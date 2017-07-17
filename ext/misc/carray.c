@@ -19,13 +19,20 @@
 ** The query above returns 5 integers contained in a C-language array
 ** at the address $ptr.  $ptr is a pointer to the array of integers.
 ** The pointer value must be assigned to $ptr using the
-** sqlite3_bind_pointer() interface.
+** sqlite3_bind_pointer() interface with a pointer type of "carray".
+** For example:
+**
+**    static int aX[] = { 53, 9, 17, 2231, 4, 99 };
+**    int i = sqlite3_bind_parameter_index(pStmt, "$ptr");
+**    sqlite3_bind_value(pStmt, i, aX, "carray");
 **
 ** There is an optional third parameter to determine the datatype of
 ** the C-language array.  Allowed values of the third parameter are
 ** 'int32', 'int64', 'double', 'char*'.  Example:
 **
 **      SELECT * FROM carray($ptr,10,'char*');
+**
+** The default value of the third parameter is 'int32'.
 **
 ** HOW IT WORKS
 **
@@ -233,7 +240,7 @@ static int carrayFilter(
 ){
   carray_cursor *pCur = (carray_cursor *)pVtabCursor;
   if( idxNum ){
-    pCur->pPtr = sqlite3_value_pointer(argv[0]);
+    pCur->pPtr = sqlite3_value_pointer(argv[0], "carray");
     pCur->iCnt = pCur->pPtr ? sqlite3_value_int64(argv[1]) : 0;
     if( idxNum<3 ){
       pCur->eType = CARRAY_INT32;
@@ -370,7 +377,7 @@ static void inttoptrFunc(
     int i32 = i64 & 0xffffffff;
     memcpy(&p, &i32, sizeof(p));
   }
-  sqlite3_result_pointer(context, p);
+  sqlite3_result_pointer(context, p, "carray");
 }
 #endif /* SQLITE_TEST */
 

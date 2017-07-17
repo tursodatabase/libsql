@@ -476,7 +476,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 #else
   void sqlite3VdbeMemSetDouble(Mem*, double);
 #endif
-void sqlite3VdbeMemSetPointer(Mem*, void*);
+void sqlite3VdbeMemSetPointer(Mem*, void*, const char*);
 void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
