@@ -161,4 +161,27 @@ do_execsql_test join5-3.3 {
   SELECT * FROM x1 LEFT JOIN x2 JOIN x3 WHERE x3.d = x2.b;
 } {}
 
+# Ticket https://www.sqlite.org/src/tktview/c2a19d81652f40568c770c43 on
+# 2015-08-20.  LEFT JOIN and the push-down optimization.
+#
+do_execsql_test join6-4.1 {
+  SELECT *
+  FROM (
+      SELECT 'apple' fruit
+      UNION ALL SELECT 'banana'
+  ) a
+  JOIN (
+      SELECT 'apple' fruit
+      UNION ALL SELECT 'banana'
+  ) b ON a.fruit=b.fruit
+  LEFT JOIN (
+      SELECT 1 isyellow
+  ) c ON b.fruit='banana';
+} {apple apple {} banana banana 1}
+do_execsql_test join6-4.2 {
+  SELECT *
+    FROM (SELECT 'apple' fruit UNION ALL SELECT 'banana')
+         LEFT JOIN (SELECT 1) ON fruit='banana';
+} {apple {} banana 1}
+
 finish_test
