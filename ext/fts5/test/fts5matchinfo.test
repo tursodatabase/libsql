@@ -472,7 +472,7 @@ do_execsql_test 12.1 {
 #
 reset_db
 proc xyz {} {}
-db func fts5 -argcount 0 xyz
+db func fts5 -argcount 1 xyz
 do_test 13.1 {
   list [catch { sqlite3_fts5_register_matchinfo db } msg] $msg
 } {1 SQLITE_ERROR}
