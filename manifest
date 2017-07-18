@@ -1,5 +1,5 @@
-C Add\stest\scases\sand\sfix\sminor\serror-handling\sissues\sin\sunionvtab.c.
-D 2017-07-18T20:49:15.448
+C Fix\sshell.c.in\sso\sthat\sit\saligns\swith\sshell.c.
+D 2017-07-18T20:59:40.649
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -454,7 +454,7 @@ F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c dd4494287b22ac5ab0654fdd5acb1f2172d2fe621f673a39229ddc31bd8d598f
-F src/shell.c.in dae43a6a43988d955014f070341f296561ea4a43ca2685166a32495b0667ef59
+F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
 F src/sqlite.h.in dad804d4e1979a2ddec33cc8da6aa50c04e6ba0dcb4058e7b3609588d010e041
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
@@ -1636,7 +1636,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47b80ecc679e656ef865e73809d6a9aa485eceeacab86d10d405881c5d9872bd
-R 15ffe9e1282d41d7effada7cdd9cfc02
-U dan
-Z 25cb6976b03d308a83435181e64ee0cf
+P deadaad2a0801b3c30d2a076d8eb006b62d8557cff820e0939741c078477c83f
+R ebeee8c11f6780fb6d8f0948c2e12549
+U drh
+Z bc4be0b0821a4d5a78f5a49fc1be3710
