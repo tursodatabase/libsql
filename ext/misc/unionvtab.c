@@ -133,7 +133,7 @@ static void *unionMalloc(int *pRc, int nByte){
 static char *unionStrdup(int *pRc, const char *zIn){
   char *zRet = 0;
   if( zIn ){
-    int nByte = strlen(zIn) + 1;
+    int nByte = (int)strlen(zIn) + 1;
     zRet = unionMalloc(pRc, nByte);
     if( zRet ){
       memcpy(zRet, zIn, nByte);

@@ -1,8 +1,8 @@
-C Suppress\sharmless\scompiler\swarnings\sin\sunion-vtab.
-D 2017-07-18T20:22:12.246
+C Fix\sanother\sharmless\scompiler\swarning.\s\sGet\sthe\sMSVC\smakefile\sworking\swith\sunionvtab.
+D 2017-07-18T20:28:34.359
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
+F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -281,7 +281,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
-F ext/misc/unionvtab.c 82e3531e24b4671d74b9e92d737ac8a6864c5d63cc7fac3c21a0bd285f3f1a9f
+F ext/misc/unionvtab.c b4d76914379f45c83783ee6120ec76ce6df64806ecee4cb127532207770c6de2
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
@@ -1635,7 +1635,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a447fdf182c9090ca5b6c9c13147ae4b78d22d67f416ee7a0436ca408284c8fe
-R 8ea1a872ebb79e713f4131066de4ea3c
+P 4d147a1e28b93e267889fcb01b538d6a2a58d6b1655512c883fa5b53ddcc60a4
+R 73d814761ea520761211a9d61c42dcd5
 U drh
-Z 15a27884ea99ea71b300076329bdc8ab
+Z bc77e968137c3c63de44322de8292edf
