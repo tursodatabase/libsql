@@ -406,6 +406,7 @@ static int unionConnect(
   UnionTab *pTab = 0;
   int rc = SQLITE_OK;
 
+  (void)pAux;   /* Suppress harmless 'unused parameter' warning */
   if( sqlite3_stricmp("temp", argv[1]) ){
     /* unionvtab tables may only be created in the temp schema */
     *pzErr = sqlite3_mprintf("unionvtab tables must be created in TEMP schema");
@@ -510,6 +511,7 @@ static int unionConnect(
 static int unionOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   UnionCsr *pCsr;
   int rc = SQLITE_OK;
+  (void)p;  /* Suppress harmless warning */
   pCsr = (UnionCsr*)unionMalloc(&rc, sizeof(UnionCsr));
   *ppCursor = &pCsr->base;
   return rc;
@@ -599,6 +601,8 @@ static int unionFilter(
        || idxNum==(SQLITE_INDEX_CONSTRAINT_GE|SQLITE_INDEX_CONSTRAINT_LE)
   );
 
+  (void)idxStr;  /* Suppress harmless warning */
+  
   if( idxNum==SQLITE_INDEX_CONSTRAINT_EQ ){
     assert( argc==1 );
     iMin = iMax = sqlite3_value_int64(argv[0]);
@@ -784,6 +788,9 @@ static int createUnionVtab(sqlite3 *db){
     0,                            /* xRollback */
     0,                            /* xFindMethod */
     0,                            /* xRename */
+    0,                            /* xSavepoint */
+    0,                            /* xRelease */
+    0                             /* xRollbackTo */
   };
 
   return sqlite3_create_module(db, "unionvtab", &unionModule, 0);
@@ -801,9 +808,9 @@ int sqlite3_unionvtab_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Suppress harmless warning */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = createUnionVtab(db);
 #endif
   return rc;
 }
-
