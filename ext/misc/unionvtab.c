@@ -152,31 +152,33 @@ static char *unionStrdup(int *pRc, const char *zIn){
 ** function is a no-op.
 */
 static void unionDequote(char *z){
-  char q = z[0];
+  if( z ){
+    char q = z[0];
 
-  /* Set stack variable q to the close-quote character */
-  if( q=='[' || q=='\'' || q=='"' || q=='`' ){
-    int iIn = 1;
-    int iOut = 0;
-    if( q=='[' ) q = ']';  
-    while( z[iIn] ){
-      if( z[iIn]==q ){
-        if( z[iIn+1]!=q ){
-          /* Character iIn was the close quote. */
-          iIn++;
-          break;
+    /* Set stack variable q to the close-quote character */
+    if( q=='[' || q=='\'' || q=='"' || q=='`' ){
+      int iIn = 1;
+      int iOut = 0;
+      if( q=='[' ) q = ']';  
+      while( z[iIn] ){
+        if( z[iIn]==q ){
+          if( z[iIn+1]!=q ){
+            /* Character iIn was the close quote. */
+            iIn++;
+            break;
+          }else{
+            /* Character iIn and iIn+1 form an escaped quote character. Skip
+            ** the input cursor past both and copy a single quote character 
+            ** to the output buffer. */
+            iIn += 2;
+            z[iOut++] = q;
+          }
         }else{
-          /* Character iIn and iIn+1 form an escaped quote character. Skip
-          ** the input cursor past both and copy a single quote character 
-          ** to the output buffer. */
-          iIn += 2;
-          z[iOut++] = q;
+          z[iOut++] = z[iIn++];
         }
-      }else{
-        z[iOut++] = z[iIn++];
       }
+      z[iOut] = '\0';
     }
-    z[iOut] = '\0';
   }
 }
 
@@ -209,6 +211,37 @@ static sqlite3_stmt *unionPrepare(
   }
   return pRet;
 }
+
+/*
+** Like unionPrepare(), except prepare the results of vprintf(zFmt, ...)
+** instead of a constant SQL string.
+*/
+static sqlite3_stmt *unionPreparePrintf(
+  int *pRc,                       /* IN/OUT: Error code */
+  char **pzErr,                   /* OUT: Error message */
+  sqlite3 *db,                    /* Database handle */
+  const char *zFmt,               /* printf() format string */
+  ...                             /* Trailing printf args */
+){
+  sqlite3_stmt *pRet = 0;
+  char *zSql;
+  va_list ap;
+  va_start(ap, zFmt);
+
+  zSql = sqlite3_vmprintf(zFmt, ap);
+  if( *pRc==SQLITE_OK ){
+    if( zSql==0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      pRet = unionPrepare(pRc, db, zSql, pzErr);
+    }
+  }
+  sqlite3_free(zSql);
+
+  va_end(ap);
+  return pRet;
+}
+
 
 /*
 ** Call sqlite3_reset() on SQL statement pStmt. If *pRc is set to 
@@ -390,16 +423,10 @@ static int unionConnect(
     ** the results by the "minimum rowid" field. This makes it easier to
     ** check that there are no rowid range overlaps between source tables 
     ** and that the UnionTab.aSrc[] array is always sorted by rowid.  */
-    if( zArg ){
-      unionDequote(zArg);
-      zSql = sqlite3_mprintf("SELECT * FROM (%s) ORDER BY 3", zArg);
-      sqlite3_free(zArg);
-      zArg = 0;
-    }
-    if( zSql==0 ){
-      rc = SQLITE_NOMEM;
-    }
-    pStmt = unionPrepare(&rc, db, zSql, pzErr);
+    unionDequote(zArg);
+    pStmt = unionPreparePrintf(&rc, pzErr, db, 
+        "SELECT * FROM (%z) ORDER BY 3", zArg
+    );
 
     /* Allocate the UnionTab structure */
     pTab = unionMalloc(&rc, sizeof(UnionTab));
@@ -443,9 +470,7 @@ static int unionConnect(
     }
     unionFinalize(&rc, pStmt);
     pStmt = 0;
-    sqlite3_free(zArg);
     sqlite3_free(zSql);
-    zArg = 0;
     zSql = 0;
 
     /* Verify that all source tables exist and have compatible schemas. */
@@ -455,18 +480,14 @@ static int unionConnect(
     }
 
     /* Compose a CREATE TABLE statement and pass it to declare_vtab() */
-    if( rc==SQLITE_OK ){
-      zSql = sqlite3_mprintf("SELECT "
-          "'CREATE TABLE xyz('"
-          "    || group_concat(quote(name) || ' ' || type, ', ')"
-          "    || ')',"
-          "max((cid+1) * (type='INTEGER' COLLATE nocase AND pk=1))-1 "
-          "FROM pragma_table_info(%Q, ?)", 
-          pTab->aSrc[0].zTab, pTab->aSrc[0].zDb
-      );
-      if( zSql==0 ) rc = SQLITE_NOMEM;
-    }
-    pStmt = unionPrepare(&rc, db, zSql, pzErr);
+    pStmt = unionPreparePrintf(&rc, pzErr, db, "SELECT "
+        "'CREATE TABLE xyz('"
+        "    || group_concat(quote(name) || ' ' || type, ', ')"
+        "    || ')',"
+        "max((cid+1) * (type='INTEGER' COLLATE nocase AND pk=1))-1 "
+        "FROM pragma_table_info(%Q, ?)", 
+        pTab->aSrc[0].zTab, pTab->aSrc[0].zDb
+    );
     if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zDecl = (const char*)sqlite3_column_text(pStmt, 0);
       rc = sqlite3_declare_vtab(db, zDecl);
