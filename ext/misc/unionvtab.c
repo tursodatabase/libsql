@@ -87,6 +87,7 @@ struct UnionSrc {
 struct UnionTab {
   sqlite3_vtab base;              /* Base class - must be first */
   sqlite3 *db;                    /* Database handle */
+  int iPK;                        /* INTEGER PRIMARY KEY column, or -1 */
   int nSrc;                       /* Number of elements in the aSrc[] array */
   UnionSrc *aSrc;                 /* Array of source tables, sorted by rowid */
 };
@@ -458,19 +459,18 @@ static int unionConnect(
       zSql = sqlite3_mprintf("SELECT "
           "'CREATE TABLE xyz('"
           "    || group_concat(quote(name) || ' ' || type, ', ')"
-          "    || ')'"
+          "    || ')',"
+          "max((cid+1) * (type='INTEGER' COLLATE nocase AND pk=1))-1 "
           "FROM pragma_table_info(%Q, ?)", 
-          pTab->aSrc[0].zTab
+          pTab->aSrc[0].zTab, pTab->aSrc[0].zDb
       );
       if( zSql==0 ) rc = SQLITE_NOMEM;
     }
     pStmt = unionPrepare(&rc, db, zSql, pzErr);
-    if( rc==SQLITE_OK ){
-      sqlite3_bind_text(pStmt, 1, pTab->aSrc[0].zDb, -1, SQLITE_STATIC);
-      if( SQLITE_ROW==sqlite3_step(pStmt) ){
-        const char *zDecl = (const char*)sqlite3_column_text(pStmt, 0);
-        rc = sqlite3_declare_vtab(db, zDecl);
-      }
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      const char *zDecl = (const char*)sqlite3_column_text(pStmt, 0);
+      rc = sqlite3_declare_vtab(db, zDecl);
+      pTab->iPK = sqlite3_column_int(pStmt, 1);
     }
 
     unionFinalize(&rc, pStmt);
@@ -686,6 +686,7 @@ static int unionBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
+  UnionTab *pTab = (UnionTab*)tab;
   int iEq = -1;
   int iLt = -1;
   int iGt = -1;
@@ -693,7 +694,7 @@ static int unionBestIndex(
 
   for(i=0; i<pIdxInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[i];
-    if( p->usable && p->iColumn<0 ){
+    if( p->usable && (p->iColumn<0 || p->iColumn==pTab->iPK) ){
       switch( p->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ:
           if( iEq<0 ) iEq = i;

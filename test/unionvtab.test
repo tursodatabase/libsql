@@ -251,6 +251,18 @@ do_execsql_test 3.9.2 { SELECT count(*) FROM uu WHERE rowid >  $L } {0}
 do_execsql_test 3.9.3 { SELECT count(*) FROM uu WHERE rowid <= $L } {300}
 do_execsql_test 3.9.4 { SELECT count(*) FROM uu WHERE rowid <  $L } {300}
 
+do_execsql_test 3.10.1 { SELECT count(*) FROM uu WHERE a < 25 } {24}
+do_execsql_test 3.10.2 { SELECT count(*) FROM uu WHERE a < 26 } {100}
+do_execsql_test 3.10.3 { SELECT count(*) FROM uu WHERE a < 27 } {126}
+do_execsql_test 3.10.4 { SELECT count(*) FROM uu WHERE a < 73 } {172}
+do_execsql_test 3.10.5 { SELECT count(*) FROM uu WHERE a < 74 } {173}
+do_execsql_test 3.10.6 { SELECT count(*) FROM uu WHERE a < 75 } {200}
+do_execsql_test 3.10.7 { SELECT count(*) FROM uu WHERE a < 76 } {275}
+do_execsql_test 3.10.8 { SELECT count(*) FROM uu WHERE a < 99 } {298}
+do_execsql_test 3.10.9 { SELECT count(*) FROM uu WHERE a < 100 } {299}
+do_execsql_test 3.10.10 { SELECT count(*) FROM uu WHERE a < 101 } {300}
+
+
 #-------------------------------------------------------------------------
 #
 do_execsql_test 4.0 {
