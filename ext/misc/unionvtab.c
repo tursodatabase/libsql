@@ -254,7 +254,7 @@ static void unionReset(int *pRc, sqlite3_stmt *pStmt, char **pzErr){
   int rc = sqlite3_reset(pStmt);
   if( *pRc==SQLITE_OK ){
     *pRc = rc;
-    if( rc && pzErr ){
+    if( rc ){
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(sqlite3_db_handle(pStmt)));
     }
   }
@@ -315,10 +315,12 @@ static char *unionSourceToStr(
   if( *pRc==SQLITE_OK ){
     int bPk = 0;
     const char *zType = 0;
+    int rc;
 
-    int rc = sqlite3_table_column_metadata(
+    sqlite3_table_column_metadata(
         db, pSrc->zDb, pSrc->zTab, "_rowid_", &zType, 0, 0, &bPk, 0
     );
+    rc = sqlite3_errcode(db);
     if( rc==SQLITE_ERROR 
      || (rc==SQLITE_OK && (!bPk || sqlite3_stricmp("integer", zType)))
     ){
@@ -475,17 +477,17 @@ static int unionConnect(
     if( rc==SQLITE_OK ){
       pTab->db = db;
       rc = unionSourceCheck(pTab, pzErr);
-    }
 
-    /* Compose a CREATE TABLE statement and pass it to declare_vtab() */
-    pStmt = unionPreparePrintf(&rc, pzErr, db, "SELECT "
-        "'CREATE TABLE xyz('"
-        "    || group_concat(quote(name) || ' ' || type, ', ')"
-        "    || ')',"
-        "max((cid+1) * (type='INTEGER' COLLATE nocase AND pk=1))-1 "
-        "FROM pragma_table_info(%Q, ?)", 
-        pTab->aSrc[0].zTab, pTab->aSrc[0].zDb
-    );
+      /* Compose a CREATE TABLE statement and pass it to declare_vtab() */
+      pStmt = unionPreparePrintf(&rc, pzErr, db, "SELECT "
+          "'CREATE TABLE xyz('"
+          "    || group_concat(quote(name) || ' ' || type, ', ')"
+          "    || ')',"
+          "max((cid+1) * (type='INTEGER' COLLATE nocase AND pk=1))-1 "
+          "FROM pragma_table_info(%Q, ?)", 
+          pTab->aSrc[0].zTab, pTab->aSrc[0].zDb
+      );
+    }
     if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zDecl = (const char*)sqlite3_column_text(pStmt, 0);
       rc = sqlite3_declare_vtab(db, zDecl);
@@ -658,29 +660,24 @@ static int unionFilter(
       break;
     }
 
-    if( zSql ){
-      if( iMin==iMax ){
-        zSql = sqlite3_mprintf("%z WHERE rowid=%lld", zSql, iMin);
-      }else{
-        const char *zWhere = "WHERE";
-        if( iMin!=SMALLEST_INT64 && iMin>pSrc->iMin ){
-          zSql = sqlite3_mprintf("%z WHERE rowid>=%lld", zSql, iMin);
-          zWhere = "AND";
-        }
-        if( iMax!=LARGEST_INT64 && iMax<pSrc->iMax ){
-          zSql = sqlite3_mprintf("%z %s rowid<=%lld", zSql, zWhere, iMax);
-        }
+    if( iMin==iMax ){
+      zSql = sqlite3_mprintf("%z WHERE rowid=%lld", zSql, iMin);
+    }else{
+      const char *zWhere = "WHERE";
+      if( iMin!=SMALLEST_INT64 && iMin>pSrc->iMin ){
+        zSql = sqlite3_mprintf("%z WHERE rowid>=%lld", zSql, iMin);
+        zWhere = "AND";
+      }
+      if( iMax!=LARGEST_INT64 && iMax<pSrc->iMax ){
+        zSql = sqlite3_mprintf("%z %s rowid<=%lld", zSql, zWhere, iMax);
       }
     }
   }
 
 
-  if( rc==SQLITE_OK ){
-    if( zSql==0 ) return SQLITE_OK;
-    pCsr->pStmt = unionPrepare(&rc, pTab->db, zSql, &pTab->base.zErrMsg);
-  }
+  if( zSql==0 ) return rc;
+  pCsr->pStmt = unionPrepare(&rc, pTab->db, zSql, &pTab->base.zErrMsg);
   sqlite3_free(zSql);
-
   if( rc!=SQLITE_OK ) return rc;
   return unionNext(pVtabCursor);
 }
@@ -718,15 +715,15 @@ static int unionBestIndex(
     if( p->usable && (p->iColumn<0 || p->iColumn==pTab->iPK) ){
       switch( p->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ:
-          if( iEq<0 ) iEq = i;
+          iEq = i;
           break;
         case SQLITE_INDEX_CONSTRAINT_LE:
         case SQLITE_INDEX_CONSTRAINT_LT:
-          if( iLt<0 ) iLt = i;
+          iLt = i;
           break;
         case SQLITE_INDEX_CONSTRAINT_GE:
         case SQLITE_INDEX_CONSTRAINT_GT:
-          if( iGt<0 ) iGt = i;
+          iGt = i;
           break;
       }
     }

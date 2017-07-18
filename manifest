@@ -1,5 +1,5 @@
-C Fix\sduplicate\stest\sname.\s\sNo\schanges\sto\scode.
-D 2017-07-18T20:30:55.470
+C Add\stest\scases\sand\sfix\sminor\serror-handling\sissues\sin\sunionvtab.c.
+D 2017-07-18T20:49:15.448
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -281,7 +281,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
-F ext/misc/unionvtab.c b4d76914379f45c83783ee6120ec76ce6df64806ecee4cb127532207770c6de2
+F ext/misc/unionvtab.c e6ed3a3a6fe244c7968620cd74b33a140610541896f69dc28f7168e9dea6326b
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
@@ -1433,6 +1433,7 @@ F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unionvtab.test ba9f8146e847c2386567bc65e43079a8cd9c047ce9f76e034033731efec07989
+F test/unionvtabfault.test ccb87c510efd0da88d90d813cfaeebe69f2be78cdfbdc3343b04fd9fc507d887
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
@@ -1635,7 +1636,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d49639c208ac366f6c675ac5671accc2a597558b62a51520194276c61f32d406
-R 8e7e64ef28860f8f5c2014a6618c15fa
-U mistachkin
-Z 42bd4dccb8e05d700a80262381d5f5c6
+P 47b80ecc679e656ef865e73809d6a9aa485eceeacab86d10d405881c5d9872bd
+R 15ffe9e1282d41d7effada7cdd9cfc02
+U dan
+Z 25cb6976b03d308a83435181e64ee0cf
