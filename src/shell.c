@@ -8375,7 +8375,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
       rc = process_input(&data, 0);
       if( zHistory ){
-        shell_stifle_history(100);
+        shell_stifle_history(2000);
         shell_write_history(zHistory);
         free(zHistory);
       }
