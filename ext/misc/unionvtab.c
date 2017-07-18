@@ -416,7 +416,6 @@ static int unionConnect(
   }else{
     int nAlloc = 0;               /* Allocated size of pTab->aSrc[] */
     sqlite3_stmt *pStmt = 0;      /* Argument statement */
-    char *zSql = 0;               /* SQL statement */
     char *zArg = unionStrdup(&rc, argv[3]);      /* Copy of argument to CVT */
 
     /* Prepare the SQL statement. Instead of executing it directly, sort
@@ -470,8 +469,6 @@ static int unionConnect(
     }
     unionFinalize(&rc, pStmt);
     pStmt = 0;
-    sqlite3_free(zSql);
-    zSql = 0;
 
     /* Verify that all source tables exist and have compatible schemas. */
     if( rc==SQLITE_OK ){
@@ -495,7 +492,6 @@ static int unionConnect(
     }
 
     unionFinalize(&rc, pStmt);
-    sqlite3_free(zSql);
   }
 
   if( rc!=SQLITE_OK ){
