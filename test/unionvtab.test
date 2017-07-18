@@ -238,5 +238,94 @@ do_execsql_test 3.7.8 { SELECT count(*) FROM uu WHERE rowid >= 99 } {2}
 do_execsql_test 3.7.9 { SELECT count(*) FROM uu WHERE rowid >= 100 } {1}
 do_execsql_test 3.7.10 { SELECT count(*) FROM uu WHERE rowid >= 101 } {0}
 
+set L [expr  9223372036854775807]
+set S [expr -9223372036854775808]
+
+do_execsql_test 3.8.1 { SELECT count(*) FROM uu WHERE rowid >= $S } {300}
+do_execsql_test 3.8.2 { SELECT count(*) FROM uu WHERE rowid >  $S } {300}
+do_execsql_test 3.8.3 { SELECT count(*) FROM uu WHERE rowid <= $S } {0}
+do_execsql_test 3.8.4 { SELECT count(*) FROM uu WHERE rowid <  $S } {0}
+
+do_execsql_test 3.9.1 { SELECT count(*) FROM uu WHERE rowid >= $L } {0}
+do_execsql_test 3.9.2 { SELECT count(*) FROM uu WHERE rowid >  $L } {0}
+do_execsql_test 3.9.3 { SELECT count(*) FROM uu WHERE rowid <= $L } {300}
+do_execsql_test 3.9.4 { SELECT count(*) FROM uu WHERE rowid <  $L } {300}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 4.0 {
+  CREATE TABLE s1(k INTEGER PRIMARY KEY, v);
+  INSERT INTO s1 VALUES($S, 'one');
+  INSERT INTO s1 VALUES($S+1, 'two');
+  INSERT INTO s1 VALUES($S+2, 'three');
+
+  CREATE TABLE l1(k INTEGER PRIMARY KEY, v);
+  INSERT INTO l1 VALUES($L, 'six');
+  INSERT INTO l1 VALUES($L-1, 'five');
+  INSERT INTO l1 VALUES($L-2, 'four');
+
+  CREATE VIRTUAL TABLE temp.sl USING unionvtab(
+    "SELECT NULL, 'l1', 0, 9223372036854775807
+     UNION ALL
+     SELECT NULL, 's1', -9223372036854775808, -1"
+  );
+}
+
+do_execsql_test 4.1 {
+  SELECT * FROM sl;
+} {
+  -9223372036854775808 one -9223372036854775807 two -9223372036854775806 three
+   9223372036854775805 four 9223372036854775806 five 9223372036854775807 six
+}
+
+foreach {k v} {
+  -9223372036854775808 one -9223372036854775807 two -9223372036854775806 three
+   9223372036854775805 four 9223372036854775806 five 9223372036854775807 six
+} {
+  do_execsql_test 4.2.$v { SELECT * FROM sl WHERE rowid=$k } [list $k $v]
+}
+
+do_execsql_test 4.3.1 {
+  SELECT * FROM sl WHERE rowid>-9223372036854775808
+} {
+  -9223372036854775807 two -9223372036854775806 three
+   9223372036854775805 four 9223372036854775806 five 9223372036854775807 six
+}
+do_execsql_test 4.3.2 {
+  SELECT * FROM sl WHERE rowid>=-9223372036854775808
+} {
+  -9223372036854775808 one -9223372036854775807 two -9223372036854775806 three
+   9223372036854775805 four 9223372036854775806 five 9223372036854775807 six
+}
+do_execsql_test 4.3.3 {
+  SELECT * FROM sl WHERE rowid<=-9223372036854775808
+} {
+  -9223372036854775808 one
+}
+do_execsql_test 4.3.4 {
+  SELECT * FROM sl WHERE rowid<-9223372036854775808
+} { }
+
+do_execsql_test 4.4.1 {
+  SELECT * FROM sl WHERE rowid<9223372036854775807
+} {
+  -9223372036854775808 one -9223372036854775807 two -9223372036854775806 three
+   9223372036854775805 four 9223372036854775806 five
+}
+do_execsql_test 4.4.2 {
+  SELECT * FROM sl WHERE rowid<=9223372036854775807
+} {
+  -9223372036854775808 one -9223372036854775807 two -9223372036854775806 three
+   9223372036854775805 four 9223372036854775806 five 9223372036854775807 six
+}
+do_execsql_test 4.3.3 {
+  SELECT * FROM sl WHERE rowid>=9223372036854775807
+} {
+  9223372036854775807 six
+}
+do_execsql_test 4.4.4 {
+  SELECT * FROM sl WHERE rowid>9223372036854775807
+} { }
+
 finish_test
 
