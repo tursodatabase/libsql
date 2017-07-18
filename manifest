@@ -1,5 +1,5 @@
-C Avoid\screating\san\sautomatic\sindex\son\sthe\sRHS\sof\sa\sLEFT\sJOIN\sto\soptimize\san\sIS\nterm.\sFix\sfor\s[ce68383b].
-D 2017-07-18T17:13:41.139
+C Do\snot\suse\sthe\sflattening\soptimization\sfor\sa\ssub-query\son\sthe\sRHS\sof\sa\sLEFT\nJOIN\sif\sthat\ssubquery\sreads\sdata\sfrom\sa\svirtual\stable.\sBecause\sit\sprevents\sthe\nplanner\sfrom\screating\san\sautomatic\sindex\son\sthe\sresults\sof\sthe\ssub-query,\sthe\nflattening\soptimization\ssometimes\sslows\sthings\sdown\sin\sthis\scase.
+D 2017-07-18T17:34:41.909
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -451,7 +451,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 95659b7990e390f9bd8dc30b8975c675fcd1d46e569bc4f5a14e22a8d03e3d14
+F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c dd4494287b22ac5ab0654fdd5acb1f2172d2fe621f673a39229ddc31bd8d598f
 F src/shell.c.in dae43a6a43988d955014f070341f296561ea4a43ca2685166a32495b0667ef59
 F src/sqlite.h.in dad804d4e1979a2ddec33cc8da6aa50c04e6ba0dcb4058e7b3609588d010e041
@@ -844,7 +844,7 @@ F test/fts3expr5.test f9abfffbf5e53d48a33e12a1e8f8ba2c551c9b49
 F test/fts3fault.test 9fb7d6266a38806de841f7244bac1b0fe3a1477184bbb10b172d19d2ca6ad692
 F test/fts3fault2.test 6a17a11d8034b1c4eca9f3091649273d56c49ff049e2173df8060f94341e9da0
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
-F test/fts3join.test a758accc808cebaef8d622aac07994a2eae15c40eebc40888dcbbabc6f6bafb6
+F test/fts3join.test 69aeb460d0ea17527a2b1b8d24ce18f29c7f207a7261867a2618f639c8020459
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test ce864e0bd92429df8008f31cf557269ba172482a
 F test/fts3misc.test 66e7b59576ce2c795f0baff6d47f7f6f57e6f41101cf85fad05989e43bb060dd
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b69aa7e37495f15c3fcc36969b650262b5aa5500fb40800de9a5c56a03f309d
-R cc5a175944c475afde62e55250d19da5
+P d2f0b2e859a8a413ee4e4bd7040e450ccd604069e4ea8dbc9ff924718c2b14d7
+R 3c4759ced4ce8b0061743bb6c4533a26
 U dan
-Z 2b933914fdd0e790eddd1d56954850dd
+Z 85b03bc1ee316c41d181881cd7406dfe

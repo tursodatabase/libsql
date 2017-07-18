@@ -3339,8 +3339,9 @@ static void substSelect(
 **        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
 **   (3)  The subquery is not the right operand of a LEFT JOIN
-**        or the subquery is not itself a join and the outer query is not
-**        an aggregate.
+**        or (a) the subquery is not itself a join and (b) the FROM clause
+**        of the subquery does not contain a virtual table and (c) the 
+**        outer query is not an aggregate.
 **
 **   (4)  The subquery is not DISTINCT.
 **
@@ -3545,7 +3546,7 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
-    if( pSubSrc->nSrc>1 || isAgg ){
+    if( pSubSrc->nSrc>1 || isAgg || IsVirtual(pSubSrc->a[0].pTab) ){
       return 0; /* Restriction (3) */
     }
   }
