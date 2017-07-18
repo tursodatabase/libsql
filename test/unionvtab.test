@@ -78,6 +78,19 @@ do_execsql_test 1.7 {
   20 twenty 21 twenty-one 22 twenty-two
 }
 
+do_execsql_test 1.8 {
+  CREATE TABLE src(db, tbl, min, max);
+  INSERT INTO src VALUES(NULL, 't1', 1, 9);
+  INSERT INTO src VALUES('main', 't2', 10, 19);
+  INSERT INTO src VALUES('aux', 't3', 20, 29);
+  CREATE VIRTUAL TABLE temp.opp USING unionvtab(src);
+  SELECT * FROM opp;
+} {
+  1 one 2 two 3 three
+  10 ten 11 eleven 12 twelve
+  20 twenty 21 twenty-one 22 twenty-two
+}
+
 #-------------------------------------------------------------------------
 # Error conditions.
 #
@@ -85,6 +98,7 @@ do_execsql_test 1.7 {
 #   2.2.*: Tables that do not exist.
 #   2.3.*: Non rowid tables.
 #   2.4.*: Tables with mismatched schemas.
+#   2.5.*: A unionvtab table with zero source tables.
 #
 do_catchsql_test 2.1.1 {
   CREATE VIRTUAL TABLE u1 USING unionvtab("VALUES(NULL, 't1', 1, 100)");
@@ -156,6 +170,25 @@ foreach {tn dbs res} {
     CREATE VIRTUAL TABLE temp.a1 USING unionvtab(\"VALUES [join $L ,]\");
   " $res
 }
+
+do_catchsql_test 2.5 {
+  CREATE VIRTUAL TABLE temp.b1 USING unionvtab(
+    [SELECT 'main', 'b1', 0, 100 WHERE 0]
+  )
+} {1 {no source tables configured}}
+
+foreach {tn sql} {
+  1 { VALUES('main', 't1', 10, 20), ('main', 't2', 30, 29) }
+  2 { VALUES('main', 't1', 10, 20), ('main', 't2', 15, 30) }
+} {
+  do_catchsql_test 2.6.$tn "
+    CREATE VIRTUAL TABLE temp.a1 USING unionvtab(`$sql`)
+  " {1 {rowid range mismatch error}}
+}
+
+do_catchsql_test 2.7.1 {
+  CREATE VIRTUAL TABLE temp.b1 USING unionvtab(1, 2, 3, 4)
+} {1 {wrong number of arguments for unionvtab}}
 
 #-------------------------------------------------------------------------
 #

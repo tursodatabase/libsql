@@ -477,8 +477,10 @@ static int unionConnect(
     if( rc==SQLITE_OK ){
       pTab->db = db;
       rc = unionSourceCheck(pTab, pzErr);
+    }
 
-      /* Compose a CREATE TABLE statement and pass it to declare_vtab() */
+    /* Compose a CREATE TABLE statement and pass it to declare_vtab() */
+    if( rc==SQLITE_OK ){
       pStmt = unionPreparePrintf(&rc, pzErr, db, "SELECT "
           "'CREATE TABLE xyz('"
           "    || group_concat(quote(name) || ' ' || type, ', ')"
