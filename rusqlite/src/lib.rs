@@ -142,7 +142,7 @@ fn str_to_cstring(s: &str) -> Result<CString> {
 }
 
 fn path_to_cstring(p: &Path) -> Result<CString> {
-    let s = try!(p.to_str().ok_or(Error::InvalidPath(p.to_owned())));
+    let s = try!(p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned())));
     str_to_cstring(s)
 }
 
@@ -737,9 +737,9 @@ impl InnerConnection {
 
         // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
         // wasn't added until version 3.7.3.
-        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits == 0x02);
-        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits == 0x04);
-        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE).bits == 0x40);
+        debug_assert_eq!(1 << SQLITE_OPEN_READ_ONLY.bits, 0x02);
+        debug_assert_eq!(1 << SQLITE_OPEN_READ_WRITE.bits, 0x04);
+        debug_assert_eq!(1 << (SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE).bits, 0x40);
         if (1 << (flags.bits & 0x7)) & 0x46 == 0 {
             return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_MISUSE), None));
         }
