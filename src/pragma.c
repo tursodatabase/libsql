@@ -1594,7 +1594,7 @@ void sqlite3Pragma(
             int addrCkOk = sqlite3VdbeMakeLabel(v);
             char *zErr;
             int k;
-            pParse->iSelfTab = iDataCur;
+            pParse->iSelfTab = iDataCur+1;
             sqlite3ExprCachePush(pParse);
             for(k=pCheck->nExpr-1; k>0; k--){
               sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
@@ -1602,6 +1602,7 @@ void sqlite3Pragma(
             sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
                 SQLITE_JUMPIFNULL);
             sqlite3VdbeResolveLabel(v, addrCkFault);
+            pParse->iSelfTab = 0;
             zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
                 pTab->zName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);

@@ -852,10 +852,11 @@ int sqlite3GenerateIndexKey(
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
-      pParse->iSelfTab = iDataCur;
+      pParse->iSelfTab = iDataCur + 1;
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
+      pParse->iSelfTab = 0;
     }else{
       *piPartIdxLabel = 0;
     }

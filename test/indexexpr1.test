@@ -181,12 +181,12 @@ do_execsql_test indexexpr1-260eqp {
 
 
 do_catchsql_test indexexpr1-300 {
-  CREATE TABLE t2(a,b,c);
+  CREATE TABLE t2(a,b,c); INSERT INTO t2 VALUES(1,2,3);
   CREATE INDEX t2x1 ON t2(a,b+random());
 } {1 {non-deterministic functions prohibited in index expressions}}
 do_catchsql_test indexexpr1-301 {
-  CREATE INDEX t2x1 ON t2(a+julianday('now'));
-} {1 {non-deterministic functions prohibited in index expressions}}
+  CREATE INDEX t2x1 ON t2(julianday('now',a));
+} {1 {non-deterministic function}}
 do_catchsql_test indexexpr1-310 {
   CREATE INDEX t2x2 ON t2(a,b+(SELECT 15));
 } {1 {subqueries prohibited in index expressions}}
@@ -379,5 +379,8 @@ do_execsql_test indexexpr1-1300.1 {
   CREATE INDEX t1300bexpr ON t1300( substr(b,4) );
   SELECT a FROM t1300 WHERE substr(b,4)='ess' COLLATE nocase ORDER BY +a;
 } {3 4}
+
+# Date and time functions can participate in an index as long as they
+# do not contain
 
 finish_test

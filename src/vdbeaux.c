@@ -4583,6 +4583,22 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+/*
+** Cause a function to throw an error if it was call from OP_PureFunc
+** rather than OP_Function.
+**
+** OP_PureFunc means that the function must be deterministic, and should
+** throw an error if it is given inputs that would make it non-deterministic.
+** This routine is invoked by date/time functions that use non-deterministic
+** features such as 'now'.
+*/
+void sqlite3VdbePureFuncOnly(sqlite3_context *pCtx){
+  if( pCtx->pVdbe->aOp[pCtx->iOp].opcode==OP_PureFunc ){
+    sqlite3_result_error(pCtx, 
+       "non-deterministic functions prohibited in index expressions", -1);
+  }
+}
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored
