@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sto\sunionvtab.test.
-D 2017-07-19T11:52:25.505
+C Create\s"pure"\sversions\sof\sthe\sdate/time\sfunctions\sthat\somit\sthe\s'now'\sfeature\nand\sare\stherefore\sdeterministic\sand\susable\sin\san\sindex.
+D 2017-07-19T17:12:53.991
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -402,7 +402,7 @@ F src/build.c 74108007d286232fb4290464ee5452fa860c26215f8caa0e6c7cbf69a6fafe8f
 F src/callback.c 8e14b60d1ed1c87c02cb5f121ecda99224f2aea6524a77ee6f72c9b5c7110f84
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 928954802b1397d9fb1378c7eb702c94b4735bbab1d5793e21b6a77734f56a1b
-F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
+F src/date.c 9d27aa270dea3c96dca2b2b5852d68319d0e030fb5a73aeb7e3cd57aa1e28c9c
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
 F src/expr.c 68552ca7f1238c9661e60a3adb4bd28c93d5373895bed5a0293b3977518dc980
@@ -458,7 +458,7 @@ F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c17
 F src/sqlite.h.in dad804d4e1979a2ddec33cc8da6aa50c04e6ba0dcb4058e7b3609588d010e041
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
-F src/sqliteInt.h 0ba730cdc8afa723a5642380712f8bb33abd6a69218571c18b94acf3562de22a
+F src/sqliteInt.h 9b57e05822422268d5a20fa797afd23bf2b039c8401e87dff26700c0c39faf34
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -696,6 +696,7 @@ F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
+F test/date-pure.test 7b765ae3065f03c78750d09cc5d1904fe5a0ad871fb5cc4f0e5ecc97b0b1ed07
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
@@ -1636,7 +1637,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 255d6b99de2bb210c09ebee9f9481ba3d1130fda47e6e01b4cc8411d00679d09
-R 95d6426702858750789f88d482aacd89
-U dan
-Z 0400e0363a16f21362bc55d50dbde94c
+P c93284cd65b6471bffc38696e14dc24a2170698faf566cf91b727ba272f88c25
+R 9ef263d49751f65fb3022c4aede63736
+T *branch * pure-date-functions
+T *sym-pure-date-functions *
+T -sym-trunk *
+U drh
+Z 1ceeac342ec18b82def9be68d6be6ede

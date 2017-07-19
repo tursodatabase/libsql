@@ -1628,7 +1628,14 @@ struct FuncDestructor {
 **     Like FUNCTION except it omits the SQLITE_FUNC_CONSTANT flag and
 **     adds the SQLITE_FUNC_SLOCHNG flag.  Used for date & time functions
 **     and functions like sqlite_version() that can change, but not during
-**     a single query.
+**     a single query.  The iArg is ignored.  The user-data is always set
+**     to a NULL pointer.  The bNC parameter is not used.
+**
+**   PURE_DATE(zName, nArg, iArg, bNC, xFunc)
+**     Used for "pure" date/time functions, this macro is like DFUNCTION
+**     except that it does set the SQLITE_FUNC_CONSTANT flags.  iArg is
+**     ignored and the user-data for these functions is set to an 
+**     arbitrary non-NULL pointer.  The bNC parameter is not used.
 **
 **   AGGREGATE(zName, nArg, iArg, bNC, xStep, xFinal)
 **     Used to create an aggregate function definition implemented by
@@ -1651,8 +1658,11 @@ struct FuncDestructor {
   {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, {0} }
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, {0} }
+  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
+   0, 0, xFunc, 0, #zName, {0} }
+#define PURE_DATE(zName, nArg, iArg, bNC, xFunc) \
+  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
+   (void*)xFunc, 0, xFunc, 0, #zName, {0} }
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
   {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, {0} }

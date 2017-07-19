@@ -79,6 +79,15 @@ struct DateTime {
   char isError;       /* An overflow has occurred */
 };
 
+/*
+** Based on the sqlite3_context pointer, determine if the current
+** function is "pure" (that is to say, if it omits the 'now' time
+** and the 'localtime' and 'utc' modifiers and is thus deterministic
+** and suitable for use in indexes).
+*/
+static int dateFuncIsPure(sqlite3_context *pCtx){
+  return sqlite3_user_data(pCtx)!=0;
+}
 
 /*
 ** Convert zDate into one or more integers according to the conversion
@@ -386,7 +395,7 @@ static int parseDateOrTime(
     return 0;
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
-  }else if( sqlite3StrICmp(zDate,"now")==0){
+  }else if( sqlite3StrICmp(zDate,"now")==0 && !dateFuncIsPure(context) ){
     return setDateTimeToCurrent(context, p);
   }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8) ){
     setRawDateNumber(p, r);
@@ -669,7 +678,7 @@ static int parseModifier(
       ** Assuming the current time value is UTC (a.k.a. GMT), shift it to
       ** show local time.
       */
-      if( sqlite3_stricmp(z, "localtime")==0 ){
+      if( sqlite3_stricmp(z, "localtime")==0 && !dateFuncIsPure(pCtx) ){
         computeJD(p);
         p->iJD += localtimeOffset(p, pCtx, &rc);
         clearYMD_HMS_TZ(p);
@@ -695,7 +704,7 @@ static int parseModifier(
         }
       }
 #ifndef SQLITE_OMIT_LOCALTIME
-      else if( sqlite3_stricmp(z, "utc")==0 ){
+      else if( sqlite3_stricmp(z, "utc")==0 && !dateFuncIsPure(pCtx) ){
         if( p->tzSet==0 ){
           sqlite3_int64 c1;
           computeJD(p);
@@ -1236,6 +1245,11 @@ void sqlite3RegisterDateTimeFunctions(void){
     DFUNCTION(time,             -1, 0, 0, timeFunc      ),
     DFUNCTION(datetime,         -1, 0, 0, datetimeFunc  ),
     DFUNCTION(strftime,         -1, 0, 0, strftimeFunc  ),
+    PURE_DATE(pure_julianday,   -1, 0, 0, juliandayFunc ),
+    PURE_DATE(pure_date,        -1, 0, 0, dateFunc      ),
+    PURE_DATE(pure_time,        -1, 0, 0, timeFunc      ),
+    PURE_DATE(pure_datetime,    -1, 0, 0, datetimeFunc  ),
+    PURE_DATE(pure_strftime,    -1, 0, 0, strftimeFunc  ),
     DFUNCTION(current_time,      0, 0, 0, ctimeFunc     ),
     DFUNCTION(current_timestamp, 0, 0, 0, ctimestampFunc),
     DFUNCTION(current_date,      0, 0, 0, cdateFunc     ),
