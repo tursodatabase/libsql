@@ -185,6 +185,12 @@ pub struct Connection {
 
 unsafe impl Send for Connection {}
 
+impl Drop for Connection {
+    fn drop(&mut self) {
+        self.flush_prepared_statement_cache();
+    }
+}
+
 impl Connection {
     /// Open a new connection to a SQLite database.
     ///
