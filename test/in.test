@@ -629,7 +629,6 @@ do_test in-13.14 {
   }
 } {}
 
-breakpoint
 do_test in-13.15 {
   catchsql {
     SELECT 0 WHERE (SELECT 0,0) OR (0 IN (1,2));

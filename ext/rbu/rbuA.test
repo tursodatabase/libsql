@@ -70,7 +70,6 @@ do_test 2.1 {
   sqlite3 db test.db
   db eval {PRAGMA journal_mode = wal}
   db close
-  breakpoint
   sqlite3rbu rbu test.db rbu.db
   rbu step
 } {SQLITE_ERROR}

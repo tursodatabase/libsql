@@ -53,7 +53,6 @@ db_save_and_close
 do_test 1.1 {
   db_restore
   sqlite3rbu rbu test.db test.db2
-  breakpoint
   set nStep 0
   while {[rbu step]=="SQLITE_OK"} { incr nStep }
   rbu close
