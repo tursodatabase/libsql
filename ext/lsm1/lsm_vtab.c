@@ -45,6 +45,23 @@ struct lsm1_cursor {
   u8 bUnique;                /* True if no more than one row of output */
 };
 
+/* Dequote the string */
+static void lsm1Dequote(char *z){
+  int j;
+  char cQuote = z[0];
+  size_t i, n;
+
+  if( cQuote!='\'' && cQuote!='"' ) return;
+  n = strlen(z);
+  if( n<2 || z[n-1]!=z[0] ) return;
+  for(i=1, j=0; i<n-1; i++){
+    if( z[i]==cQuote && z[i+1]==cQuote ) i++;
+    z[j++] = z[i];
+  }
+  z[j] = 0;
+}
+
+
 /*
 ** The lsm1Connect() method is invoked to create a new
 ** lsm1_vtab that describes the virtual table.
@@ -58,6 +75,7 @@ static int lsm1Connect(
 ){
   lsm1_vtab *pNew;
   int rc;
+  char *zFilename;
 
   if( argc!=4 || argv[3]==0 || argv[3][0]==0 ){
     *pzErr = sqlite3_mprintf("filename argument missing");
@@ -75,7 +93,10 @@ static int lsm1Connect(
     rc = SQLITE_ERROR;
     goto connect_failed;
   }
-  rc = lsm_open(pNew->pDb, argv[3]);
+  zFilename = sqlite3_mprintf("%s", argv[3]);
+  lsm1Dequote(zFilename);
+  rc = lsm_open(pNew->pDb, zFilename);
+  sqlite3_free(zFilename);
   if( rc ){
     *pzErr = sqlite3_mprintf("lsm_open failed with %d", rc);
     rc = SQLITE_ERROR;
@@ -157,7 +178,7 @@ static int lsm1Close(sqlite3_vtab_cursor *cur){
 */
 static int lsm1Next(sqlite3_vtab_cursor *cur){
   lsm1_cursor *pCur = (lsm1_cursor*)cur;
-  int rc;
+  int rc = LSM_OK;
   if( pCur->bUnique ){
     pCur->atEof = 1;
   }else{
@@ -368,7 +389,7 @@ static int lsm1EncodeKey(
         pSpace = sqlite3_malloc( nVal+1 );
         if( pSpace==0 ) return SQLITE_NOMEM;
       }
-      pSpace[0] = eType;
+      pSpace[0] = (unsigned char)eType;
       memcpy(&pSpace[1], pVal, nVal);
       *ppKey = pSpace;
       *pnKey = nVal+1;
@@ -385,7 +406,7 @@ static int lsm1EncodeKey(
         uVal = iVal;
         eType = LSM1_TYPE_POSITIVE;
       }
-      pSpace[0] = eType;
+      pSpace[0] = (unsigned char)eType;
       *ppKey = pSpace;
       *pnKey = 1 + lsm1PutVarint64(&pSpace[1], uVal);
     }
@@ -595,9 +616,10 @@ int lsm1Update(
 ){
   lsm1_vtab *p = (lsm1_vtab*)pVTab;
   const void *pKey;
+  void *pFree = 0;
   int nKey;
   int eType;
-  int rc;
+  int rc = LSM_OK;
   sqlite3_value *pValue;
   const unsigned char *pVal;
   unsigned char *pData;
@@ -629,6 +651,7 @@ int lsm1Update(
                        (unsigned char**)&pKey,&nKey,
                        pSpace,sizeof(pSpace));
     if( rc ) return rc;
+    if( pKey!=(const void*)pSpace ) pFree = (void*)pKey;
   }
   if( sqlite3_value_type(argv[2+LSM1_COLUMN_BLOBVALUE])==SQLITE_BLOB ){
     pVal = sqlite3_value_blob(argv[2+LSM1_COLUMN_BLOBVALUE]);
@@ -654,7 +677,7 @@ int lsm1Update(
         if( pData==0 ){
           rc = SQLITE_NOMEM;
         }else{
-          pData[0] = eType;
+          pData[0] = (unsigned char)eType;
           memcpy(&pData[1], pVal, nVal);
           rc = lsm_insert(p->pDb, pKey, nKey, pData, nVal+1);
           sqlite3_free(pData);
@@ -677,13 +700,13 @@ int lsm1Update(
           aVal[i] = x & 0xff;
           x >>= 8;
         }
-        aVal[i] = eType;
+        aVal[i] = (unsigned char)eType;
         rc = lsm_insert(p->pDb, pKey, nKey, &aVal[i], 9-i);
         break;
       }
     }
   }
-  if( pKey!=(const void*)pSpace ) sqlite3_free((void*)pKey);
+  sqlite3_free(pFree);
   return rc==LSM_OK ? SQLITE_OK : SQLITE_ERROR;
 }      
 

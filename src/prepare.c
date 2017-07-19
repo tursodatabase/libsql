@@ -765,9 +765,14 @@ int sqlite3_prepare_v2(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
+  /* EVIDENCE-OF: R-37923-12173 The sqlite3_prepare_v2() interface works
+  ** exactly the same as sqlite3_prepare_v3() with a zero prepFlags
+  ** parameter.
+  **
+  ** Proof in that the 5th parameter to sqlite3LockAndPrepare is 0 */
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,SQLITE_PREPARE_SAVESQL,0,
                              ppStmt,pzTail);
-  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );
   return rc;
 }
 int sqlite3_prepare_v3(
@@ -779,10 +784,17 @@ int sqlite3_prepare_v3(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
+  /* EVIDENCE-OF: R-56861-42673 sqlite3_prepare_v3() differs from
+  ** sqlite3_prepare_v2() only in having the extra prepFlags parameter,
+  ** which is a bit array consisting of zero or more of the
+  ** SQLITE_PREPARE_* flags.
+  **
+  ** Proof by comparison to the implementation of sqlite3_prepare_v2()
+  ** directly above. */
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,
                  SQLITE_PREPARE_SAVESQL|(prepFlags&SQLITE_PREPARE_MASK),
                  0,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );
   return rc;
 }
 

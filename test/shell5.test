@@ -188,7 +188,8 @@ do_test shell5-1.4.10.2 {
 #
 do_test shell5-1.4.11 {
   set in [open shell5.csv wb]
-  puts $in "\xef\xbb\xbf2|3"
+  puts -nonewline $in "\xef\xbb\xbf"
+  puts $in "2|3"
   puts $in "4|5"
   close $in
   set res [catchcmd "test.db" {CREATE TABLE t2(x INT, y INT);

@@ -2718,7 +2718,7 @@ do_test 38.1 {
   close $fd
   sqlite3 db test.db
   catchsql { CREATE TABLE t1(x) }
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 do_test 38.2 {
   catch { db close }
   forcedelete test.db

@@ -68,4 +68,3 @@ do_near_test 1.25 "a b c d e f g h i" { NEAR(i a+b+c+d b+c, 4) } 0
 
 
 finish_test
-

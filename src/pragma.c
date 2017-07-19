@@ -515,18 +515,22 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA [schema.]secure_delete
-  **  PRAGMA [schema.]secure_delete=ON/OFF
+  **  PRAGMA [schema.]secure_delete=ON/OFF/FAST
   **
   ** The first form reports the current setting for the
   ** secure_delete flag.  The second form changes the secure_delete
-  ** flag setting and reports thenew value.
+  ** flag setting and reports the new value.
   */
   case PragTyp_SECURE_DELETE: {
     Btree *pBt = pDb->pBt;
     int b = -1;
     assert( pBt!=0 );
     if( zRight ){
-      b = sqlite3GetBoolean(zRight, 0);
+      if( sqlite3_stricmp(zRight, "fast")==0 ){
+        b = 2;
+      }else{
+        b = sqlite3GetBoolean(zRight, 0);
+      }
     }
     if( pId2->n==0 && b>=0 ){
       int ii;
@@ -1247,6 +1251,50 @@ void sqlite3Pragma(
     }
   }
   break;
+
+#ifdef SQLITE_INTROSPECTION_PRAGMAS
+  case PragTyp_FUNCTION_LIST: {
+    int i;
+    HashElem *j;
+    FuncDef *p;
+    pParse->nMem = 2;
+    for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
+      for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
+        sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
+      }
+    }
+    for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
+      p = (FuncDef*)sqliteHashData(j);
+      sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 0);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
+    }
+  }
+  break;
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  case PragTyp_MODULE_LIST: {
+    HashElem *j;
+    pParse->nMem = 1;
+    for(j=sqliteHashFirst(&db->aModule); j; j=sqliteHashNext(j)){
+      Module *pMod = (Module*)sqliteHashData(j);
+      sqlite3VdbeMultiLoad(v, 1, "s", pMod->zName);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+    }
+  }
+  break;
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+  case PragTyp_PRAGMA_LIST: {
+    int i;
+    for(i=0; i<ArraySize(aPragmaName); i++){
+      sqlite3VdbeMultiLoad(v, 1, "s", aPragmaName[i].zName);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+    }
+  }
+  break;
+#endif /* SQLITE_INTROSPECTION_PRAGMAS */
+
 #endif /* SQLITE_OMIT_SCHEMA_PRAGMAS */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -1507,6 +1555,7 @@ void sqlite3Pragma(
 
       /* Make sure sufficient number of registers have been allocated */
       pParse->nMem = MAX( pParse->nMem, 8+mxIdx );
+      sqlite3ClearTempRegCache(pParse);
 
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp4(v, OP_IntegrityCk, 2, cnt, 1, (char*)aRoot,P4_INTARRAY);
@@ -1921,7 +1970,8 @@ void sqlite3Pragma(
   **    0x0008    (Not yet implemented) Create indexes that might have
   **              been helpful to recent queries
   **
-  ** The default MASK is and always shall be 0xfffe.  0xfffe means perform all    ** of the optimizations listed above except Debug Mode, including new
+  ** The default MASK is and always shall be 0xfffe.  0xfffe means perform all
+  ** of the optimizations listed above except Debug Mode, including new
   ** optimizations that have not yet been invented.  If new optimizations are
   ** ever added that should be off by default, those off-by-default 
   ** optimizations will have bitmasks of 0x10000 or larger.
@@ -2348,10 +2398,14 @@ static int pragmaVtabFilter(
   pragmaVtabCursorClear(pCsr);
   j = (pTab->pName->mPragFlg & PragFlg_Result1)!=0 ? 0 : 1;
   for(i=0; i<argc; i++, j++){
+    const char *zText = (const char*)sqlite3_value_text(argv[i]);
     assert( j<ArraySize(pCsr->azArg) );
-    pCsr->azArg[j] = sqlite3_mprintf("%s", sqlite3_value_text(argv[i]));
-    if( pCsr->azArg[j]==0 ){
-      return SQLITE_NOMEM;
+    assert( pCsr->azArg[j]==0 );
+    if( zText ){
+      pCsr->azArg[j] = sqlite3_mprintf("%s", zText);
+      if( pCsr->azArg[j]==0 ){
+        return SQLITE_NOMEM;
+      }
     }
   }
   sqlite3StrAccumInit(&acc, 0, 0, 0, pTab->db->aLimit[SQLITE_LIMIT_SQL_LENGTH]);

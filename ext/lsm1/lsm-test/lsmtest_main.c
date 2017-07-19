@@ -1,21 +1,6 @@
 
-#include "stdarg.h"
 #include "lsmtest.h"
-#include "stdio.h"
-#include "assert.h"
-#include "string.h"
-#include "stdlib.h"
-
 #include <sqlite3.h>
-
-#ifndef _WIN32
-# include <unistd.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-
 
 void test_failed(){ 
   assert( 0 );
@@ -917,7 +902,7 @@ int do_speed_tests(int nArg, char **azArg){
       testTimeInit();
       for(i=0; i<nRow; i+=nStep){
         int iStep;
-        int nWrite1, nWrite2;
+        int nWrite1 = 0, nWrite2 = 0;
         testCaseProgress(i, nRow, testCaseNDot(), &iDot);
         if( pLsm ) lsm_info(pLsm, LSM_INFO_NWRITE, &nWrite1);
         for(iStep=0; iStep<nStep; iStep++){
@@ -1239,7 +1224,7 @@ static int do_writer_test(int nArg, char **azArg){
   printf("Preparing file... ");
   fflush(stdout);
   unlink("writer.out");
-  fd = open("writer.out", O_RDWR|O_CREAT, 0664);
+  fd = open("writer.out", O_RDWR|O_CREAT|_O_BINARY, 0664);
   if( fd<0 ){
     testPrintError("open(): %d - %s\n", errno, strerror(errno));
     return -1;

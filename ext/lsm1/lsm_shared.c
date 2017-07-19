@@ -97,7 +97,7 @@ static void assertNotInFreelist(Freelist *p, int iBlk){
 /*
 ** Append an entry to the free-list. If (iId==-1), this is a delete.
 */
-int freelistAppend(lsm_db *db, int iBlk, i64 iId){
+int freelistAppend(lsm_db *db, u32 iBlk, i64 iId){
   lsm_env *pEnv = db->pEnv;
   Freelist *p;
   int i; 
@@ -230,7 +230,7 @@ static int dbTruncateFile(lsm_db *pDb){
 
     /* If the last block that contains data is not already the last block in
     ** the database file, truncate the database file so that it is. */
-    if( rc==LSM_OK && ctx.nBlock!=pDb->pWorker->nBlock ){
+    if( rc==LSM_OK ){
       rc = lsmFsTruncateDb(
           pDb->pFS, (i64)ctx.nBlock*lsmFsBlockSize(pDb->pFS)
       );
@@ -252,6 +252,8 @@ static void doDbDisconnect(lsm_db *pDb){
     ** to doDbConnect() and doDbDisconnect() across all processes.  */
     rc = lsmShmLock(pDb, LSM_LOCK_DMS1, LSM_LOCK_EXCL, 1);
     if( rc==LSM_OK ){
+
+      lsmShmLock(pDb, LSM_LOCK_DMS2, LSM_LOCK_UNLOCK, 0);
 
       /* Try an exclusive lock on DMS2. If successful, this is the last
       ** connection to the database. In this case flush the contents of the
@@ -291,7 +293,7 @@ static void doDbDisconnect(lsm_db *pDb){
 
         /* Write a checkpoint to disk. */
         if( rc==LSM_OK ){
-          rc = lsmCheckpointWrite(pDb, (bReadonly==0), 0);
+          rc = lsmCheckpointWrite(pDb, 0);
         }
 
         /* If the checkpoint was written successfully, delete the log file
@@ -310,6 +312,7 @@ static void doDbDisconnect(lsm_db *pDb){
           /* The database may only be truncated if there exist no read-only
           ** clients - either connected or running rotrans transactions. */
           if( bReadonly==0 && bRotrans==0 ){
+            lsmFsUnmap(pDb->pFS);
             dbTruncateFile(pDb);
             if( p->pFile && p->bMultiProc ){
               lsmEnvShmUnmap(pDb->pEnv, p->pFile, 1);
@@ -324,7 +327,6 @@ static void doDbDisconnect(lsm_db *pDb){
       pDb->iRwclient = -1;
     }
 
-    lsmShmLock(pDb, LSM_LOCK_DMS2, LSM_LOCK_UNLOCK, 0);
     lsmShmLock(pDb, LSM_LOCK_DMS1, LSM_LOCK_UNLOCK, 0);
   }
   pDb->pShmhdr = 0;
@@ -477,8 +479,15 @@ int lsmDbDatabaseConnect(
       }
 
       if( rc==LSM_OK && p->bMultiProc==0 ){
+        /* Hold an exclusive lock DMS1 while grabbing DMS2. This ensures
+        ** that any ongoing call to doDbDisconnect() (even one in another
+        ** process) is finished before proceeding.  */
         assert( p->bReadonly==0 );
-        rc = lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS2, LSM_LOCK_EXCL);
+        rc = lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS1, LSM_LOCK_EXCL);
+        if( rc==LSM_OK ){
+          rc = lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS2, LSM_LOCK_EXCL);
+          lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS1, LSM_LOCK_UNLOCK);
+        }
       }
 
       if( rc==LSM_OK ){
@@ -560,6 +569,7 @@ void lsmDbDatabaseRelease(lsm_db *pDb){
       doDbDisconnect(pDb);
     }
 
+    lsmFsUnmap(pDb->pFS);
     lsmMutexEnter(pDb->pEnv, p->pClientMutex);
     for(ppDb=&p->pConn; *ppDb!=pDb; ppDb=&((*ppDb)->pNext));
     *ppDb = pDb->pNext;
@@ -631,11 +641,12 @@ static int walkFreelistCb(void *pCtx, int iBlk, i64 iSnapshot){
   Freelist *pFree = p->pFreelist;
 
   assert( p->bDone==0 );
+  assert( iBlk>=0 );
   if( pFree ){
     while( (p->iFree < pFree->nEntry) && p->iFree>=0 ){
       FreelistEntry *pEntry = &pFree->aEntry[p->iFree];
-      if( (p->bReverse==0 && pEntry->iBlk>iBlk)
-       || (p->bReverse!=0 && pEntry->iBlk<iBlk)
+      if( (p->bReverse==0 && pEntry->iBlk>(u32)iBlk)
+       || (p->bReverse!=0 && pEntry->iBlk<(u32)iBlk)
       ){
         break;
       }else{
@@ -646,7 +657,7 @@ static int walkFreelistCb(void *pCtx, int iBlk, i64 iSnapshot){
           p->bDone = 1;
           return 1;
         }
-        if( pEntry->iBlk==iBlk ) return 0;
+        if( pEntry->iBlk==(u32)iBlk ) return 0;
       }
     }
   }
@@ -905,7 +916,7 @@ int lsmBlockRefree(lsm_db *pDb, int iBlk){
 ** not be held that long (in case it is required by a client flushing an
 ** in-memory tree to disk).
 */
-int lsmCheckpointWrite(lsm_db *pDb, int bTruncate, u32 *pnWrite){
+int lsmCheckpointWrite(lsm_db *pDb, u32 *pnWrite){
   int rc;                         /* Return Code */
   u32 nWrite = 0;
 
@@ -929,7 +940,7 @@ int lsmCheckpointWrite(lsm_db *pDb, int bTruncate, u32 *pnWrite){
       u8 *aData;                  /* Meta-page data buffer */
       int nData;                  /* Size of aData[] in bytes */
       i64 iCkpt;                  /* Id of checkpoint just loaded */
-      i64 iDisk;                  /* Id of checkpoint already stored in db */
+      i64 iDisk = 0;              /* Id of checkpoint already stored in db */
       iCkpt = lsmCheckpointId(pDb->aSnapshot, 0);
       rc = lsmFsMetaPageGet(pDb->pFS, 0, pShm->iMetaPage, &pPg);
       if( rc==LSM_OK ){
@@ -959,10 +970,6 @@ int lsmCheckpointWrite(lsm_db *pDb, int bTruncate, u32 *pnWrite){
           (int)lsmCheckpointId(pDb->aSnapshot, 0)
       );
 #endif
-    }
-
-    if( rc==LSM_OK && bTruncate && nBlock>0 ){
-      rc = lsmFsTruncateDb(pDb->pFS, (i64)nBlock*lsmFsBlockSize(pDb->pFS));
     }
   }
 
@@ -1747,7 +1754,10 @@ int lsmShmTestLock(
 
   lsmMutexEnter(db->pEnv, p->pClientMutex);
   for(pIter=p->pConn; pIter; pIter=pIter->pNext){
-    if( pIter!=db && (pIter->mLock & mask) ) break;
+    if( pIter!=db && (pIter->mLock & mask) ){
+      assert( pIter!=db );
+      break;
+    }
   }
 
   if( pIter ){
@@ -1875,7 +1885,7 @@ int shmLockType(lsm_db *db, int iLock){
 **   (eOp==LSM_LOCK_EXCL)   -> true if db has an EXCLUSIVE lock on iLock.
 */
 int lsmShmAssertLock(lsm_db *db, int iLock, int eOp){
-  int ret;
+  int ret = 0;
   int eHave;
 
   assert( iLock>=1 && iLock<=LSM_LOCK_READER(LSM_LOCK_NREADER-1) );
@@ -1954,7 +1964,7 @@ int lsm_checkpoint(lsm_db *pDb, int *pnKB){
 
   /* Attempt the checkpoint. If successful, nWrite is set to the number of
   ** pages written between this and the previous checkpoint.  */
-  rc = lsmCheckpointWrite(pDb, 0, &nWrite);
+  rc = lsmCheckpointWrite(pDb, &nWrite);
 
   /* If required, calculate the output variable (KB of data checkpointed). 
   ** Set it to zero if an error occured.  */

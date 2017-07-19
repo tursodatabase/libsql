@@ -2374,7 +2374,7 @@ struct Expr {
 */
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
 #define EP_Agg       0x000002 /* Contains one or more aggregate functions */
-#define EP_Resolved  0x000004 /* IDs have been resolved to COLUMNs */
+                  /* 0x000004 // available for use */
                   /* 0x000008 // available for use */
 #define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
@@ -3927,7 +3927,9 @@ int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 int sqlite3AtoF(const char *z, double*, int, u8);
 int sqlite3GetInt32(const char *, int*);
 int sqlite3Atoi(const char*);
+#ifndef SQLITE_OMIT_UTF16
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
+#endif
 int sqlite3Utf8CharLen(const char *pData, int nByte);
 u32 sqlite3Utf8Read(const u8**);
 LogEst sqlite3LogEst(u64);
@@ -4016,7 +4018,9 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
 void sqlite3ValueSetNull(sqlite3_value*);
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
+#ifndef SQLITE_OMIT_UTF16
 char *sqlite3Utf16to8(sqlite3 *, const void*, int, u8);
+#endif
 int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
@@ -4380,6 +4384,8 @@ Expr *sqlite3VectorFieldSubexpr(Expr*, int);
 Expr *sqlite3ExprForVectorField(Parse*,Expr*,int);
 void sqlite3VectorErrorMsg(Parse*, Expr*);
 
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 const char **sqlite3CompileOptions(int *pnOpt);
+#endif
 
 #endif /* SQLITEINT_H */

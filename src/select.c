@@ -1568,20 +1568,46 @@ static Table *tableWithCursor(SrcList *pList, int iCursor){
 
 
 /*
-** Generate code that will tell the VDBE the names of columns
-** in the result set.  This information is used to provide the
-** azCol[] values in the callback.
+** Compute the column names for a SELECT statement.
+**
+** The only guarantee that SQLite makes about column names is that if the
+** column has an AS clause assigning it a name, that will be the name used.
+** That is the only documented guarantee.  However, countless applications
+** developed over the years have made baseless assumptions about column names
+** and will break if those assumptions changes.  Hence, use extreme caution
+** when modifying this routine to avoid breaking legacy.
+**
+** See Also: sqlite3ColumnsFromExprList()
+**
+** The PRAGMA short_column_names and PRAGMA full_column_names settings are
+** deprecated.  The default setting is short=ON, full=OFF.  99.9% of all
+** applications should operate this way.  Nevertheless, we need to support the
+** other modes for legacy:
+**
+**    short=OFF, full=OFF:      Column name is the text of the expression has it
+**                              originally appears in the SELECT statement.  In
+**                              other words, the zSpan of the result expression.
+**
+**    short=ON, full=OFF:       (This is the default setting).  If the result
+**                              refers directly to a table column, then the result
+**                              column name is just the table column name: COLUMN. 
+**                              Otherwise use zSpan.
+**
+**    full=ON, short=ANY:       If the result refers directly to a table column,
+**                              then the result column name with the table name
+**                              prefix, ex: TABLE.COLUMN.  Otherwise use zSpan.
 */
 static void generateColumnNames(
   Parse *pParse,      /* Parser context */
-  SrcList *pTabList,  /* List of tables */
+  SrcList *pTabList,  /* The FROM clause of the SELECT */
   ExprList *pEList    /* Expressions defining the result set */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
   Table *pTab;
   sqlite3 *db = pParse->db;
-  int fullNames, shortNames;
+  int fullName;      /* TABLE.COLUMN if no AS clause and is a direct table ref */
+  int srcName;       /* COLUMN or TABLE.COLUMN if no AS clause and is direct */
 
 #ifndef SQLITE_OMIT_EXPLAIN
   /* If this is an EXPLAIN, skip this step */
@@ -1594,17 +1620,19 @@ static void generateColumnNames(
   assert( v!=0 );
   assert( pTabList!=0 );
   pParse->colNamesSet = 1;
-  fullNames = (db->flags & SQLITE_FullColNames)!=0;
-  shortNames = (db->flags & SQLITE_ShortColNames)!=0;
+  fullName = (db->flags & SQLITE_FullColNames)!=0;
+  srcName = (db->flags & SQLITE_ShortColNames)!=0 || fullName;
   sqlite3VdbeSetNumCols(v, pEList->nExpr);
   for(i=0; i<pEList->nExpr; i++){
-    Expr *p;
-    p = pEList->a[i].pExpr;
-    if( NEVER(p==0) ) continue;
+    Expr *p = pEList->a[i].pExpr;
+
+    assert( p!=0 );
     if( pEList->a[i].zName ){
+      /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
-    }else if( (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN)
+    }else if( srcName
+           && (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN)
            && (pTab = tableWithCursor(pTabList, p->iTable))!=0
     ){
       char *zCol;
@@ -1616,10 +1644,7 @@ static void generateColumnNames(
       }else{
         zCol = pTab->aCol[iCol].zName;
       }
-      if( !shortNames && !fullNames ){
-        sqlite3VdbeSetColName(v, i, COLNAME_NAME, 
-            sqlite3DbStrDup(db, pEList->a[i].zSpan), SQLITE_DYNAMIC);
-      }else if( fullNames ){
+      if( fullName ){
         char *zName = 0;
         zName = sqlite3MPrintf(db, "%s.%s", pTab->zName, zCol);
         sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_DYNAMIC);
@@ -1647,6 +1672,15 @@ static void generateColumnNames(
 **
 ** Return SQLITE_OK on success.  If a memory allocation error occurs,
 ** store NULL in *paCol and 0 in *pnCol and return SQLITE_NOMEM.
+**
+** The only guarantee that SQLite makes about column names is that if the
+** column has an AS clause assigning it a name, that will be the name used.
+** That is the only documented guarantee.  However, countless applications
+** developed over the years have made baseless assumptions about column names
+** and will break if those assumptions changes.  Hence, use extreme caution
+** when modifying this routine to avoid breaking legacy.
+**
+** See Also: generateColumnNames()
 */
 int sqlite3ColumnsFromExprList(
   Parse *pParse,          /* Parsing context */
@@ -1659,7 +1693,6 @@ int sqlite3ColumnsFromExprList(
   u32 cnt;                    /* Index added to make the name unique */
   Column *aCol, *pCol;        /* For looping over result columns */
   int nCol;                   /* Number of columns in the result set */
-  Expr *p;                    /* Expression for a single result column */
   char *zName;                /* Column name */
   int nName;                  /* Size of name in zName[] */
   Hash ht;                    /* Hash table of column names */
@@ -1680,12 +1713,10 @@ int sqlite3ColumnsFromExprList(
   for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
     /* Get an appropriate name for the column
     */
-    p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
     }else{
-      Expr *pColExpr = p;  /* The expression that is the result column name */
-      Table *pTab;         /* Table associated with this expression */
+      Expr *pColExpr = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
       while( pColExpr->op==TK_DOT ){
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
@@ -1693,7 +1724,7 @@ int sqlite3ColumnsFromExprList(
       if( pColExpr->op==TK_COLUMN && pColExpr->pTab!=0 ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
-        pTab = pColExpr->pTab;
+        Table *pTab = pColExpr->pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){
@@ -1704,7 +1735,11 @@ int sqlite3ColumnsFromExprList(
         zName = pEList->a[i].zSpan;
       }
     }
-    zName = sqlite3MPrintf(db, "%s", zName);
+    if( zName ){
+      zName = sqlite3DbStrDup(db, zName);
+    }else{
+      zName = sqlite3MPrintf(db,"column%d",i+1);
+    }
 
     /* Make sure the column name is unique.  If the name is not unique,
     ** append an integer to the name so that it becomes unique.
@@ -3304,8 +3339,9 @@ static void substSelect(
 **        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
 **   (3)  The subquery is not the right operand of a LEFT JOIN
-**        or the subquery is not itself a join and the outer query is not
-**        an aggregate.
+**        or (a) the subquery is not itself a join and (b) the FROM clause
+**        of the subquery does not contain a virtual table and (c) the 
+**        outer query is not an aggregate.
 **
 **   (4)  The subquery is not DISTINCT.
 **
@@ -3510,7 +3546,7 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
-    if( pSubSrc->nSrc>1 || isAgg ){
+    if( pSubSrc->nSrc>1 || isAgg || IsVirtual(pSubSrc->a[0].pTab) ){
       return 0; /* Restriction (3) */
     }
   }

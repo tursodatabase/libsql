@@ -366,11 +366,11 @@ do_test bind-8.1 {
 } {1}
 do_test bind-8.2 {
   sqlite3_errmsg $DB
-} {bind or column index out of range}
+} {column index out of range}
 ifcapable {utf16} {
   do_test bind-8.3 {
     encoding convertfrom unicode [sqlite3_errmsg16 $DB]
-  } {bind or column index out of range}
+  } {column index out of range}
 }
 do_test bind-8.4 {
   sqlite3_bind_null $VM 1 
@@ -381,11 +381,11 @@ do_test bind-8.5 {
 } {1}
 do_test bind-8.6 {
   sqlite3_errmsg $DB
-} {bind or column index out of range}
+} {column index out of range}
 ifcapable {utf16} {
   do_test bind-8.7 {
     encoding convertfrom unicode [sqlite3_errmsg16 $DB]
-  } {bind or column index out of range}
+  } {column index out of range}
 }
 
 do_test bind-8.8 {

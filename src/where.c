@@ -608,6 +608,15 @@ static int termCanDriveIndex(
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
+  if( (pSrc->fg.jointype & JT_LEFT) 
+   && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+   && (pTerm->eOperator & WO_IS)
+  ){
+    /* Cannot use an IS term from the WHERE clause as an index driver for
+    ** the RHS of a LEFT JOIN. Such a term can only be used if it is from
+    ** the ON clause.  */
+    return 0;
+  }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   if( pTerm->u.leftColumn<0 ) return 0;
   aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;

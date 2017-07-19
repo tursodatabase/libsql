@@ -792,7 +792,7 @@ do_test attach-8.1 {
   catchsql {
     ATTACH 'test2.db' AS t2;
   }
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 do_test attach-8.2 {
   db errorcode
 } {26}
@@ -870,5 +870,21 @@ do_execsql_test attach-11.1 {
   SELECT * FROM aux1.t1;
 } {1 2 3 4}
 
+# Ticket https://sqlite.org/src/tktview/a4e06e75a9ab61a1  2017-07-15
+# False positive when running integrity_check on a connection with
+# attached databases.  
+#
+db close
+sqlite3 db :memory:
+do_execsql_test attach-12.1 {
+  CREATE TABLE Table1 (col TEXT NOT NULL PRIMARY KEY);
+  ATTACH ':memory:' AS db2;
+  CREATE TABLE db2.Table2(col1 INTEGER, col2 INTEGER, col3 INTEGER, col4);
+  CREATE UNIQUE INDEX db2.idx_col1_unique ON Table2 (col1);
+  CREATE UNIQUE INDEX db2.idx_col23_unique ON Table2 (col2, col3);
+  CREATE INDEX db2.idx_col2 ON Table2 (col2);
+  INSERT INTO Table2 VALUES(1,2,3,4);
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test

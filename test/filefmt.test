@@ -45,7 +45,7 @@ do_test filefmt-1.3 {
   catchsql {
     SELECT count(*) FROM sqlite_master
   }
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 do_test filefmt-1.4 {
   db close
   hexio_write test.db 0 53
@@ -85,7 +85,7 @@ do_test filefmt-1.6 {
   catchsql {
      SELECT count(*) FROM sqlite_master
   }
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 
 
 # The page-size must be at least 512 bytes
@@ -97,7 +97,7 @@ do_test filefmt-1.7 {
   catchsql {
      SELECT count(*) FROM sqlite_master
   }
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 
 # Usable space per page (page-size minus unused space per page)
 # must be at least 480 bytes
@@ -114,7 +114,7 @@ ifcapable pager_pragmas {
     catchsql {
        SELECT count(*) FROM sqlite_master
     }
-  } {1 {file is encrypted or is not a database}}
+  } {1 {file is not a database}}
 }
 
 #-------------------------------------------------------------------------

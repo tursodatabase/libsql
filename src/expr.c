@@ -5255,8 +5255,8 @@ void sqlite3ClearTempRegCache(Parse *pParse){
 int sqlite3NoTempsInRange(Parse *pParse, int iFirst, int iLast){
   int i;
   if( pParse->nRangeReg>0
-   && pParse->iRangeReg+pParse->nRangeReg<iLast
-   && pParse->iRangeReg>=iFirst
+   && pParse->iRangeReg+pParse->nRangeReg > iFirst
+   && pParse->iRangeReg <= iLast
   ){
      return 0;
   }

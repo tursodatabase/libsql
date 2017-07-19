@@ -79,5 +79,3 @@ for {set tn 1 ; set pgsz 64} {$tn<32} {incr tn; incr pgsz 16} {
 
 
 finish_test
-
-

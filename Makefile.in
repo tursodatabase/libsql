@@ -435,6 +435,7 @@ TESTSRC += \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
+  $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c
 
 # Source code to the library files needed by the test fixture
@@ -484,7 +485,8 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
-  $(TOP)/ext/session/sqlite3session.c 
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/misc/stmt.c 
 
 # Header files used by all library source files.
 #

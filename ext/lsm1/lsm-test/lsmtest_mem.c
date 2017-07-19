@@ -45,9 +45,9 @@ struct TmGlobal {
   void (*xDelMutex)(TmGlobal*);   /* Call this to delete mutex */
   void *pMutex;                   /* Mutex handle */
 
-  void *xSaveMalloc;
-  void *xSaveRealloc;
-  void *xSaveFree;
+  void *(*xSaveMalloc)(void *, size_t);
+  void *(*xSaveRealloc)(void *, void *, size_t);
+  void (*xSaveFree)(void *, void *);
 
   /* OOM injection scheduling. If nCountdown is greater than zero when a 
   ** malloc attempt is made, it is decremented. If this means nCountdown 
@@ -183,7 +183,7 @@ static void tmFree(TmGlobal *pTm, void *p){
     u8 *pUser = (u8 *)p;
 
     tmEnterMutex(pTm);
-    pHdr = (TmBlockHdr *)&pUser[BLOCK_HDR_SIZE * -1];
+    pHdr = (TmBlockHdr *)(pUser - BLOCK_HDR_SIZE);
     assert( pHdr->iForeGuard==FOREGUARD );
     assert( 0==memcmp(&pUser[pHdr->nByte], &rearguard, 4) );
 
@@ -218,7 +218,7 @@ static void *tmRealloc(TmGlobal *pTm, void *p, int nByte){
   if( pNew && p ){
     TmBlockHdr *pHdr;
     u8 *pUser = (u8 *)p;
-    pHdr = (TmBlockHdr *)&pUser[BLOCK_HDR_SIZE * -1];
+    pHdr = (TmBlockHdr *)(pUser - BLOCK_HDR_SIZE);
     memcpy(pNew, p, MIN(nByte, pHdr->nByte));
     tmFree(pTm, p);
   }
@@ -355,9 +355,9 @@ void testMallocInstall(lsm_env *pEnv){
   pGlobal->xDelMutex = tmLsmMutexDel;
   pGlobal->pMutex = (void *)pMutex;
 
-  pGlobal->xSaveMalloc = (void *)pEnv->xMalloc;
-  pGlobal->xSaveRealloc = (void *)pEnv->xRealloc;
-  pGlobal->xSaveFree = (void *)pEnv->xFree;
+  pGlobal->xSaveMalloc = pEnv->xMalloc;
+  pGlobal->xSaveRealloc = pEnv->xRealloc;
+  pGlobal->xSaveFree = pEnv->xFree;
 
   /* Set up pEnv to the use the new TmGlobal */
   pEnv->pMemCtx = (void *)pGlobal;

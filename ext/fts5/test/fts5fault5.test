@@ -105,7 +105,6 @@ do_faultsim_test 3.2 -faults oom-t* -body {
   faultsim_test_result {0 {1 10 11 12 13 14 15 16 17 18 19 2}}
 }
 
-breakpoint
 do_execsql_test 3.3.0 {
   SELECT * FROM tv2;
 } {
@@ -130,4 +129,3 @@ do_faultsim_test 3.3 -faults oom-t* -body {
 
 
 finish_test
-

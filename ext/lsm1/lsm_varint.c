@@ -176,7 +176,7 @@ int lsmVarintGet32(u8 *z, int *piVal){
   }
 
   ret = lsmSqlite4GetVarint64(z, &i);
-  *piVal = i;
+  *piVal = (int)i;
   return ret;
 }
 

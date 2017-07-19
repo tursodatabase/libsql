@@ -540,7 +540,7 @@ static int fsMmapPage(FileSystem *pFS, Pgno iReal){
 ** Given that there are currently nHash slots in the hash table, return 
 ** the hash key for file iFile, page iPg.
 */
-static int fsHashKey(int nHash, int iPg){
+static int fsHashKey(int nHash, Pgno iPg){
   return (iPg % nHash);
 }
 
@@ -922,9 +922,9 @@ static Pgno fsLastPageOnBlock(FileSystem *pFS, int iBlock){
 */
 static int fsPageToBlock(FileSystem *pFS, Pgno iPg){
   if( pFS->pCompress ){
-    return (iPg / pFS->nBlocksize) + 1;
+    return (int)((iPg / pFS->nBlocksize) + 1);
   }else{
-    return 1 + ((iPg-1) / (pFS->nBlocksize / pFS->nPagesize));
+    return (int)(1 + ((iPg-1) / (pFS->nBlocksize / pFS->nPagesize)));
   }
 }
 
@@ -1151,6 +1151,17 @@ static void fsGrowMapping(
 }
 
 /*
+** If it is mapped, unmap the database file.
+*/
+int lsmFsUnmap(FileSystem *pFS){
+  int rc = LSM_OK;
+  if( pFS ){
+    rc = lsmEnvRemap(pFS->pEnv, pFS->fdDb, -1, &pFS->pMap, &pFS->nMap);
+  }
+  return rc;
+}
+
+/*
 ** fsync() the database file.
 */
 int lsmFsSyncDb(FileSystem *pFS, int nBlock){
@@ -1286,7 +1297,7 @@ static int fsReadData(
   assert( pFS->pCompress );
 
   iEob = fsLastPageOnPagesBlock(pFS, iOff) + 1;
-  nRead = LSM_MIN(iEob - iOff, nData);
+  nRead = (int)LSM_MIN(iEob - iOff, nData);
 
   rc = lsmEnvRead(pFS->pEnv, pFS->fdDb, iOff, aData, nRead);
   if( rc==LSM_OK && nRead!=nData ){
@@ -1722,8 +1733,8 @@ static int fsFreeBlock(
   int iBlk                        /* Block number of block to free */
 ){
   int rc = LSM_OK;                /* Return code */
-  int iFirst;                     /* First page on block iBlk */
-  int iLast;                      /* Last page on block iBlk */
+  Pgno iFirst;                    /* First page on block iBlk */
+  Pgno iLast;                     /* Last page on block iBlk */
   Level *pLevel;                  /* Used to iterate through levels */
 
   int iIn;                        /* Used to iterate through append points */
@@ -1856,7 +1867,7 @@ void lsmFsGobble(
   assert( nPgno>0 && 0==fsPageRedirects(pFS, pRun, aPgno[0]) );
 
   iBlk = fsPageToBlock(pFS, pRun->iFirst);
-  pRun->nSize += (pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
+  pRun->nSize += (int)(pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
 
   while( rc==LSM_OK ){
     int iNext = 0;
@@ -1867,13 +1878,13 @@ void lsmFsGobble(
     }
     rc = fsBlockNext(pFS, pRun, iBlk, &iNext);
     if( rc==LSM_OK ) rc = fsFreeBlock(pFS, pSnapshot, pRun, iBlk);
-    pRun->nSize -= (
+    pRun->nSize -= (int)(
         1 + fsLastPageOnBlock(pFS, iBlk) - fsFirstPageOnBlock(pFS, iBlk)
     );
     iBlk = iNext;
   }
 
-  pRun->nSize -= (pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
+  pRun->nSize -= (int)(pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
   assert( pRun->nSize>0 );
 }
 
@@ -2087,10 +2098,10 @@ int lsmFsSortedAppend(
 ){
   int rc = LSM_OK;
   Page *pPg = 0;
-  int iApp = 0;
-  int iNext = 0;
+  Pgno iApp = 0;
+  Pgno iNext = 0;
   Segment *p = &pLvl->lhs;
-  int iPrev = p->iLastPg;
+  Pgno iPrev = p->iLastPg;
 
   *ppOut = 0;
   assert( p->pRedirect==0 );
@@ -2116,10 +2127,10 @@ int lsmFsSortedAppend(
     if( iPrev==0 ){
       iApp = findAppendPoint(pFS, pLvl);
     }else if( fsIsLast(pFS, iPrev) ){
-      int iNext;
-      rc = fsBlockNext(pFS, 0, fsPageToBlock(pFS, iPrev), &iNext);
+      int iNext2;
+      rc = fsBlockNext(pFS, 0, fsPageToBlock(pFS, iPrev), &iNext2);
       if( rc!=LSM_OK ) return rc;
-      iApp = fsFirstPageOnBlock(pFS, iNext);
+      iApp = fsFirstPageOnBlock(pFS, iNext2);
     }else{
       iApp = iPrev + 1;
     }
@@ -2457,8 +2468,8 @@ static Pgno fsAppendData(
   int rc = *pRc;
   assert( pFS->pCompress );
   if( rc==LSM_OK ){
-    int nRem;
-    int nWrite;
+    int nRem = 0;
+    int nWrite = 0;
     Pgno iLastOnBlock;
     Pgno iApp = pSeg->iLastPg+1;
 
@@ -2477,7 +2488,7 @@ static Pgno fsAppendData(
     /* Write as much data as is possible at iApp (usually all of it). */
     iLastOnBlock = fsLastPageOnPagesBlock(pFS, iApp);
     if( rc==LSM_OK ){
-      int nSpace = iLastOnBlock - iApp + 1;
+      int nSpace = (int)(iLastOnBlock - iApp + 1);
       nWrite = LSM_MIN(nData, nSpace);
       nRem = nData - nWrite;
       assert( nWrite>=0 );
@@ -2800,7 +2811,7 @@ int lsmFsSortedPadding(
 
     iLast2 = (1 + iLast/pFS->szSector) * pFS->szSector - 1;
     assert( fsPageToBlock(pFS, iLast)==fsPageToBlock(pFS, iLast2) );
-    nPad = iLast2 - iLast;
+    nPad = (int)(iLast2 - iLast);
 
     if( iLast2>fsLastPageOnPagesBlock(pFS, iLast) ){
       nPad -= 4;
@@ -3257,10 +3268,10 @@ int lsmFsIntegrityCheck(lsm_db *pDb){
   }
 
   for(pLevel=pWorker->pLevel; pLevel; pLevel=pLevel->pNext){
-    int i;
+    int j;
     checkBlocks(pFS, &pLevel->lhs, (pLevel->nRight!=0), nBlock, aUsed);
-    for(i=0; i<pLevel->nRight; i++){
-      checkBlocks(pFS, &pLevel->aRhs[i], 0, nBlock, aUsed);
+    for(j=0; j<pLevel->nRight; j++){
+      checkBlocks(pFS, &pLevel->aRhs[j], 0, nBlock, aUsed);
     }
   }
 

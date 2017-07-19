@@ -517,7 +517,6 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
       testcase( iCol==BMS-1 );
       pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
     }
-    ExprSetProperty(p, EP_Resolved);
   }
   return p;
 }
@@ -577,8 +576,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
   pParse = pNC->pParse;
   assert( pParse==pWalker->pParse );
 
-  if( ExprHasProperty(pExpr, EP_Resolved) ) return WRC_Prune;
-  ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
   if( pNC->pSrcList && pNC->pSrcList->nAlloc>0 ){
     SrcList *pSrcList = pNC->pSrcList;

@@ -589,7 +589,7 @@ struct Snapshot {
 /*
 ** Functions from file "lsm_ckpt.c".
 */
-int lsmCheckpointWrite(lsm_db *, int, u32 *);
+int lsmCheckpointWrite(lsm_db *, u32 *);
 int lsmCheckpointLevels(lsm_db *, int, void **, int *);
 int lsmCheckpointLoadLevels(lsm_db *pDb, void *pVal, int nVal);
 
@@ -695,6 +695,8 @@ int lsmFsOpen(lsm_db *, const char *, int);
 int lsmFsOpenLog(lsm_db *, int *);
 void lsmFsCloseLog(lsm_db *);
 void lsmFsClose(FileSystem *);
+
+int lsmFsUnmap(FileSystem *);
 
 int lsmFsConfigure(lsm_db *db);
 

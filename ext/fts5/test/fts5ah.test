@@ -167,4 +167,3 @@ do_execsql_test 1.8.2 {
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
 
 finish_test
-

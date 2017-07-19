@@ -176,11 +176,11 @@ if {[clang_sanitize_address]==0} {
   } {SQLITE_MISUSE}
   do_test capi3c-3.6.2-misuse {
     sqlite3_errmsg $db2
-  } {library routine called out of sequence}
+  } {bad parameter or other API misuse}
   ifcapable {utf16} {
     do_test capi3c-3.6.3-misuse {
       utf8 [sqlite3_errmsg16 $db2]
-    } {library routine called out of sequence}
+    } {bad parameter or other API misuse}
   }
 }
 
@@ -726,9 +726,9 @@ forcedelete test.db-journal
 # Test the english language string equivalents for sqlite error codes
 set code2english [list \
 SQLITE_OK         {not an error} \
-SQLITE_ERROR      {SQL logic error or missing database} \
+SQLITE_ERROR      {SQL logic error} \
 SQLITE_PERM       {access permission denied} \
-SQLITE_ABORT      {callback requested query abort} \
+SQLITE_ABORT      {query aborted} \
 SQLITE_BUSY       {database is locked} \
 SQLITE_LOCKED     {database table is locked} \
 SQLITE_NOMEM      {out of memory} \
@@ -738,16 +738,14 @@ SQLITE_IOERR      {disk I/O error} \
 SQLITE_CORRUPT    {database disk image is malformed} \
 SQLITE_FULL       {database or disk is full} \
 SQLITE_CANTOPEN   {unable to open database file} \
-SQLITE_EMPTY      {table contains no data} \
+SQLITE_EMPTY      {unknown error} \
 SQLITE_SCHEMA     {database schema has changed} \
 SQLITE_CONSTRAINT {constraint failed} \
 SQLITE_MISMATCH   {datatype mismatch} \
-SQLITE_MISUSE     {library routine called out of sequence} \
-SQLITE_NOLFS      {large file support is disabled} \
+SQLITE_MISUSE     {bad parameter or other API misuse} \
 SQLITE_AUTH       {authorization denied} \
-SQLITE_FORMAT     {auxiliary database format error} \
-SQLITE_RANGE      {bind or column index out of range} \
-SQLITE_NOTADB     {file is encrypted or is not a database} \
+SQLITE_RANGE      {column index out of range} \
+SQLITE_NOTADB     {file is not a database} \
 unknownerror      {unknown error} \
 ]
 

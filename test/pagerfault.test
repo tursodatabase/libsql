@@ -676,7 +676,7 @@ do_faultsim_test pagerfault-14a -prep {
 } -body {
   if {[catch {db backup test.db2} msg]} { error [regsub {.*: } $msg {}] }
 } -test {
-  faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error or missing database}}
+  faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error}}
 }
 
 # If TEMP_STORE is 2 or greater, then the database [db2] will be created

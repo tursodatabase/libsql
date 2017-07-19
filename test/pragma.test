@@ -1696,7 +1696,7 @@ testvfs tvfs
 sqlite3 db test.db -vfs tvfs
 do_test pragma-19.1 {
   catchsql {PRAGMA error}
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test pragma-19.2 {
   catchsql {PRAGMA error='This is the error message'}
 } {1 {This is the error message}}
