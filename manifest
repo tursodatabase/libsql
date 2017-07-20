@@ -1,5 +1,5 @@
-C Enhance\sthe\sbuilt-in\sdate/time\sfunctions\sso\sthat\sthey\scan\sbe\sused\sin\nCHECK\sconstraints,\sin\sthe\sWHERE\sclause\sor\spartial\sindexes,\sand\sindex\nexpressions,\sprovided\sthat\snone\sof\sthe\snon-deterministic\skeywords\n("now",\s"localtime",\s"utc")\sare\sused\sas\sarguments.
-D 2017-07-20T15:08:43.378
+C Fix\sa\sharmless\stypo,\sbut\sone\sthat\swould\sshow\sup\sin\sthe\sdocumentation\sif\snot\nfixed.
+D 2017-07-20T20:49:41.207
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in dad804d4e1979a2ddec33cc8da6aa50c04e6ba0dcb4058e7b3609588d010e041
+F src/sqlite.h.in e2ffa1f15c936902489a4001fba9800ddf3d09fef19c9ca4fbd9e7df39106998
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
 F src/sqliteInt.h 96197a18f041b9ab99e6cee0db39dbf771ac7762d9f0f63d9e719285f0478664
@@ -1637,8 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d14fc621e918915bbf8e04597eb238ea78dff3d9c5eb4402cb88692d00dbdfee b7f70c7fcabc10b8b3e62fe5ac68476cec23acaee037c7250ff70bca3f3ab541
-R 636bb2618e46215e27cfa1dc613ec36a
-T +closed b7f70c7fcabc10b8b3e62fe5ac68476cec23acaee037c7250ff70bca3f3ab541
+P a90c062d46c63a1e6f83064b1c5afb26a16e93b6ee8620ca46d169fdb325c488
+R 2ab1b1f8e5ebc9530c52b76f15a291b6
 U drh
-Z 8d21c041010891259262753e78bdd45f
+Z 27a7dde5481b6c739444d9e01daaa868
