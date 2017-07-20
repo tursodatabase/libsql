@@ -1,5 +1,5 @@
-C Enhance\sthe\sbuilt-in\sdate/time\sfunctions\sso\sthat\sthey\scan\sbe\sused\sin\nCHECK\sconstraints,\sin\sthe\sWHERE\sclause\sor\spartial\sindexes,\sand\sindex\nexpressions,\sprovided\sthat\snone\sof\sthe\snon-deterministic\skeywords\n("now",\s"localtime",\s"utc")\sare\sused\sas\sarguments.
-D 2017-07-20T15:08:43.378
+C Add\ssupport\sfor\sF2FS\satomic\swrites.\sUntested\sat\sthis\spoint.
+D 2017-07-20T19:49:14.731
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -424,7 +424,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 95752936c11dc6995672d1dd783cd633eea0cc95
+F src/memjournal.c 3f1d95947cd39b35a6375b2ca384bac904f16353bd54995e9bff78161463ac1c
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -436,10 +436,10 @@ F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
+F src/os_unix.c eca7004f2cde959ed233951256e22aa4169c72f69b831e14276d0bdded4372f5
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 14f6982c470c05b8e85575c69e9c1712010602e20400f8670d8699e21283e0e4
+F src/pager.c 7ab906445447d5374971986de3525350d18c0e256723cd5a2456a429cd372f6c
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y e384cb73f99e1b074085c974b37f4d830e885359e4b60837e30f7d67c16ba65b
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in dad804d4e1979a2ddec33cc8da6aa50c04e6ba0dcb4058e7b3609588d010e041
+F src/sqlite.h.in 51541eacdbbd26afcb5933ea4fadf9952fa9b3e4d7277c2b7983bf2b4a09a0bf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
 F src/sqliteInt.h 96197a18f041b9ab99e6cee0db39dbf771ac7762d9f0f63d9e719285f0478664
@@ -1232,7 +1232,7 @@ F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/sync2.test 6be8ed007fa063b147773c1982b5bdba97a32badc536bdc6077eff5cf8710ece
-F test/syscall.test 7a60601770172a8014a4d222d5f3d95a5d2b5c47fbb0374e2698e89c99e37256
+F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test c47171c36b3d411df2bd49719dcaa5d034f8d277477fd41d253940723b969a51
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
@@ -1637,8 +1637,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d14fc621e918915bbf8e04597eb238ea78dff3d9c5eb4402cb88692d00dbdfee b7f70c7fcabc10b8b3e62fe5ac68476cec23acaee037c7250ff70bca3f3ab541
-R 636bb2618e46215e27cfa1dc613ec36a
-T +closed b7f70c7fcabc10b8b3e62fe5ac68476cec23acaee037c7250ff70bca3f3ab541
-U drh
-Z 8d21c041010891259262753e78bdd45f
+P a90c062d46c63a1e6f83064b1c5afb26a16e93b6ee8620ca46d169fdb325c488
+R 83821cb44cbf5af73c5132cb66d20c9f
+T *branch * f2fs-support
+T *sym-f2fs-support *
+T -sym-trunk *
+U dan
+Z 66fb297e5afae668d4c6aa465d37e6d1

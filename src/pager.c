@@ -958,6 +958,7 @@ static int assert_pager_state(Pager *p){
       assert( isOpen(p->jfd) 
            || p->journalMode==PAGER_JOURNALMODE_OFF 
            || p->journalMode==PAGER_JOURNALMODE_WAL 
+           || (sqlite3OsDeviceCharacteristics(p->fd)&SQLITE_IOCAP_BATCH_ATOMIC)
       );
       break;
 
@@ -1194,6 +1195,11 @@ static int jrnlBufferSize(Pager *pPager){
 
     assert( isOpen(pPager->fd) );
     dc = sqlite3OsDeviceCharacteristics(pPager->fd);
+    /* use in-memory journal */
+    if( dc&SQLITE_IOCAP_BATCH_ATOMIC ){
+      return -1;
+    }
+
     nSector = pPager->sectorSize;
     szPage = pPager->pageSize;
 
@@ -2012,7 +2018,9 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   }
 
   releaseAllSavepoints(pPager);
-  assert( isOpen(pPager->jfd) || pPager->pInJournal==0 );
+  assert( isOpen(pPager->jfd) || pPager->pInJournal==0 
+      || (sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_BATCH_ATOMIC)
+  );
   if( isOpen(pPager->jfd) ){
     assert( !pagerUseWal(pPager) );
 
@@ -4567,6 +4575,13 @@ static int pagerStress(void *p, PgHdr *pPg){
       rc = pagerWalFrames(pPager, pPg, 0, 0);
     }
   }else{
+    
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+    if( pPager->tempFile==0 ){
+      rc = sqlite3JournalCreate(pPager->jfd);
+      if( rc!=SQLITE_OK ) return pager_error(pPager, rc);
+    }
+#endif
   
     /* Sync the journal file if required. */
     if( pPg->flags&PGHDR_NEED_SYNC 
@@ -6371,32 +6386,39 @@ int sqlite3PagerCommitPhaseOne(
       ** created for this transaction.
       */
   #ifdef SQLITE_ENABLE_ATOMIC_WRITE
-      PgHdr *pPg;
-      assert( isOpen(pPager->jfd) 
-           || pPager->journalMode==PAGER_JOURNALMODE_OFF 
-           || pPager->journalMode==PAGER_JOURNALMODE_WAL 
-      );
-      if( !zMaster && isOpen(pPager->jfd) 
-       && pPager->journalOff==jrnlBufferSize(pPager) 
-       && pPager->dbSize>=pPager->dbOrigSize
-       && (0==(pPg = sqlite3PcacheDirtyList(pPager->pPCache)) || 0==pPg->pDirty)
-      ){
-        /* Update the db file change counter via the direct-write method. The 
-        ** following call will modify the in-memory representation of page 1 
-        ** to include the updated change counter and then write page 1 
-        ** directly to the database file. Because of the atomic-write 
-        ** property of the host file-system, this is safe.
-        */
-        rc = pager_incr_changecounter(pPager, 1);
-      }else{
-        rc = sqlite3JournalCreate(pPager->jfd);
-        if( rc==SQLITE_OK ){
-          rc = pager_incr_changecounter(pPager, 0);
+      sqlite3_file *fd = pPager->fd;
+      int bBatch = zMaster==0      /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
+        && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+        && pPager->journalMode!=PAGER_JOURNALMODE_MEMORY
+        && sqlite3JournalIsInMemory(pPager->jfd);
+
+      if( bBatch==0 ){
+        PgHdr *pPg;
+        assert( isOpen(pPager->jfd) 
+            || pPager->journalMode==PAGER_JOURNALMODE_OFF 
+            || pPager->journalMode==PAGER_JOURNALMODE_WAL 
+            );
+        if( !zMaster && isOpen(pPager->jfd) 
+         && pPager->journalOff==jrnlBufferSize(pPager) 
+         && pPager->dbSize>=pPager->dbOrigSize
+         && (!(pPg = sqlite3PcacheDirtyList(pPager->pPCache)) || 0==pPg->pDirty)
+        ){
+          /* Update the db file change counter via the direct-write method. The 
+          ** following call will modify the in-memory representation of page 1 
+          ** to include the updated change counter and then write page 1 
+          ** directly to the database file. Because of the atomic-write 
+          ** property of the host file-system, this is safe.
+          */
+          rc = pager_incr_changecounter(pPager, 1);
+        }else{
+          rc = sqlite3JournalCreate(pPager->jfd);
+          if( rc==SQLITE_OK ){
+            rc = pager_incr_changecounter(pPager, 0);
+          }
         }
-      }
-  #else
-      rc = pager_incr_changecounter(pPager, 0);
+      }else
   #endif
+      rc = pager_incr_changecounter(pPager, 0);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
       /* Write the master journal name into the journal file. If a master 
@@ -6419,8 +6441,24 @@ int sqlite3PagerCommitPhaseOne(
       */
       rc = syncJournal(pPager, 0);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-  
+
+      if( bBatch ){
+        /* The pager is now in DBMOD state. But regardless of what happens
+        ** next, attempting to play the journal back into the database would
+        ** be unsafe. Close it now to make sure that does not happen.  */
+        sqlite3OsClose(pPager->jfd);
+        rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, 0);
+        if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
+      }
       rc = pager_write_pagelist(pPager,sqlite3PcacheDirtyList(pPager->pPCache));
+      if( bBatch ){
+        if( rc==SQLITE_OK ){
+          rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
+        }else{
+          sqlite3OsFileControl(fd, SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE, 0);
+        }
+      }
+
       if( rc!=SQLITE_OK ){
         assert( rc!=SQLITE_IOERR_BLOCKED );
         goto commit_phase_one_exit;

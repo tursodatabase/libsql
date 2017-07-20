@@ -388,13 +388,16 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
 /*
 ** If the argument p points to a MemJournal structure that is not an 
 ** in-memory-only journal file (i.e. is one that was opened with a +ve
-** nSpill parameter), and the underlying file has not yet been created, 
-** create it now.
+** nSpill parameter or as SQLITE_OPEN_MAIN_JOURNAL), and the underlying 
+** file has not yet been created, create it now.
 */
-int sqlite3JournalCreate(sqlite3_file *p){
+int sqlite3JournalCreate(sqlite3_file *pJfd){
   int rc = SQLITE_OK;
-  if( p->pMethods==&MemJournalMethods && ((MemJournal*)p)->nSpill>0 ){
-    rc = memjrnlCreateFile((MemJournal*)p);
+  MemJournal *p = (MemJournal*)pJfd;
+  if( p->pMethod==&MemJournalMethods 
+   && (p->nSpill>0 || (p->flags & SQLITE_OPEN_MAIN_JOURNAL))
+  ){
+    rc = memjrnlCreateFile(p);
   }
   return rc;
 }

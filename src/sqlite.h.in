@@ -595,6 +595,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN  0x00000800
 #define SQLITE_IOCAP_POWERSAFE_OVERWRITE    0x00001000
 #define SQLITE_IOCAP_IMMUTABLE              0x00002000
+#define SQLITE_IOCAP_BATCH_ATOMIC           0x00004000
 
 /*
 ** CAPI3REF: File Locking Levels
@@ -729,6 +730,7 @@ struct sqlite3_file {
 ** <li> [SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN]
 ** <li> [SQLITE_IOCAP_POWERSAFE_OVERWRITE]
 ** <li> [SQLITE_IOCAP_IMMUTABLE]
+** <li> [SQLITE_IOCAP_BATCH_ATOMIC]
 ** </ul>
 **
 ** The SQLITE_IOCAP_ATOMIC property means that all writes of
@@ -1043,6 +1045,10 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_JOURNAL_POINTER        28
 #define SQLITE_FCNTL_WIN32_GET_HANDLE       29
 #define SQLITE_FCNTL_PDB                    30
+
+#define SQLITE_FCNTL_BEGIN_ATOMIC_WRITE     31
+#define SQLITE_FCNTL_COMMIT_ATOMIC_WRITE    32
+#define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
