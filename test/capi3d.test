@@ -179,5 +179,30 @@ do_test capi3d-4.2.6 {
   sqlite3_finalize $::s1
 } {SQLITE_OK}
 
+# Tests for the sqlite3_stmt_refresh() interface
+#
+do_execsql_test capi3d-5.1 {
+  DROP TABLE IF EXISTS t5;
+  CREATE TABLE t5(a,b);
+  INSERT INTO t5 VALUES(1,2),(3,4);
+}
+do_test capi3d-5.2 {
+  set ::s1 [sqlite3_prepare_v2 db "SELECT * FROM t5" -1 notused]
+  sqlite3 db2 test.db
+  db2 eval {SELECT * FROM t5 ORDER BY a}
+} {1 2 3 4}
+do_test capi3d-5.3 {
+  sqlite3_column_count $::s1
+} 2
+do_test capi3d-5.4 {
+  db2 eval {ALTER TABLE t5 ADD COLUMN c DEFAULT 9}
+  sqlite3_column_count $::s1
+} 2
+do_test capi3d-5.5 {
+  sqlite3_stmt_refresh $::s1
+  sqlite3_column_count $::s1
+} 3
+sqlite3_finalize $::s1
+db2 close
 
 finish_test

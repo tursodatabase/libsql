@@ -1609,6 +1609,28 @@ int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
 }
 
 /*
+** Recompile the prepared statement if it has expired
+*/
+int sqlite3_stmt_refresh(sqlite3_stmt *pStmt){
+  int rc = SQLITE_OK;
+  if( !sqlite3_stmt_busy(pStmt) ){
+    VdbeOp *aOp;
+    Vdbe *v = (Vdbe*)pStmt;
+    sqlite3_mutex_enter(v->db->mutex);
+    aOp = v->aOp;
+    assert( aOp[0].opcode==OP_Init );
+    if( aOp[aOp[0].p2].opcode==OP_Transaction ){
+      v->stopAfterInit = 1;
+      rc = sqlite3_step(pStmt);
+      v->stopAfterInit = 0;
+      sqlite3_reset(pStmt);
+    }
+    sqlite3_mutex_leave(v->db->mutex);
+  }
+  return rc;
+}
+
+/*
 ** Return a pointer to the next prepared statement after pStmt associated
 ** with database connection pDb.  If pStmt is NULL, return the first
 ** prepared statement for the database connection.  Return NULL if there

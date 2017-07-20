@@ -3191,6 +3191,9 @@ case OP_Transaction: {
     rc = SQLITE_SCHEMA;
   }
   if( rc ) goto abort_due_to_error;
+  if( p->stopAfterInit && pOp[1].opcode!=OP_Transaction ){
+    goto vdbe_return;
+  }
   break;
 }
 

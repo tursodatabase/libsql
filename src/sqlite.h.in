@@ -3743,6 +3743,17 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 int sqlite3_stmt_busy(sqlite3_stmt*);
 
 /*
+** CAPI3REF: Recompile A Prepared Statement If Needed
+** METHOD: sqlite3_stmt
+**
+** ^The sqlite3_stmt_refresh(S) examines the [prepared statement] S
+** and attempts to recompile it if it has expired, for example due
+** to a schema change.  ^If the prepared statement S is up-to-date and
+** ready for use, then sqlite3_stmt_refresh(S) is a no-op.
+*/
+int sqlite3_stmt_refresh(sqlite3_stmt*);
+
+/*
 ** CAPI3REF: Dynamically Typed Value Object
 ** KEYWORDS: {protected sqlite3_value} {unprotected sqlite3_value}
 **
