@@ -50,7 +50,6 @@ do_execsql_test 2.0 "
   INSERT INTO t2 VALUES('\xC0\xC8\xCC');
   INSERT INTO t3 VALUES('\xC0\xC8\xCC');
 "
-breakpoint
 do_execsql_test 2.1 "
   SELECT 't1' FROM t1 WHERE t1 MATCH '\xE0\xE8\xEC';
   SELECT 't2' FROM t2 WHERE t2 MATCH '\xE0\xE8\xEC';
@@ -59,4 +58,3 @@ do_execsql_test 2.1 "
 
 
 finish_test
-

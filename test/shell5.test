@@ -184,6 +184,37 @@ do_test shell5-1.4.10.2 {
   catchcmd "test.db" {SELECT b FROM t1 WHERE a='7';}
 } {0 {Now is the time for all good men to come to the aid of their country.}}
 
+# import file with 2 rows, 2 columns and an initial BOM
+#
+do_test shell5-1.4.11 {
+  set in [open shell5.csv wb]
+  puts -nonewline $in "\xef\xbb\xbf"
+  puts $in "2|3"
+  puts $in "4|5"
+  close $in
+  set res [catchcmd "test.db" {CREATE TABLE t2(x INT, y INT);
+.import shell5.csv t2
+.mode quote
+.header on
+SELECT * FROM t2;}]
+ string map {\n | \n\r |} $res
+} {0 {'x','y'|2,3|4,5}}
+
+# import file with 2 rows, 2 columns or text with an initial BOM
+#
+do_test shell5-1.4.12 {
+  set in [open shell5.csv wb]
+  puts $in "\xef\xbb\xbf\"two\"|3"
+  puts $in "4|5"
+  close $in
+  set res [catchcmd "test.db" {DELETE FROM t2;
+.import shell5.csv t2
+.mode quote
+.header on
+SELECT * FROM t2;}]
+ string map {\n | \n\r |} $res
+} {0 {'x','y'|'two',3|4,5}}
+
 # check importing very long field
 do_test shell5-1.5.1 {
   set str [string repeat X 999]
@@ -210,7 +241,8 @@ do_test shell5-1.6.1 {
   set in [open shell5.csv w]
   puts $in $data
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t2
+  set res [catchcmd "test.db" {DROP TABLE IF EXISTS t2;
+.import shell5.csv t2
 SELECT COUNT(*) FROM t2;}]
 } {0 1}
 

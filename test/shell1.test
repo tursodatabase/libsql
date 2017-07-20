@@ -300,7 +300,7 @@ do_test shell1-3.4.2 {
 do_test shell1-3.4.3 {
   # too many arguments
   catchcmd "test.db" ".dump FOO BAD"
-} {1 {Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?}}
+} {1 {Usage: .dump ?--preserve-rowids? ?--newlines? ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
@@ -429,7 +429,7 @@ do_test shell1-3.12.3 {
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode"
-} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
+} {0 {current output mode: list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
 } {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
@@ -558,6 +558,7 @@ do_test shell1-3.20.4 {
   catchcmd "test.db" ".restore FOO BAR BAD"
 } {1 {Usage: .restore ?DB? FILE}}
 
+ifcapable vtab {
 # .schema ?TABLE?        Show the CREATE statements
 #                          If TABLE specified, only show tables matching
 #                          LIKE pattern TABLE.
@@ -583,6 +584,7 @@ do_test shell1-3.21.4 {
 CREATE VIEW v2 AS SELECT x+1 AS y FROM t1;
 CREATE VIEW v1 AS SELECT y+1 FROM v2;}}
 db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
+}
 
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {

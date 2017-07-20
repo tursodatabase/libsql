@@ -56,7 +56,7 @@ db func sql_error sql_error
 do_test 1.1 {
   error_messages "SELECT sql_error('custom message')"
 } [list {*}{
-    SQLITE_ERROR {SQL logic error or missing database} 
+    SQLITE_ERROR {SQL logic error} 
     SQLITE_ERROR {custom message}
 }]
 do_test 1.2 {
@@ -77,7 +77,7 @@ do_execsql_test 2.1 {
 do_test 2.2 {
   error_messages "INSERT INTO t1 VALUES('ghi', 'def')"
 } [list {*}{
-    SQLITE_ERROR      {SQL logic error or missing database} 
+    SQLITE_ERROR      {SQL logic error} 
     SQLITE_CONSTRAINT {UNIQUE constraint failed: t1.b}
 }]
 verify_ex_errcode 2.2b SQLITE_CONSTRAINT_UNIQUE
@@ -101,7 +101,7 @@ do_execsql_test 3.1.1 {
 do_test 3.1.2 {
   error_messages "SELECT a FROM t2" "DROP TABLE t2"
 } [list {*}{
-    SQLITE_ERROR {SQL logic error or missing database} 
+    SQLITE_ERROR {SQL logic error} 
     SQLITE_SCHEMA {database schema has changed}
 }]
 do_execsql_test 3.2.1 {

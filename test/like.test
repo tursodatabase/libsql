@@ -160,6 +160,7 @@ ifcapable !like_opt {
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
+  db cache flush
   set data [execsql $sql]
   if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
@@ -196,7 +197,7 @@ do_test like-3.2 {
 
 # With an index on t1.x and case sensitivity on, optimize completely.
 #
-do_test like-3.3 {
+do_test like-3.3.100 {
   set sqlite_like_count 0
   execsql {
     PRAGMA case_sensitive_like=on;
@@ -206,9 +207,56 @@ do_test like-3.3 {
     SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
   }
 } {abc abcd nosort {} i1}
-do_test like-3.4 {
+do_test like-3.3.101 {
   set sqlite_like_count
 } 0
+
+# The like optimization works even when the pattern is a bound parameter
+#
+# Exception: It does not work if sqlite3_prepare() is used instead of
+# sqlite3_prepare_v2(), as in that case the statement cannot be reprepared
+# after the parameter is bound.
+#
+unset -nocomplain ::likepat
+set ::likepat abc%
+if {[permutation]!="prepare"} {
+  do_test like-3.3.102 {
+    set sqlite_like_count 0
+    queryplan {
+      SELECT x FROM t1 WHERE x LIKE $::likepat ORDER BY 1;
+    }
+  } {abc abcd nosort {} i1}
+  do_test like-3.3.103 {
+    set sqlite_like_count
+  } 0
+}
+
+# Except, the like optimization does not work for bound parameters if
+# the query planner stability guarantee is active.
+#
+do_test like-3.3.104 {
+  set sqlite_like_count 0
+  sqlite3_db_config db QPSG 1
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE $::likepat ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.3.105 {
+  set sqlite_like_count
+} 12
+
+# The query planner stability guarantee does not disrupt explicit patterns
+#
+do_test like-3.3.105 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.3.106 {
+  set sqlite_like_count
+} 0
+sqlite3_db_config db QPSG 0
 
 # The LIKE optimization still works when the RHS is a string with no
 # wildcard.  Ticket [e090183531fc2747]

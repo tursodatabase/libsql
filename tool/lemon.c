@@ -3297,7 +3297,14 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   int act;
   switch( ap->type ){
     case SHIFT:  act = ap->x.stp->statenum;                        break;
-    case SHIFTREDUCE: act = ap->x.rp->iRule + lemp->nstate;        break;
+    case SHIFTREDUCE: {
+      act = ap->x.rp->iRule + lemp->nstate;
+      /* Since a SHIFT is inherient after a prior REDUCE, convert any
+      ** SHIFTREDUCE action with a nonterminal on the LHS into a simple
+      ** REDUCE action: */
+      if( ap->sp->index>=lemp->nterminal ) act += lemp->nrule;
+      break;
+    }
     case REDUCE: act = ap->x.rp->iRule + lemp->nstate+lemp->nrule; break;
     case ERROR:  act = lemp->nstate + lemp->nrule*2;               break;
     case ACCEPT: act = lemp->nstate + lemp->nrule*2 + 1;           break;
@@ -4415,7 +4422,7 @@ void ReportTable(
   ** sequentually beginning with 0.
   */
   for(rp=lemp->rule; rp; rp=rp->next){
-    fprintf(out,"  { %d, %d },\n",rp->lhs->index,rp->nrhs); lineno++;
+    fprintf(out,"  { %d, %d },\n",rp->lhs->index,-rp->nrhs); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 

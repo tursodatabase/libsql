@@ -82,4 +82,3 @@ do_faultsim_test 4 -faults oom-* -prep {
 
 
 finish_test
-

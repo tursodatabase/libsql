@@ -90,6 +90,7 @@ do_test 2.7 {
   execsql { SELECT rowid FROM tt('a') ORDER BY rank; } db
 } {1 3 2}
 
+db2 close
 
 #--------------------------------------------------------------------------
 # At one point there was a problem with queries such as:
@@ -151,4 +152,3 @@ do_execsql_test 4.1 {
 
 
 finish_test
-

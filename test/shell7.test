@@ -50,5 +50,3 @@ foreach {tn l x} [db eval { SELECT tn, length(x) AS l, x FROM f1 }] {
 
 
 finish_test
-
-

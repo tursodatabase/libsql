@@ -110,7 +110,7 @@ sqlite3_blob_close $B
 #
 sqlite3_blob_open db main t2 a 44 3 B
 blob_write_error_test 2.2.1 $B 31 $blob 10   \
-    SQLITE_ERROR {SQL logic error or missing database}
+    SQLITE_ERROR {SQL logic error}
 
 # Make a successful write to the blob handle. This shows that the
 # sqlite3_errcode() and sqlite3_errmsg() values are set even if the
@@ -122,10 +122,10 @@ blob_write_error_test 2.2.1 $B 30 $blob 10 SQLITE_OK {not an error}
 # SQLITE_ERROR is returned and no data is written.
 #
 blob_write_error_test 2.2.2 $B 31 $blob -1   \
-    SQLITE_ERROR {SQL logic error or missing database}
+    SQLITE_ERROR {SQL logic error}
 blob_write_error_test 2.2.3 $B 20 $blob 10 SQLITE_OK {not an error}
 blob_write_error_test 2.2.4 $B -1 $blob 10   \
-    SQLITE_ERROR {SQL logic error or missing database}
+    SQLITE_ERROR {SQL logic error}
 sqlite3_blob_close $B
 
 # EVIDENCE-OF: R-20958-54138 An attempt to write to an expired BLOB
@@ -136,13 +136,13 @@ do_test 2.3 {
   execsql { DELETE FROM t2 WHERE b=43 }
 } {}
 blob_write_error_test 2.3.1 $B 5 $blob 5 \
-    SQLITE_ABORT {callback requested query abort}
+    SQLITE_ABORT {query aborted}
 do_test 2.3.2 {
   execsql { SELECT 1, 2, 3 }
   sqlite3_errcode db
 } {SQLITE_OK}
 blob_write_error_test 2.3.3 $B 5 $blob 5 \
-    SQLITE_ABORT {callback requested query abort}
+    SQLITE_ABORT {query aborted}
 sqlite3_blob_close $B
 
 # EVIDENCE-OF: R-08382-59936 Writes to the BLOB that occurred before the
@@ -173,7 +173,7 @@ do_execsql_test 3.1.2 {
   1 .....0123456789......................... xyz
 }
 blob_write_error_test 3.1.3 $B 15 $blob 10 \
-    SQLITE_ABORT {callback requested query abort}
+    SQLITE_ABORT {query aborted}
 sqlite3_blob_close $B
 do_execsql_test 3.1.4 {
   SELECT * FROM t3 WHERE i=1;
@@ -190,7 +190,7 @@ do_execsql_test 3.2.2 {
   2 xyz ........................................
 }
 blob_write_error_test 3.2.3 $B 15 $blob 10 \
-    SQLITE_ABORT {callback requested query abort}
+    SQLITE_ABORT {query aborted}
 sqlite3_blob_close $B
 do_execsql_test 3.2.4 {
   SELECT * FROM t3 WHERE i=2;

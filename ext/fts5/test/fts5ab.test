@@ -294,4 +294,3 @@ do_execsql_test 7.0 {
 
 
 finish_test
-

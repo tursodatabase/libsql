@@ -281,7 +281,6 @@ do_test 4.4 {
 
 #-------------------------------------------------------------------------
 
-breakpoint
 do_unicode_token_test3 5.1 {tokenchars {}} {
   sqlite3_reset sqlite3_column_int
 } {

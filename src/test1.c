@@ -2139,6 +2139,9 @@ static int SQLITE_TCLAPI test_stmt_status(
     { "SQLITE_STMTSTATUS_SORT",            SQLITE_STMTSTATUS_SORT            },
     { "SQLITE_STMTSTATUS_AUTOINDEX",       SQLITE_STMTSTATUS_AUTOINDEX       },
     { "SQLITE_STMTSTATUS_VM_STEP",         SQLITE_STMTSTATUS_VM_STEP         },
+    { "SQLITE_STMTSTATUS_REPREPARE",       SQLITE_STMTSTATUS_REPREPARE       },
+    { "SQLITE_STMTSTATUS_RUN",             SQLITE_STMTSTATUS_RUN             },
+    { "SQLITE_STMTSTATUS_MEMUSED",         SQLITE_STMTSTATUS_MEMUSED         },
   };
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT PARAMETER RESETFLAG");
@@ -6917,6 +6920,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_unionvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6936,6 +6940,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "series",                sqlite3_series_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "totype",                sqlite3_totype_init               },
+    { "unionvtab",             sqlite3_unionvtab_init            },
     { "wholenumber",           sqlite3_wholenumber_init          },
   };
   sqlite3 *db;
@@ -7317,6 +7322,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
     { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
     { "NO_CKPT_ON_CLOSE",SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE },
+    { "QPSG",            SQLITE_DBCONFIG_ENABLE_QPSG },
   };
   int i;
   int v;

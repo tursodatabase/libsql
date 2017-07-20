@@ -763,4 +763,21 @@ do_execsql_test join-14.12 {
   SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x ORDER BY b;
 } {4 {} {} | 2 2 1 |}
 
+# Verify the fix for ticket
+# https://www.sqlite.org/src/info/892fc34f173e99d8
+#
+db close
+sqlite3 db :memory:
+do_execsql_test join-14.20 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY);
+  CREATE TABLE t2(id INTEGER PRIMARY KEY, c2 INTEGER);
+  CREATE TABLE t3(id INTEGER PRIMARY KEY, c3 INTEGER);
+  INSERT INTO t1(id) VALUES(456);
+  INSERT INTO t3(id) VALUES(1),(2);
+  SELECT t1.id, x2.id, x3.id
+  FROM t1
+  LEFT JOIN (SELECT * FROM t2) AS x2 ON t1.id=x2.c2
+  LEFT JOIN t3 AS x3 ON x2.id=x3.c3;
+} {456 {} {}}
+
 finish_test

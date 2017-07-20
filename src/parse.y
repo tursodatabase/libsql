@@ -156,9 +156,8 @@ transtype(A) ::= ID(X). {
      parserSyntaxError(pParse, p);
    }
 }
-cmd ::= COMMIT trans_opt.      {sqlite3CommitTransaction(pParse);}
-cmd ::= END trans_opt.         {sqlite3CommitTransaction(pParse);}
-cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
+cmd ::= COMMIT|END(X) trans_opt.   {sqlite3EndTransaction(pParse,@X);}
+cmd ::= ROLLBACK(X) trans_opt.     {sqlite3EndTransaction(pParse,@X);}
 
 savepoint_opt ::= SAVEPOINT.
 savepoint_opt ::= .
@@ -891,7 +890,6 @@ idlist(A) ::= nm(Y).
 expr(A) ::= term(A).
 expr(A) ::= LP(B) expr(X) RP(E).
             {spanSet(&A,&B,&E); /*A-overwrites-B*/  A.pExpr = X.pExpr;}
-term(A) ::= NULL(X).        {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 expr(A) ::= id(X).          {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= JOIN_KW(X).     {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
@@ -908,13 +906,12 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   spanSet(&A,&X,&Z); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
-term(A) ::= FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
-term(A) ::= STRING(X).     {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= NULL|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X); /*A-overwrites-X*/}
+term(A) ::= STRING(X).          {spanExpr(&A,pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= INTEGER(X). {
   A.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
   A.zStart = X.z;
   A.zEnd = X.z + X.n;
-  if( A.pExpr ) A.pExpr->flags |= EP_Leaf|EP_Resolved;
 }
 expr(A) ::= VARIABLE(X).     {
   if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
@@ -1390,8 +1387,7 @@ trigger_decl(A) ::= temp(T) TRIGGER ifnotexists(NOERR) nm(B) dbnm(Z)
 }
 
 %type trigger_time {int}
-trigger_time(A) ::= BEFORE.      { A = TK_BEFORE; }
-trigger_time(A) ::= AFTER.       { A = TK_AFTER;  }
+trigger_time(A) ::= BEFORE|AFTER(X).  { A = @X; /*A-overwrites-X*/ }
 trigger_time(A) ::= INSTEAD OF.  { A = TK_INSTEAD;}
 trigger_time(A) ::= .            { A = TK_BEFORE; }
 

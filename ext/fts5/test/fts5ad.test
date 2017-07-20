@@ -231,7 +231,6 @@ foreach {T create} {
         set res [lsort -integer -increasing $res]
       }
       set n [llength $res]
-      if {$T==5} breakpoint 
       do_execsql_test $T.$bAsc.$tn.$n $sql $res
     }
   }
@@ -242,4 +241,3 @@ foreach {T create} {
 }
 
 finish_test
-
