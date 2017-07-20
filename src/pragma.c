@@ -1594,7 +1594,7 @@ void sqlite3Pragma(
             int addrCkOk = sqlite3VdbeMakeLabel(v);
             char *zErr;
             int k;
-            pParse->iSelfTab = iDataCur+1;
+            pParse->iSelfTab = iDataCur + 1;
             sqlite3ExprCachePush(pParse);
             for(k=pCheck->nExpr-1; k>0; k--){
               sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);

@@ -2963,8 +2963,8 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
   int szOpAlloc;       /* Bytes of memory space allocated for Vdbe.aOp[] */
-  int ckBase;          /* Base register of data during check constraints */
-  int iSelfTab;        /* Table of an index whose exprs are being coded */
+  int iSelfTab;        /* Table for associated with an index on expr, or negative
+                       ** of the base register during check-constraint eval */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
   int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
   int nLabel;          /* Number of labels used */

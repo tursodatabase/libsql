@@ -386,8 +386,7 @@ static int parseDateOrTime(
     return 0;
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
-  }else if( sqlite3StrICmp(zDate,"now")==0 ){
-    sqlite3VdbePureFuncOnly(context);
+  }else if( sqlite3StrICmp(zDate,"now")==0 && sqlite3NotPureFunc(context) ){
     return setDateTimeToCurrent(context, p);
   }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8) ){
     setRawDateNumber(p, r);
@@ -670,8 +669,7 @@ static int parseModifier(
       ** Assuming the current time value is UTC (a.k.a. GMT), shift it to
       ** show local time.
       */
-      if( sqlite3_stricmp(z, "localtime")==0 ){
-        sqlite3VdbePureFuncOnly(pCtx);
+      if( sqlite3_stricmp(z, "localtime")==0 && sqlite3NotPureFunc(pCtx) ){
         computeJD(p);
         p->iJD += localtimeOffset(p, pCtx, &rc);
         clearYMD_HMS_TZ(p);
@@ -697,8 +695,7 @@ static int parseModifier(
         }
       }
 #ifndef SQLITE_OMIT_LOCALTIME
-      else if( sqlite3_stricmp(z, "utc")==0 ){
-        sqlite3VdbePureFuncOnly(pCtx);
+      else if( sqlite3_stricmp(z, "utc")==0 && sqlite3NotPureFunc(pCtx) ){
         if( p->tzSet==0 ){
           sqlite3_int64 c1;
           computeJD(p);

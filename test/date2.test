@@ -1,0 +1,53 @@
+# 2017-07-20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing date and time functions used in
+# check constraints and index expressions.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Skip this whole file if date and time functions are omitted
+# at compile-time
+#
+ifcapable {!datetime} {
+  finish_test
+  return
+}
+
+do_execsql_test date2-100 {
+  CREATE TABLE t1(x, y, CHECK( date(x) BETWEEN '2017-07-01' AND '2017-07-31' ));
+  INSERT INTO t1(x,y) VALUES('2017-07-20','one');
+} {}
+do_catchsql_test date2-110 {
+  INSERT INTO t1(x,y) VALUES('now','two');
+} {1 {non-deterministic function in index expression or CHECK constraint}}
+do_execsql_test date2-120 {
+  SELECT * FROM t1;
+} {2017-07-20 one}
+do_catchsql_test date2-130 {
+  INSERT INTO t1(x,y) VALUES('2017-08-01','two');
+} {1 {CHECK constraint failed: t1}}
+
+do_execsql_test date2-200 {
+  CREATE TABLE t2(x,y);
+  INSERT INTO t2(x,y) VALUES(1, '2017-07-20'), (2, 'xyzzy');
+  CREATE INDEX t2y ON t2(date(y));
+}
+do_catchsql_test date2-210 {
+  INSERT INTO t2(x,y) VALUES(3, 'now');
+} {1 {non-deterministic function in index expression or CHECK constraint}}
+do_execsql_test date2-220 {
+  SELECT x, y FROM t2 ORDER BY x;
+} {1 2017-07-20 2 xyzzy}
+
+finish_test

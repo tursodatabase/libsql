@@ -3484,9 +3484,9 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
       if( iTab<0 ){
-        if( pParse->ckBase>0 ){
+        if( pParse->iSelfTab<0 ){
           /* Generating CHECK constraints or inserting into partial index */
-          return pExpr->iColumn + pParse->ckBase;
+          return pExpr->iColumn - pParse->iSelfTab;
         }else{
           /* Coding an expression that is part of an index where column names
           ** in the index refer to the table to which the index belongs */

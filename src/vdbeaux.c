@@ -4592,11 +4592,14 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** This routine is invoked by date/time functions that use non-deterministic
 ** features such as 'now'.
 */
-void sqlite3VdbePureFuncOnly(sqlite3_context *pCtx){
+int sqlite3NotPureFunc(sqlite3_context *pCtx){
   if( pCtx->pVdbe->aOp[pCtx->iOp].opcode==OP_PureFunc ){
     sqlite3_result_error(pCtx, 
-       "non-deterministic functions prohibited in index expressions", -1);
+       "non-deterministic function in index expression or CHECK constraint",
+       -1);
+    return 0;
   }
+  return 1;
 }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE

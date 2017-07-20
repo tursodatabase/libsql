@@ -253,7 +253,7 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord*);
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 #endif
 
-void sqlite3VdbePureFuncOnly(sqlite3_context*);
+int sqlite3NotPureFunc(sqlite3_context*);
 
 /* Use SQLITE_ENABLE_COMMENTS to enable generation of extra comments on
 ** each VDBE opcode.
