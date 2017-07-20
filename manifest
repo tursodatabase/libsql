@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sF2FS\satomic\swrites.\sUntested\sat\sthis\spoint.
-D 2017-07-20T19:49:14.731
+C Split\sSQLITE_ENABLE_ATOMIC_WRITE\sinto\stwo\soptions\s-\sthe\soriginal\sand\nSQLITE_ENABLE_BATCH_ATOMIC_WRITE.
+D 2017-07-20T21:00:03.793
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -424,7 +424,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 3f1d95947cd39b35a6375b2ca384bac904f16353bd54995e9bff78161463ac1c
+F src/memjournal.c 8669a499261d2c51ab2eb6c10b3b2e5085e559457ea630140de7f3521077daaa
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -439,7 +439,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c eca7004f2cde959ed233951256e22aa4169c72f69b831e14276d0bdded4372f5
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 7ab906445447d5374971986de3525350d18c0e256723cd5a2456a429cd372f6c
+F src/pager.c a42704980ed4ce38ed75981acf12a4d34bea2419306c7ffe26940869c458df48
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y e384cb73f99e1b074085c974b37f4d830e885359e4b60837e30f7d67c16ba65b
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -458,7 +458,7 @@ F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c17
 F src/sqlite.h.in 51541eacdbbd26afcb5933ea4fadf9952fa9b3e4d7277c2b7983bf2b4a09a0bf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
-F src/sqliteInt.h 96197a18f041b9ab99e6cee0db39dbf771ac7762d9f0f63d9e719285f0478664
+F src/sqliteInt.h 437217b5d22e9c8f3c53f90324915a535f649262b1281eaabed4e31653576b51
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1637,10 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a90c062d46c63a1e6f83064b1c5afb26a16e93b6ee8620ca46d169fdb325c488
-R 83821cb44cbf5af73c5132cb66d20c9f
-T *branch * f2fs-support
-T *sym-f2fs-support *
-T -sym-trunk *
+P 416973ede3bde8567d1f2699728f72352979e054ef988d1c1e1cfe4290f6f8b8
+R 1638e645768cee73f97e29d4fc63d373
 U dan
-Z 66fb297e5afae668d4c6aa465d37e6d1
+Z d68435e6ed708ea00daef410ca52596e

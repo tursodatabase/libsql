@@ -947,6 +947,7 @@ static int assert_pager_state(Pager *p){
       assert( isOpen(p->jfd) 
            || p->journalMode==PAGER_JOURNALMODE_OFF 
            || p->journalMode==PAGER_JOURNALMODE_WAL 
+           || (sqlite3OsDeviceCharacteristics(p->fd)&SQLITE_IOCAP_BATCH_ATOMIC)
       );
       assert( pPager->dbOrigSize<=pPager->dbHintSize );
       break;
@@ -1169,39 +1170,45 @@ static int pagerLockDb(Pager *pPager, int eLock){
 }
 
 /*
-** This function determines whether or not the atomic-write optimization
-** can be used with this pager. The optimization can be used if:
+** This function determines whether or not the atomic-write or
+** atomic-batch-write optimizations can be used with this pager. The
+** atomic-write optimization can be used if:
 **
 **  (a) the value returned by OsDeviceCharacteristics() indicates that
 **      a database page may be written atomically, and
 **  (b) the value returned by OsSectorSize() is less than or equal
 **      to the page size.
 **
-** The optimization is also always enabled for temporary files. It is
-** an error to call this function if pPager is opened on an in-memory
-** database.
+** If it can be used, then the value returned is the size of the journal 
+** file when it contains rollback data for exactly one page.
 **
-** If the optimization cannot be used, 0 is returned. If it can be used,
-** then the value returned is the size of the journal file when it
-** contains rollback data for exactly one page.
+** The atomic-batch-write optimization can be used if OsDeviceCharacteristics()
+** returns a value with the SQLITE_IOCAP_BATCH_ATOMIC bit set. -1 is
+** returned in this case.
+**
+** If neither optimization can be used, 0 is returned.
 */
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE
 static int jrnlBufferSize(Pager *pPager){
   assert( !MEMDB );
-  if( !pPager->tempFile ){
-    int dc;                           /* Device characteristics */
-    int nSector;                      /* Sector size */
-    int szPage;                       /* Page size */
 
-    assert( isOpen(pPager->fd) );
-    dc = sqlite3OsDeviceCharacteristics(pPager->fd);
-    /* use in-memory journal */
-    if( dc&SQLITE_IOCAP_BATCH_ATOMIC ){
-      return -1;
-    }
+#if defined(SQLITE_ENABLE_ATOMIC_WRITE) \
+ || defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+  int dc;                           /* Device characteristics */
 
-    nSector = pPager->sectorSize;
-    szPage = pPager->pageSize;
+  assert( isOpen(pPager->fd) );
+  dc = sqlite3OsDeviceCharacteristics(pPager->fd);
+#endif
+
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+  if( dc&SQLITE_IOCAP_BATCH_ATOMIC ){
+    return -1;
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+  {
+    int nSector = pPager->sectorSize;
+    int szPage = pPager->pageSize;
 
     assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
     assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
@@ -1211,10 +1218,10 @@ static int jrnlBufferSize(Pager *pPager){
   }
 
   return JOURNAL_HDR_SZ(pPager) + JOURNAL_PG_SZ(pPager);
-}
-#else
-# define jrnlBufferSize(x) 0
 #endif
+
+  return 0;
+}
 
 /*
 ** If SQLITE_CHECK_PAGES is defined then we do some sanity checking
@@ -4576,7 +4583,7 @@ static int pagerStress(void *p, PgHdr *pPg){
     }
   }else{
     
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
     if( pPager->tempFile==0 ){
       rc = sqlite3JournalCreate(pPager->jfd);
       if( rc!=SQLITE_OK ) return pager_error(pPager, rc);
@@ -6385,13 +6392,17 @@ int sqlite3PagerCommitPhaseOne(
       ** in 'direct' mode. In this case the journal file will never be
       ** created for this transaction.
       */
-  #ifdef SQLITE_ENABLE_ATOMIC_WRITE
       sqlite3_file *fd = pPager->fd;
-      int bBatch = zMaster==0      /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+      const int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
         && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
         && pPager->journalMode!=PAGER_JOURNALMODE_MEMORY
         && sqlite3JournalIsInMemory(pPager->jfd);
+#else
+      const int bBatch = 0;
+#endif
 
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
       if( bBatch==0 ){
         PgHdr *pPg;
         assert( isOpen(pPager->jfd) 
@@ -6416,9 +6427,16 @@ int sqlite3PagerCommitPhaseOne(
             rc = pager_incr_changecounter(pPager, 0);
           }
         }
-      }else
-  #endif
+      }
+#else 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+      if( zMaster ){
+        rc = sqlite3JournalCreate(pPager->jfd);
+        if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
+      }
+#endif
       rc = pager_incr_changecounter(pPager, 0);
+#endif
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
       /* Write the master journal name into the journal file. If a master 
