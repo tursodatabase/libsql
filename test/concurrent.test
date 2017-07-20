@@ -162,6 +162,8 @@ do_test 1.8.5 {
   db eval COMMIT
   db2 eval COMMIT
 } {}
+db close
+db2 close
 
 do_multiclient_test tn {
 
@@ -557,4 +559,3 @@ do_multiclient_test tn {
 }
 
 finish_test
-
