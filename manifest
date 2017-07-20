@@ -1,5 +1,5 @@
-C Get\sthe\sbuild\sworking\swith\sSQLITE_OMIT_CONCURRENT.
-D 2017-07-20T18:28:33.979
+C Fix\sa\sfaulty\s#ifdef\son\sthe\sprevious\scheck-in
+D 2017-07-20T18:56:21.537
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -444,7 +444,7 @@ F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 7666599a49ff5098cfaea232cae118ad9afda37a96c9afa8f6db656a977c9cb6
-F src/pager.h 13713b181c041691a2bb7afbfbc4aa66c5addd34c46b1e68429eab75a5cfa632
+F src/pager.h 403b7d242616f8742ec149ede4a06b3e66896c554ce09c2abeddb926fdd1b707
 F src/parse.y e4dbcc6136fc4f3084cedd41036401eafd336c5f7cb33bc516fed913a46cac2a
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
@@ -1648,7 +1648,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 213c61cb82d4ee51cc638fc5bb2b54cd51b963c40d088b2f01caf77032ea32fb
-R d95fefd02901737ecfdecd42852575c7
+P a29401e924e6f82ca1c3eec98c6c0b2f1d5b9d7fba9af41a78516f21a7bab3a2
+R 266b56d38ac33675de86b579a395b93a
 U drh
-Z fe3c771992759cd0f7884a1e6c1e626c
+Z 6866fd6a6d6e7ac87e940c57657cce02
