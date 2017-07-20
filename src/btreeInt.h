@@ -277,6 +277,9 @@ struct MemPage {
   u8 intKey;           /* True if table b-trees.  False for index b-trees */
   u8 intKeyLeaf;       /* True if the leaf of an intKey table */
   Pgno pgno;           /* Page number for this page */
+#ifndef SQLITE_OMIT_CONCURRENT
+  Pgno pgnoRoot;       /* Root page of b-tree that this page belongs to */
+#endif
   /* Only the first 8 bytes (above) are zeroed by pager.c when a new page
   ** is allocated. All fields that follow must be initialized before use */
   u8 leaf;             /* True if a leaf page */
@@ -301,9 +304,6 @@ struct MemPage {
   DbPage *pDbPage;     /* Pager page handle */
   u16 (*xCellSize)(MemPage*,u8*);             /* cellSizePtr method */
   void (*xParseCell)(MemPage*,u8*,CellInfo*); /* btreeParseCell method */
-#ifndef SQLITE_OMIT_CONCURRENT
-  u32 pgnoRoot;        /* Root page of b-tree that this page belongs to */
-#endif
 };
 
 /*

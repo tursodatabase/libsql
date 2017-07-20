@@ -10314,6 +10314,9 @@ int sqlite3BtreeExclusiveLock(Btree *p){
   assert( p->inTrans==TRANS_WRITE && pBt->pPage1 );
   sqlite3BtreeEnter(p);
   rc = sqlite3PagerExclusiveLock(pBt->pPager, pBt->pPage1->pDbPage, &pgno);
+#ifdef SQLITE_OMIT_CONCURRENT
+  assert( pgno==0 );
+#else
   if( rc==SQLITE_BUSY_SNAPSHOT && pgno ){
     PgHdr *pPg = 0;
     int rc2 = sqlite3PagerGet(pBt->pPager, pgno, &pPg, 0);
@@ -10362,7 +10365,7 @@ int sqlite3BtreeExclusiveLock(Btree *p){
       );
     }
   }
-
+#endif
   sqlite3BtreeLeave(p);
   return rc;
 }

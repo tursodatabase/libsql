@@ -229,7 +229,9 @@ int sqlite3PagerIsWal(Pager*);
 # define sqlite3PagerEndConcurrent(x)
 #endif
 
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_CONCURRENT)
 int sqlite3PagerIswriteable(DbPage*);
+#endif
 
 int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
 
