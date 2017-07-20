@@ -4076,7 +4076,6 @@ static int btreeRelocateRange(
       rc = allocateBtreePage(pBt, &pFree, &iNew, iFirst-1, BTALLOC_LE);
       assert( rc!=SQLITE_OK || iNew<iFirst );
       if( rc==SQLITE_OK ){
-        MemPage *pPg = 0;
         releasePage(pFree);
         btreeGetPage(pBt, iPg, &pPg, 0);
         rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent,iNew,1);

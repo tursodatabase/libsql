@@ -5474,6 +5474,7 @@ static int getPageNormal(
   /* If this is an CONCURRENT transaction and the page being read was
   ** present in the database file when the transaction was opened,
   ** mark it as read in the pAllRead vector.  */
+  pPg = 0;
   if( pPager->pAllRead && pgno<=pPager->dbOrigSize ){
     rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
