@@ -96,7 +96,7 @@ static int memjrnlRead(
   int iChunkOffset;
   FileChunk *pChunk;
 
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE \
+#if defined(SQLITE_ENABLE_ATOMIC_WRITE) \
  || defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
   if( (iAmt+iOfst)>p->endpoint.iOffset ){
     return SQLITE_IOERR_SHORT_READ;
@@ -216,7 +216,7 @@ static int memjrnlWrite(
     ** atomic-write optimization. In this case the first 28 bytes of the
     ** journal file may be written as part of committing the transaction. */ 
     assert( iOfst==p->endpoint.iOffset || iOfst==0 );
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE \
+#if defined(SQLITE_ENABLE_ATOMIC_WRITE) \
  || defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
     if( iOfst==0 && p->pFirst ){
       assert( p->nChunkSize>iAmt );

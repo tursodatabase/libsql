@@ -1,5 +1,5 @@
-C Split\sSQLITE_ENABLE_ATOMIC_WRITE\sinto\stwo\soptions\s-\sthe\soriginal\sand\nSQLITE_ENABLE_BATCH_ATOMIC_WRITE.
-D 2017-07-20T21:00:03.793
+C Transform\stwo\s#ifdef\sstatements\sinto\s#if\sstatements.
+D 2017-07-20T21:01:53.887
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -424,7 +424,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 8669a499261d2c51ab2eb6c10b3b2e5085e559457ea630140de7f3521077daaa
+F src/memjournal.c 9b9e579226341e891a4657dc76fe2cec69734abcd23be0e42aa8764d88131f12
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 416973ede3bde8567d1f2699728f72352979e054ef988d1c1e1cfe4290f6f8b8
-R 1638e645768cee73f97e29d4fc63d373
-U dan
-Z d68435e6ed708ea00daef410ca52596e
+P 7eb9bf2c5b42c39901fd571553c1f70aa5a9dac71fdc8e318b3063b928ad58f7
+R 07625fb6756b6e7b352836395541d6b0
+U drh
+Z cd9d564ae288b39921ae68db54ad611b
