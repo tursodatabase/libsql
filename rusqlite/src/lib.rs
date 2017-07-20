@@ -871,9 +871,14 @@ impl InnerConnection {
 }
 
 impl Drop for InnerConnection {
+    #[cfg(not(test))]
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.close();
+    }
+    #[cfg(test)]
+    fn drop(&mut self) {
+        self.close().expect("Error while closing SQLite connection");
     }
 }
 
