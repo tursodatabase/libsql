@@ -1,5 +1,5 @@
-C Transform\stwo\s#ifdef\sstatements\sinto\s#if\sstatements.
-D 2017-07-20T21:01:53.887
+C Add\sthe\sdocumentation\stext\sfor\sthe\snew\sVFS\sinterfaces\sused\sby\sbatch-atomic\nwrites.
+D 2017-07-20T21:18:49.851
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in 51541eacdbbd26afcb5933ea4fadf9952fa9b3e4d7277c2b7983bf2b4a09a0bf
+F src/sqlite.h.in 6178cd914ca32535015ff57df78438f87a0f16609e9e47b1bc5f373ffe892686
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
 F src/sqliteInt.h 437217b5d22e9c8f3c53f90324915a535f649262b1281eaabed4e31653576b51
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7eb9bf2c5b42c39901fd571553c1f70aa5a9dac71fdc8e318b3063b928ad58f7
-R 07625fb6756b6e7b352836395541d6b0
+P f2c6b5845028ef25dcd17e23e11b93c9f7296c26c7a21718fdae8f4b48c4e1da 929bc46b8be0111a7b6e3d6fe129f0cad869c6a551bd47569c122742597b9f1c
+R fd0dcdf56ec4d6602162b3b1d1594e27
 U drh
-Z cd9d564ae288b39921ae68db54ad611b
+Z 9b7e24481f0b473c93f9af036e52968c
