@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\stypo,\sbut\sone\sthat\swould\sshow\sup\sin\sthe\sdocumentation\sif\snot\nfixed.
-D 2017-07-20T20:49:41.207
+C Remove\sstray\s(and\sincomplete)\scomment\sfrom\sa\stest\sfile.\s\sNo\schanges\sto\scode.
+D 2017-07-21T20:31:31.789
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -936,7 +936,7 @@ F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
-F test/indexexpr1.test f06298de30f343f6a022c3b13ae82817bb52a169f2b23a13600688aa591be5d9
+F test/indexexpr1.test f348668daf7f533f1e5578dd4f31e4b9a3875da1ee2a60a8d2d50b938a7699c9
 F test/indexexpr2.test 3ddd7f23bc381b9f2b7a15f2d083b1a4078e7733dce8295602ecfa3c74a34cf9
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a90c062d46c63a1e6f83064b1c5afb26a16e93b6ee8620ca46d169fdb325c488
-R 2ab1b1f8e5ebc9530c52b76f15a291b6
-U drh
-Z 27a7dde5481b6c739444d9e01daaa868
+P e4b1dd36838c4a35913b393b5aad948db9eccfb89b2cd456a0227470d7ac4a26
+R 7001c030307036685b9b708e3594e6ac
+U mistachkin
+Z ae16e3e209b500ffec3e045038713f5c
