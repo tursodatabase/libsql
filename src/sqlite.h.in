@@ -584,7 +584,7 @@ int sqlite3_exec(
 ** The SQLITE_IOCAP_BATCH_ATOMIC property means that the underlying
 ** filesystem supports doing multiple write operations atomically when those
 ** write operations are bracketed by [SQLITE_FCNTL_BEGIN_ATOMIC_WRITE] and
-** [SQLITE_FCNTL_ATOMIC_WRITE_COMMIT].
+** [SQLITE_FCNTL_COMMIT_ATOMIC_WRITE].
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002
