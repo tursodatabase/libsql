@@ -156,6 +156,11 @@ int sqlite3_value_int(sqlite3_value *pVal){
 sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
   return sqlite3VdbeIntValue((Mem*)pVal);
 }
+void *sqlite3_value_pointer(sqlite3_value *pVal){
+  Mem *p = (Mem*)pVal;
+  if( (p->flags&(MEM_TypeMask|MEM_Ptr))==(MEM_Null|MEM_Ptr) ) return p->u.pPtr;
+  return 0;
+}
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
   return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
@@ -262,6 +267,13 @@ void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
 void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetInt64(&pCtx->s, iVal);
+}
+void sqlite3_result_pointer(sqlite3_context *pCtx, void *pPtr){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
+  sqlite3VdbeMemSetNull(&pCtx->s);
+  assert( (pCtx->s.flags & (MEM_TypeMask|MEM_Ptr))==MEM_Null );
+  pCtx->s.flags |= MEM_Ptr;
+  pCtx->s.u.pPtr = pPtr;
 }
 void sqlite3_result_null(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
