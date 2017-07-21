@@ -1,5 +1,5 @@
-C Version\s3.9.2
-D 2015-11-02T18:31:45.544
+C Add\snew\sinterfaces\ssqlite3_result_pointer(),\sand\nsqlite3_value_pointer()\sand\suse\sthem\sto\stransfer\sthe\seponymous\sFTS3\scolumn\npointer\sto\sthe\ssnippet()\sand\soffsets()\sroutines.\s\sThis\schanges\sis\sa\s\ncherry-pick\sof\s[f0f49224]\swith\sversion-specific\sedits.\s\sThat\scheck-in\swas\ninspired\sby\scheck-in\s[72de49f2].
+D 2017-07-21T07:45:23.406
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e028eb13432f108d2e22cded019fc980700e4e00
+F ext/fts3/fts3.c c936a1563f41025a3e8192735776b2f9c45f5f9821293eb0b885df9cee0f0cee
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h c84125c666ee54cef6efce6ff64abb0d0e2f4535
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -345,7 +345,7 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 0bc9cd2e1cacfdc9cdc9a83884cc100f166e80a4
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
-F src/sqlite.h.in dc35357824c6bb84a04acd4e99dee3e07299a8c6
+F src/sqlite.h.in 332fccab62c1d932de51ebdfe57ddbce6e04f1c7589b6d088d031840f464009a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
 F src/sqliteInt.h e21cc96bc24161df7373f6b24367cf580496889d
@@ -408,8 +408,8 @@ F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 1e0bf8d6a2308ce916d444ef399921407fd5d972
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
-F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
-F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
+F src/vdbeInt.h 7209dc7293ef58d7a306db3ee93e63f76ab33e943ea01124b2e645023a2787d4
+F src/vdbeapi.c 4ebb5e6ad10c2ed285d126a6684999cabda6837dbc4e29a754eb9ce3eb451ecb
 F src/vdbeaux.c fd00b489ab3f44f2dca1e4344faf289b7bfcf649
 F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
 F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
@@ -1390,10 +1390,11 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c0c4b6b39648be9aa9b1e218e6d281ab17812536
-R 56b278dd241b099a55f2d39b092fbea8
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.9.2 *
+P bda77dda9697c463c3d0704014d51627fceee328
+Q +f0f492245e957f5339c5aef02716321e45c18914b9a78387e4158f87fc2d83f9
+R d9726a99cce883b83c0b86ff1601f729
+T *branch * branch-3.9.2
+T *sym-branch-3.9.2 *
+T -sym-branch-3.9 *
 U drh
-Z ea2f853532ec0d2d6055c0d00a95dc82
+Z 02632e8a008083bfd94c6f55cee630d7
