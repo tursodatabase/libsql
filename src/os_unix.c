@@ -332,6 +332,9 @@ static pid_t randomnessPid = 0;
 #define F2FS_IOC_COMMIT_ATOMIC_WRITE    _IO(F2FS_IOCTL_MAGIC, 2)
 #define F2FS_IOC_START_VOLATILE_WRITE   _IO(F2FS_IOCTL_MAGIC, 3)
 #define F2FS_IOC_ABORT_VOLATILE_WRITE   _IO(F2FS_IOCTL_MAGIC, 5)
+#define F2FS_IOC_GET_FEATURES           _IOR(F2FS_IOCTL_MAGIC, 12, u32)
+
+#define F2FS_FEATURE_ATOMIC_WRITE 0x0004
 
 
 /*
@@ -507,7 +510,7 @@ static struct unix_syscall {
 #define osLstat      ((int(*)(const char*,struct stat*))aSyscall[27].pCurrent)
 
   { "ioctl",         (sqlite3_syscall_ptr)ioctl,          0 },
-#define osIoctl ((int(*)(int,int))aSyscall[28].pCurrent)
+#define osIoctl ((int(*)(int,int,...))aSyscall[28].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -3894,12 +3897,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 static void setDeviceCharacteristics(unixFile *pFd){
   if( pFd->sectorSize==0 ){
     int res;
+    u32 f = 0;
     assert( pFd->deviceCharacteristics==0 );
 
     /* Check for support for F2FS atomic batch writes. */
-    res = osIoctl(pFd->h, F2FS_IOC_START_VOLATILE_WRITE);
-    if( res==SQLITE_OK ){
-      osIoctl(pFd->h, F2FS_IOC_ABORT_VOLATILE_WRITE);
+    res = osIoctl(pFd->h, F2FS_IOC_GET_FEATURES, &f);
+    if( res==0 && (f & F2FS_FEATURE_ATOMIC_WRITE) ){
       pFd->deviceCharacteristics = 
         SQLITE_IOCAP_BATCH_ATOMIC |
         SQLITE_IOCAP_ATOMIC |
