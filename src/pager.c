@@ -6369,6 +6369,21 @@ int sqlite3PagerCommitPhaseOne(
         sqlite3PcacheCleanAll(pPager->pPCache);
       }
     }else{
+      /* The bBatch boolean is true if the batch-atomic-write commit method
+      ** should be used.  No rollback journal is created if batch-atomic-write
+      ** is enabled.
+      */
+      sqlite3_file *fd = pPager->fd;
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+      const int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
+        && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+        && !pPager->noSync
+        && sqlite3JournalIsInMemory(pPager->jfd);
+#else
+# define bBatch 0
+#endif
+
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
       /* The following block updates the change-counter. Exactly how it
       ** does this depends on whether or not the atomic-update optimization
       ** was enabled at compile time, and if this transaction meets the 
@@ -6392,17 +6407,6 @@ int sqlite3PagerCommitPhaseOne(
       ** in 'direct' mode. In this case the journal file will never be
       ** created for this transaction.
       */
-      sqlite3_file *fd = pPager->fd;
-#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
-      const int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
-        && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
-        && pPager->journalMode!=PAGER_JOURNALMODE_MEMORY
-        && sqlite3JournalIsInMemory(pPager->jfd);
-#else
-# define bBatch 0
-#endif
-
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE
       if( bBatch==0 ){
         PgHdr *pPg;
         assert( isOpen(pPager->jfd) 

@@ -631,6 +631,15 @@
 #endif
 
 /*
+** The compile-time options SQLITE_MMAP_READWRITE and 
+** SQLITE_ENABLE_BATCH_ATOMIC_WRITE are not compatible with one another.
+** You must choose one or the other (or neither) but not both.
+*/
+#if defined(SQLITE_MMAP_READWRITE) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+#error Cannot use both SQLITE_MMAP_READWRITE and SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+#endif
+
+/*
 ** GCC does not define the offsetof() macro so we'll have to do it
 ** ourselves.
 */
