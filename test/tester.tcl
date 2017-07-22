@@ -1608,6 +1608,54 @@ proc crashsql {args} {
   lappend r $msg
 }
 
+#   crash_on_write ?-devchar DEVCHAR? CRASHDELAY SQL
+#
+proc crash_on_write {args} {
+
+  set nArg [llength $args]
+  if {$nArg<2 || $nArg%2} {
+    error "bad args: $args"
+  }
+  set zSql [lindex $args end]
+  set nDelay [lindex $args end-1]
+
+  set devchar {}
+  for {set ii 0} {$ii < $nArg-2} {incr ii 2} {
+    set opt [lindex $args $ii]
+    switch -- [lindex $args $ii] {
+      -devchar {
+        set devchar [lindex $args [expr $ii+1]]
+      }
+
+      default { error "unrecognized option: $opt" }
+    }
+  }
+
+  set f [open crash.tcl w]
+  puts $f "sqlite3_crash_on_write $nDelay"
+  puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  puts $f "sqlite3 db test.db -vfs writecrash"
+  puts $f "db eval {$zSql}"
+  puts $f "set {} {}"
+
+  close $f
+  set r [catch {
+    exec [info nameofexec] crash.tcl >@stdout
+  } msg]
+
+  # Windows/ActiveState TCL returns a slightly different
+  # error message.  We map that to the expected message
+  # so that we don't have to change all of the test
+  # cases.
+  if {$::tcl_platform(platform)=="windows"} {
+    if {$msg=="child killed: unknown signal"} {
+      set msg "child process exited abnormally"
+    }
+  }
+
+  lappend r $msg
+}
+
 proc run_ioerr_prep {} {
   set ::sqlite_io_error_pending 0
   catch {db close}

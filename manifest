@@ -1,5 +1,5 @@
-C Add\sthe\s"atomic-batch-write"\spermutation\sto\spermutations.test.\sThis\npermutation\sfails\sif\snot\srun\son\sa\sfile-system\sthat\ssupports\natomic-batch-writes.
-D 2017-07-22T16:58:47.336
+C Add\sa\stest\sfor\sthe\soutcome\sof\sa\sprocess\scrash\swithin\san\sxWrite\sVFS\smethod\ncall.
+D 2017-07-22T20:12:31.931
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -468,7 +468,7 @@ F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
-F src/test6.c 004ad42f121f693b8cbe060d1a330678abc61620
+F src/test6.c e8d839fbc552ce044bec8234561a2d5b8819b48e29548ad0ba400471697946a8
 F src/test7.c 5612e9aecf934d6df7bba6ce861fdf5ba5456010
 F src/test8.c 4f4904721167b32f7a4fa8c7b32a07a673d6cc86
 F src/test9.c 12e5ba554d2d1cbe0158f6ab3f7ffcd7a86ee4e5
@@ -481,7 +481,7 @@ F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c abf6fc1fe9d041b699578c42e3db81f8831c4f5b804f1927958102ee8f2b773e
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
-F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
+F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
 F src/test_fs.c 35a2f7dd8a915900873386331386d9ba1ae1b5026d74fd20c2807bc76221f291
 F src/test_func.c a4fdab3363b436c1b12660e9362ce3f3782b7b5e
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
@@ -1246,7 +1246,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 581f0185434daf7026ccede4c07e8d1479186ec5
+F test/tester.tcl eb7ec55fe074a909423c1de701f7c545417b8aa96787b8c3e7a79203f2cebec8
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1542,6 +1542,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 06efb84b7c48a4973c2c24ea06c93d00bce24389
+F test/writecrash.test e6dc9d470d43710c3f780a50d29cce1c3884ca34ff50e737bc9ab8724c7c2398
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1637,7 +1638,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2e80e19e4faac30947ed56aa3601c45c758cafb27f84780df255fdbcdc9a6999
-R f3cc9474e40dfdafd1378160ccb50876
+P 9f1b83fae9c973eee80eefefe7bd3a1eb7bba8af4cd919d7a2ce911900dd9087
+R f23da5f714bc905d7cb0056ef392fdf9
 U dan
-Z e9e3d5840c0aa48b88a9ce806cb1e69e
+Z 063d069885d7a39f9c6cf058832bceb7
