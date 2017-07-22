@@ -6399,7 +6399,7 @@ int sqlite3PagerCommitPhaseOne(
         && pPager->journalMode!=PAGER_JOURNALMODE_MEMORY
         && sqlite3JournalIsInMemory(pPager->jfd);
 #else
-      const int bBatch = 0;
+# define bBatch 0
 #endif
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE

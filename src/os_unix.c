@@ -327,14 +327,18 @@ static pid_t randomnessPid = 0;
 # define lseek lseek64
 #endif
 
+#ifdef __linux__
+/*
+** Linux-specific IOCTL magic numbers used for controlling F2FS
+*/
 #define F2FS_IOCTL_MAGIC        0xf5
 #define F2FS_IOC_START_ATOMIC_WRITE     _IO(F2FS_IOCTL_MAGIC, 1)
 #define F2FS_IOC_COMMIT_ATOMIC_WRITE    _IO(F2FS_IOCTL_MAGIC, 2)
 #define F2FS_IOC_START_VOLATILE_WRITE   _IO(F2FS_IOCTL_MAGIC, 3)
 #define F2FS_IOC_ABORT_VOLATILE_WRITE   _IO(F2FS_IOCTL_MAGIC, 5)
 #define F2FS_IOC_GET_FEATURES           _IOR(F2FS_IOCTL_MAGIC, 12, u32)
-
 #define F2FS_FEATURE_ATOMIC_WRITE 0x0004
+#endif /* __linux__ */
 
 
 /*
@@ -3789,6 +3793,7 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
+#if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
     case SQLITE_FCNTL_BEGIN_ATOMIC_WRITE: {
       int rc = osIoctl(pFile->h, F2FS_IOC_START_ATOMIC_WRITE);
       return rc ? SQLITE_ERROR : SQLITE_OK;
@@ -3801,6 +3806,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       int rc = osIoctl(pFile->h, F2FS_IOC_ABORT_VOLATILE_WRITE);
       return rc ? SQLITE_ERROR : SQLITE_OK;
     }
+#endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
@@ -3895,10 +3901,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 */
 #ifndef __QNXNTO__
 static void setDeviceCharacteristics(unixFile *pFd){
+  assert( pFd->deviceCharacteristics==0 || pFd->sectorSize!=0 );
   if( pFd->sectorSize==0 ){
+#if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
     int res;
     u32 f = 0;
-    assert( pFd->deviceCharacteristics==0 );
 
     /* Check for support for F2FS atomic batch writes. */
     res = osIoctl(pFd->h, F2FS_IOC_GET_FEATURES, &f);
@@ -3909,6 +3916,7 @@ static void setDeviceCharacteristics(unixFile *pFd){
         SQLITE_IOCAP_SEQUENTIAL |
         SQLITE_IOCAP_SAFE_APPEND;
     }
+#endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 
     /* Set the POWERSAFE_OVERWRITE flag if requested. */
     if( pFd->ctrlFlags & UNIXFILE_PSOW ){
