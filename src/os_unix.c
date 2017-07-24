@@ -3777,8 +3777,28 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
+    case SQLITE_FCNTL_SERVER_MODE: {
+      int rc = SQLITE_OK;
+      int eServer = 0;
+      if( pFile->ctrlFlags | UNIXFILE_EXCL ){
+        char *zJrnl = sqlite3_mprintf("%s-journal", pFile->zPath);
+        if( zJrnl==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          struct stat buf;        /* Used to hold return values of stat() */
+          if( osStat(zJrnl, &buf) ){
+            rc = SQLITE_IOERR_FSTAT;
+          }else{
+            eServer = ((buf.st_mode & S_IFDIR) ? 1 : 0);
+          }
+        }
+        sqlite3_free(zJrnl);
+      }
+      *((int*)pArg) = eServer;
+      return rc;
+    }
     case SQLITE_FCNTL_FILEID: {
-      i64 *aId = (i64)pArg;
+      i64 *aId = (i64*)pArg;
       aId[0] = (i64)(pFile->pInode->fileId.dev);
       aId[1] = (i64)(pFile->pInode->fileId.ino);
       return SQLITE_OK;
@@ -5630,6 +5650,15 @@ static int findCreateFileMode(
     zDb[nDb] = '\0';
 
     rc = getFileMode(zDb, pMode, pUid, pGid);
+#ifdef SQLITE_SERVER_EDITION
+    if( rc==SQLITE_IOERR_FSTAT ){
+      while( nDb && zDb[nDb]!='/' ) nDb--;
+      if( nDb>8 && memcmp("-journal/", &zDb[nDb-8], 9)==0 ){
+        zDb[nDb-8] = '\0';
+        rc = getFileMode(zDb, pMode, pUid, pGid);
+      }
+    }
+#endif
   }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
     *pMode = 0600;
   }else if( flags & SQLITE_OPEN_URI ){

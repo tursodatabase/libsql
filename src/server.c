@@ -247,7 +247,7 @@ static int serverInitDatabase(Server *pNew){
       int bExists = 0;
       ServerJournal *pJ = &pDb->aJrnl[i];
       pJ->jfd = (sqlite3_file*)&a[ROUND8(pVfs->szOsFile)*i];
-      pJ->zJournal = sqlite3_mprintf("%s-journal%d", zFilename, i);
+      pJ->zJournal = sqlite3_mprintf("%s-journal/%d-journal", zFilename, i);
       if( pJ->zJournal==0 ){
         rc = SQLITE_NOMEM_BKPT;
         break;

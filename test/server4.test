@@ -19,9 +19,13 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-set testprefix server3
+set testprefix server4
 
-sqlite3 db2 test.db
+source $testdir/server_common.tcl
+return_if_no_server
+
+server_reset_db
+server_sqlite3 db2 test.db
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(x);
@@ -56,7 +60,6 @@ do_execsql_test -db db2 1.4 {
   ROLLBACK;
   SELECT * FROM t1;
 } {1 2 3}
-
 
 finish_test
 

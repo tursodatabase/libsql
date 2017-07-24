@@ -17,6 +17,9 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix server2
 
+source $testdir/server_common.tcl
+return_if_no_server
+
 db close
 foreach f [glob -nocomplain test.db*] {
   forcedelete $f
@@ -25,26 +28,26 @@ foreach f [glob -nocomplain test.db*] {
 #-------------------------------------------------------------------------
 # Check that the *-journal* files are deleted correctly.
 #
-reset_db
+server_reset_db
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
 } {}
 
 do_test 1.1 {
-  lsort [glob test.db*]
-} {test.db test.db-journal0}
+  lsort [glob -nocomplain test.db-journal/*]
+} {test.db-journal/0-journal}
 
 do_test 1.2 {
   db close
-  lsort [glob test.db*]
-} {test.db}
+  lsort [glob -nocomplain test.db-journal/*]
+} {}
 
-sqlite3 db test.db
+server_sqlite3 db test.db
 do_execsql_test 1.3 {
   CREATE TABLE t2(a, b);
 } {}
 
-sqlite3 db2 test.db
+server_sqlite3 db2 test.db
 do_test 1.4 {
   db eval {
     BEGIN;
@@ -59,23 +62,23 @@ do_test 1.4 {
 do_test 1.5 {
   db2 eval COMMIT
   db eval COMMIT
-  lsort [glob test.db*]
-} {test.db test.db-journal0 test.db-journal1}
+  lsort [glob -nocomplain test.db-journal/*]
+} {test.db-journal/0-journal test.db-journal/1-journal}
 
 do_test 1.6 {
   db close
-  lsort [glob test.db*]
-} {test.db test.db-journal0 test.db-journal1}
+  lsort [glob -nocomplain test.db-journal/*]
+} {test.db-journal/0-journal test.db-journal/1-journal}
 
 do_test 1.7 {
   db2 close
-  lsort [glob test.db*]
-} {test.db}
+  lsort [glob -nocomplain test.db-journal/*]
+} {}
 
 #-------------------------------------------------------------------------
 #
-reset_db
-sqlite3 db2 test.db
+server_reset_db
+server_sqlite3 db2 test.db
 
 do_execsql_test 2.0 {
   CREATE TABLE t1(a, b);
@@ -95,14 +98,14 @@ do_test 2.1 {
   }
 } {}
 do_test 2.2 {
-  lsort [glob test.db*]
-} {test.db test.db-journal0 test.db-journal1}
+  lsort [glob -nocomplain test.db-journal/*]
+} {test.db-journal/0-journal test.db-journal/1-journal}
 do_test 2.3.1 { db eval COMMIT  } {}
 do_test 2.3.2 { db2 eval COMMIT } {}
 do_execsql_test 2.4 {SELECT * FROM t1, t2} {1 2 3 4}
 do_test 2.5 {
-  lsort [glob test.db*]
-} {test.db test.db-journal0 test.db-journal1}
+  lsort [glob -nocomplain test.db-journal/*]
+} {test.db-journal/0-journal test.db-journal/1-journal}
 
 do_test 2.6 {
   execsql {BEGIN}
@@ -123,19 +126,18 @@ db2 close
 
 #-------------------------------------------------------------------------
 #
-reset_db
+server_reset_db
 do_execsql_test 3.0 {
   CREATE TABLE t1(a, b);
 }
 
 do_test 3.1 {
-  glob test.db*
-} {test.db-journal0 test.db}
+  lsort [glob -nocomplain test.db-journal/*]
+} {test.db-journal/0-journal}
 
 do_test 3.2 {
   db close
-  glob test.db*
-} {test.db}
-
+  lsort [glob -nocomplain test.db-journal/*]
+} {}
 finish_test
 

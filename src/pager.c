@@ -5066,7 +5066,7 @@ static int databaseIsUnmoved(Pager *pPager){
 ** to determine whether or not a hot-journal file exists, the IO error
 ** code is returned and the value of *pExists is undefined.
 */
-static int hasHotJournal(Pager *pPager, int *pExists){
+static int hasHotJournal(Pager *pPager, int *pExists, int *peServer){
   sqlite3_vfs * const pVfs = pPager->pVfs;
   int rc = SQLITE_OK;           /* Return code */
   int exists = 1;               /* True if a journal file is present */
@@ -5086,6 +5086,13 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   }
   if( rc==SQLITE_OK && exists ){
     int locked = 0;             /* True if some process holds a RESERVED lock */
+
+#ifdef SQLITE_SERVER_EDITION
+    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SERVER_MODE, peServer);
+    if( rc!=SQLITE_NOTFOUND ){
+      if( rc!=SQLITE_OK || *peServer ) return rc;
+    }
+#endif
 
     /* Race condition here:  Another process might have been holding the
     ** the RESERVED lock and have a journal open at the sqlite3OsAccess() 
@@ -5200,12 +5207,9 @@ void sqlite3PagerServerJournal(
   sqlite3_file *jfd,
   const char *zJournal
 ){
-  pPager->zJournal = zJournal;
+  pPager->zJournal = (char*)zJournal;
   pPager->jfd = jfd;
 }
-
-#else
-# define pagerServerConnect(pPager) SQLITE_OK
 #endif
 
 
@@ -5238,6 +5242,9 @@ void sqlite3PagerServerJournal(
 */
 int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
   int rc = SQLITE_OK;                /* Return code */
+#ifdef SQLITE_SERVER_EDITION
+  int eServer = 0;
+#endif
 
   /* This routine is only called from b-tree and only when there are no
   ** outstanding pages. This implies that the pager state should either
@@ -5266,7 +5273,8 @@ int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
     ** database file, then it either needs to be played back or deleted.
     */
     if( pPager->eLock<=SHARED_LOCK ){
-      rc = hasHotJournal(pPager, &bHotJournal);
+      rc = hasHotJournal(pPager, &bHotJournal, &eServer);
+      assert( bHotJournal==0 || eServer==0 );
     }
     if( rc!=SQLITE_OK ){
       goto failed;
@@ -5399,6 +5407,7 @@ int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
         if( rc!=SQLITE_IOERR_SHORT_READ ){
           goto failed;
         }
+        rc = SQLITE_OK;
         memset(dbFileVers, 0, sizeof(dbFileVers));
       }
 
@@ -5417,7 +5426,11 @@ int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
       }
     }
 
-    rc = pagerServerConnect(pPager);
+#ifdef SQLITE_SERVER_EDITION
+    if( eServer ){
+      rc = pagerServerConnect(pPager);
+    }
+#endif
 
     /* If there is a WAL file in the file-system, open this database in WAL
     ** mode. Otherwise, the following function call is a no-op.
@@ -5434,6 +5447,7 @@ int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
   if( pagerIsServer(pPager) ){
     assert( rc==SQLITE_OK );
     assert( sqlite3PagerRefcount(pPager)==0 );
+    assert( pagerUseWal(pPager)==0 );
     pager_reset(pPager);
     rc = sqlite3ServerBegin(pPager->pServer, bReadonly);
     if( rc==SQLITE_OK ){
@@ -7734,6 +7748,7 @@ int sqlite3PagerIsServer(Pager *pPager){
   return pagerIsServer(pPager);
 }
 int sqlite3PagerPagelock(Pager *pPager, Pgno pgno, int bWrite){
+  if( pagerIsServer(pPager)==0 ) return SQLITE_OK;
   return sqlite3ServerLock(pPager->pServer, pgno, bWrite, 0);
 }
 #endif

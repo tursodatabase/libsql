@@ -11,8 +11,7 @@
 # This file implements regression tests for SQLite library.  
 #
 # The focus of this script is testing the server mode of SQLite.
-# Specifically, that "BEGIN READONLY" starts a read-only MVCC
-# transaction.
+# Specifically, that "PRAGMA freelist_format" works.
 #
 
 
@@ -23,10 +22,6 @@ set testprefix server5
 do_execsql_test 1.0 {
   PRAGMA freelist_format;
 } {1}
-
-explain_i {
-  PRAGMA freelist_format = 2;
-}
 
 do_execsql_test 1.1 {
   PRAGMA freelist_format = 2;
@@ -56,8 +51,6 @@ do_execsql_test 1.6 {
 do_execsql_test 1.6 {
   PRAGMA freelist_format = 1;
 } {2}
-
-
 
 finish_test
 
