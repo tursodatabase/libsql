@@ -1,5 +1,5 @@
-C Compiler\swarning\sfix\sassociated\swith\sdate/time\sfunctions.
-D 2017-07-24T14:44:15.392
+C Additional\sdocumentation\son\ssqlite3_bind_pointer()\sand\ssqlite3_result_pointer().\nNo\schanges\sto\scode.
+D 2017-07-24T15:29:16.514
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in e2ffa1f15c936902489a4001fba9800ddf3d09fef19c9ca4fbd9e7df39106998
+F src/sqlite.h.in 6832630003ce858f55c750181488f30aa167870110d843035e501729a6a1c4cf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
 F src/sqliteInt.h bd6be75bc43d38ada272ef0b3472bc44ef0cc15536bea22c349ca1a2812a19ce
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8de20fc72a9b55fabd2444b2d73c88c65658430d6d182da9f0e2f3432373ab51
-R c47c127faead812067651b83dada496e
+P a98f07d942f0b8cc15da57b84e6340efae72ff19516fa04624242240af43a697
+R 53c56e6d1f80b263bf3b224af65051a5
 U drh
-Z 6eb598623a458a3c2381353cdc4ead00
+Z c6c0754087fd0fc30d2a18fe11c0daa6
