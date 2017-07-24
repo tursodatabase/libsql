@@ -3648,7 +3648,7 @@ int sqlite3_prepare16_v3(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
-  unsigned int prepFalgs, /* Zero or more SQLITE_PREPARE_ flags */
+  unsigned int prepFlags, /* Zero or more SQLITE_PREPARE_ flags */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
@@ -3893,7 +3893,12 @@ typedef struct sqlite3_context sqlite3_context;
 ** host-language pointers into [application-defined SQL functions].
 ** ^A parameter that is initialized using [sqlite3_bind_pointer()] appears
 ** to be an ordinary SQL NULL value to everything other than
-** [sqlite3_value_pointer()].  The T parameter should be a static string.
+** [sqlite3_value_pointer()].  The T parameter should be a static string,
+** preferably a string literal.  The procedure that invokes 
+** sqlite3_bind_pointer(S,I,P,T) continues to own the P and T pointers and
+** must guarantee that those pointers remain valid until after the last
+** access via [sqlite3_value_pointer()].  The sqlite3_bind_pointer() routine
+** is part of the [pointer passing interface] added for SQLite 3.20.0.
 **
 ** ^If any of the sqlite3_bind_*() routines are called with a NULL pointer
 ** for the [prepared statement] or with a prepared statement for which
@@ -5104,9 +5109,12 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** also associates the host-language pointer P or type T with that 
 ** NULL value such that the pointer can be retrieved within an
 ** [application-defined SQL function] using [sqlite3_value_pointer()].
-** The T parameter should be a static string.
-** This mechanism can be used to pass non-SQL values between
-** application-defined functions.
+** The T parameter should be a static string and preferably a string
+** literal. The procedure that invokes sqlite3_result_pointer(C,P,T)
+** continues to own the P and T pointers and must guarantee that 
+** those pointers remain valid until after the last access via
+** [sqlite3_value_pointer()].  The sqlite3_result_pointer() routine
+** is part of the [pointer passing interface] added for SQLite 3.20.0.
 **
 ** If these routines are called from within the different thread
 ** than the one containing the application-defined function that received
