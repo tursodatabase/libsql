@@ -331,6 +331,9 @@ if {$::tcl_platform(pointerSize)>=8} {
       # integer overflow.
       sqlite3_blob_read $rdHandle 2147483647 2147483647
     } errmsg]
+    if {[string match {out of memory in *test_blob.c} $errmsg]} {
+      set errmsg SQLITE_ERROR
+    }
     lappend rc $errmsg
   } {1 SQLITE_ERROR}
 }

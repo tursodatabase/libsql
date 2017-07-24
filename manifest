@@ -1,5 +1,5 @@
-C Additional\sdocumentation\son\ssqlite3_bind_pointer()\sand\ssqlite3_result_pointer().\nNo\schanges\sto\scode.
-D 2017-07-24T15:29:16.514
+C Handle\sa\sreal\sOOM\scondition\swhen\sincrblob2.test\sis\srun\son\sa\slow-memory\smachine.
+D 2017-07-24T17:37:35.310
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -476,7 +476,7 @@ F src/test_async.c 195ab49da082053fdb0f949c114b806a49ca770a
 F src/test_autoext.c 915d245e736652a219a907909bb6710f0d587871
 F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
-F src/test_blob.c f65ac717da2618691cf9dad094e6da0219dcd208
+F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c abf6fc1fe9d041b699578c42e3db81f8831c4f5b804f1927958102ee8f2b773e
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
@@ -916,7 +916,7 @@ F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
 F test/in5.test 7ae37fcd4a5e198291c6ab5f31a5bb3d15397efe8b75a6736d7a95a7b8dd9e08
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
-F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
+F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
 F test/incrblob4.test 21a52a6843a56cdcce968c6a86b72a7066d0e6ba
 F test/incrblob_err.test 69f9247fed50278d48ea710d1a8f9cdb09e4c0b8
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a98f07d942f0b8cc15da57b84e6340efae72ff19516fa04624242240af43a697
-R 53c56e6d1f80b263bf3b224af65051a5
+P b1572d4e05934a0dc1b73092acba652fa50e97552eb6e9a1cedea7c71055804b
+R 4e06a39bce0ddc1c556d18546b567a43
 U drh
-Z c6c0754087fd0fc30d2a18fe11c0daa6
+Z 9cf5ff97492597ebd137410bcef84638
