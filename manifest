@@ -1,5 +1,5 @@
-C Handle\sa\sreal\sOOM\scondition\swhen\sincrblob2.test\sis\srun\son\sa\slow-memory\smachine.
-D 2017-07-24T17:37:35.310
+C Do\snot\sattempt\sto\srun\stest\sfile\sunionvtab.test\swith\sSQLITE_OMIT_VIRTUAL_TABLE\nbuilds.
+D 2017-07-24T19:25:45.058
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1433,7 +1433,7 @@ F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
-F test/unionvtab.test 3cb7463d8c6a34ae7c043e53103d63d19465a1488f4587a981ae05e978cc6d26
+F test/unionvtab.test 595fb601de00188ca5e7c6dbe266c17a0faf234cf434ce85eccec1a929ef9baf
 F test/unionvtabfault.test ccb87c510efd0da88d90d813cfaeebe69f2be78cdfbdc3343b04fd9fc507d887
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1572d4e05934a0dc1b73092acba652fa50e97552eb6e9a1cedea7c71055804b
-R 4e06a39bce0ddc1c556d18546b567a43
-U drh
-Z 9cf5ff97492597ebd137410bcef84638
+P f483d06a9af8d6771090551d911831e1df13bb05a6b7780499594703c28ebbb2
+R 2a745c1028a0ce2fad11558d39a05f20
+U dan
+Z 0f7aa33b3a0c26040baa0907ebe928a3
