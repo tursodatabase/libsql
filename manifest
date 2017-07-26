@@ -1,5 +1,5 @@
-C Fix\sa\scomment\son\sthe\sUnpackedRecord.r1\sand\sUnpackedRecord.r2\sfields.\nNo\schanges\sto\scode.
-D 2017-07-26T10:04:51.472
+C Allow\sATTACH\sand\sDETACH\sto\soccur\sinside\sof\sa\stransaction.
+D 2017-07-26T18:26:44.412
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -390,7 +390,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 850ede4e607f12fa25ea4f3cb6ece2b2e29d1aa50e3f786ce49d615788849552
 F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
-F src/attach.c 3bd555e28382603e80d430dfebb2270f86e1e375b4c4be3e1ab1aec3a0c44943
+F src/attach.c 07b706e336fd3cedbd855e1f8266d10e82fecae07daf86717b5760cd7784c584
 F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -573,7 +573,7 @@ F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/attach.test f4b8918ba2f3e88e6883b8452340545f10a1388af808343c37fc5c577be8281c
-F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
+F test/attach2.test 567047a7607aae8ebb3794642ebb168abe66b4af366fcd0cf7f616a1495cd43f
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
@@ -1131,7 +1131,7 @@ F test/rowvalue9.test d8dd2c6ecac432dadaa79e41dc2434f007be1b6b
 F test/rowvaluefault.test 7cd9ccc6c2fbdd881672984087aad0491bb75504
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
-F test/savepoint.test c671fdbd34cd3bfe1518a777526ada595180cf8d
+F test/savepoint.test 1f8a6b1aea9a0d05837adc463d4bf47bd9d0f1c842f1c2a9caccd639baf34bf9
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
@@ -1637,7 +1637,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ca707a4fb8db7aa85430413164265607ce727fc8a5afc3424b3abfb59921b39
-R ef45dd313669ead46fc91ee2c542a47e
+P 622b108915c7982b29ca9920abde941fff55234b70af9ac4122e4827b35d985c
+R c8a5d4e1b277f24239b70c74c58b2a5c
+T *branch * attach-in-trans
+T *sym-attach-in-trans *
+T -sym-trunk *
 U drh
-Z 87bff43b0188a51b1508e2de7ded1aaf
+Z 1f8b86f42dfa6db3f69a52ef8e583d3f
