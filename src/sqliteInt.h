@@ -1316,7 +1316,8 @@ struct sqlite3 {
   sqlite3_mutex *mutex;         /* Connection mutex */
   Db *aDb;                      /* All backends */
   int nDb;                      /* Number of backends currently in use */
-  int flags;                    /* Miscellaneous flags. See below */
+  u32 mDbFlags;                 /* flags recording internal state */
+  u32 flags;                    /* flags settable by pragmas. See below */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 szMmap;                   /* Default mmap_size setting */
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
@@ -1470,18 +1471,13 @@ struct sqlite3 {
 #define SQLITE_ForeignKeys    0x00004000  /* Enforce foreign key constraints  */
 #define SQLITE_AutoIndex      0x00008000  /* Enable automatic indexes */
 #define SQLITE_LoadExtension  0x00010000  /* Enable load_extension */
-#define SQLITE_EnableTrigger  0x00020000  /* True to enable triggers */
-#define SQLITE_DeferFKs       0x00040000  /* Defer all FK constraints */
-#define SQLITE_QueryOnly      0x00080000  /* Disable database changes */
-#define SQLITE_CellSizeCk     0x00100000  /* Check btree cell sizes on load */
-#define SQLITE_Fts3Tokenizer  0x00200000  /* Enable fts3_tokenizer(2) */
-#define SQLITE_EnableQPSG     0x00400000  /* Query Planner Stability Guarantee */
-/* The next four values are not used by PRAGMAs or by sqlite3_dbconfig() and
-** could be factored out into a separate bit vector of the sqlite3 object. */
-#define SQLITE_InternChanges  0x00800000  /* Uncommitted Hash table changes */
-#define SQLITE_LoadExtFunc    0x01000000  /* Enable load_extension() SQL func */
-#define SQLITE_PreferBuiltin  0x02000000  /* Preference to built-in funcs */
-#define SQLITE_Vacuum         0x04000000  /* Currently in a VACUUM */
+#define SQLITE_LoadExtFunc    0x00020000  /* Enable load_extension() SQL func */
+#define SQLITE_EnableTrigger  0x00040000  /* True to enable triggers */
+#define SQLITE_DeferFKs       0x00080000  /* Defer all FK constraints */
+#define SQLITE_QueryOnly      0x00100000  /* Disable database changes */
+#define SQLITE_CellSizeCk     0x00200000  /* Check btree cell sizes on load */
+#define SQLITE_Fts3Tokenizer  0x00400000  /* Enable fts3_tokenizer(2) */
+#define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee */
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
 #define SQLITE_SqlTrace       0x08000000  /* Debug print SQL as it executes */
@@ -1491,6 +1487,12 @@ struct sqlite3 {
 #define SQLITE_VdbeEQP        0x80000000  /* Debug EXPLAIN QUERY PLAN */
 #endif
 
+/*
+** Allowed values for sqlite3.mDbFlags
+*/
+#define DBFLAG_SchemaChange   0x0001  /* Uncommitted Hash table changes */
+#define DBFLAG_PreferBuiltin  0x0002  /* Preference to built-in funcs */
+#define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the

@@ -130,7 +130,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
-  int saved_flags;        /* Saved value of the db->flags */
+  u16 saved_mDbFlags;     /* Saved value of db->mDbFlags */
+  u32 saved_flags;        /* Saved value of db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
   u8 saved_mTrace;        /* Saved trace settings */
@@ -153,11 +154,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   ** restored before returning. Then set the writable-schema flag, and
   ** disable CHECK and foreign key constraints.  */
   saved_flags = db->flags;
+  saved_mDbFlags = db->mDbFlags;
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   saved_mTrace = db->mTrace;
-  db->flags |= (SQLITE_WriteSchema | SQLITE_IgnoreChecks
-                 | SQLITE_PreferBuiltin | SQLITE_Vacuum);
+  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
+  db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder | SQLITE_CountRows);
   db->mTrace = 0;
 
@@ -268,8 +270,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
       "WHERE type='table'AND coalesce(rootpage,1)>0",
       zDbMain
   );
-  assert( (db->flags & SQLITE_Vacuum)!=0 );
-  db->flags &= ~SQLITE_Vacuum;
+  assert( (db->mDbFlags & DBFLAG_Vacuum)!=0 );
+  db->mDbFlags &= ~DBFLAG_Vacuum;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Copy the triggers, views, and virtual tables from the main database
@@ -337,6 +339,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
 end_of_vacuum:
   /* Restore the original value of db->flags */
   db->init.iDb = 0;
+  db->mDbFlags = saved_mDbFlags;
   db->flags = saved_flags;
   db->nChange = saved_nChange;
   db->nTotalChange = saved_nTotalChange;
