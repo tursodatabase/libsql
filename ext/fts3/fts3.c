@@ -3353,7 +3353,8 @@ static int fts3ColumnMethod(
   switch( iCol-p->nColumn ){
     case 0:
       /* The special 'table-name' column */
-      sqlite3_result_pointer(pCtx, pCsr, "fts3cursor");
+      pCsr->iMagic = FTS3_CURSOR_MAGIC;
+      sqlite3_result_blob(pCtx, pCsr, 0, SQLITE_STATIC);
       break;
 
     case 1:
@@ -3572,8 +3573,13 @@ static int fts3FunctionArg(
   Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
   int rc;
-  *ppCsr = (Fts3Cursor*)sqlite3_value_pointer(pVal, "fts3cursor");
-  if( (*ppCsr)!=0 ){
+  Fts3Cursor *pCur;
+  if( sqlite3_value_type(pVal)==SQLITE_BLOB
+   && sqlite3_value_bytes(pVal)==0
+   && (pCur = (Fts3Cursor*)sqlite3_value_blob(pVal))!=0
+   && pCur->iMagic==FTS3_CURSOR_MAGIC
+  ){
+    *ppCsr = pCur;
     rc = SQLITE_OK;
   }else{
     char *zErr = sqlite3_mprintf("illegal first argument to %s", zFunc);

@@ -291,12 +291,18 @@ struct Fts3Table {
 };
 
 /*
+** Magic number for cursors
+*/
+#define FTS3_CURSOR_MAGIC  0x2f621809
+
+/*
 ** When the core wants to read from the virtual table, it creates a
 ** virtual table cursor (an instance of the following structure) using
 ** the xOpen method. Cursors are destroyed using the xClose method.
 */
 struct Fts3Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
+  u32 iMagic;                     /* Magic number to prove identity */
   i16 eSearch;                    /* Search strategy (see below) */
   u8 isEof;                       /* True if at End Of Results */
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */

@@ -175,7 +175,7 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
       return 0;
     }
     p->flags |= MEM_Blob;
-    return p->n ? p->z : 0;
+    return p->z; // p->n ? p->z : 0;
   }else{
     return sqlite3_value_text(pVal);
   }

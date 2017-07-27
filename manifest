@@ -1,5 +1,5 @@
-C Release\scandidate\s2\sfor\s3.20.0.
-D 2017-07-25T15:12:01.300
+C A\sdemonstration\sof\show\sFTS3\scursor\spointers\scan\sbe\spassed\sfrom\sthe\sMATCH\noperator\sto\sthe\ssnippet()\sfunction\ssecurely\sand\sopaquely\swithout\shaving\sto\nuse\sthe\ssqlite3_result_pointer()\sand\ssqlite3_value_pointer()\sinterfaces.
+D 2017-07-27T14:04:57.895
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -70,9 +70,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c dfda8bb464d229785e0528fcf7017b4f8e95656d40d28333dfc3f3363bbe229e
+F ext/fts3/fts3.c 53413c372cea7d4abd5806fba05633297186a3386af84389d6f8c6b3fad78458
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
+F ext/fts3/fts3Int.h f4ee63932f52cfcd879ec2689db53bd814ab2cf40705b65e6035756fdf5f8929
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c dfd571a24412779ac01f25c01d888c6ef7b2d0ef
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -523,7 +523,7 @@ F src/vacuum.c 874c0f2f15ab2908748297d587d22d485ea96d55aaec91d4775dddb2e24d2ecf
 F src/vdbe.c 1e541ec7ff409bbabcc6b4f154957296fff5827c16c2ab0056348acae75685bf
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 19bd04a4211fe56c712ab35b48be77fd5a0579b851e9dea2cb8deade359b72b9
-F src/vdbeapi.c 52844a5a71712197be45f1c63d730c48a745c7457c959465cfb2b969af40a266
+F src/vdbeapi.c 76f27963126d783870abf5de217dfaf91bd70c707c8b447baaa20a062e4540aa
 F src/vdbeaux.c 3fe68bad02b33b09e08bdc0ad90d6b92b3d571f7864c3d047abca1bde050751c
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c fe8fce1cdc258320b465934039fe4b1230d63f81d6b81b1eac775b6eec00af0d
@@ -1637,10 +1637,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ca707a4fb8db7aa85430413164265607ce727fc8a5afc3424b3abfb59921b39
-R 8215cf089e6d9a2d7dcbd4ee22b67db3
-T *branch * branch-3.20
-T *sym-branch-3.20 *
-T -sym-trunk *
+P f39cb76b3347baba22f2c329e74036710b64620414433a952de8d44da79ba8d9
+R a4a62cb6a7f2290ef2555668a3193a2f
+T *branch * pass-pointer-as-blob
+T *sym-pass-pointer-as-blob *
+T -sym-branch-3.20 *
 U drh
-Z b5d895badf8b9b6a24951d6f900b8c5d
+Z 70b61007553b6d483f2854327b45d019
