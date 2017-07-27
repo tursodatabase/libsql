@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.21.0\sin\santicipation\sfor\schanges\sto\sgo\ninto\sthe\snext\srelease.
-D 2017-07-27T19:59:37.092
+C Enhance\sthe\slike\soptimization\sso\sthat\sit\sworks\swith\san\sESCAPE\sclause.
+D 2017-07-27T20:24:29.258
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -408,7 +408,7 @@ F src/delete.c 939bd15e6b54b82b951e1c0ffc2ff2b4ab579196780a1f6d394e47bd6f799b6c
 F src/expr.c fdb2fc465cabbf372fecad1fc2b291758bec74150b4db0fb945332e09df28a0e
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
-F src/func.c e2854b19386b93ad6b498a3f3b7d6baa98ec14cfe84530fb12fce4414263d871
+F src/func.c ed8888ae80b39f5a5d403954e4a05e0a38303523dff8143161439c142d31dec1
 F src/global.c 8a6ab6b4d91effb96ffa81b39f0d70c862abca157f8aaa194600a4a8b7923344
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -536,8 +536,8 @@ F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c cbe8ddffbcec7ce86f7a800fe8fd10aee412c76c87e0dd3732a1682e68d74cd9
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
-F src/wherecode.c c0c4c31573486cd14bb2cbfc63e41eda591609e5190416261999f211bf97abc1
-F src/whereexpr.c bf983d2d33e325cd63a36c40b8de289fd3d7b4d9f2db9052fb8f59f7161a34a0
+F src/wherecode.c e7be3b7f4c11908500cdf02b299d190d3742659533f58e0f4047962fdb5a48da
+F src/whereexpr.c 35d8b33afeedb8009fcd7211e1c848587578b345da93dbed69edc88dffe64c35
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -978,7 +978,7 @@ F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c d2b8cfc91047ebf6cac4f3a04f19c3a864e4ecfd683bbb65c395df450b8dc79c
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 3d26ae14d7042a0e96f7b0b9e9ad2c8ca6ed122772439c6b1c691fe167e15a37
+F test/like.test 67d7431c9b664254febce9e90fd2f47c7c75c8b38444e2a50ef9ec2776b84ca8
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c63903a4c5d52a490e3f26707aa85fb54d4e2e8a3ce31ca26a9c615fe7a51e97
-R 5a42c475618e9f2714e570b08be1a322
+P 0645f25c79c1b2af1fd3a02b44090329d456e373d91f6c284b8fbcb929e03a5d
+R a1b40de685cc5a3c342ce6c1e88c465d
 U drh
-Z 1ea8d09db2863a7a57318d9127cb53ba
+Z 1c2383ec54a238a2bc71d05955866da3
