@@ -1,5 +1,5 @@
-C Version\s3.19.3
-D 2017-06-08T14:26:16.283
+C Do\snow\sallow\sthe\sgeometry\sobject\sin\sthe\sright\soperand\sof\sa\sMATCH\soperator\sin\nthe\sRTREE\sextension\sto\sbe\sinpersonated\sby\sa\sBLOB\sliteral.
+D 2017-07-27T00:27:57.692
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -273,7 +273,7 @@ F ext/rbu/sqlite3rbu.c 2a89efba9eeba8e6c89a498dc195e8efbdde2694
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 8205d6e4466f766e57ce1b8aa38224ac9e1cec2d2bf4684cd1cc5a6ddf9b7014
+F ext/rtree/rtree.c 497a3040fdb41ba0cc04434b434a6b9e7b0ece78b2de5f9544b60b646a8e5aaa
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test d5f0ba215b3bd1d05269ada86e74073b8445852aa0d33a63e10ec63a09c39473
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1580,10 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97b5c4a53d0af3792c5ae5ceafdb02245f841c2bd4d79bcfd0ffdf6c5ff27c9e
-R b94272eb5bee6b36b4ac20fd561bc415
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.19.3 *
+P 0ee482a1e0eae22e08edc8978c9733a96603d4509645f348ebf55b579e89636b
+R 5aba315ce772ced25c1b87936307ec42
 U drh
-Z 0ee14e0381c757607413d6046358676f
+Z c0ec9b17a9a0e51afaa3dc2485cf6a08

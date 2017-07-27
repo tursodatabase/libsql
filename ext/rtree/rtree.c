@@ -346,6 +346,7 @@ struct RtreeGeomCallback {
 ** value to avoid operating on invalid blobs (which could cause a segfault).
 */
 #define RTREE_GEOMETRY_MAGIC 0x891245AB
+#define RTREE_GEOMETRY_SUBTYPE 0x52
 
 /*
 ** An instance of this structure (in the form of a BLOB) is returned by
@@ -1655,7 +1656,11 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   int nExpected;                     /* Expected size of the BLOB */
 
   /* Check that value is actually a blob. */
-  if( sqlite3_value_type(pValue)!=SQLITE_BLOB ) return SQLITE_ERROR;
+  if( sqlite3_value_type(pValue)!=SQLITE_BLOB
+   || sqlite3_value_subtype(pValue)!=RTREE_GEOMETRY_SUBTYPE
+  ){
+    return SQLITE_ERROR;
+  }
 
   /* Check that the blob is roughly the right size. */
   nBlob = sqlite3_value_bytes(pValue);
@@ -3726,6 +3731,7 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
       rtreeMatchArgFree(pBlob);
     }else{
       sqlite3_result_blob(ctx, pBlob, nBlob, rtreeMatchArgFree);
+      sqlite3_result_subtype(ctx, RTREE_GEOMETRY_SUBTYPE);
     }
   }
 }
