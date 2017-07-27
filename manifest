@@ -1,5 +1,5 @@
-C Add\sdestructor\sfunctions\sfor\sthe\spointer\sargument\s(NB:\snot\sthe\stype\sstring)\nto\sthe\ssqlite3_bind_pointer()\sand\ssqlite3_result_pointer()\sinterfaces.\s\sUse\nthis\snew\scapability\sto\sresolve\sa\spointer\sleak\sin\sthe\scustom\sgeometry\sfunction\nmechanism\sof\sthe\sRTREE\sextension.
-D 2017-07-27T17:45:08.840
+C Simplified\sdocumentation\sfor\sthe\spointer\spassing\sinterface.
+D 2017-07-27T18:43:13.023
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in 86a14aab0f03021bdc71e8a78091ca52931cdc3dc69633dacf9a511dfe9ee993
+F src/sqlite.h.in 0e2603c23f0747c5660669f946e231730af000c76d1653b153dcf2c26fce0a6b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 0f9f72b86a3792314f5db7a1dfbc2c82376bcd8d0919ceb80637bca126ec3c68
 F src/sqliteInt.h bd6be75bc43d38ada272ef0b3472bc44ef0cc15536bea22c349ca1a2812a19ce
@@ -1637,8 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f39cb76b3347baba22f2c329e74036710b64620414433a952de8d44da79ba8d9 d6684d2a744e6e04b8796c3b5ecb81c6577728b698c1ab5f4a828b2ac114b8a2
-R 94d2d6800509c651201392a359c9b77e
-T +closed d6684d2a744e6e04b8796c3b5ecb81c6577728b698c1ab5f4a828b2ac114b8a2
+P 5a2340b81faf0a29deb5b7c9a2ba6a7697d646de6cc4e9b2e6e5e6463fa394bd
+R 371adde7af7e490c29a3965ed217ae65
 U drh
-Z 1a620a1987be7e7a32507ea55728d87e
+Z 2e135a84e2e3ccffaa287c569d9bdf94
