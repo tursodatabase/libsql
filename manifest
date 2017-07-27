@@ -1,5 +1,5 @@
-C Add\sa\sdestructor\sargument\sto\ssqlite3_bind_pointer()\s\nand\ssqlite3_result_pointer().
-D 2017-07-27T03:48:02.500
+C Improved\simplementation\sof\sthe\sdestructor\son\spointer-passing\sinterfaces.
+D 2017-07-27T15:53:24.187
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -520,13 +520,13 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 874c0f2f15ab2908748297d587d22d485ea96d55aaec91d4775dddb2e24d2ecf
-F src/vdbe.c d8437d81958fb9d1f3382586e5a2736258e72dc981631853ecfb66f5091ad90c
+F src/vdbe.c 1e541ec7ff409bbabcc6b4f154957296fff5827c16c2ab0056348acae75685bf
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
-F src/vdbeInt.h 4f7034052871f5b358b8c733163505c2820868112494c73294084b20876591cd
-F src/vdbeapi.c 7fd45f2470bfc3b02313b4500c965b1848b827b736e3ff754b14861c9c13417f
-F src/vdbeaux.c 986c5cae1dcfda124e871a016274589f6b87ddfe4625f60ddf6a5cdb94f64517
+F src/vdbeInt.h ff2b7db0968d20e6184aee256d2e535d565f5a172e3588a78adb166a41fc4911
+F src/vdbeapi.c 5857a84fcba6005963716c973fabb1fe1bf06b680d202f8548c97861c89f93eb
+F src/vdbeaux.c 3fe68bad02b33b09e08bdc0ad90d6b92b3d571f7864c3d047abca1bde050751c
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
-F src/vdbemem.c 9d1dde677986b68a25b0f30190325ae173fa51d2991ccc7cffda984407cfc5d7
+F src/vdbemem.c 9ca2854976f35db40341977e688a08204c96427505f5b90215dc7970f6ea42c4
 F src/vdbesort.c f512c68d0bf7e0105316a5594c4329358c8ee9cae3b25138df041d97516c0372
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
@@ -1637,10 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f39cb76b3347baba22f2c329e74036710b64620414433a952de8d44da79ba8d9
-R f73e68c37e03cf44fd4c91b4fa2d5350
-T *branch * pointer-with-destructor
-T *sym-pointer-with-destructor *
-T -sym-branch-3.20 *
+P 3d9e841f6011480ebb8a6d860da72af7fa545983e08835ddef2cac96e5f5cd4b
+R db911569e272fbc630cc582a997f40e2
 U drh
-Z d38f5fd0f536ce6fac398141bc9e08dd
+Z c71a43c2a0910e645f13d11d84d63db1

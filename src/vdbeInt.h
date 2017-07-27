@@ -190,7 +190,7 @@ struct sqlite3_value {
     double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Extra zero bytes when MEM_Zero and MEM_Blob set */
-    const char *zPType; /* Pointer type when MEM_Pointer and MEM_Null set */
+    const char *zPType; /* Pointer type when MEM_Term|MEM_Subtype|MEM_Null */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
@@ -222,7 +222,8 @@ struct sqlite3_value {
 ** representations of the value stored in the Mem struct.
 **
 ** If the MEM_Null flag is set, then the value is an SQL NULL value.
-** No other flags may be set in this case.
+** For a pointer type created using sqlite3_bind_pointer() or
+** sqlite3_result_pointer() the MEM_Term and MEM_Subtype flags are also set.
 **
 ** If the MEM_Str flag is set then Mem.z points at a string representation.
 ** Usually this is encoded in the same unicode encoding as the main
@@ -230,7 +231,7 @@ struct sqlite3_value {
 ** set, then the string is nul terminated. The MEM_Int and MEM_Real 
 ** flags may coexist with the MEM_Str flag.
 */
-#define MEM_Null      0x0001   /* Value is NULL */
+#define MEM_Null      0x0001   /* Value is NULL (or a pointer) */
 #define MEM_Str       0x0002   /* Value is a string */
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
@@ -247,18 +248,13 @@ struct sqlite3_value {
 ** the following flags must be set to determine the memory management
 ** policy for Mem.z.  The MEM_Term flag tells us whether or not the
 ** string is \000 or \u0000 terminated
-**
-** NB:  MEM_Zero and MEM_Pointer are the same value.  But MEM_Zero is
-** only value if MEM_Blob is also set, and MEM_Pointer is only valid
-** if MEM_Null is also set.
 */
-#define MEM_Term      0x0200   /* String rep is nul terminated */
+#define MEM_Term      0x0200   /* String in Mem.z is zero terminated */
 #define MEM_Dyn       0x0400   /* Need to call Mem.xDel() on Mem.z */
 #define MEM_Static    0x0800   /* Mem.z points to a static string */
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
 #define MEM_Zero      0x4000   /* Mem.i contains count of 0s appended to blob */
-#define MEM_Pointer   0x4000   /* Mem.z is an extension pointer */
 #define MEM_Subtype   0x8000   /* Mem.eSubtype is valid */
 #ifdef SQLITE_OMIT_INCRBLOB
   #undef MEM_Zero

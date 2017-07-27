@@ -416,7 +416,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       else *zCsr++ = z;
     }
     *(zCsr++) = ']';
-    if( (f & (MEM_Zero|MEM_Blob))==(MEM_Zero|MEM_Blob) ){
+    if( f & MEM_Zero ){
       sqlite3_snprintf(100, zCsr,"+%dz",pMem->u.nZero);
       zCsr += sqlite3Strlen30(zCsr);
     }
@@ -2735,7 +2735,7 @@ case OP_MakeRecord: {
   do{
     assert( memIsValid(pRec) );
     pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
-    if( (pRec->flags & MEM_Zero)!=0 && (pRec->flags & MEM_Blob)!=0 ){
+    if( pRec->flags & MEM_Zero ){
       if( nData ){
         if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
       }else{
@@ -4411,7 +4411,7 @@ case OP_InsertInt: {
     x.nData = pData->n;
   }
   seekResult = ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0);
-  if( (pData->flags & MEM_Zero)!=0 && (pData->flags & MEM_Blob)!=0 ){
+  if( pData->flags & MEM_Zero ){
     x.nZero = pData->u.nZero;
   }else{
     x.nZero = 0;
