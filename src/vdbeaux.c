@@ -3224,7 +3224,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   assert( pMem->db->mallocFailed || flags&(MEM_Str|MEM_Blob) );
   assert( pMem->n>=0 );
   n = (u32)pMem->n;
-  if( flags & MEM_Zero ){
+  if( (flags & MEM_Zero)!=0 && (flags & MEM_Blob)!=0 ){
     n += pMem->u.nZero;
   }
   *pLen = n;

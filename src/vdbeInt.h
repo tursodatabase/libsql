@@ -189,8 +189,8 @@ struct sqlite3_value {
   union MemValue {
     double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
-    int nZero;          /* Used when bit MEM_Zero is set in flags */
-    void *pPtr;         /* Pointer when flags=MEM_NULL and eSubtype='p' */
+    int nZero;          /* Extra zero bytes when MEM_Zero and MEM_Blob set */
+    const char *zPType; /* Pointer type when MEM_Pointer and MEM_Null set */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
@@ -240,13 +240,17 @@ struct sqlite3_value {
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
 #define MEM_Undefined 0x0080   /* Value is undefined */
 #define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
-#define MEM_TypeMask  0x81ff   /* Mask of type bits */
+#define MEM_TypeMask  0xc1ff   /* Mask of type bits */
 
 
 /* Whenever Mem contains a valid string or blob representation, one of
 ** the following flags must be set to determine the memory management
 ** policy for Mem.z.  The MEM_Term flag tells us whether or not the
 ** string is \000 or \u0000 terminated
+**
+** NB:  MEM_Zero and MEM_Pointer are the same value.  But MEM_Zero is
+** only value if MEM_Blob is also set, and MEM_Pointer is only valid
+** if MEM_Null is also set.
 */
 #define MEM_Term      0x0200   /* String rep is nul terminated */
 #define MEM_Dyn       0x0400   /* Need to call Mem.xDel() on Mem.z */
@@ -254,6 +258,7 @@ struct sqlite3_value {
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
 #define MEM_Zero      0x4000   /* Mem.i contains count of 0s appended to blob */
+#define MEM_Pointer   0x4000   /* Mem.z is an extension pointer */
 #define MEM_Subtype   0x8000   /* Mem.eSubtype is valid */
 #ifdef SQLITE_OMIT_INCRBLOB
   #undef MEM_Zero
@@ -476,7 +481,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 #else
   void sqlite3VdbeMemSetDouble(Mem*, double);
 #endif
-void sqlite3VdbeMemSetPointer(Mem*, void*, const char*);
+void sqlite3VdbeMemSetPointer(Mem*, void*, const char*, void(*)(void*));
 void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);

@@ -201,12 +201,11 @@ unsigned int sqlite3_value_subtype(sqlite3_value *pVal){
 }
 void *sqlite3_value_pointer(sqlite3_value *pVal, const char *zPType){
   Mem *p = (Mem*)pVal;
-  if( p->flags==(MEM_Null|MEM_Subtype|MEM_Term|MEM_Static)
+  if( (p->flags&(MEM_AffMask|MEM_Pointer))==(MEM_Null|MEM_Pointer)
    && zPType!=0
-   && p->eSubtype=='p'
-   && strcmp(p->z, zPType)==0
+   && strcmp(p->u.zPType, zPType)==0
   ){
-    return p->u.pPtr;
+    return (void*)p->z;
   }else{
     return 0;
   }
@@ -389,11 +388,16 @@ void sqlite3_result_null(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
 }
-void sqlite3_result_pointer(sqlite3_context *pCtx, void *pPtr, const char *zPT){
+void sqlite3_result_pointer(
+  sqlite3_context *pCtx,
+  void *pPtr,
+  const char *zPType,
+  void (*xDestructor)(void*)
+){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pOut);
-  sqlite3VdbeMemSetPointer(pOut, pPtr, zPT);
+  sqlite3VdbeMemSetPointer(pOut, pPtr, zPType, xDestructor);
 }
 void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
   Mem *pOut = pCtx->pOut;
@@ -1398,12 +1402,18 @@ int sqlite3_bind_null(sqlite3_stmt *pStmt, int i){
   }
   return rc;
 }
-int sqlite3_bind_pointer(sqlite3_stmt *pStmt, int i, void *pPtr,const char *zT){
+int sqlite3_bind_pointer(
+  sqlite3_stmt *pStmt,
+  int i,
+  void *pPtr,
+  const char *zPTtype,
+  void (*xDestructor)(void*)
+){
   int rc;
   Vdbe *p = (Vdbe*)pStmt;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
-    sqlite3VdbeMemSetPointer(&p->aVar[i-1], pPtr, zT);
+    sqlite3VdbeMemSetPointer(&p->aVar[i-1], pPtr, zPTtype, xDestructor);
     sqlite3_mutex_leave(p->db->mutex);
   }
   return rc;

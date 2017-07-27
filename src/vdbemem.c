@@ -220,9 +220,9 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
   int nByte;
   assert( pMem->flags & MEM_Zero );
-  assert( pMem->flags&MEM_Blob );
   assert( (pMem->flags&MEM_RowSet)==0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  if( (pMem->flags & MEM_Blob)==0 ) return SQLITE_OK;
 
   /* Set nByte to the number of bytes required to store the expanded blob. */
   nByte = pMem->n + pMem->u.nZero;
@@ -709,13 +709,21 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 ** Set the value stored in *pMem should already be a NULL.
 ** Also store a pointer to go with it.
 */
-void sqlite3VdbeMemSetPointer(Mem *pMem, void *pPtr, const char *zPType){
+void sqlite3VdbeMemSetPointer(
+  Mem *pMem,
+  void *pPtr,
+  const char *zPType,
+  void (*xDestructor)(void*)
+){
   assert( pMem->flags==MEM_Null );
+  pMem->u.zPType = zPType;
+  pMem->z = pPtr;
   if( zPType ){
-    pMem->flags = MEM_Null|MEM_Subtype|MEM_Term|MEM_Static;
-    pMem->u.pPtr = pPtr;
-    pMem->eSubtype = 'p';
-    pMem->z = (char*)zPType;
+    pMem->flags = MEM_Null|MEM_Pointer;
+  }
+  if( xDestructor ){
+    pMem->xDel = xDestructor;
+    pMem->flags |= MEM_Dyn;
   }
 }
 
