@@ -1,10 +1,10 @@
-C Merge\sthe\spointer-passing\sinterface\schanges\sfrom\sthe\s3.20\sbranch.
-D 2017-07-27T18:49:19.460
+C Increase\sthe\sversion\snumber\sto\s3.21.0\sin\santicipation\sfor\schanges\sto\sgo\ninto\sthe\snext\srelease.
+D 2017-07-27T19:59:37.092
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
-F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
+F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1bcc61cdd063171d8945551c265e5701a770deeff77e0ad634f8d22e4e91c831 x
+F configure 2500b432572804093c9a2516e2b16dbcec5d797ea1cd654915cfecd1d7a39ee3 x
 F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 1f8b8d4c9f5cfe40e679fee279cc9eb2da8e6eb74ad406028538d7864cc4b6cb
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3808a00f06d372cc531da039d97bd974e4a6576a30cf63bf562f83f186b313b3 2dfcd9a8ecdf0ddd8e044d820639830c6171141c588cf0224255af85c64cf79c
-R 7fbc99c9cc153578a723e43f9966a8dd
+P c63903a4c5d52a490e3f26707aa85fb54d4e2e8a3ce31ca26a9c615fe7a51e97
+R 5a42c475618e9f2714e570b08be1a322
 U drh
-Z afa3ebb0e9df1540b3b12b225ec0860d
+Z 1ea8d09db2863a7a57318d9127cb53ba
