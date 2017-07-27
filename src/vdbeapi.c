@@ -1417,6 +1417,8 @@ int sqlite3_bind_pointer(
   if( rc==SQLITE_OK ){
     sqlite3VdbeMemSetPointer(&p->aVar[i-1], pPtr, zPTtype, xDestructor);
     sqlite3_mutex_leave(p->db->mutex);
+  }else if( xDestructor ){
+    xDestructor(pPtr);
   }
   return rc;
 }

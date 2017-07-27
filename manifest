@@ -1,5 +1,5 @@
-C Improved\simplementation\sof\sthe\sdestructor\son\spointer-passing\sinterfaces.
-D 2017-07-27T15:53:24.187
+C In\ssqlite3_bind_pointer(),\sinvoke\sthe\sdestructor\sif\sthe\sbind\sindex\sis\nout\sof\srange,\slike\ssqlite3_bind_blob()\sdoes.
+D 2017-07-27T16:42:36.805
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -523,7 +523,7 @@ F src/vacuum.c 874c0f2f15ab2908748297d587d22d485ea96d55aaec91d4775dddb2e24d2ecf
 F src/vdbe.c 1e541ec7ff409bbabcc6b4f154957296fff5827c16c2ab0056348acae75685bf
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h ff2b7db0968d20e6184aee256d2e535d565f5a172e3588a78adb166a41fc4911
-F src/vdbeapi.c 5857a84fcba6005963716c973fabb1fe1bf06b680d202f8548c97861c89f93eb
+F src/vdbeapi.c 0823531191f9d5588a245ed5b39306798681814e9e8099d54a3213a13a28fbe7
 F src/vdbeaux.c 3fe68bad02b33b09e08bdc0ad90d6b92b3d571f7864c3d047abca1bde050751c
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 9ca2854976f35db40341977e688a08204c96427505f5b90215dc7970f6ea42c4
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d9e841f6011480ebb8a6d860da72af7fa545983e08835ddef2cac96e5f5cd4b
-R db911569e272fbc630cc582a997f40e2
+P 601ad6795927fff8c3cc1711a2fd90912499573e94aa5bc8f18cbd4b89778f58
+R 94d2d6800509c651201392a359c9b77e
 U drh
-Z c71a43c2a0910e645f13d11d84d63db1
+Z 4d5dc73f23f587970c3fb18e2e41aea7
