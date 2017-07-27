@@ -3910,11 +3910,7 @@ static void setDeviceCharacteristics(unixFile *pFd){
     /* Check for support for F2FS atomic batch writes. */
     res = osIoctl(pFd->h, F2FS_IOC_GET_FEATURES, &f);
     if( res==0 && (f & F2FS_FEATURE_ATOMIC_WRITE) ){
-      pFd->deviceCharacteristics = 
-        SQLITE_IOCAP_BATCH_ATOMIC |
-        SQLITE_IOCAP_ATOMIC |
-        SQLITE_IOCAP_SEQUENTIAL |
-        SQLITE_IOCAP_SAFE_APPEND;
+      pFd->deviceCharacteristics = SQLITE_IOCAP_BATCH_ATOMIC;
     }
 #endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 
