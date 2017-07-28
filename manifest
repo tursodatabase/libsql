@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2017-07-28T22:13:26.143
+C Update\sTcl\sversion\sused\sby\sthe\sTclKit\sbatch\stool\sfor\sMSVC.
+D 2017-07-28T22:22:15.250
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1545,7 +1545,7 @@ F test/wordcount.c 06efb84b7c48a4973c2c24ea06c93d00bce24389
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
-F tool/GetTclKit.bat 6afa640edc7810725aec61c3076ac617c4aaf0b7
+F tool/GetTclKit.bat 3822c7651b18cda4cc50ebd5215c4d0efca1a480895f6a226b5a3ad81f5621e6
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/addopcodes.tcl edbd53806bf20e25af2373ad0c091be4385081c1aa1813b916bf093f94ed8380
 F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f5d330f495d07a704e115595bbdf5422ddb68fd8191114c5a12c9c873d983f7c
-R 52c41da07e87e817b0e7a61462870900
+P 3286e1a07b0693049a07f0865bf93749c461ea8f6d1175ec2d1642886673d8ac
+R fa880debd22b5643c43c3f5ac12562f1
 U mistachkin
-Z 7aff7bef71ab9d5a20c01c7b7861ab02
+Z 2ba3113508e5372bd91f947e270302b1
