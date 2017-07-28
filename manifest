@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE\smacro\sto\sctime.c
-D 2017-07-28T01:53:32.480
+C Add\snew\stest\sfile\stest/atomic.test.
+D 2017-07-28T11:05:33.638
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -572,6 +572,7 @@ F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
+F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/attach.test f4b8918ba2f3e88e6883b8452340545f10a1388af808343c37fc5c577be8281c
 F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
@@ -1638,7 +1639,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4477e60cd801dab7a8aec12c5bc5e81e774bedbfed38abbc8eb8b37336141a44
-R 7b37fdaf5e84d7527bf9bb356bdba2dd
-U drh
-Z 27d0a818d20124b850051ada33dcfbb8
+P 67bad7fb9b2fdb29b63308f22062444084dc28191a542e08076dc2e39caf6f62
+R f9a806bade742314c2ca4f28e94ea3db
+U dan
+Z e2b2bd316b28a6b89ebee3e338f870e9
