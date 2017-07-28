@@ -20,6 +20,12 @@ set testprefix writecrash
 
 do_not_use_codec
 
+
+if {$tcl_platform(platform)=="windows"} {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB UNIQUE);
   WITH s(i) AS (

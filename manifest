@@ -1,5 +1,5 @@
-C More\sprecise\sdetermination\sof\swhen\san\sin-memory\sjournal\sneeds\sto\sbe\nspilled\sto\sdisk.
-D 2017-07-28T18:16:14.317
+C Disable\sthe\swritecrash.test\smodule\son\sWindows.
+D 2017-07-28T20:49:02.901
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1543,7 +1543,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 06efb84b7c48a4973c2c24ea06c93d00bce24389
-F test/writecrash.test e6dc9d470d43710c3f780a50d29cce1c3884ca34ff50e737bc9ab8724c7c2398
+F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1639,7 +1639,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94a2004756ffe027b3495be91366750135c294a9c460edc9a1b4b9422dcc33bd
-R 86ba3bf27ee71fb4aea5fe3f1aba5d47
+P 6a505bdd9347783d3d8105cb8185aa787801bad0c855b623cfd780fb406f0e7b
+R a1d9f1b06fb7a9cab059484be0d2ec0b
 U drh
-Z 81ac04bf34607e329fe9d94777807b23
+Z f25cf82f472085f11871c2d253c31dfe
