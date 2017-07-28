@@ -1,5 +1,5 @@
-C Release\scandidate\s3\sfor\s3.20.0
-D 2017-07-28T00:45:38.081
+C Fix\sa\spunctuation\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_step().\s\sNo\schanges\sto\ncode.
+D 2017-07-28T12:20:39.570
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in 0e2603c23f0747c5660669f946e231730af000c76d1653b153dcf2c26fce0a6b
+F src/sqlite.h.in a7e29d5977916cded93ff6cf0d56ada657e13e91adbc2039e5cf02e41122a45f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 0f9f72b86a3792314f5db7a1dfbc2c82376bcd8d0919ceb80637bca126ec3c68
 F src/sqliteInt.h bd6be75bc43d38ada272ef0b3472bc44ef0cc15536bea22c349ca1a2812a19ce
@@ -1637,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2dfcd9a8ecdf0ddd8e044d820639830c6171141c588cf0224255af85c64cf79c
-R 371adde7af7e490c29a3965ed217ae65
+P d891a2a00a34b6726624c66273f0f3388da9de6a771771c94b6e8a970dd9cdb9
+R 9ec3bbe0ae2e859fe828a8508fe2f59a
 U drh
-Z 6af92512eec073a2233f3d549dae3759
+Z e4a89ba161849293c6b16a25df952da7
