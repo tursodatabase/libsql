@@ -44,6 +44,9 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock);
 
 int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite);
 
+ServerPage *sqlite3ServerBuffer(Server*);
+
+/* For "BEGIN READONLY" clients. */
 void sqlite3ServerReadPage(Server*, Pgno, u8**);
 void sqlite3ServerEndReadPage(Server*, Pgno);
 

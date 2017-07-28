@@ -109,6 +109,8 @@ struct ServerDb {
   ServerPage *pPgFirst;           /* First (oldest) in list of pages */
   ServerPage *pPgLast;            /* Last (newest) in list of pages */
   ServerPage *apPg[HMA_HASH_SIZE];
+
+  ServerPage *pFree;              /* List of free page buffers */
 };
 
 /*
@@ -281,11 +283,16 @@ void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
   serverEnterMutex();
   pDb->nClient--;
   if( pDb->nClient==0 ){
+    ServerPage *pFree;
     ServerDb **pp;
     serverShutdownDatabase(pDb);
     for(pp=&g_server.pDb; *pp!=pDb; pp=&((*pp)->pNext));
     *pp = pDb->pNext;
     sqlite3_mutex_free(pDb->mutex);
+    while( pFree=pDb->pFree ){
+      pDb->pFree = pFree->pNext;
+      sqlite3_free(pFree);
+    }
     sqlite3_free(pDb);
   }
   serverLeaveMutex();
@@ -409,7 +416,6 @@ int sqlite3ServerEnd(Server *p){
   if( p->eTrans!=SERVER_TRANS_NONE ){
     Server **pp;
     ServerDb *pDb = p->pDb;
-    ServerPage *pFree = 0;
     ServerPage *pPg = 0;
 
     sqlite3_mutex_enter(pDb->mutex);
@@ -437,6 +443,7 @@ int sqlite3ServerEnd(Server *p){
     ** them from the linked list and hash table, but do not call sqlite3_free()
     ** on them until the mutex has been released.  */
     if( pDb->pPgFirst ){
+      ServerPage *pLast = 0;
       Server *pIter;
       int iOldest = 0x7FFFFFFF;
       for(pIter=pDb->pReader; pIter; pIter=pIter->pNext){
@@ -446,7 +453,6 @@ int sqlite3ServerEnd(Server *p){
         iOldest = MIN(iOldest, pIter->iCommitId);
       }
 
-      pFree = pDb->pPgFirst;
       for(pPg=pDb->pPgFirst; pPg && pPg->iCommitId<iOldest; pPg=pPg->pNext){
         if( pPg->pHashPrev ){
           pPg->pHashPrev->pHashNext = pPg->pHashNext;
@@ -458,7 +464,15 @@ int sqlite3ServerEnd(Server *p){
         if( pPg->pHashNext ){
           pPg->pHashNext->pHashPrev = pPg->pHashPrev;
         }
+        pLast = pPg;
       }
+
+      if( pLast ){
+        assert( pLast->pNext==pPg );
+        pLast->pNext = pDb->pFree;
+        pDb->pFree = pDb->pPgFirst;
+      }
+
       if( pPg==0 ){
         pDb->pPgFirst = pDb->pPgLast = 0;
       }else{
@@ -467,14 +481,6 @@ int sqlite3ServerEnd(Server *p){
     }
 
     sqlite3_mutex_leave(pDb->mutex);
-
-    /* Call sqlite3_free() on any pages that were unlinked from the hash
-    ** table above. */
-    while( pFree && pFree!=pPg ){
-      ServerPage *pNext = pFree->pNext;
-      sqlite3_free(pFree);
-      pFree = pNext;
-    }
 
     p->pNext = 0;
     p->eTrans = SERVER_TRANS_NONE;
@@ -670,6 +676,19 @@ void sqlite3ServerEndReadPage(Server *p, Pgno pgno){
     assert( slotGetSlowReaders(*pSlot)>=0 );
     sqlite3_mutex_leave(pDb->mutex);
   }
+}
+
+ServerPage *sqlite3ServerBuffer(Server *p){
+  ServerDb *pDb = p->pDb;
+  ServerPage *pRet = 0;
+  sqlite3_mutex_enter(pDb->mutex);
+  if( pDb->pFree ){
+    pRet = pDb->pFree;
+    pDb->pFree = pRet->pNext;
+    pRet->pNext = 0;
+  }
+  sqlite3_mutex_leave(pDb->mutex);
+  return pRet;
 }
 
 #endif /* ifdef SQLITE_SERVER_EDITION */

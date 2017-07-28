@@ -63,6 +63,8 @@
 /* Database used by this server */
 static char *zDatabaseName = 0;
 
+static char *zGlobalVfs = 0;
+
 typedef struct ClientCtx ClientCtx;
 struct ClientCtx {
   sqlite3 *db;                    /* Database handle for this client */
@@ -299,7 +301,9 @@ static void *handle_client(void *pArg){
 
   ctx.fd = (int)(intptr_t)pArg;
   ctx.nRepeat = 1;
-  rc = sqlite3_open(zDatabaseName, &ctx.db);
+  rc = sqlite3_open_v2(zDatabaseName, &ctx.db,
+      SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, zGlobalVfs
+  );
   if( rc!=SQLITE_OK ){
     fprintf(stderr, "sqlite3_open(): %s\n", sqlite3_errmsg(ctx.db));
     return 0;
@@ -380,6 +384,11 @@ static void *handle_client(void *pArg){
   return 0;
 } 
 
+static void usage(const char *zExec){
+  fprintf(stderr, "Usage: %s ?-vfs VFS? DATABASE\n", zExec);
+  exit(1);
+}
+
 int main(int argc, char *argv[]) {
   sqlite3 *db;
   int sfd;
@@ -391,13 +400,19 @@ int main(int argc, char *argv[]) {
   ** abruptly.  */
   signal(SIGPIPE, SIG_IGN);
 
-  if( argc!=2 ){
-    fprintf(stderr, "Usage: %s DATABASE\n", argv[0]);
-    return 1;
+  if( argc!=2 && argc!=4 ){
+    usage(argv[0]);
   }
-  zDatabaseName = argv[1];
+  if( argc==4 ){
+    int n = strlen(argv[1]);
+    if( n<2 || n>4 || memcmp("-vfs", argv[1], 4) ) usage(argv[0]);
+    zGlobalVfs = argv[2];
+  }
+  zDatabaseName = argv[argc-1];
 
-  rc = sqlite3_open(zDatabaseName, &db);
+  rc = sqlite3_open_v2(zDatabaseName, &db,
+      SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, zGlobalVfs
+  );
   if( rc!=SQLITE_OK ){
     fprintf(stderr, "sqlite3_open(): %s\n", sqlite3_errmsg(db));
     return 1;

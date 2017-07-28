@@ -5991,9 +5991,12 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
 
 #ifdef SQLITE_SERVER_EDITION
   if( pagerIsServer(pPager) ){
-    int nByte = sizeof(ServerPage) + pPager->pageSize;
-    ServerPage *p = (ServerPage*)sqlite3_malloc(nByte);
-    if( !p ) return SQLITE_NOMEM_BKPT;
+    ServerPage *p = sqlite3ServerBuffer(pPager->pServer);
+    if( p==0 ){
+      int nByte = sizeof(ServerPage) + pPager->pageSize;
+      p = (ServerPage*)sqlite3_malloc(nByte);
+      if( !p ) return SQLITE_NOMEM_BKPT;
+    }
     memset(p, 0, sizeof(ServerPage));
     p->aData = (u8*)&p[1];
     p->nData = pPager->pageSize;

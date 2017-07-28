@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\slatest\schanges\sfrom\strunk.
-D 2017-07-24T19:43:58.292
+C Reduce\sthe\snumber\sof\smallocs\srequired\sof\swriters\sin\sserver\smode.
+D 2017-07-28T21:02:13.200
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -439,7 +439,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 98df292b72d8c15c6292be663ee917ac0316a0d9ec652e6e55e06bc4d83f84b7
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c bd64887fbd1df4cdc503ccb1c9413ffdb7e7db9fb1dc787e170f3ddb784a0811
+F src/pager.c d3a15bf7861cc9be235ff424cdddde7fae3cd06fbcacbd967c6dad2d313e1d90
 F src/pager.h 857d21f70acefc76e5bae4584f0133e754a2448b197d1e79b7179f26f9a11bc1
 F src/parse.y 3a1babd6645a8103898a5e7e239dcf56cdafbdc25fd8133bb4a9160f9471d42d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -453,8 +453,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
-F src/server.c 9b76ad62dffa41a9ddaaf23592499b967acae3c210090ba7c3fcbd1484f8389b
-F src/server.h a8477ae61546a9a4c8e06dd31936b06abf18bd086ae6a183ed57f721a3a194b4
+F src/server.c cc07e5ee19436c08ae2331e8476db0c968ade42528df68cfa40eb58314cd21e1
+F src/server.h adcc122084f9370c91479bd9f7bbac1ccd7f63784249de40f63dae8a9fae1bfe
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
 F src/sqlite.h.in 17faafcb9f410b8140c766c5faf8334da37079ddf4c5054da201071a02190f54
@@ -1618,7 +1618,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
-F tool/tserver.c c04e49b7809c01a513df645b7bbaa12a74514e660c491ee753cc0e2573c68512
+F tool/tserver.c b3f368766b6bcef6d58b057de2fc3d3e33510b2b92fd0a53a6bfbe243b58d027
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1646,7 +1646,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e77d29f64480179d7aae7d88adab2ba9ff042701e1f4e624a3a7775cb56a51cc 9a5a3d60a5c6ce23bbdab5832f706bee8acdc4b1767aeed82b1aceb294f050f7
-R 39bfb8b2bfec98e167ee487affa19155
+P d0719ad757bdf7cf2d7d7a4f7b0e713c262ffb434b91ddbb12e190e479abd19e
+R 45df4a0aef3166ba81de04b37f949988
 U dan
-Z 721200f0a7600d1433b52c73bd4b04b3
+Z b12068c542ae27866a718f970ab635de
