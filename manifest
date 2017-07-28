@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\stest/atomic.test.
-D 2017-07-28T11:05:33.638
+C Add\snew\sextended\serror\scodes\sfor\sthe\satomic\swrite\sfile-controls.
+D 2017-07-28T13:18:35.469
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -436,7 +436,7 @@ F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 9aa19db965d574cbaf74405cd51c58b87fdbfe045b8bbfc01b18bdeeda3c4305
+F src/os_unix.c 0681c6ef336fcb6a111f45b60a5faea38992ed6c4ae9fbd57a6f8e247724fa68
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1e63b0299cf123cf38c48413ec03190f56c1e7d0ccc6573c467d8ac240b898e9
@@ -455,7 +455,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in eacc9cd3fa971f6056c0a312a61430df7c8d0b1fc01774e9209becf2c184b251
+F src/sqlite.h.in 91ebe5f8b4e6595325110fb23efe6cc70dfe53d394d2dd31c8b6cdf6a98325e0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 967154985ed2ae62f90d9029bb5b5071793d847f1696a2ebe9e8cc0b042ae60b
 F src/sqliteInt.h 3cbbcb67ba66ffe44a6768c95df22137335e9ef167d5da93bf0c1ed20a91b992
@@ -1639,7 +1639,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67bad7fb9b2fdb29b63308f22062444084dc28191a542e08076dc2e39caf6f62
-R f9a806bade742314c2ca4f28e94ea3db
-U dan
-Z e2b2bd316b28a6b89ebee3e338f870e9
+P f9213e4864d0542be5489e03cf40c47d9127a86bbbbbabd963aa08525d5dc97b
+R df00eb2b7872527f1e0cbc6920cf1993
+U drh
+Z ff0fbf0bcfb6efb6cc06622fd28cdbe1
