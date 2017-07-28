@@ -2551,6 +2551,46 @@ static int SQLITE_TCLAPI test_delete_database(
 }
 
 /*
+** Usage: atomic_batch_write PATH
+*/
+static int SQLITE_TCLAPI test_atomic_batch_write(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char *zFile = 0;                /* Path to file to test */
+  sqlite3 *db = 0;                /* Database handle */
+  sqlite3_file *pFd = 0;          /* SQLite fd open on zFile */
+  int bRes = 0;                   /* Integer result of this command */
+  int dc = 0;                     /* Device-characteristics mask */
+  int rc;                         /* sqlite3_open() return code */
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATH");
+    return TCL_ERROR;
+  }
+  zFile = Tcl_GetString(objv[1]);
+
+  rc = sqlite3_open(zFile, &db);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3_errmsg(db), 0);
+    sqlite3_close(db);
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  dc = pFd->pMethods->xDeviceCharacteristics(pFd);
+  if( dc & SQLITE_IOCAP_BATCH_ATOMIC ){
+    bRes = 1;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(bRes));
+  sqlite3_close(db);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
 ** Return the next statment in sequence after STMT.
@@ -7639,6 +7679,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
      { "sqlite3_delete_database", test_delete_database, 0 },
+     { "atomic_batch_write",      test_atomic_batch_write,     0   },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

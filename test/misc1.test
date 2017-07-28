@@ -479,26 +479,28 @@ ifcapable curdir {
 # Make sure a database connection still works after changing the
 # working directory.
 #
-do_test misc1-14.1 {
-  file mkdir tempdir
-  cd tempdir
-  execsql {BEGIN}
-  file exists ./test.db-journal
-} {0}
-do_test misc1-14.2a {
-  execsql {UPDATE t1 SET a=a||'x' WHERE 0}
-  file exists ../test.db-journal
-} {0}
-do_test misc1-14.2b {
-  execsql {UPDATE t1 SET a=a||'y' WHERE 1}
-  file exists ../test.db-journal
-} {1}
-do_test misc1-14.3 {
-  cd ..
-  forcedelete tempdir
-  execsql {COMMIT}
-  file exists ./test.db-journal
-} {0}
+if {[atomic_batch_write test.db]==0} {
+  do_test misc1-14.1 {
+    file mkdir tempdir
+    cd tempdir
+    execsql {BEGIN}
+    file exists ./test.db-journal
+  } {0}
+  do_test misc1-14.2a {
+    execsql {UPDATE t1 SET a=a||'x' WHERE 0}
+    file exists ../test.db-journal
+  } {0}
+  do_test misc1-14.2b {
+    execsql {UPDATE t1 SET a=a||'y' WHERE 1}
+    file exists ../test.db-journal
+  } {1}
+  do_test misc1-14.3 {
+    cd ..
+    forcedelete tempdir
+    execsql {COMMIT}
+    file exists ./test.db-journal
+  } {0}
+}
 }
 
 # A failed create table should not leave the table in the internal
