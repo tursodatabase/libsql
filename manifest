@@ -1,5 +1,5 @@
-C Do\snot\sset\sdevice-capabilities\sflags\sSEQUENTIAL\sor\sSAFE_APPEND\sfor\sf2fs\nfile-systems.
-D 2017-07-27T18:34:00.448
+C Add\sthe\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE\smacro\sto\sctime.c
+D 2017-07-28T01:53:32.480
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -401,7 +401,7 @@ F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da
 F src/build.c 74108007d286232fb4290464ee5452fa860c26215f8caa0e6c7cbf69a6fafe8f
 F src/callback.c 8e14b60d1ed1c87c02cb5f121ecda99224f2aea6524a77ee6f72c9b5c7110f84
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 928954802b1397d9fb1378c7eb702c94b4735bbab1d5793e21b6a77734f56a1b
+F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 939bd15e6b54b82b951e1c0ffc2ff2b4ab579196780a1f6d394e47bd6f799b6c
@@ -1638,7 +1638,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb8718006cb23ba9304da5c30d19863d688495f0eaae3794c5ad870e481866f8
-R ce693a7ca9a259977de390176cf62cb0
-U dan
-Z f84e1d974aa4edf0cc8f431eef8b011b
+P 4477e60cd801dab7a8aec12c5bc5e81e774bedbfed38abbc8eb8b37336141a44
+R 7b37fdaf5e84d7527bf9bb356bdba2dd
+U drh
+Z 27d0a818d20124b850051ada33dcfbb8

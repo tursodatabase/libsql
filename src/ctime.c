@@ -184,6 +184,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_ATOMIC_WRITE
   "ENABLE_ATOMIC_WRITE",
 #endif
+#if SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+  "ENABLE_BATCH_ATOMIC_WRITE",
+#endif
 #if SQLITE_ENABLE_CEROD
   "ENABLE_CEROD",
 #endif
