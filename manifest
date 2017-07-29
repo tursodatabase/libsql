@@ -1,5 +1,5 @@
-C Update\sTcl\sversion\sused\sby\sthe\sTclKit\sbatch\stool\sfor\sMSVC.
-D 2017-07-28T22:22:15.250
+C Move\sthe\sgeneration\sof\soutput\scolumn\snames\searlier,\sto\sright\safter\sname\nresolution\sand\sbefore\squery\stransformations\ssuch\sas\sflattening.\s\sThis\sprevents\nthe\snames\sfrom\sgetting\smangled\sby\squery\stransformations,\sand\sobviates\shacks\nin\sthe\squery\sflattener\sthat\sattempt\sto\swork\saround\sthe\sname\smangling.\nThe\sresulting\scode\sis\ssmaller\sand\sfaster\sand\sgives\smore\sconsistent\soutput.\nThis\sis\san\salternative\sfix\sto\sticket\s[de3403bf5ae5f72ed].
+D 2017-07-29T16:01:55.238
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -452,7 +452,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c c6bf96a7f9d7d68f929de84738c599a30d0a725ab0b54420e70545743cd5ee7b
+F src/select.c 31b35ddf55f1021f7148a01306984b057c11ebb6e3463d94677225e0a1e301a3
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
 F src/sqlite.h.in 0e2603c23f0747c5660669f946e231730af000c76d1653b153dcf2c26fce0a6b
@@ -1637,7 +1637,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3286e1a07b0693049a07f0865bf93749c461ea8f6d1175ec2d1642886673d8ac
-R fa880debd22b5643c43c3f5ac12562f1
-U mistachkin
-Z 2ba3113508e5372bd91f947e270302b1
+P bcec155e0d6c6b17ae09d5a366c080723d01ff40dbc1a0ad0bb669a91db1b850
+R 1dd5a0c8909a7008cc7feb807ee35ff5
+T *branch * early-column-names
+T *sym-early-column-names *
+T -sym-trunk *
+U drh
+Z 012e37d9c831aa36f84ce05878b8d813
