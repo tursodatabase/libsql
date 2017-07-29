@@ -238,7 +238,6 @@ void *sqlite3PagerCodec(DbPage *);
 
 #ifdef SQLITE_SERVER_EDITION
   int sqlite3PagerRollbackJournal(Pager*, sqlite3_file*);
-  int sqlite3PagerIsServer(Pager *pPager);
   int sqlite3PagerPagelock(Pager *pPager, Pgno, int);
   void sqlite3PagerServerJournal(Pager*, sqlite3_file*, const char*);
 #endif

@@ -7747,9 +7747,6 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 #endif
 
 #ifdef SQLITE_SERVER_EDITION
-int sqlite3PagerIsServer(Pager *pPager){
-  return pagerIsServer(pPager);
-}
 int sqlite3PagerPagelock(Pager *pPager, Pgno pgno, int bWrite){
   if( pagerIsServer(pPager)==0 ) return SQLITE_OK;
   return sqlite3ServerLock(pPager->pServer, pgno, bWrite, 0);

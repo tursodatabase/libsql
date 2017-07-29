@@ -289,7 +289,7 @@ void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
     for(pp=&g_server.pDb; *pp!=pDb; pp=&((*pp)->pNext));
     *pp = pDb->pNext;
     sqlite3_mutex_free(pDb->mutex);
-    while( pFree=pDb->pFree ){
+    while( (pFree = pDb->pFree) ){
       pDb->pFree = pFree->pNext;
       sqlite3_free(pFree);
     }
