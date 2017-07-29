@@ -3769,7 +3769,51 @@ static int flattenSubquery(
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
     pSrc->a[iFrom].fg.jointype = jointype;
-  
+
+    /* For every result column in the outer query that does not have an AS
+    ** clause, if that column is a reference to an output column from the
+    ** inner query, then preserve the name of the column as it was written
+    ** in the original SQL text of the outer query by added an AS clause.
+    ** This prevents the outer query column from taking on a name derived
+    ** from inner query column name.
+    **
+    ** Example:
+    **     CREATE TABLE t1(a,b);
+    **     CREATE VIEW v1(x,y) AS SELECT a,b FROM t1;
+    **     SELECT x,y FROM v1;
+    **
+    ** The inner "v1" subquery will get flattened into the outer query.  After
+    ** flattening, the outer query becomes:  "SELECT a,b FROM t1".  But the
+    ** new query gives column names of "a" and "b", not the "x" and "y" that
+    ** the programmer expected.  This step adds AS clauses so that the
+    ** flattened query becomes:  "SELECT a AS x, b AS y FROM t1".
+    **
+    ** This is not a perfect solution.  The added AS clause is the same text as
+    ** the original input SQL.  So if the input SQL used goofy column names
+    ** like "SELECT v1.X,(y) FROM v1", then the added AS clauses will be those
+    ** same goofy colum names "v1.X" and "(y)", not just "x" and "y".  We could
+    ** improve that, but doing so might break lots of legacy code that depends
+    ** on the current behavior which dates back to around 2004.
+    **
+    ** Update on 2017-07-29:  The AS clause is only inserted into outer query
+    ** result columns that get substituted for inner query columns.  Formerly
+    ** an AS clause was added to *all* columns in the outer query that did not
+    ** already have one, even columns that had nothing to do with the inner
+    ** query.
+    */
+    pList = pParent->pEList;
+    for(i=0; i<pList->nExpr; i++){
+      Expr *p;
+      if( pList->a[i].zName==0
+       && (p = pList->a[i].pExpr)->op==TK_COLUMN
+       && p->iTable==iParent
+      ){
+        char *zName = sqlite3DbStrDup(db, pList->a[i].zSpan);
+        sqlite3Dequote(zName);
+        pList->a[i].zName = zName;
+      }
+    }
+
     /* Now begin substituting subquery result set expressions for 
     ** references to the iParent in the outer query.
     ** 
@@ -3782,14 +3826,6 @@ static int flattenSubquery(
     ** We look at every expression in the outer query and every place we see
     ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
     */
-    pList = pParent->pEList;
-    for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].zName==0 ){
-        char *zName = sqlite3DbStrDup(db, pList->a[i].zSpan);
-        sqlite3Dequote(zName);
-        pList->a[i].zName = zName;
-      }
-    }
     if( pSub->pOrderBy ){
       /* At this point, any non-zero iOrderByCol values indicate that the
       ** ORDER BY column expression is identical to the iOrderByCol'th
