@@ -289,8 +289,8 @@ struct sqlite3_api_routines {
                     sqlite3_stmt**,const char**);
   int (*prepare16_v3)(sqlite3*,const void*,int,unsigned int,
                       sqlite3_stmt**,const void**);
-  int (*bind_pointer)(sqlite3_stmt*,int,void*,const char*);
-  void (*result_pointer)(sqlite3_context*,void*,const char*);
+  int (*bind_pointer)(sqlite3_stmt*,int,void*,const char*,void(*)(void*));
+  void (*result_pointer)(sqlite3_context*,void*,const char*,void(*)(void*));
   void *(*value_pointer)(sqlite3_value*,const char*);
 };
 
