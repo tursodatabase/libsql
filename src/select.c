@@ -3772,8 +3772,7 @@ static int flattenSubquery(
 
     /* For every result column in the outer query that does not have an AS
     ** clause, if that column is a reference to an output column from the
-    ** inner query, then preserve the name of the column as it was written
-    ** in the original SQL text of the outer query by added an AS clause.
+    ** inner query, then preserve the name of the column by adding an AS clause.
     ** This prevents the outer query column from taking on a name derived
     ** from inner query column name.
     **
@@ -3788,18 +3787,13 @@ static int flattenSubquery(
     ** the programmer expected.  This step adds AS clauses so that the
     ** flattened query becomes:  "SELECT a AS x, b AS y FROM t1".
     **
-    ** This is not a perfect solution.  The added AS clause is the same text as
-    ** the original input SQL.  So if the input SQL used goofy column names
-    ** like "SELECT v1.X,(y) FROM v1", then the added AS clauses will be those
-    ** same goofy colum names "v1.X" and "(y)", not just "x" and "y".  We could
-    ** improve that, but doing so might break lots of legacy code that depends
-    ** on the current behavior which dates back to around 2004.
-    **
-    ** Update on 2017-07-29:  The AS clause is only inserted into outer query
-    ** result columns that get substituted for inner query columns.  Formerly
-    ** an AS clause was added to *all* columns in the outer query that did not
-    ** already have one, even columns that had nothing to do with the inner
-    ** query.
+    ** Update on 2017-07-29:  The current implementation only adds AS clauses
+    ** to outer query result columns that are substituted directly for
+    ** columns of the inner query.  Formerly, all result columns in the outer
+    ** query got new AS clauses if they didn't have them all ready.  Also,
+    ** the name of the AS clause is taken from the result column name of
+    ** the inner query.  Formerly, the name was a copy of the text of the
+    ** original SQL statement that specified the column.
     */
     pList = pParent->pEList;
     for(i=0; i<pList->nExpr; i++){
@@ -3807,9 +3801,10 @@ static int flattenSubquery(
       if( pList->a[i].zName==0
        && (p = pList->a[i].pExpr)->op==TK_COLUMN
        && p->iTable==iParent
+       && p->iColumn>=0
+       && ALWAYS(p->pTab!=0)
       ){
-        char *zName = sqlite3DbStrDup(db, pList->a[i].zSpan);
-        sqlite3Dequote(zName);
+        char *zName = sqlite3DbStrDup(db, p->pTab->aCol[p->iColumn].zName);
         pList->a[i].zName = zName;
       }
     }
