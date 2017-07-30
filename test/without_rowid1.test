@@ -328,5 +328,19 @@ do_catchsql_test 7.3 {
   ) WITHOUT ROWID;
 } {1 {no such column: rowid}}
 
+# 2017-07-30: OSSFuzz discovered that an extra entry was being
+# added in the sqlite_master table for an "INTEGER PRIMARY KEY UNIQUE"
+# WITHOUT ROWID table.  Make sure this has now been fixed.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 8.1 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY UNIQUE, b) WITHOUT ROWID;
+  CREATE INDEX t1x ON t1(x);
+  INSERT INTO t1(x,b) VALUES('funny','buffalo');
+  SELECT type, name, '|' FROM sqlite_master;
+} {table t1 | index t1x |}
+
+
   
 finish_test
