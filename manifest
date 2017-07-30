@@ -1,5 +1,5 @@
-C Correctly\shandle\san\s"INTEGER\sPRIMARY\sKEY\sUNIQUE"\scolumn\sin\sa\sWITHOUT\sROWID\ntable.\s\sThis\sis\sa\sfix\sfor\sticket\s[bc115541132dad136],\sa\sproblem\sdiscovered\nby\sOSSFuzz.
-D 2017-07-30T18:40:52.132
+C Add\sthe\sschema6.test\smodule\sfor\sdemonstrating\sschemas\sthat\sgenerate\sidentical\nand\sdifferent\scontent.
+D 2017-07-30T19:50:42.416
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -462,7 +462,7 @@ F src/sqliteInt.h a1b8df420e8fa80fda9414ab7784d6e62271e1f7d65034ffd3e906ee6f014d
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 2c29b0b76e91edfd1b43bf135c32c8674710089197327682b6b7e6af88062c3d
+F src/tclsqlite.c 487951d81f9704800fd9f0ffdaa2f935a83ccb6be3575c2c4ef83e4789b4c828
 F src/test1.c cfb78b728b37ae3a2b14fe1b3a6c766e0da41370eda112594e698c94011b622e
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -1144,6 +1144,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
+F test/schema6.test 54599bcf0b3cbc7f57cf02855453bbdafd77ab3cefff19cb9dd858e2ab70a91f
 F test/securedel.test 5f997cb6bd38727b81e0985f53ec386c99db6441b2b9e6357240649d29017239
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
@@ -1637,7 +1638,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcec155e0d6c6b17ae09d5a366c080723d01ff40dbc1a0ad0bb669a91db1b850
-R ef51b40dfe561fead55e0d7326def69b
+P 5216bfb73f1a49bdd879d470de139bf46a212474eaf6f38ad2390536d66a2afd
+R fcd196b2f8d80f06448991a0e133e88e
 U drh
-Z cbc21ed1f3f9e538b2bc83c6e8eaa497
+Z e76a816e9e2c5e050973bdc6741b8e4d

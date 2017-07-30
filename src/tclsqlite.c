@@ -3882,15 +3882,24 @@ static int SQLITE_TCLAPI md5file_cmd(
   const char **argv
 ){
   FILE *in;
+  int ofst;
+  int amt;
   MD5Context ctx;
   void (*converter)(unsigned char*, char*);
   unsigned char digest[16];
   char zBuf[10240];
 
-  if( argc!=2 ){
+  if( argc!=2 && argc!=4 ){
     Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-        " FILENAME\"", (char*)0);
+        " FILENAME [OFFSET AMT]\"", (char*)0);
     return TCL_ERROR;
+  }
+  if( argc==4 ){
+    ofst = atoi(argv[2]);
+    amt = atoi(argv[3]);
+  }else{
+    ofst = 0;
+    amt = 2147483647;
   }
   in = fopen(argv[1],"rb");
   if( in==0 ){
@@ -3898,12 +3907,14 @@ static int SQLITE_TCLAPI md5file_cmd(
          "\" for reading", (char*)0);
     return TCL_ERROR;
   }
+  fseek(in, ofst, SEEK_SET);
   MD5Init(&ctx);
-  for(;;){
+  while( amt>0 ){
     int n;
-    n = (int)fread(zBuf, 1, sizeof(zBuf), in);
+    n = (int)fread(zBuf, 1, sizeof(zBuf)<=amt ? sizeof(zBuf) : amt, in);
     if( n<=0 ) break;
     MD5Update(&ctx, (unsigned char*)zBuf, (unsigned)n);
+    amt -= n;
   }
   fclose(in);
   MD5Final(digest, &ctx);
