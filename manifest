@@ -1,5 +1,5 @@
-C Fix\sa\swindows-compatibility\sissue\sin\sthe\srecently\sadded\sschema6.test\sscript.
-D 2017-07-31T17:51:49.812
+C Sync\sup\sthe\sMSVC\sautoconf\smakefile.
+D 2017-07-31T19:26:06.496
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc 1014be616b420a5f48611d21b62ca2f50ec97ee795087ecb8a4d6bf6375ba11d
+F autoconf/Makefile.msc b77aec100e4fb4739748a2461b5aa82c179fcde35bc0e08ce52ae7322d218701
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 2893b823ecc86cea13739f6c8109a41392254d1db08235c5615e0af5722c8578
@@ -1638,7 +1638,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cdc6494c050d821908087e6fd9b1e44ba92d81f363494a80b54647f19e5675f7
-R 46ee37e1f08ccf265a7ab507d40c09f2
-U drh
-Z 7a3f12e9e408a319d74d92285ced4ce2
+P 14e6c302ec3bc0e012b3c01aabee2d32e81389e1a4d834d1c57dd60bfbc97f29
+R 45702da53e6727d517359f49c224cd4d
+U mistachkin
+Z a6b7434d165fcf06f1832c1145db28d9
