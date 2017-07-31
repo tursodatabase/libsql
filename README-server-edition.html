@@ -1,0 +1,231 @@
+<html>
+
+<center>
+  <h1> The "server-process-edition" Branch</h1>
+</center>
+
+<p>
+The "server-process-edition" branch contains two modifications to stock SQLite
+that work together to provide concurrent read/write transactions using
+page-level-locking provided that:
+
+<ul>
+  <li><p> All clients are in the same process, and
+  <li><p> The application uses "PRAGMA synchronous=off".
+</ul>
+
+<p>
+Up to 16 simultaneous read/write transactions controlled by page-level-locking
+are possible. Additionally, there may be any number of read-only transactions
+started using "BEGIN READONLY" commands. Read-only transactions do not block
+read-write transactions, and read-write transactions do not block read-only
+transactions.
+
+<p>
+The two features on this branch are:
+<ol>
+  <li><p> An alternative layout for the database free-page list. This is intended
+       to reduce contention between writers when allocating new database pages,
+       either from the free-list or by extending the database file.
+
+  <li><p> The "server-mode" extension, which provides the read/write
+       page-level-locking and read-only MVCC concurrency mentioned above.
+</ol>
+
+
+<h2> Alternative Free-List Format </h2>
+
+<p>
+The alternative free-list format is very similar to the current format. It
+differs in the following respects:
+
+<ul>
+  <li><p>The "total number of free pages" field in the db header is not
+       maintained. It is always set to zero.
+  <li><p> Instead of pointing to the first free-list trunk page, the free-list
+       pointer in the db header points to a page known as the "free-list node".
+  <li><p> The free-list node page contains N pointers to free-lists stored in the
+       legacy format (i.e. a linked list of trunk pages each containing
+       pointers to many free leaf pages).
+</ul>
+
+<p>
+This effectively means that a database has N free-lists instead of just one. To
+allocate a free page, a writer only needs to lock one such free-list, and so up
+to N transactions that allocate new pages may proceed concurrently.
+
+<p>
+Allocating pages from the end of the db file still locks out all other
+read/write transactions (because it involves writing to page 1, which every
+transaction needs to read). To minimize the frequency with which this occurs,
+when a page must be allocated from the end of the database file, the file is
+extended by 2048 pages. These are distributed equally between 16 free-lists
+(children of the free-list node page). Additionally, the first trunk page in
+each free list is never reused.  Doing so would require writing to the
+free-list node page - effectively an exclusive lock on the entire
+page-allocation system.
+
+<p>
+The current format used for the free-list can be modified or queried using a
+new pragma:
+
+<pre>
+  PRAGMA [database.]freelist_format;
+  PRAGMA [database.]freelist_format = 1|2;
+</pre>
+
+<p>
+At present, the free-list format may only be modified when the free-list is
+completely empty. Which, as the implementation ensures that a free-list that
+uses the alternative format is never completely emptied, effectively precludes
+changing the format from 2 (alternative) to 1 (legacy).
+
+<h2> Page level locking - "Server Mode" </h2>
+
+<p>
+A database client automatically enters "server mode" if (a) it is using a VFS
+that takes a process-wide exclusive lock on the db file (like "unix-excl"
+does), and (b) there exists a directory named "&lt;database&gt;-journal" in the
+file system alongside the database file "&lt;database&gt;" There is currently no
+provision for creating this directory, although it could be safely done for
+a database in rollback mode using something like:
+
+<pre>
+  PRAGMA journal_mode = off;
+  BEGIN EXCLUSIVE;
+    &lt;create directory&gt;
+  END;
+</pre>
+
+<p>
+To check the status of these two conditions, a new file-control is added -
+SQLITE_FCNTL_SERVER_MODE. SQLite invokes this file-control as part of the
+procedure for detecting a hot journal (after it has established that there is a
+file-system entry named &lt;database&gt;-journal and that no other process
+holds a RESERVED lock). If the VFS does support an exclusive process-wide lock
+and if the directory is present, the VFS indicates that the client should enter
+server mode. If the VFS does not indicate this, or if it returns
+SQLITE_NOTFOUND, then SQLite proceeds with the hot-journal rollback.
+
+<p>
+There is also a new file-control named SQLITE_FCNTL_FILEID, which requests a
+128-bit value that uniquely identifies an open file on disk from the VFS. This
+is used to ensure that all connections to the same database from within a
+process use the same shared state, even if they connect to the db using
+different file-system paths.
+
+<p>
+The heap-memory data structure shared between all connections to the same
+database is protected by a mutex. Clients take and release the mutex each
+time a transaction is opened or closed, and each time a read or write lock
+is taken on a specific database page. Ordinary read/write transactions lock
+each page that they access - each page can support any number of concurrent
+read locks or a single write lock. 
+
+<p>
+Write transactions use a journal file stored in the &lt;database&gt;-journal 
+directory. Journal files are named "&lt;id&gt;-journal", where &lt;id&gt; is an
+integer value betwen 0 and 15, inclusive. A client may use multiple different
+journal files throughout its lifetime.
+
+<p>Before database pages are overwritten in server-mode, entries are added to
+an in-memory hash table containing the old page content. These entries are
+used by read-only transactions to ensure that they access a consistent snapshot
+of the database. Hash table entries are automatically removed when they are
+no longer required.
+
+<p>
+It is not difficult to extend the kind of page level locking used by read/write
+transactions to clients in multiple processes. It might be more difficult to
+extend the read-only MVCC capability though.
+
+<h2> Performance Test </h2>
+
+<p>
+The test uses a single table with the following schema:
+
+<pre>
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));
+  CREATE INDEX i1 ON t1(b);
+  CREATE INDEX i2 ON t1(c);
+</pre>
+
+<p>
+The database initially contains 5,000,000 rows. Values for column "a" are
+between 1 and 5,000,000, inclusive. Other columns are populated with randomly
+generated blob values, each 16, 16, and 400 bytes in size, respectively.
+
+<p>
+Read/write transactions used by the test take the following form. Each such
+transaction modifies approximately 25 pages (5 in the main table and 10 in each
+index), not accounting for tree rebalancing operations.
+
+<pre>
+  BEGIN;
+    REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));
+    REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));
+    REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));
+    REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));
+    REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));
+  COMMIT;
+</pre>
+
+<p>
+Read-only transactions are as follows:
+
+<pre>
+  BEGIN READONLY;
+    SELECT * FROM t1 WHERE a&gt;abs((random()%5000000)) LIMIT 10;
+    SELECT * FROM t1 WHERE a&gt;abs((random()%5000000)) LIMIT 10;
+    SELECT * FROM t1 WHERE a&gt;abs((random()%5000000)) LIMIT 10;
+    SELECT * FROM t1 WHERE a&gt;abs((random()%5000000)) LIMIT 10;
+    SELECT * FROM t1 WHERE a&gt;abs((random()%5000000)) LIMIT 10;
+  END;
+</pre>
+
+<p>
+The performance test features one or more clients executing read/write
+transactions as fast as possible, and zero or more clients executing read-only
+transactions, also as fast as possible. All tests use the "unix-excl" VFS and
+all clients execute in a separate thread within the same process. The database
+is located on a tmpfs file-system.
+
+<p>
+In the table below "rw:" refers to the number of read-write clients, and "ro:"
+the number of read-only clients used by the test. The TPS values in brackets
+are the number of read-only transactions per second. All other values are 
+read-write transactions per second.
+
+<p>
+The collision rate (percentage of attempted transactions that failed due to a
+page-level locking conflict) in all tests was between 1 and 2%. Failed
+transactions are not included in the TPS counts below.
+
+<p>
+<table border=1 width=90% align=center>
+<!--
+  320 jm=persist, rw:1          139675, 135797
+  320 jm=wal, rw:1              120995, 118889
+  begin-concurrent, rw:1        119438, 117580
+  begin-concurrent, rw:2        166923, 166904
+  begin-concurrent, rw:3        180432, 172825
+  begin-concurrent, rw:2,ro:1   150427(347319),152087(351601) 
+  server-mode, rw:1             126592, 126742
+  server-mode, rw:2             228317, 227155
+  server-mode, rw:3             309712, 306218
+  server-mode, rw:2,ro:1        213303(576032),210994(556005) 
+-->
+
+  <tr><th> Configuration <th>TPS per client <th> TPS total
+  <tr><td> 3.20.0, journal_mode=persist, rw:1, ro:0 <td>6886 <td> 6886
+  <tr><td> 3.20.0, journal_mode=wal, rw:1, ro:0 <td>5997 <td> 5997
+  <tr><td> begin-concurrent, rw:1, ro:0<td>5925<td> 5925
+  <tr><td> begin-concurrent, rw:2, ro:0<td>4172 <td> 8345
+  <tr><td> begin-concurrent, rw:3, ro:0<td>2943 <td> 8831
+  <tr><td> begin-concurrent, rw:2, ro:1<td>3781 <td> 7562 (17473)
+  <tr><td> server-mode, rw:1, ro:0 <td>6333 <td> 6333
+  <tr><td> server-mode, rw:2, ro:0<td> 5693 <td> 11386
+  <tr><td> server-mode, rw:3, ro:0<td>5132 <td> 15398
+  <tr><td> server-mode, rw:2, ro:1<td>5303 <td> 10607 (28300)
+</table>
+
