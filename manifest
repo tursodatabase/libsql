@@ -1,5 +1,5 @@
-C Move\sthe\sgeneration\sof\soutput\scolumn\snames\searlier,\sto\sright\safter\nname\sresolution\sand\sbefore\squery\stransformations\ssuch\sas\sflattening.\s\nThis\sprevents\sthe\snames\sfrom\sgetting\smangled\sby\squery\stransformations,\s\nand\sobviates\shacks\sin\sthe\squery\sflattener\sthat\sattempt\sto\swork\saround\s\nthe\sname\smangling.\sThe\sresulting\scode\sis\ssmaller\sand\sfaster\sand\sgives\nmore\sconsistent\soutput.\sFix\sto\sticket\s[de3403bf5ae5f72ed].
-D 2017-07-31T16:42:46.666
+C Prevent\sOSSFuzz\sfrom\susing\sdebugging\spragmas\sthat\sare\sdisabled\sin\sdefault\sbuilds\nand\swhich\sgenerate\slots\sof\sexcess\soutput.
+D 2017-07-31T17:06:34.891
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1071,7 +1071,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c f5abed3177f719df3c3109901fcdd26b9fb7f581c8da50fc26f3a81ddfb2c2ae
+F test/ossfuzz.c 7f5cc87a0280a5854c1bfa7d5c4d07d34731f08ec34dc9c916aa35ed292b1468
 F test/ossshell.c 296ab63067841bd1b1e97b46a0b2af48ee7f69d50d1a723008bee12dd7122622
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 8149b2a8986fee667ab6a8171ab310be19e77ae215bebad0e90c857b0df1935c
@@ -1638,8 +1638,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac1da06a829051d393ccb8bb986e78f5bd35b060687688f6b3661913b13c9a5a 0c38dde4543d6183a6ab0b7b3b75819f56c47704756a2426d54d3f20468d78d8
-R 676501af990a50a3769271a58903b891
-T +closed 0c38dde4543d6183a6ab0b7b3b75819f56c47704756a2426d54d3f20468d78d8
+P ade7ddf1998190b2b630715774963150d86bed3211b7fd600cbf3068427e1531
+R 75b0d7890ccfdbdd3fb7ff07d5a5f4c9
 U drh
-Z af511cee2e586dfefe9456d8226f20b4
+Z b44ce0f406a7c3ec551068a0f7cade7c
