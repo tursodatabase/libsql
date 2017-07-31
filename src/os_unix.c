@@ -3796,15 +3796,15 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
     case SQLITE_FCNTL_BEGIN_ATOMIC_WRITE: {
       int rc = osIoctl(pFile->h, F2FS_IOC_START_ATOMIC_WRITE);
-      return rc ? SQLITE_ERROR : SQLITE_OK;
+      return rc ? SQLITE_IOERR_BEGIN_ATOMIC : SQLITE_OK;
     }
     case SQLITE_FCNTL_COMMIT_ATOMIC_WRITE: {
       int rc = osIoctl(pFile->h, F2FS_IOC_COMMIT_ATOMIC_WRITE);
-      return rc ? SQLITE_ERROR : SQLITE_OK;
+      return rc ? SQLITE_IOERR_COMMIT_ATOMIC : SQLITE_OK;
     }
     case SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE: {
       int rc = osIoctl(pFile->h, F2FS_IOC_ABORT_VOLATILE_WRITE);
-      return rc ? SQLITE_ERROR : SQLITE_OK;
+      return rc ? SQLITE_IOERR_ROLLBACK_ATOMIC : SQLITE_OK;
     }
 #endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 

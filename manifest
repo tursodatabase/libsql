@@ -1,5 +1,5 @@
-C Backport\sof\sall\sbatch-atomic-write\schanges\sthrough\scheck-in\n[67bad7fb9b]
-D 2017-07-28T02:02:45.191
+C Merge\sfurther\senhancements\sto\sthe\sbatch-atomic-write\ssubsystem.
+D 2017-07-31T12:04:23.686
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -375,7 +375,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 9b9e579226341e891a4657dc76fe2cec69734abcd23be0e42aa8764d88131f12
+F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -387,7 +387,7 @@ F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 9aa19db965d574cbaf74405cd51c58b87fdbfe045b8bbfc01b18bdeeda3c4305
+F src/os_unix.c 0681c6ef336fcb6a111f45b60a5faea38992ed6c4ae9fbd57a6f8e247724fa68
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 930dace8819cf569331bca24be8fe362d337208bc6e12dc4acb19c596630f1f4
@@ -405,7 +405,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c444ca057d48cf1a4eb8f6a58fbc13418a7f83ae94a6bd6f29f7ad6c704a9e4c
 F src/shell.c a37d96b20b3644d0eb905df5aa7a0fcf9f6e73c15898337230c760a24a8df794
-F src/sqlite.h.in d603987eee5f7a2fa81d4baf5ec70b67b214bd34f7e1819653f5ec3b9c982eee
+F src/sqlite.h.in aa1bccab835fbea701599ffc747d2fed9098142b9b52e714229d7789a140ad25
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 40785f84fc3d3b25b54f4325d42992f41a73e81de57b354271bd2de0ae377625
@@ -522,6 +522,7 @@ F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
+F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/attach.test 9976867b1a6585018f0966857aa82ed44e0bd6dc
 F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
@@ -1487,7 +1488,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 06efb84b7c48a4973c2c24ea06c93d00bce24389
-F test/writecrash.test e6dc9d470d43710c3f780a50d29cce1c3884ca34ff50e737bc9ab8724c7c2398
+F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1581,10 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 24c9cd460051781f7e6417b7e205274319258f061ae1191a6c5ff5af615439c9 67bad7fb9b2fdb29b63308f22062444084dc28191a542e08076dc2e39caf6f62
-R 52d5da1e6c65e285a15752ad8c60b72a
-T *branch * batch-atomic-write-3.19
-T *sym-batch-atomic-write-3.19 *
-T -sym-branch-3.19 *
+P def55027b1f1db9c083830019dbcc3daed94f6cc70a76b285ac1af9d82f81695 4c0520d4df7473eb4cc764774df7d99bb96cf067ac224755e09f0df47fb2a810
+R c14b6d047504c900d55e0fc810341b46
 U drh
-Z db5307b269591715fdc95cf9a91a4aa8
+Z 7e0e256b705f62a9caed770611838ecb

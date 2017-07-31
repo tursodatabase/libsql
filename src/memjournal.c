@@ -397,7 +397,15 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
 int sqlite3JournalCreate(sqlite3_file *pJfd){
   int rc = SQLITE_OK;
   MemJournal *p = (MemJournal*)pJfd;
-  if( p->pMethod==&MemJournalMethods && (p->nSpill>0 
+  if( p->pMethod==&MemJournalMethods && (
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+     p->nSpill>0
+#else
+     /* While this appears to not be possible without ATOMIC_WRITE, the
+     ** paths are complex, so it seems prudent to leave the test in as
+     ** a NEVER(), in case our analysis is subtly flawed. */
+     NEVER(p->nSpill>0)
+#endif
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
      || (p->flags & SQLITE_OPEN_MAIN_JOURNAL)
 #endif
