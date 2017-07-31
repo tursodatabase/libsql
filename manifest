@@ -1,10 +1,10 @@
-C Do\snow\sallow\sthe\sgeometry\sobject\sin\sthe\sright\soperand\sof\sa\sMATCH\soperator\sin\nthe\sRTREE\sextension\sto\sbe\sinpersonated\sby\sa\sBLOB\sliteral.
-D 2017-07-27T00:27:57.692
+C Increase\sthe\sversion\snumber\sto\s3.19.4
+D 2017-07-31T12:07:52.249
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 6035ef7e627075d9a9194304c3a07acb2736a0abd0dd980a7ea75a3a45719e86
+F VERSION de5625ebdd3aaace58a796921f1b48e83c59af88ccf6ab7a6d9290e5fc21285c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1a94740b2ac20f3b865689d32746ade6eee7974282170b0ba2b019d310917ec7 x
+F configure 069c0185c21da7b740a5beeb9b439be0a99e24f26ad938eb85f6f2954370a56a x
 F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1580,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ee482a1e0eae22e08edc8978c9733a96603d4509645f348ebf55b579e89636b
-R 5aba315ce772ced25c1b87936307ec42
+P 24c9cd460051781f7e6417b7e205274319258f061ae1191a6c5ff5af615439c9
+R 09acb00a9d7b7d8c183679387523a2cd
 U drh
-Z c0ec9b17a9a0e51afaa3dc2485cf6a08
+Z ea3844bfc66744f4803ecf14d2918808
