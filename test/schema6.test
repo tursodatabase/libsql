@@ -30,6 +30,7 @@ proc check_same_database_content {basename args} {
   set i 0
   set hash {}
   foreach sql $args {
+    catch {db close}
     forcedelete test.db
     sqlite3 db test.db
     db eval $sql

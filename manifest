@@ -1,5 +1,5 @@
-C Prevent\sOSSFuzz\sfrom\susing\sdebugging\spragmas\sthat\sare\sdisabled\sin\sdefault\sbuilds\nand\swhich\sgenerate\slots\sof\sexcess\soutput.
-D 2017-07-31T17:06:34.891
+C Fix\sa\swindows-compatibility\sissue\sin\sthe\srecently\sadded\sschema6.test\sscript.
+D 2017-07-31T17:51:49.812
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1144,7 +1144,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
-F test/schema6.test 54599bcf0b3cbc7f57cf02855453bbdafd77ab3cefff19cb9dd858e2ab70a91f
+F test/schema6.test 5b21bbdd405bc93b3e6af5e6ece64d230e35f65cc4035e5c2b89fc8a090d7270
 F test/securedel.test 5f997cb6bd38727b81e0985f53ec386c99db6441b2b9e6357240649d29017239
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
@@ -1638,7 +1638,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ade7ddf1998190b2b630715774963150d86bed3211b7fd600cbf3068427e1531
-R 75b0d7890ccfdbdd3fb7ff07d5a5f4c9
+P cdc6494c050d821908087e6fd9b1e44ba92d81f363494a80b54647f19e5675f7
+R 46ee37e1f08ccf265a7ab507d40c09f2
 U drh
-Z b44ce0f406a7c3ec551068a0f7cade7c
+Z 7a3f12e9e408a319d74d92285ced4ce2
