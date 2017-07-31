@@ -384,6 +384,30 @@ test_suite "vfslog" -prefix "" -description {
   wal* mmap*
 ]
 
+test_suite "atomic-batch-write" -prefix "" -description {
+  Like veryquick.test, but must be run on a file-system that supports
+  atomic-batch-writes. Tests that depend on the journal file being present
+  are omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj*  \
+      crash8.test delete_db.test        \
+      exclusive.test journal3.test      \
+      journal1.test                     \
+      jrnlmode.test jrnlmode2.test      \
+      lock4.test pager1.test            \
+      pager3.test sharedA.test          \
+      symlink.test stmt.test            \
+      sync.test sync2.test              \
+      tempdb.test tkt3457.test          \
+      vacuum5.test wal2.test            \
+      walmode.test zerodamage.test
+] -initialize {
+  if {[atomic_batch_write test.db]==0} {
+    error "File system does NOT support atomic-batch-write"
+  }
+}
+
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
 # Define the coverage related test suites:
