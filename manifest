@@ -1,5 +1,5 @@
-C Take\sadvantage\sof\satomic-write\scapabilities\sin\sthe\sF2FS\sfilesystem\swhen\sthe\ndatabase\sis\sstored\son\ssuch\sa\sfilesystem.\s\sThis\sis\sa\scompile-time\soption\nactivated\susing\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE.
-D 2017-08-01T14:16:15.157
+C Split\sthe\sOP_Last\sopcode\sinto\sOP_Last\sand\sOP_SeekEnd.\s\sUse\sOP_SeekEnd\sto\nposition\sa\scursor\sprior\sto\sappending.\s\sTicket\s[cb91bf4290c211d].
+D 2017-08-01T19:53:43.985
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -398,7 +398,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c f55ea8f456d103328d61076be40fa39acbfea05eaa4eccfed275532a63c867c4
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da1
-F src/build.c f65f86520aa877853125565e42c59c5c49851a4733392931777fb1aace4aedfd
+F src/build.c 1285d6b7da72d699db6aec36d04794629c8e0fb89bb1d8e3ba838fa56948643a
 F src/callback.c 930648a084a3adc741c6471adfbdc50ba47ba3542421cb80a26f259f467de65e
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -414,7 +414,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c b88a58ff7eb99365b3ff163a5771c7e5db09f43997a8c5303588056ab33bc4eb
+F src/insert.c d2d1bf12d2b5382450620d7cede84c7ffe57e6a89fa9a908f1aba68df2731cd9
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 20865b183bb8a3723d59cf1efffc3c50217eb452c1021d077b908c94da26b0b2
 F src/main.c 42f6a2660c7a1d643cc7e863d2dcd630c6aa1e8343f5478b0592120ab84c97ba
@@ -520,7 +520,7 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c ac9cc205741b295d5b77917cfd2a45632de3cd5563e143e74dce1ede42e4b68c
+F src/vdbe.c 5752a157cfb2898d154ecdd4a805135d2e9b1708084a3205dbc379af3ae8ef07
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h ff2b7db0968d20e6184aee256d2e535d565f5a172e3588a78adb166a41fc4911
 F src/vdbeapi.c 0823531191f9d5588a245ed5b39306798681814e9e8099d54a3213a13a28fbe7
@@ -1515,7 +1515,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test f520bcec2c3d12dc4615623b06b2aec7c2d67e94
 F test/where8.test 98eedca0d375fb400b8377269c4b4686582dfb45
 F test/where9.test 729c3ba9b47e8f9f1aab96bae7dad2a524f1d1a2
-F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
+F test/whereA.test 6c6a420ca7d313242f9b1bd471dc80e4d0f8323700ba9c78df0bb843d4daa3b4
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test 711d4df58d6d4fb9b3f5ce040b818564198be002
@@ -1640,7 +1640,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95e8f31658254dd2df3eeaae337aff0fe2125d170ae966c74f4fc70400e099b1 4c0520d4df7473eb4cc764774df7d99bb96cf067ac224755e09f0df47fb2a810
-R 785ca20553bf2e0c19860d1453d0c98e
+P 24190b221f73472dafaead6de101b4debc2c91c1ca28d70b45a38df5bb61fb39
+R e20c96636649f5a0133f10107f6b5f8c
 U drh
-Z 2380a4cbd6dbbedaa37eda54fb01fd11
+Z 860ec7307cf1110562833040172ad143
