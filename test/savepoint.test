@@ -616,12 +616,16 @@ ifcapable auth {
 # First make sure it is not possible to attach or detach a database while
 # a savepoint is open (it is not possible if any transaction is open).
 #
+# UPDATE 2017-07-26:  It is not possible to ATTACH and DETACH within a
+# a transaction.
+#
 do_test savepoint-10.1.1 {
   catchsql {
     SAVEPOINT one;
     ATTACH 'test2.db' AS aux;
+    DETACH aux;
   }
-} {1 {cannot ATTACH database within transaction}}
+} {0 {}}
 do_test savepoint-10.1.2 {
   execsql {
     RELEASE one;
@@ -630,8 +634,9 @@ do_test savepoint-10.1.2 {
   catchsql {
     SAVEPOINT one;
     DETACH aux;
+    ATTACH 'test2.db' AS aux;
   }
-} {1 {cannot DETACH database within transaction}}
+} {0 {}}
 do_test savepoint-10.1.3 {
   execsql {
     RELEASE one;

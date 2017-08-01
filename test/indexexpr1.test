@@ -380,7 +380,4 @@ do_execsql_test indexexpr1-1300.1 {
   SELECT a FROM t1300 WHERE substr(b,4)='ess' COLLATE nocase ORDER BY +a;
 } {3 4}
 
-# Date and time functions can participate in an index as long as they
-# do not contain
-
 finish_test

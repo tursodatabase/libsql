@@ -481,7 +481,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
     }
     freeIndex(db, pIndex);
   }
-  db->flags |= SQLITE_InternChanges;
+  db->mDbFlags |= DBFLAG_SchemaChange;
 }
 
 /*
@@ -553,7 +553,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
       sqlite3SchemaClear(pDb->pSchema);
     }
   }
-  db->flags &= ~SQLITE_InternChanges;
+  db->mDbFlags &= ~DBFLAG_SchemaChange;
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
   sqlite3CollapseDatabaseArray(db);
@@ -563,7 +563,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
 ** This routine is called when a commit occurs.
 */
 void sqlite3CommitInternalChanges(sqlite3 *db){
-  db->flags &= ~SQLITE_InternChanges;
+  db->mDbFlags &= ~DBFLAG_SchemaChange;
 }
 
 /*
@@ -667,7 +667,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName, 0);
   sqlite3DeleteTable(db, p);
-  db->flags |= SQLITE_InternChanges;
+  db->mDbFlags |= DBFLAG_SchemaChange;
 }
 
 /*
@@ -780,7 +780,8 @@ int sqlite3TwoPartName(
       return -1;
     }
   }else{
-    assert( db->init.iDb==0 || db->init.busy || (db->flags & SQLITE_Vacuum)!=0);
+    assert( db->init.iDb==0 || db->init.busy
+             || (db->mDbFlags & DBFLAG_Vacuum)!=0);
     iDb = db->init.iDb;
     *pUnqual = pName1;
   }
@@ -1740,15 +1741,6 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
 
-    /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
-    ** table entry. This is only required if currently generating VDBE
-    ** code for a CREATE TABLE (not when parsing one as part of reading
-    ** a database schema).  */
-    if( v ){
-      assert( db->init.busy==0 );
-      sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
-    }
-
     /*
     ** Remove all redundant columns from the PRIMARY KEY.  For example, change
     ** "PRIMARY KEY(a,b,a,b,c,b,c,d)" into just "PRIMARY KEY(a,b,c,d)".  Later
@@ -1767,6 +1759,15 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   pPk->isCovering = 1;
   if( !db->init.imposterTable ) pPk->uniqNotNull = 1;
   nPk = pPk->nKeyCol;
+
+  /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
+  ** table entry. This is only required if currently generating VDBE
+  ** code for a CREATE TABLE (not when parsing one as part of reading
+  ** a database schema).  */
+  if( v && pPk->tnum>0 ){
+    assert( db->init.busy==0 );
+    sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
+  }
 
   /* The root page of the PRIMARY KEY is the table root page */
   pPk->tnum = pTab->tnum;
@@ -2057,7 +2058,7 @@ void sqlite3EndTable(
       return;
     }
     pParse->pNewTable = 0;
-    db->flags |= SQLITE_InternChanges;
+    db->mDbFlags |= DBFLAG_SchemaChange;
 
 #ifndef SQLITE_OMIT_ALTERTABLE
     if( !p->pSelect ){
@@ -3326,7 +3327,7 @@ void sqlite3CreateIndex(
       sqlite3OomFault(db);
       goto exit_create_index;
     }
-    db->flags |= SQLITE_InternChanges;
+    db->mDbFlags |= DBFLAG_SchemaChange;
     if( pTblName!=0 ){
       pIndex->tnum = db->init.newTnum;
     }
