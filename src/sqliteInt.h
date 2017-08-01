@@ -631,6 +631,15 @@
 #endif
 
 /*
+** The compile-time options SQLITE_MMAP_READWRITE and 
+** SQLITE_ENABLE_BATCH_ATOMIC_WRITE are not compatible with one another.
+** You must choose one or the other (or neither) but not both.
+*/
+#if defined(SQLITE_MMAP_READWRITE) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+#error Cannot use both SQLITE_MMAP_READWRITE and SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+#endif
+
+/*
 ** GCC does not define the offsetof() macro so we'll have to do it
 ** ourselves.
 */
@@ -4287,7 +4296,8 @@ int sqlite3FindInIndex(Parse *, Expr *, u32, int*, int*);
 
 int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);
 int sqlite3JournalSize(sqlite3_vfs *);
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+#if defined(SQLITE_ENABLE_ATOMIC_WRITE) \
+ || defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
   int sqlite3JournalCreate(sqlite3_file *);
 #endif
 
