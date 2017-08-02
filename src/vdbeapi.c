@@ -523,7 +523,7 @@ static int doWalCallbacks(sqlite3 *db){
       sqlite3BtreeEnter(pBt);
       nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
       sqlite3BtreeLeave(pBt);
-      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
+      if( nEntry>0 && db->xWalCallback && rc==SQLITE_OK ){
         rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zDbSName, nEntry);
       }
     }
@@ -633,7 +633,7 @@ static int sqlite3Step(Vdbe *p){
   if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
 #endif
 
-  if( rc==SQLITE_DONE ){
+  if( rc==SQLITE_DONE && db->autoCommit ){
     assert( p->rc==SQLITE_OK );
     p->rc = doWalCallbacks(db);
     if( p->rc!=SQLITE_OK ){
