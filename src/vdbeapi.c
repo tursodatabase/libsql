@@ -1720,7 +1720,7 @@ static UnpackedRecord *vdbeUnpackRecord(
 
   pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
   if( pRet ){
-    memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nField+1));
+    memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nKeyField+1));
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
   }
   return pRet;
@@ -1793,7 +1793,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 */
 int sqlite3_preupdate_count(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
-  return (p ? p->keyinfo.nField : 0);
+  return (p ? p->keyinfo.nKeyField : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 

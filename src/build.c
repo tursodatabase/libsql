@@ -1681,7 +1681,7 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 **          schema to the rootpage from the main table.
 **     (5)  Add all table columns to the PRIMARY KEY Index object
 **          so that the PRIMARY KEY is a covering index.  The surplus
-**          columns are part of KeyInfo.nXField and are not used for
+**          columns are part of KeyInfo.nAllField and are not used for
 **          sorting or lookup or uniqueness checks.
 **     (6)  Replace the rowid tail on all automatically generated UNIQUE
 **          indices with the PRIMARY KEY columns.

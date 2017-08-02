@@ -562,11 +562,11 @@ static void pushOntoSorter(
     if( pParse->db->mallocFailed ) return;
     pOp->p2 = nKey + nData;
     pKI = pOp->p4.pKeyInfo;
-    memset(pKI->aSortOrder, 0, pKI->nField); /* Makes OP_Jump below testable */
+    memset(pKI->aSortOrder, 0, pKI->nKeyField); /* Makes OP_Jump testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
-    testcase( pKI->nXField>2 );
+    testcase( pKI->nAllField > pKI->nKeyField+2 );
     pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat,
-                                           pKI->nXField-1);
+                                           pKI->nAllField-pKI->nKeyField-1);
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
     pSort->labelBkOut = sqlite3VdbeMakeLabel(v);
@@ -1035,8 +1035,8 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   KeyInfo *p = sqlite3DbMallocRawNN(db, sizeof(KeyInfo) + nExtra);
   if( p ){
     p->aSortOrder = (u8*)&p->aColl[N+X];
-    p->nField = (u16)N;
-    p->nXField = (u16)X;
+    p->nKeyField = (u16)N;
+    p->nAllField = (u16)(N+X);
     p->enc = ENC(db);
     p->db = db;
     p->nRef = 1;

@@ -2052,8 +2052,8 @@ struct FKey {
 struct KeyInfo {
   u32 nRef;           /* Number of references to this KeyInfo object */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
-  u16 nField;         /* Number of key columns in the index */
-  u16 nXField;        /* Number of columns beyond the key columns */
+  u16 nKeyField;      /* Number of key columns in the index */
+  u16 nAllField;      /* Total columns, including key plus others */
   sqlite3 *db;        /* The database connection */
   u8 *aSortOrder;     /* Sort order for each column. */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */

@@ -2104,7 +2104,7 @@ case OP_Compare: {
     assert( memIsValid(&aMem[p2+idx]) );
     REGISTER_TRACE(p1+idx, &aMem[p1+idx]);
     REGISTER_TRACE(p2+idx, &aMem[p2+idx]);
-    assert( i<pKeyInfo->nField );
+    assert( i<pKeyInfo->nKeyField );
     pColl = pKeyInfo->aColl[i];
     bRev = pKeyInfo->aSortOrder[i];
     iCompare = sqlite3MemCompare(&aMem[p1+idx], &aMem[p2+idx], pColl);
@@ -3398,7 +3398,7 @@ case OP_OpenWrite:
     pKeyInfo = pOp->p4.pKeyInfo;
     assert( pKeyInfo->enc==ENC(db) );
     assert( pKeyInfo->db==db );
-    nField = pKeyInfo->nField+pKeyInfo->nXField;
+    nField = pKeyInfo->nAllField;
   }else if( pOp->p4type==P4_INT32 ){
     nField = pOp->p4.i;
   }
