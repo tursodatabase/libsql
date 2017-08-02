@@ -1,5 +1,5 @@
-C Rearrange\sinteger\stoken\svalues\sin\sthe\sparser\sand\slogic\sin\sthe\nresolveP2Values()\sroutine\sfor\sa\ssmall\ssize\sreduction\sand\sperformance\sincrease.
-D 2017-08-02T11:04:00.914
+C Rearrange\ssome\sof\sthe\sadded\stoken\scodes\sfor\sa\svery\sslight\ssize\sdecrease\sand\nperformance\sincrease.
+D 2017-08-02T11:36:16.181
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1550,7 +1550,7 @@ F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
-F tool/addopcodes.tcl edbd53806bf20e25af2373ad0c091be4385081c1aa1813b916bf093f94ed8380
+F tool/addopcodes.tcl dd821e5dc17d6523e631cf46c46a346ba168a62aaba71f6c2dd6b145e336f931
 F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
@@ -1640,7 +1640,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eef643a369250f1acac4c01a9b3d29068a510e5bf7fa843d565df5e2523e4dd9
-R b94c57abdcf7a3520bf08721f05c19bd
+P 1cad2926ad88b83becab1326bd189d7bac8ba6d470b36ba5d29af5c9fb016014
+R 6b25b77ed3dffa6d5d74d867110bd8bc
 U drh
-Z e85c953fd1ca1658c90aad1eff95f349
+Z 55259bb2c9c5bddabda87e8220f35e7e
