@@ -625,7 +625,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           break;
         }
       }
-      if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 && pOp->p2<0 ){
+      if( pOp->p2<0 && (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 ){
         assert( ADDR(pOp->p2)<pParse->nLabel );
         pOp->p2 = aLabel[ADDR(pOp->p2)];
       }
