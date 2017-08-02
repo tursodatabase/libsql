@@ -6117,7 +6117,7 @@ static int clearCell(
   unsigned char *pCell,    /* First byte of the Cell */
   CellInfo *pInfo          /* Size information about the cell */
 ){
-  BtShared *pBt = pPage->pBt;
+  BtShared *pBt;
   Pgno ovflPgno;
   int rc;
   int nOvfl;
@@ -6133,6 +6133,7 @@ static int clearCell(
     return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   ovflPgno = get4byte(pCell + pInfo->nSize - 4);
+  pBt = pPage->pBt;
   assert( pBt->usableSize > 4 );
   ovflPageSize = pBt->usableSize - 4;
   nOvfl = (pInfo->nPayload - pInfo->nLocal + ovflPageSize - 1)/ovflPageSize;

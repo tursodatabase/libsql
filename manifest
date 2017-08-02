@@ -1,5 +1,5 @@
-C Optimizations\sassociated\swith\serror\shandling\sin\sbtree\scursors.
-D 2017-08-02T15:50:09.496
+C Minor\soptimization\son\sclearCell()
+D 2017-08-02T18:27:50.018
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -395,7 +395,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 412321430ea1b21b3c7935736ffcf45a8b5cb6db23958565ebdfba7154d2baa1
+F src/btree.c 1a17ba1a765d80c3ca39ce33ff55f92e1f51eb84bbbdab5377f11d36b1515fa1
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da1
 F src/build.c 1285d6b7da72d699db6aec36d04794629c8e0fb89bb1d8e3ba838fa56948643a
@@ -1640,7 +1640,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c45078c062f41f43c71965b2e5a97932ff79123eeb017ba853314987bebc2bca
-R 311e48ea3177d175c259daf3cb9b8b56
+P 49ba54e26731ed371745d4bdd9dd1dfeb73357b6d206c85a4252ec866be971d0
+R 62a1e1fe30ddd4bb4ee9fd2e389b71b0
 U drh
-Z e9a83e1f54df3423de8408fcd81dcfdb
+Z 0b17768b93c7260b6ff17df2e5dd520c
