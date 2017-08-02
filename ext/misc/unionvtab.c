@@ -65,6 +65,8 @@ SQLITE_EXTENSION_INIT1
 # define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
 #endif
 
+#define SWARMVTAB_MAX_ATTACHED 9
+
 typedef struct UnionCsr UnionCsr;
 typedef struct UnionTab UnionTab;
 typedef struct UnionSrc UnionSrc;
@@ -79,6 +81,11 @@ struct UnionSrc {
   char *zTab;                     /* Source table name */
   sqlite3_int64 iMin;             /* Minimum rowid */
   sqlite3_int64 iMax;             /* Maximum rowid */
+
+  /* Fields used by swarmvtab only */
+  char *zFile;                    /* File to ATTACH */
+  int bAttached;                  /* True if currently attached */
+  UnionSrc *pNextAttached;        /* Next in list of all attached sources */
 };
 
 /*
@@ -87,9 +94,17 @@ struct UnionSrc {
 struct UnionTab {
   sqlite3_vtab base;              /* Base class - must be first */
   sqlite3 *db;                    /* Database handle */
+  int bSwarm;                     /* 1 for "swarmvtab", 0 for "unionvtab" */
   int iPK;                        /* INTEGER PRIMARY KEY column, or -1 */
   int nSrc;                       /* Number of elements in the aSrc[] array */
+  sqlite3_stmt *pSourceStr;       /* Used by unionSourceToStr() */
   UnionSrc *aSrc;                 /* Array of source tables, sorted by rowid */
+
+  /* Used by swarmvtab only */
+  char *zSourceStr;               /* Expected unionSourceToStr() value */
+  UnionSrc *pAttached;            /* First in list of attached sources */
+  int nAttach;                    /* Current number of attached sources */
+  int nMaxAttach;                 /* Maximum number of attached sources */
 };
 
 /*
@@ -98,6 +113,10 @@ struct UnionTab {
 struct UnionCsr {
   sqlite3_vtab_cursor base;       /* Base class - must be first */
   sqlite3_stmt *pStmt;            /* SQL statement to run */
+
+  /* Used by swarmvtab only */
+  sqlite3_int64 iMaxRowid;        /* Last rowid to visit */
+  int iTab;                       /* Index of table read by pStmt */
 };
 
 /*
@@ -204,7 +223,7 @@ static sqlite3_stmt *unionPrepare(
   sqlite3_stmt *pRet = 0;
   if( *pRc==SQLITE_OK ){
     int rc = sqlite3_prepare_v2(db, zSql, -1, &pRet, 0);
-    if( rc!=SQLITE_OK ){
+    if( rc!=SQLITE_OK && pzErr ){
       *pzErr = sqlite3_mprintf("sql error: %s", sqlite3_errmsg(db));
       *pRc = rc;
     }
@@ -270,6 +289,31 @@ static void unionFinalize(int *pRc, sqlite3_stmt *pStmt){
   if( *pRc==SQLITE_OK ) *pRc = rc;
 }
 
+static int unionDetachDatabase(UnionTab *pTab, char **pzErr){
+  sqlite3_stmt *pStmt = 0;
+  int rc = SQLITE_OK;
+  UnionSrc **pp;
+  assert( pTab->pAttached );
+
+  pp = &pTab->pAttached;
+  while( (*pp)->pNextAttached ){
+    pp = &(*pp)->pNextAttached;
+  }
+
+  pStmt = unionPreparePrintf(&rc, pzErr, pTab->db, "DETACH %s", (*pp)->zDb);
+  if( rc==SQLITE_OK ) sqlite3_step(pStmt);
+  unionFinalize(&rc, pStmt);
+  assert( rc==SQLITE_OK );
+  if( rc==SQLITE_OK ){
+    assert( (*pp)->bAttached && (*pp)->pNextAttached==0 );
+    (*pp)->bAttached = 0;
+    *pp = 0;
+    pTab->nAttach--;
+  }
+
+  return rc;
+}
+
 /*
 ** xDisconnect method.
 */
@@ -280,11 +324,49 @@ static int unionDisconnect(sqlite3_vtab *pVtab){
     for(i=0; i<pTab->nSrc; i++){
       sqlite3_free(pTab->aSrc[i].zDb);
       sqlite3_free(pTab->aSrc[i].zTab);
+      sqlite3_free(pTab->aSrc[i].zFile);
     }
+    while( pTab->pAttached ){
+      if( unionDetachDatabase(pTab, 0)!=SQLITE_OK ) break;
+    }
+    sqlite3_finalize(pTab->pSourceStr);
+    sqlite3_free(pTab->zSourceStr);
     sqlite3_free(pTab->aSrc);
     sqlite3_free(pTab);
   }
   return SQLITE_OK;
+}
+
+/*
+** Check that the table identified by pSrc is a rowid table. If not,
+** return SQLITE_ERROR and set (*pzErr) to point to an English language
+** error message. If the table is a rowid table and no error occurs,
+** return SQLITE_OK and leave (*pzErr) unmodified.
+*/
+static int unionIsIntkeyTable(
+  sqlite3 *db,                    /* Database handle */
+  UnionSrc *pSrc,                 /* Source table to test */
+  char **pzErr                    /* OUT: Error message */
+){
+  int bPk = 0;
+  const char *zType = 0;
+  int rc;
+
+  sqlite3_table_column_metadata(
+      db, pSrc->zDb, pSrc->zTab, "_rowid_", &zType, 0, 0, &bPk, 0
+  );
+  rc = sqlite3_errcode(db);
+  if( rc==SQLITE_ERROR 
+   || (rc==SQLITE_OK && (!bPk || sqlite3_stricmp("integer", zType)))
+  ){
+    rc = SQLITE_ERROR;
+    *pzErr = sqlite3_mprintf("no such rowid table: %s%s%s",
+        (pSrc->zDb ? pSrc->zDb : ""),
+        (pSrc->zDb ? "." : ""),
+        pSrc->zTab
+    );
+  }
+  return rc;
 }
 
 /*
@@ -306,41 +388,28 @@ static int unionDisconnect(sqlite3_vtab *pVtab){
 */
 static char *unionSourceToStr(
   int *pRc,                       /* IN/OUT: Error code */
-  sqlite3 *db,                    /* Database handle */
+  UnionTab *pTab,                 /* Virtual table object */
   UnionSrc *pSrc,                 /* Source table to test */
-  sqlite3_stmt *pStmt,
   char **pzErr                    /* OUT: Error message */
 ){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
-    int bPk = 0;
-    const char *zType = 0;
-    int rc;
-
-    sqlite3_table_column_metadata(
-        db, pSrc->zDb, pSrc->zTab, "_rowid_", &zType, 0, 0, &bPk, 0
-    );
-    rc = sqlite3_errcode(db);
-    if( rc==SQLITE_ERROR 
-     || (rc==SQLITE_OK && (!bPk || sqlite3_stricmp("integer", zType)))
-    ){
-      rc = SQLITE_ERROR;
-      *pzErr = sqlite3_mprintf("no such rowid table: %s%s%s",
-          (pSrc->zDb ? pSrc->zDb : ""),
-          (pSrc->zDb ? "." : ""),
-          pSrc->zTab
+    int rc = unionIsIntkeyTable(pTab->db, pSrc, pzErr);
+    if( rc==SQLITE_OK && pTab->pSourceStr==0 ){
+      pTab->pSourceStr = unionPrepare(&rc, pTab->db, 
+        "SELECT group_concat(quote(name) || '.' || quote(type)) "
+        "FROM pragma_table_info(?, ?)", pzErr
       );
     }
-
     if( rc==SQLITE_OK ){
-      sqlite3_bind_text(pStmt, 1, pSrc->zTab, -1, SQLITE_STATIC);
-      sqlite3_bind_text(pStmt, 2, pSrc->zDb, -1, SQLITE_STATIC);
-      if( SQLITE_ROW==sqlite3_step(pStmt) ){
-        zRet = unionStrdup(&rc, (const char*)sqlite3_column_text(pStmt, 0));
+      sqlite3_bind_text(pTab->pSourceStr, 1, pSrc->zTab, -1, SQLITE_STATIC);
+      sqlite3_bind_text(pTab->pSourceStr, 2, pSrc->zDb, -1, SQLITE_STATIC);
+      if( SQLITE_ROW==sqlite3_step(pTab->pSourceStr) ){
+        const char *z = (const char*)sqlite3_column_text(pTab->pSourceStr, 0);
+        zRet = unionStrdup(&rc, z);
       }
-      unionReset(&rc, pStmt, pzErr);
+      unionReset(&rc, pTab->pSourceStr, pzErr);
     }
-
     *pRc = rc;
   }
 
@@ -356,25 +425,19 @@ static char *unionSourceToStr(
 ** other error occurs, SQLITE_OK is returned.
 */
 static int unionSourceCheck(UnionTab *pTab, char **pzErr){
-  const char *zSql = 
-      "SELECT group_concat(quote(name) || '.' || quote(type)) "
-      "FROM pragma_table_info(?, ?)";
   int rc = SQLITE_OK;
 
+  assert( *pzErr==0 );
   if( pTab->nSrc==0 ){
     *pzErr = sqlite3_mprintf("no source tables configured");
     rc = SQLITE_ERROR;
   }else{
-    sqlite3_stmt *pStmt = 0;
     char *z0 = 0;
     int i;
 
-    pStmt = unionPrepare(&rc, pTab->db, zSql, pzErr);
-    if( rc==SQLITE_OK ){
-      z0 = unionSourceToStr(&rc, pTab->db, &pTab->aSrc[0], pStmt, pzErr);
-    }
+    z0 = unionSourceToStr(&rc, pTab, &pTab->aSrc[0], pzErr);
     for(i=1; i<pTab->nSrc; i++){
-      char *z = unionSourceToStr(&rc, pTab->db, &pTab->aSrc[i], pStmt, pzErr);
+      char *z = unionSourceToStr(&rc, pTab, &pTab->aSrc[i], pzErr);
       if( rc==SQLITE_OK && sqlite3_stricmp(z, z0) ){
         *pzErr = sqlite3_mprintf("source table schema mismatch");
         rc = SQLITE_ERROR;
@@ -382,9 +445,55 @@ static int unionSourceCheck(UnionTab *pTab, char **pzErr){
       sqlite3_free(z);
     }
 
-    unionFinalize(&rc, pStmt);
+    unionFinalize(&rc, pTab->pSourceStr);
+    pTab->pSourceStr = 0;
     sqlite3_free(z0);
   }
+  return rc;
+}
+
+static int unionAttachDatabase(UnionTab *pTab, int iSrc, char **pzErr){
+  int rc = SQLITE_OK;
+  UnionSrc *pSrc = &pTab->aSrc[iSrc];
+
+  assert( pTab->bSwarm && iSrc<pTab->nSrc );
+  if( pSrc->bAttached==0 ){
+    sqlite3_stmt *pStmt;
+
+    if( pTab->nAttach>=pTab->nMaxAttach ){
+      rc = unionDetachDatabase(pTab, pzErr);
+    }
+
+    pStmt = unionPreparePrintf(
+        &rc, pzErr, pTab->db, "ATTACH %Q AS %s", pSrc->zFile, pSrc->zDb
+    );
+    if( rc==SQLITE_OK ){
+      sqlite3_step(pStmt);
+      rc = sqlite3_finalize(pStmt);
+    }
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
+    }else{
+      char *z = unionSourceToStr(&rc, pTab, pSrc, pzErr);
+      if( rc==SQLITE_OK ){
+        if( pTab->zSourceStr==0 ){
+          pTab->zSourceStr = z;
+        }else{
+          if( sqlite3_stricmp(z, pTab->zSourceStr) ){
+            *pzErr = sqlite3_mprintf("source table schema mismatch");
+            rc = SQLITE_ERROR;
+          }
+          sqlite3_free(z);
+        }
+      }
+    }
+
+    pSrc->pNextAttached = pTab->pAttached;
+    pSrc->bAttached = 1;
+    pTab->pAttached = pSrc;
+    pTab->nAttach++;
+  }
+
   return rc;
 }
 
@@ -407,14 +516,16 @@ static int unionConnect(
 ){
   UnionTab *pTab = 0;
   int rc = SQLITE_OK;
+  int bSwarm = (pAux==0 ? 0 : 1);
+  const char *zVtab = (bSwarm ? "swarmvtab" : "unionvtab");
+  const char *zName = argv[2];
 
-  (void)pAux;   /* Suppress harmless 'unused parameter' warning */
   if( sqlite3_stricmp("temp", argv[1]) ){
     /* unionvtab tables may only be created in the temp schema */
-    *pzErr = sqlite3_mprintf("unionvtab tables must be created in TEMP schema");
+    *pzErr = sqlite3_mprintf("%s tables must be created in TEMP schema", zVtab);
     rc = SQLITE_ERROR;
   }else if( argc!=4 ){
-    *pzErr = sqlite3_mprintf("wrong number of arguments for unionvtab");
+    *pzErr = sqlite3_mprintf("wrong number of arguments for %s", zVtab);
     rc = SQLITE_ERROR;
   }else{
     int nAlloc = 0;               /* Allocated size of pTab->aSrc[] */
@@ -464,19 +575,44 @@ static int unionConnect(
         rc = SQLITE_ERROR;
       }
 
-      pSrc = &pTab->aSrc[pTab->nSrc++];
-      pSrc->zDb = unionStrdup(&rc, zDb);
-      pSrc->zTab = unionStrdup(&rc, zTab);
-      pSrc->iMin = iMin;
-      pSrc->iMax = iMax;
+      if( rc==SQLITE_OK ){
+        pSrc = &pTab->aSrc[pTab->nSrc++];
+        pSrc->zTab = unionStrdup(&rc, zTab);
+        pSrc->iMin = iMin;
+        pSrc->iMax = iMax;
+        if( bSwarm ){
+          pSrc->zFile = unionStrdup(&rc, zDb);
+          pSrc->zDb = sqlite3_mprintf("swm_%s_%d", zName, pTab->nSrc);
+          if( pSrc->zDb==0 ) rc = SQLITE_NOMEM;
+        }else{
+          pSrc->zDb = unionStrdup(&rc, zDb);
+          pSrc->bAttached = 1;
+        }
+      }
     }
     unionFinalize(&rc, pStmt);
     pStmt = 0;
 
-    /* Verify that all source tables exist and have compatible schemas. */
+    /* It is an error if the SELECT statement returned zero rows. If only
+    ** because there is no way to determine the schema of the virtual 
+    ** table in this case.  */
+    if( rc==SQLITE_OK && pTab->nSrc==0 ){
+      *pzErr = sqlite3_mprintf("no source tables configured");
+      rc = SQLITE_ERROR;
+    }
+
+    /* For unionvtab, verify that all source tables exist and have 
+    ** compatible schemas. For swarmvtab, attach the first database and
+    ** check that the first table is a rowid table only.  */
     if( rc==SQLITE_OK ){
       pTab->db = db;
-      rc = unionSourceCheck(pTab, pzErr);
+      pTab->bSwarm = bSwarm;
+      pTab->nMaxAttach = SWARMVTAB_MAX_ATTACHED;
+      if( bSwarm ){
+        rc = unionAttachDatabase(pTab, 0, pzErr);
+      }else{
+        rc = unionSourceCheck(pTab, pzErr);
+      }
     }
 
     /* Compose a CREATE TABLE statement and pass it to declare_vtab() */
@@ -535,16 +671,40 @@ static int unionClose(sqlite3_vtab_cursor *cur){
 /*
 ** xNext
 */
-static int unionNext(sqlite3_vtab_cursor *cur){
-  UnionCsr *pCsr = (UnionCsr*)cur;
-  int rc;
+static int doUnionNext(UnionCsr *pCsr){
+  int rc = SQLITE_OK;
   assert( pCsr->pStmt );
   if( sqlite3_step(pCsr->pStmt)!=SQLITE_ROW ){
+    UnionTab *pTab = (UnionTab*)pCsr->base.pVtab;
     rc = sqlite3_finalize(pCsr->pStmt);
     pCsr->pStmt = 0;
-  }else{
-    rc = SQLITE_OK;
+    if( rc==SQLITE_OK && pTab->bSwarm ){
+      pCsr->iTab++;
+      if( pCsr->iTab<pTab->nSrc ){
+        UnionSrc *pSrc = &pTab->aSrc[pCsr->iTab];
+        if( pCsr->iMaxRowid>=pSrc->iMin ){
+          /* It is necessary to scan the next table. */
+          rc = unionAttachDatabase(pTab, pCsr->iTab, &pTab->base.zErrMsg);
+          pCsr->pStmt = unionPreparePrintf(&rc, &pTab->base.zErrMsg, pTab->db,
+              "SELECT rowid, * FROM %Q.%Q %s %lld",
+              pSrc->zDb, pSrc->zTab,
+              (pSrc->iMax>pCsr->iMaxRowid ? "WHERE _rowid_ <=" : "-- "),
+              pCsr->iMaxRowid
+          );
+          if( rc==SQLITE_OK ) rc = SQLITE_ROW;
+        }
+      }
+    }
   }
+
+  return rc;
+}
+
+static int unionNext(sqlite3_vtab_cursor *cur){
+  int rc;
+  do {
+    rc = doUnionNext((UnionCsr*)cur);
+  }while( rc==SQLITE_ROW );
   return rc;
 }
 
@@ -674,6 +834,13 @@ static int unionFilter(
         zSql = sqlite3_mprintf("%z %s rowid<=%lld", zSql, zWhere, iMax);
       }
     }
+
+    if( pTab->bSwarm ){
+      pCsr->iTab = i;
+      pCsr->iMaxRowid = iMax;
+      rc = unionAttachDatabase(pTab, i, &pTab->base.zErrMsg);
+      break;
+    }
   }
 
 
@@ -791,8 +958,13 @@ static int createUnionVtab(sqlite3 *db){
     0,                            /* xRelease */
     0                             /* xRollbackTo */
   };
+  int rc;
 
-  return sqlite3_create_module(db, "unionvtab", &unionModule, 0);
+  rc = sqlite3_create_module(db, "unionvtab", &unionModule, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "swarmvtab", &unionModule, (void*)db);
+  }
+  return rc;
 }
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
