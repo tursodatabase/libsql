@@ -202,19 +202,17 @@ for {set i 0} {$i<=$max} {incr i} {
   set name $def($i)
   puts -nonewline [format {#define %-16s %3d} $name $i]
   set com {}
+  if {$jump($name)} {
+    lappend com "jump"
+  }
   if {[info exists sameas($i)]} {
-    set com "same as $sameas($i)"
+    lappend com "same as $sameas($i)"
   }
   if {[info exists synopsis($name)]} {
-    set x $synopsis($name)
-    if {$com==""} {
-      set com "synopsis: $x"
-    } else {
-      append com ", synopsis: $x"
-    }
+    lappend com "synopsis: $synopsis($name)"
   }
-  if {$com!=""} {
-    puts -nonewline [format " /* %-42s */" $com]
+  if {[llength $com]} {
+    puts -nonewline [format " /* %-42s */" [join $com {, }]]
   }
   puts ""
 }

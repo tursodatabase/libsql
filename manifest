@@ -1,5 +1,5 @@
-C Add\sthe\s"%token"\scontrol\sto\sthe\slemon\sparser.\s\sNot\scurrently\sused\sby\sSQLite.
-D 2017-08-02T03:21:11.634
+C Show\swhich\sopcodes\sare\sjumps\sin\sthe\scomments\swhen\sgenerating\s\nthe\sopcodes.h\sheader\sfile.
+D 2017-08-02T03:21:52.265
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1575,7 +1575,7 @@ F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9
 F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0fe2033c
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
-F tool/mkopcodeh.tcl bb04ab6e5e2000c91e0c69a597e7e36e002320d123e2e1944cb2819181b72ee9
+F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
 F tool/mkshellc.tcl 69c38ecd7b74b2b0799a35ce20e1e3998e504d8c99c100ca4b98ae9d8f6279bc
@@ -1640,7 +1640,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 82e46fe0d497f871e652a579f25e77de7ef05d56484418961a1296f65f19415e
-R 0bde291cb23e7d07a8d60315e9f12ad7
+P a6e4c5ae8f29bc2e7f2088426341254e9281d19db9dc9a14abc376d56dad4c4b
+R 83878328873cb9656e064240517b699e
 U drh
-Z d6f72abd78388d81bef7f991d66fd8f3
+Z 946736871cc1f941ca94f168defb031e
