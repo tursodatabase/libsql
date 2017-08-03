@@ -1955,13 +1955,23 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
   }
 compare_op:
-  switch( pOp->opcode ){
-    case OP_Eq:    res2 = res==0;     break;
-    case OP_Ne:    res2 = res;        break;
-    case OP_Lt:    res2 = res<0;      break;
-    case OP_Le:    res2 = res<=0;     break;
-    case OP_Gt:    res2 = res>0;      break;
-    default:       res2 = res>=0;     break;
+  /* At this point, res is negative, zero, or positive if reg[P1] is
+  ** less than, equal to, or greater than reg[P3], respectively.  Compute
+  ** the answer to this operator in res2, depending on what the comparison
+  ** operator actually is.  The next block of code depends on the fact
+  ** that the 6 comparison operators are consecutive integers in this
+  ** order:  NE, EQ, GT, LE, LT, GE */
+  assert( OP_Eq==OP_Ne+1 ); assert( OP_Gt==OP_Ne+2 ); assert( OP_Le==OP_Ne+3 );
+  assert( OP_Lt==OP_Ne+4 ); assert( OP_Ge==OP_Ne+5 );
+  if( res<0 ){                        /* ne, eq, gt, le, lt, ge */
+    static const unsigned char aLTb[] = { 1,  0,  0,  1,  1,  0 };
+    res2 = aLTb[pOp->opcode - OP_Ne];
+  }else if( res==0 ){
+    static const unsigned char aEQb[] = { 0,  1,  0,  1,  0,  1 };
+    res2 = aEQb[pOp->opcode - OP_Ne];
+  }else{
+    static const unsigned char aGTb[] = { 1,  0,  1,  0,  0,  1 };
+    res2 = aGTb[pOp->opcode - OP_Ne];
   }
 
   /* Undo any changes made by applyAffinity() to the input registers. */
@@ -1973,7 +1983,6 @@ compare_op:
   if( pOp->p5 & SQLITE_STOREP2 ){
     pOut = &aMem[pOp->p2];
     iCompare = res;
-    res2 = res2!=0;  /* For this path res2 must be exactly 0 or 1 */
     if( (pOp->p5 & SQLITE_KEEPNULL)!=0 ){
       /* The KEEPNULL flag prevents OP_Eq from overwriting a NULL with 1
       ** and prevents OP_Ne from overwriting NULL with 0.  This flag

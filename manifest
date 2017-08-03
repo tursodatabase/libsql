@@ -1,5 +1,5 @@
-C In\sthe\sKeyInfo\sobject,\srefactor\sthe\snField\sand\snXField\selements\sinto\nnKeyField\sand\snAllField,\swhich\sare\smore\suseful\sand\srun\sa\slittle\sfaster.
-D 2017-08-02T22:43:14.243
+C Optimization\sto\sthe\scomparison\sopcodes\sin\sthe\sbyte-code\sengine.
+D 2017-08-03T00:29:23.521
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -520,7 +520,7 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 54dfa970e37a3d60886041a62412d975cbcbd1cb4731555f53a8af15ee8f5d0f
+F src/vdbe.c 821b3edde2d17ec60da0617db1018a88f38634c359d22f3c8f7be10336c82636
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h ff2b7db0968d20e6184aee256d2e535d565f5a172e3588a78adb166a41fc4911
 F src/vdbeapi.c 05d6b14ab73952db0d73f6452d6960216997bd966a710266b2fe051f25326abc
@@ -1640,7 +1640,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 527974d4caba8bce7c89a28ea04a573b14c558657c14d9ad3c64bf1e0884caf8
-R cfede6bff76ed4054c454e02ed222e2a
+P aea5990eab5e85f92df966aa641db2271c81052010ad2d80982475c4275a1284
+R 0a918c5c5d7db9651a1ad537410f934a
 U drh
-Z 1b6d760eabb2623531ca0b0d06e46919
+Z 005788cb916471a01f593b9c2d708696
