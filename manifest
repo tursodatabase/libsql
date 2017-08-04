@@ -1,5 +1,5 @@
-C Add\sSQLITE_API\squalifiers\sto\spublic\sAPI\sfunctions\sin\sheader\sfile\ssqlite3rbu.h.
-D 2017-08-03T15:50:10.483
+C Update\sscript\stool/mksqlite3c.tcl\sto\savoid\sduplicating\sthe\sSQLITE_API\nqualifier\swhen\scopying\ssqlite3rbu.h\sinto\sthe\samalgamation.
+D 2017-08-04T08:23:33.554
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1581,7 +1581,7 @@ F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3
 F tool/mkshellc.tcl 69c38ecd7b74b2b0799a35ce20e1e3998e504d8c99c100ca4b98ae9d8f6279bc
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl f6214285bec900d28441366ca31af327aade18bbc424b0480497966ec05bc43c
+F tool/mksqlite3c.tcl a4b36eaa002ed00a0ab2c93d999a14f1acae98ff09a85382e5abc05a91edb82b
 F tool/mksqlite3h.tcl 51bd5e7e840a920388a5966c9f2ccc618f434c57bd68c1bab4085b2553e1e237
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1640,7 +1640,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7676b39bc120ae23da0c6a14452eb99a58901ee45c3d43b8beae426f9e4dc0c3
-R f5e70735ad4d3e8c4157fb574788df7d
+P d8637badf63b90b650e9d6dc970c7e1ce46669ce8272f46f01fac9bd97c1b0fc
+R 1da166520412d11ef7376fec28bc102c
 U dan
-Z 2dec7f5d3b8e5fc73ccd605255779b6d
+Z 6b24caac734a3f8170ff104b0a303a2f
