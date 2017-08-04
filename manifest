@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\sin\sRBU\stest\scases.\sAlso\supdate\sRBU\ssource\scode\sto\sbetter\nhandle\sthe\strivial\scase\swhere\san\sRBU\supdate\sis\sapplied\sto\sa\sdatabase\szero\npages\sin\ssize.
-D 2017-08-03T15:43:55.425
+C Add\sSQLITE_API\squalifiers\sto\spublic\sAPI\sfunctions\sin\sheader\sfile\ssqlite3rbu.h.
+D 2017-08-04T08:24:52.091
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -318,7 +318,7 @@ F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
 F ext/rbu/sqlite3rbu.c 920941a6ff7dbbea0970717c43662878fda5c37e43752de329f0fdd76680ab75
-F ext/rbu/sqlite3rbu.h fc25e1fcd99b5c6d32b1b5b1c73122632e873ac89bd0be9bf646db362b7ce02c
+F ext/rbu/sqlite3rbu.h 82c102e5ae41025e3b245d3d5944315f82811da85e2cd363a75caa97cbd0cd3e
 F ext/rbu/test_rbu.c ec18cfc69a104309df23c359e3c80306c9a6bdd1d2c53c8b70ae158e9832dcd6
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 4f1804b80ae06ddf7ff69192aacdceee283646dc6a328acb951f116147445212
@@ -1581,7 +1581,7 @@ F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3
 F tool/mkshellc.tcl 69c38ecd7b74b2b0799a35ce20e1e3998e504d8c99c100ca4b98ae9d8f6279bc
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl f6214285bec900d28441366ca31af327aade18bbc424b0480497966ec05bc43c
+F tool/mksqlite3c.tcl a4b36eaa002ed00a0ab2c93d999a14f1acae98ff09a85382e5abc05a91edb82b
 F tool/mksqlite3h.tcl 51bd5e7e840a920388a5966c9f2ccc618f434c57bd68c1bab4085b2553e1e237
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1640,7 +1640,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 654935c7737f1a9e08fde9b220c543e86ff6e05910e2f08973a2f93ab2b3e028
-R 6c59535d4227be5c37e4b8d6380e9436
+P 7676b39bc120ae23da0c6a14452eb99a58901ee45c3d43b8beae426f9e4dc0c3 61ab112f326a51d2d524a6371d8c93851ca2c6917414a802ac72d7cf5a2413fb
+R 1da166520412d11ef7376fec28bc102c
+T +closed 61ab112f326a51d2d524a6371d8c93851ca2c6917414a802ac72d7cf5a2413fb
 U dan
-Z e7e622931a024e16c08994823e2aa148
+Z 4e8e60f50eb244bbe132eaa0a5412a20
