@@ -85,6 +85,23 @@ SQLITE_EXTENSION_INIT1
 #endif
 
 /*
+** The following is also copied from sqliteInt.h. To facilitate coverage
+** testing.
+*/
+#ifndef ALWAYS
+# if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+#  define ALWAYS(X)      (1)
+#  define NEVER(X)       (0)
+# elif !defined(NDEBUG)
+#  define ALWAYS(X)      ((X)?1:(assert(0),0))
+#  define NEVER(X)       ((X)?(assert(0),1):0)
+# else
+#  define ALWAYS(X)      (X)
+#  define NEVER(X)       (X)
+# endif
+#endif
+
+/*
 ** The swarmvtab module attempts to keep the number of open database files
 ** at or below this limit. This may not be possible if there are too many
 ** simultaneous queries.
@@ -211,7 +228,7 @@ static void unionDequote(char *z){
       int iIn = 1;
       int iOut = 0;
       if( q=='[' ) q = ']';  
-      while( z[iIn] ){
+      while( ALWAYS(z[iIn]) ){
         if( z[iIn]==q ){
           if( z[iIn+1]!=q ){
             /* Character iIn was the close quote. */
@@ -253,9 +270,10 @@ static sqlite3_stmt *unionPrepare(
   char **pzErr                    /* OUT: Error message */
 ){
   sqlite3_stmt *pRet = 0;
+  assert( pzErr );
   if( *pRc==SQLITE_OK ){
     int rc = sqlite3_prepare_v2(db, zSql, -1, &pRet, 0);
-    if( rc!=SQLITE_OK && pzErr ){
+    if( rc!=SQLITE_OK ){
       *pzErr = sqlite3_mprintf("sql error: %s", sqlite3_errmsg(db));
       *pRc = rc;
     }
@@ -301,6 +319,7 @@ static sqlite3_stmt *unionPreparePrintf(
 ** In this case, *pzErr may be set to point to an error message
 ** buffer allocated by sqlite3_malloc().
 */
+#if 0
 static void unionReset(int *pRc, sqlite3_stmt *pStmt, char **pzErr){
   int rc = sqlite3_reset(pStmt);
   if( *pRc==SQLITE_OK ){
@@ -310,6 +329,7 @@ static void unionReset(int *pRc, sqlite3_stmt *pStmt, char **pzErr){
     }
   }
 }
+#endif
 
 /*
 ** Call sqlite3_finalize() on SQL statement pStmt. If *pRc is set to 
@@ -332,20 +352,16 @@ static void unionFinalize(int *pRc, sqlite3_stmt *pStmt, char **pzErr){
 ** close open database files until at most nMax are open. An SQLite error
 ** code is returned if an error occurs, or SQLITE_OK otherwise.
 */
-static int unionCloseSources(UnionTab *pTab, int nMax){
-  int rc = SQLITE_OK;
-  if( pTab->bSwarm ){
-    while( rc==SQLITE_OK && pTab->pClosable && pTab->nOpen>nMax ){
-      UnionSrc **pp;
-      for(pp=&pTab->pClosable; (*pp)->pNextClosable; pp=&(*pp)->pNextClosable);
-      assert( (*pp)->db );
-      rc = sqlite3_close((*pp)->db);
-      (*pp)->db = 0;
-      *pp = 0;
-      pTab->nOpen--;
-    }
+static void unionCloseSources(UnionTab *pTab, int nMax){
+  while( pTab->pClosable && pTab->nOpen>nMax ){
+    UnionSrc **pp;
+    for(pp=&pTab->pClosable; (*pp)->pNextClosable; pp=&(*pp)->pNextClosable);
+    assert( (*pp)->db );
+    sqlite3_close((*pp)->db);
+    (*pp)->db = 0;
+    *pp = 0;
+    pTab->nOpen--;
   }
-  return rc;
 }
 
 /*
@@ -428,11 +444,11 @@ static char *unionSourceToStr(
   if( *pRc==SQLITE_OK ){
     sqlite3 *db = unionGetDb(pTab, pSrc);
     int rc = unionIsIntkeyTable(db, pSrc, pzErr);
+    sqlite3_stmt *pStmt = unionPrepare(&rc, db, 
+        "SELECT group_concat(quote(name) || '.' || quote(type)) "
+        "FROM pragma_table_info(?, ?)", pzErr
+    );
     if( rc==SQLITE_OK ){
-      sqlite3_stmt *pStmt = unionPrepare(&rc, db, 
-          "SELECT group_concat(quote(name) || '.' || quote(type)) "
-          "FROM pragma_table_info(?, ?)", pzErr
-      );
       sqlite3_bind_text(pStmt, 1, pSrc->zTab, -1, SQLITE_STATIC);
       sqlite3_bind_text(pStmt, 2, pSrc->zDb, -1, SQLITE_STATIC);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -496,35 +512,32 @@ static int unionOpenDatabase(UnionTab *pTab, int iSrc, char **pzErr){
 
   assert( pTab->bSwarm && iSrc<pTab->nSrc );
   if( pSrc->db==0 ){
-    rc = unionCloseSources(pTab, pTab->nMaxOpen-1);
-
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, SQLITE_OPEN_READONLY, 0);
-      if( rc!=SQLITE_OK ){
-        *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pSrc->db));
-      }else{
-        char *z = unionSourceToStr(&rc, pTab, pSrc, pzErr);
-        if( rc==SQLITE_OK ){
-          if( pTab->zSourceStr==0 ){
-            pTab->zSourceStr = z;
-          }else{
-            if( sqlite3_stricmp(z, pTab->zSourceStr) ){
-              *pzErr = sqlite3_mprintf("source table schema mismatch");
-              rc = SQLITE_ERROR;
-            }
-            sqlite3_free(z);
+    unionCloseSources(pTab, pTab->nMaxOpen-1);
+    rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, SQLITE_OPEN_READONLY, 0);
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pSrc->db));
+    }else{
+      char *z = unionSourceToStr(&rc, pTab, pSrc, pzErr);
+      if( rc==SQLITE_OK ){
+        if( pTab->zSourceStr==0 ){
+          pTab->zSourceStr = z;
+        }else{
+          if( sqlite3_stricmp(z, pTab->zSourceStr) ){
+            *pzErr = sqlite3_mprintf("source table schema mismatch");
+            rc = SQLITE_ERROR;
           }
+          sqlite3_free(z);
         }
       }
+    }
 
-      if( rc==SQLITE_OK ){
-        pSrc->pNextClosable = pTab->pClosable;
-        pTab->pClosable = pSrc;
-        pTab->nOpen++;
-      }else{
-        sqlite3_close(pSrc->db);
-        pSrc->db = 0;
-      }
+    if( rc==SQLITE_OK ){
+      pSrc->pNextClosable = pTab->pClosable;
+      pTab->pClosable = pSrc;
+      pTab->nOpen++;
+    }else{
+      sqlite3_close(pSrc->db);
+      pSrc->db = 0;
     }
   }
 
@@ -574,6 +587,7 @@ static int unionFinalizeCsrStmt(UnionCsr *pCsr){
         pSrc->pNextClosable = pTab->pClosable;
         pTab->pClosable = pSrc;
       }
+      unionCloseSources(pTab, pTab->nMaxOpen);
     }
   }
   return rc;
@@ -763,10 +777,8 @@ static int doUnionNext(UnionCsr *pCsr){
         UnionSrc *pSrc = &pTab->aSrc[pCsr->iTab];
         if( pCsr->iMaxRowid>=pSrc->iMin ){
           /* It is necessary to scan the next table. */
-          sqlite3 *db;
           rc = unionOpenDatabase(pTab, pCsr->iTab, &pTab->base.zErrMsg);
-          db = unionGetDb(pTab, pSrc);
-          pCsr->pStmt = unionPreparePrintf(&rc, &pTab->base.zErrMsg, db,
+          pCsr->pStmt = unionPreparePrintf(&rc, &pTab->base.zErrMsg, pSrc->db,
               "SELECT rowid, * FROM %Q %s %lld",
               pSrc->zTab,
               (pSrc->iMax>pCsr->iMaxRowid ? "WHERE _rowid_ <=" : "-- "),
