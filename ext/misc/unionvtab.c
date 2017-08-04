@@ -36,7 +36,7 @@
 **
 **   A "unionvtab" virtual table is created as follows:
 **
-**     CREATE VIRTUAL TABLE <name> USING unionvtab(<sql statement>);
+**     CREATE VIRTUAL TABLE <name> USING unionvtab(<sql-statement>);
 **
 **   The implementation evalutes <sql statement> whenever a unionvtab virtual
 **   table is created or opened. It should return one row for each source
@@ -58,12 +58,15 @@
 **
 **   A "swarmvtab" virtual table is created similarly to a unionvtab table:
 **
-**     CREATE VIRTUAL TABLE <name> USING swarmvtab(<sql statement>);
+**     CREATE VIRTUAL TABLE <name>
+**      USING swarmvtab(<sql-statement>, <callback>);
 **
 **   The difference is that for a swarmvtab table, the first column returned
 **   by the <sql statement> must return a path or URI that can be used to open
-**   the database file containing the source table.
-**
+**   the database file containing the source table.  The <callback> option
+**   is optional.  If included, it is the name of an application-defined
+**   SQL function that is invoked with the URI of the file, if the file
+**   does not already exist on disk.
 */
 
 #include "sqlite3ext.h"
@@ -143,6 +146,7 @@ struct UnionTab {
 
   /* Used by swarmvtab only */
   char *zSourceStr;               /* Expected unionSourceToStr() value */
+  char *zNotFoundCallback;        /* UDF to invoke if file not found on open */
   UnionSrc *pClosable;            /* First in list of closable sources */
   int nOpen;                      /* Current number of open sources */
   int nMaxOpen;                   /* Maximum number of open sources */
@@ -379,6 +383,7 @@ static int unionDisconnect(sqlite3_vtab *pVtab){
       sqlite3_close(pSrc->db);
     }
     sqlite3_free(pTab->zSourceStr);
+    sqlite3_free(pTab->zNotFoundCallback);
     sqlite3_free(pTab->aSrc);
     sqlite3_free(pTab);
   }
@@ -491,6 +496,35 @@ static int unionSourceCheck(UnionTab *pTab, char **pzErr){
   return rc;
 }
 
+
+/*
+** Try to open the swarmvtab database.  If initially unable, invoke the
+** not-found callback UDF and then try again.
+*/
+static int unionOpenDatabaseInner(UnionTab *pTab, UnionSrc *pSrc, char **pzErr){
+  int rc = SQLITE_OK;
+  static const int openFlags = 
+       SQLITE_OPEN_READONLY | SQLITE_OPEN_URI;
+  rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, openFlags, 0);
+  if( rc==SQLITE_OK ) return rc;
+  if( pTab->zNotFoundCallback ){
+    char *zSql = sqlite3_mprintf("SELECT \"%w\"(%Q);",
+                    pTab->zNotFoundCallback, pSrc->zFile);
+    if( zSql==0 ){
+      *pzErr = sqlite3_mprintf("out of memory");
+      return SQLITE_NOMEM;
+    }
+    rc = sqlite3_exec(pTab->db, zSql, 0, 0, pzErr);
+    sqlite3_free(zSql);
+    if( rc ) return rc;
+    rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, openFlags, 0);
+  }
+  if( rc!=SQLITE_OK ){
+    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pSrc->db));
+  }
+  return rc;
+}
+
 /*
 ** This function may only be called for swarmvtab tables. The results of
 ** calling it on a unionvtab table are undefined.
@@ -513,10 +547,8 @@ static int unionOpenDatabase(UnionTab *pTab, int iSrc, char **pzErr){
   assert( pTab->bSwarm && iSrc<pTab->nSrc );
   if( pSrc->db==0 ){
     unionCloseSources(pTab, pTab->nMaxOpen-1);
-    rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, SQLITE_OPEN_READONLY, 0);
-    if( rc!=SQLITE_OK ){
-      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pSrc->db));
-    }else{
+    rc = unionOpenDatabaseInner(pTab, pSrc, pzErr);
+    if( rc==SQLITE_OK ){
       char *z = unionSourceToStr(&rc, pTab, pSrc, pzErr);
       if( rc==SQLITE_OK ){
         if( pTab->zSourceStr==0 ){
@@ -598,10 +630,11 @@ static int unionFinalizeCsrStmt(UnionCsr *pCsr){
 **
 ** The argv[] array contains the following:
 **
-**   argv[0]   -> module name  ("unionvtab")
+**   argv[0]   -> module name  ("unionvtab" or "swarmvtab")
 **   argv[1]   -> database name
 **   argv[2]   -> table name
 **   argv[3]   -> SQL statement
+**   argv[4]   -> not-found callback UDF name
 */
 static int unionConnect(
   sqlite3 *db,
@@ -619,7 +652,7 @@ static int unionConnect(
     /* unionvtab tables may only be created in the temp schema */
     *pzErr = sqlite3_mprintf("%s tables must be created in TEMP schema", zVtab);
     rc = SQLITE_ERROR;
-  }else if( argc!=4 ){
+  }else if( argc!=4 && argc!=5 ){
     *pzErr = sqlite3_mprintf("wrong number of arguments for %s", zVtab);
     rc = SQLITE_ERROR;
   }else{
@@ -684,6 +717,12 @@ static int unionConnect(
     }
     unionFinalize(&rc, pStmt, pzErr);
     pStmt = 0;
+
+    /* Capture the not-found callback UDF name */
+    if( argc>=5 ){
+      pTab->zNotFoundCallback = unionStrdup(&rc, argv[4]);
+      unionDequote(pTab->zNotFoundCallback);
+    }
 
     /* It is an error if the SELECT statement returned zero rows. If only
     ** because there is no way to determine the schema of the virtual 
