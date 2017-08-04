@@ -10,8 +10,8 @@
 **
 *************************************************************************
 **
-** This file contains the implementation of the "unionvtab" virtual
-** table. This module provides read-only access to multiple tables, 
+** This file contains the implementation of the "unionvtab" and "swarmvtab"
+** virtual tables. These modules provide read-only access to multiple tables,
 ** possibly in multiple database files, via a single database object.
 ** The source tables must have the following characteristics:
 **
@@ -25,25 +25,44 @@
 **
 **   * Each table must contain a distinct range of rowid values.
 **
-** A "unionvtab" virtual table is created as follows:
+** The difference between the two virtual table modules is that for 
+** "unionvtab", all source tables must be located in the main database or
+** in databases ATTACHed to the main database by the user. For "swarmvtab",
+** the tables may be located in any database file on disk. The "swarmvtab"
+** implementation takes care of opening and closing database files
+** automatically.
 **
-**   CREATE VIRTUAL TABLE <name> USING unionvtab(<sql statement>);
+** UNIONVTAB
 **
-** The implementation evalutes <sql statement> whenever a unionvtab virtual
-** table is created or opened. It should return one row for each source
-** database table. The four columns required of each row are:
+**   A "unionvtab" virtual table is created as follows:
 **
-**   1. The name of the database containing the table ("main" or "temp" or
-**      the name of an attached database). Or NULL to indicate that all
-**      databases should be searched for the table in the usual fashion.
+**     CREATE VIRTUAL TABLE <name> USING unionvtab(<sql statement>);
 **
-**   2. The name of the database table.
+**   The implementation evalutes <sql statement> whenever a unionvtab virtual
+**   table is created or opened. It should return one row for each source
+**   database table. The four columns required of each row are:
 **
-**   3. The smallest rowid in the range of rowids that may be stored in the
-**      database table (an integer).
+**     1. The name of the database containing the table ("main" or "temp" or
+**        the name of an attached database). Or NULL to indicate that all
+**        databases should be searched for the table in the usual fashion.
 **
-**   4. The largest rowid in the range of rowids that may be stored in the
-**      database table (an integer).
+**     2. The name of the database table.
+**
+**     3. The smallest rowid in the range of rowids that may be stored in the
+**        database table (an integer).
+**
+**     4. The largest rowid in the range of rowids that may be stored in the
+**        database table (an integer).
+**
+** SWARMVTAB
+**
+**   A "swarmvtab" virtual table is created similarly to a unionvtab table:
+**
+**     CREATE VIRTUAL TABLE <name> USING swarmvtab(<sql statement>);
+**
+**   The difference is that for a swarmvtab table, the first column returned
+**   by the <sql statement> must return a path or URI that can be used to open
+**   the database file containing the source table.
 **
 */
 
@@ -65,7 +84,12 @@ SQLITE_EXTENSION_INIT1
 # define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
 #endif
 
-#define SWARMVTAB_MAX_ATTACHED 9
+/*
+** The swarmvtab module attempts to keep the number of open database files
+** at or below this limit. This may not be possible if there are too many
+** simultaneous queries.
+*/
+#define SWARMVTAB_MAX_OPEN 9
 
 typedef struct UnionCsr UnionCsr;
 typedef struct UnionTab UnionTab;
@@ -83,7 +107,7 @@ struct UnionSrc {
   sqlite3_int64 iMax;             /* Maximum rowid */
 
   /* Fields used by swarmvtab only */
-  char *zFile;                    /* File to ATTACH */
+  char *zFile;                    /* Database file containing table zTab */
   int nUser;                      /* Current number of users */
   sqlite3 *db;                    /* Database handle */
   UnionSrc *pNextClosable;        /* Next in list of closable sources */
@@ -119,6 +143,12 @@ struct UnionCsr {
   int iTab;                       /* Index of table read by pStmt */
 };
 
+/*
+** Given UnionTab table pTab and UnionSrc object pSrc, return the database
+** handle that should be used to access the table identified by pSrc. This
+** is the main db handle for "unionvtab" tables, or the source-specific 
+** handle for "swarmvtab".
+*/
 #define unionGetDb(pTab, pSrc) ((pTab)->bSwarm ? (pSrc)->db : (pTab)->db)
 
 /*
@@ -298,25 +328,23 @@ static void unionFinalize(int *pRc, sqlite3_stmt *pStmt, char **pzErr){
 }
 
 /*
-** Close one database from the closable list.
+** This function is a no-op for unionvtab. For swarmvtab, it attempts to
+** close open database files until at most nMax are open. An SQLite error
+** code is returned if an error occurs, or SQLITE_OK otherwise.
 */
-static int unionCloseDatabase(UnionTab *pTab, char **pzErr){
+static int unionCloseSources(UnionTab *pTab, int nMax){
   int rc = SQLITE_OK;
-  UnionSrc **pp;
-
-  assert( pTab->pClosable && pTab->bSwarm );
-
-  pp = &pTab->pClosable;
-  while( (*pp)->pNextClosable ){
-    pp = &(*pp)->pNextClosable;
+  if( pTab->bSwarm ){
+    while( rc==SQLITE_OK && pTab->pClosable && pTab->nOpen>nMax ){
+      UnionSrc **pp;
+      for(pp=&pTab->pClosable; (*pp)->pNextClosable; pp=&(*pp)->pNextClosable);
+      assert( (*pp)->db );
+      rc = sqlite3_close((*pp)->db);
+      (*pp)->db = 0;
+      *pp = 0;
+      pTab->nOpen--;
+    }
   }
-
-  assert( (*pp)->db );
-  rc = sqlite3_close((*pp)->db);
-  (*pp)->db = 0;
-  *pp = 0;
-  pTab->nOpen--;
-
   return rc;
 }
 
@@ -447,18 +475,31 @@ static int unionSourceCheck(UnionTab *pTab, char **pzErr){
   return rc;
 }
 
+/*
+** This function may only be called for swarmvtab tables. The results of
+** calling it on a unionvtab table are undefined.
+**
+** For a swarmvtab table, this function ensures that source database iSrc
+** is open. If the database is opened successfully and the schema is as
+** expected, or if it is already open when this function is called, SQLITE_OK
+** is returned.
+**
+** Alternatively If an error occurs while opening the databases, or if the
+** database schema is unsuitable, an SQLite error code is returned and (*pzErr)
+** may be set to point to an English language error message. In this case it is
+** the responsibility of the caller to eventually free the error message buffer
+** using sqlite3_free(). 
+*/
 static int unionOpenDatabase(UnionTab *pTab, int iSrc, char **pzErr){
   int rc = SQLITE_OK;
   UnionSrc *pSrc = &pTab->aSrc[iSrc];
 
   assert( pTab->bSwarm && iSrc<pTab->nSrc );
   if( pSrc->db==0 ){
-    while( rc==SQLITE_OK && pTab->pClosable && pTab->nOpen>=pTab->nMaxOpen ){
-      rc = unionCloseDatabase(pTab, pzErr);
-    }
+    rc = unionCloseSources(pTab, pTab->nMaxOpen-1);
 
     if( rc==SQLITE_OK ){
-      rc = sqlite3_open(pSrc->zFile, &pSrc->db);
+      rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, SQLITE_OPEN_READONLY, 0);
       if( rc!=SQLITE_OK ){
         *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pSrc->db));
       }else{
@@ -537,8 +578,6 @@ static int unionFinalizeCsrStmt(UnionCsr *pCsr){
   }
   return rc;
 }
-
-
 
 /* 
 ** xConnect/xCreate method.
@@ -646,7 +685,7 @@ static int unionConnect(
     if( rc==SQLITE_OK ){
       pTab->db = db;
       pTab->bSwarm = bSwarm;
-      pTab->nMaxOpen = SWARMVTAB_MAX_ATTACHED;
+      pTab->nMaxOpen = SWARMVTAB_MAX_OPEN;
       if( bSwarm ){
         rc = unionOpenDatabase(pTab, 0, pzErr);
       }else{
@@ -685,7 +724,6 @@ static int unionConnect(
   return rc;
 }
 
-
 /*
 ** xOpen
 */
@@ -708,9 +746,10 @@ static int unionClose(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
-
 /*
-** xNext
+** This function does the work of the xNext() method. Except that, if it
+** returns SQLITE_ROW, it should be called again within the same xNext()
+** method call. See unionNext() for details.
 */
 static int doUnionNext(UnionCsr *pCsr){
   int rc = SQLITE_OK;
@@ -746,6 +785,9 @@ static int doUnionNext(UnionCsr *pCsr){
   return rc;
 }
 
+/*
+** xNext
+*/
 static int unionNext(sqlite3_vtab_cursor *cur){
   int rc;
   do {
@@ -887,7 +929,6 @@ static int unionFilter(
       break;
     }
   }
-
 
   if( zSql==0 ){
     return rc;
