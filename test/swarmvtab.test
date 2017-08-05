@@ -130,6 +130,7 @@ for {set i 0} {$i < 40} {incr i} { forcedelete "test.db$i" }
 #   2.1: Database file does not exist.
 #   2.2: Table does not exist.
 #   2.3: Table schema does not match.
+#   2.4: Syntax error in SELECT statement.
 #
 reset_db
 load_static_extension db unionvtab
@@ -183,6 +184,63 @@ do_catchsql_test 2.2 {
 do_catchsql_test 2.3 {
   SELECT * FROM s1 WHERE rowid BETWEEN 201 AND 300;
 } {1 {source table schema mismatch}}
+
+do_catchsql_test 2.4 {
+  CREATE VIRTUAL TABLE temp.x1 USING swarmvtab('SELECT * FROMdir');
+} {1 {sql error: near "FROMdir": syntax error}}
+do_catchsql_test 2.5 {
+  CREATE VIRTUAL TABLE temp.x1 USING swarmvtab('SELECT * FROMdir', 'fetchdb');
+} {1 {sql error: near "FROMdir": syntax error}}
+
+for {set i 0} {$i < 40} {incr i} {
+  forcedelete "test.db$i"
+}
+
+#-------------------------------------------------------------------------
+# Test the outcome of the fetch function throwing an exception.
+#
+proc fetch_db {file} {
+  error "fetch_db error!"
+}
+
+db func fetch_db fetch_db
+
+do_catchsql_test 3.1 {
+  CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
+    'VALUES
+        ("test.db1", "t1", 1, 10),
+        ("test.db2", "t1", 11, 20)
+    ', 'fetch_db_no_such_function'
+  );
+} {1 {no such function: fetch_db_no_such_function}}
+
+do_catchsql_test 3.2 {
+  CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
+    'VALUES
+        ("test.db1", "t1", 1, 10),
+        ("test.db2", "t1", 11, 20)
+    ', 'fetch_db'
+  );
+} {1 {fetch_db error!}}
+
+do_execsql_test 3.3.1 {
+  ATTACH 'test.db1' AS aux;
+  CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO aux.t1 VALUES(1, NULL);
+  INSERT INTO aux.t1 VALUES(2, NULL);
+  INSERT INTO aux.t1 VALUES(9, NULL);
+  DETACH aux;
+  CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
+    'VALUES
+        ("test.db1", "t1", 1, 10),
+        ("test.db2", "t1", 11, 20)
+    ', 'fetch_db'
+  );
+} {}
+
+do_catchsql_test 3.3 { SELECT * FROM xyz } {1 {fetch_db error!}}
+
+
 
 finish_test
 

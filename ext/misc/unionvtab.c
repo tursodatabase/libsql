@@ -721,7 +721,7 @@ static int unionConnect(
     pStmt = 0;
 
     /* Capture the not-found callback UDF name */
-    if( argc>=5 ){
+    if( rc==SQLITE_OK && argc>=5 ){
       pTab->zNotFoundCallback = unionStrdup(&rc, argv[4]);
       unionDequote(pTab->zNotFoundCallback);
     }
