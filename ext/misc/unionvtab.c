@@ -510,6 +510,8 @@ static int unionOpenDatabaseInner(UnionTab *pTab, UnionSrc *pSrc, char **pzErr){
   if( pTab->zNotFoundCallback ){
     char *zSql = sqlite3_mprintf("SELECT \"%w\"(%Q);",
                     pTab->zNotFoundCallback, pSrc->zFile);
+    sqlite3_close(pSrc->db);
+    pSrc->db = 0;
     if( zSql==0 ){
       *pzErr = sqlite3_mprintf("out of memory");
       return SQLITE_NOMEM;
