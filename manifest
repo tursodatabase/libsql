@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\s"bigmmap.test".\sFor\stesting\sbuilds\swith\n-DSQLITE_MAX_MMAP_SIZE\s>\s2GB.
-D 2017-08-07T17:14:30.170
+C Fix\san\sout-of-order\stest\snumber.
+D 2017-08-07T17:28:18.557
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1232,7 +1232,7 @@ F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
-F test/swarmvtab.test 5e75154e6488b1cca19910e2820786f12eea66c4d4120539f6f064381bef8a54
+F test/swarmvtab.test 05c4ca7b6ab0cc6f4c335a510347f99d741fa71366004699cf7dfa3cff4e2d17
 F test/swarmvtab2.test 038ef9bcad6fd2fb9e395196080cf23e223ddb1219015049a61540c161bc577d
 F test/swarmvtabfault.test 73563eefe3073c6fb3bb14475fb4ef5d4f2e3a67a02947ee0ca08980ea3dd7fe
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ce8b7ca62fcf97875395fc1a989179309e0abb48d4465658ef0d871434ea057
-R 3b0c549f417e6fd62b9ba8e08d16cf4f
-U dan
-Z e94b45dfaab9d16336ea58094ef5df91
+P 17447062799239ee978bedbf7fcc67f4c7d2cad2e82dcf9349a966fc8f67d390
+R ca41cbb6852190e871773e9cd0aff375
+U mistachkin
+Z 3adad62141c8f232faf24a8c8ab64143

@@ -238,7 +238,7 @@ do_execsql_test 3.3.1 {
   );
 } {}
 
-do_catchsql_test 3.3 { SELECT * FROM xyz } {1 {fetch_db error!}}
+do_catchsql_test 3.3.2 { SELECT * FROM xyz } {1 {fetch_db error!}}
 
 
 
