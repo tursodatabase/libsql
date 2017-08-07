@@ -1052,6 +1052,9 @@ static void setGetterMethod(Pager *pPager){
     pPager->xGet = getPageError;
 #if SQLITE_MAX_MMAP_SIZE>0
   }else if( USEFETCH(pPager)
+#ifdef SQLITE_SERVER_EDITION
+   && sqlite3ServerIsReadonly(pPager->pServer)==0
+#endif
 #ifdef SQLITE_HAS_CODEC
    && pPager->xCodec==0
 #endif
@@ -5453,6 +5456,7 @@ int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
     if( rc==SQLITE_OK ){
       rc = sqlite3ServerLock(pPager->pServer, 1, 0, 0);
     }
+    setGetterMethod(pPager);
   }
 #endif
   if( rc==SQLITE_OK && pagerUseWal(pPager) ){

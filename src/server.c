@@ -691,4 +691,14 @@ ServerPage *sqlite3ServerBuffer(Server *p){
   return pRet;
 }
 
+/*
+** Return true if the handle passed as the only argument is not NULL and
+** currently has an open readonly transaction (one started with BEGIN
+** READONLY). Return false if the argument is NULL, if there is no open
+** transaction, or if the open transaction is read/write.
+*/
+int sqlite3ServerIsReadonly(Server *p){
+  return (p && p->eTrans==SERVER_TRANS_READONLY);
+}
+
 #endif /* ifdef SQLITE_SERVER_EDITION */
