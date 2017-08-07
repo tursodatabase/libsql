@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sin\sswarmvtab\sthat\scould\soccur\sif\sthere\swas\san\serror\sin\sthe\sSQL\nstatement\spassed\sto\sthe\sconstructor.\sAdd\sother\stest\scases.
-D 2017-08-05T16:15:33.260
+C Add\snew\stest\sfile\s"bigmmap.test".\sFor\stesting\sbuilds\swith\n-DSQLITE_MAX_MMAP_SIZE\s>\s2GB.
+D 2017-08-07T17:14:30.170
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -608,6 +608,7 @@ F test/bestindex4.test 4cb5ff7dbaebadb87d366f51969271778423b455
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
+F test/bigmmap.test 736009b1fa591b4e12b4569d189e8e2020d9c2532aa270db924e6a662d18cd98
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
@@ -1643,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 422cd9f39403feeacd70133c7a147e23572c75d617ac564344f016ae6611162c
-R dfa04873a550ce06576a091a701d0729
+P 6ce8b7ca62fcf97875395fc1a989179309e0abb48d4465658ef0d871434ea057
+R 3b0c549f417e6fd62b9ba8e08d16cf4f
 U dan
-Z f26bc896b278db4548da6d42aa588fb6
+Z e94b45dfaab9d16336ea58094ef5df91
