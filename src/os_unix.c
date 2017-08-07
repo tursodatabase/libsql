@@ -3861,7 +3861,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 
       /* The value of newLimit may be eventually cast to (size_t) and passed
       ** to mmap(). Restrict its value to 2GB if (size_t) is a 32-bit type. */
-      if( sizeof(size_t)<8 ){
+      if( newLimit>0 && sizeof(size_t)<8 ){
         newLimit = (newLimit & 0x7FFFFFFF);
       }
 
