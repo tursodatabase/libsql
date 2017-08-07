@@ -30,7 +30,7 @@ db eval {
   SELECT compile_options AS x FROM pragma_compile_options 
   WHERE x LIKE 'max_mmap_size=%' 
 } {
-  regexp {MAX_MMAP_SIZE=(.*)} $x -> mmap_limit
+  regexp {MAX_MMAP_SIZE=([0-9]*)} $x -> mmap_limit
 }
 if {$mmap_limit < [expr 8 * 1<<30]} {
   puts "Skipping bigmmap.test - requires SQLITE_MAX_MMAP_SIZE >= 8G"

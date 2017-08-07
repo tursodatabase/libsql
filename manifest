@@ -1,5 +1,5 @@
-C Fix\san\sout-of-order\stest\snumber.
-D 2017-08-07T17:28:18.557
+C Avoid\scasting\sa\svalue\slarger\sthan\s2^31\sto\sa\s(size_t)\sor\s(SIZE_T)\son\ssystems\nwhere\sit\sis\sa\s32-bit\stype.
+D 2017-08-07T19:12:49.379
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -436,8 +436,8 @@ F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 0681c6ef336fcb6a111f45b60a5faea38992ed6c4ae9fbd57a6f8e247724fa68
-F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
+F src/os_unix.c a361273749229755f92c8f0e3e4855054ad39bbc5c65773e8db5d0b79afa632c
+F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1e63b0299cf123cf38c48413ec03190f56c1e7d0ccc6573c467d8ac240b898e9
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
@@ -608,7 +608,7 @@ F test/bestindex4.test 4cb5ff7dbaebadb87d366f51969271778423b455
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
-F test/bigmmap.test 736009b1fa591b4e12b4569d189e8e2020d9c2532aa270db924e6a662d18cd98
+F test/bigmmap.test ed6058a7794be26865c94d5bb62e12cdc4f7f01562b3b04f13eb3cdc52783921
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 17447062799239ee978bedbf7fcc67f4c7d2cad2e82dcf9349a966fc8f67d390
-R ca41cbb6852190e871773e9cd0aff375
-U mistachkin
-Z 3adad62141c8f232faf24a8c8ab64143
+P 38f30091f9b1e2c393396da7257f3487fa374e1ee6d610577291909768ff9626 f08d63b413601b22726e8b96ff8eb779857321b9df30db0333f71e50ffb5077d
+R ada1495a3f5fb5efd255ea78a3bbd776
+U dan
+Z b588cc0bf1fe6fda1e1e52f15501eea7
