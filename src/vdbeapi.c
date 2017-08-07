@@ -523,7 +523,7 @@ static int doWalCallbacks(sqlite3 *db){
       sqlite3BtreeEnter(pBt);
       nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
       sqlite3BtreeLeave(pBt);
-      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
+      if( nEntry>0 && db->xWalCallback && rc==SQLITE_OK ){
         rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zDbSName, nEntry);
       }
     }
@@ -633,7 +633,7 @@ static int sqlite3Step(Vdbe *p){
   if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
 #endif
 
-  if( rc==SQLITE_DONE ){
+  if( rc==SQLITE_DONE && db->autoCommit ){
     assert( p->rc==SQLITE_OK );
     p->rc = doWalCallbacks(db);
     if( p->rc!=SQLITE_OK ){
@@ -677,7 +677,6 @@ end_of_step:
 */
 int sqlite3_step(sqlite3_stmt *pStmt){
   int rc = SQLITE_OK;      /* Result from sqlite3Step() */
-  int rc2 = SQLITE_OK;     /* Result from sqlite3Reprepare() */
   Vdbe *v = (Vdbe*)pStmt;  /* the prepared statement */
   int cnt = 0;             /* Counter to prevent infinite loop of reprepares */
   sqlite3 *db;             /* The database connection */
@@ -691,32 +690,31 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){
     int savedPc = v->pc;
-    rc2 = rc = sqlite3Reprepare(v);
-    if( rc!=SQLITE_OK) break;
+    rc = sqlite3Reprepare(v);
+    if( rc!=SQLITE_OK ){
+      /* This case occurs after failing to recompile an sql statement. 
+      ** The error message from the SQL compiler has already been loaded 
+      ** into the database handle. This block copies the error message 
+      ** from the database handle into the statement and sets the statement
+      ** program counter to 0 to ensure that when the statement is 
+      ** finalized or reset the parser error message is available via
+      ** sqlite3_errmsg() and sqlite3_errcode().
+      */
+      const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
+      sqlite3DbFree(db, v->zErrMsg);
+      if( !db->mallocFailed ){
+        v->zErrMsg = sqlite3DbStrDup(db, zErr);
+        v->rc = rc = sqlite3ApiExit(db, rc);
+      } else {
+        v->zErrMsg = 0;
+        v->rc = rc = SQLITE_NOMEM_BKPT;
+      }
+      break;
+    }
     sqlite3_reset(pStmt);
     if( savedPc>=0 ) v->doingRerun = 1;
     assert( v->expired==0 );
   }
-  if( rc2!=SQLITE_OK ){
-    /* This case occurs after failing to recompile an sql statement. 
-    ** The error message from the SQL compiler has already been loaded 
-    ** into the database handle. This block copies the error message 
-    ** from the database handle into the statement and sets the statement
-    ** program counter to 0 to ensure that when the statement is 
-    ** finalized or reset the parser error message is available via
-    ** sqlite3_errmsg() and sqlite3_errcode().
-    */
-    const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
-    sqlite3DbFree(db, v->zErrMsg);
-    if( !db->mallocFailed ){
-      v->zErrMsg = sqlite3DbStrDup(db, zErr);
-      v->rc = rc2;
-    } else {
-      v->zErrMsg = 0;
-      v->rc = rc = SQLITE_NOMEM_BKPT;
-    }
-  }
-  rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -1722,7 +1720,7 @@ static UnpackedRecord *vdbeUnpackRecord(
 
   pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
   if( pRet ){
-    memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nField+1));
+    memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nKeyField+1));
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
   }
   return pRet;
@@ -1795,7 +1793,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 */
 int sqlite3_preupdate_count(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
-  return (p ? p->keyinfo.nField : 0);
+  return (p ? p->keyinfo.nKeyField : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 

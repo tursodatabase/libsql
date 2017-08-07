@@ -13,7 +13,6 @@
 # The focus of this file is testing how SQLite generates the names
 # of columns in a result set.
 #
-# $Id: colname.test,v 1.7 2009/06/02 15:47:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -325,5 +324,59 @@ do_test colname-8.1 {
     SELECT "y"."x" FROM (SELECT "x" FROM "t3893") AS "y";
   }
 } {123}
+
+# 2017-07-29: Interaction between column naming and query flattening.
+# For years now, the query flattener has inserted AS clauses on the
+# outer query that were the original SQL text of the column.  This caused
+# column-name shifts when the query flattener was enhanced, breaking
+# legacy applications.  See https://sqlite.org/src/info/41c27bc0ff1d3135
+# for details.
+#
+# To fix this, the column naming logic was moved ahead of the query
+# flattener so that column names are assigned before the query flattener
+# runs.
+#
+db close
+sqlite3 db :memory:
+do_test colname-9.100 {
+  db eval {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,2);
+    CREATE VIEW v1(x,y) AS SELECT a,b FROM t1;
+  }
+  execsql2 {SELECT v1.x, (Y) FROM v1}
+  # Prior to the fix, this would return:  "v1.x 1 (Y) 2"
+} {x 1 y 2}
+do_test colname-9.110 {
+  execsql2 {SELECT * FROM v1}
+} {x 1 y 2}
+do_test colname-9.120 {
+  db eval {
+    CREATE VIEW v2(x,y) AS SELECT a,b FROM t1 LIMIT 10;
+  }
+  execsql2 {SELECT * FROM v2 WHERE 1}
+} {x 1 y 2}
+do_test colname-9.130 {
+  execsql2 {SELECT v2.x, [v2].[y] FROM v2 WHERE 1}
+} {x 1 y 2}
+do_test colname-9.140 {
+  execsql2 {SELECT +x, +y FROM v2 WHERE 1}
+} {+x 1 +y 2}
+
+do_test colname-9.200 {
+  db eval {
+    CREATE TABLE t2(c,d);
+    INSERT INTO t2 VALUES(3,4);
+    CREATE VIEW v3 AS SELECT c AS a, d AS b FROM t2;
+  }
+  execsql2 {SELECT t1.a, v3.a AS n FROM t1 LEFT JOIN v3}
+} {a 1 n 3}
+do_test colname-9.211 {
+  execsql2 {SELECT t1.a AS n, v3.a FROM t1 JOIN v3}
+} {n 1 a 3}
+do_test colname-9.210 {
+  execsql2 {SELECT t1.a, v3.a AS n FROM t1 JOIN v3}
+} {a 1 n 3}
+
 
 finish_test

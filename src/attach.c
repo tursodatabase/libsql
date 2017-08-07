@@ -93,10 +93,6 @@ static void attachFunc(
     );
     goto attach_error;
   }
-  if( !db->autoCommit ){
-    zErrDyn = sqlite3MPrintf(db, "cannot ATTACH database within transaction");
-    goto attach_error;
-  }
   for(i=0; i<db->nDb; i++){
     char *z = db->aDb[i].zDbSName;
     assert( z && zName );
@@ -286,11 +282,6 @@ static void detachFunc(
   }
   if( i<2 ){
     sqlite3_snprintf(sizeof(zErr),zErr, "cannot detach database %s", zName);
-    goto detach_error;
-  }
-  if( !db->autoCommit ){
-    sqlite3_snprintf(sizeof(zErr), zErr,
-                     "cannot DETACH database within transaction");
     goto detach_error;
   }
   if( sqlite3BtreeIsInReadTrans(pDb->pBt) || sqlite3BtreeIsInBackup(pDb->pBt) ){

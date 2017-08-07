@@ -562,11 +562,11 @@ static void pushOntoSorter(
     if( pParse->db->mallocFailed ) return;
     pOp->p2 = nKey + nData;
     pKI = pOp->p4.pKeyInfo;
-    memset(pKI->aSortOrder, 0, pKI->nField); /* Makes OP_Jump below testable */
+    memset(pKI->aSortOrder, 0, pKI->nKeyField); /* Makes OP_Jump testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
-    testcase( pKI->nXField>2 );
+    testcase( pKI->nAllField > pKI->nKeyField+2 );
     pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat,
-                                           pKI->nXField-1);
+                                           pKI->nAllField-pKI->nKeyField-1);
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
     pSort->labelBkOut = sqlite3VdbeMakeLabel(v);
@@ -1035,8 +1035,8 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   KeyInfo *p = sqlite3DbMallocRawNN(db, sizeof(KeyInfo) + nExtra);
   if( p ){
     p->aSortOrder = (u8*)&p->aColl[N+X];
-    p->nField = (u16)N;
-    p->nXField = (u16)X;
+    p->nKeyField = (u16)N;
+    p->nAllField = (u16)(N+X);
     p->enc = ENC(db);
     p->db = db;
     p->nRef = 1;
@@ -1438,13 +1438,10 @@ static const char *columnTypeImpl(
         ** of the SELECT statement. Return the declaration type and origin
         ** data for the result-set column of the sub-select.
         */
-        if( iCol>=0 && ALWAYS(iCol<pS->pEList->nExpr) ){
+        if( iCol>=0 && iCol<pS->pEList->nExpr ){
           /* If iCol is less than zero, then the expression requests the
           ** rowid of the sub-select or view. This expression is legal (see 
           ** test case misc2.2.2) - it always evaluates to NULL.
-          **
-          ** The ALWAYS() is because iCol>=pS->pEList->nExpr will have been
-          ** caught already by name resolution.
           */
           NameContext sNC;
           Expr *p = pS->pEList->a[iCol].pExpr;
@@ -1554,18 +1551,6 @@ static void generateColumnTypes(
 #endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 }
 
-/*
-** Return the Table objecct in the SrcList that has cursor iCursor.
-** Or return NULL if no such Table object exists in the SrcList.
-*/
-static Table *tableWithCursor(SrcList *pList, int iCursor){
-  int j;
-  for(j=0; j<pList->nSrc; j++){
-    if( pList->a[j].iCursor==iCursor ) return pList->a[j].pTab;
-  }
-  return 0;
-}
-
 
 /*
 ** Compute the column names for a SELECT statement.
@@ -1599,15 +1584,16 @@ static Table *tableWithCursor(SrcList *pList, int iCursor){
 */
 static void generateColumnNames(
   Parse *pParse,      /* Parser context */
-  SrcList *pTabList,  /* The FROM clause of the SELECT */
-  ExprList *pEList    /* Expressions defining the result set */
+  Select *pSelect     /* Generate column names for this SELECT statement */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
   Table *pTab;
+  SrcList *pTabList;
+  ExprList *pEList;
   sqlite3 *db = pParse->db;
-  int fullName;      /* TABLE.COLUMN if no AS clause and is a direct table ref */
-  int srcName;       /* COLUMN or TABLE.COLUMN if no AS clause and is direct */
+  int fullName;    /* TABLE.COLUMN if no AS clause and is a direct table ref */
+  int srcName;     /* COLUMN or TABLE.COLUMN if no AS clause and is direct */
 
 #ifndef SQLITE_OMIT_EXPLAIN
   /* If this is an EXPLAIN, skip this step */
@@ -1617,6 +1603,10 @@ static void generateColumnNames(
 #endif
 
   if( pParse->colNamesSet || db->mallocFailed ) return;
+  /* Column names are determined by the left-most term of a compound select */
+  while( pSelect->pPrior ) pSelect = pSelect->pPrior;
+  pTabList = pSelect->pSrc;
+  pEList = pSelect->pEList;
   assert( v!=0 );
   assert( pTabList!=0 );
   pParse->colNamesSet = 1;
@@ -1631,12 +1621,11 @@ static void generateColumnNames(
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
-    }else if( srcName
-           && (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN)
-           && (pTab = tableWithCursor(pTabList, p->iTable))!=0
-    ){
+    }else if( srcName && p->op==TK_COLUMN ){
       char *zCol;
       int iCol = p->iColumn;
+      pTab = p->pTab;
+      assert( pTab!=0 );
       if( iCol<0 ) iCol = pTab->iPKey;
       assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
       if( iCol<0 ){
@@ -2468,11 +2457,6 @@ static int multiSelect(
       if( dest.eDest!=priorOp ){
         int iCont, iBreak, iStart;
         assert( p->pEList );
-        if( dest.eDest==SRT_Output ){
-          Select *pFirst = p;
-          while( pFirst->pPrior ) pFirst = pFirst->pPrior;
-          generateColumnNames(pParse, pFirst->pSrc, pFirst->pEList);
-        }
         iBreak = sqlite3VdbeMakeLabel(v);
         iCont = sqlite3VdbeMakeLabel(v);
         computeLimitRegisters(pParse, p, iBreak);
@@ -2543,11 +2527,6 @@ static int multiSelect(
       ** tables.
       */
       assert( p->pEList );
-      if( dest.eDest==SRT_Output ){
-        Select *pFirst = p;
-        while( pFirst->pPrior ) pFirst = pFirst->pPrior;
-        generateColumnNames(pParse, pFirst->pSrc, pFirst->pEList);
-      }
       iBreak = sqlite3VdbeMakeLabel(v);
       iCont = sqlite3VdbeMakeLabel(v);
       computeLimitRegisters(pParse, p, iBreak);
@@ -3155,14 +3134,6 @@ static int multiSelectOrderBy(
   */
   sqlite3VdbeResolveLabel(v, labelEnd);
 
-  /* Set the number of output columns
-  */
-  if( pDest->eDest==SRT_Output ){
-    Select *pFirst = pPrior;
-    while( pFirst->pPrior ) pFirst = pFirst->pPrior;
-    generateColumnNames(pParse, pFirst->pSrc, pFirst->pEList);
-  }
-
   /* Reassembly the compound query so that it will be freed correctly
   ** by the calling function */
   if( p->pPrior ){
@@ -3457,7 +3428,6 @@ static int flattenSubquery(
   Select *pSub1;      /* Pointer to the rightmost select in sub-query */
   SrcList *pSrc;      /* The FROM clause of the outer query */
   SrcList *pSubSrc;   /* The FROM clause of the subquery */
-  ExprList *pList;    /* The result set of the outer query */
   int iParent;        /* VDBE cursor number of the pSub result set temp table */
   int iNewParent = -1;/* Replacement table for iParent */
   int isLeftJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
@@ -3782,14 +3752,6 @@ static int flattenSubquery(
     ** We look at every expression in the outer query and every place we see
     ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
     */
-    pList = pParent->pEList;
-    for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].zName==0 ){
-        char *zName = sqlite3DbStrDup(db, pList->a[i].zSpan);
-        sqlite3Dequote(zName);
-        pList->a[i].zName = zName;
-      }
-    }
     if( pSub->pOrderBy ){
       /* At this point, any non-zero iOrderByCol values indicate that the
       ** ORDER BY column expression is identical to the iOrderByCol'th
@@ -5219,6 +5181,14 @@ int sqlite3Select(
   }
 #endif
 
+  /* Get a pointer the VDBE under construction, allocating a new VDBE if one
+  ** does not already exist */
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) goto select_end;
+  if( pDest->eDest==SRT_Output ){
+    generateColumnNames(pParse, p);
+  }
+
   /* Try to flatten subqueries in the FROM clause up into the main query
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
@@ -5253,11 +5223,6 @@ int sqlite3Select(
     }
   }
 #endif
-
-  /* Get a pointer the VDBE under construction, allocating a new VDBE if one
-  ** does not already exist */
-  v = sqlite3GetVdbe(pParse);
-  if( v==0 ) goto select_end;
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* Handle compound SELECT statements using the separate multiSelect()
@@ -6057,12 +6022,6 @@ int sqlite3Select(
   */
 select_end:
   explainSetInteger(pParse->iSelectId, iRestoreSelectId);
-
-  /* Identify column names if results of the SELECT are to be output.
-  */
-  if( rc==SQLITE_OK && pDest->eDest==SRT_Output ){
-    generateColumnNames(pParse, pTabList, pEList);
-  }
 
   sqlite3DbFree(db, sAggInfo.aCol);
   sqlite3DbFree(db, sAggInfo.aFunc);

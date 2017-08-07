@@ -2155,7 +2155,8 @@ enum e_state {
   WAITING_FOR_FALLBACK_ID,
   WAITING_FOR_WILDCARD_ID,
   WAITING_FOR_CLASS_ID,
-  WAITING_FOR_CLASS_TOKEN
+  WAITING_FOR_CLASS_TOKEN,
+  WAITING_FOR_TOKEN_NAME
 };
 struct pstate {
   char *filename;       /* Name of the input file */
@@ -2470,6 +2471,8 @@ to follow the previous rule.");
         }else if( strcmp(x,"fallback")==0 ){
           psp->fallback = 0;
           psp->state = WAITING_FOR_FALLBACK_ID;
+        }else if( strcmp(x,"token")==0 ){
+          psp->state = WAITING_FOR_TOKEN_NAME;
         }else if( strcmp(x,"wildcard")==0 ){
           psp->state = WAITING_FOR_WILDCARD_ID;
         }else if( strcmp(x,"token_class")==0 ){
@@ -2622,6 +2625,26 @@ to follow the previous rule.");
           sp->fallback = psp->fallback;
           psp->gp->has_fallback = 1;
         }
+      }
+      break;
+    case WAITING_FOR_TOKEN_NAME:
+      /* Tokens do not have to be declared before use.  But they can be
+      ** in order to control their assigned integer number.  The number for
+      ** each token is assigned when it is first seen.  So by including
+      **
+      **     %token ONE TWO THREE
+      **
+      ** early in the grammar file, that assigns small consecutive values
+      ** to each of the tokens ONE TWO and THREE.
+      */
+      if( x[0]=='.' ){
+        psp->state = WAITING_FOR_DECL_OR_RULE;
+      }else if( !ISUPPER(x[0]) ){
+        ErrorMsg(psp->filename, psp->tokenlineno,
+          "%%token argument \"%s\" should be a token", x);
+        psp->errorcnt++;
+      }else{
+        (void)Symbol_new(x);
       }
       break;
     case WAITING_FOR_WILDCARD_ID:

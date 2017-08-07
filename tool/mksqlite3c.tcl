@@ -225,6 +225,8 @@ proc copy_file {filename} {
       if {![info exists varonly_hdr($tail)]
        && [regexp $declpattern $line all rettype funcname rest]} {
         regsub {^SQLITE_API } $line {} line
+        regsub {^SQLITE_API } $rettype {} rettype
+
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
         if {[regexp {^sqlite3[a-z]*_} $funcname]} {
