@@ -1,5 +1,5 @@
-C Avoid\scasting\sa\svalue\slarger\sthan\s2^31\sto\sa\s(size_t)\son\ssystems\swhere\sit\n\sis\sa\s32-bit\stype.
-D 2017-08-07T18:13:28.414
+C Update\sbigmmap.test\sto\saccount\sfor\sbuilds\sthat\suse\n"-DSQLITE_MAX_MMAP_SIZE=<integer-constant>LL".
+D 2017-08-07T18:27:19.354
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -608,7 +608,7 @@ F test/bestindex4.test 4cb5ff7dbaebadb87d366f51969271778423b455
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
-F test/bigmmap.test 736009b1fa591b4e12b4569d189e8e2020d9c2532aa270db924e6a662d18cd98
+F test/bigmmap.test ed6058a7794be26865c94d5bb62e12cdc4f7f01562b3b04f13eb3cdc52783921
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38f30091f9b1e2c393396da7257f3487fa374e1ee6d610577291909768ff9626
-R d7182bcc87ba6fa2b23f4b7d5a15d267
+P 46c3085dcad6372ac20eff499e17fe11680fdf4adb9186bf8b12221a5047e485
+R 917e163835aeeed6d367dbe94c0c0ca5
 U dan
-Z 7df27ce143e774d3022f4451dd6ffa24
+Z a557a600c035a5d5a09fd207b43b667b
