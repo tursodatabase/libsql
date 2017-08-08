@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\ssigned/unsigned\scharacter\scomparison\sin\sthe\sLIKE\soptimization\nlogic.
-D 2017-08-08T21:30:43.624
+C The\sidentifier\s"vsnprintf"\sappears\sto\sbe\sa\sreserved\sword\sin\srecent\sversions\nof\sXCode,\sso\savoid\susing\sit\sas\sa\sstructure\sfield.
+D 2017-08-08T21:40:23.590
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -457,7 +457,7 @@ F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
 F src/sqlite.h.in 72f1775c7a134f9e358eedafe1ebc703c28b0d705d976464ddbf6a9219448952
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 0f9f72b86a3792314f5db7a1dfbc2c82376bcd8d0919ceb80637bca126ec3c68
+F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
 F src/sqliteInt.h 07e4d3c8021aea80e3bbafab4dd52833cfcfa4f000210af0d15c7fdaed2f09fc
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 537e3be2e9503183799afffcd91defc751fea2c779e9b77b77f9485f7de5d170
-R c0257e7418783a1dad51ec17553da8cb
+P f4a4b1497355c1b27d3d0770550fffcc3b2d2d51ab284101f19e8fc4264ee675
+R c288692e72cd4a77fa38abaf013fcc5d
 U drh
-Z eaaf23e57e1119f1d2e06b48f90e37e6
+Z 88c200cab07436f531dde2c3538548b4
