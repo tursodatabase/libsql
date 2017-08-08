@@ -1,5 +1,5 @@
-C Avoid\scasting\sa\svalue\slarger\sthan\s2^31\sto\sa\s(size_t)\sor\s(SIZE_T)\son\ssystems\nwhere\sit\sis\sa\s32-bit\stype.
-D 2017-08-07T19:12:49.379
+C Enhance\sthe\sCSV\svirtual\stable\sextension\sso\sthat\sit\saccepts\sthe\slast\srow\sof\nthe\sCSV\sfile\seven\sif\sthe\slast\srow\somits\sthe\sclosing\s\\n,\sas\slong\sas\sthe\slast\nrow\shas\sa\sfull\sset\sof\scolumns.
+D 2017-08-08T20:03:10.022
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -260,7 +260,7 @@ F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c d91c0388445b08f6e373dd0e8fc024d4551b1fcaf64e876a1c3f4fac8a63adc2
+F ext/misc/csv.c b10ea114cf29f446e384064ae61e01373b431f6f172896f41ca0ba3507709003
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c b1aa06c0f1dac277695d4529e5e976c65ab5678dcbb53a0304deaa8adc44b332
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38f30091f9b1e2c393396da7257f3487fa374e1ee6d610577291909768ff9626 f08d63b413601b22726e8b96ff8eb779857321b9df30db0333f71e50ffb5077d
-R ada1495a3f5fb5efd255ea78a3bbd776
-U dan
-Z b588cc0bf1fe6fda1e1e52f15501eea7
+P b26d7a1c7b5d59a2ceabc3716ccea32e26de729eb164a9c0e47f2d8f6ad3df37
+R 56b681b4bac4514f060903132d3e36f0
+U drh
+Z ccaffe78aa350be9baaf3161acf84308

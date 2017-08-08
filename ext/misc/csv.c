@@ -680,16 +680,16 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
       i++;
     }
   }while( pCur->rdr.cTerm==',' );
-  while( i<pTab->nCol ){
-    sqlite3_free(pCur->azVal[i]);
-    pCur->azVal[i] = 0;
-    pCur->aLen[i] = 0;
-    i++;
-  }
-  if( z==0 || pCur->rdr.cTerm==EOF ){
+  if( z==0 || (pCur->rdr.cTerm==EOF && i<pTab->nCol) ){
     pCur->iRowid = -1;
   }else{
     pCur->iRowid++;
+    while( i<pTab->nCol ){
+      sqlite3_free(pCur->azVal[i]);
+      pCur->azVal[i] = 0;
+      pCur->aLen[i] = 0;
+      i++;
+    }
   }
   return SQLITE_OK;
 }
