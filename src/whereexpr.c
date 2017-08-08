@@ -194,7 +194,7 @@ static int isLikeOrGlob(
   int *pisComplete, /* True if the only wildcard is % in the last character */
   int *pnoCase      /* True if uppercase is equivalent to lowercase */
 ){
-  const char *z = 0;         /* String on RHS of LIKE operator */
+  const u8 *z = 0;         /* String on RHS of LIKE operator */
   Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
   ExprList *pList;           /* List of operands to the LIKE operator */
   int c;                     /* One character in z[] */
@@ -221,12 +221,12 @@ static int isLikeOrGlob(
     int iCol = pRight->iColumn;
     pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_BLOB);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
-      z = (char *)sqlite3_value_text(pVal);
+      z = sqlite3_value_text(pVal);
     }
     sqlite3VdbeSetVarmask(pParse->pVdbe, iCol);
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
-    z = pRight->u.zToken;
+    z = (u8*)pRight->u.zToken;
   }
   if( z ){
 
@@ -269,7 +269,7 @@ static int isLikeOrGlob(
       *pisComplete = c==wc[0] && z[cnt+1]==0;
 
       /* Get the pattern prefix.  Remove all escapes from the prefix. */
-      pPrefix = sqlite3Expr(db, TK_STRING, z);
+      pPrefix = sqlite3Expr(db, TK_STRING, (char*)z);
       if( pPrefix ){
         int iFrom, iTo;
         char *zNew = pPrefix->u.zToken;
