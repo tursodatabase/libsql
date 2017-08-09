@@ -30,9 +30,10 @@ do_execsql_test 1.0 {
 }
 
 do_execsql_test 1.1 {
-  INSERT INTO x1(a,b,c,d) VALUES(15, 11, 22, 33);
-  SELECT * FROM x1;
-} {15 11 22 33}
+  INSERT INTO x1(a,b,c,d) VALUES(15, 11, 22, 33),(8,'banjo',x'333231',NULL),
+      (12,NULL,3.25,-559281390);
+  SELECT a, quote(b), quote(c), quote(d) FROM x1;
+} {8 'banjo' X'333231' NULL 12 NULL 3.25 -559281390 15 11 22 33}
 
 do_catchsql_test 1.2 {
   UPDATE x1 SET d = d+1.0 WHERE a=15;

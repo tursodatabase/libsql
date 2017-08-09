@@ -1,5 +1,5 @@
-C Work\stoward\sredesigning\sthe\sinterface\sto\sthe\sLSM1\svirtual\stable.
-D 2017-08-09T18:40:35.775
+C Various\sbug\sfixes\sfor\sthe\snew\sLSM1\svirtual\stable\sdesign.
+D 2017-08-09T19:27:24.812
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -249,10 +249,10 @@ F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
 F ext/lsm1/lsm_varint.c 43f954af668a66c7928b81597c14d6ad4be9fedbc276bbd80f52fa28a02fdb62
-F ext/lsm1/lsm_vtab.c 356e1206c45c09b7cb267b2518557ac6b30524719731760ffc39de3050b3f220
+F ext/lsm1/lsm_vtab.c 976ded75b78be59fc358cf5c06641cda01a4bd0b52374419ab36bf37f646d5df
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
 F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
-F ext/lsm1/test/lsm1_simple.test e4541832cf542e3c01a718e176e82978f593caf0d735d668d17368c31a11da27
+F ext/lsm1/test/lsm1_simple.test 0ca15907fbfe09b6606f93149416786709e0cd55a69ecf53f605fadefa64228c
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 795eede331b832a53e886318466dedc12504f7181c1d7295af7935864a04b72c
-R 37cfc3f8919ba1594a23cb70a509962a
+P 313df946668b943b0a9a9a91fd7bafa7212d05765c7714fa6c0de46aa9062a74
+R 51c1f235e2778744da3264339c3e2f94
 U drh
-Z 7334a536688a5b586851f2e43ccf1724
+Z d3fda50f76603a97e7bd0f2862a316b1

@@ -45,8 +45,9 @@
 ** values, the content is the blob data or the UTF-8 text data.  For
 ** non-negative integers X, the content is a variable-length integer X*2.
 ** For negative integers Y, the content is varaible-length integer (1-Y)*2+1.
-** For FLOAT values, the content is the variable length encoding of the
-** integer with the same bit pattern as the IEEE754 floating point value.
+** For FLOAT values, the content is the IEEE754 floating point value in
+** native byte-order.  This means that FLOAT values will be corrupted when
+** database file is moved between big-endian and little-endian machines.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -529,7 +530,7 @@ static int lsm1PutSignedVarint64(u8 *z, sqlite3_int64 v){
     u = (sqlite3_uint64)v;
     return lsm1PutVarint64(z, u*2);
   }else{
-    u = (sqlite3_uint64)(1-v);
+    u = (sqlite3_uint64)(-1-v);
     return lsm1PutVarint64(z, u*2+1);
   }
 }
@@ -645,18 +646,20 @@ static int lsm1Column(
         break;
       }
       case SQLITE_FLOAT: {
-        sqlite3_uint64 v1 = 0;
         double v;
-        lsm1GetVarint64(zData, nData, &v1);
-        memcpy(&v, &v1, sizeof(v));
-        sqlite3_result_double(ctx, v);
+        if( nData==sizeof(v) ){
+          memcpy(&v, zData, sizeof(v));
+          sqlite3_result_double(ctx, v);
+        }
         break;
       }
       case SQLITE_TEXT: {
         sqlite3_result_text(ctx, (const char*)zData, nData, SQLITE_TRANSIENT);
+        break;
       }
       case SQLITE_BLOB: {
         sqlite3_result_blob(ctx, zData, nData, SQLITE_TRANSIENT);
+        break;
       }
       default: {
          /* A NULL.  Do nothing */
@@ -908,14 +911,15 @@ int lsm1Update(
   }
   memset(&val, 0, sizeof(val));
   for(i=0; i<p->nVal; i++){
-    u8 eType = sqlite3_value_type(argv[3+i]);
+    sqlite3_value *pArg = argv[3+i];
+    u8 eType = sqlite3_value_type(pArg);
     switch( eType ){
       case SQLITE_NULL: {
         lsm1VblobAppendVarint(&val, SQLITE_NULL);
         break;
       }
       case SQLITE_INTEGER: {
-        sqlite3_int64 v = sqlite3_value_int64(argv[3+i]);
+        sqlite3_int64 v = sqlite3_value_int64(pArg);
         if( v>=0 && v<=240/6 ){
           lsm1VblobAppendVarint(&val, v*6);
         }else{
@@ -926,25 +930,21 @@ int lsm1Update(
         break;
       }
       case SQLITE_FLOAT: {
-        double r = sqlite3_value_double(argv[3+i]);
-        sqlite3_uint64 u;
-        int n;
-        memcpy(&u, &r, 8);
-        n = lsm1PutSignedVarint64(pSpace, u);
-        lsm1VblobAppendVarint(&val, SQLITE_FLOAT + n*6);
-        lsm1VblobAppend(&val, pSpace, n);
+        double r = sqlite3_value_double(pArg);
+        lsm1VblobAppendVarint(&val, SQLITE_FLOAT + 8*6);
+        lsm1VblobAppend(&val, (u8*)&r, sizeof(r));
         break;
       }
       case SQLITE_BLOB: {
-        int n = sqlite3_value_bytes(argv[3+i]);
+        int n = sqlite3_value_bytes(pArg);
         lsm1VblobAppendVarint(&val, n*6 + SQLITE_BLOB);
-        lsm1VblobAppend(&val, sqlite3_value_blob(argv[2+i]), n);
+        lsm1VblobAppend(&val, sqlite3_value_blob(pArg), n);
         break;
       }
       case SQLITE_TEXT: {
-        int n = sqlite3_value_bytes(argv[3+i]);
+        int n = sqlite3_value_bytes(pArg);
         lsm1VblobAppendVarint(&val, n*6 + SQLITE_TEXT);
-        lsm1VblobAppend(&val, sqlite3_value_text(argv[2+i]), n);
+        lsm1VblobAppend(&val, sqlite3_value_text(pArg), n);
         break;
       }
     }
