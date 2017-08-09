@@ -354,14 +354,14 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
   /* Reload the table, index and permanent trigger schemas. */
   zWhere = sqlite3MPrintf(pParse->db, "tbl_name=%Q", zName);
   if( !zWhere ) return;
-  sqlite3VdbeAddParseSchemaOp(v, iDb, zWhere);
+  sqlite3VdbeAddParseSchemaOp(pParse, iDb, zWhere);
 
 #ifndef SQLITE_OMIT_TRIGGER
   /* Now, if the table is not stored in the temp database, reload any temp 
   ** triggers. Don't use IN(...) in case SQLITE_OMIT_SUBQUERY is defined. 
   */
   if( (zWhere=whereTempTriggers(pParse, pTab))!=0 ){
-    sqlite3VdbeAddParseSchemaOp(v, 1, zWhere);
+    sqlite3VdbeAddParseSchemaOp(pParse, 1, zWhere);
   }
 #endif
 }

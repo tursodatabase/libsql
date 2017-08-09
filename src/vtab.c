@@ -434,7 +434,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 
     sqlite3VdbeAddOp0(v, OP_Expire);
     zWhere = sqlite3MPrintf(db, "name='%q' AND type='table'", pTab->zName);
-    sqlite3VdbeAddParseSchemaOp(v, iDb, zWhere);
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb, zWhere);
 
     iReg = ++pParse->nMem;
     sqlite3VdbeLoadString(v, iReg, pTab->zName);

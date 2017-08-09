@@ -1189,6 +1189,10 @@ struct Schema {
   u8 enc;              /* Text encoding used by this database */
   u16 schemaFlags;     /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
+
+  int nRef;            /* Number of connections using this schema */
+  u64 cksum;           /* Checksum for this database schema */
+  Schema *pNext;       /* Next schema in shared schema list */
 };
 
 /*
@@ -4085,6 +4089,9 @@ void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 void sqlite3SchemaClear(void *);
+void sqlite3SchemaUnuse(sqlite3*, int);
+void sqlite3SchemaReuse(sqlite3*, int);
+void sqlite3SchemaWritable(Parse*, int);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3*,int,int);

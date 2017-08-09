@@ -517,23 +517,19 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
 ** TEMP schema.
 */
 void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
-  Db *pDb;
-  assert( iDb<db->nDb );
-
-  /* Case 1:  Reset the single schema identified by iDb */
-  pDb = &db->aDb[iDb];
-  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+  /* If any database other than TEMP is reset, then also reset TEMP
+  ** since TEMP might be holding triggers that reference tables in the
+  ** other database.  */
+  Db *pDb = &db->aDb[1];
   assert( pDb->pSchema!=0 );
   sqlite3SchemaClear(pDb->pSchema);
 
-  /* If any database other than TEMP is reset, then also reset TEMP
-  ** since TEMP might be holding triggers that reference tables in the
-  ** other database.
-  */
+  assert( iDb<db->nDb );
+  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+  assert( db->aDb[iDb].pSchema!=0 );
+
   if( iDb!=1 ){
-    pDb = &db->aDb[1];
-    assert( pDb->pSchema!=0 );
-    sqlite3SchemaClear(pDb->pSchema);
+    sqlite3SchemaUnuse(db, iDb);
   }
   return;
 }
@@ -545,12 +541,11 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
 void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   int i;
   sqlite3BtreeEnterAll(db);
-  for(i=0; i<db->nDb; i++){
-    Db *pDb = &db->aDb[i];
-    if( pDb->pSchema ){
-      sqlite3SchemaClear(pDb->pSchema);
-    }
+  for(i=0; i<db->nDb; i = (i?i+1:2)){
+    sqlite3SchemaUnuse(db, i);
   }
+  sqlite3SchemaClear(db->aDb[1].pSchema);
+
   db->mDbFlags &= ~DBFLAG_SchemaChange;
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
@@ -2038,7 +2033,7 @@ void sqlite3EndTable(
 #endif
 
     /* Reparse everything to update our internal data structures */
-    sqlite3VdbeAddParseSchemaOp(v, iDb,
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName));
   }
 
@@ -2533,6 +2528,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
+  sqlite3SchemaWritable(pParse, iDb);
 
   /* If pTab is a virtual table, call ViewGetColumnNames() to ensure
   ** it is initialized.
@@ -3396,7 +3392,7 @@ void sqlite3CreateIndex(
     if( pTblName ){
       sqlite3RefillIndex(pParse, pIndex, iMem);
       sqlite3ChangeCookie(pParse, iDb);
-      sqlite3VdbeAddParseSchemaOp(v, iDb,
+      sqlite3VdbeAddParseSchemaOp(pParse, iDb,
          sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
       sqlite3VdbeAddOp0(v, OP_Expire);
     }
@@ -3515,6 +3511,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
     goto exit_drop_index;
   }
   iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
+  sqlite3SchemaWritable(pParse, iDb);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;

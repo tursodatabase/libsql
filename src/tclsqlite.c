@@ -3428,6 +3428,14 @@ static int SQLITE_TCLAPI DbMain(
       }else{
         flags &= ~SQLITE_OPEN_URI;
       }
+    }else if( strcmp(zArg, "-reuse-schema")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_REUSE_SCHEMA;
+      }else{
+        flags &= ~SQLITE_OPEN_REUSE_SCHEMA;
+      }
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
       return TCL_ERROR;
@@ -3437,6 +3445,7 @@ static int SQLITE_TCLAPI DbMain(
     Tcl_WrongNumArgs(interp, 1, objv,
       "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
       " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+      " ?-reuse-schema BOOLEAN?"
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
       " ?-key CODECKEY?"
 #endif

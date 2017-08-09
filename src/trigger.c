@@ -313,7 +313,7 @@ void sqlite3FinishTrigger(
        pTrig->table, z);
     sqlite3DbFree(db, z);
     sqlite3ChangeCookie(pParse, iDb);
-    sqlite3VdbeAddParseSchemaOp(v, iDb,
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb,
         sqlite3MPrintf(db, "type='trigger' AND name='%q'", zName));
   }
 
@@ -538,6 +538,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 
   iDb = sqlite3SchemaToIndex(pParse->db, pTrigger->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
+  sqlite3SchemaWritable(pParse, iDb);
   pTable = tableOfTrigger(pTrigger);
   assert( pTable );
   assert( pTable->pSchema==pTrigger->pSchema || iDb==1 );

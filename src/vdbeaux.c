@@ -309,8 +309,10 @@ int sqlite3VdbeAddOp4Dup8(
 ** The zWhere string must have been obtained from sqlite3_malloc().
 ** This routine will take ownership of the allocated memory.
 */
-void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere){
+void sqlite3VdbeAddParseSchemaOp(Parse *pParse, int iDb, char *zWhere){
+  Vdbe *p = pParse->pVdbe;
   int j;
+  sqlite3SchemaWritable(pParse, iDb);
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
 }

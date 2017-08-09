@@ -37,6 +37,26 @@ static void corruptSchema(
 }
 
 /*
+** Update the Schema.cksum checksum to account for the database object
+** specified by the three arguments following the first.
+*/
+void schemaUpdateChecksum(
+  Schema *pSchema,                /* Schema object being parsed */
+  const char *zName,              /* Name of new database object */
+  const char *zRoot,              /* Root page of new database object */
+  const char *zSql                /* SQL used to create new database object */
+){
+  int i;
+  u64 cksum = pSchema->cksum;
+  if( zName ){
+    for(i=0; zName[i]; i++) cksum += (cksum<<3) + zName[i];
+  }
+  if( zRoot ) for(i=0; zRoot[i]; i++) cksum += (cksum<<3) + zRoot[i];
+  if( zSql ) for(i=0; zSql[i]; i++) cksum += (cksum<<3) + zSql[i];
+  pSchema->cksum = cksum;
+}
+
+/*
 ** This is the callback routine for the code that initializes the
 ** database.  See sqlite3Init() below for additional information.
 ** This routine is also called from the OP_ParseSchema opcode of the VDBE.
@@ -120,6 +140,16 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     }else if( sqlite3GetInt32(argv[1], &pIndex->tnum)==0 ){
       corruptSchema(pData, argv[0], "invalid rootpage");
     }
+  }
+
+  if( iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+    /* If this schema might be used by multiple connections, ensure that
+    ** the affinity string is allocated here. Otherwise, there might be
+    ** a race condition where two threads attempt to allocate it
+    ** simultaneously.  */
+    Index *pIndex = sqlite3FindIndex(db, argv[0], db->aDb[iDb].zDbSName);
+    if( pIndex ) sqlite3IndexAffinityStr(db, pIndex);
+    schemaUpdateChecksum(db->aDb[iDb].pSchema, argv[0], argv[1], argv[2]);
   }
   return 0;
 }
@@ -323,6 +353,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     rc = SQLITE_OK;
+  }
+
+  if( iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+    sqlite3SchemaReuse(db, iDb);
   }
 
   /* Jump here for an error that occurs after successfully allocating

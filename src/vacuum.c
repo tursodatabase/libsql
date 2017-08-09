@@ -117,6 +117,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm){
 #endif
   }
   if( iDb!=1 ){
+    sqlite3SchemaWritable(pParse, iDb);
     sqlite3VdbeAddOp1(v, OP_Vacuum, iDb);
     sqlite3VdbeUsesBtree(v, iDb);
   }

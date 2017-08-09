@@ -462,12 +462,114 @@ void sqlite3SchemaClear(void *p){
 }
 
 /*
+** Global linked list of sharable Schema objects. Read and write access must
+** be protected by the SQLITE_MUTEX_STATIC_MASTER mutex.
+*/
+static Schema *SQLITE_WSD sharedSchemaList = 0;
+
+/*
+** Check that the schema of db iDb is writable (either because it is the temp
+** db schema or because the db handle was opened without
+** SQLITE_OPEN_REUSE_SCHEMA). If so, do nothing. Otherwise, leave an 
+** error in the Parse object.
+*/
+void sqlite3SchemaWritable(Parse *pParse, int iDb){
+  if( iDb!=1 && (pParse->db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+    sqlite3ErrorMsg(pParse, "attempt to modify read-only schema");
+  }
+}
+
+/*
+** Replace the Schema object currently associated with database iDb with
+** an empty schema object, ready to be populated. If there are multiple
+** users of the Schema, this means decrementing the current objects ref
+** count and replacing it with a pointer to a new, empty, object. Or, if
+** the database handle passed as the first argument of the schema object 
+** is the only user, remove it from the shared list (if applicable) and 
+** clear it in place.
+*/
+void sqlite3SchemaUnuse(sqlite3 *db, int iDb){
+  Db *pDb = &db->aDb[iDb];
+  Schema *pSchema;
+  assert( iDb!=1 );
+  if( (pSchema = pDb->pSchema) ){
+
+    if( (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+      assert( pSchema->nRef>=1 );
+      if( pSchema->nRef==1 ){
+        Schema **pp;
+        for(pp=&sharedSchemaList; (*pp); pp=&(*pp)->pNext){
+          if( *pp==pSchema ){
+            *pp = pSchema->pNext;
+            break;
+          }
+        }
+        pSchema->pNext = 0;
+      }else{
+        assert( db->openFlags & SQLITE_OPEN_REUSE_SCHEMA );
+        pSchema->nRef--;
+        pDb->pSchema = pSchema = 0;
+      }
+      sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+    }
+
+    if( pSchema==0 ){
+      db->aDb[iDb].pSchema = sqlite3SchemaGet(db, 0);
+    }else{
+      sqlite3SchemaClear(pSchema);
+    }
+  }
+}
+
+/*
+** The schema for database iDb of database handle db, which was opened
+** with SQLITE_OPEN_REUSE_SCHEMA, has just been parsed. This function
+** checks the global list (sharedSchemaList) for a matching schema and,
+** if one is found, frees the newly parsed Schema object and adds a pointer 
+** to the existing shared schema in its place. Or, if there is no matching
+** schema in the list, then the new schema is added to it.
+*/
+void sqlite3SchemaReuse(sqlite3 *db, int iDb){
+  Schema *pSchema = db->aDb[iDb].pSchema;
+  Schema *p;
+  assert( pSchema && iDb!=1 );
+
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  for(p=sharedSchemaList; p; p=p->pNext){
+    if( p->cksum==pSchema->cksum 
+        && p->schema_cookie==pSchema->schema_cookie 
+      ){
+      break;
+    }
+  }
+  if( !p ){
+    /* No matching schema was found. */
+    pSchema->pNext = sharedSchemaList;
+    sharedSchemaList = pSchema;
+  }else{
+    /* Found a matching schema. Increase its ref count. */
+    p->nRef++;
+  }
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+
+  /* If a matching schema was found in the shared schema list, free the
+  ** schema object just parsed, and add a pointer to the matching schema
+  ** to the db handle.  */
+  if( p ){
+    sqlite3SchemaClear(pSchema);
+    sqlite3DbFree(0, pSchema);
+    db->aDb[iDb].pSchema = p;
+  }
+}
+
+/*
 ** Find and return the schema associated with a BTree.  Create
 ** a new one if necessary.
 */
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema * p;
-  if( pBt ){
+  if( pBt && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA)==0 ){
     p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
     p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));
@@ -480,6 +582,7 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
     sqlite3HashInit(&p->trigHash);
     sqlite3HashInit(&p->fkeyHash);
     p->enc = SQLITE_UTF8;
+    p->nRef = 1;
   }
   return p;
 }

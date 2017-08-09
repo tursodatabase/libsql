@@ -1314,6 +1314,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   int iMem;
   int iTab;
 
+  sqlite3SchemaWritable(pParse, iDb);
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 3;
