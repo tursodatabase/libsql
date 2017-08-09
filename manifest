@@ -1,5 +1,5 @@
-C Various\sbug\sfixes\sfor\sthe\snew\sLSM1\svirtual\stable\sdesign.
-D 2017-08-09T19:27:24.812
+C Preserve\sthe\serror\scode\sfrom\sxConnect\sor\sxCreate\smethods\sin\svirtual\stable\nimplementations\swhen\sthey\sare\sencountered\sduring\sparsing.
+D 2017-08-09T22:55:09.083
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -332,7 +332,7 @@ F ext/rtree/rtree6.test 773a90db2dce6a8353dd0d5b64bca69b29761196
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test 076d9d5b783b61b7a23a5ab45fc899551dfffd821974f36ee599ff29f4de7a61
 F ext/rtree/rtree9.test 8bfa84dfaba1c897468a2448c28db0a00ad12d464225b5993c7814e907f3776f
-F ext/rtree/rtreeA.test e25d76c1701f8591e7a0b6de8224d5dbc1418c562654c7240e6f33f37b1e36f7
+F ext/rtree/rtreeA.test abb1e2434defc8cdc5e3195a18ead3681cae04565c06069251d1998796e77d55
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test c0a9c67f2efa98b6fae12acb8a28348d231a481d
 F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c4a1100dc
@@ -529,7 +529,7 @@ F src/vdbeblob.c db3cf91060f6f4b2f1358a4200e844697990752177784c7c95da00b7ac9f1c7
 F src/vdbemem.c b7fac20534c79b7554dab2e8a180c585a8bc1b9c85149d1b2d9746cf314d06ed
 F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e3
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c a305582d3a6c7090982ac1610b8e5724fa954d8b28899fa6c633cb4de9c2f8ee
+F src/vtab.c 45d2aab3374d53f6d24490fe14a5c531c34f78d6fd8579ef90548a0f2d9642ab
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -1644,7 +1644,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 313df946668b943b0a9a9a91fd7bafa7212d05765c7714fa6c0de46aa9062a74
-R 51c1f235e2778744da3264339c3e2f94
+P 94434a252f0f2b57f325fd8fb82534f20cc1340ff13076cd88deeb47740ef6a2
+R 2eb609cedbbf19e67eff9ae679b4afef
 U drh
-Z d3fda50f76603a97e7bd0f2862a316b1
+Z 959c864a11e480d5e65269dfbd8be473

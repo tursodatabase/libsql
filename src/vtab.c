@@ -644,6 +644,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
     rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xConnect, &zErr);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "%s", zErr);
+      pParse->rc = rc;
     }
     sqlite3DbFree(db, zErr);
   }
