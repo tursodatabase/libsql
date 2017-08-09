@@ -20,26 +20,26 @@ load_lsm1_vtab db
 forcedelete testlsm.db
 
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE x1 USING lsm1(testlsm.db);
+  CREATE VIRTUAL TABLE x1 USING lsm1(testlsm.db,a,UINT,b,c,d);
   PRAGMA table_info(x1);
 } {
-  0 key       {} 0 {} 0 
-  1 blobkey   {} 0 {} 0 
-  2 value     {} 0 {} 0 
-  3 blobvalue {} 0 {} 0
+  0 a UINT 0 {} 0 
+  1 b {} 0 {} 0 
+  2 c {} 0 {} 0 
+  3 d {} 0 {} 0
 }
 
 do_execsql_test 1.1 {
-  INSERT INTO x1(blobkey, blobvalue) VALUES(x'abcd', x'1234');
-  SELECT quote(blobkey), quote(blobvalue) FROM x1;
-} {X'ABCD' X'1234'}
+  INSERT INTO x1(a,b,c,d) VALUES(15, 11, 22, 33);
+  SELECT * FROM x1;
+} {15 11 22 33}
 
 do_catchsql_test 1.2 {
-  UPDATE x1 SET blobvalue = x'7890' WHERE blobkey = x'abcd';
+  UPDATE x1 SET d = d+1.0 WHERE a=15;
 } {1 {cannot UPDATE}}
 
 do_catchsql_test 1.3 {
-  DELETE FROM x1 WHERE blobkey = x'abcd'
+  DELETE FROM x1 WHERE a=15;
 } {1 {cannot DELETE}}
 
 do_test 1.4 {
@@ -52,5 +52,3 @@ do_test 1.5 {
 } {testlsm.db}
 
 finish_test
-
-
