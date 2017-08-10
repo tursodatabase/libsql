@@ -1,5 +1,5 @@
-C Add\sa\sfirst\sdraft\sof\sthe\s"vtablog"\sextensions\sthat\simplements\sa\sgeneric\nvirtual\stable\suseful\sfor\sexperimentation\susing\sthe\scommand-line\sshell.
-D 2017-08-10T03:27:27.239
+C Add\sthe\s"instance"\stype\sto\sthe\sfts5vocab\svirtual\stable\smodule.\sFor\sdirect\naccess\sto\sthe\scontents\sof\sthe\sfts5\sterm\sindex.
+D 2017-08-10T20:36:56.419
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -114,7 +114,7 @@ F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086aba
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
-F ext/fts5/fts5_vocab.c e44fefa7f0c1db252998af071daf06a7147e17e7
+F ext/fts5/fts5_vocab.c 90783d59cb8ee29ae08ac7f7e1f9c04cc4fb3ffc46d34fedba96d145636dd39d
 F ext/fts5/fts5parse.y a070b538e08ae9e2177d15c337ed2a3464408f0f886e746307098f746efd94ca
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
@@ -1645,7 +1645,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dcdf091388251292ff9939bdff920708320bc64dacfe0fa1878c5ffd11b679c9
-R 089d3b3d49f7f300de0a7e207b239b0f
-U drh
-Z e2065e8cae31fe4aaa6c975ba17a09f2
+P e49279e65169a939b6058a0960dc1fe09ce4ee2d78992a1969773cbc7ce1043b
+R 51c4219f1ac2413928699169835fef62
+U dan
+Z c67de475a6759cd5bb3ba77ac9b27176
