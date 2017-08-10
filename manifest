@@ -1,5 +1,5 @@
-C Add\sextra\stests\sto\sthis\sbranch.
-D 2017-08-10T19:10:23.968
+C Fix\sa\stypo\sin\scsv01.test\sintroduced\sby\sthe\sprevious\scommit.
+D 2017-08-10T19:12:04.643
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -695,7 +695,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/csv01.test 5ffc78e1996a383ea3f67741dfc48799fbb2a1cbcde4f225a6ce1b435be4d80e
+F test/csv01.test 526fc6aefd052badd5a0283f86b4b395c3df76bfe98d96c801f494f5e2c7836c
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
@@ -1646,7 +1646,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6997e00c3221f266f4d9187501d8a9e5bafb85551e88a744cdc8ffe3b75ec2a4
-R 096e5171e2724292816fdcadd164966f
+P b0e3b88a792623f7761586d8bfac058ddf939f49944ff0c4376627ff920895db
+R f6522b1ac79c489b723c146b9fd586f4
 U dan
-Z c80d512bc59f6381f86022a14538e615
+Z 105e790a02c4f620d8e963aaaf4e7ac3

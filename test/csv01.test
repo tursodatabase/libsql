@@ -138,7 +138,7 @@ do_catchsql_test 4.2 {
       'CREATE TABLE t3(a,b,c,d) WITHOUT ROWID',
       testflags=1
       );
-} {0 {vtable constructor failed: t5}}
+} {1 {vtable constructor failed: t5}}
 
 
 finish_test
