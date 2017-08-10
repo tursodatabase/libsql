@@ -15,6 +15,25 @@
 **
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
+**
+** The TCLVAR eponymous virtual table has a schema like this:
+**
+**    CREATE TABLE tclvar(
+**       name TEXT,       -- base name of the variable:  "x" in "$x(y)"
+**       arrayname TEXT,  -- array index name: "y" in "$x(y)"
+**       value TEXT,      -- the value of the variable 
+**       fullname TEXT,   -- the full name of the variable
+**       PRIMARY KEY(fullname)
+**    ) WITHOUT ROWID;
+**
+** DELETE, INSERT, and UPDATE operations use the "fullname" field to
+** determine the variable to be modified.  Changing "value" to NULL
+** deletes the variable.
+**
+** For SELECT operations, the "name" and "arrayname" fields will always
+** match the "fullname" field.  For DELETE, INSERT, and UPDATE, the
+** "name" and "arrayname" fields are ignored and the variable is modified
+** according to "fullname" and "value" only.
 */
 #include "sqliteInt.h"
 #if defined(INCLUDE_SQLITE_TCL_H)
@@ -67,7 +86,12 @@ static int tclvarConnect(
 ){
   tclvar_vtab *pVtab;
   static const char zSchema[] = 
-     "CREATE TABLE whatever(name TEXT, arrayname TEXT, value TEXT)";
+     "CREATE TABLE x("
+     "  name TEXT,"                       /* Base name */
+     "  arrayname TEXT,"                  /* Array index */
+     "  value TEXT,"                      /* Value */
+     "  fullname TEXT PRIMARY KEY"        /* base(index) name */
+     ") WITHOUT ROWID";
   pVtab = sqlite3MallocZero( sizeof(*pVtab) );
   if( pVtab==0 ) return SQLITE_NOMEM;
   *ppVtab = &pVtab->base;
@@ -251,6 +275,16 @@ static int tclvarColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
       sqlite3_result_text(ctx, Tcl_GetString(pVal), -1, SQLITE_TRANSIENT);
       break;
     }
+    case 3: {
+      char *z3;
+      if( p2 ){
+        z3 = sqlite3_mprintf("%s(%s)", z1, z2);
+        sqlite3_result_text(ctx, z3, -1, sqlite3_free);
+      }else{
+        sqlite3_result_text(ctx, z1, -1, SQLITE_TRANSIENT);
+      }
+      break;
+    }
   }
   return SQLITE_OK;
 }
@@ -377,6 +411,58 @@ static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
+** Invoked for any UPDATE, INSERT, or DELETE against a tclvar table
+*/
+static int tclvarUpdate(
+  sqlite3_vtab *tab,
+  int argc,
+  sqlite3_value **argv,
+  sqlite_int64 *pRowid
+){
+  tclvar_vtab *pTab = (tclvar_vtab*)tab;
+  if( argc==1 ){
+    /* A DELETE operation.  The variable to be deleted is stored in argv[0] */
+    const char *zVar = (const char*)sqlite3_value_text(argv[0]);
+    Tcl_UnsetVar(pTab->interp, zVar, TCL_GLOBAL_ONLY);
+    return SQLITE_OK;
+  }
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+    /* An INSERT operation */
+    const char *zValue = (const char*)sqlite3_value_text(argv[4]);
+    const char *zName;
+    if( sqlite3_value_type(argv[5])!=SQLITE_TEXT ){
+      tab->zErrMsg = sqlite3_mprintf("the 'fullname' column must be TEXT");
+      return SQLITE_ERROR;
+    }
+    zName = (const char*)sqlite3_value_text(argv[5]);
+    if( zValue ){
+      Tcl_SetVar(pTab->interp, zName, zValue, TCL_GLOBAL_ONLY);
+    }else{
+      Tcl_UnsetVar(pTab->interp, zName, TCL_GLOBAL_ONLY);
+    }
+    return SQLITE_OK;
+  }
+  if( sqlite3_value_type(argv[0])==SQLITE_TEXT
+   && sqlite3_value_type(argv[1])==SQLITE_TEXT
+  ){
+    /* An UPDATE operation */
+    const char *zOldName = (const char*)sqlite3_value_text(argv[0]);
+    const char *zNewName = (const char*)sqlite3_value_text(argv[1]);
+    const char *zValue = (const char*)sqlite3_value_text(argv[4]);
+
+    if( strcmp(zOldName, zNewName)!=0 || zValue==0 ){
+      Tcl_UnsetVar(pTab->interp, zOldName, TCL_GLOBAL_ONLY);
+    }
+    if( zValue!=0 ){
+      Tcl_SetVar(pTab->interp, zNewName, zValue, TCL_GLOBAL_ONLY);
+    }
+    return SQLITE_OK;
+  }
+  tab->zErrMsg = sqlite3_mprintf("prohibited TCL variable change");
+  return SQLITE_ERROR;
+}
+
+/*
 ** A virtual table module that provides read-only access to a
 ** Tcl global variable namespace.
 */
@@ -394,7 +480,7 @@ static sqlite3_module tclvarModule = {
   tclvarEof,                   /* xEof - check for end of scan */
   tclvarColumn,                /* xColumn - read data */
   tclvarRowid,                 /* xRowid - read data */
-  0,                           /* xUpdate */
+  tclvarUpdate,                /* xUpdate */
   0,                           /* xBegin */
   0,                           /* xSync */
   0,                           /* xCommit */
