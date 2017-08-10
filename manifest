@@ -1,5 +1,5 @@
-C Add\sa\sfirst\sdraft\sof\sthe\s"vtablog"\sextensions\sthat\simplements\sa\sgeneric\nvirtual\stable\suseful\sfor\sexperimentation\susing\sthe\scommand-line\sshell.
-D 2017-08-10T03:27:27.239
+C Experimental\schanges\sthat\sallow\sa\sWITHOUT\sROWID\svirtual\stable\sto\sbe\swritable\nas\slong\sas\sit\shas\sonly\sa\ssingle-column\sPRIMARY\sKEY.
+D 2017-08-10T15:19:39.810
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -405,7 +405,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
-F src/delete.c 939bd15e6b54b82b951e1c0ffc2ff2b4ab579196780a1f6d394e47bd6f799b6c
+F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
 F src/expr.c fdb2fc465cabbf372fecad1fc2b291758bec74150b4db0fb945332e09df28a0e
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
@@ -517,7 +517,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afef
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
-F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
+F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
@@ -530,7 +530,7 @@ F src/vdbeblob.c db3cf91060f6f4b2f1358a4200e844697990752177784c7c95da00b7ac9f1c7
 F src/vdbemem.c b7fac20534c79b7554dab2e8a180c585a8bc1b9c85149d1b2d9746cf314d06ed
 F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e3
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c 45d2aab3374d53f6d24490fe14a5c531c34f78d6fd8579ef90548a0f2d9642ab
+F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -695,7 +695,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
+F test/csv01.test 2e394789f479ab0786bba31b2a53a580e60cbeabcc71695521556af8c812cc18
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
@@ -1645,7 +1645,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dcdf091388251292ff9939bdff920708320bc64dacfe0fa1878c5ffd11b679c9
-R 089d3b3d49f7f300de0a7e207b239b0f
+P e49279e65169a939b6058a0960dc1fe09ce4ee2d78992a1969773cbc7ce1043b
+R fc0428bfd3fb49d6ae76636976efdfdc
+T *branch * writable-vtab-without-rowid
+T *sym-writable-vtab-without-rowid *
+T -sym-trunk *
 U drh
-Z e2065e8cae31fe4aaa6c975ba17a09f2
+Z 4eb753989223a630f69c7bf5598d0be4
