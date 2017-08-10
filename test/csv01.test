@@ -125,4 +125,20 @@ do_catchsql_test 4.1 {
   );
 } {0 {}}
 
+do_catchsql_test 4.2 {
+  DROP TABLE IF EXISTS t5;
+  CREATE VIRTUAL TABLE temp.t5 USING csv_wr(
+      data=
+      '1,2,3,4
+      5,6,7,8
+      9,10,11,12
+      13,14,15,16',
+      columns=4,
+      schema=
+      'CREATE TABLE t3(a,b,c,d) WITHOUT ROWID',
+      testflags=1
+      );
+} {0 {vtable constructor failed: t5}}
+
+
 finish_test

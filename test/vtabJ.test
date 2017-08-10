@@ -99,4 +99,28 @@ do_test 162 {
   set res
 } {vtabJ(1) this vtabJ(3) {a test} vtabJ(5) 55}
 
+# Try to trick the module into updating the same variable twice for a
+# single UPDATE statement.
+#
+do_execsql_test 171 {
+  INSERT INTO tclvar(fullname, value) VALUES('xx', 'a');
+  SELECT name, value FROM tclvar where name = 'xx';
+} {xx a}
+do_execsql_test 172 {
+  UPDATE tclvar SET value = value || 't' 
+  WHERE name = 'xx' OR name = 'x'||'x';
+  SELECT name, value FROM tclvar where name = 'xx';
+} {xx at}
+do_execsql_test 173 {
+  UPDATE tclvar SET value = value || 't' 
+  WHERE name = 'xx' OR name BETWEEN 'xx' AND 'xx';
+  SELECT name, value FROM tclvar where name = 'xx';
+} {xx att}
+
+do_execsql_test 181 {
+  DELETE FROM tclvar WHERE name BETWEEN 'xx' AND 'xx' OR name='xx';
+  SELECT name, value FROM tclvar where name = 'xx';
+} {}
+
+
 finish_test
