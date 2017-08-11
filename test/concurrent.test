@@ -558,4 +558,63 @@ do_multiclient_test tn {
   } {1 {database is locked}}
 }
 
+do_multiclient_test tn {
+  do_test 7.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+      WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100) 
+      INSERT INTO t1 SELECT NULL, randomblob(400) FROM s;
+
+      CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+      WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<50000) 
+      INSERT INTO t2 SELECT NULL, randomblob(400) FROM s;
+
+      CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+      WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100) 
+      INSERT INTO t3 SELECT NULL, randomblob(400) FROM s;
+
+      CREATE TABLE t4(a INTEGER PRIMARY KEY, b);
+
+      PRAGMA wal_checkpoint;
+    }
+    set {} {}
+  } {}
+
+  do_test 7.$tn.2 {
+    sql2 {
+      BEGIN CONCURRENT;
+        SELECT * FROM t1;
+        INSERT INTO t4 VALUES(1, 2);
+    }
+    set {} {}
+  } {}
+
+  do_test 7.$tn.3 {
+    sql3 {
+      BEGIN CONCURRENT;
+        SELECT * FROM t3;
+        INSERT INTO t4 VALUES(1, 2);
+    }
+    set {} {}
+  } {}
+
+  do_test 7.$tn.4 {
+    sql1 {
+      UPDATE t1 SET b=randomblob(400);
+      UPDATE t2 SET b=randomblob(400);
+      UPDATE t3 SET b=randomblob(400);
+    }
+  } {}
+
+  do_test 7.$tn.5 {
+    csql2 { COMMIT } 
+  } {1 {database is locked}}
+
+  do_test 7.$tn.6 {
+    csql3 { COMMIT } 
+  } {1 {database is locked}}
+
+}
+
 finish_test

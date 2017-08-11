@@ -1,5 +1,5 @@
-C Add\sanother\sPAGERTRACE()\smacro\sto\sshow\swhen\spages\sare\sadded\sto\sPager.pAllRead.\nNo\simpact\son\sproduction\sbuilds.
-D 2017-08-11T20:22:30.659
+C Fix\sa\sproblem\sallowing\sa\sconflicting\stransaction\sto\sbe\scommitted\sin\sthe\scase\nwhere\smore\sthan\sone\s32KB\sshared-memory\spage\shas\sbeen\swritten\sto\ssince\sthe\ntransaction\swas\sstarted.
+D 2017-08-11T21:16:23.047
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -536,7 +536,7 @@ F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 57c8c0720420b5b4a4301b263f3cb09f68cf4cd2240f4473de0910b91de03923
+F src/wal.c ab94c3cc7bfe006c424b5f5945ad8285ffcda36222f0d40048d46bafb43dab69
 F src/wal.h 1ea51dc499d6451529b822a8aaac053eafeef10b7fd9e5a4c9cc413182be429f
 F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c cbe8ddffbcec7ce86f7a800fe8fd10aee412c76c87e0dd3732a1682e68d74cd9
@@ -662,7 +662,7 @@ F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151eca
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test b111edd2a84f558567320904bb94c779d7eec47254265b5f0a3d1f3e52cc28e0
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
-F test/concurrent.test 75977c464f9613045dfa45eb9871aca0c51c2d67a6c89ccd19d47a88c5168cfe
+F test/concurrent.test f91ab1933beee68b5dbe7a784ed147d2ad190c1b84425e3ea84aefe14f7d1151
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test f4af1cf1220908c6dd5694923621c19e999b78cd997e2646285f08a52bcb4170
 F test/concurrent4.test 653de3066911acfb9dcf3802bf4f1981b392b86c11f75e2c38ed1abfdd162293
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39f39e3d9a083eebe2f8dd5812d20c5b07cc17607b04b573a52fde6d00666f36
-R 44b0453e47b7d15fed17613bc4cf70e5
-U drh
-Z f6a60fb915e7da3c7036aeb9a03bed52
+P 11054cf5e8c24ef9ca869d558a0ca6750b56103c3b3793dc4afcef75192ea943
+R 4e06f85f8b10dfd7cc0854935df8167f
+U dan
+Z d88ae17a00fc8079da60ecbd46144cbb

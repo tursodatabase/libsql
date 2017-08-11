@@ -2900,11 +2900,10 @@ int sqlite3WalLockForCommit(
         rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
         if( rc==SQLITE_OK ){
           u32 i, iMin, iMax;
-          assert( iFirst >= iZero );
-          iMin = (iFirst - iZero);
+          assert( head.mxFrame>=iZero );
+          iMin = (iZero >= iFirst) ? 1 : (iFirst - iZero);
           iMax = (iHash==0) ? HASHTABLE_NPAGE_ONE : HASHTABLE_NPAGE;
-          if( iMin<1 ) iMin = 1;
-          if( iMax>head.mxFrame ) iMax = head.mxFrame;
+          if( iMax>(head.mxFrame-iZero) ) iMax = (head.mxFrame-iZero);
           for(i=iMin; rc==SQLITE_OK && i<=iMax; i++){
             PgHdr *pPg;
             if( aPgno[i]==1 ){
