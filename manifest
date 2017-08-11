@@ -1,5 +1,5 @@
-C Allow\sWITHOUT\sROWID\svirtual\stables\sto\sbe\swritable\sas\slong\sas\sthey\shave\nexactly\sone\scolumn\sas\stheir\sPRIMARY\sKEY.
-D 2017-08-10T20:43:07.509
+C Simplification\sto\sthe\slike\soptimization\slogic.\s\sRemove\sunnecessary\sbranches.
+D 2017-08-11T03:47:21.399
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -538,7 +538,7 @@ F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c cbe8ddffbcec7ce86f7a800fe8fd10aee412c76c87e0dd3732a1682e68d74cd9
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
 F src/wherecode.c e7be3b7f4c11908500cdf02b299d190d3742659533f58e0f4047962fdb5a48da
-F src/whereexpr.c 1e55d79174522fe3b9b7ab224ebedc03da6ec5e6d204d740fa73e71280f54574
+F src/whereexpr.c fe1fe600d7334e91f3d9d487021362d543fba8ab2f1be5e0d68063d619379c05
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1646,8 +1646,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 34a7bd7121a478e14982d59be95ad891fab8050ad5e006638f826c57c392b93e f38ff718278c8ff477d1c6379ced32167063de15f0666c8eac2e4dd30cbd975c
-R 2bbcd61e6b49ae99642d400578e0c457
-T +closed f38ff718278c8ff477d1c6379ced32167063de15f0666c8eac2e4dd30cbd975c
+P c601d128ff1f1dd6d221ee9f55595a95b58ba07d043e1d530743ea913731560e
+R 7b8cc485a478f9a3a5e81fd5979a0685
 U drh
-Z 8e6962897e49436cc593ee413e7d03cc
+Z d5fe3bd64a4a4e8c044c651e64077540

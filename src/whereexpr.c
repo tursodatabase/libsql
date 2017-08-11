@@ -251,9 +251,7 @@ static int isLikeOrGlob(
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
-      if( c==wc[3] && z[cnt]!=0 ){
-        if( z[cnt++]>0xc0 ) while( (z[cnt]&0xc0)==0x80 ){ cnt++; }
-      }
+      if( c==wc[3] && z[cnt]!=0 ) cnt++;
     }
 
     /* The optimization is possible only if (1) the pattern does not begin
