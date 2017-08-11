@@ -67,6 +67,18 @@ do_faultsim_test 1.2 -faults oom* -prep {
   faultsim_test_result {0 {1 one 2 two 3 three 10 ten 11 eleven 12 twelve 20 twenty 21 twenty-one 22 twenty-two}} 
 }
 
+#-------------------------------------------------------------------------
+# Error while registering the two vtab modules.
+do_faultsim_test 2.0 -faults * -prep {
+  catch { db close }
+  sqlite3 db :memory:
+} -body {
+  load_static_extension db unionvtab
+} -test {
+  faultsim_test_result {0 {}} {1 {initialization of unionvtab failed: }}
+}
+
+
 
 finish_test
 

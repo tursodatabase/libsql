@@ -4610,7 +4610,9 @@ static int rbuVfsAccess(
       if( *pResOut ){
         rc = SQLITE_CANTOPEN;
       }else{
-        *pResOut = 1;
+        sqlite3_int64 sz = 0;
+        rc = rbuVfsFileSize(&pDb->base, &sz);
+        *pResOut = (sz>0);
       }
     }
   }

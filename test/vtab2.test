@@ -60,7 +60,7 @@ do_test vtab2-2.1 {
   set ::abc 123
   execsql {
     CREATE VIRTUAL TABLE vars USING tclvar;
-    SELECT * FROM vars WHERE name='abc';
+    SELECT name, arrayname, value FROM vars WHERE name='abc';
   }
 } [list abc "" 123]
 do_test vtab2-2.2 {
@@ -68,7 +68,7 @@ do_test vtab2-2.2 {
   set A(2) 4
   set A(3) 9
   execsql {
-    SELECT * FROM vars WHERE name='A';
+    SELECT name, arrayname, value FROM vars WHERE name='A';
   }
 } [list A 1 1 A 2 4 A 3 9]
 unset -nocomplain result

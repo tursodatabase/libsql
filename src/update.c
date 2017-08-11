@@ -803,18 +803,29 @@ static void updateVirtualTable(
   if( pWInfo==0 ) return;
 
   /* Populate the argument registers. */
-  sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg);
-  if( pRowid ){
-    sqlite3ExprCode(pParse, pRowid, regArg+1);
-  }else{
-    sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg+1);
-  }
   for(i=0; i<pTab->nCol; i++){
     if( aXRef[i]>=0 ){
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
     }
+  }
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg);
+    if( pRowid ){
+      sqlite3ExprCode(pParse, pRowid, regArg+1);
+    }else{
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg+1);
+    }
+  }else{
+    Index *pPk;   /* PRIMARY KEY index */
+    i16 iPk;      /* PRIMARY KEY column */
+    pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    assert( pPk->nKeyCol==1 );
+    iPk = pPk->aiColumn[0];
+    sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, iPk, regArg);
+    sqlite3VdbeAddOp2(v, OP_SCopy, regArg+2+iPk, regArg+1);
   }
 
   bOnePass = sqlite3WhereOkOnePass(pWInfo, aDummy);

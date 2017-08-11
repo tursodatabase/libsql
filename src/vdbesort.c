@@ -823,7 +823,7 @@ static int vdbeSorterCompareText(
   }
 
   if( res==0 ){
-    if( pTask->pSorter->pKeyInfo->nField>1 ){
+    if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
       res = vdbeSorterCompareTail(
           pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
       );
@@ -892,7 +892,7 @@ static int vdbeSorterCompareInt(
   }
 
   if( res==0 ){
-    if( pTask->pSorter->pKeyInfo->nField>1 ){
+    if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
       res = vdbeSorterCompareTail(
           pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
       );
@@ -907,7 +907,7 @@ static int vdbeSorterCompareInt(
 /*
 ** Initialize the temporary index cursor just opened as a sorter cursor.
 **
-** Usually, the sorter module uses the value of (pCsr->pKeyInfo->nField)
+** Usually, the sorter module uses the value of (pCsr->pKeyInfo->nKeyField)
 ** to determine the number of fields that should be compared from the
 ** records being sorted. However, if the value passed as argument nField
 ** is non-zero and the sorter is able to guarantee a stable sort, nField
@@ -960,7 +960,7 @@ int sqlite3VdbeSorterInit(
 
   assert( pCsr->pKeyInfo && pCsr->pBtx==0 );
   assert( pCsr->eCurType==CURTYPE_SORTER );
-  szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
+  szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nKeyField-1)*sizeof(CollSeq*);
   sz = sizeof(VdbeSorter) + nWorker * sizeof(SortSubtask);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
@@ -972,8 +972,7 @@ int sqlite3VdbeSorterInit(
     memcpy(pKeyInfo, pCsr->pKeyInfo, szKeyInfo);
     pKeyInfo->db = 0;
     if( nField && nWorker==0 ){
-      pKeyInfo->nXField += (pKeyInfo->nField - nField);
-      pKeyInfo->nField = nField;
+      pKeyInfo->nKeyField = nField;
     }
     pSorter->pgsz = pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
     pSorter->nTask = nWorker + 1;
@@ -1013,7 +1012,7 @@ int sqlite3VdbeSorterInit(
       }
     }
 
-    if( (pKeyInfo->nField+pKeyInfo->nXField)<13 
+    if( pKeyInfo->nAllField<13 
      && (pKeyInfo->aColl[0]==0 || pKeyInfo->aColl[0]==db->pDfltColl)
     ){
       pSorter->typeMask = SORTER_TYPE_INTEGER | SORTER_TYPE_TEXT;
@@ -1328,7 +1327,7 @@ static int vdbeSortAllocUnpacked(SortSubtask *pTask){
   if( pTask->pUnpacked==0 ){
     pTask->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pTask->pSorter->pKeyInfo);
     if( pTask->pUnpacked==0 ) return SQLITE_NOMEM_BKPT;
-    pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nField;
+    pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nKeyField;
     pTask->pUnpacked->errCode = 0;
   }
   return SQLITE_OK;

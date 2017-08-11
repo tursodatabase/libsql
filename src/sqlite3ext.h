@@ -246,7 +246,7 @@ struct sqlite3_api_routines {
   int (*uri_boolean)(const char*,const char*,int);
   sqlite3_int64 (*uri_int64)(const char*,const char*,sqlite3_int64);
   const char *(*uri_parameter)(const char*,const char*);
-  char *(*vsnprintf)(int,char*,const char*,va_list);
+  char *(*xvsnprintf)(int,char*,const char*,va_list);
   int (*wal_checkpoint_v2)(sqlite3*,const char*,int,int*,int*);
   /* Version 3.8.7 and later */
   int (*auto_extension)(void(*)(void));
@@ -442,7 +442,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_value_text16le         sqlite3_api->value_text16le
 #define sqlite3_value_type             sqlite3_api->value_type
 #define sqlite3_vmprintf               sqlite3_api->vmprintf
-#define sqlite3_vsnprintf              sqlite3_api->vsnprintf
+#define sqlite3_vsnprintf              sqlite3_api->xvsnprintf
 #define sqlite3_overload_function      sqlite3_api->overload_function
 #define sqlite3_prepare_v2             sqlite3_api->prepare_v2
 #define sqlite3_prepare16_v2           sqlite3_api->prepare16_v2
@@ -518,7 +518,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_uri_boolean            sqlite3_api->uri_boolean
 #define sqlite3_uri_int64              sqlite3_api->uri_int64
 #define sqlite3_uri_parameter          sqlite3_api->uri_parameter
-#define sqlite3_uri_vsnprintf          sqlite3_api->vsnprintf
+#define sqlite3_uri_vsnprintf          sqlite3_api->xvsnprintf
 #define sqlite3_wal_checkpoint_v2      sqlite3_api->wal_checkpoint_v2
 /* Version 3.8.7 and later */
 #define sqlite3_auto_extension         sqlite3_api->auto_extension
