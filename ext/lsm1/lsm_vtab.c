@@ -10,16 +10,54 @@
 **
 *************************************************************************
 **
-** This file implements a simple virtual table wrapper around the LSM
+** This file implements a virtual table for SQLite3 around the LSM
 ** storage engine from SQLite4.
 **
 ** USAGE
 **
 **   CREATE VIRTUAL TABLE demo USING lsm1(filename,key,keytype,value1,...);
 **
+** The filename parameter is the name of the LSM database file, which is
+** separate and distinct from the SQLite3 database file.
+**
 ** The keytype must be one of: UINT, TEXT, BLOB.  All keys must be of that
-** one type.  "UINT" means unsigned integer.  The values may be any
-** SQLite datatype.
+** one type.  "UINT" means unsigned integer.  The values may be of any
+** SQLite datatype: BLOB, TEXT, INTEGER, FLOAT, or NULL.
+**
+** The virtual table contains read-only hidden columns:
+**
+**     lsm1_key	      A BLOB which is the raw LSM key.  If the "keytype"
+**                    is BLOB or TEXT then this column is exactly the
+**                    same as the key.  For the UINT keytype, this column
+**                    will be a variable-length integer encoding of the key.
+**
+**     lsm1_value     A BLOB which is the raw LSM value.  All of the value
+**                    columns are packed into this BLOB using the encoding
+**                    described below.
+**
+** Attempts to write values into the lsm1_key and lsm1_value columns are
+** silently ignored.
+**
+** EXAMPLE
+**
+** The virtual table declared this way:
+**
+**    CREATE VIRTUAL TABLE demo2 USING lsm1('x.lsm',id,UINT,a,b,c,d);
+**
+** Results in a new virtual table named "demo2" that acts as if it has
+** the following schema:
+**
+**    CREATE TABLE demo2(
+**      id UINT PRIMARY KEY ON CONFLICT REPLACE,
+**      a ANY,
+**      b ANY,
+**      c ANY,
+**      d ANY,
+**      lsm1_key BLOB HIDDEN,
+**      lsm1_value BLOB HIDDEN
+**    ) WITHOUT ROWID;
+**
+** 
 **
 ** INTERNALS
 **
