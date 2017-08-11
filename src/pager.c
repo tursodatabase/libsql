@@ -5500,6 +5500,7 @@ static int getPageNormal(
   ** mark it as read in the pAllRead vector.  */
   pPg = 0;
   if( pPager->pAllRead && pgno<=pPager->dbOrigSize ){
+    PAGERTRACE(("USING page %d\n", pgno));
     rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
   }
