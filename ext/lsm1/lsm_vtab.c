@@ -243,13 +243,16 @@ static int lsm1Connect(
   lsm1VblobAppendText(&sql, argv[4]);
   lsm1VblobAppendText(&sql, " ");
   lsm1VblobAppendText(&sql, argv[5]);
+  lsm1VblobAppendText(&sql, " PRIMARY KEY");
   for(i=6; i<argc; i++){
     lsm1VblobAppendText(&sql, ", ");
     lsm1VblobAppendText(&sql, argv[i]);
     pNew->nVal++;
   }
   lsm1VblobAppendText(&sql, 
-      ", lsm1_command HIDDEN, lsm1_key HIDDEN, lsm1_value HIDDEN)");
+      ", lsm1_command HIDDEN"
+      ", lsm1_key HIDDEN"
+      ", lsm1_value HIDDEN) WITHOUT ROWID");
   lsm1VblobAppend(&sql, (u8*)"", 1);
   if( sql.errNoMem ){
     rc = SQLITE_NOMEM;
@@ -669,6 +672,31 @@ static int lsm1Column(
   return SQLITE_OK;
 }
 
+/* Parameter "pValue" contains an SQL value that is to be used as
+** a key in an LSM table.  The type of the key is determined by
+** "keyType".  Extract the raw bytes used for the key in LSM1.
+*/
+static void lsm1KeyFromValue(
+  int keyType,                 /* The key type */
+  sqlite3_value *pValue,       /* The key value */
+  u8 *pBuf,                    /* Storage space for a generated key */
+  const u8 **ppKey,            /* OUT: the bytes of the key */
+  int *pnKey                   /* OUT: size of the key */
+){
+  if( keyType==SQLITE_BLOB ){
+    *ppKey = (const u8*)sqlite3_value_blob(pValue);
+    *pnKey = sqlite3_value_bytes(pValue);
+  }else if( keyType==SQLITE_TEXT ){
+    *ppKey = (const u8*)sqlite3_value_text(pValue);
+    *pnKey = sqlite3_value_bytes(pValue);
+  }else{
+    sqlite3_int64 v = sqlite3_value_int64(pValue);
+    if( v<0 ) v = 0;
+    *pnKey = lsm1PutVarint64(pBuf, v);
+    *ppKey = pBuf;
+  }
+}
+
 /* Move to the first row to return.
 */
 static int lsm1Filter(
@@ -680,7 +708,7 @@ static int lsm1Filter(
   lsm1_vtab *pTab = (lsm1_vtab*)(pCur->base.pVtab);
   int rc = LSM_OK;
   int seekType = -1;
-  const void *pVal = 0;
+  const u8 *pVal = 0;
   int nVal;
   u8 keyType = pTab->keyType;
   u8 aKey1[16];
@@ -689,18 +717,7 @@ static int lsm1Filter(
   sqlite3_free(pCur->pKey2);
   pCur->pKey2 = 0;
   if( idxNum<99 ){
-    if( keyType==SQLITE_BLOB ){
-      pVal = sqlite3_value_blob(argv[0]);
-      nVal = sqlite3_value_bytes(argv[0]);
-    }else if( keyType==SQLITE_TEXT ){
-      pVal = sqlite3_value_text(argv[0]);
-      nVal = sqlite3_value_bytes(argv[0]);
-    }else{
-      sqlite3_int64 v = sqlite3_value_int64(argv[0]);
-      if( v<0 ) v = 0;
-      nVal = lsm1PutVarint64(aKey1, v);
-      pVal = aKey1;
-    }
+    lsm1KeyFromValue(keyType, argv[0], aKey1, &pVal, &nVal);
   }
   switch( idxNum ){
     case 0: {   /* key==argv[0] */
@@ -870,21 +887,30 @@ int lsm1Update(
   sqlite_int64 *pRowid
 ){
   lsm1_vtab *p = (lsm1_vtab*)pVTab;
-  int nKey;
+  int nKey, nKey2;
   int i;
   int rc = LSM_OK;
-  unsigned char *pKey;
+  const u8 *pKey, *pKey2;
   unsigned char aKey[16];
   unsigned char pSpace[16];
   lsm1_vblob val;
 
   if( argc==1 ){
-    pVTab->zErrMsg = sqlite3_mprintf("cannot DELETE");
-    return SQLITE_ERROR;
+    /* DELETE the record whose key is argv[0] */
+    lsm1KeyFromValue(p->keyType, argv[0], aKey, &pKey, &nKey);
+    lsm_delete(p->pDb, pKey, nKey);
+    return SQLITE_OK;
   }
+
   if( sqlite3_value_type(argv[0])!=SQLITE_NULL ){
-    pVTab->zErrMsg = sqlite3_mprintf("cannot UPDATE");
-    return SQLITE_ERROR;
+    /* An UPDATE */
+    lsm1KeyFromValue(p->keyType, argv[0], aKey, &pKey, &nKey);
+    lsm1KeyFromValue(p->keyType, argv[1], pSpace, &pKey2, &nKey2);
+    if( nKey!=nKey2 || memcmp(pKey, pKey2, nKey)!=0 ){
+      /* The UPDATE changes the PRIMARY KEY value.  DELETE the old key */
+      lsm_delete(p->pDb, pKey, nKey);
+    }
+    /* Fall through into the INSERT case to complete the UPDATE */
   }
 
   /* "INSERT INTO tab(lsm1_command) VALUES('....')" is used to implement
@@ -893,22 +919,7 @@ int lsm1Update(
   if( sqlite3_value_type(argv[3+p->nVal])!=SQLITE_NULL ){
     return SQLITE_OK;
   }
-  if( p->keyType==SQLITE_BLOB ){
-    pKey = (u8*)sqlite3_value_blob(argv[2]);
-    nKey = sqlite3_value_bytes(argv[2]);
-  }else if( p->keyType==SQLITE_TEXT ){
-    pKey = (u8*)sqlite3_value_text(argv[2]);
-    nKey = sqlite3_value_bytes(argv[2]);
-  }else{
-    sqlite3_int64 v = sqlite3_value_int64(argv[2]);
-    if( v>=0 ){
-      nKey = lsm1PutVarint64(aKey, (sqlite3_uint64)v);
-      pKey = aKey;
-    }else{
-      pVTab->zErrMsg = sqlite3_mprintf("key must be non-negative");
-      return SQLITE_ERROR;
-    }
-  }
+  lsm1KeyFromValue(p->keyType, argv[2], aKey, &pKey, &nKey);
   memset(&val, 0, sizeof(val));
   for(i=0; i<p->nVal; i++){
     sqlite3_value *pArg = argv[3+i];
