@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\senhancements\sfrom\strunk.
-D 2017-08-11T19:16:55.071
+C Add\sa\sPAGERTRACE()\smacro\sto\slog\swhen\sframes\sare\swritten\sinto\sthe\sWAL\sfile.\nThis\sis\sfor\sanalysis\sonly\sand\sis\sa\sno-op\sfor\sproduction\sbuilds.
+D 2017-08-11T19:31:53.502
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -444,7 +444,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c a361273749229755f92c8f0e3e4855054ad39bbc5c65773e8db5d0b79afa632c
 F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 399d8d5f9436f2e14c5b116875248f03afacb05e77f8465b3f23ce7cad34c86d
+F src/pager.c 7fbee7d787ada94b523cb50f92cd89b0eb9a297a1b4328260748b3df0619140e
 F src/pager.h 403b7d242616f8742ec149ede4a06b3e66896c554ce09c2abeddb926fdd1b707
 F src/parse.y bcd8c5d9442518887df1fc9c35d454126927f705ae262cd3981c16bf297e910e
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aafe1fec803ddf207bbcb3c669da0a9639411375fc04a52066dde4eb99c3c11b 831156a4bd7c4408085f7c5584cdeebd1953c539972f80c5ef29bc147008630e
-R cf26a5dc81c3e301583424514c738282
+P 47e716952d4a5d893b75726a2c52202cb0bc8ce1f75131e920a3ac2e202a507e
+R dd67bd244e76571fe616a1fa57b01237
 U drh
-Z d7b2abd4937b3c1a53ce3f10f75e5d51
+Z d2720ec37e28e2f9ee94d83f86f8a988

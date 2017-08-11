@@ -3243,6 +3243,8 @@ static int pagerWalFrames(
       if( p->pgno<=nTruncate ){
         ppNext = &p->pDirty;
         nList++;
+        PAGERTRACE(("TO-WAL %d page %d hash(%08x)\n",
+                     PAGERID(pPager), p->pgno, pager_pagehash(p)));
       }
     }
     assert( pList );
