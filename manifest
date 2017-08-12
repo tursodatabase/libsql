@@ -1,5 +1,5 @@
-C Update\sthe\sspeed-check.sh\stest\sscript\sto\sappend\slog\soutput\sto\sthe\send\sof\sthe\ncout-NAME.txt\sfile.
-D 2017-08-12T02:16:34.150
+C Add\snew\stest\sfile\sfts5vocab2.test.
+D 2017-08-12T18:31:31.810
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -201,6 +201,7 @@ F ext/fts5/test/fts5unindexed.test 9021af86a0fb9fc616f7a69a996db0116e7936d0db638
 F ext/fts5/test/fts5update.test 0737876e20e97a6a6abf45de19fc99315727bcee6a83fadcada1cc080b9aa8f0
 F ext/fts5/test/fts5version.test 99b81372630fbf359107c96580fa761e41cdfb1dafc9966e148629ca72efee71
 F ext/fts5/test/fts5vocab.test 2ba98bcef0fcab3e5fead8eaabd6c0efb7e57bfe707a5cfcc18572ca9b277360
+F ext/fts5/test/fts5vocab2.test 2beeec974a305a1d79b91426622cc922c87065874437d22b400de7438979959e
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
@@ -1646,7 +1647,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e52fa5fd79988a433bae0152ceae036edab4bb18d2b48ed04c1f53f141728b0
-R 772c60eb3b2c75ff30436857fe8c0a95
-U drh
-Z 259464aafd26637749328aadb6f43b1b
+P 14d262d6aa4e281dfe0490988f0c1965c4babf98038a1a96b9bb5772a61521a3
+R 458c6571aa20c315f2d6b3e7fbde0c5a
+U dan
+Z d58fa1886079f8c44974d3b28910f9ac
