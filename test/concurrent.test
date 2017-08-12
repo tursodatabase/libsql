@@ -576,7 +576,6 @@ do_multiclient_test tn {
 
       CREATE TABLE t4(a INTEGER PRIMARY KEY, b);
 
-      PRAGMA wal_checkpoint;
     }
     set {} {}
   } {}
@@ -614,6 +613,37 @@ do_multiclient_test tn {
   do_test 7.$tn.6 {
     csql3 { COMMIT } 
   } {1 {database is locked}}
+
+
+  csql2 ROLLBACK
+  csql3 ROLLBACK
+
+  # The following test works with $tn==1 (sql2 and sql3 use separate 
+  # processes), but is quite slow. So only run it with $tn==2 (all
+  # connections in the same process).
+  #
+  if {$tn==2} {
+    do_test 7.$tn.7 {
+      for {set i 1} {$i < 10000} {incr i} {
+        sql3 { 
+          PRAGMA wal_checkpoint;
+          BEGIN CONCURRENT;
+          SELECT * FROM t3;
+          INSERT INTO t4 VALUES(1, 2);
+        }
+
+        sql1 {
+          UPDATE t2 SET b = randomblob(400) WHERE rowid <= $i;
+          UPDATE t3 SET b = randomblob(400) WHERE rowid = 1;
+        }
+
+        if {[csql3 COMMIT]!={1 {database is locked}}} {
+          error "Failed at i=$i"
+        }
+        csql3 ROLLBACK
+      }
+    } {}
+  }
 
 }
 

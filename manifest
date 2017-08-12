@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sallowing\sa\sconflicting\stransaction\sto\sbe\scommitted\sin\sthe\scase\nwhere\smore\sthan\sone\s32KB\sshared-memory\spage\shas\sbeen\swritten\sto\ssince\sthe\ntransaction\swas\sstarted.
-D 2017-08-11T21:16:23.047
+C Add\sa\smore\srigorous\stest\scase\sfor\sthe\sbug\sfixed\sby\sthe\sprevious\scommit\son\sthis\nbranch.
+D 2017-08-12T14:06:15.050
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -662,7 +662,7 @@ F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151eca
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test b111edd2a84f558567320904bb94c779d7eec47254265b5f0a3d1f3e52cc28e0
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
-F test/concurrent.test f91ab1933beee68b5dbe7a784ed147d2ad190c1b84425e3ea84aefe14f7d1151
+F test/concurrent.test a801cd60c370f0ed851657c9576b102f9ab1dd846c6a88e6ae45939a8deeda7c
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test f4af1cf1220908c6dd5694923621c19e999b78cd997e2646285f08a52bcb4170
 F test/concurrent4.test 653de3066911acfb9dcf3802bf4f1981b392b86c11f75e2c38ed1abfdd162293
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11054cf5e8c24ef9ca869d558a0ca6750b56103c3b3793dc4afcef75192ea943
-R 4e06f85f8b10dfd7cc0854935df8167f
+P 38dd9b50fe260d853cbc2551bc1bb60ddf5752f0456e0da3afe4cbf728c891d8
+R 5ae6eec944d8695060377eb5fcb02f25
 U dan
-Z d88ae17a00fc8079da60ecbd46144cbb
+Z be5258dc78cb84266e8cf9b3ea9ebd92
