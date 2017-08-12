@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sthat\sarise\sif\sthe\sPAGERTRACE\smacro\sis\sturned\son.\nThis\schanges\sdoes\snot\saffect\sproduction\sbuilds.
-D 2017-08-11T18:59:00.035
+C Size\sand\sperformance\smicro-optimization\son\ssqlite3SrcListIndexedBy().
+D 2017-08-12T01:09:06.103
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -399,7 +399,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 1a17ba1a765d80c3ca39ce33ff55f92e1f51eb84bbbdab5377f11d36b1515fa1
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da1
-F src/build.c 33b0f6055bd990ed052b96e71368acefcd98daa21ccf21f91aa90e8b769c2219
+F src/build.c f8a85d2ad14c2201e10c2fe7185e1cb3f1db8b0c90d40d1fb99c20b135ab71bc
 F src/callback.c 930648a084a3adc741c6471adfbdc50ba47ba3542421cb80a26f259f467de65e
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -1646,7 +1646,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa49926dbffaae4f7c486be72ad814f381cca65c549f9d2605f47540a5f4be84
-R d8063074df6e7dea7a8298073c2e62a5
+P 831156a4bd7c4408085f7c5584cdeebd1953c539972f80c5ef29bc147008630e
+R 34a870a8db0fd3ad276f368e06b50630
 U drh
-Z 445b2c6d99e984c3a2a0aca154b718db
+Z 3aa22be27e86e8143572e422fdd4e2d3
