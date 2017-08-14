@@ -7694,9 +7694,6 @@ int sqlite3PagerOpenWal(
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
       pPager->eState = PAGER_OPEN;
-#ifdef SQLITE_SERVER_EDITION
-      sqlite3WalServer(pPager->pWal, pPager->pServer);
-#endif
     }
   }else{
     *pbOpen = 1;

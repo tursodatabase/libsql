@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\slatest\strunk\schanges.
-D 2017-08-14T06:55:22.004
+C Remove\scode\sfor\sPLL\ssupport\sin\swal\smode\sfrom\sthis\sbranch.
+D 2017-08-14T07:16:18.805
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -442,7 +442,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 24e4b7f6f89b742357068959255c4530014254579c09c1b56beff1014eb0c0c1
 F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c f2d2af4fd2e8c581ac0a07d5564da9321d555ee12d1371e174e271ed58a36199
+F src/pager.c 0cfac2557de08ac12ec8d2edd3c4cb69f96ad49b923f1390619c310aa684366e
 F src/pager.h 316dac0671fd7555af9e73d4357febd5f2d3ce6a185ffd8d77b7fc0423ac8b1a
 F src/parse.y 58a2de13e855aece3d7709440e6e86849f4cde97f5227c6a25e6bba2fc5e2976
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -536,7 +536,7 @@ F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 1b208938ba3c33cc419f6240d914f68a147e9abb336c578d4c153dd1579d40f8
+F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 739d92494eb18b6d8f3e353e66c10eb8f94534bafd336ece9f3f60235317ea08
 F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c cbe8ddffbcec7ce86f7a800fe8fd10aee412c76c87e0dd3732a1682e68d74cd9
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 17bc7ded07fe2f1f47857bba646eb297e53f69fb1bafd68556d60700ce008750 7e0d3e9cb071873564b7916c022aba5cd9f3b8ebab9dba787ecd7113c5b7816a
-R 730c18be52f4de912cd8696c8ab9607f
+P bc2498d60fa22b587ad463ec697abe82d1c87abb7fd0d2cb60cc7316cfd7cec7
+R 97b8be53027d87f1df1370ba323e39a9
 U dan
-Z ba592691f21813c3d6a71d486db6b259
+Z cc211de634879a22eac42d92c4a3bb35

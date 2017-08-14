@@ -454,16 +454,7 @@ struct Wal {
 #ifdef SQLITE_ENABLE_SNAPSHOT
   WalIndexHdr *pSnapshot;    /* Start transaction here if not NULL */
 #endif
-#ifdef SQLITE_SERVER_EDITION
-  Server *pServer;
-#endif
 };
-
-#ifdef SQLITE_SERVER_EDITION
-# define walIsServer(p) ((p)->pServer!=0)
-#else
-# define walIsServer(p) 0
-#endif
 
 /*
 ** Candidate values for Wal.exclusiveMode.
@@ -1270,14 +1261,6 @@ static void walIndexClose(Wal *pWal, int isDelete){
   }
 }
 
-#ifdef SQLITE_SERVER_EDITION
-int sqlite3WalServer(Wal *pWal, Server *pServer){
-  assert( pWal->pServer==0 );
-  pWal->pServer = pServer;
-  return SQLITE_OK;
-}
-#endif
-
 /* 
 ** Open a connection to the WAL file zWalName. The database file must 
 ** already be opened on connection pDbFd. The buffer that zWalName points
@@ -1909,9 +1892,6 @@ static int walCheckpoint(
           ** indicate that the log file contains zero valid frames.  */
           walRestartHdr(pWal, salt1);
           rc = sqlite3OsTruncate(pWal->pWalFd, 0);
-        }else if( walIsServer(pWal) ){
-          assert( eMode==SQLITE_CHECKPOINT_RESTART );
-          walRestartHdr(pWal, salt1);
         }
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }
@@ -2071,14 +2051,6 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   return 0;
 }
 
-static int walIndexWriteLock(Wal *pWal){
-  if( walIsServer(pWal) ){
-    return sqlite3ServerLock(pWal->pServer, 0, 1, 0);
-  }else{
-    return walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-  }
-}
-
 /*
 ** Read the wal-index header from the wal-index and into pWal->hdr.
 ** If the wal-header appears to be corrupt, try to reconstruct the
@@ -2119,12 +2091,11 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr ){
     if( pWal->readOnly & WAL_SHM_RDONLY ){
-      assert( walIsServer(pWal)==0 );
       if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
       }
-    }else if( SQLITE_OK==(rc = walIndexWriteLock(pWal)) ){
+    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
       pWal->writeLock = 1;
       if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
         badHdr = walIndexTryHdr(pWal, pChanged);
@@ -2138,9 +2109,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         }
       }
       pWal->writeLock = 0;
-      if( walIsServer(pWal)==0 ){
-        walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
-      }
+      walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     }
   }
 
@@ -2279,9 +2248,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       return rc;
     }
   }
-
-  assert( rc==SQLITE_OK );
-  if( walIsServer(pWal) ) return SQLITE_OK;
 
   pInfo = walCkptInfo(pWal);
   if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame 
@@ -2622,15 +2588,7 @@ int sqlite3WalFindFrame(
   int iMinHash;
 
   /* This routine is only be called from within a read transaction. */
-  assert( walIsServer(pWal) || pWal->readLock>=0 || pWal->lockError );
-
-  assert( walIsServer(pWal)==0 || pWal->writeLock==0 
-       || sqlite3ServerHasLock(pWal->pServer, 0, 1) 
-  );
-  if( walIsServer(pWal) && pWal->writeLock==0 ){
-    /* A server mode connection must read from the most recent snapshot. */
-    iLast = walIndexHdr(pWal)->mxFrame;
-  }
+  assert( pWal->readLock>=0 || pWal->lockError );
 
   /* If the "last page" field of the wal-index header snapshot is 0, then
   ** no data will be read from the wal under any circumstances. Return early
@@ -2742,7 +2700,7 @@ int sqlite3WalReadFrame(
 ** Return the size of the database in pages (or zero, if unknown).
 */
 Pgno sqlite3WalDbsize(Wal *pWal){
-  if( pWal && (walIsServer(pWal) || ALWAYS(pWal->readLock>=0)) ){
+  if( pWal && ALWAYS(pWal->readLock>=0) ){
     return pWal->hdr.nPage;
   }
   return 0;
@@ -2767,16 +2725,11 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
-  assert( walIsServer(pWal) || pWal->readLock>=0 );
+  assert( pWal->readLock>=0 );
   assert( pWal->writeLock==0 && pWal->iReCksum==0 );
 
   if( pWal->readOnly ){
     return SQLITE_READONLY;
-  }
-
-  /* For a server connection, do nothing at this point. */
-  if( walIsServer(pWal) ){
-    return SQLITE_OK;
   }
 
   /* Only one writer allowed at a time.  Get the write lock.  Return
@@ -2829,7 +2782,7 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
-  if( pWal->writeLock ){
+  if( ALWAYS(pWal->writeLock) ){
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
@@ -2919,13 +2872,11 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 ** if an error occurs.
 */
 static int walRestartLog(Wal *pWal){
-  volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
   int rc = SQLITE_OK;
   int cnt;
 
-  if( pWal->readLock==0 
-   || (walIsServer(pWal) && pInfo->nBackfill==pWal->hdr.mxFrame)
-  ){
+  if( pWal->readLock==0 ){
+    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
     assert( pInfo->nBackfill==pWal->hdr.mxFrame );
     if( pInfo->nBackfill>0 ){
       u32 salt1;
@@ -2947,7 +2898,6 @@ static int walRestartLog(Wal *pWal){
         return rc;
       }
     }
-    if( walIsServer(pWal) ) return rc;
     walUnlockShared(pWal, WAL_READ_LOCK(0));
     pWal->readLock = -1;
     cnt = 0;
@@ -3108,23 +3058,7 @@ int sqlite3WalFrames(
   WalIndexHdr *pLive;             /* Pointer to shared header */
 
   assert( pList );
-  assert( pWal->writeLock || walIsServer(pWal) );
-  if( pWal->writeLock==0 ){
-    int bDummy = 0;
-#if 0
-    rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-#endif
-    rc = sqlite3ServerLock(pWal->pServer, 0, 1, 1);
-    if( rc==SQLITE_OK ){
-      pWal->writeLock = 1;
-      rc = walIndexTryHdr(pWal, &bDummy);
-    }
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    assert( sqlite3ServerHasLock(pWal->pServer, 0, 1) );
-  }
-  assert( walIsServer(pWal)==0 || sqlite3ServerHasLock(pWal->pServer, 0, 1) );
+  assert( pWal->writeLock );
 
   /* If this frame set completes a transaction, then nTruncate>0.  If
   ** nTruncate==0 then this frame set does not complete the transaction. */
@@ -3145,7 +3079,7 @@ int sqlite3WalFrames(
   /* See if it is possible to write these frames into the start of the
   ** log file, instead of appending to it at pWal->hdr.mxFrame.
   */
-  if( walIsServer(pWal)==0 && SQLITE_OK!=(rc = walRestartLog(pWal)) ){
+  if( SQLITE_OK!=(rc = walRestartLog(pWal)) ){
     return rc;
   }
 
@@ -3397,19 +3331,7 @@ int sqlite3WalCheckpoint(
   ** lock is successfully obtained.
   */
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
-    if( walIsServer(pWal) ){
-      rc = sqlite3ServerBegin(pWal->pServer, 0);
-      if( rc!=SQLITE_OK ) goto ckpt_out;
-      if( eMode>=SQLITE_CHECKPOINT_RESTART ){
-        /* Exclusive lock on page 1. This is exclusive access to the db. */
-        rc = sqlite3ServerLock(pWal->pServer, 1, 1, 1);
-      }else{
-        /* Take the server write-lock ("page" 0) */
-        rc = sqlite3ServerLock(pWal->pServer, 0, 1, 1);
-      }
-    }else{
-      rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_WRITE_LOCK, 1);
-    }
+    rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_WRITE_LOCK, 1);
     if( rc==SQLITE_OK ){
       pWal->writeLock = 1;
     }else if( rc==SQLITE_BUSY ){
@@ -3454,12 +3376,10 @@ int sqlite3WalCheckpoint(
   }
 
   /* Release the locks. */
- ckpt_out:
   sqlite3WalEndWriteTransaction(pWal);
   walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
   pWal->ckptLock = 0;
   WALTRACE(("WAL%p: checkpoint %s\n", pWal, rc ? "failed" : "ok"));
-  if( walIsServer(pWal) ) sqlite3ServerEnd(pWal->pServer);
   return (rc==SQLITE_OK && eMode!=eMode2 ? SQLITE_BUSY : rc);
 }
 
