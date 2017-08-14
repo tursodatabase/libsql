@@ -4296,7 +4296,6 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     int i;
     BtShared *pBt = pCur->pBt;
     sqlite3BtreeEnter(pBtree);
-    sqlite3BtreeClearCursor(pCur);
     assert( pBt->pCursor!=0 );
     if( pBt->pCursor==pCur ){
       pBt->pCursor = pCur->pNext;
@@ -4315,7 +4314,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     }
     unlockBtreeIfUnused(pBt);
     sqlite3_free(pCur->aOverflow);
-    /* sqlite3_free(pCur); */
+    sqlite3_free(pCur->pKey);
     sqlite3BtreeLeave(pBtree);
   }
   return SQLITE_OK;
