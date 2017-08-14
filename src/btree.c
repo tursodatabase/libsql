@@ -4914,9 +4914,9 @@ static void moveToParent(BtCursor *pCur){
 ** single child page. This can only happen with the table rooted at page 1.
 **
 ** If the b-tree structure is empty, the cursor state is set to 
-** CURSOR_INVALID. Otherwise, the cursor is set to point to the first
-** cell located on the root (or virtual root) page and the cursor state
-** is set to CURSOR_VALID.
+** CURSOR_INVALID and this routine returns SQLITE_EMPTY. Otherwise,
+** the cursor is set to point to the first cell located on the root
+** (or virtual root) page and the cursor state is set to CURSOR_VALID.
 **
 ** If this function returns successfully, it may be assumed that the
 ** page-header flags indicate that the [virtual] root-page is the expected 
@@ -4935,6 +4935,7 @@ static int moveToRoot(BtCursor *pCur){
   assert( CURSOR_VALID   < CURSOR_REQUIRESEEK );
   assert( CURSOR_FAULT   > CURSOR_REQUIRESEEK );
   assert( pCur->eState < CURSOR_REQUIRESEEK || pCur->iPage<0 );
+  assert( pCur->pgnoRoot>0 || pCur->iPage<0 );
 
   if( pCur->iPage>=0 ){
     if( pCur->iPage ){
@@ -4946,7 +4947,7 @@ static int moveToRoot(BtCursor *pCur){
     }
   }else if( pCur->pgnoRoot==0 ){
     pCur->eState = CURSOR_INVALID;
-    return SQLITE_OK;
+    return SQLITE_EMPTY;
   }else{
     assert( pCur->iPage==(-1) );
     if( pCur->eState>=CURSOR_REQUIRESEEK ){
@@ -4999,6 +5000,7 @@ skip_init:
     rc = moveToChild(pCur, subpage);
   }else{
     pCur->eState = CURSOR_INVALID;
+    rc = SQLITE_EMPTY;
   }
   return rc;
 }
@@ -5065,14 +5067,13 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
-    if( pCur->eState==CURSOR_INVALID ){
-      assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
-      *pRes = 1;
-    }else{
-      assert( pCur->apPage[pCur->iPage]->nCell>0 );
-      *pRes = 0;
-      rc = moveToLeftmost(pCur);
-    }
+    assert( pCur->apPage[pCur->iPage]->nCell>0 );
+    *pRes = 0;
+    rc = moveToLeftmost(pCur);
+  }else if( rc==SQLITE_EMPTY ){
+    assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
+    *pRes = 1;
+    rc = SQLITE_OK;
   }
   return rc;
 }
@@ -5104,20 +5105,18 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
-    if( CURSOR_INVALID==pCur->eState ){
-      assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
-      *pRes = 1;
+    assert( pCur->eState==CURSOR_VALID );
+    *pRes = 0;
+    rc = moveToRightmost(pCur);
+    if( rc==SQLITE_OK ){
+      pCur->curFlags |= BTCF_AtLast;
     }else{
-      assert( pCur->eState==CURSOR_VALID );
-      *pRes = 0;
-      rc = moveToRightmost(pCur);
-      if( rc==SQLITE_OK ){
-        pCur->curFlags |= BTCF_AtLast;
-      }else{
-        pCur->curFlags &= ~BTCF_AtLast;
-      }
-   
+      pCur->curFlags &= ~BTCF_AtLast;
     }
+  }else if( rc==SQLITE_EMPTY ){
+    assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
+    *pRes = 1;
+    rc = SQLITE_OK;
   }
   return rc;
 }
@@ -5216,16 +5215,17 @@ int sqlite3BtreeMovetoUnpacked(
 
   rc = moveToRoot(pCur);
   if( rc ){
+    if( rc==SQLITE_EMPTY ){
+      assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
+      *pRes = -1;
+      return SQLITE_OK;
+    }
     return rc;
   }
-  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage] );
-  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->isInit );
-  assert( pCur->eState==CURSOR_INVALID || pCur->apPage[pCur->iPage]->nCell>0 );
-  if( pCur->eState==CURSOR_INVALID ){
-    *pRes = -1;
-    assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
-    return SQLITE_OK;
-  }
+  assert( pCur->apPage[pCur->iPage] );
+  assert( pCur->apPage[pCur->iPage]->isInit );
+  assert( pCur->eState==CURSOR_VALID );
+  assert( pCur->apPage[pCur->iPage]->nCell > 0 );
   assert( pCur->apPage[0]->intKey==pCur->curIntKey );
   assert( pCur->curIntKey || pIdxKey );
   for(;;){
@@ -8439,6 +8439,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
         btreeReleaseAllCursorPages(pCur);
         pCur->eState = CURSOR_REQUIRESEEK;
       }
+      if( rc==SQLITE_EMPTY ) rc = SQLITE_OK;
     }
   }
   return rc;
@@ -8903,11 +8904,11 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
   i64 nEntry = 0;                      /* Value to return in *pnEntry */
   int rc;                              /* Return code */
 
-  if( pCur->pgnoRoot==0 ){
+  rc = moveToRoot(pCur);
+  if( rc==SQLITE_EMPTY ){
     *pnEntry = 0;
     return SQLITE_OK;
   }
-  rc = moveToRoot(pCur);
 
   /* Unless an error occurs, the following loop runs one iteration for each
   ** page in the B-Tree structure (not including overflow pages). 
