@@ -380,4 +380,26 @@ do_execsql_test indexexpr1-1300.1 {
   SELECT a FROM t1300 WHERE substr(b,4)='ess' COLLATE nocase ORDER BY +a;
 } {3 4}
 
+# Ticket https://sqlite.org/src/tktview/aa98619a
+# Assertion fault using an index on a constant
+#
+do_execsql_test indexexpr1-1400 {
+  CREATE TABLE t1400(x TEXT);
+  CREATE INDEX t1400x ON t1400(1);  -- Index on a constant
+  SELECT 1 IN (SELECT 2) FROM t1400;
+} {}
+do_execsql_test indexexpr1-1410 {
+  INSERT INTO t1400 VALUES('a'),('b');
+  SELECT 1 IN (SELECT 2) FROM t1400;
+} {0 0}
+do_execsql_test indexexpr1-1420 {
+  SELECT 1 IN (SELECT 2 UNION ALL SELECT 1) FROM t1400;
+} {1 1}
+do_execsql_test indexexpr1-1430 {
+  DROP INDEX t1400x;
+  CREATE INDEX t1400x ON t1400(abs(15+3));
+  SELECT abs(15+3) IN (SELECT 17 UNION ALL SELECT 18) FROM t1;
+} {1 1}
+
+
 finish_test
