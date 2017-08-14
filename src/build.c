@@ -3883,8 +3883,10 @@ SrcList *sqlite3SrcListAppendFromTerm(
 */
 void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
   assert( pIndexedBy!=0 );
-  if( p && ALWAYS(p->nSrc>0) ){
-    struct SrcList_item *pItem = &p->a[p->nSrc-1];
+  if( p && pIndexedBy->n>0 ){
+    struct SrcList_item *pItem;
+    assert( p->nSrc>0 );
+    pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
     assert( pItem->fg.isTabFunc==0 );
@@ -3894,7 +3896,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
       pItem->fg.notIndexed = 1;
     }else{
       pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
-      pItem->fg.isIndexedBy = (pItem->u1.zIndexedBy!=0);
+      pItem->fg.isIndexedBy = 1;
     }
   }
 }

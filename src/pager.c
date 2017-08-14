@@ -128,8 +128,8 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 ** associated file-descriptor is returned. FILEHANDLEID() takes an sqlite3_file
 ** struct as its argument.
 */
-#define PAGERID(p) ((int)(p->fd))
-#define FILEHANDLEID(fd) ((int)fd)
+#define PAGERID(p) (SQLITE_PTR_TO_INT(p->fd))
+#define FILEHANDLEID(fd) (SQLITE_PTR_TO_INT(fd))
 
 /*
 ** The Pager.eState variable stores the current 'state' of a pager. A

@@ -1710,7 +1710,9 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( pColExpr->op==TK_COLUMN && pColExpr->pTab!=0 ){
+      if( (pColExpr->op==TK_COLUMN || pColExpr->op==TK_AGG_COLUMN)
+       && pColExpr->pTab!=0 
+      ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
         Table *pTab = pColExpr->pTab;

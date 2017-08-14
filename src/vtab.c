@@ -644,6 +644,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
     rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xConnect, &zErr);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "%s", zErr);
+      pParse->rc = rc;
     }
     sqlite3DbFree(db, zErr);
   }
@@ -772,7 +773,13 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       pNew->nCol = 0;
       pNew->aCol = 0;
       assert( pTab->pIndex==0 );
-      if( !HasRowid(pNew) && pCtx->pVTable->pMod->pModule->xUpdate!=0 ){
+      assert( HasRowid(pNew) || sqlite3PrimaryKeyIndex(pNew)!=0 );
+      if( !HasRowid(pNew)
+       && pCtx->pVTable->pMod->pModule->xUpdate!=0
+       && sqlite3PrimaryKeyIndex(pNew)->nKeyCol!=1
+      ){
+        /* WITHOUT ROWID virtual tables must either be read-only (xUpdate==0)
+        ** or else must have a single-column PRIMARY KEY */
         rc = SQLITE_ERROR;
       }
       pIdx = pNew->pIndex;
