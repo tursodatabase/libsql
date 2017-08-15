@@ -1,5 +1,5 @@
-C Minor\ssize\sand\sperformance\soptimization\sto\ssqlite3BtreeCloseCursor().
-D 2017-08-14T23:53:02.259
+C Btree\soptimization:\s\sNew\sfield\sBtCursor.pPage\sthat\spoints\sto\sthe\scurrent\spage,\nsaving\sa\ssingle\spointer\sdereference\son\seach\saccess.
+D 2017-08-15T03:46:47.011
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -397,9 +397,9 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 05781141fe24e9e24719a1d9c9b6ce38480af115f85a8a26f389a089888060d7
+F src/btree.c d2f5f347e56f8b7ed1bb798087045a3b98cd63f45fde7675fd24b9e88b61304d
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
-F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da1
+F src/btreeInt.h f78671f594dafd88cf9a81253da04db81272b382d2dc074bb983d348b95d9d2d
 F src/build.c f8a85d2ad14c2201e10c2fe7185e1cb3f1db8b0c90d40d1fb99c20b135ab71bc
 F src/callback.c 930648a084a3adc741c6471adfbdc50ba47ba3542421cb80a26f259f467de65e
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -1647,7 +1647,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 240d57143d943eaddd5f7c2d473f47a1d29417e61d28142f70f3d960bb9b30df
-R a7c4eab7d8d2ce1f319f583d46cbd640
+P 16969338841734d00ab906a94b82480c7e1e426eb0ddf7b9e6aed722aee5d91f
+R 3d6cdbe8a873abb5b839027115a07163
 U drh
-Z e48f5e9e2a338851fd6ede62f6ca96de
+Z 53459ac0c08285b40b84acbd692920bc
