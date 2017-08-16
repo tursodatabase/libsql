@@ -3787,38 +3787,247 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
 /* Forward declaration */
 static int unixGetTempname(int nBuf, char *zBuf);
 
+#ifdef SQLITE_SERVER_EDITION
+
+/*
+** Structure passed by SQLite through the (void*) argument to various 
+** fcntl operations.
+*/
+struct UnixServerArg {
+  void *h;                        /* Handle from SHMOPEN */
+  void *p;                        /* Mapping */
+  int i1;                         /* Integer value 1 */
+  int i2;                         /* Integer value 2 */
+};
+typedef struct UnixServerArg UnixServerArg;
+
+/*
+** Structure used as a server-shm handle.
+*/
+struct UnixServerShm {
+  void *pMap;                     /* Pointer to mapping */
+  int nMap;                       /* Size of mapping in bytes */
+  int fd;                         /* File descriptor open on *-hma file */
+};
+typedef struct UnixServerShm UnixServerShm;
+
+/*
+** Implementation of SQLITE_FCNTL_FILEID
+*/
+static int unixFcntlServerFileid(unixFile *pFile, void *pArg){
+  i64 *aId = (i64*)pArg;
+  aId[0] = (i64)(pFile->pInode->fileId.dev);
+  aId[1] = (i64)(pFile->pInode->fileId.ino);
+  return SQLITE_OK;
+}
+
+/*
+** Implementation of SQLITE_FCNTL_SERVER_MODE
+*/
+static int unixFcntlServerMode(unixFile *pFile, void *pArg){
+  int rc = SQLITE_OK;
+  int eServer = 0;
+  char *zJrnl = sqlite3_mprintf("%s-journal", pFile->zPath);
+  if( zJrnl==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    struct stat buf;        /* Used to hold return values of stat() */
+    if( osStat(zJrnl, &buf) ){
+      rc = SQLITE_IOERR_FSTAT;
+    }else if( buf.st_mode & S_IFDIR ){
+      eServer = (pFile->ctrlFlags & UNIXFILE_EXCL) ? 1 : 2;
+    }
+  }
+  sqlite3_free(zJrnl);
+  *((int*)pArg) = eServer;
+  return rc;
+}
+
+/*
+** Implementation of SQLITE_FCNTL_SERVER_SHMOPEN.
+**
+** The (void*) argument passed to this file control should actually be
+** a pointer to a UnixServerArg or equivalent structure. Arguments are
+** interpreted as follows:
+**
+**   UnixServerArg.h  - OUT: New server shm handle.
+**   UnixServerArg.p  - OUT: New server shm mapping.
+**   UnixServerArg.i1 - Size of requested mapping in bytes.
+**   UnixServerArg.i2 - OUT: True if journal rollback + SHMOPEN2 are required.
+*/
+static int unixFcntlServerShmopen(unixFile *pFd, void *pArg){
+  int rc = SQLITE_OK;
+  UnixServerArg *pSArg = (UnixServerArg*)pArg;
+  UnixServerShm *p;
+  char *zHma;
+
+  p = sqlite3_malloc(sizeof(UnixServerShm));
+  if( p==0 ) return SQLITE_NOMEM;
+  memset(p, 0, sizeof(UnixServerShm));
+  p->fd = -1;
+
+  zHma = sqlite3_mprintf("%s-journal/hma", pFd->zPath);
+  if( zHma==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    p->fd = osOpen(zHma, O_RDWR|O_CREAT, 0644);
+    p->nMap = pSArg->i1;
+
+    if( p->fd<0 ){
+      rc = SQLITE_CANTOPEN;
+    }else{
+      int res = ftruncate(p->fd, p->nMap);
+      if( res!=0 ){
+        rc = SQLITE_IOERR_TRUNCATE;
+      }else{
+        p->pMap = osMmap(0, p->nMap, PROT_READ|PROT_WRITE, MAP_SHARED, p->fd,0);
+        if( p->pMap==0 ){
+          rc = SQLITE_IOERR_MMAP;
+        }
+      }
+    }
+    sqlite3_free(zHma);
+  }
+
+  if( rc==SQLITE_OK ){
+    int res;
+    struct flock lock;
+    memset(&lock, 0, sizeof(struct flock));
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = p->nMap;
+    lock.l_len = 1;
+
+    res = osFcntl(p->fd, F_SETLK, &lock);
+    if( res==0 ){
+      pSArg->i2 = 1;
+      memset(p->pMap, 0, p->nMap);
+    }else{
+      pSArg->i2 = 0;
+      lock.l_type = F_RDLCK;
+      res = osFcntl(p->fd, F_SETLKW, &lock);
+      if( res!=0 ){
+        rc = SQLITE_IOERR_LOCK;
+      }
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    if( p->pMap ) osMunmap(p->pMap, p->nMap);
+    if( p->fd>=0 ) close(p->fd);
+    sqlite3_free(p);
+    pSArg->h = pSArg->p = 0;
+  }else{
+    pSArg->h = (void*)p;
+    pSArg->p = (void*)(p->pMap);
+  }
+
+  return rc;
+}
+
+/*
+** Implementation of SQLITE_FCNTL_SERVER_SHMOPEN2.
+**
+** The (void*) argument passed to this file control should actually be
+** a pointer to a UnixServerArg or equivalent structure. Arguments are
+** interpreted as follows:
+**
+**   UnixServerArg.h  - Server shm handle (from SHMOPEN).
+**   UnixServerArg.p  - unused.
+**   UnixServerArg.i1 - unused.
+**   UnixServerArg.i2 - unused.
+*/
+static int unixFcntlServerShmopen2(unixFile *pFd, void *pArg){
+  UnixServerArg *pSArg = (UnixServerArg*)pArg;
+  UnixServerShm *p = (UnixServerShm*)pSArg->h;
+  int res;
+  struct flock lock;
+
+  memset(&lock, 0, sizeof(struct flock));
+  lock.l_type = F_RDLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = p->nMap;
+  lock.l_len = 1;
+  res = osFcntl(p->fd, F_SETLK, &lock);
+
+  return res ? SQLITE_IOERR_LOCK : SQLITE_OK;
+}
+
+/*
+** Implementation of SQLITE_FCNTL_SERVER_SHMCLOSE.
+**
+** The (void*) argument passed to this file control should actually be
+** a pointer to a UnixServerArg or equivalent structure. Arguments are
+** interpreted as follows:
+**
+**   UnixServerArg.h  - Server shm handle (from SHMOPEN).
+**   UnixServerArg.p  - unused.
+**   UnixServerArg.i1 - unused.
+**   UnixServerArg.i2 - unused.
+*/
+static int unixFcntlServerShmclose(unixFile *pFd, void *pArg){
+  UnixServerArg *pSArg = (UnixServerArg*)pArg;
+  UnixServerShm *p = (UnixServerShm*)pSArg->h;
+
+  if( p->pMap ) osMunmap(p->pMap, p->nMap);
+  if( p->fd>=0 ) close(p->fd);
+  sqlite3_free(p);
+
+  return SQLITE_OK;
+}
+
+/*
+** Implementation of SQLITE_FCNTL_SERVER_SHMLOCK.
+**
+** The (void*) argument passed to this file control should actually be
+** a pointer to a UnixServerArg or equivalent structure. Arguments are
+** interpreted as follows:
+**
+**   UnixServerArg.h  - Server shm handle (from SHMOPEN).
+**   UnixServerArg.p  - unused.
+**   UnixServerArg.i1 - slot to lock.
+**   UnixServerArg.i2 - true to take the lock, false to release it.
+*/
+static int unixFcntlServerShmlock(unixFile *pFd, void *pArg){
+  UnixServerArg *pSArg = (UnixServerArg*)pArg;
+  UnixServerShm *p = (UnixServerShm*)pSArg->h;
+  int res;
+
+  struct flock lock;
+  memset(&lock, 0, sizeof(struct flock));
+  lock.l_type = pSArg->i2 ? F_WRLCK : F_UNLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = p->nMap + pSArg->i1 + 1;
+  lock.l_len = 1;
+
+  res = osFcntl(p->fd, F_SETLK, &lock);
+
+  return (res==0 ? SQLITE_OK : SQLITE_BUSY);
+}
+#endif
+
 /*
 ** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
-    case SQLITE_FCNTL_SERVER_MODE: {
-      int rc = SQLITE_OK;
-      int eServer = 0;
-      if( pFile->ctrlFlags | UNIXFILE_EXCL ){
-        char *zJrnl = sqlite3_mprintf("%s-journal", pFile->zPath);
-        if( zJrnl==0 ){
-          rc = SQLITE_NOMEM;
-        }else{
-          struct stat buf;        /* Used to hold return values of stat() */
-          if( osStat(zJrnl, &buf) ){
-            rc = SQLITE_IOERR_FSTAT;
-          }else{
-            eServer = ((buf.st_mode & S_IFDIR) ? 1 : 0);
-          }
-        }
-        sqlite3_free(zJrnl);
-      }
-      *((int*)pArg) = eServer;
-      return rc;
-    }
-    case SQLITE_FCNTL_FILEID: {
-      i64 *aId = (i64*)pArg;
-      aId[0] = (i64)(pFile->pInode->fileId.dev);
-      aId[1] = (i64)(pFile->pInode->fileId.ino);
-      return SQLITE_OK;
-    }
+
+#ifdef SQLITE_SERVER_EDITION
+    case SQLITE_FCNTL_FILEID:
+      return unixFcntlServerFileid(pFile, pArg);
+    case SQLITE_FCNTL_SERVER_MODE: 
+      return unixFcntlServerMode(pFile, pArg);
+    case SQLITE_FCNTL_SERVER_SHMOPEN:
+      return unixFcntlServerShmopen(pFile, pArg);
+    case SQLITE_FCNTL_SERVER_SHMOPEN2:
+      return unixFcntlServerShmopen2(pFile, pArg);
+    case SQLITE_FCNTL_SERVER_SHMCLOSE:
+      return unixFcntlServerShmclose(pFile, pArg);
+    case SQLITE_FCNTL_SERVER_SHMLOCK:
+      return unixFcntlServerShmlock(pFile, pArg);
+#endif
+
 #if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
     case SQLITE_FCNTL_BEGIN_ATOMIC_WRITE: {
       int rc = osIoctl(pFile->h, F2FS_IOC_START_ATOMIC_WRITE);

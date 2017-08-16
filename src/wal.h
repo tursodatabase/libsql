@@ -144,9 +144,5 @@ int sqlite3WalFramesize(Wal *pWal);
 /* Return the sqlite3_file object for the WAL file */
 sqlite3_file *sqlite3WalFile(Wal *pWal);
 
-#ifdef SQLITE_SERVER_EDITION
-int sqlite3WalServer(Wal *pWal, Server *pServer);
-#endif
-
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */

@@ -842,6 +842,7 @@ int sqlite3PagerUseWal(Pager *pPager, Pgno pgno){
 
 #ifdef SQLITE_SERVER_EDITION
 # define pagerIsServer(x) ((x)->pServer!=0)
+# define pagerIsProcessServer(x) sqlite3ServerIsSingleProcess((x)->pServer)
 #else
 # define pagerIsServer(x) 0
 #endif
@@ -1807,6 +1808,9 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 }
 
 #ifdef SQLITE_SERVER_EDITION
+/*
+** Free the linked list of ServerPage objects headed at Pager.pServerPage.
+*/
 static void pagerFreeServerPage(Pager *pPager){
   ServerPage *pPg;
   ServerPage *pNext;
@@ -4434,7 +4438,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   assert( isOpen(pPager->fd) || pList->pDirty==0 );
 
 #ifdef SQLITE_SERVER_EDITION
-  if( pagerIsServer(pPager) ){
+  if( pagerIsProcessServer(pPager) ){
     rc = sqlite3ServerPreCommit(pPager->pServer, pPager->pServerPage);
     pPager->pServerPage = 0;
     if( rc!=SQLITE_OK ) return rc;
@@ -5192,12 +5196,12 @@ static int hasHotJournal(Pager *pPager, int *pExists, int *peServer){
 }
 
 #ifdef SQLITE_SERVER_EDITION
-static int pagerServerConnect(Pager *pPager){
+static int pagerServerConnect(Pager *pPager, int eServer){
   int rc = SQLITE_OK;
   if( pPager->tempFile==0 ){
     pPager->noLock = 1;
     pPager->journalMode = PAGER_JOURNALMODE_PERSIST;
-    rc = sqlite3ServerConnect(pPager, &pPager->pServer);
+    rc = sqlite3ServerConnect(pPager, eServer, &pPager->pServer);
   }
   return rc;
 }
@@ -5453,7 +5457,7 @@ int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
 
 #ifdef SQLITE_SERVER_EDITION
     if( eServer ){
-      rc = pagerServerConnect(pPager);
+      rc = pagerServerConnect(pPager, eServer);
     }
 #endif
 
@@ -6016,7 +6020,7 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
   i64 iOff = pPager->journalOff;
 
 #ifdef SQLITE_SERVER_EDITION
-  if( pagerIsServer(pPager) ){
+  if( pagerIsProcessServer(pPager) ){
     ServerPage *p = sqlite3ServerBuffer(pPager->pServer);
     if( p==0 ){
       int nByte = sizeof(ServerPage) + pPager->pageSize;

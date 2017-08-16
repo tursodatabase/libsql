@@ -31,7 +31,7 @@ struct ServerPage {
   ServerPage *pHashPrev;
 };
 
-int sqlite3ServerConnect(Pager *pPager, Server **ppOut);
+int sqlite3ServerConnect(Pager *pPager, int eServer, Server **ppOut);
 void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd);
 
 int sqlite3ServerBegin(Server *p, int bReadonly);
@@ -45,6 +45,8 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock);
 int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite);
 
 ServerPage *sqlite3ServerBuffer(Server*);
+
+int sqlite3ServerIsSingleProcess(Server*);
 
 /* For "BEGIN READONLY" clients. */
 int sqlite3ServerIsReadonly(Server*);

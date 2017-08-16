@@ -36,7 +36,6 @@
 
 #define HMA_SLOT_RLWL_BITS (HMA_SLOT_RL_BITS + HMA_SLOT_WL_BITS)
 
-
 #define HMA_SLOT_RL_MASK ((1 << HMA_SLOT_RL_BITS)-1)
 #define HMA_SLOT_WL_MASK (((1 << HMA_SLOT_WL_BITS)-1) << HMA_SLOT_RL_BITS)
 #define HMA_SLOT_TR_MASK (((1 << HMA_SLOT_TR_BITS)-1) << HMA_SLOT_RLWL_BITS)
@@ -48,7 +47,7 @@
 /* Maximum concurrent read/write transactions */
 #define HMA_MAX_TRANSACTIONID 16
 
-
+/* Number of buckets in hash table used for MVCC in single-process mode */
 #define HMA_HASH_SIZE 512
 
 /*
@@ -66,18 +65,27 @@
 
 #define slotReaderMask(v) ((v) & HMA_SLOT_RL_MASK)
 
-#include "unistd.h"
-#include "fcntl.h"
-#include "sys/mman.h"
-#include "sys/types.h"
-#include "sys/stat.h"
-#include "errno.h"
+
+/* 
+** Atomic CAS primitive used in multi-process mode. Equivalent to:
+**
+**   int serverCompareAndSwap(u32 *ptr, u32 oldval, u32 newval){
+**     if( *ptr==oldval ){
+**       *ptr = newval;
+**       return 1;
+**     }
+**     return 0;
+**   }
+*/
+#define serverCompareAndSwap(ptr,oldval,newval) \
+  __sync_bool_compare_and_swap(ptr,oldval,newval)
+
 
 typedef struct ServerDb ServerDb;
 typedef struct ServerJournal ServerJournal;
 
 struct ServerGlobal {
-  ServerDb *pDb;                  /* Linked list of all ServerHMA objects */
+  ServerDb *pDb;                  /* Linked list of all ServerDb objects */
 };
 static struct ServerGlobal g_server;
 
@@ -103,13 +111,14 @@ struct ServerDb {
   ServerJournal aJrnl[HMA_MAX_TRANSACTIONID];
   u8 *aJrnlFdSpace;
 
+  void *pServerShm;
+
   int iNextCommit;                /* Commit id for next pre-commit call */ 
   Server *pCommit;                /* List of connections currently commiting */
   Server *pReader;                /* Connections in slower-reader transaction */
   ServerPage *pPgFirst;           /* First (oldest) in list of pages */
   ServerPage *pPgLast;            /* Last (newest) in list of pages */
-  ServerPage *apPg[HMA_HASH_SIZE];
-
+  ServerPage *apPg[HMA_HASH_SIZE];/* Hash table of "old" page data */
   ServerPage *pFree;              /* List of free page buffers */
 };
 
@@ -125,9 +134,17 @@ struct Server {
   int iCommitId;                  /* Current commit id (or 0) */
   int nAlloc;                     /* Allocated size of aLock[] array */
   int nLock;                      /* Number of entries in aLock[] */
-  u32 *aLock;                     /* Mapped lock file */
+  u32 *aLock;                     /* Array of held locks */
   Server *pNext;                  /* Next in pCommit or pReader list */
 };
+
+struct ServerFcntlArg {
+  void *h;                        /* Handle from SHMOPEN */
+  void *p;                        /* Mapping */
+  int i1;                         /* Integer value 1 */
+  int i2;                         /* Integer value 2 */
+};
+typedef struct ServerFcntlArg ServerFcntlArg;
 
 /*
 ** Possible values for Server.eTrans.
@@ -153,6 +170,12 @@ static void serverAssertMutexHeld(void){
   assert( sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_APP1)) );
 }
 
+/*
+** Locate the ServerDb object shared by all connections to the db identified
+** by aFileId[2], increment its ref count and set pNew->pDb to point to it. 
+** In this context "locate" may mean to find an existing object or to
+** allocate a new one.
+*/
 static int serverFindDatabase(Server *pNew, i64 *aFileId){
   ServerDb *p;
   int rc = SQLITE_OK;
@@ -165,18 +188,11 @@ static int serverFindDatabase(Server *pNew, i64 *aFileId){
   if( p==0 ){
     p = (ServerDb*)sqlite3MallocZero(sizeof(ServerDb));
     if( p ){
-      p->aSlot = (u32*)sqlite3MallocZero(sizeof(u32)*HMA_PAGELOCK_SLOTS);
-      if( p->aSlot==0 ){
-        rc = SQLITE_NOMEM_BKPT;
-      }else{
-        p->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      p->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
 #if SQLITE_THREADSAFE!=0
-        if( p->mutex==0 ) rc = SQLITE_NOMEM_BKPT;
+      if( p->mutex==0 ) rc = SQLITE_NOMEM_BKPT;
 #endif
-      }
-
       if( rc==SQLITE_NOMEM ){
-        sqlite3_free(p->aSlot);
         sqlite3_free(p);
         p = 0;
       }else{
@@ -202,14 +218,18 @@ static int serverFindDatabase(Server *pNew, i64 *aFileId){
 ** Free all resources allocated by serverInitDatabase() associated with the
 ** object passed as the only argument.
 */
-static void serverShutdownDatabase(ServerDb *pDb){
+static void serverShutdownDatabase(
+  ServerDb *pDb, 
+  sqlite3_file *dbfd, 
+  int bDelete
+){
   int i;
 
   for(i=0; i<HMA_MAX_TRANSACTIONID; i++){
     ServerJournal *pJ = &pDb->aJrnl[i];
     if( pJ->jfd ){
       sqlite3OsClose(pJ->jfd);
-      sqlite3OsDelete(pDb->pVfs, pJ->zJournal, 0);
+      if( bDelete ) sqlite3OsDelete(pDb->pVfs, pJ->zJournal, 0);
     }
     sqlite3_free(pJ->zJournal);
   }
@@ -220,7 +240,15 @@ static void serverShutdownDatabase(ServerDb *pDb){
     pDb->aJrnlFdSpace = 0;
   }
 
-  sqlite3_free(pDb->aSlot);
+  if( pDb->pServerShm ){
+    ServerFcntlArg arg;
+    memset(&arg, 0, sizeof(ServerFcntlArg));
+    arg.h = pDb->pServerShm;
+    sqlite3OsFileControl(dbfd, SQLITE_FCNTL_SERVER_SHMCLOSE, (void*)&arg);
+  }else{
+    sqlite3_free(pDb->aSlot);
+  }
+  pDb->aSlot = 0;
   pDb->bInit = 0;
 }
 
@@ -229,24 +257,48 @@ static void serverShutdownDatabase(ServerDb *pDb){
 ** is established. It is responsible for rolling back any hot journal
 ** files found in the file-system.
 */
-static int serverInitDatabase(Server *pNew){
+static int serverInitDatabase(Server *pNew, int eServer){
   int nByte;
   int rc = SQLITE_OK;
   ServerDb *pDb = pNew->pDb;
   sqlite3_vfs *pVfs;
+  sqlite3_file *dbfd = sqlite3PagerFile(pNew->pPager);
   const char *zFilename = sqlite3PagerFilename(pNew->pPager, 0);
+  int bRollback = 0;
 
   assert( zFilename );
+  assert( eServer==1 || eServer==2 );
+
   pVfs = pDb->pVfs = sqlite3PagerVfs(pNew->pPager);
   nByte = ROUND8(pVfs->szOsFile) * HMA_MAX_TRANSACTIONID;
   pDb->aJrnlFdSpace = (u8*)sqlite3MallocZero(nByte);
   if( pDb->aJrnlFdSpace==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }else{
+    if( eServer==2 ){
+      ServerFcntlArg arg;
+      arg.h = 0;
+      arg.p = 0;
+      arg.i1 = sizeof(u32)*HMA_PAGELOCK_SLOTS;
+      arg.i2 = 0;
+
+      rc = sqlite3OsFileControl(dbfd, SQLITE_FCNTL_SERVER_SHMOPEN, (void*)&arg);
+      if( rc==SQLITE_OK ){
+        pDb->aSlot = (u32*)arg.p;
+        pDb->pServerShm = arg.h;
+        bRollback = arg.i2;
+      }
+    }else{
+      pDb->aSlot = (u32*)sqlite3MallocZero(sizeof(u32)*HMA_PAGELOCK_SLOTS);
+      if( pDb->aSlot==0 ) rc = SQLITE_NOMEM_BKPT;
+      bRollback = 1;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
     u8 *a = pDb->aJrnlFdSpace;
     int i;
     for(i=0; rc==SQLITE_OK && i<HMA_MAX_TRANSACTIONID; i++){
-      int bExists = 0;
       ServerJournal *pJ = &pDb->aJrnl[i];
       pJ->jfd = (sqlite3_file*)&a[ROUND8(pVfs->szOsFile)*i];
       pJ->zJournal = sqlite3_mprintf("%s-journal/%d-journal", zFilename, i);
@@ -255,22 +307,51 @@ static int serverInitDatabase(Server *pNew){
         break;
       }
 
-      rc = sqlite3OsAccess(pVfs, pJ->zJournal, SQLITE_ACCESS_EXISTS, &bExists);
-      if( rc==SQLITE_OK && bExists ){
-        int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
-        rc = sqlite3OsOpen(pVfs, pJ->zJournal, pJ->jfd, flags, &flags);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3PagerRollbackJournal(pNew->pPager, pJ->jfd);
+      if( bRollback ){
+        int bExist = 0;
+        rc = sqlite3OsAccess(pVfs, pJ->zJournal, SQLITE_ACCESS_EXISTS, &bExist);
+        if( rc==SQLITE_OK && bExist ){
+          int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
+          rc = sqlite3OsOpen(pVfs, pJ->zJournal, pJ->jfd, flags, &flags);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3PagerRollbackJournal(pNew->pPager, pJ->jfd);
+          }
         }
       }
     }
   }
 
+  if( rc==SQLITE_OK && pDb->pServerShm && bRollback ){
+    ServerFcntlArg arg;
+    arg.h = pDb->pServerShm;
+    arg.p = 0;
+    arg.p = 0;
+    arg.i2 = 0;
+    rc = sqlite3OsFileControl(dbfd, SQLITE_FCNTL_SERVER_SHMOPEN2, (void*)&arg);
+  }
+
   if( rc==SQLITE_OK ){
     pDb->bInit = 1;
   }else{
-    serverShutdownDatabase(pNew->pDb);
+    serverShutdownDatabase(pNew->pDb, dbfd, eServer==1);
   }
+  return rc;
+}
+
+/*
+** Take (bLock==1) or release (bLock==0) a server shmlock on slot iSlot.
+** Return SQLITE_OK if successful, or SQLITE_BUSY if the lock cannot be
+** obtained. 
+*/
+static int serverFcntlLock(Server *p, int iSlot, int bLock){
+  sqlite3_file *dbfd = sqlite3PagerFile(p->pPager);
+  int rc;
+  ServerFcntlArg arg;
+  arg.h = p->pDb->pServerShm;
+  arg.p = 0;
+  arg.i1 = iSlot;
+  arg.i2 = bLock;
+  rc = sqlite3OsFileControl(dbfd, SQLITE_FCNTL_SERVER_SHMLOCK, (void*)&arg);
   return rc;
 }
 
@@ -280,12 +361,38 @@ static int serverInitDatabase(Server *pNew){
 void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
   ServerDb *pDb = p->pDb;
 
+  /* In a multi-process setup, release the lock on the client slot and
+  ** clear the bit in the ServerDb.transmask bitmask. */
+  if( pDb->pServerShm && p->iTransId>=0 ){
+    sqlite3_mutex_enter(pDb->mutex);
+    pDb->transmask &= ~((u32)1 << p->iTransId);
+    sqlite3_mutex_leave(pDb->mutex);
+    serverFcntlLock(p, p->iTransId, 0);
+  }
+
   serverEnterMutex();
   pDb->nClient--;
   if( pDb->nClient==0 ){
+    sqlite3_file *dbfd = sqlite3PagerFile(p->pPager);
     ServerPage *pFree;
     ServerDb **pp;
-    serverShutdownDatabase(pDb);
+
+    /* Delete the journal files on shutdown if an EXCLUSIVE lock is already
+    ** held (single process mode) or can be obtained (multi process mode)
+    ** on the database file. 
+    **
+    ** TODO: Need to account for disk-full errors and the like here. It
+    ** is not necessarily safe to delete journal files here. */
+    int bDelete = 0;
+    if( pDb->pServerShm ){
+      int res;
+      res = sqlite3OsLock(dbfd, EXCLUSIVE_LOCK);
+      if( res==SQLITE_OK ) bDelete = 1;
+    }else{
+      bDelete = 1;
+    }
+    serverShutdownDatabase(pDb, dbfd, bDelete);
+
     for(pp=&g_server.pDb; *pp!=pDb; pp=&((*pp)->pNext));
     *pp = pDb->pNext;
     sqlite3_mutex_free(pDb->mutex);
@@ -305,7 +412,8 @@ void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
 ** Connect to the system.
 */
 int sqlite3ServerConnect(
-  Pager *pPager,
+  Pager *pPager,                  /* Pager object */
+  int eServer,                    /* 1 -> single process, 2 -> multi process */
   Server **ppOut                  /* OUT: Server handle */
 ){
   Server *pNew = 0;
@@ -324,15 +432,37 @@ int sqlite3ServerConnect(
         sqlite3_free(pNew);
         pNew = 0;
       }else{
+        ServerDb *pDb = pNew->pDb;
         sqlite3_mutex_enter(pNew->pDb->mutex);
-        if( pNew->pDb->bInit==0 ){
-          rc = serverInitDatabase(pNew);
+        if( pDb->bInit==0 ){
+          rc = serverInitDatabase(pNew, eServer);
+        }
+
+        /* If this is a multi-process connection, need to lock a 
+        ** client locking-slot before continuing. */
+        if( rc==SQLITE_OK && pDb->pServerShm ){
+          int i;
+          rc = SQLITE_BUSY;
+          for(i=0; rc==SQLITE_BUSY && i<HMA_MAX_TRANSACTIONID; i++){
+            if( 0==(pDb->transmask & ((u32)1 << i)) ){
+              rc = serverFcntlLock(pNew, i, 1);
+              if( rc==SQLITE_OK ){
+                pNew->iTransId = i;
+                pDb->transmask |= ((u32)1 << i);
+              }
+            }
+          }
         }
         sqlite3_mutex_leave(pNew->pDb->mutex);
       }
     }else{
       rc = SQLITE_NOMEM_BKPT;
     }
+  }
+
+  if( rc!=SQLITE_OK && pNew ){
+    sqlite3ServerDisconnect(pNew, dbfd);
+    pNew = 0;
   }
 
   *ppOut = pNew;
@@ -346,148 +476,176 @@ int sqlite3ServerBegin(Server *p, int bReadonly){
   int rc = SQLITE_OK;
 
   if( p->eTrans==SERVER_TRANS_NONE ){
-    int id;
     ServerDb *pDb = p->pDb;
     u32 t;
 
-    assert( p->iTransId<0 );
     assert( p->pNext==0 );
-    sqlite3_mutex_enter(pDb->mutex);
-
-    if( bReadonly ){
-      Server *pIter;
-      p->iCommitId = pDb->iNextCommit;
-      for(pIter=pDb->pCommit; pIter; pIter=pIter->pNext){
-        if( pIter->iCommitId<p->iCommitId ){
-          p->iCommitId = pIter->iCommitId;
-        }
-      }
-      p->pNext = pDb->pReader;
-      pDb->pReader = p;
-      p->eTrans = SERVER_TRANS_READONLY;
-    }else{
-      /* Find a transaction id to use */
-      rc = SQLITE_BUSY;
-      t = pDb->transmask;
-      for(id=0; id<HMA_MAX_TRANSACTIONID; id++){
-        if( (t & (1 << id))==0 ){
-          t = t | (1 << id);
-          rc = SQLITE_OK;
-          break;
-        }
-      }
-      pDb->transmask = t;
+    if( pDb->pServerShm ){
       p->eTrans = SERVER_TRANS_READWRITE;
+    }else{
+      assert( p->iTransId<0 );
+      sqlite3_mutex_enter(pDb->mutex);
+      if( bReadonly ){
+        Server *pIter;
+        p->iCommitId = pDb->iNextCommit;
+        for(pIter=pDb->pCommit; pIter; pIter=pIter->pNext){
+          if( pIter->iCommitId<p->iCommitId ){
+            p->iCommitId = pIter->iCommitId;
+          }
+        }
+        p->pNext = pDb->pReader;
+        pDb->pReader = p;
+        p->eTrans = SERVER_TRANS_READONLY;
+      }else{
+        int id;
+
+        /* Find a transaction id to use */
+        rc = SQLITE_BUSY;
+        t = pDb->transmask;
+        for(id=0; id<HMA_MAX_TRANSACTIONID; id++){
+          if( (t & (1 << id))==0 ){
+            t = t | (1 << id);
+            rc = SQLITE_OK;
+            break;
+          }
+        }
+        pDb->transmask = t;
+        p->eTrans = SERVER_TRANS_READWRITE;
+        if( rc==SQLITE_OK ){
+          p->iTransId = id;
+        }
+      }
+      sqlite3_mutex_leave(pDb->mutex);
     }
 
-    sqlite3_mutex_leave(pDb->mutex);
-
-    if( rc==SQLITE_OK && bReadonly==0 ){
-      ServerJournal *pJrnl = &pDb->aJrnl[id];
+    if( rc==SQLITE_OK && p->eTrans==SERVER_TRANS_READWRITE ){
+      ServerJournal *pJrnl = &pDb->aJrnl[p->iTransId];
       sqlite3PagerServerJournal(p->pPager, pJrnl->jfd, pJrnl->zJournal);
-      p->iTransId = id;
     }
   }
 
   return rc;
 }
 
+static u32 *serverLockingSlot(ServerDb *pDb, u32 pgno){
+  return &pDb->aSlot[pgno % HMA_PAGELOCK_SLOTS];
+}
+
 static void serverReleaseLocks(Server *p){
   ServerDb *pDb = p->pDb;
   int i;
-  assert( sqlite3_mutex_held(pDb->mutex) );
+
+  assert( pDb->pServerShm || sqlite3_mutex_held(pDb->mutex) );
 
   for(i=0; i<p->nLock; i++){
-    u32 *pSlot = &pDb->aSlot[p->aLock[i] % HMA_PAGELOCK_SLOTS];
-    if( slotGetWriter(*pSlot)==p->iTransId ){
-      *pSlot -= ((p->iTransId + 1) << HMA_MAX_TRANSACTIONID);
+    while( 1 ){
+      u32 *pSlot = serverLockingSlot(pDb, p->aLock[i]);
+      u32 o = *pSlot;
+      u32 n = o & ~((u32)1 << p->iTransId);
+      if( slotGetWriter(n)==p->iTransId ){
+        n -= ((p->iTransId + 1) << HMA_MAX_TRANSACTIONID);
+      }
+      if( serverCompareAndSwap(pSlot, o, n) ) break;
     }
-    *pSlot &= ~((u32)1 << p->iTransId);
   }
 
   p->nLock = 0;
 }
 
 /*
+** End a transaction (and release all locks). This version runs in
+** single process mode only.
+*/
+static void serverEndSingle(Server *p){
+  Server **pp;
+  ServerDb *pDb = p->pDb;
+  ServerPage *pPg = 0;
+
+  assert( p->eTrans!=SERVER_TRANS_NONE );
+  assert( pDb->pServerShm==0 );
+
+  sqlite3_mutex_enter(pDb->mutex);
+
+  if( p->eTrans==SERVER_TRANS_READONLY ){
+    /* Remove the connection from the readers list */
+    for(pp=&pDb->pReader; *pp!=p; pp = &((*pp)->pNext));
+    *pp = p->pNext;
+  }else{
+    serverReleaseLocks(p);
+
+    /* Clear the bit in the transaction mask. */
+    pDb->transmask &= ~((u32)1 << p->iTransId);
+
+    /* If this connection is in the committers list, remove it. */
+    for(pp=&pDb->pCommit; *pp; pp = &((*pp)->pNext)){
+      if( *pp==p ){
+        *pp = p->pNext;
+        break;
+      }
+    }
+  }
+
+  /* See if it is possible to free any ServerPage records. If so, remove
+  ** them from the linked list and hash table, but do not call sqlite3_free()
+  ** on them until the mutex has been released.  */
+  if( pDb->pPgFirst ){
+    ServerPage *pLast = 0;
+    Server *pIter;
+    int iOldest = 0x7FFFFFFF;
+    for(pIter=pDb->pReader; pIter; pIter=pIter->pNext){
+      iOldest = MIN(iOldest, pIter->iCommitId);
+    }
+    for(pIter=pDb->pCommit; pIter; pIter=pIter->pNext){
+      iOldest = MIN(iOldest, pIter->iCommitId);
+    }
+
+    for(pPg=pDb->pPgFirst; pPg && pPg->iCommitId<iOldest; pPg=pPg->pNext){
+      if( pPg->pHashPrev ){
+        pPg->pHashPrev->pHashNext = pPg->pHashNext;
+      }else{
+        int iHash = pPg->pgno % HMA_HASH_SIZE;
+        assert( pDb->apPg[iHash]==pPg );
+        pDb->apPg[iHash] = pPg->pHashNext;
+      }
+      if( pPg->pHashNext ){
+        pPg->pHashNext->pHashPrev = pPg->pHashPrev;
+      }
+      pLast = pPg;
+    }
+
+    if( pLast ){
+      assert( pLast->pNext==pPg );
+      pLast->pNext = pDb->pFree;
+      pDb->pFree = pDb->pPgFirst;
+    }
+
+    if( pPg==0 ){
+      pDb->pPgFirst = pDb->pPgLast = 0;
+    }else{
+      pDb->pPgFirst = pPg;
+    }
+  }
+
+  sqlite3_mutex_leave(pDb->mutex);
+
+  p->pNext = 0;
+  p->eTrans = SERVER_TRANS_NONE;
+  p->iTransId = -1;
+  p->iCommitId = 0;
+}
+
+/*
 ** End a transaction (and release all locks).
 */
 int sqlite3ServerEnd(Server *p){
-  int rc = SQLITE_OK;
   if( p->eTrans!=SERVER_TRANS_NONE ){
-    Server **pp;
-    ServerDb *pDb = p->pDb;
-    ServerPage *pPg = 0;
-
-    sqlite3_mutex_enter(pDb->mutex);
-
-    if( p->eTrans==SERVER_TRANS_READONLY ){
-      /* Remove the connection from the readers list */
-      for(pp=&pDb->pReader; *pp!=p; pp = &((*pp)->pNext));
-      *pp = p->pNext;
-    }else{
+    if( p->pDb->pServerShm ){
       serverReleaseLocks(p);
-
-      /* Clear the bit in the transaction mask. */
-      pDb->transmask &= ~((u32)1 << p->iTransId);
-
-      /* If this connection is in the committers list, remove it. */
-      for(pp=&pDb->pCommit; *pp; pp = &((*pp)->pNext)){
-        if( *pp==p ){
-          *pp = p->pNext;
-          break;
-        }
-      }
+    }else{
+      serverEndSingle(p);
     }
-
-    /* See if it is possible to free any ServerPage records. If so, remove
-    ** them from the linked list and hash table, but do not call sqlite3_free()
-    ** on them until the mutex has been released.  */
-    if( pDb->pPgFirst ){
-      ServerPage *pLast = 0;
-      Server *pIter;
-      int iOldest = 0x7FFFFFFF;
-      for(pIter=pDb->pReader; pIter; pIter=pIter->pNext){
-        iOldest = MIN(iOldest, pIter->iCommitId);
-      }
-      for(pIter=pDb->pCommit; pIter; pIter=pIter->pNext){
-        iOldest = MIN(iOldest, pIter->iCommitId);
-      }
-
-      for(pPg=pDb->pPgFirst; pPg && pPg->iCommitId<iOldest; pPg=pPg->pNext){
-        if( pPg->pHashPrev ){
-          pPg->pHashPrev->pHashNext = pPg->pHashNext;
-        }else{
-          int iHash = pPg->pgno % HMA_HASH_SIZE;
-          assert( pDb->apPg[iHash]==pPg );
-          pDb->apPg[iHash] = pPg->pHashNext;
-        }
-        if( pPg->pHashNext ){
-          pPg->pHashNext->pHashPrev = pPg->pHashPrev;
-        }
-        pLast = pPg;
-      }
-
-      if( pLast ){
-        assert( pLast->pNext==pPg );
-        pLast->pNext = pDb->pFree;
-        pDb->pFree = pDb->pPgFirst;
-      }
-
-      if( pPg==0 ){
-        pDb->pPgFirst = pDb->pPgLast = 0;
-      }else{
-        pDb->pPgFirst = pPg;
-      }
-    }
-
-    sqlite3_mutex_leave(pDb->mutex);
-
-    p->pNext = 0;
-    p->eTrans = SERVER_TRANS_NONE;
-    p->iTransId = -1;
-    p->iCommitId = 0;
   }
-  return rc;
+  return SQLITE_OK;
 }
 
 int sqlite3ServerPreCommit(Server *p, ServerPage *pPg){
@@ -495,6 +653,8 @@ int sqlite3ServerPreCommit(Server *p, ServerPage *pPg){
   int rc = SQLITE_OK;
   ServerPage *pIter;
 
+  /* This should never be called in multi-process mode */
+  assert( pDb->pServerShm==0 );
   if( pPg==0 ) return SQLITE_OK;
 
   sqlite3_mutex_enter(pDb->mutex);
@@ -569,7 +729,7 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
   int rc = SQLITE_OK;
 
   assert( p->eTrans==SERVER_TRANS_READWRITE 
-       || p->eTrans==SERVER_TRANS_READONLY 
+       || (p->eTrans==SERVER_TRANS_READONLY && p->pDb->pServerShm==0)
   );
   if( p->eTrans==SERVER_TRANS_READWRITE ){
     ServerDb *pDb = p->pDb;
@@ -577,6 +737,7 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
     int bSkip = 0;
     u32 *pSlot;
 
+    /* Grow the aLock[] array if required */
     assert( p->iTransId>=0 );
     assert( p->nLock<=p->nAlloc );
     if( p->nLock==p->nAlloc ){
@@ -588,37 +749,48 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
       p->aLock = aNew;
     }
 
-    sqlite3_mutex_enter(pDb->mutex);
+    /* Find the locking slot for the page in question */
+    pSlot = serverLockingSlot(pDb, pgno);
 
-    pSlot = &pDb->aSlot[pgno % HMA_PAGELOCK_SLOTS];
-    assert( slotGetWriter(*pSlot)<0 
-        || slotReaderMask(*pSlot)==0 
-        || slotReaderMask(*pSlot)==(1 << slotGetWriter(*pSlot))
-        );
+    if( pDb->pServerShm==0 ) sqlite3_mutex_enter(pDb->mutex);
 
-    iWriter = slotGetWriter(*pSlot);
-    if( iWriter==p->iTransId || (bWrite==0 && (*pSlot & (1<<p->iTransId))) ){
-      bSkip = 1;
-    }else if( iWriter>=0 ){
-      rc = SQLITE_BUSY_DEADLOCK;
-    }else if( bWrite ){
-      if( (slotReaderMask(*pSlot) & ~(1 << p->iTransId))==0 ){
-        *pSlot += ((p->iTransId + 1) << HMA_MAX_TRANSACTIONID);
-      }else{
+    while( 1 ){
+      u32 o = *pSlot;
+      u32 n = o;
+
+      assert( slotGetWriter(o)<0 
+          || slotReaderMask(o)==0 
+          || slotReaderMask(o)==(1 << slotGetWriter(o))
+      );
+
+      iWriter = slotGetWriter(o);
+      if( iWriter==p->iTransId || (bWrite==0 && (o & (1<<p->iTransId))) ){
+        bSkip = 1;
+        break;
+      }else if( iWriter>=0 ){
         rc = SQLITE_BUSY_DEADLOCK;
+      }else if( bWrite ){
+        if( (slotReaderMask(o) & ~(1 << p->iTransId))==0 ){
+          n += ((p->iTransId + 1) << HMA_MAX_TRANSACTIONID);
+        }else{
+          rc = SQLITE_BUSY_DEADLOCK;
+        }
+      }else{
+        n |= (1 << p->iTransId);
       }
-    }else{
-      *pSlot |= (1 << p->iTransId);
+
+      assert( slotGetWriter(n)<0 
+          || slotReaderMask(n)==0 
+          || slotReaderMask(n)==(1 << slotGetWriter(n))
+      );
+      if( rc!=SQLITE_OK || serverCompareAndSwap(pSlot, o, n) ) break;
     }
 
-    assert( slotGetWriter(*pSlot)<0 
-        || slotReaderMask(*pSlot)==0 
-        || slotReaderMask(*pSlot)==(1 << slotGetWriter(*pSlot))
-        );
+    if( pDb->pServerShm==0 ){
+      sqlite3_mutex_leave(pDb->mutex);
+    }
 
-    sqlite3_mutex_leave(pDb->mutex);
-
-    if( bSkip==0 ){
+    if( bSkip==0 && rc==SQLITE_OK ){
       p->aLock[p->nLock++] = pgno;
     }
   }
@@ -643,6 +815,8 @@ void sqlite3ServerReadPage(Server *p, Pgno pgno, u8 **ppData){
     ServerPage *pBest = 0;
     int iHash = pgno % HMA_HASH_SIZE;
 
+    /* There are no READONLY transactions in a multi process system */
+    assert( pDb->pServerShm==0 );
     sqlite3_mutex_enter(pDb->mutex);
 
     /* Search the hash table for the oldest version of page pgno with
@@ -671,6 +845,7 @@ void sqlite3ServerEndReadPage(Server *p, Pgno pgno){
   if( p->eTrans==SERVER_TRANS_READONLY ){
     ServerDb *pDb = p->pDb;
     u32 *pSlot = &pDb->aSlot[pgno % HMA_PAGELOCK_SLOTS];
+    assert( pDb->pServerShm==0 );
     sqlite3_mutex_enter(pDb->mutex);
     serverIncrSlowReader(pSlot, -1);
     assert( slotGetSlowReaders(*pSlot)>=0 );
@@ -681,6 +856,7 @@ void sqlite3ServerEndReadPage(Server *p, Pgno pgno){
 ServerPage *sqlite3ServerBuffer(Server *p){
   ServerDb *pDb = p->pDb;
   ServerPage *pRet = 0;
+  assert( pDb->pServerShm==0 );
   sqlite3_mutex_enter(pDb->mutex);
   if( pDb->pFree ){
     pRet = pDb->pFree;
@@ -699,6 +875,15 @@ ServerPage *sqlite3ServerBuffer(Server *p){
 */
 int sqlite3ServerIsReadonly(Server *p){
   return (p && p->eTrans==SERVER_TRANS_READONLY);
+}
+
+/*
+** Return true if the argument is non-NULL and connects to a single-process
+** server system. Return false if the argument is NULL or the system supports
+** multiple processes.
+*/
+int sqlite3ServerIsSingleProcess(Server *p){
+  return (p && p->pDb->pServerShm==0);
 }
 
 #endif /* ifdef SQLITE_SERVER_EDITION */

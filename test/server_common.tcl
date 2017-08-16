@@ -22,7 +22,7 @@ ifcapable !server {
 }
 
 proc server_sqlite3 {cmd file} {
-  sqlite3 $cmd $file -vfs unix-excl
+  sqlite3 $cmd $file -vfs $::server_vfs
 }
 
 proc server_reset_db {} {
@@ -32,4 +32,8 @@ proc server_reset_db {} {
   server_sqlite3 db test.db 
 }
 
+set ::server_vfs unix-excl
+proc server_set_vfs {vfs} {
+  set ::server_vfs $vfs
+}
 
