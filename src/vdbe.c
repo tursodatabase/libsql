@@ -2413,8 +2413,10 @@ case OP_Column: {
   if( pC->cacheStatus!=p->cacheCtr ){                /*OPTIMIZATION-IF-FALSE*/
     if( pC->nullRow ){
       if( pC->eCurType==CURTYPE_PSEUDO ){
-        assert( pC->uc.pseudoTableReg>0 );
-        pReg = &aMem[pC->uc.pseudoTableReg];
+        /* For the special case of as pseudo-cursor, the seekResult field
+        ** identifies the register that holds the record */
+        assert( pC->seekResult>0 );
+        pReg = &aMem[pC->seekResult];
         assert( pReg->flags & MEM_Blob );
         assert( memIsValid(pReg) );
         pC->payloadSize = pC->szRow = pReg->n;
@@ -3628,8 +3630,13 @@ case OP_OpenPseudo: {
   pCx = allocateCursor(p, pOp->p1, pOp->p3, -1, CURTYPE_PSEUDO);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  pCx->uc.pseudoTableReg = pOp->p2;
+  pCx->seekResult = pOp->p2;
   pCx->isTable = 1;
+  /* Give this pseudo-cursor a fake BtCursor pointer so that pCx
+  ** can be safely passed to sqlite3VdbeCursorMoveto().  This avoids a test
+  ** for pCx->eCurType==CURTYPE_BTREE inside of sqlite3VdbeCursorMoveto()
+  ** which is a performance optimization */
+  pCx->uc.pCursor = sqlite3BtreeFakeValidCursor();
   assert( pOp->p5==0 );
   break;
 }

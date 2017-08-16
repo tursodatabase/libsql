@@ -839,6 +839,17 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
 }
 
 /*
+** Return a pointer to a fake BtCursor object that will always answer
+** false to the sqlite3BtreeCursorHasMoved() routine above.  The fake
+** cursor returned must not be used with any other Btree interface.
+*/
+BtCursor *sqlite3BtreeFakeValidCursor(void){
+  static u8 fakeCursor = CURSOR_VALID;
+  assert( offsetof(BtCursor, eState)==0 );
+  return (BtCursor*)&fakeCursor;
+}
+
+/*
 ** This routine restores a cursor back to its original position after it
 ** has been moved by some outside activity (such as a btree rebalance or
 ** a row having been deleted out from under the cursor).  
