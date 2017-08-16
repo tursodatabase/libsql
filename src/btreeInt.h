@@ -522,7 +522,8 @@ struct BtCursor {
   u16 ix;                   /* Current index for apPage[iPage] */
   u16 aiIdx[BTCURSOR_MAX_DEPTH-1];     /* Current index in apPage[i] */
   struct KeyInfo *pKeyInfo;            /* Arg passed to comparison function */
-  MemPage *apPage[BTCURSOR_MAX_DEPTH]; /* Pages from root to current page */
+  MemPage *pPage;                        /* Current page */
+  MemPage *apPage[BTCURSOR_MAX_DEPTH-1]; /* Stack of parents of current page */
 };
 
 /*
