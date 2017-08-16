@@ -1,5 +1,5 @@
-C Small\ssize\sand\sperformance\sin\sthe\sOP_Column\sopcode.
-D 2017-08-15T14:14:36.511
+C Performance\simprovement\sin\sthe\sOP_Column\sopcode.
+D 2017-08-16T11:04:22.469
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -522,7 +522,7 @@ F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c ebfc41ca25465888b2dc2969a0059d0d563c2a36e31696352573198cdec51fad
+F src/vdbe.c 8530c38ffc19400cf9634d2e55b9c6141d276350e6ea6d99a003cd6963fbf20a
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h ff2b7db0968d20e6184aee256d2e535d565f5a172e3588a78adb166a41fc4911
 F src/vdbeapi.c 05d6b14ab73952db0d73f6452d6960216997bd966a710266b2fe051f25326abc
@@ -1647,7 +1647,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 373b71d19cad785922d5a80828f2fee0cbe7dff6594743e625bbdfa31b1ca131
-R 36da37536a24b366658dfab60814a38c
+P 2cf3f3de8a48465bd6b0af7763bfe905f3bb0151488f63c9ecc3147bcb345094
+R 1db09713c9077dbfc76327c90333340a
 U drh
-Z 16cc8098bdc3d63f9bef627e24ebd270
+Z 65fa1f244e3ef6aef2172aa886d1ccda
