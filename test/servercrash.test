@@ -21,8 +21,15 @@ ifcapable !crashtest {
 }
 do_not_use_codec
 
+source $testdir/server_common.tcl
+return_if_no_server
+db close
+
+server_set_vfs unix
+server_reset_db
+
 do_execsql_test 1.0 {
-  PRAGMA page_siBlockze = 4096;
+  PRAGMA page_size = 4096;
   PRAGMA auto_vacuum = OFF;
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(c, d);
@@ -62,6 +69,18 @@ for {set i 0} {$i < 10} {incr i} {
   sqlite3 db test.db
   do_execsql_test 3.$i.2 { SELECT * FROM t1 } {1 2 3 4}
   db close
+}
+
+sqlite3 db test.db
+db eval {SELECT * FROM t1}
+for {set i 0} {$i < 10} {incr i} {
+  do_test 4.$i.1 {
+    crashsql -delay 1 -file test.db { INSERT INTO t1 VALUES(5, 6) }
+  } {1 {child process exited abnormally}}
+
+  db close
+  sqlite3 db test.db
+  do_execsql_test 4.$i.2 { SELECT * FROM t1 } {1 2 3 4}
 }
 
 finish_test

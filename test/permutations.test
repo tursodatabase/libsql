@@ -278,7 +278,8 @@ test_suite "server" -prefix "" -description {
   All server-edition tests.
 } -files [
   test_set \
-      select1.test server2.test server3.test server4.test server5.test
+      select1.test server2.test server3.test server4.test server5.test \
+      servercrash.test
 ]
 
 test_suite "fts5-light" -prefix "" -description {

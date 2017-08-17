@@ -214,19 +214,48 @@ static int serverFindDatabase(Server *pNew, i64 *aFileId){
   return rc;
 }
 
+static int serverClientRollback(Server *p, int iClient){
+  ServerDb *pDb = p->pDb;
+  ServerJournal *pJ = &pDb->aJrnl[iClient];
+  int bExist = 1;
+  int rc = SQLITE_OK;
+
+  if( pJ->jfd->pMethods==0 ){
+    bExist = 0;
+    rc = sqlite3OsAccess(pDb->pVfs, pJ->zJournal, SQLITE_ACCESS_EXISTS,&bExist);
+    if( bExist && rc==SQLITE_OK ){
+      int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
+      rc = sqlite3OsOpen(pDb->pVfs, pJ->zJournal, pJ->jfd, flags, &flags);
+    }
+  }
+
+  if( bExist && rc==SQLITE_OK ){
+    rc = sqlite3PagerRollbackJournal(p->pPager, pJ->jfd);
+  }
+  return rc;
+}
+
+
 /*
 ** Free all resources allocated by serverInitDatabase() associated with the
 ** object passed as the only argument.
 */
 static void serverShutdownDatabase(
-  ServerDb *pDb, 
+  Server *p, 
   sqlite3_file *dbfd, 
   int bDelete
 ){
+  ServerDb *pDb = p->pDb;
   int i;
 
   for(i=0; i<HMA_MAX_TRANSACTIONID; i++){
     ServerJournal *pJ = &pDb->aJrnl[i];
+
+    if( pDb->pServerShm && bDelete ){
+      int rc = serverClientRollback(p, i);
+      if( rc!=SQLITE_OK ) bDelete = 0;
+    }
+
     if( pJ->jfd ){
       sqlite3OsClose(pJ->jfd);
       if( bDelete ) sqlite3OsDelete(pDb->pVfs, pJ->zJournal, 0);
@@ -250,6 +279,24 @@ static void serverShutdownDatabase(
   }
   pDb->aSlot = 0;
   pDb->bInit = 0;
+}
+
+static void serverClientUnlock(Server *p, int iClient){
+  ServerDb *pDb = p->pDb;
+  int i;
+
+  assert( pDb->pServerShm );
+  for(i=0; i<HMA_PAGELOCK_SLOTS; i++){
+    u32 *pSlot = &pDb->aSlot[i];
+    while( 1 ){
+      u32 o = *pSlot;
+      u32 n = o & ~((u32)1 << iClient);
+      if( slotGetWriter(n)==iClient ){
+        n -= ((iClient + 1) << HMA_MAX_TRANSACTIONID);
+      }
+      if( o==n || serverCompareAndSwap(pSlot, o, n) ) break;
+    }
+  }
 }
 
 /*
@@ -308,15 +355,7 @@ static int serverInitDatabase(Server *pNew, int eServer){
       }
 
       if( bRollback ){
-        int bExist = 0;
-        rc = sqlite3OsAccess(pVfs, pJ->zJournal, SQLITE_ACCESS_EXISTS, &bExist);
-        if( rc==SQLITE_OK && bExist ){
-          int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
-          rc = sqlite3OsOpen(pVfs, pJ->zJournal, pJ->jfd, flags, &flags);
-          if( rc==SQLITE_OK ){
-            rc = sqlite3PagerRollbackJournal(pNew->pPager, pJ->jfd);
-          }
-        }
+        rc = serverClientRollback(pNew, i);
       }
     }
   }
@@ -333,7 +372,7 @@ static int serverInitDatabase(Server *pNew, int eServer){
   if( rc==SQLITE_OK ){
     pDb->bInit = 1;
   }else{
-    serverShutdownDatabase(pNew->pDb, dbfd, eServer==1);
+    serverShutdownDatabase(pNew, dbfd, eServer==1);
   }
   return rc;
 }
@@ -364,10 +403,10 @@ void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
   /* In a multi-process setup, release the lock on the client slot and
   ** clear the bit in the ServerDb.transmask bitmask. */
   if( pDb->pServerShm && p->iTransId>=0 ){
+    serverFcntlLock(p, p->iTransId, 0);
     sqlite3_mutex_enter(pDb->mutex);
     pDb->transmask &= ~((u32)1 << p->iTransId);
     sqlite3_mutex_leave(pDb->mutex);
-    serverFcntlLock(p, p->iTransId, 0);
   }
 
   serverEnterMutex();
@@ -391,7 +430,7 @@ void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
     }else{
       bDelete = 1;
     }
-    serverShutdownDatabase(pDb, dbfd, bDelete);
+    serverShutdownDatabase(p, dbfd, bDelete);
 
     for(pp=&g_server.pDb; *pp!=pDb; pp=&((*pp)->pNext));
     *pp = pDb->pNext;
@@ -454,6 +493,16 @@ int sqlite3ServerConnect(
           }
         }
         sqlite3_mutex_leave(pNew->pDb->mutex);
+
+        /* If this is a multi-process database, it may be that the previous
+        ** user of client-id pNew->iTransId crashed mid transaction. Roll
+        ** back any hot journal file in the file-system and release 
+        ** page locks held by any crashed process. TODO: The call to
+        ** serverClientUnlock() is expensive.  */
+        if( rc==SQLITE_OK && pDb->pServerShm ){
+          serverClientUnlock(pNew, pNew->iTransId);
+          rc = serverClientRollback(pNew, pNew->iTransId);
+        }
       }
     }else{
       rc = SQLITE_NOMEM_BKPT;
@@ -719,6 +768,28 @@ int sqlite3ServerReleaseWriteLocks(Server *p){
   return rc;
 }
 
+static int serverCheckClient(Server *p, int iClient){
+  ServerDb *pDb = p->pDb;
+  int rc = SQLITE_BUSY_DEADLOCK;
+  if( pDb->pServerShm && 0==(pDb->transmask & (1 << iClient)) ){
+
+    /* At this point it is know that client iClient, if it exists, resides in
+    ** some other process. Check that it is still alive by attempting to lock
+    ** its client slot. If the client is not alive, clear all its locks and
+    ** rollback its journal.  */
+    rc = serverFcntlLock(p, iClient, 1);
+    if( rc==SQLITE_OK ){
+      serverClientUnlock(p, iClient);
+      rc = serverClientRollback(p, iClient);
+      serverFcntlLock(p, iClient, 0);
+      pDb->transmask &= ~(1 << iClient);
+    }else if( rc==SQLITE_BUSY ){
+      rc = SQLITE_BUSY_DEADLOCK;
+    }
+  }
+  return rc;
+}
+
 /*
 ** Lock page pgno for reading (bWrite==0) or writing (bWrite==1).
 **
@@ -768,12 +839,18 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
         bSkip = 1;
         break;
       }else if( iWriter>=0 ){
-        rc = SQLITE_BUSY_DEADLOCK;
+        rc = serverCheckClient(p, iWriter);
       }else if( bWrite ){
         if( (slotReaderMask(o) & ~(1 << p->iTransId))==0 ){
           n += ((p->iTransId + 1) << HMA_MAX_TRANSACTIONID);
         }else{
-          rc = SQLITE_BUSY_DEADLOCK;
+          int i;
+          for(i=0; i<HMA_MAX_TRANSACTIONID; i++){
+            if( o & (1 << i) ){
+              rc = serverCheckClient(p, i);
+              break;
+            }
+          }
         }
       }else{
         n |= (1 << p->iTransId);
