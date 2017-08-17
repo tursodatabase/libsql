@@ -1,5 +1,5 @@
-C Size\soptimization\sin\sthe\sauthorizer\serror\smessage\sgeneration\slogic.
-D 2017-08-17T18:54:27.587
+C Small\soptimization\sin\sthe\sExpr\stree\swalker.
+D 2017-08-17T19:23:16.310
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -537,7 +537,7 @@ F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
-F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
+F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c cbe8ddffbcec7ce86f7a800fe8fd10aee412c76c87e0dd3732a1682e68d74cd9
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
 F src/wherecode.c e7be3b7f4c11908500cdf02b299d190d3742659533f58e0f4047962fdb5a48da
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f13682ea2350ba366026a4a58e59591af378c496b92da60803c4c642c3bfc8de
-R 40661ee0bd8f99ce6a0763a7096049ca
+P 0367a4d58682a64d7ed4c5a4b4377899e22432851587c649d419efb6d7bac250
+R ff1cbce154569f3d7cb9695eac015fa5
 U drh
-Z 4b024de8a532f345dd700cff7b7b4750
+Z 24e86d635456e5a8dccd5aa790210fdc
