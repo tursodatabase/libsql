@@ -230,7 +230,7 @@ do_catchsql_test rtreeA-7.110 {
 } {1 {undersize RTree blobs in "t1_node"}}
 do_test rtreeA-7.120 {
   sqlite3_extended_errcode db
-} {SQLITE_CORRUPT}
+} {SQLITE_CORRUPT_VTAB}
 
 
 

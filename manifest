@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\sbranch\sfrom\sthe\s[be436a7f4587ce517ddc]\sfix.
-D 2017-08-17T14:47:56.368
+C The\sRTREE\sextension\sshould\sreturn\sSQLITE_CORRUPT_VTAB,\snot\sjust\sSQLITE_CORRUPT\nwhen\sit\sencounters\sincorrectly\sformatted\sshadow\stables.
+D 2017-08-17T18:17:24.544
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -324,7 +324,7 @@ F ext/rbu/sqlite3rbu.c 920941a6ff7dbbea0970717c43662878fda5c37e43752de329f0fdd76
 F ext/rbu/sqlite3rbu.h 82c102e5ae41025e3b245d3d5944315f82811da85e2cd363a75caa97cbd0cd3e
 F ext/rbu/test_rbu.c ec18cfc69a104309df23c359e3c80306c9a6bdd1d2c53c8b70ae158e9832dcd6
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 4f1804b80ae06ddf7ff69192aacdceee283646dc6a328acb951f116147445212
+F ext/rtree/rtree.c cf84d52958a7ec6a506f1711e119db847ed6bb5dedde78a58e97503287afcda1
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 4fdd60ae034e43f2fefc26492032d02e742e8b14d468b7c51d95a1e2fa47cf00
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -335,7 +335,7 @@ F ext/rtree/rtree6.test 773a90db2dce6a8353dd0d5b64bca69b29761196
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test 076d9d5b783b61b7a23a5ab45fc899551dfffd821974f36ee599ff29f4de7a61
 F ext/rtree/rtree9.test 8bfa84dfaba1c897468a2448c28db0a00ad12d464225b5993c7814e907f3776f
-F ext/rtree/rtreeA.test abb1e2434defc8cdc5e3195a18ead3681cae04565c06069251d1998796e77d55
+F ext/rtree/rtreeA.test c09ad3f76c08feac00770685ff50ca12966dc0c641bf19a982b26a80643b46d1
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test c0a9c67f2efa98b6fae12acb8a28348d231a481d
 F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c4a1100dc
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2101b4208787d297788e05f2bd82d4a9aff26e2237a7016ac857a52fb5252ce0
-R a88a9175d0467a8bcee3d90b3070177c
+P fb6ca99b88c67414eab425e2b4ddb6a5e2fd48a6b2cd96a34627c86a5b568c9b
+R 44adf3aab86d2f98e7899082e69a019f
 U drh
-Z f282ee329c3784824fa5652eca8490b4
+Z f778c72442b5a965c1d6d29d9b5a7947
