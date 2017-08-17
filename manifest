@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sticket\s[be436a7f4587ce517]\susing\svirtual\stable\smodules\sfts5\nand\srtree.
-D 2017-08-17T14:12:16.980
+C Remove\san\sunnecessary\sbranch\sfrom\sthe\s[be436a7f4587ce517ddc]\sfix.
+D 2017-08-17T14:47:56.368
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -451,7 +451,7 @@ F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
 F src/pragma.c cd6aeda3587be6c5c08f9b2d45eae6068666a03c9d077c8c43cdb85fb0aa70f2
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
-F src/prepare.c 5da8a0563eff02e23584ec32863273eb3b1ac30bc736e1084efbcbf7379d1a56
+F src/prepare.c 9e880c0efb5d7f9101bb34c0a87daf6e1e5284c34024fdb811e67bb02fdd299b
 F src/printf.c 439c145d71ff9e0328ec26b7db23a45f995f742d3207dd546e034cdc1667ac9c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7bc7752ba0266684f5317e424a4ee9add4af002272082183519e708ab9ffc79
-R c613de5ae36b19d57fec37de442df285
-U dan
-Z ec0c29a7c81c6674b289e2e6cbe8b9e8
+P 2101b4208787d297788e05f2bd82d4a9aff26e2237a7016ac857a52fb5252ce0
+R a88a9175d0467a8bcee3d90b3070177c
+U drh
+Z f282ee329c3784824fa5652eca8490b4
