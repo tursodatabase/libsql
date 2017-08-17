@@ -1,5 +1,5 @@
-C The\sRTREE\sextension\sshould\sreturn\sSQLITE_CORRUPT_VTAB,\snot\sjust\sSQLITE_CORRUPT\nwhen\sit\sencounters\sincorrectly\sformatted\sshadow\stables.
-D 2017-08-17T18:17:24.544
+C In\ssqlite3ViewGetColumnNames(),\sreturn\sthe\snumber\sof\serrors,\snot\san\serror\scode.
+D 2017-08-17T18:23:46.704
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -402,7 +402,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c e1a98bef27d6189df5c5b8b3c9b5e53d6b74bf9a936af97757c21e9ea6a5c6b2
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
-F src/build.c 559bce114d59bb6dd795a7985a9eaac781d374ff31422d134dc147f9667a4d21
+F src/build.c 5b81049a4cea3f547ddb4efc6f56345894524248816dc1ca1511b99be3f7d3ad
 F src/callback.c 28a8ede982fde4129b828350f78f2c01fe7d12c74d1a0a05d7108ab36f308688
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb6ca99b88c67414eab425e2b4ddb6a5e2fd48a6b2cd96a34627c86a5b568c9b
-R 44adf3aab86d2f98e7899082e69a019f
+P 0712f057ef3dcd907984dda30f6d961a29b61c1d2b25627028c4e227ec85dbba
+R f75e24aaa696ff01027f9a4363031c06
 U drh
-Z f778c72442b5a965c1d6d29d9b5a7947
+Z 9049600ac1caae144c300dc50a09a71b

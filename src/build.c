@@ -2168,7 +2168,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   rc = sqlite3VtabCallConnect(pParse, pTable);
   db->nSchemaLock--;
   if( rc ){
-    return SQLITE_ERROR;
+    return 1;
   }
   if( IsVirtual(pTable) ) return 0;
 #endif
