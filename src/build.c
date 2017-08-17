@@ -514,28 +514,26 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
 
 /*
 ** Reset the schema for the database at index iDb.  Also reset the
-** TEMP schema.
+** TEMP schema.  The reset is deferred if db->nSchemaLock is not zero.
+** Deferred resets may be run by calling with iDb<0.
 */
 void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
-  Db *pDb;
+  int i;
   assert( iDb<db->nDb );
 
-  /* Case 1:  Reset the single schema identified by iDb */
-  pDb = &db->aDb[iDb];
-  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  assert( pDb->pSchema!=0 );
-  sqlite3SchemaClear(pDb->pSchema);
-
-  /* If any database other than TEMP is reset, then also reset TEMP
-  ** since TEMP might be holding triggers that reference tables in the
-  ** other database.
-  */
-  if( iDb!=1 ){
-    pDb = &db->aDb[1];
-    assert( pDb->pSchema!=0 );
-    sqlite3SchemaClear(pDb->pSchema);
+  if( iDb>=0 ){
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    DbSetProperty(db, iDb, DB_ResetWanted);
+    DbSetProperty(db, 1, DB_ResetWanted);
   }
-  return;
+
+  if( db->nSchemaLock==0 ){
+    for(i=0; i<db->nDb; i++){
+      if( DbHasProperty(db, i, DB_ResetWanted) ){
+        sqlite3SchemaClear(db->aDb[i].pSchema);
+      }
+    }
+  }
 }
 
 /*
@@ -545,6 +543,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
 void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   int i;
   sqlite3BtreeEnterAll(db);
+  assert( db->nSchemaLock==0 );
   for(i=0; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
@@ -2155,6 +2154,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   int nErr = 0;     /* Number of errors encountered */
   int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
+#ifndef SQLITE_OMIT_VIRTUALTABLE	
+  int rc;
+#endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth;       /* Saved xAuth pointer */
 #endif
@@ -2162,7 +2164,10 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable );
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( sqlite3VtabCallConnect(pParse, pTable) ){
+  db->nSchemaLock++;
+  rc = sqlite3VtabCallConnect(pParse, pTable);
+  db->nSchemaLock--;
+  if( rc ){
     return SQLITE_ERROR;
   }
   if( IsVirtual(pTable) ) return 0;

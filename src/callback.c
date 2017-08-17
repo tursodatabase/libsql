@@ -457,8 +457,8 @@ void sqlite3SchemaClear(void *p){
   pSchema->pSeqTab = 0;
   if( pSchema->schemaFlags & DB_SchemaLoaded ){
     pSchema->iGeneration++;
-    pSchema->schemaFlags &= ~DB_SchemaLoaded;
   }
+  pSchema->schemaFlags &= ~(DB_SchemaLoaded|DB_ResetWanted);
 }
 
 /*

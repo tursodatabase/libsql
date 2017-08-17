@@ -1213,6 +1213,7 @@ struct Schema {
 #define DB_SchemaLoaded    0x0001  /* The schema has been loaded */
 #define DB_UnresetViews    0x0002  /* Some views have defined column names */
 #define DB_Empty           0x0004  /* The file is empty (length 0 bytes) */
+#define DB_ResetWanted     0x0008  /* Reset the schema when nSchemaLock==0 */
 
 /*
 ** The number of different kinds of things that can be limited
@@ -1329,6 +1330,7 @@ struct sqlite3 {
   u32 flags;                    /* flags settable by pragmas. See below */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 szMmap;                   /* Default mmap_size setting */
+  u32 nSchemaLock;              /* Do not reset the schema when non-zero */
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */

@@ -686,7 +686,8 @@ static int sqlite3LockAndPrepare(
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
   rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
-  if( rc==SQLITE_SCHEMA ){
+  if( rc==SQLITE_SCHEMA && db->nSchemaLock==0 ){
+    sqlite3ResetOneSchema(db, -1);
     sqlite3_finalize(*ppStmt);
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
   }
