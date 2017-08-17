@@ -1,5 +1,5 @@
-C In\ssqlite3ViewGetColumnNames(),\sreturn\sthe\snumber\sof\serrors,\snot\san\serror\scode.
-D 2017-08-17T18:23:46.704
+C Size\soptimization\sin\sthe\sauthorizer\serror\smessage\sgeneration\slogic.
+D 2017-08-17T18:54:27.587
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -395,7 +395,7 @@ F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
 F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
 F src/attach.c 07b706e336fd3cedbd855e1f8266d10e82fecae07daf86717b5760cd7784c584
-F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
+F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0712f057ef3dcd907984dda30f6d961a29b61c1d2b25627028c4e227ec85dbba
-R f75e24aaa696ff01027f9a4363031c06
+P f13682ea2350ba366026a4a58e59591af378c496b92da60803c4c642c3bfc8de
+R 40661ee0bd8f99ce6a0763a7096049ca
 U drh
-Z 9049600ac1caae144c300dc50a09a71b
+Z 4b024de8a532f345dd700cff7b7b4750
