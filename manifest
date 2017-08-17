@@ -1,5 +1,5 @@
-C Small\soptimization\sin\sthe\sExpr\stree\swalker.
-D 2017-08-17T19:23:16.310
+C Use\sthe\s__builtin_clzll()\sfunction\sof\sgcc\sto\simprove\sthe\sperformance\sand\nreduce\sthe\ssize\sof\sthe\ssqlite3LogEst()\sroutine.
+D 2017-08-17T20:53:07.912
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -522,7 +522,7 @@ F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afe
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
 F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
-F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
+F src/util.c 773843506ce694714bc96fe67c30c37015f90ef515d0e70f1f8d5c9c24088152
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
 F src/vdbe.c 711a1b2c0a6046483ebf4ac43c4c0ea5bef3e50534a4ab9e1d7e3542635cd009
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0367a4d58682a64d7ed4c5a4b4377899e22432851587c649d419efb6d7bac250
-R ff1cbce154569f3d7cb9695eac015fa5
+P 264a5e1b75ee073bd019483e289c3d8d79abcf5a765435be23ac3c21b1db8246
+R 08353d9c0ca9dacc46ddab1c0e437979
 U drh
-Z 24e86d635456e5a8dccd5aa790210fdc
+Z 35417eeee14d21861c3f9ed9415c7596
