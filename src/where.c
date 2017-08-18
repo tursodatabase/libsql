@@ -3689,7 +3689,7 @@ static i8 wherePathSatisfiesOrderBy(
               continue;
             }
           }
-          if( iColumn>=0 ){
+          if( iColumn!=XN_ROWID ){
             pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
             if( !pColl ) pColl = db->pDfltColl;
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
