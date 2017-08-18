@@ -2982,7 +2982,8 @@ end_playback:
 
 
 /*
-** Read the content for page pPg out of the database file and into 
+** Read the content for page pPg out of the database file (or out of
+** the WAL if that is where the most recent copy if found) into 
 ** pPg->pData. A shared lock or greater must be held on the database
 ** file before this function is called.
 **
@@ -2992,22 +2993,23 @@ end_playback:
 ** If an IO error occurs, then the IO error is returned to the caller.
 ** Otherwise, SQLITE_OK is returned.
 */
-static int readDbPage(PgHdr *pPg, u32 iFrame){
+static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   Pgno pgno = pPg->pgno;       /* Page number to read */
   int rc = SQLITE_OK;          /* Return code */
   int pgsz = pPager->pageSize; /* Number of bytes to read */
+  u32 iFrame = 0;              /* Frame of WAL containing pgno */
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
   assert( isOpen(pPager->fd) );
 
-#ifndef SQLITE_OMIT_WAL
+  if( pagerUseWal(pPager) ){
+    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+    if( rc ) return rc;
+  }
   if( iFrame ){
-    /* Try to pull the page from the write-ahead log. */
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame, pgsz, pPg->pData);
-  }else
-#endif
-  {
+  }else{
     i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
     rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
     if( rc==SQLITE_IOERR_SHORT_READ ){
@@ -3092,11 +3094,7 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
     if( sqlite3PcachePageRefcount(pPg)==1 ){
       sqlite3PcacheDrop(pPg);
     }else{
-      u32 iFrame = 0;
-      rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
-      if( rc==SQLITE_OK ){
-        rc = readDbPage(pPg, iFrame);
-      }
+      rc = readDbPage(pPg);
       if( rc==SQLITE_OK ){
         pPager->xReiniter(pPg);
       }
@@ -5489,14 +5487,9 @@ static int getPageNormal(
       memset(pPg->pData, 0, pPager->pageSize);
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
-      u32 iFrame = 0;                 /* Frame to read from WAL file */
-      if( pagerUseWal(pPager) ){
-        rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
-        if( rc!=SQLITE_OK ) goto pager_acquire_err;
-      }
       assert( pPg->pPager==pPager );
       pPager->aStat[PAGER_STAT_MISS]++;
-      rc = readDbPage(pPg, iFrame);
+      rc = readDbPage(pPg);
       if( rc!=SQLITE_OK ){
         goto pager_acquire_err;
       }

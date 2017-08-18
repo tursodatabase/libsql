@@ -1,5 +1,5 @@
-C For\sthe\sunix\sVFS,\savoid\san\sunnecessary\sstat()\ssystem\scall\sprior\sto\sopening\nany\sfile\sin\sthe\scommon\scase\swhere\sthere\sare\sno\sunused\sfile\sdescriptors.
-D 2017-08-18T16:09:52.797
+C Size\sand\sperformance\soptimization\sthe\sreadDbPage()\sroutine\sin\sthe\spager.
+D 2017-08-18T21:14:50.622
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -443,7 +443,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 0a7730f6cb797ba1fd12825e4ea751e1325041410c063c258e30089ca71f9a88
 F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 6f2ae58c0d4ddf510d324cb2ec38f471b5cff8f3e061afd32717ad790685cc7f
+F src/pager.c fb9a8f40417d6dfbd6b8be91237f2f64d51cc867ab28687420acbc5cab786a3c
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb1202b5e43f1f029ad2bdf845509e7f31361e4dc189943e5e2bd4462e2ef3f3
-R 75fd277ce5c40358998ed365a587d991
+P 3075cfa07489eaf13cb9a2760e2391e79dd73181fe1730fae7bdcd6ad66d2a1f
+R 73e91e0689b3737aa34e053426722c6a
 U drh
-Z 8da9bd8ec0af0fa3e80213d960cc13a7
+Z 58f532a67b173dfa15cad7f44c1bc81c
