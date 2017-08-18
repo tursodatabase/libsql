@@ -210,7 +210,7 @@ struct unixFile {
   unsigned short int ctrlFlags;       /* Behavioral bits.  UNIXFILE_* flags */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
-  UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
+  UnixUnusedFd *pPreallocatedUnused;  /* Pre-allocated UnixUnusedFd */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
@@ -1120,7 +1120,8 @@ struct unixInodeInfo {
 /*
 ** A lists of all unixInodeInfo objects.
 */
-static unixInodeInfo *inodeList = 0;
+static unixInodeInfo *inodeList = 0;  /* All unixInodeInfo objects */
+static unsigned int nUnusedFd = 0;    /* Total unused file descriptors */
 
 /*
 **
@@ -1230,6 +1231,7 @@ static void closePendingFds(unixFile *pFile){
     pNext = p->pNext;
     robust_close(pFile, p->fd, __LINE__);
     sqlite3_free(p);
+    nUnusedFd--;
   }
   pInode->pUnused = 0;
 }
@@ -1262,6 +1264,7 @@ static void releaseInodeInfo(unixFile *pFile){
       sqlite3_free(pInode);
     }
   }
+  assert( inodeList!=0 || nUnusedFd==0 );
 }
 
 /*
@@ -1331,6 +1334,7 @@ static int findInodeInfo(
 #else
   fileId.ino = (u64)statbuf.st_ino;
 #endif
+  assert( inodeList!=0 || nUnusedFd==0 );
   pInode = inodeList;
   while( pInode && memcmp(&fileId, &pInode->fileId, sizeof(fileId)) ){
     pInode = pInode->pNext;
@@ -1750,11 +1754,12 @@ end_lock:
 */
 static void setPendingFd(unixFile *pFile){
   unixInodeInfo *pInode = pFile->pInode;
-  UnixUnusedFd *p = pFile->pUnused;
+  UnixUnusedFd *p = pFile->pPreallocatedUnused;
   p->pNext = pInode->pUnused;
   pInode->pUnused = p;
   pFile->h = -1;
-  pFile->pUnused = 0;
+  pFile->pPreallocatedUnused = 0;
+  nUnusedFd++;
 }
 
 /*
@@ -1979,7 +1984,7 @@ static int closeUnixFile(sqlite3_file *id){
 #endif
   OSTRACE(("CLOSE   %-3d\n", pFile->h));
   OpenCounter(-1);
-  sqlite3_free(pFile->pUnused);
+  sqlite3_free(pFile->pPreallocatedUnused);
   memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
@@ -3200,7 +3205,7 @@ static int unixRead(
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
-  assert( pFile->pUnused==0
+  assert( pFile->pPreallocatedUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
@@ -3313,7 +3318,7 @@ static int unixWrite(
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
-  assert( pFile->pUnused==0
+  assert( pFile->pPreallocatedUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
@@ -5564,6 +5569,8 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 #if !OS_VXWORKS
   struct stat sStat;                   /* Results of stat() call */
 
+  unixEnterMutex();
+
   /* A stat() call may fail for various reasons. If this happens, it is
   ** almost certain that an open() call on the same path will also fail.
   ** For this reason, if an error occurs in the stat() call here, it is
@@ -5572,10 +5579,9 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   **
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a reusable file descriptor are not dire.  */
-  if( 0==osStat(zPath, &sStat) ){
+  if( nUnusedFd>0 && 0==osStat(zPath, &sStat) ){
     unixInodeInfo *pInode;
 
-    unixEnterMutex();
     pInode = inodeList;
     while( pInode && (pInode->fileId.dev!=sStat.st_dev
                      || pInode->fileId.ino!=(u64)sStat.st_ino) ){
@@ -5586,11 +5592,12 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
       for(pp=&pInode->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
       pUnused = *pp;
       if( pUnused ){
+        nUnusedFd--;
         *pp = pUnused->pNext;
       }
     }
-    unixLeaveMutex();
   }
+  unixLeaveMutex();
 #endif    /* if !OS_VXWORKS */
   return pUnused;
 }
@@ -5811,7 +5818,7 @@ static int unixOpen(
         return SQLITE_NOMEM_BKPT;
       }
     }
-    p->pUnused = pUnused;
+    p->pPreallocatedUnused = pUnused;
 
     /* Database filenames are double-zero terminated if they are not
     ** URIs with parameters.  Hence, they can always be passed into
@@ -5848,7 +5855,7 @@ static int unixOpen(
     gid_t gid;                    /* Groupid for the file */
     rc = findCreateFileMode(zName, flags, &openMode, &uid, &gid);
     if( rc!=SQLITE_OK ){
-      assert( !p->pUnused );
+      assert( !p->pPreallocatedUnused );
       assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
       return rc;
     }
@@ -5882,9 +5889,9 @@ static int unixOpen(
     *pOutFlags = flags;
   }
 
-  if( p->pUnused ){
-    p->pUnused->fd = fd;
-    p->pUnused->flags = flags;
+  if( p->pPreallocatedUnused ){
+    p->pPreallocatedUnused->fd = fd;
+    p->pPreallocatedUnused->flags = flags;
   }
 
   if( isDelete ){
@@ -5965,7 +5972,7 @@ static int unixOpen(
 
 open_finished:
   if( rc!=SQLITE_OK ){
-    sqlite3_free(p->pUnused);
+    sqlite3_free(p->pPreallocatedUnused);
   }
   return rc;
 }
@@ -6706,7 +6713,7 @@ static int proxyCreateUnixFile(
   dummyVfs.zName = "dummy";
   pUnused->fd = fd;
   pUnused->flags = openFlags;
-  pNew->pUnused = pUnused;
+  pNew->pPreallocatedUnused = pUnused;
   
   rc = fillInUnixFile(&dummyVfs, fd, (sqlite3_file*)pNew, path, 0);
   if( rc==SQLITE_OK ){
