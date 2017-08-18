@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\scrash\srecovery\sin\smulti-process\smode.\sAnd\sadd\stest\scases\sfor\nthe\ssame.
-D 2017-08-17T19:32:02.420
+C Do\snot\ssearch\sfor\slocks\sto\sclear\swhen\sconnecting\sto\sa\sdb\sin\smulti-process\smode\nunless\sit\slooks\slike\sthe\sprevious\suser\sof\sthe\sclient-id\scrashed.
+D 2017-08-18T16:04:40.867
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -456,7 +456,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
-F src/server.c 481366fff6584dc6754b6e59d3340d379faf0c55fd7e012d46257139af282e1d
+F src/server.c 6ed43d130950389006399268ce3e9a8b1951eefc3709a5730e24b026712500b0
 F src/server.h cf1ede28aaa07a30550228582f211327b5ebe5517d2334e35ec09d00fd6d230d
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 380a7b7a458b212b0463c8e128c289cc70f2fdb9b9a63b91fc7542c120eb9c10
-R 70f8b6d0240578b43d191efd6f3e839e
+P a8115f95e80cc90c095fdd0a151da51f4d3ee427defdc34780e977585a68776d
+R 3a806093fb1d82eb28aea633865a3bda
 U dan
-Z 25c9fec4aa243def4a00985f9de58c4b
+Z 66a9c79489e9385c1bc99754d5e08a1b
