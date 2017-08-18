@@ -588,12 +588,12 @@ bitflags! {
         const SQLITE_OPEN_READ_ONLY     = ffi::SQLITE_OPEN_READONLY;
         const SQLITE_OPEN_READ_WRITE    = ffi::SQLITE_OPEN_READWRITE;
         const SQLITE_OPEN_CREATE        = ffi::SQLITE_OPEN_CREATE;
-        const SQLITE_OPEN_URI           = 0x00000040;
-        const SQLITE_OPEN_MEMORY        = 0x00000080;
+        const SQLITE_OPEN_URI           = 0x0000_0040;
+        const SQLITE_OPEN_MEMORY        = 0x0000_0080;
         const SQLITE_OPEN_NO_MUTEX      = ffi::SQLITE_OPEN_NOMUTEX;
         const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX;
-        const SQLITE_OPEN_SHARED_CACHE  = 0x00020000;
-        const SQLITE_OPEN_PRIVATE_CACHE = 0x00040000;
+        const SQLITE_OPEN_SHARED_CACHE  = 0x0002_0000;
+        const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
     }
 }
 
@@ -638,7 +638,7 @@ fn ensure_valid_sqlite_version() {
         let version_number = version_number();
 
         // Check our hard floor.
-        if version_number < 3006008 {
+        if version_number < 3_006_008 {
             panic!("rusqlite requires SQLite 3.6.8 or newer");
         }
 
@@ -691,7 +691,7 @@ fn ensure_safe_sqlite_threading_mode() -> Result<()> {
     //    will fail if someone else has already initialized SQLite even if they initialized it
     //    safely. That's not ideal either, which is why we expose bypass_sqlite_initialization
     //    above.
-    if version_number() >= 3007000 {
+    if version_number() >= 3_007_000 {
         const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
         let is_singlethreaded = unsafe {
             let mutex_ptr = ffi::sqlite3_mutex_alloc(0);
