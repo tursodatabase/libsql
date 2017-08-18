@@ -2995,29 +2995,27 @@ end_playback:
 */
 static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
-  Pgno pgno = pPg->pgno;       /* Page number to read */
   int rc = SQLITE_OK;          /* Return code */
-  int pgsz = pPager->pageSize; /* Number of bytes to read */
   u32 iFrame = 0;              /* Frame of WAL containing pgno */
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
   assert( isOpen(pPager->fd) );
 
   if( pagerUseWal(pPager) ){
-    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+    rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
     if( rc ) return rc;
   }
   if( iFrame ){
-    rc = sqlite3WalReadFrame(pPager->pWal, iFrame, pgsz, pPg->pData);
+    rc = sqlite3WalReadFrame(pPager->pWal, iFrame,pPager->pageSize,pPg->pData);
   }else{
-    i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
-    rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
+    i64 iOffset = (pPg->pgno-1)*(i64)pPager->pageSize;
+    rc = sqlite3OsRead(pPager->fd, pPg->pData, pPager->pageSize, iOffset);
     if( rc==SQLITE_IOERR_SHORT_READ ){
       rc = SQLITE_OK;
     }
   }
 
-  if( pgno==1 ){
+  if( pPg->pgno==1 ){
     if( rc ){
       /* If the read is unsuccessful, set the dbFileVers[] to something
       ** that will never be a valid file version.  dbFileVers[] is a copy
@@ -3037,13 +3035,13 @@ static int readDbPage(PgHdr *pPg){
       memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
     }
   }
-  CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM_BKPT);
+  CODEC1(pPager, pPg->pData, pPg->pgno, 3, rc = SQLITE_NOMEM_BKPT);
 
   PAGER_INCR(sqlite3_pager_readdb_count);
   PAGER_INCR(pPager->nRead);
-  IOTRACE(("PGIN %p %d\n", pPager, pgno));
+  IOTRACE(("PGIN %p %d\n", pPager, pPg->pgno));
   PAGERTRACE(("FETCH %d page %d hash(%08x)\n",
-               PAGERID(pPager), pgno, pager_pagehash(pPg)));
+               PAGERID(pPager), pPg->pgno, pager_pagehash(pPg)));
 
   return rc;
 }
