@@ -32,8 +32,15 @@ proc server_reset_db {} {
   server_sqlite3 db test.db 
 }
 
+
 set ::server_vfs unix-excl
 proc server_set_vfs {vfs} {
-  set ::server_vfs $vfs
+  if {$vfs=="single"} {
+    set ::server_vfs unix-excl
+  } elseif {$vfs=="multi"} {
+    set ::server_vfs unix
+  } else {
+    set ::server_vfs $vfs
+  }
 }
 

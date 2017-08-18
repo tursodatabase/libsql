@@ -1,0 +1,177 @@
+# 2017 April 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the server mode of SQLite.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix serverlimit
+
+source $testdir/server_common.tcl
+source $testdir/lock_common.tcl
+return_if_no_server
+
+#-------------------------------------------------------------------------
+# Test plan:
+#
+#   1.* The concurrent connections limit in multi-process mode. With all
+#       connections in the local process.
+#
+#   2.* The concurrent connections limit in multi-process mode. Using
+#       multiple processes.
+#
+#   3.* The concurrent transactions limit in single-process mode.
+#
+
+server_set_vfs multi
+server_reset_db
+
+set MLIMIT 16           ;# maximum number of allowed connections
+
+do_test 1.0 {
+  server_sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES('hello'), ('world');
+  }
+  db close
+  for {set i 0} {$i < $MLIMIT} {incr i} {
+    server_sqlite3 db.$i test.db
+    db.$i eval { SELECT * FROM t1 }
+  }
+  set {} {}
+} {}
+
+# Connection [db] cannot connect - all client slots are occupied.
+#
+do_test 1.1 {
+  server_sqlite3 db test.db
+  list [catch { db eval { SELECT * FROM t1 } } msg] $msg
+} {1 {database is locked}}
+
+# But, if one connection disconnects, [db] can then connect and
+# query the db.
+#
+do_test 1.2 {
+  db.0 close
+  list [catch { db eval { SELECT * FROM t1 } } msg] $msg
+} {0 {hello world}}
+
+do_test 1.3 {
+  for {set i 0} {$i < $MLIMIT} {incr i} {
+    catch { db.$i close }
+  }
+  set {} {}
+} {}
+
+#-------------------------------------------------------------------------
+# Connections in different processes.
+do_multiclient_test tn {
+  code1 { db close }
+  code2 { db2 close }
+  code3 { db3 close }
+
+  set N1 [expr $MLIMIT / 2]
+  set N2 [expr $MLIMIT - $N1]
+
+  do_test 2.$tn.0 {
+    file mkdir test.db-journal
+    code1 {
+      sqlite3 db test.db
+      db eval {
+        CREATE TABLE t11(a, b);
+        INSERT INTO t11 VALUES(1, 2), (3, 4);
+      }
+      db close
+
+      for {set i 0} {$i < $N1} {incr i} {
+        sqlite3 db.$i test.db
+        db.$i eval { SELECT * FROM t11 }
+      }
+    }
+
+    code2 [string map [list %N2% $N2] {
+      for {set i 0} {$i < %N2%} {incr i} {
+        sqlite3 db2.$i test.db
+        db2.$i eval { SELECT * FROM t11 }
+      }
+    }]
+
+    code2 { db2.0 eval {SELECT * FROM t11} }
+  } {1 2 3 4}
+
+  do_test 2.$tn.1 {
+    code3 { sqlite3 db3 test.db }
+    csql3 { SELECT * FROM t11 }
+  } {1 {database is locked}}
+
+  do_test 2.$tn.2 {
+    code2 { db2.0 close }
+    csql3 { SELECT * FROM t11 }
+  } {0 {1 2 3 4}}
+
+  do_test 2.$tn.3 {
+    code1 { sqlite3 db test.db }
+    csql1 { SELECT * FROM t11 }
+  } {1 {database is locked}}
+
+  do_test 2.$tn.4 {
+    code2 { db2.1 close }
+    csql1 { SELECT * FROM t11 }
+  } {0 {1 2 3 4}}
+
+  do_test 2.$tn.X {
+    code1 { for {set i 0} {$i < 50} {incr i} { catch {db.$i close} } }
+    code2 { for {set i 0} {$i < 50} {incr i} { catch {db2.$i close} } }
+  } {}
+}
+
+server_set_vfs single
+server_reset_db
+
+set TLIMIT 16
+
+do_test 3.0 {
+  execsql "CREATE TABLE t1 (o PRIMARY KEY) WITHOUT ROWID"
+  for {set i 0} {$i < $TLIMIT} {incr i} {
+    execsql "CREATE TABLE x$i (o PRIMARY KEY) WITHOUT ROWID"
+  }
+  set "" ""
+} {}
+do_test 3.1 {
+  for {set i 0} {$i < $TLIMIT} {incr i} {
+    sqlite3 db.$i test.db
+    db.$i eval "
+      BEGIN;
+        INSERT INTO x$i VALUES ('one');
+    "
+  }
+} {}
+do_catchsql_test 3.2 {
+  INSERT INTO t1 VALUES('two');
+} {1 {database is locked}}
+do_test 3.3 {
+  db.0 eval COMMIT
+  execsql { INSERT INTO t1 VALUES('two'); }
+} {}
+do_catchsql_test 3.4 { SELECT * FROM x1 } {1 {database is locked}}
+do_catchsql_test 3.5 { SELECT * FROM x0 } {0 one}
+do_test 3.6 {
+  for {set i 1} {$i < $TLIMIT} {incr i} {
+    db.$i eval COMMIT
+  }
+} {}
+
+
+finish_test
+

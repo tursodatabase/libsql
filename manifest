@@ -1,5 +1,5 @@
-C Do\snot\ssearch\sfor\slocks\sto\sclear\swhen\sconnecting\sto\sa\sdb\sin\smulti-process\smode\nunless\sit\slooks\slike\sthe\sprevious\suser\sof\sthe\sclient-id\scrashed.
-D 2017-08-18T16:04:40.867
+C Add\stests\sto\sthis\sbranch.
+D 2017-08-18T18:55:22.047
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -1094,7 +1094,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test b3326d58fe5c183ebcb359fe880db6c98ed1d3f4d3b350ec718f74287e063bee
+F test/permutations.test 4554a5c671d480ba482260b5f3e92640c31902aac51d556cc5eb5bf129eb47a9
 F test/pragma.test f274259d6393b6681eb433beb8dd39a26ec06a4431052a4880b43b84912a3f58
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1173,10 +1173,11 @@ F test/selectG.test e8600e379589e85e9fefd2fe4d44a4cdd63f6982
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/server2.test e7890fb1eb9a11a0f94cd0892279e0f3cd1ba8c3006fa343637ee9ff3c4689f6
 F test/server3.test c3ae4ca7a6e7df870bfcd2450a9815507eaa80b9cdc44ee6c7975d48311505d4
-F test/server4.test 97040670597948a695b1973537d770417589f1998bcbb3959302aaee3c211250
-F test/server5.test 2e554001145170094a19731a8ce2981d040cf44c947542b35d130e6e31256fca
-F test/server_common.tcl 551923cf8d51fefcdb4444bfd72b88ca5c5228fe1525da5b6528ae4edb7a2f2e
+F test/server_common.tcl c491d0f509b94a5cca845d45ca3bb47e464ad3a4bc89641982269112d0f1f3f4
 F test/servercrash.test 1cbd2f98cadee2d8d42ed85ad76fbcf48958fedd537c82221838cd9bc6899dae
+F test/serverfreelist.test 2e554001145170094a19731a8ce2981d040cf44c947542b35d130e6e31256fca w test/server5.test
+F test/serverlimit.test 4bc013c0b991956486ddbff6ea3bee78a0d14a3d8091f5ec00e2bd34a7fa9aa7
+F test/serverreadonly.test 97040670597948a695b1973537d770417589f1998bcbb3959302aaee3c211250 w test/server4.test
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1657,7 +1658,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8115f95e80cc90c095fdd0a151da51f4d3ee427defdc34780e977585a68776d
-R 3a806093fb1d82eb28aea633865a3bda
+P 66fb9e1cb479f1e764f1606f041bd97fd3bd428093832c000ee36b643377e9e2
+R 6a3c43c16b1d75fce7516d061ebaa6d6
 U dan
-Z 66a9c79489e9385c1bc99754d5e08a1b
+Z f1a62abc260e8d42c995536e20991d87
