@@ -1,5 +1,5 @@
-C Only\suse\sindexes\son\sexpressions\sto\soptimize\sORDER\sBY\sand\sGROUP\sBY\sif\sthe\ncollation\ssequence\smatches.\sPossible\sfix\sfor\s[e20dd54a].
-D 2017-08-18T08:29:37.727
+C Combine\sthe\sOP_CreateTable\sand\sOP_CreateIndex\sopcodes\sof\sthe\sbytecode\sengine\ninto\sa\ssingle\sOP_CreateBtree\sopcode.\s\sThis\ssimplifies\sthe\simplementation\sand\nmakes\sthe\sbytecode\sprograms\sclearer.
+D 2017-08-18T14:34:28.967
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -402,7 +402,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c e1a98bef27d6189df5c5b8b3c9b5e53d6b74bf9a936af97757c21e9ea6a5c6b2
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
-F src/build.c 5b81049a4cea3f547ddb4efc6f56345894524248816dc1ca1511b99be3f7d3ad
+F src/build.c b47a0320c6d237718b8f493ac97d37d1071bce12aca668b15219187150c41295
 F src/callback.c 28a8ede982fde4129b828350f78f2c01fe7d12c74d1a0a05d7108ab36f308688
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -462,7 +462,7 @@ F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c17
 F src/sqlite.h.in f0bd1abf5e27bd22b3bcaae2a861c1efc4ab7e752bf7eb102355135617eb8199
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h 6dddca4e215f4088aeaf60aebaa6d913397d61422733e160f25ab9dc53605a36
+F src/sqliteInt.h bc0792db4ff887e4884d386188527e1cd7c16d496c8f3ba23333e68cee3e4f78
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -524,11 +524,11 @@ F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 773843506ce694714bc96fe67c30c37015f90ef515d0e70f1f8d5c9c24088152
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 711a1b2c0a6046483ebf4ac43c4c0ea5bef3e50534a4ab9e1d7e3542635cd009
+F src/vdbe.c 82fc4553a0986a06bdd0d2b03a424e159bba5c74802fabb2841aa6cd27ccd962
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 05d6b14ab73952db0d73f6452d6960216997bd966a710266b2fe051f25326abc
-F src/vdbeaux.c 1f15018ef7abe22669967f70b02bfe6709be403f126f713dabb091b9d631859a
+F src/vdbeaux.c 2dff8186d34e0e525838f77b2fac70bd480f0273a77015bf21b6a08f2792da82
 F src/vdbeblob.c db3cf91060f6f4b2f1358a4200e844697990752177784c7c95da00b7ac9f1c7b
 F src/vdbemem.c b7fac20534c79b7554dab2e8a180c585a8bc1b9c85149d1b2d9746cf314d06ed
 F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e3
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a42a438cbbd721765ca55e71c464552dbaa494050cf472593599b8c7f0249516
-R 01b1b734d02df776d0a6e39431469431
-U dan
-Z 25c783941cfeb73ae08636afb42efa7c
+P 37e1900880b70be6802eaf43b0e568fda709a1dd6083d8be11e5a7a7d1fda41a
+R 590c7fe86e3ddb105e4572bf5c63dff2
+U drh
+Z 553a5b087246c1036f2341d36a71efe3
