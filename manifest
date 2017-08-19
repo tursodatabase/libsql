@@ -1,5 +1,5 @@
-C Add\stests\sto\sthis\sbranch.
-D 2017-08-18T18:55:22.047
+C Ensure\sthat\swrite-locks\son\spages\sare\sdropped\sat\sthe\send\sof\seach\nwrite\stransaction,\seven\sif\sthere\sis\sstill\sa\sread\stransaction\sopen.
+D 2017-08-19T15:50:45.975
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -442,7 +442,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 6947c0fccc1b68404def7161553881b2efab6fcac4a58bf9f4ce36a4ad27d325
 F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c e53f35d61f266c47cc3883e34c7d01eaca38a71451dd72efb3cf21e043b471a7
+F src/pager.c 4e8dc5bf9011a2a26e3ab18838f3c07d82e5d56c5bf177c5c11bfd63cdc2f429
 F src/pager.h 316dac0671fd7555af9e73d4357febd5f2d3ce6a185ffd8d77b7fc0423ac8b1a
 F src/parse.y 58a2de13e855aece3d7709440e6e86849f4cde97f5227c6a25e6bba2fc5e2976
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -456,8 +456,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
-F src/server.c 6ed43d130950389006399268ce3e9a8b1951eefc3709a5730e24b026712500b0
-F src/server.h cf1ede28aaa07a30550228582f211327b5ebe5517d2334e35ec09d00fd6d230d
+F src/server.c 4215bc2287c28f37e2bc79521eb8163e1340be2ca45f0fe4b2566f5faec9300c
+F src/server.h f46be129ffe407cac9b7018e6d4851b04e685d59b6837c73a1fb69e6aab52e3a
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
 F src/sqlite.h.in 29317515594eb3db2800a21fe8b568e502d76899fc64cc3b685f90c4a1ebe214
@@ -1171,13 +1171,13 @@ F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/selectG.test e8600e379589e85e9fefd2fe4d44a4cdd63f6982
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/server2.test e7890fb1eb9a11a0f94cd0892279e0f3cd1ba8c3006fa343637ee9ff3c4689f6
+F test/server2.test 787ba6044b5e9b2c3d60588bc5596054e6a5c3a7dc64bc2fb0e62f6616c142a9
 F test/server3.test c3ae4ca7a6e7df870bfcd2450a9815507eaa80b9cdc44ee6c7975d48311505d4
 F test/server_common.tcl c491d0f509b94a5cca845d45ca3bb47e464ad3a4bc89641982269112d0f1f3f4
 F test/servercrash.test 1cbd2f98cadee2d8d42ed85ad76fbcf48958fedd537c82221838cd9bc6899dae
-F test/serverfreelist.test 2e554001145170094a19731a8ce2981d040cf44c947542b35d130e6e31256fca w test/server5.test
+F test/serverfreelist.test 2e554001145170094a19731a8ce2981d040cf44c947542b35d130e6e31256fca
 F test/serverlimit.test 4bc013c0b991956486ddbff6ea3bee78a0d14a3d8091f5ec00e2bd34a7fa9aa7
-F test/serverreadonly.test 97040670597948a695b1973537d770417589f1998bcbb3959302aaee3c211250 w test/server4.test
+F test/serverreadonly.test 97040670597948a695b1973537d770417589f1998bcbb3959302aaee3c211250
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1658,7 +1658,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 66fb9e1cb479f1e764f1606f041bd97fd3bd428093832c000ee36b643377e9e2
-R 6a3c43c16b1d75fce7516d061ebaa6d6
+P abb6e076c851c0b10f62c02d0d7e54f24d86c75f01036dddbc0a8a7dfc627a0d
+R aa6e06e084e3c3d3595864687ba9477a
 U dan
-Z f1a62abc260e8d42c995536e20991d87
+Z 571fa6db3e131de25960c3e8f380a0b4

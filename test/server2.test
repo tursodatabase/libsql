@@ -142,6 +142,33 @@ foreach {tn vfs} {1 unix-excl 2 unix} {
     db close
     lsort [glob -nocomplain test.db-journal/*-journal]
   } {}
+
+  #-----------------------------------------------------------------------
+  # Test that write-locks are downgraded when a transaction is ended,
+  # even if the connection holds an open read statement.
+  #
+  do_test $tn.4.1 {
+    server_sqlite3 db test.db
+    server_sqlite3 db2 test.db
+    db eval {
+      CREATE TABLE t2(a);
+      INSERT INTO t2 VALUES('one');
+      INSERT INTO t2 VALUES('two');
+      INSERT INTO t2 VALUES('three');
+      CREATE TABLE t3(k INTEGER PRIMARY KEY, val);
+    }
+
+    set res [list]
+    db eval { SELECT a FROM t2 ORDER BY rowid } {
+      db eval { REPLACE INTO t3 VALUES(1, $a) }
+      lappend res [db2 one { SELECT val FROM t3 }]
+    }
+
+    set res
+  } {one two three}
+
+  catch { db close }
+  catch { db2 close }
 }
 
 finish_test

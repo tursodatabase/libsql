@@ -2159,7 +2159,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
 
 #ifdef SQLITE_SERVER_EDITION
   if( pagerIsServer(pPager) ){
-    rc2 = sqlite3ServerReleaseWriteLocks(pPager->pServer);
+    rc2 = sqlite3ServerEndWrite(pPager->pServer);
   }else
 #endif
   if( !pPager->exclusiveMode 

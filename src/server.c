@@ -623,45 +623,17 @@ static void serverReleaseLocks(Server *p){
   p->nLock = 0;
 }
 
-/*
-** End a transaction (and release all locks). This version runs in
-** single process mode only.
-*/
-static void serverEndSingle(Server *p){
-  Server **pp;
-  ServerDb *pDb = p->pDb;
-  ServerPage *pPg = 0;
-
-  assert( p->eTrans!=SERVER_TRANS_NONE );
+static void serverRecycleBuffers(ServerDb *pDb){
   assert( pDb->pServerShm==0 );
-
-  sqlite3_mutex_enter(pDb->mutex);
-
-  if( p->eTrans==SERVER_TRANS_READONLY ){
-    /* Remove the connection from the readers list */
-    for(pp=&pDb->pReader; *pp!=p; pp = &((*pp)->pNext));
-    *pp = p->pNext;
-  }else{
-    serverReleaseLocks(p);
-
-    /* Clear the bit in the transaction mask. */
-    pDb->transmask &= ~((u32)1 << p->iTransId);
-
-    /* If this connection is in the committers list, remove it. */
-    for(pp=&pDb->pCommit; *pp; pp = &((*pp)->pNext)){
-      if( *pp==p ){
-        *pp = p->pNext;
-        break;
-      }
-    }
-  }
+  assert( sqlite3_mutex_held(pDb->mutex) );
 
   /* See if it is possible to free any ServerPage records. If so, remove
-  ** them from the linked list and hash table, but do not call sqlite3_free()
-  ** on them until the mutex has been released.  */
+  ** them from the linked list and hash table, and add them to the pFree
+  ** list.  */
   if( pDb->pPgFirst ){
-    ServerPage *pLast = 0;
+    ServerPage *pPg;
     Server *pIter;
+    ServerPage *pLast = 0;
     int iOldest = 0x7FFFFFFF;
     for(pIter=pDb->pReader; pIter; pIter=pIter->pNext){
       iOldest = MIN(iOldest, pIter->iCommitId);
@@ -696,12 +668,37 @@ static void serverEndSingle(Server *p){
       pDb->pPgFirst = pPg;
     }
   }
+}
 
+/*
+** End a transaction (and release all locks). This version runs in
+** single process mode only.
+*/
+static void serverEndSingle(Server *p){
+  Server **pp;
+  ServerDb *pDb = p->pDb;
+
+  assert( p->eTrans!=SERVER_TRANS_NONE );
+  assert( pDb->pServerShm==0 );
+
+  sqlite3_mutex_enter(pDb->mutex);
+
+  if( p->eTrans==SERVER_TRANS_READONLY ){
+    /* Remove the connection from the readers list */
+    for(pp=&pDb->pReader; *pp!=p; pp = &((*pp)->pNext));
+    *pp = p->pNext;
+  }else{
+    serverReleaseLocks(p);
+
+    /* Clear the bit in the transaction mask. */
+    pDb->transmask &= ~((u32)1 << p->iTransId);
+  }
+
+  serverRecycleBuffers(pDb);
   sqlite3_mutex_leave(pDb->mutex);
 
   p->pNext = 0;
   p->iTransId = -1;
-  p->iCommitId = 0;
 }
 
 /*
@@ -786,9 +783,37 @@ int sqlite3ServerPreCommit(Server *p, ServerPage *pPg){
 /*
 ** Release all write-locks.
 */
-int sqlite3ServerReleaseWriteLocks(Server *p){
-  int rc = SQLITE_OK;
-  return rc;
+int sqlite3ServerEndWrite(Server *p){
+  ServerDb *pDb = p->pDb;
+  int i;
+
+  if( pDb->pServerShm==0 ) sqlite3_mutex_enter(pDb->mutex);
+  for(i=0; i<p->nLock; i++){
+    while( 1 ){
+      u32 *pSlot = serverLockingSlot(pDb, p->aLock[i]);
+      u32 o = *pSlot;
+      u32 n = o & ~((u32)1 << p->iTransId);
+      if( slotGetWriter(n)==p->iTransId ){
+        n -= ((p->iTransId + 1) << HMA_MAX_TRANSACTIONID);
+        n |= ((u32)1 << p->iTransId);
+      }
+      if( o==n || serverCompareAndSwap(pSlot, o, n) ) break;
+    }
+  }
+  if( pDb->pServerShm==0 ){
+    ServerDb **pp;
+    /* If this connection is in the committers list, remove it. */
+    for(pp=&pDb->pCommit; *pp; pp = &((*pp)->pNext)){
+      if( *pp==p ){
+        *pp = p->pNext;
+        break;
+      }
+    }
+    p->iCommitId = 0;
+    sqlite3_mutex_leave(pDb->mutex);
+  }
+
+  return SQLITE_OK;
 }
 
 static int serverCheckClient(Server *p, int iClient){
@@ -896,11 +921,6 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
   }
 
   return rc;
-}
-
-int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite){
-  assert( 0 );
-  return 0;
 }
 
 static void serverIncrSlowReader(u32 *pSlot, int n){
