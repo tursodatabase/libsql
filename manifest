@@ -1,5 +1,5 @@
-C Another\ssize\sand\sperformance\soptimization\sto\sreadDbPage().\s\sThis\stime\swe\neliminate\ssome\sunnecessary\slocal\svariables.
-D 2017-08-18T22:30:20.164
+C Space\sand\ssize\soptimization\sto\sthe\sprintf\simplementation.
+D 2017-08-19T20:38:18.374
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -452,7 +452,7 @@ F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
 F src/pragma.c cd6aeda3587be6c5c08f9b2d45eae6068666a03c9d077c8c43cdb85fb0aa70f2
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9e880c0efb5d7f9101bb34c0a87daf6e1e5284c34024fdb811e67bb02fdd299b
-F src/printf.c 439c145d71ff9e0328ec26b7db23a45f995f742d3207dd546e034cdc1667ac9c
+F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca9e1875c3a893321d70a131fc4ffc76d169ad05e0b48b7006f53b6b467db4be
-R 2ae3b6889f1fe566e9272b8874e17865
+P 745bc8decd18d4dc00589474fd3928a3a9f4156d09e05e6f5b8623de6491795a
+R f17a35ca8aefa46f1d59e82e2ca24c65
 U drh
-Z 970c0b65cb119d003a12faf3a1e4e18e
+Z 9e343ccf54a229e4a80d7dbe62c9be25

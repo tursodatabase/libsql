@@ -656,7 +656,7 @@ void sqlite3VXPrintf(
         if( precision>=0 ){
           for(length=0; length<precision && bufpt[length]; length++){}
         }else{
-          length = sqlite3Strlen30(bufpt);
+          length = 0x7fffffff & (int)strlen(bufpt);
         }
         break;
       case etSQLESCAPE:           /* Escape ' characters */
