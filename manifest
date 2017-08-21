@@ -1,5 +1,5 @@
-C Space\sand\ssize\soptimization\sto\sthe\sprintf\simplementation.
-D 2017-08-19T20:38:18.374
+C Minor\soptimization\sto\ssqlite3VdbeMemSetStr().
+D 2017-08-21T02:05:22.118
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -530,7 +530,7 @@ F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 05d6b14ab73952db0d73f6452d6960216997bd966a710266b2fe051f25326abc
 F src/vdbeaux.c 2dff8186d34e0e525838f77b2fac70bd480f0273a77015bf21b6a08f2792da82
 F src/vdbeblob.c db3cf91060f6f4b2f1358a4200e844697990752177784c7c95da00b7ac9f1c7b
-F src/vdbemem.c b7fac20534c79b7554dab2e8a180c585a8bc1b9c85149d1b2d9746cf314d06ed
+F src/vdbemem.c 2f9d672af5260f0145787e1dc2c6985414987cc0dc575133a0dc17dda767d868
 F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e3
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 745bc8decd18d4dc00589474fd3928a3a9f4156d09e05e6f5b8623de6491795a
-R f17a35ca8aefa46f1d59e82e2ca24c65
+P d01d2cffefd1cdb52b386e4983599534c0fbbe6aebda186db53200e4b2283f0a
+R 4e15eb10124cc2a73cc86451db58097f
 U drh
-Z 9e343ccf54a229e4a80d7dbe62c9be25
+Z cde05a24b81c141b2ecb8ef40de25a03
