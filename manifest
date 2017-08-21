@@ -1,5 +1,5 @@
-C Minor\soptimization\sto\ssqlite3VdbeMemSetStr().
-D 2017-08-21T02:05:22.118
+C Remove\san\sunnecessary\sconditional.
+D 2017-08-21T02:20:57.510
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -409,7 +409,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
-F src/expr.c dc436431dc50a0256b9dcd3daaa06aac0df21834f91068525f2eb3c10b9a7a9a
+F src/expr.c 4ca86dc65f5ea478c665a5b4fe79d05f00432c9bd82237a896b45bd376bf1217
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c ed8888ae80b39f5a5d403954e4a05e0a38303523dff8143161439c142d31dec1
@@ -1649,7 +1649,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d01d2cffefd1cdb52b386e4983599534c0fbbe6aebda186db53200e4b2283f0a
-R 4e15eb10124cc2a73cc86451db58097f
+P 6538ef7b6b56c7a6629a0bb7418910c64c8b2e73af2296a116c073ecf2e0d429
+R 44db9cb33f37af7df65ab136e59cd109
 U drh
-Z cde05a24b81c141b2ecb8ef40de25a03
+Z bcd0fe0605e077fa72b238dc51f819ad
