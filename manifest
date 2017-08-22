@@ -1,5 +1,5 @@
-C Less\sdramatic\schanges\sto\sthe\ssource-id\sfollowing\san\sedit.\s\sModify\sthe\sway\nthat\sthe\samalgamation\sis\sconstructed\sto\sgive\sit\sthe\sopportunity\sto\sdetect\nchanges\sand\smodify\sthe\ssource-id.
-D 2017-08-22T21:07:03.663
+C Update\sdocumentation\sto\smake\sit\sclear\sthat\sSQLITE_SOURCE_ID\sand\nsqlite3_sourceid()\smight\schanges\sif\sthe\ssource\scode\sis\sedited.
+D 2017-08-22T21:23:02.258
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -459,7 +459,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
 F src/shell.c 8f2a8b9e4ffe4f4596b1690dd628cd355d5605257e14ddba83daf5422e0e39af
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
-F src/sqlite.h.in f0bd1abf5e27bd22b3bcaae2a861c1efc4ab7e752bf7eb102355135617eb8199
+F src/sqlite.h.in 73a75cc53b5017525332ff3db2f74bb2607f1e8c0e8974d4afa3df3786f70aab
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
 F src/sqliteInt.h bc0792db4ff887e4884d386188527e1cd7c16d496c8f3ba23333e68cee3e4f78
@@ -1650,7 +1650,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 515d6a8377cc1dc76d2e78e242fe256cbeef1c1217ec35367648ddeeb17007ec
-R a4db1e4547b3dd92436518e89aa3b90a
+P 564c7340a3368501c3da885afde52123ed7f558801f6190cbe6173dfe9704b70
+R b1a5f4a03931a03b3cf49a93760947b3
 U drh
-Z 98b8ca1d9a43edd06d77198cb0511ee0
+Z 80eecc829d5290754bef086590571027
