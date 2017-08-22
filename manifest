@@ -1,8 +1,8 @@
-C Fix\serror\stests\sin\sseldom-used\scompile-time\sbranches\sof\sthe\sunix\sbackend.
-D 2017-08-22T15:21:54.760
-F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
+C Add\sthe\s"mksourceid"\sprogram\sto\sthe\sbuild\sprocess.\s\sThat\sprogram\schanges\nthe\sSQLITE_SOURCE_ID\sif\sthe\ssource\stree\shas\sbeen\smodified\sin\sany\sway.
+D 2017-08-22T19:19:00.280
+F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
+F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -380,7 +380,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 5b7d72ab03dd70aa1401f934d31e85aefd6fc542eb58094d7a95d6921390b2d0
+F main.mk da75a0527a56da0b7f568a976b3cb69756613080f16e4d208b6c6a0495bfb132
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1588,10 +1588,11 @@ F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
 F tool/mkshellc.tcl 69c38ecd7b74b2b0799a35ce20e1e3998e504d8c99c100ca4b98ae9d8f6279bc
+F tool/mksourceid.c 1db4636bf4249ac5d2d56fb06b0b30929bf7446a88c7048bb731a72a1c4767ea
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl a4b36eaa002ed00a0ab2c93d999a14f1acae98ff09a85382e5abc05a91edb82b
-F tool/mksqlite3h.tcl 51bd5e7e840a920388a5966c9f2ccc618f434c57bd68c1bab4085b2553e1e237
+F tool/mksqlite3h.tcl e10b7878ca20161594fbc28913027956d7ee35713400534a115d8f139b496478
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1649,7 +1650,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56d19f9fd7b01d4ed5c3e7309977b43fedffee168c9760d3e3b7e885790f781e
-R fadb89000aeb50524d087e05d444ff10
+P 885c2b44a44f8d054014e4079b2cac8279c11d13206d5b5215189ef75b9c5254
+R 48a68cf4cf699ac46128e2797c5425f9
 U drh
-Z b11624f2af9f39a4604e682002fd5d5e
+Z 40e98cab2922888e2c30394283edf487
