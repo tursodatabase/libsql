@@ -53,7 +53,10 @@ set nVersion [eval format "%d%03d%03d" [split $zVersion .]]
 
 # Get the source-id
 #
-set zSourceId [exec ./mksourceid $TOP/manifest]
+set PWD [pwd]
+cd $TOP
+set zSourceId [exec ./mksourceid manifest]
+cd $PWD
 
 # Set up patterns for recognizing API declarations.
 #
