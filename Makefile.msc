@@ -1670,6 +1670,12 @@ lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
 		-Fe$@ $(TOP)\tool\lemon.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
+# <<mark>>
+# Rules to build the source-id generator tool
+#
+mksourceid.exe:	$(TOP)\tool\mksourceid.c
+	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\mksourceid.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
+
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
 #
@@ -1948,7 +1954,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	move parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
-$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
+$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source

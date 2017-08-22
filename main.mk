@@ -606,6 +606,11 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
+# A tool to generate the source-id
+#
+mksourceid:	$(TOP)/tool/mksourceid.c
+	$(BCC) -o mksourceid $(TOP)/tool/mksourceid.c
+
 # Rules to build individual *.o files from generated *.c files. This
 # applies to:
 #
@@ -645,7 +650,7 @@ parse.c:	$(TOP)/src/parse.y lemon $(TOP)/tool/addopcodes.tcl
 	mv parse.h parse.h.temp
 	tclsh $(TOP)/tool/addopcodes.tcl parse.h.temp >parse.h
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION $(TOP)/ext/rtree/sqlite3rtree.h
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid $(TOP)/VERSION $(TOP)/ext/rtree/sqlite3rtree.h
 	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
