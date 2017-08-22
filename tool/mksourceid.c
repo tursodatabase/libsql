@@ -7,7 +7,7 @@
 **      SHA3 hash of the manifest file.
 **
 ** (2)  All individual file hashes in the manifest are verified.  If any
-**      source file has changed, the SHA3 hash ends with "-modified".
+**      source file has changed, the SHA3 hash ends with "modified".
 **
 */
 #include <stdlib.h>
@@ -844,7 +844,7 @@ int main(int argc, char **argv){
   fclose(in);
   sha3sum_file(zManifest, 256, zHash);
   if( !allValid ){
-    printf("%s %.55s-modified\n", zDate, zHash);
+    printf("%s %.60salt1\n", zDate, zHash);
   }else{
     printf("%s %s\n", zDate, zHash);
   }
