@@ -1,5 +1,5 @@
-C Attempting\sto\sfix\sthe\ssource-id\sgenerator\sso\sthat\sit\sworks\sfor\sout-of-tree\nbuilds.
-D 2017-08-22T19:43:41.092
+C Trying\sagain\sto\sget\sout-of-tree\sbuilds\sto\swork\scorrectly.
+D 2017-08-22T19:49:34.691
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -1592,7 +1592,7 @@ F tool/mksourceid.c 1db4636bf4249ac5d2d56fb06b0b30929bf7446a88c7048bb731a72a1c47
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl a4b36eaa002ed00a0ab2c93d999a14f1acae98ff09a85382e5abc05a91edb82b
-F tool/mksqlite3h.tcl 5dbb75b1125000907f5b334b7b7a16960c5805a26c7a7475f6dd9bd415709a71
+F tool/mksqlite3h.tcl f92f994d9709aeb9e2b6e6f9fc8b069d2f55202c8e23f453edc44390a25982dc
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1650,7 +1650,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4c05e04f7e1325a3260808ee17252876f678e78bf0cf6569a18a52ff674bd7a
-R cac9e20accccd833acf3f1836f6cc4f1
+P 5a037ac2da7449be3e26c36910ac5d865d7e74d3c25af0a10578c1f92fe2afea
+R 5f7cd0b5ad89a4d7783875a0ce64d27b
 U drh
-Z 8bf43d2286864b6e544f292f098efb98
+Z ce17968a3f11b573ce5537607e65c92d
