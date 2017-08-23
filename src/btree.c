@@ -1505,7 +1505,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     if( (x = size - nByte)>=0 ){
       testcase( x==4 );
       testcase( x==3 );
-      if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
+      if( size+pc > usableSize ){
         *pRc = SQLITE_CORRUPT_PGNO(pPg->pgno);
         return 0;
       }else if( x<4 ){
@@ -1640,7 +1640,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   u8 hdr;                               /* Page header size.  0 or 100 */
   u8 nFrag = 0;                         /* Reduction in fragmentation */
   u16 iOrigSize = iSize;                /* Original value of iSize */
-  u32 iLast = pPage->pBt->usableSize-4; /* Largest possible freeblock offset */
+  u16 x;                                /* Offset to cell content area */
   u32 iEnd = iStart + iSize;            /* First byte past the iStart buffer */
   unsigned char *data = pPage->aData;   /* Page content */
 
@@ -1650,13 +1650,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   assert( CORRUPT_DB || iEnd <= pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( iSize>=4 );   /* Minimum cell size is 4 */
-  assert( iStart<=iLast );
-
-  /* Overwrite deleted information with zeros when the secure_delete
-  ** option is enabled */
-  if( pPage->pBt->btsFlags & BTS_FAST_SECURE ){
-    memset(&data[iStart], 0, iSize);
-  }
+  assert( iStart<=pPage->pBt->usableSize-4 );
 
   /* The list of freeblocks must be in ascending order.  Find the 
   ** spot on the list where iStart should be inserted.
@@ -1673,7 +1667,9 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
       }
       iPtr = iFreeBlk;
     }
-    if( iFreeBlk>iLast ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
+    if( iFreeBlk>pPage->pBt->usableSize-4 ){
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
+    }
     assert( iFreeBlk>iPtr || iFreeBlk==0 );
   
     /* At this point:
@@ -1709,19 +1705,25 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
     data[hdr+7] -= nFrag;
   }
-  if( iStart==get2byte(&data[hdr+5]) ){
+  x = get2byte(&data[hdr+5]);
+  if( iStart<=x ){
     /* The new freeblock is at the beginning of the cell content area,
     ** so just extend the cell content area rather than create another
     ** freelist entry */
-    if( iPtr!=hdr+1 ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
+    if( iStart<x || iPtr!=hdr+1 ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
     put2byte(&data[hdr+1], iFreeBlk);
     put2byte(&data[hdr+5], iEnd);
   }else{
     /* Insert the new freeblock into the freelist */
     put2byte(&data[iPtr], iStart);
-    put2byte(&data[iStart], iFreeBlk);
-    put2byte(&data[iStart+2], iSize);
   }
+  if( pPage->pBt->btsFlags & BTS_FAST_SECURE ){
+    /* Overwrite deleted information with zeros when the secure_delete
+    ** option is enabled */
+    memset(&data[iStart], 0, iSize);
+  }
+  put2byte(&data[iStart], iFreeBlk);
+  put2byte(&data[iStart+2], iSize);
   pPage->nFree += iOrigSize;
   return SQLITE_OK;
 }
@@ -6418,7 +6420,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   hdr = pPage->hdrOffset;
   testcase( pc==get2byte(&data[hdr+5]) );
   testcase( pc+sz==pPage->pBt->usableSize );
-  if( pc < (u32)get2byte(&data[hdr+5]) || pc+sz > pPage->pBt->usableSize ){
+  if( pc+sz > pPage->pBt->usableSize ){
     *pRC = SQLITE_CORRUPT_BKPT;
     return;
   }
