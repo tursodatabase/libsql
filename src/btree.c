@@ -1488,16 +1488,10 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
   int pc = get2byte(&aData[iAddr]);
   int x;
   int usableSize = pPg->pBt->usableSize;
+  int size;            /* Size of the free slot */
 
   assert( pc>0 );
-  do{
-    int size;            /* Size of the free slot */
-    /* EVIDENCE-OF: R-06866-39125 Freeblocks are always connected in order of
-    ** increasing offset. */
-    if( pc>usableSize-4 || pc<iAddr+4 ){
-      *pRc = SQLITE_CORRUPT_PGNO(pPg->pgno);
-      return 0;
-    }
+  while( pc<=usableSize-4 ){
     /* EVIDENCE-OF: R-22710-53328 The third and fourth bytes of each
     ** freeblock form a big-endian integer which is the size of the freeblock
     ** in bytes, including the 4-byte header. */
@@ -1526,7 +1520,11 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     }
     iAddr = pc;
     pc = get2byte(&aData[pc]);
-  }while( pc );
+    if( pc<iAddr+size ) break;
+  }
+  if( pc ){
+    *pRc = SQLITE_CORRUPT_PGNO(pPg->pgno);
+  }
 
   return 0;
 }

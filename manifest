@@ -1,5 +1,5 @@
-C Size\sand\sperformance\soptimization\sto\sdropCell()\sand\sfreeSpace().
-D 2017-08-23T20:36:06.554
+C Performance\soptimization\sto\spageFindSlot()\sin\sthe\sb-tree\slayer.
+D 2017-08-23T23:09:03.990
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -399,7 +399,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 45f3b8b3ad112d21afacfdfcbc1c362637bf080abb58c901104a8d3a6207a1bf
+F src/btree.c f93c05dbd60551b322dbcaaf4961e87ea20eb67667ebc3181f15d2b5cb66bbaa
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c b47a0320c6d237718b8f493ac97d37d1071bce12aca668b15219187150c41295
@@ -1650,7 +1650,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77074990edef6c42bdfe7ccce1affc8ed64a86dde3ad4fa50b60ba0a6d851eea
-R 522ed57ec99b8b2e95cc60b01e62a8eb
+P bc1ec123ce05c9d16b0942f870381145dc9725764e47806939ff207a73066f4d
+R f6b2325c9199ea50423580e65f552033
 U drh
-Z 185127068afaca8c598b7b9a50979c09
+Z 8c1fbb63bd6c44847b2e56eee310d2d1
