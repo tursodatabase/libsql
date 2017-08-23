@@ -6218,21 +6218,20 @@ static int fillInCell(
 ){
   int nPayload;
   const u8 *pSrc;
-  int nSrc, n, rc;
+  int nSrc, n, rc, mn;
   int spaceLeft;
-  MemPage *pOvfl = 0;
-  MemPage *pToRelease = 0;
+  MemPage *pToRelease;
   unsigned char *pPrior;
   unsigned char *pPayload;
-  BtShared *pBt = pPage->pBt;
-  Pgno pgnoOvfl = 0;
+  BtShared *pBt;
+  Pgno pgnoOvfl;
   int nHeader;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
 
   /* pPage is not necessarily writeable since pCell might be auxiliary
   ** buffer space that is separate from the pPage buffer area */
-  assert( pCell<pPage->aData || pCell>=&pPage->aData[pBt->pageSize]
+  assert( pCell<pPage->aData || pCell>=&pPage->aData[pPage->pBt->pageSize]
             || sqlite3PagerIswriteable(pPage->pDbPage) );
 
   /* Fill in the header. */
@@ -6252,25 +6251,36 @@ static int fillInCell(
   }
   
   /* Fill in the payload */
+  pPayload = &pCell[nHeader];
   if( nPayload<=pPage->maxLocal ){
+    /* This is the common case where everything fits on the btree page
+    ** and no overflow pages are required. */
     n = nHeader + nPayload;
     testcase( n==3 );
     testcase( n==4 );
     if( n<4 ) n = 4;
     *pnSize = n;
-    spaceLeft = nPayload;
-    pPrior = pCell;
-  }else{
-    int mn = pPage->minLocal;
-    n = mn + (nPayload - mn) % (pPage->pBt->usableSize - 4);
-    testcase( n==pPage->maxLocal );
-    testcase( n==pPage->maxLocal+1 );
-    if( n > pPage->maxLocal ) n = mn;
-    spaceLeft = n;
-    *pnSize = n + nHeader + 4;
-    pPrior = &pCell[nHeader+n];
+    assert( nSrc<=nPayload );
+    testcase( nSrc<nPayload );
+    memcpy(pPayload, pSrc, nSrc);
+    memset(pPayload+nSrc, 0, nPayload-nSrc);
+    return SQLITE_OK;
   }
-  pPayload = &pCell[nHeader];
+
+  /* If we reach this point, it means that some of the content will need
+  ** to spill onto overflow pages.
+  */
+  mn = pPage->minLocal;
+  n = mn + (nPayload - mn) % (pPage->pBt->usableSize - 4);
+  testcase( n==pPage->maxLocal );
+  testcase( n==pPage->maxLocal+1 );
+  if( n > pPage->maxLocal ) n = mn;
+  spaceLeft = n;
+  *pnSize = n + nHeader + 4;
+  pPrior = &pCell[nHeader+n];
+  pToRelease = 0;
+  pgnoOvfl = 0;
+  pBt = pPage->pBt;
 
   /* At this point variables should be set as follows:
   **
@@ -6296,8 +6306,35 @@ static int fillInCell(
 #endif
 
   /* Write the payload into the local Cell and any extra into overflow pages */
-  while( nPayload>0 ){
+  while( 1 ){
+    n = nPayload;
+    if( n>spaceLeft ) n = spaceLeft;
+
+    /* If pToRelease is not zero than pPayload points into the data area
+    ** of pToRelease.  Make sure pToRelease is still writeable. */
+    assert( pToRelease==0 || sqlite3PagerIswriteable(pToRelease->pDbPage) );
+
+    /* If pPayload is part of the data area of pPage, then make sure pPage
+    ** is still writeable */
+    assert( pPayload<pPage->aData || pPayload>=&pPage->aData[pBt->pageSize]
+            || sqlite3PagerIswriteable(pPage->pDbPage) );
+
+    if( nSrc>=n ){
+      memcpy(pPayload, pSrc, n);
+    }else if( nSrc>0 ){
+      n = nSrc;
+      memcpy(pPayload, pSrc, n);
+    }else{
+      memset(pPayload, 0, n);
+    }
+    nPayload -= n;
+    if( nPayload<=0 ) break;
+    pPayload += n;
+    pSrc += n;
+    nSrc -= n;
+    spaceLeft -= n;
     if( spaceLeft==0 ){
+      MemPage *pOvfl = 0;
 #ifndef SQLITE_OMIT_AUTOVACUUM
       Pgno pgnoPtrmap = pgnoOvfl; /* Overflow page pointer-map entry page */
       if( pBt->autoVacuum ){
@@ -6350,30 +6387,6 @@ static int fillInCell(
       pPayload = &pOvfl->aData[4];
       spaceLeft = pBt->usableSize - 4;
     }
-    n = nPayload;
-    if( n>spaceLeft ) n = spaceLeft;
-
-    /* If pToRelease is not zero than pPayload points into the data area
-    ** of pToRelease.  Make sure pToRelease is still writeable. */
-    assert( pToRelease==0 || sqlite3PagerIswriteable(pToRelease->pDbPage) );
-
-    /* If pPayload is part of the data area of pPage, then make sure pPage
-    ** is still writeable */
-    assert( pPayload<pPage->aData || pPayload>=&pPage->aData[pBt->pageSize]
-            || sqlite3PagerIswriteable(pPage->pDbPage) );
-
-    if( nSrc>0 ){
-      if( n>nSrc ) n = nSrc;
-      assert( pSrc );
-      memcpy(pPayload, pSrc, n);
-    }else{
-      memset(pPayload, 0, n);
-    }
-    nPayload -= n;
-    pPayload += n;
-    pSrc += n;
-    nSrc -= n;
-    spaceLeft -= n;
   }
   releasePage(pToRelease);
   return SQLITE_OK;
