@@ -398,7 +398,8 @@ void sqlite3_result_pointer(
 ){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
-  sqlite3VdbeMemSetNull(pOut);
+  sqlite3VdbeMemRelease(pOut);
+  pOut->flags = MEM_Null;
   sqlite3VdbeMemSetPointer(pOut, pPtr, zPType, xDestructor);
 }
 void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
