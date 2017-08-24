@@ -1,5 +1,5 @@
-C Fixes\sto\sdocumentation\sabout\sSQLITE_OPEN_URI.
-D 2017-08-24T15:43:26.350
+C Fix\san\sincorrect\shyperlink\sin\sa\scomment.
+D 2017-08-24T20:54:42.754
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -535,7 +535,7 @@ F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
+F src/wal.c 4c7c13a3c0d92b0bed157ac234679e4874afcb1990af33510542a0f35f9264b8
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c ad558533d6fe6578857635218633aa241e2428835763c46801be9e68d6ec0701
@@ -1650,7 +1650,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2f9230c5c7ad6166e7d2b649f77960fa58b1cb583e529a43882753ab348413c
-R 9289556db20d60c2fec8166d36acfa2c
+P 7ec72314d6b66e4969833194fd032f01963bb861a7bb30d060acdb82dc5d62fe
+R 0a9008b1e381e229108d828896139715
 U drh
-Z 14ebde2517e2be2d793887e9fa413aa5
+Z 0f9a691a1b4c4aa8a5eacf3d9e1dd571

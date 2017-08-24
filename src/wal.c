@@ -3119,7 +3119,7 @@ int sqlite3WalFrames(
     ** an out-of-order write following a WAL restart could result in
     ** database corruption.  See the ticket:
     **
-    **     http://localhost:591/sqlite/info/ff5be73dee
+    **     https://sqlite.org/src/info/ff5be73dee
     */
     if( pWal->syncHeader && sync_flags ){
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags & SQLITE_SYNC_MASK);
