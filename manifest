@@ -1,10 +1,10 @@
-C Make\ssure\sthe\ssqlite3_result_pointer()\sinterface\sdoes\snot\sleave\sa\sVM\sregister\nin\san\sinconsistent\sstate.\s\sFix\sfor\sticket\s[7486aa54b968e9b5].\s\sTest\scases\nare\sin\sTH3.
-D 2017-08-24T14:04:31.936
+C Increase\sthe\sversion\snumber\sto\s3.20.1.
+D 2017-08-24T14:08:03.805
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
-F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
+F VERSION 2fd9e47664e2bdb2b12a5fcced76c6768d35cd2730c4d8d5948638d6e1697176
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1bcc61cdd063171d8945551c265e5701a770deeff77e0ad634f8d22e4e91c831 x
+F configure 2158ca3525085497feff8aa56386ee451bb0ebe49ef5d5fde3ac00e255fbc808 x
 F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 1f8b8d4c9f5cfe40e679fee279cc9eb2da8e6eb74ad406028538d7864cc4b6cb
@@ -1637,8 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9501e22dfeebdcefa783575e47c60b514d7c2e0cad73b2a496c0bc4b680900a8
-Q +d2f9230c5c7ad6166e7d2b649f77960fa58b1cb583e529a43882753ab348413c
-R 23b0ea14abc8da30d284a926d6ebd95e
+P abc7adfda27b67ef0e3eb4da72811aac7e838cc4bca183007c308dc46362fd1e
+R f28d3a18ae99c0abfb9dbb754ba936b5
 U drh
-Z c70586d4650d253eee17f42116d32ade
+Z de821df371c72ac8c675f4ff8352d075
