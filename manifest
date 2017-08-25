@@ -1,5 +1,5 @@
-C Avoid\sreturning\sduplicate\srows\sin\sexperimental\spragmas\s"pragma_list",\n"module_list"\sand\s"function_list".
-D 2017-08-25T09:17:14.786
+C Improve\sthe\sinternal\smechanism\sused\sto\skeep\strack\sof\swhat\skind\sof\ssyncing\nto\sdo\sfor\sWAL\stransaction\scommits\sand\scheckpoint\soperations.\s\nUse\sthe\scheckpoint-style\sof\ssyncing\sto\ssync\sthe\sheader\sof\sa\snew\nor\srestarted\sWAL\sfile.
+D 2017-08-25T11:44:51.174
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -436,14 +436,14 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
 F src/mutex_w32.c a898fa969823b100c0f5fdc57e54c9a1e419ab4d
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
-F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
+F src/os.c 93e0979b9b55df29c0c4923f73b48e9d3fe728f01dd8ed4f6a9d2f1d79779bc8
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 489aa972ccc34f7b4770b891694b32101c59ddd4be4ef0ddd9a4da58c145c1a6
 F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c c1dc0609f04a0659519bb2b8ca1440a64b0ad82b6c2afd675f1a50f6c918321a
+F src/pager.c bf51378c57c8e05d7f4d7bb9861f403a2e40cde82e25513401216d1ed30bc3e5
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -535,8 +535,8 @@ F src/vdbesort.c fea2bea25f5e9ccd91e0760d7359f0365f9fba1aaeac7216c71cad78765f58e
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 4c7c13a3c0d92b0bed157ac234679e4874afcb1990af33510542a0f35f9264b8
-F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
+F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
+F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c ad558533d6fe6578857635218633aa241e2428835763c46801be9e68d6ec0701
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
@@ -1487,7 +1487,7 @@ F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c37
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
-F test/wal2.test 56b0bc95b8693a0be294f8d210c49025dd094bd7
+F test/wal2.test 6ac39b94a284ebac6efb6be93b0cdfe73ee6083f129555e3144d8a615e9900ef
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -1651,7 +1651,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25292b9a4eb5efc7db551da0b3c9cfd7e79da1594ee14729de44090e188c2b2a
-R 7b2e7d0666727914b868e680cae90457
-U dan
-Z 2b958aabca575686d03fef3a95382582
+P b79cc8dc88c8ae03daff1290fd650b2b0e6f673ec9d83be6a533a57172930190 bf65dae8d4297c57ac63228ccf0100f9fabf2fb600438c9f2e10a29c4b118168
+R 537f505d2d307d3df7ac5ca0ae8a4ab7
+T +closed bf65dae8d4297c57ac63228ccf0100f9fabf2fb600438c9f2e10a29c4b118168
+U drh
+Z f4c9090d66a1befc7247247744f54bd9
