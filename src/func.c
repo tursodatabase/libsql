@@ -865,7 +865,8 @@ static void likeFunc(
 #ifdef SQLITE_TEST
     sqlite3_like_count++;
 #endif
-    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
+    sqlite3_result_int(context,
+                      patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
   }
 }
 
