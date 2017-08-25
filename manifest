@@ -1,5 +1,5 @@
-C Convert\sa\sbranch\smade\sunreachable\sby\s[59560d07]\sinto\san\sassert().
-D 2017-08-25T13:02:48.882
+C Small\sperformance\soptimization\sin\ssqlite3WhereBegin().
+D 2017-08-25T13:34:18.937
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -538,7 +538,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
-F src/where.c ad558533d6fe6578857635218633aa241e2428835763c46801be9e68d6ec0701
+F src/where.c 0aaa1b085a018c1c2e2da367b48491ce2686aea351bd17772c46b7e04eb51e3d
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
 F src/wherecode.c e7be3b7f4c11908500cdf02b299d190d3742659533f58e0f4047962fdb5a48da
 F src/whereexpr.c fe1fe600d7334e91f3d9d487021362d543fba8ab2f1be5e0d68063d619379c05
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8d23afe8478e42779ec1dd602ca2d77d4f3c26c4d54f52112c5aaa928536538
-R c47094d13357cf3081b589cea406d444
+P 2738b8db3caa6ce48d27cb5749d27b79241e6f6682b694886f6ef663e5443583
+R be107142fb32b5eeca2b38bf38398332
 U drh
-Z 0c1347313e1f31701f169aeedc1bd394
+Z ca59cf9901a72073d38774a5b3f91248

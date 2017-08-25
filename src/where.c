@@ -4537,37 +4537,38 @@ WhereInfo *sqlite3WhereBegin(
     if( wctrlFlags & WHERE_WANT_DISTINCT ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
-  }
-
-  /* Assign a bit from the bitmask to every term in the FROM clause.
-  **
-  ** The N-th term of the FROM clause is assigned a bitmask of 1<<N.
-  **
-  ** The rule of the previous sentence ensures thta if X is the bitmask for
-  ** a table T, then X-1 is the bitmask for all other tables to the left of T.
-  ** Knowing the bitmask for all tables to the left of a left join is
-  ** important.  Ticket #3015.
-  **
-  ** Note that bitmasks are created for all pTabList->nSrc tables in
-  ** pTabList, not just the first nTabList tables.  nTabList is normally
-  ** equal to pTabList->nSrc but might be shortened to 1 if the
-  ** WHERE_OR_SUBCLAUSE flag is set.
-  */
-  for(ii=0; ii<pTabList->nSrc; ii++){
-    createMask(pMaskSet, pTabList->a[ii].iCursor);
-    sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
-  }
-#ifdef SQLITE_DEBUG
-  {
-    Bitmask mx = 0;
-    for(ii=0; ii<pTabList->nSrc; ii++){
-      Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
-      assert( m>=mx );
-      mx = m;
+  }else{
+    /* Assign a bit from the bitmask to every term in the FROM clause.
+    **
+    ** The N-th term of the FROM clause is assigned a bitmask of 1<<N.
+    **
+    ** The rule of the previous sentence ensures thta if X is the bitmask for
+    ** a table T, then X-1 is the bitmask for all other tables to the left of T.
+    ** Knowing the bitmask for all tables to the left of a left join is
+    ** important.  Ticket #3015.
+    **
+    ** Note that bitmasks are created for all pTabList->nSrc tables in
+    ** pTabList, not just the first nTabList tables.  nTabList is normally
+    ** equal to pTabList->nSrc but might be shortened to 1 if the
+    ** WHERE_OR_SUBCLAUSE flag is set.
+    */
+    ii = 0;
+    do{
+      createMask(pMaskSet, pTabList->a[ii].iCursor);
+      sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
+    }while( (++ii)<pTabList->nSrc );
+  #ifdef SQLITE_DEBUG
+    {
+      Bitmask mx = 0;
+      for(ii=0; ii<pTabList->nSrc; ii++){
+        Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
+        assert( m>=mx );
+        mx = m;
+      }
     }
+  #endif
   }
-#endif
-
+  
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
   if( db->mallocFailed ) goto whereBeginError;
