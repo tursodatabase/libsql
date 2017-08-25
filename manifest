@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\ssqlite3WhereBegin().
-D 2017-08-25T13:34:18.937
+C Size\sand\sperformance\soptimization\sfor\ssqlite3Init().
+D 2017-08-25T15:43:34.075
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -451,7 +451,7 @@ F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
 F src/pragma.c a4e5028dfc8af4c5c347cd0e91bd2f0c0f81fcd9b2c6e0acf8da7da51df7f1fe
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
-F src/prepare.c 9e880c0efb5d7f9101bb34c0a87daf6e1e5284c34024fdb811e67bb02fdd299b
+F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
 F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2738b8db3caa6ce48d27cb5749d27b79241e6f6682b694886f6ef663e5443583
-R be107142fb32b5eeca2b38bf38398332
+P 39f708d1e286931365a8992dbe7f900108ff1dad146032a284ad1dec09b11e06
+R fe3e8a19bfb43e621f9a86b9a7564beb
 U drh
-Z ca59cf9901a72073d38774a5b3f91248
+Z 5ffd42d30ddfce1213880dd5c5ac3e27
