@@ -251,7 +251,7 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
     PgFreeslot *p;
     if( pBuf==0 ) sz = n = 0;
     sz = ROUNDDOWN8(sz);
-    pcache1.szSlot = sz;
+    pcache1.szSlot = n ? sz : 0;
     pcache1.nSlot = pcache1.nFreeSlot = n;
     pcache1.nReserve = n>90 ? 10 : (n/10 + 1);
     pcache1.pStart = pBuf;

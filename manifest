@@ -1,5 +1,5 @@
-C Fix\sa\sfew\sover-length\ssource\scode\slines.\s\sNo\sfunctional\schanges.
-D 2017-08-25T19:51:51.034
+C Instrumentation\sand\schanges\sin\san\seffort\sto\sreduce\sthread\scontention.
+D 2017-08-27T10:55:38.364
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -422,7 +422,7 @@ F src/insert.c d2d1bf12d2b5382450620d7cede84c7ffe57e6a89fa9a908f1aba68df2731cd9
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 20865b183bb8a3723d59cf1efffc3c50217eb452c1021d077b908c94da26b0b2
 F src/main.c 42f6a2660c7a1d643cc7e863d2dcd630c6aa1e8343f5478b0592120ab84c97ba
-F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
+F src/malloc.c 6bd9604ef98b253fe607f6e8357e003511665a2488dd76f385784f628c53b05c
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -433,7 +433,7 @@ F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
+F src/mutex_unix.c 78d1d635207cba51f8cbe16b151016dff70cfd5d5c7ba7a8c628ec2d8e48b7b8
 F src/mutex_w32.c a898fa969823b100c0f5fdc57e54c9a1e419ab4d
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 93e0979b9b55df29c0c4923f73b48e9d3fe728f01dd8ed4f6a9d2f1d79779bc8
@@ -448,7 +448,7 @@ F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
-F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
+F src/pcache1.c e7114d2e80331daafa6f87f54839ed0563e1273b835d809a911569407c12ebaf
 F src/pragma.c a4e5028dfc8af4c5c347cd0e91bd2f0c0f81fcd9b2c6e0acf8da7da51df7f1fe
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
@@ -1651,7 +1651,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 776d91284a891bec64d6f649ff17de898b6ac6f66dd3d2afccc394a012a40c7d
-R 41344988e24701db849a6d76419462a5
+P 1783c54ce9dcb4b2c4f2a66f6d3315e646b71b54a8899fc32a7bf0f935a21f7f
+R f6b27e943dfb2f80ed02285eb3bbff35
+T *branch * reduced-thread-contention
+T *sym-reduced-thread-contention *
+T -sym-trunk *
 U drh
-Z b62f697e1468d19c3e527d2e161c50d8
+Z f8bcb83c40e54107ee94d952e34ad313

@@ -310,8 +310,10 @@ void *sqlite3_malloc64(sqlite3_uint64 n){
 ** case by setting scratchAllocOut to 1 when an allocation
 ** is outstanding clearing it when the allocation is freed.
 */
+#ifndef SQLITE_DISABLE_SCRATCH_MALLOC
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
 static int scratchAllocOut = 0;
+#endif
 #endif
 
 
@@ -324,6 +326,9 @@ static int scratchAllocOut = 0;
 ** embedded processor.
 */
 void *sqlite3ScratchMalloc(int n){
+#ifdef SQLITE_DISABLE_SCRATCH_MALLOC
+  return sqlite3Malloc(n);
+#else  
   void *p;
   assert( n>0 );
 
@@ -359,8 +364,12 @@ void *sqlite3ScratchMalloc(int n){
 #endif
 
   return p;
+#endif /* SQLITE_DISABLE_SCRATCH_MALLOC */
 }
 void sqlite3ScratchFree(void *p){
+#ifdef SQLITE_DISABLE_SCRATCH_MALLOC
+  sqlite3_free(p);
+#else
   if( p ){
 
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
@@ -401,6 +410,7 @@ void sqlite3ScratchFree(void *p){
       }
     }
   }
+#endif /* SQLITE_DISABLE_SCRATCH_MALLOC */
 }
 
 /*

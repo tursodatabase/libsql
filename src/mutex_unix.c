@@ -43,6 +43,9 @@ struct sqlite3_mutex {
 #if SQLITE_MUTEX_NREF || defined(SQLITE_ENABLE_API_ARMOR)
   int id;                    /* Mutex type */
 #endif
+#ifdef SQLITE_COUNT_MUTEX_DELAYS
+  u32 nCollide;
+#endif
 #if SQLITE_MUTEX_NREF
   volatile int nRef;         /* Number of entrances */
   volatile pthread_t owner;  /* Thread that is within this mutex */
@@ -221,6 +224,11 @@ static void pthreadMutexFree(sqlite3_mutex *p){
 #endif
   {
     pthread_mutex_destroy(&p->mutex);
+#if SQLITE_COUNT_MUTEX_DELAYS
+    if( p->nCollide ){
+      printf("%d mutex delays for %p\n", p->nCollide, (void*)p);
+    }
+#endif
     sqlite3_free(p);
   }
 #ifdef SQLITE_ENABLE_API_ARMOR
@@ -269,7 +277,14 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
 #else
   /* Use the built-in recursive mutexes if they are available.
   */
+#if SQLITE_COUNT_MUTEX_DELAYS
+  if( pthread_mutex_trylock(&p->mutex) ){
+    p->nCollide++;
+    pthread_mutex_lock(&p->mutex);
+  }
+#else
   pthread_mutex_lock(&p->mutex);
+#endif
 #if SQLITE_MUTEX_NREF
   assert( p->nRef>0 || p->owner==0 );
   p->owner = pthread_self();
