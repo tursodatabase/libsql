@@ -1,5 +1,5 @@
-C Remove\sthe\srarely-used\sscratch\smemory\sallocator.\s\sThis\smakes\sthe\scode\ssmaller,\nfaster,\sand\seasier\sto\smaintain.\s\sIn\splace\sof\sthe\sscratch\sallocator,\sadd\sthe\nSQLITE_CONFIG_SMALL_MALLOC\sconfiguration\soption\sthat\sprovides\sa\shint\sto\sSQLite\nthat\slarge\smemory\sallocations\sshould\sbe\savoided.
-D 2017-08-28T15:51:35.625
+C Avoid\sunnecessary\smutexes\sin\sthe\spcache1\simplementation\sin\sthe\scommon\scase\nwhere\sno\sauxiliary\spage\scache\smemory\sis\sconfigured.
+D 2017-08-28T16:11:05.724
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -448,7 +448,7 @@ F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
-F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
+F src/pcache1.c ad5bc71727c2e825dcbf342413e1b4b09ed8520cd83903671e8bd03bc30b4c98
 F src/pragma.c a4e5028dfc8af4c5c347cd0e91bd2f0c0f81fcd9b2c6e0acf8da7da51df7f1fe
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2348045fbc3fc99e2b46095cc86db99815cd1f9254d30a3b72c2b15c02076a84
-R dbf94ead9bb02368db4853c4bef6223c
+P 54b000246cfb5c7b8adb61a17357ef5a49adddde9e48e8937834d5ba0beb8a6b
+R 83da5bfb65f5a08c38f889ed88d6f498
 U drh
-Z 970c3285dea1ce91571a8f403e94ff33
+Z cc59cd24e10bd66953b2a2efefd623c5
