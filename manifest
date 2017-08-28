@@ -1,5 +1,5 @@
-C Remove\sthe\srarely-used\sscratch\smemory\sallocator.\s\sThis\smakes\sthe\scode\ssmaller,\nfaster,\sand\seasier\sto\smaintain.\s\sIn\splace\sof\sthe\sscratch\sallocator,\sadd\sthe\nSQLITE_CONFIG_SMALL_MALLOC\sconfiguration\soption\sthat\sprovides\sa\shint\sto\sSQLite\nthat\slarge\smemory\sallocations\sshould\sbe\savoided.
-D 2017-08-28T17:26:46.926
+C Avoid\sunnecessary\smutexes\sin\sthe\spcache1\simplementation\sin\sthe\scommon\scase\nwhere\sno\sauxiliary\spage\scache\smemory\sis\sconfigured.
+D 2017-08-28T17:30:34.999
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -448,7 +448,7 @@ F src/pager.h 403b7d242616f8742ec149ede4a06b3e66896c554ce09c2abeddb926fdd1b707
 F src/parse.y e4dbcc6136fc4f3084cedd41036401eafd336c5f7cb33bc516fed913a46cac2a
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
-F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
+F src/pcache1.c af5395536c2d7e6ce46f25ec67bb2709d9237ee0e6c8d3c41a4470d1c05f5a3e
 F src/pragma.c cd6aeda3587be6c5c08f9b2d45eae6068666a03c9d077c8c43cdb85fb0aa70f2
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c dd250f904739b1dc449c131ac527c35e3424d94082dd111321bd83f80c6bb0fe
@@ -1648,8 +1648,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 346a710da4b50c9eaf327a4960174ec1f79adea0d41cd0a1c43ef82a0ba05ad7
-Q +54b000246cfb5c7b8adb61a17357ef5a49adddde9e48e8937834d5ba0beb8a6b
-R 729a2493a22ee1b87e8023c907ed70b8
+P cc440400a1a56463a82ef4d67b93139bfced095f899f8081673c3d1095329c80
+Q +1ba051e34d7512ab5e8fc969c1b5aaaf827b8e6493ba4235895257aca78b500f
+R 8c64c4e5a3e0ab86e81242d59369e8dd
 U drh
-Z 1d67a7ed340799b9f4521ab99c489ae0
+Z 813f7573851ceae8f85a2d7be86ec6ea
