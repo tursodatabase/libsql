@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\smutexes\sin\sthe\spcache1\simplementation\sin\sthe\scommon\scase\nwhere\sno\sauxiliary\spage\scache\smemory\sis\sconfigured.
-D 2017-08-28T17:30:34.999
+C Add\sthe\s--enable-update-limit\soption\sto\sthe\s./configure\sscript.
+D 2017-08-28T17:32:54.426
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1bcc61cdd063171d8945551c265e5701a770deeff77e0ad634f8d22e4e91c831 x
-F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
+F configure dc46c3b57f0b8b9035185507f952d528cf6795481dc09898abe0010d8281ac73 x
+F configure.ac bb85c1c53e952c8c7078a2f147eba613e0128b8b6e7780d64758d8fb29bcc695
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 1f8b8d4c9f5cfe40e679fee279cc9eb2da8e6eb74ad406028538d7864cc4b6cb
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1648,8 +1648,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc440400a1a56463a82ef4d67b93139bfced095f899f8081673c3d1095329c80
-Q +1ba051e34d7512ab5e8fc969c1b5aaaf827b8e6493ba4235895257aca78b500f
-R 8c64c4e5a3e0ab86e81242d59369e8dd
+P 5cd9ff87d8aa62ad97ad64b580e042b82477f6fd7b6dde1b4de7a050023c80c5
+Q +64a8ae68381b7fbb29b659901ca7ce8d50510e4753758d5761f7e41539288cef
+R 6bb00496744d8d2a879a1bc421dbf575
 U drh
-Z 813f7573851ceae8f85a2d7be86ec6ea
+Z df1c572526669d8743a8235c4f2e7336
