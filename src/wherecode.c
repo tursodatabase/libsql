@@ -1070,9 +1070,9 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
 }
 
 /*
-** For an indexes on expression X, locate every instance of expression X in pExpr
-** and change that subexpression into a reference to the appropriate column of
-** the index.
+** For an indexes on expression X, locate every instance of expression X
+** in pExpr and change that subexpression into a reference to the appropriate
+** column of the index.
 */
 static void whereIndexExprTrans(
   Index *pIdx,      /* The Index */

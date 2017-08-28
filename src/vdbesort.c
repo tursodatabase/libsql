@@ -1000,11 +1000,9 @@ int sqlite3VdbeSorterInit(
       mxCache = MIN(mxCache, SQLITE_MAX_PMASZ);
       pSorter->mxPmaSize = MAX(pSorter->mnPmaSize, (int)mxCache);
 
-      /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
-      ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
-      ** large heap allocations.
-      */
-      if( sqlite3GlobalConfig.pScratch==0 ){
+      /* Avoid large memory allocations if the application has requested
+      ** SQLITE_CONFIG_SMALL_MALLOC. */
+      if( sqlite3GlobalConfig.bSmallMalloc==0 ){
         assert( pSorter->iMemory==0 );
         pSorter->nMemory = pgsz;
         pSorter->list.aMemory = (u8*)sqlite3Malloc(pgsz);

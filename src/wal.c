@@ -1799,9 +1799,7 @@ static int walCheckpoint(
       pInfo->nBackfillAttempted = mxSafeFrame;
 
       /* Sync the WAL to disk */
-      if( sync_flags ){
-        rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
-      }
+      rc = sqlite3OsSync(pWal->pWalFd, CKPT_SYNC_FLAGS(sync_flags));
 
       /* If the database may grow as a result of this checkpoint, hint
       ** about the eventual size of the db file to the VFS layer.
@@ -1842,8 +1840,8 @@ static int walCheckpoint(
           i64 szDb = pWal->hdr.nPage*(i64)szPage;
           testcase( IS_BIG_INT(szDb) );
           rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
-          if( rc==SQLITE_OK && sync_flags ){
-            rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
           }
         }
         if( rc==SQLITE_OK ){
@@ -3177,8 +3175,8 @@ static int walWriteToLog(
     iOffset += iFirstAmt;
     iAmt -= iFirstAmt;
     pContent = (void*)(iFirstAmt + (char*)pContent);
-    assert( p->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
-    rc = sqlite3OsSync(p->pFd, p->syncFlags & SQLITE_SYNC_MASK);
+    assert( WAL_SYNC_FLAGS(p->syncFlags)!=0 );
+    rc = sqlite3OsSync(p->pFd, WAL_SYNC_FLAGS(p->syncFlags));
     if( iAmt==0 || rc ) return rc;
   }
   rc = sqlite3OsWrite(p->pFd, pContent, iAmt, iOffset);
@@ -3348,10 +3346,10 @@ int sqlite3WalFrames(
     ** an out-of-order write following a WAL restart could result in
     ** database corruption.  See the ticket:
     **
-    **     http://localhost:591/sqlite/info/ff5be73dee
+    **     https://sqlite.org/src/info/ff5be73dee
     */
-    if( pWal->syncHeader && sync_flags ){
-      rc = sqlite3OsSync(pWal->pWalFd, sync_flags & SQLITE_SYNC_MASK);
+    if( pWal->syncHeader ){
+      rc = sqlite3OsSync(pWal->pWalFd, CKPT_SYNC_FLAGS(sync_flags));
       if( rc ) return rc;
     }
   }
@@ -3427,7 +3425,7 @@ int sqlite3WalFrames(
   ** sector boundary is synced; the part of the last frame that extends
   ** past the sector boundary is written after the sync.
   */
-  if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
+  if( isCommit && WAL_SYNC_FLAGS(sync_flags)!=0 ){
     int bSync = 1;
     if( pWal->padToSectorBoundary ){
       int sectorSize = sqlite3SectorSize(pWal->pWalFd);
@@ -3443,7 +3441,7 @@ int sqlite3WalFrames(
     }
     if( bSync ){
       assert( rc==SQLITE_OK );
-      rc = sqlite3OsSync(w.pFd, sync_flags & SQLITE_SYNC_MASK);
+      rc = sqlite3OsSync(w.pFd, WAL_SYNC_FLAGS(sync_flags));
     }
   }
 

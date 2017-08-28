@@ -242,7 +242,13 @@ proc copy_file {filename} {
             }
           }
           append line $funcname $rest
-          puts $out $line
+          if {$funcname=="sqlite3_sourceid" && !$linemacros} {
+            # The sqlite3_sourceid() routine is synthesized at the end of
+            # the amalgamation
+            puts $out "/* $line */"
+          } else {
+            puts $out $line
+          }
         } else {
           puts $out "SQLITE_PRIVATE $line"
         }
@@ -395,5 +401,35 @@ foreach file {
 } {
   copy_file tsrc/$file
 }
+
+# Synthesize an alternative sqlite3_sourceid() implementation that
+# that tries to detects changes in the amalgamation source text
+# and modify returns a modified source-id if changes are detected.
+#
+# The only detection mechanism we have is the __LINE__ macro.  So only
+# edits that changes the number of lines of source code are detected.
+#
+if {!$linemacros} {
+  flush $out
+  set in2 [open sqlite3.c]
+  set cnt 0
+  set oldsrcid {}
+  while {![eof $in2]} {
+    incr cnt
+    gets $in2 line
+    if {[regexp {^#define SQLITE_SOURCE_ID } $line]} {set oldsrcid $line}
+  }
+  close $in2
+  regsub {[0-9a-flt]{4}"} $oldsrcid {alt2"} oldsrcid
+  puts $out \
+"#if __LINE__!=[expr {$cnt+0}]
+#undef SQLITE_SOURCE_ID
+$oldsrcid
+#endif
+/* Return the source-id for this library */
+SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }"
+}
+puts $out \
+"/************************** End of sqlite3.c ******************************/"
 
 close $out

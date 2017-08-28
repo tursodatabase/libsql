@@ -378,5 +378,22 @@ do_test colname-9.210 {
   execsql2 {SELECT t1.a, v3.a AS n FROM t1 JOIN v3}
 } {a 1 n 3}
 
+# Make sure the quotation marks get removed from the column names
+# when constructing a new table from an aggregate SELECT.
+# Email from Juergen Palm on 2017-07-11.
+#
+do_execsql_test colname-10.100 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1("with space" TEXT);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2 AS SELECT "with space" FROM t1;
+  PRAGMA table_info(t2);
+} {0 {with space} TEXT 0 {} 0}
+do_execsql_test colname-10.110 {
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t3 AS SELECT "with space" FROM t1 GROUP BY 1;
+  PRAGMA table_info(t3);
+} {0 {with space} TEXT 0 {} 0}
+
 
 finish_test

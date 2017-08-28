@@ -656,7 +656,7 @@ void sqlite3VXPrintf(
         if( precision>=0 ){
           for(length=0; length<precision && bufpt[length]; length++){}
         }else{
-          length = sqlite3Strlen30(bufpt);
+          length = 0x7fffffff & (int)strlen(bufpt);
         }
         break;
       case etSQLESCAPE:           /* Escape ' characters */
@@ -782,7 +782,6 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
   }else{
     char *zOld = isMalloced(p) ? p->zText : 0;
     i64 szNew = p->nChar;
-    assert( (p->zText==0 || p->zText==p->zBase)==!isMalloced(p) );
     szNew += N + 1;
     if( szNew+p->nChar<=p->mxAlloc ){
       /* Force exponential buffer size growth as long as it does not overflow,
@@ -824,7 +823,6 @@ void sqlite3AppendChar(StrAccum *p, int N, char c){
   if( p->nChar+(i64)N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ){
     return;
   }
-  assert( (p->zText==p->zBase)==!isMalloced(p) );
   while( (N--)>0 ) p->zText[p->nChar++] = c;
 }
 
@@ -842,7 +840,6 @@ static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
     memcpy(&p->zText[p->nChar], z, N);
     p->nChar += N;
   }
-  assert( (p->zText==0 || p->zText==p->zBase)==!isMalloced(p) );
 }
 
 /*
@@ -877,19 +874,20 @@ void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
 ** pointer if any kind of error was encountered.
 */
 static SQLITE_NOINLINE char *strAccumFinishRealloc(StrAccum *p){
+  char *zText;
   assert( p->mxAlloc>0 && !isMalloced(p) );
-  p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
-  if( p->zText ){
-    memcpy(p->zText, p->zBase, p->nChar+1);
+  zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+  if( zText ){
+    memcpy(zText, p->zText, p->nChar+1);
     p->printfFlags |= SQLITE_PRINTF_MALLOCED;
   }else{
     setStrAccumError(p, STRACCUM_NOMEM);
   }
-  return p->zText;
+  p->zText = zText;
+  return zText;
 }
 char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
-    assert( (p->zText==p->zBase)==!isMalloced(p) );
     p->zText[p->nChar] = 0;
     if( p->mxAlloc>0 && !isMalloced(p) ){
       return strAccumFinishRealloc(p);
@@ -902,7 +900,6 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 ** Reset an StrAccum string.  Reclaim all malloced memory.
 */
 void sqlite3StrAccumReset(StrAccum *p){
-  assert( (p->zText==0 || p->zText==p->zBase)==!isMalloced(p) );
   if( isMalloced(p) ){
     sqlite3DbFree(p->db, p->zText);
     p->printfFlags &= ~SQLITE_PRINTF_MALLOCED;
@@ -925,11 +922,11 @@ void sqlite3StrAccumReset(StrAccum *p){
 **        allocations will ever occur.
 */
 void sqlite3StrAccumInit(StrAccum *p, sqlite3 *db, char *zBase, int n, int mx){
-  p->zText = p->zBase = zBase;
+  p->zText = zBase;
   p->db = db;
-  p->nChar = 0;
   p->nAlloc = n;
   p->mxAlloc = mx;
+  p->nChar = 0;
   p->accError = 0;
   p->printfFlags = 0;
 }

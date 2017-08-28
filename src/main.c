@@ -436,14 +436,8 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
       break;
     }
-    case SQLITE_CONFIG_SCRATCH: {
-      /* EVIDENCE-OF: R-08404-60887 There are three arguments to
-      ** SQLITE_CONFIG_SCRATCH: A pointer an 8-byte aligned memory buffer from
-      ** which the scratch allocations will be drawn, the size of each scratch
-      ** allocation (sz), and the maximum number of scratch allocations (N). */
-      sqlite3GlobalConfig.pScratch = va_arg(ap, void*);
-      sqlite3GlobalConfig.szScratch = va_arg(ap, int);
-      sqlite3GlobalConfig.nScratch = va_arg(ap, int);
+    case SQLITE_CONFIG_SMALL_MALLOC: {
+      sqlite3GlobalConfig.bSmallMalloc = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
@@ -3801,22 +3795,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif 
-
-    /* sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
-    **
-    ** Pass pFree into sqlite3ScratchFree(). 
-    ** If sz>0 then allocate a scratch buffer into pNew.  
-    */
-    case SQLITE_TESTCTRL_SCRATCHMALLOC: {
-      void *pFree, **ppNew;
-      int sz;
-      sz = va_arg(ap, int);
-      ppNew = va_arg(ap, void**);
-      pFree = va_arg(ap, void*);
-      if( sz ) *ppNew = sqlite3ScratchMalloc(sz);
-      sqlite3ScratchFree(pFree);
-      break;
-    }
 
     /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
     **

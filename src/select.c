@@ -1617,6 +1617,8 @@ static void generateColumnNames(
     Expr *p = pEList->a[i].pExpr;
 
     assert( p!=0 );
+    assert( p->op!=TK_AGG_COLUMN );  /* Agg processing has not run yet */
+    assert( p->op!=TK_COLUMN || p->pTab!=0 ); /* Covering indexes not yet coded */
     if( pEList->a[i].zName ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zName;
@@ -1710,7 +1712,9 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( pColExpr->op==TK_COLUMN && pColExpr->pTab!=0 ){
+      if( (pColExpr->op==TK_COLUMN || pColExpr->op==TK_AGG_COLUMN)
+       && pColExpr->pTab!=0 
+      ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
         Table *pTab = pColExpr->pTab;

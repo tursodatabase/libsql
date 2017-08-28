@@ -96,18 +96,18 @@ struct VdbeCursor {
   u32 cacheStatus;        /* Cache is valid if this matches Vdbe.cacheCtr */
   int seekResult;         /* Result of previous sqlite3BtreeMoveto() or 0
                           ** if there have been no prior seeks on the cursor. */
-  /* NB: seekResult does not distinguish between "no seeks have ever occurred
-  ** on this cursor" and "the most recent seek was an exact match". */
+  /* seekResult does not distinguish between "no seeks have ever occurred
+  ** on this cursor" and "the most recent seek was an exact match".
+  ** For CURTYPE_PSEUDO, seekResult is the register holding the record */
 
   /* When a new VdbeCursor is allocated, only the fields above are zeroed.
   ** The fields that follow are uninitialized, and must be individually
   ** initialized prior to first use. */
   VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
   union {
-    BtCursor *pCursor;          /* CURTYPE_BTREE.  Btree cursor */
-    sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.   Vtab cursor */
-    int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
-    VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
+    BtCursor *pCursor;          /* CURTYPE_BTREE or _PSEUDO.  Btree cursor */
+    sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.              Vtab cursor */
+    VdbeSorter *pSorter;        /* CURTYPE_SORTER.            Sorter object */
   } uc;
   KeyInfo *pKeyInfo;      /* Info about index keys needed by index cursors */
   u32 iHdrOffset;         /* Offset to next unparsed byte of the header */
