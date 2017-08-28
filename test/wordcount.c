@@ -633,14 +633,10 @@ int main(int argc, char **argv){
     printf("%s Outstanding Allocations:     %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, 0);
     printf("%s Pcache Overflow Bytes:       %d (max %d)\n",zTag,iCur,iHiwtr);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, 0);
-    printf("%s Scratch Overflow Bytes:      %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, 0);
     printf("%s Largest Allocation:          %d bytes\n",zTag,iHiwtr);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, 0);
     printf("%s Largest Pcache Allocation:   %d bytes\n",zTag,iHiwtr);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, 0);
-    printf("%s Largest Scratch Allocation:  %d bytes\n",zTag,iHiwtr);
   }
   return 0;
 }
