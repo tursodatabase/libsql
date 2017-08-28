@@ -1,5 +1,5 @@
-C Fix\sa\sfew\sover-length\ssource\scode\slines.\s\sNo\sfunctional\schanges.
-D 2017-08-25T19:51:51.034
+C Fix\sthe\s".dump",\s".schema",\sand\s".fullschema"\scommands\sof\sthe\scommand-line\nshell\sso\sthat\sthey\swork\seven\sif\sPRAGMA\sempty_result_callbacks\sis\senabled.\nFix\sfor\sticket\s[02f0f4c54f281].
+D 2017-08-28T11:12:57.851
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -457,7 +457,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
-F src/shell.c 8f2a8b9e4ffe4f4596b1690dd628cd355d5605257e14ddba83daf5422e0e39af
+F src/shell.c 117305aab365a0448505d8cfcc27d58b0182ea314f0201bd26c340a5717419a4
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
 F src/sqlite.h.in a8e60396a73996a12a153299943f45fe59202c89bb1a46bab203a5e1b99b2493
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 776d91284a891bec64d6f649ff17de898b6ac6f66dd3d2afccc394a012a40c7d
-R 41344988e24701db849a6d76419462a5
+P 1783c54ce9dcb4b2c4f2a66f6d3315e646b71b54a8899fc32a7bf0f935a21f7f
+R 5eea66808a45f5f0657c113630b948a8
 U drh
-Z b62f697e1468d19c3e527d2e161c50d8
+Z d811ef40d0e65caf3cded0793706c012
