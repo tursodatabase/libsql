@@ -122,7 +122,6 @@ void sqlite3StatusHighwater(int op, int X){
                                            : sqlite3MallocMutex()) );
   assert( op==SQLITE_STATUS_MALLOC_SIZE
           || op==SQLITE_STATUS_PAGECACHE_SIZE
-          || op==SQLITE_STATUS_SCRATCH_SIZE
           || op==SQLITE_STATUS_PARSER_STACK );
   if( newValue>wsdStat.mxValue[op] ){
     wsdStat.mxValue[op] = newValue;

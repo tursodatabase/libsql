@@ -431,33 +431,31 @@ lappend ::testsuitelist xxx
 # Define the permutation test suites:
 #
 
-# Run some tests using pre-allocated page and scratch blocks.
+# Run some tests using pre-allocated page blocks.
 #
 # mmap1.test is excluded because a good number of its tests depend on 
 # the page-cache being larger than the database. But this permutation
 # causes the effective limit on the page-cache to be just 24 pages.
 #
 test_suite "memsubsys1" -description {
-  Tests using pre-allocated page and scratch blocks
+  Tests using pre-allocated page blocks
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
   test_set_config_pagecache 4096 24
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 25000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
 }
 
-# Run some tests using pre-allocated page and scratch blocks. This time
+# Run some tests using pre-allocated page blocks. This time
 # the allocations are too small to use in most cases.
 #
 # Both ioerr5.test and malloc5.test are excluded because they test the
@@ -465,21 +463,19 @@ test_suite "memsubsys1" -description {
 # This functionality is disabled if a pre-allocated page block is provided.
 #
 test_suite "memsubsys2" -description {
-  Tests using small pre-allocated page and scratch blocks
+  Tests using small pre-allocated page blocks
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test
 ] -initialize {
   test_set_config_pagecache 512 5
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 1000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
 }

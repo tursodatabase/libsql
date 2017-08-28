@@ -7685,7 +7685,7 @@ static int balance_nonroot(
   /* EVIDENCE-OF: R-28375-38319 SQLite will never request a scratch buffer
   ** that is more than 6 times the database page size. */
   assert( szScratch<=6*(int)pBt->pageSize );
-  b.apCell = sqlite3ScratchMalloc( szScratch ); 
+  b.apCell = sqlite3StackAllocRaw(0, szScratch );
   if( b.apCell==0 ){
     rc = SQLITE_NOMEM_BKPT;
     goto balance_cleanup;
@@ -8263,7 +8263,7 @@ static int balance_nonroot(
   ** Cleanup before returning.
   */
 balance_cleanup:
-  sqlite3ScratchFree(b.apCell);
+  sqlite3StackFree(0, b.apCell);
   for(i=0; i<nOld; i++){
     releasePage(apOld[i]);
   }

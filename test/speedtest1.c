@@ -25,7 +25,6 @@ static const char zHelp[] =
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
-  "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --serialized        Set serialized threading mode\n"
   "  --singlethread      Set single-threaded mode - disables all mutexing\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
@@ -1649,7 +1648,6 @@ int main(int argc, char **argv){
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
   int doPCache = 0;             /* True if --pcache is seen */
-  int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
   int mmapSize = 0;             /* How big of a memory map to use */
@@ -1661,7 +1659,6 @@ int main(int argc, char **argv){
   void *pHeap = 0;              /* Allocated heap space */
   void *pLook = 0;              /* Allocated lookaside space */
   void *pPCache = 0;            /* Allocated storage for pcache */
-  void *pScratch = 0;           /* Allocated storage for scratch */
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
@@ -1741,11 +1738,6 @@ int main(int argc, char **argv){
         i += 1;
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
-      }else if( strcmp(z,"scratch")==0 ){
-        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
-        nScratch = integerValue(argv[i+1]);
-        szScratch = integerValue(argv[i+2]);
-        i += 2;
 #if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"serialized")==0 ){
         sqlite3_config(SQLITE_CONFIG_SERIALIZED);
@@ -1815,13 +1807,6 @@ int main(int argc, char **argv){
     }
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
     if( rc ) fatal_error("pcache configuration failed: %d\n", rc);
-  }
-  if( nScratch>0 && szScratch>0 ){
-    pScratch = malloc( nScratch*(sqlite3_int64)szScratch );
-    if( pScratch==0 ) fatal_error("cannot allocate %lld-byte scratch\n",
-                                 nScratch*(sqlite3_int64)szScratch);
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
-    if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
   }
   if( nLook>=0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
@@ -1939,14 +1924,10 @@ int main(int argc, char **argv){
 #endif
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHi, 0);
     printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHi);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHi, 0);
-    printf("-- Scratch Overflow Bytes:      %d (max %d)\n", iCur,iHi);
     sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Allocation:          %d bytes\n",iHi);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Pcache Allocation:   %d bytes\n",iHi);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHi, 0);
-    printf("-- Largest Scratch Allocation:  %d bytes\n", iHi);
   }
 #endif
 
@@ -1959,7 +1940,6 @@ int main(int argc, char **argv){
   /* Release memory */
   free( pLook );
   free( pPCache );
-  free( pScratch );
   free( pHeap );
   return 0;
 }

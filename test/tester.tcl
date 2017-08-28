@@ -1241,14 +1241,6 @@ proc show_memstats {} {
   set x [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0]
   set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
   output1 "Page-cache overflow:  $val"
-  set x [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0]
-  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-  output1 "Scratch memory used:  $val"
-  set x [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0]
-  set y [sqlite3_status SQLITE_STATUS_SCRATCH_SIZE 0]
-  set val [format {now %10d  max %10d  max-size %10d} \
-               [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-  output1 "Scratch overflow:     $val"
   ifcapable yytrackmaxstackdepth {
     set x [sqlite3_status SQLITE_STATUS_PARSER_STACK 0]
     set val [format {               max %10d} [lindex $x 2]]
