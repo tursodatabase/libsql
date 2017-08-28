@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\smutexes\sin\sthe\spcache1\simplementation\sin\sthe\scommon\scase\nwhere\sno\sauxiliary\spage\scache\smemory\sis\sconfigured.
-D 2017-08-28T16:11:05.724
+C Add\sthe\s--enable-update-limit\soption\sto\sthe\s./configure\sscript.
+D 2017-08-28T17:00:12.028
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 2500b432572804093c9a2516e2b16dbcec5d797ea1cd654915cfecd1d7a39ee3 x
-F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
+F configure e691ad9b505f1f47bc5d99be9e1d49b1be9037e9cb3821c9b14c63c3d413d055 x
+F configure.ac bb85c1c53e952c8c7078a2f147eba613e0128b8b6e7780d64758d8fb29bcc695
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 1f8b8d4c9f5cfe40e679fee279cc9eb2da8e6eb74ad406028538d7864cc4b6cb
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54b000246cfb5c7b8adb61a17357ef5a49adddde9e48e8937834d5ba0beb8a6b
-R 83da5bfb65f5a08c38f889ed88d6f498
+P 1ba051e34d7512ab5e8fc969c1b5aaaf827b8e6493ba4235895257aca78b500f
+R 7e1ed169d6d4a03a64afe06fcba95957
 U drh
-Z cc59cd24e10bd66953b2a2efefd623c5
+Z 13247c5e6bbeac642354740051347480

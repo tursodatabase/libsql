@@ -645,6 +645,16 @@ if test "${enable_json1}" = "yes" ; then
 fi
 
 #########
+# See whether we should enable the LIMIT clause on UPDATE and DELETE
+# statements.
+AC_ARG_ENABLE(update-limit, AC_HELP_STRING([--enable-update-limit],
+      [Enable the UPDATE/DELETE LIMIT clause]),
+      [enable_udlimit=yes],[enable_udlimit=no])
+if test "${enable_udlimit}" = "yes" ; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
+fi
+
+#########
 # See whether we should enable RTREE
 AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
       [Enable the RTREE extension]),
