@@ -1,5 +1,5 @@
-C Ensure\sthat\swrite-locks\son\spages\sare\sdropped\sat\sthe\send\sof\seach\nwrite\stransaction,\seven\sif\sthere\sis\sstill\sa\sread\stransaction\sopen.
-D 2017-08-19T15:50:45.975
+C Add\sa\sTcl\sscript\sto\srun\sthe\sperformance\stests\sdescribed\sin\nREADME-server-edition.html.
+D 2017-08-29T17:52:14.719
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -456,7 +456,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
-F src/server.c 4215bc2287c28f37e2bc79521eb8163e1340be2ca45f0fe4b2566f5faec9300c
+F src/server.c 9af69ec201823023bfa6f52b2b8262611f2e14698cb7d5e79e7791f0e7fd7139
 F src/server.h f46be129ffe407cac9b7018e6d4851b04e685d59b6837c73a1fb69e6aab52e3a
 F src/shell.c bd6a37cbe8bf64ef6a6a74fdc50f067d3148149b4ce2b4d03154663e66ded55f
 F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c175
@@ -1610,6 +1610,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
+F tool/se_perf_test.tcl e2a5081f9378f188a431c4a85c5f3f9e99719027df5a6faa405c981b267ad8fd
 F tool/showdb.c e6bc9dba233bf1b57ca0a525a2bba762db4e223de84990739db3f09c46151b1e
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1630,7 +1631,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
-F tool/tserver.c d6b4e074dc9d11edf9aac79cfd925cf1ea71f823b00344bc443e1aaea1f16d5b
+F tool/tserver.c ac67b8fe175850b780c5bd1888c2bb2f0f5e24096f040db7fc1a2af7a4908f2b
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1658,7 +1659,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P abb6e076c851c0b10f62c02d0d7e54f24d86c75f01036dddbc0a8a7dfc627a0d
-R aa6e06e084e3c3d3595864687ba9477a
+P 2dd36ade9ea948de27b217b83cbf704e071e6ea5dddb8566165a645143b0f846
+R 090737ae736ae0ec45491b46ad6ddffe
 U dan
-Z 571fa6db3e131de25960c3e8f380a0b4
+Z 196af7197d18e14a39d9e416f4edfb10

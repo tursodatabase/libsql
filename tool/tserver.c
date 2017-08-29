@@ -34,6 +34,7 @@
 **   .seconds N               Configure the number of seconds to ".run" for.
 **   .mutex_commit            Add a "COMMIT" protected by a g.commit_mutex
 **                            to the current SQL.
+**   .stop                    Stop the tserver process - exit(0).
 **
 ** Example input:
 **
@@ -69,6 +70,7 @@ struct TserverGlobal {
   char *zDatabaseName;             /* Database used by this server */
   char *zVfs;
   sqlite3_mutex *commit_mutex;
+  sqlite3 *db;                     /* Global db handle */
 
   /* The following use native pthreads instead of a portable interface. This
   ** is because a condition variable, as well as a mutex, is required.  */
@@ -297,7 +299,11 @@ static int handle_run_command(ClientCtx *p){
   }
 
   if( rc==SQLITE_OK ){
+    int nMs = (int)(get_timer() - t0);
     send_message(p, "ok (%d/%d SQLITE_BUSY)\n", nBusy, j);
+    if( p->nRepeat<=0 ){
+      send_message(p, "### ok %d busy %d ms %d\n", j-nBusy, nBusy, nMs);
+    }
   }
   clear_sql(p);
 
@@ -350,7 +356,7 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
     rc = handle_run_command(p);
   }
 
-  else if( n>=1 && n<=7 && 0==strncmp(z, "seconds", n) ){
+  else if( n>=2 && n<=7 && 0==strncmp(z, "seconds", n) ){
     if( nArg ){
       p->nSecond = strtol(zArg, 0, 0);
       if( p->nSecond>0 ) p->nRepeat = 0;
@@ -363,6 +369,11 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
     if( rc==SQLITE_OK ){
       p->aPrepare[p->nPrepare-1].bMutex = 1;
     }
+  }
+
+  else if( n>=2 && n<=4 && 0==strncmp(z, "stop", n) ){
+    sqlite3_close(g.db);
+    exit(0);
   }
 
   else{
@@ -467,6 +478,7 @@ static void *handle_client(void *pArg){
   }
 
   fprintf(stdout, "Client %d disconnects\n", ctx.fd);
+  fflush(stdout);
   close(ctx.fd);
   clear_sql(&ctx);
   sqlite3_free(ctx.aPrepare);
@@ -480,7 +492,6 @@ static void usage(const char *zExec){
 }
 
 int main(int argc, char *argv[]) {
-  sqlite3 *db;
   int sfd;
   int rc;
   int yes = 1;
@@ -505,17 +516,17 @@ int main(int argc, char *argv[]) {
   pthread_mutex_init(&g.ckpt_mutex, 0);
   pthread_cond_init(&g.ckpt_cond, 0);
 
-  rc = sqlite3_open_v2(g.zDatabaseName, &db,
+  rc = sqlite3_open_v2(g.zDatabaseName, &g.db,
       SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, g.zVfs
   );
   if( rc!=SQLITE_OK ){
-    fprintf(stderr, "sqlite3_open(): %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "sqlite3_open(): %s\n", sqlite3_errmsg(g.db));
     return 1;
   }
 
-  rc = sqlite3_exec(db, "SELECT * FROM sqlite_master", 0, 0, 0);
+  rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_master", 0, 0, 0);
   if( rc!=SQLITE_OK ){
-    fprintf(stderr, "sqlite3_exec(): %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "sqlite3_exec(): %s\n", sqlite3_errmsg(g.db));
     return 1;
   }
 
@@ -557,6 +568,7 @@ int main(int argc, char *argv[]) {
     }
 
     fprintf(stdout, "Client %d connects\n", cfd);
+    fflush(stdout);
     rc = pthread_create(&tid, NULL, handle_client, (void*)(intptr_t)cfd);
     if( rc!=0 ){
       perror("pthread_create()");

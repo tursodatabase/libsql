@@ -717,6 +717,17 @@ int sqlite3ServerEnd(Server *p){
   return SQLITE_OK;
 }
 
+#if 0
+static void dump_commit_list(ServerDb *pDb, int bRemove){
+  Server *pIter;
+  printf("commitlist(%d):", bRemove);
+  for(pIter=pDb->pCommit; pIter; pIter=pIter->pNext ){
+    printf(" %p", (void*)pIter);
+  }
+  printf("\n");
+}
+#endif
+
 int sqlite3ServerPreCommit(Server *p, ServerPage *pPg){
   ServerDb *pDb = p->pDb;
   int rc = SQLITE_OK;
@@ -775,7 +786,6 @@ int sqlite3ServerPreCommit(Server *p, ServerPage *pPg){
   assert( p->pNext==0 );
   p->pNext = pDb->pCommit;
   pDb->pCommit = p;
-
   sqlite3_mutex_leave(pDb->mutex);
   return rc;
 }
@@ -801,7 +811,7 @@ int sqlite3ServerEndWrite(Server *p){
     }
   }
   if( pDb->pServerShm==0 ){
-    ServerDb **pp;
+    Server **pp;
     /* If this connection is in the committers list, remove it. */
     for(pp=&pDb->pCommit; *pp; pp = &((*pp)->pNext)){
       if( *pp==p ){
