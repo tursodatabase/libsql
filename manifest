@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\spcache1.
-D 2017-08-30T04:44:59.152
+C Remove\sunnecessary\s"__declspec(dllexport)"\squalifiers\sfrom\sgenerated\sfile\nshell.c.
+D 2017-08-30T13:21:17.718
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -457,7 +457,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
-F src/shell.c 117305aab365a0448505d8cfcc27d58b0182ea314f0201bd26c340a5717419a4
+F src/shell.c 319082accd4b719a332f4cf92347546e310327b4b4d50c42de129787b5ed2946
 F src/shell.c.in af3fb9eabdc0a95beace2f760597d213be0988c974eca116208eb220cd24469c
 F src/sqlite.h.in f18eef5b101d5f33f98ca43decb1f025c1b629f091ad77fe2190128e93938a5a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1588,7 +1588,7 @@ F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
-F tool/mkshellc.tcl 8743a62e12ab67741f63f3e8ea00c482f8fa50ae3d3bca16b38754641777bf13
+F tool/mkshellc.tcl 950c36f45941c12140e346a907fb66198bc2770ff7a17c749201e78d34bb3b0b
 F tool/mksourceid.c 30966d568654a4fd962fb324753e49429b7379e1f72d2be489ade963121f5943
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a06263f1efd2d45eac88b8d59e8fe8e458670fa3808c795feaa7f247fc36cbe9
-R bcdeb031d82a94a75572b4604ebe0254
-U drh
-Z 5debc6036b056965ebab42f5ae8d1e01
+P ffd437da9541f8a2792e3e07c0a43f388f856fdc211fe42755eb51bfa5995d9f
+R 62e1ab098327dc96140157e6ff15fb3c
+U dan
+Z 8f2a622e90379c693a565adc570bf8df
