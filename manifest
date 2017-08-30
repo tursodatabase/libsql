@@ -1,5 +1,5 @@
-C Faster\smemory\sallocation\sfrom\slookaside\sby\snot\strying\sto\skeep\strack\sof\sthe\nnumber\sof\soutstanding\sallocations,\sand\srather\scomputing\sthat\svalue\sonly\nwhen\srequested.
-D 2017-08-29T20:21:12.167
+C Small\sperformance\soptimization\sin\spcache1.
+D 2017-08-30T04:44:59.152
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -448,7 +448,7 @@ F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
-F src/pcache1.c ad5bc71727c2e825dcbf342413e1b4b09ed8520cd83903671e8bd03bc30b4c98
+F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c a4e5028dfc8af4c5c347cd0e91bd2f0c0f81fcd9b2c6e0acf8da7da51df7f1fe
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64a8ae68381b7fbb29b659901ca7ce8d50510e4753758d5761f7e41539288cef
-R bf9afa7c8e223eb9e939beb0ed77930c
+P a06263f1efd2d45eac88b8d59e8fe8e458670fa3808c795feaa7f247fc36cbe9
+R bcdeb031d82a94a75572b4604ebe0254
 U drh
-Z 4dae0b64b90b0b3580ad9499179d8a8f
+Z 5debc6036b056965ebab42f5ae8d1e01
