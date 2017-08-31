@@ -1,5 +1,5 @@
-C Remove\sunnecessary\s"__declspec(dllexport)"\squalifiers\sfrom\sgenerated\sfile\nshell.c.
-D 2017-08-30T13:21:17.718
+C Clarify\sthe\sdocumentation\sabout\s"protected"\sversus\s"unprotected"\ssqlite3_value\nobjects.\s\sNo\schanges\sto\scode.
+D 2017-08-31T21:11:52.089
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -459,7 +459,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
 F src/shell.c 319082accd4b719a332f4cf92347546e310327b4b4d50c42de129787b5ed2946
 F src/shell.c.in af3fb9eabdc0a95beace2f760597d213be0988c974eca116208eb220cd24469c
-F src/sqlite.h.in f18eef5b101d5f33f98ca43decb1f025c1b629f091ad77fe2190128e93938a5a
+F src/sqlite.h.in 21f62793a3611b43f6fb31f0a4c8b38489a4df025416e9b7db7cc01bf5ef5aaa
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
 F src/sqliteInt.h 60295f5f909e32aef1961075a8fa98df19335a4b7792b4a0b897f1d8789681c9
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ffd437da9541f8a2792e3e07c0a43f388f856fdc211fe42755eb51bfa5995d9f
-R 62e1ab098327dc96140157e6ff15fb3c
-U dan
-Z 8f2a622e90379c693a565adc570bf8df
+P bcc20be5b290c563183e82a590cc1fdabadfb13475fd8f6b3d810365cea5d868
+R d2d3bdf1e274f5eba4292da390f3324b
+U drh
+Z c0deaaf09b7cbc0b0d0b890200390003
