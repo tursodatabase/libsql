@@ -191,12 +191,9 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
         p->eCreate = 2;
       }
     }
-    pPage->pDirtyNext = 0;
-    pPage->pDirtyPrev = 0;
   }
   if( addRemove & PCACHE_DIRTYLIST_ADD ){
-    assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
-  
+    pPage->pDirtyPrev = 0;
     pPage->pDirtyNext = p->pDirty;
     if( pPage->pDirtyNext ){
       assert( pPage->pDirtyNext->pDirtyPrev==0 );

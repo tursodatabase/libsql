@@ -1,5 +1,5 @@
-C Clarify\sthe\sdocumentation\sabout\s"protected"\sversus\s"unprotected"\ssqlite3_value\nobjects.\s\sNo\schanges\sto\scode.
-D 2017-08-31T21:11:52.089
+C Small\ssize\sand\sperformance\simprovement\sin\spcacheManageDirtyList()\sby\snot\nzeroing\sthe\sPgHdr.pDirtyNext\sand\sPgHdr.pDirtyPrev\spointers\sfor\sPgHdr\sobjects\nthat\sare\snot\son\sthe\sdirty\slist.
+D 2017-09-01T12:18:41.125
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -446,8 +446,8 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c bf51378c57c8e05d7f4d7bb9861f403a2e40cde82e25513401216d1ed30bc3e5
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
-F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
-F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
+F src/pcache.c f79181979fe7954b7bb4ef6c9689eabaa6733ed7393b25a4f77e15d11362b29d
+F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c a4e5028dfc8af4c5c347cd0e91bd2f0c0f81fcd9b2c6e0acf8da7da51df7f1fe
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcc20be5b290c563183e82a590cc1fdabadfb13475fd8f6b3d810365cea5d868
-R d2d3bdf1e274f5eba4292da390f3324b
+P 4094a3410e05597d0adc740d161e0358a3041c5a4e73bde35b1e983594c6879a
+R 5aa7325d41fae70be10866bcc032aad5
 U drh
-Z c0deaaf09b7cbc0b0d0b890200390003
+Z 3a2ed42dc8bf752f068ef19d1afbebba
