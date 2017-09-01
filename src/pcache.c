@@ -510,11 +510,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   if( (--p->nRef)==0 ){
     if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
-    }else if( p->pDirtyPrev!=0 ){ /*OPTIMIZATION-IF-FALSE*/
-      /* Move the page to the head of the dirty list. If p->pDirtyPrev==0,
-      ** then page p is already at the head of the dirty list and the
-      ** following call would be a no-op. Hence the OPTIMIZATION-IF-FALSE
-      ** tag above.  */
+    }else{
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
     }
   }
