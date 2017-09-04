@@ -1,5 +1,5 @@
-C Fix\srecent\stest\scases\sin\stest/indexepxr2.test\sso\sthat\sthey\swork\seven\swithout\nSQLITE_ENABLE_STAT4\sand\sSQLITE_ENABLE_JSON1.
-D 2017-09-04T00:19:29.067
+C Proposed\sfix\sfor\sticket\s[b899b6042f97f5]
+D 2017-09-04T00:33:04.196
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -409,7 +409,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
-F src/expr.c 4ca86dc65f5ea478c665a5b4fe79d05f00432c9bd82237a896b45bd376bf1217
+F src/expr.c 0f611840217016cf2c5e72f2eb8e412e48511bf740ae1fd5b58dc5e409c6e738
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c b4d259af627e3cd9510cf08db37f0bcc88b1887c735169c74490c3739d5cf5c6
@@ -462,7 +462,7 @@ F src/shell.c.in af3fb9eabdc0a95beace2f760597d213be0988c974eca116208eb220cd24469
 F src/sqlite.h.in 21f62793a3611b43f6fb31f0a4c8b38489a4df025416e9b7db7cc01bf5ef5aaa
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h 60295f5f909e32aef1961075a8fa98df19335a4b7792b4a0b897f1d8789681c9
+F src/sqliteInt.h f9ae3609a583aa51712083e1d5817f62c7d97c0a203036a9a62c439059e8258b
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -538,7 +538,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
-F src/where.c 0aaa1b085a018c1c2e2da367b48491ce2686aea351bd17772c46b7e04eb51e3d
+F src/where.c 101f0a645c45c12141b38a61b593232555fc001bf7786dcb03eb8f313783b404
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
 F src/wherecode.c d246d19f5453d3f154ed8fcea892ce6d70ae4a5ddaebae34bd49d73f4c913bc7
 F src/whereexpr.c fe1fe600d7334e91f3d9d487021362d543fba8ab2f1be5e0d68063d619379c05
@@ -750,7 +750,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 6807f7a7740a00361ca8d0ccd66bc60c8dc5f2b6
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test 3f9ba0b2594837c7beaa3ba824e2137cfe857308f020ec5a0c7a62b444e837b0
+F test/eqp.test 3fe051af50921284189d1970eb653f9fcf5117d2
 F test/errmsg.test eae9f091eb39ce7e20305de45d8e5d115b68fa856fba4ea6757b6ca3705ff7f9
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
 F test/exclusive.test 9a57bd66e39144b888ca75c309914fcdefb4e3f9
@@ -1530,7 +1530,7 @@ F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test 711d4df58d6d4fb9b3f5ce040b818564198be002
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
-F test/whereF.test 97a86ecdfa4c21684fdff501dbd2cb7397689be8676d0dbad1f5a0892c6b56a3
+F test/whereF.test ec178da9a65f50d1fefeb0fd1303faa01fe74d1eec5b24db89b040b7c4faa9c7
 F test/whereG.test dde4c52a97385a55be6a7cd46be8373f0cf35501
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test eab5b226bbc344ac70d7dc09b963a064860ae6d7
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2e2100cf766da1cb499aec0ca0a9969d7af5d93312ab8cf895fbf4a6ffb9b2f
-R 433d5cb6c81e4d88ac4aa41130f6c962
+P 03f3cc03aaf233ad663d32a0200bfafee24a6c81f6a0ad14094ff014f880f00f
+R 73122b1ef41dd788e5b58ec3a808a0c7
 U drh
-Z bece2044ea92becf4529a710cefa9f07
+Z eed146bdd0a46f231fdb1a0c698d494d
