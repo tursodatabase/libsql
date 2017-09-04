@@ -775,7 +775,7 @@ static int btreeMoveto(
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
     sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_BKPT;
       goto moveto_done;
     }
   }else{
@@ -5388,7 +5388,7 @@ int sqlite3BtreeMovetoUnpacked(
           *pRes = 0;
           rc = SQLITE_OK;
           pCur->ix = (u16)idx;
-          if( pIdxKey->errCode ) rc = SQLITE_CORRUPT;
+          if( pIdxKey->errCode ) rc = SQLITE_CORRUPT_BKPT;
           goto moveto_finish;
         }
         if( lwr>upr ) break;

@@ -1,5 +1,5 @@
-C Add\sthe\s'mksourceid'\sexecutable\sto\sthe\sclean\starget\sfor\sMSVC.
-D 2017-09-04T18:44:54.145
+C Use\sthe\sSQLITE_CORRUPT_BKPT\sreturn\scode\sin\sa\scouple\smore\splaces.
+D 2017-09-04T19:31:54.200
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -399,7 +399,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c f1ac9509f4595d034fe432982c39d51ac2bfc9bd83136d16255aede35c526b45
+F src/btree.c 1c2b2f1714c411d7a9bc52c90d9dd7eab261261d5691ac0f67e1ced92419799c
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c e71e96a67daf3d1dd23188423e66cd6af38017e2ec73fead5d2b57da2d3c7e16
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7f9f47b239fdd99b555fb0a31eb82b22dbe6c821f1612d67a0d6a822288d9f7
-R b36b0263a36e16d360d8708a28fbd7f3
+P 77854694b2da989aa4dbbdbd3ccf61756c46cc368de9731f5fd1c3aa38d7cad5
+R 4f0c4978d96d81c3edc4766e1765023c
 U mistachkin
-Z c44112597706424847ee8ef603a5780f
+Z 249910ae9570afe838571fb260f0586c
