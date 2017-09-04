@@ -2266,7 +2266,7 @@ clean:
 	del /Q sqlite3.c sqlite3.h 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
-	del /Q mkkeywordhash.* keywordhash.h 2>NUL
+	del /Q mksourceid.* mkkeywordhash.* keywordhash.h 2>NUL
 	del /Q notasharedlib.* 2>NUL
 	-rmdir /Q/S .deps 2>NUL
 	-rmdir /Q/S .libs 2>NUL

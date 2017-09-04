@@ -1,8 +1,8 @@
-C Proposed\sfix\sfor\sticket\s[b899b6042f97f5]
-D 2017-09-04T00:33:04.196
+C Add\sthe\s'mksourceid'\sexecutable\sto\sthe\sclean\starget\sfor\sMSVC.
+D 2017-09-04T18:44:54.145
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
+F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03f3cc03aaf233ad663d32a0200bfafee24a6c81f6a0ad14094ff014f880f00f
-R 73122b1ef41dd788e5b58ec3a808a0c7
-U drh
-Z eed146bdd0a46f231fdb1a0c698d494d
+P c7f9f47b239fdd99b555fb0a31eb82b22dbe6c821f1612d67a0d6a822288d9f7
+R b36b0263a36e16d360d8708a28fbd7f3
+U mistachkin
+Z c44112597706424847ee8ef603a5780f
