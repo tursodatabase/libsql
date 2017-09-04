@@ -1,5 +1,5 @@
-C Add\sthe\snew\ssqlite3PagerUnrefPageOne()\spager\smethod\sto\sdeal\swith\sthe\sspecial\ncase\sof\sunreferencing\spage1.
-D 2017-09-01T14:50:19.167
+C Fix\srecent\stest\scases\sin\stest/indexepxr2.test\sso\sthat\sthey\swork\seven\swithout\nSQLITE_ENABLE_STAT4\sand\sSQLITE_ENABLE_JSON1.
+D 2017-09-04T00:19:29.067
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 25b154da7f0b3d4924f27378c1f8d006285b80811f1ccf3ed953dbebf6282136
@@ -943,7 +943,7 @@ F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test 84100e880154a4b645db9f4fc7642756d9a2b6011b68f73c8efda4d244816de9
-F test/indexexpr2.test 2237f1408efa921bd66d0a09ebf0208cb0c228c1bc3b3a18e9fb8fc87d6ed90b
+F test/indexexpr2.test fdccd5c13a57af59a8e392660953dbcaacc4699c433516372cfba52994aa503a
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1651,7 +1651,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4e7e175eecfd79015f4fae99618dfce6baf97c21bf3c909ea535d4e12dcaaad
-R 6f9a52521f107a3c330b7cfcb23523cf
+P b2e2100cf766da1cb499aec0ca0a9969d7af5d93312ab8cf895fbf4a6ffb9b2f
+R 433d5cb6c81e4d88ac4aa41130f6c962
 U drh
-Z f39368718f6b0d67941da00fc11a34d5
+Z bece2044ea92becf4529a710cefa9f07
