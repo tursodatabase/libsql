@@ -1,5 +1,5 @@
-C Add\sexperimental\sAPI\ssqlite3rbu_temp_size_limit().\sFor\slimiting\sthe\samount\sof\ntemporary\sdisk\sspace\sRBU\suses.
-D 2017-09-05T16:24:38.115
+C Fix\sa\scomment\sdescribing\sthe\sxRowid\smethod\sof\sthe\s"series"\svirtual\stable.\sNo\ncode\schanges.
+D 2017-09-05T17:23:39.813
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -276,7 +276,7 @@ F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
-F ext/misc/series.c b0f5f346aca9b7ff7caaf0da2efb4ad462441abd4dcd92a460cb573b3ea2370b
+F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681da564
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1652,7 +1652,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72d22c226bf4311345e8844fd9801ebddf77aceb80a038dce46608bf4ccae636
-R 6f77c70118414e1c190062cb8a829104
+P 7fdd629830679db620d477df3c206bf84598cc935ccb51547c0d8444a186b63e
+R ba2b0e2cf633a70b38f76579945773c9
 U dan
-Z c201de8958e66e7927017757d360b434
+Z 2dd0f7547357db044b1737b583f40176
