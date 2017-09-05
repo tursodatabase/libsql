@@ -1,5 +1,5 @@
-C Use\sthe\sSQLITE_CORRUPT_BKPT\sreturn\scode\sin\sa\scouple\smore\splaces.
-D 2017-09-04T19:31:54.200
+C Add\sexperimental\sAPI\ssqlite3rbu_temp_size_limit().\sFor\slimiting\sthe\samount\sof\ntemporary\sdisk\sspace\sRBU\suses.
+D 2017-09-05T16:24:38.115
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -318,11 +318,12 @@ F ext/rbu/rbufts.test a2bbd202c9321fba15fb4a62a90add7d70e07bd8404e1e598135adbfff
 F ext/rbu/rbuprogress.test 1849d4e0e50616edf5ce75ce7db86622e656b5cf
 F ext/rbu/rburesume.test 8acb77f4a422ff55acfcfc9cc15a5cb210b1de83
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
+F ext/rbu/rbutemplimit.test cd553a9288d515d0b5f87d277e76fd18c4aa740b761e7880fab11ce986ea18d1
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c 920941a6ff7dbbea0970717c43662878fda5c37e43752de329f0fdd76680ab75
-F ext/rbu/sqlite3rbu.h 82c102e5ae41025e3b245d3d5944315f82811da85e2cd363a75caa97cbd0cd3e
-F ext/rbu/test_rbu.c ec18cfc69a104309df23c359e3c80306c9a6bdd1d2c53c8b70ae158e9832dcd6
+F ext/rbu/sqlite3rbu.c a1a303de8b90f987ef63bf9cef57f5d7dd7983a9e8aed3775a759d87ad57075d
+F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d007e79b2
+F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd7822997533a
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c cf84d52958a7ec6a506f1711e119db847ed6bb5dedde78a58e97503287afcda1
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1651,7 +1652,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77854694b2da989aa4dbbdbd3ccf61756c46cc368de9731f5fd1c3aa38d7cad5
-R 4f0c4978d96d81c3edc4766e1765023c
-U mistachkin
-Z 249910ae9570afe838571fb260f0586c
+P 72d22c226bf4311345e8844fd9801ebddf77aceb80a038dce46608bf4ccae636
+R 6f77c70118414e1c190062cb8a829104
+U dan
+Z c201de8958e66e7927017757d360b434

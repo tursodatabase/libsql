@@ -69,16 +69,18 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
     int nArg;
     const char *zUsage;
   } aCmd[] = {
-    {"step", 2, ""},              /* 0 */
-    {"close", 2, ""},             /* 1 */
-    {"create_rbu_delta", 2, ""},  /* 2 */
-    {"savestate", 2, ""},         /* 3 */
-    {"dbMain_eval", 3, "SQL"},    /* 4 */
-    {"bp_progress", 2, ""},       /* 5 */
-    {"db", 3, "RBU"},             /* 6 */
-    {"state", 2, ""},             /* 7 */
-    {"progress", 2, ""},          /* 8 */
-    {"close_no_error", 2, ""},    /* 9 */
+    {"step", 2, ""},                 /* 0 */
+    {"close", 2, ""},                /* 1 */
+    {"create_rbu_delta", 2, ""},     /* 2 */
+    {"savestate", 2, ""},            /* 3 */
+    {"dbMain_eval", 3, "SQL"},       /* 4 */
+    {"bp_progress", 2, ""},          /* 5 */
+    {"db", 3, "RBU"},                /* 6 */
+    {"state", 2, ""},                /* 7 */
+    {"progress", 2, ""},             /* 8 */
+    {"close_no_error", 2, ""},       /* 9 */
+    {"temp_size_limit", 3, "LIMIT"}, /* 10 */
+    {"temp_size", 2, ""},            /* 11 */
     {0,0,0}
   };
   int iCmd;
@@ -191,6 +193,22 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
     case 8: /* progress */ {
       sqlite3_int64 nStep =  sqlite3rbu_progress(pRbu);
       Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nStep));
+      break;
+    }
+                           
+    case 10: /* temp_size_limit */ {
+      sqlite3_int64 nLimit;
+      if( Tcl_GetWideIntFromObj(interp, objv[2], &nLimit) ){
+        ret = TCL_ERROR;
+      }else{
+        nLimit = sqlite3rbu_temp_size_limit(pRbu, nLimit);
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nLimit));
+      }
+      break;
+    }
+    case 11: /* temp_size */ {
+      sqlite3_int64 sz = sqlite3rbu_temp_size(pRbu);
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sz));
       break;
     }
 

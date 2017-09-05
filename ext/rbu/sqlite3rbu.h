@@ -353,6 +353,28 @@ SQLITE_API sqlite3rbu *sqlite3rbu_vacuum(
 );
 
 /*
+** Configure a limit for the amount of temp space that may be used by
+** the RBU handle passed as the first argument. The new limit is specified
+** in bytes by the second parameter. If it is positive, the limit is updated.
+** If the second parameter to this function is passed zero, then the limit
+** is removed entirely. If the second parameter is negative, the limit is
+** not modified (this is useful for querying the current limit).
+**
+** In all cases the returned value is the current limit in bytes (zero 
+** indicates unlimited).
+**
+** If the temp space limit is exceeded during operation, an SQLITE_FULL
+** error is returned.
+*/
+SQLITE_API sqlite3_int64 sqlite3rbu_temp_size_limit(sqlite3rbu*, sqlite3_int64);
+
+/*
+** Return the current amount of temp file space, in bytes, currently used by 
+** the RBU handle passed as the only argument.
+*/
+SQLITE_API sqlite3_int64 sqlite3rbu_temp_size(sqlite3rbu*);
+
+/*
 ** Internally, each RBU connection uses a separate SQLite database 
 ** connection to access the target and rbu update databases. This
 ** API allows the application direct access to these database handles.
