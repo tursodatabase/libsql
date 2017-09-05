@@ -1583,6 +1583,7 @@ void sqlite3Pragma(
           sqlite3VdbeJumpHere(v, jmp2);
         }
         /* Verify CHECK constraints */
+        sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
           ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
           if( db->mallocFailed==0 ){
