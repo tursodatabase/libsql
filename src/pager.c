@@ -1315,6 +1315,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, u32 nMaster){
    || szJ<16
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-16, &len))
    || len>=nMaster 
+   || len>szJ-16
    || len==0 
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-12, &cksum))
    || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, aMagic, 8, szJ-8))
