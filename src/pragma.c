@@ -1549,12 +1549,6 @@ void sqlite3Pragma(
         int r1 = -1;
 
         if( pTab->tnum<1 ) continue;  /* Skip VIEWs or VIRTUAL TABLEs */
-        if( pTab->pCheck==0
-         && (pTab->tabFlags & TF_HasNotNull)==0
-         && (pTab->pIndex==0 || isQuick)
-        ){
-          continue;  /* No additional checks needed for this table */
-        }
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
         sqlite3ExprCacheClear(pParse);
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
@@ -1583,7 +1577,6 @@ void sqlite3Pragma(
           sqlite3VdbeJumpHere(v, jmp2);
         }
         /* Verify CHECK constraints */
-        sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
           ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
           if( db->mallocFailed==0 ){
@@ -1609,51 +1602,56 @@ void sqlite3Pragma(
           }
           sqlite3ExprListDelete(db, pCheck);
         }
-        /* Validate index entries for the current row */
-        for(j=0, pIdx=pTab->pIndex; pIdx && !isQuick; pIdx=pIdx->pNext, j++){
-          int jmp2, jmp3, jmp4, jmp5;
-          int ckUniq = sqlite3VdbeMakeLabel(v);
-          if( pPk==pIdx ) continue;
-          r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3,
-                                       pPrior, r1);
-          pPrior = pIdx;
-          sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);  /* increment entry count */
-          /* Verify that an index entry exists for the current table row */
-          jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
-                                      pIdx->nColumn); VdbeCoverage(v);
-          sqlite3VdbeLoadString(v, 3, "row ");
-          sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
-          sqlite3VdbeLoadString(v, 4, " missing from index ");
-          sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-          jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
-          sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-          jmp4 = integrityCheckResultRow(v, 3);
-          sqlite3VdbeJumpHere(v, jmp2);
-          /* For UNIQUE indexes, verify that only one entry exists with the
-          ** current key.  The entry is unique if (1) any column is NULL
-          ** or (2) the next entry has a different key */
-          if( IsUniqueIndex(pIdx) ){
-            int uniqOk = sqlite3VdbeMakeLabel(v);
-            int jmp6;
-            int kk;
-            for(kk=0; kk<pIdx->nKeyCol; kk++){
-              int iCol = pIdx->aiColumn[kk];
-              assert( iCol!=XN_ROWID && iCol<pTab->nCol );
-              if( iCol>=0 && pTab->aCol[iCol].notNull ) continue;
-              sqlite3VdbeAddOp2(v, OP_IsNull, r1+kk, uniqOk);
-              VdbeCoverage(v);
+        if( !isQuick ){ /* Omit the remaining tests for quick_check */
+          /* Sanity check on record header decoding */
+          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
+          sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+          /* Validate index entries for the current row */
+          for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
+            int jmp2, jmp3, jmp4, jmp5;
+            int ckUniq = sqlite3VdbeMakeLabel(v);
+            if( pPk==pIdx ) continue;
+            r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3,
+                                         pPrior, r1);
+            pPrior = pIdx;
+            sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);/* increment entry count */
+            /* Verify that an index entry exists for the current table row */
+            jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
+                                        pIdx->nColumn); VdbeCoverage(v);
+            sqlite3VdbeLoadString(v, 3, "row ");
+            sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
+            sqlite3VdbeLoadString(v, 4, " missing from index ");
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+            jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+            jmp4 = integrityCheckResultRow(v, 3);
+            sqlite3VdbeJumpHere(v, jmp2);
+            /* For UNIQUE indexes, verify that only one entry exists with the
+            ** current key.  The entry is unique if (1) any column is NULL
+            ** or (2) the next entry has a different key */
+            if( IsUniqueIndex(pIdx) ){
+              int uniqOk = sqlite3VdbeMakeLabel(v);
+              int jmp6;
+              int kk;
+              for(kk=0; kk<pIdx->nKeyCol; kk++){
+                int iCol = pIdx->aiColumn[kk];
+                assert( iCol!=XN_ROWID && iCol<pTab->nCol );
+                if( iCol>=0 && pTab->aCol[iCol].notNull ) continue;
+                sqlite3VdbeAddOp2(v, OP_IsNull, r1+kk, uniqOk);
+                VdbeCoverage(v);
+              }
+              jmp6 = sqlite3VdbeAddOp1(v, OP_Next, iIdxCur+j); VdbeCoverage(v);
+              sqlite3VdbeGoto(v, uniqOk);
+              sqlite3VdbeJumpHere(v, jmp6);
+              sqlite3VdbeAddOp4Int(v, OP_IdxGT, iIdxCur+j, uniqOk, r1,
+                                   pIdx->nKeyCol); VdbeCoverage(v);
+              sqlite3VdbeLoadString(v, 3, "non-unique entry in index ");
+              sqlite3VdbeGoto(v, jmp5);
+              sqlite3VdbeResolveLabel(v, uniqOk);
             }
-            jmp6 = sqlite3VdbeAddOp1(v, OP_Next, iIdxCur+j); VdbeCoverage(v);
-            sqlite3VdbeGoto(v, uniqOk);
-            sqlite3VdbeJumpHere(v, jmp6);
-            sqlite3VdbeAddOp4Int(v, OP_IdxGT, iIdxCur+j, uniqOk, r1,
-                                 pIdx->nKeyCol); VdbeCoverage(v);
-            sqlite3VdbeLoadString(v, 3, "non-unique entry in index ");
-            sqlite3VdbeGoto(v, jmp5);
-            sqlite3VdbeResolveLabel(v, uniqOk);
+            sqlite3VdbeJumpHere(v, jmp4);
+            sqlite3ResolvePartIdxLabel(pParse, jmp3);
           }
-          sqlite3VdbeJumpHere(v, jmp4);
-          sqlite3ResolvePartIdxLabel(pParse, jmp3);
         }
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);

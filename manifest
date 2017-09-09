@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2017-09-09T00:51:36.496
+C Improved\sdetection\sof\smalformed\srecords\sby\sPRAGMA\sintegrity_check.
+D 2017-09-09T20:38:49.243
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -450,7 +450,7 @@ F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 4bada070456980c3c1f16d58ec2e64e389ad77b935e3d77e0c96e7bbd397289c
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c faf5f9ec553b71035c63e08d31651bbd28bec826d546b32c8e9c295855ca3605
+F src/pragma.c 036a79afc71443ecfa15234e65dd7d519cc33cd2d1ec25f4e1d6657f19ac5d1a
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
 F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
@@ -1652,7 +1652,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1e3ca7ea43a68b9b57dc38d8855f63b63a53feb8128b666a1becf87a2c70341
-R 14621bd82abfa0f650a4c6242c2108d7
-U mistachkin
-Z 11f83c8a0999c8fee516d7917728daf2
+P faa22e29a5a05a16d46a428d838acedfa7d6fad6239495d59a6a1f4764e1b1b6
+R c0b0efe9ffccc3828c7a4126e046d589
+T *branch * improved-integrity-check
+T *sym-improved-integrity-check *
+T -sym-trunk *
+U drh
+Z 18fb8b540ef1d907c45078ed2e61ad8c
