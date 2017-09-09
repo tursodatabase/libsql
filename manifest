@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2017-09-09T00:51:36.496
+C Use\sa\smutex-free\sPRNG\sfor\sthe\srandom()\sand\srandomblob()\sSQL\sfunctions\sand\sfor\nthe\srandomness\sused\sduring\scheckpoint\soperations.
+D 2017-09-09T08:03:28.579
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -413,7 +413,7 @@ F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
 F src/expr.c 0f611840217016cf2c5e72f2eb8e412e48511bf740ae1fd5b58dc5e409c6e738
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
-F src/func.c b4d259af627e3cd9510cf08db37f0bcc88b1887c735169c74490c3739d5cf5c6
+F src/func.c 8c46246dcb5779e77bf2ef192fa1355460aeec1d3d0b2537608d319bcd7d8778
 F src/global.c ac3094f1dc59fbeb919aef7cc0cc827a8459d1fb1adb7972ef75bd9e0c10b75b
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -422,7 +422,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d2d1bf12d2b5382450620d7cede84c7ffe57e6a89fa9a908f1aba68df2731cd9
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 20865b183bb8a3723d59cf1efffc3c50217eb452c1021d077b908c94da26b0b2
-F src/main.c 34a58563358fe40979186124d1a3614b9a00c833124d7ebfa8e5d604ed1d2521
+F src/main.c cd03aeca7a9d5f221010d0212b3abdd558e37a317947f8e78dd9162a5d904223
 F src/malloc.c a02c9e69bc76bee0f639416b947a946412890b606301454727feadcb313536d6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -454,16 +454,16 @@ F src/pragma.c faf5f9ec553b71035c63e08d31651bbd28bec826d546b32c8e9c295855ca3605
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
 F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
-F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
+F src/random.c f27af4099afaea7284ade5c206224dcfdb2334cfd119d018b470d46356b3f27d
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
+F src/select.c 5bda89e7cda69ef9cdd25c98ee6403ed2a3753d5ab135e24fc7a20344fd68d0a
 F src/shell.c c1206a23d9239f8f51751d3be9b8c3b02fa4103546bea1add7f864d84a8276ab
 F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220ee
 F src/sqlite.h.in 21f62793a3611b43f6fb31f0a4c8b38489a4df025416e9b7db7cc01bf5ef5aaa
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h f9ae3609a583aa51712083e1d5817f62c7d97c0a203036a9a62c439059e8258b
+F src/sqliteInt.h 63e64c24f19910f52d2910f000b070a027fad42d134055970c98c18a76584fce
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -536,7 +536,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
+F src/wal.c 2a205ec9c9be4e4b2933d32481c4654b4c6b644d8a6c755a5f8c7a10ade64616
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c 101f0a645c45c12141b38a61b593232555fc001bf7786dcb03eb8f313783b404
@@ -1652,7 +1652,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1e3ca7ea43a68b9b57dc38d8855f63b63a53feb8128b666a1becf87a2c70341
-R 14621bd82abfa0f650a4c6242c2108d7
-U mistachkin
-Z 11f83c8a0999c8fee516d7917728daf2
+P faa22e29a5a05a16d46a428d838acedfa7d6fad6239495d59a6a1f4764e1b1b6
+R a52f584275f92dc78c3958a57a4f1fc7
+T *branch * mutex-free-randomness
+T *sym-mutex-free-randomness *
+T -sym-trunk *
+U drh
+Z fc9d4eaa55f9d67c6518af204f0991ab
