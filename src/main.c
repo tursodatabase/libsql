@@ -439,14 +439,8 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
       break;
     }
-    case SQLITE_CONFIG_SCRATCH: {
-      /* EVIDENCE-OF: R-08404-60887 There are three arguments to
-      ** SQLITE_CONFIG_SCRATCH: A pointer an 8-byte aligned memory buffer from
-      ** which the scratch allocations will be drawn, the size of each scratch
-      ** allocation (sz), and the maximum number of scratch allocations (N). */
-      sqlite3GlobalConfig.pScratch = va_arg(ap, void*);
-      sqlite3GlobalConfig.szScratch = va_arg(ap, int);
-      sqlite3GlobalConfig.nScratch = va_arg(ap, int);
+    case SQLITE_CONFIG_SMALL_MALLOC: {
+      sqlite3GlobalConfig.bSmallMalloc = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
@@ -667,7 +661,8 @@ int sqlite3_config(int op, ...){
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
-  if( db->lookaside.nOut ){
+  
+  if( sqlite3LookasideUsed(db,0)>0 ){
     return SQLITE_BUSY;
   }
   /* Free any existing lookaside buffer for this handle before
@@ -695,16 +690,18 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     pStart = pBuf;
   }
   db->lookaside.pStart = pStart;
+  db->lookaside.pInit = 0;
   db->lookaside.pFree = 0;
   db->lookaside.sz = (u16)sz;
   if( pStart ){
     int i;
     LookasideSlot *p;
     assert( sz > (int)sizeof(LookasideSlot*) );
+    db->lookaside.nSlot = cnt;
     p = (LookasideSlot*)pStart;
     for(i=cnt-1; i>=0; i--){
-      p->pNext = db->lookaside.pFree;
-      db->lookaside.pFree = p;
+      p->pNext = db->lookaside.pInit;
+      db->lookaside.pInit = p;
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
     db->lookaside.pEnd = p;
@@ -715,6 +712,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.pEnd = db;
     db->lookaside.bDisable = 1;
     db->lookaside.bMalloced = 0;
+    db->lookaside.nSlot = 0;
   }
 #endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
@@ -827,7 +825,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         if( aFlagOp[i].op==op ){
           int onoff = va_arg(ap, int);
           int *pRes = va_arg(ap, int*);
-          int oldFlags = db->flags;
+          u32 oldFlags = db->flags;
           if( onoff>0 ){
             db->flags |= aFlagOp[i].mask;
           }else if( onoff==0 ){
@@ -1234,7 +1232,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
-  assert( db->lookaside.nOut==0 );  /* Fails on a lookaside memory leak */
+  assert( sqlite3LookasideUsed(db,0)==0 );
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
@@ -1266,7 +1264,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   ** the database rollback and schema reset, which can cause false
   ** corruption reports in some cases.  */
   sqlite3BtreeEnterAll(db);
-  schemaChange = (db->flags & SQLITE_InternChanges)!=0 && db->init.busy==0;
+  schemaChange = (db->mDbFlags & DBFLAG_SchemaChange)!=0 && db->init.busy==0;
 
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
@@ -1280,7 +1278,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   sqlite3VtabRollback(db);
   sqlite3EndBenignMalloc();
 
-  if( (db->flags&SQLITE_InternChanges)!=0 && db->init.busy==0 ){
+  if( (db->mDbFlags&DBFLAG_SchemaChange)!=0 && db->init.busy==0 ){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }
@@ -2182,7 +2180,8 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 ** checkpointed. If an error is encountered it is returned immediately -
 ** no attempt is made to checkpoint any remaining databases.
 **
-** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL, RESTART
+** or TRUNCATE.
 */
 int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;             /* Return code */
@@ -3929,22 +3928,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif 
-
-    /* sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
-    **
-    ** Pass pFree into sqlite3ScratchFree(). 
-    ** If sz>0 then allocate a scratch buffer into pNew.  
-    */
-    case SQLITE_TESTCTRL_SCRATCHMALLOC: {
-      void *pFree, **ppNew;
-      int sz;
-      sz = va_arg(ap, int);
-      ppNew = va_arg(ap, void**);
-      pFree = va_arg(ap, void*);
-      if( sz ) *ppNew = sqlite3ScratchMalloc(sz);
-      sqlite3ScratchFree(pFree);
-      break;
-    }
 
     /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
     **

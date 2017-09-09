@@ -25,8 +25,9 @@ puts $out {/* DO NOT EDIT!
 ** by "src/shell.c.in", then rerun the tool/mkshellc.tcl script.
 */}
 set in [open $topdir/src/shell.c.in rb]
-while {![eof $in]} {
+while {1} {
   set lx [gets $in]
+  if {[eof $in]} break;
   if {[regexp {^INCLUDE } $lx]} {
     set cfile [lindex $lx 1]
     puts $out "/************************* Begin $cfile ******************/"
@@ -34,6 +35,7 @@ while {![eof $in]} {
     while {![eof $in2]} {
       set lx [gets $in2]
       if {[regexp {^#include "sqlite} $lx]} continue
+      set lx [string map [list __declspec(dllexport) {}] $lx]
       puts $out $lx
     }
     close $in2

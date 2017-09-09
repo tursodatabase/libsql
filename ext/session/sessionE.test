@@ -42,7 +42,6 @@ do_execsql_test 1.0 {
 do_test 1.1 {
   sqlite3session S db main
   S attach *
-  breakpoint
   execsql {
     INSERT INTO t1 VALUES(1, 2);
     INSERT INTO t2 VALUES(1, 2);
@@ -62,7 +61,6 @@ do_test 2.1 {
   sqlite3session S db main
   S attach t1
   S attach t2
-  breakpoint
   execsql {
     INSERT INTO t1 VALUES(3, 4);
     INSERT INTO t2 VALUES(3, 4);

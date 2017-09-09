@@ -1234,13 +1234,11 @@ void sqlite3Pragma(
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
         sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
       }
     }
     for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
       p = (FuncDef*)sqliteHashData(j);
       sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 0);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
     }
   }
   break;
@@ -1252,7 +1250,6 @@ void sqlite3Pragma(
     for(j=sqliteHashFirst(&db->aModule); j; j=sqliteHashNext(j)){
       Module *pMod = (Module*)sqliteHashData(j);
       sqlite3VdbeMultiLoad(v, 1, "s", pMod->zName);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
     }
   }
   break;
@@ -1262,7 +1259,6 @@ void sqlite3Pragma(
     int i;
     for(i=0; i<ArraySize(aPragmaName); i++){
       sqlite3VdbeMultiLoad(v, 1, "s", aPragmaName[i].zName);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
     }
   }
   break;
@@ -1587,6 +1583,7 @@ void sqlite3Pragma(
           sqlite3VdbeJumpHere(v, jmp2);
         }
         /* Verify CHECK constraints */
+        sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
           ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
           if( db->mallocFailed==0 ){
@@ -1594,7 +1591,7 @@ void sqlite3Pragma(
             int addrCkOk = sqlite3VdbeMakeLabel(v);
             char *zErr;
             int k;
-            pParse->iSelfTab = iDataCur;
+            pParse->iSelfTab = iDataCur + 1;
             sqlite3ExprCachePush(pParse);
             for(k=pCheck->nExpr-1; k>0; k--){
               sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
@@ -1602,6 +1599,7 @@ void sqlite3Pragma(
             sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
                 SQLITE_JUMPIFNULL);
             sqlite3VdbeResolveLabel(v, addrCkFault);
+            pParse->iSelfTab = 0;
             zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
                 pTab->zName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
@@ -2371,10 +2369,14 @@ static int pragmaVtabFilter(
   pragmaVtabCursorClear(pCsr);
   j = (pTab->pName->mPragFlg & PragFlg_Result1)!=0 ? 0 : 1;
   for(i=0; i<argc; i++, j++){
+    const char *zText = (const char*)sqlite3_value_text(argv[i]);
     assert( j<ArraySize(pCsr->azArg) );
-    pCsr->azArg[j] = sqlite3_mprintf("%s", sqlite3_value_text(argv[i]));
-    if( pCsr->azArg[j]==0 ){
-      return SQLITE_NOMEM;
+    assert( pCsr->azArg[j]==0 );
+    if( zText ){
+      pCsr->azArg[j] = sqlite3_mprintf("%s", zText);
+      if( pCsr->azArg[j]==0 ){
+        return SQLITE_NOMEM;
+      }
     }
   }
   sqlite3StrAccumInit(&acc, 0, 0, 0, pTab->db->aLimit[SQLITE_LIMIT_SQL_LENGTH]);

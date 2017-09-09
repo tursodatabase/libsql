@@ -741,26 +741,12 @@ static int display_stats(
           "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n",
           iCur, iHiwtr);
   iHiwtr = iCur = -1;
-  sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
-  fprintf(out,
-      "Number of Scratch Allocations Used:  %d (max %d)\n",
-      iCur, iHiwtr);
-  iHiwtr = iCur = -1;
-  sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
-  fprintf(out,
-          "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n",
-          iCur, iHiwtr);
-  iHiwtr = iCur = -1;
   sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
   fprintf(out, "Largest Allocation:                  %d bytes\n",
           iHiwtr);
   iHiwtr = iCur = -1;
   sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
   fprintf(out, "Largest Pcache Allocation:           %d bytes\n",
-          iHiwtr);
-  iHiwtr = iCur = -1;
-  sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
-  fprintf(out, "Largest Scratch Allocation:          %d bytes\n",
           iHiwtr);
 
   iHiwtr = iCur = -1;

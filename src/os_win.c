@@ -3568,6 +3568,14 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       if( newLimit>sqlite3GlobalConfig.mxMmap ){
         newLimit = sqlite3GlobalConfig.mxMmap;
       }
+
+      /* The value of newLimit may be eventually cast to (SIZE_T) and passed
+      ** to MapViewOfFile(). Restrict its value to 2GB if (SIZE_T) is not at
+      ** least a 64-bit type. */
+      if( newLimit>0 && sizeof(SIZE_T)<8 ){
+        newLimit = (newLimit & 0x7FFFFFFF);
+      }
+
       *(i64*)pArg = pFile->mmapSizeMax;
       if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;

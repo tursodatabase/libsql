@@ -241,7 +241,7 @@ static int SQLITE_TCLAPI test_blob_read(
   if( nByte>0 ){
     zBuf = (unsigned char *)Tcl_AttemptAlloc(nByte);
     if( zBuf==0 ){
-      Tcl_AppendResult(interp, "out of memory", 0);
+      Tcl_AppendResult(interp, "out of memory in " __FILE__, 0);
       return TCL_ERROR;
     }
   }

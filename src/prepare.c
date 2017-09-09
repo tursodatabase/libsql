@@ -88,7 +88,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = saved_iDb;
-    assert( saved_iDb==0 || (db->flags & SQLITE_Vacuum)!=0 );
+    assert( saved_iDb==0 || (db->mDbFlags & DBFLAG_Vacuum)!=0 );
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -153,6 +153,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
 
+  db->init.busy = 1;
+
   /* Construct the in-memory representation schema tables (sqlite_master or
   ** sqlite_temp_master) by invoking the parser directly.  The appropriate
   ** table name will be inserted automatically by the parser so we can just
@@ -161,7 +163,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   azArg[0] = zMasterName = SCHEMA_TABLE(iDb);
   azArg[1] = "1";
   azArg[2] = "CREATE TABLE x(type text,name text,tbl_name text,"
-                            "rootpage integer,sql text)";
+                            "rootpage int,sql text)";
   azArg[3] = 0;
   initData.db = db;
   initData.iDb = iDb;
@@ -177,10 +179,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   pDb = &db->aDb[iDb];
   if( pDb->pBt==0 ){
-    if( !OMIT_TEMPDB && ALWAYS(iDb==1) ){
-      DbSetProperty(db, 1, DB_SchemaLoaded);
-    }
-    return SQLITE_OK;
+    assert( iDb==1 );
+    DbSetProperty(db, 1, DB_SchemaLoaded);
+    rc = SQLITE_OK;
+    goto error_out;
   }
 
   /* If there is not already a read-only (or read-write) transaction opened
@@ -339,9 +341,13 @@ initone_error_out:
   sqlite3BtreeLeave(pDb->pBt);
 
 error_out:
-  if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-    sqlite3OomFault(db);
+  if( rc ){
+    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+      sqlite3OomFault(db);
+    }
+    sqlite3ResetOneSchema(db, iDb);
   }
+  db->init.busy = 0;
   return rc;
 }
 
@@ -357,42 +363,29 @@ error_out:
 */
 int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int i, rc;
-  int commit_internal = !(db->flags&SQLITE_InternChanges);
+  int commit_internal = !(db->mDbFlags&DBFLAG_SchemaChange);
   
   assert( sqlite3_mutex_held(db->mutex) );
   assert( sqlite3BtreeHoldsMutex(db->aDb[0].pBt) );
   assert( db->init.busy==0 );
-  rc = SQLITE_OK;
-  db->init.busy = 1;
   ENC(db) = SCHEMA_ENC(db);
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-    if( DbHasProperty(db, i, DB_SchemaLoaded) || i==1 ) continue;
-    rc = sqlite3InitOne(db, i, pzErrMsg);
-    if( rc ){
-      sqlite3ResetOneSchema(db, i);
+  assert( db->nDb>0 );
+  /* Do the main schema first */
+  if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
+    rc = sqlite3InitOne(db, 0, pzErrMsg);
+    if( rc ) return rc;
+  }
+  /* All other schemas after the main schema. The "temp" schema must be last */
+  for(i=db->nDb-1; i>0; i--){
+    if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
+      rc = sqlite3InitOne(db, i, pzErrMsg);
+      if( rc ) return rc;
     }
   }
-
-  /* Once all the other databases have been initialized, load the schema
-  ** for the TEMP database. This is loaded last, as the TEMP database
-  ** schema may contain references to objects in other databases.
-  */
-#ifndef SQLITE_OMIT_TEMPDB
-  assert( db->nDb>1 );
-  if( rc==SQLITE_OK && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
-    rc = sqlite3InitOne(db, 1, pzErrMsg);
-    if( rc ){
-      sqlite3ResetOneSchema(db, 1);
-    }
-  }
-#endif
-
-  db->init.busy = 0;
-  if( rc==SQLITE_OK && commit_internal ){
+  if( commit_internal ){
     sqlite3CommitInternalChanges(db);
   }
-
-  return rc; 
+  return SQLITE_OK;
 }
 
 /*
@@ -497,16 +490,14 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 ** Free all memory allocations in the pParse object
 */
 void sqlite3ParserReset(Parse *pParse){
-  if( pParse ){
-    sqlite3 *db = pParse->db;
-    sqlite3DbFree(db, pParse->aLabel);
-    sqlite3ExprListDelete(db, pParse->pConstExpr);
-    if( db ){
-      assert( db->lookaside.bDisable >= pParse->disableLookaside );
-      db->lookaside.bDisable -= pParse->disableLookaside;
-    }
-    pParse->disableLookaside = 0;
+  sqlite3 *db = pParse->db;
+  sqlite3DbFree(db, pParse->aLabel);
+  sqlite3ExprListDelete(db, pParse->pConstExpr);
+  if( db ){
+    assert( db->lookaside.bDisable >= pParse->disableLookaside );
+    db->lookaside.bDisable -= pParse->disableLookaside;
   }
+  pParse->disableLookaside = 0;
 }
 
 /*
@@ -692,6 +683,7 @@ static int sqlite3LockAndPrepare(
   sqlite3BtreeEnterAll(db);
   rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
   if( rc==SQLITE_SCHEMA ){
+    sqlite3ResetOneSchema(db, -1);
     sqlite3_finalize(*ppStmt);
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
   }

@@ -33,7 +33,6 @@ test_set_config_pagecache 0 0
 
 catch {db close}
 sqlite3_shutdown
-sqlite3_config_scratch 0 0
 sqlite3_initialize
 autoinstall_test_functions
 sqlite3 db test.db

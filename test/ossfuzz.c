@@ -71,6 +71,28 @@ static int progress_handler(void *pClientData) {
 #endif
 
 /*
+** Disallow debugging pragmas such as "PRAGMA vdbe_debug" and
+** "PRAGMA parser_trace" since they can dramatically increase the
+** amount of output without actually testing anything useful.
+*/
+static int block_debug_pragmas(
+  void *Notused,
+  int eCode,
+  const char *zArg1,
+  const char *zArg2,
+  const char *zArg3,
+  const char *zArg4
+){
+  if( eCode==SQLITE_PRAGMA
+   && (sqlite3_strnicmp("vdbe_", zArg1, 5)==0
+        || sqlite3_stricmp("parser_trace", zArg1)==0)
+  ){
+    return SQLITE_DENY;
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Callback for sqlite3_exec().
 */
 static int exec_handler(void *pCnt, int argc, char **argv, char **namev){
@@ -127,6 +149,9 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Bit 1 of the selector enables foreign key constraints */
   sqlite3_db_config(cx.db, SQLITE_DBCONFIG_ENABLE_FKEY, uSelector&1, &rc);
   uSelector >>= 1;
+
+  /* Do not allow debugging pragma statements that might cause excess output */
+  sqlite3_set_authorizer(cx.db, block_debug_pragmas, 0);
 
   /* Remaining bits of the selector determine a limit on the number of
   ** output rows */

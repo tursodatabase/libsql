@@ -147,6 +147,8 @@ size sqlite3.o | tee -a summary-$NAME.txt
 wc sqlite3.c
 if test $doCachegrind -eq 1; then
   cg_anno.tcl cachegrind.out.* >cout-$NAME.txt
+  echo '*****************************************************' >>cout-$NAME.txt
+  sed 's/^[0-9=-]\{9\}/==00000==/' summary-$NAME.txt >>cout-$NAME.txt
 fi
 if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt

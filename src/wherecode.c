@@ -794,7 +794,7 @@ static int codeCursorHintIsOrFunction(Walker *pWalker, Expr *pExpr){
     pWalker->eCode = 1;
   }else if( pExpr->op==TK_FUNCTION ){
     int d1;
-    char d2[3];
+    char d2[4];
     if( 0==sqlite3IsLikeFunction(pWalker->pParse->db, pExpr, &d1, d2) ){
       pWalker->eCode = 1;
     }
@@ -1070,9 +1070,9 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
 }
 
 /*
-** For an indexes on expression X, locate every instance of expression X in pExpr
-** and change that subexpression into a reference to the appropriate column of
-** the index.
+** For an indexes on expression X, locate every instance of expression X
+** in pExpr and change that subexpression into a reference to the appropriate
+** column of the index.
 */
 static void whereIndexExprTrans(
   Index *pIdx,      /* The Index */

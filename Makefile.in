@@ -438,6 +438,7 @@ TESTSRC += \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
+  $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c
 
 # Source code to the library files needed by the test fixture
@@ -705,6 +706,11 @@ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
+# Rules to build the program that generates the source-id
+#
+mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
+	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
+
 # Rules to build individual *.o files from generated *.c files. This
 # applies to:
 #
@@ -970,7 +976,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/tool/addopcodes.tcl
 	mv parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)/tool/addopcodes.tcl parse.h.temp >parse.h
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c

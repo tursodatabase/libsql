@@ -110,7 +110,6 @@ do_catchsql_test 5.1 {
   CREATE VIRTUAL TABLE xx USING fts5(x, tokenize="porter 'ascii");
 } {1 {parse error in tokenize directive}} 
 
-breakpoint
 do_catchsql_test 5.2 {
   CREATE VIRTUAL TABLE xx USING fts5(x, [y[]);
 } {0 {}}

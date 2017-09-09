@@ -340,14 +340,6 @@ struct RtreeGeomCallback {
   void *pContext;
 };
 
-
-/*
-** Value for the first field of every RtreeMatchArg object. The MATCH
-** operator tests that the first field of a blob operand matches this
-** value to avoid operating on invalid blobs (which could cause a segfault).
-*/
-#define RTREE_GEOMETRY_MAGIC 0x891245AB
-
 /*
 ** An instance of this structure (in the form of a BLOB) is returned by
 ** the SQL functions that sqlite3_rtree_geometry_callback() and
@@ -355,7 +347,7 @@ struct RtreeGeomCallback {
 ** operand to the MATCH operator of an R-Tree.
 */
 struct RtreeMatchArg {
-  u32 magic;                  /* Always RTREE_GEOMETRY_MAGIC */
+  u32 iSize;                  /* Size of this object */
   RtreeGeomCallback cb;       /* Info about the callback functions */
   int nParam;                 /* Number of parameters to the SQL function */
   sqlite3_value **apSqlParam; /* Original SQL parameter values */
@@ -1650,33 +1642,17 @@ static int findLeafNode(
 ** operator.
 */
 static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
-  RtreeMatchArg *pBlob;              /* BLOB returned by geometry function */
+  RtreeMatchArg *pBlob, *pSrc;       /* BLOB returned by geometry function */
   sqlite3_rtree_query_info *pInfo;   /* Callback information */
-  int nBlob;                         /* Size of the geometry function blob */
-  int nExpected;                     /* Expected size of the BLOB */
 
-  /* Check that value is actually a blob. */
-  if( sqlite3_value_type(pValue)!=SQLITE_BLOB ) return SQLITE_ERROR;
-
-  /* Check that the blob is roughly the right size. */
-  nBlob = sqlite3_value_bytes(pValue);
-  if( nBlob<(int)sizeof(RtreeMatchArg) ){
-    return SQLITE_ERROR;
-  }
-
-  pInfo = (sqlite3_rtree_query_info*)sqlite3_malloc( sizeof(*pInfo)+nBlob );
+  pSrc = sqlite3_value_pointer(pValue, "RtreeMatchArg");
+  if( pSrc==0 ) return SQLITE_ERROR;
+  pInfo = (sqlite3_rtree_query_info*)
+                sqlite3_malloc64( sizeof(*pInfo)+pSrc->iSize );
   if( !pInfo ) return SQLITE_NOMEM;
   memset(pInfo, 0, sizeof(*pInfo));
   pBlob = (RtreeMatchArg*)&pInfo[1];
-
-  memcpy(pBlob, sqlite3_value_blob(pValue), nBlob);
-  nExpected = (int)(sizeof(RtreeMatchArg) +
-                    pBlob->nParam*sizeof(sqlite3_value*) +
-                    (pBlob->nParam-1)*sizeof(RtreeDValue));
-  if( pBlob->magic!=RTREE_GEOMETRY_MAGIC || nBlob!=nExpected ){
-    sqlite3_free(pInfo);
-    return SQLITE_ERROR;
-  }
+  memcpy(pBlob, pSrc, pSrc->iSize);
   pInfo->pContext = pBlob->cb.pContext;
   pInfo->nParam = pBlob->nParam;
   pInfo->aParam = pBlob->aParam;
@@ -3439,7 +3415,7 @@ static int getNodeSize(
     if( rc!=SQLITE_OK ){
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }else if( pRtree->iNodeSize<(512-64) ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_VTAB;
       *pzErr = sqlite3_mprintf("undersize RTree blobs in \"%q_node\"",
                                pRtree->zName);
     }
@@ -3714,7 +3690,7 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
     sqlite3_result_error_nomem(ctx);
   }else{
     int i;
-    pBlob->magic = RTREE_GEOMETRY_MAGIC;
+    pBlob->iSize = nBlob;
     pBlob->cb = pGeomCtx[0];
     pBlob->apSqlParam = (sqlite3_value**)&pBlob->aParam[nArg];
     pBlob->nParam = nArg;
@@ -3731,7 +3707,7 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
       sqlite3_result_error_nomem(ctx);
       rtreeMatchArgFree(pBlob);
     }else{
-      sqlite3_result_blob(ctx, pBlob, nBlob, rtreeMatchArgFree);
+      sqlite3_result_pointer(ctx, pBlob, "RtreeMatchArg", rtreeMatchArgFree);
     }
   }
 }

@@ -775,7 +775,7 @@ Expr *sqlite3Expr(
 ){
   Token x;
   x.z = zToken;
-  x.n = zToken ? sqlite3Strlen30(zToken) : 0;
+  x.n = sqlite3Strlen30(zToken);
   return sqlite3ExprAlloc(db, op, &x, 0);
 }
 
@@ -1688,6 +1688,19 @@ u32 sqlite3ExprListFlags(const ExprList *pList){
 }
 
 /*
+** This is a SELECT-node callback for the expression walker that
+** always "fails".  By "fail" in this case, we mean set
+** pWalker->eCode to zero and abort.
+**
+** This callback is used by multiple expression walkers.
+*/
+int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
+  pWalker->eCode = 0;
+  return WRC_Abort;
+}
+
+/*
 ** These routines are Walker callbacks used to check expressions to
 ** see if they are "constant" for some definition of constant.  The
 ** Walker.eCode value determines the type of "constant" we are looking
@@ -1763,21 +1776,16 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       }
       /* Fall through */
     default:
-      testcase( pExpr->op==TK_SELECT ); /* selectNodeIsConstant will disallow */
-      testcase( pExpr->op==TK_EXISTS ); /* selectNodeIsConstant will disallow */
+      testcase( pExpr->op==TK_SELECT ); /* sqlite3SelectWalkFail will disallow */
+      testcase( pExpr->op==TK_EXISTS ); /* sqlite3SelectWalkFail will disallow */
       return WRC_Continue;
   }
-}
-static int selectNodeIsConstant(Walker *pWalker, Select *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  pWalker->eCode = 0;
-  return WRC_Abort;
 }
 static int exprIsConst(Expr *p, int initFlag, int iCur){
   Walker w;
   w.eCode = initFlag;
   w.xExprCallback = exprNodeIsConstant;
-  w.xSelectCallback = selectNodeIsConstant;
+  w.xSelectCallback = sqlite3SelectWalkFail;
 #ifdef SQLITE_DEBUG
   w.xSelectCallback2 = sqlite3SelectWalkAssert2;
 #endif
@@ -1900,7 +1908,7 @@ int sqlite3ExprContainsSubquery(Expr *p){
   Walker w;
   w.eCode = 1;
   w.xExprCallback = sqlite3ExprWalkNoop;
-  w.xSelectCallback = selectNodeIsConstant;
+  w.xSelectCallback = sqlite3SelectWalkFail;
 #ifdef SQLITE_DEBUG
   w.xSelectCallback2 = sqlite3SelectWalkAssert2;
 #endif
@@ -1973,8 +1981,8 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_BLOB:
       return 0;
     case TK_COLUMN:
-      assert( p->pTab!=0 );
       return ExprHasProperty(p, EP_CanBeNull) ||
+             p->pTab==0 ||  /* Reference to column of index on expression */
              (p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
@@ -3238,8 +3246,9 @@ void sqlite3ExprCodeLoadIndexColumn(
   if( iTabCol==XN_EXPR ){
     assert( pIdx->aColExpr );
     assert( pIdx->aColExpr->nExpr>iIdxCol );
-    pParse->iSelfTab = iTabCur;
+    pParse->iSelfTab = iTabCur + 1;
     sqlite3ExprCodeCopy(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
+    pParse->iSelfTab = 0;
   }else{
     sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
                                     iTabCol, regOut);
@@ -3483,13 +3492,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
       if( iTab<0 ){
-        if( pParse->ckBase>0 ){
+        if( pParse->iSelfTab<0 ){
           /* Generating CHECK constraints or inserting into partial index */
-          return pExpr->iColumn + pParse->ckBase;
+          return pExpr->iColumn - pParse->iSelfTab;
         }else{
           /* Coding an expression that is part of an index where column names
           ** in the index refer to the table to which the index belongs */
-          iTab = pParse->iSelfTab;
+          iTab = pParse->iSelfTab - 1;
         }
       }
       return sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
@@ -3826,8 +3835,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
-      sqlite3VdbeAddOp4(v, OP_Function0, constMask, r1, target,
-                        (char*)pDef, P4_FUNCDEF);
+      sqlite3VdbeAddOp4(v, pParse->iSelfTab ? OP_PureFunc0 : OP_Function0,
+                        constMask, r1, target, (char*)pDef, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nFarg);
       if( nFarg && constMask==0 ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);

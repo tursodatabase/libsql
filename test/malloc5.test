@@ -120,7 +120,6 @@ do_test malloc5-1.6 {
     CREATE TABLE def(d, e, f);
     SELECT * FROM abc;
   }
-  breakpoint
   value_in_range $::pgalloc $::mrange [sqlite3_release_memory 500]
 } [value_in_range $::pgalloc $::mrange]
 do_test malloc5-1.7 {

@@ -104,7 +104,7 @@ static int SQLITE_TCLAPI f5tDbAndApi(
       Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
       return TCL_ERROR;
     }
-    sqlite3_bind_pointer(pStmt, 1, (void*)&pApi, "fts5_api_ptr");
+    sqlite3_bind_pointer(pStmt, 1, (void*)&pApi, "fts5_api_ptr", 0);
     sqlite3_step(pStmt);
 
     if( sqlite3_finalize(pStmt)!=SQLITE_OK ){

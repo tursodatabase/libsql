@@ -75,7 +75,7 @@ static int fts5_api_from_db(sqlite3 *db, fts5_api **ppApi){
   *ppApi = 0;
   rc = sqlite3_prepare(db, "SELECT fts5(?1)", -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
-    sqlite3_bind_pointer(pStmt, 1, (void*)ppApi, "fts5_api_ptr");
+    sqlite3_bind_pointer(pStmt, 1, (void*)ppApi, "fts5_api_ptr", 0);
     (void)sqlite3_step(pStmt);
     rc = sqlite3_finalize(pStmt);
   }

@@ -51,24 +51,12 @@ set zVersion [string trim [read $in]]
 close $in
 set nVersion [eval format "%d%03d%03d" [split $zVersion .]]
 
-# Get the fossil-scm version number from $TOP/manifest.uuid.
+# Get the source-id
 #
-set in [open $TOP/manifest.uuid]
-set zUuid [string trim [read $in]]
-close $in
-
-# Get the fossil-scm check-in date from the "D" card of $TOP/manifest.
-#
-set in [open $TOP/manifest]
-set zDate {}
-while {![eof $in]} {
-  set line [gets $in]
-  if {[regexp {^D (2[-0-9T:]+)} $line all date]} {
-    set zDate [string map {T { }} $date]
-    break
-  }
-}
-close $in
+set PWD [pwd]
+cd $TOP
+set zSourceId [exec $PWD/mksourceid manifest]
+cd $PWD
 
 # Set up patterns for recognizing API declarations.
 #
@@ -125,7 +113,7 @@ foreach file $filelist {
 
     regsub -- --VERS--           $line $zVersion line
     regsub -- --VERSION-NUMBER-- $line $nVersion line
-    regsub -- --SOURCE-ID--      $line "$zDate $zUuid" line
+    regsub -- --SOURCE-ID--      $line "$zSourceId" line
 
     if {[regexp $varpattern $line] && ![regexp {^ *typedef} $line]} {
       set line "SQLITE_API $line"

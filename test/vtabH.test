@@ -55,7 +55,7 @@ register_tclvar_module db
 set ::xyz 10
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE vars USING tclvar;
-  SELECT * FROM vars WHERE name = 'xyz';
+  SELECT name, arrayname, value FROM vars WHERE name = 'xyz';
 } {xyz {} 10}
 
 set x1 aback

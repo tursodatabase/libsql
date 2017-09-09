@@ -114,7 +114,7 @@ ifcapable fts3 {
         INSERT INTO data_xt VALUES('a', 'b', 1, 0);
       }
     } msg] $msg
-  } {1 {SQLITE_ERROR - SQL logic error or missing database}}
+  } {1 {SQLITE_ERROR - SQL logic error}}
 }
 
 #--------------------------------------------------------------------

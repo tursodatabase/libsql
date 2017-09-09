@@ -1418,6 +1418,7 @@ TESTEXT = \
   $(TOP)\ext\misc\series.c \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
+  $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c
 
 # Source code to the library files needed by the test fixture
@@ -1671,6 +1672,12 @@ lempar.c:	$(TOP)\tool\lempar.c
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
 		-Fe$@ $(TOP)\tool\lemon.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
+
+# <<mark>>
+# Rules to build the source-id generator tool
+#
+mksourceid.exe:	$(TOP)\tool\mksourceid.c
+	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\mksourceid.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1950,7 +1957,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	move parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
-$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
+$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
@@ -2262,7 +2269,7 @@ clean:
 	del /Q sqlite3.c sqlite3.h 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
-	del /Q mkkeywordhash.* keywordhash.h 2>NUL
+	del /Q mksourceid.* mkkeywordhash.* keywordhash.h 2>NUL
 	del /Q notasharedlib.* 2>NUL
 	-rmdir /Q/S .deps 2>NUL
 	-rmdir /Q/S .libs 2>NUL

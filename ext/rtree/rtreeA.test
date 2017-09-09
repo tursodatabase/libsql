@@ -228,6 +228,10 @@ do_execsql_test rtreeA-7.100 {
 do_catchsql_test rtreeA-7.110 {
   SELECT * FROM t1 WHERE x1>0 AND x1<100 AND x2>0 AND x2<100;
 } {1 {undersize RTree blobs in "t1_node"}}
+do_test rtreeA-7.120 {
+  sqlite3_extended_errcode db
+} {SQLITE_CORRUPT_VTAB}
+
 
 
 finish_test

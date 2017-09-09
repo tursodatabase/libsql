@@ -502,7 +502,11 @@ void sqlite3DeleteFrom(
       }
     }else if( pPk ){
       addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_RowData, iEphCur, iKey);
+      if( IsVirtual(pTab) ){
+        sqlite3VdbeAddOp3(v, OP_Column, iEphCur, 0, iKey);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_RowData, iEphCur, iKey);
+      }
       assert( nKey==0 );  /* OP_Found will use a composite key */
     }else{
       addrLoop = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, 0, iKey);
@@ -852,10 +856,11 @@ int sqlite3GenerateIndexKey(
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
-      pParse->iSelfTab = iDataCur;
+      pParse->iSelfTab = iDataCur + 1;
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
+      pParse->iSelfTab = 0;
     }else{
       *piPartIdxLabel = 0;
     }

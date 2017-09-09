@@ -121,7 +121,6 @@ foreach_detail_mode $testprefix {
     }
 
     execsql { CREATE VIRTUAL TABLE t2 USING fts5(x, detail=%DETAIL%) }
-breakpoint
     execsql {
       INSERT INTO t2 VALUES($small || ' ' || $big);
     }

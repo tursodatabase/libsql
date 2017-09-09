@@ -1499,7 +1499,7 @@ static void sha3QueryFunc(
 
 
 #ifdef _WIN32
-__declspec(dllexport)
+
 #endif
 int sqlite3_shathree_init(
   sqlite3 *db,
@@ -1611,7 +1611,7 @@ static void writefileFunc(
 
 
 #ifdef _WIN32
-__declspec(dllexport)
+
 #endif
 int sqlite3_fileio_init(
   sqlite3 *db, 
@@ -2139,7 +2139,7 @@ int sqlite3CompletionVtabInit(sqlite3 *db){
 }
 
 #ifdef _WIN32
-__declspec(dllexport)
+
 #endif
 int sqlite3_completion_init(
   sqlite3 *db, 
@@ -2231,14 +2231,13 @@ struct ShellState {
 /*
 ** These are the allowed shellFlgs values
 */
-#define SHFLG_Scratch        0x00000001 /* The --scratch option is used */
-#define SHFLG_Pagecache      0x00000002 /* The --pagecache option is used */
-#define SHFLG_Lookaside      0x00000004 /* Lookaside memory is used */
-#define SHFLG_Backslash      0x00000008 /* The --backslash option is used */
-#define SHFLG_PreserveRowid  0x00000010 /* .dump preserves rowid values */
-#define SHFLG_Newlines       0x00000020 /* .dump --newline flag */
-#define SHFLG_CountChanges   0x00000040 /* .changes setting */
-#define SHFLG_Echo           0x00000080 /* .echo or --echo setting */
+#define SHFLG_Pagecache      0x00000001 /* The --pagecache option is used */
+#define SHFLG_Lookaside      0x00000002 /* Lookaside memory is used */
+#define SHFLG_Backslash      0x00000004 /* The --backslash option is used */
+#define SHFLG_PreserveRowid  0x00000008 /* .dump preserves rowid values */
+#define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
+#define SHFLG_CountChanges   0x00000020 /* .changes setting */
+#define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -2659,6 +2658,7 @@ static int shell_callback(
   int i;
   ShellState *p = (ShellState*)pArg;
 
+  if( azArg==0 ) return 0;
   switch( p->cMode ){
     case MODE_Line: {
       int w = 5;
@@ -3009,6 +3009,7 @@ static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
   ShellText *p = (ShellText*)pArg;
   int i;
   UNUSED_PARAMETER(az);
+  if( azArg==0 ) return 0;
   if( p->n ) appendText(p, "|", 0);
   for(i=0; i<nArg; i++){
     if( i ) appendText(p, ",", 0);
@@ -3073,7 +3074,7 @@ static void createSelftestTable(ShellState *p){
 */
 static void set_table_name(ShellState *p, const char *zName){
   int i, n;
-  int cQuote;
+  char cQuote;
   char *z;
 
   if( p->zDestTable ){
@@ -3255,18 +3256,10 @@ static int display_stats(
     }
     displayStatLine(pArg, "Number of Pcache Overflow Bytes:",
        "%lld (max %lld) bytes", SQLITE_STATUS_PAGECACHE_OVERFLOW, bReset);
-    if( pArg->shellFlgs & SHFLG_Scratch ){
-      displayStatLine(pArg, "Number of Scratch Allocations Used:",
-         "%lld (max %lld)", SQLITE_STATUS_SCRATCH_USED, bReset);
-    }
-    displayStatLine(pArg, "Number of Scratch Overflow Bytes:",
-       "%lld (max %lld) bytes", SQLITE_STATUS_SCRATCH_OVERFLOW, bReset);
     displayStatLine(pArg, "Largest Allocation:",
        "%lld bytes", SQLITE_STATUS_MALLOC_SIZE, bReset);
     displayStatLine(pArg, "Largest Pcache Allocation:",
        "%lld bytes", SQLITE_STATUS_PAGECACHE_SIZE, bReset);
-    displayStatLine(pArg, "Largest Scratch Allocation:",
-       "%lld bytes", SQLITE_STATUS_SCRATCH_SIZE, bReset);
 #ifdef YYTRACKMAXSTACKDEPTH
     displayStatLine(pArg, "Deepest Parser Stack:",
        "%lld (max %lld)", SQLITE_STATUS_PARSER_STACK, bReset);
@@ -3890,7 +3883,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   ShellState *p = (ShellState *)pArg;
 
   UNUSED_PARAMETER(azNotUsed);
-  if( nArg!=3 ) return 1;
+  if( nArg!=3 || azArg==0 ) return 0;
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];
@@ -7287,7 +7280,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "reserve",               SQLITE_TESTCTRL_RESERVE                },
       { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
       { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
-      { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
       { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
       { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
       { "imposter",              SQLITE_TESTCTRL_IMPOSTER               },
@@ -7400,7 +7392,6 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_TESTCTRL_BITVEC_TEST:
         case SQLITE_TESTCTRL_FAULT_INSTALL:
         case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS:
-        case SQLITE_TESTCTRL_SCRATCHMALLOC:
         default:
           utf8_printf(stderr,
                       "Error: CLI support for testctrl %s not implemented\n",
@@ -7920,7 +7911,6 @@ static const char zOptions[] =
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -quote               set output mode to 'quote'\n"
-  "   -scratch SIZE N      use N slots of SZ bytes each for scratch memory\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
@@ -8023,7 +8013,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   stdout_is_console = isatty(1);
 
 #if USE_SYSTEM_SQLITE+0!=1
-  if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
+  if( strncmp(sqlite3_sourceid(),SQLITE_SOURCE_ID,60)!=0 ){
     utf8_printf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
             sqlite3_sourceid(), SQLITE_SOURCE_ID);
     exit(1);
@@ -8118,16 +8108,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #else
       (void)cmdline_option_value(argc, argv, ++i);
 #endif
-    }else if( strcmp(z,"-scratch")==0 ){
-      int n, sz;
-      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
-      if( sz>400000 ) sz = 400000;
-      if( sz<2500 ) sz = 2500;
-      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
-      if( n>10 ) n = 10;
-      if( n<1 ) n = 1;
-      sqlite3_config(SQLITE_CONFIG_SCRATCH, malloc(n*sz+1), sz, n);
-      data.shellFlgs |= SHFLG_Scratch;
     }else if( strcmp(z,"-pagecache")==0 ){
       int n, sz;
       sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
@@ -8271,8 +8251,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
       i++;
-    }else if( strcmp(z,"-scratch")==0 ){
-      i+=2;
     }else if( strcmp(z,"-pagecache")==0 ){
       i+=2;
     }else if( strcmp(z,"-lookaside")==0 ){
@@ -8375,7 +8353,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
       rc = process_input(&data, 0);
       if( zHistory ){
-        shell_stifle_history(100);
+        shell_stifle_history(2000);
         shell_write_history(zHistory);
         free(zHistory);
       }
@@ -8396,4 +8374,3 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   return rc;
 }
-

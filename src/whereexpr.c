@@ -194,12 +194,12 @@ static int isLikeOrGlob(
   int *pisComplete, /* True if the only wildcard is % in the last character */
   int *pnoCase      /* True if uppercase is equivalent to lowercase */
 ){
-  const char *z = 0;         /* String on RHS of LIKE operator */
+  const u8 *z = 0;         /* String on RHS of LIKE operator */
   Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
   ExprList *pList;           /* List of operands to the LIKE operator */
   int c;                     /* One character in z[] */
   int cnt;                   /* Number of non-wildcard prefix characters */
-  char wc[3];                /* Wildcard characters */
+  char wc[4];                /* Wildcard characters */
   sqlite3 *db = pParse->db;  /* Database connection */
   sqlite3_value *pVal = 0;
   int op;                    /* Opcode of pRight */
@@ -221,12 +221,12 @@ static int isLikeOrGlob(
     int iCol = pRight->iColumn;
     pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_BLOB);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
-      z = (char *)sqlite3_value_text(pVal);
+      z = sqlite3_value_text(pVal);
     }
     sqlite3VdbeSetVarmask(pParse->pVdbe, iCol);
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
-    z = pRight->u.zToken;
+    z = (u8*)pRight->u.zToken;
   }
   if( z ){
 
@@ -246,16 +246,42 @@ static int isLikeOrGlob(
         return 0;
       }
     }
+
+    /* Count the number of prefix characters prior to the first wildcard */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
+      if( c==wc[3] && z[cnt]!=0 ) cnt++;
     }
+
+    /* The optimization is possible only if (1) the pattern does not begin
+    ** with a wildcard and if (2) the non-wildcard prefix does not end with
+    ** an (illegal 0xff) character.  The second condition is necessary so
+    ** that we can increment the prefix key to find an upper bound for the
+    ** range search. 
+    */
     if( cnt!=0 && 255!=(u8)z[cnt-1] ){
       Expr *pPrefix;
+
+      /* A "complete" match if the pattern ends with "*" or "%" */
       *pisComplete = c==wc[0] && z[cnt+1]==0;
-      pPrefix = sqlite3Expr(db, TK_STRING, z);
-      if( pPrefix ) pPrefix->u.zToken[cnt] = 0;
+
+      /* Get the pattern prefix.  Remove all escapes from the prefix. */
+      pPrefix = sqlite3Expr(db, TK_STRING, (char*)z);
+      if( pPrefix ){
+        int iFrom, iTo;
+        char *zNew = pPrefix->u.zToken;
+        zNew[cnt] = 0;
+        for(iFrom=iTo=0; iFrom<cnt; iFrom++){
+          if( zNew[iFrom]==wc[3] ) iFrom++;
+          zNew[iTo++] = zNew[iFrom];
+        }
+        zNew[iTo] = 0;
+      }
       *ppPrefix = pPrefix;
+
+      /* If the RHS pattern is a bound parameter, make arrangements to
+      ** reprepare the statement when that parameter is rebound */
       if( op==TK_VARIABLE ){
         Vdbe *v = pParse->pVdbe;
         sqlite3VdbeSetVarmask(v, pRight->iColumn);

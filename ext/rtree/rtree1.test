@@ -604,7 +604,6 @@ do_execsql_test 15.1 {
   BEGIN;
   INSERT INTO rt VALUES(1,2,3,4,5);
 }
-breakpoint
 do_execsql_test 15.2 {
   DROP TABLE t13;
   COMMIT;

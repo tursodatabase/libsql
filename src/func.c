@@ -865,7 +865,8 @@ static void likeFunc(
 #ifdef SQLITE_TEST
     sqlite3_like_count++;
 #endif
-    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
+    sqlite3_result_int(context,
+                      patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
   }
 }
 
@@ -1706,9 +1707,14 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 /*
 ** pExpr points to an expression which implements a function.  If
 ** it is appropriate to apply the LIKE optimization to that function
-** then set aWc[0] through aWc[2] to the wildcard characters and
-** return TRUE.  If the function is not a LIKE-style function then
-** return FALSE.
+** then set aWc[0] through aWc[2] to the wildcard characters and the
+** escape character and then return TRUE.  If the function is not a 
+** LIKE-style function then return FALSE.
+**
+** The expression "a LIKE b ESCAPE c" is only considered a valid LIKE
+** operator if c is a string literal that is exactly one byte in length.
+** That one byte is stored in aWc[3].  aWc[3] is set to zero if there is
+** no ESCAPE clause.
 **
 ** *pIsNocase is set to true if uppercase and lowercase are equivalent for
 ** the function (default for LIKE).  If the function makes the distinction
@@ -1717,16 +1723,25 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
-  if( pExpr->op!=TK_FUNCTION 
-   || !pExpr->x.pList 
-   || pExpr->x.pList->nExpr!=2
-  ){
+  int nExpr;
+  if( pExpr->op!=TK_FUNCTION || !pExpr->x.pList ){
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  pDef = sqlite3FindFunction(db, pExpr->u.zToken, 2, SQLITE_UTF8, 0);
+  nExpr = pExpr->x.pList->nExpr;
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
+  }
+  if( nExpr<3 ){
+    aWc[3] = 0;
+  }else{
+    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
+    char *zEscape;
+    if( pEscape->op!=TK_STRING ) return 0;
+    zEscape = pEscape->u.zToken;
+    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
+    aWc[3] = zEscape[0];
   }
 
   /* The memcpy() statement assumes that the wildcard characters are

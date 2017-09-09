@@ -78,7 +78,6 @@ do_test 2.1 {
 
 do_test 2.2 {
   set L [list]
-  breakpoint
   execsql {
     SELECT * FROM u1 WHERE 123=(
       SELECT x FROM u2 WHERE x=a AND f('two')

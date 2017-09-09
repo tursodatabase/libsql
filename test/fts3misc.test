@@ -221,7 +221,6 @@ do_execsql_test 6.0 {
     INSERT INTO t6 SELECT 'x x x x x x x x x x x' FROM s;
   COMMIT;
 }
-breakpoint
 do_execsql_test 6.1 {
   SELECT rowid FROM t6 WHERE t6 MATCH 'b OR "x a"'
 } {50001 50002 50003 50004}

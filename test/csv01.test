@@ -93,6 +93,7 @@ do_catchsql_test 3.2 {
   SELECT rowid, a FROM t3;
 } {1 {no such column: rowid}}
 
+# Multi-column WITHOUT ROWID virtual tables may not be writable.
 do_catchsql_test 4.0 {
   DROP TABLE t3;
   CREATE VIRTUAL TABLE temp.t4 USING csv_wr(
@@ -100,13 +101,44 @@ do_catchsql_test 4.0 {
 '1,2,3,4
 5,6,7,8
 9,10,11,12
-13,14,15,16
-',
+13,14,15,16',
     columns=4,
     schema=
-      'CREATE TABLE t3(a PRIMARY KEY,b TEXT,c TEXT,d TEXT) WITHOUT ROWID',
+      'CREATE TABLE t3(a,b,c,d,PRIMARY KEY(a,b)) WITHOUT ROWID',
     testflags=1
   );
 } {1 {vtable constructor failed: t4}}
+
+# WITHOUT ROWID tables with a single-column PRIMARY KEY may be writable.
+do_catchsql_test 4.1 {
+  DROP TABLE IF EXISTS t4;
+  CREATE VIRTUAL TABLE temp.t4 USING csv_wr(
+    data=
+'1,2,3,4
+5,6,7,8
+9,10,11,12
+13,14,15,16',
+    columns=4,
+    schema=
+      'CREATE TABLE t3(a,b,c,d,PRIMARY KEY(b)) WITHOUT ROWID',
+    testflags=1
+  );
+} {0 {}}
+
+do_catchsql_test 4.2 {
+  DROP TABLE IF EXISTS t5;
+  CREATE VIRTUAL TABLE temp.t5 USING csv_wr(
+      data=
+      '1,2,3,4
+      5,6,7,8
+      9,10,11,12
+      13,14,15,16',
+      columns=4,
+      schema=
+      'CREATE TABLE t3(a,b,c,d) WITHOUT ROWID',
+      testflags=1
+      );
+} {1 {vtable constructor failed: t5}}
+
 
 finish_test
