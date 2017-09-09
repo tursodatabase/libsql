@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\smalformed\srecords\sby\sPRAGMA\sintegrity_check.
-D 2017-09-09T20:38:49.243
+C Simplification\sand\sperformance\simprovement\sto\ssqlite3_reset().
+D 2017-09-09T22:46:56.684
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -529,7 +529,7 @@ F src/vdbe.c 82fc4553a0986a06bdd0d2b03a424e159bba5c74802fabb2841aa6cd27ccd962
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
-F src/vdbeaux.c 2dff8186d34e0e525838f77b2fac70bd480f0273a77015bf21b6a08f2792da82
+F src/vdbeaux.c 41d90002d774e234f95d1298fc70d25e3420e8d9ebd65aa270a8b771c5525790
 F src/vdbeblob.c db3cf91060f6f4b2f1358a4200e844697990752177784c7c95da00b7ac9f1c7b
 F src/vdbemem.c 2f9d672af5260f0145787e1dc2c6985414987cc0dc575133a0dc17dda767d868
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1652,10 +1652,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P faa22e29a5a05a16d46a428d838acedfa7d6fad6239495d59a6a1f4764e1b1b6
-R c0b0efe9ffccc3828c7a4126e046d589
-T *branch * improved-integrity-check
-T *sym-improved-integrity-check *
-T -sym-trunk *
+P 8fa923caa1535fc9ebed0214d211fc3d09a015d78afd01f288c215a7980d25f2
+R 8957c035c2461edf5598d333c8c16670
 U drh
-Z 18fb8b540ef1d907c45078ed2e61ad8c
+Z 241aa0e3b67611bf0f414b4c1b2a7410
