@@ -868,7 +868,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     assert( pTerm->u.leftColumn>=(-1) );
     nTerm++;
@@ -916,7 +916,7 @@ static sqlite3_index_info *allocateIndexInfo(
                                                                    pUsage;
 
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    u8 op;
+    u16 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     if( pTerm->prereqRight & mUnusable ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
@@ -924,34 +924,41 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     assert( pTerm->u.leftColumn>=(-1) );
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
-    op = (u8)pTerm->eOperator & WO_ALL;
+    op = pTerm->eOperator & WO_ALL;
     if( op==WO_IN ) op = WO_EQ;
     if( op==WO_MATCH ){
-      op = pTerm->eMatchOp;
-    }
-    pIdxCons[j].op = op;
-    /* The direct assignment in the previous line is possible only because
-    ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
-    ** following asserts verify this fact. */
-    assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
-    assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
-    assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
-    assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
-    assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
-    assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
-    assert( pTerm->eOperator & (WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
+      pIdxCons[j].op = pTerm->eMatchOp;
+    }else if( op & (WO_ISNULL|WO_IS) ){
+      if( op==WO_ISNULL ){
+        pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_ISNULL;
+      }else{
+        pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_IS;
+      }
+    }else{
+      pIdxCons[j].op = (u8)op;
+      /* The direct assignment in the previous line is possible only because
+      ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
+      ** following asserts verify this fact. */
+      assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
+      assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
+      assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
+      assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
+      assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
+      assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
+      assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
 
-    if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
-     && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
-    ){
-      if( i<16 ) mNoOmit |= (1 << i);
-      if( op==WO_LT ) pIdxCons[j].op = WO_LE;
-      if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+      if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
+          && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
+        ){
+        if( i<16 ) mNoOmit |= (1 << i);
+        if( op==WO_LT ) pIdxCons[j].op = WO_LE;
+        if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+      }
     }
 
     j++;
