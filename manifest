@@ -1,5 +1,5 @@
-C Have\sthe\sheader\scomment\sfor\ssqlite3Checkpoint()\smention\sTRUNCATE\salong\swith\nthe\sother\sthree\scheckpoint\stypes.\sNo\schanges\sto\scode.
-D 2017-09-08T17:48:00.753
+C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
+D 2017-09-09T00:51:36.496
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -458,8 +458,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9b3d8444bbf6f167d84f41ca6f3672e2521cb163a8c706b19058dc82fffe9b8
-F src/shell.c 319082accd4b719a332f4cf92347546e310327b4b4d50c42de129787b5ed2946
-F src/shell.c.in af3fb9eabdc0a95beace2f760597d213be0988c974eca116208eb220cd24469c
+F src/shell.c c1206a23d9239f8f51751d3be9b8c3b02fa4103546bea1add7f864d84a8276ab
+F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220ee
 F src/sqlite.h.in 21f62793a3611b43f6fb31f0a4c8b38489a4df025416e9b7db7cc01bf5ef5aaa
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
@@ -1652,7 +1652,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02828d717e2d97b1f59e9279cea9c06eed4accd4e262606bd90d060449c5a1a3
-R a16bad8b23f653646029e20ce84ed88a
-U dan
-Z 83e6954e72708437b1490d8e46bc78b4
+P e1e3ca7ea43a68b9b57dc38d8855f63b63a53feb8128b666a1becf87a2c70341
+R 14621bd82abfa0f650a4c6242c2108d7
+U mistachkin
+Z 11f83c8a0999c8fee516d7917728daf2

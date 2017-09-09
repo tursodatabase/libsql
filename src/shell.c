@@ -3074,7 +3074,7 @@ static void createSelftestTable(ShellState *p){
 */
 static void set_table_name(ShellState *p, const char *zName){
   int i, n;
-  int cQuote;
+  char cQuote;
   char *z;
 
   if( p->zDestTable ){
