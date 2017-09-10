@@ -298,16 +298,16 @@ static const PragmaName *pragmaLocate(const char *zName){
 /*
 ** Helper subroutine for PRAGMA integrity_check:
 **
-** Generate code to output a single-column result row with the result
-** held in register regResult.  Decrement the result count and halt if
-** the maximum number of result rows have been issued.
+** Generate code to output a single-column result row with a value of the
+** string held in register 3.  Decrement the result count in register 1
+** and halt if the maximum number of result rows have been issued.
 */
-static int integrityCheckResultRow(Vdbe *v, int regResult){
+static int integrityCheckResultRow(Vdbe *v){
   int addr;
-  sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 1);
+  sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
   addr = sqlite3VdbeAddOp3(v, OP_IfPos, 1, sqlite3VdbeCurrentAddr(v)+2, 1);
   VdbeCoverage(v);
-  sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
+  sqlite3VdbeAddOp0(v, OP_Halt);
   return addr;
 }
 
@@ -1484,12 +1484,11 @@ void sqlite3Pragma(
 
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
-      HashElem *x;
-      Hash *pTbls;
-      int *aRoot;
-      int cnt = 0;
-      int mxIdx = 0;
-      int nIdx;
+      HashElem *x;     /* For looping over tables in the schema */
+      Hash *pTbls;     /* Set of all tables in the schema */
+      int *aRoot;      /* Array of root page numbers of all btrees */
+      int cnt = 0;     /* Number of entries in aRoot[] */
+      int mxIdx = 0;   /* Maximum number of indexes for any table */
 
       if( OMIT_TEMPDB && i==1 ) continue;
       if( iDb>=0 && i!=iDb ) continue;
@@ -1504,8 +1503,9 @@ void sqlite3Pragma(
       assert( sqlite3SchemaMutexHeld(db, i, 0) );
       pTbls = &db->aDb[i].pSchema->tblHash;
       for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
-        Table *pTab = sqliteHashData(x);
-        Index *pIdx;
+        Table *pTab = sqliteHashData(x);  /* Current table */
+        Index *pIdx;                      /* An index on pTab */
+        int nIdx;                         /* Number of indexes on pTab */
         if( HasRowid(pTab) ) cnt++;
         for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){ cnt++; }
         if( nIdx>mxIdx ) mxIdx = nIdx;
@@ -1533,9 +1533,8 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zDbSName),
          P4_DYNAMIC);
-      sqlite3VdbeAddOp3(v, OP_Move, 2, 4, 1);
-      sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 2);
-      integrityCheckResultRow(v, 2);
+      sqlite3VdbeAddOp3(v, OP_Concat, 2, 3, 3);
+      integrityCheckResultRow(v);
       sqlite3VdbeJumpHere(v, addr);
 
       /* Make sure all the indices are constructed correctly.
@@ -1553,6 +1552,9 @@ void sqlite3Pragma(
         sqlite3ExprCacheClear(pParse);
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
+        /* reg[7] counts the number of entries in the table.
+        ** reg[8+i] counts the number of entries in the i-th index 
+        */
         sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           sqlite3VdbeAddOp2(v, OP_Integer, 0, 8+j); /* index entries counter */
@@ -1573,7 +1575,7 @@ void sqlite3Pragma(
           zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                               pTab->aCol[j].zName);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-          integrityCheckResultRow(v, 3);
+          integrityCheckResultRow(v);
           sqlite3VdbeJumpHere(v, jmp2);
         }
         /* Verify CHECK constraints */
@@ -1596,7 +1598,7 @@ void sqlite3Pragma(
             zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
                 pTab->zName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            integrityCheckResultRow(v, 3);
+            integrityCheckResultRow(v);
             sqlite3VdbeResolveLabel(v, addrCkOk);
             sqlite3ExprCachePop(pParse);
           }
@@ -1624,7 +1626,7 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
             jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-            jmp4 = integrityCheckResultRow(v, 3);
+            jmp4 = integrityCheckResultRow(v);
             sqlite3VdbeJumpHere(v, jmp2);
             /* For UNIQUE indexes, verify that only one entry exists with the
             ** current key.  The entry is unique if (1) any column is NULL
@@ -1663,9 +1665,9 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
             addr = sqlite3VdbeAddOp3(v, OP_Eq, 8+j, 0, 3); VdbeCoverage(v);
             sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
-            sqlite3VdbeLoadString(v, 3, pIdx->zName);
-            sqlite3VdbeAddOp3(v, OP_Concat, 3, 2, 7);
-            integrityCheckResultRow(v, 7);
+            sqlite3VdbeLoadString(v, 4, pIdx->zName);
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
+            integrityCheckResultRow(v);
             sqlite3VdbeJumpHere(v, addr);
           }
         }

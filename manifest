@@ -1,5 +1,5 @@
-C Simplification\sand\sperformance\simprovement\sto\ssqlite3_reset().
-D 2017-09-09T22:46:56.684
+C Simplifications\sto\sthe\sPRAGMA\sintegrity_check\scode\sgenerator.
+D 2017-09-10T01:06:05.406
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -450,7 +450,7 @@ F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 4bada070456980c3c1f16d58ec2e64e389ad77b935e3d77e0c96e7bbd397289c
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c 036a79afc71443ecfa15234e65dd7d519cc33cd2d1ec25f4e1d6657f19ac5d1a
+F src/pragma.c 3799864604c6ac706b7423eab2b6e59ec404559f347af505cf8fe8f2e3a7b509
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
 F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
@@ -1652,7 +1652,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8fa923caa1535fc9ebed0214d211fc3d09a015d78afd01f288c215a7980d25f2
-R 8957c035c2461edf5598d333c8c16670
+P b6425d0170721d803a055a958f1823c9c4be925cd93ac47562ff723daf8ce2ed
+R aac8ac34594edb6971d5273ddcaef89f
 U drh
-Z 241aa0e3b67611bf0f414b4c1b2a7410
+Z f7ba7422ef3914964199f82bd5c4f921
