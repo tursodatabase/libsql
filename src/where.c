@@ -953,8 +953,8 @@ static sqlite3_index_info *allocateIndexInfo(
       assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
 
       if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
-          && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
-        ){
+       && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
+      ){
         if( i<16 ) mNoOmit |= (1 << i);
         if( op==WO_LT ) pIdxCons[j].op = WO_LE;
         if( op==WO_GT ) pIdxCons[j].op = WO_GE;
