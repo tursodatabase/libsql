@@ -1,5 +1,5 @@
-C Enhance\sthe\svtab\sinterface\sto\shandle\sIS,\s!=,\sIS\sNOT,\sIS\sNULL\sand\sIS\sNOT\sNULL\nconstraints.
-D 2017-09-09T19:41:12.986
+C Add\stests\sto\scheck\sthat\saffinities\swork\swith\s!=\soperators\son\svirtual\stable\ncolumn\svalues.\sNo\schanges\sto\scode.
+D 2017-09-11T08:53:54.105
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -610,7 +610,7 @@ F test/bestindex1.test 0cf1bd2d7b97d3a3a8c10736125274f64765c4ee
 F test/bestindex2.test 4a06b8922ab2fd09434870da8d1cdf525aaf7060
 F test/bestindex3.test 578b6a52dab819e63f28e3640e04b32c85aed320
 F test/bestindex4.test 4cb5ff7dbaebadb87d366f51969271778423b455
-F test/bestindex5.test a7f1c32dc21d5c85afd4e9611e1160247107387b85a371fded36852c1c4959e0
+F test/bestindex5.test 412b42f8036b28d8b2f3534d89389ad946a4b1a65a12263f51936f7424296f1b
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1653,10 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P faa22e29a5a05a16d46a428d838acedfa7d6fad6239495d59a6a1f4764e1b1b6
-R 71eba3dbcd321cff2772c9856db2cb4e
-T *branch * vtab-extra-ops
-T *sym-vtab-extra-ops *
-T -sym-trunk *
+P 34c8e952616013deb6fffec701ac5989afac9bef1bf92458a2e4ba92c7ee924f
+R 6bfa24cd8fec89ac45bb8a73348298d3
 U dan
-Z f5cb136cb2d9007b3611d202913746bf
+Z 91aa744c0aa50af3f54f9b98e2cb4c5c
