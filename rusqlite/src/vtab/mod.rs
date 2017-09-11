@@ -56,13 +56,13 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
 bitflags! {
     #[doc = "Index constraint operator."]
     #[repr(C)]
-    pub flags IndexConstraintOp: ::std::os::raw::c_uchar {
-        const SQLITE_INDEX_CONSTRAINT_EQ    = 2,
-        const SQLITE_INDEX_CONSTRAINT_GT    = 4,
-        const SQLITE_INDEX_CONSTRAINT_LE    = 8,
-        const SQLITE_INDEX_CONSTRAINT_LT    = 16,
-        const SQLITE_INDEX_CONSTRAINT_GE    = 32,
-        const SQLITE_INDEX_CONSTRAINT_MATCH = 64,
+    pub struct IndexConstraintOp: ::std::os::raw::c_uchar {
+        const SQLITE_INDEX_CONSTRAINT_EQ    = 2;
+        const SQLITE_INDEX_CONSTRAINT_GT    = 4;
+        const SQLITE_INDEX_CONSTRAINT_LE    = 8;
+        const SQLITE_INDEX_CONSTRAINT_LT    = 16;
+        const SQLITE_INDEX_CONSTRAINT_GE    = 32;
+        const SQLITE_INDEX_CONSTRAINT_MATCH = 64;
     }
 }
 
@@ -96,7 +96,7 @@ impl IndexInfo {
 
     /// if `argv_index` > 0, constraint is part of argv to xFilter
     pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage {
-        let mut constraint_usages = unsafe {
+        let constraint_usages = unsafe {
             slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
         };
         IndexConstraintUsage(&mut constraint_usages[constraint_idx])

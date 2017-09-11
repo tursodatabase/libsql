@@ -145,18 +145,14 @@ impl error::Error for Error {
         match *self {
             Error::SqliteFailure(ref err, None) => err.description(),
             Error::SqliteFailure(_, Some(ref s)) => s,
-            Error::SqliteSingleThreadedMode => {
-                "SQLite was compiled or configured for single-threaded use only"
-            }
+            Error::SqliteSingleThreadedMode => "SQLite was compiled or configured for single-threaded use only",
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
             Error::IntegralValueOutOfRange(_, _) => "integral value out of range of requested type",
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
             Error::InvalidPath(_) => "invalid path",
-            Error::ExecuteReturnedResults => {
-                "execute returned results - did you mean to call query?"
-            }
+            Error::ExecuteReturnedResults => "execute returned results - did you mean to call query?",
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",

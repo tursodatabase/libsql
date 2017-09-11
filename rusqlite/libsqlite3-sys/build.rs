@@ -34,6 +34,7 @@ mod build {
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
+            .flag("-DHAVE_USLEEP=1")
             .compile("libsqlite3.a");
     }
 }
@@ -41,6 +42,9 @@ mod build {
 #[cfg(not(feature = "bundled"))]
 mod build {
     extern crate pkg_config;
+
+    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
+    extern crate vcpkg;
 
     use std::env;
 
@@ -79,6 +83,10 @@ mod build {
             return HeaderLocation::FromEnvironment;
         }
 
+        if let Some(header) = try_vcpkg() {
+            return header;
+        }
+
         // See if pkg-config can do everything for us.
         match pkg_config::Config::new().print_system_libs(false).probe("sqlite3") {
             Ok(mut lib) => {
@@ -98,6 +106,23 @@ mod build {
                 HeaderLocation::Wrapper
             }
         }
+    }
+
+    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
+    fn try_vcpkg() -> Option<HeaderLocation> {
+        // See if vcpkg can find it.
+        if let Ok(mut lib) = vcpkg::Config::new().probe("sqlite3") {
+            if let Some(mut header) = lib.include_paths.pop() {
+                header.push("sqlite3.h");
+                return Some(HeaderLocation::FromPath(header.to_string_lossy().into()));
+            }
+        }
+        None
+    }
+
+    #[cfg(not(all(feature = "vcpkg", target_env = "msvc")))]
+    fn try_vcpkg() -> Option<HeaderLocation> {
+        None
     }
 
     #[cfg(not(feature = "buildtime_bindgen"))]
@@ -142,7 +167,7 @@ mod build {
     mod bindings {
         extern crate bindgen;
 
-        use self::bindgen::chooser::{TypeChooser, IntKind};
+        use self::bindgen::callbacks::{ParseCallbacks, IntKind};
         use super::HeaderLocation;
 
         use std::env;
@@ -153,7 +178,7 @@ mod build {
         #[derive(Debug)]
         struct SqliteTypeChooser;
 
-        impl TypeChooser for SqliteTypeChooser {
+        impl ParseCallbacks for SqliteTypeChooser {
             fn int_macro(&self, _name: &str, value: i64) -> Option<IntKind> {
                 if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
                     Some(IntKind::I32)
@@ -169,7 +194,7 @@ mod build {
             let mut output = Vec::new();
             bindgen::builder()
                 .header(header.clone())
-                .type_chooser(Box::new(SqliteTypeChooser))
+                .parse_callbacks(Box::new(SqliteTypeChooser))
                 .generate()
                 .expect(&format!("could not run bindgen on header {}", header))
                 .write(Box::new(&mut output))

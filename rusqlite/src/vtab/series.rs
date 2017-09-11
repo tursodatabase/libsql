@@ -37,17 +37,17 @@ const SERIES_COLUMN_STEP: c_int = 3;
 
 bitflags! {
     #[repr(C)]
-    flags QueryPlanFlags: ::std::os::raw::c_int {
+    struct QueryPlanFlags: ::std::os::raw::c_int {
         // start = $value  -- constraint exists
-        const START = 1,
+        const START = 1;
         // stop = $value   -- constraint exists
-        const STOP  = 2,
+        const STOP  = 2;
         // step = $value   -- constraint exists
-        const STEP  = 4,
+        const STEP  = 4;
         // output in descending order
-        const DESC  = 8,
+        const DESC  = 8;
         // Both start and stop
-        const BOTH  = START.bits | STOP.bits,
+        const BOTH  = START.bits | STOP.bits;
     }
 }
 

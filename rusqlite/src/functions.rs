@@ -119,9 +119,13 @@ pub unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
     // if we're on the bundled version (since it's at least 3.17.0) and the normal constraint
     // error code if not.
     #[cfg(feature = "bundled")]
-    fn constraint_error_code() -> i32 { ffi::SQLITE_CONSTRAINT_FUNCTION }
+    fn constraint_error_code() -> i32 {
+        ffi::SQLITE_CONSTRAINT_FUNCTION
+    }
     #[cfg(not(feature = "bundled"))]
-    fn constraint_error_code() -> i32 { ffi::SQLITE_CONSTRAINT }
+    fn constraint_error_code() -> i32 {
+        ffi::SQLITE_CONSTRAINT
+    }
 
     match *err {
         Error::SqliteFailure(ref err, ref s) => {
@@ -154,19 +158,24 @@ impl<'a> ValueRef<'a> {
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str().expect("sqlite3_value_text returned invalid UTF-8");
+                let s = s.to_str()
+                    .expect("sqlite3_value_text returned invalid UTF-8");
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
-                let blob = ffi::sqlite3_value_blob(value);
-                assert!(!blob.is_null(),
-                        "unexpected SQLITE_BLOB value type with NULL data");
+                let (blob, len) = (ffi::sqlite3_value_blob(value), ffi::sqlite3_value_bytes(value));
 
-                let len = ffi::sqlite3_value_bytes(value);
                 assert!(len >= 0,
                         "unexpected negative return from sqlite3_value_bytes");
-
-                ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                if len > 0 {
+                    assert!(!blob.is_null(),
+                            "unexpected SQLITE_BLOB value type with NULL data");
+                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                } else {
+                    // The return value from sqlite3_value_blob() for a zero-length BLOB
+                    // is a NULL pointer.
+                    ValueRef::Blob(&[])
+                }
             }
             _ => unreachable!("sqlite3_value_type returned invalid value"),
         }
@@ -204,14 +213,17 @@ impl<'a> Context<'a> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
-            FromSqlError::InvalidType => {
+                                                  FromSqlError::InvalidType => {
                 Error::InvalidFunctionParameterType(idx, value.data_type())
             }
-            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx as c_int, i),
-            FromSqlError::Other(err) => {
+                                                  FromSqlError::OutOfRange(i) => {
+                                                      Error::IntegralValueOutOfRange(idx as c_int,
+                                                                                     i)
+                                                  }
+                                                  FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
-        })
+                                              })
     }
 
     /// Sets the auxilliary data associated with a particular parameter. See
@@ -304,7 +316,9 @@ impl Connection {
         where F: FnMut(&Context) -> Result<T>,
               T: ToSql
     {
-        self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
+        self.db
+            .borrow_mut()
+            .create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
 
     /// Attach a user-defined aggregate function to this database connection.
@@ -720,17 +734,16 @@ mod test {
     #[test]
     fn test_sum() {
         let db = Connection::open_in_memory().unwrap();
-        db.create_aggregate_function("my_sum", 1, true, Sum).unwrap();
+        db.create_aggregate_function("my_sum", 1, true, Sum)
+            .unwrap();
 
         // sum should return NULL when given no columns (contrast with count below)
         let no_result = "SELECT my_sum(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
-        let result: Option<i64> = db.query_row(no_result, &[], |r| r.get(0))
-            .unwrap();
+        let result: Option<i64> = db.query_row(no_result, &[], |r| r.get(0)).unwrap();
         assert!(result.is_none());
 
         let single_sum = "SELECT my_sum(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
-        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
-            .unwrap();
+        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0)).unwrap();
         assert_eq!(4, result);
 
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
@@ -743,7 +756,8 @@ mod test {
     #[test]
     fn test_count() {
         let db = Connection::open_in_memory().unwrap();
-        db.create_aggregate_function("my_count", -1, true, Count).unwrap();
+        db.create_aggregate_function("my_count", -1, true, Count)
+            .unwrap();
 
         // count should return 0 when given no columns (contrast with sum above)
         let no_result = "SELECT my_count(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
@@ -751,8 +765,7 @@ mod test {
         assert_eq!(result, 0);
 
         let single_sum = "SELECT my_count(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
-        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
-            .unwrap();
+        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0)).unwrap();
         assert_eq!(2, result);
     }
 }
