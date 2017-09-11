@@ -414,6 +414,16 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         zOp = "glob"; break;
       case SQLITE_INDEX_CONSTRAINT_REGEXP:
         zOp = "regexp"; break;
+      case SQLITE_INDEX_CONSTRAINT_NE:
+        zOp = "ne"; break;
+      case SQLITE_INDEX_CONSTRAINT_ISNOT:
+        zOp = "isnot"; break;
+      case SQLITE_INDEX_CONSTRAINT_ISNOTNULL:
+        zOp = "isnotnull"; break;
+      case SQLITE_INDEX_CONSTRAINT_ISNULL:
+        zOp = "isnull"; break;
+      case SQLITE_INDEX_CONSTRAINT_IS:
+        zOp = "is"; break;
     }
 
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("op", -1));
