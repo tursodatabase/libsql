@@ -1,5 +1,5 @@
-C Minor\sadjustments\sto\sindentation\sand\sspacing\sfor\sclarity.\s\sNo\schanges\sto\scode.
-D 2017-09-11T18:37:44.991
+C Refactor\snames\sof\sconstants\sand\sfunctions\sassociated\swith\sthe\sauxiliary\noperators\sfor\sxBestIndex.
+D 2017-09-11T19:47:37.315
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -539,10 +539,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
-F src/where.c 3db249dfcef40357a295bc481af99cfcadc896d4eef259992681534db909e335
-F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
+F src/where.c d97f97ca6017747b7361af7f168a640d667c41cd1d4e91c2c5b2bd7538815d07
+F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c e8c2ece5843ea56e6c90277d421f2d628f3f7b7c976642369cc519f008e1d2b1
-F src/whereexpr.c ffc3c90f68ad28c6eca1c8b05029f361bc151187be578985d992788d31f295ae
+F src/whereexpr.c 4953ca4e769c047d0a00a1ba9085849626b1f3a6e89f6befcf5c38fa0722acdd
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1653,7 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d24e0803d180448e637e33030a4ebf2c20eb1cab1074290c08f2eee0a23f66c
-R 0a1fb7fe2a3156d2459600f96873dd1d
+P d3153abda6fd48015b007081734738b9cc4622e3564dc78a7a470a72dc2ca236
+R 6bf300e1c6f9b6f8c5e667046a0485fa
 U drh
-Z 68e910dc75889ef64693d78040f26d24
+Z 6c35ef01413cc8966446242df55841d2

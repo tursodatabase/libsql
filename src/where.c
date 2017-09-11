@@ -931,7 +931,7 @@ static sqlite3_index_info *allocateIndexInfo(
     pIdxCons[j].iTermOffset = i;
     op = pTerm->eOperator & WO_ALL;
     if( op==WO_IN ) op = WO_EQ;
-    if( op==WO_MATCH ){
+    if( op==WO_AUX ){
       pIdxCons[j].op = pTerm->eMatchOp;
     }else if( op & (WO_ISNULL|WO_IS) ){
       if( op==WO_ISNULL ){
@@ -949,8 +949,7 @@ static sqlite3_index_info *allocateIndexInfo(
       assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
       assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
       assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
-      assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
-      assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
+      assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_AUX) );
 
       if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
        && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
