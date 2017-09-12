@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\s[b22cdd67]\sthat\scan\scause\sa\snegative\sinfinity\sto\sbe\s(rarely)\nreported\sas\sa\spositive\sinfinity.
-D 2017-09-12T15:05:34.004
+C Hack\sto\shave\smultiple\sconnections\sto\sa\ssingle\sfile\sshare\sa\nsingle\smemory\smapping\sof\sthe\sdatabse\sfile.
+D 2017-09-12T18:03:12.014
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -441,7 +441,7 @@ F src/os.c 93e0979b9b55df29c0c4923f73b48e9d3fe728f01dd8ed4f6a9d2f1d79779bc8
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 489aa972ccc34f7b4770b891694b32101c59ddd4be4ef0ddd9a4da58c145c1a6
+F src/os_unix.c f36ad99b752d4abf1b8c1d1b8ea83fa6a5010c7a76cf6a0a76abb83641aa8948
 F src/os_win.c 964165b66cde03abc72fe948198b01be608436894732eadb94c8720d2467f223
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 967168bba88d2dc790ed9618bd4ba7bfe475b67b521ef6da305a6425c592928f
@@ -1653,7 +1653,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b22cdd6734ecda2b2b9749668f353abc2660f192d6a40c5d266309d30e25695e
-R 39b328d722a14e00d87cd1b0274ba2b6
-U drh
-Z 7a920600be1c7fd6aaa5dec418f9fad6
+P 9780b23ca375de6a542516fbc03eb39d5a393ca577718fda231d0d0ccf3b1c7e
+R 4c111361f04c7540b8ad9592d8f1048c
+T *branch * shared-mapping-hack
+T *sym-shared-mapping-hack *
+T -sym-trunk *
+U dan
+Z 4c10a02d9e6c902f708178ec77270bb4
