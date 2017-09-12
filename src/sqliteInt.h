@@ -51,14 +51,6 @@
 #endif
 
 /*
-** Make sure that rand_s() is available on Windows systems with MSVC 2005
-** or higher.
-*/
-#if defined(_MSC_VER) && _MSC_VER>=1400
-#  define _CRT_RAND_S
-#endif
-
-/*
 ** Include the header file used to customize the compiler options for MSVC.
 ** This should be done first so that it can successfully prevent spurious
 ** compiler warnings due to subsequent content in this file and other files
