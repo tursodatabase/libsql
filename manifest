@@ -1,5 +1,5 @@
-C Add\sa\smore\srigorous\stest\scase\sfor\sthe\sbug\sfixed\sby\sthe\sprevious\scommit\son\sthis\nbranch.
-D 2017-08-12T14:06:15.050
+C Add\sthe\shighly-experimental\s"PRAGMA\snoop_update=TRUE"\scommand.
+D 2017-09-12T20:09:31.560
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -451,7 +451,7 @@ F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
 F src/pragma.c cd6aeda3587be6c5c08f9b2d45eae6068666a03c9d077c8c43cdb85fb0aa70f2
-F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
+F src/pragma.h 70cb22e66adabf21bac20e2894184ece986a67a3252506220f3b62633c87dceb
 F src/prepare.c 3cbb99757d7295997674972f9dd2331c5c544368854ca08954c9beb1e9b6145a
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -463,7 +463,7 @@ F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c17
 F src/sqlite.h.in 803d2c969bccaf78ef087269c73f1f00f8870c122b3514414b8c47c4fde73e82
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h 0eccf839f75dab42f46559ea529c51921b8bf427b3d9a170a45e8e58cb4304bd
+F src/sqliteInt.h dc8a03250ca4887630a048ed135e50c47f75ef30a0859256420d072e6b98caf4
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -521,7 +521,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afef
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
-F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
+F src/update.c 2bb1d048a1a56e1f9238d68e8e476299a5873c4d4d9e0e9c4ab542d8b25f341d
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 07eec96f821c7dcbdca2fadffc6e38ea2c24bf409fcb15fe9fb3ac444d632dfe
@@ -1594,7 +1594,7 @@ F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66e
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
+F tool/mkpragmatab.tcl e9a725395dc4419047d242f4ebd4716dd8c682e234b6553a4bb891fc1f12174c
 F tool/mkshellc.tcl 69c38ecd7b74b2b0799a35ce20e1e3998e504d8c99c100ca4b98ae9d8f6279bc
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
@@ -1657,7 +1657,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38dd9b50fe260d853cbc2551bc1bb60ddf5752f0456e0da3afe4cbf728c891d8
-R 5ae6eec944d8695060377eb5fcb02f25
-U dan
-Z be5258dc78cb84266e8cf9b3ea9ebd92
+P 4256072399f44f48ed0856aa8112226af6feaf8676923612bde6cea239ebf920
+Q +de2e371757d2031cefc4bbae29d746a768c126a6c8443bb0f9ddebee7e69240b
+R 2413782f3f576a461bb90e166b6f6e32
+T *branch * begin-concurrent-pnu
+T *sym-begin-concurrent-pnu *
+T -sym-begin-concurrent *
+U drh
+Z 105db701de986bc4ba15a35d9febe596

@@ -223,6 +223,17 @@ void sqlite3Update(
   */
   chngRowid = chngPk = 0;
   for(i=0; i<pChanges->nExpr; i++){
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+    if( db->flags & SQLITE_NoopUpdate ){
+      Token x;
+      sqlite3ExprDelete(db, pChanges->a[i].pExpr);
+      x.z = pChanges->a[i].zName;
+      x.n = sqlite3Strlen30(x.z);
+      pChanges->a[i].pExpr =
+         sqlite3PExpr(pParse, TK_UPLUS, sqlite3ExprAlloc(db, TK_ID, &x, 0), 0);
+      if( db->mallocFailed ) goto update_cleanup;
+    }
+#endif
     if( sqlite3ResolveExprNames(&sNC, pChanges->a[i].pExpr) ){
       goto update_cleanup;
     }
