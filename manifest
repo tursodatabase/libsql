@@ -1,5 +1,5 @@
-C Make\ssure\sall\sconnections\sare\sclosed\sin\sthe\spragma.test\sscript.\nTest\schange\sonly\s-\sno\schanges\sto\scode.
-D 2017-09-12T00:24:45.988
+C Changes\sto\s(hopefully)\sget\sthe\sbuild\sworking\swith\srecent\sIntel\scompilers.
+D 2017-09-12T13:27:43.222
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -523,7 +523,7 @@ F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afe
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
 F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
-F src/util.c 773843506ce694714bc96fe67c30c37015f90ef515d0e70f1f8d5c9c24088152
+F src/util.c c2e1f79f6aa027d67eeae82390c633597fa936679a0e63d03eaf8a6789f65783
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
 F src/vdbe.c 82fc4553a0986a06bdd0d2b03a424e159bba5c74802fabb2841aa6cd27ccd962
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
@@ -1653,7 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9d91ee5ee3f316a8804b02eb3c34b175b8f87b28c22df56f481af708c54e297c
-R 569dfff7f83956e010969f23270d7c7f
+P d7b7f038a2c5e81a58c1dd4b556096b58ce10c30eb74fd4b770445927fdb62f3
+R faaafb9d700186855b0c5f4648cf9c3d
 U drh
-Z dc7e3abd878bac78055247ca067fef2c
+Z b126c5cc9d8f4cb4e874c4cda7b85db8

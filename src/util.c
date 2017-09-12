@@ -491,7 +491,11 @@ do_atof_calc:
           if( esign<0 ){
             result = 0.0*s;
           }else{
+#ifdef INFINITY
+            result = INFINITY;
+#else
             result = 1e308*1e308*s;  /* Infinity */
+#endif
           }
         }
       }else{
@@ -1276,7 +1280,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
 ** overflow, leave *pA unchanged and return 1.
 */
 int sqlite3AddInt64(i64 *pA, i64 iB){
-#if GCC_VERSION>=5004000
+#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
   return __builtin_add_overflow(*pA, iB, pA);
 #else
   i64 iA = *pA;
@@ -1296,7 +1300,7 @@ int sqlite3AddInt64(i64 *pA, i64 iB){
 #endif
 }
 int sqlite3SubInt64(i64 *pA, i64 iB){
-#if GCC_VERSION>=5004000
+#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
   return __builtin_sub_overflow(*pA, iB, pA);
 #else
   testcase( iB==SMALLEST_INT64+1 );
@@ -1311,7 +1315,7 @@ int sqlite3SubInt64(i64 *pA, i64 iB){
 #endif
 }
 int sqlite3MulInt64(i64 *pA, i64 iB){
-#if GCC_VERSION>=5004000
+#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
   return __builtin_mul_overflow(*pA, iB, pA);
 #else
   i64 iA = *pA;
