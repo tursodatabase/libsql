@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\s[b22cdd67]\sthat\scan\scause\sa\snegative\sinfinity\sto\sbe\s(rarely)\nreported\sas\sa\spositive\sinfinity.
-D 2017-09-12T15:05:34.004
+C Add\sthe\shighly-experimental\s"PRAGMA\snoop_update=TRUE"\scommand.
+D 2017-09-12T18:49:47.976
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -451,7 +451,7 @@ F src/pcache.c 4bada070456980c3c1f16d58ec2e64e389ad77b935e3d77e0c96e7bbd397289c
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c faf5f9ec553b71035c63e08d31651bbd28bec826d546b32c8e9c295855ca3605
-F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
+F src/pragma.h 70cb22e66adabf21bac20e2894184ece986a67a3252506220f3b62633c87dceb
 F src/prepare.c 9a141a1b02dca53beaa9771699d390aafcac01f5d1f1c0ae6e23ded8dcdb709a
 F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -463,7 +463,7 @@ F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220e
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h f9ae3609a583aa51712083e1d5817f62c7d97c0a203036a9a62c439059e8258b
+F src/sqliteInt.h 719814190ac5416116550e533d88de017f3aa6c320e20c01fdf462de2e70eea8
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -521,7 +521,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afef
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
-F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
+F src/update.c 2bb1d048a1a56e1f9238d68e8e476299a5873c4d4d9e0e9c4ab542d8b25f341d
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c ece10cb34b4a62cbb3aab8d711b67e93a2765e0b81d0f72458cb801a3ac60703
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
@@ -1589,7 +1589,7 @@ F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66e
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
+F tool/mkpragmatab.tcl e9a725395dc4419047d242f4ebd4716dd8c682e234b6553a4bb891fc1f12174c
 F tool/mkshellc.tcl 950c36f45941c12140e346a907fb66198bc2770ff7a17c749201e78d34bb3b0b
 F tool/mksourceid.c 30966d568654a4fd962fb324753e49429b7379e1f72d2be489ade963121f5943
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1653,7 +1653,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b22cdd6734ecda2b2b9749668f353abc2660f192d6a40c5d266309d30e25695e
-R 39b328d722a14e00d87cd1b0274ba2b6
+P 9780b23ca375de6a542516fbc03eb39d5a393ca577718fda231d0d0ccf3b1c7e
+R 81605b3002924d502b5591aa2ea8cc58
+T *branch * pragma-noop-update
+T *sym-pragma-noop-update *
+T -sym-trunk *
 U drh
-Z 7a920600be1c7fd6aaa5dec418f9fad6
+Z c962e5a18b582e6589df13d253ebf315
