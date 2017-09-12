@@ -1932,6 +1932,7 @@ do_test 23.5 {
     PRAGMA foreign_key_list(t2);
   }
 } {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
+db2 close
 
 reset_db
 do_execsql_test 24.0 {

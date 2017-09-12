@@ -1,5 +1,5 @@
-C New\stest\scase\sfor\sticket\s[b899b6042f97f52d].
-D 2017-09-11T23:46:59.120
+C Make\ssure\sall\sconnections\sare\sclosed\sin\sthe\spragma.test\sscript.\nTest\schange\sonly\s-\sno\schanges\sto\scode.
+D 2017-09-12T00:24:45.988
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -1096,7 +1096,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test d911c9ba49088d22054a05dc73743f677872a92ac89288bcdeafa0ebf3f9c531
-F test/pragma.test faa8b64c4be28b67b3a0d3e9c977e2feff7dd2a4b08f2fd062a95d30f8c8fd1c
+F test/pragma.test 277488e8098e55eef32cf3188513269035cccf5a1804d505db7ac4c725fa52a5
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
 F test/pragma4.test 6e85b6eab8e61ffc9c7db59d842276674e8e3264
@@ -1653,7 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3b7dbe9da90b7db336eed597a73a5364d8a691e57c1febd60908349f57a539ad
-R d1f8e4be016c31ab042e5cda9ad31b92
+P 9d91ee5ee3f316a8804b02eb3c34b175b8f87b28c22df56f481af708c54e297c
+R 569dfff7f83956e010969f23270d7c7f
 U drh
-Z d58faf0ad143f7a7b57c47c15bbc02fa
+Z dc7e3abd878bac78055247ca067fef2c
