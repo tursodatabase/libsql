@@ -492,7 +492,7 @@ do_atof_calc:
             result = 0.0*s;
           }else{
 #ifdef INFINITY
-            result = INFINITY;
+            result = INFINITY*s;
 #else
             result = 1e308*1e308*s;  /* Infinity */
 #endif
