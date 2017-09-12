@@ -46,7 +46,7 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
-#define SQLITE_SHARED_MAPPING 1
+/* #define SQLITE_SHARED_MAPPING 1 */
 
 /*
 ** There are various methods for file locking used for concurrency
