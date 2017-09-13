@@ -1681,6 +1681,9 @@ void sqlite3Pragma(
         { OP_IfNotZero,   1, 4,        0},    /* 1 */
         { OP_String8,     0, 3,        0},    /* 2 */
         { OP_ResultRow,   3, 1,        0},    /* 3 */
+        { OP_Halt,        0, 0,        0},    /* 4 */
+        { OP_String8,     0, 3,        0},    /* 5 */
+        { OP_Goto,        0, 3,        0},    /* 6 */
       };
       VdbeOp *aOp;
 
@@ -1689,7 +1692,10 @@ void sqlite3Pragma(
         aOp[0].p2 = 1-mxErr;
         aOp[2].p4type = P4_STATIC;
         aOp[2].p4.z = "ok";
+        aOp[5].p4type = P4_STATIC;
+        aOp[5].p4.z = (char*)sqlite3ErrStr(SQLITE_CORRUPT);
       }
+      sqlite3VdbeChangeP3(v, 0, sqlite3VdbeCurrentAddr(v)-2);
     }
   }
   break;

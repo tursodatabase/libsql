@@ -1952,7 +1952,7 @@ do_catchsql_test 24.1 {
 } {1 {database disk image is malformed}}
 do_catchsql_test 24.2 {
   PRAGMA integrity_check;
-} {1 {database disk image is malformed}}
+} {0 {{database disk image is malformed}}}
 
 database_never_corrupt
 finish_test
