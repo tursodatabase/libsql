@@ -1,5 +1,5 @@
-C Remove\suse\sof\sthe\srand_s()\sfunction\s(added\sby\s[139081bef9f63c3e])\sas\sit\sappears\sto\scause\sissues\swith\ssome\sthird-party\sDLLs.
-D 2017-09-12T23:58:47.871
+C Fix\stest\sscript\scomment.\s\sNo\schanges\sto\scode.
+D 2017-09-13T00:01:26.395
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -1541,7 +1541,7 @@ F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
-F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
+F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
@@ -1653,7 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9780b23ca375de6a542516fbc03eb39d5a393ca577718fda231d0d0ccf3b1c7e
-R 342e5faaf3ce5ac225c0025f84f1d0f8
+P 3a2793aa65727cbbf8c4678d478cf8fb02350f19ff98201934a984727368d64d
+R 1b5d97330475c133bb2adcba21536957
 U mistachkin
-Z ee0e295b03f3976f16bf7211fd8df318
+Z e62aad7ac8dd39a60ddf24398d01019c
