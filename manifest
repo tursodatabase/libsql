@@ -1,5 +1,5 @@
-C Disable\sFTS3\smatchinfo()\stests\sthat\sassume\sa\slittleEndian\splatform\swhen\nrunning\son\sbigEndian.
-D 2017-09-13T12:55:59.555
+C Test\scase\supdate\sdue\sto\sPRAGMA\sintegrity_check\senhancements\sin\s[8525c30c].\nNo\schanges\sto\scode.
+D 2017-09-13T20:20:36.313
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -676,7 +676,7 @@ F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
 F test/corruptA.test 112f4b2ae0b95ebf3ea63718642fb969a93acea557ace3a307234d19c245989b
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
-F test/corruptC.test 46ec43bd90a02fd7b37ad8a7a949c55aa5717f89
+F test/corruptC.test 138ecb02188ed1a719b533d4a139568204039f72f00e07a8d30d920bd83122db
 F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test 82ccf4f8f543fdbedd4aa42c709cb077f7374c62
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
@@ -1653,7 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8525c30c1d6676e51b9d9c642450aae3722c129edafdbc39b8435fcfe09b1817
-R 6ec072e8cc5f89299e9fb58896934d7c
+P 87ccdf9cbb9284553330683d4971be4f523ce922089aee6dffccfc18b3004263
+R 50570f8e00c8cd0ca9dde4dca24e8802
 U drh
-Z 5fb925822a75ef5ce57cd890a3d631bf
+Z 86679bd0091a9a37518dba2a956b32cd
