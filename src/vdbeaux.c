@@ -2702,7 +2702,9 @@ int sqlite3VdbeHalt(Vdbe *p){
           ** or hit an 'OR FAIL' constraint and there are no deferred foreign
           ** key constraints to hold up the transaction. This means a commit 
           ** is required. */
+          db->busyHandler.nTimeout = 0;
           rc = vdbeCommit(db, p);
+          p->retryable = db->busyHandler.nTimeout>0;
         }
         if( rc==SQLITE_BUSY && p->readOnly ){
           sqlite3VdbeLeave(p);

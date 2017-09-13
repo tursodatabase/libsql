@@ -393,6 +393,7 @@ struct Vdbe {
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
+  bft retryable:1;        /* True if the statement might succeed next time */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[7];        /* Counters used by sqlite3_stmt_status() */

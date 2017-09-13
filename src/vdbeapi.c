@@ -1614,6 +1614,14 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 }
 
 /*
+** Return true if the prepared statement failed with SQLITE_BUSY on its
+** previous run but might succeed if tried again.
+*/
+int sqlite3_stmt_retryable(sqlite3_stmt *pStmt){
+  return pStmt ? ((Vdbe*)pStmt)->retryable : 0;
+}
+
+/*
 ** Return true if the prepared statement is in need of being reset.
 */
 int sqlite3_stmt_busy(sqlite3_stmt *pStmt){

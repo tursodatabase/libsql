@@ -3765,6 +3765,18 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt);
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
 /*
+** CAPI3REF: Determine If An SQL Statement Can Be Retried After SQLITE_BUSY
+** METHOD: sqlite3_stmt
+**
+** ^The sqlite3_stmt_retryable(X) interface returns true (non-zero) if
+** the previous run of [prepared statement] X failed with an
+** [SQLITE_BUSY] error but might succeed if run again.  If X has not been
+** previously run or if the previous run of X did not return SQLITE_BUSY,
+** then the result of this function is a meaningless boolean.
+*/
+int sqlite3_stmt_retryable(sqlite3_stmt *pStmt);
+
+/*
 ** CAPI3REF: Determine If A Prepared Statement Has Been Reset
 ** METHOD: sqlite3_stmt
 **

@@ -949,6 +949,7 @@ struct BusyHandler {
   int (*xFunc)(void *,int);  /* The busy callback */
   void *pArg;                /* First arg to busy callback */
   int nBusy;                 /* Incremented with each busy call */
+  u32 nTimeout;              /* Number of timeouts */
 };
 
 /*

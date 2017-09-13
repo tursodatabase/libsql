@@ -2257,7 +2257,7 @@ static int shell_exec(
 ){
   sqlite3_stmt *pStmt = NULL;     /* Statement to execute. */
   int rc = SQLITE_OK;             /* Return Code */
-  int rc2;
+  int rc2, rc3;
   const char *zLeftover;          /* Tail of unprocessed SQL */
 
   if( pzErrMsg ){
@@ -2358,13 +2358,23 @@ static int shell_exec(
       /* Finalize the statement just executed. If this fails, save a
       ** copy of the error message. Otherwise, set zSql to point to the
       ** next statement to execute. */
+      rc3 = sqlite3_stmt_retryable(pStmt);
       rc2 = sqlite3_finalize(pStmt);
       if( rc!=SQLITE_NOMEM ) rc = rc2;
       if( rc==SQLITE_OK ){
         zSql = zLeftover;
         while( IsSpace(zSql[0]) ) zSql++;
-      }else if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+      }else{
+        if( rc==SQLITE_BUSY ){
+          if( rc3 ){
+            raw_printf(pArg->out, "Busy: might succeed on retry\n");
+          }else{
+            raw_printf(pArg->out, "Busy: cannot succeed - rollback required\n");
+          }
+        }
+        if( pzErrMsg ){
+          *pzErrMsg = save_err_msg(db);
+        }
       }
 
       /* clear saved stmt handle */
