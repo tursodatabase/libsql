@@ -1,5 +1,5 @@
-C Avoid\san\sout-of-bounds\sread\son\sa\srecovery\sattempt\susing\sa\scarefully\scrafted\ndatabase\sand\srollback\sjournal\swith\smismatched\spage\ssizes.\s\sThe\stest\scase\sfor\nthis\sis\sin\sTH3.
-D 2017-09-14T02:36:27.714
+C Avoid\san\sout-of-bounds\sread\sthat\scan\sbe\scaused\sby\sa\sspecially\sconstructed\njournal\sfile.
+D 2017-09-14T20:41:17.170
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -441,7 +441,7 @@ F src/os.c 93e0979b9b55df29c0c4923f73b48e9d3fe728f01dd8ed4f6a9d2f1d79779bc8
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 489aa972ccc34f7b4770b891694b32101c59ddd4be4ef0ddd9a4da58c145c1a6
+F src/os_unix.c 0e365b4c95bd6f5a9d3cea650272eba46706bad2c833f1d0e7ac38521331ddba
 F src/os_win.c 225432ab6512f63ab2f37eb76872f818b01f0483ba0bea04a7a1168be3070ea5
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 2a523bf8ec77678b35fe56b43ac24045d2f97ad44d58c6a0894c131feda3eeff
@@ -1046,6 +1046,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test ba03aaa08f02d62fbb8d3b2f5595c1b33aa9bbc5
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
+F test/mjournal.test 479076d56e89659cce2197ee0054df4a6578f43e10bdda9bdfcdb6eefaa02575
 F test/mmap1.test d2cfc1635171c434dcff0ece2f1c8e0a658807ce
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -1653,7 +1654,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43c6023bbf6b808ab4cfdbd1a63a516cbe2f1794c7787f8230632bae12e2ff59
-R 751623e94f5ae53084bb1caa4a774bfe
-U drh
-Z 37756b1d45e36db238c0646514cfea00
+P 378afa16381a222aafa6009dbbbc92473a69683537f1c265694678b0595a42c8
+R c2746be599de5d7ee9f8e8da17342031
+U dan
+Z cb084e7d60ad5fef0134c6ef29bfedb3
