@@ -5952,7 +5952,9 @@ static int unixOpen(
   }
 #endif
   
-  assert( zPath==0 || zPath[0]=='/' || eType==SQLITE_OPEN_MASTER_JOURNAL );
+  assert( zPath==0 || zPath[0]=='/' 
+      || eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL 
+  );
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 
 open_finished:
