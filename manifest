@@ -1,5 +1,5 @@
-C Test\scase\supdate\sdue\sto\sPRAGMA\sintegrity_check\senhancements\sin\s[8525c30c].\nNo\schanges\sto\scode.
-D 2017-09-13T20:20:36.313
+C Avoid\san\sout-of-bounds\sread\son\sa\srecovery\sattempt\susing\sa\scarefully\scrafted\ndatabase\sand\srollback\sjournal\swith\smismatched\spage\ssizes.\s\sThe\stest\scase\sfor\nthis\sis\sin\sTH3.
+D 2017-09-14T02:36:27.714
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -444,7 +444,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 489aa972ccc34f7b4770b891694b32101c59ddd4be4ef0ddd9a4da58c145c1a6
 F src/os_win.c 225432ab6512f63ab2f37eb76872f818b01f0483ba0bea04a7a1168be3070ea5
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 967168bba88d2dc790ed9618bd4ba7bfe475b67b521ef6da305a6425c592928f
+F src/pager.c 2a523bf8ec77678b35fe56b43ac24045d2f97ad44d58c6a0894c131feda3eeff
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 4bada070456980c3c1f16d58ec2e64e389ad77b935e3d77e0c96e7bbd397289c
@@ -1653,7 +1653,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87ccdf9cbb9284553330683d4971be4f523ce922089aee6dffccfc18b3004263
-R 50570f8e00c8cd0ca9dde4dca24e8802
+P 43c6023bbf6b808ab4cfdbd1a63a516cbe2f1794c7787f8230632bae12e2ff59
+R 751623e94f5ae53084bb1caa4a774bfe
 U drh
-Z 86679bd0091a9a37518dba2a956b32cd
+Z 37756b1d45e36db238c0646514cfea00

@@ -2844,12 +2844,13 @@ static int pager_playback(Pager *pPager, int isHot){
   ** pager_playback_one_page() call returns SQLITE_DONE or an IO error 
   ** occurs. 
   */
-  while( 1 ){
+  do{
     /* Read the next journal header from the journal file.  If there are
     ** not enough bytes left in the journal file for a complete header, or
     ** it is corrupted, then a process must have failed while writing it.
     ** This indicates nothing more needs to be rolled back.
     */
+    u32 savedPageSize = pPager->pageSize;
     rc = readJournalHdr(pPager, isHot, szJ, &nRec, &mxPg);
     if( rc!=SQLITE_OK ){ 
       if( rc==SQLITE_DONE ){
@@ -2931,9 +2932,8 @@ static int pager_playback(Pager *pPager, int isHot){
         }
       }
     }
-  }
-  /*NOTREACHED*/
-  assert( 0 );
+    rc = sqlite3PagerSetPagesize(pPager, &savedPageSize, -1);
+  }while( rc==SQLITE_OK );
 
 end_playback:
   /* Following a rollback, the database file should be back in its original
