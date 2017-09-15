@@ -1,5 +1,5 @@
-C Optimization\sto\sthe\sExprList\sobject\sto\smake\sit\sslightly\ssmaller\sand\sfaster.
-D 2017-09-15T15:17:48.630
+C Improved\sthe\sheader-comment\sdocumentation\son\ssqlite3ExprCodeExprList().\nNo\schanges\sto\scode.
+D 2017-09-15T15:38:01.722
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -410,7 +410,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
-F src/expr.c e44dda9df05faf96d340bbb68db3d1c47658576c13ac2fc3b660e0fe738d693e
+F src/expr.c 995a0801cc3ed8491cccbd6851b5d1f2461a67363e03cff377dd2a275b8a894d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c b4d259af627e3cd9510cf08db37f0bcc88b1887c735169c74490c3739d5cf5c6
@@ -1654,7 +1654,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7f0bf1da03f7fc1647ef172d9cb71a2ac46f136d4dee8e3a24e39313a981eb5
-R e5c2701ca337741bd503cd0a7cd02786
+P 4da49a95c0f07ed7790169e8833c3e2dacda504a3d997f567572020148abe30b
+R bec2d8e8b1fdf47c35ba1679c00b4d84
 U drh
-Z 176d5b19d69323e742495e3d44c24aea
+Z 9190f931e57ef2b5b105e255f9cf8a27
