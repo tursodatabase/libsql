@@ -1,5 +1,5 @@
-C Add\sanother\stest\scase\sfor\sthe\sproblem\sfixed\sby\sthe\sprevious\scommit.
-D 2017-09-14T21:12:07.969
+C Fix\sa\sharmless\scomment\stypo.\s\sNo\schanges\sto\scode.
+D 2017-09-15T14:36:13.956
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -539,7 +539,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
-F src/where.c d97f97ca6017747b7361af7f168a640d667c41cd1d4e91c2c5b2bd7538815d07
+F src/where.c 21eea981920a13fd3c0ac3d6c128d0a34b22cbec064e4f0603375fe1ffe26ca6
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c e8c2ece5843ea56e6c90277d421f2d628f3f7b7c976642369cc519f008e1d2b1
 F src/whereexpr.c 4953ca4e769c047d0a00a1ba9085849626b1f3a6e89f6befcf5c38fa0722acdd
@@ -1654,7 +1654,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf5bf42cad6e019a38dc0a36ff1f53ada619eef5259e175c3554a16669e03202
-R 8f7468b63be6b7c93b7232094070d3e5
-U dan
-Z 9fe988a13763bfb5ac0a7e60dbcb1440
+P 1a7e0b61c8a6bdd3ed105b9bc8a3732668fd7a897d2ed16c99445498e3c87089
+R 5c4f2e86b78512af5ee1ca6c5d751115
+U drh
+Z 3594cc4520cafe2c25c44febc34a036c

@@ -4798,7 +4798,7 @@ WhereInfo *sqlite3WhereBegin(
       Index *pIx = pLoop->u.btree.pIndex;
       int iIndexCur;
       int op = OP_OpenRead;
-      /* iAuxArg is always set if to a positive value if ONEPASS is possible */
+      /* iAuxArg is always set to a positive value if ONEPASS is possible */
       assert( iAuxArg!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
       if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIx)
        && (wctrlFlags & WHERE_OR_SUBCLAUSE)!=0
