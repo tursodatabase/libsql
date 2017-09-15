@@ -1305,7 +1305,11 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   pNew = sqlite3DbMallocRawNN(db, 
              sizeof(*pNew)+sizeof(pNew->a[0])*(p->nExpr-1) );
   if( pNew==0 ) return 0;
-  pNew->nAlloc = pNew->nExpr = p->nExpr;
+  pNew->nExpr = p->nExpr;
+  /* After being duplicated, the ExprList may not be expanded again using
+  ** Append() because Append() assumes that the number of slots in
+  ** ExprList.a[] is a power of 2 */
+  VVA_ONLY( pNew->bFixedSize = 1 );
   pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
@@ -1459,6 +1463,13 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
 ** Add a new element to the end of an expression list.  If pList is
 ** initially NULL, then create a new expression list.
 **
+** The pList argument must be either NULL or a pointer to an ExprList
+** obtained from a prior call to sqlite3ExprListAppend().  This routine
+** may not be used with an ExprList obtained from sqlite3ExprListDup().
+** Reason:  This routine assumes that the number of slots in pList->a[]
+** is a power of two.  That is true for sqlite3ExprListAppend() returns
+** but is not necessarily true from the return value of sqlite3ExprListDup().
+**
 ** If a memory allocation error occurs, the entire list is freed and
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
 ** that the new entry was successfully appended.
@@ -1471,22 +1482,22 @@ ExprList *sqlite3ExprListAppend(
   struct ExprList_item *pItem;
   sqlite3 *db = pParse->db;
   assert( db!=0 );
+  assert( pList==0 || pList->bFixedSize==0 );
   if( pList==0 ){
     pList = sqlite3DbMallocRawNN(db, sizeof(ExprList) );
     if( pList==0 ){
       goto no_mem;
     }
     pList->nExpr = 0;
-    pList->nAlloc = 1;
-  }else if( pList->nExpr==pList->nAlloc ){
+    VVA_ONLY( pList->bFixedSize = 0 );
+  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
     ExprList *pNew;
     pNew = sqlite3DbRealloc(db, pList, 
-             sizeof(*pList)+(2*pList->nAlloc - 1)*sizeof(pList->a[0]));
+             sizeof(*pList)+(2*pList->nExpr - 1)*sizeof(pList->a[0]));
     if( pNew==0 ){
       goto no_mem;
     }
     pList = pNew;
-    pList->nAlloc *= 2;
   }
   pItem = &pList->a[pList->nExpr++];
   assert( offsetof(struct ExprList_item,zName)==sizeof(pItem->pExpr) );
