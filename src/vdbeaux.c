@@ -33,10 +33,12 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   db->pVdbe = p;
   p->magic = VDBE_MAGIC_INIT;
   p->pParse = pParse;
+  pParse->pVdbe = p;
   assert( pParse->aLabel==0 );
   assert( pParse->nLabel==0 );
   assert( pParse->nOpAlloc==0 );
   assert( pParse->szOpAlloc==0 );
+  sqlite3VdbeAddOp2(p, OP_Init, 0, 1);
   return p;
 }
 

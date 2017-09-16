@@ -1861,19 +1861,16 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
 ** Get a VDBE for the given parser context.  Create a new one if necessary.
 ** If an error occurs, return NULL and leave a message in pParse.
 */
-static SQLITE_NOINLINE Vdbe *allocVdbe(Parse *pParse){
-  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
-  if( v ) sqlite3VdbeAddOp2(v, OP_Init, 0, 1);
+Vdbe *sqlite3GetVdbe(Parse *pParse){
+  if( pParse->pVdbe ){
+    return pParse->pVdbe;
+  }
   if( pParse->pToplevel==0
    && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
   ){
     pParse->okConstFactor = 1;
   }
-  return v;
-}
-Vdbe *sqlite3GetVdbe(Parse *pParse){
-  Vdbe *v = pParse->pVdbe;
-  return v ? v : allocVdbe(pParse);
+  return sqlite3VdbeCreate(pParse);
 }
 
 
