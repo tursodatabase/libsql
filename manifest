@@ -1,5 +1,5 @@
-C Simplify\sthe\ssqlite3VdbeGet()\sroutine.\s\sSmaller,\sfaster,\sand\seasier\sto\smaintain.
-D 2017-09-16T20:58:41.545
+C Do\snot\smake\sthe\sassumption\s(as\scheck-in\s[4da49a95c0f07]\sincorrectly\sdid)\sthat\nthe\sExprList\sreturned\sby\ssqlite3ExprListDup()\swould\snever\sbe\spassed\sinto\nsqlite3ExprListAppend().\s\sInclude\sa\snew\stest\scase\sthat\sshows\sthis\ssometimes\ndoes\shappen.
+D 2017-09-17T19:45:28.163
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -410,7 +410,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
-F src/expr.c 995a0801cc3ed8491cccbd6851b5d1f2461a67363e03cff377dd2a275b8a894d
+F src/expr.c 38a225057f5b7d6a2bc403d7a5d3a67f59ee57b73fe7c546221e3c53202a3731
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c b4d259af627e3cd9510cf08db37f0bcc88b1887c735169c74490c3739d5cf5c6
@@ -463,7 +463,7 @@ F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220e
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h 386e5b493c2e534c27366a8cdc20ed2f9767ec1eef63a4bad25a098c93aee473
+F src/sqliteInt.h 12aa1f626b3209ffa6a50d9d1e6b4235abd33273a0fcbfeedb66f573a68932b9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1037,7 +1037,7 @@ F test/minmax.test 6751e87b409fe11b02e70a306d846fa544e25a41
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
-F test/misc1.test 51ec3f56a2a7965de226964cff856695e743186826561536647f1e8b7d1d0eb3
+F test/misc1.test 76737c259537586355f45e2a1e121b6e91b5476c4604ad5c53d1abfcb3acf786
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
@@ -1654,7 +1654,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd95887f82739d05585edfb70913fdaaab154de46c4d3113dd32d283767fb6fc
-R b8f3b2c060c77e9294810570628283d5
+P 5dbb255a9377a6c2619fbac519f18caa4d8cb23257dfba0ffb9e36dd9dc16627
+R 42a326f02605d68acfe72daa45650e4b
 U drh
-Z 0a435a49b3c57e3c1d1922c1afe31527
+Z c92fbfe48a95c4de010b904ec47e6dc7

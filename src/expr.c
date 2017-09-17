@@ -1302,14 +1302,9 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   Expr *pPriorSelectCol = 0;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, 
-             sizeof(*pNew)+sizeof(pNew->a[0])*(p->nExpr-1) );
+  pNew = sqlite3DbMallocRawNN(db, sqlite3DbMallocSize(db, p));
   if( pNew==0 ) return 0;
   pNew->nExpr = p->nExpr;
-  /* After being duplicated, the ExprList may not be expanded again using
-  ** Append() because Append() assumes that the number of slots in
-  ** ExprList.a[] is a power of 2 */
-  VVA_ONLY( pNew->bFixedSize = 1 );
   pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
@@ -1482,14 +1477,12 @@ ExprList *sqlite3ExprListAppend(
   struct ExprList_item *pItem;
   sqlite3 *db = pParse->db;
   assert( db!=0 );
-  assert( pList==0 || pList->bFixedSize==0 );
   if( pList==0 ){
     pList = sqlite3DbMallocRawNN(db, sizeof(ExprList) );
     if( pList==0 ){
       goto no_mem;
     }
     pList->nExpr = 0;
-    VVA_ONLY( pList->bFixedSize = 0 );
   }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
     ExprList *pNew;
     pNew = sqlite3DbRealloc(db, pList, 

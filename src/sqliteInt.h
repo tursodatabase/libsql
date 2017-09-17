@@ -2468,9 +2468,6 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
-#ifdef SQLITE_DEBUG
-  u8 bFixedSize;         /* May not be expanded using sqlite3ExprListAppend() */
-#endif
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
