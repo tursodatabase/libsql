@@ -1,5 +1,5 @@
-C Do\snot\smake\sthe\sassumption\s(as\scheck-in\s[4da49a95c0f07]\sincorrectly\sdid)\sthat\nthe\sExprList\sreturned\sby\ssqlite3ExprListDup()\swould\snever\sbe\spassed\sinto\nsqlite3ExprListAppend().\s\sInclude\sa\snew\stest\scase\sthat\sshows\sthis\ssometimes\ndoes\shappen.
-D 2017-09-17T19:45:28.163
+C Fix\sthe\sCSV\svirtual\stable\sextension\sso\sthat\sit\sworks\swhen\sthe\sdefault\scharacter\nis\sunsigned.
+D 2017-09-18T00:18:31.200
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -262,7 +262,7 @@ F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c b10ea114cf29f446e384064ae61e01373b431f6f172896f41ca0ba3507709003
+F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c b1aa06c0f1dac277695d4529e5e976c65ab5678dcbb53a0304deaa8adc44b332
@@ -1121,7 +1121,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 7bb585433ce7fb2a2c255ae4b5e24f1bc27fe177ec1120f886cc4852f48f5ee9 x
+F test/releasetest.tcl 22bd6be9f227a1ad01ebfaa8ed92400b5eaaff1ecc1e14e269eec2631c7f43ab x
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test f580934279800d480a19176c6b44909df31ce7ad45267ea475a541daa522f3d3
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1654,7 +1654,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dbb255a9377a6c2619fbac519f18caa4d8cb23257dfba0ffb9e36dd9dc16627
-R 42a326f02605d68acfe72daa45650e4b
+P 29227d00a9999f0f28a0b55ef70183799a667c3b9d81d2e5ac0ab1840bef98b1
+R ccebe3b4b57d7dc8c5482ee2b9f63107
 U drh
-Z c92fbfe48a95c4de010b904ec47e6dc7
+Z a535a0ac2d4006e12331e0812c689362
