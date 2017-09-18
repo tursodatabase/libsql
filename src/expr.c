@@ -1302,10 +1302,9 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   Expr *pPriorSelectCol = 0;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, 
-             sizeof(*pNew)+sizeof(pNew->a[0])*(p->nExpr-1) );
+  pNew = sqlite3DbMallocRawNN(db, sqlite3DbMallocSize(db, p));
   if( pNew==0 ) return 0;
-  pNew->nAlloc = pNew->nExpr = p->nExpr;
+  pNew->nExpr = p->nExpr;
   pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
@@ -1459,6 +1458,13 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
 ** Add a new element to the end of an expression list.  If pList is
 ** initially NULL, then create a new expression list.
 **
+** The pList argument must be either NULL or a pointer to an ExprList
+** obtained from a prior call to sqlite3ExprListAppend().  This routine
+** may not be used with an ExprList obtained from sqlite3ExprListDup().
+** Reason:  This routine assumes that the number of slots in pList->a[]
+** is a power of two.  That is true for sqlite3ExprListAppend() returns
+** but is not necessarily true from the return value of sqlite3ExprListDup().
+**
 ** If a memory allocation error occurs, the entire list is freed and
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
 ** that the new entry was successfully appended.
@@ -1477,16 +1483,14 @@ ExprList *sqlite3ExprListAppend(
       goto no_mem;
     }
     pList->nExpr = 0;
-    pList->nAlloc = 1;
-  }else if( pList->nExpr==pList->nAlloc ){
+  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
     ExprList *pNew;
     pNew = sqlite3DbRealloc(db, pList, 
-             sizeof(*pList)+(2*pList->nAlloc - 1)*sizeof(pList->a[0]));
+             sizeof(*pList)+(2*pList->nExpr - 1)*sizeof(pList->a[0]));
     if( pNew==0 ){
       goto no_mem;
     }
     pList = pNew;
-    pList->nAlloc *= 2;
   }
   pItem = &pList->a[pList->nExpr++];
   assert( offsetof(struct ExprList_item,zName)==sizeof(pItem->pExpr) );
@@ -4241,7 +4245,9 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 ** Generate code that pushes the value of every element of the given
 ** expression list into a sequence of registers beginning at target.
 **
-** Return the number of elements evaluated.
+** Return the number of elements evaluated.  The number returned will
+** usually be pList->nExpr but might be reduced if SQLITE_ECEL_OMITREF
+** is defined.
 **
 ** The SQLITE_ECEL_DUP flag prevents the arguments from being
 ** filled using OP_SCopy.  OP_Copy must be used instead.
@@ -4252,6 +4258,8 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 ** The SQLITE_ECEL_REF flag means that expressions in the list with
 ** ExprList.a[].u.x.iOrderByCol>0 have already been evaluated and stored
 ** in registers at srcReg, and so the value can be copied from there.
+** If SQLITE_ECEL_OMITREF is also set, then the values with u.x.iOrderByCol>0
+** are simply omitted rather than being copied from srcReg.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */

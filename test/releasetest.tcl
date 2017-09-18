@@ -114,7 +114,7 @@ array set ::Configs [strip_comments {
   }
   "Debug-One" {
     --disable-shared
-    -O2
+    -O2 -funsigned-char
     -DSQLITE_DEBUG=1
     -DSQLITE_MEMDEBUG=1
     -DSQLITE_MUTEX_NOOP=1

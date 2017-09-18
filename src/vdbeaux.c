@@ -33,10 +33,12 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   db->pVdbe = p;
   p->magic = VDBE_MAGIC_INIT;
   p->pParse = pParse;
+  pParse->pVdbe = p;
   assert( pParse->aLabel==0 );
   assert( pParse->nLabel==0 );
   assert( pParse->nOpAlloc==0 );
   assert( pParse->szOpAlloc==0 );
+  sqlite3VdbeAddOp2(p, OP_Init, 0, 1);
   return p;
 }
 
@@ -2159,27 +2161,6 @@ static void closeAllCursors(Vdbe *p){
 }
 
 /*
-** Clean up the VM after a single run.
-*/
-static void Cleanup(Vdbe *p){
-  sqlite3 *db = p->db;
-
-#ifdef SQLITE_DEBUG
-  /* Execute assert() statements to ensure that the Vdbe.apCsr[] and 
-  ** Vdbe.aMem[] arrays have already been cleaned up.  */
-  int i;
-  if( p->apCsr ) for(i=0; i<p->nCursor; i++) assert( p->apCsr[i]==0 );
-  if( p->aMem ){
-    for(i=0; i<p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
-  }
-#endif
-
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = 0;
-  p->pResultSet = 0;
-}
-
-/*
 ** Set the number of result columns that will be returned by this SQL
 ** statement. This is now set at compile time, rather than during
 ** execution of the vdbe program so that sqlite3_column_count() can
@@ -2904,8 +2885,6 @@ int sqlite3VdbeReset(Vdbe *p){
   if( p->pc>=0 ){
     vdbeInvokeSqllog(p);
     sqlite3VdbeTransferError(p);
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = 0;
     if( p->runOnlyOnce ) p->expired = 1;
   }else if( p->rc && p->expired ){
     /* The expired flag was set on the VDBE before the first call
@@ -2913,13 +2892,22 @@ int sqlite3VdbeReset(Vdbe *p){
     ** called), set the database error in this case as well.
     */
     sqlite3ErrorWithMsg(db, p->rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = 0;
   }
 
-  /* Reclaim all memory used by the VDBE
+  /* Reset register contents and reclaim error message memory.
   */
-  Cleanup(p);
+#ifdef SQLITE_DEBUG
+  /* Execute assert() statements to ensure that the Vdbe.apCsr[] and 
+  ** Vdbe.aMem[] arrays have already been cleaned up.  */
+  int i;
+  if( p->apCsr ) for(i=0; i<p->nCursor; i++) assert( p->apCsr[i]==0 );
+  if( p->aMem ){
+    for(i=0; i<p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
+  }
+#endif
+  sqlite3DbFree(db, p->zErrMsg);
+  p->zErrMsg = 0;
+  p->pResultSet = 0;
 
   /* Save profiling information from this VDBE run.
   */

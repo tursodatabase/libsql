@@ -5696,9 +5696,6 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   EntropyGatherer e;
   UNUSED_PARAMETER(pVfs);
   memset(zBuf, 0, nBuf);
-#if defined(_MSC_VER) && _MSC_VER>=1400 && !SQLITE_OS_WINCE
-  rand_s((unsigned int*)zBuf); /* rand_s() is not available with MinGW */
-#endif /* defined(_MSC_VER) && _MSC_VER>=1400 */
   e.a = (unsigned char*)zBuf;
   e.na = nBuf;
   e.nXor = 0;

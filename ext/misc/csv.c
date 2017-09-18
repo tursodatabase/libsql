@@ -78,7 +78,7 @@ struct CsvReader {
   int nAlloc;            /* Space allocated for z[] */
   int nLine;             /* Current line number */
   int bNotFirst;         /* True if prior text has been seen */
-  char cTerm;            /* Character that terminated the most recent field */
+  int cTerm;             /* Character that terminated the most recent field */
   size_t iIn;            /* Next unread character in the input buffer */
   size_t nIn;            /* Number of characters in the input buffer */
   char *zIn;             /* The input buffer */
@@ -166,7 +166,7 @@ static int csv_getc(CsvReader *p){
     if( p->in!=0 ) return csv_getc_refill(p);
     return EOF;
   }
-  return p->zIn[p->iIn++];
+  return ((unsigned char*)p->zIn)[p->iIn++];
 }
 
 /* Increase the size of p->z and append character c to the end. 
