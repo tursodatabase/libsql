@@ -2807,6 +2807,7 @@ static int pager_playback(Pager *pPager, int isHot){
   char *zMaster = 0;       /* Name of master journal file if any */
   int needPagerReset;      /* True to reset page prior to first page rollback */
   int nPlayback = 0;       /* Total number of pages restored from journal */
+  u32 savedPageSize = pPager->pageSize;
 
   /* Figure out how many records are in the journal.  Abort early if
   ** the journal is empty.
@@ -2844,13 +2845,12 @@ static int pager_playback(Pager *pPager, int isHot){
   ** pager_playback_one_page() call returns SQLITE_DONE or an IO error 
   ** occurs. 
   */
-  do{
+  while( 1 ){
     /* Read the next journal header from the journal file.  If there are
     ** not enough bytes left in the journal file for a complete header, or
     ** it is corrupted, then a process must have failed while writing it.
     ** This indicates nothing more needs to be rolled back.
     */
-    u32 savedPageSize = pPager->pageSize;
     rc = readJournalHdr(pPager, isHot, szJ, &nRec, &mxPg);
     if( rc!=SQLITE_OK ){ 
       if( rc==SQLITE_DONE ){
@@ -2932,10 +2932,14 @@ static int pager_playback(Pager *pPager, int isHot){
         }
       }
     }
-    rc = sqlite3PagerSetPagesize(pPager, &savedPageSize, -1);
-  }while( rc==SQLITE_OK );
+  }
+  /*NOTREACHED*/
+  assert( 0 );
 
 end_playback:
+  if( rc==SQLITE_OK ){
+    rc = sqlite3PagerSetPagesize(pPager, &savedPageSize, -1);
+  }
   /* Following a rollback, the database file should be back in its original
   ** state prior to the start of the transaction, so invoke the
   ** SQLITE_FCNTL_DB_UNCHANGED file-control method to disable the
