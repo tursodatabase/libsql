@@ -1,8 +1,8 @@
-C Add\sextension\s"mmapwarm.c".\sProvides\sfunction\ssqlite3_mmap_warm(),\sused\sto\n"warm\sup"\sthe\smemory\smapping\sused\sby\sSQLite\sin\smmap\smode\sto\saccess\sdb\sfile\ncontent.
-D 2017-09-18T16:28:56.386
+C Fix\sa\stypo\sin\sthe\sMSVC\smakefile.
+D 2017-09-18T18:08:54.087
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 2a1cf3959b03b3cffedcbc3cf6bde8c992ed865667f2a7aefb14cb2105ec97c7
+F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1655,10 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42f07775556758754e92e29a759d200d0d81d16eee83ab982b840db11292f834
-R 2de3e498b6d544466fabd508443a98d0
-T *branch * mmap-warm
-T *sym-mmap-warm *
-T -sym-trunk *
-U dan
-Z 5972d569bdc42461a8703da92c49c171
+P d4a30b91f9aad93510baead8c04ee51b82c98763be5a224ed4873298214c963a
+R 4ba39d2b6ec2c2ddd6b331aa8e33693e
+U drh
+Z e0cd459a48e910a5c5781b8e3cab411d
