@@ -1,8 +1,8 @@
-C Fix\sthe\sCSV\svirtual\stable\sextension\sso\sthat\sit\sworks\swhen\sthe\sdefault\scharacter\nis\sunsigned.
-D 2017-09-18T00:18:31.200
-F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
+C Add\sextension\s"mmapwarm.c".\sProvides\sfunction\ssqlite3_mmap_warm(),\sused\sto\n"warm\sup"\sthe\smemory\smapping\sused\sby\sSQLite\sin\smmap\smode\sto\saccess\sdb\sfile\ncontent.
+D 2017-09-18T16:28:56.386
+F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
+F Makefile.msc 2a1cf3959b03b3cffedcbc3cf6bde8c992ed865667f2a7aefb14cb2105ec97c7
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -270,6 +270,7 @@ F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
 F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
+F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
@@ -381,7 +382,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk da75a0527a56da0b7f568a976b3cb69756613080f16e4d208b6c6a0495bfb132
+F main.mk d0145f02deb67d65c4822225847cba112c237cdb62f4905eeb4b648e82bfc222
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -468,7 +469,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 487951d81f9704800fd9f0ffdaa2f935a83ccb6be3575c2c4ef83e4789b4c828
-F src/test1.c 8513b17ca4a7a9ba28748535d178b6e472ec7394ae0eea53907f2d3bcdbab2df
+F src/test1.c a947b2554fa77d0ef2dd21d1ef08e37e5d91b17af83de923a4e3c7f10957a2eb
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1654,7 +1655,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29227d00a9999f0f28a0b55ef70183799a667c3b9d81d2e5ac0ab1840bef98b1
-R ccebe3b4b57d7dc8c5482ee2b9f63107
-U drh
-Z a535a0ac2d4006e12331e0812c689362
+P 42f07775556758754e92e29a759d200d0d81d16eee83ab982b840db11292f834
+R 2de3e498b6d544466fabd508443a98d0
+T *branch * mmap-warm
+T *sym-mmap-warm *
+T -sym-trunk *
+U dan
+Z 5972d569bdc42461a8703da92c49c171
