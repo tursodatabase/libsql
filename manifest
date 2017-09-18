@@ -1,5 +1,5 @@
-C The\sout-of-bounds\sread\son\srecovery\sfix\sof\scheck-in\s[378afa16381a222a]\scaused\nproblems\sfor\ssome\scorner-case\serror\sconditions.\s\sThis\salternative\sfix\sappears\nto\swork\sbetter.
-D 2017-09-18T09:40:46.165
+C Minor\ssimplification\sof\serror\smessage\sgeneration\sduring\scompound\squery\ncode\sgeneration.
+D 2017-09-18T13:16:10.771
 F Makefile.in c644bbe8ebe4aae82ad6783eae6b6beea4c727b99ff97568b847ced5e2ac7afb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a7a74bf60ad395098c0bd175ab054cd65ef85d7f034198d52bcc4d9e5fb4c6b
@@ -457,7 +457,7 @@ F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 6ea1cb2f0ab80a5bbaa603c872658c0237d4997d24a455e9b025d74ea08a4615
+F src/select.c 9fa0db382f43217e207a145b8c6cec26e85cd1a42a8428ee8b3df5870dfea0f4
 F src/shell.c c1206a23d9239f8f51751d3be9b8c3b02fa4103546bea1add7f864d84a8276ab
 F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220ee
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
@@ -1654,7 +1654,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42f07775556758754e92e29a759d200d0d81d16eee83ab982b840db11292f834
-R 243e075c375b949edc613e149835756a
+P 74f399d81fe250e09fde730ac0c17fe8b2b776ed32a3f576adaad56090f2b7fa
+R 1904950103dccd08d21013a5f29bd183
 U drh
-Z d7a1bb52fe8a802fdbcc937d885ced35
+Z b85cfdf5b76cc24c75500946d403051a

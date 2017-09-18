@@ -2281,15 +2281,9 @@ static int multiSelect(
   db = pParse->db;
   pPrior = p->pPrior;
   dest = *pDest;
-  if( pPrior->pOrderBy ){
-    sqlite3ErrorMsg(pParse,"ORDER BY clause should come after %s not before",
-      selectOpName(p->op));
-    rc = 1;
-    goto multi_select_end;
-  }
-  if( pPrior->pLimit ){
-    sqlite3ErrorMsg(pParse,"LIMIT clause should come after %s not before",
-      selectOpName(p->op));
+  if( pPrior->pOrderBy || pPrior->pLimit ){
+    sqlite3ErrorMsg(pParse,"%s clause should come after %s not before",
+      pPrior->pOrderBy!=0 ? "ORDER BY" : "LIMIT", selectOpName(p->op));
     rc = 1;
     goto multi_select_end;
   }
