@@ -125,6 +125,8 @@ pub mod limits;
 mod hooks;
 #[cfg(feature = "hooks")]
 pub use hooks::*;
+#[cfg(feature = "unlock_notify")]
+pub mod unlock_notify;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;

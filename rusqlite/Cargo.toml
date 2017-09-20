@@ -28,6 +28,7 @@ buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
+unlock_notify = ["libsqlite3-sys/unlock_notify"]
 
 [dependencies]
 time = "0.1.0"
