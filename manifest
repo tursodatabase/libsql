@@ -1,5 +1,5 @@
-C The\sBLOB\sreturned\sby\ssqlite3VdbeMemFromBtree()\sdoes\snot\sneed\sto\sbe\nzero-terminated.
-D 2017-09-20T18:07:50.056
+C Size\sand\sperformance\soptimization\son\ssqlite3VdbeMemGrow().
+D 2017-09-20T18:47:51.074
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -532,7 +532,7 @@ F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
 F src/vdbeaux.c 3be977a032e54fe46cb1b1f3ba62158438b0cc93e091f6feca7742d20dad3203
 F src/vdbeblob.c 635a79b60340a6a14a622ea8dcb081f0a66b1ac3836870c587f232eec08c0286
-F src/vdbemem.c 4996dd14244a7757a9b8b085c03825e4b7611865e73e55df248b4f0836dcf9bf
+F src/vdbemem.c 9496f08e196c536397039783cdfda4ad2bc944d84ccad93df03e1ed3635534d6
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3b3e32d4cd07a1d2d1708fffa47819345ae6b39205a9f548280d499c8f481d64
-R bc412d1d9fd3e512c9d7b13d3be8fe98
+P e0af9a9040768adf8bba42a8780adeb6304bc442afb1f35d239d019db1624f40
+R 687f0aa7f9a7f38a700d64fc554d13e9
 U drh
-Z 372454472847a80abeaf6ba3b240911a
+Z 9d62175f9630fe98b6fce9be22a6837d
