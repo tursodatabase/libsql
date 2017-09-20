@@ -3942,7 +3942,7 @@ sqlite3_int64 sqlite3_uri_int64(
 ){
   const char *z = sqlite3_uri_parameter(zFilename, zParam);
   sqlite3_int64 v;
-  if( z && sqlite3DecOrHexToI64(z, &v)==SQLITE_OK ){
+  if( z && sqlite3DecOrHexToI64(z, &v)==0 ){
     bDflt = v;
   }
   return bDflt;

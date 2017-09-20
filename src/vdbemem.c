@@ -597,14 +597,21 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
   if( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 ){
+    int rc;
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    if( 0==sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc) ){
+    rc = sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc);
+    if( rc==0 ){
       MemSetTypeFlag(pMem, MEM_Int);
     }else{
-      pMem->u.r = sqlite3VdbeRealValue(pMem);
-      MemSetTypeFlag(pMem, MEM_Real);
-      sqlite3VdbeIntegerAffinity(pMem);
+      i64 i = pMem->u.i;
+      sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+      if( rc==1 && pMem->u.r==(double)i ){
+        pMem->u.i = i;
+        MemSetTypeFlag(pMem, MEM_Int);
+      }else{
+        MemSetTypeFlag(pMem, MEM_Real);
+      }
     }
   }
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))!=0 );
