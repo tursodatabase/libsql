@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_mmap_warm()\sfunction\sas\san\sextension\sin\sthe\sext/misc/mmapwarm.c\ssource\sfile.
-D 2017-09-18T18:17:01.889
+C Updates\sto\sthe\s"lemon.html"\sdocument\sreceived\sfrom\sAndy\sGoth.
+D 2017-09-20T09:09:34.192
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -33,7 +33,7 @@ F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure e691ad9b505f1f47bc5d99be9e1d49b1be9037e9cb3821c9b14c63c3d413d055 x
 F configure.ac bb85c1c53e952c8c7078a2f147eba613e0128b8b6e7780d64758d8fb29bcc695
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
-F doc/lemon.html 1f8b8d4c9f5cfe40e679fee279cc9eb2da8e6eb74ad406028538d7864cc4b6cb
+F doc/lemon.html 278113807f49d12d04179a93fab92b5b917a08771152ca7949d34e928efa3941
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
@@ -1655,8 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a944719314e0ac2f1954b65668815769eba3ab3e39a74666293b8dea52a184b2 3235835babb49b4dd1acaabd1aa6cfb0b7fe19a914db1cb511e8cc872d3c0c39
-R 62da41337307696798754c70fb4a4da8
-T +closed 3235835babb49b4dd1acaabd1aa6cfb0b7fe19a914db1cb511e8cc872d3c0c39
+P 1b2de41453ac33de82f9cd6cbb92eee4fe184fb282c27e5efa5243c8cb239630
+R e0e8cf7279386534b02109d8fa18ad99
 U drh
-Z 9c4b90490d8e7ae619a7569445f78dbf
+Z 86920861ac015f347841db4c53c64a7b
