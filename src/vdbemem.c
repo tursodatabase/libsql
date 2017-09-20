@@ -114,7 +114,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
   assert( (pMem->flags&MEM_RowSet)==0 );
   assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
            || desiredEnc==SQLITE_UTF16BE );
-  if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
+  if( pMem->enc==desiredEnc || !(pMem->flags&MEM_Str) ){
     return SQLITE_OK;
   }
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -210,6 +210,20 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 }
 
 /*
+** It is already known that pMem contains an unterminated string.
+** Add the zero terminator.
+*/
+static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
+  if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  pMem->z[pMem->n] = 0;
+  pMem->z[pMem->n+1] = 0;
+  pMem->flags |= MEM_Term;
+  return SQLITE_OK;
+}
+
+/*
 ** Change pMem so that its MEM_Str or MEM_Blob value is stored in
 ** MEM.zMalloc, where it can be safely written.
 **
@@ -221,12 +235,8 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   if( (pMem->flags & (MEM_Str|MEM_Blob))!=0 ){
     if( ExpandBlob(pMem) ) return SQLITE_NOMEM;
     if( pMem->szMalloc==0 || pMem->z!=pMem->zMalloc ){
-      if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
-        return SQLITE_NOMEM_BKPT;
-      }
-      pMem->z[pMem->n] = 0;
-      pMem->z[pMem->n+1] = 0;
-      pMem->flags |= MEM_Term;
+      int rc = vdbeMemAddTerminator(pMem);
+      if( rc ) return rc;
     }
   }
   pMem->flags &= ~MEM_Ephem;
@@ -264,20 +274,6 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   return SQLITE_OK;
 }
 #endif
-
-/*
-** It is already known that pMem contains an unterminated string.
-** Add the zero terminator.
-*/
-static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
-  if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
-    return SQLITE_NOMEM_BKPT;
-  }
-  pMem->z[pMem->n] = 0;
-  pMem->z[pMem->n+1] = 0;
-  pMem->flags |= MEM_Term;
-  return SQLITE_OK;
-}
 
 /*
 ** Make sure the given Mem is \u0000 terminated.
