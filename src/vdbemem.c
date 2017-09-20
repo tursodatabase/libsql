@@ -1012,12 +1012,10 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
 ){
   int rc;
   pMem->flags = MEM_Null;
-  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
+  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt)) ){
     rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){
-      pMem->z[amt] = 0;
-      pMem->z[amt+1] = 0;
-      pMem->flags = MEM_Blob|MEM_Term;
+      pMem->flags = MEM_Blob;
       pMem->n = (int)amt;
     }else{
       sqlite3VdbeMemRelease(pMem);
