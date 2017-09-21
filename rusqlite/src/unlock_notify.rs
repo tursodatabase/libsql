@@ -40,14 +40,12 @@ impl UnlockNotification {
 /// This function is an unlock-notify callback
 #[cfg(feature = "unlock_notify")]
 unsafe extern "C" fn unlock_notify_cb(ap_arg: *mut *mut c_void, n_arg: c_int) {
-    /*int i;
-  for(i=0; i<nArg; i++){
-    UnlockNotification *p = (UnlockNotification *)apArg[i];
-    pthread_mutex_lock(&p->mutex);
-    p->fired = 1;
-    pthread_cond_signal(&p->cond);
-    pthread_mutex_unlock(&p->mutex);
-  }*/
+    use std::slice::from_raw_parts;
+    let args = from_raw_parts(ap_arg, n_arg as usize);
+    for arg in args {
+        let un: &mut UnlockNotification = &mut *(*arg as *mut UnlockNotification);
+        un.fired();
+    }
 }
 
 /// This function assumes that an SQLite API call (either `sqlite3_prepare_v2()`
