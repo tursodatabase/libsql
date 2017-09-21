@@ -5094,8 +5094,6 @@ static int winOpen(
            dwDesiredAccess, (h==INVALID_HANDLE_VALUE) ? "failed" : "ok"));
 
   if( h==INVALID_HANDLE_VALUE ){
-    pFile->lastErrno = lastErrno;
-    winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
     sqlite3_free(zConverted);
     sqlite3_free(zTmpname);
     if( isReadWrite && !isExclusive ){
@@ -5104,6 +5102,8 @@ static int winOpen(
                      ~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)),
          pOutFlags);
     }else{
+      pFile->lastErrno = lastErrno;
+      winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
       return SQLITE_CANTOPEN_BKPT;
     }
   }
