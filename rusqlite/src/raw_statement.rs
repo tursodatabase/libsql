@@ -2,14 +2,15 @@ use std::ffi::CStr;
 use std::ptr;
 use std::os::raw::c_int;
 use super::ffi;
+use super::unlock_notify;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
-pub struct RawStatement(*mut ffi::sqlite3_stmt);
+pub struct RawStatement(*mut ffi::sqlite3_stmt, *mut ffi::sqlite3);
 
 impl RawStatement {
-    pub fn new(stmt: *mut ffi::sqlite3_stmt) -> RawStatement {
-        RawStatement(stmt)
+    pub fn new(stmt: *mut ffi::sqlite3_stmt, db: *mut ffi::sqlite3) -> RawStatement {
+        RawStatement(stmt, db)
     }
 
     pub unsafe fn ptr(&self) -> *mut ffi::sqlite3_stmt {
@@ -29,7 +30,29 @@ impl RawStatement {
     }
 
     pub fn step(&self) -> c_int {
-        unsafe { ffi::sqlite3_step(self.0) }
+        if cfg!(feature = "unlock_notify") {
+            let mut rc;
+            loop {
+                rc = unsafe { ffi::sqlite3_step(self.0) };
+                if rc == ffi::SQLITE_LOCKED {
+                    if unsafe { ffi::sqlite3_extended_errcode(self.1) } !=
+                        ffi::SQLITE_LOCKED_SHAREDCACHE
+                    {
+                        break;
+                    }
+                } else if rc != ffi::SQLITE_LOCKED_SHAREDCACHE {
+                    break;
+                }
+                rc = unlock_notify::wait_for_unlock_notify(self.1);
+                if rc != ffi::SQLITE_OK {
+                    break;
+                }
+                self.reset();
+            }
+            rc
+        } else {
+            unsafe { ffi::sqlite3_step(self.0) }
+        }
     }
 
     pub fn reset(&self) -> c_int {
