@@ -1515,12 +1515,12 @@ void sqlite3Pragma(
       for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        if( HasRowid(pTab) ) aRoot[cnt++] = pTab->tnum;
+        if( HasRowid(pTab) ) aRoot[++cnt] = pTab->tnum;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          aRoot[cnt++] = pIdx->tnum;
+          aRoot[++cnt] = pIdx->tnum;
         }
       }
-      aRoot[cnt] = 0;
+      aRoot[0] = cnt;
 
       /* Make sure sufficient number of registers have been allocated */
       pParse->nMem = MAX( pParse->nMem, 8+mxIdx );

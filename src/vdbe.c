@@ -5673,7 +5673,7 @@ case OP_IntegrityCk: {
   nRoot = pOp->p2;
   aRoot = pOp->p4.ai;
   assert( nRoot>0 );
-  assert( aRoot[nRoot]==0 );
+  assert( aRoot[0]==nRoot );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pnErr = &aMem[pOp->p3];
   assert( (pnErr->flags & MEM_Int)!=0 );
@@ -5681,7 +5681,7 @@ case OP_IntegrityCk: {
   pIn1 = &aMem[pOp->p1];
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
-  z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
+  z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, &aRoot[1], nRoot,
                                  (int)pnErr->u.i+1, &nErr);
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){

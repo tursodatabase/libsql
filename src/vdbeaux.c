@@ -1396,7 +1396,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       int *ai = pOp->p4.ai;
       int n = ai[0];   /* The first element of an INTARRAY is always the
                        ** count of the number of elements to follow */
-      for(i=1; i<n; i++){
+      for(i=1; i<=n; i++){
         sqlite3XPrintf(&x, ",%d", ai[i]);
       }
       zTemp[0] = '[';

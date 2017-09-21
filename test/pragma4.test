@@ -80,5 +80,24 @@ foreach {tn sql} {
   do_pragma_ncol_test 1.$tn.1 $sql 0
 }
 
+# EXPLAIN on a PRAGMA integrity_check.
+# Verify that that P4_INTARRAY argument to OP_IntegrityCk is rendered
+# correctly.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_test pragma4-2.100 {
+  db eval {
+    PRAGMA page_size=512;
+    CREATE TABLE t1(x);
+    WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10000)
+    INSERT INTO t1(x) SELECT zeroblob(300) FROM c;
+    CREATE TABLE t2(y);
+    DROP TABLE t1;
+  }
+  string map {\[ x \] x \173 {} \175 {}} \
+    [db eval {EXPLAIN PRAGMA integrity_check}]
+} {/ IntegrityCk 2 2 1 x[0-9]+,1x /}
 
 finish_test
