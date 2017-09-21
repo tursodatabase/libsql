@@ -3514,6 +3514,29 @@ int sqlite3_snapshot_cmp(sqlite3_snapshot *p1, sqlite3_snapshot *p2){
   if( pHdr1->mxFrame>pHdr2->mxFrame ) return +1;
   return 0;
 }
+
+/*
+** Write a human-readable description of a snapshot into a text buffer.
+*/
+void sqlite3_snapshot_describe(sqlite3_snapshot *pSS, char *z, int n){
+  WalIndexHdr *p = (WalIndexHdr*)pSS;
+  sqlite3_snprintf(n,z,
+     "mxFrame %u "
+     "nPage %u "
+     "szPage %u "
+     "iChange %u "
+     "aFrameCksum 0x%08x%08x "
+     "aSalt 0x%08x%08x "
+     "iVersion %u ",
+     p->mxFrame,
+     p->nPage,
+     p->szPage,
+     p->iChange,
+     p->aFrameCksum[0], p->aFrameCksum[1],
+     p->aSalt[0], p->aSalt[1],
+     p->iVersion
+  );
+}
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

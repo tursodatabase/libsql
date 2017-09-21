@@ -8575,6 +8575,7 @@ typedef struct sqlite3_snapshot {
 
 /*
 ** CAPI3REF: Record A Database Snapshot
+** CONSTRUCTOR: sqlite3_snapshot
 ** EXPERIMENTAL
 **
 ** ^The [sqlite3_snapshot_get(D,S,P)] interface attempts to make a
@@ -8662,6 +8663,7 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(
 
 /*
 ** CAPI3REF: Destroy a snapshot
+** DESTRUCTOR: sqlite3_snapshot
 ** EXPERIMENTAL
 **
 ** ^The [sqlite3_snapshot_free(P)] interface destroys [sqlite3_snapshot] P.
@@ -8721,6 +8723,30 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
+
+
+/*
+** CAPI3REF: Human-readable description of a snapshot
+** EXPERIMENTAL
+**
+** The sqlite3_snapshot_describe(S,B,N) interface writes a human-readable
+** description of snapshot S into the array of characters B of length N.
+** As long as N is greater than 0, the string written into B is guaranteed
+** to be zero terminated.
+**
+** This routine is intended for testing and debugging use only. The details
+** of the text description written into B may vary from one release to the
+** next.
+**
+** The [sqlite3_snapshot_describe()] interface is only available when the
+** both the [SQLITE_ENABLE_SNAPSHOT] an [SQLITE_DEBUG] compile-time options
+** are used.
+*/
+SQLITE_EXPERIMENTAL void sqlite3_snapshot_describe(
+  sqlite3_snapshot*,   /* The snapshot to be described */
+  char *pBuf,          /* Write the description into this buffer */
+  int nBuf             /* Length of pBuf in bytes */
+);
 
 /*
 ** Undo the hack that converts floating point types to integer for
