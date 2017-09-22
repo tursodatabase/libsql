@@ -5063,14 +5063,19 @@ static int winOpen(
     extendedParameters.dwSecurityQosFlags = SECURITY_ANONYMOUS;
     extendedParameters.lpSecurityAttributes = NULL;
     extendedParameters.hTemplateFile = NULL;
-    while( (h = osCreateFile2((LPCWSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode,
-                              dwCreationDisposition,
-                              &extendedParameters))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFile2((LPCWSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode,
+                        dwCreationDisposition,
+                        &extendedParameters);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
 #else
     do{
       h = osCreateFileW((LPCWSTR)zConverted,
@@ -5090,15 +5095,20 @@ static int winOpen(
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
-    while( (h = osCreateFileA((LPCSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode, NULL,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFileA((LPCSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode, NULL,
+                        dwCreationDisposition,
+                        dwFlagsAndAttributes,
+                        NULL);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
   }
 #endif
   winLogIoerr(cnt, __LINE__);
