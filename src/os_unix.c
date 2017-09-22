@@ -1115,6 +1115,10 @@ struct unixInodeInfo {
   sem_t *pSem;                    /* Named POSIX semaphore */
   char aSemName[MAX_PATHNAME+2];  /* Name of that semaphore */
 #endif
+#ifdef SQLITE_SHARED_MAPPING
+  sqlite3_int64 nSharedMapping;   /* Size of mapped region in bytes */
+  void *pSharedMapping;           /* Memory mapped region */
+#endif
 };
 
 /*
@@ -1249,6 +1253,13 @@ static void releaseInodeInfo(unixFile *pFile){
     pInode->nRef--;
     if( pInode->nRef==0 ){
       assert( pInode->pShmNode==0 );
+#ifdef SQLITE_SHARED_MAPPING
+      if( pInode->pSharedMapping ){
+        osMunmap(pInode->pSharedMapping, pInode->nSharedMapping);
+        pInode->pSharedMapping = 0;
+        pInode->nSharedMapping = 0;
+      }
+#endif
       closePendingFds(pFile);
       if( pInode->pPrev ){
         assert( pInode->pPrev->pNext==pInode );
@@ -2055,6 +2066,14 @@ static int nolockUnlock(sqlite3_file *NotUsed, int NotUsed2){
 ** Close the file.
 */
 static int nolockClose(sqlite3_file *id) {
+#ifdef SQLITE_SHARED_MAPPING
+  unixFile *pFd = (unixFile*)id;
+  if( pFd->pInode ){
+    unixEnterMutex();
+    releaseInodeInfo(pFd);
+    unixLeaveMutex();
+  }
+#endif
   return closeUnixFile(id);
 }
 
@@ -3874,6 +3893,9 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(i64*)pArg = pFile->mmapSizeMax;
       if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;
+#ifdef SQLITE_SHARED_MAPPING
+        if( pFile->pInode==0 )
+#endif
         if( pFile->mmapSize>0 ){
           unixUnmapfile(pFile);
           rc = unixMapfile(pFile, -1);
@@ -4774,6 +4796,9 @@ static int unixShmUnmap(
 */
 static void unixUnmapfile(unixFile *pFd){
   assert( pFd->nFetchOut==0 );
+#ifdef SQLITE_SHARED_MAPPING
+  if( pFd->pInode ) return;
+#endif
   if( pFd->pMapRegion ){
     osMunmap(pFd->pMapRegion, pFd->mmapSizeActual);
     pFd->pMapRegion = 0;
@@ -4904,6 +4929,28 @@ static int unixMapfile(unixFile *pFd, i64 nMap){
   if( nMap>pFd->mmapSizeMax ){
     nMap = pFd->mmapSizeMax;
   }
+
+#ifdef SQLITE_SHARED_MAPPING
+  if( pFd->pInode ){
+    unixInodeInfo *pInode = pFd->pInode;
+    if( pFd->pMapRegion ) return SQLITE_OK;
+    unixEnterMutex();
+    if( pInode->pSharedMapping==0 ){
+      u8 *pNew = osMmap(0, nMap, PROT_READ, MAP_SHARED, pFd->h, 0);
+      if( pNew==MAP_FAILED ){
+        unixLogError(SQLITE_OK, "mmap", pFd->zPath);
+        pFd->mmapSizeMax = 0;
+      }else{
+        pInode->pSharedMapping = pNew;
+        pInode->nSharedMapping = nMap;
+      }
+    }
+    pFd->pMapRegion = pInode->pSharedMapping;
+    pFd->mmapSizeActual = pFd->mmapSize = pInode->nSharedMapping;
+    unixLeaveMutex();
+    return SQLITE_OK;
+  }
+#endif
 
   assert( nMap>0 || (pFd->mmapSize==0 && pFd->pMapRegion==0) );
   if( nMap!=pFd->mmapSize ){
@@ -5342,6 +5389,9 @@ static int fillInUnixFile(
   if( pLockingStyle == &posixIoMethods
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
     || pLockingStyle == &nfsIoMethods
+#endif
+#ifdef SQLITE_SHARED_MAPPING
+    || pLockingStyle == &nolockIoMethods
 #endif
   ){
     unixEnterMutex();
