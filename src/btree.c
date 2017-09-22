@@ -636,6 +636,7 @@ static void btreePtrmapDelete(BtShared *pBt){
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
+static void releasePageOne(MemPage *pPage);      /* Forward reference */
 static void releasePageNotNull(MemPage *pPage);  /* Forward reference */
 
 /*
@@ -970,7 +971,7 @@ static int btreeMoveto(
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
     sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_BKPT;
       goto moveto_done;
     }
   }else{
@@ -2323,6 +2324,8 @@ static void setMempageRoot(MemPage *pPg, u32 pgnoRoot){
 /*
 ** Release a MemPage.  This should be called once for each prior
 ** call to btreeGetPage.
+**
+** Page1 is a special case and must be released using releasePageOne().
 */
 static void releasePageNotNull(MemPage *pPage){
   assert( pPage->aData );
@@ -2335,6 +2338,16 @@ static void releasePageNotNull(MemPage *pPage){
 }
 static void releasePage(MemPage *pPage){
   if( pPage ) releasePageNotNull(pPage);
+}
+static void releasePageOne(MemPage *pPage){
+  assert( pPage!=0 );
+  assert( pPage->aData );
+  assert( pPage->pBt );
+  assert( pPage->pDbPage!=0 );
+  assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
+  assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData );
+  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  sqlite3PagerUnrefPageOne(pPage->pDbPage);
 }
 
 /*
@@ -3214,7 +3227,7 @@ static int lockBtree(BtShared *pBt){
       }else{
         setDefaultSyncFlag(pBt, SQLITE_DEFAULT_WAL_SYNCHRONOUS+1);
         if( isOpen==0 ){
-          releasePage(pPage1);
+          releasePageOne(pPage1);
           return SQLITE_OK;
         }
       }
@@ -3261,7 +3274,7 @@ static int lockBtree(BtShared *pBt){
       ** zero and return SQLITE_OK. The caller will call this function
       ** again with the correct page-size.
       */
-      releasePage(pPage1);
+      releasePageOne(pPage1);
       pBt->usableSize = usableSize;
       pBt->pageSize = pageSize;
       freeTempSpace(pBt);
@@ -3315,7 +3328,7 @@ static int lockBtree(BtShared *pBt){
   return SQLITE_OK;
 
 page1_init_failed:
-  releasePage(pPage1);
+  releasePageOne(pPage1);
   pBt->pPage1 = 0;
   return rc;
 }
@@ -3360,7 +3373,7 @@ static void unlockBtreeIfUnused(BtShared *pBt){
     assert( pPage1->aData );
     assert( sqlite3PagerRefcount(pBt->pPager)==1 );
     pBt->pPage1 = 0;
-    releasePageNotNull(pPage1);
+    releasePageOne(pPage1);
   }
 }
 
@@ -4471,7 +4484,7 @@ int sqlite3BtreeRollback(Btree *p, int tripCode, int writeOnly){
       if( nPage==0 ) sqlite3PagerPagecount(pBt->pPager, &nPage);
       testcase( pBt->nPage!=nPage );
       pBt->nPage = nPage;
-      releasePage(pPage1);
+      releasePageOne(pPage1);
     }
     assert( countValidCursors(pBt, 1)==0 );
     pBt->inTransaction = TRANS_READ;
@@ -5789,7 +5802,7 @@ int sqlite3BtreeMovetoUnpacked(
           *pRes = 0;
           rc = SQLITE_OK;
           pCur->ix = (u16)idx;
-          if( pIdxKey->errCode ) rc = SQLITE_CORRUPT;
+          if( pIdxKey->errCode ) rc = SQLITE_CORRUPT_BKPT;
           goto moveto_finish;
         }
         if( lwr>upr ) break;

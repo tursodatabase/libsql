@@ -658,7 +658,8 @@ int sqlite3_config(int op, ...){
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
-  if( db->lookaside.nOut ){
+  
+  if( sqlite3LookasideUsed(db,0)>0 ){
     return SQLITE_BUSY;
   }
   /* Free any existing lookaside buffer for this handle before
@@ -686,16 +687,18 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     pStart = pBuf;
   }
   db->lookaside.pStart = pStart;
+  db->lookaside.pInit = 0;
   db->lookaside.pFree = 0;
   db->lookaside.sz = (u16)sz;
   if( pStart ){
     int i;
     LookasideSlot *p;
     assert( sz > (int)sizeof(LookasideSlot*) );
+    db->lookaside.nSlot = cnt;
     p = (LookasideSlot*)pStart;
     for(i=cnt-1; i>=0; i--){
-      p->pNext = db->lookaside.pFree;
-      db->lookaside.pFree = p;
+      p->pNext = db->lookaside.pInit;
+      db->lookaside.pInit = p;
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
     db->lookaside.pEnd = p;
@@ -706,6 +709,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.pEnd = db;
     db->lookaside.bDisable = 1;
     db->lookaside.bMalloced = 0;
+    db->lookaside.nSlot = 0;
   }
 #endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
@@ -1225,7 +1229,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
-  assert( db->lookaside.nOut==0 );  /* Fails on a lookaside memory leak */
+  assert( sqlite3LookasideUsed(db,0)==0 );
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
@@ -2169,7 +2173,8 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 ** checkpointed. If an error is encountered it is returned immediately -
 ** no attempt is made to checkpoint any remaining databases.
 **
-** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL, RESTART
+** or TRUNCATE.
 */
 int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;             /* Return code */
@@ -3937,7 +3942,7 @@ sqlite3_int64 sqlite3_uri_int64(
 ){
   const char *z = sqlite3_uri_parameter(zFilename, zParam);
   sqlite3_int64 v;
-  if( z && sqlite3DecOrHexToI64(z, &v)==SQLITE_OK ){
+  if( z && sqlite3DecOrHexToI64(z, &v)==0 ){
     bDflt = v;
   }
   return bDflt;

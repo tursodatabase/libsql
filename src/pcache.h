@@ -43,6 +43,8 @@ struct PgHdr {
   i16 nRef;                      /* Number of users of this page */
   PgHdr *pDirtyNext;             /* Next element in list of dirty pages */
   PgHdr *pDirtyPrev;             /* Previous element in list of dirty pages */
+                          /* NB: pDirtyNext and pDirtyPrev are undefined if the
+                          ** PgHdr object is not dirty */
 };
 
 /* Bit values for PgHdr.flags */

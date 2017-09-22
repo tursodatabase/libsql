@@ -600,13 +600,16 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
 */
 static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
-  TESTONLY( int nLookaside; ) /* Used to verify lookaside not used for schema */
 
+#ifdef SQLITE_DEBUG
   /* Record the number of outstanding lookaside allocations in schema Tables
   ** prior to doing any free() operations.  Since schema Tables do not use
   ** lookaside, this number should not change. */
-  TESTONLY( nLookaside = (db && (pTable->tabFlags & TF_Ephemeral)==0) ?
-                         db->lookaside.nOut : 0 );
+  int nLookaside = 0;
+  if( db && (pTable->tabFlags & TF_Ephemeral)==0 ){
+    nLookaside = sqlite3LookasideUsed(db, 0);
+  }
+#endif
 
   /* Delete all indices associated with this table. */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
@@ -640,7 +643,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   sqlite3DbFree(db, pTable);
 
   /* Verify that no lookaside memory was used by schema tables */
-  assert( nLookaside==0 || nLookaside==db->lookaside.nOut );
+  assert( nLookaside==0 || nLookaside==sqlite3LookasideUsed(db,0) );
 }
 void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Do not delete the table until the reference count reaches zero. */

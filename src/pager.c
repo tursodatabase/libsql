@@ -1320,6 +1320,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, u32 nMaster){
    || szJ<16
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-16, &len))
    || len>=nMaster 
+   || len>szJ-16
    || len==0 
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-12, &cksum))
    || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, aMagic, 8, szJ-8))
@@ -2856,6 +2857,7 @@ static int pager_playback(Pager *pPager, int isHot){
   char *zMaster = 0;       /* Name of master journal file if any */
   int needPagerReset;      /* True to reset page prior to first page rollback */
   int nPlayback = 0;       /* Total number of pages restored from journal */
+  u32 savedPageSize = pPager->pageSize;
 
   /* Figure out how many records are in the journal.  Abort early if
   ** the journal is empty.
@@ -2985,6 +2987,9 @@ static int pager_playback(Pager *pPager, int isHot){
   assert( 0 );
 
 end_playback:
+  if( rc==SQLITE_OK ){
+    rc = sqlite3PagerSetPagesize(pPager, &savedPageSize, -1);
+  }
   /* Following a rollback, the database file should be back in its original
   ** state prior to the start of the transaction, so invoke the
   ** SQLITE_FCNTL_DB_UNCHANGED file-control method to disable the
@@ -5418,7 +5423,8 @@ int sqlite3PagerSharedLock(Pager *pPager){
 ** nothing to rollback, so this routine is a no-op.
 */ 
 static void pagerUnlockIfUnused(Pager *pPager){
-  if( pPager->nMmapOut==0 && (sqlite3PcacheRefCount(pPager->pPCache)==0) ){
+  if( sqlite3PcacheRefCount(pPager->pPCache)==0 ){
+    assert( pPager->nMmapOut==0 ); /* because page1 is never memory mapped */
     pagerUnlockAndRollback(pPager);
   }
 }
@@ -5716,24 +5722,38 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 /*
 ** Release a page reference.
 **
-** If the number of references to the page drop to zero, then the
-** page is added to the LRU list.  When all references to all pages
-** are released, a rollback occurs and the lock on the database is
-** removed.
+** The sqlite3PagerUnref() and sqlite3PagerUnrefNotNull() may only be
+** used if we know that the page being released is not the last page.
+** The btree layer always holds page1 open until the end, so these first
+** to routines can be used to release any page other than BtShared.pPage1.
+**
+** Use sqlite3PagerUnrefPageOne() to release page1.  This latter routine
+** checks the total number of outstanding pages and if the number of
+** pages reaches zero it drops the database lock.
 */
 void sqlite3PagerUnrefNotNull(DbPage *pPg){
-  Pager *pPager;
+  TESTONLY( Pager *pPager = pPg->pPager; )
   assert( pPg!=0 );
-  pPager = pPg->pPager;
   if( pPg->flags & PGHDR_MMAP ){
+    assert( pPg->pgno!=1 );  /* Page1 is never memory mapped */
     pagerReleaseMapPage(pPg);
   }else{
     sqlite3PcacheRelease(pPg);
   }
-  pagerUnlockIfUnused(pPager);
+  /* Do not use this routine to release the last reference to page1 */
+  assert( sqlite3PcacheRefCount(pPager->pPCache)>0 );
 }
 void sqlite3PagerUnref(DbPage *pPg){
   if( pPg ) sqlite3PagerUnrefNotNull(pPg);
+}
+void sqlite3PagerUnrefPageOne(DbPage *pPg){
+  Pager *pPager;
+  assert( pPg!=0 );
+  assert( pPg->pgno==1 );
+  assert( (pPg->flags & PGHDR_MMAP)==0 ); /* Page1 is never memory mapped */
+  pPager = pPg->pPager;
+  sqlite3PcacheRelease(pPg);
+  pagerUnlockIfUnused(pPager);
 }
 
 /*

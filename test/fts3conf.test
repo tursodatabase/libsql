@@ -136,47 +136,49 @@ do_execsql_test 2.2.2 { COMMIT }
 do_execsql_test 2.2.3 { SELECT * FROM t1 } {{a b c} {a b c}}
 fts3_integrity 2.2.4 db t1
 
-do_execsql_test 3.1 {
-  CREATE VIRTUAL TABLE t3 USING fts4;
-  REPLACE INTO t3(docid, content) VALUES (1, 'one two');
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'one'
-} {X'0100000002000000'}
-
-do_execsql_test 3.2 {
-  REPLACE INTO t3(docid, content) VALUES (2, 'one two three four');
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'four'
-} {X'0200000003000000'}
-
-do_execsql_test 3.3 {
-  REPLACE INTO t3(docid, content) VALUES (1, 'one two three four five six');
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'six'
-} {X'0200000005000000'}
-
-do_execsql_test 3.4 {
-  UPDATE OR REPLACE t3 SET docid = 2 WHERE docid=1;
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'six'
-} {X'0100000006000000'}
-
-do_execsql_test 3.5 {
-  UPDATE OR REPLACE t3 SET docid = 3 WHERE docid=2;
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'six'
-} {X'0100000006000000'}
-
-do_execsql_test 3.6 {
-  REPLACE INTO t3(docid, content) VALUES (3, 'one two');
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'one'
-} {X'0100000002000000'}
-
-do_execsql_test 3.7 {
-  REPLACE INTO t3(docid, content) VALUES (NULL, 'one two three four');
-  REPLACE INTO t3(docid, content) VALUES (NULL, 'one two three four five six');
-  SELECT docid FROM t3;
-} {3 4 5}
-
-do_execsql_test 3.8 {
-  UPDATE OR REPLACE t3 SET docid = 5, content='three four' WHERE docid = 4;
-  SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'one'
-} {X'0200000002000000'}
+if {$tcl_platform(byteOrder)=="littleEndian"} {
+  do_execsql_test 3.1 {
+    CREATE VIRTUAL TABLE t3 USING fts4;
+    REPLACE INTO t3(docid, content) VALUES (1, 'one two');
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'one'
+  } {X'0100000002000000'}
+  
+  do_execsql_test 3.2 {
+    REPLACE INTO t3(docid, content) VALUES (2, 'one two three four');
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'four'
+  } {X'0200000003000000'}
+  
+  do_execsql_test 3.3 {
+    REPLACE INTO t3(docid, content) VALUES (1, 'one two three four five six');
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'six'
+  } {X'0200000005000000'}
+  
+  do_execsql_test 3.4 {
+    UPDATE OR REPLACE t3 SET docid = 2 WHERE docid=1;
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'six'
+  } {X'0100000006000000'}
+  
+  do_execsql_test 3.5 {
+    UPDATE OR REPLACE t3 SET docid = 3 WHERE docid=2;
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'six'
+  } {X'0100000006000000'}
+  
+  do_execsql_test 3.6 {
+    REPLACE INTO t3(docid, content) VALUES (3, 'one two');
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'one'
+  } {X'0100000002000000'}
+  
+  do_execsql_test 3.7 {
+    REPLACE INTO t3(docid, content) VALUES(NULL,'one two three four');
+    REPLACE INTO t3(docid, content) VALUES(NULL,'one two three four five six');
+    SELECT docid FROM t3;
+  } {3 4 5}
+  
+  do_execsql_test 3.8 {
+    UPDATE OR REPLACE t3 SET docid = 5, content='three four' WHERE docid = 4;
+    SELECT quote(matchinfo(t3, 'na')) FROM t3 WHERE t3 MATCH 'one'
+  } {X'0200000002000000'}
+}
 
 #-------------------------------------------------------------------------
 # Test that the xSavepoint is invoked correctly if the first write 

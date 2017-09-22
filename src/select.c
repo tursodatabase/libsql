@@ -664,16 +664,15 @@ static void codeDistinct(
 ** This routine generates the code for the inside of the inner loop
 ** of a SELECT.
 **
-** If srcTab is negative, then the pEList expressions
+** If srcTab is negative, then the p->pEList expressions
 ** are evaluated in order to get the data for this row.  If srcTab is
-** zero or more, then data is pulled from srcTab and pEList is used only 
+** zero or more, then data is pulled from srcTab and p->pEList is used only 
 ** to get the number of columns and the collation sequence for each column.
 */
 static void selectInnerLoop(
   Parse *pParse,          /* The parser context */
   Select *p,              /* The complete select statement being coded */
-  ExprList *pEList,       /* List of values being extracted */
-  int srcTab,             /* Pull data from this table */
+  int srcTab,             /* Pull data from this table if non-negative */
   SortCtx *pSort,         /* If not NULL, info on how to process ORDER BY */
   DistinctCtx *pDistinct, /* If not NULL, info on how to process DISTINCT */
   SelectDest *pDest,      /* How to dispose of the results */
@@ -697,7 +696,7 @@ static void selectInnerLoop(
   int regOrig;                /* Start of memory holding full result (or 0) */
 
   assert( v );
-  assert( pEList!=0 );
+  assert( p->pEList!=0 );
   hasDistinct = pDistinct ? pDistinct->eTnctType : WHERE_DISTINCT_NOOP;
   if( pSort && pSort->pOrderBy==0 ) pSort = 0;
   if( pSort==0 && !hasDistinct ){
@@ -707,7 +706,7 @@ static void selectInnerLoop(
 
   /* Pull the requested columns.
   */
-  nResultCol = pEList->nExpr;
+  nResultCol = p->pEList->nExpr;
 
   if( pDest->iSdst==0 ){
     if( pSort ){
@@ -730,7 +729,7 @@ static void selectInnerLoop(
   if( srcTab>=0 ){
     for(i=0; i<nResultCol; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
-      VdbeComment((v, "%s", pEList->a[i].zName));
+      VdbeComment((v, "%s", p->pEList->a[i].zName));
     }
   }else if( eDest!=SRT_Exists ){
     /* If the destination is an EXISTS(...) expression, the actual
@@ -743,24 +742,24 @@ static void selectInnerLoop(
       ecelFlags = 0;
     }
     if( pSort && hasDistinct==0 && eDest!=SRT_EphemTab && eDest!=SRT_Table ){
-      /* For each expression in pEList that is a copy of an expression in
+      /* For each expression in p->pEList that is a copy of an expression in
       ** the ORDER BY clause (pSort->pOrderBy), set the associated 
       ** iOrderByCol value to one more than the index of the ORDER BY 
       ** expression within the sort-key that pushOntoSorter() will generate.
-      ** This allows the pEList field to be omitted from the sorted record,
+      ** This allows the p->pEList field to be omitted from the sorted record,
       ** saving space and CPU cycles.  */
       ecelFlags |= (SQLITE_ECEL_OMITREF|SQLITE_ECEL_REF);
       for(i=pSort->nOBSat; i<pSort->pOrderBy->nExpr; i++){
         int j;
         if( (j = pSort->pOrderBy->a[i].u.x.iOrderByCol)>0 ){
-          pEList->a[j-1].u.x.iOrderByCol = i+1-pSort->nOBSat;
+          p->pEList->a[j-1].u.x.iOrderByCol = i+1-pSort->nOBSat;
         }
       }
       regOrig = 0;
       assert( eDest==SRT_Set || eDest==SRT_Mem 
            || eDest==SRT_Coroutine || eDest==SRT_Output );
     }
-    nResultCol = sqlite3ExprCodeExprList(pParse,pEList,regResult,0,ecelFlags);
+    nResultCol = sqlite3ExprCodeExprList(pParse,p->pEList,regResult,0,ecelFlags);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -792,7 +791,7 @@ static void selectInnerLoop(
 
         iJump = sqlite3VdbeCurrentAddr(v) + nResultCol;
         for(i=0; i<nResultCol; i++){
-          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pEList->a[i].pExpr);
+          CollSeq *pColl = sqlite3ExprCollSeq(pParse, p->pEList->a[i].pExpr);
           if( i<nResultCol-1 ){
             sqlite3VdbeAddOp3(v, OP_Ne, regResult+i, iJump, regPrev+i);
             VdbeCoverage(v);
@@ -1862,19 +1861,16 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
 ** Get a VDBE for the given parser context.  Create a new one if necessary.
 ** If an error occurs, return NULL and leave a message in pParse.
 */
-static SQLITE_NOINLINE Vdbe *allocVdbe(Parse *pParse){
-  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
-  if( v ) sqlite3VdbeAddOp2(v, OP_Init, 0, 1);
+Vdbe *sqlite3GetVdbe(Parse *pParse){
+  if( pParse->pVdbe ){
+    return pParse->pVdbe;
+  }
   if( pParse->pToplevel==0
    && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
   ){
     pParse->okConstFactor = 1;
   }
-  return v;
-}
-Vdbe *sqlite3GetVdbe(Parse *pParse){
-  Vdbe *v = pParse->pVdbe;
-  return v ? v : allocVdbe(pParse);
+  return sqlite3VdbeCreate(pParse);
 }
 
 
@@ -2147,7 +2143,7 @@ static void generateWithRecursiveQuery(
   /* Output the single row in Current */
   addrCont = sqlite3VdbeMakeLabel(v);
   codeOffset(v, regOffset, addrCont);
-  selectInnerLoop(pParse, p, p->pEList, iCurrent,
+  selectInnerLoop(pParse, p, iCurrent,
       0, 0, pDest, addrCont, addrBreak);
   if( regLimit ){
     sqlite3VdbeAddOp2(v, OP_DecrJumpZero, regLimit, addrBreak);
@@ -2285,15 +2281,9 @@ static int multiSelect(
   db = pParse->db;
   pPrior = p->pPrior;
   dest = *pDest;
-  if( pPrior->pOrderBy ){
-    sqlite3ErrorMsg(pParse,"ORDER BY clause should come after %s not before",
-      selectOpName(p->op));
-    rc = 1;
-    goto multi_select_end;
-  }
-  if( pPrior->pLimit ){
-    sqlite3ErrorMsg(pParse,"LIMIT clause should come after %s not before",
-      selectOpName(p->op));
+  if( pPrior->pOrderBy || pPrior->pLimit ){
+    sqlite3ErrorMsg(pParse,"%s clause should come after %s not before",
+      pPrior->pOrderBy!=0 ? "ORDER BY" : "LIMIT", selectOpName(p->op));
     rc = 1;
     goto multi_select_end;
   }
@@ -2466,7 +2456,7 @@ static int multiSelect(
         computeLimitRegisters(pParse, p, iBreak);
         sqlite3VdbeAddOp2(v, OP_Rewind, unionTab, iBreak); VdbeCoverage(v);
         iStart = sqlite3VdbeCurrentAddr(v);
-        selectInnerLoop(pParse, p, p->pEList, unionTab,
+        selectInnerLoop(pParse, p, unionTab,
                         0, 0, &dest, iCont, iBreak);
         sqlite3VdbeResolveLabel(v, iCont);
         sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart); VdbeCoverage(v);
@@ -2539,7 +2529,7 @@ static int multiSelect(
       iStart = sqlite3VdbeAddOp2(v, OP_RowData, tab1, r1);
       sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0); VdbeCoverage(v);
       sqlite3ReleaseTempReg(pParse, r1);
-      selectInnerLoop(pParse, p, p->pEList, tab1,
+      selectInnerLoop(pParse, p, tab1,
                       0, 0, &dest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart); VdbeCoverage(v);
@@ -5545,7 +5535,8 @@ int sqlite3Select(
     }
 
     /* Use the standard inner loop. */
-    selectInnerLoop(pParse, p, pEList, -1, &sSort, &sDistinct, pDest,
+    assert( p->pEList==pEList );
+    selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest,
                     sqlite3WhereContinueLabel(pWInfo),
                     sqlite3WhereBreakLabel(pWInfo));
 
@@ -5848,7 +5839,7 @@ int sqlite3Select(
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       finalizeAggFunctions(pParse, &sAggInfo);
       sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
-      selectInnerLoop(pParse, p, p->pEList, -1, &sSort,
+      selectInnerLoop(pParse, p, -1, &sSort,
                       &sDistinct, pDest,
                       addrOutputRow+1, addrSetAbort);
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
@@ -5992,7 +5983,7 @@ int sqlite3Select(
 
       sSort.pOrderBy = 0;
       sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
-      selectInnerLoop(pParse, p, p->pEList, -1, 0, 0, 
+      selectInnerLoop(pParse, p, -1, 0, 0, 
                       pDest, addrEnd, addrEnd);
       sqlite3ExprListDelete(db, pDel);
     }

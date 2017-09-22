@@ -1017,7 +1017,7 @@ static void codeDeferredSeek(
 */
 static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
-  if( sqlite3ExprIsVector(p) ){
+  if( p && sqlite3ExprIsVector(p) ){
 #ifndef SQLITE_OMIT_SUBQUERY
     if( (p->flags & EP_xIsSelect) ){
       Vdbe *v = pParse->pVdbe;

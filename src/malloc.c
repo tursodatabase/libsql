@@ -354,7 +354,6 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
 #endif
       pBuf->pNext = db->lookaside.pFree;
       db->lookaside.pFree = pBuf;
-      db->lookaside.nOut--;
       return;
     }
   }
@@ -515,16 +514,16 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
     assert( db->mallocFailed==0 );
     if( n>db->lookaside.sz ){
       db->lookaside.anStat[1]++;
-    }else if( (pBuf = db->lookaside.pFree)==0 ){
-      db->lookaside.anStat[2]++;
-    }else{
+    }else if( (pBuf = db->lookaside.pFree)!=0 ){
       db->lookaside.pFree = pBuf->pNext;
-      db->lookaside.nOut++;
       db->lookaside.anStat[0]++;
-      if( db->lookaside.nOut>db->lookaside.mxOut ){
-        db->lookaside.mxOut = db->lookaside.nOut;
-      }
       return (void*)pBuf;
+    }else if( (pBuf = db->lookaside.pInit)!=0 ){
+      db->lookaside.pInit = pBuf->pNext;
+      db->lookaside.anStat[0]++;
+      return (void*)pBuf;
+    }else{
+      db->lookaside.anStat[2]++;
     }
   }else if( db->mallocFailed ){
     return 0;

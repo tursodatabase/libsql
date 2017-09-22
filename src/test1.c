@@ -7451,6 +7451,35 @@ static int SQLITE_TCLAPI test_wal_info(
 }
 
 /*
+** Usage: sqlite3_mmap_warm DB DBNAME
+*/
+static int SQLITE_TCLAPI test_mmap_warm(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  extern int sqlite3_mmap_warm(sqlite3 *db, const char *);
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ?DBNAME?");
+    return TCL_ERROR;
+  }else{
+    int rc;
+    sqlite3 *db;
+    const char *zDb = 0;
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    if( objc==3 ){
+      zDb = Tcl_GetString(objv[2]);
+    }
+    rc = sqlite3_mmap_warm(db, zDb);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_OK;
+  }
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -7722,6 +7751,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_delete_database", test_delete_database, 0 },
      { "sqlite3_wal_info", test_wal_info, 0 },
      { "atomic_batch_write",      test_atomic_batch_write,     0   },
+     { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

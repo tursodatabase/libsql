@@ -151,6 +151,7 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno);
 void sqlite3PagerRef(DbPage*);
 void sqlite3PagerUnref(DbPage*);
 void sqlite3PagerUnrefNotNull(DbPage*);
+void sqlite3PagerUnrefPageOne(DbPage*);
 
 /* Operations on page references. */
 int sqlite3PagerWrite(DbPage*);

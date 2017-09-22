@@ -275,7 +275,8 @@ int sqlite3_blob_open(
       sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, wrFlag, 
                            pTab->pSchema->schema_cookie,
                            pTab->pSchema->iGeneration);
-      sqlite3VdbeChangeP5(v, 1);     
+      sqlite3VdbeChangeP5(v, 1);
+      assert( sqlite3VdbeCurrentAddr(v)==2 || db->mallocFailed );
       aOp = sqlite3VdbeAddOpList(v, ArraySize(openBlob), openBlob, iLn);
 
       /* Make sure a mutex is held on the table to be accessed */
@@ -290,7 +291,7 @@ int sqlite3_blob_open(
         aOp[0].p1 = iDb;
         aOp[0].p2 = pTab->tnum;
         aOp[0].p3 = wrFlag;
-        sqlite3VdbeChangeP4(v, 1, pTab->zName, P4_TRANSIENT);
+        sqlite3VdbeChangeP4(v, 2, pTab->zName, P4_TRANSIENT);
       }
       if( db->mallocFailed==0 ){
 #endif

@@ -371,6 +371,8 @@ struct sqlite3rbu {
   int pgsz;
   u8 *aBuf;
   i64 iWalCksum;
+  i64 szTemp;                     /* Current size of all temp files in use */
+  i64 szTempLimit;                /* Total size limit for temp files */
 
   /* Used in RBU vacuum mode only */
   int nRbu;                       /* Number of RBU VFS in the stack */
@@ -379,23 +381,33 @@ struct sqlite3rbu {
 
 /*
 ** An rbu VFS is implemented using an instance of this structure.
+**
+** Variable pRbu is only non-NULL for automatically created RBU VFS objects.
+** It is NULL for RBU VFS objects created explicitly using
+** sqlite3rbu_create_vfs(). It is used to track the total amount of temp
+** space used by the RBU handle.
 */
 struct rbu_vfs {
   sqlite3_vfs base;               /* rbu VFS shim methods */
   sqlite3_vfs *pRealVfs;          /* Underlying VFS */
   sqlite3_mutex *mutex;           /* Mutex to protect pMain */
+  sqlite3rbu *pRbu;               /* Owner RBU object */
   rbu_file *pMain;                /* Linked list of main db files */
 };
 
 /*
 ** Each file opened by an rbu VFS is represented by an instance of
 ** the following structure.
+**
+** If this is a temporary file (pRbu!=0 && flags&DELETE_ON_CLOSE), variable
+** "sz" is set to the current size of the database file.
 */
 struct rbu_file {
   sqlite3_file base;              /* sqlite3_file methods */
   sqlite3_file *pReal;            /* Underlying file handle */
   rbu_vfs *pRbuVfs;               /* Pointer to the rbu_vfs object */
   sqlite3rbu *pRbu;               /* Pointer to rbu object (rbu target only) */
+  i64 sz;                         /* Size of file in bytes (temp only) */
 
   int openFlags;                  /* Flags this file was opened with */
   u32 iCookie;                    /* Cookie value for main db files */
@@ -3409,6 +3421,7 @@ static void rbuCreateVfs(sqlite3rbu *p){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(zRnd);
     assert( pVfs );
     p->zVfsName = pVfs->zName;
+    ((rbu_vfs*)pVfs)->pRbu = p;
   }
 }
 
@@ -3781,6 +3794,7 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
     /* Close the open database handle and VFS object. */
     sqlite3_close(p->dbRbu);
     sqlite3_close(p->dbMain);
+    assert( p->szTemp==0 );
     rbuDeleteVfs(p);
     sqlite3_free(p->aBuf);
     sqlite3_free(p->aFrame);
@@ -3968,6 +3982,7 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
 */
 
 static void rbuUnlockShm(rbu_file *p){
+  assert( p->openFlags & SQLITE_OPEN_MAIN_DB );
   if( p->pRbu ){
     int (*xShmLock)(sqlite3_file*,int,int,int) = p->pReal->pMethods->xShmLock;
     int i;
@@ -3978,6 +3993,18 @@ static void rbuUnlockShm(rbu_file *p){
     }
     p->pRbu->mLock = 0;
   }
+}
+
+/*
+*/
+static int rbuUpdateTempSize(rbu_file *pFd, sqlite3_int64 nNew){
+  sqlite3rbu *pRbu = pFd->pRbu;
+  i64 nDiff = nNew - pFd->sz;
+  pRbu->szTemp += nDiff;
+  pFd->sz = nNew;
+  assert( pRbu->szTemp>=0 );
+  if( pRbu->szTempLimit && pRbu->szTemp>pRbu->szTempLimit ) return SQLITE_FULL;
+  return SQLITE_OK;
 }
 
 /*
@@ -4004,6 +4031,9 @@ static int rbuVfsClose(sqlite3_file *pFile){
     sqlite3_mutex_leave(p->pRbuVfs->mutex);
     rbuUnlockShm(p);
     p->pReal->pMethods->xShmUnmap(p->pReal, 0);
+  }
+  else if( (p->openFlags & SQLITE_OPEN_DELETEONCLOSE) && p->pRbu ){
+    rbuUpdateTempSize(p, 0);
   }
 
   /* Close the underlying file handle */
@@ -4122,11 +4152,19 @@ static int rbuVfsWrite(
     assert( p->openFlags & SQLITE_OPEN_MAIN_DB );
     rc = rbuCaptureDbWrite(p->pRbu, iOfst);
   }else{
-    if( pRbu && pRbu->eStage==RBU_STAGE_OAL 
-     && (p->openFlags & SQLITE_OPEN_WAL) 
-     && iOfst>=pRbu->iOalSz
-    ){
-      pRbu->iOalSz = iAmt + iOfst;
+    if( pRbu ){
+      if( pRbu->eStage==RBU_STAGE_OAL 
+       && (p->openFlags & SQLITE_OPEN_WAL) 
+       && iOfst>=pRbu->iOalSz
+      ){
+        pRbu->iOalSz = iAmt + iOfst;
+      }else if( p->openFlags & SQLITE_OPEN_DELETEONCLOSE ){
+        i64 szNew = iAmt+iOfst;
+        if( szNew>p->sz ){
+          rc = rbuUpdateTempSize(p, szNew);
+          if( rc!=SQLITE_OK ) return rc;
+        }
+      }
     }
     rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
     if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
@@ -4145,6 +4183,10 @@ static int rbuVfsWrite(
 */
 static int rbuVfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
   rbu_file *p = (rbu_file*)pFile;
+  if( (p->openFlags & SQLITE_OPEN_DELETEONCLOSE) && p->pRbu ){
+    int rc = rbuUpdateTempSize(p, size);
+    if( rc!=SQLITE_OK ) return rc;
+  }
   return p->pReal->pMethods->xTruncate(p->pReal, size);
 }
 
@@ -4534,6 +4576,8 @@ static int rbuVfsOpen(
         pDb->pWalFd = pFd;
       }
     }
+  }else{
+    pFd->pRbu = pRbuVfs->pRbu;
   }
 
   if( oflags & SQLITE_OPEN_MAIN_DB 
@@ -4799,6 +4843,20 @@ int sqlite3rbu_create_vfs(const char *zName, const char *zParent){
   }
 
   return rc;
+}
+
+/*
+** Configure the aggregate temp file size limit for this RBU handle.
+*/
+sqlite3_int64 sqlite3rbu_temp_size_limit(sqlite3rbu *pRbu, sqlite3_int64 n){
+  if( n>=0 ){
+    pRbu->szTempLimit = n;
+  }
+  return pRbu->szTempLimit;
+}
+
+sqlite3_int64 sqlite3rbu_temp_size(sqlite3rbu *pRbu){
+  return pRbu->szTemp;
 }
 
 
