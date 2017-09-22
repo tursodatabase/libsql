@@ -122,7 +122,7 @@ do_test backup2-7 {
   close $out
   set rc [catch {db backup temp bu2.db} res]
   lappend rc $res
-} {1 {backup failed: file is encrypted or is not a database}}
+} {1 {backup failed: file is not a database}}
 
 # Try to backup database that does not exist
 #
@@ -143,8 +143,8 @@ do_test backup2-9 {
 #
 if {$tcl_platform(platform)=="windows"} {
   set msg {cannot open source database: unable to open database file}
-} elseif {$tcl_platform(os)=="OpenBSD"} {
-  set msg {restore failed: file is encrypted or is not a database}
+} elseif {[string match *BSD $tcl_platform(os)]} {
+  set msg {restore failed: file is not a database}
 } else {
   set msg {cannot open source database: disk I/O error}
 }
@@ -160,7 +160,7 @@ do_test backup2-10 {
 do_test backup2-11 {
   set rc [catch {db restore temp bu2.db} res]
   lappend rc $res
-} {1 {restore failed: file is encrypted or is not a database}}
+} {1 {restore failed: file is not a database}}
 
 # Try to restore a database that does not exist
 #

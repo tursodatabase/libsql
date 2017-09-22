@@ -341,5 +341,3 @@ foreach {tn create} {
 }
 
 finish_test
-
-

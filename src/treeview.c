@@ -126,6 +126,10 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
   int cnt = 0;
+  if( p==0 ){
+    sqlite3TreeViewLine(pView, "nil-SELECT");
+    return;
+  } 
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( p->pWith ){
     sqlite3TreeViewWith(pView, p->pWith, 1);
@@ -234,7 +238,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
 void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   const char *zBinOp = 0;   /* Binary operator */
   const char *zUniOp = 0;   /* Unary operator */
-  char zFlgs[30];
+  char zFlgs[60];
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( pExpr==0 ){
     sqlite3TreeViewLine(pView, "nil");
@@ -242,7 +246,12 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     return;
   }
   if( pExpr->flags ){
-    sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x",pExpr->flags);
+    if( ExprHasProperty(pExpr, EP_FromJoin) ){
+      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x iRJT=%d",
+                       pExpr->flags, pExpr->iRightJoinTable);
+    }else{
+      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x",pExpr->flags);
+    }
   }else{
     zFlgs[0] = 0;
   }
@@ -373,17 +382,17 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS: {
-      sqlite3TreeViewLine(pView, "EXISTS-expr");
+      sqlite3TreeViewLine(pView, "EXISTS-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_SELECT: {
-      sqlite3TreeViewLine(pView, "SELECT-expr");
+      sqlite3TreeViewLine(pView, "SELECT-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_IN: {
-      sqlite3TreeViewLine(pView, "IN");
+      sqlite3TreeViewLine(pView, "IN flags=0x%x", pExpr->flags);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
@@ -459,6 +468,11 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_SELECT_COLUMN: {
       sqlite3TreeViewLine(pView, "SELECT-COLUMN %d", pExpr->iColumn);
       sqlite3TreeViewSelect(pView, pExpr->pLeft->x.pSelect, 0);
+      break;
+    }
+    case TK_IF_NULL_ROW: {
+      sqlite3TreeViewLine(pView, "IF-NULL-ROW %d", pExpr->iTable);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
     }
     default: {

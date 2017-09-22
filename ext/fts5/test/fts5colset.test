@@ -44,16 +44,43 @@ foreach_detail_mode $::testprefix {
     9 "-c : a"  {1 2 4}
     10 "-\"c\" : a"  {1 2 4}
   } {
-  breakpoint
     do_execsql_test 1.$tn {
       SELECT rowid FROM t1($q)
     } $res
   }
 
+  foreach {tn q res} {
+    0 {{a} : (a AND ":")}     {}
+    1 "{a b c} : (a AND d)"   {2 3}
+    2 "{a b c} : (a AND b:d)" {3}
+    3 "{a b c} : (a AND d:d)" {}
+    4 "{b} : ( {b a} : ( {c b a} : ( {d b c a} : ( d OR c ) ) ) )" {3 4}
+    5 "{a} : ( {b a} : ( {c b a} : ( {d b c a} : ( d OR c ) ) ) )" {2 3}
+    6 "{a} : ( {b a} : ( {c b} : ( {d b c a} : ( d OR c ) ) ) )" {}
+    7 "{a b c} : (b:a AND c:b)" {2}
+  } {
+    do_execsql_test 2.$tn {
+      SELECT rowid FROM t1($q)
+    } $res
+  }
 
+  foreach {tn w res} {
+    0 "a MATCH 'a'" {1}
+    1 "b MATCH 'a'" {2}
+    2 "b MATCH '{a b c} : a'" {2}
+    3 "b MATCH 'a OR b'"      {1 2}
+    4 "b MATCH 'a OR a:b'"    {2}
+    5 "b MATCH 'a OR b:b'"    {1 2}
+  } {
+    do_execsql_test 3.$tn "
+      SELECT rowid FROM t1 WHERE $w
+    " $res
+  }
+
+  do_catchsql_test 4.1 {
+    SELECT * FROM t1 WHERE rowid MATCH 'a'
+  } {1 {unable to use function MATCH in the requested context}}
 }
 
 
 finish_test
-
-

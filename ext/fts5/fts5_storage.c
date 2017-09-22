@@ -136,7 +136,8 @@ static int fts5StorageGetStmt(
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v2(pC->db, zSql, -1, &p->aStmt[eStmt], 0);
+      rc = sqlite3_prepare_v3(pC->db, zSql, -1,
+                              SQLITE_PREPARE_PERSISTENT, &p->aStmt[eStmt], 0);
       sqlite3_free(zSql);
       if( rc!=SQLITE_OK && pzErrMsg ){
         *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));
@@ -218,7 +219,7 @@ static void fts5StorageRenameOne(
 
 int sqlite3Fts5StorageRename(Fts5Storage *pStorage, const char *zName){
   Fts5Config *pConfig = pStorage->pConfig;
-  int rc = sqlite3Fts5StorageSync(pStorage, 1);
+  int rc = sqlite3Fts5StorageSync(pStorage);
 
   fts5StorageRenameOne(pConfig, &rc, "data", zName);
   fts5StorageRenameOne(pConfig, &rc, "idx", zName);
@@ -545,11 +546,6 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel, sqlite3_value **apVal){
     }
   }
 
-  /* Write the averages record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageSaveTotals(p);
-  }
-
   return rc;
 }
 
@@ -752,11 +748,6 @@ int sqlite3Fts5StorageIndexInsert(
     rc = fts5StorageInsertDocsize(p, iRowid, &buf);
   }
   sqlite3_free(buf.p);
-
-  /* Write the averages record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageSaveTotals(p);
-  }
 
   return rc;
 }
@@ -1091,13 +1082,18 @@ int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
 /*
 ** Flush any data currently held in-memory to disk.
 */
-int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit){
-  if( bCommit && p->bTotalsValid ){
-    int rc = fts5StorageSaveTotals(p);
+int sqlite3Fts5StorageSync(Fts5Storage *p){
+  int rc = SQLITE_OK;
+  i64 iLastRowid = sqlite3_last_insert_rowid(p->pConfig->db);
+  if( p->bTotalsValid ){
+    rc = fts5StorageSaveTotals(p);
     p->bTotalsValid = 0;
-    if( rc!=SQLITE_OK ) return rc;
   }
-  return sqlite3Fts5IndexSync(p->pIndex, bCommit);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexSync(p->pIndex);
+  }
+  sqlite3_set_last_insert_rowid(p->pConfig->db, iLastRowid);
+  return rc;
 }
 
 int sqlite3Fts5StorageRollback(Fts5Storage *p){

@@ -352,7 +352,34 @@ struct winVfsAppData {
  ******************************************************************************
  */
 #ifndef SQLITE_WIN32_HEAP_CREATE
-#  define SQLITE_WIN32_HEAP_CREATE    (TRUE)
+#  define SQLITE_WIN32_HEAP_CREATE        (TRUE)
+#endif
+
+/*
+ * This is the maximum possible initial size of the Win32-specific heap, in
+ * bytes.
+ */
+#ifndef SQLITE_WIN32_HEAP_MAX_INIT_SIZE
+#  define SQLITE_WIN32_HEAP_MAX_INIT_SIZE (4294967295U)
+#endif
+
+/*
+ * This is the extra space for the initial size of the Win32-specific heap,
+ * in bytes.  This value may be zero.
+ */
+#ifndef SQLITE_WIN32_HEAP_INIT_EXTRA
+#  define SQLITE_WIN32_HEAP_INIT_EXTRA  (4194304)
+#endif
+
+/*
+ * Calculate the maximum legal cache size, in pages, based on the maximum
+ * possible initial heap size and the default page size, setting aside the
+ * needed extra space.
+ */
+#ifndef SQLITE_WIN32_MAX_CACHE_SIZE
+#  define SQLITE_WIN32_MAX_CACHE_SIZE   (((SQLITE_WIN32_HEAP_MAX_INIT_SIZE) - \
+                                          (SQLITE_WIN32_HEAP_INIT_EXTRA)) / \
+                                         (SQLITE_DEFAULT_PAGE_SIZE))
 #endif
 
 /*
@@ -361,25 +388,36 @@ struct winVfsAppData {
  */
 #ifndef SQLITE_WIN32_CACHE_SIZE
 #  if SQLITE_DEFAULT_CACHE_SIZE>=0
-#    define SQLITE_WIN32_CACHE_SIZE (SQLITE_DEFAULT_CACHE_SIZE)
+#    define SQLITE_WIN32_CACHE_SIZE     (SQLITE_DEFAULT_CACHE_SIZE)
 #  else
-#    define SQLITE_WIN32_CACHE_SIZE (-(SQLITE_DEFAULT_CACHE_SIZE))
+#    define SQLITE_WIN32_CACHE_SIZE     (-(SQLITE_DEFAULT_CACHE_SIZE))
 #  endif
+#endif
+
+/*
+ * Make sure that the calculated cache size, in pages, cannot cause the
+ * initial size of the Win32-specific heap to exceed the maximum amount
+ * of memory that can be specified in the call to HeapCreate.
+ */
+#if SQLITE_WIN32_CACHE_SIZE>SQLITE_WIN32_MAX_CACHE_SIZE
+#  undef SQLITE_WIN32_CACHE_SIZE
+#  define SQLITE_WIN32_CACHE_SIZE       (2000)
 #endif
 
 /*
  * The initial size of the Win32-specific heap.  This value may be zero.
  */
 #ifndef SQLITE_WIN32_HEAP_INIT_SIZE
-#  define SQLITE_WIN32_HEAP_INIT_SIZE ((SQLITE_WIN32_CACHE_SIZE) * \
-                                       (SQLITE_DEFAULT_PAGE_SIZE) + 4194304)
+#  define SQLITE_WIN32_HEAP_INIT_SIZE   ((SQLITE_WIN32_CACHE_SIZE) * \
+                                         (SQLITE_DEFAULT_PAGE_SIZE) + \
+                                         (SQLITE_WIN32_HEAP_INIT_EXTRA))
 #endif
 
 /*
  * The maximum size of the Win32-specific heap.  This value may be zero.
  */
 #ifndef SQLITE_WIN32_HEAP_MAX_SIZE
-#  define SQLITE_WIN32_HEAP_MAX_SIZE  (0)
+#  define SQLITE_WIN32_HEAP_MAX_SIZE    (0)
 #endif
 
 /*
@@ -387,7 +425,7 @@ struct winVfsAppData {
  * zero for the default behavior.
  */
 #ifndef SQLITE_WIN32_HEAP_FLAGS
-#  define SQLITE_WIN32_HEAP_FLAGS     (0)
+#  define SQLITE_WIN32_HEAP_FLAGS       (0)
 #endif
 
 
@@ -3521,6 +3559,14 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       if( newLimit>sqlite3GlobalConfig.mxMmap ){
         newLimit = sqlite3GlobalConfig.mxMmap;
       }
+
+      /* The value of newLimit may be eventually cast to (SIZE_T) and passed
+      ** to MapViewOfFile(). Restrict its value to 2GB if (SIZE_T) is not at
+      ** least a 64-bit type. */
+      if( newLimit>0 && sizeof(SIZE_T)<8 ){
+        newLimit = (newLimit & 0x7FFFFFFF);
+      }
+
       *(i64*)pArg = pFile->mmapSizeMax;
       if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;
@@ -4833,6 +4879,14 @@ static int winIsDir(const void *zConverted){
   return (attr!=INVALID_FILE_ATTRIBUTES) && (attr&FILE_ATTRIBUTE_DIRECTORY);
 }
 
+/* forward reference */
+static int winAccess(
+  sqlite3_vfs *pVfs,         /* Not used on win32 */
+  const char *zFilename,     /* Name of file to check */
+  int flags,                 /* Type of test to make on this file */
+  int *pResOut               /* OUT: Result */
+);
+
 /*
 ** Open a file.
 */
@@ -5009,37 +5063,52 @@ static int winOpen(
     extendedParameters.dwSecurityQosFlags = SECURITY_ANONYMOUS;
     extendedParameters.lpSecurityAttributes = NULL;
     extendedParameters.hTemplateFile = NULL;
-    while( (h = osCreateFile2((LPCWSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode,
-                              dwCreationDisposition,
-                              &extendedParameters))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFile2((LPCWSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode,
+                        dwCreationDisposition,
+                        &extendedParameters);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
 #else
-    while( (h = osCreateFileW((LPCWSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode, NULL,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFileW((LPCWSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode, NULL,
+                        dwCreationDisposition,
+                        dwFlagsAndAttributes,
+                        NULL);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
 #endif
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
-    while( (h = osCreateFileA((LPCSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode, NULL,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFileA((LPCSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode, NULL,
+                        dwCreationDisposition,
+                        dwFlagsAndAttributes,
+                        NULL);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
   }
 #endif
   winLogIoerr(cnt, __LINE__);
@@ -5048,8 +5117,6 @@ static int winOpen(
            dwDesiredAccess, (h==INVALID_HANDLE_VALUE) ? "failed" : "ok"));
 
   if( h==INVALID_HANDLE_VALUE ){
-    pFile->lastErrno = lastErrno;
-    winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
     sqlite3_free(zConverted);
     sqlite3_free(zTmpname);
     if( isReadWrite && !isExclusive ){
@@ -5058,6 +5125,8 @@ static int winOpen(
                      ~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)),
          pOutFlags);
     }else{
+      pFile->lastErrno = lastErrno;
+      winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
       return SQLITE_CANTOPEN_BKPT;
     }
   }
@@ -5650,9 +5719,6 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   EntropyGatherer e;
   UNUSED_PARAMETER(pVfs);
   memset(zBuf, 0, nBuf);
-#if defined(_MSC_VER) && _MSC_VER>=1400 && !SQLITE_OS_WINCE
-  rand_s((unsigned int*)zBuf); /* rand_s() is not available with MinGW */
-#endif /* defined(_MSC_VER) && _MSC_VER>=1400 */
   e.a = (unsigned char*)zBuf;
   e.na = nBuf;
   e.nXor = 0;

@@ -118,8 +118,11 @@ int main(int argc, char **argv){
         }
         if( iVal==7 ){
           double r;
+          char *z;
           memcpy(&r, &v, sizeof(r));
-          printf("%s%#g", zSep, r);
+          z = sqlite3_mprintf("%s%!.15g", zSep, r);
+          printf("%s", z);
+          sqlite3_free(z);
         }else{
           printf("%s%lld", zSep, v);
         }

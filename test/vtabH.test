@@ -55,7 +55,7 @@ register_tclvar_module db
 set ::xyz 10
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE vars USING tclvar;
-  SELECT * FROM vars WHERE name = 'xyz';
+  SELECT name, arrayname, value FROM vars WHERE name = 'xyz';
 } {xyz {} 10}
 
 set x1 aback
@@ -216,24 +216,28 @@ if {$tcl_platform(platform)!="windows" || \
   } {}
 
   set pwd [pwd]
-  do_execsql_test 3.5 {
-    SELECT path, size FROM fstree WHERE path GLOB $pwd || '/subdir/*' ORDER BY 1
-  } [list \
-    "$pwd/subdir/x1.txt" 143 \
-    "$pwd/subdir/x2.txt" 153 \
-  ]
-  do_execsql_test 3.6 {
-    SELECT path, size FROM fstree WHERE path LIKE $pwd || '/subdir/%' ORDER BY 1
-  } [list \
-    "$pwd/subdir/x1.txt" 143 \
-    "$pwd/subdir/x2.txt" 153 \
-  ]
-  do_execsql_test 3.7 {
-    SELECT sum(size) FROM fstree WHERE path LIKE $pwd || '/subdir/%'
-  } 296
-  do_execsql_test 3.8 {
-    SELECT size FROM fstree WHERE path = $pwd || '/subdir/x1.txt'
-  } 143
+  if {![string match {*[_%]*} $pwd]} {
+    do_execsql_test 3.5 {
+      SELECT path, size FROM fstree 
+       WHERE path GLOB $pwd || '/subdir/*' ORDER BY 1
+    } [list \
+      "$pwd/subdir/x1.txt" 143 \
+      "$pwd/subdir/x2.txt" 153 \
+    ]
+    do_execsql_test 3.6 {
+      SELECT path, size FROM fstree
+       WHERE path LIKE $pwd || '/subdir/%' ORDER BY 1
+    } [list \
+      "$pwd/subdir/x1.txt" 143 \
+      "$pwd/subdir/x2.txt" 153 \
+    ]
+    do_execsql_test 3.7 {
+      SELECT sum(size) FROM fstree WHERE path LIKE $pwd || '/subdir/%'
+    } 296
+    do_execsql_test 3.8 {
+      SELECT size FROM fstree WHERE path = $pwd || '/subdir/x1.txt'
+    } 143
+  }
 
 }
 

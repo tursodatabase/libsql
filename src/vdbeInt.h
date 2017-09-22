@@ -96,18 +96,18 @@ struct VdbeCursor {
   u32 cacheStatus;        /* Cache is valid if this matches Vdbe.cacheCtr */
   int seekResult;         /* Result of previous sqlite3BtreeMoveto() or 0
                           ** if there have been no prior seeks on the cursor. */
-  /* NB: seekResult does not distinguish between "no seeks have ever occurred
-  ** on this cursor" and "the most recent seek was an exact match". */
+  /* seekResult does not distinguish between "no seeks have ever occurred
+  ** on this cursor" and "the most recent seek was an exact match".
+  ** For CURTYPE_PSEUDO, seekResult is the register holding the record */
 
   /* When a new VdbeCursor is allocated, only the fields above are zeroed.
   ** The fields that follow are uninitialized, and must be individually
   ** initialized prior to first use. */
   VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
   union {
-    BtCursor *pCursor;          /* CURTYPE_BTREE.  Btree cursor */
-    sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.   Vtab cursor */
-    int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
-    VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
+    BtCursor *pCursor;          /* CURTYPE_BTREE or _PSEUDO.  Btree cursor */
+    sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.              Vtab cursor */
+    VdbeSorter *pSorter;        /* CURTYPE_SORTER.            Sorter object */
   } uc;
   KeyInfo *pKeyInfo;      /* Info about index keys needed by index cursors */
   u32 iHdrOffset;         /* Offset to next unparsed byte of the header */
@@ -164,6 +164,7 @@ struct VdbeFrame {
   i64 *anExec;            /* Event counters from parent frame */
   Mem *aMem;              /* Array of memory cells for parent frame */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
+  u8 *aOnce;              /* Bitmask used by OP_Once */
   void *token;            /* Copy of SubProgram.token */
   i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
@@ -184,11 +185,12 @@ struct VdbeFrame {
 ** structures. Each Mem struct may cache multiple representations (string,
 ** integer etc.) of the same value.
 */
-struct Mem {
+struct sqlite3_value {
   union MemValue {
     double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
-    int nZero;          /* Used when bit MEM_Zero is set in flags */
+    int nZero;          /* Extra zero bytes when MEM_Zero and MEM_Blob set */
+    const char *zPType; /* Pointer type when MEM_Term|MEM_Subtype|MEM_Null */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
@@ -220,7 +222,8 @@ struct Mem {
 ** representations of the value stored in the Mem struct.
 **
 ** If the MEM_Null flag is set, then the value is an SQL NULL value.
-** No other flags may be set in this case.
+** For a pointer type created using sqlite3_bind_pointer() or
+** sqlite3_result_pointer() the MEM_Term and MEM_Subtype flags are also set.
 **
 ** If the MEM_Str flag is set then Mem.z points at a string representation.
 ** Usually this is encoded in the same unicode encoding as the main
@@ -228,7 +231,7 @@ struct Mem {
 ** set, then the string is nul terminated. The MEM_Int and MEM_Real 
 ** flags may coexist with the MEM_Str flag.
 */
-#define MEM_Null      0x0001   /* Value is NULL */
+#define MEM_Null      0x0001   /* Value is NULL (or a pointer) */
 #define MEM_Str       0x0002   /* Value is a string */
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
@@ -238,7 +241,7 @@ struct Mem {
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
 #define MEM_Undefined 0x0080   /* Value is undefined */
 #define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
-#define MEM_TypeMask  0x81ff   /* Mask of type bits */
+#define MEM_TypeMask  0xc1ff   /* Mask of type bits */
 
 
 /* Whenever Mem contains a valid string or blob representation, one of
@@ -246,7 +249,7 @@ struct Mem {
 ** policy for Mem.z.  The MEM_Term flag tells us whether or not the
 ** string is \000 or \u0000 terminated
 */
-#define MEM_Term      0x0200   /* String rep is nul terminated */
+#define MEM_Term      0x0200   /* String in Mem.z is zero terminated */
 #define MEM_Dyn       0x0400   /* Need to call Mem.xDel() on Mem.z */
 #define MEM_Static    0x0800   /* Mem.z points to a static string */
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
@@ -286,11 +289,11 @@ struct Mem {
 ** when the VM is halted (if not before).
 */
 struct AuxData {
-  int iOp;                        /* Instruction number of OP_Function opcode */
-  int iArg;                       /* Index of function argument. */
+  int iAuxOp;                     /* Instruction number of OP_Function opcode */
+  int iAuxArg;                    /* Index of function argument. */
   void *pAux;                     /* Aux data pointer */
-  void (*xDelete)(void *);        /* Destructor for the aux data */
-  AuxData *pNext;                 /* Next element in list */
+  void (*xDeleteAux)(void*);      /* Destructor for the aux data */
+  AuxData *pNextAux;              /* Next element in list */
 };
 
 /*
@@ -381,6 +384,7 @@ struct Vdbe {
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
+  u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   bft expired:1;          /* True if the VM needs to be recompiled */
   bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
@@ -389,10 +393,9 @@ struct Vdbe {
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
-  bft isPrepareV2:1;      /* True if prepared with prepare_v2() */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
-  u32 aCounter[5];        /* Counters used by sqlite3_stmt_status() */
+  u32 aCounter[7];        /* Counters used by sqlite3_stmt_status() */
   char *zSql;             /* Text of the SQL statement that generated this */
   void *pFree;            /* Free this when deleting the vdbe */
   VdbeFrame *pFrame;      /* Parent frame */
@@ -474,6 +477,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 #else
   void sqlite3VdbeMemSetDouble(Mem*, double);
 #endif
+void sqlite3VdbeMemSetPointer(Mem*, void*, const char*, void(*)(void*));
 void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
@@ -505,7 +509,7 @@ int sqlite3VdbeSorterInit(sqlite3 *, int, VdbeCursor *);
 void sqlite3VdbeSorterReset(sqlite3 *, VdbeSorter *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
-int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
+int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *);
 int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
@@ -533,12 +537,14 @@ int sqlite3VdbeCheckFk(Vdbe *, int);
 # define sqlite3VdbeCheckFk(p,i) 0
 #endif
 
-int sqlite3VdbeMemTranslate(Mem*, u8);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbePrintSql(Vdbe*);
   void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
 #endif
-int sqlite3VdbeMemHandleBom(Mem *pMem);
+#ifndef SQLITE_OMIT_UTF16
+  int sqlite3VdbeMemTranslate(Mem*, u8);
+  int sqlite3VdbeMemHandleBom(Mem *pMem);
+#endif
 
 #ifndef SQLITE_OMIT_INCRBLOB
   int sqlite3VdbeMemExpandBlob(Mem *);

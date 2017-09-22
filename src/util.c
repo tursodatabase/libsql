@@ -491,7 +491,11 @@ do_atof_calc:
           if( esign<0 ){
             result = 0.0*s;
           }else{
+#ifdef INFINITY
+            result = INFINITY*s;
+#else
             result = 1e308*1e308*s;  /* Infinity */
+#endif
           }
         }
       }else{
@@ -553,16 +557,12 @@ static int compare2pow63(const char *zNum, int incr){
 ** Convert zNum to a 64-bit signed integer.  zNum must be decimal. This
 ** routine does *not* accept hexadecimal notation.
 **
-** If the zNum value is representable as a 64-bit twos-complement 
-** integer, then write that value into *pNum and return 0.
+** Returns:
 **
-** If zNum is exactly 9223372036854775808, return 2.  This special
-** case is broken out because while 9223372036854775808 cannot be a 
-** signed 64-bit integer, its negative -9223372036854775808 can be.
-**
-** If zNum is too big for a 64-bit integer and is not
-** 9223372036854775808  or if zNum contains any non-numeric text,
-** then return 1.
+**     0    Successful transformation.  Fits in a 64-bit signed integer.
+**     1    Excess text after the integer value
+**     2    Integer too large for a 64-bit signed integer or is malformed
+**     3    Special case of 9223372036854775808
 **
 ** length is the number of bytes in the string (bytes, not characters).
 ** The string is not necessarily zero-terminated.  The encoding is
@@ -575,6 +575,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int i;
   int c = 0;
   int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
+  int rc;          /* Baseline return code */
   const char *zStart;
   const char *zEnd = zNum + length;
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
@@ -614,31 +615,35 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   testcase( i==20 );
   if( &zNum[i]<zEnd              /* Extra bytes at the end */
    || (i==0 && zStart==zNum)     /* No digits */
-   || i>19*incr                  /* Too many digits */
    || nonNum                     /* UTF16 with high-order bytes non-zero */
   ){
+    rc = 1;
+  }else{
+    rc = 0;
+  }
+  if( i>19*incr ){                /* Too many digits */
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranteeing that it is too large) */
-    return 1;
+    return 2;
   }else if( i<19*incr ){
     /* Less than 19 digits, so we know that it fits in 64 bits */
     assert( u<=LARGEST_INT64 );
-    return 0;
+    return rc;
   }else{
     /* zNum is a 19-digit numbers.  Compare it against 9223372036854775808. */
     c = compare2pow63(zNum, incr);
     if( c<0 ){
       /* zNum is less than 9223372036854775808 so it fits */
       assert( u<=LARGEST_INT64 );
-      return 0;
+      return rc;
     }else if( c>0 ){
       /* zNum is greater than 9223372036854775808 so it overflows */
-      return 1;
+      return 2;
     }else{
       /* zNum is exactly 9223372036854775808.  Fits if negative.  The
       ** special case 2 overflow if positive */
       assert( u-1==LARGEST_INT64 );
-      return neg ? 0 : 2;
+      return neg ? rc : 3;
     }
   }
 }
@@ -651,8 +656,9 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
 ** Returns:
 **
 **     0    Successful transformation.  Fits in a 64-bit signed integer.
-**     1    Integer too large for a 64-bit signed integer or is malformed
-**     2    Special case of 9223372036854775808
+**     1    Excess text after the integer value
+**     2    Integer too large for a 64-bit signed integer or is malformed
+**     3    Special case of 9223372036854775808
 */
 int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
 #ifndef SQLITE_OMIT_HEX_INTEGER
@@ -666,7 +672,7 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
       u = u*16 + sqlite3HexToInt(z[k]);
     }
     memcpy(pOut, &u, 8);
-    return (z[k]==0 && k-i<=16) ? 0 : 1;
+    return (z[k]==0 && k-i<=16) ? 0 : 2;
   }else
 #endif /* SQLITE_OMIT_HEX_INTEGER */
   {
@@ -713,6 +719,7 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
     }
   }
 #endif
+  if( !sqlite3Isdigit(zNum[0]) ) return 0;
   while( zNum[0]=='0' ) zNum++;
   for(i=0; i<11 && (c = zNum[i] - '0')>=0 && c<=9; i++){
     v = v*10 + c;
@@ -1275,7 +1282,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
 ** overflow, leave *pA unchanged and return 1.
 */
 int sqlite3AddInt64(i64 *pA, i64 iB){
-#if GCC_VERSION>=5004000
+#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
   return __builtin_add_overflow(*pA, iB, pA);
 #else
   i64 iA = *pA;
@@ -1295,7 +1302,7 @@ int sqlite3AddInt64(i64 *pA, i64 iB){
 #endif
 }
 int sqlite3SubInt64(i64 *pA, i64 iB){
-#if GCC_VERSION>=5004000
+#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
   return __builtin_sub_overflow(*pA, iB, pA);
 #else
   testcase( iB==SMALLEST_INT64+1 );
@@ -1310,7 +1317,7 @@ int sqlite3SubInt64(i64 *pA, i64 iB){
 #endif
 }
 int sqlite3MulInt64(i64 *pA, i64 iB){
-#if GCC_VERSION>=5004000
+#if GCC_VERSION>=5004000 && !defined(__INTEL_COMPILER)
   return __builtin_mul_overflow(*pA, iB, pA);
 #else
   i64 iA = *pA;
@@ -1412,8 +1419,14 @@ LogEst sqlite3LogEst(u64 x){
     if( x<2 ) return 0;
     while( x<8 ){  y -= 10; x <<= 1; }
   }else{
+#if GCC_VERSION>=5004000
+    int i = 60 - __builtin_clzll(x);
+    y += i*10;
+    x >>= i;
+#else
     while( x>255 ){ y += 40; x >>= 4; }  /*OPTIMIZATION-IF-TRUE*/
     while( x>15 ){  y += 10; x >>= 1; }
+#endif
   }
   return a[x&7] + y - 10;
 }

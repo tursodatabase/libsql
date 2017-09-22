@@ -137,9 +137,16 @@ const unsigned char sqlite3CtypeMap[256] = {
 ** EVIDENCE-OF: R-43642-56306 By default, URI handling is globally
 ** disabled. The default value may be changed by compiling with the
 ** SQLITE_USE_URI symbol defined.
+**
+** URI filenames are enabled by default if SQLITE_HAS_CODEC is
+** enabled.
 */
 #ifndef SQLITE_USE_URI
-# define  SQLITE_USE_URI 0
+# ifdef SQLITE_HAS_CODEC
+#  define SQLITE_USE_URI 1
+# else
+#  define SQLITE_USE_URI 0
+# endif
 #endif
 
 /* EVIDENCE-OF: R-38720-18127 The default setting is determined by the
@@ -192,6 +199,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    SQLITE_THREADSAFE==1,      /* bFullMutex */
    SQLITE_USE_URI,            /* bOpenUri */
    SQLITE_ALLOW_COVERING_INDEX_SCAN,   /* bUseCis */
+   0,                         /* bSmallMalloc */
    0x7ffffffe,                /* mxStrlen */
    0,                         /* neverCorrupt */
    SQLITE_DEFAULT_LOOKASIDE,  /* szLookaside, nLookaside */
@@ -204,9 +212,6 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0, 0,                      /* mnHeap, mxHeap */
    SQLITE_DEFAULT_MMAP_SIZE,  /* szMmap */
    SQLITE_MAX_MMAP_SIZE,      /* mxMmap */
-   (void*)0,                  /* pScratch */
-   0,                         /* szScratch */
-   0,                         /* nScratch */
    (void*)0,                  /* pPage */
    0,                         /* szPage */
    SQLITE_DEFAULT_PCACHE_INITSZ, /* nPage */

@@ -729,15 +729,15 @@ do_test e_fkey-19.5 {
 # foreign key DML errors is usually "foreign key mismatch" but can also
 # be "no such table" if the parent table does not exist.
 #
-# EVIDENCE-OF: R-60781-26576 Foreign key DML errors are may be reported
-# if: The parent table does not exist, or The parent key columns named
-# in the foreign key constraint do not exist, or The parent key columns
-# named in the foreign key constraint are not the primary key of the
-# parent table and are not subject to a unique constraint using
-# collating sequence specified in the CREATE TABLE, or The child table
-# references the primary key of the parent without specifying the
-# primary key columns and the number of primary key columns in the
-# parent do not match the number of child key columns.
+# EVIDENCE-OF: R-35763-48267 Foreign key DML errors are reported if: The
+# parent table does not exist, or The parent key columns named in the
+# foreign key constraint do not exist, or The parent key columns named
+# in the foreign key constraint are not the primary key of the parent
+# table and are not subject to a unique constraint using collating
+# sequence specified in the CREATE TABLE, or The child table references
+# the primary key of the parent without specifying the primary key
+# columns and the number of primary key columns in the parent do not
+# match the number of child key columns.
 #
 do_test e_fkey-20.1 {
   execsql {

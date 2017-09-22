@@ -89,7 +89,7 @@ foreach mod {fts3 fts4} {
   } {
     do_catchsql_test 2.$tn { 
       INSERT INTO t2(t2) VALUES($arg);
-    } {1 {SQL logic error or missing database}}
+    } {1 {SQL logic error}}
   }
   
   #-------------------------------------------------------------------------

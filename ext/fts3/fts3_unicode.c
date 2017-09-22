@@ -136,16 +136,16 @@ static int unicodeAddExceptions(
 ){
   const unsigned char *z = (const unsigned char *)zIn;
   const unsigned char *zTerm = &z[nIn];
-  int iCode;
+  unsigned int iCode;
   int nEntry = 0;
 
   assert( bAlnum==0 || bAlnum==1 );
 
   while( z<zTerm ){
     READ_UTF8(z, zTerm, iCode);
-    assert( (sqlite3FtsUnicodeIsalnum(iCode) & 0xFFFFFFFE)==0 );
-    if( sqlite3FtsUnicodeIsalnum(iCode)!=bAlnum 
-     && sqlite3FtsUnicodeIsdiacritic(iCode)==0 
+    assert( (sqlite3FtsUnicodeIsalnum((int)iCode) & 0xFFFFFFFE)==0 );
+    if( sqlite3FtsUnicodeIsalnum((int)iCode)!=bAlnum 
+     && sqlite3FtsUnicodeIsdiacritic((int)iCode)==0 
     ){
       nEntry++;
     }
@@ -162,13 +162,13 @@ static int unicodeAddExceptions(
     z = (const unsigned char *)zIn;
     while( z<zTerm ){
       READ_UTF8(z, zTerm, iCode);
-      if( sqlite3FtsUnicodeIsalnum(iCode)!=bAlnum 
-       && sqlite3FtsUnicodeIsdiacritic(iCode)==0
+      if( sqlite3FtsUnicodeIsalnum((int)iCode)!=bAlnum 
+       && sqlite3FtsUnicodeIsdiacritic((int)iCode)==0
       ){
         int i, j;
-        for(i=0; i<nNew && aNew[i]<iCode; i++);
+        for(i=0; i<nNew && aNew[i]<(int)iCode; i++);
         for(j=nNew; j>i; j--) aNew[j] = aNew[j-1];
-        aNew[i] = iCode;
+        aNew[i] = (int)iCode;
         nNew++;
       }
     }
@@ -318,7 +318,7 @@ static int unicodeNext(
 ){
   unicode_cursor *pCsr = (unicode_cursor *)pC;
   unicode_tokenizer *p = ((unicode_tokenizer *)pCsr->base.pTokenizer);
-  int iCode = 0;
+  unsigned int iCode = 0;
   char *zOut;
   const unsigned char *z = &pCsr->aInput[pCsr->iOff];
   const unsigned char *zStart = z;
@@ -330,7 +330,7 @@ static int unicodeNext(
   ** the input.  */
   while( z<zTerm ){
     READ_UTF8(z, zTerm, iCode);
-    if( unicodeIsAlnum(p, iCode) ) break;
+    if( unicodeIsAlnum(p, (int)iCode) ) break;
     zStart = z;
   }
   if( zStart>=zTerm ) return SQLITE_DONE;
@@ -350,7 +350,7 @@ static int unicodeNext(
 
     /* Write the folded case of the last character read to the output */
     zEnd = z;
-    iOut = sqlite3FtsUnicodeFold(iCode, p->bRemoveDiacritic);
+    iOut = sqlite3FtsUnicodeFold((int)iCode, p->bRemoveDiacritic);
     if( iOut ){
       WRITE_UTF8(zOut, iOut);
     }
@@ -358,8 +358,8 @@ static int unicodeNext(
     /* If the cursor is not at EOF, read the next character */
     if( z>=zTerm ) break;
     READ_UTF8(z, zTerm, iCode);
-  }while( unicodeIsAlnum(p, iCode) 
-       || sqlite3FtsUnicodeIsdiacritic(iCode)
+  }while( unicodeIsAlnum(p, (int)iCode) 
+       || sqlite3FtsUnicodeIsdiacritic((int)iCode)
   );
 
   /* Set the output variables and return. */

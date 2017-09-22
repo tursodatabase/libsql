@@ -76,16 +76,20 @@ static void typeofFunc(
   int NotUsed,
   sqlite3_value **argv
 ){
-  const char *z = 0;
+  static const char *azType[] = { "integer", "real", "text", "blob", "null" };
+  int i = sqlite3_value_type(argv[0]) - 1;
   UNUSED_PARAMETER(NotUsed);
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_INTEGER: z = "integer"; break;
-    case SQLITE_TEXT:    z = "text";    break;
-    case SQLITE_FLOAT:   z = "real";    break;
-    case SQLITE_BLOB:    z = "blob";    break;
-    default:             z = "null";    break;
-  }
-  sqlite3_result_text(context, z, -1, SQLITE_STATIC);
+  assert( i>=0 && i<ArraySize(azType) );
+  assert( SQLITE_INTEGER==1 );
+  assert( SQLITE_FLOAT==2 );
+  assert( SQLITE_TEXT==3 );
+  assert( SQLITE_BLOB==4 );
+  assert( SQLITE_NULL==5 );
+  /* EVIDENCE-OF: R-01470-60482 The sqlite3_value_type(V) interface returns
+  ** the datatype code for the initial datatype of the sqlite3_value object
+  ** V. The returned value is one of SQLITE_INTEGER, SQLITE_FLOAT,
+  ** SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL. */
+  sqlite3_result_text(context, azType[i], -1, SQLITE_STATIC);
 }
 
 
@@ -204,15 +208,13 @@ static void instrFunc(
     if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
       zHaystack = sqlite3_value_blob(argv[0]);
       zNeedle = sqlite3_value_blob(argv[1]);
-      assert( zNeedle!=0 );
-      assert( zHaystack!=0 || nHaystack==0 );
       isText = 0;
     }else{
       zHaystack = sqlite3_value_text(argv[0]);
       zNeedle = sqlite3_value_text(argv[1]);
       isText = 1;
-      if( zHaystack==0 || zNeedle==0 ) return;
     }
+    if( zNeedle==0 || (nHaystack && zHaystack==0) ) return;
     while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
       N++;
       do{
@@ -863,7 +865,8 @@ static void likeFunc(
 #ifdef SQLITE_TEST
     sqlite3_like_count++;
 #endif
-    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
+    sqlite3_result_int(context,
+                      patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
   }
 }
 
@@ -1704,9 +1707,14 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 /*
 ** pExpr points to an expression which implements a function.  If
 ** it is appropriate to apply the LIKE optimization to that function
-** then set aWc[0] through aWc[2] to the wildcard characters and
-** return TRUE.  If the function is not a LIKE-style function then
-** return FALSE.
+** then set aWc[0] through aWc[2] to the wildcard characters and the
+** escape character and then return TRUE.  If the function is not a 
+** LIKE-style function then return FALSE.
+**
+** The expression "a LIKE b ESCAPE c" is only considered a valid LIKE
+** operator if c is a string literal that is exactly one byte in length.
+** That one byte is stored in aWc[3].  aWc[3] is set to zero if there is
+** no ESCAPE clause.
 **
 ** *pIsNocase is set to true if uppercase and lowercase are equivalent for
 ** the function (default for LIKE).  If the function makes the distinction
@@ -1715,16 +1723,25 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
-  if( pExpr->op!=TK_FUNCTION 
-   || !pExpr->x.pList 
-   || pExpr->x.pList->nExpr!=2
-  ){
+  int nExpr;
+  if( pExpr->op!=TK_FUNCTION || !pExpr->x.pList ){
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  pDef = sqlite3FindFunction(db, pExpr->u.zToken, 2, SQLITE_UTF8, 0);
+  nExpr = pExpr->x.pList->nExpr;
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
+  }
+  if( nExpr<3 ){
+    aWc[3] = 0;
+  }else{
+    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
+    char *zEscape;
+    if( pEscape->op!=TK_STRING ) return 0;
+    zEscape = pEscape->u.zToken;
+    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
+    aWc[3] = zEscape[0];
   }
 
   /* The memcpy() statement assumes that the wildcard characters are

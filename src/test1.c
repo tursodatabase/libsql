@@ -2139,6 +2139,9 @@ static int SQLITE_TCLAPI test_stmt_status(
     { "SQLITE_STMTSTATUS_SORT",            SQLITE_STMTSTATUS_SORT            },
     { "SQLITE_STMTSTATUS_AUTOINDEX",       SQLITE_STMTSTATUS_AUTOINDEX       },
     { "SQLITE_STMTSTATUS_VM_STEP",         SQLITE_STMTSTATUS_VM_STEP         },
+    { "SQLITE_STMTSTATUS_REPREPARE",       SQLITE_STMTSTATUS_REPREPARE       },
+    { "SQLITE_STMTSTATUS_RUN",             SQLITE_STMTSTATUS_RUN             },
+    { "SQLITE_STMTSTATUS_MEMUSED",         SQLITE_STMTSTATUS_MEMUSED         },
   };
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT PARAMETER RESETFLAG");
@@ -2547,6 +2550,46 @@ static int SQLITE_TCLAPI test_delete_database(
   rc = sqlite3_delete_database(zFile);
 
   Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_OK;
+}
+
+/*
+** Usage: atomic_batch_write PATH
+*/
+static int SQLITE_TCLAPI test_atomic_batch_write(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char *zFile = 0;                /* Path to file to test */
+  sqlite3 *db = 0;                /* Database handle */
+  sqlite3_file *pFd = 0;          /* SQLite fd open on zFile */
+  int bRes = 0;                   /* Integer result of this command */
+  int dc = 0;                     /* Device-characteristics mask */
+  int rc;                         /* sqlite3_open() return code */
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATH");
+    return TCL_ERROR;
+  }
+  zFile = Tcl_GetString(objv[1]);
+
+  rc = sqlite3_open(zFile, &db);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3_errmsg(db), 0);
+    sqlite3_close(db);
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  dc = pFd->pMethods->xDeviceCharacteristics(pFd);
+  if( dc & SQLITE_IOCAP_BATCH_ATOMIC ){
+    bRes = 1;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(bRes));
+  sqlite3_close(db);
   return TCL_OK;
 }
 
@@ -4949,52 +4992,6 @@ static int SQLITE_TCLAPI test_interrupt(
   return TCL_OK;
 }
 
-static u8 *sqlite3_stack_baseline = 0;
-
-/*
-** Fill the stack with a known bitpattern.
-*/
-static void prepStack(void){
-  int i;
-  u32 bigBuf[65536];
-  for(i=0; i<sizeof(bigBuf)/sizeof(bigBuf[0]); i++) bigBuf[i] = 0xdeadbeef;
-  sqlite3_stack_baseline = (u8*)&bigBuf[65536];
-}
-
-/*
-** Get the current stack depth.  Used for debugging only.
-*/
-u64 sqlite3StackDepth(void){
-  u8 x;
-  return (u64)(sqlite3_stack_baseline - &x);
-}
-
-/*
-** Usage:  sqlite3_stack_used DB SQL
-**
-** Try to measure the amount of stack space used by a call to sqlite3_exec
-*/
-static int SQLITE_TCLAPI test_stack_used(
-  void * clientData,
-  Tcl_Interp *interp,
-  int argc,
-  char **argv
-){
-  sqlite3 *db;
-  int i;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-        " DB SQL", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  prepStack();
-  (void)sqlite3_exec(db, argv[2], 0, 0, 0);
-  for(i=65535; i>=0 && ((u32*)sqlite3_stack_baseline)[-i]==0xdeadbeef; i--){}
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(i*4));
-  return TCL_OK;
-}
-
 /*
 ** Usage: sqlite_delete_function DB function-name
 **
@@ -6963,6 +6960,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_unionvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6982,6 +6980,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "series",                sqlite3_series_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "totype",                sqlite3_totype_init               },
+    { "unionvtab",             sqlite3_unionvtab_init            },
     { "wholenumber",           sqlite3_wholenumber_init          },
   };
   sqlite3 *db;
@@ -7363,6 +7362,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
     { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
     { "NO_CKPT_ON_CLOSE",SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE },
+    { "QPSG",            SQLITE_DBCONFIG_ENABLE_QPSG },
   };
   int i;
   int v;
@@ -7411,6 +7411,35 @@ static int SQLITE_TCLAPI test_dbconfig_maindbname_icecube(
     if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
     rc = sqlite3_db_config(db, SQLITE_DBCONFIG_MAINDBNAME, "icecube");
     Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+    return TCL_OK;
+  }
+}
+
+/*
+** Usage: sqlite3_mmap_warm DB DBNAME
+*/
+static int SQLITE_TCLAPI test_mmap_warm(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  extern int sqlite3_mmap_warm(sqlite3 *db, const char *);
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ?DBNAME?");
+    return TCL_ERROR;
+  }else{
+    int rc;
+    sqlite3 *db;
+    const char *zDb = 0;
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    if( objc==3 ){
+      zDb = Tcl_GetString(objv[2]);
+    }
+    rc = sqlite3_mmap_warm(db, zDb);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_OK;
   }
 }
@@ -7473,7 +7502,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_delete_function",        (Tcl_CmdProc*)delete_function       },
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
-     { "sqlite3_stack_used",            (Tcl_CmdProc*)test_stack_used       },
      { "sqlite3_busy_timeout",          (Tcl_CmdProc*)test_busy_timeout     },
      { "printf",                        (Tcl_CmdProc*)test_printf           },
      { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
@@ -7685,7 +7713,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_open_blob", test_snapshot_open_blob, 0 },
      { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
-     { "sqlite3_delete_database", test_delete_database, 0 },
+     { "sqlite3_delete_database", test_delete_database,    0 },
+     { "atomic_batch_write",      test_atomic_batch_write, 0 },
+     { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

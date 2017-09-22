@@ -102,15 +102,15 @@ static int icuLikeCompare(
   const uint8_t *zString,    /* The UTF-8 string to compare against */
   const UChar32 uEsc         /* The escape character */
 ){
-  static const int MATCH_ONE = (UChar32)'_';
-  static const int MATCH_ALL = (UChar32)'%';
+  static const uint32_t MATCH_ONE = (uint32_t)'_';
+  static const uint32_t MATCH_ALL = (uint32_t)'%';
 
   int prevEscape = 0;     /* True if the previous character was uEsc */
 
   while( 1 ){
 
     /* Read (and consume) the next character from the input pattern. */
-    UChar32 uPattern;
+    uint32_t uPattern;
     SQLITE_ICU_READ_UTF8(zPattern, uPattern);
     if( uPattern==0 ) break;
 
@@ -152,16 +152,16 @@ static int icuLikeCompare(
       if( *zString==0 ) return 0;
       SQLITE_ICU_SKIP_UTF8(zString);
 
-    }else if( !prevEscape && uPattern==uEsc){
+    }else if( !prevEscape && uPattern==(uint32_t)uEsc){
       /* Case 3. */
       prevEscape = 1;
 
     }else{
       /* Case 4. */
-      UChar32 uString;
+      uint32_t uString;
       SQLITE_ICU_READ_UTF8(zString, uString);
-      uString = u_foldCase(uString, U_FOLD_CASE_DEFAULT);
-      uPattern = u_foldCase(uPattern, U_FOLD_CASE_DEFAULT);
+      uString = (uint32_t)u_foldCase((UChar32)uString, U_FOLD_CASE_DEFAULT);
+      uPattern = (uint32_t)u_foldCase((UChar32)uPattern, U_FOLD_CASE_DEFAULT);
       if( uString!=uPattern ){
         return 0;
       }

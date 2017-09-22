@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix collateB
 
 do_execsql_test collateB-1.1 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY);
@@ -59,5 +60,18 @@ do_execsql_test collateB-1.16 {
 do_execsql_test collateB-1.17 {
   SELECT *,'|' FROM t1, t2, t3 WHERE b=x2 AND a=x1 AND 1=a;
 } {1 11 1 11 |}
+
+#-------------------------------------------------------------------------
+# Test an assert() failure that was occuring if an index were created
+# on a column explicitly declared "COLLATE binary".
+reset_db
+do_execsql_test 2.1 {
+  CREATE TABLE t4(a COLLATE binary);
+  CREATE INDEX i4 ON t4(a);
+  INSERT INTO t4 VALUES('one'), ('two'), ('three');
+  VACUUM;
+} 
+
+integrity_check 2.2
 
 finish_test

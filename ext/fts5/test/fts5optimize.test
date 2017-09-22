@@ -106,4 +106,3 @@ foreach {tn nStep} {
   do_test 2.$tn.6 { fts5_segcount t1 } 1
 }
 finish_test
-

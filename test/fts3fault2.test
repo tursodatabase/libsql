@@ -174,4 +174,74 @@ do_faultsim_test 6.1 -faults oom* -prep {
   faultsim_test_result {0 -1}
 }
 
+#-------------------------------------------------------------------------
+# Inject faults into a query for an N-byte prefix that uses a prefix=N+1
+# index.
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t7 USING fts4(x,prefix=2);
+  INSERT INTO t7 VALUES('the quick brown fox');
+  INSERT INTO t7 VALUES('jumped over the');
+  INSERT INTO t7 VALUES('lazy dog');
+}
+do_faultsim_test 7.1 -faults oom* -body {
+  execsql { SELECT docid FROM t7 WHERE t7 MATCH 't*' }
+} -test {
+  faultsim_test_result {0 {1 2}}
+}
+
+#-------------------------------------------------------------------------
+# Inject faults into a opening an existing fts3 table that has been 
+# upgraded to add an %_stat table.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t8 USING fts3;
+  INSERT INTO t8 VALUES('the quick brown fox');
+  INSERT INTO t8 VALUES('jumped over the');
+  INSERT INTO t8 VALUES('lazy dog');
+  INSERT INTO t8(t8) VALUES('automerge=8');
+  SELECT name FROM sqlite_master WHERE name LIKE 't8%';
+} {
+  t8 t8_content t8_segments t8_segdir t8_stat
+}
+faultsim_save_and_close
+
+do_faultsim_test 8.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO t8 VALUES('one two three') }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 8.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { ALTER TABLE t8 RENAME TO t8ii }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+set chunkconfig [fts3_configure_incr_load 1 1]
+do_execsql_test 9.0 {
+  PRAGMA page_size = 512;
+  CREATE VIRTUAL TABLE t9 USING fts3;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50
+  )
+  INSERT INTO t9 SELECT 'one two three' FROM s;
+}
+
+do_faultsim_test 8.2 -faults io* -body {
+  execsql { SELECT count(*) FROM t9 WHERE t9 MATCH '"one two three"' }
+} -test {
+  faultsim_test_result {0 50}
+}
+
+eval fts3_configure_incr_load $chunkconfig
+
+
 finish_test

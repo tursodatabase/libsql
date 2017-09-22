@@ -315,8 +315,9 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         assert(pWrite->zBuf);
 
 #ifdef TRACE_CRASHTEST
-        printf("Trashing %d sectors @ %lld (sector %d) (%s)\n", 
-            1+iLast-iFirst, pWrite->iOffset, iFirst, pWrite->pFile->zName
+        printf("Trashing %d sectors (%d bytes) @ %lld (sector %d) (%s)\n", 
+            1+iLast-iFirst, (1+iLast-iFirst)*g.iSectorSize,
+            pWrite->iOffset, iFirst, pWrite->pFile->zName
         );
 #endif
 
@@ -735,6 +736,7 @@ static int processDevSymArgs(
     { "sequential",          SQLITE_IOCAP_SEQUENTIAL            },
     { "safe_append",         SQLITE_IOCAP_SAFE_APPEND           },
     { "powersafe_overwrite", SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
+    { "batch-atomic",        SQLITE_IOCAP_BATCH_ATOMIC          },
     { 0, 0 }
   };
 
@@ -827,7 +829,7 @@ static int SQLITE_TCLAPI crashNowCmd(
 }
 
 /*
-** tclcmd:   sqlite_crash_enable ENABLE
+** tclcmd:   sqlite_crash_enable ENABLE ?DEFAULT?
 **
 ** Parameter ENABLE must be a boolean value. If true, then the "crash"
 ** vfs is added to the system. If false, it is removed.
@@ -839,6 +841,7 @@ static int SQLITE_TCLAPI crashEnableCmd(
   Tcl_Obj *CONST objv[]
 ){
   int isEnable;
+  int isDefault = 0;
   static sqlite3_vfs crashVfs = {
     2,                  /* iVersion */
     0,                  /* szOsFile */
@@ -862,12 +865,15 @@ static int SQLITE_TCLAPI crashEnableCmd(
     0,                    /* xCurrentTimeInt64 */
   };
 
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "ENABLE");
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ENABLE ?DEFAULT?");
     return TCL_ERROR;
   }
 
   if( Tcl_GetBooleanFromObj(interp, objv[1], &isEnable) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 && Tcl_GetBooleanFromObj(interp, objv[2], &isDefault) ){
     return TCL_ERROR;
   }
 
@@ -880,7 +886,7 @@ static int SQLITE_TCLAPI crashEnableCmd(
     crashVfs.mxPathname = pOriginalVfs->mxPathname;
     crashVfs.pAppData = (void *)pOriginalVfs;
     crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
-    sqlite3_vfs_register(&crashVfs, 0);
+    sqlite3_vfs_register(&crashVfs, isDefault);
   }else{
     crashVfs.pAppData = 0;
     sqlite3_vfs_unregister(&crashVfs);
@@ -971,7 +977,30 @@ static int SQLITE_TCLAPI devSymObjCmd(
   devsym_register(iDc, iSectorSize);
 
   return TCL_OK;
+}
 
+/*
+** tclcmd: sqlite3_crash_on_write N
+*/
+static int SQLITE_TCLAPI writeCrashObjCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  void devsym_crash_on_write(int);
+  int nWrite = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NWRITE");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &nWrite) ){
+    return TCL_ERROR;
+  }
+
+  devsym_crash_on_write(nWrite);
+  return TCL_OK;
 }
 
 /*
@@ -1063,6 +1092,7 @@ int Sqlitetest6_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_crash_now", crashNowCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "sqlite3_crash_on_write", writeCrashObjCmd,0,0);
   Tcl_CreateObjCommand(interp, "unregister_devsim", dsUnregisterObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "register_jt_vfs", jtObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, 0, 0);

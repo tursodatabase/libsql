@@ -1191,7 +1191,7 @@ if {$::tcl_platform(platform) == "unix"} {
 #
 foreach {tn sql reslist} {
   1 { }                                 {10 0 4 0 6 0}
-  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {10 6 4 3 6 3}
   3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
 } {
   ifcapable default_ckptfullfsync {
@@ -1261,8 +1261,8 @@ foreach {tn settings restart_sync commit_sync ckpt_sync} {
   6  {0 1 full}    {0 2}  {0 1}  {0 2}
 
   7  {1 0 off}     {0 0}  {0 0}  {0 0}
-  8  {1 0 normal}  {1 0}  {0 0}  {0 2}
-  9  {1 0 full}    {2 0}  {1 0}  {0 2}
+  8  {1 0 normal}  {0 1}  {0 0}  {0 2}
+  9  {1 0 full}    {1 1}  {1 0}  {0 2}
 
   10 {1 1 off}     {0 0}  {0 0}  {0 0}
   11 {1 1 normal}  {0 1}  {0 0}  {0 2}

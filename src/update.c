@@ -285,7 +285,7 @@ void sqlite3Update(
   */
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
-    if( chngKey || hasFK || pIdx->pPartIdxWhere || pIdx==pPk ){
+    if( chngKey || hasFK>1 || pIdx->pPartIdxWhere || pIdx==pPk ){
       reg = ++pParse->nMem;
       pParse->nMem += pIdx->nColumn;
     }else{
@@ -640,7 +640,7 @@ void sqlite3Update(
     assert( regNew==regNewRowid+1 );
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
     sqlite3VdbeAddOp3(v, OP_Delete, iDataCur,
-        OPFLAG_ISUPDATE | ((hasFK || chngKey) ? 0 : OPFLAG_ISNOOP),
+        OPFLAG_ISUPDATE | ((hasFK>1 || chngKey) ? 0 : OPFLAG_ISNOOP),
         regNewRowid
     );
     if( eOnePass==ONEPASS_MULTI ){
@@ -651,7 +651,7 @@ void sqlite3Update(
       sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
     }
 #else
-    if( hasFK || chngKey ){
+    if( hasFK>1 || chngKey ){
       sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, 0);
     }
 #endif
@@ -803,18 +803,29 @@ static void updateVirtualTable(
   if( pWInfo==0 ) return;
 
   /* Populate the argument registers. */
-  sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg);
-  if( pRowid ){
-    sqlite3ExprCode(pParse, pRowid, regArg+1);
-  }else{
-    sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg+1);
-  }
   for(i=0; i<pTab->nCol; i++){
     if( aXRef[i]>=0 ){
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
     }
+  }
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg);
+    if( pRowid ){
+      sqlite3ExprCode(pParse, pRowid, regArg+1);
+    }else{
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg+1);
+    }
+  }else{
+    Index *pPk;   /* PRIMARY KEY index */
+    i16 iPk;      /* PRIMARY KEY column */
+    pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    assert( pPk->nKeyCol==1 );
+    iPk = pPk->aiColumn[0];
+    sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, iPk, regArg);
+    sqlite3VdbeAddOp2(v, OP_SCopy, regArg+2+iPk, regArg+1);
   }
 
   bOnePass = sqlite3WhereOkOnePass(pWInfo, aDummy);

@@ -66,7 +66,6 @@ proc do_dlidx_test1 {tn spc1 spc2 nEntry iFirst nStep} {
   }
   execsql COMMIT
 
-  breakpoint
   do_test $tn.1 {
     execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
   } {}
@@ -124,7 +123,6 @@ proc do_dlidx_test2 {tn nEntry iFirst nStep} {
   do_execsql_test $tn.1 {
     SELECT rowid FROM t1 WHERE t1 MATCH 'b AND a'
   } {1}
-  breakpoint
   do_execsql_test $tn.2 {
     SELECT rowid FROM t1 WHERE t1 MATCH 'b AND a' ORDER BY rowid DESC
   } {1}
@@ -197,4 +195,3 @@ foreach v $vocab {
 
 
 finish_test
-

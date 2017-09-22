@@ -89,7 +89,8 @@ foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
 foreach f [glob -nocomplain       \
     $testdir/../ext/rtree/*.test  \
     $testdir/../ext/fts5/test/*.test   \
-] { 
+    $testdir/../ext/lsm1/test/*.test   \
+] {
   lappend alltests $f 
 }
 foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
@@ -247,22 +248,26 @@ test_suite "threads" -prefix "" -description {
 test_suite "fts3" -prefix "" -description {
   All FTS3 tests except fts3rnd.test.
 } -files {
-  fts3aa.test fts3ab.test fts3ac.test fts3ad.test fts3ae.test
-  fts3af.test fts3ag.test fts3ah.test fts3ai.test fts3aj.test
-  fts3ak.test fts3al.test fts3am.test fts3an.test fts3ao.test
-  fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
-  fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
-  fts3expr3.test
-  fts3near.test fts3query.test fts3shared.test fts3snippet.test 
-  fts3sort.test
-  fts3fault.test fts3malloc.test fts3matchinfo.test
-  fts3aux1.test fts3comp1.test fts3auto.test
-  fts4aa.test fts4content.test
-  fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
-  fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
-  fts4check.test fts4unicode.test fts4noti.test
-  fts3varint.test
-  fts4growth.test fts4growth2.test
+  fts3aa.test fts3ab.test fts3ac.test fts3ad.test
+  fts3ae.test fts3af.test fts3ag.test fts3ah.test
+  fts3ai.test fts3aj.test fts3ak.test fts3al.test
+  fts3am.test fts3an.test fts3ao.test fts3atoken.test
+  fts3auto.test fts3aux1.test fts3aux2.test fts3b.test
+  fts3comp1.test fts3conf.test fts3corrupt2.test fts3corrupt.test
+  fts3cov.test fts3c.test fts3defer2.test fts3defer3.test
+  fts3defer.test fts3drop.test fts3d.test fts3e.test
+  fts3expr2.test fts3expr3.test fts3expr4.test fts3expr5.test
+  fts3expr.test fts3fault2.test fts3fault.test fts3first.test
+  fts3join.test fts3malloc.test fts3matchinfo.test fts3near.test
+  fts3offsets.test fts3prefix2.test fts3prefix.test fts3query.test
+  fts3shared.test fts3snippet.test fts3sort.test fts3tok1.test
+  fts3tok_err.test fts3varint.test fts4aa.test fts4check.test
+  fts4content.test fts4docid.test fts4growth2.test fts4growth.test
+  fts4incr.test fts4langid.test fts4lastrowid.test fts4merge2.test
+  fts4merge4.test fts4merge.test fts4noti.test fts4onepass.test 
+  fts4opt.test fts4unicode.test
+  fts3corrupt3.test
+  fts3misc.test
 }
 
 test_suite "fts5" -prefix "" -description {
@@ -276,6 +281,10 @@ test_suite "fts5-light" -prefix "" -description {
       [glob -nocomplain $::testdir/../ext/fts5/test/*.test] \
       -exclude *corrupt* *fault* *big* *fts5aj*
 ]
+
+test_suite "lsm1" -prefix "" -description {
+  All LSM1 tests.
+} -files [glob -nocomplain $::testdir/../ext/lsm1/test/*.test]
 
 test_suite "nofaultsim" -prefix "" -description {
   "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
@@ -380,6 +389,30 @@ test_suite "vfslog" -prefix "" -description {
   wal* mmap*
 ]
 
+test_suite "atomic-batch-write" -prefix "" -description {
+  Like veryquick.test, but must be run on a file-system that supports
+  atomic-batch-writes. Tests that depend on the journal file being present
+  are omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj*  \
+      crash8.test delete_db.test        \
+      exclusive.test journal3.test      \
+      journal1.test                     \
+      jrnlmode.test jrnlmode2.test      \
+      lock4.test pager1.test            \
+      pager3.test sharedA.test          \
+      symlink.test stmt.test            \
+      sync.test sync2.test              \
+      tempdb.test tkt3457.test          \
+      vacuum5.test wal2.test            \
+      walmode.test zerodamage.test
+] -initialize {
+  if {[atomic_batch_write test.db]==0} {
+    error "File system does NOT support atomic-batch-write"
+  }
+}
+
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
 # Define the coverage related test suites:
@@ -422,33 +455,31 @@ lappend ::testsuitelist xxx
 # Define the permutation test suites:
 #
 
-# Run some tests using pre-allocated page and scratch blocks.
+# Run some tests using pre-allocated page blocks.
 #
 # mmap1.test is excluded because a good number of its tests depend on 
 # the page-cache being larger than the database. But this permutation
 # causes the effective limit on the page-cache to be just 24 pages.
 #
 test_suite "memsubsys1" -description {
-  Tests using pre-allocated page and scratch blocks
+  Tests using pre-allocated page blocks
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
   test_set_config_pagecache 4096 24
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 25000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
 }
 
-# Run some tests using pre-allocated page and scratch blocks. This time
+# Run some tests using pre-allocated page blocks. This time
 # the allocations are too small to use in most cases.
 #
 # Both ioerr5.test and malloc5.test are excluded because they test the
@@ -456,21 +487,19 @@ test_suite "memsubsys1" -description {
 # This functionality is disabled if a pre-allocated page block is provided.
 #
 test_suite "memsubsys2" -description {
-  Tests using small pre-allocated page and scratch blocks
+  Tests using small pre-allocated page blocks
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test
 ] -initialize {
   test_set_config_pagecache 512 5
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 1000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
 }
@@ -1039,7 +1068,8 @@ test_suite "prepare" -description {
   db_use_legacy_prepare $::dbhandle 1
   #$::dbhandle cache size 0
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* \
+      stmtvtab1.test index9.test
 ]
 
 # End of tests

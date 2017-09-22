@@ -227,7 +227,7 @@ proc print_isalnum {zFunc lRange} {
   an_print_ascii_bitmap $lRange
   puts {
   if( (unsigned int)c<128 ){
-    return ( (aAscii[c >> 5] & (1 << (c & 0x001F)))==0 );
+    return ( (aAscii[c >> 5] & ((unsigned int)1 << (c & 0x001F)))==0 );
   }else if( (unsigned int)c<(1<<22) ){
     unsigned int key = (((unsigned int)c)<<10) | 0x000003FF;
     int iRes = 0;

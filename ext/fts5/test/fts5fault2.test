@@ -137,4 +137,3 @@ do_faultsim_test 5.0 -faults oom-* -prep {
 }
 
 finish_test
-

@@ -39,11 +39,27 @@ ifcapable !memorymanage {
    return
 }
 
+# The sizes of memory allocations from system malloc() might vary,
+# depending on the memory allocator algorithms used.  The following
+# routine is designed to support answers that fall within a range
+# of values while also supplying easy-to-understand "expected" values
+# when errors occur.
+#
+proc value_in_range {target x args} {
+  set v [lindex $args 0]
+  if {$v!=""} {
+    if {$v<$target*$x} {return $v}
+    if {$v>$target/$x} {return $v}
+  }
+  return "number between [expr {int($target*$x)}] and [expr {int($target/$x)}]"
+}
+set mrange 0.98   ;#  plus or minus 2%
+
 test_set_config_pagecache 0 100
 
 sqlite3_soft_heap_limit 0
 sqlite3 db test.db
-db eval {PRAGMA cache_size=1}
+# db eval {PRAGMA cache_size=1}
 
 do_test malloc5-1.1 {
   # Simplest possible test. Call sqlite3_release_memory when there is exactly
@@ -71,24 +87,8 @@ do_test malloc5-1.3 {
   # in the cache belonging to db2.
   #
   set ::pgalloc [sqlite3_release_memory]
-} {0}
-
-# The sizes of memory allocations from system malloc() might vary,
-# depending on the memory allocator algorithms used.  The following
-# routine is designed to support answers that fall within a range
-# of values while also supplying easy-to-understand "expected" values
-# when errors occur.
-#
-proc value_in_range {target x args} {
-  set v [lindex $args 0]
-  if {$v!=""} {
-    if {$v<$target*$x} {return $v}
-    if {$v>$target/$x} {return $v}
-  }
-  return "number between [expr {int($target*$x)}] and [expr {int($target/$x)}]"
-}
-set mrange 0.98   ;#  plus or minus 2%
-
+  value_in_range 1288 0.75
+} [value_in_range 1288 0.75]
 
 do_test malloc5-1.4 {
   # Commit the transaction and open a new one. Read 1 page into the cache.
@@ -117,12 +117,11 @@ do_test malloc5-1.6 {
   db2 close
   execsql {
     BEGIN;
-    SELECT * FROM abc;
     CREATE TABLE def(d, e, f);
+    SELECT * FROM abc;
   }
   value_in_range $::pgalloc $::mrange [sqlite3_release_memory 500]
 } [value_in_range $::pgalloc $::mrange]
-
 do_test malloc5-1.7 {
   # Database should not be locked this time. 
   sqlite3 db2 test.db
@@ -346,7 +345,7 @@ do_test malloc5-6.2.2 {
   # If we now try to reclaim some memory, it should come from the db2 cache.
   sqlite3_release_memory 3000
   expr [nPage db] + [nPage db2]
-} {4}
+} {1}
 do_test malloc5-6.2.3 {
   # Access the db2 cache again, so that all the db2 pages have been used
   # more recently than all the db pages. Then try to reclaim 3000 bytes.
@@ -354,7 +353,7 @@ do_test malloc5-6.2.3 {
   execsql { SELECT * FROM abc } db2
   sqlite3_release_memory 3000
   expr [nPage db] + [nPage db2]
-} {4}
+} {0}
 
 do_test malloc5-6.3.1 {
   # Now open a transaction and update 2 pages in the db2 cache. Then
@@ -364,6 +363,8 @@ do_test malloc5-6.3.1 {
   # sync() to free up the dirty db2 pages. The only page that cannot be
   # freed is page1 of db2. Because there is an open transaction, the
   # btree layer holds a reference to page 1 in the db2 cache.
+  #
+  # UPDATE: No longer. As release_memory() does not cause a sync()
   execsql {
     BEGIN;
     UPDATE abc SET c = randstr(100,100) 
@@ -377,13 +378,13 @@ do_test malloc5-6.3.2 {
   # non-dirty pages held by db2.
   sqlite3_release_memory [expr 7*1132]
   list [nPage db] [nPage db2]
-} {1 3}
+} {0 3}
 do_test malloc5-6.3.3 {
   # Try to release another 1000 bytes. This should come fromt the db
   # cache, since all three pages held by db2 are either in-use or diry.
   sqlite3_release_memory 1000
   list [nPage db] [nPage db2]
-} {1 3}
+} {0 3}
 do_test malloc5-6.3.4 {
   # Now release 9900 more (about 9 pages worth). This should expunge
   # the rest of the db cache. But the db2 cache remains intact, because
@@ -394,20 +395,20 @@ do_test malloc5-6.3.4 {
     sqlite3_release_memory 9900
   }
   list [nPage db] [nPage db2]
-} {1 3}
+} {0 3}
 do_test malloc5-6.3.5 {
   # But if we are really insistent, SQLite will consent to call sync()
   # if there is no other option. UPDATE: As of 3.6.2, SQLite will not
   # call sync() in this scenario. So no further memory can be reclaimed.
   sqlite3_release_memory 1000
   list [nPage db] [nPage db2]
-} {1 3}
+} {0 3}
 do_test malloc5-6.3.6 {
   # The referenced page (page 1 of the db2 cache) will not be freed no
   # matter how much memory we ask for:
   sqlite3_release_memory 31459
   list [nPage db] [nPage db2]
-} {1 3}
+} {0 3}
 
 db2 close
 

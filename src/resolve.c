@@ -229,7 +229,8 @@ static int lookupName(
   }
 
   /* Start at the inner-most context and move outward until a match is found */
-  while( pNC && cnt==0 ){
+  assert( pNC && cnt==0 );
+  do{
     ExprList *pEList;
     SrcList *pSrcList = pNC->pSrcList;
 
@@ -414,11 +415,11 @@ static int lookupName(
     /* Advance to the next name context.  The loop will exit when either
     ** we have a match (cnt>0) or when we run out of name contexts.
     */
-    if( cnt==0 ){
-      pNC = pNC->pNext;
-      nSubquery++;
-    }
-  }
+    if( cnt ) break;
+    pNC = pNC->pNext;
+    nSubquery++;
+  }while( pNC );
+
 
   /*
   ** If X and Y are NULL (in other words if only the column name Z is
@@ -477,6 +478,7 @@ static int lookupName(
   sqlite3ExprDelete(db, pExpr->pRight);
   pExpr->pRight = 0;
   pExpr->op = (isTrigger ? TK_TRIGGER : TK_COLUMN);
+  ExprSetProperty(pExpr, EP_Leaf);
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
@@ -515,7 +517,6 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
       testcase( iCol==BMS-1 );
       pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
     }
-    ExprSetProperty(p, EP_Resolved);
   }
   return p;
 }
@@ -575,8 +576,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
   pParse = pNC->pParse;
   assert( pParse==pWalker->pParse );
 
-  if( ExprHasProperty(pExpr, EP_Resolved) ) return WRC_Prune;
-  ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
   if( pNC->pSrcList && pNC->pSrcList->nAlloc>0 ){
     SrcList *pSrcList = pNC->pSrcList;
@@ -608,33 +607,38 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT)
           && !defined(SQLITE_OMIT_SUBQUERY) */
 
-    /* A lone identifier is the name of a column.
-    */
-    case TK_ID: {
-      return lookupName(pParse, 0, 0, pExpr->u.zToken, pNC, pExpr);
-    }
-  
-    /* A table name and column name:     ID.ID
+    /* A column name:                    ID
+    ** Or table name and column name:    ID.ID
     ** Or a database, table and column:  ID.ID.ID
+    **
+    ** The TK_ID and TK_OUT cases are combined so that there will only
+    ** be one call to lookupName().  Then the compiler will in-line 
+    ** lookupName() for a size reduction and performance increase.
     */
+    case TK_ID:
     case TK_DOT: {
       const char *zColumn;
       const char *zTable;
       const char *zDb;
       Expr *pRight;
 
-      /* if( pSrcList==0 ) break; */
-      notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
-      pRight = pExpr->pRight;
-      if( pRight->op==TK_ID ){
+      if( pExpr->op==TK_ID ){
         zDb = 0;
-        zTable = pExpr->pLeft->u.zToken;
-        zColumn = pRight->u.zToken;
+        zTable = 0;
+        zColumn = pExpr->u.zToken;
       }else{
-        assert( pRight->op==TK_DOT );
-        zDb = pExpr->pLeft->u.zToken;
-        zTable = pRight->pLeft->u.zToken;
-        zColumn = pRight->pRight->u.zToken;
+        notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
+        pRight = pExpr->pRight;
+        if( pRight->op==TK_ID ){
+          zDb = 0;
+          zTable = pExpr->pLeft->u.zToken;
+          zColumn = pRight->u.zToken;
+        }else{
+          assert( pRight->op==TK_DOT );
+          zDb = pExpr->pLeft->u.zToken;
+          zTable = pRight->pLeft->u.zToken;
+          zColumn = pRight->pRight->u.zToken;
+        }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
     }
@@ -904,7 +908,7 @@ static int resolveOrderByTermToExprList(
   ** result-set entry.
   */
   for(i=0; i<pEList->nExpr; i++){
-    if( sqlite3ExprCompare(pEList->a[i].pExpr, pE, -1)<2 ){
+    if( sqlite3ExprCompare(0, pEList->a[i].pExpr, pE, -1)<2 ){
       return i+1;
     }
   }
@@ -1138,7 +1142,7 @@ static int resolveOrderGroupBy(
       return 1;
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
-      if( sqlite3ExprCompare(pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
+      if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
         pItem->u.x.iOrderByCol = j+1;
       }
     }
@@ -1424,37 +1428,29 @@ int sqlite3ResolveExprNames(
   u16 savedHasAgg;
   Walker w;
 
-  if( pExpr==0 ) return 0;
-#if SQLITE_MAX_EXPR_DEPTH>0
-  {
-    Parse *pParse = pNC->pParse;
-    if( sqlite3ExprCheckHeight(pParse, pExpr->nHeight+pNC->pParse->nHeight) ){
-      return 1;
-    }
-    pParse->nHeight += pExpr->nHeight;
-  }
-#endif
+  if( pExpr==0 ) return SQLITE_OK;
   savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg);
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg);
   w.pParse = pNC->pParse;
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
   w.xSelectCallback2 = 0;
-  w.walkerDepth = 0;
-  w.eCode = 0;
   w.u.pNC = pNC;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  w.pParse->nHeight += pExpr->nHeight;
+  if( sqlite3ExprCheckHeight(w.pParse, w.pParse->nHeight) ){
+    return SQLITE_ERROR;
+  }
+#endif
   sqlite3WalkExpr(&w, pExpr);
 #if SQLITE_MAX_EXPR_DEPTH>0
-  pNC->pParse->nHeight -= pExpr->nHeight;
+  w.pParse->nHeight -= pExpr->nHeight;
 #endif
-  if( pNC->nErr>0 || w.pParse->nErr>0 ){
-    ExprSetProperty(pExpr, EP_Error);
-  }
   if( pNC->ncFlags & NC_HasAgg ){
     ExprSetProperty(pExpr, EP_Agg);
   }
   pNC->ncFlags |= savedHasAgg;
-  return ExprHasProperty(pExpr, EP_Error);
+  return pNC->nErr>0 || w.pParse->nErr>0;
 }
 
 /*
@@ -1495,9 +1491,9 @@ void sqlite3ResolveSelectNames(
   Walker w;
 
   assert( p!=0 );
-  memset(&w, 0, sizeof(w));
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
+  w.xSelectCallback2 = 0;
   w.pParse = pParse;
   w.u.pNC = pOuterNC;
   sqlite3WalkSelect(&w, p);

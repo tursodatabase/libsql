@@ -8,6 +8,50 @@ If you are reading this on a Git mirror someplace, you are doing it wrong.
 The [official repository](https://www.sqlite.org/src/) is better.  Go there
 now.
 
+## Obtaining The Code
+
+SQLite sources are managed using the
+[Fossil](https://www.fossil-scm.org/), a distributed version control system
+that was specifically designed to support SQLite development.
+If you do not want to use Fossil, you can download tarballs or ZIP
+archives as follows:
+
+  *  Lastest trunk check-in:
+     <https://www.sqlite.org/src/tarball/sqlite.tar.gz> or
+     <https://www.sqlite.org/src/zip/sqlite.zip>.
+
+  *  Latest release:
+     <https://www.sqlite.org/src/tarball/sqlite.tar.gz?r=release> or
+     <https://www.sqlite.org/src/zip/sqlite.zip?r=release>.
+
+  *  For other check-ins, substitute an appropriate branch name or
+     tag or hash prefix for "release" in the URLs of the previous
+     bullet.  Or browse the [timeline](https://www.sqlite.org/src/timeline)
+     to locate the check-in desired, click on its information page link,
+     then click on the "Tarball" or "ZIP Archive" links on the information
+     page.
+
+If you do want to use Fossil to check out the source tree, 
+first install Fossil version 2.0 or later.
+(Source tarballs and precompiled binaries available
+[here](https://www.fossil-scm.org/fossil/uv/download.html).  Fossil is
+a stand-alone program.  To install, simply download or build the single 
+executable file and put that file someplace on your $PATH.)
+Then run commands like this:
+
+        mkdir ~/sqlite
+        cd ~/sqlite
+        fossil clone https://www.sqlite.org/src sqlite.fossil
+        fossil open sqlite.fossil
+    
+After setting up a repository using the steps above, you can always
+update to the lastest version using:
+
+        fossil update trunk   ;# latest trunk check-in
+        fossil update release ;# latest official release
+
+Or type "fossil ui" to get a web-based user interface.
+
 ## Compiling
 
 First create a directory in which to place
@@ -18,13 +62,13 @@ script found at the root of the source tree.  Then run "make".
 
 For example:
 
-    tar xzf sqlite.tar.gz    ;#  Unpack the source tree into "sqlite"
-    mkdir bld                ;#  Build will occur in a sibling directory
-    cd bld                   ;#  Change to the build directory
-    ../sqlite/configure      ;#  Run the configure script
-    make                     ;#  Run the makefile.
-    make sqlite3.c           ;#  Build the "amalgamation" source file
-    make test                ;#  Run some tests (requires Tcl)
+        tar xzf sqlite.tar.gz    ;#  Unpack the source tree into "sqlite"
+        mkdir bld                ;#  Build will occur in a sibling directory
+        cd bld                   ;#  Change to the build directory
+        ../sqlite/configure      ;#  Run the configure script
+        make                     ;#  Run the makefile.
+        make sqlite3.c           ;#  Build the "amalgamation" source file
+        make test                ;#  Run some tests (requires Tcl)
 
 See the makefile for additional targets.
 
@@ -43,13 +87,13 @@ with the provided "Makefile.msc" to build one of the supported targets.
 
 For example:
 
-    mkdir bld
-    cd bld
-    nmake /f Makefile.msc TOP=..\sqlite
-    nmake /f Makefile.msc sqlite3.c TOP=..\sqlite
-    nmake /f Makefile.msc sqlite3.dll TOP=..\sqlite
-    nmake /f Makefile.msc sqlite3.exe TOP=..\sqlite
-    nmake /f Makefile.msc test TOP=..\sqlite
+        mkdir bld
+        cd bld
+        nmake /f Makefile.msc TOP=..\sqlite
+        nmake /f Makefile.msc sqlite3.c TOP=..\sqlite
+        nmake /f Makefile.msc sqlite3.dll TOP=..\sqlite
+        nmake /f Makefile.msc sqlite3.exe TOP=..\sqlite
+        nmake /f Makefile.msc test TOP=..\sqlite
 
 There are several build options that can be set via the NMAKE command
 line.  For example, to build for WinRT, simply add "FOR_WINRT=1" argument
@@ -64,19 +108,22 @@ The makefiles also require AWK.
 
 ## Source Code Tour
 
-Most of the core source files are in the **src/** subdirectory.  But
-src/ also contains files used to build the "testfixture" test harness;
-those file all begin with "test".  And src/ contains the "shell.c" file
-which is the main program for the "sqlite3.exe" command-line shell and
-the "tclsqlite.c" file which implements the bindings to SQLite from the
-Tcl programming language.  (Historical note:  SQLite began as a Tcl
+Most of the core source files are in the **src/** subdirectory.  The
+**src/** folder also contains files used to build the "testfixture" test
+harness. The names of the source files used by "testfixture" all begin
+with "test".
+The **src/** also contains the "shell.c" file
+which is the main program for the "sqlite3.exe"
+[command-line shell](https://sqlite.org/cli.html) and
+the "tclsqlite.c" file which implements the
+[TCL bindings](https://sqlite.org/tclsqlite.html) for SQLite.
+(Historical note:  SQLite began as a Tcl
 extension and only later escaped to the wild as an independent library.)
 
 Test scripts and programs are found in the **test/** subdirectory.
-There are other test suites for SQLite (see
-[How SQLite Is Tested](http://www.sqlite.org/testing.html))
-but those other test suites are
-in separate source repositories.
+Addtional test code is found in other source repositories.
+See [How SQLite Is Tested](http://www.sqlite.org/testing.html) for
+additional information.
 
 The **ext/** subdirectory contains code for extensions.  The
 Full-text search engine is in **ext/fts3**.  The R-Tree engine is in
@@ -100,7 +147,7 @@ manually-edited files and automatically-generated files.
 The SQLite interface is defined by the **sqlite3.h** header file, which is
 generated from src/sqlite.h.in, ./manifest.uuid, and ./VERSION.  The
 [Tcl script](http://www.tcl.tk) at tool/mksqlite3h.tcl does the conversion.
-The manifest.uuid file contains the SHA1 hash of the particular check-in
+The manifest.uuid file contains the SHA3 hash of the particular check-in
 and is used to generate the SQLITE\_SOURCE\_ID macro.  The VERSION file
 contains the current SQLite version number.  The sqlite3.h header is really
 just a copy of src/sqlite.h.in with the source-id and version number inserted
@@ -111,9 +158,8 @@ used to generate that documentation are in a separate source repository.
 The SQL language parser is **parse.c** which is generate from a grammar in
 the src/parse.y file.  The conversion of "parse.y" into "parse.c" is done
 by the [lemon](./doc/lemon.html) LALR(1) parser generator.  The source code
-for lemon is at tool/lemon.c.  Lemon uses a
-template for generating its parser.  A generic template is in tool/lempar.c,
-but SQLite uses a slightly modified template found in src/lempar.c.
+for lemon is at tool/lemon.c.  Lemon uses the tool/lempar.c file as a
+template for generating its parser.
 
 Lemon also generates the **parse.h** header file, at the same time it
 generates parse.c. But the parse.h header file is
@@ -133,6 +179,13 @@ that maps SQL language keywords (ex: "CREATE", "SELECT", "INDEX", etc.) into
 the numeric codes used by the parse.c parser.  The keywordhash.h file is
 generated by a C-language program at tool mkkeywordhash.c.
 
+The **pragma.h** header file contains various definitions used to parse
+and implement the PRAGMA statements.  The header is generated by a
+script **tool/mkpragmatab.tcl**. If you want to add a new PRAGMA, edit
+the **tool/mkpragmatab.tcl** file to insert the information needed by the
+parser for your new PRAGMA, then run the script to regenerate the
+**pragma.h** header file.
+
 ### The Amalgamation
 
 All of the individual C source code and header files (both manually-edited
@@ -150,7 +203,7 @@ subdirectory (using the equivalent of "make target_source") then the
 tool/mksqlite3c.tcl script is run to copy them all together in just the
 right order while resolving internal "#include" references.
 
-The amalgamation source file is more than 100K lines long.  Some symbolic
+The amalgamation source file is more than 200K lines long.  Some symbolic
 debuggers (most notably MSVC) are unable to deal with files longer than 64K
 lines.  To work around this, a separate Tcl script, tool/split-sqlite3c.tcl,
 can be run on the amalgamation to break it up into a single small C file
@@ -167,14 +220,15 @@ See the [architectural description](http://www.sqlite.org/arch.html)
 for details. Other documents that are useful in
 (helping to understand how SQLite works include the
 [file format](http://www.sqlite.org/fileformat2.html) description,
-the [virtual machine](http://www.sqlite.org/vdbe.html) that runs
+the [virtual machine](http://www.sqlite.org/opcode.html) that runs
 prepared statements, the description of
 [how transactions work](http://www.sqlite.org/atomiccommit.html), and
 the [overview of the query planner](http://www.sqlite.org/optoverview.html).
 
-Unfortunately, years of effort have gone into optimizating SQLite, both
+Years of effort have gone into optimizating SQLite, both
 for small size and high performance.  And optimizations tend to result in
-complex code.  So there is a lot of complexity in the SQLite implementation.
+complex code.  So there is a lot of complexity in the current SQLite
+implementation.  It will not be the easiest library in the world to hack.
 
 Key files:
 
@@ -185,7 +239,7 @@ Key files:
   *  **sqliteInt.h** - this header file defines many of the data objects
      used internally by SQLite.
 
-  *  **parse.y** - This file describes the LALR(1) grammer that SQLite uses
+  *  **parse.y** - This file describes the LALR(1) grammar that SQLite uses
      to parse SQL statements, and the actions that are taken at each step
      in the parsing process.
 
@@ -218,13 +272,13 @@ Key files:
      is not part of the core SQLite library.  But as most of the tests in this
      repository are written in Tcl, the Tcl language bindings are important.
 
-There are many other source files.  Each has a suscinct header comment that
+There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
 
 
 ## Contacts
 
 The main SQLite webpage is [http://www.sqlite.org/](http://www.sqlite.org/)
-with geographically distributed backup servers at
+with geographically distributed backups at
 [http://www2.sqlite.org/](http://www2.sqlite.org) and
 [http://www3.sqlite.org/](http://www3.sqlite.org).

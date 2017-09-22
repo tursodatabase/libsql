@@ -73,7 +73,7 @@ int sqlite3_exec(
           (SQLITE_DONE==rc && !callbackIsInit
                            && db->flags&SQLITE_NullCallback)) ){
         if( !callbackIsInit ){
-          azCols = sqlite3DbMallocZero(db, 2*nCol*sizeof(const char*) + 1);
+          azCols = sqlite3DbMallocRaw(db, (2*nCol+1)*sizeof(const char*));
           if( azCols==0 ){
             goto exec_out;
           }
@@ -94,6 +94,7 @@ int sqlite3_exec(
               goto exec_out;
             }
           }
+          azVals[i] = 0;
         }
         if( xCallback(pArg, nCol, azVals, azCols) ){
           /* EVIDENCE-OF: R-38229-40159 If the callback function to
@@ -126,11 +127,8 @@ exec_out:
 
   rc = sqlite3ApiExit(db, rc);
   if( rc!=SQLITE_OK && pzErrMsg ){
-    int nErrMsg = 1 + sqlite3Strlen30(sqlite3_errmsg(db));
-    *pzErrMsg = sqlite3Malloc(nErrMsg);
-    if( *pzErrMsg ){
-      memcpy(*pzErrMsg, sqlite3_errmsg(db), nErrMsg);
-    }else{
+    *pzErrMsg = sqlite3DbStrDup(0, sqlite3_errmsg(db));
+    if( *pzErrMsg==0 ){
       rc = SQLITE_NOMEM_BKPT;
       sqlite3Error(db, SQLITE_NOMEM);
     }

@@ -39,6 +39,8 @@ set testprefix rtree1
 #               inserted. Also that if a non-numeric is inserted into one
 #               of the min/max dimension columns, it is converted to the
 #               required type before being inserted.
+#   rtree-15.*: Check that DROP TABLE works within a transaction that
+#               writes to an r-tree table.
 #
 
 ifcapable !rtree {
@@ -336,7 +338,7 @@ do_test rtree-7.2.1 {
     CREATE TABLE t4_node(a);
   }
   catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test rtree-7.2.2 {
   execsql_intout { SELECT * FROM "abc 123" }
 } {1 2 3 4 5 6 7}
@@ -346,7 +348,7 @@ do_test rtree-7.2.3 {
     CREATE TABLE t4_rowid(a);
   }
   catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test rtree-7.2.4 {
   db close
   sqlite3 db test.db
@@ -590,6 +592,21 @@ do_execsql_test 14.5 {
   1 0 0
   2 52 81
   3 42 49
+}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 15.0 {
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1,x2, y1,y2);
+  CREATE TEMP TABLE t13(a, b, c);
+}
+do_execsql_test 15.1 {
+  BEGIN;
+  INSERT INTO rt VALUES(1,2,3,4,5);
+}
+do_execsql_test 15.2 {
+  DROP TABLE t13;
+  COMMIT;
 }
 
 finish_test

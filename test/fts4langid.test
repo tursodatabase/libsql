@@ -14,7 +14,6 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set ::testprefix fts4content
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
@@ -341,6 +340,13 @@ do_test_query1 3.3.4 {"zero one" OR "one two"} {
   or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
 }
 
+do_execsql_test 3.4 {
+  CREATE TABLE t8c(a, b);
+  CREATE VIRTUAL TABLE t8 USING fts4(content=t8c, languageid=langid);
+  INSERT INTO t8(docid, a, b) VALUES(-1, 'one two three', 'x y z');
+  SELECT docid FROM t8 WHERE t8 MATCH 'one x' AND langid=0
+} {-1}
+
 #-------------------------------------------------------------------------
 # Test cases 4.*
 #
@@ -381,7 +387,7 @@ for {set i 0} {$i < 50} {incr i} {
 }
 do_catchsql_test 4.1.5 {
   INSERT INTO t4(content, lid) VALUES('hello world', 101)
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 #-------------------------------------------------------------------------
 # Test cases 5.*

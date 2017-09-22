@@ -21,7 +21,7 @@ USE_AMALGAMATION = 1
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
-USE_FULLWARN = 0
+USE_FULLWARN = 1
 !ENDIF
 
 # Set this non-0 to enable treating warnings as errors (-WX, etc) when
@@ -746,6 +746,10 @@ RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_DEBUG=1
 RCC = $(RCC) -DSQLITE_DEBUG=1
+!IF $(DYNAMIC_SHELL)==0
+TCC = $(TCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
+RCC = $(RCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
+!ENDIF
 !ENDIF
 
 !IF $(DEBUG)>4 || $(OSTRACE)!=0
@@ -1290,7 +1294,8 @@ SRC07 = \
   $(TOP)\ext\rtree\rtree.c \
   $(TOP)\ext\session\sqlite3session.c \
   $(TOP)\ext\rbu\sqlite3rbu.c \
-  $(TOP)\ext\misc\json1.c
+  $(TOP)\ext\misc\json1.c \
+  $(TOP)\ext\misc\stmt.c
 
 # Extension header files, part 1.
 #
@@ -1406,6 +1411,7 @@ TESTEXT = \
   $(TOP)\ext\fts5\fts5_test_mi.c \
   $(TOP)\ext\fts5\fts5_test_tok.c \
   $(TOP)\ext\misc\ieee754.c \
+  $(TOP)\ext\misc\mmapwarm.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\regexp.c \
@@ -1413,6 +1419,7 @@ TESTEXT = \
   $(TOP)\ext\misc\series.c \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
+  $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c
 
 # Source code to the library files needed by the test fixture
@@ -1501,7 +1508,7 @@ FUZZDATA = \
 # when the shell is not being dynamically linked.
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_STMTVTAB
 !ENDIF
 
 # <<mark>>
@@ -1509,7 +1516,7 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
@@ -1558,7 +1565,7 @@ $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 sqlite3.def:	libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset)?_[^@]*)(?:@\d+)?$$" \1 \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup)?_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
 # <</block2>>
 
@@ -1663,6 +1670,12 @@ lempar.c:	$(TOP)\tool\lempar.c
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
 		-Fe$@ $(TOP)\tool\lemon.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
+
+# <<mark>>
+# Rules to build the source-id generator tool
+#
+mksourceid.exe:	$(TOP)\tool\mksourceid.c
+	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\mksourceid.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1942,7 +1955,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	move parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
-$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
+$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
@@ -2085,6 +2098,7 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
@@ -2177,6 +2191,10 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
+dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
+		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS)
+
 testloadext.lo:	$(TOP)\src\test_loadext.c
 	$(LTCOMPILE) $(NO_WARN) -c $(TOP)\src\test_loadext.c
 
@@ -2234,6 +2252,9 @@ rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H
 	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+LSMDIR=$(TOP)\ext\lsm1
+!INCLUDE $(LSMDIR)\Makefile.msc
+
 moreclean:	clean
 	del /Q $(SQLITE3C) $(SQLITE3H) 2>NUL
 # <</mark>>
@@ -2246,16 +2267,17 @@ clean:
 	del /Q sqlite3.c sqlite3.h 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
-	del /Q mkkeywordhash.* keywordhash.h 2>NUL
+	del /Q mksourceid.* mkkeywordhash.* keywordhash.h 2>NUL
 	del /Q notasharedlib.* 2>NUL
 	-rmdir /Q/S .deps 2>NUL
 	-rmdir /Q/S .libs 2>NUL
 	-rmdir /Q/S tsrc 2>NUL
 	del /Q .target_source 2>NUL
 	del /Q tclsqlite3.exe $(SQLITETCLH) $(SQLITETCLDECLSH) 2>NUL
+	del /Q lsm.dll lsmtest.exe 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
-	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
+	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL

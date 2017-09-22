@@ -112,4 +112,3 @@ db eval {
 }
 
 finish_test
-

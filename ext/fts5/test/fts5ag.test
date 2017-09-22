@@ -142,4 +142,3 @@ if {[detail_is_full]} {
 
 
 finish_test
-

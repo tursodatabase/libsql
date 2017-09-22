@@ -73,6 +73,26 @@ foreach {tn schema output} {
     CREATE INDEX 'y1_a' ON 'y1'('a' COLLATE nocase); --> x1(a)
   }
 
+  7 {
+    CREATE TABLE x1(a PRIMARY KEY COLLATE nocase, b);
+    CREATE TABLE y1(a REFERENCES x1);
+  } {
+    CREATE INDEX 'y1_a' ON 'y1'('a' COLLATE nocase); --> x1(a)
+  }
+
+  8 {
+    CREATE TABLE x1(a, b COLLATE nocase, c COLLATE rtrim, PRIMARY KEY(c, b, a));
+    CREATE TABLE y1(d, e, f, FOREIGN KEY(d, e, f) REFERENCES x1);
+  } {
+    CREATE INDEX 'y1_d_e_f' ON 'y1'('d' COLLATE rtrim, 'e' COLLATE nocase, 'f'); --> x1(c,b,a)
+  }
+
+  9 {
+    CREATE TABLE p1(a, b UNIQUE);
+    CREATE TABLE c1(x INTEGER PRIMARY KEY REFERENCES p1(b));
+  } {
+  }
+
 } {
   forcedelete test.db
   sqlite3 db test.db

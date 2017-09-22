@@ -306,7 +306,11 @@ static int SQLITE_TCLAPI btree_next(
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
   sqlite3BtreeEnter(pCur->pBtree);
-  rc = sqlite3BtreeNext(pCur, &res);
+  rc = sqlite3BtreeNext(pCur, 0);
+  if( rc==SQLITE_DONE ){
+    res = 1;
+    rc = SQLITE_OK;
+  }
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

@@ -73,7 +73,7 @@ do_test 1.4.3 {
   list [catch {
     sqlite3_prepare $DB "SELECT * FROM sqlite_master" -1 dummy
   } msg] $msg
-} {1 {(21) library routine called out of sequence}}
+} {1 {(21) bad parameter or other API misuse}}
 
 do_test 1.4.4 {
   sqlite3_finalize $STMT

@@ -805,6 +805,7 @@ static void showHelp(void){
 "  --load-db ARGS...    Load template databases from files into SOURCE_DB\n"
 "  -m TEXT              Add a description to the database\n"
 "  --native-vfs         Use the native VFS for initially empty database files\n"
+"  --native-malloc      Turn off MEMSYS3/5 and Lookaside\n"
 "  --oss-fuzz           Enable OSS-FUZZ testing\n"
 "  --prng-seed N        Seed value for the PRGN inside of SQLite\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
@@ -851,6 +852,7 @@ int main(int argc, char **argv){
   void *pHeap = 0;             /* Heap for use by SQLite */
   int ossFuzz = 0;             /* enable OSS-FUZZ testing */
   int ossFuzzThisDb = 0;       /* ossFuzz value for this particular database */
+  int nativeMalloc = 0;        /* Turn off MEMSYS3/5 and lookaside if true */
   sqlite3_vfs *pDfltVfs;       /* The default VFS */
 
   iBegin = timeOfDay();
@@ -910,6 +912,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"m")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         zMsg = argv[++i];
+      }else
+      if( strcmp(z,"native-malloc")==0 ){
+        nativeMalloc = 1;
       }else
       if( strcmp(z,"native-vfs")==0 ){
         nativeFlag = 1;
@@ -972,7 +977,7 @@ int main(int argc, char **argv){
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
     rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
-                         SQLITE_OPEN_READONLY, pDfltVfs->zName);
+                         SQLITE_OPEN_READWRITE, pDfltVfs->zName);
     if( rc ){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
@@ -1013,7 +1018,7 @@ int main(int argc, char **argv){
           ossFuzzThisDb = sqlite3_column_int(pStmt,1);
           if( verboseFlag ) printf("Config: oss-fuzz=%d\n", ossFuzzThisDb);
         }
-        if( strcmp(zName, "limit-mem")==0 ){
+        if( strcmp(zName, "limit-mem")==0 && !nativeMalloc ){
 #if !defined(SQLITE_ENABLE_MEMSYS3) && !defined(SQLITE_ENABLE_MEMSYS5)
           fatalError("the limit-mem option requires -DSQLITE_ENABLE_MEMSYS5"
                      " or _MEMSYS3");
@@ -1047,6 +1052,8 @@ int main(int argc, char **argv){
       sqlite3_close(db);
       return 0;
     }
+    rc = sqlite3_exec(db, "PRAGMA query_only=1;", 0, 0, 0);
+    if( rc ) fatalError("cannot set database to query-only");
     if( zExpDb!=0 || zExpSql!=0 ){
       sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
                               writefileFunc, 0, 0);
@@ -1141,13 +1148,18 @@ int main(int argc, char **argv){
     }
 
     /* Limit available memory, if requested */
-    if( nMemThisDb>0 ){
-      sqlite3_shutdown();
+    sqlite3_shutdown();
+    if( nMemThisDb>0 && !nativeMalloc ){
       pHeap = realloc(pHeap, nMemThisDb);
       if( pHeap==0 ){
         fatalError("failed to allocate %d bytes of heap memory", nMem);
       }
       sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nMemThisDb, 128);
+    }
+
+    /* Disable lookaside with the --native-malloc option */
+    if( nativeMalloc ){
+      sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
     }
   
     /* Reset the in-memory virtual filesystem */
@@ -1205,9 +1217,13 @@ int main(int argc, char **argv){
             runSql(db, (char*)pSql->a, runFlags);
           }while( timeoutTest );
           setAlarm(0);
+          sqlite3_exec(db, "PRAGMA temp_store_directory=''", 0, 0, 0);
           sqlite3_close(db);
         }
-        if( sqlite3_memory_used()>0 ) fatalError("memory leak");
+        if( sqlite3_memory_used()>0 ){
+           fatalError("memory leak: %lld bytes outstanding",
+                      sqlite3_memory_used());
+        }
         reformatVfs();
         nTest++;
         g.zTestName[0] = 0;

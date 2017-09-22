@@ -107,5 +107,28 @@ do_faultsim_test 3.3 -faults oom* -body {
   faultsim_test_result {0 {2 3}}
 }
 
-finish_test
+#-------------------------------------------------------------------------
+# Test OOM injection with nested colsets.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, d);
+  INSERT INTO t1 VALUES('a', 'b', 'c', 'd');  -- 1
+  INSERT INTO t1 VALUES('d', 'a', 'b', 'c');  -- 2
+  INSERT INTO t1 VALUES('c', 'd', 'a', 'b');  -- 3
+  INSERT INTO t1 VALUES('b', 'c', 'd', 'a');  -- 4
+}
+do_faultsim_test 4.1 -faults oom* -body {
+  execsql { SELECT rowid FROM t1('{a b c} : (b:a AND c:b)'); }
+} -test {
+  faultsim_test_result {0 2}
+}
 
+do_faultsim_test 4.2 -faults oom* -body {
+  execsql { SELECT rowid FROM t1('{a b c} : (a AND d)') }
+} -test {
+  faultsim_test_result {0 {2 3}}
+}
+
+
+finish_test

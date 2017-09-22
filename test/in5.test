@@ -237,4 +237,16 @@ do_execsql_test 8.4 {
   SELECT count(*) FROM n1 WHERE a IN (SELECT +a FROM n1)
 } 3
 
+#-------------------------------------------------------------------------
+# Test that ticket 61fe97454c is fixed.
+#
+do_execsql_test 9.0 {
+  CREATE TABLE t9(a INTEGER PRIMARY KEY);
+  INSERT INTO t9 VALUES (44), (45);
+}
+do_execsql_test 9.1 {
+  SELECT * FROM t9 WHERE a IN (44, 45, 44, 45)
+} {44 45}
+
+
 finish_test

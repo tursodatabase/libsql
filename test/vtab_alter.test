@@ -95,7 +95,7 @@ do_test vtab_alter-2.5 {
 do_test vtab_alter-3.1 {
   execsql  { CREATE TABLE y_base(a, b, c) }
   catchsql { ALTER TABLE x RENAME TO y }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test vtab_alter-3.2 {
   execsql  { SELECT * FROM x }
 } {1 2 3}

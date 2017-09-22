@@ -18,8 +18,6 @@ set ::testprefix fts3fault
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 
-if 0 {
-
 # Test error handling in the sqlite3Fts3Init() function. This is the 
 # function that registers the FTS3 module and various support functions
 # with SQLite.
@@ -147,7 +145,7 @@ do_faultsim_test 7.2 -prep {
 } -test {
   faultsim_test_result {1 {unrecognized matchinfo: fs3}} \
                        {1 {vtable constructor failed: t1}} \
-                       {1 {SQL logic error or missing database}}
+                       {1 {SQL logic error}}
 }
 do_faultsim_test 7.3 -prep { 
   faultsim_delete_and_reopen
@@ -156,11 +154,9 @@ do_faultsim_test 7.3 -prep {
 } -test {
   faultsim_test_result {1 {unrecognized parameter: matchnfo=fts3}} \
                        {1 {vtable constructor failed: t1}} \
-                       {1 {SQL logic error or missing database}}
+                       {1 {SQL logic error}}
 }
 
-
-}
 
 proc mit {blob} {
   set scan(littleEndian) i*
@@ -181,13 +177,15 @@ do_test 8.0 {
   faultsim_save_and_close
 } {}
 
-do_faultsim_test 8.1 -faults oom-t* -prep { 
-  faultsim_restore_and_reopen
-  db func mit mit
-} -body {
-  execsql { SELECT mit(matchinfo(t8, 'x')) FROM t8 WHERE t8 MATCH 'a b c' }
-} -test {
-  faultsim_test_result {0 {{1 1 1 1 4 2 1 5 5}}}
+ifcapable fts4_deferred {
+  do_faultsim_test 8.1 -faults oom-t* -prep { 
+    faultsim_restore_and_reopen
+    db func mit mit
+  } -body {
+    execsql { SELECT mit(matchinfo(t8, 'x')) FROM t8 WHERE t8 MATCH 'a b c' }
+  } -test {
+    faultsim_test_result {0 {{1 1 1 1 4 2 1 5 5}}}
+  }
 }
 
 do_faultsim_test 8.2 -faults oom-t* -prep { 
@@ -232,6 +230,14 @@ do_faultsim_test 9.1 -prep {
   execsql { SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to*' }
 } -test {
   faultsim_test_result {0 {{0 0 20 39 0 0 64 2}}}
+}
+
+do_faultsim_test 10.1 -prep {
+  faultsim_delete_and_reopen
+} -body {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts4(a, b, languageid=d) }
+} -test {
+  faultsim_test_result {0 {}}
 }
 
 finish_test

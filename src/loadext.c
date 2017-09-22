@@ -51,6 +51,7 @@
 # define sqlite3_open16                 0
 # define sqlite3_prepare16              0
 # define sqlite3_prepare16_v2           0
+# define sqlite3_prepare16_v3           0
 # define sqlite3_result_error16         0
 # define sqlite3_result_text16          0
 # define sqlite3_result_text16be        0
@@ -421,7 +422,15 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_system_errno,
   /* Version 3.14.0 and later */
   sqlite3_trace_v2,
-  sqlite3_expanded_sql
+  sqlite3_expanded_sql,
+  /* Version 3.18.0 and later */
+  sqlite3_set_last_insert_rowid,
+  /* Version 3.20.0 and later */
+  sqlite3_prepare_v3,
+  sqlite3_prepare16_v3,
+  sqlite3_bind_pointer,
+  sqlite3_result_pointer,
+  sqlite3_value_pointer
 };
 
 /*

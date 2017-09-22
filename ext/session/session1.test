@@ -536,7 +536,6 @@ do_test $tn.10.1.1 {
     DELETE FROM $tblname WHERE a = 'xyz';
   "
 } {}
-breakpoint
 do_changeset_test $tn.10.1.2 S "
   {INSERT $tblname 0 X. {} {t uvw t abc}}
   {DELETE $tblname 0 X. {t xyz t def} {}}
@@ -577,7 +576,6 @@ do_test $tn.10.1.1 {
     DELETE FROM $tblname WHERE a = 'xyz';
   "
 } {}
-breakpoint
 do_changeset_test $tn.10.1.2 S "
   {INSERT $tblname 0 X. {} {t uvw t abc}}
   {DELETE $tblname 0 X. {t xyz t def} {}}

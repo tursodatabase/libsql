@@ -31,7 +31,7 @@ foreach {fault errlist} {
     {1 SQLITE_IOERR_READ} 
     {1 {SQLITE_IOERR - unable to open database: test.db2}} 
     {1 {SQLITE_ERROR - unable to open database: test.db2}} 
-    {1 {SQLITE_ERROR - SQL logic error or missing database}}
+    {1 {SQLITE_ERROR - SQL logic error}}
   }
 
   cantopen* {

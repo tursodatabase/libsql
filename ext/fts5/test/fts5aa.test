@@ -441,7 +441,7 @@ db func funk funk
 do_catchsql_test 16.2 {
   SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
 } {0 {{} -1e-06 {}}}
-# {1 {SQL logic error or missing database}}
+# {1 {SQL logic error}}
 
 #-------------------------------------------------------------------------
 #
@@ -561,9 +561,37 @@ do_test 20.1 {
   execsql { SELECT rowid FROM tmp WHERE tmp MATCH 'y' }
 } $::ids
 
+#--------------------------------------------------------------------
+# Test that a DROP TABLE may be executed within a transaction that
+# writes to an FTS5 table.
+#
+do_execsql_test 21.0 {
+  CREATE TEMP TABLE t8(a, b);
+  CREATE VIRTUAL TABLE ft USING fts5(x, detail=%DETAIL%);
+}
+
+do_execsql_test 21.1 {
+  BEGIN;
+    INSERT INTO ft VALUES('a b c');
+    DROP TABLE t8;
+  COMMIT;
+}
+
+do_execsql_test 22.0 {
+  CREATE VIRTUAL TABLE t9 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO t9(rowid, x) VALUES(2, 'bbb');
+  BEGIN;
+    INSERT INTO t9(rowid, x) VALUES(1, 'aaa');
+    DELETE FROM t9 WHERE rowid = 2;
+    INSERT INTO t9(rowid, x) VALUES(3, 'bbb');
+  COMMIT;
+}
+
+do_execsql_test 22.1 {
+  SELECT rowid FROM t9('a*')
+} {1}
+
 }
 
 
 finish_test
-
-

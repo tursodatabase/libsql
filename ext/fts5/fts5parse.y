@@ -89,32 +89,6 @@ input ::= expr(X). { sqlite3Fts5ParseFinished(pParse, X); }
 %destructor expr     { sqlite3Fts5ParseNodeFree($$); }
 %destructor exprlist { sqlite3Fts5ParseNodeFree($$); }
 
-expr(A) ::= expr(X) AND expr(Y). {
-  A = sqlite3Fts5ParseNode(pParse, FTS5_AND, X, Y, 0);
-}
-expr(A) ::= expr(X) OR expr(Y). {
-  A = sqlite3Fts5ParseNode(pParse, FTS5_OR, X, Y, 0);
-}
-expr(A) ::= expr(X) NOT expr(Y). {
-  A = sqlite3Fts5ParseNode(pParse, FTS5_NOT, X, Y, 0);
-}
-
-expr(A) ::= LP expr(X) RP. {A = X;}
-expr(A) ::= exprlist(X).   {A = X;}
-
-exprlist(A) ::= cnearset(X). {A = X;}
-exprlist(A) ::= exprlist(X) cnearset(Y). {
-  A = sqlite3Fts5ParseImplicitAnd(pParse, X, Y);
-}
-
-cnearset(A) ::= nearset(X). { 
-  A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, X); 
-}
-cnearset(A) ::= colset(X) COLON nearset(Y). { 
-  sqlite3Fts5ParseSetColset(pParse, Y, X);
-  A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, Y); 
-}
-
 %type colset {Fts5Colset*}
 %destructor colset { sqlite3_free($$); }
 %type colsetlist {Fts5Colset*}
@@ -137,6 +111,37 @@ colsetlist(A) ::= colsetlist(Y) STRING(X). {
 colsetlist(A) ::= STRING(X). { 
   A = sqlite3Fts5ParseColset(pParse, 0, &X); 
 }
+
+expr(A) ::= expr(X) AND expr(Y). {
+  A = sqlite3Fts5ParseNode(pParse, FTS5_AND, X, Y, 0);
+}
+expr(A) ::= expr(X) OR expr(Y). {
+  A = sqlite3Fts5ParseNode(pParse, FTS5_OR, X, Y, 0);
+}
+expr(A) ::= expr(X) NOT expr(Y). {
+  A = sqlite3Fts5ParseNode(pParse, FTS5_NOT, X, Y, 0);
+}
+
+expr(A) ::= colset(X) COLON LP expr(Y) RP. {
+  sqlite3Fts5ParseSetColset(pParse, Y, X);
+  A = Y;
+}
+expr(A) ::= LP expr(X) RP. {A = X;}
+expr(A) ::= exprlist(X).   {A = X;}
+
+exprlist(A) ::= cnearset(X). {A = X;}
+exprlist(A) ::= exprlist(X) cnearset(Y). {
+  A = sqlite3Fts5ParseImplicitAnd(pParse, X, Y);
+}
+
+cnearset(A) ::= nearset(X). { 
+  A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, X); 
+}
+cnearset(A) ::= colset(X) COLON nearset(Y). { 
+  A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, Y); 
+  sqlite3Fts5ParseSetColset(pParse, A, X);
+}
+
 
 %type nearset     {Fts5ExprNearset*}
 %type nearphrases {Fts5ExprNearset*}

@@ -216,5 +216,22 @@ do_corruption_tests rtreeA-6.1 {
   2   "UPDATE t1 SET x1=x1+1, x2=x2+1"
 }
 
+#-------------------------------------------------------------------------
+# Truncated blobs in the _node table.
+#
+create_t1
+populate_t1
+sqlite3 db test.db
+do_execsql_test rtreeA-7.100 { 
+  UPDATE t1_node SET data=x'' WHERE rowid=1;
+} {}
+do_catchsql_test rtreeA-7.110 {
+  SELECT * FROM t1 WHERE x1>0 AND x1<100 AND x2>0 AND x2<100;
+} {1 {undersize RTree blobs in "t1_node"}}
+do_test rtreeA-7.120 {
+  sqlite3_extended_errcode db
+} {SQLITE_CORRUPT_VTAB}
+
+
 
 finish_test

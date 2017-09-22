@@ -633,10 +633,12 @@ static void fkScanChildren(
   /* Create VDBE to loop through the entries in pSrc that match the WHERE
   ** clause. For each row found, increment either the deferred or immediate
   ** foreign key constraint counter. */
-  pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0, 0, 0);
-  sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
-  if( pWInfo ){
-    sqlite3WhereEnd(pWInfo);
+  if( pParse->nErr==0 ){
+    pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0, 0, 0);
+    sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
+    if( pWInfo ){
+      sqlite3WhereEnd(pWInfo);
+    }
   }
 
   /* Clean up the WHERE clause constructed above. */
@@ -1087,8 +1089,16 @@ u32 sqlite3FkOldmask(
 ** UPDATE statement modifies the rowid fields of the table.
 **
 ** If any foreign key processing will be required, this function returns
-** true. If there is no foreign key related processing, this function 
-** returns false.
+** non-zero. If there is no foreign key related processing, this function 
+** returns zero.
+**
+** For an UPDATE, this function returns 2 if:
+**
+**   * There are any FKs for which pTab is the child and the parent table, or
+**   * the UPDATE modifies one or more parent keys for which the action is
+**     not "NO ACTION" (i.e. is CASCADE, SET DEFAULT or SET NULL).
+**
+** Or, assuming some other foreign key processing is required, 1.
 */
 int sqlite3FkRequired(
   Parse *pParse,                  /* Parse context */
@@ -1096,12 +1106,13 @@ int sqlite3FkRequired(
   int *aChange,                   /* Non-NULL for UPDATE operations */
   int chngRowid                   /* True for UPDATE that affects rowid */
 ){
+  int eRet = 0;
   if( pParse->db->flags&SQLITE_ForeignKeys ){
     if( !aChange ){
       /* A DELETE operation. Foreign key processing is required if the 
       ** table in question is either the child or parent table for any 
       ** foreign key constraint.  */
-      return (sqlite3FkReferences(pTab) || pTab->pFKey);
+      eRet = (sqlite3FkReferences(pTab) || pTab->pFKey);
     }else{
       /* This is an UPDATE. Foreign key processing is only required if the
       ** operation modifies one or more child or parent key columns. */
@@ -1109,16 +1120,22 @@ int sqlite3FkRequired(
 
       /* Check if any child key columns are being modified. */
       for(p=pTab->pFKey; p; p=p->pNextFrom){
-        if( fkChildIsModified(pTab, p, aChange, chngRowid) ) return 1;
+        if( 0==sqlite3_stricmp(pTab->zName, p->zTo) ) return 2;
+        if( fkChildIsModified(pTab, p, aChange, chngRowid) ){
+          eRet = 1;
+        }
       }
 
       /* Check if any parent key columns are being modified. */
       for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
-        if( fkParentIsModified(pTab, p, aChange, chngRowid) ) return 1;
+        if( fkParentIsModified(pTab, p, aChange, chngRowid) ){
+          if( p->aAction[1]!=OE_None ) return 2;
+          eRet = 1;
+        }
       }
     }
   }
-  return 0;
+  return eRet;
 }
 
 /*

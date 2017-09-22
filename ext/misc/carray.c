@@ -17,14 +17,22 @@
 **      SELECT * FROM carray($ptr,5)
 **
 ** The query above returns 5 integers contained in a C-language array
-** at the address $ptr.  $ptr is a pointer to the array of integers that
-** has been cast to an integer.
+** at the address $ptr.  $ptr is a pointer to the array of integers.
+** The pointer value must be assigned to $ptr using the
+** sqlite3_bind_pointer() interface with a pointer type of "carray".
+** For example:
+**
+**    static int aX[] = { 53, 9, 17, 2231, 4, 99 };
+**    int i = sqlite3_bind_parameter_index(pStmt, "$ptr");
+**    sqlite3_bind_value(pStmt, i, aX, "carray", 0);
 **
 ** There is an optional third parameter to determine the datatype of
 ** the C-language array.  Allowed values of the third parameter are
 ** 'int32', 'int64', 'double', 'char*'.  Example:
 **
 **      SELECT * FROM carray($ptr,10,'char*');
+**
+** The default value of the third parameter is 'int32'.
 **
 ** HOW IT WORKS
 **
@@ -73,7 +81,7 @@ typedef struct carray_cursor carray_cursor;
 struct carray_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   sqlite3_int64 iRowid;      /* The rowid */
-  sqlite3_int64 iPtr;        /* Pointer to array of values */
+  void *pPtr;                /* Pointer to the array of values */
   sqlite3_int64 iCnt;        /* Number of integers in the array */
   unsigned char eType;       /* One of the CARRAY_type values */
 };
@@ -167,7 +175,7 @@ static int carrayColumn(
   carray_cursor *pCur = (carray_cursor*)cur;
   sqlite3_int64 x = 0;
   switch( i ){
-    case CARRAY_COLUMN_POINTER:   x = pCur->iPtr;   break;
+    case CARRAY_COLUMN_POINTER:   return SQLITE_OK;
     case CARRAY_COLUMN_COUNT:     x = pCur->iCnt;   break;
     case CARRAY_COLUMN_CTYPE: {
       sqlite3_result_text(ctx, azType[pCur->eType], -1, SQLITE_STATIC);
@@ -176,22 +184,22 @@ static int carrayColumn(
     default: {
       switch( pCur->eType ){
         case CARRAY_INT32: {
-          int *p = (int*)pCur->iPtr;
+          int *p = (int*)pCur->pPtr;
           sqlite3_result_int(ctx, p[pCur->iRowid-1]);
           return SQLITE_OK;
         }
         case CARRAY_INT64: {
-          sqlite3_int64 *p = (sqlite3_int64*)pCur->iPtr;
+          sqlite3_int64 *p = (sqlite3_int64*)pCur->pPtr;
           sqlite3_result_int64(ctx, p[pCur->iRowid-1]);
           return SQLITE_OK;
         }
         case CARRAY_DOUBLE: {
-          double *p = (double*)pCur->iPtr;
+          double *p = (double*)pCur->pPtr;
           sqlite3_result_double(ctx, p[pCur->iRowid-1]);
           return SQLITE_OK;
         }
         case CARRAY_TEXT: {
-          const char **p = (const char**)pCur->iPtr;
+          const char **p = (const char**)pCur->pPtr;
           sqlite3_result_text(ctx, p[pCur->iRowid-1], -1, SQLITE_TRANSIENT);
           return SQLITE_OK;
         }
@@ -232,8 +240,8 @@ static int carrayFilter(
 ){
   carray_cursor *pCur = (carray_cursor *)pVtabCursor;
   if( idxNum ){
-    pCur->iPtr = sqlite3_value_int64(argv[0]);
-    pCur->iCnt = sqlite3_value_int64(argv[1]);
+    pCur->pPtr = sqlite3_value_pointer(argv[0], "carray");
+    pCur->iCnt = pCur->pPtr ? sqlite3_value_int64(argv[1]) : 0;
     if( idxNum<3 ){
       pCur->eType = CARRAY_INT32;
     }else{
@@ -251,7 +259,7 @@ static int carrayFilter(
       }
     }
   }else{
-    pCur->iPtr = 0;
+    pCur->pPtr = 0;
     pCur->iCnt = 0;
   }
   pCur->iRowid = 1;
@@ -345,6 +353,34 @@ static sqlite3_module carrayModule = {
   0,                         /* xRename */
 };
 
+/*
+** For testing purpose in the TCL test harness, we need a method for
+** setting the pointer value.  The inttoptr(X) SQL function accomplishes
+** this.  Tcl script will bind an integer to X and the inttoptr() SQL
+** function will use sqlite3_result_pointer() to convert that integer into
+** a pointer.
+**
+** This is for testing on TCL only.
+*/
+#ifdef SQLITE_TEST
+static void inttoptrFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  void *p;
+  sqlite3_int64 i64;
+  i64 = sqlite3_value_int64(argv[0]);
+  if( sizeof(i64)==sizeof(p) ){
+    memcpy(&p, &i64, sizeof(p));
+  }else{
+    int i32 = i64 & 0xffffffff;
+    memcpy(&p, &i32, sizeof(p));
+  }
+  sqlite3_result_pointer(context, p, "carray", 0);
+}
+#endif /* SQLITE_TEST */
+
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifdef _WIN32
@@ -359,6 +395,12 @@ int sqlite3_carray_init(
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
-#endif
+#ifdef SQLITE_TEST
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
+                                 inttoptrFunc, 0, 0);
+  }
+#endif /* SQLITE_TEST */
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
   return rc;
 }

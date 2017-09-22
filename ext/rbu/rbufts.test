@@ -119,14 +119,14 @@ do_test 3.2 {
     CREATE TABLE data_ft(x, rbu_rowid, rbu_control);
     INSERT INTO data_ft VALUES(NULL, 2, 1);
   } } msg] $msg]
-} {1 {SQLITE_ERROR - SQL logic error or missing database]}}
+} {1 {SQLITE_ERROR - SQL logic error]}}
 
 do_test 3.3 {
   list [catch { apply_rbu_update test.db {
     CREATE TABLE data_ft(x, rbu_rowid, rbu_control);
     INSERT INTO data_ft VALUES('7 8 9', 1, 'x');
   } } msg] $msg]
-} {1 {SQLITE_ERROR - SQL logic error or missing database]}}
+} {1 {SQLITE_ERROR - SQL logic error]}}
 
 
 

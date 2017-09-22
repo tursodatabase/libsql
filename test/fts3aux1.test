@@ -364,10 +364,10 @@ do_execsql_test 3.2.1 {
 }
 do_catchsql_test 3.2.2 {
   SELECT * FROM terms3
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_catchsql_test 3.2.3 {
   SELECT * FROM terms3 WHERE term = 'abc'
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 do_catchsql_test 3.3.1 {
   INSERT INTO terms VALUES(1,2,3);
@@ -516,6 +516,6 @@ do_test 8.1 {
 do_test 8.2 {
   execsql {DETACH att}
   catchsql { SELECT * FROM aux2 }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 finish_test

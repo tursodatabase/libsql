@@ -29,6 +29,8 @@ IF DEFINED PROCESSOR (
   GOTO usage
 )
 
+SET PROCESSOR=%PROCESSOR:AMD64=x64%
+
 %_VECHO% Processor = '%PROCESSOR%'
 
 SET DUMMY2=%2
@@ -124,7 +126,7 @@ IF NOT EXIST "%FRAMEWORKDIR%\csc.exe" (
   GOTO errors
 )
 
-SET PATH=%FRAMEWORKDIR%;%PATH%
+CALL :fn_PrependToPath FRAMEWORKDIR
 
 :skip_addToPath
 
@@ -193,12 +195,19 @@ ECHO.
 GOTO no_errors
 
 :fn_TclKitX86Variables
+  REM
+  REM NOTE: By default, use latest available version of the TclKit SDK
+  REM       for x86.  However, the "default" TclKit executable for x86
+  REM       is still used here because it is the only one "well-known"
+  REM       to be available for download.
+  REM
   IF NOT DEFINED TCLKIT_PATCHLEVEL (
-    SET TCLKIT_PATCHLEVEL=8.6.4
+    SET TCLKIT_PATCHLEVEL=8.6.6
   )
   SET TCLKIT_VERSION=%TCLKIT_PATCHLEVEL:.=%
   SET TCLKIT_VERSION=%TCLKIT_VERSION:~0,2%
-  SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
+  REM SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
+  SET TCLKIT_EXE=tclkit-8.6.4.exe
   SET TCLKIT_LIB=libtclkit%TCLKIT_PATCHLEVEL:.=%.lib
   SET TCLKIT_LIB_STUB=libtclstub%TCLKIT_VERSION:.=%.a
   SET TCLKIT_SDK=libtclkit-sdk-x86-%TCLKIT_PATCHLEVEL%
@@ -210,20 +219,19 @@ GOTO no_errors
   GOTO :EOF
 
 :fn_TclKitX64Variables
+  REM
+  REM NOTE: By default, use latest available version of the TclKit SDK
+  REM       for x64.  However, the "default" TclKit executable for x86
+  REM       is still used here because it is the only one "well-known"
+  REM       to be available for download.
+  REM
   IF NOT DEFINED TCLKIT_PATCHLEVEL (
-    REM
-    REM NOTE: By default, use latest available version of the TclKit SDK
-    REM       for x64.  However, the "default" TclKit executable for x86
-    REM       is still used here because it is the only one "well-known"
-    REM       to be available for download.
-    REM
-    SET TCLKIT_PATCHLEVEL=8.6.3
-    SET TCLKIT_EXE=tclkit-8.6.4.exe
-  ) ELSE (
-    SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
+    SET TCLKIT_PATCHLEVEL=8.6.6
   )
   SET TCLKIT_VERSION=%TCLKIT_PATCHLEVEL:.=%
   SET TCLKIT_VERSION=%TCLKIT_VERSION:~0,2%
+  REM SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
+  SET TCLKIT_EXE=tclkit-8.6.4.exe
   SET TCLKIT_LIB=libtclkit%TCLKIT_PATCHLEVEL:.=%.lib
   SET TCLKIT_LIB_STUB=libtclstub%TCLKIT_VERSION:.=%.a
   SET TCLKIT_SDK=libtclkit-sdk-x64-%TCLKIT_PATCHLEVEL%
@@ -244,6 +252,18 @@ GOTO no_errors
   SET VALUE=%VALUE:"=%
   REM "
   ENDLOCAL && SET %1=%VALUE%
+  GOTO :EOF
+
+:fn_PrependToPath
+  IF NOT DEFINED %1 GOTO :EOF
+  SETLOCAL
+  SET __ECHO_CMD=ECHO %%%1%%
+  FOR /F "delims=" %%V IN ('%__ECHO_CMD%') DO (
+    SET VALUE=%%V
+  )
+  SET VALUE=%VALUE:"=%
+  REM "
+  ENDLOCAL && SET PATH=%VALUE%;%PATH%
   GOTO :EOF
 
 :fn_ResetErrorLevel

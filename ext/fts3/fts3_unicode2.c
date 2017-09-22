@@ -127,9 +127,9 @@ int sqlite3FtsUnicodeIsalnum(int c){
     0xFFFFFFFF, 0xFC00FFFF, 0xF8000001, 0xF8000001,
   };
 
-  if( c<128 ){
-    return ( (aAscii[c >> 5] & (1 << (c & 0x001F)))==0 );
-  }else if( c<(1<<22) ){
+  if( (unsigned int)c<128 ){
+    return ( (aAscii[c >> 5] & ((unsigned int)1 << (c & 0x001F)))==0 );
+  }else if( (unsigned int)c<(1<<22) ){
     unsigned int key = (((unsigned int)c)<<10) | 0x000003FF;
     int iRes = 0;
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
@@ -322,16 +322,17 @@ int sqlite3FtsUnicodeFold(int c, int bRemoveDiacritic){
 
   int ret = c;
 
-  assert( c>=0 );
   assert( sizeof(unsigned short)==2 && sizeof(unsigned char)==1 );
 
   if( c<128 ){
     if( c>='A' && c<='Z' ) ret = c + ('a' - 'A');
   }else if( c<65536 ){
+    const struct TableEntry *p;
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
     int iLo = 0;
     int iRes = -1;
 
+    assert( c>aEntry[0].iCode );
     while( iHi>=iLo ){
       int iTest = (iHi + iLo) / 2;
       int cmp = (c - aEntry[iTest].iCode);
@@ -342,14 +343,12 @@ int sqlite3FtsUnicodeFold(int c, int bRemoveDiacritic){
         iHi = iTest-1;
       }
     }
-    assert( iRes<0 || c>=aEntry[iRes].iCode );
 
-    if( iRes>=0 ){
-      const struct TableEntry *p = &aEntry[iRes];
-      if( c<(p->iCode + p->nRange) && 0==(0x01 & p->flags & (p->iCode ^ c)) ){
-        ret = (c + (aiOff[p->flags>>1])) & 0x0000FFFF;
-        assert( ret>0 );
-      }
+    assert( iRes>=0 && c>=aEntry[iRes].iCode );
+    p = &aEntry[iRes];
+    if( c<(p->iCode + p->nRange) && 0==(0x01 & p->flags & (p->iCode ^ c)) ){
+      ret = (c + (aiOff[p->flags>>1])) & 0x0000FFFF;
+      assert( ret>0 );
     }
 
     if( bRemoveDiacritic ) ret = remove_diacritic(ret);

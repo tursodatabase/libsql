@@ -168,12 +168,12 @@ static struct action *Action_new(void);
 static struct action *Action_sort(struct action *);
 
 /********** From the file "build.h" ************************************/
-void FindRulePrecedences();
-void FindFirstSets();
-void FindStates();
-void FindLinks();
-void FindFollowSets();
-void FindActions();
+void FindRulePrecedences(struct lemon*);
+void FindFirstSets(struct lemon*);
+void FindStates(struct lemon*);
+void FindLinks(struct lemon*);
+void FindFollowSets(struct lemon*);
+void FindActions(struct lemon*);
 
 /********* From the file "configlist.h" *********************************/
 void Configlist_init(void);
@@ -457,7 +457,7 @@ struct state *State_new(void);
 void State_init(void);
 int State_insert(struct state *, struct config *);
 struct state *State_find(struct config *);
-struct state **State_arrayof(/*  */);
+struct state **State_arrayof(void);
 
 /* Routines used for efficiency in Configlist_add */
 
@@ -561,8 +561,8 @@ void Action_add(
 ** default action for the state_number is returned.
 **
 ** All actions associated with a single state_number are first entered
-** into aLookahead[] using multiple calls to acttab_action().  Then the 
-** actions for that single state_number are placed into the aAction[] 
+** into aLookahead[] using multiple calls to acttab_action().  Then the
+** actions for that single state_number are placed into the aAction[]
 ** array with a single call to acttab_insert().  The acttab_insert() call
 ** also resets the aLookahead[] array in preparation for the next
 ** state number.
@@ -612,7 +612,7 @@ acttab *acttab_alloc(void){
   return p;
 }
 
-/* Add a new action to the current transaction set.  
+/* Add a new action to the current transaction set.
 **
 ** This routine is called once for each lookahead for a particular
 ** state.
@@ -674,7 +674,7 @@ int acttab_insert(acttab *p){
     }
   }
 
-  /* Scan the existing action table looking for an offset that is a 
+  /* Scan the existing action table looking for an offset that is a
   ** duplicate of the current transaction set.  Fall out of the loop
   ** if and when the duplicate is found.
   **
@@ -752,7 +752,7 @@ int acttab_insert(acttab *p){
 */
 
 /* Find a precedence symbol of every rule in the grammar.
-** 
+**
 ** Those rules which have a precedence symbol coded in the input
 ** grammar using the "[symbol]" construct will already have the
 ** rp->precsym field filled.  Other rules take as their precedence
@@ -1072,7 +1072,7 @@ void FindFollowSets(struct lemon *lemp)
       cfp->status = INCOMPLETE;
     }
   }
-  
+
   do{
     progress = 0;
     for(i=0; i<lemp->nstate; i++){
@@ -1103,7 +1103,7 @@ void FindActions(struct lemon *lemp)
   struct symbol *sp;
   struct rule *rp;
 
-  /* Add all of the reduce actions 
+  /* Add all of the reduce actions
   ** A reduce action is added for each element of the followset of
   ** a configuration which has its dot at the extreme right.
   */
@@ -1220,7 +1220,7 @@ static int resolve_conflict(
       apx->type = RD_RESOLVED;
     }
   }else{
-    assert( 
+    assert(
       apx->type==SH_RESOLVED ||
       apx->type==RD_RESOLVED ||
       apx->type==SSCONFLICT ||
@@ -1251,7 +1251,7 @@ static struct config *basis = 0;         /* Top of list of basis configs */
 static struct config **basisend = 0;     /* End of list of basis configs */
 
 /* Return a pointer to a new configuration */
-PRIVATE struct config *newconfig(){
+PRIVATE struct config *newconfig(void){
   struct config *newcfg;
   if( freelist==0 ){
     int i;
@@ -1277,7 +1277,7 @@ PRIVATE void deleteconfig(struct config *old)
 }
 
 /* Initialized the configuration list builder */
-void Configlist_init(){
+void Configlist_init(void){
   current = 0;
   currentend = &current;
   basis = 0;
@@ -1287,7 +1287,7 @@ void Configlist_init(){
 }
 
 /* Initialized the configuration list builder */
-void Configlist_reset(){
+void Configlist_reset(void){
   current = 0;
   currentend = &current;
   basis = 0;
@@ -1397,7 +1397,7 @@ void Configlist_closure(struct lemon *lemp)
 }
 
 /* Sort the configuration list */
-void Configlist_sort(){
+void Configlist_sort(void){
   current = (struct config*)msort((char*)current,(char**)&(current->next),
                                   Configcmp);
   currentend = 0;
@@ -1405,7 +1405,7 @@ void Configlist_sort(){
 }
 
 /* Sort the basis configuration list */
-void Configlist_sortbasis(){
+void Configlist_sortbasis(void){
   basis = (struct config*)msort((char*)current,(char**)&(current->bp),
                                 Configcmp);
   basisend = 0;
@@ -1414,7 +1414,7 @@ void Configlist_sortbasis(){
 
 /* Return a pointer to the head of the configuration list and
 ** reset the list */
-struct config *Configlist_return(){
+struct config *Configlist_return(void){
   struct config *old;
   old = current;
   current = 0;
@@ -1424,7 +1424,7 @@ struct config *Configlist_return(){
 
 /* Return a pointer to the head of the configuration list and
 ** reset the list */
-struct config *Configlist_basis(){
+struct config *Configlist_basis(void){
   struct config *old;
   old = basis;
   basis = 0;
@@ -1466,7 +1466,7 @@ void ErrorMsg(const char *filename, int lineno, const char *format, ...){
 /* Report an out-of-memory condition and abort.  This function
 ** is used mostly by the "MemoryCheck" macro in struct.h
 */
-void memory_error(){
+void memory_error(void){
   fprintf(stderr,"Out of memory.  Aborting...\n");
   exit(1);
 }
@@ -1606,7 +1606,7 @@ int main(int argc, char **argv)
   OptInit(argv,options,stderr);
   if( version ){
      printf("Lemon version 1.0\n");
-     exit(0); 
+     exit(0);
   }
   if( OptNArgs()!=1 ){
     fprintf(stderr,"Exactly one filename argument is required.\n");
@@ -2051,7 +2051,7 @@ int OptInit(char **a, struct s_options *o, FILE *err)
   return 0;
 }
 
-int OptNArgs(){
+int OptNArgs(void){
   int cnt = 0;
   int dashdash = 0;
   int i;
@@ -2078,7 +2078,7 @@ void OptErr(int n)
   if( i>=0 ) errline(i,0,errstream);
 }
 
-void OptPrint(){
+void OptPrint(void){
   int i;
   int max, len;
   max = 0;
@@ -2155,7 +2155,8 @@ enum e_state {
   WAITING_FOR_FALLBACK_ID,
   WAITING_FOR_WILDCARD_ID,
   WAITING_FOR_CLASS_ID,
-  WAITING_FOR_CLASS_TOKEN
+  WAITING_FOR_CLASS_TOKEN,
+  WAITING_FOR_TOKEN_NAME
 };
 struct pstate {
   char *filename;       /* Name of the input file */
@@ -2307,7 +2308,7 @@ to follow the previous rule.");
     case IN_RHS:
       if( x[0]=='.' ){
         struct rule *rp;
-        rp = (struct rule *)calloc( sizeof(struct rule) + 
+        rp = (struct rule *)calloc( sizeof(struct rule) +
              sizeof(struct symbol*)*psp->nrhs + sizeof(char*)*psp->nrhs, 1);
         if( rp==0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
@@ -2470,6 +2471,8 @@ to follow the previous rule.");
         }else if( strcmp(x,"fallback")==0 ){
           psp->fallback = 0;
           psp->state = WAITING_FOR_FALLBACK_ID;
+        }else if( strcmp(x,"token")==0 ){
+          psp->state = WAITING_FOR_TOKEN_NAME;
         }else if( strcmp(x,"wildcard")==0 ){
           psp->state = WAITING_FOR_WILDCARD_ID;
         }else if( strcmp(x,"token_class")==0 ){
@@ -2622,6 +2625,26 @@ to follow the previous rule.");
           sp->fallback = psp->fallback;
           psp->gp->has_fallback = 1;
         }
+      }
+      break;
+    case WAITING_FOR_TOKEN_NAME:
+      /* Tokens do not have to be declared before use.  But they can be
+      ** in order to control their assigned integer number.  The number for
+      ** each token is assigned when it is first seen.  So by including
+      **
+      **     %token ONE TWO THREE
+      **
+      ** early in the grammar file, that assigns small consecutive values
+      ** to each of the tokens ONE TWO and THREE.
+      */
+      if( x[0]=='.' ){
+        psp->state = WAITING_FOR_DECL_OR_RULE;
+      }else if( !ISUPPER(x[0]) ){
+        ErrorMsg(psp->filename, psp->tokenlineno,
+          "%%token argument \"%s\" should be a token", x);
+        psp->errorcnt++;
+      }else{
+        (void)Symbol_new(x);
       }
       break;
     case WAITING_FOR_WILDCARD_ID:
@@ -2896,7 +2919,7 @@ void Parse(struct lemon *gp)
 static struct plink *plink_freelist = 0;
 
 /* Allocate a new plink */
-struct plink *Plink_new(){
+struct plink *Plink_new(void){
   struct plink *newlink;
 
   if( plink_freelist==0 ){
@@ -2997,7 +3020,7 @@ PRIVATE FILE *file_open(
   return fp;
 }
 
-/* Duplicate the input file without comments and without actions 
+/* Duplicate the input file without comments and without actions
 ** on rules */
 void Reprint(struct lemon *lemp)
 {
@@ -3148,7 +3171,7 @@ int PrintAction(
         indent,ap->sp->name,ap->x.rp->iRule);
       break;
     case SSCONFLICT:
-      fprintf(fp,"%*s shift        %-7d ** Parsing conflict **", 
+      fprintf(fp,"%*s shift        %-7d ** Parsing conflict **",
         indent,ap->sp->name,ap->x.stp->statenum);
       break;
     case SH_RESOLVED:
@@ -3297,7 +3320,14 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   int act;
   switch( ap->type ){
     case SHIFT:  act = ap->x.stp->statenum;                        break;
-    case SHIFTREDUCE: act = ap->x.rp->iRule + lemp->nstate;        break;
+    case SHIFTREDUCE: {
+      act = ap->x.rp->iRule + lemp->nstate;
+      /* Since a SHIFT is inherient after a prior REDUCE, convert any
+      ** SHIFTREDUCE action with a nonterminal on the LHS into a simple
+      ** REDUCE action: */
+      if( ap->sp->index>=lemp->nterminal ) act += lemp->nrule;
+      break;
+    }
     case REDUCE: act = ap->x.rp->iRule + lemp->nstate+lemp->nrule; break;
     case ERROR:  act = lemp->nstate + lemp->nrule*2;               break;
     case ACCEPT: act = lemp->nstate + lemp->nrule*2 + 1;           break;
@@ -3421,7 +3451,7 @@ PRIVATE void tplt_print(FILE *out, struct lemon *lemp, char *str, int *lineno)
     (*lineno)++;
   }
   if (!lemp->nolinenosflag) {
-    (*lineno)++; tplt_linedir(out,*lineno,lemp->outname); 
+    (*lineno)++; tplt_linedir(out,*lineno,lemp->outname);
   }
   return;
 }
@@ -3466,8 +3496,8 @@ void emit_destructor_code(
    fputc(*cp,out);
  }
  fprintf(out,"\n"); (*lineno)++;
- if (!lemp->nolinenosflag) { 
-   (*lineno)++; tplt_linedir(out,*lineno,lemp->outname); 
+ if (!lemp->nolinenosflag) {
+   (*lineno)++; tplt_linedir(out,*lineno,lemp->outname);
  }
  fprintf(out,"}\n"); (*lineno)++;
  return;
@@ -3590,7 +3620,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
     /* There is no LHS value symbol. */
     lhsdirect = 1;
   }else if( strcmp(rp->lhsalias,rp->rhsalias[0])==0 ){
-    /* The LHS symbol and the left-most RHS symbol are the same, so 
+    /* The LHS symbol and the left-most RHS symbol are the same, so
     ** direct writing is allowed */
     lhsdirect = 1;
     lhsused = 1;
@@ -3601,7 +3631,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
         "different datatypes.",
         rp->lhs->name, rp->lhsalias, rp->rhs[0]->name, rp->rhsalias[0]);
       lemp->errorcnt++;
-    }    
+    }
   }else{
     lemon_sprintf(zOvwrt, "/*%s-overwrites-%s*/",
                   rp->lhsalias, rp->rhsalias[0]);
@@ -3740,7 +3770,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
   return rc;
 }
 
-/* 
+/*
 ** Generate code which executes when the rule "rp" is reduced.  Write
 ** the code to "out".  Make sure lineno stays up-to-date.
 */
@@ -4161,7 +4191,7 @@ void ReportTable(
   for(i=0; i<lemp->nxstate; i++){
     for(ap=lemp->sorted[i]->ap; ap; ap=ap->next){
       if( ap->type==REDUCE || ap->type==SHIFTREDUCE ){
-        ap->x.rp->doesReduce = i;
+        ap->x.rp->doesReduce = 1;
       }
     }
   }
@@ -4237,7 +4267,7 @@ void ReportTable(
   fprintf(out, "#define YY_SHIFT_COUNT    (%d)\n", n-1); lineno++;
   fprintf(out, "#define YY_SHIFT_MIN      (%d)\n", mnTknOfst); lineno++;
   fprintf(out, "#define YY_SHIFT_MAX      (%d)\n", mxTknOfst); lineno++;
-  fprintf(out, "static const %s yy_shift_ofst[] = {\n", 
+  fprintf(out, "static const %s yy_shift_ofst[] = {\n",
        minimum_size_type(mnTknOfst, lemp->nterminal+lemp->nactiontab, &sz));
        lineno++;
   lemp->tablesize += n*sz;
@@ -4264,7 +4294,7 @@ void ReportTable(
   fprintf(out, "#define YY_REDUCE_COUNT (%d)\n", n-1); lineno++;
   fprintf(out, "#define YY_REDUCE_MIN   (%d)\n", mnNtOfst); lineno++;
   fprintf(out, "#define YY_REDUCE_MAX   (%d)\n", mxNtOfst); lineno++;
-  fprintf(out, "static const %s yy_reduce_ofst[] = {\n", 
+  fprintf(out, "static const %s yy_reduce_ofst[] = {\n",
           minimum_size_type(mnNtOfst-1, mxNtOfst, &sz)); lineno++;
   lemp->tablesize += n*sz;
   for(i=j=0; i<n; i++){
@@ -4343,7 +4373,7 @@ void ReportTable(
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes every time a symbol is popped from
-  ** the stack while processing errors or while destroying the parser. 
+  ** the stack while processing errors or while destroying the parser.
   ** (In other words, generate the %destructor actions)
   */
   if( lemp->tokendest ){
@@ -4409,13 +4439,13 @@ void ReportTable(
   tplt_print(out,lemp,lemp->overflow,&lineno);
   tplt_xfer(lemp->name,in,out,&lineno);
 
-  /* Generate the table of rule information 
+  /* Generate the table of rule information
   **
   ** Note: This code depends on the fact that rules are number
   ** sequentually beginning with 0.
   */
   for(rp=lemp->rule; rp; rp=rp->next){
-    fprintf(out,"  { %d, %d },\n",rp->lhs->index,rp->nrhs); lineno++;
+    fprintf(out,"  { %d, %d },\n",rp->lhs->index,-rp->nrhs); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
@@ -4520,7 +4550,7 @@ void ReportHeader(struct lemon *lemp)
     for(i=1; i<lemp->nterminal; i++){
       fprintf(out,"#define %s%-30s %3d\n",prefix,lemp->symbols[i]->name,i);
     }
-    fclose(out);  
+    fclose(out);
   }
   return;
 }
@@ -4567,7 +4597,7 @@ void CompressTables(struct lemon *lemp)
         rbest = rp;
       }
     }
- 
+
     /* Do not make a default if the number of rules to default
     ** is not at least 1 or if the wildcard token is a possible
     ** lookahead.
@@ -4724,7 +4754,7 @@ void SetSize(int n)
 }
 
 /* Allocate a new set */
-char *SetNew(){
+char *SetNew(void){
   char *s;
   s = (char*)calloc( size, 1);
   if( s==0 ){
@@ -4830,7 +4860,7 @@ typedef struct s_x1node {
 static struct s_x1 *x1a;
 
 /* Allocate a new associative array */
-void Strsafe_init(){
+void Strsafe_init(void){
   if( x1a ) return;
   x1a = (struct s_x1*)malloc( sizeof(struct s_x1) );
   if( x1a ){
@@ -4997,7 +5027,7 @@ typedef struct s_x2node {
 static struct s_x2 *x2a;
 
 /* Allocate a new associative array */
-void Symbol_init(){
+void Symbol_init(void){
   if( x2a ) return;
   x2a = (struct s_x2*)malloc( sizeof(struct s_x2) );
   if( x2a ){
@@ -5194,7 +5224,7 @@ typedef struct s_x3node {
 static struct s_x3 *x3a;
 
 /* Allocate a new associative array */
-void State_init(){
+void State_init(void){
   if( x3a ) return;
   x3a = (struct s_x3*)malloc( sizeof(struct s_x3) );
   if( x3a ){
@@ -5288,7 +5318,7 @@ struct state *State_find(struct config *key)
 /* Return an array of pointers to all data in the table.
 ** The array is obtained from malloc.  Return NULL if memory allocation
 ** problems, or if the array is empty. */
-struct state **State_arrayof()
+struct state **State_arrayof(void)
 {
   struct state **array;
   int i,arrSize;
@@ -5334,7 +5364,7 @@ typedef struct s_x4node {
 static struct s_x4 *x4a;
 
 /* Allocate a new associative array */
-void Configtable_init(){
+void Configtable_init(void){
   if( x4a ) return;
   x4a = (struct s_x4*)malloc( sizeof(struct s_x4) );
   if( x4a ){

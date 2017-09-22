@@ -240,7 +240,6 @@ foreach {tn lRow res} {
 } {
   execsql { DELETE FROM x1 }
   foreach row $lRow { execsql { INSERT INTO x1 VALUES($row) } }
-  breakpoint
   do_execsql_test 8.$tn {
     SELECT highlight(x1, 0, '[', ']') FROM x1 WHERE x1 MATCH 'a OR (b AND d)';
   } $res
@@ -279,4 +278,3 @@ do_execsql_test 9.3 {
 
 
 finish_test
-

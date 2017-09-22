@@ -64,4 +64,3 @@ do_catchsql_test 2.2 {
   INSERT INTO nc(nc) VALUES('rebuild');
 } {1 {'rebuild' may not be used with a contentless fts5 table}}
 finish_test
-

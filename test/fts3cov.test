@@ -96,7 +96,7 @@ do_test fts3cov-2.2 {
 } {}
 do_error_test fts3cov-2.3 {
   SELECT * FROM t1 WHERE t1 MATCH 'c*'
-} {SQL logic error or missing database}
+} {SQL logic error}
 
 # Test the "replaced with NULL" case:
 do_test fts3cov-2.4 {
@@ -104,7 +104,7 @@ do_test fts3cov-2.4 {
 } {}
 do_error_test fts3cov-2.5 {
   SELECT * FROM t1 WHERE t1 MATCH 'cloud'
-} {SQL logic error or missing database}
+} {SQL logic error}
 
 #--------------------------------------------------------------------------
 # The following tests are to test the effects of OOM errors while storing
@@ -308,13 +308,13 @@ do_test fts3cov-9.1 {
 } {}
 do_error_test fts3cov-9.2 {
   INSERT INTO xx(xx) VALUES('optimise');   -- British spelling
-} {SQL logic error or missing database}
+} {SQL logic error}
 do_error_test fts3cov-9.3 {
   INSERT INTO xx(xx) VALUES('short');
-} {SQL logic error or missing database}
+} {SQL logic error}
 do_error_test fts3cov-9.4 {
   INSERT INTO xx(xx) VALUES('waytoolongtobecorrect');
-} {SQL logic error or missing database}
+} {SQL logic error}
 do_test fts3cov-9.5 {
   execsql { INSERT INTO xx(xx) VALUES('optimize') }
 } {}

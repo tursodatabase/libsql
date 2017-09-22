@@ -162,7 +162,7 @@ ifcapable attach {
 #   catchsql {
 #     INSERT INTO abc2 VALUES(1, 2, 3);
 #   }
-# } {1 {library routine called out of sequence}}
+# } {1 {bad parameter or other API misuse}}
 
 # These tests, vtab7-4.*, test that an SQLITE_LOCKED error is returned
 # if an attempt to write to a virtual module table or create a new 

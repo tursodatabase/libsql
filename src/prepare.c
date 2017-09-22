@@ -25,7 +25,7 @@ static void corruptSchema(
   const char *zExtra   /* Error information */
 ){
   sqlite3 *db = pData->db;
-  if( !db->mallocFailed && (db->flags & SQLITE_RecoveryMode)==0 ){
+  if( !db->mallocFailed && (db->flags & SQLITE_WriteSchema)==0 ){
     char *z;
     if( zObj==0 ) zObj = "?";
     z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
@@ -85,7 +85,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = saved_iDb;
-    assert( saved_iDb==0 || (db->flags & SQLITE_Vacuum)!=0 );
+    assert( saved_iDb==0 || (db->mDbFlags & DBFLAG_Vacuum)!=0 );
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -150,6 +150,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
 
+  db->init.busy = 1;
+
   /* Construct the in-memory representation schema tables (sqlite_master or
   ** sqlite_temp_master) by invoking the parser directly.  The appropriate
   ** table name will be inserted automatically by the parser so we can just
@@ -158,7 +160,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   azArg[0] = zMasterName = SCHEMA_TABLE(iDb);
   azArg[1] = "1";
   azArg[2] = "CREATE TABLE x(type text,name text,tbl_name text,"
-                            "rootpage integer,sql text)";
+                            "rootpage int,sql text)";
   azArg[3] = 0;
   initData.db = db;
   initData.iDb = iDb;
@@ -174,10 +176,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   pDb = &db->aDb[iDb];
   if( pDb->pBt==0 ){
-    if( !OMIT_TEMPDB && ALWAYS(iDb==1) ){
-      DbSetProperty(db, 1, DB_SchemaLoaded);
-    }
-    return SQLITE_OK;
+    assert( iDb==1 );
+    DbSetProperty(db, 1, DB_SchemaLoaded);
+    rc = SQLITE_OK;
+    goto error_out;
   }
 
   /* If there is not already a read-only (or read-write) transaction opened
@@ -312,8 +314,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
   }
-  if( rc==SQLITE_OK || (db->flags&SQLITE_RecoveryMode)){
-    /* Black magic: If the SQLITE_RecoveryMode flag is set, then consider
+  if( rc==SQLITE_OK || (db->flags&SQLITE_WriteSchema)){
+    /* Black magic: If the SQLITE_WriteSchema flag is set, then consider
     ** the schema loaded, even if errors occurred. In this situation the 
     ** current sqlite3_prepare() operation will fail, but the following one
     ** will attempt to compile the supplied statement against whatever subset
@@ -336,9 +338,13 @@ initone_error_out:
   sqlite3BtreeLeave(pDb->pBt);
 
 error_out:
-  if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-    sqlite3OomFault(db);
+  if( rc ){
+    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+      sqlite3OomFault(db);
+    }
+    sqlite3ResetOneSchema(db, iDb);
   }
+  db->init.busy = 0;
   return rc;
 }
 
@@ -354,42 +360,29 @@ error_out:
 */
 int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int i, rc;
-  int commit_internal = !(db->flags&SQLITE_InternChanges);
+  int commit_internal = !(db->mDbFlags&DBFLAG_SchemaChange);
   
   assert( sqlite3_mutex_held(db->mutex) );
   assert( sqlite3BtreeHoldsMutex(db->aDb[0].pBt) );
   assert( db->init.busy==0 );
-  rc = SQLITE_OK;
-  db->init.busy = 1;
   ENC(db) = SCHEMA_ENC(db);
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-    if( DbHasProperty(db, i, DB_SchemaLoaded) || i==1 ) continue;
-    rc = sqlite3InitOne(db, i, pzErrMsg);
-    if( rc ){
-      sqlite3ResetOneSchema(db, i);
+  assert( db->nDb>0 );
+  /* Do the main schema first */
+  if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
+    rc = sqlite3InitOne(db, 0, pzErrMsg);
+    if( rc ) return rc;
+  }
+  /* All other schemas after the main schema. The "temp" schema must be last */
+  for(i=db->nDb-1; i>0; i--){
+    if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
+      rc = sqlite3InitOne(db, i, pzErrMsg);
+      if( rc ) return rc;
     }
   }
-
-  /* Once all the other databases have been initialized, load the schema
-  ** for the TEMP database. This is loaded last, as the TEMP database
-  ** schema may contain references to objects in other databases.
-  */
-#ifndef SQLITE_OMIT_TEMPDB
-  assert( db->nDb>1 );
-  if( rc==SQLITE_OK && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
-    rc = sqlite3InitOne(db, 1, pzErrMsg);
-    if( rc ){
-      sqlite3ResetOneSchema(db, 1);
-    }
-  }
-#endif
-
-  db->init.busy = 0;
-  if( rc==SQLITE_OK && commit_internal ){
+  if( commit_internal ){
     sqlite3CommitInternalChanges(db);
   }
-
-  return rc; 
+  return SQLITE_OK;
 }
 
 /*
@@ -494,16 +487,14 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 ** Free all memory allocations in the pParse object
 */
 void sqlite3ParserReset(Parse *pParse){
-  if( pParse ){
-    sqlite3 *db = pParse->db;
-    sqlite3DbFree(db, pParse->aLabel);
-    sqlite3ExprListDelete(db, pParse->pConstExpr);
-    if( db ){
-      assert( db->lookaside.bDisable >= pParse->disableLookaside );
-      db->lookaside.bDisable -= pParse->disableLookaside;
-    }
-    pParse->disableLookaside = 0;
+  sqlite3 *db = pParse->db;
+  sqlite3DbFree(db, pParse->aLabel);
+  sqlite3ExprListDelete(db, pParse->pConstExpr);
+  if( db ){
+    assert( db->lookaside.bDisable >= pParse->disableLookaside );
+    db->lookaside.bDisable -= pParse->disableLookaside;
   }
+  pParse->disableLookaside = 0;
 }
 
 /*
@@ -513,7 +504,7 @@ static int sqlite3Prepare(
   sqlite3 *db,              /* Database handle. */
   const char *zSql,         /* UTF-8 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
-  int saveSqlFlag,          /* True to copy SQL text into the sqlite3_stmt */
+  u32 prepFlags,            /* Zero or more SQLITE_PREPARE_* flags */
   Vdbe *pReprepare,         /* VM being reprepared */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const char **pzTail       /* OUT: End of parsed string */
@@ -529,6 +520,14 @@ static int sqlite3Prepare(
   assert( ppStmt && *ppStmt==0 );
   /* assert( !db->mallocFailed ); // not true with SQLITE_USE_ALLOCA */
   assert( sqlite3_mutex_held(db->mutex) );
+
+  /* For a long-term use prepared statement avoid the use of
+  ** lookaside memory.
+  */
+  if( prepFlags & SQLITE_PREPARE_PERSISTENT ){
+    sParse.disableLookaside++;
+    db->lookaside.bDisable++;
+  }
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that
@@ -561,7 +560,7 @@ static int sqlite3Prepare(
       if( rc ){
         const char *zDb = db->aDb[i].zDbSName;
         sqlite3ErrorWithMsg(db, rc, "database schema is locked: %s", zDb);
-        testcase( db->flags & SQLITE_ReadUncommitted );
+        testcase( db->flags & SQLITE_ReadUncommit );
         goto end_prepare;
       }
     }
@@ -629,8 +628,7 @@ static int sqlite3Prepare(
 #endif
 
   if( db->init.busy==0 ){
-    Vdbe *pVdbe = sParse.pVdbe;
-    sqlite3VdbeSetSql(pVdbe, zSql, (int)(sParse.zTail-zSql), saveSqlFlag);
+    sqlite3VdbeSetSql(sParse.pVdbe, zSql, (int)(sParse.zTail-zSql), prepFlags);
   }
   if( sParse.pVdbe && (rc!=SQLITE_OK || db->mallocFailed) ){
     sqlite3VdbeFinalize(sParse.pVdbe);
@@ -664,7 +662,7 @@ static int sqlite3LockAndPrepare(
   sqlite3 *db,              /* Database handle. */
   const char *zSql,         /* UTF-8 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
-  int saveSqlFlag,          /* True to copy SQL text into the sqlite3_stmt */
+  u32 prepFlags,            /* Zero or more SQLITE_PREPARE_* flags */
   Vdbe *pOld,               /* VM being reprepared */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const char **pzTail       /* OUT: End of parsed string */
@@ -680,10 +678,11 @@ static int sqlite3LockAndPrepare(
   }
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
-  rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, pOld, ppStmt, pzTail);
+  rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
   if( rc==SQLITE_SCHEMA ){
+    sqlite3ResetOneSchema(db, -1);
     sqlite3_finalize(*ppStmt);
-    rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, pOld, ppStmt, pzTail);
+    rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
   }
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
@@ -704,13 +703,15 @@ int sqlite3Reprepare(Vdbe *p){
   sqlite3_stmt *pNew;
   const char *zSql;
   sqlite3 *db;
+  u8 prepFlags;
 
   assert( sqlite3_mutex_held(sqlite3VdbeDb(p)->mutex) );
   zSql = sqlite3_sql((sqlite3_stmt *)p);
   assert( zSql!=0 );  /* Reprepare only called for prepare_v2() statements */
   db = sqlite3VdbeDb(p);
   assert( sqlite3_mutex_held(db->mutex) );
-  rc = sqlite3LockAndPrepare(db, zSql, -1, 0, p, &pNew, 0);
+  prepFlags = sqlite3VdbePrepareFlags(p);
+  rc = sqlite3LockAndPrepare(db, zSql, -1, prepFlags, p, &pNew, 0);
   if( rc ){
     if( rc==SQLITE_NOMEM ){
       sqlite3OomFault(db);
@@ -756,8 +757,36 @@ int sqlite3_prepare_v2(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
-  rc = sqlite3LockAndPrepare(db,zSql,nBytes,1,0,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
+  /* EVIDENCE-OF: R-37923-12173 The sqlite3_prepare_v2() interface works
+  ** exactly the same as sqlite3_prepare_v3() with a zero prepFlags
+  ** parameter.
+  **
+  ** Proof in that the 5th parameter to sqlite3LockAndPrepare is 0 */
+  rc = sqlite3LockAndPrepare(db,zSql,nBytes,SQLITE_PREPARE_SAVESQL,0,
+                             ppStmt,pzTail);
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );
+  return rc;
+}
+int sqlite3_prepare_v3(
+  sqlite3 *db,              /* Database handle. */
+  const char *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  unsigned int prepFlags,   /* Zero or more SQLITE_PREPARE_* flags */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const char **pzTail       /* OUT: End of parsed string */
+){
+  int rc;
+  /* EVIDENCE-OF: R-56861-42673 sqlite3_prepare_v3() differs from
+  ** sqlite3_prepare_v2() only in having the extra prepFlags parameter,
+  ** which is a bit array consisting of zero or more of the
+  ** SQLITE_PREPARE_* flags.
+  **
+  ** Proof by comparison to the implementation of sqlite3_prepare_v2()
+  ** directly above. */
+  rc = sqlite3LockAndPrepare(db,zSql,nBytes,
+                 SQLITE_PREPARE_SAVESQL|(prepFlags&SQLITE_PREPARE_MASK),
+                 0,ppStmt,pzTail);
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );
   return rc;
 }
 
@@ -770,7 +799,7 @@ static int sqlite3Prepare16(
   sqlite3 *db,              /* Database handle. */ 
   const void *zSql,         /* UTF-16 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
-  int saveSqlFlag,          /* True to save SQL text into the sqlite3_stmt */
+  u32 prepFlags,            /* Zero or more SQLITE_PREPARE_* flags */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const void **pzTail       /* OUT: End of parsed string */
 ){
@@ -798,7 +827,7 @@ static int sqlite3Prepare16(
   sqlite3_mutex_enter(db->mutex);
   zSql8 = sqlite3Utf16to8(db, zSql, nBytes, SQLITE_UTF16NATIVE);
   if( zSql8 ){
-    rc = sqlite3LockAndPrepare(db, zSql8, -1, saveSqlFlag, 0, ppStmt, &zTail8);
+    rc = sqlite3LockAndPrepare(db, zSql8, -1, prepFlags, 0, ppStmt, &zTail8);
   }
 
   if( zTail8 && pzTail ){
@@ -844,7 +873,22 @@ int sqlite3_prepare16_v2(
   const void **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
-  rc = sqlite3Prepare16(db,zSql,nBytes,1,ppStmt,pzTail);
+  rc = sqlite3Prepare16(db,zSql,nBytes,SQLITE_PREPARE_SAVESQL,ppStmt,pzTail);
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
+  return rc;
+}
+int sqlite3_prepare16_v3(
+  sqlite3 *db,              /* Database handle. */ 
+  const void *zSql,         /* UTF-16 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  unsigned int prepFlags,   /* Zero or more SQLITE_PREPARE_* flags */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const void **pzTail       /* OUT: End of parsed string */
+){
+  int rc;
+  rc = sqlite3Prepare16(db,zSql,nBytes,
+         SQLITE_PREPARE_SAVESQL|(prepFlags&SQLITE_PREPARE_MASK),
+         ppStmt,pzTail);
   assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }

@@ -1,6 +1,3 @@
-
-set rcsid {$Id: omittest.tcl,v 1.8 2008/10/13 15:35:09 drh Exp $}
-
 # Documentation for this script. This may be output to stderr
 # if the script is invoked incorrectly.
 set ::USAGE_MESSAGE {
@@ -134,24 +131,35 @@ proc process_options {argv} {
   set ::TARGET testfixture                  ;# Default thing to build
 
   for {set i 0} {$i < [llength $argv]} {incr i} {
-    switch -- [lindex $argv $i] {
-      -makefile {
+    switch -regexp -- [lindex $argv $i] {
+      -{1,2}makefile {
         incr i
         set ::MAKEFILE [lindex $argv $i]
       }
   
-      -nmake {
+      -{1,2}nmake {
         set ::MAKEBIN nmake
         set ::MAKEFILE ./Makefile.msc
       }
 
-      -target {
+      -{1,2}target {
         incr i
         set ::TARGET [lindex $argv $i]
       }
 
-      -skip_run {
+      -{1,2}skip_run {
         set ::SKIP_RUN 1
+      }
+
+      -{1,2}help {
+        puts $::USAGE_MESSAGE
+        exit
+      }
+
+      -.* {
+        puts stderr "Unknown option: [lindex $argv i]"
+        puts stderr $::USAGE_MESSAGE
+        exit 1
       }
 
       default {

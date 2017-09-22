@@ -87,7 +87,7 @@
 ** Not currently enforced.
 */
 #ifndef SQLITE_MAX_VDBE_OP
-# define SQLITE_MAX_VDBE_OP 25000
+# define SQLITE_MAX_VDBE_OP 250000000
 #endif
 
 /*

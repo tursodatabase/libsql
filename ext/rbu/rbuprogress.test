@@ -40,6 +40,7 @@ proc create_rbu1 {filename} {
 
 
 do_execsql_test 1.0 {
+  PRAGMA page_size = 4096;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
 }
 
@@ -266,6 +267,7 @@ foreach bReopen {0 1} {
   do_test 3.$bReopen.1.0 {
     reset_db
     execsql {
+      PRAGMA page_size = 4096;
       CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
       CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
       CREATE TABLE t3(a INTEGER PRIMARY KEY, b);

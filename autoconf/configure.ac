@@ -55,9 +55,9 @@ AS_IF([ test x"$enable_editline" != xno ],[
     LIBS=""
     AC_SEARCH_LIBS([readline],[edit],[
       AC_DEFINE([HAVE_EDITLINE],1,Define to use BSD editline)
-      READLINE_LIBS=$LIBS
+      READLINE_LIBS="$LIBS -ltinfo"
       enable_readline=no
-    ])
+    ],[],[-ltinfo])
     AS_UNSET(ac_cv_search_readline)
     LIBS=$sLIBS
   ])

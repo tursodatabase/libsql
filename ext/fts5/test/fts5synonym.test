@@ -421,4 +421,3 @@ do_execsql_test 7.1.2 {
 } ;# foreach_detail_mode
 
 finish_test
-

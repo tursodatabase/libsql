@@ -386,7 +386,7 @@ static int parseDateOrTime(
     return 0;
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
-  }else if( sqlite3StrICmp(zDate,"now")==0){
+  }else if( sqlite3StrICmp(zDate,"now")==0 && sqlite3NotPureFunc(context) ){
     return setDateTimeToCurrent(context, p);
   }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8) ){
     setRawDateNumber(p, r);
@@ -423,8 +423,10 @@ static void computeYMD(DateTime *p){
     p->Y = 2000;
     p->M = 1;
     p->D = 1;
+  }else if( !validJulianDay(p->iJD) ){
+    datetimeError(p);
+    return;
   }else{
-    assert( validJulianDay(p->iJD) );
     Z = (int)((p->iJD + 43200000)/86400000);
     A = (int)((Z - 1867216.25)/36524.25);
     A = Z + 1 + A - (A/4);
@@ -667,7 +669,7 @@ static int parseModifier(
       ** Assuming the current time value is UTC (a.k.a. GMT), shift it to
       ** show local time.
       */
-      if( sqlite3_stricmp(z, "localtime")==0 ){
+      if( sqlite3_stricmp(z, "localtime")==0 && sqlite3NotPureFunc(pCtx) ){
         computeJD(p);
         p->iJD += localtimeOffset(p, pCtx, &rc);
         clearYMD_HMS_TZ(p);
@@ -693,7 +695,7 @@ static int parseModifier(
         }
       }
 #ifndef SQLITE_OMIT_LOCALTIME
-      else if( sqlite3_stricmp(z, "utc")==0 ){
+      else if( sqlite3_stricmp(z, "utc")==0 && sqlite3NotPureFunc(pCtx) ){
         if( p->tzSet==0 ){
           sqlite3_int64 c1;
           computeJD(p);
@@ -743,18 +745,19 @@ static int parseModifier(
       ** or month or year.
       */
       if( sqlite3_strnicmp(z, "start of ", 9)!=0 ) break;
+      if( !p->validJD && !p->validYMD && !p->validHMS ) break;
       z += 9;
       computeYMD(p);
       p->validHMS = 1;
       p->h = p->m = 0;
       p->s = 0.0;
+      p->rawS = 0;
       p->validTZ = 0;
       p->validJD = 0;
       if( sqlite3_stricmp(z,"month")==0 ){
         p->D = 1;
         rc = 0;
       }else if( sqlite3_stricmp(z,"year")==0 ){
-        computeYMD(p);
         p->M = 1;
         p->D = 1;
         rc = 0;
@@ -1228,11 +1231,11 @@ static void currentTimeFunc(
 void sqlite3RegisterDateTimeFunctions(void){
   static FuncDef aDateTimeFuncs[] = {
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
-    DFUNCTION(julianday,        -1, 0, 0, juliandayFunc ),
-    DFUNCTION(date,             -1, 0, 0, dateFunc      ),
-    DFUNCTION(time,             -1, 0, 0, timeFunc      ),
-    DFUNCTION(datetime,         -1, 0, 0, datetimeFunc  ),
-    DFUNCTION(strftime,         -1, 0, 0, strftimeFunc  ),
+    PURE_DATE(julianday,        -1, 0, 0, juliandayFunc ),
+    PURE_DATE(date,             -1, 0, 0, dateFunc      ),
+    PURE_DATE(time,             -1, 0, 0, timeFunc      ),
+    PURE_DATE(datetime,         -1, 0, 0, datetimeFunc  ),
+    PURE_DATE(strftime,         -1, 0, 0, strftimeFunc  ),
     DFUNCTION(current_time,      0, 0, 0, ctimeFunc     ),
     DFUNCTION(current_timestamp, 0, 0, 0, ctimestampFunc),
     DFUNCTION(current_date,      0, 0, 0, cdateFunc     ),
