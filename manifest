@@ -1,5 +1,5 @@
-C Update\sthe\sconfigure\sscript\sso\sthat\sit\slooks\sfor\stclsh8.7\sahead\sof\stclsh8.6.
-D 2017-09-22T00:24:44.674
+C Partial\sbackout\sof\scheck-in\s[e0af9a904076].\s\sIt\sturns\sout\swe\sdo\sneed\ssome\nextra\sspace\sat\sthe\send\sof\sthe\srecord\sblob\sas\san\soverrun\sarea\sto\suse\swhen\ndecoding\sa\smaliciously\smalformed\srecord.
+D 2017-09-22T12:52:31.525
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -532,7 +532,7 @@ F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
 F src/vdbeaux.c 831a77aaa7aa43005f1c9bf3e9eb6506f4865e1cf99943ccdcd3be5d2dd8a3c7
 F src/vdbeblob.c 635a79b60340a6a14a622ea8dcb081f0a66b1ac3836870c587f232eec08c0286
-F src/vdbemem.c 043f9fdbb19d4857d5ac9c1ff60b972da9397e51c1a3d5ff43e8b6b4ae552aaf
+F src/vdbemem.c 5c1533bf756918b4e46b2ed2bb82c29c7c651e1e37bbd0a0d8731a68787598ff
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
@@ -1655,7 +1655,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d03c738e93d36815248991d9ed3d62297ba1bb966e602e7874410076c144f43
-R af25328b1412b5532988e49269e8bcab
+P 0a12915b373cd0491a58d8f7a645711c620c70efced623e6b40aa01f23284157
+Q -e0af9a9040768adf8bba42a8780adeb6304bc442afb1f35d239d019db1624f40
+R 2559539454c3155961a04b42be8e4a30
 U drh
-Z d8a9f78bca4ad7573c0a5dc3ae2ffff1
+Z df9a1372bda63aba20d2b49e01e54f8d
