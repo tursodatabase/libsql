@@ -35,8 +35,8 @@ impl RawStatement {
             loop {
                 rc = unsafe { ffi::sqlite3_step(self.0) };
                 if rc == ffi::SQLITE_LOCKED {
-                    if unsafe { ffi::sqlite3_extended_errcode(self.1) } !=
-                        ffi::SQLITE_LOCKED_SHAREDCACHE
+                    if unsafe { ffi::sqlite3_extended_errcode(self.1) }
+                        != ffi::SQLITE_LOCKED_SHAREDCACHE
                     {
                         break;
                     }
