@@ -1,5 +1,5 @@
-C Use\sthe\supdated\sWin32\sVFS\ssemantics\sfor\swinOpen\sfrom\scheck-in\s[5d03c738e9]\sfor\sWinRT,\set\sal,\sas\swell.
-D 2017-09-22T16:23:23.946
+C Experimental\schange\sso\sthat\ssnapshot\stransactions\salways\slock\sthe\swal\sfile\s-\npreventing\swriters\sor\struncate-checkpointers\sfrom\swrapping\sit.
+D 2017-09-23T07:46:54.932
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -537,7 +537,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c f1d5c23132fb0247af3e86146404112283ddedb6c518de0d4edc91cfb36970ef
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
+F src/wal.c 0ceefa9f2a0cb00033d312a04c2d5c2005a6404a6fccab22743de9b3c363154b
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c 21eea981920a13fd3c0ac3d6c128d0a34b22cbec064e4f0603375fe1ffe26ca6
@@ -1206,6 +1206,7 @@ F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/snapshot.test 85735bd997a4f6d710140c28fd860519a299649f
 F test/snapshot2.test 867652ed4a13282dce218723535fad1c7b44c3c4
+F test/snapshot3.test 9719443594a04778861bd20d12596c5f880af177d6cd62f111da3198cafc6096
 F test/snapshot_fault.test 52c5e97ebd218846a8ae2da4d147d3e77d71f963
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1655,7 +1656,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 403b88a894d877b85bcc33133abad06c3c576e4928de4a4b0c091f74c4015355
-R 7f08f0df04c939d1dd5a187c9ae3cc49
-U mistachkin
-Z 321f82ff3326ba269549cfe661409f34
+P 2c03d8b8f028b6a736aaf2cf8b28a51b3434cf341c95cf3a80469e0a24acdd98
+R 44e3d692cd4dca7384d5a55f548b9b05
+T *branch * snapshots-lock-wal
+T *sym-snapshots-lock-wal *
+T -sym-trunk *
+U dan
+Z 91f0de7cf02d66dc9c74cc874f9821f7
