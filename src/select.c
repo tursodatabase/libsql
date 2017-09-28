@@ -5317,9 +5317,7 @@ int sqlite3Select(
     ** The subquery is implemented as a co-routine if all of these are true:
     **   (1)  The subquery is guaranteed to be the outer loop (so that it
     **        does not need to be computed more than once)
-    **   (2)  The ALL keyword after SELECT is omitted.  (Applications are
-    **        allowed to say "SELECT ALL" instead of just "SELECT" to disable
-    **        the use of co-routines.)
+    **   (2)  REMOVED (2017-09-28): The ALL keyword after SELECT is omitted.
     **   (3)  Co-routines are not disabled using sqlite3_test_control()
     **        with SQLITE_TESTCTRL_OPTIMIZATIONS.
     **
@@ -5329,7 +5327,7 @@ int sqlite3Select(
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
-     && (p->selFlags & SF_All)==0                                   /* (2) */
+     /*** constraint removed: && (p->selFlags & SF_All)==0             (2) */
      && OptimizationEnabled(db, SQLITE_SubqCoroutine)               /* (3) */
     ){
       /* Implement a co-routine that will return a single row of the result
