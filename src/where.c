@@ -2669,7 +2669,7 @@ static int indexMightHelpWithOrderBy(
     }else if( (aColExpr = pIndex->aColExpr)!=0 ){
       for(jj=0; jj<pIndex->nKeyCol; jj++){
         if( pIndex->aiColumn[jj]!=XN_EXPR ) continue;
-        if( sqlite3ExprCompare(0, pExpr,aColExpr->a[jj].pExpr,iCursor)==0 ){
+        if( sqlite3ExprCompareSkip(pExpr,aColExpr->a[jj].pExpr,iCursor)==0 ){
           return 1;
         }
       }
@@ -3690,8 +3690,8 @@ static i8 wherePathSatisfiesOrderBy(
             if( pOBExpr->iTable!=iCur ) continue;
             if( pOBExpr->iColumn!=iColumn ) continue;
           }else{
-            if( sqlite3ExprCompare(0,
-                  pOBExpr,pIndex->aColExpr->a[j].pExpr,iCur) ){
+            Expr *pIdxExpr = pIndex->aColExpr->a[j].pExpr;
+            if( sqlite3ExprCompareSkip(pOBExpr, pIdxExpr, iCur) ){
               continue;
             }
           }
