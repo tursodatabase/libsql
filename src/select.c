@@ -5205,6 +5205,25 @@ int sqlite3Select(
       goto select_end;
     }
 
+    /* If the subquery contains an ORDER BY or GROUP BY clause and if
+    ** it will be implemented as a co-routine, then do not flatten.  This
+    ** restriction allows SQL constructs like this:
+    **
+    **  SELECT expensive_function(x)
+    **    FROM (SELECT x FROM tab ORDER BY y LIMIT 10);
+    **
+    ** The expensive_function() is only computed on the 10 rows that
+    ** are output, rather than every row of the table.
+    */
+    if( (pSub->pOrderBy!=0 || pSub->pGroupBy!=0)
+     && i==0
+     && (pTabList->nSrc==1
+         || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)
+     && OptimizationEnabled(db, SQLITE_SubqCoroutine)
+    ){
+      continue;
+    }
+
     isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
     if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
       /* This subquery can be absorbed into its parent. */
