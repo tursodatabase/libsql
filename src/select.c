@@ -1109,10 +1109,7 @@ static KeyInfo *keyInfoFromExprList(
   if( pInfo ){
     assert( sqlite3KeyInfoIsWriteable(pInfo) );
     for(i=iStart, pItem=pList->a+iStart; i<nExpr; i++, pItem++){
-      CollSeq *pColl;
-      pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
-      if( !pColl ) pColl = db->pDfltColl;
-      pInfo->aColl[i-iStart] = pColl;
+      pInfo->aColl[i-iStart] = sqlite3ExprNNCollSeq(pParse, pItem->pExpr);
       pInfo->aSortOrder[i-iStart] = pItem->sortOrder;
     }
   }

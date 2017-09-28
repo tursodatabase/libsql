@@ -842,7 +842,6 @@ static void exprAnalyzeOrTerm(
 static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   char aff1, aff2;
   CollSeq *pColl;
-  const char *zColl1, *zColl2;
   if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
@@ -855,11 +854,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   }
   pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
   if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
-  pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  zColl1 = pColl ? pColl->zName : 0;
-  pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-  zColl2 = pColl ? pColl->zName : 0;
-  return sqlite3_stricmp(zColl1, zColl2)==0;
+  return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
 }
 
 /*

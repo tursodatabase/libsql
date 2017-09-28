@@ -403,8 +403,8 @@ static int findIndexCol(
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
     ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
-      if( pColl && 0==sqlite3StrICmp(pColl->zName, zColl) ){
+      CollSeq *pColl = sqlite3ExprNNCollSeq(pParse, pList->a[i].pExpr);
+      if( 0==sqlite3StrICmp(pColl->zName, zColl) ){
         return i;
       }
     }
@@ -3579,14 +3579,10 @@ static i8 wherePathSatisfiesOrderBy(
         if( j>=pLoop->nLTerm ) continue;
       }
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
-        const char *z1, *z2;
-        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
-        if( !pColl ) pColl = db->pDfltColl;
-        z1 = pColl->zName;
-        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pTerm->pExpr);
-        if( !pColl ) pColl = db->pDfltColl;
-        z2 = pColl->zName;
-        if( sqlite3StrICmp(z1, z2)!=0 ) continue;
+        if( sqlite3ExprCollSeqMatch(pWInfo->pParse, 
+                  pOrderBy->a[i].pExpr, pTerm->pExpr)==0 ){
+          continue;
+        }
         testcase( pTerm->pExpr->op==TK_IS );
       }
       obSat |= MASKBIT(i);
@@ -3696,8 +3692,7 @@ static i8 wherePathSatisfiesOrderBy(
             }
           }
           if( iColumn!=XN_ROWID ){
-            pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
-            if( !pColl ) pColl = db->pDfltColl;
+            pColl = sqlite3ExprNNCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
           }
           pLoop->u.btree.nIdxCol = j+1;
