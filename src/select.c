@@ -118,7 +118,8 @@ Select *sqlite3SelectNew(
     pNew = &standin;
   }
   if( pEList==0 ){
-    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db,TK_ASTERISK,0));
+    pEList = sqlite3ExprListAppend(pParse, 0,
+                                   sqlite3Expr(pParse->db,TK_ASTERISK,0));
   }
   pNew->pEList = pEList;
   pNew->op = TK_SELECT;
@@ -142,7 +143,8 @@ Select *sqlite3SelectNew(
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
   pNew->pWith = 0;
-  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0 || pParse->db->mallocFailed!=0 );
+  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0
+                     || pParse->db->mallocFailed!=0 );
   if( pParse->db->mallocFailed ) {
     clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;
@@ -759,7 +761,8 @@ static void selectInnerLoop(
       assert( eDest==SRT_Set || eDest==SRT_Mem 
            || eDest==SRT_Coroutine || eDest==SRT_Output );
     }
-    nResultCol = sqlite3ExprCodeExprList(pParse,p->pEList,regResult,0,ecelFlags);
+    nResultCol = sqlite3ExprCodeExprList(pParse,p->pEList,regResult,
+                                         0,ecelFlags);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -1570,9 +1573,9 @@ static void generateColumnTypes(
 **                              other words, the zSpan of the result expression.
 **
 **    short=ON, full=OFF:       (This is the default setting).  If the result
-**                              refers directly to a table column, then the result
-**                              column name is just the table column name: COLUMN. 
-**                              Otherwise use zSpan.
+**                              refers directly to a table column, then the
+**                              result column name is just the table column
+**                              name: COLUMN.  Otherwise use zSpan.
 **
 **    full=ON, short=ANY:       If the result refers directly to a table column,
 **                              then the result column name with the table name
@@ -1614,7 +1617,7 @@ static void generateColumnNames(
 
     assert( p!=0 );
     assert( p->op!=TK_AGG_COLUMN );  /* Agg processing has not run yet */
-    assert( p->op!=TK_COLUMN || p->pTab!=0 ); /* Covering indexes not yet coded */
+    assert( p->op!=TK_COLUMN || p->pTab!=0 ); /* Covering idx not yet coded */
     if( pEList->a[i].zName ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zName;
@@ -3178,7 +3181,9 @@ static Expr *substExpr(
   Expr *pExpr            /* Expr in which substitution occurs */
 ){
   if( pExpr==0 ) return 0;
-  if( ExprHasProperty(pExpr, EP_FromJoin) && pExpr->iRightJoinTable==pSubst->iTable ){
+  if( ExprHasProperty(pExpr, EP_FromJoin)
+   && pExpr->iRightJoinTable==pSubst->iTable
+  ){
     pExpr->iRightJoinTable = pSubst->iNewTable;
   }
   if( pExpr->op==TK_COLUMN && pExpr->iTable==pSubst->iTable ){
@@ -3514,8 +3519,9 @@ static int flattenSubquery(
 #ifdef SQLITE_EXTRA_IFNULLROW
   else if( iFrom>0 && !isAgg ){
     /* Setting isLeftJoin to -1 causes OP_IfNullRow opcodes to be generated for
-    ** every reference to any result column from subquery in a join, even though
-    ** they are not necessary.  This will stress-test the OP_IfNullRow opcode. */
+    ** every reference to any result column from subquery in a join, even
+    ** though they are not necessary.  This will stress-test the OP_IfNullRow 
+    ** opcode. */
     isLeftJoin = -1;
   }
 #endif
@@ -4225,7 +4231,8 @@ static int withExpand(
       );
       return SQLITE_ERROR;
     }
-    assert( pTab->nTabRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nTabRef==2 ));
+    assert( pTab->nTabRef==1 || 
+            ((pSel->selFlags&SF_Recursive) && pTab->nTabRef==2 ));
 
     pCte->zCteErr = "circular reference: %s";
     pSavedWith = pParse->pWith;
@@ -5029,24 +5036,24 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   Expr *pExpr;
   Expr *pCount;
   sqlite3 *db;
-  if( (p->selFlags & SF_Aggregate)==0 ) return 0;   /* This is an aggregate query */
+  if( (p->selFlags & SF_Aggregate)==0 ) return 0;   /* This is an aggregate */
   if( p->pEList->nExpr!=1 ) return 0;               /* Single result column */
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;        /* Result is an aggregate */
-  if( sqlite3_stricmp(pExpr->u.zToken,"count") ) return 0;  /* Must be count() */
+  if( sqlite3_stricmp(pExpr->u.zToken,"count") ) return 0;  /* Is count() */
   if( pExpr->x.pList!=0 ) return 0;                 /* Must be count(*) */
-  if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in the FROM clause */
+  if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in FROM  */
   pSub = p->pSrc->a[0].pSelect;
   if( pSub==0 ) return 0;                           /* The FROM is a subquery */
-  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound subquery */
+  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound ry */
   do{
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
     if( pSub->selFlags & SF_Aggregate ) return 0;     /* Not an aggregate */
-    pSub = pSub->pPrior;                              /* Repeat over compound terms */
+    pSub = pSub->pPrior;                              /* Repeat over compound */
   }while( pSub );
 
-  /* If we reach this point, that means it is OK to perform the transformation */
+  /* If we reach this point then it is OK to perform the transformation */
 
   db = pParse->db;
   pCount = pExpr;
@@ -5239,9 +5246,10 @@ int sqlite3Select(
     SelectDest dest;
     Select *pSub;
 
-    /* Issue SQLITE_READ authorizations with a fake column name for any tables that
-    ** are referenced but from which no values are extracted. Examples of where these
-    ** kinds of null SQLITE_READ authorizations would occur:
+    /* Issue SQLITE_READ authorizations with a fake column name for any
+    ** tables that are referenced but from which no values are extracted.
+    ** Examples of where these kinds of null SQLITE_READ authorizations
+    ** would occur:
     **
     **     SELECT count(*) FROM t1;   -- SQLITE_READ t1.""
     **     SELECT t1.* FROM t1, t2;   -- SQLITE_READ t2.""
@@ -5249,10 +5257,10 @@ int sqlite3Select(
     ** The fake column name is an empty string.  It is possible for a table to
     ** have a column named by the empty string, in which case there is no way to
     ** distinguish between an unreferenced table and an actual reference to the
-    ** "" column.  The original design was for the fake column name to be a NULL,
+    ** "" column. The original design was for the fake column name to be a NULL,
     ** which would be unambiguous.  But legacy authorization callbacks might
-    ** assume the column name is non-NULL and segfault.  The use of an empty string
-    ** for the fake column name seems safer.
+    ** assume the column name is non-NULL and segfault.  The use of an empty
+    ** string for the fake column name seems safer.
     */
     if( pItem->colUsed==0 ){
       sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "", pItem->zDatabase);
