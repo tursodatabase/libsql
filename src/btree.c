@@ -1399,6 +1399,9 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
         int sz2 = 0;
         int sz = get2byte(&data[iFree+2]);
         int top = get2byte(&data[hdr+5]);
+        if( top>=iFree ){
+          return SQLITE_CORRUPT_PGNO(pPage->pgno);
+        }
         if( iFree2 ){
           assert( iFree+sz<=iFree2 ); /* Verified by pageFindSlot() */
           sz2 = get2byte(&data[iFree2+2]);
