@@ -1,5 +1,5 @@
-C Disable\stests\sfor\sthe\sLIKE\soptimization\swhen\sICU\sis\senabled,\ssince\sthe\nLIKE\soptimization\sonly\sworks\sfor\sthe\sbuilt-in\sLIKE\soperator\sand\sICU\soverrides\nthe\sbuilt-in.
-D 2017-09-27T16:51:00.557
+C In\stwo\splaces,\schange\sthe\smagic\snumber\s-1\sto\sits\sproper\ssymbol\sXN_ROWID.
+D 2017-09-28T00:01:36.686
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -540,7 +540,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 839db09792fead5052bb35e533fa485e134913d547d05b5f42e537b73e63f07a
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
-F src/where.c 21eea981920a13fd3c0ac3d6c128d0a34b22cbec064e4f0603375fe1ffe26ca6
+F src/where.c da814d09ab1e5400221e74f8c5fd2e270bc2bd88f8879c90b945ae969440760d
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c e8c2ece5843ea56e6c90277d421f2d628f3f7b7c976642369cc519f008e1d2b1
 F src/whereexpr.c 4953ca4e769c047d0a00a1ba9085849626b1f3a6e89f6befcf5c38fa0722acdd
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 24a95e143785bb8e12198092d13c979ec2e116fa8b55d0bf482cb473a92294d8
-R ea36f216c91269073f8e9e0d7f835975
+P f5ef2e1bcd2790f960c15947f87cda19bd6a6a384ad09b25f6d07d5244cfecbd
+R c47ffb2981ef5a31e85dd8c84d5bf56c
 U drh
-Z 625452c09eb5e3262c5fc4d08882748f
+Z 7390013eff4c87ebba9e8675c4ba2e1e
