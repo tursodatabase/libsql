@@ -4376,7 +4376,11 @@ static int selectExpander(Walker *pWalker, Select *p){
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nTabRef = 1;
-      pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
+      if( pFrom->zAlias ){
+        pTab->zName = sqlite3DbStrDup(db, pFrom->zAlias);
+      }else{
+        pTab->zName = sqlite3MPrintf(db, "subquery_%p", (void*)pTab);
+      }
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
       sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
       pTab->iPKey = -1;
