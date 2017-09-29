@@ -3296,68 +3296,71 @@ static void substSelect(
 ** exist on the table t1, a complete scan of the data might be
 ** avoided.
 **
-** Flattening is only attempted if all of the following are true:
+** Flattening is subject to the following constraints:
 **
-**   (1)  The subquery and the outer query do not both use aggregates.
+**   (1)  The subquery and the outer query cannot both be aggregates.
 **
-**   (2)  The subquery is not an aggregate or (2a) the outer query is not a join
-**        and (2b) the outer query does not use subqueries other than the one
-**        FROM-clause subquery that is a candidate for flattening.  (2b is
-**        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
+**   (2)  If the subquery is an aggregate then
+**        (2a) the outer query must not be a join and
+**        (2b) the outer query must not use subqueries
+**             other than the one FROM-clause subquery that is a candidate
+**             for flattening.  (This is due to ticket [2f7170d73bf9abf80]
+**             from 2015-02-09.)
 **
-**   (3)  The subquery is not the right operand of a LEFT JOIN
-**        or (a) the subquery is not itself a join and (b) the FROM clause
-**        of the subquery does not contain a virtual table and (c) the 
-**        outer query is not an aggregate.
+**   (3)  If the subquery is the right operand of a LEFT JOIN then
+**        (3a) the subquery may not be a join and
+**        (3b) the FROM clause of the subquery may not contain a virtual
+**             table and
+**        (3c) the outer query may not be an aggregate.
 **
-**   (4)  The subquery is not DISTINCT.
+**   (4)  The subquery can not be DISTINCT.
 **
 **  (**)  At one point restrictions (4) and (5) defined a subset of DISTINCT
 **        sub-queries that were excluded from this optimization. Restriction 
 **        (4) has since been expanded to exclude all DISTINCT subqueries.
 **
-**   (6)  The subquery does not use aggregates or the outer query is not
-**        DISTINCT.
+**   (6)  If the subquery is aggregate, the outer query may not be DISTINCT.
 **
-**   (7)  The subquery has a FROM clause.  TODO:  For subqueries without
+**   (7)  The subquery must have a FROM clause.  TODO:  For subqueries without
 **        A FROM clause, consider adding a FROM clause with the special
 **        table sqlite_once that consists of a single row containing a
 **        single NULL.
 **
-**   (8)  The subquery does not use LIMIT or the outer query is not a join.
+**   (8)  If the subquery uses LIMIT then the outer query may not be a join.
 **
-**   (9)  The subquery does not use LIMIT or the outer query does not use
-**        aggregates.
+**   (9)  If the subquery uses LIMIT then the outer query may not be aggregate.
 **
 **  (**)  Restriction (10) was removed from the code on 2005-02-05 but we
 **        accidently carried the comment forward until 2014-09-15.  Original
-**        text: "The subquery does not use aggregates or the outer query 
-**        does not use LIMIT."
+**        constraint: "If the subquery is aggregate then the outer query 
+**        may not use LIMIT."
 **
-**  (11)  The subquery and the outer query do not both have ORDER BY clauses.
+**  (11)  The subquery and the outer query may not both have ORDER BY clauses.
 **
 **  (**)  Not implemented.  Subsumed into restriction (3).  Was previously
 **        a separate restriction deriving from ticket #350.
 **
-**  (13)  The subquery and outer query do not both use LIMIT.
+**  (13)  The subquery and outer query may not both use LIMIT.
 **
-**  (14)  The subquery does not use OFFSET.
+**  (14)  The subquery may not use OFFSET.
 **
-**  (15)  The outer query is not part of a compound select or the
-**        subquery does not have a LIMIT clause.
+**  (15)  If the outer query is part of a compound select, then the
+**        subquery may not use LIMIT.
 **        (See ticket #2339 and ticket [02a8e81d44]).
 **
-**  (16)  The outer query is not an aggregate or the subquery does
-**        not contain ORDER BY.  (Ticket #2942)  This used to not matter
+**  (16)  If the outer query is aggregate, then the subquery may not
+**        use ORDER BY.  (Ticket #2942)  This used to not matter
 **        until we introduced the group_concat() function.  
 **
-**  (17)  The sub-query is not a compound select, or it is a UNION ALL 
-**        compound clause made up entirely of non-aggregate queries, and 
-**        the parent query:
-**
-**          * is not itself part of a compound select,
-**          * is not an aggregate or DISTINCT query, and
-**          * is not a join
+**  (17)  If the subquery is a compound select, then
+**        (17a) all compound operators must be a UNION ALL, and
+**        (17b) no terms within the subquery compound may be aggregate
+**              or DISTINT, and
+**        (17c) every term within the subquery compound must have a FROM clause
+**        (17d) the outer query may not be
+**              (17d1) aggregate, or
+**              (17d2) DISTINCT, or
+**              (17d3) a join.
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -3373,10 +3376,10 @@ static void substSelect(
 **        syntax error and return a detailed message.
 **
 **  (18)  If the sub-query is a compound select, then all terms of the
-**        ORDER by clause of the parent must be simple references to 
+**        ORDER BY clause of the parent must be simple references to 
 **        columns of the sub-query.
 **
-**  (19)  The subquery does not use LIMIT or the outer query does not
+**  (19)  If the subquery uses LIMIT then the outer query may not
 **        have a WHERE clause.
 **
 **  (20)  If the sub-query is a compound select, then it must not use
@@ -3385,17 +3388,17 @@ static void substSelect(
 **        appear as unmodified result columns in the outer query.  But we
 **        have other optimizations in mind to deal with that case.
 **
-**  (21)  The subquery does not use LIMIT or the outer query is not
+**  (21)  If the subquery uses LIMIT then the outer query may not be
 **        DISTINCT.  (See ticket [752e1646fc]).
 **
-**  (22)  The subquery is not a recursive CTE.
+**  (22)  The subquery may not be a recursive CTE.
 **
-**  (23)  The parent is not a recursive CTE, or the sub-query is not a
-**        compound query. This restriction is because transforming the
+**  (23)  If the outer query is a recursive CTE, then the sub-query may not be
+**        a compound query. This restriction is because transforming the
 **        parent to a compound query confuses the code that handles
 **        recursive queries in multiSelect().
 **
-**  (24)  The subquery is not an aggregate that uses the built-in min() or 
+**  (24)  The subquery may not be an aggregate that uses the built-in min() or 
 **        or max() functions.  (Without this restriction, a query like:
 **        "SELECT x FROM (SELECT max(y), x FROM t1)" would not necessarily
 **        return the value X for which Y was maximal.)
@@ -3435,7 +3438,7 @@ static int flattenSubquery(
   /* Check to see if flattening is permitted.  Return 0 if not.
   */
   assert( p!=0 );
-  assert( p->pPrior==0 );  /* Unable to flatten compound queries */
+  assert( p->pPrior==0 );
   if( OptimizationDisabled(db, SQLITE_QueryFlattener) ) return 0;
   pSrc = p->pSrc;
   assert( pSrc && iFrom>=0 && iFrom<pSrc->nSrc );
@@ -3467,7 +3470,7 @@ static int flattenSubquery(
     return 0;                                            /* Restriction (15) */
   }
   if( pSubSrc->nSrc==0 ) return 0;                       /* Restriction (7)  */
-  if( pSub->selFlags & SF_Distinct ) return 0;           /* Restriction (5)  */
+  if( pSub->selFlags & SF_Distinct ) return 0;           /* Restriction (4)  */
   if( pSub->pLimit && (pSrc->nSrc>1 || isAgg) ){
      return 0;         /* Restrictions (8)(9) */
   }
@@ -3493,7 +3496,8 @@ static int flattenSubquery(
 
   /*
   ** If the subquery is the right operand of a LEFT JOIN, then the
-  ** subquery may not be a join itself.  Example of why this is not allowed:
+  ** subquery may not be a join itself (3a). Example of why this is not
+  ** allowed:
   **
   **         t1 LEFT OUTER JOIN (t2 JOIN t3)
   **
@@ -3504,16 +3508,17 @@ static int flattenSubquery(
   ** which is not at all the same thing.
   **
   ** If the subquery is the right operand of a LEFT JOIN, then the outer
-  ** query cannot be an aggregate.  This is an artifact of the way aggregates
-  ** are processed - there is no mechanism to determine if the LEFT JOIN
-  ** table should be all-NULL.
+  ** query cannot be an aggregate. (3c)  This is an artifact of the way
+  ** aggregates are processed - there is no mechanism to determine if
+  ** the LEFT JOIN table should be all-NULL.
   **
   ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
     if( pSubSrc->nSrc>1 || isAgg || IsVirtual(pSubSrc->a[0].pTab) ){
-      return 0; /* Restriction (3) */
+      /*  (3a)             (3c)     (3b) */
+      return 0;
     }
   }
 #ifdef SQLITE_EXTRA_IFNULLROW
@@ -3526,33 +3531,33 @@ static int flattenSubquery(
   }
 #endif
 
-  /* Restriction 17: If the sub-query is a compound SELECT, then it must
+  /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
   ** that make up the compound SELECT are allowed to be aggregate or distinct
   ** queries.
   */
   if( pSub->pPrior ){
     if( pSub->pOrderBy ){
-      return 0;  /* Restriction 20 */
+      return 0;  /* Restriction (20) */
     }
     if( isAgg || (p->selFlags & SF_Distinct)!=0 || pSrc->nSrc!=1 ){
-      return 0;
+      return 0; /* (17d1), (17d2), or (17d3) */
     }
     for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
       testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct );
       testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
       assert( pSub->pSrc!=0 );
       assert( pSub->pEList->nExpr==pSub1->pEList->nExpr );
-      if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0
-       || (pSub1->pPrior && pSub1->op!=TK_ALL) 
-       || pSub1->pSrc->nSrc<1
+      if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0    /* (17b) */
+       || (pSub1->pPrior && pSub1->op!=TK_ALL)                 /* (17a) */
+       || pSub1->pSrc->nSrc<1                                  /* (17c) */
       ){
         return 0;
       }
       testcase( pSub1->pSrc->nSrc>1 );
     }
 
-    /* Restriction 18. */
+    /* Restriction (18). */
     if( p->pOrderBy ){
       int ii;
       for(ii=0; ii<p->pOrderBy->nExpr; ii++){
