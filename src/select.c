@@ -5249,6 +5249,9 @@ int sqlite3Select(
     struct SrcList_item *pItem = &pTabList->a[i];
     SelectDest dest;
     Select *pSub;
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+    const char *zSavedAuthContext;
+#endif
 
     /* Issue SQLITE_READ authorizations with a fake column name for any
     ** tables that are referenced but from which no values are extracted.
@@ -5316,6 +5319,9 @@ int sqlite3Select(
 #endif
     }
 
+    zSavedAuthContext = pParse->zAuthContext;
+    pParse->zAuthContext = pItem->zName;
+
     /* Generate code to implement the subquery
     **
     ** The subquery is implemented as a co-routine if all of these are true:
@@ -5338,6 +5344,7 @@ int sqlite3Select(
       ** set on each invocation.
       */
       int addrTop = sqlite3VdbeCurrentAddr(v)+1;
+     
       pItem->regReturn = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
       VdbeComment((v, "%s", pItem->pTab->zName));
@@ -5395,6 +5402,7 @@ int sqlite3Select(
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);
+    pParse->zAuthContext = zSavedAuthContext;
 #endif
   }
 
