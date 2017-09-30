@@ -1511,9 +1511,10 @@ struct sqlite3 {
 #define SQLITE_OrderByIdxJoin 0x0040   /* ORDER BY of joins via index */
 #define SQLITE_Transitive     0x0080   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
-#define SQLITE_Stat34         0x0200   /* Use STAT3 or STAT4 data */
-#define SQLITE_CountOfView    0x0400   /* The count-of-view optimization */
-#define SQLITE_CursorHints    0x0800   /* Add OP_CursorHint opcodes */
+#define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
+#define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
+#define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
+   /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
