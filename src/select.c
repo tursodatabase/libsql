@@ -3831,7 +3831,11 @@ static int flattenSubquery(
 **
 **   (1) (** This restriction was removed on 2017-09-29.  We used to
 **           disallow this optimization for aggregate subqueries, but now
-**           it is allowed by putting the extra terms on the HAVING clause **)
+**           it is allowed by putting the extra terms on the HAVING clause.
+**           The added HAVING clause is pointless if the subquery lacks
+**           a GROUP BY clause.  But such a HAVING clause is also harmless
+**           so there does not appear to be any reason to add extra logic
+**           to suppress it. **)
 **
 **   (2) The inner query is the recursive part of a common table expression.
 **
