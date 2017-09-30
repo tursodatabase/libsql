@@ -65,19 +65,6 @@ foreach {tn sql1 sql2} {
   3 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE binary HAVING a=2"
     "SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a COLLATE binary"
 
-  4 {
-      SELECT x,y FROM (
-        SELECT a AS x, sum(b) AS y FROM t1 
-        GROUP BY a
-      ) WHERE x BETWEEN 8888 AND 9999
-    } {
-      SELECT x,y FROM (
-        SELECT a AS x, sum(b) AS y FROM t1 
-        WHERE x BETWEEN 8888 AND 9999 
-        GROUP BY a
-      )
-    }
-
   5 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE binary HAVING 0"
     "SELECT a, sum(b) FROM t1 WHERE 0 GROUP BY a COLLATE binary"
 
@@ -97,6 +84,24 @@ foreach {tn sql1 sql2} {
 } {
   do_compare_vdbe_test 2.$tn $sql1 $sql2 1
 }
+
+# The (4) test in the above set used to generate identical bytecode, but
+# that is no longer the case.  The byte code is equivalent, though.
+#
+do_execsql_test 2.4a {
+  SELECT x,y FROM (
+    SELECT a AS x, sum(b) AS y FROM t1 
+    GROUP BY a
+  ) WHERE x BETWEEN 2 AND 9999
+} {2 12}
+do_execsql_test 2.4b {
+  SELECT x,y FROM (
+    SELECT a AS x, sum(b) AS y FROM t1 
+    WHERE x BETWEEN 2 AND 9999 
+    GROUP BY a
+  )
+} {2 12}
+
 
 #-------------------------------------------------------------------------
 # 1: Test that the optimization is only applied if the GROUP BY term
