@@ -4733,15 +4733,12 @@ void sqlite3SelectPrep(
   Select *p,             /* The SELECT statement being coded. */
   NameContext *pOuterNC  /* Name context for container */
 ){
-  sqlite3 *db;
-  if( NEVER(p==0) ) return;
-  db = pParse->db;
-  if( db->mallocFailed ) return;
+  assert( p!=0 );
   if( p->selFlags & SF_HasTypeInfo ) return;
   sqlite3SelectExpand(pParse, p);
-  if( pParse->nErr || db->mallocFailed ) return;
+  if( pParse->nErr || pParse->db->mallocFailed ) return;
   sqlite3ResolveSelectNames(pParse, p, pOuterNC);
-  if( pParse->nErr || db->mallocFailed ) return;
+  if( pParse->nErr || pParse->db->mallocFailed ) return;
   sqlite3SelectAddTypeInfo(pParse, p);
 }
 
