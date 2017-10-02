@@ -3298,9 +3298,11 @@ static void substSelect(
 **
 ** Flattening is subject to the following constraints:
 **
-**   (1)  The subquery and the outer query cannot both be aggregates.
+**  (**)  We no longer attempt to flatten aggregate subqueries. Was:
+**        The subquery and the outer query cannot both be aggregates.
 **
-**   (2)  If the subquery is an aggregate then
+**  (**)  We no longer attempt to flatten aggregate subqueries. Was:
+**        (2) If the subquery is an aggregate then
 **        (2a) the outer query must not be a join and
 **        (2b) the outer query must not use subqueries
 **             other than the one FROM-clause subquery that is a candidate
@@ -3319,7 +3321,8 @@ static void substSelect(
 **        sub-queries that were excluded from this optimization. Restriction 
 **        (4) has since been expanded to exclude all DISTINCT subqueries.
 **
-**   (6)  If the subquery is aggregate, the outer query may not be DISTINCT.
+**  (**)  We no longer attempt to flatten aggregate subqueries.  Was:
+**        If the subquery is aggregate, the outer query may not be DISTINCT.
 **
 **   (7)  The subquery must have a FROM clause.  TODO:  For subqueries without
 **        A FROM clause, consider adding a FROM clause with the special
@@ -3398,7 +3401,8 @@ static void substSelect(
 **        parent to a compound query confuses the code that handles
 **        recursive queries in multiSelect().
 **
-**  (24)  The subquery may not be an aggregate that uses the built-in min() or 
+**  (**)  We no longer attempt to flatten aggregate subqueries.  Was:
+**        The subquery may not be an aggregate that uses the built-in min() or 
 **        or max() functions.  (Without this restriction, a query like:
 **        "SELECT x FROM (SELECT max(y), x FROM t1)" would not necessarily
 **        return the value X for which Y was maximal.)
@@ -3406,7 +3410,7 @@ static void substSelect(
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
-** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
+** uses aggregates.
 **
 ** If flattening is not attempted, this routine is a no-op and returns 0.
 ** If flattening is attempted this routine returns 1.
@@ -3418,8 +3422,7 @@ static int flattenSubquery(
   Parse *pParse,       /* Parsing context */
   Select *p,           /* The parent or outer SELECT statement */
   int iFrom,           /* Index in p->pSrc->a[] of the inner subquery */
-  int isAgg,           /* True if outer SELECT uses aggregate functions */
-  int subqueryIsAgg    /* True if the subquery uses aggregate functions */
+  int isAgg            /* True if outer SELECT uses aggregate functions */
 ){
   const char *zSavedAuthContext = pParse->zAuthContext;
   Select *pParent;    /* Current UNION ALL term of the other query */
@@ -3446,16 +3449,6 @@ static int flattenSubquery(
   iParent = pSubitem->iCursor;
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
-  if( subqueryIsAgg ){
-    if( isAgg ) return 0;                                /* Restriction (1)   */
-    if( pSrc->nSrc>1 ) return 0;                         /* Restriction (2a)  */
-    if( (p->pWhere && ExprHasProperty(p->pWhere,EP_Subquery))
-     || (sqlite3ExprListFlags(p->pEList) & EP_Subquery)!=0
-     || (sqlite3ExprListFlags(p->pOrderBy) & EP_Subquery)!=0
-    ){
-      return 0;                                          /* Restriction (2b)  */
-    }
-  }
 
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
@@ -3474,9 +3467,6 @@ static int flattenSubquery(
   if( pSub->pLimit && (pSrc->nSrc>1 || isAgg) ){
      return 0;         /* Restrictions (8)(9) */
   }
-  if( (p->selFlags & SF_Distinct)!=0 && subqueryIsAgg ){
-     return 0;         /* Restriction (6)  */
-  }
   if( p->pOrderBy && pSub->pOrderBy ){
      return 0;                                           /* Restriction (11) */
   }
@@ -3485,10 +3475,8 @@ static int flattenSubquery(
   if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
      return 0;         /* Restriction (21) */
   }
-  testcase( pSub->selFlags & SF_Recursive );
-  testcase( pSub->selFlags & SF_MinMaxAgg );
-  if( pSub->selFlags & (SF_Recursive|SF_MinMaxAgg) ){
-    return 0; /* Restrictions (22) and (24) */
+  if( pSub->selFlags & (SF_Recursive) ){
+    return 0; /* Restrictions (22) */
   }
   if( (p->selFlags & SF_Recursive) && pSub->pPrior ){
     return 0; /* Restriction (23) */
@@ -3778,18 +3766,7 @@ static int flattenSubquery(
     if( isLeftJoin>0 ){
       setJoinExpr(pWhere, iNewParent);
     }
-    if( subqueryIsAgg ){
-      assert( pParent->pHaving==0 );
-      pParent->pHaving = pParent->pWhere;
-      pParent->pWhere = pWhere;
-      pParent->pHaving = sqlite3ExprAnd(db, 
-          sqlite3ExprDup(db, pSub->pHaving, 0), pParent->pHaving
-      );
-      assert( pParent->pGroupBy==0 );
-      pParent->pGroupBy = sqlite3ExprListDup(db, pSub->pGroupBy, 0);
-    }else{
-      pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
-    }
+    pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
     if( db->mallocFailed==0 ){
       SubstContext x;
       x.pParse = pParse;
@@ -3852,9 +3829,13 @@ static int flattenSubquery(
 **
 ** Do not attempt this optimization if:
 **
-**   (1) The inner query is an aggregate.  (In that case, we'd really want
-**       to copy the outer WHERE-clause terms onto the HAVING clause of the
-**       inner query.  But they probably won't help there so do not bother.)
+**   (1) (** This restriction was removed on 2017-09-29.  We used to
+**           disallow this optimization for aggregate subqueries, but now
+**           it is allowed by putting the extra terms on the HAVING clause.
+**           The added HAVING clause is pointless if the subquery lacks
+**           a GROUP BY clause.  But such a HAVING clause is also harmless
+**           so there does not appear to be any reason to add extra logic
+**           to suppress it. **)
 **
 **   (2) The inner query is the recursive part of a common table expression.
 **
@@ -3879,16 +3860,22 @@ static int pushDownWhereTerms(
 ){
   Expr *pNew;
   int nChng = 0;
-  Select *pX;           /* For looping over compound SELECTs in pSubq */
   if( pWhere==0 ) return 0;
-  for(pX=pSubq; pX; pX=pX->pPrior){
-    if( (pX->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
-      testcase( pX->selFlags & SF_Aggregate );
-      testcase( pX->selFlags & SF_Recursive );
-      testcase( pX!=pSubq );
-      return 0; /* restrictions (1) and (2) */
+  if( pSubq->selFlags & SF_Recursive ) return 0;  /* restriction (2) */
+
+#ifdef SQLITE_DEBUG
+  /* Only the first term of a compound can have a WITH clause.  But make
+  ** sure no other terms are marked SF_Recursive in case something changes
+  ** in the future.
+  */
+  {
+    Select *pX;  
+    for(pX=pSubq; pX; pX=pX->pPrior){
+      assert( (pX->selFlags & (SF_Recursive))==0 );
     }
   }
+#endif
+
   if( pSubq->pLimit!=0 ){
     return 0; /* restriction (3) */
   }
@@ -3896,7 +3883,7 @@ static int pushDownWhereTerms(
     nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, iCursor);
     pWhere = pWhere->pLeft;
   }
-  if( ExprHasProperty(pWhere,EP_FromJoin) ) return 0; /* restriction 5 */
+  if( ExprHasProperty(pWhere,EP_FromJoin) ) return 0; /* restriction (5) */
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
     nChng++;
     while( pSubq ){
@@ -3908,7 +3895,11 @@ static int pushDownWhereTerms(
       x.isLeftJoin = 0;
       x.pEList = pSubq->pEList;
       pNew = substExpr(&x, pNew);
-      pSubq->pWhere = sqlite3ExprAnd(pParse->db, pSubq->pWhere, pNew);
+      if( pSubq->selFlags & SF_Aggregate ){
+        pSubq->pHaving = sqlite3ExprAnd(pParse->db, pSubq->pHaving, pNew);
+      }else{
+        pSubq->pWhere = sqlite3ExprAnd(pParse->db, pSubq->pWhere, pNew);
+      }
       pSubq = pSubq->pPrior;
     }
   }
@@ -5202,7 +5193,6 @@ int sqlite3Select(
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
     Select *pSub = pItem->pSelect;
-    int isAggSub;
     Table *pTab = pItem->pTab;
     if( pSub==0 ) continue;
 
@@ -5214,13 +5204,36 @@ int sqlite3Select(
       goto select_end;
     }
 
-    isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
-    if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
+    /* Do not try to flatten an aggregate subquery.
+    **
+    ** Flattening an aggregate subquery is only possible if the outer query
+    ** is not a join.  But if the outer query is not a join, then the subquery
+    ** will be implemented as a co-routine and there is no advantage to
+    ** flattening in that case.
+    */
+    if( (pSub->selFlags & SF_Aggregate)!=0 ) continue;
+    assert( pSub->pGroupBy==0 );
+
+    /* If the subquery contains an ORDER BY clause and if
+    ** it will be implemented as a co-routine, then do not flatten.  This
+    ** restriction allows SQL constructs like this:
+    **
+    **  SELECT expensive_function(x)
+    **    FROM (SELECT x FROM tab ORDER BY y LIMIT 10);
+    **
+    ** The expensive_function() is only computed on the 10 rows that
+    ** are output, rather than every row of the table.
+    */
+    if( pSub->pOrderBy!=0
+     && i==0
+     && (pTabList->nSrc==1
+         || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)
+    ){
+      continue;
+    }
+
+    if( flattenSubquery(pParse, p, i, isAgg) ){
       /* This subquery can be absorbed into its parent. */
-      if( isAggSub ){
-        isAgg = 1;
-        p->selFlags |= SF_Aggregate;
-      }
       i = -1;
     }
     pTabList = p->pSrc;
@@ -5329,12 +5342,9 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine if all of these are true:
-    **   (1)  The subquery is guaranteed to be the outer loop (so that it
-    **        does not need to be computed more than once)
-    **   (2)  REMOVED (2017-09-28): The ALL keyword after SELECT is omitted.
-    **   (3)  Co-routines are not disabled using sqlite3_test_control()
-    **        with SQLITE_TESTCTRL_OPTIMIZATIONS.
+    ** The subquery is implemented as a co-routine if the subquery is
+    ** guaranteed to be the outer loop (so that it does not need to be
+    ** computed more than once)
     **
     ** TODO: Are there other reasons beside (1) to use a co-routine
     ** implementation?
@@ -5342,8 +5352,6 @@ int sqlite3Select(
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
-     /*** constraint removed: && (p->selFlags & SF_All)==0             (2) */
-     && OptimizationEnabled(db, SQLITE_SubqCoroutine)               /* (3) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
