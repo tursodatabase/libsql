@@ -447,6 +447,21 @@
 #endif
 
 /*
+** Some conditionals are optimizations only.  In other words, if the
+** conditionals are replaced with a constant 1 (true) or 0 (false) then
+** the correct answer is still obtained, though perhaps not as quickly.
+**
+** The following macros mark these optimizations conditionals.
+*/
+#if defined(SQLITE_MUTATION_TEST)
+# define OK_IF_ALWAYS_TRUE(X)  (1)
+# define OK_IF_ALWAYS_FALSE(X) (0)
+#else
+# define OK_IF_ALWAYS_TRUE(X)  (X)
+# define OK_IF_ALWAYS_FALSE(X) (X)
+#endif
+
+/*
 ** Some malloc failures are only possible if SQLITE_TEST_REALLOC_STRESS is
 ** defined.  We need to defend against those failures when testing with
 ** SQLITE_TEST_REALLOC_STRESS, but we don't want the unreachable branches

@@ -4285,7 +4285,7 @@ static int withExpand(
 */
 static void selectPopWith(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
-  if( pParse->pWith && p->pPrior==0 ){
+  if( OK_IF_ALWAYS_TRUE(pParse->pWith) && p->pPrior==0 ){
     With *pWith = findRightmost(p)->pWith;
     if( pWith!=0 ){
       assert( pParse->pWith==pWith );
@@ -4340,7 +4340,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
-  if( p->pWith ){
+  if( OK_IF_ALWAYS_TRUE(p->pWith) ){
     sqlite3WithPush(pParse, p->pWith, 0);
   }
 

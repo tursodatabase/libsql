@@ -1,5 +1,5 @@
-C Avoid\susing\slookaside\smemory\sfor\spersistent\svirtual\stable\sstructures.
-D 2017-10-02T13:20:43.199
+C Add\sthe\sOK_IF_ALWAYS_TRUE()\sand\sOK_IF_ALWAYS_FALSE()\smacros\sfor\smarking\nconditionals\sthat\simprove\sperformance\sbut\sdo\snot\schange\sthe\soutcome.
+D 2017-10-02T21:29:51.437
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -458,13 +458,13 @@ F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 19ebf10e33de8e1f327cbc844aff12af74bdf0513b3eb1b712b7bcdca4c9bdb5
+F src/select.c 38ab76414b86e98dfa5b2fbec695c97760ccb242ee3aa275fc754fad7232b9a2
 F src/shell.c c1206a23d9239f8f51751d3be9b8c3b02fa4103546bea1add7f864d84a8276ab
 F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220ee
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h 99e4beebd466495434ca6ed94bd7966a7f8c5879cd1f01768c588a5a2acd84c2
+F src/sqliteInt.h 50a509839bae7d27d1a09fe4e74432baa1d63f6e1b39383546cf461721c3572a
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1122,7 +1122,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 22bd6be9f227a1ad01ebfaa8ed92400b5eaaff1ecc1e14e269eec2631c7f43ab x
+F test/releasetest.tcl 0b0b3d926e36822ff63b405d683544ce1014303b029f2678bbcf40c162b5f246 x
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test f580934279800d480a19176c6b44909df31ce7ad45267ea475a541daa522f3d3
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9104b59c7ed360291f7f6fc8caae938e9840c77620d598e4096f78183bf807a
-R 4fb59e163271c3c6913da8e89cf04532
+P d815f255dfbcd6d64326f7bc0ad3fe3c4ff08270ca75f8836ef2a919d5e57401
+R cad5ba00a1afaf9521996fdcf47b3324
 U drh
-Z b5205318031b18ac166280920d64572f
+Z d8ed85ff60322b19e2b85a6468ce5a8d
