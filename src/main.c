@@ -3711,7 +3711,7 @@ int sqlite3_test_control(int op, ...){
     ** This action provides a run-time test to see how the ALWAYS and
     ** NEVER macros were defined at compile-time.
     **
-    ** The return value is ALWAYS(X).  
+    ** The return value is ALWAYS(X) if X is true, or 0 if X is false.
     **
     ** The recommended test is X==2.  If the return value is 2, that means
     ** ALWAYS() and NEVER() are both no-op pass-through macros, which is the
@@ -3734,7 +3734,7 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_ALWAYS: {
       int x = va_arg(ap,int);
-      rc = ALWAYS(x);
+      rc = x ? ALWAYS(x) : 0;
       break;
     }
 

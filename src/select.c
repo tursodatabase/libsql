@@ -412,11 +412,10 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
   pLeft = &pSrc->a[0];
   pRight = &pLeft[1];
   for(i=0; i<pSrc->nSrc-1; i++, pRight++, pLeft++){
-    Table *pLeftTab = pLeft->pTab;
     Table *pRightTab = pRight->pTab;
     int isOuter;
 
-    if( NEVER(pLeftTab==0 || pRightTab==0) ) continue;
+    if( NEVER(pLeft->pTab==0 || pRightTab==0) ) continue;
     isOuter = (pRight->fg.jointype & JT_OUTER)!=0;
 
     /* When the NATURAL keyword is present, add WHERE clause terms for

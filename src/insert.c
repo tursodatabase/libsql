@@ -484,7 +484,6 @@ void sqlite3Insert(
 ){
   sqlite3 *db;          /* The main database structure */
   Table *pTab;          /* The table to insert into.  aka TABLE */
-  char *zTab;           /* Name of the table into which we are inserting */
   int i, j;             /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
@@ -540,8 +539,6 @@ void sqlite3Insert(
   /* Locate the table into which we will be inserting new information.
   */
   assert( pTabList->nSrc==1 );
-  zTab = pTabList->a[0].zName;
-  if( NEVER(zTab==0) ) goto insert_cleanup;
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ){
     goto insert_cleanup;
