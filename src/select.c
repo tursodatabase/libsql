@@ -1800,7 +1800,8 @@ void sqlite3SelectAddColumnTypeAndCollation(
     zType = columnType(&sNC, p, 0, 0, 0);
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
-    if( zType && (m = sqlite3Strlen30(zType))>0 ){
+    if( zType ){
+      m = sqlite3Strlen30(zType);
       n = sqlite3Strlen30(pCol->zName);
       pCol->zName = sqlite3DbReallocOrFree(db, pCol->zName, n+m+2);
       if( pCol->zName ){
