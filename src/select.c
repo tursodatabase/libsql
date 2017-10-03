@@ -1449,12 +1449,13 @@ static const char *columnTypeImpl(
           sNC.pParse = pNC->pParse;
           zType = columnType(&sNC, p,&zOrigDb,&zOrigTab,&zOrigCol); 
         }
-      }else if( pTab->pSchema ){
-        /* A real table */
+      }else{
+        /* Usually a real table, but sometimes a CTE table */
         assert( !pS );
+        testcase( pTab->pSchema==0 );
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
         if( iCol<0 ) iCol = pTab->iPKey;
         assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
-#ifdef SQLITE_ENABLE_COLUMN_METADATA
         if( iCol<0 ){
           zType = "INTEGER";
           zOrigCol = "rowid";
@@ -1468,6 +1469,7 @@ static const char *columnTypeImpl(
           zOrigDb = pNC->pParse->db->aDb[iDb].zDbSName;
         }
 #else
+        assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
         if( iCol<0 ){
           zType = "INTEGER";
         }else{
