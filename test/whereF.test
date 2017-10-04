@@ -195,7 +195,24 @@ ifcapable json1 {
     SELECT * FROM t6
      WHERE (EXISTS (SELECT 1 FROM json_each(t6.c) AS x WHERE x.value=1));
   } {1 {} {{"a":1,"b":[3,4,5],"c":{"x":4.5,"y":7.8}}}}
-    
+
+  # Another test case derived from a posting by Wout Mertens on the
+  # sqlite-users mailing list on 2017-10-04.
+  do_execsql_test 6.3 {
+    DROP TABLE IF EXISTS t;
+    CREATE TABLE t(json JSON);
+    SELECT * FROM t
+     WHERE(EXISTS(SELECT 1 FROM json_each(t.json,"$.foo") j
+                   WHERE j.value = 'meep'));
+  } {}
+  do_execsql_test 6.4 {
+    INSERT INTO t VALUES('{"xyzzy":null}');
+    INSERT INTO t VALUES('{"foo":"meep","other":12345}');
+    INSERT INTO t VALUES('{"foo":"bingo","alt":5.25}');
+    SELECT * FROM t
+     WHERE(EXISTS(SELECT 1 FROM json_each(t.json,"$.foo") j
+                   WHERE j.value = 'meep'));
+  } {{{"foo":"meep","other":12345}}}
 }
 
 finish_test
