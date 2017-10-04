@@ -1,5 +1,5 @@
-C Fix\stypos\sin\ssession\sextension\sheader\scomments.\s\sNo\schanges\sto\scode.
-D 2017-10-04T16:35:01.122
+C Update\sthe\sspeedtest1\sprogram\sso\sthat\sit\sprints\sthe\soutput\sof\s"PRAGMA\ncompile_options"\sif\sthe\s-stats\soption\sis\sspecified.
+D 2017-10-04T17:05:04.541
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -1223,7 +1223,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 7a6ec22e87f78ef98d523667593f5d818f6be4a1bcf5fe70d933aece058f32df
+F test/speedtest1.c e44c5fccddcfe916c3bf7fe2f87dcc4b4fd66a0d923eb83515f311212670f267
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef94ea061d2ec8ee0243e97dfcfc7a7c75dd22006e61a7195b780722bbc925db
-R c7a044ee466229738035e85eab787e7b
-U mistachkin
-Z 9b266a68687cdc8bad7e7c02276ace92
+P 182ec9d6f6c44938de0a2cd542e259d082deeeabc12a1815fff35e3ed1e524ef
+R c6410b6021916e7e52f7510d770d1c78
+U dan
+Z 9d814cce16c052d0d52ffa24753c3c91
