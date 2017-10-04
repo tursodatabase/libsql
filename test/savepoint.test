@@ -28,6 +28,7 @@ do_test savepoint-1.1 {
     RELEASE sp1;
   }
 } {}
+wal_check_journal_mode savepoint-1.1
 do_test savepoint-1.2 {
   execsql {
     SAVEPOINT sp1;

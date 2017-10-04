@@ -1019,6 +1019,23 @@ test_suite "wal" -description {
   fts3c.test   fts3d.test   fts3e.test   fts3query.test 
 }
 
+test_suite "wal2" -description {
+  Run tests with journal_mode=WAL2
+} -initialize {
+  set ::G(savepoint6_iterations) 100
+} -shutdown {
+  unset -nocomplain ::G(savepoint6_iterations)
+} -files {
+  savepoint.test     savepoint2.test     savepoint6.test
+  trans.test         avtrans.test
+
+  fts3aa.test  fts3ab.test  fts3ac.test  fts3ad.test
+  fts3ae.test  fts3af.test  fts3ag.test  fts3ah.test
+  fts3ai.test  fts3aj.test  fts3ak.test  fts3al.test
+  fts3am.test  fts3an.test  fts3ao.test  fts3b.test
+  fts3c.test   fts3d.test   fts3e.test   fts3query.test 
+}
+
 test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]

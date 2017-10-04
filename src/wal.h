@@ -26,7 +26,7 @@
 #define CKPT_SYNC_FLAGS(X)  (((X)>>2)&0x03)
 
 #ifdef SQLITE_OMIT_WAL
-# define sqlite3WalOpen(x,y,z)                   0
+# define sqlite3WalOpen(w,x,y,z)                 0
 # define sqlite3WalLimit(x,y)
 # define sqlite3WalClose(v,w,x,y,z)              0
 # define sqlite3WalBeginReadTransaction(y,z)     0
@@ -55,7 +55,7 @@
 typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *, int, i64, Wal**);
+int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *,int,i64,int,Wal**);
 int sqlite3WalClose(Wal *pWal, sqlite3*, int sync_flags, int, u8 *);
 
 /* Set the limiting size of a WAL file. */
