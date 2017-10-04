@@ -3355,7 +3355,7 @@ static void substSelect(
 **  (17)  If the subquery is a compound select, then
 **        (17a) all compound operators must be a UNION ALL, and
 **        (17b) no terms within the subquery compound may be aggregate
-**              or DISTINT, and
+**              or DISTINCT, and
 **        (17c) every term within the subquery compound must have a FROM clause
 **        (17d) the outer query may not be
 **              (17d1) aggregate, or
