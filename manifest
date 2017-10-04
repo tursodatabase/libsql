@@ -1,5 +1,5 @@
-C Remove\sa\sredundant\srestriction\sfrom\sthe\squery\sflattener.
-D 2017-10-04T05:59:54.466
+C Add\stests\sto\sverify\sthat\sthe\sbusy-handler\sis\sinvoked\scorrectly\swhen\sprocessing\s"PRAGMA\soptimize"\sand\sANALYZE\scommands.
+D 2017-10-04T10:39:28.853
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -633,7 +633,7 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
 F test/btree02.test fe69453d474d8154d19b904157ff1db4812fed99
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
-F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
+F test/busy.test bf7f099161793dd2e50b0e657c68840ac6ad19d4af2f34ba6702ace67a00040d
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d050dc605c24bcf60c0c47d13612ad53b871d3d4eff681c0c1b933acf53fb5ee
-R 0deb4a35d3602fd5f83a95efc798c5e9
-U drh
-Z 70da60dffddabeaa8e38379103c330a2
+P 66629b2a0997ceedcfb38553f2200466b6c4e352ea00f8a0a7cb67a660c19523
+R 9a9c201e8296e0260f25603d504d4def
+U dan
+Z 0d6df17481534a9055059794f33541b5
