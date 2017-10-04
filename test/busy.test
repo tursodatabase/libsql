@@ -60,11 +60,11 @@ db2 close
 #-------------------------------------------------------------------------
 # Test that the busy-handler is invoked correctly for "PRAGMA optimize"
 # and ANALYZE commnds.
-ifcapable pragma&&analyze {
+ifcapable pragma&&analyze&&!stat4 {
 
 reset_db
 
-do_execsql_test 2.1 {
+do_execsql_test 3.1 {
   CREATE TABLE t1(x);
   CREATE TABLE t2(y);
   CREATE TABLE t3(z);
@@ -80,7 +80,7 @@ do_execsql_test 2.1 {
   SELECT * FROM t2 WHERE y=1;
 } {1 1}
 
-do_test 2.2 {
+do_test 3.2 {
   sqlite3 db2 test.db
   execsql { BEGIN EXCLUSIVE } db2
   catchsql { PRAGMA optimize }
@@ -92,11 +92,11 @@ proc busy_handler {n} {
 }
 db busy busy_handler
 
-do_test 2.3 {
+do_test 3.3 {
   catchsql { PRAGMA optimize }
 } {0 {}}
 
-do_test 2.4 {
+do_test 3.4 {
   execsql {
     BEGIN;
     SELECT count(*) FROM sqlite_master;
@@ -104,11 +104,11 @@ do_test 2.4 {
 } {6}
 
 proc busy_handler {n} { return 1 }
-do_test 2.5 {
+do_test 3.5 {
   catchsql { PRAGMA optimize }
 } {0 {}}
 
-do_test 2.6 {
+do_test 3.6 {
   execsql { COMMIT } db2
   execsql {
     WITH s(i) AS (
@@ -122,7 +122,7 @@ do_test 2.6 {
   } db2
 } {6}
 
-do_test 2.7 {
+do_test 3.7 {
   catchsql { PRAGMA optimize }
 } {1 {database is locked}}
 
@@ -130,7 +130,7 @@ proc busy_handler {n} {
   if {$n>1000} { execsql { COMMIT } db2 }
   return 0
 }
-do_test 2.8 {
+do_test 3.8 {
   catchsql { PRAGMA optimize }
 } {0 {}}
 

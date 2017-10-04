@@ -1,5 +1,5 @@
-C Turn\srestriction\s20\son\sthe\squery\sflattener\sinto\san\sassert\ssince\sthe\ssituation\nrestricted\scan\sno\slonger\soccur\sbecause\sof\sthe\smore\saggressive\suse\sof\nco-routines.
-D 2017-10-04T12:06:31.705
+C Amend\srecent\schanges\sto\sbusy.test\sto\savoid\sfailing\swith\sSQLITE_ENABLE_STAT4\nbuilds.
+D 2017-10-04T12:08:35.867
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -633,7 +633,7 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
 F test/btree02.test fe69453d474d8154d19b904157ff1db4812fed99
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
-F test/busy.test bf7f099161793dd2e50b0e657c68840ac6ad19d4af2f34ba6702ace67a00040d
+F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb83c3d8df250cb701fbe775b48ab93f5674496f68c57e04f50668c43c2de328
-R f3d3274b176630163255462be6322523
-U drh
-Z 54cf8654d3e3811fdefd23ba6c7d6b42
+P 4464f40ccd7c5553f4d44120ca6dac4e9445f08f083f7dcb3bd66b4413d818e0
+R 4c5ee8ddebc2e3331db784299bd3d5dd
+U dan
+Z 592fc1b29722b14ffc2bc21290e229f0
