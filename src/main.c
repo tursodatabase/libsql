@@ -47,9 +47,11 @@ const char sqlite3_version[] = SQLITE_VERSION;
 */
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 
-/* IMPLEMENTATION-OF: R-63124-39300 The sqlite3_sourceid() function returns a
+/* IMPLEMENTATION-OF: R-25063-23286 The sqlite3_sourceid() function returns a
 ** pointer to a string constant whose value is the same as the
-** SQLITE_SOURCE_ID C preprocessor macro. 
+** SQLITE_SOURCE_ID C preprocessor macro. Except if SQLite is built using
+** an edited copy of the amalgamation, then the last four characters of
+** the hash might be different from SQLITE_SOURCE_ID.
 */
 const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 

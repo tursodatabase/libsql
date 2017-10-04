@@ -7301,8 +7301,6 @@ static int balance_nonroot(
      + nMaxCells*sizeof(u16)                       /* b.szCell */
      + pBt->pageSize;                              /* aSpace1 */
 
-  /* EVIDENCE-OF: R-28375-38319 SQLite will never request a scratch buffer
-  ** that is more than 6 times the database page size. */
   assert( szScratch<=6*(int)pBt->pageSize );
   b.apCell = sqlite3StackAllocRaw(0, szScratch );
   if( b.apCell==0 ){
