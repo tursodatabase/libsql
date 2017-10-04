@@ -3393,8 +3393,9 @@ static void substSelect(
 **
 **  (22)  The subquery may not be a recursive CTE.
 **
-**  (23)  If the outer query is a recursive CTE, then the sub-query may not be
-**        a compound query. This restriction is because transforming the
+**  (**)  Subsumed into restriction (17d3).  Was: If the outer query is
+**        a recursive CTE, then the sub-query may not be a compound query.
+**        This restriction is because transforming the
 **        parent to a compound query confuses the code that handles
 **        recursive queries in multiSelect().
 **
@@ -3475,9 +3476,6 @@ static int flattenSubquery(
   if( pSub->selFlags & (SF_Recursive) ){
     return 0; /* Restrictions (22) */
   }
-  if( (p->selFlags & SF_Recursive) && pSub->pPrior ){
-    return 0; /* Restriction (23) */
-  }
 
   /*
   ** If the subquery is the right operand of a LEFT JOIN, then the
@@ -3550,6 +3548,14 @@ static int flattenSubquery(
       }
     }
   }
+
+  /* Ex-restriction (23):
+  ** The only way that the recursive part of a CTE can contain a compound
+  ** subquery is for the subquery to be one term of a join.  But if the
+  ** subquery is a join, then the flattening has already been stopped by
+  ** restriction (17d3)
+  */
+  assert( (p->selFlags & SF_Recursive)==0 || pSub->pPrior==0 );
 
   /***** If we reach this point, flattening is permitted. *****/
   SELECTTRACE(1,pParse,p,("flatten %s.%p from term %d\n",

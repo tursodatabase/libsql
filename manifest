@@ -1,5 +1,5 @@
-C Fix\sa\sminor\stypo\sin\sthe\squery\sflattener\sheader\scomment.\s\sNo\scode\schanges.
-D 2017-10-04T02:30:45.805
+C Remove\sa\sredundant\srestriction\sfrom\sthe\squery\sflattener.
+D 2017-10-04T05:59:54.466
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -458,7 +458,7 @@ F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 4248b28ec9db68653d3ea5137b7c7f5bad52451486ccf1a2247cd39ca3b9e35c
+F src/select.c 8a506e0a27799e96276aea0b5fd1591762905bd572f326d2886cb74f5ceb5f4a
 F src/shell.c c1206a23d9239f8f51751d3be9b8c3b02fa4103546bea1add7f864d84a8276ab
 F src/shell.c.in bb9720a8c5c98d3984b16ab7540e7142bcae959666ecf248bfc523a1d44220ee
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 772b0db1469c9e1c2728cf65dd070e29c624e75c3a5da72ee1297f15d758dd13
-R 5f83cd7ed7c6212a42bd83dd65e953e5
+P d050dc605c24bcf60c0c47d13612ad53b871d3d4eff681c0c1b933acf53fb5ee
+R 0deb4a35d3602fd5f83a95efc798c5e9
 U drh
-Z 4de48cca341b3f710b375c35ea16b291
+Z 70da60dffddabeaa8e38379103c330a2
