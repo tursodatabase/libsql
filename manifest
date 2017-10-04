@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sticket\s[b899b6042f97f5]\sderived\sfrom\sa\sbug\sreport\son\nthe\smailing\slist\sfrom\sWout\sMertens.
-D 2017-10-04T14:13:29.708
+C Fix\stypos\sin\ssession\sextension\sheader\scomments.\s\sNo\schanges\sto\scode.
+D 2017-10-04T16:35:01.122
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -374,7 +374,7 @@ F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
 F ext/session/sqlite3session.c cc127222a9ea6f4eaa31281aa9da924f5244f6099be0ee526c950684fb3513a6
-F ext/session/sqlite3session.h d4db650adfcc7a4360e9f12a09c2d117b1db6b53
+F ext/session/sqlite3session.h cb4d860101ba6d3ac810f18684539b766d24d668fa2436cdde90d711af9464fb
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ff4944194c56b38843bc626dc51604db8e1ca8a0fd221e2d6f78c840d57c341
-R 799bca1879769404f931f1637b51cab6
-U drh
-Z bd1c8b775635a1239ba29ee4684e681f
+P ef94ea061d2ec8ee0243e97dfcfc7a7c75dd22006e61a7195b780722bbc925db
+R c7a044ee466229738035e85eab787e7b
+U mistachkin
+Z 9b266a68687cdc8bad7e7c02276ace92
