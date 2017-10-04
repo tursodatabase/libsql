@@ -3382,11 +3382,12 @@ static void substSelect(
 **  (19)  If the subquery uses LIMIT then the outer query may not
 **        have a WHERE clause.
 **
-**  (20)  If the sub-query is a compound select, then it must not use
-**        an ORDER BY clause.  Ticket #3773.  We could relax this constraint
-**        somewhat by saying that the terms of the ORDER BY clause must
-**        appear as unmodified result columns in the outer query.  But we
-**        have other optimizations in mind to deal with that case.
+**  (**)  Subsumed into (17d3).  Was: If the sub-query is a compound select,
+**        then it must not use an ORDER BY clause - Ticket #3773.  Because
+**        of (17d3), then only way to have a compound subquery is if it is
+**        the only term in the FROM clause of the outer query.  But if the
+**        only term in the FROM clause has an ORDER BY, then it will be
+**        implemented as a co-routine and the flattener will never be called.
 **
 **  (21)  If the subquery uses LIMIT then the outer query may not be
 **        DISTINCT.  (See ticket [752e1646fc]).
@@ -3520,9 +3521,6 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
-    if( pSub->pOrderBy ){
-      return 0;  /* Restriction (20) */
-    }
     if( isAgg || (p->selFlags & SF_Distinct)!=0 || pSrc->nSrc!=1 ){
       return 0; /* (17d1), (17d2), or (17d3) */
     }
@@ -3556,6 +3554,15 @@ static int flattenSubquery(
   ** restriction (17d3)
   */
   assert( (p->selFlags & SF_Recursive)==0 || pSub->pPrior==0 );
+
+  /* Ex-restriction (20):
+  ** A compound subquery must be the only term in the FROM clause of the
+  ** outer query by restriction (17d3).  But if that term also has an
+  ** ORDER BY clause, then the subquery will be implemented by co-routine
+  ** and so the flattener will never be invoked.  Hence, it is not possible
+  ** for the subquery to be a compound and have an ORDER BY clause.
+  */
+  assert( pSub->pPrior==0 || pSub->pOrderBy==0 );
 
   /***** If we reach this point, flattening is permitted. *****/
   SELECTTRACE(1,pParse,p,("flatten %s.%p from term %d\n",
