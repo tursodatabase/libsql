@@ -3012,6 +3012,8 @@ end_playback:
 static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   int rc = SQLITE_OK;          /* Return code */
+
+#ifndef SQLITE_OMIT_WAL
   u32 iFrame = 0;              /* Frame of WAL containing pgno */
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
@@ -3023,7 +3025,9 @@ static int readDbPage(PgHdr *pPg){
   }
   if( iFrame ){
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame,pPager->pageSize,pPg->pData);
-  }else{
+  }else
+#endif
+  {
     i64 iOffset = (pPg->pgno-1)*(i64)pPager->pageSize;
     rc = sqlite3OsRead(pPager->fd, pPg->pData, pPager->pageSize, iOffset);
     if( rc==SQLITE_IOERR_SHORT_READ ){
