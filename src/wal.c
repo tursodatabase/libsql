@@ -1507,11 +1507,18 @@ static int walIndexRecover(Wal *pWal){
     ** problems caused by applications routinely shutting down without
     ** checkpointing the log file.  */
     if( pWal->hdr.nPage ){
-      sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
-          "recovered (%d,%d) frames from WAL files %s[2] (%s mode)",
-          walidxGetMxFrame(&pWal->hdr, 0), walidxGetMxFrame(&pWal->hdr, 1), 
-          pWal->zWalName, isWalMode2(pWal) ? "wal2" : "wal"
-      );
+      if( isWalMode2(pWal) ){
+        sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
+            "recovered (%d,%d) frames from WAL files %s[2] (%s mode)",
+            walidxGetMxFrame(&pWal->hdr, 0), walidxGetMxFrame(&pWal->hdr, 1), 
+            pWal->zWalName, isWalMode2(pWal) ? "wal2" : "wal"
+        );
+      }else{
+        sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
+            "recovered %d frames from WAL file %s",
+            pWal->hdr.mxFrame, pWal->zWalName
+        );
+      }
     }
   }
 
@@ -2164,13 +2171,15 @@ static int walCheckpoint(
 
       /* Truncate the db file, sync the wal file and set the WalCkptInfo
       ** flag to indicate that it has been checkpointed. */
-      if( !bWal2 && rc==SQLITE_OK && mxSafeFrame==walIndexHdr(pWal)->mxFrame ){
-        i64 szDb = pWal->hdr.nPage*(i64)szPage;
-        testcase( IS_BIG_INT(szDb) );
-        rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
-      }
-      if( rc==SQLITE_OK ){
-        rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
+      if( rc==SQLITE_OK && (bWal2 || mxSafeFrame==walIndexHdr(pWal)->mxFrame) ){
+        if( !bWal2 ){
+          i64 szDb = pWal->hdr.nPage*(i64)szPage;
+          testcase( IS_BIG_INT(szDb) );
+          rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
+        }
+        if( rc==SQLITE_OK ){
+          rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
+        }
       }
       if( rc==SQLITE_OK ){
         pInfo->nBackfill = bWal2 ? 1 : mxSafeFrame;
@@ -4003,14 +4012,14 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 
   if( op==0 ){
     if( pWal->exclusiveMode ){
-      pWal->exclusiveMode = 0;
+      pWal->exclusiveMode = WAL_NORMAL_MODE;
       if( isWalMode2(pWal) ){
         rc = walLockReader(pWal, pWal->readLock, 1);
       }else{
         rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
       }
-      if( rc==SQLITE_OK ){
-        pWal->exclusiveMode = 1;
+      if( rc!=SQLITE_OK ){
+        pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
       rc = pWal->exclusiveMode==0;
     }else{
@@ -4025,7 +4034,7 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
     }else{
       walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     }
-    pWal->exclusiveMode = 1;
+    pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
     rc = 1;
   }else{
     rc = pWal->exclusiveMode==0;

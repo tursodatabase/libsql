@@ -1,5 +1,5 @@
-C Add\sexperimental\smode\sthat\suses\stwo\swal\sfiles.\sActivated\susing\s"PRAGMA\njournal_mode\s=\swal2".
-D 2017-10-04T20:57:14.949
+C Fix\stest\scase\sfailures\son\sthis\sbranch.
+D 2017-10-05T18:14:46.713
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -537,7 +537,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 5ca528539a69edd6333dcab1d49e89d4f98efb6a23f0fda85bc52c4ec313db49
+F src/wal.c 3455865cef56441a90c3688b65e091df3343e18c36bd4ad9da1154ecb22f2216
 F src/wal.h b6063e6be1b03389372f3f32240e99b8ab92c32cdd05aa0e31b30a21e4e41654
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c 049522adcf5426f1a8c3ed07be15e1ffa3266afd34e8e7bee64b63e2fbfad0b5
@@ -675,7 +675,7 @@ F test/corrupt6.test fc6a891716139665dae0073b6945e3670bf92568
 F test/corrupt7.test b036f94bda4b0b23a2919bf717046ce9ecca4543
 F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
-F test/corruptA.test 112f4b2ae0b95ebf3ea63718642fb969a93acea557ace3a307234d19c245989b
+F test/corruptA.test 56e8f321adaf3411960e9d2c7136669d8e1a91cbde6cf401ea84e6d6c7ccbe10
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
 F test/corruptC.test 138ecb02188ed1a719b533d4a139568204039f72f00e07a8d30d920bd83122db
 F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
@@ -1118,7 +1118,7 @@ F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
-F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
+F test/rdonly.test 21e99ee237265d0cf95a0c84b50c784e834acaa4ef05d92a27b262626a656682
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
@@ -1456,7 +1456,7 @@ F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/update2.test fffc92e72ae568fe048588762e650cd8ccbd8c8b6e4fe9099231766bfe4b51de
-F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
+F test/uri.test a2becabcb9fe25d08d1ae49c0788f4a75dda97bfe4c8641c2d04e224faf7a6e2
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
@@ -1656,11 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40964a4ef7565ea0ddf452f48cb22373d068528e07d40eefc008f2231c969422
-R 07b0a272ae21af8e4cb674b6ac44fa89
-T *branch * wal2
-T *sym-wal2 *
-T +closed f04ded1d9b40d54463162264e37e6d92411d09427eea592ef05681035e2f2e64
-T -sym-trunk *
+P e2fc5c814cf6862d536aacb9eca66ecd31ba7e3e3033fa4c5564d533f4a18dfc
+R 69b71d3158015f2955b522d7c6fc4b0d
 U dan
-Z 07422baaaff21d5f15df6853d7e92b06
+Z 23af8b038261b8f3163841b50db40cad
