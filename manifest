@@ -1,5 +1,5 @@
-C Updates\sto\srequirements\smarks.
-D 2017-10-04T18:26:44.610
+C Disable\sthe\sdelta\schecksum\sverification\sin\sRBU\sby\sdefault.\s\sReenable\sit\susing\n-DRBU_ENABLE_DELTA_CKSUM,\sif\sdesired.
+D 2017-10-05T11:29:37.874
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -322,7 +322,7 @@ F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbutemplimit.test cd553a9288d515d0b5f87d277e76fd18c4aa740b761e7880fab11ce986ea18d1
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c a1a303de8b90f987ef63bf9cef57f5d7dd7983a9e8aed3775a759d87ad57075d
+F ext/rbu/sqlite3rbu.c 64bd08c1011456f90564ed167abce3a9c2af421a924b21eb57231e078da04feb
 F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d007e79b2
 F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd7822997533a
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1655,7 +1655,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c69f8f1089c3e3843fbf7ec37a897c849a3df822a4ce3b4fcde586adf991a3f
-R 61b14913c42f4f709d3e3a3845316f97
+P 40964a4ef7565ea0ddf452f48cb22373d068528e07d40eefc008f2231c969422
+R 56c4429917e25e309d2b170a348071dc
 U drh
-Z 37903880ad327c432f24949839963d82
+Z 02d9f9a2aecdfad7c3d7a847ab2e4ae9

@@ -96,6 +96,13 @@
 /* Maximum number of prepared UPDATE statements held by this module */
 #define SQLITE_RBU_UPDATE_CACHESIZE 16
 
+/* Delta checksums disabled by default.  Compile with -DRBU_ENABLE_DELTA_CKSUM
+** to enable checksum verification.
+*/
+#ifndef RBU_ENABLE_DELTA_CKSUM
+# define RBU_ENABLE_DELTA_CKSUM 0
+#endif
+
 /*
 ** Swap two objects of type TYPE.
 */
@@ -470,6 +477,7 @@ static unsigned int rbuDeltaGetInt(const char **pz, int *pLen){
   return v;
 }
 
+#if RBU_ENABLE_DELTA_CKSUM
 /*
 ** Compute a 32-bit checksum on the N-byte buffer.  Return the result.
 */
@@ -504,6 +512,7 @@ static unsigned int rbuDeltaChecksum(const char *zIn, size_t N){
   }
   return sum3;
 }
+#endif
 
 /*
 ** Apply a delta.
@@ -534,7 +543,7 @@ static int rbuDeltaApply(
 ){
   unsigned int limit;
   unsigned int total = 0;
-#ifndef FOSSIL_OMIT_DELTA_CKSUM_TEST
+#if RBU_ENABLE_DELTA_CKSUM
   char *zOrigOut = zOut;
 #endif
 
@@ -589,7 +598,7 @@ static int rbuDeltaApply(
       case ';': {
         zDelta++; lenDelta--;
         zOut[0] = 0;
-#ifndef FOSSIL_OMIT_DELTA_CKSUM_TEST
+#if RBU_ENABLE_DELTA_CKSUM
         if( cnt!=rbuDeltaChecksum(zOrigOut, total) ){
           /* ERROR:  bad checksum */
           return -1;
