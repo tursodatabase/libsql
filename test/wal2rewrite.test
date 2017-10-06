@@ -71,8 +71,20 @@ foreach {tn jrnlmode} {
 
     do_test $tn.$i.3 { expr [filesize test.db-wal]  < 100000 } 1
     do_test $tn.$i.4 { expr [filesize test.db-wal2] < 100000 } 1
-  }
 
+    set sum [db eval {SELECT sum(b), md5sum(c) FROM t1}]
+
+    do_test $tn.$i.5 {
+      foreach f [glob -nocomplain test.db2*] {forcedelete $f}
+      foreach f [glob -nocomplain test.db*] {
+        forcecopy $f [string map {test.db test.db2} $f]
+      }
+
+      sqlite3 db2 test.db2
+      db2 eval {SELECT sum(b), md5sum(c) FROM t1}
+    } $sum
+    db2 close
+  }
 }
     
 

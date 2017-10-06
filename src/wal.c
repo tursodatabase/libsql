@@ -3549,7 +3549,7 @@ static int walRewriteChecksums(Wal *pWal, u32 iLast){
   }else{
     iCksumOff = walFrameOffset(pWal->iReCksum-1, szPage) + 16;
   }
-  rc = sqlite3OsRead(pWal->apWalFd[0], aBuf, sizeof(u32)*2, iCksumOff);
+  rc = sqlite3OsRead(pWalFd, aBuf, sizeof(u32)*2, iCksumOff);
   pWal->hdr.aFrameCksum[0] = sqlite3Get4byte(aBuf);
   pWal->hdr.aFrameCksum[1] = sqlite3Get4byte(&aBuf[sizeof(u32)]);
 
@@ -3557,14 +3557,14 @@ static int walRewriteChecksums(Wal *pWal, u32 iLast){
   pWal->iReCksum = 0;
   for(; rc==SQLITE_OK && iRead<=iLast; iRead++){
     i64 iOff = walFrameOffset(iRead, szPage);
-    rc = sqlite3OsRead(pWal->apWalFd[0], aBuf, szPage+WAL_FRAME_HDRSIZE, iOff);
+    rc = sqlite3OsRead(pWalFd, aBuf, szPage+WAL_FRAME_HDRSIZE, iOff);
     if( rc==SQLITE_OK ){
       u32 iPgno, nDbSize;
       iPgno = sqlite3Get4byte(aBuf);
       nDbSize = sqlite3Get4byte(&aBuf[4]);
 
       walEncodeFrame(pWal, iPgno, nDbSize, &aBuf[WAL_FRAME_HDRSIZE], aFrame);
-      rc = sqlite3OsWrite(pWal->apWalFd[0], aFrame, sizeof(aFrame), iOff);
+      rc = sqlite3OsWrite(pWalFd, aFrame, sizeof(aFrame), iOff);
     }
   }
 
