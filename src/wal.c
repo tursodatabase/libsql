@@ -3006,6 +3006,30 @@ static int walSearchHash(
   return SQLITE_OK;
 }
 
+static int walSearchWal(
+  Wal *pWal, 
+  int iWal, 
+  Pgno pgno, 
+  u32 *piRead
+){
+  int rc = SQLITE_OK;
+  int bWal2 = isWalMode2(pWal);
+  u32 iLast = walidxGetMxFrame(&pWal->hdr, iWal);
+  if( iLast ){
+    int iHash;
+    int iMinHash = walFramePage(pWal->minFrame);
+    u32 iExternal = bWal2 ? walExternalEncode(iWal, iLast) : iLast;
+    assert( bWal2==0 || pWal->minFrame==0 );
+    for(iHash=walFramePage(iExternal); 
+        iHash>=iMinHash && *piRead==0; 
+        iHash-=(1+bWal2)
+    ){
+      rc = walSearchHash(pWal, iExternal, iHash, pgno, piRead);
+      if( rc!=SQLITE_OK ) break;
+    }
+  }
+  return rc;
+}
 
 /*
 ** Search the wal file for page pgno. If found, set *piRead to the frame that
@@ -3024,8 +3048,6 @@ int sqlite3WalFindFrame(
   int iApp = walidxGetFile(&pWal->hdr);
   int rc = SQLITE_OK;
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
-  u32 iLast;                      /* Last frame in wal file */
-  int iHash;                      /* Used to loop through N hash tables */
 
   /* This routine is only be called from within a read transaction. */
   assert( pWal->readLock!=WAL_LOCK_NONE );
@@ -3041,18 +3063,8 @@ int sqlite3WalFindFrame(
   assert( bWal2 || iApp==0 );
 
   /* Search the wal file that the client holds a partial lock on first */
-  iLast = walidxGetMxFrame(&pWal->hdr, iApp);
-  if( iLast ){
-    u32 iExternal = bWal2 ? walExternalEncode(iApp, iLast) : iLast;
-    int iMinHash = walFramePage(pWal->minFrame);
-    for(iHash=walFramePage(iExternal); 
-        iHash>=iMinHash && iRead==0; 
-        iHash-=(1+bWal2)
-    ){
-      rc = walSearchHash(pWal, iExternal, iHash, pgno, &iRead);
-      if( rc!=SQLITE_OK ) break;
-    }
-  }
+
+  rc = walSearchWal(pWal, iApp, pgno, &iRead);
 
   /* If the requested page was not found, no error has occured, and 
   ** the client holds a full-wal lock on the other wal file, search it
@@ -3061,14 +3073,7 @@ int sqlite3WalFindFrame(
         pWal->readLock==WAL_LOCK_PART1_FULL2 
      || pWal->readLock==WAL_LOCK_PART2_FULL1
   )){
-    iLast = walidxGetMxFrame(&pWal->hdr, !iApp);
-    if( iLast ){
-      u32 iExternal = walExternalEncode(!iApp, iLast);
-      for(iHash=walFramePage2(!iApp, iLast); iHash>=0 && iRead==0; iHash -= 2){
-        rc = walSearchHash(pWal, iExternal, iHash, pgno, &iRead);
-        if( rc!=SQLITE_OK ) break;
-      }
-    }
+    rc = walSearchWal(pWal, !iApp, pgno, &iRead);
   }
 
 #if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
@@ -3526,6 +3531,7 @@ static int walRewriteChecksums(Wal *pWal, u32 iLast){
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-headers in */
   u32 iRead;                      /* Next frame to read from wal file */
   i64 iCksumOff;
+  sqlite3_file *pWalFd = pWal->apWalFd[walidxGetFile(&pWal->hdr)];
 
   assert( isWalMode2(pWal)==0 );
 
@@ -3589,6 +3595,7 @@ int sqlite3WalFrames(
   u32 iFirst = 0;                 /* First frame that may be overwritten */
   WalIndexHdr *pLive;             /* Pointer to shared header */
   int iApp;
+  int bWal2 = isWalMode2(pWal);
 
   assert( pList );
   assert( pWal->writeLock );
@@ -3599,9 +3606,8 @@ int sqlite3WalFrames(
 
   pLive = (WalIndexHdr*)walIndexHdr(pWal);
   if( memcmp(&pWal->hdr, (void *)pLive, sizeof(WalIndexHdr))!=0 ){
-    if( isWalMode2(pWal)==0 ){
-      iFirst = pLive->mxFrame+1;
-    }
+    /* if( isWalMode2(pWal)==0 ) */
+    iFirst = walidxGetMxFrame(pLive, walidxGetFile(pLive))+1;
   }
 
   /* See if it is possible to write these frames into the start of the
@@ -3617,7 +3623,7 @@ int sqlite3WalFrames(
   */
   iApp = walidxGetFile(&pWal->hdr);
   iFrame = walidxGetMxFrame(&pWal->hdr, iApp);
-  assert( iApp==0 || isWalMode2(pWal) );
+  assert( iApp==0 || bWal2 );
 
 #if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
   { int cnt; for(cnt=0, p=pList; p; p=p->pDirty, cnt++){}
@@ -3634,7 +3640,7 @@ int sqlite3WalFrames(
     sqlite3Put4byte(&aWalHdr[0], (WAL_MAGIC | SQLITE_BIGENDIAN));
     sqlite3Put4byte(&aWalHdr[4], pWal->hdr.iVersion);
     sqlite3Put4byte(&aWalHdr[8], szPage);
-    if( isWalMode2(pWal) ){
+    if( bWal2 ){
       if( walidxGetMxFrame(&pWal->hdr, !iApp)>0 ){
         u8 aPrev[4];
         rc = sqlite3OsRead(pWal->apWalFd[!iApp], aPrev, 4, 12);
@@ -3697,8 +3703,11 @@ int sqlite3WalFrames(
     ** checksums must be recomputed when the transaction is committed.  */
     if( iFirst && (p->pDirty || isCommit==0) ){
       u32 iWrite = 0;
-      VVA_ONLY(rc =) sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
+      VVA_ONLY(rc =) walSearchWal(pWal, iApp, p->pgno, &iWrite);
       assert( rc==SQLITE_OK || iWrite==0 );
+      if( iWrite && bWal2 ){
+        walExternalDecode(iWrite, &iWrite);
+      }
       if( iWrite>=iFirst ){
         i64 iOff = walFrameOffset(iWrite, szPage) + WAL_FRAME_HDRSIZE;
         void *pData;
@@ -3810,7 +3819,7 @@ int sqlite3WalFrames(
     /* If this is a commit, update the wal-index header too. */
     if( isCommit ){
       walIndexWriteHdr(pWal);
-      if( isWalMode2(pWal) ){
+      if( bWal2 ){
         int iOther = !walidxGetFile(&pWal->hdr);
         if( walidxGetMxFrame(&pWal->hdr, iOther) 
             && !walCkptInfo(pWal)->nBackfill 
