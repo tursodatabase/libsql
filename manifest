@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sthat\scome\sup\swith\sSQLITE_OMIT_WAL.
-D 2017-10-05T20:57:38.304
+C Add\stests\sfor\sthe\sexample\sfts3\s"rank"\sfunction\sthat\sappears\sin\sthe\ndocumentation.
+D 2017-10-06T18:00:36.541
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -489,7 +489,7 @@ F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
 F src/test_fs.c 35a2f7dd8a915900873386331386d9ba1ae1b5026d74fd20c2807bc76221f291
-F src/test_func.c a4fdab3363b436c1b12660e9362ce3f3782b7b5e
+F src/test_func.c 772bb74807d3485ce90c9347f5dfddec4a76ed9edd4cf6c58d2d79b9ce9064d6
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
 F src/test_intarray.c 988fc61cb0ff539f4172c0d95f15287c92516f64
@@ -864,6 +864,7 @@ F test/fts3offsets.test b85fd382abdc78ebce721d8117bd552dfb75094c
 F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test f33eb71a1fe1084ea585eeb7ee76b390729f5170
+F test/fts3rank.test e4d2e16a28c98cae95001a75e2b4b05b19b051ffd6aaab15491c5e0595127b9b
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
 F test/fts3snippet.test 01a4231816e03a0660ae53ba2404fe69012fe0db
@@ -1655,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 373b0ace480aa303bbf512ea8806a17f6186b16d6316a7b724499bf94b3974d4
-R adacc5e670ad3c34f8576daa184cae71
-U drh
-Z 9327d763f0b9382eb519713049c15b88
+P 8ca0fa8dfe6a66aea7fc63f15e6f704cb190aa0760a3fec2db5f6bad3861a135
+R 413648e1416f08d1828bb75a07c656dd
+U dan
+Z b857c7dffd71ebfaddd17b63d1fd16c3
