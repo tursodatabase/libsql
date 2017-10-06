@@ -2773,6 +2773,7 @@ static int shell_callback(
       for(i=0; IsSpace(z[i]); i++){}
       for(; (c = z[i])!=0; i++){
         if( IsSpace(c) ){
+          if( z[j-1]=='\r' ) z[j-1] = '\n';
           if( IsSpace(z[j-1]) || z[j-1]=='(' ) continue;
         }else if( (c=='(' || c==')') && j>0 && IsSpace(z[j-1]) ){
           j--;
