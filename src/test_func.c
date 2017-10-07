@@ -843,7 +843,7 @@ static void rankfunc(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   ** size of the matchinfo blob is as expected. Return an error if it is not.
   */
   if( nVal<1 ) goto wrong_number_args;
-  aMatchinfo = (unsigned int *)sqlite3_value_blob(apVal[0]);
+  aMatchinfo = (int*)sqlite3_value_blob(apVal[0]);
   nMatchinfo = sqlite3_value_bytes(apVal[0]) / sizeof(int);
   if( nMatchinfo>=2 ){
     nPhrase = aMatchinfo[0];
