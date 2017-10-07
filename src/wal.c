@@ -1375,6 +1375,21 @@ static int walOpenWal2(Wal *pWal){
   return rc;
 }
 
+static int walTruncateWal2(Wal *pWal){
+  int bIs;
+  int rc;
+  assert( !isOpen(pWal->apWalFd[1]) );
+  rc = sqlite3OsAccess(pWal->pVfs, pWal->zWalName2, SQLITE_ACCESS_EXISTS, &bIs);
+  if( rc==SQLITE_OK && bIs ){
+    rc = walOpenWal2(pWal);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3OsTruncate(pWal->apWalFd[1], 0);
+      sqlite3OsClose(pWal->apWalFd[1]);
+    }
+  }
+  return rc;
+}
+
 /*
 ** Recover the wal-index by reading the write-ahead log file. 
 **
@@ -1434,6 +1449,9 @@ static int walIndexRecover(Wal *pWal){
       || pWal->hdr.iVersion==WAL_VERSION1 
       || pWal->hdr.iVersion==WAL_VERSION2 
   );
+  if( rc==SQLITE_OK && bZero ){
+    rc = walTruncateWal2(pWal);
+  }
   if( rc==SQLITE_OK && pWal->hdr.iVersion!=WAL_VERSION1 ){
     int bOpen = 1;
     sqlite3_vfs *pVfs = pWal->pVfs;
@@ -1481,6 +1499,8 @@ static int walIndexRecover(Wal *pWal){
         pWal->hdr = hdr;
       }else{
         walidxSetFile(&pWal->hdr, 1);
+        walidxSetMxFrame(&pWal->hdr, 1, pWal->hdr.mxFrame);
+        walidxSetMxFrame(&pWal->hdr, 0, 0);
       }
       pWal->hdr.iVersion = WAL_VERSION2;
     }else{

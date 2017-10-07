@@ -228,6 +228,64 @@ foreach js {4000 8000 12000} {
 }
 
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE tx(x);
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 3500;
+} {wal2 3500}
 
+do_test 6.1 {
+  for {set i 0} {$i < 10} {incr i} {
+    execsql "CREATE TABLE t$i (x);"
+  }
+} {}
+
+puts "[file size test.db-wal] [file size test.db-wal2]"
+
+do_test 6.2.1 {
+  foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+  forcecopy test.db-wal2 test.db2-wal2
+  sqlite3 db2 test.db2
+  db2 eval { SELECT * FROM sqlite_master }
+} {}
+do_test 6.2.2 {
+  db2 eval {
+    PRAGMA journal_mode = wal2;
+    SELECT * FROM sqlite_master;
+  }
+} {wal2}
+
+do_test 6.3.1 {
+  db2 close
+  foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+  forcecopy test.db-wal2 test.db2-wal2
+  forcecopy test.db test.db2
+  sqlite3 db2 test.db2
+  db2 eval { SELECT * FROM sqlite_master }
+} {table tx tx 2 {CREATE TABLE tx(x)}}
+do_test 6.3.2 {
+  db2 eval {
+    PRAGMA journal_mode = wal2;
+    SELECT * FROM sqlite_master;
+  }
+} {wal2 table tx tx 2 {CREATE TABLE tx(x)}}
+
+do_test 6.4.1 {
+  db2 close
+  foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+  forcecopy test.db-wal2 test.db2-wal2
+  forcecopy test.db-wal test.db2-wal
+  sqlite3 db2 test.db2
+  db2 eval { SELECT * FROM sqlite_master }
+} {}
+do_test 6.4.2 {
+  db2 eval {
+    PRAGMA journal_mode = wal2;
+    SELECT * FROM sqlite_master;
+  }
+} {wal2}
+db2 close
 
 finish_test
