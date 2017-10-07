@@ -2868,7 +2868,7 @@ static void vdbeInvokeSqllog(Vdbe *v){
 ** VDBE_MAGIC_INIT.
 */
 int sqlite3VdbeReset(Vdbe *p){
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
   int i;
 #endif
 
@@ -2918,7 +2918,6 @@ int sqlite3VdbeReset(Vdbe *p){
   {
     FILE *out = fopen("vdbe_profile.out", "a");
     if( out ){
-      int i;
       fprintf(out, "---- ");
       for(i=0; i<p->nOp; i++){
         fprintf(out, "%02x", p->aOp[i].opcode);
