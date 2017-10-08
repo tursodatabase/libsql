@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2017-10-07T23:58:55.057
+C Fix\sharmless\scompiler\swarnings\sin\sFTS5\sseen\swith\sMSVC.
+D 2017-10-08T02:22:06.059
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -114,7 +114,7 @@ F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086aba
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
-F ext/fts5/fts5_vocab.c 90783d59cb8ee29ae08ac7f7e1f9c04cc4fb3ffc46d34fedba96d145636dd39d
+F ext/fts5/fts5_vocab.c 1cd79854cb21543e66507b25b0578bc1b20aa6a1349b7feceb8e8fed0e7a77a6
 F ext/fts5/fts5parse.y a070b538e08ae9e2177d15c337ed2a3464408f0f886e746307098f746efd94ca
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
@@ -1656,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63d1b425ee6a7d2ae782b738d81d98e39342ae7fe7c4fd217a28a0bdafe4f222
-R aa4393f5910ab347fda44397cfe57042
+P 39d920d1ef0cce40195b21e148f78f544710348fa180c0e76f743a73e5236d45
+R f768d25ae3366d16350abf238bbc60dc
 U mistachkin
-Z c22b12679dc2652828389d7408722be7
+Z 0e12f4ab1427b4952396ef9a1f9de008
