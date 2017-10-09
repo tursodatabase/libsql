@@ -1,5 +1,5 @@
-C Ignore\sthe\s*-wal2\sfile\sif\sthe\s*-wal\sfile\sis\szero\sbytes\sin\ssize.
-D 2017-10-07T19:55:37.322
+C Add\sa\sheader\scomment\sto\swal.c\sdescribing\sthe\sdifferences\sbetween\swal\sand\swal2\nmode.
+D 2017-10-09T19:49:08.605
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -537,7 +537,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 11314f64edbb7613e80290830a7379ff083b511bd1ee97846518c3102ebf5c4f
+F src/wal.c c025455c9d6cf48ca55bd894be4a37a160565de9c845510a048fb9113761b2f4
 F src/wal.h b6063e6be1b03389372f3f32240e99b8ab92c32cdd05aa0e31b30a21e4e41654
 F src/walker.c 3ccfa8637f95355bff61144e01a615b8ef26f79c312880848da73f03367da1e6
 F src/where.c 049522adcf5426f1a8c3ed07be15e1ffa3266afd34e8e7bee64b63e2fbfad0b5
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8932b2f1d7e6a26221ea3dea01000832b2d1eb17ac0b70ef6028f9286ae450a3
-R c46e3ca31dc60584535891a8280b1e6f
+P f7360fad51f224f347bb7d263eb89056b27461c278309e00e575a0e8898c9f40
+R 3eebf17818b82033242954f80ad24b93
 U dan
-Z fe4e7b40b37235ec7703f9add7af6779
+Z fe65619fadae77c6923d24a16aa4aa37

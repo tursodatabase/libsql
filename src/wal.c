@@ -101,7 +101,7 @@
 **
 ** To read a page from the database (call it page number P), a reader
 ** first checks the WAL to see if it contains page P.  If so, then the
-** last valid instance of page P that is a followed by a commit frame
+** last valid instance of page P that is followed by a commit frame
 ** or is a commit frame itself becomes the value read.  If the WAL
 ** contains no copies of page P that are valid and which are a commit
 ** frame or are followed by a commit frame, then page P is read from
@@ -229,7 +229,7 @@
 ** and to the wal-index) might be using a different value K1, where K1>K0.
 ** Both readers can use the same hash table and mapping section to get
 ** the correct result.  There may be entries in the hash table with
-** K>K0 but to the first reader, those entries will appear to be unused
+** K>K0, but to the first reader those entries will appear to be unused
 ** slots in the hash table and so the first reader will get an answer as
 ** if no values greater than K0 had ever been inserted into the hash table
 ** in the first place - which is what reader one wants.  Meanwhile, the
@@ -240,6 +240,166 @@
 ** that correspond to frames greater than the new K value are removed
 ** from the hash table at this point.
 */
+
+/*
+** WAL2 NOTES
+**
+** This file also contains the implementation of "wal2" mode - activated
+** using "PRAGMA journal_mode = wal2". Wal2 mode is very similar to wal
+** mode, except that it uses two wal files instead of one. Under some
+** circumstances, wal2 mode provides more concurrency than legacy wal 
+** mode.
+**
+** THE PROBLEM WAL2 SOLVES:
+**
+** In legacy wal mode, if a writer wishes to write to the database while
+** a checkpoint is ongoing, it may append frames to the existing wal file.
+** This means that after the checkpoint has finished, the wal file consists
+** of a large block of checkpointed frames, followed by a block of
+** uncheckpointed frames. In a deployment that features a high volume of
+** write traffic, this may mean that the wal file is never completely
+** checkpointed. And so grows indefinitely.
+**
+** An alternative is to use "PRAGMA wal_checkpoint=RESTART" or similar to
+** force a complete checkpoint of the wal file. But this must:
+**
+**   1) Wait on all existing readers to finish,
+**   2) Wait on any existing writer, and then block all new writers,
+**   3) Do the checkpoint,
+**   4) Wait on any new readers that started during steps 2 and 3. Writers
+**      are still blocked during this step.
+**
+** This means that in order to avoid the wal file growing indefinitely 
+** in a busy system, writers must periodically pause to allow a checkpoint
+** to complete. In a system with long running readers, such pauses may be
+** for a non-trivial amount of time.
+**
+** OVERVIEW OF SOLUTION
+**
+** Wal2 mode uses two wal files. After writers have grown the first wal 
+** file to a pre-configured size, they begin appending transactions to 
+** the second wal file. Once all existing readers are reading snapshots
+** new enough to include the entire first wal file, a checkpointer can
+** checkpoint it.
+**
+** Meanwhile, writers are writing transactions to the second wal file.
+** Once that wal file has grown larger than the pre-configured size, each
+** new writer checks if:
+**
+**    * the first wal file has been checkpointed, and if so, if
+**    * there are no readers still reading from the first wal file (once
+**      it has been checkpointed, new readers read only from the second
+**      wal file).
+**
+** If both these conditions are true, the writer may switch back to the
+** first wal file. Eventually, a checkpointer can checkpoint the second
+** wal file, and so on.
+**
+** The wal file that writers are currently appending to (the one they
+** don't have to check the above two criteria before writing to) is called
+** the "current" wal file.
+**
+** The first wal file takes the same name as the wal file in legacy wal
+** mode systems - "<db>-wal". The second is named "<db>-wal2".
+**
+** WAL FILE FORMAT
+**
+** The file format used for each wal file in wal2 mode is the same as for
+** legacy wal mode.  Except, the file format field is set to 3021000 
+** instead of 3007000.
+**
+** WAL-INDEX FORMAT
+**
+** The wal-index format is also very similar. Even though there are two
+** wal files, there is still a single wal-index shared-memory area (*-shm
+** file with the default unix or win32 VFS). The wal-index header is the
+** same size, with the following exceptions it has the same format:
+**
+**   * The version field is set to 3021000 instead of 3007000.
+**
+**   * An unused 32-bit field in the legacy wal-index header is
+**     now used to store (a) a single bit indicating which of the
+**     two wal files writers should append to and (b) the number
+**     of frames in the second wal file (31 bits).
+**
+** The first hash table in the wal-index contains entries corresponding
+** to the first HASHTABLE_NPAGE_ONE frames stored in the first wal file.
+** The second hash table in the wal-index contains entries indexing the
+** first HASHTABLE_NPAGE frames in the second wal file. The third hash
+** table contains the next HASHTABLE_NPAGE frames in the first wal file,
+** and so on.
+**
+** LOCKS
+**
+** Read-locks are simpler than for legacy wal mode. There are no locking
+** slots that contain frame numbers. Instead, there are four distinct
+** combinations of read locks a reader may hold:
+**
+**   WAL_LOCK_PART1:       "part" lock on first wal, none of second.
+**   WAL_LOCK_PART1_FULL2: "part" lock on first wal, "full" of second.
+**   WAL_LOCK_PART2: no lock on first wal, "part" lock on second.
+**   WAL_LOCK_PART2_FULL1: "full" lock on first wal, "part" lock on second.
+**
+** When a reader reads the wal-index header as part of opening a read
+** transaction, it takes a "part" lock on the current wal file. "Part" 
+** because the wal file may grow while the read transaction is active, in 
+** which case the reader would be reading only part of the wal file. 
+** A part lock prevents a checkpointer from checkpointing the wal file 
+** on which it is held.
+**
+** If there is data in the non-current wal file that has not been 
+** checkpointed, the reader takes a "full" lock on that wal file. A 
+** "full" lock indicates that the reader is using the entire wal file.
+** A full lock prevents a writer from overwriting the wal file on which
+** it is held, but does not prevent a checkpointer from checkpointing 
+** it.
+**
+** There is still a single WRITER and a single CHECKPOINTER lock. The
+** recovery procedure still takes the same exclusive lock on the entire
+** range of SQLITE_SHM_NLOCK shm-locks. This works because the read-locks
+** above use four of the six read-locking slots used by legacy wal mode.
+** See the header comment for function walLockReader() for details.
+**
+** STARTUP/RECOVERY
+**
+** The read and write version fields of the database header in a wal2
+** database are set to 0x03, instead of 0x02 as in legacy wal mode.
+**
+** The wal file format used in wal2 mode is the same as the format used
+** in legacy wal mode. However, in order to support recovery, there are two
+** differences in the way wal file header fields are populated, as follows:
+**
+**   * When the first wal file is first created, the "nCkpt" field in
+**     the wal file header is set to 0. Thereafter, each time the writer
+**     switches wal file, it sets the nCkpt field in the new wal file
+**     header to ((nCkpt0 + 1) & 0x0F), where nCkpt0 is the value in
+**     the previous wal file header. This means that the first wal file
+**     always has an even value in the nCkpt field, and the second wal
+**     file always has an odd value.
+**
+**   * When a writer switches wal file, it sets the salt values in the
+**     new wal file to a copy of the checksum for the final frame in
+**     the previous wal file.
+**
+** Recovery proceeds as follows:
+**
+** 1. Each wal file is recovered separately. Except, if the first wal 
+**    file does not exist or is zero bytes in size, the second wal file
+**    is truncated to zero bytes before it is "recovered".
+**
+** 2. If both wal files contain valid headers, then the nCkpt fields
+**    are compared to see which of the two wal files is older. If the
+**    salt keys in the second wal file match the final frame checksum 
+**    in the older wal file, then both wal files are used. Otherwise,
+**    the newer wal file is ignored.
+**
+** 3. Or, if only one or neither of the wal files has a valid header, 
+**    then only a single or no wal files are recovered into the 
+**    reconstructed wal-index.
+**
+** Refer to header comments for walIndexRecover() for further details.
+*/
+
 #ifndef SQLITE_OMIT_WAL
 
 #include "wal.h"
@@ -1491,6 +1651,10 @@ static int walIndexRecover(Wal *pWal){
         ){
           SWAP(WalIndexHdr, pWal->hdr, hdr);
           walidxSetMxFrame(&pWal->hdr, 1, hdr.mxFrame);
+        }else{
+          walidxSetFile(&pWal->hdr, 1);
+          walidxSetMxFrame(&pWal->hdr, 1, pWal->hdr.mxFrame);
+          walidxSetMxFrame(&pWal->hdr, 0, 0);
         }
       }else
 
