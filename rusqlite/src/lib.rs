@@ -599,7 +599,8 @@ bitflags! {
 
 impl Default for OpenFlags {
     fn default() -> OpenFlags {
-        SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NO_MUTEX | SQLITE_OPEN_URI
+        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE | 
+        OpenFlags::SQLITE_OPEN_NO_MUTEX | OpenFlags::SQLITE_OPEN_URI
     }
 }
 
@@ -737,9 +738,9 @@ impl InnerConnection {
 
         // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
         // wasn't added until version 3.7.3.
-        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits == 0x02);
-        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits == 0x04);
-        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE).bits == 0x40);
+        debug_assert!(1 << OpenFlags::SQLITE_OPEN_READ_ONLY.bits == 0x02);
+        debug_assert!(1 << OpenFlags::SQLITE_OPEN_READ_WRITE.bits == 0x04);
+        debug_assert!(1 << (OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE).bits == 0x40);
         if (1 << (flags.bits & 0x7)) & 0x46 == 0 {
             return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_MISUSE), None));
         }
@@ -976,8 +977,8 @@ mod test {
     #[test]
     fn test_open_with_flags() {
         for bad_flags in &[OpenFlags::empty(),
-                           SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
-                           SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE] {
+                           OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_READ_WRITE,
+                           OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_CREATE] {
             assert!(Connection::open_in_memory_with_flags(*bad_flags).is_err());
         }
     }
