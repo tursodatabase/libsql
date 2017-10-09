@@ -1,5 +1,5 @@
-C Add\sa\sheader\scomment\sto\swal.c\sdescribing\sthe\sdifferences\sbetween\swal\sand\swal2\nmode.
-D 2017-10-09T19:49:08.605
+C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
+D 2017-10-09T19:50:09.728
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -114,7 +114,7 @@ F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086aba
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
-F ext/fts5/fts5_vocab.c 90783d59cb8ee29ae08ac7f7e1f9c04cc4fb3ffc46d34fedba96d145636dd39d
+F ext/fts5/fts5_vocab.c 1cd79854cb21543e66507b25b0578bc1b20aa6a1349b7feceb8e8fed0e7a77a6
 F ext/fts5/fts5parse.y a070b538e08ae9e2177d15c337ed2a3464408f0f886e746307098f746efd94ca
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
@@ -489,7 +489,7 @@ F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
 F src/test_fs.c 35a2f7dd8a915900873386331386d9ba1ae1b5026d74fd20c2807bc76221f291
-F src/test_func.c a4fdab3363b436c1b12660e9362ce3f3782b7b5e
+F src/test_func.c d12d805953bcb3bb19f71d29cdc93383b7b7a3369504d2b7e398a1bd77376294
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
 F src/test_intarray.c 988fc61cb0ff539f4172c0d95f15287c92516f64
@@ -530,7 +530,7 @@ F src/vdbe.c c3c3fe95d98df8757570fb265236cfdf31536d1025bf37c232237d1e422ae39b
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
-F src/vdbeaux.c 831a77aaa7aa43005f1c9bf3e9eb6506f4865e1cf99943ccdcd3be5d2dd8a3c7
+F src/vdbeaux.c c423065d50cee24bc8cba57764f5e9869a1bb920c50907f5dd363ebd7c5aef82
 F src/vdbeblob.c 635a79b60340a6a14a622ea8dcb081f0a66b1ac3836870c587f232eec08c0286
 F src/vdbemem.c 5c1533bf756918b4e46b2ed2bb82c29c7c651e1e37bbd0a0d8731a68787598ff
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -864,6 +864,7 @@ F test/fts3offsets.test b85fd382abdc78ebce721d8117bd552dfb75094c
 F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test f33eb71a1fe1084ea585eeb7ee76b390729f5170
+F test/fts3rank.test e4d2e16a28c98cae95001a75e2b4b05b19b051ffd6aaab15491c5e0595127b9b
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
 F test/fts3snippet.test 01a4231816e03a0660ae53ba2404fe69012fe0db
@@ -1657,7 +1658,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7360fad51f224f347bb7d263eb89056b27461c278309e00e575a0e8898c9f40
-R 3eebf17818b82033242954f80ad24b93
+P 9c80cd202f1c966929b279e18f19c663912686fcf92f03b85a02b9c7e55a0fc6 5594a121bf132a98d0ecb4cf86d9f2681925c9416206096bf11c9370a5dae22f
+R 23a883a99c179b06ab669012d3314db6
 U dan
-Z fe65619fadae77c6923d24a16aa4aa37
+Z c8f907ef387c1600d03d31327cf9ed02

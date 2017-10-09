@@ -2868,6 +2868,10 @@ static void vdbeInvokeSqllog(Vdbe *v){
 ** VDBE_MAGIC_INIT.
 */
 int sqlite3VdbeReset(Vdbe *p){
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+  int i;
+#endif
+
   sqlite3 *db;
   db = p->db;
 
@@ -2899,7 +2903,6 @@ int sqlite3VdbeReset(Vdbe *p){
 #ifdef SQLITE_DEBUG
   /* Execute assert() statements to ensure that the Vdbe.apCsr[] and 
   ** Vdbe.aMem[] arrays have already been cleaned up.  */
-  int i;
   if( p->apCsr ) for(i=0; i<p->nCursor; i++) assert( p->apCsr[i]==0 );
   if( p->aMem ){
     for(i=0; i<p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
@@ -2915,7 +2918,6 @@ int sqlite3VdbeReset(Vdbe *p){
   {
     FILE *out = fopen("vdbe_profile.out", "a");
     if( out ){
-      int i;
       fprintf(out, "---- ");
       for(i=0; i<p->nOp; i++){
         fprintf(out, "%02x", p->aOp[i].opcode);
