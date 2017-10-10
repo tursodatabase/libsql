@@ -327,6 +327,7 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/bgckpt.c \
   $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
