@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sFTS5\sseen\swith\sMSVC.
-D 2017-10-08T02:22:06.059
+C DROP\sTABLE\snow\sworks\sfor\sWITHOUT\sROWID\stables\sand\sthe\sSQLITE_OMIT_AUTOVACUUM\ncompile-time\soption.\s\sFix\sfor\sticket\s[e651b1341861d6]
+D 2017-10-10T13:37:22.404
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -404,7 +404,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 07ad643c75519359f72622bfb862e53723e0bed52ef7c9979e04a0a531078e34
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
-F src/build.c e71e96a67daf3d1dd23188423e66cd6af38017e2ec73fead5d2b57da2d3c7e16
+F src/build.c 6ffe76970aeee4bc94e60cf0138269e67109061a853e13098c38a904dd66e673
 F src/callback.c 28a8ede982fde4129b828350f78f2c01fe7d12c74d1a0a05d7108ab36f308688
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -1656,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39d920d1ef0cce40195b21e148f78f544710348fa180c0e76f743a73e5236d45
-R f768d25ae3366d16350abf238bbc60dc
-U mistachkin
-Z 0e12f4ab1427b4952396ef9a1f9de008
+P 5594a121bf132a98d0ecb4cf86d9f2681925c9416206096bf11c9370a5dae22f
+R f3d3a32072dba092302fd2943ac3dda5
+U drh
+Z c352a62dec18b44931aef87cbd4d711d
