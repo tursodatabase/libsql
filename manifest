@@ -1,8 +1,8 @@
-C Get\swrites\sworking\son\sthe\ssqlite_dbpage\svirtual\stable.\s\sAdd\sa\sfew\stest\scases.
-D 2017-10-11T15:02:53.047
-F Makefile.in f7cba589198b8663d8a43f25ad001cf44fdac4fcd6216325f05775924a7af2f9
+C Enable\ssqlite_dbpage\sand\sdbstat\svirtual\stables\sin\sthe\sshell,\sby\sdefault.
+D 2017-10-11T17:13:29.048
+F Makefile.in 05d02ce8606a9e46cd413d0bb46873fe597e5e41f52c4110241c11e60adff018
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 1224c8773fc7f89c57e83c7b452291d239aa2cff4af50a204c84129e295cc37d
+F Makefile.msc 148d7cd36e556f5c257232cd93c71a1dd32c880d964c7d714990d677cd094589
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -382,7 +382,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 656d9f31fdc01290094460f00255a45fdf4bedd08839467857919fea628582cf
+F main.mk dc4d9dfe050e6d65671cb940974bd6b76451287db334c47332552ede28325714
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1658,7 +1658,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2c1d656e3f52465192c2a697a976cd1837ccc4e10708a2377cff8bf6eaa7d49
-R 92490bca397034b7f3fba4e951f0781d
+P a8b264d811e5bcb7e3ae8a12bf5b6830a9d1adff1f59436dda9e886f97da242f
+R 26ea83977ebe8e13c118f8a4befc3e5d
 U drh
-Z ddf133cf759c24442aeeb91134927fef
+Z d68d7c86064c38dfe4b5e452d55c3294
