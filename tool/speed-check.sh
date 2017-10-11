@@ -29,13 +29,14 @@ SIZE=5
 LEAN_OPTS="-DSQLITE_THREADSAFE=0"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_DEFAULT_MEMSTATUS=0"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1"
-LEAN_OPTS="$LEAN_OPTS -DSQLITE_LIKE_DOESNT_MATCH_BLOB"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_LIKE_DOESNT_MATCH_BLOBS"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_MAX_EXPR_DEPTH=0"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DECLTYPE"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DEPRECATED"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_PROGRESS_CALLBACK"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_SHARED_CACHE"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_USE_ALLOCA"
+BASELINE="trunk"
 doExplain=0
 doCachegrind=1
 while test "$1" != ""; do
@@ -116,8 +117,11 @@ while test "$1" != ""; do
     --orm)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset orm"
         ;;
-    *)
+    -*)
         CC_OPTS="$CC_OPTS $1"
+        ;;
+    *)
+	BASELINE=$1
         ;;
   esac
   shift
@@ -153,6 +157,6 @@ fi
 if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt
 fi
-if test "$NAME" != "trunk"; then
-  fossil test-diff --tk -c 20 cout-trunk.txt cout-$NAME.txt
+if test "$NAME" != "$BASELINE"; then
+  fossil test-diff --tk -c 20 cout-$BASELINE.txt cout-$NAME.txt
 fi
