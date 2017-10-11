@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sthe\s"sqlite_dbpage"\svirtual\stable.\s\sCurrently\nit\sis\sread-only\sand\shas\sa\splace-holder\sxBestIndex.
-D 2017-10-11T13:48:11.877
+C Get\swrites\sworking\son\sthe\ssqlite_dbpage\svirtual\stable.\s\sAdd\sa\sfew\stest\scases.
+D 2017-10-11T15:02:53.047
 F Makefile.in f7cba589198b8663d8a43f25ad001cf44fdac4fcd6216325f05775924a7af2f9
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1224c8773fc7f89c57e83c7b452291d239aa2cff4af50a204c84129e295cc37d
@@ -409,7 +409,7 @@ F src/callback.c 28a8ede982fde4129b828350f78f2c01fe7d12c74d1a0a05d7108ab36f30868
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
-F src/dbpage.c f274a9b7bb680cc2952ee78883d67e133be0ef6065317813586a5f723af35ad5
+F src/dbpage.c c625a0bd605d4cea9a3258b8db49a5474a04976e95a9fe380cdaf74e8eb6736d
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
 F src/expr.c 4d2d0aafd945424f638ee03e11330f03288ccf616e025498f3c8602d01609a0a
@@ -709,6 +709,7 @@ F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
+F test/dbpage.test 9cf4dc92a4de67c81e5c32b24e3fbb8c4757e4b642694a219b3090a4f9277a4d
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
@@ -1657,10 +1658,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0245adffc6f9b580217e0d2feb396d6895e54cdc25f5dfc9c8f4090b919e9e49
-R 9d91f38d6de2e0aabd371a2c4dbcd832
-T *branch * dbpage
-T *sym-dbpage *
-T -sym-trunk *
+P c2c1d656e3f52465192c2a697a976cd1837ccc4e10708a2377cff8bf6eaa7d49
+R 92490bca397034b7f3fba4e951f0781d
 U drh
-Z 95e75b385006fb35e51e104eb16c88ba
+Z ddf133cf759c24442aeeb91134927fef

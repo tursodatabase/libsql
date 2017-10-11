@@ -16,6 +16,19 @@
 ** pages of the database file.  The pager interface is used so that 
 ** uncommitted changes and changes recorded in the WAL file are correctly
 ** retrieved.
+**
+** Usage example:
+**
+**    SELECT data FROM sqlite_dbpage('aux1') WHERE pgno=123;
+**
+** This is an eponymous virtual table so it does not need to be created before
+** use.  The optional argument to the sqlite_dbpage() table name is the
+** schema for the database file that is to be read.  The default schema is
+** "main".
+**
+** The data field of sqlite_dbpage table can be updated.  The new
+** value must be a BLOB which is the correct page size, otherwise the
+** update fails.  Rows may not be deleted or inserted.
 */
 
 #include "sqliteInt.h"   /* Requires access to internal data structures */
@@ -28,6 +41,7 @@ typedef struct DbpageCursor DbpageCursor;
 struct DbpageCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   int pgno;                       /* Current page number */
+  int mxPgno;                     /* Last page to visit on this scan */
 };
 
 struct DbpageTable {
@@ -65,7 +79,7 @@ static int dbpageConnect(
     iDb = 0;
   }
   rc = sqlite3_declare_vtab(db, 
-          "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB)");
+          "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB, schema HIDDEN)");
   if( rc==SQLITE_OK ){
     pTab = (DbpageTable *)sqlite3_malloc64(sizeof(DbpageTable));
     if( pTab==0 ) rc = SQLITE_NOMEM_BKPT;
@@ -99,7 +113,26 @@ static int dbpageDisconnect(sqlite3_vtab *pVtab){
 **     1     pgno=?1
 */
 static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  int i;
   pIdxInfo->estimatedCost = 1.0e6;  /* Initial cost estimate */
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[i];
+    if( p->usable && p->iColumn<=0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      pIdxInfo->estimatedRows = 1;
+      pIdxInfo->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
+      pIdxInfo->estimatedCost = 1.0;
+      pIdxInfo->idxNum = 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+      break;
+    }
+  }
+  if( pIdxInfo->nOrderBy>=1
+   && pIdxInfo->aOrderBy[0].iColumn<=0
+   && pIdxInfo->aOrderBy[0].desc==0
+  ){
+    pIdxInfo->orderByConsumed = 1;
+  }
   return SQLITE_OK;
 }
 
@@ -143,8 +176,7 @@ static int dbpageNext(sqlite3_vtab_cursor *pCursor){
 
 static int dbpageEof(sqlite3_vtab_cursor *pCursor){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
-  DbpageTable *pTab = (DbpageTable *)pCursor->pVtab;
-  return pCsr->pgno >= pTab->nPage;
+  return pCsr->pgno > pCsr->mxPgno;
 }
 
 static int dbpageFilter(
@@ -157,13 +189,20 @@ static int dbpageFilter(
   int rc = SQLITE_OK;
   Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
 
-  if( idxNum==1 ){
-    pCsr->pgno = sqlite3_value_int(argv[0]);
-  }else{
-    pCsr->pgno = 0;
-  }
   pTab->szPage = sqlite3BtreeGetPageSize(pBt);
   pTab->nPage = sqlite3BtreeLastPage(pBt);
+  if( idxNum==1 ){
+    pCsr->pgno = sqlite3_value_int(argv[0]);
+    if( pCsr->pgno<1 || pCsr->pgno>pTab->nPage ){
+      pCsr->pgno = 1;
+      pCsr->mxPgno = 0;
+    }else{
+      pCsr->mxPgno = pCsr->pgno;
+    }
+  }else{
+    pCsr->pgno = 1;
+    pCsr->mxPgno = pTab->nPage;
+  }
   return rc;
 }
 
@@ -205,6 +244,55 @@ static int dbpageRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
+static int dbpageUpdate(
+  sqlite3_vtab *pVtab,
+  int argc,
+  sqlite3_value **argv,
+  sqlite_int64 *pRowid
+){
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+  int pgno;
+  DbPage *pDbPage = 0;
+  int rc = SQLITE_OK;
+  char *zErr = 0;
+
+  if( argc==1 ){
+    zErr = "cannot delete";
+    goto update_fail;
+  }
+  pgno = sqlite3_value_int(argv[0]);
+  if( pgno<1 || pgno>pTab->nPage ){
+    zErr = "bad page number";
+    goto update_fail;
+  }
+  if( sqlite3_value_int(argv[1])!=pgno ){
+    zErr = "cannot insert";
+    goto update_fail;
+  }
+  if( sqlite3_value_type(argv[3])!=SQLITE_BLOB 
+   || sqlite3_value_bytes(argv[3])!=pTab->szPage 
+  ){
+    zErr = "bad page value";
+    goto update_fail;
+  }
+  rc = sqlite3PagerGet(pTab->pPager, pgno, (DbPage**)&pDbPage, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3PagerWrite(pDbPage);
+    if( rc==SQLITE_OK ){
+      memcpy(sqlite3PagerGetData(pDbPage),
+             sqlite3_value_blob(argv[3]),
+             pTab->szPage);
+    }
+  }
+  sqlite3PagerUnref(pDbPage);
+  return rc;
+
+update_fail:
+  sqlite3_free(pVtab->zErrMsg);
+  pVtab->zErrMsg = sqlite3_mprintf("%s", zErr);
+  return SQLITE_ERROR;
+}
+
 /*
 ** Invoke this routine to register the "dbpage" virtual table module
 */
@@ -223,7 +311,7 @@ int sqlite3DbpageRegister(sqlite3 *db){
     dbpageEof,                    /* xEof - check for end of scan */
     dbpageColumn,                 /* xColumn - read data */
     dbpageRowid,                  /* xRowid - read data */
-    0,                            /* xUpdate */
+    dbpageUpdate,                 /* xUpdate */
     0,                            /* xBegin */
     0,                            /* xSync */
     0,                            /* xCommit */
