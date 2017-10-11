@@ -1,5 +1,5 @@
-C Enable\ssqlite_dbpage\sand\sdbstat\svirtual\stables\sin\sthe\sshell,\sby\sdefault.
-D 2017-10-11T17:13:29.048
+C Convert\sthe\simplementation\sof\sthe\s".dbstat"\sdot-command\sof\sthe\scommand-line\nshell\sto\suse\sthe\ssqlite_dbpage\stable.
+D 2017-10-11T17:51:08.392
 F Makefile.in 05d02ce8606a9e46cd413d0bb46873fe597e5e41f52c4110241c11e60adff018
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 148d7cd36e556f5c257232cd93c71a1dd32c880d964c7d714990d677cd094589
@@ -460,8 +460,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 42aca61e739c405ddd8a1b702977a7743c7d52a94885f7c5596bd7e73e6bff18
-F src/shell.c cbf450e75665a185c546adc702ec5fd091306ae7a08bc88b1508ac9c11acc7fe
-F src/shell.c.in e03f7d473e10b65c25836a058a3e7a1665ffb1fe712949dcd6e38c790e4eafd0
+F src/shell.c b1c14539ae8f756a96a5604952e24fb8f2a65745290037f4f43dddfabac76e6e
+F src/shell.c.in 73d8000bb066cd7ceb9655ffdb0e19a80779e3c64506f5a1ecfa9838511bee18
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
@@ -1658,7 +1658,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8b264d811e5bcb7e3ae8a12bf5b6830a9d1adff1f59436dda9e886f97da242f
-R 26ea83977ebe8e13c118f8a4befc3e5d
+P 01bf856c424c20b464f26973720bf5dcd3e89509c5b02c3625d4828f0385d3db
+R 32cd47bb05391f34b12cc1216f3e5e53
 U drh
-Z d68d7c86064c38dfe4b5e452d55c3294
+Z ef5ad8ed0ad3bdbe43b1de17eb74fe58
