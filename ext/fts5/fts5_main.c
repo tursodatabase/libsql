@@ -883,7 +883,8 @@ static int fts5PrepareStatement(
   if( zSql==0 ){
     rc = SQLITE_NOMEM; 
   }else{
-    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pRet, 0);
+    rc = sqlite3_prepare_v3(pConfig->db, zSql, -1, 
+                            SQLITE_PREPARE_PERSISTENT, &pRet, 0);
     if( rc!=SQLITE_OK ){
       *pConfig->pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(pConfig->db));
     }
@@ -1019,7 +1020,8 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
     char *zSql = sqlite3Fts5Mprintf(&rc, "SELECT %s", zRankArgs);
     if( zSql ){
       sqlite3_stmt *pStmt = 0;
-      rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pStmt, 0);
+      rc = sqlite3_prepare_v3(pConfig->db, zSql, -1,
+                              SQLITE_PREPARE_PERSISTENT, &pStmt, 0);
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pCsr->pRankArgStmt==0 );
       if( rc==SQLITE_OK ){
@@ -2607,15 +2609,14 @@ static void fts5ModuleDestroy(void *pCtx){
 static void fts5Fts5Func(
   sqlite3_context *pCtx,          /* Function call context */
   int nArg,                       /* Number of args */
-  sqlite3_value **apUnused        /* Function arguments */
+  sqlite3_value **apArg           /* Function arguments */
 ){
   Fts5Global *pGlobal = (Fts5Global*)sqlite3_user_data(pCtx);
-  char buf[8];
-  UNUSED_PARAM2(nArg, apUnused);
-  assert( nArg==0 );
-  assert( sizeof(buf)>=sizeof(pGlobal) );
-  memcpy(buf, (void*)&pGlobal, sizeof(pGlobal));
-  sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
+  fts5_api **ppApi;
+  UNUSED_PARAM(nArg);
+  assert( nArg==1 );
+  ppApi = (fts5_api**)sqlite3_value_pointer(apArg[0], "fts5_api_ptr");
+  if( ppApi ) *ppApi = &pGlobal->api;
 }
 
 /*
@@ -2680,7 +2681,7 @@ static int fts5Init(sqlite3 *db){
     if( rc==SQLITE_OK ) rc = sqlite3Fts5VocabInit(pGlobal, db);
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
-          db, "fts5", 0, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
+          db, "fts5", 1, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
       );
     }
     if( rc==SQLITE_OK ){

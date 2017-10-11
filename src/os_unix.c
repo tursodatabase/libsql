@@ -90,6 +90,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
@@ -209,7 +210,7 @@ struct unixFile {
   unsigned short int ctrlFlags;       /* Behavioral bits.  UNIXFILE_* flags */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
-  UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
+  UnixUnusedFd *pPreallocatedUnused;  /* Pre-allocated UnixUnusedFd */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
@@ -220,10 +221,8 @@ struct unixFile {
   sqlite3_int64 mmapSizeMax;          /* Configured FCNTL_MMAP_SIZE value */
   void *pMapRegion;                   /* Memory mapped region */
 #endif
-#ifdef __QNXNTO__
   int sectorSize;                     /* Device sector size */
   int deviceCharacteristics;          /* Precomputed device characteristics */
-#endif
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                      /* The flags specified at open() */
 #endif
@@ -327,6 +326,20 @@ static pid_t randomnessPid = 0;
 #ifdef __ANDROID__
 # define lseek lseek64
 #endif
+
+#ifdef __linux__
+/*
+** Linux-specific IOCTL magic numbers used for controlling F2FS
+*/
+#define F2FS_IOCTL_MAGIC        0xf5
+#define F2FS_IOC_START_ATOMIC_WRITE     _IO(F2FS_IOCTL_MAGIC, 1)
+#define F2FS_IOC_COMMIT_ATOMIC_WRITE    _IO(F2FS_IOCTL_MAGIC, 2)
+#define F2FS_IOC_START_VOLATILE_WRITE   _IO(F2FS_IOCTL_MAGIC, 3)
+#define F2FS_IOC_ABORT_VOLATILE_WRITE   _IO(F2FS_IOCTL_MAGIC, 5)
+#define F2FS_IOC_GET_FEATURES           _IOR(F2FS_IOCTL_MAGIC, 12, u32)
+#define F2FS_FEATURE_ATOMIC_WRITE 0x0004
+#endif /* __linux__ */
+
 
 /*
 ** Different Unix systems declare open() in different ways.  Same use
@@ -499,6 +512,9 @@ static struct unix_syscall {
   { "lstat",         (sqlite3_syscall_ptr)0,              0 },
 #endif
 #define osLstat      ((int(*)(const char*,struct stat*))aSyscall[27].pCurrent)
+
+  { "ioctl",         (sqlite3_syscall_ptr)ioctl,          0 },
+#define osIoctl ((int(*)(int,int,...))aSyscall[28].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -1104,7 +1120,8 @@ struct unixInodeInfo {
 /*
 ** A lists of all unixInodeInfo objects.
 */
-static unixInodeInfo *inodeList = 0;
+static unixInodeInfo *inodeList = 0;  /* All unixInodeInfo objects */
+static unsigned int nUnusedFd = 0;    /* Total unused file descriptors */
 
 /*
 **
@@ -1214,6 +1231,7 @@ static void closePendingFds(unixFile *pFile){
     pNext = p->pNext;
     robust_close(pFile, p->fd, __LINE__);
     sqlite3_free(p);
+    nUnusedFd--;
   }
   pInode->pUnused = 0;
 }
@@ -1246,6 +1264,7 @@ static void releaseInodeInfo(unixFile *pFile){
       sqlite3_free(pInode);
     }
   }
+  assert( inodeList!=0 || nUnusedFd==0 );
 }
 
 /*
@@ -1315,6 +1334,7 @@ static int findInodeInfo(
 #else
   fileId.ino = (u64)statbuf.st_ino;
 #endif
+  assert( inodeList!=0 || nUnusedFd==0 );
   pInode = inodeList;
   while( pInode && memcmp(&fileId, &pInode->fileId, sizeof(fileId)) ){
     pInode = pInode->pNext;
@@ -1734,11 +1754,12 @@ end_lock:
 */
 static void setPendingFd(unixFile *pFile){
   unixInodeInfo *pInode = pFile->pInode;
-  UnixUnusedFd *p = pFile->pUnused;
+  UnixUnusedFd *p = pFile->pPreallocatedUnused;
   p->pNext = pInode->pUnused;
   pInode->pUnused = p;
   pFile->h = -1;
-  pFile->pUnused = 0;
+  pFile->pPreallocatedUnused = 0;
+  nUnusedFd++;
 }
 
 /*
@@ -1963,7 +1984,7 @@ static int closeUnixFile(sqlite3_file *id){
 #endif
   OSTRACE(("CLOSE   %-3d\n", pFile->h));
   OpenCounter(-1);
-  sqlite3_free(pFile->pUnused);
+  sqlite3_free(pFile->pPreallocatedUnused);
   memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
@@ -2300,7 +2321,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
   OSTRACE(("TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved));
 
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
-  if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
+  if( (rc & 0xff) == SQLITE_IOERR ){
     rc = SQLITE_OK;
     reserved=1;
   }
@@ -2367,7 +2388,7 @@ static int flockLock(sqlite3_file *id, int eFileLock) {
   OSTRACE(("LOCK    %d %s %s (flock)\n", pFile->h, azFileLock(eFileLock), 
            rc==SQLITE_OK ? "ok" : "failed"));
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
-  if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
+  if( (rc & 0xff) == SQLITE_IOERR ){
     rc = SQLITE_BUSY;
   }
 #endif /* SQLITE_IGNORE_FLOCK_LOCK_ERRORS */
@@ -2904,7 +2925,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
           /* Can't reestablish the shared lock.  Sqlite can't deal, this is
           ** a critical I/O error
           */
-          rc = ((failed & SQLITE_IOERR) == SQLITE_IOERR) ? failed2 : 
+          rc = ((failed & 0xff) == SQLITE_IOERR) ? failed2 : 
                SQLITE_IOERR_LOCK;
           goto afp_end_lock;
         } 
@@ -3184,7 +3205,7 @@ static int unixRead(
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
-  assert( pFile->pUnused==0
+  assert( pFile->pPreallocatedUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
@@ -3297,7 +3318,7 @@ static int unixWrite(
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
-  assert( pFile->pUnused==0
+  assert( pFile->pPreallocatedUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
@@ -3777,6 +3798,21 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
+#if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+    case SQLITE_FCNTL_BEGIN_ATOMIC_WRITE: {
+      int rc = osIoctl(pFile->h, F2FS_IOC_START_ATOMIC_WRITE);
+      return rc ? SQLITE_IOERR_BEGIN_ATOMIC : SQLITE_OK;
+    }
+    case SQLITE_FCNTL_COMMIT_ATOMIC_WRITE: {
+      int rc = osIoctl(pFile->h, F2FS_IOC_COMMIT_ATOMIC_WRITE);
+      return rc ? SQLITE_IOERR_COMMIT_ATOMIC : SQLITE_OK;
+    }
+    case SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE: {
+      int rc = osIoctl(pFile->h, F2FS_IOC_ABORT_VOLATILE_WRITE);
+      return rc ? SQLITE_IOERR_ROLLBACK_ATOMIC : SQLITE_OK;
+    }
+#endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
+
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
@@ -3827,6 +3863,14 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       if( newLimit>sqlite3GlobalConfig.mxMmap ){
         newLimit = sqlite3GlobalConfig.mxMmap;
       }
+
+      /* The value of newLimit may be eventually cast to (size_t) and passed
+      ** to mmap(). Restrict its value to 2GB if (size_t) is not at least a
+      ** 64-bit type. */
+      if( newLimit>0 && sizeof(size_t)<8 ){
+        newLimit = (newLimit & 0x7FFFFFFF);
+      }
+
       *(i64*)pArg = pFile->mmapSizeMax;
       if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;
@@ -3860,30 +3904,41 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 }
 
 /*
-** Return the sector size in bytes of the underlying block device for
-** the specified file. This is almost always 512 bytes, but may be
-** larger for some devices.
+** If pFd->sectorSize is non-zero when this function is called, it is a
+** no-op. Otherwise, the values of pFd->sectorSize and 
+** pFd->deviceCharacteristics are set according to the file-system 
+** characteristics. 
 **
-** SQLite code assumes this function cannot fail. It also assumes that
-** if two files are created in the same file-system directory (i.e.
-** a database and its journal file) that the sector size will be the
-** same for both.
+** There are two versions of this function. One for QNX and one for all
+** other systems.
 */
-#ifndef __QNXNTO__ 
-static int unixSectorSize(sqlite3_file *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  return SQLITE_DEFAULT_SECTOR_SIZE;
-}
-#endif
+#ifndef __QNXNTO__
+static void setDeviceCharacteristics(unixFile *pFd){
+  assert( pFd->deviceCharacteristics==0 || pFd->sectorSize!=0 );
+  if( pFd->sectorSize==0 ){
+#if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+    int res;
+    u32 f = 0;
 
-/*
-** The following version of unixSectorSize() is optimized for QNX.
-*/
-#ifdef __QNXNTO__
+    /* Check for support for F2FS atomic batch writes. */
+    res = osIoctl(pFd->h, F2FS_IOC_GET_FEATURES, &f);
+    if( res==0 && (f & F2FS_FEATURE_ATOMIC_WRITE) ){
+      pFd->deviceCharacteristics = SQLITE_IOCAP_BATCH_ATOMIC;
+    }
+#endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
+
+    /* Set the POWERSAFE_OVERWRITE flag if requested. */
+    if( pFd->ctrlFlags & UNIXFILE_PSOW ){
+      pFd->deviceCharacteristics |= SQLITE_IOCAP_POWERSAFE_OVERWRITE;
+    }
+
+    pFd->sectorSize = SQLITE_DEFAULT_SECTOR_SIZE;
+  }
+}
+#else
 #include <sys/dcmd_blk.h>
 #include <sys/statvfs.h>
-static int unixSectorSize(sqlite3_file *id){
-  unixFile *pFile = (unixFile*)id;
+static void setDeviceCharacteristics(unixFile *pFile){
   if( pFile->sectorSize == 0 ){
     struct statvfs fsInfo;
        
@@ -3952,9 +4007,24 @@ static int unixSectorSize(sqlite3_file *id){
     pFile->deviceCharacteristics = 0;
     pFile->sectorSize = SQLITE_DEFAULT_SECTOR_SIZE;
   }
-  return pFile->sectorSize;
 }
-#endif /* __QNXNTO__ */
+#endif
+
+/*
+** Return the sector size in bytes of the underlying block device for
+** the specified file. This is almost always 512 bytes, but may be
+** larger for some devices.
+**
+** SQLite code assumes this function cannot fail. It also assumes that
+** if two files are created in the same file-system directory (i.e.
+** a database and its journal file) that the sector size will be the
+** same for both.
+*/
+static int unixSectorSize(sqlite3_file *id){
+  unixFile *pFd = (unixFile*)id;
+  setDeviceCharacteristics(pFd);
+  return pFd->sectorSize;
+}
 
 /*
 ** Return the device characteristics for the file.
@@ -3970,16 +4040,9 @@ static int unixSectorSize(sqlite3_file *id){
 ** available to turn it off and URI query parameter available to turn it off.
 */
 static int unixDeviceCharacteristics(sqlite3_file *id){
-  unixFile *p = (unixFile*)id;
-  int rc = 0;
-#ifdef __QNXNTO__
-  if( p->sectorSize==0 ) unixSectorSize(id);
-  rc = p->deviceCharacteristics;
-#endif
-  if( p->ctrlFlags & UNIXFILE_PSOW ){
-    rc |= SQLITE_IOCAP_POWERSAFE_OVERWRITE;
-  }
-  return rc;
+  unixFile *pFd = (unixFile*)id;
+  setDeviceCharacteristics(pFd);
+  return pFd->deviceCharacteristics;
 }
 
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
@@ -5237,17 +5300,6 @@ static int fillInUnixFile(
 
   assert( pNew->pInode==NULL );
 
-  /* Usually the path zFilename should not be a relative pathname. The
-  ** exception is when opening the proxy "conch" file in builds that
-  ** include the special Apple locking styles.
-  */
-#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
-  assert( zFilename==0 || zFilename[0]=='/' 
-    || pVfs->pAppData==(void*)&autolockIoFinder );
-#else
-  assert( zFilename==0 || zFilename[0]=='/' );
-#endif
-
   /* No locking occurs in temporary files */
   assert( zFilename!=0 || (ctrlFlags & UNIXFILE_NOLOCK)!=0 );
 
@@ -5506,6 +5558,8 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 #if !OS_VXWORKS
   struct stat sStat;                   /* Results of stat() call */
 
+  unixEnterMutex();
+
   /* A stat() call may fail for various reasons. If this happens, it is
   ** almost certain that an open() call on the same path will also fail.
   ** For this reason, if an error occurs in the stat() call here, it is
@@ -5514,10 +5568,9 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   **
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a reusable file descriptor are not dire.  */
-  if( 0==osStat(zPath, &sStat) ){
+  if( nUnusedFd>0 && 0==osStat(zPath, &sStat) ){
     unixInodeInfo *pInode;
 
-    unixEnterMutex();
     pInode = inodeList;
     while( pInode && (pInode->fileId.dev!=sStat.st_dev
                      || pInode->fileId.ino!=(u64)sStat.st_ino) ){
@@ -5528,11 +5581,12 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
       for(pp=&pInode->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
       pUnused = *pp;
       if( pUnused ){
+        nUnusedFd--;
         *pp = pUnused->pNext;
       }
     }
-    unixLeaveMutex();
   }
+  unixLeaveMutex();
 #endif    /* if !OS_VXWORKS */
   return pUnused;
 }
@@ -5608,16 +5662,11 @@ static int findCreateFileMode(
     */
     nDb = sqlite3Strlen30(zPath) - 1; 
     while( zPath[nDb]!='-' ){
-#ifndef SQLITE_ENABLE_8_3_NAMES
-      /* In the normal case (8+3 filenames disabled) the journal filename
-      ** is guaranteed to contain a '-' character. */
-      assert( nDb>0 );
-      assert( sqlite3Isalnum(zPath[nDb]) );
-#else
-      /* If 8+3 names are possible, then the journal file might not contain
-      ** a '-' character.  So check for that case and return early. */
+      /* In normal operation, the journal file name will always contain
+      ** a '-' character.  However in 8+3 filename mode, or if a corrupt
+      ** rollback journal specifies a master journal with a goofy name, then
+      ** the '-' might be missing. */
       if( nDb==0 || zPath[nDb]=='.' ) return SQLITE_OK;
-#endif
       nDb--;
     }
     memcpy(zDb, zPath, nDb);
@@ -5753,7 +5802,7 @@ static int unixOpen(
         return SQLITE_NOMEM_BKPT;
       }
     }
-    p->pUnused = pUnused;
+    p->pPreallocatedUnused = pUnused;
 
     /* Database filenames are double-zero terminated if they are not
     ** URIs with parameters.  Hence, they can always be passed into
@@ -5790,7 +5839,7 @@ static int unixOpen(
     gid_t gid;                    /* Groupid for the file */
     rc = findCreateFileMode(zName, flags, &openMode, &uid, &gid);
     if( rc!=SQLITE_OK ){
-      assert( !p->pUnused );
+      assert( !p->pPreallocatedUnused );
       assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
       return rc;
     }
@@ -5824,9 +5873,9 @@ static int unixOpen(
     *pOutFlags = flags;
   }
 
-  if( p->pUnused ){
-    p->pUnused->fd = fd;
-    p->pUnused->flags = flags;
+  if( p->pPreallocatedUnused ){
+    p->pPreallocatedUnused->fd = fd;
+    p->pPreallocatedUnused->flags = flags;
   }
 
   if( isDelete ){
@@ -5903,11 +5952,14 @@ static int unixOpen(
   }
 #endif
   
+  assert( zPath==0 || zPath[0]=='/' 
+      || eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL 
+  );
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 
 open_finished:
   if( rc!=SQLITE_OK ){
-    sqlite3_free(p->pUnused);
+    sqlite3_free(p->pPreallocatedUnused);
   }
   return rc;
 }
@@ -6648,7 +6700,7 @@ static int proxyCreateUnixFile(
   dummyVfs.zName = "dummy";
   pUnused->fd = fd;
   pUnused->flags = openFlags;
-  pNew->pUnused = pUnused;
+  pNew->pPreallocatedUnused = pUnused;
   
   rc = fillInUnixFile(&dummyVfs, fd, (sqlite3_file*)pNew, path, 0);
   if( rc==SQLITE_OK ){
@@ -7598,7 +7650,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==28 );
+  assert( ArraySize(aSyscall)==29 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

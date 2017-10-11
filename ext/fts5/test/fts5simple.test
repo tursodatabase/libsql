@@ -411,7 +411,6 @@ do_catchsql_test 19.2 {
 
 #-------------------------------------------------------------------------
 reset_db
-breakpoint
 do_execsql_test 20.0 {
   CREATE VIRTUAL TABLE x1 USING fts5(x);
   INSERT INTO x1(x1, rank) VALUES('pgsz', 32);

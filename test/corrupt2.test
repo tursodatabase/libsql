@@ -59,7 +59,7 @@ do_test corrupt2-1.2 {
     $::presql
     SELECT * FROM sqlite_master;
   " db2
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 
 do_test corrupt2-1.3 {
   db2 close
@@ -79,7 +79,7 @@ do_test corrupt2-1.3 {
     $::presql
     SELECT * FROM sqlite_master;
   " db2
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 
 do_test corrupt2-1.4 {
   db2 close

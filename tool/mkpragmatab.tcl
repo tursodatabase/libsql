@@ -120,12 +120,12 @@ set pragma_def {
 
   NAME: writable_schema
   TYPE: FLAG
-  ARG:  SQLITE_WriteSchema|SQLITE_RecoveryMode
+  ARG:  SQLITE_WriteSchema
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
   TYPE: FLAG
-  ARG:  SQLITE_ReadUncommitted
+  ARG:  SQLITE_ReadUncommit
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: recursive_triggers
@@ -252,6 +252,24 @@ set pragma_def {
   COLS: seq name file
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
+  NAME: function_list
+  FLAG: Result0
+  COLS: name builtin
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+
+  NAME: module_list
+  FLAG: Result0
+  COLS: name
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_VIRTUALTABLE)
+  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+
+  NAME: pragma_list
+  FLAG: Result0
+  COLS: name
+  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+
   NAME: collation_list
   FLAG: Result0
   COLS: seq name
@@ -263,7 +281,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY)
 
   NAME: foreign_key_check
-  FLAG: NeedSchema
+  FLAG: NeedSchema Result0
   COLS: table rowid parent fkid
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
@@ -274,12 +292,12 @@ set pragma_def {
   FLAG: NoColumns
 
   NAME: integrity_check
-  FLAG: NeedSchema
+  FLAG: NeedSchema Result0 Result1
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: quick_check
   TYPE: INTEGRITY_CHECK
-  FLAG: NeedSchema
+  FLAG: NeedSchema Result0 Result1
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: encoding

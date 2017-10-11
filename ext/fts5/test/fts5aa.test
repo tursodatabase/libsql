@@ -441,7 +441,7 @@ db func funk funk
 do_catchsql_test 16.2 {
   SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
 } {0 {{} -1e-06 {}}}
-# {1 {SQL logic error or missing database}}
+# {1 {SQL logic error}}
 
 #-------------------------------------------------------------------------
 #
@@ -595,5 +595,3 @@ do_execsql_test 22.1 {
 
 
 finish_test
-
-

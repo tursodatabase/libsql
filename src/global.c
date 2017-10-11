@@ -199,6 +199,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    SQLITE_THREADSAFE==1,      /* bFullMutex */
    SQLITE_USE_URI,            /* bOpenUri */
    SQLITE_ALLOW_COVERING_INDEX_SCAN,   /* bUseCis */
+   0,                         /* bSmallMalloc */
    0x7ffffffe,                /* mxStrlen */
    0,                         /* neverCorrupt */
    SQLITE_DEFAULT_LOOKASIDE,  /* szLookaside, nLookaside */
@@ -211,9 +212,6 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0, 0,                      /* mnHeap, mxHeap */
    SQLITE_DEFAULT_MMAP_SIZE,  /* szMmap */
    SQLITE_MAX_MMAP_SIZE,      /* mxMmap */
-   (void*)0,                  /* pScratch */
-   0,                         /* szScratch */
-   0,                         /* nScratch */
    (void*)0,                  /* pPage */
    0,                         /* szPage */
    SQLITE_DEFAULT_PCACHE_INITSZ, /* nPage */

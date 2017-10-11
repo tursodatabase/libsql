@@ -815,15 +815,15 @@ static int vdbeSorterCompareText(
   int n2;
   int res;
 
-  getVarint32(&p1[1], n1); n1 = (n1 - 13) / 2;
-  getVarint32(&p2[1], n2); n2 = (n2 - 13) / 2;
-  res = memcmp(v1, v2, MIN(n1, n2));
+  getVarint32(&p1[1], n1);
+  getVarint32(&p2[1], n2);
+  res = memcmp(v1, v2, (MIN(n1, n2) - 13)/2);
   if( res==0 ){
     res = n1 - n2;
   }
 
   if( res==0 ){
-    if( pTask->pSorter->pKeyInfo->nField>1 ){
+    if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
       res = vdbeSorterCompareTail(
           pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
       );
@@ -892,7 +892,7 @@ static int vdbeSorterCompareInt(
   }
 
   if( res==0 ){
-    if( pTask->pSorter->pKeyInfo->nField>1 ){
+    if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
       res = vdbeSorterCompareTail(
           pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
       );
@@ -907,7 +907,7 @@ static int vdbeSorterCompareInt(
 /*
 ** Initialize the temporary index cursor just opened as a sorter cursor.
 **
-** Usually, the sorter module uses the value of (pCsr->pKeyInfo->nField)
+** Usually, the sorter module uses the value of (pCsr->pKeyInfo->nKeyField)
 ** to determine the number of fields that should be compared from the
 ** records being sorted. However, if the value passed as argument nField
 ** is non-zero and the sorter is able to guarantee a stable sort, nField
@@ -960,7 +960,7 @@ int sqlite3VdbeSorterInit(
 
   assert( pCsr->pKeyInfo && pCsr->pBtx==0 );
   assert( pCsr->eCurType==CURTYPE_SORTER );
-  szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
+  szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nKeyField-1)*sizeof(CollSeq*);
   sz = sizeof(VdbeSorter) + nWorker * sizeof(SortSubtask);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
@@ -972,8 +972,7 @@ int sqlite3VdbeSorterInit(
     memcpy(pKeyInfo, pCsr->pKeyInfo, szKeyInfo);
     pKeyInfo->db = 0;
     if( nField && nWorker==0 ){
-      pKeyInfo->nXField += (pKeyInfo->nField - nField);
-      pKeyInfo->nField = nField;
+      pKeyInfo->nKeyField = nField;
     }
     pSorter->pgsz = pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
     pSorter->nTask = nWorker + 1;
@@ -1001,11 +1000,9 @@ int sqlite3VdbeSorterInit(
       mxCache = MIN(mxCache, SQLITE_MAX_PMASZ);
       pSorter->mxPmaSize = MAX(pSorter->mnPmaSize, (int)mxCache);
 
-      /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
-      ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
-      ** large heap allocations.
-      */
-      if( sqlite3GlobalConfig.pScratch==0 ){
+      /* Avoid large memory allocations if the application has requested
+      ** SQLITE_CONFIG_SMALL_MALLOC. */
+      if( sqlite3GlobalConfig.bSmallMalloc==0 ){
         assert( pSorter->iMemory==0 );
         pSorter->nMemory = pgsz;
         pSorter->list.aMemory = (u8*)sqlite3Malloc(pgsz);
@@ -1013,7 +1010,7 @@ int sqlite3VdbeSorterInit(
       }
     }
 
-    if( (pKeyInfo->nField+pKeyInfo->nXField)<13 
+    if( pKeyInfo->nAllField<13 
      && (pKeyInfo->aColl[0]==0 || pKeyInfo->aColl[0]==db->pDfltColl)
     ){
       pSorter->typeMask = SORTER_TYPE_INTEGER | SORTER_TYPE_TEXT;
@@ -1328,7 +1325,7 @@ static int vdbeSortAllocUnpacked(SortSubtask *pTask){
   if( pTask->pUnpacked==0 ){
     pTask->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pTask->pSorter->pKeyInfo);
     if( pTask->pUnpacked==0 ) return SQLITE_NOMEM_BKPT;
-    pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nField;
+    pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nKeyField;
     pTask->pUnpacked->errCode = 0;
   }
   return SQLITE_OK;
@@ -2612,9 +2609,13 @@ int sqlite3VdbeSorterRewind(const VdbeCursor *pCsr, int *pbEof){
 }
 
 /*
-** Advance to the next element in the sorter.
+** Advance to the next element in the sorter.  Return value:
+**
+**    SQLITE_OK     success
+**    SQLITE_DONE   end of data
+**    otherwise     some kind of error.
 */
-int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
+int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr){
   VdbeSorter *pSorter;
   int rc;                         /* Return code */
 
@@ -2628,21 +2629,22 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
 #if SQLITE_MAX_WORKER_THREADS>0
     if( pSorter->bUseThreads ){
       rc = vdbePmaReaderNext(pSorter->pReader);
-      *pbEof = (pSorter->pReader->pFd==0);
+      if( rc==SQLITE_OK && pSorter->pReader->pFd==0 ) rc = SQLITE_DONE;
     }else
 #endif
     /*if( !pSorter->bUseThreads )*/ {
+      int res = 0;
       assert( pSorter->pMerger!=0 );
       assert( pSorter->pMerger->pTask==(&pSorter->aTask[0]) );
-      rc = vdbeMergeEngineStep(pSorter->pMerger, pbEof);
+      rc = vdbeMergeEngineStep(pSorter->pMerger, &res);
+      if( rc==SQLITE_OK && res ) rc = SQLITE_DONE;
     }
   }else{
     SorterRecord *pFree = pSorter->list.pList;
     pSorter->list.pList = pFree->u.pNext;
     pFree->u.pNext = 0;
     if( pSorter->list.aMemory==0 ) vdbeSorterRecordFree(db, pFree);
-    *pbEof = !pSorter->list.pList;
-    rc = SQLITE_OK;
+    rc = pSorter->list.pList ? SQLITE_OK : SQLITE_DONE;
   }
   return rc;
 }

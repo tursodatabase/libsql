@@ -374,23 +374,17 @@ do_test attach2-6.1 {
 do_test attach2-6.2 {
   catchsql {
     ATTACH 'test3.db' as aux2;
+    DETACH aux2;
   }
-} {1 {cannot ATTACH database within transaction}}
+} {0 {}}
 
-# EVIDENCE-OF: R-59740-55581 This statement will fail if SQLite is in
-# the middle of a transaction.
+# As of version 3.21.0: it is ok to DETACH from within a transaction
 #
 do_test attach2-6.3 {
   catchsql {
     DETACH aux;
   }
-} {1 {cannot DETACH database within transaction}}
-do_test attach2-6.4 {
-  execsql {
-    COMMIT;
-    DETACH aux;
-  }
-} {}
+} {0 {}}
 
 db close
 

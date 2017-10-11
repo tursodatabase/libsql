@@ -70,4 +70,3 @@ do_execsql_test 1.6 {
 
 
 finish_test
-

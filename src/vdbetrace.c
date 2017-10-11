@@ -82,7 +82,7 @@ char *sqlite3VdbeExpandSql(
   Mem *pVar;               /* Value of a host parameter */
   StrAccum out;            /* Accumulate the output here */
 #ifndef SQLITE_OMIT_UTF16
-  Mem utf8;                /* Used to convert UTF16 parameters into UTF8 for display */
+  Mem utf8;                /* Used to convert UTF16 into UTF8 for display */
 #endif
   char zBase[100];         /* Initial working space */
 

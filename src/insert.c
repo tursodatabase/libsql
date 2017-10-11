@@ -226,7 +226,7 @@ static int autoIncBegin(
 ){
   int memId = 0;      /* Register holding maximum rowid */
   if( (pTab->tabFlags & TF_Autoincrement)!=0
-   && (pParse->db->flags & SQLITE_Vacuum)==0
+   && (pParse->db->mDbFlags & DBFLAG_Vacuum)==0
   ){
     Parse *pToplevel = sqlite3ParseToplevel(pParse);
     AutoincInfo *pInfo;
@@ -484,7 +484,6 @@ void sqlite3Insert(
 ){
   sqlite3 *db;          /* The main database structure */
   Table *pTab;          /* The table to insert into.  aka TABLE */
-  char *zTab;           /* Name of the table into which we are inserting */
   int i, j;             /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
@@ -521,10 +520,10 @@ void sqlite3Insert(
 #endif
 
   db = pParse->db;
-  memset(&dest, 0, sizeof(dest));
   if( pParse->nErr || db->mallocFailed ){
     goto insert_cleanup;
   }
+  dest.iSDParm = 0;  /* Suppress a harmless compiler warning */
 
   /* If the Select object is really just a simple VALUES() list with a
   ** single row (the common case) then keep that one row of values
@@ -540,8 +539,6 @@ void sqlite3Insert(
   /* Locate the table into which we will be inserting new information.
   */
   assert( pTabList->nSrc==1 );
-  zTab = pTabList->a[0].zName;
-  if( NEVER(zTab==0) ) goto insert_cleanup;
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ){
     goto insert_cleanup;
@@ -1333,7 +1330,7 @@ void sqlite3GenerateConstraintChecks(
 #ifndef SQLITE_OMIT_CHECK
   if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
     ExprList *pCheck = pTab->pCheck;
-    pParse->ckBase = regNewData+1;
+    pParse->iSelfTab = -(regNewData+1);
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk;
@@ -1353,6 +1350,7 @@ void sqlite3GenerateConstraintChecks(
       }
       sqlite3VdbeResolveLabel(v, allOk);
     }
+    pParse->iSelfTab = 0;
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 
@@ -1497,10 +1495,10 @@ void sqlite3GenerateConstraintChecks(
     /* Skip partial indices for which the WHERE clause is not true */
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, aRegIdx[ix]);
-      pParse->ckBase = regNewData+1;
+      pParse->iSelfTab = -(regNewData+1);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, addrUniqueOk,
                             SQLITE_JUMPIFNULL);
-      pParse->ckBase = 0;
+      pParse->iSelfTab = 0;
     }
 
     /* Create a record for this index entry as it should appear after
@@ -1511,9 +1509,9 @@ void sqlite3GenerateConstraintChecks(
       int iField = pIdx->aiColumn[i];
       int x;
       if( iField==XN_EXPR ){
-        pParse->ckBase = regNewData+1;
+        pParse->iSelfTab = -(regNewData+1);
         sqlite3ExprCodeCopy(pParse, pIdx->aColExpr->a[i].pExpr, regIdx+i);
-        pParse->ckBase = 0;
+        pParse->iSelfTab = 0;
         VdbeComment((v, "%s column %d", pIdx->zName, i));
       }else{
         if( iField==XN_ROWID || iField==pTab->iPKey ){
@@ -1898,7 +1896,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
     }
     if( pSrc->aiColumn[i]==XN_EXPR ){
       assert( pSrc->aColExpr!=0 && pDest->aColExpr!=0 );
-      if( sqlite3ExprCompare(pSrc->aColExpr->a[i].pExpr,
+      if( sqlite3ExprCompare(0, pSrc->aColExpr->a[i].pExpr,
                              pDest->aColExpr->a[i].pExpr, -1)!=0 ){
         return 0;   /* Different expressions in the index */
       }
@@ -1910,7 +1908,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
       return 0;   /* Different collating sequences */
     }
   }
-  if( sqlite3ExprCompare(pSrc->pPartIdxWhere, pDest->pPartIdxWhere, -1) ){
+  if( sqlite3ExprCompare(0, pSrc->pPartIdxWhere, pDest->pPartIdxWhere, -1) ){
     return 0;     /* Different WHERE clauses */
   }
 
@@ -2058,7 +2056,7 @@ static int xferOptimization(
     Column *pDestCol = &pDest->aCol[i];
     Column *pSrcCol = &pSrc->aCol[i];
 #ifdef SQLITE_ENABLE_HIDDEN_COLUMNS
-    if( (db->flags & SQLITE_Vacuum)==0 
+    if( (db->mDbFlags & DBFLAG_Vacuum)==0 
      && (pDestCol->colFlags | pSrcCol->colFlags) & COLFLAG_HIDDEN 
     ){
       return 0;    /* Neither table may have __hidden__ columns */
@@ -2134,15 +2132,15 @@ static int xferOptimization(
   regRowid = sqlite3GetTempReg(pParse);
   sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
   assert( HasRowid(pDest) || destHasUniqueIdx );
-  if( (db->flags & SQLITE_Vacuum)==0 && (
+  if( (db->mDbFlags & DBFLAG_Vacuum)==0 && (
       (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
    || destHasUniqueIdx                              /* (2) */
    || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
   )){
     /* In some circumstances, we are able to run the xfer optimization
     ** only if the destination table is initially empty. Unless the
-    ** SQLITE_Vacuum flag is set, this block generates code to make
-    ** that determination. If SQLITE_Vacuum is set, then the destination
+    ** DBFLAG_Vacuum flag is set, this block generates code to make
+    ** that determination. If DBFLAG_Vacuum is set, then the destination
     ** table is always empty.
     **
     ** Conditions under which the destination must be empty:
@@ -2178,8 +2176,8 @@ static int xferOptimization(
       assert( (pDest->tabFlags & TF_Autoincrement)==0 );
     }
     sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-    if( db->flags & SQLITE_Vacuum ){
-      sqlite3VdbeAddOp3(v, OP_Last, iDest, 0, -1);
+    if( db->mDbFlags & DBFLAG_Vacuum ){
+      sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
       insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|
                            OPFLAG_APPEND|OPFLAG_USESEEKRESULT;
     }else{
@@ -2210,13 +2208,13 @@ static int xferOptimization(
     VdbeComment((v, "%s", pDestIdx->zName));
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0); VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-    if( db->flags & SQLITE_Vacuum ){
+    if( db->mDbFlags & DBFLAG_Vacuum ){
       /* This INSERT command is part of a VACUUM operation, which guarantees
       ** that the destination table is empty. If all indexed columns use
       ** collation sequence BINARY, then it can also be assumed that the
       ** index will be populated by inserting keys in strictly sorted 
       ** order. In this case, instead of seeking within the b-tree as part
-      ** of every OP_IdxInsert opcode, an OP_Last is added before the
+      ** of every OP_IdxInsert opcode, an OP_SeekEnd is added before the
       ** OP_IdxInsert to seek to the point within the b-tree where each key 
       ** should be inserted. This is faster.
       **
@@ -2231,7 +2229,7 @@ static int xferOptimization(
       }
       if( i==pSrcIdx->nColumn ){
         idxInsFlags = OPFLAG_USESEEKRESULT;
-        sqlite3VdbeAddOp3(v, OP_Last, iDest, 0, -1);
+        sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
       }
     }
     if( !HasRowid(pSrc) && pDestIdx->idxType==2 ){

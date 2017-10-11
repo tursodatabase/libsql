@@ -150,62 +150,63 @@ do_execsql_test tabfunc01-600 {
 do_test tabfunc01-700 {
   set PTR1 [intarray_addr 5 7 13 17 23]
   db eval {
-    SELECT b FROM t600, carray($PTR1,5) WHERE a=value;
+    SELECT b FROM t600, carray(inttoptr($PTR1),5) WHERE a=value;
   }
 } {(005) (007) (013) (017) (023)}
 do_test tabfunc01-701 {
   db eval {
-    SELECT b FROM t600 WHERE a IN carray($PTR1,5,'int32');
+    SELECT b FROM t600 WHERE a IN carray(inttoptr($PTR1),5,'int32');
   }
 } {(005) (007) (013) (017) (023)}
 do_test tabfunc01-702 {
   db eval {
-    SELECT b FROM t600 WHERE a IN carray($PTR1,4,'int32');
+    SELECT b FROM t600 WHERE a IN carray(inttoptr($PTR1),4,'int32');
   }
 } {(005) (007) (013) (017)}
 do_catchsql_test tabfunc01-710 {
-  SELECT b FROM t600 WHERE a IN carray($PTR1,5,'int33');
+  SELECT b FROM t600 WHERE a IN carray(inttoptr($PTR1),5,'int33');
 } {1 {unknown datatype: 'int33'}}
 
 do_test tabfunc01-720 {
   set PTR2 [int64array_addr 5 7 13 17 23]
   db eval {
-    SELECT b FROM t600, carray($PTR2,5,'int64') WHERE a=value;
+    SELECT b FROM t600, carray(inttoptr($PTR2),5,'int64') WHERE a=value;
   }
 } {(005) (007) (013) (017) (023)}
 do_test tabfunc01-721 {
   db eval {
-    SELECT remember(123,$PTR2);
-    SELECT value FROM carray($PTR2,5,'int64');
+    SELECT remember(123,inttoptr($PTR2));
+    SELECT value FROM carray(inttoptr($PTR2),5,'int64');
   }
 } {123 123 7 13 17 23}
 do_test tabfunc01-722 {
   set PTR3 [expr {$PTR2+16}]
   db eval {
-    SELECT remember(987,$PTR3);
-    SELECT value FROM carray($PTR2,5,'int64');
+    SELECT remember(987,inttoptr($PTR3));
+    SELECT value FROM carray(inttoptr($PTR2),5,'int64');
   }
 } {987 123 7 987 17 23}
 
 do_test tabfunc01-730 {
   set PTR4 [doublearray_addr 5.0 7.0 13.0 17.0 23.0]
   db eval {
-    SELECT b FROM t600, carray($PTR4,5,'double') WHERE a=value;
+    SELECT b FROM t600, carray(inttoptr($PTR4),5,'double') WHERE a=value;
   }
 } {(005) (007) (013) (017) (023)}
 
 do_test tabfunc01-740 {
   set PTR5 [textarray_addr x5 x7 x13 x17 x23]
   db eval {
-    SELECT b FROM t600, carray($PTR5,5,'char*') WHERE a=trim(value,'x');
+    SELECT b FROM t600, carray(inttoptr($PTR5),5,'char*')
+     WHERE a=trim(value,'x');
   }
 } {(005) (007) (013) (017) (023)}
 
 do_test tabfunc01-750 {
   db eval {
     SELECT aa.value, bb.value, '|'
-      FROM carray($PTR4,5,'double') AS aa
-      JOIN carray($PTR5,5,'char*') AS bb ON aa.rowid=bb.rowid;
+      FROM carray(inttoptr($PTR4),5,'double') AS aa
+      JOIN carray(inttoptr($PTR5),5,'char*') AS bb ON aa.rowid=bb.rowid;
   }
 } {5.0 x5 | 7.0 x7 | 13.0 x13 | 17.0 x17 | 23.0 x23 |}
 

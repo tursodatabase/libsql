@@ -61,4 +61,3 @@ do_faultsim_test 2 -faults oom* -prep {
   faultsim_test_result {0 {1 2}}
 }
 finish_test
-

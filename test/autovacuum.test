@@ -705,5 +705,12 @@ do_test autovacuum-9.5 {
   file size test.db
 } $::sqlite_pending_byte
  
+do_execsql_test autovacuum-10.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(25, randomblob(104));
+  REPLACE INTO t1 VALUES(25, randomblob(1117));
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test

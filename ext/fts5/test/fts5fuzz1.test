@@ -90,4 +90,3 @@ do_catchsql_test 4.1 {
 } {1 {fts5: syntax error near "`"}}
 
 finish_test
-

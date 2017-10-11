@@ -210,7 +210,6 @@ do_execsql_test 5.0 {
   INSERT INTO aux.t1 VALUES('x n z');
 }
 
-breakpoint
 do_execsql_test 5.1 {
   CREATE VIRTUAL TABLE temp.vm  USING fts5vocab(main, t1, row);
   CREATE VIRTUAL TABLE temp.vt1 USING fts5vocab(t1, row);

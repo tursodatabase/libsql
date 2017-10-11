@@ -98,7 +98,7 @@ int sqlite3OsTruncate(sqlite3_file *id, i64 size){
 }
 int sqlite3OsSync(sqlite3_file *id, int flags){
   DO_OS_MALLOC_TEST(id);
-  return id->pMethods->xSync(id, flags);
+  return flags ? id->pMethods->xSync(id, flags) : SQLITE_OK;
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
   DO_OS_MALLOC_TEST(id);
@@ -153,6 +153,7 @@ int sqlite3OsSectorSize(sqlite3_file *id){
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
 }
+#ifndef SQLITE_OMIT_WAL
 int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
   return id->pMethods->xShmLock(id, offset, n, flags);
 }
@@ -172,6 +173,7 @@ int sqlite3OsShmMap(
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
+#endif /* SQLITE_OMIT_WAL */
 
 #if SQLITE_MAX_MMAP_SIZE>0
 /* The real implementation of xFetch and xUnfetch */

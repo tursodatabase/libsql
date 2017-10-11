@@ -382,17 +382,17 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS: {
-      sqlite3TreeViewLine(pView, "EXISTS-expr");
+      sqlite3TreeViewLine(pView, "EXISTS-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_SELECT: {
-      sqlite3TreeViewLine(pView, "SELECT-expr");
+      sqlite3TreeViewLine(pView, "SELECT-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_IN: {
-      sqlite3TreeViewLine(pView, "IN");
+      sqlite3TreeViewLine(pView, "IN flags=0x%x", pExpr->flags);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);

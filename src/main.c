@@ -28,6 +28,9 @@
 #ifdef SQLITE_ENABLE_JSON1
 int sqlite3Json1Init(sqlite3*);
 #endif
+#ifdef SQLITE_ENABLE_STMTVTAB
+int sqlite3StmtVtabInit(sqlite3*);
+#endif
 #ifdef SQLITE_ENABLE_FTS5
 int sqlite3Fts5Init(sqlite3*);
 #endif
@@ -44,9 +47,11 @@ const char sqlite3_version[] = SQLITE_VERSION;
 */
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 
-/* IMPLEMENTATION-OF: R-63124-39300 The sqlite3_sourceid() function returns a
+/* IMPLEMENTATION-OF: R-25063-23286 The sqlite3_sourceid() function returns a
 ** pointer to a string constant whose value is the same as the
-** SQLITE_SOURCE_ID C preprocessor macro. 
+** SQLITE_SOURCE_ID C preprocessor macro. Except if SQLite is built using
+** an edited copy of the amalgamation, then the last four characters of
+** the hash might be different from SQLITE_SOURCE_ID.
 */
 const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 
@@ -433,14 +438,8 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
       break;
     }
-    case SQLITE_CONFIG_SCRATCH: {
-      /* EVIDENCE-OF: R-08404-60887 There are three arguments to
-      ** SQLITE_CONFIG_SCRATCH: A pointer an 8-byte aligned memory buffer from
-      ** which the scratch allocations will be drawn, the size of each scratch
-      ** allocation (sz), and the maximum number of scratch allocations (N). */
-      sqlite3GlobalConfig.pScratch = va_arg(ap, void*);
-      sqlite3GlobalConfig.szScratch = va_arg(ap, int);
-      sqlite3GlobalConfig.nScratch = va_arg(ap, int);
+    case SQLITE_CONFIG_SMALL_MALLOC: {
+      sqlite3GlobalConfig.bSmallMalloc = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
@@ -661,7 +660,8 @@ int sqlite3_config(int op, ...){
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
-  if( db->lookaside.nOut ){
+  
+  if( sqlite3LookasideUsed(db,0)>0 ){
     return SQLITE_BUSY;
   }
   /* Free any existing lookaside buffer for this handle before
@@ -689,16 +689,18 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     pStart = pBuf;
   }
   db->lookaside.pStart = pStart;
+  db->lookaside.pInit = 0;
   db->lookaside.pFree = 0;
   db->lookaside.sz = (u16)sz;
   if( pStart ){
     int i;
     LookasideSlot *p;
     assert( sz > (int)sizeof(LookasideSlot*) );
+    db->lookaside.nSlot = cnt;
     p = (LookasideSlot*)pStart;
     for(i=cnt-1; i>=0; i--){
-      p->pNext = db->lookaside.pFree;
-      db->lookaside.pFree = p;
+      p->pNext = db->lookaside.pInit;
+      db->lookaside.pInit = p;
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
     db->lookaside.pEnd = p;
@@ -709,6 +711,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.pEnd = db;
     db->lookaside.bDisable = 1;
     db->lookaside.bMalloced = 0;
+    db->lookaside.nSlot = 0;
   }
 #endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
@@ -790,6 +793,8 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_start(ap, op);
   switch( op ){
     case SQLITE_DBCONFIG_MAINDBNAME: {
+      /* IMP: R-06824-28531 */
+      /* IMP: R-36257-52125 */
       db->aDb[0].zDbSName = va_arg(ap,char*);
       rc = SQLITE_OK;
       break;
@@ -826,6 +831,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
+        { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -833,7 +839,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         if( aFlagOp[i].op==op ){
           int onoff = va_arg(ap, int);
           int *pRes = va_arg(ap, int*);
-          int oldFlags = db->flags;
+          u32 oldFlags = db->flags;
           if( onoff>0 ){
             db->flags |= aFlagOp[i].mask;
           }else if( onoff==0 ){
@@ -882,6 +888,7 @@ static int binCollFunc(
   /* EVIDENCE-OF: R-65033-28449 The built-in BINARY collation compares
   ** strings byte by byte using the memcmp() function from the standard C
   ** library. */
+  assert( pKey1 && pKey2 );
   rc = memcmp(pKey1, pKey2, n);
   if( rc==0 ){
     if( padFlag
@@ -1239,7 +1246,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
-  assert( db->lookaside.nOut==0 );  /* Fails on a lookaside memory leak */
+  assert( sqlite3LookasideUsed(db,0)==0 );
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
@@ -1267,7 +1274,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   ** the database rollback and schema reset, which can cause false
   ** corruption reports in some cases.  */
   sqlite3BtreeEnterAll(db);
-  schemaChange = (db->flags & SQLITE_InternChanges)!=0 && db->init.busy==0;
+  schemaChange = (db->mDbFlags & DBFLAG_SchemaChange)!=0 && db->init.busy==0;
 
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
@@ -1281,7 +1288,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   sqlite3VtabRollback(db);
   sqlite3EndBenignMalloc();
 
-  if( (db->flags&SQLITE_InternChanges)!=0 && db->init.busy==0 ){
+  if( (db->mDbFlags&DBFLAG_SchemaChange)!=0 && db->init.busy==0 ){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }
@@ -1414,10 +1421,10 @@ const char *sqlite3ErrName(int rc){
 const char *sqlite3ErrStr(int rc){
   static const char* const aMsg[] = {
     /* SQLITE_OK          */ "not an error",
-    /* SQLITE_ERROR       */ "SQL logic error or missing database",
+    /* SQLITE_ERROR       */ "SQL logic error",
     /* SQLITE_INTERNAL    */ 0,
     /* SQLITE_PERM        */ "access permission denied",
-    /* SQLITE_ABORT       */ "callback requested query abort",
+    /* SQLITE_ABORT       */ "query aborted",
     /* SQLITE_BUSY        */ "database is locked",
     /* SQLITE_LOCKED      */ "database table is locked",
     /* SQLITE_NOMEM       */ "out of memory",
@@ -1429,17 +1436,21 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_FULL        */ "database or disk is full",
     /* SQLITE_CANTOPEN    */ "unable to open database file",
     /* SQLITE_PROTOCOL    */ "locking protocol",
-    /* SQLITE_EMPTY       */ "table contains no data",
+    /* SQLITE_EMPTY       */ 0,
     /* SQLITE_SCHEMA      */ "database schema has changed",
     /* SQLITE_TOOBIG      */ "string or blob too big",
     /* SQLITE_CONSTRAINT  */ "constraint failed",
     /* SQLITE_MISMATCH    */ "datatype mismatch",
-    /* SQLITE_MISUSE      */ "library routine called out of sequence",
+    /* SQLITE_MISUSE      */ "bad parameter or other API misuse",
+#ifdef SQLITE_DISABLE_LFS
     /* SQLITE_NOLFS       */ "large file support is disabled",
+#else
+    /* SQLITE_NOLFS       */ 0,
+#endif
     /* SQLITE_AUTH        */ "authorization denied",
-    /* SQLITE_FORMAT      */ "auxiliary database format error",
-    /* SQLITE_RANGE       */ "bind or column index out of range",
-    /* SQLITE_NOTADB      */ "file is encrypted or is not a database",
+    /* SQLITE_FORMAT      */ 0,
+    /* SQLITE_RANGE       */ "column index out of range",
+    /* SQLITE_NOTADB      */ "file is not a database",
   };
   const char *zErr = "unknown error";
   switch( rc ){
@@ -2179,7 +2190,8 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 ** checkpointed. If an error is encountered it is returned immediately -
 ** no attempt is made to checkpoint any remaining databases.
 **
-** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL, RESTART
+** or TRUNCATE.
 */
 int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;             /* Return code */
@@ -2279,12 +2291,9 @@ const void *sqlite3_errmsg16(sqlite3 *db){
     'o', 'u', 't', ' ', 'o', 'f', ' ', 'm', 'e', 'm', 'o', 'r', 'y', 0
   };
   static const u16 misuse[] = {
-    'l', 'i', 'b', 'r', 'a', 'r', 'y', ' ', 
-    'r', 'o', 'u', 't', 'i', 'n', 'e', ' ', 
-    'c', 'a', 'l', 'l', 'e', 'd', ' ', 
-    'o', 'u', 't', ' ', 
-    'o', 'f', ' ', 
-    's', 'e', 'q', 'u', 'e', 'n', 'c', 'e', 0
+    'b', 'a', 'd', ' ', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r', ' ',
+    'o', 'r', ' ', 'o', 't', 'h', 'e', 'r', ' ', 'A', 'P', 'I', ' ',
+    'm', 'i', 's', 'u', 's', 'e', 0
   };
 
   const void *z;
@@ -2819,26 +2828,6 @@ static int openDatabase(
   if( rc ) return rc;
 #endif
 
-  /* Only allow sensible combinations of bits in the flags argument.  
-  ** Throw an error if any non-sense combination is used.  If we
-  ** do not block illegal combinations here, it could trigger
-  ** assert() statements in deeper layers.  Sensible combinations
-  ** are:
-  **
-  **  1:  SQLITE_OPEN_READONLY
-  **  2:  SQLITE_OPEN_READWRITE
-  **  6:  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-  */
-  assert( SQLITE_OPEN_READONLY  == 0x01 );
-  assert( SQLITE_OPEN_READWRITE == 0x02 );
-  assert( SQLITE_OPEN_CREATE    == 0x04 );
-  testcase( (1<<(flags&7))==0x02 ); /* READONLY */
-  testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
-  testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
-  if( ((1<<(flags&7)) & 0x46)==0 ){
-    return SQLITE_MISUSE_BKPT;  /* IMP: R-65497-44594 */
-  }
-
   if( sqlite3GlobalConfig.bCoreMutex==0 ){
     isThreadsafe = 0;
   }else if( flags & SQLITE_OPEN_NOMUTEX ){
@@ -2930,6 +2919,9 @@ static int openDatabase(
 #if defined(SQLITE_ENABLE_FTS3_TOKENIZER)
                  | SQLITE_Fts3Tokenizer
 #endif
+#if defined(SQLITE_ENABLE_QPSG)
+                 | SQLITE_EnableQPSG
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2957,9 +2949,30 @@ static int openDatabase(
   db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, sqlite3StrBINARY, 0);
   assert( db->pDfltColl!=0 );
 
-  /* Parse the filename/URI argument. */
+  /* Parse the filename/URI argument
+  **
+  ** Only allow sensible combinations of bits in the flags argument.  
+  ** Throw an error if any non-sense combination is used.  If we
+  ** do not block illegal combinations here, it could trigger
+  ** assert() statements in deeper layers.  Sensible combinations
+  ** are:
+  **
+  **  1:  SQLITE_OPEN_READONLY
+  **  2:  SQLITE_OPEN_READWRITE
+  **  6:  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+  */
   db->openFlags = flags;
-  rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
+  assert( SQLITE_OPEN_READONLY  == 0x01 );
+  assert( SQLITE_OPEN_READWRITE == 0x02 );
+  assert( SQLITE_OPEN_CREATE    == 0x04 );
+  testcase( (1<<(flags&7))==0x02 ); /* READONLY */
+  testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
+  testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
+  if( ((1<<(flags&7)) & 0x46)==0 ){
+    rc = SQLITE_MISUSE_BKPT;  /* IMP: R-65497-44594 */
+  }else{
+    rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
+  }
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
     sqlite3ErrorWithMsg(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
@@ -3068,6 +3081,12 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_STMTVTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3StmtVtabInit(db);
+  }
+#endif
+
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
   ** mode.  Doing nothing at all also makes NORMAL the default.
@@ -3111,7 +3130,7 @@ opendb_out:
 #if defined(SQLITE_HAS_CODEC)
   if( rc==SQLITE_OK ){
     const char *zKey;
-    if( (zKey = sqlite3_uri_parameter(zOpen, "hexkey"))!=0 && zKey[0] ){;
+    if( (zKey = sqlite3_uri_parameter(zOpen, "hexkey"))!=0 && zKey[0] ){
       u8 iByte;
       int i;
       char zDecoded[40];
@@ -3352,6 +3371,12 @@ int sqlite3CantopenError(int lineno){
   return reportError(SQLITE_CANTOPEN, lineno, "cannot open file");
 }
 #ifdef SQLITE_DEBUG
+int sqlite3CorruptPgnoError(int lineno, Pgno pgno){
+  char zMsg[100];
+  sqlite3_snprintf(sizeof(zMsg), zMsg, "database corruption page %d", pgno);
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  return reportError(SQLITE_CORRUPT, lineno, zMsg);
+}
 int sqlite3NomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
   return reportError(SQLITE_NOMEM, lineno, "OOM");
@@ -3703,7 +3728,7 @@ int sqlite3_test_control(int op, ...){
     ** This action provides a run-time test to see how the ALWAYS and
     ** NEVER macros were defined at compile-time.
     **
-    ** The return value is ALWAYS(X).  
+    ** The return value is ALWAYS(X) if X is true, or 0 if X is false.
     **
     ** The recommended test is X==2.  If the return value is 2, that means
     ** ALWAYS() and NEVER() are both no-op pass-through macros, which is the
@@ -3726,7 +3751,7 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_ALWAYS: {
       int x = va_arg(ap,int);
-      rc = ALWAYS(x);
+      rc = x ? ALWAYS(x) : 0;
       break;
     }
 
@@ -3792,22 +3817,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif 
-
-    /* sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
-    **
-    ** Pass pFree into sqlite3ScratchFree(). 
-    ** If sz>0 then allocate a scratch buffer into pNew.  
-    */
-    case SQLITE_TESTCTRL_SCRATCHMALLOC: {
-      void *pFree, **ppNew;
-      int sz;
-      sz = va_arg(ap, int);
-      ppNew = va_arg(ap, void**);
-      pFree = va_arg(ap, void*);
-      if( sz ) *ppNew = sqlite3ScratchMalloc(sz);
-      sqlite3ScratchFree(pFree);
-      break;
-    }
 
     /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
     **
@@ -3950,7 +3959,7 @@ sqlite3_int64 sqlite3_uri_int64(
 ){
   const char *z = sqlite3_uri_parameter(zFilename, zParam);
   sqlite3_int64 v;
-  if( z && sqlite3DecOrHexToI64(z, &v)==SQLITE_OK ){
+  if( z && sqlite3DecOrHexToI64(z, &v)==0 ){
     bDflt = v;
   }
   return bDflt;
@@ -4110,3 +4119,55 @@ void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
   sqlite3_free(pSnapshot);
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+/*
+** Given the name of a compile-time option, return true if that option
+** was used and false if not.
+**
+** The name can optionally begin with "SQLITE_" but the "SQLITE_" prefix
+** is not required for a match.
+*/
+int sqlite3_compileoption_used(const char *zOptName){
+  int i, n;
+  int nOpt;
+  const char **azCompileOpt;
+ 
+#if SQLITE_ENABLE_API_ARMOR
+  if( zOptName==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+
+  azCompileOpt = sqlite3CompileOptions(&nOpt);
+
+  if( sqlite3StrNICmp(zOptName, "SQLITE_", 7)==0 ) zOptName += 7;
+  n = sqlite3Strlen30(zOptName);
+
+  /* Since nOpt is normally in single digits, a linear search is 
+  ** adequate. No need for a binary search. */
+  for(i=0; i<nOpt; i++){
+    if( sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0
+     && sqlite3IsIdChar((unsigned char)azCompileOpt[i][n])==0
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Return the N-th compile-time option string.  If N is out of range,
+** return a NULL pointer.
+*/
+const char *sqlite3_compileoption_get(int N){
+  int nOpt;
+  const char **azCompileOpt;
+  azCompileOpt = sqlite3CompileOptions(&nOpt);
+  if( N>=0 && N<nOpt ){
+    return azCompileOpt[N];
+  }
+  return 0;
+}
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */

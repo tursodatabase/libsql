@@ -69,17 +69,17 @@ do_execsql_test rtree9-3.3 {
 
 do_catchsql_test rtree9-4.1 {
   SELECT id FROM rt32 WHERE id MATCH cube(5.5, 5.5, 1, 1, 1) ORDER BY id;
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 for {set x 2} {$x<200} {incr x 2} {
   do_catchsql_test rtree9-4.2.[expr $x/2] {
     SELECT id FROM rt WHERE id MATCH randomblob($x)
-  } {1 {SQL logic error or missing database}}
+  } {1 {SQL logic error}}
 }
 do_catchsql_test rtree9-4.3 {
   SELECT id FROM rt WHERE id MATCH CAST( 
     (cube(5.5, 5.5, 5.5, 1, 1, 1) || X'1234567812345678') AS blob 
   )
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 
 #-------------------------------------------------------------------------

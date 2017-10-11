@@ -55,5 +55,37 @@ do_test 1.5 {
   execsql { SELECT * FROM t1 WHERE a=3 AND f(c) AND f(b) }
   set L
 } {b3}
+
+#-----------------------------------------------
+
+do_execsql_test 2.0 {
+  CREATE TABLE u1(a, b, c);
+  CREATE TABLE u2(x, y, z);
+
+  INSERT INTO u1 VALUES('a1', 'b1', 'c1');
+  INSERT INTO u2 VALUES('a1', 'b1', 'c1');
+}
+
+do_test 2.1 {
+  set L [list]
+  execsql {
+    SELECT * FROM u1 WHERE f('one')=123 AND 123=(
+      SELECT x FROM u2 WHERE x=a AND f('two')
+    )
+  }
+  set L
+} {one}
+
+do_test 2.2 {
+  set L [list]
+  execsql {
+    SELECT * FROM u1 WHERE 123=(
+      SELECT x FROM u2 WHERE x=a AND f('two')
+    ) AND f('three')=123
+  }
+  set L
+} {three}
+
+
   
 finish_test

@@ -230,6 +230,7 @@ int sqlite3BtreeCursor(
   struct KeyInfo*,                     /* First argument to compare function */
   BtCursor *pCursor                    /* Space to write cursor structure */
 );
+BtCursor *sqlite3BtreeFakeValidCursor(void);
 int sqlite3BtreeCursorSize(void);
 void sqlite3BtreeCursorZero(BtCursor*);
 void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
@@ -286,9 +287,9 @@ int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
                        int flags, int seekResult);
 int sqlite3BtreeFirst(BtCursor*, int *pRes);
 int sqlite3BtreeLast(BtCursor*, int *pRes);
-int sqlite3BtreeNext(BtCursor*, int *pRes);
+int sqlite3BtreeNext(BtCursor*, int flags);
 int sqlite3BtreeEof(BtCursor*);
-int sqlite3BtreePrevious(BtCursor*, int *pRes);
+int sqlite3BtreePrevious(BtCursor*, int flags);
 i64 sqlite3BtreeIntegerKey(BtCursor*);
 int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);

@@ -77,7 +77,7 @@ foreach {tn defn} {
 } {
   do_test 2.2.$tn {
     catchsql { INSERT INTO ft1(ft1, rank) VALUES('rank', $defn) }
-  } {1 {SQL logic error or missing database}}
+  } {1 {SQL logic error}}
 }
 
 #-------------------------------------------------------------------------
@@ -297,4 +297,3 @@ do_catchsql_test 4.4.4 {
 
 
 finish_test
-

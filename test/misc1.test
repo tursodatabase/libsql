@@ -479,26 +479,28 @@ ifcapable curdir {
 # Make sure a database connection still works after changing the
 # working directory.
 #
-do_test misc1-14.1 {
-  file mkdir tempdir
-  cd tempdir
-  execsql {BEGIN}
-  file exists ./test.db-journal
-} {0}
-do_test misc1-14.2a {
-  execsql {UPDATE t1 SET a=a||'x' WHERE 0}
-  file exists ../test.db-journal
-} {0}
-do_test misc1-14.2b {
-  execsql {UPDATE t1 SET a=a||'y' WHERE 1}
-  file exists ../test.db-journal
-} {1}
-do_test misc1-14.3 {
-  cd ..
-  forcedelete tempdir
-  execsql {COMMIT}
-  file exists ./test.db-journal
-} {0}
+if {[atomic_batch_write test.db]==0} {
+  do_test misc1-14.1 {
+    file mkdir tempdir
+    cd tempdir
+    execsql {BEGIN}
+    file exists ./test.db-journal
+  } {0}
+  do_test misc1-14.2a {
+    execsql {UPDATE t1 SET a=a||'x' WHERE 0}
+    file exists ../test.db-journal
+  } {0}
+  do_test misc1-14.2b {
+    execsql {UPDATE t1 SET a=a||'y' WHERE 1}
+    file exists ../test.db-journal
+  } {1}
+  do_test misc1-14.3 {
+    cd ..
+    forcedelete tempdir
+    execsql {COMMIT}
+    file exists ./test.db-journal
+  } {0}
+}
 }
 
 # A failed create table should not leave the table in the internal
@@ -709,5 +711,15 @@ SELECT-1 UNION  SELECT 5 UNION SELECT 0 UNION SElECT*from(SELECT-5) UNION SELECT
 $group,:conc ap0,1)fro,(select"",:PBAG,c,a,b,b,c,a,b,c,e,d,d,c,a,b,b,c,d,d,c,a,b,c,e,d,c,d,c,a,b,c,e,c,d,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,b,c,e,d,d,c,a,b,b,c,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,e,d,d,c,a,b,b,c,c,a,b,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,a,b,c,e,d,d,c,a,b,b,c,d,d,c,a,b,c,e,d,c,d,c,a,b,c,e,c,d,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,e,d,d,c,a,b,b,c,c,a,b,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,a,b,c,e,d,d,c,a,b,b,c,d,d,c,a,b,c,e,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,c,d,c,c,a,a,b,d,d,c,a,b,b,c,d,c,a,b,e,e,d,b,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d, foreign_keysc,d,c,e,d,d,c,a,b,b,c,c,a,b,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,a,b,d,d,c,a,b,b,c,d,c,a,b,e,e,d,b,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,e,d,d,c,a,b,b,c,c,a,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,e,d,d,c,a,b,b,c,c,a,b,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,a,b,c,e,d,d,c,a,b,b,c,d,d,c,a,b,c,e,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,c,d,c,a,b,d,d,c,a,a,b,d,d,c,a,b,b,c,d,c,a,b,e,e,d,b,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,e,d,d,c,a,b,b,c,c,a,b,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,a,b,d,d,c,a,b,b,c,d,c,a,b,e,e,d,b,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,c,a,b,b,c,d,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,d,c,e,d,d,c,a,b,b,c,c,a,b,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,a,bb,b,E,d,c,d,c,b,c,d,c,d,c,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,a,b,c,e,d,d,c,a,b,b,c,d,d,c,a,b,c,e,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,c,d,c,a,b,d,d,c,a,a,b,d,d,c,a,b,b,c,d,c,a,b,e,e,d,b,c,d,c,a,b,b,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,c,a,b,c,e,d,d,c,a,b,b,c,d,c,d,c,a,b,c,e,c,d,c,a,b,b,c,d,MAato_aecSELEC,+?b," "O,"i","a",""b  ,5 ))KEY)SELECT*FROM((k()reaC,k,K) eA,k '' )t ,K  M);
 } {1 {'k' is not a function}}
 
+# 2017-09-17
+#
+# Sometimes sqlite3ExprListAppend() can be invoked on an ExprList that
+# was obtained from sqlite3ExprListDup().
+#
+do_execsql_test misc1-26.0 {
+  DROP TABLE IF EXISTS abc;
+  CREATE TABLE abc(a, b, c);
+  SELECT randomblob(min(max(coalesce(EXISTS (SELECT 1 FROM ( SELECT (SELECT 2147483647) NOT IN (SELECT 2147483649 UNION ALL SELECT DISTINCT -1) IN (SELECT 2147483649), 'fault', (SELECT ALL -1 INTERSECT SELECT 'experiments') IN (SELECT ALL 56.1 ORDER BY 'experiments' DESC) FROM (SELECT DISTINCT 2147483648, 'hardware' UNION ALL SELECT -2147483648, 'experiments' ORDER BY 2147483648 LIMIT 1 OFFSET 123456789.1234567899) GROUP BY (SELECT ALL 0 INTERSECT SELECT 'in') IN (SELECT DISTINCT 'experiments' ORDER BY zeroblob(1000) LIMIT 56.1 OFFSET -456) HAVING EXISTS (SELECT 'fault' EXCEPT    SELECT DISTINCT 56.1) UNION SELECT 'The', 'The', 2147483649 UNION ALL SELECT DISTINCT 'hardware', 'first', 'experiments' ORDER BY 'hardware' LIMIT 123456789.1234567899 OFFSET -2147483647)) NOT IN (SELECT (SELECT DISTINCT (SELECT 'The') FROM abc ORDER BY EXISTS (SELECT -1 INTERSECT SELECT ALL NULL) ASC) IN (SELECT DISTINCT EXISTS (SELECT ALL 123456789.1234567899 ORDER BY 1 ASC, NULL DESC) FROM sqlite_master INTERSECT SELECT 456)), (SELECT ALL 'injection' UNION ALL SELECT ALL (SELECT DISTINCT 'first' UNION     SELECT DISTINCT 'The') FROM (SELECT 456, 'in', 2147483649))),1), 500)), 'first', EXISTS (SELECT DISTINCT 456 FROM abc ORDER BY 'experiments' DESC) FROM abc;
+} {}
 
 finish_test

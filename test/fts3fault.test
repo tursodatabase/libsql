@@ -145,7 +145,7 @@ do_faultsim_test 7.2 -prep {
 } -test {
   faultsim_test_result {1 {unrecognized matchinfo: fs3}} \
                        {1 {vtable constructor failed: t1}} \
-                       {1 {SQL logic error or missing database}}
+                       {1 {SQL logic error}}
 }
 do_faultsim_test 7.3 -prep { 
   faultsim_delete_and_reopen
@@ -154,7 +154,7 @@ do_faultsim_test 7.3 -prep {
 } -test {
   faultsim_test_result {1 {unrecognized parameter: matchnfo=fts3}} \
                        {1 {vtable constructor failed: t1}} \
-                       {1 {SQL logic error or missing database}}
+                       {1 {SQL logic error}}
 }
 
 

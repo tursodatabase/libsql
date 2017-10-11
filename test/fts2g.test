@@ -73,7 +73,7 @@ do_test fts2g-1.9 {
 # No support for all-except queries.
 do_test fts2g-1.10 {
   catchsql {SELECT rowid FROM t1 WHERE t1 MATCH '-this -something'}
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 # Test that docListOrMerge() correctly handles reaching the end of one
 # doclist before it reaches the end of the other.

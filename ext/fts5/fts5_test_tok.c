@@ -182,7 +182,7 @@ static int fts5tokConnectMethod(
   Fts5tokTable *pTab = 0;
   int rc;
   char **azDequote = 0;
-  int nDequote;
+  int nDequote = 0;
 
   rc = sqlite3_declare_vtab(db, 
        "CREATE TABLE x(input HIDDEN, token, start, end, position)"

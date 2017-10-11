@@ -181,7 +181,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
-         sqlite3session.lo select.lo sqlite3rbu.lo status.lo \
+         sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
@@ -350,7 +350,8 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
-  $(TOP)/ext/misc/json1.c
+  $(TOP)/ext/misc/json1.c \
+  $(TOP)/ext/misc/stmt.c
 
 # Generated source code files
 #
@@ -429,6 +430,7 @@ TESTSRC += \
   $(TOP)/ext/fts5/fts5_test_mi.c \
   $(TOP)/ext/fts5/fts5_test_tok.c \
   $(TOP)/ext/misc/ieee754.c \
+  $(TOP)/ext/misc/mmapwarm.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
@@ -436,6 +438,7 @@ TESTSRC += \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
+  $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c
 
 # Source code to the library files needed by the test fixture
@@ -485,7 +488,8 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
-  $(TOP)/ext/session/sqlite3session.c 
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/misc/stmt.c 
 
 # Header files used by all library source files.
 #
@@ -566,6 +570,7 @@ SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4
 # SHELL_OPT += -DSQLITE_ENABLE_FTS5
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
@@ -690,6 +695,11 @@ sqlite3.lo:	sqlite3.c
 lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
+
+# Rules to build the program that generates the source-id
+#
+mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
+	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
 
 # Rules to build individual *.o files from generated *.c files. This
 # applies to:
@@ -956,7 +966,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/tool/addopcodes.tcl
 	mv parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)/tool/addopcodes.tcl parse.h.temp >parse.h
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
@@ -1036,6 +1046,9 @@ sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 json1.lo:	$(TOP)/ext/misc/json1.c
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
 
+stmt.lo:	$(TOP)/ext/misc/stmt.c
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c
+
 # FTS5 things
 #
 FTS5_SRC = \
@@ -1085,6 +1098,7 @@ TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 TESTFIXTURE_FLAGS += -DBUILD_sqlite
 TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
 
 TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.la
 TESTFIXTURE_SRC1 = sqlite3.c

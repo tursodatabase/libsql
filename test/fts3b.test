@@ -206,7 +206,7 @@ do_test fts3b-4.8 {
     INSERT INTO t4 (rowid, docid, c) VALUES (14, 15, 'bad test');
     SELECT * FROM t4 WHERE docid = 14;
   }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 do_test fts3b-4.9 {
   execsql { SELECT docid FROM t4 WHERE t4 MATCH 'testing' }

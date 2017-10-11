@@ -375,7 +375,7 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
 ** Or, if zName is not a system table, zero is returned.
 */
 static int isSystemTable(Parse *pParse, const char *zName){
-  if( sqlite3Strlen30(zName)>6 && 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
+  if( 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
     sqlite3ErrorMsg(pParse, "table %s may not be altered", zName);
     return 1;
   }
@@ -403,9 +403,9 @@ void sqlite3AlterRenameTable(
   char *zWhere = 0;         /* Where clause to locate temp triggers */
 #endif
   VTable *pVTab = 0;        /* Non-zero if this is a v-tab with an xRename() */
-  int savedDbFlags;         /* Saved value of db->flags */
+  u32 savedDbFlags;         /* Saved value of db->mDbFlags */
 
-  savedDbFlags = db->flags;  
+  savedDbFlags = db->mDbFlags;  
   if( NEVER(db->mallocFailed) ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
@@ -414,7 +414,7 @@ void sqlite3AlterRenameTable(
   if( !pTab ) goto exit_rename_table;
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zDbSName;
-  db->flags |= SQLITE_PreferBuiltin;
+  db->mDbFlags |= DBFLAG_PreferBuiltin;
 
   /* Get a NULL terminated version of the new table name. */
   zName = sqlite3NameFromToken(db, pName);
@@ -579,7 +579,7 @@ void sqlite3AlterRenameTable(
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
   sqlite3DbFree(db, zName);
-  db->flags = savedDbFlags;
+  db->mDbFlags = savedDbFlags;
 }
 
 /*
@@ -680,11 +680,11 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
   if( zCol ){
     char *zEnd = &zCol[pColDef->n-1];
-    int savedDbFlags = db->flags;
+    u32 savedDbFlags = db->mDbFlags;
     while( zEnd>zCol && (*zEnd==';' || sqlite3Isspace(*zEnd)) ){
       *zEnd-- = '\0';
     }
-    db->flags |= SQLITE_PreferBuiltin;
+    db->mDbFlags |= DBFLAG_PreferBuiltin;
     sqlite3NestedParse(pParse, 
         "UPDATE \"%w\".%s SET "
           "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
@@ -693,7 +693,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       zTab
     );
     sqlite3DbFree(db, zCol);
-    db->flags = savedDbFlags;
+    db->mDbFlags = savedDbFlags;
   }
 
   /* Make sure the schema version is at least 3.  But do not upgrade

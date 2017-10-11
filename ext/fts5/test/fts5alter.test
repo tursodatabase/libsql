@@ -89,7 +89,6 @@ do_execsql_test 3.1 {
   BEGIN;
     INSERT INTO abc(rowid, a) VALUES(2, 'a');
 }
-breakpoint
 do_execsql_test 3.2 {
     SELECT rowid FROM abc WHERE abc MATCH 'a';
 } {1 2}
@@ -100,4 +99,3 @@ do_execsql_test 3.3 {
 } {1 2}
 
 finish_test
-

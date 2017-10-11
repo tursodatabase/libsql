@@ -403,8 +403,8 @@ static int findIndexCol(
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
     ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
-      if( pColl && 0==sqlite3StrICmp(pColl->zName, zColl) ){
+      CollSeq *pColl = sqlite3ExprNNCollSeq(pParse, pList->a[i].pExpr);
+      if( 0==sqlite3StrICmp(pColl->zName, zColl) ){
         return i;
       }
     }
@@ -608,6 +608,15 @@ static int termCanDriveIndex(
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
+  if( (pSrc->fg.jointype & JT_LEFT) 
+   && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+   && (pTerm->eOperator & WO_IS)
+  ){
+    /* Cannot use an IS term from the WHERE clause as an index driver for
+    ** the RHS of a LEFT JOIN. Such a term can only be used if it is from
+    ** the ON clause.  */
+    return 0;
+  }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   if( pTerm->u.leftColumn<0 ) return 0;
   aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;
@@ -859,7 +868,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     assert( pTerm->u.leftColumn>=(-1) );
     nTerm++;
@@ -908,7 +917,7 @@ static sqlite3_index_info *allocateIndexInfo(
                                                                    pUsage;
 
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    u8 op;
+    u16 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     if( pTerm->prereqRight & mUnusable ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
@@ -916,34 +925,40 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     assert( pTerm->u.leftColumn>=(-1) );
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
-    op = (u8)pTerm->eOperator & WO_ALL;
+    op = pTerm->eOperator & WO_ALL;
     if( op==WO_IN ) op = WO_EQ;
-    if( op==WO_MATCH ){
-      op = pTerm->eMatchOp;
-    }
-    pIdxCons[j].op = op;
-    /* The direct assignment in the previous line is possible only because
-    ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
-    ** following asserts verify this fact. */
-    assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
-    assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
-    assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
-    assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
-    assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
-    assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
-    assert( pTerm->eOperator & (WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
+    if( op==WO_AUX ){
+      pIdxCons[j].op = pTerm->eMatchOp;
+    }else if( op & (WO_ISNULL|WO_IS) ){
+      if( op==WO_ISNULL ){
+        pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_ISNULL;
+      }else{
+        pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_IS;
+      }
+    }else{
+      pIdxCons[j].op = (u8)op;
+      /* The direct assignment in the previous line is possible only because
+      ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
+      ** following asserts verify this fact. */
+      assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
+      assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
+      assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
+      assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
+      assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
+      assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_AUX) );
 
-    if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
-     && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
-    ){
-      if( i<16 ) mNoOmit |= (1 << i);
-      if( op==WO_LT ) pIdxCons[j].op = WO_LE;
-      if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+      if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
+       && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
+      ){
+        if( i<16 ) mNoOmit |= (1 << i);
+        if( op==WO_LT ) pIdxCons[j].op = WO_LE;
+        if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+      }
     }
 
     j++;
@@ -1193,7 +1208,7 @@ static int whereKeyStats(
       iGap = iGap/3;
     }
     aStat[0] = iLower + iGap;
-    aStat[1] = pIdx->aAvgEq[iCol];
+    aStat[1] = pIdx->aAvgEq[nField-1];
   }
 
   /* Restore the pRec->nField value before returning.  */
@@ -1946,16 +1961,17 @@ static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
 
 /*
 ** Search the list of WhereLoops in *ppPrev looking for one that can be
-** supplanted by pTemplate.
+** replaced by pTemplate.
 **
-** Return NULL if the WhereLoop list contains an entry that can supplant
-** pTemplate, in other words if pTemplate does not belong on the list.
+** Return NULL if pTemplate does not belong on the WhereLoop list.
+** In other words if pTemplate ought to be dropped from further consideration.
 **
-** If pX is a WhereLoop that pTemplate can supplant, then return the
+** If pX is a WhereLoop that pTemplate can replace, then return the
 ** link that points to pX.
 **
-** If pTemplate cannot supplant any existing element of the list but needs
-** to be added to the list, then return a pointer to the tail of the list.
+** If pTemplate cannot replace any existing element of the list but needs
+** to be added to the list as a new entry, then return a pointer to the
+** tail of the list.
 */
 static WhereLoop **whereLoopFindLesser(
   WhereLoop **ppPrev,
@@ -2100,8 +2116,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     if( p!=0 ){
       sqlite3DebugPrintf("replace: ");
       whereLoopPrint(p, pBuilder->pWC);
+      sqlite3DebugPrintf("   with: ");
+    }else{
+      sqlite3DebugPrintf("    add: ");
     }
-    sqlite3DebugPrintf("    add: ");
     whereLoopPrint(pTemplate, pBuilder->pWC);
   }
 #endif
@@ -2652,7 +2670,7 @@ static int indexMightHelpWithOrderBy(
     }else if( (aColExpr = pIndex->aColExpr)!=0 ){
       for(jj=0; jj<pIndex->nKeyCol; jj++){
         if( pIndex->aiColumn[jj]!=XN_EXPR ) continue;
-        if( sqlite3ExprCompare(pExpr,aColExpr->a[jj].pExpr,iCursor)==0 ){
+        if( sqlite3ExprCompareSkip(pExpr,aColExpr->a[jj].pExpr,iCursor)==0 ){
           return 1;
         }
       }
@@ -2685,14 +2703,16 @@ static Bitmask columnsInIndex(Index *pIdx){
 static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   int i;
   WhereTerm *pTerm;
+  Parse *pParse = pWC->pWInfo->pParse;
   while( pWhere->op==TK_AND ){
     if( !whereUsablePartialIndex(iTab,pWC,pWhere->pLeft) ) return 0;
     pWhere = pWhere->pRight;
   }
+  if( pParse->db->flags & SQLITE_EnableQPSG ) pParse = 0;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     Expr *pExpr = pTerm->pExpr;
-    if( sqlite3ExprImpliesExpr(pExpr, pWhere, iTab) 
-     && (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
+    if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
+     && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab) 
     ){
       return 1;
     }
@@ -3598,14 +3618,10 @@ static i8 wherePathSatisfiesOrderBy(
         if( j>=pLoop->nLTerm ) continue;
       }
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
-        const char *z1, *z2;
-        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
-        if( !pColl ) pColl = db->pDfltColl;
-        z1 = pColl->zName;
-        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pTerm->pExpr);
-        if( !pColl ) pColl = db->pDfltColl;
-        z2 = pColl->zName;
-        if( sqlite3StrICmp(z1, z2)!=0 ) continue;
+        if( sqlite3ExprCollSeqMatch(pWInfo->pParse, 
+                  pOrderBy->a[i].pExpr, pTerm->pExpr)==0 ){
+          continue;
+        }
         testcase( pTerm->pExpr->op==TK_IS );
       }
       obSat |= MASKBIT(i);
@@ -3677,7 +3693,7 @@ static i8 wherePathSatisfiesOrderBy(
         if( pIndex ){
           iColumn = pIndex->aiColumn[j];
           revIdx = pIndex->aSortOrder[j];
-          if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
+          if( iColumn==pIndex->pTable->iPKey ) iColumn = XN_ROWID;
         }else{
           iColumn = XN_ROWID;
           revIdx = 0;
@@ -3704,18 +3720,18 @@ static i8 wherePathSatisfiesOrderBy(
           testcase( wctrlFlags & WHERE_GROUPBY );
           testcase( wctrlFlags & WHERE_DISTINCTBY );
           if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
-          if( iColumn>=(-1) ){
+          if( iColumn>=XN_ROWID ){
             if( pOBExpr->op!=TK_COLUMN ) continue;
             if( pOBExpr->iTable!=iCur ) continue;
             if( pOBExpr->iColumn!=iColumn ) continue;
           }else{
-            if( sqlite3ExprCompare(pOBExpr,pIndex->aColExpr->a[j].pExpr,iCur) ){
+            Expr *pIdxExpr = pIndex->aColExpr->a[j].pExpr;
+            if( sqlite3ExprCompareSkip(pOBExpr, pIdxExpr, iCur) ){
               continue;
             }
           }
-          if( iColumn>=0 ){
-            pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
-            if( !pColl ) pColl = db->pDfltColl;
+          if( iColumn!=XN_ROWID ){
+            pColl = sqlite3ExprNNCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
           }
           pLoop->u.btree.nIdxCol = j+1;
@@ -4008,6 +4024,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                rUnsorted, rCost));
         }else{
           rCost = rUnsorted;
+          rUnsorted -= 2;  /* TUNING:  Slight bias in favor of no-sort plans */
         }
 
         /* Check to see if pWLoop should be added to the set of
@@ -4039,8 +4056,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             ** this candidate as not viable. */
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
-              sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+              sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d,%3d order=%c\n",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                   isOrdered>=0 ? isOrdered+'0' : '?');
             }
 #endif
@@ -4058,26 +4075,36 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           pTo = &aTo[jj];
 #ifdef WHERETRACE_ENABLED /* 0x4 */
           if( sqlite3WhereTrace&0x4 ){
-            sqlite3DebugPrintf("New    %s cost=%-3d,%3d order=%c\n",
-                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+            sqlite3DebugPrintf("New    %s cost=%-3d,%3d,%3d order=%c\n",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                 isOrdered>=0 ? isOrdered+'0' : '?');
           }
 #endif
         }else{
           /* Control reaches here if best-so-far path pTo=aTo[jj] covers the
-          ** same set of loops and has the sam isOrdered setting as the
+          ** same set of loops and has the same isOrdered setting as the
           ** candidate path.  Check to see if the candidate should replace
-          ** pTo or if the candidate should be skipped */
-          if( pTo->rCost<rCost || (pTo->rCost==rCost && pTo->nRow<=nOut) ){
+          ** pTo or if the candidate should be skipped.
+          ** 
+          ** The conditional is an expanded vector comparison equivalent to:
+          **   (pTo->rCost,pTo->nRow,pTo->rUnsorted) <= (rCost,nOut,rUnsorted)
+          */
+          if( pTo->rCost<rCost 
+           || (pTo->rCost==rCost
+               && (pTo->nRow<nOut
+                   || (pTo->nRow==nOut && pTo->rUnsorted<=rUnsorted)
+                  )
+              )
+          ){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
-                  "Skip   %s cost=%-3d,%3d order=%c",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+                  "Skip   %s cost=%-3d,%3d,%3d order=%c",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                   isOrdered>=0 ? isOrdered+'0' : '?');
-              sqlite3DebugPrintf("   vs %s cost=%-3d,%d order=%c\n",
+              sqlite3DebugPrintf("   vs %s cost=%-3d,%3d,%3d order=%c\n",
                   wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-                  pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
+                  pTo->rUnsorted, pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
             }
 #endif
             /* Discard the candidate path from further consideration */
@@ -4090,12 +4117,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf(
-                "Update %s cost=%-3d,%3d order=%c",
-                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+                "Update %s cost=%-3d,%3d,%3d order=%c",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                 isOrdered>=0 ? isOrdered+'0' : '?');
-            sqlite3DebugPrintf("  was %s cost=%-3d,%3d order=%c\n",
+            sqlite3DebugPrintf("  was %s cost=%-3d,%3d,%3d order=%c\n",
                 wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-                pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
+                pTo->rUnsorted, pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
           }
 #endif
         }
@@ -4321,6 +4348,32 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 }
 
 /*
+** Helper function for exprIsDeterministic().
+*/
+static int exprNodeIsDeterministic(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_FUNCTION && ExprHasProperty(pExpr, EP_ConstFunc)==0 ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return true if the expression contains no non-deterministic SQL 
+** functions. Do not consider non-deterministic SQL functions that are 
+** part of sub-select statements.
+*/
+static int exprIsDeterministic(Expr *p){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = exprNodeIsDeterministic;
+  w.xSelectCallback = sqlite3SelectWalkFail;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -4518,17 +4571,6 @@ WhereInfo *sqlite3WhereBegin(
   sqlite3WhereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3WhereSplit(&pWInfo->sWC, pWhere, TK_AND);
     
-  /* Special case: a WHERE clause that is constant.  Evaluate the
-  ** expression and either jump over all of the code or fall thru.
-  */
-  for(ii=0; ii<sWLB.pWC->nTerm; ii++){
-    if( nTabList==0 || sqlite3ExprIsConstantNotJoin(sWLB.pWC->a[ii].pExpr) ){
-      sqlite3ExprIfFalse(pParse, sWLB.pWC->a[ii].pExpr, pWInfo->iBreak,
-                         SQLITE_JUMPIFNULL);
-      sWLB.pWC->a[ii].wtFlags |= TERM_CODED;
-    }
-  }
-
   /* Special case: No FROM clause
   */
   if( nTabList==0 ){
@@ -4536,36 +4578,60 @@ WhereInfo *sqlite3WhereBegin(
     if( wctrlFlags & WHERE_WANT_DISTINCT ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
+  }else{
+    /* Assign a bit from the bitmask to every term in the FROM clause.
+    **
+    ** The N-th term of the FROM clause is assigned a bitmask of 1<<N.
+    **
+    ** The rule of the previous sentence ensures thta if X is the bitmask for
+    ** a table T, then X-1 is the bitmask for all other tables to the left of T.
+    ** Knowing the bitmask for all tables to the left of a left join is
+    ** important.  Ticket #3015.
+    **
+    ** Note that bitmasks are created for all pTabList->nSrc tables in
+    ** pTabList, not just the first nTabList tables.  nTabList is normally
+    ** equal to pTabList->nSrc but might be shortened to 1 if the
+    ** WHERE_OR_SUBCLAUSE flag is set.
+    */
+    ii = 0;
+    do{
+      createMask(pMaskSet, pTabList->a[ii].iCursor);
+      sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
+    }while( (++ii)<pTabList->nSrc );
+  #ifdef SQLITE_DEBUG
+    {
+      Bitmask mx = 0;
+      for(ii=0; ii<pTabList->nSrc; ii++){
+        Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
+        assert( m>=mx );
+        mx = m;
+      }
+    }
+  #endif
   }
-
-  /* Assign a bit from the bitmask to every term in the FROM clause.
-  **
-  ** The N-th term of the FROM clause is assigned a bitmask of 1<<N.
-  **
-  ** The rule of the previous sentence ensures thta if X is the bitmask for
-  ** a table T, then X-1 is the bitmask for all other tables to the left of T.
-  ** Knowing the bitmask for all tables to the left of a left join is
-  ** important.  Ticket #3015.
-  **
-  ** Note that bitmasks are created for all pTabList->nSrc tables in
-  ** pTabList, not just the first nTabList tables.  nTabList is normally
-  ** equal to pTabList->nSrc but might be shortened to 1 if the
-  ** WHERE_OR_SUBCLAUSE flag is set.
-  */
-  for(ii=0; ii<pTabList->nSrc; ii++){
-    createMask(pMaskSet, pTabList->a[ii].iCursor);
-    sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
-  }
-#ifdef SQLITE_DEBUG
-  for(ii=0; ii<pTabList->nSrc; ii++){
-    Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
-    assert( m==MASKBIT(ii) );
-  }
-#endif
-
+  
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
   if( db->mallocFailed ) goto whereBeginError;
+
+  /* Special case: WHERE terms that do not refer to any tables in the join
+  ** (constant expressions). Evaluate each such term, and jump over all the
+  ** generated code if the result is not true.  
+  **
+  ** Do not do this if the expression contains non-deterministic functions
+  ** that are not within a sub-select. This is not strictly required, but
+  ** preserves SQLite's legacy behaviour in the following two cases:
+  **
+  **   FROM ... WHERE random()>0;           -- eval random() once per row
+  **   FROM ... WHERE (SELECT random())>0;  -- eval random() once overall
+  */
+  for(ii=0; ii<sWLB.pWC->nTerm; ii++){
+    WhereTerm *pT = &sWLB.pWC->a[ii];
+    if( pT->prereqAll==0 && (nTabList==0 || exprIsDeterministic(pT->pExpr)) ){
+      sqlite3ExprIfFalse(pParse, pT->pExpr, pWInfo->iBreak, SQLITE_JUMPIFNULL);
+      pT->wtFlags |= TERM_CODED;
+    }
+  }
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
     if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
@@ -4603,7 +4669,7 @@ WhereInfo *sqlite3WhereBegin(
       static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
                                              "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
       for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
-        p->cId = zLabel[i%sizeof(zLabel)];
+        p->cId = zLabel[i%(sizeof(zLabel)-1)];
         whereLoopPrint(p, sWLB.pWC);
       }
     }
@@ -4766,7 +4832,7 @@ WhereInfo *sqlite3WhereBegin(
       Index *pIx = pLoop->u.btree.pIndex;
       int iIndexCur;
       int op = OP_OpenRead;
-      /* iAuxArg is always set if to a positive value if ONEPASS is possible */
+      /* iAuxArg is always set to a positive value if ONEPASS is possible */
       assert( iAuxArg!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
       if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIx)
        && (wctrlFlags & WHERE_OR_SUBCLAUSE)!=0

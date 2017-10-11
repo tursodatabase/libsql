@@ -384,7 +384,9 @@ foreach T $tokenizers {
   do_isspace_test 6.$T.13 $T    8200
   do_isspace_test 6.$T.14 $T    8201
   do_isspace_test 6.$T.15 $T    8202
-  do_isspace_test 6.$T.16 $T    8239
+  if {$T!="icu"} {
+    do_isspace_test 6.$T.16 $T    8239
+  }
   do_isspace_test 6.$T.17 $T    8287
   do_isspace_test 6.$T.18 $T   12288
 

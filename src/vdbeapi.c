@@ -154,7 +154,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
     sqlite3VdbeMemRelease(&p->aVar[i]);
     p->aVar[i].flags = MEM_Null;
   }
-  assert( p->isPrepareV2 || p->expmask==0 );
+  assert( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 || p->expmask==0 );
   if( p->expmask ){
     p->expired = 1;
   }
@@ -198,6 +198,19 @@ sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
 unsigned int sqlite3_value_subtype(sqlite3_value *pVal){
   Mem *pMem = (Mem*)pVal;
   return ((pMem->flags & MEM_Subtype) ? pMem->eSubtype : 0);
+}
+void *sqlite3_value_pointer(sqlite3_value *pVal, const char *zPType){
+  Mem *p = (Mem*)pVal;
+  if( (p->flags&(MEM_TypeMask|MEM_Term|MEM_Subtype)) ==
+                 (MEM_Null|MEM_Term|MEM_Subtype)
+   && zPType!=0
+   && p->eSubtype=='p'
+   && strcmp(p->u.zPType, zPType)==0
+  ){
+    return (void*)p->z;
+  }else{
+    return 0;
+  }
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
   return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
@@ -377,6 +390,18 @@ void sqlite3_result_null(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
 }
+void sqlite3_result_pointer(
+  sqlite3_context *pCtx,
+  void *pPtr,
+  const char *zPType,
+  void (*xDestructor)(void*)
+){
+  Mem *pOut = pCtx->pOut;
+  assert( sqlite3_mutex_held(pOut->db->mutex) );
+  sqlite3VdbeMemRelease(pOut);
+  pOut->flags = MEM_Null;
+  sqlite3VdbeMemSetPointer(pOut, pPtr, zPType, xDestructor);
+}
 void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
@@ -499,7 +524,7 @@ static int doWalCallbacks(sqlite3 *db){
       sqlite3BtreeEnter(pBt);
       nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
       sqlite3BtreeLeave(pBt);
-      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
+      if( nEntry>0 && db->xWalCallback && rc==SQLITE_OK ){
         rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zDbSName, nEntry);
       }
     }
@@ -609,7 +634,7 @@ static int sqlite3Step(Vdbe *p){
   if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
 #endif
 
-  if( rc==SQLITE_DONE ){
+  if( rc==SQLITE_DONE && db->autoCommit ){
     assert( p->rc==SQLITE_OK );
     p->rc = doWalCallbacks(db);
     if( p->rc!=SQLITE_OK ){
@@ -633,8 +658,11 @@ end_of_step:
        || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
   assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
-  if( p->isPrepareV2 && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
-    /* If this statement was prepared using sqlite3_prepare_v2(), and an
+  if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 
+   && rc!=SQLITE_ROW 
+   && rc!=SQLITE_DONE 
+  ){
+    /* If this statement was prepared using saved SQL and an 
     ** error has occurred, then return the error code in p->rc to the
     ** caller. Set the error code in the database handle to the same value.
     */ 
@@ -650,7 +678,6 @@ end_of_step:
 */
 int sqlite3_step(sqlite3_stmt *pStmt){
   int rc = SQLITE_OK;      /* Result from sqlite3Step() */
-  int rc2 = SQLITE_OK;     /* Result from sqlite3Reprepare() */
   Vdbe *v = (Vdbe*)pStmt;  /* the prepared statement */
   int cnt = 0;             /* Counter to prevent infinite loop of reprepares */
   sqlite3 *db;             /* The database connection */
@@ -664,32 +691,31 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){
     int savedPc = v->pc;
-    rc2 = rc = sqlite3Reprepare(v);
-    if( rc!=SQLITE_OK) break;
+    rc = sqlite3Reprepare(v);
+    if( rc!=SQLITE_OK ){
+      /* This case occurs after failing to recompile an sql statement. 
+      ** The error message from the SQL compiler has already been loaded 
+      ** into the database handle. This block copies the error message 
+      ** from the database handle into the statement and sets the statement
+      ** program counter to 0 to ensure that when the statement is 
+      ** finalized or reset the parser error message is available via
+      ** sqlite3_errmsg() and sqlite3_errcode().
+      */
+      const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
+      sqlite3DbFree(db, v->zErrMsg);
+      if( !db->mallocFailed ){
+        v->zErrMsg = sqlite3DbStrDup(db, zErr);
+        v->rc = rc = sqlite3ApiExit(db, rc);
+      } else {
+        v->zErrMsg = 0;
+        v->rc = rc = SQLITE_NOMEM_BKPT;
+      }
+      break;
+    }
     sqlite3_reset(pStmt);
     if( savedPc>=0 ) v->doingRerun = 1;
     assert( v->expired==0 );
   }
-  if( rc2!=SQLITE_OK ){
-    /* This case occurs after failing to recompile an sql statement. 
-    ** The error message from the SQL compiler has already been loaded 
-    ** into the database handle. This block copies the error message 
-    ** from the database handle into the statement and sets the statement
-    ** program counter to 0 to ensure that when the statement is 
-    ** finalized or reset the parser error message is available via
-    ** sqlite3_errmsg() and sqlite3_errcode().
-    */
-    const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
-    sqlite3DbFree(db, v->zErrMsg);
-    if( !db->mallocFailed ){
-      v->zErrMsg = sqlite3DbStrDup(db, zErr);
-      v->rc = rc2;
-    } else {
-      v->zErrMsg = 0;
-      v->rc = rc = SQLITE_NOMEM_BKPT;
-    }
-  }
-  rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -1273,7 +1299,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   ** as if there had been a schema change, on the first sqlite3_step() call
   ** following any change to the bindings of that parameter.
   */
-  assert( p->isPrepareV2 || p->expmask==0 );
+  assert( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 || p->expmask==0 );
   if( p->expmask!=0 && (p->expmask & (i>=31 ? 0x80000000 : (u32)1<<i))!=0 ){
     p->expired = 1;
   }
@@ -1303,8 +1329,10 @@ static int bindText(
       if( rc==SQLITE_OK && encoding!=0 ){
         rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
       }
-      sqlite3Error(p->db, rc);
-      rc = sqlite3ApiExit(p->db, rc);
+      if( rc ){
+        sqlite3Error(p->db, rc);
+        rc = sqlite3ApiExit(p->db, rc);
+      }
     }
     sqlite3_mutex_leave(p->db->mutex);
   }else if( xDel!=SQLITE_STATIC && xDel!=SQLITE_TRANSIENT ){
@@ -1372,6 +1400,24 @@ int sqlite3_bind_null(sqlite3_stmt *pStmt, int i){
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
     sqlite3_mutex_leave(p->db->mutex);
+  }
+  return rc;
+}
+int sqlite3_bind_pointer(
+  sqlite3_stmt *pStmt,
+  int i,
+  void *pPtr,
+  const char *zPTtype,
+  void (*xDestructor)(void*)
+){
+  int rc;
+  Vdbe *p = (Vdbe*)pStmt;
+  rc = vdbeUnbind(p, i);
+  if( rc==SQLITE_OK ){
+    sqlite3VdbeMemSetPointer(&p->aVar[i-1], pPtr, zPTtype, xDestructor);
+    sqlite3_mutex_leave(p->db->mutex);
+  }else if( xDestructor ){
+    xDestructor(pPtr);
   }
   return rc;
 }
@@ -1537,11 +1583,11 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   if( pFrom->nVar!=pTo->nVar ){
     return SQLITE_ERROR;
   }
-  assert( pTo->isPrepareV2 || pTo->expmask==0 );
+  assert( (pTo->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 || pTo->expmask==0 );
   if( pTo->expmask ){
     pTo->expired = 1;
   }
-  assert( pFrom->isPrepareV2 || pFrom->expmask==0 );
+  assert( (pFrom->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 || pFrom->expmask==0 );
   if( pFrom->expmask ){
     pFrom->expired = 1;
   }
@@ -1611,8 +1657,19 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
     return 0;
   }
 #endif
-  v = pVdbe->aCounter[op];
-  if( resetFlag ) pVdbe->aCounter[op] = 0;
+  if( op==SQLITE_STMTSTATUS_MEMUSED ){
+    sqlite3 *db = pVdbe->db;
+    sqlite3_mutex_enter(db->mutex);
+    v = 0;
+    db->pnBytesFreed = (int*)&v;
+    sqlite3VdbeClearObject(db, pVdbe);
+    sqlite3DbFree(db, pVdbe);
+    db->pnBytesFreed = 0;
+    sqlite3_mutex_leave(db->mutex);
+  }else{
+    v = pVdbe->aCounter[op];
+    if( resetFlag ) pVdbe->aCounter[op] = 0;
+  }
   return (int)v;
 }
 
@@ -1664,7 +1721,7 @@ static UnpackedRecord *vdbeUnpackRecord(
 
   pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
   if( pRet ){
-    memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nField+1));
+    memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nKeyField+1));
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
   }
   return pRet;
@@ -1737,7 +1794,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 */
 int sqlite3_preupdate_count(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
-  return (p ? p->keyinfo.nField : 0);
+  return (p ? p->keyinfo.nKeyField : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 

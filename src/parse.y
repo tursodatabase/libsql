@@ -140,9 +140,8 @@ transtype(A) ::= .             {A = TK_DEFERRED;}
 transtype(A) ::= DEFERRED(X).  {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= IMMEDIATE(X). {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= EXCLUSIVE(X). {A = @X; /*A-overwrites-X*/}
-cmd ::= COMMIT trans_opt.      {sqlite3CommitTransaction(pParse);}
-cmd ::= END trans_opt.         {sqlite3CommitTransaction(pParse);}
-cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
+cmd ::= COMMIT|END(X) trans_opt.   {sqlite3EndTransaction(pParse,@X);}
+cmd ::= ROLLBACK(X) trans_opt.     {sqlite3EndTransaction(pParse,@X);}
 
 savepoint_opt ::= SAVEPOINT.
 savepoint_opt ::= .
@@ -192,6 +191,19 @@ table_options(A) ::= WITHOUT nm(X). {
 columnlist ::= columnlist COMMA columnname carglist.
 columnlist ::= columnname carglist.
 columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
+
+// Declare some tokens early in order to influence their values, to 
+// improve performance and reduce the executable size.  The goal here is
+// to get the "jump" operations in ISNULL through ESCAPE to have numeric
+// values that are early enough so that all jump operations are clustered
+// at the beginning, but also so that the comparison tokens NE through GE
+// are as large as possible so that they are near to FUNCTION, which is a
+// token synthesized by addopcodes.tcl.
+//
+%token ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST.
+%token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL.
+%token OR AND NOT IS MATCH LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
+%token GT LE LT GE ESCAPE.
 
 // The following directive causes tokens ABORT, AFTER, ASC, etc. to
 // fallback to ID if they will not parse as their original value.
@@ -876,7 +888,6 @@ idlist(A) ::= nm(Y).
 expr(A) ::= term(A).
 expr(A) ::= LP(B) expr(X) RP(E).
             {spanSet(&A,&B,&E); /*A-overwrites-B*/  A.pExpr = X.pExpr;}
-term(A) ::= NULL(X).        {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 expr(A) ::= id(X).          {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= JOIN_KW(X).     {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
@@ -893,13 +904,12 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   spanSet(&A,&X,&Z); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
-term(A) ::= FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
-term(A) ::= STRING(X).     {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= NULL|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X); /*A-overwrites-X*/}
+term(A) ::= STRING(X).          {spanExpr(&A,pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= INTEGER(X). {
   A.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
   A.zStart = X.z;
   A.zEnd = X.z + X.n;
-  if( A.pExpr ) A.pExpr->flags |= EP_Leaf|EP_Resolved;
 }
 expr(A) ::= VARIABLE(X).     {
   if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
@@ -1375,8 +1385,7 @@ trigger_decl(A) ::= temp(T) TRIGGER ifnotexists(NOERR) nm(B) dbnm(Z)
 }
 
 %type trigger_time {int}
-trigger_time(A) ::= BEFORE.      { A = TK_BEFORE; }
-trigger_time(A) ::= AFTER.       { A = TK_AFTER;  }
+trigger_time(A) ::= BEFORE|AFTER(X).  { A = @X; /*A-overwrites-X*/ }
 trigger_time(A) ::= INSTEAD OF.  { A = TK_INSTEAD;}
 trigger_time(A) ::= .            { A = TK_BEFORE; }
 

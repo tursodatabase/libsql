@@ -99,16 +99,13 @@ static int SQLITE_TCLAPI f5tDbAndApi(
     sqlite3_stmt *pStmt = 0;
     fts5_api *pApi = 0;
 
-    rc = sqlite3_prepare_v2(db, "SELECT fts5()", -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(db, "SELECT fts5(?1)", -1, &pStmt, 0);
     if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
       return TCL_ERROR;
     }
-
-    if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      const void *pPtr = sqlite3_column_blob(pStmt, 0);
-      memcpy((void*)&pApi, pPtr, sizeof(pApi));
-    }
+    sqlite3_bind_pointer(pStmt, 1, (void*)&pApi, "fts5_api_ptr", 0);
+    sqlite3_step(pStmt);
 
     if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
       Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);

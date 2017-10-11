@@ -353,7 +353,7 @@ void sqlite3DeleteFrom(
   ** API function sqlite3_count_changes) to be set incorrectly.
   **
   ** The "rcauth==SQLITE_OK" terms is the
-  ** IMPLEMENATION-OF: R-17228-37124 If the action code is SQLITE_DELETE and
+  ** IMPLEMENTATION-OF: R-17228-37124 If the action code is SQLITE_DELETE and
   ** the callback returns SQLITE_IGNORE then the DELETE operation proceeds but
   ** the truncate optimization is disabled and all rows are deleted
   ** individually.
@@ -459,7 +459,7 @@ void sqlite3DeleteFrom(
         sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iEphCur, iKey, iPk, nPk);
       }else{
         /* Add the rowid of the row to be deleted to the RowSet */
-        nKey = 1;  /* OP_Seek always uses a single rowid */
+        nKey = 1;  /* OP_DeferredSeek always uses a single rowid */
         sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iKey);
       }
     }
@@ -502,7 +502,11 @@ void sqlite3DeleteFrom(
       }
     }else if( pPk ){
       addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_RowData, iEphCur, iKey);
+      if( IsVirtual(pTab) ){
+        sqlite3VdbeAddOp3(v, OP_Column, iEphCur, 0, iKey);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_RowData, iEphCur, iKey);
+      }
       assert( nKey==0 );  /* OP_Found will use a composite key */
     }else{
       addrLoop = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, 0, iKey);
@@ -852,10 +856,11 @@ int sqlite3GenerateIndexKey(
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
-      pParse->iSelfTab = iDataCur;
+      pParse->iSelfTab = iDataCur + 1;
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
+      pParse->iSelfTab = 0;
     }else{
       *piPartIdxLabel = 0;
     }

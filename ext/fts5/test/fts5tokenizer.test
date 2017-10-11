@@ -302,4 +302,3 @@ do_test 9.5.2 { set ::flags } {query}
 
 
 finish_test
-

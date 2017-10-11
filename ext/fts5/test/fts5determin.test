@@ -63,5 +63,3 @@ foreach_detail_mode $::testprefix {
 
 
 finish_test
-
-

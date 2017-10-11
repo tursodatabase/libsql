@@ -118,11 +118,9 @@ int sqlite3AuthReadCol(
 #endif
                 );
   if( rc==SQLITE_DENY ){
-    if( db->nDb>2 || iDb!=0 ){
-      sqlite3ErrorMsg(pParse, "access to %s.%s.%s is prohibited",zDb,zTab,zCol);
-    }else{
-      sqlite3ErrorMsg(pParse, "access to %s.%s is prohibited", zTab, zCol);
-    }
+    char *z = sqlite3_mprintf("%s.%s", zTab, zCol);
+    if( db->nDb>2 || iDb!=0 ) z = sqlite3_mprintf("%s.%z", zDb, z);
+    sqlite3ErrorMsg(pParse, "access to %z is prohibited", z);
     pParse->rc = SQLITE_AUTH;
   }else if( rc!=SQLITE_IGNORE && rc!=SQLITE_OK ){
     sqliteAuthBadReturnCode(pParse);

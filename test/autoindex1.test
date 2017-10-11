@@ -520,4 +520,22 @@ do_execsql_test autoindex1-920 {
   SELECT * FROM t920,(SELECT 0 FROM t920),(VALUES(9)) WHERE 5 IN (x);
 } {5 0 9 5 0 9 5 0 9}
 
+#-------------------------------------------------------------------------
+# An IS term from the WHERE clause of a LEFT JOIN cannot be used as an
+# index driver for the RHS of a LEFT JOIN. Prior to this being fixed,
+# the following SELECT count(*) would incorrectly return 1.
+#
+do_execsql_test autoindex1-1010 {
+  CREATE TABLE t11(w);
+  CREATE TABLE t12(y);
+  INSERT INTO t11 VALUES(NULL);
+  INSERT INTO t12 VALUES('notnull');
+}
+do_execsql_test autoindex1-1020 {
+  SELECT count(*) FROM t11 LEFT JOIN t12 WHERE t12.y IS t11.w;
+} 0
+
+
+
+
 finish_test

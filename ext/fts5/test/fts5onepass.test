@@ -178,4 +178,3 @@ do_execsql_test 4.3.1 {
 do_test 4.2.2 { fts5_level_segs ttt } {3}
 
 finish_test
-

@@ -77,7 +77,8 @@ struct CsvReader {
   int n;                 /* Number of bytes in z */
   int nAlloc;            /* Space allocated for z[] */
   int nLine;             /* Current line number */
-  char cTerm;            /* Character that terminated the most recent field */
+  int bNotFirst;         /* True if prior text has been seen */
+  int cTerm;             /* Character that terminated the most recent field */
   size_t iIn;            /* Next unread character in the input buffer */
   size_t nIn;            /* Number of characters in the input buffer */
   char *zIn;             /* The input buffer */
@@ -91,6 +92,7 @@ static void csv_reader_init(CsvReader *p){
   p->n = 0;
   p->nAlloc = 0;
   p->nLine = 0;
+  p->bNotFirst = 0;
   p->nIn = 0;
   p->zIn = 0;
   p->zErr[0] = 0;
@@ -164,7 +166,7 @@ static int csv_getc(CsvReader *p){
     if( p->in!=0 ) return csv_getc_refill(p);
     return EOF;
   }
-  return p->zIn[p->iIn++];
+  return ((unsigned char*)p->zIn)[p->iIn++];
 }
 
 /* Increase the size of p->z and append character c to the end. 
@@ -251,6 +253,21 @@ static char *csv_read_one_field(CsvReader *p){
       pc = c;
     }
   }else{
+    /* If this is the first field being parsed and it begins with the
+    ** UTF-8 BOM  (0xEF BB BF) then skip the BOM */
+    if( (c&0xff)==0xef && p->bNotFirst==0 ){
+      csv_append(p, (char)c);
+      c = csv_getc(p);
+      if( (c&0xff)==0xbb ){
+        csv_append(p, (char)c);
+        c = csv_getc(p);
+        if( (c&0xff)==0xbf ){
+          p->bNotFirst = 1;
+          p->n = 0;
+          return csv_read_one_field(p);
+        }
+      }
+    }
     while( c>',' || (c!=EOF && c!=',' && c!='\n') ){
       if( csv_append(p, (char)c) ) return 0;
       c = csv_getc(p);
@@ -262,6 +279,7 @@ static char *csv_read_one_field(CsvReader *p){
     p->cTerm = (char)c;
   }
   if( p->z ) p->z[p->n] = 0;
+  p->bNotFirst = 1;
   return p->z;
 }
 
@@ -662,16 +680,16 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
       i++;
     }
   }while( pCur->rdr.cTerm==',' );
-  while( i<pTab->nCol ){
-    sqlite3_free(pCur->azVal[i]);
-    pCur->azVal[i] = 0;
-    pCur->aLen[i] = 0;
-    i++;
-  }
-  if( z==0 || pCur->rdr.cTerm==EOF ){
+  if( z==0 || (pCur->rdr.cTerm==EOF && i<pTab->nCol) ){
     pCur->iRowid = -1;
   }else{
     pCur->iRowid++;
+    while( i<pTab->nCol ){
+      sqlite3_free(pCur->azVal[i]);
+      pCur->azVal[i] = 0;
+      pCur->aLen[i] = 0;
+      i++;
+    }
   }
   return SQLITE_OK;
 }

@@ -209,6 +209,35 @@ eval [string map [list %WR% $trailing] {
     list [catch { sqlite3changeset_concat $c1 $c2} msg] $msg
   } {1 SQLITE_SCHEMA}
 
+  #-----------------------------------------------------------------------
+  db2 close
+  sqlite3 db2 test.db
+  do_execsql_test $tn.6.0 {
+    CREATE TABLE t7(a INTEGER PRIMARY KEY, b) %WR%;
+    INSERT INTO t7 VALUES(1, 1);
+    INSERT INTO t7 VALUES(2, 2);
+    INSERT INTO t7 VALUES(3, 3);
+  }
+
+  do_test $tn.6.1 {
+    set c1 [sql_exec_changeset db {
+      INSERT INTO t7 VALUES(4, 4);
+      DELETE FROM t7 WHERE a=1;
+      UPDATE t7 SET b=222 WHERE a=2;
+    }]
+    set cinv [sqlite3changeset_invert $c1]
+    execsql { SELECT * FROM t7 }
+  } {2 222 3 3 4 4}
+
+  do_execsql_test -db db2 $tn.6.2 {
+    ALTER TABLE t7 ADD COLUMN c DEFAULT 'ccc'
+  }
+
+  proc xConfict {args} { return "OMIT" }
+  do_test $tn.6.3 {
+    sqlite3changeset_apply db $cinv xConflict
+    execsql { SELECT * FROM t7 }
+  } {1 1 ccc 2 2 ccc 3 3 ccc}
 }]
 }
 

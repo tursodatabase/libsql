@@ -378,7 +378,7 @@ do_malloc_test shared_err-6 -tclbody {
 #    sqlite3_enable_shared_cache 0
 #  } msg
 #  set msg
-#} {library routine called out of sequence}
+#} {bad parameter or other API misuse}
 
 # Again provoke a malloc() failure when a cursor position is being saved, 
 # this time during a ROLLBACK operation by some other handle. 

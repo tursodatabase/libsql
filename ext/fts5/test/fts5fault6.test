@@ -280,7 +280,6 @@ do_faultsim_test 5.4 -faults oom* -prep {
 
 #-------------------------------------------------------------------------
 catch { db close }
-breakpoint
 do_faultsim_test 6 -faults oom* -prep {
   sqlite_orig db test.db
   sqlite3_db_config_lookaside db 0 0 0
@@ -292,4 +291,3 @@ do_faultsim_test 6 -faults oom* -prep {
   db close
 }
 finish_test
-

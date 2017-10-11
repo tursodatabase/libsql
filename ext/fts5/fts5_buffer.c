@@ -67,9 +67,11 @@ void sqlite3Fts5BufferAppendBlob(
   const u8 *pData
 ){
   assert_nc( *pRc || nData>=0 );
-  if( fts5BufferGrow(pRc, pBuf, nData) ) return;
-  memcpy(&pBuf->p[pBuf->n], pData, nData);
-  pBuf->n += nData;
+  if( nData ){
+    if( fts5BufferGrow(pRc, pBuf, nData) ) return;
+    memcpy(&pBuf->p[pBuf->n], pData, nData);
+    pBuf->n += nData;
+  }
 }
 
 /*
@@ -246,8 +248,8 @@ void *sqlite3Fts5MallocZero(int *pRc, int nByte){
   void *pRet = 0;
   if( *pRc==SQLITE_OK ){
     pRet = sqlite3_malloc(nByte);
-    if( pRet==0 && nByte>0 ){
-      *pRc = SQLITE_NOMEM;
+    if( pRet==0 ){
+      if( nByte>0 ) *pRc = SQLITE_NOMEM;
     }else{
       memset(pRet, 0, nByte);
     }

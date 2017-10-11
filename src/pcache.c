@@ -191,12 +191,9 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
         p->eCreate = 2;
       }
     }
-    pPage->pDirtyNext = 0;
-    pPage->pDirtyPrev = 0;
   }
   if( addRemove & PCACHE_DIRTYLIST_ADD ){
-    assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
-  
+    pPage->pDirtyPrev = 0;
     pPage->pDirtyNext = p->pDirty;
     if( pPage->pDirtyNext ){
       assert( pPage->pDirtyNext->pDirtyPrev==0 );
@@ -513,11 +510,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   if( (--p->nRef)==0 ){
     if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
-    }else if( p->pDirtyPrev!=0 ){ /*OPTIMIZATION-IF-FALSE*/
-      /* Move the page to the head of the dirty list. If p->pDirtyPrev==0,
-      ** then page p is already at the head of the dirty list and the
-      ** following call would be a no-op. Hence the OPTIMIZATION-IF-FALSE
-      ** tag above.  */
+    }else{
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
     }
   }

@@ -338,7 +338,7 @@ do_test rtree-7.2.1 {
     CREATE TABLE t4_node(a);
   }
   catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test rtree-7.2.2 {
   execsql_intout { SELECT * FROM "abc 123" }
 } {1 2 3 4 5 6 7}
@@ -348,7 +348,7 @@ do_test rtree-7.2.3 {
     CREATE TABLE t4_rowid(a);
   }
   catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test rtree-7.2.4 {
   db close
   sqlite3 db test.db
@@ -604,7 +604,6 @@ do_execsql_test 15.1 {
   BEGIN;
   INSERT INTO rt VALUES(1,2,3,4,5);
 }
-breakpoint
 do_execsql_test 15.2 {
   DROP TABLE t13;
   COMMIT;

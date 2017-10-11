@@ -160,6 +160,7 @@ ifcapable !like_opt {
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
+  db cache flush
   set data [execsql $sql]
   if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
@@ -196,7 +197,7 @@ do_test like-3.2 {
 
 # With an index on t1.x and case sensitivity on, optimize completely.
 #
-do_test like-3.3 {
+do_test like-3.3.100 {
   set sqlite_like_count 0
   execsql {
     PRAGMA case_sensitive_like=on;
@@ -206,9 +207,56 @@ do_test like-3.3 {
     SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
   }
 } {abc abcd nosort {} i1}
-do_test like-3.4 {
+do_test like-3.3.100.cnt {
   set sqlite_like_count
 } 0
+
+# The like optimization works even when the pattern is a bound parameter
+#
+# Exception: It does not work if sqlite3_prepare() is used instead of
+# sqlite3_prepare_v2(), as in that case the statement cannot be reprepared
+# after the parameter is bound.
+#
+unset -nocomplain ::likepat
+set ::likepat abc%
+if {[permutation]!="prepare"} {
+  do_test like-3.3.102 {
+    set sqlite_like_count 0
+    queryplan {
+      SELECT x FROM t1 WHERE x LIKE $::likepat ORDER BY 1;
+    }
+  } {abc abcd nosort {} i1}
+  do_test like-3.3.103 {
+    set sqlite_like_count
+  } 0
+}
+
+# Except, the like optimization does not work for bound parameters if
+# the query planner stability guarantee is active.
+#
+do_test like-3.3.104 {
+  set sqlite_like_count 0
+  sqlite3_db_config db QPSG 1
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE $::likepat ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.3.105 {
+  set sqlite_like_count
+} 12
+
+# The query planner stability guarantee does not disrupt explicit patterns
+#
+do_test like-3.3.105 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.3.106 {
+  set sqlite_like_count
+} 0
+sqlite3_db_config db QPSG 0
 
 # The LIKE optimization still works when the RHS is a string with no
 # wildcard.  Ticket [e090183531fc2747]
@@ -998,6 +1046,53 @@ ifcapable !icu {
     puts -nonewline " ($x ms - want less than 1000) "
     expr {$x<1000}
   } {1}
+}
+
+ifcapable !icu {
+# As of 2017-07-27 (3.21.0) the LIKE optimization works with ESCAPE as
+# long as the ESCAPE is a single-byte literal.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test like-15.100 {
+  CREATE TABLE t15(x TEXT COLLATE nocase, y, PRIMARY KEY(x));
+  INSERT INTO t15(x,y) VALUES
+    ('abcde',1), ('ab%de',2), ('a_cde',3),
+    ('uvwxy',11),('uvwx%',12),('uvwx_',13),
+    ('_bcde',21),('%bcde',22),
+    ('abcd_',31),('abcd%',32),
+    ('ab%xy',41);
+  SELECT y FROM t15 WHERE x LIKE 'ab/%d%' ESCAPE '/';
+} {2}
+do_execsql_test like-15.101 {
+  EXPLAIN QUERY PLAN
+  SELECT y FROM t15 WHERE x LIKE 'ab/%d%' ESCAPE '/';
+} {/SEARCH/}
+do_execsql_test like-15.102 {
+  EXPLAIN QUERY PLAN
+  SELECT y FROM t15 WHERE x LIKE 'ab/%d%' ESCAPE '//';
+} {/SCAN/}
+do_execsql_test like-15.103 {
+  EXPLAIN QUERY PLAN
+  SELECT y FROM t15 WHERE x LIKE 'ab/%d%' ESCAPE '';
+} {/SCAN/}
+do_execsql_test like-15.110 {
+  SELECT y FROM t15 WHERE x LIKE 'abcdx%%' ESCAPE 'x';
+} {32}
+do_execsql_test like-15.111 {
+  SELECT y FROM t15 WHERE x LIKE 'abx%%' ESCAPE 'x' ORDER BY +y
+} {2 41}
+do_execsql_test like-15.112 {
+  EXPLAIN QUERY PLAN
+  SELECT y FROM t15 WHERE x LIKE 'abx%%' ESCAPE 'x' ORDER BY +y
+} {/SEARCH/}
+do_execsql_test like-15.120 {
+  SELECT y FROM t15 WHERE x LIKE '/%bc%' ESCAPE '/';
+} {22}
+do_execsql_test like-15.121 {
+  EXPLAIN QUERY PLAN
+  SELECT y FROM t15 WHERE x LIKE '/%bc%' ESCAPE '/';
+} {/SEARCH/}
 }
 
 finish_test

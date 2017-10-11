@@ -479,7 +479,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
     }
     freeIndex(db, pIndex);
   }
-  db->flags |= SQLITE_InternChanges;
+  db->mDbFlags |= DBFLAG_SchemaChange;
 }
 
 /*
@@ -514,28 +514,26 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
 
 /*
 ** Reset the schema for the database at index iDb.  Also reset the
-** TEMP schema.
+** TEMP schema.  The reset is deferred if db->nSchemaLock is not zero.
+** Deferred resets may be run by calling with iDb<0.
 */
 void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
-  Db *pDb;
+  int i;
   assert( iDb<db->nDb );
 
-  /* Case 1:  Reset the single schema identified by iDb */
-  pDb = &db->aDb[iDb];
-  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  assert( pDb->pSchema!=0 );
-  sqlite3SchemaClear(pDb->pSchema);
-
-  /* If any database other than TEMP is reset, then also reset TEMP
-  ** since TEMP might be holding triggers that reference tables in the
-  ** other database.
-  */
-  if( iDb!=1 ){
-    pDb = &db->aDb[1];
-    assert( pDb->pSchema!=0 );
-    sqlite3SchemaClear(pDb->pSchema);
+  if( iDb>=0 ){
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    DbSetProperty(db, iDb, DB_ResetWanted);
+    DbSetProperty(db, 1, DB_ResetWanted);
   }
-  return;
+
+  if( db->nSchemaLock==0 ){
+    for(i=0; i<db->nDb; i++){
+      if( DbHasProperty(db, i, DB_ResetWanted) ){
+        sqlite3SchemaClear(db->aDb[i].pSchema);
+      }
+    }
+  }
 }
 
 /*
@@ -545,13 +543,14 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
 void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   int i;
   sqlite3BtreeEnterAll(db);
+  assert( db->nSchemaLock==0 );
   for(i=0; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
       sqlite3SchemaClear(pDb->pSchema);
     }
   }
-  db->flags &= ~SQLITE_InternChanges;
+  db->mDbFlags &= ~DBFLAG_SchemaChange;
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
   sqlite3CollapseDatabaseArray(db);
@@ -561,7 +560,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
 ** This routine is called when a commit occurs.
 */
 void sqlite3CommitInternalChanges(sqlite3 *db){
-  db->flags &= ~SQLITE_InternChanges;
+  db->mDbFlags &= ~DBFLAG_SchemaChange;
 }
 
 /*
@@ -599,13 +598,16 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
 */
 static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
-  TESTONLY( int nLookaside; ) /* Used to verify lookaside not used for schema */
 
+#ifdef SQLITE_DEBUG
   /* Record the number of outstanding lookaside allocations in schema Tables
   ** prior to doing any free() operations.  Since schema Tables do not use
   ** lookaside, this number should not change. */
-  TESTONLY( nLookaside = (db && (pTable->tabFlags & TF_Ephemeral)==0) ?
-                         db->lookaside.nOut : 0 );
+  int nLookaside = 0;
+  if( db && (pTable->tabFlags & TF_Ephemeral)==0 ){
+    nLookaside = sqlite3LookasideUsed(db, 0);
+  }
+#endif
 
   /* Delete all indices associated with this table. */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
@@ -639,7 +641,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   sqlite3DbFree(db, pTable);
 
   /* Verify that no lookaside memory was used by schema tables */
-  assert( nLookaside==0 || nLookaside==db->lookaside.nOut );
+  assert( nLookaside==0 || nLookaside==sqlite3LookasideUsed(db,0) );
 }
 void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Do not delete the table until the reference count reaches zero. */
@@ -665,7 +667,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName, 0);
   sqlite3DeleteTable(db, p);
-  db->flags |= SQLITE_InternChanges;
+  db->mDbFlags |= DBFLAG_SchemaChange;
 }
 
 /*
@@ -778,7 +780,8 @@ int sqlite3TwoPartName(
       return -1;
     }
   }else{
-    assert( db->init.iDb==0 || db->init.busy || (db->flags & SQLITE_Vacuum)!=0);
+    assert( db->init.iDb==0 || db->init.busy
+             || (db->mDbFlags & DBFLAG_Vacuum)!=0);
     iDb = db->init.iDb;
     *pUnqual = pName1;
   }
@@ -939,7 +942,11 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nTabRef = 1;
+#ifdef SQLITE_DEFAULT_ROWEST
+  pTable->nRowLogEst = sqlite3LogEst(SQLITE_DEFAULT_ROWEST);
+#else
   pTable->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
+#endif
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 
@@ -1006,7 +1013,8 @@ void sqlite3StartTable(
     }else
 #endif
     {
-      pParse->addrCrTab = sqlite3VdbeAddOp2(v, OP_CreateTable, iDb, reg2);
+      pParse->addrCrTab =
+         sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, reg2, BTREE_INTKEY);
     }
     sqlite3OpenMasterTable(pParse, iDb);
     sqlite3VdbeAddOp2(v, OP_NewRowid, 0, reg1);
@@ -1666,9 +1674,8 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 ** Changes include:
 **
 **     (1)  Set all columns of the PRIMARY KEY schema object to be NOT NULL.
-**     (2)  Convert the OP_CreateTable into an OP_CreateIndex.  There is
-**          no rowid btree for a WITHOUT ROWID.  Instead, the canonical
-**          data storage is a covering index btree.
+**     (2)  Convert P3 parameter of the OP_CreateBtree from BTREE_INTKEY 
+**          into BTREE_BLOBKEY.
 **     (3)  Bypass the creation of the sqlite_master table entry
 **          for the PRIMARY KEY as the primary key index is now
 **          identified by the sqlite_master table entry of the table itself.
@@ -1676,7 +1683,7 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 **          schema to the rootpage from the main table.
 **     (5)  Add all table columns to the PRIMARY KEY Index object
 **          so that the PRIMARY KEY is a covering index.  The surplus
-**          columns are part of KeyInfo.nXField and are not used for
+**          columns are part of KeyInfo.nAllField and are not used for
 **          sorting or lookup or uniqueness checks.
 **     (6)  Replace the rowid tail on all automatically generated UNIQUE
 **          indices with the PRIMARY KEY columns.
@@ -1705,13 +1712,12 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   ** virtual tables */
   if( IN_DECLARE_VTAB ) return;
 
-  /* Convert the OP_CreateTable opcode that would normally create the
-  ** root-page for the table into an OP_CreateIndex opcode.  The index
-  ** created will become the PRIMARY KEY index.
+  /* Convert the P3 operand of the OP_CreateBtree opcode from BTREE_INTKEY
+  ** into BTREE_BLOBKEY.
   */
   if( pParse->addrCrTab ){
     assert( v );
-    sqlite3VdbeChangeOpcode(v, pParse->addrCrTab, OP_CreateIndex);
+    sqlite3VdbeChangeP3(v, pParse->addrCrTab, BTREE_BLOBKEY);
   }
 
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
@@ -1734,15 +1740,6 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
 
-    /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
-    ** table entry. This is only required if currently generating VDBE
-    ** code for a CREATE TABLE (not when parsing one as part of reading
-    ** a database schema).  */
-    if( v ){
-      assert( db->init.busy==0 );
-      sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
-    }
-
     /*
     ** Remove all redundant columns from the PRIMARY KEY.  For example, change
     ** "PRIMARY KEY(a,b,a,b,c,b,c,d)" into just "PRIMARY KEY(a,b,c,d)".  Later
@@ -1761,6 +1758,15 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   pPk->isCovering = 1;
   if( !db->init.imposterTable ) pPk->uniqNotNull = 1;
   nPk = pPk->nKeyCol;
+
+  /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
+  ** table entry. This is only required if currently generating VDBE
+  ** code for a CREATE TABLE (not when parsing one as part of reading
+  ** a database schema).  */
+  if( v && pPk->tnum>0 ){
+    assert( db->init.busy==0 );
+    sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
+  }
 
   /* The root page of the PRIMARY KEY is the table root page */
   pPk->tnum = pTab->tnum;
@@ -2051,7 +2057,7 @@ void sqlite3EndTable(
       return;
     }
     pParse->pNewTable = 0;
-    db->flags |= SQLITE_InternChanges;
+    db->mDbFlags |= DBFLAG_SchemaChange;
 
 #ifndef SQLITE_OMIT_ALTERTABLE
     if( !p->pSelect ){
@@ -2150,6 +2156,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   int nErr = 0;     /* Number of errors encountered */
   int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
+#ifndef SQLITE_OMIT_VIRTUALTABLE	
+  int rc;
+#endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth;       /* Saved xAuth pointer */
 #endif
@@ -2157,8 +2166,11 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable );
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( sqlite3VtabCallConnect(pParse, pTable) ){
-    return SQLITE_ERROR;
+  db->nSchemaLock++;
+  rc = sqlite3VtabCallConnect(pParse, pTable);
+  db->nSchemaLock--;
+  if( rc ){
+    return 1;
   }
   if( IsVirtual(pTable) ) return 0;
 #endif
@@ -2354,14 +2366,6 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
 ** is also added (this can happen with an auto-vacuum database).
 */
 static void destroyTable(Parse *pParse, Table *pTab){
-#ifdef SQLITE_OMIT_AUTOVACUUM
-  Index *pIdx;
-  int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-  destroyRootPage(pParse, pTab->tnum, iDb);
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    destroyRootPage(pParse, pIdx->tnum, iDb);
-  }
-#else
   /* If the database may be auto-vacuum capable (if SQLITE_OMIT_AUTOVACUUM
   ** is not defined), then it is important to call OP_Destroy on the
   ** table and index root-pages in order, starting with the numerically 
@@ -2404,7 +2408,6 @@ static void destroyTable(Parse *pParse, Table *pTab){
       iDestroyed = iLargest;
     }
   }
-#endif
 }
 
 /*
@@ -2831,7 +2834,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
   sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);
-  sqlite3VdbeAddOp3(v, OP_Last, iIdx, 0, -1);
+  sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
@@ -3320,7 +3323,7 @@ void sqlite3CreateIndex(
       sqlite3OomFault(db);
       goto exit_create_index;
     }
-    db->flags |= SQLITE_InternChanges;
+    db->mDbFlags |= DBFLAG_SchemaChange;
     if( pTblName!=0 ){
       pIndex->tnum = db->init.newTnum;
     }
@@ -3356,7 +3359,7 @@ void sqlite3CreateIndex(
     ** that case the convertToWithoutRowidTable() routine will replace
     ** the Noop with a Goto to jump over the VDBE code generated below. */
     pIndex->tnum = sqlite3VdbeAddOp0(v, OP_Noop);
-    sqlite3VdbeAddOp2(v, OP_CreateIndex, iDb, iMem);
+    sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, iMem, BTREE_BLOBKEY);
 
     /* Gather the complete text of the CREATE INDEX statement into
     ** the zStmt variable
@@ -3768,12 +3771,12 @@ SrcList *sqlite3SrcListAppend(
     pDatabase = 0;
   }
   if( pDatabase ){
-    Token *pTemp = pDatabase;
-    pDatabase = pTable;
-    pTable = pTemp;
+    pItem->zName = sqlite3NameFromToken(db, pDatabase);
+    pItem->zDatabase = sqlite3NameFromToken(db, pTable);
+  }else{
+    pItem->zName = sqlite3NameFromToken(db, pTable);
+    pItem->zDatabase = 0;
   }
-  pItem->zName = sqlite3NameFromToken(db, pTable);
-  pItem->zDatabase = sqlite3NameFromToken(db, pDatabase);
   return pList;
 }
 
@@ -3878,8 +3881,10 @@ SrcList *sqlite3SrcListAppendFromTerm(
 */
 void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
   assert( pIndexedBy!=0 );
-  if( p && ALWAYS(p->nSrc>0) ){
-    struct SrcList_item *pItem = &p->a[p->nSrc-1];
+  if( p && pIndexedBy->n>0 ){
+    struct SrcList_item *pItem;
+    assert( p->nSrc>0 );
+    pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
     assert( pItem->fg.isTabFunc==0 );
@@ -3889,7 +3894,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
       pItem->fg.notIndexed = 1;
     }else{
       pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
-      pItem->fg.isIndexedBy = (pItem->u1.zIndexedBy!=0);
+      pItem->fg.isIndexedBy = 1;
     }
   }
 }
@@ -3962,36 +3967,25 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
 }
 
 /*
-** Generate VDBE code for a COMMIT statement.
+** Generate VDBE code for a COMMIT or ROLLBACK statement.
+** Code for ROLLBACK is generated if eType==TK_ROLLBACK.  Otherwise
+** code is generated for a COMMIT.
 */
-void sqlite3CommitTransaction(Parse *pParse){
+void sqlite3EndTransaction(Parse *pParse, int eType){
   Vdbe *v;
+  int isRollback;
 
   assert( pParse!=0 );
   assert( pParse->db!=0 );
-  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ){
+  assert( eType==TK_COMMIT || eType==TK_END || eType==TK_ROLLBACK );
+  isRollback = eType==TK_ROLLBACK;
+  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, 
+       isRollback ? "ROLLBACK" : "COMMIT", 0, 0) ){
     return;
   }
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp1(v, OP_AutoCommit, 1);
-  }
-}
-
-/*
-** Generate VDBE code for a ROLLBACK statement.
-*/
-void sqlite3RollbackTransaction(Parse *pParse){
-  Vdbe *v;
-
-  assert( pParse!=0 );
-  assert( pParse->db!=0 );
-  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ){
-    return;
-  }
-  v = sqlite3GetVdbe(pParse);
-  if( v ){
-    sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, 1);
+    sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, isRollback);
   }
 }
 
@@ -4181,7 +4175,9 @@ void sqlite3UniqueConstraint(
       assert( pIdx->aiColumn[j]>=0 );
       zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
       if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-      sqlite3XPrintf(&errMsg, "%s.%s", pTab->zName, zCol);
+      sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
+      sqlite3StrAccumAppend(&errMsg, ".", 1);
+      sqlite3StrAccumAppendAll(&errMsg, zCol);
     }
   }
   zErr = sqlite3StrAccumFinish(&errMsg);

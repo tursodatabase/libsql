@@ -245,5 +245,3 @@ eval fts3_configure_incr_load $chunkconfig
 
 
 finish_test
-
-

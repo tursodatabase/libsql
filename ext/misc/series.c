@@ -33,7 +33,7 @@
 ** The generate_series "function" is really a virtual table with the
 ** following schema:
 **
-**     CREATE FUNCTION generate_series(
+**     CREATE TABLE generate_series(
 **       value,
 **       start HIDDEN,
 **       stop HIDDEN,
@@ -195,8 +195,9 @@ static int seriesColumn(
 }
 
 /*
-** Return the rowid for the current row.  In this implementation, the
-** rowid is the same as the output value.
+** Return the rowid for the current row. In this implementation, the
+** first row returned is assigned rowid value 1, and each subsequent
+** row a value 1 more than that of the previous.
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;

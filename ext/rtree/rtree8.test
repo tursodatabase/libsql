@@ -129,7 +129,7 @@ do_execsql_test rtree8-2.2.3 {
 populate_t1 10
 do_catchsql_test rtree8-3.1 { 
   SELECT * FROM t1 WHERE x1 MATCH '1234'
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 #-------------------------------------------------------------------------
 # Test a couple of invalid arguments to rtreedepth().

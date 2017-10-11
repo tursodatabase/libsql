@@ -284,6 +284,7 @@ struct WhereTerm {
 #define TERM_LIKECOND   0x200  /* Conditionally this LIKE operator term */
 #define TERM_LIKE       0x400  /* The original LIKE operator */
 #define TERM_IS         0x800  /* Term.pExpr is an IS operator */
+#define TERM_VARSELECT  0x1000 /* Term.pExpr contains a correlated sub-query */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
@@ -373,6 +374,7 @@ struct WhereAndInfo {
 ** no gaps.
 */
 struct WhereMaskSet {
+  int bVarSelect;               /* Used by sqlite3WhereExprUsage() */
   int n;                        /* Number of assigned cursor values */
   int ix[BMS];                  /* Cursor assigned to each bit */
 };
@@ -513,7 +515,6 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 **     WO_LE    == SQLITE_INDEX_CONSTRAINT_LE
 **     WO_GT    == SQLITE_INDEX_CONSTRAINT_GT
 **     WO_GE    == SQLITE_INDEX_CONSTRAINT_GE
-**     WO_MATCH == SQLITE_INDEX_CONSTRAINT_MATCH
 */
 #define WO_IN     0x0001
 #define WO_EQ     0x0002
@@ -521,7 +522,7 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))
 #define WO_GE     (WO_EQ<<(TK_GE-TK_EQ))
-#define WO_MATCH  0x0040
+#define WO_AUX    0x0040       /* Op useful to virtual tables only */
 #define WO_IS     0x0080
 #define WO_ISNULL 0x0100
 #define WO_OR     0x0200       /* Two or more OR-connected terms */

@@ -3559,6 +3559,14 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       if( newLimit>sqlite3GlobalConfig.mxMmap ){
         newLimit = sqlite3GlobalConfig.mxMmap;
       }
+
+      /* The value of newLimit may be eventually cast to (SIZE_T) and passed
+      ** to MapViewOfFile(). Restrict its value to 2GB if (SIZE_T) is not at
+      ** least a 64-bit type. */
+      if( newLimit>0 && sizeof(SIZE_T)<8 ){
+        newLimit = (newLimit & 0x7FFFFFFF);
+      }
+
       *(i64*)pArg = pFile->mmapSizeMax;
       if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;
@@ -4871,6 +4879,14 @@ static int winIsDir(const void *zConverted){
   return (attr!=INVALID_FILE_ATTRIBUTES) && (attr&FILE_ATTRIBUTE_DIRECTORY);
 }
 
+/* forward reference */
+static int winAccess(
+  sqlite3_vfs *pVfs,         /* Not used on win32 */
+  const char *zFilename,     /* Name of file to check */
+  int flags,                 /* Type of test to make on this file */
+  int *pResOut               /* OUT: Result */
+);
+
 /*
 ** Open a file.
 */
@@ -5047,37 +5063,52 @@ static int winOpen(
     extendedParameters.dwSecurityQosFlags = SECURITY_ANONYMOUS;
     extendedParameters.lpSecurityAttributes = NULL;
     extendedParameters.hTemplateFile = NULL;
-    while( (h = osCreateFile2((LPCWSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode,
-                              dwCreationDisposition,
-                              &extendedParameters))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFile2((LPCWSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode,
+                        dwCreationDisposition,
+                        &extendedParameters);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
 #else
-    while( (h = osCreateFileW((LPCWSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode, NULL,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFileW((LPCWSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode, NULL,
+                        dwCreationDisposition,
+                        dwFlagsAndAttributes,
+                        NULL);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
 #endif
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
-    while( (h = osCreateFileA((LPCSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode, NULL,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
+    do{
+      h = osCreateFileA((LPCSTR)zConverted,
+                        dwDesiredAccess,
+                        dwShareMode, NULL,
+                        dwCreationDisposition,
+                        dwFlagsAndAttributes,
+                        NULL);
+      if( h!=INVALID_HANDLE_VALUE ) break;
+      if( isReadWrite ){
+        int isRO = 0;
+        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        if( rc2==SQLITE_OK && isRO ) break;
+      }
+    }while( winRetryIoerr(&cnt, &lastErrno) );
   }
 #endif
   winLogIoerr(cnt, __LINE__);
@@ -5086,8 +5117,6 @@ static int winOpen(
            dwDesiredAccess, (h==INVALID_HANDLE_VALUE) ? "failed" : "ok"));
 
   if( h==INVALID_HANDLE_VALUE ){
-    pFile->lastErrno = lastErrno;
-    winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
     sqlite3_free(zConverted);
     sqlite3_free(zTmpname);
     if( isReadWrite && !isExclusive ){
@@ -5096,6 +5125,8 @@ static int winOpen(
                      ~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)),
          pOutFlags);
     }else{
+      pFile->lastErrno = lastErrno;
+      winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
       return SQLITE_CANTOPEN_BKPT;
     }
   }
@@ -5688,9 +5719,6 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   EntropyGatherer e;
   UNUSED_PARAMETER(pVfs);
   memset(zBuf, 0, nBuf);
-#if defined(_MSC_VER) && _MSC_VER>=1400 && !SQLITE_OS_WINCE
-  rand_s((unsigned int*)zBuf); /* rand_s() is not available with MinGW */
-#endif /* defined(_MSC_VER) && _MSC_VER>=1400 */
   e.a = (unsigned char*)zBuf;
   e.na = nBuf;
   e.nXor = 0;
