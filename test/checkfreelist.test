@@ -110,5 +110,14 @@ do_execsql_test 1.10 {
   ROLLBACK;
 } {{leaf page 0 is out of range (child 247 of trunk page 5)}}
 
+do_execsql_test 1.11 {
+  BEGIN;
+    UPDATE sqlite_dbpage 
+      SET data = set_int(data, 1, 249)
+      WHERE pgno=5;
+    SELECT checkfreelist('main');
+  ROLLBACK;
+} {{leaf count out of range (249) on trunk page 5}}
+
 finish_test
 

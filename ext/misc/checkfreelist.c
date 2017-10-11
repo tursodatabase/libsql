@@ -170,6 +170,14 @@ static int checkFreelist(
     u32 iNext = get4byte(&aData[0]);
     u32 nLeaf = get4byte(&aData[4]);
 
+    if( nLeaf>((nData/4)-2-6) ){
+      rc = checkFreelistError(pzOut, 
+          "leaf count out of range (%d) on trunk page %d", 
+          (int)nLeaf, (int)iTrunk
+      );
+      nLeaf = (nData/4) - 2 - 6;
+    }
+
     nFree += 1+nLeaf;
     if( iNext>nPage ){
       rc = checkFreelistError(pzOut, 
