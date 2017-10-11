@@ -796,6 +796,7 @@ static void shellAddSchemaName(
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
+INCLUDE ../ext/misc/checkfreelist.c
 
 #if defined(SQLITE_ENABLE_SESSION)
 /*
@@ -2886,6 +2887,7 @@ static void open_db(ShellState *p, int keepAlive){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
+    sqlite3_checkfreelist_init(p->db, 0, 0);
     sqlite3_create_function(p->db, "shell_add_schema", 2, SQLITE_UTF8, 0,
                             shellAddSchemaName, 0, 0);
   }

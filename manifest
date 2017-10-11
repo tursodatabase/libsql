@@ -1,5 +1,5 @@
-C Check\sthat\sthe\sleaf\scount\son\seach\sfreelist\strunk\spage\sis\sin\srange\sas\spart\sof\ncheckfreelist\sprocessing.
-D 2017-10-11T18:21:44.429
+C Add\sthe\scheckfreelist\sextension\sto\sthe\scommand-line\sshell.
+D 2017-10-11T18:26:26.636
 F Makefile.in 05d02ce8606a9e46cd413d0bb46873fe597e5e41f52c4110241c11e60adff018
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 148d7cd36e556f5c257232cd93c71a1dd32c880d964c7d714990d677cd094589
@@ -259,7 +259,7 @@ F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
-F ext/misc/checkfreelist.c fc46557e73a6233bd698815d3963acc44bf4dba0ca9c91c90be361cca49d6b3e
+F ext/misc/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
@@ -461,8 +461,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 42aca61e739c405ddd8a1b702977a7743c7d52a94885f7c5596bd7e73e6bff18
-F src/shell.c b1c14539ae8f756a96a5604952e24fb8f2a65745290037f4f43dddfabac76e6e
-F src/shell.c.in 73d8000bb066cd7ceb9655ffdb0e19a80779e3c64506f5a1ecfa9838511bee18
+F src/shell.c ffb06532d6667bf1bb64080a316120c67249636a12f008c2f9716d6778565d57
+F src/shell.c.in 7842db264d5512520c61d0353196eeefeb65b710dd0d97d4ad9844c56e313be5
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
@@ -1660,7 +1660,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 21930ef5376261d95fa325be7761d327a350d4ae6b4573c83ddb4d294dea51c4
-R f25a07255c10ac9143e97a5d9d8e737e
-U dan
-Z fe2b858df1a95da0fbc85fd6ca1ee6ea
+P 4e89406248f51d3b83d61e5472fb493f3d3b4ff2a69bf256c7e15445eeb2f3ec
+R 0bf65201c138febf2eab9baca075a19d
+U drh
+Z f892c9c71f9811efc31d97f9328db29a

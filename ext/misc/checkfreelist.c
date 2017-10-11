@@ -223,7 +223,7 @@ static void checkfreelist_function(
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
   assert( nArg==1 );
-  zDb = sqlite3_value_text(apArg[0]);
+  zDb = (const char*)sqlite3_value_text(apArg[0]);
   rc = checkFreelist(db, zDb, &zOut);
   if( rc==SQLITE_OK ){
     sqlite3_result_text(pCtx, zOut?zOut:"ok", -1, SQLITE_TRANSIENT);
