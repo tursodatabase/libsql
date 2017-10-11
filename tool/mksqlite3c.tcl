@@ -394,6 +394,7 @@ foreach file {
    fts3_icu.c
    sqlite3rbu.c
    dbstat.c
+   dbpage.c
    sqlite3session.c
    json1.c
    fts5.c

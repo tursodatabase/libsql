@@ -1,8 +1,8 @@
-C In\sthe\sspeed-check.sh\stest\sscript,\sallow\san\sadditional\stest-name\sargument\nwhich\sbecomes\sthe\scomparison\sbaseline,\sin\splace\sof\s"trunk".
-D 2017-10-11T12:20:36.082
-F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
+C Initial\simplementation\sof\sthe\s"sqlite_dbpage"\svirtual\stable.\s\sCurrently\nit\sis\sread-only\sand\shas\sa\splace-holder\sxBestIndex.
+D 2017-10-11T13:48:11.877
+F Makefile.in f7cba589198b8663d8a43f25ad001cf44fdac4fcd6216325f05775924a7af2f9
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
+F Makefile.msc 1224c8773fc7f89c57e83c7b452291d239aa2cff4af50a204c84129e295cc37d
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -382,7 +382,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d0145f02deb67d65c4822225847cba112c237cdb62f4905eeb4b648e82bfc222
+F main.mk 656d9f31fdc01290094460f00255a45fdf4bedd08839467857919fea628582cf
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -409,6 +409,7 @@ F src/callback.c 28a8ede982fde4129b828350f78f2c01fe7d12c74d1a0a05d7108ab36f30868
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
+F src/dbpage.c f274a9b7bb680cc2952ee78883d67e133be0ef6065317813586a5f723af35ad5
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
 F src/expr.c 4d2d0aafd945424f638ee03e11330f03288ccf616e025498f3c8602d01609a0a
@@ -423,7 +424,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 1f33ef4ca0553b60fff03aa171370f8709a3e945acfcc68ccafc92752d872f40
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 20865b183bb8a3723d59cf1efffc3c50217eb452c1021d077b908c94da26b0b2
-F src/main.c a4bdadaaa827e7380cba4de878ed7947dab5aeb84f617118ba6a0422cd745b4b
+F src/main.c 54637b9e7f91de6d281e577cd1a997762a4613f51a0509790027ca9865185d7c
 F src/malloc.c a02c9e69bc76bee0f639416b947a946412890b606301454727feadcb313536d6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -464,7 +465,7 @@ F src/shell.c.in e03f7d473e10b65c25836a058a3e7a1665ffb1fe712949dcd6e38c790e4eafd
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h c07bc88eca1f59ce73e1f486187d0df4effe67c4579e112dfdd91c159e5c0569
+F src/sqliteInt.h 6f93fd6fde862410ac26b930f70752c38ad99ea78c3fc28356bac78049c53bd9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1597,7 +1598,7 @@ F tool/mkshellc.tcl 950c36f45941c12140e346a907fb66198bc2770ff7a17c749201e78d34bb
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl b258d679829a9305f5cf107b7d97b9bf23adb3773df42947fed5ef7b180dfbd9
+F tool/mksqlite3c.tcl 1fb69d39166f52d802a70ec37d99bca51d011c8ab30be27bc495be493196ae41
 F tool/mksqlite3h.tcl f92f994d9709aeb9e2b6e6f9fc8b069d2f55202c8e23f453edc44390a25982dc
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1656,7 +1657,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8c1b5a584aeb6ab63cff875ca16135efeadac16b4b32afa589845477feebf32
-R 9a03aa36b167c86705816bfaa31cdc19
+P 0245adffc6f9b580217e0d2feb396d6895e54cdc25f5dfc9c8f4090b919e9e49
+R 9d91f38d6de2e0aabd371a2c4dbcd832
+T *branch * dbpage
+T *sym-dbpage *
+T -sym-trunk *
 U drh
-Z 8f5e2f1e221681e7d4bf20eb32b86754
+Z 95e75b385006fb35e51e104eb16c88ba
