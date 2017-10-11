@@ -479,7 +479,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
     }
     freeIndex(db, pIndex);
   }
-  db->bInternChanges = 1;
+  db->flags |= SQLITE_InternChanges;
 }
 
 /*
@@ -551,7 +551,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
       sqlite3SchemaClear(pDb->pSchema);
     }
   }
-  db->bInternChanges = 0;
+  db->flags &= ~SQLITE_InternChanges;
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
   sqlite3CollapseDatabaseArray(db);
@@ -561,7 +561,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
 ** This routine is called when a commit occurs.
 */
 void sqlite3CommitInternalChanges(sqlite3 *db){
-  db->bInternChanges = 0;
+  db->flags &= ~SQLITE_InternChanges;
 }
 
 /*
@@ -665,7 +665,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName, 0);
   sqlite3DeleteTable(db, p);
-  db->bInternChanges = 1;
+  db->flags |= SQLITE_InternChanges;
 }
 
 /*
@@ -2051,7 +2051,7 @@ void sqlite3EndTable(
       return;
     }
     pParse->pNewTable = 0;
-    db->bInternChanges = 1;
+    db->flags |= SQLITE_InternChanges;
 
 #ifndef SQLITE_OMIT_ALTERTABLE
     if( !p->pSelect ){
@@ -3320,7 +3320,7 @@ void sqlite3CreateIndex(
       sqlite3OomFault(db);
       goto exit_create_index;
     }
-    db->bInternChanges = 1;
+    db->flags |= SQLITE_InternChanges;
     if( pTblName!=0 ){
       pIndex->tnum = db->init.newTnum;
     }

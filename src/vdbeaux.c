@@ -1611,7 +1611,7 @@ int sqlite3VdbeList(
   int i;                               /* Loop counter */
   int rc = SQLITE_OK;                  /* Return code */
   Mem *pMem = &p->aMem[1];             /* First Mem of result set */
-  int bFull = (p->explain==1 || (db->flags & SQLITE_FullEQP));
+  int bFull = (p->explain==1 || db->bFullEQP);
   Op *pOp = 0;
 
   assert( p->explain );

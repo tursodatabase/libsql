@@ -801,6 +801,21 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
+    case SQLITE_DBCONFIG_FULL_EQP: {
+      int onoff = va_arg(ap, int);
+      int *pRes = va_arg(ap, int*);
+      if( onoff>0 ){
+        db->bFullEQP = 1;
+      }else if( onoff==0 ){
+        db->bFullEQP = 0;
+      }
+      sqlite3ExpirePreparedStatements(db);
+      if( pRes ){
+        *pRes = db->bFullEQP;
+      }
+      rc = SQLITE_OK;
+      break;
+    }
     default: {
       static const struct {
         int op;      /* The opcode */
@@ -811,7 +826,6 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
-        { SQLITE_DBCONFIG_FULL_EQP,              SQLITE_FullEQP  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1253,7 +1267,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   ** the database rollback and schema reset, which can cause false
   ** corruption reports in some cases.  */
   sqlite3BtreeEnterAll(db);
-  schemaChange = db->bInternChanges && db->init.busy==0;
+  schemaChange = (db->flags & SQLITE_InternChanges)!=0 && db->init.busy==0;
 
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
@@ -1267,7 +1281,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   sqlite3VtabRollback(db);
   sqlite3EndBenignMalloc();
 
-  if( db->bInternChanges && db->init.busy==0 ){
+  if( (db->flags&SQLITE_InternChanges)!=0 && db->init.busy==0 ){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }

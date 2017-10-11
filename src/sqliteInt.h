@@ -1334,7 +1334,7 @@ struct sqlite3 {
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 skipBtreeMutex;            /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
-  u8 bInternChanges;            /* There are uncommited schema changes */
+  u8 bFullEQP;                  /* Include triggers in EQP output */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
@@ -1450,7 +1450,7 @@ struct sqlite3 {
 **      SQLITE_CacheSpill    == PAGER_CACHE_SPILL
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
-#define SQLITE_FullEQP        0x00000002  /* Include triggers in EQP output */
+#define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
 #define SQLITE_FullColNames   0x00000004  /* Show full column names on SELECT */
 #define SQLITE_FullFSync      0x00000008  /* Use full fsync on the backend */
 #define SQLITE_CkptFullFSync  0x00000010  /* Use full fsync for checkpoint */
