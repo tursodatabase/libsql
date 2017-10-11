@@ -1,5 +1,5 @@
-C DROP\sTABLE\snow\sworks\sfor\sWITHOUT\sROWID\stables\sand\sthe\sSQLITE_OMIT_AUTOVACUUM\ncompile-time\soption.\s\sFix\sfor\sticket\s[e651b1341861d6]
-D 2017-10-10T13:37:22.404
+C Create\sa\sbranch\sfor\sthe\s3.21.0\srelease.\s\sDevelopment\scontinues\son\strunk.
+D 2017-10-11T11:12:20.240
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
@@ -1656,7 +1656,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5594a121bf132a98d0ecb4cf86d9f2681925c9416206096bf11c9370a5dae22f
+P b8c1b5a584aeb6ab63cff875ca16135efeadac16b4b32afa589845477feebf32
 R f3d3a32072dba092302fd2943ac3dda5
+T *branch * branch-3.21
+T *sym-branch-3.21 *
+T -sym-trunk *
 U drh
-Z c352a62dec18b44931aef87cbd4d711d
+Z 2b6b9e30a8a2f29d1c1889fa41916c23
