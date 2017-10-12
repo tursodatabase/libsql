@@ -1,8 +1,8 @@
-C Merge\sfixes\sfrom\sthe\s3.21\sbranch.
-D 2017-10-12T13:21:56.153
-F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
+C The\ssrc/shell.c\sfile\sis\snow\sgenerated\sfrom\ssrc/shell.c.in,\sso\sremove\sshell.c\nfrom\sversion\scontrol\sand\supdate\sthe\smakefiles\sto\sbuild\sit\sautomatically.
+D 2017-10-12T13:47:48.544
+F Makefile.in 9c9f4dea3f622464cba9768501aceca187d2bbae10b60bf420b531cd776fe5c0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 307701b46e4ac0e2aaa7776ea5936fff21636e991c9d5988584f37d65be9c13e
+F Makefile.msc 3f96a87fb271b06aede7e304234cce096edd3d5ad76507ccc4716b20511a3b20
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -382,7 +382,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d0145f02deb67d65c4822225847cba112c237cdb62f4905eeb4b648e82bfc222
+F main.mk 3e671408634fb8e8eaa296e80627066a2524053db5a9c5c28c6ec06cf7e99a51
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -459,7 +459,6 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 42aca61e739c405ddd8a1b702977a7743c7d52a94885f7c5596bd7e73e6bff18
-F src/shell.c b7a097667fbf48f5b45ffdd789dcfa2c7bd8985ebb284aedddaf6d1d1101237f
 F src/shell.c.in 423944f4ad73a7e73d9c06e645e19ac1aa5f45c22069936e3a008b28a5df8003
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1594,7 +1593,7 @@ F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
-F tool/mkshellc.tcl 950c36f45941c12140e346a907fb66198bc2770ff7a17c749201e78d34bb3b0b
+F tool/mkshellc.tcl 574307265b49d813301fba91ccd74e6a26d33f65f74b6891c320a0ffbee07895
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
@@ -1657,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c36761e1a05c15c48468dd793faf06636f5dcfd3b4314074c4d9c9eac5c2695c 5d0ceb8dcdef92cd72307e532a4a6c269b2c458fecb0bbede0bb941099eebc5b
-R 5e22761bfa955ea525bc4446de4276dc
+P 292921692c8919d29f0a67d03ca953d5c1c4900d8c8567cceab27513732be598
+R 55fc95c237c6d381b00d7c404f68ae59
 U drh
-Z 1f315bd34e44a8389c3ed773831f4232
+Z 4cb9f1b7e5b96c77468dac8db9ac0cf0
