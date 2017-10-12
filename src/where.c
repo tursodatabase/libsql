@@ -3137,6 +3137,35 @@ static int whereLoopAddVirtualOne(
 
 
 /*
+** Context object used to pass information from whereLoopAddVirtual()
+** to sqlite3_vtab_collation().
+*/
+struct BestIndexCtx {
+  WhereClause *pWC;
+  sqlite3_index_info *pIdxInfo;
+  Parse *pParse;
+};
+
+/*
+** If this function is invoked from within an xBestIndex() callback, it
+** returns a pointer to a buffer containing the name of the collation
+** sequence associated with element iCons of the sqlite3_index_info.aConstraint
+** array. Or, if iCons is out of range or there is no active xBestIndex
+** call, return NULL.
+*/
+const char *sqlite3_vtab_collation(sqlite3 *db, int iCons){
+  struct BestIndexCtx *p = (struct BestIndexCtx*)db->pBestIndexCtx;
+  const char *zRet = 0;
+  if( p && iCons>=0 && iCons<p->pIdxInfo->nConstraint ){
+    int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
+    Expr *pX = p->pWC->a[iTerm].pExpr;
+    CollSeq *pC = sqlite3BinaryCompareCollSeq(p->pParse,pX->pLeft,pX->pRight);
+    zRet = (pC ? pC->zName : "BINARY");
+  }
+  return zRet;
+}
+
+/*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
 **
@@ -3177,6 +3206,8 @@ static int whereLoopAddVirtual(
   WhereLoop *pNew;
   Bitmask mBest;               /* Tables used by best possible plan */
   u16 mNoOmit;
+  struct BestIndexCtx bic;
+  void *pSaved;
 
   assert( (mPrereq & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
@@ -3197,6 +3228,12 @@ static int whereLoopAddVirtual(
     sqlite3DbFree(pParse->db, p);
     return SQLITE_NOMEM_BKPT;
   }
+
+  bic.pWC = pWC;
+  bic.pIdxInfo = p;
+  bic.pParse = pParse;
+  pSaved = pParse->db->pBestIndexCtx;
+  pParse->db->pBestIndexCtx = (void*)&bic;
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
@@ -3274,6 +3311,7 @@ static int whereLoopAddVirtual(
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   sqlite3DbFreeNN(pParse->db, p);
+  pParse->db->pBestIndexCtx = pSaved;
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
