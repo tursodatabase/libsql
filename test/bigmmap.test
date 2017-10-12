@@ -20,7 +20,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix bigmmap
 
-ifcapable !mmap {
+ifcapable !mmap||!vtab {
   finish_test
   return
 }

@@ -1220,11 +1220,6 @@ SRC01 = \
   $(TOP)\src\wherecode.c \
   $(TOP)\src\whereexpr.c
 
-# Shell source code files.
-#
-SRC02 = \
-  $(TOP)\src\shell.c
-
 # Core miscellaneous files.
 #
 SRC03 = \
@@ -1331,6 +1326,7 @@ SRC11 = \
   keywordhash.h \
   opcodes.h \
   parse.h \
+  shell.c \
   $(SQLITE3H)
 
 # Generated Tcl header files
@@ -1345,7 +1341,7 @@ SRC12 =
 
 # All source code files.
 #
-SRC = $(SRC00) $(SRC01) $(SRC02) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
+SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
 
 # Source code to the test files.
 #
@@ -1569,8 +1565,8 @@ sqlite3.def:	libsqlite3.lib
 		| sort >> sqlite3.def
 # <</block2>>
 
-$(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(SHELL_CORE_SRC) \
+$(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) shell.c $(SHELL_CORE_SRC) \
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
@@ -1629,7 +1625,6 @@ mptest:	mptester.exe
 	-mkdir tsrc
 	for %i in ($(SRC00)) do copy /Y %i tsrc
 	for %i in ($(SRC01)) do copy /Y %i tsrc
-	for %i in ($(SRC02)) do copy /Y %i tsrc
 	for %i in ($(SRC03)) do copy /Y %i tsrc
 	for %i in ($(SRC04)) do copy /Y %i tsrc
 	for %i in ($(SRC05)) do copy /Y %i tsrc
@@ -1974,6 +1969,15 @@ mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
 
+# Source files that go into making shell.c
+SHELL_SRC = \
+	$(TOP)\src\shell.c.in \
+	$(TOP)\ext\misc\shathree.c \
+	$(TOP)\ext\misc\fileio.c \
+	$(TOP)\ext\misc\completion.c
+
+shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl > shell.c
 
 
 # Rules to build the extension objects.
