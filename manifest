@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\sto\smatch\slatest\strunk.
-D 2017-10-12T14:13:31.376
+C Fix\sthe\sEXPLAIN\sprocessing\sso\sthat\sit\sreturns\sSQLITE_ERROR\son\san\sOOM,\sas\sit\nshould.
+D 2017-10-12T20:24:09.195
 F Makefile.in 51259a193f348a96b0ebc60ad84cfe83fdeecdd1d0ecb24f0e278a35ac1449da
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e3fd2bfdf18211892e3f09db7e2841753fe61cc0747a0b0e87d77406840c3f6e
@@ -535,7 +535,7 @@ F src/vdbe.c 176c0897af0aedecd3abc9afaf7fa80eaa7cf5eaf62583de256a9961df474373
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
-F src/vdbeaux.c 32530e6e635649244399e2230b41f7dcfc95c40b5a4dcf81611b8aeec6b9d064
+F src/vdbeaux.c 2b10f70d6479f990e66d0e7bbd3c58b85cd8388c1dba5b89698b7a42c185d0f2
 F src/vdbeblob.c 635a79b60340a6a14a622ea8dcb081f0a66b1ac3836870c587f232eec08c0286
 F src/vdbemem.c 5c1533bf756918b4e46b2ed2bb82c29c7c651e1e37bbd0a0d8731a68787598ff
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1662,7 +1662,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2719cf5c5bbe8e31d18368d54d968af3878ad2e15f0666e18d7b567d7439c451 36acc0a97fdcc6f54f29c68c4e131702f69c3e59e58237ff4e5c647928699956
-R 7d4d36d7e390bddaee9373964ffc0b0e
-U dan
-Z 45c234430da48e38efb9390ff8797b6d
+P d325da6c50f2f9c10f50b3839f87c155876c339879bb8bdb82567b5ff34ef7ba
+R 6202e14e92fa1dfd47a763d4d423b320
+U drh
+Z 6985a8a5847e041f83568bb74bfda40b

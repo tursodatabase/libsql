@@ -1653,7 +1653,7 @@ int sqlite3VdbeList(
   releaseMemArray(pMem, 8);
   p->pResultSet = 0;
 
-  if( p->rc==SQLITE_NOMEM_BKPT ){
+  if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
     sqlite3OomFault(db);
@@ -1720,8 +1720,11 @@ int sqlite3VdbeList(
         if( apSub[j]==pOp->p4.pProgram ) break;
       }
       if( j==nSub ){
-        rc = sqlite3VdbeMemGrow(pSub, nByte, nSub!=0);
-        if( rc!=SQLITE_OK ) break;
+        p->rc = sqlite3VdbeMemGrow(pSub, nByte, nSub!=0);
+        if( p->rc!=SQLITE_OK ){
+          rc = SQLITE_ERROR;
+          break;
+        }
         apSub = (SubProgram **)pSub->z;
         apSub[nSub++] = pOp->p4.pProgram;
         pSub->flags |= MEM_Blob;
