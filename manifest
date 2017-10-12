@@ -1,8 +1,8 @@
-C Fix\sa\spotential\scrash\sthat\smay\sfollow\san\sOOM\sor\sother\ssystem\serror\sin\sthe\sshell\stool.
-D 2017-10-12T11:33:13.900
+C Merge\sfixes\sfrom\sthe\s3.21\sbranch.
+D 2017-10-12T13:21:56.153
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 6033b51b6aea702ea059f6ab2d47b1d3cef648695f787247dd4fb395fe60673f
+F Makefile.msc 307701b46e4ac0e2aaa7776ea5936fff21636e991c9d5988584f37d65be9c13e
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc b77aec100e4fb4739748a2461b5aa82c179fcde35bc0e08ce52ae7322d218701
+F autoconf/Makefile.msc 55328895d224f1b81298224929a16b8601baa75f9d7badd493224f68a22700dd
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 2893b823ecc86cea13739f6c8109a41392254d1db08235c5615e0af5722c8578
@@ -401,7 +401,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 07ad643c75519359f72622bfb862e53723e0bed52ef7c9979e04a0a531078e34
+F src/btree.c 8565b061a6a6fad850230c73d6a7a8ffb88f3370e3352a8689a9a672160c5cc5
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c 6ffe76970aeee4bc94e60cf0138269e67109061a853e13098c38a904dd66e673
@@ -459,8 +459,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 42aca61e739c405ddd8a1b702977a7743c7d52a94885f7c5596bd7e73e6bff18
-F src/shell.c edadbfd5b21ec8fadf8844f087b2c1224cb9db57614b4a69c33e732436296f43
-F src/shell.c.in e03f7d473e10b65c25836a058a3e7a1665ffb1fe712949dcd6e38c790e4eafd0
+F src/shell.c b7a097667fbf48f5b45ffdd789dcfa2c7bd8985ebb284aedddaf6d1d1101237f
+F src/shell.c.in 423944f4ad73a7e73d9c06e645e19ac1aa5f45c22069936e3a008b28a5df8003
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4b68f424ca9b5d4b0e77065a4e60ec0f70dcce0d01053fd7a6b2ecae9d3a5967
-R 83b72d43ce085ee1e083f5ceb39f739a
-U dan
-Z e19953ef492c0be13869a8f2e3e20ba9
+P c36761e1a05c15c48468dd793faf06636f5dcfd3b4314074c4d9c9eac5c2695c 5d0ceb8dcdef92cd72307e532a4a6c269b2c458fecb0bbede0bb941099eebc5b
+R 5e22761bfa955ea525bc4446de4276dc
+U drh
+Z 1f315bd34e44a8389c3ed773831f4232

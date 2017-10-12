@@ -2040,7 +2040,7 @@ static Pgno btreePagecount(BtShared *pBt){
 }
 u32 sqlite3BtreeLastPage(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( ((p->pBt->nPage)&0x8000000)==0 );
+  assert( ((p->pBt->nPage)&0x80000000)==0 );
   return btreePagecount(p->pBt);
 }
 
