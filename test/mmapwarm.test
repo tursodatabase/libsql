@@ -26,6 +26,7 @@ set testprefix mmapwarm
 
 
 do_execsql_test 1.0 {
+  PRAGMA auto_vacuum = 0;
   CREATE TABLE t1(x, y);
   WITH s(i) AS (
     SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<500
