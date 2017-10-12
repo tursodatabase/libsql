@@ -3611,20 +3611,24 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
      { "schema size:",
        "SELECT total(length(sql)) FROM %s" },
   };
-  sqlite3_file *pFile = 0;
   int i;
   char *zSchemaTab;
   char *zDb = nArg>=2 ? azArg[1] : "main";
+  sqlite3_stmt *pStmt = 0;
   unsigned char aHdr[100];
   open_db(p, 0);
   if( p->db==0 ) return 1;
-  sqlite3_file_control(p->db, zDb, SQLITE_FCNTL_FILE_POINTER, &pFile);
-  if( pFile==0 || pFile->pMethods==0 || pFile->pMethods->xRead==0 ){
-    return 1;
-  }
-  i = pFile->pMethods->xRead(pFile, aHdr, 100, 0);
-  if( i!=SQLITE_OK ){
+  sqlite3_prepare_v2(p->db,"SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
+                     -1, &pStmt, 0);
+  sqlite3_bind_text(pStmt, 1, zDb, -1, SQLITE_STATIC);
+  if( sqlite3_step(pStmt)==SQLITE_ROW
+   && sqlite3_column_bytes(pStmt,0)>100
+  ){
+    memcpy(aHdr, sqlite3_column_blob(pStmt,0), 100);
+    sqlite3_finalize(pStmt);
+  }else{
     raw_printf(stderr, "unable to read database header\n");
+    sqlite3_finalize(pStmt);
     return 1;
   }
   i = get2byteInt(aHdr+16);

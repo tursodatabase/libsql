@@ -1091,7 +1091,8 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
+         callback.lo complete.lo ctime.lo \
+         date.lo dbpage.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
@@ -1154,6 +1155,7 @@ SRC00 = \
   $(TOP)\src\complete.c \
   $(TOP)\src\ctime.c \
   $(TOP)\src\date.c \
+  $(TOP)\src\dbpage.c \
   $(TOP)\src\dbstat.c \
   $(TOP)\src\delete.c \
   $(TOP)\src\expr.c \
@@ -1505,6 +1507,7 @@ FUZZDATA = \
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_STMTVTAB
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_DBPAGE_VTAB -DSQLITE_ENABLE_DBSTAT_VTAB
 !ENDIF
 
 # <<mark>>
@@ -1742,7 +1745,10 @@ ctime.lo:	$(TOP)\src\ctime.c $(HDR)
 date.lo:	$(TOP)\src\date.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\date.c
 
-dbstat.lo:	$(TOP)\src\date.c $(HDR)
+dbpage.lo:	$(TOP)\src\dbpage.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\dbpage.c
+
+dbstat.lo:	$(TOP)\src\dbstat.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\dbstat.c
 
 delete.lo:	$(TOP)\src\delete.c $(HDR)

@@ -166,7 +166,8 @@ USE_AMALGAMATION = @USE_AMALGAMATION@
 #
 LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
+         callback.lo complete.lo ctime.lo \
+         date.lo dbpage.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
@@ -215,6 +216,7 @@ SRC = \
   $(TOP)/src/complete.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -450,6 +452,7 @@ TESTSRC2 = \
   $(TOP)/src/build.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
@@ -570,6 +573,8 @@ SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
+SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
@@ -752,6 +757,9 @@ ctime.lo:	$(TOP)/src/ctime.c $(HDR)
 
 date.lo:	$(TOP)/src/date.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
+
+dbpage.lo:	$(TOP)/src/dbpage.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbpage.c
 
 dbstat.lo:	$(TOP)/src/dbstat.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbstat.c
