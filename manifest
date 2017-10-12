@@ -1,5 +1,5 @@
-C Fix\sthe\s"snapshot-tarball"\smakefile\starget,\swhich\swas\sbroken\sby\sthe\sshell.c\nchange\sof\scheck-in\s[36acc0a9].
-D 2017-10-12T14:13:20.758
+C Fix\sa\sharmless\scompiler\swarning\sabout\san\sunused\sparameter.
+D 2017-10-12T14:18:38.182
 F Makefile.in 9c9f4dea3f622464cba9768501aceca187d2bbae10b60bf420b531cd776fe5c0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3f96a87fb271b06aede7e304234cce096edd3d5ad76507ccc4716b20511a3b20
@@ -445,7 +445,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 3984fc069df59e26f000e30609611cecdb4e93293e6ee52313a473a7e874af1b
 F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 62f88892d3a2c68cff6e8f96c81c5dfe5178eace887880c36364aabe4d8d6422
+F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
 F src/parse.y 52ef3cecd0934e9da4a45b585883a03243ad615d338ad94f44501a05891dcdfa
 F src/pcache.c 4bada070456980c3c1f16d58ec2e64e389ad77b935e3d77e0c96e7bbd397289c
@@ -1656,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1fb87a0c6e4db1f8bf51d552d9af1252544b7d7bd2dd80f78870f3b4fd347bad
-R 8088fa2748c2b3c07e15e47d6681488a
+P c643ace24c1936f9d2b16bd6d1d13cf08070dfe5b094208b638924e904915339
+R 6b8c8a980bca85216c2bbb28216f8b36
 U drh
-Z 449b637c9672f868a961d2fed56fa177
+Z ee2d81a451eaa5a0334a9c3d00838821

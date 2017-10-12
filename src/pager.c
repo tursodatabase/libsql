@@ -1208,6 +1208,8 @@ static int jrnlBufferSize(Pager *pPager){
 
   assert( isOpen(pPager->fd) );
   dc = sqlite3OsDeviceCharacteristics(pPager->fd);
+#else
+  UNUSED_PARAMETER(pPager);
 #endif
 
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
