@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\snumeric\sconstant\sin\san\sassert()\s-\sa\sbug\sthat\shas\sbeen\spresent\nin\sthe\scode\ssince\scheck-in\s[79e22b95038]\son\s2010-03-30.
-D 2017-10-12T01:19:06.385
+C Make\ssure\sthe\stableColumnList()\sroutine\sof\sthe\scommand-line\sshell\sdoes\snot\ncause\sa\snull-pointer\sdereference\sin\san\serror\scondition.
+D 2017-10-12T10:28:30.906
 F Makefile.in 4bc36d913c2e3e2d326d588d72f618ac9788b2fd4b7efda61102611a6495c3ff
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 307701b46e4ac0e2aaa7776ea5936fff21636e991c9d5988584f37d65be9c13e
@@ -459,8 +459,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4324a94573b1e29286f8121e4881db59eaedc014afeb274c8d3e07ed282e0e20
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 42aca61e739c405ddd8a1b702977a7743c7d52a94885f7c5596bd7e73e6bff18
-F src/shell.c cbf450e75665a185c546adc702ec5fd091306ae7a08bc88b1508ac9c11acc7fe
-F src/shell.c.in e03f7d473e10b65c25836a058a3e7a1665ffb1fe712949dcd6e38c790e4eafd0
+F src/shell.c b7a097667fbf48f5b45ffdd789dcfa2c7bd8985ebb284aedddaf6d1d1101237f
+F src/shell.c.in 423944f4ad73a7e73d9c06e645e19ac1aa5f45c22069936e3a008b28a5df8003
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
@@ -1656,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31eee0e4bffc5419e076a589049bfea7327dfc666fcc2767c0b700f506055c4e
-R 53da87efcb541e81caf23f4e430fb62a
+P f0a2724f0a255cd5a262f31e4ee1f99ae713c25a9ecc56dc794c95f223453b9b
+R d1ecfc96a3abe2209d6b1155d4df5e91
 U drh
-Z 3fb702a07bd6ea398ba326fd478602ce
+Z 7fd7ee0ab2a7b6f6de891ca66c37b5d6
