@@ -146,7 +146,7 @@ SRC = \
   $(TOP)/src/rowset.c \
   $(TOP)/src/select.c \
   $(TOP)/src/status.c \
-  $(TOP)/src/shell.c \
+  $(TOP)/src/shell.c.in \
   $(TOP)/src/sqlite.h.in \
   $(TOP)/src/sqlite3ext.h \
   $(TOP)/src/sqliteInt.h \
@@ -270,6 +270,7 @@ SRC += \
   opcodes.h \
   parse.c \
   parse.h \
+  shell.c \
   sqlite3.h
 
 
@@ -498,9 +499,9 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+sqlite3$(EXE):	shell.c libsqlite3.a sqlite3.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT) \
-		$(TOP)/src/shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
+		shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
@@ -659,6 +660,16 @@ sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid $(TOP)/VERSION $(TO
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash $(OPTS) $(TOP)/tool/mkkeywordhash.c
 	./mkkeywordhash >keywordhash.h
+
+# Source files that go into making shell.c
+SHELL_SRC = \
+	$(TOP)/src/shell.c.in \
+	$(TOP)/ext/misc/shathree.c \
+	$(TOP)/ext/misc/fileio.c \
+	$(TOP)/ext/misc/completion.c
+
+shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
+	tclsh $(TOP)/tool/mkshellc.tcl >shell.c
 
 
 

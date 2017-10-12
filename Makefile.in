@@ -265,7 +265,7 @@ SRC = \
   $(TOP)/src/rowset.c \
   $(TOP)/src/select.c \
   $(TOP)/src/status.c \
-  $(TOP)/src/shell.c \
+  $(TOP)/src/shell.c.in \
   $(TOP)/src/sqlite.h.in \
   $(TOP)/src/sqlite3ext.h \
   $(TOP)/src/sqliteInt.h \
@@ -362,6 +362,7 @@ SRC += \
   parse.c \
   parse.h \
   config.h \
+  shell.c \
   sqlite3.h
 
 # Source code to the test files.
@@ -599,9 +600,9 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-version-info "8:6:8" \
 		-avoid-version
 
-sqlite3$(TEXE):	$(TOP)/src/shell.c sqlite3.c
+sqlite3$(TEXE):	shell.c sqlite3.c
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
-		$(TOP)/src/shell.c sqlite3.c \
+		shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
@@ -972,6 +973,17 @@ sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSI
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
 	./mkkeywordhash$(BEXE) >keywordhash.h
+
+# Source files that go into making shell.c
+SHELL_SRC = \
+	$(TOP)/src/shell.c.in \
+	$(TOP)/ext/misc/shathree.c \
+	$(TOP)/ext/misc/fileio.c \
+	$(TOP)/ext/misc/completion.c
+
+shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
+
 
 
 
