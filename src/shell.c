@@ -3801,6 +3801,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
     }
   }
   sqlite3_finalize(pStmt);
+  if( !azCol ) return 0;
   azCol[0] = 0;
   azCol[nCol+1] = 0;
 
