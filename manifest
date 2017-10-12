@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\strunk.\s\sAll\schanges\sare\son\smakefiles\sand\stest\sscripts.\nThere\sare\sno\score\scode\schanges.
-D 2017-10-12T14:03:09.021
+C Fix\sthe\s"snapshot-tarball"\smakefile\starget,\swhich\swas\sbroken\sby\sthe\sshell.c\nchange\sof\scheck-in\s[36acc0a9].
+D 2017-10-12T14:13:20.758
 F Makefile.in 9c9f4dea3f622464cba9768501aceca187d2bbae10b60bf420b531cd776fe5c0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3f96a87fb271b06aede7e304234cce096edd3d5ad76507ccc4716b20511a3b20
@@ -1585,7 +1585,7 @@ F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
-F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
+F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c736fdeca5e
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
 F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0fe2033c
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
@@ -1632,7 +1632,7 @@ F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
-F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
+F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 8a4acea31e0f9c562949a2d767329533c0930d699ea19c6704c0ca0aa9154068
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F vsixtest/App.xaml b76d3b48860e7454775c47ea38ffea9c4abe3e85
@@ -1656,7 +1656,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d0ceb8dcdef92cd72307e532a4a6c269b2c458fecb0bbede0bb941099eebc5b 36acc0a97fdcc6f54f29c68c4e131702f69c3e59e58237ff4e5c647928699956
-R 55fc95c237c6d381b00d7c404f68ae59
+P 1fb87a0c6e4db1f8bf51d552d9af1252544b7d7bd2dd80f78870f3b4fd347bad
+R 8088fa2748c2b3c07e15e47d6681488a
 U drh
-Z 9ae511da21bc6dca261bd7a352a2c613
+Z 449b637c9672f868a961d2fed56fa177

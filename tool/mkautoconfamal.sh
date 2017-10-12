@@ -51,7 +51,7 @@ cp sqlite3.h              $TMPSPACE
 cp sqlite3ext.h           $TMPSPACE
 cp $TOP/sqlite3.1         $TMPSPACE
 cp $TOP/sqlite3.pc.in     $TMPSPACE
-cp $TOP/src/shell.c       $TMPSPACE
+cp shell.c                $TMPSPACE
 cp $TOP/src/sqlite3.rc    $TMPSPACE
 cp $TOP/tool/Replace.cs   $TMPSPACE
 
