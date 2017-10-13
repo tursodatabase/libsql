@@ -1,5 +1,5 @@
-C When\scompiling\swith\sSQLITE_TEST,\sextra\soptions\sare\savailable\son\sthe\n"DB\sversion"\scommand\sfor\scontrolling\sthe\sinternal\sstate\sof\sthe\sSqliteDb\nobject,\sfor\stesting\spurposes.
-D 2017-10-13T15:56:26.514
+C The\sdb_use_legacy_prepare\scommand\sno\slonger\sexists.\s\sUse\sthe\sundocumented\n-use-legacy-prepare\soption\sto\sDB\sversion\sinstead.
+D 2017-10-13T16:01:36.071
 F Makefile.in d9acf9cc5252f406c2a417c12475ef14fe49096d121bd025a230fe3b58e0f294
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc c20c8f2945955931d0f790104b335b37ba511eeb0d75eded23b7f878077ee1f5
@@ -1105,7 +1105,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test d911c9ba49088d22054a05dc73743f677872a92ac89288bcdeafa0ebf3f9c531
+F test/permutations.test 53fb87f0a345259f884fa8b5fc62ee327b20be378ebe5149833b1b28c58a42f6
 F test/pragma.test c31b5e98998c160a4c85b1e04f590655c67f2daa7f73854640cd120610e3ac15
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1663,7 +1663,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95b7687fed75b32a62a0c62d397f4f543bf40095e13c22e15938d5dcfd71fcdf
-R beaa5ad001aa19fb6dcaa6d5d2766f78
+P bf86478d9c6b899d6441e80cf9d17b58731e5d354e31b11f0d58a798f6fab896
+R ef5c1b585866b0d225763ce3d0edba7c
 U drh
-Z 978089b1abbc5f3c189d1cdd601af59d
+Z e1aad8bb9151be888a26c10aa66d2e50
