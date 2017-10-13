@@ -1,8 +1,8 @@
-C Move\sa\sbunch\sof\sunrelated\stest\scode\sout\sof\stclsqlite.c\sand\sinto\ntest_*.c\sfiles.\s\sThere\sis\sstill\ssome\stest\scode\sin\stclsqlite.c,\sbut\sthe\samount\nis\sgreatly\sreduced.
-D 2017-10-13T16:19:48.503
-F Makefile.in d9acf9cc5252f406c2a417c12475ef14fe49096d121bd025a230fe3b58e0f294
+C Add\sthe\stcl/mkccode.tcl\sscript\sused\sto\sconstruct\sa\ssingle\sC-language\ssource\nfiel\sfor\sprograms\sthat\scombine\sC-code,\sSQLite,\sand\sTCL.\s\sUse\sthis\sscript\sto\nconstruct\sthe\ssqlite3_analyzer\sprogram.
+D 2017-10-13T18:58:55.897
+F Makefile.in a99044d778e2a83ba6cf78b88937d3d667cee425dca5915d73eeba1d56b98082
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc c20c8f2945955931d0f790104b335b37ba511eeb0d75eded23b7f878077ee1f5
+F Makefile.msc b864c4f906031a37e425466d8214df2da2f01703956dad5290156f03548d7277
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -384,7 +384,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 9311f1d83efd6818b7fbeb1256dbc5377159359528be4e7d925345e4d80446bf
+F main.mk a1948e0509f143fe4395a449cf61039bb6c7db3a93ae6af65092a72556718026
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1593,6 +1593,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
+F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
 F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0fe2033c
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
@@ -1631,11 +1632,11 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
+F tool/sqlite3_analyzer.c.in 3d53f06e04619f43b7aebc01cc318ef215bfd09ea1947fe9e485bed6aa6cb4b9
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
-F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1663,8 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eaeeb09d4aa1dbccdd2488af8461e2a8c8a53d92c63fd56330be041ad72a9e4a ea2fa9ab9b3c97e001c1a2f3e24f3554b544070d5f915b9827eb07eb5ea8f00b
-R ef5c1b585866b0d225763ce3d0edba7c
-T +closed ea2fa9ab9b3c97e001c1a2f3e24f3554b544070d5f915b9827eb07eb5ea8f00b
+P a9c4bc88fcf985a0bea14ed5381239cfb697886287998da04a10230b6858ab5d
+R 78f34b33921be1c7a7c8587f43b33b81
 U drh
-Z 0c47718eb3eab9783f8c2bca1833cb14
+Z 180ea09ee34fefc9e97e7461c13719ef
