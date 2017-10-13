@@ -1,8 +1,8 @@
-C Add\sthe\ssqlite_dbpage\svirtual\stable\s(enabled\susing\sSQLITE_ENABLE_DBPAGE_VTAB).\nMake\sthat\svirtual\stable\sand\sdbstat\savailable\sto\sthe\scommand-line\sshell.
-D 2017-10-12T20:37:20.278
-F Makefile.in cb88ca5a6d8e116a50bd19bf477384498df475c5463cbbf53f36624ce308ed62
+C Move\ssome\stest\slogic\sout\sof\stclsqlite.c\sand\sinto\sauxiliary\stest_*.c\sfiles.\nThis\sis\sa\swork\sin\sprogress.
+D 2017-10-13T15:06:06.783
+F Makefile.in 8658943abe79d10adfed7b504936199ebcd5c1d372d176936d5edd075492b13b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 918f07fee01bf858d20df6b37802161423f216da1ece14794afee12de4992e35
+F Makefile.msc 22fc2be4ac777553096de774b9b601568fa21904d1d64f595916f78957025558
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -384,7 +384,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 8be17ffd37df86bfbd696072045cd360600499876f7144313090f96ce3a37a55
+F main.mk 03a3ae65678b238a787f0aa9162e0e2bd998561bc8d66b9b073f54d9025dee61
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -470,7 +470,7 @@ F src/sqliteInt.h 6f93fd6fde862410ac26b930f70752c38ad99ea78c3fc28356bac78049c53b
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 487951d81f9704800fd9f0ffdaa2f935a83ccb6be3575c2c4ef83e4789b4c828
+F src/tclsqlite.c 93b2267ade2bfaad9d4f0135e5928ee28fdd77a355a563ad444ead13e1c488b2
 F src/test1.c 8ef15f7a357f85dfc41c6c748ce9c947b4f676e01bb5ae6a45bee4923dff8b51
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -499,6 +499,7 @@ F src/test_intarray.h f3b7672f5d1056eac563c0d6ea8480a660b1475c
 F src/test_journal.c 619f2aa10e0d7a5f87c0f06825bc61dfce1c6b9c7f3ad990fb13de6c3b8874a3
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c 4f06a805de86be5216a127b3777ca2d5a1ff99d1a9238374ce136a47411be36c
+F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8c
 F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c 7f4337ba23ee6b1d2ec81c189653608cb069926a
@@ -513,6 +514,7 @@ F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c 11e6ce7575f489155c604ac4b439f2ac1d3d5aef
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
 F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
+F src/test_tclsh.c 2a1ff3eac1ac3ee070a80209384d6cb353d4ad4a549400e3cd29445c672b2b87
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
 F src/test_vfs.c f0186261a24de2671d080bcd8050732f0cb64f6e
@@ -1661,8 +1663,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36acc0a97fdcc6f54f29c68c4e131702f69c3e59e58237ff4e5c647928699956 dfdebd12bfc80b91d234ab328cb6106d5d37ccb79b58e36e556c1a8af640a4ab
-R a8e3c658e72c296e51cc10d88be952b0
-T +closed dfdebd12bfc80b91d234ab328cb6106d5d37ccb79b58e36e556c1a8af640a4ab
+P eaeeb09d4aa1dbccdd2488af8461e2a8c8a53d92c63fd56330be041ad72a9e4a
+R 225e4cd689e0c61d406db3daa52debdc
+T *branch * tclsqlite-cleanup
+T *sym-tclsqlite-cleanup *
+T -sym-trunk *
 U drh
-Z 03ff5b730193797e00df33319c2ae82d
+Z 604c544fbf5b9e259c249448beb617c7
