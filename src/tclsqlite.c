@@ -14,17 +14,19 @@
 **
 ** Compile-time options:
 **
-**  -DTCLSH=1             Add a "main()" routine that works as a tclsh.
+**  -DTCLSH         Add a "main()" routine that works as a tclsh.
 **
-**  -DSQLITE_TCLMD5       When used in conjuction with -DTCLSH=1, add
-**                        four new commands to the TCL interpreter for
-**                        generating MD5 checksums:  md5, md5file,
-**                        md5-10x8, and md5file-10x8.
+**  -DTCLSH_INIT_PROC=name
 **
-**  -DSQLITE_TEST         When used in conjuction with -DTCLSH=1, add
-**                        hundreds of new commands used for testing
-**                        SQLite.  This option implies -DSQLITE_TCLMD5.
+**                  Invoke name(interp) to initialize the Tcl interpreter.
+**                  If name(interp) returns a non-NULL string, then run
+**                  that string as a Tcl script to launch the application.
+**                  If name(interp) returns NULL, then run the regular
+**                  tclsh-emulator code.
 */
+#ifdef TCLSH_INIT_PROC
+# define TCLSH 1
+#endif
 
 /*
 ** If requested, include the SQLite compiler options file for MSVC.
@@ -3582,56 +3584,55 @@ int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 #endif
 
 /*
-** If the TCLSH macro is defined to be either 1 or 2, then a main()
-** routine is inserted that starts up a Tcl interpreter.  When TCLSH==1
-** the interpreter works like an ordinary tclsh.  When TCLSH==2 then the
-** startup script is supplied by an routine named "tclsh_main_loop()"
-** that must be linked separately.  The TCLSH==2 technique is used to
-** generate stand-alone executables based on TCL, such as 
-** sqlite3_analyzer.exe.
+** If the TCLSH macro is defined, add code to make a stand-alone program.
 */
-#ifdef TCLSH
+#if defined(TCLSH)
 
-/*
-** If the macro TCLSH is one, then put in code this for the
-** "main" routine that will initialize Tcl and take input from
-** standard input, or if a file is named on the command line
-** the TCL interpreter reads and evaluates that file.
+/* This is the main routine for an ordinary TCL shell.  If there are
+** are arguments, run the first argument as a script.  Otherwise,
+** read TCL commands from standard input
 */
-#if TCLSH==1
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =
-    "set line {}\n"
-    "while {![eof stdin]} {\n"
-      "if {$line!=\"\"} {\n"
-        "puts -nonewline \"> \"\n"
-      "} else {\n"
-        "puts -nonewline \"% \"\n"
-      "}\n"
-      "flush stdout\n"
-      "append line [gets stdin]\n"
-      "if {[info complete $line]} {\n"
-        "if {[catch {uplevel #0 $line} result]} {\n"
-          "puts stderr \"Error: $result\"\n"
-        "} elseif {$result!=\"\"} {\n"
-          "puts $result\n"
+    "if {[llength $argv]>=1} {\n"
+      "set argv0 [lindex $argv 0]\n"
+      "set argv [lrange $argv 1 end]\n"
+      "source $argv0\n"
+    "} else {\n"
+      "set line {}\n"
+      "while {![eof stdin]} {\n"
+        "if {$line!=\"\"} {\n"
+          "puts -nonewline \"> \"\n"
+        "} else {\n"
+          "puts -nonewline \"% \"\n"
         "}\n"
-        "set line {}\n"
-      "} else {\n"
-        "append line \\n\n"
+        "flush stdout\n"
+        "append line [gets stdin]\n"
+        "if {[info complete $line]} {\n"
+          "if {[catch {uplevel #0 $line} result]} {\n"
+            "puts stderr \"Error: $result\"\n"
+          "} elseif {$result!=\"\"} {\n"
+            "puts $result\n"
+          "}\n"
+          "set line {}\n"
+        "} else {\n"
+          "append line \\n\n"
+        "}\n"
       "}\n"
     "}\n"
   ;
   return zMainloop;
 }
-#endif
-#if TCLSH==2
-static const char *tclsh_main_loop(void);
-#endif
 
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
+  int i;
+  const char *zScript = 0;
+  char zArgc[32];
+#if defined(TCLSH_INIT_PROC)
+  extern const char *TCLSH_INIT_PROC(Tcl_Interp*);
+#endif
 
 #if !defined(_WIN32_WCE)
   if( getenv("BREAK") ){
@@ -3650,42 +3651,27 @@ int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_FindExecutable(argv[0]);
   Tcl_SetSystemEncoding(NULL, "utf-8");
   interp = Tcl_CreateInterp();
-
-#if TCLSH==2
-  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
-#endif
-
-  /* Add extensions */
-#if !defined(SQLITE_TEST)
-  /* Normally we only initialize the TCL extension */
   Sqlite3_Init(interp);
-#else
-  /* For testing, do lots of extra initialization */
-  {
-    extern void sqlite3InitTclTestLogic(Tcl_Interp*);
-    sqlite3InitTclTestLogic(interp);
+
+  sqlite3_snprintf(sizeof(zArgc), zArgc, "%d", argc-1);
+  Tcl_SetVar(interp,"argc", zArgc, TCL_GLOBAL_ONLY);
+  Tcl_SetVar(interp,"argv0",argv[0],TCL_GLOBAL_ONLY);
+  Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
+  for(i=1; i<argc; i++){
+    Tcl_SetVar(interp, "argv", argv[i],
+        TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
   }
-#endif /* SQLITE_TEST */
-  if( argc>=2 ){
-    int i;
-    char zArgc[32];
-    sqlite3_snprintf(sizeof(zArgc), zArgc, "%d", argc-(3-TCLSH));
-    Tcl_SetVar(interp,"argc", zArgc, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp,"argv0",argv[1],TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
-    for(i=3-TCLSH; i<argc; i++){
-      Tcl_SetVar(interp, "argv", argv[i],
-          TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
-    }
-    if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
-      const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
-      if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
-      fprintf(stderr,"%s: %s\n", *argv, zInfo);
-      return 1;
-    }
+#if defined(TCLSH_INIT_PROC)
+  zScript = TCLSH_INIT_PROC(interp);
+#endif
+  if( zScript==0 ){
+    zScript = tclsh_main_loop();
   }
-  if( TCLSH==2 || argc<=1 ){
-    Tcl_GlobalEval(interp, tclsh_main_loop());
+  if( Tcl_GlobalEval(interp, zScript)!=TCL_OK ){
+    const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+    if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
+    fprintf(stderr,"%s: %s\n", *argv, zInfo);
+    return 1;
   }
   return 0;
 }

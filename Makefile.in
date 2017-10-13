@@ -947,7 +947,7 @@ tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -c $(TOP)/src/tclsqlite.c
 
 tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(LTCOMPILE) -DTCLSH=1 -o $@ -c $(TOP)/src/tclsqlite.c
+	$(LTCOMPILE) -DTCLSH -o $@ -c $(TOP)/src/tclsqlite.c
 
 tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
@@ -1113,7 +1113,8 @@ sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 # necessary because the test fixture requires non-API symbols which are
 # hidden when the library is built via the amalgamation).
 #
-TESTFIXTURE_FLAGS  = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
+TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
+TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
 TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
 TESTFIXTURE_FLAGS += -DBUILD_sqlite
 TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
