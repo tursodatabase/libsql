@@ -3286,7 +3286,42 @@ static int SQLITE_TCLAPI DbObjCmd(
   ** Return the version string for this database.
   */
   case DB_VERSION: {
-    Tcl_SetResult(interp, (char *)sqlite3_libversion(), TCL_STATIC);
+    int i;
+    for(i=2; i<objc; i++){
+      const char *zArg = Tcl_GetString(objv[i]);
+      /* Optional arguments to $db version are used for testing purpose */
+#ifdef SQLITE_TEST
+      /* $db version -use-legacy-prepare BOOLEAN
+      **
+      ** Turn the use of legacy sqlite3_prepare() on or off.
+      */
+      if( strcmp(zArg, "-use-legacy-prepare")==0 && i+1<objc ){
+        i++;
+        if( Tcl_GetBooleanFromObj(interp, objv[i], &pDb->bLegacyPrepare) ){
+          return TCL_ERROR;
+        }
+      }else
+
+      /* $db version -last-stmt-ptr
+      **
+      ** Return a string which is a hex encoding of the pointer to the
+      ** most recent sqlite3_stmt in the statement cache.
+      */
+      if( strcmp(zArg, "-last-stmt-ptr")==0 ){
+        char zBuf[100];
+        sqlite3_snprintf(sizeof(zBuf), zBuf, "%p",
+                         pDb->stmtList ? pDb->stmtList->pStmt: 0);
+        Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+      }else
+#endif /* SQLITE_TEST */
+      {
+        Tcl_AppendResult(interp, "unknown argument: ", zArg, (char*)0);
+        return TCL_ERROR;
+      }
+    }
+    if( i==2 ){   
+      Tcl_SetResult(interp, (char *)sqlite3_libversion(), TCL_STATIC);
+    }
     break;
   }
 
@@ -3594,89 +3629,6 @@ static const char *tclsh_main_loop(void){
 static const char *tclsh_main_loop(void);
 #endif
 
-/* The following to TCL commands used for testing must appear in this
-** file (they cannot be factored out into one of the test_*.c files where
-** they belong) because they require access to the SqliteDb object.
-*/
-#ifdef SQLITE_TEST
-/*
-** Tclcmd: db_use_legacy_prepare DB BOOLEAN
-**
-**   The first argument to this command must be a database command created by
-**   [sqlite3]. If the second argument is true, then the handle is configured
-**   to use the sqlite3_prepare_v2() function to prepare statements. If it
-**   is false, sqlite3_prepare().
-*/
-static int SQLITE_TCLAPI db_use_legacy_prepare_cmd(
-  ClientData cd,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  Tcl_CmdInfo cmdInfo;
-  SqliteDb *pDb;
-  int bPrepare;
-
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB BOOLEAN");
-    return TCL_ERROR;
-  }
-
-  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
-    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
-  }
-  pDb = (SqliteDb*)cmdInfo.objClientData;
-  if( Tcl_GetBooleanFromObj(interp, objv[2], &bPrepare) ){
-    return TCL_ERROR;
-  }
-
-  pDb->bLegacyPrepare = bPrepare;
-
-  Tcl_ResetResult(interp);
-  return TCL_OK;
-}
-
-/*
-** Tclcmd: db_last_stmt_ptr DB
-**
-**   If the statement cache associated with database DB is not empty,
-**   return the text representation of the most recently used statement
-**   handle.
-*/
-static int SQLITE_TCLAPI db_last_stmt_ptr(
-  ClientData cd,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
-  Tcl_CmdInfo cmdInfo;
-  SqliteDb *pDb;
-  sqlite3_stmt *pStmt = 0;
-  char zBuf[100];
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-
-  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
-    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
-  }
-  pDb = (SqliteDb*)cmdInfo.objClientData;
-
-  if( pDb->stmtList ) pStmt = pDb->stmtList->pStmt;
-  if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ){
-    return TCL_ERROR;
-  }
-  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
-
-  return TCL_OK;
-}
-#endif /* SQLITE_TEST */
-
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
@@ -3712,12 +3664,6 @@ int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   {
     extern void sqlite3InitTclTestLogic(Tcl_Interp*);
     sqlite3InitTclTestLogic(interp);
-    Tcl_CreateObjCommand(
-        interp, "db_use_legacy_prepare", db_use_legacy_prepare_cmd, 0, 0
-    );
-    Tcl_CreateObjCommand(
-        interp, "db_last_stmt_ptr", db_last_stmt_ptr, 0, 0
-    );
   }
 #endif /* SQLITE_TEST */
   if( argc>=2 ){
