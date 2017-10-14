@@ -1,8 +1,8 @@
-C Fix\sa\sharmless\scompiler\swarning\sabout\san\sunused\sparameter.
-D 2017-10-12T14:18:38.182
+C Updates\sto\sthe\sMakefiles\sfor\sMSVC.\s\sCherrypick\sof\s[ac8786f3f9f35cb6].
+D 2017-10-14T19:58:37.221
 F Makefile.in 9c9f4dea3f622464cba9768501aceca187d2bbae10b60bf420b531cd776fe5c0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 3f96a87fb271b06aede7e304234cce096edd3d5ad76507ccc4716b20511a3b20
+F Makefile.msc 4a7ebdaacec1abd415d2847c8f5b42053c5963294e925672d43d2972a5bb2cb6
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc 55328895d224f1b81298224929a16b8601baa75f9d7badd493224f68a22700dd
+F autoconf/Makefile.msc b045158822d2320d5551cb7291ecc685dd6123324b928490691deed71274c305
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 2893b823ecc86cea13739f6c8109a41392254d1db08235c5615e0af5722c8578
@@ -1656,7 +1656,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c643ace24c1936f9d2b16bd6d1d13cf08070dfe5b094208b638924e904915339
-R 6b8c8a980bca85216c2bbb28216f8b36
-U drh
-Z ee2d81a451eaa5a0334a9c3d00838821
+P de20133d44773f0b3b8869db5c1cb2a90f0426a54c7f40d12a930003343ad8e0
+Q +ac8786f3f9f35cb6fa72c65f5ca41cc6659f4702cd29ab0c9dcf04d3d1189090
+R 8e422c1ee06cd57625ef547ccd862b5a
+U mistachkin
+Z 0ed36b5b53069fc1c0ccb6054caf79bd
