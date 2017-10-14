@@ -1984,8 +1984,8 @@ SHELL_SRC = \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\completion.c
 
-shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
-	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl > shell.c
+shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
+	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
 
 # Rules to build the extension objects.
