@@ -1885,16 +1885,15 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** Return TRUE if all of the following are true:
 **
 **   (1)  X has the same or lower cost that Y
-**   (2)  X is a proper subset of Y
-**   (3)  X skips at least as many columns as Y
+**   (2)  X users fewer WHERE clause terms than Y
+**   (3)  Every WHERE clause term used by X is also used by Y
+**   (4)  X skips at least as many columns as Y
+**   (5)  If X is a covering index, than Y is too
 **
-** By "proper subset" we mean that X uses fewer WHERE clause terms
-** than Y and that every WHERE clause term used by X is also used
-** by Y.
-**
+** Conditions (2) and (3) mean that X is a "proper subset" of Y.
 ** If X is a proper subset of Y then Y is a better choice and ought
 ** to have a lower cost.  This routine returns TRUE when that cost 
-** relationship is inverted and needs to be adjusted.  The third rule
+** relationship is inverted and needs to be adjusted.  Constraint (4)
 ** was added because if X uses skip-scan less than Y it still might
 ** deserve a lower cost even if it is a proper subset of Y.
 */
@@ -1917,6 +1916,10 @@ static int whereLoopCheaperProperSubset(
       if( pY->aLTerm[j]==pX->aLTerm[i] ) break;
     }
     if( j<0 ) return 0;  /* X not a subset of Y since term X[i] not used by Y */
+  }
+  if( (pX->wsFlags&WHERE_IDX_ONLY)!=0 
+   && (pY->wsFlags&WHERE_IDX_ONLY)==0 ){
+    return 0;  /* Constraint (5) */
   }
   return 1;  /* All conditions meet */
 }
