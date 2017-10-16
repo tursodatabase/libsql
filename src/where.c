@@ -1885,7 +1885,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** Return TRUE if all of the following are true:
 **
 **   (1)  X has the same or lower cost that Y
-**   (2)  X users fewer WHERE clause terms than Y
+**   (2)  X uses fewer WHERE clause terms than Y
 **   (3)  Every WHERE clause term used by X is also used by Y
 **   (4)  X skips at least as many columns as Y
 **   (5)  If X is a covering index, than Y is too
@@ -1895,7 +1895,9 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** to have a lower cost.  This routine returns TRUE when that cost 
 ** relationship is inverted and needs to be adjusted.  Constraint (4)
 ** was added because if X uses skip-scan less than Y it still might
-** deserve a lower cost even if it is a proper subset of Y.
+** deserve a lower cost even if it is a proper subset of Y.  Constraint (5)
+** was added because a covering index probably deserves to have a lower cost
+** than a non-covering index even if it is a proper subset.
 */
 static int whereLoopCheaperProperSubset(
   const WhereLoop *pX,       /* First WhereLoop to compare */
