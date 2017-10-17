@@ -4248,7 +4248,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       utf8_printf(stderr,
                  "testcase-%s FAILED\n Expected: [%s]\n      Got: [%s]\n",
                  p->zTestcase, azArg[1], zRes);
-      rc = 2;
+      rc = 1;
     }else{
       utf8_printf(stdout, "testcase-%s ok\n", p->zTestcase);
       p->nCheck++;
