@@ -1,5 +1,5 @@
-C Avoid\susing\ssnprintf\sas\sa\smember\svariable\sof\sa\sstruct\sin\ssqlite3ext.h.\sThis\ncauses\sproblems\son\sOSX.\sSimilar\sto\sfix\s[a1fd3aa8].
-D 2017-10-18T15:02:01.361
+C Take\sextra\scare\sto\savoid\san\sOOB\sread\scaused\sby\sa\scorrupt\sb-tree\spage.
+D 2017-10-19T15:17:38.752
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -403,7 +403,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 8565b061a6a6fad850230c73d6a7a8ffb88f3370e3352a8689a9a672160c5cc5
+F src/btree.c 75229a5a47985997f861b428552acd14fe42b657f755cba5e0b1a007bd77b2ea
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c 6ffe76970aeee4bc94e60cf0138269e67109061a853e13098c38a904dd66e673
@@ -690,7 +690,7 @@ F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 075fe1d75aa1d84e2949be56b6264376c41502e4
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
-F test/corruptK.test 814a59ec699d8546b4e29005fba3d16e933ef2fe
+F test/corruptK.test 251ef631d095e882d455d2183961fa9ba879b4156e18e96c5d2b84aa7ef5f7a9
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
@@ -1105,7 +1105,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 53fb87f0a345259f884fa8b5fc62ee327b20be378ebe5149833b1b28c58a42f6
+F test/permutations.test 490e3333b9b1aefb7ebc6e9ab2ae0e382b7dd8713ccc4a2786b0f75467c2ab6b
 F test/pragma.test c31b5e98998c160a4c85b1e04f590655c67f2daa7f73854640cd120610e3ac15
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1664,8 +1664,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a08c43431be18a08bdcbf33d327513f72fff72dac5d02103dab8399d8c3d668 b066d5a69f5391b2cef04b4e288f7d33e63a4ff54325b7e9fbd6aa42529c2f3c
-R bae812ccbd328c244f2fa888e3ba625e
-T +closed b066d5a69f5391b2cef04b4e288f7d33e63a4ff54325b7e9fbd6aa42529c2f3c
+P cd0471ca9f75e7c8be74536ff4ec85b5d70f0d7994b680ed5f45b9f12a46cf46
+R 14641e8822b464d39bf472f899e19240
+T +closed 9dd591ef24b302a5fe2af0619d0cda6733348bacc541b3c0a134ac25981d4b2a
 U dan
-Z 4879d15d8231001302e10b2e0a3c2891
+Z 576e55698c218b4128bbad5de39dc1b0

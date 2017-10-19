@@ -194,7 +194,7 @@ test_suite "valgrind" -prefix "" -description {
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* wal.test \
               shell*.test crash8.test atof1.test selectG.test \
-              tkt-fc62af4523.test numindex1.test
+              tkt-fc62af4523.test numindex1.test corruptK.test
 ] -initialize {
   set ::G(valgrind) 1
 } -shutdown {
