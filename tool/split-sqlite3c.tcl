@@ -15,6 +15,7 @@ set END   {^/\*+ End of %s \*+/}
 
 set in [open sqlite3.c]
 set out1 [open sqlite3-all.c w]
+fconfigure $out1 -translation lf
 
 # Copy the header from sqlite3.c into sqlite3-all.c
 #
@@ -48,6 +49,7 @@ proc write_one_file {content} {
   global filecnt
   incr filecnt
   set out [open sqlite3-$filecnt.c w]
+  fconfigure $out -translation lf
   puts -nonewline $out $content
   close $out
   puts $::out1 "#include \"sqlite3-$filecnt.c\""

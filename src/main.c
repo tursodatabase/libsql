@@ -3054,6 +3054,12 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_DBPAGE_VTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3DbpageRegister(db);
+  }
+#endif
+
 #ifdef SQLITE_ENABLE_DBSTAT_VTAB
   if( !db->mallocFailed && rc==SQLITE_OK){
     rc = sqlite3DbstatRegister(db);
