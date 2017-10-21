@@ -1689,6 +1689,7 @@ int sqlite3ColumnsFromExprList(
     nCol = pEList->nExpr;
     aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
     testcase( aCol==0 );
+    if( nCol>32767 ) nCol = 32767;
   }else{
     nCol = 0;
     aCol = 0;

@@ -1,5 +1,5 @@
-C Remove\sunnecessary\s"#if\sSQLITE_MAX_COLUMN".\s\sSQLITE_MAX_COLUMN\sis\salways\ndefined.
-D 2017-10-21T13:29:26.479
+C Catch\sand\savoid\sa\s16-bit\sinteger\soverflow\son\sthe\snumber\sof\scolumns\sin\sa\ncommon\stable\sexpression.\s\sThis\sfixes\sa\sproblem\sfound\sby\sOSS-Fuzz.\s\sThe\ntest\scase\sis\sin\sTH3.
+D 2017-10-21T14:17:31.555
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -461,7 +461,7 @@ F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 5a461643f294ec510ca615b67256fc3861e4c8eff5f29e5940491e70553b1955
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 78b81b0d0f8ba2445e4de5ca3c97a9fd317240a9c5e4994887d4ae8a1d5a3367
+F src/select.c e6a068d9ea54417d625578086d3d482284af8d5a449bb3593d40c257080806a8
 F src/shell.c.in f13262c8778f0cd76bf8d9c01bbf5ef66842e6b14e1705cd60d86ab32a6ce69f
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 04925dee41a21ffca9a9f9df27d8165431668c42c2b33d08b077fdb28011170b
-R 3fe93e66991cd1a89b7cde18365d4335
+P 6ec82acde81a46a75ed5931fc7dd813f2523753106ad7b8f0b544b9da9824d5a
+R 201775ba1e14aa2d5f8d0e57defde230
 U drh
-Z 82fbf688aff072892ed2c0d525c25911
+Z bad3386d6737a5472f5b033811b6e996
