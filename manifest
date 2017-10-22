@@ -1,5 +1,5 @@
-C Catch\sand\savoid\sa\s16-bit\sinteger\soverflow\son\sthe\snumber\sof\scolumns\sin\sa\ncommon\stable\sexpression.\s\sThis\sfixes\sa\sproblem\sfound\sby\sOSS-Fuzz.\s\sThe\ntest\scase\sis\sin\sTH3.
-D 2017-10-21T14:17:31.555
+C Avoid\srunning\stests\sthat\suse\ssqlite_dbpage\swith\sSQLITE_OMIT_VIRTUAL_TABLE\nbuilds.
+D 2017-10-22T07:57:29.038
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -690,7 +690,7 @@ F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 075fe1d75aa1d84e2949be56b6264376c41502e4
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
-F test/corruptK.test 251ef631d095e882d455d2183961fa9ba879b4156e18e96c5d2b84aa7ef5f7a9
+F test/corruptK.test d93f5797bf0555a47dcc81bc9727cb72fa7c8ac348c25f42937573cd29bb3850
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ec82acde81a46a75ed5931fc7dd813f2523753106ad7b8f0b544b9da9824d5a
-R 201775ba1e14aa2d5f8d0e57defde230
-U drh
-Z bad3386d6737a5472f5b033811b6e996
+P 6ee8cb6ae5fd076ec226bb184b5690ba29f9df8cfaef47aaf13336873b4c1f6c
+R 2ad0f857ce1c547a47a99955708ad02e
+U dan
+Z 31291a1d9ccb37db331d41df009b953d
