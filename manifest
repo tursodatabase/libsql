@@ -1,5 +1,5 @@
-C Merge\sall\sthe\senhancements\sand\sbug\sfixes\sfrom\strunk,\ssince\snone\sare\ndestablizing.\s\sCall\sthis\sthe\ssecond\sbeta.
-D 2017-10-21T17:17:17.187
+C Avoid\srunning\stests\sthat\suse\ssqlite_dbpage\swith\sSQLITE_OMIT_VIRTUAL_TABLE\nbuilds.
+D 2017-10-22T07:58:09.276
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -690,7 +690,7 @@ F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 075fe1d75aa1d84e2949be56b6264376c41502e4
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
-F test/corruptK.test 251ef631d095e882d455d2183961fa9ba879b4156e18e96c5d2b84aa7ef5f7a9
+F test/corruptK.test d93f5797bf0555a47dcc81bc9727cb72fa7c8ac348c25f42937573cd29bb3850
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92eb721faefcdd8396072722d3e4d7ca41b860b306e4bb0f0191dde8f30d0add 6ee8cb6ae5fd076ec226bb184b5690ba29f9df8cfaef47aaf13336873b4c1f6c
-R cbea5558ab489dc3dc438260e1496797
-U drh
-Z 9e651e977f775eeb3bfb6c192219eebf
+P fb3ee1b7cac09e4950e4f48b44c277e4f391cb6c8f069644732d2389ca653da4 7bd20a20a0f422765a6e469d1a1b67b95c4a441931688e04a2b1b491a5238528
+R f5a8b3c7c89468b69c7c49590387a154
+U dan
+Z 68d28a2fb4cc05caa2331d58b535590e
