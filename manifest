@@ -1,5 +1,5 @@
-C In\slsm\s(not\sSQLite),\savoid\sopening\sthe\s*-shm\sfile\sbefore\sthe\sdatabase\sfile\sis\nlocked.\sOtherwise,\sthere\sis\sa\srace\scondition\swhereby\sa\sconnection\sin\sanother\nprocess\sprocess\smay\sunlink()\sit\swhile\sit\sis\sstill\sin\suse.
-D 2017-10-23T11:48:00.248
+C Cleanup\sa\stest\sdatabase\sfile\sprior\sto\susing\sit.
+D 2017-10-23T17:36:52.561
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -1251,7 +1251,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/swarmvtab.test 05c4ca7b6ab0cc6f4c335a510347f99d741fa71366004699cf7dfa3cff4e2d17
 F test/swarmvtab2.test 038ef9bcad6fd2fb9e395196080cf23e223ddb1219015049a61540c161bc577d
-F test/swarmvtabfault.test 73563eefe3073c6fb3bb14475fb4ef5d4f2e3a67a02947ee0ca08980ea3dd7fe
+F test/swarmvtabfault.test f8ae84cd44454555386c393892280f85f5ab35dcd0797641830fd7ebbfcc9d15
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/sync2.test 6be8ed007fa063b147773c1982b5bdba97a32badc536bdc6077eff5cf8710ece
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 15e87d9bc81812fb9de86f9870389217dddb9f9c4d48e42acefce2d35ba293f1
-R 788a72b4e4bc49507efed4d645930eed
-U dan
-Z 97cc68bc0ee206aadd31e81854de499f
+P c8b8b9b573665c2b4d278bb679a48ac407374b8d860f0c3f4d50a303043464ad
+R 8a4b9bbdc7dfd424f00b7f6b2d5817a7
+U mistachkin
+Z b3872513ac1c114df2a01eba444b5f49
