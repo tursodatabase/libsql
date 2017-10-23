@@ -1,5 +1,5 @@
-C Updates\sto\stest\sprocedures\sso\sthat\sthey\sall\swork\swith\sencryption.\s\sNo\schanges\nto\sthe\score\sSQLite\scode.
-D 2017-10-23T16:34:07.586
+C Merge\strunk\sfixes\sto\sswarmvtabfault.test\sand\sthe\slsm\sextension\sinto\sthis\nbranch.\sNo\schanges\sto\score\sSQLite\scode.
+D 2017-10-23T20:20:42.832
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -245,7 +245,7 @@ F ext/lsm1/lsm_log.c a8bf334532109bba05b09a504ee45fc393828b0d034ca61ab45e3940709
 F ext/lsm1/lsm_main.c 15e73ccdafdd44ddeefc29e332079d88ba8f00c12c797b3c2b63d3171b5afce8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
-F ext/lsm1/lsm_shared.c 5bc37768e558492f60d7196735ddd54843cd239bd66c1af6eb205a6348ca5e46
+F ext/lsm1/lsm_shared.c 1a76b7a5e89a003c24d58f1fb295c4203b48ef6acba9a194ac6003ade09fcd47
 F ext/lsm1/lsm_sorted.c a04518dfbfff0171fafb152a46e9fe9f45e1edbf3570e4533dd58ddb6567f0c9
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
@@ -1251,7 +1251,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/swarmvtab.test c2279311b44de032f86a8295a9b06818d864856f9428b4c99eee91a0d419cf25
 F test/swarmvtab2.test 9a3a68a1e58d00f4ed6c68d12d52f2df971b9e22a80a41f6f8c1409abba8e5b4
-F test/swarmvtabfault.test 73563eefe3073c6fb3bb14475fb4ef5d4f2e3a67a02947ee0ca08980ea3dd7fe
+F test/swarmvtabfault.test 00aec54665909490f5c383f3cae3b5d18bd97c12490b429ff8752a3027acfa42
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/sync2.test 6be8ed007fa063b147773c1982b5bdba97a32badc536bdc6077eff5cf8710ece
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58e5bb491bc0e28412ca188ba8fbe94adc67b5b1e9d7c112c36011400528d577
-R a447261df1989a937247d3824cdf45d6
-U drh
-Z c50c87663ba16acea2ad67bd15f69a8a
+P 0481330756e861de8e1eb7136e7dca2f333b2a82377949d2e0eba401af7d73dd f317037b31b19007e30bb41c54506d9d241a6d590c2b31e2ddda10d4f6e7605b
+R ddc3003da6d6bb8e92c74828b5fa4343
+U dan
+Z d8722be9be441804446b8c51f09c2f27
