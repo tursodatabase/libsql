@@ -1,5 +1,5 @@
-C Merge\strunk\sfixes\sto\sswarmvtabfault.test\sand\sthe\slsm\sextension\sinto\sthis\nbranch.\sNo\schanges\sto\score\sSQLite\scode.
-D 2017-10-23T20:20:42.832
+C On\sthe\samalgamation\spackage,\senable\sthe\ssqlite_dbpage\svirtual\stable\sso\sthat\nthe\s.dbinfo\scommand\sworks\sin\sthe\sCLI.
+D 2017-10-23T21:24:38.787
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -10,7 +10,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
+F autoconf/Makefile.am 66c0befa511f0d95ba229e180067cf0357a9ebf8b3201b06d683c5ba6220fb39
 F autoconf/Makefile.msc 645b8a9774281515dc4a8de65d8a914f7b418ba8bd1c48b53ccbf43d3b339715
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0481330756e861de8e1eb7136e7dca2f333b2a82377949d2e0eba401af7d73dd f317037b31b19007e30bb41c54506d9d241a6d590c2b31e2ddda10d4f6e7605b
-R ddc3003da6d6bb8e92c74828b5fa4343
-U dan
-Z d8722be9be441804446b8c51f09c2f27
+P f632b87002a7ee9be569aacb5ce85bb7e9c86b7d77bb8d1bf8b55eb5be4ecc77
+R f52ceae69cf9eb99d83d95eeda09f025
+U drh
+Z 919379e1b338add2dc31d98f7ca8060a
