@@ -1,5 +1,5 @@
-C Fix\stest\scases\sin\sdbpage.test\sso\sthat\sthey\swork\swith\nSQLITE_DEFAULT_AUTOVACUUM=1\sbuilds.
-D 2017-10-22T08:03:39.057
+C Fix\sminor\stest\sscript\sproblems\srevealed\sby\sreleasetest.tcl.
+D 2017-10-23T07:53:00.457
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -690,7 +690,7 @@ F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 075fe1d75aa1d84e2949be56b6264376c41502e4
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
-F test/corruptK.test d93f5797bf0555a47dcc81bc9727cb72fa7c8ac348c25f42937573cd29bb3850
+F test/corruptK.test 91550557849244a9904f4e090052e3f2c1c3f1106840d58b00ffaa3a8c2d3fc0
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
@@ -713,7 +713,7 @@ F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
-F test/dbpage.test a9e7774416f5f2fb237601628804b339f897112edb9ba92f7675a61e3e9c6244
+F test/dbpage.test 10b9e91d07b0892444fff4578706648e955b5fb260218298f838da74f0d9d211
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6dde8d6154c5b4d36c7aad17d6eaafdb13c66a09d17d4c79f52b2417846ea0b5 0fcf1e61ef2b6c1fb8f4846f973d2d427598ffbc80dbc49e56e71513b194bae7
-R 58f31246838ac70b6c10f575ffe2d173
+P 9474f061d634721ca462bbad375270b8b39dea44011df3e1aac72021e8bf70fc 15e87d9bc81812fb9de86f9870389217dddb9f9c4d48e42acefce2d35ba293f1
+R fca4c2998d860b91137d3cb7520f7137
 U dan
-Z 95bb6fe81e5a89afea2cc73a6ba2ebc8
+Z 456ef7edc59a34c970d90601a596e58f

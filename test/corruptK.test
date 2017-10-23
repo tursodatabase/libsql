@@ -110,6 +110,7 @@ do_catchsql_test 2.3 {
 #-------------------------------------------------------------------------
 
 ifcapable vtab {
+if {[permutation]!="inmemory_journal"} {
 
   proc hex2blob {hex} {
     # Split on newlines:
@@ -219,6 +220,7 @@ ifcapable vtab {
     PRAGMA integrity_check;
   } {1 {database disk image is malformed}}
 
+} ;# [permutation]!="inmemory_journal"
 } ;# ifcapable vtab
 
 
