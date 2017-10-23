@@ -21,15 +21,19 @@ ifcapable !vtab||!compound {
   return
 }
 
-do_execsql_test 100 {
-  PRAGMA auto_vacuum=0;
-  PRAGMA page_size=4096;
-  PRAGMA journal_mode=WAL;
-  CREATE TABLE t1(a,b);
-  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
-  INSERT INTO t1(a,b) SELECT x, printf('%d-x%.*c',x,x,'x') FROM c;
-  PRAGMA integrity_check;
-} {wal ok}
+do_test 100 {
+  execsql {
+    PRAGMA auto_vacuum=0;
+    PRAGMA page_size=4096;
+    PRAGMA journal_mode=WAL;
+  }
+  execsql { 
+    CREATE TABLE t1(a,b);
+    WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+      INSERT INTO t1(a,b) SELECT x, printf('%d-x%.*c',x,x,'x') FROM c;
+    PRAGMA integrity_check;
+  }
+} {ok}
 do_execsql_test 110 {
   SELECT pgno, quote(substr(data,1,5)) FROM sqlite_dbpage('main') ORDER BY pgno;
 } {1 X'53514C6974' 2 X'0500000001' 3 X'0D0000004E' 4 X'0D00000016'}
