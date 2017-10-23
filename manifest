@@ -1,5 +1,5 @@
-C Avoid\spassing\sa\sNULL\svalue\sas\sthe\ssecond\sargument\sto\smemcpy().
-D 2017-10-23T16:03:54.957
+C Updates\sto\stest\sprocedures\sso\sthat\sthey\sall\swork\swith\sencryption.\s\sNo\schanges\nto\sthe\score\sSQLite\scode.
+D 2017-10-23T16:34:07.586
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -486,7 +486,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c 78809f11026f18a93fcfd798d9479cba37e1201c830260bf1edc674b2fa9b857
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c abf6fc1fe9d041b699578c42e3db81f8831c4f5b804f1927958102ee8f2b773e
+F src/test_config.c 3000f00b9b47b149d842059904c3fcab5f3871fb6aee7d7cc5756f0c64779ae3
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
@@ -1106,7 +1106,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 490e3333b9b1aefb7ebc6e9ab2ae0e382b7dd8713ccc4a2786b0f75467c2ab6b
-F test/pragma.test c31b5e98998c160a4c85b1e04f590655c67f2daa7f73854640cd120610e3ac15
+F test/pragma.test 7c8cfc328a1717a95663cf8edb06c52ddfeaf97bb0aee69ae7457132e8d39e7d
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
 F test/pragma4.test 3046501bee2f652dc2a4f9c87781e2741361d6864439c8381aba6c3b774b335c
@@ -1163,7 +1163,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
-F test/schema6.test 5b21bbdd405bc93b3e6af5e6ece64d230e35f65cc4035e5c2b89fc8a090d7270
+F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce1f9b
 F test/securedel.test 5f997cb6bd38727b81e0985f53ec386c99db6441b2b9e6357240649d29017239
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test 460a5824df01575b18f7fa4bd8e40d09de20c542e90c1543e164bc7d3b0a0bb7
@@ -1249,8 +1249,8 @@ F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
-F test/swarmvtab.test 05c4ca7b6ab0cc6f4c335a510347f99d741fa71366004699cf7dfa3cff4e2d17
-F test/swarmvtab2.test 038ef9bcad6fd2fb9e395196080cf23e223ddb1219015049a61540c161bc577d
+F test/swarmvtab.test c2279311b44de032f86a8295a9b06818d864856f9428b4c99eee91a0d419cf25
+F test/swarmvtab2.test 9a3a68a1e58d00f4ed6c68d12d52f2df971b9e22a80a41f6f8c1409abba8e5b4
 F test/swarmvtabfault.test 73563eefe3073c6fb3bb14475fb4ef5d4f2e3a67a02947ee0ca08980ea3dd7fe
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c333ee7e9677bda1dad8e80cf94755350bfe20bc0754577442727b6f807ad831
-R 676a97200c74a615c9238afe630ac524
-U dan
-Z 81b9a8d334381cc6ba3e8852cc37f621
+P 58e5bb491bc0e28412ca188ba8fbe94adc67b5b1e9d7c112c36011400528d577
+R a447261df1989a937247d3824cdf45d6
+U drh
+Z c50c87663ba16acea2ad67bd15f69a8a
