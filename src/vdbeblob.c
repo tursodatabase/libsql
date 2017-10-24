@@ -63,11 +63,12 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   v->aMem[1].u.i = iRow;
 
   /* If the statement has been run before (and is paused at the OP_ResultRow)
-  ** then back it up to the point where it does the OP_SeekRowid.  This could
+  ** then back it up to the point where it does the OP_NotExists.  This could
   ** have been down with an extra OP_Goto, but simply setting the program
   ** counter is faster. */
-  if( v->pc>3 ){
-    v->pc = 3;
+  if( v->pc>4 ){
+    v->pc = 4;
+    assert( v->aOp[v->pc].opcode==OP_NotExists );
     rc = sqlite3VdbeExec(v);
   }else{
     rc = sqlite3_step(p->pStmt);

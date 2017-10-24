@@ -1,5 +1,5 @@
-C On\sthe\samalgamation\spackage,\senable\sthe\ssqlite_dbpage\svirtual\stable\sso\sthat\nthe\s.dbinfo\scommand\sworks\sin\sthe\sCLI.
-D 2017-10-23T21:24:38.787
+C Fix\sa\sproblem\sin\sthe\sincr-blob\scode\scausing\sa\snew\scursor\sto\sbe\sopened\sfor\nevery\ssqlite3_blob_reopen()\scall.
+D 2017-10-24T17:28:25.843
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -535,7 +535,7 @@ F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
 F src/vdbeaux.c c423065d50cee24bc8cba57764f5e9869a1bb920c50907f5dd363ebd7c5aef82
-F src/vdbeblob.c 635a79b60340a6a14a622ea8dcb081f0a66b1ac3836870c587f232eec08c0286
+F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 5c1533bf756918b4e46b2ed2bb82c29c7c651e1e37bbd0a0d8731a68787598ff
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f632b87002a7ee9be569aacb5ce85bb7e9c86b7d77bb8d1bf8b55eb5be4ecc77
-R f52ceae69cf9eb99d83d95eeda09f025
-U drh
-Z 919379e1b338add2dc31d98f7ca8060a
+P 54b90b4f27f6f213825e881929fa04a6282e5b909a12e881366f9aef6872dcb6
+R ba55e91a353da744095752f95418b3a4
+U dan
+Z 67fa09a204d6f78af71556879bc0e0f6
