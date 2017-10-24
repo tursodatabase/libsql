@@ -7,13 +7,14 @@ description = "Native bindings to the libsqlite3 library"
 license = "MIT"
 links = "sqlite3"
 build = "build.rs"
-keywords = ["sqlite", "database", "ffi"]
+keywords = ["sqlite", "sqlcipher", "database", "ffi"]
 categories = ["database", "external-ffi-bindings"]
 
 [features]
 default = ["min_sqlite_version_3_6_8"]
 bundled = ["gcc"]
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
+sqlcipher = []
 min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_6_11 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_6_23 = ["pkg-config", "vcpkg"]
