@@ -515,7 +515,6 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 **     WO_LE    == SQLITE_INDEX_CONSTRAINT_LE
 **     WO_GT    == SQLITE_INDEX_CONSTRAINT_GT
 **     WO_GE    == SQLITE_INDEX_CONSTRAINT_GE
-**     WO_MATCH == SQLITE_INDEX_CONSTRAINT_MATCH
 */
 #define WO_IN     0x0001
 #define WO_EQ     0x0002
@@ -523,7 +522,7 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))
 #define WO_GE     (WO_EQ<<(TK_GE-TK_EQ))
-#define WO_MATCH  0x0040
+#define WO_AUX    0x0040       /* Op useful to virtual tables only */
 #define WO_IS     0x0080
 #define WO_ISNULL 0x0100
 #define WO_OR     0x0200       /* Two or more OR-connected terms */

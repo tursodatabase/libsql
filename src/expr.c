@@ -124,6 +124,11 @@ Expr *sqlite3ExprSkipCollate(Expr *pExpr){
 ** Return the collation sequence for the expression pExpr. If
 ** there is no defined collating sequence, return NULL.
 **
+** See also: sqlite3ExprNNCollSeq()
+**
+** The sqlite3ExprNNCollSeq() works the same exact that it returns the
+** default collation if pExpr has no defined collation.
+**
 ** The collating sequence might be determined by a COLLATE operator
 ** or by the presence of a column with a defined collating sequence.
 ** COLLATE operators take first precedence.  Left operands take
@@ -186,6 +191,32 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     pColl = 0;
   }
   return pColl;
+}
+
+/*
+** Return the collation sequence for the expression pExpr. If
+** there is no defined collating sequence, return a pointer to the
+** defautl collation sequence.
+**
+** See also: sqlite3ExprCollSeq()
+**
+** The sqlite3ExprCollSeq() routine works the same except that it
+** returns NULL if there is no defined collation.
+*/
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr){
+  CollSeq *p = sqlite3ExprCollSeq(pParse, pExpr);
+  if( p==0 ) p = pParse->db->pDfltColl;
+  assert( p!=0 );
+  return p;
+}
+
+/*
+** Return TRUE if the two expressions have equivalent collating sequences.
+*/
+int sqlite3ExprCollSeqMatch(Parse *pParse, Expr *pE1, Expr *pE2){
+  CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pE1);
+  CollSeq *pColl2 = sqlite3ExprNNCollSeq(pParse, pE2);
+  return sqlite3StrICmp(pColl1->zName, pColl2->zName)==0;
 }
 
 /*
@@ -1302,10 +1333,9 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   Expr *pPriorSelectCol = 0;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, 
-             sizeof(*pNew)+sizeof(pNew->a[0])*(p->nExpr-1) );
+  pNew = sqlite3DbMallocRawNN(db, sqlite3DbMallocSize(db, p));
   if( pNew==0 ) return 0;
-  pNew->nAlloc = pNew->nExpr = p->nExpr;
+  pNew->nExpr = p->nExpr;
   pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
@@ -1459,6 +1489,13 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
 ** Add a new element to the end of an expression list.  If pList is
 ** initially NULL, then create a new expression list.
 **
+** The pList argument must be either NULL or a pointer to an ExprList
+** obtained from a prior call to sqlite3ExprListAppend().  This routine
+** may not be used with an ExprList obtained from sqlite3ExprListDup().
+** Reason:  This routine assumes that the number of slots in pList->a[]
+** is a power of two.  That is true for sqlite3ExprListAppend() returns
+** but is not necessarily true from the return value of sqlite3ExprListDup().
+**
 ** If a memory allocation error occurs, the entire list is freed and
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
 ** that the new entry was successfully appended.
@@ -1477,16 +1514,14 @@ ExprList *sqlite3ExprListAppend(
       goto no_mem;
     }
     pList->nExpr = 0;
-    pList->nAlloc = 1;
-  }else if( pList->nExpr==pList->nAlloc ){
+  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
     ExprList *pNew;
     pNew = sqlite3DbRealloc(db, pList, 
-             sizeof(*pList)+(2*pList->nAlloc - 1)*sizeof(pList->a[0]));
+             sizeof(*pList)+(2*pList->nExpr - 1)*sizeof(pList->a[0]));
     if( pNew==0 ){
       goto no_mem;
     }
     pList = pNew;
-    pList->nAlloc *= 2;
   }
   pItem = &pList->a[pList->nExpr++];
   assert( offsetof(struct ExprList_item,zName)==sizeof(pItem->pExpr) );
@@ -1677,12 +1712,11 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
 u32 sqlite3ExprListFlags(const ExprList *pList){
   int i;
   u32 m = 0;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-       Expr *pExpr = pList->a[i].pExpr;
-       assert( pExpr!=0 );
-       m |= pExpr->flags;
-    }
+  assert( pList!=0 );
+  for(i=0; i<pList->nExpr; i++){
+     Expr *pExpr = pList->a[i].pExpr;
+     assert( pExpr!=0 );
+     m |= pExpr->flags;
   }
   return m;
 }
@@ -1839,8 +1873,8 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
   for(i=0; i<pGroupBy->nExpr; i++){
     Expr *p = pGroupBy->a[i].pExpr;
     if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pWalker->pParse, p);
-      if( pColl==0 || sqlite3_stricmp("BINARY", pColl->zName)==0 ){
+      CollSeq *pColl = sqlite3ExprNNCollSeq(pWalker->pParse, p);
+      if( sqlite3_stricmp("BINARY", pColl->zName)==0 ){
         return WRC_Prune;
       }
     }
@@ -2644,7 +2678,7 @@ int sqlite3CodeSubselect(
         /* Loop through each expression in <exprlist>. */
         r1 = sqlite3GetTempReg(pParse);
         r2 = sqlite3GetTempReg(pParse);
-        if( isRowid ) sqlite3VdbeAddOp2(v, OP_Null, 0, r2);
+        if( isRowid ) sqlite3VdbeAddOp4(v, OP_Blob, 0, r2, 0, "", P4_STATIC);
         for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
           Expr *pE2 = pItem->pExpr;
           int iValToIns;
@@ -3072,7 +3106,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
     const char *z = pExpr->u.zToken;
     assert( z!=0 );
     c = sqlite3DecOrHexToI64(z, &value);
-    if( c==1 || (c==2 && !negFlag) || (negFlag && value==SMALLEST_INT64)){
+    if( (c==3 && !negFlag) || (c==2) || (negFlag && value==SMALLEST_INT64)){
 #ifdef SQLITE_OMIT_FLOATING_POINT
       sqlite3ErrorMsg(pParse, "oversized integer: %s%s", negFlag ? "-" : "", z);
 #else
@@ -3086,7 +3120,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
       }
 #endif
     }else{
-      if( negFlag ){ value = c==2 ? SMALLEST_INT64 : -value; }
+      if( negFlag ){ value = c==3 ? SMALLEST_INT64 : -value; }
       sqlite3VdbeAddOp4Dup8(v, OP_Int64, 0, iMem, 0, (u8*)&value, P4_INT64);
     }
   }
@@ -4241,7 +4275,9 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 ** Generate code that pushes the value of every element of the given
 ** expression list into a sequence of registers beginning at target.
 **
-** Return the number of elements evaluated.
+** Return the number of elements evaluated.  The number returned will
+** usually be pList->nExpr but might be reduced if SQLITE_ECEL_OMITREF
+** is defined.
 **
 ** The SQLITE_ECEL_DUP flag prevents the arguments from being
 ** filled using OP_SCopy.  OP_Copy must be used instead.
@@ -4252,6 +4288,8 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 ** The SQLITE_ECEL_REF flag means that expressions in the list with
 ** ExprList.a[].u.x.iOrderByCol>0 have already been evaluated and stored
 ** in registers at srcReg, and so the value can be copied from there.
+** If SQLITE_ECEL_OMITREF is also set, then the values with u.x.iOrderByCol>0
+** are simply omitted rather than being copied from srcReg.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */

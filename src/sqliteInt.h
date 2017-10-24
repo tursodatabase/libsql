@@ -51,14 +51,6 @@
 #endif
 
 /*
-** Make sure that rand_s() is available on Windows systems with MSVC 2005
-** or higher.
-*/
-#if defined(_MSC_VER) && _MSC_VER>=1400
-#  define _CRT_RAND_S
-#endif
-
-/*
 ** Include the header file used to customize the compiler options for MSVC.
 ** This should be done first so that it can successfully prevent spurious
 ** compiler warnings due to subsequent content in this file and other files
@@ -452,6 +444,21 @@
 #else
 # define ALWAYS(X)      (X)
 # define NEVER(X)       (X)
+#endif
+
+/*
+** Some conditionals are optimizations only.  In other words, if the
+** conditionals are replaced with a constant 1 (true) or 0 (false) then
+** the correct answer is still obtained, though perhaps not as quickly.
+**
+** The following macros mark these optimizations conditionals.
+*/
+#if defined(SQLITE_MUTATION_TEST)
+# define OK_IF_ALWAYS_TRUE(X)  (1)
+# define OK_IF_ALWAYS_FALSE(X) (0)
+#else
+# define OK_IF_ALWAYS_TRUE(X)  (X)
+# define OK_IF_ALWAYS_FALSE(X) (X)
 #endif
 
 /*
@@ -937,7 +944,7 @@ typedef INT16_TYPE LogEst;
 ** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
 ** the Select query generator tracing logic is turned on.
 */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_SELECTTRACE)
+#if defined(SQLITE_ENABLE_SELECTTRACE)
 # define SELECTTRACE_ENABLED 1
 #else
 # define SELECTTRACE_ENABLED 0
@@ -1514,16 +1521,15 @@ struct sqlite3 {
 #define SQLITE_ColumnCache    0x0002   /* Column cache */
 #define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
 #define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
-/*                not used    0x0010   // Was: SQLITE_IdxRealAsInt */
-#define SQLITE_DistinctOpt    0x0020   /* DISTINCT using indexes */
-#define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
-#define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
-#define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
-#define SQLITE_Transitive     0x0200   /* Transitive constraints */
-#define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
+#define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan   0x0020   /* Covering index scans */
+#define SQLITE_OrderByIdxJoin 0x0040   /* ORDER BY of joins via index */
+#define SQLITE_Transitive     0x0080   /* Transitive constraints */
+#define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
+#define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
+#define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
 #define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
-#define SQLITE_CountOfView    0x1000   /* The count-of-view optimization */
-#define SQLITE_CursorHints    0x2000   /* Add OP_CursorHint opcodes */
+   /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -2476,7 +2482,6 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
-  int nAlloc;            /* Number of a[] slots allocated */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
@@ -4013,6 +4018,8 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr);
+int sqlite3ExprCollSeqMatch(Parse*,Expr*,Expr*);
 Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*, int);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
@@ -4417,6 +4424,9 @@ int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 int sqlite3ThreadJoin(SQLiteThread*, void**);
 #endif
 
+#if defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)
+int sqlite3DbpageRegister(sqlite3*);
+#endif
 #if defined(SQLITE_ENABLE_DBSTAT_VTAB) || defined(SQLITE_TEST)
 int sqlite3DbstatRegister(sqlite3*);
 #endif

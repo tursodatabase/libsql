@@ -164,7 +164,7 @@ do_test corruptC-2.5 {
   catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
   catchsql {PRAGMA integrity_check}
 } {0 {{*** in database main ***
-On tree page 4 cell 19: Extends off end of page}}}
+On tree page 4 cell 19: Extends off end of page} {database disk image is malformed}}}
 
 # {0 {{*** in database main ***
 # Corruption detected in cell 710 on page 4

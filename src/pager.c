@@ -1208,6 +1208,8 @@ static int jrnlBufferSize(Pager *pPager){
 
   assert( isOpen(pPager->fd) );
   dc = sqlite3OsDeviceCharacteristics(pPager->fd);
+#else
+  UNUSED_PARAMETER(pPager);
 #endif
 
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
@@ -2815,6 +2817,7 @@ static int pager_playback(Pager *pPager, int isHot){
   char *zMaster = 0;       /* Name of master journal file if any */
   int needPagerReset;      /* True to reset page prior to first page rollback */
   int nPlayback = 0;       /* Total number of pages restored from journal */
+  u32 savedPageSize = pPager->pageSize;
 
   /* Figure out how many records are in the journal.  Abort early if
   ** the journal is empty.
@@ -2944,6 +2947,9 @@ static int pager_playback(Pager *pPager, int isHot){
   assert( 0 );
 
 end_playback:
+  if( rc==SQLITE_OK ){
+    rc = sqlite3PagerSetPagesize(pPager, &savedPageSize, -1);
+  }
   /* Following a rollback, the database file should be back in its original
   ** state prior to the start of the transaction, so invoke the
   ** SQLITE_FCNTL_DB_UNCHANGED file-control method to disable the
@@ -3016,6 +3022,8 @@ end_playback:
 static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   int rc = SQLITE_OK;          /* Return code */
+
+#ifndef SQLITE_OMIT_WAL
   u32 iFrame = 0;              /* Frame of WAL containing pgno */
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
@@ -3027,7 +3035,9 @@ static int readDbPage(PgHdr *pPg){
   }
   if( iFrame ){
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame,pPager->pageSize,pPg->pData);
-  }else{
+  }else
+#endif
+  {
     i64 iOffset = (pPg->pgno-1)*(i64)pPager->pageSize;
     rc = sqlite3OsRead(pPager->fd, pPg->pData, pPager->pageSize, iOffset);
     if( rc==SQLITE_IOERR_SHORT_READ ){

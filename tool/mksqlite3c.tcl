@@ -396,6 +396,7 @@ foreach file {
    sqlrr.c
    sqlite3rbu.c
    dbstat.c
+   dbpage.c
    sqlite3session.c
    json1.c
    fts5.c

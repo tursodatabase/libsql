@@ -1405,6 +1405,9 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
         int sz2 = 0;
         int sz = get2byte(&data[iFree+2]);
         int top = get2byte(&data[hdr+5]);
+        if( top>=iFree ){
+          return SQLITE_CORRUPT_PGNO(pPage->pgno);
+        }
         if( iFree2 ){
           assert( iFree+sz<=iFree2 ); /* Verified by pageFindSlot() */
           sz2 = get2byte(&data[iFree2+2]);
@@ -2043,7 +2046,7 @@ static Pgno btreePagecount(BtShared *pBt){
 }
 u32 sqlite3BtreeLastPage(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( ((p->pBt->nPage)&0x8000000)==0 );
+  assert( ((p->pBt->nPage)&0x80000000)==0 );
   return btreePagecount(p->pBt);
 }
 
@@ -2925,7 +2928,8 @@ int sqlite3BtreeGetAutoVacuum(Btree *p){
 ** set to the value passed to this function as the second parameter,
 ** set it so.
 */
-#if SQLITE_DEFAULT_SYNCHRONOUS!=SQLITE_DEFAULT_WAL_SYNCHRONOUS
+#if SQLITE_DEFAULT_SYNCHRONOUS!=SQLITE_DEFAULT_WAL_SYNCHRONOUS \
+    && !defined(SQLITE_OMIT_WAL)
 static void setDefaultSyncFlag(BtShared *pBt, u8 safety_level){
   sqlite3 *db;
   Db *pDb;
@@ -4826,7 +4830,7 @@ static const void *fetchPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
   u32 *pAmt            /* Write the number of available bytes here */
 ){
-  u32 amt;
+  int amt;
   assert( pCur!=0 && pCur->iPage>=0 && pCur->pPage);
   assert( pCur->eState==CURSOR_VALID );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
@@ -4835,9 +4839,14 @@ static const void *fetchPayload(
   assert( pCur->info.nSize>0 );
   assert( pCur->info.pPayload>pCur->pPage->aData || CORRUPT_DB );
   assert( pCur->info.pPayload<pCur->pPage->aDataEnd ||CORRUPT_DB);
-  amt = (int)(pCur->pPage->aDataEnd - pCur->info.pPayload);
-  if( pCur->info.nLocal<amt ) amt = pCur->info.nLocal;
-  *pAmt = amt;
+  amt = pCur->info.nLocal;
+  if( amt>(int)(pCur->pPage->aDataEnd - pCur->info.pPayload) ){
+    /* There is too little space on the page for the expected amount
+    ** of local content. Database must be corrupt. */
+    assert( CORRUPT_DB );
+    amt = MAX(0, (int)(pCur->pPage->aDataEnd - pCur->info.pPayload));
+  }
+  *pAmt = (u32)amt;
   return (void*)pCur->info.pPayload;
 }
 
@@ -7304,8 +7313,6 @@ static int balance_nonroot(
      + nMaxCells*sizeof(u16)                       /* b.szCell */
      + pBt->pageSize;                              /* aSpace1 */
 
-  /* EVIDENCE-OF: R-28375-38319 SQLite will never request a scratch buffer
-  ** that is more than 6 times the database page size. */
   assert( szScratch<=6*(int)pBt->pageSize );
   b.apCell = sqlite3StackAllocRaw(0, szScratch );
   if( b.apCell==0 ){

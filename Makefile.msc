@@ -1091,7 +1091,8 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
+         callback.lo complete.lo ctime.lo \
+         date.lo dbpage.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
@@ -1154,6 +1155,7 @@ SRC00 = \
   $(TOP)\src\complete.c \
   $(TOP)\src\ctime.c \
   $(TOP)\src\date.c \
+  $(TOP)\src\dbpage.c \
   $(TOP)\src\dbstat.c \
   $(TOP)\src\delete.c \
   $(TOP)\src\expr.c \
@@ -1219,11 +1221,6 @@ SRC01 = \
   $(TOP)\src\where.c \
   $(TOP)\src\wherecode.c \
   $(TOP)\src\whereexpr.c
-
-# Shell source code files.
-#
-SRC02 = \
-  $(TOP)\src\shell.c
 
 # Core miscellaneous files.
 #
@@ -1331,6 +1328,7 @@ SRC11 = \
   keywordhash.h \
   opcodes.h \
   parse.h \
+  shell.c \
   $(SQLITE3H)
 
 # Generated Tcl header files
@@ -1345,7 +1343,7 @@ SRC12 =
 
 # All source code files.
 #
-SRC = $(SRC00) $(SRC01) $(SRC02) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
+SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
 
 # Source code to the test files.
 #
@@ -1376,6 +1374,7 @@ TESTSRC = \
   $(TOP)\src\test_intarray.c \
   $(TOP)\src\test_journal.c \
   $(TOP)\src\test_malloc.c \
+  $(TOP)\src\test_md5.c \
   $(TOP)\src\test_multiplex.c \
   $(TOP)\src\test_mutex.c \
   $(TOP)\src\test_onefile.c \
@@ -1387,6 +1386,7 @@ TESTSRC = \
   $(TOP)\src\test_server.c \
   $(TOP)\src\test_superlock.c \
   $(TOP)\src\test_syscall.c \
+  $(TOP)\src\test_tclsh.c \
   $(TOP)\src\test_tclvar.c \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vfs.c \
@@ -1411,6 +1411,7 @@ TESTEXT = \
   $(TOP)\ext\fts5\fts5_test_mi.c \
   $(TOP)\ext\fts5\fts5_test_tok.c \
   $(TOP)\ext\misc\ieee754.c \
+  $(TOP)\ext\misc\mmapwarm.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\regexp.c \
@@ -1507,7 +1508,8 @@ FUZZDATA = \
 # when the shell is not being dynamically linked.
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_STMTVTAB
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_STMTVTAB
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_DBPAGE_VTAB -DSQLITE_ENABLE_DBSTAT_VTAB
 # SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS5
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
@@ -1516,7 +1518,7 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 # <<mark>>
 # Extra compiler options for various test tools.
 #
-MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
+MPTESTER_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
@@ -1571,8 +1573,8 @@ sqlite3.def:	libsqlite3.lib
 		| sort >> sqlite3.def
 # <</block2>>
 
-$(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(SHELL_CORE_SRC) \
+$(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) shell.c $(SHELL_CORE_SRC) \
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
@@ -1631,7 +1633,6 @@ mptest:	mptester.exe
 	-mkdir tsrc
 	for %i in ($(SRC00)) do copy /Y %i tsrc
 	for %i in ($(SRC01)) do copy /Y %i tsrc
-	for %i in ($(SRC02)) do copy /Y %i tsrc
 	for %i in ($(SRC03)) do copy /Y %i tsrc
 	for %i in ($(SRC04)) do copy /Y %i tsrc
 	for %i in ($(SRC05)) do copy /Y %i tsrc
@@ -1749,7 +1750,10 @@ ctime.lo:	$(TOP)\src\ctime.c $(HDR)
 date.lo:	$(TOP)\src\date.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\date.c
 
-dbstat.lo:	$(TOP)\src\date.c $(HDR)
+dbpage.lo:	$(TOP)\src\dbpage.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\dbpage.c
+
+dbstat.lo:	$(TOP)\src\dbstat.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\dbstat.c
 
 delete.lo:	$(TOP)\src\delete.c $(HDR)
@@ -1933,7 +1937,7 @@ tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
-	$(LTCOMPILE) $(NO_WARN) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
+	$(LTCOMPILE) $(NO_WARN) -DTCLSH -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
@@ -1976,6 +1980,15 @@ mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
 
+# Source files that go into making shell.c
+SHELL_SRC = \
+	$(TOP)\src\shell.c.in \
+	$(TOP)\ext\misc\shathree.c \
+	$(TOP)\ext\misc\fileio.c \
+	$(TOP)\ext\misc\completion.c
+
+shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
+	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
 
 # Rules to build the extension objects.
@@ -2095,12 +2108,13 @@ sqlite3rbu.lo:	$(TOP)\ext\rbu\sqlite3rbu.c $(HDR) $(EXTHDR)
 # necessary because the test fixture requires non-API symbols which are
 # hidden when the library is built via the amalgamation).
 #
-TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
+TESTFIXTURE_FLAGS = -DTCLSH_INIT_PROC=sqlite3TestInit -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
@@ -2180,14 +2194,8 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(SQLITE_TCL_DEP)
-	echo #define TCLSH 2 > $@
-	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
-	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
-	echo static const char *tclsh_main_loop(void){ >> $@
-	echo static const char *zMainloop = >> $@
-	$(TCLSH_CMD) $(TOP)\tool\tostr.tcl $(TOP)\tool\spaceanal.tcl >> $@
-	echo ; return zMainloop; } >> $@
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(SQLITE_TCL_DEP)
+	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \

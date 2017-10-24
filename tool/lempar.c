@@ -75,7 +75,8 @@
 **    YY_MAX_SHIFT       Maximum value for shift actions
 **    YY_MIN_SHIFTREDUCE Minimum value for shift-reduce actions
 **    YY_MAX_SHIFTREDUCE Maximum value for shift-reduce actions
-**    YY_MIN_REDUCE      Maximum value for reduce actions
+**    YY_MIN_REDUCE      Minimum value for reduce actions
+**    YY_MAX_REDUCE      Maximum value for reduce actions
 **    YY_ERROR_ACTION    The yy_action[] code for syntax error
 **    YY_ACCEPT_ACTION   The yy_action[] code for accept
 **    YY_NO_ACTION       The yy_action[] code for no-op

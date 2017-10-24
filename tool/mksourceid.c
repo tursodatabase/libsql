@@ -777,9 +777,10 @@ int main(int argc, char **argv){
   FILE *in;
   int allValid = 1;
   int rc;
+  SHA3Context ctx;
   char zDate[50];
   char zHash[100];
-  char zLine[1000];
+  char zLine[20000];
 
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -805,7 +806,11 @@ int main(int argc, char **argv){
     fprintf(stderr, "cannot open \"%s\" for reading\n", zManifest);
     exit(1);
   }
+  SHA3Init(&ctx, 256);
   while( fgets(zLine, sizeof(zLine), in) ){
+    if( strncmp(zLine,"# Remove this line", 18)!=0 ){
+      SHA3Update(&ctx, (unsigned char*)zLine, (unsigned)strlen(zLine));
+    }
     if( strncmp(zLine, "D 20", 4)==0 ){
       memcpy(zDate, &zLine[2], 10);
       zDate[10] = ' ';
@@ -826,8 +831,6 @@ int main(int argc, char **argv){
         allValid = 0;
         if( bVerbose ){
           printf("hash failed: %s\n", zFilename);
-        }else{
-          break;
         }
       }else if( strcmp(zHash, zMHash)!=0 ){
         allValid = 0;
@@ -835,14 +838,12 @@ int main(int argc, char **argv){
           printf("wrong hash: %s\n", zFilename);
           printf("... expected: %s\n", zMHash);
           printf("... got:      %s\n", zHash);
-        }else{
-          break;
         }
       }
     }
   }
   fclose(in);
-  sha3sum_file(zManifest, 256, zHash);
+  DigestToBase16(SHA3Final(&ctx), zHash, 256/8);
   if( !allValid ){
     printf("%s %.60salt1\n", zDate, zHash);
   }else{

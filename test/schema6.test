@@ -18,6 +18,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix schema6
+do_not_use_codec
 
 # Command:   check_same_database_content TESTNAME SQL1 SQL2 SQL3 ...
 #

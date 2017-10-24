@@ -114,7 +114,7 @@ array set ::Configs [strip_comments {
   }
   "Debug-One" {
     --disable-shared
-    -O2
+    -O2 -funsigned-char
     -DSQLITE_DEBUG=1
     -DSQLITE_MEMDEBUG=1
     -DSQLITE_MUTEX_NOOP=1
@@ -126,6 +126,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_MUTATION_TEST
   }
   "Fast-One" {
     -O6

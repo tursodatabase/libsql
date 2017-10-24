@@ -354,7 +354,7 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
   if( sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc)==0 ){
     return 0;
   }
-  if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==SQLITE_OK ){
+  if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==0 ){
     return MEM_Int;
   }
   return MEM_Real;
@@ -2462,8 +2462,7 @@ case OP_Column: {
       ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
       */
       if( aOffset[0] > 98307 || aOffset[0] > pC->payloadSize ){
-        rc = SQLITE_CORRUPT_BKPT;
-        goto abort_due_to_error;
+        goto op_column_corrupt;
       }
     }else{
       /* This is an optimization.  By skipping over the first few tests
@@ -2536,8 +2535,7 @@ case OP_Column: {
           zHdr = zEndHdr;
         }else{
           if( pC->aRow==0 ) sqlite3VdbeMemRelease(&sMem);
-          rc = SQLITE_CORRUPT_BKPT;
-          goto abort_due_to_error;
+          goto op_column_corrupt;
         }
       }
 
@@ -2632,6 +2630,15 @@ op_column_out:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
   break;
+
+op_column_corrupt:
+  if( aOp[0].p3>0 ){
+    pOp = &aOp[aOp[0].p3-1];
+    break;
+  }else{
+    rc = SQLITE_CORRUPT_BKPT;
+    goto abort_due_to_error;
+  }
 }
 
 /* Opcode: Affinity P1 P2 * P4 *
@@ -4429,14 +4436,9 @@ case OP_InsertInt: {
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = x.nKey;
-  if( pData->flags & MEM_Null ){
-    x.pData = 0;
-    x.nData = 0;
-  }else{
-    assert( pData->flags & (MEM_Blob|MEM_Str) );
-    x.pData = pData->z;
-    x.nData = pData->n;
-  }
+  assert( pData->flags & (MEM_Blob|MEM_Str) );
+  x.pData = pData->z;
+  x.nData = pData->n;
   seekResult = ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0);
   if( pData->flags & MEM_Zero ){
     x.nZero = pData->u.nZero;
@@ -5667,7 +5669,7 @@ case OP_IntegrityCk: {
   nRoot = pOp->p2;
   aRoot = pOp->p4.ai;
   assert( nRoot>0 );
-  assert( aRoot[nRoot]==0 );
+  assert( aRoot[0]==nRoot );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pnErr = &aMem[pOp->p3];
   assert( (pnErr->flags & MEM_Int)!=0 );
@@ -5675,7 +5677,7 @@ case OP_IntegrityCk: {
   pIn1 = &aMem[pOp->p1];
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
-  z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
+  z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, &aRoot[1], nRoot,
                                  (int)pnErr->u.i+1, &nErr);
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){
@@ -7016,7 +7018,7 @@ case OP_Function: {
 }
 
 
-/* Opcode: Init P1 P2 * P4 *
+/* Opcode: Init P1 P2 P3 P4 *
 ** Synopsis: Start at P2
 **
 ** Programs contain a single instance of this opcode as the very first
@@ -7030,6 +7032,9 @@ case OP_Function: {
 **
 ** Increment the value of P1 so that OP_Once opcodes will jump the
 ** first time they are evaluated for this run.
+**
+** If P3 is not zero, then it is an address to jump to if an SQLITE_CORRUPT
+** error is encountered.
 */
 case OP_Init: {          /* jump */
   char *zTrace;
