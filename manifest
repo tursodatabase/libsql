@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sincr-blob\scode\scausing\sa\snew\scursor\sto\sbe\sopened\sfor\nevery\ssqlite3_blob_reopen()\scall.
-D 2017-10-24T17:28:25.843
+C Version\s3.21.0
+D 2017-10-24T18:55:49.833
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -1664,7 +1664,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54b90b4f27f6f213825e881929fa04a6282e5b909a12e881366f9aef6872dcb6
+P 41ef34a1f0650c50cacb203665cd9d57db53a49c979bf0d5a78937517f763a2c
 R ba55e91a353da744095752f95418b3a4
-U dan
-Z 67fa09a204d6f78af71556879bc0e0f6
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.21.0 *
+U drh
+Z c165baaf48a254c276ef91f282f216a1
