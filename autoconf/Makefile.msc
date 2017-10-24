@@ -974,7 +974,7 @@ sqlite3.lo:	$(SQLITE3C)
 !IF $(USE_RC)!=0
 _HASHCHAR=^#
 !IF ![echo !IFNDEF VERSION > rcver.vc] && \
-    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| find "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \
+    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| "%SystemRoot%\System32\find.exe" "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \
     ![echo !ENDIF >> rcver.vc]
 !INCLUDE rcver.vc
 !ENDIF

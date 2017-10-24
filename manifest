@@ -1,5 +1,5 @@
-C Merge\sall\sof\sthe\sfixes\sfrom\sthe\s3.21.0\srelease.
-D 2017-10-24T19:05:26.063
+C Force\sthe\sautoconf\smakefile\sfor\sMSVC\sto\salways\suse\sthe\s'find.exe'\sincluded\swith\sWindows.
+D 2017-10-24T21:17:12.950
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 66c0befa511f0d95ba229e180067cf0357a9ebf8b3201b06d683c5ba6220fb39
-F autoconf/Makefile.msc 645b8a9774281515dc4a8de65d8a914f7b418ba8bd1c48b53ccbf43d3b339715
+F autoconf/Makefile.msc 6143fe5b571cfeb0159702931d3ade664a00edc0c03814c7f6d825ae73eeffac
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 2893b823ecc86cea13739f6c8109a41392254d1db08235c5615e0af5722c8578
@@ -1596,7 +1596,7 @@ F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c7
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
 F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0fe2033c
-F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
+F tool/mkmsvcmin.tcl 8baf26690b80d861d0ac341b29880eec6ade39e4f11fe690271ded9cb90563a3
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1664,7 +1664,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f317037b31b19007e30bb41c54506d9d241a6d590c2b31e2ddda10d4f6e7605b 1a584e499906b5c87ec7d43d4abce641fdf017c42125b083109bc77c4de48827
-R ba55e91a353da744095752f95418b3a4
-U drh
-Z c9856165fc8b1b55de6e521677f40ace
+P 5ab662b443df17c5ebdadc0bdac2f447c5c7e86f7a32a6943bb4ac8605879441
+R 54e49932e96b845a01a6eb1a3cc08724
+U mistachkin
+Z 580a702e0e85c423f77f3c922262f566
