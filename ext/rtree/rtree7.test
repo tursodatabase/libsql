@@ -17,6 +17,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 
 ifcapable !rtree||!vacuum {
@@ -66,5 +67,7 @@ do_test rtree7-1.5 {
     SELECT sum(x1), sum(x2), sum(y1), sum(y2) FROM rt
   }
 } {51 102 153 204}
+
+do_rtree_integrity_test rtree7-1.6 rt
 
 finish_test

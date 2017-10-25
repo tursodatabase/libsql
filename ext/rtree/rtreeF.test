@@ -28,6 +28,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 
@@ -77,5 +78,7 @@ do_execsql_test rtreeF-1.5 {
   SELECT '|';
   SELECT y FROM t2 ORDER BY y;
 } {1 4 5 | 1 4}
+
+do_rtree_integrity_test rtreeF-1.6 t3
 
 finish_test
