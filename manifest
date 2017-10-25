@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite_btreeinfo\seponymous-only\stable\sfor\sintrospecting\sthe\sschema\nand\sestimating\sthe\ssizes\sof\svarious\sbtrees.
-D 2017-10-25T01:34:24.293
+C Do\snot\sreference\sthe\sioctl()\ssystem\scall\sin\sthe\sunix\sbackend\sunless\sit\nis\sactually\sneeded\sby\sthe\sBatch\sAtomic\sWrite\sextension.\s\sThis\sshould\sallow\nthe\sbuild\sto\swork\son\sVxWorks.
+D 2017-10-25T16:14:12.910
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -258,7 +258,7 @@ F ext/lsm1/test/lsm1_simple.test ca949efefa102f4644231dcd9291d8cda7699a4ce1006b2
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/btreeinfo.c 89488a065f5fc3c54f81c589460d69d83cd2f337ae59ed1cf813b8572b258516 w ext/misc/btreelist.c
+F ext/misc/btreeinfo.c 89488a065f5fc3c54f81c589460d69d83cd2f337ae59ed1cf813b8572b258516
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
@@ -446,7 +446,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 3984fc069df59e26f000e30609611cecdb4e93293e6ee52313a473a7e874af1b
+F src/os_unix.c 7edc872747feaa3016bd04e5e4389743bacafc0fee3444b0ecdec5d8f45049df
 F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
@@ -1665,7 +1665,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b76bffd332585e8412a0a994ae6dee79a83213d8b709d7f858c5c05678ab0887
-R 2cb01c8a7e418d5768c813428fd16a20
+P 1e30f4772db1e1086096f72d32e87c552923be8b264aa13cf822fae754eb083d
+R 15e40e111eafb5e48910635a49cabea3
 U drh
-Z 2d2691251ae11d16de493df9f4384426
+Z 02638cae8d6ec29df692272f34f9ba5b
