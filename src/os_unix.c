@@ -4145,6 +4145,7 @@ struct unixShm {
 */
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
+#define UNIX_SHM_N_DMS  1000000000                        /* Size of the DMS */
 
 /*
 ** Apply posix advisory locks for all bytes from ofst through ofst+n-1.
@@ -4166,12 +4167,6 @@ static int unixShmSystemLock(
   pShmNode = pFile->pInode->pShmNode;
   assert( sqlite3_mutex_held(pShmNode->mutex) || pShmNode->nRef==0 );
 
-  /* Shared locks never span more than one byte */
-  assert( n==1 || lockType!=F_RDLCK );
-
-  /* Locks are within range */
-  assert( n>=1 && n<=SQLITE_SHM_NLOCK );
-
   if( pShmNode->h>=0 ){
     /* Initialize the locking parameters */
     memset(&f, 0, sizeof(f));
@@ -4186,36 +4181,44 @@ static int unixShmSystemLock(
 
   /* Update the global lock state and do debug tracing */
 #ifdef SQLITE_DEBUG
-  { u16 mask;
-  OSTRACE(("SHM-LOCK "));
-  mask = ofst>31 ? 0xffff : (1<<(ofst+n)) - (1<<ofst);
-  if( rc==SQLITE_OK ){
-    if( lockType==F_UNLCK ){
-      OSTRACE(("unlock %d ok", ofst));
-      pShmNode->exclMask &= ~mask;
-      pShmNode->sharedMask &= ~mask;
-    }else if( lockType==F_RDLCK ){
-      OSTRACE(("read-lock %d ok", ofst));
-      pShmNode->exclMask &= ~mask;
-      pShmNode->sharedMask |= mask;
+  if( ofst<UNIX_SHM_DMS ){
+    u16 mask;
+
+    /* Shared locks never span more than one byte */
+    assert( n==1 || lockType!=F_RDLCK );
+
+    /* Locks are within range */
+    assert( n>=1 && n<=SQLITE_SHM_NLOCK );
+
+    OSTRACE(("SHM-LOCK "));
+    mask = ofst>31 ? 0xffff : (1<<(ofst+n)) - (1<<ofst);
+    if( rc==SQLITE_OK ){
+      if( lockType==F_UNLCK ){
+        OSTRACE(("unlock %d ok", ofst));
+        pShmNode->exclMask &= ~mask;
+        pShmNode->sharedMask &= ~mask;
+      }else if( lockType==F_RDLCK ){
+        OSTRACE(("read-lock %d ok", ofst));
+        pShmNode->exclMask &= ~mask;
+        pShmNode->sharedMask |= mask;
+      }else{
+        assert( lockType==F_WRLCK );
+        OSTRACE(("write-lock %d ok", ofst));
+        pShmNode->exclMask |= mask;
+        pShmNode->sharedMask &= ~mask;
+      }
     }else{
-      assert( lockType==F_WRLCK );
-      OSTRACE(("write-lock %d ok", ofst));
-      pShmNode->exclMask |= mask;
-      pShmNode->sharedMask &= ~mask;
+      if( lockType==F_UNLCK ){
+        OSTRACE(("unlock %d failed", ofst));
+      }else if( lockType==F_RDLCK ){
+        OSTRACE(("read-lock failed"));
+      }else{
+        assert( lockType==F_WRLCK );
+        OSTRACE(("write-lock %d failed", ofst));
+      }
     }
-  }else{
-    if( lockType==F_UNLCK ){
-      OSTRACE(("unlock %d failed", ofst));
-    }else if( lockType==F_RDLCK ){
-      OSTRACE(("read-lock failed"));
-    }else{
-      assert( lockType==F_WRLCK );
-      OSTRACE(("write-lock %d failed", ofst));
-    }
-  }
-  OSTRACE((" - afterwards %03x,%03x\n",
-           pShmNode->sharedMask, pShmNode->exclMask));
+    OSTRACE((" - afterwards %03x,%03x\n",
+             pShmNode->sharedMask, pShmNode->exclMask));
   }
 #endif
 
@@ -4389,17 +4392,38 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       */
       robustFchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
   
-      /* Check to see if another process is holding the dead-man switch.
-      ** If not, truncate the file to zero length. 
+      /* Do not allow a read-only process to connect if there are no
+      ** writers, because a read-only process is unable to recover the
+      ** shm file following a system crash.
       */
       rc = SQLITE_OK;
+      if( pShmNode->isReadonly ){
+        if( !unixShmSystemLock(pDbFd, F_RDLCK, UNIX_SHM_DMS, UNIX_SHM_N_DMS) ){
+          rc = SQLITE_CANTOPEN_DIRTYWAL;
+        }
+      }
+
+      /* If we are able to grab the dead-man switch, that means this is the
+      ** first (write-enable) process to connect to the database.  In that
+      ** case, truncate the shm file because the contents found on disk might
+      ** be invalid leftovers from a system crash.  The shm will be rebuilt
+      */
       if( unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
         if( robust_ftruncate(pShmNode->h, 0) ){
           rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
         }
       }
+
+      /* Acquires locks to tell other processes that a this process is
+      ** running and therefore the shm is valid they do not need to run
+      ** recovery.
+      */
       if( rc==SQLITE_OK ){
+        unsigned r;
         rc = unixShmSystemLock(pDbFd, F_RDLCK, UNIX_SHM_DMS, 1);
+        sqlite3_randomness(sizeof(r), &r);
+        r = 1 + (r%(UNIX_SHM_N_DMS-1));
+        (void)unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS+r, 1);
       }
       if( rc ) goto shm_open_err;
     }
