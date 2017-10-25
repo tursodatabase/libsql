@@ -15,6 +15,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 set testprefix rtreeC
@@ -180,6 +181,7 @@ do_execsql_test 5.1 {
 
   INSERT INTO rt SELECT x, x, x+1 FROM t1 WHERE x<=5;
 }
+do_rtree_integrity_test 5.1.1 rt
 
 # First test a query with no ANALYZE data at all. The outer loop is
 # real table "t1".
