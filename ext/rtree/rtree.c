@@ -3659,7 +3659,11 @@ static sqlite3_stmt *rtreeCheckPrepare(
   z = sqlite3_vmprintf(zFmt, ap);
 
   if( pCheck->rc==SQLITE_OK ){
-    pCheck->rc = sqlite3_prepare_v2(pCheck->db, z, -1, &pRet, 0);
+    if( z==0 ){
+      pCheck->rc = SQLITE_NOMEM;
+    }else{
+      pCheck->rc = sqlite3_prepare_v2(pCheck->db, z, -1, &pRet, 0);
+    }
   }
 
   sqlite3_free(z);
@@ -3781,7 +3785,7 @@ static void rtreeCheckMapping(
     );
   }else if( rc==SQLITE_ROW ){
     i64 ii = sqlite3_column_int64(pStmt, 0);
-   if( ii!=iVal ){
+    if( ii!=iVal ){
       rtreeCheckAppendMsg(pCheck, 
           "Found (%lld -> %lld) in %s table, expected (%lld -> %lld)",
           iKey, ii, (bLeaf ? "%_rowid" : "%_parent"), iKey, iVal
@@ -3791,10 +3795,22 @@ static void rtreeCheckMapping(
   rtreeCheckReset(pCheck, pStmt);
 }
 
+/*
+** Argument pCell points to an array of coordinates stored on an rtree page.
+** This function checks that the coordinates are internally consistent (no
+** x1>x2 conditions) and adds an error message to the RtreeCheck object
+** if they are not.
+**
+** Additionally, if pParent is not NULL, then it is assumed to point to
+** the array of coordinates on the parent page that bound the page 
+** containing pCell. In this case it is also verified that the two
+** sets of coordinates are mutually consistent and an error message added
+** to the RtreeCheck object if they are not.
+*/
 static void rtreeCheckCellCoord(
   RtreeCheck *pCheck, 
-  i64 iNode,
-  int iCell,
+  i64 iNode,                      /* Node id to use in error messages */
+  int iCell,                      /* Cell number to use in error messages */
   u8 *pCell,                      /* Pointer to cell coordinates */
   u8 *pParent                     /* Pointer to parent coordinates */
 ){
@@ -3829,6 +3845,14 @@ static void rtreeCheckCellCoord(
   }
 }
 
+/*
+** Run rtreecheck() checks on node iNode, which is at depth iDepth within
+** the r-tree structure. Argument aParent points to the array of coordinates
+** that bound node iNode on the parent node.
+**
+** If any problems are discovered, an error message is appended to the
+** report accumulated in the RtreeCheck object.
+*/
 static void rtreeCheckNode(
   RtreeCheck *pCheck,
   int iDepth,                     /* Depth of iNode (0==leaf) */
@@ -3864,19 +3888,20 @@ static void rtreeCheckNode(
             "Node %lld is too small for cell count of %d (%d bytes)", 
             iNode, nCell, nNode
         );
-      }
-      for(i=0; i<nCell; i++){
-        u8 *pCell = &aNode[4 + i*(8 + pCheck->nDim*2*4)];
-        i64 iVal = readInt64(pCell);
-        rtreeCheckCellCoord(pCheck, iNode, i, &pCell[8], aParent);
+      }else{
+        for(i=0; i<nCell; i++){
+          u8 *pCell = &aNode[4 + i*(8 + pCheck->nDim*2*4)];
+          i64 iVal = readInt64(pCell);
+          rtreeCheckCellCoord(pCheck, iNode, i, &pCell[8], aParent);
 
-        if( iDepth>0 ){
-          rtreeCheckMapping(pCheck, 0, iVal, iNode);
-          rtreeCheckNode(pCheck, iDepth-1, &pCell[8], iVal);
-          pCheck->nNonLeaf++;
-        }else{
-          rtreeCheckMapping(pCheck, 1, iVal, iNode);
-          pCheck->nLeaf++;
+          if( iDepth>0 ){
+            rtreeCheckMapping(pCheck, 0, iVal, iNode);
+            rtreeCheckNode(pCheck, iDepth-1, &pCell[8], iVal);
+            pCheck->nNonLeaf++;
+          }else{
+            rtreeCheckMapping(pCheck, 1, iVal, iNode);
+            pCheck->nLeaf++;
+          }
         }
       }
     }
@@ -3884,9 +3909,14 @@ static void rtreeCheckNode(
   }
 }
 
-static void rtreeCheckCount(
-  RtreeCheck *pCheck, const char *zTbl, i64 nExpected
-){
+/*
+** The second argument to this function must be either "_rowid" or
+** "_parent". This function checks that the number of entries in the
+** %_rowid or %_parent table is exactly nExpect. If not, it adds
+** an error message to the report in the RtreeCheck object indicated
+** by the first argument.
+*/
+static void rtreeCheckCount(RtreeCheck *pCheck, const char *zTbl, i64 nExpect){
   if( pCheck->rc==SQLITE_OK ){
     sqlite3_stmt *pCount;
     pCount = rtreeCheckPrepare(pCheck, "SELECT count(*) FROM %Q.'%q%s'",
@@ -3895,9 +3925,9 @@ static void rtreeCheckCount(
     if( pCount ){
       if( sqlite3_step(pCount)==SQLITE_ROW ){
         i64 nActual = sqlite3_column_int64(pCount, 0);
-        if( nActual!=nExpected ){
+        if( nActual!=nExpect ){
           rtreeCheckAppendMsg(pCheck, "Wrong number of entries in %%%s table"
-              " - expected %lld, actual %lld" , zTbl, nExpected, nActual
+              " - expected %lld, actual %lld" , zTbl, nExpect, nActual
           );
         }
       }
@@ -3906,7 +3936,11 @@ static void rtreeCheckCount(
   }
 }
 
-static int rtreeCheck(
+/*
+** This function does the bulk of the work for the rtree integrity-check.
+** It is called by rtreecheck(), which is the SQL function implementation.
+*/
+static int rtreeCheckTable(
   sqlite3 *db,                    /* Database handle to access db through */
   const char *zDb,                /* Name of db ("main", "temp" etc.) */
   const char *zTab,               /* Name of rtree table to check */
@@ -3945,11 +3979,13 @@ static int rtreeCheck(
   }
 
   /* Do the actual integrity-check */
-  if( check.rc==SQLITE_OK ){
-    rtreeCheckNode(&check, 0, 0, 1);
+  if( check.nDim>=1 ){
+    if( check.rc==SQLITE_OK ){
+      rtreeCheckNode(&check, 0, 0, 1);
+    }
+    rtreeCheckCount(&check, "_rowid", check.nLeaf);
+    rtreeCheckCount(&check, "_parent", check.nNonLeaf);
   }
-  rtreeCheckCount(&check, "_rowid", check.nLeaf);
-  rtreeCheckCount(&check, "_parent", check.nNonLeaf);
 
   /* Finalize SQL statements used by the integrity-check */
   sqlite3_finalize(check.pGetNode);
@@ -4018,7 +4054,7 @@ static void rtreecheck(
     }else{
       zTab = (const char*)sqlite3_value_text(apArg[1]);
     }
-    rc = rtreeCheck(sqlite3_context_db_handle(ctx), zDb, zTab, &zReport);
+    rc = rtreeCheckTable(sqlite3_context_db_handle(ctx), zDb, zTab, &zReport);
     if( rc==SQLITE_OK ){
       sqlite3_result_text(ctx, zReport ? zReport : "ok", -1, SQLITE_TRANSIENT);
     }else{

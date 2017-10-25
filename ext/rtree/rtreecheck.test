@@ -35,6 +35,12 @@ proc swap_int32 {blob i0 i1} {
   binary format I* $L
 }
 
+proc set_int32 {blob idx val} {
+  binary scan $blob I* L
+  lset L $idx $val
+  binary format I* $L
+}
+
 do_catchsql_test 1.0 {
   SELECT rtreecheck();
 } {1 {wrong number of arguments to function rtreecheck()}}
@@ -85,7 +91,6 @@ do_execsql_test 2.5 {
   SELECT rtreecheck('r1') 
 } {{Found (3 -> 2) in %_rowid table, expected (3 -> 1)}}
 
-################
 reset_db
 do_execsql_test 3.0 { 
   CREATE VIRTUAL TABLE r1 USING rtree_i32(id, x1, x2);
@@ -101,13 +106,53 @@ do_execsql_test 3.0 {
   SELECT rtreecheck('r1') 
 } {ok}
 
-breakpoint
 do_execsql_test 3.1 { 
   CREATE VIRTUAL TABLE r2 USING rtree_i32(id, x1, x2);
   INSERT INTO r2 VALUES(2, -1*(1<<31), -1*(1<<31)+5);
   SELECT rtreecheck('r2') 
 } {ok}
 
+do_execsql_test 3.2 {
+  BEGIN;
+    UPDATE r2_node SET data = X'123456';
+    SELECT rtreecheck('r2')!="ok";
+} {1}
+
+do_execsql_test 3.3 {
+  ROLLBACK;
+  UPDATE r2_node SET data = X'00001234';
+  SELECT rtreecheck('r2')!="ok";
+} {1}
+
+do_execsql_test 4.0 {
+  CREATE TABLE notanrtree(i);
+  SELECT rtreecheck('notanrtree');
+} {{Schema corrupt or not an rtree}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+db func set_int32 set_int32
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE r3 USING rtree_i32(id, x1, x2, y1, y2);
+  WITH x(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<1000
+  )
+  INSERT INTO r3 SELECT i, i, i, i, i FROM x;
+}
+do_execsql_test 5.1 {
+  BEGIN;
+    UPDATE r3_node SET data = set_int32(data, 3, 5000);
+    UPDATE r3_node SET data = set_int32(data, 4, 5000);
+    SELECT rtreecheck('r3')=='ok'
+} 0
+do_execsql_test 5.2 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE r3_node SET data = set_int32(data, 3, 0);
+    UPDATE r3_node SET data = set_int32(data, 4, 0);
+    SELECT rtreecheck('r3')=='ok'
+} 0
 
 finish_test
 
