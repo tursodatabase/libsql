@@ -3652,9 +3652,11 @@ static sqlite3_stmt *rtreeCheckPrepare(
   const char *zFmt, ...           /* Format string and trailing args */
 ){
   va_list ap;
-  va_start(ap, zFmt);
-  char *z = sqlite3_vmprintf(zFmt, ap);
+  char *z;
   sqlite3_stmt *pRet = 0;
+
+  va_start(ap, zFmt);
+  z = sqlite3_vmprintf(zFmt, ap);
 
   if( pCheck->rc==SQLITE_OK ){
     pCheck->rc = sqlite3_prepare_v2(pCheck->db, z, -1, &pRet, 0);

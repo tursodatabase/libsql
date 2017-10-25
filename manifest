@@ -1,5 +1,5 @@
-C Add\sSQL\sscalar\sfunction\srtreecheck()\sto\sthe\srtree\smodule.\sFor\srunning\schecks\nto\sensure\sthe\sshadow\stables\sused\sby\san\srtree\svirtual\stable\sare\sinternally\nconsistent.
-D 2017-10-25T16:38:34.144
+C Fix\scompilation\sissue\s(C99-ism)\sseen\swith\sMSVC.
+D 2017-10-25T18:00:58.356
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -329,7 +329,7 @@ F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd782299
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 7941c4283bef9ecdd1b7a5c20122006b7d363836468fe7f4bef46698c55d1d93
+F ext/rtree/rtree.c 49ced71763c4bd170ceb0b46ab34c749f3356a8c0e36ce6b9e2f36dc63716609
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 82a353747fcab1083d114b2ac84723dfefdbf86c1a6e1df57bf588c7d4285436
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1666,7 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P adfa7ed2de3e833fff65935455e71236a59602aaf7b97ece667ab300dca9f673
-R b2ab5ba3cbab5da53d273c6ee124bea0
-U dan
-Z 3064e6e3a20de6115706024077565624
+P dde0bb3eab1316c3247b1755594527ca70955aab4ad4907190731f7ec092b327
+R bbf1f0574f080f1a74b750b54fc22d8d
+U mistachkin
+Z e8d8b6c6557c63f0494992168a2a41d0
