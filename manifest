@@ -1,5 +1,5 @@
-C Instead\sof\sextra\slocks,\suse\sF_GETLK\sto\sensure\sthat\sreadonly_shm\sclients\scannot\nconnect\sto\sa\swal-mode\sdatabase\sif\sthere\sare\sno\swriters.
-D 2017-10-26T17:05:22.656
+C Fix\san\serror\sin\sthe\sprevious\scommit\son\sthis\sbranch.
+D 2017-10-26T17:34:50.823
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -447,7 +447,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 8103f60342c65d501b4e58b381796648d6584b4814ffee79cd3a6e0c12fb6545
+F src/os_unix.c 9bf0c1b7156cbcd2ec32e557cffa319251e1ffb1515d923a2dd2d8eee69b4ee4
 F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
@@ -1526,7 +1526,7 @@ F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
-F test/walro.test 4ab7ac01b77c2f894235c699d59e3e3c7f15a160
+F test/walro.test e492598baa8cd7777fef6203f6fe922c20cd691cc19e60ccd0dd0dbc68394d0a
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
@@ -1666,7 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35d979082b4ab36d6a8975f8f15a50e69f46b72a173164d2b353377b9f758bd8
-R 87551e9df4f45e3704d812374bd0d192
+P 5492f457dc7cc5c416de4b4e61e84bd2f10b4e6ce54011b7a60feb47f629c923
+R 49c1c99b22f8e84ff20a7afe5d1d547b
 U dan
-Z a113fb74c5589c985f30184211e03e42
+Z 07348874af35473af5ead94c9a86c9df

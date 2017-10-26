@@ -4401,7 +4401,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
         lock.l_start = UNIX_SHM_DMS;
         lock.l_len = 1;
         lock.l_type = F_WRLCK;
-        if( osFcntl(pShmNode->h, F_GETLK, &lockInfo)!=0 ) {
+        if( osFcntl(pShmNode->h, F_GETLK, &lock)!=0 ) {
           rc = SQLITE_IOERR_LOCK;
         }else if( lock.l_type==F_UNLCK ){
           rc = SQLITE_CANTOPEN_DIRTYWAL;
