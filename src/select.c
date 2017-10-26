@@ -3919,42 +3919,44 @@ static int pushDownWhereTerms(
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 /*
-** Based on the contents of the AggInfo structure indicated by the first
-** argument, this function checks if the following are true:
+** The pFunc is the only aggregate function in the query.  Check to see
+** if the query is a candidate for the min/max optimization. 
 **
-**    * the query contains just a single aggregate function,
-**    * the aggregate function is either min() or max(), and
-**    * the argument to the aggregate function is a column value.
+** If the query is a candidate for the min/max optimization, then set
+** *ppMinMax to be an ORDER BY clause to be used for the optimization
+** and return either WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX depending on
+** whether pFunc is a min() or max() function.
 **
-** If all of the above are true, then WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX
-** is returned as appropriate. Also, *ppMinMax is set to point to the 
-** list of arguments passed to the aggregate before returning.
+** If the query is not a candidate for the min/max optimization, return
+** WHERE_ORDERBY_NORMAL (which must be zero).
 **
-** Or, if the conditions above are not met, *ppMinMax is set to 0 and
-** WHERE_ORDERBY_NORMAL is returned.
+** This routine must be called after aggregate functions have been
+** located but before their arguments have been subjected to aggregate
+** analysis.
 */
-static u8 minMaxQuery(AggInfo *pAggInfo, ExprList **ppMinMax){
-  int eRet = WHERE_ORDERBY_NORMAL;          /* Return value */
+static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
+  int eRet = WHERE_ORDERBY_NORMAL;      /* Return value */
+  ExprList *pEList = pFunc->x.pList;    /* Arguments to agg function */
+  const char *zFunc;                    /* Name of aggregate function pFunc */
+  ExprList *pOrderBy;
+  u8 sortOrder;
 
-  *ppMinMax = 0;
-  if( pAggInfo->nFunc==1 ){
-    Expr *pExpr = pAggInfo->aFunc[0].pExpr; /* Aggregate function */
-    ExprList *pEList = pExpr->x.pList;      /* Arguments to agg function */
-
-    assert( pExpr->op==TK_AGG_FUNCTION );
-    if( pEList && pEList->nExpr==1 && pEList->a[0].pExpr->op==TK_AGG_COLUMN ){
-      const char *zFunc = pExpr->u.zToken;
-      if( sqlite3StrICmp(zFunc, "min")==0 ){
-        eRet = WHERE_ORDERBY_MIN;
-        *ppMinMax = pEList;
-      }else if( sqlite3StrICmp(zFunc, "max")==0 ){
-        eRet = WHERE_ORDERBY_MAX;
-        *ppMinMax = pEList;
-      }
-    }
+  assert( *ppMinMax==0 );
+  assert( pFunc->op==TK_AGG_FUNCTION );
+  if( pEList==0 || pEList->nExpr!=1 ) return eRet;
+  zFunc = pFunc->u.zToken;
+  if( sqlite3StrICmp(zFunc, "min")==0 ){
+    eRet = WHERE_ORDERBY_MIN;
+    sortOrder = SQLITE_SO_ASC;
+  }else if( sqlite3StrICmp(zFunc, "max")==0 ){
+    eRet = WHERE_ORDERBY_MAX;
+    sortOrder = SQLITE_SO_DESC;
+  }else{
+    return eRet;
   }
-
-  assert( *ppMinMax==0 || (*ppMinMax)->nExpr==1 );
+  *ppMinMax = pOrderBy = sqlite3ExprListDup(db, pEList, 0);
+  assert( pOrderBy!=0 || db->mallocFailed );
+  if( pOrderBy ) pOrderBy->a[0].sortOrder = sortOrder;
   return eRet;
 }
 
@@ -5135,6 +5137,8 @@ int sqlite3Select(
   AggInfo sAggInfo;      /* Information used by aggregate queries */
   int iEnd;              /* Address of the end of the query */
   sqlite3 *db;           /* The database connection */
+  ExprList *pMinMaxOrderBy = 0;  /* Added ORDER BY for min/max queries */
+  u8 minMaxFlag;                 /* Flag for min/max queries */
 
 #ifndef SQLITE_OMIT_EXPLAIN
   int iRestoreSelectId = pParse->iSelectId;
@@ -5651,6 +5655,11 @@ int sqlite3Select(
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
     }
     sAggInfo.nAccumulator = sAggInfo.nColumn;
+    if( p->pGroupBy==0 && p->pHaving==0 && sAggInfo.nFunc==1 ){
+      minMaxFlag = minMaxQuery(db, sAggInfo.aFunc[0].pExpr, &pMinMaxOrderBy);
+    }else{
+      minMaxFlag = WHERE_ORDERBY_NORMAL;
+    }
     for(i=0; i<sAggInfo.nFunc; i++){
       assert( !ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_xIsSelect) );
       sNC.ncFlags |= NC_InAggFunc;
@@ -5906,7 +5915,6 @@ int sqlite3Select(
      
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
-      ExprList *pDel = 0;
 #ifndef SQLITE_OMIT_BTREECOUNT
       Table *pTab;
       if( (pTab = isSimpleCount(p, &sAggInfo))!=0 ){
@@ -5968,67 +5976,31 @@ int sqlite3Select(
       }else
 #endif /* SQLITE_OMIT_BTREECOUNT */
       {
-        /* Check if the query is of one of the following forms:
-        **
-        **   SELECT min(x) FROM ...
-        **   SELECT max(x) FROM ...
-        **
-        ** If it is, then ask the code in where.c to attempt to sort results
-        ** as if there was an "ORDER BY x" or "ORDER BY x DESC" clause. 
-        ** If where.c is able to produce results sorted in this order, then
-        ** add vdbe code to break out of the processing loop after the 
-        ** first iteration (since the first iteration of the loop is 
-        ** guaranteed to operate on the row with the minimum or maximum 
-        ** value of x, the only row required).
-        **
-        ** A special flag must be passed to sqlite3WhereBegin() to slightly
-        ** modify behavior as follows:
-        **
-        **   + If the query is a "SELECT min(x)", then the loop coded by
-        **     where.c should not iterate over any values with a NULL value
-        **     for x.
-        **
-        **   + The optimizer code in where.c (the thing that decides which
-        **     index or indices to use) should place a different priority on 
-        **     satisfying the 'ORDER BY' clause than it does in other cases.
-        **     Refer to code and comments in where.c for details.
-        */
-        ExprList *pMinMax = 0;
-        u8 flag = WHERE_ORDERBY_NORMAL;
-        
-        assert( p->pGroupBy==0 );
-        assert( flag==0 );
-        if( p->pHaving==0 ){
-          flag = minMaxQuery(&sAggInfo, &pMinMax);
-        }
-        assert( flag==0 || (pMinMax!=0 && pMinMax->nExpr==1) );
-
-        if( flag ){
-          pMinMax = sqlite3ExprListDup(db, pMinMax, 0);
-          pDel = pMinMax;
-          assert( db->mallocFailed || pMinMax!=0 );
-          if( !db->mallocFailed ){
-            pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
-            pMinMax->a[0].pExpr->op = TK_COLUMN;
-          }
-        }
-  
         /* This case runs if the aggregate has no GROUP BY clause.  The
         ** processing is much simpler since there is only a single row
         ** of output.
         */
+        assert( p->pGroupBy==0 );
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax, 0,flag,0);
+
+        /* If this query is a candidate for the min/max optimization, then
+        ** minMaxFlag will have been previously set to either
+        ** WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX and pMinMaxOrderBy will
+        ** be an appropriate ORDER BY expression for the optimization.
+        */
+        assert( minMaxFlag==WHERE_ORDERBY_NORMAL || pMinMaxOrderBy!=0 );
+        assert( pMinMaxOrderBy==0 || pMinMaxOrderBy->nExpr==1 );
+
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
+                                   0, minMaxFlag, 0);
         if( pWInfo==0 ){
-          sqlite3ExprListDelete(db, pDel);
           goto select_end;
         }
         updateAccumulator(pParse, &sAggInfo);
-        assert( pMinMax==0 || pMinMax->nExpr==1 );
         if( sqlite3WhereIsOrdered(pWInfo)>0 ){
           sqlite3VdbeGoto(v, sqlite3WhereBreakLabel(pWInfo));
           VdbeComment((v, "%s() by index",
-                (flag==WHERE_ORDERBY_MIN?"min":"max")));
+                (minMaxFlag==WHERE_ORDERBY_MIN?"min":"max")));
         }
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, &sAggInfo);
@@ -6038,7 +6010,6 @@ int sqlite3Select(
       sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
       selectInnerLoop(pParse, p, -1, 0, 0, 
                       pDest, addrEnd, addrEnd);
-      sqlite3ExprListDelete(db, pDel);
     }
     sqlite3VdbeResolveLabel(v, addrEnd);
     
@@ -6070,7 +6041,7 @@ int sqlite3Select(
   */
 select_end:
   explainSetInteger(pParse->iSelectId, iRestoreSelectId);
-
+  sqlite3ExprListDelete(db, pMinMaxOrderBy);
   sqlite3DbFree(db, sAggInfo.aCol);
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED
