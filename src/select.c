@@ -5659,6 +5659,24 @@ int sqlite3Select(
     }
     sAggInfo.mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x400 ){
+      int ii;
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+      for(ii=0; ii<sAggInfo.nColumn; ii++){
+        sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
+            ii, sAggInfo.aCol[ii].iMem);
+        sqlite3TreeViewExpr(0, sAggInfo.aCol[ii].pExpr, 0);
+      }
+      for(ii=0; ii<sAggInfo.nFunc; ii++){
+        sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
+            ii, sAggInfo.aFunc[ii].iMem);
+        sqlite3TreeViewExpr(0, sAggInfo.aFunc[ii].pExpr, 0);
+      }
+    }
+#endif
+
 
     /* Processing for aggregates with GROUP BY is very different and
     ** much more complex than aggregates without a GROUP BY.
@@ -5956,7 +5974,7 @@ int sqlite3Select(
         **   SELECT max(x) FROM ...
         **
         ** If it is, then ask the code in where.c to attempt to sort results
-        ** as if there was an "ORDER ON x" or "ORDER ON x DESC" clause. 
+        ** as if there was an "ORDER BY x" or "ORDER BY x DESC" clause. 
         ** If where.c is able to produce results sorted in this order, then
         ** add vdbe code to break out of the processing loop after the 
         ** first iteration (since the first iteration of the loop is 
