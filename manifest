@@ -1,5 +1,5 @@
-C Use\sextra\slocks\sto\sprevent\sa\sreadonly_shm=1\sprocess\sfrom\sconnecting\sto\sa\nWAL-mode\sdatabase\sif\sthere\sare\sno\swriters.
-D 2017-10-25T23:28:13.771
+C Instead\sof\sextra\slocks,\suse\sF_GETLK\sto\sensure\sthat\sreadonly_shm\sclients\scannot\nconnect\sto\sa\swal-mode\sdatabase\sif\sthere\sare\sno\swriters.
+D 2017-10-26T17:05:22.656
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -447,7 +447,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c bec568f6f89e57b987f5ca38ae90087687d8e18669cd37eceb48ca6b56a8fbfb
+F src/os_unix.c 8103f60342c65d501b4e58b381796648d6584b4814ffee79cd3a6e0c12fb6545
 F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
@@ -1666,10 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4f893e1ae53a0445939ea2920af87d21dd36270494381028b2eaebe5c188f18
-R 7c17d54c5cff309a6f13f49dd620b485
-T *branch * readonly-wal-recovery
-T *sym-readonly-wal-recovery *
-T -sym-trunk *
-U drh
-Z 26f9af4fe6668c97b92039b43092c035
+P 35d979082b4ab36d6a8975f8f15a50e69f46b72a173164d2b353377b9f758bd8
+R 87551e9df4f45e3704d812374bd0d192
+U dan
+Z a113fb74c5589c985f30184211e03e42
