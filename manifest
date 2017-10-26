@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_dbpage\svirtual\stable\sso\sthat\sit\scan\sread\sand\swrite\sfrom\nany\sattached\sdatabase.
-D 2017-10-25T19:18:33.009
+C Fix\sa\sbug\scausing\s"make\samalgmation-autoconf"\sto\screate\san\sinvalid\spackage\sif\neither\sthe\scurrent\sor\sparent\sdirectory\scontains\sa\sfile\snamed\sinstall.sh\sor\ninstall-sh.
+D 2017-10-26T15:21:56.963
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -14,7 +14,7 @@ F autoconf/Makefile.am 66c0befa511f0d95ba229e180067cf0357a9ebf8b3201b06d683c5ba6
 F autoconf/Makefile.msc 6143fe5b571cfeb0159702931d3ade664a00edc0c03814c7f6d825ae73eeffac
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 2893b823ecc86cea13739f6c8109a41392254d1db08235c5615e0af5722c8578
+F autoconf/configure.ac 8dd08ca564279fff091c9bfdd2599d8f992c9f1f70c5396de2126ad2bd1b3bed
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1666,7 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6130cd226c0ca95e02f0cbabfdc27071acdcf83e0d0cb0eaa47d992479ed9a1
-R de06ad2d264283eba96aba95f64ee6f5
-U drh
-Z 3b4d77a61659a96790923a30bda00b59
+P d4f893e1ae53a0445939ea2920af87d21dd36270494381028b2eaebe5c188f18
+R b4e850a770e92ea272826b571ec0824a
+U dan
+Z d2098b60d98f2c55ca7e6fbf02761c40
