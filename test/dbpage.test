@@ -56,6 +56,14 @@ do_execsql_test 160 {
   INSERT INTO t2 VALUES(11,12,13);
   SELECT pgno, quote(substr(data,1,5)) FROM sqlite_dbpage('aux1');
 } {1 X'53514C6974' 2 X'0D00000001'}
+do_execsql_test 170 {
+  CREATE TABLE aux1.x3(x,y,z);
+  INSERT INTO x3(x,y,z) VALUES(1,'main',1),(2,'aux1',1);
+  SELECT pgno, schema, substr(data,1,6)
+    FROM sqlite_dbpage, x3
+   WHERE sqlite_dbpage.schema=x3.y AND sqlite_dbpage.pgno=x3.z
+   ORDER BY x3.x;
+} {1 main SQLite 1 aux1 SQLite}
 
 do_execsql_test 200 {
   CREATE TEMP TABLE saved_content(x);
