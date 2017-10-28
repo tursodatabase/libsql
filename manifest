@@ -1,5 +1,5 @@
-C Add\stest\scases\sfrom\sOSSFuzz\sto\sprevent\sa\sregression\sin\sco-routine\nprocessing.
-D 2017-10-28T12:20:09.635
+C Reactivate\squery\sflattening\swhen\sthe\sresult\sset\sof\sthe\souter\squery\shas\nno\sfunction\scalls\sor\ssubqueries.\s\sThis\sis\sa\spartial\sreversal\sof\s\ncheck-in\s[c9104b59].\s\sCo-routines\sare\sstill\spreferred\sif\sthe\souter\nquery\shas\sa\scomplex\sresult\sset,\sbut\sfor\ssimple\sresults\ssets,\squery\sflattening\nis\sused.\s\sCheck-in\s[4464f40ccd7]\sis\scompletely\sbacked\nout\sdue\sto\sthis\schange.
+D 2017-10-28T20:51:54.404
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -416,7 +416,7 @@ F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbpage.c 003755140e21b917c0a39e70907c1e4612b25d1e24b9a3c64b0d638c8ecb5dc2
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 21a5f1812fdb599e9f7afb9f650bdabab60a3afd51d7e94e539c982f647b0023
-F src/expr.c 755caeafc43e3cd31e1d810795712641f6e19f7e7e9575faece4c77381fd8304
+F src/expr.c 0016b95aed1df47ebc0eb7415bd621841d72dbffd3bfb62210e50e71d83b4691
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c b4d259af627e3cd9510cf08db37f0bcc88b1887c735169c74490c3739d5cf5c6
@@ -463,12 +463,12 @@ F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 5a461643f294ec510ca615b67256fc3861e4c8eff5f29e5940491e70553b1955
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 0b4c1ac59221c91c9f01c326105c1749874704a77310735c0417f3c3026a4f11
+F src/select.c 36345c63153e3e3e8ba533c6d3be6201c317358e8c2b34c51400abdf192515ab
 F src/shell.c.in 08cbffc31900359fea85896342a46147e9772c370d8a5079b7be26e3a1f50e8a
 F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
-F src/sqliteInt.h 6f93fd6fde862410ac26b930f70752c38ad99ea78c3fc28356bac78049c53bd9
+F src/sqliteInt.h f5377febf86654c975e1d4e4353a5ad2fbaa5bc86b584ba3761ed33e24ce2c0e
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1666,7 +1666,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c063bb04da77d6847e4e254b6bb939c860e781382e34ddff8e0454d9db7552e2
-R 49302fb645a8bd5bf1702bc6c1b70644
+P 689743d8e3fa81e65dcb067bbf61bab09210b3b39586c865c00d9f1d6692daf2
+Q -4464f40ccd7c5553f4d44120ca6dac4e9445f08f083f7dcb3bd66b4413d818e0
+R 645c7260930835d4324fc70970813d97
 U drh
-Z 9899cde33cecabbc451b9857a10233e0
+Z 4445aa956123d14dc2e74ce6385c6a77

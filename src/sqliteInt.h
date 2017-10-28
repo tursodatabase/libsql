@@ -2402,7 +2402,7 @@ struct Expr {
 */
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
 #define EP_Agg       0x000002 /* Contains one or more aggregate functions */
-                  /* 0x000004 // available for use */
+#define EP_HasFunc   0x000004 /* Contains one or more functions of any kind */
                   /* 0x000008 // available for use */
 #define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
@@ -2426,9 +2426,10 @@ struct Expr {
 #define EP_Leaf      0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
 
 /*
-** Combinations of two or more EP_* flags
+** The EP_Propagate mask is a set of properties that automatically propagate
+** upwards into parent nodes.
 */
-#define EP_Propagate (EP_Collate|EP_Subquery) /* Propagate these bits up tree */
+#define EP_Propagate (EP_Collate|EP_Subquery|EP_HasFunc)
 
 /*
 ** These macros can be used to test, set, or clear bits in the
@@ -2708,6 +2709,7 @@ struct NameContext {
 #define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
 #define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
+#define NC_Complex   0x2000  /* True if a function or subquery seen */
 
 /*
 ** An instance of the following structure contains all information
@@ -2778,6 +2780,7 @@ struct Select {
 #define SF_MaybeConvert   0x08000  /* Need convertCompoundSelectToSubquery() */
 #define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
 #define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
+#define SF_ComplexResult  0x40000  /* Result set contains subquery or function */
 
 
 /*
