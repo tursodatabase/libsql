@@ -1,10 +1,10 @@
-C Reactivate\squery\sflattening\swhen\sthe\sresult\sset\sof\sthe\souter\squery\shas\nno\sfunction\scalls\sor\ssubqueries.\s\sThis\sis\sa\spartial\sreversal\sof\s\ncheck-in\s[c9104b59].\s\sCo-routines\sare\sstill\spreferred\sif\sthe\souter\nquery\shas\sa\scomplex\sresult\sset,\sbut\sfor\ssimple\sresults\ssets,\squery\sflattening\nis\sused.\s\sCheck-in\s[4464f40ccd7]\sis\scompletely\sbacked\nout\sdue\sto\sthis\schange.
-D 2017-10-28T20:51:54.404
+C Increase\sthe\sversion\snumber\sfor\sthe\snext\srelease\s-\swhich\sis\sstill\smonths\naway\sbut\sthere\shave\sbeen\ssignificant\squery\splanner\senhancements\ssince\sthe\nprevious\srelease.
+D 2017-10-28T20:54:51.351
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
-F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
+F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure e9dbb65b61c36bb9622225de254b768d4816749ff4cb4d71307bb067095aceec x
+F configure bdc49e9f0b0ced903ebdb2850362dd3391eeb88585e0429d12b94928d2873b6b x
 F configure.ac 369ebae6c04d9d2de5064e21d300f2f42f2fbf13235cabff9d1a54f2b2c4d05d
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 278113807f49d12d04179a93fab92b5b917a08771152ca7949d34e928efa3941
@@ -1666,8 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 689743d8e3fa81e65dcb067bbf61bab09210b3b39586c865c00d9f1d6692daf2
-Q -4464f40ccd7c5553f4d44120ca6dac4e9445f08f083f7dcb3bd66b4413d818e0
-R 645c7260930835d4324fc70970813d97
+P d17ef7d153058f7332b3fec421ade42c67e26b06f36fc1629e6799537a5afc5f
+R d5f45aed899d7f014af4553e25cf640f
 U drh
-Z 4445aa956123d14dc2e74ce6385c6a77
+Z 66b45fa3f9b3a864ae6a46fe2fdaa343
