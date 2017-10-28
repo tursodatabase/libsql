@@ -1,5 +1,5 @@
-C Fix\sa\sPager\sref-count\sleak\sin\sthe\ssqlite_dbpage\svirtual\stable.
-D 2017-10-27T18:24:11.866
+C Add\stest\scases\sfrom\sOSSFuzz\sto\sprevent\sa\sregression\sin\sco-routine\nprocessing.
+D 2017-10-28T12:20:09.635
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -1557,7 +1557,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/with1.test 732e3ef398dcecb609839cd5ef0cb63beb2a9eff31420f3b745fc55b9e85b61e
+F test/with1.test ca08e291249a810a2ec9b72ceef5575e07d5925b360fcf6652ae6fe06ac4dced
 F test/with2.test 2b40da883658eb74ad8ad06afabe11a408e7fb87
 F test/with3.test e71604a0e53cba82bc04c703987cb1d6751ec0b6
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
@@ -1666,7 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8aaf37117ed4a23bbd15dc481788735efcb77bff98be423eca3521c0a9270de
-R f85ba3328211fce31f6fd8c8e66f1d27
+P c063bb04da77d6847e4e254b6bb939c860e781382e34ddff8e0454d9db7552e2
+R 49302fb645a8bd5bf1702bc6c1b70644
 U drh
-Z a44af1749e0d20716f81debef1ff6db8
+Z 9899cde33cecabbc451b9857a10233e0
