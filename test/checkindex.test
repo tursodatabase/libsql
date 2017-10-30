@@ -67,9 +67,10 @@ proc do_index_check_test {tn idx res} {
   " $res]
 
   uplevel [list do_test $tn.2 "incr_index_check $idx 1" [list {*}$res]]
-  #uplevel [list do_test $tn.3 "incr_index_check $idx 2" [list {*}$res]]
-  #uplevel [list do_test $tn.4 "incr_index_check $idx 5" [list {*}$res]]
+  uplevel [list do_test $tn.3 "incr_index_check $idx 2" [list {*}$res]]
+  uplevel [list do_test $tn.4 "incr_index_check $idx 5" [list {*}$res]]
 }
+
 
 do_execsql_test 1.2 {
   SELECT errmsg IS NULL, current_key FROM incremental_index_check('i1');
