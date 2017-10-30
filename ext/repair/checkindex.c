@@ -298,7 +298,8 @@ static int cidxLookupIndex(
       "  coalesce('quote(' || name || ')', 'rowid'), '|| '','' ||'"
       ") AS zCurrentKey,"
       "       group_concat("
-      "  coalesce(name, 'rowid') || CASE WHEN desc THEN ' DESC' ELSE '' END,"
+      "  coalesce(name, 'rowid') || ' COLLATE ' || coll "
+      "  || CASE WHEN desc THEN ' DESC' ELSE '' END,"
       "  ', '"
       ") AS zOrderBy,"
       "       group_concat("
@@ -313,7 +314,7 @@ static int cidxLookupIndex(
       "         END,"
       "  ' AND '"
       ") AS zSubExpr,"
-      "       count(*) AS nCol"
+      "      count(*) AS nCol"
       " FROM pragma_index_xinfo(%Q);"
       , zIdx, zIdx, zIdx
   );

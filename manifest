@@ -1,5 +1,5 @@
-C Fix\s"after"\sparameter\shandling\sin\sthe\sincremental_index_check\scode.
-D 2017-10-28T20:31:25.564
+C Fix\san\sissue\sin\sincremental_index_check\swith\sindexes\sthat\suse\snon-default\ncollation\ssequences.
+D 2017-10-30T08:04:38.448
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -328,7 +328,7 @@ F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d0
 F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd7822997533a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
-F ext/repair/checkindex.c 62df3d58ddf2988ab5bc9a7e3a9f16d16c3844a988df5cb702a2d0f4d2dd5bf4
+F ext/repair/checkindex.c ff736821b84286ace872a5fa793aee39232fa804cb79c40c3086686e94d2f7e0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c cc91b6905bf55512c6ebc7dfdd37ac81c86f1753db8cfa6d62f0ee864464044f
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -654,7 +654,7 @@ F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test 33a698e8c63613449d85d624a38ef669bf20331daabebe3891c9405dd6df463a
 F test/checkfreelist.test 100283a3e6b8a3018c7fab7cfdaf03d1d6540fc66453114e248cf82b25784d3b
-F test/checkindex.test 48cf7b237756f4691e7a12be78e1719d5b0456e7e205b87da380f3a6bec11966
+F test/checkindex.test ea3ae087539e36cf8f63f65afe7347c3325147f6ddd873fb6bbb2214804d08f2
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1668,7 +1668,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d5b9dada471358a2864727759648b763bf6890fc2521fac53c0d8216017d39b7
-R 31f10dd93d0cbe363e20ad50a747a726
+P c40c3c62e996044f31ca49ffc2edb2cc0320e69956f7ee6fe3e9012200e0d9a0
+R 35b9a81e4b8b6b857354a831ff9c29c1
 U dan
-Z 019388109f5e5cd896dce5eabbc0252a
+Z cd0262c8d2e550da2f2d47bdfb3d2467

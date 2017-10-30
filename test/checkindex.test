@@ -185,6 +185,7 @@ do_index_check_test 2.3 i5 {
   {} 3,2,2,9
 }
 
+#--------------------------------------------------------------------------
 do_execsql_test 3.0 {
 
   CREATE TABLE t3(w, x, y, z PRIMARY KEY) WITHOUT ROWID;
@@ -215,6 +216,49 @@ do_index_check_test 3.2 t3wxy2 {
   {} 'a',NULL,NULL,4  {} 'a',NULL,NULL,5  {} 'a',NULL,NULL,6 
   {} NULL,NULL,NULL,1 {} NULL,NULL,NULL,2 {} NULL,NULL,NULL,3 
 }
+
+#--------------------------------------------------------------------------
+# Test with an index that uses non-default collation sequences.
+#
+do_execsql_test 4.0 {
+  CREATE TABLE t4(a INTEGER PRIMARY KEY, c1 TEXT, c2 TEXT);
+  INSERT INTO t4 VALUES(1, 'aaa', 'bbb');
+  INSERT INTO t4 VALUES(2, 'AAA', 'CCC');
+  INSERT INTO t4 VALUES(3, 'aab', 'ddd');
+  INSERT INTO t4 VALUES(4, 'AAB', 'EEE');
+
+  CREATE INDEX t4cc ON t4(c1 COLLATE nocase, c2 COLLATE nocase);
+}
+
+do_index_check_test 4.1 t4cc {
+  {} 'aaa','bbb',1 
+  {} 'AAA','CCC',2 
+  {} 'aab','ddd',3 
+  {} 'AAB','EEE',4
+}
+
+do_test 4.2 {
+  set tblroot [db one { SELECT rootpage FROM sqlite_master WHERE name='t4' }]
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $tblroot
+  db eval {CREATE TABLE xt4(a INTEGER PRIMARY KEY, c1 TEXT, c2 TEXT)}
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+
+  execsql {
+    UPDATE xt4 SET c1='hello' WHERE rowid=2;
+    DELETE FROM xt4 WHERE rowid = 3;
+  }
+
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 1
+} {}
+
+do_index_check_test 4.3 t4cc {
+  {} 'aaa','bbb',1 
+  {row data mismatch} 'AAA','CCC',2 
+  {row missing} 'aab','ddd',3 
+  {} 'AAB','EEE',4
+}
+
+
 
 finish_test
 
