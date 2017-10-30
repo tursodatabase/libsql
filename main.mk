@@ -908,6 +908,9 @@ showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
 
+showshm$(EXE):	$(TOP)/tool/showshm.c
+	$(TCC) -o showshm$(EXE) $(TOP)/tool/showshm.c
+
 changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \
 		$(TOP)/ext/session/changeset.c sqlite3.o $(THREADLIB)

@@ -1,8 +1,8 @@
-C Clarify\ssome\scomments\sdescribing\sthe\sWAL\sindex\sfile.\s\sNo\schanges\sto\scode.
-D 2017-10-30T20:44:36.285
-F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
+C Add\sthe\sshowshm\sutility\sprogram\sfor\sprinting\sout\sthe\sshm\sheader\sin\sa\nhuman-readable\sformat.
+D 2017-10-30T23:25:06.424
+F Makefile.in 5fb6750646b432cb72d1aa91f9a7888eb488b3de145024cc48ec9815dc106fbd
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
+F Makefile.msc 74ccbe1c06de753a6a0fa0fad4e7f8bea37f1ba4303448300bda3427efb64f2d
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -386,7 +386,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk a39528d993afc1f0c0aebde2e3623ab4171d3bba484eea1e5241615c706c9ce8
+F main.mk a6e3fa3c4d145189a67ad89e3f0d6541e8c085f5c34a21df0b1c870eb3aeb6ce
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1622,6 +1622,7 @@ F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
 F tool/showdb.c e6bc9dba233bf1b57ca0a525a2bba762db4e223de84990739db3f09c46151b1e
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
+F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1666,7 +1667,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37284d4e8f501a37c582aa899419a3dfe0932e2a8e2ef2fdf59addd1d3cdacb4
-R b73d22fe388dfec64db639a4eb4f982f
+P 3be3aad9ecbe33060cfa9c6059b9206ed221d1fd72a69c355a9387f9f4e075e7
+R 5511878351634578cf57017f9253148a
 U drh
-Z b8d196e6ebc579e3254aa8271770e0e4
+Z 5f57a6784d89256cd72e7dad10ab878c

@@ -1203,6 +1203,9 @@ showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
 showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(TLIBS)
 
+showshm$(TEXE):	$(TOP)/tool/showshm.c
+	$(LTLINK) -o $@ $(TOP)/tool/showshm.c
+
 changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(TLIBS)
 
