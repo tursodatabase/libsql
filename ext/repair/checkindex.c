@@ -274,6 +274,110 @@ static void cidxFreeIndex(CidxIndex *pIdx){
   }
 }
 
+#define CIDX_PARSE_EOF   0
+#define CIDX_PARSE_COMMA 1      /*  "," */
+#define CIDX_PARSE_OPEN  2      /*  "(" */
+#define CIDX_PARSE_CLOSE 3      /*  ")" */
+
+static int cidxFindNext(const char *zIn, const char **pzOut){
+  const char *z = zIn;
+
+  while( 1 ){
+    *pzOut = z;
+    switch( *z ){
+      case '\0':
+        return CIDX_PARSE_EOF;
+      case '(':
+        return CIDX_PARSE_OPEN;
+      case ')':
+        return CIDX_PARSE_CLOSE;
+      case ',':
+        return CIDX_PARSE_COMMA;
+
+      case '"': 
+      case '\'': 
+      case '`': {
+        char q = *z;
+        z++;
+        while( *z ){
+          if( *z==q ){
+            z++;
+            if( *z!=q ) break;
+          }
+          z++;
+        }
+        break;
+      }
+
+      case '[':
+        while( *z++!=']' );
+        break;
+
+      default:
+        z++;
+    }
+  }
+
+  assert( 0 );
+  return -1;
+}
+
+static int cidx_isspace(char c){
+  return c==' ' || c=='\t' || c=='\r' || c=='\n';
+}
+
+static int cidx_isident(char c){
+  return c<0 
+    || (c>='0' && c<='9') || (c>='a' && c<='z') 
+    || (c>='A' && c<='Z') || c=='_';
+}
+
+static int cidxParseSQL(CidxCursor *pCsr, CidxIndex *pIdx, const char *zSql){
+  const char *z = zSql;
+  const char *z1;
+  int e;
+  int rc = SQLITE_OK;
+  int nParen = 1;
+  CidxColumn *pCol = pIdx->aCol;
+
+  e = cidxFindNext(z, &z);
+  if( e!=CIDX_PARSE_OPEN ) goto parse_error;
+  z1 = z+1;
+  z++;
+  while( nParen>0 ){
+    e = cidxFindNext(z, &z);
+    if( e==CIDX_PARSE_EOF ) goto parse_error;
+    if( (e==CIDX_PARSE_COMMA || e==CIDX_PARSE_CLOSE) && nParen==1 ){
+      const char *z2 = z;
+      if( pCol->zExpr ) goto parse_error;
+
+      while( cidx_isspace(z[-1]) ) z--;
+      if( 0==sqlite3_strnicmp(&z[-3], "asc", 3) && 0==cidx_isident(z[-4]) ){
+        z -= 3;
+        while( cidx_isspace(z[-1]) ) z--;
+      }else
+      if( 0==sqlite3_strnicmp(&z[-4], "desc", 4) && 0==cidx_isident(z[-5]) ){
+        z -= 4;
+        while( cidx_isspace(z[-1]) ) z--;
+      }
+
+      while( cidx_isspace(z1[0]) ) z1++;
+      pCol->zExpr = cidxMprintf(&rc, "%.*s", z-z1, z1);
+      pCol++;
+      z = z1 = z2+1;
+    }
+    if( e==CIDX_PARSE_OPEN ) nParen++;
+    if( e==CIDX_PARSE_CLOSE ) nParen--;
+    z++;
+  }
+
+  return rc;
+
+ parse_error:
+  cidxCursorError(pCsr, "Parse error in: %s", zSql);
+  return SQLITE_ERROR;
+}
+
 static int cidxLookupIndex(
   CidxCursor *pCsr,               /* Cursor object */
   const char *zIdx,               /* Name of index to look up */
@@ -289,38 +393,49 @@ static int cidxLookupIndex(
     
   /* Find the table for this index. */
   pFindTab = cidxPrepare(&rc, pCsr, 
-      "SELECT tbl_name FROM sqlite_master WHERE name=%Q AND type='index'",
+      "SELECT tbl_name, sql FROM sqlite_master WHERE name=%Q AND type='index'",
       zIdx
   );
   if( rc==SQLITE_OK && sqlite3_step(pFindTab)==SQLITE_ROW ){
+    const char *zSql = (const char*)sqlite3_column_text(pFindTab, 1);
     zTab = cidxStrdup(&rc, (const char*)sqlite3_column_text(pFindTab, 0));
+
+    pInfo = cidxPrepare(&rc, pCsr, "PRAGMA index_xinfo(%Q)", zIdx);
+    if( rc==SQLITE_OK ){
+      int nAlloc = 0;
+      int iCol = 0;
+
+      while( sqlite3_step(pInfo)==SQLITE_ROW ){
+        const char *zName = (const char*)sqlite3_column_text(pInfo, 2);
+        const char *zColl = (const char*)sqlite3_column_text(pInfo, 4);
+        CidxColumn *p;
+        if( zName==0 ) zName = "rowid";
+        if( iCol==nAlloc ){
+          int nByte = sizeof(CidxIndex) + sizeof(CidxColumn)*(nAlloc+8);
+          pIdx = (CidxIndex*)sqlite3_realloc(pIdx, nByte);
+          nAlloc += 8;
+        }
+        p = &pIdx->aCol[iCol++];
+        p->bDesc = sqlite3_column_int(pInfo, 3);
+        p->bKey = sqlite3_column_int(pInfo, 5);
+        if( zSql==0 || p->bKey==0 ){
+          p->zExpr = cidxMprintf(&rc, "\"%w\" COLLATE %s",zName,zColl);
+        }else{
+          p->zExpr = 0;
+        }
+        pIdx->nCol = iCol;
+      }
+      cidxFinalize(&rc, pInfo);
+    }
+
+    if( rc==SQLITE_OK && zSql ){
+      rc = cidxParseSQL(pCsr, pIdx, zSql);
+    }
   }
+
   cidxFinalize(&rc, pFindTab);
   if( rc==SQLITE_OK && zTab==0 ){
     rc = SQLITE_ERROR;
-  }
-
-  pInfo = cidxPrepare(&rc, pCsr, "PRAGMA index_xinfo(%Q)", zIdx);
-  if( rc==SQLITE_OK ){
-    int nAlloc = 0;
-    int iCol = 0;
-
-    while( sqlite3_step(pInfo)==SQLITE_ROW ){
-      const char *zName = (const char*)sqlite3_column_text(pInfo, 2);
-      const char *zColl = (const char*)sqlite3_column_text(pInfo, 4);
-      CidxColumn *p;
-      if( zName==0 ) zName = "rowid";
-      if( iCol==nAlloc ){
-        int nByte = sizeof(CidxIndex) + sizeof(CidxColumn)*(nAlloc+8);
-        pIdx = (CidxIndex*)sqlite3_realloc(pIdx, nByte);
-      }
-      p = &pIdx->aCol[iCol++];
-      p->zExpr = cidxMprintf(&rc, "\"%w\" COLLATE %s",zName,zColl);
-      p->bDesc = sqlite3_column_int(pInfo, 3);
-      p->bKey = sqlite3_column_int(pInfo, 5);
-      pIdx->nCol = iCol;
-    }
-    cidxFinalize(&rc, pInfo);
   }
   
   if( rc!=SQLITE_OK ){
@@ -411,22 +526,22 @@ static char *cidxWhere(
   int i;
 
   for(i=0; i<iGt; i++){
-    zRet = cidxMprintf(pRc, "%z%s%s IS %s", zRet, 
+    zRet = cidxMprintf(pRc, "%z%s(%s) IS %s", zRet, 
         zSep, aCol[i].zExpr, (azAfter[i] ? azAfter[i] : "NULL")
     );
     zSep = " AND ";
   }
 
   if( bLastIsNull ){
-    zRet = cidxMprintf(pRc, "%z%s%s IS NULL", zRet, zSep, aCol[iGt].zExpr);
+    zRet = cidxMprintf(pRc, "%z%s(%s) IS NULL", zRet, zSep, aCol[iGt].zExpr);
   }
   else if( azAfter[iGt] ){
-    zRet = cidxMprintf(pRc, "%z%s%s %s %s", zRet, 
+    zRet = cidxMprintf(pRc, "%z%s(%s) %s %s", zRet, 
         zSep, aCol[iGt].zExpr, (aCol[iGt].bDesc ? "<" : ">"), 
         azAfter[iGt]
     );
   }else{
-    zRet = cidxMprintf(pRc, "%z%s%s IS NOT NULL", zRet, zSep, aCol[iGt].zExpr);
+    zRet = cidxMprintf(pRc, "%z%s(%s) IS NOT NULL", zRet, zSep,aCol[iGt].zExpr);
   }
 
   return zRet;
@@ -450,7 +565,7 @@ static char *cidxColumnList(
 ){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
-    const char *aDir[2] = {" ASC", " DESC"};
+    const char *aDir[2] = {"", " DESC"};
     int i;
     const char *zSep = "";
 
@@ -460,19 +575,19 @@ static char *cidxColumnList(
       switch( eType ){
 
         case CIDX_CLIST_ORDERBY:
-          zRet = cidxMprintf(pRc, "%z%s%s%s",zRet,zSep,p->zExpr,aDir[p->bDesc]);
+          zRet = cidxMprintf(pRc, "%z%s%d%s", zRet, zSep, i+1, aDir[p->bDesc]);
           zSep = ",";
           break;
 
         case CIDX_CLIST_CURRENT_KEY:
-          zRet = cidxMprintf(pRc, "%z%squote(%s)", zRet, zSep, p->zExpr);
+          zRet = cidxMprintf(pRc, "%z%squote(i%d)", zRet, zSep, i);
           zSep = "||','||";
           break;
 
         case CIDX_CLIST_SUBWHERE:
           if( p->bKey==0 ){
-            zRet = cidxMprintf(pRc, "%z%s%s IS \"%w\".%s", zRet, 
-                zSep, p->zExpr, zIdx, p->zExpr
+            zRet = cidxMprintf(pRc, "%z%s%s IS i.i%d", zRet, 
+                zSep, p->zExpr, i
             );
             zSep = " AND ";
           }
@@ -480,8 +595,8 @@ static char *cidxColumnList(
 
         case CIDX_CLIST_SUBEXPR:
           if( p->bKey==1 ){
-            zRet = cidxMprintf(pRc, "%z%s%s IS \"%w\".%s", zRet, 
-                zSep, p->zExpr, zIdx, p->zExpr
+            zRet = cidxMprintf(pRc, "%z%s%s IS i.i%d", zRet, 
+                zSep, p->zExpr, i
             );
             zSep = " AND ";
           }
@@ -489,8 +604,8 @@ static char *cidxColumnList(
 
         default:
           assert( eType==CIDX_CLIST_ALL );
-          zRet = cidxMprintf(pRc, "%z%s%s", zRet, zSep, p->zExpr);
-          zSep = ",";
+          zRet = cidxMprintf(pRc, "%z%s(%s) AS i%d", zRet, zSep, p->zExpr, i);
+          zSep = ", ";
           break;
       }
     }
@@ -536,7 +651,7 @@ static int cidxFilter(
     zCurrentKey = cidxColumnList(&rc, zIdxName, pIdx, CIDX_CLIST_CURRENT_KEY);
     zSubWhere = cidxColumnList(&rc, zIdxName, pIdx, CIDX_CLIST_SUBWHERE);
     zSubExpr = cidxColumnList(&rc, zIdxName, pIdx, CIDX_CLIST_SUBEXPR);
-    /* zSrcList = cidxColumnList(&rc, zIdxName, pIdx, CIDX_CLIST_ALL); */
+    zSrcList = cidxColumnList(&rc, zIdxName, pIdx, CIDX_CLIST_ALL);
 
     if( rc==SQLITE_OK && zAfterKey ){
       rc = cidxDecodeAfter(pCsr, pIdx->nCol, zAfterKey, &azAfter);
@@ -544,17 +659,19 @@ static int cidxFilter(
 
     if( rc || zAfterKey==0 ){
       pCsr->pStmt = cidxPrepare(&rc, pCsr, 
-          "SELECT (SELECT %s FROM %Q WHERE %s), %s FROM %Q AS %Q ORDER BY %s",
-          zSubExpr, zTab, zSubWhere, zCurrentKey, zTab, zIdxName, zOrderBy
+          "SELECT (SELECT %s FROM %Q AS t WHERE %s), %s "
+          "FROM (SELECT %s FROM %Q ORDER BY %s) AS i",
+          zSubExpr, zTab, zSubWhere, zCurrentKey, 
+          zSrcList, zTab, zOrderBy
       );
-      /* printf("SQL: %s\n", sqlite3_sql(pCsr->pStmt));  */
+      /* printf("SQL: %s\n", sqlite3_sql(pCsr->pStmt)); */
     }else{
-      char *zList = cidxColumnList(&rc, zIdxName, pIdx, 0);
       const char *zSep = "";
       char *zSql;
       int i;
 
-      zSql = cidxMprintf(&rc, "SELECT (SELECT %s FROM %Q WHERE %s), %s FROM (",
+      zSql = cidxMprintf(&rc, 
+          "SELECT (SELECT %s FROM %Q WHERE %s), %s FROM (",
           zSubExpr, zTab, zSubWhere, zCurrentKey
       );
       for(i=pIdx->nCol-1; i>=0; i--){
@@ -562,16 +679,15 @@ static int cidxFilter(
         if( pIdx->aCol[i].bDesc && azAfter[i]==0 ) continue;
         for(j=0; j<2; j++){
           char *zWhere = cidxWhere(&rc, pIdx->aCol, azAfter, i, j);
-          zSql = cidxMprintf(&rc, 
-              "%z%s SELECT * FROM (SELECT %s FROM %Q WHERE %z ORDER BY %s)",
-              zSql, zSep, zList, zTab, zWhere, zOrderBy
-              );
+          zSql = cidxMprintf(&rc, "%z"
+              "%sSELECT * FROM (SELECT %s FROM %Q WHERE %z ORDER BY %s)",
+              zSql, zSep, zSrcList, zTab, zWhere, zOrderBy
+          );
           zSep = " UNION ALL ";
           if( pIdx->aCol[i].bDesc==0 ) break;
         }
       }
-      zSql = cidxMprintf(&rc, "%z) AS %Q", zSql, zIdxName);
-      sqlite3_free(zList);
+      zSql = cidxMprintf(&rc, "%z) AS i", zSql);
 
       /* printf("SQL: %s\n", zSql); */
       pCsr->pStmt = cidxPrepare(&rc, pCsr, "%z", zSql);
@@ -582,6 +698,7 @@ static int cidxFilter(
     sqlite3_free(zOrderBy);
     sqlite3_free(zSubWhere);
     sqlite3_free(zSubExpr);
+    sqlite3_free(zSrcList);
     cidxFreeIndex(pIdx);
     sqlite3_free(azAfter);
   }

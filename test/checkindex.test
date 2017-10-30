@@ -259,6 +259,64 @@ do_index_check_test 4.3 t4cc {
   {} 'AAB','EEE',4
 }
 
+#--------------------------------------------------------------------------
+# Test an index on an expression.
+#
+do_execsql_test 5.0 {
+  CREATE TABLE t5(x INTEGER PRIMARY KEY, y TEXT, UNIQUE(y));
+  INSERT INTO t5 VALUES(1, '{"x":1, "y":1}');
+  INSERT INTO t5 VALUES(2, '{"x":2, "y":2}');
+  INSERT INTO t5 VALUES(3, '{"x":3, "y":3}');
+  INSERT INTO t5 VALUES(4, '{"w":4, "z":4}');
+  INSERT INTO t5 VALUES(5, '{"x":5, "y":5}');
+
+  CREATE INDEX t5x ON t5( json_extract(y, '$.x') );
+  CREATE INDEX t5y ON t5( json_extract(y, '$.y') DESC );
+}
+
+do_index_check_test 5.1.1 t5x {
+  {} NULL,4 {} 1,1 {} 2,2 {} 3,3 {} 5,5
+}
+
+do_index_check_test 5.1.2 t5y {
+  {} 5,5 {} 3,3 {} 2,2 {} 1,1 {} NULL,4
+}
+
+do_index_check_test 5.1.3 sqlite_autoindex_t5_1 {
+  {} {'{"w":4, "z":4}',4} 
+  {} {'{"x":1, "y":1}',1} 
+  {} {'{"x":2, "y":2}',2} 
+  {} {'{"x":3, "y":3}',3} 
+  {} {'{"x":5, "y":5}',5}
+}
+
+do_test 5.2 {
+  set tblroot [db one { SELECT rootpage FROM sqlite_master WHERE name='t5' }]
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $tblroot
+  db eval {CREATE TABLE xt5(a INTEGER PRIMARY KEY, c1 TEXT);}
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+  execsql {
+    UPDATE xt5 SET c1='{"x":22, "y":11}' WHERE rowid=1;
+    DELETE FROM xt5 WHERE rowid = 4;
+  }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 1
+} {}
+
+do_index_check_test 5.3.1 t5x {
+  {row missing} NULL,4 
+  {row data mismatch} 1,1 
+  {} 2,2 
+  {} 3,3 
+  {} 5,5
+}
+
+do_index_check_test 5.3.2 sqlite_autoindex_t5_1 {
+  {row missing} {'{"w":4, "z":4}',4} 
+  {row data mismatch} {'{"x":1, "y":1}',1} 
+  {} {'{"x":2, "y":2}',2} 
+  {} {'{"x":3, "y":3}',3} 
+  {} {'{"x":5, "y":5}',5}
+}
 
 
 finish_test
