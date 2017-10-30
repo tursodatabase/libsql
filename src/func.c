@@ -706,11 +706,24 @@ static int patternCompare(
         }else{
           cx = c;
         }
+        while(1){
+          const u8 *zStr1 = (const u8*)strchr((const char*)zString,c);
+          if( cx!=c ){
+            const u8 *zStr2 = (const u8*)strchr((const char*)zString,cx);
+            if( zStr1==0 || (zStr2!=0 && zStr2<zStr1) ) zStr1 = zStr2;
+          }
+          if( zStr1==0 ) break;
+          zString = &zStr1[1];
+          bMatch = patternCompare(zPattern,zString,pInfo,matchOther);
+          if( bMatch!=SQLITE_NOMATCH ) return bMatch;
+        }
+#if 0
         while( (c2 = *(zString++))!=0 ){
           if( c2!=c && c2!=cx ) continue;
           bMatch = patternCompare(zPattern,zString,pInfo,matchOther);
           if( bMatch!=SQLITE_NOMATCH ) return bMatch;
         }
+#endif
       }else{
         int bMatch;
         while( (c2 = Utf8Read(zString))!=0 ){
