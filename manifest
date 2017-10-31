@@ -1,5 +1,5 @@
-C Fix\sredundancies\sin\sthe\smakefiles\sthat\sresulted\sfrom\smoving\sshell.c\sover\nto\sshell.c.in.
-D 2017-10-31T12:20:43.201
+C Update\sthe\sbuilt\sprocedures\sfor\sthe\ssqlite3_analyzer\sutility\sto\sallow\sit\nto\sbe\slinked\swith\san\sexternal\ssqlite3.o\slibrary.\s\sAutomatically\sdetect\sa\nmissing\sdbstat\sextension\sand\sreport\sthe\scompile-time\serror.
+D 2017-10-31T14:56:44.588
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -1626,7 +1626,7 @@ F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a80
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
-F tool/spaceanal.tcl f40dc82b4d5e39d040a02a3ec38268e324068815e4292a15ffa30ee93208bbfd
+F tool/spaceanal.tcl 4bfd19aad7eb3ce0372ef0255f58035e0bba4ff5e9acfd763a10c6fb365c8dec
 F tool/speed-check.sh a97ae367e9172a706101901e7caef48f1a14fc8a49053b25e79f6a67296b3412
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
@@ -1635,7 +1635,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
 F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
-F tool/sqlite3_analyzer.c.in 771d15fb9c67645fd8ef932a438f98959da4b7c7da3cb87ae1850b27c969edf3
+F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1667,7 +1667,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f79e6d9c3d44b0cc7cf805429006f7b29a69e8d863b58472172a56b29a7bb4e
-R 2e8424d9fbc533001e55f43737738a2c
+P bf09fa683ea42b7552bd2f29ab5371bd175f0055cf9a453e6f8c6f4408cd168f
+R 405d6881e4ae5254162d311375149a09
 U drh
-Z 784be9d7f67c93467ca8ada4e99f0e81
+Z b66d68a4e4b6a1ef52955c34a93fec95
