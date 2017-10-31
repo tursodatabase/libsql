@@ -1,8 +1,8 @@
-C Fix\san\serror\sin\sthe\sMakefile.msc\sfor\sthe\ssqlite3_checker.exe\starget.
-D 2017-10-31T15:55:48.444
-F Makefile.in bc4705e00b28eb444ba6689c5b8d3bf3df2c58deb6d5093db6869e1f3ce416e5
+C Add\sthe\scheckfreelist\sextension\sto\sthe\ssqlite3_checker\sbinary.
+D 2017-10-31T18:09:40.959
+F Makefile.in 750ff35a98dd7f4ad585923d88f4309bb4cebb51c4a6622a32f134a138c9bd13
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 16ab000bdfd7578f8b762ac65c72112196d8f7353554498075093c08930a33c1
+F Makefile.msc 038f2c990966e6503f4960da574d4eef7b07c272a480983e10c4ebaa6d98cff9
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION f81232df28e2d3ff049feefad5fbd5489cc33697f6bd2ecf61af7f0dde3b83d0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -329,7 +329,7 @@ F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd782299
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
 F ext/repair/checkindex.c f33d90ed6a556ad03511f7932891c2fd47ad93ddc998a4ab8bb56f4adf6fb206
-F ext/repair/sqlite3_checker.c.in cf1850c9fc819ec63a006799daabc1911e89248671b3ae5670c205067c9b2c92
+F ext/repair/sqlite3_checker.c.in 16d62615dfce1ff3eeac83d1a77fe376a7b660afa9db07e1fdd8b964dcc41510
 F ext/repair/sqlite3_checker.tcl 61437f3eb4de9ba044e0b72532dc13b7e0cf1a06e63c76198b1ef577cabe2de4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c cc91b6905bf55512c6ebc7dfdd37ac81c86f1753db8cfa6d62f0ee864464044f
@@ -389,7 +389,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 2bf2c463a52d7fad3b6b779810d09307ac484e7acd0ea044cfa6add5703c5030
+F main.mk 4f59e62614c9e2d793cdafa25f7b24f357b48b009099185c66c52af4e31ee36f
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1670,7 +1670,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 429e3c3c85d6b677038be93567f93e69eb756442bb421bb02ee5d5d69290fa09
-R d3e35133a6b7ed531196c48b12a56714
+P 49d0c6f1f62dccc3c4609760950f7b28bf94a9520996a80d10ff45096b0dd9a0
+R 0e924f8968e62617bb612a72ff226c2d
 U drh
-Z 22a9f7b25cabce39b5f911e9801c9b67
+Z 18789d1f0a3682c9ed4749672ea58f7e

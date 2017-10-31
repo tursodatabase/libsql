@@ -17,12 +17,14 @@ INCLUDE sqlite3.c
 INCLUDE $ROOT/src/tclsqlite.c
 INCLUDE $ROOT/ext/misc/btreeinfo.c
 INCLUDE $ROOT/ext/repair/checkindex.c
+INCLUDE $ROOT/ext/repair/checkfreelist.c
 
 #include <stdio.h>
 
 const char *sqlite3_checker_init_proc(Tcl_Interp *interp){
   sqlite3_auto_extension((void(*)(void))sqlite3_btreeinfo_init);
   sqlite3_auto_extension((void(*)(void))sqlite3_checkindex_init);
+  sqlite3_auto_extension((void(*)(void))sqlite3_checkfreelist_init);
   return
 BEGIN_STRING
 INCLUDE $ROOT/ext/repair/sqlite3_checker.tcl

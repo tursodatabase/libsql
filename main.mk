@@ -793,6 +793,7 @@ CHECKER_DEPS =\
   $(TOP)/src/tclsqlite.c \
   $(TOP)/ext/repair/sqlite3_checker.tcl \
   $(TOP)/ext/repair/checkindex.c \
+  $(TOP)/ext/repair/checkfreelist.c \
   $(TOP)/ext/misc/btreeinfo.c \
   $(TOP)/ext/repair/sqlite3_checker.c.in
 
