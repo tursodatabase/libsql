@@ -2154,7 +2154,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** checkpointed.  If useWal==0 then this routine calls walIndexReadHdr() 
 ** to make a copy of the wal-index header into pWal->hdr.  If the 
 ** wal-index header has changed, *pChanged is set to 1 (as an indication 
-** to the caller that the local paget cache is obsolete and needs to be 
+** to the caller that the local page cache is obsolete and needs to be 
 ** flushed.)  When useWal==1, the wal-index header is assumed to already
 ** be loaded and the pChanged parameter is unused.
 **

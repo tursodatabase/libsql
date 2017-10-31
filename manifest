@@ -1,5 +1,5 @@
-C Remove\sunnecessary\sNEVER()\sand\sALWAYS()\sconditionals.
-D 2017-10-31T03:40:15.885
+C Fix\sa\sminor\scomment\stypo.\s\sNo\schanges\sto\scode.
+D 2017-10-31T12:06:29.439
 F Makefile.in 5fb6750646b432cb72d1aa91f9a7888eb488b3de145024cc48ec9815dc106fbd
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 74ccbe1c06de753a6a0fa0fad4e7f8bea37f1ba4303448300bda3427efb64f2d
@@ -543,7 +543,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 712947ad0e37ccb852c631527fd708cc0dea8b6fd503c8fd070370aae37bbe56
+F src/wal.c cc9b1120f1955b66af425630c9893acd537a39d967fd39d404417f0a1b4c1579
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c d591e8a9ccf60abb010966b354fcea4aa08eba4d83675c2b281a8764c76cc22f
 F src/where.c b7a075f5fb3d912a891dcc3257f538372bb4a1622dd8ca7d752ad95ce8949ba4
@@ -1667,7 +1667,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6304fd142c998aba44f02c6018223af2630671b4791d750b70a59ab1adb8d6d
-R 3a78a4e252d74365847a93117da52332
+P 1c80c75d4be2f3d44fb18bb4c07eccac2aba79b688215a741317dfc47dc7c2ce
+R bec87929117a677c4c0a889fc21edace
 U drh
-Z 5327e6fab7ec504e303ebb0642487352
+Z 4a41196ea5bc7a7d68e6bb73582e1035
