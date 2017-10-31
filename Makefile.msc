@@ -2209,7 +2209,7 @@ CHECKER_DEPS =\
   $(TOP)/ext/repair/sqlite3_checker.c.in
 
 sqlite3_checker.c:	$(CHECKER_DEPS)
-	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\misc\repair\sqlite3_checker.c.in > $@
+	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\ext\repair\sqlite3_checker.c.in > $@
 
 sqlite3_checker.exe:	sqlite3_checker.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_checker.c \
