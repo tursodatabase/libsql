@@ -1649,7 +1649,6 @@ mptest:	mptester.exe
 
 sqlite3.c:	.target_source sqlite3ext.h $(MKSQLITE3C_TOOL)
 	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
-	copy tsrc\shell.c .
 	copy $(TOP)\ext\session\sqlite3session.h .
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl

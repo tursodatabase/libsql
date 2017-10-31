@@ -1,8 +1,8 @@
-C Fix\sa\sminor\scomment\stypo.\s\sNo\schanges\sto\scode.
-D 2017-10-31T12:06:29.439
-F Makefile.in 5fb6750646b432cb72d1aa91f9a7888eb488b3de145024cc48ec9815dc106fbd
+C Fix\sredundancies\sin\sthe\smakefiles\sthat\sresulted\sfrom\smoving\sshell.c\sover\nto\sshell.c.in.
+D 2017-10-31T12:20:43.201
+F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 74ccbe1c06de753a6a0fa0fad4e7f8bea37f1ba4303448300bda3427efb64f2d
+F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -386,7 +386,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk a6e3fa3c4d145189a67ad89e3f0d6541e8c085f5c34a21df0b1c870eb3aeb6ce
+F main.mk 4fafbf2c23268ad5c497bd7c9da99dd3a53b1ffa2c150b6eb975397d4bb3f12f
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1667,7 +1667,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c80c75d4be2f3d44fb18bb4c07eccac2aba79b688215a741317dfc47dc7c2ce
-R bec87929117a677c4c0a889fc21edace
+P 5f79e6d9c3d44b0cc7cf805429006f7b29a69e8d863b58472172a56b29a7bb4e
+R 2e8424d9fbc533001e55f43737738a2c
 U drh
-Z 4a41196ea5bc7a7d68e6bb73582e1035
+Z 784be9d7f67c93467ca8ada4e99f0e81
