@@ -108,16 +108,15 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   struct SrcList_item *pItem;
 
   pSrc = p->pSrc;
-  if( ALWAYS(pSrc) ){
-    for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-      if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
-        return WRC_Abort;
-      }
-      if( pItem->fg.isTabFunc
-       && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
-      ){
-        return WRC_Abort;
-      }
+  assert( pSrc!=0 );
+  for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
+    if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
+      return WRC_Abort;
+    }
+    if( pItem->fg.isTabFunc
+     && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
+    ){
+      return WRC_Abort;
     }
   }
   return WRC_Continue;

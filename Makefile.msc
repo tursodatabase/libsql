@@ -1650,7 +1650,6 @@ mptest:	mptester.exe
 
 sqlite3.c:	.target_source sqlite3ext.h $(MKSQLITE3C_TOOL)
 	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
-	copy tsrc\shell.c .
 	copy $(TOP)\ext\session\sqlite3session.h .
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
@@ -2241,6 +2240,9 @@ showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C) $(SQLITE3H)
 showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\showwal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+showshm.exe:	$(TOP)\tool\showshm.c
+	$(LTLINK) $(NO_WARN)	$(TOP)\tool\showshm.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \

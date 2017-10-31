@@ -220,7 +220,7 @@ static int dbpageFilter(
 ){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
   DbpageTable *pTab = (DbpageTable *)pCursor->pVtab;
-  int rc = SQLITE_OK;
+  int rc;
   sqlite3 *db = pTab->db;
   Btree *pBt;
 
@@ -254,6 +254,7 @@ static int dbpageFilter(
   }else{
     assert( pCsr->pgno==1 );
   }
+  if( pCsr->pPage1 ) sqlite3PagerUnrefPageOne(pCsr->pPage1);
   rc = sqlite3PagerGet(pCsr->pPager, 1, &pCsr->pPage1, 0);
   return rc;
 }

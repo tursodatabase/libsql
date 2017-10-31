@@ -3383,12 +3383,11 @@ static void substSelect(
 **  (19)  If the subquery uses LIMIT then the outer query may not
 **        have a WHERE clause.
 **
-**  (**)  Subsumed into (17d3).  Was: If the sub-query is a compound select,
-**        then it must not use an ORDER BY clause - Ticket #3773.  Because
-**        of (17d3), then only way to have a compound subquery is if it is
-**        the only term in the FROM clause of the outer query.  But if the
-**        only term in the FROM clause has an ORDER BY, then it will be
-**        implemented as a co-routine and the flattener will never be called.
+**  (20)  If the sub-query is a compound select, then it must not use
+**        an ORDER BY clause.  Ticket #3773.  We could relax this constraint
+**        somewhat by saying that the terms of the ORDER BY clause must
+**        appear as unmodified result columns in the outer query.  But we
+**        have other optimizations in mind to deal with that case.
 **
 **  (21)  If the subquery uses LIMIT then the outer query may not be
 **        DISTINCT.  (See ticket [752e1646fc]).
@@ -3522,6 +3521,9 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
+    if( pSub->pOrderBy ){
+      return 0;  /* Restriction (20) */
+    }
     if( isAgg || (p->selFlags & SF_Distinct)!=0 || pSrc->nSrc!=1 ){
       return 0; /* (17d1), (17d2), or (17d3) */
     }
@@ -3555,15 +3557,6 @@ static int flattenSubquery(
   ** restriction (17d3)
   */
   assert( (p->selFlags & SF_Recursive)==0 || pSub->pPrior==0 );
-
-  /* Ex-restriction (20):
-  ** A compound subquery must be the only term in the FROM clause of the
-  ** outer query by restriction (17d3).  But if that term also has an
-  ** ORDER BY clause, then the subquery will be implemented by co-routine
-  ** and so the flattener will never be invoked.  Hence, it is not possible
-  ** for the subquery to be a compound and have an ORDER BY clause.
-  */
-  assert( pSub->pPrior==0 || pSub->pOrderBy==0 );
 
   /***** If we reach this point, flattening is permitted. *****/
   SELECTTRACE(1,pParse,p,("flatten %s.%p from term %d\n",
@@ -4343,12 +4336,14 @@ static int selectExpander(Walker *pWalker, Select *p){
   sqlite3 *db = pParse->db;
   Expr *pE, *pRight, *pExpr;
   u16 selFlags = p->selFlags;
+  u32 elistFlags = 0;
 
   p->selFlags |= SF_Expanded;
   if( db->mallocFailed  ){
     return WRC_Abort;
   }
-  if( NEVER(p->pSrc==0) || (selFlags & SF_Expanded)!=0 ){
+  assert( p->pSrc!=0 );
+  if( (selFlags & SF_Expanded)!=0 ){
     return WRC_Prune;
   }
   pTabList = p->pSrc;
@@ -4455,6 +4450,7 @@ static int selectExpander(Walker *pWalker, Select *p){
     assert( pE->op!=TK_DOT || pE->pRight!=0 );
     assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
     if( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK ) break;
+    elistFlags |= pE->flags;
   }
   if( k<pEList->nExpr ){
     /*
@@ -4470,6 +4466,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
+      elistFlags |= pE->flags;
       pRight = pE->pRight;
       assert( pE->op!=TK_DOT || pRight!=0 );
       if( pE->op!=TK_ASTERISK
@@ -4599,9 +4596,14 @@ static int selectExpander(Walker *pWalker, Select *p){
     sqlite3ExprListDelete(db, pEList);
     p->pEList = pNew;
   }
-  if( p->pEList && p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
-    sqlite3ErrorMsg(pParse, "too many columns in result set");
-    return WRC_Abort;
+  if( p->pEList ){
+    if( p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
+      sqlite3ErrorMsg(pParse, "too many columns in result set");
+      return WRC_Abort;
+    }
+    if( (elistFlags & (EP_HasFunc|EP_Subquery))!=0 ){
+      p->selFlags |= SF_ComplexResult;
+    }
   }
   return WRC_Continue;
 }
@@ -5225,7 +5227,9 @@ int sqlite3Select(
     if( (pSub->selFlags & SF_Aggregate)!=0 ) continue;
     assert( pSub->pGroupBy==0 );
 
-    /* If the subquery contains an ORDER BY clause and if
+    /* If the outer query contains a "complex" result set (that is,
+    ** if the result set of the outer query uses functions or subqueries)
+    ** and if the subquery contains an ORDER BY clause and if
     ** it will be implemented as a co-routine, then do not flatten.  This
     ** restriction allows SQL constructs like this:
     **
@@ -5234,9 +5238,16 @@ int sqlite3Select(
     **
     ** The expensive_function() is only computed on the 10 rows that
     ** are output, rather than every row of the table.
+    **
+    ** The requirement that the outer query have a complex result set
+    ** means that flattening does occur on simpler SQL constraints without
+    ** the expensive_function() like:
+    **
+    **  SELECT x FROM (SELECT x FROM tab ORDER BY y LIMIT 10);
     */
     if( pSub->pOrderBy!=0
      && i==0
+     && (p->selFlags & SF_ComplexResult)!=0
      && (pTabList->nSrc==1
          || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)
     ){
