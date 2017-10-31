@@ -1863,22 +1863,21 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 ** Free a WhereInfo structure
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
-  if( ALWAYS(pWInfo) ){
-    int i;
-    for(i=0; i<pWInfo->nLevel; i++){
-      WhereLevel *pLevel = &pWInfo->a[i];
-      if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE) ){
-        sqlite3DbFree(db, pLevel->u.in.aInLoop);
-      }
+  int i;
+  assert( pWInfo!=0 );
+  for(i=0; i<pWInfo->nLevel; i++){
+    WhereLevel *pLevel = &pWInfo->a[i];
+    if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE) ){
+      sqlite3DbFree(db, pLevel->u.in.aInLoop);
     }
-    sqlite3WhereClauseClear(&pWInfo->sWC);
-    while( pWInfo->pLoops ){
-      WhereLoop *p = pWInfo->pLoops;
-      pWInfo->pLoops = p->pNextLoop;
-      whereLoopDelete(db, p);
-    }
-    sqlite3DbFreeNN(db, pWInfo);
   }
+  sqlite3WhereClauseClear(&pWInfo->sWC);
+  while( pWInfo->pLoops ){
+    WhereLoop *p = pWInfo->pLoops;
+    pWInfo->pLoops = p->pNextLoop;
+    whereLoopDelete(db, p);
+  }
+  sqlite3DbFreeNN(db, pWInfo);
 }
 
 /*
