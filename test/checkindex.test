@@ -318,6 +318,33 @@ do_index_check_test 5.3.2 sqlite_autoindex_t5_1 {
   {} {'{"x":5, "y":5}',5}
 }
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.0 {
+  CREATE TABLE t6(x INTEGER PRIMARY KEY, y, z);
+  CREATE INDEX t6x1 ON t6(y, /* one,two,three */ z);
+  CREATE INDEX t6x2 ON t6(z, -- hello,world,
+  y);
+
+  CREATE INDEX t6x3 ON t6(z -- hello,world
+  , y);
+
+  INSERT INTO t6 VALUES(1, 2, 3);
+  INSERT INTO t6 VALUES(4, 5, 6);
+}
+
+do_index_check_test 6.1 t6x1 {
+  {} 2,3,1 
+  {} 5,6,4
+}
+do_index_check_test 6.2 t6x2 {
+  {} 3,2,1 
+  {} 6,5,4
+}
+do_index_check_test 6.2 t6x3 {
+  {} 3,2,1 
+  {} 6,5,4
+}
 
 finish_test
 

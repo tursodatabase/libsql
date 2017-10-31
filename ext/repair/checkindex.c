@@ -274,54 +274,6 @@ static void cidxFreeIndex(CidxIndex *pIdx){
   }
 }
 
-#define CIDX_PARSE_EOF   0
-#define CIDX_PARSE_COMMA 1      /*  "," */
-#define CIDX_PARSE_OPEN  2      /*  "(" */
-#define CIDX_PARSE_CLOSE 3      /*  ")" */
-
-static int cidxFindNext(const char *zIn, const char **pzOut){
-  const char *z = zIn;
-
-  while( 1 ){
-    *pzOut = z;
-    switch( *z ){
-      case '\0':
-        return CIDX_PARSE_EOF;
-      case '(':
-        return CIDX_PARSE_OPEN;
-      case ')':
-        return CIDX_PARSE_CLOSE;
-      case ',':
-        return CIDX_PARSE_COMMA;
-
-      case '"': 
-      case '\'': 
-      case '`': {
-        char q = *z;
-        z++;
-        while( *z ){
-          if( *z==q ){
-            z++;
-            if( *z!=q ) break;
-          }
-          z++;
-        }
-        break;
-      }
-
-      case '[':
-        while( *z++!=']' );
-        break;
-
-      default:
-        z++;
-    }
-  }
-
-  assert( 0 );
-  return -1;
-}
-
 static int cidx_isspace(char c){
   return c==' ' || c=='\t' || c=='\r' || c=='\n';
 }
@@ -332,36 +284,114 @@ static int cidx_isident(char c){
     || (c>='A' && c<='Z') || c=='_';
 }
 
+#define CIDX_PARSE_EOF   0
+#define CIDX_PARSE_COMMA 1      /*  "," */
+#define CIDX_PARSE_OPEN  2      /*  "(" */
+#define CIDX_PARSE_CLOSE 3      /*  ")" */
+
+static int cidxFindNext(
+  const char *zIn, 
+  const char **pzOut,
+  int *pbDoNotTrim                /* OUT: True if prev is -- comment */
+){
+  const char *z = zIn;
+
+  while( 1 ){
+    if( z[0]=='-' && z[1]=='-' ){
+      z += 2;
+      while( z[0]!='\n' ){
+        if( z[0]=='\0' ) return CIDX_PARSE_EOF;
+        z++;
+      }
+      while( cidx_isspace(*z) ) z++;
+      *pbDoNotTrim = 1;
+    }else{
+      *pzOut = z;
+      switch( *z ){
+        case '\0':
+          return CIDX_PARSE_EOF;
+        case '(':
+          return CIDX_PARSE_OPEN;
+        case ')':
+          return CIDX_PARSE_CLOSE;
+        case ',':
+          return CIDX_PARSE_COMMA;
+  
+        case '"': 
+        case '\'': 
+        case '`': {
+          char q = *z;
+          z++;
+          while( *z ){
+            if( *z==q ){
+              z++;
+              if( *z!=q ) break;
+            }
+            z++;
+          }
+          break;
+        }
+  
+        case '[':
+          while( *z++!=']' );
+          break;
+  
+        case '/':
+          if( z[1]=='*' ){
+            z += 2;
+            while( z[0]!='*' || z[1]!='/' ){
+              if( z[1]=='\0' ) return CIDX_PARSE_EOF;
+              z++;
+            }
+            z += 2;
+            break;
+          }
+  
+        default:
+          z++;
+          break;
+      }
+      *pbDoNotTrim = 0;
+    }
+  }
+
+  assert( 0 );
+  return -1;
+}
+
 static int cidxParseSQL(CidxCursor *pCsr, CidxIndex *pIdx, const char *zSql){
   const char *z = zSql;
   const char *z1;
   int e;
   int rc = SQLITE_OK;
   int nParen = 1;
+  int bDoNotTrim = 0;
   CidxColumn *pCol = pIdx->aCol;
 
-  e = cidxFindNext(z, &z);
+  e = cidxFindNext(z, &z, &bDoNotTrim);
   if( e!=CIDX_PARSE_OPEN ) goto parse_error;
   z1 = z+1;
   z++;
   while( nParen>0 ){
-    e = cidxFindNext(z, &z);
+    e = cidxFindNext(z, &z, &bDoNotTrim);
     if( e==CIDX_PARSE_EOF ) goto parse_error;
     if( (e==CIDX_PARSE_COMMA || e==CIDX_PARSE_CLOSE) && nParen==1 ){
       const char *z2 = z;
       if( pCol->zExpr ) goto parse_error;
 
-      while( cidx_isspace(z[-1]) ) z--;
-      if( 0==sqlite3_strnicmp(&z[-3], "asc", 3) && 0==cidx_isident(z[-4]) ){
-        z -= 3;
+      if( bDoNotTrim==0 ){
         while( cidx_isspace(z[-1]) ) z--;
-      }else
-      if( 0==sqlite3_strnicmp(&z[-4], "desc", 4) && 0==cidx_isident(z[-5]) ){
-        z -= 4;
-        while( cidx_isspace(z[-1]) ) z--;
+        if( !sqlite3_strnicmp(&z[-3], "asc", 3) && 0==cidx_isident(z[-4]) ){
+          z -= 3;
+          while( cidx_isspace(z[-1]) ) z--;
+        }else
+          if( !sqlite3_strnicmp(&z[-4], "desc", 4) && 0==cidx_isident(z[-5]) ){
+            z -= 4;
+            while( cidx_isspace(z[-1]) ) z--;
+          }
+        while( cidx_isspace(z1[0]) ) z1++;
       }
 
-      while( cidx_isspace(z1[0]) ) z1++;
       pCol->zExpr = cidxMprintf(&rc, "%.*s", z-z1, z1);
       pCol++;
       z = z1 = z2+1;
