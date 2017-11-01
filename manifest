@@ -1,5 +1,5 @@
-C Add\sthe\scheckindex.c\sextension\sand\sthe\ssqlite3_checker\sutility\sprogram\sused\nfor\sdoing\slive\svalidation\sof\slarge\sdatabases.
-D 2017-11-01T19:44:19.216
+C Make\ssure\sthe\sJSON1\sextension\sis\savailable\sto\ssqlite3_checker.exe
+D 2017-11-01T19:50:11.569
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -329,7 +329,7 @@ F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd782299
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
 F ext/repair/checkindex.c a013a0a165b2e6f2b278a31566da04913856c88d6ed5457d477f89e78d5979d9
-F ext/repair/sqlite3_checker.c.in 445118c5f7fea958b36fba1b2c464283e60ed4842039ddee3265f1698115ebf7
+F ext/repair/sqlite3_checker.c.in 4a5a3af3f450fe503e5a2985e98516dc2a6b9ad247449e284c1cf140fc91720f
 F ext/repair/sqlite3_checker.tcl 4820d7f58428d47336874b5a148a95b4dad38fe5da72286c01a861590b8f8337
 F ext/repair/test/README.md 34b2f542cf5be7bffe479242b33ee3492cea30711e447cc4a1a86cb5915f419e
 F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc78249442da72ff3f8297398a69
@@ -1673,8 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb39744f4b2b25c10d293e85db7579e2a99c639fdab45e93d1de75952b68b2de c1641affae31a4350727ce940c92499263880e672dc2c3f47e78e1c23ae99b78
-R e97da7e6f34a0c98621feff75b5fc1d7
-T +closed c1641affae31a4350727ce940c92499263880e672dc2c3f47e78e1c23ae99b78
+P 0c5d18a01ec77f784d5434c5465ab8da9a0c365a58d4bd8551872ca90aaf42d6
+R f83c5c1798f6f791a77e395a421e7535
 U drh
-Z 29d052b9d1f9214dbd3b25e5b7544e56
+Z b827e3b3bff13979721cde0c77e4ccc0
