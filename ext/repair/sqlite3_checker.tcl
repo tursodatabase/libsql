@@ -48,7 +48,11 @@ proc check_index {idxname batchsize} {
   set i 0
   set more 1
   set nerr 0
-  puts -nonewline "$idxname: "
+  set pct 00.0
+  set max [db one {SELECT nEntry FROM sqlite_btreeinfo('main')
+                    WHERE name=$idxname}]
+  puts -nonewline "$idxname: $i of $max rows ($pct%)\r"
+  flush stdout
   while {$more} {
     set more 0
     db eval {SELECT errmsg, current_key AS key
@@ -57,20 +61,19 @@ proc check_index {idxname batchsize} {
               LIMIT $batchsize} {
       set more 1
       if {$errmsg!=""} {
-        if {$nerr>0} {
-           puts -nonewline "$idxname: "
-        }
         incr nerr
-        puts "key($key): $errmsg"
+        puts "$idxname: key($key): $errmsg"
       }
       incr i
     }
+    set x [format {%.1f} [expr {($i*100.0)/$max}]]
+    if {$x!=$pct} {
+      puts -nonewline "$idxname: $i of $max rows ($pct%)\r"
+      flush stdout
+      set pct $x
+    }
   }
-  if {$nerr==0} {
-    puts "$i entries, ok"
-  } else {
-    puts "$idxname: $nerr errors out of $i entries"
-  }
+  puts "$idxname: $nerr errors out of $i entries"
 }
 
 # Print a usage message on standard error, then quit.
@@ -107,7 +110,7 @@ set bFreelistCheck 0
 set bSummary 0
 set zIndex {}
 set zTable {}
-set batchsize 100
+set batchsize 1000
 set bAll 1
 set argc [llength $argv]
 for {set i 0} {$i<$argc} {incr i} {

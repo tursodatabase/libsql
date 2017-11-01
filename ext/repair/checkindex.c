@@ -42,6 +42,7 @@ struct CidxTable {
 
 struct CidxCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
+  sqlite3_int64 iRowid;
   sqlite3_stmt *pStmt;
 };
 
@@ -93,6 +94,10 @@ static int cidxConnect(
   int rc = SQLITE_OK;
   CidxTable *pRet;
 
+#define IIC_ERRMSG        0
+#define IIC_CURRENT_KEY   1
+#define IIC_INDEX_NAME    2
+#define IIC_AFTER_KEY     3
   rc = sqlite3_declare_vtab(db,
       "CREATE TABLE xyz("
       " errmsg TEXT, current_key TEXT,"
@@ -130,10 +135,10 @@ static int cidxBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pInfo){
     if( p->usable==0 ) continue;
     if( p->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
 
-    if( p->iColumn==2 ){
+    if( p->iColumn==IIC_INDEX_NAME ){
       iIdxName = i;
     }
-    if( p->iColumn==3 ){
+    if( p->iColumn==IIC_AFTER_KEY ){
       iAfterKey = i;
     }
   }
@@ -193,6 +198,7 @@ static int cidxNext(sqlite3_vtab_cursor *pCursor){
       cidxCursorError(pCsr, "Cursor error: %s", sqlite3_errmsg(db));
     }
   }else{
+    pCsr->iRowid++;
     rc = SQLITE_OK;
   }
   return rc;
@@ -737,6 +743,7 @@ static int cidxFilter(
     assert( rc==SQLITE_OK );
     rc = cidxNext(pCursor);
   }
+  pCsr->iRowid = 1;
   return rc;
 }
 
@@ -749,8 +756,8 @@ static int cidxColumn(
   int iCol
 ){
   CidxCursor *pCsr = (CidxCursor*)pCursor;
-  assert( iCol==0 || iCol==1 );
-  if( iCol==0 ){
+  assert( iCol>=IIC_ERRMSG && iCol<=IIC_AFTER_KEY );
+  if( iCol==IIC_ERRMSG ){
     const char *zVal = 0;
     if( sqlite3_column_type(pCsr->pStmt, 0)==SQLITE_INTEGER ){
       if( sqlite3_column_int(pCsr->pStmt, 0)==0 ){
@@ -760,7 +767,7 @@ static int cidxColumn(
       zVal = "row missing";
     }
     sqlite3_result_text(ctx, zVal, -1, SQLITE_STATIC);
-  }else{
+  }else if( iCol==IIC_CURRENT_KEY ){
     sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pStmt, 1));
   }
   return SQLITE_OK;
