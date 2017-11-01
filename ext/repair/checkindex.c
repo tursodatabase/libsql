@@ -263,7 +263,7 @@ static void cidxFinalize(int *pRc, sqlite3_stmt *pStmt){
 char *cidxStrdup(int *pRc, const char *zStr){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
-    int n = strlen(zStr);
+    int n = (int)strlen(zStr);
     zRet = cidxMalloc(pRc, n+1);
     if( zRet ) memcpy(zRet, zStr, n+1);
   }
@@ -493,7 +493,7 @@ static int cidxDecodeAfter(
 ){
   char **azAfter;
   int rc = SQLITE_OK;
-  int nAfterKey = strlen(zAfterKey);
+  int nAfterKey = (int)strlen(zAfterKey);
 
   azAfter = cidxMalloc(&rc, sizeof(char*)*nCol + nAfterKey+1);
   if( rc==SQLITE_OK ){

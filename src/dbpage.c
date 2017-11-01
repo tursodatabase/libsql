@@ -329,7 +329,7 @@ static int dbpageUpdate(
     goto update_fail;
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( pgno<1 || pBt==0 || pgno>sqlite3BtreeLastPage(pBt) ){
+  if( pgno<1 || pBt==0 || pgno>(int)sqlite3BtreeLastPage(pBt) ){
     zErr = "bad page number";
     goto update_fail;
   }
