@@ -61,7 +61,7 @@ proc check_index {idxname batchsize} {
            puts -nonewline "$idxname: "
         }
         incr nerr
-        puts "row $i: $errmsg"
+        puts "key($key): $errmsg"
       }
       incr i
     }
