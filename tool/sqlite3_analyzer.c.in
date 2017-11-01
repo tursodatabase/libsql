@@ -14,7 +14,9 @@
 #define SQLITE_DEFAULT_MEMSTATUS 0
 #define SQLITE_MAX_EXPR_DEPTH 0
 #define SQLITE_OMIT_LOAD_EXTENSION 1
+#ifndef USE_EXTERNAL_SQLITE
 INCLUDE sqlite3.c
+#endif
 INCLUDE $ROOT/src/tclsqlite.c
 
 const char *sqlite3_analyzer_init_proc(Tcl_Interp *interp){

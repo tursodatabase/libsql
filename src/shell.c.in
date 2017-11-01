@@ -1205,7 +1205,6 @@ static void output_csv(ShellState *p, const char *z, int bSep){
   }
 }
 
-#ifdef SIGINT
 /*
 ** This routine runs when the user presses Ctrl-C
 */
@@ -1214,6 +1213,20 @@ static void interrupt_handler(int NotUsed){
   seenInterrupt++;
   if( seenInterrupt>2 ) exit(1);
   if( globalDb ) sqlite3_interrupt(globalDb);
+}
+
+#if (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+/*
+** This routine runs for console events (e.g. Ctrl-C) on Win32
+*/
+static BOOL WINAPI ConsoleCtrlHandler(
+  DWORD dwCtrlType /* One of the CTRL_*_EVENT constants */
+){
+  if( dwCtrlType==CTRL_C_EVENT ){
+    interrupt_handler(0);
+    return TRUE;
+  }
+  return FALSE;
 }
 #endif
 
@@ -6689,6 +6702,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   */
 #ifdef SIGINT
   signal(SIGINT, interrupt_handler);
+#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+  SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 #endif
 
 #ifdef SQLITE_SHELL_DBNAME_PROC

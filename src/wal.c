@@ -132,6 +132,10 @@
 ** on a network filesystem.  All users of the database must be able to
 ** share memory.
 **
+** In the default unix and windows implementation, the wal-index is a mmapped
+** file whose name is the database name with a "-shm" suffix added.  For that
+** reason, the wal-index is sometimes called the "shm" file.
+**
 ** The wal-index is transient.  After a crash, the wal-index can (and should
 ** be) reconstructed from the original WAL file.  In fact, the VFS is required
 ** to either truncate or zero the header of the wal-index when the last
@@ -271,9 +275,18 @@ int sqlite3WalTrace = 0;
 #define WALINDEX_MAX_VERSION 3007000
 
 /*
-** Indices of various locking bytes.   WAL_NREADER is the number
+** Index numbers for various locking bytes.   WAL_NREADER is the number
 ** of available reader locks and should be at least 3.  The default
 ** is SQLITE_SHM_NLOCK==8 and  WAL_NREADER==5.
+**
+** Technically, the various VFSes are free to implement these locks however
+** they see fit.  However, compatibility is encouraged so that VFSes can
+** interoperate.  The standard implemention used on both unix and windows
+** is for the index number to indicate a byte offset into the
+** WalCkptInfo.aLock[] array in the wal-index header.  In other words, all
+** locks are on the shm file.  The WALINDEX_LOCK_OFFSET constant (which
+** should be 120) is the location in the shm file for the first locking
+** byte.
 */
 #define WAL_WRITE_LOCK         0
 #define WAL_ALL_BUT_WRITE      1
@@ -397,7 +410,6 @@ struct WalCkptInfo {
 #define WAL_FRAME_HDRSIZE 24
 
 /* Size of write ahead log header, including checksum. */
-/* #define WAL_HDRSIZE 24 */
 #define WAL_HDRSIZE 32
 
 /* WAL magic value. Either this value, or the same value with the least
@@ -2142,7 +2154,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** checkpointed.  If useWal==0 then this routine calls walIndexReadHdr() 
 ** to make a copy of the wal-index header into pWal->hdr.  If the 
 ** wal-index header has changed, *pChanged is set to 1 (as an indication 
-** to the caller that the local paget cache is obsolete and needs to be 
+** to the caller that the local page cache is obsolete and needs to be 
 ** flushed.)  When useWal==1, the wal-index header is assumed to already
 ** be loaded and the pChanged parameter is unused.
 **
