@@ -27,8 +27,8 @@ do_execsql_test 1.5 {
   )
   SELECT i FROM freelist_trunk WHERE i!=1;
 } {
-  10010 9716 9344 8970 8596 8223 7848 7475 7103 6728 6355 5983 5609 5235
-  4861 4488 4113 3741 3368 2993 2620 2248 1873 1500 1126 753 378 5
+  10009 9715 9343 8969 8595 8222 7847 7474 7102 6727 6354 5982 5608 5234
+  4860 4487 4112 3740 3367 2992 2619 2247 1872 1499 1125 752 377 5
 }
 
 do_execsql_test 1.6 { SELECT checkfreelist('main') } {ok}
@@ -50,7 +50,7 @@ do_execsql_test 1.7 {
   BEGIN;
     UPDATE sqlite_dbpage 
       SET data = set_int(data, 1, get_int(data, 1)-1) 
-      WHERE pgno=4861;
+      WHERE pgno=4860;
     SELECT checkfreelist('main');
   ROLLBACK;
 } {{free-list count mismatch: actual=6725 header=6726}}
@@ -59,19 +59,19 @@ do_execsql_test 1.8 {
   BEGIN;
     UPDATE sqlite_dbpage 
       SET data = set_int(data, 5, (SELECT * FROM pragma_page_count)+1)
-      WHERE pgno=4861;
+      WHERE pgno=4860;
     SELECT checkfreelist('main');
   ROLLBACK;
-} {{leaf page 10093 is out of range (child 3 of trunk page 4861)}}
+} {{leaf page 10092 is out of range (child 3 of trunk page 4860)}}
 
 do_execsql_test 1.9 {
   BEGIN;
     UPDATE sqlite_dbpage 
       SET data = set_int(data, 5, 0)
-      WHERE pgno=4861;
+      WHERE pgno=4860;
     SELECT checkfreelist('main');
   ROLLBACK;
-} {{leaf page 0 is out of range (child 3 of trunk page 4861)}}
+} {{leaf page 0 is out of range (child 3 of trunk page 4860)}}
 
 do_execsql_test 1.10 {
   BEGIN;
