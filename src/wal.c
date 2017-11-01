@@ -575,9 +575,11 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
       rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
           pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
       );
-      if( rc==SQLITE_READONLY ){
+      if( (rc&0xff)==SQLITE_READONLY ){
         pWal->readOnly |= WAL_SHM_RDONLY;
-        rc = SQLITE_OK;
+        if( rc==SQLITE_READONLY ){
+          rc = SQLITE_OK;
+        }
       }
     }
   }
@@ -2084,6 +2086,14 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   assert( pChanged );
   rc = walIndexPage(pWal, 0, &page0);
   if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_READONLY_CANTLOCK 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+        && pWal->pSnapshot==0 
+#endif
+    ){
+      memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
+      rc = SQLITE_OK;
+    }
     return rc;
   };
   assert( page0 || pWal->writeLock==0 );
@@ -2259,8 +2269,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     }
   }
 
-  pInfo = walCkptInfo(pWal);
-  if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame 
+  assert( pWal->nWiData>0 );
+  assert( pWal->apWiData[0] || (pWal->readOnly & WAL_SHM_RDONLY) );
+  pInfo = pWal->apWiData[0] ? walCkptInfo(pWal) : 0;
+  if( !useWal && (pInfo==0 || pInfo->nBackfill==pWal->hdr.mxFrame)
 #ifdef SQLITE_ENABLE_SNAPSHOT
    && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0
      || 0==memcmp(&pWal->hdr, pWal->pSnapshot, sizeof(WalIndexHdr)))
@@ -2272,7 +2284,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
     walShmBarrier(pWal);
     if( rc==SQLITE_OK ){
-      if( memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) ){
+      if( pInfo
+       && memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) 
+      ){
         /* It is not safe to allow the reader to continue here if frames
         ** may have been appended to the log before READ_LOCK(0) was obtained.
         ** When holding READ_LOCK(0), the reader ignores the entire log file,

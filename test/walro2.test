@@ -1,0 +1,87 @@
+# 2011 May 09
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for using WAL databases in read-only mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set ::testprefix walro
+
+# These tests are only going to work on unix.
+#
+if {$::tcl_platform(platform) != "unix"} {
+  finish_test
+  return
+}
+
+# And only if the build is WAL-capable.
+#
+ifcapable !wal {
+  finish_test
+  return
+}
+
+do_multiclient_test tn {
+  
+  # Close all connections and delete the database.
+  #
+  code1 { db close  }
+  code2 { db2 close }
+  code3 { db3 close }
+  forcedelete test.db
+  
+  # Do not run tests with the connections in the same process.
+  #
+  if {$tn==2} continue
+
+  foreach c {code1 code2 code3} {
+    $c {
+      sqlite3_shutdown
+      sqlite3_config_uri 1
+    }
+  }
+
+  do_test 1.1 {
+    code2 { sqlite3 db2 test.db }
+    sql2 { 
+      CREATE TABLE t1(x, y);
+      PRAGMA journal_mode = WAL;
+      INSERT INTO t1 VALUES('a', 'b');
+      INSERT INTO t1 VALUES('c', 'd');
+    }
+    file exists test.db-shm
+  } {1}
+
+  do_test 1.2 {
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-shm test.db2-shm
+    code1 {
+      sqlite3 db file:test.db2?readonly_shm=1
+    }
+
+    sql1 { SELECT * FROM t1 }
+  } {}
+
+  do_test 1.3.1 {
+    code3 { sqlite3 db3 test.db2 }
+    sql3 { SELECT * FROM t1 }
+  } {a b c d}
+
+  do_test 1.3.2 {
+    sql1 { SELECT * FROM t1 }
+  } {a b c d}
+
+}
+
+finish_test
