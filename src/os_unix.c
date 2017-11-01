@@ -4372,6 +4372,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
     if( pInode->bProcessLock==0 ){
+      struct flock lock;
       int openFlags = O_RDWR | O_CREAT;
       if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
         openFlags = O_RDONLY;
@@ -4389,29 +4390,46 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       */
       robustFchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
   
-      /* Check to see if another process is holding the dead-man switch.
-      ** For a readonly_shm client, if no other process holds the DMS lock,
-      ** the file cannot be opened and SQLITE_CANTOPEN_DIRTYWAL is returned.
-      ** Or, for a read-write connection, if no other process holds a
-      ** DMS lock the file is truncated to zero bytes in size.  */
+      /* Use F_GETLK to determine the locks other processes are holding
+      ** on the DMS byte. If it indicates that another process is holding
+      ** a SHARED lock, then this process may also take a SHARED lock
+      ** and proceed with opening the *-shm file. 
+      **
+      ** Or, if no other process is holding any lock, then this process
+      ** is the first to open it. In this case take an EXCLUSIVE lock on the
+      ** DMS byte and truncate the *-shm file to zero bytes in size. Then
+      ** downgrade to a SHARED lock on the DMS byte.
+      **
+      ** If another process is holding an EXCLUSIVE lock on the DMS byte,
+      ** return SQLITE_BUSY to the caller (it will try again). An earlier
+      ** version of this code attempted the SHARED lock at this point. But
+      ** this introduced a subtle race condition: if the process holding
+      ** EXCLUSIVE failed just before truncating the *-shm file, then this
+      ** process might open and use the *-shm file without truncating it.
+      ** And if the *-shm file has been corrupted by a power failure or
+      ** system crash, the database itself may also become corrupt.  */
       rc = SQLITE_OK;
-      if( pShmNode->isReadonly ){
-        struct flock lock;
-        lock.l_whence = SEEK_SET;
-        lock.l_start = UNIX_SHM_DMS;
-        lock.l_len = 1;
-        lock.l_type = F_WRLCK;
-        if( osFcntl(pShmNode->h, F_GETLK, &lock)!=0 ) {
-          rc = SQLITE_IOERR_LOCK;
-        }else if( lock.l_type==F_UNLCK ){
+      lock.l_whence = SEEK_SET;
+      lock.l_start = UNIX_SHM_DMS;
+      lock.l_len = 1;
+      lock.l_type = F_WRLCK;
+      if( osFcntl(pShmNode->h, F_GETLK, &lock)!=0 ) {
+        rc = SQLITE_IOERR_LOCK;
+      }else if( lock.l_type==F_UNLCK ){
+        if( pShmNode->isReadonly ){
           rc = SQLITE_CANTOPEN_DIRTYWAL;
+        }else{
+          rc = unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1);
+          if( rc==SQLITE_OK && robust_ftruncate(pShmNode->h, 0) ){
+            rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
+          }
         }
-      }else if( unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
-        if( robust_ftruncate(pShmNode->h, 0) ){
-          rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
-        }
+      }else if( lock.l_type==F_WRLCK ){
+        rc = SQLITE_BUSY;
       }
+
       if( rc==SQLITE_OK ){
+        assert( lock.l_type==F_UNLCK || lock.l_type==F_RDLCK );
         rc = unixShmSystemLock(pDbFd, F_RDLCK, UNIX_SHM_DMS, 1);
       }
       if( rc ) goto shm_open_err;

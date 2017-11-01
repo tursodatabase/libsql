@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\sprevious\scommit\son\sthis\sbranch.
-D 2017-10-26T17:34:50.823
+C Fix\sa\srace\scondition\sin\sos_unix.c\sthat\smight\sallow\sa\sclient\sto\suse\sa\s*-shm\nfile\scorrupted\sby\sa\spower\sfailure\sif\sanother\sclient\sfails\sbetween\slocking\sthe\n*-shm\sfile\sand\struncating\sit\sto\szero\sbytes.
+D 2017-11-01T06:59:19.745
 F Makefile.in e016061b23e60ac9ec27c65cb577292b6bde0307ca55abd874ab3487b3b1beb2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 37740aba9c4bb359c627eadccf1cfd7be4f5f847078723777ea7763969e533b1
@@ -447,7 +447,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 9bf0c1b7156cbcd2ec32e557cffa319251e1ffb1515d923a2dd2d8eee69b4ee4
+F src/os_unix.c 9137cfdb42e83f4fb599aa2b1c6996f368aacbb410bde53b534e766a61ba65ca
 F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
@@ -1666,7 +1666,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5492f457dc7cc5c416de4b4e61e84bd2f10b4e6ce54011b7a60feb47f629c923
-R 49c1c99b22f8e84ff20a7afe5d1d547b
+P f71dfee06ce1e0eee760cfca19482bdec7729d6c7d28f10f4cfd21e1f92a04b0
+R 37c523032e6b14675e1621a01cbce4c1
 U dan
-Z 07348874af35473af5ead94c9a86c9df
+Z e56573f2b7ef574fffc6cf13c6dfb22b
