@@ -1,5 +1,5 @@
-C Move\sthe\stest\sscripts\sfor\scheckfreelist\sand\scheckindex\sover\sinto\sthe\next/repair/test\sdirectory.\s\sRun\sthem\snow\susing\sthe\ssqlite3_checker\sutility\nwith\sthe\s--test\soption.\s\sSome\stests\sare\scurrently\sfailing\sdue\sto\san\nincomplete\sport.\s\sThis\sis\san\sincremental\scheck-in.
-D 2017-11-01T18:05:32.697
+C Add\sthe\s"sqlite3_imposter\sDB\sSCHEMA\sROOT\sSQL"\scommand\sto\ssqlite3_checker.\nUse\sit\sto\sfix\sthe\scheckindex01.test\smodule.\s\sThere\sare\sstill\serrors\sreported\nby\sthe\scheckfreelist01.test\smodule.
+D 2017-11-01T18:31:34.119
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -329,11 +329,11 @@ F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd782299
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
 F ext/repair/checkindex.c a013a0a165b2e6f2b278a31566da04913856c88d6ed5457d477f89e78d5979d9
-F ext/repair/sqlite3_checker.c.in 16d62615dfce1ff3eeac83d1a77fe376a7b660afa9db07e1fdd8b964dcc41510
+F ext/repair/sqlite3_checker.c.in 445118c5f7fea958b36fba1b2c464283e60ed4842039ddee3265f1698115ebf7
 F ext/repair/sqlite3_checker.tcl 4820d7f58428d47336874b5a148a95b4dad38fe5da72286c01a861590b8f8337
 F ext/repair/test/README.md 34b2f542cf5be7bffe479242b33ee3492cea30711e447cc4a1a86cb5915f419e
 F ext/repair/test/checkfreelist01.test 185648c046c0e269dc3b5141d525b87a38d72f0f55495d46c65108a5dde1428f
-F ext/repair/test/checkindex01.test 7be2299647ac7be41b6a7e249eb78e3aba1b57a7b20943ad199a1dc457edb4f7
+F ext/repair/test/checkindex01.test 98bfac50822da9681d75570087aac92a905290ffdaddf95ab6f69212fb4c7b14
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c cc91b6905bf55512c6ebc7dfdd37ac81c86f1753db8cfa6d62f0ee864464044f
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ca31cc3ffe1cce4a9961d29801eebd47f0093d1b53d0ea63386338a1d434fd3
-R 9a0909f5ab1dfc6f8f86ede9c43722ca
+P 17f8d5e111a9fe5b074f946e23936ae5a2a7a8d8018bad4212660d8eb81c04b7
+R 789d2ddc9f5813af408c7050793744d3
 U drh
-Z 17e4966dab1f438179fdac475786b16e
+Z 00e34b3226a7a4c513950643ceed7a0f

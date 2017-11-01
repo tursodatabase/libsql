@@ -71,16 +71,12 @@ do_index_check_test 1.4 i2 {
 
 do_test 1.5 {
   set tblroot [db one { SELECT rootpage FROM sqlite_master WHERE name='t1' }]
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $tblroot
-  db eval {CREATE TABLE xt1(a, b)}
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
-
-  execsql {
+  sqlite3_imposter db main $tblroot {CREATE TABLE xt1(a,b)}
+  db eval {
     UPDATE xt1 SET a='six' WHERE rowid=3;
     DELETE FROM xt1 WHERE rowid = 5;
   }
-
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 1
+  sqlite3_imposter db main
 } {}
 
 do_index_check_test 1.6 i1 {
@@ -211,16 +207,14 @@ do_index_check_test 4.1 t4cc {
 
 do_test 4.2 {
   set tblroot [db one { SELECT rootpage FROM sqlite_master WHERE name='t4' }]
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $tblroot
-  db eval {CREATE TABLE xt4(a INTEGER PRIMARY KEY, c1 TEXT, c2 TEXT)}
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+  sqlite3_imposter db main $tblroot \
+     {CREATE TABLE xt4(a INTEGER PRIMARY KEY, c1 TEXT, c2 TEXT)}
 
-  execsql {
+  db eval {
     UPDATE xt4 SET c1='hello' WHERE rowid=2;
     DELETE FROM xt4 WHERE rowid = 3;
   }
-
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 1
+  sqlite3_imposter db main
 } {}
 
 do_index_check_test 4.3 t4cc {
@@ -263,14 +257,13 @@ do_index_check_test 5.1.3 sqlite_autoindex_t5_1 {
 
 do_test 5.2 {
   set tblroot [db one { SELECT rootpage FROM sqlite_master WHERE name='t5' }]
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $tblroot
-  db eval {CREATE TABLE xt5(a INTEGER PRIMARY KEY, c1 TEXT);}
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
-  execsql {
+  sqlite3_imposter db main $tblroot \
+      {CREATE TABLE xt5(a INTEGER PRIMARY KEY, c1 TEXT);}
+  db eval {
     UPDATE xt5 SET c1='{"x":22, "y":11}' WHERE rowid=1;
     DELETE FROM xt5 WHERE rowid = 4;
   }
-  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 1
+  sqlite3_imposter db main
 } {}
 
 do_index_check_test 5.3.1 t5x {
