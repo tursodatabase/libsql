@@ -1488,9 +1488,9 @@ struct sqlite3 {
 #define SQLITE_CellSizeCk     0x00200000  /* Check btree cell sizes on load */
 #define SQLITE_Fts3Tokenizer  0x00400000  /* Enable fts3_tokenizer(2) */
 #define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee */
+#define SQLITE_NoopUpdate     0x01000000  /* UPDATE operations are no-ops */
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
-#define SQLITE_NoopUpdate     0x04000000  /* UPDATE operations are no-ops */
 #define SQLITE_SqlTrace       0x08000000  /* Debug print SQL as it executes */
 #define SQLITE_VdbeListing    0x10000000  /* Debug listings of VDBE programs */
 #define SQLITE_VdbeTrace      0x20000000  /* True to trace VDBE execution */

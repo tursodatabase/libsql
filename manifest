@@ -1,5 +1,5 @@
-C The\s"PRAGMA\snoop_update"\scommand\snow\srequires\sSQLITE_ENABLE_NOOP_UPDATE\nand\sno\slonger\srequires\sSQLITE_DEBUG.
-D 2017-11-01T18:48:54.596
+C Fix\sthe\sSQLITE_NoopUpdate\s#define\sso\sthat\sit\soccurs\sunder\sthe\scorrect\nconditions.
+D 2017-11-01T19:30:41.289
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -463,7 +463,7 @@ F src/shell.c.in b5725acacba95ccefa57b6d068f710e29ba8239c3aa704628a1902a1f729c17
 F src/sqlite.h.in 803d2c969bccaf78ef087269c73f1f00f8870c122b3514414b8c47c4fde73e82
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a1fd3aa82f967da436164e0728a7d6841651fd0c6e27b9044e0eb9f6c8462e47
-F src/sqliteInt.h dc8a03250ca4887630a048ed135e50c47f75ef30a0859256420d072e6b98caf4
+F src/sqliteInt.h 5bea474f3e9e2446bb80d3f5e632fb33cad6332f822fd1f207c4fbfee63bc39c
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1657,7 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afe45271b9c0cd379cf0beb94657e2396068c4a18f84003c4c48297760fd83ee
-R 13a4e608c33e96d8f32961fb092111d1
+P 81baf67c4493468e4feb2f4990bf82d59804ce4f3149252c0e1e8c43f90d6bc1
+R 59abeaa6daabac9ab7e74c5755dea792
 U drh
-Z 22f49919fb59529cdea1770ba1acc6e3
+Z d4cba171c15be720c948ceaa78bd9661
