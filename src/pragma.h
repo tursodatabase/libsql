@@ -442,7 +442,7 @@ static const PragmaName aPragmaName[] = {
 #endif
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_ENABLE_NOOP_UPDATE)
  {/* zName:     */ "noop_update",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,

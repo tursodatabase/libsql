@@ -1,5 +1,5 @@
-C Add\sthe\shighly-experimental\s"PRAGMA\snoop_update=TRUE"\scommand.
-D 2017-09-12T20:09:31.560
+C The\s"PRAGMA\snoop_update"\scommand\snow\srequires\sSQLITE_ENABLE_NOOP_UPDATE\nand\sno\slonger\srequires\sSQLITE_DEBUG.
+D 2017-11-01T18:48:54.596
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 02b469e9dcd5b7ee63fc1fb05babc174260ee4cfa4e0ef2e48c3c6801567a016
@@ -451,7 +451,7 @@ F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 0b793738b5dddaf0a645784835c6b5557b1ecfaee339af9c26810c6ecdb273aa
 F src/pragma.c cd6aeda3587be6c5c08f9b2d45eae6068666a03c9d077c8c43cdb85fb0aa70f2
-F src/pragma.h 70cb22e66adabf21bac20e2894184ece986a67a3252506220f3b62633c87dceb
+F src/pragma.h ce41efb7d4cdafca499839f29014d9b1d9534c8f503eeceb88310920c62d6097
 F src/prepare.c 3cbb99757d7295997674972f9dd2331c5c544368854ca08954c9beb1e9b6145a
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -521,7 +521,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afef
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
-F src/update.c 2bb1d048a1a56e1f9238d68e8e476299a5873c4d4d9e0e9c4ab542d8b25f341d
+F src/update.c d36ee12b6cde68543fa35f6b88475a78e787c7237ed0a79c786364e8ef680480
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 07eec96f821c7dcbdca2fadffc6e38ea2c24bf409fcb15fe9fb3ac444d632dfe
@@ -1594,7 +1594,7 @@ F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66e
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl e9a725395dc4419047d242f4ebd4716dd8c682e234b6553a4bb891fc1f12174c
+F tool/mkpragmatab.tcl 0d67312ad1a6db29e85215c87e3f5c0cd3a9bf9e32784bf3a02e5ebaf1faadb0
 F tool/mkshellc.tcl 69c38ecd7b74b2b0799a35ce20e1e3998e504d8c99c100ca4b98ae9d8f6279bc
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
@@ -1657,11 +1657,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4256072399f44f48ed0856aa8112226af6feaf8676923612bde6cea239ebf920
-Q +de2e371757d2031cefc4bbae29d746a768c126a6c8443bb0f9ddebee7e69240b
-R 2413782f3f576a461bb90e166b6f6e32
-T *branch * begin-concurrent-pnu
-T *sym-begin-concurrent-pnu *
-T -sym-begin-concurrent *
+P afe45271b9c0cd379cf0beb94657e2396068c4a18f84003c4c48297760fd83ee
+R 13a4e608c33e96d8f32961fb092111d1
 U drh
-Z 105db701de986bc4ba15a35d9febe596
+Z 22f49919fb59529cdea1770ba1acc6e3

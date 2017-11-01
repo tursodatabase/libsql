@@ -223,7 +223,7 @@ void sqlite3Update(
   */
   chngRowid = chngPk = 0;
   for(i=0; i<pChanges->nExpr; i++){
-#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+#if defined(SQLITE_ENABLE_NOOP_UPDATE) && !defined(SQLITE_OMIT_FLAG_PRAGMAS)
     if( db->flags & SQLITE_NoopUpdate ){
       Token x;
       sqlite3ExprDelete(db, pChanges->a[i].pExpr);
