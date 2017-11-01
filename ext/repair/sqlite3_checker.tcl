@@ -1,5 +1,3 @@
-# Read and run TCL commands from standard input.  Used to implement
-# the --tclsh option.
 # This TCL script is the main driver script for the sqlite3_checker utility
 # program.
 #
@@ -10,10 +8,10 @@
 #
 # uses FILENAME in place of this script.
 #
-if {[lindex $argv 0]=="--test" && [llength $argv]>2} {
-  set file [lindex $argv 1]
+if {[lindex $argv 0]=="--test" && [llength $argv]>1} {
+  set ::argv0 [lindex $argv 1]
   set argv [lrange $argv 2 end]
-  source $file
+  source $argv0
   exit 0
 }
 

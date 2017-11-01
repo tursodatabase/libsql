@@ -1,5 +1,5 @@
-C Minor\scleanup\sin\scheckindex.c.\s\sAdd\sprogress\sdisplays\swhen\schecking\sa\nsingle\sindex\sin\sthe\stop-level\sTCL\sscript\sfor\ssqlite3_checker.
-D 2017-11-01T13:09:02.677
+C Move\sthe\stest\sscripts\sfor\scheckfreelist\sand\scheckindex\sover\sinto\sthe\next/repair/test\sdirectory.\s\sRun\sthem\snow\susing\sthe\ssqlite3_checker\sutility\nwith\sthe\s--test\soption.\s\sSome\stests\sare\scurrently\sfailing\sdue\sto\san\nincomplete\sport.\s\sThis\sis\san\sincremental\scheck-in.
+D 2017-11-01T18:05:32.697
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -330,7 +330,11 @@ F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b14469
 F ext/repair/checkfreelist.c 0abb84b4545016d57ba1a2aa8884c72c73ed838968909858c03bc1f38fb6b054
 F ext/repair/checkindex.c a013a0a165b2e6f2b278a31566da04913856c88d6ed5457d477f89e78d5979d9
 F ext/repair/sqlite3_checker.c.in 16d62615dfce1ff3eeac83d1a77fe376a7b660afa9db07e1fdd8b964dcc41510
-F ext/repair/sqlite3_checker.tcl 32d474decb6bb65e60bd3660dba0b75e7e0719d6f6fb6dba97e5b9249eec94a1
+F ext/repair/sqlite3_checker.tcl 4820d7f58428d47336874b5a148a95b4dad38fe5da72286c01a861590b8f8337
+F ext/repair/test/README.md 34b2f542cf5be7bffe479242b33ee3492cea30711e447cc4a1a86cb5915f419e
+F ext/repair/test/checkfreelist01.test 185648c046c0e269dc3b5141d525b87a38d72f0f55495d46c65108a5dde1428f
+F ext/repair/test/checkindex01.test 7be2299647ac7be41b6a7e249eb78e3aba1b57a7b20943ad199a1dc457edb4f7
+F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c cc91b6905bf55512c6ebc7dfdd37ac81c86f1753db8cfa6d62f0ee864464044f
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -655,8 +659,6 @@ F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test 33a698e8c63613449d85d624a38ef669bf20331daabebe3891c9405dd6df463a
-F test/checkfreelist.test 100283a3e6b8a3018c7fab7cfdaf03d1d6540fc66453114e248cf82b25784d3b
-F test/checkindex.test 77153b3d92492a186c947031ee0eb2e9b879c07192c0066f6152539b670dd237
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1671,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ffe917d10e298cd80cd3a8c8c5116a2819145a176fb8cfccd5dbd88b10f39df
-R 9a8d975a41c4365cfebb7312db115daa
+P 3ca31cc3ffe1cce4a9961d29801eebd47f0093d1b53d0ea63386338a1d434fd3
+R 9a0909f5ab1dfc6f8f86ede9c43722ca
 U drh
-Z d02ff4965492ed83b018c8e578de7329
+Z 17e4966dab1f438179fdac475786b16e
