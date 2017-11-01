@@ -42,6 +42,37 @@ proc tclsh {} {
   }
 }
 
+# Do an incremental integrity check of a single index
+#
+proc check_index {idxname batchsize} {
+  set i 0
+  set more 1
+  set nerr 0
+  puts -nonewline "$idxname: "
+  while {$more} {
+    set more 0
+    db eval {SELECT errmsg, current_key AS key
+               FROM incremental_index_check($idxname)
+              WHERE after_key=$key
+              LIMIT $batchsize} {
+      set more 1
+      if {$errmsg!=""} {
+        if {$nerr>0} {
+           puts -nonewline "$idxname: "
+        }
+        incr nerr
+        puts "row $i: $errmsg"
+      }
+      incr i
+    }
+  }
+  if {$nerr==0} {
+    puts "$i entries, ok"
+  } else {
+    puts "$idxname: $nerr errors out of $i entries"
+  }
+}
+
 # Print a usage message on standard error, then quit.
 #
 proc usage {} {
@@ -53,11 +84,19 @@ Do sanity checking on a live SQLite3 database file specified by the
 
 Options:
 
-   --freelist   Perform a freelist check
+   --batchsize N     Number of rows to check per transaction
 
-   --tclsh      Run the built-in TCL interpreter interactively (for debugging)
+   --freelist        Perform a freelist check
 
-   --version    Show the version number of SQLite
+   --index NAME      Run a check of the index NAME
+
+   --summary         Print summary information about the database
+
+   --table NAME      Run a check of all indexes for table NAME
+
+   --tclsh           Run the built-in TCL interpreter (for debugging)
+
+   --version         Show the version number of SQLite
 }
   exit 1
 }
@@ -65,8 +104,14 @@ Options:
 set file_to_analyze {}
 append argv {}
 set bFreelistCheck 0
-set bSummary 1
-foreach arg $argv {
+set bSummary 0
+set zIndex {}
+set zTable {}
+set batchsize 100
+set bAll 1
+set argc [llength $argv]
+for {set i 0} {$i<$argc} {incr i} {
+  set arg [lindex $argv $i]
   if {[regexp {^-+tclsh$} $arg]} {
     tclsh
     exit 0
@@ -79,7 +124,41 @@ foreach arg $argv {
   }
   if {[regexp {^-+freelist$} $arg]} {
     set bFreelistCheck 1
-    set bSummary 0
+    set bAll 0
+    continue
+  }
+  if {[regexp {^-+summary$} $arg]} {
+    set bSummary 1
+    set bAll 0
+    continue
+  }
+  if {[regexp {^-+batchsize$} $arg]} {
+    incr i
+    if {$i>=$argc} {
+      puts stderr "missing argument on $arg"
+      exit 1
+    }
+    set batchsize [lindex $argv $i]
+    continue
+  }
+  if {[regexp {^-+index$} $arg]} {
+    incr i
+    if {$i>=$argc} {
+      puts stderr "missing argument on $arg"
+      exit 1
+    }
+    set zIndex [lindex $argv $i]
+    set bAll 0
+    continue
+  }
+  if {[regexp {^-+table$} $arg]} {
+    incr i
+    if {$i>=$argc} {
+      puts stderr "missing argument on $arg"
+      exit 1
+    }
+    set zTable [lindex $argv $i]
+    set bAll 0
     continue
   }
   if {[regexp {^-} $arg]} {
@@ -118,8 +197,8 @@ if {[catch {sqlite3 db $file_to_analyze} res]} {
   exit 1
 }
 
-if {$bFreelistCheck} {
-  puts "freelist-check:"
+if {$bFreelistCheck || $bAll} {
+  puts -nonewline "freelist-check: "
   flush stdout
   puts [db one {SELECT checkfreelist('main')}]
 }
@@ -141,5 +220,23 @@ if {$bSummary} {
     }
     puts [format {%7.1f %s index %s of table %s} \
             [expr {$sz/$scale}] $unit $name $tbl_name]
+  }
+}
+if {$zIndex!=""} {
+  check_index $zIndex $batchsize
+}
+if {$zTable!=""} {
+  foreach idx [db eval {SELECT name FROM sqlite_master
+                         WHERE type='index' AND rootpage>0
+                           AND tbl_name=$zTable}] {
+    check_index $idx $batchsize
+  }
+}
+if {$bAll} {
+  set allidx [db eval {SELECT name FROM sqlite_btreeinfo('main')
+                        WHERE type='index' AND rootpage>0
+                        ORDER BY nEntry}]
+  foreach idx $allidx {
+    check_index $idx $batchsize
   }
 }
