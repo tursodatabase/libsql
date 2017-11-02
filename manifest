@@ -1,5 +1,5 @@
-C Avoid\slocking\sshm-lock\sWAL_READ_LOCK(0)\sduring\srecovery.\sDoing\sthis\sallows\nrecovery\sto\sproceed\swhile\sa\sreadonly_shm\sconnection\sin\sunlocked\smode\shas\san\nongoing\sread\stransaction.
-D 2017-11-02T11:12:03.045
+C Fix\stest\scases\sin\swal2.test\sbroken\sby\sthe\slocking\schange\sin\sthe\sprevious\ncommit.
+D 2017-11-02T18:57:46.036
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -1501,7 +1501,7 @@ F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c37
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
-F test/wal2.test 6ac39b94a284ebac6efb6be93b0cdfe73ee6083f129555e3144d8a615e9900ef
+F test/wal2.test 4c44bbe447959638e5163631a1fe95c9dbc01a06eff6eb34449be06b6e0ed64c
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -1668,7 +1668,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce5d13c2de69b73378637d4f7e109714f7cd17bf1d1ad995e0be442d517ed1b3
-R 5519605a9af9008f6aa3aade00e8ea39
+P 5190d84a296b7cf716ef43bf7b6d4d351ef1a4d650de37dc01a5ab333da7c05d
+R 30693e487c23aaa3c080ebb269e4e38f
 U dan
-Z aa82fa216e4468716131c3fe0543b69b
+Z a5242a9fca30f5b5641106b18cdb01ae
