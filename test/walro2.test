@@ -82,6 +82,37 @@ do_multiclient_test tn {
     sql1 { SELECT * FROM t1 }
   } {a b c d}
 
+  code1 { db close  }
+  code2 { db2 close }
+  code3 { db3 close }
+
+  do_test 2.1 {
+    code2 { sqlite3 db2 test.db }
+    sql2 { 
+      INSERT INTO t1 VALUES('e', 'f');
+      INSERT INTO t1 VALUES('g', 'h');
+    }
+    file exists test.db-shm
+  } {1}
+
+  do_test 2.2 {
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-shm test.db2-shm
+    code1 {
+      sqlite3 db file:test.db2?readonly_shm=1
+    }
+    sql1 { 
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {a b c d}
+
+  do_test 2.3.1 {
+    code3 { sqlite3 db3 test.db2 }
+    sql3 { SELECT * FROM t1 }
+  } {a b c d e f g h}
+
 }
 
 finish_test

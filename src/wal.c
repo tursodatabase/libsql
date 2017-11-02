@@ -1101,7 +1101,6 @@ static int walIndexRecover(Wal *pWal){
   i64 nSize;                      /* Size of log file */
   u32 aFrameCksum[2] = {0, 0};
   int iLock;                      /* Lock offset to lock for checkpoint */
-  int nLock;                      /* Number of locks to hold */
 
   /* Obtain an exclusive lock on all byte in the locking range not already
   ** locked by the caller. The caller is guaranteed to have locked the
@@ -1114,11 +1113,17 @@ static int walIndexRecover(Wal *pWal){
   assert( WAL_CKPT_LOCK==WAL_ALL_BUT_WRITE );
   assert( pWal->writeLock );
   iLock = WAL_ALL_BUT_WRITE + pWal->ckptLock;
-  nLock = SQLITE_SHM_NLOCK - iLock;
-  rc = walLockExclusive(pWal, iLock, nLock);
+  rc = walLockExclusive(pWal, iLock, WAL_READ_LOCK(0)-iLock);
+  if( rc==SQLITE_OK ){
+    rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+    if( rc!=SQLITE_OK ){
+      walUnlockExclusive(pWal, iLock, WAL_READ_LOCK(0)-iLock);
+    }
+  }
   if( rc ){
     return rc;
   }
+
   WALTRACE(("WAL%p: recovery begin...\n", pWal));
 
   memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
@@ -1256,7 +1261,8 @@ finished:
 
 recovery_error:
   WALTRACE(("WAL%p: recovery %s\n", pWal, rc ? "failed" : "ok"));
-  walUnlockExclusive(pWal, iLock, nLock);
+  walUnlockExclusive(pWal, iLock, WAL_READ_LOCK(0)-iLock);
+  walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
   return rc;
 }
 
