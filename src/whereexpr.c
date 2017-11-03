@@ -983,7 +983,7 @@ static void exprAnalyze(
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
-  unsigned char eOp2;              /* op2 value for LIKE/REGEXP/GLOB */
+  unsigned char eOp2 = 0;          /* op2 value for LIKE/REGEXP/GLOB */
   int nLeft;                       /* Number of elements on left side vector */
 
   if( db->mallocFailed ){
@@ -1227,7 +1227,7 @@ static void exprAnalyze(
   ** to do anything with MATCH functions.
   */
   if( pWC->op==TK_AND ){
-    Expr *pRight, *pLeft;
+    Expr *pRight = 0, *pLeft = 0;
     int res = isAuxiliaryVtabOperator(pExpr, &eOp2, &pLeft, &pRight);
     while( res-- > 0 ){
       int idxNew;

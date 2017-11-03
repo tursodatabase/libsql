@@ -61,7 +61,9 @@
 **      SELECT name FROM sqlite_btreeinfo
 **       WHERE type='table' AND NOT hasRowid;
 */
-#include <sqlite3ext.h>
+#if !defined(SQLITEINT_H)
+#include "sqlite3ext.h"
+#endif
 SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>

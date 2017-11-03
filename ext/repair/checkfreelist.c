@@ -166,7 +166,7 @@ static int checkFreelist(
     u32 i;
     u32 iTrunk = (u32)sqlite3_column_int(pTrunk, 0);
     const u8 *aData = (const u8*)sqlite3_column_blob(pTrunk, 1);
-    int nData = sqlite3_column_bytes(pTrunk, 1);
+    u32 nData = (u32)sqlite3_column_bytes(pTrunk, 1);
     u32 iNext = get4byte(&aData[0]);
     u32 nLeaf = get4byte(&aData[4]);
 
