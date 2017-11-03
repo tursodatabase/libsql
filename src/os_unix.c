@@ -3795,6 +3795,7 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
 
 /* Forward declaration */
 static int unixGetTempname(int nBuf, char *zBuf);
+static int fcntlReadShm(unixFile*,void*);
 
 /*
 ** Information and control of an open file handle.
@@ -3816,6 +3817,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return rc ? SQLITE_IOERR_ROLLBACK_ATOMIC : SQLITE_OK;
     }
 #endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
+
+    case SQLITE_FCNTL_READ_SHM: {
+      return fcntlReadShm(pFile, pArg);
+    }
 
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
@@ -4146,6 +4151,51 @@ struct unixShm {
 */
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
+
+/*
+** Implementation of file-control SQLITE_FCNTL_READ_SHM.
+*/
+static int fcntlReadShm(unixFile *pFile, void *pArg){
+  struct ReadShmParam {
+    void *pBuf;
+    int nBuf;
+  } *pParam = (struct ReadShmParam*)pArg;
+  unixShmNode *pShmNode = pFile->pShm->pShmNode;
+  int rc = SQLITE_OK;
+  sqlite3_mutex_enter( pShmNode->mutex );
+  if( pShmNode->isUnlocked==1 ){
+    struct stat buf;          /* Used to hold return values of fstat() */
+    if( osFstat(pShmNode->h, &buf) ){
+      rc = SQLITE_IOERR_FSTAT;
+    }else if( 0!=lseek(pShmNode->h, 0, SEEK_SET) ){
+      rc = SQLITE_IOERR_READ;
+    }else{
+      int nRead = buf.st_size;
+      if( nRead==0 ){
+        pParam->nBuf = 0;
+        pParam->pBuf = 0;
+      }else{    
+        pParam->pBuf = sqlite3_malloc(nRead);
+        if( pParam->pBuf ){
+          int res = osRead(pShmNode->h, pParam->pBuf, nRead);
+          if( res!=nRead ){
+            sqlite3_free(pParam->pBuf);
+            pParam->pBuf = 0;
+            rc = SQLITE_IOERR_READ;
+          }else{
+            pParam->nBuf = nRead;
+          }
+        }else{
+          rc = SQLITE_NOMEM_BKPT;
+        }
+      }
+    }
+  }else{
+    rc = SQLITE_BUSY;
+  }
+  sqlite3_mutex_leave( pShmNode->mutex );
+  return rc;
+}
 
 /*
 ** Apply posix advisory locks for all bytes from ofst through ofst+n-1.
