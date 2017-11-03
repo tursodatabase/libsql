@@ -2345,7 +2345,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     if( rc==SQLITE_READONLY_CANTLOCK ){
       /* This is a readonly_shm connection and there are no other connections
       ** to the database. So the *-shm file may not be accessed using mmap.
-      ** Take WAL_READ_LOCK(0) before proceding.  */
+      ** Try to open an "unlocked" transaction - one that loads the *-shm
+      ** file into memory using read() - instead.  */
       assert( pWal->nWiData>0 && pWal->apWiData[0]==0 );
       assert( pWal->readOnly & WAL_SHM_RDONLY );
       return walBeginUnlocked(pWal, pChanged);

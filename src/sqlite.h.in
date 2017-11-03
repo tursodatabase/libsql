@@ -508,7 +508,6 @@ int sqlite3_exec(
 #define SQLITE_CANTOPEN_ISDIR          (SQLITE_CANTOPEN | (2<<8))
 #define SQLITE_CANTOPEN_FULLPATH       (SQLITE_CANTOPEN | (3<<8))
 #define SQLITE_CANTOPEN_CONVPATH       (SQLITE_CANTOPEN | (4<<8))
-#define SQLITE_CANTOPEN_DIRTYWAL       (SQLITE_CANTOPEN | (5<<8))
 #define SQLITE_CORRUPT_VTAB            (SQLITE_CORRUPT | (1<<8))
 #define SQLITE_READONLY_RECOVERY       (SQLITE_READONLY | (1<<8))
 #define SQLITE_READONLY_CANTLOCK       (SQLITE_READONLY | (2<<8))
@@ -1061,6 +1060,20 @@ struct sqlite3_io_methods {
 ** so that all subsequent write operations are independent.
 ** ^SQLite will never invoke SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE without
 ** a prior successful call to [SQLITE_FCNTL_BEGIN_ATOMIC_WRITE].
+**
+** <li>[[SQLITE_FCNTL_READ_SHM]]
+** The [SQLITE_FCNTL_READ_SHM] opcode may be used to read data from 
+** the shared-memory region used by wal mode if the previous call
+** to the xShmMap method returned SQLITE_READONLY_CANTLOCK. The argument
+** must point to an instance of a structure declared as:
+** <blockquote><pre>
+**   struct ReadShmArg { void *pBuf; int nBuf };
+** </pre></blockquote>)^
+** Before returning, this operation allocates a buffer large enough for
+** the entire shared-memory using sqlite3_malloc() and populates it with
+** a copy thereof. ReadShmArg.pBuf is set to point to the buffer, and
+** ReadShmArg to its size in bytes. It is the responsibility of the caller
+** to eventually free the buffer using sqlite3_free().
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
