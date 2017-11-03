@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\ssqlite3_checker.exe
-D 2017-11-01T19:58:25.196
+C Fix\sharmless\scompiler\swarnings.
+D 2017-11-03T06:45:37.503
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -556,7 +556,7 @@ F src/walker.c d591e8a9ccf60abb010966b354fcea4aa08eba4d83675c2b281a8764c76cc22f
 F src/where.c b7a075f5fb3d912a891dcc3257f538372bb4a1622dd8ca7d752ad95ce8949ba4
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c 4a117dd5886616d074f7b6589c23bf742f5a9858d6ffdaf8b9d1f76ab06245d2
-F src/whereexpr.c afcac9cccfc0fdaccbdda94034a398947b6dc47dbf821c1b496261722832a6a4
+F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a946a8ed46ba76b9a09bcbac58000d3d92db1f08a98f6cc12365be696d8921de
-R 7ee45d8c7d2f00dd882d0691ca6a1bfb
-U drh
-Z 0f28cc7179e20c43d298dd1935e3a35c
+P 491f867b377b3b9e00bd713fb07df00207673f9eca0e7d5b7af7974082c8e3f0
+R 2898c172e35d6c4a6ab6316ba23aa96d
+U mistachkin
+Z 0198e72b5c24cd8ac4cd7a2d9de73913
