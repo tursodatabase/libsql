@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2017-11-03T06:45:37.503
+C The\sextensions\sfunctions\sin\sspellfix\sare\sall\sdeterministic.
+D 2017-11-03T08:46:48.968
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -282,7 +282,7 @@ F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681d
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
+F ext/misc/spellfix.c 41cf26c6b89fcaa8798ae10ae64d39c1f1d9d6995152e545bd491c13058b8fac
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/unionvtab.c 1e0ebc5078e1a916db191bcd88f87e94ea7ba4aa563ee30ff706261cb4b39461
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 491f867b377b3b9e00bd713fb07df00207673f9eca0e7d5b7af7974082c8e3f0
-R 2898c172e35d6c4a6ab6316ba23aa96d
-U mistachkin
-Z 0198e72b5c24cd8ac4cd7a2d9de73913
+P d088c5a3f1a803118cb67560fc35c11178e1b7e54c0e1511677559906b9da980
+R b7838526febd368042ba32a4576c580c
+U drh
+Z 18ebbc1917110c35a4b2606f5ce6f533
