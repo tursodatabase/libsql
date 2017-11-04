@@ -455,6 +455,7 @@ struct Wal {
   u8 truncateOnCommit;       /* True to truncate WAL file on commit */
   u8 syncHeader;             /* Fsync the WAL header if true */
   u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
+  u8 bUnlocked;
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   u32 minFrame;              /* Ignore wal frames before this one */
   u32 iReCksum;              /* On commit, recalculate checksums from here */
@@ -1270,13 +1271,14 @@ recovery_error:
 ** Close an open wal-index.
 */
 static void walIndexClose(Wal *pWal, int isDelete){
-  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
+  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE || pWal->bUnlocked ){
     int i;
     for(i=0; i<pWal->nWiData; i++){
       sqlite3_free((void *)pWal->apWiData[i]);
       pWal->apWiData[i] = 0;
     }
-  }else{
+  }
+  if( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE ){
     sqlite3OsShmUnmap(pWal->pDbFd, isDelete);
   }
 }
@@ -2091,15 +2093,13 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   */
   assert( pChanged );
   rc = walIndexPage(pWal, 0, &page0);
+  if( rc==SQLITE_READONLY_CANTLOCK ){
+    assert( page0==0 && pWal->writeLock==0 );
+    pWal->bUnlocked = 1;
+    pWal->exclusiveMode = WAL_HEAPMEMORY_MODE;
+    *pChanged = 1;
+  }else
   if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_READONLY_CANTLOCK 
-#ifdef SQLITE_ENABLE_SNAPSHOT
-        && pWal->pSnapshot==0 
-#endif
-    ){
-      memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
-      rc = SQLITE_OK;
-    }
     return rc;
   };
   assert( page0 || pWal->writeLock==0 );
@@ -2116,7 +2116,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   */
   assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr ){
-    if( pWal->readOnly & WAL_SHM_RDONLY ){
+    if( pWal->bUnlocked==0 && (pWal->readOnly & WAL_SHM_RDONLY) ){
       if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
@@ -2146,6 +2146,12 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   if( badHdr==0 && pWal->hdr.iVersion!=WALINDEX_MAX_VERSION ){
     rc = SQLITE_CANTOPEN_BKPT;
   }
+  if( pWal->bUnlocked ){
+    if( rc!=SQLITE_OK ){
+      walIndexClose(pWal, 0);
+    }
+    pWal->exclusiveMode = WAL_NORMAL_MODE;
+  }
 
   return rc;
 }
@@ -2155,6 +2161,144 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** be retried.
 */
 #define WAL_RETRY  (-1)
+
+/*
+** Open an "unlocked" transaction. An unlocked transaction is a read 
+** transaction used by a read-only client in cases where the *-shm
+** file cannot be mapped and its contents cannot be trusted. It is
+** assumed that the *-wal file has been read and that a wal-index 
+** constructed in heap memory is currently available in Wal.apWiData[].
+**
+** If this function returns SQLITE_OK, then the read transaction has
+** been successfully opened. In this case output variable (*pChanged) 
+** is set to true before returning if the caller should discard the
+** contents of the page cache before proceeding. Or, if it returns 
+** WAL_RETRY, then the heap memory wal-index has been discarded and 
+** the caller should retry opening the read transaction from the 
+** beginning (including attempting to map the *-shm file). 
+**
+** If an error occurs, an SQLite error code is returned.
+*/
+static int walBeginUnlocked(Wal *pWal, int *pChanged){
+  i64 szWal;                      /* Size of wal file on disk in bytes */
+  i64 iOffset;                    /* Current offset when reading wal file */
+  u8 aBuf[WAL_HDRSIZE];           /* Buffer to load WAL header into */
+  u8 *aFrame = 0;                 /* Malloc'd buffer to load entire frame */
+  int szFrame;                    /* Number of bytes in buffer aFrame[] */
+  u8 *aData;                      /* Pointer to data part of aFrame buffer */
+  volatile void *pDummy;          /* Dummy argument for xShmMap */
+  int rc;                         /* Return code */
+  u32 aSaveCksum[2];              /* Saved copy of pWal->hdr.aFrameCksum */
+
+  assert( pWal->bUnlocked );
+  assert( pWal->readOnly & WAL_SHM_RDONLY );
+  assert( pWal->nWiData>0 && pWal->apWiData[0] );
+
+  /* Take WAL_READ_LOCK(0). This has the effect of preventing any
+  ** live clients from running a checkpoint, but does not stop them
+  ** from running recovery.  */
+  rc = walLockShared(pWal, WAL_READ_LOCK(0));
+  if( rc!=SQLITE_OK ){
+    return (rc==SQLITE_BUSY ? WAL_RETRY : rc);
+  }
+  pWal->readLock = 0;
+
+  /* Try to map the *-shm file again. If it succeeds this time, then 
+  ** a non-readonly_shm connection has already connected to the database.
+  ** In this case, start over with opening the transaction.
+  ** 
+  ** The WAL_READ_LOCK(0) lock held by this client prevents a checkpoint
+  ** from taking place. But it does not prevent the wal from being wrapped
+  ** if a checkpoint has already taken place. This means that if another
+  ** client is connected at this point, it may have already checkpointed 
+  ** the entire wal. In that case it would not be safe to continue with
+  ** the unlocked transaction, as the other client may overwrite wal 
+  ** frames that this client is still using.  */
+  rc = sqlite3OsShmMap(pWal->pDbFd, 0, WALINDEX_PGSZ, 0, &pDummy);
+  if( rc!=SQLITE_READONLY_CANTLOCK ){
+    assert( rc!=SQLITE_OK );
+    rc = (rc==SQLITE_READONLY ? WAL_RETRY : rc);
+    goto begin_unlocked_out;
+  }
+
+  memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
+  rc = sqlite3OsFileSize(pWal->pWalFd, &szWal);
+  if( rc!=SQLITE_OK || (szWal<WAL_HDRSIZE && pWal->hdr.mxFrame==0) ){
+    /* If the wal file is too small to contain a wal-header and the
+    ** wal-index header has mxFrame==0, then it must be safe to proceed
+    ** reading the database file only. However, the page cache cannot
+    ** be trusted, as a read/write connection may have connected, written
+    ** the db, run a checkpoint, truncated the wal file and disconnected
+    ** since this client's last read transaction.  */
+    *pChanged = 1;
+    goto begin_unlocked_out;
+  }
+
+  /* Check the salt keys at the start of the wal file still match. */
+  rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
+  if( rc!=SQLITE_OK ){
+    goto begin_unlocked_out;
+  }
+  if( memcmp(&pWal->hdr.aSalt, &aBuf[16], 8) ){
+    rc = WAL_RETRY;
+    goto begin_unlocked_out;
+  }
+
+  /* Allocate a buffer to read frames into */
+  szFrame = pWal->hdr.szPage + WAL_FRAME_HDRSIZE;
+  aFrame = (u8 *)sqlite3_malloc64(szFrame);
+  if( aFrame==0 ){
+    rc = SQLITE_NOMEM_BKPT;
+    goto begin_unlocked_out;
+  }
+  aData = &aFrame[WAL_FRAME_HDRSIZE];
+
+  aSaveCksum[0] = pWal->hdr.aFrameCksum[0];
+  aSaveCksum[1] = pWal->hdr.aFrameCksum[1];
+  for(iOffset=walFrameOffset(pWal->hdr.mxFrame+1, pWal->hdr.szPage); 
+      iOffset+szFrame<=szWal; 
+      iOffset+=szFrame
+  ){
+    u32 pgno;                   /* Database page number for frame */
+    u32 nTruncate;              /* dbsize field from frame header */
+
+    /* Read and decode the next log frame. */
+    rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOffset);
+    if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_IOERR_SHORT_READ ){
+        /* If this branch is taken, some other client has truncated the
+        ** *-wal file since the call to sqlite3OsFileSize() above. This
+        ** indicates that a read-write client has connected to the system.
+        ** So retry opening this read transaction.  */
+        rc = WAL_RETRY;
+      }
+      break;
+    }
+    if( !walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame) ) break;
+
+    /* If nTruncate is non-zero, this is a commit record. */
+    if( nTruncate ){
+      rc = WAL_RETRY;
+      break;
+    }
+  }
+  pWal->hdr.aFrameCksum[0] = aSaveCksum[0];
+  pWal->hdr.aFrameCksum[1] = aSaveCksum[1];
+
+ begin_unlocked_out:
+  sqlite3_free(aFrame);
+  if( rc!=SQLITE_OK ){
+    int i;
+    for(i=0; i<pWal->nWiData; i++){
+      sqlite3_free((void*)pWal->apWiData[i]);
+      pWal->apWiData[i] = 0;
+    }
+    pWal->bUnlocked = 0;
+    sqlite3WalEndReadTransaction(pWal);
+    *pChanged = 1;
+  }
+  return rc;
+}
 
 /*
 ** Attempt to start a read transaction.  This might fail due to a race or
@@ -2244,7 +2388,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
 
   if( !useWal ){
-    rc = walIndexReadHdr(pWal, pChanged);
+    assert( rc==SQLITE_OK );
+    if( pWal->bUnlocked==0 ){
+      rc = walIndexReadHdr(pWal, pChanged);
+    }
     if( rc==SQLITE_BUSY ){
       /* If there is not a recovery running in another thread or process
       ** then convert BUSY errors to WAL_RETRY.  If recovery is known to
@@ -2272,6 +2419,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     }
     if( rc!=SQLITE_OK ){
       return rc;
+    }
+    else if( pWal->bUnlocked ){
+      return walBeginUnlocked(pWal, pChanged);
     }
   }
 
@@ -2626,7 +2776,7 @@ int sqlite3WalFindFrame(
   ** then the WAL is ignored by the reader so return early, as if the 
   ** WAL were empty.
   */
-  if( iLast==0 || pWal->readLock==0 ){
+  if( iLast==0 || (pWal->readLock==0 && pWal->bUnlocked==0) ){
     *piRead = 0;
     return SQLITE_OK;
   }
