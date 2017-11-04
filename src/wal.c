@@ -2253,6 +2253,10 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   }
   aData = &aFrame[WAL_FRAME_HDRSIZE];
 
+  /* Check to see if a complete transaction has been appended to the
+  ** wal file since the heap-memory wal-index was created. If so, the
+  ** heap-memory wal-index is discarded and WAL_RETRY returned to
+  ** the caller.  */
   aSaveCksum[0] = pWal->hdr.aFrameCksum[0];
   aSaveCksum[1] = pWal->hdr.aFrameCksum[1];
   for(iOffset=walFrameOffset(pWal->hdr.mxFrame+1, pWal->hdr.szPage); 
@@ -2276,7 +2280,9 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
     }
     if( !walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame) ) break;
 
-    /* If nTruncate is non-zero, this is a commit record. */
+    /* If nTruncate is non-zero, then a complete transaction has been
+    ** appended to this wal file. Set rc to WAL_RETRY and break out of
+    ** the loop.  */
     if( nTruncate ){
       rc = WAL_RETRY;
       break;

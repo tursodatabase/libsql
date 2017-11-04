@@ -15,7 +15,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-set ::testprefix walro
+source $testdir/wal_common.tcl
+set ::testprefix walro2
 
 # These tests are only going to work on unix.
 #
@@ -120,10 +121,81 @@ do_multiclient_test tn {
     code3 { db3 close }
     sql1 { COMMIT } 
   } {}
-  breakpoint
   do_test 2.3.3 {
     sql1 { SELECT * FROM t1 }
   } {a b c d e f g h i j}
+
+
+  #-----------------------------------------------------------------------
+  # 3.1.*: That a readonly_shm connection can read a database file if both
+  #        the *-wal and *-shm files are zero bytes in size.
+  #
+  # 3.2.*: That it flushes the cache if, between transactions on a db with a
+  #        zero byte *-wal file, some other connection modifies the db, then
+  #        does "PRAGMA wal_checkpoint=truncate" to truncate the wal file
+  #        back to zero bytes in size.
+  #
+  # 3.3.*: That, if between transactions some other process wraps the wal
+  #        file, the readonly_shm client reruns recovery.
+  #
+  catch { code1 { db close } }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
+  do_test 3.1.0 {
+    list [file exists test.db-wal] [file exists test.db-shm]
+  } {0 0}
+  do_test 3.1.1 {
+    close [open test.db-wal w]
+    close [open test.db-shm w]
+    code1 {
+      sqlite3 db file:test.db?readonly_shm=1
+    }
+    sql1 { SELECT * FROM t1 }
+  } {a b c d e f g h}
+
+  do_test 3.2.0 {
+    list [file size test.db-wal] [file size test.db-shm]
+  } {0 0}
+  do_test 3.2.1 {
+    code2 { sqlite3 db2 test.db }
+    sql2 { INSERT INTO t1 VALUES(1, 2) ; PRAGMA wal_checkpoint=truncate }
+    code2 { db2 close }
+    sql1 { SELECT * FROM t1 }
+  } {a b c d e f g h 1 2}
+  do_test 3.2.2 {
+    list [file size test.db-wal] [file size test.db-shm]
+  } {0 32768}
+
+  do_test 3.3.0 {
+    code2 { sqlite3 db2 test.db }
+    sql2 { 
+      INSERT INTO t1 VALUES(3, 4);
+      INSERT INTO t1 VALUES(5, 6);
+      INSERT INTO t1 VALUES(7, 8);
+      INSERT INTO t1 VALUES(9, 10);
+    }
+    code2 { db2 close }
+    code1 { db close }
+    list [file size test.db-wal] [file size test.db-shm]
+  } [list [wal_file_size 4 1024] 32768]
+  do_test 3.3.1 {
+    code1 { sqlite3 db file:test.db?readonly_shm=1 }
+    sql1 { SELECT * FROM t1 }
+  } {a b c d e f g h 1 2 3 4 5 6 7 8 9 10}
+  do_test 3.3.2 {
+    code2 { sqlite3 db2 test.db }
+    sql2 { 
+      PRAGMA wal_checkpoint; 
+      DELETE FROM t1;
+      INSERT INTO t1 VALUES('i', 'ii');
+    }
+    code2 { db2 close }
+    list [file size test.db-wal] [file size test.db-shm]
+  } [list [wal_file_size 4 1024] 32768]
+  do_test 3.3.3 {
+    sql1 { SELECT * FROM t1 }
+  } {i ii}
+
 }
 
 finish_test
