@@ -520,13 +520,11 @@ int lsmDbDatabaseConnect(
   ** recovery as necessary. Or, if this is a read-only database handle,
   ** defer attempting to connect to the system until a read-transaction
   ** is opened.  */
-  if( pDb->bReadonly==0 ){
-    if( rc==LSM_OK ){
-      rc = lsmFsConfigure(pDb);
-    }
-    if( rc==LSM_OK ){
-      rc = doDbConnect(pDb);
-    }
+  if( rc==LSM_OK ){
+    rc = lsmFsConfigure(pDb);
+  }
+  if( rc==LSM_OK && pDb->bReadonly==0 ){
+    rc = doDbConnect(pDb);
   }
 
   return rc;
