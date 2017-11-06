@@ -1205,7 +1205,6 @@ static void output_csv(ShellState *p, const char *z, int bSep){
   }
 }
 
-#ifdef SIGINT
 /*
 ** This routine runs when the user presses Ctrl-C
 */
@@ -1214,6 +1213,20 @@ static void interrupt_handler(int NotUsed){
   seenInterrupt++;
   if( seenInterrupt>2 ) exit(1);
   if( globalDb ) sqlite3_interrupt(globalDb);
+}
+
+#if (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+/*
+** This routine runs for console events (e.g. Ctrl-C) on Win32
+*/
+static BOOL WINAPI ConsoleCtrlHandler(
+  DWORD dwCtrlType /* One of the CTRL_*_EVENT constants */
+){
+  if( dwCtrlType==CTRL_C_EVENT ){
+    interrupt_handler(0);
+    return TRUE;
+  }
+  return FALSE;
 }
 #endif
 
@@ -1413,6 +1426,7 @@ static int shell_callback(
       for(i=0; IsSpace(z[i]); i++){}
       for(; (c = z[i])!=0; i++){
         if( IsSpace(c) ){
+          if( z[j-1]=='\r' ) z[j-1] = '\n';
           if( IsSpace(z[j-1]) || z[j-1]=='(' ) continue;
         }else if( (c=='(' || c==')') && j>0 && IsSpace(z[j-1]) ){
           j--;
@@ -2440,6 +2454,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
     }
   }
   sqlite3_finalize(pStmt);
+  if( azCol==0 ) return 0;
   azCol[0] = 0;
   azCol[nCol+1] = 0;
 
@@ -3609,20 +3624,24 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
      { "schema size:",
        "SELECT total(length(sql)) FROM %s" },
   };
-  sqlite3_file *pFile = 0;
   int i;
   char *zSchemaTab;
   char *zDb = nArg>=2 ? azArg[1] : "main";
+  sqlite3_stmt *pStmt = 0;
   unsigned char aHdr[100];
   open_db(p, 0);
   if( p->db==0 ) return 1;
-  sqlite3_file_control(p->db, zDb, SQLITE_FCNTL_FILE_POINTER, &pFile);
-  if( pFile==0 || pFile->pMethods==0 || pFile->pMethods->xRead==0 ){
-    return 1;
-  }
-  i = pFile->pMethods->xRead(pFile, aHdr, 100, 0);
-  if( i!=SQLITE_OK ){
+  sqlite3_prepare_v2(p->db,"SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
+                     -1, &pStmt, 0);
+  sqlite3_bind_text(pStmt, 1, zDb, -1, SQLITE_STATIC);
+  if( sqlite3_step(pStmt)==SQLITE_ROW
+   && sqlite3_column_bytes(pStmt,0)>100
+  ){
+    memcpy(aHdr, sqlite3_column_blob(pStmt,0), 100);
+    sqlite3_finalize(pStmt);
+  }else{
     raw_printf(stderr, "unable to read database header\n");
+    sqlite3_finalize(pStmt);
     return 1;
   }
   i = get2byteInt(aHdr+16);
@@ -4242,7 +4261,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       utf8_printf(stderr,
                  "testcase-%s FAILED\n Expected: [%s]\n      Got: [%s]\n",
                  p->zTestcase, azArg[1], zRes);
-      rc = 2;
+      rc = 1;
     }else{
       utf8_printf(stdout, "testcase-%s ok\n", p->zTestcase);
       p->nCheck++;
@@ -6683,6 +6702,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   */
 #ifdef SIGINT
   signal(SIGINT, interrupt_handler);
+#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+  SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 #endif
 
 #ifdef SQLITE_SHELL_DBNAME_PROC

@@ -124,6 +124,11 @@ Expr *sqlite3ExprSkipCollate(Expr *pExpr){
 ** Return the collation sequence for the expression pExpr. If
 ** there is no defined collating sequence, return NULL.
 **
+** See also: sqlite3ExprNNCollSeq()
+**
+** The sqlite3ExprNNCollSeq() works the same exact that it returns the
+** default collation if pExpr has no defined collation.
+**
 ** The collating sequence might be determined by a COLLATE operator
 ** or by the presence of a column with a defined collating sequence.
 ** COLLATE operators take first precedence.  Left operands take
@@ -186,6 +191,32 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     pColl = 0;
   }
   return pColl;
+}
+
+/*
+** Return the collation sequence for the expression pExpr. If
+** there is no defined collating sequence, return a pointer to the
+** defautl collation sequence.
+**
+** See also: sqlite3ExprCollSeq()
+**
+** The sqlite3ExprCollSeq() routine works the same except that it
+** returns NULL if there is no defined collation.
+*/
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr){
+  CollSeq *p = sqlite3ExprCollSeq(pParse, pExpr);
+  if( p==0 ) p = pParse->db->pDfltColl;
+  assert( p!=0 );
+  return p;
+}
+
+/*
+** Return TRUE if the two expressions have equivalent collating sequences.
+*/
+int sqlite3ExprCollSeqMatch(Parse *pParse, Expr *pE1, Expr *pE2){
+  CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pE1);
+  CollSeq *pColl2 = sqlite3ExprNNCollSeq(pParse, pE2);
+  return sqlite3StrICmp(pColl1->zName, pColl2->zName)==0;
 }
 
 /*
@@ -921,6 +952,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
     return 0;
   }
   pNew->x.pList = pList;
+  ExprSetProperty(pNew, EP_HasFunc);
   assert( !ExprHasProperty(pNew, EP_xIsSelect) );
   sqlite3ExprSetHeightAndFlags(pParse, pNew);
   return pNew;
@@ -1681,12 +1713,11 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
 u32 sqlite3ExprListFlags(const ExprList *pList){
   int i;
   u32 m = 0;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-       Expr *pExpr = pList->a[i].pExpr;
-       assert( pExpr!=0 );
-       m |= pExpr->flags;
-    }
+  assert( pList!=0 );
+  for(i=0; i<pList->nExpr; i++){
+     Expr *pExpr = pList->a[i].pExpr;
+     assert( pExpr!=0 );
+     m |= pExpr->flags;
   }
   return m;
 }
@@ -1843,8 +1874,8 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
   for(i=0; i<pGroupBy->nExpr; i++){
     Expr *p = pGroupBy->a[i].pExpr;
     if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pWalker->pParse, p);
-      if( pColl==0 || sqlite3_stricmp("BINARY", pColl->zName)==0 ){
+      CollSeq *pColl = sqlite3ExprNNCollSeq(pWalker->pParse, p);
+      if( sqlite3_stricmp("BINARY", pColl->zName)==0 ){
         return WRC_Prune;
       }
     }
@@ -2648,7 +2679,7 @@ int sqlite3CodeSubselect(
         /* Loop through each expression in <exprlist>. */
         r1 = sqlite3GetTempReg(pParse);
         r2 = sqlite3GetTempReg(pParse);
-        if( isRowid ) sqlite3VdbeAddOp2(v, OP_Null, 0, r2);
+        if( isRowid ) sqlite3VdbeAddOp4(v, OP_Blob, 0, r2, 0, "", P4_STATIC);
         for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
           Expr *pE2 = pItem->pExpr;
           int iValToIns;

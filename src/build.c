@@ -1065,12 +1065,10 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Column *pCol;
   sqlite3 *db = pParse->db;
   if( (p = pParse->pNewTable)==0 ) return;
-#if SQLITE_MAX_COLUMN
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
     return;
   }
-#endif
   z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
   memcpy(z, pName->z, pName->n);
@@ -2368,14 +2366,6 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
 ** is also added (this can happen with an auto-vacuum database).
 */
 static void destroyTable(Parse *pParse, Table *pTab){
-#ifdef SQLITE_OMIT_AUTOVACUUM
-  Index *pIdx;
-  int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-  destroyRootPage(pParse, pTab->tnum, iDb);
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    destroyRootPage(pParse, pIdx->tnum, iDb);
-  }
-#else
   /* If the database may be auto-vacuum capable (if SQLITE_OMIT_AUTOVACUUM
   ** is not defined), then it is important to call OP_Destroy on the
   ** table and index root-pages in order, starting with the numerically 
@@ -2418,7 +2408,6 @@ static void destroyTable(Parse *pParse, Table *pTab){
       iDestroyed = iLargest;
     }
   }
-#endif
 }
 
 /*
@@ -3865,9 +3854,10 @@ SrcList *sqlite3SrcListAppendFromTerm(
     goto append_from_error;
   }
   p = sqlite3SrcListAppend(db, p, pTable, pDatabase);
-  if( p==0 || NEVER(p->nSrc==0) ){
+  if( p==0 ){
     goto append_from_error;
   }
+  assert( p->nSrc>0 );
   pItem = &p->a[p->nSrc-1];
   assert( pAlias!=0 );
   if( pAlias->n ){

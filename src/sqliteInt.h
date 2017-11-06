@@ -447,6 +447,21 @@
 #endif
 
 /*
+** Some conditionals are optimizations only.  In other words, if the
+** conditionals are replaced with a constant 1 (true) or 0 (false) then
+** the correct answer is still obtained, though perhaps not as quickly.
+**
+** The following macros mark these optimizations conditionals.
+*/
+#if defined(SQLITE_MUTATION_TEST)
+# define OK_IF_ALWAYS_TRUE(X)  (1)
+# define OK_IF_ALWAYS_FALSE(X) (0)
+#else
+# define OK_IF_ALWAYS_TRUE(X)  (X)
+# define OK_IF_ALWAYS_FALSE(X) (X)
+#endif
+
+/*
 ** Some malloc failures are only possible if SQLITE_TEST_REALLOC_STRESS is
 ** defined.  We need to defend against those failures when testing with
 ** SQLITE_TEST_REALLOC_STRESS, but we don't want the unreachable branches
@@ -929,7 +944,7 @@ typedef INT16_TYPE LogEst;
 ** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
 ** the Select query generator tracing logic is turned on.
 */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_SELECTTRACE)
+#if defined(SQLITE_ENABLE_SELECTTRACE)
 # define SELECTTRACE_ENABLED 1
 #else
 # define SELECTTRACE_ENABLED 0
@@ -1507,16 +1522,15 @@ struct sqlite3 {
 #define SQLITE_ColumnCache    0x0002   /* Column cache */
 #define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
 #define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
-/*                not used    0x0010   // Was: SQLITE_IdxRealAsInt */
-#define SQLITE_DistinctOpt    0x0020   /* DISTINCT using indexes */
-#define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
-#define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
-#define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
-#define SQLITE_Transitive     0x0200   /* Transitive constraints */
-#define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
+#define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan   0x0020   /* Covering index scans */
+#define SQLITE_OrderByIdxJoin 0x0040   /* ORDER BY of joins via index */
+#define SQLITE_Transitive     0x0080   /* Transitive constraints */
+#define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
+#define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
+#define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
 #define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
-#define SQLITE_CountOfView    0x1000   /* The count-of-view optimization */
-#define SQLITE_CursorHints    0x2000   /* Add OP_CursorHint opcodes */
+   /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -2389,7 +2403,7 @@ struct Expr {
 */
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
 #define EP_Agg       0x000002 /* Contains one or more aggregate functions */
-                  /* 0x000004 // available for use */
+#define EP_HasFunc   0x000004 /* Contains one or more functions of any kind */
                   /* 0x000008 // available for use */
 #define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
@@ -2413,9 +2427,10 @@ struct Expr {
 #define EP_Leaf      0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
 
 /*
-** Combinations of two or more EP_* flags
+** The EP_Propagate mask is a set of properties that automatically propagate
+** upwards into parent nodes.
 */
-#define EP_Propagate (EP_Collate|EP_Subquery) /* Propagate these bits up tree */
+#define EP_Propagate (EP_Collate|EP_Subquery|EP_HasFunc)
 
 /*
 ** These macros can be used to test, set, or clear bits in the
@@ -2695,6 +2710,7 @@ struct NameContext {
 #define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
 #define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
+#define NC_Complex   0x2000  /* True if a function or subquery seen */
 
 /*
 ** An instance of the following structure contains all information
@@ -2765,6 +2781,7 @@ struct Select {
 #define SF_MaybeConvert   0x08000  /* Need convertCompoundSelectToSubquery() */
 #define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
 #define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
+#define SF_ComplexResult  0x40000  /* Result set contains subquery or function */
 
 
 /*
@@ -4005,6 +4022,8 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr);
+int sqlite3ExprCollSeqMatch(Parse*,Expr*,Expr*);
 Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*, int);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
@@ -4385,6 +4404,9 @@ int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 int sqlite3ThreadJoin(SQLiteThread*, void**);
 #endif
 
+#if defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)
+int sqlite3DbpageRegister(sqlite3*);
+#endif
 #if defined(SQLITE_ENABLE_DBSTAT_VTAB) || defined(SQLITE_TEST)
 int sqlite3DbstatRegister(sqlite3*);
 #endif

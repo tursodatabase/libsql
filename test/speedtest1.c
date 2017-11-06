@@ -1635,6 +1635,11 @@ static void displayLinuxIoStats(FILE *out){
 #  define sqlite3_sourceid(X) "(before 3.6.18)"
 #endif
 
+static int xCompileOptions(void *pCtx, int nVal, char **azVal, char **azCol){
+  printf("-- Compile option: %s\n", azVal[0]);
+  return SQLITE_OK;
+}
+
 int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
@@ -1880,6 +1885,10 @@ int main(int argc, char **argv){
                  zTSet);
   }
   speedtest1_final();
+
+  if( showStats ){
+    sqlite3_exec(g.db, "PRAGMA compile_options", xCompileOptions, 0, 0);
+  }
 
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */

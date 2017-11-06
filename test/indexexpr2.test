@@ -136,4 +136,26 @@ do_execsql_test 3.4.2 {
   .ABC 1   .ABC 3   .abc 2   .abc 4
 }
 
+do_execsql_test 3.4.3 {
+  DROP INDEX i4;
+  UPDATE t4 SET a = printf('%s%d',a,b);
+  SELECT * FROM t4 ORDER BY Substr(a,-2) COLLATE nocase;
+} {.ABC1 1 .abc2 2 .ABC3 3 .abc4 4}
+do_execsql_test 3.4.4 {
+  SELECT * FROM t4 ORDER BY Substr(a,-2) COLLATE binary;
+} {.ABC1 1 .ABC3 3 .abc2 2 .abc4 4}
+
+do_execsql_test 3.4.5 {
+  CREATE INDEX i4 ON t4( Substr(a,-2) COLLATE nocase );
+  SELECT * FROM t4 ORDER BY Substr(a,-2) COLLATE nocase;
+} {.ABC1 1 .abc2 2 .ABC3 3 .abc4 4}
+do_execsql_test 3.4.5eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t4 ORDER BY Substr(a,-2) COLLATE nocase;
+} {/SCAN TABLE t4 USING INDEX i4/}
+do_execsql_test 3.4.6 {
+  SELECT * FROM t4 ORDER BY Substr(a,-2) COLLATE binary;
+} {.ABC1 1 .ABC3 3 .abc2 2 .abc4 4}
+
+
 finish_test

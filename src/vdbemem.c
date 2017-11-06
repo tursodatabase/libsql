@@ -350,26 +350,24 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 ** otherwise.
 */
 int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
-  int rc = SQLITE_OK;
-  if( ALWAYS(pFunc && pFunc->xFinalize) ){
-    sqlite3_context ctx;
-    Mem t;
-    assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
-    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    memset(&ctx, 0, sizeof(ctx));
-    memset(&t, 0, sizeof(t));
-    t.flags = MEM_Null;
-    t.db = pMem->db;
-    ctx.pOut = &t;
-    ctx.pMem = pMem;
-    ctx.pFunc = pFunc;
-    pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
-    assert( (pMem->flags & MEM_Dyn)==0 );
-    if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
-    memcpy(pMem, &t, sizeof(t));
-    rc = ctx.isError;
-  }
-  return rc;
+  sqlite3_context ctx;
+  Mem t;
+  assert( pFunc!=0 );
+  assert( pFunc->xFinalize!=0 );
+  assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  memset(&ctx, 0, sizeof(ctx));
+  memset(&t, 0, sizeof(t));
+  t.flags = MEM_Null;
+  t.db = pMem->db;
+  ctx.pOut = &t;
+  ctx.pMem = pMem;
+  ctx.pFunc = pFunc;
+  pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
+  assert( (pMem->flags & MEM_Dyn)==0 );
+  if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
+  memcpy(pMem, &t, sizeof(t));
+  return ctx.isError;
 }
 
 /*
@@ -1013,9 +1011,10 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
 ){
   int rc;
   pMem->flags = MEM_Null;
-  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt)) ){
+  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){
     rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){
+      pMem->z[amt] = 0;   /* Overrun area used when reading malformed records */
       pMem->flags = MEM_Blob;
       pMem->n = (int)amt;
     }else{

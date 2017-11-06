@@ -42,8 +42,10 @@ Module *sqlite3VtabCreateModule(
 ){
   Module *pMod;
   int nName = sqlite3Strlen30(zName);
-  pMod = (Module *)sqlite3DbMallocRawNN(db, sizeof(Module) + nName + 1);
-  if( pMod ){
+  pMod = (Module *)sqlite3Malloc(sizeof(Module) + nName + 1);
+  if( pMod==0 ){
+    sqlite3OomFault(db);
+  }else{
     Module *pDel;
     char *zCopy = (char *)(&pMod[1]);
     memcpy(zCopy, zName, nName+1);
@@ -518,13 +520,14 @@ static int vtabCallConstructor(
     }
   }
 
-  zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
+  zModuleName = sqlite3DbStrDup(db, pTab->zName);
   if( !zModuleName ){
     return SQLITE_NOMEM_BKPT;
   }
 
-  pVTable = sqlite3DbMallocZero(db, sizeof(VTable));
+  pVTable = sqlite3MallocZero(sizeof(VTable));
   if( !pVTable ){
+    sqlite3OomFault(db);
     sqlite3DbFree(db, zModuleName);
     return SQLITE_NOMEM_BKPT;
   }

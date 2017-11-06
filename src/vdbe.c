@@ -4466,14 +4466,9 @@ case OP_InsertInt: {
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = x.nKey;
-  if( pData->flags & MEM_Null ){
-    x.pData = 0;
-    x.nData = 0;
-  }else{
-    assert( pData->flags & (MEM_Blob|MEM_Str) );
-    x.pData = pData->z;
-    x.nData = pData->n;
-  }
+  assert( pData->flags & (MEM_Blob|MEM_Str) );
+  x.pData = pData->z;
+  x.nData = pData->n;
   seekResult = ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0);
   if( pData->flags & MEM_Zero ){
     x.nZero = pData->u.nZero;

@@ -47,9 +47,11 @@ const char sqlite3_version[] = SQLITE_VERSION;
 */
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 
-/* IMPLEMENTATION-OF: R-63124-39300 The sqlite3_sourceid() function returns a
+/* IMPLEMENTATION-OF: R-25063-23286 The sqlite3_sourceid() function returns a
 ** pointer to a string constant whose value is the same as the
-** SQLITE_SOURCE_ID C preprocessor macro. 
+** SQLITE_SOURCE_ID C preprocessor macro. Except if SQLite is built using
+** an edited copy of the amalgamation, then the last four characters of
+** the hash might be different from SQLITE_SOURCE_ID.
 */
 const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 
@@ -3052,6 +3054,12 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_DBPAGE_VTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3DbpageRegister(db);
+  }
+#endif
+
 #ifdef SQLITE_ENABLE_DBSTAT_VTAB
   if( !db->mallocFailed && rc==SQLITE_OK){
     rc = sqlite3DbstatRegister(db);
@@ -3711,7 +3719,7 @@ int sqlite3_test_control(int op, ...){
     ** This action provides a run-time test to see how the ALWAYS and
     ** NEVER macros were defined at compile-time.
     **
-    ** The return value is ALWAYS(X).  
+    ** The return value is ALWAYS(X) if X is true, or 0 if X is false.
     **
     ** The recommended test is X==2.  If the return value is 2, that means
     ** ALWAYS() and NEVER() are both no-op pass-through macros, which is the
@@ -3734,7 +3742,7 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_ALWAYS: {
       int x = va_arg(ap,int);
-      rc = ALWAYS(x);
+      rc = x ? ALWAYS(x) : 0;
       break;
     }
 
