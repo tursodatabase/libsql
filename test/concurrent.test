@@ -112,19 +112,47 @@ foreach {tn sql} {
   2 { DROP TABLE t1 }
   3 { CREATE INDEX i1 ON t1(a) }
   4 { CREATE VIEW v1 AS SELECT * FROM t1 }
-  5 { CREATE TEMP TABLE xx(a, b) }
 } {
-  do_catchsql_test 1.7.$tn.1 "
+  do_catchsql_test 1.7.0.$tn.1 "
     BEGIN CONCURRENT;
     $sql
   " {1 {cannot modify database schema within CONCURRENT transaction}}
 
-  do_execsql_test 1.7.$tn.2 {
+  do_execsql_test 1.7.0.$tn.2 {
     SELECT sql FROM sqlite_master;
     SELECT sql FROM sqlite_temp_master;
   } {{CREATE TABLE t1(a, b)}}
 
-  do_execsql_test 1.7.$tn.3 COMMIT
+  do_execsql_test 1.7.0.$tn.3 COMMIT
+}
+
+# Except the temp db schema.
+foreach {tn sql} {
+  1 { CREATE TEMP TABLE xx(a, b) }
+  2 { DROP TABLE xx }
+  3 { CREATE TEMP TABLE yy(a, b) }
+  4 { CREATE VIEW temp.v1 AS SELECT * FROM t1 }
+  5 { CREATE INDEX yyi1 ON yy(a); }
+  6 { CREATE TABLE temp.zz(a, b) }
+} {
+  do_catchsql_test 1.7.1.$tn.1 "
+    BEGIN CONCURRENT;
+    $sql
+  " {0 {}}
+
+  do_execsql_test 1.7.1.$tn.2 COMMIT
+}
+
+
+do_execsql_test 1.7.1.x {
+  SELECT sql FROM sqlite_master;
+  SELECT sql FROM sqlite_temp_master;
+} {
+  {CREATE TABLE t1(a, b)}
+  {CREATE TABLE yy(a, b)} 
+  {CREATE VIEW v1 AS SELECT * FROM t1} 
+  {CREATE INDEX yyi1 ON yy(a)} 
+  {CREATE TABLE zz(a, b)}
 }
 
 #-------------------------------------------------------------------------

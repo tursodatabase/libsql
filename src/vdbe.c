@@ -3306,7 +3306,7 @@ case OP_SetCookie: {
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, pOp->p3);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
     /* When the schema cookie changes, record the new cookie internally */
-    assert( db->bConcurrent==0 );
+    assert( pOp->p1==1 || db->bConcurrent==0 );
     pDb->pSchema->schema_cookie = pOp->p3;
     db->mDbFlags |= DBFLAG_SchemaChange;
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
@@ -6509,7 +6509,7 @@ case OP_Expire: {
 case OP_TableLock: {
   u8 isWriteLock = (u8)pOp->p3;
 #ifndef SQLITE_OMIT_CONCURRENT
-  if( isWriteLock && db->bConcurrent && pOp->p2==1 ){
+  if( isWriteLock && db->bConcurrent && pOp->p2==1 && pOp->p1!=1 ){
     rc = SQLITE_ERROR;
     sqlite3VdbeError(p, 
         "cannot modify database schema within CONCURRENT transaction");
