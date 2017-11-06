@@ -196,6 +196,146 @@ do_multiclient_test tn {
     sql1 { SELECT * FROM t1 }
   } {i ii}
 
+  #-----------------------------------------------------------------------
+  #
+  #
+  catch { code1 { db close } }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
+
+  do_test 4.0 {
+    code1 { forcedelete test.db }
+    code1 { sqlite3 db test.db }
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('hello');
+      INSERT INTO t1 VALUES('world');
+    }
+
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-shm test.db2-shm
+    
+    code1 { db close }
+  } {}
+
+  do_test 4.1.1 {
+    code2 { sqlite3 db2 file:test.db2?readonly_shm=1 }
+    sql2 { SELECT * FROM t1 }
+  } {hello world}
+
+  do_test 4.1.2 {
+    code3 { sqlite3 db3 test.db2 }
+    sql3 {
+      INSERT INTO t1 VALUES('!');
+      PRAGMA wal_checkpoint = truncate;
+    }
+    code3 { db3 close }
+  } {}
+  do_test 4.1.3 {
+    sql2 { SELECT * FROM t1 }
+  } {hello world !}
+
+  catch { code1 { db close } }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
+
+  do_test 4.2.1 {
+    code1 { sqlite3 db test.db }
+    sql1 {
+      INSERT INTO t1 VALUES('!');
+      INSERT INTO t1 VALUES('!');
+
+      PRAGMA cache_size = 10;
+      CREATE TABLE t2(x);
+
+      BEGIN;
+        WITH s(i) AS (
+          SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<500
+          )
+        INSERT INTO t2 SELECT randomblob(500) FROM s;
+        SELECT count(*) FROM t2;
+    } 
+  } {500}
+  do_test 4.2.2 {
+    file size test.db-wal
+  } {461152}
+  do_test 4.2.4 {
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-shm test.db2-shm
+
+    code2 { sqlite3 db2 file:test.db2?readonly_shm=1 }
+    sql2 {
+      SELECT * FROM t1;
+      SELECT count(*) FROM t2;
+    }
+  } {hello world ! ! 0}
+
+  #-----------------------------------------------------------------------
+  #
+  #
+  catch { code1 { db close } }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
+
+  do_test 5.0 {
+    code1 { forcedelete test.db }
+    code1 { sqlite3 db test.db }
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('hello');
+      INSERT INTO t1 VALUES('world');
+      INSERT INTO t1 VALUES('!');
+      INSERT INTO t1 VALUES('world');
+      INSERT INTO t1 VALUES('hello');
+    }
+
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-shm test.db2-shm
+    
+    code1 { db close }
+  } {}
+
+  do_test 5.1 {
+    code2 { sqlite3 db2 file:test.db2?readonly_shm=1 }
+    sql2 {
+      SELECT * FROM t1;
+    }
+  } {hello world ! world hello}
+
+  do_test 5.2 {
+    code1 {
+      proc handle_read {op args} {
+        if {$op=="xRead" && [file tail [lindex $args 0]]=="test.db2-wal"} {
+          set ::res2 [sql2 { SELECT * FROM t1 }]
+        }
+        puts "$msg xRead $args"
+        return "SQLITE_OK"
+      }
+      testvfs tvfs -fullshm 1
+
+      sqlite3 db file:test.db2?vfs=tvfs
+      db eval { SELECT * FROM sqlite_master }
+
+      tvfs filter xRead
+      tvfs script handle_read
+    }
+    sql1 {
+      PRAGMA wal_checkpoint = truncate;
+    }
+    code1 { set ::res2 }
+  } {hello world ! world hello}
+
+  do_test 5.3 {
+    code1 { db close }
+    code1 { tvfs delete }
+  } {}
+
+
 }
 
 finish_test

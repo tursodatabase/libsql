@@ -2199,7 +2199,8 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   ** from running recovery.  */
   rc = walLockShared(pWal, WAL_READ_LOCK(0));
   if( rc!=SQLITE_OK ){
-    return (rc==SQLITE_BUSY ? WAL_RETRY : rc);
+    if( rc==SQLITE_BUSY ) rc = WAL_RETRY;
+    goto begin_unlocked_out;
   }
   pWal->readLock = 0;
 
@@ -2223,7 +2224,10 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
 
   memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
   rc = sqlite3OsFileSize(pWal->pWalFd, &szWal);
-  if( rc!=SQLITE_OK || (szWal<WAL_HDRSIZE && pWal->hdr.mxFrame==0) ){
+  if( rc!=SQLITE_OK ){
+    goto begin_unlocked_out;
+  }
+  if( szWal<WAL_HDRSIZE ){
     /* If the wal file is too small to contain a wal-header and the
     ** wal-index header has mxFrame==0, then it must be safe to proceed
     ** reading the database file only. However, the page cache cannot
@@ -2231,6 +2235,7 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
     ** the db, run a checkpoint, truncated the wal file and disconnected
     ** since this client's last read transaction.  */
     *pChanged = 1;
+    rc = (pWal->hdr.mxFrame==0 ? SQLITE_OK : WAL_RETRY);
     goto begin_unlocked_out;
   }
 
@@ -2268,16 +2273,7 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
 
     /* Read and decode the next log frame. */
     rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOffset);
-    if( rc!=SQLITE_OK ){
-      if( rc==SQLITE_IOERR_SHORT_READ ){
-        /* If this branch is taken, some other client has truncated the
-        ** *-wal file since the call to sqlite3OsFileSize() above. This
-        ** indicates that a read-write client has connected to the system.
-        ** So retry opening this read transaction.  */
-        rc = WAL_RETRY;
-      }
-      break;
-    }
+    if( rc!=SQLITE_OK ) break;
     if( !walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame) ) break;
 
     /* If nTruncate is non-zero, then a complete transaction has been
