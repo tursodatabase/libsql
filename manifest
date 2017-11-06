@@ -1,5 +1,5 @@
-C Fix\san\sLSM\sproblem\swith\sread-only\sconnections\sand\scompression\s(not\ncompression-factory)\scallbacks.
-D 2017-11-04T08:53:37.599
+C Fix\sa\sharmless\scompiler\swarning\sfrom\sXcode\s9.1.
+D 2017-11-06T09:34:45.112
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -537,7 +537,7 @@ F src/treeview.c 2ee4a5dada213d5ab08a742af5c876cee6f1aaae65f10a61923f3fb63846afe
 F src/trigger.c 48e0f7ed6749ce4d50a695e09e20ce9cf84ecabf2691852c965a51e0b620eccc
 F src/update.c 5404be9e840717323a69209190cdbc9d0d34adaedaaf1d1a1069babf2c4171c0
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
-F src/util.c 5168013cfd937a695d23cce8c67cb07a3dda242d4cb812530ba1148b88e0f159
+F src/util.c d01fa6f45bfad3b65fb2490513aa2e0676412c61b4b094340b513cf72c3704a4
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
 F src/vdbe.c 3393b508d9ad084ffce232a7c53e375ef5ac99b50b685c5131fcdfce97a9d534
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29ec855e13e0dcd675dcf12948b42f9e669d0a31c5d9efb95857888aba0beeee
-R 50deaa5f352753bc15393c76a6fab0d8
-U dan
-Z 685560e0f9310b127a265df0e79cb145
+P 51ee5188b03c4b9508e94afaee4bf1f224aef28875efabda8ce09a5ab641d99e
+R ca8ae1ded89ca445023d13a31194e801
+U drh
+Z c36ef70e8d55fddaef51df49c2bfea5f
