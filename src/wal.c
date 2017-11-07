@@ -2844,8 +2844,8 @@ int sqlite3WalFindFrame(
   {
     u32 iRead2 = 0;
     u32 iTest;
-    assert( pWal->minFrame>0 );
-    for(iTest=iLast; iTest>=pWal->minFrame; iTest--){
+    assert( pWal->bUnlocked || pWal->minFrame>0 );
+    for(iTest=iLast; iTest>=pWal->minFrame && iTest>0; iTest--){
       if( walFramePgno(pWal, iTest)==pgno ){
         iRead2 = iTest;
         break;
