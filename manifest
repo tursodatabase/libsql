@@ -1,5 +1,5 @@
-C Add\sfault-injection\stests\sfor\sthe\scode\son\sthis\sbranch.
-D 2017-11-07T09:08:43.757
+C On\sunix,\sif\sthe\s*-shm\sfile\scannot\sbe\sopened\sfor\sread/write\saccess,\sopen\sit\nread-only\sand\sproceed\sas\sif\sthe\sreadonly_shm=1\sURI\soption\swere\sspecified.
+D 2017-11-07T15:43:52.117
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -447,7 +447,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c e376adf6014df7d1a73faaaa6c87e6eb9b299b157a58cccff02fad8abc943fe7
+F src/os_unix.c 7de9280173d58b557c602d2a47c2893e536ef9547fa43df92bce0bc2c0d47b0e
 F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
@@ -1501,7 +1501,7 @@ F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c37
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
-F test/wal2.test 4c44bbe447959638e5163631a1fe95c9dbc01a06eff6eb34449be06b6e0ed64c
+F test/wal2.test 2d81ffe2a02d9e5c7447b266f7153716cfcba7aecda5ed832db4544617399e29
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -1526,7 +1526,7 @@ F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
-F test/walro.test 906586c3ae7a991d8c840ceed92400aee21a0a3e4155ce7c4220399777311552
+F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 2f0f662f880580d6ecadda9d7cc647d90b1f9e0fb1d487c2a723bcea07eb17dd
 F test/walrofault.test befa889648b2f779e2886f8434d8b44c05c49c130048305977da3e97c33dcb8d
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71af9acb227a91d9ad8798c9d0b12d6967e863d050f5cb1fddb45f25ee1f47db
-R 2894b2184d60284fd42b25cb64811e1a
+P a7d949fb735f60c19e7257a1a7a12568a9c15be9cd980c018f3a0d6bf112c339
+R 7a4e57959f170e8ae96924256d8168d4
 U dan
-Z 3f08ac70c434ed263499224338c46e3a
+Z fa20e28121f5e7127ed54b089c80ff82
