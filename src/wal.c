@@ -2072,6 +2072,12 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
 }
 
 /*
+** This is the value that walTryBeginRead returns when it needs to
+** be retried.
+*/
+#define WAL_RETRY  (-1)
+
+/*
 ** Read the wal-index header from the wal-index and into pWal->hdr.
 ** If the wal-header appears to be corrupt, try to reconstruct the
 ** wal-index from the WAL before returning.
@@ -2149,18 +2155,15 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   if( pWal->bUnlocked ){
     if( rc!=SQLITE_OK ){
       walIndexClose(pWal, 0);
+      pWal->bUnlocked = 0;
+      assert( pWal->nWiData>0 && pWal->apWiData[0]==0 );
+      if( rc==SQLITE_IOERR_SHORT_READ ) rc = WAL_RETRY;
     }
     pWal->exclusiveMode = WAL_NORMAL_MODE;
   }
 
   return rc;
 }
-
-/*
-** This is the value that walTryBeginRead returns when it needs to
-** be retried.
-*/
-#define WAL_RETRY  (-1)
 
 /*
 ** Open an "unlocked" transaction. An unlocked transaction is a read 

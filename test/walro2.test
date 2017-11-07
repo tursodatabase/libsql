@@ -335,7 +335,60 @@ do_multiclient_test tn {
     code1 { tvfs delete }
   } {}
 
+  #-----------------------------------------------------------------------
+  #
+  #
+  catch { code1 { db close } }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
 
+  do_test 6.1 {
+    code1 { forcedelete test.db }
+    code1 { sqlite3 db test.db }
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('hello');
+      INSERT INTO t1 VALUES('world');
+      INSERT INTO t1 VALUES('!');
+      INSERT INTO t1 VALUES('world');
+      INSERT INTO t1 VALUES('hello');
+    }
+
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-shm test.db2-shm
+    
+    code1 { db close }
+  } {}
+
+  do_test 6.2 {
+    code1 {
+      set ::nRem 5
+      proc handle_read {op args} {
+        if {$op=="xRead" && [file tail [lindex $args 0]]=="test.db2-wal"} {
+          incr ::nRem -1
+          if {$::nRem==0} {
+            code2 { sqlite3 db2 test.db2 }
+            sql2  { PRAGMA wal_checkpoint = truncate }
+          }
+        }
+        return "SQLITE_OK"
+      }
+      testvfs tvfs -fullshm 1
+
+      tvfs filter xRead
+      tvfs script handle_read
+
+      sqlite3 db file:test.db2?readonly_shm=1&vfs=tvfs
+      db eval { SELECT * FROM t1 }
+    }
+  } {hello world ! world hello}
+
+  do_test 6.3 {
+    code1 { db close }
+    code1 { tvfs delete }
+  } {}
 }
 
 finish_test

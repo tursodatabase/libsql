@@ -1,5 +1,5 @@
-C On\sunix,\sif\sthe\s*-shm\sfile\scannot\sbe\sopened\sfor\sread/write\saccess,\sopen\sit\nread-only\sand\sproceed\sas\sif\sthe\sreadonly_shm=1\sURI\soption\swere\sspecified.
-D 2017-11-07T15:43:52.117
+C Handle\sthe\srace\scondition\sthat\smay\soccur\sif\sanother\sprocess\sconnects\sand\sthen\ncheckpoints\sand\struncates\sthe\swal\sfile\swhile\sa\sreadonly-shm\sclient\sis\sbuilding\nits\sheap-memory\swal-index.
+D 2017-11-07T21:15:07.949
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -543,7 +543,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 32ee6550804a27c155bdeeddd9bf9bc6ca5331a901c763105bccd0b408049d20
+F src/wal.c b3cd00a165e63ffa91f803fd678f5fc9b7e82745db79bb6c8c220678d5c7ec2f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c d591e8a9ccf60abb010966b354fcea4aa08eba4d83675c2b281a8764c76cc22f
 F src/where.c b7a075f5fb3d912a891dcc3257f538372bb4a1622dd8ca7d752ad95ce8949ba4
@@ -1527,7 +1527,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
-F test/walro2.test 2f0f662f880580d6ecadda9d7cc647d90b1f9e0fb1d487c2a723bcea07eb17dd
+F test/walro2.test 2e499d89fa825c9d23b53ed4da8e4dcc7017ea16212d6a4f3aec56d1861eaf8e
 F test/walrofault.test befa889648b2f779e2886f8434d8b44c05c49c130048305977da3e97c33dcb8d
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7d949fb735f60c19e7257a1a7a12568a9c15be9cd980c018f3a0d6bf112c339
-R 7a4e57959f170e8ae96924256d8168d4
+P ba718754fa5ab8596cb84b751051de98afa2706fe6c5df39ad6d925d790719ee
+R e391f2931828dcd8c6e04450ea4ce5f1
 U dan
-Z fa20e28121f5e7127ed54b089c80ff82
+Z a1807096877d0d55e25dd1ebf350b50a
