@@ -1,5 +1,5 @@
-C Add\sthe\s--trace\soption\sto\sthe\ssqlite3_checker\sutility\sprogram.
-D 2017-11-07T16:54:20.340
+C Fix\sa\sproblem\scausing\san\sINDEXED\sBY\sspecifying\san\sunusable\spartial\sindex\sto\sbe\nmishandled.
+D 2017-11-07T18:20:15.108
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -553,7 +553,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c cc9b1120f1955b66af425630c9893acd537a39d967fd39d404417f0a1b4c1579
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c d591e8a9ccf60abb010966b354fcea4aa08eba4d83675c2b281a8764c76cc22f
-F src/where.c b7a075f5fb3d912a891dcc3257f538372bb4a1622dd8ca7d752ad95ce8949ba4
+F src/where.c 031a80bcafe93934fd7052f3031c9e7eb36b61754c6c84d6bf0833184abad3db
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c 4a117dd5886616d074f7b6589c23bf742f5a9858d6ffdaf8b9d1f76ab06245d2
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -959,7 +959,7 @@ F test/index6.test b4fc812290067a578b98bb2667b676db89e202a7
 F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
-F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
+F test/indexedby.test faa585e315e868f09bce0eb39c41d6134649b13d2801638294d3ae616edf1609
 F test/indexexpr1.test 84100e880154a4b645db9f4fc7642756d9a2b6011b68f73c8efda4d244816de9
 F test/indexexpr2.test 13247bac49143196556eb3f65e97ef301bd3e993f4511558b5db322ddc370ea6
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32e2520ce91351acceda845d81c9567f7a634257dc2b5b90fe6fb6583d8c0f87
-R d811e2909e0aaa74e9aeec168920f2dd
-U drh
-Z c6a691c1b309b32f8cd47b4317d437a7
+P dc217b7cfe680044d8742e317701abd0269162da8f5cb097361ae7f47fd9ba2d
+R da22ae68c1c6ec503942cfb34af1b16b
+U dan
+Z 75bfd7248538a99270ce42b4a5b4456f
