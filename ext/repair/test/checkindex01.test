@@ -43,14 +43,24 @@ proc do_index_check_test {tn idx res} {
 }
 
 
-do_execsql_test 1.2 {
-  SELECT errmsg IS NULL, current_key FROM incremental_index_check('i1');
+do_execsql_test 1.2.1 {
+  SELECT rowid, errmsg IS NULL, current_key FROM incremental_index_check('i1');
 } {
-  1 'five',5
-  1 'four',4
-  1 'one',1
-  1 'three',3
-  1 'two',2
+  1 1 'five',5
+  2 1 'four',4
+  3 1 'one',1
+  4 1 'three',3
+  5 1 'two',2
+}
+do_execsql_test 1.2.2 {
+  SELECT errmsg IS NULL, current_key, index_name, after_key, scanner_sql
+    FROM incremental_index_check('i1') LIMIT 1;
+} {
+  1
+  'five',5
+  i1
+  {}
+  {SELECT (SELECT a IS i.i0 FROM 't1' AS t WHERE "rowid" COLLATE BINARY IS i.i1), quote(i0)||','||quote(i1) FROM (SELECT (a) AS i0, ("rowid" COLLATE BINARY) AS i1 FROM 't1' ORDER BY 1,2) AS i}
 }
 
 do_index_check_test 1.3 i1 {

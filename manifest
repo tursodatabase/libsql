@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sfrom\sXcode\s9.1.
-D 2017-11-06T09:34:45.112
+C Enhance\sthe\scheckindex.c\svirtual\stable\sso\sthat\sit\swill\soutput\sthe\nindex_name\sand\safter_key\sparameters.\s\sAlso\sadd\sa\snew\sdiagnostic\soutput\ncolumn\snamed\sscanner_sql\swhich\sshows\sthe\sSQL\sstatement\sused\sto\simplement\nthe\scurrent\sindex\sscan.
+D 2017-11-07T16:23:24.445
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -328,12 +328,12 @@ F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d0
 F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd7822997533a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0dbae18c1b552f58d64f8969e4fb1e7f11930c60a8c2a9a8d50b7f15bdfd54bd
-F ext/repair/checkindex.c 73f26fc1e2e17d68ede5db5b0aaf4869f2d6182f45f3d3624befc503c0f04a70
+F ext/repair/checkindex.c 50264729469ae44abe9ce6c78944ec577e50faf26e362f3036142425807a8b67
 F ext/repair/sqlite3_checker.c.in 4a5a3af3f450fe503e5a2985e98516dc2a6b9ad247449e284c1cf140fc91720f
 F ext/repair/sqlite3_checker.tcl 4820d7f58428d47336874b5a148a95b4dad38fe5da72286c01a861590b8f8337
 F ext/repair/test/README.md 34b2f542cf5be7bffe479242b33ee3492cea30711e447cc4a1a86cb5915f419e
 F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc78249442da72ff3f8297398a69
-F ext/repair/test/checkindex01.test 98bfac50822da9681d75570087aac92a905290ffdaddf95ab6f69212fb4c7b14
+F ext/repair/test/checkindex01.test c4c9e62b1068ddb2d8b5c75580c3036713fc27ec105bbc579114da4ab29d53f4
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c cc91b6905bf55512c6ebc7dfdd37ac81c86f1753db8cfa6d62f0ee864464044f
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51ee5188b03c4b9508e94afaee4bf1f224aef28875efabda8ce09a5ab641d99e
-R ca8ae1ded89ca445023d13a31194e801
+P 66d98310b91c69fd01c6a9a958ef1eabda14ec6cd0e4b6612f877f2dfe486c54
+R 9707d9dec21c954b720b6c37687c0a3c
 U drh
-Z c36ef70e8d55fddaef51df49c2bfea5f
+Z a2de00e6bfce7f49b15935d74b6b30ce
