@@ -59,6 +59,7 @@ struct CidxColumn {
 
 typedef struct CidxIndex CidxIndex;
 struct CidxIndex {
+  char *zWhere;                   /* WHERE clause, if any */
   int nCol;                       /* Elements in aCol[] array */
   CidxColumn aCol[1];             /* Array of indexed columns */
 };
@@ -293,6 +294,7 @@ static void cidxFreeIndex(CidxIndex *pIdx){
     for(i=0; i<pIdx->nCol; i++){
       sqlite3_free(pIdx->aCol[i].zExpr);
     }
+    sqlite3_free(pIdx->zWhere);
     sqlite3_free(pIdx);
   }
 }
@@ -312,6 +314,24 @@ static int cidx_isident(char c){
 #define CIDX_PARSE_OPEN  2      /*  "(" */
 #define CIDX_PARSE_CLOSE 3      /*  ")" */
 
+/*
+** Argument zIn points into the start, middle or end of a CREATE INDEX
+** statement. If argument pbDoNotTrim is non-NULL, then this function
+** scans the input until it finds EOF, a comma (",") or an open or
+** close parenthesis character. It then sets (*pzOut) to point to said
+** character and returns a CIDX_PARSE_XXX constant as appropriate. The
+** parser is smart enough that special characters inside SQL strings
+** or comments are not returned for.
+**
+** Or, if argument pbDoNotTrim is NULL, then this function sets *pzOut
+** to point to the first character of the string that is not whitespace
+** or part of an SQL comment and returns CIDX_PARSE_EOF.
+**
+** Additionally, if pbDoNotTrim is not NULL and the element immediately
+** before (*pzOut) is an SQL comment of the form "-- comment", then
+** (*pbDoNotTrim) is set before returning. In all other cases it is
+** cleared.
+*/
 static int cidxFindNext(
   const char *zIn, 
   const char **pzOut,
@@ -320,6 +340,7 @@ static int cidxFindNext(
   const char *z = zIn;
 
   while( 1 ){
+    while( cidx_isspace(*z) ) z++;
     if( z[0]=='-' && z[1]=='-' ){
       z += 2;
       while( z[0]!='\n' ){
@@ -327,9 +348,18 @@ static int cidxFindNext(
         z++;
       }
       while( cidx_isspace(*z) ) z++;
-      *pbDoNotTrim = 1;
+      if( pbDoNotTrim ) *pbDoNotTrim = 1;
+    }else
+    if( z[0]=='/' && z[1]=='*' ){
+      z += 2;
+      while( z[0]!='*' || z[1]!='/' ){
+        if( z[1]=='\0' ) return CIDX_PARSE_EOF;
+        z++;
+      }
+      z += 2;
     }else{
       *pzOut = z;
+      if( pbDoNotTrim==0 ) return CIDX_PARSE_EOF;
       switch( *z ){
         case '\0':
           return CIDX_PARSE_EOF;
@@ -358,17 +388,6 @@ static int cidxFindNext(
         case '[':
           while( *z++!=']' );
           break;
-  
-        case '/':
-          if( z[1]=='*' ){
-            z += 2;
-            while( z[0]!='*' || z[1]!='/' ){
-              if( z[1]=='\0' ) return CIDX_PARSE_EOF;
-              z++;
-            }
-            z += 2;
-            break;
-          }
   
         default:
           z++;
@@ -424,6 +443,14 @@ static int cidxParseSQL(CidxCursor *pCsr, CidxIndex *pIdx, const char *zSql){
     z++;
   }
 
+  /* Search for a WHERE clause */
+  cidxFindNext(z, &z, 0);
+  if( 0==sqlite3_strnicmp(z, "where", 5) ){
+    pIdx->zWhere = cidxMprintf(&rc, "%s\n", &z[5]);
+  }else if( z[0]!='\0' ){
+    goto parse_error;
+  }
+
   return rc;
 
  parse_error:
@@ -477,6 +504,7 @@ static int cidxLookupIndex(
           p->zExpr = 0;
         }
         pIdx->nCol = iCol;
+        pIdx->zWhere = 0;
       }
       cidxFinalize(&rc, pInfo);
     }
@@ -700,36 +728,45 @@ int cidxGenerateScanSql(
     rc = cidxDecodeAfter(pCsr, pIdx->nCol, zAfterKey, &azAfter);
   }
 
-  if( rc || zAfterKey==0 ){
-    *pzSqlOut = cidxMprintf(&rc,
-        "SELECT (SELECT %s FROM %Q AS t WHERE %s), %s "
-        "FROM (SELECT %s FROM %Q ORDER BY %s) AS i",
-        zSubExpr, zTab, zSubWhere, zCurrentKey, 
-        zSrcList, zTab, zOrderBy
-    );
-  }else{
-    const char *zSep = "";
-    char *zSql;
-    int i;
-
-    zSql = cidxMprintf(&rc, 
-        "SELECT (SELECT %s FROM %Q WHERE %s), %s FROM (",
-        zSubExpr, zTab, zSubWhere, zCurrentKey
-    );
-    for(i=pIdx->nCol-1; i>=0; i--){
-      int j;
-      if( pIdx->aCol[i].bDesc && azAfter[i]==0 ) continue;
-      for(j=0; j<2; j++){
-        char *zWhere = cidxWhere(&rc, pIdx->aCol, azAfter, i, j);
-        zSql = cidxMprintf(&rc, "%z"
-            "%sSELECT * FROM (SELECT %s FROM %Q WHERE %z ORDER BY %s)",
-            zSql, zSep, zSrcList, zTab, zWhere, zOrderBy
-        );
-        zSep = " UNION ALL ";
-        if( pIdx->aCol[i].bDesc==0 ) break;
+  if( rc==SQLITE_OK ){
+    if( zAfterKey==0 ){
+      *pzSqlOut = cidxMprintf(&rc,
+          "SELECT (SELECT %s FROM %Q AS t WHERE %s), %s "
+          "FROM (SELECT %s FROM %Q INDEXED BY %Q %s%sORDER BY %s) AS i",
+          zSubExpr, zTab, zSubWhere, zCurrentKey, 
+          zSrcList, zTab, zIdxName, 
+          (pIdx->zWhere ? "WHERE " : ""), (pIdx->zWhere ? pIdx->zWhere : ""),
+          zOrderBy
+      );
+    }else{
+      const char *zSep = "";
+      char *zSql;
+      int i;
+  
+      zSql = cidxMprintf(&rc, 
+          "SELECT (SELECT %s FROM %Q WHERE %s), %s FROM (",
+          zSubExpr, zTab, zSubWhere, zCurrentKey
+      );
+      for(i=pIdx->nCol-1; i>=0; i--){
+        int j;
+        if( pIdx->aCol[i].bDesc && azAfter[i]==0 ) continue;
+        for(j=0; j<2; j++){
+          char *zWhere = cidxWhere(&rc, pIdx->aCol, azAfter, i, j);
+          zSql = cidxMprintf(&rc, "%z"
+              "%sSELECT * FROM ("
+                "SELECT %s FROM %Q INDEXED BY %Q WHERE %s%s%z ORDER BY %s"
+              ")",
+              zSql, zSep, zSrcList, zTab, zIdxName, 
+              pIdx->zWhere ? pIdx->zWhere : "",
+              pIdx->zWhere ? " AND " : "",
+              zWhere, zOrderBy
+          );
+          zSep = " UNION ALL ";
+          if( pIdx->aCol[i].bDesc==0 ) break;
+        }
       }
+      *pzSqlOut = cidxMprintf(&rc, "%z) AS i", zSql);
     }
-    *pzSqlOut = cidxMprintf(&rc, "%z) AS i", zSql);
   }
 
   sqlite3_free(zTab);
