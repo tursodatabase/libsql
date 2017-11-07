@@ -1,5 +1,5 @@
-C Add\sfurther\stest\scases\sfor\sthe\snew\scode\son\sthis\sbranch.\sAnd\sa\scouple\sof\sfixes.
-D 2017-11-06T19:49:34.916
+C Add\sfault-injection\stests\sfor\sthe\scode\son\sthis\sbranch.
+D 2017-11-07T09:08:43.757
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -1528,6 +1528,7 @@ F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
 F test/walro.test 906586c3ae7a991d8c840ceed92400aee21a0a3e4155ce7c4220399777311552
 F test/walro2.test 2f0f662f880580d6ecadda9d7cc647d90b1f9e0fb1d487c2a723bcea07eb17dd
+F test/walrofault.test befa889648b2f779e2886f8434d8b44c05c49c130048305977da3e97c33dcb8d
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
@@ -1668,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6716fcde38b28b8a03b40f9d16f78a57ec20f60cf391ff553692641cb7f0d3f
-R fb9f39269dd42d0221893523e00b9010
+P 71af9acb227a91d9ad8798c9d0b12d6967e863d050f5cb1fddb45f25ee1f47db
+R 2894b2184d60284fd42b25cb64811e1a
 U dan
-Z ae1d97ffe1b3072414f0d45a94e66fe3
+Z 3f08ac70c434ed263499224338c46e3a
