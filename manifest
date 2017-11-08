@@ -1,5 +1,5 @@
-C Improved\scomments\sused\sfor\sdocumentation\sof\ssqlite3_vfs.\s\sNo\schanges\nto\scode.
-D 2017-11-08T02:50:09.495
+C Fix\sa\sproblem\scausing\sLSM\sto\sadd\sunnecessary\spadding\sto\sempty\ssegments\sin\ncompressed\sdatabases.
+D 2017-11-08T11:14:53.660
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -211,7 +211,7 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 635775226d07c743c770888a9dd5175afc6e67d3e28a4032b7fedc3bcaa92e65
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/lsm1/Makefile 2951812df1c1cbc9e023af7e070876f479b3d75ce3898b3b9d00f83fecf13608
+F ext/lsm1/Makefile 98b0a24b45e248283d6bea4b6cb3e58d7b394edd8e96a0ac28c5fa5104813bad
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h 5847594d4b43ec3412e1fd97104f7eb5fd770be55e691e6cb2e80929f86bebe3
@@ -240,7 +240,7 @@ F ext/lsm1/lsm-test/lsmtest_win32.c 0e0a224674c4d3170631c41b026b56c7e1672b151f52
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h e9e5c5f08e35a104086102b3def94ee69cbc0d39002f6596f5c80a640439628e
 F ext/lsm1/lsm_ckpt.c ac6fb4581983291c2e0be6fbb68f12b26f0c08d606835c05417be1323d0fdd03
-F ext/lsm1/lsm_file.c e50f0e15427513dca4507110d0107268544bcaebb0ff0599a822da1f8d0da9eb
+F ext/lsm1/lsm_file.c 4b3fb56336fbc9d941e1b2042e809d986feebdc41e73dc7fc4fdc0dd1bd4274d
 F ext/lsm1/lsm_log.c a8bf334532109bba05b09a504ee45fc393828b0d034ca61ab45e3940709d9a7c
 F ext/lsm1/lsm_main.c 15e73ccdafdd44ddeefc29e332079d88ba8f00c12c797b3c2b63d3171b5afce8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31932a9eb8dbb33d5535715ae8bbfdc55ce66b1a1a0abd57cefe720eeb31e231
-R 3a2f607d35fb53b6e561d687398b02f3
-U drh
-Z 38299a5cdd3519065be7d21e475b6bdf
+P db8f22d069b1725f16b208c96c0c47b6ab0e30236feeac43cca4217ef80316b8
+R 6c8e575584f16f8416ee1b9774368bff
+U dan
+Z 515295e5c95123e6255cf7559983f082
