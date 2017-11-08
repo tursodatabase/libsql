@@ -2210,6 +2210,14 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   /* Try to map the *-shm file again. If it succeeds this time, then 
   ** a non-readonly_shm connection has already connected to the database.
   ** In this case, start over with opening the transaction.
+  **
+  ** The *-shm file was opened read-only, so sqlite3OsShmMap() can never
+  ** return SQLITE_OK here, as that would imply that it had established
+  ** a read/write mapping.  A return of SQLITE_READONLY means success - that
+  ** a mapping has been established to a shared-memory segment that is actively
+  ** maintained by a writer.  SQLITE_READONLY_CANTINIT means that all
+  ** all connections to the -shm file are read-only and hence the content
+  ** of the -shm file might be out-of-date.
   ** 
   ** The WAL_READ_LOCK(0) lock held by this client prevents a checkpoint
   ** from taking place. But it does not prevent the wal from being wrapped
@@ -2219,8 +2227,8 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   ** the unlocked transaction, as the other client may overwrite wal 
   ** frames that this client is still using.  */
   rc = sqlite3OsShmMap(pWal->pDbFd, 0, WALINDEX_PGSZ, 0, &pDummy);
+  assert( rc!=SQLITE_OK ); /* SQLITE_OK not possible for read-only connection */
   if( rc!=SQLITE_READONLY_CANTINIT ){
-    assert( rc!=SQLITE_OK );
     rc = (rc==SQLITE_READONLY ? WAL_RETRY : rc);
     goto begin_unlocked_out;
   }
