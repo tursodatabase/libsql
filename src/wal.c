@@ -2099,7 +2099,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   */
   assert( pChanged );
   rc = walIndexPage(pWal, 0, &page0);
-  if( rc==SQLITE_READONLY_CANTLOCK ){
+  if( rc==SQLITE_READONLY_CANTINIT ){
     assert( page0==0 && pWal->writeLock==0 );
     pWal->bUnlocked = 1;
     pWal->exclusiveMode = WAL_HEAPMEMORY_MODE;
@@ -2219,7 +2219,7 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   ** the unlocked transaction, as the other client may overwrite wal 
   ** frames that this client is still using.  */
   rc = sqlite3OsShmMap(pWal->pDbFd, 0, WALINDEX_PGSZ, 0, &pDummy);
-  if( rc!=SQLITE_READONLY_CANTLOCK ){
+  if( rc!=SQLITE_READONLY_CANTINIT ){
     assert( rc!=SQLITE_OK );
     rc = (rc==SQLITE_READONLY ? WAL_RETRY : rc);
     goto begin_unlocked_out;
@@ -2509,7 +2509,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
   if( mxI==0 ){
     assert( rc==SQLITE_BUSY || (pWal->readOnly & WAL_SHM_RDONLY)!=0 );
-    return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTLOCK;
+    return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTINIT;
   }
 
   rc = walLockShared(pWal, WAL_READ_LOCK(mxI));

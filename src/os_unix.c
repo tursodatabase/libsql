@@ -4278,7 +4278,7 @@ static void unixShmPurge(unixFile *pFd){
 **
 ** If the DMS cannot be locked because this is a readonly_shm=1 
 ** connection and no other process already holds a lock, return
-** SQLITE_READONLY_CANTLOCK and set pShmNode->isUnlocked=1.
+** SQLITE_READONLY_CANTINIT and set pShmNode->isUnlocked=1.
 */
 static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
   struct flock lock;
@@ -4311,7 +4311,7 @@ static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
   }else if( lock.l_type==F_UNLCK ){
     if( pShmNode->isReadonly ){
       pShmNode->isUnlocked = 1;
-      rc = SQLITE_READONLY_CANTLOCK;
+      rc = SQLITE_READONLY_CANTINIT;
     }else{
       rc = unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1);
       if( rc==SQLITE_OK && robust_ftruncate(pShmNode->h, 0) ){
@@ -4450,7 +4450,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       robustFchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
 
       rc = unixLockSharedMemory(pDbFd, pShmNode);
-      if( rc!=SQLITE_OK && rc!=SQLITE_READONLY_CANTLOCK ) goto shm_open_err;
+      if( rc!=SQLITE_OK && rc!=SQLITE_READONLY_CANTINIT ) goto shm_open_err;
     }
   }
 
