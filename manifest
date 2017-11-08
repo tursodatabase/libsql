@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sSQLITE_READONLY_CANTLOCK\sto\sSQLITE_READONLY_CANTINIT.
-D 2017-11-08T17:32:12.655
+C Turns\sout\sthat\sSQLITE_READONLY_CANTLOCK\sis\san\shistorical\sname\sthat\smust\nbe\spreserved.\s\sSo\smake\sa\snew\sSQLITE_READLOCK_CANTINIT\sname\sinstead.
+D 2017-11-08T17:51:10.682
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -465,7 +465,7 @@ F src/resolve.c 5a461643f294ec510ca615b67256fc3861e4c8eff5f29e5940491e70553b1955
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 660ef7977841fb462f24c8561e4212615bb6e5c9835fd3556257ce8316c50fee
 F src/shell.c.in 08cbffc31900359fea85896342a46147e9772c370d8a5079b7be26e3a1f50e8a
-F src/sqlite.h.in 49b42d0376e7ed94fe71a7338ea19b20185897abaf6b87fd79ec7126c9541c24
+F src/sqlite.h.in df0f3e18bd7210a562dfa4dc7c5b8f57058dfd0f51d771feb5fcfbe3d6ccae5b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h f5377febf86654c975e1d4e4353a5ad2fbaa5bc86b584ba3761ed33e24ce2c0e
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94527b897bac66d100ca92161f18b6f0e0768dd77ebcb06e3fb106f0e0e380ee
-R a029a6995bf9493f5c27e7086cc8ad9a
+P 6d7f94faa7e6de62f82bc6cac019508a9c1ffd6fa1d14f52fa93e9c06afdd32f
+R 1af2a9a9afceb6f159be2ed742a0108b
 U drh
-Z d606e5b93c29b98849932178fdbf9f8a
+Z 83682bfec24bdede404f3ec79bae717f
