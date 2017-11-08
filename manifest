@@ -1,5 +1,5 @@
-C Fix\shandling\sof\spartial\sindexes\sin\scheckindex.c\s(sqlite3_checker).
-D 2017-11-07T19:02:00.173
+C Improved\scomments\sused\sfor\sdocumentation\sof\ssqlite3_vfs.\s\sNo\schanges\nto\scode.
+D 2017-11-08T02:50:09.495
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -472,7 +472,7 @@ F src/resolve.c 5a461643f294ec510ca615b67256fc3861e4c8eff5f29e5940491e70553b1955
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 660ef7977841fb462f24c8561e4212615bb6e5c9835fd3556257ce8316c50fee
 F src/shell.c.in 08cbffc31900359fea85896342a46147e9772c370d8a5079b7be26e3a1f50e8a
-F src/sqlite.h.in ab4f8a29d1580dfaeb6891fa1b83cff8229ba0daa56994707ceaca71495d9ab7
+F src/sqlite.h.in 6d96f09aac30a030c7674a47659d8156263d2ccad1aa5dae23a723f7166a0c37
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h f5377febf86654c975e1d4e4353a5ad2fbaa5bc86b584ba3761ed33e24ce2c0e
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 292a04086a902634fc514b379a2b245eb2681c1b84d9bb950b6ecb9aab28b468
-R 34ab99e7735ca564d873e9e5cddc35ee
-U dan
-Z e9b579d9d018f181ffb82f5d81fd8f28
+P 31932a9eb8dbb33d5535715ae8bbfdc55ce66b1a1a0abd57cefe720eeb31e231
+R 3a2f607d35fb53b6e561d687398b02f3
+U drh
+Z 38299a5cdd3519065be7d21e475b6bdf
