@@ -18,13 +18,6 @@ source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 set ::testprefix walro2
 
-# These tests are only going to work on unix.
-#
-if {$::tcl_platform(platform) != "unix"} {
-  finish_test
-  return
-}
-
 # And only if the build is WAL-capable.
 #
 ifcapable !wal {
