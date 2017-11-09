@@ -3858,12 +3858,12 @@ static int winLockSharedMemory(winShmNode *pShmNode){
 ** the file must be truncated to zero length or have its header cleared.
 */
 static int winOpenSharedMemory(winFile *pDbFd){
-  struct winShm *p;         /* The connection to be opened */
-  winShmNode *pShmNode = 0; /* The underlying mmapped file */
-  int rc = SQLITE_OK;       /* Result code */
-  int rc2 = SQLITE_ERROR;   /* winOpen result code */
-  winShmNode *pNew;         /* Newly allocated winShmNode */
-  int nName;                /* Size of zName in bytes */
+  struct winShm *p;                  /* The connection to be opened */
+  winShmNode *pShmNode = 0;          /* The underlying mmapped file */
+  int rc = SQLITE_OK;                /* Result code */
+  int rc2 = SQLITE_ERROR;            /* winOpen result code */
+  winShmNode *pNew;                  /* Newly allocated winShmNode */
+  int nName;                         /* Size of zName in bytes */
 
   assert( pDbFd->pShm==0 );    /* Not previously opened */
 
