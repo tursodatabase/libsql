@@ -3895,7 +3895,7 @@ static int winGetShmDmsLockType(
 ** connection and no other process already holds a lock, return
 ** SQLITE_READONLY_CANTINIT and set pShmNode->isUnlocked=1.
 */
-static int winLockSharedMemory(winFile *pDbFd, winShmNode *pShmNode){
+static int winLockSharedMemory(winShmNode *pShmNode){
   int lockType;
   int rc = SQLITE_OK;
 
@@ -4014,7 +4014,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
       rc2 = winOpen(pDbFd->pVfs,
                     pShmNode->zFilename,
                     (sqlite3_file*)&pShmNode->hFile,
-                    SQLITE_OPEN_WAL|SQLITE_OPEN_READONLY|SQLITE_OPEN_CREATE,
+                    SQLITE_OPEN_WAL|SQLITE_OPEN_READONLY,
                     0);
       if( rc2!=SQLITE_OK ){
         rc = winLogError(SQLITE_CANTOPEN_BKPT, osGetLastError(),
@@ -4024,7 +4024,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
       pShmNode->isReadonly = 1;
     }
 
-    rc = winLockSharedMemory(pDbFd, pShmNode);
+    rc = winLockSharedMemory(pShmNode);
     if( rc!=SQLITE_OK && rc!=SQLITE_READONLY_CANTINIT ) goto shm_open_err;
   }
 
@@ -4048,7 +4048,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
   p->pNext = pShmNode->pFirst;
   pShmNode->pFirst = p;
   sqlite3_mutex_leave(pShmNode->mutex);
-  return SQLITE_OK;
+  return rc;
 
   /* Jump here on any error */
 shm_open_err:
@@ -4265,7 +4265,7 @@ static int winShmMap(
 
   sqlite3_mutex_enter(pShmNode->mutex);
   if( pShmNode->isUnlocked ){
-    rc = winLockSharedMemory(pDbFd, pShmNode);
+    rc = winLockSharedMemory(pShmNode);
     if( rc!=SQLITE_OK ) goto shmpage_out;
     pShmNode->isUnlocked = 0;
   }
