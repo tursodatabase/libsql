@@ -3834,6 +3834,7 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 */
 static int winLockSharedMemory(winShmNode *pShmNode){
   int rc = winShmSystemLock(pShmNode, WINSHM_WRLCK, WIN_SHM_DMS, 1);
+
   if( rc==SQLITE_OK ){
     if( pShmNode->isReadonly ){
       pShmNode->isUnlocked = 1;
@@ -3846,7 +3847,10 @@ static int winLockSharedMemory(winShmNode *pShmNode){
     }
   }
 
-  winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+  if( rc==SQLITE_OK ){
+    winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+  }
+
   return winShmSystemLock(pShmNode, WINSHM_RDLCK, WIN_SHM_DMS, 1);
 }
 
