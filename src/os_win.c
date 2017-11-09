@@ -2105,8 +2105,9 @@ static int winIoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 ** to file locking.
 */
 #if !defined(winIsLockingError)
-#define winIsLockingError(a) (((a)==ERROR_ACCESS_DENIED)        || \
+#define winIsLockingError(a) (((a)==NO_ERROR)                   || \
                               ((a)==ERROR_LOCK_VIOLATION)       || \
+                              ((a)==ERROR_HANDLE_EOF)           || \
                               ((a)==ERROR_IO_PENDING))
 #endif
 
@@ -3847,6 +3848,7 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 */
 static int winGetShmDmsLockType(
   winFile *pFile, /* File handle object */
+  int bReadOnly,  /* Non-zero if the SHM was opened read-only */
   int *pLockType  /* WINSHM_UNLCK, WINSHM_RDLCK, or WINSHM_WRLCK */
 ){
 #if !SQLITE_OS_WINCE && !defined(SQLITE_WIN32_NO_OVERLAPPED)
@@ -3867,24 +3869,25 @@ static int winGetShmDmsLockType(
   overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
   pOverlapped = &overlapped;
 #endif
-  if( !osWriteFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
-    DWORD lastErrno = osGetLastError();
+  if( bReadOnly ||
+      !osWriteFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
+    DWORD lastErrno = bReadOnly ? NO_ERROR : osGetLastError();
     if( !osReadFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
       lastErrno = osGetLastError();
       if( winIsLockingError(lastErrno) ){
-        *pLockType = WINSHM_WRLCK;
+        if( pLockType ) *pLockType = WINSHM_WRLCK;
       }else{
         return SQLITE_IOERR_READ;
       }
     }else{
       if( winIsLockingError(lastErrno) ){
-        *pLockType = WINSHM_RDLCK;
+        if( pLockType ) *pLockType = WINSHM_RDLCK;
       }else{
         return SQLITE_IOERR_WRITE;
       }
     }
   }else{
-    *pLockType = WINSHM_UNLCK;
+    if( pLockType ) *pLockType = WINSHM_UNLCK;
   }
   return SQLITE_OK;
 }
@@ -3920,7 +3923,8 @@ static int winLockSharedMemory(winShmNode *pShmNode){
   ** process might open and use the *-shm file without truncating it.
   ** And if the *-shm file has been corrupted by a power failure or
   ** system crash, the database itself may also become corrupt.  */
-  if( winGetShmDmsLockType(&pShmNode->hFile, &lockType)!=SQLITE_OK ){
+  if( winGetShmDmsLockType(&pShmNode->hFile, pShmNode->isReadonly,
+                           &lockType)!=SQLITE_OK ){
     rc = SQLITE_IOERR_LOCK;
   }else if( lockType==WINSHM_UNLCK ){
     if( pShmNode->isReadonly ){

@@ -1,5 +1,5 @@
-C Corrections\sto\sWin32\slock\sdetection\sfor\sSHM\sfiles.
-D 2017-11-09T18:21:51.933
+C Further\scorrections\sto\sread-only\sSHM\sfile\shandling\son\sWin32.
+D 2017-11-09T18:53:51.070
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -448,7 +448,7 @@ F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c e87cef0bb894b94d96ee3af210be669549d111c580817d14818101b992640767
-F src/os_win.c eac2f14343eaf9ff8c02d7025ce459f64dc1334c1f6739be5b6595aabed32ca2
+F src/os_win.c f55a1ae65702e1762dcc175c1b3b32818bcb4d5faee83d2159adafbac94770c4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b26a5a26d700e20eea5ebbd620af0af6f2d61c652cfca5b8563267588cb2be6
-R e599061360fdeb01478e7f6faea2d0b3
+P 3a91be975daee65c3e1199855613066015d5df8ad44ababdef31d1c698b5e746
+R b94c408b8a8461b2b6bed04445c4e88e
 U mistachkin
-Z 310f1e71824409858101a715db0b42e2
+Z 2f572d772e98ad83ecab51d538357fde
