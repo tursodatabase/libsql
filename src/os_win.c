@@ -3885,6 +3885,7 @@ static int winGetShmDmsLockType(
       if( winIsLockConflict(lastErrno) ){
         if( pLockType ) *pLockType = WINSHM_WRLCK;
       }else if( winIsLockMissing(lastErrno) ){
+        assert( bReadOnly );
         if( pLockType ) *pLockType = WINSHM_UNLCK;
       }else{
         return SQLITE_IOERR_READ;
