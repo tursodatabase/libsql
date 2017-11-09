@@ -2099,27 +2099,6 @@ static int winIoerrRetry = SQLITE_WIN32_IOERR_RETRY;
 static int winIoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 
 /*
-** The "winIsLockConflict" macro is used to determine if a particular I/O
-** error code is due to a file locking conflict.  It must accept the error
-** code DWORD as its only argument.
-*/
-#if !defined(winIsLockConflict)
-#define winIsLockConflict(a) (((a)==NO_ERROR)                   || \
-                              ((a)==ERROR_LOCK_VIOLATION)       || \
-                              ((a)==ERROR_IO_PENDING))
-#endif
-
-/*
-** The "winIsLockMissing" macro is used to determine if a particular I/O
-** error code is due to being unable to obtain a file lock because all or
-** part of the range requested within the file is missing.  It must accept
-** the error code DWORD as its only argument.
-*/
-#if !defined(winIsLockMissing)
-#define winIsLockMissing(a) (((a)==ERROR_HANDLE_EOF))
-#endif
-
-/*
 ** The "winIoerrCanRetry1" macro is used to determine if a particular I/O
 ** error code obtained via GetLastError() is eligible to be retried.  It
 ** must accept the error code DWORD as its only argument and should return
@@ -3845,65 +3824,6 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 }
 
 /*
-** Query the status of the DMS lock for the specified file.  Returns
-** SQLITE_OK upon success.  Upon success, the integer pointed to by
-** the pLockType argument will be set to the lock type held by the
-** other process, as follows:
-**
-**       WINSHM_UNLCK -- No locks are held on the DMS.
-**       WINSHM_RDLCK -- A SHARED lock is held on the DMS.
-**       WINSHM_WRLCK -- An EXCLUSIVE lock is held on the DMS.
-*/
-static int winGetShmDmsLockType(
-  winFile *pFile, /* File handle object */
-  int bReadOnly,  /* Non-zero if the SHM was opened read-only */
-  int *pLockType  /* WINSHM_UNLCK, WINSHM_RDLCK, or WINSHM_WRLCK */
-){
-#if !SQLITE_OS_WINCE && !defined(SQLITE_WIN32_NO_OVERLAPPED)
-  OVERLAPPED overlapped; /* The offset for ReadFile/WriteFile. */
-#endif
-  LPVOID pOverlapped = 0;
-  sqlite3_int64 offset = WIN_SHM_DMS;
-  BYTE notUsed1 = 0;
-  DWORD notUsed2 = 0;
-
-#if SQLITE_OS_WINCE || defined(SQLITE_WIN32_NO_OVERLAPPED)
-  if( winSeekFile(pFile, offset) ){
-    return SQLITE_IOERR_SEEK;
-  }
-#else
-  memset(&overlapped, 0, sizeof(OVERLAPPED));
-  overlapped.Offset = (LONG)(offset & 0xffffffff);
-  overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
-  pOverlapped = &overlapped;
-#endif
-  if( bReadOnly ||
-      !osWriteFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
-    DWORD lastErrno = bReadOnly ? NO_ERROR : osGetLastError();
-    if( !osReadFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
-      lastErrno = osGetLastError();
-      if( winIsLockConflict(lastErrno) ){
-        if( pLockType ) *pLockType = WINSHM_WRLCK;
-      }else if( winIsLockMissing(lastErrno) ){
-        assert( bReadOnly );
-        if( pLockType ) *pLockType = WINSHM_UNLCK;
-      }else{
-        return SQLITE_IOERR_READ;
-      }
-    }else{
-      if( winIsLockConflict(lastErrno) ){
-        if( pLockType ) *pLockType = WINSHM_RDLCK;
-      }else{
-        return SQLITE_IOERR_WRITE;
-      }
-    }
-  }else{
-    if( pLockType ) *pLockType = WINSHM_UNLCK;
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** The DMS lock has not yet been taken on shm file pShmNode. Attempt to
 ** take it now. Return SQLITE_OK if successful, or an SQLite error
 ** code otherwise.
@@ -3913,53 +3833,21 @@ static int winGetShmDmsLockType(
 ** SQLITE_READONLY_CANTINIT and set pShmNode->isUnlocked=1.
 */
 static int winLockSharedMemory(winShmNode *pShmNode){
-  int lockType;
-  int rc = SQLITE_OK;
-
-  /* Use ReadFile/WriteFile to determine the locks other processes are
-  ** holding on the DMS byte. If it indicates that another process is
-  ** holding a SHARED lock, then this process may also take a SHARED
-  ** lock and proceed with opening the *-shm file.
-  **
-  ** Or, if no other process is holding any lock, then this process
-  ** is the first to open it. In this case take an EXCLUSIVE lock on the
-  ** DMS byte and truncate the *-shm file to zero bytes in size. Then
-  ** downgrade to a SHARED lock on the DMS byte.
-  **
-  ** If another process is holding an EXCLUSIVE lock on the DMS byte,
-  ** return SQLITE_BUSY to the caller (it will try again). An earlier
-  ** version of this code attempted the SHARED lock at this point. But
-  ** this introduced a subtle race condition: if the process holding
-  ** EXCLUSIVE failed just before truncating the *-shm file, then this
-  ** process might open and use the *-shm file without truncating it.
-  ** And if the *-shm file has been corrupted by a power failure or
-  ** system crash, the database itself may also become corrupt.  */
-  if( winGetShmDmsLockType(&pShmNode->hFile, pShmNode->isReadonly,
-                           &lockType)!=SQLITE_OK ){
-    rc = SQLITE_IOERR_LOCK;
-  }else if( lockType==WINSHM_UNLCK ){
+  int rc = winShmSystemLock(pShmNode, WINSHM_WRLCK, WIN_SHM_DMS, 1);
+  if( rc==SQLITE_OK ){
     if( pShmNode->isReadonly ){
       pShmNode->isUnlocked = 1;
-      rc = SQLITE_READONLY_CANTINIT;
-    }else{
       winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
-      rc = winShmSystemLock(pShmNode, WINSHM_WRLCK, WIN_SHM_DMS, 1);
-      if( rc==SQLITE_OK && winTruncate((sqlite3_file*)&pShmNode->hFile, 0) ){
-        rc = winLogError(SQLITE_IOERR_SHMOPEN, osGetLastError(),
+      return SQLITE_READONLY_CANTINIT;
+    }else if( winTruncate((sqlite3_file*)&pShmNode->hFile, 0) ){
+      winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+      return winLogError(SQLITE_IOERR_SHMOPEN, osGetLastError(),
                          "winLockSharedMemory", pShmNode->zFilename);
-      }
     }
-  }else if( lockType==WINSHM_WRLCK ){
-    rc = SQLITE_BUSY;
   }
 
-  if( rc==SQLITE_OK ){
-    assert( lockType==WINSHM_UNLCK || lockType==WINSHM_RDLCK );
-    winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
-    rc = winShmSystemLock(pShmNode, WINSHM_RDLCK, WIN_SHM_DMS, 1);
-  }
-
-  return rc;
+  winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+  return winShmSystemLock(pShmNode, WINSHM_RDLCK, WIN_SHM_DMS, 1);
 }
 
 /*
