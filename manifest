@@ -1,5 +1,5 @@
-C Enhance\sthe\slike\soptimization\sso\sthat\sit\sworks\swith\san\sESCAPE\sclause.
-D 2017-07-27T22:16:26.706
+C Disallow\sORDER\sBY\sand\sLIMIT\son\sUPDATE\sand\sDELETE\sof\sviews\sand\sWITHOUT\sROWID\ntables.\s\sThis\sis\sa\stemporary\sfix\sfor\sticket\s[d4beea1633f1b88f]\suntil\sa\sbetter\nsolution\scan\sbe\sfound.
+D 2017-11-09T04:13:54.494
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
+F src/resolve.c 741f5dcdcb1f6df30778af87119931639921ec957bd3f1a9a6c669b1cb7c6069
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 7922b1e1aaceb8eea4b921d0e6d062e32cfef8d897c6b30015fdd546c9b9f57f
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
@@ -1180,7 +1180,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
+F test/wherelimit.test 035bac7669d5a22f3456d4d7e75cd5b11fd07f7a9b58b957cb860477cc5b3ddf
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
@@ -1250,8 +1250,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cd6ac0784898609ddca887cfb87c042cf409acbbe4e4e84bc5bc1f8528de74fd
-Q +f5d330f495d07a704e115595bbdf5422ddb68fd8191114c5a12c9c873d983f7c
-R 772fa82801a81bb4d46b7048641a4ff3
+P 2495acf71017fa2ffada18824590ead593c47dabe2312701a25adc517cbf72eb
+Q +62fe56b59270d9d7372b1bb8a53788a40d20d0f111fe38c61dd6269848592c70
+R 39f33bcdff1a181e0ad060a458e43b3e
 U drh
-Z c0ef846c292323e54ed21acdd6c2a147
+Z 39845f6e7d1ca7e051c4b6ab3a1fe9f4
