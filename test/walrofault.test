@@ -42,6 +42,7 @@ do_execsql_test 1.0 {
     WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<30 ) 
     INSERT INTO t1(b) SELECT randomblob(800) FROM s;
 } {wal}
+file_control_persist_wal db 1; db close
 faultsim_save_and_close
 
 do_faultsim_test 1 -faults oom* -prep {

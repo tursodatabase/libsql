@@ -255,6 +255,8 @@ do_multiclient_test tn {
     file size test.db-wal
   } {461152}
   do_test 4.2.4 {
+    file_control_persist_wal db 1; db close
+
     forcecopy test.db test.db2
     forcecopy test.db-wal test.db2-wal
     forcecopy test.db-shm test.db2-shm

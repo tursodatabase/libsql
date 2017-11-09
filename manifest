@@ -1,5 +1,5 @@
-C Further\scorrections\sto\sread-only\sSHM\sfile\shandling\son\sWin32.
-D 2017-11-09T18:53:51.070
+C Get\sread-only\sSHM\sfile\stests\spassing\son\sWin32.
+D 2017-11-09T20:02:44.785
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -448,7 +448,7 @@ F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c e87cef0bb894b94d96ee3af210be669549d111c580817d14818101b992640767
-F src/os_win.c f55a1ae65702e1762dcc175c1b3b32818bcb4d5faee83d2159adafbac94770c4
+F src/os_win.c cf4099958dcc72a9e36ce161638aa369811012fa1e2592415fdc1fdafdf26c8c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
@@ -1527,8 +1527,8 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
-F test/walro2.test 2c01a3c38ca731df4690cc901e3c0bee21bf9d231fa3d47d81162be10462c40b
-F test/walrofault.test f1c9c361a73faab98ce1bb4588333e42f7dd330f2b4987e962aa5fe68e7982de
+F test/walro2.test bde4b25b701be452ba1436409d9ee418513f77bf4c11229d558fd14282330e00
+F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a91be975daee65c3e1199855613066015d5df8ad44ababdef31d1c698b5e746
-R b94c408b8a8461b2b6bed04445c4e88e
+P 43c311701bdf1202918cd46fa6133a11458e0ef8ddb09e46290a231083f395ce
+R b51af4203460b2806284a868a4615565
 U mistachkin
-Z 2f572d772e98ad83ecab51d538357fde
+Z 2f0a43c33871392e0df8028f39e6b334

@@ -2099,16 +2099,24 @@ static int winIoerrRetry = SQLITE_WIN32_IOERR_RETRY;
 static int winIoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 
 /*
-** The "winIsLockingError" macro is used to determine if a particular I/O
-** error code is due to file locking.  It must accept the error code DWORD
-** as its only argument and should return non-zero if the error code is due
-** to file locking.
+** The "winIsLockConflict" macro is used to determine if a particular I/O
+** error code is due to a file locking conflict.  It must accept the error
+** code DWORD as its only argument.
 */
-#if !defined(winIsLockingError)
-#define winIsLockingError(a) (((a)==NO_ERROR)                   || \
+#if !defined(winIsLockConflict)
+#define winIsLockConflict(a) (((a)==NO_ERROR)                   || \
                               ((a)==ERROR_LOCK_VIOLATION)       || \
-                              ((a)==ERROR_HANDLE_EOF)           || \
                               ((a)==ERROR_IO_PENDING))
+#endif
+
+/*
+** The "winIsLockMissing" macro is used to determine if a particular I/O
+** error code is due to being unable to obtain a file lock because all or
+** part of the range requested within the file is missing.  It must accept
+** the error code DWORD as its only argument.
+*/
+#if !defined(winIsLockMissing)
+#define winIsLockMissing(a) (((a)==ERROR_HANDLE_EOF))
 #endif
 
 /*
@@ -3874,13 +3882,15 @@ static int winGetShmDmsLockType(
     DWORD lastErrno = bReadOnly ? NO_ERROR : osGetLastError();
     if( !osReadFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
       lastErrno = osGetLastError();
-      if( winIsLockingError(lastErrno) ){
+      if( winIsLockConflict(lastErrno) ){
         if( pLockType ) *pLockType = WINSHM_WRLCK;
+      }else if( winIsLockMissing(lastErrno) ){
+        if( pLockType ) *pLockType = WINSHM_UNLCK;
       }else{
         return SQLITE_IOERR_READ;
       }
     }else{
-      if( winIsLockingError(lastErrno) ){
+      if( winIsLockConflict(lastErrno) ){
         if( pLockType ) *pLockType = WINSHM_RDLCK;
       }else{
         return SQLITE_IOERR_WRITE;
@@ -4024,8 +4034,8 @@ static int winOpenSharedMemory(winFile *pDbFd){
                     SQLITE_OPEN_WAL|SQLITE_OPEN_READONLY,
                     0);
       if( rc2!=SQLITE_OK ){
-        rc = winLogError(SQLITE_CANTOPEN_BKPT, osGetLastError(),
-                         "winOpenShm", pShmNode->zFilename);
+        rc = winLogError(rc2, osGetLastError(), "winOpenShm",
+                         pShmNode->zFilename);
         goto shm_open_err;
       }
       pShmNode->isReadonly = 1;
