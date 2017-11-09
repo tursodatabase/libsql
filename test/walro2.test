@@ -25,6 +25,22 @@ ifcapable !wal {
   return
 }
 
+proc copy_to_test2 {bZeroShm} {
+  forcecopy test.db test.db2
+  forcecopy test.db-wal test.db2-wal
+  if {$bZeroShm} {
+    forcedelete test.db2-shm
+    set fd [open test.db2-shm w]
+    seek $fd [expr [file size test.db-shm]-1]
+    puts -nonewline $fd "\0"
+    close $fd
+  } else {
+    forcecopy test.db-shm test.db2-shm
+  }
+}
+
+foreach bZeroShm {0 1} {
+set TN [expr $bZeroShm+1]
 do_multiclient_test tn {
   
   # Close all connections and delete the database.
@@ -45,7 +61,7 @@ do_multiclient_test tn {
     }
   }
 
-  do_test 1.1 {
+  do_test $TN.1.1 {
     code2 { sqlite3 db2 test.db }
     sql2 { 
       CREATE TABLE t1(x, y);
@@ -56,26 +72,24 @@ do_multiclient_test tn {
     file exists test.db-shm
   } {1}
 
-  do_test 1.2.1 {
-    forcecopy test.db test.db2
-    forcecopy test.db-wal test.db2-wal
-    forcecopy test.db-shm test.db2-shm
+  do_test $TN.1.2.1 {
+    copy_to_test2 $bZeroShm
     code1 {
       sqlite3 db file:test.db2?readonly_shm=1
     }
 
     sql1 { SELECT * FROM t1 }
   } {a b c d}
-  do_test 1.2.2 {
+  do_test $TN.1.2.2 {
     sql1 { SELECT * FROM t1 }
   } {a b c d}
 
-  do_test 1.3.1 {
+  do_test $TN.1.3.1 {
     code3 { sqlite3 db3 test.db2 }
     sql3 { SELECT * FROM t1 }
   } {a b c d}
 
-  do_test 1.3.2 {
+  do_test $TN.1.3.2 {
     sql1 { SELECT * FROM t1 }
   } {a b c d}
 
@@ -83,7 +97,7 @@ do_multiclient_test tn {
   code2 { db2 close }
   code3 { db3 close }
 
-  do_test 2.1 {
+  do_test $TN.2.1 {
     code2 { sqlite3 db2 test.db }
     sql2 { 
       INSERT INTO t1 VALUES('e', 'f');
@@ -92,10 +106,8 @@ do_multiclient_test tn {
     file exists test.db-shm
   } {1}
 
-  do_test 2.2 {
-    forcecopy test.db test.db2
-    forcecopy test.db-wal test.db2-wal
-    forcecopy test.db-shm test.db2-shm
+  do_test $TN.2.2 {
+    copy_to_test2 $bZeroShm
     code1 {
       sqlite3 db file:test.db2?readonly_shm=1
     }
@@ -105,16 +117,16 @@ do_multiclient_test tn {
     }
   } {a b c d e f g h}
 
-  do_test 2.3.1 {
+  do_test $TN.2.3.1 {
     code3 { sqlite3 db3 test.db2 }
     sql3 { SELECT * FROM t1 }
   } {a b c d e f g h}
-  do_test 2.3.2 {
+  do_test $TN.2.3.2 {
     sql3 { INSERT INTO t1 VALUES('i', 'j') }
     code3 { db3 close }
     sql1 { COMMIT } 
   } {}
-  do_test 2.3.3 {
+  do_test $TN.2.3.3 {
     sql1 { SELECT * FROM t1 }
   } {a b c d e f g h i j}
 
@@ -134,10 +146,10 @@ do_multiclient_test tn {
   catch { code1 { db close } }
   catch { code2 { db2 close } }
   catch { code3 { db3 close } }
-  do_test 3.1.0 {
+  do_test $TN.3.1.0 {
     list [file exists test.db-wal] [file exists test.db-shm]
   } {0 0}
-  do_test 3.1.1 {
+  do_test $TN.3.1.1 {
     close [open test.db-wal w]
     close [open test.db-shm w]
     code1 {
@@ -146,20 +158,20 @@ do_multiclient_test tn {
     sql1 { SELECT * FROM t1 }
   } {a b c d e f g h}
 
-  do_test 3.2.0 {
+  do_test $TN.3.2.0 {
     list [file size test.db-wal] [file size test.db-shm]
   } {0 0}
-  do_test 3.2.1 {
+  do_test $TN.3.2.1 {
     code2 { sqlite3 db2 test.db }
     sql2 { INSERT INTO t1 VALUES(1, 2) ; PRAGMA wal_checkpoint=truncate }
     code2 { db2 close }
     sql1 { SELECT * FROM t1 }
   } {a b c d e f g h 1 2}
-  do_test 3.2.2 {
+  do_test $TN.3.2.2 {
     list [file size test.db-wal] [file size test.db-shm]
   } {0 32768}
 
-  do_test 3.3.0 {
+  do_test $TN.3.3.0 {
     code2 { sqlite3 db2 test.db }
     sql2 { 
       INSERT INTO t1 VALUES(3, 4);
@@ -171,11 +183,11 @@ do_multiclient_test tn {
     code1 { db close }
     list [file size test.db-wal] [file size test.db-shm]
   } [list [wal_file_size 4 1024] 32768]
-  do_test 3.3.1 {
+  do_test $TN.3.3.1 {
     code1 { sqlite3 db file:test.db?readonly_shm=1 }
     sql1 { SELECT * FROM t1 }
   } {a b c d e f g h 1 2 3 4 5 6 7 8 9 10}
-  do_test 3.3.2 {
+  do_test $TN.3.3.2 {
     code2 { sqlite3 db2 test.db }
     sql2 { 
       PRAGMA wal_checkpoint; 
@@ -185,7 +197,7 @@ do_multiclient_test tn {
     code2 { db2 close }
     list [file size test.db-wal] [file size test.db-shm]
   } [list [wal_file_size 4 1024] 32768]
-  do_test 3.3.3 {
+  do_test $TN.3.3.3 {
     sql1 { SELECT * FROM t1 }
   } {i ii}
 
@@ -196,7 +208,7 @@ do_multiclient_test tn {
   catch { code2 { db2 close } }
   catch { code3 { db3 close } }
 
-  do_test 4.0 {
+  do_test $TN.4.0 {
     code1 { forcedelete test.db }
     code1 { sqlite3 db test.db }
     sql1 {
@@ -206,19 +218,17 @@ do_multiclient_test tn {
       INSERT INTO t1 VALUES('world');
     }
 
-    forcecopy test.db test.db2
-    forcecopy test.db-wal test.db2-wal
-    forcecopy test.db-shm test.db2-shm
-    
+    copy_to_test2 $bZeroShm
+
     code1 { db close }
   } {}
 
-  do_test 4.1.1 {
+  do_test $TN.4.1.1 {
     code2 { sqlite3 db2 file:test.db2?readonly_shm=1 }
     sql2 { SELECT * FROM t1 }
   } {hello world}
 
-  do_test 4.1.2 {
+  do_test $TN.4.1.2 {
     code3 { sqlite3 db3 test.db2 }
     sql3 {
       INSERT INTO t1 VALUES('!');
@@ -226,7 +236,7 @@ do_multiclient_test tn {
     }
     code3 { db3 close }
   } {}
-  do_test 4.1.3 {
+  do_test $TN.4.1.3 {
     sql2 { SELECT * FROM t1 }
   } {hello world !}
 
@@ -234,7 +244,7 @@ do_multiclient_test tn {
   catch { code2 { db2 close } }
   catch { code3 { db3 close } }
 
-  do_test 4.2.1 {
+  do_test $TN.4.2.1 {
     code1 { sqlite3 db test.db }
     sql1 {
       INSERT INTO t1 VALUES('!');
@@ -251,16 +261,13 @@ do_multiclient_test tn {
         SELECT count(*) FROM t2;
     } 
   } {500}
-  do_test 4.2.2 {
+  do_test $TN.4.2.2 {
     file size test.db-wal
   } {461152}
-  do_test 4.2.4 {
+  do_test $TN.4.2.4 {
     file_control_persist_wal db 1; db close
 
-    forcecopy test.db test.db2
-    forcecopy test.db-wal test.db2-wal
-    forcecopy test.db-shm test.db2-shm
-
+    copy_to_test2 $bZeroShm
     code2 { sqlite3 db2 file:test.db2?readonly_shm=1 }
     sql2 {
       SELECT * FROM t1;
@@ -275,7 +282,7 @@ do_multiclient_test tn {
   catch { code2 { db2 close } }
   catch { code3 { db3 close } }
 
-  do_test 5.0 {
+  do_test $TN.5.0 {
     code1 { forcedelete test.db }
     code1 { sqlite3 db test.db }
     sql1 {
@@ -288,21 +295,19 @@ do_multiclient_test tn {
       INSERT INTO t1 VALUES('hello');
     }
 
-    forcecopy test.db test.db2
-    forcecopy test.db-wal test.db2-wal
-    forcecopy test.db-shm test.db2-shm
+    copy_to_test2 $bZeroShm
     
     code1 { db close }
   } {}
 
-  do_test 5.1 {
+  do_test $TN.5.1 {
     code2 { sqlite3 db2 file:test.db2?readonly_shm=1 }
     sql2 {
       SELECT * FROM t1;
     }
   } {hello world ! world hello}
 
-  do_test 5.2 {
+  do_test $TN.5.2 {
     code1 {
       proc handle_read {op args} {
         if {$op=="xRead" && [file tail [lindex $args 0]]=="test.db2-wal"} {
@@ -325,7 +330,7 @@ do_multiclient_test tn {
     code1 { set ::res2 }
   } {hello world ! world hello}
 
-  do_test 5.3 {
+  do_test $TN.5.3 {
     code1 { db close }
     code1 { tvfs delete }
   } {}
@@ -337,7 +342,7 @@ do_multiclient_test tn {
   catch { code2 { db2 close } }
   catch { code3 { db3 close } }
 
-  do_test 6.1 {
+  do_test $TN.6.1 {
     code1 { forcedelete test.db }
     code1 { sqlite3 db test.db }
     sql1 {
@@ -350,14 +355,12 @@ do_multiclient_test tn {
       INSERT INTO t1 VALUES('hello');
     }
 
-    forcecopy test.db test.db2
-    forcecopy test.db-wal test.db2-wal
-    forcecopy test.db-shm test.db2-shm
+    copy_to_test2 $bZeroShm
     
     code1 { db close }
   } {}
 
-  do_test 6.2 {
+  do_test $TN.6.2 {
     code1 {
       set ::nRem 5
       proc handle_read {op args} {
@@ -380,10 +383,11 @@ do_multiclient_test tn {
     }
   } {hello world ! world hello}
 
-  do_test 6.3 {
+  do_test $TN.6.3 {
     code1 { db close }
     code1 { tvfs delete }
   } {}
 }
+} ;# foreach bZeroShm
 
 finish_test
