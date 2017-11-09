@@ -2105,7 +2105,8 @@ static int winIoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 ** to file locking.
 */
 #if !defined(winIsLockingError)
-#define winIsLockingError(a) (((a)==ERROR_LOCK_VIOLATION)       || \
+#define winIsLockingError(a) (((a)==ERROR_ACCESS_DENIED)        || \
+                              ((a)==ERROR_LOCK_VIOLATION)       || \
                               ((a)==ERROR_IO_PENDING))
 #endif
 
@@ -3867,14 +3868,16 @@ static int winGetShmDmsLockType(
   pOverlapped = &overlapped;
 #endif
   if( !osWriteFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
+    DWORD lastErrno = osGetLastError();
     if( !osReadFile(pFile->h, &notUsed1, 1, &notUsed2, pOverlapped) ){
-      if( winIsLockingError(osGetLastError()) ){
+      lastErrno = osGetLastError();
+      if( winIsLockingError(lastErrno) ){
         *pLockType = WINSHM_WRLCK;
       }else{
         return SQLITE_IOERR_READ;
       }
     }else{
-      if( winIsLockingError(osGetLastError()) ){
+      if( winIsLockingError(lastErrno) ){
         *pLockType = WINSHM_RDLCK;
       }else{
         return SQLITE_IOERR_WRITE;
