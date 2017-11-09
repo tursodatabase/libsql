@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sLSM\sto\sadd\sunnecessary\spadding\sto\sempty\ssegments\sin\ncompressed\sdatabases.
-D 2017-11-08T11:14:53.660
+C Disallow\sORDER\sBY\sand\sLIMIT\son\sUPDATE\sand\sDELETE\sof\sviews\sand\sWITHOUT\sROWID\ntables.\s\sThis\sis\sa\stemporary\sfix\sfor\sticket\s[d4beea1633f1b88f]\suntil\sa\sbetter\nsolution\scan\sbe\sfound.
+D 2017-11-09T03:55:09.531
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -468,7 +468,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 7cf451f903ad92a14e22de415a13e7a7d30f1bd23b3d21eeb0dc7264723244c5
 F src/printf.c 40aee47ae9be4bd3dbdc8968bd07fddc027be8edec8daddf24d3391d36698a1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 5a461643f294ec510ca615b67256fc3861e4c8eff5f29e5940491e70553b1955
+F src/resolve.c 704978e5aabb9f524789e3b53016b4068a4e64c669c0f8ff025d2b23b95d62b5
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 660ef7977841fb462f24c8561e4212615bb6e5c9835fd3556257ce8316c50fee
 F src/shell.c.in 08cbffc31900359fea85896342a46147e9772c370d8a5079b7be26e3a1f50e8a
@@ -1557,7 +1557,7 @@ F test/whereI.test eab5b226bbc344ac70d7dc09b963a064860ae6d7
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
-F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
+F test/wherelimit.test baa8e5e30b2eddc395cbb3edb313deea14ca6938ea8a96c02a03c34d0ab84b5b
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
@@ -1673,7 +1673,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db8f22d069b1725f16b208c96c0c47b6ab0e30236feeac43cca4217ef80316b8
-R 6c8e575584f16f8416ee1b9774368bff
-U dan
-Z 515295e5c95123e6255cf7559983f082
+P 1bc2d04645c5239ba9a30a13f6fb3c8cc46461c864e7927012bc0ad305eb705e
+R a028f3be0864f739aeb3787daf46fc8e
+U drh
+Z 97937a65b1ac3d4b961579eac7d25cbd
