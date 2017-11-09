@@ -1,0 +1,109 @@
+# 2008 October 6
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the LIMIT ... OFFSET ... clause
+#  of UPDATE and DELETE statements.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix wherelimit2
+
+ifcapable !update_delete_limit {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 'f');
+  INSERT INTO t1 VALUES(2, 'e');
+  INSERT INTO t1 VALUES(3, 'd');
+  INSERT INTO t1 VALUES(4, 'c');
+  INSERT INTO t1 VALUES(5, 'b');
+  INSERT INTO t1 VALUES(6, 'a');
+
+  CREATE VIEW v1 AS SELECT a,b FROM t1;
+  CREATE TABLE log(op, a);
+
+  CREATE TRIGGER v1del INSTEAD OF DELETE ON v1 BEGIN
+    INSERT INTO log VALUES('delete', old.a);
+  END;
+
+  CREATE TRIGGER v1upd INSTEAD OF UPDATE ON v1 BEGIN
+    INSERT INTO log VALUES('update', old.a);
+  END;
+}
+
+do_execsql_test 1.1 {
+  DELETE FROM v1 ORDER BY a LIMIT 3;
+  SELECT * FROM log; DELETE FROM log;
+} {
+  delete 1 delete 2 delete 3
+}
+do_execsql_test 1.2 {
+  DELETE FROM v1 ORDER BY b LIMIT 3;
+  SELECT * FROM log; DELETE FROM log;
+} {
+  delete 6 delete 5 delete 4
+}
+do_execsql_test 1.3 {
+  UPDATE v1 SET b = 555 ORDER BY a LIMIT 3;
+  SELECT * FROM log; DELETE FROM log;
+} {
+  update 1 update 2 update 3
+}
+do_execsql_test 1.4 {
+  UPDATE v1 SET b = 555 ORDER BY b LIMIT 3;
+  SELECT * FROM log; DELETE FROM log;
+} {
+  update 6 update 5 update 4
+}
+
+do_execsql_test 2.0 {
+  CREATE TABLE t2(a, b, c, PRIMARY KEY(a, b)) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(1, 1, 'h');
+  INSERT INTO t2 VALUES(1, 2, 'g');
+  INSERT INTO t2 VALUES(2, 1, 'f');
+  INSERT INTO t2 VALUES(2, 2, 'e');
+  INSERT INTO t2 VALUES(3, 1, 'd');
+  INSERT INTO t2 VALUES(3, 2, 'c');
+  INSERT INTO t2 VALUES(4, 1, 'b');
+  INSERT INTO t2 VALUES(4, 2, 'a');
+}
+
+do_execsql_test 2.1 {
+  BEGIN;
+    DELETE FROM t2 WHERE b=1 ORDER BY c LIMIT 2;
+    SELECT c FROM t2 ORDER BY 1;
+  ROLLBACK;
+} {a c e f g h}
+
+do_execsql_test 2.2 {
+  BEGIN;
+    UPDATE t2 SET c=NULL ORDER BY a, b DESC LIMIT 3 OFFSET 1;
+    SELECT a, b, c FROM t2;
+  ROLLBACK;
+} {
+  1 1 {} 
+  1 2 g 
+  2 1 {} 
+  2 2 {} 
+  3 1 d 
+  3 2 c 
+  4 1 b 
+  4 2 a
+}
+
+
+
+finish_test
+
