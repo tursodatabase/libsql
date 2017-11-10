@@ -778,9 +778,6 @@ cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
   sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-#if 0
-  W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset, "UPDATE");
-#endif
   sqlite3UpdateLimit(pParse,X,Y,W,R,O,L.pLimit,L.pOffset);
 }
 %endif

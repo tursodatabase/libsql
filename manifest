@@ -1,5 +1,5 @@
-C Add\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT\sfor\sviews\sand\sWITHOUT\sROWID\stables.
-D 2017-11-09T19:53:06.815
+C Fix\sa\sproblem\swith\s(DELETE...LIMIT)\sstatements\sagainst\sWITHOUT\sROWID\stables\nwith\sa\ssingle\scolumn\sPK.
+D 2017-11-10T15:42:21.918
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -422,7 +422,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbpage.c 432f46fb47c99ae1f0e2863fe595038a6f9d3b59f4a3dabe5f86ec2a88758fde
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
-F src/delete.c 001653cc4065ad83d47f4307c29572437f778f1fe249d482894e100275d27efd
+F src/delete.c cd86beec4f64491270f52521a45f0d335e29766b165511d025ee11119839375a
 F src/expr.c 0016b95aed1df47ebc0eb7415bd621841d72dbffd3bfb62210e50e71d83b4691
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
@@ -459,7 +459,7 @@ F src/os_win.c 6892c3ff23b7886577e47f13d827ca220c0831bae3ce00eea8c258352692f8c6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
-F src/parse.y 5fbc16a4adf5da8ee22a1ef271e001fd6b766eebc3195b52ba2c30cecbbaf2d0
+F src/parse.y 49eb13a590f88a03e81f1bc8df0634e56598ebd8d76d38dda24ba9edd7f92194
 F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1558,7 +1558,7 @@ F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelimit.test 1dee70c9cc147330156d75e23de88f771e624998b03ae316cb64e1d249f129d8
-F test/wherelimit2.test 501e470c9cf62e96359e3386ae520874792b83322060168ee9c708b2e953b985
+F test/wherelimit2.test 565fc74c3f96c3f08f3c20e233530e4c5532e6dfa01d1acc8dd2da5009a3dfd3
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
@@ -1674,10 +1674,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62fe56b59270d9d7372b1bb8a53788a40d20d0f111fe38c61dd6269848592c70
-R 46792a4c59e5e3fb96fc57893e581fbe
-T *branch * update-delete-limit-fix
-T *sym-update-delete-limit-fix *
-T -sym-trunk *
+P 584b88aaf89ab30cb51185396b7b50c6ecba286add023a26ab41d865b9c605ce
+R d15b259ca771d410cbcab13660cb7826
 U dan
-Z c86d100b98964de2c810aa6a7710c91c
+Z 4ca2b1e389083d1c64078c78c67450a8

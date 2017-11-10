@@ -181,7 +181,9 @@ Expr *sqlite3LimitWhere(
   }else{
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
     if( pPk->nKeyCol==1 ){
-      pLhs = sqlite3Expr(db, TK_ID, pTab->aCol[pPk->aiColumn[0]].zName);
+      const char *zName = pTab->aCol[pPk->aiColumn[0]].zName;
+      pLhs = sqlite3Expr(db, TK_ID, zName);
+      pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ID, zName));
     }else{
       int i;
       for(i=0; i<pPk->nKeyCol; i++){
