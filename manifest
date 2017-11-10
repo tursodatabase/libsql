@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sinvolving\s"DELETE/UPDATE...LIMIT"\sstatements\sthat\suse\san\sINDEXED\nBY\sclause.
-D 2017-11-10T16:14:26.225
+C Add\sfurther\stests\sfor\sthe\scode\son\sthis\sbranch.
+D 2017-11-10T17:47:54.147
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -1557,8 +1557,9 @@ F test/whereI.test eab5b226bbc344ac70d7dc09b963a064860ae6d7
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
+F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 1dee70c9cc147330156d75e23de88f771e624998b03ae316cb64e1d249f129d8
-F test/wherelimit2.test 85e3fc3e61e100d8da27323c5cb30ed5881013c3b9100bb26ac5fd52d594c79b
+F test/wherelimit2.test be78ba3aa1831c6358fd7d5b9809bfd520f0c2a7d63a295e8f182e140ff137c3
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
@@ -1674,7 +1675,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35477a3dcceadf5dade8e036d5a2ce91b9ca83c4b85d309db233bdbcf538b1cc
-R 07fcc16cd40c06e7e9266df3e5decf1a
+P 09f94c2c8199b0d23a45cc062ca9561f9e5ddfcba117100e41889ce199d21bdb
+R 276fb9c7ab900388b15c7da93d892ba2
 U dan
-Z 02c3e7941017d253308184d6859dc937
+Z 620b60e1c2be9813cc742e8964032235

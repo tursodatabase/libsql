@@ -239,7 +239,61 @@ do_execsql_test 4.5 {
 #-------------------------------------------------------------------------
 # Test using object names that require quoting.
 #
+do_execsql_test 5.0 {
+  CREATE TABLE "x y"("a b" PRIMARY KEY, "c d") WITHOUT ROWID;
+  CREATE INDEX xycd ON "x y"("c d");
 
+  INSERT INTO "x y" VALUES('a', 'a');
+  INSERT INTO "x y" VALUES('b', 'b');
+  INSERT INTO "x y" VALUES('c', 'c');
+  INSERT INTO "x y" VALUES('d', 'd');
+  INSERT INTO "x y" VALUES('e', 'a');
+  INSERT INTO "x y" VALUES('f', 'b');
+  INSERT INTO "x y" VALUES('g', 'c');
+  INSERT INTO "x y" VALUES('h', 'd');
+}
+
+do_execsql_test 5.1 {
+  BEGIN;
+    DELETE FROM "x y" WHERE "c d"!='e' ORDER BY "c d" LIMIT 2 OFFSET 2;
+    SELECT * FROM "x y" ORDER BY 1;
+  ROLLBACK;
+} {
+  a a c c d d e a g c h d
+}
+
+do_execsql_test 5.2 {
+  BEGIN;
+    UPDATE "x y" SET "c d"='e' WHERE "c d"!='e' ORDER BY "c d" LIMIT 2 OFFSET 2;
+    SELECT * FROM "x y" ORDER BY 1;
+  ROLLBACK;
+} {
+  a a b e c c d d e a f e g c h d
+}
+
+proc log {args} { lappend ::log {*}$args }
+db func log log
+do_execsql_test 5.3 {
+  CREATE VIEW "v w" AS SELECT * FROM "x y";
+  CREATE TRIGGER tr1 INSTEAD OF DELETE ON "v w" BEGIN
+    SELECT log(old."a b", old."c d");
+  END;
+  CREATE TRIGGER tr2 INSTEAD OF UPDATE ON "v w" BEGIN
+    SELECT log(new."a b", new."c d");
+  END;
+}
+
+do_test 5.4 {
+  set ::log {}
+  execsql { DELETE FROM "v w" ORDER BY "a b" LIMIT 3 }
+  set ::log
+} {a a b b c c}
+
+do_test 5.5 {
+  set ::log {}
+  execsql { UPDATE "v w" SET "a b" = "a b" || 'x' ORDER BY "a b" LIMIT 5; }
+  set ::log
+} {ax a bx b cx c dx d ex a}
 
 
 finish_test
