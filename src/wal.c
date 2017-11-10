@@ -455,7 +455,7 @@ struct Wal {
   u8 truncateOnCommit;       /* True to truncate WAL file on commit */
   u8 syncHeader;             /* Fsync the WAL header if true */
   u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
-  u8 bUnlocked;
+  u8 bShmUnreliable;         /* SHM content is read-only and unreliable */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   u32 minFrame;              /* Ignore wal frames before this one */
   u32 iReCksum;              /* On commit, recalculate checksums from here */
@@ -1271,7 +1271,7 @@ recovery_error:
 ** Close an open wal-index.
 */
 static void walIndexClose(Wal *pWal, int isDelete){
-  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE || pWal->bUnlocked ){
+  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE || pWal->bShmUnreliable ){
     int i;
     for(i=0; i<pWal->nWiData; i++){
       sqlite3_free((void *)pWal->apWiData[i]);
@@ -2099,14 +2099,22 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   */
   assert( pChanged );
   rc = walIndexPage(pWal, 0, &page0);
-  if( rc==SQLITE_READONLY_CANTINIT ){
-    assert( page0==0 && pWal->writeLock==0 );
-    pWal->bUnlocked = 1;
-    pWal->exclusiveMode = WAL_HEAPMEMORY_MODE;
-    *pChanged = 1;
-  }else
   if( rc!=SQLITE_OK ){
-    return rc;
+    assert( rc!=SQLITE_READONLY ); /* READONLY changed to OK in walIndexPage */
+    if( rc==SQLITE_READONLY_CANTINIT ){
+      /* The SQLITE_READONLY_CANTINIT return means that the shared-memory
+      ** was openable but is not writable, and this thread is unable to
+      ** confirm that another write-capable connection has the shared-memory
+      ** open, and hence the content of the shared-memory is unreliable,
+      ** since the shared-memory might be inconsistent with the WAL file
+      ** and there is no writer on hand to fix it. */
+      assert( page0==0 && pWal->writeLock==0 );
+      pWal->bShmUnreliable = 1;
+      pWal->exclusiveMode = WAL_HEAPMEMORY_MODE;
+      *pChanged = 1;
+    }else{
+      return rc; /* Any other non-OK return is just an error */
+    }
   };
   assert( page0 || pWal->writeLock==0 );
 
@@ -2122,7 +2130,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   */
   assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr ){
-    if( pWal->bUnlocked==0 && (pWal->readOnly & WAL_SHM_RDONLY) ){
+    if( pWal->bShmUnreliable==0 && (pWal->readOnly & WAL_SHM_RDONLY) ){
       if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
@@ -2152,10 +2160,10 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   if( badHdr==0 && pWal->hdr.iVersion!=WALINDEX_MAX_VERSION ){
     rc = SQLITE_CANTOPEN_BKPT;
   }
-  if( pWal->bUnlocked ){
+  if( pWal->bShmUnreliable ){
     if( rc!=SQLITE_OK ){
       walIndexClose(pWal, 0);
-      pWal->bUnlocked = 0;
+      pWal->bShmUnreliable = 0;
       assert( pWal->nWiData>0 && pWal->apWiData[0]==0 );
       if( rc==SQLITE_IOERR_SHORT_READ ) rc = WAL_RETRY;
     }
@@ -2166,11 +2174,21 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 }
 
 /*
-** Open an "unlocked" transaction. An unlocked transaction is a read 
-** transaction used by a read-only client in cases where the *-shm
-** file cannot be mapped and its contents cannot be trusted. It is
-** assumed that the *-wal file has been read and that a wal-index 
-** constructed in heap memory is currently available in Wal.apWiData[].
+** Open a transaction in a connection where the shared-memory is read-only
+** and where we cannot verify that there is a separate write-capable connection
+** on hand to keep the shared-memory up-to-date with the WAL file.
+**
+** This can happen, for example, when the shared-memory is implemented by
+** memory-mapping a *-shm file, where a prior writer has shut down and
+** left the *-shm file on disk, and now the present connection is trying
+** to use that database but lacks write permission on the *-shm file.
+** Other scenarios are also possible, depending on the VFS implementation.
+**
+** Precondition:
+**
+**    The *-wal file has been read and an appropriate wal-index has been
+**    constructed in pWal->apWiData[] using heap memory instead of shared
+**    memory. 
 **
 ** If this function returns SQLITE_OK, then the read transaction has
 ** been successfully opened. In this case output variable (*pChanged) 
@@ -2182,7 +2200,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 **
 ** If an error occurs, an SQLite error code is returned.
 */
-static int walBeginUnlocked(Wal *pWal, int *pChanged){
+static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
   i64 szWal;                      /* Size of wal file on disk in bytes */
   i64 iOffset;                    /* Current offset when reading wal file */
   u8 aBuf[WAL_HDRSIZE];           /* Buffer to load WAL header into */
@@ -2193,50 +2211,59 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   u32 aSaveCksum[2];              /* Saved copy of pWal->hdr.aFrameCksum */
 
-  assert( pWal->bUnlocked );
+  assert( pWal->bShmUnreliable );
   assert( pWal->readOnly & WAL_SHM_RDONLY );
   assert( pWal->nWiData>0 && pWal->apWiData[0] );
 
   /* Take WAL_READ_LOCK(0). This has the effect of preventing any
-  ** live clients from running a checkpoint, but does not stop them
+  ** writers from running a checkpoint, but does not stop them
   ** from running recovery.  */
   rc = walLockShared(pWal, WAL_READ_LOCK(0));
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_BUSY ) rc = WAL_RETRY;
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
   pWal->readLock = 0;
 
-  /* Try to map the *-shm file again. If it succeeds this time, then 
-  ** a non-readonly_shm connection has already connected to the database.
-  ** In this case, start over with opening the transaction.
+  /* Check to see if a separate writer has attached to the shared-memory area,
+  ** thus making the shared-memory "reliable" again.  Do this by invoking
+  ** the xShmMap() routine of the VFS and looking to see if the return
+  ** is SQLITE_READONLY instead of SQLITE_READONLY_CANTINIT.
   **
-  ** The *-shm file was opened read-only, so sqlite3OsShmMap() can never
-  ** return SQLITE_OK here, as that would imply that it had established
-  ** a read/write mapping.  A return of SQLITE_READONLY means success - that
-  ** a mapping has been established to a shared-memory segment that is actively
-  ** maintained by a writer.  SQLITE_READONLY_CANTINIT means that all
-  ** all connections to the -shm file are read-only and hence the content
-  ** of the -shm file might be out-of-date.
-  ** 
-  ** The WAL_READ_LOCK(0) lock held by this client prevents a checkpoint
-  ** from taking place. But it does not prevent the wal from being wrapped
-  ** if a checkpoint has already taken place. This means that if another
-  ** client is connected at this point, it may have already checkpointed 
-  ** the entire wal. In that case it would not be safe to continue with
-  ** the unlocked transaction, as the other client may overwrite wal 
-  ** frames that this client is still using.  */
+  ** Once sqlite3OsShmMap() has been called for a file and has returned
+  ** any SQLITE_READONLY value, it must SQLITE_READONLY or
+  ** SQLITE_READONLY_CANTINIT or some error for all subsequent invocations,
+  ** until sqlite3OsShmUnmap() has been called.  This is a requirement
+  ** on the VFS implementation.
+  **
+  ** If the shared-memory is now "reliable" return WAL_RETRY, which will
+  ** cause the heap-memory WAL-index to be discarded and the actual
+  ** shared memory to be used in its place.
+  */
   rc = sqlite3OsShmMap(pWal->pDbFd, 0, WALINDEX_PGSZ, 0, &pDummy);
   assert( rc!=SQLITE_OK ); /* SQLITE_OK not possible for read-only connection */
   if( rc!=SQLITE_READONLY_CANTINIT ){
     rc = (rc==SQLITE_READONLY ? WAL_RETRY : rc);
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
 
+  /* Reach this point only if the real shared-memory is still unreliable.
+  ** Assume the in-memory WAL-index substitute is correct and load it
+  ** into pWal->hdr.
+  */
   memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
+
+  /* The WAL_READ_LOCK(0) lock held by this client prevents a checkpoint
+  ** from taking place. But it does not prevent the wal from being wrapped
+  ** if a checkpoint has already taken place. This means that if another
+  ** client is connected at this point, it may have already checkpointed 
+  ** the entire wal. In that case it would not be safe to continue with
+  ** the this transaction, as the other client may overwrite wal 
+  ** frames that this client is still using.
+  */
   rc = sqlite3OsFileSize(pWal->pWalFd, &szWal);
   if( rc!=SQLITE_OK ){
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
   if( szWal<WAL_HDRSIZE ){
     /* If the wal file is too small to contain a wal-header and the
@@ -2247,17 +2274,17 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
     ** since this client's last read transaction.  */
     *pChanged = 1;
     rc = (pWal->hdr.mxFrame==0 ? SQLITE_OK : WAL_RETRY);
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
 
   /* Check the salt keys at the start of the wal file still match. */
   rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
   if( rc!=SQLITE_OK ){
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
   if( memcmp(&pWal->hdr.aSalt, &aBuf[16], 8) ){
     rc = WAL_RETRY;
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
 
   /* Allocate a buffer to read frames into */
@@ -2265,7 +2292,7 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   aFrame = (u8 *)sqlite3_malloc64(szFrame);
   if( aFrame==0 ){
     rc = SQLITE_NOMEM_BKPT;
-    goto begin_unlocked_out;
+    goto begin_unreliable_shm_out;
   }
   aData = &aFrame[WAL_FRAME_HDRSIZE];
 
@@ -2298,7 +2325,7 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
   pWal->hdr.aFrameCksum[0] = aSaveCksum[0];
   pWal->hdr.aFrameCksum[1] = aSaveCksum[1];
 
- begin_unlocked_out:
+ begin_unreliable_shm_out:
   sqlite3_free(aFrame);
   if( rc!=SQLITE_OK ){
     int i;
@@ -2306,7 +2333,7 @@ static int walBeginUnlocked(Wal *pWal, int *pChanged){
       sqlite3_free((void*)pWal->apWiData[i]);
       pWal->apWiData[i] = 0;
     }
-    pWal->bUnlocked = 0;
+    pWal->bShmUnreliable = 0;
     sqlite3WalEndReadTransaction(pWal);
     *pChanged = 1;
   }
@@ -2402,7 +2429,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 
   if( !useWal ){
     assert( rc==SQLITE_OK );
-    if( pWal->bUnlocked==0 ){
+    if( pWal->bShmUnreliable==0 ){
       rc = walIndexReadHdr(pWal, pChanged);
     }
     if( rc==SQLITE_BUSY ){
@@ -2433,8 +2460,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    else if( pWal->bUnlocked ){
-      return walBeginUnlocked(pWal, pChanged);
+    else if( pWal->bShmUnreliable ){
+      return walBeginShmUnreliable(pWal, pChanged);
     }
   }
 
@@ -2789,7 +2816,7 @@ int sqlite3WalFindFrame(
   ** then the WAL is ignored by the reader so return early, as if the 
   ** WAL were empty.
   */
-  if( iLast==0 || (pWal->readLock==0 && pWal->bUnlocked==0) ){
+  if( iLast==0 || (pWal->readLock==0 && pWal->bShmUnreliable==0) ){
     *piRead = 0;
     return SQLITE_OK;
   }
@@ -2852,7 +2879,7 @@ int sqlite3WalFindFrame(
   {
     u32 iRead2 = 0;
     u32 iTest;
-    assert( pWal->bUnlocked || pWal->minFrame>0 );
+    assert( pWal->bShmUnreliable || pWal->minFrame>0 );
     for(iTest=iLast; iTest>=pWal->minFrame && iTest>0; iTest--){
       if( walFramePgno(pWal, iTest)==pgno ){
         iRead2 = iTest;

@@ -1,5 +1,5 @@
-C Avoid\ssuperfluous\sSHM\sunlock\scall\sin\sthe\sWin32\sVFS.
-D 2017-11-09T23:24:29.716
+C Improved\scomments\sand\svariable\snames\sin\sthe\sread-only\sWAL\slogic.
+D 2017-11-10T20:00:50.239
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -543,7 +543,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 6903d391b6c224e45910795d66f97151428662c5f459d3b69997209dbcadc6f5
+F src/wal.c 47f8a4493e077b312399b62fd36fd4e8b70535dcd8d9a5caf18b8be019fcf420
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c d591e8a9ccf60abb010966b354fcea4aa08eba4d83675c2b281a8764c76cc22f
 F src/where.c b7a075f5fb3d912a891dcc3257f538372bb4a1622dd8ca7d752ad95ce8949ba4
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a2908e2c88f7a30638a7e791fc7ad0325b663097c12cecd1f4726b0d60a9a3ed
-R 9d6be609689f3743af6adbbc5cf401b2
-U mistachkin
-Z 39f42e393c5183ce2049496b416ae681
+P 5a384be6979b783d1f3af2ac6307e7e731c415d052f9405f04c0216f59414633
+R 4efdec1d3561b29c7744e3cfcf4d5f7b
+U drh
+Z df395ed2f6beb277e98c44e2de48326a
