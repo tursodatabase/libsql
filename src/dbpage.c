@@ -303,7 +303,7 @@ static int dbpageUpdate(
   sqlite_int64 *pRowid
 ){
   DbpageTable *pTab = (DbpageTable *)pVtab;
-  int pgno;
+  Pgno pgno;
   DbPage *pDbPage = 0;
   int rc = SQLITE_OK;
   char *zErr = 0;
@@ -318,7 +318,7 @@ static int dbpageUpdate(
     goto update_fail;
   }
   pgno = sqlite3_value_int(argv[0]);
-  if( sqlite3_value_int(argv[1])!=pgno ){
+  if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
     zErr = "cannot insert";
     goto update_fail;
   }
