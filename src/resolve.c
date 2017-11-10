@@ -597,10 +597,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       struct SrcList_item *pItem;
       assert( pSrcList && pSrcList->nSrc==1 );
       pItem = pSrcList->a;
-      if( !HasRowid(pItem->pTab) || pItem->pTab->pSelect!=0 ){
-         sqlite3ErrorMsg(pParse, "ORDER BY and LIMIT not support for table %s",
-                                 pItem->pTab->zName);
-      }
+      assert( HasRowid(pItem->pTab) && pItem->pTab->pSelect==0 );
       pExpr->op = TK_COLUMN;
       pExpr->pTab = pItem->pTab;
       pExpr->iTable = pItem->iCursor;

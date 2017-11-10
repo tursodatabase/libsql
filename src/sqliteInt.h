@@ -3764,11 +3764,8 @@ void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
 #if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY)
 Expr *sqlite3LimitWhere(Parse*,SrcList*,Expr*,ExprList*,Expr*,Expr*,char*);
 #endif
-void sqlite3DeleteFromLimit(Parse*, SrcList*, Expr*, ExprList*, Expr*, Expr*);
-#define sqlite3DeleteFrom(x,y,z) sqlite3DeleteFromLimit(x,y,z,0,0,0)
-void sqlite3UpdateLimit(Parse*, SrcList*, ExprList*, Expr*, int,
-                        ExprList*,Expr*,Expr*);
-#define sqlite3Update(v,w,x,y,z) sqlite3UpdateLimit(v,w,x,y,z,0,0,0)
+void sqlite3DeleteFrom(Parse*, SrcList*, Expr*, ExprList*, Expr*, Expr*);
+void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*,Expr*);
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 LogEst sqlite3WhereOutputRowCount(WhereInfo*);

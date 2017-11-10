@@ -224,13 +224,13 @@ Expr *sqlite3LimitWhere(
 **                 \________/       \________________/
 **                  pTabList              pWhere
 */
-void sqlite3DeleteFromLimit(
+void sqlite3DeleteFrom(
   Parse *pParse,         /* The parser context */
   SrcList *pTabList,     /* The table from which we should delete things */
   Expr *pWhere,          /* The WHERE clause.  May be null */
-  ExprList *pOrderBy,
-  Expr *pLimit,
-  Expr *pOffset
+  ExprList *pOrderBy,    /* ORDER BY clause. May be null */
+  Expr *pLimit,          /* LIMIT clause. May be null */
+  Expr *pOffset          /* OFFSET clause. May be null */
 ){
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
@@ -606,9 +606,11 @@ delete_from_cleanup:
   sqlite3AuthContextPop(&sContext);
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprDelete(db, pWhere);
+#if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) 
   sqlite3ExprListDelete(db, pOrderBy);
   sqlite3ExprDelete(db, pLimit);
   sqlite3ExprDelete(db, pOffset);
+#endif
   sqlite3DbFree(db, aToOpen);
   return;
 }

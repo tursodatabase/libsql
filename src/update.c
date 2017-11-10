@@ -86,15 +86,15 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
 **          \_______/ \________/     \______/       \________________/
 *            onError   pTabList      pChanges             pWhere
 */
-void sqlite3UpdateLimit(
+void sqlite3Update(
   Parse *pParse,         /* The parser context */
   SrcList *pTabList,     /* The table in which we should change things */
   ExprList *pChanges,    /* Things to be changed */
   Expr *pWhere,          /* The WHERE clause.  May be null */
   int onError,           /* How to handle constraint errors */
-  ExprList *pOrderBy,
-  Expr *pLimit,
-  Expr *pOffset
+  ExprList *pOrderBy,    /* ORDER BY clause. May be null */
+  Expr *pLimit,          /* LIMIT clause. May be null */
+  Expr *pOffset          /* OFFSET clause. May be null */
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
@@ -745,9 +745,11 @@ update_cleanup:
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprListDelete(db, pChanges);
   sqlite3ExprDelete(db, pWhere);
+#if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) 
   sqlite3ExprListDelete(db, pOrderBy);
   sqlite3ExprDelete(db, pLimit);
   sqlite3ExprDelete(db, pOffset);
+#endif
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
