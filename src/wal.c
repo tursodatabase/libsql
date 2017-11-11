@@ -2230,16 +2230,23 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
   ** the xShmMap() routine of the VFS and looking to see if the return
   ** is SQLITE_READONLY instead of SQLITE_READONLY_CANTINIT.
   **
-  ** Once sqlite3OsShmMap() has been called for a file and has returned
-  ** any SQLITE_READONLY value, it must SQLITE_READONLY or
-  ** SQLITE_READONLY_CANTINIT or some error for all subsequent invocations,
-  ** until sqlite3OsShmUnmap() has been called.  This is a requirement
-  ** on the VFS implementation.
-  **
   ** If the shared-memory is now "reliable" return WAL_RETRY, which will
   ** cause the heap-memory WAL-index to be discarded and the actual
   ** shared memory to be used in its place.
-  */
+  **
+  ** This step is important because, even though this connection is holding
+  ** the WAL_READ_LOCK(0) which prevents a checkpoint, a writer might
+  ** have already checkpointed the WAL file and, while the current
+  ** is active, wrap the WAL and start overwriting frames that this
+  ** process wants to use.
+  **
+  ** Once sqlite3OsShmMap() has been called for an sqlite3_file and has
+  ** returned any SQLITE_READONLY value, it must return only SQLITE_READONLY
+  ** or SQLITE_READONLY_CANTINIT or some error for all subsequent invocations,
+  ** even if some external agent does a "chmod" to make the shared-memory
+  ** writable by us, until sqlite3OsShmUnmap() has been called.
+  ** This is a requirement on the VFS implementation.
+   */
   rc = sqlite3OsShmMap(pWal->pDbFd, 0, WALINDEX_PGSZ, 0, &pDummy);
   assert( rc!=SQLITE_OK ); /* SQLITE_OK not possible for read-only connection */
   if( rc!=SQLITE_READONLY_CANTINIT ){
@@ -2247,19 +2254,14 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
     goto begin_unreliable_shm_out;
   }
 
-  /* Reach this point only if the real shared-memory is still unreliable.
+  /* We reach this point only if the real shared-memory is still unreliable.
   ** Assume the in-memory WAL-index substitute is correct and load it
   ** into pWal->hdr.
   */
   memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
 
-  /* The WAL_READ_LOCK(0) lock held by this client prevents a checkpoint
-  ** from taking place. But it does not prevent the wal from being wrapped
-  ** if a checkpoint has already taken place. This means that if another
-  ** client is connected at this point, it may have already checkpointed 
-  ** the entire wal. In that case it would not be safe to continue with
-  ** the this transaction, as the other client may overwrite wal 
-  ** frames that this client is still using.
+  /* Make sure some writer hasn't come in and changed the WAL file out
+  ** from under us, then disconnected, while we were not looking.
   */
   rc = sqlite3OsFileSize(pWal->pWalFd, &szWal);
   if( rc!=SQLITE_OK ){
@@ -2283,6 +2285,9 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
     goto begin_unreliable_shm_out;
   }
   if( memcmp(&pWal->hdr.aSalt, &aBuf[16], 8) ){
+    /* Some writer has wrapped the WAL file while we were not looking.
+    ** Return WAL_RETRY which will cause the in-memory WAL-index to be
+    ** rebuilt. */
     rc = WAL_RETRY;
     goto begin_unreliable_shm_out;
   }
