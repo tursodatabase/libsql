@@ -545,6 +545,11 @@ struct WalIterator {
 ** is broken into pages of WALINDEX_PGSZ bytes. Wal-index pages are
 ** numbered from zero.
 **
+** If the wal-index is currently smaller the iPage pages then the size
+** of the wal-index might be increased, but only if it is safe to do
+** so.  It is safe to enlarge the wal-index if pWal->writeLock is true
+** or pWal->exclusiveMode==WAL_HEAPMEMORY_MODE.
+**
 ** If this call is successful, *ppPage is set to point to the wal-index
 ** page and SQLITE_OK is returned. If an error (an OOM or VFS error) occurs,
 ** then an SQLite error code is returned and *ppPage is set to 0.
@@ -576,6 +581,8 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
       rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
           pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
       );
+      assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
+      testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
       if( (rc&0xff)==SQLITE_READONLY ){
         pWal->readOnly |= WAL_SHM_RDONLY;
         if( rc==SQLITE_READONLY ){
@@ -2108,15 +2115,21 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       ** open, and hence the content of the shared-memory is unreliable,
       ** since the shared-memory might be inconsistent with the WAL file
       ** and there is no writer on hand to fix it. */
-      assert( page0==0 && pWal->writeLock==0 );
+      assert( page0==0 );
+      assert( pWal->writeLock==0 );
+      assert( pWal->readOnly & WAL_SHM_RDONLY );
       pWal->bShmUnreliable = 1;
       pWal->exclusiveMode = WAL_HEAPMEMORY_MODE;
       *pChanged = 1;
     }else{
       return rc; /* Any other non-OK return is just an error */
     }
-  };
-  assert( page0 || pWal->writeLock==0 );
+  }else{
+    /* page0 can be NULL if the SHM is zero bytes in size and pWal->writeLock
+    ** is zero, which prevents the SHM from growing */
+    testcase( page0!=0 );
+  }
+  assert( page0!=0 || pWal->writeLock==0 );
 
   /* If the first page of the wal-index has been mapped, try to read the
   ** wal-index header immediately, without holding any lock. This usually
@@ -3661,24 +3674,24 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
   assert( pWal->readLock>=0 || (op<=0 && pWal->exclusiveMode==0) );
 
   if( op==0 ){
-    if( pWal->exclusiveMode ){
-      pWal->exclusiveMode = 0;
+    if( pWal->exclusiveMode!=WAL_NORMAL_MODE ){
+      pWal->exclusiveMode = WAL_NORMAL_MODE;
       if( walLockShared(pWal, WAL_READ_LOCK(pWal->readLock))!=SQLITE_OK ){
-        pWal->exclusiveMode = 1;
+        pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      rc = pWal->exclusiveMode==0;
+      rc = pWal->exclusiveMode==WAL_NORMAL_MODE;
     }else{
       /* Already in locking_mode=NORMAL */
       rc = 0;
     }
   }else if( op>0 ){
-    assert( pWal->exclusiveMode==0 );
+    assert( pWal->exclusiveMode==WAL_NORMAL_MODE );
     assert( pWal->readLock>=0 );
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-    pWal->exclusiveMode = 1;
+    pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
     rc = 1;
   }else{
-    rc = pWal->exclusiveMode==0;
+    rc = pWal->exclusiveMode==WAL_NORMAL_MODE;
   }
   return rc;
 }
