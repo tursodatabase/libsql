@@ -22,7 +22,7 @@ min_sqlite_version_3_7_4 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
 
 [build-dependencies]
-bindgen = { version = "0.23", optional = true }
+bindgen = { version = "0.31.3", optional = true }
 pkg-config = { version = "0.3", optional = true }
 gcc = { version = "0.3", optional = true }
 
