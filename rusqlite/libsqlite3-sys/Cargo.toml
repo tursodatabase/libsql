@@ -12,7 +12,7 @@ categories = ["database", "external-ffi-bindings"]
 
 [features]
 default = ["min_sqlite_version_3_6_8"]
-bundled = ["gcc"]
+bundled = ["cc"]
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
 min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_6_11 = ["pkg-config", "vcpkg"]
@@ -22,9 +22,9 @@ min_sqlite_version_3_7_4 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
 
 [build-dependencies]
-bindgen = { version = "0.23", optional = true }
+bindgen = { version = "0.30", optional = true }
 pkg-config = { version = "0.3", optional = true }
-gcc = { version = "0.3", optional = true }
+cc = { version = "1.0", optional = true }
 
 [target.'cfg(target_env = "msvc")'.build-dependencies]
 vcpkg = { version = "0.2", optional = true }
