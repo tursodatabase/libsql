@@ -30,21 +30,21 @@ impl<'stmt> Rows<'stmt> {
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt
             .and_then(|stmt| match stmt.step() {
-                          Ok(true) => {
-                              Some(Ok(Row {
-                                          stmt: stmt,
-                                          phantom: PhantomData,
-                                      }))
-                          }
-                          Ok(false) => {
-                self.reset();
-                None
-            }
-                          Err(err) => {
-                self.reset();
-                Some(Err(err))
-            }
-                      })
+                Ok(true) => {
+                    Some(Ok(Row {
+                        stmt: stmt,
+                        phantom: PhantomData,
+                    }))
+                }
+                Ok(false) => {
+                    self.reset();
+                    None
+                }
+                Err(err) => {
+                    self.reset();
+                    Some(Err(err))
+                }
+            })
     }
 }
 
