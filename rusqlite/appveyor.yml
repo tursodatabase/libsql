@@ -1,8 +1,8 @@
 environment:
   matrix:
-  - TARGET: 1.15.0-x86_64-pc-windows-gnu
+  - TARGET: 1.21.0-x86_64-pc-windows-gnu
     MSYS2_BITS: 64
-  - TARGET: 1.15.0-x86_64-pc-windows-msvc
+  - TARGET: 1.21.0-x86_64-pc-windows-msvc
     VCPKG_DEFAULT_TRIPLET: x64-windows
     VCPKGRS_DYNAMIC: 1
   - TARGET: nightly-x86_64-pc-windows-msvc

@@ -4,7 +4,7 @@ fn main() {
 
 #[cfg(feature = "bundled")]
 mod build {
-    extern crate gcc;
+    extern crate cc;
     use std::{env, fs};
     use std::path::Path;
 
@@ -14,7 +14,7 @@ mod build {
         fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
             .expect("Could not copy bindings to output directory");
 
-        gcc::Config::new()
+        cc::Build::new()
             .file("sqlite3/sqlite3.c")
             .flag("-DSQLITE_CORE")
             .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
