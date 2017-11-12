@@ -91,7 +91,7 @@ impl<Tz: TimeZone> ToSql for DateTime<Tz> {
     }
 }
 
-/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Utc>.
+/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Utc>`.
 impl FromSql for DateTime<Utc> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         {
@@ -120,7 +120,7 @@ impl FromSql for DateTime<Utc> {
     }
 }
 
-/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Local>.
+/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Local>`.
 impl FromSql for DateTime<Local> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         let utc_dt = try!(DateTime::<Utc>::column_result(value));
