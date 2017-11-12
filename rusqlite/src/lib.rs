@@ -185,6 +185,12 @@ pub struct Connection {
 
 unsafe impl Send for Connection {}
 
+impl Drop for Connection {
+    fn drop(&mut self) {
+        self.flush_prepared_statement_cache();
+    }
+}
+
 impl Connection {
     /// Open a new connection to a SQLite database.
     ///
@@ -868,7 +874,15 @@ impl InnerConnection {
 impl Drop for InnerConnection {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
-        self.close();
+        use std::thread::panicking;
+
+        if let Err(e) = self.close() {
+            if panicking() {
+                eprintln!("Error while closing SQLite connection: {:?}", e);
+            } else {
+                panic!("Error while closing SQLite connection: {:?}", e);
+            }
+        }
     }
 }
 
