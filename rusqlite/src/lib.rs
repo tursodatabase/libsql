@@ -82,7 +82,7 @@ use cache::StatementCache;
 pub use statement::Statement;
 use statement::StatementCrateImpl;
 
-pub use row::{Row, Rows, MappedRows, AndThenRows};
+pub use row::{Row, Rows, MappedRows, AndThenRows, RowIndex};
 use row::RowsCrateImpl;
 
 #[allow(deprecated)]
