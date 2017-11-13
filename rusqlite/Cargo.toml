@@ -26,6 +26,7 @@ trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
 bundled = ["libsqlite3-sys/bundled"]
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
+sqlcipher = ["libsqlite3-sys/sqlcipher"]
 
 [dependencies]
 time = "0.1.0"
