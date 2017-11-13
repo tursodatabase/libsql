@@ -1,4 +1,4 @@
-# Version 0.13.0 (TODO)
+# Version 0.13.0 (2017-11-13)
 
 * Added ToSqlConversionFailure case to Error enum.
 * Now depends on chrono 0.4, bitflats 1.0, and (optionally) cc 1.0 / bindgen 0.31.
