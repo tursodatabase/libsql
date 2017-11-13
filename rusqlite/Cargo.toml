@@ -4,7 +4,7 @@ version = "0.12.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
-documentation = "http://jgallagher.github.io/rusqlite/rusqlite/index.html"
+documentation = "http://docs.rs/rusqlite/"
 readme = "README.md"
 keywords = ["sqlite", "database", "ffi"]
 license = "MIT"
@@ -50,3 +50,9 @@ harness = false
 
 [[test]]
 name = "deny_single_threaded_sqlite_config"
+
+[package.metadata.docs.rs]
+features = [ "backup", "blob", "chrono", "functions", "load_extension", "serde_json", "trace" ]
+all-features = false
+no-default-features = true
+default-target = "x86_64-unknown-linux-gnu"
