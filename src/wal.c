@@ -2418,6 +2418,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 
   assert( pWal->readLock<0 );     /* Not currently locked */
 
+  /* useWal may only be set for read/write connections */
+  assert( (pWal->readOnly & WAL_SHM_RDONLY)==0 || useWal==0 );
+
   /* Take steps to avoid spinning forever if there is a protocol error.
   **
   ** Circumstances that cause a RETRY should only last for the briefest
@@ -2484,9 +2487,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
 
   assert( pWal->nWiData>0 );
-  assert( pWal->apWiData[0] || (pWal->readOnly & WAL_SHM_RDONLY) );
-  pInfo = pWal->apWiData[0] ? walCkptInfo(pWal) : 0;
-  if( !useWal && (pInfo==0 || pInfo->nBackfill==pWal->hdr.mxFrame)
+  assert( pWal->apWiData[0]!=0 );
+  pInfo = walCkptInfo(pWal);
+  if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame
 #ifdef SQLITE_ENABLE_SNAPSHOT
    && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0
      || 0==memcmp(&pWal->hdr, pWal->pSnapshot, sizeof(WalIndexHdr)))
@@ -2498,9 +2501,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
     walShmBarrier(pWal);
     if( rc==SQLITE_OK ){
-      if( pInfo
-       && memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) 
-      ){
+      if( memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) ){
         /* It is not safe to allow the reader to continue here if frames
         ** may have been appended to the log before READ_LOCK(0) was obtained.
         ** When holding READ_LOCK(0), the reader ignores the entire log file,

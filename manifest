@@ -1,5 +1,5 @@
-C In\swal.c:\simproved\scomments,\snew\sassert()\sand\stestcase()\smacros,\sand\nreplace\ssome\smagic\snumbers\swith\sappropriate\ssymbolic\sconstants.
-D 2017-11-11T20:11:01.646
+C Remove\ssome\sbranches\sin\swalTryBeginRead()\sthat\swere\s\nadded\sby\scheck-in\s[ce5d13c2de]\sbut\sbecame\sunreachable\swith\sthe\saddition\nof\slogic\sin\scheck-in\s[18b26843]\sthat\senabled\sread-only\sclients\sto\sparse\nthe\sWAL\sfile\sinto\sa\sheap-memory\sWAL-index,\sthus\sguaranteeing\sthat\sthe\s\nWAL-index\sheader\sis\salways\savailable.
+D 2017-11-13T05:51:37.627
 F Makefile.in 5bae3f2f3d42f2ad52b141562d74872c97ac0fca6c54953c91bb150a0e6427a8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3a5cb477ec3ce5274663b693164e349db63348667cd45bad78cc13d580b691e2
@@ -543,7 +543,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 213ddce034c354e640294e77b28097db2a7e10e16c12f6a1158bd7fbcc8e730c
+F src/wal.c 31ae1a82afccf02e2ff220add690d057dd7e25d9d7ec0b53fe57f2d62a4ba510
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c d591e8a9ccf60abb010966b354fcea4aa08eba4d83675c2b281a8764c76cc22f
 F src/where.c b7a075f5fb3d912a891dcc3257f538372bb4a1622dd8ca7d752ad95ce8949ba4
@@ -1669,7 +1669,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 346388007de585083dc67ad865b91db7c7d7b78c10a06f8bb7c48767c326c47e
-R cc8d47b78b14e89aa0bda73b44dcaa29
+P 13ec8a77a47aa471af587459f4094da0d06674c5960f0d34777bcb3d38bc413b
+R be755a48b3ce9c3ee36556946fccdf2c
 U drh
-Z f012da86d6540243e580ab3866be51e7
+Z a296aa345abf23e8a36cfa010f746e55
