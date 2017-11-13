@@ -52,7 +52,7 @@ harness = false
 name = "deny_single_threaded_sqlite_config"
 
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "functions", "load_extension", "serde_json", "trace" ]
+features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
