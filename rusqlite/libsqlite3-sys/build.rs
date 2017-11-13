@@ -202,7 +202,7 @@ mod build {
             // was added in SQLite 3.8.3, but oring it in in prior versions of SQLite is harmless. We
             // don't want to not build just because this flag is missing (e.g., if we're linking against
             // SQLite 3.7.x), so append the flag manually if it isn't present in bindgen's output.
-            if !output.contains("pub const SQLITE_DETERMINISTIC:") {
+            if !output.contains("pub const SQLITE_DETERMINISTIC") {
                 output.push_str("\npub const SQLITE_DETERMINISTIC: i32 = 2048;\n");
             }
 
