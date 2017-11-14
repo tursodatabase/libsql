@@ -2178,6 +2178,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       walIndexClose(pWal, 0);
       pWal->bShmUnreliable = 0;
       assert( pWal->nWiData>0 && pWal->apWiData[0]==0 );
+      /* walIndexRecover() might have returned SHORT_READ if a concurrent
+      ** writer truncated the WAL out from under it.  If that happens, it
+      ** indicates that a writer has fixed the SHM file for us, so retry */
       if( rc==SQLITE_IOERR_SHORT_READ ) rc = WAL_RETRY;
     }
     pWal->exclusiveMode = WAL_NORMAL_MODE;
