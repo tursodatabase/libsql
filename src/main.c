@@ -1321,7 +1321,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_NOMEM:              zName = "SQLITE_NOMEM";             break;
       case SQLITE_READONLY:           zName = "SQLITE_READONLY";          break;
       case SQLITE_READONLY_RECOVERY:  zName = "SQLITE_READONLY_RECOVERY"; break;
-      case SQLITE_READONLY_CANTLOCK:  zName = "SQLITE_READONLY_CANTLOCK"; break;
+      case SQLITE_READONLY_CANTINIT:  zName = "SQLITE_READONLY_CANTINIT"; break;
       case SQLITE_READONLY_ROLLBACK:  zName = "SQLITE_READONLY_ROLLBACK"; break;
       case SQLITE_READONLY_DBMOVED:   zName = "SQLITE_READONLY_DBMOVED";  break;
       case SQLITE_INTERRUPT:          zName = "SQLITE_INTERRUPT";         break;

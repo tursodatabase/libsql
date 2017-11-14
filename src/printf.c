@@ -1092,8 +1092,15 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   sqlite3VXPrintf(&acc, zFormat, ap);
   va_end(ap);
   sqlite3StrAccumFinish(&acc);
+#ifdef SQLITE_OS_TRACE_PROC
+  {
+    extern void SQLITE_OS_TRACE_PROC(const char *zBuf, int nBuf);
+    SQLITE_OS_TRACE_PROC(zBuf, sizeof(zBuf));
+  }
+#else
   fprintf(stdout,"%s", zBuf);
   fflush(stdout);
+#endif
 }
 #endif
 
