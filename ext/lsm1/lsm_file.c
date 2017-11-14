@@ -2803,7 +2803,7 @@ int lsmFsSortedPadding(
   Segment *pSeg
 ){
   int rc = LSM_OK;
-  if( pFS->pCompress ){
+  if( pFS->pCompress && pSeg->iFirst ){
     Pgno iLast2;
     Pgno iLast = pSeg->iLastPg;     /* Current last page of segment */
     int nPad;                       /* Bytes of padding required */

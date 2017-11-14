@@ -42,7 +42,7 @@ proc tclsh {} {
 
 # Do an incremental integrity check of a single index
 #
-proc check_index {idxname batchsize} {
+proc check_index {idxname batchsize bTrace} {
   set i 0
   set more 1
   set nerr 0
@@ -51,18 +51,30 @@ proc check_index {idxname batchsize} {
                     WHERE name=$idxname}]
   puts -nonewline "$idxname: $i of $max rows ($pct%)\r"
   flush stdout
-  while {$more} {
-    set more 0
-    db eval {SELECT errmsg, current_key AS key
+  if {$bTrace} {
+    set sql {SELECT errmsg, current_key AS key,
+                    CASE WHEN rowid=1 THEN scanner_sql END AS traceOut
                FROM incremental_index_check($idxname)
               WHERE after_key=$key
-              LIMIT $batchsize} {
+              LIMIT $batchsize}
+  } else {
+    set sql {SELECT errmsg, current_key AS key, NULL AS traceOut
+               FROM incremental_index_check($idxname)
+              WHERE after_key=$key
+              LIMIT $batchsize}
+  }
+  while {$more} {
+    set more 0
+    db eval $sql {
       set more 1
       if {$errmsg!=""} {
         incr nerr
         puts "$idxname: key($key): $errmsg"
+      } elseif {$traceOut!=""} {
+        puts "$idxname: $traceOut"
       }
       incr i
+      
     }
     set x [format {%.1f} [expr {($i*100.0)/$max}]]
     if {$x!=$pct} {
@@ -97,6 +109,8 @@ Options:
 
    --tclsh           Run the built-in TCL interpreter (for debugging)
 
+   --trace           (Debugging only:) Output trace information on the scan
+
    --version         Show the version number of SQLite
 }
   exit 1
@@ -110,6 +124,7 @@ set zIndex {}
 set zTable {}
 set batchsize 1000
 set bAll 1
+set bTrace 0
 set argc [llength $argv]
 for {set i 0} {$i<$argc} {incr i} {
   set arg [lindex $argv $i]
@@ -131,6 +146,10 @@ for {set i 0} {$i<$argc} {incr i} {
   if {[regexp {^-+summary$} $arg]} {
     set bSummary 1
     set bAll 0
+    continue
+  }
+  if {[regexp {^-+trace$} $arg]} {
+    set bTrace 1
     continue
   }
   if {[regexp {^-+batchsize$} $arg]} {
@@ -224,13 +243,13 @@ if {$bSummary} {
   }
 }
 if {$zIndex!=""} {
-  check_index $zIndex $batchsize
+  check_index $zIndex $batchsize $bTrace
 }
 if {$zTable!=""} {
   foreach idx [db eval {SELECT name FROM sqlite_master
                          WHERE type='index' AND rootpage>0
                            AND tbl_name=$zTable}] {
-    check_index $idx $batchsize
+    check_index $idx $batchsize $bTrace
   }
 }
 if {$bAll} {
@@ -238,6 +257,6 @@ if {$bAll} {
                         WHERE type='index' AND rootpage>0
                         ORDER BY nEntry}]
   foreach idx $allidx {
-    check_index $idx $batchsize
+    check_index $idx $batchsize $bTrace
   }
 }

@@ -364,4 +364,25 @@ do_eqp_test 11.10 {
   SELECT a,b,c FROM x2 INDEXED BY x2i WHERE a=1 AND b=1 AND c='3.0';
 } {0 0 0 {SEARCH TABLE x2 USING COVERING INDEX x2i (a=? AND b=? AND rowid=?)}}
 
+#-------------------------------------------------------------------------
+# Check INDEXED BY works (throws an exception) with partial indexes that 
+# cannot be used.
+do_execsql_test 12.1 {
+  CREATE TABLE o1(x INTEGER PRIMARY KEY, y, z);
+  CREATE INDEX p1 ON o1(z);
+  CREATE INDEX p2 ON o1(y) WHERE z=1;
+}
+do_catchsql_test 12.2 {
+  SELECT * FROM o1 INDEXED BY p2 ORDER BY 1;
+} {1 {no query solution}}
+do_execsql_test 12.3 {
+  DROP INDEX p1;
+  DROP INDEX p2;
+  CREATE INDEX p2 ON o1(y) WHERE z=1;
+  CREATE INDEX p1 ON o1(z);
+}
+do_catchsql_test 12.4 {
+  SELECT * FROM o1 INDEXED BY p2 ORDER BY 1;
+} {1 {no query solution}}
+
 finish_test

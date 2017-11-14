@@ -1131,12 +1131,18 @@ typedef struct sqlite3_api_routines sqlite3_api_routines;
 ** in the name of the object stands for "virtual file system".  See
 ** the [VFS | VFS documentation] for further information.
 **
-** The value of the iVersion field is initially 1 but may be larger in
-** future versions of SQLite.  Additional fields may be appended to this
-** object when the iVersion value is increased.  Note that the structure
-** of the sqlite3_vfs object changes in the transaction between
-** SQLite version 3.5.9 and 3.6.0 and yet the iVersion field was not
-** modified.
+** The VFS interface is sometimes extended by adding new methods onto
+** the end.  Each time such an extension occurs, the iVersion field
+** is incremented.  The iVersion value started out as 1 in
+** SQLite [version 3.5.0] on [dateof:3.5.0], then increased to 2
+** with SQLite [version 3.7.0] on [dateof:3.7.0], and then increased
+** to 3 with SQLite [version 3.7.6] on [dateof:3.7.6].  Additional fields
+** may be appended to the sqlite3_vfs object and the iVersion value
+** may increase again in future versions of SQLite.
+** Note that the structure
+** of the sqlite3_vfs object changes in the transition from
+** SQLite [version 3.5.9] to [version 3.6.0] on [dateof:3.6.0]
+** and yet the iVersion field was not modified.
 **
 ** The szOsFile field is the size of the subclassed [sqlite3_file]
 ** structure used by this VFS.  mxPathname is the maximum length of

@@ -2869,9 +2869,11 @@ static int whereLoopAddBtree(
   }
 #endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
-  /* Loop over all indices
-  */
-  for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
+  /* Loop over all indices. If there was an INDEXED BY clause, then only 
+  ** consider index pProbe.  */
+  for(; rc==SQLITE_OK && pProbe; 
+      pProbe=(pSrc->pIBIndex ? 0 : pProbe->pNext), iSortIdx++
+  ){
     if( pProbe->pPartIdxWhere!=0
      && !whereUsablePartialIndex(pSrc->iCursor, pWC, pProbe->pPartIdxWhere) ){
       testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
@@ -2981,10 +2983,6 @@ static int whereLoopAddBtree(
     pBuilder->nRecValid = 0;
     pBuilder->pRec = 0;
 #endif
-
-    /* If there was an INDEXED BY clause, then only that one index is
-    ** considered. */
-    if( pSrc->pIBIndex ) break;
   }
   return rc;
 }
