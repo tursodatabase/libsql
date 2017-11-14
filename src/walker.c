@@ -91,7 +91,6 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
   if( sqlite3WalkExpr(pWalker, p->pHaving) ) return WRC_Abort;
   if( sqlite3WalkExprList(pWalker, p->pOrderBy) ) return WRC_Abort;
   if( sqlite3WalkExpr(pWalker, p->pLimit) ) return WRC_Abort;
-  if( sqlite3WalkExpr(pWalker, p->pOffset) ) return WRC_Abort;
   return WRC_Continue;
 }
 

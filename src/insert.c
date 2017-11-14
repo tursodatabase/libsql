@@ -2007,7 +2007,6 @@ static int xferOptimization(
   if( pSelect->pLimit ){
     return 0;   /* SELECT may not have a LIMIT clause */
   }
-  assert( pSelect->pOffset==0 );  /* Must be so if pLimit==0 */
   if( pSelect->pPrior ){
     return 0;   /* SELECT may not be a compound query */
   }

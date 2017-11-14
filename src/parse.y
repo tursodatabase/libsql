@@ -85,15 +85,6 @@
 #define YYMALLOCARGTYPE  u64
 
 /*
-** An instance of this structure holds information about the
-** LIMIT clause of a SELECT statement.
-*/
-struct LimitVal {
-  Expr *pLimit;    /* The LIMIT expression.  NULL if there is no limit */
-  Expr *pOffset;   /* The OFFSET expression.  NULL if there is none */
-};
-
-/*
 ** An instance of the following structure describes the event of a
 ** TRIGGER.  "a" is the event type, one of TK_UPDATE, TK_INSERT,
 ** TK_DELETE, or TK_INSTEAD.  If the event is of the form
@@ -470,7 +461,7 @@ selectnowith(A) ::= selectnowith(A) multiselect_op(Y) oneselect(Z).  {
     x.n = 0;
     parserDoubleLinkSelect(pParse, pRhs);
     pFrom = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&x,pRhs,0,0);
-    pRhs = sqlite3SelectNew(pParse,0,pFrom,0,0,0,0,0,0,0);
+    pRhs = sqlite3SelectNew(pParse,0,pFrom,0,0,0,0,0,0);
   }
   if( pRhs ){
     pRhs->op = (u8)Y;
@@ -493,7 +484,7 @@ oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
 #if SELECTTRACE_ENABLED
   Token s = S; /*A-overwrites-S*/
 #endif
-  A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L.pLimit,L.pOffset);
+  A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L);
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
   ** query planner debugging, to differentiate between multiple Select
@@ -524,11 +515,11 @@ oneselect(A) ::= values(A).
 %type values {Select*}
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}
 values(A) ::= VALUES LP nexprlist(X) RP. {
-  A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0,0);
+  A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
 }
 values(A) ::= values(A) COMMA LP exprlist(Y) RP. {
   Select *pRight, *pLeft = A;
-  pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0,0);
+  pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0);
   if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
     pRight->op = TK_ALL;
@@ -639,7 +630,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
     }else{
       Select *pSubquery;
       sqlite3SrcListShiftJoinType(F);
-      pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,SF_NestedFrom,0,0);
+      pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,SF_NestedFrom,0);
       A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,pSubquery,N,U);
     }
   }
@@ -726,7 +717,7 @@ groupby_opt(A) ::= GROUP BY nexprlist(X). {A = X;}
 having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X.pExpr;}
 
-%type limit_opt {struct LimitVal}
+%type limit_opt {Expr*}
 
 // The destructor for limit_opt will never fire in the current grammar.
 // The limit_opt non-terminal only occurs at the end of a single production
@@ -735,16 +726,14 @@ having_opt(A) ::= HAVING expr(X).  {A = X.pExpr;}
 // reduce.  So there is never a limit_opt non-terminal on the stack 
 // except as a transient.  So there is never anything to destroy.
 //
-//%destructor limit_opt {
-//  sqlite3ExprDelete(pParse->db, $$.pLimit);
-//  sqlite3ExprDelete(pParse->db, $$.pOffset);
-//}
-limit_opt(A) ::= .                    {A.pLimit = 0; A.pOffset = 0;}
-limit_opt(A) ::= LIMIT expr(X).       {A.pLimit = X.pExpr; A.pOffset = 0;}
+//%destructor limit_opt {sqlite3ExprDelete(pParse->db, $$);}
+limit_opt(A) ::= .       {A = 0;}
+limit_opt(A) ::= LIMIT expr(X).
+                         {A = sqlite3PExpr(pParse,TK_LIMIT,X.pExpr,0);}
 limit_opt(A) ::= LIMIT expr(X) OFFSET expr(Y). 
-                                      {A.pLimit = X.pExpr; A.pOffset = Y.pExpr;}
+                         {A = sqlite3PExpr(pParse,TK_LIMIT,X.pExpr,Y.pExpr);}
 limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y). 
-                                      {A.pOffset = X.pExpr; A.pLimit = Y.pExpr;}
+                         {A = sqlite3PExpr(pParse,TK_LIMIT,Y.pExpr,X.pExpr);}
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //
@@ -753,14 +742,14 @@ cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W)
         orderby_opt(O) limit_opt(L). {
   sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
-  sqlite3DeleteFrom(pParse,X,W,O,L.pLimit,L.pOffset); 
+  sqlite3DeleteFrom(pParse,X,W,O,L);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
 cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
   sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
-  sqlite3DeleteFrom(pParse,X,W,0,0,0);
+  sqlite3DeleteFrom(pParse,X,W,0,0);
 }
 %endif
 
@@ -778,7 +767,7 @@ cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
   sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,W,R,O,L.pLimit,L.pOffset);
+  sqlite3Update(pParse,X,Y,W,R,O,L);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
@@ -787,7 +776,7 @@ cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
   sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,W,R,0,0,0);
+  sqlite3Update(pParse,X,Y,W,R,0,0);
 }
 %endif
 
@@ -1189,7 +1178,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   }
   expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z) paren_exprlist(E). [IN] {
     SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
-    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
+    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0);
     if( E )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, E);
     A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0);
     sqlite3PExprAddSelect(pParse, A.pExpr, pSelect);
