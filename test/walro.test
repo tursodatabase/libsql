@@ -101,10 +101,11 @@ do_multiclient_test tn {
     code1 { db close }
     list [file exists test.db-wal] [file exists test.db-shm]
   } {1 1}
+
   do_test 1.2.2 {
     code1 { sqlite3 db file:test.db?readonly_shm=1 }
-    sql1 { SELECT * FROM t1 }
-  } {a b c d e f g h i j}
+    list [catch { sql1 { SELECT * FROM t1 } } msg] $msg
+  } {0 {a b c d e f g h i j}}
 
   do_test 1.2.3 {
     code1 { db close }
@@ -113,10 +114,10 @@ do_multiclient_test tn {
     file attributes test.db-shm -permissions r--r--r--
     code1 { sqlite3 db file:test.db?readonly_shm=1 }
     csql1 { SELECT * FROM t1 }
-  } {1 {attempt to write a readonly database}}
+  } {0 {a b c d e f g h i j}}
   do_test 1.2.4 {
     code1 { sqlite3_extended_errcode db } 
-  } {SQLITE_READONLY_RECOVERY}
+  } {SQLITE_OK}
 
   do_test 1.2.5 {
     file attributes test.db-shm -permissions rw-r--r--
@@ -138,11 +139,15 @@ do_multiclient_test tn {
   # Now check that if the readonly_shm option is not supplied, or if it
   # is set to zero, it is not possible to connect to the database without
   # read-write access to the shm.
+  # 
+  # UPDATE: os_unix.c now opens the *-shm file in readonly mode 
+  # automatically.
+  #
   do_test 1.3.1 {
     code1 { db close }
     code1 { sqlite3 db test.db }
     csql1 { SELECT * FROM t1 }
-  } {1 {unable to open database file}}
+  } {0 {a b c d e f g h i j k l}}
 
   # Also test that if the -shm file can be opened for read/write access,
   # it is not if readonly_shm=1 is present in the URI.
@@ -161,10 +166,10 @@ do_multiclient_test tn {
     file attributes test.db-shm -permissions r--r--r--
     code1 { sqlite3 db file:test.db?readonly_shm=1 }
     csql1 { SELECT * FROM t1 }
-  } {1 {attempt to write a readonly database}}
+  } {0 {a b c d e f g h i j k l}}
   do_test 1.3.2.4 {
     code1 { sqlite3_extended_errcode db } 
-  } {SQLITE_READONLY_RECOVERY}
+  } {SQLITE_OK}
 
   #-----------------------------------------------------------------------
   # Test cases 1.4.* check that checkpoints and log wraps don't prevent

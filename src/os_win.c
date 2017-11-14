@@ -3673,6 +3673,9 @@ struct winShmNode {
 
   int szRegion;              /* Size of shared-memory regions */
   int nRegion;               /* Size of array apRegion */
+  u8 isReadonly;             /* True if read-only */
+  u8 isUnlocked;             /* True if no DMS lock held */
+
   struct ShmRegion {
     HANDLE hMap;             /* File handle from CreateFileMapping */
     void *pMap;
@@ -3821,6 +3824,37 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 }
 
 /*
+** The DMS lock has not yet been taken on shm file pShmNode. Attempt to
+** take it now. Return SQLITE_OK if successful, or an SQLite error
+** code otherwise.
+**
+** If the DMS cannot be locked because this is a readonly_shm=1
+** connection and no other process already holds a lock, return
+** SQLITE_READONLY_CANTINIT and set pShmNode->isUnlocked=1.
+*/
+static int winLockSharedMemory(winShmNode *pShmNode){
+  int rc = winShmSystemLock(pShmNode, WINSHM_WRLCK, WIN_SHM_DMS, 1);
+
+  if( rc==SQLITE_OK ){
+    if( pShmNode->isReadonly ){
+      pShmNode->isUnlocked = 1;
+      winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+      return SQLITE_READONLY_CANTINIT;
+    }else if( winTruncate((sqlite3_file*)&pShmNode->hFile, 0) ){
+      winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+      return winLogError(SQLITE_IOERR_SHMOPEN, osGetLastError(),
+                         "winLockSharedMemory", pShmNode->zFilename);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
+  }
+
+  return winShmSystemLock(pShmNode, WINSHM_RDLCK, WIN_SHM_DMS, 1);
+}
+
+/*
 ** Open the shared-memory area associated with database file pDbFd.
 **
 ** When opening a new shared-memory file, if no other instances of that
@@ -3829,9 +3863,10 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 */
 static int winOpenSharedMemory(winFile *pDbFd){
   struct winShm *p;                  /* The connection to be opened */
-  struct winShmNode *pShmNode = 0;   /* The underlying mmapped file */
-  int rc;                            /* Result code */
-  struct winShmNode *pNew;           /* Newly allocated winShmNode */
+  winShmNode *pShmNode = 0;          /* The underlying mmapped file */
+  int rc = SQLITE_OK;                /* Result code */
+  int rc2 = SQLITE_ERROR;            /* winOpen result code */
+  winShmNode *pNew;                  /* Newly allocated winShmNode */
   int nName;                         /* Size of zName in bytes */
 
   assert( pDbFd->pShm==0 );    /* Not previously opened */
@@ -3878,30 +3913,29 @@ static int winOpenSharedMemory(winFile *pDbFd){
       }
     }
 
-    rc = winOpen(pDbFd->pVfs,
-                 pShmNode->zFilename,             /* Name of the file (UTF-8) */
-                 (sqlite3_file*)&pShmNode->hFile,  /* File handle here */
-                 SQLITE_OPEN_WAL | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-                 0);
-    if( SQLITE_OK!=rc ){
-      goto shm_open_err;
+    if( 0==sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
+      rc2 = winOpen(pDbFd->pVfs,
+                    pShmNode->zFilename,
+                    (sqlite3_file*)&pShmNode->hFile,
+                    SQLITE_OPEN_WAL|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,
+                    0);
+    }
+    if( rc2!=SQLITE_OK ){
+      rc2 = winOpen(pDbFd->pVfs,
+                    pShmNode->zFilename,
+                    (sqlite3_file*)&pShmNode->hFile,
+                    SQLITE_OPEN_WAL|SQLITE_OPEN_READONLY,
+                    0);
+      if( rc2!=SQLITE_OK ){
+        rc = winLogError(rc2, osGetLastError(), "winOpenShm",
+                         pShmNode->zFilename);
+        goto shm_open_err;
+      }
+      pShmNode->isReadonly = 1;
     }
 
-    /* Check to see if another process is holding the dead-man switch.
-    ** If not, truncate the file to zero length.
-    */
-    if( winShmSystemLock(pShmNode, WINSHM_WRLCK, WIN_SHM_DMS, 1)==SQLITE_OK ){
-      rc = winTruncate((sqlite3_file *)&pShmNode->hFile, 0);
-      if( rc!=SQLITE_OK ){
-        rc = winLogError(SQLITE_IOERR_SHMOPEN, osGetLastError(),
-                         "winOpenShm", pDbFd->zPath);
-      }
-    }
-    if( rc==SQLITE_OK ){
-      winShmSystemLock(pShmNode, WINSHM_UNLCK, WIN_SHM_DMS, 1);
-      rc = winShmSystemLock(pShmNode, WINSHM_RDLCK, WIN_SHM_DMS, 1);
-    }
-    if( rc ) goto shm_open_err;
+    rc = winLockSharedMemory(pShmNode);
+    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY_CANTINIT ) goto shm_open_err;
   }
 
   /* Make the new connection a child of the winShmNode */
@@ -3924,7 +3958,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
   p->pNext = pShmNode->pFirst;
   pShmNode->pFirst = p;
   sqlite3_mutex_leave(pShmNode->mutex);
-  return SQLITE_OK;
+  return rc;
 
   /* Jump here on any error */
 shm_open_err:
@@ -4128,6 +4162,8 @@ static int winShmMap(
   winFile *pDbFd = (winFile*)fd;
   winShm *pShm = pDbFd->pShm;
   winShmNode *pShmNode;
+  DWORD protect = PAGE_READWRITE;
+  DWORD flags = FILE_MAP_WRITE | FILE_MAP_READ;
   int rc = SQLITE_OK;
 
   if( !pShm ){
@@ -4138,6 +4174,11 @@ static int winShmMap(
   pShmNode = pShm->pShmNode;
 
   sqlite3_mutex_enter(pShmNode->mutex);
+  if( pShmNode->isUnlocked ){
+    rc = winLockSharedMemory(pShmNode);
+    if( rc!=SQLITE_OK ) goto shmpage_out;
+    pShmNode->isUnlocked = 0;
+  }
   assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
 
   if( pShmNode->nRegion<=iRegion ){
@@ -4184,21 +4225,26 @@ static int winShmMap(
     }
     pShmNode->aRegion = apNew;
 
+    if( pShmNode->isReadonly ){
+      protect = PAGE_READONLY;
+      flags = FILE_MAP_READ;
+    }
+
     while( pShmNode->nRegion<=iRegion ){
       HANDLE hMap = NULL;         /* file-mapping handle */
       void *pMap = 0;             /* Mapped memory region */
 
 #if SQLITE_OS_WINRT
       hMap = osCreateFileMappingFromApp(pShmNode->hFile.h,
-          NULL, PAGE_READWRITE, nByte, NULL
+          NULL, protect, nByte, NULL
       );
 #elif defined(SQLITE_WIN32_HAS_WIDE)
       hMap = osCreateFileMappingW(pShmNode->hFile.h,
-          NULL, PAGE_READWRITE, 0, nByte, NULL
+          NULL, protect, 0, nByte, NULL
       );
 #elif defined(SQLITE_WIN32_HAS_ANSI) && SQLITE_WIN32_CREATEFILEMAPPINGA
       hMap = osCreateFileMappingA(pShmNode->hFile.h,
-          NULL, PAGE_READWRITE, 0, nByte, NULL
+          NULL, protect, 0, nByte, NULL
       );
 #endif
       OSTRACE(("SHM-MAP-CREATE pid=%lu, region=%d, size=%d, rc=%s\n",
@@ -4208,11 +4254,11 @@ static int winShmMap(
         int iOffset = pShmNode->nRegion*szRegion;
         int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
 #if SQLITE_OS_WINRT
-        pMap = osMapViewOfFileFromApp(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
+        pMap = osMapViewOfFileFromApp(hMap, flags,
             iOffset - iOffsetShift, szRegion + iOffsetShift
         );
 #else
-        pMap = osMapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
+        pMap = osMapViewOfFile(hMap, flags,
             0, iOffset - iOffsetShift, szRegion + iOffsetShift
         );
 #endif
@@ -4243,6 +4289,7 @@ shmpage_out:
   }else{
     *pp = 0;
   }
+  if( pShmNode->isReadonly && rc==SQLITE_OK ) rc = SQLITE_READONLY;
   sqlite3_mutex_leave(pShmNode->mutex);
   return rc;
 }
