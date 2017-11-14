@@ -1,5 +1,5 @@
-C Merge\sthe\spatch\sthat\senables\sreading\sa\sread-only\sWAL-mode\sdatabase,\swithout\nany\sspecial\squery\sparameters,\sas\slong\sas\sthe\s-shm\sand\s-wal\sfiles\sare\son\sdisk.
-D 2017-11-14T20:36:33.703
+C Fix\sa\stypo\sthat\sprevented\ssuccessful\sbuilds\son\smacs.
+D 2017-11-14T21:06:38.497
 F Makefile.in 28a879888205a67bd3b54c68afa1cd2e939e8ead2179b1177756a101dd1eb86e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9e7628ad7d33be39ac041e452e47e648ae3d14afbaaa254096e3a4d1d7c1c653
@@ -457,7 +457,7 @@ F src/os.c 1975fc1d821a8095c6800072874665413733def2e460896c3e0af6a97d082015
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 50b62dad4ea54c5962d311d94303d1f7f88ce0ac1bdc09b34720a33466f5eee8
+F src/os_unix.c fcbdfbbadd280d80a23695b9311f373e01203cbcf25a1317d7e2f1ba2cdc5be5
 F src/os_win.c f626b26c878e7be2a3393a68291c1d8d1008c2740054044ab12656108b3b766a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c fb3cd08ac0cb9918c77a46dbe51806977d17eaaf561d623ad95fd34b5ec86069
@@ -1682,7 +1682,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1754faefccba39900a89bad3d6ba6670a504a1f229621ce3a16eca03ae062e36 00ec95fcd02bb415dabd7f25fee24856d45d6916c18b2728e97e9bb9b8322ba3
-R 2a1beef0243bfb3f51f21af2892b9850
+P 8c2a769c4ac331c20134eb3d0e96f6af21c8ac7529a5eaea4843cce7cf7c936a
+R 388d273751fe9d57d57f45d0982a02a4
 U drh
-Z 393c94cd8c1fefab07b43a474d449ce1
+Z 831624bba25564066028723af61db301

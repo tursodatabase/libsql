@@ -5184,7 +5184,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 #ifdef __APPLE__
       /* On MacOS and iOS, avoid even trying to open a read-only SHM file
       ** for writing, because doing so generates scary log messages */
-      if( osAccess(zShmFilename, R_OK|W_OK)!=0 && (errno==EPERM || errno==EACCES) ){
+      if( osAccess(zShm, R_OK|W_OK)!=0 && (errno==EPERM || errno==EACCES) ){
         pShmNode->h = -1;
       }else
 #endif
