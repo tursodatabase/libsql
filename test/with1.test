@@ -1003,6 +1003,17 @@ do_execsql_test 19.1 {
   SELECT * FROM t1;
 } {0 0 0 {SCAN SUBQUERY 1} 0 1 1 {SCAN SUBQUERY 1}}
 
-
+# 2017-10-28.
+# See check-in https://sqlite.org/src/info/0926df095faf72c2
+# Tried to optimize co-routine processing by changing a Copy opcode
+# into SCopy.  But OSSFuzz found two (similar) cases where that optimization
+# does not work.
+#
+do_execsql_test 20.1 {
+  WITH c(i)AS(VALUES(9)UNION SELECT~i FROM c)SELECT max(5)>i fROM c;
+} {0}
+do_execsql_test 20.2 {
+  WITH c(i)AS(VALUES(5)UNIoN SELECT 0)SELECT min(1)-i fROM c;
+} {1}
 
 finish_test

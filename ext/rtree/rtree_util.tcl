@@ -190,3 +190,8 @@ proc rtree_treedump {db zTab} {
   set d [rtree_depth $db $zTab]
   rtree_nodetreedump $db $zTab "" $d 1
 }
+
+proc do_rtree_integrity_test {tn tbl} {
+  uplevel [list do_execsql_test $tn "SELECT rtreecheck('$tbl')" ok]
+}
+
