@@ -38,6 +38,8 @@ proc create_test_data {size} {
 
 ifcapable {update_delete_limit} {
 
+  execsql { CREATE TABLE t1(x, y) }
+
   # check syntax error support
   do_test wherelimit-0.1 {
     catchsql {DELETE FROM t1 ORDER BY x}
@@ -48,6 +50,8 @@ ifcapable {update_delete_limit} {
   do_test wherelimit-0.3 {
     catchsql {UPDATE t1 SET y=1 WHERE x=1 ORDER BY x}
   } {1 {ORDER BY without LIMIT on UPDATE}}
+
+  execsql { DROP TABLE t1 }
 
   # no AS on table sources
   do_test wherelimit-0.4 {
@@ -301,20 +305,20 @@ ifcapable {update_delete_limit} {
   } {}
   do_catchsql_test wherelimit-4.2 {
     DELETE FROM tv WHERE 1 LIMIT 2;
-  } {1 {ORDER BY and LIMIT not support for table tv}}
+  } {0 {}}
   do_catchsql_test wherelimit-4.3 {
     DELETE FROM tv WHERE 1 ORDER BY a LIMIT 2;
-  } {1 {ORDER BY and LIMIT not support for table tv}}
+  } {0 {}}
   do_execsql_test wherelimit-4.10 {
     CREATE TABLE t3(a,b,c,d TEXT, PRIMARY KEY(a,b)) WITHOUT ROWID;
     INSERT INTO t3(a,b,c,d) VALUES(1,2,3,4),(5,6,7,8),(9,10,11,12);
   } {}
   do_catchsql_test wherelimit-4.11 {
     DELETE FROM t3 WHERE a=5 LIMIT 2;
-  } {1 {ORDER BY and LIMIT not support for table t3}}
+  } {0 {}}
   do_execsql_test wherelimit-4.12 {
     SELECT a,b,c,d FROM t3 ORDER BY 1;
-  } {1 2 3 4 5 6 7 8 9 10 11 12}
+  } {1 2 3 4 9 10 11 12}
 
 }
 
