@@ -5922,49 +5922,68 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
 #ifndef SQLITE_UNTESTABLE
-  if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 && nArg>=2 ){
+  if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 ){
     static const struct {
        const char *zCtrlName;   /* Name of a test-control option */
        int ctrlCode;            /* Integer code for that option */
     } aCtrl[] = {
-      { "prng_save",             SQLITE_TESTCTRL_PRNG_SAVE              },
-      { "prng_restore",          SQLITE_TESTCTRL_PRNG_RESTORE           },
-      { "prng_reset",            SQLITE_TESTCTRL_PRNG_RESET             },
-      { "bitvec_test",           SQLITE_TESTCTRL_BITVEC_TEST            },
-      { "fault_install",         SQLITE_TESTCTRL_FAULT_INSTALL          },
-      { "benign_malloc_hooks",   SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS    },
-      { "pending_byte",          SQLITE_TESTCTRL_PENDING_BYTE           },
-      { "assert",                SQLITE_TESTCTRL_ASSERT                 },
       { "always",                SQLITE_TESTCTRL_ALWAYS                 },
-      { "reserve",               SQLITE_TESTCTRL_RESERVE                },
-      { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
-      { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
+      { "assert",                SQLITE_TESTCTRL_ASSERT                 },
+      { "benign_malloc_hooks",   SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS    },
+      { "bitvec_test",           SQLITE_TESTCTRL_BITVEC_TEST            },
       { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
-      { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
+      { "fault_install",         SQLITE_TESTCTRL_FAULT_INSTALL          },
       { "imposter",              SQLITE_TESTCTRL_IMPOSTER               },
+      { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
+      { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
+      { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
+      { "pending_byte",          SQLITE_TESTCTRL_PENDING_BYTE           },
+      { "prng_reset",            SQLITE_TESTCTRL_PRNG_RESET             },
+      { "prng_restore",          SQLITE_TESTCTRL_PRNG_RESTORE           },
+      { "prng_save",             SQLITE_TESTCTRL_PRNG_SAVE              },
+      { "reserve",               SQLITE_TESTCTRL_RESERVE                },
     };
     int testctrl = -1;
     int rc2 = 0;
     int i, n2;
     open_db(p, 0);
+    const char *zCmd = nArg>=2 ? azArg[1] : "help";
+
+    /* The argument can optionally begin with "-" or "--" */
+    if( zCmd[0]=='-' && zCmd[1] ){
+      zCmd++;
+      if( zCmd[0]=='-' && zCmd[1] ) zCmd++;
+    }
+
+    /* --help lists all test-controls */
+    if( strcmp(zCmd,"help")==0 ){
+      utf8_printf(p->out, "Available test-controls:\n");
+      for(i=0; i<ArraySize(aCtrl); i++){
+        utf8_printf(p->out, "  .testctrl %s\n", aCtrl[i].zCtrlName);
+      }
+      rc = 1;
+      goto meta_command_exit;
+    }
 
     /* convert testctrl text option to value. allow any unique prefix
     ** of the option name, or a numerical value. */
-    n2 = strlen30(azArg[1]);
+    n2 = strlen30(zCmd);
     for(i=0; i<ArraySize(aCtrl); i++){
-      if( strncmp(azArg[1], aCtrl[i].zCtrlName, n2)==0 ){
+      if( strncmp(zCmd, aCtrl[i].zCtrlName, n2)==0 ){
         if( testctrl<0 ){
           testctrl = aCtrl[i].ctrlCode;
         }else{
-          utf8_printf(stderr, "ambiguous option name: \"%s\"\n", azArg[1]);
-          testctrl = -1;
-          break;
+          utf8_printf(stderr, "Error: ambiguous test-control: \"%s\"\n"
+                              "Use \".testctrl --help\" for help\n", zCmd);
+          rc = 1;
+          goto meta_command_exit;
         }
       }
     }
-    if( testctrl<0 ) testctrl = (int)integerValue(azArg[1]);
+    if( testctrl<0 ) testctrl = (int)integerValue(zCmd);
     if( (testctrl<SQLITE_TESTCTRL_FIRST) || (testctrl>SQLITE_TESTCTRL_LAST) ){
-      utf8_printf(stderr,"Error: invalid testctrl option: %s\n", azArg[1]);
+      utf8_printf(stderr,"Error: unknown test-control: %s\n"
+                         "Use \".testctrl --help\" for help\n", zCmd);
     }else{
       switch(testctrl){
 
