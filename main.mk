@@ -464,6 +464,7 @@ TESTPROGS = \
   testfixture$(EXE) \
   sqlite3$(EXE) \
   sqlite3_analyzer$(EXE) \
+  sqlite3_checker$(EXE) \
   sqldiff$(EXE) \
   dbhash$(EXE)
 
@@ -582,7 +583,7 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
-	cp tsrc/shell.c tsrc/sqlite3ext.h .
+	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
@@ -786,6 +787,22 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
+CHECKER_DEPS =\
+  $(TOP)/tool/mkccode.tcl \
+  sqlite3.c \
+  $(TOP)/src/tclsqlite.c \
+  $(TOP)/ext/repair/sqlite3_checker.tcl \
+  $(TOP)/ext/repair/checkindex.c \
+  $(TOP)/ext/repair/checkfreelist.c \
+  $(TOP)/ext/misc/btreeinfo.c \
+  $(TOP)/ext/repair/sqlite3_checker.c.in
+
+sqlite3_checker.c:	$(CHECKER_DEPS)
+	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
+
+sqlite3_checker$(TEXE):	sqlite3_checker.c
+	$(TCCX) $(TCL_FLAGS) sqlite3_checker.c -o $@ $(LIBTCL) $(THREADLIB)
+
 dbdump$(EXE):	$(TOP)/ext/misc/dbdump.c sqlite3.o
 	$(TCCX) -DDBDUMP_STANDALONE -o dbdump$(EXE) \
             $(TOP)/ext/misc/dbdump.c sqlite3.o $(THREADLIB)
@@ -907,6 +924,9 @@ showjournal$(EXE):	$(TOP)/tool/showjournal.c sqlite3.o
 showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
+
+showshm$(EXE):	$(TOP)/tool/showshm.c
+	$(TCC) -o showshm$(EXE) $(TOP)/tool/showshm.c
 
 changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \

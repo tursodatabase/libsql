@@ -722,4 +722,44 @@ do_execsql_test json-11.3 {
   /* } */
 } {0}
 
+# 2017-10-27.  Demonstrate the ability to access an element from
+# a json structure even though the element name constains a "."
+# character, by quoting the element name in the path.
+#
+do_execsql_test json-12.100 {
+  CREATE TABLE t12(x);
+  INSERT INTO t12(x) VALUES(
+    '{"settings":
+        {"layer2":
+           {"hapax.legomenon":
+              {"forceDisplay":true,
+               "transliterate":true,
+               "add.footnote":true,
+               "summary.report":true},
+            "dis.legomenon":
+              {"forceDisplay":true,
+               "transliterate":false,
+               "add.footnote":false,
+               "summary.report":true},
+            "tris.legomenon":
+              {"forceDisplay":true,
+               "transliterate":false,
+               "add.footnote":false,
+               "summary.report":false}
+           }
+        }
+     }');
+} {}
+do_execsql_test json-12.110 {
+  SELECT json_remove(x, '$.settings.layer2."dis.legomenon".forceDisplay')
+    FROM t12;
+} {{{"settings":{"layer2":{"hapax.legomenon":{"forceDisplay":true,"transliterate":true,"add.footnote":true,"summary.report":true},"dis.legomenon":{"transliterate":false,"add.footnote":false,"summary.report":true},"tris.legomenon":{"forceDisplay":true,"transliterate":false,"add.footnote":false,"summary.report":false}}}}}}
+do_execsql_test json-12.120 {
+  SELECT json_extract(x, '$.settings.layer2."tris.legomenon"."summary.report"')
+    FROM t12;
+} {0}
+
+
+
+
 finish_test

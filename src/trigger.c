@@ -711,7 +711,7 @@ static int codeTriggerProgram(
           targetSrcList(pParse, pStep),
           sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3ExprDup(db, pStep->pWhere, 0), 
-          pParse->eOrconf
+          pParse->eOrconf, 0, 0
         );
         break;
       }
@@ -727,7 +727,7 @@ static int codeTriggerProgram(
       case TK_DELETE: {
         sqlite3DeleteFrom(pParse, 
           targetSrcList(pParse, pStep),
-          sqlite3ExprDup(db, pStep->pWhere, 0)
+          sqlite3ExprDup(db, pStep->pWhere, 0), 0, 0
         );
         break;
       }

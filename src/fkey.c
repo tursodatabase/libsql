@@ -725,7 +725,7 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     }
 
     pParse->disableTriggers = 1;
-    sqlite3DeleteFrom(pParse, sqlite3SrcListDup(db, pName, 0), 0);
+    sqlite3DeleteFrom(pParse, sqlite3SrcListDup(db, pName, 0), 0, 0, 0);
     pParse->disableTriggers = 0;
 
     /* If the DELETE has generated immediate foreign key constraint 
@@ -1283,7 +1283,7 @@ static Trigger *fkActionTrigger(
           sqlite3ExprListAppend(pParse, 0, pRaise),
           sqlite3SrcListAppend(db, 0, &tFrom, 0),
           pWhere,
-          0, 0, 0, 0, 0, 0
+          0, 0, 0, 0, 0
       );
       pWhere = 0;
     }

@@ -383,5 +383,39 @@ do_test minmax2-10.12 {
   }
 } {{} {}}
 
+# 2017-10-26.  Extend the min/max optimization to indexes on expressions
+#
+do_execsql_test minmax2-11.100 {
+  CREATE TABLE t11(a,b,c);
+  INSERT INTO t11(a,b,c) VALUES(1,10,5),(2,8,11),(3,1,4),(4,20,1),(5,16,4);
+  CREATE INDEX t11bc ON t11(b+c);
+  SELECT max(b+c) FROM t11;
+} {21}
+do_execsql_test minmax2-11.110 {
+  SELECT a, max(b+c) FROM t11;
+} {4 21}
+do_test minmax2-11.111 {
+  db eval {SELECT max(b+c) FROM t11}
+  db status step
+} {0}
+do_test minmax2-11.112 {
+  db eval {SELECT max(c+b) FROM t11}
+  db status step
+} {4}
+do_execsql_test minmax2-11.120 {
+  SELECT a, min(b+c) FROM t11;
+} {3 5}
+do_test minmax2-11.121 {
+  db eval {SELECT min(b+c) FROM t11}
+  db status step
+} {0}
+do_test minmax2-11.122 {
+  db eval {SELECT min(c+b) FROM t11}
+  db status step
+} {4}
+do_execsql_test minmax2-11.130 {
+  INSERT INTO t11(a,b,c) VALUES(6,NULL,0),(7,0,NULL);
+  SELECT a, min(b+c) FROM t11;
+} {3 5}
 
 finish_test

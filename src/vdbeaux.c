@@ -3043,7 +3043,7 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
 void sqlite3VdbeDelete(Vdbe *p){
   sqlite3 *db;
 
-  if( NEVER(p==0) ) return;
+  assert( p!=0 );
   db = p->db;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3VdbeClearObject(db, p);
