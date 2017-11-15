@@ -5926,25 +5926,31 @@ static int do_meta_command(char *zLine, ShellState *p){
     static const struct {
        const char *zCtrlName;   /* Name of a test-control option */
        int ctrlCode;            /* Integer code for that option */
+       const char *zUsage;      /* Usage notes */
     } aCtrl[] = {
-      { "always",                SQLITE_TESTCTRL_ALWAYS                 },
-      { "assert",                SQLITE_TESTCTRL_ASSERT                 },
-      { "benign_malloc_hooks",   SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS    },
-      { "bitvec_test",           SQLITE_TESTCTRL_BITVEC_TEST            },
-      { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
-      { "fault_install",         SQLITE_TESTCTRL_FAULT_INSTALL          },
-      { "imposter",              SQLITE_TESTCTRL_IMPOSTER               },
-      { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
-      { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
-      { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
-      { "pending_byte",          SQLITE_TESTCTRL_PENDING_BYTE           },
-      { "prng_reset",            SQLITE_TESTCTRL_PRNG_RESET             },
-      { "prng_restore",          SQLITE_TESTCTRL_PRNG_RESTORE           },
-      { "prng_save",             SQLITE_TESTCTRL_PRNG_SAVE              },
-      { "reserve",               SQLITE_TESTCTRL_RESERVE                },
+      { "always",             SQLITE_TESTCTRL_ALWAYS,        "BOOLEAN"            },
+      { "assert",             SQLITE_TESTCTRL_ASSERT,        "BOOLEAN"            },
+    /*{ "benign_malloc_hooks",SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, ""          },*/
+    /*{ "bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST,   ""                },*/
+      { "byteorder",          SQLITE_TESTCTRL_BYTEORDER,     ""                   },
+    /*{ "fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, ""                }, */
+      { "imposter",           SQLITE_TESTCTRL_IMPOSTER,   "SCHEMA ON/OFF ROOTPAGE"},
+#ifdef SQLITE_N_KEYWORD
+      { "iskeyword",          SQLITE_TESTCTRL_ISKEYWORD,     "IDENTIFIER"         },
+#endif
+      { "localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,"BOOLEAN"           },
+      { "never_corrupt",      SQLITE_TESTCTRL_NEVER_CORRUPT, "BOOLEAN"            },
+      { "optimizations",      SQLITE_TESTCTRL_OPTIMIZATIONS, "DISABLE-MASK"       },
+      { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "           },
+      { "prng_reset",         SQLITE_TESTCTRL_PRNG_RESET,    ""                   },
+      { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""                   },
+      { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""                   },
+      { "reserve",            SQLITE_TESTCTRL_RESERVE,       "BYTES-OF-RESERVE"   },
     };
     int testctrl = -1;
-    int rc2 = 0;
+    int iCtrl = -1;
+    int rc2 = 0;    /* 0: usage.  1: %d  2: %x  3: no-output */
+    int isOk = 0;
     int i, n2;
     open_db(p, 0);
     const char *zCmd = nArg>=2 ? azArg[1] : "help";
@@ -5959,7 +5965,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( strcmp(zCmd,"help")==0 ){
       utf8_printf(p->out, "Available test-controls:\n");
       for(i=0; i<ArraySize(aCtrl); i++){
-        utf8_printf(p->out, "  .testctrl %s\n", aCtrl[i].zCtrlName);
+        utf8_printf(p->out, "  .testctrl %s %s\n",
+                    aCtrl[i].zCtrlName, aCtrl[i].zUsage);
       }
       rc = 1;
       goto meta_command_exit;
@@ -5972,6 +5979,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( strncmp(zCmd, aCtrl[i].zCtrlName, n2)==0 ){
         if( testctrl<0 ){
           testctrl = aCtrl[i].ctrlCode;
+          iCtrl = i;
         }else{
           utf8_printf(stderr, "Error: ambiguous test-control: \"%s\"\n"
                               "Use \".testctrl --help\" for help\n", zCmd);
@@ -5980,8 +5988,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
       }
     }
-    if( testctrl<0 ) testctrl = (int)integerValue(zCmd);
-    if( (testctrl<SQLITE_TESTCTRL_FIRST) || (testctrl>SQLITE_TESTCTRL_LAST) ){
+    if( testctrl<0 ){
       utf8_printf(stderr,"Error: unknown test-control: %s\n"
                          "Use \".testctrl --help\" for help\n", zCmd);
     }else{
@@ -5993,10 +6000,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==3 ){
             int opt = (int)strtol(azArg[2], 0, 0);
             rc2 = sqlite3_test_control(testctrl, p->db, opt);
-            raw_printf(p->out, "%d (0x%08x)\n", rc2, rc2);
-          } else {
-            utf8_printf(stderr,"Error: testctrl %s takes a single int option\n",
-                    azArg[1]);
+            isOk = 3;
           }
           break;
 
@@ -6007,10 +6011,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_TESTCTRL_BYTEORDER:
           if( nArg==2 ){
             rc2 = sqlite3_test_control(testctrl);
-            raw_printf(p->out, "%d (0x%08x)\n", rc2, rc2);
-          } else {
-            utf8_printf(stderr,"Error: testctrl %s takes no options\n",
-                        azArg[1]);
+            isOk = testctrl==SQLITE_TESTCTRL_BYTEORDER ? 1 : 3;
           }
           break;
 
@@ -6019,24 +6020,27 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==3 ){
             unsigned int opt = (unsigned int)integerValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);
-            raw_printf(p->out, "%d (0x%08x)\n", rc2, rc2);
-          } else {
-            utf8_printf(stderr,"Error: testctrl %s takes a single unsigned"
-                           " int option\n", azArg[1]);
+            isOk = 3;
           }
           break;
 
         /* sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_ASSERT:
         case SQLITE_TESTCTRL_ALWAYS:
+          if( nArg==3 ){
+            int opt = booleanValue(azArg[2]);
+            rc2 = sqlite3_test_control(testctrl, opt);
+            isOk = 1;
+          }
+          break;
+
+        /* sqlite3_test_control(int, int) */
+        case SQLITE_TESTCTRL_LOCALTIME_FAULT:
         case SQLITE_TESTCTRL_NEVER_CORRUPT:
           if( nArg==3 ){
             int opt = booleanValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);
-            raw_printf(p->out, "%d (0x%08x)\n", rc2, rc2);
-          } else {
-            utf8_printf(stderr,"Error: testctrl %s takes a single int option\n",
-                            azArg[1]);
+            isOk = 3;
           }
           break;
 
@@ -6046,11 +6050,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==3 ){
             const char *opt = azArg[2];
             rc2 = sqlite3_test_control(testctrl, opt);
-            raw_printf(p->out, "%d (0x%08x)\n", rc2, rc2);
-          } else {
-            utf8_printf(stderr,
-                        "Error: testctrl %s takes a single char * option\n",
-                        azArg[1]);
+            isOk = 1;
           }
           break;
 #endif
@@ -6061,21 +6061,18 @@ static int do_meta_command(char *zLine, ShellState *p){
                           azArg[2],
                           integerValue(azArg[3]),
                           integerValue(azArg[4]));
-            raw_printf(p->out, "%d (0x%08x)\n", rc2, rc2);
-          }else{
-            raw_printf(stderr,"Usage: .testctrl imposter dbName onoff tnum\n");
+            isOk = 3;
           }
           break;
-
-        case SQLITE_TESTCTRL_BITVEC_TEST:
-        case SQLITE_TESTCTRL_FAULT_INSTALL:
-        case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS:
-        default:
-          utf8_printf(stderr,
-                      "Error: CLI support for testctrl %s not implemented\n",
-                      azArg[1]);
-          break;
       }
+    }
+    if( isOk==0 && iCtrl>=0 ){
+      utf8_printf(p->out, "Usage: .testctrl %s %s\n", zCmd, aCtrl[iCtrl].zUsage);
+      rc = 1;
+    }else if( isOk==1 ){
+      raw_printf(p->out, "%d\n", rc2);
+    }else if( isOk==2 ){
+      raw_printf(p->out, "0x%08x\n", rc2);
     }
   }else
 #endif /* !defined(SQLITE_UNTESTABLE) */
