@@ -74,7 +74,6 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     sqlite3ExprDelete(db, p->pHaving);
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pLimit);
-    sqlite3ExprDelete(db, p->pOffset);
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
@@ -107,8 +106,7 @@ Select *sqlite3SelectNew(
   Expr *pHaving,        /* the HAVING clause */
   ExprList *pOrderBy,   /* the ORDER BY clause */
   u32 selFlags,         /* Flag parameters, such as SF_Distinct */
-  Expr *pLimit,         /* LIMIT value.  NULL means not used */
-  Expr *pOffset         /* OFFSET value.  NULL means no offset */
+  Expr *pLimit          /* LIMIT value.  NULL means not used */
 ){
   Select *pNew;
   Select standin;
@@ -141,10 +139,7 @@ Select *sqlite3SelectNew(
   pNew->pPrior = 0;
   pNew->pNext = 0;
   pNew->pLimit = pLimit;
-  pNew->pOffset = pOffset;
   pNew->pWith = 0;
-  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0
-                     || pParse->db->mallocFailed!=0 );
   if( pParse->db->mallocFailed ) {
     clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;
@@ -1874,7 +1869,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
-** pLimit and pOffset expressions.  pLimit and pOffset hold the expressions
+** pLimit expressions.  pLimit->pLeft and pLimit->pRight hold the expressions
 ** that appear in the original SQL statement after the LIMIT and OFFSET
 ** keywords.  Or NULL if those keywords are omitted. iLimit and iOffset 
 ** are the integer memory register numbers for counters used to compute 
@@ -1882,15 +1877,15 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 ** iLimit and iOffset are negative.
 **
 ** This routine changes the values of iLimit and iOffset only if
-** a limit or offset is defined by pLimit and pOffset.  iLimit and
-** iOffset should have been preset to appropriate default values (zero)
+** a limit or offset is defined by pLimit->pLeft and pLimit->pRight.  iLimit
+** and iOffset should have been preset to appropriate default values (zero)
 ** prior to calling this routine.
 **
 ** The iOffset register (if it exists) is initialized to the value
 ** of the OFFSET.  The iLimit register is initialized to LIMIT.  Register
 ** iOffset+1 is initialized to LIMIT+OFFSET.
 **
-** Only if pLimit!=0 or pOffset!=0 do the limit registers get
+** Only if pLimit->pLeft!=0 do the limit registers get
 ** redefined.  The UNION ALL operator uses this property to force
 ** the reuse of the same limit and offset registers across multiple
 ** SELECT statements.
@@ -1900,6 +1895,8 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   int iLimit = 0;
   int iOffset;
   int n;
+  Expr *pLimit = p->pLimit;
+
   if( p->iLimit ) return;
 
   /* 
@@ -1909,12 +1906,13 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** no rows.
   */
   sqlite3ExprCacheClear(pParse);
-  assert( p->pOffset==0 || p->pLimit!=0 );
-  if( p->pLimit ){
+  if( pLimit ){
+    assert( pLimit->op==TK_LIMIT );
+    assert( pLimit->pLeft!=0 );
     p->iLimit = iLimit = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
     assert( v!=0 );
-    if( sqlite3ExprIsInteger(p->pLimit, &n) ){
+    if( sqlite3ExprIsInteger(pLimit->pLeft, &n) ){
       sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
       VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
@@ -1924,15 +1922,15 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
         p->selFlags |= SF_FixedLimit;
       }
     }else{
-      sqlite3ExprCode(pParse, p->pLimit, iLimit);
+      sqlite3ExprCode(pParse, pLimit->pLeft, iLimit);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, iLimit); VdbeCoverage(v);
       VdbeComment((v, "LIMIT counter"));
       sqlite3VdbeAddOp2(v, OP_IfNot, iLimit, iBreak); VdbeCoverage(v);
     }
-    if( p->pOffset ){
+    if( pLimit->pRight ){
       p->iOffset = iOffset = ++pParse->nMem;
       pParse->nMem++;   /* Allocate an extra register for limit+offset */
-      sqlite3ExprCode(pParse, p->pOffset, iOffset);
+      sqlite3ExprCode(pParse, pLimit->pRight, iOffset);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset); VdbeCoverage(v);
       VdbeComment((v, "OFFSET counter"));
       sqlite3VdbeAddOp3(v, OP_OffsetLimit, iLimit, iOffset+1, iOffset);
@@ -2062,7 +2060,7 @@ static void generateWithRecursiveQuery(
   int i;                        /* Loop counter */
   int rc;                       /* Result code */
   ExprList *pOrderBy;           /* The ORDER BY clause */
-  Expr *pLimit, *pOffset;       /* Saved LIMIT and OFFSET */
+  Expr *pLimit;                 /* Saved LIMIT and OFFSET */
   int regLimit, regOffset;      /* Registers used by LIMIT and OFFSET */
 
   /* Obtain authorization to do a recursive query */
@@ -2073,10 +2071,9 @@ static void generateWithRecursiveQuery(
   p->nSelectRow = 320;  /* 4 billion rows */
   computeLimitRegisters(pParse, p, addrBreak);
   pLimit = p->pLimit;
-  pOffset = p->pOffset;
   regLimit = p->iLimit;
   regOffset = p->iOffset;
-  p->pLimit = p->pOffset = 0;
+  p->pLimit = 0;
   p->iLimit = p->iOffset = 0;
   pOrderBy = p->pOrderBy;
 
@@ -2169,7 +2166,6 @@ end_of_recursive_query:
   sqlite3ExprListDelete(pParse->db, p->pOrderBy);
   p->pOrderBy = pOrderBy;
   p->pLimit = pLimit;
-  p->pOffset = pOffset;
   return;
 }
 #endif /* SQLITE_OMIT_CTE */
@@ -2205,7 +2201,6 @@ static int multiSelectValues(
     assert( p->selFlags & SF_Values );
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
     assert( p->pLimit==0 );
-    assert( p->pOffset==0 );
     assert( p->pNext==0 || p->pEList->nExpr==p->pNext->pEList->nExpr );
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
@@ -2332,11 +2327,9 @@ static int multiSelect(
       pPrior->iLimit = p->iLimit;
       pPrior->iOffset = p->iOffset;
       pPrior->pLimit = p->pLimit;
-      pPrior->pOffset = p->pOffset;
       explainSetInteger(iSub1, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, pPrior, &dest);
       p->pLimit = 0;
-      p->pOffset = 0;
       if( rc ){
         goto multi_select_end;
       }
@@ -2358,7 +2351,7 @@ static int multiSelect(
       p->pPrior = pPrior;
       p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
       if( pPrior->pLimit
-       && sqlite3ExprIsInteger(pPrior->pLimit, &nLimit)
+       && sqlite3ExprIsInteger(pPrior->pLimit->pLeft, &nLimit)
        && nLimit>0 && p->nSelectRow > sqlite3LogEst((u64)nLimit) 
       ){
         p->nSelectRow = sqlite3LogEst((u64)nLimit);
@@ -2373,7 +2366,7 @@ static int multiSelect(
       int unionTab;    /* Cursor number of the temporary table holding result */
       u8 op = 0;       /* One of the SRT_ operations to apply to self */
       int priorOp;     /* The SRT_ operation to apply to prior selects */
-      Expr *pLimit, *pOffset; /* Saved values of p->nLimit and p->nOffset */
+      Expr *pLimit;    /* Saved values of p->nLimit  */
       int addr;
       SelectDest uniondest;
 
@@ -2385,7 +2378,6 @@ static int multiSelect(
         ** right.
         */
         assert( p->pLimit==0 );      /* Not allowed on leftward elements */
-        assert( p->pOffset==0 );     /* Not allowed on leftward elements */
         unionTab = dest.iSDParm;
       }else{
         /* We will need to create our own temporary table to hold the
@@ -2421,8 +2413,6 @@ static int multiSelect(
       p->pPrior = 0;
       pLimit = p->pLimit;
       p->pLimit = 0;
-      pOffset = p->pOffset;
-      p->pOffset = 0;
       uniondest.eDest = op;
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &uniondest);
@@ -2438,7 +2428,6 @@ static int multiSelect(
       }
       sqlite3ExprDelete(db, p->pLimit);
       p->pLimit = pLimit;
-      p->pOffset = pOffset;
       p->iLimit = 0;
       p->iOffset = 0;
 
@@ -2466,7 +2455,7 @@ static int multiSelect(
     default: assert( p->op==TK_INTERSECT ); {
       int tab1, tab2;
       int iCont, iBreak, iStart;
-      Expr *pLimit, *pOffset;
+      Expr *pLimit;
       int addr;
       SelectDest intersectdest;
       int r1;
@@ -2502,8 +2491,6 @@ static int multiSelect(
       p->pPrior = 0;
       pLimit = p->pLimit;
       p->pLimit = 0;
-      pOffset = p->pOffset;
-      p->pOffset = 0;
       intersectdest.iSDParm = tab2;
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &intersectdest);
@@ -2513,7 +2500,6 @@ static int multiSelect(
       if( p->nSelectRow>pPrior->nSelectRow ) p->nSelectRow = pPrior->nSelectRow;
       sqlite3ExprDelete(db, p->pLimit);
       p->pLimit = pLimit;
-      p->pOffset = pOffset;
 
       /* Generate code to take the intersection of the two temporary
       ** tables.
@@ -2992,8 +2978,6 @@ static int multiSelectOrderBy(
   }
   sqlite3ExprDelete(db, p->pLimit);
   p->pLimit = 0;
-  sqlite3ExprDelete(db, p->pOffset);
-  p->pOffset = 0;
 
   regAddrA = ++pParse->nMem;
   regAddrB = ++pParse->nMem;
@@ -3457,7 +3441,7 @@ static int flattenSubquery(
   ** became arbitrary expressions, we were forced to add restrictions (13)
   ** and (14). */
   if( pSub->pLimit && p->pLimit ) return 0;              /* Restriction (13) */
-  if( pSub->pOffset ) return 0;                          /* Restriction (14) */
+  if( pSub->pLimit && pSub->pLimit->pRight ) return 0;   /* Restriction (14) */
   if( (p->selFlags & SF_Compound)!=0 && pSub->pLimit ){
     return 0;                                            /* Restriction (15) */
   }
@@ -3605,16 +3589,13 @@ static int flattenSubquery(
     Select *pNew;
     ExprList *pOrderBy = p->pOrderBy;
     Expr *pLimit = p->pLimit;
-    Expr *pOffset = p->pOffset;
     Select *pPrior = p->pPrior;
     p->pOrderBy = 0;
     p->pSrc = 0;
     p->pPrior = 0;
     p->pLimit = 0;
-    p->pOffset = 0;
     pNew = sqlite3SelectDup(db, p, 0);
     sqlite3SelectSetName(pNew, pSub->zSelName);
-    p->pOffset = pOffset;
     p->pLimit = pLimit;
     p->pOrderBy = pOrderBy;
     p->pSrc = pSrc;
@@ -4080,7 +4061,6 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   assert( pNew->pPrior!=0 );
   pNew->pPrior->pNext = pNew;
   pNew->pLimit = 0;
-  pNew->pOffset = 0;
   return WRC_Continue;
 }
 

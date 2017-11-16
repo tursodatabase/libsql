@@ -153,7 +153,6 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       if( p->pHaving ) n++;
       if( p->pOrderBy ) n++;
       if( p->pLimit ) n++;
-      if( p->pOffset ) n++;
     }
     sqlite3TreeViewExprList(pView, p->pEList, (n--)>0, "result-set");
     if( p->pSrc && p->pSrc->nSrc ){
@@ -210,12 +209,12 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
     }
     if( p->pLimit ){
       sqlite3TreeViewItem(pView, "LIMIT", (n--)>0);
-      sqlite3TreeViewExpr(pView, p->pLimit, 0);
-      sqlite3TreeViewPop(pView);
-    }
-    if( p->pOffset ){
-      sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
-      sqlite3TreeViewExpr(pView, p->pOffset, 0);
+      sqlite3TreeViewExpr(pView, p->pLimit->pLeft, p->pLimit->pRight!=0);
+      if( p->pLimit->pRight ){
+        sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
+        sqlite3TreeViewExpr(pView, p->pLimit->pRight, 0);
+        sqlite3TreeViewPop(pView);
+      }
       sqlite3TreeViewPop(pView);
     }
     if( p->pPrior ){
