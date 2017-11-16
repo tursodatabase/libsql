@@ -1,5 +1,5 @@
-C Futher\simprovements\sto\sthe\s.testctrl\sinterface\sin\sthe\sshell.
-D 2017-11-15T19:14:08.134
+C Add\sa\smissing\s"finish_test"\sto\sthe\send\sof\sthe\sstmtvtab1.test\sscript.
+D 2017-11-16T19:04:33.787
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -1249,7 +1249,7 @@ F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/stat.test f8f1279ffffabe6df825723af18cc6e0ae70a893
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 64844332db69cf1a735fcb3e11548557fc95392f
-F test/stmtvtab1.test acc3c40f484f2c4922e270724383d715abb9d69676da907a9c64f31c54f2ef9f
+F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
@@ -1677,7 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d66219c4706e11a9c2a1290224e7c17b19f74657e8239accfb4c6f6be6af9b5
-R bb554ed3e0e111141682146f45553c3a
+P 1ca3b8cce93e83fabe35c22cb726b8ce0883e0448afa3301ad0b53073055fa8d
+R 43f6376592b4d26341e49684bbb727c1
 U drh
-Z e5620a9dcff0b704be870774526d47b0
+Z 7e47c726c44355ca56f3a93b39a4aaed
