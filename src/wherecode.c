@@ -377,6 +377,27 @@ static void updateRangeAffinityStr(
   }
 }
 
+#ifdef SQLITE_DEBUG
+/* Return true if the pSub ExprList is a subset of pMain.  The terms
+** of pSub can be in a different order from pMain.  The only requirement
+** is that every term in pSub must exist somewhere in pMain.
+**
+** Return false if pSub contains any term that is not found in pMain.
+*/
+static int exprListSubset(ExprList *pSub, ExprList *pMain){
+  int i, j;
+  for(i=0; i<pSub->nExpr; i++){
+    Expr *p = pSub->a[i].pExpr;
+    for(j=0; j<pMain->nExpr; j++){
+      if( sqlite3ExprCompare(0, p, pMain->a[j].pExpr, 0)==0 ) break;
+    }
+    if( j>=pMain->nExpr ) return 0;
+  }
+  return 1;
+}
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** Generate code for a single equality term of the WHERE clause.  An equality
 ** term can be either X=expr or X IN (...).   pTerm is the term to be 
@@ -463,6 +484,14 @@ static int codeEqualityTerm(
           pLhs = sqlite3ExprListAppend(pParse, pLhs, pNewLhs);
         }
       }
+ 
+      /* pRhs should be a subset of pOrigRhs (though possibly in a different
+      ** order).  And pLhs should be a subset of pOrigLhs.  To put it 
+      ** another way:  Every term of pRhs should exist in pOrigRhs and
+      ** every term of pLhs should exist in pOrigLhs. */
+      assert( db->mallocFailed || exprListSubset(pRhs, pOrigRhs) );
+      assert( db->mallocFailed || exprListSubset(pLhs, pOrigLhs) );
+
       if( !db->mallocFailed ){
         Expr *pLeft = pX->pLeft;
 
