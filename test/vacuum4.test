@@ -65,3 +65,5 @@ do_test vacuum4-1.1 {
     VACUUM;
   }
 } {}
+
+finish_test
