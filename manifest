@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\schanges,\sand\sthe\sstmtvtab1.test\sfix,\sfrom\strunk.
-D 2017-11-16T19:17:45.977
+C Merge\slatest\schanges\sfrom\strunk,\sincluding\sthe\stemporary\sdb/ATTACH/master-journal\sfix.
+D 2017-11-17T13:23:44.351
 F Makefile.in 28a879888205a67bd3b54c68afa1cd2e939e8ead2179b1177756a101dd1eb86e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9e7628ad7d33be39ac041e452e47e648ae3d14afbaaa254096e3a4d1d7c1c653
@@ -246,7 +246,7 @@ F ext/lsm1/lsm_main.c 15e73ccdafdd44ddeefc29e332079d88ba8f00c12c797b3c2b63d3171b
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c 76adfc1ed9ffebaf92746dde4b370ccc48143ca8b05b563816eadd2aadf1c525
-F ext/lsm1/lsm_sorted.c a04518dfbfff0171fafb152a46e9fe9f45e1edbf3570e4533dd58ddb6567f0c9
+F ext/lsm1/lsm_sorted.c 8f899fb64a4c736ff3c27d5126c7ce181129ddffde947fe5fb657a7a413f470b
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
@@ -547,7 +547,7 @@ F src/vdbe.c bdf4118f1194272241feb97fbeebf83aa228ef95287fe6dc2cccc533ef0fc90c
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 896c36955ffc31154c258c69330c65830d4b300b779b8f6177d31ddc6bc2a14b
-F src/vdbeaux.c 9521a9364e68edad3c8d05ae63395d076724bed1c878c9b13fab61ada54e7d2a
+F src/vdbeaux.c b02a1f842c0e916285643b8475b7189f10b76f9e7edb5e2353a913c7980f90b5
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 2ef9e66b301a1e575e32966c4c0fd4844e8eea37a2f02bae78c4f68f50a6ab30
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1067,7 +1067,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test ba03aaa08f02d62fbb8d3b2f5595c1b33aa9bbc5
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
-F test/mjournal.test 68b749956f9a179e7e633a3958b48a5a905d28d30c7ec88f3f26dc6f220129db
+F test/mjournal.test 946d7161cabbc45ecc818d7fa38c1925bbf36e5534a08a81fa0203ee7ced7d54
 F test/mmap1.test d2cfc1635171c434dcff0ece2f1c8e0a658807ce
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -1682,7 +1682,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P adf83060a658aadb935b9315244ce5628ba00a6b6c795e39a8f727e6cec9cbc0 e0b5c0585e8530bd516b340093a46d8e358a731facb78da22d3208633c852804
-R 582acff7673b6555d6c271120564415b
-U drh
-Z 5af37f7876417b7fc257028c47404a3a
+P 85247880a68ab5b7b296a71661b4326250d6ecaa58982e7f8197da52c66dde0a 93e012a317c8a4bfb84327616a597acabfcb24417197eefdccb8031bcf64e0c0
+R 1a79c055aa11299eabdf81f9d9ce7c37
+U dan
+Z 54c84aac0c4f53ad3fc0713bd73fcf85
