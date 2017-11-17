@@ -5,6 +5,10 @@
 #ifndef _SQLITE3_PRIVATE_H
 #define _SQLITE3_PRIVATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SQLITE_LOCKSTATE_OFF    0
 #define SQLITE_LOCKSTATE_ON     1
 #define SQLITE_LOCKSTATE_NOTADB 2
@@ -70,4 +74,7 @@ extern int _sqlite3_lockstate(const char *path, pid_t pid);
 #define SQLITE_FCNTL_REPLACE_DATABASE       102
 #define SQLITE_REPLACE_DATABASE             SQLITE_FCNTL_REPLACE_DATABASE
 
+#ifdef __cplusplus
+}  /* End of the 'extern "C"' block */
+#endif
 #endif
