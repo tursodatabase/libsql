@@ -1,5 +1,5 @@
-C Do\snot\scount\stemporary\sdatabases\sthat\shave\sbeen\sattached\susing\sATTACH\swhen\nfiguring\sout\sif\sa\smaster-journal\sfile\sis\srequired\sby\sa\stransaction.
-D 2017-11-17T13:21:12.384
+C Clarification\sof\scomments\son\ssqlite3FindInIndex().\s\sNo\schanges\sto\scode.
+D 2017-11-17T15:02:00.058
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -423,7 +423,7 @@ F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c e6a70fb58f6628f0ffc6d7221a6702c0d7b342c82520385b3996b364c22e0cb3
-F src/expr.c 5257a9157f22f048ddcce5cd494d39633e89c2a4769671311b3e7875d262f746
+F src/expr.c fe11b91bb65b869143bd42023427c4429778ae42c0a0db7762f68f75b347a958
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 0fb9a2d678d3c8aba89b46468b309cd7e8fa9806a369a30aa89024660845bb13
@@ -1677,8 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ffec5db33137251090d45e2ca7e3e7823e3215ae89822d905923424ceba2ac2 355d1232fd7314723afaa8d6b8b73506b09cbba1113a88b10204ba89be993508
-R 549acd152a27430f44fc7371aab0d342
-T +closed 355d1232fd7314723afaa8d6b8b73506b09cbba1113a88b10204ba89be993508
-U dan
-Z eb504c2f876fdf46c1053782d9bac493
+P 93e012a317c8a4bfb84327616a597acabfcb24417197eefdccb8031bcf64e0c0
+R 9e3518c1c08ebf61892be3d9ca3ce745
+U drh
+Z 183368b52c0a93e109b0b85758c70894
