@@ -1352,6 +1352,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_IOERR_MMAP:         zName = "SQLITE_IOERR_MMAP";        break;
       case SQLITE_IOERR_GETTEMPPATH:  zName = "SQLITE_IOERR_GETTEMPPATH"; break;
       case SQLITE_IOERR_CONVPATH:     zName = "SQLITE_IOERR_CONVPATH";    break;
+      case SQLITE_IOERR_VNODE:        zName = "SQLITE_IOERR_VNODE";       break;
       case SQLITE_CORRUPT:            zName = "SQLITE_CORRUPT";           break;
       case SQLITE_CORRUPT_VTAB:       zName = "SQLITE_CORRUPT_VTAB";      break;
       case SQLITE_NOTFOUND:           zName = "SQLITE_NOTFOUND";          break;
