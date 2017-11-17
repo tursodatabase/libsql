@@ -79,5 +79,80 @@ do_execsql_test 1.6 {
   SELECT * FROM t1;
 }
 
-  
+#-------------------------------------------------------------------------
+# Check that master journals are not created if the transaction involves
+# multiple temp files.
+#
+db close
+testvfs tvfs
+tvfs filter xOpen
+tvfs script open_cb
+set ::open ""
+proc open_cb {method file arglist} {
+  lappend ::open $file
+}
+
+proc contains_mj {} {
+  foreach f $::open {
+    set t [file tail $f]
+    if {[string match *mj* $t]} { return 1 }
+  }
+  return 0
+}
+
+# Like [do_execsql_test], except that a boolean indicating whether or
+# not a master journal file was opened ([file tail] contains "mj") or
+# not. Example:
+#
+#   do_hasmj_test 1.0 { SELECT 'a', 'b' } {0 a b}
+#
+proc do_hasmj_test {tn sql expected} {
+  set ::open [list]
+  uplevel [list do_test $tn [subst -nocommands {
+    set res [execsql "$sql"]
+    concat [contains_mj] [set res]
+  }] [list {*}$expected]]
+}
+
+forcedelete test.db
+forcedelete test.db2
+forcedelete test.db3
+sqlite3 db test.db -vfs tvfs
+
+do_execsql_test 2.0 {
+  ATTACH 'test.db2' AS dbfile;
+  ATTACH ''         AS dbtemp;
+  ATTACH ':memory:'  AS dbmem;
+
+  CREATE TABLE t1(x);
+  CREATE TABLE dbfile.t2(x);
+  CREATE TABLE dbtemp.t3(x);
+  CREATE TABLE dbmem.t4(x);
+}
+
+# Two real files.
+do_hasmj_test 2.1 {
+  BEGIN;
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t2 VALUES(1);
+  COMMIT;
+} {1}
+
+# One real, one temp file.
+do_hasmj_test 2.2 {
+  BEGIN;
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t3 VALUES(1);
+  COMMIT;
+} {0}
+
+# One file, one :memory: db.
+do_hasmj_test 2.3 {
+  BEGIN;
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t4 VALUES(1);
+  COMMIT;
+} {0}
+
 finish_test
+
