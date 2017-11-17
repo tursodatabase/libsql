@@ -166,7 +166,6 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
-            Error::FromSqlConversionFailure(_, _, ref err) => Some(&**err),
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
@@ -186,6 +185,8 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
+
+            Error::FromSqlConversionFailure(_, _, ref err) |
             Error::ToSqlConversionFailure(ref err) => Some(&**err),
         }
     }
