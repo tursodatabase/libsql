@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\spreventing\sthe\splanner\sfrom\sidentifying\sscans\sthat\svisit\sat\smost\none\srow\sin\scases\swhere\sthat\sproperty\sis\sguaranteed\sby\sa\sunique,\snot-null,\nnon-IPK\scolumn\sthat\sis\sthe\sleftmost\sin\sits\stable.
-D 2017-11-20T14:40:03.587
+C Fix\sa\stypo\sin\sa\stest\sscript\son\sthis\sbranch.
+D 2017-11-20T15:45:03.103
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -983,7 +983,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/join.test 442c462eea85cf065d70a663c626b780a95af6e11585d909bb63b87598afe678
-F test/join2.test 8e3085b352e9f6d89247059ffd55c572b517f00295c8c0643a5c20cabd1e3848
+F test/join2.test 770a9b6c9f0e91590a102bae707727bce6103b8ad478cea077b2ac126d0698e8
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test bc98ea4b4e5003f5b1453701ebb8cd7d1c01a550
@@ -1677,7 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee840a7669dd462af072625232ea4238198c9b94e1873f361c45f3b0985456f3
-R d6874f2de8f8cac9d7779bbf432e0b3c
+P 299d7ca52fec32f04ffd2b8561dd4b839e891792162f8b00259368683436b02d
+R e3d55f8947932d938e221f1f7209d770
 U dan
-Z 3df96851db88f42b898e0f724b99ed03
+Z 5b68c810792c127ff29194bdbf236929
