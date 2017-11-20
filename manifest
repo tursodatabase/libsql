@@ -1,5 +1,5 @@
-C Enhance\sthe\slog\smessages\sproduced\sin\ssome\scases\sif\sdatabase\scorruption\sis\nencountered\sby\san\sSQLITE_DEBUG\sbuild.
-D 2017-11-18T18:07:17.406
+C Fix\sa\sproblem\spreventing\sthe\splanner\sfrom\sidentifying\sscans\sthat\svisit\sat\smost\none\srow\sin\scases\swhere\sthat\sproperty\sis\sguaranteed\sby\sa\sunique,\snot-null,\nnon-IPK\scolumn\sthat\sis\sthe\sleftmost\sin\sits\stable.
+D 2017-11-20T15:46:10.484
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -553,7 +553,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c beeb71e4eab65dbf0d95f2717efc6ca3c0f5b3090ce67f3de63828f39a6ff053
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 031a80bcafe93934fd7052f3031c9e7eb36b61754c6c84d6bf0833184abad3db
+F src/where.c e729f477523e3394892951347f57da1471a94a601133c19efd2573903e60a4a2
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c 611fcabd05592ed2febd7d182f9621425b0466c5232d70e0981c842d429356d5
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -983,7 +983,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/join.test 442c462eea85cf065d70a663c626b780a95af6e11585d909bb63b87598afe678
-F test/join2.test a48f723c5692e2cbb23a9297ac2720cb77d51a70
+F test/join2.test 770a9b6c9f0e91590a102bae707727bce6103b8ad478cea077b2ac126d0698e8
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test bc98ea4b4e5003f5b1453701ebb8cd7d1c01a550
@@ -1677,8 +1677,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 723f1be3d4a905a6a16333f8ef3e1067dcd4944497b303033c49946fc37c780f 23a3128083834b5fc80adf45448f7dc65587c52761fb3c9483b80313b369406f
-R 05158c3570d45bd02cc2ba4cbb719bc9
-T +closed 23a3128083834b5fc80adf45448f7dc65587c52761fb3c9483b80313b369406f
+P ee840a7669dd462af072625232ea4238198c9b94e1873f361c45f3b0985456f3 bff5dcfd2b29ee4834258914410a5dee69ec2727dd254053e3ebaf5090937694
+R e3d55f8947932d938e221f1f7209d770
+T +closed bff5dcfd2b29ee4834258914410a5dee69ec2727dd254053e3ebaf5090937694
 U dan
-Z ce33cab931a12d704bb3e13109bc56c2
+Z 0d562170c07312a10559bcbda1122c53

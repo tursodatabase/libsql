@@ -92,4 +92,35 @@ do_catchsql_test 2.2 {
   SELECT * FROM aa JOIN cc ON (a=b) JOIN bb ON (b=c);
 } {0 {one one one}}
 
+#-------------------------------------------------------------------------
+# Test that a problem causing where.c to overlook opportunities to
+# omit unnecessary tables from a LEFT JOIN when UNIQUE, NOT NULL column 
+# that makes this possible happens to be the leftmost in its table.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(k1 INTEGER PRIMARY KEY, k2, k3);
+  CREATE TABLE t2(k2 INTEGER PRIMARY KEY, v2);
+
+  -- Prior to this problem being fixed, table t3_2 would be omitted from
+  -- the join queries below, but if t3_1 were used in its place it would
+  -- not.
+  CREATE TABLE t3_1(k3 PRIMARY KEY, v3) WITHOUT ROWID;
+  CREATE TABLE t3_2(v3, k3 PRIMARY KEY) WITHOUT ROWID;
+}
+
+do_eqp_test 3.1 {
+  SELECT v2 FROM t1 LEFT JOIN t2 USING (k2) LEFT JOIN t3_1 USING (k3);
+} {
+  0 0 0 {SCAN TABLE t1} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+
+do_eqp_test 3.2 {
+  SELECT v2 FROM t1 LEFT JOIN t2 USING (k2) LEFT JOIN t3_2 USING (k3);
+} {
+  0 0 0 {SCAN TABLE t1} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+
 finish_test
