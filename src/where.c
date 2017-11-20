@@ -2460,7 +2460,7 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       assert( saved_nEq==pNew->u.btree.nEq );
       if( iCol==XN_ROWID 
-       || (iCol>0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
+       || (iCol>=0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
       ){
         if( iCol>=0 && pProbe->uniqNotNull==0 ){
           pNew->wsFlags |= WHERE_UNQ_WANTED;
