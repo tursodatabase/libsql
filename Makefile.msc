@@ -974,7 +974,7 @@ LTLINK = $(TCC) -Fe$@
 # If requested, link to the RPCRT4 library.
 #
 !IF $(USE_RPCRT4_LIB)!=0
-LTLINK = $(LTLINK) rpcrt4.lib
+LTLIBS = $(LTLIBS) rpcrt4.lib
 !ENDIF
 
 # If a platform was set, force the linker to target that.
@@ -1072,7 +1072,7 @@ LDFLAGS = $(LDOPTS)
 #
 !IF $(NO_TCL)==0
 LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
-LTLIBS = $(LIBTCL)
+LTLIBS = $(LTLIBS) $(LIBTCL)
 !ENDIF
 
 # If ICU support is enabled, add the linker options for it.

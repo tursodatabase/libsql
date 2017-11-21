@@ -1,8 +1,8 @@
-C Fix\scompilation\sissue\s(C99-ism)\sin\sthe\sshell\sseen\swith\sMSVC.
-D 2017-11-21T21:14:32.355
+C Fix\stypo\sin\sthe\sMakefiles\sfor\sMSVC.
+D 2017-11-21T21:15:17.379
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
+F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 66c0befa511f0d95ba229e180067cf0357a9ebf8b3201b06d683c5ba6220fb39
-F autoconf/Makefile.msc 6143fe5b571cfeb0159702931d3ade664a00edc0c03814c7f6d825ae73eeffac
+F autoconf/Makefile.msc b88a70dee8453cc353e5d6df172d60a11a0af905710a24b1e6be80f8fea6e96b
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 8dd08ca564279fff091c9bfdd2599d8f992c9f1f70c5396de2126ad2bd1b3bed
@@ -1677,7 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0cd82ee9a8413cf127b5ca65770e3f363bd579941cd592298d3b0c27715583f3
-R 4fa7a7c4266f9577164091bee69af1d6
+P 9cb47430553f00216e9b06e3d8226b903da536152fac80a5b6f615508c933252
+R a6bc597bdf966513d392563d9213ee42
 U mistachkin
-Z 932ce0ecb18fdaa178b1c4aecbb344e5
+Z c9f491fa6730dc4831f9db1bff90ef98
