@@ -5952,8 +5952,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     int rc2 = 0;    /* 0: usage.  1: %d  2: %x  3: no-output */
     int isOk = 0;
     int i, n2;
+    const char *zCmd = 0;
+
     open_db(p, 0);
-    const char *zCmd = nArg>=2 ? azArg[1] : "help";
+    zCmd = nArg>=2 ? azArg[1] : "help";
 
     /* The argument can optionally begin with "-" or "--" */
     if( zCmd[0]=='-' && zCmd[1] ){

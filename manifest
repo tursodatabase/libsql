@@ -1,5 +1,5 @@
-C Update\sthe\somit-table-from-left-join\soptimization\sso\sthat\sit\scan\somit\stables\nfrom\sthe\smiddle\sof\sthe\sjoin\sas\swell\sas\sthe\send.
-D 2017-11-21T20:53:14.147
+C Fix\scompilation\sissue\s(C99-ism)\sin\sthe\sshell\sseen\swith\sMSVC.
+D 2017-11-21T21:14:32.355
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -471,7 +471,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
-F src/shell.c.in a87f3094c1d2a07ed3f731409b33dbf36faf99157bfedb17855a664c60e1a909
+F src/shell.c.in cb1b5e41ef9c081b2b8927ae32c9c384a9ec110ada808ebfe083ba7c8a19bbb8
 F src/sqlite.h.in 8fd97993d48b50b9bade38c52f12d175942c9497c960905610c7b03a3e4b5818
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1677,8 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fdb1e2ac2040dc47800a224d33a5c95d55200c480d46fedec1e97fb4f089ef7 618ca9fe53d8d2d7b4f368e6ee404d5fceeecac0d689f32ab62af8a6cbb37401
-R 77239b01fe37a025cc689347a6c626c1
-T +closed 618ca9fe53d8d2d7b4f368e6ee404d5fceeecac0d689f32ab62af8a6cbb37401
-U dan
-Z 33c2b988566a650eaa7cbc98ff0c3943
+P 0cd82ee9a8413cf127b5ca65770e3f363bd579941cd592298d3b0c27715583f3
+R 4fa7a7c4266f9577164091bee69af1d6
+U mistachkin
+Z 932ce0ecb18fdaa178b1c4aecbb344e5
