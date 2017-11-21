@@ -4677,35 +4677,73 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 #endif
-  /* Attempt to omit tables from the join that do not effect the result */
+
+  /* Attempt to omit tables from the join that do not affect the result.
+  ** For a table to not affect the result, the following must be true:
+  **
+  **   1) The query must not be an aggregate.
+  **   2) The table must be the RHS of a LEFT JOIN.
+  **   3) Either the query must be DISTINCT, or else the ON or USING clause
+  **      must contain a constraint that limits the scan of the table to 
+  **      at most a single row.
+  **   4) The table must not be referenced by any part of the query apart
+  **      from its own USING or ON clause.
+  **
+  ** For example, given:
+  **
+  **     CREATE TABLE t1(ipk INTEGER PRIMARY KEY, v1);
+  **     CREATE TABLE t2(ipk INTEGER PRIMARY KEY, v2);
+  **     CREATE TABLE t3(ipk INTEGER PRIMARY KEY, v3);
+  **
+  ** then table t2 can be omitted from the following:
+  **
+  **     SELECT v1, v3 FROM t1 
+  **       LEFT JOIN t2 USING (t1.ipk=t2.ipk)
+  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  **
+  ** or from:
+  **
+  **     SELECT DISTINCT v1, v3 FROM t1 
+  **       LEFT JOIN t2
+  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  */
   if( pWInfo->nLevel>=2
-   && pResultSet!=0
+   && pResultSet!=0               /* guarantees condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
+    int i;
     Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
     if( sWLB.pOrderBy ){
       tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
     }
-    while( pWInfo->nLevel>=2 ){
+    for(i=pWInfo->nLevel-1; i>=1; i--){
       WhereTerm *pTerm, *pEnd;
-      pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
-      if( (pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0 ) break;
+      struct SrcList_item *pItem;
+      pLoop = pWInfo->a[i].pWLoop;
+      pItem = &pWInfo->pTabList->a[pLoop->iTab];
+      if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
       if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
        && (pLoop->wsFlags & WHERE_ONEROW)==0
       ){
-        break;
+        continue;
       }
-      if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+      if( (tabUsed & pLoop->maskSelf)!=0 ) continue;
       pEnd = sWLB.pWC->a + sWLB.pWC->nTerm;
       for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
-        if( (pTerm->prereqAll & pLoop->maskSelf)!=0
-         && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
-        ){
-          break;
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+          if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+           || pTerm->pExpr->iRightJoinTable!=pItem->iCursor
+          ){
+            break;
+          }
         }
       }
-      if( pTerm<pEnd ) break;
+      if( pTerm<pEnd ) continue;
       WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+      if( i!=pWInfo->nLevel-1 ){
+        int nByte = (pWInfo->nLevel-1-i) * sizeof(WhereLevel);
+        memmove(&pWInfo->a[i], &pWInfo->a[i+1], nByte);
+      }
       pWInfo->nLevel--;
       nTabList--;
     }
@@ -4990,7 +5028,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
       assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
       if( (ws & WHERE_IDX_ONLY)==0 ){
-        sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
+        assert( pLevel->iTabCur==pTabList->a[pLevel->iFrom].iCursor );
+        sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
       }
       if( (ws & WHERE_INDEXED) 
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
