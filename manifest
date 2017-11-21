@@ -1,5 +1,5 @@
-C Fix\sthe\sskip-ahead-distinct\soptimization\son\sjoins\sfor\scases\sthere\sthe\stable\nin\sthe\sinner\sloop\sof\sthe\sjoin\sdoes\snot\scontribute\sany\scolumns\sto\sthe\nresult\sset.\s\sProposed\sfix\sfor\sticket\s[ef9318757b152e3a2]
-D 2017-11-21T23:38:48.349
+C An\sexperimental\soptimization\sto\sDISTINCT\sthat\scauses\san\simmediate\sexit\sof\nthe\sinner\sloop\sof\sa\sjoin\sfollowing\seach\soutput\srow\sif\sthe\sinner\sloop\sdoes\nnot\scontribute\sany\scolumns\sto\sthe\sresult\sset.
+D 2017-11-21T23:47:42.367
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -553,7 +553,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c beeb71e4eab65dbf0d95f2717efc6ca3c0f5b3090ce67f3de63828f39a6ff053
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 1c0ab20720f1a5e76fb4f78d2c45b4525b59167a20d44baf4467fa5b106679ad
+F src/where.c 868c5b47225508475dbad7d9dd018f1b97021059e3cba1aabbd8b55556f431fe
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c 611fcabd05592ed2febd7d182f9621425b0466c5232d70e0981c842d429356d5
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -1677,7 +1677,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 17dd2f7314e7eb124e0a2a7a6cf475850e87fe3041e6ce1e1fd71b38d54852a8
-R c2dbc2aeaa2d6cfa4070ebdfc171fa89
+P 2dcef5a9ae7f347da65207bf6bf612fb12e18e1a6704799322f0cf2a86154cfd
+R 75672ed46856a240c20f5076dd9094e5
+T *branch * distinct-early-out
+T *sym-distinct-early-out *
+T -sym-trunk *
 U drh
-Z 8287b3f25cb0100d8a846549bf308df5
+Z df12b60b5ae3ea7b2417c98f8efae76f

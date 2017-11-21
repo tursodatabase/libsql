@@ -4948,6 +4948,24 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   SrcList *pTabList = pWInfo->pTabList;
   sqlite3 *db = pParse->db;
 
+  /* For a DISTINCT join in which no columns of inner loops appear in
+  ** the result set, put a jump right after the inner loop body that
+  ** causes the unused inner loops to exit.
+  */
+  if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
+   && pWInfo->nLevel>1
+  ){
+    Bitmask tabUsed;
+    tabUsed = sqlite3WhereExprListUsage(&pWInfo->sMaskSet, pWInfo->pResultSet);
+    for(i=pWInfo->nLevel-1; i>=0; i--){
+      pLoop = pWInfo->a[i].pWLoop;
+      if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+    }
+    if( i<pWInfo->nLevel-1 ){
+      sqlite3VdbeGoto(v, pWInfo->a[i].addrCont);
+    }
+  }
+
   /* Generate loop termination code.
   */
   VdbeModuleComment((v, "End WHERE-core"));
