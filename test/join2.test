@@ -169,6 +169,27 @@ do_eqp_test 4.2.2 {
   0 1 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
 }
 
-
+# 2017-11-23 (Thanksgiving day)
+# OSSFuzz found an assertion fault in the new LEFT JOIN eliminator code.
+#
+do_execsql_test 4.3.0 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(x PRIMARY KEY) WITHOUT ROWID;
+  CREATE TABLE t2(x);
+  SELECT a.x
+    FROM t1 AS a
+    LEFT JOIN t1 AS b ON (a.x=b.x)
+    LEFT JOIN t2 AS c ON (a.x=c.x);
+} {}
+do_execsql_test 4.3.1 {
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
+    INSERT INTO t1(x) SELECT x FROM c;
+  INSERT INTO t2(x) SELECT x+9 FROM t1;
+  SELECT a.x, c.x
+    FROM t1 AS a
+    LEFT JOIN t1 AS b ON (a.x=b.x)
+    LEFT JOIN t2 AS c ON (a.x=c.x);
+} {1 {} 2 {} 3 {} 4 {} 5 {} 6 {} 7 {} 8 {} 9 {} 10 10}
 
 finish_test

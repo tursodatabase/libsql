@@ -1,5 +1,5 @@
-C Completely\sdisable\sthe\sskip-ahead-distinct\soptimization\sfor\sall\sbut\sthe\ninner-most\sloop\sof\sa\sDISTINCT\sjoin.\s\sFix\sfor\sticket\s[ef9318757b152e3a26e9592]
-D 2017-11-23T00:45:21.475
+C Fix\sa\sproblem\sin\sthe\somit-table-from-left-join\soptimization\s\nfrom\scheck-in\s[0cd82ee9a8413cf]\sthat\swas\sdiscovered\sby\sOSSFuzz.
+D 2017-11-23T04:45:35.235
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -553,7 +553,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c beeb71e4eab65dbf0d95f2717efc6ca3c0f5b3090ce67f3de63828f39a6ff053
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 1b85f0676c6b0e07bf815ce752e2f1e9968a4d506bfb1e9cb35dd95d18254fcf
+F src/where.c 9752b68e03e2044f0faa4708fabb0189769067b660bffa931e1fd65736269659
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c 611fcabd05592ed2febd7d182f9621425b0466c5232d70e0981c842d429356d5
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -983,7 +983,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/join.test 442c462eea85cf065d70a663c626b780a95af6e11585d909bb63b87598afe678
-F test/join2.test ac70b2b79ac593550d1d6f15e9bb3693dd71826b496e84f15166c5053fa518e6
+F test/join2.test 1a0c26399910b015d9f8f95b884e9a079fd2cfdccd65f7b1603846508cae0dc6
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test bc98ea4b4e5003f5b1453701ebb8cd7d1c01a550
@@ -1677,7 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2dcef5a9ae7f347da65207bf6bf612fb12e18e1a6704799322f0cf2a86154cfd
-R 5a77744cb1beed3c66e0137b7a88aa75
+P b7595cf2cadcba486e60b3c230ccc412a7cf449c1d56cbe65869e6d5d9f1374d
+R 9669b3f605458d14cc31b00c90e7e717
 U drh
-Z 8adc99178c09900ff045958fd53e1035
+Z 772d565646149360b17fb446b36f96b2

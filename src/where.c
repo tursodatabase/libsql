@@ -4707,6 +4707,7 @@ WhereInfo *sqlite3WhereBegin(
   **       LEFT JOIN t2
   **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
   */
+  notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2
    && pResultSet!=0               /* guarantees condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
@@ -4740,6 +4741,12 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( pTerm<pEnd ) continue;
       WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+      notReady &= ~pLoop->maskSelf;
+      for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+          pTerm->wtFlags |= TERM_CODED;
+        }
+      }
       if( i!=pWInfo->nLevel-1 ){
         int nByte = (pWInfo->nLevel-1-i) * sizeof(WhereLevel);
         memmove(&pWInfo->a[i], &pWInfo->a[i+1], nByte);
@@ -4898,7 +4905,6 @@ WhereInfo *sqlite3WhereBegin(
   ** loop below generates code for a single nested loop of the VM
   ** program.
   */
-  notReady = ~(Bitmask)0;
   for(ii=0; ii<nTabList; ii++){
     int addrExplain;
     int wsFlags;
