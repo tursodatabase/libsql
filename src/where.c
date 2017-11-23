@@ -4962,6 +4962,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       Index *pIdx;
       int n;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
+       && i==pWInfo->nLevel-1  /* Ticket [ef9318757b152e3] 2017-10-21 */
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
        && (n = pLoop->u.btree.nIdxCol)>0
@@ -4978,13 +4979,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverageIf(v, op==OP_SeekLT);
         VdbeCoverageIf(v, op==OP_SeekGT);
         sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
-        if( i<pWInfo->nLevel-1 ){
-          /* Ticket https://sqlite.org/src/info/ef9318757b152e3 2017-11-21
-          ** The break location for the next inner loop is above the code
-          ** generated here, but it should be afterwards.  So call re-resolve
-          ** the break location to be afterwards. */
-          sqlite3VdbeResolveLabel(v, pWInfo->a[i+1].addrBrk);
-        }
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
       /* The common case: Advance to the next row */
