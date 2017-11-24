@@ -1,6 +1,6 @@
-C Fix\sa\sproblem\sin\sthe\somit-table-from-left-join\soptimization\s\nfrom\scheck-in\s[0cd82ee9a8413cf]\sthat\swas\sdiscovered\sby\sOSSFuzz.
-D 2017-11-23T04:45:35.235
-F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
+C Enhance\sthe\sconfigure\sscript\sto\sdetect\szLib.
+D 2017-11-24T16:55:48.156
+F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bdc49e9f0b0ced903ebdb2850362dd3391eeb88585e0429d12b94928d2873b6b x
-F configure.ac 369ebae6c04d9d2de5064e21d300f2f42f2fbf13235cabff9d1a54f2b2c4d05d
+F configure 9af547be0e0e1a8fca8553b82599b5a3be1528a3d78deb68cb49d3b611215cb7 x
+F configure.ac d4529ebb26ae046269334f1dac65f2b1d6927c2efe22b2ec24dce24dfe4f83dd
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 278113807f49d12d04179a93fab92b5b917a08771152ca7949d34e928efa3941
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1677,7 +1677,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7595cf2cadcba486e60b3c230ccc412a7cf449c1d56cbe65869e6d5d9f1374d
-R 9669b3f605458d14cc31b00c90e7e717
+P b016c28fa5617a20ad34c005372e738d28f7fc4388d19ee0cb7add4ed19d74aa
+R 32193c0299a7059451a8ff25bb895cce
 U drh
-Z 772d565646149360b17fb446b36f96b2
+Z 88a3edc8b736c2bf1f1a3f732d1a86ca
