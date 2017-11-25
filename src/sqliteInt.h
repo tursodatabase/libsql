@@ -3590,6 +3590,12 @@ int sqlite3LookasideUsed(sqlite3*,int*);
 sqlite3_mutex *sqlite3Pcache1Mutex(void);
 sqlite3_mutex *sqlite3MallocMutex(void);
 
+#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+void sqlite3MutexWarnOnContention(sqlite3_mutex*);
+#else
+# define sqlite3MutexWarnOnContention(x)
+#endif
+
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int sqlite3IsNaN(double);
 #else
