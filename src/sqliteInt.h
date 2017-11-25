@@ -3590,7 +3590,7 @@ int sqlite3LookasideUsed(sqlite3*,int*);
 sqlite3_mutex *sqlite3Pcache1Mutex(void);
 sqlite3_mutex *sqlite3MallocMutex(void);
 
-#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+#if defined(SQLITE_ENABLE_MULTITHREADED_CHECKS) && !defined(SQLITE_MUTEX_OMIT)
 void sqlite3MutexWarnOnContention(sqlite3_mutex*);
 #else
 # define sqlite3MutexWarnOnContention(x)
