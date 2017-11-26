@@ -1190,12 +1190,9 @@ static void output_csv(ShellState *p, const char *z, int bSep){
       }
     }
     if( i==0 ){
-      putc('"', out);
-      for(i=0; z[i]; i++){
-        if( z[i]=='"' ) putc('"', out);
-        putc(z[i], out);
-      }
-      putc('"', out);
+      char *zQuoted = sqlite3_mprintf("\"%w\"", z);
+      utf8_printf(out, "%s", zQuoted);
+      sqlite3_free(zQuoted);
     }else{
       utf8_printf(out, "%s", z);
     }
