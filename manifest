@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sNEVER\sassert()\sthat\scould\sfail\sfor\sSQLITE_ENABLE_STAT4\sbuilds\nthat\suse\sforeign\skeys.
-D 2017-11-27T17:56:14.310
+C Update\stests\sto\sdeal\swith\sSQLITE_FAST_SECURE_DELETE.
+D 2017-11-28T00:52:14.148
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -496,7 +496,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c 78809f11026f18a93fcfd798d9479cba37e1201c830260bf1edc674b2fa9b857
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 3000f00b9b47b149d842059904c3fcab5f3871fb6aee7d7cc5756f0c64779ae3
+F src/test_config.c 2dad654eb81e90160f764f485bf7248e87b6d251e484c959de1aa04935acae8e
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
@@ -1173,7 +1173,7 @@ F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
 F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce1f9b
-F test/securedel.test 5f997cb6bd38727b81e0985f53ec386c99db6441b2b9e6357240649d29017239
+F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test 460a5824df01575b18f7fa4bd8e40d09de20c542e90c1543e164bc7d3b0a0bb7
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -1678,7 +1678,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6500cdbd36b0169f37fe363c49182b3e30477a51bb521c2a964555cd086a5589
-R 0247a4bb86c66f994a19293f6b9d8594
-U dan
-Z a556263a76630f97a74cefb44456d7c1
+P 465350e55ddaf30cfba7874653301de7238a9dc2bc5e1f800fc95de9360679f6
+R 5c3698b136ad7029a7e22749e9f1a061
+U drh
+Z 455c99a49ae132932748abfe00c111c4
