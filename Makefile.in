@@ -89,6 +89,9 @@ TCC += $(OPT_FEATURE_FLAGS)
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC += $(OPTS)
 
+# Add in compile-time options for some libraries used by extensions
+TCC += @HAVE_ZLIB@
+
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = @VERSION@

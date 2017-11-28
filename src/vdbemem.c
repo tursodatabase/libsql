@@ -1321,7 +1321,7 @@ static int valueFromExpr(
 
   assert( pExpr!=0 );
   while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
-  if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+  if( op==TK_REGISTER ) op = pExpr->op2;
 
   /* Compressed expressions only appear when parsing the DEFAULT clause
   ** on a table column definition, and hence only when pCtx==0.  This

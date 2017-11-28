@@ -1190,12 +1190,9 @@ static void output_csv(ShellState *p, const char *z, int bSep){
       }
     }
     if( i==0 ){
-      putc('"', out);
-      for(i=0; z[i]; i++){
-        if( z[i]=='"' ) putc('"', out);
-        putc(z[i], out);
-      }
-      putc('"', out);
+      char *zQuoted = sqlite3_mprintf("\"%w\"", z);
+      utf8_printf(out, "%s", zQuoted);
+      sqlite3_free(zQuoted);
     }else{
       utf8_printf(out, "%s", z);
     }
@@ -5952,8 +5949,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     int rc2 = 0;    /* 0: usage.  1: %d  2: %x  3: no-output */
     int isOk = 0;
     int i, n2;
+    const char *zCmd = 0;
+
     open_db(p, 0);
-    const char *zCmd = nArg>=2 ? azArg[1] : "help";
+    zCmd = nArg>=2 ? azArg[1] : "help";
 
     /* The argument can optionally begin with "-" or "--" */
     if( zCmd[0]=='-' && zCmd[1] ){

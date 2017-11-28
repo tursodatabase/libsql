@@ -3431,6 +3431,7 @@ struct TreeView {
 ** using sqlite3_log().  The routines also provide a convenient place
 ** to set a debugger breakpoint.
 */
+int sqlite3ReportError(int iErr, int lineno, const char *zType);
 int sqlite3CorruptError(int);
 int sqlite3MisuseError(int);
 int sqlite3CantopenError(int);
@@ -3588,6 +3589,12 @@ int sqlite3LookasideUsed(sqlite3*,int*);
 /* Access to mutexes used by sqlite3_status() */
 sqlite3_mutex *sqlite3Pcache1Mutex(void);
 sqlite3_mutex *sqlite3MallocMutex(void);
+
+#if defined(SQLITE_ENABLE_MULTITHREADED_CHECKS) && !defined(SQLITE_MUTEX_OMIT)
+void sqlite3MutexWarnOnContention(sqlite3_mutex*);
+#else
+# define sqlite3MutexWarnOnContention(x)
+#endif
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int sqlite3IsNaN(double);
