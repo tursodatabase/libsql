@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges,\sincluding\sthe\sSQLITE_ENABLE_MULTITHREADED_CHECKS\nfeature,\sinto\sthis\sbranch.
-D 2017-11-28T08:08:40.954
+C Merge\sthe\ssnapshots-always-lock-the-wal-file\schange\sinto\sthis\sbranch.
+D 2017-11-28T13:48:42.669
 F Makefile.in c097996f4eea365f81c5e29a892cb198205c156a7cdfb2c3c1e10709cd419929
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6b76a1b3e7aa7af73ce870120ed880a288e0c7f1ee047940f62b23b514286726
@@ -555,7 +555,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c f940fd2e63228dede53d56a29364831f5a3f9e24232fbb9a6db3baec01f95f36
+F src/wal.c 605f85c9afd3bfd44008d73951e1f1fa64263bcddd7cc5e03b339a9dd7ccd1d5
 F src/wal.h bada9007800e82f2765ad9ecd9f96176b45c71db769502e24de49d68c0acef65
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 9752b68e03e2044f0faa4708fabb0189769067b660bffa931e1fd65736269659
@@ -1228,6 +1228,7 @@ F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/snapshot.test 85735bd997a4f6d710140c28fd860519a299649f
 F test/snapshot2.test 925e42427e923262db63c9d7155183f889e3e99feaedec4075f659e51608344f
+F test/snapshot3.test 9719443594a04778861bd20d12596c5f880af177d6cd62f111da3198cafc6096
 F test/snapshot_fault.test 52c5e97ebd218846a8ae2da4d147d3e77d71f963
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1683,7 +1684,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e2b3e33537384633a1c160f1fc9c78d515684c942c2446eb339f375d10a42000 40b598c8392f030f6ed8c63ce81cb0426bb3984397c19c756215f6a569a40164
-R a4104d8f12dc56d2dc5dca4b58c03e0d
+P 1fd1034935b932e9e0a29b26931f7ccf9fb0bda916c4fa8b741bf6f48f124dda b81a31495bd27c1d96f7df653da3502054240cb5acf66b860da7f0f9b422a524
+R ce1e563938f18a80da5f4163a06f5f4a
 U dan
-Z 2b822330764d4aa852a5ab08e7a63437
+Z 83a12225ed775f5cde42826fd19f9630
