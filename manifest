@@ -1,5 +1,5 @@
-C Add\sexperimental\sfeature\sto\sdetect\sthreading\sbugs\sin\sapps\sthat\suse\nSQLITE_CONFIG_MULTITHREADED.\sEnabled\sat\scompile\stime\susing\nSQLITE_ENABLE_MULTITHREADED_CHECKS.
-D 2017-11-28T07:52:00.416
+C Lock\sthe\swal\sfile\sfor\sall\ssnapshot\stransactions,\seven\sif\sthey\swould\snot\notherwise\srequire\sthis,\spreventing\scheckpointers\sand\swriters\sfrom\swrapping\sthe\nwal\sfile.\sThis\smeans\sthat\sif\sone\sconnection\shas\san\sopen\ssnapshot\stransaction\nit\sis\sguaranteed\sthat\sa\ssecond\sconnection\scan\sopen\sa\stransaction\son\sthe\ssame\nsnapshot.
+D 2017-11-28T13:39:41.135
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -551,7 +551,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c beeb71e4eab65dbf0d95f2717efc6ca3c0f5b3090ce67f3de63828f39a6ff053
+F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 9752b68e03e2044f0faa4708fabb0189769067b660bffa931e1fd65736269659
@@ -1223,6 +1223,7 @@ F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/snapshot.test 85735bd997a4f6d710140c28fd860519a299649f
 F test/snapshot2.test 925e42427e923262db63c9d7155183f889e3e99feaedec4075f659e51608344f
+F test/snapshot3.test 9719443594a04778861bd20d12596c5f880af177d6cd62f111da3198cafc6096
 F test/snapshot_fault.test 52c5e97ebd218846a8ae2da4d147d3e77d71f963
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1678,8 +1679,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6b89304695be371978e65dddd710c8bd563c66b9c94d23165142b6c235c82e1 12a23c0a66fac5c9674120b390f6abaeaba3f7ff04693b281af1eefb93d6f47c
-R dd8aff31239aebcaa5e5379a4673912d
-T +closed 12a23c0a66fac5c9674120b390f6abaeaba3f7ff04693b281af1eefb93d6f47c
+P 40b598c8392f030f6ed8c63ce81cb0426bb3984397c19c756215f6a569a40164 d71eeaab9ecdeed772047498b781be1f0be0655af284b94cf676bb408ceea8b1
+R e37ca38ceb47340e2d23476ad044f736
+T +closed d71eeaab9ecdeed772047498b781be1f0be0655af284b94cf676bb408ceea8b1
 U dan
-Z bdded6a608898929c58df7d45769809f
+Z a9d291c094a58941f666434dce6709fb
