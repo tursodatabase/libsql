@@ -1117,6 +1117,25 @@ void sqlite3Pragma(
   }
   break;
 
+  /*
+  **   PRAGMA table_ipk(<table>)
+  **
+  ** If <table> has an INTEGER PRIMARY KEY column that is an alias for
+  ** the ROWID, then return the name of that column.  If <table> does not
+  ** have a ROWID alias, or if it does not have a ROWID, or if <table> is
+  ** a view or virtual table or if it does not exist, then return no rows.
+  */
+  case PragTyp_TABLE_IPK: {
+    if( zRight ){
+      Table *pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
+      sqlite3CodeVerifySchema(pParse, iDb);
+      if( pTab && HasRowid(pTab) && pTab->iPKey>=0 ){
+        sqlite3VdbeMultiLoad(v, 1, "s", pTab->aCol[pTab->iPKey].zName);
+      }
+    }
+  }
+  break;
+
 #ifdef SQLITE_DEBUG
   case PragTyp_STATS: {
     Index *pIdx;

@@ -40,18 +40,19 @@
 #define PragTyp_SOFT_HEAP_LIMIT               32
 #define PragTyp_SYNCHRONOUS                   33
 #define PragTyp_TABLE_INFO                    34
-#define PragTyp_TEMP_STORE                    35
-#define PragTyp_TEMP_STORE_DIRECTORY          36
-#define PragTyp_THREADS                       37
-#define PragTyp_WAL_AUTOCHECKPOINT            38
-#define PragTyp_WAL_CHECKPOINT                39
-#define PragTyp_ACTIVATE_EXTENSIONS           40
-#define PragTyp_HEXKEY                        41
-#define PragTyp_KEY                           42
-#define PragTyp_REKEY                         43
-#define PragTyp_LOCK_STATUS                   44
-#define PragTyp_PARSER_TRACE                  45
-#define PragTyp_STATS                         46
+#define PragTyp_TABLE_IPK                     35
+#define PragTyp_TEMP_STORE                    36
+#define PragTyp_TEMP_STORE_DIRECTORY          37
+#define PragTyp_THREADS                       38
+#define PragTyp_WAL_AUTOCHECKPOINT            39
+#define PragTyp_WAL_CHECKPOINT                40
+#define PragTyp_ACTIVATE_EXTENSIONS           41
+#define PragTyp_HEXKEY                        42
+#define PragTyp_KEY                           43
+#define PragTyp_REKEY                         44
+#define PragTyp_LOCK_STATUS                   45
+#define PragTyp_PARSER_TRACE                  46
+#define PragTyp_STATS                         47
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -75,31 +76,31 @@ static const char *const pragCName[] = {
   /*   4 */ "notnull",    
   /*   5 */ "dflt_value", 
   /*   6 */ "pk",         
-  /*   7 */ "tbl",         /* Used by: stats */
-  /*   8 */ "idx",        
-  /*   9 */ "wdth",       
-  /*  10 */ "hght",       
-  /*  11 */ "flgs",       
-  /*  12 */ "seqno",       /* Used by: index_info */
-  /*  13 */ "cid",        
-  /*  14 */ "name",       
-  /*  15 */ "seqno",       /* Used by: index_xinfo */
-  /*  16 */ "cid",        
-  /*  17 */ "name",       
-  /*  18 */ "desc",       
-  /*  19 */ "coll",       
-  /*  20 */ "key",        
-  /*  21 */ "seq",         /* Used by: index_list */
-  /*  22 */ "name",       
-  /*  23 */ "unique",     
-  /*  24 */ "origin",     
-  /*  25 */ "partial",    
-  /*  26 */ "seq",         /* Used by: database_list */
-  /*  27 */ "name",       
-  /*  28 */ "file",       
-  /*  29 */ "name",        /* Used by: function_list */
-  /*  30 */ "builtin",    
-  /*  31 */ "name",        /* Used by: module_list pragma_list */
+  /*   7 */ "name",        /* Used by: table_ipk module_list pragma_list */
+  /*   8 */ "tbl",         /* Used by: stats */
+  /*   9 */ "idx",        
+  /*  10 */ "wdth",       
+  /*  11 */ "hght",       
+  /*  12 */ "flgs",       
+  /*  13 */ "seqno",       /* Used by: index_info */
+  /*  14 */ "cid",        
+  /*  15 */ "name",       
+  /*  16 */ "seqno",       /* Used by: index_xinfo */
+  /*  17 */ "cid",        
+  /*  18 */ "name",       
+  /*  19 */ "desc",       
+  /*  20 */ "coll",       
+  /*  21 */ "key",        
+  /*  22 */ "seq",         /* Used by: index_list */
+  /*  23 */ "name",       
+  /*  24 */ "unique",     
+  /*  25 */ "origin",     
+  /*  26 */ "partial",    
+  /*  27 */ "seq",         /* Used by: database_list */
+  /*  28 */ "name",       
+  /*  29 */ "file",       
+  /*  30 */ "name",        /* Used by: function_list */
+  /*  31 */ "builtin",    
   /*  32 */ "seq",         /* Used by: collation_list */
   /*  33 */ "name",       
   /*  34 */ "id",          /* Used by: foreign_key_list */
@@ -237,7 +238,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "database_list",
   /* ePragTyp:  */ PragTyp_DATABASE_LIST,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0,
-  /* ColNames:  */ 26, 3,
+  /* ColNames:  */ 27, 3,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
@@ -317,7 +318,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "function_list",
   /* ePragTyp:  */ PragTyp_FUNCTION_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 29, 2,
+  /* ColNames:  */ 30, 2,
   /* iArg:      */ 0 },
 #endif
 #endif
@@ -353,17 +354,17 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "index_info",
   /* ePragTyp:  */ PragTyp_INDEX_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 12, 3,
+  /* ColNames:  */ 13, 3,
   /* iArg:      */ 0 },
  {/* zName:     */ "index_list",
   /* ePragTyp:  */ PragTyp_INDEX_LIST,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 21, 5,
+  /* ColNames:  */ 22, 5,
   /* iArg:      */ 0 },
  {/* zName:     */ "index_xinfo",
   /* ePragTyp:  */ PragTyp_INDEX_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 15, 6,
+  /* ColNames:  */ 16, 6,
   /* iArg:      */ 1 },
 #endif
 #if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
@@ -436,7 +437,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "module_list",
   /* ePragTyp:  */ PragTyp_MODULE_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 31, 1,
+  /* ColNames:  */ 7, 1,
   /* iArg:      */ 0 },
 #endif
 #endif
@@ -469,7 +470,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "pragma_list",
   /* ePragTyp:  */ PragTyp_PRAGMA_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 31, 1,
+  /* ColNames:  */ 7, 1,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
@@ -556,7 +557,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "stats",
   /* ePragTyp:  */ PragTyp_STATS,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,
-  /* ColNames:  */ 7, 5,
+  /* ColNames:  */ 8, 5,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
@@ -571,6 +572,11 @@ static const PragmaName aPragmaName[] = {
   /* ePragTyp:  */ PragTyp_TABLE_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
   /* ColNames:  */ 1, 6,
+  /* iArg:      */ 0 },
+ {/* zName:     */ "table_ipk",
+  /* ePragTyp:  */ PragTyp_TABLE_IPK,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1,
+  /* ColNames:  */ 7, 1,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
@@ -646,4 +652,4 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ SQLITE_WriteSchema },
 #endif
 };
-/* Number of pragmas: 60 on by default, 77 total. */
+/* Number of pragmas: 61 on by default, 78 total. */

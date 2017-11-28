@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2001-09-15
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -13,7 +13,6 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.24 2007/11/29 17:43:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -641,5 +640,87 @@ do_execsql_test intpkey-17.2 {
   UPDATE t17 SET y='ostrich' WHERE abs(x)=248;
   SELECT * FROM t17 ORDER BY +x;
 } {123 elephant 248 ostrich}
+
+# 2017-11-28:  The table_ipk pragma.
+#
+do_execsql_test intpkey-18.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER PRIMARY KEY, abc, pqr);
+  PRAGMA table_ipk(t1);
+} {xyz}
+do_execsql_test intpkey-18.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER PRIMARY KEY ASC, abc, pqr);
+  PRAGMA table_ipk(t1);
+} {xyz}
+do_execsql_test intpkey-18.2 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER PRIMARY KEY DESC, abc, pqr);
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.3 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER, abc, pqr, PRIMARY KEY(xyz));
+  PRAGMA table_ipk(t1);
+} {xyz}
+do_execsql_test intpkey-18.4 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER, abc, pqr, PRIMARY KEY(xyz ASC));
+  PRAGMA table_ipk(t1);
+} {xyz}
+do_execsql_test intpkey-18.5 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER, abc, pqr, PRIMARY KEY(xyz DESC));
+  PRAGMA table_ipk(t1);
+} {xyz}
+do_execsql_test intpkey-18.10 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER PRIMARY KEY, abc, pqr) WITHOUT ROWID;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.11 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER PRIMARY KEY ASC, abc, pqr) WITHOUT ROWID;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.12 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER PRIMARY KEY DESC, abc, pqr) WITHOUT ROWID;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.13 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER, abc, pqr, PRIMARY KEY(xyz)) WITHOUT ROWID;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.14 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER, abc, pqr, PRIMARY KEY(xyz ASC)) WITHOUT ROWID;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.15 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(xyz INTEGER, abc, pqr, PRIMARY KEY(xyz DESC)) WITHOUT ROWID;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.20 {
+  DROP TABLE IF EXISTS t1;
+  PRAGMA table_ipk(t1);
+} {}
+do_execsql_test intpkey-18.21 {
+  CREATE TABLE t1(a,b,xyz INTEGER PRIMARY KEY NOT NULL);
+  SELECT * FROM pragma_table_ipk('t1');
+} {xyz}
+do_execsql_test intpkey-18.22 {
+  PRAGMA table_ipk(pragma_table_ipk);
+} {}
+do_execsql_test intpkey-18.23 {
+  PRAGMA table_info(pragma_table_ipk);
+} {0 name {} 0 {} 0}
+do_execsql_test intpkey-18.24 {
+  CREATE VIEW v1 AS SELECT * FROM t1 WHERE rowid>5;
+  PRAGMA table_ipk(v1);
+} {}
+
 
 finish_test

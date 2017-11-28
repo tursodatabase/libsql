@@ -223,6 +223,11 @@ set pragma_def {
   COLS: cid name type notnull dflt_value pk
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
+  NAME: table_ipk
+  FLAG: NeedSchema Result1
+  COLS: name
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
   NAME: stats
   FLAG: NeedSchema Result0 SchemaReq
   COLS: tbl idx wdth hght flgs

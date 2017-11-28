@@ -1,5 +1,5 @@
-C Update\stests\sto\sdeal\swith\sSQLITE_FAST_SECURE_DELETE.
-D 2017-11-28T00:52:14.148
+C Add\sthe\s"PRAGMA\stable_ipk(TABLE)"\scommand\sfor\sevaluation\spurposes.
+D 2017-11-28T02:47:42.046
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -464,8 +464,8 @@ F src/parse.y d79001da275bfe344b409006b85e81e486a0f6afc3762fdf0944f000f4aa0111
 F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c d04725ac25387d9638919e197fb009f378e13af7bf899516979e54b3164e3602
-F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
+F src/pragma.c 021613c97a331d42c45ecc1510c8ebd222972f9679254078a7e2b5c4513c4566
+F src/pragma.h 4ce81be73b88094c23fc635643f8712178f986f776830ff8115627c810714b75
 F src/prepare.c 7cf451f903ad92a14e22de415a13e7a7d30f1bd23b3d21eeb0dc7264723244c5
 F src/printf.c 9506b4b96e59c0467047155f09015750cb2878aeda3d39e5610c1192ddc3c41c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -975,7 +975,7 @@ F test/instrfault.test 0f870b218ea17cd477bb19ed330eecdb460dd53a
 F test/intarray.test 46d95b457916638c5d8b1af21fb174804b3acf8b
 F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
 F test/interrupt2.test e4408ca770a6feafbadb0801e54a0dcd1a8d108d
-F test/intpkey.test ac71107a49a06492b69b82aafaf225400598d3c8
+F test/intpkey.test 21290ef810c049467d9f4f3b3361178ced254ff37df62af314a0ede878009b25
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
 F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -1613,7 +1613,7 @@ F tool/mkmsvcmin.tcl 8baf26690b80d861d0ac341b29880eec6ade39e4f11fe690271ded9cb90
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
+F tool/mkpragmatab.tcl f49ae6e8cb961d36f449109badcb7020c2fcdeb6d03c7f1acda89633e10250ca
 F tool/mkshellc.tcl 574307265b49d813301fba91ccd74e6a26d33f65f74b6891c320a0ffbee07895
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1678,7 +1678,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 465350e55ddaf30cfba7874653301de7238a9dc2bc5e1f800fc95de9360679f6
-R 5c3698b136ad7029a7e22749e9f1a061
+P e6b89304695be371978e65dddd710c8bd563c66b9c94d23165142b6c235c82e1
+R 89fbad1a4c6de971034ac5f140aa2b84
+T *branch * pragma-table-ipk
+T *sym-pragma-table-ipk *
+T -sym-trunk *
 U drh
-Z 455c99a49ae132932748abfe00c111c4
+Z 5a5f1ee8645506e803bde7a836253a0d
