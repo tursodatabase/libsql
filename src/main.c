@@ -2822,6 +2822,7 @@ static int openDatabase(
   }else{
     isThreadsafe = sqlite3GlobalConfig.bFullMutex;
   }
+
   if( flags & SQLITE_OPEN_PRIVATECACHE ){
     flags &= ~SQLITE_OPEN_SHAREDCACHE;
   }else if( sqlite3GlobalConfig.sharedCacheEnabled ){
@@ -2854,12 +2855,19 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  if( isThreadsafe ){
+  if( isThreadsafe 
+#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+   || sqlite3GlobalConfig.bCoreMutex
+#endif
+  ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
       sqlite3_free(db);
       db = 0;
       goto opendb_out;
+    }
+    if( isThreadsafe==0 ){
+      sqlite3MutexWarnOnContention(db->mutex);
     }
   }
   sqlite3_mutex_enter(db->mutex);
