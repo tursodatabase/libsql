@@ -1,5 +1,5 @@
-C Lock\sthe\swal\sfile\sfor\sall\ssnapshot\stransactions,\seven\sif\sthey\swould\snot\notherwise\srequire\sthis,\spreventing\scheckpointers\sand\swriters\sfrom\swrapping\sthe\nwal\sfile.\sThis\smeans\sthat\sif\sone\sconnection\shas\san\sopen\ssnapshot\stransaction\nit\sis\sguaranteed\sthat\sa\ssecond\sconnection\scan\sopen\sa\stransaction\son\sthe\ssame\nsnapshot.
-D 2017-11-28T13:39:41.135
+C Fix\san\sassertion\sfault\sfound\sby\sOSSFuzz.
+D 2017-11-28T20:43:40.167
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -535,7 +535,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 08a83195de8fad3f00542e3c8b3c1eb1222c999817c9e301ffb7f332882b96dd
-F src/trigger.c fc6be2a6e103d9e38b161e07d7db0ffb1f2218bd2f27ccdc0a3d1cc89e9cea0f
+F src/trigger.c 775053eecf6b73062e243404b56f5064446254d5cce17d8704d5cdffd72a546a
 F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d01fa6f45bfad3b65fb2490513aa2e0676412c61b4b094340b513cf72c3704a4
@@ -1457,7 +1457,7 @@ F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 15fa63f1097db1f83dd62d121616006978063d1f
 F test/triggerF.test 6a8c22bd058cf467f0c7d112afe87f7a8c579c0c4681b914b8f19020f48528a4
-F test/triggerG.test 175cafdc6399d85231a09e82e051b0e45a2fd1f23dd08ae715bc359716149ab6
+F test/triggerG.test d5caeef6144ede2426dd13211fd72248241ff2ebc68e12a4c0bf30f5faa21499
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
@@ -1679,8 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40b598c8392f030f6ed8c63ce81cb0426bb3984397c19c756215f6a569a40164 d71eeaab9ecdeed772047498b781be1f0be0655af284b94cf676bb408ceea8b1
-R e37ca38ceb47340e2d23476ad044f736
-T +closed d71eeaab9ecdeed772047498b781be1f0be0655af284b94cf676bb408ceea8b1
+P b81a31495bd27c1d96f7df653da3502054240cb5acf66b860da7f0f9b422a524
+R 419b1183c51a17454670ae5c0f948f4f
 U dan
-Z a9d291c094a58941f666434dce6709fb
+Z af229f4b2717b4f314275fdbf907e896
