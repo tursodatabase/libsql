@@ -1,5 +1,5 @@
-C Fix\sbuilds\swith\sboth\sSQLITE_ENABLE_MULTITHREADED_CHECKS\sand\nSQLITE_THREADSAFE=0\sdefined.
-D 2017-11-25T21:09:29.272
+C Use\sa\ssymbolic\sconstant\sinstead\sof\sa\sliteral\s(-1)\sto\sidentify\sa\nwarn-on-contention\smutex.
+D 2017-11-28T07:47:57.520
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -445,7 +445,7 @@ F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
-F src/mutex.c 38addb10f90641b5f88521f7099e729ef10e3f0ac50bd6b9196183fb313a0378
+F src/mutex.c 20172f2cc43c4542f7860ab6bafdd16965822c4e56650d62628059a48c7f43c4
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
@@ -1678,7 +1678,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a66886ac13aa6d8ccbb6d673ddd00267c93e3ee1fbc158236fce3157d150868d
-R e1844ccd94c28116d72c961404a2fb64
+P 7d0b12fcb58353b883ffce77df824a5cc8b1e913a21ec3f22fb73481a398c916
+R a940a7b7e2663c64f019728def2f503f
 U dan
-Z 03bc6023c96e908c306e6b560dfce5a2
+Z d7c77380d4461a6101913d9af19a0151

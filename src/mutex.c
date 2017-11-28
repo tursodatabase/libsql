@@ -44,13 +44,20 @@ static SQLITE_WSD int mutexIsInit = 0;
 
 /* 
 ** Type for all mutexes used when SQLITE_ENABLE_MULTITHREADED_CHECKS
-** is defined.
+** is defined. Variable CheckMutex.mutex is a pointer to the real mutex
+** allocated by the system mutex implementation. Variable iType is usually set
+** to the type of mutex requested - SQLITE_MUTEX_RECURSIVE, SQLITE_MUTEX_FAST
+** or one of the static mutex identifiers. Or, if this is a recursive mutex
+** that has been configured using sqlite3MutexWarnOnContention(), it is
+** set to SQLITE_MUTEX_WARNONCONTENTION.
 */
 typedef struct CheckMutex CheckMutex;
 struct CheckMutex {
   int iType;
   sqlite3_mutex *mutex;
 };
+
+#define SQLITE_MUTEX_WARNONCONTENTION  (-1)
 
 /* 
 ** Pointer to real mutex methods object used by the CheckMutex
@@ -122,6 +129,10 @@ static sqlite3_mutex *checkMutexAlloc(int iType){
 ** Free a mutex.
 */
 static void checkMutexFree(sqlite3_mutex *p){
+  assert( SQLITE_MUTEX_RECURSIVE<2 );
+  assert( SQLITE_MUTEX_FAST<2 );
+  assert( SQLITE_MUTEX_WARNONCONTENTION<2 );
+
 #if SQLITE_ENABLE_API_ARMOR
   if( p->iType<2 ){
 #endif
@@ -142,7 +153,7 @@ static void checkMutexFree(sqlite3_mutex *p){
 */
 static void checkMutexEnter(sqlite3_mutex *p){
   CheckMutex *pCheck = (CheckMutex*)p;
-  if( pCheck->iType<0 ){
+  if( pCheck->iType==SQLITE_MUTEX_WARNONCONTENTION ){
     if( SQLITE_OK==pGlobalMutexMethods->xMutexTry(pCheck->mutex) ){
       return;
     }
@@ -197,7 +208,7 @@ void sqlite3MutexWarnOnContention(sqlite3_mutex *p){
   if( sqlite3GlobalConfig.mutex.xMutexAlloc==checkMutexAlloc ){
     CheckMutex *pCheck = (CheckMutex*)p;
     assert( pCheck->iType==SQLITE_MUTEX_RECURSIVE );
-    pCheck->iType = -1;
+    pCheck->iType = SQLITE_MUTEX_WARNONCONTENTION;
   }
 }
 #endif   /* ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS */
