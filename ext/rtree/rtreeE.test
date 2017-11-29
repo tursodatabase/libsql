@@ -15,6 +15,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 ifcapable rtree_int_only { finish_test; return }
@@ -25,7 +26,7 @@ ifcapable rtree_int_only { finish_test; return }
 #
 register_circle_geom db
 
-do_execsql_test rtreeE-1.1 {
+do_execsql_test rtreeE-1.0.0 {
   PRAGMA page_size=512;
   CREATE VIRTUAL TABLE rt1 USING rtree(id,x0,x1,y0,y1);
   
@@ -47,6 +48,7 @@ do_execsql_test rtreeE-1.1 {
     y(y) AS (VALUES(0) UNION ALL SELECT y+1 FROM y WHERE y<4)
   INSERT INTO rt1 SELECT 200+x+5*y, x*7, x*7+15, y*7+200, y*7+215 FROM x, y;
 } {}
+do_rtree_integrity_test rtreeE-1.0.1 rt1
 
 # Queries against each of the three clusters */
 do_execsql_test rtreeE-1.1 {
@@ -111,6 +113,7 @@ do_test rtreeE-2.1 {
     COMMIT;
   }
 } {}
+do_rtree_integrity_test rtreeE-2.1.1 rt2
 
 for {set i 1} {$i<=200} {incr i} {
   set dx [expr {int(rand()*100)}]

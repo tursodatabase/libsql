@@ -55,7 +55,8 @@ THREADLIB += $(LIBS)
 LIBOBJ+= vdbe.o parse.o \
          alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
-         callback.o complete.o ctime.o date.o dbstat.o delete.o expr.o \
+         callback.o complete.o ctime.o \
+         date.o dbpage.o dbstat.o delete.o expr.o \
 	 fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
@@ -96,6 +97,7 @@ SRC = \
   $(TOP)/src/complete.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -308,6 +310,7 @@ TESTSRC = \
   $(TOP)/src/test_intarray.c \
   $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
+  $(TOP)/src/test_md5.c \
   $(TOP)/src/test_multiplex.c \
   $(TOP)/src/test_mutex.c \
   $(TOP)/src/test_onefile.c \
@@ -320,6 +323,7 @@ TESTSRC = \
   $(TOP)/src/test_sqllog.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
+  $(TOP)/src/test_tclsh.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
@@ -362,6 +366,7 @@ TESTSRC2 = \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
@@ -461,6 +466,7 @@ TESTPROGS = \
   testfixture$(EXE) \
   sqlite3$(EXE) \
   sqlite3_analyzer$(EXE) \
+  sqlite3_checker$(EXE) \
   sqldiff$(EXE) \
   dbhash$(EXE)
 
@@ -483,6 +489,8 @@ SHELL_OPT += -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
+SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
@@ -577,7 +585,7 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
-	cp tsrc/shell.c tsrc/sqlite3ext.h .
+	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
@@ -772,23 +780,33 @@ sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 # Rules for building test programs and for running tests
 #
 tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite3 \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH -o tclsqlite3 \
 		$(TOP)/src/tclsqlite.c libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
-	echo "#define TCLSH 2" > $@
-	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
-	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
-	echo "static const char *tclsh_main_loop(void){" >> $@
-	echo "static const char *zMainloop = " >> $@
-	tclsh $(TOP)/tool/tostr.tcl $(TOP)/tool/spaceanal.tcl >> $@
-	echo "; return zMainloop; }" >> $@
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/sqlite3_analyzer.c.in $(TOP)/tool/mkccode.tcl
+	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
 sqlite3_expert$(EXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
 	$(TCCX) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert$(EXE) $(THREADLIB)
+
+CHECKER_DEPS =\
+  $(TOP)/tool/mkccode.tcl \
+  sqlite3.c \
+  $(TOP)/src/tclsqlite.c \
+  $(TOP)/ext/repair/sqlite3_checker.tcl \
+  $(TOP)/ext/repair/checkindex.c \
+  $(TOP)/ext/repair/checkfreelist.c \
+  $(TOP)/ext/misc/btreeinfo.c \
+  $(TOP)/ext/repair/sqlite3_checker.c.in
+
+sqlite3_checker.c:	$(CHECKER_DEPS)
+	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
+
+sqlite3_checker$(TEXE):	sqlite3_checker.c
+	$(TCCX) $(TCL_FLAGS) sqlite3_checker.c -o $@ $(LIBTCL) $(THREADLIB)
 
 dbdump$(EXE):	$(TOP)/ext/misc/dbdump.c sqlite3.o
 	$(TCCX) -DDBDUMP_STANDALONE -o dbdump$(EXE) \
@@ -801,21 +819,23 @@ TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
+TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
+	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
 amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
 				$(TOP)/ext/session/test_session.c
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
+	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
 		$(TOP)/ext/session/test_session.c                            \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
+	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
 	-DSQLITE_ENABLE_FTS3=1                                               \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
@@ -909,6 +929,9 @@ showjournal$(EXE):	$(TOP)/tool/showjournal.c sqlite3.o
 showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
+
+showshm$(EXE):	$(TOP)/tool/showshm.c
+	$(TCC) -o showshm$(EXE) $(TOP)/tool/showshm.c
 
 changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \

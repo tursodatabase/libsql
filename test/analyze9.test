@@ -1052,8 +1052,11 @@ do_execsql_test 23.0 {
 do_eqp_test 23.1 {
   SELECT * FROM t4 WHERE 
     (e=1 AND b='xyz' AND c='zyx' AND a<'AEA') AND f<300
+  -- Formerly used index i41.  But i41 is not a covering index whereas
+  -- the PRIMARY KEY is a covering index, and so as of 2017-10-15, the
+  -- PRIMARY KEY is preferred.
 } {
-  0 0 0 {SEARCH TABLE t4 USING INDEX i41 (e=? AND c=? AND b=? AND a<?)}
+  0 0 0 {SEARCH TABLE t4 USING PRIMARY KEY (c=? AND b=? AND a<?)}
 }
 do_eqp_test 23.2 {
   SELECT * FROM t4 WHERE 

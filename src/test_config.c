@@ -214,6 +214,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "json1", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_HAS_CODEC
+  Tcl_SetVar2(interp, "sqlite_options", "has_codec", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "has_codec", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   Tcl_SetVar2(interp, "sqlite_options", "like_match_blobs", "0", TCL_GLOBAL_ONLY);
 #else
@@ -688,6 +694,12 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "unlock_notify", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "unlock_notify", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_FAST_SECURE_DELETE
+  Tcl_SetVar2(interp, "sqlite_options", "fast_secure_delete", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "fast_secure_delete", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_SECURE_DELETE

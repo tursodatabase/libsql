@@ -24,11 +24,16 @@ ifcapable !vtab {
 proc fetch_db {file} {
   forcedelete $file
   sqlite3 dbX $file
-  dbX eval { CREATE TABLE t1(a INTEGER PRIMARY KEY, b) }
+  set rc [catch {
+    dbX eval { CREATE TABLE t1(a INTEGER PRIMARY KEY, b) }
+  } res]
   dbX close
+  if {$rc!=0} {error $res}
 }
 
 forcedelete test.db1
+forcedelete test.db2
+
 do_execsql_test 1.0 {
   ATTACH 'test.db1' AS aux;
   CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b);

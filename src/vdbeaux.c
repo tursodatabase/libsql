@@ -2280,6 +2280,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       pPager = sqlite3BtreePager(pBt);
       if( db->aDb[i].safety_level!=PAGER_SYNCHRONOUS_OFF
        && aMJNeeded[sqlite3PagerGetJournalMode(pPager)]
+       && sqlite3PagerIsMemdb(pPager)==0
       ){ 
         assert( i!=1 );
         nTrans++;
@@ -3055,7 +3056,7 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
 void sqlite3VdbeDelete(Vdbe *p){
   sqlite3 *db;
 
-  if( NEVER(p==0) ) return;
+  assert( p!=0 );
   db = p->db;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3VdbeClearObject(db, p);

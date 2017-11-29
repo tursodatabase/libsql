@@ -74,7 +74,6 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     sqlite3ExprDelete(db, p->pHaving);
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pLimit);
-    sqlite3ExprDelete(db, p->pOffset);
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
@@ -107,8 +106,7 @@ Select *sqlite3SelectNew(
   Expr *pHaving,        /* the HAVING clause */
   ExprList *pOrderBy,   /* the ORDER BY clause */
   u32 selFlags,         /* Flag parameters, such as SF_Distinct */
-  Expr *pLimit,         /* LIMIT value.  NULL means not used */
-  Expr *pOffset         /* OFFSET value.  NULL means no offset */
+  Expr *pLimit          /* LIMIT value.  NULL means not used */
 ){
   Select *pNew;
   Select standin;
@@ -141,10 +139,7 @@ Select *sqlite3SelectNew(
   pNew->pPrior = 0;
   pNew->pNext = 0;
   pNew->pLimit = pLimit;
-  pNew->pOffset = pOffset;
   pNew->pWith = 0;
-  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0
-                     || pParse->db->mallocFailed!=0 );
   if( pParse->db->mallocFailed ) {
     clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;
@@ -1689,6 +1684,7 @@ int sqlite3ColumnsFromExprList(
     nCol = pEList->nExpr;
     aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
     testcase( aCol==0 );
+    if( nCol>32767 ) nCol = 32767;
   }else{
     nCol = 0;
     aCol = 0;
@@ -1873,7 +1869,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
-** pLimit and pOffset expressions.  pLimit and pOffset hold the expressions
+** pLimit expressions.  pLimit->pLeft and pLimit->pRight hold the expressions
 ** that appear in the original SQL statement after the LIMIT and OFFSET
 ** keywords.  Or NULL if those keywords are omitted. iLimit and iOffset 
 ** are the integer memory register numbers for counters used to compute 
@@ -1881,15 +1877,15 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 ** iLimit and iOffset are negative.
 **
 ** This routine changes the values of iLimit and iOffset only if
-** a limit or offset is defined by pLimit and pOffset.  iLimit and
-** iOffset should have been preset to appropriate default values (zero)
+** a limit or offset is defined by pLimit->pLeft and pLimit->pRight.  iLimit
+** and iOffset should have been preset to appropriate default values (zero)
 ** prior to calling this routine.
 **
 ** The iOffset register (if it exists) is initialized to the value
 ** of the OFFSET.  The iLimit register is initialized to LIMIT.  Register
 ** iOffset+1 is initialized to LIMIT+OFFSET.
 **
-** Only if pLimit!=0 or pOffset!=0 do the limit registers get
+** Only if pLimit->pLeft!=0 do the limit registers get
 ** redefined.  The UNION ALL operator uses this property to force
 ** the reuse of the same limit and offset registers across multiple
 ** SELECT statements.
@@ -1899,6 +1895,8 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   int iLimit = 0;
   int iOffset;
   int n;
+  Expr *pLimit = p->pLimit;
+
   if( p->iLimit ) return;
 
   /* 
@@ -1908,12 +1906,13 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** no rows.
   */
   sqlite3ExprCacheClear(pParse);
-  assert( p->pOffset==0 || p->pLimit!=0 );
-  if( p->pLimit ){
+  if( pLimit ){
+    assert( pLimit->op==TK_LIMIT );
+    assert( pLimit->pLeft!=0 );
     p->iLimit = iLimit = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
     assert( v!=0 );
-    if( sqlite3ExprIsInteger(p->pLimit, &n) ){
+    if( sqlite3ExprIsInteger(pLimit->pLeft, &n) ){
       sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
       VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
@@ -1923,15 +1922,15 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
         p->selFlags |= SF_FixedLimit;
       }
     }else{
-      sqlite3ExprCode(pParse, p->pLimit, iLimit);
+      sqlite3ExprCode(pParse, pLimit->pLeft, iLimit);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, iLimit); VdbeCoverage(v);
       VdbeComment((v, "LIMIT counter"));
       sqlite3VdbeAddOp2(v, OP_IfNot, iLimit, iBreak); VdbeCoverage(v);
     }
-    if( p->pOffset ){
+    if( pLimit->pRight ){
       p->iOffset = iOffset = ++pParse->nMem;
       pParse->nMem++;   /* Allocate an extra register for limit+offset */
-      sqlite3ExprCode(pParse, p->pOffset, iOffset);
+      sqlite3ExprCode(pParse, pLimit->pRight, iOffset);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset); VdbeCoverage(v);
       VdbeComment((v, "OFFSET counter"));
       sqlite3VdbeAddOp3(v, OP_OffsetLimit, iLimit, iOffset+1, iOffset);
@@ -2061,7 +2060,7 @@ static void generateWithRecursiveQuery(
   int i;                        /* Loop counter */
   int rc;                       /* Result code */
   ExprList *pOrderBy;           /* The ORDER BY clause */
-  Expr *pLimit, *pOffset;       /* Saved LIMIT and OFFSET */
+  Expr *pLimit;                 /* Saved LIMIT and OFFSET */
   int regLimit, regOffset;      /* Registers used by LIMIT and OFFSET */
 
   /* Obtain authorization to do a recursive query */
@@ -2072,10 +2071,9 @@ static void generateWithRecursiveQuery(
   p->nSelectRow = 320;  /* 4 billion rows */
   computeLimitRegisters(pParse, p, addrBreak);
   pLimit = p->pLimit;
-  pOffset = p->pOffset;
   regLimit = p->iLimit;
   regOffset = p->iOffset;
-  p->pLimit = p->pOffset = 0;
+  p->pLimit = 0;
   p->iLimit = p->iOffset = 0;
   pOrderBy = p->pOrderBy;
 
@@ -2168,7 +2166,6 @@ end_of_recursive_query:
   sqlite3ExprListDelete(pParse->db, p->pOrderBy);
   p->pOrderBy = pOrderBy;
   p->pLimit = pLimit;
-  p->pOffset = pOffset;
   return;
 }
 #endif /* SQLITE_OMIT_CTE */
@@ -2204,7 +2201,6 @@ static int multiSelectValues(
     assert( p->selFlags & SF_Values );
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
     assert( p->pLimit==0 );
-    assert( p->pOffset==0 );
     assert( p->pNext==0 || p->pEList->nExpr==p->pNext->pEList->nExpr );
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
@@ -2331,11 +2327,9 @@ static int multiSelect(
       pPrior->iLimit = p->iLimit;
       pPrior->iOffset = p->iOffset;
       pPrior->pLimit = p->pLimit;
-      pPrior->pOffset = p->pOffset;
       explainSetInteger(iSub1, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, pPrior, &dest);
       p->pLimit = 0;
-      p->pOffset = 0;
       if( rc ){
         goto multi_select_end;
       }
@@ -2357,7 +2351,7 @@ static int multiSelect(
       p->pPrior = pPrior;
       p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
       if( pPrior->pLimit
-       && sqlite3ExprIsInteger(pPrior->pLimit, &nLimit)
+       && sqlite3ExprIsInteger(pPrior->pLimit->pLeft, &nLimit)
        && nLimit>0 && p->nSelectRow > sqlite3LogEst((u64)nLimit) 
       ){
         p->nSelectRow = sqlite3LogEst((u64)nLimit);
@@ -2372,7 +2366,7 @@ static int multiSelect(
       int unionTab;    /* Cursor number of the temporary table holding result */
       u8 op = 0;       /* One of the SRT_ operations to apply to self */
       int priorOp;     /* The SRT_ operation to apply to prior selects */
-      Expr *pLimit, *pOffset; /* Saved values of p->nLimit and p->nOffset */
+      Expr *pLimit;    /* Saved values of p->nLimit  */
       int addr;
       SelectDest uniondest;
 
@@ -2384,7 +2378,6 @@ static int multiSelect(
         ** right.
         */
         assert( p->pLimit==0 );      /* Not allowed on leftward elements */
-        assert( p->pOffset==0 );     /* Not allowed on leftward elements */
         unionTab = dest.iSDParm;
       }else{
         /* We will need to create our own temporary table to hold the
@@ -2420,8 +2413,6 @@ static int multiSelect(
       p->pPrior = 0;
       pLimit = p->pLimit;
       p->pLimit = 0;
-      pOffset = p->pOffset;
-      p->pOffset = 0;
       uniondest.eDest = op;
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &uniondest);
@@ -2437,7 +2428,6 @@ static int multiSelect(
       }
       sqlite3ExprDelete(db, p->pLimit);
       p->pLimit = pLimit;
-      p->pOffset = pOffset;
       p->iLimit = 0;
       p->iOffset = 0;
 
@@ -2465,7 +2455,7 @@ static int multiSelect(
     default: assert( p->op==TK_INTERSECT ); {
       int tab1, tab2;
       int iCont, iBreak, iStart;
-      Expr *pLimit, *pOffset;
+      Expr *pLimit;
       int addr;
       SelectDest intersectdest;
       int r1;
@@ -2501,8 +2491,6 @@ static int multiSelect(
       p->pPrior = 0;
       pLimit = p->pLimit;
       p->pLimit = 0;
-      pOffset = p->pOffset;
-      p->pOffset = 0;
       intersectdest.iSDParm = tab2;
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &intersectdest);
@@ -2512,7 +2500,6 @@ static int multiSelect(
       if( p->nSelectRow>pPrior->nSelectRow ) p->nSelectRow = pPrior->nSelectRow;
       sqlite3ExprDelete(db, p->pLimit);
       p->pLimit = pLimit;
-      p->pOffset = pOffset;
 
       /* Generate code to take the intersection of the two temporary
       ** tables.
@@ -2991,8 +2978,6 @@ static int multiSelectOrderBy(
   }
   sqlite3ExprDelete(db, p->pLimit);
   p->pLimit = 0;
-  sqlite3ExprDelete(db, p->pOffset);
-  p->pOffset = 0;
 
   regAddrA = ++pParse->nMem;
   regAddrB = ++pParse->nMem;
@@ -3382,12 +3367,11 @@ static void substSelect(
 **  (19)  If the subquery uses LIMIT then the outer query may not
 **        have a WHERE clause.
 **
-**  (**)  Subsumed into (17d3).  Was: If the sub-query is a compound select,
-**        then it must not use an ORDER BY clause - Ticket #3773.  Because
-**        of (17d3), then only way to have a compound subquery is if it is
-**        the only term in the FROM clause of the outer query.  But if the
-**        only term in the FROM clause has an ORDER BY, then it will be
-**        implemented as a co-routine and the flattener will never be called.
+**  (20)  If the sub-query is a compound select, then it must not use
+**        an ORDER BY clause.  Ticket #3773.  We could relax this constraint
+**        somewhat by saying that the terms of the ORDER BY clause must
+**        appear as unmodified result columns in the outer query.  But we
+**        have other optimizations in mind to deal with that case.
 **
 **  (21)  If the subquery uses LIMIT then the outer query may not be
 **        DISTINCT.  (See ticket [752e1646fc]).
@@ -3457,7 +3441,7 @@ static int flattenSubquery(
   ** became arbitrary expressions, we were forced to add restrictions (13)
   ** and (14). */
   if( pSub->pLimit && p->pLimit ) return 0;              /* Restriction (13) */
-  if( pSub->pOffset ) return 0;                          /* Restriction (14) */
+  if( pSub->pLimit && pSub->pLimit->pRight ) return 0;   /* Restriction (14) */
   if( (p->selFlags & SF_Compound)!=0 && pSub->pLimit ){
     return 0;                                            /* Restriction (15) */
   }
@@ -3521,6 +3505,9 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
+    if( pSub->pOrderBy ){
+      return 0;  /* Restriction (20) */
+    }
     if( isAgg || (p->selFlags & SF_Distinct)!=0 || pSrc->nSrc!=1 ){
       return 0; /* (17d1), (17d2), or (17d3) */
     }
@@ -3554,15 +3541,6 @@ static int flattenSubquery(
   ** restriction (17d3)
   */
   assert( (p->selFlags & SF_Recursive)==0 || pSub->pPrior==0 );
-
-  /* Ex-restriction (20):
-  ** A compound subquery must be the only term in the FROM clause of the
-  ** outer query by restriction (17d3).  But if that term also has an
-  ** ORDER BY clause, then the subquery will be implemented by co-routine
-  ** and so the flattener will never be invoked.  Hence, it is not possible
-  ** for the subquery to be a compound and have an ORDER BY clause.
-  */
-  assert( pSub->pPrior==0 || pSub->pOrderBy==0 );
 
   /***** If we reach this point, flattening is permitted. *****/
   SELECTTRACE(1,pParse,p,("flatten %s.%p from term %d\n",
@@ -3611,16 +3589,13 @@ static int flattenSubquery(
     Select *pNew;
     ExprList *pOrderBy = p->pOrderBy;
     Expr *pLimit = p->pLimit;
-    Expr *pOffset = p->pOffset;
     Select *pPrior = p->pPrior;
     p->pOrderBy = 0;
     p->pSrc = 0;
     p->pPrior = 0;
     p->pLimit = 0;
-    p->pOffset = 0;
     pNew = sqlite3SelectDup(db, p, 0);
     sqlite3SelectSetName(pNew, pSub->zSelName);
-    p->pOffset = pOffset;
     p->pLimit = pLimit;
     p->pOrderBy = pOrderBy;
     p->pSrc = pSrc;
@@ -3918,42 +3893,44 @@ static int pushDownWhereTerms(
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 /*
-** Based on the contents of the AggInfo structure indicated by the first
-** argument, this function checks if the following are true:
+** The pFunc is the only aggregate function in the query.  Check to see
+** if the query is a candidate for the min/max optimization. 
 **
-**    * the query contains just a single aggregate function,
-**    * the aggregate function is either min() or max(), and
-**    * the argument to the aggregate function is a column value.
+** If the query is a candidate for the min/max optimization, then set
+** *ppMinMax to be an ORDER BY clause to be used for the optimization
+** and return either WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX depending on
+** whether pFunc is a min() or max() function.
 **
-** If all of the above are true, then WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX
-** is returned as appropriate. Also, *ppMinMax is set to point to the 
-** list of arguments passed to the aggregate before returning.
+** If the query is not a candidate for the min/max optimization, return
+** WHERE_ORDERBY_NORMAL (which must be zero).
 **
-** Or, if the conditions above are not met, *ppMinMax is set to 0 and
-** WHERE_ORDERBY_NORMAL is returned.
+** This routine must be called after aggregate functions have been
+** located but before their arguments have been subjected to aggregate
+** analysis.
 */
-static u8 minMaxQuery(AggInfo *pAggInfo, ExprList **ppMinMax){
-  int eRet = WHERE_ORDERBY_NORMAL;          /* Return value */
+static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
+  int eRet = WHERE_ORDERBY_NORMAL;      /* Return value */
+  ExprList *pEList = pFunc->x.pList;    /* Arguments to agg function */
+  const char *zFunc;                    /* Name of aggregate function pFunc */
+  ExprList *pOrderBy;
+  u8 sortOrder;
 
-  *ppMinMax = 0;
-  if( pAggInfo->nFunc==1 ){
-    Expr *pExpr = pAggInfo->aFunc[0].pExpr; /* Aggregate function */
-    ExprList *pEList = pExpr->x.pList;      /* Arguments to agg function */
-
-    assert( pExpr->op==TK_AGG_FUNCTION );
-    if( pEList && pEList->nExpr==1 && pEList->a[0].pExpr->op==TK_AGG_COLUMN ){
-      const char *zFunc = pExpr->u.zToken;
-      if( sqlite3StrICmp(zFunc, "min")==0 ){
-        eRet = WHERE_ORDERBY_MIN;
-        *ppMinMax = pEList;
-      }else if( sqlite3StrICmp(zFunc, "max")==0 ){
-        eRet = WHERE_ORDERBY_MAX;
-        *ppMinMax = pEList;
-      }
-    }
+  assert( *ppMinMax==0 );
+  assert( pFunc->op==TK_AGG_FUNCTION );
+  if( pEList==0 || pEList->nExpr!=1 ) return eRet;
+  zFunc = pFunc->u.zToken;
+  if( sqlite3StrICmp(zFunc, "min")==0 ){
+    eRet = WHERE_ORDERBY_MIN;
+    sortOrder = SQLITE_SO_ASC;
+  }else if( sqlite3StrICmp(zFunc, "max")==0 ){
+    eRet = WHERE_ORDERBY_MAX;
+    sortOrder = SQLITE_SO_DESC;
+  }else{
+    return eRet;
   }
-
-  assert( *ppMinMax==0 || (*ppMinMax)->nExpr==1 );
+  *ppMinMax = pOrderBy = sqlite3ExprListDup(db, pEList, 0);
+  assert( pOrderBy!=0 || db->mallocFailed );
+  if( pOrderBy ) pOrderBy->a[0].sortOrder = sortOrder;
   return eRet;
 }
 
@@ -4084,7 +4061,6 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   assert( pNew->pPrior!=0 );
   pNew->pPrior->pNext = pNew;
   pNew->pLimit = 0;
-  pNew->pOffset = 0;
   return WRC_Continue;
 }
 
@@ -4340,12 +4316,14 @@ static int selectExpander(Walker *pWalker, Select *p){
   sqlite3 *db = pParse->db;
   Expr *pE, *pRight, *pExpr;
   u16 selFlags = p->selFlags;
+  u32 elistFlags = 0;
 
   p->selFlags |= SF_Expanded;
   if( db->mallocFailed  ){
     return WRC_Abort;
   }
-  if( NEVER(p->pSrc==0) || (selFlags & SF_Expanded)!=0 ){
+  assert( p->pSrc!=0 );
+  if( (selFlags & SF_Expanded)!=0 ){
     return WRC_Prune;
   }
   pTabList = p->pSrc;
@@ -4452,6 +4430,7 @@ static int selectExpander(Walker *pWalker, Select *p){
     assert( pE->op!=TK_DOT || pE->pRight!=0 );
     assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
     if( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK ) break;
+    elistFlags |= pE->flags;
   }
   if( k<pEList->nExpr ){
     /*
@@ -4467,6 +4446,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
+      elistFlags |= pE->flags;
       pRight = pE->pRight;
       assert( pE->op!=TK_DOT || pRight!=0 );
       if( pE->op!=TK_ASTERISK
@@ -4596,12 +4576,15 @@ static int selectExpander(Walker *pWalker, Select *p){
     sqlite3ExprListDelete(db, pEList);
     p->pEList = pNew;
   }
-#if SQLITE_MAX_COLUMN
-  if( p->pEList && p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
-    sqlite3ErrorMsg(pParse, "too many columns in result set");
-    return WRC_Abort;
+  if( p->pEList ){
+    if( p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
+      sqlite3ErrorMsg(pParse, "too many columns in result set");
+      return WRC_Abort;
+    }
+    if( (elistFlags & (EP_HasFunc|EP_Subquery))!=0 ){
+      p->selFlags |= SF_ComplexResult;
+    }
   }
-#endif
   return WRC_Continue;
 }
 
@@ -5136,6 +5119,8 @@ int sqlite3Select(
   AggInfo sAggInfo;      /* Information used by aggregate queries */
   int iEnd;              /* Address of the end of the query */
   sqlite3 *db;           /* The database connection */
+  ExprList *pMinMaxOrderBy = 0;  /* Added ORDER BY for min/max queries */
+  u8 minMaxFlag;                 /* Flag for min/max queries */
 
 #ifndef SQLITE_OMIT_EXPLAIN
   int iRestoreSelectId = pParse->iSelectId;
@@ -5222,7 +5207,9 @@ int sqlite3Select(
     if( (pSub->selFlags & SF_Aggregate)!=0 ) continue;
     assert( pSub->pGroupBy==0 );
 
-    /* If the subquery contains an ORDER BY clause and if
+    /* If the outer query contains a "complex" result set (that is,
+    ** if the result set of the outer query uses functions or subqueries)
+    ** and if the subquery contains an ORDER BY clause and if
     ** it will be implemented as a co-routine, then do not flatten.  This
     ** restriction allows SQL constructs like this:
     **
@@ -5231,9 +5218,16 @@ int sqlite3Select(
     **
     ** The expensive_function() is only computed on the 10 rows that
     ** are output, rather than every row of the table.
+    **
+    ** The requirement that the outer query have a complex result set
+    ** means that flattening does occur on simpler SQL constraints without
+    ** the expensive_function() like:
+    **
+    **  SELECT x FROM (SELECT x FROM tab ORDER BY y LIMIT 10);
     */
     if( pSub->pOrderBy!=0
      && i==0
+     && (p->selFlags & SF_ComplexResult)!=0
      && (pTabList->nSrc==1
          || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)
     ){
@@ -5652,6 +5646,11 @@ int sqlite3Select(
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
     }
     sAggInfo.nAccumulator = sAggInfo.nColumn;
+    if( p->pGroupBy==0 && p->pHaving==0 && sAggInfo.nFunc==1 ){
+      minMaxFlag = minMaxQuery(db, sAggInfo.aFunc[0].pExpr, &pMinMaxOrderBy);
+    }else{
+      minMaxFlag = WHERE_ORDERBY_NORMAL;
+    }
     for(i=0; i<sAggInfo.nFunc; i++){
       assert( !ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_xIsSelect) );
       sNC.ncFlags |= NC_InAggFunc;
@@ -5660,6 +5659,24 @@ int sqlite3Select(
     }
     sAggInfo.mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x400 ){
+      int ii;
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+      for(ii=0; ii<sAggInfo.nColumn; ii++){
+        sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
+            ii, sAggInfo.aCol[ii].iMem);
+        sqlite3TreeViewExpr(0, sAggInfo.aCol[ii].pExpr, 0);
+      }
+      for(ii=0; ii<sAggInfo.nFunc; ii++){
+        sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
+            ii, sAggInfo.aFunc[ii].iMem);
+        sqlite3TreeViewExpr(0, sAggInfo.aFunc[ii].pExpr, 0);
+      }
+    }
+#endif
+
 
     /* Processing for aggregates with GROUP BY is very different and
     ** much more complex than aggregates without a GROUP BY.
@@ -5889,7 +5906,6 @@ int sqlite3Select(
      
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
-      ExprList *pDel = 0;
 #ifndef SQLITE_OMIT_BTREECOUNT
       Table *pTab;
       if( (pTab = isSimpleCount(p, &sAggInfo))!=0 ){
@@ -5951,67 +5967,31 @@ int sqlite3Select(
       }else
 #endif /* SQLITE_OMIT_BTREECOUNT */
       {
-        /* Check if the query is of one of the following forms:
-        **
-        **   SELECT min(x) FROM ...
-        **   SELECT max(x) FROM ...
-        **
-        ** If it is, then ask the code in where.c to attempt to sort results
-        ** as if there was an "ORDER ON x" or "ORDER ON x DESC" clause. 
-        ** If where.c is able to produce results sorted in this order, then
-        ** add vdbe code to break out of the processing loop after the 
-        ** first iteration (since the first iteration of the loop is 
-        ** guaranteed to operate on the row with the minimum or maximum 
-        ** value of x, the only row required).
-        **
-        ** A special flag must be passed to sqlite3WhereBegin() to slightly
-        ** modify behavior as follows:
-        **
-        **   + If the query is a "SELECT min(x)", then the loop coded by
-        **     where.c should not iterate over any values with a NULL value
-        **     for x.
-        **
-        **   + The optimizer code in where.c (the thing that decides which
-        **     index or indices to use) should place a different priority on 
-        **     satisfying the 'ORDER BY' clause than it does in other cases.
-        **     Refer to code and comments in where.c for details.
-        */
-        ExprList *pMinMax = 0;
-        u8 flag = WHERE_ORDERBY_NORMAL;
-        
-        assert( p->pGroupBy==0 );
-        assert( flag==0 );
-        if( p->pHaving==0 ){
-          flag = minMaxQuery(&sAggInfo, &pMinMax);
-        }
-        assert( flag==0 || (pMinMax!=0 && pMinMax->nExpr==1) );
-
-        if( flag ){
-          pMinMax = sqlite3ExprListDup(db, pMinMax, 0);
-          pDel = pMinMax;
-          assert( db->mallocFailed || pMinMax!=0 );
-          if( !db->mallocFailed ){
-            pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
-            pMinMax->a[0].pExpr->op = TK_COLUMN;
-          }
-        }
-  
         /* This case runs if the aggregate has no GROUP BY clause.  The
         ** processing is much simpler since there is only a single row
         ** of output.
         */
+        assert( p->pGroupBy==0 );
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax, 0,flag,0);
+
+        /* If this query is a candidate for the min/max optimization, then
+        ** minMaxFlag will have been previously set to either
+        ** WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX and pMinMaxOrderBy will
+        ** be an appropriate ORDER BY expression for the optimization.
+        */
+        assert( minMaxFlag==WHERE_ORDERBY_NORMAL || pMinMaxOrderBy!=0 );
+        assert( pMinMaxOrderBy==0 || pMinMaxOrderBy->nExpr==1 );
+
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
+                                   0, minMaxFlag, 0);
         if( pWInfo==0 ){
-          sqlite3ExprListDelete(db, pDel);
           goto select_end;
         }
         updateAccumulator(pParse, &sAggInfo);
-        assert( pMinMax==0 || pMinMax->nExpr==1 );
         if( sqlite3WhereIsOrdered(pWInfo)>0 ){
           sqlite3VdbeGoto(v, sqlite3WhereBreakLabel(pWInfo));
           VdbeComment((v, "%s() by index",
-                (flag==WHERE_ORDERBY_MIN?"min":"max")));
+                (minMaxFlag==WHERE_ORDERBY_MIN?"min":"max")));
         }
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, &sAggInfo);
@@ -6021,7 +6001,6 @@ int sqlite3Select(
       sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
       selectInnerLoop(pParse, p, -1, 0, 0, 
                       pDest, addrEnd, addrEnd);
-      sqlite3ExprListDelete(db, pDel);
     }
     sqlite3VdbeResolveLabel(v, addrEnd);
     
@@ -6053,7 +6032,7 @@ int sqlite3Select(
   */
 select_end:
   explainSetInteger(pParse->iSelectId, iRestoreSelectId);
-
+  sqlite3ExprListDelete(db, pMinMaxOrderBy);
   sqlite3DbFree(db, sAggInfo.aCol);
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED

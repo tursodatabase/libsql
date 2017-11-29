@@ -92,4 +92,104 @@ do_catchsql_test 2.2 {
   SELECT * FROM aa JOIN cc ON (a=b) JOIN bb ON (b=c);
 } {0 {one one one}}
 
+#-------------------------------------------------------------------------
+# Test that a problem causing where.c to overlook opportunities to
+# omit unnecessary tables from a LEFT JOIN when UNIQUE, NOT NULL column 
+# that makes this possible happens to be the leftmost in its table.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(k1 INTEGER PRIMARY KEY, k2, k3);
+  CREATE TABLE t2(k2 INTEGER PRIMARY KEY, v2);
+
+  -- Prior to this problem being fixed, table t3_2 would be omitted from
+  -- the join queries below, but if t3_1 were used in its place it would
+  -- not.
+  CREATE TABLE t3_1(k3 PRIMARY KEY, v3) WITHOUT ROWID;
+  CREATE TABLE t3_2(v3, k3 PRIMARY KEY) WITHOUT ROWID;
+}
+
+do_eqp_test 3.1 {
+  SELECT v2 FROM t1 LEFT JOIN t2 USING (k2) LEFT JOIN t3_1 USING (k3);
+} {
+  0 0 0 {SCAN TABLE t1} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+
+do_eqp_test 3.2 {
+  SELECT v2 FROM t1 LEFT JOIN t2 USING (k2) LEFT JOIN t3_2 USING (k3);
+} {
+  0 0 0 {SCAN TABLE t1} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+
+#-------------------------------------------------------------------------
+# Test that tables other than the rightmost can be omitted from a
+# LEFT JOIN query.
+#
+do_execsql_test 4.0 {
+  CREATE TABLE c1(k INTEGER PRIMARY KEY, v1);
+  CREATE TABLE c2(k INTEGER PRIMARY KEY, v2);
+  CREATE TABLE c3(k INTEGER PRIMARY KEY, v3);
+
+  INSERT INTO c1 VALUES(1, 2);
+  INSERT INTO c2 VALUES(2, 3);
+  INSERT INTO c3 VALUES(3, 'v3');
+
+  INSERT INTO c1 VALUES(111, 1112);
+  INSERT INTO c2 VALUES(112, 1113);
+  INSERT INTO c3 VALUES(113, 'v1113');
+}
+do_execsql_test 4.1.1 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
+} {2 v3 1112 {}}
+do_execsql_test 4.1.2 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
+} {2 v3 1112 {}}
+
+do_execsql_test 4.1.3 {
+  SELECT DISTINCT v1, v3 FROM c1 LEFT JOIN c2 LEFT JOIN c3 ON (c3.k=v1+1);
+} {2 v3 1112 {}}
+
+do_execsql_test 4.1.4 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 LEFT JOIN c3 ON (c3.k=v1+1);
+} {2 v3 2 v3 1112 {} 1112 {}}
+
+do_eqp_test 4.2.1 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
+} {
+  0 0 0 {SCAN TABLE c1} 
+  0 1 1 {SEARCH TABLE c2 USING INTEGER PRIMARY KEY (rowid=?)}
+  0 2 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+do_eqp_test 4.2.2 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
+} {
+  0 0 0 {SCAN TABLE c1} 
+  0 1 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+
+# 2017-11-23 (Thanksgiving day)
+# OSSFuzz found an assertion fault in the new LEFT JOIN eliminator code.
+#
+do_execsql_test 4.3.0 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(x PRIMARY KEY) WITHOUT ROWID;
+  CREATE TABLE t2(x);
+  SELECT a.x
+    FROM t1 AS a
+    LEFT JOIN t1 AS b ON (a.x=b.x)
+    LEFT JOIN t2 AS c ON (a.x=c.x);
+} {}
+do_execsql_test 4.3.1 {
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
+    INSERT INTO t1(x) SELECT x FROM c;
+  INSERT INTO t2(x) SELECT x+9 FROM t1;
+  SELECT a.x, c.x
+    FROM t1 AS a
+    LEFT JOIN t1 AS b ON (a.x=b.x)
+    LEFT JOIN t2 AS c ON (a.x=c.x);
+} {1 {} 2 {} 3 {} 4 {} 5 {} 6 {} 7 {} 8 {} 9 {} 10 10}
+
 finish_test

@@ -1063,12 +1063,10 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Column *pCol;
   sqlite3 *db = pParse->db;
   if( (p = pParse->pNewTable)==0 ) return;
-#if SQLITE_MAX_COLUMN
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
     return;
   }
-#endif
   z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
   memcpy(z, pName->z, pName->n);
@@ -3854,9 +3852,10 @@ SrcList *sqlite3SrcListAppendFromTerm(
     goto append_from_error;
   }
   p = sqlite3SrcListAppend(db, p, pTable, pDatabase);
-  if( p==0 || NEVER(p->nSrc==0) ){
+  if( p==0 ){
     goto append_from_error;
   }
+  assert( p->nSrc>0 );
   pItem = &p->a[p->nSrc-1];
   assert( pAlias!=0 );
   if( pAlias->n ){

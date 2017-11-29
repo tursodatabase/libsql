@@ -92,7 +92,7 @@
 #define SEGMENT_POINTER_OFFSET(pgsz)        ((pgsz) - 2 - 2 - 8)
 #define SEGMENT_CELLPTR_OFFSET(pgsz, iCell) ((pgsz) - 2 - 2 - 8 - 2 - (iCell)*2)
 
-#define SEGMENT_EOF(pgsz, nEntry) SEGMENT_CELLPTR_OFFSET(pgsz, nEntry)
+#define SEGMENT_EOF(pgsz, nEntry) SEGMENT_CELLPTR_OFFSET(pgsz, nEntry-1)
 
 #define SEGMENT_BTREE_FLAG     0x0001
 #define PGFTR_SKIP_NEXT_FLAG   0x0002
@@ -3999,6 +3999,11 @@ static int mergeWorkerWrite(
     ** marked read-only, advance to the next page of the output run. */
     iOff = pMerge->iOutputOff;
     if( iOff<0 || pPg==0 || iOff+nHdr > SEGMENT_EOF(nData, nRec+1) ){
+      if( iOff>=0 && pPg ){
+        /* Zero any free space on the page */
+        assert( aData );
+        memset(&aData[iOff], 0, SEGMENT_EOF(nData, nRec)-iOff);
+      }
       iFPtr = (int)*pMW->pCsr->pPrevMergePtr;
       iRPtr = iPtr - iFPtr;
       iOff = 0;
@@ -4069,36 +4074,49 @@ static void mergeWorkerShutdown(MergeWorker *pMW, int *pRc){
   /* Unless the merge has finished, save the cursor position in the
   ** Merge.aInput[] array. See function mergeWorkerInit() for the 
   ** code to restore a cursor position based on aInput[].  */
-  if( rc==LSM_OK && pCsr && lsmMCursorValid(pCsr) ){
+  if( rc==LSM_OK && pCsr ){
     Merge *pMerge = pMW->pLevel->pMerge;
-    int bBtree = (pCsr->pBtCsr!=0);
-    int iPtr;
+    if( lsmMCursorValid(pCsr) ){
+      int bBtree = (pCsr->pBtCsr!=0);
+      int iPtr;
 
-    /* pMerge->nInput==0 indicates that this is a FlushTree() operation. */
-    assert( pMerge->nInput==0 || pMW->pLevel->nRight>0 );
-    assert( pMerge->nInput==0 || pMerge->nInput==(pCsr->nPtr+bBtree) );
+      /* pMerge->nInput==0 indicates that this is a FlushTree() operation. */
+      assert( pMerge->nInput==0 || pMW->pLevel->nRight>0 );
+      assert( pMerge->nInput==0 || pMerge->nInput==(pCsr->nPtr+bBtree) );
 
-    for(i=0; i<(pMerge->nInput-bBtree); i++){
-      SegmentPtr *pPtr = &pCsr->aPtr[i];
-      if( pPtr->pPg ){
-        pMerge->aInput[i].iPg = lsmFsPageNumber(pPtr->pPg);
-        pMerge->aInput[i].iCell = pPtr->iCell;
+      for(i=0; i<(pMerge->nInput-bBtree); i++){
+        SegmentPtr *pPtr = &pCsr->aPtr[i];
+        if( pPtr->pPg ){
+          pMerge->aInput[i].iPg = lsmFsPageNumber(pPtr->pPg);
+          pMerge->aInput[i].iCell = pPtr->iCell;
+        }else{
+          pMerge->aInput[i].iPg = 0;
+          pMerge->aInput[i].iCell = 0;
+        }
+      }
+      if( bBtree && pMerge->nInput ){
+        assert( i==pCsr->nPtr );
+        btreeCursorPosition(pCsr->pBtCsr, &pMerge->aInput[i]);
+      }
+
+      /* Store the location of the split-key */
+      iPtr = pCsr->aTree[1] - CURSOR_DATA_SEGMENT;
+      if( iPtr<pCsr->nPtr ){
+        pMerge->splitkey = pMerge->aInput[iPtr];
       }else{
-        pMerge->aInput[i].iPg = 0;
-        pMerge->aInput[i].iCell = 0;
+        btreeCursorSplitkey(pCsr->pBtCsr, &pMerge->splitkey);
       }
     }
-    if( bBtree && pMerge->nInput ){
-      assert( i==pCsr->nPtr );
-      btreeCursorPosition(pCsr->pBtCsr, &pMerge->aInput[i]);
-    }
 
-    /* Store the location of the split-key */
-    iPtr = pCsr->aTree[1] - CURSOR_DATA_SEGMENT;
-    if( iPtr<pCsr->nPtr ){
-      pMerge->splitkey = pMerge->aInput[iPtr];
-    }else{
-      btreeCursorSplitkey(pCsr->pBtCsr, &pMerge->splitkey);
+    /* Zero any free space left on the final page. This helps with
+    ** compression if using a compression hook. And prevents valgrind
+    ** from complaining about uninitialized byte passed to write(). */
+    if( pMW->pPage ){
+      int nData;
+      u8 *aData = fsPageData(pMW->pPage, &nData);
+      int iOff = pMerge->iOutputOff;
+      int iEof = SEGMENT_EOF(nData, pageGetNRec(aData, nData));
+      memset(&aData[iOff], 0, iEof - iOff);
     }
     
     pMerge->iOutputOff = -1;

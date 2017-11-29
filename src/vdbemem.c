@@ -350,26 +350,24 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 ** otherwise.
 */
 int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
-  int rc = SQLITE_OK;
-  if( ALWAYS(pFunc && pFunc->xFinalize) ){
-    sqlite3_context ctx;
-    Mem t;
-    assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
-    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    memset(&ctx, 0, sizeof(ctx));
-    memset(&t, 0, sizeof(t));
-    t.flags = MEM_Null;
-    t.db = pMem->db;
-    ctx.pOut = &t;
-    ctx.pMem = pMem;
-    ctx.pFunc = pFunc;
-    pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
-    assert( (pMem->flags & MEM_Dyn)==0 );
-    if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
-    memcpy(pMem, &t, sizeof(t));
-    rc = ctx.isError;
-  }
-  return rc;
+  sqlite3_context ctx;
+  Mem t;
+  assert( pFunc!=0 );
+  assert( pFunc->xFinalize!=0 );
+  assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  memset(&ctx, 0, sizeof(ctx));
+  memset(&t, 0, sizeof(t));
+  t.flags = MEM_Null;
+  t.db = pMem->db;
+  ctx.pOut = &t;
+  ctx.pMem = pMem;
+  ctx.pFunc = pFunc;
+  pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
+  assert( (pMem->flags & MEM_Dyn)==0 );
+  if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
+  memcpy(pMem, &t, sizeof(t));
+  return ctx.isError;
 }
 
 /*
@@ -1323,7 +1321,7 @@ static int valueFromExpr(
 
   assert( pExpr!=0 );
   while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
-  if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+  if( op==TK_REGISTER ) op = pExpr->op2;
 
   /* Compressed expressions only appear when parsing the DEFAULT clause
   ** on a table column definition, and hence only when pCtx==0.  This
