@@ -1,5 +1,5 @@
-C Fix\san\sassertion\sfault\sfound\sby\sOSSFuzz.
-D 2017-11-28T20:43:40.167
+C Update\stest\sfile\swalprotocol.test\sto\saccount\sfor\sthe\schanges\sin\sthe\swal\nlocking\sprotocol.
+D 2017-11-30T07:55:15.935
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -1533,7 +1533,7 @@ F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
-F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
+F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 8812e514c968bf4ee317571fafedac43443360ae23edd7d0f4ef1eae0c13e8e8
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b81a31495bd27c1d96f7df653da3502054240cb5acf66b860da7f0f9b422a524
-R 419b1183c51a17454670ae5c0f948f4f
+P 75d699877fa7d06d30285ecf008fbedfdf68cc7965bb328c96f5a931d1f13f04
+R fc8bdb8d48da4660663e6bac79ba45ec
 U dan
-Z af229f4b2717b4f314275fdbf907e896
+Z d8a8a814dbff1ab540fb1916cfe46931
