@@ -15,6 +15,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix mjournal
 
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 # Test that nothing bad happens if a journal file contains a pointer to
 # a master journal file that does not have a "-" in the name. At one point
 # this was causing a segfault on unix.

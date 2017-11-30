@@ -1,5 +1,5 @@
-C Update\stest\sfile\swalprotocol.test\sto\saccount\sfor\sthe\schanges\sin\sthe\swal\nlocking\sprotocol.
-D 2017-11-30T07:55:15.935
+C Fix\ssome\sminor\sproblems\sin\stest\sscripts.
+D 2017-11-30T11:21:59.935
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -1063,7 +1063,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test ba03aaa08f02d62fbb8d3b2f5595c1b33aa9bbc5
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
-F test/mjournal.test 946d7161cabbc45ecc818d7fa38c1925bbf36e5534a08a81fa0203ee7ced7d54
+F test/mjournal.test 9d86e697dcbc5da2c4e8caba9b176b5765fe65e80c88c278b8c09a917e436795
 F test/mmap1.test d2cfc1635171c434dcff0ece2f1c8e0a658807ce
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -1535,7 +1535,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
-F test/walro2.test 8812e514c968bf4ee317571fafedac43443360ae23edd7d0f4ef1eae0c13e8e8
+F test/walro2.test 5cd57d192ee334c3894330303b5f8cb6789fef49b2c83ad1b50b9b132d0f7ae1
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75d699877fa7d06d30285ecf008fbedfdf68cc7965bb328c96f5a931d1f13f04
-R fc8bdb8d48da4660663e6bac79ba45ec
+P 64e567009dd56ef595850fe460925bc15fa875163541527638b654aa2b2cf785
+R bcb5dee584d5b6628891c4aa47c39d94
 U dan
-Z d8a8a814dbff1ab540fb1916cfe46931
+Z 7f9d49097c1baf2fffb084b71e5e24bc
