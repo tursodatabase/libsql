@@ -1,5 +1,5 @@
-C Merge\sthe\ssnapshots-always-lock-the-wal-file\schange\sinto\sthis\sbranch.
-D 2017-11-28T13:48:42.669
+C Merge\slatest\strunk\schanges,\sincluding\sthe\sfixes\sfor\stest\sfile\nwalprotocol.test.
+D 2017-11-30T07:56:43.427
 F Makefile.in c097996f4eea365f81c5e29a892cb198205c156a7cdfb2c3c1e10709cd419929
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6b76a1b3e7aa7af73ce870120ed880a288e0c7f1ee047940f62b23b514286726
@@ -539,7 +539,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 08a83195de8fad3f00542e3c8b3c1eb1222c999817c9e301ffb7f332882b96dd
-F src/trigger.c fc6be2a6e103d9e38b161e07d7db0ffb1f2218bd2f27ccdc0a3d1cc89e9cea0f
+F src/trigger.c 775053eecf6b73062e243404b56f5064446254d5cce17d8704d5cdffd72a546a
 F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d01fa6f45bfad3b65fb2490513aa2e0676412c61b4b094340b513cf72c3704a4
@@ -1462,7 +1462,7 @@ F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 15fa63f1097db1f83dd62d121616006978063d1f
 F test/triggerF.test 6a8c22bd058cf467f0c7d112afe87f7a8c579c0c4681b914b8f19020f48528a4
-F test/triggerG.test 175cafdc6399d85231a09e82e051b0e45a2fd1f23dd08ae715bc359716149ab6
+F test/triggerG.test d5caeef6144ede2426dd13211fd72248241ff2ebc68e12a4c0bf30f5faa21499
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
@@ -1538,7 +1538,7 @@ F test/walmode.test aa45339b4afa435dde5d88e71a95459cc221a3f4
 F test/walnoshm.test 559b878f3aab838971d820329ca35f1caa7b038e
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test abd956d66e2f36d2d9d05d3a969f48be6d2ddbec
-F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
+F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
 F test/walro.test cac7fa52dffec99f15c6e266769628d711935e4064dbcd7466ce3479b5011eb5
 F test/walro2.test 8812e514c968bf4ee317571fafedac43443360ae23edd7d0f4ef1eae0c13e8e8
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
@@ -1684,7 +1684,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1fd1034935b932e9e0a29b26931f7ccf9fb0bda916c4fa8b741bf6f48f124dda b81a31495bd27c1d96f7df653da3502054240cb5acf66b860da7f0f9b422a524
-R ce1e563938f18a80da5f4163a06f5f4a
+P 3ec976e01550d7fb4fb76cc4896c13c86f66a141060f5fe59319434dc6119116 64e567009dd56ef595850fe460925bc15fa875163541527638b654aa2b2cf785
+R 238440233616b2ed5434360d0cd4f8b5
 U dan
-Z 83a12225ed775f5cde42826fd19f9630
+Z 04e54b20dfad3e329858cfd672877a28
