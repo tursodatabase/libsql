@@ -92,6 +92,20 @@ SPLIT_AMALGAMATION = 0
 !ENDIF
 
 # <<mark>>
+# Set this non-0 to use zlib, possibly compiling it from source code.
+#
+!IFNDEF USE_ZLIB
+USE_ZLIB = 0
+!ENDIF
+
+# Set this non-0 to build zlib from source code.  This is enabled by
+# default and in that case it will be assumed that the ZLIBDIR macro
+# points to the top-level source code directory for zlib.
+#
+!IFNDEF BUILD_ZLIB
+BUILD_ZLIB = 1
+!ENDIF
+
 # Set this non-0 to use the International Components for Unicode (ICU).
 #
 !IFNDEF USE_ICU
@@ -612,6 +626,14 @@ SHELL_CORE_DEP =
 !ENDIF
 !ENDIF
 
+# <<mark>>
+# If zlib support is enabled, add the shell dependency for it.
+#
+!IF $(USE_ZLIB)!=0 && $(BUILD_ZLIB)!=0
+SHELL_CORE_DEP = zlib $(SHELL_CORE_DEP)
+!ENDIF
+# <</mark>>
+
 # This is the core library that the shell executable should link with.
 #
 !IFNDEF SHELL_CORE_LIB
@@ -802,12 +824,16 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
+!IFNDEF TCLDIR
+TCLDIR = c:\tcl
+!ENDIF
+
 !IFNDEF TCLINCDIR
-TCLINCDIR = c:\tcl\include
+TCLINCDIR = $(TCLDIR)\include
 !ENDIF
 
 !IFNDEF TCLLIBDIR
-TCLLIBDIR = c:\tcl\lib
+TCLLIBDIR = $(TCLDIR)\lib
 !ENDIF
 
 !IFNDEF LIBTCL
@@ -819,7 +845,32 @@ LIBTCLSTUB = tclstub86.lib
 !ENDIF
 
 !IFNDEF LIBTCLPATH
-LIBTCLPATH = c:\tcl\bin
+LIBTCLPATH = $(TCLDIR)\bin
+!ENDIF
+
+# The locations of the zlib header and library files.  These variables
+# (ZLIBINCDIR, ZLIBLIBDIR, and ZLIBLIB) may be overridden via the environment
+# prior to running nmake in order to match the actual installed (or source
+# code) location on this machine.
+#
+!IFNDEF ZLIBDIR
+ZLIBDIR = $(TOP)\compat\zlib
+!ENDIF
+
+!IFNDEF ZLIBINCDIR
+ZLIBINCDIR = $(ZLIBDIR)
+!ENDIF
+
+!IFNDEF ZLIBLIBDIR
+ZLIBLIBDIR = $(ZLIBDIR)
+!ENDIF
+
+!IFNDEF ZLIBLIB
+!IF $(DYNAMIC_SHELL)!=0
+ZLIBLIB = zdll.lib
+!ELSE
+ZLIBLIB = zlib.lib
+!ENDIF
 !ENDIF
 
 # The locations of the ICU header and library files.  These variables
@@ -827,12 +878,16 @@ LIBTCLPATH = c:\tcl\bin
 # prior to running nmake in order to match the actual installed location on
 # this machine.
 #
+!IFNDEF ICUDIR
+ICUDIR = C:\icu
+!ENDIF
+
 !IFNDEF ICUINCDIR
-ICUINCDIR = c:\icu\include
+ICUINCDIR = $(ICUDIR)\include
 !ENDIF
 
 !IFNDEF ICULIBDIR
-ICULIBDIR = c:\icu\lib
+ICULIBDIR = $(ICUDIR)\lib
 !ENDIF
 
 !IFNDEF LIBICU
@@ -951,6 +1006,15 @@ BCC = $(BCC) -Zi
 !ENDIF
 
 # <<mark>>
+# If zlib support is enabled, add the compiler options for it.
+#
+!IF $(USE_ZLIB)!=0
+TCC = $(TCC) -DSQLITE_HAVE_ZLIB=1
+RCC = $(RCC) -DSQLITE_HAVE_ZLIB=1
+TCC = $(TCC) -I$(ZLIBINCDIR)
+RCC = $(RCC) -I$(ZLIBINCDIR)
+!ENDIF
+
 # If ICU support is enabled, add the compiler options for it.
 #
 !IF $(USE_ICU)!=0
@@ -1073,6 +1137,13 @@ LDFLAGS = $(LDOPTS)
 !IF $(NO_TCL)==0
 LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
 LTLIBS = $(LTLIBS) $(LIBTCL)
+!ENDIF
+
+# If zlib support is enabled, add the linker options for it.
+#
+!IF $(USE_ZLIB)!=0
+LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ZLIBLIBDIR)
+LTLIBS = $(LTLIBS) $(ZLIBLIB)
 !ENDIF
 
 # If ICU support is enabled, add the linker options for it.
@@ -1987,6 +2058,8 @@ SHELL_SRC = \
 shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
+zlib:
+	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc $(ZLIBLIB) && popd
 
 # Rules to build the extension objects.
 #

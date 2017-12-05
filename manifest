@@ -1,8 +1,10 @@
-C If\sSQLITE_HAVE_ZLIB\sis\sdefined\sat\sbuild-time,\sinclude\sthe\sfunctions\sin\next/misc/compress.c\sin\sthe\sshell.
-D 2017-12-05T18:32:40.201
+C Add\ssupport\sfor\sincluding\szlib\sin\sthe\sshell\swhen\scompiling\swith\sMSVC.
+D 2017-12-05T18:54:12.861
+F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
+F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
+F Makefile.msc 2cc781176ca1a58bfb7c2741a192726e2f08db0b473daba3d6c3388d44698470
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +13,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 66c0befa511f0d95ba229e180067cf0357a9ebf8b3201b06d683c5ba6220fb39
-F autoconf/Makefile.msc b88a70dee8453cc353e5d6df172d60a11a0af905710a24b1e6be80f8fea6e96b
+F autoconf/Makefile.msc 2b4b5e5ff7e7a9806ebdd4b441f8fb54695a3628701a97ae53860e67e872acc3
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 8dd08ca564279fff091c9bfdd2599d8f992c9f1f70c5396de2126ad2bd1b3bed
@@ -1679,10 +1681,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0342ce510d2063a63839399a2cfa25b7fc02f4fde17764082676b332d6136241
-R eddb6c6e05812e7a9afe7b2909e80007
-T *branch * sqlar-shell-support
-T *sym-sqlar-shell-support *
-T -sym-trunk *
-U dan
-Z e3b1a40cd391e9a775fce7f501c26e90
+P 0296286a9963bbaab60ee30d8700703f5ccb382380c9bfc0eb12c4bcb6f2accd
+R 8fbbfa59bd11832619e2c9584cf54899
+U mistachkin
+Z 4e0794167698ff60a9b30c96ee6b24e0
