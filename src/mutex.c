@@ -134,7 +134,7 @@ static void checkMutexFree(sqlite3_mutex *p){
   assert( SQLITE_MUTEX_WARNONCONTENTION<2 );
 
 #if SQLITE_ENABLE_API_ARMOR
-  if( p->iType<2 ){
+  if( ((CheckMutex*)p)->iType<2 )
 #endif
   {
     CheckMutex *pCheck = (CheckMutex*)p;
