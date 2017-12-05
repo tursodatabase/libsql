@@ -92,6 +92,15 @@ SPLIT_AMALGAMATION = 0
 !ENDIF
 
 # <<mark>>
+# Set this non-0 to have this makefile assume the Tcl shell executable
+# (tclsh*.exe) is available in the PATH.  By default, this is enabled
+# for compatibility with older build environments.  This setting only
+# applies if TCLSH_CMD is not set manually.
+#
+!IFNDEF USE_TCLSH_IN_PATH
+USE_TCLSH_IN_PATH = 1
+!ENDIF
+
 # Set this non-0 to use zlib, possibly compiling it from source code.
 #
 !IFNDEF USE_ZLIB
@@ -825,7 +834,7 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 # version on this machine.
 #
 !IFNDEF TCLDIR
-TCLDIR = c:\tcl
+TCLDIR = $(TOP)\compat\tcl
 !ENDIF
 
 !IFNDEF TCLINCDIR
@@ -879,7 +888,7 @@ ZLIBLIB = zlib.lib
 # this machine.
 #
 !IFNDEF ICUDIR
-ICUDIR = C:\icu
+ICUDIR = $(TOP)\compat\icu
 !ENDIF
 
 !IFNDEF ICUINCDIR
@@ -900,7 +909,11 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
+!IF $(USE_TCLSH_IN_PATH)!=0
 TCLSH_CMD = tclsh
+!ELSE
+TCLSH_CMD = $(TCLDIR)\bin\tclsh.exe
+!ENDIF
 !ENDIF
 # <</mark>>
 
