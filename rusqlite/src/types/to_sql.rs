@@ -84,7 +84,7 @@ impl<'a, T: ?Sized> ToSql for &'a T
     where &'a T: Into<ToSqlOutput<'a>>
 {
     fn to_sql(&self) -> Result<ToSqlOutput> {
-        Ok(ToSqlOutput::from((*self).into()))
+        Ok((*self).into())
     }
 }
 
