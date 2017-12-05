@@ -3895,10 +3895,10 @@ static int lintFkeyIndexes(
   **
   ** 0. The text of an SQL statement similar to:
   **
-  **      "EXPLAIN QUERY PLAN SELECT rowid FROM child_table WHERE child_key=?"
+  **      "EXPLAIN QUERY PLAN SELECT 1 FROM child_table WHERE child_key=?"
   **
-  **    This is the same SELECT that the foreign keys implementation needs
-  **    to run internally on child tables. If there is an index that can
+  **    This SELECT is similar to the one that the foreign keys implementation
+  **    needs to run internally on child tables. If there is an index that can
   **    be used to optimize this query, then it can also be used by the FK
   **    implementation to optimize DELETE or UPDATE statements on the parent
   **    table.
@@ -3926,7 +3926,7 @@ static int lintFkeyIndexes(
   */
   const char *zSql =
   "SELECT "
-    "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(s.name) || ' WHERE '"
+    "     'EXPLAIN QUERY PLAN SELECT 1 FROM ' || quote(s.name) || ' WHERE '"
     "  || group_concat(quote(s.name) || '.' || quote(f.[from]) || '=?' "
     "  || fkey_collate_clause("
     "       f.[table], COALESCE(f.[to], p.[name]), s.name, f.[from]),' AND ')"

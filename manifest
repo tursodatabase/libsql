@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges,\sincluding\sthe\sfixes\sfor\stest\sfile\nwalprotocol.test.
-D 2017-11-30T07:56:43.427
+C Merge\slatest\strunk\schanges,\sincluding\sthe\scompilation\sfix\sfor\sbuilds\sthat\ndefine\sboth\sSQLITE_ENABLE_MULTITHREADED_CHECKS\sand\sSQLITE_ENABLE_API_ARMOUR.
+D 2017-12-05T15:00:17.364
 F Makefile.in c097996f4eea365f81c5e29a892cb198205c156a7cdfb2c3c1e10709cd419929
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6b76a1b3e7aa7af73ce870120ed880a288e0c7f1ee047940f62b23b514286726
@@ -448,7 +448,7 @@ F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
-F src/mutex.c 20172f2cc43c4542f7860ab6bafdd16965822c4e56650d62628059a48c7f43c4
+F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
@@ -475,7 +475,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
-F src/shell.c.in c441d7ddfbb8120cd8a7cde838ca5c9167311a7e400b1077c3ae6090aa420be8
+F src/shell.c.in 6ffed0c589f5aff180789a8c8abf5b2d3e2eea7470c86b30e797887cb0c9d0e5
 F src/sqlite.h.in d91e91266f023109e46160119cfd31490a11fe7006204dbf004f774b535fe1b8
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3_private.h aee73ebaea1963e528b61408c01ba82f49fdf3dca9cbe940f3b0f3d9cec25942
@@ -1068,7 +1068,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test ba03aaa08f02d62fbb8d3b2f5595c1b33aa9bbc5
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
-F test/mjournal.test 946d7161cabbc45ecc818d7fa38c1925bbf36e5534a08a81fa0203ee7ced7d54
+F test/mjournal.test 9d86e697dcbc5da2c4e8caba9b176b5765fe65e80c88c278b8c09a917e436795
 F test/mmap1.test d2cfc1635171c434dcff0ece2f1c8e0a658807ce
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -1215,7 +1215,7 @@ F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 23939a4c51f0421330ea61dbd3c74f9c215f5f8d3d1a94846da6ffc777a35458
-F test/shell6.test ab1592ebe881371f651f18ee6a0df21cbfb5310f88cb832ab642d4038f679772
+F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1540,7 +1540,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test abd956d66e2f36d2d9d05d3a969f48be6d2ddbec
 F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
 F test/walro.test cac7fa52dffec99f15c6e266769628d711935e4064dbcd7466ce3479b5011eb5
-F test/walro2.test 8812e514c968bf4ee317571fafedac43443360ae23edd7d0f4ef1eae0c13e8e8
+F test/walro2.test 5cd57d192ee334c3894330303b5f8cb6789fef49b2c83ad1b50b9b132d0f7ae1
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walshared.test 04590b10c677f75318701818c50bc0dda5da64ab
 F test/walslow.test 07a51cbe9d4895d0a90c7af76d14a62d363ac162
@@ -1684,7 +1684,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ec976e01550d7fb4fb76cc4896c13c86f66a141060f5fe59319434dc6119116 64e567009dd56ef595850fe460925bc15fa875163541527638b654aa2b2cf785
-R 238440233616b2ed5434360d0cd4f8b5
+P b425b99811b331d3eb531251a1fb4c883648cb56d7e0fec8eb1870ab3b123d50 0342ce510d2063a63839399a2cfa25b7fc02f4fde17764082676b332d6136241
+R 97b77d76b464d316fd0ae358bbdcd0c9
 U dan
-Z 04e54b20dfad3e329858cfd672877a28
+Z c0f2fac0523d16ce2b892534322a4cc7
