@@ -4074,6 +4074,214 @@ static int lintDotCommand(
   return SQLITE_ERROR;
 }
 
+static void shellPrepare(
+  ShellState *p, 
+  int *pRc, 
+  const char *zSql, 
+  sqlite3_stmt **ppStmt
+){
+  *ppStmt = 0;
+  if( *pRc==SQLITE_OK ){
+    int rc = sqlite3_prepare_v2(p->db, zSql, -1, ppStmt, 0);
+    if( rc!=SQLITE_OK ){
+      raw_printf(stderr, "sql error: %s (%d)\n", 
+          sqlite3_errmsg(p->db), sqlite3_errcode(p->db)
+      );
+      *pRc = rc;
+    }
+  }
+}
+
+static void shellFinalize(
+  int *pRc, 
+  sqlite3_stmt *pStmt
+){
+  int rc = sqlite3_finalize(pStmt);
+  if( *pRc==SQLITE_OK ) *pRc = rc;
+}
+
+static void shellReset(
+  int *pRc, 
+  sqlite3_stmt *pStmt
+){
+  int rc = sqlite3_reset(pStmt);
+  if( *pRc==SQLITE_OK ) *pRc = rc;
+}
+
+/*
+** Implementation of .ar "eXtract" command. 
+*/
+static int arExtractCommand(ShellState *p, int bVerbose){
+  const char *zSql = 
+    "SELECT name, mode, mtime, sz, data FROM sqlar";
+  sqlite3_stmt *pSql = 0;
+  int rc = SQLITE_OK;
+
+  shellPrepare(p, &rc, zSql, &pSql);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+  }
+
+  shellFinalize(&rc, pSql);
+  return rc;
+}
+
+/*
+** Implementation of .ar "Create" command. 
+**
+** Create the "sqlar" table in the database if it does not already exist.
+** Then add each file in the azFile[] array to the archive. Directories
+** are added recursively. If argument bVerbose is non-zero, a message is
+** printed on stdout for each file archived.
+*/
+static int arCreateCommand(
+  ShellState *p,                  /* Shell state pointer */
+  char **azFile,                  /* Array of files to add to archive */
+  int nFile,                      /* Number of entries in azFile[] */
+  int bVerbose                    /* True to be verbose on stdout */
+){
+  const char *zSql = 
+    "WITH f(n, m, t, d) AS ("
+    "  SELECT name, mode, mtime, data FROM fsentry(:1) UNION ALL "
+    "  SELECT n || '/' || name, mode, mtime, data "
+    "      FROM f, fsdir(n) WHERE (m&?)"
+    ") SELECT * FROM f";
+
+  const char *zSqlar = 
+      "CREATE TABLE IF NOT EXISTS sqlar("
+      "name TEXT PRIMARY KEY,  -- name of the file\n"
+      "mode INT,               -- access permissions\n"
+      "mtime INT,              -- last modification time\n"
+      "sz INT,                 -- original file size\n"
+      "data BLOB               -- compressed content\n"
+      ")";
+
+  const char *zInsert = "REPLACE INTO sqlar VALUES(?, ?, ?, ?, ?)";
+
+  sqlite3_stmt *pStmt = 0;        /* Directory traverser */
+  sqlite3_stmt *pInsert = 0;      /* Compilation of zInsert */
+  int i;                          /* For iterating through azFile[] */
+  int rc;                         /* Return code */
+
+  Bytef *aCompress = 0;           /* Compression buffer */
+  int nCompress = 0;              /* Size of compression buffer */
+  
+  rc = sqlite3_exec(p->db, "SAVEPOINT ar;", 0, 0, 0);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_exec(p->db, zSqlar, 0, 0, 0);
+  shellPrepare(p, &rc, zInsert, &pInsert);
+  shellPrepare(p, &rc, zSql, &pStmt);
+
+  for(i=0; i<nFile && rc==SQLITE_OK; i++){
+    sqlite3_bind_text(pStmt, 1, azFile[i], -1, SQLITE_STATIC);
+    sqlite3_bind_int(pStmt, 2, S_IFDIR);
+    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      int sz;
+      const char *zName = (const char*)sqlite3_column_text(pStmt, 0);
+      int mode = sqlite3_column_int(pStmt, 1);
+      unsigned int mtime = sqlite3_column_int(pStmt, 2);
+
+      if( bVerbose ){
+        raw_printf(stdout, "%s\n", zName);
+      }
+
+      sqlite3_bind_text(pInsert, 1, zName, -1, SQLITE_STATIC);
+      sqlite3_bind_int(pInsert, 2, mode);
+      sqlite3_bind_int64(pInsert, 3, (sqlite3_int64)mtime);
+
+      if( S_ISDIR(mode) ){
+        sz = 0;
+        sqlite3_bind_null(pInsert, 5);
+      }else if( S_ISLNK(mode) ){
+        sz = -1;
+        sqlite3_bind_value(pInsert, 5, sqlite3_column_value(pStmt, 3));
+      }else{
+        uLongf nReq;              /* Required size of compression buffer */
+        const Bytef *pData = (const Bytef*)sqlite3_column_blob(pStmt, 3);
+        sz = sqlite3_column_bytes(pStmt, 3);
+        nReq = compressBound(sz);
+        if( aCompress==0 || nReq>nCompress ){
+          Bytef *aNew = sqlite3_realloc(aCompress, nReq);
+          if( aNew==0 ){
+            rc = SQLITE_NOMEM;
+          }else{
+            aCompress = aNew;
+            nCompress = nReq;
+          }
+        }
+
+        if( Z_OK!=compress(aCompress, &nReq, pData, sz) ){
+          rc = SQLITE_ERROR;
+        }
+        if( nReq<sz ){
+          sqlite3_bind_blob(pInsert, 5, aCompress, nReq, SQLITE_STATIC);
+        }else{
+          sqlite3_bind_blob(pInsert, 5, pData, sz, SQLITE_STATIC);
+        }
+      }
+
+      if( rc==SQLITE_OK ){
+        sqlite3_bind_int(pInsert, 4, sz);
+        sqlite3_step(pInsert);
+        rc = sqlite3_reset(pInsert);
+      }
+    }
+    shellReset(&rc, pStmt);
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_exec(p->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
+  }else{
+    rc = sqlite3_exec(p->db, "RELEASE ar;", 0, 0, 0);
+  }
+  shellFinalize(&rc, pStmt);
+  shellFinalize(&rc, pInsert);
+  sqlite3_free(aCompress);
+  return rc;
+}
+
+/*
+** Implementation of ".ar" dot command.
+*/
+static int arDotCommand(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  int bVerbose = 0;
+  char cmd = 0;
+  int i;
+  int n1;
+  if( nArg<=1 ) goto usage;
+
+  n1 = strlen(azArg[1]);
+  for(i=0; i<n1; i++){
+    char c = azArg[1][i];
+    if( c=='c' || c=='x' ){
+      if( cmd ) goto usage;
+      cmd = c;
+    }
+    else if( c=='v' ){
+      bVerbose = 1;
+    }else{
+      goto usage;
+    }
+  }
+
+  if( cmd=='c' ){
+    return arCreateCommand(pState, &azArg[2], nArg-2, bVerbose);
+  }
+
+  if( cmd=='x' ){
+    if( nArg!=2 ) goto usage;
+    return arExtractCommand(pState, bVerbose);
+  }
+
+ usage:
+  raw_printf(stderr, "Usage %s sub-command ?args...?\n", azArg[0]);
+  return SQLITE_ERROR;
+}
+
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -4131,6 +4339,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       sqlite3_set_authorizer(p->db, 0, 0);
     }
+  }else
+#endif
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( c=='a' && strncmp(azArg[0], "ar", n)==0 ){
+    open_db(p, 0);
+    rc = arDotCommand(p, azArg, nArg);
   }else
 #endif
 
