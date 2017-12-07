@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2017-12-07T22:04:53.501
+C When\sdoing\sa\stable\sscan\susing\san\sindex,\sdo\snot\serror\sout\sif\scollating\nfunctions\sused\sby\sthat\sindex\sare\sunavailable,\ssince\sthey\swill\snot\sbe\sused.
+D 2017-12-07T22:10:16.830
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -554,7 +554,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 9752b68e03e2044f0faa4708fabb0189769067b660bffa931e1fd65736269659
+F src/where.c ea27cbc78ccc8c1f054adc2ebced57a883620b77605699ccf6e865ea871bf17b
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c 611fcabd05592ed2febd7d182f9621425b0466c5232d70e0981c842d429356d5
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 113470772b04210b9300803124c06af2c0b33278313b311fefe6f80594b24e4a
-R a3d7a4858f784ab2683858753b638ca6
-U mistachkin
-Z 94edf6faf2cefb2eca29e53557ee84d1
+P 95958b60f9282384cac8f29c519d0fa1c32d7c0366c01ce681f6691e5bbf8438
+R bf4e2e41467697978aeb7f6536c24c13
+U drh
+Z c50a2b3f457141d0934c9b148b713f31
