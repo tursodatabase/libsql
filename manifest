@@ -1,5 +1,5 @@
-C Updates\sto\sthe\smain\sREADME.md\sfile.
-D 2017-12-07T13:15:48.698
+C Fix\sharmless\scompiler\swarnings\sin\sthe\srot13\sextension.
+D 2017-12-07T16:51:25.777
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -277,7 +277,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
-F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
+F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
 F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681da564
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a55bd67720451cdf316155cf348103bfce1056a78bcddf0029b45ff0fdbcc71
-R 5db6dab0cbf463182c8a99af07dcc6eb
+P 6bfafc35d1fa0415dcc85edbbd1b273f84b7a6ab75f979b01d90b18ce6aa5703
+R 6e8dc804e858af71ad2b8ec1737b4689
 U drh
-Z 889514808bfb806c866b9adca4b0ed44
+Z 5dfea499ba027d378d355b994a19e393
