@@ -30,6 +30,17 @@
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 #include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <time.h>
+#include <utime.h>
+
 
 #define FSDIR_SCHEMA "CREATE TABLE x(name,mode,mtime,data,dir HIDDEN)"
 
@@ -69,43 +80,90 @@ static void readfileFunc(
   readFileContents(context, zName);
 }
 
+static void ctxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
+  char *zMsg = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+  zMsg = sqlite3_vmprintf(zFmt, ap);
+  sqlite3_result_error(ctx, zMsg, -1);
+  sqlite3_free(zMsg);
+  va_end(ap);
+}
+
 /*
-** Implementation of the "writefile(X,Y)" SQL function.  The argument Y
-** is written into file X.  The number of bytes written is returned.  Or
-** NULL is returned if something goes wrong, such as being unable to open
-** file X for writing.
+** Implementation of the "writefile(W,X[,Y]])" SQL function.  
+**
+** The argument X is written into file W.  The number of bytes written is
+** returned. Or NULL is returned if something goes wrong, such as being unable
+** to open file X for writing.
 */
 static void writefileFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  FILE *out;
-  const char *z;
-  sqlite3_int64 rc;
   const char *zFile;
+  mode_t mode = 0;
 
-  (void)(argc);  /* Unused parameter */
+  if( argc<2 || argc>3 ){
+    sqlite3_result_error(context, 
+        "wrong number of arguments to function writefile()", -1
+    );
+    return;
+  }
+
   zFile = (const char*)sqlite3_value_text(argv[0]);
   if( zFile==0 ) return;
-  out = fopen(zFile, "wb");
-  if( out==0 ) return;
-  z = (const char*)sqlite3_value_blob(argv[1]);
-  if( z==0 ){
-    rc = 0;
-  }else{
-    rc = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
+  if( argc>=3 ){
+    sqlite3_result_int(context, 0);
+    mode = sqlite3_value_int(argv[2]);
   }
-  fclose(out);
-  sqlite3_result_int64(context, rc);
+
+  if( S_ISLNK(mode) ){
+    const char *zTo = (const char*)sqlite3_value_text(argv[1]);
+    if( symlink(zTo, zFile)<0 ){
+      ctxErrorMsg(context, "failed to create symlink: %s", zFile);
+      return;
+    }
+  }else{
+    if( S_ISDIR(mode) ){
+      if( mkdir(zFile, mode) ){
+        ctxErrorMsg(context, "failed to create directory: %s", zFile);
+        return;
+      }
+    }else{
+      sqlite3_int64 nWrite = 0;
+      const char *z;
+      int rc = 0;
+      FILE *out = fopen(zFile, "wb");
+      if( out==0 ){
+        if( argc>2 ){
+          ctxErrorMsg(context, "failed to open file for writing: %s", zFile);
+        }
+        return;
+      }
+      z = (const char*)sqlite3_value_blob(argv[1]);
+      if( z ){
+        sqlite3_int64 n = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
+        nWrite = sqlite3_value_bytes(argv[1]);
+        if( nWrite!=n ){
+          ctxErrorMsg(context, "failed to write file: %s", zFile);
+          rc = 1;
+        }
+      }
+      fclose(out);
+      if( rc ) return;
+      sqlite3_result_int64(context, nWrite);
+    }
+
+    if( argc>2 && chmod(zFile, mode & 0777) ){
+      ctxErrorMsg(context, "failed to chmod file: %s", zFile);
+      return;
+    }
+  }
 }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
 
 /* 
 */
@@ -463,7 +521,7 @@ int sqlite3_fileio_init(
   rc = sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
                                readfileFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "writefile", -1, SQLITE_UTF8, 0,
                                  writefileFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){

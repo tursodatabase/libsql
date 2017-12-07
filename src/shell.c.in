@@ -4096,8 +4096,16 @@ static void shellFinalize(
   int *pRc, 
   sqlite3_stmt *pStmt
 ){
-  int rc = sqlite3_finalize(pStmt);
-  if( *pRc==SQLITE_OK ) *pRc = rc;
+  if( pStmt ){
+    sqlite3 *db = sqlite3_db_handle(pStmt);
+    int rc = sqlite3_finalize(pStmt);
+    if( *pRc==SQLITE_OK ){
+      if( rc!=SQLITE_OK ){
+        raw_printf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+      }
+      *pRc = rc;
+    }
+  }
 }
 
 static void shellReset(
@@ -4112,16 +4120,40 @@ static void shellReset(
 ** Implementation of .ar "eXtract" command. 
 */
 static int arExtractCommand(ShellState *p, int bVerbose){
-  const char *zSql = 
-    "SELECT name, mode, mtime, sz, data FROM sqlar";
+  const char *zSql1 = 
+    "SELECT name, writefile(name, "
+    "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN uncompress(data) "
+    "   ELSE data END, "
+    "mode) FROM sqlar";
+  const char *zSql2 = "SELECT name, mtime FROM sqlar"; 
+
+  struct timespec times[2];
   sqlite3_stmt *pSql = 0;
   int rc = SQLITE_OK;
 
-  shellPrepare(p, &rc, zSql, &pSql);
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-  }
+  memset(times, 0, sizeof(times));
+  times[0].tv_sec = time(0);
 
+  shellPrepare(p, &rc, zSql1, &pSql);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+    if( bVerbose ){
+      raw_printf(stdout, "%s\n", sqlite3_column_text(pSql, 0));
+    }
+  }
   shellFinalize(&rc, pSql);
+
+  shellPrepare(p, &rc, zSql2, &pSql);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+    const char *zPath = (const char*)sqlite3_column_text(pSql, 0);
+    times[1].tv_sec = (time_t)sqlite3_column_int64(pSql, 1);
+    if( utimensat(AT_FDCWD, zPath, times, AT_SYMLINK_NOFOLLOW) ){
+      raw_printf(stderr, "failed to set timestamp for %s\n", zPath);
+      rc = SQLITE_ERROR;
+      break;
+    }
+  }
+  shellFinalize(&rc, pSql);
+
   return rc;
 }
 
