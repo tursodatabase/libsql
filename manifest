@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\srot13\sextension.
-D 2017-12-07T16:51:25.777
+C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
+D 2017-12-07T22:04:53.501
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -420,7 +420,7 @@ F src/build.c 514db9d494ed29155e552f2ec2fa7c55c0241f847c683156b7c017f4b0bad9fa
 F src/callback.c 28a8ede982fde4129b828350f78f2c01fe7d12c74d1a0a05d7108ab36f308688
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
-F src/date.c 48f743d88bbe88f848532d333cca84f26e52a4f217e86f86be7fc1b919c33d74
+F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c e6a70fb58f6628f0ffc6d7221a6702c0d7b342c82520385b3996b364c22e0cb3
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bfafc35d1fa0415dcc85edbbd1b273f84b7a6ab75f979b01d90b18ce6aa5703
-R 6e8dc804e858af71ad2b8ec1737b4689
-U drh
-Z 5dfea499ba027d378d355b994a19e393
+P 113470772b04210b9300803124c06af2c0b33278313b311fefe6f80594b24e4a
+R a3d7a4858f784ab2683858753b638ca6
+U mistachkin
+Z 94edf6faf2cefb2eca29e53557ee84d1
