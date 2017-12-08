@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sbComplex\svariable\sin\ssqlite3DeleteFrom()\sis\sinitialized\swhen\ncompiling\swith\s-DSQLITE_OMIT_TRIGGER.
-D 2017-12-08T14:07:14.466
+C Add\scompile\stime\sswitch\sSQLITE_ENABLE_ICU_COLLATIONS.\sFor\senabling\sICU\ncollations\swithout\salso\senabling\sthe\stokenizer,\sthe\sLIKE\soperator,\sthe\nREGEXP\soperator,\sor\sthe\sunicode\saware\supper()/lower()\sscalar\sfunctions.
+D 2017-12-08T16:23:38.347
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -210,7 +210,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
-F ext/icu/icu.c 635775226d07c743c770888a9dd5175afc6e67d3e28a4032b7fedc3bcaa92e65
+F ext/icu/icu.c c2c7592574c08cd1270d909b8fb8797f6ea1f49e931e71dbcc25506b9b224580
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile 98b0a24b45e248283d6bea4b6cb3e58d7b394edd8e96a0ac28c5fa5104813bad
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
@@ -436,7 +436,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c cb67cc56ef2ddd13e6944b2c0dd08a920bcd9503230adef8b9928d338097c722
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 20865b183bb8a3723d59cf1efffc3c50217eb452c1021d077b908c94da26b0b2
-F src/main.c 6a0cc1c7b8ab92374effecdd7b92792b3273a255c70575b7d67bd9a4315e6d3a
+F src/main.c 4f94536a61dc77477e1cee7ecfae2896778c1a3d3de4f978db28f8b9220f6e52
 F src/malloc.c a02c9e69bc76bee0f639416b947a946412890b606301454727feadcb313536d6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -496,7 +496,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c 78809f11026f18a93fcfd798d9479cba37e1201c830260bf1edc674b2fa9b857
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 2dad654eb81e90160f764f485bf7248e87b6d251e484c959de1aa04935acae8e
+F src/test_config.c 3904a8682aac58b77d20ca236face2b11e50781be4116004ba1ba79f69896ec9
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
@@ -932,7 +932,7 @@ F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test dbc0b87756e1e20e7497b56889c9e9cd2f8cc2b5
 F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
-F test/icu.test 73956798bace8982909c00476b216714a6d0559a
+F test/icu.test 7fb00edc09e05d51e36be12b33e0af04e3394e3b02dbdcb2eefcb901203e28c4
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 2fa2dfba1afe30eb830f327e7131dfadaa7a701d677de0eb65f9303d99e18fe0
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bbd69fa6fa7f3c86fb5cd1b69e1abbe1bbad61aa281e6c073a402d1b202e42ec
-R ca151348414bf89661535a75ec0c12be
-U drh
-Z 7fa850481121f6987d8c1258ea8eefc5
+P e526d0c40b971d970367a52a57d3920cb64e6a98920114bfac46ba009f0b1eb5
+R e5fd041d6b7727f71627ca57ebea4f83
+U dan
+Z b6d953d578629eaa29d8e731d0cdeaa8

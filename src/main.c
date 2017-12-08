@@ -22,7 +22,7 @@
 #ifdef SQLITE_ENABLE_RTREE
 # include "rtree.h"
 #endif
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
 # include "sqliteicu.h"
 #endif
 #ifdef SQLITE_ENABLE_JSON1
@@ -3050,7 +3050,7 @@ static int openDatabase(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3IcuInit(db);
   }
