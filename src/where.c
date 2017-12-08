@@ -2879,6 +2879,7 @@ static int whereLoopAddBtree(
       testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
       continue;  /* Partial index inappropriate for this query */
     }
+    if( pProbe->bNoQuery ) continue;
     rSize = pProbe->aiRowLogEst[0];
     pNew->u.btree.nEq = 0;
     pNew->u.btree.nBtm = 0;
@@ -4870,16 +4871,7 @@ WhereInfo *sqlite3WhereBegin(
       assert( iIndexCur>=0 );
       if( op ){
         sqlite3VdbeAddOp3(v, op, iIndexCur, pIx->tnum, iDb);
-
-        /* If the index is only being scanned - if there is no searching -
-        ** then no collating functions are required.  Set db->init.busy in that
-        ** case, to prevent sqlite3VdbeSetP4KeyInfo() from raising needless
-        ** errors about the missing collating functions. */
-        assert( db->init.busy==0 );
-        db->init.busy = (pLoop->wsFlags & ~(WHERE_IDX_ONLY|WHERE_INDEXED))==0;
         sqlite3VdbeSetP4KeyInfo(pParse, pIx);
-        db->init.busy = 0;  /* Restore db->init.busy */
-
         if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=0
          && (pLoop->wsFlags & (WHERE_COLUMN_RANGE|WHERE_SKIPSCAN))==0
          && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0
