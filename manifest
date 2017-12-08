@@ -1,5 +1,5 @@
-C When\sdoing\sa\stable\sscan\susing\san\sindex,\sdo\snot\serror\sout\sif\scollating\nfunctions\sused\sby\sthat\sindex\sare\sunavailable,\ssince\sthey\swill\snot\sbe\sused.
-D 2017-12-07T22:10:16.830
+C Make\ssure\sthe\sbComplex\svariable\sin\ssqlite3DeleteFrom()\sis\sinitialized\swhen\ncompiling\swith\s-DSQLITE_OMIT_TRIGGER.
+D 2017-12-08T14:07:14.466
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -423,7 +423,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
-F src/delete.c e6a70fb58f6628f0ffc6d7221a6702c0d7b342c82520385b3996b364c22e0cb3
+F src/delete.c 74667ad914ac143731a444a1bacf29ceb18f6eded8a0dd17aafae80baa07f8bb
 F src/expr.c fe11b91bb65b869143bd42023427c4429778ae42c0a0db7762f68f75b347a958
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95958b60f9282384cac8f29c519d0fa1c32d7c0366c01ce681f6691e5bbf8438
-R bf4e2e41467697978aeb7f6536c24c13
+P bbd69fa6fa7f3c86fb5cd1b69e1abbe1bbad61aa281e6c073a402d1b202e42ec
+R ca151348414bf89661535a75ec0c12be
 U drh
-Z c50a2b3f457141d0934c9b148b713f31
+Z 7fa850481121f6987d8c1258ea8eefc5
