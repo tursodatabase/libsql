@@ -34,12 +34,14 @@ proc populate_dir {dirname spec} {
   }
 }
 
-proc dir_to_list {dirname} {
+proc dir_to_list {dirname {n -1}} {
+  if {$n<0} {set n [llength [file split $dirname]]}
+
   set res [list]
   foreach f [glob -nocomplain $dirname/*] {
     set mtime [file mtime $f]
     set perm [file attributes $f -perm]
-    set relpath [file join {*}[lrange [file split $f] 1 end]]
+    set relpath [file join {*}[lrange [file split $f] $n end]]
     lappend res 
     if {[file isdirectory $f]} {
       lappend res [list $relpath / $mtime $perm]
@@ -76,6 +78,13 @@ do_test 1.1 {
   catchcmd test_ar.db ".ar x"
 
   dir_to_list ar1
+} $expected
+
+do_test 1.2 {
+  file delete -force ar3
+  file mkdir ar3
+  catchcmd test_ar.db ".ar xvC ar3"
+  dir_to_list ar3/ar1
 } $expected
 
 

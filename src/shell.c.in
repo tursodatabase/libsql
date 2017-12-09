@@ -4235,20 +4235,30 @@ static int arListCommand(ShellState *p, ArCommand *pAr){
 */
 static int arExtractCommand(ShellState *p, ArCommand *pAr){
   const char *zSql1 = 
-    "SELECT name, writefile(name, "
+    "SELECT :1 || name, writefile(:1 || name, "
     "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN uncompress(data) "
     "   ELSE data END, "
     "mode) FROM sqlar";
-  const char *zSql2 = "SELECT name, mtime FROM sqlar"; 
+  const char *zSql2 = "SELECT :1 || name, mtime FROM sqlar"; 
 
   struct timespec times[2];
   sqlite3_stmt *pSql = 0;
   int rc = SQLITE_OK;
+  char *zDir = 0;
+
+  if( pAr->zDir ){
+    zDir = sqlite3_mprintf("%s/", pAr->zDir);
+  }else{
+    zDir = sqlite3_mprintf("");
+  }
 
   memset(times, 0, sizeof(times));
   times[0].tv_sec = time(0);
 
   shellPrepare(p, &rc, zSql1, &pSql);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
+  }
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
     if( pAr->bVerbose ){
       raw_printf(stdout, "%s\n", sqlite3_column_text(pSql, 0));
@@ -4257,6 +4267,9 @@ static int arExtractCommand(ShellState *p, ArCommand *pAr){
   shellFinalize(&rc, pSql);
 
   shellPrepare(p, &rc, zSql2, &pSql);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
+  }
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
     const char *zPath = (const char*)sqlite3_column_text(pSql, 0);
     times[1].tv_sec = (time_t)sqlite3_column_int64(pSql, 1);
@@ -4268,6 +4281,7 @@ static int arExtractCommand(ShellState *p, ArCommand *pAr){
   }
   shellFinalize(&rc, pSql);
 
+  sqlite3_free(zDir);
   return rc;
 }
 
