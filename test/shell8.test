@@ -1,0 +1,83 @@
+# 2017 December 9
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test the shell tool ".ar" command.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix shell8
+set CLI [test_find_cli]
+
+proc populate_dir {dirname spec} {
+  # First delete the current tree, if one exists.
+  file delete -force $dirname
+  
+  # Recreate the root of the new tree.
+  file mkdir $dirname
+
+  # Add each file to the new tree.
+  foreach {f d} $spec {
+    set path [file join $dirname $f]
+    file mkdir [file dirname $path]
+    set fd [open $path w]
+    puts -nonewline $fd $d
+    close $fd
+  }
+}
+
+proc dir_to_list {dirname} {
+  set res [list]
+  foreach f [glob -nocomplain $dirname/*] {
+    set mtime [file mtime $f]
+    set perm [file attributes $f -perm]
+    set relpath [file join {*}[lrange [file split $f] 1 end]]
+    lappend res 
+    if {[file isdirectory $f]} {
+      lappend res [list $relpath / $mtime $perm]
+      lappend res {*}[dir_to_list $f]
+    } else {
+      set fd [open $f]
+      set data [read $fd]
+      close $fd
+      lappend res [list $relpath $data $mtime $perm]
+    }
+  }
+  lsort $res
+}
+
+proc dir_compare {d1 d2} {
+  set l1 [dir_to_list $d1]
+  set l2 [dir_to_list $d1]
+  string compare $l1 $l2
+}
+
+populate_dir ar1 {
+  file1 "abcd" 
+  file2 "efgh"
+  dir1/file3 "ijkl"
+}
+
+set expected [dir_to_list ar1]
+# puts "# $expected"
+do_test 1.1 {
+  forcedelete test_ar.db
+
+  catchcmd test_ar.db ".ar c ar1"
+  file delete -force ar1
+  catchcmd test_ar.db ".ar x"
+
+  dir_to_list ar1
+} $expected
+
+
+
+finish_test

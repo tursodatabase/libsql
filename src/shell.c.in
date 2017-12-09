@@ -4116,10 +4116,124 @@ static void shellReset(
   if( *pRc==SQLITE_OK ) *pRc = rc;
 }
 
+/* 
+** Structure representing a single ".ar" command.
+*/
+typedef struct ArCommand ArCommand;
+struct ArCommand {
+  int eCmd;                       /* An AR_CMD_* value */
+  const char *zFile;              /* --file argument, or NULL */
+  const char *zDir;               /* --directory argument, or NULL */
+  int bVerbose;                   /* True if --verbose */
+  int nArg;                       /* Number of command arguments */
+  char **azArg;                   /* Array of command arguments */
+};
+
+/*
+** Print a usage message for the .ar command to stderr and return SQLITE_ERROR.
+*/
+static int arUsage(void){
+  /* todo */
+  raw_printf(stderr, "error in .ar command line\n");
+  return SQLITE_ERROR;
+}
+
+/*
+** Values for ArCommand.eCmd.
+*/
+#define AR_CMD_CREATE  1
+#define AR_CMD_EXTRACT 2
+#define AR_CMD_LIST    3
+#define AR_CMD_UPDATE  4
+
+/*
+** Parse the command line for an ".ar" command. The results are written into
+** structure (*pAr). SQLITE_OK is returned if the command line is parsed
+** successfully, otherwise an error message is written to stderr and 
+** SQLITE_ERROR returned.
+*/
+static int arParseCommand(
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg,                       /* Number of entries in azArg[] */
+  ArCommand *pAr                  /* Populate this object */
+){
+  if( nArg<=1 ){
+    return arUsage();
+  }else{
+    char *z = azArg[1];
+    memset(pAr, 0, sizeof(ArCommand));
+
+    if( z[0]!='-' ){
+      /* Traditional style [tar] invocation */
+      int i;
+      int iArg = 2;
+      for(i=0; z[i]; i++){
+        switch( z[i] ){
+          case 'c':
+            if( pAr->eCmd ) return arUsage();
+            pAr->eCmd = AR_CMD_CREATE;
+            break;
+          case 'x':
+            if( pAr->eCmd ) return arUsage();
+            pAr->eCmd = AR_CMD_EXTRACT;
+            break;
+          case 't':
+            if( pAr->eCmd ) return arUsage();
+            pAr->eCmd = AR_CMD_LIST;
+            break;
+          case 'u':
+            if( pAr->eCmd ) return arUsage();
+            pAr->eCmd = AR_CMD_UPDATE;
+            break;
+
+          case 'v':
+            pAr->bVerbose = 1;
+            break;
+          case 'f':
+            if( iArg>=nArg ) return arUsage();
+            pAr->zFile = azArg[iArg++];
+            break;
+          case 'C':
+            if( iArg>=nArg ) return arUsage();
+            pAr->zDir = azArg[iArg++];
+            break;
+
+          default:
+            return arUsage();
+        }
+      }
+
+      pAr->nArg = nArg-iArg;
+      if( pAr->nArg>0 ){
+        pAr->azArg = &azArg[iArg];
+      }
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Implementation of .ar "Update" command. 
+*/
+static int arUpdateCmd(ShellState *p, ArCommand *pAr){
+  raw_printf(stderr, "todo...\n");
+  return SQLITE_OK;
+}
+
+/*
+** Implementation of .ar "lisT" command. 
+*/
+static int arListCommand(ShellState *p, ArCommand *pAr){
+  raw_printf(stderr, "todo...\n");
+  return SQLITE_OK;
+}
+
+
 /*
 ** Implementation of .ar "eXtract" command. 
 */
-static int arExtractCommand(ShellState *p, int bVerbose){
+static int arExtractCommand(ShellState *p, ArCommand *pAr){
   const char *zSql1 = 
     "SELECT name, writefile(name, "
     "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN uncompress(data) "
@@ -4136,7 +4250,7 @@ static int arExtractCommand(ShellState *p, int bVerbose){
 
   shellPrepare(p, &rc, zSql1, &pSql);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-    if( bVerbose ){
+    if( pAr->bVerbose ){
       raw_printf(stdout, "%s\n", sqlite3_column_text(pSql, 0));
     }
   }
@@ -4167,9 +4281,7 @@ static int arExtractCommand(ShellState *p, int bVerbose){
 */
 static int arCreateCommand(
   ShellState *p,                  /* Shell state pointer */
-  char **azFile,                  /* Array of files to add to archive */
-  int nFile,                      /* Number of entries in azFile[] */
-  int bVerbose                    /* True to be verbose on stdout */
+  ArCommand *pAr                  /* Command arguments and options */
 ){
   const char *zSql = 
     "WITH f(n, m, t, d) AS ("
@@ -4204,8 +4316,8 @@ static int arCreateCommand(
   shellPrepare(p, &rc, zInsert, &pInsert);
   shellPrepare(p, &rc, zSql, &pStmt);
 
-  for(i=0; i<nFile && rc==SQLITE_OK; i++){
-    sqlite3_bind_text(pStmt, 1, azFile[i], -1, SQLITE_STATIC);
+  for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
+    sqlite3_bind_text(pStmt, 1, pAr->azArg[i], -1, SQLITE_STATIC);
     sqlite3_bind_int(pStmt, 2, S_IFDIR);
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int sz;
@@ -4213,7 +4325,7 @@ static int arCreateCommand(
       int mode = sqlite3_column_int(pStmt, 1);
       unsigned int mtime = sqlite3_column_int(pStmt, 2);
 
-      if( bVerbose ){
+      if( pAr->bVerbose ){
         raw_printf(stdout, "%s\n", zName);
       }
 
@@ -4280,38 +4392,31 @@ static int arDotCommand(
   char **azArg,                   /* Array of arguments passed to dot command */
   int nArg                        /* Number of entries in azArg[] */
 ){
-  int bVerbose = 0;
-  char cmd = 0;
-  int i;
-  int n1;
-  if( nArg<=1 ) goto usage;
+  ArCommand cmd;
+  int rc;
+  rc = arParseCommand(azArg, nArg, &cmd);
+  if( rc==SQLITE_OK ){
+    switch( cmd.eCmd ){
+      case AR_CMD_CREATE:
+        rc = arCreateCommand(pState, &cmd);
+        break;
 
-  n1 = strlen(azArg[1]);
-  for(i=0; i<n1; i++){
-    char c = azArg[1][i];
-    if( c=='c' || c=='x' ){
-      if( cmd ) goto usage;
-      cmd = c;
+      case AR_CMD_EXTRACT:
+        rc = arExtractCommand(pState, &cmd);
+        break;
+
+      case AR_CMD_LIST:
+        rc = arListCommand(pState, &cmd);
+        break;
+
+      default:
+        assert( cmd.eCmd==AR_CMD_UPDATE );
+        rc = arUpdateCmd(pState, &cmd);
+        break;
     }
-    else if( c=='v' ){
-      bVerbose = 1;
-    }else{
-      goto usage;
-    }
   }
 
-  if( cmd=='c' ){
-    return arCreateCommand(pState, &azArg[2], nArg-2, bVerbose);
-  }
-
-  if( cmd=='x' ){
-    if( nArg!=2 ) goto usage;
-    return arExtractCommand(pState, bVerbose);
-  }
-
- usage:
-  raw_printf(stderr, "Usage %s sub-command ?args...?\n", azArg[0]);
-  return SQLITE_ERROR;
+  return rc;
 }
 
 
