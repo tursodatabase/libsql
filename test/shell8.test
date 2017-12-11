@@ -87,6 +87,16 @@ do_test 1.2 {
   dir_to_list ar3/ar1
 } $expected
 
+do_test 1.3 {
+  file delete -force ar3
+  file mkdir ar3
+
+  forcedelete test_ar.db
+  catchcmd test_ar.db ".ar cC ar1 file1 file2 dir1"
+  catchcmd test_ar.db ".ar xC ar3"
+  dir_to_list ar3
+} $expected
+
 
 
 finish_test

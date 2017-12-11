@@ -42,7 +42,7 @@ SQLITE_EXTENSION_INIT1
 #include <utime.h>
 
 
-#define FSDIR_SCHEMA "CREATE TABLE x(name,mode,mtime,data,dir HIDDEN)"
+#define FSDIR_SCHEMA "(name,mode,mtime,data,path HIDDEN,dir HIDDEN)"
 
 static void readFileContents(sqlite3_context *ctx, const char *zName){
   FILE *in;
@@ -166,28 +166,35 @@ static void writefileFunc(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /* 
+** Cursor type for recursively iterating through a directory structure.
 */
 typedef struct fsdir_cursor fsdir_cursor;
+typedef struct FsdirLevel FsdirLevel;
+
+struct FsdirLevel {
+  DIR *pDir;                 /* From opendir() */
+  char *zDir;                /* Name of directory (nul-terminated) */
+};
+
 struct fsdir_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
-  int eType;                 /* One of FSDIR_DIR or FSDIR_ENTRY */
-  DIR *pDir;                 /* From opendir() */
+
+  int nLvl;                  /* Number of entries in aLvl[] array */
+  int iLvl;                  /* Index of current entry */
+  FsdirLevel *aLvl;          /* Hierarchy of directories being traversed */
+
+  const char *zBase;
+  int nBase;
+
   struct stat sStat;         /* Current lstat() results */
-  char *zDir;                /* Directory to read */
-  int nDir;                  /* Value of strlen(zDir) */
   char *zPath;               /* Path to current entry */
-  int bEof;
   sqlite3_int64 iRowid;      /* Current rowid */
 };
 
 typedef struct fsdir_tab fsdir_tab;
 struct fsdir_tab {
   sqlite3_vtab base;         /* Base class - must be first */
-  int eType;                 /* One of FSDIR_DIR or FSDIR_ENTRY */
 };
-
-#define FSDIR_DIR   0
-#define FSDIR_ENTRY 1
 
 /*
 ** Construct a new fsdir virtual table object.
@@ -202,12 +209,11 @@ static int fsdirConnect(
   fsdir_tab *pNew = 0;
   int rc;
 
-  rc = sqlite3_declare_vtab(db, FSDIR_SCHEMA);
+  rc = sqlite3_declare_vtab(db, "CREATE TABLE x" FSDIR_SCHEMA);
   if( rc==SQLITE_OK ){
     pNew = (fsdir_tab*)sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
-    pNew->eType = (pAux==0 ? FSDIR_DIR : FSDIR_ENTRY);
   }
   *ppVtab = (sqlite3_vtab*)pNew;
   return rc;
@@ -229,9 +235,25 @@ static int fsdirOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
-  pCur->eType = ((fsdir_tab*)p)->eType;
+  pCur->iLvl = -1;
   *ppCursor = &pCur->base;
   return SQLITE_OK;
+}
+
+static void fsdirResetCursor(fsdir_cursor *pCur){
+  int i;
+  for(i=0; i<=pCur->iLvl; i++){
+    FsdirLevel *pLvl = &pCur->aLvl[i];
+    if( pLvl->pDir ) closedir(pLvl->pDir);
+    sqlite3_free(pLvl->zDir);
+  }
+  sqlite3_free(pCur->zPath);
+  pCur->aLvl = 0;
+  pCur->zPath = 0;
+  pCur->zBase = 0;
+  pCur->nBase = 0;
+  pCur->iLvl = -1;
+  pCur->iRowid = 1;
 }
 
 /*
@@ -239,46 +261,81 @@ static int fsdirOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 */
 static int fsdirClose(sqlite3_vtab_cursor *cur){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
-  if( pCur->pDir ) closedir(pCur->pDir);
-  sqlite3_free(pCur->zDir);
-  sqlite3_free(pCur->zPath);
+
+  fsdirResetCursor(pCur);
+  sqlite3_free(pCur->aLvl);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
+
+static void fsdirSetErrmsg(fsdir_cursor *pCur, const char *zFmt, ...){
+  va_list ap;
+  va_start(ap, zFmt);
+  pCur->base.pVtab->zErrMsg = sqlite3_vmprintf(zFmt, ap);
+  va_end(ap);
+}
+
 
 /*
 ** Advance an fsdir_cursor to its next row of output.
 */
 static int fsdirNext(sqlite3_vtab_cursor *cur){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
-  struct dirent *pEntry;
+  mode_t m = pCur->sStat.st_mode;
 
-  if( pCur->eType==FSDIR_ENTRY ){
-    pCur->bEof = 1;
-    return SQLITE_OK;
-  }
-
-  sqlite3_free(pCur->zPath);
-  pCur->zPath = 0;
-
-  while( 1 ){
-    pEntry = readdir(pCur->pDir);
-    if( pEntry ){
-      if( strcmp(pEntry->d_name, ".") 
-       && strcmp(pEntry->d_name, "..") 
-      ){
-        pCur->zPath = sqlite3_mprintf("%s/%s", pCur->zDir, pEntry->d_name);
-        if( pCur->zPath==0 ) return SQLITE_NOMEM;
-        lstat(pCur->zPath, &pCur->sStat);
-        break;
-      }
-    }else{
-      pCur->bEof = 1;
-      break;
+  pCur->iRowid++;
+  if( S_ISDIR(m) ){
+    /* Descend into this directory */
+    int iNew = pCur->iLvl + 1;
+    FsdirLevel *pLvl;
+    if( iNew>=pCur->nLvl ){
+      int nNew = iNew+1;
+      int nByte = nNew*sizeof(FsdirLevel);
+      FsdirLevel *aNew = (FsdirLevel*)sqlite3_realloc(pCur->aLvl, nByte);
+      if( aNew==0 ) return SQLITE_NOMEM;
+      memset(&aNew[pCur->nLvl], 0, sizeof(FsdirLevel)*(nNew-pCur->nLvl));
+      pCur->aLvl = aNew;
+      pCur->nLvl = nNew;
+    }
+    pCur->iLvl = iNew;
+    pLvl = &pCur->aLvl[iNew];
+    
+    pLvl->zDir = pCur->zPath;
+    pCur->zPath = 0;
+    pLvl->pDir = opendir(pLvl->zDir);
+    if( pLvl->pDir==0 ){
+      fsdirSetErrmsg(pCur, "cannot read directory: %s", pCur->zPath);
+      return SQLITE_ERROR;
     }
   }
 
-  pCur->iRowid++;
+  while( pCur->iLvl>=0 ){
+    FsdirLevel *pLvl = &pCur->aLvl[pCur->iLvl];
+    struct dirent *pEntry = readdir(pLvl->pDir);
+    if( pEntry ){
+      if( pEntry->d_name[0]=='.' ){
+       if( pEntry->d_name[1]=='.' && pEntry->d_name[2]=='\0' ) continue;
+       if( pEntry->d_name[1]=='\0' ) continue;
+      }
+      sqlite3_free(pCur->zPath);
+      pCur->zPath = sqlite3_mprintf("%s/%s", pLvl->zDir, pEntry->d_name);
+      if( pCur->zPath==0 ) return SQLITE_NOMEM;
+      if( lstat(pCur->zPath, &pCur->sStat) ){
+        fsdirSetErrmsg(pCur, "cannot stat file: %s", pCur->zPath);
+        return SQLITE_ERROR;
+      }
+      return SQLITE_OK;
+    }
+    closedir(pLvl->pDir);
+    sqlite3_free(pLvl->zDir);
+    pLvl->pDir = 0;
+    pLvl->zDir = 0;
+    pCur->iLvl--;
+  }
+
+  /* EOF */
+  sqlite3_free(pCur->zPath);
+  pCur->zPath = 0;
   return SQLITE_OK;
 }
 
@@ -294,13 +351,7 @@ static int fsdirColumn(
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
   switch( i ){
     case 0: { /* name */
-      const char *zName;
-      if( pCur->eType==FSDIR_DIR ){
-        zName = &pCur->zPath[pCur->nDir+1];
-      }else{
-        zName = pCur->zPath;
-      }
-      sqlite3_result_text(ctx, zName, -1, SQLITE_TRANSIENT);
+      sqlite3_result_text(ctx, &pCur->zPath[pCur->nBase], -1, SQLITE_TRANSIENT);
       break;
     }
 
@@ -308,11 +359,11 @@ static int fsdirColumn(
       sqlite3_result_int64(ctx, pCur->sStat.st_mode);
       break;
 
-    case 2: /* mode */
+    case 2: /* mtime */
       sqlite3_result_int64(ctx, pCur->sStat.st_mtime);
       break;
 
-    case 3: {
+    case 3: { /* data */
       mode_t m = pCur->sStat.st_mode;
       if( S_ISDIR(m) ){
         sqlite3_result_null(ctx);
@@ -361,14 +412,7 @@ static int fsdirRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int fsdirEof(sqlite3_vtab_cursor *cur){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
-  return pCur->bEof;
-}
-
-static void fsdirSetErrmsg(fsdir_cursor *pCur, const char *zFmt, ...){
-  va_list ap;
-  va_start(ap, zFmt);
-  pCur->base.pVtab->zErrMsg = sqlite3_vmprintf(zFmt, ap);
-  va_end(ap);
+  return (pCur->zPath==0);
 }
 
 /*
@@ -382,51 +426,38 @@ static int fsdirFilter(
   const char *zDir = 0;
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
 
-  sqlite3_free(pCur->zDir);
-  pCur->iRowid = 0;
-  pCur->zDir = 0;
-  pCur->bEof = 0;
-  if( pCur->pDir ){
-    closedir(pCur->pDir);
-    pCur->pDir = 0;
-  }
+  fsdirResetCursor(pCur);
 
   if( idxNum==0 ){
     fsdirSetErrmsg(pCur, "table function fsdir requires an argument");
     return SQLITE_ERROR;
   }
 
-  assert( argc==1 );
+  assert( argc==idxNum && (argc==1 || argc==2) );
   zDir = (const char*)sqlite3_value_text(argv[0]);
   if( zDir==0 ){
     fsdirSetErrmsg(pCur, "table function fsdir requires a non-NULL argument");
     return SQLITE_ERROR;
   }
+  if( argc==2 ){
+    pCur->zBase = (const char*)sqlite3_value_text(argv[1]);
+  }
+  if( pCur->zBase ){
+    pCur->nBase = strlen(pCur->zBase)+1;
+    pCur->zPath = sqlite3_mprintf("%s/%s", pCur->zBase, zDir);
+  }else{
+    pCur->zPath = sqlite3_mprintf("%s", zDir);
+  }
 
-  pCur->zDir = sqlite3_mprintf("%s", zDir);
-  if( pCur->zDir==0 ){
+  if( pCur->zPath==0 ){
     return SQLITE_NOMEM;
   }
-
-  if( pCur->eType==FSDIR_ENTRY ){
-    int rc = lstat(pCur->zDir, &pCur->sStat);
-    if( rc ){
-      fsdirSetErrmsg(pCur, "cannot stat file: %s", pCur->zDir);
-    }else{
-      pCur->zPath = sqlite3_mprintf("%s", pCur->zDir);
-      if( pCur->zPath==0 ) return SQLITE_NOMEM;
-    }
-    return SQLITE_OK;
-  }else{
-    pCur->nDir = strlen(pCur->zDir);
-    pCur->pDir = opendir(zDir);
-    if( pCur->pDir==0 ){
-      fsdirSetErrmsg(pCur, "error in opendir(\"%s\")", zDir);
-      return SQLITE_ERROR;
-    }
-
-    return fsdirNext(cur);
+  if( lstat(pCur->zPath, &pCur->sStat) ){
+    fsdirSetErrmsg(pCur, "cannot stat file: %s", pCur->zPath);
+    return SQLITE_ERROR;
   }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -450,24 +481,33 @@ static int fsdirBestIndex(
   sqlite3_index_info *pIdxInfo
 ){
   int i;                 /* Loop over constraints */
+  int idx4 = -1;
+  int idx5 = -1;
 
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
     if( pConstraint->usable==0 ) continue;
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    if( pConstraint->iColumn!=4 ) continue;
-    break;
+    if( pConstraint->iColumn==4 ) idx4 = i;
+    if( pConstraint->iColumn==5 ) idx5 = i;
   }
 
-  if( i<pIdxInfo->nConstraint ){
-    pIdxInfo->aConstraintUsage[i].omit = 1;
-    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
-    pIdxInfo->idxNum = 1;
-    pIdxInfo->estimatedCost = 10.0;
-  }else{
+  if( idx4<0 ){
     pIdxInfo->idxNum = 0;
     pIdxInfo->estimatedCost = (double)(((sqlite3_int64)1) << 50);
+  }else{
+    pIdxInfo->aConstraintUsage[idx4].omit = 1;
+    pIdxInfo->aConstraintUsage[idx4].argvIndex = 1;
+    if( idx5>=0 ){
+      pIdxInfo->aConstraintUsage[idx5].omit = 1;
+      pIdxInfo->aConstraintUsage[idx5].argvIndex = 2;
+      pIdxInfo->idxNum = 2;
+      pIdxInfo->estimatedCost = 10.0;
+    }else{
+      pIdxInfo->idxNum = 1;
+      pIdxInfo->estimatedCost = 100.0;
+    }
   }
 
   return SQLITE_OK;

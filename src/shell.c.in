@@ -4285,6 +4285,7 @@ static int arExtractCommand(ShellState *p, ArCommand *pAr){
   return rc;
 }
 
+
 /*
 ** Implementation of .ar "Create" command. 
 **
@@ -4298,11 +4299,7 @@ static int arCreateCommand(
   ArCommand *pAr                  /* Command arguments and options */
 ){
   const char *zSql = 
-    "WITH f(n, m, t, d) AS ("
-    "  SELECT name, mode, mtime, data FROM fsentry(:1) UNION ALL "
-    "  SELECT n || '/' || name, mode, mtime, data "
-    "      FROM f, fsdir(n) WHERE (m&?)"
-    ") SELECT * FROM f";
+    "SELECT name, mode, mtime, data FROM fsdir(?, ?)";
 
   const char *zSqlar = 
       "CREATE TABLE IF NOT EXISTS sqlar("
@@ -4322,17 +4319,17 @@ static int arCreateCommand(
 
   Bytef *aCompress = 0;           /* Compression buffer */
   int nCompress = 0;              /* Size of compression buffer */
-  
+
   rc = sqlite3_exec(p->db, "SAVEPOINT ar;", 0, 0, 0);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_exec(p->db, zSqlar, 0, 0, 0);
   shellPrepare(p, &rc, zInsert, &pInsert);
   shellPrepare(p, &rc, zSql, &pStmt);
+  sqlite3_bind_text(pStmt, 2, pAr->zDir, -1, SQLITE_STATIC);
 
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
     sqlite3_bind_text(pStmt, 1, pAr->azArg[i], -1, SQLITE_STATIC);
-    sqlite3_bind_int(pStmt, 2, S_IFDIR);
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int sz;
       const char *zName = (const char*)sqlite3_column_text(pStmt, 0);
