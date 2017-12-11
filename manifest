@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sAPI\ssignature\smismatch\sin\sthe\sunix\sVFS.
-D 2017-12-09T01:02:33.171
+C Fix\sa\sbuffer\soverwrite\sin\sfts5\sthat\scould\soccur\swhen\sprocessing\sa\sprefix\nquery.
+D 2017-12-11T17:20:37.958
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -105,7 +105,7 @@ F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bf
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 01048018d21524e2c302b063ff5c3cdcf546e03297215e577205d85b47499deb
 F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301546dd55
-F ext/fts5/fts5_index.c 2ce9d50ec5508b8205615aad69e1c9b2c77f017f21d4479e1fb2079c01fdd017
+F ext/fts5/fts5_index.c 5fe14375a29e8a7aa8f3e863babe180a19269206c254c8f47b216821d4ac1e15
 F ext/fts5/fts5_main.c 24868f88ab2a865defbba7a92eebeb726cc991eb092b71b5f5508f180c72605b
 F ext/fts5/fts5_storage.c fb5ef3c27073f67ade2e1bea08405f9e43f68f5f3676ed0ab7013bce5ba10be6
 F ext/fts5/fts5_tcl.c a7df39442ae674dde877cf06fe02ebb7658e69c179a4d223241c90df4f14b54e
@@ -183,7 +183,7 @@ F ext/fts5/test/fts5plan.test e30e8378441114ef6977a3dc24ecd203caa670d782124dfc9a
 F ext/fts5/test/fts5porter.test 8d08010c28527db66bc3feebd2b8767504aaeb9b101a986342fa7833d49d0d15
 F ext/fts5/test/fts5porter2.test 0d251a673f02fa13ca7f011654873b3add20745f7402f108600a23e52d8c7457
 F ext/fts5/test/fts5prefix.test a0fa67b06650f2deaa7bf27745899d94e0fb547ad9ecbd08bfad98c04912c056
-F ext/fts5/test/fts5query.test bdb6fd9e73268cfc07f789f1448cd71ea78acb02e481c619f286289ea18ca518
+F ext/fts5/test/fts5query.test ac363b17a442620bb0780e93c24f16a5f963dfe2f23dc85647b869efcfada728
 F ext/fts5/test/fts5rank.test 6e149da77a269923a8439aaa52366e49b85be4721902662da39a5ded16ed85d9
 F ext/fts5/test/fts5rebuild.test 6d09fd54b1170a1e54fe17b808bbf17fba3154956cc2f065dd94bf1e3d254f63
 F ext/fts5/test/fts5restart.test 835ecc8f449e3919f72509ab58056d0cedca40d1fe04108ccf8ac4c2ba41f415
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02013fc120bf71a8be3550c696a588af8c92f2209f8e5db530624878ddc8aa7e
-R 70ec80a62b754f49e015c4fa7a36d748
-U drh
-Z d8e2fb990ec2e3ae449b802623df526d
+P bab9de7fdda20a724f7c21ec2c25b488ece08b685f1e4fd15c9e73b6b4a0133a
+R 693906cf332f161a7ecc56eb7becf7aa
+U dan
+Z fd6217bb3206aa8caa41c580e04a37c2
