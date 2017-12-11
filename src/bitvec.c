@@ -175,6 +175,7 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
     sqlite3_log(SQLITE_ERROR, 
         "Bitvec: setting bit %d of bitvec size %d\n", (int)i, (int)p->iSize
     );
+    abort();
   }
   i--;
   while((p->iSize > BITVEC_NBIT) && p->iDivisor) {
