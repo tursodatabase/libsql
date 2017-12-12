@@ -4075,17 +4075,17 @@ static int lintDotCommand(
 }
 
 static void shellPrepare(
-  ShellState *p, 
+  sqlite3 *db, 
   int *pRc, 
   const char *zSql, 
   sqlite3_stmt **ppStmt
 ){
   *ppStmt = 0;
   if( *pRc==SQLITE_OK ){
-    int rc = sqlite3_prepare_v2(p->db, zSql, -1, ppStmt, 0);
+    int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
     if( rc!=SQLITE_OK ){
       raw_printf(stderr, "sql error: %s (%d)\n", 
-          sqlite3_errmsg(p->db), sqlite3_errcode(p->db)
+          sqlite3_errmsg(db), sqlite3_errcode(db)
       );
       *pRc = rc;
     }
@@ -4141,10 +4141,42 @@ static int arUsage(void){
 /*
 ** Values for ArCommand.eCmd.
 */
-#define AR_CMD_CREATE  1
-#define AR_CMD_EXTRACT 2
-#define AR_CMD_LIST    3
-#define AR_CMD_UPDATE  4
+#define AR_CMD_CREATE       1
+#define AR_CMD_EXTRACT      2
+#define AR_CMD_LIST         3
+#define AR_CMD_UPDATE       4
+
+/*
+** Other (non-command) switches.
+*/
+#define AR_SWITCH_VERBOSE   5
+#define AR_SWITCH_FILE      6
+#define AR_SWITCH_DIRECTORY 7
+
+static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
+  switch( eSwitch ){
+    case AR_CMD_CREATE:
+    case AR_CMD_EXTRACT:
+    case AR_CMD_LIST:
+    case AR_CMD_UPDATE:
+      if( pAr->eCmd ) return arUsage();
+      pAr->eCmd = eSwitch;
+      break;
+
+    case AR_SWITCH_VERBOSE:
+      pAr->bVerbose = 1;
+      break;
+
+    case AR_SWITCH_FILE:
+      pAr->zFile = zArg;
+      break;
+    case AR_SWITCH_DIRECTORY:
+      pAr->zDir = zArg;
+      break;
+  }
+
+  return SQLITE_OK;
+}
 
 /*
 ** Parse the command line for an ".ar" command. The results are written into
@@ -4157,6 +4189,23 @@ static int arParseCommand(
   int nArg,                       /* Number of entries in azArg[] */
   ArCommand *pAr                  /* Populate this object */
 ){
+  struct ArSwitch {
+    char cShort;
+    const char *zLong;
+    int eSwitch;
+    int bArg;
+  } aSwitch[] = {
+    { 'c', "create",    AR_CMD_CREATE, 0 },
+    { 'x', "extract",   AR_CMD_EXTRACT, 0 },
+    { 't', "list",      AR_CMD_LIST, 0 },
+    { 'u', "update",    AR_CMD_UPDATE, 0 },
+    { 'v', "verbose",   AR_SWITCH_VERBOSE, 0 },
+    { 'f', "file",      AR_SWITCH_FILE, 1 },
+    { 'C', "directory", AR_SWITCH_DIRECTORY, 1 }
+  };
+  int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);
+  struct ArSwitch *pEnd = &aSwitch[nSwitch];
+
   if( nArg<=1 ){
     return arUsage();
   }else{
@@ -4168,44 +4217,90 @@ static int arParseCommand(
       int i;
       int iArg = 2;
       for(i=0; z[i]; i++){
-        switch( z[i] ){
-          case 'c':
-            if( pAr->eCmd ) return arUsage();
-            pAr->eCmd = AR_CMD_CREATE;
-            break;
-          case 'x':
-            if( pAr->eCmd ) return arUsage();
-            pAr->eCmd = AR_CMD_EXTRACT;
-            break;
-          case 't':
-            if( pAr->eCmd ) return arUsage();
-            pAr->eCmd = AR_CMD_LIST;
-            break;
-          case 'u':
-            if( pAr->eCmd ) return arUsage();
-            pAr->eCmd = AR_CMD_UPDATE;
-            break;
-
-          case 'v':
-            pAr->bVerbose = 1;
-            break;
-          case 'f':
-            if( iArg>=nArg ) return arUsage();
-            pAr->zFile = azArg[iArg++];
-            break;
-          case 'C':
-            if( iArg>=nArg ) return arUsage();
-            pAr->zDir = azArg[iArg++];
-            break;
-
-          default:
-            return arUsage();
+        const char *zArg = 0;
+        struct ArSwitch *pOpt;
+        for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
+          if( z[i]==pOpt->cShort ) break;
         }
+        if( pOpt==pEnd ) return arUsage();
+        if( pOpt->bArg ){
+          if( iArg>=nArg ) return arUsage();
+          zArg = azArg[iArg++];
+        }
+        if( arProcessSwitch(pAr, pOpt->eSwitch, zArg) ) return SQLITE_ERROR;
       }
-
       pAr->nArg = nArg-iArg;
       if( pAr->nArg>0 ){
         pAr->azArg = &azArg[iArg];
+      }
+    }else{
+      /* Non-traditional invocation */
+      int iArg;
+      for(iArg=1; iArg<nArg; iArg++){
+        int n;
+        z = azArg[iArg];
+        if( z[0]!='-' ){
+          /* All remaining command line words are command arguments. */
+          pAr->azArg = &azArg[iArg];
+          pAr->nArg = nArg-iArg;
+          break;
+        }
+        n = strlen(z);
+
+        if( z[1]!='-' ){
+          int i;
+          /* One or more short options */
+          for(i=1; i<n; i++){
+            const char *zArg = 0;
+            struct ArSwitch *pOpt;
+            for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
+              if( z[i]==pOpt->cShort ) break;
+            }
+            if( pOpt==pEnd ) return arUsage();
+            if( pOpt->bArg ){
+              if( i<(n-1) ){
+                zArg = &z[i+1];
+                i = n;
+              }else{
+                if( iArg>=(nArg-1) ) return arUsage();
+                zArg = azArg[++iArg];
+              }
+            }
+            if( arProcessSwitch(pAr, pOpt->eSwitch, zArg) ) return SQLITE_ERROR;
+          }
+        }else if( z[2]=='\0' ){
+          /* A -- option, indicating that all remaining command line words
+          ** are command arguments.  */
+          pAr->azArg = &azArg[iArg+1];
+          pAr->nArg = nArg-iArg-1;
+          break;
+        }else{
+          /* A long option */
+          const char *zArg = 0;             /* Argument for option, if any */
+          struct ArSwitch *pMatch = 0;      /* Matching option */
+          struct ArSwitch *pOpt;            /* Iterator */
+          for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
+            const char *zLong = pOpt->zLong;
+            if( (n-2)<=strlen(zLong) && 0==memcmp(&z[2], zLong, n-2) ){
+              if( pMatch ){
+                /* ambiguous option */
+                return arUsage();
+              }else{
+                pMatch = pOpt;
+              }
+            }
+          }
+
+          if( pMatch==0 ){
+            /* no such option. */
+            return arUsage();
+          }
+          if( pMatch->bArg ){
+            if( iArg>=(nArg-1) ) return arUsage();
+            zArg = azArg[++iArg];
+          }
+          if( arProcessSwitch(pAr, pMatch->eSwitch, zArg) ) return SQLITE_ERROR;
+        }
       }
     }
   }
@@ -4216,7 +4311,7 @@ static int arParseCommand(
 /*
 ** Implementation of .ar "Update" command. 
 */
-static int arUpdateCmd(ShellState *p, ArCommand *pAr){
+static int arUpdateCmd(ShellState *p, sqlite3 *db, ArCommand *pAr){
   raw_printf(stderr, "todo...\n");
   return SQLITE_OK;
 }
@@ -4224,7 +4319,7 @@ static int arUpdateCmd(ShellState *p, ArCommand *pAr){
 /*
 ** Implementation of .ar "lisT" command. 
 */
-static int arListCommand(ShellState *p, ArCommand *pAr){
+static int arListCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   raw_printf(stderr, "todo...\n");
   return SQLITE_OK;
 }
@@ -4233,7 +4328,7 @@ static int arListCommand(ShellState *p, ArCommand *pAr){
 /*
 ** Implementation of .ar "eXtract" command. 
 */
-static int arExtractCommand(ShellState *p, ArCommand *pAr){
+static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   const char *zSql1 = 
     "SELECT :1 || name, writefile(:1 || name, "
     "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN uncompress(data) "
@@ -4255,7 +4350,7 @@ static int arExtractCommand(ShellState *p, ArCommand *pAr){
   memset(times, 0, sizeof(times));
   times[0].tv_sec = time(0);
 
-  shellPrepare(p, &rc, zSql1, &pSql);
+  shellPrepare(db, &rc, zSql1, &pSql);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
   }
@@ -4266,7 +4361,7 @@ static int arExtractCommand(ShellState *p, ArCommand *pAr){
   }
   shellFinalize(&rc, pSql);
 
-  shellPrepare(p, &rc, zSql2, &pSql);
+  shellPrepare(db, &rc, zSql2, &pSql);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
   }
@@ -4296,20 +4391,19 @@ static int arExtractCommand(ShellState *p, ArCommand *pAr){
 */
 static int arCreateCommand(
   ShellState *p,                  /* Shell state pointer */
+  sqlite3 *db,
   ArCommand *pAr                  /* Command arguments and options */
 ){
-  const char *zSql = 
-    "SELECT name, mode, mtime, data FROM fsdir(?, ?)";
-
-  const char *zSqlar = 
+  const char *zSql = "SELECT name, mode, mtime, data FROM fsdir(?, ?)";
+  const char *zCreate = 
       "CREATE TABLE IF NOT EXISTS sqlar("
       "name TEXT PRIMARY KEY,  -- name of the file\n"
       "mode INT,               -- access permissions\n"
       "mtime INT,              -- last modification time\n"
       "sz INT,                 -- original file size\n"
       "data BLOB               -- compressed content\n"
-      ")";
-
+  ")";
+  const char *zDrop = "DROP TABLE IF EXISTS sqlar";
   const char *zInsert = "REPLACE INTO sqlar VALUES(?, ?, ?, ?, ?)";
 
   sqlite3_stmt *pStmt = 0;        /* Directory traverser */
@@ -4320,12 +4414,15 @@ static int arCreateCommand(
   Bytef *aCompress = 0;           /* Compression buffer */
   int nCompress = 0;              /* Size of compression buffer */
 
-  rc = sqlite3_exec(p->db, "SAVEPOINT ar;", 0, 0, 0);
+  rc = sqlite3_exec(db, "SAVEPOINT ar;", 0, 0, 0);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_exec(p->db, zSqlar, 0, 0, 0);
-  shellPrepare(p, &rc, zInsert, &pInsert);
-  shellPrepare(p, &rc, zSql, &pStmt);
+  rc = sqlite3_exec(db, zDrop, 0, 0, 0);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_exec(db, zCreate, 0, 0, 0);
+  shellPrepare(db, &rc, zInsert, &pInsert);
+  shellPrepare(db, &rc, zSql, &pStmt);
   sqlite3_bind_text(pStmt, 2, pAr->zDir, -1, SQLITE_STATIC);
 
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
@@ -4385,9 +4482,9 @@ static int arCreateCommand(
   }
 
   if( rc!=SQLITE_OK ){
-    sqlite3_exec(p->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
+    sqlite3_exec(db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
   }else{
-    rc = sqlite3_exec(p->db, "RELEASE ar;", 0, 0, 0);
+    rc = sqlite3_exec(db, "RELEASE ar;", 0, 0, 0);
   }
   shellFinalize(&rc, pStmt);
   shellFinalize(&rc, pInsert);
@@ -4407,23 +4504,48 @@ static int arDotCommand(
   int rc;
   rc = arParseCommand(azArg, nArg, &cmd);
   if( rc==SQLITE_OK ){
+    sqlite3 *db = 0;              /* Database handle to use as archive */
+
+    if( cmd.zFile ){
+      int flags;
+      if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_UPDATE ){
+        flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+      }else{
+        flags = SQLITE_OPEN_READONLY;
+      }
+      rc = sqlite3_open_v2(cmd.zFile, &db, flags, 0);
+      if( rc!=SQLITE_OK ){
+        raw_printf(stderr, "cannot open file: %s (%s)\n", 
+            cmd.zFile, sqlite3_errmsg(db)
+        );
+        sqlite3_close(db);
+        return rc;
+      }
+    }else{
+      db = pState->db;
+    }
+
     switch( cmd.eCmd ){
       case AR_CMD_CREATE:
-        rc = arCreateCommand(pState, &cmd);
+        rc = arCreateCommand(pState, db, &cmd);
         break;
 
       case AR_CMD_EXTRACT:
-        rc = arExtractCommand(pState, &cmd);
+        rc = arExtractCommand(pState, db, &cmd);
         break;
 
       case AR_CMD_LIST:
-        rc = arListCommand(pState, &cmd);
+        rc = arListCommand(pState, db, &cmd);
         break;
 
       default:
         assert( cmd.eCmd==AR_CMD_UPDATE );
-        rc = arUpdateCmd(pState, &cmd);
+        rc = arUpdateCmd(pState, db, &cmd);
         break;
+    }
+
+    if( cmd.zFile ){
+      sqlite3_close(db);
     }
   }
 

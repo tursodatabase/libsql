@@ -62,41 +62,68 @@ proc dir_compare {d1 d2} {
   string compare $l1 $l2
 }
 
-populate_dir ar1 {
-  file1 "abcd" 
-  file2 "efgh"
-  dir1/file3 "ijkl"
+foreach {tn tcl} {
+  1 {
+    set c1 ".ar c ar1"
+    set x1 ".ar x"
+
+    set c2 ".ar cC ar1 ."
+    set x2 ".ar Cx ar3"
+  }
+
+  2 {
+    set c1 ".ar -c ar1"
+    set x1 ".ar -x"
+
+    set c2 ".ar -cC ar1 ."
+    set x2 ".ar -xC ar3"
+  }
+
+  3 {
+    set c1 ".ar --create ar1"
+    set x1 ".ar --extract"
+
+    set c2 ".ar --directory ar1 --create ."
+    set x2 ".ar --extract --dir ar3"
+  }
+
+  4 {
+    set c1 ".ar --cr ar1"
+    set x1 ".ar --e"
+
+    set c2 ".ar -C ar1 -c ."
+    set x2 ".ar -x -C ar3"
+  }
+} {
+  eval $tcl
+
+  # Populate directory "ar1" with some files.
+  #
+  populate_dir ar1 {
+    file1 "abcd" 
+    file2 "efgh"
+    dir1/file3 "ijkl"
+  }
+  set expected [dir_to_list ar1]
+
+  do_test 1.$tn.1 {
+    catchcmd test_ar.db $c1
+    file delete -force ar1
+    catchcmd test_ar.db $x1
+    dir_to_list ar1
+  } $expected
+
+  do_test 1.$tn.2 {
+    file delete -force ar3
+    catchcmd test_ar.db $c2
+    catchcmd test_ar.db $x2
+    dir_to_list ar3
+  } $expected
 }
 
-set expected [dir_to_list ar1]
-# puts "# $expected"
-do_test 1.1 {
-  forcedelete test_ar.db
-
-  catchcmd test_ar.db ".ar c ar1"
-  file delete -force ar1
-  catchcmd test_ar.db ".ar x"
-
-  dir_to_list ar1
-} $expected
-
-do_test 1.2 {
-  file delete -force ar3
-  file mkdir ar3
-  catchcmd test_ar.db ".ar xvC ar3"
-  dir_to_list ar3/ar1
-} $expected
-
-do_test 1.3 {
-  file delete -force ar3
-  file mkdir ar3
-
-  forcedelete test_ar.db
-  catchcmd test_ar.db ".ar cC ar1 file1 file2 dir1"
-  catchcmd test_ar.db ".ar xC ar3"
-  dir_to_list ar3
-} $expected
+finish_test
 
 
 
 finish_test
+

@@ -40,6 +40,7 @@ SQLITE_EXTENSION_INIT1
 #include <dirent.h>
 #include <time.h>
 #include <utime.h>
+#include <errno.h>
 
 
 #define FSDIR_SCHEMA "(name,mode,mtime,data,path HIDDEN,dir HIDDEN)"
@@ -91,6 +92,103 @@ static void ctxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
 }
 
 /*
+** Argument zFile is the name of a file that will be created and/or written
+** by SQL function writefile(). This function ensures that the directory
+** zFile will be written to exists, creating it if required. The permissions
+** for any path components created by this function are set to (mode&0777).
+**
+** If an OOM condition is encountered, SQLITE_NOMEM is returned. Otherwise,
+** SQLITE_OK is returned if the directory is successfully created, or
+** SQLITE_ERROR otherwise.
+*/
+static int makeDirectory(
+  const char *zFile,
+  mode_t mode
+){
+  char *zCopy = sqlite3_mprintf("%s", zFile);
+  int rc = SQLITE_OK;
+
+  if( zCopy==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    int nCopy = strlen(zCopy);
+    int i = 1;
+
+    while( rc==SQLITE_OK ){
+      struct stat sStat;
+      int rc;
+
+      for(; zCopy[i]!='/' && i<nCopy; i++);
+      if( i==nCopy ) break;
+      zCopy[i] = '\0';
+
+      rc = stat(zCopy, &sStat);
+      if( rc!=0 ){
+        if( mkdir(zCopy, mode & 0777) ) rc = SQLITE_ERROR;
+      }else{
+        if( !S_ISDIR(sStat.st_mode) ) rc = SQLITE_ERROR;
+      }
+      zCopy[i] = '/';
+      i++;
+    }
+
+    sqlite3_free(zCopy);
+  }
+
+  return rc;
+}
+
+static int writeFile(
+  sqlite3_context *pCtx, 
+  const char *zFile, 
+  mode_t mode, 
+  sqlite3_value *pData
+){
+  if( S_ISLNK(mode) ){
+    const char *zTo = (const char*)sqlite3_value_text(pData);
+    if( symlink(zTo, zFile)<0 ) return 1;
+  }else{
+    if( S_ISDIR(mode) ){
+      if( mkdir(zFile, mode) ){
+        /* The mkdir() call to create the directory failed. This might not
+        ** be an error though - if there is already a directory at the same
+        ** path and either the permissions already match or can be changed
+        ** to do so using chmod(), it is not an error.  */
+        struct stat sStat;
+        if( errno!=EEXIST
+         || 0!=stat(zFile, &sStat)
+         || !S_ISDIR(sStat.st_mode)
+         || ((sStat.st_mode&0777)!=(mode&0777) && 0!=chmod(zFile, mode&0777))
+        ){
+          return 1;
+        }
+      }
+    }else{
+      sqlite3_int64 nWrite = 0;
+      const char *z;
+      int rc = 0;
+      FILE *out = fopen(zFile, "wb");
+      if( out==0 ) return 1;
+      z = (const char*)sqlite3_value_blob(pData);
+      if( z ){
+        sqlite3_int64 n = fwrite(z, 1, sqlite3_value_bytes(pData), out);
+        nWrite = sqlite3_value_bytes(pData);
+        if( nWrite!=n ){
+          rc = 1;
+        }
+      }
+      fclose(out);
+      if( rc==0 && chmod(zFile, mode & 0777) ){
+        rc = 1;
+      }
+      if( rc ) return 2;
+      sqlite3_result_int64(pCtx, nWrite);
+    }
+  }
+  return 0;
+}
+
+/*
 ** Implementation of the "writefile(W,X[,Y]])" SQL function.  
 **
 ** The argument X is written into file W.  The number of bytes written is
@@ -104,6 +202,7 @@ static void writefileFunc(
 ){
   const char *zFile;
   mode_t mode = 0;
+  int res;
 
   if( argc<2 || argc>3 ){
     sqlite3_result_error(context, 
@@ -119,46 +218,20 @@ static void writefileFunc(
     mode = sqlite3_value_int(argv[2]);
   }
 
-  if( S_ISLNK(mode) ){
-    const char *zTo = (const char*)sqlite3_value_text(argv[1]);
-    if( symlink(zTo, zFile)<0 ){
-      ctxErrorMsg(context, "failed to create symlink: %s", zFile);
-      return;
+  res = writeFile(context, zFile, mode, argv[1]);
+  if( res==1 && errno==ENOENT ){
+    if( makeDirectory(zFile, mode)==SQLITE_OK ){
+      res = writeFile(context, zFile, mode, argv[1]);
     }
-  }else{
-    if( S_ISDIR(mode) ){
-      if( mkdir(zFile, mode) ){
-        ctxErrorMsg(context, "failed to create directory: %s", zFile);
-        return;
-      }
-    }else{
-      sqlite3_int64 nWrite = 0;
-      const char *z;
-      int rc = 0;
-      FILE *out = fopen(zFile, "wb");
-      if( out==0 ){
-        if( argc>2 ){
-          ctxErrorMsg(context, "failed to open file for writing: %s", zFile);
-        }
-        return;
-      }
-      z = (const char*)sqlite3_value_blob(argv[1]);
-      if( z ){
-        sqlite3_int64 n = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
-        nWrite = sqlite3_value_bytes(argv[1]);
-        if( nWrite!=n ){
-          ctxErrorMsg(context, "failed to write file: %s", zFile);
-          rc = 1;
-        }
-      }
-      fclose(out);
-      if( rc ) return;
-      sqlite3_result_int64(context, nWrite);
-    }
+  }
 
-    if( argc>2 && chmod(zFile, mode & 0777) ){
-      ctxErrorMsg(context, "failed to chmod file: %s", zFile);
-      return;
+  if( res!=0 ){
+    if( S_ISLNK(mode) ){
+      ctxErrorMsg(context, "failed to create symlink: %s", zFile);
+    }else if( S_ISDIR(mode) ){
+      ctxErrorMsg(context, "failed to create directory: %s", zFile);
+    }else{
+      ctxErrorMsg(context, "failed to write file: %s", zFile);
     }
   }
 }
