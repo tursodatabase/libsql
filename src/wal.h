@@ -19,11 +19,11 @@
 
 #include "sqliteInt.h"
 
-/* Additional values that can be added to the sync_flags argument of
-** sqlite3WalFrames():
+/* Macros for extracting appropriate sync flags for either transaction
+** commits (WAL_SYNC_FLAGS(X)) or for checkpoint ops (CKPT_SYNC_FLAGS(X)):
 */
-#define WAL_SYNC_TRANSACTIONS  0x20   /* Sync at the end of each transaction */
-#define SQLITE_SYNC_MASK       0x13   /* Mask off the SQLITE_SYNC_* values */
+#define WAL_SYNC_FLAGS(X)   ((X)&0x03)
+#define CKPT_SYNC_FLAGS(X)  (((X)>>2)&0x03)
 
 #ifdef SQLITE_OMIT_WAL
 # define sqlite3WalOpen(x,y,z)                   0

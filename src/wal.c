@@ -132,6 +132,10 @@
 ** on a network filesystem.  All users of the database must be able to
 ** share memory.
 **
+** In the default unix and windows implementation, the wal-index is a mmapped
+** file whose name is the database name with a "-shm" suffix added.  For that
+** reason, the wal-index is sometimes called the "shm" file.
+**
 ** The wal-index is transient.  After a crash, the wal-index can (and should
 ** be) reconstructed from the original WAL file.  In fact, the VFS is required
 ** to either truncate or zero the header of the wal-index when the last
@@ -271,9 +275,18 @@ int sqlite3WalTrace = 0;
 #define WALINDEX_MAX_VERSION 3007000
 
 /*
-** Indices of various locking bytes.   WAL_NREADER is the number
+** Index numbers for various locking bytes.   WAL_NREADER is the number
 ** of available reader locks and should be at least 3.  The default
 ** is SQLITE_SHM_NLOCK==8 and  WAL_NREADER==5.
+**
+** Technically, the various VFSes are free to implement these locks however
+** they see fit.  However, compatibility is encouraged so that VFSes can
+** interoperate.  The standard implemention used on both unix and windows
+** is for the index number to indicate a byte offset into the
+** WalCkptInfo.aLock[] array in the wal-index header.  In other words, all
+** locks are on the shm file.  The WALINDEX_LOCK_OFFSET constant (which
+** should be 120) is the location in the shm file for the first locking
+** byte.
 */
 #define WAL_WRITE_LOCK         0
 #define WAL_ALL_BUT_WRITE      1
@@ -397,7 +410,6 @@ struct WalCkptInfo {
 #define WAL_FRAME_HDRSIZE 24
 
 /* Size of write ahead log header, including checksum. */
-/* #define WAL_HDRSIZE 24 */
 #define WAL_HDRSIZE 32
 
 /* WAL magic value. Either this value, or the same value with the least
@@ -1799,9 +1811,7 @@ static int walCheckpoint(
       pInfo->nBackfillAttempted = mxSafeFrame;
 
       /* Sync the WAL to disk */
-      if( sync_flags ){
-        rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
-      }
+      rc = sqlite3OsSync(pWal->pWalFd, CKPT_SYNC_FLAGS(sync_flags));
 
       /* If the database may grow as a result of this checkpoint, hint
       ** about the eventual size of the db file to the VFS layer.
@@ -1842,8 +1852,8 @@ static int walCheckpoint(
           i64 szDb = pWal->hdr.nPage*(i64)szPage;
           testcase( IS_BIG_INT(szDb) );
           rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
-          if( rc==SQLITE_OK && sync_flags ){
-            rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
           }
         }
         if( rc==SQLITE_OK ){
@@ -2161,7 +2171,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** checkpointed.  If useWal==0 then this routine calls walIndexReadHdr() 
 ** to make a copy of the wal-index header into pWal->hdr.  If the 
 ** wal-index header has changed, *pChanged is set to 1 (as an indication 
-** to the caller that the local paget cache is obsolete and needs to be 
+** to the caller that the local page cache is obsolete and needs to be 
 ** flushed.)  When useWal==1, the wal-index header is assumed to already
 ** be loaded and the pChanged parameter is unused.
 **
@@ -3177,8 +3187,8 @@ static int walWriteToLog(
     iOffset += iFirstAmt;
     iAmt -= iFirstAmt;
     pContent = (void*)(iFirstAmt + (char*)pContent);
-    assert( p->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
-    rc = sqlite3OsSync(p->pFd, p->syncFlags & SQLITE_SYNC_MASK);
+    assert( WAL_SYNC_FLAGS(p->syncFlags)!=0 );
+    rc = sqlite3OsSync(p->pFd, WAL_SYNC_FLAGS(p->syncFlags));
     if( iAmt==0 || rc ) return rc;
   }
   rc = sqlite3OsWrite(p->pFd, pContent, iAmt, iOffset);
@@ -3348,10 +3358,10 @@ int sqlite3WalFrames(
     ** an out-of-order write following a WAL restart could result in
     ** database corruption.  See the ticket:
     **
-    **     http://localhost:591/sqlite/info/ff5be73dee
+    **     https://sqlite.org/src/info/ff5be73dee
     */
-    if( pWal->syncHeader && sync_flags ){
-      rc = sqlite3OsSync(pWal->pWalFd, sync_flags & SQLITE_SYNC_MASK);
+    if( pWal->syncHeader ){
+      rc = sqlite3OsSync(pWal->pWalFd, CKPT_SYNC_FLAGS(sync_flags));
       if( rc ) return rc;
     }
   }
@@ -3427,7 +3437,7 @@ int sqlite3WalFrames(
   ** sector boundary is synced; the part of the last frame that extends
   ** past the sector boundary is written after the sync.
   */
-  if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
+  if( isCommit && WAL_SYNC_FLAGS(sync_flags)!=0 ){
     int bSync = 1;
     if( pWal->padToSectorBoundary ){
       int sectorSize = sqlite3SectorSize(pWal->pWalFd);
@@ -3443,7 +3453,7 @@ int sqlite3WalFrames(
     }
     if( bSync ){
       assert( rc==SQLITE_OK );
-      rc = sqlite3OsSync(w.pFd, sync_flags & SQLITE_SYNC_MASK);
+      rc = sqlite3OsSync(w.pFd, WAL_SYNC_FLAGS(sync_flags));
     }
   }
 

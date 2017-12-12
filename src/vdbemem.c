@@ -155,7 +155,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   assert( pMem->szMalloc==0
        || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
   if( n<32 ) n = 32;
-  if( bPreserve && pMem->szMalloc>0 && pMem->z==pMem->zMalloc ){
+  if( pMem->szMalloc>0 && bPreserve && pMem->z==pMem->zMalloc ){
     pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
     bPreserve = 0;
   }else{
@@ -171,7 +171,8 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
     pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
   }
 
-  if( bPreserve && pMem->z && ALWAYS(pMem->z!=pMem->zMalloc) ){
+  if( bPreserve && pMem->z ){
+    assert( pMem->z!=pMem->zMalloc );
     memcpy(pMem->zMalloc, pMem->z, pMem->n);
   }
   if( (pMem->flags&MEM_Dyn)!=0 ){
@@ -210,6 +211,20 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 }
 
 /*
+** It is already known that pMem contains an unterminated string.
+** Add the zero terminator.
+*/
+static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
+  if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  pMem->z[pMem->n] = 0;
+  pMem->z[pMem->n+1] = 0;
+  pMem->flags |= MEM_Term;
+  return SQLITE_OK;
+}
+
+/*
 ** Change pMem so that its MEM_Str or MEM_Blob value is stored in
 ** MEM.zMalloc, where it can be safely written.
 **
@@ -221,12 +236,8 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   if( (pMem->flags & (MEM_Str|MEM_Blob))!=0 ){
     if( ExpandBlob(pMem) ) return SQLITE_NOMEM;
     if( pMem->szMalloc==0 || pMem->z!=pMem->zMalloc ){
-      if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
-        return SQLITE_NOMEM_BKPT;
-      }
-      pMem->z[pMem->n] = 0;
-      pMem->z[pMem->n+1] = 0;
-      pMem->flags |= MEM_Term;
+      int rc = vdbeMemAddTerminator(pMem);
+      if( rc ) return rc;
     }
   }
   pMem->flags &= ~MEM_Ephem;
@@ -264,20 +275,6 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   return SQLITE_OK;
 }
 #endif
-
-/*
-** It is already known that pMem contains an unterminated string.
-** Add the zero terminator.
-*/
-static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
-  if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
-    return SQLITE_NOMEM_BKPT;
-  }
-  pMem->z[pMem->n] = 0;
-  pMem->z[pMem->n+1] = 0;
-  pMem->flags |= MEM_Term;
-  return SQLITE_OK;
-}
 
 /*
 ** Make sure the given Mem is \u0000 terminated.
@@ -353,26 +350,24 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 ** otherwise.
 */
 int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
-  int rc = SQLITE_OK;
-  if( ALWAYS(pFunc && pFunc->xFinalize) ){
-    sqlite3_context ctx;
-    Mem t;
-    assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
-    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    memset(&ctx, 0, sizeof(ctx));
-    memset(&t, 0, sizeof(t));
-    t.flags = MEM_Null;
-    t.db = pMem->db;
-    ctx.pOut = &t;
-    ctx.pMem = pMem;
-    ctx.pFunc = pFunc;
-    pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
-    assert( (pMem->flags & MEM_Dyn)==0 );
-    if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
-    memcpy(pMem, &t, sizeof(t));
-    rc = ctx.isError;
-  }
-  return rc;
+  sqlite3_context ctx;
+  Mem t;
+  assert( pFunc!=0 );
+  assert( pFunc->xFinalize!=0 );
+  assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  memset(&ctx, 0, sizeof(ctx));
+  memset(&t, 0, sizeof(t));
+  t.flags = MEM_Null;
+  t.db = pMem->db;
+  ctx.pOut = &t;
+  ctx.pMem = pMem;
+  ctx.pFunc = pFunc;
+  pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
+  assert( (pMem->flags & MEM_Dyn)==0 );
+  if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
+  memcpy(pMem, &t, sizeof(t));
+  return ctx.isError;
 }
 
 /*
@@ -597,14 +592,21 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
   if( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 ){
+    int rc;
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    if( 0==sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc) ){
+    rc = sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc);
+    if( rc==0 ){
       MemSetTypeFlag(pMem, MEM_Int);
     }else{
-      pMem->u.r = sqlite3VdbeRealValue(pMem);
-      MemSetTypeFlag(pMem, MEM_Real);
-      sqlite3VdbeIntegerAffinity(pMem);
+      i64 i = pMem->u.i;
+      sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+      if( rc==1 && pMem->u.r==(double)i ){
+        pMem->u.i = i;
+        MemSetTypeFlag(pMem, MEM_Int);
+      }else{
+        MemSetTypeFlag(pMem, MEM_Real);
+      }
     }
   }
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))!=0 );
@@ -931,7 +933,7 @@ int sqlite3VdbeMemSetStr(
   if( nByte<0 ){
     assert( enc!=0 );
     if( enc==SQLITE_UTF8 ){
-      nByte = sqlite3Strlen30(z);
+      nByte = 0x7fffffff & (int)strlen(z);
       if( nByte>iLimit ) nByte = iLimit+1;
     }else{
       for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
@@ -1009,12 +1011,11 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
 ){
   int rc;
   pMem->flags = MEM_Null;
-  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
+  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){
     rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){
-      pMem->z[amt] = 0;
-      pMem->z[amt+1] = 0;
-      pMem->flags = MEM_Blob|MEM_Term;
+      pMem->z[amt] = 0;   /* Overrun area used when reading malformed records */
+      pMem->flags = MEM_Blob;
       pMem->n = (int)amt;
     }else{
       sqlite3VdbeMemRelease(pMem);

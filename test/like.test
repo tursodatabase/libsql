@@ -1048,6 +1048,7 @@ ifcapable !icu {
   } {1}
 }
 
+ifcapable !icu {
 # As of 2017-07-27 (3.21.0) the LIKE optimization works with ESCAPE as
 # long as the ESCAPE is a single-byte literal.
 #
@@ -1092,8 +1093,6 @@ do_execsql_test like-15.121 {
   EXPLAIN QUERY PLAN
   SELECT y FROM t15 WHERE x LIKE '/%bc%' ESCAPE '/';
 } {/SEARCH/}
-
-
-
+}
 
 finish_test

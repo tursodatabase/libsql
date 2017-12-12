@@ -101,5 +101,94 @@ do_execsql_test 3.2 {
   COMMIT;
 } {}
 
+#-------------------------------------------------------------------------
+# Test the effect of BEGIN CONCURRENT transactions that consist entirely
+# of read-only statements.
+#
+reset_db
+do_execsql_test 4.0 {
+  PRAGMA page_size = 1024;
+  PRAGMA journal_mode = wal;
+  
+  CREATE TABLE t4(a, b);
+  INSERT INTO t4 VALUES(1, 2);
+  INSERT INTO t4 VALUES(3, 4);
+} {wal}
+ 
+sqlite3 db2 test.db
+do_test 4.1.1 {
+  db eval {
+    BEGIN CONCURRENT;
+      INSERT INTO t4 VALUES(5, 6);
+  }
+
+  db2 eval {
+    BEGIN CONCURRENT;
+      SELECT * FROM t4;
+    ROLLBACK;
+  }
+} {1 2 3 4}
+
+do_test 4.1.2 {
+  db eval { COMMIT }
+  db2 eval { SELECT * FROM t4 }
+} {1 2 3 4 5 6}
+
+do_test 4.2.1 {
+  db eval {
+    BEGIN CONCURRENT;
+      INSERT INTO t4 VALUES(7, 8);
+  }
+
+  db2 eval {
+    BEGIN CONCURRENT;
+      SELECT * FROM t4;
+    COMMIT;
+  }
+} {1 2 3 4 5 6}
+
+do_test 4.2.2 {
+  db eval { COMMIT }
+  db2 eval { SELECT * FROM t4 }
+} {1 2 3 4 5 6 7 8}
+
+do_test 4.3 {
+  db2 eval {
+    BEGIN CONCURRENT;
+      SELECT * FROM t4;
+  }
+
+  db eval {
+    BEGIN CONCURRENT;
+      INSERT INTO t4 VALUES(9, 10);
+    COMMIT;
+  }
+  db2 eval {
+    SELECT * FROM t4;
+    COMMIT;
+  }
+} {1 2 3 4 5 6 7 8}
+
+set sz [file size test.db-wal]
+do_test 4.4.1 {
+  db eval {
+    BEGIN CONCURRENT;
+      SELECT * FROM t4;
+      SELECT * FROM sqlite_master;
+  }
+
+  db eval COMMIT
+  file size test.db-wal
+} $sz
+do_test 4.4.2 {
+  db eval {
+    BEGIN CONCURRENT;
+      SELECT * FROM t4;
+      SELECT * FROM sqlite_master;
+    ROLLBACK;
+  }
+  file size test.db-wal
+} $sz
+
 finish_test
 

@@ -1122,15 +1122,17 @@ static int editDist3Install(sqlite3 *db){
   if( pConfig==0 ) return SQLITE_NOMEM;
   memset(pConfig, 0, sizeof(*pConfig));
   rc = sqlite3_create_function_v2(db, "editdist3",
-              2, SQLITE_UTF8, pConfig, editDist3SqlFunc, 0, 0, 0);
+              2, SQLITE_UTF8|SQLITE_DETERMINISTIC, pConfig,
+              editDist3SqlFunc, 0, 0, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function_v2(db, "editdist3",
-                3, SQLITE_UTF8, pConfig, editDist3SqlFunc, 0, 0, 0);
+                3, SQLITE_UTF8|SQLITE_DETERMINISTIC, pConfig,
+                editDist3SqlFunc, 0, 0, 0);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function_v2(db, "editdist3",
-                1, SQLITE_UTF8, pConfig, editDist3SqlFunc, 0, 0,
-                editDist3ConfigDelete);
+                1, SQLITE_UTF8|SQLITE_DETERMINISTIC, pConfig,
+                editDist3SqlFunc, 0, 0, editDist3ConfigDelete);
   }else{
     sqlite3_free(pConfig);
   }
@@ -2895,18 +2897,22 @@ static sqlite3_module spellfix1Module = {
 static int spellfix1Register(sqlite3 *db){
   int rc = SQLITE_OK;
   int i;
-  rc = sqlite3_create_function(db, "spellfix1_translit", 1, SQLITE_UTF8, 0,
-                                  transliterateSqlFunc, 0, 0);
+  rc = sqlite3_create_function(db, "spellfix1_translit", 1,
+                               SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
+                                transliterateSqlFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "spellfix1_editdist", 2, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "spellfix1_editdist", 2,
+                                 SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
                                   editdistSqlFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "spellfix1_phonehash", 1, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "spellfix1_phonehash", 1,
+                                 SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
                                   phoneticHashSqlFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "spellfix1_scriptcode", 1, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "spellfix1_scriptcode", 1,
+                                  SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
                                   scriptCodeSqlFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){

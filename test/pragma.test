@@ -1932,6 +1932,29 @@ do_test 23.5 {
     PRAGMA foreign_key_list(t2);
   }
 } {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
+db2 close
 
+ifcapable !has_codec {
+  reset_db
+  do_execsql_test 24.0 {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a, b, c);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES('a', 'b', 'c');
+    PRAGMA integrity_check;
+  } {ok}
+  
+  set r [db one {SELECT rootpage FROM sqlite_master WHERE name = 't1'}]
+  db close
+  hexio_write test.db [expr $r*1024 - 16] 000000000000000701040f0f1f616263
+  
+  sqlite3 db test.db
+  do_catchsql_test 24.1 {
+    SELECT * FROM t1;
+  } {1 {database disk image is malformed}}
+  do_catchsql_test 24.2 {
+    PRAGMA integrity_check;
+  } {0 {{database disk image is malformed}}}
+}  
 database_never_corrupt
 finish_test

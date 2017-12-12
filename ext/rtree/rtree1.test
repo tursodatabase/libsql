@@ -519,7 +519,7 @@ foreach {tn sql_template testdata} {
     do_test $testname.2 [list sql_uses_stmt db $sql] $uses
     do_execsql_test $testname.3 { SELECT * FROM t1 ORDER BY idx } $data
 
-    do_test $testname.4 { rtree_check db t1 } 0
+    do_rtree_integrity_test $testname.4 t1
     db close
   }
 }

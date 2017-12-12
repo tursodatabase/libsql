@@ -294,8 +294,8 @@ void sqlite3WhereAddScanStatus(
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;
-  while( ALWAYS(pTerm!=0)
-      && (pTerm->wtFlags & TERM_CODED)==0
+  assert( pTerm!=0 );
+  while( (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
       && (pLevel->notReady & pTerm->prereqAll)==0
   ){
@@ -306,6 +306,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
     }
     if( pTerm->iParent<0 ) break;
     pTerm = &pTerm->pWC->a[pTerm->iParent];
+    assert( pTerm!=0 );
     pTerm->nChild--;
     if( pTerm->nChild!=0 ) break;
     nLoop++;
@@ -1017,7 +1018,7 @@ static void codeDeferredSeek(
 */
 static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
-  if( sqlite3ExprIsVector(p) ){
+  if( p && sqlite3ExprIsVector(p) ){
 #ifndef SQLITE_OMIT_SUBQUERY
     if( (p->flags & EP_xIsSelect) ){
       Vdbe *v = pParse->pVdbe;
@@ -1070,9 +1071,9 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
 }
 
 /*
-** For an indexes on expression X, locate every instance of expression X in pExpr
-** and change that subexpression into a reference to the appropriate column of
-** the index.
+** For an indexes on expression X, locate every instance of expression X
+** in pExpr and change that subexpression into a reference to the appropriate
+** column of the index.
 */
 static void whereIndexExprTrans(
   Index *pIdx,      /* The Index */
