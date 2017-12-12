@@ -4521,6 +4521,8 @@ static int arDotCommand(
         sqlite3_close(db);
         return rc;
       }
+      sqlite3_fileio_init(db, 0, 0);
+      sqlite3_compress_init(db, 0, 0);
     }else{
       db = pState->db;
     }

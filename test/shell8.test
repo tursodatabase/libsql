@@ -69,6 +69,9 @@ foreach {tn tcl} {
 
     set c2 ".ar cC ar1 ."
     set x2 ".ar Cx ar3"
+
+    set c3 ".ar cCf ar1 test_xyz.db ."
+    set x3 ".ar Cfx ar3 test_xyz.db"
   }
 
   2 {
@@ -77,6 +80,9 @@ foreach {tn tcl} {
 
     set c2 ".ar -cC ar1 ."
     set x2 ".ar -xC ar3"
+
+    set c3 ".ar -cCar1 -ftest_xyz.db ."
+    set x3 ".ar -x -C ar3 -f test_xyz.db"
   }
 
   3 {
@@ -85,6 +91,9 @@ foreach {tn tcl} {
 
     set c2 ".ar --directory ar1 --create ."
     set x2 ".ar --extract --dir ar3"
+
+    set c3 ".ar --creat --dir ar1 --file test_xyz.db ."
+    set x3 ".ar --e  --d ar3 --f test_xyz.db"
   }
 
   4 {
@@ -93,6 +102,9 @@ foreach {tn tcl} {
 
     set c2 ".ar -C ar1 -c ."
     set x2 ".ar -x -C ar3"
+
+    set c3 ".ar -c --directory ar1 --file test_xyz.db ."
+    set x3 ".ar -x --directory ar3 --file test_xyz.db"
   }
 } {
   eval $tcl
@@ -117,6 +129,14 @@ foreach {tn tcl} {
     file delete -force ar3
     catchcmd test_ar.db $c2
     catchcmd test_ar.db $x2
+    dir_to_list ar3
+  } $expected
+
+  do_test 1.$tn.3 {
+    file delete -force ar3
+    file delete -force test_xyz.db
+    catchcmd ":memory:" $c3
+    catchcmd ":memory:" $x3
     dir_to_list ar3
   } $expected
 }
