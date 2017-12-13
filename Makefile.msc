@@ -2075,6 +2075,24 @@ FTS5_SRC = \
    $(TOP)\ext\fts5\fts5_varint.c \
    $(TOP)\ext\fts5\fts5_vocab.c
 
+LSM1_SRC = \
+   $(TOP)\ext\lsm1\lsm.h \
+   $(TOP)\ext\lsm1\lsmInt.h \
+   $(TOP)\ext\lsm1\lsm_ckpt.c \
+   $(TOP)\ext\lsm1\lsm_file.c \
+   $(TOP)\ext\lsm1\lsm_log.c \
+   $(TOP)\ext\lsm1\lsm_main.c \
+   $(TOP)\ext\lsm1\lsm_mem.c \
+   $(TOP)\ext\lsm1\lsm_mutex.c \
+   $(TOP)\ext\lsm1\lsm_shared.c \
+   $(TOP)\ext\lsm1\lsm_sorted.c \
+   $(TOP)\ext\lsm1\lsm_str.c \
+   $(TOP)\ext\lsm1\lsm_tree.c \
+   $(TOP)\ext\lsm1\lsm_unix.c \
+   $(TOP)\ext\lsm1\lsm_varint.c \
+   $(TOP)\ext\lsm1\lsm_vtab.c \
+   $(TOP)\ext\lsm1\lsm_win32.c
+
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy $(TOP)\ext\fts5\fts5parse.y .
 	del /Q fts5parse.h 2>NUL
@@ -2085,6 +2103,10 @@ fts5parse.h:	fts5parse.c
 fts5.c:	$(FTS5_SRC)
 	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
 	copy $(TOP)\ext\fts5\fts5.h .
+
+lsm1.c:	$(LSM1_SRC)
+	$(TCLSH_CMD) $(TOP)\ext\lsm1\tool\mklsm1c.tcl
+	copy $(TOP)\ext\lsm1\lsm.h .
 
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
@@ -2315,4 +2337,5 @@ clean:
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
+	del /Q lsm.h lsm1.c 2>NUL
 # <</mark>>
