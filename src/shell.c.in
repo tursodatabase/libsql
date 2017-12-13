@@ -4329,14 +4329,6 @@ static int arParseCommand(
 }
 
 /*
-** Implementation of .ar "Update" command. 
-*/
-static int arUpdateCmd(ShellState *p, sqlite3 *db, ArCommand *pAr){
-  raw_printf(stderr, "todo...\n");
-  return SQLITE_OK;
-}
-
-/*
 ** This function assumes that all arguments within the ArCommand.azArg[]
 ** array refer to archive members, as for the --extract or --list commands. 
 ** It checks that each of them are present. If any specified file is not
@@ -4500,17 +4492,21 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
 
 
 /*
-** Implementation of .ar "Create" command. 
+** Implementation of .ar "create" and "update" commands.
 **
 ** Create the "sqlar" table in the database if it does not already exist.
 ** Then add each file in the azFile[] array to the archive. Directories
 ** are added recursively. If argument bVerbose is non-zero, a message is
 ** printed on stdout for each file archived.
+**
+** The create command is the same as update, except that it drops
+** any existing "sqlar" table before beginning.
 */
-static int arCreateCommand(
+static int arCreateUpdate(
   ShellState *p,                  /* Shell state pointer */
   sqlite3 *db,
-  ArCommand *pAr                  /* Command arguments and options */
+  ArCommand *pAr,                 /* Command arguments and options */
+  int bUpdate
 ){
   const char *zSql = "SELECT name, mode, mtime, data FROM fsdir(?, ?)";
   const char *zCreate = 
@@ -4535,8 +4531,10 @@ static int arCreateCommand(
   rc = sqlite3_exec(db, "SAVEPOINT ar;", 0, 0, 0);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_exec(db, zDrop, 0, 0, 0);
-  if( rc!=SQLITE_OK ) return rc;
+  if( bUpdate==0 ){
+    rc = sqlite3_exec(db, zDrop, 0, 0, 0);
+    if( rc!=SQLITE_OK ) return rc;
+  }
 
   rc = sqlite3_exec(db, zCreate, 0, 0, 0);
   shellPrepare(db, &rc, zInsert, &pInsert);
@@ -4609,6 +4607,30 @@ static int arCreateCommand(
   sqlite3_free(aCompress);
   return rc;
 }
+
+/*
+** Implementation of .ar "Create" command. 
+**
+** Create the "sqlar" table in the database if it does not already exist.
+** Then add each file in the azFile[] array to the archive. Directories
+** are added recursively. If argument bVerbose is non-zero, a message is
+** printed on stdout for each file archived.
+*/
+static int arCreateCommand(
+  ShellState *p,                  /* Shell state pointer */
+  sqlite3 *db,
+  ArCommand *pAr                  /* Command arguments and options */
+){
+  return arCreateUpdate(p, db, pAr, 0);
+}
+
+/*
+** Implementation of .ar "Update" command. 
+*/
+static int arUpdateCmd(ShellState *p, sqlite3 *db, ArCommand *pAr){
+  return arCreateUpdate(p, db, pAr, 1);
+}
+
 
 /*
 ** Implementation of ".ar" dot command.
