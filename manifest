@@ -1,5 +1,5 @@
-C Minor\senhancement\sto\stwo\sassert()\sstatements\sin\sthe\sdefault\sVFSes.
-D 2017-12-13T10:11:09.727
+C Add\sscript\sto\samalgamate\sall\sLSM\sfiles\sinto\s"lsm1.c".
+D 2017-12-13T14:22:48.449
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -256,6 +256,7 @@ F ext/lsm1/lsm_vtab.c 529255dc704289001b225d97e57e0cfa14b29c3f281c7349cfa8fdb655
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
 F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
 F ext/lsm1/test/lsm1_simple.test ca949efefa102f4644231dcd9291d8cda7699a4ce1006b26e0e3fcb72233f422
+F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f6078e07335398b0
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -394,7 +395,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk fbe15be384ec172be0cc30efc91cda61ca16bd5d833e8b812cf653ccb0c74977
+F main.mk 6123b0b2db806ddb482c24786ad6603a289df720382a3bce8f532d76a94c84b1
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1679,7 +1680,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92fc146bc2b781e7e2d7138b00e5ea649c6fee1c2b8449420460a1b3e5c9661b
-R 001c7e37a1fb8cc134a2537ef8c0ad1e
-U drh
-Z d178c4b2ec00ed03598e2a437f7153cc
+P 9cede8a83ca4cd88d504050115e1e89e7b3d3cd3cb2ffb5b8961e311a23ff5e2
+R 0bb1b86efd302c3523a2137056206a8a
+U dan
+Z 0df44b61ec124ac51afd1eb16b579be7
