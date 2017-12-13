@@ -4092,6 +4092,26 @@ static void shellPrepare(
   }
 }
 
+static void shellPrepare2(
+  sqlite3 *db, 
+  int *pRc, 
+  const char *zSql, 
+  const char *zTail, 
+  sqlite3_stmt **ppStmt
+){
+  if( *pRc==SQLITE_OK && zTail ){
+    char *z = sqlite3_mprintf("%s %s", zSql, zTail);
+    if( z==0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      shellPrepare(db, pRc, z, ppStmt);
+      sqlite3_free(z);
+    }
+  }else{
+    shellPrepare(db, pRc, zSql, ppStmt);
+  }
+}
+
 static void shellFinalize(
   int *pRc, 
   sqlite3_stmt *pStmt
@@ -4317,11 +4337,95 @@ static int arUpdateCmd(ShellState *p, sqlite3 *db, ArCommand *pAr){
 }
 
 /*
+** This function assumes that all arguments within the ArCommand.azArg[]
+** array refer to archive members, as for the --extract or --list commands. 
+** It checks that each of them are present. If any specified file is not
+** present in the archive, an error is printed to stderr and an error
+** code returned. Otherwise, if all specified arguments are present in
+** the archive, SQLITE_OK is returned.
+**
+** This function strips any trailing '/' characters from each argument.
+** This is consistent with the way the [tar] command seems to work on
+** Linux.
+*/
+static int arCheckEntries(sqlite3 *db, ArCommand *pAr){
+  int rc = SQLITE_OK;
+  if( pAr->nArg ){
+    int i;
+    sqlite3_stmt *pTest = 0;
+
+    shellPrepare(db, &rc, "SELECT name FROM sqlar WHERE name=?", &pTest);
+    for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
+      char *z = pAr->azArg[i];
+      int n = strlen(z);
+      int bOk = 0;
+      while( n>0 && z[n-1]=='/' ) n--;
+      z[n] = '\0';
+      sqlite3_bind_text(pTest, 1, z, -1, SQLITE_STATIC);
+      if( SQLITE_ROW==sqlite3_step(pTest) ){
+        bOk = 1;
+      }
+      shellReset(&rc, pTest);
+      if( rc==SQLITE_OK && bOk==0 ){
+        raw_printf(stderr, "not found in archive: %s\n", z);
+        rc = SQLITE_ERROR;
+      }
+    }
+    shellFinalize(&rc, pTest);
+  }
+
+  return rc;
+}
+
+/*
+** Format a WHERE clause that can be used against the "sqlar" table to
+** identify all archive members that match the command arguments held
+** in (*pAr). Leave this WHERE clause in (*pzWhere) before returning.
+** The caller is responsible for eventually calling sqlite3_free() on
+** any non-NULL (*pzWhere) value.
+*/
+static void arWhereClause(
+  int *pRc, 
+  ArCommand *pAr, 
+  char **pzWhere                  /* OUT: New WHERE clause (or NULL) */
+){
+  char *zWhere = 0;
+  if( *pRc==SQLITE_OK ){
+    int i;
+    const char *zSep = "WHERE ";
+    for(i=0; i<pAr->nArg; i++){
+      const char *z = pAr->azArg[i];
+      zWhere = sqlite3_mprintf(
+          "%z%s name = '%q' OR name BETWEEN '%q/' AND '%q0'", 
+          zWhere, zSep, z, z, z
+      );
+      if( zWhere==0 ){
+        *pRc = SQLITE_NOMEM;
+        break;
+      }
+      zSep = " OR ";
+    }
+  }
+  *pzWhere = zWhere;
+}
+
+/*
 ** Implementation of .ar "lisT" command. 
 */
 static int arListCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
-  raw_printf(stderr, "todo...\n");
-  return SQLITE_OK;
+  const char *zSql = "SELECT name FROM sqlar"; 
+  char *zWhere = 0;
+  sqlite3_stmt *pSql = 0;
+  int rc;
+
+  rc = arCheckEntries(db, pAr);
+  arWhereClause(&rc, pAr, &zWhere);
+
+  shellPrepare2(db, &rc, zSql, zWhere, &pSql);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+    raw_printf(p->out, "%s\n", sqlite3_column_text(pSql, 0));
+  }
+  return rc;
 }
 
 
@@ -4331,8 +4435,11 @@ static int arListCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
 static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   const char *zSql1 = 
     "SELECT :1 || name, writefile(:1 || name, "
-    "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN uncompress(data) "
-    "   ELSE data END, "
+    "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN "
+    "    uncompress(data) "
+    "ELSE"
+    "    data "
+    "END, "
     "mode) FROM sqlar";
   const char *zSql2 = "SELECT :1 || name, mtime FROM sqlar"; 
 
@@ -4340,17 +4447,27 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   sqlite3_stmt *pSql = 0;
   int rc = SQLITE_OK;
   char *zDir = 0;
+  char *zWhere = 0;
 
-  if( pAr->zDir ){
-    zDir = sqlite3_mprintf("%s/", pAr->zDir);
-  }else{
-    zDir = sqlite3_mprintf("");
+  /* If arguments are specified, check that they actually exist within
+  ** the archive before proceeding. And formulate a WHERE clause to
+  ** match them.  */
+  rc = arCheckEntries(db, pAr);
+  arWhereClause(&rc, pAr, &zWhere);
+
+  if( rc==SQLITE_OK ){
+    if( pAr->zDir ){
+      zDir = sqlite3_mprintf("%s/", pAr->zDir);
+    }else{
+      zDir = sqlite3_mprintf("");
+    }
+    if( zDir==0 ) rc = SQLITE_NOMEM;
   }
 
   memset(times, 0, sizeof(times));
   times[0].tv_sec = time(0);
 
-  shellPrepare(db, &rc, zSql1, &pSql);
+  shellPrepare2(db, &rc, zSql1, zWhere, &pSql);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
   }
@@ -4361,7 +4478,7 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   }
   shellFinalize(&rc, pSql);
 
-  shellPrepare(db, &rc, zSql2, &pSql);
+  shellPrepare2(db, &rc, zSql2, zWhere, &pSql);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
   }
@@ -4377,6 +4494,7 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   shellFinalize(&rc, pSql);
 
   sqlite3_free(zDir);
+  sqlite3_free(zWhere);
   return rc;
 }
 
