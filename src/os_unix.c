@@ -5904,12 +5904,6 @@ static int unixOpen(
     fd = robust_open(zName, openFlags, openMode);
     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     assert( !isExclusive || (openFlags & O_CREAT)!=0 );
-    if( fd<0 && isNewJrnl && osAccess(zName, F_OK) ){
-      /* Trying to create a journal file where we don't have write 
-      ** permission on the directory */
-      rc = unixLogError(SQLITE_READONLY_DIRECTORY, "open", zName);
-      goto open_finished;
-    }
     if( fd<0 && errno!=EISDIR && isReadWrite ){
       /* Failed to open the file for read/write access. Try read-only. */
       flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
@@ -5921,6 +5915,9 @@ static int unixOpen(
     }
     if( fd<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
+      /* If unable to create a journal, change the error code to
+      ** indicate that the directory permissions are wrong. */
+      if( isNewJrnl && osAccess(zName, F_OK) ) rc = SQLITE_READONLY_DIRECTORY;
       goto open_finished;
     }
 
