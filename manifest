@@ -1,5 +1,5 @@
-C Correctly\sinvalidate\sa\scolumn\scache\sline\swhen\sit\sis\soverwritten\swith\sNULL.\nFix\sfor\sticket\s[123c9ba32130a6c9d432].
-D 2017-12-13T18:01:52.248
+C New\sresult\scode\sSQLITE_READONLY_DIRECTORY\sis\sreturned\swhen\san\sattempt\sis\nmade\sto\swrite\son\sa\sdatabase\sfile\sthat\sis\sin\sa\sread-only\sdirectory\sand\shence\nthe\sjournal\sfile\scould\snot\sbe\screated.\s\sThis\ssituation\sformerly\sreturned\nSQLITE_CANTOPEN,\swhich\sless\shelpful.
+D 2017-12-13T20:02:29.496
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -456,7 +456,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c a40e2926d2cee18f5bd919356f560ff30f0189dd03cf298662e70ece89c23088
+F src/os_unix.c 1ec9390926a0626494466e572eb7754545acd3e423a4871a749fe35c09e0b6ab
 F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
@@ -474,7 +474,7 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
 F src/shell.c.in 6ffed0c589f5aff180789a8c8abf5b2d3e2eea7470c86b30e797887cb0c9d0e5
-F src/sqlite.h.in 4622dbb3bb94119795fd926c2a10cacfb86d59900fa9b037e8678acd9830d147
+F src/sqlite.h.in 364515dd186285f3c01f5cab42e7db7edc47c70e87b6a25de389a2e6b8c413fd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h 55b8e7da85947eb61b13d4d2523ccdda7800a13e987c3fc4ca73d8518bbf02fa
@@ -1680,7 +1680,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30bf38d589adf0b2eb613e184ffb03ed7e625736cb04fd5c341328f72bc5ef4d
-R 0b90f4f4961013e5f05c73c6020a97dc
+P 65754dc3b830ef9482655d2e93c2cd4acaa7a8715a58d8309955d04378541f89
+R 317d939eaca617f6f45ef08fff90ca48
 U drh
-Z 53ad352984145a11e63d4c3ee646c195
+Z f0826ac4a0e91b44749cba2450c52240
