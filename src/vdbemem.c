@@ -1420,7 +1420,10 @@ static int valueFromExpr(
   return rc;
 
 no_mem:
-  sqlite3OomFault(db);
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  if( pCtx==0 || pCtx->pParse->nErr==0 )
+#endif
+    sqlite3OomFault(db);
   sqlite3DbFree(db, zVal);
   assert( *ppVal==0 );
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4

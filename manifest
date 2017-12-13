@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\s'lsm1.c'\starget\sin\sthe\sMSVC\smakefile.
-D 2017-12-13T22:42:55.057
+C In\svalueFromExpr()\sonly\sgenerate\sa\sOOM\sfault\sif\sthere\shave\sbeen\snow\sprior\nfaults.
+D 2017-12-13T23:47:55.478
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a2492b29176edc3c754aa7a2f7daa20cd3fa20a56e3ee64e376092836177c42a
@@ -547,7 +547,7 @@ F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
 F src/vdbeaux.c b02a1f842c0e916285643b8475b7189f10b76f9e7edb5e2353a913c7980f90b5
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 3e8c795e0874b2848658b7ca96930a7bcda3f80dc93be2a3422cd30967961e4c
+F src/vdbemem.c 8478f7fb1948bf8fdeec7c2cb59ea58155c31258b9cd43c56d485e03ed40bd07
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
@@ -1680,7 +1680,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c0aa919ee429cd194820ec9c54084563f39e63fd399b23f859fc6703b429b15
-R c15fac6ddfa8bdc9c58742ac799b0523
-U mistachkin
-Z f5d555af74f00cd8b8d0269819b3c3ed
+P 6de21deac469ab25378656f6f58115a92f5892428c6f2f3545c9bafac37e4a41
+R 44abcc3575bcbddb8f261c0eaf812ba5
+U drh
+Z 3fcdf29f818607817f06d87e8d680060
