@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverwrite\sin\sfts5\sthat\scould\soccur\swhen\sprocessing\sa\sprefix\nquery.
-D 2017-12-11T17:20:37.958
+C Minor\senhancement\sto\stwo\sassert()\sstatements\sin\sthe\sdefault\sVFSes.
+D 2017-12-13T10:11:09.727
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e5d7606238f55816da99f719969598df5b091aa2e9a6935c9412fcae8f53fc44
@@ -455,8 +455,8 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 888afdeab00cd5df5e1c2cefe26926127664d73416e60804576d661cb1c11f52
-F src/os_win.c 7f36120492e4a23c48d1dd685edf29ae459c6d555660c61f1323cea3e5a1191d
+F src/os_unix.c a40e2926d2cee18f5bd919356f560ff30f0189dd03cf298662e70ece89c23088
+F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
@@ -1679,7 +1679,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bab9de7fdda20a724f7c21ec2c25b488ece08b685f1e4fd15c9e73b6b4a0133a
-R 693906cf332f161a7ecc56eb7becf7aa
-U dan
-Z fd6217bb3206aa8caa41c580e04a37c2
+P 92fc146bc2b781e7e2d7138b00e5ea649c6fee1c2b8449420460a1b3e5c9661b
+R 001c7e37a1fb8cc134a2537ef8c0ad1e
+U drh
+Z d178c4b2ec00ed03598e2a437f7153cc
