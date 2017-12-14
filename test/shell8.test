@@ -139,6 +139,21 @@ foreach {tn tcl} {
     catchcmd ":memory:" $x3
     dir_to_list ar3
   } $expected
+
+  # This is a repeat of test 1.$tn.1, except that there is a 2 second 
+  # pause between creating the archive and extracting its contents.
+  # This is to test that timestamps are set correctly.
+  #
+  # Because it is slow, only do this for $tn==1.
+  if {$tn==1} {
+    do_test 1.$tn.1 {
+      catchcmd test_ar.db $c1
+      file delete -force ar1
+      after 2000
+      catchcmd test_ar.db $x1
+      dir_to_list ar1
+    } $expected
+  }
 }
 
 finish_test

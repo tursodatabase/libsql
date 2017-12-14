@@ -4092,23 +4092,25 @@ static void shellPrepare(
   }
 }
 
-static void shellPrepare2(
+static void shellPreparePrintf(
   sqlite3 *db, 
   int *pRc, 
-  const char *zSql, 
-  const char *zTail, 
-  sqlite3_stmt **ppStmt
+  sqlite3_stmt **ppStmt,
+  const char *zFmt, 
+  ...
 ){
-  if( *pRc==SQLITE_OK && zTail ){
-    char *z = sqlite3_mprintf("%s %s", zSql, zTail);
+  *ppStmt = 0;
+  if( *pRc==SQLITE_OK ){
+    va_list ap;
+    char *z;
+    va_start(ap, zFmt);
+    z = sqlite3_vmprintf(zFmt, ap);
     if( z==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
       shellPrepare(db, pRc, z, ppStmt);
       sqlite3_free(z);
     }
-  }else{
-    shellPrepare(db, pRc, zSql, ppStmt);
   }
 }
 
@@ -4429,23 +4431,27 @@ static int arCheckEntries(sqlite3 *db, ArCommand *pAr){
 static void arWhereClause(
   int *pRc, 
   ArCommand *pAr, 
-  char **pzWhere                  /* OUT: New WHERE clause (or NULL) */
+  char **pzWhere                  /* OUT: New WHERE clause */
 ){
   char *zWhere = 0;
   if( *pRc==SQLITE_OK ){
-    int i;
-    const char *zSep = "WHERE ";
-    for(i=0; i<pAr->nArg; i++){
-      const char *z = pAr->azArg[i];
-      zWhere = sqlite3_mprintf(
-          "%z%s name = '%q' OR name BETWEEN '%q/' AND '%q0'", 
-          zWhere, zSep, z, z, z
-      );
-      if( zWhere==0 ){
-        *pRc = SQLITE_NOMEM;
-        break;
+    if( pAr->nArg==0 ){
+      zWhere = sqlite3_mprintf("1");
+    }else{
+      int i;
+      const char *zSep = "";
+      for(i=0; i<pAr->nArg; i++){
+        const char *z = pAr->azArg[i];
+        zWhere = sqlite3_mprintf(
+            "%z%s name = '%q' OR name BETWEEN '%q/' AND '%q0'", 
+            zWhere, zSep, z, z, z
+            );
+        if( zWhere==0 ){
+          *pRc = SQLITE_NOMEM;
+          break;
+        }
+        zSep = " OR ";
       }
-      zSep = " OR ";
     }
   }
   *pzWhere = zWhere;
@@ -4455,7 +4461,7 @@ static void arWhereClause(
 ** Implementation of .ar "lisT" command. 
 */
 static int arListCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
-  const char *zSql = "SELECT name FROM sqlar"; 
+  const char *zSql = "SELECT name FROM sqlar WHERE %s"; 
   char *zWhere = 0;
   sqlite3_stmt *pSql = 0;
   int rc;
@@ -4463,7 +4469,7 @@ static int arListCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   rc = arCheckEntries(db, pAr);
   arWhereClause(&rc, pAr, &zWhere);
 
-  shellPrepare2(db, &rc, zSql, zWhere, &pSql);
+  shellPreparePrintf(db, &rc, &pSql, zSql, zWhere);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
     raw_printf(p->out, "%s\n", sqlite3_column_text(pSql, 0));
   }
@@ -4482,14 +4488,14 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
     "ELSE"
     "    data "
     "END, "
-    "mode) FROM sqlar";
-  const char *zSql2 = "SELECT :1 || name, mtime FROM sqlar"; 
+    "mode, mtime) FROM sqlar WHERE (%s) AND (data IS NULL OR :2 = 0)";
 
   struct timespec times[2];
   sqlite3_stmt *pSql = 0;
   int rc = SQLITE_OK;
   char *zDir = 0;
   char *zWhere = 0;
+  int i;
 
   /* If arguments are specified, check that they actually exist within
   ** the archive before proceeding. And formulate a WHERE clause to
@@ -4509,31 +4515,26 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   memset(times, 0, sizeof(times));
   times[0].tv_sec = time(0);
 
-  shellPrepare2(db, &rc, zSql1, zWhere, &pSql);
+  shellPreparePrintf(db, &rc, &pSql, zSql1, zWhere);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
-  }
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-    if( pAr->bVerbose ){
-      raw_printf(p->out, "%s\n", sqlite3_column_text(pSql, 0));
-    }
-  }
-  shellFinalize(&rc, pSql);
 
-  shellPrepare2(db, &rc, zSql2, zWhere, &pSql);
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_text(pSql, 1, zDir, -1, SQLITE_STATIC);
-  }
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-    const char *zPath = (const char*)sqlite3_column_text(pSql, 0);
-    times[1].tv_sec = (time_t)sqlite3_column_int64(pSql, 1);
-    if( utimensat(AT_FDCWD, zPath, times, AT_SYMLINK_NOFOLLOW) ){
-      raw_printf(stderr, "failed to set timestamp for %s\n", zPath);
-      rc = SQLITE_ERROR;
-      break;
+    /* Run the SELECT statement twice. The first time, writefile() is called
+    ** for all archive members that should be extracted. The second time,
+    ** only for the directories. This is because the timestamps for
+    ** extracted directories must be reset after they are populated (as
+    ** populating them changes the timestamp).  */
+    for(i=0; i<2; i++){
+      sqlite3_bind_int(pSql, 2, i);
+      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+        if( i==0 && pAr->bVerbose ){
+          raw_printf(p->out, "%s\n", sqlite3_column_text(pSql, 0));
+        }
+      }
+      shellReset(&rc, pSql);
     }
+    shellFinalize(&rc, pSql);
   }
-  shellFinalize(&rc, pSql);
 
   sqlite3_free(zDir);
   sqlite3_free(zWhere);

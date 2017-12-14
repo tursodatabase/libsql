@@ -11,21 +11,67 @@
 ******************************************************************************
 **
 ** This SQLite extension implements SQL functions readfile() and
-** writefile().
+** writefile(), and eponymous virtual type "fsdir".
 **
-** Also, an eponymous virtual table type "fsdir". Used as follows:
+** WRITEFILE(FILE, DATA [, MODE [, MTIME]]):
 **
-**   SELECT * FROM fsdir($dirname);
+**   If neither of the optional arguments is present, then this UDF
+**   function writes blob DATA to file FILE. If successful, the number
+**   of bytes written is returned. If an error occurs, NULL is returned.
 **
-** Returns one row for each entry in the directory $dirname. No row is
-** returned for "." or "..". Row columns are as follows:
+**   If the first option argument - MODE - is present, then it must
+**   be passed an integer value that corresponds to a POSIX mode
+**   value (file type + permissions, as returned in the stat.st_mode
+**   field by the stat() system call). Three types of files may
+**   be written/created:
 **
-**   name:  Name of directory entry.
-**   mode:  Value of stat.st_mode for directory entry.
-**   mtime: Value of stat.st_mtime for directory entry.
-**   data:  For a regular file, a blob containing the file data. For a
-**          symlink, a text value containing the text of the link. For a
-**          directory, NULL.
+**     regular files:  (mode & 0170000)==0100000
+**     symbolic links: (mode & 0170000)==0120000
+**     directories:    (mode & 0170000)==0040000
+**
+**   For a directory, the DATA is ignored. For a symbolic link, it is
+**   interpreted as text and used as the target of the link. For a
+**   regular file, it is interpreted as a blob and written into the
+**   named file. Regardless of the type of file, its permissions are
+**   set to (mode & 0777) before returning.
+**
+**   If the optional MTIME argument is present, then it is interpreted
+**   as an integer - the number of seconds since the unix epoch. The
+**   modification-time of the target file is set to this value before
+**   returning.
+**
+**   If three or more arguments are passed to this function and an
+**   error is encountered, an exception is raised.
+**
+** READFILE(FILE):
+**
+**   Read and return the contents of file FILE (type blob) from disk.
+**
+** FSDIR:
+**
+**   Used as follows:
+**
+**     SELECT * FROM fsdir($path [, $dir]);
+**
+**   Parameter $path is an absolute or relative pathname. If the file that it
+**   refers to does not exist, it is an error. If the path refers to a regular
+**   file or symbolic link, it returns a single row. Or, if the path refers
+**   to a directory, it returns one row for the directory, and one row for each
+**   file within the hierarchy rooted at $path.
+**
+**   Each row has the following columns:
+**
+**     name:  Path to file or directory (text value).
+**     mode:  Value of stat.st_mode for directory entry (an integer).
+**     mtime: Value of stat.st_mtime for directory entry (an integer).
+**     data:  For a regular file, a blob containing the file data. For a
+**            symlink, a text value containing the text of the link. For a
+**            directory, NULL.
+**
+**   If a non-NULL value is specified for the optional $dir parameter and
+**   $path is a relative path, then $path is interpreted relative to $dir. 
+**   And the paths returned in the "name" column of the table are also 
+**   relative to directory $dir.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -45,6 +91,10 @@ SQLITE_EXTENSION_INIT1
 
 #define FSDIR_SCHEMA "(name,mode,mtime,data,path HIDDEN,dir HIDDEN)"
 
+/*
+** Set the result stored by context ctx to a blob containing the 
+** contents of file zName.
+*/
 static void readFileContents(sqlite3_context *ctx, const char *zName){
   FILE *in;
   long nIn;
@@ -81,6 +131,10 @@ static void readfileFunc(
   readFileContents(context, zName);
 }
 
+/*
+** Set the error message contained in context ctx to the results of
+** vprintf(zFmt, ...).
+*/
 static void ctxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
   char *zMsg = 0;
   va_list ap;
@@ -138,11 +192,16 @@ static int makeDirectory(
   return rc;
 }
 
+/*
+** This function does the work for the writefile() UDF. Refer to 
+** header comments at the top of this file for details.
+*/
 static int writeFile(
-  sqlite3_context *pCtx, 
-  const char *zFile, 
-  mode_t mode, 
-  sqlite3_value *pData
+  sqlite3_context *pCtx,          /* Context to return bytes written in */
+  const char *zFile,              /* File to write */
+  sqlite3_value *pData,           /* Data to write */
+  mode_t mode,                    /* MODE parameter passed to writefile() */
+  sqlite3_int64 mtime             /* MTIME parameter (or -1 to not set time) */
 ){
   if( S_ISLNK(mode) ){
     const char *zTo = (const char*)sqlite3_value_text(pData);
@@ -178,22 +237,30 @@ static int writeFile(
         }
       }
       fclose(out);
-      if( rc==0 && chmod(zFile, mode & 0777) ){
+      if( rc==0 && mode && chmod(zFile, mode & 0777) ){
         rc = 1;
       }
       if( rc ) return 2;
       sqlite3_result_int64(pCtx, nWrite);
     }
   }
+
+  if( mtime>=0 ){
+    struct timespec times[2];
+    times[0].tv_nsec = times[1].tv_nsec = 0;
+    times[0].tv_sec = time(0);
+    times[1].tv_sec = mtime;
+    if( utimensat(AT_FDCWD, zFile, times, AT_SYMLINK_NOFOLLOW) ){
+      return 1;
+    }
+  }
+
   return 0;
 }
 
 /*
-** Implementation of the "writefile(W,X[,Y]])" SQL function.  
-**
-** The argument X is written into file W.  The number of bytes written is
-** returned. Or NULL is returned if something goes wrong, such as being unable
-** to open file X for writing.
+** Implementation of the "writefile(W,X[,Y[,Z]]])" SQL function.  
+** Refer to header comments at the top of this file for details.
 */
 static void writefileFunc(
   sqlite3_context *context,
@@ -203,8 +270,9 @@ static void writefileFunc(
   const char *zFile;
   mode_t mode = 0;
   int res;
+  sqlite3_int64 mtime = -1;
 
-  if( argc<2 || argc>3 ){
+  if( argc<2 || argc>4 ){
     sqlite3_result_error(context, 
         "wrong number of arguments to function writefile()", -1
     );
@@ -214,18 +282,20 @@ static void writefileFunc(
   zFile = (const char*)sqlite3_value_text(argv[0]);
   if( zFile==0 ) return;
   if( argc>=3 ){
-    sqlite3_result_int(context, 0);
     mode = sqlite3_value_int(argv[2]);
   }
+  if( argc==4 ){
+    mtime = sqlite3_value_int64(argv[3]);
+  }
 
-  res = writeFile(context, zFile, mode, argv[1]);
+  res = writeFile(context, zFile, argv[1], mode, mtime);
   if( res==1 && errno==ENOENT ){
     if( makeDirectory(zFile, mode)==SQLITE_OK ){
-      res = writeFile(context, zFile, mode, argv[1]);
+      res = writeFile(context, zFile, argv[1], mode, mtime);
     }
   }
 
-  if( res!=0 ){
+  if( argc>2 && res!=0 ){
     if( S_ISLNK(mode) ){
       ctxErrorMsg(context, "failed to create symlink: %s", zFile);
     }else if( S_ISDIR(mode) ){
@@ -313,6 +383,10 @@ static int fsdirOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
+/*
+** Reset a cursor back to the state it was in when first returned
+** by fsdirOpen().
+*/
 static void fsdirResetCursor(fsdir_cursor *pCur){
   int i;
   for(i=0; i<=pCur->iLvl; i++){
@@ -341,6 +415,10 @@ static int fsdirClose(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
+/*
+** Set the error message for the virtual table associated with cursor
+** pCur to the results of vprintf(zFmt, ...).
+*/
 static void fsdirSetErrmsg(fsdir_cursor *pCur, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
@@ -586,6 +664,9 @@ static int fsdirBestIndex(
   return SQLITE_OK;
 }
 
+/*
+** Register the "fsdir" virtual table.
+*/
 static int fsdirRegister(sqlite3 *db){
   static sqlite3_module fsdirModule = {
     0,                         /* iVersion */
@@ -611,9 +692,6 @@ static int fsdirRegister(sqlite3 *db){
   };
 
   int rc = sqlite3_create_module(db, "fsdir", &fsdirModule, 0);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_module(db, "fsentry", &fsdirModule, (void*)1);
-  }
   return rc;
 }
 #else         /* SQLITE_OMIT_VIRTUALTABLE */
