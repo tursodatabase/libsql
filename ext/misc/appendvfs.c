@@ -47,7 +47,9 @@
 ** If the file being opened is not an appended database, then this shim is
 ** a pass-through into the default underlying VFS.
 **/
+#if !defined(SQLITEINT_H)
 #include <sqlite3ext.h>
+#endif
 SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
@@ -458,6 +460,7 @@ static int apndOpen(
   }
   if( (flags & SQLITE_OPEN_CREATE)==0 ){
     pSubFile->pMethods->xClose(pSubFile);
+    pFile->pMethods = 0;
     return SQLITE_CANTOPEN;
   }
   p->iPgOne = (sz+0xfff) & ~(sqlite3_int64)0xfff;

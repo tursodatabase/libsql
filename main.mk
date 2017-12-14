@@ -484,7 +484,8 @@ TESTPROGS = \
   sqlite3_analyzer$(EXE) \
   sqlite3_checker$(EXE) \
   sqldiff$(EXE) \
-  dbhash$(EXE)
+  dbhash$(EXE) \
+  sqltclsh$(EXE)
 
 # Databases containing fuzzer test cases
 #
@@ -808,6 +809,12 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
+
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl
+	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
+
+sqltclsh$(EXE): sqltclsh.c
+	$(TCCX) $(TCL_FLAGS) sqltclsh.c -o $@ $(LIBTCL) $(THREADLIB) 
 
 CHECKER_DEPS =\
   $(TOP)/tool/mkccode.tcl \
