@@ -18,8 +18,31 @@
 ** best performance page 1 should be located at a disk page boundary, though
 ** that is not required.
 **
-** An appended database is considered immutable.  It is read-only and no
-** locks are ever taken.
+** When opening a database using this VFS, the connection might treat
+** the file as an ordinary SQLite database, or it might treat is as a
+** database appended onto some other file.  Here are the rules:
+**
+**  (1)  When opening a new empty file, that file is treated as an ordinary
+**       database.
+**
+**  (2)  When opening a file that begins with the standard SQLite prefix
+**       string "SQLite format 3", that file is treated as an ordinary
+**       database.
+**
+**  (3)  When opening a file that ends with the appendvfs trailer string
+**       "Start-Of-SQLite3-NNNNNNNN" that file is treated as an appended
+**       database.
+**
+**  (4)  If none of the above apply and the SQLITE_OPEN_CREATE flag is
+**       set, then a new database is appended to the already existing file.
+**
+**  (5)  Otherwise, SQLITE_CANTOPEN is returned.
+**
+** To avoid unnecessary complications with the PENDING_BYTE, the size of
+** the file containing the database is limited to 1GB.  This VFS will refuse
+** to read or write past the 1GB mark.  This restriction might be lifted in
+** future versions.  For now, if you need a large database, then keep the
+** database in a separate file.
 **
 ** If the file being opened is not an appended database, then this shim is
 ** a pass-through into the default underlying VFS.
@@ -42,6 +65,12 @@ SQLITE_EXTENSION_INIT1
 #define APND_MARK_SIZE       25
 
 /*
+** Maximum size of the combined prefix + database + append-mark.  This
+** must be less than 0x40000000 to avoid locking issues on Windows.
+*/
+#define APND_MAX_SIZE  (65536*15259)
+
+/*
 ** Forward declaration of objects used by this utility
 */
 typedef struct sqlite3_vfs ApndVfs;
@@ -57,6 +86,7 @@ typedef struct ApndFile ApndFile;
 struct ApndFile {
   sqlite3_file base;              /* IO methods */
   sqlite3_int64 iPgOne;           /* File offset to page 1 */
+  sqlite3_int64 iMark;            /* Start of the append-mark */
 };
 
 /*
@@ -173,36 +203,74 @@ static int apndRead(
 }
 
 /*
+** Add the append-mark onto the end of the file.
+*/
+static int apndWriteMark(ApndFile *p, sqlite3_file *pFile){
+  int i;
+  unsigned char a[APND_MARK_SIZE];
+  memcpy(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ);
+  for(i=0; i<8; i++){
+    a[APND_MARK_PREFIX_SZ+i] = (p->iPgOne >> (56 - i*8)) & 0xff;
+  }
+  return pFile->pMethods->xWrite(pFile, a, APND_MARK_PREFIX_SZ, p->iMark);
+}
+
+/*
 ** Write data to an apnd-file.
 */
 static int apndWrite(
   sqlite3_file *pFile,
-  const void *z,
+  const void *zBuf,
   int iAmt,
   sqlite_int64 iOfst
 ){
-  return SQLITE_READONLY;
+  int rc;
+  ApndFile *p = (ApndFile *)pFile;
+  pFile = ORIGFILE(pFile);
+  if( iOfst+iAmt>=APND_MAX_SIZE ) return SQLITE_FULL;
+  rc = pFile->pMethods->xWrite(pFile, zBuf, iAmt, iOfst+p->iPgOne);
+  if( rc==SQLITE_OK &&  iOfst + iAmt + p->iPgOne > p->iMark ){
+    sqlite3_int64 sz = 0;
+    rc = pFile->pMethods->xFileSize(pFile, &sz);
+    if( rc==SQLITE_OK ){
+      p->iMark = sz - APND_MARK_SIZE;
+      if( iOfst + iAmt + p->iPgOne > p->iMark ){
+        p->iMark = p->iPgOne + iOfst + iAmt;
+        rc = apndWriteMark(p, pFile);
+      }
+    }
+  }
+  return rc;
 }
 
 /*
 ** Truncate an apnd-file.
 */
 static int apndTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  return SQLITE_READONLY;
+  int rc;
+  ApndFile *p = (ApndFile *)pFile;
+  pFile = ORIGFILE(pFile);
+  rc = pFile->pMethods->xTruncate(pFile, size+p->iPgOne+APND_MARK_SIZE);
+  if( rc==SQLITE_OK ){
+    p->iMark = p->iPgOne+size;
+    rc = apndWriteMark(p, pFile);
+  }
+  return rc;
 }
 
 /*
 ** Sync an apnd-file.
 */
 static int apndSync(sqlite3_file *pFile, int flags){
-  return SQLITE_READONLY;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xSync(pFile, flags);
 }
 
 /*
 ** Return the current file-size of an apnd-file.
 */
 static int apndFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
-  ApndFile *p = (ApndFile*)pFile;
+  ApndFile *p = (ApndFile *)pFile;
   int rc;
   pFile = ORIGFILE(p);
   rc = pFile->pMethods->xFileSize(pFile, pSize);
@@ -216,22 +284,24 @@ static int apndFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 ** Lock an apnd-file.
 */
 static int apndLock(sqlite3_file *pFile, int eLock){
-  return SQLITE_READONLY;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xLock(pFile, eLock);
 }
 
 /*
 ** Unlock an apnd-file.
 */
 static int apndUnlock(sqlite3_file *pFile, int eLock){
-  return SQLITE_OK;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xUnlock(pFile, eLock);
 }
 
 /*
 ** Check if another file-handle holds a RESERVED lock on an apnd-file.
 */
 static int apndCheckReservedLock(sqlite3_file *pFile, int *pResOut){
-  *pResOut = 0;
-  return SQLITE_OK;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xCheckReservedLock(pFile, pResOut);
 }
 
 /*
@@ -273,22 +343,26 @@ static int apndShmMap(
   int bExtend,
   void volatile **pp
 ){
-  return SQLITE_READONLY;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xShmMap(pFile,iPg,pgsz,bExtend,pp);
 }
 
 /* Perform locking on a shared-memory segment */
 static int apndShmLock(sqlite3_file *pFile, int offset, int n, int flags){
-  return SQLITE_READONLY;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xShmLock(pFile,offset,n,flags);
 }
 
 /* Memory barrier operation on shared memory */
 static void apndShmBarrier(sqlite3_file *pFile){
-  return;
+  pFile = ORIGFILE(pFile);
+  pFile->pMethods->xShmBarrier(pFile);
 }
 
 /* Unmap a shared memory segment */
 static int apndShmUnmap(sqlite3_file *pFile, int deleteFlag){
-  return SQLITE_OK;
+  pFile = ORIGFILE(pFile);
+  return pFile->pMethods->xShmUnmap(pFile,deleteFlag);
 }
 
 /* Fetch a page of a memory-mapped file */
@@ -311,6 +385,40 @@ static int apndUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *pPage){
 }
 
 /*
+** Check to see if the file is an ordinary SQLite database file.
+*/
+static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
+  int rc;
+  char zHdr[16];
+  static const char aSqliteHdr[] = "SQLite format 3";
+  if( sz<512 ) return 0;
+  rc = pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), 0);
+  if( rc ) return 0;
+  return memcmp(zHdr, aSqliteHdr, sizeof(zHdr))==0;
+}
+
+/*
+** Try to read the append-mark off the end of a file.  Return the
+** start of the appended database if the append-mark is present.  If
+** there is no append-mark, return -1;
+*/
+static sqlite3_int64 apndReadMark(sqlite3_int64 sz, sqlite3_file *pFile){
+  int rc, i;
+  sqlite3_int64 iMark;
+  unsigned char a[APND_MARK_SIZE];
+
+  if( sz<=APND_MARK_SIZE ) return -1;
+  rc = pFile->pMethods->xRead(pFile, a, APND_MARK_SIZE, sz-APND_MARK_SIZE);
+  if( rc ) return -1;
+  if( memcmp(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ)!=0 ) return -1;
+  iMark = ((sqlite3_int64)(a[APND_MARK_PREFIX_SZ]&0x7f))<<56;
+  for(i=1; i<8; i++){    
+    iMark += (sqlite3_int64)a[APND_MARK_PREFIX_SZ+i]<<(56-8*i);
+  }
+  return iMark;
+}
+
+/*
 ** Open an apnd file handle.
 */
 static int apndOpen(
@@ -321,38 +429,39 @@ static int apndOpen(
   int *pOutFlags
 ){
   ApndFile *p;
+  sqlite3_file *pSubFile;
+  sqlite3_vfs *pSubVfs;
   int rc;
   sqlite3_int64 sz;
-  pVfs = ORIGVFS(pVfs);
+  pSubVfs = ORIGVFS(pVfs);
   if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
-    return pVfs->xOpen(pVfs, zName, pFile, flags, pOutFlags);
+    return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
   }
   p = (ApndFile*)pFile;
   memset(p, 0, sizeof(*p));
   p->base.pMethods = &apnd_io_methods;
-  pFile = ORIGFILE(pFile);
-  flags &= ~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE);
-  flags |= SQLITE_OPEN_READONLY;
-  rc = pVfs->xOpen(pVfs, zName, pFile, flags, pOutFlags);
+  pSubFile = ORIGFILE(pFile);
+  rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
   if( rc ) return rc;
-  rc = pFile->pMethods->xFileSize(pFile, &sz);
-  if( rc==SQLITE_OK && sz>512 ){
-    unsigned char a[APND_MARK_SIZE];
-    rc = pFile->pMethods->xRead(pFile, a, APND_MARK_SIZE, sz-APND_MARK_SIZE);
-    if( rc==SQLITE_OK
-     && memcmp(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ)==0
-    ){
-      p->iPgOne =
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ]<<56) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+1]<<48) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+2]<<40) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+3]<<32) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+4]<<24) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+5]<<16) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+6]<<8) +
-         ((sqlite3_uint64)a[APND_MARK_PREFIX_SZ+7]);
-    }
+  rc = pSubFile->pMethods->xFileSize(pSubFile, &sz);
+  if( rc ){
+    pSubFile->pMethods->xClose(pSubFile);
+    return rc;
   }
+  if( apndIsOrdinaryDatabaseFile(sz, pSubFile) ){
+    memmove(pFile, pSubFile, pSubVfs->szOsFile);
+    return SQLITE_OK;
+  }
+  p->iMark = 0;
+  p->iPgOne = apndReadMark(sz, pFile);
+  if( p->iPgOne>0 ){
+    return SQLITE_OK;
+  }
+  if( (flags & SQLITE_OPEN_CREATE)==0 ){
+    pSubFile->pMethods->xClose(pSubFile);
+    return SQLITE_CANTOPEN;
+  }
+  p->iPgOne = (sz+0xfff) & ~(sqlite3_int64)0xfff;
   return SQLITE_OK;
 }
 
@@ -442,7 +551,7 @@ int sqlite3_appendvfs_init(
   apnd_vfs.iVersion = pOrig->iVersion;
   apnd_vfs.pAppData = pOrig;
   apnd_vfs.szOsFile = sizeof(ApndFile);
-  rc = sqlite3_vfs_register(&apnd_vfs, 1);
+  rc = sqlite3_vfs_register(&apnd_vfs, 0);
 #ifdef APPENDVFS_TEST
   if( rc==SQLITE_OK ){
     rc = sqlite3_auto_extension((void(*)(void))apndvfsRegister);
