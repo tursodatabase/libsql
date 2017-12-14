@@ -4364,6 +4364,18 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       pKey->aSortOrder[i] = pIdx->aSortOrder[i];
     }
     if( pParse->nErr ){
+      assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );
+      if( pIdx->bNoQuery==0 ){
+        /* Deactivate the index because it contains an unknown collating
+        ** sequence.  The only way to reactive the index is to reload the
+        ** schema.  Adding the missing collating sequence later does not
+        ** reactive the index.  The application had the chance to register
+        ** the missing index using the collation-needed callback.  For
+        ** simplicity, SQLite will not give the application a second chance.
+        */
+        pIdx->bNoQuery = 1;
+        pParse->rc = SQLITE_ERROR_RETRY;
+      }
       sqlite3KeyInfoUnref(pKey);
       pKey = 0;
     }

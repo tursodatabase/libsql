@@ -105,6 +105,7 @@ CollSeq *sqlite3GetCollSeq(
   assert( !p || p->xCmp );
   if( p==0 ){
     sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
+    pParse->rc = SQLITE_ERROR_MISSING_COLLSEQ;
   }
   return p;
 }

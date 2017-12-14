@@ -583,14 +583,14 @@ int lsm_info(lsm_db *pDb, int eParam, ...){
     }
 
     case LSM_INFO_ARRAY_STRUCTURE: {
-      Pgno pgno = va_arg(ap, Pgno);
+      LsmPgno pgno = va_arg(ap, LsmPgno);
       char **pzVal = va_arg(ap, char **);
       rc = lsmInfoArrayStructure(pDb, 0, pgno, pzVal);
       break;
     }
 
     case LSM_INFO_ARRAY_PAGES: {
-      Pgno pgno = va_arg(ap, Pgno);
+      LsmPgno pgno = va_arg(ap, LsmPgno);
       char **pzVal = va_arg(ap, char **);
       rc = lsmInfoArrayPages(pDb, pgno, pzVal);
       break;
@@ -598,7 +598,7 @@ int lsm_info(lsm_db *pDb, int eParam, ...){
 
     case LSM_INFO_PAGE_HEX_DUMP:
     case LSM_INFO_PAGE_ASCII_DUMP: {
-      Pgno pgno = va_arg(ap, Pgno);
+      LsmPgno pgno = va_arg(ap, LsmPgno);
       char **pzVal = va_arg(ap, char **);
       int bUnlock = 0;
       rc = infoGetWorker(pDb, 0, &bUnlock);

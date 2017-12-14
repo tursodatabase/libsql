@@ -655,8 +655,6 @@ static int sqlite3Prepare(
 end_prepare:
 
   sqlite3ParserReset(&sParse);
-  rc = sqlite3ApiExit(db, rc);
-  assert( (rc&db->errMask)==rc );
   return rc;
 }
 static int sqlite3LockAndPrepare(
@@ -669,6 +667,7 @@ static int sqlite3LockAndPrepare(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
+  int cnt = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
@@ -679,15 +678,18 @@ static int sqlite3LockAndPrepare(
   }
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
-  rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
-  if( rc==SQLITE_SCHEMA ){
-    sqlite3ResetOneSchema(db, -1);
-    sqlite3_finalize(*ppStmt);
+  do{
+    /* Make multiple attempts to compile the SQL, until it either succeeds
+    ** or encounters a permanent error.  A schema problem after one schema
+    ** reset is considered a permanent error. */
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
-  }
+    assert( rc==SQLITE_OK || *ppStmt==0 );
+  }while( rc==SQLITE_ERROR_RETRY
+       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
   sqlite3BtreeLeaveAll(db);
+  rc = sqlite3ApiExit(db, rc);
+  assert( (rc&db->errMask)==rc );
   sqlite3_mutex_leave(db->mutex);
-  assert( rc==SQLITE_OK || *ppStmt==0 );
   return rc;
 }
 
