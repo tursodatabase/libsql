@@ -875,7 +875,7 @@ static TriggerPrg *codeRowTrigger(
     VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
 
     transferParseError(pParse, pSubParse);
-    if( db->mallocFailed==0 ){
+    if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
     pProgram->nMem = pSubParse->nMem;

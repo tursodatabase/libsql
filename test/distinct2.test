@@ -179,5 +179,55 @@ do_execsql_test 920 {
   wxYZ wxYz wxYz wxyZ wxyZ wxyz wxyz
 }
 
+# Ticket https://sqlite.org/src/info/ef9318757b152e3a on 2017-11-21
+# Incorrect result due to a skip-ahead-distinct optimization on a
+# join where no rows of the inner loop appear in the result set.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 1000 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INTEGER);
+  CREATE INDEX t1b ON t1(b);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y INTEGER);
+  CREATE INDEX t2y ON t2(y);
+  WITH RECURSIVE c(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM c WHERE x<49)
+    INSERT INTO t1(b) SELECT x/10 - 1 FROM c;
+  WITH RECURSIVE c(x) AS (VALUES(-1) UNION ALL SELECT x+1 FROM c WHERE x<19)
+    INSERT INTO t2(x,y) SELECT x, 1 FROM c;
+  SELECT DISTINCT y FROM t1, t2 WHERE b=x AND b<>-1;
+  ANALYZE;
+  SELECT DISTINCT y FROM t1, t2 WHERE b=x AND b<>-1;
+} {1 1}
+db close
+sqlite3 db :memory:
+do_execsql_test 1010 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INTEGER);
+  CREATE INDEX t1b ON t1(b);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y INTEGER);
+  CREATE INDEX t2y ON t2(y);
+  WITH RECURSIVE c(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM c WHERE x<49)
+    INSERT INTO t1(b) SELECT -(x/10 - 1) FROM c;
+  WITH RECURSIVE c(x) AS (VALUES(-1) UNION ALL SELECT x+1 FROM c WHERE x<19)
+    INSERT INTO t2(x,y) SELECT -x, 1 FROM c;
+  SELECT DISTINCT y FROM t1, t2 WHERE b=x AND b<>1 ORDER BY y DESC;
+  ANALYZE;
+  SELECT DISTINCT y FROM t1, t2 WHERE b=x AND b<>1 ORDER BY y DESC;
+} {1 1}
+db close
+sqlite3 db :memory:
+do_execsql_test 1020 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX t1a ON t1(a, b);
+  -- Lots of rows of (1, 'no'), followed by a single (1, 'yes').
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+    INSERT INTO t1(a, b) SELECT 1, 'no' FROM c;
+  INSERT INTO t1(a, b) VALUES(1, 'yes');
+  CREATE TABLE t2(x PRIMARY KEY);
+  INSERT INTO t2 VALUES('yes');
+  SELECT DISTINCT a FROM t1, t2 WHERE x=b;
+  ANALYZE;
+  SELECT DISTINCT a FROM t1, t2 WHERE x=b;
+} {1 1}
+
 
 finish_test

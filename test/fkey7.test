@@ -68,4 +68,18 @@ ifcapable incrblob {
   } {SQLITE_CONSTRAINT}
 }
 
+ifcapable stat4 {
+  do_execsql_test 3.0 {
+    CREATE TABLE p4 (id INTEGER NOT NULL PRIMARY KEY);
+    INSERT INTO p4 VALUES(1), (2), (3);
+
+    CREATE TABLE c4(x INTEGER REFERENCES p4(id) DEFERRABLE INITIALLY DEFERRED);
+    CREATE INDEX c4_x ON c4(x);
+    INSERT INTO c4 VALUES(1), (2), (3);
+
+    ANALYZE;
+    INSERT INTO p4(id) VALUES(4);
+  }
+}
+
 finish_test

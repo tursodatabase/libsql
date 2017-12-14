@@ -577,6 +577,12 @@ fi
 AC_SUBST(USE_AMALGAMATION)
 
 #########
+# Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+AC_CHECK_HEADERS(zlib.h)
+AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
+AC_SUBST(HAVE_ZLIB)
+
+#########
 # See whether we should allow loadable extensions
 AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--disable-load-extension],
       [Disable loading of external extensions]),

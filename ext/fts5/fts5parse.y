@@ -148,7 +148,11 @@ cnearset(A) ::= colset(X) COLON nearset(Y). {
 %destructor nearset { sqlite3Fts5ParseNearsetFree($$); }
 %destructor nearphrases { sqlite3Fts5ParseNearsetFree($$); }
 
-nearset(A) ::= phrase(X). { A = sqlite3Fts5ParseNearset(pParse, 0, X); }
+nearset(A) ::= phrase(Y). { A = sqlite3Fts5ParseNearset(pParse, 0, Y); }
+nearset(A) ::= CARET phrase(Y). { 
+  sqlite3Fts5ParseSetCaret(Y);
+  A = sqlite3Fts5ParseNearset(pParse, 0, Y); 
+}
 nearset(A) ::= STRING(X) LP nearphrases(Y) neardist_opt(Z) RP. {
   sqlite3Fts5ParseNear(pParse, &X);
   sqlite3Fts5ParseSetDistance(pParse, Y, &Z);
@@ -189,6 +193,5 @@ phrase(A) ::= STRING(Y) star_opt(Z). {
 ** Optional "*" character.
 */
 %type star_opt {int}
-
 star_opt(A) ::= STAR. { A = 1; }
 star_opt(A) ::= . { A = 0; }

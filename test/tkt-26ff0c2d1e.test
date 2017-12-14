@@ -31,3 +31,5 @@ do_test bug-20100512-3 {
   sqlite3_column_int $STMT 0
 } {555}
 sqlite3_finalize $STMT
+
+finish_test

@@ -93,6 +93,14 @@ foreach {tn schema output} {
   } {
   }
 
+  10 {
+    CREATE TABLE parent (id INTEGER PRIMARY KEY); 
+    CREATE TABLE child2 (id INT PRIMARY KEY, parentID INT REFERENCES parent) 
+      WITHOUT ROWID;
+  } {
+    CREATE INDEX 'child2_parentID' ON 'child2'('parentID'); --> parent(id)
+  }
+
 } {
   forcedelete test.db
   sqlite3 db test.db

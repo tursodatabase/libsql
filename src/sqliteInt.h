@@ -2172,6 +2172,7 @@ struct Index {
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
+  unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
@@ -2984,7 +2985,7 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
   int szOpAlloc;       /* Bytes of memory space allocated for Vdbe.aOp[] */
-  int iSelfTab;        /* Table for associated with an index on expr, or negative
+  int iSelfTab;        /* Table associated with an index on expr, or negative
                        ** of the base register during check-constraint eval */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
   int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
@@ -3431,6 +3432,7 @@ struct TreeView {
 ** using sqlite3_log().  The routines also provide a convenient place
 ** to set a debugger breakpoint.
 */
+int sqlite3ReportError(int iErr, int lineno, const char *zType);
 int sqlite3CorruptError(int);
 int sqlite3MisuseError(int);
 int sqlite3CantopenError(int);
@@ -3588,6 +3590,12 @@ int sqlite3LookasideUsed(sqlite3*,int*);
 /* Access to mutexes used by sqlite3_status() */
 sqlite3_mutex *sqlite3Pcache1Mutex(void);
 sqlite3_mutex *sqlite3MallocMutex(void);
+
+#if defined(SQLITE_ENABLE_MULTITHREADED_CHECKS) && !defined(SQLITE_MUTEX_OMIT)
+void sqlite3MutexWarnOnContention(sqlite3_mutex*);
+#else
+# define sqlite3MutexWarnOnContention(x)
+#endif
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int sqlite3IsNaN(double);

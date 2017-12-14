@@ -22,7 +22,7 @@
 #ifdef SQLITE_ENABLE_RTREE
 # include "rtree.h"
 #endif
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
 # include "sqliteicu.h"
 #endif
 #ifdef SQLITE_ENABLE_JSON1
@@ -2822,6 +2822,7 @@ static int openDatabase(
   }else{
     isThreadsafe = sqlite3GlobalConfig.bFullMutex;
   }
+
   if( flags & SQLITE_OPEN_PRIVATECACHE ){
     flags &= ~SQLITE_OPEN_SHAREDCACHE;
   }else if( sqlite3GlobalConfig.sharedCacheEnabled ){
@@ -2854,12 +2855,19 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  if( isThreadsafe ){
+  if( isThreadsafe 
+#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+   || sqlite3GlobalConfig.bCoreMutex
+#endif
+  ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
       sqlite3_free(db);
       db = 0;
       goto opendb_out;
+    }
+    if( isThreadsafe==0 ){
+      sqlite3MutexWarnOnContention(db->mutex);
     }
   }
   sqlite3_mutex_enter(db->mutex);
@@ -3042,7 +3050,7 @@ static int openDatabase(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3IcuInit(db);
   }
@@ -3344,37 +3352,37 @@ int sqlite3_get_autocommit(sqlite3 *db){
 **   2.  Invoke sqlite3_log() to provide the source code location where
 **       a low-level error is first detected.
 */
-static int reportError(int iErr, int lineno, const char *zType){
+int sqlite3ReportError(int iErr, int lineno, const char *zType){
   sqlite3_log(iErr, "%s at line %d of [%.10s]",
               zType, lineno, 20+sqlite3_sourceid());
   return iErr;
 }
 int sqlite3CorruptError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_CORRUPT, lineno, "database corruption");
+  return sqlite3ReportError(SQLITE_CORRUPT, lineno, "database corruption");
 }
 int sqlite3MisuseError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_MISUSE, lineno, "misuse");
+  return sqlite3ReportError(SQLITE_MISUSE, lineno, "misuse");
 }
 int sqlite3CantopenError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_CANTOPEN, lineno, "cannot open file");
+  return sqlite3ReportError(SQLITE_CANTOPEN, lineno, "cannot open file");
 }
 #ifdef SQLITE_DEBUG
 int sqlite3CorruptPgnoError(int lineno, Pgno pgno){
   char zMsg[100];
   sqlite3_snprintf(sizeof(zMsg), zMsg, "database corruption page %d", pgno);
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_CORRUPT, lineno, zMsg);
+  return sqlite3ReportError(SQLITE_CORRUPT, lineno, zMsg);
 }
 int sqlite3NomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_NOMEM, lineno, "OOM");
+  return sqlite3ReportError(SQLITE_NOMEM, lineno, "OOM");
 }
 int sqlite3IoerrnomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_IOERR_NOMEM, lineno, "I/O OOM error");
+  return sqlite3ReportError(SQLITE_IOERR_NOMEM, lineno, "I/O OOM error");
 }
 #endif
 

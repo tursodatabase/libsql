@@ -2186,16 +2186,15 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 ** pX->iTable made to point to the ephemeral table instead of an
 ** existing table.
 **
-** The inFlags parameter must contain exactly one of the bits
-** IN_INDEX_MEMBERSHIP or IN_INDEX_LOOP.  If inFlags contains
-** IN_INDEX_MEMBERSHIP, then the generated table will be used for a
-** fast membership test.  When the IN_INDEX_LOOP bit is set, the
-** IN index will be used to loop over all values of the RHS of the
-** IN operator.
+** The inFlags parameter must contain, at a minimum, one of the bits
+** IN_INDEX_MEMBERSHIP or IN_INDEX_LOOP but not both.  If inFlags contains
+** IN_INDEX_MEMBERSHIP, then the generated table will be used for a fast
+** membership test.  When the IN_INDEX_LOOP bit is set, the IN index will
+** be used to loop over all values of the RHS of the IN operator.
 **
 ** When IN_INDEX_LOOP is used (and the b-tree will be used to iterate
 ** through the set members) then the b-tree must not contain duplicates.
-** An epheremal table must be used unless the selected columns are guaranteed
+** An epheremal table will be created unless the selected columns are guaranteed
 ** to be unique - either because it is an INTEGER PRIMARY KEY or due to
 ** a UNIQUE constraint or index.
 **

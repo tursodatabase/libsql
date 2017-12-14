@@ -377,6 +377,102 @@ static void updateRangeAffinityStr(
   }
 }
 
+
+/*
+** pX is an expression of the form:  (vector) IN (SELECT ...)
+** In other words, it is a vector IN operator with a SELECT clause on the
+** LHS.  But not all terms in the vector are indexable and the terms might
+** not be in the correct order for indexing.
+**
+** This routine makes a copy of the input pX expression and then adjusts
+** the vector on the LHS with corresponding changes to the SELECT so that
+** the vector contains only index terms and those terms are in the correct
+** order.  The modified IN expression is returned.  The caller is responsible
+** for deleting the returned expression.
+**
+** Example:
+**
+**    CREATE TABLE t1(a,b,c,d,e,f);
+**    CREATE INDEX t1x1 ON t1(e,c);
+**    SELECT * FROM t1 WHERE (a,b,c,d,e) IN (SELECT v,w,x,y,z FROM t2)
+**                           \_______________________________________/
+**                                     The pX expression
+**
+** Since only columns e and c can be used with the index, in that order,
+** the modified IN expression that is returned will be:
+**
+**        (e,c) IN (SELECT z,x FROM t2)
+**
+** The reduced pX is different from the original (obviously) and thus is
+** only used for indexing, to improve performance.  The original unaltered
+** IN expression must also be run on each output row for correctness.
+*/
+static Expr *removeUnindexableInClauseTerms(
+  Parse *pParse,        /* The parsing context */
+  int iEq,              /* Look at loop terms starting here */
+  WhereLoop *pLoop,     /* The current loop */
+  Expr *pX              /* The IN expression to be reduced */
+){
+  sqlite3 *db = pParse->db;
+  Expr *pNew = sqlite3ExprDup(db, pX, 0);
+  if( db->mallocFailed==0 ){
+    ExprList *pOrigRhs = pNew->x.pSelect->pEList;  /* Original unmodified RHS */
+    ExprList *pOrigLhs = pNew->pLeft->x.pList;     /* Original unmodified LHS */
+    ExprList *pRhs = 0;         /* New RHS after modifications */
+    ExprList *pLhs = 0;         /* New LHS after mods */
+    int i;                      /* Loop counter */
+    Select *pSelect;            /* Pointer to the SELECT on the RHS */
+
+    for(i=iEq; i<pLoop->nLTerm; i++){
+      if( pLoop->aLTerm[i]->pExpr==pX ){
+        int iField = pLoop->aLTerm[i]->iField - 1;
+        assert( pOrigRhs->a[iField].pExpr!=0 );
+        pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
+        pOrigRhs->a[iField].pExpr = 0;
+        assert( pOrigLhs->a[iField].pExpr!=0 );
+        pLhs = sqlite3ExprListAppend(pParse, pLhs, pOrigLhs->a[iField].pExpr);
+        pOrigLhs->a[iField].pExpr = 0;
+      }
+    }
+    sqlite3ExprListDelete(db, pOrigRhs);
+    sqlite3ExprListDelete(db, pOrigLhs);
+    pNew->pLeft->x.pList = pLhs;
+    pNew->x.pSelect->pEList = pRhs;
+    if( pLhs && pLhs->nExpr==1 ){
+      /* Take care here not to generate a TK_VECTOR containing only a
+      ** single value. Since the parser never creates such a vector, some
+      ** of the subroutines do not handle this case.  */
+      Expr *p = pLhs->a[0].pExpr;
+      pLhs->a[0].pExpr = 0;
+      sqlite3ExprDelete(db, pNew->pLeft);
+      pNew->pLeft = p;
+    }
+    pSelect = pNew->x.pSelect;
+    if( pSelect->pOrderBy ){
+      /* If the SELECT statement has an ORDER BY clause, zero the 
+      ** iOrderByCol variables. These are set to non-zero when an 
+      ** ORDER BY term exactly matches one of the terms of the 
+      ** result-set. Since the result-set of the SELECT statement may
+      ** have been modified or reordered, these variables are no longer 
+      ** set correctly.  Since setting them is just an optimization, 
+      ** it's easiest just to zero them here.  */
+      ExprList *pOrderBy = pSelect->pOrderBy;
+      for(i=0; i<pOrderBy->nExpr; i++){
+        pOrderBy->a[i].u.x.iOrderByCol = 0;
+      }
+    }
+
+#if 0
+    printf("For indexing, change the IN expr:\n");
+    sqlite3TreeViewExpr(0, pX, 0);
+    printf("Into:\n");
+    sqlite3TreeViewExpr(0, pNew, 0);
+#endif
+  }
+  return pNew;
+}
+
+
 /*
 ** Generate code for a single equality term of the WHERE clause.  An equality
 ** term can be either X=expr or X IN (...).   pTerm is the term to be 
@@ -439,68 +535,23 @@ static int codeEqualityTerm(
       }
     }
     for(i=iEq;i<pLoop->nLTerm; i++){
-      if( ALWAYS(pLoop->aLTerm[i]) && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
+      assert( pLoop->aLTerm[i]!=0 );
+      if( pLoop->aLTerm[i]->pExpr==pX ) nEq++;
     }
 
     if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
     }else{
-      Select *pSelect = pX->x.pSelect;
       sqlite3 *db = pParse->db;
-      u16 savedDbOptFlags = db->dbOptFlags;
-      ExprList *pOrigRhs = pSelect->pEList;
-      ExprList *pOrigLhs = pX->pLeft->x.pList;
-      ExprList *pRhs = 0;         /* New Select.pEList for RHS */
-      ExprList *pLhs = 0;         /* New pX->pLeft vector */
+      pX = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
 
-      for(i=iEq;i<pLoop->nLTerm; i++){
-        if( pLoop->aLTerm[i]->pExpr==pX ){
-          int iField = pLoop->aLTerm[i]->iField - 1;
-          Expr *pNewRhs = sqlite3ExprDup(db, pOrigRhs->a[iField].pExpr, 0);
-          Expr *pNewLhs = sqlite3ExprDup(db, pOrigLhs->a[iField].pExpr, 0);
-
-          pRhs = sqlite3ExprListAppend(pParse, pRhs, pNewRhs);
-          pLhs = sqlite3ExprListAppend(pParse, pLhs, pNewLhs);
-        }
-      }
       if( !db->mallocFailed ){
-        Expr *pLeft = pX->pLeft;
-
-        if( pSelect->pOrderBy ){
-          /* If the SELECT statement has an ORDER BY clause, zero the 
-          ** iOrderByCol variables. These are set to non-zero when an 
-          ** ORDER BY term exactly matches one of the terms of the 
-          ** result-set. Since the result-set of the SELECT statement may
-          ** have been modified or reordered, these variables are no longer 
-          ** set correctly.  Since setting them is just an optimization, 
-          ** it's easiest just to zero them here.  */
-          ExprList *pOrderBy = pSelect->pOrderBy;
-          for(i=0; i<pOrderBy->nExpr; i++){
-            pOrderBy->a[i].u.x.iOrderByCol = 0;
-          }
-        }
-
-        /* Take care here not to generate a TK_VECTOR containing only a
-        ** single value. Since the parser never creates such a vector, some
-        ** of the subroutines do not handle this case.  */
-        if( pLhs->nExpr==1 ){
-          pX->pLeft = pLhs->a[0].pExpr;
-        }else{
-          pLeft->x.pList = pLhs;
-          aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
-          testcase( aiMap==0 );
-        }
-        pSelect->pEList = pRhs;
-        db->dbOptFlags |= SQLITE_QueryFlattener;
+        aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
-        db->dbOptFlags = savedDbOptFlags;
-        testcase( aiMap!=0 && aiMap[0]!=0 );
-        pSelect->pEList = pOrigRhs;
-        pLeft->x.pList = pOrigLhs;
-        pX->pLeft = pLeft;
+        pTerm->pExpr->iTable = pX->iTable;
       }
-      sqlite3ExprListDelete(pParse->db, pLhs);
-      sqlite3ExprListDelete(pParse->db, pRhs);
+      sqlite3ExprDelete(db, pX);
+      pX = pTerm->pExpr;
     }
 
     if( eType==IN_INDEX_INDEX_DESC ){
@@ -1639,6 +1690,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
     }else if( bStopAtNull ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+      sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       endEq = 0;
       nConstraint++;
     }

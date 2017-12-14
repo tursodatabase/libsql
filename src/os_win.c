@@ -3742,7 +3742,7 @@ static int winShmSystemLock(
   int rc = 0;           /* Result code form Lock/UnlockFileEx() */
 
   /* Access to the winShmNode object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) || pFile->nRef==0 );
+  assert( pFile->nRef==0 || sqlite3_mutex_held(pFile->mutex) );
 
   OSTRACE(("SHM-LOCK file=%p, lock=%d, offset=%d, size=%d\n",
            pFile->hFile.h, lockType, ofst, nByte));

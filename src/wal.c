@@ -2494,8 +2494,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   pInfo = walCkptInfo(pWal);
   if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame
 #ifdef SQLITE_ENABLE_SNAPSHOT
-   && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0
-     || 0==memcmp(&pWal->hdr, pWal->pSnapshot, sizeof(WalIndexHdr)))
+   && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0)
 #endif
   ){
     /* The WAL has been completely backfilled (or it is empty).
