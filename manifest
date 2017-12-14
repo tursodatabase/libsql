@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2017-12-14T13:55:01.572
+C Improve\serror\sand\susage\smessages\soutput\sby\sthe\sshell\s".ar"\scommand.
+D 2017-12-14T15:40:42.931
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
@@ -475,7 +475,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
-F src/shell.c.in 12313c0500b9b1958507d3a432c192f73f86da112f0f37467636530696d13152
+F src/shell.c.in 4bdd2efe722005180365698f2a3de51e22ae1e9bb61c868006bc8f2c5e02eb98
 F src/sqlite.h.in 364515dd186285f3c01f5cab42e7db7edc47c70e87b6a25de389a2e6b8c413fd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1683,7 +1683,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 825e3c037b03fc09d581aeda0193ff1d4062404414c7354cb649f99aa9022d25 3765aaf712998af5ffb6bc680a0c1419f2b5deb47ecbc1835ba5879127c4dbe3
-R bf083f80c8163c105f680457377723eb
+P 803156cba8b056a1cb8d1bb186a57454afe72341abe7de1dfe529234c3415cd2
+R 69895ee1194373ab4ba11578d798fe26
 U dan
-Z 36133c008e2dcaa09c3c6c120c31dee9
+Z 5ea750b0cf239f9442948a3eda934166

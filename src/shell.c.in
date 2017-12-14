@@ -4152,9 +4152,46 @@ struct ArCommand {
 /*
 ** Print a usage message for the .ar command to stderr and return SQLITE_ERROR.
 */
-static int arUsage(void){
-  /* todo */
-  raw_printf(stderr, "error in .ar command line\n");
+static int arUsage(FILE *f){
+  raw_printf(f,
+"\n"
+"Usage: .ar [OPTION...] [FILE...]\n"
+"The .ar command manages sqlar archives.\n"
+"\n"
+"Examples:\n"
+"  .ar -cf archive.sar foo bar    # Create archive.sar from files foo and bar\n"
+"  .ar -tf archive.sar            # List members of archive.sar\n"
+"  .ar -xvf archive.sar           # Verbosely extract files from archive.sar\n"
+"\n"
+"Each command line must feature exactly one command option:\n"
+"  -c, --create               Create a new archive\n"
+"  -u, --update               Update or add files to an existing archive\n"
+"  -t, --list                 List contents of archive\n"
+"  -x, --extract              Extract files from archive\n"
+"\n"
+"And zero or more optional options:\n"
+"  -v, --verbose              Print each filename as it is processed\n"
+"  -f FILE, --file FILE       Operate on archive FILE (default is current db)\n"
+"  -C DIR, --directory DIR    Change to directory DIR to read/extract files\n"
+"\n"
+"See also: http://sqlite.org/cli.html#sqlar_archive_support\n"
+"\n"
+);
+  return SQLITE_ERROR;
+}
+
+/*
+** Print an error message for the .ar command to stderr and return 
+** SQLITE_ERROR.
+*/
+static int arErrorMsg(const char *zFmt, ...){
+  va_list ap;
+  char *z;
+  va_start(ap, zFmt);
+  z = sqlite3_vmprintf(zFmt, ap);
+  va_end(ap);
+  raw_printf(stderr, "Error: %s (try \".ar --help\")\n", z);
+  sqlite3_free(z);
   return SQLITE_ERROR;
 }
 
@@ -4165,13 +4202,14 @@ static int arUsage(void){
 #define AR_CMD_EXTRACT      2
 #define AR_CMD_LIST         3
 #define AR_CMD_UPDATE       4
+#define AR_CMD_HELP         5
 
 /*
 ** Other (non-command) switches.
 */
-#define AR_SWITCH_VERBOSE   5
-#define AR_SWITCH_FILE      6
-#define AR_SWITCH_DIRECTORY 7
+#define AR_SWITCH_VERBOSE   6
+#define AR_SWITCH_FILE      7
+#define AR_SWITCH_DIRECTORY 8
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){
@@ -4179,7 +4217,10 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
     case AR_CMD_EXTRACT:
     case AR_CMD_LIST:
     case AR_CMD_UPDATE:
-      if( pAr->eCmd ) return arUsage();
+    case AR_CMD_HELP:
+      if( pAr->eCmd ){
+        return arErrorMsg("multiple command options");
+      }
       pAr->eCmd = eSwitch;
       break;
 
@@ -4219,6 +4260,7 @@ static int arParseCommand(
     { 'x', "extract",   AR_CMD_EXTRACT, 0 },
     { 't', "list",      AR_CMD_LIST, 0 },
     { 'u', "update",    AR_CMD_UPDATE, 0 },
+    { 'h', "help",      AR_CMD_HELP, 0 },
     { 'v', "verbose",   AR_SWITCH_VERBOSE, 0 },
     { 'f', "file",      AR_SWITCH_FILE, 1 },
     { 'C', "directory", AR_SWITCH_DIRECTORY, 1 }
@@ -4227,7 +4269,7 @@ static int arParseCommand(
   struct ArSwitch *pEnd = &aSwitch[nSwitch];
 
   if( nArg<=1 ){
-    return arUsage();
+    return arUsage(stderr);
   }else{
     char *z = azArg[1];
     memset(pAr, 0, sizeof(ArCommand));
@@ -4242,9 +4284,13 @@ static int arParseCommand(
         for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
           if( z[i]==pOpt->cShort ) break;
         }
-        if( pOpt==pEnd ) return arUsage();
+        if( pOpt==pEnd ){
+          return arErrorMsg("unrecognized option: %c", z[i]);
+        }
         if( pOpt->bArg ){
-          if( iArg>=nArg ) return arUsage();
+          if( iArg>=nArg ){
+            return arErrorMsg("option requires an argument: %c",z[i]);
+          }
           zArg = azArg[iArg++];
         }
         if( arProcessSwitch(pAr, pOpt->eSwitch, zArg) ) return SQLITE_ERROR;
@@ -4276,13 +4322,17 @@ static int arParseCommand(
             for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
               if( z[i]==pOpt->cShort ) break;
             }
-            if( pOpt==pEnd ) return arUsage();
+            if( pOpt==pEnd ){
+              return arErrorMsg("unrecognized option: %c\n", z[i]);
+            }
             if( pOpt->bArg ){
               if( i<(n-1) ){
                 zArg = &z[i+1];
                 i = n;
               }else{
-                if( iArg>=(nArg-1) ) return arUsage();
+                if( iArg>=(nArg-1) ){
+                  return arErrorMsg("option requires an argument: %c\n",z[i]);
+                }
                 zArg = azArg[++iArg];
               }
             }
@@ -4303,8 +4353,7 @@ static int arParseCommand(
             const char *zLong = pOpt->zLong;
             if( (n-2)<=strlen(zLong) && 0==memcmp(&z[2], zLong, n-2) ){
               if( pMatch ){
-                /* ambiguous option */
-                return arUsage();
+                return arErrorMsg("ambiguous option: %s",z);
               }else{
                 pMatch = pOpt;
               }
@@ -4312,11 +4361,12 @@ static int arParseCommand(
           }
 
           if( pMatch==0 ){
-            /* no such option. */
-            return arUsage();
+            return arErrorMsg("unrecognized option: %s", z);
           }
           if( pMatch->bArg ){
-            if( iArg>=(nArg-1) ) return arUsage();
+            if( iArg>=(nArg-1) ){
+              return arErrorMsg("option requires an argument: %s", z);
+            }
             zArg = azArg[++iArg];
           }
           if( arProcessSwitch(pAr, pMatch->eSwitch, zArg) ) return SQLITE_ERROR;
@@ -4465,7 +4515,7 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   }
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
     if( pAr->bVerbose ){
-      raw_printf(stdout, "%s\n", sqlite3_column_text(pSql, 0));
+      raw_printf(p->out, "%s\n", sqlite3_column_text(pSql, 0));
     }
   }
   shellFinalize(&rc, pSql);
@@ -4550,7 +4600,7 @@ static int arCreateUpdate(
       unsigned int mtime = sqlite3_column_int(pStmt, 2);
 
       if( pAr->bVerbose ){
-        raw_printf(stdout, "%s\n", zName);
+        raw_printf(p->out, "%s\n", zName);
       }
 
       sqlite3_bind_text(pInsert, 1, zName, -1, SQLITE_STATIC);
@@ -4678,6 +4728,10 @@ static int arDotCommand(
 
       case AR_CMD_LIST:
         rc = arListCommand(pState, db, &cmd);
+        break;
+
+      case AR_CMD_HELP:
+        arUsage(pState->out);
         break;
 
       default:
