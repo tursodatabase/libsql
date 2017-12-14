@@ -212,7 +212,7 @@ static int apndWriteMark(ApndFile *p, sqlite3_file *pFile){
   for(i=0; i<8; i++){
     a[APND_MARK_PREFIX_SZ+i] = (p->iPgOne >> (56 - i*8)) & 0xff;
   }
-  return pFile->pMethods->xWrite(pFile, a, APND_MARK_PREFIX_SZ, p->iMark);
+  return pFile->pMethods->xWrite(pFile, a, APND_MARK_SIZE, p->iMark);
 }
 
 /*
@@ -331,8 +331,7 @@ static int apndSectorSize(sqlite3_file *pFile){
 */
 static int apndDeviceCharacteristics(sqlite3_file *pFile){
   pFile = ORIGFILE(pFile);
-  return SQLITE_IOCAP_IMMUTABLE |
-           pFile->pMethods->xDeviceCharacteristics(pFile);
+  return pFile->pMethods->xDeviceCharacteristics(pFile);
 }
 
 /* Create a shared memory file mapping */
@@ -550,7 +549,7 @@ int sqlite3_appendvfs_init(
   pOrig = sqlite3_vfs_find(0);
   apnd_vfs.iVersion = pOrig->iVersion;
   apnd_vfs.pAppData = pOrig;
-  apnd_vfs.szOsFile = sizeof(ApndFile);
+  apnd_vfs.szOsFile = pOrig->szOsFile + sizeof(ApndFile);
   rc = sqlite3_vfs_register(&apnd_vfs, 0);
 #ifdef APPENDVFS_TEST
   if( rc==SQLITE_OK ){
