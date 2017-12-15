@@ -1,5 +1,5 @@
-C In\svalueFromExpr()\sonly\sgenerate\sa\sOOM\sfault\sif\sthere\shave\sbeen\snow\sprior\nfaults.
-D 2017-12-13T23:47:55.478
+C In\sthe\sLEMON\sparser\sgenerator,\sprovide\sreduce\sactions\swith\saccess\sto\sthe\nlookahead\stoken.
+D 2017-12-15T12:22:21.137
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a2492b29176edc3c754aa7a2f7daa20cd3fa20a56e3ee64e376092836177c42a
@@ -1602,7 +1602,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c e6056373044d55296d21f81467dba7632bbb81dc49af072b3f0e76338771497e
-F tool/lempar.c 105d0d9cbe5a25d24d4769241ffbfc63ac7c09e6ccee0dc43dcc8a4c4ae4e426
+F tool/lempar.c 967ebf585cd09b11b89d255d213865109a9c4ff075680d22580a2826de288c89
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1680,7 +1680,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6de21deac469ab25378656f6f58115a92f5892428c6f2f3545c9bafac37e4a41
-R 44abcc3575bcbddb8f261c0eaf812ba5
+P 3765aaf712998af5ffb6bc680a0c1419f2b5deb47ecbc1835ba5879127c4dbe3
+R 545f6d4adf455d1fa5987c428909cf33
 U drh
-Z 3fcdf29f818607817f06d87e8d680060
+Z 7981b7f16ad8b88f8d8fe8aa12f607a9
