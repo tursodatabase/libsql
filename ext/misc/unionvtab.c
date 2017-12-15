@@ -56,6 +56,8 @@
 **
 ** SWARMVTAB
 **
+**  LEGACY SYNTAX:
+**
 **   A "swarmvtab" virtual table is created similarly to a unionvtab table:
 **
 **     CREATE VIRTUAL TABLE <name>
@@ -66,13 +68,78 @@
 **   the database file containing the source table.  The <callback> option
 **   is optional.  If included, it is the name of an application-defined
 **   SQL function that is invoked with the URI of the file, if the file
-**   does not already exist on disk.
+**   does not already exist on disk when required by swarmvtab.
+**
+**  NEW SYNTAX:
+**
+**   Using the new syntax, a swarmvtab table is created with:
+**
+**      CREATE VIRTUAL TABLE <name> USING swarmvtab(
+**        <sql-statement> [, <options>]
+**      );
+**
+**   where valid <options> are:
+**
+**      missing=<udf-function-name>
+**      openclose=<udf-function-name>
+**      maxopen=<integer>
+**      <sql-parameter>=<text-value>
+**
+**   The <sql-statement> must return the same 4 columns as for a swarmvtab
+**   table in legacy mode. However, it may also return a 5th column - the
+**   "context" column. The text value returned in this column is not used
+**   at all by the swarmvtab implementation, except that it is passed as
+**   an additional argument to the two UDF functions that may be invoked
+**   (see below).
+**
+**   The "missing" option, if present, specifies the name of an SQL UDF
+**   function to be invoked if a database file is not already present on
+**   disk when required by swarmvtab. If the <sql-statement> did not provide
+**   a context column, it is invoked as:
+**
+**     SELECT <missing-udf>(<database filename/uri>);
+**
+**   Or, if there was a context column:
+**
+**     SELECT <missing-udf>(<database filename/uri>, <context>);
+**
+**   The "openclose" option may also specify a UDF function. This function
+**   is invoked right before swarmvtab opens a database, and right after
+**   it closes one. The first argument - or first two arguments, if
+**   <sql-statement> supplied the context column - is the same as for
+**   the "missing" UDF. Following this, the UDF is passed integer value
+**   0 before a db is opened, and 1 right after it is closed. If both
+**   a missing and openclose UDF is supplied, the application should expect
+**   the following sequence of calls (for a single database):
+**
+**      SELECT <openclose-udf>(<db filename>, <context>, 0);
+**      if( db not already on disk ){
+**          SELECT <missing-udf>(<db filename>, <context>);
+**      }
+**      ... swarmvtab uses database ...
+**      SELECT <openclose-udf>(<db filename>, <context>, 1);
+**
+**   The "maxopen" option is used to configure the maximum number of
+**   database files swarmvtab will hold open simultaneously (default 9).
+**
+**   If an option name begins with a ":" character, then it is assumed
+**   to be an SQL parameter. In this case, the specified text value is
+**   bound to the same variable of the <sql-statement> before it is 
+**   executed. It is an error of the named SQL parameter does not exist.
+**   For example:
+**
+**     CREATE VIRTUAL TABLE swarm USING swarmvtab(
+**       'SELECT :path || localfile, tbl, min, max FROM swarmdir',
+**       :path='/home/user/databases/'
+**       missing='missing_func'
+**     );
 */
 
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -128,6 +195,7 @@ struct UnionSrc {
 
   /* Fields used by swarmvtab only */
   char *zFile;                    /* Database file containing table zTab */
+  char *zContext;                 /* Context string, if any */
   int nUser;                      /* Current number of users */
   sqlite3 *db;                    /* Database handle */
   UnionSrc *pNextClosable;        /* Next in list of closable sources */
@@ -145,8 +213,11 @@ struct UnionTab {
   UnionSrc *aSrc;                 /* Array of source tables, sorted by rowid */
 
   /* Used by swarmvtab only */
+  int bHasContext;                /* Has context strings */
   char *zSourceStr;               /* Expected unionSourceToStr() value */
-  char *zNotFoundCallback;        /* UDF to invoke if file not found on open */
+  sqlite3_stmt *pNotFound;        /* UDF to invoke if file not found on open */
+  sqlite3_stmt *pOpenClose;       /* UDF to invoke on open and close */
+
   UnionSrc *pClosable;            /* First in list of closable sources */
   int nOpen;                      /* Current number of open sources */
   int nMaxOpen;                   /* Maximum number of open sources */
@@ -352,19 +423,55 @@ static void unionFinalize(int *pRc, sqlite3_stmt *pStmt, char **pzErr){
 }
 
 /*
+** If an "openclose" UDF was supplied when this virtual table was created,
+** invoke it now. The first argument passed is the name of the database
+** file for source pSrc. The second is integer value bClose.
+**
+** If successful, return SQLITE_OK. Otherwise an SQLite error code. In this
+** case if argument pzErr is not NULL, also set (*pzErr) to an English
+** language error message. The caller is responsible for eventually freeing 
+** any error message using sqlite3_free().
+*/
+static int unionInvokeOpenClose(
+  UnionTab *pTab, 
+  UnionSrc *pSrc, 
+  int bClose,
+  char **pzErr
+){
+  int rc = SQLITE_OK;
+  if( pTab->pOpenClose ){
+    sqlite3_bind_text(pTab->pOpenClose, 1, pSrc->zFile, -1, SQLITE_STATIC);
+    if( pTab->bHasContext ){
+      sqlite3_bind_text(pTab->pOpenClose, 2, pSrc->zContext, -1, SQLITE_STATIC);
+    }
+    sqlite3_bind_int(pTab->pOpenClose, 2+pTab->bHasContext, bClose);
+    sqlite3_step(pTab->pOpenClose);
+    if( SQLITE_OK!=(rc = sqlite3_reset(pTab->pOpenClose)) ){
+      if( pzErr ){
+        *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
+      }
+    }
+  }
+  return rc;
+}
+
+/*
 ** This function is a no-op for unionvtab. For swarmvtab, it attempts to
 ** close open database files until at most nMax are open. An SQLite error
 ** code is returned if an error occurs, or SQLITE_OK otherwise.
 */
 static void unionCloseSources(UnionTab *pTab, int nMax){
   while( pTab->pClosable && pTab->nOpen>nMax ){
+    UnionSrc *p;
     UnionSrc **pp;
     for(pp=&pTab->pClosable; (*pp)->pNextClosable; pp=&(*pp)->pNextClosable);
-    assert( (*pp)->db );
-    sqlite3_close((*pp)->db);
-    (*pp)->db = 0;
+    p = *pp;
+    assert( p->db );
+    sqlite3_close(p->db);
+    p->db = 0;
     *pp = 0;
     pTab->nOpen--;
+    unionInvokeOpenClose(pTab, p, 1, 0);
   }
 }
 
@@ -377,13 +484,18 @@ static int unionDisconnect(sqlite3_vtab *pVtab){
     int i;
     for(i=0; i<pTab->nSrc; i++){
       UnionSrc *pSrc = &pTab->aSrc[i];
+      if( pSrc->db ){
+        unionInvokeOpenClose(pTab, pSrc, 1, 0);
+      }
       sqlite3_free(pSrc->zDb);
       sqlite3_free(pSrc->zTab);
       sqlite3_free(pSrc->zFile);
+      sqlite3_free(pSrc->zContext);
       sqlite3_close(pSrc->db);
     }
+    sqlite3_finalize(pTab->pNotFound);
+    sqlite3_finalize(pTab->pOpenClose);
     sqlite3_free(pTab->zSourceStr);
-    sqlite3_free(pTab->zNotFoundCallback);
     sqlite3_free(pTab->aSrc);
     sqlite3_free(pTab);
   }
@@ -496,29 +608,31 @@ static int unionSourceCheck(UnionTab *pTab, char **pzErr){
   return rc;
 }
 
-
 /*
 ** Try to open the swarmvtab database.  If initially unable, invoke the
 ** not-found callback UDF and then try again.
 */
 static int unionOpenDatabaseInner(UnionTab *pTab, UnionSrc *pSrc, char **pzErr){
-  int rc = SQLITE_OK;
-  static const int openFlags = 
-       SQLITE_OPEN_READONLY | SQLITE_OPEN_URI;
+  static const int openFlags = SQLITE_OPEN_READONLY | SQLITE_OPEN_URI;
+  int rc;
+
+  rc = unionInvokeOpenClose(pTab, pSrc, 0, pzErr);
+  if( rc!=SQLITE_OK ) return rc;
+
   rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, openFlags, 0);
   if( rc==SQLITE_OK ) return rc;
-  if( pTab->zNotFoundCallback ){
-    char *zSql = sqlite3_mprintf("SELECT \"%w\"(%Q);",
-                    pTab->zNotFoundCallback, pSrc->zFile);
+  if( pTab->pNotFound ){
     sqlite3_close(pSrc->db);
     pSrc->db = 0;
-    if( zSql==0 ){
-      *pzErr = sqlite3_mprintf("out of memory");
-      return SQLITE_NOMEM;
+    sqlite3_bind_text(pTab->pNotFound, 1, pSrc->zFile, -1, SQLITE_STATIC);
+    if( pTab->bHasContext ){
+      sqlite3_bind_text(pTab->pNotFound, 2, pSrc->zContext, -1, SQLITE_STATIC);
     }
-    rc = sqlite3_exec(pTab->db, zSql, 0, 0, pzErr);
-    sqlite3_free(zSql);
-    if( rc ) return rc;
+    sqlite3_step(pTab->pNotFound);
+    if( SQLITE_OK!=(rc = sqlite3_reset(pTab->pNotFound)) ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
+      return rc;
+    }
     rc = sqlite3_open_v2(pSrc->zFile, &pSrc->db, openFlags, 0);
   }
   if( rc!=SQLITE_OK ){
@@ -572,6 +686,7 @@ static int unionOpenDatabase(UnionTab *pTab, int iSrc, char **pzErr){
     }else{
       sqlite3_close(pSrc->db);
       pSrc->db = 0;
+      unionInvokeOpenClose(pTab, pSrc, 1, 0);
     }
   }
 
@@ -628,6 +743,132 @@ static int unionFinalizeCsrStmt(UnionCsr *pCsr){
 }
 
 /* 
+** Return true if the argument is a space, tab, CR or LF character.
+*/
+static int union_isspace(char c){
+  return (c==' ' || c=='\n' || c=='\r' || c=='\t');
+}
+
+/* 
+** Return true if the argument is an alphanumeric character in the 
+** ASCII range.
+*/
+static int union_isidchar(char c){
+  return ((c>='a' && c<='z') || (c>='A' && c<'Z') || (c>='0' && c<='9'));
+}
+
+/*
+** This function is called to handle all arguments following the first 
+** (the SQL statement) passed to a swarmvtab (not unionvtab) CREATE 
+** VIRTUAL TABLE statement. It may bind parameters to the SQL statement 
+** or configure members of the UnionTab object passed as the second
+** argument.
+**
+** Refer to header comments at the top of this file for a description
+** of the arguments parsed.
+**
+** This function is a no-op if *pRc is other than SQLITE_OK when it is
+** called. Otherwise, if an error occurs, *pRc is set to an SQLite error
+** code. In this case *pzErr may be set to point to a buffer containing
+** an English language error message. It is the responsibility of the 
+** caller to eventually free the buffer using sqlite3_free().
+*/
+static void unionConfigureVtab(
+  int *pRc,                       /* IN/OUT: Error code */
+  UnionTab *pTab,                 /* Table to configure */
+  sqlite3_stmt *pStmt,            /* SQL statement to find sources */
+  int nArg,                       /* Number of entries in azArg[] array */
+  const char * const *azArg,      /* Array of arguments to consider */
+  char **pzErr                    /* OUT: Error message */
+){
+  int rc = *pRc;
+  int i;
+  if( rc==SQLITE_OK ){
+    pTab->bHasContext = (sqlite3_column_count(pStmt)>4);
+  }
+  for(i=0; rc==SQLITE_OK && i<nArg; i++){
+    char *zArg = unionStrdup(&rc, azArg[i]);
+    if( zArg ){
+      int nOpt = 0;               /* Size of option name in bytes */
+      char *zOpt;                 /* Pointer to option name */
+      char *zVal;                 /* Pointer to value */
+
+      unionDequote(zArg);
+      zOpt = zArg;
+      while( union_isspace(*zOpt) ) zOpt++;
+      zVal = zOpt;
+      if( *zVal==':' ) zVal++;
+      while( union_isidchar(*zVal) ) zVal++;
+      nOpt = zVal-zOpt;
+
+      while( union_isspace(*zVal) ) zVal++;
+      if( *zVal=='=' ){
+        zOpt[nOpt] = '\0';
+        zVal++;
+        while( union_isspace(*zVal) ) zVal++;
+        zVal = unionStrdup(&rc, zVal);
+        if( zVal ){
+          unionDequote(zVal);
+          if( zOpt[0]==':' ){
+            /* A value to bind to the SQL statement */
+            int iParam = sqlite3_bind_parameter_index(pStmt, zOpt);
+            if( iParam==0 ){
+              *pzErr = sqlite3_mprintf(
+                  "swarmvtab: no such SQL parameter: %s", zOpt
+              );
+              rc = SQLITE_ERROR;
+            }else{
+              rc = sqlite3_bind_text(pStmt, iParam, zVal, -1, SQLITE_TRANSIENT);
+            }
+          }else if( nOpt==7 && 0==sqlite3_strnicmp(zOpt, "maxopen", 7) ){
+            pTab->nMaxOpen = atoi(zVal);
+            if( pTab->nMaxOpen<=0 ){
+              *pzErr = sqlite3_mprintf("swarmvtab: illegal maxopen value");
+              rc = SQLITE_ERROR;
+            }
+          }else if( nOpt==7 && 0==sqlite3_strnicmp(zOpt, "missing", 7) ){
+            if( pTab->pNotFound ){
+              *pzErr = sqlite3_mprintf(
+                  "swarmvtab: duplicate \"missing\" option");
+              rc = SQLITE_ERROR;
+            }else{
+              pTab->pNotFound = unionPreparePrintf(&rc, pzErr, pTab->db,
+                  "SELECT \"%w\"(?%s)", zVal, pTab->bHasContext ? ",?" : ""
+              );
+            }
+          }else if( nOpt==9 && 0==sqlite3_strnicmp(zOpt, "openclose", 9) ){
+            if( pTab->pOpenClose ){
+              *pzErr = sqlite3_mprintf(
+                  "swarmvtab: duplicate \"openclose\" option");
+              rc = SQLITE_ERROR;
+            }else{
+              pTab->pOpenClose = unionPreparePrintf(&rc, pzErr, pTab->db,
+                  "SELECT \"%w\"(?,?%s)", zVal, pTab->bHasContext ? ",?" : ""
+              );
+            }
+          }else{
+            *pzErr = sqlite3_mprintf("swarmvtab: unrecognized option: %s",zOpt);
+            rc = SQLITE_ERROR;
+          }
+          sqlite3_free(zVal);
+        }
+      }else{
+        if( i==0 && nArg==1 ){
+          pTab->pNotFound = unionPreparePrintf(&rc, pzErr, pTab->db,
+              "SELECT \"%w\"(?)", zArg
+          );
+        }else{
+          *pzErr = sqlite3_mprintf( "swarmvtab: parse error: %s", azArg[i]);
+          rc = SQLITE_ERROR;
+        }
+      }
+      sqlite3_free(zArg);
+    }
+  }
+  *pRc = rc;
+}
+
+/* 
 ** xConnect/xCreate method.
 **
 ** The argv[] array contains the following:
@@ -654,7 +895,7 @@ static int unionConnect(
     /* unionvtab tables may only be created in the temp schema */
     *pzErr = sqlite3_mprintf("%s tables must be created in TEMP schema", zVtab);
     rc = SQLITE_ERROR;
-  }else if( argc!=4 && argc!=5 ){
+  }else if( argc<4 || (argc>4 && bSwarm==0) ){
     *pzErr = sqlite3_mprintf("wrong number of arguments for %s", zVtab);
     rc = SQLITE_ERROR;
   }else{
@@ -673,6 +914,17 @@ static int unionConnect(
 
     /* Allocate the UnionTab structure */
     pTab = unionMalloc(&rc, sizeof(UnionTab));
+    if( pTab ){
+      assert( rc==SQLITE_OK );
+      pTab->db = db;
+      pTab->bSwarm = bSwarm;
+      pTab->nMaxOpen = SWARMVTAB_MAX_OPEN;
+    }
+
+    /* Parse other CVT arguments, if any */
+    if( bSwarm ){
+      unionConfigureVtab(&rc, pTab, pStmt, argc-4, &argv[4], pzErr);
+    }
 
     /* Iterate through the rows returned by the SQL statement specified
     ** as an argument to the CREATE VIRTUAL TABLE statement. */
@@ -715,16 +967,14 @@ static int unionConnect(
         }else{
           pSrc->zDb = unionStrdup(&rc, zDb);
         }
+        if( pTab->bHasContext ){
+          const char *zContext = (const char*)sqlite3_column_text(pStmt, 4);
+          pSrc->zContext = unionStrdup(&rc, zContext);
+        }
       }
     }
     unionFinalize(&rc, pStmt, pzErr);
     pStmt = 0;
-
-    /* Capture the not-found callback UDF name */
-    if( rc==SQLITE_OK && argc>=5 ){
-      pTab->zNotFoundCallback = unionStrdup(&rc, argv[4]);
-      unionDequote(pTab->zNotFoundCallback);
-    }
 
     /* It is an error if the SELECT statement returned zero rows. If only
     ** because there is no way to determine the schema of the virtual 
@@ -738,9 +988,6 @@ static int unionConnect(
     ** compatible schemas. For swarmvtab, attach the first database and
     ** check that the first table is a rowid table only.  */
     if( rc==SQLITE_OK ){
-      pTab->db = db;
-      pTab->bSwarm = bSwarm;
-      pTab->nMaxOpen = SWARMVTAB_MAX_OPEN;
       if( bSwarm ){
         rc = unionOpenDatabase(pTab, 0, pzErr);
       }else{
