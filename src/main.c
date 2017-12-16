@@ -806,6 +806,21 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
+    case SQLITE_DBCONFIG_FULL_EQP: {
+      int onoff = va_arg(ap, int);
+      int *pRes = va_arg(ap, int*);
+      if( onoff>0 ){
+        db->bFullEQP = 1;
+      }else if( onoff==0 ){
+        db->bFullEQP = 0;
+      }
+      sqlite3ExpirePreparedStatements(db);
+      if( pRes ){
+        *pRes = db->bFullEQP;
+      }
+      rc = SQLITE_OK;
+      break;
+    }
     default: {
       static const struct {
         int op;      /* The opcode */

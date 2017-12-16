@@ -2060,7 +2060,6 @@ struct sqlite3_mem_methods {
 ** into which is written 0 or 1 to indicate whether checkpoints-on-close
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
-**
 ** <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
 ** <dd>^(The SQLITE_DBCONFIG_ENABLE_QPSG option activates or deactivates
 ** the [query planner stability guarantee] (QPSG).  When the QPSG is active,
@@ -2071,7 +2070,16 @@ struct sqlite3_mem_methods {
 ** the QPSG active, SQLite will always use the same query plan in the field as
 ** was used during testing in the lab.
 ** </dd>
-**
+** <dt>SQLITE_DBCONFIG_FULL_EQP</dt>
+** <dd> By default, the output of EXPLAIN QUERY PLAN commands does not 
+** include output for any operations performed by trigger programs. This
+** option is used to set or clear (the default) a flag that governs this
+** behavior. The first parameter passed to this operation is an integer -
+** non-zero to enable output for trigger programs, or zero to disable it.
+** The second parameter is a pointer to an integer into which is written 
+** 0 or 1 to indicate whether output-for-triggers has been disabled - 0 if 
+** it is not disabled, 1 if it is.  
+** </dd>
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2082,7 +2090,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
 #define SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      1006 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_QPSG           1007 /* int int* */
-
+#define SQLITE_DBCONFIG_FULL_EQP              1008 /* int int* */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -8286,6 +8294,22 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** [virtual table].
 */
 int sqlite3_vtab_on_conflict(sqlite3 *);
+
+/*
+** CAPI3REF: Determine The Collation For a Virtual Table Constraint
+**
+** This function may only be called from within a call to the [xBestIndex]
+** method of a [virtual table implementation]. 
+**
+** The first argument must be the database handle with which the virtual 
+** table is associated (the one passed to the [xConnect] or [xCreate] method 
+** to create the sqlite3_vtab object. The second argument must be an index
+** into the aConstraint[] array belonging to the sqlite3_index_info structure
+** passed to xBestIndex. This function returns a pointer to a buffer 
+** containing the name of the collation sequence for the corresponding
+** constraint.
+*/
+SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3*, int);
 
 /*
 ** CAPI3REF: Conflict resolution modes

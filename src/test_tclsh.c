@@ -104,6 +104,8 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_ZIPVFS
   extern int Zipvfs_Init(Tcl_Interp*);
 #endif
+  extern int TestExpert_Init(Tcl_Interp*);
+
   Tcl_CmdInfo cmdInfo;
 
   /* Since the primary use case for this binary is testing of SQLite,
@@ -166,6 +168,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
   Sqlitetestfts3_Init(interp);
 #endif
+  TestExpert_Init(interp);
 
   Tcl_CreateObjCommand(
       interp, "load_testfixture_extensions", load_testfixture_extensions,0,0
