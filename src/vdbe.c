@@ -2349,6 +2349,26 @@ case OP_IfNullRow: {         /* jump */
   break;
 }
 
+/* Opcode: Location P1 P2 * * *
+** Synopsis: r[P2] = location(P1)
+**
+** Store in register r[P2] the location in the database file that is the
+** start of the payload for the record at which that cursor P1 is currently
+** pointing.
+*/
+case OP_Location: {          /* out2 */
+  VdbeCursor *pC;    /* The VDBE cursor */
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  pOut = out2Prerelease(p, pOp);
+  if( pC==0 || pC->eCurType!=CURTYPE_BTREE ){
+    pOut->flags = MEM_Null;
+  }else{
+    pOut->u.i = sqlite3BtreeLocation(pC->uc.pCursor);
+  }
+  break;
+}
+
 /* Opcode: Column P1 P2 P3 P4 P5
 ** Synopsis: r[P3]=PX
 **

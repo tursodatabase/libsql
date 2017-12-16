@@ -4433,6 +4433,19 @@ i64 sqlite3BtreeIntegerKey(BtCursor *pCur){
 }
 
 /*
+** Return the offset into the database file for the start of the
+** payload to which the cursor is pointing.
+*/
+i64 sqlite3BtreeLocation(BtCursor *pCur){
+  assert( cursorHoldsMutex(pCur) );
+  assert( pCur->eState==CURSOR_VALID );
+  assert( pCur->curIntKey );
+  getCellInfo(pCur);
+  return (i64)pCur->pBt->pageSize*(i64)pCur->pPage->pgno +
+         (i64)(pCur->info.pPayload - pCur->pPage->aData);
+}
+
+/*
 ** Return the number of bytes of payload for the entry that pCur is
 ** currently pointing to.  For table btrees, this will be the amount
 ** of data.  For index btrees, this will be the size of the key.
