@@ -263,6 +263,24 @@ FTS5_SRC = \
    $(TOP)/ext/fts5/fts5_varint.c \
    $(TOP)/ext/fts5/fts5_vocab.c  \
 
+LSM1_SRC = \
+   $(TOP)/ext/lsm1/lsm.h \
+   $(TOP)/ext/lsm1/lsmInt.h \
+   $(TOP)/ext/lsm1/lsm_ckpt.c \
+   $(TOP)/ext/lsm1/lsm_file.c \
+   $(TOP)/ext/lsm1/lsm_log.c \
+   $(TOP)/ext/lsm1/lsm_main.c \
+   $(TOP)/ext/lsm1/lsm_mem.c \
+   $(TOP)/ext/lsm1/lsm_mutex.c \
+   $(TOP)/ext/lsm1/lsm_shared.c \
+   $(TOP)/ext/lsm1/lsm_sorted.c \
+   $(TOP)/ext/lsm1/lsm_str.c \
+   $(TOP)/ext/lsm1/lsm_tree.c \
+   $(TOP)/ext/lsm1/lsm_unix.c \
+   $(TOP)/ext/lsm1/lsm_varint.c \
+   $(TOP)/ext/lsm1/lsm_vtab.c \
+   $(TOP)/ext/lsm1/lsm_win32.c
+
 
 # Generated source code files
 #
@@ -768,6 +786,10 @@ fts5.c: $(FTS5_SRC) $(FTS5_HDR)
 	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
+lsm1.c: $(LSM1_SRC)
+	tclsh $(TOP)/ext/lsm1/tool/mklsm1c.tcl
+	cp $(TOP)/ext/lsm1/lsm.h .
+
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
@@ -1025,3 +1047,4 @@ clean:
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
 	rm -f fts5.* fts5parse.*
+	rm -f lsm.h lsm1.c

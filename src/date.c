@@ -39,7 +39,7 @@
 **
 **      Jean Meeus
 **      Astronomical Algorithms, 2nd Edition, 1998
-**      ISBM 0-943396-61-1
+**      ISBN 0-943396-61-1
 **      Willmann-Bell, Inc
 **      Richmond, Virginia (USA)
 */

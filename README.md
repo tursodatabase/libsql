@@ -207,8 +207,8 @@ The amalgamation source file is more than 200K lines long.  Some symbolic
 debuggers (most notably MSVC) are unable to deal with files longer than 64K
 lines.  To work around this, a separate Tcl script, tool/split-sqlite3c.tcl,
 can be run on the amalgamation to break it up into a single small C file
-called **sqlite3-all.c** that does #include on about five other files
-named **sqlite3-1.c**, **sqlite3-2.c**, ..., **sqlite3-5.c**.  In this way,
+called **sqlite3-all.c** that does #include on about seven other files
+named **sqlite3-1.c**, **sqlite3-2.c**, ..., **sqlite3-7.c**.  In this way,
 all of the source code is contained within a single translation unit so
 that the compiler can do extra cross-procedure optimization, but no
 individual source file exceeds 32K lines in length.
@@ -237,7 +237,8 @@ Key files:
      trying to understand how the library works internally.
 
   *  **sqliteInt.h** - this header file defines many of the data objects
-     used internally by SQLite.
+     used internally by SQLite.  In addition to "sqliteInt.h", some
+     subsystems have their own header files.
 
   *  **parse.y** - This file describes the LALR(1) grammar that SQLite uses
      to parse SQL statements, and the actions that are taken at each step
@@ -249,28 +250,43 @@ Key files:
      which defines internal data objects.  The rest of SQLite interacts
      with the VDBE through an interface defined by vdbe.h.
 
-  *  **where.c** - This file analyzes the WHERE clause and generates
+  *  **where.c** - This file (together with its helper files named
+     by "where*.c") analyzes the WHERE clause and generates
      virtual machine code to run queries efficiently.  This file is
      sometimes called the "query optimizer".  It has its own private
      header file, whereInt.h, that defines data objects used internally.
 
   *  **btree.c** - This file contains the implementation of the B-Tree
-     storage engine used by SQLite.
+     storage engine used by SQLite.  The interface to the rest of the system
+     is defined by "btree.h".  The "btreeInt.h" header defines objects
+     used internally by btree.c and not published to the rest of the system.
 
   *  **pager.c** - This file contains the "pager" implementation, the
-     module that implements transactions.
+     module that implements transactions.  The "pager.h" header file
+     defines the interface between pager.c and the rest of the system.
 
   *  **os_unix.c** and **os_win.c** - These two files implement the interface
      between SQLite and the underlying operating system using the run-time
      pluggable VFS interface.
 
-  *  **shell.c** - This file is not part of the core SQLite library.  This
+  *  **shell.c.in** - This file is not part of the core SQLite library.  This
      is the file that, when linked against sqlite3.a, generates the
-     "sqlite3.exe" command-line shell.
+     "sqlite3.exe" command-line shell.  The "shell.c.in" file is transformed
+     into "shell.c" as part of the build process.
 
   *  **tclsqlite.c** - This file implements the Tcl bindings for SQLite.  It
      is not part of the core SQLite library.  But as most of the tests in this
      repository are written in Tcl, the Tcl language bindings are important.
+
+  *  **test*.c** - Files in the src/ folder that begin with "test" go into
+     building the "testfixture.exe" program.  The testfixture.exe program is
+     an enhanced TCL shell.  The testfixture.exe program runs scripts in the
+     test/ folder to validate the core SQLite code.  The testfixture program
+     (and some other test programs too) is build and run when you type
+     "make test".
+
+  *  **ext/misc/json1.c** - This file implements the various JSON functions
+     that are build into SQLite.
 
 There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.

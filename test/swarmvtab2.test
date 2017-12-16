@@ -14,7 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix swarmvtab
+set testprefix swarmvtab2
 do_not_use_codec
 
 ifcapable !vtab {

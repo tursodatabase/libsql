@@ -262,8 +262,9 @@ do_multiclient_test tn {
     } 
   } {500}
   do_test $TN.4.2.2 {
-    file size test.db-wal
-  } {461152}
+    set sz [file size test.db-wal]
+    expr {$sz>400000 && $sz<500000}
+  } {1}
   do_test $TN.4.2.4 {
     file_control_persist_wal db 1; db close
 

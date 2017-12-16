@@ -283,11 +283,11 @@ void sqlite3DeleteFrom(
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
   isView = pTab->pSelect!=0;
-  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #else
 # define pTrigger 0
 # define isView 0
 #endif
+  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0

@@ -64,7 +64,7 @@ for {set tn 1 ; set pgsz 64} {$tn<32} {incr tn; incr pgsz 16} {
     execsql COMMIT
   } {}
 
-  do_execsql_test 1.$tn.2 {
+  do_execsql_test 2.$tn.2 {
     INSERT INTO t1(t1) VALUES('integrity-check');
   }
 
@@ -76,6 +76,16 @@ for {set tn 1 ; set pgsz 64} {$tn<32} {incr tn; incr pgsz 16} {
     incr ret
   }
 }
+
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  INSERT INTO x1(rowid, a) VALUES(-1000000000000, 'toyota');
+  INSERT INTO x1(rowid, a) VALUES(1, 'tarago');
+}
+do_execsql_test 3.1 {
+  SELECT rowid FROM x1('t*');
+} {-1000000000000 1}
 
 
 finish_test

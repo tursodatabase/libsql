@@ -2021,7 +2021,7 @@ static int ChooseLeaf(
 ){
   int rc;
   int ii;
-  RtreeNode *pNode;
+  RtreeNode *pNode = 0;
   rc = nodeAcquire(pRtree, 1, 0, &pNode);
 
   for(ii=0; rc==SQLITE_OK && ii<(pRtree->iDepth-iHeight); ii++){
@@ -2896,7 +2896,7 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   */
   if( rc==SQLITE_OK && pRtree->iDepth>0 && NCELL(pRoot)==1 ){
     int rc2;
-    RtreeNode *pChild;
+    RtreeNode *pChild = 0;
     i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
     rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
     if( rc==SQLITE_OK ){
