@@ -1,5 +1,5 @@
-C Have\sthe\swritefile()\sfunction\soptionally\sset\sthe\smodification-time\sof\sthe\nfiles\sit\swrites\sor\screates.\sAnd\smany\ssmall\sfixes\sto\sthe\snew\scode\son\sthis\nbranch.
-D 2017-12-14T19:15:07.381
+C Do\snot\suse\sthe\scompress()\sand\suncompress()\sfunctions\sin\sext/misc/compress.c\s-\nthey\sare\snot\squite\scompatible\swith\sthe\sspec.\sInstead\suse\snew\sfunctions\sin\next/misc/sqlar.c.
+D 2017-12-16T19:11:26.054
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6a879cbf01e37f9eac131414955f71774b566502d9a57ded1b8585b507503cb8
@@ -287,6 +287,7 @@ F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 41cf26c6b89fcaa8798ae10ae64d39c1f1d9d6995152e545bd491c13058b8fac
+F ext/misc/sqlar.c d355cd8b6e7280d2f61d4737672922acb512a2ab1cee52399ffb88980476e31c
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/unionvtab.c 1e0ebc5078e1a916db191bcd88f87e94ea7ba4aa563ee30ff706261cb4b39461
@@ -397,7 +398,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 6123b0b2db806ddb482c24786ad6603a289df720382a3bce8f532d76a94c84b1
+F main.mk f5f8e5e6bdd9ab3dabd94c6cf929813a601d5dbf312197fe463190c7d927c27c
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -475,7 +476,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
-F src/shell.c.in 074b2129559a0aa712a367317f7e7daf4740925ec2c123b529800628eb10dc73
+F src/shell.c.in ad8c13b9dee606d1ef11226f90d8e4e084d75986f96e6852e8e5b1c54aa4f0aa
 F src/sqlite.h.in 364515dd186285f3c01f5cab42e7db7edc47c70e87b6a25de389a2e6b8c413fd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1683,7 +1684,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9d2d5d97291bf3d1392232e3705cca89dc7b918db2b08067b2b013ea39320e0
-R 975f9981c88e18e3ddfa1fe4bb6e7fae
+P 7b51269caebe1492885fe9b965892f49a3f8bdb1d666b0203d594c30f9e83938
+R 6fdfedcd54ee170b8eb014864253aebf
 U dan
-Z 1e84576de6ef44efce8abf1d868c1119
+Z 7252a7eb50ba8ff9515237c2fa79b757

@@ -797,7 +797,7 @@ INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
 #ifdef SQLITE_HAVE_ZLIB
-INCLUDE ../ext/misc/compress.c
+INCLUDE ../ext/misc/sqlar.c
 #endif
 
 #if defined(SQLITE_ENABLE_SESSION)
@@ -2901,7 +2901,7 @@ static void open_db(ShellState *p, int keepAlive){
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
 #ifdef SQLITE_HAVE_ZLIB
-    sqlite3_compress_init(p->db, 0, 0);
+    sqlite3_sqlar_init(p->db, 0, 0);
 #endif
     sqlite3_create_function(p->db, "shell_add_schema", 2, SQLITE_UTF8, 0,
                             shellAddSchemaName, 0, 0);
@@ -4482,13 +4482,10 @@ static int arListCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
 */
 static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
   const char *zSql1 = 
-    "SELECT :1 || name, writefile(:1 || name, "
-    "CASE WHEN (data AND sz>=0 AND sz!=length(data)) THEN "
-    "    uncompress(data) "
-    "ELSE"
-    "    data "
-    "END, "
-    "mode, mtime) FROM sqlar WHERE (%s) AND (data IS NULL OR :2 = 0)";
+    "SELECT "
+    "  :1 || name, "
+    "  writefile(:1 || name, sqlar_uncompress(data, sz), mode, mtime) "
+    "FROM sqlar WHERE (%s) AND (data IS NULL OR :2 = 0)";
 
   struct timespec times[2];
   sqlite3_stmt *pSql = 0;
@@ -4569,15 +4566,12 @@ static int arCreateUpdate(
       "data BLOB               -- compressed content\n"
   ")";
   const char *zDrop = "DROP TABLE IF EXISTS sqlar";
-  const char *zInsert = "REPLACE INTO sqlar VALUES(?, ?, ?, ?, ?)";
+  const char *zInsert = "REPLACE INTO sqlar VALUES(?,?,?,?,sqlar_compress(?))";
 
   sqlite3_stmt *pStmt = 0;        /* Directory traverser */
   sqlite3_stmt *pInsert = 0;      /* Compilation of zInsert */
   int i;                          /* For iterating through azFile[] */
   int rc;                         /* Return code */
-
-  Bytef *aCompress = 0;           /* Compression buffer */
-  int nCompress = 0;              /* Size of compression buffer */
 
   rc = sqlite3_exec(db, "SAVEPOINT ar;", 0, 0, 0);
   if( rc!=SQLITE_OK ) return rc;
@@ -4611,39 +4605,18 @@ static int arCreateUpdate(
       if( S_ISDIR(mode) ){
         sz = 0;
         sqlite3_bind_null(pInsert, 5);
-      }else if( S_ISLNK(mode) ){
-        sz = -1;
-        sqlite3_bind_value(pInsert, 5, sqlite3_column_value(pStmt, 3));
       }else{
-        uLongf nReq;              /* Required size of compression buffer */
-        const Bytef *pData = (const Bytef*)sqlite3_column_blob(pStmt, 3);
-        sz = sqlite3_column_bytes(pStmt, 3);
-        nReq = compressBound(sz);
-        if( aCompress==0 || nReq>nCompress ){
-          Bytef *aNew = sqlite3_realloc(aCompress, nReq);
-          if( aNew==0 ){
-            rc = SQLITE_NOMEM;
-          }else{
-            aCompress = aNew;
-            nCompress = nReq;
-          }
-        }
-
-        if( Z_OK!=compress(aCompress, &nReq, pData, sz) ){
-          rc = SQLITE_ERROR;
-        }
-        if( nReq<sz ){
-          sqlite3_bind_blob(pInsert, 5, aCompress, nReq, SQLITE_STATIC);
+        sqlite3_bind_value(pInsert, 5, sqlite3_column_value(pStmt, 3));
+        if( S_ISLNK(mode) ){
+          sz = -1;
         }else{
-          sqlite3_bind_blob(pInsert, 5, pData, sz, SQLITE_STATIC);
+          sz = sqlite3_column_bytes(pStmt, 3);
         }
       }
 
-      if( rc==SQLITE_OK ){
-        sqlite3_bind_int(pInsert, 4, sz);
-        sqlite3_step(pInsert);
-        rc = sqlite3_reset(pInsert);
-      }
+      sqlite3_bind_int(pInsert, 4, sz);
+      sqlite3_step(pInsert);
+      rc = sqlite3_reset(pInsert);
     }
     shellReset(&rc, pStmt);
   }
@@ -4655,7 +4628,6 @@ static int arCreateUpdate(
   }
   shellFinalize(&rc, pStmt);
   shellFinalize(&rc, pInsert);
-  sqlite3_free(aCompress);
   return rc;
 }
 
@@ -4713,7 +4685,7 @@ static int arDotCommand(
         return rc;
       }
       sqlite3_fileio_init(db, 0, 0);
-      sqlite3_compress_init(db, 0, 0);
+      sqlite3_sqlar_init(db, 0, 0);
     }else{
       db = pState->db;
     }
