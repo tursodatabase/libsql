@@ -692,7 +692,9 @@ SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
-	$(TOP)/ext/misc/completion.c
+	$(TOP)/ext/misc/completion.c \
+	$(TOP)/ext/expert/sqlite3expert.c \
+	$(TOP)/ext/expert/sqlite3expert.h
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
 	tclsh $(TOP)/tool/mkshellc.tcl >shell.c

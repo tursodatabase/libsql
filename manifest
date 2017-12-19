@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_vtab_collation()\sfunction,\swhich\sallows\san\sxBestIndex\scallback\nto\sdetermine\sthe\scollation\ssequence\sthat\sSQLite\swill\suse\sfor\sa\scomparison.\sAnd\nthe\sSQLITE_DBCONFIG_FULL_EQP\sconfiguration\soption,\swhich\senhances\sthe\soutput\nof\s"EXPLAIN\sQUERY\sPLAN"\sso\sthat\sit\sincludes\sstatements\srun\sby\striggers.\sAnd\nthe\scode\sfor\sthe\ssqlite3_expert\sextension\sand\scommand\sline\sapplication.
-D 2017-12-16T19:36:52.802
+C Experimentally\sadd\sthe\sSQLite\sexpert\sfunctionality\sto\sthe\sshell\stool.
+D 2017-12-19T17:42:13.030
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -42,7 +42,7 @@ F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 4791c5e064aea81b2b829fa95228b22283380ee370ea88a1e580103b75516ebf
-F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
+F ext/expert/expert1.test 4ffbecb378dc542d6fe030f936e2aff79a42c8cdf9fbcbff07db629fb7857b22
 F ext/expert/sqlite3expert.c 6ed4e84a06d1a29b2cf3009c0266573b88602d098055caa46c467154a64e0959
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c 85f5c743a899063fa48296d21de2f32c26d09a21c8582b2a0bc482e8de183e7a
@@ -401,7 +401,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 6ef9e2b1c3f1e46c9e3c2b362531cbc277f7bea1a66fe610a3a7c4173b091ba4
+F main.mk 50bac9920024b5485f06398b3980f09e97ab28cd4b5b6dcd829d2a5e3ce22e7a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -479,7 +479,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
-F src/shell.c.in 6ffed0c589f5aff180789a8c8abf5b2d3e2eea7470c86b30e797887cb0c9d0e5
+F src/shell.c.in 87a048fabcf0080a78bcdd01e57933369951f7fa7d628f04bad48e900c1899a1
 F src/sqlite.h.in 95afbec6e623843d702e727765efc833586fecc688867f41f87be7db3ff1fa62
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1287,7 +1287,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 9948bd856ce8a1c127f2f7900365387a42a917ce0dc87185bdd128fa5b11aff2
+F test/tester.tcl 3ed81b9e1d9718a8d9603596c8a877793d054294053c4277a3d3897eabab3866
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1687,8 +1687,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64487d658cb3b6c8c67f1e198c70813c963de52599f3ea974bdc2aa432e74de9 d5b597b52a1213cdf382d96f4df3535727be0852b25bafd12bbef54da946c5f2
-R 864c298149f75794a8b0c88eee2c8573
-T +closed d5b597b52a1213cdf382d96f4df3535727be0852b25bafd12bbef54da946c5f2
+P 4c782c950204c09c1d8f857c39c4cf476539ec4e7eee6fd86419d47cf0f8b9e0
+R 02a097d24d17c339f9cf394885a43a5e
+T *branch * expert-in-shell
+T *sym-expert-in-shell *
+T -sym-trunk *
 U dan
-Z 532f71905753147684a848f63aad67ba
+Z d356e0f9c90762c0d67a4b31b4b9510d

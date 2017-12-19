@@ -23,11 +23,8 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 set testprefix expert1
 
-if {$tcl_platform(platform)=="windows"} {
-  set CMD "sqlite3_expert.exe"
-} else {
-  set CMD ".././sqlite3_expert"
-}
+set CLI [test_binary_name sqlite3]
+set CMD [test_binary_name sqlite3_expert]
 
 proc squish {txt} {
   regsub -all {[[:space:]]+} $txt { }
@@ -71,6 +68,17 @@ foreach {tn setup} {
 
       set tst [subst -nocommands {set {} [squish [join {$result}]]}]
       uplevel [list do_test $tn $tst [string trim [squish $res]]]
+    }
+  }
+  3 {
+    if {![file executable $CLI]} { continue }
+
+    proc do_rec_test {tn sql res} {
+      set res [squish [string trim $res]]
+      set tst [subst -nocommands { 
+        squish [string trim [exec $::CLI test.db ".expert" {$sql;}]]
+      }]
+      uplevel [list do_test $tn $tst $res]
     }
   }
 } {
