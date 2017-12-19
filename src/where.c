@@ -3160,9 +3160,12 @@ const char *sqlite3_vtab_collation(sqlite3 *db, int iCons){
   struct BestIndexCtx *p = (struct BestIndexCtx*)db->pBestIndexCtx;
   const char *zRet = 0;
   if( p && iCons>=0 && iCons<p->pIdxInfo->nConstraint ){
+    CollSeq *pC = 0;
     int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
     Expr *pX = p->pWC->a[iTerm].pExpr;
-    CollSeq *pC = sqlite3BinaryCompareCollSeq(p->pParse,pX->pLeft,pX->pRight);
+    if( pX->pLeft ){
+      pC = sqlite3BinaryCompareCollSeq(p->pParse, pX->pLeft, pX->pRight);
+    }
     zRet = (pC ? pC->zName : "BINARY");
   }
   return zRet;

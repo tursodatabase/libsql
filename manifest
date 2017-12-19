@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_vtab_collation()\sfunction,\swhich\sallows\san\sxBestIndex\scallback\nto\sdetermine\sthe\scollation\ssequence\sthat\sSQLite\swill\suse\sfor\sa\scomparison.\sAnd\nthe\sSQLITE_DBCONFIG_FULL_EQP\sconfiguration\soption,\swhich\senhances\sthe\soutput\nof\s"EXPLAIN\sQUERY\sPLAN"\sso\sthat\sit\sincludes\sstatements\srun\sby\striggers.\sAnd\nthe\scode\sfor\sthe\ssqlite3_expert\sextension\sand\scommand\sline\sapplication.
-D 2017-12-16T19:36:52.802
+C Fix\scrash\sin\ssqlite3_vtab_collation()\swhen\scalled\sfor\san\sIS\sNOT\sNULL\nconstraint.
+D 2017-12-19T18:56:28.856
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -42,7 +42,7 @@ F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 4791c5e064aea81b2b829fa95228b22283380ee370ea88a1e580103b75516ebf
-F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
+F ext/expert/expert1.test 939265e01b8a40551b1338cc3c38b378d7c99479ececbfc5095b2e757f7b8944
 F ext/expert/sqlite3expert.c 6ed4e84a06d1a29b2cf3009c0266573b88602d098055caa46c467154a64e0959
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c 85f5c743a899063fa48296d21de2f32c26d09a21c8582b2a0bc482e8de183e7a
@@ -561,7 +561,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 1617e7e42daf0ace7799204e3e9b7c9e75069aa2a0c8ddd24d1b9569b2a0b7e4
+F src/where.c 0cdfda28708fe75699df2fcdb44d067dc94e7b1f83e3a622dca96a27aaaa2e42
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c ff2f079097a3bdce6ebabfde1419fba448c9ce5feb7cb964e8bfa2a4e27274ef
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -1687,8 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64487d658cb3b6c8c67f1e198c70813c963de52599f3ea974bdc2aa432e74de9 d5b597b52a1213cdf382d96f4df3535727be0852b25bafd12bbef54da946c5f2
-R 864c298149f75794a8b0c88eee2c8573
-T +closed d5b597b52a1213cdf382d96f4df3535727be0852b25bafd12bbef54da946c5f2
+P 4c782c950204c09c1d8f857c39c4cf476539ec4e7eee6fd86419d47cf0f8b9e0
+R 467752e7571913f5d5399376bb34bcd1
 U dan
-Z 532f71905753147684a848f63aad67ba
+Z b7b7f4c9939a0a5799e54a0fcc200864

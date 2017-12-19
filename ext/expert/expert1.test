@@ -292,6 +292,15 @@ do_setup_rec_test $tn.15 {
   0|1|1|SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
 }
 
+do_setup_rec_test $tn.16 {
+  CREATE TABLE t1(a, b);
+} {
+  SELECT * FROM t1 WHERE b IS NOT NULL;
+} {
+  (no new indexes)
+  0|0|0|SCAN TABLE t1
+}
+
 }
 
 proc do_candidates_test {tn sql res} {
