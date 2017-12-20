@@ -1,5 +1,5 @@
-C Fix\scrash\sin\ssqlite3_vtab_collation()\swhen\scalled\sfor\san\sIS\sNOT\sNULL\nconstraint.
-D 2017-12-19T18:56:28.856
+C Lowercase\slocal\svariable\snames\sin\sthe\sSHA3\sextension\sin\sorder\sto\savoid\ncollisions\swith\smacros\sin\stermios.h.
+D 2017-12-20T23:46:29.934
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -288,7 +288,7 @@ F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8d
 F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
 F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681da564
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
-F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
+F ext/misc/shathree.c 9e960ba50483214c6a7a4b1517f8d8cef799e9db381195178c3fd3ad207e10c0
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 41cf26c6b89fcaa8798ae10ae64d39c1f1d9d6995152e545bd491c13058b8fac
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c782c950204c09c1d8f857c39c4cf476539ec4e7eee6fd86419d47cf0f8b9e0
-R 467752e7571913f5d5399376bb34bcd1
-U dan
-Z b7b7f4c9939a0a5799e54a0fcc200864
+P ad38d2c4f073705c02c7b38675e8ae86fe4a794d54eb796e7ed51a905824d5f5
+R 5daaca0715e80715d469ec030422b144
+U drh
+Z 1310a0a150441991e0cda5ffa4262cdc
