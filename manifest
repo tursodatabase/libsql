@@ -1,5 +1,5 @@
-C Add\sthe\s".eqp\strigger"\soption\sto\sthe\s".eqp"\scommand\sin\sthe\scommand-line\nshell.\s\sImplemented\susing\sthe\snew\sSQLITE_DBCONFIG_TRIGGER_EQP\scontrol.
-D 2017-12-21T21:02:27.410
+C Fix\sSQLITE_DBCONFIG_TRIGGER_EQP\sso\sthat\sit\sworks\seven\sif\sSQLITE_DEBUG\sis\nnot\sdefined.
+D 2017-12-21T21:41:13.558
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -563,7 +563,7 @@ F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 0cdfda28708fe75699df2fcdb44d067dc94e7b1f83e3a622dca96a27aaaa2e42
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
-F src/wherecode.c ff2f079097a3bdce6ebabfde1419fba448c9ce5feb7cb964e8bfa2a4e27274ef
+F src/wherecode.c af1e79154aaa88cd802d6f2e5b945f67eaca7c958d1525fbf8ee19d5bd7b9020
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc6193af5d216b4066fbc47e75a7d0538fd5fda40b94ee15e2ff4037ea89221b
-R 9e177759a0c3bcdc85d791f3df26085a
+P 2c51644a12a638d89e4f7cc3fd561236ce424f2d4e1db31f1e8388f77add02b8
+R f003797eb1e0446ed94e2b0c9d22122e
 U drh
-Z 1ea40405a7cdaae369b8eb1d1f8aee13
+Z c4f59d8ddc7f0db54ec7405d6ea2d997
