@@ -796,6 +796,8 @@ static void shellAddSchemaName(
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
+INCLUDE ../ext/expert/sqlite3expert.h
+INCLUDE ../ext/expert/sqlite3expert.c
 
 #if defined(SQLITE_ENABLE_SESSION)
 /*
@@ -820,6 +822,12 @@ struct SavedModeInfo {
   int mode;           /* Mode prior to ".explain on" */
   int showHeader;     /* The ".header" setting prior to ".explain on" */
   int colWidth[100];  /* Column widths prior to ".explain on" */
+};
+
+typedef struct ExpertInfo ExpertInfo;
+struct ExpertInfo {
+  sqlite3expert *pExpert;
+  int bVerbose;
 };
 
 /*
@@ -866,6 +874,7 @@ struct ShellState {
   int nSession;             /* Number of active sessions */
   OpenSession aSession[4];  /* Array of sessions.  [0] is in focus. */
 #endif
+  ExpertInfo expert;        /* Valid if previous command was ".expert OPT..." */
 };
 
 /*
@@ -2250,6 +2259,79 @@ static void exec_prepared_stmt(
 }
 
 /*
+** This function is called to process SQL if the previous shell command
+** was ".expert". It passes the SQL in the second argument directly to
+** the sqlite3expert object.
+**
+** If successful, SQLITE_OK is returned. Otherwise, an SQLite error
+** code. In this case, (*pzErr) may be set to point to a buffer containing
+** an English language error message. It is the responsibility of the
+** caller to eventually free this buffer using sqlite3_free().
+*/
+static int expertHandleSQL(
+  ShellState *pState, 
+  const char *zSql, 
+  char **pzErr
+){
+  assert( pState->expert.pExpert );
+  assert( pzErr==0 || *pzErr==0 );
+  return sqlite3_expert_sql(pState->expert.pExpert, zSql, pzErr);
+}
+
+/*
+** This function is called either to silently clean up the object
+** created by the ".expert" command (if bCancel==1), or to generate a 
+** report from it and then clean it up (if bCancel==0).
+**
+** If successful, SQLITE_OK is returned. Otherwise, an SQLite error
+** code. In this case, (*pzErr) may be set to point to a buffer containing
+** an English language error message. It is the responsibility of the
+** caller to eventually free this buffer using sqlite3_free().
+*/
+static int expertFinish(
+  ShellState *pState,
+  int bCancel,
+  char **pzErr
+){
+  int rc = SQLITE_OK;
+  sqlite3expert *p = pState->expert.pExpert;
+  assert( p );
+  assert( bCancel || pzErr==0 || *pzErr==0 );
+  if( bCancel==0 ){
+    FILE *out = pState->out;
+    int bVerbose = pState->expert.bVerbose;
+
+    rc = sqlite3_expert_analyze(p, pzErr);
+    if( rc==SQLITE_OK ){
+      int nQuery = sqlite3_expert_count(p);
+      int i;
+
+      if( bVerbose ){
+        const char *zCand = sqlite3_expert_report(p,0,EXPERT_REPORT_CANDIDATES);
+        raw_printf(out, "-- Candidates -----------------------------\n");
+        raw_printf(out, "%s\n", zCand);
+      }
+      for(i=0; i<nQuery; i++){
+        const char *zSql = sqlite3_expert_report(p, i, EXPERT_REPORT_SQL);
+        const char *zIdx = sqlite3_expert_report(p, i, EXPERT_REPORT_INDEXES);
+        const char *zEQP = sqlite3_expert_report(p, i, EXPERT_REPORT_PLAN);
+        if( zIdx==0 ) zIdx = "(no new indexes)\n";
+        if( bVerbose ){
+          raw_printf(out, "-- Query %d --------------------------------\n",i+1);
+          raw_printf(out, "%s\n\n", zSql);
+        }
+        raw_printf(out, "%s\n", zIdx);
+        raw_printf(out, "%s\n", zEQP);
+      }
+    }
+  }
+  sqlite3_expert_destroy(p);
+  pState->expert.pExpert = 0;
+  return rc;
+}
+
+
+/*
 ** Execute a statement or set of statements.  Print
 ** any result rows/columns depending on the current mode
 ** set via the supplied callback.
@@ -2273,6 +2355,11 @@ static int shell_exec(
 
   if( pzErrMsg ){
     *pzErrMsg = NULL;
+  }
+
+  if( pArg->expert.pExpert ){
+    rc = expertHandleSQL(pArg, zSql, pzErrMsg);
+    return expertFinish(pArg, (rc!=SQLITE_OK), pzErrMsg);
   }
 
   while( zSql[0] && (SQLITE_OK == rc) ){
@@ -4068,6 +4155,64 @@ static int lintDotCommand(
   return SQLITE_ERROR;
 }
 
+/*
+** Implementation of ".expert" dot command.
+*/
+static int expertDotCommand(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  int rc = SQLITE_OK;
+  char *zErr = 0;
+  int i;
+  int iSample = 0;
+
+  assert( pState->expert.pExpert==0 );
+  memset(&pState->expert, 0, sizeof(ExpertInfo));
+
+  for(i=1; rc==SQLITE_OK && i<nArg; i++){
+    char *z = azArg[i];
+    int n;
+    if( z[0]=='-' && z[1]=='-' ) z++;
+    n = strlen(z);
+    if( n>=2 && 0==strncmp(z, "-verbose", n) ){
+      pState->expert.bVerbose = 1;
+    }
+    else if( n>=2 && 0==strncmp(z, "-sample", n) ){
+      if( i==(nArg-1) ){
+        raw_printf(stderr, "option requires an argument: %s\n", z);
+        rc = SQLITE_ERROR;
+      }else{
+        iSample = (int)integerValue(azArg[++i]);
+        if( iSample<0 || iSample>100 ){
+          raw_printf(stderr, "value out of range: %s\n", azArg[i]);
+          rc = SQLITE_ERROR;
+        }
+      }
+    }
+    else{
+      raw_printf(stderr, "unknown option: %s\n", z);
+      rc = SQLITE_ERROR;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    pState->expert.pExpert = sqlite3_expert_new(pState->db, &zErr);
+    if( pState->expert.pExpert==0 ){
+      raw_printf(stderr, "sqlite3_expert_new: %s\n", zErr);
+      rc = SQLITE_ERROR;
+    }else{
+      sqlite3_expert_config(
+          pState->expert.pExpert, EXPERT_CONFIG_SAMPLE, iSample
+      );
+    }
+  }
+
+  return rc;
+}
+
+
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -4081,6 +4226,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   int n, c;
   int rc = 0;
   char *azArg[50];
+
+  if( p->expert.pExpert ){
+    expertFinish(p, 1, 0);
+  }
 
   /* Parse the input line into tokens.
   */
@@ -4434,6 +4583,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( p->mode==MODE_Explain ) p->mode = p->normalMode;
       p->autoExplain = 1;
     }
+  }else
+
+  if( c=='e' && strncmp(azArg[0], "expert", n)==0 ){
+    open_db(p, 0);
+    expertDotCommand(p, azArg, nArg);
   }else
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
