@@ -1734,7 +1734,7 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   if( rc==SQLITE_OK ){
     rc = sqlite3_open(":memory:", &pNew->dbm);
     if( rc==SQLITE_OK ){
-      sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_FULL_EQP, 1, (int*)0);
+      sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_TRIGGER_EQP, 1, (int*)0);
     }
   }
   

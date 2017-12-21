@@ -2070,7 +2070,7 @@ struct sqlite3_mem_methods {
 ** the QPSG active, SQLite will always use the same query plan in the field as
 ** was used during testing in the lab.
 ** </dd>
-** <dt>SQLITE_DBCONFIG_FULL_EQP</dt>
+** <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
 ** <dd> By default, the output of EXPLAIN QUERY PLAN commands does not 
 ** include output for any operations performed by trigger programs. This
 ** option is used to set or clear (the default) a flag that governs this
@@ -2090,7 +2090,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
 #define SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      1006 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_QPSG           1007 /* int int* */
-#define SQLITE_DBCONFIG_FULL_EQP              1008 /* int int* */
+#define SQLITE_DBCONFIG_TRIGGER_EQP           1008 /* int int* */
 #define SQLITE_DBCONFIG_MAX                   1008 /* Largest DBCONFIG */
 
 /*

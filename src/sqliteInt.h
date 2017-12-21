@@ -1356,7 +1356,6 @@ struct sqlite3 {
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 skipBtreeMutex;            /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
-  u8 bFullEQP;                  /* Include triggers in EQP output */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
@@ -1497,7 +1496,9 @@ struct sqlite3 {
 #define SQLITE_QueryOnly      0x00100000  /* Disable database changes */
 #define SQLITE_CellSizeCk     0x00200000  /* Check btree cell sizes on load */
 #define SQLITE_Fts3Tokenizer  0x00400000  /* Enable fts3_tokenizer(2) */
-#define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee */
+#define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee*/
+#define SQLITE_TriggerEQP     0x01000000  /* Show trigger EXPLAIN QUERY PLAN */
+
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
 #define SQLITE_SqlTrace       0x08000000  /* Debug print SQL as it executes */

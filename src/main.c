@@ -806,21 +806,6 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
-    case SQLITE_DBCONFIG_FULL_EQP: {
-      int onoff = va_arg(ap, int);
-      int *pRes = va_arg(ap, int*);
-      if( onoff>0 ){
-        db->bFullEQP = 1;
-      }else if( onoff==0 ){
-        db->bFullEQP = 0;
-      }
-      sqlite3ExpirePreparedStatements(db);
-      if( pRes ){
-        *pRes = db->bFullEQP;
-      }
-      rc = SQLITE_OK;
-      break;
-    }
     default: {
       static const struct {
         int op;      /* The opcode */
@@ -832,6 +817,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
         { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
+        { SQLITE_DBCONFIG_TRIGGER_EQP,           SQLITE_TriggerEQP     },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
