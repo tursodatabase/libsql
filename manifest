@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\s".expert"\scommand\sto\sthe\ssqlite3.exe\sshell.
-D 2017-12-21T02:17:02.540
+C Add\sthe\sSQLITE_DBCONFIG_MAX\spreprocessor\smacro\swhich\swill\salways\sbe\sequal\sto\nthe\slargest\sSQLITE_DECONFIG\svalue.
+D 2017-12-21T14:46:11.149
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -480,7 +480,7 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 17e220191860a64a18c084141e1a8b7309e166a6f2d42c02021af27ea080d157
 F src/shell.c.in 87a048fabcf0080a78bcdd01e57933369951f7fa7d628f04bad48e900c1899a1
-F src/sqlite.h.in 95afbec6e623843d702e727765efc833586fecc688867f41f87be7db3ff1fa62
+F src/sqlite.h.in e00a8c4910e64bd72c1808e9dff80a7a6323f1f036cdd3fdf927c8eae6bb33d2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h 4d6580ab911e9bc36447ef05bf4d2aab929dde161ac117c7de6220eef06d6175
@@ -1687,8 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ec7371161bd617e40328aa015b09acc2b37b0b5d269a87050a0c57163f92801 51068dbaeaef13bb80af8126b8c4f3a454dee63de5127d706db50bf789533e60
-R 4f8ab13364d6bba7088ea515e80d086d
-T +closed 51068dbaeaef13bb80af8126b8c4f3a454dee63de5127d706db50bf789533e60
+P 0821bae7afefed98102c81104b4a477e81816bb1f43353c80865411771e3c5a7
+R 0d03176c5debc93f715c8f8149153033
 U drh
-Z b5148bb6ba613d796ac4de4909e11d71
+Z b349f9c48e8b618dcebb916f768288b4

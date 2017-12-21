@@ -2091,6 +2091,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      1006 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_QPSG           1007 /* int int* */
 #define SQLITE_DBCONFIG_FULL_EQP              1008 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1008 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -7041,7 +7042,7 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_ISINIT                  23
 #define SQLITE_TESTCTRL_SORTER_MMAP             24
 #define SQLITE_TESTCTRL_IMPOSTER                25
-#define SQLITE_TESTCTRL_LAST                    25
+#define SQLITE_TESTCTRL_LAST                    25  /* Largest TESTCTRL */
 
 /*
 ** CAPI3REF: SQLite Runtime Status
