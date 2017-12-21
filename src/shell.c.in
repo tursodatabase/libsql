@@ -2779,6 +2779,7 @@ static char zHelp[] =
   ".echo on|off           Turn command echo on or off\n"
   ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
+  ".expert                EXPERIMENTAL. Suggest indexes for specified queries\n"
 /* Because explain mode comes on automatically now, the ".explain" mode
 ** is removed from the help screen.  It is still supported for legacy, however */
 /*".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"*/
