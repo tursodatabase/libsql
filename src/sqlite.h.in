@@ -8302,15 +8302,14 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** This function may only be called from within a call to the [xBestIndex]
 ** method of a [virtual table implementation]. 
 **
-** The first argument must be the database handle with which the virtual 
-** table is associated (the one passed to the [xConnect] or [xCreate] method 
-** to create the sqlite3_vtab object. The second argument must be an index
-** into the aConstraint[] array belonging to the sqlite3_index_info structure
-** passed to xBestIndex. This function returns a pointer to a buffer 
+** The first argument must be the sqlite3_index_info object that is the
+** first parameter to the xBestIndex() method. The second argument must be
+** an index into the aConstraint[] array belonging to the sqlite3_index_info
+** structure passed to xBestIndex. This function returns a pointer to a buffer 
 ** containing the name of the collation sequence for the corresponding
 ** constraint.
 */
-SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3*, int);
+SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 
 /*
 ** CAPI3REF: Conflict resolution modes

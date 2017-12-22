@@ -19,6 +19,21 @@
 #include "sqliteInt.h"
 #include "whereInt.h"
 
+/*
+** Extra information appended to the end of sqlite3_index_info but not
+** visible to the xBestIndex function, at least not directly.  The
+** sqlite3_vtab_collation() interface knows how to reach it, however.
+**
+** This object is not an API and can be changed from one release to the
+** next.  As long as allocateIndexInfo() and sqlite3_vtab_collation()
+** agree on the structure, all will be well.
+*/
+typedef struct HiddenIndexInfo HiddenIndexInfo;
+struct HiddenIndexInfo {
+  WhereClause *pWC;   /* The Where clause being analyzed */
+  Parse *pParse;      /* The parsing context */
+};
+
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
 
@@ -841,11 +856,11 @@ end_auto_index_create:
 ** by passing the pointer returned by this function to sqlite3_free().
 */
 static sqlite3_index_info *allocateIndexInfo(
-  Parse *pParse,
-  WhereClause *pWC,
+  Parse *pParse,                  /* The parsing context */
+  WhereClause *pWC,               /* The WHERE clause being analyzed */
   Bitmask mUnusable,              /* Ignore terms with these prereqs */
-  struct SrcList_item *pSrc,
-  ExprList *pOrderBy,
+  struct SrcList_item *pSrc,      /* The FROM clause term that is the vtab */
+  ExprList *pOrderBy,             /* The ORDER BY clause */
   u16 *pmNoOmit                   /* Mask of terms not to omit */
 ){
   int i, j;
@@ -853,6 +868,7 @@ static sqlite3_index_info *allocateIndexInfo(
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_orderby *pIdxOrderBy;
   struct sqlite3_index_constraint_usage *pUsage;
+  struct HiddenIndexInfo *pHidden;
   WhereTerm *pTerm;
   int nOrderBy;
   sqlite3_index_info *pIdxInfo;
@@ -894,7 +910,7 @@ static sqlite3_index_info *allocateIndexInfo(
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
                            + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy );
+                           + sizeof(*pIdxOrderBy)*nOrderBy + sizeof(*pHidden) );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
@@ -905,7 +921,8 @@ static sqlite3_index_info *allocateIndexInfo(
   ** changing them.  We have to do some funky casting in order to
   ** initialize those fields.
   */
-  pIdxCons = (struct sqlite3_index_constraint*)&pIdxInfo[1];
+  pHidden = (struct HiddenIndexInfo*)&pIdxInfo[1];
+  pIdxCons = (struct sqlite3_index_constraint*)&pHidden[1];
   pIdxOrderBy = (struct sqlite3_index_orderby*)&pIdxCons[nTerm];
   pUsage = (struct sqlite3_index_constraint_usage*)&pIdxOrderBy[nOrderBy];
   *(int*)&pIdxInfo->nConstraint = nTerm;
@@ -915,6 +932,8 @@ static sqlite3_index_info *allocateIndexInfo(
   *(struct sqlite3_index_constraint_usage**)&pIdxInfo->aConstraintUsage =
                                                                    pUsage;
 
+  pHidden->pWC = pWC;
+  pHidden->pParse = pParse;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
@@ -3138,17 +3157,6 @@ static int whereLoopAddVirtualOne(
   return rc;
 }
 
-
-/*
-** Context object used to pass information from whereLoopAddVirtual()
-** to sqlite3_vtab_collation().
-*/
-struct BestIndexCtx {
-  WhereClause *pWC;
-  sqlite3_index_info *pIdxInfo;
-  Parse *pParse;
-};
-
 /*
 ** If this function is invoked from within an xBestIndex() callback, it
 ** returns a pointer to a buffer containing the name of the collation
@@ -3156,15 +3164,15 @@ struct BestIndexCtx {
 ** array. Or, if iCons is out of range or there is no active xBestIndex
 ** call, return NULL.
 */
-const char *sqlite3_vtab_collation(sqlite3 *db, int iCons){
-  struct BestIndexCtx *p = (struct BestIndexCtx*)db->pBestIndexCtx;
+const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
   const char *zRet = 0;
-  if( p && iCons>=0 && iCons<p->pIdxInfo->nConstraint ){
+  if( iCons>=0 && iCons<pIdxInfo->nConstraint ){
     CollSeq *pC = 0;
-    int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
-    Expr *pX = p->pWC->a[iTerm].pExpr;
+    int iTerm = pIdxInfo->aConstraint[iCons].iTermOffset;
+    Expr *pX = pHidden->pWC->a[iTerm].pExpr;
     if( pX->pLeft ){
-      pC = sqlite3BinaryCompareCollSeq(p->pParse, pX->pLeft, pX->pRight);
+      pC = sqlite3BinaryCompareCollSeq(pHidden->pParse, pX->pLeft, pX->pRight);
     }
     zRet = (pC ? pC->zName : "BINARY");
   }
@@ -3212,8 +3220,6 @@ static int whereLoopAddVirtual(
   WhereLoop *pNew;
   Bitmask mBest;               /* Tables used by best possible plan */
   u16 mNoOmit;
-  struct BestIndexCtx bic;
-  void *pSaved;
 
   assert( (mPrereq & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
@@ -3234,12 +3240,6 @@ static int whereLoopAddVirtual(
     sqlite3DbFree(pParse->db, p);
     return SQLITE_NOMEM_BKPT;
   }
-
-  bic.pWC = pWC;
-  bic.pIdxInfo = p;
-  bic.pParse = pParse;
-  pSaved = pParse->db->pBestIndexCtx;
-  pParse->db->pBestIndexCtx = (void*)&bic;
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
@@ -3317,7 +3317,6 @@ static int whereLoopAddVirtual(
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   sqlite3DbFreeNN(pParse->db, p);
-  pParse->db->pBestIndexCtx = pSaved;
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

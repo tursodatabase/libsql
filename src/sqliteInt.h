@@ -1420,8 +1420,7 @@ struct sqlite3 {
   Hash aModule;                 /* populated by sqlite3_create_module() */
   VtabCtx *pVtabCtx;            /* Context for active vtab connect/create */
   VTable **aVTrans;             /* Virtual tables with open transactions */
-  VTable *pDisconnect;    /* Disconnect these in next sqlite3_prepare() */
-  void *pBestIndexCtx;          /* For sqlite3_vtab_collation() */
+  VTable *pDisconnect;          /* Disconnect these in next sqlite3_prepare() */
 #endif
   Hash aFunc;                   /* Hash table of connection functions */
   Hash aCollSeq;                /* All collating sequences */
