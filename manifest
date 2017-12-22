@@ -1,5 +1,5 @@
-C Modify\sthe\snew\ssqlite3_vtab_collation()\sinterface\sso\sthat\sit\stakes\sa\npointer\sto\sthe\ssqlite3_index_info\sobject\spassed\sinto\sxBestIndex\srather\sthan\nan\ssqlite3\sconnection\spointer,\swhich\sthe\sxBestIndex\smethod\smight\snot\shave\naccess\sto.
-D 2017-12-22T00:52:50.426
+C In\sthe\ssqlite3TreeViewExprList()\sroutine,\sshow\sthe\s"AS"\salias\sname\sfor\s\neach\sexpression\sin\sthe\slist,\sif\sit\sexists.
+D 2017-12-22T19:53:02.654
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -541,7 +541,7 @@ F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
-F src/treeview.c 08a83195de8fad3f00542e3c8b3c1eb1222c999817c9e301ffb7f332882b96dd
+F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec3
 F src/trigger.c 775053eecf6b73062e243404b56f5064446254d5cce17d8704d5cdffd72a546a
 F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afbbfff72002089fa73b5473cc98360df14288d489e93e667332d6e884ef60da
-R b5eb5cd81beccd0fb58b9d1b00a03e31
+P 5c1fe6666019147a26480b5db1bf2f474a5d072c234c736f16ed5d2a9a040b3f
+R d3af759da34c77156099ceec10b188ae
 U drh
-Z 10e32a088c82fd051b685f8b12f5082b
+Z f7d659c7910069dbd59e1c3feefe9c0a
