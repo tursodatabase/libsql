@@ -1965,11 +1965,6 @@ void sqlite3EndTable(
       pParse->nTab = 2;
       addrTop = sqlite3VdbeCurrentAddr(v) + 1;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
-      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
-      sqlite3Select(pParse, pSelect, &dest);
-      sqlite3VdbeEndCoroutine(v, regYield);
-      sqlite3VdbeJumpHere(v, addrTop - 1);
-      if( pParse->nErr ) return;
       pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect);
       if( pSelTab==0 ) return;
       assert( p->aCol==0 );
@@ -1978,6 +1973,10 @@ void sqlite3EndTable(
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
       sqlite3DeleteTable(db, pSelTab);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
+      sqlite3Select(pParse, pSelect, &dest);
+      sqlite3VdbeEndCoroutine(v, regYield);
+      sqlite3VdbeJumpHere(v, addrTop - 1);
       addrInsLoop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, dest.iSdst, dest.nSdst, regRec);

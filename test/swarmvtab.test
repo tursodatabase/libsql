@@ -213,7 +213,7 @@ do_catchsql_test 3.1 {
         ("test.db2", "t1", 11, 20)
     ', 'fetch_db_no_such_function'
   );
-} {1 {no such function: fetch_db_no_such_function}}
+} {1 {sql error: no such function: fetch_db_no_such_function}}
 
 do_catchsql_test 3.2 {
   CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(

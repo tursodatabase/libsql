@@ -378,6 +378,27 @@ do_test colname-9.210 {
   execsql2 {SELECT t1.a, v3.a AS n FROM t1 JOIN v3}
 } {a 1 n 3}
 
+# 2017-12-23:  Ticket https://www.sqlite.org/src/info/3b4450072511e621
+# Inconsistent column names in CREATE TABLE AS
+#
+# Verify that the names of columns in the created table of a CREATE TABLE AS
+# are the same as the names of result columns in the SELECT statement.
+#
+do_execsql_test colname-9.300 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(aaa INT);
+  INSERT INTO t1(aaa) VALUES(123);
+}
+do_test colname-9.310 {
+  execsql2 {SELECT BBb FROM (SELECT aaa AS Bbb FROM t1)}
+} {Bbb 123}
+do_execsql_test colname-9.320 {
+  CREATE TABLE t2 AS SELECT BBb FROM (SELECT aaa AS Bbb FROM t1);
+  SELECT name FROM pragma_table_info('t2');
+} {Bbb}
+
+
 # Make sure the quotation marks get removed from the column names
 # when constructing a new table from an aggregate SELECT.
 # Email from Juergen Palm on 2017-07-11.

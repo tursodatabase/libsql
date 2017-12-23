@@ -297,6 +297,8 @@ SRC += \
 # Source code to the test files.
 #
 TESTSRC = \
+  $(TOP)/ext/expert/sqlite3expert.c \
+  $(TOP)/ext/expert/test_expert.c \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
   $(TOP)/ext/rbu/test_rbu.c \
@@ -691,7 +693,9 @@ SHELL_SRC = \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \
-	$(TOP)/ext/misc/sqlar.c
+	$(TOP)/ext/misc/sqlar.c \
+	$(TOP)/ext/expert/sqlite3expert.c \
+	$(TOP)/ext/expert/sqlite3expert.h
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
 	tclsh $(TOP)/tool/mkshellc.tcl >shell.c
@@ -809,6 +813,9 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
+
+sqlite3_expert$(EXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
+	$(TCCX) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert$(EXE) $(THREADLIB)
 
 CHECKER_DEPS =\
   $(TOP)/tool/mkccode.tcl \
@@ -1036,6 +1043,7 @@ clean:
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
+	rm -f sqlite3_expert sqlite3_expert.exe 
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f fuzzershell fuzzershell.exe

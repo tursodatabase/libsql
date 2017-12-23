@@ -651,10 +651,18 @@ static void yy_accept(yyParser*);  /* Forward Declaration */
 /*
 ** Perform a reduce action and the shift that must immediately
 ** follow the reduce.
+**
+** The yyLookahead and yyLookaheadToken parameters provide reduce actions
+** access to the lookahead token (if any).  The yyLookahead will be YYNOCODE
+** if the lookahead token has already been consumed.  As this procedure is
+** only called from one place, optimizing compilers will in-line it, which
+** means that the extra parameters have no performance impact.
 */
 static void yy_reduce(
   yyParser *yypParser,         /* The parser */
-  unsigned int yyruleno        /* Number of the rule by which to reduce */
+  unsigned int yyruleno,       /* Number of the rule by which to reduce */
+  int yyLookahead,             /* Lookahead token, or YYNOCODE if none */
+  ParseTOKENTYPE yyLookaheadToken  /* Value of the lookahead token */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
@@ -853,7 +861,7 @@ void Parse(
 #endif
       yymajor = YYNOCODE;
     }else if( yyact <= YY_MAX_REDUCE ){
-      yy_reduce(yypParser,yyact-YY_MIN_REDUCE);
+      yy_reduce(yypParser,yyact-YY_MIN_REDUCE,yymajor,yyminor);
     }else{
       assert( yyact == YY_ERROR_ACTION );
       yyminorunion.yy0 = yyminor;

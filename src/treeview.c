@@ -507,12 +507,20 @@ void sqlite3TreeViewBareExprList(
     sqlite3TreeViewLine(pView, "%s", zLabel);
     for(i=0; i<pList->nExpr; i++){
       int j = pList->a[i].u.x.iOrderByCol;
-      if( j ){
+      char *zName = pList->a[i].zName;
+      if( j || zName ){
         sqlite3TreeViewPush(pView, 0);
+      }
+      if( zName ){
+        sqlite3TreeViewLine(pView, "AS %s", zName);
+      }
+      if( j ){
         sqlite3TreeViewLine(pView, "iOrderByCol=%d", j);
       }
       sqlite3TreeViewExpr(pView, pList->a[i].pExpr, i<pList->nExpr-1);
-      if( j ) sqlite3TreeViewPop(pView);
+      if( j || zName ){
+        sqlite3TreeViewPop(pView);
+      }
     }
   }
 }
