@@ -1,5 +1,5 @@
-C Move\sthe\sgeneration\sof\soutput\scolumn\snames\searlier\sin\sthe\scase\sof\sa\nCREATE\sTABLE\sAS.\s\sThis\sis\sa\sfix\sfor\sticket\s[3b4450072511e62]\sand\sa\ncontinuation\sof\scheck-in\s[ade7ddf1998190b2b63]\sthat\sfixes\scases\sof\nticket\s[de3403bf5ae5f72ed6]\sthat\swere\smissed\spreviously.
-D 2017-12-23T12:33:40.443
+C Improve\sthe\serror\smessage\sthat\scomes\sback\swhen\ssqlite3_load_extension()\nfails\sbecause\sthe\snamed\sfile\sexists\sbut\sis\snot\sa\svalid\sshared\slibrary.
+D 2017-12-23T13:55:43.819
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -442,7 +442,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c cb67cc56ef2ddd13e6944b2c0dd08a920bcd9503230adef8b9928d338097c722
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
-F src/loadext.c 20865b183bb8a3723d59cf1efffc3c50217eb452c1021d077b908c94da26b0b2
+F src/loadext.c c2eb35ab31035effc0429e367147a06c2a7aeb86a9114b0cbe9b882a9fb8f131
 F src/main.c 7ce55fa3c0bf669944de309ebab1655ed06ec67869adb0372c7a1062e461c448
 F src/malloc.c a02c9e69bc76bee0f639416b947a946412890b606301454727feadcb313536d6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f194008c3aaa4ef287200e37bc5278ba9c377a7091ee3f95bad66513226b083
-R 64e4839a73a8deb3e3e75445ed44ca78
+P 6b2ff26c25bb9da344add79c93fb3e49fa034a89b38ef56e08e18d21de61f707
+R 7577ffeaa1cca163e13b3e78ba9bdfee
 U drh
-Z d26f24526e4b1ec13c6ca34a79230a0c
+Z 436076bd78ea4f3cfe09ab636dacef01
