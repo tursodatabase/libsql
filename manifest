@@ -1,5 +1,5 @@
-C Add\sa\sSELECTTRACE()\smacro\sto\sindicate\swhen\scolumn\snames\sare\sassigned\sto\na\sSELECT\sstatement.\s\sThis\shelps\swith\sdebugging\sfor\stickets\slike\n[de3403bf5ae5f72e]\sand\s[3b4450072511e621].
-D 2017-12-23T11:51:40.933
+C Move\sthe\sgeneration\sof\soutput\scolumn\snames\searlier\sin\sthe\scase\sof\sa\nCREATE\sTABLE\sAS.\s\sThis\sis\sa\sfix\sfor\sticket\s[3b4450072511e62]\sand\sa\ncontinuation\sof\scheck-in\s[ade7ddf1998190b2b63]\sthat\sfixes\scases\sof\nticket\s[de3403bf5ae5f72ed6]\sthat\swere\smissed\spreviously.
+D 2017-12-23T12:33:40.443
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -423,7 +423,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c b83a6b03f160528020bb965f0c3a40af5286cd4923c3870fd218177f03a120a7
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
-F src/build.c 87b68e3b45559ec404b12f095f0ba5f06f91a6dd2d21bd8443e41d8ac2e67196
+F src/build.c ed567f088edbc305dad33a6b14e08f8216a3860f6bad1d180450d5a5414bf346
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -478,7 +478,7 @@ F src/printf.c 9506b4b96e59c0467047155f09015750cb2878aeda3d39e5610c1192ddc3c41c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 6c84733262885f70675b7b4d5c3f5d21562cd378cf06d5b0cb3bdbdb4785b85f
+F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
 F src/shell.c.in 339169a3d1307b5566ebe9ce15832d03439206106724c78cc3d9125a7b851795
 F src/sqlite.h.in 2126192945019d4cdce335cb236b440a05ec75c93e4cd94c9c6d6e7fcc654cc4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -682,7 +682,7 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151ecac0b95
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
-F test/colname.test c47639d26cbeba6977457e5ef2c2c55c5b6c889478dd7eb0ed858ba894e7fa93
+F test/colname.test a7ecb8f1d6d8b30a6cf8fa84a2cd6f6e91cad8296376fabe485cf93cd5eb6229
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5efd854fe21470336ba4140294b6c90ef39af32e103b92c664438d7485c50f9a
-R 3deaa3da40d43e03f04500b413c136e7
+P 8f194008c3aaa4ef287200e37bc5278ba9c377a7091ee3f95bad66513226b083
+R 64e4839a73a8deb3e3e75445ed44ca78
 U drh
-Z 1c7db6ece307b188f8e97c3dc484c292
+Z d26f24526e4b1ec13c6ca34a79230a0c

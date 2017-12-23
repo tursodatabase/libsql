@@ -1381,8 +1381,9 @@ static const char *columnTypeImpl(
 
   assert( pExpr!=0 );
   assert( pNC->pSrcList!=0 );
+  assert( pExpr->op!=TK_AGG_COLUMN );  /* This routine runes before aggregates
+                                       ** are processed */
   switch( pExpr->op ){
-    case TK_AGG_COLUMN:
     case TK_COLUMN: {
       /* The expression is a column. Locate the table the column is being
       ** extracted from in NameContext.pSrcList. This table may be real
@@ -1391,8 +1392,6 @@ static const char *columnTypeImpl(
       Table *pTab = 0;            /* Table structure column is extracted from */
       Select *pS = 0;             /* Select the column is extracted from */
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
-      testcase( pExpr->op==TK_AGG_COLUMN );
-      testcase( pExpr->op==TK_COLUMN );
       while( pNC && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
@@ -1705,12 +1704,12 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( (pColExpr->op==TK_COLUMN || pColExpr->op==TK_AGG_COLUMN)
-       && pColExpr->pTab!=0 
-      ){
+      assert( pColExpr->op!=TK_AGG_COLUMN );
+      if( pColExpr->op==TK_COLUMN ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
         Table *pTab = pColExpr->pTab;
+        assert( pTab!=0 );
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){
