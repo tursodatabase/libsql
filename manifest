@@ -1,5 +1,5 @@
-C Remove\sthe\sExprSpan\sobject.\sInstead,\skeep\strack\sof\sthe\stest\sof\ssubphrases\sin\nthe\sparse\susing\sthe\s"scanpt"\snon-terminal.
-D 2017-12-24T00:18:47.740
+C Improved\sparser\stracing\soutput.
+D 2017-12-24T14:14:21.392
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -1609,7 +1609,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c e6056373044d55296d21f81467dba7632bbb81dc49af072b3f0e76338771497e
-F tool/lempar.c 967ebf585cd09b11b89d255d213865109a9c4ff075680d22580a2826de288c89
+F tool/lempar.c a427c2375df118fa52e69174ffbbf9e26878096f0a109df6b77062d6032afe18
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1687,10 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07c773148d8db185fa54991df09298b64f4fef28879e6c9395759265e8183977
-R 1cdf837f203b6ea58ba0352a2b260bed
-T *branch * span-refactor
-T *sym-span-refactor *
-T -sym-trunk *
+P 3eab7bdc44e0878b83dc86f27058a40c2ffafeacadc566f03693f6dc7e40a504
+R 35c7a29b183ac93da1a9be4e6a82bb63
 U drh
-Z 03a6ffebedfd10412e429ce17606ec66
+Z 121e81b010860ccafac66f3ea34cc3c9
