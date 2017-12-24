@@ -384,6 +384,12 @@ struct lemon {
   int nrule;               /* Number of rules */
   int nsymbol;             /* Number of terminal and nonterminal symbols */
   int nterminal;           /* Number of terminal symbols */
+  int minShiftReduce;      /* Minimum shift-reduce action value */
+  int errAction;           /* Error action value */
+  int accAction;           /* Accept action value */
+  int noAction;            /* No-op action value */
+  int minReduce;           /* Minimum reduce action */
+  int maxAction;           /* Maximum action value of any kind */
   struct symbol **symbols; /* Sorted array of pointers to symbols */
   int errorcnt;            /* Number of errors */
   struct symbol *errsym;   /* The error symbol */
@@ -3020,6 +3026,27 @@ PRIVATE FILE *file_open(
   return fp;
 }
 
+/* Print the text of a rule
+*/
+void rule_print(FILE *out, struct rule *rp){
+  int i, j;
+  fprintf(out, "%s",rp->lhs->name);
+  /*    if( rp->lhsalias ) fprintf(out,"(%s)",rp->lhsalias); */
+  fprintf(out," ::=");
+  for(i=0; i<rp->nrhs; i++){
+    struct symbol *sp = rp->rhs[i];
+    if( sp->type==MULTITERMINAL ){
+      fprintf(out," %s", sp->subsym[0]->name);
+      for(j=1; j<sp->nsubsym; j++){
+        fprintf(out,"|%s", sp->subsym[j]->name);
+      }
+    }else{
+      fprintf(out," %s", sp->name);
+    }
+    /* if( rp->rhsalias[i] ) fprintf(out,"(%s)",rp->rhsalias[i]); */
+  }
+}
+
 /* Duplicate the input file without comments and without actions
 ** on rules */
 void Reprint(struct lemon *lemp)
@@ -3047,21 +3074,7 @@ void Reprint(struct lemon *lemp)
     printf("\n");
   }
   for(rp=lemp->rule; rp; rp=rp->next){
-    printf("%s",rp->lhs->name);
-    /*    if( rp->lhsalias ) printf("(%s)",rp->lhsalias); */
-    printf(" ::=");
-    for(i=0; i<rp->nrhs; i++){
-      sp = rp->rhs[i];
-      if( sp->type==MULTITERMINAL ){
-        printf(" %s", sp->subsym[0]->name);
-        for(j=1; j<sp->nsubsym; j++){
-          printf("|%s", sp->subsym[j]->name);
-        }
-      }else{
-        printf(" %s", sp->name);
-      }
-      /* if( rp->rhsalias[i] ) printf("(%s)",rp->rhsalias[i]); */
-    }
+    rule_print(stdout, rp);
     printf(".");
     if( rp->precsym ) printf(" [%s]",rp->precsym->name);
     /* if( rp->code ) printf("\n    %s",rp->code); */
@@ -3321,16 +3334,19 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   switch( ap->type ){
     case SHIFT:  act = ap->x.stp->statenum;                        break;
     case SHIFTREDUCE: {
-      act = ap->x.rp->iRule + lemp->nstate;
       /* Since a SHIFT is inherient after a prior REDUCE, convert any
       ** SHIFTREDUCE action with a nonterminal on the LHS into a simple
       ** REDUCE action: */
-      if( ap->sp->index>=lemp->nterminal ) act += lemp->nrule;
+      if( ap->sp->index>=lemp->nterminal ){
+        act = lemp->minReduce + ap->x.rp->iRule;
+      }else{
+        act = lemp->minShiftReduce + ap->x.rp->iRule;
+      }
       break;
     }
-    case REDUCE: act = ap->x.rp->iRule + lemp->nstate+lemp->nrule; break;
-    case ERROR:  act = lemp->nstate + lemp->nrule*2;               break;
-    case ACCEPT: act = lemp->nstate + lemp->nrule*2 + 1;           break;
+    case REDUCE: act = lemp->minReduce + ap->x.rp->iRule;          break;
+    case ERROR:  act = lemp->errAction;                            break;
+    case ACCEPT: act = lemp->accAction;                            break;
     default:     act = -1; break;
   }
   return act;
@@ -4038,6 +4054,13 @@ void ReportTable(
   int mnNtOfst, mxNtOfst;
   struct axset *ax;
 
+  lemp->minShiftReduce = lemp->nstate;
+  lemp->errAction = lemp->minShiftReduce + lemp->nrule;
+  lemp->accAction = lemp->errAction + 1;
+  lemp->noAction = lemp->accAction + 1;
+  lemp->minReduce = lemp->noAction + 1;
+  lemp->maxAction = lemp->minReduce + lemp->nrule;
+
   in = tplt_open(lemp);
   if( in==0 ) return;
   out = file_open(lemp,".c","wb");
@@ -4076,7 +4099,7 @@ void ReportTable(
     minimum_size_type(0, lemp->nsymbol+1, &szCodeType)); lineno++;
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
-    minimum_size_type(0,lemp->nstate+lemp->nrule*2+5,&szActionType)); lineno++;
+    minimum_size_type(0,lemp->maxAction,&szActionType)); lineno++;
   if( lemp->wildcard ){
     fprintf(out,"#define YYWILDCARD %d\n",
        lemp->wildcard->index); lineno++;
@@ -4201,15 +4224,16 @@ void ReportTable(
   fprintf(out,"#define YYNSTATE             %d\n",lemp->nxstate);  lineno++;
   fprintf(out,"#define YYNRULE              %d\n",lemp->nrule);  lineno++;
   fprintf(out,"#define YY_MAX_SHIFT         %d\n",lemp->nxstate-1); lineno++;
-  fprintf(out,"#define YY_MIN_SHIFTREDUCE   %d\n",lemp->nstate); lineno++;
-  i = lemp->nstate + lemp->nrule;
+  i = lemp->minShiftReduce;
+  fprintf(out,"#define YY_MIN_SHIFTREDUCE   %d\n",i); lineno++;
+  i += lemp->nrule;
   fprintf(out,"#define YY_MAX_SHIFTREDUCE   %d\n", i-1); lineno++;
-  fprintf(out,"#define YY_MIN_REDUCE        %d\n", i); lineno++;
-  i = lemp->nstate + lemp->nrule*2;
+  fprintf(out,"#define YY_ERROR_ACTION      %d\n", lemp->errAction); lineno++;
+  fprintf(out,"#define YY_ACCEPT_ACTION     %d\n", lemp->accAction); lineno++;
+  fprintf(out,"#define YY_NO_ACTION         %d\n", lemp->noAction); lineno++;
+  fprintf(out,"#define YY_MIN_REDUCE        %d\n", lemp->minReduce); lineno++;
+  i = lemp->minReduce + lemp->nrule;
   fprintf(out,"#define YY_MAX_REDUCE        %d\n", i-1); lineno++;
-  fprintf(out,"#define YY_ERROR_ACTION      %d\n", i); lineno++;
-  fprintf(out,"#define YY_ACCEPT_ACTION     %d\n", i+1); lineno++;
-  fprintf(out,"#define YY_NO_ACTION         %d\n", i+2); lineno++;
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Now output the action table and its associates:
@@ -4231,7 +4255,7 @@ void ReportTable(
   fprintf(out,"static const YYACTIONTYPE yy_action[] = {\n"); lineno++;
   for(i=j=0; i<n; i++){
     int action = acttab_yyaction(pActtab, i);
-    if( action<0 ) action = lemp->nstate + lemp->nrule + 2;
+    if( action<0 ) action = lemp->noAction;
     if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", action);
     if( j==9 || i==n-1 ){
@@ -4320,7 +4344,11 @@ void ReportTable(
   for(i=j=0; i<n; i++){
     stp = lemp->sorted[i];
     if( j==0 ) fprintf(out," /* %5d */ ", i);
-    fprintf(out, " %4d,", stp->iDfltReduce+lemp->nstate+lemp->nrule);
+    if( stp->iDfltReduce<0 ){
+      fprintf(out, " %4d,", lemp->errAction);
+    }else{
+      fprintf(out, " %4d,", stp->iDfltReduce + lemp->minReduce);
+    }
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
       j = 0;
@@ -4401,7 +4429,7 @@ void ReportTable(
       if( sp==0 || sp->type==TERMINAL ||
           sp->index<=0 || sp->destructor!=0 ) continue;
       if( once ){
-        fprintf(out, "      /* Default NON-TERMINAL Destructor */\n"); lineno++;
+        fprintf(out, "      /* Default NON-TERMINAL Destructor */\n");lineno++;
         once = 0;
       }
       fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
@@ -4444,8 +4472,10 @@ void ReportTable(
   ** Note: This code depends on the fact that rules are number
   ** sequentually beginning with 0.
   */
-  for(rp=lemp->rule; rp; rp=rp->next){
-    fprintf(out,"  { %d, %d },\n",rp->lhs->index,-rp->nrhs); lineno++;
+  for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
+    fprintf(out,"  { %4d, %4d }, /* (%d) ",rp->lhs->index,-rp->nrhs,i);
+    rule_print(out, rp);
+    fprintf(out," */\n"); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
@@ -4711,7 +4741,7 @@ void ResortStates(struct lemon *lemp)
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
     stp->nTknAct = stp->nNtAct = 0;
-    stp->iDfltReduce = lemp->nrule;  /* Init dflt action to "syntax error" */
+    stp->iDfltReduce = -1; /* Init dflt action to "syntax error" */
     stp->iTknOfst = NO_OFFSET;
     stp->iNtOfst = NO_OFFSET;
     for(ap=stp->ap; ap; ap=ap->next){
@@ -4723,7 +4753,7 @@ void ResortStates(struct lemon *lemp)
           stp->nNtAct++;
         }else{
           assert( stp->autoReduce==0 || stp->pDfltReduce==ap->x.rp );
-          stp->iDfltReduce = iAction - lemp->nstate - lemp->nrule;
+          stp->iDfltReduce = iAction;
         }
       }
     }
