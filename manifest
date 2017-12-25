@@ -1,5 +1,5 @@
-C Fix\sa\sNULL\spointer\sdereference\safter\sa\ssyntax\serror\sthat\scan\soccur\sas\sa\nresult\sof\scheck-in\s[6b2ff26c25bb9da3]\syesterday.\s\sThis\sproblem\swas\ndiscovered\sby\sthe\sOSSFuzz.
-D 2017-12-24T18:56:28.786
+C Fix\san\sassertion\sfault\son\sa\ssyntax\serror\sinput\scaused\sby\scheck-in\n[6b2ff26c25bb9da3].\s\sProblem\sdiscovered\sby\sOSSFuzz.
+D 2017-12-25T13:43:54.974
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -423,7 +423,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c b83a6b03f160528020bb965f0c3a40af5286cd4923c3870fd218177f03a120a7
 F src/btree.h 32ef5d3f25dc70ef1ee9cecf84a023c21378f06a57cd701d2e866e141b150f09
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
-F src/build.c ab5bdf955c85bcd56acbf310a48bbd50b4b92079efa40d997a7e4246f8e03741
+F src/build.c 6ab114a9a4717622df3745d26f2c55e9113f356441a8f76fa2b1d7e1f2472c20
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -682,7 +682,7 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151ecac0b95
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
-F test/colname.test 36da785927822ecd0de979459e27e9be63f458dd08d3edde41af3af37a337d58
+F test/colname.test 101aa39392a1f6883278f588836a3ab99178f8103f78032433400475cc05109f
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07c773148d8db185fa54991df09298b64f4fef28879e6c9395759265e8183977
-R 2e4222d820aa06549d33319e9e33c627
+P d49afb8f9804e96662d1e3cadc4c6643908706d848a53d5ed019919c98f2ccba
+R 22dc7c511444b2944fcb40dc7656150e
 U drh
-Z 67298e45eb2d4d992f0cdf5678deffdf
+Z df3951acae9acd7f479ba37833a7cfe6

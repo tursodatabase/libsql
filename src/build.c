@@ -1976,6 +1976,7 @@ void sqlite3EndTable(
       sqlite3DeleteTable(db, pSelTab);
       sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
       sqlite3Select(pParse, pSelect, &dest);
+      if( pParse->nErr ) return;
       sqlite3VdbeEndCoroutine(v, regYield);
       sqlite3VdbeJumpHere(v, addrTop - 1);
       addrInsLoop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);

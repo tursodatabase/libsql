@@ -398,7 +398,7 @@ do_execsql_test colname-9.320 {
   SELECT name FROM pragma_table_info('t2');
 } {Bbb}
 
-# Issue detected by clusterfuzz on 2017-12-24 (Christmas Eve)
+# Issue detected by OSSFuzz on 2017-12-24 (Christmas Eve)
 # caused by check-in https://sqlite.org/src/info/6b2ff26c25
 #
 # Prior to being fixed, the following CREATE TABLE was dereferencing
@@ -408,6 +408,15 @@ do_catchsql_test colname-9.400 {
   CREATE TABLE t4 AS SELECT #0;
 } {1 {near "#0": syntax error}}
 
+# Issue detected by OSSFuzz on 2017-12-25 (Christmas Day)
+# also caused by check-in https://sqlite.org/src/info/6b2ff26c25
+#
+# Prior to being fixed, the following CREATE TABLE caused an
+# assertion fault.
+#
+do_catchsql_test colname-9.410 {
+  CREATE TABLE t5 AS SELECT RAISE(abort,a);
+} {1 {RAISE() may only be used within a trigger-program}}
 
 # Make sure the quotation marks get removed from the column names
 # when constructing a new table from an aggregate SELECT.
