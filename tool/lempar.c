@@ -131,19 +131,13 @@
 **    (A)   N = yy_action[ yy_shift_ofst[S] + X ]
 **    (B)   N = yy_default[S]
 **
-** The (A) formula is preferred.  The B formula is used instead if:
-**    (1)  The yy_shift_ofst[S]+X value is out of range, or
-**    (2)  yy_lookahead[yy_shift_ofst[S]+X] is not equal to X, or
-**    (3)  yy_shift_ofst[S] equal YY_SHIFT_USE_DFLT.
-** (Implementation note: YY_SHIFT_USE_DFLT is chosen so that
-** YY_SHIFT_USE_DFLT+X will be out of range for all possible lookaheads X.
-** Hence only tests (1) and (2) need to be evaluated.)
+** The (A) formula is preferred.  The B formula is used instead if
+** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X.
 **
 ** The formulas above are for computing the action when the lookahead is
 ** a terminal symbol.  If the lookahead is a non-terminal (as occurs after
 ** a reduce action) then the yy_reduce_ofst[] array is used in place of
-** the yy_shift_ofst[] array and YY_REDUCE_USE_DFLT is used in place of
-** YY_SHIFT_USE_DFLT.
+** the yy_shift_ofst[] array.
 **
 ** The following are the tables generated in this section:
 **
@@ -478,7 +472,8 @@ static unsigned int yy_find_shift_action(
     i = yy_shift_ofst[stateno];
     assert( iLookAhead!=YYNOCODE );
     i += iLookAhead;
-    if( i<0 || i>=YY_ACTTAB_COUNT || yy_lookahead[i]!=iLookAhead ){
+    assert( i>=0 && i<sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
+    if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
@@ -541,7 +536,6 @@ static int yy_find_reduce_action(
   assert( stateno<=YY_REDUCE_COUNT );
 #endif
   i = yy_reduce_ofst[stateno];
-  assert( i!=YY_REDUCE_USE_DFLT );
   assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
 #ifdef YYERRORSYMBOL

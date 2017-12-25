@@ -413,6 +413,7 @@ struct lemon {
   char *tokenprefix;       /* A prefix added to token names in the .h file */
   int nconflict;           /* Number of parsing conflicts */
   int nactiontab;          /* Number of entries in the yy_action[] table */
+  int nlookaheadtab;       /* Number of entries in yy_lookahead[] */
   int tablesize;           /* Total table size of all tables in bytes */
   int basisflag;           /* Print only basis configurations */
   int has_fallback;        /* True if any %fallback is seen in the grammar */
@@ -589,10 +590,12 @@ struct acttab {
   int mxLookahead;             /* Maximum aLookahead[].lookahead */
   int nLookahead;              /* Used slots in aLookahead[] */
   int nLookaheadAlloc;         /* Slots allocated in aLookahead[] */
+  int nterminal;               /* Number of terminal symbols */
+  int nsymbol;                 /* total number of symbols */
 };
 
 /* Return the number of entries in the yy_action table */
-#define acttab_size(X) ((X)->nAction)
+#define acttab_lookahead_size(X) ((X)->nAction)
 
 /* The value for the N-th entry in yy_action */
 #define acttab_yyaction(X,N)  ((X)->aAction[N].action)
@@ -608,13 +611,15 @@ void acttab_free(acttab *p){
 }
 
 /* Allocate a new acttab structure */
-acttab *acttab_alloc(void){
+acttab *acttab_alloc(int nsymbol, int nterminal){
   acttab *p = (acttab *) calloc( 1, sizeof(*p) );
   if( p==0 ){
     fprintf(stderr,"Unable to allocate memory for a new acttab.");
     exit(1);
   }
   memset(p, 0, sizeof(*p));
+  p->nsymbol = nsymbol;
+  p->nterminal = nterminal;
   return p;
 }
 
@@ -655,16 +660,24 @@ void acttab_action(acttab *p, int lookahead, int action){
 ** to an empty set in preparation for a new round of acttab_action() calls.
 **
 ** Return the offset into the action table of the new transaction.
+**
+** If the makeItSafe parameter is true, then the offset is chosen so that
+** it is impossible to overread the yy_lookaside[] table regardless of
+** the lookaside token.  This is done for the terminal symbols, as they
+** come from external inputs and can contain syntax errors.  When makeItSafe
+** is false, there is more flexibility in selecting offsets, resulting in
+** a smaller table.  For non-terminal symbols, which are never syntax errors,
+** makeItSafe can be false.
 */
-int acttab_insert(acttab *p){
-  int i, j, k, n;
+int acttab_insert(acttab *p, int makeItSafe){
+  int i, j, k, n, end;
   assert( p->nLookahead>0 );
 
   /* Make sure we have enough space to hold the expanded action table
   ** in the worst case.  The worst case occurs if the transaction set
   ** must be appended to the current action table
   */
-  n = p->mxLookahead + 1;
+  n = p->nsymbol + 1;
   if( p->nAction + n >= p->nActionAlloc ){
     int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
@@ -686,7 +699,8 @@ int acttab_insert(acttab *p){
   **
   ** i is the index in p->aAction[] where p->mnLookahead is inserted.
   */
-  for(i=p->nAction-1; i>=0; i--){
+  end = makeItSafe ? p->mnLookahead : 0;
+  for(i=p->nAction-1; i>=end; i--){
     if( p->aAction[i].lookahead==p->mnLookahead ){
       /* All lookaheads and actions in the aLookahead[] transaction
       ** must match against the candidate aAction[i] entry. */
@@ -716,12 +730,13 @@ int acttab_insert(acttab *p){
   ** an empty offset in the aAction[] table in which we can add the
   ** aLookahead[] transaction.
   */
-  if( i<0 ){
+  if( i<end ){
     /* Look for holes in the aAction[] table that fit the current
     ** aLookahead[] transaction.  Leave i set to the offset of the hole.
     ** If no holes are found, i is left at p->nAction, which means the
     ** transaction will be appended. */
-    for(i=0; i<p->nActionAlloc - p->mxLookahead; i++){
+    i = makeItSafe ? p->mnLookahead : 0;
+    for(; i<p->nActionAlloc - p->mxLookahead; i++){
       if( p->aAction[i].lookahead<0 ){
         for(j=0; j<p->nLookahead; j++){
           k = p->aLookahead[j].lookahead - p->mnLookahead + i;
@@ -739,16 +754,34 @@ int acttab_insert(acttab *p){
     }
   }
   /* Insert transaction set at index i. */
+#if 0
+  printf("Acttab:");
+  for(j=0; j<p->nLookahead; j++){
+    printf(" %d", p->aLookahead[j].lookahead);
+  }
+  printf(" inserted at %d\n", i);
+#endif
   for(j=0; j<p->nLookahead; j++){
     k = p->aLookahead[j].lookahead - p->mnLookahead + i;
     p->aAction[k] = p->aLookahead[j];
     if( k>=p->nAction ) p->nAction = k+1;
   }
+  if( makeItSafe && i+p->nterminal>p->nAction ) p->nAction = i+p->nterminal;
   p->nLookahead = 0;
 
   /* Return the offset that is added to the lookahead in order to get the
   ** index into yy_action of the action */
   return i - p->mnLookahead;
+}
+
+/*
+** Return the size of the action table without the trailing syntax error
+** entries.
+*/
+int acttab_action_size(acttab *p){
+  int n = p->nAction;
+  while( n>0 && p->aAction[n-1].lookahead<0 ){ n--; }
+  return n;
 }
 
 /********************** From the file "build.c" *****************************/
@@ -1724,6 +1757,7 @@ int main(int argc, char **argv)
     stats_line("states", lem.nxstate);
     stats_line("conflicts", lem.nconflict);
     stats_line("action table entries", lem.nactiontab);
+    stats_line("lookahead table entries", lem.nlookaheadtab);
     stats_line("total table size (bytes)", lem.tablesize);
   }
   if( lem.nconflict > 0 ){
@@ -4167,7 +4201,7 @@ void ReportTable(
   ** of placing the largest action sets first */
   for(i=0; i<lemp->nxstate*2; i++) ax[i].iOrder = i;
   qsort(ax, lemp->nxstate*2, sizeof(ax[0]), axset_compare);
-  pActtab = acttab_alloc();
+  pActtab = acttab_alloc(lemp->nsymbol, lemp->nterminal);
   for(i=0; i<lemp->nxstate*2 && ax[i].nAction>0; i++){
     stp = ax[i].stp;
     if( ax[i].isTkn ){
@@ -4178,7 +4212,7 @@ void ReportTable(
         if( action<0 ) continue;
         acttab_action(pActtab, ap->sp->index, action);
       }
-      stp->iTknOfst = acttab_insert(pActtab);
+      stp->iTknOfst = acttab_insert(pActtab, 1);
       if( stp->iTknOfst<mnTknOfst ) mnTknOfst = stp->iTknOfst;
       if( stp->iTknOfst>mxTknOfst ) mxTknOfst = stp->iTknOfst;
     }else{
@@ -4190,7 +4224,7 @@ void ReportTable(
         if( action<0 ) continue;
         acttab_action(pActtab, ap->sp->index, action);
       }
-      stp->iNtOfst = acttab_insert(pActtab);
+      stp->iNtOfst = acttab_insert(pActtab, 0);
       if( stp->iNtOfst<mnNtOfst ) mnNtOfst = stp->iNtOfst;
       if( stp->iNtOfst>mxNtOfst ) mxNtOfst = stp->iNtOfst;
     }
@@ -4249,7 +4283,7 @@ void ReportTable(
   */
 
   /* Output the yy_action table */
-  lemp->nactiontab = n = acttab_size(pActtab);
+  lemp->nactiontab = n = acttab_action_size(pActtab);
   lemp->tablesize += n*szActionType;
   fprintf(out,"#define YY_ACTTAB_COUNT (%d)\n", n); lineno++;
   fprintf(out,"static const YYACTIONTYPE yy_action[] = {\n"); lineno++;
@@ -4268,6 +4302,7 @@ void ReportTable(
   fprintf(out, "};\n"); lineno++;
 
   /* Output the yy_lookahead table */
+  lemp->nlookaheadtab = n = acttab_lookahead_size(pActtab);
   lemp->tablesize += n*szCodeType;
   fprintf(out,"static const YYCODETYPE yy_lookahead[] = {\n"); lineno++;
   for(i=j=0; i<n; i++){
@@ -4287,7 +4322,6 @@ void ReportTable(
   /* Output the yy_shift_ofst[] table */
   n = lemp->nxstate;
   while( n>0 && lemp->sorted[n-1]->iTknOfst==NO_OFFSET ) n--;
-  fprintf(out, "#define YY_SHIFT_USE_DFLT (%d)\n", lemp->nactiontab); lineno++;
   fprintf(out, "#define YY_SHIFT_COUNT    (%d)\n", n-1); lineno++;
   fprintf(out, "#define YY_SHIFT_MIN      (%d)\n", mnTknOfst); lineno++;
   fprintf(out, "#define YY_SHIFT_MAX      (%d)\n", mxTknOfst); lineno++;
@@ -4312,7 +4346,6 @@ void ReportTable(
   fprintf(out, "};\n"); lineno++;
 
   /* Output the yy_reduce_ofst[] table */
-  fprintf(out, "#define YY_REDUCE_USE_DFLT (%d)\n", mnNtOfst-1); lineno++;
   n = lemp->nxstate;
   while( n>0 && lemp->sorted[n-1]->iNtOfst==NO_OFFSET ) n--;
   fprintf(out, "#define YY_REDUCE_COUNT (%d)\n", n-1); lineno++;
@@ -4382,10 +4415,8 @@ void ReportTable(
   */
   for(i=0; i<lemp->nsymbol; i++){
     lemon_sprintf(line,"\"%s\",",lemp->symbols[i]->name);
-    fprintf(out,"  %-15s",line);
-    if( (i&3)==3 ){ fprintf(out,"\n"); lineno++; }
+    fprintf(out,"  /* %4d */ \"%s\",\n",i, lemp->symbols[i]->name); lineno++;
   }
-  if( (i&3)!=0 ){ fprintf(out,"\n"); lineno++; }
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate a table containing a text string that describes every

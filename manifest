@@ -1,5 +1,5 @@
-C In\sthe\sLEMON-generated\sparser,\savoid\sunnecessary\stests\sfor\sthe\sacceptance\nstate.
-D 2017-12-25T00:10:05.418
+C Enhance\sLEMON\sso\sthat\sit\sgenerates\sthe\saction\stable\sin\ssuch\sa\sway\sthat\sno\nrange\scheck\sis\sneeded\son\sthe\slookahead\stable\sto\sverify\sthat\sthe\snext\sinput\ntoken\sis\svalid.\s\sThis\smakes\sthe\slookahead\stable\sslightly\slarger\s(about\s120\nbytes)\sbut\shelps\sthe\sparser\sto\srun\sfaster.
+D 2017-12-25T04:15:38.668
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -1608,8 +1608,8 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 7c6919d98e459c0f8a3673be64b03425553733dba01c12939b2fadc30e4e2804
-F tool/lempar.c 8062f219b4ce349853cb3ab3ebd3ab44466604235347457d703a9f4252e76dd5
+F tool/lemon.c c8d7ce4fe7a90f7fa6a5985452aa926fcf25376cf90095c9d06c432ab0bebdbc
+F tool/lempar.c 427ee280f3c3781e82bbee21f428bc8ae18ab245d4f66d65da46b598ded81648
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7bfe7a360261ac7227840db49487c2f0fe338a2f1b868fcaada1e04a8d2b8f7a
-R 904d9f58d13471f5c0ad3064ead9b812
+P fdbb35c54f2b6cb65d04ac295f207ff3e69360e0558348c77eb5e62691807046
+R f14cbf100834d359550a23c924f7ebaa
 U drh
-Z c00f50853c78fa733a13b33ab92ee708
+Z bb1d7d0db816330a6f1e2b8011c2819b
