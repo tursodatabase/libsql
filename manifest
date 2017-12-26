@@ -1,5 +1,5 @@
-C Fix\scrashes\sthat\scould\soccur\sif\sSQL\sNULL\svalues\swere\spassed\sto\sthe\sbuilt-in\nFTS5\ssnippet\sfunction.\sEdit:\sbreaks\samalgamation\sbuilds.
-D 2017-12-26T14:32:25.807
+C Faster\sand\ssmaller\simplementation\sof\ssqlite3AtoF()\sbased\son\sa\ssuggestion\nfrom\sCezary\sH.\sNoweta.
+D 2017-12-26T14:46:20.800
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -545,7 +545,7 @@ F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec
 F src/trigger.c 775053eecf6b73062e243404b56f5064446254d5cce17d8704d5cdffd72a546a
 F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
-F src/util.c d01fa6f45bfad3b65fb2490513aa2e0676412c61b4b094340b513cf72c3704a4
+F src/util.c 7315e97a8dc2c8e19ca64196c652cf0a65d13fd0a211b2cec082062372dc6261
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
 F src/vdbe.c 3393b508d9ad084ffce232a7c53e375ef5ac99b50b685c5131fcdfce97a9d534
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
@@ -1687,8 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ebfea8728fec955b1d74b1d0a3de498fd1a32e8b39572a8fdab606ed87b169b4
-Q +553a3ad32498ddda920216cd44a376a439a58fbb326d2d3800528867db1ffa9d
-R 742f62796704fae3ae9dc15618c72290
-U dan
-Z ecb93df9cf8c6f4bd1c8f7a6ca97d753
+P 6a790b67a0a5c698526db16ea262b13ecdd1b6ca74e80bdccfcad88ddbdc933a
+R c3240df89b3aa2504611bdd745085460
+U drh
+Z 3dc20c6e2c72c6078d443025934f152b
