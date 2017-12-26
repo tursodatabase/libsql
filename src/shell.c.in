@@ -6108,6 +6108,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,"BOOLEAN"           },
       { "never_corrupt",      SQLITE_TESTCTRL_NEVER_CORRUPT, "BOOLEAN"            },
       { "optimizations",      SQLITE_TESTCTRL_OPTIMIZATIONS, "DISABLE-MASK"       },
+#ifdef YYCOVERAGE
+      { "parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE, ""                 },
+#endif
       { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "           },
       { "prng_reset",         SQLITE_TESTCTRL_PRNG_RESET,    ""                   },
       { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""                   },
@@ -6233,6 +6236,14 @@ static int do_meta_command(char *zLine, ShellState *p){
             isOk = 3;
           }
           break;
+
+#ifdef YYCOVERAGE
+        case SQLITE_TESTCTRL_PARSER_COVERAGE:
+          if( nArg==2 ){
+            sqlite3_test_control(testctrl, p->out);
+            isOk = 3;
+          }
+#endif
       }
     }
     if( isOk==0 && iCtrl>=0 ){

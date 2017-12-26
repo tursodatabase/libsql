@@ -4257,6 +4257,7 @@ void ReportTable(
   ** been computed */
   fprintf(out,"#define YYNSTATE             %d\n",lemp->nxstate);  lineno++;
   fprintf(out,"#define YYNRULE              %d\n",lemp->nrule);  lineno++;
+  fprintf(out,"#define YYNTOKEN             %d\n",lemp->nterminal); lineno++;
   fprintf(out,"#define YY_MAX_SHIFT         %d\n",lemp->nxstate-1); lineno++;
   i = lemp->minShiftReduce;
   fprintf(out,"#define YY_MIN_SHIFTREDUCE   %d\n",i); lineno++;

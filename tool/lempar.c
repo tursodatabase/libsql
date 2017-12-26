@@ -72,6 +72,7 @@
 **                       defined, then do no error processing.
 **    YYNSTATE           the combined number of states.
 **    YYNRULE            the number of rules in the grammar
+**    YYNTOKEN           Number of terminal symbols
 **    YY_MAX_SHIFT       Maximum value for shift actions
 **    YY_MIN_SHIFTREDUCE Minimum value for shift-reduce actions
 **    YY_MAX_SHIFTREDUCE Maximum value for shift-reduce actions
@@ -253,13 +254,13 @@ void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
 }
 #endif /* NDEBUG */
 
-#ifndef NDEBUG
+#if defined(YYCOVERAGE) || !defined(NDEBUG)
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
 static const char *const yyTokenName[] = { 
 %%
 };
-#endif /* NDEBUG */
+#endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
 #ifndef NDEBUG
 /* For tracing reduce actions, the names of all rules are required.
@@ -455,6 +456,35 @@ int ParseStackPeak(void *p){
 }
 #endif
 
+/* This array of booleans keeps track of the parser statement
+** coverage.  The element yycoverage[X][Y] is set when the parser
+** is in state X and has a lookahead token Y.  In a well-tested
+** systems, every element of this matrix should end up being set.
+*/
+#if defined(YYCOVERAGE)
+static unsigned char yycoverage[YYNSTATE][YYNTOKEN];
+#endif
+
+/*
+** Write into out a description of every state/lookahead combination that
+** has not previously been seen by the parser.  Return the number of 
+** missed state/lookahead combinations.
+*/
+#if defined(YYCOVERAGE)
+int ParseCoverage(FILE *out){
+  int i, j;
+  int nMissed = 0;
+  for(i=0; i<YYNSTATE; i++){
+    for(j=0; j<YYNTOKEN; j++){
+      if( yycoverage[i][j] ) continue;
+      nMissed++;
+      if( out ) fprintf(out,"State %d lookahead %s\n", i, yyTokenName[j]);
+    }
+  }
+  return nMissed;
+}
+#endif
+
 /*
 ** Find the appropriate action for a parser given the terminal
 ** look-ahead token iLookAhead.
@@ -468,6 +498,9 @@ static unsigned int yy_find_shift_action(
  
   if( stateno>YY_MAX_SHIFT ) return stateno;
   assert( stateno <= YY_SHIFT_COUNT );
+#if defined(YYCOVERAGE)
+  yycoverage[stateno][iLookAhead] = 1;
+#endif
   do{
     i = yy_shift_ofst[stateno];
     assert( iLookAhead!=YYNOCODE );
