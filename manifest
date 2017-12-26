@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk.
-D 2017-12-23T18:34:49.545
+C Add\snew\sfile\sext/misc/zipfile.c,\scontaining\sa\svirtual\stable\sfor\sread-only\naccess\sto\ssimple\szip\sarchives.
+D 2017-12-26T20:39:58.777
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
@@ -302,6 +302,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
+F ext/misc/zipfile.c 9736694a5eb029397e769f06517250be8b8e3836f4869246bfb60942a4047227
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -404,7 +405,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk eef9a9918485b5df70d7a69ed3d0e1dd182bf714740122a144905a59d42da5c6
+F main.mk fc13303745f7a06e2eac69406ee0e7ba481f6df37a528ceb6ebacc03e310a020
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -482,7 +483,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in e739db2809b9ad38ac389a89bead6986542a679ca33b153aef5850856998b525
+F src/shell.c.in 1c927f9407fa4e58ed114577971525209ea12a293d25fe689d1973d9fef17f74
 F src/sqlite.h.in 2126192945019d4cdce335cb236b440a05ec75c93e4cd94c9c6d6e7fcc654cc4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1691,7 +1692,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7652b3c2374084047b6c1da3e525e0cac34fe220597f81e793bc4fd9f33358da 07c773148d8db185fa54991df09298b64f4fef28879e6c9395759265e8183977
-R 0cdaf396f246262d8fd00807c02fe094
-U drh
-Z d44ebee6c3c37877974b2b88daec7bfe
+P 150f07fec1e6d1fc0601820d717d8712fc513fe0d4bed67c8679eb51bca30d53
+R ab04bfd243997fb0b46867b0347c7799
+U dan
+Z 06eecfc1ea586319973b447240342e1d
