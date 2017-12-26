@@ -476,9 +476,11 @@ int ParseCoverage(FILE *out){
   int nMissed = 0;
   for(i=0; i<YYNSTATE; i++){
     for(j=0; j<YYNTOKEN; j++){
-      if( yycoverage[i][j] ) continue;
-      nMissed++;
-      if( out ) fprintf(out,"State %d lookahead %s\n", i, yyTokenName[j]);
+      if( !yycoverage[i][j] ) nMissed++;
+      if( out ){
+        fprintf(out,"State %d lookahead %s %s\n",
+           i, yyTokenName[j], yycoverage[i][j] ? "ok" : "missed");
+      }
     }
   }
   return nMissed;

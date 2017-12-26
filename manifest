@@ -1,5 +1,5 @@
-C Merge\sbug\sfixes\sfrom\strunk.
-D 2017-12-26T18:14:53.001
+C Change\sthe\slemon-parser\scoverage\sreport\sformat\sto\sreport\sall\sstate/lookahead\npairs\sand\sindicate\son\seach\swhether\sit\sis\shit\sor\smissed.
+D 2017-12-26T18:32:06.041
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -1609,7 +1609,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c d92031adf63377ff5055441c9d26a41a03378e8cac8dbcc1cd6ef7190f51aa6a
-F tool/lempar.c 2a688bf343f21c25908cf082d0d707f45bc4416eea8550787809da4025c3d7c6
+F tool/lempar.c 64e760f7cc21ea7e73513b062a86a3c478dfd1ed41fe9837a6f49958cdb61e03
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1253a872dbf48656d4efd588ab61223a5ac550d9b2b932249d6ba585276ba573 fd2e0e7a770c2ce9355068aad1024c3d2861c104fd3be304a91c55ca742155fa
-R 2e2b89187d0becf4c2715a566c5e3287
+P d76e12066fa6950f877cbe33b1892e2b0afa948978815d5b9a90cde1fff8ec98
+R 930f1a264ff138489be35924f879ef78
 U drh
-Z ade3bde65575a1ed1ca48cdbaee1adc1
+Z 2620b1a658dd06210670b65491310e1c
