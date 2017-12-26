@@ -359,6 +359,16 @@ static int fts5SnippetScore(
 }
 
 /*
+** Return the value in pVal interpreted as utf-8 text. Except, if pVal 
+** contains a NULL value, return a pointer to a static string zero
+** bytes in length instead of a NULL pointer.
+*/
+static const char *fts5ValueToText(sqlite3_value *pVal){
+  const char *zRet = (const char*)sqlite3_value_text(pVal);
+  return zRet ? zRet : "";
+}
+
+/*
 ** Implementation of snippet() function.
 */
 static void fts5SnippetFunction(
@@ -393,9 +403,9 @@ static void fts5SnippetFunction(
   nCol = pApi->xColumnCount(pFts);
   memset(&ctx, 0, sizeof(HighlightContext));
   iCol = sqlite3_value_int(apVal[0]);
-  ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
-  ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
-  zEllips = (const char*)sqlite3_value_text(apVal[3]);
+  ctx.zOpen = fts5ValueToText(apVal[1]);
+  ctx.zClose = fts5ValueToText(apVal[2]);
+  zEllips = fts5ValueToText(apVal[3]);
   nToken = sqlite3_value_int(apVal[4]);
 
   iBestCol = (iCol>=0 ? iCol : 0);
