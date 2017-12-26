@@ -1,5 +1,5 @@
-C Fix\san\sassertion\sfault\son\sa\ssyntax\serror\sinput\scaused\sby\scheck-in\n[6b2ff26c25bb9da3].\s\sProblem\sdiscovered\sby\sOSSFuzz.
-D 2017-12-25T13:43:54.974
+C Add\soptions\sto\sspeedtest1.c\sand\sspeed-check.sh\sfor\stesting\sperformance\sof\nfloating-point\scomputatations.
+D 2017-12-26T14:30:44.117
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -1248,7 +1248,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c e44c5fccddcfe916c3bf7fe2f87dcc4b4fd66a0d923eb83515f311212670f267
+F test/speedtest1.c a5faf4cbe5769eee4b721b3875cb3f12520a9b99d9026b1063b47c39603375b8
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1647,7 +1647,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 4bfd19aad7eb3ce0372ef0255f58035e0bba4ff5e9acfd763a10c6fb365c8dec
-F tool/speed-check.sh a97ae367e9172a706101901e7caef48f1a14fc8a49053b25e79f6a67296b3412
+F tool/speed-check.sh 9ae425da8819e54e780cf494fc6d8175dfb16e109ae3214a45a5c9bb2b74e2c4
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1687,7 +1687,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d49afb8f9804e96662d1e3cadc4c6643908706d848a53d5ed019919c98f2ccba
-R 22dc7c511444b2944fcb40dc7656150e
-U drh
-Z df3951acae9acd7f479ba37833a7cfe6
+P 90d6e4f10d3055a776d24854c442a2a68e726af8fc382cdb6241a834082e4c4c
+Q +b3c6105181d22c8a53f5bf662e3d182bba962ee8afd1ad972ebd10094b20fc17
+R c2447707ab323a591ab8e05be0f0cae9
+U dan
+Z 1002781326ca68c114cfc46396055176
