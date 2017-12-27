@@ -475,7 +475,8 @@ int ParseCoverage(FILE *out){
   int i, j;
   int nMissed = 0;
   for(i=0; i<YYNSTATE; i++){
-    for(j=0; j<YYNTOKEN; j++){
+    for(j=1; j<YYNTOKEN; j++){
+      if( j==YYWILDCARD ) continue;
       if( !yycoverage[i][j] ) nMissed++;
       if( out ){
         fprintf(out,"State %d lookahead %s %s\n",
