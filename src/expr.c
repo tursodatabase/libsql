@@ -1661,13 +1661,9 @@ void sqlite3ExprListSetSpan(
   assert( pList!=0 || db->mallocFailed!=0 );
   if( pList ){
     struct ExprList_item *pItem = &pList->a[pList->nExpr-1];
-    int n;
     assert( pList->nExpr>0 );
     sqlite3DbFree(db, pItem->zSpan);
-    while( sqlite3Isspace(zStart[0]) ) zStart++;
-    n = (int)(zEnd - zStart);
-    while( n>0 && sqlite3Isspace(zStart[n-1]) ) n--;
-    pItem->zSpan = sqlite3DbStrNDup(db, zStart, n);
+    pItem->zSpan = sqlite3DbSpanDup(db, zStart, zEnd);
   }
 }
 

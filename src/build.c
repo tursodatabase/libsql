@@ -1241,14 +1241,10 @@ void sqlite3AddDefaultValue(
       ** tokens that point to volatile memory.	
       */
       Expr x;
-      int n;
       sqlite3ExprDelete(db, pCol->pDflt);
       memset(&x, 0, sizeof(x));
       x.op = TK_SPAN;
-      while( sqlite3Isspace(zStart[0]) ) zStart++;
-      n = (int)(zEnd - zStart);
-      while( n>0 && sqlite3Isspace(zStart[n-1]) ) n--;
-      x.u.zToken = sqlite3DbStrNDup(db, zStart, n);
+      x.u.zToken = sqlite3DbSpanDup(db, zStart, zEnd);
       x.pLeft = pExpr;
       x.flags = EP_Skip;
       pCol->pDflt = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
