@@ -4348,6 +4348,9 @@ void sqlite3Put4byte(u8*, u32);
 #ifdef SQLITE_DEBUG
   void sqlite3ParserTrace(FILE*, char *);
 #endif
+#if defined(YYCOVERAGE)
+  int sqlite3ParserCoverage(FILE*);
+#endif
 
 /*
 ** If the SQLITE_ENABLE IOTRACE exists then the global variable

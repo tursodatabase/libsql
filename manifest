@@ -1,5 +1,5 @@
-C Faster\sand\ssmaller\simplementation\sof\ssqlite3AtoF()\sbased\son\sa\ssuggestion\nfrom\sCezary\sH.\sNoweta.
-D 2017-12-26T14:46:20.800
+C Enhance\sthe\sLemon\sparser\sgenerator\sso\sthat\sit\screates\sa\sfaster\sparser\sat\sthe\ncost\sof\sslightly\slarger\sparser\stables.\s\sAdd\sthe\sability\sto\smeasure\scoverage\nof\sthe\sgenerated\sstate\smachine\swhen\scompiling\swith\sthe\s-DYYCONVERGE\soption.\nIn\sSQLite,\sadd\sthe\sSQLITE_TESTCTRL_PARSER_COVERAGE\stest-control\sto\squery\sthe\nnew\sparser\scoverage\sfeature.
+D 2017-12-27T18:19:06.642
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -443,7 +443,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c cb67cc56ef2ddd13e6944b2c0dd08a920bcd9503230adef8b9928d338097c722
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 55bcc3c741059a1056859e8adaf133aa179e22be12215c0936b2f354ef71209b
-F src/main.c 7ce55fa3c0bf669944de309ebab1655ed06ec67869adb0372c7a1062e461c448
+F src/main.c 690c4134f944cbd5b71d59dd6e61ce4131f6a50ab774f38108e57d07d79cf876
 F src/malloc.c a02c9e69bc76bee0f639416b947a946412890b606301454727feadcb313536d6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -479,11 +479,11 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in 339169a3d1307b5566ebe9ce15832d03439206106724c78cc3d9125a7b851795
-F src/sqlite.h.in 2126192945019d4cdce335cb236b440a05ec75c93e4cd94c9c6d6e7fcc654cc4
+F src/shell.c.in f3ec8f90dd698ea98781a90642c91eacbc24f4e55bb551c7b2762000d3ef55dc
+F src/sqlite.h.in b4dc75265ed04b98e2184011a7dd0054ce2137ff84867a6be8b4f3bdfbc03d30
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
-F src/sqliteInt.h 003b78433baae4e5c997f99f2f9cf98d90754f256baeacb32f8189569a48251f
+F src/sqliteInt.h 26bf7cc7aaa6a6eb3d3c0581f9ef5523da01babb8de1d796793d5165fea95958
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1608,8 +1608,8 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c e6056373044d55296d21f81467dba7632bbb81dc49af072b3f0e76338771497e
-F tool/lempar.c 967ebf585cd09b11b89d255d213865109a9c4ff075680d22580a2826de288c89
+F tool/lemon.c 7f7735326ca9c3b48327b241063cee52d35d44e20ebe1b3624a81658052a4d39
+F tool/lempar.c dddd4f592b8bad36aec4500d456c5db5fe42fefc4ee384913880439d8917f87a
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1687,7 +1687,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a790b67a0a5c698526db16ea262b13ecdd1b6ca74e80bdccfcad88ddbdc933a
-R c3240df89b3aa2504611bdd745085460
+P fd2e0e7a770c2ce9355068aad1024c3d2861c104fd3be304a91c55ca742155fa ec9b19eb652e81cd3c8a5595eb39aac3aca4abe72136c4b65c9cc257594a9c92
+R 0e64cfa85d322f92630985625ab9cde3
+T +closed ec9b19eb652e81cd3c8a5595eb39aac3aca4abe72136c4b65c9cc257594a9c92
 U drh
-Z 3dc20c6e2c72c6078d443025934f152b
+Z 2c8c57db844de473726a040b30aceb6b

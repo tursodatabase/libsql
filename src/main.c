@@ -3911,6 +3911,22 @@ int sqlite3_test_control(int op, ...){
       sqlite3_mutex_leave(db->mutex);
       break;
     }
+
+#if defined(YYCOVERAGE)
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_PARSER_COVERAGE, FILE *out)
+    **
+    ** This test control (only available when SQLite is compiled with
+    ** -DYYCOVERAGE) writes a report onto "out" that shows all
+    ** state/lookahead combinations in the parser state machine
+    ** which are never exercised.  If any state is missed, make the
+    ** return code SQLITE_ERROR.
+    */
+    case SQLITE_TESTCTRL_PARSER_COVERAGE: {
+      FILE *out = va_arg(ap, FILE*);
+      if( sqlite3ParserCoverage(out) ) rc = SQLITE_ERROR;
+      break;
+    }
+#endif /* defined(YYCOVERAGE) */
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */
