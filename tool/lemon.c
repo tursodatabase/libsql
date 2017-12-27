@@ -766,7 +766,7 @@ int acttab_insert(acttab *p, int makeItSafe){
     p->aAction[k] = p->aLookahead[j];
     if( k>=p->nAction ) p->nAction = k+1;
   }
-  if( makeItSafe && i+p->nterminal>p->nAction ) p->nAction = i+p->nterminal;
+  if( makeItSafe && i+p->nterminal>=p->nAction ) p->nAction = i+p->nterminal+1;
   p->nLookahead = 0;
 
   /* Return the offset that is added to the lookahead in order to get the
