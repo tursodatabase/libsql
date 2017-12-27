@@ -467,20 +467,25 @@ static unsigned char yycoverage[YYNSTATE][YYNTOKEN];
 
 /*
 ** Write into out a description of every state/lookahead combination that
-** has not previously been seen by the parser.  Return the number of 
-** missed state/lookahead combinations.
+**
+**   (1)  has not been used by the parser, and
+**   (2)  is not a syntax error.
+**
+** Return the number of missed state/lookahead combinations.
 */
 #if defined(YYCOVERAGE)
 int ParseCoverage(FILE *out){
-  int i, j;
+  int stateno, iLookAhead, i;
   int nMissed = 0;
-  for(i=0; i<YYNSTATE; i++){
-    for(j=1; j<YYNTOKEN; j++){
-      if( j==YYWILDCARD ) continue;
-      if( !yycoverage[i][j] ) nMissed++;
+  for(stateno=0; stateno<YYNSTATE; stateno++){
+    i = yy_shift_ofst[stateno];
+    for(iLookAhead=0; iLookAhead<YYNTOKEN; iLookAhead++){
+      if( yy_lookahead[i]!=iLookAhead ) continue;
+      if( yycoverage[stateno][iLookAhead]==0 ) nMissed++;
       if( out ){
-        fprintf(out,"State %d lookahead %s %s\n",
-           i, yyTokenName[j], yycoverage[i][j] ? "ok" : "missed");
+        fprintf(out,"State %d lookahead %s %s\n", stateno,
+                yyTokenName[iLookAhead],
+                yycoverage[stateno][iLookAhead] ? "ok" : "missed");
       }
     }
   }
@@ -506,9 +511,10 @@ static unsigned int yy_find_shift_action(
 #endif
   do{
     i = yy_shift_ofst[stateno];
+    assert( i>=0 && i+YYNTOKEN<=sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
     assert( iLookAhead!=YYNOCODE );
+    assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
-    assert( i>=0 && i<sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
     if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
