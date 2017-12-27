@@ -1221,34 +1221,37 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
 ** This routine is called by the parser while in the middle of
 ** parsing a CREATE TABLE statement.
 */
-void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
+void sqlite3AddDefaultValue(
+  Parse *pParse,           /* Parsing context */
+  Expr *pExpr,             /* The parsed expression of the default value */
+  const char *zStart,      /* Start of the default value text */
+  const char *zEnd         /* First character past end of defaut value text */
+){
   Table *p;
   Column *pCol;
   sqlite3 *db = pParse->db;
   p = pParse->pNewTable;
   if( p!=0 ){
     pCol = &(p->aCol[p->nCol-1]);
-    if( !sqlite3ExprIsConstantOrFunction(pSpan->pExpr, db->init.busy) ){
+    if( !sqlite3ExprIsConstantOrFunction(pExpr, db->init.busy) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
     }else{
       /* A copy of pExpr is used instead of the original, as pExpr contains
-      ** tokens that point to volatile memory. The 'span' of the expression
-      ** is required by pragma table_info.
+      ** tokens that point to volatile memory.	
       */
       Expr x;
       sqlite3ExprDelete(db, pCol->pDflt);
       memset(&x, 0, sizeof(x));
       x.op = TK_SPAN;
-      x.u.zToken = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                    (int)(pSpan->zEnd - pSpan->zStart));
-      x.pLeft = pSpan->pExpr;
+      x.u.zToken = sqlite3DbSpanDup(db, zStart, zEnd);
+      x.pLeft = pExpr;
       x.flags = EP_Skip;
       pCol->pDflt = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
       sqlite3DbFree(db, x.u.zToken);
     }
   }
-  sqlite3ExprDelete(db, pSpan->pExpr);
+  sqlite3ExprDelete(db, pExpr);
 }
 
 /*

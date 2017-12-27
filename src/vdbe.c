@@ -7016,7 +7016,13 @@ case OP_Function: {
   break;
 }
 
-
+/* Opcode: Trace P1 P2 * P4 *
+**
+** Write P4 on the statement trace output if statement tracing is
+** enabled.
+**
+** Operand P1 must be 0x7fffffff and P2 must positive.
+*/
 /* Opcode: Init P1 P2 P3 P4 *
 ** Synopsis: Start at P2
 **
@@ -7035,6 +7041,7 @@ case OP_Function: {
 ** If P3 is not zero, then it is an address to jump to if an SQLITE_CORRUPT
 ** error is encountered.
 */
+case OP_Trace:
 case OP_Init: {          /* jump */
   char *zTrace;
   int i;
@@ -7049,7 +7056,9 @@ case OP_Init: {          /* jump */
   ** sqlite3_expanded_sql(P) otherwise.
   */
   assert( pOp->p4.z==0 || strncmp(pOp->p4.z, "-" "- ", 3)==0 );
-  assert( pOp==p->aOp );  /* Always instruction 0 */
+
+  /* OP_Init is always instruction 0 */
+  assert( pOp==p->aOp || pOp->opcode==OP_Trace );
 
 #ifndef SQLITE_OMIT_TRACE
   if( (db->mTrace & (SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
@@ -7092,6 +7101,7 @@ case OP_Init: {          /* jump */
 #endif /* SQLITE_OMIT_TRACE */
   assert( pOp->p2>0 );
   if( pOp->p1>=sqlite3GlobalConfig.iOnceResetThreshold ){
+    if( pOp->opcode==OP_Trace ) break;
     for(i=1; i<p->nOp; i++){
       if( p->aOp[i].opcode==OP_Once ) p->aOp[i].p1 = 0;
     }
