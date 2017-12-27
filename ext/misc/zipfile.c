@@ -50,6 +50,9 @@ typedef unsigned long u32;
 
 #define ZIPFILE_BUFFER_SIZE (64*1024)
 
+
+#define ZIPFILE_EXTRA_TIMESTAMP 0x5455
+
 /*
 ** Set the error message contained in context ctx to the results of
 ** vprintf(zFmt, ...).
@@ -341,7 +344,14 @@ static int zipfileReadCDS(ZipfileCsr *pCsr){
         pCsr->iNextOff += pCsr->cds.nComment;
       }
 
-      /* Scan the "extra" fields */
+      /* Scan the cds.nExtra bytes of "extra" fields for any that can
+      ** be interpreted. The general format of an extra field is:
+      **
+      **   Header ID    2 bytes
+      **   Data Size    2 bytes
+      **   Data         N bytes
+      **
+      */
       if( rc==SQLITE_OK ){
         u8 *p = &aRead[pCsr->cds.nFile];
         u8 *pEnd = &p[pCsr->cds.nExtra];
@@ -351,7 +361,7 @@ static int zipfileReadCDS(ZipfileCsr *pCsr){
           u16 nByte = zipfileRead16(p);
 
           switch( id ){
-            case 0x5455: {        /* Extended timestamp */
+            case ZIPFILE_EXTRA_TIMESTAMP: {
               u8 b = p[0];
               if( b & 0x01 ){     /* 0x01 -> modtime is present */
                 pCsr->mTime = zipfileGetU32(&p[1]);
@@ -359,9 +369,6 @@ static int zipfileReadCDS(ZipfileCsr *pCsr){
               }
               break;
             }
-
-            case 0x7875:          /* Info-ZIP Unix (new) */
-              break;
           }
 
           p += nByte;
