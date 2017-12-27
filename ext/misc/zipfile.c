@@ -680,6 +680,54 @@ static int zipfileRegister(sqlite3 *db){
 # define zipfileRegister(x) SQLITE_OK
 #endif
 
+#include <zlib.h>
+
+/*
+** zipfile_uncompress(DATA, SZ, METHOD)
+*/
+static void zipfileUncompressFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int iMethod;
+
+  iMethod = sqlite3_value_int(argv[2]);
+  if( iMethod==0 ){
+    sqlite3_result_value(context, argv[0]);
+  }else if( iMethod==8 ){
+    Byte *res;
+    int sz = sqlite3_value_int(argv[1]);
+    z_stream str;
+    memset(&str, 0, sizeof(str));
+    str.next_in = (Byte*)sqlite3_value_blob(argv[0]);
+    str.avail_in = sqlite3_value_bytes(argv[0]);
+    res = str.next_out = (Byte*)sqlite3_malloc(sz);
+    if( res==0 ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      int err;
+      str.avail_out = sz;
+
+      err = inflateInit2(&str, -15);
+      if( err!=Z_OK ){
+        zipfileCtxErrorMsg(context, "inflateInit2() failed (%d)", err);
+      }else{
+        err = inflate(&str, Z_NO_FLUSH);
+        if( err!=Z_STREAM_END ){
+          zipfileCtxErrorMsg(context, "inflate() failed (%d)", err);
+        }else{
+          sqlite3_result_blob(context, res, sz, SQLITE_TRANSIENT);
+        }
+      }
+      sqlite3_free(res);
+      inflateEnd(&str);
+    }
+  }else{
+    zipfileCtxErrorMsg(context, "unrecognized compression method: %d", iMethod);
+  }
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -691,6 +739,10 @@ int sqlite3_zipfile_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
+  rc = sqlite3_create_function(db, "zipfile_uncompress", 3,
+      SQLITE_UTF8, 0, zipfileUncompressFunc, 0, 0
+  );
+  if( rc!=SQLITE_OK ) return rc;
   return zipfileRegister(db);
 }
 
