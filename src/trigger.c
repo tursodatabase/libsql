@@ -733,9 +733,11 @@ static int codeTriggerProgram(
     assert( pParse->okConstFactor==0 );
 
 #ifndef SQLITE_OMIT_TRACE
-    sqlite3VdbeAddOp4(v, OP_Trace, 0x7fffffff, 1, 0,
-                      sqlite3MPrintf(db, "-- %s", pStep->zSpan),
-                      P4_DYNAMIC);
+    if( pStep->zSpan ){
+      sqlite3VdbeAddOp4(v, OP_Trace, 0x7fffffff, 1, 0,
+                        sqlite3MPrintf(db, "-- %s", pStep->zSpan),
+                        P4_DYNAMIC);
+    }
 #endif
 
     switch( pStep->op ){
@@ -878,9 +880,11 @@ static TriggerPrg *codeRowTrigger(
       pTab->zName
     ));
 #ifndef SQLITE_OMIT_TRACE
-    sqlite3VdbeChangeP4(v, -1, 
-      sqlite3MPrintf(db, "-- TRIGGER %s", pTrigger->zName), P4_DYNAMIC
-    );
+    if( pTrigger->zName ){
+      sqlite3VdbeChangeP4(v, -1, 
+        sqlite3MPrintf(db, "-- TRIGGER %s", pTrigger->zName), P4_DYNAMIC
+      );
+    }
 #endif
 
     /* If one was specified, code the WHEN clause. If it evaluates to false
