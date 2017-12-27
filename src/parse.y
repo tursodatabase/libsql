@@ -288,11 +288,8 @@ signed ::= minus_num.
 //
 %type scanpt {const char*}
 scanpt(A) ::= . {
-  if( yyLookahead!=YYNOCODE ){
-    A = yyLookaheadToken.z;
-  }else{
-    A = pParse->sLastToken.z + pParse->sLastToken.n;
-  }
+  assert( yyLookahead!=YYNOCODE );
+  A = yyLookaheadToken.z;
 }
 
 // "carglist" is a list of additional constraints that come after the
@@ -1371,20 +1368,21 @@ tridxby ::= NOT INDEXED. {
 %destructor trigger_cmd {sqlite3DeleteTriggerStep(pParse->db, $$);}
 // UPDATE 
 trigger_cmd(A) ::=
-   UPDATE orconf(R) trnm(X) tridxby SET setlist(Y) where_opt(Z).  
-   {A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R);}
+   UPDATE(B) orconf(R) trnm(X) tridxby SET setlist(Y) where_opt(Z) scanpt(E).  
+   {A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R, B.z, E);}
 
 // INSERT
-trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) idlist_opt(F) select(S).
-   {A = sqlite3TriggerInsertStep(pParse->db, &X, F, S, R);/*A-overwrites-R*/}
+trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
+                      trnm(X) idlist_opt(F) select(S) scanpt(Z).
+   {A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,R,B,Z);/*A-overwrites-R*/}
 
 // DELETE
-trigger_cmd(A) ::= DELETE FROM trnm(X) tridxby where_opt(Y).
-   {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y);}
+trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
+   {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y, B.z, E);}
 
 // SELECT
-trigger_cmd(A) ::= select(X).
-   {A = sqlite3TriggerSelectStep(pParse->db, X); /*A-overwrites-X*/}
+trigger_cmd(A) ::= scanpt(B) select(X) scanpt(E).
+   {A = sqlite3TriggerSelectStep(pParse->db, X, B, E); /*A-overwrites-X*/}
 
 // The special RAISE expression that may occur in trigger programs
 expr(A) ::= RAISE LP IGNORE RP.  {

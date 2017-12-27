@@ -1,5 +1,5 @@
-C Add\sand\suse\sthe\sinternal\ssqlite3DbSpanDup()\sinterface.
-D 2017-12-27T19:43:22.931
+C Show\sthe\stext\sof\sindividual\sstatements\swithin\sa\strigger,\sas\sthey\nexecute,\sas\scomments\sin\sthe\soutput\sfrom\ssqlite3_trace()\sand\ssqlite3_trace_v2().
+D 2017-12-27T20:38:35.013
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -467,7 +467,7 @@ F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
-F src/parse.y 2b0653fd44534d941ff5289f372fedfc213e78c4698e28334d073cf4cfd146f2
+F src/parse.y 44cbbc3e132ea128258eff7be7f6d5c5dfa25522f89ec8b5501276966511bd50
 F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -483,7 +483,7 @@ F src/shell.c.in f3ec8f90dd698ea98781a90642c91eacbc24f4e55bb551c7b2762000d3ef55d
 F src/sqlite.h.in b4dc75265ed04b98e2184011a7dd0054ce2137ff84867a6be8b4f3bdfbc03d30
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
-F src/sqliteInt.h 707e078db16dafad27401bb023da2dd12bafb0a2a421900ef4a1ff1e38c2b01f
+F src/sqliteInt.h 394655443ab2ee9bde2c2f629bd1e613d5ee211dd6c16995f68e6014bbe60b5d
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -542,12 +542,12 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec3
-F src/trigger.c 775053eecf6b73062e243404b56f5064446254d5cce17d8704d5cdffd72a546a
+F src/trigger.c 5fa038ae62adae53b62776bacc34dc56191385eedac79d49264389620ddc2526
 F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 7315e97a8dc2c8e19ca64196c652cf0a65d13fd0a211b2cec082062372dc6261
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 3393b508d9ad084ffce232a7c53e375ef5ac99b50b685c5131fcdfce97a9d534
+F src/vdbe.c e0a1ca7539d7071d5fa582bdf27195a51197b5ae1ab0f143888b1561df592fd0
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
@@ -1443,7 +1443,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 18dbc6617f7a4b90e938d1bd6d26ad18daafaf08
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
-F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
+F test/trace.test a659a9862957f4789e37a92b3bf6d2caf5c86b02cdeefc41e850ae53acf6992a
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
 F test/trace3.test 56ab944fddacf628b118cc298503fc45c2e50ab0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
@@ -1687,7 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76373091354f27577e5235e96cfaa4b31429a38d1e0e1d6e094c4cc323b92a0a
-R 913c4466610a0123883763647119d1c7
+P a8e1545cb7aacb6a26a8c92a3ad4a3d584d150c3a00d2828c8adbb1ee19fcb6d
+R 0ae5195579783355d0e4696ba0c5bdad
 U drh
-Z 28dbbdc669e3541be1657ab76b942c72
+Z 4ebaaf3c94dd44dc4a2d0b266bee40f3
