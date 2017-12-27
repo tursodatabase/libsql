@@ -480,7 +480,7 @@ int ParseCoverage(FILE *out){
   for(stateno=0; stateno<YYNSTATE; stateno++){
     i = yy_shift_ofst[stateno];
     for(iLookAhead=0; iLookAhead<YYNTOKEN; iLookAhead++){
-      if( yy_lookahead[i]!=iLookAhead ) continue;
+      if( yy_lookahead[i+iLookAhead]!=iLookAhead ) continue;
       if( yycoverage[stateno][iLookAhead]==0 ) nMissed++;
       if( out ){
         fprintf(out,"State %d lookahead %s %s\n", stateno,
