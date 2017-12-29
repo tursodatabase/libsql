@@ -1,8 +1,8 @@
-C Change\sthe\sfunction\sname\sto\ssqlite_unsupported_offset(X).\s\sOnly\senable\sthe\nfunction\sif\scompiled\swith\s-DSQLITE_ENABLE_OFFSET_SQL_FUNC.\s\sThe\smakefiles\sadd\nthat\sdefinition\sto\sshell\sbuilds.
-D 2017-12-29T15:04:49.734
+C Fix\sa\stypo\sin\sthe\sMSVC\smakefile.
+D 2017-12-29T15:19:03.549
 F Makefile.in 804c347948b0ad5a962aea3e59413e897227e0173d0e76910f11f473e6c7ae9b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc f11644a365122b16628da7839a8ed2e3a781b578a94cb1ebd25ebad260bdc9c2
+F Makefile.msc 57dcce0595d4a0c4b94b6f6ba732b8e33540358adf5fb8e1aa8389d34a9677e8
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd94d6a880dfec4bddd247239b815b84964f804d24841e25f33f1d46a4b5274d
-R 78409e335314d524c66761480a13a3e4
+P 7a7f826e324b1a2c332e2f1d0740fd0babffcaca6275a798572f02ad367b99ab
+R 0e2a4a2bb72ba4dcfe2f3a815db6ddb3
 U drh
-Z 5cd44f60a8e786e38b3cacae6fe91794
+Z 9e1beeafb001196cab204d1af69f0fe2
