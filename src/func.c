@@ -1799,8 +1799,11 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifdef SQLITE_DEBUG
     FUNCTION2(affinity,          1, 0, 0, noopFunc,  SQLITE_FUNC_AFFINITY),
 #endif
-    FUNCTION2(location,          1, 0, 0, noopFunc,  SQLITE_FUNC_LOCATION|
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+    FUNCTION2(sqlite_unsupported_offset,
+                                 1, 0, 0, noopFunc,  SQLITE_FUNC_OFFSET|
                                                      SQLITE_FUNC_TYPEOF),
+#endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
     FUNCTION(rtrim,              1, 2, 0, trimFunc         ),

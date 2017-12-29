@@ -4432,17 +4432,19 @@ i64 sqlite3BtreeIntegerKey(BtCursor *pCur){
   return pCur->info.nKey;
 }
 
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
 /*
 ** Return the offset into the database file for the start of the
 ** payload to which the cursor is pointing.
 */
-i64 sqlite3BtreeLocation(BtCursor *pCur){
+i64 sqlite3BtreeOffset(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
   getCellInfo(pCur);
   return (i64)pCur->pBt->pageSize*((i64)pCur->pPage->pgno - 1) +
          (i64)(pCur->info.pPayload - pCur->pPage->aData);
 }
+#endif /* SQLITE_ENABLE_OFFSET_SQL_FUNC */
 
 /*
 ** Return the number of bytes of payload for the entry that pCur is

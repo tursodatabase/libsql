@@ -9,10 +9,14 @@
 #
 #*************************************************************************
 #
-# Test cases for the location() function.
+# Test cases for the sqlite_unsupported_offset() function.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !offset_sql_func {
+  finish_test
+  return
+}
 
 do_execsql_test func6-100 {
   CREATE TABLE t1(a,b,c,d);
@@ -20,17 +24,21 @@ do_execsql_test func6-100 {
    INSERT INTO t1(a,b,c,d) SELECT printf('abc%03x',x), x, 1000-x, NULL FROM c;
 }
 do_execsql_test func6-110 {
-  SELECT a, typeof(location(a)) FROM t1 ORDER BY rowid LIMIT 2;
+  SELECT a, typeof(sqlite_unsupported_offset(a)) FROM t1
+   ORDER BY rowid LIMIT 2;
 } {abc001 integer abc002 integer}
 do_execsql_test func6-120 {
-  SELECT a, typeof(location(+a)) FROM t1 ORDER BY rowid LIMIT 2;
+  SELECT a, typeof(sqlite_unsupported_offset(+a)) FROM t1
+   ORDER BY rowid LIMIT 2;
 } {abc001 null abc002 null}
 do_execsql_test func6-130 {
   CREATE INDEX t1a ON t1(a);
-  SELECT a, typeof(location(a)) FROM t1 ORDER BY a LIMIT 2;
+  SELECT a, typeof(sqlite_unsupported_offset(a)) FROM t1
+   ORDER BY a LIMIT 2;
 } {abc001 integer abc002 integer}
 do_execsql_test func6-140 {
-  SELECT a, typeof(location(a)) FROM t1 NOT INDEXED ORDER BY a LIMIT 2;
+  SELECT a, typeof(sqlite_unsupported_offset(a)) FROM t1 NOT INDEXED
+   ORDER BY a LIMIT 2;
 } {abc001 integer abc002 integer}
 
 finish_test

@@ -5146,7 +5146,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       pOp = sqlite3VdbeGetOp(v, k);
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
-        if( pOp->opcode==OP_Column || pOp->opcode==OP_Location ){
+        if( pOp->opcode==OP_Column
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+         || pOp->opcode==OP_Offset
+#endif
+        ){
           int x = pOp->p2;
           assert( pIdx->pTable==pTab );
           if( !HasRowid(pTab) ){

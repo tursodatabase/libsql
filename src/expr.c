@@ -3870,14 +3870,17 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
-      if( pDef->funcFlags & SQLITE_FUNC_LOCATION ){
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+      if( pDef->funcFlags & SQLITE_FUNC_OFFSET ){
         Expr *pArg = pFarg->a[0].pExpr;
         if( pArg->op==TK_COLUMN ){
-          sqlite3VdbeAddOp3(v, OP_Location, pArg->iTable, pArg->iColumn,target);
+          sqlite3VdbeAddOp3(v, OP_Offset, pArg->iTable, pArg->iColumn, target);
         }else{
           sqlite3VdbeAddOp2(v, OP_Null, 0, target);
         }
-      }else{
+      }else
+#endif
+      {
         sqlite3VdbeAddOp4(v, pParse->iSelfTab ? OP_PureFunc0 : OP_Function0,
                           constMask, r1, target, (char*)pDef, P4_FUNCDEF);
         sqlite3VdbeChangeP5(v, (u8)nFarg);
