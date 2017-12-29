@@ -184,7 +184,7 @@ do_test capi2-3.5 {
 } {1 {(1) no such column: bogus} {;;x;}}
 do_test capi2-3.6 {
   set rc [catch {
-      sqlite3_prepare $DB {select 5/0} -1 TAIL
+      sqlite3_prepare $DB {select 5/0;} -1 TAIL
   } VM]
   lappend rc $TAIL
 } {0 {}}

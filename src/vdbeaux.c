@@ -1639,7 +1639,7 @@ int sqlite3VdbeList(
   int i;                               /* Loop counter */
   int rc = SQLITE_OK;                  /* Return code */
   Mem *pMem = &p->aMem[1];             /* First Mem of result set */
-  int bFull = (p->explain==1 || db->bFullEQP);
+  int bListSubprogs = (p->explain==1 || (db->flags & SQLITE_TriggerEQP)!=0);
   Op *pOp = 0;
 
   assert( p->explain );
@@ -1668,7 +1668,7 @@ int sqlite3VdbeList(
   ** encountered, but p->pc will eventually catch up to nRow.
   */
   nRow = p->nOp;
-  if( bFull ){
+  if( bListSubprogs ){
     /* The first 8 memory cells are used for the result set.  So we will
     ** commandeer the 9th cell to use as storage for an array of pointers
     ** to trigger subprograms.  The VDBE is guaranteed to have at least 9
@@ -1713,7 +1713,7 @@ int sqlite3VdbeList(
     ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
     ** has not already been seen.
     */
-    if( bFull && pOp->p4type==P4_SUBPROGRAM ){
+    if( bListSubprogs && pOp->p4type==P4_SUBPROGRAM ){
       int nByte = (nSub+1)*sizeof(SubProgram*);
       int j;
       for(j=0; j<nSub; j++){
