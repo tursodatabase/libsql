@@ -1,5 +1,5 @@
-C The\soutput\sof\ssqlite3_trace()\snow\sshows\seach\scommand\sof\sa\strigger\sas\sit\sis\nevaluated.\s\sThis\sfeature\sinvolved\smajor\schanges\sto\sthe\sparser,\ssuch\sas\nremoving\sthe\sExprSpan\sobject\sand\sreplacing\sit\swith\sa\snew\smechanism\sfor\ncapturing\sthe\soriginal\sSQL\stext\sof\sphrases\sin\sthe\sinput\sSQL.
-D 2017-12-27T22:09:53.804
+C Add\stest\scases\sfor\sthe\sundocumented\sbehavior\sof\sduplicate\scolumns\son\san\nINSERT\sor\sUPDATE.
+D 2017-12-29T12:50:43.938
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -1061,7 +1061,7 @@ F test/minmax.test 6751e87b409fe11b02e70a306d846fa544e25a41
 F test/minmax2.test dae92964ac87c1d2ef978c582e81a95e11c00f1cbef68980bfb2abaf10315063
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
-F test/misc1.test 76737c259537586355f45e2a1e121b6e91b5476c4604ad5c53d1abfcb3acf786
+F test/misc1.test 704ea2cc7e7b9deb622b37953f0e77d0879826e8c3bfc1d7a691528035405061
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
@@ -1687,8 +1687,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b22b42e59793af19c69a2e5f6822883cc2687d4a0d9b9280bbff885276c6baa fda08e3d10cc850664a356efdafcfc68187053849e1b00991b0b35d892a6776b
-R 22de62f1b2836f49ea0af57f6725c723
-T +closed fda08e3d10cc850664a356efdafcfc68187053849e1b00991b0b35d892a6776b
+P 0fdf97efe5df745510c6b4b377a8ee5683a3a237630bfbd0f56e57c7c6e5b246
+R 9fe2cb7c2c9b946d64749c1df6cc4954
 U drh
-Z e235709d3662d8065d80f758148733ed
+Z 157cf27648c17a2b2af97b1730aa1c08
