@@ -6960,6 +6960,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_unionvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_zipfile_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6981,6 +6982,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "totype",                sqlite3_totype_init               },
     { "unionvtab",             sqlite3_unionvtab_init            },
     { "wholenumber",           sqlite3_wholenumber_init          },
+    { "zipfile",               sqlite3_zipfile_init              },
   };
   sqlite3 *db;
   const char *zName;
