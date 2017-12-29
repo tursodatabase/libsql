@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk.
-D 2017-12-29T13:35:09.867
+C Enhance\slocation(X)\sso\sthat\sit\sworks\swith\sindexes\sand\sWITHOUT\sROWID\stables.\nThe\sfunction\smight\sreturn\san\soffset\sto\sthe\smain\stable\sor\sto\san\sindex,\ndepending\son\swhether\sthe\scolumn\sX\swould\sbe\sloaded\sfrom\sthe\smain\stable\sor\nfrom\sthe\sindex.
+D 2017-12-29T14:33:54.266
 F Makefile.in ceb40bfcb30ebba8e1202b34c56ff7e13e112f9809e2381d99be32c2726058f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6480671f7c129e61208d69492b3c71ce4310d49fceac83cfb17f1c081e242b69
@@ -420,7 +420,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 6fba32ea06e9be55849dd486e88df6c467bf69cf306d38ca3c3a8df34e6499e9
+F src/btree.c 516fea6cad0d904ba1f7d599cb3d8ec9f14c2c6d1b71cf883dcef81d77bc6a5a
 F src/btree.h e9d22d0475b37422cc2db53f4336cc814645dcca8634bc4aae25ed52d043ef53
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c a03eb5a1cfff74784c24a4478ba5455711571936f1ac9d43f94fa7df57509977
@@ -431,7 +431,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 74667ad914ac143731a444a1bacf29ceb18f6eded8a0dd17aafae80baa07f8bb
-F src/expr.c db1f29a1ee0c8a3abec55134ae7e149fa5684d77b569c6a62121b9e13becc43a
+F src/expr.c 119aa8d492bfc05ecf73ff4160b48c65d696972b2c954149271a1363e795874b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c a23ea9b8869ca47e20a273985013b36a2294788fde5abe1a610be4bb90c8e6e8
@@ -547,7 +547,7 @@ F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 7315e97a8dc2c8e19ca64196c652cf0a65d13fd0a211b2cec082062372dc6261
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 742812438ab9c897db18025c6040af23feb4679fc63c53bdf25a9b190c7f91ec
+F src/vdbe.c 42e79ef2da625fd8c4364bf952b0515760958775beb38cc9f9e84bcec4115964
 F src/vdbe.h d50cadf12bcf9fb99117ef392ce1ea283aa429270481426b6e8b0280c101fd97
 F src/vdbeInt.h 1fe00770144c12c4913128f35262d11527ef3284561baaab59b947a41c08d0d9
 F src/vdbeapi.c 9c670ca0dcc1cd86373aa353b747b26fe531ca5cd4331690c611d1f03842e2a1
@@ -561,7 +561,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 5876c9100b622f7b9e5ee7f579b8b6a71ae5ba627724cea4546d9114c32b3cb5
+F src/where.c 9c1fca74de02cf5d8ac6437fc385b683e194c403a2ae675eb4f15a5c19086726
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c af1e79154aaa88cd802d6f2e5b945f67eaca7c958d1525fbf8ee19d5bd7b9020
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -917,7 +917,7 @@ F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test d202a7606d23f90988a664e88e268aed1087c11c
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
-F test/func6.test 5d4b0526f5013db07e2f6de43df42d990500f636fa32258cfac0c87113a1c1ce
+F test/func6.test afd2f720b333f0fbbb220887b3f1b3637ef9bfde47015f664e9bb4ba14a01535
 F test/fuzz-oss1.test e58330d01cbbd8215ee636b17a03fe220b37dbfa
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51be9558164301c5dd4df23ab8b3e67de0b522f8d36f79f3d84d45d3dc2a83a4 f4349c0c26611de8a7d5beb99431a575cf531cdeb0ca2413efabcf0a61e6f424
-R 21534cc483241840a2ab1c4e82c69566
+P 6251e438f2a76170fd1e95aa512a46086ed88ab93b9b97a1dba97c4558689305
+R f543ccd2667c3e9285e509d3e9a274bf
 U drh
-Z 27f7d54e41b653412b0ccbce7bf65d00
+Z e0ddcaae57472f72e53764b52bf6363b

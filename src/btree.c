@@ -4439,9 +4439,8 @@ i64 sqlite3BtreeIntegerKey(BtCursor *pCur){
 i64 sqlite3BtreeLocation(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  assert( pCur->curIntKey );
   getCellInfo(pCur);
-  return (i64)pCur->pBt->pageSize*(i64)pCur->pPage->pgno +
+  return (i64)pCur->pBt->pageSize*((i64)pCur->pPage->pgno - 1) +
          (i64)(pCur->info.pPayload - pCur->pPage->aData);
 }
 

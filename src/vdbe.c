@@ -2349,22 +2349,27 @@ case OP_IfNullRow: {         /* jump */
   break;
 }
 
-/* Opcode: Location P1 P2 * * *
-** Synopsis: r[P2] = location(P1)
+/* Opcode: Location P1 P2 P3 * *
+** Synopsis: r[P3] = location(P1)
 **
-** Store in register r[P2] the location in the database file that is the
+** Store in register r[P3] the location in the database file that is the
 ** start of the payload for the record at which that cursor P1 is currently
 ** pointing.
+**
+** P2 is the column number for the argument to the location() function.
+** This opcode does not use P2 itself, but the P2 value is used by the
+** code generator.  The P1, P2, and P3 operands to this opcode are the
+** as as for OP_Column.
 */
-case OP_Location: {          /* out2 */
+case OP_Location: {          /* out3 */
   VdbeCursor *pC;    /* The VDBE cursor */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  pOut = out2Prerelease(p, pOp);
+  pOut = &p->aMem[pOp->p3];
   if( pC==0 || pC->eCurType!=CURTYPE_BTREE ){
-    pOut->flags = MEM_Null;
+    sqlite3VdbeMemSetNull(pOut);
   }else{
-    pOut->u.i = sqlite3BtreeLocation(pC->uc.pCursor);
+    sqlite3VdbeMemSetInt64(pOut, sqlite3BtreeLocation(pC->uc.pCursor));
   }
   break;
 }

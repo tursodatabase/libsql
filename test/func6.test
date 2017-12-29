@@ -28,7 +28,7 @@ do_execsql_test func6-120 {
 do_execsql_test func6-130 {
   CREATE INDEX t1a ON t1(a);
   SELECT a, typeof(location(a)) FROM t1 ORDER BY a LIMIT 2;
-} {abc001 null abc002 null}
+} {abc001 integer abc002 integer}
 do_execsql_test func6-140 {
   SELECT a, typeof(location(a)) FROM t1 NOT INDEXED ORDER BY a LIMIT 2;
 } {abc001 integer abc002 integer}

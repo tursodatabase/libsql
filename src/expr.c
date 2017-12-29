@@ -3873,7 +3873,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( pDef->funcFlags & SQLITE_FUNC_LOCATION ){
         Expr *pArg = pFarg->a[0].pExpr;
         if( pArg->op==TK_COLUMN ){
-          sqlite3VdbeAddOp2(v, OP_Location, pArg->iTable, target);
+          sqlite3VdbeAddOp3(v, OP_Location, pArg->iTable, pArg->iColumn,target);
         }else{
           sqlite3VdbeAddOp2(v, OP_Null, 0, target);
         }
