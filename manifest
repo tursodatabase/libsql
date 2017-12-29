@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sMSVC\smakefile.
-D 2017-12-29T15:19:03.549
+C Stricter\stest\scases.
+D 2017-12-29T16:37:33.070
 F Makefile.in 804c347948b0ad5a962aea3e59413e897227e0173d0e76910f11f473e6c7ae9b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 57dcce0595d4a0c4b94b6f6ba732b8e33540358adf5fb8e1aa8389d34a9677e8
@@ -917,7 +917,7 @@ F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test d202a7606d23f90988a664e88e268aed1087c11c
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
-F test/func6.test 8a6ecb974a9d0bdeef6a06aff8e305b1667c3b922103037735b39c716360ebc2
+F test/func6.test 1a2bc511fedb779e2bd3154361385216c6d35080f36bfe896b8cdd1b1954294a
 F test/fuzz-oss1.test e58330d01cbbd8215ee636b17a03fe220b37dbfa
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a7f826e324b1a2c332e2f1d0740fd0babffcaca6275a798572f02ad367b99ab
-R 0e2a4a2bb72ba4dcfe2f3a815db6ddb3
+P 89e5720a8d8d46d4e2f16f15678e91336117e64abc977174e2b345a30308d0d2
+R 9cb794037b97521b258cb5fdbbf60d53
 U drh
-Z 9e1beeafb001196cab204d1af69f0fe2
+Z 8d1ee588df9bbfd069e3afd64819112f
