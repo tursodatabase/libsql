@@ -218,7 +218,7 @@ struct ZipfileCsr {
   ZipfileLFH lfh;            /* Local File Header for current entry */
   i64 iDataOff;              /* Offset in zipfile to data */
   u32 mTime;                 /* Extended mtime value */
-  int flags;
+  int flags;                 /* Flags byte (see below for bits) */
 };
 
 /*
@@ -229,9 +229,10 @@ struct ZipfileCsr {
 typedef struct ZipfileEntry ZipfileEntry;
 struct ZipfileEntry {
   char *zPath;               /* Path of zipfile entry */
+  i64 iRowid;                /* Rowid for this value if queried */
   u8 *aCdsEntry;             /* Buffer containing entire CDS entry */
   int nCdsEntry;             /* Size of buffer aCdsEntry[] in bytes */
-  ZipfileEntry *pNext;
+  ZipfileEntry *pNext;       /* Next element in in-memory CDS */
 };
 
 typedef struct ZipfileTab ZipfileTab;
@@ -241,7 +242,8 @@ struct ZipfileTab {
   u8 *aBuffer;               /* Temporary buffer used for various tasks */
 
   /* The following are used by write transactions only */
-  ZipfileEntry *pEntry;      /* Linked list of all files (if pWriteFd!=0) */
+  ZipfileEntry *pFirstEntry; /* Linked list of all files (if pWriteFd!=0) */
+  ZipfileEntry *pLastEntry;  /* Last element in pFirstEntry list */
   FILE *pWriteFd;            /* File handle open on zip archive */
   i64 szCurrent;             /* Current size of zip archive */
   i64 szOrig;                /* Size of archive at start of transaction */
@@ -830,6 +832,22 @@ static int zipfileBestIndex(
   return SQLITE_OK;
 }
 
+/*
+** Add object pNew to the end of the linked list that begins at
+** ZipfileTab.pFirstEntry and ends with pLastEntry.
+*/
+static void zipfileAddEntry(ZipfileTab *pTab, ZipfileEntry *pNew){
+  assert( (pTab->pFirstEntry==0)==(pTab->pLastEntry==0) );
+  assert( pNew->pNext==0 );
+  if( pTab->pFirstEntry==0 ){
+    pTab->pFirstEntry = pTab->pLastEntry = pNew;
+  }else{
+    assert( pTab->pLastEntry->pNext==0 );
+    pTab->pLastEntry->pNext = pNew;
+    pTab->pLastEntry = pNew;
+  }
+}
+
 static int zipfileLoadDirectory(ZipfileTab *pTab){
   ZipfileEOCD eocd;
   int rc;
@@ -871,10 +889,9 @@ static int zipfileLoadDirectory(ZipfileTab *pTab){
         pNew->zPath[nFile] = '\0';
         pNew->aCdsEntry = (u8*)&pNew->zPath[nFile+1];
         pNew->nCdsEntry = ZIPFILE_CDS_FIXED_SZ+nFile+nExtra+nComment;
+        pNew->pNext = 0;
         memcpy(pNew->aCdsEntry, aRec, pNew->nCdsEntry);
-
-        pNew->pNext = pTab->pEntry;
-        pTab->pEntry = pNew;
+        zipfileAddEntry(pTab, pNew);
       }
 
       iOff += ZIPFILE_CDS_FIXED_SZ+nFile+nExtra+nComment;
@@ -908,6 +925,7 @@ static ZipfileEntry *zipfileNewEntry(
     pNew->zPath = (char*)&pNew[1];
     pNew->aCdsEntry = (u8*)&pNew->zPath[nPath+1];
     pNew->nCdsEntry = ZIPFILE_CDS_FIXED_SZ + nPath + pCds->nExtra;
+    pNew->pNext = 0;
     memcpy(pNew->zPath, zPath, nPath+1);
 
     aWrite = pNew->aCdsEntry;
@@ -1135,8 +1153,7 @@ static int zipfileUpdate(
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      pNew->pNext = pTab->pEntry;
-      pTab->pEntry = pNew;
+      zipfileAddEntry(pTab, pNew);
     }
   }
 
@@ -1169,11 +1186,12 @@ static void zipfileCleanupTransaction(ZipfileTab *pTab){
   ZipfileEntry *pEntry;
   ZipfileEntry *pNext;
 
-  for(pEntry=pTab->pEntry; pEntry; pEntry=pNext){
+  for(pEntry=pTab->pFirstEntry; pEntry; pEntry=pNext){
     pNext = pEntry->pNext;
     sqlite3_free(pEntry);
   }
-  pTab->pEntry = 0;
+  pTab->pFirstEntry = 0;
+  pTab->pLastEntry = 0;
   fclose(pTab->pWriteFd);
   pTab->pWriteFd = 0;
   pTab->szCurrent = 0;
@@ -1189,13 +1207,13 @@ static int zipfileCommit(sqlite3_vtab *pVtab){
   int rc = SQLITE_OK;
   if( pTab->pWriteFd ){
     i64 iOffset = pTab->szCurrent;
-    ZipfileEntry *pEntry;
+    ZipfileEntry *p;
     ZipfileEOCD eocd;
     int nEntry = 0;
 
     /* Write out all entries */
-    for(pEntry=pTab->pEntry; rc==SQLITE_OK && pEntry; pEntry=pEntry->pNext){
-      rc = zipfileAppendData(pTab, pEntry->aCdsEntry, pEntry->nCdsEntry);
+    for(p=pTab->pFirstEntry; rc==SQLITE_OK && p; p=p->pNext){
+      rc = zipfileAppendData(pTab, p->aCdsEntry, p->nCdsEntry);
       nEntry++;
     }
 
