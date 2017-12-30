@@ -29,13 +29,15 @@ do_execsql_test 1.0 {
   5 method {} 0 {} 0
 }
 
-do_execsql_test 1.1 {
+do_execsql_test 1.1.1 {
   INSERT INTO zz VALUES('f.txt', '-rw-r--r--', 1000000000, 5, 'abcde', 0);
+}
+do_execsql_test 1.1.2 {
   INSERT INTO zz VALUES('g.txt', '-rw-r--r--', 1000000002, 5, '12345', 0);
 }
 
 do_execsql_test 1.2 {
-  SELECT name, mtime, data FROM zipfile('test.zip');
+  SELECT name, mtime, data FROM zipfile('test.zip')
 } {
   f.txt 1000000000 abcde 
   g.txt 1000000002 12345
@@ -55,6 +57,21 @@ do_execsql_test 1.4 {
   g.txt 1000000002 12345 0
   h.txt 1000000004 aaaaaaaaaabbbbbbbbbb 8
 }
+
+do_execsql_test 1.5.1 {
+  BEGIN;
+    INSERT INTO zz VALUES('i.txt', '-rw-r--r--', 1000000006, 5, 'zxcvb', 0);
+    SELECT name FROM zz;
+  COMMIT;
+} {f.txt g.txt h.txt i.txt}
+do_execsql_test 1.5.2 {
+  SELECT name FROM zz;
+} {f.txt g.txt h.txt i.txt}
+
+do_execsql_test 1.6.0 {
+  DELETE FROM zz WHERE name='g.txt';
+  SELECT name FROM zz;
+} {f.txt h.txt i.txt}
 
 finish_test
 

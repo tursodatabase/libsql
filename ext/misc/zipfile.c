@@ -201,39 +201,44 @@ struct ZipfileLFH {
   u16 nExtra;
 };
 
-/* 
-** Cursor type for recursively iterating through a directory structure.
-*/
-typedef struct ZipfileCsr ZipfileCsr;
-
-struct ZipfileCsr {
-  sqlite3_vtab_cursor base;  /* Base class - must be first */
-  i64 iRowid;                /* Rowid for current row */
-  FILE *pFile;               /* Zip file */
-  i64 nByte;                 /* Size of zip file on disk */
-  int bEof;                  /* True when at EOF */
-  i64 iNextOff;              /* Offset of next record in central directory */
-  ZipfileEOCD eocd;          /* Parse of central directory record */
-  ZipfileCDS cds;            /* Central Directory Structure */
-  ZipfileLFH lfh;            /* Local File Header for current entry */
-  i64 iDataOff;              /* Offset in zipfile to data */
-  u32 mTime;                 /* Extended mtime value */
-  int flags;                 /* Flags byte (see below for bits) */
-};
-
-/*
-** Values for ZipfileCsr.flags.
-*/
-#define ZIPFILE_MTIME_VALID 0x0001
-
 typedef struct ZipfileEntry ZipfileEntry;
 struct ZipfileEntry {
   char *zPath;               /* Path of zipfile entry */
   i64 iRowid;                /* Rowid for this value if queried */
   u8 *aCdsEntry;             /* Buffer containing entire CDS entry */
   int nCdsEntry;             /* Size of buffer aCdsEntry[] in bytes */
+  int bDeleted;              /* True if entry has been deleted */
   ZipfileEntry *pNext;       /* Next element in in-memory CDS */
 };
+
+/* 
+** Cursor type for recursively iterating through a directory structure.
+*/
+typedef struct ZipfileCsr ZipfileCsr;
+struct ZipfileCsr {
+  sqlite3_vtab_cursor base;  /* Base class - must be first */
+  int bEof;                  /* True when at EOF */
+
+  /* Used outside of write transactions */
+  FILE *pFile;               /* Zip file */
+  i64 iNextOff;              /* Offset of next record in central directory */
+  ZipfileEOCD eocd;          /* Parse of central directory record */
+
+  /* Used inside write transactions */
+  ZipfileEntry *pCurrent;
+
+  ZipfileCDS cds;            /* Central Directory Structure */
+  ZipfileLFH lfh;            /* Local File Header for current entry */
+  i64 iDataOff;              /* Offset in zipfile to data */
+  u32 mTime;                 /* Extended mtime value */
+  int flags;                 /* Flags byte (see below for bits) */
+  ZipfileCsr *pCsrNext;      /* Next cursor on same virtual table */
+};
+
+/*
+** Values for ZipfileCsr.flags.
+*/
+#define ZIPFILE_MTIME_VALID 0x0001
 
 typedef struct ZipfileTab ZipfileTab;
 struct ZipfileTab {
@@ -242,6 +247,7 @@ struct ZipfileTab {
   u8 *aBuffer;               /* Temporary buffer used for various tasks */
 
   /* The following are used by write transactions only */
+  ZipfileCsr *pCsrList;      /* List of cursors */
   ZipfileEntry *pFirstEntry; /* Linked list of all files (if pWriteFd!=0) */
   ZipfileEntry *pLastEntry;  /* Last element in pFirstEntry list */
   FILE *pWriteFd;            /* File handle open on zip archive */
@@ -335,9 +341,16 @@ static int zipfileOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
 ** by zipfileOpen().
 */
 static void zipfileResetCursor(ZipfileCsr *pCsr){
+  ZipfileTab *pTab = (ZipfileTab*)(pCsr->base.pVtab);
+  ZipfileCsr **pp;
+
+  /* Remove this cursor from the ZipfileTab.pCsrList list. */
+  for(pp=&pTab->pCsrList; *pp; pp=&((*pp)->pCsrNext)){
+    if( *pp==pCsr ) *pp = pCsr->pCsrNext;
+  }
+
   sqlite3_free(pCsr->cds.zFile);
   pCsr->cds.zFile = 0;
-  pCsr->iRowid = 0;
   pCsr->bEof = 0;
   if( pCsr->pFile ){
     fclose(pCsr->pFile);
@@ -438,18 +451,25 @@ static u8* zipfileCsrBuffer(ZipfileCsr *pCsr){
 
 static int zipfileReadCDS(ZipfileCsr *pCsr){
   char **pzErr = &pCsr->base.pVtab->zErrMsg;
-  u8 *aRead = zipfileCsrBuffer(pCsr);
-  int rc;
+  u8 *aRead;
+  int rc = SQLITE_OK;
 
   sqlite3_free(pCsr->cds.zFile);
   pCsr->cds.zFile = 0;
 
-  rc = zipfileReadData(
-      pCsr->pFile, aRead, ZIPFILE_CDS_FIXED_SZ, pCsr->iNextOff, pzErr
-  );
+  if( pCsr->pCurrent==0 ){
+    aRead = zipfileCsrBuffer(pCsr);
+    rc = zipfileReadData(
+        pCsr->pFile, aRead, ZIPFILE_CDS_FIXED_SZ, pCsr->iNextOff, pzErr
+    );
+  }else{
+    aRead = pCsr->pCurrent->aCdsEntry;
+  }
+
   if( rc==SQLITE_OK ){
     u32 sig = zipfileRead32(aRead);
     if( sig!=ZIPFILE_SIGNATURE_CDS ){
+      assert( pCsr->pCurrent==0 );
       zipfileSetErrmsg(pCsr,"failed to read CDS at offset %lld",pCsr->iNextOff);
       rc = SQLITE_ERROR;
     }else{
@@ -463,7 +483,9 @@ static int zipfileReadCDS(ZipfileCsr *pCsr){
       pCsr->cds.crc32 = zipfileRead32(aRead);
       pCsr->cds.szCompressed = zipfileRead32(aRead);
       pCsr->cds.szUncompressed = zipfileRead32(aRead);
-      assert( aRead==zipfileCsrBuffer(pCsr)+ZIPFILE_CDS_NFILE_OFF );
+      assert( pCsr->pCurrent 
+           || aRead==zipfileCsrBuffer(pCsr)+ZIPFILE_CDS_NFILE_OFF 
+      );
       pCsr->cds.nFile = zipfileRead16(aRead);
       pCsr->cds.nExtra = zipfileRead16(aRead);
       pCsr->cds.nComment = zipfileRead16(aRead);
@@ -471,13 +493,16 @@ static int zipfileReadCDS(ZipfileCsr *pCsr){
       pCsr->cds.iInternalAttr = zipfileRead16(aRead);
       pCsr->cds.iExternalAttr = zipfileRead32(aRead);
       pCsr->cds.iOffset = zipfileRead32(aRead);
+      assert( pCsr->pCurrent 
+           || aRead==zipfileCsrBuffer(pCsr)+ZIPFILE_CDS_FIXED_SZ
+      );
 
-      assert( aRead==zipfileCsrBuffer(pCsr)+ZIPFILE_CDS_FIXED_SZ );
-
-      nRead = pCsr->cds.nFile + pCsr->cds.nExtra;
-      aRead = zipfileCsrBuffer(pCsr);
-      pCsr->iNextOff += ZIPFILE_CDS_FIXED_SZ;
-      rc = zipfileReadData(pCsr->pFile, aRead, nRead, pCsr->iNextOff, pzErr);
+      if( pCsr->pCurrent==0 ){
+        nRead = pCsr->cds.nFile + pCsr->cds.nExtra;
+        aRead = zipfileCsrBuffer(pCsr);
+        pCsr->iNextOff += ZIPFILE_CDS_FIXED_SZ;
+        rc = zipfileReadData(pCsr->pFile, aRead, nRead, pCsr->iNextOff, pzErr);
+      }
 
       if( rc==SQLITE_OK ){
         pCsr->cds.zFile = sqlite3_mprintf("%.*s", (int)pCsr->cds.nFile, aRead);
@@ -522,13 +547,19 @@ static int zipfileReadCDS(ZipfileCsr *pCsr){
   return rc;
 }
 
+static FILE *zipfileGetFd(ZipfileCsr *pCsr){
+  if( pCsr->pFile ) return pCsr->pFile;
+  return ((ZipfileTab*)(pCsr->base.pVtab))->pWriteFd;
+}
+
 static int zipfileReadLFH(ZipfileCsr *pCsr){
+  FILE *pFile = zipfileGetFd(pCsr);
   char **pzErr = &pCsr->base.pVtab->zErrMsg;
   static const int szFix = ZIPFILE_LFH_FIXED_SZ;
   u8 *aRead = zipfileCsrBuffer(pCsr);
   int rc;
 
-  rc = zipfileReadData(pCsr->pFile, aRead, szFix, pCsr->cds.iOffset, pzErr);
+  rc = zipfileReadData(pFile, aRead, szFix, pCsr->cds.iOffset, pzErr);
   if( rc==SQLITE_OK ){
     u32 sig = zipfileRead32(aRead);
     if( sig!=ZIPFILE_SIGNATURE_LFH ){
@@ -561,19 +592,31 @@ static int zipfileReadLFH(ZipfileCsr *pCsr){
 */
 static int zipfileNext(sqlite3_vtab_cursor *cur){
   ZipfileCsr *pCsr = (ZipfileCsr*)cur;
-  i64 iEof = pCsr->eocd.iOffset + pCsr->eocd.nSize;
   int rc = SQLITE_OK;
+  pCsr->flags = 0;
 
-  if( pCsr->iNextOff>=iEof ){
-    pCsr->bEof = 1;
+  if( pCsr->pCurrent==0 ){
+    i64 iEof = pCsr->eocd.iOffset + pCsr->eocd.nSize;
+    if( pCsr->iNextOff>=iEof ){
+      pCsr->bEof = 1;
+    }
   }else{
-    pCsr->iRowid++;
-    pCsr->flags = 0;
+    assert( pCsr->pFile==0 );
+    do {
+      pCsr->pCurrent = pCsr->pCurrent->pNext;
+    }while( pCsr->pCurrent && pCsr->pCurrent->bDeleted );
+    if( pCsr->pCurrent==0 ){
+      pCsr->bEof = 1;
+    }
+  }
+
+  if( pCsr->bEof==0 ){
     rc = zipfileReadCDS(pCsr);
     if( rc==SQLITE_OK ){
       rc = zipfileReadLFH(pCsr);
     }
   }
+
   return rc;
 }
 
@@ -658,7 +701,8 @@ static int zipfileColumn(
         if( aBuf==0 ){
           rc = SQLITE_NOMEM;
         }else{
-          rc = zipfileReadData(pCsr->pFile, aBuf, sz, pCsr->iDataOff,
+          FILE *pFile = zipfileGetFd(pCsr);
+          rc = zipfileReadData(pFile, aBuf, sz, pCsr->iDataOff,
               &pCsr->base.pVtab->zErrMsg
           );
         }
@@ -678,13 +722,15 @@ static int zipfileColumn(
 }
 
 /*
-** Return the rowid for the current row. In this implementation, the
-** first row returned is assigned rowid value 1, and each subsequent
-** row a value 1 more than that of the previous.
+** Return the rowid for the current row.
 */
 static int zipfileRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   ZipfileCsr *pCsr = (ZipfileCsr*)cur;
-  *pRowid = pCsr->iRowid;
+  if( pCsr->pCurrent ){
+    *pRowid = pCsr->pCurrent->iRowid;
+  }else{
+    *pRowid = pCsr->cds.iOffset;
+  }
   return SQLITE_OK;
 }
 
@@ -771,32 +817,39 @@ static int zipfileFilter(
 
   zipfileResetCursor(pCsr);
 
-  assert( idxNum==argc && (idxNum==0 || idxNum==1) );
-  if( idxNum==0 ){
-    ZipfileTab *pTab = (ZipfileTab*)cur->pVtab;
+  if( pTab->zFile ){
     zFile = pTab->zFile;
-    if( zFile==0 ){
-      /* Error. This is an eponymous virtual table and the user has not 
-      ** supplied a file name. */
-      zipfileSetErrmsg(pCsr, "table function zipfile() requires an argument");
-      return SQLITE_ERROR;
-    }
+  }else if( idxNum==0 ){
+    /* Error. This is an eponymous virtual table and the user has not 
+    ** supplied a file name. */
+    zipfileSetErrmsg(pCsr, "table function zipfile() requires an argument");
+    return SQLITE_ERROR;
   }else{
     zFile = (const char*)sqlite3_value_text(argv[0]);
   }
-  pCsr->pFile = fopen(zFile, "rb");
-  if( pCsr->pFile==0 ){
-    zipfileSetErrmsg(pCsr, "cannot open file: %s", zFile);
-    rc = SQLITE_ERROR;
-  }else{
-    rc = zipfileReadEOCD(pTab, pCsr->pFile, &pCsr->eocd);
-    if( rc==SQLITE_OK ){
-      pCsr->iNextOff = pCsr->eocd.iOffset;
-      rc = zipfileNext(cur);
-    }else if( rc==SQLITE_EMPTY ){
-      rc = SQLITE_OK;
-      pCsr->bEof = 1;
+
+  if( pTab->pWriteFd==0 ){
+    pCsr->pFile = fopen(zFile, "rb");
+    if( pCsr->pFile==0 ){
+      zipfileSetErrmsg(pCsr, "cannot open file: %s", zFile);
+      rc = SQLITE_ERROR;
+    }else{
+      rc = zipfileReadEOCD(pTab, pCsr->pFile, &pCsr->eocd);
+      if( rc==SQLITE_OK ){
+        pCsr->iNextOff = pCsr->eocd.iOffset;
+        rc = zipfileNext(cur);
+      }else if( rc==SQLITE_EMPTY ){
+        rc = SQLITE_OK;
+        pCsr->bEof = 1;
+      }
     }
+  }else{
+    ZipfileEntry e;
+    memset(&e, 0, sizeof(e));
+    e.pNext = pTab->pFirstEntry;
+    pCsr->pCurrent = &e;
+    rc = zipfileNext(cur);
+    assert( pCsr->pCurrent!=&e );
   }
 
   return rc;
@@ -840,9 +893,11 @@ static void zipfileAddEntry(ZipfileTab *pTab, ZipfileEntry *pNew){
   assert( (pTab->pFirstEntry==0)==(pTab->pLastEntry==0) );
   assert( pNew->pNext==0 );
   if( pTab->pFirstEntry==0 ){
+    pNew->iRowid = 1;
     pTab->pFirstEntry = pTab->pLastEntry = pNew;
   }else{
     assert( pTab->pLastEntry->pNext==0 );
+    pNew->iRowid = pTab->pLastEntry->iRowid+1;
     pTab->pLastEntry->pNext = pNew;
     pTab->pLastEntry = pNew;
   }
@@ -884,12 +939,12 @@ static int zipfileLoadDirectory(ZipfileTab *pTab){
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
+        memset(pNew, 0, sizeof(ZipfileEntry));
         pNew->zPath = (char*)&pNew[1];
         memcpy(pNew->zPath, &aBuf[ZIPFILE_CDS_FIXED_SZ], nFile);
         pNew->zPath[nFile] = '\0';
         pNew->aCdsEntry = (u8*)&pNew->zPath[nFile+1];
         pNew->nCdsEntry = ZIPFILE_CDS_FIXED_SZ+nFile+nExtra+nComment;
-        pNew->pNext = 0;
         memcpy(pNew->aCdsEntry, aRec, pNew->nCdsEntry);
         zipfileAddEntry(pTab, pNew);
       }
@@ -922,10 +977,10 @@ static ZipfileEntry *zipfileNewEntry(
   );
 
   if( pNew ){
+    memset(pNew, 0, sizeof(ZipfileEntry));
     pNew->zPath = (char*)&pNew[1];
     pNew->aCdsEntry = (u8*)&pNew->zPath[nPath+1];
     pNew->nCdsEntry = ZIPFILE_CDS_FIXED_SZ + nPath + pCds->nExtra;
-    pNew->pNext = 0;
     memcpy(pNew->zPath, zPath, nPath+1);
 
     aWrite = pNew->aCdsEntry;
@@ -1057,38 +1112,19 @@ static int zipfileUpdate(
   u8 *pFree = 0;                  /* Free this */
   ZipfileCDS cds;                 /* New Central Directory Structure entry */
 
+  assert( pTab->zFile );
+  assert( pTab->pWriteFd );
+
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
-    pTab->base.zErrMsg = sqlite3_mprintf(
-        "zipfile: UPDATE/DELETE not yet supported"
-    );
-    return SQLITE_ERROR;
-  }
-
-  /* This table is only writable if a default archive path was specified 
-  ** as part of the CREATE VIRTUAL TABLE statement. */
-  if( pTab->zFile==0 ){
-    pTab->base.zErrMsg = sqlite3_mprintf(
-        "zipfile: writing requires a default archive"
-    );
-    return SQLITE_ERROR;
-  }
-
-  /* Open a write fd on the file. Also load the entire central directory
-  ** structure into memory. During the transaction any new file data is 
-  ** appended to the archive file, but the central directory is accumulated
-  ** in main-memory until the transaction is committed.  */
-  if( pTab->pWriteFd==0 ){
-    pTab->pWriteFd = fopen(pTab->zFile, "ab+");
-    if( pTab->pWriteFd==0 ){
-      pTab->base.zErrMsg = sqlite3_mprintf(
-          "zipfile: failed to open file %s for writing", pTab->zFile
-      );
-      return SQLITE_ERROR;
+    i64 iDelete = sqlite3_value_int64(apVal[0]);
+    ZipfileEntry *p;
+    for(p=pTab->pFirstEntry; p; p=p->pNext){
+      if( p->iRowid==iDelete ){
+        p->bDeleted = 1;
+        break;
+      }
     }
-    fseek(pTab->pWriteFd, 0, SEEK_END);
-    pTab->szCurrent = pTab->szOrig = (i64)ftell(pTab->pWriteFd);
-    rc = zipfileLoadDirectory(pTab);
-    if( rc!=SQLITE_OK ) return rc;
+    if( nVal==1 ) return SQLITE_OK;
   }
 
   zPath = (const char*)sqlite3_value_text(apVal[2]);
@@ -1199,7 +1235,41 @@ static void zipfileCleanupTransaction(ZipfileTab *pTab){
 }
 
 static int zipfileBegin(sqlite3_vtab *pVtab){
-  return SQLITE_OK;
+  ZipfileTab *pTab = (ZipfileTab*)pVtab;
+  int rc = SQLITE_OK;
+
+  assert( pTab->pWriteFd==0 );
+
+  /* This table is only writable if a default archive path was specified 
+  ** as part of the CREATE VIRTUAL TABLE statement. */
+  if( pTab->zFile==0 ){
+    pTab->base.zErrMsg = sqlite3_mprintf(
+        "zipfile: writing requires a default archive"
+    );
+    return SQLITE_ERROR;
+  }
+
+  /* Open a write fd on the file. Also load the entire central directory
+  ** structure into memory. During the transaction any new file data is 
+  ** appended to the archive file, but the central directory is accumulated
+  ** in main-memory until the transaction is committed.  */
+  pTab->pWriteFd = fopen(pTab->zFile, "ab+");
+  if( pTab->pWriteFd==0 ){
+    pTab->base.zErrMsg = sqlite3_mprintf(
+        "zipfile: failed to open file %s for writing", pTab->zFile
+    );
+    rc = SQLITE_ERROR;
+  }else{
+    fseek(pTab->pWriteFd, 0, SEEK_END);
+    pTab->szCurrent = pTab->szOrig = (i64)ftell(pTab->pWriteFd);
+    rc = zipfileLoadDirectory(pTab);
+  }
+
+  if( rc!=SQLITE_OK ){
+    zipfileCleanupTransaction(pTab);
+  }
+
+  return rc;
 }
 
 static int zipfileCommit(sqlite3_vtab *pVtab){
@@ -1211,8 +1281,9 @@ static int zipfileCommit(sqlite3_vtab *pVtab){
     ZipfileEOCD eocd;
     int nEntry = 0;
 
-    /* Write out all entries */
+    /* Write out all undeleted entries */
     for(p=pTab->pFirstEntry; rc==SQLITE_OK && p; p=p->pNext){
+      if( p->bDeleted ) continue;
       rc = zipfileAppendData(pTab, p->aCdsEntry, p->nCdsEntry);
       nEntry++;
     }
