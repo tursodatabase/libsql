@@ -1,5 +1,5 @@
-C Minor\ssimplification\sto\sthe\s".schema"\slogic\sin\sthe\scommand-line\sshell.
-D 2018-01-01T20:11:23.297
+C In\sthe\soutput\sof\s".schema",\sshow\sthe\scolumn\snames\sof\svirtual\stables\sand\nviews\sin\sa\sseparate\scomment.
+D 2018-01-01T21:28:25.565
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -479,7 +479,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in a3f30523bbf436e886831c9f867419edb957dec60a2b5d70d2a071298206e37d
+F src/shell.c.in f151a1181ed4da01c48ecbbeeb4e102d298dd239102c252f92cc331c85a1436b
 F src/sqlite.h.in b4dc75265ed04b98e2184011a7dd0054ce2137ff84867a6be8b4f3bdfbc03d30
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1127,7 +1127,7 @@ F test/pragma.test 7c8cfc328a1717a95663cf8edb06c52ddfeaf97bb0aee69ae7457132e8d39
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
 F test/pragma4.test 3046501bee2f652dc2a4f9c87781e2741361d6864439c8381aba6c3b774b335c
-F test/pragma5.test fd517f42ee847e126afbbbd9fd0fb9e5a4a61a962496a350adb8a22583fbdc37
+F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
@@ -1213,7 +1213,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test f78ea0e2637ae9f497cb41206f6346f983052ffc7a359e664aaf6847fc704ea7
+F test/shell1.test 3f23fe267fc591dc6a004a163b719a7a6509e4b46915bab8781e32e854c0a0a4
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b04223f256f5c1e06fa6e899727815ebf650f2dfcf8f36d6cbfb6cb62d4ead8
-R 2690a690f31be0b2523230103d44d965
+P add45c47288248ca3745e0fceb5e0d9062a852d173d93ff2ff1a0f8fdf3237dc
+R dcc0e8850f6f2345f6beb728eed33eca
 U drh
-Z 17d3ed202c106ebc7057d8eede16f971
+Z b932e40f742685fed6e88a07d4738316
