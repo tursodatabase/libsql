@@ -1,8 +1,8 @@
-C Add\ssupport\sfor\sthe\ssqlite_unsupported_offset()\sSQL\sfunction\sif\sand\sonly\nif\scompiled\susing\s-DSQLITE_ENABLE_OFFSET_SQL_FUNC.\s\sUse\sthat\sdefinition\nwhen\scompiling\sthe\scommand-line\sshell.
-D 2017-12-29T17:21:21.319
-F Makefile.in 804c347948b0ad5a962aea3e59413e897227e0173d0e76910f11f473e6c7ae9b
+C Enable\sthe\sintrospection\spragmas\sfor\scommand-line\sshell\sbuilds.
+D 2018-01-01T19:33:12.194
+F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 57dcce0595d4a0c4b94b6f6ba732b8e33540358adf5fb8e1aa8389d34a9677e8
+F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -401,7 +401,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk b5f569262e4f8111bb8cf6110784b8210fe14ea45f6c7ea50fb4230ebe7a4880
+F main.mk 59744c818d349d170ff56cdbdfb5af0e0a2029db18ce2824fcd1b0a3fa317d84
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1688,8 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f4349c0c26611de8a7d5beb99431a575cf531cdeb0ca2413efabcf0a61e6f424 9406c0a685fd5ff3516a66402b0514a1440652822a5eecf0b7af85929f3079e8
-R 35346abc344e9d51558b9d8d5c8f2d13
-T +closed 9406c0a685fd5ff3516a66402b0514a1440652822a5eecf0b7af85929f3079e8
+P 4f1f1f521ae6da96b899e10bfeff6bc1ab7a45de0705076febaae20b441f48c6
+R c9a22e6c8d8b0c74afd8179337182631
 U drh
-Z b5b643a0e7da393bb8589918154fc3c1
+Z ad901b13942be312e9eb272912737269
