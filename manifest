@@ -1,5 +1,5 @@
-C In\sthe\soutput\sof\s".schema",\sshow\sthe\scolumn\snames\sof\svirtual\stables\sand\nviews\sin\sa\sseparate\scomment.
-D 2018-01-01T21:28:25.565
+C Improved\sname\squoting\sand\sescaping\sin\sthe\sauxiliary\scolumn\sinfo\ssection\nof\sthe\s".schema"\soutput\sfor\sviews\sand\svirtual\stables.
+D 2018-01-01T21:49:43.315
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -479,7 +479,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in f151a1181ed4da01c48ecbbeeb4e102d298dd239102c252f92cc331c85a1436b
+F src/shell.c.in e0d3ef676265771a001446906765dd89617df2cece3249b08b1dcd24ba296f63
 F src/sqlite.h.in b4dc75265ed04b98e2184011a7dd0054ce2137ff84867a6be8b4f3bdfbc03d30
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1213,7 +1213,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 3f23fe267fc591dc6a004a163b719a7a6509e4b46915bab8781e32e854c0a0a4
+F test/shell1.test 6d69e08039aea13f2c42749f162fe05eab7b5c93729f31d49d7d27cf36226e5a
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P add45c47288248ca3745e0fceb5e0d9062a852d173d93ff2ff1a0f8fdf3237dc
-R dcc0e8850f6f2345f6beb728eed33eca
+P 2234a87fa905312b23f46d52e06cff7cacbf23b187e16c4398a42e6bdae0ee9f
+R ca3aef501320cce9e28be13c23be1622
 U drh
-Z b932e40f742685fed6e88a07d4738316
+Z 2aaca99c49ba21a51639392b75414605

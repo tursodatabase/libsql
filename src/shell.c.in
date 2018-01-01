@@ -741,19 +741,34 @@ static char *shellFakeCrTab(
 ){
   sqlite3_stmt *pStmt = 0;
   char *zSql;
-  char *z = 0;
+  ShellText s;
+  char cQuote;
+  char *zDiv = "(";
 
-  zSql = sqlite3_mprintf("SELECT group_concat(name,',')"
-                         " FROM pragma_table_info(%Q,%Q);",
-                         zName, zSchema);
+  zSql = sqlite3_mprintf("PRAGMA \"%w\".table_info=%Q;",
+                         zSchema ? zSchema : "main", zName);
   sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    z = sqlite3_mprintf("/* %s.%s(%s) */",
-           zSchema ? zSchema : "main", zName, sqlite3_column_text(pStmt, 0));
+  initText(&s);
+  if( zSchema ){
+    cQuote = quoteChar(zSchema);
+    if( cQuote && sqlite3_stricmp(zSchema,"temp")==0 ) cQuote = 0;
+    appendText(&s, zSchema, cQuote);
+    appendText(&s, ".", 0);
   }
+  cQuote = quoteChar(zName);
+  appendText(&s, zName, cQuote);
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zCol = (const char*)sqlite3_column_text(pStmt, 1);
+    appendText(&s, zDiv, 0);
+    zDiv = ",";
+    cQuote = quoteChar(zCol);
+    appendText(&s, zCol, cQuote);
+  }
+  appendText(&s, ")", 0);
+
   sqlite3_finalize(pStmt);
-  return z;
+  return s.z;
 }
 
 /*
@@ -808,7 +823,8 @@ static void shellAddSchemaName(
         if( aPrefix[i][0]=='V' ){
           const char *zName = (const char*)sqlite3_value_text(apVal[2]);
           if( z==0 ) z = sqlite3_mprintf("%s", zIn);
-          z = sqlite3_mprintf("%z\n%z", z,  shellFakeCrTab(db, zSchema, zName));
+          z = sqlite3_mprintf("%z\n/* %z */", z,
+                              shellFakeCrTab(db, zSchema, zName));
         }
         if( z ){
           sqlite3_result_text(pCtx, z, -1, sqlite3_free);

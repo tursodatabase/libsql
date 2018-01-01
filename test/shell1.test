@@ -582,9 +582,9 @@ do_test shell1-3.21.4 {
   catchcmd "test.db" ".schema"
 } {0 {CREATE TABLE t1(x);
 CREATE VIEW v2 AS SELECT x+1 AS y FROM t1
-/* main.v2(y) */;
+/* v2(y) */;
 CREATE VIEW v1 AS SELECT y+1 FROM v2
-/* main.v1(y+1) */;}}
+/* v1("y+1") */;}}
 db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
 }
 
