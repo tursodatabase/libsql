@@ -5334,33 +5334,23 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( nArg==2 && azArg[1][0]!='-' ){
       int i;
       for(i=0; azArg[1][i]; i++) azArg[1][i] = ToLower(azArg[1][i]);
-      if( strcmp(azArg[1],"sqlite_master")==0 ){
+      if( strcmp(azArg[1],"sqlite_master")==0
+       || strcmp(azArg[1],"sqlite_temp_master")==0
+      ){
         char *new_argv[2], *new_colv[2];
-        new_argv[0] = "CREATE TABLE sqlite_master (\n"
+        new_argv[0] = sqlite3_mprintf(
+                      "CREATE TABLE %s (\n"
                       "  type text,\n"
                       "  name text,\n"
                       "  tbl_name text,\n"
                       "  rootpage integer,\n"
                       "  sql text\n"
-                      ")";
+                      ")", azArg[1]);
         new_argv[1] = 0;
         new_colv[0] = "sql";
         new_colv[1] = 0;
         callback(&data, 1, new_argv, new_colv);
-        rc = SQLITE_OK;
-      }else if( strcmp(azArg[1],"sqlite_temp_master")==0 ){
-        char *new_argv[2], *new_colv[2];
-        new_argv[0] = "CREATE TEMP TABLE sqlite_temp_master (\n"
-                      "  type text,\n"
-                      "  name text,\n"
-                      "  tbl_name text,\n"
-                      "  rootpage integer,\n"
-                      "  sql text\n"
-                      ")";
-        new_argv[1] = 0;
-        new_colv[0] = "sql";
-        new_colv[1] = 0;
-        callback(&data, 1, new_argv, new_colv);
+        sqlite3_free(new_argv[0]);
         rc = SQLITE_OK;
       }else{
         zDiv = "(";
