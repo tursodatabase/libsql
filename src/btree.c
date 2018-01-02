@@ -4179,10 +4179,12 @@ static int btreeFixUnlocked(Btree *p){
         /* The current transaction allocated pages pMap->iFirst through
         ** nPage (inclusive) at the end of the database file. Meanwhile,
         ** other transactions have allocated (iFirst..nHPage). So move
-        ** pages (iFirst..MIN(nPage,nHPage)) to (MAX(nPage,nHPage)+1).  */
+        ** pages (iFirst..MIN(nPage,nHPage)) to (MAX(nPage,nHPage)+1). */
         Pgno iLast = MIN(nPage, nHPage);    /* Last page to move */
         Pgno nCurrent;                      /* Current size of db */
+
         nCurrent = MAX(nPage, nHPage);
+        pBt->nPage = nCurrent;
         rc = btreeRelocateRange(pBt, pMap->iFirst, iLast, &nCurrent);
 
         /* There are now no collisions with the snapshot at the head of the
@@ -6127,7 +6129,7 @@ static int allocateBtreePage(
   ** stores stores the total number of pages on the freelist. */
   n = get4byte(&pPage1->aData[36]);
   testcase( n==mxPage-1 );
-  if( ISCONCURRENT==0 && n>=mxPage ){
+  if( n>=mxPage ){
     return SQLITE_CORRUPT_BKPT;
   }
 
