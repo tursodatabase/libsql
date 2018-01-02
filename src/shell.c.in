@@ -5477,11 +5477,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sSelect, ".sqlite_master", 0);
       }
       sqlite3_finalize(pStmt);
+#ifdef SQLITE_INTROSPECTION_PRAGMAS
       if( zName ){
         appendText(&sSelect,
            " UNION ALL SELECT shell_module_schema(name),"
            " 'table', name, name, name, 9e+99, 'main' FROM pragma_module_list", 0);
       }
+#endif
       appendText(&sSelect, ") WHERE ", 0);
       if( zName ){
         char *zQarg = sqlite3_mprintf("%Q", zName);
