@@ -1,5 +1,5 @@
-C In\sthe\sconstraint\sresolution\slogic,\sbe\scareful\snot\sto\scache\scolumn\svalues\s\nin\sregisters\swhose\sinitialization\smight\sbe\sbypassed\sby\san\sOP_NoConflict\sopcode.\nFix\sfor\sticket\s[dc3f932f5a147771]\sreported\sby\sOSSFuzz.
-D 2018-01-02T18:11:11.985
+C Fix\scode\sindentation.\s\sNo\slogic\schanges.
+D 2018-01-02T21:29:42.540
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -465,7 +465,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 7fc2735390a7809d5d893ed735d994ff12521224b89738226fff6f1a0aa1c932
 F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 07cf850241667874fcce9d7d924c814305e499b26c804322e2261247b5921903
+F src/pager.c 9b9cb4e06c03d43d62480a7a685a012d645fcf3a39e7767ccb505fb41ee083ec
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
 F src/parse.y 44cbbc3e132ea128258eff7be7f6d5c5dfa25522f89ec8b5501276966511bd50
 F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 04c9197d589666299aef86ee6a56df63448c050274c9fba4af94f932752be237
-R 264e263a982eceab94b4544263056f03
+P 2846458af5d029a8e4fdcc8f50873a44e57897bbfe6aee8a23a01ffc34c5579f
+R 9613ba300b7bd9cce413f2672960fb05
 U drh
-Z 317cb96d5817cef99d6f004b6578f45e
+Z 9fca118926b581510cc96e0ce3702687
