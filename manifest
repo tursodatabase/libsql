@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3_file_control()\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2018-01-02T13:48:48.784
+C Enhance\sthe\smemvfs\sextension\sso\sthat\sit\scan\sbe\sread/write.
+D 2018-01-02T16:02:50.552
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -278,7 +278,7 @@ F ext/misc/fileio.c b1aa06c0f1dac277695d4529e5e976c65ab5678dcbb53a0304deaa8adc44
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
-F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
+F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39ca5fcd31c902cbade4da05125b0dbf2bc5e2b8901af1645f113c9d3dbc8209
-R 1ce62a1c4d9b56a67e8d1f1aed222781
+P 240e32ab1f2a18e3c9b92f577b1cc8f8ecb4c68c44eac863d859491e042cb72a
+R e6325f7b9d9fed8be88a348d63977f27
 U drh
-Z d9ace2c20dd904e2b4c8de8f33d7aa5e
+Z de6d00886014fb58a1b54f4eb1670d54
