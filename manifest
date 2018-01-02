@@ -1,5 +1,5 @@
-C Enhance\sthe\smemvfs\sextension\sso\sthat\sit\scan\sbe\sread/write.
-D 2018-01-02T16:02:50.552
+C In\sthe\sconstraint\sresolution\slogic,\sbe\scareful\snot\sto\scache\scolumn\svalues\s\nin\sregisters\swhose\sinitialization\smight\sbe\sbypassed\sby\san\sOP_NoConflict\sopcode.\nFix\sfor\sticket\s[dc3f932f5a147771]\sreported\sby\sOSSFuzz.
+D 2018-01-02T18:11:11.985
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -440,7 +440,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c cb67cc56ef2ddd13e6944b2c0dd08a920bcd9503230adef8b9928d338097c722
+F src/insert.c 14686083cedc198540b15a79586cdd4be2acf6d5fa97627e355f817ab07e9fee
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 55bcc3c741059a1056859e8adaf133aa179e22be12215c0936b2f354ef71209b
 F src/main.c 690c4134f944cbd5b71d59dd6e61ce4131f6a50ab774f38108e57d07d79cf876
@@ -969,7 +969,7 @@ F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test faa585e315e868f09bce0eb39c41d6134649b13d2801638294d3ae616edf1609
-F test/indexexpr1.test 84100e880154a4b645db9f4fc7642756d9a2b6011b68f73c8efda4d244816de9
+F test/indexexpr1.test 60e2d6f1d1337fd213208270295c650d268503ff215de728f540ea31eb237f70
 F test/indexexpr2.test 13247bac49143196556eb3f65e97ef301bd3e993f4511558b5db322ddc370ea6
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 240e32ab1f2a18e3c9b92f577b1cc8f8ecb4c68c44eac863d859491e042cb72a
-R e6325f7b9d9fed8be88a348d63977f27
+P 04c9197d589666299aef86ee6a56df63448c050274c9fba4af94f932752be237
+R 264e263a982eceab94b4544263056f03
 U drh
-Z de6d00886014fb58a1b54f4eb1670d54
+Z 317cb96d5817cef99d6f004b6578f45e
