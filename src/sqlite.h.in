@@ -6971,9 +6971,9 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** the xFileControl method.  ^The return value of the xFileControl
 ** method becomes the return value of this routine.
 **
-** ^The SQLITE_FCNTL_FILE_POINTER value for the op parameter causes
+** ^The [SQLITE_FCNTL_FILE_POINTER] value for the op parameter causes
 ** a pointer to the underlying [sqlite3_file] object to be written into
-** the space pointed to by the 4th parameter.  ^The SQLITE_FCNTL_FILE_POINTER
+** the space pointed to by the 4th parameter.  ^The [SQLITE_FCNTL_FILE_POINTER]
 ** case is a short-circuit path which does not actually invoke the
 ** underlying sqlite3_io_methods.xFileControl method.
 **
@@ -6985,7 +6985,7 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** an incorrect zDbName and an SQLITE_ERROR return from the underlying
 ** xFileControl method.
 **
-** See also: [SQLITE_FCNTL_LOCKSTATE]
+** See also: [file control opcodes]
 */
 int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
 

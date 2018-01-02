@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\suse\spragma_module_list\sin\sthe\scommand-line\sshell\sunless\s\nit\shas\sbeen\scompiled\swith\s-DSQLITE_INTROSPECTION_PRAGMAS.
-D 2018-01-02T12:50:40.391
+C Updates\sto\sthe\ssqlite3_file_control()\sdocumentation.\s\sNo\schanges\sto\scode.
+D 2018-01-02T13:48:48.784
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -480,7 +480,7 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
 F src/shell.c.in a418ddceef7a2789f18bdc2bcdd481b2562fe4a7754b8009c8dd33d5a67da332
-F src/sqlite.h.in b4dc75265ed04b98e2184011a7dd0054ce2137ff84867a6be8b4f3bdfbc03d30
+F src/sqlite.h.in c597ba5d11666bb2d0179a173cd25e44f0b0333f9e18ce60b07eac8bdc3de67f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h fd8702c65994d7de3e2d8f7d85d958731da1ed29476571fdfa2290fd8ec0bf80
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f80f6651df0b2843c6c9619a8f3e05c56cd50363402800a2e166e6eb664f7768
-R 6990ef46fea99f4195aa8641bdb529e8
+P 39ca5fcd31c902cbade4da05125b0dbf2bc5e2b8901af1645f113c9d3dbc8209
+R 1ce62a1c4d9b56a67e8d1f1aed222781
 U drh
-Z 071c90bd35c02d763da61d6f60dc05ae
+Z d9ace2c20dd904e2b4c8de8f33d7aa5e
