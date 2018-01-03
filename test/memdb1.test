@@ -27,8 +27,6 @@ ifcapable !memdb {
 # Verify that the size of $::db1 is the same as the size of
 # the database.
 #
-db close
-sqlite3 db dummy -vfs memdb
 unset -nocomplain db1
 unset -nocomplain sz1
 unset -nocomplain pgsz
@@ -39,9 +37,12 @@ do_test 100 {
   }
   set ::pgsz [db one {PRAGMA page_size}]
   set ::sz1 [expr {$::pgsz*[db one {PRAGMA page_count}]}]
-  set ::db1 [db memdb main]
+  set ::db1 [db serialize]
   expr {[string length $::db1]==$::sz1}
 } 1
+set fd [open db1.db wb]
+puts -nonewline $fd $db1
+close $fd
 
 # Create a new MEMDB and initialize it to the content of $::db1
 # Verify that the content is the same.

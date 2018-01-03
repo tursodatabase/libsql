@@ -1846,34 +1846,36 @@ static int SQLITE_TCLAPI DbObjCmd(
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",         "backup",            "busy",
-    "cache",              "changes",           "close",
-    "collate",            "collation_needed",  "commit_hook",
-    "complete",           "copy",              "enable_load_extension",
-    "errorcode",          "eval",              "exists",
-    "function",           "incrblob",          "interrupt",
-    "last_insert_rowid",  "memdb",             "nullvalue",
-    "onecolumn",          "preupdate",         "profile",
-    "progress",           "rekey",             "restore",
-    "rollback_hook",      "status",            "timeout",
-    "total_changes",      "trace",             "trace_v2",
-    "transaction",        "unlock_notify",     "update_hook",
-    "version",            "wal_hook",          0
+    "authorizer",             "backup",                "busy",
+    "cache",                  "changes",               "close",
+    "collate",                "collation_needed",      "commit_hook",
+    "complete",               "copy",                  "deserialize",
+    "enable_load_extension",  "errorcode",             "eval",
+    "exists",                 "function",              "incrblob",
+    "interrupt",              "last_insert_rowid",     "memdb",
+    "nullvalue",              "onecolumn",             "preupdate",
+    "profile",                "progress",              "rekey",
+    "restore",                "rollback_hook",         "serialize",
+    "status",                 "timeout",               "total_changes",
+    "trace",                  "trace_v2",              "transaction",
+    "unlock_notify",          "update_hook",           "version",
+    "wal_hook",               0                        
   };
   enum DB_enum {
-    DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
-    DB_CACHE,             DB_CHANGES,          DB_CLOSE,
-    DB_COLLATE,           DB_COLLATION_NEEDED, DB_COMMIT_HOOK,
-    DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
-    DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
-    DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
-    DB_LAST_INSERT_ROWID, DB_MEMDB,            DB_NULLVALUE,
-    DB_ONECOLUMN,         DB_PREUPDATE,        DB_PROFILE,
-    DB_PROGRESS,          DB_REKEY,            DB_RESTORE,
-    DB_ROLLBACK_HOOK,     DB_STATUS,           DB_TIMEOUT,
-    DB_TOTAL_CHANGES,     DB_TRACE,            DB_TRACE_V2,
-    DB_TRANSACTION,       DB_UNLOCK_NOTIFY,    DB_UPDATE_HOOK,
-    DB_VERSION,           DB_WAL_HOOK
+    DB_AUTHORIZER,            DB_BACKUP,               DB_BUSY,
+    DB_CACHE,                 DB_CHANGES,              DB_CLOSE,
+    DB_COLLATE,               DB_COLLATION_NEEDED,     DB_COMMIT_HOOK,
+    DB_COMPLETE,              DB_COPY,                 DB_DESERIALIZE,
+    DB_ENABLE_LOAD_EXTENSION, DB_ERRORCODE,            DB_EVAL,
+    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
+    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_MEMDB,
+    DB_NULLVALUE,             DB_ONECOLUMN,            DB_PREUPDATE,
+    DB_PROFILE,               DB_PROGRESS,             DB_REKEY,
+    DB_RESTORE,               DB_ROLLBACK_HOOK,        DB_SERIALIZE,
+    DB_STATUS,                DB_TIMEOUT,              DB_TOTAL_CHANGES,
+    DB_TRACE,                 DB_TRACE_V2,             DB_TRANSACTION,
+    DB_UNLOCK_NOTIFY,         DB_UPDATE_HOOK,          DB_VERSION,
+    DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2412,6 +2414,16 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
+  **     $db deserialize ?DATABASE? VALUE
+  **
+  ** Reopen DATABASE (default "main") using the content in $VALUE
+  */
+  case DB_DESERIALIZE: {
+    rc = TCL_ERROR;  /* TBD */
+    break; 
+  }
+
+  /*
   **    $db enable_load_extension BOOLEAN
   **
   ** Turn the extension loading feature on or off.  It if off by
@@ -2679,17 +2691,8 @@ static int SQLITE_TCLAPI DbObjCmd(
     rc = TCL_ERROR;
 #else
     const char *zSchema = Tcl_GetString(objv[2]);
-    sqlite3_int64 sz = 0;
     unsigned char *pData;
-    if( objc==3 ){
-      pData = sqlite3_memdb_ptr(pDb->db, zSchema, &sz);
-      if( pData==0 ){
-        Tcl_AppendResult(interp, "not a MEMDB database", (char*)0);
-        rc = TCL_ERROR;
-      }else{
-        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pData,sz));
-      }
-    }else if( objc==4 ){
+    if( objc==4 ){
       int len = 0, xrc;
       unsigned char *pBA = Tcl_GetByteArrayFromObj(objv[3], &len);
       pData = sqlite3_malloc64( len );
@@ -2930,6 +2933,39 @@ static int SQLITE_TCLAPI DbObjCmd(
       rc = TCL_ERROR;
     }
     sqlite3_close(pSrc);
+    break;
+  }
+
+  /*
+  **     $db serialize ?DATABASE?
+  **
+  ** Return a serialization of a database.  
+  */
+  case DB_SERIALIZE: {
+#ifndef SQLITE_ENABLE_MEMDB
+    Tcl_AppendResult(interp, "MEMDB not available in this build",
+                     (char*)0);
+    rc = TCL_ERROR;
+#else
+    const char *zSchema = objc>=3 ? Tcl_GetString(objv[2]) : "main";
+    sqlite3_int64 sz = 0;
+    unsigned char *pData;
+    if( objc!=2 && objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE?");
+      rc = TCL_ERROR;
+    }else{
+      int needFree;
+      pData = sqlite3_serialize(pDb->db, zSchema, &sz, SQLITE_SERIALIZE_NOCOPY);
+      if( pData ){
+        needFree = 0;
+      }else{
+        pData = sqlite3_serialize(pDb->db, zSchema, &sz, 0);
+        needFree = 1;
+      }
+      Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pData,sz));
+      if( needFree ) sqlite3_free(pData);
+    }
+#endif
     break;
   }
 

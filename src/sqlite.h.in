@@ -8759,22 +8759,6 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
 /*
-** CAPI3REF: Retrieve the current MEMDB buffer
-** EXPERIMENTAL
-**
-** This interface is only available when SQLite is compiled
-** with SQLITE_ENABLE_MEMDB.
-**
-** The sqlite3_memdb_ptr(D,S,P) interface returns a pointer to the
-** memory buffer that is the database file used for [database connection] D
-** and schema S.  If schema S of database connection D is not a MEMDB
-** database, then this routine returns NULL.  If P is not NULL, then it must
-** be a pointer to a 64-bit signed integer into which the size of the 
-** database file is written.
-*/
-SQLITE_EXPERIMENTAL void *sqlite3_memdb_ptr(sqlite3*,const char*,sqlite3_int64*);
-
-/*
 ** CAPI3REF: Set the current MEMDB buffer
 ** EXPERIMENTAL
 **
@@ -8785,7 +8769,7 @@ SQLITE_EXPERIMENTAL void *sqlite3_memdb_ptr(sqlite3*,const char*,sqlite3_int64*)
 ** The database identified by D and S must not be in active use when this
 ** interface is called, or [SQLITE_BUSY] is returned.
 */
-SQLITE_EXPERIMENTAL int sqlite3_memdb_config(sqlite3*,const char*,void*,sqlite3_int64,sqlite3_int64,unsigned);
+int sqlite3_memdb_config(sqlite3*,const char*,void*,sqlite3_int64,sqlite3_int64,unsigned);
 
 /*
 ** CAPI3REF: Flags for configuring MEMDB databases
@@ -8797,6 +8781,99 @@ SQLITE_EXPERIMENTAL int sqlite3_memdb_config(sqlite3*,const char*,void*,sqlite3_
 #define SQLITE_MEMDB_FREEONCLOSE  0x001   /* Free the memory buffer on close */
 #define SQLITE_MEMDB_RESIZEABLE   0x002   /* Resize using sqlite3_realloc64() */
 
+/*
+** CAPI3REF: Serialize a database
+** EXPERIMENTAL
+**
+** The sqlite3_serialize(D,S,P,F) interface returns a pointer to memory
+** that is a serialization of the S database on [database connection] D.
+** If P is not a NULL pointer, then the size of the database in bytes
+** is written into *P.
+**
+** For an ordinary on-disk database file, the serialization is just a
+** copy of the disk file.  For an in-memory database or a "TEMP" database,
+** the serialization is the same sequence of bytes which would be written
+** to disk if that database where backed up to disk.
+**
+** The usual case is that sqlite3_serialize() copies the serialization of
+** the database into memory obtained from [sqlite3_malloc64()] and returns
+** a pointer to that memory.  The caller is responsible for freeing the
+** returned value to avoid a memory leak.  However, if the F argument
+** contains the SQLITE_SERIALIZE_NOCOPY bit, then no memory allocations
+** are made, and the sqlite3_serialize() function will return a pointer
+** to the contiguous memory representation of the database that SQLite
+** is currently using for that database, or NULL if the no such contiguous
+** memory representation of the database exists.  A contigous memory
+** representation of the database will usually only exist if there has
+** been a prior call to [sqlite3_deserialize(D,S,...)] with the same
+** values of D and S.
+** The size of the database is written into *P even if the 
+** SQLITE_SERIALIZE_NOCOPY bit is set but no contigious copy
+** of the database exists.
+**
+** A call to sqlite3_serialize(D,S,P,F) might return NULL even if the
+** SQLITE_SERIALIZE_NOCOPY bit is omitted from argument F if a memory
+** allocation error occurs.
+*/
+unsigned char *sqlite3_serialize(
+  sqlite3 *db,           /* The database connection */
+  const char *zSchema,   /* Which DB to serialize. ex: "main", "temp", ... */
+  sqlite3_int64 *piSize, /* Write size of the DB here, if not NULL */
+  unsigned int mFlags    /* Zero or more SQLITE_SERIALIZE_* flags */
+);
+
+/*
+** CAPI3REF: Flags for sqlite3_serialize
+** EXPERIMENTAL
+*/
+#define SQLITE_SERIALIZE_NOCOPY 0x001   /* Do no memory allocations */
+
+/*
+** CAPI3REF: Set the current MEMDB buffer
+** EXPERIMENTAL
+**
+** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the 
+** [database connection] D to disconnection from database S and then
+** reopen S as an in-memory database based on the serialization contained
+** in P.  The serialized database P is N bytes in size.  M is the size of
+** the buffer P, which might be larger than N.  If M is larger than N, and
+** the SQLITE_DESERIALIZE_READONLY bit is not set in F, then SQLite is
+** permitted to add content to the in-memory database as long as the total
+** size does not exceed M bytes.
+**
+** If the SQLITE_DESERIALIZE_FREEONCLOSE bit is set in F, then SQLite will
+** invoke sqlite3_free() on the serialization buffer when the database
+** connection closes.  If the SQLITE_DESERIALIZE_RESIZEABLE bit is set, then
+** SQLite will try to increase the buffer size using sqlite3_realloc64()
+** if writes on the database cause it to grow larger than M bytes.
+**
+** The sqlite3_deserialize() interface will fail with SQLITE_BUSY if the
+** database is currently in a read transaction or is involved in a backup
+** operation.
+**
+** If sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the 
+** SQLITE_DESERIALIZE_FREEONCLOSE bit is set in argument F, then
+** [sqlite3_free()] is invoked on argument P prior to returning.
+*/
+int sqlite3_deserialize(
+  sqlite3 *db,            /* The database connection */
+  const char *zSchema,    /* Which DB to reopen with the deserialization */
+  unsigned char *pData,   /* The serialized database content */
+  sqlite3_int64 szDb,     /* Number bytes in the deserialization */
+  sqlite3_int64 szBuf,    /* Total size of buffer pData[] */
+  unsigned mFlags         /* Zero or more SQLITE_DESERIALIZE_* flags */
+);
+
+/*
+** CAPI3REF: Flags for sqlite3_deserialize()
+** EXPERIMENTAL
+**
+** The following are allowed values for the 6th argument (the "flags" or "F"
+** argument) of the [sqlite3_deserialize()] interface.
+*/
+#define SQLITE_DESERIALIZE_FREEONCLOSE 1 /* Call sqlite3_free() on close */
+#define SQLITE_DESERIALIZE_RESIZEABLE  2 /* Resize using sqlite3_realloc64() */
+#define SQLITE_DESERIALIZE_READONLY    4 /* Database is read-only */
 
 /*
 ** Undo the hack that converts floating point types to integer for

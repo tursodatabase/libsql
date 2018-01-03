@@ -1,5 +1,5 @@
-C Simplify\sthe\s"sqlite3"\scommand\sin\sthe\sTCL\sinterface.\s\sThe\sfilename\sis\snow\noptional.\s\sThere\sis\sa\snew\s--memdb\soption\swith\san\sargument\sthat\sis\sthe\sblob\nto\swhich\sthe\sdatabase\scontent\sshould\sbe\sinitialized.
-D 2018-01-03T13:20:02.897
+C Replace\sthe\ssqlite3_memdb_ptr()\sinterface\swith\sthe\smore\sgeneral\nsqlite3_serialize()\sinterface.
+D 2018-01-03T16:49:52.676
 F Makefile.in 892bf253c48f3d2d8d4e4e89b44b71aa548a0eba11b148c338690cfb99822859
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3b7ee2ebaf579fe7d30bece93e61e52782c3ff836455cba3a192f7a8f6f269d6
@@ -450,7 +450,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 13c69aee0185614a25303e2be3802b73416e655e95e1f1c607a9f963b35a1def
+F src/memdb.c 39dd9443f902759b858e598f17afc425c094b0d5f057b7ec988d224d812bd2a3
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
@@ -481,14 +481,14 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
 F src/shell.c.in a418ddceef7a2789f18bdc2bcdd481b2562fe4a7754b8009c8dd33d5a67da332
-F src/sqlite.h.in 8b6cd7fd8b286d567bcc1ee3a750686cbb1c0962dc453b2cfa034684fe5808db
+F src/sqlite.h.in 16bbb15a5fc53bfd725305ec9a201a7f57df7770749aa758b33a0636946d1bb4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h 2567341e37050ad542d57f3027b8717cb9b14ff363fdfeecf85421e0d973787f
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 907133153d3194ddfd728e84f55fa106de696dc644c9508a054c72b9f833972e
+F src/tclsqlite.c 322ad6b4e613aba84eee8cf6239eae668167f8b9891ca9e4aa53b78cd3aaff35
 F src/test1.c 8ef15f7a357f85dfc41c6c748ce9c947b4f676e01bb5ae6a45bee4923dff8b51
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -1056,7 +1056,7 @@ F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test 1d94a4bf153201f16a0a755a5a0a5d7f33b001c972e3086acb1f76ad3fb7e0e5
+F test/memdb1.test 062cdf3b7de2f861878e4275d3a67b80982d9f792f693418c844fade15ec7537
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1624,7 +1624,7 @@ F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0
 F tool/mkmsvcmin.tcl 8baf26690b80d861d0ac341b29880eec6ade39e4f11fe690271ded9cb90563a3
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
+F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
 F tool/mkshellc.tcl 574307265b49d813301fba91ccd74e6a26d33f65f74b6891c320a0ffbee07895
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
@@ -1690,7 +1690,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5c6ade8ee596eaffd98d1d7ce9c7c968cd2d45f206603b894026e7ad7ac15b6
-R 66054801a2fc399d3dc7a916643e1819
+P 47398ae77236a92f6b9345aa397361b6df127a9a2895c0771d506b0be10822b9
+R bfc121db68c7d1b10b977a508d74da37
 U drh
-Z 2a01cfd70faa22757159c69df08c3c76
+Z 6064e9ffbc398d82aebface075258c56

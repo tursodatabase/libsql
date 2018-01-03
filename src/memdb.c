@@ -157,6 +157,7 @@ static int memdbRead(
   MemFile *p = (MemFile *)pFile;
   if( iOfst+iAmt>p->sz ){
     memset(zBuf, 0, iAmt);
+    if( iOfst<p->sz ) memcpy(zBuf, p->aData+iOfst, p->sz - iOfst);
     return SQLITE_IOERR_SHORT_READ;
   }
   memcpy(zBuf, p->aData+iOfst, iAmt);
@@ -450,20 +451,6 @@ static MemFile *memdbFromDbSchema(sqlite3 *db, const char *zSchema){
 }
 
 /*
-** Return a pointer to the memory used to hold the database.
-** Return NULL if the arguments do not describe a memdb database.
-*/
-void *sqlite3_memdb_ptr(sqlite3 *db, const char *zSchema, sqlite3_int64 *pSz){
-  MemFile *p = memdbFromDbSchema(db, zSchema);
-  if( p==0 ){
-    *pSz = 0;
-    return 0;
-  }
-  *pSz = p->sz;
-  return p->aData;
-}
-
-/*
 ** Reconfigure a memdb database.
 */
 int sqlite3_memdb_config(
@@ -492,6 +479,72 @@ int sqlite3_memdb_config(
     sqlite3_free(aData);
   }
   return SQLITE_OK;
+}
+
+/*
+** Return the serialization of a database
+*/
+unsigned char *sqlite3_serialize(
+  sqlite3 *db,              /* The database connection */
+  const char *zSchema,      /* Which database within the connection */
+  sqlite3_int64 *piSize,    /* Write size here, if not NULL */
+  unsigned int mFlags       /* Maybe SQLITE_SERIALIZE_NOCOPY */
+){
+  MemFile *p = memdbFromDbSchema(db, zSchema);
+  int iDb = sqlite3FindDbName(db, zSchema);
+  Btree *pBt;
+  sqlite3_int64 sz;
+  int szPage = 0;
+  sqlite3_stmt *pStmt = 0;
+  unsigned char *pOut;
+  char *zSql;
+  int rc;
+
+  if( piSize ) *piSize = -1;
+  if( iDb<0 ) return 0;
+  if( p ){
+    if( piSize ) *piSize = p->sz;
+    if( mFlags & SQLITE_SERIALIZE_NOCOPY ){
+      pOut = p->aData;
+    }else{
+      pOut = sqlite3_malloc64( p->sz );
+      if( pOut ) memcpy(pOut, p->aData, p->sz);
+    }
+    return pOut;
+  }
+  pBt = db->aDb[iDb].pBt;
+  if( pBt==0 ) return 0;
+  szPage = sqlite3BtreeGetPageSize(pBt);
+  zSql = sqlite3_mprintf("PRAGMA \"%w\".page_count", zSchema);
+  rc = zSql ? sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0) : SQLITE_NOMEM;
+  sqlite3_free(zSql);
+  if( rc ) return 0;
+  sqlite3_step(pStmt);
+  sz = sqlite3_column_int64(pStmt, 0)*szPage;
+  if( piSize ) *piSize = sz;
+  if( mFlags & SQLITE_SERIALIZE_NOCOPY ){
+    pOut = 0;
+  }else{
+    pOut = sqlite3_malloc64( sz );
+    if( pOut ){
+      int nPage = sqlite3_column_int(pStmt, 0);
+      Pager *pPager = sqlite3BtreePager(pBt);
+      int pgno;
+      for(pgno=1; pgno<=nPage; pgno++){
+        DbPage *pPage = 0;
+        unsigned char *pTo = pOut + szPage*(sqlite3_int64)(pgno-1);
+        rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pPage, 0);
+        if( rc==SQLITE_OK ){
+          memcpy(pTo, sqlite3PagerGetData(pPage), szPage);
+        }else{
+          memset(pTo, 0, szPage);
+        }
+        sqlite3PagerUnref(pPage);       
+      }
+    }
+  }
+  sqlite3_finalize(pStmt);
+  return pOut;
 }
 
 /* 
