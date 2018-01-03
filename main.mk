@@ -65,7 +65,7 @@ LIBOBJ+= vdbe.o parse.o \
          fts3_write.o fts5.o func.o global.o hash.o \
          icu.o insert.o json1.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
-         memjournal.o \
+         memdb.o memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
@@ -118,6 +118,7 @@ SRC = \
   $(TOP)/src/mem2.c \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
+  $(TOP)/src/memdb.c \
   $(TOP)/src/memjournal.c \
   $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \

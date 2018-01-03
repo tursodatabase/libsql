@@ -1,0 +1,57 @@
+# 2018-01-02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is the "memdb" VFS
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix memdb1
+do_not_use_codec
+
+ifcapable !memdb {
+  finish_test
+  return
+}
+
+# Create a MEMDB and populate it with some dummy data.
+# Then extract the database into the $::db1 variable.
+# Verify that the size of $::db1 is the same as the size of
+# the database.
+#
+db close
+sqlite3 db dummy -vfs memdb
+unset -nocomplain db1
+unset -nocomplain sz1
+unset -nocomplain pgsz
+do_test 100 {
+  db eval {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,2);
+  }
+  set ::pgsz [db one {PRAGMA page_size}]
+  set ::sz1 [expr {$::pgsz*[db one {PRAGMA page_count}]}]
+  set ::db1 [db memdb main]
+  expr {[string length $::db1]==$::sz1}
+} 1
+
+# Create a new MEMDB and initialize it to the content of $::db1
+# Verify that the content is the same.
+#
+db close
+sqlite3 db dummy2 -vfs memdb
+db memdb main $db1
+do_execsql_test 110 {
+  SELECT * FROM t1;
+} {1 2}
+
+
+finish_test

@@ -8759,6 +8759,46 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
 /*
+** CAPI3REF: Retrieve the current MEMDB buffer
+** EXPERIMENTAL
+**
+** This interface is only available when SQLite is compiled
+** with SQLITE_ENABLE_MEMDB.
+**
+** The sqlite3_memdb_ptr(D,S,P) interface returns a pointer to the
+** memory buffer that is the database file used for [database connection] D
+** and schema S.  If schema S of database connection D is not a MEMDB
+** database, then this routine returns NULL.  If P is not NULL, then it must
+** be a pointer to a 64-bit signed integer into which the size of the 
+** database file is written.
+*/
+SQLITE_EXPERIMENTAL void *sqlite3_memdb_ptr(sqlite3*,const char*,sqlite3_int64*);
+
+/*
+** CAPI3REF: Set the current MEMDB buffer
+** EXPERIMENTAL
+**
+** This interface is only available when SQLite is compiled
+** with SQLITE_ENABLE_MEMDB.
+**
+** The sqlite3_memdb_config(D,S,P,N,M,F) interface initializes a MEMDB database.
+** The database identified by D and S must not be in active use when this
+** interface is called, or [SQLITE_BUSY] is returned.
+*/
+SQLITE_EXPERIMENTAL int sqlite3_memdb_config(sqlite3*,const char*,void*,sqlite3_int64,sqlite3_int64,unsigned);
+
+/*
+** CAPI3REF: Flags for configuring MEMDB databases
+** EXPERIMENTAL
+**
+** The following are allowed values for the 6th argument (the "flags"
+** argument) of the [sqlite3_memdb_config()] interface.
+*/
+#define SQLITE_MEMDB_FREEONCLOSE  0x001   /* Free the memory buffer on close */
+#define SQLITE_MEMDB_RESIZEABLE   0x002   /* Resize using sqlite3_realloc64() */
+
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */
