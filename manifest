@@ -1,5 +1,5 @@
-C Fix\scode\sindentation.\s\sNo\slogic\schanges.
-D 2018-01-02T21:29:42.540
+C Add\sanother\stest\scase\s(found\sby\sOSSFuzz)\sfor\sthe\sproblem\sfixed\sin\s\ncheck-in\s[2846458a]\sand\sdescribed\sby\sticket\s[dc3f932f5a147771].\nNo\schanges\sto\scode.
+D 2018-01-03T01:47:30.287
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -969,7 +969,7 @@ F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test faa585e315e868f09bce0eb39c41d6134649b13d2801638294d3ae616edf1609
-F test/indexexpr1.test 60e2d6f1d1337fd213208270295c650d268503ff215de728f540ea31eb237f70
+F test/indexexpr1.test ace1ad489adc25325ad298434f13b1a515b36bf5dca9fe2a4b66cdf17aea3fa0
 F test/indexexpr2.test 13247bac49143196556eb3f65e97ef301bd3e993f4511558b5db322ddc370ea6
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2846458af5d029a8e4fdcc8f50873a44e57897bbfe6aee8a23a01ffc34c5579f
-R 9613ba300b7bd9cce413f2672960fb05
+P e115f2583499df0c7ee991d372bed4b89aa717b10a4e4b10977864390cb4fc11
+R 83a0b36c500269c331a5b5ebe1ebb55e
 U drh
-Z 9fca118926b581510cc96e0ce3702687
+Z 192675b51835fbb18bda08bad08dd763
