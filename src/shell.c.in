@@ -4272,7 +4272,7 @@ static int expertDotCommand(
     char *z = azArg[i];
     int n;
     if( z[0]=='-' && z[1]=='-' ) z++;
-    n = strlen(z);
+    n = strlen30(z);
     if( n>=2 && 0==strncmp(z, "-verbose", n) ){
       pState->expert.bVerbose = 1;
     }
