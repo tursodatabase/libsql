@@ -1,8 +1,8 @@
-C Add\ssupport\sfor\sthe\s"memdb"\sVFS\sand\sthe\ssqlite3_memdb_ptr()\sand\nsqlite3_memdb_config()\sinterfaces,\sto\senable\san\sSQLite\sdatabase\sto\sbe\nmanipulated\sas\san\sin-memory\sobject.
-D 2018-01-03T01:28:46.871
+C Fix\stypo\sin\sthe\sMakefile\sfor\sMSVC.
+D 2018-01-03T12:39:35.460
 F Makefile.in 892bf253c48f3d2d8d4e4e89b44b71aa548a0eba11b148c338690cfb99822859
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc bddc04c05f1ab348be051da17827b123fa004005c9ee47489eaf3a2759dcdc45
+F Makefile.msc 3b7ee2ebaf579fe7d30bece93e61e52782c3ff836455cba3a192f7a8f6f269d6
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1690,10 +1690,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e115f2583499df0c7ee991d372bed4b89aa717b10a4e4b10977864390cb4fc11
-R dd0ff0dcdd2908eb59154bae6d4e7abd
-T *branch * memdb
-T *sym-memdb *
-T -sym-trunk *
-U drh
-Z 4f847deac1204c1b3d7c3decd276393a
+P fb2ac2d2fa6374084f3325b41b257c7a3ace43aade4b666ec4be93b6b70dc39a
+R 025ad5693b1eb347e4b6ac2d4f7892d8
+U mistachkin
+Z 11bcd34cb283c66a6b2991d9a37cef7f

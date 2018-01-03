@@ -1808,7 +1808,7 @@ mem3.lo:	$(TOP)\src\mem3.c $(HDR)
 mem5.lo:	$(TOP)\src\mem5.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\mem5.c
 
-memdb.lo:	$(TOP)\src\memjournal.c $(HDR)
+memdb.lo:	$(TOP)\src\memdb.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\memdb.c
 
 memjournal.lo:	$(TOP)\src\memjournal.c $(HDR)
