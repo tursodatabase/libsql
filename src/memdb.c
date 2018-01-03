@@ -475,13 +475,22 @@ int sqlite3_memdb_config(
   unsigned int mFlags
 ){
   MemFile *p = memdbFromDbSchema(db, zSchema);
-  if( p==0 ) return SQLITE_ERROR;
-  if( p->eLock!=SQLITE_LOCK_NONE || p->nMmap>0 ) return SQLITE_BUSY;
-  if( p->mFlags & SQLITE_MEMDB_FREEONCLOSE ) sqlite3_free(p->aData);
-  p->aData = aData;
-  p->sz = sz;
-  p->szMax = szMax;
-  p->mFlags = mFlags;
+  int rc;
+  if( p==0 ){
+    rc = SQLITE_ERROR;
+  }else if( p->eLock!=SQLITE_LOCK_NONE || p->nMmap>0 ){
+    rc = SQLITE_BUSY;
+  }else{
+    if( p->mFlags & SQLITE_MEMDB_FREEONCLOSE ) sqlite3_free(p->aData);
+    p->aData = aData;
+    p->sz = sz;
+    p->szMax = szMax;
+    p->mFlags = mFlags;
+    rc = SQLITE_OK;
+  }
+  if( rc!=SQLITE_OK && (mFlags & SQLITE_MEMDB_FREEONCLOSE)!=0 ){
+    sqlite3_free(aData);
+  }
   return SQLITE_OK;
 }
 

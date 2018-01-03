@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sMakefile\sfor\sMSVC.
-D 2018-01-03T12:39:35.460
+C Simplify\sthe\s"sqlite3"\scommand\sin\sthe\sTCL\sinterface.\s\sThe\sfilename\sis\snow\noptional.\s\sThere\sis\sa\snew\s--memdb\soption\swith\san\sargument\sthat\sis\sthe\sblob\nto\swhich\sthe\sdatabase\scontent\sshould\sbe\sinitialized.
+D 2018-01-03T13:20:02.897
 F Makefile.in 892bf253c48f3d2d8d4e4e89b44b71aa548a0eba11b148c338690cfb99822859
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3b7ee2ebaf579fe7d30bece93e61e52782c3ff836455cba3a192f7a8f6f269d6
@@ -450,7 +450,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 46109bc6c890c21a802b6aad6e667c81aee53e5623e2068c6fa9ded1b9634558
+F src/memdb.c 13c69aee0185614a25303e2be3802b73416e655e95e1f1c607a9f963b35a1def
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
@@ -488,7 +488,7 @@ F src/sqliteInt.h 2567341e37050ad542d57f3027b8717cb9b14ff363fdfeecf85421e0d97378
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 45bcce558f40f245e25d1dd7c208f6845137fbee042cced2a4116f05349ffd9d
+F src/tclsqlite.c 907133153d3194ddfd728e84f55fa106de696dc644c9508a054c72b9f833972e
 F src/test1.c 8ef15f7a357f85dfc41c6c748ce9c947b4f676e01bb5ae6a45bee4923dff8b51
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -1056,7 +1056,7 @@ F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test 3d8ebffdc64ea1a7b4ccacd5502e61191233d979451747f4af88c9f2ee9b34c5
+F test/memdb1.test 1d94a4bf153201f16a0a755a5a0a5d7f33b001c972e3086acb1f76ad3fb7e0e5
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1282,7 +1282,7 @@ F test/tabfunc01.test c47171c36b3d411df2bd49719dcaa5d034f8d277477fd41d253940723b
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test c3d7ac9449634b9f17fd048a3c0212e88a7448be810a9c5bd051acc1ffa00d2f
+F test/tclsqlite.test 45462ee8dd0ca4fd95a476c9253d332ce2cf90985cb0ad5c7eae6e8c7fe24ae8
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/tempdb2.test 27e41ed540b2f9b056c2e77e9bddc1b875358507
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -1690,7 +1690,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb2ac2d2fa6374084f3325b41b257c7a3ace43aade4b666ec4be93b6b70dc39a
-R 025ad5693b1eb347e4b6ac2d4f7892d8
-U mistachkin
-Z 11bcd34cb283c66a6b2991d9a37cef7f
+P e5c6ade8ee596eaffd98d1d7ce9c7c968cd2d45f206603b894026e7ad7ac15b6
+R 66054801a2fc399d3dc7a916643e1819
+U drh
+Z 2a01cfd70faa22757159c69df08c3c76

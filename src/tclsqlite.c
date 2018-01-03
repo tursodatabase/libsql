@@ -1856,7 +1856,7 @@ static int SQLITE_TCLAPI DbObjCmd(
     "onecolumn",          "preupdate",         "profile",
     "progress",           "rekey",             "restore",
     "rollback_hook",      "status",            "timeout",
-    "total_changes",      "trace",             "trace_v",
+    "total_changes",      "trace",             "trace_v2",
     "transaction",        "unlock_notify",     "update_hook",
     "version",            "wal_hook",          0
   };
@@ -2701,7 +2701,6 @@ static int SQLITE_TCLAPI DbObjCmd(
         xrc = sqlite3_memdb_config(pDb->db, zSchema, pData, len, len,
                   SQLITE_MEMDB_FREEONCLOSE|SQLITE_MEMDB_RESIZEABLE);
         if( xrc ){
-          sqlite3_free(pData);
           Tcl_AppendResult(interp, "unable to set MEMDB content", (char*)0);
           rc = TCL_ERROR;
         }
@@ -3395,6 +3394,24 @@ static int SQLITE_TCLAPI DbObjCmdAdaptor(
 #endif /* SQLITE_TCL_NRE */
 
 /*
+** Issue the usage message when the "sqlite3" command arguments are
+** incorrect.
+*/
+static int sqliteCmdUsage(
+  Tcl_Interp *interp,
+  Tcl_Obj *const*objv
+){
+  Tcl_WrongNumArgs(interp, 1, objv,
+    "HANDLE ?FILENAME? ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+    " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
+    " ?-key CODECKEY?"
+#endif
+  );
+  return TCL_ERROR;
+}
+
+/*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
 **                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
 **
@@ -3419,7 +3436,7 @@ static int SQLITE_TCLAPI DbMain(
   const char *zArg;
   char *zErrMsg;
   int i;
-  const char *zFile;
+  const char *zFile = 0;
   const char *zVfs = 0;
   int flags;
   Tcl_DString translatedFilename;
@@ -3428,9 +3445,12 @@ static int SQLITE_TCLAPI DbMain(
   int nKey = 0;
 #endif
   int rc;
+#ifdef SQLITE_ENABLE_MEMDB
+  Tcl_Obj *pDbObj = 0;
+#endif
 
   /* In normal use, each TCL interpreter runs in a single thread.  So
-  ** by default, we can turn of mutexing on SQLite database connections.
+  ** by default, we can turn off mutexing on SQLite database connections.
   ** However, for testing purposes it is useful to have mutexes turned
   ** on.  So, by default, mutexes default off.  But if compiled with
   ** SQLITE_TCL_DEFAULT_FULLMUTEX then mutexes default on.
@@ -3459,18 +3479,26 @@ static int SQLITE_TCLAPI DbMain(
 #endif
       return TCL_OK;
     }
+    if( zArg[0]=='-' ) return sqliteCmdUsage(interp, objv);
   }
-  for(i=3; i+1<objc; i+=2){
+  for(i=2; i<objc; i++){
     zArg = Tcl_GetString(objv[i]);
+    if( zArg[0]!='-' ){
+      if( zFile!=0 ) return sqliteCmdUsage(interp, objv);
+      zFile = zArg;
+      continue;
+    }
+    if( i==objc-1 ) return sqliteCmdUsage(interp, objv);
+    i++;
     if( strcmp(zArg,"-key")==0 ){
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-      pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
+      pKey = Tcl_GetByteArrayFromObj(objv[i], &nKey);
 #endif
     }else if( strcmp(zArg, "-vfs")==0 ){
-      zVfs = Tcl_GetString(objv[i+1]);
+      zVfs = Tcl_GetString(objv[i]);
     }else if( strcmp(zArg, "-readonly")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
         flags |= SQLITE_OPEN_READONLY;
@@ -3480,7 +3508,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-create")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b && (flags & SQLITE_OPEN_READONLY)==0 ){
         flags |= SQLITE_OPEN_CREATE;
       }else{
@@ -3488,7 +3516,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-nomutex")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_NOMUTEX;
         flags &= ~SQLITE_OPEN_FULLMUTEX;
@@ -3497,7 +3525,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-fullmutex")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_FULLMUTEX;
         flags &= ~SQLITE_OPEN_NOMUTEX;
@@ -3506,34 +3534,43 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-uri")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_URI;
       }else{
         flags &= ~SQLITE_OPEN_URI;
       }
+#ifdef SQLITE_ENABLE_MEMDB
+    }else if( strcmp(zArg, "-memdb")==0 ){
+      pDbObj = objv[i];
+#endif
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
       return TCL_ERROR;
     }
   }
-  if( objc<3 || (objc&1)!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv,
-      "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
-      " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
-#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-      " ?-key CODECKEY?"
-#endif
-    );
-    return TCL_ERROR;
-  }
   zErrMsg = 0;
   p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
   memset(p, 0, sizeof(*p));
-  zFile = Tcl_GetStringFromObj(objv[2], 0);
-  zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
-  rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
-  Tcl_DStringFree(&translatedFilename);
+#ifdef SQLITE_ENABLE_MEMDB
+  if( pDbObj ){
+    rc = sqlite3_open_v2("x", &p->db, flags, "memdb");
+    if( rc==SQLITE_OK ){
+      int len;
+      unsigned char *aData = Tcl_GetByteArrayFromObj(pDbObj, &len);
+      unsigned char *a = sqlite3_malloc64( len );
+      memcpy(a, aData, len);
+      sqlite3_memdb_config(p->db, "main", a, len, sqlite3_msize(a),
+           SQLITE_MEMDB_FREEONCLOSE | SQLITE_MEMDB_RESIZEABLE);
+    }
+  }else
+#endif
+  {
+    if( zFile==0 ) zFile = ":memory:";
+    zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
+    rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
+    Tcl_DStringFree(&translatedFilename);
+  }
   if( p->db ){
     if( SQLITE_OK!=sqlite3_errcode(p->db) ){
       zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));

@@ -47,8 +47,7 @@ do_test 100 {
 # Verify that the content is the same.
 #
 db close
-sqlite3 db dummy2 -vfs memdb
-db memdb main $db1
+sqlite3 db -memdb $db1
 do_execsql_test 110 {
   SELECT * FROM t1;
 } {1 2}
