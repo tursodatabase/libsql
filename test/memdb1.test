@@ -54,5 +54,109 @@ do_execsql_test 110 {
   SELECT * FROM t1;
 } {1 2}
 
+# What happens when we try to VACUUM a MEMDB database?
+#
+do_execsql_test 120 {
+  VACUUM;
+} {}
+do_execsql_test 130 {
+  CREATE TABLE t2(x, y);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+   INSERT INTO t2(x, y) SELECT x, randomblob(1000) FROM c;
+  DROP TABLE t2;
+  PRAGMA page_count;
+} {116}
+do_execsql_test 140 {
+  VACUUM;
+  PRAGMA page_count;
+} {2}
+
+# Build a largish on-disk database and serialize it.  Verify that the
+# serialization works.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 200 {
+  CREATE TABLE t3(x, y);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<400)
+   INSERT INTO t3(x, y) SELECT x, randomblob(1000) FROM c;
+  PRAGMA quick_check;
+} {ok}
+set fd [open test.db rb]
+unset -nocomplain direct
+set direct [read $fd]
+close $fd
+do_test 210 {
+  string length [db serialize]
+} [string length $direct]
+do_test 220 {
+  db eval {ATTACH ':memory:' AS aux1}
+  db deserialize aux1 $::direct
+  db eval {
+     SELECT x, y FROM main.t3 EXCEPT SELECT x, y FROM aux1.t3;
+  }
+} {}
+unset -nocomplain direct
+
+# Do the same with a :memory: database.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 300 {
+  CREATE TABLE t3(x, y);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<400)
+   INSERT INTO t3(x, y) SELECT x, randomblob(1000) FROM c;
+  PRAGMA quick_check;
+} {ok}
+do_test 310 {
+  db eval {ATTACH ':memory:' AS aux1}
+  db deserialize aux1 [db serialize main]
+  db eval {
+     SELECT x, y FROM main.t3 EXCEPT SELECT x, y FROM aux1.t3;
+  }
+} {}
+
+# Deserialize an empty database
+#
+db close
+sqlite3 db
+db deserialize {}
+do_execsql_test 400 {
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 410 {
+  CREATE TABLE t4(a,b);
+  INSERT INTO t4 VALUES('hello','world!');
+  PRAGMA integrity_check;
+  SELECT * FROM t4;
+} {ok hello world!}
+
+# Deserialize something that is not a database.
+#
+db close
+sqlite3 db
+do_test 500 {
+  set rc [catch {db deserialize not-a-database} msg]
+  lappend rc $msg
+} {0 {}}
+do_catchsql_test 510 {
+  PRAGMA integrity_check;
+} {1 {file is not a database}}
+
+# Abuse the serialize and deserialize commands.  Make sure errors are caught.
+#
+do_test 600 {
+  set rc [catch {db deserialize} msg]
+  lappend rc $msg
+} {1 {wrong # args: should be "db deserialize ?DATABASE? VALUE"}}
+do_test 610 {
+  set rc [catch {db deserialize a b c} msg]
+  lappend rc $msg
+} {1 {wrong # args: should be "db deserialize ?DATABASE? VALUE"}}
+do_test 620 {
+  set rc [catch {db serialize a b} msg]
+  lappend rc $msg
+} {1 {wrong # args: should be "db serialize ?DATABASE?"}}
 
 finish_test

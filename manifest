@@ -1,5 +1,5 @@
-C Miscellaneous\scode\sand\scomment\scleanup.
-D 2018-01-03T22:48:38.759
+C New\stest\scases\sand\sfixes\sfor\sminor\sproblems.
+D 2018-01-03T23:40:02.979
 F Makefile.in 892bf253c48f3d2d8d4e4e89b44b71aa548a0eba11b148c338690cfb99822859
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3b7ee2ebaf579fe7d30bece93e61e52782c3ff836455cba3a192f7a8f6f269d6
@@ -415,7 +415,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
 F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
-F src/attach.c af582a55cdb0435dc21da926cfcd5545eadfd99ea201b5b9e067cbeae1077077
+F src/attach.c 8158394251d62a6513d6e395f14c9b8ad3f3447d8a1249c242c940cde5c1453e
 F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -488,7 +488,7 @@ F src/sqliteInt.h 713ee4be20beddf2f053b3ac1871c1f0d9ab54d1cc21c24a4365b560181b5d
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 8370ce15f97277304e7a17c47e18d47c1a31701fcd213eded727d09c547da2fc
+F src/tclsqlite.c 4f4ca19af1a666da6f80d35443e58905d1fb7cbdb9899cf9ce7da60aeede5830
 F src/test1.c 8ef15f7a357f85dfc41c6c748ce9c947b4f676e01bb5ae6a45bee4923dff8b51
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -1056,7 +1056,7 @@ F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test 6ae9f9fe51c918bf203ee5135f88d74f6e4446b573a9c07b141356f8f5fbeaf1
+F test/memdb1.test 526252d466ecc3701550000651e1405d08ccefe0bf23e2dc86ada90e81a8eacc
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1690,7 +1690,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f6e9df9f0c5a9e5b1acb99cfa9486850cc1822d35b0989e779a7a10f3b1f1ac
-R bb0359f4210b8aee0e32802f6ef52a4c
+P fa6069fb3b0a4411fd6661dec7de40ece3064a2fe4b94ebfbda9e5e524e04e86
+R 80c4d802a2eb305cbf9b2f9ece314afe
 U drh
-Z c49fae41835e3bd8d0d8eeb0cf1f4a88
+Z e7e409e5145088df0792d1925f4056dd

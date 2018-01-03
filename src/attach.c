@@ -229,6 +229,7 @@ static void attachFunc(
   */
   if( rc==SQLITE_OK ){
     sqlite3BtreeEnterAll(db);
+    db->init.iDb = 0;
     rc = sqlite3Init(db, &zErrDyn);
     sqlite3BtreeLeaveAll(db);
   }

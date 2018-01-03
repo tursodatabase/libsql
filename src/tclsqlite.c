@@ -2442,11 +2442,11 @@ static int SQLITE_TCLAPI DbObjCmd(
     }
     pBA = Tcl_GetByteArrayFromObj(pValue, &len);
     pData = sqlite3_malloc64( len );
-    if( pData==0 ){
+    if( pData==0 && len>0 ){
       Tcl_AppendResult(interp, "out of memory", (char*)0);
       rc = TCL_ERROR;
     }else{
-      memcpy(pData, pBA, len);
+      if( len>0 ) memcpy(pData, pBA, len);
       xrc = sqlite3_deserialize(pDb->db, zSchema, pData, len, len,
                 SQLITE_DESERIALIZE_FREEONCLOSE |
                 SQLITE_DESERIALIZE_RESIZEABLE);
