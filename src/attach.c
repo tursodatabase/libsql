@@ -84,7 +84,13 @@ static void attachFunc(
   if( zFile==0 ) zFile = "";
   if( zName==0 ) zName = "";
 
-  if( db->init.reopenMemdb ){
+#ifdef SQLITE_ENABLE_MEMDB
+# define REOPEN_AS_MEMDB(db)  (db->init.reopenMemdb)
+#else
+# define REOPEN_AS_MEMDB(db)  (0)
+#endif
+
+  if( REOPEN_AS_MEMDB(db) ){
     /* This is not a real ATTACH.  Instead, this routine is being called
     ** from sqlite3_deserialize() to close database db->init.iDb and
     ** reopen it as a MemDB */
@@ -96,9 +102,9 @@ static void attachFunc(
     pNew->pSchema = 0;
     rc = sqlite3BtreeOpen(pVfs, "x", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
   }else{
-    /* This is a real ATTACH */
-  
-    /* Check for the following errors:
+    /* This is a real ATTACH
+    **
+    ** Check for the following errors:
     **
     **     * Too many attached databases,
     **     * Transaction currently open
@@ -178,7 +184,7 @@ static void attachFunc(
     sqlite3BtreeLeave(pNew->pBt);
   }
   pNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
-  if( !db->init.reopenMemdb ) pNew->zDbSName = sqlite3DbStrDup(db, zName);
+  if( !REOPEN_AS_MEMDB(db) ) pNew->zDbSName = sqlite3DbStrDup(db, zName);
   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
@@ -235,7 +241,7 @@ static void attachFunc(
     }
   }
 #endif
-  if( rc ){
+  if( rc && !REOPEN_AS_MEMDB(db) ){
     int iDb = db->nDb - 1;
     assert( iDb>=2 );
     if( db->aDb[iDb].pBt ){

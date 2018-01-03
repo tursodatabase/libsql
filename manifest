@@ -1,5 +1,5 @@
-C Replace\ssqlite3_memdb_config()\swith\ssqlite3_deserialize().\s\sRemove\sthe\n"db\smemdb"\scommand\sfrom\sthe\sTCL\sinterface,\sreplacing\sit\swith\s"db\sserialize"\nand\s"db\sdeserialize".
-D 2018-01-03T19:03:31.558
+C Miscellaneous\scode\sand\scomment\scleanup.
+D 2018-01-03T22:48:38.759
 F Makefile.in 892bf253c48f3d2d8d4e4e89b44b71aa548a0eba11b148c338690cfb99822859
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3b7ee2ebaf579fe7d30bece93e61e52782c3ff836455cba3a192f7a8f6f269d6
@@ -415,7 +415,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
 F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
-F src/attach.c 52c34c2fb1a8852739aca3c4ae797f02660d826d1e79c067dadac97fe3335b6c
+F src/attach.c af582a55cdb0435dc21da926cfcd5545eadfd99ea201b5b9e067cbeae1077077
 F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -450,7 +450,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 67c01e51b9e515721fbb4a27375233c67a8a8e5d66bd3fa6f4f84c85de43c05e
+F src/memdb.c d58bb51e6029a7bd91b2148b98ab00c3a271c6cd2632eb756cfcd91e1252930b
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
@@ -1690,7 +1690,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cf2ed4eff6d2e0958656e23384b05ead2128b678b0b69a591878af4190cd077
-R 752064346b8d3ad9381bcf73633be499
+P 2f6e9df9f0c5a9e5b1acb99cfa9486850cc1822d35b0989e779a7a10f3b1f1ac
+R bb0359f4210b8aee0e32802f6ef52a4c
 U drh
-Z 59a3fb5e3f8eae3c5ea078db9efbd371
+Z c49fae41835e3bd8d0d8eeb0cf1f4a88

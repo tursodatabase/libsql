@@ -10,8 +10,11 @@
 **
 ******************************************************************************
 **
-** This is an in-memory VFS implementation.  The application supplies
-** a chunk of memory to hold the database file.
+** This file implements in-memory VFS.  A database is held as a contiguous
+** block of memory.
+**
+** This file also implements interface sqlite3_serialize() and
+** sqlite3_deserialize().
 */
 #ifdef SQLITE_ENABLE_MEMDB
 #include "sqliteInt.h"
@@ -52,10 +55,6 @@ static int memdbCheckReservedLock(sqlite3_file*, int *pResOut);
 static int memdbFileControl(sqlite3_file*, int op, void *pArg);
 static int memdbSectorSize(sqlite3_file*);
 static int memdbDeviceCharacteristics(sqlite3_file*);
-static int memdbShmMap(sqlite3_file*, int iPg, int pgsz, int, void volatile**);
-static int memdbShmLock(sqlite3_file*, int offset, int n, int flags);
-static void memdbShmBarrier(sqlite3_file*);
-static int memdbShmUnmap(sqlite3_file*, int deleteFlag);
 static int memdbFetch(sqlite3_file*, sqlite3_int64 iOfst, int iAmt, void **pp);
 static int memdbUnfetch(sqlite3_file*, sqlite3_int64 iOfst, void *p);
 
@@ -112,10 +111,10 @@ static const sqlite3_io_methods memdb_io_methods = {
   memdbFileControl,                /* xFileControl */
   memdbSectorSize,                 /* xSectorSize */
   memdbDeviceCharacteristics,      /* xDeviceCharacteristics */
-  memdbShmMap,                     /* xShmMap */
-  memdbShmLock,                    /* xShmLock */
-  memdbShmBarrier,                 /* xShmBarrier */
-  memdbShmUnmap,                   /* xShmUnmap */
+  0,                               /* xShmMap */
+  0,                               /* xShmLock */
+  0,                               /* xShmBarrier */
+  0,                               /* xShmUnmap */
   memdbFetch,                      /* xFetch */
   memdbUnfetch                     /* xUnfetch */
 };
@@ -262,32 +261,6 @@ static int memdbDeviceCharacteristics(sqlite3_file *pFile){
          SQLITE_IOCAP_POWERSAFE_OVERWRITE |
          SQLITE_IOCAP_SAFE_APPEND |
          SQLITE_IOCAP_SEQUENTIAL;
-}
-
-/* Create a shared memory file mapping */
-static int memdbShmMap(
-  sqlite3_file *pFile,
-  int iPg,
-  int pgsz,
-  int bExtend,
-  void volatile **pp
-){
-  return SQLITE_IOERR_SHMMAP;
-}
-
-/* Perform locking on a shared-memory segment */
-static int memdbShmLock(sqlite3_file *pFile, int offset, int n, int flags){
-  return SQLITE_IOERR_SHMLOCK;
-}
-
-/* Memory barrier operation on shared memory */
-static void memdbShmBarrier(sqlite3_file *pFile){
-  return;
-}
-
-/* Unmap a shared memory segment */
-static int memdbShmUnmap(sqlite3_file *pFile, int deleteFlag){
-  return SQLITE_OK;
 }
 
 /* Fetch a page of a memory-mapped file */
