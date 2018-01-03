@@ -48,7 +48,8 @@ close $fd
 # Verify that the content is the same.
 #
 db close
-sqlite3 db -memdb $db1
+sqlite3 db
+db deserialize $db1
 do_execsql_test 110 {
   SELECT * FROM t1;
 } {1 2}

@@ -8759,29 +8759,6 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
 /*
-** CAPI3REF: Set the current MEMDB buffer
-** EXPERIMENTAL
-**
-** This interface is only available when SQLite is compiled
-** with SQLITE_ENABLE_MEMDB.
-**
-** The sqlite3_memdb_config(D,S,P,N,M,F) interface initializes a MEMDB database.
-** The database identified by D and S must not be in active use when this
-** interface is called, or [SQLITE_BUSY] is returned.
-*/
-int sqlite3_memdb_config(sqlite3*,const char*,void*,sqlite3_int64,sqlite3_int64,unsigned);
-
-/*
-** CAPI3REF: Flags for configuring MEMDB databases
-** EXPERIMENTAL
-**
-** The following are allowed values for the 6th argument (the "flags"
-** argument) of the [sqlite3_memdb_config()] interface.
-*/
-#define SQLITE_MEMDB_FREEONCLOSE  0x001   /* Free the memory buffer on close */
-#define SQLITE_MEMDB_RESIZEABLE   0x002   /* Resize using sqlite3_realloc64() */
-
-/*
 ** CAPI3REF: Serialize a database
 ** EXPERIMENTAL
 **
@@ -8829,7 +8806,7 @@ unsigned char *sqlite3_serialize(
 #define SQLITE_SERIALIZE_NOCOPY 0x001   /* Do no memory allocations */
 
 /*
-** CAPI3REF: Set the current MEMDB buffer
+** CAPI3REF: Deserialize a database
 ** EXPERIMENTAL
 **
 ** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the 

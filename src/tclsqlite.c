@@ -1852,14 +1852,14 @@ static int SQLITE_TCLAPI DbObjCmd(
     "complete",               "copy",                  "deserialize",
     "enable_load_extension",  "errorcode",             "eval",
     "exists",                 "function",              "incrblob",
-    "interrupt",              "last_insert_rowid",     "memdb",
-    "nullvalue",              "onecolumn",             "preupdate",
-    "profile",                "progress",              "rekey",
-    "restore",                "rollback_hook",         "serialize",
-    "status",                 "timeout",               "total_changes",
-    "trace",                  "trace_v2",              "transaction",
-    "unlock_notify",          "update_hook",           "version",
-    "wal_hook",               0                        
+    "interrupt",              "last_insert_rowid",     "nullvalue",
+    "onecolumn",              "preupdate",             "profile",
+    "progress",               "rekey",                 "restore",
+    "rollback_hook",          "serialize",             "status",
+    "timeout",                "total_changes",         "trace",
+    "trace_v2",               "transaction",           "unlock_notify",
+    "update_hook",            "version",               "wal_hook",
+    0                        
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BUSY,
@@ -1868,14 +1868,13 @@ static int SQLITE_TCLAPI DbObjCmd(
     DB_COMPLETE,              DB_COPY,                 DB_DESERIALIZE,
     DB_ENABLE_LOAD_EXTENSION, DB_ERRORCODE,            DB_EVAL,
     DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
-    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_MEMDB,
-    DB_NULLVALUE,             DB_ONECOLUMN,            DB_PREUPDATE,
-    DB_PROFILE,               DB_PROGRESS,             DB_REKEY,
-    DB_RESTORE,               DB_ROLLBACK_HOOK,        DB_SERIALIZE,
-    DB_STATUS,                DB_TIMEOUT,              DB_TOTAL_CHANGES,
-    DB_TRACE,                 DB_TRACE_V2,             DB_TRANSACTION,
-    DB_UNLOCK_NOTIFY,         DB_UPDATE_HOOK,          DB_VERSION,
-    DB_WAL_HOOK
+    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
+    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
+    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
+    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
+    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
+    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
+    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2419,7 +2418,44 @@ static int SQLITE_TCLAPI DbObjCmd(
   ** Reopen DATABASE (default "main") using the content in $VALUE
   */
   case DB_DESERIALIZE: {
-    rc = TCL_ERROR;  /* TBD */
+#ifndef SQLITE_ENABLE_MEMDB
+    Tcl_AppendResult(interp, "MEMDB not available in this build",
+                     (char*)0);
+    rc = TCL_ERROR;
+#else
+    const char *zSchema;
+    Tcl_Obj *pValue;
+    unsigned char *pBA;
+    unsigned char *pData;
+    int len, xrc;
+    
+    if( objc==3 ){
+      zSchema = 0;
+      pValue = objv[2];
+    }else if( objc==4 ){
+      zSchema = Tcl_GetString(objv[2]);
+      pValue = objv[3];
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? VALUE");
+      rc = TCL_ERROR;
+      break;
+    }
+    pBA = Tcl_GetByteArrayFromObj(pValue, &len);
+    pData = sqlite3_malloc64( len );
+    if( pData==0 ){
+      Tcl_AppendResult(interp, "out of memory", (char*)0);
+      rc = TCL_ERROR;
+    }else{
+      memcpy(pData, pBA, len);
+      xrc = sqlite3_deserialize(pDb->db, zSchema, pData, len, len,
+                SQLITE_DESERIALIZE_FREEONCLOSE |
+                SQLITE_DESERIALIZE_RESIZEABLE);
+      if( xrc ){
+        Tcl_AppendResult(interp, "unable to set MEMDB content", (char*)0);
+        rc = TCL_ERROR;
+      }
+    }
+#endif
     break; 
   }
 
@@ -2675,44 +2711,6 @@ static int SQLITE_TCLAPI DbObjCmd(
   */
   case DB_INTERRUPT: {
     sqlite3_interrupt(pDb->db);
-    break;
-  }
-
-  /*
-  **     $db memdb DATABASE ?BLOB?
-  **
-  ** Set or query the content of a MEMDB database.
-  **
-  */
-  case DB_MEMDB: {
-#ifndef SQLITE_ENABLE_MEMDB
-    Tcl_AppendResult(interp, "MEMDB not available in this build",
-                     (char*)0);
-    rc = TCL_ERROR;
-#else
-    const char *zSchema = Tcl_GetString(objv[2]);
-    unsigned char *pData;
-    if( objc==4 ){
-      int len = 0, xrc;
-      unsigned char *pBA = Tcl_GetByteArrayFromObj(objv[3], &len);
-      pData = sqlite3_malloc64( len );
-      if( pData==0 ){
-        Tcl_AppendResult(interp, "out of memory", (char*)0);
-        rc = TCL_ERROR;
-      }else{
-        memcpy(pData, pBA, len);
-        xrc = sqlite3_memdb_config(pDb->db, zSchema, pData, len, len,
-                  SQLITE_MEMDB_FREEONCLOSE|SQLITE_MEMDB_RESIZEABLE);
-        if( xrc ){
-          Tcl_AppendResult(interp, "unable to set MEMDB content", (char*)0);
-          rc = TCL_ERROR;
-        }
-      }
-    }else{
-      Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
-      rc = TCL_ERROR;
-    }
-#endif
     break;
   }
 
@@ -3481,9 +3479,6 @@ static int SQLITE_TCLAPI DbMain(
   int nKey = 0;
 #endif
   int rc;
-#ifdef SQLITE_ENABLE_MEMDB
-  Tcl_Obj *pDbObj = 0;
-#endif
 
   /* In normal use, each TCL interpreter runs in a single thread.  So
   ** by default, we can turn off mutexing on SQLite database connections.
@@ -3576,10 +3571,6 @@ static int SQLITE_TCLAPI DbMain(
       }else{
         flags &= ~SQLITE_OPEN_URI;
       }
-#ifdef SQLITE_ENABLE_MEMDB
-    }else if( strcmp(zArg, "-memdb")==0 ){
-      pDbObj = objv[i];
-#endif
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
       return TCL_ERROR;
@@ -3588,25 +3579,10 @@ static int SQLITE_TCLAPI DbMain(
   zErrMsg = 0;
   p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
   memset(p, 0, sizeof(*p));
-#ifdef SQLITE_ENABLE_MEMDB
-  if( pDbObj ){
-    rc = sqlite3_open_v2("x", &p->db, flags, "memdb");
-    if( rc==SQLITE_OK ){
-      int len;
-      unsigned char *aData = Tcl_GetByteArrayFromObj(pDbObj, &len);
-      unsigned char *a = sqlite3_malloc64( len );
-      memcpy(a, aData, len);
-      sqlite3_memdb_config(p->db, "main", a, len, sqlite3_msize(a),
-           SQLITE_MEMDB_FREEONCLOSE | SQLITE_MEMDB_RESIZEABLE);
-    }
-  }else
-#endif
-  {
-    if( zFile==0 ) zFile = ":memory:";
-    zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
-    rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
-    Tcl_DStringFree(&translatedFilename);
-  }
+  if( zFile==0 ) zFile = "";
+  zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
+  rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
+  Tcl_DStringFree(&translatedFilename);
   if( p->db ){
     if( SQLITE_OK!=sqlite3_errcode(p->db) ){
       zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));

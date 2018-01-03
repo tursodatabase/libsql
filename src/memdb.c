@@ -12,17 +12,6 @@
 **
 ** This is an in-memory VFS implementation.  The application supplies
 ** a chunk of memory to hold the database file.
-**
-** USAGE:
-**
-**    sqlite3_open_v2("whatever", &db, SQLITE_OPEN_READWRITE, "memdb");
-**    void *sqlite3_memdb_ptr(db, "main", &sz);
-**    int sqlite3_memdb_config(db, "main", pMem, szData, szMem, mFlags);
-**
-** Flags:
-**
-**    SQLITE_MEMDB_FREEONCLOSE        Free pMem when closing the connection
-**    SQLITE_MEMDB_RESIZEABLE         Use sqlite3_realloc64() to resize pMem
 */
 #ifdef SQLITE_ENABLE_MEMDB
 #include "sqliteInt.h"
@@ -141,7 +130,7 @@ static const sqlite3_io_methods memdb_io_methods = {
 */
 static int memdbClose(sqlite3_file *pFile){
   MemFile *p = (MemFile *)pFile;
-  if( p->mFlags & SQLITE_MEMDB_FREEONCLOSE ) sqlite3_free(p->aData);
+  if( p->mFlags & SQLITE_DESERIALIZE_FREEONCLOSE ) sqlite3_free(p->aData);
   return SQLITE_OK;
 }
 
@@ -169,7 +158,7 @@ static int memdbRead(
 */
 static int memdbEnlarge(MemFile *p, sqlite3_int64 newSz){
   unsigned char *pNew;
-  if( (p->mFlags & SQLITE_MEMDB_RESIZEABLE)==0 ) return SQLITE_FULL;
+  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 ) return SQLITE_FULL;
   if( p->nMmap>0 ) return SQLITE_FULL;
   pNew = sqlite3_realloc64(p->aData, newSz);
   if( pNew==0 ) return SQLITE_FULL;
@@ -334,7 +323,7 @@ static int memdbOpen(
   MemFile *p = (MemFile*)pFile;
   memset(p, 0, sizeof(*p));
   if( (flags & SQLITE_OPEN_MAIN_DB)==0 ) return SQLITE_CANTOPEN;
-  p->mFlags = SQLITE_MEMDB_RESIZEABLE | SQLITE_MEMDB_FREEONCLOSE;
+  p->mFlags = SQLITE_DESERIALIZE_RESIZEABLE | SQLITE_DESERIALIZE_FREEONCLOSE;
   *pOutFlags = flags | SQLITE_OPEN_MEMORY;
   p->base.pMethods = &memdb_io_methods;
   return SQLITE_OK;
@@ -451,37 +440,6 @@ static MemFile *memdbFromDbSchema(sqlite3 *db, const char *zSchema){
 }
 
 /*
-** Reconfigure a memdb database.
-*/
-int sqlite3_memdb_config(
-  sqlite3 *db,
-  const char *zSchema,
-  void *aData,
-  sqlite3_int64 sz,
-  sqlite3_int64 szMax,
-  unsigned int mFlags
-){
-  MemFile *p = memdbFromDbSchema(db, zSchema);
-  int rc;
-  if( p==0 ){
-    rc = SQLITE_ERROR;
-  }else if( p->eLock!=SQLITE_LOCK_NONE || p->nMmap>0 ){
-    rc = SQLITE_BUSY;
-  }else{
-    if( p->mFlags & SQLITE_MEMDB_FREEONCLOSE ) sqlite3_free(p->aData);
-    p->aData = aData;
-    p->sz = sz;
-    p->szMax = szMax;
-    p->mFlags = mFlags;
-    rc = SQLITE_OK;
-  }
-  if( rc!=SQLITE_OK && (mFlags & SQLITE_MEMDB_FREEONCLOSE)!=0 ){
-    sqlite3_free(aData);
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** Return the serialization of a database
 */
 unsigned char *sqlite3_serialize(
@@ -545,6 +503,57 @@ unsigned char *sqlite3_serialize(
   }
   sqlite3_finalize(pStmt);
   return pOut;
+}
+
+/* Convert zSchema to a MemDB and initialize its content.
+*/
+int sqlite3_deserialize(
+  sqlite3 *db,            /* The database connection */
+  const char *zSchema,    /* Which DB to reopen with the deserialization */
+  unsigned char *pData,   /* The serialized database content */
+  sqlite3_int64 szDb,     /* Number bytes in the deserialization */
+  sqlite3_int64 szBuf,    /* Total size of buffer pData[] */
+  unsigned mFlags         /* Zero or more SQLITE_DESERIALIZE_* flags */
+){
+  MemFile *p;
+  char *zSql;
+  sqlite3_stmt *pStmt = 0;
+  int rc;
+  int iDb;
+
+  sqlite3_mutex_enter(db->mutex);
+  if( zSchema==0 ) zSchema = db->aDb[0].zDbSName;
+  iDb = sqlite3FindDbName(db, zSchema);
+  if( iDb<0 ){
+    rc = SQLITE_ERROR;
+    goto end_deserialize;
+  }    
+  zSql = sqlite3_mprintf("ATTACH x AS %Q", zSchema);
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc ) goto end_deserialize;
+  db->init.iDb = (u8)iDb;
+  db->init.reopenMemdb = 1;
+  rc = sqlite3_step(pStmt);
+  db->init.reopenMemdb = 0;
+  if( rc!=SQLITE_DONE ){
+    rc = SQLITE_ERROR;
+    goto end_deserialize;
+  }
+  p = memdbFromDbSchema(db, zSchema);
+  if( p==0 ){
+    rc = SQLITE_ERROR;
+  }else{
+    p->aData = pData;
+    p->sz = szDb;
+    p->szMax = szBuf;
+    p->mFlags = mFlags;
+    rc = SQLITE_OK;
+  }
+end_deserialize:
+  sqlite3_finalize(pStmt);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /* 
