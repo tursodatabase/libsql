@@ -9,7 +9,7 @@
 #
 #*************************************************************************
 #
-# Test cases for the sqlite_unsupported_offset() function.
+# Test cases for the sqlite_offset() function.
 #
 # Some of the tests in this file depend on the exact placement of content
 # within b-tree pages.  Such placement is at the implementations discretion,
@@ -34,51 +34,51 @@ do_execsql_test func6-100 {
   INSERT INTO t2(x,y) SELECT a, b FROM t1;
 }
 do_execsql_test func6-110 {
-  SELECT a, sqlite_unsupported_offset(d)/4096 + 1,
-            sqlite_unsupported_offset(d)%4096 FROM t1
+  SELECT a, sqlite_offset(d)/4096 + 1,
+            sqlite_offset(d)%4096 FROM t1
    ORDER BY rowid LIMIT 2;
 } {abc001 2 4084 abc002 2 4069}
 do_execsql_test func6-120 {
-  SELECT a, typeof(sqlite_unsupported_offset(+a)) FROM t1
+  SELECT a, typeof(sqlite_offset(+a)) FROM t1
    ORDER BY rowid LIMIT 2;
 } {abc001 null abc002 null}
 do_execsql_test func6-130 {
-  SELECT a, sqlite_unsupported_offset(a)/4096+1, 
-         sqlite_unsupported_offset(a)%4096
+  SELECT a, sqlite_offset(a)/4096+1, 
+         sqlite_offset(a)%4096
    FROM t1
    ORDER BY a LIMIT 2;
 } {abc001 3 4087 abc002 3 4076}
 do_execsql_test func6-140 {
-  SELECT a, sqlite_unsupported_offset(d)/4096+1, 
-         sqlite_unsupported_offset(d)%4096
+  SELECT a, sqlite_offset(d)/4096+1, 
+         sqlite_offset(d)%4096
    FROM t1
    ORDER BY a LIMIT 2;
 } {abc001 2 4084 abc002 2 4069}
 do_execsql_test func6-150 {
   SELECT a,
-         sqlite_unsupported_offset(a)/4096+1, 
-         sqlite_unsupported_offset(a)%4096,
-         sqlite_unsupported_offset(d)/4096+1, 
-         sqlite_unsupported_offset(d)%4096
+         sqlite_offset(a)/4096+1, 
+         sqlite_offset(a)%4096,
+         sqlite_offset(d)/4096+1, 
+         sqlite_offset(d)%4096
    FROM t1
    ORDER BY a LIMIT 2;
 } {abc001 3 4087 2 4084 abc002 3 4076 2 4069}
 do_execsql_test func6-160 {
   SELECT b,
-         sqlite_unsupported_offset(b)/4096+1, 
-         sqlite_unsupported_offset(b)%4096,
-         sqlite_unsupported_offset(c)/4096+1, 
-         sqlite_unsupported_offset(c)%4096,
-         sqlite_unsupported_offset(d)/4096+1, 
-         sqlite_unsupported_offset(d)%4096
+         sqlite_offset(b)/4096+1, 
+         sqlite_offset(b)%4096,
+         sqlite_offset(c)/4096+1, 
+         sqlite_offset(c)%4096,
+         sqlite_offset(d)/4096+1, 
+         sqlite_offset(d)%4096
    FROM t1
    ORDER BY b LIMIT 2;
 } {1 4 4090 4 4090 2 4084 2 4 4081 4 4081 2 4069}
 
 
 do_execsql_test func6-200 {
-  SELECT y, sqlite_unsupported_offset(y)/4096+1,
-         sqlite_unsupported_offset(y)%4096
+  SELECT y, sqlite_offset(y)/4096+1,
+         sqlite_offset(y)%4096
    FROM t2
    ORDER BY x LIMIT 2;
 } {1 5 4087 2 5 4076}
