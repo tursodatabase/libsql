@@ -4755,7 +4755,6 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
 
 
 
-  struct timespec times[2];
   sqlite3_stmt *pSql = 0;
   int rc = SQLITE_OK;
   char *zDir = 0;
@@ -4776,9 +4775,6 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
     }
     if( zDir==0 ) rc = SQLITE_NOMEM;
   }
-
-  memset(times, 0, sizeof(times));
-  times[0].tv_sec = time(0);
 
   shellPreparePrintf(db, &rc, &pSql, zSql1, 
       azExtraArg[pAr->bZip], azSource[pAr->bZip], zWhere

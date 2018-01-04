@@ -124,16 +124,6 @@ struct DIR {
 };
 #endif
 
-#ifndef TIMESPEC_DEFINED
-#define TIMESPEC_DEFINED
-typedef struct TIMESPEC TIMESPEC;
-typedef TIMESPEC *LPTIMESPEC;
-struct TIMESPEC {
-  time_t tv_sec; /* Number of whole seconds. */
-  long tv_nsec;  /* Number of whole nanoseconds. */
-};
-#endif
-
 /*
 ** Provide a macro, for use by the implementation, to determine if a
 ** particular directory entry should be skipped over when searching for
