@@ -401,5 +401,28 @@ do_execsql_test indexexpr1-1430 {
   SELECT abs(15+3) IN (SELECT 17 UNION ALL SELECT 18) FROM t1;
 } {1 1}
 
+# 2018-01-02 ticket https://sqlite.org/src/info/dc3f932f5a147771
+# A REPLACE into a table that uses an index on an expression causes
+# an assertion fault.  Problem discovered by OSSFuzz.
+#
+do_execsql_test indexexpr1-1500 {
+  CREATE TABLE t1500(a INT PRIMARY KEY, b INT UNIQUE);
+  CREATE INDEX t1500ab ON t1500(a*b);
+  INSERT INTO t1500(a,b) VALUES(1,2);
+  REPLACE INTO t1500(a,b) VALUES(1,3);  -- formerly caused assertion fault
+  SELECT * FROM t1500;
+} {1 3}
+
+# 2018-01-03 OSSFuzz discovers another test case for the same problem
+# above.
+#
+do_execsql_test indexexpr-1510 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a PRIMARY KEY,b UNIQUE);
+  REPLACE INTO t1 VALUES(2, 1);
+  REPLACE INTO t1 SELECT 6,1;
+  CREATE INDEX t1aa ON t1(a-a);
+  REPLACE INTO t1 SELECT a, randomblob(a) FROM t1
+} {}
 
 finish_test

@@ -2349,6 +2349,36 @@ case OP_IfNullRow: {         /* jump */
   break;
 }
 
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+/* Opcode: Offset P1 P2 P3 * *
+** Synopsis: r[P3] = sqlite_offset(P1)
+**
+** Store in register r[P3] the byte offset into the database file that is the
+** start of the payload for the record at which that cursor P1 is currently
+** pointing.
+**
+** P2 is the column number for the argument to the sqlite_offset() function.
+** This opcode does not use P2 itself, but the P2 value is used by the
+** code generator.  The P1, P2, and P3 operands to this opcode are the
+** as as for OP_Column.
+**
+** This opcode is only available if SQLite is compiled with the
+** -DSQLITE_ENABLE_OFFSET_SQL_FUNC option.
+*/
+case OP_Offset: {          /* out3 */
+  VdbeCursor *pC;    /* The VDBE cursor */
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  pOut = &p->aMem[pOp->p3];
+  if( NEVER(pC==0) || pC->eCurType!=CURTYPE_BTREE ){
+    sqlite3VdbeMemSetNull(pOut);
+  }else{
+    sqlite3VdbeMemSetInt64(pOut, sqlite3BtreeOffset(pC->uc.pCursor));
+  }
+  break;
+}
+#endif /* SQLITE_ENABLE_OFFSET_SQL_FUNC */
+
 /* Opcode: Column P1 P2 P3 P4 P5
 ** Synopsis: r[P3]=PX
 **
@@ -7016,7 +7046,13 @@ case OP_Function: {
   break;
 }
 
-
+/* Opcode: Trace P1 P2 * P4 *
+**
+** Write P4 on the statement trace output if statement tracing is
+** enabled.
+**
+** Operand P1 must be 0x7fffffff and P2 must positive.
+*/
 /* Opcode: Init P1 P2 P3 P4 *
 ** Synopsis: Start at P2
 **
@@ -7035,6 +7071,7 @@ case OP_Function: {
 ** If P3 is not zero, then it is an address to jump to if an SQLITE_CORRUPT
 ** error is encountered.
 */
+case OP_Trace:
 case OP_Init: {          /* jump */
   char *zTrace;
   int i;
@@ -7049,7 +7086,9 @@ case OP_Init: {          /* jump */
   ** sqlite3_expanded_sql(P) otherwise.
   */
   assert( pOp->p4.z==0 || strncmp(pOp->p4.z, "-" "- ", 3)==0 );
-  assert( pOp==p->aOp );  /* Always instruction 0 */
+
+  /* OP_Init is always instruction 0 */
+  assert( pOp==p->aOp || pOp->opcode==OP_Trace );
 
 #ifndef SQLITE_OMIT_TRACE
   if( (db->mTrace & (SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
@@ -7092,6 +7131,7 @@ case OP_Init: {          /* jump */
 #endif /* SQLITE_OMIT_TRACE */
   assert( pOp->p2>0 );
   if( pOp->p1>=sqlite3GlobalConfig.iOnceResetThreshold ){
+    if( pOp->opcode==OP_Trace ) break;
     for(i=1; i<p->nOp; i++){
       if( p->aOp[i].opcode==OP_Once ) p->aOp[i].p1 = 0;
     }

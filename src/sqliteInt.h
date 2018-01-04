@@ -1063,7 +1063,6 @@ typedef struct Db Db;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
-typedef struct ExprSpan ExprSpan;
 typedef struct FKey FKey;
 typedef struct FuncDestructor FuncDestructor;
 typedef struct FuncDef FuncDef;
@@ -1630,6 +1629,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
+#define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -2505,17 +2505,6 @@ struct ExprList {
 };
 
 /*
-** An instance of this structure is used by the parser to record both
-** the parse tree for an expression and the span of input text for an
-** expression.
-*/
-struct ExprSpan {
-  Expr *pExpr;          /* The expression parse tree */
-  const char *zStart;   /* First character of input text */
-  const char *zEnd;     /* One character past the end of input text */
-};
-
-/*
 ** An instance of this structure can hold a simple list of identifiers,
 ** such as the list "a,b,c" in the following statements:
 **
@@ -3215,6 +3204,7 @@ struct TriggerStep {
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
   ExprList *pExprList; /* SET clause for UPDATE. */
   IdList *pIdList;     /* Column names for INSERT */
+  char *zSpan;         /* Original SQL text of this command */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
 };
@@ -3525,6 +3515,7 @@ void *sqlite3DbMallocRaw(sqlite3*, u64);
 void *sqlite3DbMallocRawNN(sqlite3*, u64);
 char *sqlite3DbStrDup(sqlite3*,const char*);
 char *sqlite3DbStrNDup(sqlite3*,const char*, u64);
+char *sqlite3DbSpanDup(sqlite3*,const char*,const char*);
 void *sqlite3Realloc(void*, u64);
 void *sqlite3DbReallocOrFree(sqlite3 *, void *, u64);
 void *sqlite3DbRealloc(sqlite3 *, void *, u64);
@@ -3663,7 +3654,7 @@ ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
 void sqlite3ExprListSetSortOrder(ExprList*,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
-void sqlite3ExprListSetSpan(Parse*,ExprList*,ExprSpan*);
+void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
@@ -3693,7 +3684,7 @@ void sqlite3AddColumn(Parse*,Token*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*);
-void sqlite3AddDefaultValue(Parse*,ExprSpan*);
+void sqlite3AddDefaultValue(Parse*,Expr*,const char*,const char*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
@@ -3914,11 +3905,14 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   void sqlite3CodeRowTriggerDirect(Parse *, Trigger *, Table *, int, int, int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
-  TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
+  TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
+                                        const char*,const char*);
   TriggerStep *sqlite3TriggerInsertStep(sqlite3*,Token*, IdList*,
-                                        Select*,u8);
-  TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8);
-  TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
+                                        Select*,u8,const char*,const char*);
+  TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8,
+                                        const char*,const char*);
+  TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*,
+                                        const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
   u32 sqlite3TriggerColmask(Parse*,Trigger*,ExprList*,int,int,Table*,int);
@@ -4347,6 +4341,9 @@ void sqlite3Put4byte(u8*, u32);
 
 #ifdef SQLITE_DEBUG
   void sqlite3ParserTrace(FILE*, char *);
+#endif
+#if defined(YYCOVERAGE)
+  int sqlite3ParserCoverage(FILE*);
 #endif
 
 /*

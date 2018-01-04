@@ -6971,9 +6971,9 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** the xFileControl method.  ^The return value of the xFileControl
 ** method becomes the return value of this routine.
 **
-** ^The SQLITE_FCNTL_FILE_POINTER value for the op parameter causes
+** ^The [SQLITE_FCNTL_FILE_POINTER] value for the op parameter causes
 ** a pointer to the underlying [sqlite3_file] object to be written into
-** the space pointed to by the 4th parameter.  ^The SQLITE_FCNTL_FILE_POINTER
+** the space pointed to by the 4th parameter.  ^The [SQLITE_FCNTL_FILE_POINTER]
 ** case is a short-circuit path which does not actually invoke the
 ** underlying sqlite3_io_methods.xFileControl method.
 **
@@ -6985,7 +6985,7 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** an incorrect zDbName and an SQLITE_ERROR return from the underlying
 ** xFileControl method.
 **
-** See also: [SQLITE_FCNTL_LOCKSTATE]
+** See also: [file control opcodes]
 */
 int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
 
@@ -7042,7 +7042,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_ISINIT                  23
 #define SQLITE_TESTCTRL_SORTER_MMAP             24
 #define SQLITE_TESTCTRL_IMPOSTER                25
-#define SQLITE_TESTCTRL_LAST                    25  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_PARSER_COVERAGE         26
+#define SQLITE_TESTCTRL_LAST                    26  /* Largest TESTCTRL */
 
 /*
 ** CAPI3REF: SQLite Runtime Status
@@ -8300,7 +8301,7 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** CAPI3REF: Determine The Collation For a Virtual Table Constraint
 **
 ** This function may only be called from within a call to the [xBestIndex]
-** method of a [virtual table implementation]. 
+** method of a [virtual table]. 
 **
 ** The first argument must be the sqlite3_index_info object that is the
 ** first parameter to the xBestIndex() method. The second argument must be

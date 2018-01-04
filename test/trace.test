@@ -197,7 +197,7 @@ ifcapable trigger {
       UPDATE t1 SET a=a+1;
     }
     set TRACE_OUT
-  } {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2}}
+  } {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- UPDATE t2 SET a=new.a WHERE rowid=new.rowid} {-- TRIGGER r1t2} {-- SELECT 'hello'} {-- TRIGGER r1t1} {-- UPDATE t2 SET a=new.a WHERE rowid=new.rowid} {-- TRIGGER r1t2} {-- SELECT 'hello'} {-- TRIGGER r1t1} {-- UPDATE t2 SET a=new.a WHERE rowid=new.rowid} {-- TRIGGER r1t2} {-- SELECT 'hello'}}
 }
 
 # With 3.6.21, we add the ability to expand host parameters in the trace

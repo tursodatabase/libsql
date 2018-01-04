@@ -5579,7 +5579,7 @@ static int getPageMMap(
       }
       if( pPg==0 ){
         rc = pagerAcquireMapPage(pPager, pgno, pData, &pPg);
-     }else{
+      }else{
         sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1)*pPager->pageSize, pData);
       }
       if( pPg ){

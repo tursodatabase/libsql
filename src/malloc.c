@@ -628,6 +628,19 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
 }
 
 /*
+** The text between zStart and zEnd represents a phrase within a larger
+** SQL statement.  Make a copy of this phrase in space obtained form
+** sqlite3DbMalloc().  Omit leading and trailing whitespace.
+*/
+char *sqlite3DbSpanDup(sqlite3 *db, const char *zStart, const char *zEnd){
+  int n;
+  while( sqlite3Isspace(zStart[0]) ) zStart++;
+  n = (int)(zEnd - zStart);
+  while( n>0 && sqlite3Isspace(zStart[n-1]) ) n--;
+  return sqlite3DbStrNDup(db, zStart, n);
+}
+
+/*
 ** Free any prior content in *pz and replace it with a copy of zNew.
 */
 void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){

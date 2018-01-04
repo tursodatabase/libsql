@@ -321,6 +321,24 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 }
 
 /*
+** Compute 10 to the E-th power.  Examples:  E==1 results in 10.
+** E==2 results in 100.  E==50 results in 1.0e50.
+**
+** This routine only works for values of E between 1 and 341.
+*/
+static LONGDOUBLE_TYPE sqlite3Pow10(int E){
+  LONGDOUBLE_TYPE x = 10.0;
+  LONGDOUBLE_TYPE r = 1.0;
+  while(1){
+    if( E & 1 ) r *= x;
+    E >>= 1;
+    if( E==0 ) break;
+    x *= x;
+  }
+  return r; 
+}
+
+/*
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
 **
@@ -475,11 +493,10 @@ do_atof_calc:
     if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
       result = (double)s;
     }else{
-      LONGDOUBLE_TYPE scale = 1.0;
       /* attempt to handle extremely small/large numbers better */
       if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
         if( e<342 ){                                    /*OPTIMIZATION-IF-TRUE*/
-          while( e%308 ) { scale *= 1.0e+1; e -= 1; }
+          LONGDOUBLE_TYPE scale = sqlite3Pow10(e-308);
           if( esign<0 ){
             result = s / scale;
             result /= 1.0e+308;
@@ -499,10 +516,7 @@ do_atof_calc:
           }
         }
       }else{
-        /* 1.0e+22 is the largest power of 10 than can be 
-        ** represented exactly. */
-        while( e%22 ) { scale *= 1.0e+1; e -= 1; }
-        while( e>0 ) { scale *= 1.0e+22; e -= 22; }
+        LONGDOUBLE_TYPE scale = sqlite3Pow10(e);
         if( esign<0 ){
           result = s / scale;
         }else{
