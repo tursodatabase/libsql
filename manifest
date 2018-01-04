@@ -1,5 +1,5 @@
-C Add\sanother\stest\scase\s(found\sby\sOSSFuzz)\sfor\sthe\sproblem\sfixed\sin\s\ncheck-in\s[2846458a]\sand\sdescribed\sby\sticket\s[dc3f932f5a147771].\nNo\schanges\sto\scode.
-D 2018-01-03T01:47:30.287
+C Fix\sa\sbroken\sdocumentation\shyperlink.\s\sNo\scode\schanges.
+D 2018-01-04T16:40:44.063
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -480,7 +480,7 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
 F src/shell.c.in a418ddceef7a2789f18bdc2bcdd481b2562fe4a7754b8009c8dd33d5a67da332
-F src/sqlite.h.in c597ba5d11666bb2d0179a173cd25e44f0b0333f9e18ce60b07eac8bdc3de67f
+F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
 F src/sqliteInt.h fd8702c65994d7de3e2d8f7d85d958731da1ed29476571fdfa2290fd8ec0bf80
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e115f2583499df0c7ee991d372bed4b89aa717b10a4e4b10977864390cb4fc11
-R 83a0b36c500269c331a5b5ebe1ebb55e
+P 4165fae920a1176c68bfaa1f2cfe17df7f8dd8793519d458b71e3e63670b5495
+R d66f50893f4ffe9e2cfb6738dd929b34
 U drh
-Z 192675b51835fbb18bda08bad08dd763
+Z 6dbec8e8e1444dbd0ed402b28d5f012a

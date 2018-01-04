@@ -8301,7 +8301,7 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** CAPI3REF: Determine The Collation For a Virtual Table Constraint
 **
 ** This function may only be called from within a call to the [xBestIndex]
-** method of a [virtual table implementation]. 
+** method of a [virtual table]. 
 **
 ** The first argument must be the sqlite3_index_info object that is the
 ** first parameter to the xBestIndex() method. The second argument must be
