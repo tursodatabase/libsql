@@ -4095,7 +4095,10 @@ static int btreeRelocateRange(
     if( pEntry->eType==PTRMAP_FREEPAGE ){
       Pgno dummy;
       rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
-      releasePage(pFree);
+      if( pFree ){
+        assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );
+        sqlite3PcacheDrop(pFree->pDbPage);
+      }
       assert( rc!=SQLITE_OK || dummy==iPg );
     }else if( pnCurrent ){
       btreeGetPage(pBt, iPg, &pPg, 0);
