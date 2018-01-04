@@ -1506,7 +1506,8 @@ TESTEXT = \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\unionvtab.c \
-  $(TOP)\ext\misc\wholenumber.c
+  $(TOP)\ext\misc\wholenumber.c \
+  $(TOP)\ext\misc\zipfile.c
 
 # Source code to the library files needed by the test fixture
 # (non-amalgamation)
@@ -2069,7 +2070,11 @@ SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\fileio.c \
-	$(TOP)\ext\misc\completion.c
+	$(TOP)\ext\misc\completion.c \
+	$(TOP)\ext\misc\sqlar.c \
+	$(TOP)\ext\expert\sqlite3expert.c \
+	$(TOP)\ext\expert\sqlite3expert.h \
+	$(TOP)\ext\misc\zipfile.c
 
 shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c

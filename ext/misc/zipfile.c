@@ -20,10 +20,14 @@ SQLITE_EXTENSION_INIT1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <dirent.h>
+#if !defined(_WIN32) && !defined(WIN32)
+#  include <unistd.h>
+#  include <dirent.h>
+#  include <utime.h>
+#else
+#  include <io.h>
+#endif
 #include <time.h>
-#include <utime.h>
 #include <errno.h>
 
 #include <zlib.h>
@@ -387,9 +391,9 @@ static int zipfileReadData(
   char **pzErrmsg                 /* OUT: Error message (from sqlite3_malloc) */
 ){
   size_t n;
-  fseek(pFile, iOff, SEEK_SET);
+  fseek(pFile, (long)iOff, SEEK_SET);
   n = fread(aRead, 1, nRead, pFile);
-  if( n!=nRead ){
+  if( (int)n!=nRead ){
     *pzErrmsg = sqlite3_mprintf("error in fread()");
     return SQLITE_ERROR;
   }
@@ -402,9 +406,9 @@ static int zipfileAppendData(
   int nWrite
 ){
   size_t n;
-  fseek(pTab->pWriteFd, pTab->szCurrent, SEEK_SET);
+  fseek(pTab->pWriteFd, (long)pTab->szCurrent, SEEK_SET);
   n = fwrite(aWrite, 1, nWrite, pTab->pWriteFd);
-  if( n!=nWrite ){
+  if( (int)n!=nWrite ){
     pTab->base.zErrMsg = sqlite3_mprintf("error in fwrite()");
     return SQLITE_ERROR;
   }
@@ -649,17 +653,22 @@ static time_t zipfileMtime(ZipfileCsr *pCsr){
 static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mTime){
   time_t t = (time_t)mTime;
   struct tm res;
-  localtime_r(&t, &res);
 
-  pCds->mTime = 
+#if !defined(_WIN32) && !defined(WIN32)
+  localtime_r(&t, &res);
+#else
+  memcpy(&res, localtime(&t), sizeof(struct tm));
+#endif
+
+  pCds->mTime = (u16)(
     (res.tm_sec / 2) + 
     (res.tm_min << 5) +
-    (res.tm_hour << 11);
+    (res.tm_hour << 11));
 
-  pCds->mDate = 
+  pCds->mDate = (u16)(
     (res.tm_mday-1) +
     ((res.tm_mon+1) << 5) +
-    ((res.tm_year-80) << 9);
+    ((res.tm_year-80) << 9));
 }
 
 /*
@@ -754,6 +763,7 @@ static int zipfileReadEOCD(
   i64 szFile;                     /* Total size of file in bytes */
   int nRead;                      /* Bytes to read from file */
   i64 iOff;                       /* Offset to read from */
+  int rc;
 
   fseek(pFile, 0, SEEK_END);
   szFile = (i64)ftell(pFile);
@@ -763,7 +773,7 @@ static int zipfileReadEOCD(
   nRead = (int)(MIN(szFile, ZIPFILE_BUFFER_SIZE));
   iOff = szFile - nRead;
 
-  int rc = zipfileReadData(pFile, aRead, nRead, iOff, &pTab->base.zErrMsg);
+  rc = zipfileReadData(pFile, aRead, nRead, iOff, &pTab->base.zErrMsg);
   if( rc==SQLITE_OK ){
     int i;
 
@@ -968,7 +978,7 @@ static ZipfileEntry *zipfileNewEntry(
 ){
   u8 *aWrite;
   ZipfileEntry *pNew;
-  pCds->nFile = nPath;
+  pCds->nFile = (u16)nPath;
   pCds->nExtra = mTime ? 9 : 0;
   pNew = (ZipfileEntry*)sqlite3_malloc(
     sizeof(ZipfileEntry) + 
@@ -1036,7 +1046,7 @@ static int zipfileAppendEntry(
   zipfileWrite32(aBuf, pCds->crc32);
   zipfileWrite32(aBuf, pCds->szCompressed);
   zipfileWrite32(aBuf, pCds->szUncompressed);
-  zipfileWrite16(aBuf, nPath);
+  zipfileWrite16(aBuf, (u16)nPath);
   zipfileWrite16(aBuf, pCds->nExtra);
   assert( aBuf==&pTab->aBuffer[ZIPFILE_LFH_FIXED_SZ] );
   rc = zipfileAppendData(pTab, pTab->aBuffer, aBuf - pTab->aBuffer);
@@ -1066,13 +1076,15 @@ static int zipfileGetMode(ZipfileTab *pTab, sqlite3_value *pVal, int *pMode){
   if( z==0 || (z[0]>=0 && z[0]<=9) ){
     mode = sqlite3_value_int(pVal);
   }else{
-    const char zTemplate[10] = "-rwxrwxrwx";
+    const char zTemplate[11] = "-rwxrwxrwx";
     int i;
     if( strlen(z)!=10 ) goto parse_error;
     switch( z[0] ){
       case '-': mode |= S_IFREG; break;
       case 'd': mode |= S_IFDIR; break;
+#if !defined(_WIN32) && !defined(WIN32)
       case 'l': mode |= S_IFLNK; break;
+#endif
       default: goto parse_error;
     }
     for(i=1; i<10; i++){
@@ -1178,13 +1190,13 @@ static int zipfileUpdate(
     cds.iVersionMadeBy = ZIPFILE_NEWENTRY_MADEBY;
     cds.iVersionExtract = ZIPFILE_NEWENTRY_REQUIRED;
     cds.flags = ZIPFILE_NEWENTRY_FLAGS;
-    cds.iCompression = iMethod;
+    cds.iCompression = (u16)iMethod;
     zipfileMtimeToDos(&cds, (u32)mTime);
     cds.crc32 = crc32(0, pData, nData);
     cds.szCompressed = nData;
-    cds.szUncompressed = sz;
+    cds.szUncompressed = (u32)sz;
     cds.iExternalAttr = (mode<<16);
-    cds.iOffset = pTab->szCurrent;
+    cds.iOffset = (u32)pTab->szCurrent;
     pNew = zipfileNewEntry(&cds, zPath, nPath, (u32)mTime);
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
@@ -1291,10 +1303,10 @@ static int zipfileCommit(sqlite3_vtab *pVtab){
     /* Write out the EOCD record */
     eocd.iDisk = 0;
     eocd.iFirstDisk = 0;
-    eocd.nEntry = nEntry;
-    eocd.nEntryTotal = nEntry;
-    eocd.nSize = pTab->szCurrent - iOffset;;
-    eocd.iOffset = iOffset;
+    eocd.nEntry = (u16)nEntry;
+    eocd.nEntryTotal = (u16)nEntry;
+    eocd.nSize = (u32)(pTab->szCurrent - iOffset);
+    eocd.iOffset = (u32)iOffset;
     rc = zipfileAppendEOCD(pTab, &eocd);
 
     zipfileCleanupTransaction(pTab);

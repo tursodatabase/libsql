@@ -82,10 +82,21 @@ SQLITE_EXTENSION_INIT1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <dirent.h>
+#if !defined(_WIN32) && !defined(WIN32)
+#  include <unistd.h>
+#  include <dirent.h>
+#  include <utime.h>
+#else
+#  include "windows.h"
+#  include <io.h>
+#  include <direct.h>
+#  include "test_windirent.h"
+#  define dirent DIRENT
+#  define timespec TIMESPEC
+#  define mkdir(path,mode) _mkdir(path)
+#  define lstat(path,buf) _stat(path,buf)
+#endif
 #include <time.h>
-#include <utime.h>
 #include <errno.h>
 
 
@@ -203,10 +214,13 @@ static int writeFile(
   mode_t mode,                    /* MODE parameter passed to writefile() */
   sqlite3_int64 mtime             /* MTIME parameter (or -1 to not set time) */
 ){
+#if !defined(_WIN32) && !defined(WIN32)
   if( S_ISLNK(mode) ){
     const char *zTo = (const char*)sqlite3_value_text(pData);
     if( symlink(zTo, zFile)<0 ) return 1;
-  }else{
+  }else
+#endif
+  {
     if( S_ISDIR(mode) ){
       if( mkdir(zFile, mode) ){
         /* The mkdir() call to create the directory failed. This might not
@@ -246,6 +260,7 @@ static int writeFile(
   }
 
   if( mtime>=0 ){
+#if !defined(_WIN32) && !defined(WIN32)
     struct timespec times[2];
     times[0].tv_nsec = times[1].tv_nsec = 0;
     times[0].tv_sec = time(0);
@@ -253,6 +268,28 @@ static int writeFile(
     if( utimensat(AT_FDCWD, zFile, times, AT_SYMLINK_NOFOLLOW) ){
       return 1;
     }
+#else
+    FILETIME lastAccess;
+    FILETIME lastWrite;
+    SYSTEMTIME currentTime;
+    LONGLONG intervals;
+    HANDLE hFile;
+    GetSystemTime(&currentTime);
+    SystemTimeToFileTime(&currentTime, &lastAccess);
+    intervals = Int32x32To64(mtime, 10000000) + 116444736000000000;
+    lastWrite.dwLowDateTime = (DWORD)intervals;
+    lastWrite.dwHighDateTime = intervals >> 32;
+    hFile = CreateFile(
+      zFile, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 0, NULL
+    );
+    if( hFile!=INVALID_HANDLE_VALUE ){
+      BOOL bResult = SetFileTime(hFile, NULL, &lastAccess, &lastWrite);
+      CloseHandle(hFile);
+      return !bResult;
+    }else{
+      return 1;
+    }
+#endif
   }
 
   return 0;
@@ -282,7 +319,7 @@ static void writefileFunc(
   zFile = (const char*)sqlite3_value_text(argv[0]);
   if( zFile==0 ) return;
   if( argc>=3 ){
-    mode = sqlite3_value_int(argv[2]);
+    mode = (mode_t)sqlite3_value_int(argv[2]);
   }
   if( argc==4 ){
     mtime = sqlite3_value_int64(argv[3]);
@@ -518,6 +555,7 @@ static int fsdirColumn(
       mode_t m = pCur->sStat.st_mode;
       if( S_ISDIR(m) ){
         sqlite3_result_null(ctx);
+#if !defined(_WIN32) && !defined(WIN32)
       }else if( S_ISLNK(m) ){
         char aStatic[64];
         char *aBuf = aStatic;
@@ -538,6 +576,7 @@ static int fsdirColumn(
 
         sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
         if( aBuf!=aStatic ) sqlite3_free(aBuf);
+#endif
       }else{
         readFileContents(ctx, pCur->zPath);
       }

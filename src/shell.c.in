@@ -73,8 +73,9 @@
 #  include <pwd.h>
 # endif
 # include <unistd.h>
-# include <sys/types.h>
 #endif
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #if HAVE_READLINE
 # include <readline/readline.h>
@@ -874,6 +875,11 @@ static void shellAddSchemaName(
 #define SQLITE_EXTENSION_INIT1
 #define SQLITE_EXTENSION_INIT2(X) (void)(X)
 
+#if defined(_WIN32) || defined(WIN32)
+INCLUDE test_windirent.c
+#define dirent DIRENT
+#define timespec TIMESPEC
+#endif
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
@@ -4551,7 +4557,7 @@ static int arParseCommand(
           struct ArSwitch *pOpt;            /* Iterator */
           for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
             const char *zLong = pOpt->zLong;
-            if( (n-2)<=strlen(zLong) && 0==memcmp(&z[2], zLong, n-2) ){
+            if( (n-2)<=(int)strlen(zLong) && 0==memcmp(&z[2], zLong, n-2) ){
               if( pMatch ){
                 return arErrorMsg("ambiguous option: %s",z);
               }else{

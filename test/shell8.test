@@ -40,7 +40,11 @@ proc dir_to_list {dirname {n -1}} {
   set res [list]
   foreach f [glob -nocomplain $dirname/*] {
     set mtime [file mtime $f]
-    set perm [file attributes $f -perm]
+    if {$::tcl_platform(platform)!="windows"} {
+      set perm [file attributes $f -perm]
+    } else {
+      set perm 0
+    }
     set relpath [file join {*}[lrange [file split $f] $n end]]
     lappend res 
     if {[file isdirectory $f]} {
