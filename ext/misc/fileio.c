@@ -280,7 +280,8 @@ static int writeFile(
     lastWrite.dwLowDateTime = (DWORD)intervals;
     lastWrite.dwHighDateTime = intervals >> 32;
     hFile = CreateFile(
-      zFile, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 0, NULL
+      zFile, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
+      FILE_FLAG_BACKUP_SEMANTICS, NULL
     );
     if( hFile!=INVALID_HANDLE_VALUE ){
       BOOL bResult = SetFileTime(hFile, NULL, &lastAccess, &lastWrite);
