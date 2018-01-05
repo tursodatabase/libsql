@@ -182,13 +182,14 @@ static int makeDirectory(
 
     while( rc==SQLITE_OK ){
       struct stat sStat;
+      int rc2;
 
       for(; zCopy[i]!='/' && i<nCopy; i++);
       if( i==nCopy ) break;
       zCopy[i] = '\0';
 
-      rc = stat(zCopy, &sStat);
-      if( rc!=0 ){
+      rc2 = stat(zCopy, &sStat);
+      if( rc2!=0 ){
         if( mkdir(zCopy, mode & 0777) ) rc = SQLITE_ERROR;
       }else{
         if( !S_ISDIR(sStat.st_mode) ) rc = SQLITE_ERROR;
