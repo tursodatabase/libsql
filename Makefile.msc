@@ -1148,8 +1148,8 @@ LDFLAGS = $(LDOPTS)
 # Start with the Tcl related linker options.
 #
 !IF $(NO_TCL)==0
-LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
-LTLIBS = $(LTLIBS) $(LIBTCL)
+TCLLIBPATHS = $(TCLLIBPATHS) /LIBPATH:$(TCLLIBDIR)
+TCLLIBS = $(TCLLIBS) $(LIBTCL)
 !ENDIF
 
 # If zlib support is enabled, add the linker options for it.
@@ -1506,8 +1506,13 @@ TESTEXT = \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\unionvtab.c \
-  $(TOP)\ext\misc\wholenumber.c \
-  $(TOP)\ext\misc\zipfile.c
+  $(TOP)\ext\misc\wholenumber.c
+
+# If use of zlib is enabled, add the "zipfile.c" source file.
+#
+!IF $(USE_ZLIB)!=0
+TESTEXT = $(TESTEXT) $(TOP)\ext\misc\zipfile.c
+!ENDIF
 
 # Source code to the library files needed by the test fixture
 # (non-amalgamation)
@@ -2025,7 +2030,7 @@ tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -2073,8 +2078,13 @@ SHELL_SRC = \
 	$(TOP)\ext\misc\completion.c \
 	$(TOP)\ext\misc\sqlar.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
-	$(TOP)\ext\expert\sqlite3expert.h \
-	$(TOP)\ext\misc\zipfile.c
+	$(TOP)\ext\expert\sqlite3expert.h
+
+# If use of zlib is enabled, add the "zipfile.c" source file.
+#
+!IF $(USE_ZLIB)!=0
+SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\zipfile.c
+!ENDIF
 
 shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
@@ -2262,7 +2272,7 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TC
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
@@ -2312,7 +2322,7 @@ sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\s
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
