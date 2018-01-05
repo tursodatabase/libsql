@@ -4967,7 +4967,9 @@ static int arDotCommand(
         return rc;
       }
       sqlite3_fileio_init(db, 0, 0);
+#ifdef SQLITE_HAVE_ZLIB
       sqlite3_sqlar_init(db, 0, 0);
+#endif
     }else{
       db = pState->db;
     }
