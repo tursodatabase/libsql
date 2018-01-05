@@ -683,7 +683,7 @@ static int doWriteOp(
     int nDiff;
 
     if( nQuant>pDb->nTreeLimit ){
-      nQuant = pDb->nTreeLimit;
+      nQuant = LSM_MAX(pDb->nTreeLimit, pgsz);
     }
 
     nBefore = lsmTreeSize(pDb);
