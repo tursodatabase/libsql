@@ -2352,7 +2352,7 @@ sqlite3_checker.c:	$(CHECKER_DEPS)
 
 sqlite3_checker.exe:	sqlite3_checker.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_checker.c \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
