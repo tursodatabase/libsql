@@ -1,5 +1,5 @@
-C Fix\sthe\sautoconf\smakefile\sso\sthat\sit\sbuilds\stestfixture\scorrectly.
-D 2018-01-05T19:49:54.732
+C Fix\sshell\scompilation\swith\sMinGW\sby\sincluding\sthe\s'dirent.h'\sheader.
+D 2018-01-05T20:08:46.463
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in c4a9842dcd07572a106da739fa4f76d5ae228e3c4c40c859c84ceaa71c36348e
@@ -483,7 +483,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in 17fc28661aae277767db63fa90e644b8c9bf1242fbd167dcc2e7af0f0e620bb7
+F src/shell.c.in 54b689b5c4301c77c27cb74030387a8fa311ca8e419efde97c32368447496adf
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1694,7 +1694,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da8712bdb8f69dee9efb42b74d0b2ec10043f281c5f93e2724078bdf1370ecb1
-R 3f6a7684abe5e233e60eee143543b86b
-U drh
-Z 40c46b9c1ab67658db9ed4b73dac85b2
+P fbfe04c0b4f261789cbda3d2e98d12508181c283eab0bb757b081f0383e891bd
+R 67b7409129088d9700def94a0c3a7e6a
+U mistachkin
+Z 6191ddbb449a249c839487fd17b108da

@@ -72,7 +72,13 @@
 # if !defined(__RTP__) && !defined(_WRS_KERNEL)
 #  include <pwd.h>
 # endif
+#endif
+#if (!defined(_WIN32) && !defined(WIN32)) || defined(__MINGW_H)
 # include <unistd.h>
+# include <dirent.h>
+# if defined(__MINGW_H)
+#  define DIRENT dirent
+# endif
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -875,10 +881,9 @@ static void shellAddSchemaName(
 #define SQLITE_EXTENSION_INIT1
 #define SQLITE_EXTENSION_INIT2(X) (void)(X)
 
-#if defined(_WIN32) || defined(WIN32)
+#if defined(_WIN32) && defined(_MSC_VER)
 INCLUDE test_windirent.c
 #define dirent DIRENT
-#define timespec TIMESPEC
 #endif
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
