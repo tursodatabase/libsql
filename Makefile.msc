@@ -1636,7 +1636,15 @@ ALL_TCL_TARGETS =
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib shell $(ALL_TCL_TARGETS)
+core:	dll libsqlite3.lib shell
+
+# Targets that require the Tcl library.
+#
+tcl:	$(ALL_TCL_TARGETS)
+
+# This Makefile target builds all of the standard binaries.
+#
+all:	core tcl
 
 # Dynamic link library section.
 #

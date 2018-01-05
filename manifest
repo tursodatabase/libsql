@@ -1,10 +1,10 @@
-C More\sadjustments\sto\sMSVC\sMakefile\sdependencies\sfor\szlib.
-D 2018-01-05T17:12:13.607
+C In\sthe\sMakefile\sfor\sMSVC,\sthe\sdefault\starget\sshould\snot\sinclude\sbinaries\sthat\slink\sagainst\sthe\sTcl\slibrary.
+D 2018-01-05T17:40:38.949
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in f5c6285ac43b2e567d6cf463dff3744da960a19f2cf141744b4472842a97681e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc de37dcd0e875a72b3e4f0d5d962df007e7fffbdebcf588547aa9a414dc690dbc
+F Makefile.msc 2335db317697a3ea33ec3a258be9f46c973fcfd4e7cffe6798c6f3d55bc83d5b
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1694,7 +1694,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19aabccfe34c956599f33cd3ddc846816adc06784c2496838f1ef53059e038e5
-R 4f7a61feaaf912b14f8d84b71ecd0523
+P bb650e5d14642b925c5ea65ba7991b35c4e941405d2557d542b99c66ca4bc130
+R cf861d2a1bc231834a93f636736946e1
 U mistachkin
-Z 232e8c03263ea4c4f59899620c8c44c4
+Z d9fbefa44671c9c82483590ecbf133ab
