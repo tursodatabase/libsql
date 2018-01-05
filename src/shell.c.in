@@ -78,6 +78,9 @@
 # include <dirent.h>
 # if defined(__MINGW_H)
 #  define DIRENT dirent
+#  ifndef S_ISLNK
+#   define S_ISLNK(mode) (0)
+#  endif
 # endif
 #endif
 #include <sys/types.h>
