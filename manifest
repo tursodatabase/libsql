@@ -1,5 +1,5 @@
-C Fix\san\sLSM\scrash\sthat\scould\soccur\sif\sLSM_CONFIG_AUTOFLUSH\swas\sset\sto\s0.
-D 2018-01-05T07:57:54.787
+C Fix\san\sLSM\sproblem\scausing\sthe\swrong\samount\sof\s"auto-work"\sto\sbe\sperformed\nunder\sfairly\sobscure\scircumstances.
+D 2018-01-05T11:34:18.736
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f68b4f9b83cfeb057b6265e0288ad653f319e2ceacca731e0f22e19617829a89
@@ -253,7 +253,7 @@ F ext/lsm1/lsm_main.c b5703f8042e71d3a2d65e671f6832e077e79e89e9975818f67f9699226
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c 76adfc1ed9ffebaf92746dde4b370ccc48143ca8b05b563816eadd2aadf1c525
-F ext/lsm1/lsm_sorted.c d07ff7c28758542b8b4da4b5a1fb67b22a4d33e50e7f684cffe1f6c45cf5182c
+F ext/lsm1/lsm_sorted.c df7b393d9e4b85e6ad07181c6434d58a69a9145ee925d89c3ee1d2a210adaf9a
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6eee0fcd89d3958f8720ebdb5f0a8558b4795d747128091dae283eb81c4f74f
-R 2eb065da8ca94639b242562f929b4d2b
+P 05346f83d587e6049da0e8ec5f62c749daa9e80359cf48f8c37e333e6a1e7d2a
+R 3aef1a930039ecc41e90c5782e1f14e5
 U dan
-Z 4b1a53b69d218d7d45a85af2c33ced1c
+Z 26afacfab65aa4f19216c821cd8450d4
