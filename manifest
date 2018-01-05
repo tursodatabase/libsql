@@ -1,5 +1,5 @@
-C Fix\sshell\scompilation\swith\sMinGW\sby\sincluding\sthe\s'dirent.h'\sheader.
-D 2018-01-05T20:08:46.463
+C Skip\srunning\sthe\s'zipfile'\stest\sif\sthe\snecessary\sstatic\spackage\scannot\sbe\sloaded.
+D 2018-01-05T20:13:33.577
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in c4a9842dcd07572a106da739fa4f76d5ae228e3c4c40c859c84ceaa71c36348e
@@ -1597,7 +1597,7 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
-F test/zipfile.test d4f342ca918fd4d7981a12c1523f5041074cc592f25fecce4ee11446cc984f56
+F test/zipfile.test a1dd0429294cb9487900fc2b29aa9921329f20a7314aa0921b668246172ac090
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1694,7 +1694,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbfe04c0b4f261789cbda3d2e98d12508181c283eab0bb757b081f0383e891bd
-R 67b7409129088d9700def94a0c3a7e6a
+P dfe510b51046a53c7f5c54fe73ec9de3364923eabd4b909c11984552e6bea406
+R 77b0d484d37ac0b70535216ad42f574c
 U mistachkin
-Z 6191ddbb449a249c839487fd17b108da
+Z 2a7cfd5e6817597b58865e4e49810899
