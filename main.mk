@@ -699,7 +699,8 @@ SHELL_SRC = \
 	$(TOP)/ext/misc/sqlar.c \
 	$(TOP)/ext/expert/sqlite3expert.c \
 	$(TOP)/ext/expert/sqlite3expert.h \
-	$(TOP)/ext/misc/zipfile.c
+	$(TOP)/ext/misc/zipfile.c \
+        $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
 	tclsh $(TOP)/tool/mkshellc.tcl >shell.c

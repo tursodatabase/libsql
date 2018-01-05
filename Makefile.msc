@@ -2078,7 +2078,9 @@ SHELL_SRC = \
 	$(TOP)\ext\misc\completion.c \
 	$(TOP)\ext\misc\sqlar.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
-	$(TOP)\ext\expert\sqlite3expert.h
+	$(TOP)\ext\expert\sqlite3expert.h \
+	$(TOP)\ext\misc\zipfile.c \
+        $(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
