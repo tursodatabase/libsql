@@ -799,7 +799,7 @@ static void unionConfigureVtab(
       zVal = zOpt;
       if( *zVal==':' ) zVal++;
       while( union_isidchar(*zVal) ) zVal++;
-      nOpt = zVal-zOpt;
+      nOpt = (int)(zVal-zOpt);
 
       while( union_isspace(*zVal) ) zVal++;
       if( *zVal=='=' ){

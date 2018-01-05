@@ -433,7 +433,7 @@ static int SQLITE_TCLAPI xF5tApi(
       int iVal;
       int bClear;
       if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
-      iVal = ((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
+      iVal = (int)((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
       break;
     }

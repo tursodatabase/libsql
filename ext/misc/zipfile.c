@@ -299,7 +299,7 @@ static int zipfileConnect(
 
   if( argc>3 ){
     zFile = argv[3];
-    nFile = strlen(zFile)+1;
+    nFile = (int)strlen(zFile)+1;
   }
 
   rc = sqlite3_declare_vtab(db, ZIPFILE_SCHEMA);
@@ -1049,7 +1049,7 @@ static int zipfileAppendEntry(
   zipfileWrite16(aBuf, (u16)nPath);
   zipfileWrite16(aBuf, pCds->nExtra);
   assert( aBuf==&pTab->aBuffer[ZIPFILE_LFH_FIXED_SZ] );
-  rc = zipfileAppendData(pTab, pTab->aBuffer, aBuf - pTab->aBuffer);
+  rc = zipfileAppendData(pTab, pTab->aBuffer, (int)(aBuf - pTab->aBuffer));
   if( rc==SQLITE_OK ){
     rc = zipfileAppendData(pTab, (const u8*)zPath, nPath);
   }
@@ -1140,7 +1140,7 @@ static int zipfileUpdate(
   }
 
   zPath = (const char*)sqlite3_value_text(apVal[2]);
-  nPath = strlen(zPath);
+  nPath = (int)strlen(zPath);
   rc = zipfileGetMode(pTab, apVal[3], &mode);
   if( rc!=SQLITE_OK ) return rc;
   mTime = sqlite3_value_int64(apVal[4]);
@@ -1227,7 +1227,7 @@ static int zipfileAppendEOCD(ZipfileTab *pTab, ZipfileEOCD *p){
   zipfileWrite16(aBuf, 0);        /* Size of trailing comment in bytes*/
 
   assert( (aBuf-pTab->aBuffer)==22 );
-  return zipfileAppendData(pTab, pTab->aBuffer, aBuf - pTab->aBuffer);
+  return zipfileAppendData(pTab, pTab->aBuffer, (int)(aBuf - pTab->aBuffer));
 }
 
 static void zipfileCleanupTransaction(ZipfileTab *pTab){
