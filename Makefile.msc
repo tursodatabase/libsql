@@ -92,6 +92,29 @@ SPLIT_AMALGAMATION = 0
 !ENDIF
 
 # <<mark>>
+# Set this non-0 to have this makefile assume the Tcl shell executable
+# (tclsh*.exe) is available in the PATH.  By default, this is disabled
+# for compatibility with older build environments.  This setting only
+# applies if TCLSH_CMD is not set manually.
+#
+!IFNDEF USE_TCLSH_IN_PATH
+USE_TCLSH_IN_PATH = 0
+!ENDIF
+
+# Set this non-0 to use zlib, possibly compiling it from source code.
+#
+!IFNDEF USE_ZLIB
+USE_ZLIB = 0
+!ENDIF
+
+# Set this non-0 to build zlib from source code.  This is enabled by
+# default and in that case it will be assumed that the ZLIBDIR macro
+# points to the top-level source code directory for zlib.
+#
+!IFNDEF BUILD_ZLIB
+BUILD_ZLIB = 1
+!ENDIF
+
 # Set this non-0 to use the International Components for Unicode (ICU).
 #
 !IFNDEF USE_ICU
@@ -612,6 +635,15 @@ SHELL_CORE_DEP =
 !ENDIF
 !ENDIF
 
+# <<mark>>
+# If zlib support is enabled, add the dependencies for it.
+#
+!IF $(USE_ZLIB)!=0 && $(BUILD_ZLIB)!=0
+SHELL_CORE_DEP = zlib $(SHELL_CORE_DEP)
+TESTFIXTURE_DEP = zlib $(TESTFIXTURE_DEP)
+!ENDIF
+# <</mark>>
+
 # This is the core library that the shell executable should link with.
 #
 !IFNDEF SHELL_CORE_LIB
@@ -802,12 +834,16 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
+!IFNDEF TCLDIR
+TCLDIR = $(TOP)\compat\tcl
+!ENDIF
+
 !IFNDEF TCLINCDIR
-TCLINCDIR = c:\tcl\include
+TCLINCDIR = $(TCLDIR)\include
 !ENDIF
 
 !IFNDEF TCLLIBDIR
-TCLLIBDIR = c:\tcl\lib
+TCLLIBDIR = $(TCLDIR)\lib
 !ENDIF
 
 !IFNDEF LIBTCL
@@ -819,7 +855,32 @@ LIBTCLSTUB = tclstub86.lib
 !ENDIF
 
 !IFNDEF LIBTCLPATH
-LIBTCLPATH = c:\tcl\bin
+LIBTCLPATH = $(TCLDIR)\bin
+!ENDIF
+
+# The locations of the zlib header and library files.  These variables
+# (ZLIBINCDIR, ZLIBLIBDIR, and ZLIBLIB) may be overridden via the environment
+# prior to running nmake in order to match the actual installed (or source
+# code) location on this machine.
+#
+!IFNDEF ZLIBDIR
+ZLIBDIR = $(TOP)\compat\zlib
+!ENDIF
+
+!IFNDEF ZLIBINCDIR
+ZLIBINCDIR = $(ZLIBDIR)
+!ENDIF
+
+!IFNDEF ZLIBLIBDIR
+ZLIBLIBDIR = $(ZLIBDIR)
+!ENDIF
+
+!IFNDEF ZLIBLIB
+!IF $(DYNAMIC_SHELL)!=0
+ZLIBLIB = zdll.lib
+!ELSE
+ZLIBLIB = zlib.lib
+!ENDIF
 !ENDIF
 
 # The locations of the ICU header and library files.  These variables
@@ -827,12 +888,16 @@ LIBTCLPATH = c:\tcl\bin
 # prior to running nmake in order to match the actual installed location on
 # this machine.
 #
+!IFNDEF ICUDIR
+ICUDIR = $(TOP)\compat\icu
+!ENDIF
+
 !IFNDEF ICUINCDIR
-ICUINCDIR = c:\icu\include
+ICUINCDIR = $(ICUDIR)\include
 !ENDIF
 
 !IFNDEF ICULIBDIR
-ICULIBDIR = c:\icu\lib
+ICULIBDIR = $(ICUDIR)\lib
 !ENDIF
 
 !IFNDEF LIBICU
@@ -845,7 +910,11 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
+!IF $(USE_TCLSH_IN_PATH)!=0 || !EXIST("$(TCLDIR)\bin\tclsh.exe")
 TCLSH_CMD = tclsh
+!ELSE
+TCLSH_CMD = $(TCLDIR)\bin\tclsh.exe
+!ENDIF
 !ENDIF
 # <</mark>>
 
@@ -951,6 +1020,15 @@ BCC = $(BCC) -Zi
 !ENDIF
 
 # <<mark>>
+# If zlib support is enabled, add the compiler options for it.
+#
+!IF $(USE_ZLIB)!=0
+TCC = $(TCC) -DSQLITE_HAVE_ZLIB=1
+RCC = $(RCC) -DSQLITE_HAVE_ZLIB=1
+TCC = $(TCC) -I$(ZLIBINCDIR)
+RCC = $(RCC) -I$(ZLIBINCDIR)
+!ENDIF
+
 # If ICU support is enabled, add the compiler options for it.
 #
 !IF $(USE_ICU)!=0
@@ -1071,8 +1149,15 @@ LDFLAGS = $(LDOPTS)
 # Start with the Tcl related linker options.
 #
 !IF $(NO_TCL)==0
-LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
-LTLIBS = $(LTLIBS) $(LIBTCL)
+TCLLIBPATHS = $(TCLLIBPATHS) /LIBPATH:$(TCLLIBDIR)
+TCLLIBS = $(TCLLIBS) $(LIBTCL)
+!ENDIF
+
+# If zlib support is enabled, add the linker options for it.
+#
+!IF $(USE_ZLIB)!=0
+LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ZLIBLIBDIR)
+LTLIBS = $(LTLIBS) $(ZLIBLIB)
 !ENDIF
 
 # If ICU support is enabled, add the linker options for it.
@@ -1424,6 +1509,12 @@ TESTEXT = \
   $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c
 
+# If use of zlib is enabled, add the "zipfile.c" source file.
+#
+!IF $(USE_ZLIB)!=0
+TESTEXT = $(TESTEXT) $(TOP)\ext\misc\zipfile.c
+!ENDIF
+
 # Source code to the library files needed by the test fixture
 # (non-amalgamation)
 #
@@ -1545,7 +1636,15 @@ ALL_TCL_TARGETS =
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib shell $(ALL_TCL_TARGETS)
+core:	dll libsqlite3.lib shell
+
+# Targets that require the Tcl library.
+#
+tcl:	$(ALL_TCL_TARGETS)
+
+# This Makefile target builds all of the standard binaries.
+#
+all:	core tcl
 
 # Dynamic link library section.
 #
@@ -1940,7 +2039,7 @@ tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -1985,11 +2084,23 @@ SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\fileio.c \
-	$(TOP)\ext\misc\completion.c
+	$(TOP)\ext\misc\completion.c \
+	$(TOP)\ext\expert\sqlite3expert.c \
+	$(TOP)\ext\expert\sqlite3expert.h \
+	$(TOP)\src\test_windirent.c
+
+# If use of zlib is enabled, add the "zipfile.c" source file.
+#
+!IF $(USE_ZLIB)!=0
+SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\sqlar.c
+SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\zipfile.c
+!ENDIF
 
 shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
+zlib:
+	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
 
 # Rules to build the extension objects.
 #
@@ -2167,11 +2278,11 @@ sqlite_tcl.h:
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*createProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *createProc)" >> $(SQLITETCLH)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
+testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
@@ -2221,7 +2332,7 @@ sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\s
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
 sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)

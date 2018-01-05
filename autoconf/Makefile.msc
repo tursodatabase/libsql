@@ -561,6 +561,7 @@ SHELL_CORE_DEP =
 !ENDIF
 !ENDIF
 
+
 # This is the core library that the shell executable should link with.
 #
 !IFNDEF SHELL_CORE_LIB

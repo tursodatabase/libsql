@@ -370,6 +370,7 @@ TESTSRC += \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
+  $(TOP)/ext/misc/zipfile.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
   $(TOP)/ext/fts5/fts5_test_tok.c 
@@ -695,8 +696,11 @@ SHELL_SRC = \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \
+	$(TOP)/ext/misc/sqlar.c \
 	$(TOP)/ext/expert/sqlite3expert.c \
-	$(TOP)/ext/expert/sqlite3expert.h
+	$(TOP)/ext/expert/sqlite3expert.h \
+	$(TOP)/ext/misc/zipfile.c \
+        $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
 	tclsh $(TOP)/tool/mkshellc.tcl >shell.c
