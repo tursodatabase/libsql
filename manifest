@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.
-D 2018-01-05T14:55:43.233
+C Add\ssome\smissing\s#ifdefs\sfor\sbuilding\swithout\szlib.
+D 2018-01-05T16:03:52.073
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
@@ -492,7 +492,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 1833388c01e3b77f4c712185ee7250b9423ee0981ce6ae7e401e47db0319a696
-F src/test1.c 1879ff5095def6091f83f54c6233bc19e2b7223068fb02da41f2396d55729764
+F src/test1.c b52f9e7fe62016d357c3266fcfa0793cc1883d3cb2b11dfa39fcba2e70b0305c
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1694,7 +1694,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45fabd868dc690894f5a911d373a3d6410ba2d95d177307a42009afc8ae296cc
-R 67924405c342403978f2d6d8e94eaa8e
-U drh
-Z e8ddc1cfcd8bdce50b891a625082402b
+P 364ac333b030f0e3372937df723f1098183da87913ba0e8ae162864ee24a50d3
+R 0ea7c4065b03d537986e987f96237bd2
+U mistachkin
+Z 7bfc76075fe03643e9086a52bceca2fa
