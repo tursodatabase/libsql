@@ -1,10 +1,10 @@
-C Add\smissing\s#ifdef.
-D 2018-01-05T00:53:03.495
+C Enhance\sthe\s'zlib'\sbuild\starget\sfor\sMSVC.
+D 2018-01-05T01:00:17.962
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1b11037c5ed3399a79433cc82c59b5e36a7b3a3e4e195bb27640d0d2145e03e1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc feaf722defab458cbf9583249e441239bae08fcf7fb907496c7d3fed16862f21
+F Makefile.msc e8b973cd249b0db11c221c1bd7e9f738e8dac369275160342e1011f3932074c9
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1694,7 +1694,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4f3444060057127bce81787ed83cb5225cdbdd577596bc3fb06a40be2208f238
-R c50a08a594d751082d54ba21ce6e9836
+P a0e18aea0950f5ebdf4112f826ff64d24e8660b341031132dcb65bb15579ef1c
+R ae30dd8990fa7c0deb74a2452807863c
 U mistachkin
-Z bad7a2c44b50561368222d84fba1c0b2
+Z 062c561092c9190b73f85a153a52c8b7

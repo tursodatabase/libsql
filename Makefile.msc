@@ -2080,7 +2080,7 @@ shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
 zlib:
-	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc $(ZLIBLIB) && popd
+	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
 
 # Rules to build the extension objects.
 #
