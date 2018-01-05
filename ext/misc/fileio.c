@@ -176,12 +176,11 @@ static int makeDirectory(
   if( zCopy==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    int nCopy = strlen(zCopy);
+    int nCopy = (int)strlen(zCopy);
     int i = 1;
 
     while( rc==SQLITE_OK ){
       struct stat sStat;
-      int rc;
 
       for(; zCopy[i]!='/' && i<nCopy; i++);
       if( i==nCopy ) break;
@@ -634,7 +633,7 @@ static int fsdirFilter(
     pCur->zBase = (const char*)sqlite3_value_text(argv[1]);
   }
   if( pCur->zBase ){
-    pCur->nBase = strlen(pCur->zBase)+1;
+    pCur->nBase = (int)strlen(pCur->zBase)+1;
     pCur->zPath = sqlite3_mprintf("%s/%s", pCur->zBase, zDir);
   }else{
     pCur->zPath = sqlite3_mprintf("%s", zDir);

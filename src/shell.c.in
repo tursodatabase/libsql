@@ -1955,7 +1955,7 @@ static void displayLinuxIoStats(FILE *out){
     };
     int i;
     for(i=0; i<ArraySize(aTrans); i++){
-      int n = (int)strlen(aTrans[i].zPattern);
+      int n = strlen30(aTrans[i].zPattern);
       if( strncmp(aTrans[i].zPattern, z, n)==0 ){
         utf8_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
         break;
@@ -3134,7 +3134,7 @@ static char **readline_completion(const char *zText, int iStart, int iEnd){
 ** Linenoise completion callback
 */
 static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
-  int nLine = (int)strlen(zLine);
+  int nLine = strlen30(zLine);
   int i, iStart;
   sqlite3_stmt *pStmt = 0;
   char *zSql;
@@ -3360,7 +3360,7 @@ static int sql_trace_callback(
   UNUSED_PARAMETER(pP);
   if( f ){
     const char *z = (const char*)pX;
-    int i = (int)strlen(z);
+    int i = strlen30(z);
     while( i>0 && z[i-1]==';' ){ i--; }
     utf8_printf(f, "%.*s;\n", i, z);
   }
@@ -3549,7 +3549,7 @@ static void tryToCloneData(
   char *zInsert = 0;
   int rc;
   int i, j, n;
-  int nTable = (int)strlen(zTable);
+  int nTable = strlen30(zTable);
   int k = 0;
   int cnt = 0;
   const int spinRate = 10000;
@@ -3570,7 +3570,7 @@ static void tryToCloneData(
   }
   sqlite3_snprintf(200+nTable,zInsert,
                    "INSERT OR IGNORE INTO \"%s\" VALUES(?", zTable);
-  i = (int)strlen(zInsert);
+  i = strlen30(zInsert);
   for(j=1; j<n; j++){
     memcpy(zInsert+i, ",?", 2);
     i += 2;
@@ -4152,7 +4152,7 @@ static int lintFkeyIndexes(
   const char *zGlobIPK = "SEARCH TABLE * USING INTEGER PRIMARY KEY (rowid=?)";
 
   for(i=2; i<nArg; i++){
-    int n = (int)strlen(azArg[i]);
+    int n = strlen30(azArg[i]);
     if( n>1 && sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
       bVerbose = 1;
     }
@@ -4255,7 +4255,7 @@ static int lintDotCommand(
   int nArg                        /* Number of entries in azArg[] */
 ){
   int n;
-  n = (nArg>=2 ? (int)strlen(azArg[1]) : 0);
+  n = (nArg>=2 ? strlen30(azArg[1]) : 0);
   if( n<1 || sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
   return lintFkeyIndexes(pState, azArg, nArg);
 
@@ -4517,7 +4517,7 @@ static int arParseCommand(
           pAr->nArg = nArg-iArg;
           break;
         }
-        n = strlen(z);
+        n = strlen30(z);
 
         if( z[1]!='-' ){
           int i;
@@ -4557,7 +4557,7 @@ static int arParseCommand(
           struct ArSwitch *pOpt;            /* Iterator */
           for(pOpt=&aSwitch[0]; pOpt<pEnd; pOpt++){
             const char *zLong = pOpt->zLong;
-            if( (n-2)<=(int)strlen(zLong) && 0==memcmp(&z[2], zLong, n-2) ){
+            if( (n-2)<=strlen30(zLong) && 0==memcmp(&z[2], zLong, n-2) ){
               if( pMatch ){
                 return arErrorMsg("ambiguous option: %s",z);
               }else{
@@ -4610,7 +4610,7 @@ static int arCheckEntries(sqlite3 *db, ArCommand *pAr){
     }
     for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
       char *z = pAr->azArg[i];
-      int n = strlen(z);
+      int n = strlen30(z);
       int bOk = 0;
       while( n>0 && z[n-1]=='/' ) n--;
       z[n] = '\0';
@@ -5025,7 +5025,7 @@ static int expertDotCommand(
     char *z = azArg[i];
     int n;
     if( z[0]=='-' && z[1]=='-' ) z++;
-    n = strlen(z);
+    n = strlen30(z);
     if( n>=2 && 0==strncmp(z, "-verbose", n) ){
       pState->expert.bVerbose = 1;
     }
@@ -5908,7 +5908,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 ){
     const char *zMode = nArg>=2 ? azArg[1] : "";
-    int n2 = (int)strlen(zMode);
+    int n2 = strlen30(zMode);
     int c2 = zMode[0];
     if( c2=='l' && n2>2 && strncmp(azArg[1],"lines",n2)==0 ){
       p->mode = MODE_Line;
@@ -7147,8 +7147,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_authenticate(p->db, azArg[2], azArg[3],
-                                    (int)strlen(azArg[3]));
+      rc = sqlite3_user_authenticate(p->db, azArg[2], azArg[3], strlen30(azArg[3]));
       if( rc ){
         utf8_printf(stderr, "Authentication failed for user %s\n", azArg[2]);
         rc = 1;
@@ -7159,8 +7158,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_add(p->db, azArg[2],
-                            azArg[3], (int)strlen(azArg[3]),
+      rc = sqlite3_user_add(p->db, azArg[2], azArg[3], strlen30(azArg[3]),
                             booleanValue(azArg[4]));
       if( rc ){
         raw_printf(stderr, "User-Add failed: %d\n", rc);
@@ -7172,8 +7170,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_change(p->db, azArg[2],
-                              azArg[3], (int)strlen(azArg[3]),
+      rc = sqlite3_user_change(p->db, azArg[2], azArg[3], strlen30(azArg[3]),
                               booleanValue(azArg[4]));
       if( rc ){
         raw_printf(stderr, "User-Edit failed: %d\n", rc);
