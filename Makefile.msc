@@ -636,10 +636,11 @@ SHELL_CORE_DEP =
 !ENDIF
 
 # <<mark>>
-# If zlib support is enabled, add the shell dependency for it.
+# If zlib support is enabled, add the dependencies for it.
 #
 !IF $(USE_ZLIB)!=0 && $(BUILD_ZLIB)!=0
 SHELL_CORE_DEP = zlib $(SHELL_CORE_DEP)
+TESTFIXTURE_DEP = zlib $(TESTFIXTURE_DEP)
 !ENDIF
 # <</mark>>
 
@@ -2076,15 +2077,14 @@ SHELL_SRC = \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\completion.c \
-	$(TOP)\ext\misc\sqlar.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
-	$(TOP)\ext\misc\zipfile.c \
-        $(TOP)\src\test_windirent.c
+	$(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
 !IF $(USE_ZLIB)!=0
+SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\sqlar.c
 SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\zipfile.c
 !ENDIF
 
@@ -2270,7 +2270,7 @@ sqlite_tcl.h:
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*createProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *createProc)" >> $(SQLITETCLH)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
+testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
