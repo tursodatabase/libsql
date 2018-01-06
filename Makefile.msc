@@ -1495,7 +1495,8 @@ TESTPROGS = \
   sqlite3_analyzer.exe \
   sqlite3_checker.exe \
   sqldiff.exe \
-  dbhash.exe
+  dbhash.exe \
+  sqltclsh.exe
 
 # Databases containing fuzzer test cases
 #
@@ -2221,6 +2222,14 @@ sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\s
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+
+sqltclsh.c: sqlite3.c $(TOP)\src\tclsqlite.c $(TOP)\tool\sqltclsh.tcl $(TOP)\ext\misc\appendvfs.c $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in	
+	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in >sqltclsh.c
+
+sqltclsh.exe: sqltclsh.c
+	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqltclsh.c \
+               /link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LTLIBS) $(TLIBS)
+
 
 sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
