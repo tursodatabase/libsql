@@ -1,5 +1,5 @@
-C Remove\sa\strailing\stab\sfrom\sthe\sMakefile\sfor\sMSVC.
-D 2018-01-06T14:44:29.580
+C Improved\soutput\sfrom\s".schema\s--indent"\swhen\sa\scolumn\sdefinition\sis\sfollowed\nby\sa\scomment.
+D 2018-01-06T15:46:20.603
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9536f61ce33172d4868707ecc10844a0abef9e2e775ad2434245a60406fd7e38
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in 4cfa9394737306c5a5f3d7f72e74868df5f3010676d6a1a2a52db37b61b0c13a
+F src/shell.c.in 8874828ece41dc20767b1dcee40b0784dfb934cb8affe020b616542f57b42ea9
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f6cc5d8a0d9d961d1daf46e8725f7373f740afa788cf99ede9689f49d3a54ec
-R 5465f05e31d38450dc68aa4d6f2bc0a7
-U mistachkin
-Z 16a3cdc1a076fc6d00702b3c46501e75
+P 00cc26e34d2b81f140b031aa2f9ae0e2a4835cdd261d68f94b3e18a1388ca73d
+R eb5f4dd564d1c772c17fe91ddfa9e74c
+U drh
+Z 0810beaa8d664bc298dc9e0f39c4629f

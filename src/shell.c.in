@@ -1412,6 +1412,22 @@ static void printSchemaLineN(FILE *out, char *z, int n, const char *zTail){
 }
 
 /*
+** Return true if string z[] has nothing but whitespace and comments to the
+** end of the first line.
+*/
+static int wsToEol(const char *z){
+  int i;
+  for(i=0; z[i]; i++){
+    if( z[i]=='\n' ) return 1;
+    if( IsSpace(z[i]) ) continue;
+    if( z[i]=='-' && z[i+1]=='-' ) return 1;
+    return 0;
+  }
+  return 1;
+}
+    
+
+/*
 ** This is the callback routine that the shell
 ** invokes for each row of a query result.
 */
@@ -1550,13 +1566,15 @@ static int shell_callback(
       while( j>0 && IsSpace(z[j-1]) ){ j--; }
       z[j] = 0;
       if( strlen30(z)>=79 ){
-        for(i=j=0; (c = z[i])!=0; i++){
+        for(i=j=0; (c = z[i])!=0; i++){  /* Copy changes from z[i] back to z[j] */
           if( c==cEnd ){
             cEnd = 0;
           }else if( c=='"' || c=='\'' || c=='`' ){
             cEnd = c;
           }else if( c=='[' ){
             cEnd = ']';
+          }else if( c=='-' && z[i+1]=='-' ){
+            cEnd = '\n';
           }else if( c=='(' ){
             nParen++;
           }else if( c==')' ){
@@ -1567,7 +1585,9 @@ static int shell_callback(
             }
           }
           z[j++] = c;
-          if( nParen==1 && (c=='(' || c==',' || c=='\n') ){
+          if( nParen==1 && cEnd==0
+           && (c=='(' || c=='\n' || (c==',' && !wsToEol(z+i+1)))
+          ){
             if( c=='\n' ) j--;
             printSchemaLineN(p->out, z, j, "\n  ");
             j = 0;
