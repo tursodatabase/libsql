@@ -2895,6 +2895,9 @@ static int run_schema_dump_query(
 ** Text of a help message
 */
 static char zHelp[] =
+#if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
+  ".archive ...           Manage SQL archives: \".archive --help\" for details\n"
+#endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   ".auth ON|OFF           Show authorizer callbacks\n"
 #endif
@@ -4296,6 +4299,10 @@ static int lintDotCommand(
   return SQLITE_ERROR;
 }
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+/*********************************************************************************
+** The ".archive" or ".ar" command.
+*/
 static void shellPrepare(
   sqlite3 *db, 
   int *pRc, 
@@ -4365,8 +4372,7 @@ static void shellReset(
     *pRc = rc;
   }
 }
-
-/* 
+/*
 ** Structure representing a single ".ar" command.
 */
 typedef struct ArCommand ArCommand;
@@ -5034,6 +5040,9 @@ static int arDotCommand(
 
   return rc;
 }
+/* End of the ".archive" or ".ar" command logic
+**********************************************************************************/
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
 
 /*
 ** Implementation of ".expert" dot command.
@@ -5156,8 +5165,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( c=='a' && strncmp(azArg[0], "ar", n)==0 ){
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+  if( c=='a' && strncmp(azArg[0], "archive", n)==0 ){
     open_db(p, 0);
     rc = arDotCommand(p, azArg, nArg);
   }else
