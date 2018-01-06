@@ -63,6 +63,7 @@
 #include "sqlite3.h"
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
+typedef unsigned char u8;
 #if SQLITE_USER_AUTHENTICATION
 # include "sqlite3userauth.h"
 #endif
@@ -938,10 +939,11 @@ struct ExpertInfo {
 typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
-  int autoExplain;       /* Automatically turn on .explain mode */
-  int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
-  int statsOn;           /* True to display memory stats before each finalize */
-  int scanstatsOn;       /* True to display scan stats before each finalize */
+  u8 autoExplain;        /* Automatically turn on .explain mode */
+  u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
+  u8 statsOn;            /* True to display memory stats before each finalize */
+  u8 scanstatsOn;        /* True to display scan stats before each finalize */
+  u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
@@ -978,12 +980,20 @@ struct ShellState {
   ExpertInfo expert;        /* Valid if previous command was ".expert OPT..." */
 };
 
+
 /* Allowed values for ShellState.autoEQP
 */
 #define AUTOEQP_off      0
 #define AUTOEQP_on       1
 #define AUTOEQP_trigger  2
 #define AUTOEQP_full     3
+
+/* Allowed values for ShellState.openMode
+*/
+#define SHELL_OPEN_UNSPEC     0      /* No open-mode specified */
+#define SHELL_OPEN_NORMAL     1      /* Normal database file */
+#define SHELL_OPEN_APPENDVFS  2      /* Use appendvfs */
+#define SHELL_OPEN_ZIPFILE    3      /* Use the zipfile virtual table */
 
 /*
 ** These are the allowed shellFlgs values
@@ -3102,13 +3112,57 @@ static int session_filter(void *pCtx, const char *zTab){
 #endif
 
 /*
+** Try to deduce the type of file for zName based on its content.  Return
+** one of the SHELL_OPEN_* constants.
+*/
+static int deduceDatabaseType(const char *zName){
+  FILE *f = fopen(zName, "rb");
+  size_t n;
+  int rc = SHELL_OPEN_UNSPEC;
+  char zBuf[100];
+  if( f==0 ) return SHELL_OPEN_NORMAL;
+  fseek(f, -25, SEEK_END);
+  n = fread(zBuf, 25, 1, f);
+  if( n==1 && memcmp(zBuf, "Start-Of-SQLite3-", 17)==0 ){
+    rc = SHELL_OPEN_APPENDVFS;
+  }else{
+    fseek(f, -22, SEEK_END);
+    n = fread(zBuf, 22, 1, f);
+    if( n==1 && zBuf[0]==0x50 && zBuf[1]==0x4b && zBuf[2]==0x05
+       && zBuf[3]==0x06 ){
+      rc = SHELL_OPEN_ZIPFILE;
+    }
+  }
+  fclose(f);
+  return rc;  
+}
+
+/*
 ** Make sure the database is open.  If it is not, then open it.  If
 ** the database fails to open, print an error message and exit.
 */
 static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
     sqlite3_initialize();
-    sqlite3_open(p->zDbFilename, &p->db);
+    if( p->openMode==SHELL_OPEN_UNSPEC && access(p->zDbFilename,0)==0 ){
+      p->openMode = deduceDatabaseType(p->zDbFilename);
+    }
+    switch( p->openMode ){
+      case SHELL_OPEN_APPENDVFS: {
+        sqlite3_open_v2(p->zDbFilename, &p->db, 
+           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, "apndvfs");
+        break;
+      }
+      case SHELL_OPEN_ZIPFILE: {
+        sqlite3_open(":memory:", &p->db);
+        break;
+      }
+      case SHELL_OPEN_UNSPEC:
+      case SHELL_OPEN_NORMAL: {
+        sqlite3_open(p->zDbFilename, &p->db);
+        break;
+      }
+    }
     globalDb = p->db;
     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
       utf8_printf(stderr,"Error: unable to open database \"%s\": %s\n",
@@ -3130,6 +3184,12 @@ static void open_db(ShellState *p, int keepAlive){
                             shellAddSchemaName, 0, 0);
     sqlite3_create_function(p->db, "shell_module_schema", 1, SQLITE_UTF8, 0,
                             shellModuleSchema, 0, 0);
+    if( p->openMode==SHELL_OPEN_ZIPFILE ){
+      char *zSql = sqlite3_mprintf(
+         "CREATE VIRTUAL TABLE zip USING zipfile(%Q);", p->zDbFilename);
+      sqlite3_exec(p->db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }
   }
 }
 
@@ -6012,11 +6072,18 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->zDbFilename = 0;
     sqlite3_free(p->zFreeOnClose);
     p->zFreeOnClose = 0;
+    p->openMode = SHELL_OPEN_UNSPEC;
     /* Check for command-line arguments */
     for(iName=1; iName<nArg && azArg[iName][0]=='-'; iName++){
       const char *z = azArg[iName];
       if( optionMatch(z,"new") ){
         newFlag = 1;
+#ifdef SQLITE_HAVE_ZIP
+      }else if( optionMatch(z, "zip") ){
+        p->openMode = SHELL_OPEN_ZIPFILE;
+#endif
+      }else if( optionMatch(z, "append") ){
+        p->openMode = SHELL_OPEN_APPENDVFS;
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
@@ -7937,6 +8004,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-csv")==0 ){
       data.mode = MODE_Csv;
       memcpy(data.colSeparator,",",2);
+#ifdef SQLITE_HAVE_ZIP
+    }else if( strcmp(z,"-zip")==0 ){
+      data.openMode = SHELL_OPEN_ZIPFILE;
+#endif
+    }else if( strcmp(z,"-append")==0 ){
+      data.openMode = SHELL_OPEN_APPENDVFS;
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
