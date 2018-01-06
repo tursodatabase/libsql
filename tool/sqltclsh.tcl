@@ -2,6 +2,9 @@
 # field where "scripts.name" is 'main.tcl'
 #
 catch {
+  if {![file exists $argv0] && [file exists $argv0.exe]} {
+    append argv0 .exe
+  }
   sqlite3 db $argv0 -vfs apndvfs -create 0
   set mainscript [db one {SELECT data FROM scripts WHERE name='main.tcl'}]
 }

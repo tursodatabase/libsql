@@ -1,5 +1,5 @@
-C Add\ssqltclsh.exe\sto\sthe\swindows\smakefile.
-D 2018-01-06T04:34:05.887
+C Fix\sthe\sappendvfs\sso\sthat\sit\sleaves\ssqlite3_file->pMethods\sas\sNULL\sif\sit\nfails\sto\sopen.
+D 2018-01-06T13:33:21.118
 F Makefile.in f2dc8c140e1d728157834da295eaaa8a0cb29620595c2a9f0efc7258797e6f24
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 80cca5fd5760cb3e26aaedaf6ef0df155cab3761a98efd0aa819973713839ca9
@@ -266,7 +266,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 8cc3ae6633e7d97ca9c3c9a48c647e9ba23f8d24f3d5f5f596272a81dc50c398
+F ext/misc/appendvfs.c 24b72d0556e81939c19316ca48c628938b4bd0ec81dac076406260c3ccd51def
 F ext/misc/btreeinfo.c d7fd9a2fe2fa33ba28488e2fce703ebecc759219ea9e0bb3b254784866c0a676
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
@@ -1658,7 +1658,7 @@ F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec8
 F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
 F tool/sqltclsh.c.in e1f48150f755bfbe0194478cba50aa9f2f5183bb1efbdd6456532cce3cd2e18d
-F tool/sqltclsh.tcl 71bdb62c8f6b37c05b2d377e870c3dd13ee96cc4fee5b5ae5215ae9a0aca088d
+F tool/sqltclsh.tcl 18adb7d4a24374a3c79a2acc011b5f54a22186beec13056b0fa3ca011711c4f3
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1690,7 +1690,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edceaccd66a65d6b36e53ce33d760a7bd9c2261a592d12189f5f55417b5d5d74
-R 724c729f15e9ebb158a68ffbc1395b1f
+P a6d5c7c2aabd70b4fb2bd8f6278f70272a5bd166adf2f7225ea582e10a46fafa
+R 11d42f816c24c039c3f505e6266a4bae
 U drh
-Z adb127fe5f715fb70b7df6486f1fd9f2
+Z 83fb91d11f3679f988cee9a994d344b9

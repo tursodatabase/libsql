@@ -440,14 +440,14 @@ static int apndOpen(
   }
   p = (ApndFile*)pFile;
   memset(p, 0, sizeof(*p));
-  p->base.pMethods = &apnd_io_methods;
   pSubFile = ORIGFILE(pFile);
+  p->base.pMethods = &apnd_io_methods;
   rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
-  if( rc ) return rc;
+  if( rc ) goto apnd_open_done;
   rc = pSubFile->pMethods->xFileSize(pSubFile, &sz);
   if( rc ){
     pSubFile->pMethods->xClose(pSubFile);
-    return rc;
+    goto apnd_open_done;
   }
   if( apndIsOrdinaryDatabaseFile(sz, pSubFile) ){
     memmove(pFile, pSubFile, pSubVfs->szOsFile);
@@ -460,11 +460,12 @@ static int apndOpen(
   }
   if( (flags & SQLITE_OPEN_CREATE)==0 ){
     pSubFile->pMethods->xClose(pSubFile);
-    pFile->pMethods = 0;
-    return SQLITE_CANTOPEN;
+    rc = SQLITE_CANTOPEN;
   }
   p->iPgOne = (sz+0xfff) & ~(sqlite3_int64)0xfff;
-  return SQLITE_OK;
+apnd_open_done:
+  if( rc ) pFile->pMethods = 0;
+  return rc;
 }
 
 /*
