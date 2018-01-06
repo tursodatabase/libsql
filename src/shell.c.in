@@ -4858,13 +4858,13 @@ static int arCreateUpdate(
 ){
   const char *zSql = "SELECT name, mode, mtime, data FROM fsdir(?, ?)";
   const char *zCreate = 
-      "CREATE TABLE IF NOT EXISTS sqlar("
-      "name TEXT PRIMARY KEY,  -- name of the file\n"
-      "mode INT,               -- access permissions\n"
-      "mtime INT,              -- last modification time\n"
-      "sz INT,                 -- original file size\n"
-      "data BLOB               -- compressed content\n"
-  ")";
+      "CREATE TABLE IF NOT EXISTS sqlar(\n"
+      "  name TEXT PRIMARY KEY,  -- name of the file\n"
+      "  mode INT,               -- access permissions\n"
+      "  mtime INT,              -- last modification time\n"
+      "  sz INT,                 -- original file size\n"
+      "  data BLOB               -- compressed content\n"
+      ")";
   const char *zDrop = "DROP TABLE IF EXISTS sqlar";
   const char *zInsert = "REPLACE INTO sqlar VALUES(?,?,?,?,sqlar_compress(?))";
 
