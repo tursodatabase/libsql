@@ -24,6 +24,14 @@ SQLITE_EXTENSION_INIT1
 ** If the type of X is SQLITE_BLOB, and compressing that blob using
 ** zlib utility function compress() yields a smaller blob, return the
 ** compressed blob. Otherwise, return a copy of X.
+**
+** SQLar uses the "zlib format" for compressed content.  The zlib format
+** contains a two-byte identification header and a four-byte checksum at
+** the end.  This is different from ZIP which uses the raw deflate format.
+**
+** Future enhancements to SQLar might add support for new compression formats.
+** If so, those new formats will be identified by alternative headers in the
+** compressed data.
 */
 static void sqlarCompressFunc(
   sqlite3_context *context,
