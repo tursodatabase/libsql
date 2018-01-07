@@ -261,15 +261,8 @@ static int writeFile(
   }
 
   if( mtime>=0 ){
-#if !defined(_WIN32) && !defined(WIN32)
-    struct timespec times[2];
-    times[0].tv_nsec = times[1].tv_nsec = 0;
-    times[0].tv_sec = time(0);
-    times[1].tv_sec = mtime;
-    if( utimensat(AT_FDCWD, zFile, times, AT_SYMLINK_NOFOLLOW) ){
-      return 1;
-    }
-#else
+#if defined(_WIN32)
+    /* Windows */
     FILETIME lastAccess;
     FILETIME lastWrite;
     SYSTEMTIME currentTime;
@@ -289,6 +282,24 @@ static int writeFile(
       CloseHandle(hFile);
       return !bResult;
     }else{
+      return 1;
+    }
+#elif defined(AT_FDCWD)
+    /* Recent unix */
+    struct timespec times[2];
+    times[0].tv_nsec = times[1].tv_nsec = 0;
+    times[0].tv_sec = time(0);
+    times[1].tv_sec = mtime;
+    if( utimensat(AT_FDCWD, zFile, times, AT_SYMLINK_NOFOLLOW) ){
+      return 1;
+    }
+#else
+    /* Legacy unix */
+    struct timeval times[2];
+    times[0].tv_usec = times[1].tv_usec = 0;
+    times[0].tv_sec = time(0);
+    times[1].tv_sec = mtime;
+    if( utimes(zFile, times) ){
       return 1;
     }
 #endif
