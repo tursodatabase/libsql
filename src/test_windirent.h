@@ -13,7 +13,8 @@
 ** POSIX functions on Win32 using the MSVCRT.
 */
 
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER) && !defined(SQLITE_WINDIRENT_H)
+#define SQLITE_WINDIRENT_H
 
 /*
 ** We need several data types from the Windows SDK header.

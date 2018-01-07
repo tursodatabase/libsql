@@ -50,6 +50,9 @@ while {1} {
     while {![eof $in2]} {
       set lx [omit_redundant_typedefs [gets $in2]]
       if {[regexp {^#include "sqlite} $lx]} continue
+      if {[regexp {^# *include "test_windirent.h"} $lx]} {
+        set lx "/* $lx */"
+      }
       set lx [string map [list __declspec(dllexport) {}] $lx]
       puts $out $lx
     }
