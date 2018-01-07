@@ -694,6 +694,7 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source files that go into making shell.c
 SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
+        $(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \

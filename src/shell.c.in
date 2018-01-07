@@ -894,6 +894,7 @@ INCLUDE test_windirent.c
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
+INCLUDE ../ext/misc/appendvfs.c
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -7952,6 +7953,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         utf8_printf(stderr, "no such VFS: \"%s\"\n", argv[i]);
         exit(1);
       }
+#ifdef SQLITE_HAVE_ZIP
+    }else if( strcmp(z,"-zip")==0 ){
+      data.openMode = SHELL_OPEN_ZIPFILE;
+#endif
+    }else if( strcmp(z,"-append")==0 ){
+      data.openMode = SHELL_OPEN_APPENDVFS;
     }
   }
   if( data.zDbFilename==0 ){
@@ -7964,6 +7971,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   }
   data.out = stdout;
+  sqlite3_appendvfs_init(0,0,0);
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database

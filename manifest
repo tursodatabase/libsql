@@ -1,10 +1,10 @@
-C Improved\scomments\son\sthe\ssqlar.c\sand\scompress.c\sextensions\sthat\sdescribe\nthe\sdifferences\sbetween\sthe\s"zlib\sformat"\sused\sby\sSQLAR,\sthe\sraw\sdeflate\nformat\sused\sby\sZIP,\sand\sthe\scustom\sformat\sused\sby\scompress.c.\s\sNo\schanges\nto\scode.
-D 2018-01-07T19:52:28.395
+C Modify\sthe\ssqltclsh\sstartup\sscript\sto\slook\sfor\sa\sproperly\sformatted\nSQLAR\sat\sthe\send\sof\sthe\sexecutable.\s\sFix\sthe\sCLI\sso\sthat\sit\sautomatically\nlinks\sagainst\sappendvfs\sand\sso\sthat\sthe\s--append\scommand-line\soption\sworks.
+D 2018-01-07T20:38:10.880
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 9536f61ce33172d4868707ecc10844a0abef9e2e775ad2434245a60406fd7e38
+F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 688fb6375f78dc41f3a4a67201e4d5ef62ef556faa776c7cbe2c50a887d1fa5d
+F Makefile.msc b33f630258ce72fb3150c1a6819a484eba3950dc9397571d48672087e12abf4a
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -268,7 +268,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 24b72d0556e81939c19316ca48c628938b4bd0ec81dac076406260c3ccd51def
+F ext/misc/appendvfs.c 4c65f0b79686ae5a483134233d7fd912f0f2d4fd76023404f96f2290fff13b19
 F ext/misc/btreeinfo.c d7fd9a2fe2fa33ba28488e2fce703ebecc759219ea9e0bb3b254784866c0a676
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
@@ -406,7 +406,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk a1ecafe75de24b10286572033e195d0da53a7a05773b4f23ff509b54f7056f0f
+F main.mk 7965d01485f7bec7945407c5238985ea8c7cb2cb686d2bfdbe3d5f79d6fd4eb2
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in c2231d96fc059e2a6c86d67571db0dc7e029de25553a42c3334a6ef4c8e92484
+F src/shell.c.in ffcef0e1b2497b32c13f00ab9a1fececeeeb678dd04f5b17c0b5fa0cc99cd105
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1664,8 +1664,8 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
 F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
-F tool/sqltclsh.c.in e1f48150f755bfbe0194478cba50aa9f2f5183bb1efbdd6456532cce3cd2e18d
-F tool/sqltclsh.tcl 18adb7d4a24374a3c79a2acc011b5f54a22186beec13056b0fa3ca011711c4f3
+F tool/sqltclsh.c.in 8b2529b6c3cdd8ad6aaff21e80eb58370c428cb207b4607d0da4def064dcec56
+F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05c99eb8cefbb3366b6d4ae91e10aa0c82bdf5ea361f4b3375413783af9167ac
-R 1813bb08dedce0701d741a99a479782e
+P c13415c5caf06eaa73086c500907451dfcdfd1354ac4a9ab63edb7255edbfa1b
+R 08ba8efa22e9576ef9e933cfe51a8274
 U drh
-Z e662d2fceaa8f576c7d1d1fef9cf3ce7
+Z 0db18b9089efefc8f8c5c54f23707a0d

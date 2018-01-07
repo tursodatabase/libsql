@@ -47,9 +47,7 @@
 ** If the file being opened is not an appended database, then this shim is
 ** a pass-through into the default underlying VFS.
 **/
-#if !defined(SQLITEINT_H)
-#include <sqlite3ext.h>
-#endif
+#include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>

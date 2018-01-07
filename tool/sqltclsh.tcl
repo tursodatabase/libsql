@@ -6,7 +6,9 @@ catch {
     append argv0 .exe
   }
   sqlite3 db $argv0 -vfs apndvfs -create 0
-  set mainscript [db one {SELECT data FROM scripts WHERE name='main.tcl'}]
+  set mainscript [db one {
+      SELECT sqlar_uncompress(data,sz) FROM sqlar WHERE name='main.tcl'
+  }]
 }
 if {[info exists mainscript]} {
   eval $mainscript
