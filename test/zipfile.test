@@ -28,15 +28,18 @@ do_execsql_test 1.0 {
   1 mode {} 0 {} 0 
   2 mtime {} 0 {} 0 
   3 sz {} 0 {} 0 
-  4 data {} 0 {} 0
-  5 method {} 0 {} 0
+  4 rawdata {} 0 {} 0
+  5 data {} 0 {} 0
+  6 method {} 0 {} 0
 }
 
 do_execsql_test 1.1.1 {
-  INSERT INTO zz VALUES('f.txt', '-rw-r--r--', 1000000000, 5, 'abcde', 0);
+  INSERT INTO zz(name, mode, mtime, sz, rawdata, method) 
+  VALUES('f.txt', '-rw-r--r--', 1000000000, 5, 'abcde', 0);
 }
 do_execsql_test 1.1.2 {
-  INSERT INTO zz VALUES('g.txt', '-rw-r--r--', 1000000002, 5, '12345', 0);
+  INSERT INTO zz(name, mtime, sz, rawdata, method) 
+  VALUES('g.txt', 1000000002, 5, '12345', 0);
 }
 
 do_execsql_test 1.2 {
@@ -47,14 +50,13 @@ do_execsql_test 1.2 {
 }
 
 do_execsql_test 1.3 {
-  INSERT INTO zz VALUES('h.txt', 
-    '-rw-r--r--', 1000000004, 20, 'aaaaaaaaaabbbbbbbbbb', NULL
+  INSERT INTO zz(name, mode, mtime, data) VALUES('h.txt', 
+    '-rw-r--r--', 1000000004, 'aaaaaaaaaabbbbbbbbbb'
   );
 }
 
 do_execsql_test 1.4 {
-  SELECT name, mtime, zipfile_uncompress(data, sz, method), method
-  FROM zipfile('test.zip');
+  SELECT name, mtime, data, method FROM zipfile('test.zip');
 } {
   f.txt 1000000000 abcde 0
   g.txt 1000000002 12345 0
@@ -63,7 +65,8 @@ do_execsql_test 1.4 {
 
 do_execsql_test 1.5.1 {
   BEGIN;
-    INSERT INTO zz VALUES('i.txt', '-rw-r--r--', 1000000006, 5, 'zxcvb', 0);
+    INSERT INTO zz(name, mode, mtime, data, method)
+    VALUES('i.txt', '-rw-r--r--', 1000000006, 'zxcvb', 0);
     SELECT name FROM zz;
   COMMIT;
 } {f.txt g.txt h.txt i.txt}

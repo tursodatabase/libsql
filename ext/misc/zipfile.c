@@ -42,17 +42,18 @@ typedef unsigned long u32;
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #endif
 
-#define ZIPFILE_SCHEMA "CREATE TABLE y("                           \
-  "name,      /* Name of file in zip archive */"                   \
-  "mode,      /* POSIX mode for file */"                           \
-  "mtime,     /* Last modification time in seconds since epoch */" \
-  "sz,        /* Size of object */"                                \
-  "data,      /* Data stored in zip file (possibly compressed) */" \
-  "method,    /* Compression method (integer) */"                  \
-  "f HIDDEN   /* Name of zip file */"                              \
+#define ZIPFILE_SCHEMA "CREATE TABLE y("                              \
+  "name,      /* 0: Name of file in zip archive */"                   \
+  "mode,      /* 1: POSIX mode for file */"                           \
+  "mtime,     /* 2: Last modification time in seconds since epoch */" \
+  "sz,        /* 3: Size of object */"                                \
+  "rawdata,   /* 4: Raw data */"                                      \
+  "data,      /* 5: Uncompressed data */"                             \
+  "method,    /* 6: Compression method (integer) */"                  \
+  "file HIDDEN   /* Name of zip file */"                              \
 ");"
 
-#define ZIPFILE_F_COLUMN_IDX 6    /* Index of column "f" in the above */
+#define ZIPFILE_F_COLUMN_IDX 7    /* Index of column "f" in the above */
 #define ZIPFILE_BUFFER_SIZE (64*1024)
 
 
@@ -671,6 +672,80 @@ static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mTime){
     ((res.tm_year-80) << 9));
 }
 
+static void zipfileInflate(
+  sqlite3_context *pCtx,          /* Store error here, if any */
+  const u8 *aIn,                  /* Compressed data */
+  int nIn,                        /* Size of buffer aIn[] in bytes */
+  int nOut                        /* Expected output size */
+){
+  u8 *aRes = sqlite3_malloc(nOut);
+  if( aRes==0 ){
+    sqlite3_result_error_nomem(pCtx);
+  }else{
+    int err;
+    z_stream str;
+    memset(&str, 0, sizeof(str));
+
+    str.next_in = (Byte*)aIn;
+    str.avail_in = nIn;
+    str.next_out = (Byte*)aRes;
+    str.avail_out = nOut;
+
+    err = inflateInit2(&str, -15);
+    if( err!=Z_OK ){
+      zipfileCtxErrorMsg(pCtx, "inflateInit2() failed (%d)", err);
+    }else{
+      err = inflate(&str, Z_NO_FLUSH);
+      if( err!=Z_STREAM_END ){
+        zipfileCtxErrorMsg(pCtx, "inflate() failed (%d)", err);
+      }else{
+        sqlite3_result_blob(pCtx, aRes, nOut, SQLITE_TRANSIENT);
+      }
+    }
+    sqlite3_free(aRes);
+    inflateEnd(&str);
+  }
+}
+
+static int zipfileDeflate(
+  ZipfileTab *pTab,               /* Set error message here */
+  const u8 *aIn, int nIn,         /* Input */
+  u8 **ppOut, int *pnOut          /* Output */
+){
+  int nAlloc = (int)compressBound(nIn);
+  u8 *aOut;
+  int rc;
+
+  aOut = (u8*)sqlite3_malloc(nAlloc);
+  if( aOut==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    int res;
+    z_stream str;
+    memset(&str, 0, sizeof(str));
+    str.next_in = (z_const Bytef*)aIn;
+    str.avail_in = nIn;
+    str.next_out = aOut;
+    str.avail_out = nAlloc;
+
+    deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
+    res = deflate(&str, Z_FINISH);
+
+    if( res==Z_STREAM_END ){
+      *ppOut = aOut;
+      *pnOut = (int)str.total_out;
+    }else{
+      sqlite3_free(aOut);
+      pTab->base.zErrMsg = sqlite3_mprintf("zipfile: deflate() error");
+      rc = SQLITE_ERROR;
+    }
+    deflateEnd(&str);
+  }
+
+  return rc;
+}
+
+
 /*
 ** Return values of columns for the row at which the series_cursor
 ** is currently pointing.
@@ -703,26 +778,33 @@ static int zipfileColumn(
       sqlite3_result_int64(ctx, pCsr->cds.szUncompressed);
       break;
     }
-    case 4: { /* data */
-      int sz = pCsr->cds.szCompressed;
-      if( sz>0 ){
-        u8 *aBuf = sqlite3_malloc(sz);
-        if( aBuf==0 ){
-          rc = SQLITE_NOMEM;
-        }else{
-          FILE *pFile = zipfileGetFd(pCsr);
-          rc = zipfileReadData(pFile, aBuf, sz, pCsr->iDataOff,
-              &pCsr->base.pVtab->zErrMsg
-          );
-        }
-        if( rc==SQLITE_OK ){
-          sqlite3_result_blob(ctx, aBuf, sz, SQLITE_TRANSIENT);
-          sqlite3_free(aBuf);
+    case 4:   /* rawdata */
+    case 5: { /* data */
+      if( i==4 || pCsr->cds.iCompression==0 || pCsr->cds.iCompression==8 ){
+        int sz = pCsr->cds.szCompressed;
+        if( sz>0 ){
+          u8 *aBuf = sqlite3_malloc(sz);
+          if( aBuf==0 ){
+            rc = SQLITE_NOMEM;
+          }else{
+            FILE *pFile = zipfileGetFd(pCsr);
+            rc = zipfileReadData(pFile, aBuf, sz, pCsr->iDataOff,
+                &pCsr->base.pVtab->zErrMsg
+            );
+          }
+          if( rc==SQLITE_OK ){
+            if( i==5 && pCsr->cds.iCompression ){
+              zipfileInflate(ctx, aBuf, sz, pCsr->cds.szUncompressed);
+            }else{
+              sqlite3_result_blob(ctx, aBuf, sz, SQLITE_TRANSIENT);
+            }
+            sqlite3_free(aBuf);
+          }
         }
       }
       break;
     }
-    case 5:   /* method */
+    case 6:   /* method */
       sqlite3_result_int(ctx, pCsr->cds.iCompression);
       break;
   }
@@ -1073,7 +1155,9 @@ static int zipfileAppendEntry(
 static int zipfileGetMode(ZipfileTab *pTab, sqlite3_value *pVal, int *pMode){
   const char *z = (const char*)sqlite3_value_text(pVal);
   int mode = 0;
-  if( z==0 || (z[0]>=0 && z[0]<=9) ){
+  if( z==0 ){
+    mode = 33188;                 /* -rw-r--r-- */
+  }else if( z[0]>=0 && z[0]<=9 ){
     mode = sqlite3_value_int(pVal);
   }else{
     const char zTemplate[11] = "-rwxrwxrwx";
@@ -1118,8 +1202,8 @@ static int zipfileUpdate(
   i64 sz;                         /* Uncompressed size */
   const char *zPath;              /* Path for new entry */
   int nPath;                      /* strlen(zPath) */
-  const u8 *pData;                /* Pointer to buffer containing content */
-  int nData;                      /* Size of pData buffer in bytes */
+  const u8 *pData = 0;            /* Pointer to buffer containing content */
+  int nData = 0;                  /* Size of pData buffer in bytes */
   int iMethod = 0;                /* Compression method for new entry */
   u8 *pFree = 0;                  /* Free this */
   ZipfileCDS cds;                 /* New Central Directory Structure entry */
@@ -1143,45 +1227,54 @@ static int zipfileUpdate(
   nPath = (int)strlen(zPath);
   rc = zipfileGetMode(pTab, apVal[3], &mode);
   if( rc!=SQLITE_OK ) return rc;
-  mTime = sqlite3_value_int64(apVal[4]);
-  sz = sqlite3_value_int(apVal[5]);
-  pData = sqlite3_value_blob(apVal[6]);
-  nData = sqlite3_value_bytes(apVal[6]);
-
-  /* If a NULL value is inserted into the 'method' column, do automatic
-  ** compression. */
-  if( nData>0 && sqlite3_value_type(apVal[7])==SQLITE_NULL ){
-    pFree = (u8*)sqlite3_malloc(nData);
-    if( pFree==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      int res;
-      z_stream str;
-      memset(&str, 0, sizeof(str));
-      str.next_in = (z_const Bytef*)pData;
-      str.avail_in = nData;
-      str.next_out = pFree;
-      str.avail_out = nData;
-      deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
-      res = deflate(&str, Z_FINISH);
-      if( res==Z_STREAM_END ){
-        pData = pFree;
-        nData = str.total_out;
-        iMethod = 8;
-      }else if( res!=Z_OK ){
-        pTab->base.zErrMsg = sqlite3_mprintf("zipfile: deflate() error");
-        rc = SQLITE_ERROR;
-      }
-      deflateEnd(&str);
-    }
+  if( sqlite3_value_type(apVal[4])==SQLITE_NULL ){
+    mTime = (sqlite3_int64)time(0);
   }else{
-    iMethod = sqlite3_value_int(apVal[7]);
+    mTime = sqlite3_value_int64(apVal[4]);
+  }
+
+  if( sqlite3_value_type(apVal[5])==SQLITE_NULL    /* sz */
+   && sqlite3_value_type(apVal[6])==SQLITE_NULL    /* rawdata */
+   && sqlite3_value_type(apVal[7])!=SQLITE_NULL    /* data */
+  ){
+    const u8 *aIn = sqlite3_value_blob(apVal[7]);
+    int nIn = sqlite3_value_bytes(apVal[7]);
+    int bAuto = sqlite3_value_type(apVal[8])==SQLITE_NULL;
+    
+    iMethod = sqlite3_value_int(apVal[8]);
+    sz = nIn;
+    if( iMethod!=0 && iMethod!=8 ){
+      rc = SQLITE_CONSTRAINT;
+    }else if( bAuto || iMethod ){
+      rc = zipfileDeflate(pTab, aIn, nIn, &pFree, &nData);
+      if( rc==SQLITE_OK ){
+        if( iMethod || nData<nIn ){
+          iMethod = 8;
+          pData = pFree;
+        }else{
+          pData = aIn;
+          nData = nIn;
+        }
+      }
+    }
+  }else 
+  if( sqlite3_value_type(apVal[5])!=SQLITE_NULL    /* sz */
+   && sqlite3_value_type(apVal[6])!=SQLITE_NULL    /* rawdata */
+   && sqlite3_value_type(apVal[7])==SQLITE_NULL    /* data */
+   && sqlite3_value_type(apVal[8])!=SQLITE_NULL    /* method */
+  ){
+    pData = sqlite3_value_blob(apVal[6]);
+    nData = sqlite3_value_bytes(apVal[6]);
+    sz = sqlite3_value_int(apVal[5]);
+    iMethod = sqlite3_value_int(apVal[8]);
     if( iMethod<0 || iMethod>65535 ){
       pTab->base.zErrMsg = sqlite3_mprintf(
           "zipfile: invalid compression method: %d", iMethod
       );
       rc = SQLITE_ERROR;
     }
+  }else{
+    rc = SQLITE_CONSTRAINT;
   }
 
   if( rc==SQLITE_OK ){
@@ -1352,52 +1445,6 @@ static int zipfileRegister(sqlite3 *db){
 # define zipfileRegister(x) SQLITE_OK
 #endif
 
-/*
-** zipfile_uncompress(DATA, SZ, METHOD)
-*/
-static void zipfileUncompressFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int iMethod;
-
-  iMethod = sqlite3_value_int(argv[2]);
-  if( iMethod==0 ){
-    sqlite3_result_value(context, argv[0]);
-  }else if( iMethod==8 ){
-    Byte *res;
-    int sz = sqlite3_value_int(argv[1]);
-    z_stream str;
-    memset(&str, 0, sizeof(str));
-    str.next_in = (Byte*)sqlite3_value_blob(argv[0]);
-    str.avail_in = sqlite3_value_bytes(argv[0]);
-    res = str.next_out = (Byte*)sqlite3_malloc(sz);
-    if( res==0 ){
-      sqlite3_result_error_nomem(context);
-    }else{
-      int err;
-      str.avail_out = sz;
-
-      err = inflateInit2(&str, -15);
-      if( err!=Z_OK ){
-        zipfileCtxErrorMsg(context, "inflateInit2() failed (%d)", err);
-      }else{
-        err = inflate(&str, Z_NO_FLUSH);
-        if( err!=Z_STREAM_END ){
-          zipfileCtxErrorMsg(context, "inflate() failed (%d)", err);
-        }else{
-          sqlite3_result_blob(context, res, sz, SQLITE_TRANSIENT);
-        }
-      }
-      sqlite3_free(res);
-      inflateEnd(&str);
-    }
-  }else{
-    zipfileCtxErrorMsg(context, "unrecognized compression method: %d", iMethod);
-  }
-}
-
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -1406,13 +1453,8 @@ int sqlite3_zipfile_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
-  int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "zipfile_uncompress", 3,
-      SQLITE_UTF8, 0, zipfileUncompressFunc, 0, 0
-  );
-  if( rc!=SQLITE_OK ) return rc;
   return zipfileRegister(db);
 }
 

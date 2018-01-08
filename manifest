@@ -1,5 +1,5 @@
-C Fix\sproblems\sin\sthe\ssqlite3expert.c\scode\srevealed\sby\s-fsanitize.
-D 2018-01-08T17:34:15.620
+C Update\sthe\szipfile\smodule\sso\sthat\sit\smatches\sthe\sdocumentation.
+D 2018-01-08T19:59:59.813
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -303,7 +303,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 8075df9296beeebc344567927d114c6d3201110a29110013388d233fa7d4fb2c
+F ext/misc/zipfile.c d576a5b473333f5d14f9380cf005b52a684a1ee46d4a6cfb08802564e6365e5e
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in be04d6797b4ee066f064dc370bdcb148c84c6c6979bf12f70025a7a89cf79346
+F src/shell.c.in 2aa65d155202d1caf457cb7112ec47d1aded1bc54b20e7f8f7cf81ca1dbb43bf
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1598,7 +1598,7 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
-F test/zipfile.test a1dd0429294cb9487900fc2b29aa9921329f20a7314aa0921b668246172ac090
+F test/zipfile.test ad4278e1ebb1c7bc0fcd7f9b47df18916b9e8f841165119865a5a6a095a2d0ba
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7182591d351dde22ed2f6a60521d1d7c10a610d702e79693412efc6938167be0
-R 49ecd97a6ce816710af5cab9bccdaf02
+P 7a93dd784bfdbf01927979a61643796e0901d9ac285fe4214677838def93a9a4
+R 86cc2218634a3d23586f8875ed6e23c5
 U dan
-Z 0d0d547dd2ee63ac3d70f7968bc046aa
+Z 3ef32c645be21defc25c769ce8063d43

@@ -4847,13 +4847,11 @@ static int arExtractCommand(ShellState *p, sqlite3 *db, ArCommand *pAr){
 
   const char *azExtraArg[] = { 
     "sqlar_uncompress(data, sz)",
-    "zipfile_uncompress(data, sz, method)"
+    "data"
   };
   const char *azSource[] = {
     "sqlar", "zipfile(?3)"
   };
-
-
 
   sqlite3_stmt *pSql = 0;
   int rc = SQLITE_OK;
