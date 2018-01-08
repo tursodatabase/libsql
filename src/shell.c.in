@@ -802,8 +802,9 @@ static void shellModuleSchema(
   const char *zName = (const char*)sqlite3_value_text(apVal[0]);
   char *zFake = shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName);
   if( zFake ){
-    sqlite3_result_text(pCtx, sqlite3_mprintf("/* %z */", zFake),
+    sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
                         -1, sqlite3_free);
+    free(zFake);
   }
 }
 
@@ -863,10 +864,11 @@ static void shellAddSchemaName(
          && (zFake = shellFakeSchema(db, zSchema, zName))!=0
         ){
           if( z==0 ){
-            z = sqlite3_mprintf("%s\n/* %z */", zIn, zFake);
+            z = sqlite3_mprintf("%s\n/* %s */", zIn, zFake);
           }else{
-            z = sqlite3_mprintf("%z\n/* %z */", z, zFake);
+            z = sqlite3_mprintf("%z\n/* %s */", z, zFake);
           }
+          free(zFake);
         }
         if( z ){
           sqlite3_result_text(pCtx, z, -1, sqlite3_free);
