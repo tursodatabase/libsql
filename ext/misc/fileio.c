@@ -92,7 +92,6 @@ SQLITE_EXTENSION_INIT1
 #  include <direct.h>
 #  include "test_windirent.h"
 #  define dirent DIRENT
-#  define timespec TIMESPEC
 #  define stat _stat
 #  define mkdir(path,mode) _mkdir(path)
 #  define lstat(path,buf) _stat(path,buf)
