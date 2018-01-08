@@ -29,15 +29,19 @@
 #define SQLITE_MAX_EXPR_DEPTH 0
 INCLUDE sqlite3.c
 INCLUDE $ROOT/ext/misc/appendvfs.c
+#ifdef SQLITE_HAVE_ZLIB
 INCLUDE $ROOT/ext/misc/zipfile.c
 INCLUDE $ROOT/ext/misc/sqlar.c
+#endif
 INCLUDE $ROOT/src/tclsqlite.c
 
 const char *sqlite3_tclapp_init_proc(Tcl_Interp *interp){
   (void)interp;
   sqlite3_appendvfs_init(0,0,0);
+#ifdef SQLITE_HAVE_ZLIB
   sqlite3_auto_extension((void(*)(void))sqlite3_sqlar_init);
   sqlite3_auto_extension((void(*)(void))sqlite3_zipfile_init);
+#endif
 
   return
 BEGIN_STRING

@@ -2339,7 +2339,7 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 sqltclsh.c: sqlite3.c $(TOP)\src\tclsqlite.c $(TOP)\tool\sqltclsh.tcl $(TOP)\ext\misc\appendvfs.c $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in >sqltclsh.c
 
-sqltclsh.exe: sqltclsh.c
+sqltclsh.exe: sqltclsh.c  $(SHELL_CORE_DEP) $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqltclsh.c \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 

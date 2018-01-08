@@ -1,10 +1,10 @@
-C Avoid\sthe\suse\sof\sutimensat()\son\solder\sunix\splatforms.
-D 2018-01-07T23:28:10.983
+C Fix\scompilation\sof\s'sqltclsh.exe'\sfor\sMSVC.
+D 2018-01-08T14:24:08.629
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b33f630258ce72fb3150c1a6819a484eba3950dc9397571d48672087e12abf4a
+F Makefile.msc 085d3b65cebdebec89dc8c91901c06f18e357eb320a0434bfa67a53e917f10de
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1664,7 +1664,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
 F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
-F tool/sqltclsh.c.in 8b2529b6c3cdd8ad6aaff21e80eb58370c428cb207b4607d0da4def064dcec56
+F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a50c9e3bb0dbdaaec819ac6453276ba287b475ea322918ddda1ab3a1ec4b58b
-R 1b4834f0a49c166cef0f6faa748094c7
-U drh
-Z 0323f752d28821f22e44c20f1850c6dd
+P 90cb01d8d6ac12d0b88f2952a75aeefa81ba66f5e4a5377fdd8b9f86aec8e927
+R 76adb99cb262a63e3f8964691f33ecc1
+U mistachkin
+Z 00d4b6b04e6e70aa614f01ae7c47411b
