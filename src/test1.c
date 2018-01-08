@@ -4560,6 +4560,35 @@ static int SQLITE_TCLAPI test_complete16(
 }
 
 /*
+** Usage: sqlite3_normalize SQL
+**
+** Return the normalized value for an SQL statement.
+*/
+static int SQLITE_TCLAPI test_normalize(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char *zSql;
+  char *zNorm;
+  extern char *sqlite3_normalize(const char*);
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SQL");
+    return TCL_ERROR;
+  }
+
+  zSql = (char*)Tcl_GetString(objv[1]);
+  zNorm = sqlite3_normalize(zSql);
+  if( zNorm ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(zNorm, -1));
+    sqlite3_free(zNorm);
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_step STMT
 **
 ** Advance the statement to the next row.
@@ -7547,6 +7576,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_open16",                test_open16        ,0 },
      { "sqlite3_open_v2",               test_open_v2       ,0 },
      { "sqlite3_complete16",            test_complete16    ,0 },
+     { "sqlite3_normalize",             test_normalize     ,0 },
 
      { "sqlite3_prepare",               test_prepare       ,0 },
      { "sqlite3_prepare16",             test_prepare16     ,0 },
