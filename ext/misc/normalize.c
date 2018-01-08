@@ -573,6 +573,17 @@ char *sqlite3_normalize(const char *zSql){
       }
       case TK_PUNCT:
       case TK_NAME: {
+        if( n==4 && sqlite3_strnicmp(zSql+i,"NULL",4)==0 ){
+          if( (j>=3 && strncmp(z+j-2,"is",2)==0 && !IdChar(z[j-3]))
+           || (j>=4 && strncmp(z+j-3,"not",3)==0 && !IdChar(z[j-4]))
+          ){
+            /* NULL is a keyword in this case, not a literal value */
+          }else{
+            /* Here the NULL is a literal value */
+            z[j++] = '?';
+            break;
+          }
+        }
         if( j>0 && IdChar(z[j-1]) && IdChar(zSql[i]) ) z[j++] = ' ';
         for(k=0; k<n; k++){
           z[j++] = sqlite3Tolower(zSql[i+k]);
