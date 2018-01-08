@@ -35,11 +35,19 @@
 **
 ** The purpose of normalization is two-fold:
 **
-**   (1)  Sanitize queries by removing possibly sensitive information contained
-**        in literals.
+**   (1)  Sanitize queries by removing potentially private or sensitive
+**        information contained in literals.
 **
 **   (2)  Identify structurally identical queries by comparing their
 **        normalized forms.
+**
+** Command-Line Utility
+** --------------------
+**
+** This file also contains code for a command-line utility that converts
+** SQL queries in text files into their normalized forms.  To build the
+** command-line program, compile this file with -DSQLITE_NORMALIZE_CLI
+** and link it against the SQLite library.
 */
 #include <sqlite3.h>
 #include <string.h>
@@ -48,9 +56,13 @@
 ** Implementation note:
 **
 ** Much of the tokenizer logic is copied out of the tokenize.c source file
-** of SQLite.  This logic could be simplified for this particular application,
+** of SQLite.  That logic could be simplified for this particular application,
 ** but that would impose a risk of introducing subtle errors.  It is best to
 ** keep the code as close to the original as possible.
+**
+** The tokenize code is in sync with the SQLite core as of 2018-01-08.
+** Any future changes to the core tokenizer might require corresponding
+** adjustments to the tokenizer logic in this module.
 */
 
 
@@ -572,13 +584,54 @@ char *sqlite3_normalize(const char *zSql){
   while( j>0 && z[j-1]==' ' ){ j--; }
   if( i>0 && z[j-1]!=';' ){ z[j++] = ';'; }
   z[j] = 0;
+
+  /* Make a second pass converting "in(...)" where the "..." is not a
+  ** SELECT statement into "in(?,?,?)" */
+  for(i=0; i<j; i=n){
+    char *zIn = strstr(z+i, "in(");
+    int nParen;
+    if( zIn==0 ) break;
+    n = (int)(zIn-z)+3;  /* Index of first char past "in(" */
+    if( n && IdChar(zIn[-1]) ) continue;
+    if( strncmp(zIn, "in(select",9)==0 && !IdChar(zIn[9]) ) continue;
+    if( strncmp(zIn, "in(with",7)==0 && !IdChar(zIn[7]) ) continue;
+    for(nParen=1, k=0; z[n+k]; k++){
+      if( z[n+k]=='(' ) nParen++;
+      if( z[n+k]==')' ){
+        nParen--;
+        if( nParen==0 ) break;
+      }
+    }
+    /* k is the number of bytes in the "..." within "in(...)" */
+    if( k<5 ){
+      z = sqlite3_realloc64(z, j+(5-k)+1);
+      if( z==0 ) return 0;
+      memmove(z+n+5, z+n+k, j-(n+k));
+    }else if( k>5 ){
+      memmove(z+n+5, z+n+k, j-(n+k));
+    }
+    j = j-k+5;
+    z[j] = 0;
+    memcpy(z+n, "?,?,?", 5);
+  }
   return z;
 }
 
-#ifdef NORMALIZE_TEST
+/*
+** For testing purposes, or to build a stand-alone SQL normalizer program,
+** compile this one source file with the -DSQLITE_NORMALIZE_CLI and link
+** it against any SQLite library.  The resulting command-line program will
+** run sqlite3_normalize() over the text of all files named on the command-
+** line and show the result on standard output.
+*/
+#ifdef SQLITE_NORMALIZE_CLI
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+** Break zIn up into separate SQL statements and run sqlite3_normalize()
+** on each one.  Print the result of each run.
+*/
 static void normalizeFile(char *zIn){
   int i;
   if( zIn==0 ) return;
@@ -604,6 +657,10 @@ static void normalizeFile(char *zIn){
   }
 }
 
+/*
+** The main routine for "sql_normalize".  Read files named on the
+** command-line and run the text of each through sqlite3_normalize().
+*/
 int main(int argc, char **argv){
   int i;
   FILE *in;
@@ -636,4 +693,4 @@ int main(int argc, char **argv){
   }
   sqlite3_free(zBuf);
 }
-#endif /* NORMALIZE_TEST */
+#endif /* SQLITE_NORMALIZE_CLI */
