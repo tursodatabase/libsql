@@ -1,5 +1,5 @@
-C Remove\sa\ssuperfluous\sdefine\sfrom\sthe\s'fileio'\sextension\swhen\scompiled\sfor\sWin32.
-D 2018-01-08T17:09:05.559
+C Add\san\s"ifcapable\strace\s{}"\sblock\sto\sa\stest\sin\sfkey1.test\sthat\suses\sSQL\ntracing.
+D 2018-01-08T17:12:54.166
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -793,7 +793,7 @@ F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 87b5e43c872b7e69cd80b7b8813eb102b571a75d45dda24e38b65537bcc85733
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
-F test/fkey1.test 9d7e3a0d409e7f64ab077af3b4fc5e5ce1a4e8d8f1272b65b9d93480aeb1fa2b
+F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
 F test/fkey2.test 155809016fad6b2a1491facf2ac53a551bc57c2c
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe053b2ecdc04b918367fa503bf10292fd7cd84a6929670857b2e9153df4d1f9
-R 976d51d50d3ac4cef737330f069bf895
-U mistachkin
-Z ec6d23a123b55225bd923dacec25128f
+P 6dcba6693f064b0e21360c5eab18abe4a1534f6699b5d7b92e60eab6be14c347
+R 409a1d71985cee1ddb2e1600f67ae81d
+U dan
+Z 1ce57652dfb6237638a64015c88854e8
