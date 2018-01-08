@@ -1,5 +1,5 @@
-C Add\san\s"ifcapable\strace\s{}"\sblock\sto\sa\stest\sin\sfkey1.test\sthat\suses\sSQL\ntracing.
-D 2018-01-08T17:12:54.166
+C Fix\sproblems\sin\sthe\ssqlite3expert.c\scode\srevealed\sby\s-fsanitize.
+D 2018-01-08T17:34:15.620
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -45,7 +45,7 @@ F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 4791c5e064aea81b2b829fa95228b22283380ee370ea88a1e580103b75516ebf
 F ext/expert/expert1.test 0c71a3453ce3a0b4dbe952713aec0ae8d416dd846820dd027b08f305f5278b30
-F ext/expert/sqlite3expert.c 252f3129f12a0e9df094a14711db98265c9c6d7afa033ec906d94e920f5c7ba7
+F ext/expert/sqlite3expert.c 9d352d8693a997402095a16791122ca5c1bff7627faee3625509fcaaef9b30db
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c 85f5c743a899063fa48296d21de2f32c26d09a21c8582b2a0bc482e8de183e7a
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6dcba6693f064b0e21360c5eab18abe4a1534f6699b5d7b92e60eab6be14c347
-R 409a1d71985cee1ddb2e1600f67ae81d
+P 7182591d351dde22ed2f6a60521d1d7c10a610d702e79693412efc6938167be0
+R 49ecd97a6ce816710af5cab9bccdaf02
 U dan
-Z 1ce57652dfb6237638a64015c88854e8
+Z 0d0d547dd2ee63ac3d70f7968bc046aa

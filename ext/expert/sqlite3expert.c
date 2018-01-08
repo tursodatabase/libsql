@@ -495,7 +495,7 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
     }
   }
 
-  pIdxInfo->estimatedCost = 1000000.0 / n;
+  pIdxInfo->estimatedCost = 1000000.0 / (n+1);
   return rc;
 }
 
@@ -754,7 +754,7 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
       zRet = (char*)sqlite3_malloc(nIn + nAppend + 1);
     }
     if( zAppend && zRet ){
-      memcpy(zRet, zIn, nIn);
+      if( nIn ) memcpy(zRet, zIn, nIn);
       memcpy(&zRet[nIn], zAppend, nAppend+1);
     }else{
       sqlite3_free(zRet);
@@ -908,7 +908,7 @@ static int idxCreateFromCons(
     char *zCols = 0;
     char *zIdx = 0;
     IdxConstraint *pCons;
-    int h = 0;
+    unsigned int h = 0;
     const char *zFmt;
 
     for(pCons=pEq; pCons; pCons=pCons->pLink){
