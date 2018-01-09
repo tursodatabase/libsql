@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2018-01-09T20:49:33.189
+C When\sdisconnecting\sfrom\sthe\s'swarmvtab'\sextension,\sclose\seach\sdatabase\sprior\sto\sinvoking\sthe\s'openclose'\sfunction\son\sit.
+D 2018-01-09T22:23:42.971
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -297,7 +297,7 @@ F ext/misc/spellfix.c 41cf26c6b89fcaa8798ae10ae64d39c1f1d9d6995152e545bd491c1305
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
-F ext/misc/unionvtab.c 2aa94902ea646e1aaf6c05eac944a14276cddd67735b2ad856030ffffbb6626c
+F ext/misc/unionvtab.c 0b3173f69b8899da640a13a345dc5ef1400199405f738abe6145b2454195b8ff
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
@@ -1275,7 +1275,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/swarmvtab.test 9a3fd5ab3e9b3c976ad1b3d7646aab725114f2ac26b59395d0778b33bab6cdaf
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
-F test/swarmvtab3.test c4c8d09e56ae99b90187ac225458f13f373873ea296fc442c7ad7511f25e7314
+F test/swarmvtab3.test 6cb664669630fcec4102a09333e52068734858fd2761eee3b0465c14cdbcee29
 F test/swarmvtabfault.test 00aec54665909490f5c383f3cae3b5d18bd97c12490b429ff8752a3027acfa42
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64c9ccf6c5598a68135e78dad128ec070afa49416e1d1f35745a24276e7aeeea
-R ec154d3d05b58458e2848c5eff3a9b08
+P 0fb42090cb2c785e044abe273a00da134927db191fea7b0c67ba4028944bce3a
+R 6a5a34e76be8657e78b0d58d3645af35
 U mistachkin
-Z cd319f239e5515c89a36567aa5d72543
+Z b0c2e831274b963bd4ec05162b124f71

@@ -74,7 +74,7 @@ proc check_dbcache {} {
   for {set i 0} {$i<100} {incr i} {
     set exists [file exists test.db$i]
     if {$exists!=($::dbcache(test.db$i)!=0)} {
-      error "inconsistent ::dbcache and disk"
+      error "inconsistent ::dbcache and disk ($i) - $exists"
     }
     incr n $exists
   }
@@ -114,7 +114,7 @@ foreach {tn nMaxOpen cvt} {
 
 } {
   execsql { DROP TABLE IF EXISTS s }
-  
+
   do_execsql_test 1.$tn.1 $cvt
 
   do_execsql_test 1.$tn.2 {
@@ -192,7 +192,7 @@ proc check_dbcache {} {
   foreach k [array names ::dbcache] {
     set exists [file exists $k]
     if {$exists!=($::dbcache($k)!=0)} {
-      error "inconsistent ::dbcache and disk ($k)"
+      error "inconsistent ::dbcache and disk ($k) - $exists"
     }
     incr n $exists
   }
@@ -210,23 +210,24 @@ foreach {tn nMaxOpen cvt} {
   }
 } {
   execsql { DROP TABLE IF EXISTS s }
-  
-  do_execsql_test 1.$tn.1 $cvt
 
-  do_execsql_test 1.$tn.2 {
+  do_execsql_test 3.$tn.1 $cvt
+
+  do_execsql_test 3.$tn.2 {
     SELECT b FROM s WHERE a<10;
   } {0 1 2 3 4 5 6 7 8 9}
 
-  do_test 1.$tn.3 { check_dbcache } $nMaxOpen
+  do_test 3.$tn.3 { check_dbcache } $nMaxOpen
 
-  do_execsql_test 1.$tn.4 {
+  do_execsql_test 3.$tn.4 {
     SELECT b FROM s WHERE (b%10)=0;
   } {0 10 20 30 40 50 60 70 80 90}
 
-  do_test 1.$tn.5 { check_dbcache } $nMaxOpen
+  do_test 3.$tn.5 { check_dbcache } $nMaxOpen
 }
 
 db close
+forcedelete {*}[glob test.db*]
 forcedelete {*}[glob test_remote.db*]
 
 finish_test

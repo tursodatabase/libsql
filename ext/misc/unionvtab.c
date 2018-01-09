@@ -484,14 +484,15 @@ static int unionDisconnect(sqlite3_vtab *pVtab){
     int i;
     for(i=0; i<pTab->nSrc; i++){
       UnionSrc *pSrc = &pTab->aSrc[i];
-      if( pSrc->db ){
+      int bHaveSrcDb = (pSrc->db!=0);
+      sqlite3_close(pSrc->db);
+      if( bHaveSrcDb ){
         unionInvokeOpenClose(pTab, pSrc, 1, 0);
       }
       sqlite3_free(pSrc->zDb);
       sqlite3_free(pSrc->zTab);
       sqlite3_free(pSrc->zFile);
       sqlite3_free(pSrc->zContext);
-      sqlite3_close(pSrc->db);
     }
     sqlite3_finalize(pTab->pNotFound);
     sqlite3_finalize(pTab->pOpenClose);
