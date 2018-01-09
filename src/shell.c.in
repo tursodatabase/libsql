@@ -2400,6 +2400,7 @@ static void exec_prepared_stmt(
   }
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** This function is called to process SQL if the previous shell command
 ** was ".expert". It passes the SQL in the second argument directly to
@@ -2472,6 +2473,63 @@ static int expertFinish(
   return rc;
 }
 
+/*
+** Implementation of ".expert" dot command.
+*/
+static int expertDotCommand(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  int rc = SQLITE_OK;
+  char *zErr = 0;
+  int i;
+  int iSample = 0;
+
+  assert( pState->expert.pExpert==0 );
+  memset(&pState->expert, 0, sizeof(ExpertInfo));
+
+  for(i=1; rc==SQLITE_OK && i<nArg; i++){
+    char *z = azArg[i];
+    int n;
+    if( z[0]=='-' && z[1]=='-' ) z++;
+    n = strlen30(z);
+    if( n>=2 && 0==strncmp(z, "-verbose", n) ){
+      pState->expert.bVerbose = 1;
+    }
+    else if( n>=2 && 0==strncmp(z, "-sample", n) ){
+      if( i==(nArg-1) ){
+        raw_printf(stderr, "option requires an argument: %s\n", z);
+        rc = SQLITE_ERROR;
+      }else{
+        iSample = (int)integerValue(azArg[++i]);
+        if( iSample<0 || iSample>100 ){
+          raw_printf(stderr, "value out of range: %s\n", azArg[i]);
+          rc = SQLITE_ERROR;
+        }
+      }
+    }
+    else{
+      raw_printf(stderr, "unknown option: %s\n", z);
+      rc = SQLITE_ERROR;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    pState->expert.pExpert = sqlite3_expert_new(pState->db, &zErr);
+    if( pState->expert.pExpert==0 ){
+      raw_printf(stderr, "sqlite3_expert_new: %s\n", zErr);
+      rc = SQLITE_ERROR;
+    }else{
+      sqlite3_expert_config(
+          pState->expert.pExpert, EXPERT_CONFIG_SAMPLE, iSample
+      );
+    }
+  }
+
+  return rc;
+}
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** Execute a statement or set of statements.  Print
@@ -2499,10 +2557,12 @@ static int shell_exec(
     *pzErrMsg = NULL;
   }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   if( pArg->expert.pExpert ){
     rc = expertHandleSQL(pArg, zSql, pzErrMsg);
     return expertFinish(pArg, (rc!=SQLITE_OK), pzErrMsg);
   }
+#endif
 
   while( zSql[0] && (SQLITE_OK == rc) ){
     static const char *zStmtSql;
@@ -5106,63 +5166,6 @@ static int arDotCommand(
 **********************************************************************************/
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
 
-/*
-** Implementation of ".expert" dot command.
-*/
-static int expertDotCommand(
-  ShellState *pState,             /* Current shell tool state */
-  char **azArg,                   /* Array of arguments passed to dot command */
-  int nArg                        /* Number of entries in azArg[] */
-){
-  int rc = SQLITE_OK;
-  char *zErr = 0;
-  int i;
-  int iSample = 0;
-
-  assert( pState->expert.pExpert==0 );
-  memset(&pState->expert, 0, sizeof(ExpertInfo));
-
-  for(i=1; rc==SQLITE_OK && i<nArg; i++){
-    char *z = azArg[i];
-    int n;
-    if( z[0]=='-' && z[1]=='-' ) z++;
-    n = strlen30(z);
-    if( n>=2 && 0==strncmp(z, "-verbose", n) ){
-      pState->expert.bVerbose = 1;
-    }
-    else if( n>=2 && 0==strncmp(z, "-sample", n) ){
-      if( i==(nArg-1) ){
-        raw_printf(stderr, "option requires an argument: %s\n", z);
-        rc = SQLITE_ERROR;
-      }else{
-        iSample = (int)integerValue(azArg[++i]);
-        if( iSample<0 || iSample>100 ){
-          raw_printf(stderr, "value out of range: %s\n", azArg[i]);
-          rc = SQLITE_ERROR;
-        }
-      }
-    }
-    else{
-      raw_printf(stderr, "unknown option: %s\n", z);
-      rc = SQLITE_ERROR;
-    }
-  }
-
-  if( rc==SQLITE_OK ){
-    pState->expert.pExpert = sqlite3_expert_new(pState->db, &zErr);
-    if( pState->expert.pExpert==0 ){
-      raw_printf(stderr, "sqlite3_expert_new: %s\n", zErr);
-      rc = SQLITE_ERROR;
-    }else{
-      sqlite3_expert_config(
-          pState->expert.pExpert, EXPERT_CONFIG_SAMPLE, iSample
-      );
-    }
-  }
-
-  return rc;
-}
-
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -5177,9 +5180,11 @@ static int do_meta_command(char *zLine, ShellState *p){
   int rc = 0;
   char *azArg[50];
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   if( p->expert.pExpert ){
     expertFinish(p, 1, 0);
   }
+#endif
 
   /* Parse the input line into tokens.
   */
@@ -5544,10 +5549,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   if( c=='e' && strncmp(azArg[0], "expert", n)==0 ){
     open_db(p, 0);
     expertDotCommand(p, azArg, nArg);
   }else
+#endif
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
     ShellState data;

@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sbuild\sthe\scode\sin\sext/expert/sqlite3expert.c\sif\nSQLITE_OMIT_VIRTUALTABLE\sis\sdefined.
-D 2018-01-09T14:30:49.074
+C Fix\sthe\sshell\sso\sthat\sit\scan\sbe\sbuilt\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2018-01-09T15:25:55.758
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in fb615970a6ae95be99316d9e4ab14bd2d5c6ecdc15ff905c4107eadfd2e20d0c
+F src/shell.c.in 2a752aed1dc3727b3845429540543ff7fea383f960c7fa9e3741f16eeaed8686
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7446d3217d39c96c884fbfb294dd320378255f3bfb34e35d15ba6d7c6698f53
-R e70943770a9fc04a23bf01555115b0a6
+P ba967ad2e38590fe2a51e814a087140089be5e6a06a795a958e70a8a47f6350f
+R bfa134ce14c4136d4127894dc7db3a26
 U dan
-Z 4badcc0edcd89f4a5802d71ebe94c4d8
+Z f58bc377dca6569bb98e68d46d49fa3f
