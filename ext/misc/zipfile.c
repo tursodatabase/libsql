@@ -1221,15 +1221,19 @@ static int zipfileUpdate(
   assert( pTab->pWriteFd );
 
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
-    i64 iDelete = sqlite3_value_int64(apVal[0]);
-    ZipfileEntry *p;
-    for(p=pTab->pFirstEntry; p; p=p->pNext){
-      if( p->iRowid==iDelete ){
-        p->bDeleted = 1;
-        break;
+    if( nVal>1 ){
+      return SQLITE_CONSTRAINT;
+    }else{
+      i64 iDelete = sqlite3_value_int64(apVal[0]);
+      ZipfileEntry *p;
+      for(p=pTab->pFirstEntry; p; p=p->pNext){
+        if( p->iRowid==iDelete ){
+          p->bDeleted = 1;
+          break;
+        }
       }
+      return SQLITE_OK;
     }
-    if( nVal==1 ) return SQLITE_OK;
   }
 
   mNull = (sqlite3_value_type(apVal[5])==SQLITE_NULL ? 0x0 : 0x8)  /* sz */
