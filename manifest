@@ -1,5 +1,5 @@
-C Fix\sthe\sshell\sso\sthat\sit\scan\sbe\sbuilt\swith\sSQLITE_OMIT_VIRTUALTABLE.
-D 2018-01-09T15:25:55.758
+C Updates\sto\sthe\sREADME.md\sfile\sfor\sthe\sext/misc\sdirectory.\s\sNo\scode\schanges.
+D 2018-01-09T15:28:25.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -265,7 +265,7 @@ F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa
 F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
 F ext/lsm1/test/lsm1_simple.test ca949efefa102f4644231dcd9291d8cda7699a4ce1006b26e0e3fcb72233f422
 F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f6078e07335398b0
-F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
+F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 4c65f0b79686ae5a483134233d7fd912f0f2d4fd76023404f96f2290fff13b19
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba967ad2e38590fe2a51e814a087140089be5e6a06a795a958e70a8a47f6350f
-R bfa134ce14c4136d4127894dc7db3a26
-U dan
-Z f58bc377dca6569bb98e68d46d49fa3f
+P 931421a22507a5e1edb46e19cb5b3958ec3904807836ab5bcc7a90f37f476e6a
+R d817db25938f9e9b2bf2929fb858f109
+U drh
+Z 5854e586ea789fbe92ed499c4878d58a
