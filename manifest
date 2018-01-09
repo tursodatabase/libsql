@@ -1,5 +1,5 @@
-C Fix\sa\spotential\scrash\sin\ssqlite3expert.c\scaused\sby\sa\smissing\ssqlite3_reset()\ncall.
-D 2018-01-09T18:31:11.283
+C In\sthe\sos_unix.c\simplementation\sof\sxOpen(),\sdo\snot\sreturn\nSQLITE_READONLY_DIRECTORY\sin\scases\swhere\sthe\sfile\scannot\sbe\sopened\sfor\sreasons\nother\sthan\sa\sreadonly\sdirectory,\ssuch\sas\sthe\sprocess\srunning\sout\sof\sfile\ndescriptors.
+D 2018-01-09T20:34:53.247
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -467,7 +467,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 7fc2735390a7809d5d893ed735d994ff12521224b89738226fff6f1a0aa1c932
+F src/os_unix.c a9edddcc35d664c8247a18abd10d73b7a80c0d897a5341de8feea5a47cd57e25
 F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9b9cb4e06c03d43d62480a7a685a012d645fcf3a39e7767ccb505fb41ee083ec
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ee7b54c580de0240e0f49a5fd2d11ddcdbcce8a2ae4b249618d0ab2d54b5e5b
-R dc296443bd383bb63a4f4ed70dfa8f45
+P f6355970f04a3c4d85801c806366788139d8d5ad29383ec7faa81e2176ffe987
+R d7d90fd061094f6c861c9386a57e031e
 U dan
-Z 3dfe6831182d02544e29db133db41f01
+Z 2d88017ad0f4c9b72ee8a5b92f98fadf

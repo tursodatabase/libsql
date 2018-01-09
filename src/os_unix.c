@@ -5917,7 +5917,9 @@ static int unixOpen(
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
       /* If unable to create a journal, change the error code to
       ** indicate that the directory permissions are wrong. */
-      if( isNewJrnl && osAccess(zName, F_OK) ) rc = SQLITE_READONLY_DIRECTORY;
+      if( isNewJrnl && errno==EACCES && osAccess(zName, F_OK) ){
+        rc = SQLITE_READONLY_DIRECTORY;
+      }
       goto open_finished;
     }
 
