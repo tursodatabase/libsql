@@ -2473,6 +2473,8 @@ static int expertFinish(
   return rc;
 }
 
+static sqlite3_int64 integerValue(const char *zArg);
+
 /*
 ** Implementation of ".expert" dot command.
 */
