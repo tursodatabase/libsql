@@ -714,7 +714,7 @@ static int zipfileDeflate(
 ){
   int nAlloc = (int)compressBound(nIn);
   u8 *aOut;
-  int rc;
+  int rc = SQLITE_OK;
 
   aOut = (u8*)sqlite3_malloc(nAlloc);
   if( aOut==0 ){
@@ -1199,7 +1199,7 @@ static int zipfileUpdate(
 
   int mode;                       /* Mode for new entry */
   i64 mTime;                      /* Modification time for new entry */
-  i64 sz;                         /* Uncompressed size */
+  i64 sz = 0;                     /* Uncompressed size */
   const char *zPath;              /* Path for new entry */
   int nPath;                      /* strlen(zPath) */
   const u8 *pData = 0;            /* Pointer to buffer containing content */
