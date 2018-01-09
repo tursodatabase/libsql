@@ -1,5 +1,5 @@
-C Fix\sanother\s-fsanitize\sissue\sin\snew\sshell\scode.
-D 2018-01-09T15:57:55.704
+C Fix\sa\spotential\scrash\sin\ssqlite3expert.c\scaused\sby\sa\smissing\ssqlite3_reset()\ncall.
+D 2018-01-09T18:31:11.283
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -45,7 +45,7 @@ F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 4791c5e064aea81b2b829fa95228b22283380ee370ea88a1e580103b75516ebf
 F ext/expert/expert1.test fd21496d8e52c817a7741f467f42b0502c0ac7e07dcdd1d6e15a3e8154ed4e41
-F ext/expert/sqlite3expert.c 9f1b0a5ea34abe1ccd0e9aae6ba5f96865c0f08373a731dd1ed6226074a3d75b
+F ext/expert/sqlite3expert.c 55ea02e9fcc014f4252e8a8c78d2bddc6d7ef62f9cb54ee283a659516eabb711
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -687,7 +687,7 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151ecac0b95
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
-F test/colname.test 101aa39392a1f6883278f588836a3ab99178f8103f78032433400475cc05109f
+F test/colname.test fb28b3687e03625425bc216edf8b186ce974aa71008e2aa1f426a7dcb75a601d
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
@@ -1225,7 +1225,7 @@ F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 23939a4c51f0421330ea61dbd3c74f9c215f5f8d3d1a94846da6ffc777a35458
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
-F test/shell8.test 7585847402452d594f0e5f93430d34ed63b2f34ca7e956f63db157f9327c6896
+F test/shell8.test 5a1f2c6d5cc11e7c7d69e960972f447a9b01e80c419ff9ebaf059f94fe5b3ab9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
@@ -1598,7 +1598,7 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
-F test/zipfile.test de2ee377705999bcd7391fb742d6b833ffab4f21dab1d4f484098a66d60eb4fb
+F test/zipfile.test 2f71a254a9c0fe84362156a8e8cb85188280b95bfc64a26da9179ef5da8557e0
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b3f4349d7156501f05270d494d6002ee03a0860b6e77b46d17effcab027b753
-R c9d51344455c4168d42531ca44edf723
+P 6ee7b54c580de0240e0f49a5fd2d11ddcdbcce8a2ae4b249618d0ab2d54b5e5b
+R dc296443bd383bb63a4f4ed70dfa8f45
 U dan
-Z df7d69cf286a4b0474c2af6fdf8505cd
+Z 3dfe6831182d02544e29db133db41f01

@@ -1525,6 +1525,7 @@ static int idxPopulateOneStat1(
     );
     zOrder = idxAppendText(&rc, zOrder, "%s%d", zComma, ++nCol);
   }
+  sqlite3_reset(pIndexXInfo);
   if( rc==SQLITE_OK ){
     if( p->iSample==100 ){
       zQuery = sqlite3_mprintf(

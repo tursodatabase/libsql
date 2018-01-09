@@ -393,10 +393,12 @@ do_execsql_test colname-9.300 {
 do_test colname-9.310 {
   execsql2 {SELECT BBb FROM (SELECT aaa AS Bbb FROM t1)}
 } {Bbb 123}
-do_execsql_test colname-9.320 {
-  CREATE TABLE t2 AS SELECT BBb FROM (SELECT aaa AS Bbb FROM t1);
-  SELECT name FROM pragma_table_info('t2');
-} {Bbb}
+ifcapable vtab {
+  do_execsql_test colname-9.320 {
+    CREATE TABLE t2 AS SELECT BBb FROM (SELECT aaa AS Bbb FROM t1);
+    SELECT name FROM pragma_table_info('t2');
+  } {Bbb}
+}
 
 # Issue detected by OSSFuzz on 2017-12-24 (Christmas Eve)
 # caused by check-in https://sqlite.org/src/info/6b2ff26c25
