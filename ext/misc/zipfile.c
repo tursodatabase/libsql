@@ -1202,11 +1202,11 @@ static int zipfileUpdate(
   int rc = SQLITE_OK;             /* Return Code */
   ZipfileEntry *pNew = 0;         /* New in-memory CDS entry */
 
-  u32 mode;                       /* Mode for new entry */
-  i64 mTime;                      /* Modification time for new entry */
+  u32 mode = 0;                   /* Mode for new entry */
+  i64 mTime = 0;                  /* Modification time for new entry */
   i64 sz = 0;                     /* Uncompressed size */
-  const char *zPath;              /* Path for new entry */
-  int nPath;                      /* strlen(zPath) */
+  const char *zPath = 0;          /* Path for new entry */
+  int nPath = 0;                  /* strlen(zPath) */
   const u8 *pData = 0;            /* Pointer to buffer containing content */
   int nData = 0;                  /* Size of pData buffer in bytes */
   int iMethod = 0;                /* Compression method for new entry */
