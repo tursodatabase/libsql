@@ -1152,13 +1152,13 @@ static int zipfileAppendEntry(
   return rc;
 }
 
-static int zipfileGetMode(ZipfileTab *pTab, sqlite3_value *pVal, int *pMode){
+static int zipfileGetMode(ZipfileTab *pTab, sqlite3_value *pVal, u32 *pMode){
   const char *z = (const char*)sqlite3_value_text(pVal);
-  int mode = 0;
+  u32 mode = 0;
   if( z==0 ){
-    mode = 33188;                 /* -rw-r--r-- */
+    mode = S_IFREG + 0644;                 /* -rw-r--r-- */
   }else if( z[0]>=0 && z[0]<=9 ){
-    mode = sqlite3_value_int(pVal);
+    mode = (unsigned int)sqlite3_value_int(pVal);
   }else{
     const char zTemplate[11] = "-rwxrwxrwx";
     int i;
@@ -1197,7 +1197,7 @@ static int zipfileUpdate(
   int rc = SQLITE_OK;             /* Return Code */
   ZipfileEntry *pNew = 0;         /* New in-memory CDS entry */
 
-  int mode;                       /* Mode for new entry */
+  u32 mode;                       /* Mode for new entry */
   i64 mTime;                      /* Modification time for new entry */
   i64 sz = 0;                     /* Uncompressed size */
   const char *zPath;              /* Path for new entry */
