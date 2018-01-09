@@ -96,7 +96,7 @@ SQLITE_EXTENSION_INIT1
 #    define stat _stat
 #  endif
 #  define mkdir(path,mode) _mkdir(path)
-#  define lstat(path,buf) _stat(path,buf)
+#  define lstat(path,buf) stat(path,buf)
 #endif
 #include <time.h>
 #include <errno.h>
