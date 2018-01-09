@@ -15,6 +15,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE 
+
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
@@ -1932,3 +1934,5 @@ void sqlite3_expert_destroy(sqlite3expert *p){
     sqlite3_free(p);
   }
 }
+
+#endif /* ifndef SQLITE_OMIT_VIRTUAL_TABLE */
