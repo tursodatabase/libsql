@@ -79,5 +79,27 @@ do_execsql_test 1.6.0 {
   SELECT name FROM zz;
 } {f.txt h.txt i.txt}
 
+#-------------------------------------------------------------------------
+db close
+forcedelete test.zip
+reset_db
+load_static_extension db zipfile
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE zzz USING zipfile('test.zip');
+  INSERT INTO zzz(name, mode) VALUES('dirname', 'drwxr-xr-x');
+  SELECT name, mode, data FROM zzz;
+} {dirname 16877 {}}
+do_execsql_test 2.2 {
+  INSERT INTO zzz(name, data) VALUES('dirname2', NULL);
+  INSERT INTO zzz(name, data) VALUES('dirname2/file1.txt', 'abcdefghijklmnop');
+  SELECT name, mode, data FROM zzz;
+} {
+  dirname 16877 {}
+  dirname2 16877 {}
+  dirname2/file1.txt 33188 abcdefghijklmnop
+}
+
+
+
 finish_test
 

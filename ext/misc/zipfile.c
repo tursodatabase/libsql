@@ -1152,11 +1152,16 @@ static int zipfileAppendEntry(
   return rc;
 }
 
-static int zipfileGetMode(ZipfileTab *pTab, sqlite3_value *pVal, u32 *pMode){
+static int zipfileGetMode(
+  ZipfileTab *pTab, 
+  sqlite3_value *pVal, 
+  u32 defaultMode,                /* Value to use if pVal IS NULL */
+  u32 *pMode
+){
   const char *z = (const char*)sqlite3_value_text(pVal);
   u32 mode = 0;
   if( z==0 ){
-    mode = S_IFREG + 0644;                 /* -rw-r--r-- */
+    mode = defaultMode;
   }else if( z[0]>=0 && z[0]<=9 ){
     mode = (unsigned int)sqlite3_value_int(pVal);
   }else{
@@ -1208,6 +1213,10 @@ static int zipfileUpdate(
   u8 *pFree = 0;                  /* Free this */
   ZipfileCDS cds;                 /* New Central Directory Structure entry */
 
+  int bIsDir = 0;
+
+  int mNull;
+
   assert( pTab->zFile );
   assert( pTab->pWriteFd );
 
@@ -1223,20 +1232,17 @@ static int zipfileUpdate(
     if( nVal==1 ) return SQLITE_OK;
   }
 
-  zPath = (const char*)sqlite3_value_text(apVal[2]);
-  nPath = (int)strlen(zPath);
-  rc = zipfileGetMode(pTab, apVal[3], &mode);
-  if( rc!=SQLITE_OK ) return rc;
-  if( sqlite3_value_type(apVal[4])==SQLITE_NULL ){
-    mTime = (sqlite3_int64)time(0);
-  }else{
-    mTime = sqlite3_value_int64(apVal[4]);
+  mNull = (sqlite3_value_type(apVal[5])==SQLITE_NULL ? 0x0 : 0x8)  /* sz */
+        + (sqlite3_value_type(apVal[6])==SQLITE_NULL ? 0x0 : 0x4)  /* rawdata */
+        + (sqlite3_value_type(apVal[7])==SQLITE_NULL ? 0x0 : 0x2)  /* data */
+        + (sqlite3_value_type(apVal[8])==SQLITE_NULL ? 0x0 : 0x1); /* method */
+  if( mNull==0x00 ){     
+    /* All four are NULL - this must be a directory */
+    bIsDir = 1;
   }
-
-  if( sqlite3_value_type(apVal[5])==SQLITE_NULL    /* sz */
-   && sqlite3_value_type(apVal[6])==SQLITE_NULL    /* rawdata */
-   && sqlite3_value_type(apVal[7])!=SQLITE_NULL    /* data */
-  ){
+  else if( mNull==0x2 || mNull==0x3 ){
+    /* Value specified for "data", and possibly "method". This must be
+    ** a regular file or a symlink. */
     const u8 *aIn = sqlite3_value_blob(apVal[7]);
     int nIn = sqlite3_value_bytes(apVal[7]);
     int bAuto = sqlite3_value_type(apVal[8])==SQLITE_NULL;
@@ -1257,12 +1263,10 @@ static int zipfileUpdate(
         }
       }
     }
-  }else 
-  if( sqlite3_value_type(apVal[5])!=SQLITE_NULL    /* sz */
-   && sqlite3_value_type(apVal[6])!=SQLITE_NULL    /* rawdata */
-   && sqlite3_value_type(apVal[7])==SQLITE_NULL    /* data */
-   && sqlite3_value_type(apVal[8])!=SQLITE_NULL    /* method */
-  ){
+  }
+  else if( mNull==0x0D ){
+    /* Values specified for "sz", "rawdata" and "method". In other words,
+    ** pre-compressed data is being inserted.  */
     pData = sqlite3_value_blob(apVal[6]);
     nData = sqlite3_value_bytes(apVal[6]);
     sz = sqlite3_value_int(apVal[5]);
@@ -1273,8 +1277,30 @@ static int zipfileUpdate(
       );
       rc = SQLITE_ERROR;
     }
-  }else{
+  }
+  else{
     rc = SQLITE_CONSTRAINT;
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = zipfileGetMode(pTab, apVal[3], 
+        (bIsDir ? (S_IFDIR + 0755) : (S_IFREG + 0644)), &mode
+    );
+    if( rc==SQLITE_OK && (bIsDir == ((mode & S_IFDIR)==0)) ){
+      /* The "mode" attribute is a directory, but data has been specified.
+      ** Or vice-versa - no data but "mode" is a file or symlink.  */
+      rc = SQLITE_CONSTRAINT;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    zPath = (const char*)sqlite3_value_text(apVal[2]);
+    nPath = (int)strlen(zPath);
+    if( sqlite3_value_type(apVal[4])==SQLITE_NULL ){
+      mTime = (sqlite3_int64)time(0);
+    }else{
+      mTime = sqlite3_value_int64(apVal[4]);
+    }
   }
 
   if( rc==SQLITE_OK ){
