@@ -76,10 +76,10 @@ typedef unsigned char u8;
 #  include <pwd.h>
 # endif
 #endif
-#if (!defined(_WIN32) && !defined(WIN32)) || defined(__MINGW_H)
+#if (!defined(_WIN32) && !defined(WIN32)) || defined(__MINGW32__)
 # include <unistd.h>
 # include <dirent.h>
-# if defined(__MINGW_H)
+# if defined(__MINGW32__)
 #  define DIRENT dirent
 #  ifndef S_ISLNK
 #   define S_ISLNK(mode) (0)
