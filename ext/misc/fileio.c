@@ -357,6 +357,30 @@ static void writefileFunc(
   }
 }
 
+/*
+** SQL function:   filetype(MODE)
+**
+** Based on the integer mode, return one of "file", "directory", or "symlink".
+*/
+static void fileTypeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zMode;
+  int iMode = sqlite3_value_int(argv[0]);
+  if( S_ISLNK(iMode) ){
+    zMode = "symlink";
+  }else if( S_ISREG(iMode) ){
+    zMode = "file";
+  }else if( S_ISDIR(iMode) ){
+    zMode = "directory";
+  }else{
+    zMode = "unknown";
+  }
+  sqlite3_result_text(context, zMode, -1, SQLITE_STATIC);
+}
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /* 
@@ -767,6 +791,10 @@ int sqlite3_fileio_init(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "writefile", -1, SQLITE_UTF8, 0,
                                  writefileFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "fileType", 1, SQLITE_UTF8, 0,
+                                 fileTypeFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
     rc = fsdirRegister(db);
