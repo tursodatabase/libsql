@@ -1,5 +1,5 @@
-C Rearrange\ssome\sroutines\sin\sshell.c\sto\savoid\sthe\sneed\sto\sforward\sreference\sa\nstatic\sfunction.
-D 2018-01-10T00:53:55.338
+C Fix\sa\sproblem\sin\sos_unix.c\scausing\sit\sto\sreturn\sSQLITE_CANTOPEN\sinstead\sof\nSQLITE_READONLY_RECOVERY.
+D 2018-01-10T11:56:03.281
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -448,7 +448,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 14686083cedc198540b15a79586cdd4be2acf6d5fa97627e355f817ab07e9fee
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 55bcc3c741059a1056859e8adaf133aa179e22be12215c0936b2f354ef71209b
-F src/main.c 690c4134f944cbd5b71d59dd6e61ce4131f6a50ab774f38108e57d07d79cf876
+F src/main.c 26918d50dd4a61b8f6f210320a522f46b5e7e592335b6aa664ab15b80b7c239b
 F src/malloc.c 6f684fd039f53bf9195193eb0cde731a2954970fabc6ef054ba379b6052dc296
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -467,7 +467,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c a9edddcc35d664c8247a18abd10d73b7a80c0d897a5341de8feea5a47cd57e25
+F src/os_unix.c ecdffdc7fc25c07e42908be7c5ea30456fee6263e0d54cdf204557945b445da2
 F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9b9cb4e06c03d43d62480a7a685a012d645fcf3a39e7767ccb505fb41ee083ec
@@ -1073,7 +1073,7 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
 F test/misc5.test 60e1fc758a93cacd19eb2fafcd1d40d150a05047546c7a92389c98047d621901
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
+F test/misc7.test 859894e3192257ce2fc4063b5438b220e352286974b387e485050f0ad1f665d6
 F test/misc8.test ba03aaa08f02d62fbb8d3b2f5595c1b33aa9bbc5
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 9d86e697dcbc5da2c4e8caba9b176b5765fe65e80c88c278b8c09a917e436795
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36b89d728ff13d395fe0e1db8e7c01263f73dccb278b3ece27f6ef78e909b492
-R c0e5b3be89f9671131b70568ccd2de3b
-U drh
-Z 058862bc11ed7b27f8f707a776eec676
+P fd7f51a107806666d5c3a3a7a62528ec3e1fb71c4256f49d57b4dcdac4bf8680
+R b0aec6844a1353d3e8dcd58b6b9b074d
+U dan
+Z b1844f359ee67c65b8d14dad2349ae2c

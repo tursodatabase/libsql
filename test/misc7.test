@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix misc7
 
 if {[clang_sanitize_address]==0} {
   do_test misc7-1-misuse {
@@ -518,8 +519,41 @@ do_test misc7-22.3 {
 do_test misc7-22.4 { 
   sqlite3_extended_errcode db
 } SQLITE_READONLY_ROLLBACK
-
-db close
+catch { db close }
 forcedelete test.db
+
+if {$::tcl_platform(platform)=="unix"} {
+  reset_db
+  do_execsql_test 23.0 {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  
+  do_test 23.1 {
+    db close
+    forcedelete tst
+    file mkdir tst
+    forcecopy test.db tst/test.db
+    file attributes tst -permissions r-xr-xr-x
+  } {}
+  
+  sqlite3 db tst/test.db
+  do_execsql_test 23.2 {
+    SELECT * FROM t1;
+  } {1 2}
+  
+  do_catchsql_test 23.3 {
+    INSERT INTO t1 VALUES(3, 4);
+  } {1 {attempt to write a readonly database}}
+  
+  do_test 23.4 {
+    sqlite3_extended_errcode db
+  } {SQLITE_READONLY_DIRECTORY}
+  
+  do_test 23.5 {
+    db close
+    forcedelete tst
+  } {}
+}
 
 finish_test
