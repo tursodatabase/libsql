@@ -4505,10 +4505,11 @@ typedef struct ArCommand ArCommand;
 struct ArCommand {
   u8 eCmd;                        /* An AR_CMD_* value */
   u8 bVerbose;                    /* True if --verbose */
-  u8 bZip;                        /* True if --zip */
+  u8 bZip;                        /* True if the archive is a ZIP */
   u8 bDryRun;                     /* True if --dry-run */
+  u8 bAppend;                     /* True if --append */
   int nArg;                       /* Number of command arguments */
-  const char *zSrcTable;          /* "sqlar", "zipfile($file)" or "zip" */
+  char *zSrcTable;                /* "sqlar", "zipfile($file)" or "zip" */
   const char *zFile;              /* --file argument, or NULL */
   const char *zDir;               /* --directory argument, or NULL */
   char **azArg;                   /* Array of command arguments */
@@ -4541,7 +4542,7 @@ static int arUsage(FILE *f){
 "  -f FILE, --file FILE       Operate on archive FILE (default is current db)\n"
 "  -C DIR, --directory DIR    Change to directory DIR to read/extract files\n"
 "  -n, --dryrun               Show the SQL that would have occurred\n"
-"  -z, --zip                  Operate on a ZIP archive instead of an SQLAR\n"
+"  -a, --append               Append the SQLAR to an existing file\n"
 "\n"
 "See also: http://sqlite.org/cli.html#sqlar_archive_support\n"
 "\n"
@@ -4579,7 +4580,7 @@ static int arErrorMsg(const char *zFmt, ...){
 #define AR_SWITCH_VERBOSE     6
 #define AR_SWITCH_FILE        7
 #define AR_SWITCH_DIRECTORY   8
-#define AR_SWITCH_ZIP         9
+#define AR_SWITCH_APPEND      9
 #define AR_SWITCH_DRYRUN     10
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
@@ -4601,8 +4602,8 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
     case AR_SWITCH_VERBOSE:
       pAr->bVerbose = 1;
       break;
-    case AR_SWITCH_ZIP:
-      pAr->bZip = 1;
+    case AR_SWITCH_APPEND:
+      pAr->bAppend = 1;
       break;
 
     case AR_SWITCH_FILE:
@@ -4641,7 +4642,7 @@ static int arParseCommand(
     { "verbose",   'v', AR_SWITCH_VERBOSE,   0 },
     { "file",      'f', AR_SWITCH_FILE,      1 },
     { "directory", 'C', AR_SWITCH_DIRECTORY, 1 },
-    { "zip",       'z', AR_SWITCH_ZIP,       0 },
+    { "append",    'a', AR_SWITCH_APPEND,    0 },
     { "dryrun",    'n', AR_SWITCH_DRYRUN,    0 },
   };
   int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);
@@ -4779,11 +4780,6 @@ static int arCheckEntries(ArCommand *pAr){
         "SELECT name FROM %s WHERE name=$name", 
         pAr->zSrcTable
     );
-    if( rc==SQLITE_OK
-     && (j = sqlite3_bind_parameter_index(pTest, "$archiveFile"))>0
-    ){
-      sqlite3_bind_text(pTest, j, pAr->zFile, -1, SQLITE_TRANSIENT);
-    }
     j = sqlite3_bind_parameter_index(pTest, "$name");
     for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
       char *z = pAr->azArg[i];
@@ -4882,18 +4878,12 @@ static int arListCommand(ArCommand *pAr){
   char *zWhere = 0;
   sqlite3_stmt *pSql = 0;
   int rc;
-  int j;
 
   rc = arCheckEntries(pAr);
   arWhereClause(&rc, pAr, &zWhere);
 
   shellPreparePrintf(pAr->db, &rc, &pSql, zSql, azCols[pAr->bVerbose],
                      pAr->zSrcTable, zWhere);
-  if( rc==SQLITE_OK 
-   && (j = sqlite3_bind_parameter_index(pSql, "$archiveFile"))>0
-  ){
-    sqlite3_bind_text(pSql, j, pAr->zFile, -1, SQLITE_TRANSIENT);
-  }
   if( pAr->bDryRun ){
     utf8_printf(pAr->p->out, "%s\n", sqlite3_sql(pSql));
   }else{
@@ -4960,10 +4950,6 @@ static int arExtractCommand(ArCommand *pAr){
   if( rc==SQLITE_OK ){
     j = sqlite3_bind_parameter_index(pSql, "$dir");
     sqlite3_bind_text(pSql, j, zDir, -1, SQLITE_STATIC);
-    j = sqlite3_bind_parameter_index(pSql, "$archiveFile");
-    if( j ){
-      sqlite3_bind_text(pSql, j, pAr->zFile, -1, SQLITE_STATIC);
-    }
 
     /* Run the SELECT statement twice. The first time, writefile() is called
     ** for all archive members that should be extracted. The second time,
@@ -5022,7 +5008,7 @@ static int arCreateOrUpdateCommand(
   ArCommand *pAr,                 /* Command arguments and options */
   int bUpdate                     /* true for a --create.  false for --update */
 ){
-  const char *zSql = "SELECT name, mode, mtime, data FROM fsdir(?, ?)";
+  const char *zSql = "SELECT name, mode, mtime, data FROM fsdir($name, $dir)";
   const char *zCreate = 
       "CREATE TABLE IF NOT EXISTS sqlar(\n"
       "  name TEXT PRIMARY KEY,  -- name of the file\n"
@@ -5037,6 +5023,7 @@ static int arCreateOrUpdateCommand(
   sqlite3_stmt *pStmt = 0;        /* Directory traverser */
   sqlite3_stmt *pInsert = 0;      /* Compilation of zInsert */
   int i;                          /* For iterating through azFile[] */
+  int j;                          /* Parameter index */
   int rc;                         /* Return code */
 
   assert( pAr->bZip==0 );
@@ -5050,12 +5037,19 @@ static int arCreateOrUpdateCommand(
   }
 
   rc = arExecSql(pAr, zCreate);
-  shellPrepare(pAr->db, &rc, zInsert, &pInsert);
+  if( !pAr->bDryRun ){
+    shellPrepare(pAr->db, &rc, zInsert, &pInsert);
+  }
   shellPrepare(pAr->db, &rc, zSql, &pStmt);
-  sqlite3_bind_text(pStmt, 2, pAr->zDir, -1, SQLITE_STATIC);
+  j = sqlite3_bind_parameter_index(pStmt, "$dir");
+  sqlite3_bind_text(pStmt, j, pAr->zDir, -1, SQLITE_STATIC);
+  if( pAr->bDryRun ){
+    utf8_printf(pAr->p->out, "%s;\n", sqlite3_sql(pStmt));
+  }
 
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
-    sqlite3_bind_text(pStmt, 1, pAr->azArg[i], -1, SQLITE_STATIC);
+    j = sqlite3_bind_parameter_index(pStmt, "$name");
+    sqlite3_bind_text(pStmt, j, pAr->azArg[i], -1, SQLITE_STATIC);
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int sz;
       const char *zName = (const char*)sqlite3_column_text(pStmt, 0);
@@ -5064,6 +5058,10 @@ static int arCreateOrUpdateCommand(
 
       if( pAr->bVerbose ){
         utf8_printf(pAr->p->out, "%s\n", zName);
+      }
+      if( pAr->bDryRun ){
+        utf8_printf(pAr->p->out, "%s;\n", zInsert);
+        continue;
       }
 
       sqlite3_bind_text(pInsert, 1, zName, -1, SQLITE_STATIC);
@@ -5115,44 +5113,60 @@ static int arDotCommand(
   int rc;
   rc = arParseCommand(azArg, nArg, &cmd);
   if( rc==SQLITE_OK ){
+    int eDbType = SHELL_OPEN_UNSPEC;
     cmd.p = pState;
     cmd.db = pState->db;
-    cmd.zSrcTable = "sqlar";
-    if( cmd.bZip || pState->openMode==SHELL_OPEN_ZIPFILE ){
-      if( cmd.zFile==0
-       && sqlite3_table_column_metadata(cmd.db,0,"zip","name",0,0,0,0,0)==SQLITE_OK
-      ){
-        cmd.zSrcTable = "zip";
-      }else if( cmd.zFile!=0 ){
-        cmd.zSrcTable = "zipfile($archiveFile)";
+    cmd.zSrcTable = 0;
+    if( cmd.zFile ){
+      eDbType = deduceDatabaseType(cmd.zFile);
+    }else{
+      eDbType = pState->openMode;
+    }
+    if( eDbType==SHELL_OPEN_ZIPFILE ){
+      if( cmd.zFile==0 ){
+        cmd.zSrcTable = sqlite3_mprintf("zip");
       }else{
-        utf8_printf(stderr, "no zip archive file specified\n");
-        return SQLITE_ERROR;
+        cmd.zSrcTable = sqlite3_mprintf("zipfile(%Q)", cmd.zFile);
       }
       if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_UPDATE ){
         utf8_printf(stderr, "zip archives are read-only\n");
-        return SQLITE_ERROR;
+        rc = SQLITE_ERROR;
+        goto end_ar_command;
       }
+      cmd.bZip = 1;
     }else if( cmd.zFile ){
       int flags;
+      if( cmd.bAppend ) eDbType = SHELL_OPEN_APPENDVFS;
       if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_UPDATE ){
         flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
       }else{
         flags = SQLITE_OPEN_READONLY;
       }
       cmd.db = 0;
-      rc = sqlite3_open_v2(cmd.zFile, &cmd.db, flags, 0);
+      if( cmd.bDryRun ){
+        utf8_printf(pState->out, "-- open database '%s'%s\n", cmd.zFile,
+             eDbType==SHELL_OPEN_APPENDVFS ? " using 'apndvfs'" : "");
+      }
+      rc = sqlite3_open_v2(cmd.zFile, &cmd.db, flags, 
+             eDbType==SHELL_OPEN_APPENDVFS ? "apndvfs" : 0);
       if( rc!=SQLITE_OK ){
         utf8_printf(stderr, "cannot open file: %s (%s)\n", 
             cmd.zFile, sqlite3_errmsg(cmd.db)
         );
-        sqlite3_close(cmd.db);
-        return rc;
+        goto end_ar_command;
       }
       sqlite3_fileio_init(cmd.db, 0, 0);
 #ifdef SQLITE_HAVE_ZLIB
       sqlite3_sqlar_init(cmd.db, 0, 0);
 #endif
+    }
+    if( cmd.zSrcTable==0 ){
+      if( sqlite3_table_column_metadata(cmd.db,0,"sqlar","name",0,0,0,0,0) ){
+        utf8_printf(stderr, "database does not contain an 'sqlar' table\n");
+        rc = SQLITE_ERROR;
+        goto end_ar_command;
+      }
+      cmd.zSrcTable = sqlite3_mprintf("sqlar");
     }
 
     switch( cmd.eCmd ){
@@ -5177,11 +5191,12 @@ static int arDotCommand(
         rc = arCreateOrUpdateCommand(&cmd, 1);
         break;
     }
-
-    if( cmd.db!=pState->db ){
-      sqlite3_close(cmd.db);
-    }
   }
+end_ar_command:
+  if( cmd.db!=pState->db ){
+    sqlite3_close(cmd.db);
+  }
+  sqlite3_free(cmd.zSrcTable);
 
   return rc;
 }

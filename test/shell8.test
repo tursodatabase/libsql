@@ -101,7 +101,7 @@ foreach {tn tcl} {
     set x2 ".ar --extract --dir ar3"
 
     set c3 ".ar --creat --dir ar1 --file test_xyz.db ."
-    set x3 ".ar --e  --d ar3 --f test_xyz.db"
+    set x3 ".ar --e  --dir ar3 --f test_xyz.db"
   }
 
   4 {
@@ -169,4 +169,3 @@ finish_test
 
 
 finish_test
-
