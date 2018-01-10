@@ -353,6 +353,11 @@ static void endTimer(void){
 #define UNUSED_PARAMETER(x) (void)(x)
 
 /*
+** Number of elements in an array
+*/
+#define ArraySize(X)  (int)(sizeof(X)/sizeof(X[0]))
+
+/*
 ** If the following flag is set, then command execution stops
 ** at an error if we are not interactive.
 */
@@ -624,6 +629,65 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
+
+
+/*
+** Return the value of a hexadecimal digit.  Return -1 if the input
+** is not a hex digit.
+*/
+static int hexDigitValue(char c){
+  if( c>='0' && c<='9' ) return c - '0';
+  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
+  return -1;
+}
+
+/*
+** Interpret zArg as an integer value, possibly with suffixes.
+*/
+static sqlite3_int64 integerValue(const char *zArg){
+  sqlite3_int64 v = 0;
+  static const struct { char *zSuffix; int iMult; } aMult[] = {
+    { "KiB", 1024 },
+    { "MiB", 1024*1024 },
+    { "GiB", 1024*1024*1024 },
+    { "KB",  1000 },
+    { "MB",  1000000 },
+    { "GB",  1000000000 },
+    { "K",   1000 },
+    { "M",   1000000 },
+    { "G",   1000000000 },
+  };
+  int i;
+  int isNeg = 0;
+  if( zArg[0]=='-' ){
+    isNeg = 1;
+    zArg++;
+  }else if( zArg[0]=='+' ){
+    zArg++;
+  }
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    int x;
+    zArg += 2;
+    while( (x = hexDigitValue(zArg[0]))>=0 ){
+      v = (v<<4) + x;
+      zArg++;
+    }
+  }else{
+    while( IsDigit(zArg[0]) ){
+      v = v*10 + zArg[0] - '0';
+      zArg++;
+    }
+  }
+  for(i=0; i<ArraySize(aMult); i++){
+    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+      v *= aMult[i].iMult;
+      break;
+    }
+  }
+  return isNeg? -v : v;
+}
+
 /*
 ** A variable length string to which one can append text.
 */
@@ -1060,11 +1124,6 @@ static const char *modeDescr[] = {
 #define SEP_CrLf      "\r\n"
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
-
-/*
-** Number of elements in an array
-*/
-#define ArraySize(X)  (int)(sizeof(X)/sizeof(X[0]))
 
 /*
 ** A callback for the sqlite3_log() interface.
@@ -2473,8 +2532,6 @@ static int expertFinish(
   return rc;
 }
 
-static sqlite3_int64 integerValue(const char *zArg);
-
 /*
 ** Implementation of ".expert" dot command.
 */
@@ -3381,63 +3438,6 @@ static void resolve_backslashes(char *z){
     z[j] = c;
   }
   if( j<i ) z[j] = 0;
-}
-
-/*
-** Return the value of a hexadecimal digit.  Return -1 if the input
-** is not a hex digit.
-*/
-static int hexDigitValue(char c){
-  if( c>='0' && c<='9' ) return c - '0';
-  if( c>='a' && c<='f' ) return c - 'a' + 10;
-  if( c>='A' && c<='F' ) return c - 'A' + 10;
-  return -1;
-}
-
-/*
-** Interpret zArg as an integer value, possibly with suffixes.
-*/
-static sqlite3_int64 integerValue(const char *zArg){
-  sqlite3_int64 v = 0;
-  static const struct { char *zSuffix; int iMult; } aMult[] = {
-    { "KiB", 1024 },
-    { "MiB", 1024*1024 },
-    { "GiB", 1024*1024*1024 },
-    { "KB",  1000 },
-    { "MB",  1000000 },
-    { "GB",  1000000000 },
-    { "K",   1000 },
-    { "M",   1000000 },
-    { "G",   1000000000 },
-  };
-  int i;
-  int isNeg = 0;
-  if( zArg[0]=='-' ){
-    isNeg = 1;
-    zArg++;
-  }else if( zArg[0]=='+' ){
-    zArg++;
-  }
-  if( zArg[0]=='0' && zArg[1]=='x' ){
-    int x;
-    zArg += 2;
-    while( (x = hexDigitValue(zArg[0]))>=0 ){
-      v = (v<<4) + x;
-      zArg++;
-    }
-  }else{
-    while( IsDigit(zArg[0]) ){
-      v = v*10 + zArg[0] - '0';
-      zArg++;
-    }
-  }
-  for(i=0; i<ArraySize(aMult); i++){
-    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
-      v *= aMult[i].iMult;
-      break;
-    }
-  }
-  return isNeg? -v : v;
 }
 
 /*

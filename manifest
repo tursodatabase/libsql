@@ -1,5 +1,5 @@
-C Compute\sthe\scorrect\scolumn\sname\seven\sif\sthe\scolumn\sidentifier\sis\sthe\nvery\slast\stoken\sin\sthe\sSQL\sstatement.\s\sThis\sfixes\sa\sproblem\sintroduced\nby\scheck-in\s[0fdf97efe5df745510c6b]\sand\sreported\sby\sthe\scommunity\sduring\nbeta-testing.
-D 2018-01-10T00:40:06.636
+C Rearrange\ssome\sroutines\sin\sshell.c\sto\savoid\sthe\sneed\sto\sforward\sreference\sa\nstatic\sfunction.
+D 2018-01-10T00:53:55.338
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in 4121ecd9a812c9032726aa137a4504251d03f2001dd6c7c110e7cabd3ee1454b
+F src/shell.c.in 1e50d66dc88bcc61d6300a5b8fb71d2d3821ec2d1418aee69337e391061514dd
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3e5647cb6c4553683e24b9cb62548f16c79c4e2ac9e39cf135ea52a623f7cc33
-R 13437b6007d6ef55bf4d81b9dff0be71
+P 36b89d728ff13d395fe0e1db8e7c01263f73dccb278b3ece27f6ef78e909b492
+R c0e5b3be89f9671131b70568ccd2de3b
 U drh
-Z f9f9bd51ed93ca5bce3e08c7f811f3c5
+Z 058862bc11ed7b27f8f707a776eec676
