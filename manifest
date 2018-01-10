@@ -1,10 +1,10 @@
-C Modify\sthe\snew\s"--append"\soption\sto\sthe\s.archive\sso\sthat\sit\stakes\sa\sfilename\nargument,\sthe\ssame\sas\s"--file".
-D 2018-01-10T18:09:20.329
+C Include\sRTREE\sin\sthe\sdefault\sCLI\sbuild.
+D 2018-01-10T19:15:21.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
+F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 085d3b65cebdebec89dc8c91901c06f18e357eb320a0434bfa67a53e917f10de
+F Makefile.msc ede26e3fb675e0b3b07627640ce5917154a6ee7f8f2c97424eb5ab5f651cbd56
 F README.md eeae1e552f93ef72ef7c5b8f6647b368a001c28820ad1df179d3dae602bef681
 F VERSION 0c10cdfed866fdd2d80434f64f042c3330f1daaed12e54287beb104f04b3faaf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -406,7 +406,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7965d01485f7bec7945407c5238985ea8c7cb2cb686d2bfdbe3d5f79d6fd4eb2
+F main.mk fc0edb268998a049ce70ee3dc056b2a96cc8aa4ef0c6da296700d7081d167627
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38f28029d16df8489772c27867de8888dd1c26b170861acdc977fd4023939dde
-R 816b51584860870ca4a8d73ef0ed2ba2
+P 58e3b07cc8cb5cc915f7d430483bd455b03f14120e0db23286d2e20dbb5391c5
+R 2e662e06c18ea15ed95bfe93585d99c1
 U drh
-Z 8ced30e3ccc67e3689656b52b7db29d9
+Z 73fb00a74c3f6ec900cd40e3e36e7246
