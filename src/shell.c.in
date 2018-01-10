@@ -1012,12 +1012,14 @@ struct ShellState {
   u8 statsOn;            /* True to display memory stats before each finalize */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
+  u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
   int nErr;              /* Number of errors seen */
   int mode;              /* An output mode setting */
+  int modePrior;         /* Saved mode */
   int cMode;             /* temporary output mode for the current query */
   int normalMode;        /* Output mode before ".explain on" */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
@@ -1025,9 +1027,12 @@ struct ShellState {
   int nCheck;            /* Number of ".check" commands run */
   unsigned shellFlgs;    /* Various flags */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
+  char *zTempFile;       /* Temporary file that might need deleting */
   char zTestcase[30];    /* Name of current test case */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
+  char colSepPrior[20];  /* Saved column separator */
+  char rowSepPrior[20];  /* Saved row separator */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
   char nullValue[20];    /* The text to print when a NULL comes back from
@@ -1149,6 +1154,20 @@ static void shellPutsFunc(
   ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
   utf8_printf(p->out, "%s\n", sqlite3_value_text(apVal[0]));
   sqlite3_result_value(pCtx, apVal[0]);
+}
+
+/*
+** Save or restore the current output mode
+*/
+static void outputModePush(ShellState *p){
+  p->modePrior = p->mode;
+  memcpy(p->colSepPrior, p->colSeparator, sizeof(p->colSeparator));
+  memcpy(p->rowSepPrior, p->rowSeparator, sizeof(p->rowSeparator));
+}
+static void outputModePop(ShellState *p){
+  p->mode = p->modePrior;
+  memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
+  memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
 }
 
 /*
@@ -3064,6 +3083,7 @@ static char zHelp[] =
   "                         LIKE pattern TABLE.\n"
   ".echo on|off           Turn command echo on or off\n"
   ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
+  ".excel                 Display the output of next command in a spreadsheet\n"
   ".exit                  Exit this program\n"
   ".expert                EXPERIMENTAL. Suggest indexes for specified queries\n"
 /* Because explain mode comes on automatically now, the ".explain" mode
@@ -3504,7 +3524,7 @@ static void output_file_close(FILE *f){
 ** recognized and do the right thing.  NULL is returned if the output
 ** filename is "off".
 */
-static FILE *output_file_open(const char *zFile){
+static FILE *output_file_open(const char *zFile, int bTextMode){
   FILE *f;
   if( strcmp(zFile,"stdout")==0 ){
     f = stdout;
@@ -3513,7 +3533,7 @@ static FILE *output_file_open(const char *zFile){
   }else if( strcmp(zFile, "off")==0 ){
     f = 0;
   }else{
-    f = fopen(zFile, "wb");
+    f = fopen(zFile, bTextMode ? "w" : "wb");
     if( f==0 ){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
     }
@@ -3926,7 +3946,11 @@ static void tryToClone(ShellState *p, const char *zNewDb){
 }
 
 /*
-** Change the output file back to stdout
+** Change the output file back to stdout.
+**
+** If the p->doXdgOpen flag is set, that means the output was being
+** redirected to a temporary file named by p->zTempFile.  In that case,
+** launch start/open/xdg-open on that temporary file.
 */
 static void output_reset(ShellState *p){
   if( p->outfile[0]=='|' ){
@@ -3935,6 +3959,24 @@ static void output_reset(ShellState *p){
 #endif
   }else{
     output_file_close(p->out);
+    if( p->doXdgOpen ){
+      const char *zXdgOpenCmd =
+#if defined(_WIN32)
+      "start";
+#elif defined(__APPLE__)
+      "open";
+#else
+      "xdg-open";
+#endif
+      char *zCmd;
+      zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
+      if( system(zCmd) ){
+        utf8_printf(stderr, "Failed: [%s]\n", zCmd);
+      }
+      sqlite3_free(zCmd);
+      outputModePop(p);
+      p->doXdgOpen = 0;
+    }
   }
   p->outfile[0] = 0;
   p->out = stdout;
@@ -4191,6 +4233,40 @@ int shellDeleteFile(const char *zFilename){
   rc = unlink(zFilename);
 #endif
   return rc;
+}
+
+/*
+** Try to delete the temporary file (if there is one) and free the
+** memory used to hold the name of the temp file.
+*/
+static void clearTempFile(ShellState *p){
+  if( p->zTempFile==0 ) return;
+  if( shellDeleteFile(p->zTempFile) ) return;
+  sqlite3_free(p->zTempFile);
+  p->zTempFile = 0;
+}
+
+/*
+** Create a new temp file name with the given suffix.
+*/
+static void newTempFile(ShellState *p, const char *zSuffix){
+  clearTempFile(p);
+  sqlite3_free(p->zTempFile);
+  p->zTempFile = 0;
+  if( p->db ){
+    sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
+  }
+  if( p->zTempFile==0 ){
+    sqlite3_uint64 r;
+    sqlite3_randomness(sizeof(r), &r);
+    p->zTempFile = sqlite3_mprintf("temp%llx.%s", r, zSuffix);
+  }else{
+    p->zTempFile = sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
+  }
+  if( p->zTempFile==0 ){
+    raw_printf(stderr, "out of memory\n");
+    exit(1);
+  }
 }
 
 
@@ -5205,6 +5281,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( nArg==0 ) return 0; /* no tokens, no error */
   n = strlen30(azArg[0]);
   c = azArg[0][0];
+  clearTempFile(p);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( c=='a' && strncmp(azArg[0], "auth", n)==0 ){
@@ -6000,7 +6077,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       const char *zFile = azArg[1];
       output_file_close(p->pLog);
-      p->pLog = output_file_open(zFile);
+      p->pLog = output_file_open(zFile, 0);
     }
   }else
 
@@ -6109,18 +6186,27 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  if( c=='o'
-   && (strncmp(azArg[0], "output", n)==0 || strncmp(azArg[0], "once", n)==0)
+  if( (c=='o'
+        && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
+   || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
     const char *zFile = nArg>=2 ? azArg[1] : "stdout";
+    int bTxtMode = 0;
+    if( azArg[0][0]=='e' ){
+      /* Transform the ".excel" command into ".once -x" */
+      nArg = 2;
+      azArg[0] = "once";
+      zFile = azArg[1] = "-x";
+      n = 4;
+    }
     if( nArg>2 ){
-      utf8_printf(stderr, "Usage: .%s FILE\n", azArg[0]);
+      utf8_printf(stderr, "Usage: .%s [-e|-x|FILE]\n", azArg[0]);
       rc = 1;
       goto meta_command_exit;
     }
     if( n>1 && strncmp(azArg[0], "once", n)==0 ){
       if( nArg<2 ){
-        raw_printf(stderr, "Usage: .once FILE\n");
+        raw_printf(stderr, "Usage: .once (-e|-x|FILE)\n");
         rc = 1;
         goto meta_command_exit;
       }
@@ -6129,6 +6215,21 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->outCount = 0;
     }
     output_reset(p);
+    if( zFile[0]=='-' && zFile[1]=='-' ) zFile++;
+    if( strcmp(zFile, "-e")==0 || strcmp(zFile, "-x")==0 ){
+      p->doXdgOpen = 1;
+      outputModePush(p);
+      if( zFile[1]=='x' ){
+        newTempFile(p, "csv");
+        p->mode = MODE_Csv;
+        sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+        sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
+      }else{
+        newTempFile(p, "txt");
+        bTxtMode = 1;
+      }
+      zFile = p->zTempFile;
+    }
     if( zFile[0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
       raw_printf(stderr, "Error: pipes are not supported in this OS\n");
@@ -6145,7 +6246,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
 #endif
     }else{
-      p->out = output_file_open(zFile);
+      p->out = output_file_open(zFile, bTxtMode);
       if( p->out==0 ){
         if( strcmp(zFile,"off")!=0 ){
           utf8_printf(stderr,"Error: cannot write to \"%s\"\n", zFile);
@@ -7022,7 +7123,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
-    p->out = output_file_open("testcase-out.txt");
+    p->out = output_file_open("testcase-out.txt", 0);
     if( p->out==0 ){
       raw_printf(stderr, "Error: cannot open 'testcase-out.txt'\n");
     }
@@ -7228,7 +7329,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       goto meta_command_exit;
     }
     output_file_close(p->traceOut);
-    p->traceOut = output_file_open(azArg[1]);
+    p->traceOut = output_file_open(azArg[1], 0);
 #if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
     if( p->traceOut==0 ){
       sqlite3_trace_v2(p->db, 0, 0, 0);
@@ -7558,6 +7659,8 @@ static int process_input(ShellState *p, FILE *in){
       if( p->outCount ){
         output_reset(p);
         p->outCount = 0;
+      }else{
+        clearTempFile(p);
       }
     }else if( nSql && _all_whitespace(zSql) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
@@ -8180,6 +8283,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
   sqlite3_free(data.zFreeOnClose);
   find_home_dir(1);
+  clearTempFile(&data);
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argc; i++) sqlite3_free(argv[i]);
   sqlite3_free(argv);
