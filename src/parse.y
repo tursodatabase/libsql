@@ -31,8 +31,11 @@
 //
 %syntax_error {
   UNUSED_PARAMETER(yymajor);  /* Silence some compiler warnings */
-  assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
-  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+  if( TOKEN.z[0] ){
+    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+  }else{
+    sqlite3ErrorMsg(pParse, "incomplete input");
+  }
 }
 %stack_overflow {
   sqlite3ErrorMsg(pParse, "parser stack overflow");

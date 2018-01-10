@@ -434,7 +434,7 @@ do_test main-3.2.28 {
 } {0 246}
 do_test main-3.2.29 {
   catchsql {select 123/}
-} {1 {near "/": syntax error}}
+} {1 {incomplete input}}
 do_test main-3.2.30 {
   catchsql {select 123--5}
 } {0 123}
@@ -467,7 +467,7 @@ do_test main-3.4 {
 do_test main-3.5 {
   set v [catch {execsql {create}} msg]
   lappend v $msg
-} {1 {near "create": syntax error}}
+} {1 {incomplete input}}
 do_test main-3.6 {
   catchsql {SELECT 'abc' + #9}
 } {1 {near "#9": syntax error}}
