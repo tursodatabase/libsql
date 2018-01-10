@@ -3507,7 +3507,7 @@ static void output_file_close(FILE *f){
 ** recognized and do the right thing.  NULL is returned if the output
 ** filename is "off".
 */
-static FILE *output_file_open(const char *zFile){
+static FILE *output_file_open(const char *zFile, int bTextMode){
   FILE *f;
   if( strcmp(zFile,"stdout")==0 ){
     f = stdout;
@@ -3516,7 +3516,7 @@ static FILE *output_file_open(const char *zFile){
   }else if( strcmp(zFile, "off")==0 ){
     f = 0;
   }else{
-    f = fopen(zFile, "wb");
+    f = fopen(zFile, bTextMode ? "w" : "wb");
     if( f==0 ){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
     }
@@ -3953,7 +3953,9 @@ static void output_reset(ShellState *p){
 #endif
       char *zCmd;
       zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
-      system(zCmd);
+      if( system(zCmd) ){
+        utf8_printf(stderr, "Failed: [%s]\n", zCmd);
+      }
       sqlite3_free(zCmd);
       p->mode = p->doXdgOpen - 1;
       p->doXdgOpen = 0;
@@ -6058,7 +6060,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       const char *zFile = azArg[1];
       output_file_close(p->pLog);
-      p->pLog = output_file_open(zFile);
+      p->pLog = output_file_open(zFile, 0);
     }
   }else
 
@@ -6172,6 +6174,7 @@ static int do_meta_command(char *zLine, ShellState *p){
    || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
     const char *zFile = nArg>=2 ? azArg[1] : "stdout";
+    int bTxtMode = 0;
     if( azArg[0][0]=='e' ){
       /* Transform the ".excel" command into ".once -x" */
       nArg = 2;
@@ -6205,6 +6208,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
       }else{
         newTempFile(p, "txt");
+        bTxtMode = 1;
       }
       zFile = p->zTempFile;
     }
@@ -6224,7 +6228,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
 #endif
     }else{
-      p->out = output_file_open(zFile);
+      p->out = output_file_open(zFile, bTxtMode);
       if( p->out==0 ){
         if( strcmp(zFile,"off")!=0 ){
           utf8_printf(stderr,"Error: cannot write to \"%s\"\n", zFile);
@@ -7101,7 +7105,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
-    p->out = output_file_open("testcase-out.txt");
+    p->out = output_file_open("testcase-out.txt", 0);
     if( p->out==0 ){
       raw_printf(stderr, "Error: cannot open 'testcase-out.txt'\n");
     }
@@ -7307,7 +7311,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       goto meta_command_exit;
     }
     output_file_close(p->traceOut);
-    p->traceOut = output_file_open(azArg[1]);
+    p->traceOut = output_file_open(azArg[1], 0);
 #if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
     if( p->traceOut==0 ){
       sqlite3_trace_v2(p->db, 0, 0, 0);
