@@ -1,5 +1,5 @@
-C Work\son\sthe\s".archive"\scommand.\n(1)\sAdd\sthe\s--dryrun\soption.\n(2)\sDo\snot\srequire\s--file\swhen\sopen\son\sa\sZIP\sarchive.\n(3)\sMiscellaneous\scode\ssimplifications.\nThis\sis\san\sincremental\scheck-in\sof\swork\sin\sprogress.
-D 2018-01-10T13:11:51.661
+C Allow\sthe\suse\sof\s".ar\s-t"\swithout\sspecifying\san\sarchive\sfile\sor\sthe\s"-z"\noption\swhen\sthe\scommand-line\sshell\sis\sopened\son\sa\sZIP\sarchive.
+D 2018-01-10T14:00:00.949
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in f86200b08a8201fab1c775edbff4a81cb7b07e5926b1ed1ad7c043453fdfa7b3
+F src/shell.c.in aae06c143e7c70cfe616a96af8b5656f3891916beee172c7a40b084dab221b79
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1697,10 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd7f51a107806666d5c3a3a7a62528ec3e1fb71c4256f49d57b4dcdac4bf8680
-R da66d185dcc66f20b0c30262a6b67fe7
-T *branch * archive-improvements
-T *sym-archive-improvements *
-T -sym-trunk *
+P a2baada429e84dc4b7243173a056e3c8bc042682f7efb01fdf8d2cc452c97e04
+R 870698cbfc790bad8e7df783afd6e385
 U drh
-Z 75859d5801ea825c715cde8533b487b8
+Z 6cb4ecc388fb1e11ac7a5d118227df45

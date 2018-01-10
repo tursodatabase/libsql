@@ -5118,11 +5118,16 @@ static int arDotCommand(
     cmd.p = pState;
     cmd.db = pState->db;
     cmd.zSrcTable = "sqlar";
-    if( cmd.bZip ){
-      if( pState->openMode==SHELL_OPEN_ZIPFILE ){
+    if( cmd.bZip || pState->openMode==SHELL_OPEN_ZIPFILE ){
+      if( cmd.zFile==0
+       && sqlite3_table_column_metadata(cmd.db,0,"zip","name",0,0,0,0,0)==SQLITE_OK
+      ){
         cmd.zSrcTable = "zip";
-      }else{
+      }else if( cmd.zFile!=0 ){
         cmd.zSrcTable = "zipfile($archiveFile)";
+      }else{
+        utf8_printf(stderr, "no zip archive file specified\n");
+        return SQLITE_ERROR;
       }
       if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_UPDATE ){
         utf8_printf(stderr, "zip archives are read-only\n");
@@ -5135,6 +5140,7 @@ static int arDotCommand(
       }else{
         flags = SQLITE_OPEN_READONLY;
       }
+      cmd.db = 0;
       rc = sqlite3_open_v2(cmd.zFile, &cmd.db, flags, 0);
       if( rc!=SQLITE_OK ){
         utf8_printf(stderr, "cannot open file: %s (%s)\n", 
@@ -5172,7 +5178,7 @@ static int arDotCommand(
         break;
     }
 
-    if( cmd.zFile ){
+    if( cmd.db!=pState->db ){
       sqlite3_close(cmd.db);
     }
   }
