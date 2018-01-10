@@ -4234,7 +4234,9 @@ static void newTempFile(ShellState *p, const char *zSuffix){
   clearTempFile(p);
   sqlite3_free(p->zTempFile);
   p->zTempFile = 0;
-  sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
+  if( p->db ){
+    sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
+  }
   if( p->zTempFile==0 ){
     sqlite3_uint64 r;
     sqlite3_randomness(sizeof(r), &r);
