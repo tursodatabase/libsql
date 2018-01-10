@@ -91,28 +91,47 @@ do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE zzz USING zipfile('test.zip');
   INSERT INTO zzz(name, mode) VALUES('dirname', 'drwxr-xr-x');
   SELECT name, mode, data FROM zzz;
-} {dirname 16877 {}}
+} {dirname/ 16877 {}}
 do_execsql_test 2.2 {
   INSERT INTO zzz(name, data) VALUES('dirname2', NULL);
   INSERT INTO zzz(name, data) VALUES('dirname2/file1.txt', 'abcdefghijklmnop');
   SELECT name, mode, data FROM zzz;
 } {
-  dirname 16877 {}
-  dirname2 16877 {}
+  dirname/ 16877 {}
+  dirname2/ 16877 {}
   dirname2/file1.txt 33188 abcdefghijklmnop
 }
 
 do_catchsql_test 2.3 {
-  UPDATE zzz SET name = 'dirname3' WHERE name = 'dirname';
+  UPDATE zzz SET name = 'dirname3' WHERE name = 'dirname/';
 } {1 {constraint failed}}
 do_execsql_test 2.4 {
   SELECT name, mode, data FROM zzz;
 } {
-  dirname 16877 {}
-  dirname2 16877 {}
+  dirname/ 16877 {}
+  dirname2/ 16877 {}
   dirname2/file1.txt 33188 abcdefghijklmnop
 }
 
+# If on unix, check that the [unzip] utility can unpack our archive.
+#
+if {$::tcl_platform(platform)=="unix"} {
+  do_test 2.5.1 {
+    forcedelete dirname
+      forcedelete dirname2
+      set rc [catch { exec unzip test.zip > /dev/null } msg]
+      list $rc $msg
+  } {0 {}}
+  do_test 2.5.2 { file isdir dirname } 1
+  do_test 2.5.3 { file isdir dirname2 } 1
+  do_test 2.5.4 { file isdir dirname2/file1.txt } 0
+  do_test 2.5.5 { 
+    set fd [open dirname2/file1.txt]
+    set data [read $fd]
+    close $fd
+    set data
+  } {abcdefghijklmnop}
+}
 
 finish_test
 

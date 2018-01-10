@@ -1211,6 +1211,7 @@ static int zipfileUpdate(
   int nData = 0;                  /* Size of pData buffer in bytes */
   int iMethod = 0;                /* Compression method for new entry */
   u8 *pFree = 0;                  /* Free this */
+  char *zFree = 0;                /* Also free this */
   ZipfileCDS cds;                 /* New Central Directory Structure entry */
 
   int bIsDir = 0;
@@ -1307,6 +1308,19 @@ static int zipfileUpdate(
     }
   }
 
+  if( rc==SQLITE_OK && bIsDir ){
+    /* For a directory, check that the last character in the path is a
+    ** '/'. This appears to be required for compatibility with info-zip
+    ** (the unzip command on unix). It does not create directories
+    ** otherwise.  */
+    if( zPath[nPath-1]!='/' ){
+      zFree = sqlite3_mprintf("%s/", zPath);
+      if( zFree==0 ){ rc = SQLITE_NOMEM; }
+      zPath = (const char*)zFree;
+      nPath++;
+    }
+  }
+
   if( rc==SQLITE_OK ){
     /* Create the new CDS record. */
     memset(&cds, 0, sizeof(cds));
@@ -1334,6 +1348,7 @@ static int zipfileUpdate(
   }
 
   sqlite3_free(pFree);
+  sqlite3_free(zFree);
   return rc;
 }
 
