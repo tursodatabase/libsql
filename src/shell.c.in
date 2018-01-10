@@ -4857,40 +4857,13 @@ static void arWhereClause(
 }
 
 /*
-** Argument zMode must point to a buffer at least 11 bytes in size. This
-** function populates this buffer with the string interpretation of
-** the unix file mode passed as the second argument (e.g. "drwxr-xr-x").
-*/
-static void shellModeToString(char *zMode, int mode){
-  int i;
-
-  /* Magic numbers copied from [man 2 stat] */
-  if( mode & 0040000 ){
-    zMode[0] = 'd';
-  }else if( (mode & 0120000)==0120000 ){
-    zMode[0] = 'l';
-  }else{
-    zMode[0] = '-';
-  }
-
-  for(i=0; i<3; i++){
-    int m = (mode >> ((2-i)*3));
-    char *a = &zMode[1 + i*3];
-    a[0] = (m & 0x4) ? 'r' : '-';
-    a[1] = (m & 0x2) ? 'w' : '-';
-    a[2] = (m & 0x1) ? 'x' : '-';
-  }
-  zMode[10] = '\0';
-}
-
-/*
 ** Implementation of .ar "lisT" command. 
 */
 static int arListCommand(ArCommand *pAr){
   const char *zSql = "SELECT %s FROM %s WHERE %s"; 
   const char *azCols[] = {
     "name",
-    "mode, sz, datetime(mtime, 'unixepoch'), name"
+    "lsmode(mode), sz, datetime(mtime, 'unixepoch'), name"
   };
 
   char *zWhere = 0;
@@ -4907,10 +4880,8 @@ static int arListCommand(ArCommand *pAr){
   }else{
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
       if( pAr->bVerbose ){
-        char zMode[11];
-        shellModeToString(zMode, sqlite3_column_int(pSql, 0));
-  
-        utf8_printf(pAr->p->out, "%s % 10d  %s  %s\n", zMode,
+        utf8_printf(pAr->p->out, "%s % 10d  %s  %s\n",
+            sqlite3_column_text(pSql, 0),
             sqlite3_column_int(pSql, 1), 
             sqlite3_column_text(pSql, 2),
             sqlite3_column_text(pSql, 3)
@@ -5005,7 +4976,12 @@ static int arExecSql(ArCommand *pAr, const char *zSql){
     utf8_printf(pAr->p->out, "%s\n", zSql);
     rc = SQLITE_OK;
   }else{
-    rc = sqlite3_exec(pAr->db, zSql, 0, 0, 0);
+    char *zErr = 0;
+    rc = sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
+    if( zErr ){
+      utf8_printf(stdout, "ERROR: %s\n", zErr);
+      sqlite3_free(zErr);
+    }
   }
   return rc;
 }
@@ -5041,13 +5017,13 @@ static int arCreateOrUpdateCommand(
      "    %s,\n"
      "    mode,\n"
      "    mtime,\n"
-     "    CASE filetype(mode)\n"
-     "      WHEN 'file' THEN length(data)\n"
-     "      WHEN 'directory' THEN 0\n"
+     "    CASE substr(lsmode(mode),1,1)\n"
+     "      WHEN '-' THEN length(data)\n"
+     "      WHEN 'd' THEN 0\n"
      "      ELSE -1 END,\n"
-     "    CASE WHEN filetype(mode)<>'directory' THEN data ELSE NULL END\n"
+     "    CASE WHEN lsmode(mode) LIKE 'd%%' THEN NULL else data END\n"
      "  FROM fsdir(%Q,%Q)\n"
-     "  WHERE filetype(mode)<>'unknown'";
+     "  WHERE lsmode(mode) NOT LIKE '?%%';";
   int i;                          /* For iterating through azFile[] */
   int rc;                         /* Return code */
 

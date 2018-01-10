@@ -358,27 +358,37 @@ static void writefileFunc(
 }
 
 /*
-** SQL function:   filetype(MODE)
+** SQL function:   lsmode(MODE)
 **
-** Based on the integer mode, return one of "file", "directory", or "symlink".
+** Given a numberic st_mode from stat(), convert it into a human-readable
+** text string in the style of "ls -l".
 */
-static void fileTypeFunc(
+static void lsModeFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  const char *zMode;
+  int i;
   int iMode = sqlite3_value_int(argv[0]);
+  char z[16];
   if( S_ISLNK(iMode) ){
-    zMode = "symlink";
+    z[0] = 'l';
   }else if( S_ISREG(iMode) ){
-    zMode = "file";
+    z[0] = '-';
   }else if( S_ISDIR(iMode) ){
-    zMode = "directory";
+    z[0] = 'd';
   }else{
-    zMode = "unknown";
+    z[0] = '?';
   }
-  sqlite3_result_text(context, zMode, -1, SQLITE_STATIC);
+  for(i=0; i<3; i++){
+    int m = (iMode >> ((2-i)*3));
+    char *a = &z[1 + i*3];
+    a[0] = (m & 0x4) ? 'r' : '-';
+    a[1] = (m & 0x2) ? 'w' : '-';
+    a[2] = (m & 0x1) ? 'x' : '-';
+  }
+  z[10] = '\0';
+  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
 }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -793,8 +803,8 @@ int sqlite3_fileio_init(
                                  writefileFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "fileType", 1, SQLITE_UTF8, 0,
-                                 fileTypeFunc, 0, 0);
+    rc = sqlite3_create_function(db, "lsmode", 1, SQLITE_UTF8, 0,
+                                 lsModeFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
     rc = fsdirRegister(db);
