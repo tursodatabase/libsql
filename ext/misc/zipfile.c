@@ -1033,7 +1033,7 @@ static int zipfileLoadDirectory(ZipfileTab *pTab){
       }else{
         memset(pNew, 0, sizeof(ZipfileEntry));
         pNew->zPath = (char*)&pNew[1];
-        memcpy(pNew->zPath, &aBuf[ZIPFILE_CDS_FIXED_SZ], nFile);
+        memcpy(pNew->zPath, &aRec[ZIPFILE_CDS_FIXED_SZ], nFile);
         pNew->zPath[nFile] = '\0';
         pNew->aCdsEntry = (u8*)&pNew->zPath[nFile+1];
         pNew->nCdsEntry = ZIPFILE_CDS_FIXED_SZ+nFile+nExtra+nComment;
@@ -1190,6 +1190,18 @@ static int zipfileGetMode(
 }
 
 /*
+** Both (const char*) arguments point to nul-terminated strings. Argument
+** nB is the value of strlen(zB). This function returns 0 if the strings are
+** identical, ignoring any trailing '/' character in either path.  */
+static int zipfileComparePath(const char *zA, const char *zB, int nB){
+  int nA = strlen(zA);
+  if( zA[nA-1]=='/' ) nA--;
+  if( zB[nB-1]=='/' ) nB--;
+  if( nA==nB && memcmp(zA, zB, nA)==0 ) return 0;
+  return 1;
+}
+
+/*
 ** xUpdate method.
 */
 static int zipfileUpdate(
@@ -1318,6 +1330,17 @@ static int zipfileUpdate(
       if( zFree==0 ){ rc = SQLITE_NOMEM; }
       zPath = (const char*)zFree;
       nPath++;
+    }
+  }
+
+  /* Check that we're not inserting a duplicate entry */
+  if( rc==SQLITE_OK ){
+    ZipfileEntry *p;
+    for(p=pTab->pFirstEntry; p; p=p->pNext){
+      if( zipfileComparePath(p->zPath, zPath, nPath)==0 ){
+        rc = SQLITE_CONSTRAINT;
+        break;
+      }
     }
   }
 

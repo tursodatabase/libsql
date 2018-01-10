@@ -133,5 +133,33 @@ if {$::tcl_platform(platform)=="unix"} {
   } {abcdefghijklmnop}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.zip
+load_static_extension db zipfile
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE temp.x1 USING zipfile('test.zip');
+  INSERT INTO x1(name, data) VALUES('dir1/', NULL);
+  INSERT INTO x1(name, data) VALUES('file1', '1234');
+  INSERT INTO x1(name, data) VALUES('dir1/file2', '5678');
+}
+foreach {tn fname} {
+  1 dir1
+  2 file1
+  3 dir1/file2
+} {
+  do_catchsql_test 3.1.$tn.0 {
+    INSERT INTO x1(name, data) VALUES($fname, NULL);
+  } {1 {constraint failed}}
+  do_catchsql_test 3.1.$tn.1 {
+    INSERT INTO x1(name, data) VALUES($fname || '/', NULL);
+  } {1 {constraint failed}}
+  do_catchsql_test 3.1.$tn.2 {
+    INSERT INTO x1(name, data) VALUES($fname, 'abcd');
+  } {1 {constraint failed}}
+}
+
+
 finish_test
 
