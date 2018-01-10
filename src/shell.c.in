@@ -1019,6 +1019,7 @@ struct ShellState {
   FILE *traceOut;        /* Output for sqlite3_trace() */
   int nErr;              /* Number of errors seen */
   int mode;              /* An output mode setting */
+  int modePrior;         /* Saved mode */
   int cMode;             /* temporary output mode for the current query */
   int normalMode;        /* Output mode before ".explain on" */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
@@ -1030,6 +1031,8 @@ struct ShellState {
   char zTestcase[30];    /* Name of current test case */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
+  char colSepPrior[20];  /* Saved column separator */
+  char rowSepPrior[20];  /* Saved row separator */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
   char nullValue[20];    /* The text to print when a NULL comes back from
@@ -1151,6 +1154,20 @@ static void shellPutsFunc(
   ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
   utf8_printf(p->out, "%s\n", sqlite3_value_text(apVal[0]));
   sqlite3_result_value(pCtx, apVal[0]);
+}
+
+/*
+** Save or restore the current output mode
+*/
+static void outputModePush(ShellState *p){
+  p->modePrior = p->mode;
+  memcpy(p->colSepPrior, p->colSeparator, sizeof(p->colSeparator));
+  memcpy(p->rowSepPrior, p->rowSeparator, sizeof(p->rowSeparator));
+}
+static void outputModePop(ShellState *p){
+  p->mode = p->modePrior;
+  memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
+  memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
 }
 
 /*
@@ -3957,7 +3974,7 @@ static void output_reset(ShellState *p){
         utf8_printf(stderr, "Failed: [%s]\n", zCmd);
       }
       sqlite3_free(zCmd);
-      p->mode = p->doXdgOpen - 1;
+      outputModePop(p);
       p->doXdgOpen = 0;
     }
   }
@@ -6200,7 +6217,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     output_reset(p);
     if( zFile[0]=='-' && zFile[1]=='-' ) zFile++;
     if( strcmp(zFile, "-e")==0 || strcmp(zFile, "-x")==0 ){
-      p->doXdgOpen = p->mode + 1;
+      p->doXdgOpen = 1;
+      outputModePush(p);
       if( zFile[1]=='x' ){
         newTempFile(p, "csv");
         p->mode = MODE_Csv;
