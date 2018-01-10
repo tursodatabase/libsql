@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sos_unix.c\scausing\sit\sto\sreturn\sSQLITE_CANTOPEN\sinstead\sof\nSQLITE_READONLY_RECOVERY.
-D 2018-01-10T11:56:03.281
+C Tag\san\sunreachable\sbranch\susing\sALWAYS().
+D 2018-01-10T13:58:23.623
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -449,7 +449,7 @@ F src/insert.c 14686083cedc198540b15a79586cdd4be2acf6d5fa97627e355f817ab07e9fee
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 55bcc3c741059a1056859e8adaf133aa179e22be12215c0936b2f354ef71209b
 F src/main.c 26918d50dd4a61b8f6f210320a522f46b5e7e592335b6aa664ab15b80b7c239b
-F src/malloc.c 6f684fd039f53bf9195193eb0cde731a2954970fabc6ef054ba379b6052dc296
+F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd7f51a107806666d5c3a3a7a62528ec3e1fb71c4256f49d57b4dcdac4bf8680
-R b0aec6844a1353d3e8dcd58b6b9b074d
-U dan
-Z b1844f359ee67c65b8d14dad2349ae2c
+P 6a16f554f027ba268276b728588b5eaea837cbed85358a06a2f6da3b70e834ad
+R 8ba57fadebb1bef28ae4cd97ec4b22a9
+U drh
+Z 3f9f5c48f04edbfb2783cc163a50a4b5
