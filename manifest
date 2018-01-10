@@ -1,5 +1,5 @@
-C Save\sand\srestore\sthe\soutput\smode\swhen\sdoing\s".once\s-x"\sor\s".excel".
-D 2018-01-10T22:27:21.115
+C Update\stest\scases\sfor\sthe\snew\s"usage"\sfor\s.output.
+D 2018-01-10T23:27:30.001
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -1218,7 +1218,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 6d69e08039aea13f2c42749f162fe05eab7b5c93729f31d49d7d27cf36226e5a
+F test/shell1.test 9f8b8da05a79b134e252a5e1d8d411245ad83ac7126c262900b9f42b43108ffd
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b97f9d2c876162139dbd9485fcf68412d1572d9ddc179b08938b8a602e895d6
-R d864377b5e3ba9e6ed72c01bab712abd
+P f697c164518d36f2a63c87d9f2708d0f9481fad3ded2de61f3f48c393cf7a500
+R cbc8182064251451cd032585a1a8098f
 U drh
-Z 372298188cf6cc90b3d7d11dd46f07c5
+Z 0fca8af732176ea4c3e2417e5169029d
