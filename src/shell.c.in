@@ -4558,9 +4558,9 @@ static int arUsage(FILE *f){
 "And zero or more optional options:\n"
 "  -v, --verbose              Print each filename as it is processed\n"
 "  -f FILE, --file FILE       Operate on archive FILE (default is current db)\n"
+"  -a FILE, --append FILE     Operate on FILE opened using the apndvfs VFS\n"
 "  -C DIR, --directory DIR    Change to directory DIR to read/extract files\n"
 "  -n, --dryrun               Show the SQL that would have occurred\n"
-"  -a, --append               Append the SQLAR to an existing file\n"
 "\n"
 "See also: http://sqlite.org/cli.html#sqlar_archive_support\n"
 "\n"
@@ -4622,8 +4622,7 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
       break;
     case AR_SWITCH_APPEND:
       pAr->bAppend = 1;
-      break;
-
+      /* Fall thru into --file */
     case AR_SWITCH_FILE:
       pAr->zFile = zArg;
       break;
@@ -4659,8 +4658,8 @@ static int arParseCommand(
     { "help",      'h', AR_CMD_HELP,         0 },
     { "verbose",   'v', AR_SWITCH_VERBOSE,   0 },
     { "file",      'f', AR_SWITCH_FILE,      1 },
+    { "append",    'a', AR_SWITCH_APPEND,    1 },
     { "directory", 'C', AR_SWITCH_DIRECTORY, 1 },
-    { "append",    'a', AR_SWITCH_APPEND,    0 },
     { "dryrun",    'n', AR_SWITCH_DRYRUN,    0 },
   };
   int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);

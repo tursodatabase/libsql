@@ -1,5 +1,5 @@
-C Add\sthe\slsmode(MODE)\sfunction\sin\sthe\sfileio.c\sextension\sand\suse\sthat\sfunction\nin\sthe\s.archive\simplementation.\s\sAdd\sthe\s--append\sand\s--dryrun\soptions\sto\nthe\s.archive\scommand\sand\sremove\sthe\s--zip\soption,\smaking\sit\sautomatic.
-D 2018-01-10T17:44:03.548
+C Modify\sthe\snew\s"--append"\soption\sto\sthe\s.archive\sso\sthat\sit\stakes\sa\sfilename\nargument,\sthe\ssame\sas\s"--file".
+D 2018-01-10T18:09:20.329
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 12b6daa4bdb03fa87da27cbc205ff88ace645475b5be79414a3038b68ade14cb
@@ -484,7 +484,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8b22abe193e4d8243befa2038e4ae2405802fed1c446e5e502d11f652e09ba74
-F src/shell.c.in 4cb216da4adaac57faf03a502584d44d96f99b3235a6d2956750670c6aabc8b1
+F src/shell.c.in 2e72b9dc9dabde7e1d26142bf1080dfbc182ac1bf9431f85307b5931062a041b
 F src/sqlite.h.in 1f1a2da222ec57465794e8984d77f32d0bd0da80cdc136beadda461a0be9d80c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c02d628cca67f3889c689d82d25c3eb45e2c155db08e4c6089b5840d64687d34
@@ -1697,8 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f099b2b45074c89eeff8ff241aa49489c95c2221b25c305fcda670ebf63fb4e 612b30c95f948438016bd11470e9dd114d7bb064418a57e5954a094d2ca77f69
-R 92ad9119ea4a1b866aa95ac38fa72e64
-T +closed 612b30c95f948438016bd11470e9dd114d7bb064418a57e5954a094d2ca77f69
+P 38f28029d16df8489772c27867de8888dd1c26b170861acdc977fd4023939dde
+R 816b51584860870ca4a8d73ef0ed2ba2
 U drh
-Z 0e2d546e002bd2ff2da7a7782cc6fb79
+Z 8ced30e3ccc67e3689656b52b7db29d9
