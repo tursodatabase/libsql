@@ -1136,6 +1136,22 @@ static void shellLog(void *pArg, int iErrCode, const char *zMsg){
 }
 
 /*
+** SQL function:  shell_putsnl(X)
+**
+** Write the text X to the screen (or whatever output is being directed)
+** adding a newline at the end, and then return X.
+*/
+static void shellPutsFunc(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
+  utf8_printf(p->out, "%s\n", sqlite3_value_text(apVal[0]));
+  sqlite3_result_value(pCtx, apVal[0]);
+}
+
+/*
 ** Output the given string as a hex-encoded blob (eg. X'1234' )
 */
 static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
@@ -3307,6 +3323,8 @@ static void open_db(ShellState *p, int keepAlive){
                             shellAddSchemaName, 0, 0);
     sqlite3_create_function(p->db, "shell_module_schema", 1, SQLITE_UTF8, 0,
                             shellModuleSchema, 0, 0);
+    sqlite3_create_function(p->db, "shell_putsnl", 1, SQLITE_UTF8, p,
+                            shellPutsFunc, 0, 0);
     if( p->openMode==SHELL_OPEN_ZIPFILE ){
       char *zSql = sqlite3_mprintf(
          "CREATE VIRTUAL TABLE zip USING zipfile(%Q);", p->zDbFilename);
@@ -5008,7 +5026,6 @@ static int arCreateOrUpdateCommand(
   ArCommand *pAr,                 /* Command arguments and options */
   int bUpdate                     /* true for a --create.  false for --update */
 ){
-  const char *zSql = "SELECT name, mode, mtime, data FROM fsdir($name, $dir)";
   const char *zCreate = 
       "CREATE TABLE IF NOT EXISTS sqlar(\n"
       "  name TEXT PRIMARY KEY,  -- name of the file\n"
@@ -5018,86 +5035,41 @@ static int arCreateOrUpdateCommand(
       "  data BLOB               -- compressed content\n"
       ")";
   const char *zDrop = "DROP TABLE IF EXISTS sqlar";
-  const char *zInsert = "REPLACE INTO sqlar VALUES(?,?,?,?,sqlar_compress(?))";
-
-  sqlite3_stmt *pStmt = 0;        /* Directory traverser */
-  sqlite3_stmt *pInsert = 0;      /* Compilation of zInsert */
+  const char *zInsertFmt = 
+     "REPLACE INTO sqlar(name,mode,mtime,sz,data)\n"
+     "  SELECT\n"
+     "    %s,\n"
+     "    mode,\n"
+     "    mtime,\n"
+     "    CASE filetype(mode)\n"
+     "      WHEN 'file' THEN length(data)\n"
+     "      WHEN 'directory' THEN 0\n"
+     "      ELSE -1 END,\n"
+     "    CASE WHEN filetype(mode)<>'directory' THEN data ELSE NULL END\n"
+     "  FROM fsdir(%Q,%Q)\n"
+     "  WHERE filetype(mode)<>'unknown'";
   int i;                          /* For iterating through azFile[] */
-  int j;                          /* Parameter index */
   int rc;                         /* Return code */
-
-  assert( pAr->bZip==0 );
 
   rc = arExecSql(pAr, "SAVEPOINT ar;");
   if( rc!=SQLITE_OK ) return rc;
-
   if( bUpdate==0 ){
     rc = arExecSql(pAr, zDrop);
     if( rc!=SQLITE_OK ) return rc;
   }
-
   rc = arExecSql(pAr, zCreate);
-  if( !pAr->bDryRun ){
-    shellPrepare(pAr->db, &rc, zInsert, &pInsert);
-  }
-  shellPrepare(pAr->db, &rc, zSql, &pStmt);
-  j = sqlite3_bind_parameter_index(pStmt, "$dir");
-  sqlite3_bind_text(pStmt, j, pAr->zDir, -1, SQLITE_STATIC);
-  if( pAr->bDryRun ){
-    utf8_printf(pAr->p->out, "%s;\n", sqlite3_sql(pStmt));
-  }
-
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
-    j = sqlite3_bind_parameter_index(pStmt, "$name");
-    sqlite3_bind_text(pStmt, j, pAr->azArg[i], -1, SQLITE_STATIC);
-    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-      int sz;
-      const char *zName = (const char*)sqlite3_column_text(pStmt, 0);
-      int mode = sqlite3_column_int(pStmt, 1);
-      unsigned int mtime = sqlite3_column_int(pStmt, 2);
-
-      if( pAr->bVerbose ){
-        utf8_printf(pAr->p->out, "%s\n", zName);
-      }
-      if( pAr->bDryRun ){
-        utf8_printf(pAr->p->out, "%s;\n", zInsert);
-        continue;
-      }
-
-      sqlite3_bind_text(pInsert, 1, zName, -1, SQLITE_STATIC);
-      sqlite3_bind_int(pInsert, 2, mode);
-      sqlite3_bind_int64(pInsert, 3, (sqlite3_int64)mtime);
-
-      if( S_ISDIR(mode) ){
-        sz = 0;
-        sqlite3_bind_null(pInsert, 5);
-      }else{
-        sqlite3_bind_value(pInsert, 5, sqlite3_column_value(pStmt, 3));
-        if( S_ISLNK(mode) ){
-          sz = -1;
-        }else{
-          sz = sqlite3_column_bytes(pStmt, 3);
-        }
-      }
-
-      sqlite3_bind_int(pInsert, 4, sz);
-      if( pAr->bDryRun ){
-        utf8_printf(pAr->p->out, "%s\n", sqlite3_sql(pInsert));
-      }else{
-        sqlite3_step(pInsert);
-      }
-      rc = sqlite3_reset(pInsert);
-    }
-    shellReset(&rc, pStmt);
+    char *zSql = sqlite3_mprintf(zInsertFmt,
+        pAr->bVerbose ? "shell_putsnl(name)" : "name",
+        pAr->azArg[i], pAr->zDir);
+    rc = arExecSql(pAr, zSql);
+    sqlite3_free(zSql);
   }
-
   if( rc!=SQLITE_OK ){
     arExecSql(pAr, "ROLLBACK TO ar; RELEASE ar;");
   }else{
     rc = arExecSql(pAr, "RELEASE ar;");
   }
-  shellFinalize(&rc, pStmt);
-  shellFinalize(&rc, pInsert);
   return rc;
 }
 
@@ -5161,7 +5133,9 @@ static int arDotCommand(
 #endif
     }
     if( cmd.zSrcTable==0 ){
-      if( sqlite3_table_column_metadata(cmd.db,0,"sqlar","name",0,0,0,0,0) ){
+      if( cmd.eCmd!=AR_CMD_CREATE
+       && sqlite3_table_column_metadata(cmd.db,0,"sqlar","name",0,0,0,0,0)
+      ){
         utf8_printf(stderr, "database does not contain an 'sqlar' table\n");
         rc = SQLITE_ERROR;
         goto end_ar_command;
