@@ -27,7 +27,7 @@ do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE temp.zz USING zipfile('test.zip');
   PRAGMA table_info(zz);
 } {
-  0 name {} 0 {} 0 
+  0 name {} 1 {} 1 
   1 mode {} 0 {} 0 
   2 mtime {} 0 {} 0 
   3 sz {} 0 {} 0 
@@ -159,6 +159,10 @@ foreach {tn fname} {
     INSERT INTO x1(name, data) VALUES($fname, 'abcd');
   } {1 {constraint failed}}
 }
+
+do_catchsql_test 3.2 {
+  SELECT rowid FROM x1
+} {1 {no such column: rowid}}
 
 
 finish_test
