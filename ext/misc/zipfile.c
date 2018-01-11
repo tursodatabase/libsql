@@ -10,6 +10,19 @@
 **
 ******************************************************************************
 **
+** This file implements a virtual table for reading and writing ZIP archive
+** files.
+**
+** Usage example:
+**
+**     SELECT name, sz, datetime(mtime,'unixepoch') FROM zipfile($filename);
+**
+** Current limitations:
+**
+**    *  No support for encryption
+**    *  No support for ZIP archives spanning multiple files
+**    *  No support for zip64 extensions
+**    *  Only the "inflate/deflate" (zlib) compression method is supported
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -42,18 +55,19 @@ typedef unsigned long u32;
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #endif
 
-#define ZIPFILE_SCHEMA "CREATE TABLE y("                              \
-  "name,      /* 0: Name of file in zip archive */"                   \
-  "mode,      /* 1: POSIX mode for file */"                           \
-  "mtime,     /* 2: Last modification time in seconds since epoch */" \
-  "sz,        /* 3: Size of object */"                                \
-  "rawdata,   /* 4: Raw data */"                                      \
-  "data,      /* 5: Uncompressed data */"                             \
-  "method,    /* 6: Compression method (integer) */"                  \
-  "file HIDDEN   /* Name of zip file */"                              \
-");"
+static const char ZIPFILE_SCHEMA[] = 
+  "CREATE TABLE y("
+    "name,"              /* 0: Name of file in zip archive */
+    "mode,"              /* 1: POSIX mode for file */
+    "mtime,"             /* 2: Last modification time (secs since 1970)*/
+    "sz,"                /* 3: Size of object */
+    "rawdata,"           /* 4: Raw data */
+    "data,"              /* 5: Uncompressed data */
+    "method,"            /* 6: Compression method (integer) */
+    "file HIDDEN"        /* 7: Name of zip file */
+  ");";
 
-#define ZIPFILE_F_COLUMN_IDX 7    /* Index of column "f" in the above */
+#define ZIPFILE_F_COLUMN_IDX 7    /* Index of column "file" in the above */
 #define ZIPFILE_BUFFER_SIZE (64*1024)
 
 
