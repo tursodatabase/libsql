@@ -8298,6 +8298,18 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 int sqlite3_vtab_on_conflict(sqlite3 *);
 
 /*
+** CAPI3REF: Determine If Virtual Table Column Access Is For UPDATE
+**
+** If the sqlite3_vtab_nochange(X) routine is called within the [xColumn]
+** method of a [virtual table], then it returns true if and only if the
+** column is being fetched as part of an UPDATE operation during which the
+** column value will not change.  Applications might use this to substitute
+** a lighter-weight value to return that the corresponding [xUpdate] method
+** understands as a "no-change" value.
+*/
+int sqlite3_vtab_nochange(sqlite3_context*);
+
+/*
 ** CAPI3REF: Determine The Collation For a Virtual Table Constraint
 **
 ** This function may only be called from within a call to the [xBestIndex]

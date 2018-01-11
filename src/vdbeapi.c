@@ -746,6 +746,25 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 }
 
 /*
+** If this routine is invoked from within an xColumn method of a virtual
+** table, then it returns true if and only if the the call is during an
+** UPDATE operation and the value of the column will not be modified
+** by the UPDATE.
+**
+** If this routine is called from any context other than within the
+** xColumn method of a virtual table, then the return value is meaningless
+** and arbitrary.
+**
+** Virtual table implements might use this routine to optimize their
+** performance by substituting a NULL result, or some other light-weight
+** value, as a signal to the xUpdate routine that the column is unchanged.
+*/
+int sqlite3_vtab_nochange(sqlite3_context *p){
+  assert( p );
+  return p->bVtabNoChng;
+}
+
+/*
 ** Return the current time for a statement.  If the current time
 ** is requested more than once within the same run of a single prepared
 ** statement, the exact same time is returned for each invocation regardless

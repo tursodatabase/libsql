@@ -827,7 +827,7 @@ static void updateVirtualTable(
     if( aXRef[i]>=0 ){
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
-      sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
+      sqlite3VdbeAddOp4Int(v, OP_VColumn, iCsr, i, regArg+2+i, 1);
     }
   }
   if( HasRowid(pTab) ){
