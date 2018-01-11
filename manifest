@@ -1,5 +1,5 @@
-C Minor\sformatting\schanges\sin\szipfile.c.\s\sNo\slogical\scode\sdifferences.
-D 2018-01-11T14:50:40.176
+C Add\stest\scases\sfor\srunning\smultiple\sRBU\soperations\swithin\sthe\ssame\sprocess\nconcurrently.
+D 2018-01-11T16:16:03.148
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -330,6 +330,7 @@ F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufault3.test 0913c1aeaee266d9c36c33179341a5a504aad7d423d1979cfec43c8346a29899
 F ext/rbu/rbufault4.test 34e70701cbec51571ffbd9fbf9d4e0f2ec495ca7
 F ext/rbu/rbufts.test a2bbd202c9321fba15fb4a62a90add7d70e07bd8404e1e598135adbfff8a0508
+F ext/rbu/rbumulti.test 2cf153ab3d5861ff26517dc6cbaec430787a59f1d50e8771fe7a7529a0551cf1
 F ext/rbu/rbuprogress.test 1849d4e0e50616edf5ce75ce7db86622e656b5cf
 F ext/rbu/rburesume.test 8acb77f4a422ff55acfcfc9cc15a5cb210b1de83
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
@@ -1697,7 +1698,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c55571baaae58d6f5b6210cf85d0fa325a9977682bd449e3802191f7a4142de
-R 33de751c900466ee2a12d260dcb2a3de
-U drh
-Z 324651d5684ea52cfa823d4ea5809b01
+P 4f68bed3b9a63a349a2a2d7f26609491577e9717034ad86af404cf9eed9d6aaf
+R b4712b12dc6463238ee69f57e3b3a2cb
+U dan
+Z e742283e882b3ab287b40d1d09763224
