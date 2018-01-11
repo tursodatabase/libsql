@@ -807,7 +807,7 @@ static void updateVirtualTable(
   int bOnePass;                   /* True to use onepass strategy */
   int addr;                       /* Address of OP_OpenEphemeral */
 
-  /* Allocate nArg registers to martial the arguments to VUpdate. Then
+  /* Allocate nArg registers in which to gather the arguments for VUpdate. Then
   ** create and open the ephemeral table in which the records created from
   ** these arguments will be temporarily stored. */
   assert( v );

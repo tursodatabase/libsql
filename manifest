@@ -1,5 +1,5 @@
-C Update\sthe\s.help\sscreen\sin\sthe\sCLI.\s\sMake\ssure\sthe\stemporary\sfiles\sfor\n".open"\sare\snot\sdeleted\stoo\ssoon.
-D 2018-01-11T00:38:39.192
+C Fix\stypo\sin\scomment.\s\sNo\scode\schanges.
+D 2018-01-11T13:43:04.788
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -548,7 +548,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec3
 F src/trigger.c a34539c69433276d37b0da9a89c117726ff2d292c0902895af1f393a983cd3a1
-F src/update.c 961bd1265d4d1e5cd65c9a54fa5122fb7aefcb003fcf2de0c092fceb7e58972c
+F src/update.c f75a8bf497219fa0c4ba9293022db64cca13e457e33d62f58306f107327506ac
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 7315e97a8dc2c8e19ca64196c652cf0a65d13fd0a211b2cec082062372dc6261
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
@@ -1697,7 +1697,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef823c47a0ac4f3b001e6c89c38354b45b5229d872cfc69a29c82e99414b89c8
-R 3f7dbb61aadad578b23395ee859b8a4c
+P b8d92d8dc239597c6f01a6e572b047f98ce374a8f48257683fa839dde3ec993f
+R 7aa5de08d44a1e2c05aadb2e5fa21a20
 U drh
-Z c33398289b510440ef343bbf6c1308f4
+Z af4c8b3a64ae000c2affb5a4b97dbea6
