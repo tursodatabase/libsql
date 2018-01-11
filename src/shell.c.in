@@ -3247,10 +3247,12 @@ static char zHelp[] =
   "                         tabs     Tab-separated values\n"
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
-  ".once FILENAME         Output for the next SQL command only to FILENAME\n"
+  ".once (-e|-x|FILE)     Output for the next SQL command only to FILE\n"
+  "                         or invoke system text editor (-e) or spreadsheet (-x)\n"
+  "                         on the output.\n"
   ".open ?OPTIONS? ?FILE? Close existing database and reopen FILE\n"
   "                         The --new option starts with an empty file\n"
-  ".output ?FILENAME?     Send output to FILENAME or stdout\n"
+  ".output ?FILE?         Send output to FILE or stdout\n"
   ".print STRING...       Print literal STRING\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
@@ -4371,6 +4373,7 @@ int shellDeleteFile(const char *zFilename){
 */
 static void clearTempFile(ShellState *p){
   if( p->zTempFile==0 ) return;
+  if( p->doXdgOpen ) return;
   if( shellDeleteFile(p->zTempFile) ) return;
   sqlite3_free(p->zTempFile);
   p->zTempFile = 0;
@@ -8413,6 +8416,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
   sqlite3_free(data.zFreeOnClose);
   find_home_dir(1);
+  output_reset(&data);
+  data.doXdgOpen = 0;
   clearTempFile(&data);
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argc; i++) sqlite3_free(argv[i]);
