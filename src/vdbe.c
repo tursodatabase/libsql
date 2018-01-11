@@ -6693,12 +6693,18 @@ case OP_VFilter: {   /* jump */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VColumn P1 P2 P3 * *
+/* Opcode: VColumn P1 P2 P3 P4 *
 ** Synopsis: r[P3]=vcolumn(P2)
 **
-** Store the value of the P2-th column of
-** the row of the virtual-table that the 
-** P1 cursor is pointing to into register P3.
+** Store in register P3 the value of the P2-th column of
+** the current row of the virtual-table of cursor P1.
+**
+** If the VColumn opcode is being used to fetch the value of
+** an unchanging column during an UPDATE operation, then the P4
+** value is 1.  Otherwise, P4 is 0.  The P4 value is returned
+** by sqlite3_vtab_nochange() routine can can be used
+** by virtual table implementations to return special "no-change"
+** marks which can be more efficient, depending on the virtual table.
 */
 case OP_VColumn: {
   sqlite3_vtab *pVtab;
@@ -6720,6 +6726,7 @@ case OP_VColumn: {
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
+  sContext.bVtabNoChng = pOp->p4.i!=0;
   MemSetTypeFlag(pDest, MEM_Null);
   rc = pModule->xColumn(pCur->uc.pVCur, &sContext, pOp->p2);
   sqlite3VtabImportErrmsg(p, pVtab);
