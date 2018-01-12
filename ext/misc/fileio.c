@@ -86,6 +86,7 @@ SQLITE_EXTENSION_INIT1
 #  include <unistd.h>
 #  include <dirent.h>
 #  include <utime.h>
+#  include <sys/time.h>
 #else
 #  include "windows.h"
 #  include <io.h>
@@ -285,7 +286,7 @@ static int writeFile(
     }else{
       return 1;
     }
-#elif defined(AT_FDCWD)
+#elif defined(AT_FDCWD) && 0 /* utimensat() is not univerally available */
     /* Recent unix */
     struct timespec times[2];
     times[0].tv_nsec = times[1].tv_nsec = 0;
