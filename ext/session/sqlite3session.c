@@ -894,9 +894,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 
 /*
 ** This function queries the database for the names of the columns of table
-** zThis, in schema zDb. It is expected that the table has nCol columns. If
-** not, SQLITE_SCHEMA is returned and none of the output variables are
-** populated.
+** zThis, in schema zDb.
 **
 ** Otherwise, if they are not NULL, variable *pnCol is set to the number
 ** of columns in the database table and variable *pzTab is set to point to a
@@ -917,9 +915,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 **     *pabPK  = {1, 0, 0, 1}
 **
 ** All returned buffers are part of the same single allocation, which must
-** be freed using sqlite3_free() by the caller. If pazCol was not NULL, then
-** pointer *pazCol should be freed to release all memory. Otherwise, pointer
-** *pabPK. It is illegal for both pazCol and pabPK to be NULL.
+** be freed using sqlite3_free() by the caller
 */
 static int sessionTableInfo(
   sqlite3 *db,                    /* Database connection */

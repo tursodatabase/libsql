@@ -1,5 +1,5 @@
-C Include\schanges\smade\sto\sthe\ssqlite_stat1\stable\sin\schangesets\ngenerated\sby\sthe\ssessions\smodule.\ssqlite_stat1\sentries\sin\ssuch\schangesets\sare\nignored\sby\slegacy\sclients.
-D 2018-01-12T17:25:25.310
+C Fix\sobsolete\scomments.\s\sNo\schanges\sto\scode.
+D 2018-01-12T18:03:38.307
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -399,7 +399,7 @@ F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionstat1.test a361997e6ea72d427cb4b1313226b56278b9c74d3045817c33c99de5bef0f2e9
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 604aa21fa17c161a982595ec76c533add0e3f02ad7fb48bd4ece59335901a421
+F ext/session/sqlite3session.c 0153359f97800a7dddf1c06f4b18d78dd4b233c96bc3e2e63879a71fc80a4b09
 F ext/session/sqlite3session.h cb4d860101ba6d3ac810f18684539b766d24d668fa2436cdde90d711af9464fb
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1699,8 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30ed7a4b6408f0ca921abc4d8b7bb5404fc7708cedcd104b017b361054e7148c bd46c4429693545eb16db85692fc591ac529796aa746f5f21df1ce4380619320
-R 45cb3eae3cd802c11970c064766b4af9
-T +closed bd46c4429693545eb16db85692fc591ac529796aa746f5f21df1ce4380619320
-U dan
-Z f2dd6a8e929126a4d6fd50f30c0d0ed2
+P 2064233533edec0308d0212fb08e72fd14c760a1c88452424cae298e9eaf4af8
+R 3e8aedeebf1827d98e1081cfd8339e33
+U drh
+Z 59c372a6dec67f6ff695d342429f4b78
