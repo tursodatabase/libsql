@@ -4483,7 +4483,8 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
-  if( db->xUpdateCallback && op ){
+  assert( !op || pTab->aCol || !sqlite3_stricmp(pTab->zName,"sqlite_stat1") );
+  if( db->xUpdateCallback && op && pTab->aCol ){
     db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, x.nKey);
   }
   break;
