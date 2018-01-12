@@ -4454,11 +4454,14 @@ case OP_InsertInt: {
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
-  if( db->xPreUpdateCallback 
-   && pOp->p4type==P4_TABLE
-   && !(pOp->p5 & OPFLAG_ISUPDATE)
-  ){
-    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey, pOp->p2);
+  if( pOp->p4type==P4_TABLE ){
+    if( db->xPreUpdateCallback && !(pOp->p5 & OPFLAG_ISUPDATE) ){
+      sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey,pOp->p2);
+    }
+    if( op && pTab->aCol==0 ){
+      assert( sqlite3_stricmp(pTab->zName, "sqlite_stat1")==0 );
+      op = 0;
+    }
   }
   if( pOp->p5 & OPFLAG_ISNOOP ) break;
 #endif
@@ -4483,8 +4486,8 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
-  assert( !op || pTab->aCol || !sqlite3_stricmp(pTab->zName,"sqlite_stat1") );
-  if( db->xUpdateCallback && op && pTab->aCol ){
+  if( db->xUpdateCallback && op ){
+    assert( pTab->aCol );
     db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, x.nKey);
   }
   break;
