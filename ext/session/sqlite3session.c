@@ -941,12 +941,19 @@ static int sessionTableInfo(
 
   nThis = sqlite3Strlen30(zThis);
   if( nThis==12 && 0==sqlite3_stricmp("sqlite_stat1", zThis) ){
-    /* For sqlite_stat1, pretend that (tbl,idx) is the PRIMARY KEY. */
-    zPragma = sqlite3_mprintf(
-        "SELECT 0, 'tbl',  '', 0, '', 1     UNION ALL "
-        "SELECT 1, 'idx',  '', 0, '', 2     UNION ALL "
-        "SELECT 2, 'stat', '', 0, '', 0"
-    );
+    rc = sqlite3_table_column_metadata(db, zDb, zThis, 0, 0, 0, 0, 0, 0);
+    if( rc==SQLITE_OK ){
+      /* For sqlite_stat1, pretend that (tbl,idx) is the PRIMARY KEY. */
+      zPragma = sqlite3_mprintf(
+          "SELECT 0, 'tbl',  '', 0, '', 1     UNION ALL "
+          "SELECT 1, 'idx',  '', 0, '', 2     UNION ALL "
+          "SELECT 2, 'stat', '', 0, '', 0"
+      );
+    }else if( rc==SQLITE_ERROR ){
+      zPragma = sqlite3_mprintf("");
+    }else{
+      return rc;
+    }
   }else{
     zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
   }
@@ -1506,7 +1513,6 @@ int sqlite3session_diff(
             if( abPK[i] ) bHasPk = 1;
           }
         }
-
       }
       sqlite3_free((char*)azCol);
       if( bMismatch ){

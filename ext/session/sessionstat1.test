@@ -119,7 +119,7 @@ do_execsql_test -db db2 2.4 {
 } {
 }
 
-do_execsql_test -db db2 2.4 { SELECT count(*) FROM t1 } 32
+do_execsql_test -db db2 2.5 { SELECT count(*) FROM t1 } 32
 
 finish_test
 
