@@ -760,7 +760,7 @@ void sqlite3GenerateRowDelete(
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( pParse->nested==0 ){
+    if( pParse->nested==0 || 0==sqlite3_stricmp(pTab->zName, "sqlite_stat1") ){
       sqlite3VdbeAppendP4(v, (char*)pTab, P4_TABLE);
     }
     if( eMode!=ONEPASS_OFF ){

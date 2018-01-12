@@ -944,7 +944,16 @@ static int sessionTableInfo(
   assert( pazCol && pabPK );
 
   nThis = sqlite3Strlen30(zThis);
-  zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  if( nThis==12 && 0==sqlite3_stricmp("sqlite_stat1", zThis) ){
+    /* For sqlite_stat1, pretend that (tbl,idx) is the PRIMARY KEY. */
+    zPragma = sqlite3_mprintf(
+        "SELECT 0, 'tbl',  '', 0, '', 1     UNION ALL "
+        "SELECT 1, 'idx',  '', 0, '', 2     UNION ALL "
+        "SELECT 2, 'stat', '', 0, '', 0"
+    );
+  }else{
+    zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  }
   if( !zPragma ) return SQLITE_NOMEM;
 
   rc = sqlite3_prepare_v2(db, zPragma, -1, &pStmt, 0);
