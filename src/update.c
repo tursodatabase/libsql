@@ -828,7 +828,7 @@ static void updateVirtualTable(
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
-      sqlite3VdbeChangeP5(v, 1);
+      sqlite3VdbeChangeP5(v, 1); /* Enable sqlite3_vtab_nochange() */
     }
   }
   if( HasRowid(pTab) ){
@@ -863,7 +863,11 @@ static void updateVirtualTable(
     /* Create a record from the argument register contents and insert it into
     ** the ephemeral table. */
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
-    sqlite3VdbeChangeP5(v, 2);
+#ifdef SQLITE_DEBUG
+    /* Signal an assert() within OP_MakeRecord that it is allowed to
+    ** accept no-change records with serial_type 10 */
+    sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
+#endif
     sqlite3VdbeAddOp2(v, OP_NewRowid, ephemTab, regRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
   }
