@@ -4415,10 +4415,8 @@ case OP_InsertInt: {
   int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
   Table *pTab;      /* Table structure - used by update and pre-update hooks */
-  int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
   BtreePayload x;   /* Payload to be inserted */
 
-  op = 0;
   pData = &aMem[pOp->p2];
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( memIsValid(pData) );
@@ -4446,21 +4444,20 @@ case OP_InsertInt: {
     zDb = db->aDb[pC->iDb].zDbSName;
     pTab = pOp->p4.pTab;
     assert( (pOp->p5 & OPFLAG_ISNOOP) || HasRowid(pTab) );
-    op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }else{
-    pTab = 0; /* Not needed.  Silence a compiler warning. */
+    pTab = 0;
     zDb = 0;  /* Not needed.  Silence a compiler warning. */
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
-  if( pOp->p4type==P4_TABLE ){
+  if( pTab ){
     if( db->xPreUpdateCallback && !(pOp->p5 & OPFLAG_ISUPDATE) ){
       sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey,pOp->p2);
     }
-    if( op && pTab->aCol==0 ){
-      assert( sqlite3_stricmp(pTab->zName, "sqlite_stat1")==0 );
-      op = 0;
+    if( db->xUpdateCallback==0 || pTab->aCol==0 ){
+      /* Prevent post-update hook from running in cases when it should not */
+      pTab = 0;
     }
   }
   if( pOp->p5 & OPFLAG_ISNOOP ) break;
@@ -4486,9 +4483,12 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
-  if( db->xUpdateCallback && op ){
-    assert( pTab->aCol );
-    db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, x.nKey);
+  if( pTab ){
+    assert( db->xUpdateCallback!=0 );
+    assert( pTab->aCol!=0 );
+    db->xUpdateCallback(db->pUpdateArg,
+           (pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT,
+           zDb, pTab->zName, x.nKey);
   }
   break;
 }
