@@ -26,6 +26,9 @@ pub enum DropBehavior {
     /// Do not commit or roll back changes - this will leave the transaction or savepoint
     /// open, so should be used with care.
     Ignore,
+
+    /// Panic. Used to enforce intentional behavior during development.
+    Panic,
 }
 
 /// Old name for `Transaction`. `SqliteTransaction` is deprecated.
@@ -192,6 +195,7 @@ impl<'conn> Transaction<'conn> {
             DropBehavior::Commit => self.commit_(),
             DropBehavior::Rollback => self.rollback_(),
             DropBehavior::Ignore => Ok(()),
+            DropBehavior::Panic => panic!("Transaction dropped unexpectedly."),
         }
     }
 }
@@ -303,6 +307,7 @@ impl<'conn> Savepoint<'conn> {
             DropBehavior::Commit => self.commit_(),
             DropBehavior::Rollback => self.rollback(),
             DropBehavior::Ignore => Ok(()),
+            DropBehavior::Panic => panic!("Savepoint dropped unexpectedly."),
         }
     }
 }
