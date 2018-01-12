@@ -479,6 +479,9 @@ void sqlite3DeleteFrom(
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
       if( addrEphOpen ) sqlite3VdbeChangeToNoop(v, addrEphOpen);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+      if( IsVirtual(pTab) ) sqlite3VdbeAddOp1(v, OP_Close, iTabCur);
+#endif
     }else{
       if( pPk ){
         /* Add the PK key for this row to the temporary table */

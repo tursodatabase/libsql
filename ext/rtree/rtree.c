@@ -1851,6 +1851,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       */ 
       pIdxInfo->estimatedCost = 30.0;
       pIdxInfo->estimatedRows = 1;
+      pIdxInfo->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
       return SQLITE_OK;
     }
 

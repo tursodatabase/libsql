@@ -864,13 +864,14 @@ static void updateVirtualTable(
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
     sqlite3VdbeAddOp2(v, OP_NewRowid, ephemTab, regRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
-  }
-
-
-  if( bOnePass==0 ){
     /* End the virtual table scan */
     sqlite3WhereEnd(pWInfo);
+  }
 
+  /* Make sure the scan cursor is closed prior to doing the update */
+  sqlite3VdbeAddOp1(v, OP_Close, iCsr);
+
+  if( bOnePass==0 ){
     /* Begin scannning through the ephemeral table. */
     addr = sqlite3VdbeAddOp1(v, OP_Rewind, ephemTab); VdbeCoverage(v);
 
@@ -890,7 +891,7 @@ static void updateVirtualTable(
   if( bOnePass==0 ){
     sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
-    sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
+    sqlite3VdbeAddOp1(v, OP_Close, ephemTab);
   }else{
     sqlite3WhereEnd(pWInfo);
   }

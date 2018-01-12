@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_vtab_nochange()\sinterface.\s\sTest\scases\sare\sin\sTH3.
-D 2018-01-11T18:15:40.111
+C Enable\sthe\sone-pass\soptimization\sfor\sDELETE\sand\sUPDATE\son\sRTree.\s\sThis\sis\nparked\sin\sa\sbranch\sbecause\sis\sseems\sto\smake\sno\smeasureable\sperformance\ndifference.
+D 2018-01-12T00:30:54.726
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -350,7 +350,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 2111f685ae07988622c241f819b56fea60782f56e32f97e334473c59f6083481
+F ext/rtree/rtree.c 5db4eb1a893acc8d11067f9fec4abf65a167a3130512a07541ac81f6f779ef96
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 82a353747fcab1083d114b2ac84723dfefdbf86c1a6e1df57bf588c7d4285436
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -436,7 +436,7 @@ F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
-F src/delete.c 74667ad914ac143731a444a1bacf29ceb18f6eded8a0dd17aafae80baa07f8bb
+F src/delete.c f0f08da5e0c91cf60c10c2c32958d416eb0ca5f40c8673620bf9c26e09fdf9cd
 F src/expr.c ad6e7a9c34a4bab9d10cc857d647ae7ce370a633b5c0bfa71f1c29b81ae364b8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
@@ -549,7 +549,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec3
 F src/trigger.c a34539c69433276d37b0da9a89c117726ff2d292c0902895af1f393a983cd3a1
-F src/update.c 8bd52c38d6d426925be4488ee106db26d9ee344406315671ed246ddace8d6091
+F src/update.c 82f99065817b44d46a4f2ccc8507747af0ca24833d97da318f0f36878dacd83c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 7315e97a8dc2c8e19ca64196c652cf0a65d13fd0a211b2cec082062372dc6261
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
@@ -1698,8 +1698,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 931201f64e04247ed613a0301fcc86c3a337c2ed162c6370a80c67a1dd919e7c d444b1ff39f0a1673a977b8047e1e14a49d461c9934be080d27c2392a830c1c0
-R 9b5e5f478942b3c80eb44a5edc905e08
-T +closed d444b1ff39f0a1673a977b8047e1e14a49d461c9934be080d27c2392a830c1c0
+P a5d09dfaa337fa51d6e702c6aefe58824ab1e7d221c6e79166e2c6f9c7ab1501
+R 93319db175e524b0fd67ece91d3155f8
+T *branch * rtree-one-pass
+T *sym-rtree-one-pass *
+T -sym-trunk *
 U drh
-Z 90bbe9ce2100212cdce59fb9703ab09f
+Z 3a43968bccc728946c82ebbfdcce51ee
