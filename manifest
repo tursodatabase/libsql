@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_vtab_nochange()\sinterface.\s\sTest\scases\sare\sin\sTH3.
-D 2018-01-11T18:15:40.111
+C Add\sa\stest\sto\sensure\sthat\sthe\ssqlite3changeset_apply()\sfunction\signores\stables\nthat\sdo\snot\shave\sthe\sexpected\sprimary\skeys.
+D 2018-01-12T12:02:02.075
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -390,7 +390,7 @@ F ext/session/sessionC.test 97556f5164ac29f2344b24bd7de6a3a35a95c390
 F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
 F ext/session/sessionE.test 0a616c4ad8fd2c05f23217ebb6212ef80b7fef30f5f086a6633a081f93e84637
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
-F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
+F ext/session/sessionG.test 63f9a744341d670775af29e4f19c1ef09a4810798400f28cd76704803a2e56ff
 F ext/session/session_common.tcl 7776eda579773113b30c7abfd4545c445228cb73
 F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionat.test feb7d22b3124882064b9d9df69f5484a9bb8c123dc9ddc6ffcd357521848139f
@@ -1698,8 +1698,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 931201f64e04247ed613a0301fcc86c3a337c2ed162c6370a80c67a1dd919e7c d444b1ff39f0a1673a977b8047e1e14a49d461c9934be080d27c2392a830c1c0
-R 9b5e5f478942b3c80eb44a5edc905e08
-T +closed d444b1ff39f0a1673a977b8047e1e14a49d461c9934be080d27c2392a830c1c0
-U drh
-Z 90bbe9ce2100212cdce59fb9703ab09f
+P a5d09dfaa337fa51d6e702c6aefe58824ab1e7d221c6e79166e2c6f9c7ab1501
+R 180a0996d52ee7f7f835ebd96e9ccca1
+U dan
+Z 12f762acfd5b059fba2b906c66463308
