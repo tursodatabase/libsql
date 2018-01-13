@@ -272,7 +272,7 @@ ifcapable pragma {
   if {[atomic_batch_write test.db]==0} {
     do_test crash8.4.1.1 {
       list [file exists test.db-journal] [file exists test2.db-journal]
-    } [list $bJrnl $bJrnl]
+    } {1 1}
   }
 
   do_test crash8-4.2 {

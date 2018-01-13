@@ -1,5 +1,5 @@
-C Fix\svarious\sproblems\sin\stest\sscripts\spreventing\s"make\stest"\sfrom\spassing\son\nF2FS\sfile-systems\swith\sthe\s"atomic-write"\sfeature.\sCherrypick\sof\s[56d93d07].
-D 2018-01-13T13:21:04.534
+C Fix\sa\stypo\sin\stest\sfile\scrash8.test.
+D 2018-01-13T14:07:24.871
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -638,7 +638,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 64e464f22883be5184535a9620eb9070027073610d997bd2784227ca9564fb84
+F test/crash8.test 63cd5aea313222d7a69637cf7174c34d151676cc187d57193b66d4c89dedede3
 F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
@@ -1582,8 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 605907e73adb4533b12d22be8422f17a8dc125b5c37bb391756a11fc3a8c4d10
-Q +56d93d070d6b92d8a5a3fec1b09aae8911116c73d072fc5022f0b51668ed996b
-R 42cae1f02fcb9ccc20a10a90507b22db
+P 6a296d4d4d326f34f104a6632008050d1fff0e55118a428bc2df15cdef773b22
+R 47f453fe230e6d2e922e6d8659420e7f
 U dan
-Z 1b0a5b5324bf67537a5afbc88e5cdd1c
+Z bc4db4501f68833508f4972c23c5187e
