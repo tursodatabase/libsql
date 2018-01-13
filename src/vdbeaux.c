@@ -3457,6 +3457,8 @@ u32 sqlite3VdbeSerialGet(
     case 10: { /* Internal use only: NULL with virtual table
                ** UPDATE no-change flag set */
       pMem->flags = MEM_Null|MEM_Zero;
+      pMem->n = 0;
+      pMem->u.nZero = 0;
       break;
     }
     case 11:   /* Reserved for future use */
