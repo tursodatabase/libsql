@@ -1278,7 +1278,7 @@ static int zipfileUpdate(
 
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
     const char *zDelete = (const char*)sqlite3_value_text(apVal[0]);
-    int nDelete = strlen(zDelete);
+    int nDelete = (int)strlen(zDelete);
     for(pOld=pTab->pFirstEntry; 1; pOld=pOld->pNext){
       if( pOld->bDeleted ) continue;
       if( zipfileComparePath(pOld->zPath, zDelete, nDelete)==0 ){
@@ -1295,7 +1295,6 @@ static int zipfileUpdate(
   ){
     /* Reuse the data from the existing entry. */
     FILE *pFile = pTab->pWriteFd;
-    ZipfileCDS cds;
     zipfileReadCDS(pOld->aCdsEntry, &cds);
 
     bIsDir = ((cds.iExternalAttr>>16) & S_IFDIR) ? 1 : 0;
