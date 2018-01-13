@@ -1,5 +1,5 @@
-C Fix\svarious\sproblems\sin\stest\sscripts\spreventing\s"make\stest"\sfrom\spassing\son\nF2FS\sfile-systems\swith\sthe\s"atomic-write"\sfeature.
-D 2018-01-13T13:07:49.167
+C Fix\sa\stypo\sin\scrash8.test.
+D 2018-01-13T14:01:26.293
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -724,7 +724,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 64e464f22883be5184535a9620eb9070027073610d997bd2784227ca9564fb84
+F test/crash8.test 63cd5aea313222d7a69637cf7174c34d151676cc187d57193b66d4c89dedede3
 F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb196fcb677e962db4308c02097968615729a51fe4a1292e468aaf3e4bf522d3
-R 3bf69d486c995f84804eb3abae6dd335
+P 56d93d070d6b92d8a5a3fec1b09aae8911116c73d072fc5022f0b51668ed996b
+R 095d7894b995bcb80e7e3cee4fddb19c
 U dan
-Z ecacbd8e6749e1f68b1f30b320420a3c
+Z 4ed30e44a783453de01bc7b75236f201
