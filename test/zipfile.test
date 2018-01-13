@@ -76,11 +76,78 @@ do_execsql_test 1.5.1 {
 do_execsql_test 1.5.2 {
   SELECT name FROM zz;
 } {f.txt g.txt h.txt i.txt}
+do_execsql_test 1.5.3 {
+  SELECT data FROM zz WHERE name='i.txt';
+} {zxcvb}
 
 do_execsql_test 1.6.0 {
   DELETE FROM zz WHERE name='g.txt';
   SELECT name FROM zz;
 } {f.txt h.txt i.txt}
+
+do_execsql_test 1.6.1 {
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 33188 1000000000 abcde 0
+  h.txt 33188 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 1000000006 zxcvb 0
+}
+
+do_execsql_test 1.6.2 {
+  UPDATE zz SET mtime=4 WHERE name='i.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 33188 1000000000 abcde 0
+  h.txt 33188 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.3 {
+  UPDATE zz SET mode='-rw-r--r-x' WHERE name='h.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 33188 1000000000 abcde 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.4 {
+  UPDATE zz SET name = 'blue.txt' WHERE name='f.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt 33188 1000000000 abcde 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.5 {
+  UPDATE zz SET data = 'edcba' WHERE name='blue.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt 33188 1000000000 edcba 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.6 {
+  UPDATE zz SET mode=NULL, data = NULL WHERE name='blue.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt/ 16877 1000000000 {} 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_catchsql_test 1.6.7 {
+  UPDATE zz SET data=NULL WHERE name='i.txt'
+} {1 {constraint failed}}
+do_execsql_test 1.6.8 {
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt/ 16877 1000000000 {} 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
 
 #-------------------------------------------------------------------------
 db close
@@ -104,11 +171,11 @@ do_execsql_test 2.2 {
 
 do_catchsql_test 2.3 {
   UPDATE zzz SET name = 'dirname3' WHERE name = 'dirname/';
-} {1 {constraint failed}}
+} {0 {}}
 do_execsql_test 2.4 {
   SELECT name, mode, data FROM zzz;
 } {
-  dirname/ 16877 {}
+  dirname3/ 16877 {}
   dirname2/ 16877 {}
   dirname2/file1.txt 33188 abcdefghijklmnop
 }
@@ -118,11 +185,11 @@ do_execsql_test 2.4 {
 if {$::tcl_platform(platform)=="unix"} {
   do_test 2.5.1 {
     forcedelete dirname
-      forcedelete dirname2
-      set rc [catch { exec unzip test.zip > /dev/null } msg]
-      list $rc $msg
+    forcedelete dirname2
+    set rc [catch { exec unzip test.zip > /dev/null } msg]
+    list $rc $msg
   } {0 {}}
-  do_test 2.5.2 { file isdir dirname } 1
+  do_test 2.5.2 { file isdir dirname3 } 1
   do_test 2.5.3 { file isdir dirname2 } 1
   do_test 2.5.4 { file isdir dirname2/file1.txt } 0
   do_test 2.5.5 { 
