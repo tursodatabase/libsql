@@ -19,6 +19,11 @@ if {[run_thread_tests]==0} { finish_test ; return }
 db close
 set ::testprefix sharedA
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
+
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
 #-------------------------------------------------------------------------

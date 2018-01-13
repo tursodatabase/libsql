@@ -302,6 +302,7 @@ ifcapable autovacuum&&pragma {
 # The following test caes, jrnlmode-5.*, test the journal_size_limit
 # pragma.
 ifcapable pragma {
+if {[atomic_batch_write test.db]==0} {
   db close
   forcedelete test.db test2.db test3.db
   sqlite3 db test.db
@@ -454,8 +455,10 @@ ifcapable pragma {
     list [file exists test.db-journal] [file size test.db-journal]
   } {1 0}
 }
+}
 
 ifcapable pragma {
+if {[atomic_batch_write test.db]==0} {
   # These tests are not run as part of the "journaltest" permutation,
   # as the test_journal.c layer is incompatible with in-memory journaling.
   if {[permutation] ne "journaltest"} {
@@ -506,6 +509,7 @@ ifcapable pragma {
       file exists test.db-journal
     } {0}
   }
+}
 }
 
 ifcapable pragma {
