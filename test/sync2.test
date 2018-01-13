@@ -29,6 +29,7 @@ ifcapable !pager_pragmas||!attach||!dirsync {
 if {$::tcl_platform(platform)!="unix" 
   || [permutation] == "journaltest"
   || [permutation] == "inmemory_journal"
+  || [atomic_batch_write test.db] 
 } {
   finish_test
   return

@@ -20,7 +20,9 @@ source $testdir/malloc_common.tcl
 # If a connection is required to create a journal file, it creates it with 
 # the same file-system permissions as the database file itself. Test this.
 #
-if {$::tcl_platform(platform) == "unix"} {
+if {$::tcl_platform(platform) == "unix"
+ && [atomic_batch_write test.db]==0
+} {
 
   # Changed on 2012-02-13:  umask is deliberately ignored for -wal, -journal,
   # and -shm files.
