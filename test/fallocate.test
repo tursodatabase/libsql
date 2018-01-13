@@ -61,6 +61,7 @@ do_test fallocate-1.7 {
   execsql { BEGIN; INSERT INTO t1 VALUES(1, 2); }
   if {[permutation] != "inmemory_journal"
    && [permutation] != "atomic-batch-write"
+   && [atomic_batch_write test.db]==0
   } {
     hexio_get_int [hexio_read test.db-journal 16 4]
   } else {

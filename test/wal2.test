@@ -582,15 +582,23 @@ do_test wal2-6.3.4 {
     BEGIN;
       INSERT INTO t1 VALUES('Groucho');
   }
-  list [file exists test.db-wal] [file exists test.db-journal]
-} {0 1}
+} {}
+if {[atomic_batch_write test.db]==0} {
+  do_test wal2-6.3.4.1 {
+    list [file exists test.db-wal] [file exists test.db-journal]
+  } {0 1}
+}
 do_test wal2-6.3.5 {
   execsql { PRAGMA lock_status }
 } {main exclusive temp closed}
 do_test wal2-6.3.6 {
   execsql { COMMIT }
-  list [file exists test.db-wal] [file exists test.db-journal]
-} {0 1}
+} {}
+if {[atomic_batch_write test.db]==0} {
+  do_test wal2-6.3.6.1 {
+    list [file exists test.db-wal] [file exists test.db-journal]
+  } {0 1}
+}
 do_test wal2-6.3.7 {
   execsql { PRAGMA lock_status }
 } {main exclusive temp closed}
