@@ -2764,7 +2764,6 @@ int sqlite3CodeSubselect(
         pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
       }
       pSel->iLimit = 0;
-      pSel->selFlags &= ~SF_MultiValue;
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }
