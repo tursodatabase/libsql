@@ -283,11 +283,11 @@ void sqlite3DeleteFrom(
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
   isView = pTab->pSelect!=0;
-  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #else
 # define pTrigger 0
 # define isView 0
 #endif
+  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0
@@ -760,7 +760,7 @@ void sqlite3GenerateRowDelete(
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( pParse->nested==0 ){
+    if( pParse->nested==0 || 0==sqlite3_stricmp(pTab->zName, "sqlite_stat1") ){
       sqlite3VdbeAppendP4(v, (char*)pTab, P4_TABLE);
     }
     if( eMode!=ONEPASS_OFF ){

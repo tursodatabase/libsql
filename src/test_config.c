@@ -160,6 +160,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "mem5", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+  Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","0",TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   Tcl_SetVar2(interp, "sqlite_options", "preupdate", "1", TCL_GLOBAL_ONLY);
 #else
@@ -427,6 +433,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "icu", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "icu", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_ICU_COLLATIONS
+  Tcl_SetVar2(interp, "sqlite_options", "icu_collations", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "icu_collations", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_INCRBLOB

@@ -1,0 +1,245 @@
+# 2017 December 9
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix zipfile
+
+ifcapable !vtab {
+  finish_test; return
+}
+if {[catch {load_static_extension db zipfile} error]} {
+  puts "Skipping zipfile tests, hit load error: $error"
+  finish_test; return
+}
+
+forcedelete test.zip
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE temp.zz USING zipfile('test.zip');
+  PRAGMA table_info(zz);
+} {
+  0 name {} 1 {} 1 
+  1 mode {} 0 {} 0 
+  2 mtime {} 0 {} 0 
+  3 sz {} 0 {} 0 
+  4 rawdata {} 0 {} 0
+  5 data {} 0 {} 0
+  6 method {} 0 {} 0
+}
+
+do_catchsql_test 1.1.0.1 {
+  INSERT INTO zz(name, mode, mtime, sz, rawdata, method) 
+  VALUES('f.txt', '-rw-r--r--', 1000000000, 5, 'abcde', 0);
+} {1 {constraint failed}}
+do_catchsql_test 1.1.0.1 {
+  INSERT INTO zz(name, mtime, sz, rawdata, method) 
+  VALUES('g.txt', 1000000002, 5, '12345', 0);
+} {1 {constraint failed}}
+
+do_execsql_test 1.1.1 {
+  INSERT INTO zz(name, mode, mtime, data, method) 
+  VALUES('f.txt', '-rw-r--r--', 1000000000, 'abcde', 0);
+}
+do_execsql_test 1.1.2 {
+  INSERT INTO zz(name, mode, mtime, data, method) 
+  VALUES('g.txt', NULL, 1000000002, '12345', 0);
+}
+
+do_execsql_test 1.2 {
+  SELECT name, mtime, data FROM zipfile('test.zip')
+} {
+  f.txt 1000000000 abcde 
+  g.txt 1000000002 12345
+}
+
+do_execsql_test 1.3 {
+  INSERT INTO zz(name, mode, mtime, data) VALUES('h.txt', 
+    '-rw-r--r--', 1000000004, 'aaaaaaaaaabbbbbbbbbb'
+  );
+}
+
+do_execsql_test 1.4 {
+  SELECT name, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 1000000000 abcde 0
+  g.txt 1000000002 12345 0
+  h.txt 1000000004 aaaaaaaaaabbbbbbbbbb 8
+}
+
+do_execsql_test 1.5.1 {
+  BEGIN;
+    INSERT INTO zz(name, mode, mtime, data, method)
+    VALUES('i.txt', '-rw-r--r--', 1000000006, 'zxcvb', 0);
+    SELECT name FROM zz;
+  COMMIT;
+} {f.txt g.txt h.txt i.txt}
+do_execsql_test 1.5.2 {
+  SELECT name FROM zz;
+} {f.txt g.txt h.txt i.txt}
+do_execsql_test 1.5.3 {
+  SELECT data FROM zz WHERE name='i.txt';
+} {zxcvb}
+
+do_execsql_test 1.6.0 {
+  DELETE FROM zz WHERE name='g.txt';
+  SELECT name FROM zz;
+} {f.txt h.txt i.txt}
+
+do_execsql_test 1.6.1 {
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 33188 1000000000 abcde 0
+  h.txt 33188 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 1000000006 zxcvb 0
+}
+
+do_execsql_test 1.6.2 {
+  UPDATE zz SET mtime=4 WHERE name='i.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 33188 1000000000 abcde 0
+  h.txt 33188 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.3 {
+  UPDATE zz SET mode='-rw-r--r-x' WHERE name='h.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  f.txt 33188 1000000000 abcde 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.4 {
+  UPDATE zz SET name = 'blue.txt' WHERE name='f.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt 33188 1000000000 abcde 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.5 {
+  UPDATE zz SET data = 'edcba' WHERE name='blue.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt 33188 1000000000 edcba 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_execsql_test 1.6.6 {
+  UPDATE zz SET mode=NULL, data = NULL WHERE name='blue.txt';
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt/ 16877 1000000000 {} 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+do_catchsql_test 1.6.7 {
+  UPDATE zz SET data=NULL WHERE name='i.txt'
+} {1 {constraint failed}}
+do_execsql_test 1.6.8 {
+  SELECT name, mode, mtime, data, method FROM zipfile('test.zip');
+} {
+  blue.txt/ 16877 1000000000 {} 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 zxcvb 0
+}
+
+#-------------------------------------------------------------------------
+db close
+forcedelete test.zip
+reset_db
+load_static_extension db zipfile
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE zzz USING zipfile('test.zip');
+  INSERT INTO zzz(name, mode) VALUES('dirname', 'drwxr-xr-x');
+  SELECT name, mode, data FROM zzz;
+} {dirname/ 16877 {}}
+do_execsql_test 2.2 {
+  INSERT INTO zzz(name, data) VALUES('dirname2', NULL);
+  INSERT INTO zzz(name, data) VALUES('dirname2/file1.txt', 'abcdefghijklmnop');
+  SELECT name, mode, data FROM zzz;
+} {
+  dirname/ 16877 {}
+  dirname2/ 16877 {}
+  dirname2/file1.txt 33188 abcdefghijklmnop
+}
+
+do_catchsql_test 2.3 {
+  UPDATE zzz SET name = 'dirname3' WHERE name = 'dirname/';
+} {0 {}}
+do_execsql_test 2.4 {
+  SELECT name, mode, data FROM zzz;
+} {
+  dirname3/ 16877 {}
+  dirname2/ 16877 {}
+  dirname2/file1.txt 33188 abcdefghijklmnop
+}
+
+# If on unix, check that the [unzip] utility can unpack our archive.
+#
+if {$::tcl_platform(platform)=="unix"} {
+  do_test 2.5.1 {
+    forcedelete dirname
+    forcedelete dirname2
+    set rc [catch { exec unzip test.zip > /dev/null } msg]
+    list $rc $msg
+  } {0 {}}
+  do_test 2.5.2 { file isdir dirname3 } 1
+  do_test 2.5.3 { file isdir dirname2 } 1
+  do_test 2.5.4 { file isdir dirname2/file1.txt } 0
+  do_test 2.5.5 { 
+    set fd [open dirname2/file1.txt]
+    set data [read $fd]
+    close $fd
+    set data
+  } {abcdefghijklmnop}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.zip
+load_static_extension db zipfile
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE temp.x1 USING zipfile('test.zip');
+  INSERT INTO x1(name, data) VALUES('dir1/', NULL);
+  INSERT INTO x1(name, data) VALUES('file1', '1234');
+  INSERT INTO x1(name, data) VALUES('dir1/file2', '5678');
+}
+foreach {tn fname} {
+  1 dir1
+  2 file1
+  3 dir1/file2
+} {
+  do_catchsql_test 3.1.$tn.0 {
+    INSERT INTO x1(name, data) VALUES($fname, NULL);
+  } {1 {constraint failed}}
+  do_catchsql_test 3.1.$tn.1 {
+    INSERT INTO x1(name, data) VALUES($fname || '/', NULL);
+  } {1 {constraint failed}}
+  do_catchsql_test 3.1.$tn.2 {
+    INSERT INTO x1(name, data) VALUES($fname, 'abcd');
+  } {1 {constraint failed}}
+}
+
+do_catchsql_test 3.2 {
+  SELECT rowid FROM x1
+} {1 {no such column: rowid}}
+
+
+finish_test
+

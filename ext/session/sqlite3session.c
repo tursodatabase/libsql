@@ -894,9 +894,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 
 /*
 ** This function queries the database for the names of the columns of table
-** zThis, in schema zDb. It is expected that the table has nCol columns. If
-** not, SQLITE_SCHEMA is returned and none of the output variables are
-** populated.
+** zThis, in schema zDb.
 **
 ** Otherwise, if they are not NULL, variable *pnCol is set to the number
 ** of columns in the database table and variable *pzTab is set to point to a
@@ -917,9 +915,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 **     *pabPK  = {1, 0, 0, 1}
 **
 ** All returned buffers are part of the same single allocation, which must
-** be freed using sqlite3_free() by the caller. If pazCol was not NULL, then
-** pointer *pazCol should be freed to release all memory. Otherwise, pointer
-** *pabPK. It is illegal for both pazCol and pabPK to be NULL.
+** be freed using sqlite3_free() by the caller
 */
 static int sessionTableInfo(
   sqlite3 *db,                    /* Database connection */
@@ -944,7 +940,23 @@ static int sessionTableInfo(
   assert( pazCol && pabPK );
 
   nThis = sqlite3Strlen30(zThis);
-  zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  if( nThis==12 && 0==sqlite3_stricmp("sqlite_stat1", zThis) ){
+    rc = sqlite3_table_column_metadata(db, zDb, zThis, 0, 0, 0, 0, 0, 0);
+    if( rc==SQLITE_OK ){
+      /* For sqlite_stat1, pretend that (tbl,idx) is the PRIMARY KEY. */
+      zPragma = sqlite3_mprintf(
+          "SELECT 0, 'tbl',  '', 0, '', 1     UNION ALL "
+          "SELECT 1, 'idx',  '', 0, '', 2     UNION ALL "
+          "SELECT 2, 'stat', '', 0, '', 0"
+      );
+    }else if( rc==SQLITE_ERROR ){
+      zPragma = sqlite3_mprintf("");
+    }else{
+      return rc;
+    }
+  }else{
+    zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  }
   if( !zPragma ) return SQLITE_NOMEM;
 
   rc = sqlite3_prepare_v2(db, zPragma, -1, &pStmt, 0);
@@ -1501,7 +1513,6 @@ int sqlite3session_diff(
             if( abPK[i] ) bHasPk = 1;
           }
         }
-
       }
       sqlite3_free((char*)azCol);
       if( bMismatch ){

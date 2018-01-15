@@ -22,7 +22,12 @@ source $testdir/tester.tcl
 # These tests will not work on windows because windows uses
 # manditory file locking which breaks the copy_file command.
 #
-if {$tcl_platform(platform)=="windows"} {
+# Or with atomic_batch_write systems, as journal files are
+# not created.
+#
+if {$tcl_platform(platform)=="windows"
+ || [atomic_batch_write test.db]
+} {
   finish_test
   return
 }

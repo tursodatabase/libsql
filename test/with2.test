@@ -326,7 +326,7 @@ do_catchsql_test 6.5 {
 
 do_catchsql_test 6.6 { 
   WITH x AS (SELECT * FROM t1) DELETE FROM t2 WHERE
-} {/1 {near .* syntax error}/}
+} {1 {incomplete input}}
 
 do_catchsql_test 6.7 { 
   WITH x AS (SELECT * FROM t1) DELETE FROM t2 WHRE 1;

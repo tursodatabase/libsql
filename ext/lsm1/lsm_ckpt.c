@@ -389,7 +389,7 @@ static void ckptExportAppendlist(
   int *pRc                        /* IN/OUT: Error code */
 ){
   int i;
-  Pgno *aiAppend = db->pWorker->aiAppend;
+  LsmPgno *aiAppend = db->pWorker->aiAppend;
 
   for(i=0; i<LSM_APPLIST_SZ; i++){
     ckptAppend64(p, piOut, aiAppend[i], pRc);

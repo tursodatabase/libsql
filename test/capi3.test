@@ -649,6 +649,18 @@ do_test capi3-5.33 {
   sqlite3_finalize $STMT
 } SQLITE_OK
 
+# 2018-01-09:  If a column is the last token if a string, the column name
+# was not being set correctly, due to changes in check-in
+# https://sqlite.org/src/info/0fdf97efe5df7455
+#
+# This problem was detected by the community during beta-testing.
+#
+do_test capi3-5.34 {
+  set STMT [sqlite3_prepare $DB {SELECT :a, :b} -1 TAIL]
+  sqlite3_column_count $STMT
+} 2
+check_header $STMT capi-5.35 {:a :b} {{} {}}
+sqlite3_finalize $STMT
 
 set ::ENC [execsql {pragma encoding}]
 db close

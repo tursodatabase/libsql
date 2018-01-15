@@ -83,6 +83,7 @@ if {$tcl_platform(platform) == "unix"
  && [permutation] ne "onefile"
  && [permutation] ne "inmemory_journal"
  && [permutation] ne "atomic-batch-write"
+ && [atomic_batch_write test.db]==0
 } {
   do_test rollback-2.1 {
     execsql {

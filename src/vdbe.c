@@ -464,7 +464,7 @@ static void memTracePrint(Mem *p){
   if( p->flags & MEM_Undefined ){
     printf(" undefined");
   }else if( p->flags & MEM_Null ){
-    printf(" NULL");
+    printf(p->flags & MEM_Zero ? " NULL-nochng" : " NULL");
   }else if( (p->flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
     printf(" si:%lld", p->u.i);
   }else if( p->flags & MEM_Int ){
@@ -2350,6 +2350,36 @@ case OP_IfNullRow: {         /* jump */
   break;
 }
 
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+/* Opcode: Offset P1 P2 P3 * *
+** Synopsis: r[P3] = sqlite_offset(P1)
+**
+** Store in register r[P3] the byte offset into the database file that is the
+** start of the payload for the record at which that cursor P1 is currently
+** pointing.
+**
+** P2 is the column number for the argument to the sqlite_offset() function.
+** This opcode does not use P2 itself, but the P2 value is used by the
+** code generator.  The P1, P2, and P3 operands to this opcode are the
+** as as for OP_Column.
+**
+** This opcode is only available if SQLite is compiled with the
+** -DSQLITE_ENABLE_OFFSET_SQL_FUNC option.
+*/
+case OP_Offset: {          /* out3 */
+  VdbeCursor *pC;    /* The VDBE cursor */
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  pOut = &p->aMem[pOp->p3];
+  if( NEVER(pC==0) || pC->eCurType!=CURTYPE_BTREE ){
+    sqlite3VdbeMemSetNull(pOut);
+  }else{
+    sqlite3VdbeMemSetInt64(pOut, sqlite3BtreeOffset(pC->uc.pCursor));
+  }
+  break;
+}
+#endif /* SQLITE_ENABLE_OFFSET_SQL_FUNC */
+
 /* Opcode: Column P1 P2 P3 P4 P5
 ** Synopsis: r[P3]=PX
 **
@@ -2763,9 +2793,18 @@ case OP_MakeRecord: {
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
+    serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
     if( pRec->flags & MEM_Zero ){
-      if( nData ){
+      if( serial_type==0 ){
+        /* Values with MEM_Null and MEM_Zero are created by xColumn virtual
+        ** table methods that never invoke sqlite3_result_xxxxx() while
+        ** computing an unchanging column value in an UPDATE statement.
+        ** Give such values a special internal-use-only serial-type of 10
+        ** so that they can be passed through to xUpdate and have
+        ** a true sqlite3_value_nochange(). */
+        assert( pOp->p5==OPFLAG_NOCHNG_MAGIC || CORRUPT_DB );
+        serial_type = 10;
+      }else if( nData ){
         if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
       }else{
         nZero += pRec->u.nZero;
@@ -2776,6 +2815,7 @@ case OP_MakeRecord: {
     testcase( serial_type==127 );
     testcase( serial_type==128 );
     nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
+    pRec->uTemp = serial_type;
     if( pRec==pData0 ) break;
     pRec--;
   }while(1);
@@ -4386,10 +4426,8 @@ case OP_InsertInt: {
   int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
   Table *pTab;      /* Table structure - used by update and pre-update hooks */
-  int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
   BtreePayload x;   /* Payload to be inserted */
 
-  op = 0;
   pData = &aMem[pOp->p2];
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( memIsValid(pData) );
@@ -4417,19 +4455,21 @@ case OP_InsertInt: {
     zDb = db->aDb[pC->iDb].zDbSName;
     pTab = pOp->p4.pTab;
     assert( (pOp->p5 & OPFLAG_ISNOOP) || HasRowid(pTab) );
-    op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }else{
-    pTab = 0; /* Not needed.  Silence a compiler warning. */
+    pTab = 0;
     zDb = 0;  /* Not needed.  Silence a compiler warning. */
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
-  if( db->xPreUpdateCallback 
-   && pOp->p4type==P4_TABLE
-   && !(pOp->p5 & OPFLAG_ISUPDATE)
-  ){
-    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey, pOp->p2);
+  if( pTab ){
+    if( db->xPreUpdateCallback && !(pOp->p5 & OPFLAG_ISUPDATE) ){
+      sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey,pOp->p2);
+    }
+    if( db->xUpdateCallback==0 || pTab->aCol==0 ){
+      /* Prevent post-update hook from running in cases when it should not */
+      pTab = 0;
+    }
   }
   if( pOp->p5 & OPFLAG_ISNOOP ) break;
 #endif
@@ -4454,8 +4494,12 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
-  if( db->xUpdateCallback && op ){
-    db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, x.nKey);
+  if( pTab ){
+    assert( db->xUpdateCallback!=0 );
+    assert( pTab->aCol!=0 );
+    db->xUpdateCallback(db->pUpdateArg,
+           (pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT,
+           zDb, pTab->zName, x.nKey);
   }
   break;
 }
@@ -6664,12 +6708,18 @@ case OP_VFilter: {   /* jump */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VColumn P1 P2 P3 * *
+/* Opcode: VColumn P1 P2 P3 * P5
 ** Synopsis: r[P3]=vcolumn(P2)
 **
-** Store the value of the P2-th column of
-** the row of the virtual-table that the 
-** P1 cursor is pointing to into register P3.
+** Store in register P3 the value of the P2-th column of
+** the current row of the virtual-table of cursor P1.
+**
+** If the VColumn opcode is being used to fetch the value of
+** an unchanging column during an UPDATE operation, then the P5
+** value is 1.  Otherwise, P5 is 0.  The P5 value is returned
+** by sqlite3_vtab_nochange() routine can can be used
+** by virtual table implementations to return special "no-change"
+** marks which can be more efficient, depending on the virtual table.
 */
 case OP_VColumn: {
   sqlite3_vtab *pVtab;
@@ -6691,7 +6741,13 @@ case OP_VColumn: {
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
-  MemSetTypeFlag(pDest, MEM_Null);
+  if( pOp->p5 ){
+    sqlite3VdbeMemSetNull(pDest);
+    pDest->flags = MEM_Null|MEM_Zero;
+    pDest->u.nZero = 0;
+  }else{
+    MemSetTypeFlag(pDest, MEM_Null);
+  }
   rc = pModule->xColumn(pCur->uc.pVCur, &sContext, pOp->p2);
   sqlite3VtabImportErrmsg(p, pVtab);
   if( sContext.isError ){
@@ -7017,7 +7073,13 @@ case OP_Function: {
   break;
 }
 
-
+/* Opcode: Trace P1 P2 * P4 *
+**
+** Write P4 on the statement trace output if statement tracing is
+** enabled.
+**
+** Operand P1 must be 0x7fffffff and P2 must positive.
+*/
 /* Opcode: Init P1 P2 P3 P4 *
 ** Synopsis: Start at P2
 **
@@ -7036,6 +7098,7 @@ case OP_Function: {
 ** If P3 is not zero, then it is an address to jump to if an SQLITE_CORRUPT
 ** error is encountered.
 */
+case OP_Trace:
 case OP_Init: {          /* jump */
   char *zTrace;
   int i;
@@ -7050,7 +7113,9 @@ case OP_Init: {          /* jump */
   ** sqlite3_expanded_sql(P) otherwise.
   */
   assert( pOp->p4.z==0 || strncmp(pOp->p4.z, "-" "- ", 3)==0 );
-  assert( pOp==p->aOp );  /* Always instruction 0 */
+
+  /* OP_Init is always instruction 0 */
+  assert( pOp==p->aOp || pOp->opcode==OP_Trace );
 
 #ifndef SQLITE_OMIT_TRACE
   if( (db->mTrace & (SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
@@ -7093,6 +7158,7 @@ case OP_Init: {          /* jump */
 #endif /* SQLITE_OMIT_TRACE */
   assert( pOp->p2>0 );
   if( pOp->p1>=sqlite3GlobalConfig.iOnceResetThreshold ){
+    if( pOp->opcode==OP_Trace ) break;
     for(i=1; i<p->nOp; i++){
       if( p->aOp[i].opcode==OP_Once ) p->aOp[i].p1 = 0;
     }

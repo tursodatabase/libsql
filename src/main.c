@@ -25,7 +25,7 @@
 #ifdef SQLITE_ENABLE_RTREE
 # include "rtree.h"
 #endif
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
 # include "sqliteicu.h"
 #endif
 #ifdef SQLITE_ENABLE_JSON1
@@ -820,6 +820,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
         { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
+        { SQLITE_DBCONFIG_TRIGGER_EQP,           SQLITE_TriggerEQP     },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1324,6 +1325,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_READONLY_CANTINIT:  zName = "SQLITE_READONLY_CANTINIT"; break;
       case SQLITE_READONLY_ROLLBACK:  zName = "SQLITE_READONLY_ROLLBACK"; break;
       case SQLITE_READONLY_DBMOVED:   zName = "SQLITE_READONLY_DBMOVED";  break;
+      case SQLITE_READONLY_DIRECTORY: zName = "SQLITE_READONLY_DIRECTORY";break;
       case SQLITE_INTERRUPT:          zName = "SQLITE_INTERRUPT";         break;
       case SQLITE_IOERR:              zName = "SQLITE_IOERR";             break;
       case SQLITE_IOERR_READ:         zName = "SQLITE_IOERR_READ";        break;
@@ -3147,7 +3149,7 @@ static int openDatabase(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3IcuInit(db);
   }
@@ -4039,6 +4041,22 @@ int sqlite3_test_control(int op, ...){
       sqlite3_mutex_leave(db->mutex);
       break;
     }
+
+#if defined(YYCOVERAGE)
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_PARSER_COVERAGE, FILE *out)
+    **
+    ** This test control (only available when SQLite is compiled with
+    ** -DYYCOVERAGE) writes a report onto "out" that shows all
+    ** state/lookahead combinations in the parser state machine
+    ** which are never exercised.  If any state is missed, make the
+    ** return code SQLITE_ERROR.
+    */
+    case SQLITE_TESTCTRL_PARSER_COVERAGE: {
+      FILE *out = va_arg(ap, FILE*);
+      if( sqlite3ParserCoverage(out) ) rc = SQLITE_ERROR;
+      break;
+    }
+#endif /* defined(YYCOVERAGE) */
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */

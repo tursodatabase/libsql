@@ -771,7 +771,7 @@ static struct unix_syscall {
 #else
   { "munmap",       (sqlite3_syscall_ptr)0,               0 },
 #endif
-#define osMunmap ((void*(*)(void*,size_t))aSyscall[23].pCurrent)
+#define osMunmap ((int(*)(void*,size_t))aSyscall[23].pCurrent)
 
 #if HAVE_MREMAP && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
   { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
@@ -4681,7 +4681,7 @@ static void setDeviceCharacteristics(unixFile *pFile){
     pFile->sectorSize = SQLITE_DEFAULT_SECTOR_SIZE;
     pFile->deviceCharacteristics = 0;
     if( fstatvfs(pFile->h, &fsInfo) == -1 ) {
-      return pFile->sectorSize;
+      return;
     }
 
     if( !strcmp(fsInfo.f_basetype, "tmp") ) {
@@ -4896,7 +4896,7 @@ static int unixShmSystemLock(
 
   /* Access to the unixShmNode object is serialized by the caller */
   pShmNode = pFile->pInode->pShmNode;
-  assert( sqlite3_mutex_held(pShmNode->mutex) || pShmNode->nRef==0 );
+  assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->mutex) );
 
   /* Shared locks never span more than one byte */
   assert( n==1 || lockType!=F_RDLCK );
@@ -6974,7 +6974,7 @@ static int unixOpen(
   ** a file-descriptor on the directory too. The first time unixSync()
   ** is called the directory file descriptor will be fsync()ed and close()d.
   */
-  int syncDir = (isCreate && (
+  int isNewJrnl = (isCreate && (
         eType==SQLITE_OPEN_MASTER_JOURNAL 
      || eType==SQLITE_OPEN_MAIN_JOURNAL 
      || eType==SQLITE_OPEN_WAL
@@ -7044,7 +7044,7 @@ static int unixOpen(
 
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
-    assert(isDelete && !syncDir);
+    assert(isDelete && !isNewJrnl);
     rc = unixGetTempname(pVfs->mxPathname, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
@@ -7083,17 +7083,24 @@ static int unixOpen(
     fd = robust_open(zName, openFlags, openMode);
     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     assert( !isExclusive || (openFlags & O_CREAT)!=0 );
-    if( fd<0 && errno!=EISDIR && isReadWrite ){
-      /* Failed to open the file for read/write access. Try read-only. */
-      flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
-      openFlags &= ~(O_RDWR|O_CREAT);
-      flags |= SQLITE_OPEN_READONLY;
-      openFlags |= O_RDONLY;
-      isReadonly = 1;
-      fd = robust_open(zName, openFlags, openMode);
+    if( fd<0 ){
+      if( isNewJrnl && errno==EACCES && osAccess(zName, F_OK) ){
+        /* If unable to create a journal because the directory is not
+        ** writable, change the error code to indicate that. */
+        rc = SQLITE_READONLY_DIRECTORY;
+      }else if( errno!=EISDIR && isReadWrite ){
+        /* Failed to open the file for read/write access. Try read-only. */
+        flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+        openFlags &= ~(O_RDWR|O_CREAT);
+        flags |= SQLITE_OPEN_READONLY;
+        openFlags |= O_RDONLY;
+        isReadonly = 1;
+        fd = robust_open(zName, openFlags, openMode);
+      }
     }
     if( fd<0 ){
-      rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
+      int rc2 = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
+      if( rc==SQLITE_OK ) rc = rc2;
       goto open_finished;
     }
 
@@ -7157,7 +7164,7 @@ static int unixOpen(
   if( isReadonly )              ctrlFlags |= UNIXFILE_RDONLY;
   noLock = eType!=SQLITE_OPEN_MAIN_DB;
   if( noLock )                  ctrlFlags |= UNIXFILE_NOLOCK;
-  if( syncDir )                 ctrlFlags |= UNIXFILE_DIRSYNC;
+  if( isNewJrnl )               ctrlFlags |= UNIXFILE_DIRSYNC;
   if( flags & SQLITE_OPEN_URI ) ctrlFlags |= UNIXFILE_URI;
 #if defined(SQLITE_ENABLE_PERSIST_WAL)
   if( eType==SQLITE_OPEN_MAIN_DB ) {

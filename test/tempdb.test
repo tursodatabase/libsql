@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
+
 # Use a temporary database.
 #
 db close

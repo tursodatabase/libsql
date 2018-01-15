@@ -1381,8 +1381,9 @@ static const char *columnTypeImpl(
 
   assert( pExpr!=0 );
   assert( pNC->pSrcList!=0 );
+  assert( pExpr->op!=TK_AGG_COLUMN );  /* This routine runes before aggregates
+                                       ** are processed */
   switch( pExpr->op ){
-    case TK_AGG_COLUMN:
     case TK_COLUMN: {
       /* The expression is a column. Locate the table the column is being
       ** extracted from in NameContext.pSrcList. This table may be real
@@ -1391,8 +1392,6 @@ static const char *columnTypeImpl(
       Table *pTab = 0;            /* Table structure column is extracted from */
       Select *pS = 0;             /* Select the column is extracted from */
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
-      testcase( pExpr->op==TK_AGG_COLUMN );
-      testcase( pExpr->op==TK_COLUMN );
       while( pNC && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
@@ -1596,6 +1595,7 @@ static void generateColumnNames(
   if( pParse->colNamesSet || db->mallocFailed ) return;
   /* Column names are determined by the left-most term of a compound select */
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
+  SELECTTRACE(1,pParse,pSelect,("generating column names\n"));
   pTabList = pSelect->pSrc;
   pEList = pSelect->pEList;
   assert( v!=0 );
@@ -1704,12 +1704,12 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( (pColExpr->op==TK_COLUMN || pColExpr->op==TK_AGG_COLUMN)
-       && pColExpr->pTab!=0 
-      ){
+      assert( pColExpr->op!=TK_AGG_COLUMN );
+      if( pColExpr->op==TK_COLUMN ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
         Table *pTab = pColExpr->pTab;
+        assert( pTab!=0 );
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){
@@ -2184,9 +2184,14 @@ static int multiSelectOrderBy(
 ** on a VALUES clause.
 **
 ** Because the Select object originates from a VALUES clause:
-**   (1) It has no LIMIT or OFFSET
+**   (1) There is no LIMIT or OFFSET or else there is a LIMIT of exactly 1
 **   (2) All terms are UNION ALL
 **   (3) There is no ORDER BY clause
+**
+** The "LIMIT of exactly 1" case of condition (1) comes about when a VALUES
+** clause occurs within scalar expression (ex: "SELECT (VALUES(1),(2),(3))").
+** The sqlite3CodeSubselect will have added the LIMIT 1 clause in tht case.
+** Since the limit is exactly 1, we only need to evalutes the left-most VALUES.
 */
 static int multiSelectValues(
   Parse *pParse,        /* Parsing context */
@@ -2194,13 +2199,13 @@ static int multiSelectValues(
   SelectDest *pDest     /* What to do with query results */
 ){
   Select *pPrior;
+  Select *pRightmost = p;
   int nRow = 1;
   int rc = 0;
   assert( p->selFlags & SF_MultiValue );
   do{
     assert( p->selFlags & SF_Values );
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
-    assert( p->pLimit==0 );
     assert( p->pNext==0 || p->pEList->nExpr==p->pNext->pEList->nExpr );
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
@@ -2212,7 +2217,7 @@ static int multiSelectValues(
     p->pPrior = 0;
     rc = sqlite3Select(pParse, p, pDest);
     p->pPrior = pPrior;
-    if( rc ) break;
+    if( rc || pRightmost->pLimit ) break;
     p->nSelectRow = nRow;
     p = p->pNext;
   }

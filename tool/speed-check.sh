@@ -117,6 +117,12 @@ while test "$1" != ""; do
     --orm)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset orm"
         ;;
+    --cte)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset cte"
+        ;;
+    --fp)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset fp"
+        ;;
     -*)
         CC_OPTS="$CC_OPTS $1"
         ;;

@@ -1221,34 +1221,37 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
 ** This routine is called by the parser while in the middle of
 ** parsing a CREATE TABLE statement.
 */
-void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
+void sqlite3AddDefaultValue(
+  Parse *pParse,           /* Parsing context */
+  Expr *pExpr,             /* The parsed expression of the default value */
+  const char *zStart,      /* Start of the default value text */
+  const char *zEnd         /* First character past end of defaut value text */
+){
   Table *p;
   Column *pCol;
   sqlite3 *db = pParse->db;
   p = pParse->pNewTable;
   if( p!=0 ){
     pCol = &(p->aCol[p->nCol-1]);
-    if( !sqlite3ExprIsConstantOrFunction(pSpan->pExpr, db->init.busy) ){
+    if( !sqlite3ExprIsConstantOrFunction(pExpr, db->init.busy) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
     }else{
       /* A copy of pExpr is used instead of the original, as pExpr contains
-      ** tokens that point to volatile memory. The 'span' of the expression
-      ** is required by pragma table_info.
+      ** tokens that point to volatile memory.	
       */
       Expr x;
       sqlite3ExprDelete(db, pCol->pDflt);
       memset(&x, 0, sizeof(x));
       x.op = TK_SPAN;
-      x.u.zToken = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                    (int)(pSpan->zEnd - pSpan->zStart));
-      x.pLeft = pSpan->pExpr;
+      x.u.zToken = sqlite3DbSpanDup(db, zStart, zEnd);
+      x.pLeft = pExpr;
       x.flags = EP_Skip;
       pCol->pDflt = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
       sqlite3DbFree(db, x.u.zToken);
     }
   }
-  sqlite3ExprDelete(db, pSpan->pExpr);
+  sqlite3ExprDelete(db, pExpr);
 }
 
 /*
@@ -1965,10 +1968,6 @@ void sqlite3EndTable(
       pParse->nTab = 2;
       addrTop = sqlite3VdbeCurrentAddr(v) + 1;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
-      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
-      sqlite3Select(pParse, pSelect, &dest);
-      sqlite3VdbeEndCoroutine(v, regYield);
-      sqlite3VdbeJumpHere(v, addrTop - 1);
       if( pParse->nErr ) return;
       pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect);
       if( pSelTab==0 ) return;
@@ -1978,6 +1977,11 @@ void sqlite3EndTable(
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
       sqlite3DeleteTable(db, pSelTab);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
+      sqlite3Select(pParse, pSelect, &dest);
+      if( pParse->nErr ) return;
+      sqlite3VdbeEndCoroutine(v, regYield);
+      sqlite3VdbeJumpHere(v, addrTop - 1);
       addrInsLoop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, dest.iSdst, dest.nSdst, regRec);
@@ -2120,7 +2124,7 @@ void sqlite3CreateView(
   ** the end.
   */
   sEnd = pParse->sLastToken;
-  assert( sEnd.z[0]!=0 );
+  assert( sEnd.z[0]!=0 || sEnd.n==0 );
   if( sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
   }
@@ -4364,6 +4368,18 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       pKey->aSortOrder[i] = pIdx->aSortOrder[i];
     }
     if( pParse->nErr ){
+      assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );
+      if( pIdx->bNoQuery==0 ){
+        /* Deactivate the index because it contains an unknown collating
+        ** sequence.  The only way to reactive the index is to reload the
+        ** schema.  Adding the missing collating sequence later does not
+        ** reactive the index.  The application had the chance to register
+        ** the missing index using the collation-needed callback.  For
+        ** simplicity, SQLite will not give the application a second chance.
+        */
+        pIdx->bNoQuery = 1;
+        pParse->rc = SQLITE_ERROR_RETRY;
+      }
       sqlite3KeyInfoUnref(pKey);
       pKey = 0;
     }

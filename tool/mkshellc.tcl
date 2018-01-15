@@ -30,16 +30,29 @@ puts $out {/* DO NOT EDIT!
 ** by "src/shell.c.in", then rerun the tool/mkshellc.tcl script.
 */}
 set in [open $topdir/src/shell.c.in rb]
+proc omit_redundant_typedefs {line} {
+  global typedef_seen
+  if {[regexp {^typedef .*;} $line]} {
+    if {[info exists typedef_seen($line)]} {
+      return "/* $line */"
+    }
+    set typedef_seen($line) 1
+  }
+  return $line
+}
 while {1} {
-  set lx [gets $in]
+  set lx [omit_redundant_typedefs [gets $in]]
   if {[eof $in]} break;
   if {[regexp {^INCLUDE } $lx]} {
     set cfile [lindex $lx 1]
     puts $out "/************************* Begin $cfile ******************/"
     set in2 [open $topdir/src/$cfile rb]
     while {![eof $in2]} {
-      set lx [gets $in2]
+      set lx [omit_redundant_typedefs [gets $in2]]
       if {[regexp {^#include "sqlite} $lx]} continue
+      if {[regexp {^# *include "test_windirent.h"} $lx]} {
+        set lx "/* $lx */"
+      }
       set lx [string map [list __declspec(dllexport) {}] $lx]
       puts $out $lx
     }

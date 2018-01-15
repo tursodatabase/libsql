@@ -1654,17 +1654,16 @@ void sqlite3ExprListSetName(
 void sqlite3ExprListSetSpan(
   Parse *pParse,          /* Parsing context */
   ExprList *pList,        /* List to which to add the span. */
-  ExprSpan *pSpan         /* The span to be added */
+  const char *zStart,     /* Start of the span */
+  const char *zEnd        /* End of the span */
 ){
   sqlite3 *db = pParse->db;
   assert( pList!=0 || db->mallocFailed!=0 );
   if( pList ){
     struct ExprList_item *pItem = &pList->a[pList->nExpr-1];
     assert( pList->nExpr>0 );
-    assert( db->mallocFailed || pItem->pExpr==pSpan->pExpr );
     sqlite3DbFree(db, pItem->zSpan);
-    pItem->zSpan = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                    (int)(pSpan->zEnd - pSpan->zStart));
+    pItem->zSpan = sqlite3DbSpanDup(db, zStart, zEnd);
   }
 }
 
@@ -2765,7 +2764,6 @@ int sqlite3CodeSubselect(
         pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
       }
       pSel->iLimit = 0;
-      pSel->selFlags &= ~SF_MultiValue;
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }
@@ -3871,9 +3869,21 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
-      sqlite3VdbeAddOp4(v, pParse->iSelfTab ? OP_PureFunc0 : OP_Function0,
-                        constMask, r1, target, (char*)pDef, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, (u8)nFarg);
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+      if( pDef->funcFlags & SQLITE_FUNC_OFFSET ){
+        Expr *pArg = pFarg->a[0].pExpr;
+        if( pArg->op==TK_COLUMN ){
+          sqlite3VdbeAddOp3(v, OP_Offset, pArg->iTable, pArg->iColumn, target);
+        }else{
+          sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+        }
+      }else
+#endif
+      {
+        sqlite3VdbeAddOp4(v, pParse->iSelfTab ? OP_PureFunc0 : OP_Function0,
+                          constMask, r1, target, (char*)pDef, P4_FUNCDEF);
+        sqlite3VdbeChangeP5(v, (u8)nFarg);
+      }
       if( nFarg && constMask==0 ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);
       }

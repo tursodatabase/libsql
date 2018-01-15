@@ -17,6 +17,14 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {[atomic_batch_write test.db]} {
+  # This test uses two processes, one of which blocks until the other
+  # creates a *-journal file. Which doesn't work if atomic writes are
+  # available.
+  finish_test
+  return
+}
+
 do_not_use_codec
 
 # Initialize the test.db database so that it is non-empty

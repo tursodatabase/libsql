@@ -2313,13 +2313,17 @@ proc test_restore_config_pagecache {} {
   sqlite3 db test.db
 }
 
-proc test_find_binary {nm} {
+proc test_binary_name {nm} {
   if {$::tcl_platform(platform)=="windows"} {
     set ret "$nm.exe"
   } else {
     set ret $nm
   }
-  set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
+  file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]
+}
+
+proc test_find_binary {nm} {
+  set ret [test_binary_name $nm]
   if {![file executable $ret]} {
     finish_test
     return ""

@@ -1063,7 +1063,6 @@ typedef struct Db Db;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
-typedef struct ExprSpan ExprSpan;
 typedef struct FKey FKey;
 typedef struct FuncDestructor FuncDestructor;
 typedef struct FuncDef FuncDef;
@@ -1420,7 +1419,7 @@ struct sqlite3 {
   Hash aModule;                 /* populated by sqlite3_create_module() */
   VtabCtx *pVtabCtx;            /* Context for active vtab connect/create */
   VTable **aVTrans;             /* Virtual tables with open transactions */
-  VTable *pDisconnect;    /* Disconnect these in next sqlite3_prepare() */
+  VTable *pDisconnect;          /* Disconnect these in next sqlite3_prepare() */
 #endif
   Hash aFunc;                   /* Hash table of connection functions */
   Hash aCollSeq;                /* All collating sequences */
@@ -1495,7 +1494,9 @@ struct sqlite3 {
 #define SQLITE_QueryOnly      0x00100000  /* Disable database changes */
 #define SQLITE_CellSizeCk     0x00200000  /* Check btree cell sizes on load */
 #define SQLITE_Fts3Tokenizer  0x00400000  /* Enable fts3_tokenizer(2) */
-#define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee */
+#define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee*/
+#define SQLITE_TriggerEQP     0x01000000  /* Show trigger EXPLAIN QUERY PLAN */
+
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
 #define SQLITE_SqlTrace       0x08000000  /* Debug print SQL as it executes */
@@ -1628,6 +1629,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
+#define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -2172,6 +2174,7 @@ struct Index {
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
+  unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
@@ -2499,17 +2502,6 @@ struct ExprList {
       int iConstExprReg;      /* Register in which Expr value is cached */
     } u;
   } a[1];                  /* One slot for each expression in the list */
-};
-
-/*
-** An instance of this structure is used by the parser to record both
-** the parse tree for an expression and the span of input text for an
-** expression.
-*/
-struct ExprSpan {
-  Expr *pExpr;          /* The expression parse tree */
-  const char *zStart;   /* First character of input text */
-  const char *zEnd;     /* One character past the end of input text */
 };
 
 /*
@@ -2984,7 +2976,7 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
   int szOpAlloc;       /* Bytes of memory space allocated for Vdbe.aOp[] */
-  int iSelfTab;        /* Table for associated with an index on expr, or negative
+  int iSelfTab;        /* Table associated with an index on expr, or negative
                        ** of the base register during check-constraint eval */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
   int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
@@ -3125,6 +3117,7 @@ struct AuthContext {
 #define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
 #define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete/Insert: save cursor pos */
 #define OPFLAG_AUXDELETE     0x04    /* OP_Delete: index in a DELETE op */
+#define OPFLAG_NOCHNG_MAGIC  0x6d    /* OP_MakeRecord: serialtype 10 is ok */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -3212,6 +3205,7 @@ struct TriggerStep {
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
   ExprList *pExprList; /* SET clause for UPDATE. */
   IdList *pIdList;     /* Column names for INSERT */
+  char *zSpan;         /* Original SQL text of this command */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
 };
@@ -3522,6 +3516,7 @@ void *sqlite3DbMallocRaw(sqlite3*, u64);
 void *sqlite3DbMallocRawNN(sqlite3*, u64);
 char *sqlite3DbStrDup(sqlite3*,const char*);
 char *sqlite3DbStrNDup(sqlite3*,const char*, u64);
+char *sqlite3DbSpanDup(sqlite3*,const char*,const char*);
 void *sqlite3Realloc(void*, u64);
 void *sqlite3DbReallocOrFree(sqlite3 *, void *, u64);
 void *sqlite3DbRealloc(sqlite3 *, void *, u64);
@@ -3660,7 +3655,7 @@ ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
 void sqlite3ExprListSetSortOrder(ExprList*,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
-void sqlite3ExprListSetSpan(Parse*,ExprList*,ExprSpan*);
+void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
@@ -3690,7 +3685,7 @@ void sqlite3AddColumn(Parse*,Token*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*);
-void sqlite3AddDefaultValue(Parse*,ExprSpan*);
+void sqlite3AddDefaultValue(Parse*,Expr*,const char*,const char*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
@@ -3911,11 +3906,14 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   void sqlite3CodeRowTriggerDirect(Parse *, Trigger *, Table *, int, int, int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
-  TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
+  TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
+                                        const char*,const char*);
   TriggerStep *sqlite3TriggerInsertStep(sqlite3*,Token*, IdList*,
-                                        Select*,u8);
-  TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8);
-  TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
+                                        Select*,u8,const char*,const char*);
+  TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8,
+                                        const char*,const char*);
+  TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*,
+                                        const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
   u32 sqlite3TriggerColmask(Parse*,Trigger*,ExprList*,int,int,Table*,int);
@@ -4344,6 +4342,9 @@ void sqlite3Put4byte(u8*, u32);
 
 #ifdef SQLITE_DEBUG
   void sqlite3ParserTrace(FILE*, char *);
+#endif
+#if defined(YYCOVERAGE)
+  int sqlite3ParserCoverage(FILE*);
 #endif
 
 /*

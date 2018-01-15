@@ -110,7 +110,7 @@ typedef unsigned long long int u64;
 #endif
 
 /* A page number is a 64-bit integer. */
-typedef i64 Pgno;
+typedef i64 LsmPgno;
 
 #ifdef LSM_DEBUG
 int lsmErrorBkpt(int);
@@ -402,9 +402,9 @@ struct lsm_db {
 };
 
 struct Segment {
-  Pgno iFirst;                     /* First page of this run */
-  Pgno iLastPg;                    /* Last page of this run */
-  Pgno iRoot;                      /* Root page number (if any) */
+  LsmPgno iFirst;                  /* First page of this run */
+  LsmPgno iLastPg;                 /* Last page of this run */
+  LsmPgno iRoot;                   /* Root page number (if any) */
   int nSize;                       /* Size of this run in pages */
 
   Redirect *pRedirect;             /* Block redirects (or NULL) */
@@ -456,7 +456,7 @@ struct Level {
 **   output segment.
 */
 struct MergeInput {
-  Pgno iPg;                       /* Page on which next input is stored */
+  LsmPgno iPg;                    /* Page on which next input is stored */
   int iCell;                      /* Cell containing next input to merge */
 };
 struct Merge {
@@ -465,7 +465,7 @@ struct Merge {
   MergeInput splitkey;            /* Location in file of current splitkey */
   int nSkip;                      /* Number of separators entries to skip */
   int iOutputOff;                 /* Write offset on output page */
-  Pgno iCurrentPtr;               /* Current pointer value */
+  LsmPgno iCurrentPtr;            /* Current pointer value */
 };
 
 /* 
@@ -579,10 +579,10 @@ struct Snapshot {
   Redirect redirect;              /* Block redirection array */
 
   /* Used by worker snapshots only */
-  int nBlock;                     /* Number of blocks in database file */
-  Pgno aiAppend[LSM_APPLIST_SZ];  /* Append point list */
-  Freelist freelist;              /* Free block list */
-  u32 nWrite;                     /* Total number of pages written to disk */
+  int nBlock;                        /* Number of blocks in database file */
+  LsmPgno aiAppend[LSM_APPLIST_SZ];  /* Append point list */
+  Freelist freelist;                 /* Free block list */
+  u32 nWrite;                        /* Total number of pages written to disk */
 };
 #define LSM_INITIAL_SNAPSHOT_ID 11
 
@@ -710,7 +710,7 @@ void lsmFsSetPageSize(FileSystem *, int);
 int lsmFsFileid(lsm_db *pDb, void **ppId, int *pnId);
 
 /* Creating, populating, gobbling and deleting sorted runs. */
-void lsmFsGobble(lsm_db *, Segment *, Pgno *, int);
+void lsmFsGobble(lsm_db *, Segment *, LsmPgno *, int);
 int lsmFsSortedDelete(FileSystem *, Snapshot *, int, Segment *);
 int lsmFsSortedFinish(FileSystem *, Segment *);
 int lsmFsSortedAppend(FileSystem *, Snapshot *, Level *, int, Page **);
@@ -727,14 +727,14 @@ void lsmSortedSplitkey(lsm_db *, Level *, int *);
 
 /* Reading sorted run content. */
 int lsmFsDbPageLast(FileSystem *pFS, Segment *pSeg, Page **ppPg);
-int lsmFsDbPageGet(FileSystem *, Segment *, Pgno, Page **);
+int lsmFsDbPageGet(FileSystem *, Segment *, LsmPgno, Page **);
 int lsmFsDbPageNext(Segment *, Page *, int eDir, Page **);
 
 u8 *lsmFsPageData(Page *, int *);
 int lsmFsPageRelease(Page *);
 int lsmFsPagePersist(Page *);
 void lsmFsPageRef(Page *);
-Pgno lsmFsPageNumber(Page *);
+LsmPgno lsmFsPageNumber(Page *);
 
 int lsmFsNRead(FileSystem *);
 int lsmFsNWrite(FileSystem *);
@@ -748,7 +748,7 @@ int lsmFsDbPageIsLast(Segment *pSeg, Page *pPg);
 int lsmFsIntegrityCheck(lsm_db *);
 #endif
 
-Pgno lsmFsRedirectPage(FileSystem *, Redirect *, Pgno);
+LsmPgno lsmFsRedirectPage(FileSystem *, Redirect *, LsmPgno);
 
 int lsmFsPageWritable(Page *);
 
@@ -768,8 +768,8 @@ int lsmFsSyncDb(FileSystem *, int);
 void lsmFsFlushWaiting(FileSystem *, int *);
 
 /* Used by lsm_info(ARRAY_STRUCTURE) and lsm_config(MMAP) */
-int lsmInfoArrayStructure(lsm_db *pDb, int bBlock, Pgno iFirst, char **pzOut);
-int lsmInfoArrayPages(lsm_db *pDb, Pgno iFirst, char **pzOut);
+int lsmInfoArrayStructure(lsm_db *pDb, int bBlock, LsmPgno iFirst, char **pz);
+int lsmInfoArrayPages(lsm_db *pDb, LsmPgno iFirst, char **pzOut);
 int lsmConfigMmap(lsm_db *pDb, int *piParam);
 
 int lsmEnvOpen(lsm_env *, const char *, int, lsm_file **);
@@ -785,7 +785,7 @@ void lsmEnvSleep(lsm_env *, int);
 
 int lsmFsReadSyncedId(lsm_db *db, int, i64 *piVal);
 
-int lsmFsSegmentContainsPg(FileSystem *pFS, Segment *, Pgno, int *);
+int lsmFsSegmentContainsPg(FileSystem *pFS, Segment *, LsmPgno, int *);
 
 void lsmFsPurgeCache(FileSystem *);
 
@@ -796,7 +796,7 @@ void lsmFsPurgeCache(FileSystem *);
 /* 
 ** Functions from file "lsm_sorted.c".
 */
-int lsmInfoPageDump(lsm_db *, Pgno, int, char **);
+int lsmInfoPageDump(lsm_db *, LsmPgno, int, char **);
 void lsmSortedCleanup(lsm_db *);
 int lsmSortedAutoWork(lsm_db *, int nUnit);
 

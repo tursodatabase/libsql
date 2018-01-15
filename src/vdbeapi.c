@@ -284,6 +284,11 @@ int sqlite3_value_type(sqlite3_value* pVal){
   return aType[pVal->flags&MEM_AffMask];
 }
 
+/* Return true if a parameter to xUpdate represents an unchanged column */
+int sqlite3_value_nochange(sqlite3_value *pVal){
+  return (pVal->flags&(MEM_Null|MEM_Zero))==(MEM_Null|MEM_Zero);
+}
+
 /* Make a copy of an sqlite3_value object
 */
 sqlite3_value *sqlite3_value_dup(const sqlite3_value *pOrig){
@@ -759,6 +764,25 @@ void *sqlite3_user_data(sqlite3_context *p){
 sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
   assert( p && p->pOut );
   return p->pOut->db;
+}
+
+/*
+** If this routine is invoked from within an xColumn method of a virtual
+** table, then it returns true if and only if the the call is during an
+** UPDATE operation and the value of the column will not be modified
+** by the UPDATE.
+**
+** If this routine is called from any context other than within the
+** xColumn method of a virtual table, then the return value is meaningless
+** and arbitrary.
+**
+** Virtual table implements might use this routine to optimize their
+** performance by substituting a NULL result, or some other light-weight
+** value, as a signal to the xUpdate routine that the column is unchanged.
+*/
+int sqlite3_vtab_nochange(sqlite3_context *p){
+  assert( p );
+  return sqlite3_value_nochange(p->pOut);
 }
 
 /*

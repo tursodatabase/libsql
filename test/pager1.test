@@ -17,6 +17,11 @@ source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 set testprefix pager1
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
+
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
 #

@@ -4909,7 +4909,13 @@ static void fts5MergePrefixLists(
     Fts5Buffer out = {0, 0, 0};
     Fts5Buffer tmp = {0, 0, 0};
 
-    if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n) ) return;
+    /* The maximum size of the output is equal to the sum of the two 
+    ** input sizes + 1 varint (9 bytes). The extra varint is because if the
+    ** first rowid in one input is a large negative number, and the first in
+    ** the other a non-negative number, the delta for the non-negative
+    ** number will be larger on disk than the literal integer value
+    ** was.  */
+    if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n + 9) ) return;
     fts5DoclistIterInit(p1, &i1);
     fts5DoclistIterInit(p2, &i2);
 
@@ -5003,6 +5009,7 @@ static void fts5MergePrefixLists(
       fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
       fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.aEof - i2.aPoslist);
     }
+    assert( out.n<=(p1->n+p2->n+9) );
 
     fts5BufferSet(&p->rc, p1, out.n, out.p);
     fts5BufferFree(&tmp);

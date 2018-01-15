@@ -1571,6 +1571,7 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Check to see if the new index entry will be unique */
+    sqlite3ExprCachePush(pParse);
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol); VdbeCoverage(v);
 
@@ -1659,6 +1660,7 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     sqlite3VdbeResolveLabel(v, addrUniqueOk);
+    sqlite3ExprCachePop(pParse);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
   }
   if( ipkTop ){

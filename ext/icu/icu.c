@@ -28,7 +28,9 @@
 **     provide case-independent matching.
 */
 
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
+#if !defined(SQLITE_CORE)                  \
+ || defined(SQLITE_ENABLE_ICU)             \
+ || defined(SQLITE_ENABLE_ICU_COLLATIONS)
 
 /* Include ICU headers */
 #include <unicode/utypes.h>
@@ -44,6 +46,26 @@
 #else
   #include "sqlite3.h"
 #endif
+
+/*
+** This function is called when an ICU function called from within
+** the implementation of an SQL scalar function returns an error.
+**
+** The scalar function context passed as the first argument is 
+** loaded with an error message based on the following two args.
+*/
+static void icuFunctionError(
+  sqlite3_context *pCtx,       /* SQLite scalar function context */
+  const char *zName,           /* Name of ICU function that failed */
+  UErrorCode e                 /* Error code returned by ICU function */
+){
+  char zBuf[128];
+  sqlite3_snprintf(128, zBuf, "ICU error: %s(): %s", zName, u_errorName(e));
+  zBuf[127] = '\0';
+  sqlite3_result_error(pCtx, zBuf, -1);
+}
+
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
 
 /*
 ** Maximum length (in bytes) of the pattern in a LIKE or GLOB
@@ -225,24 +247,6 @@ static void icuLikeFunc(
 }
 
 /*
-** This function is called when an ICU function called from within
-** the implementation of an SQL scalar function returns an error.
-**
-** The scalar function context passed as the first argument is 
-** loaded with an error message based on the following two args.
-*/
-static void icuFunctionError(
-  sqlite3_context *pCtx,       /* SQLite scalar function context */
-  const char *zName,           /* Name of ICU function that failed */
-  UErrorCode e                 /* Error code returned by ICU function */
-){
-  char zBuf[128];
-  sqlite3_snprintf(128, zBuf, "ICU error: %s(): %s", zName, u_errorName(e));
-  zBuf[127] = '\0';
-  sqlite3_result_error(pCtx, zBuf, -1);
-}
-
-/*
 ** Function to delete compiled regexp objects. Registered as
 ** a destructor function with sqlite3_set_auxdata().
 */
@@ -407,6 +411,8 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   assert( 0 );     /* Unreachable */
 }
 
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU) */
+
 /*
 ** Collation sequence destructor function. The pCtx argument points to
 ** a UCollator structure previously allocated using ucol_open().
@@ -501,6 +507,7 @@ int sqlite3IcuInit(sqlite3 *db){
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
     {"icu_load_collation",  2, SQLITE_UTF8,                1, icuLoadCollation},
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
     {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,         0, icuRegexpFunc},
     {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
     {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
@@ -512,10 +519,10 @@ int sqlite3IcuInit(sqlite3 *db){
     {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        1, icuCaseFunc16},
     {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
     {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU) */
   };
   int rc = SQLITE_OK;
   int i;
-
   
   for(i=0; rc==SQLITE_OK && i<(int)(sizeof(scalars)/sizeof(scalars[0])); i++){
     const struct IcuScalar *p = &scalars[i];

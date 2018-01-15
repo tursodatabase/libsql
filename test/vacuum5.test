@@ -143,9 +143,11 @@ if {$::TEMP_STORE<3 && [permutation]!="inmemory_journal"} {
 
   db close
   tvfs delete
-  do_test 3.2 {
-    lrange $::openfiles 0 4
-  } {test.db test.db-journal test.db-journal {} test.db-journal}
+  if {[atomic_batch_write test.db]==0} {
+    do_test 3.2 {
+      lrange $::openfiles 0 4
+    } {test.db test.db-journal test.db-journal {} test.db-journal}
+  }
 } 
 
 
