@@ -36,13 +36,22 @@ do_execsql_test 1.0 {
   6 method {} 0 {} 0
 }
 
-do_execsql_test 1.1.1 {
+do_catchsql_test 1.1.0.1 {
   INSERT INTO zz(name, mode, mtime, sz, rawdata, method) 
   VALUES('f.txt', '-rw-r--r--', 1000000000, 5, 'abcde', 0);
-}
-do_execsql_test 1.1.2 {
+} {1 {constraint failed}}
+do_catchsql_test 1.1.0.1 {
   INSERT INTO zz(name, mtime, sz, rawdata, method) 
   VALUES('g.txt', 1000000002, 5, '12345', 0);
+} {1 {constraint failed}}
+
+do_execsql_test 1.1.1 {
+  INSERT INTO zz(name, mode, mtime, data, method) 
+  VALUES('f.txt', '-rw-r--r--', 1000000000, 'abcde', 0);
+}
+do_execsql_test 1.1.2 {
+  INSERT INTO zz(name, mode, mtime, data, method) 
+  VALUES('g.txt', NULL, 1000000002, '12345', 0);
 }
 
 do_execsql_test 1.2 {
