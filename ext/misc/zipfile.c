@@ -64,7 +64,7 @@ static const char ZIPFILE_SCHEMA[] =
     "rawdata,"           /* 4: Raw data */
     "data,"              /* 5: Uncompressed data */
     "method,"            /* 6: Compression method (integer) */
-    "file HIDDEN"        /* 7: Name of zip file */
+    "z HIDDEN"           /* 7: Name of zip file */
   ") WITHOUT ROWID;";
 
 #define ZIPFILE_F_COLUMN_IDX 7    /* Index of column "file" in the above */
@@ -235,6 +235,7 @@ struct ZipfileEntry {
 typedef struct ZipfileCsr ZipfileCsr;
 struct ZipfileCsr {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
+  i64 iId;                   /* Cursor ID */
   int bEof;                  /* True when at EOF */
 
   /* Used outside of write transactions */
@@ -264,8 +265,10 @@ struct ZipfileTab {
   char *zFile;               /* Zip file this table accesses (may be NULL) */
   u8 *aBuffer;               /* Temporary buffer used for various tasks */
 
-  /* The following are used by write transactions only */
   ZipfileCsr *pCsrList;      /* List of cursors */
+  i64 iNextCsrid;
+
+  /* The following are used by write transactions only */
   ZipfileEntry *pFirstEntry; /* Linked list of all files (if pWriteFd!=0) */
   ZipfileEntry *pLastEntry;  /* Last element in pFirstEntry list */
   FILE *pWriteFd;            /* File handle open on zip archive */
@@ -344,6 +347,7 @@ static int zipfileDisconnect(sqlite3_vtab *pVtab){
 ** Constructor for a new ZipfileCsr object.
 */
 static int zipfileOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
+  ZipfileTab *pTab = (ZipfileTab*)p;
   ZipfileCsr *pCsr;
   pCsr = sqlite3_malloc(sizeof(*pCsr));
   *ppCsr = (sqlite3_vtab_cursor*)pCsr;
@@ -351,6 +355,9 @@ static int zipfileOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
     return SQLITE_NOMEM;
   }
   memset(pCsr, 0, sizeof(*pCsr));
+  pCsr->iId = ++pTab->iNextCsrid;
+  pCsr->pCsrNext = pTab->pCsrList;
+  pTab->pCsrList = pCsr;
   return SQLITE_OK;
 }
 
@@ -359,14 +366,6 @@ static int zipfileOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
 ** by zipfileOpen().
 */
 static void zipfileResetCursor(ZipfileCsr *pCsr){
-  ZipfileTab *pTab = (ZipfileTab*)(pCsr->base.pVtab);
-  ZipfileCsr **pp;
-
-  /* Remove this cursor from the ZipfileTab.pCsrList list. */
-  for(pp=&pTab->pCsrList; *pp; pp=&((*pp)->pCsrNext)){
-    if( *pp==pCsr ) *pp = pCsr->pCsrNext;
-  }
-
   sqlite3_free(pCsr->cds.zFile);
   pCsr->cds.zFile = 0;
   pCsr->bEof = 0;
@@ -381,7 +380,18 @@ static void zipfileResetCursor(ZipfileCsr *pCsr){
 */
 static int zipfileClose(sqlite3_vtab_cursor *cur){
   ZipfileCsr *pCsr = (ZipfileCsr*)cur;
+  ZipfileTab *pTab = (ZipfileTab*)(pCsr->base.pVtab);
+  ZipfileCsr **pp;
   zipfileResetCursor(pCsr);
+
+  /* Remove this cursor from the ZipfileTab.pCsrList list. */
+  for(pp=&pTab->pCsrList; *pp; pp=&((*pp)->pCsrNext)){
+    if( *pp==pCsr ){ 
+      *pp = pCsr->pCsrNext;
+      break;
+    }
+  }
+
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -823,7 +833,8 @@ static int zipfileColumn(
     case 5: { /* data */
       if( i==4 || pCsr->cds.iCompression==0 || pCsr->cds.iCompression==8 ){
         int sz = pCsr->cds.szCompressed;
-        if( sz>0 ){
+        int szFinal = pCsr->cds.szUncompressed;
+        if( szFinal>0 ){
           u8 *aBuf = sqlite3_malloc(sz);
           if( aBuf==0 ){
             rc = SQLITE_NOMEM;
@@ -835,11 +846,19 @@ static int zipfileColumn(
           }
           if( rc==SQLITE_OK ){
             if( i==5 && pCsr->cds.iCompression ){
-              zipfileInflate(ctx, aBuf, sz, pCsr->cds.szUncompressed);
+              zipfileInflate(ctx, aBuf, sz, szFinal);
             }else{
               sqlite3_result_blob(ctx, aBuf, sz, SQLITE_TRANSIENT);
             }
             sqlite3_free(aBuf);
+          }
+        }else{
+          /* Figure out if this is a directory or a zero-sized file. Consider
+          ** it to be a directory either if the mode suggests so, or if
+          ** the final character in the name is '/'.  */
+          u32 mode = pCsr->cds.iExternalAttr >> 16;
+          if( !(mode & S_IFDIR) && pCsr->cds.zFile[pCsr->cds.nFile-1]!='/' ){
+            sqlite3_result_blob(ctx, "", 0, SQLITE_STATIC);
           }
         }
       }
@@ -847,6 +866,9 @@ static int zipfileColumn(
     }
     case 6:   /* method */
       sqlite3_result_int(ctx, pCsr->cds.iCompression);
+      break;
+    case 7:   /* z */
+      sqlite3_result_int64(ctx, pCsr->iId);
       break;
   }
 
@@ -1553,6 +1575,84 @@ static int zipfileRollback(sqlite3_vtab *pVtab){
   return zipfileCommit(pVtab);
 }
 
+static ZipfileCsr *zipfileFindCursor(ZipfileTab *pTab, i64 iId){
+  ZipfileCsr *pCsr;
+  for(pCsr=pTab->pCsrList; pCsr; pCsr=pCsr->pCsrNext){
+    if( iId==pCsr->iId ) break;
+  }
+  return pCsr;
+}
+
+static void zipfileFunctionCds(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  ZipfileCsr *pCsr;
+  ZipfileTab *pTab = (ZipfileTab*)sqlite3_user_data(context);
+  assert( argc>0 );
+
+  pCsr = zipfileFindCursor(pTab, sqlite3_value_int64(argv[0]));
+  if( pCsr ){
+    ZipfileCDS *p = &pCsr->cds;
+    char *zRes = sqlite3_mprintf("{"
+        "\"version-made-by\" : %u, "
+        "\"version-to-extract\" : %u, "
+        "\"flags\" : %u, "
+        "\"compression\" : %u, "
+        "\"time\" : %u, "
+        "\"date\" : %u, "
+        "\"crc32\" : %u, "
+        "\"compressed-size\" : %u, "
+        "\"uncompressed-size\" : %u, "
+        "\"file-name-length\" : %u, "
+        "\"extra-field-length\" : %u, "
+        "\"file-comment-length\" : %u, "
+        "\"disk-number-start\" : %u, "
+        "\"internal-attr\" : %u, "
+        "\"external-attr\" : %u, "
+        "\"offset\" : %u }",
+        (u32)p->iVersionMadeBy, (u32)p->iVersionExtract,
+        (u32)p->flags, (u32)p->iCompression,
+        (u32)p->mTime, (u32)p->mDate,
+        (u32)p->crc32, (u32)p->szCompressed,
+        (u32)p->szUncompressed, (u32)p->nFile,
+        (u32)p->nExtra, (u32)p->nComment,
+        (u32)p->iDiskStart, (u32)p->iInternalAttr,
+        (u32)p->iExternalAttr, (u32)p->iOffset
+    );
+
+    if( zRes==0 ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      sqlite3_result_text(context, zRes, -1, SQLITE_TRANSIENT);
+      sqlite3_free(zRes);
+    }
+  }
+}
+
+
+/*
+** xFindFunction method.
+*/
+static int zipfileFindFunction(
+  sqlite3_vtab *pVtab,            /* Virtual table handle */
+  int nArg,                       /* Number of SQL function arguments */
+  const char *zName,              /* Name of SQL function */
+  void (**pxFunc)(sqlite3_context*,int,sqlite3_value**), /* OUT: Result */
+  void **ppArg                    /* OUT: User data for *pxFunc */
+){
+  if( nArg>0 ){
+    if( sqlite3_stricmp("zipfile_cds", zName)==0 ){
+      *pxFunc = zipfileFunctionCds;
+      *ppArg = (void*)pVtab;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 /*
 ** Register the "zipfile" virtual table.
 */
@@ -1576,11 +1676,14 @@ static int zipfileRegister(sqlite3 *db){
     0,                         /* xSync */
     zipfileCommit,             /* xCommit */
     zipfileRollback,           /* xRollback */
-    0,                         /* xFindMethod */
+    zipfileFindFunction,       /* xFindMethod */
     0,                         /* xRename */
   };
 
   int rc = sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_overload_function(db, "zipfile_cds", -1);
+  }
   return rc;
 }
 #else         /* SQLITE_OMIT_VIRTUALTABLE */

@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\ssetDeviceCharacteristics()\sprocedure\sfor\sthe\n(unsupported)\sQNX\scode\sin\sos_unix.c.
-D 2018-01-15T14:32:37.594
+C Fix\sa\szipfile\sproblem\swith\sextracting\szero\slength\sfiles\scompressed\susing\ndeflate.
+D 2018-01-15T15:49:46.517
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -303,7 +303,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 7001d7ca733d34a8b4fbacf7f8d322f3b2bf402f41052a021b5eda8227f0f5d4
+F ext/misc/zipfile.c 46171a19439d0c76acf48770e736c281536f160d3a5a96a0511e34402e262fac
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4fa0581ba7cfd45fabe0198f55b3c2c8ee3ecfd2825aeed91116f44e77d760b
-R 755347b860dbdbaa8de782672cfa2550
-U drh
-Z bf44e658c85afb034dcb761e50e86217
+P 8151913a3987f4dd2d6efee046727f5fa9b6f11d5d3867ea8f512c03a212ac2b
+R d9864f9f3d3219c31b427d2f3aa9a193
+U dan
+Z 4b1456c73d542678caf828eee79b5bff
