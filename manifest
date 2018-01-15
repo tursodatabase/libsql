@@ -1,5 +1,5 @@
-C Avoid\sexcess\sstack\susage\swhen\sa\sVALUES\sclause\swith\slots\sof\srows\soccurs\nwithin\sa\sscalar\sexpression.\s\sThis\sfixes\sa\sproblem\sdiscovered\sby\sOSSFuzz.
-D 2018-01-14T20:12:23.878
+C Fix\san\serror\sin\sthe\ssetDeviceCharacteristics()\sprocedure\sfor\sthe\n(unsupported)\sQNX\scode\sin\sos_unix.c.
+D 2018-01-15T14:32:37.594
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -469,7 +469,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c ecdffdc7fc25c07e42908be7c5ea30456fee6263e0d54cdf204557945b445da2
+F src/os_unix.c a82505be158d8ce42b38dcc9b426187d776904c12cdc68dc8925e1dfcc5cb6ce
 F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9b9cb4e06c03d43d62480a7a685a012d645fcf3a39e7767ccb505fb41ee083ec
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f7a592f8c044d75b4615a95e27454100b10c2b26f4cafee97dec23343821130
-R 5b961a6038bd65800f58ecff32ab6963
+P a4fa0581ba7cfd45fabe0198f55b3c2c8ee3ecfd2825aeed91116f44e77d760b
+R 755347b860dbdbaa8de782672cfa2550
 U drh
-Z 3c12035fed53223a4dcc5a3ae6914444
+Z bf44e658c85afb034dcb761e50e86217
