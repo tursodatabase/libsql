@@ -1,5 +1,5 @@
-C Fix\sa\stest\sproblem\scausing\san\serror\sin\sfts5fault9.test.
-D 2018-01-16T20:44:00.735
+C Make\sthe\snew\ssqlite3_vtab_collation()\sinterface\saccessible\sto\sloadable\nextensions.
+D 2018-01-16T20:50:37.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -449,7 +449,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 14686083cedc198540b15a79586cdd4be2acf6d5fa97627e355f817ab07e9fee
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
-F src/loadext.c 8d5d9c3ab3c4d600a161f389988bdee6a04dad7c4c1754f04f257734b9d1ce8c
+F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 26918d50dd4a61b8f6f210320a522f46b5e7e592335b6aa664ab15b80b7c239b
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -489,7 +489,7 @@ F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
 F src/shell.c.in 568aacb5b15520fa7981ebcf976ebd99849e6a4777858706762f201a446626f3
 F src/sqlite.h.in 840e8aee0d7f8592bd69730797582b342a413eceaff7a220fb5f9db9c412cea9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 3737a51c5798e47a8ff2af0720f6dbc00fabd5ea401db392d05b1916085857a6
+F src/sqlite3ext.h 99189e7611eb0bf98f21c7835dc74730a84e2e809c98e1e31c33896dee7a2849
 F src/sqliteInt.h 9c70315598b34810a83e4894455acb18e95cf63ce4e6cbb451ac2d17eabc2544
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c786305fc6eaa6856ec6c71fc7969f61de266ba1bea0abf0ae133eb94e54b2d
-R 0c8190aebc59833d33e61d80979c7e84
-U dan
-Z 09329f4d67456c2fa346b8eec49ecdd6
+P 8e2048113fc6ed87fc7d5ba470261926aa0bd35474744bb2b99ea596bc468f02
+R 267bc65de959febfa028d4a40cdbf39c
+U drh
+Z 9b16902ddc51de02e55cd9f83731d91e

@@ -433,7 +433,8 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_value_pointer,
   /* Version 3.22.0 and later */
   sqlite3_vtab_nochange,
-  sqlite3_value_nochange
+  sqlite3_value_nochange,
+  sqlite3_vtab_collation
 };
 
 /*
