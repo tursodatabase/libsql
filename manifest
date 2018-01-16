@@ -1,5 +1,5 @@
-C Fix\scompiler\swarning\sin\sthe\sFTS5\stest\sinterface.
-D 2018-01-16T21:00:58.725
+C Remove\san\sunused\sfield\sfrom\sthe\sinternal\sdefinition\sof\sthe\ssqlite3_context\nobject.
+D 2018-01-16T21:05:10.561
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -556,7 +556,7 @@ F src/util.c 7315e97a8dc2c8e19ca64196c652cf0a65d13fd0a211b2cec082062372dc6261
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
 F src/vdbe.c ccc1e17a30325068ae4f0292e8601997946886d23acc989c68f2a261a2795c70
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
-F src/vdbeInt.h 5442fc816b6cf19c8801724199fd6b77a02eb31a7a174021713f8c59b30e51fa
+F src/vdbeInt.h c8cfbbc28e37e67a493c3f892fb0596add56a31a00e7537a06049af9ef2f51b0
 F src/vdbeapi.c 02f773681d06e46454b0606339068d4d4490873dc4a7334bc0c6030552bb2c8c
 F src/vdbeaux.c 2756ac68ac259c416554100598fc291870063288cd7e1af22847f57b3e130e56
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f301db3c2343fd2086bc5b69a17b2d226175584ccd09549ebb2cb603590da487
-R 0b7a4854cd40ff8848724ee789fa5f0a
+P 2ab4e8d5d82ab410c00f048c12555f2f40f9fd8bffda64ccbdd3dfe036727315
+R e4f4080f808433f06cbdcdcd7e3a3a16
 U drh
-Z a8abeaf4b85a720e69d65b8f52daa4a1
+Z f5b1113de44f2b59daf15f747c8d38d4
