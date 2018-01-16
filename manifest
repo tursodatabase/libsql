@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sSQLITE_CANTOPEN_DIRTYWAL\sresult\scode.
-D 2018-01-16T20:37:56.341
+C Fix\sa\stest\sproblem\scausing\san\serror\sin\sfts5fault9.test.
+D 2018-01-16T20:44:00.735
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -116,7 +116,7 @@ F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301
 F ext/fts5/fts5_index.c 5fe14375a29e8a7aa8f3e863babe180a19269206c254c8f47b216821d4ac1e15
 F ext/fts5/fts5_main.c 24868f88ab2a865defbba7a92eebeb726cc991eb092b71b5f5508f180c72605b
 F ext/fts5/fts5_storage.c fb5ef3c27073f67ade2e1bea08405f9e43f68f5f3676ed0ab7013bce5ba10be6
-F ext/fts5/fts5_tcl.c b470467be4c5cab2d8b026992c05d86cd2293e7d8c4a10ba56d5f4f707981097
+F ext/fts5/fts5_tcl.c a021468dfa204a4a48717d7709503ab062a010e8b79ea73e2a23ba5a0a9a6ec6
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086abacd66c2a9b26
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
@@ -168,7 +168,7 @@ F ext/fts5/test/fts5fault5.test a336e4e11847de24c9497f80cce18e00bb3fab7fb11f97d0
 F ext/fts5/test/fts5fault6.test 8a3c61402e36960ba46a419e73121fcefdc9160e0c04b6f5318c7fb0e3180dbc
 F ext/fts5/test/fts5fault7.test 0acbec416edb24b8881f154e99c31e9ccf73f539cfcd164090be139e9e97ed4c
 F ext/fts5/test/fts5fault8.test 318238659d35f82ad215ecb57ca4c87486ea85d45dbeedaee42f148ff5105ee2
-F ext/fts5/test/fts5fault9.test 0111b229388bdf251b91cfead68580227801dd30960a19aa8fe9021a1e73cb6d
+F ext/fts5/test/fts5fault9.test 098e6b894bbdf9b2192f994a30f4043673fb3f338b6b8ab1624c704422f39119
 F ext/fts5/test/fts5faultA.test be4487576bff8c22cee6597d1893b312f306504a8c6ccd3c53ca85af12290c8c
 F ext/fts5/test/fts5faultB.test e6d04f9ea7b21be1d89abb8df2cb4baf65b0453b744d5a805fcd3ef45ff86a7e
 F ext/fts5/test/fts5faultD.test cc5d1225556e356615e719c612e845d41bff7d5a
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f6e5bdf9021c31e8bde82c224bf53be3c93b79f7bb5c2802c54be8031cf89fb
-R 0d3241ffa7f896b9008a93ec004c8dbb
-U drh
-Z f5ef3a49cfd0d1f0bb95f024d28d366c
+P 3c786305fc6eaa6856ec6c71fc7969f61de266ba1bea0abf0ae133eb94e54b2d
+R 0c8190aebc59833d33e61d80979c7e84
+U dan
+Z 09329f4d67456c2fa346b8eec49ecdd6
