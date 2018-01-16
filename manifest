@@ -1,5 +1,5 @@
-C Fix\sa\smakefile\sproblem\scausing\s-DSQLITE_ENABLE_STMTVTAB\sbuilds\sto\sfail.
-D 2018-01-16T20:20:00.594
+C Remove\sthe\sunused\sSQLITE_CANTOPEN_DIRTYWAL\sresult\scode.
+D 2018-01-16T20:37:56.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -487,7 +487,7 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
 F src/shell.c.in 568aacb5b15520fa7981ebcf976ebd99849e6a4777858706762f201a446626f3
-F src/sqlite.h.in 9daf78e8f3cecc9ea0c3a82201f75bb74f789ecbfcda28d2e47fa80b3d956961
+F src/sqlite.h.in 840e8aee0d7f8592bd69730797582b342a413eceaff7a220fb5f9db9c412cea9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3737a51c5798e47a8ff2af0720f6dbc00fabd5ea401db392d05b1916085857a6
 F src/sqliteInt.h 9c70315598b34810a83e4894455acb18e95cf63ce4e6cbb451ac2d17eabc2544
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 231679d6f8c0c3d957c8daa88b0743449b60b47159e114f4bc073a8612a73b2a
-R 6b159b88b50b86cd5639c2b511315c42
-U dan
-Z 8749febdaf33c2d94ed547e3c6b0b72c
+P 7f6e5bdf9021c31e8bde82c224bf53be3c93b79f7bb5c2802c54be8031cf89fb
+R 0d3241ffa7f896b9008a93ec004c8dbb
+U drh
+Z f5ef3a49cfd0d1f0bb95f024d28d366c
