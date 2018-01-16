@@ -8380,6 +8380,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         "Enter \".help\" for usage hints.\n",
         sqlite3_libversion(), sqlite3_sourceid()
       );
+#if SQLITE_HAVE_ZLIB
+      printf("Using zlib version %s.\n", zlibVersion());
+#endif
       if( warnInmemoryDb ){
         printf("Connected to a ");
         printBold("transient in-memory database");
