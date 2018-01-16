@@ -1,5 +1,5 @@
-C Disable\sthe\s".archive"\scommand\stests\sin\sshell8.test\sif\sthe\sCLI\sis\scompiled\swithout\nZLIB\ssupport.
-D 2018-01-16T02:38:35.189
+C Fix\sa\sproblem\scausing\san\sinfinite\sloop\sor\sother\smalfunction\sin\ssome\sUPDATE\nstatements\swith\san\sOR\sterm\sin\sthe\sWHERE\sclause.
+D 2018-01-16T13:37:43.188
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -568,7 +568,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 36b92103f726609cc3dbe07c619426bd6886bede455de56ccff54c8e567f5582
+F src/where.c caf0b6c9d31f22f0b2c91aba723858de52b5d665aaa89034099015aaf9bb8219
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c af1e79154aaa88cd802d6f2e5b945f67eaca7c958d1525fbf8ee19d5bd7b9020
 F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
@@ -1490,7 +1490,7 @@ F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
-F test/update2.test fffc92e72ae568fe048588762e650cd8ccbd8c8b6e4fe9099231766bfe4b51de
+F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2313e
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0b7d0363acf38c2178e2d3041d8ce2a0de061a51caa64670dbf539ee6d4356b
-R 7e32bbd83b21ce648e53afd2544cab2d
-U drh
-Z 4c459e37e4b5a5b61d3c298abef31f05
+P ce8bfe6c2b87090a2de1e04bc88fcb878597fe1f4ecd5df6d9d588a65601c901
+R 1aa7995509c0f191863de5587ae93f47
+U dan
+Z 2e5fd108f2c4172f1f8c00e9ff432235
