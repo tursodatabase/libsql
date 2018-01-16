@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\szipfile\smodule\scausing\sit\sto\sgenerate\sincorrect\nchecksums.\sRemove\sthe\sability\sto\sinsert\scompressed\sdata\sinto\sa\szip\sarchive.
-D 2018-01-15T19:00:35.051
+C Disable\sthe\s".archive"\scommand\stests\sin\sshell8.test\sif\sthe\sCLI\sis\scompiled\swithout\nZLIB\ssupport.
+D 2018-01-16T02:38:35.189
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -1227,7 +1227,7 @@ F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 23939a4c51f0421330ea61dbd3c74f9c215f5f8d3d1a94846da6ffc777a35458
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
-F test/shell8.test c836470ccde867e1f438a7acad7560805cc04f9dbab84cb55d92925942b76247
+F test/shell8.test 96be02ea0c21f05b24c1883d7b711a1fa8525a68ab7b636aacf6057876941013
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf64087224aff1a2fe169d23996d9e5ed8d86459c655eb5d0bace0466a557ec6
-R 5e0c54dfbab7bd3d719e333800776169
-U dan
-Z a41cf66d60fe2e5069108d980e3c47d6
+P b0b7d0363acf38c2178e2d3041d8ce2a0de061a51caa64670dbf539ee6d4356b
+R 7e32bbd83b21ce648e53afd2544cab2d
+U drh
+Z 4c459e37e4b5a5b61d3c298abef31f05
