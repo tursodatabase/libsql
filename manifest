@@ -1,5 +1,5 @@
-C Make\sthe\snew\ssqlite3_vtab_collation()\sinterface\saccessible\sto\sloadable\nextensions.
-D 2018-01-16T20:50:37.717
+C Fix\scompiler\swarning\sin\sthe\sFTS5\stest\sinterface.
+D 2018-01-16T21:00:58.725
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -116,7 +116,7 @@ F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301
 F ext/fts5/fts5_index.c 5fe14375a29e8a7aa8f3e863babe180a19269206c254c8f47b216821d4ac1e15
 F ext/fts5/fts5_main.c 24868f88ab2a865defbba7a92eebeb726cc991eb092b71b5f5508f180c72605b
 F ext/fts5/fts5_storage.c fb5ef3c27073f67ade2e1bea08405f9e43f68f5f3676ed0ab7013bce5ba10be6
-F ext/fts5/fts5_tcl.c a021468dfa204a4a48717d7709503ab062a010e8b79ea73e2a23ba5a0a9a6ec6
+F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086abacd66c2a9b26
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e2048113fc6ed87fc7d5ba470261926aa0bd35474744bb2b99ea596bc468f02
-R 267bc65de959febfa028d4a40cdbf39c
+P f301db3c2343fd2086bc5b69a17b2d226175584ccd09549ebb2cb603590da487
+R 0b7a4854cd40ff8848724ee789fa5f0a
 U drh
-Z 9b16902ddc51de02e55cd9f83731d91e
+Z a8abeaf4b85a720e69d65b8f52daa4a1

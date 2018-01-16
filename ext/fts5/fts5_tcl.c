@@ -482,7 +482,7 @@ static int SQLITE_TCLAPI xF5tApi(
 
       rc = p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
       if( rc!=SQLITE_OK ){
-        Tcl_SetResult(interp, sqlite3ErrName(rc), TCL_VOLATILE);
+        Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
         return TCL_ERROR;
       }
       for( ; iCol>=0; p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)){
