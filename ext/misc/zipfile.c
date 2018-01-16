@@ -771,7 +771,7 @@ static int zipfileDeflate(
     int res;
     z_stream str;
     memset(&str, 0, sizeof(str));
-    str.next_in = (z_const Bytef*)aIn;
+    str.next_in = (Bytef*)aIn;
     str.avail_in = nIn;
     str.next_out = aOut;
     str.avail_out = nAlloc;
