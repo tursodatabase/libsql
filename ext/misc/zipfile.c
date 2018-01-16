@@ -1337,14 +1337,16 @@ static int zipfileUpdate(
       nData = nIn;
       if( iMethod!=0 && iMethod!=8 ){
         rc = SQLITE_CONSTRAINT;
-      }else if( bAuto || iMethod ){
-        int nCmp;
-        rc = zipfileDeflate(pTab, aIn, nIn, &pFree, &nCmp);
-        if( rc==SQLITE_OK ){
-          if( iMethod || nCmp<nIn ){
-            iMethod = 8;
-            pData = pFree;
-            nData = nCmp;
+      }else{
+        if( bAuto || iMethod ){
+          int nCmp;
+          rc = zipfileDeflate(pTab, aIn, nIn, &pFree, &nCmp);
+          if( rc==SQLITE_OK ){
+            if( iMethod || nCmp<nIn ){
+              iMethod = 8;
+              pData = pFree;
+              nData = nCmp;
+            }
           }
         }
         iCrc32 = crc32(0, aIn, nIn);
