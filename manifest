@@ -1,5 +1,5 @@
-C Move\sthe\sZLIB\sversion\sannouncement\sin\sthe\sCLI\sout\sof\sthe\sdefault\sbanner\nand\sput\sit\sin\sthe\s".version"\scommand.
-D 2018-01-16T20:05:27.199
+C Fix\sa\smakefile\sproblem\scausing\s-DSQLITE_ENABLE_STMTVTAB\sbuilds\sto\sfail.
+D 2018-01-16T20:20:00.594
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -408,7 +408,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk fc0edb268998a049ce70ee3dc056b2a96cc8aa4ef0c6da296700d7081d167627
+F main.mk 69bce07f975e6835a544f43df8d9619ea31d2c8e7b3a8d2cb4c21ac704c9c9c2
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8906b527a8f7a2cec88cc3b05c063a2785f0d1d141e148d954fc7440972a484
-R 98c56f352f44e579ba7b90a6b8abb9cd
-U drh
-Z e359cfb1d91fd4e09231f1eb354cb112
+P 231679d6f8c0c3d957c8daa88b0743449b60b47159e114f4bc073a8612a73b2a
+R 6b159b88b50b86cd5639c2b511315c42
+U dan
+Z 8749febdaf33c2d94ed547e3c6b0b72c
