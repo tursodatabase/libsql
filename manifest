@@ -1,5 +1,5 @@
-C Show\sversion\sof\szlib\sin\suse\swhen\srunning\sthe\sshell\stool\sin\sinteractive\smode.
-D 2018-01-16T19:03:51.951
+C Move\sthe\sZLIB\sversion\sannouncement\sin\sthe\sCLI\sout\sof\sthe\sdefault\sbanner\nand\sput\sit\sin\sthe\s".version"\scommand.
+D 2018-01-16T20:05:27.199
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -486,7 +486,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
-F src/shell.c.in 594f9427e519a77b2d6d18e223b370caf9e81e588f47fd5dc463e0910365cdfa
+F src/shell.c.in 568aacb5b15520fa7981ebcf976ebd99849e6a4777858706762f201a446626f3
 F src/sqlite.h.in 9daf78e8f3cecc9ea0c3a82201f75bb74f789ecbfcda28d2e47fa80b3d956961
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3737a51c5798e47a8ff2af0720f6dbc00fabd5ea401db392d05b1916085857a6
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac9af91d5a2927e71903461e7bbdd2c0168fde9a042853c8bcd4c7ebd0d51e0d
-R 039d269ff5ea61ab17b17f8244c27f58
-U mistachkin
-Z 588ee2b95c490fe538f28f786da31468
+P a8906b527a8f7a2cec88cc3b05c063a2785f0d1d141e148d954fc7440972a484
+R 98c56f352f44e579ba7b90a6b8abb9cd
+U drh
+Z e359cfb1d91fd4e09231f1eb354cb112
