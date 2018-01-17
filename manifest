@@ -1,5 +1,5 @@
-C Simplifications\sto\swinOpenSharedMemory\sin\sthe\sWin32\sVFS.
-D 2018-01-17T01:40:57.173
+C Update\stest\sfile\sfts5fault6.test\sto\saccount\sfor\stest\stokenizers\simplemented\sin\nTcl\sreturning\sSQLITE_ERROR\sinstead\sof\sSQLITE_NOMEM\sfollowing\san\sOOM\serror.
+D 2018-01-17T12:57:07.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -165,7 +165,7 @@ F ext/fts5/test/fts5fault2.test 69c8fdbef830cd0d450908d4504d5bb86609e255af99c421
 F ext/fts5/test/fts5fault3.test da2f9e3e56ff5740d68ebdd6877c97089e7ed28ddff28a0da87a6afea27e5522
 F ext/fts5/test/fts5fault4.test 1c1db5fcfe59401e7833146100f1d8de284a0a686fac31ddac9fb56c459f725b
 F ext/fts5/test/fts5fault5.test a336e4e11847de24c9497f80cce18e00bb3fab7fb11f97d04eb9af898900a762
-F ext/fts5/test/fts5fault6.test 8a3c61402e36960ba46a419e73121fcefdc9160e0c04b6f5318c7fb0e3180dbc
+F ext/fts5/test/fts5fault6.test a0fc0a8f99e4b16500c31dfc7e38e1defe0f1693ac47650517ac7b723b1956f8
 F ext/fts5/test/fts5fault7.test 0acbec416edb24b8881f154e99c31e9ccf73f539cfcd164090be139e9e97ed4c
 F ext/fts5/test/fts5fault8.test 318238659d35f82ad215ecb57ca4c87486ea85d45dbeedaee42f148ff5105ee2
 F ext/fts5/test/fts5fault9.test 098e6b894bbdf9b2192f994a30f4043673fb3f338b6b8ab1624c704422f39119
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 568192228c9578b8ea34c363e10ff28450045cda76248b2f0f89f84b3a57e680
-R 74d0fd9e585002553a9ac7b39220a819
-U mistachkin
-Z 373464fa908aa53424186ef8053b7fb1
+P 3e04999dabb87715de46255b1a9b08d5dfa70d140e0a09a37ea2842d71c77caf
+R 941f33fbf2a23d6c019574c3e00d86d4
+U dan
+Z f10d4208193a5de16aeae87ee4be55df
