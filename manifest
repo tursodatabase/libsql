@@ -1,5 +1,5 @@
-C Fix\sduplicate\stest\snames\sin\s'walfault.test'.
-D 2018-01-17T01:15:08.464
+C Corrections\sto\serror\scode\shandling\sin\sos_win.c,\spursuant\sto\swalfault.test.
+D 2018-01-17T01:26:05.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -470,7 +470,7 @@ F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c a82505be158d8ce42b38dcc9b426187d776904c12cdc68dc8925e1dfcc5cb6ce
-F src/os_win.c 0a4afa35cc8e812000df3ea2f64b476131b39e29e75d8007d0504726e4761de4
+F src/os_win.c 196b2b38953a3678e0ae1be40875c9c303ff216ec56ac2a6721e56ce9a9a454e
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9b9cb4e06c03d43d62480a7a685a012d645fcf3a39e7767ccb505fb41ee083ec
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba44724bcca2e87788b7c6d8c5de7fa388360127bd894ee6a171fd66e794fcae
-R f3a35383cfb8ac5b9a76f4dd696ca9d1
+P 7274d05ff43fc9872f0e4857ae583689e4a6c429b7fa991dcc29744da3048879
+R a85767f9e76828ee76ff125e1a16892d
 U mistachkin
-Z 9ba015577ebd6a341cfca228abd228a2
+Z 21eee94f9fdd383abaac3542e6cde8fb
