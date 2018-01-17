@@ -327,6 +327,26 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 ** This routine only works for values of E between 1 and 341.
 */
 static LONGDOUBLE_TYPE sqlite3Pow10(int E){
+#if defined(_MSC_VER)
+  static const LONGDOUBLE_TYPE x[] = {
+    1.0e+001,
+    1.0e+002,
+    1.0e+004,
+    1.0e+008,
+    1.0e+016,
+    1.0e+032,
+    1.0e+064,
+    1.0e+128,
+    1.0e+256
+  };
+  LONGDOUBLE_TYPE r = 1.0;
+  int i;
+  assert( E>=0 && E<=307 );
+  for(i=0; E!=0; i++, E >>=1){
+    if( E & 1 ) r *= x[i];
+  }
+  return r;
+#else
   LONGDOUBLE_TYPE x = 10.0;
   LONGDOUBLE_TYPE r = 1.0;
   while(1){
@@ -336,6 +356,7 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
     x *= x;
   }
   return r; 
+#endif
 }
 
 /*
