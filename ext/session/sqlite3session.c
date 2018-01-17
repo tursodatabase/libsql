@@ -838,7 +838,6 @@ static int sessionPreupdateEqual(
         }
         if( memcmp(a, z, n) ) return 0;
         a += n;
-        break;
       }
     }
   }

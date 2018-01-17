@@ -1,5 +1,5 @@
-C Fix\smain.mk\sso\sthat\stestfixture\scan\sbe\sbuilt\seither\sfrom\sthe\samalgamation\sor\nfrom\sindividual\ssource\sfiles.\sNo\schanges\sto\scode.
-D 2018-01-17T16:11:26.562
+C Fix\sa\sproblem\scausing\sthe\ssessions\smodule\sto\soccasionally\slose\strack\sof\srows\nwith\scomposite\sprimary\skeys\swhen\sthere\sare\stwo\srows\swith\sthe\ssame\stext\svalue\nin\sthe\sleftmost\scolumn\sof\sthe\sPK.
+D 2018-01-17T17:38:18.448
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -391,15 +391,16 @@ F ext/session/sessionD.test d3617e29aa15c9413aee5286d99587633245d58d2ad28f3f331c
 F ext/session/sessionE.test 0a616c4ad8fd2c05f23217ebb6212ef80b7fef30f5f086a6633a081f93e84637
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/sessionG.test 63f9a744341d670775af29e4f19c1ef09a4810798400f28cd76704803a2e56ff
+F ext/session/sessionH.test 332b60e4c2e0a680105e11936201cabe378216f307e2747803cea56fa7d9ebae
 F ext/session/session_common.tcl 7776eda579773113b30c7abfd4545c445228cb73
 F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
-F ext/session/sessionat.test feb7d22b3124882064b9d9df69f5484a9bb8c123dc9ddc6ffcd357521848139f
+F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28f0c1cc142c3ec
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionstat1.test e3a3f5876ce1526b48f6f447ee0b18960ac683e3fc891791e1ca0c08e823d498
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c a18bfdab0de090597fb50aae734e2cd41bf5e5d394bbd9a2189308f2bc8525d5
+F ext/session/sqlite3session.c c9d813ffa8db0670257da0a0c931e7188dfbb0010bf1a38274775c9b6300dd5c
 F ext/session/sqlite3session.h cb4d860101ba6d3ac810f18684539b766d24d668fa2436cdde90d711af9464fb
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1699,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bfbeffab7735461acb3773242ba31dae15af9f8b0291c54a6734747bb1b36e66
-R ec2f214ab6dea8dc121fe027cc99d1ce
+P a8aea925f8fde8f2dc5ff4b744d54aa2bf8916f3ee57f22d77fd1ddb5a35a9cc
+R fffe7fea955e558a2fcc7877bcdc39db
 U dan
-Z d15337a42013c6ddacd72bec21ca6a84
+Z 8da05c1c6303c10ad33f099cfa382df7
