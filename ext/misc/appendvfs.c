@@ -548,6 +548,8 @@ int sqlite3_appendvfs_init(
   int rc = SQLITE_OK;
   sqlite3_vfs *pOrig;
   SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;
+  (void)db;
   pOrig = sqlite3_vfs_find(0);
   apnd_vfs.iVersion = pOrig->iVersion;
   apnd_vfs.pAppData = pOrig;

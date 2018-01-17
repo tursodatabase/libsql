@@ -1,5 +1,5 @@
-C Omit\sthe\ssingle\stest\sfrom\szipfile.test\sthat\suses\sjson\sfunctionality\sin\nnon-SQLITE_ENABLE_JSON1\sbuilds.
-D 2018-01-17T12:58:11.883
+C Fix\sharmless\scompiler\swarnings,\smostly\sunused\sparameters\sfor\sUDFs\sin\sthe\sCLI.
+D 2018-01-17T13:15:23.987
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -45,7 +45,7 @@ F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 4791c5e064aea81b2b829fa95228b22283380ee370ea88a1e580103b75516ebf
 F ext/expert/expert1.test fd21496d8e52c817a7741f467f42b0502c0ac7e07dcdd1d6e15a3e8154ed4e41
-F ext/expert/sqlite3expert.c 55ea02e9fcc014f4252e8a8c78d2bddc6d7ef62f9cb54ee283a659516eabb711
+F ext/expert/sqlite3expert.c 1dfa561e64dc0f89d56b96e6afda87468c34b43604c2df50c47e3f4362778fb2
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -268,7 +268,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 4c65f0b79686ae5a483134233d7fd912f0f2d4fd76023404f96f2290fff13b19
+F ext/misc/appendvfs.c 3777f22ec1057dc4e5fd89f2fbddcc7a29fbeef1ad038c736c54411bb1967af7
 F ext/misc/btreeinfo.c d7fd9a2fe2fa33ba28488e2fce703ebecc759219ea9e0bb3b254784866c0a676
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
@@ -277,7 +277,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
-F ext/misc/fileio.c 777c13f00b4505df3bfab602568c98d2b067f7d1d265de88160d0f1ac92f3dcf
+F ext/misc/fileio.c 06bd79dcc43d0887da27ffaadd69b8a698b1bafe203d1d134a3a2964f69368f9
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -486,7 +486,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
-F src/shell.c.in 568aacb5b15520fa7981ebcf976ebd99849e6a4777858706762f201a446626f3
+F src/shell.c.in 4e1bcf8c70b8fb97c7cbaca6602e2a291d7fe17eff23a5de003d6fabd87f27d1
 F src/sqlite.h.in 840e8aee0d7f8592bd69730797582b342a413eceaff7a220fb5f9db9c412cea9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 99189e7611eb0bf98f21c7835dc74730a84e2e809c98e1e31c33896dee7a2849
@@ -1619,7 +1619,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 7f7735326ca9c3b48327b241063cee52d35d44e20ebe1b3624a81658052a4d39
-F tool/lempar.c dddd4f592b8bad36aec4500d456c5db5fe42fefc4ee384913880439d8917f87a
+F tool/lempar.c da840fc8a6fbac23599a65ff075e6e3d01320417c794ff577088e09f5d74b689
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c232f6424a858ede44940a927fe4e26ee99c6ab614aa6f63e13ba46e88dbb280
-R 1693bc0c1e569048e8eec005916d4449
-U dan
-Z 8dee77e444940dc97285c3ee0298e6bb
+P 6bb2a10fad71bf8cec6bca538db7b00be0d26418ab62b83092d3a6a68d1c0d9f
+R 3ce13cb6be5e7cd3831ddb44a0279981
+U drh
+Z 43432e1e2cf79a7dd14125e4a977e1e5

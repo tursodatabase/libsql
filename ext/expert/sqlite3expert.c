@@ -507,6 +507,10 @@ static int expertUpdate(
   sqlite3_value **azData, 
   sqlite_int64 *pRowid
 ){
+  (void)pVtab;
+  (void)nData;
+  (void)azData;
+  (void)pRowid;
   return SQLITE_OK;
 }
 
@@ -516,6 +520,7 @@ static int expertUpdate(
 static int expertOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_OK;
   ExpertCsr *pCsr;
+  (void)pVTab;
   pCsr = idxMalloc(&rc, sizeof(ExpertCsr));
   *ppCursor = (sqlite3_vtab_cursor*)pCsr;
   return rc;
@@ -565,6 +570,7 @@ static int expertNext(sqlite3_vtab_cursor *cur){
 ** Virtual table module xRowid method.
 */
 static int expertRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  (void)cur;
   *pRowid = 0;
   return SQLITE_OK;
 }
@@ -595,6 +601,10 @@ static int expertFilter(
   sqlite3expert *pExpert = pVtab->pExpert;
   int rc;
 
+  (void)idxNum;
+  (void)idxStr;
+  (void)argc;
+  (void)argv;
   rc = sqlite3_finalize(pCsr->pData);
   pCsr->pData = 0;
   if( rc==SQLITE_OK ){
@@ -1005,7 +1015,7 @@ static int idxCreateFromWhere(
 ** Create candidate indexes in database [dbm] based on the data in 
 ** linked-list pScan.
 */
-static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
+static int idxCreateCandidates(sqlite3expert *p){
   int rc = SQLITE_OK;
   IdxScan *pIter;
 
@@ -1168,6 +1178,8 @@ static int idxAuthCallback(
   const char *zTrigger
 ){
   int rc = SQLITE_OK;
+  (void)z4;
+  (void)zTrigger;
   if( eOp==SQLITE_INSERT || eOp==SQLITE_UPDATE || eOp==SQLITE_DELETE ){
     if( sqlite3_stricmp(zDb, "main")==0 ){
       sqlite3expert *p = (sqlite3expert*)pCtx;
@@ -1370,6 +1382,7 @@ static void idxSampleFunc(
   struct IdxSampleCtx *p = (struct IdxSampleCtx*)sqlite3_user_data(pCtx);
   int bRet;
 
+  (void)argv;
   assert( argc==0 );
   if( p->nRow==0.0 ){
     bRet = 1;
@@ -1855,7 +1868,7 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
 
   /* Create candidate indexes within the in-memory database file */
   if( rc==SQLITE_OK ){
-    rc = idxCreateCandidates(p, pzErr);
+    rc = idxCreateCandidates(p);
   }
 
   /* Generate the stat1 data */
