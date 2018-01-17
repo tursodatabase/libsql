@@ -366,7 +366,6 @@ TESTSRC += \
   $(TOP)/ext/misc/remember.c \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
-  $(TOP)/ext/misc/stmt.c \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
@@ -423,6 +422,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
+  $(TOP)/ext/misc/stmt.c \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/test_session.c 
 

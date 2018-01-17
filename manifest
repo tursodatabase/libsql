@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings,\smostly\sunused\sparameters\sfor\sUDFs\sin\sthe\sCLI.
-D 2018-01-17T13:15:23.987
+C Fix\smain.mk\sso\sthat\stestfixture\scan\sbe\sbuilt\seither\sfrom\sthe\samalgamation\sor\nfrom\sindividual\ssource\sfiles.\sNo\schanges\sto\scode.
+D 2018-01-17T16:11:26.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -408,7 +408,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 69bce07f975e6835a544f43df8d9619ea31d2c8e7b3a8d2cb4c21ac704c9c9c2
+F main.mk 4d19895cb268021474ade6244119c80b8a3f1d910cb5b13cf5e04f5f37c3d61b
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1699,7 +1699,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bb2a10fad71bf8cec6bca538db7b00be0d26418ab62b83092d3a6a68d1c0d9f
-R 3ce13cb6be5e7cd3831ddb44a0279981
-U drh
-Z 43432e1e2cf79a7dd14125e4a977e1e5
+P bfbeffab7735461acb3773242ba31dae15af9f8b0291c54a6734747bb1b36e66
+R ec2f214ab6dea8dc121fe027cc99d1ce
+U dan
+Z d15337a42013c6ddacd72bec21ca6a84
