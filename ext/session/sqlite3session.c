@@ -46,6 +46,7 @@ struct sqlite3_session {
   int rc;                         /* Non-zero if an error has occurred */
   void *pFilterCtx;               /* First argument to pass to xTableFilter */
   int (*xTableFilter)(void *pCtx, const char *zTab);
+  sqlite3_value *pZeroBlob;       /* Value containing X'' */
   sqlite3_session *pNext;         /* Next session object on same db. */
   SessionTable *pTable;           /* List of attached tables */
   SessionHook hook;               /* APIs to grab new and old data with */
@@ -473,35 +474,32 @@ static int sessionPreupdateHash(
       if( rc!=SQLITE_OK ) return rc;
 
       eType = sqlite3_value_type(pVal);
-      if( pTab->bStat1 && eType==SQLITE_NULL ){
-        h = sessionHashAppendType(h, SQLITE_BLOB);
-      }else{
-        h = sessionHashAppendType(h, eType);
-        if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-          i64 iVal;
-          if( eType==SQLITE_INTEGER ){
-            iVal = sqlite3_value_int64(pVal);
-          }else{
-            double rVal = sqlite3_value_double(pVal);
-            assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
-            memcpy(&iVal, &rVal, 8);
-          }
-          h = sessionHashAppendI64(h, iVal);
-        }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
-          const u8 *z;
-          int n;
-          if( eType==SQLITE_TEXT ){
-            z = (const u8 *)sqlite3_value_text(pVal);
-          }else{
-            z = (const u8 *)sqlite3_value_blob(pVal);
-          }
-          n = sqlite3_value_bytes(pVal);
-          if( !z && (eType!=SQLITE_BLOB || n>0) ) return SQLITE_NOMEM;
-          h = sessionHashAppendBlob(h, n, z);
+      h = sessionHashAppendType(h, eType);
+      if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+        i64 iVal;
+        if( eType==SQLITE_INTEGER ){
+          iVal = sqlite3_value_int64(pVal);
         }else{
-          assert( eType==SQLITE_NULL );
-          *pbNullPK = 1;
+          double rVal = sqlite3_value_double(pVal);
+          assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
+          memcpy(&iVal, &rVal, 8);
         }
+        h = sessionHashAppendI64(h, iVal);
+      }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+        const u8 *z;
+        int n;
+        if( eType==SQLITE_TEXT ){
+          z = (const u8 *)sqlite3_value_text(pVal);
+        }else{
+          z = (const u8 *)sqlite3_value_blob(pVal);
+        }
+        n = sqlite3_value_bytes(pVal);
+        if( !z && (eType!=SQLITE_BLOB || n>0) ) return SQLITE_NOMEM;
+        h = sessionHashAppendBlob(h, n, z);
+      }else{
+        assert( eType==SQLITE_NULL );
+        assert( pTab->bStat1==0 || i!=1 );
+        *pbNullPK = 1;
       }
     }
   }
@@ -555,7 +553,7 @@ static unsigned int sessionChangeHash(
          || eType==SQLITE_TEXT || eType==SQLITE_BLOB 
          || eType==SQLITE_NULL || eType==0 
     );
-    assert( !isPK || (eType!=0 && (pTab->bStat1 || eType!=SQLITE_NULL)) );
+    assert( !isPK || (eType!=0 && eType!=SQLITE_NULL) );
 
     if( isPK ){
       a++;
@@ -563,7 +561,7 @@ static unsigned int sessionChangeHash(
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
         h = sessionHashAppendI64(h, sessionGetI64(a));
         a += 8;
-      }else if( eType!=SQLITE_NULL ){
+      }else{
         int n; 
         a += sessionVarintGet(a, &n);
         h = sessionHashAppendBlob(h, n, a);
@@ -799,7 +797,6 @@ static int sessionPreupdateEqual(
       sqlite3_value *pVal;        /* Value returned by preupdate_new/old */
       int rc;                     /* Error code from preupdate_new/old */
       int eType = *a++;           /* Type of value from change record */
-      int eValType;
 
       /* The following calls to preupdate_new() and preupdate_old() can not
       ** fail. This is because they cache their return values, and by the
@@ -814,14 +811,7 @@ static int sessionPreupdateEqual(
         rc = pSession->hook.xOld(pSession->hook.pCtx, iCol, &pVal);
       }
       assert( rc==SQLITE_OK );
-      eValType = sqlite3_value_type(pVal);
-      if( eType==SQLITE_BLOB && eValType==SQLITE_NULL && pTab->bStat1 ){
-        int n;
-        a += sessionVarintGet(a, &n);
-        if( n!=0 ) return 0;
-        continue;
-      }
-      if( eValType!=eType ) return 0;
+      if( sqlite3_value_type(pVal)!=eType ) return 0;
 
       /* A SessionChange object never has a NULL value in a PK column */
       assert( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT
@@ -1069,6 +1059,47 @@ static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
 }
 
 /*
+** Versions of the four methods in object SessionHook for use with the
+** sqlite_stat1 table. The purpose of this is to substitute a zero-length
+** blob each time a NULL value is read from the "idx" column of the
+** sqlite_stat1 table.
+*/
+typedef struct SessionStat1Ctx SessionStat1Ctx;
+struct SessionStat1Ctx {
+  SessionHook hook;
+  sqlite3_session *pSession;
+};
+static int sessionStat1Old(void *pCtx, int iCol, sqlite3_value **ppVal){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  sqlite3_value *pVal = 0;
+  int rc = p->hook.xOld(p->hook.pCtx, iCol, &pVal);
+  if( rc==SQLITE_OK && iCol==1 && sqlite3_value_type(pVal)==SQLITE_NULL ){
+    pVal = p->pSession->pZeroBlob;
+  }
+  *ppVal = pVal;
+  return rc;
+}
+static int sessionStat1New(void *pCtx, int iCol, sqlite3_value **ppVal){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  sqlite3_value *pVal = 0;
+  int rc = p->hook.xNew(p->hook.pCtx, iCol, &pVal);
+  if( rc==SQLITE_OK && iCol==1 && sqlite3_value_type(pVal)==SQLITE_NULL ){
+    pVal = p->pSession->pZeroBlob;
+  }
+  *ppVal = pVal;
+  return rc;
+}
+static int sessionStat1Count(void *pCtx){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  return p->hook.xCount(p->hook.pCtx);
+}
+static int sessionStat1Depth(void *pCtx){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  return p->hook.xDepth(p->hook.pCtx);
+}
+
+
+/*
 ** This function is only called from with a pre-update-hook reporting a 
 ** change on table pTab (attached to session pSession). The type of change
 ** (UPDATE, INSERT, DELETE) is specified by the first argument.
@@ -1084,6 +1115,7 @@ static void sessionPreupdateOneChange(
   int iHash; 
   int bNull = 0; 
   int rc = SQLITE_OK;
+  SessionStat1Ctx stat1;
 
   if( pSession->rc ) return;
 
@@ -1103,13 +1135,32 @@ static void sessionPreupdateOneChange(
     return;
   }
 
+  if( pTab->bStat1 ){
+    stat1.hook = pSession->hook;
+    stat1.pSession = pSession;
+    pSession->hook.pCtx = (void*)&stat1;
+    pSession->hook.xNew = sessionStat1New;
+    pSession->hook.xOld = sessionStat1Old;
+    pSession->hook.xCount = sessionStat1Count;
+    pSession->hook.xDepth = sessionStat1Depth;
+    if( pSession->pZeroBlob==0 ){
+      sqlite3_value *p = sqlite3ValueNew(0);
+      if( p==0 ){
+        rc = SQLITE_NOMEM;
+        goto error_out;
+      }
+      sqlite3ValueSetStr(p, 0, "", 0, SQLITE_STATIC);
+      pSession->pZeroBlob = p;
+    }
+  }
+
   /* Calculate the hash-key for this change. If the primary key of the row
   ** includes a NULL value, exit early. Such changes are ignored by the
   ** session module. */
   rc = sessionPreupdateHash(pSession, pTab, op==SQLITE_INSERT, &iHash, &bNull);
   if( rc!=SQLITE_OK ) goto error_out;
 
-  if( bNull==0 || pTab->bStat1 ){
+  if( bNull==0 ){
     /* Search the hash table for an existing record for this row. */
     SessionChange *pC;
     for(pC=pTab->apChange[iHash]; pC; pC=pC->pNext){
@@ -1144,7 +1195,6 @@ static void sessionPreupdateOneChange(
         rc = sessionSerializeValue(0, p, &nByte);
         if( rc!=SQLITE_OK ) goto error_out;
       }
-      if( pTab->bStat1 ) nByte += 30;
   
       /* Allocate the change object */
       pChange = (SessionChange *)sqlite3_malloc(nByte);
@@ -1168,12 +1218,7 @@ static void sessionPreupdateOneChange(
         }else if( pTab->abPK[i] ){
           pSession->hook.xNew(pSession->hook.pCtx, i, &p);
         }
-        if( p && pTab->bStat1 && sqlite3_value_type(p)==SQLITE_NULL ){
-          pChange->aRecord[nByte++] = SQLITE_BLOB;
-          nByte += sessionVarintPut(&pChange->aRecord[nByte], 0);
-        }else{
-          sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
-        }
+        sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
       }
 
       /* Add the change to the hash-table */
@@ -1198,6 +1243,9 @@ static void sessionPreupdateOneChange(
 
   /* If an error has occurred, mark the session object as failed. */
  error_out:
+  if( pTab->bStat1 ){
+    pSession->hook = stat1.hook;
+  }
   if( rc!=SQLITE_OK ){
     pSession->rc = rc;
   }
@@ -1659,6 +1707,7 @@ void sqlite3session_delete(sqlite3_session *pSession){
     }
   }
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
+  sqlite3ValueFree(pSession->pZeroBlob);
 
   /* Delete all attached table objects. And the contents of their 
   ** associated hash-tables. */
@@ -2188,7 +2237,7 @@ static int sessionSelectBind(
     switch( eType ){
       case 0:
       case SQLITE_NULL:
-        /* assert( abPK[i]==0 ); */
+        assert( abPK[i]==0 );
         break;
 
       case SQLITE_INTEGER: {
