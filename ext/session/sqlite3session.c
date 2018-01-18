@@ -3378,7 +3378,7 @@ struct SessionApplyCtx {
   int nCol;                       /* Size of azCol[] and abPK[] arrays */
   const char **azCol;             /* Array of column names */
   u8 *abPK;                       /* Boolean array - true if column is in PK */
-
+  int bStat1;                     /* True if table is sqlite_stat1 */
   int bDeferConstraints;          /* True to defer constraints */
   SessionBuffer constraints;      /* Deferred constraints are stored here */
 };
@@ -3981,11 +3981,25 @@ static int sessionApplyOneOp(
 
   }else{
     assert( op==SQLITE_INSERT );
-    rc = sessionBindRow(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
-    if( rc!=SQLITE_OK ) return rc;
+    if( p->bStat1 ){
+      /* Check if there is a conflicting row. For sqlite_stat1, this needs
+      ** to be done using a SELECT, as there is no PRIMARY KEY in the 
+      ** database schema to throw an exception if a duplicate is inserted.  */
+      rc = sessionSeekToRow(p->db, pIter, p->abPK, p->pSelect);
+      if( rc==SQLITE_ROW ){
+        rc = SQLITE_CONSTRAINT;
+        sqlite3_reset(p->pSelect);
+      }
+    }
 
-    sqlite3_step(p->pInsert);
-    rc = sqlite3_reset(p->pInsert);
+    if( rc==SQLITE_OK ){
+      rc = sessionBindRow(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
+      if( rc!=SQLITE_OK ) return rc;
+
+      sqlite3_step(p->pInsert);
+      rc = sqlite3_reset(p->pInsert);
+    }
+
     if( (rc&0xff)==SQLITE_CONSTRAINT ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, pbReplace
@@ -4222,13 +4236,16 @@ static int sessionChangesetApply(
             if( (rc = sessionStat1Sql(db, &sApply) ) ){
               break;
             }
-          }else
-          if((rc = sessionSelectRow(db, zTab, &sApply))
-          || (rc = sessionUpdateRow(db, zTab, &sApply))
-          || (rc = sessionDeleteRow(db, zTab, &sApply))
-          || (rc = sessionInsertRow(db, zTab, &sApply))
-          ){
-            break;
+            sApply.bStat1 = 1;
+          }else{
+            if((rc = sessionSelectRow(db, zTab, &sApply))
+                || (rc = sessionUpdateRow(db, zTab, &sApply))
+                || (rc = sessionDeleteRow(db, zTab, &sApply))
+                || (rc = sessionInsertRow(db, zTab, &sApply))
+              ){
+              break;
+            }
+            sApply.bStat1 = 0;
           }
         }
         nTab = sqlite3Strlen30(zTab);

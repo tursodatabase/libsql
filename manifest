@@ -1,5 +1,5 @@
-C Simplify\sthe\ssessions\spreupdate-hook\slogic\sfor\stransforming\sNULL\sto\sX''\sfor\ncolumn\ssqlite_stat1.idx.
-D 2018-01-18T15:06:23.750
+C Fix\ssessions\smodule\sconflict\shandling\sfor\sthe\ssqlite_stat1\stable.
+D 2018-01-18T16:42:11.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -398,9 +398,9 @@ F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sessionstat1.test 16268a9bf62ab19c9bc9e41404bf7a13b5fd37c9cb6cf278a472f0c6c50d7ac1
+F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 55f20fa4a9b6acc338e11867439633c7faa3d18809cdd826fde6abf9a75dd7a0
+F ext/session/sqlite3session.c 989466bba4dff0ede8d4c450b1fc65ca222b87e31193eddbf3931b88bf898a57
 F ext/session/sqlite3session.h cb4d860101ba6d3ac810f18684539b766d24d668fa2436cdde90d711af9464fb
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25bf734be1b3883fccf12ac4d93d50289aa307fb60a52e0e32df12f7ee4edc7a
-R f7c998dd2622eae2189b630c53aa0780
+P 089d7cecaaa47db58320b216a111a5e56123d022008be6c81bc0746148bbdb58
+R b26168110a43028fdb5773dcda862810
 U dan
-Z 3f8bd6ff445f731b364c070e53a9b8ca
+Z 3667003c7f66cdcf6e4cbccaf82894fb
