@@ -46,6 +46,7 @@ struct sqlite3_session {
   int rc;                         /* Non-zero if an error has occurred */
   void *pFilterCtx;               /* First argument to pass to xTableFilter */
   int (*xTableFilter)(void *pCtx, const char *zTab);
+  sqlite3_value *pZeroBlob;       /* Value containing X'' */
   sqlite3_session *pNext;         /* Next session object on same db. */
   SessionTable *pTable;           /* List of attached tables */
   SessionHook hook;               /* APIs to grab new and old data with */
@@ -113,6 +114,7 @@ struct SessionTable {
   SessionTable *pNext;
   char *zName;                    /* Local name of table */
   int nCol;                       /* Number of columns in table zName */
+  int bStat1;                     /* True if this is sqlite_stat1 */
   const char **azCol;             /* Column names */
   u8 *abPK;                       /* Array of primary key flags */
   int nEntry;                     /* Total number of entries in hash table */
@@ -496,6 +498,7 @@ static int sessionPreupdateHash(
         h = sessionHashAppendBlob(h, n, z);
       }else{
         assert( eType==SQLITE_NULL );
+        assert( pTab->bStat1==0 || i!=1 );
         *pbNullPK = 1;
       }
     }
@@ -1047,10 +1050,54 @@ static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
           break;
         }
       }
+      if( 0==sqlite3_stricmp("sqlite_stat1", pTab->zName) ){
+        pTab->bStat1 = 1;
+      }
     }
   }
   return (pSession->rc || pTab->abPK==0);
 }
+
+/*
+** Versions of the four methods in object SessionHook for use with the
+** sqlite_stat1 table. The purpose of this is to substitute a zero-length
+** blob each time a NULL value is read from the "idx" column of the
+** sqlite_stat1 table.
+*/
+typedef struct SessionStat1Ctx SessionStat1Ctx;
+struct SessionStat1Ctx {
+  SessionHook hook;
+  sqlite3_session *pSession;
+};
+static int sessionStat1Old(void *pCtx, int iCol, sqlite3_value **ppVal){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  sqlite3_value *pVal = 0;
+  int rc = p->hook.xOld(p->hook.pCtx, iCol, &pVal);
+  if( rc==SQLITE_OK && iCol==1 && sqlite3_value_type(pVal)==SQLITE_NULL ){
+    pVal = p->pSession->pZeroBlob;
+  }
+  *ppVal = pVal;
+  return rc;
+}
+static int sessionStat1New(void *pCtx, int iCol, sqlite3_value **ppVal){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  sqlite3_value *pVal = 0;
+  int rc = p->hook.xNew(p->hook.pCtx, iCol, &pVal);
+  if( rc==SQLITE_OK && iCol==1 && sqlite3_value_type(pVal)==SQLITE_NULL ){
+    pVal = p->pSession->pZeroBlob;
+  }
+  *ppVal = pVal;
+  return rc;
+}
+static int sessionStat1Count(void *pCtx){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  return p->hook.xCount(p->hook.pCtx);
+}
+static int sessionStat1Depth(void *pCtx){
+  SessionStat1Ctx *p = (SessionStat1Ctx*)pCtx;
+  return p->hook.xDepth(p->hook.pCtx);
+}
+
 
 /*
 ** This function is only called from with a pre-update-hook reporting a 
@@ -1068,6 +1115,7 @@ static void sessionPreupdateOneChange(
   int iHash; 
   int bNull = 0; 
   int rc = SQLITE_OK;
+  SessionStat1Ctx stat1;
 
   if( pSession->rc ) return;
 
@@ -1085,6 +1133,25 @@ static void sessionPreupdateOneChange(
   if( sessionGrowHash(0, pTab) ){
     pSession->rc = SQLITE_NOMEM;
     return;
+  }
+
+  if( pTab->bStat1 ){
+    stat1.hook = pSession->hook;
+    stat1.pSession = pSession;
+    pSession->hook.pCtx = (void*)&stat1;
+    pSession->hook.xNew = sessionStat1New;
+    pSession->hook.xOld = sessionStat1Old;
+    pSession->hook.xCount = sessionStat1Count;
+    pSession->hook.xDepth = sessionStat1Depth;
+    if( pSession->pZeroBlob==0 ){
+      sqlite3_value *p = sqlite3ValueNew(0);
+      if( p==0 ){
+        rc = SQLITE_NOMEM;
+        goto error_out;
+      }
+      sqlite3ValueSetStr(p, 0, "", 0, SQLITE_STATIC);
+      pSession->pZeroBlob = p;
+    }
   }
 
   /* Calculate the hash-key for this change. If the primary key of the row
@@ -1176,6 +1243,9 @@ static void sessionPreupdateOneChange(
 
   /* If an error has occurred, mark the session object as failed. */
  error_out:
+  if( pTab->bStat1 ){
+    pSession->hook = stat1.hook;
+  }
   if( rc!=SQLITE_OK ){
     pSession->rc = rc;
   }
@@ -1637,6 +1707,7 @@ void sqlite3session_delete(sqlite3_session *pSession){
     }
   }
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
+  sqlite3ValueFree(pSession->pZeroBlob);
 
   /* Delete all attached table objects. And the contents of their 
   ** associated hash-tables. */
@@ -2104,28 +2175,41 @@ static int sessionSelectStmt(
   sqlite3_stmt **ppStmt           /* OUT: Prepared SELECT statement */
 ){
   int rc = SQLITE_OK;
-  int i;
-  const char *zSep = "";
-  SessionBuffer buf = {0, 0, 0};
+  char *zSql = 0;
+  int nSql = -1;
 
-  sessionAppendStr(&buf, "SELECT * FROM ", &rc);
-  sessionAppendIdent(&buf, zDb, &rc);
-  sessionAppendStr(&buf, ".", &rc);
-  sessionAppendIdent(&buf, zTab, &rc);
-  sessionAppendStr(&buf, " WHERE ", &rc);
-  for(i=0; i<nCol; i++){
-    if( abPK[i] ){
-      sessionAppendStr(&buf, zSep, &rc);
-      sessionAppendIdent(&buf, azCol[i], &rc);
-      sessionAppendStr(&buf, " = ?", &rc);
-      sessionAppendInteger(&buf, i+1, &rc);
-      zSep = " AND ";
+  if( 0==sqlite3_stricmp("sqlite_stat1", zTab) ){
+    zSql = sqlite3_mprintf(
+        "SELECT tbl, ?2, stat FROM %Q.sqlite_stat1 WHERE tbl IS ?1 AND "
+        "idx IS (CASE WHEN ?2=X'' THEN NULL ELSE ?2 END)", zDb
+    );
+  }else{
+    int i;
+    const char *zSep = "";
+    SessionBuffer buf = {0, 0, 0};
+
+    sessionAppendStr(&buf, "SELECT * FROM ", &rc);
+    sessionAppendIdent(&buf, zDb, &rc);
+    sessionAppendStr(&buf, ".", &rc);
+    sessionAppendIdent(&buf, zTab, &rc);
+    sessionAppendStr(&buf, " WHERE ", &rc);
+    for(i=0; i<nCol; i++){
+      if( abPK[i] ){
+        sessionAppendStr(&buf, zSep, &rc);
+        sessionAppendIdent(&buf, azCol[i], &rc);
+        sessionAppendStr(&buf, " IS ?", &rc);
+        sessionAppendInteger(&buf, i+1, &rc);
+        zSep = " AND ";
+      }
     }
+    zSql = (char*)buf.aBuf;
+    nSql = buf.nBuf;
   }
+
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, ppStmt, 0);
+    rc = sqlite3_prepare_v2(db, zSql, nSql, ppStmt, 0);
   }
-  sqlite3_free(buf.aBuf);
+  sqlite3_free(zSql);
   return rc;
 }
 
@@ -3294,7 +3378,7 @@ struct SessionApplyCtx {
   int nCol;                       /* Size of azCol[] and abPK[] arrays */
   const char **azCol;             /* Array of column names */
   u8 *abPK;                       /* Boolean array - true if column is in PK */
-
+  int bStat1;                     /* True if table is sqlite_stat1 */
   int bDeferConstraints;          /* True to defer constraints */
   SessionBuffer constraints;      /* Deferred constraints are stored here */
 };
@@ -3464,6 +3548,7 @@ static int sessionUpdateRow(
   return rc;
 }
 
+
 /*
 ** Formulate and prepare an SQL statement to query table zTab by primary
 ** key. Assuming the following table structure:
@@ -3522,6 +3607,47 @@ static int sessionInsertRow(
     rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pInsert, 0);
   }
   sqlite3_free(buf.aBuf);
+  return rc;
+}
+
+static int sessionPrepare(sqlite3 *db, sqlite3_stmt **pp, const char *zSql){
+  return sqlite3_prepare_v2(db, zSql, -1, pp, 0);
+}
+
+/*
+** Prepare statements for applying changes to the sqlite_stat1 table.
+** These are similar to those created by sessionSelectRow(),
+** sessionInsertRow(), sessionUpdateRow() and sessionDeleteRow() for 
+** other tables.
+*/
+static int sessionStat1Sql(sqlite3 *db, SessionApplyCtx *p){
+  int rc = sessionSelectRow(db, "sqlite_stat1", p);
+  if( rc==SQLITE_OK ){
+    rc = sessionPrepare(db, &p->pInsert,
+        "INSERT INTO main.sqlite_stat1 VALUES(?1, "
+        "CASE WHEN length(?2)=0 AND typeof(?2)='blob' THEN NULL ELSE ?2 END, "
+        "?3)"
+    );
+  }
+  if( rc==SQLITE_OK ){
+    rc = sessionPrepare(db, &p->pUpdate,
+        "UPDATE main.sqlite_stat1 SET "
+        "tbl = CASE WHEN ?2 THEN ?3 ELSE tbl END, "
+        "idx = CASE WHEN ?5 THEN ?6 ELSE idx END, "
+        "stat = CASE WHEN ?8 THEN ?9 ELSE stat END  "
+        "WHERE tbl=?1 AND idx IS "
+        "CASE WHEN length(?4)=0 AND typeof(?4)='blob' THEN NULL ELSE ?4 END "
+        "AND (?10 OR ?8=0 OR stat IS ?7)"
+    );
+  }
+  if( rc==SQLITE_OK ){
+    rc = sessionPrepare(db, &p->pDelete,
+        "DELETE FROM main.sqlite_stat1 WHERE tbl=?1 AND idx IS "
+        "CASE WHEN length(?2)=0 AND typeof(?2)='blob' THEN NULL ELSE ?2 END "
+        "AND (?4 OR stat IS ?3)"
+    );
+  }
+  assert( rc==SQLITE_OK );
   return rc;
 }
 
@@ -3855,11 +3981,25 @@ static int sessionApplyOneOp(
 
   }else{
     assert( op==SQLITE_INSERT );
-    rc = sessionBindRow(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
-    if( rc!=SQLITE_OK ) return rc;
+    if( p->bStat1 ){
+      /* Check if there is a conflicting row. For sqlite_stat1, this needs
+      ** to be done using a SELECT, as there is no PRIMARY KEY in the 
+      ** database schema to throw an exception if a duplicate is inserted.  */
+      rc = sessionSeekToRow(p->db, pIter, p->abPK, p->pSelect);
+      if( rc==SQLITE_ROW ){
+        rc = SQLITE_CONSTRAINT;
+        sqlite3_reset(p->pSelect);
+      }
+    }
 
-    sqlite3_step(p->pInsert);
-    rc = sqlite3_reset(p->pInsert);
+    if( rc==SQLITE_OK ){
+      rc = sessionBindRow(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
+      if( rc!=SQLITE_OK ) return rc;
+
+      sqlite3_step(p->pInsert);
+      rc = sqlite3_reset(p->pInsert);
+    }
+
     if( (rc&0xff)==SQLITE_CONSTRAINT ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, pbReplace
@@ -4092,12 +4232,20 @@ static int sessionChangesetApply(
         }
         else{
           sApply.nCol = nCol;
-          if((rc = sessionSelectRow(db, zTab, &sApply))
-          || (rc = sessionUpdateRow(db, zTab, &sApply))
-          || (rc = sessionDeleteRow(db, zTab, &sApply))
-          || (rc = sessionInsertRow(db, zTab, &sApply))
-          ){
-            break;
+          if( 0==sqlite3_stricmp(zTab, "sqlite_stat1") ){
+            if( (rc = sessionStat1Sql(db, &sApply) ) ){
+              break;
+            }
+            sApply.bStat1 = 1;
+          }else{
+            if((rc = sessionSelectRow(db, zTab, &sApply))
+                || (rc = sessionUpdateRow(db, zTab, &sApply))
+                || (rc = sessionDeleteRow(db, zTab, &sApply))
+                || (rc = sessionInsertRow(db, zTab, &sApply))
+              ){
+              break;
+            }
+            sApply.bStat1 = 0;
           }
         }
         nTab = sqlite3Strlen30(zTab);

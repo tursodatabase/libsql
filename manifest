@@ -1,5 +1,5 @@
-C Fix\sto\sthe\sdocumentation\sfor\ssqlite3_trace_v2().\s\sNo\schanges\sto\scode.
-D 2018-01-18T16:52:35.238
+C Fix\ssessions\smodule\shandling\sof\ssqlite_stat1\srows\swith\s(idx\sIS\sNULL).
+D 2018-01-18T16:59:52.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -398,10 +398,10 @@ F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sessionstat1.test e3a3f5876ce1526b48f6f447ee0b18960ac683e3fc891791e1ca0c08e823d498
+F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c c9d813ffa8db0670257da0a0c931e7188dfbb0010bf1a38274775c9b6300dd5c
-F ext/session/sqlite3session.h cb4d860101ba6d3ac810f18684539b766d24d668fa2436cdde90d711af9464fb
+F ext/session/sqlite3session.c 989466bba4dff0ede8d4c450b1fc65ca222b87e31193eddbf3931b88bf898a57
+F ext/session/sqlite3session.h 01774161cbd328fe3d496323655b9cc142317ff1fb1ae15c1232075ea240e3a4
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -422,7 +422,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
-F src/analyze.c f9bfffd0416c547a916cb96793b94684bdb0d26a71542ea31819c6757741c19d
+F src/analyze.c 6b42e36a5dcc2703a771f2411bd5e99524bd62c7ecde209bb88dfb04c72f046e
 F src/attach.c 84c477e856b24c2b9a0983b438a707c0cf4d616cee7a425401d418e58afec24c
 F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
@@ -1700,7 +1700,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 469b96be5350ba2291518280ffe179b87aa7fbe701e2813ef63843922771517a
-R 2b93eecc1bfa73dda9a58b538de6c0af
-U drh
-Z f64363038b04686cc1ed3a7aa13703ce
+P 6fbd0a11a66f8eb4d7820cb49c23bdcb917db98a22c29d76edea1eea6dab0a4e dc7c48cb4126db9e25c73512cc743155293fe1c4c2516f8c84102228695b6e70
+R e340b654f2343cebf57c71c1eef74e4f
+T +closed dc7c48cb4126db9e25c73512cc743155293fe1c4c2516f8c84102228695b6e70
+U dan
+Z 94f64c633d9eca20229572c5d0ac1d82

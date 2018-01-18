@@ -1309,6 +1309,9 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    sqlite3VdbeChangeP4(v, -1, (char*)pStat1, P4_TABLE);
+#endif
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
 }
