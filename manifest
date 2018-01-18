@@ -1,5 +1,5 @@
-C Add\scomments\sdescribing\sthe\sspecial\ssqlite_stat1\shandling\sto\ssqlite3session.h.
-D 2018-01-18T16:53:41.289
+C Clarify\sthe\shandling\sof\sthe\ssqlite_stat1\stable\sby\slegacy\sversions\sof\sthe\nsessions\smodule.
+D 2018-01-18T16:56:19.115
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -401,7 +401,7 @@ F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
 F ext/session/sqlite3session.c 989466bba4dff0ede8d4c450b1fc65ca222b87e31193eddbf3931b88bf898a57
-F ext/session/sqlite3session.h 1bf32a9598ae4288bf7ecbda032a0479d6225ab8d2283fd252056a26b1046946
+F ext/session/sqlite3session.h 01774161cbd328fe3d496323655b9cc142317ff1fb1ae15c1232075ea240e3a4
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f05ee74e05c401eb075a1ba65179662a08a5c3d5b55fc81f2acc841e841dd055
-R 62c81de92f4cf24f6460f153aeb30b06
+P 4431a3256f7436e34b3c33edc1f3e53df7eb3c87daec9bac8d038895d93ca7f2
+R 6488443bbec455d1afdebff112c6cb1b
 U dan
-Z 4f9e979274bbe8dc16dfd6dd12c05029
+Z 8531e6daca6e4a95660fec10c24747c3

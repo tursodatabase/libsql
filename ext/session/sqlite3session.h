@@ -150,8 +150,8 @@ int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
 **
 ** <h3>Special sqlite_stat1 Handling</h3>
 **
-** The "sqlite_stat1" table is an exception to some of the rules above. In
-** SQLite, the schema of sqlite_stat1 is:
+** As of SQLite version 3.22.0, the "sqlite_stat1" table is an exception to 
+** some of the rules above. In SQLite, the schema of sqlite_stat1 is:
 **  <pre>
 **  &nbsp;     CREATE TABLE sqlite_stat1(tbl,idx,stat)  
 **  </pre>
@@ -171,6 +171,11 @@ int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
 ** iterator directly (including on a changeset iterator passed to a
 ** conflict-handler callback) then the X'' value is returned. The application
 ** must translate X'' to NULL itself if required.
+**
+** Legacy (older than 3.22.0) versions of the sessions module cannot capture
+** changes made to the sqlite_stat1 table. Legacy versions of the
+** sqlite3changeset_apply() function silently ignore any modifications to the
+** sqlite_stat1 table that are part of a changeset or patchset.
 */
 int sqlite3session_attach(
   sqlite3_session *pSession,      /* Session object */
