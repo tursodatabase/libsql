@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\sconfigure.ac\sscript\sand\sMakefile.am\stemplates\sso\sthat\nZLIB\sis\sautomatically\sdetected\sand\sused.
-D 2018-01-18T17:09:26.634
+C Check\sfor\sboth\szlib.h\sand\s-lz\sbefore\senabling\szlib\ssupport\sin\sthe\samalgamation\nconfigure\sscript.
+D 2018-01-18T17:46:08.702
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -16,7 +16,7 @@ F autoconf/Makefile.am 6cca3f797c649b40c762484ce26491839fec54de72d376d774969e76e
 F autoconf/Makefile.msc 2c50a59319af7da4eaca8c13e3240881b1bc245fd175845a055faab7d03d6e67
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac c610cbec367dfdcbbe1341f445699700a0f9e157150254e1d3460fa1602e33c5
+F autoconf/configure.ac aeeed858e5e54e79052ae44ba774e56595dcb787f23a2155aa98a8aa27327b66
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e916416331d7948b312a5dd58ac0c145030bb3b47a37dab2636564397249a86
-R 5056e176b64caf38b7d602040a3b5ee2
-U drh
-Z 40c80df1df52239dfd839811e525ac68
+P 41bfb6b8d61699d09a7e67d2289149abfbb9ce8e75e6ff8560546cad0d2e3f2b
+R 6ef8367290b0a71ac4c6dc7b9f60b8d6
+U dan
+Z 5d28bdaaa8634c1e4ea00e17fbeb8b59
