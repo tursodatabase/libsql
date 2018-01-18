@@ -164,6 +164,9 @@ AC_SUBST(EXTRA_SHELL_OBJ)
 #-----------------------------------------------------------------------
 
 AC_CHECK_FUNCS(posix_fallocate)
+AC_CHECK_HEADERS(zlib.h)
+AC_SEARCH_LIBS(deflate,z,[ZLIB_FLAGS="-DSQLITE_HAVE_ZLIB"])
+AC_SUBST(ZLIB_FLAGS)
 
 #-----------------------------------------------------------------------
 # UPDATE: Maybe it's better if users just set CFLAGS before invoking

@@ -1,5 +1,5 @@
-C Fix\ssessions\smodule\shandling\sof\ssqlite_stat1\srows\swith\s(idx\sIS\sNULL).
-D 2018-01-18T16:59:52.652
+C Update\sthe\sautoconf\sconfigure.ac\sscript\sand\sMakefile.am\stemplates\sso\sthat\nZLIB\sis\sautomatically\sdetected\sand\sused.
+D 2018-01-18T17:09:26.634
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -12,11 +12,11 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 66c0befa511f0d95ba229e180067cf0357a9ebf8b3201b06d683c5ba6220fb39
+F autoconf/Makefile.am 6cca3f797c649b40c762484ce26491839fec54de72d376d774969e76ed13931f
 F autoconf/Makefile.msc 2c50a59319af7da4eaca8c13e3240881b1bc245fd175845a055faab7d03d6e67
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 8dd08ca564279fff091c9bfdd2599d8f992c9f1f70c5396de2126ad2bd1b3bed
+F autoconf/configure.ac c610cbec367dfdcbbe1341f445699700a0f9e157150254e1d3460fa1602e33c5
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1700,8 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6fbd0a11a66f8eb4d7820cb49c23bdcb917db98a22c29d76edea1eea6dab0a4e dc7c48cb4126db9e25c73512cc743155293fe1c4c2516f8c84102228695b6e70
-R e340b654f2343cebf57c71c1eef74e4f
-T +closed dc7c48cb4126db9e25c73512cc743155293fe1c4c2516f8c84102228695b6e70
-U dan
-Z 94f64c633d9eca20229572c5d0ac1d82
+P 0e916416331d7948b312a5dd58ac0c145030bb3b47a37dab2636564397249a86
+R 5056e176b64caf38b7d602040a3b5ee2
+U drh
+Z 40c80df1df52239dfd839811e525ac68
