@@ -1,3 +1,13 @@
+# Version 0.13.0 (2017-11-13)
+
+* Added ToSqlConversionFailure case to Error enum.
+* Now depends on chrono 0.4, bitflats 1.0, and (optionally) cc 1.0 / bindgen 0.31.
+* The ToSql/FromSql implementations for time::Timespec now include
+  and expect fractional seconds and timezone in the serialized string.
+* The RowIndex type used in Row::get is now publicly exported.
+* New `sqlcipher` feature allows linking against SQLCipher instead of SQLite.
+* Doc link in README now point to docs.rs.
+
 # Version 0.12.0 (2017-05-29)
 
 * Defines HAVE\_USLEEP when building with a bundled SQLite (#263).

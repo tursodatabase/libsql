@@ -61,12 +61,24 @@ pub trait FromSql: Sized {
     fn column_result(value: ValueRef) -> FromSqlResult<Self>;
 }
 
+impl FromSql for isize {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        i64::column_result(value).and_then(|i| {
+            if i < isize::min_value() as i64 || i > isize::max_value() as i64 {
+                Err(FromSqlError::OutOfRange(i))
+            } else {
+                Ok(i as isize)
+            }
+        })
+    }
+}
+
 macro_rules! from_sql_integral(
     ($t:ident) => (
         impl FromSql for $t {
             fn column_result(value: ValueRef) -> FromSqlResult<Self> {
                 i64::column_result(value).and_then(|i| {
-                    if i < $t::min_value() as i64 || i > $t::max_value() as i64 {
+                    if i < i64::from($t::min_value()) || i > i64::from($t::max_value()) {
                         Err(FromSqlError::OutOfRange(i))
                     } else {
                         Ok(i as $t)
@@ -80,7 +92,6 @@ macro_rules! from_sql_integral(
 from_sql_integral!(i8);
 from_sql_integral!(i16);
 from_sql_integral!(i32);
-from_sql_integral!(isize);
 from_sql_integral!(u8);
 from_sql_integral!(u16);
 from_sql_integral!(u32);

@@ -3,7 +3,7 @@ extern crate chrono;
 
 use std::borrow::Cow;
 
-use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC, Local};
+use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, Utc, Local};
 
 use Result;
 use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
@@ -87,12 +87,12 @@ impl FromSql for NaiveDateTime {
 /// Date and time with time zone => UTC RFC3339 timestamp ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
 impl<Tz: TimeZone> ToSql for DateTime<Tz> {
     fn to_sql(&self) -> Result<ToSqlOutput> {
-        Ok(ToSqlOutput::from(self.with_timezone(&UTC).to_rfc3339()))
+        Ok(ToSqlOutput::from(self.with_timezone(&Utc).to_rfc3339()))
     }
 }
 
-/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<UTC>.
-impl FromSql for DateTime<UTC> {
+/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Utc>`.
+impl FromSql for DateTime<Utc> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         {
             // Try to parse value as rfc3339 first.
@@ -111,19 +111,19 @@ impl FromSql for DateTime<UTC> {
             };
 
             if let Ok(dt) = DateTime::parse_from_rfc3339(&s) {
-                return Ok(dt.with_timezone(&UTC));
+                return Ok(dt.with_timezone(&Utc));
             }
         }
 
         // Couldn't parse as rfc3339 - fall back to NaiveDateTime.
-        NaiveDateTime::column_result(value).map(|dt| UTC.from_utc_datetime(&dt))
+        NaiveDateTime::column_result(value).map(|dt| Utc.from_utc_datetime(&dt))
     }
 }
 
-/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Local>.
+/// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Local>`.
 impl FromSql for DateTime<Local> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        let utc_dt = try!(DateTime::<UTC>::column_result(value));
+        let utc_dt = try!(DateTime::<Utc>::column_result(value));
         Ok(utc_dt.with_timezone(&Local))
     }
 }
@@ -131,7 +131,7 @@ impl FromSql for DateTime<Local> {
 #[cfg(test)]
 mod test {
     use Connection;
-    use super::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, UTC,
+    use super::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
                         Duration};
 
     fn checked_memory_handle() -> Connection {
@@ -201,7 +201,7 @@ mod test {
         let date = NaiveDate::from_ymd(2016, 2, 23);
         let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
         let dt = NaiveDateTime::new(date, time);
-        let utc = UTC.from_utc_datetime(&dt);
+        let utc = Utc.from_utc_datetime(&dt);
 
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc])
             .unwrap();
@@ -210,19 +210,19 @@ mod test {
             .unwrap();
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
 
-        let v1: DateTime<UTC> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let v1: DateTime<Utc> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(utc, v1);
 
-        let v2: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0))
+        let v2: DateTime<Utc> = db.query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(utc, v2);
 
-        let v3: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0))
+        let v3: DateTime<Utc> = db.query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(utc - Duration::milliseconds(789), v3);
 
-        let v4: DateTime<UTC> =
+        let v4: DateTime<Utc> =
             db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0))
                 .unwrap();
         assert_eq!(utc, v4);

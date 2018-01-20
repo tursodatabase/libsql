@@ -5,7 +5,7 @@
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres). View the full
-[API documentation](http://jgallagher.github.io/rusqlite/rusqlite/index.html).
+[API documentation](http://docs.rs/rusqlite/).
 
 ```rust
 extern crate rusqlite;
@@ -90,6 +90,7 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
   and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
+* `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 
 ## Notes on building rusqlite and libsqlite3-sys
 

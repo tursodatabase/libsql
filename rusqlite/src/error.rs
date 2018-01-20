@@ -75,6 +75,9 @@ pub enum Error {
     #[allow(dead_code)]
     UserFunctionError(Box<error::Error + Send + Sync>),
 
+    /// Error available for the implementors of the `ToSql` trait.
+    ToSqlConversionFailure(Box<error::Error + Send + Sync>),
+
     /// An error case available for implementors of custom modules (e.g.,
     /// `create_module`).
     #[cfg(feature = "vtab")]
@@ -134,6 +137,7 @@ impl fmt::Display for Error {
             }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
+            Error::ToSqlConversionFailure(ref err) => err.fmt(f),
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => write!(f, "{}", desc),
         }
@@ -163,6 +167,7 @@ impl error::Error for Error {
             Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
+            Error::ToSqlConversionFailure(ref err) => err.description(),
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => desc,
         }
@@ -171,7 +176,6 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
-            Error::FromSqlConversionFailure(_, _, ref err) => Some(&**err),
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
@@ -191,6 +195,9 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
+
+            Error::FromSqlConversionFailure(_, _, ref err) |
+            Error::ToSqlConversionFailure(ref err) => Some(&**err),
             #[cfg(feature = "vtab")]
             Error::ModuleError(_) => None,
         }

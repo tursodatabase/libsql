@@ -1,10 +1,10 @@
 [package]
 name = "rusqlite"
-version = "0.12.0"
+version = "0.13.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
-documentation = "http://jgallagher.github.io/rusqlite/rusqlite/index.html"
+documentation = "http://docs.rs/rusqlite/"
 readme = "README.md"
 keywords = ["sqlite", "database", "ffi"]
 license = "MIT"
@@ -26,14 +26,15 @@ trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
 bundled = ["libsqlite3-sys/bundled"]
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
+sqlcipher = ["libsqlite3-sys/sqlcipher"]
 vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
 csvtab = ["csv"]
 
 [dependencies]
 time = "0.1.0"
-bitflags = "0.9"
+bitflags = "1.0"
 lru-cache = "0.1"
-chrono = { version = "0.3", optional = true }
+chrono = { version = "0.4", optional = true }
 serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
@@ -43,7 +44,7 @@ regex = "0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.8"
+version = "0.9"
 
 [dependencies.csv]
 version = "0.14"
@@ -55,3 +56,9 @@ harness = false
 
 [[test]]
 name = "deny_single_threaded_sqlite_config"
+
+[package.metadata.docs.rs]
+features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace" ]
+all-features = false
+no-default-features = true
+default-target = "x86_64-unknown-linux-gnu"
