@@ -368,7 +368,7 @@ impl<'conn> Statement<'conn> {
     }
 
     fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
-        assert!(params.len() as c_int == self.stmt.bind_parameter_count(),
+        assert_eq!(params.len() as c_int, self.stmt.bind_parameter_count(),
                 "incorrect number of parameters to query(): expected {}, got {}",
                 self.stmt.bind_parameter_count(),
                 params.len());
@@ -402,14 +402,19 @@ impl<'conn> Statement<'conn> {
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
                 return self.conn
-                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
+                           .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
             }
         };
-        self.conn.decode_result(match value {
-            ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
-            ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col, i) },
-            ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col, r) },
-            ValueRef::Text(s) => unsafe {
+        self.conn
+            .decode_result(match value {
+                               ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
+                               ValueRef::Integer(i) => unsafe {
+                ffi::sqlite3_bind_int64(ptr, col, i)
+            },
+                               ValueRef::Real(r) => unsafe {
+                ffi::sqlite3_bind_double(ptr, col, r)
+            },
+                               ValueRef::Text(s) => unsafe {
                 let length = s.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
@@ -423,7 +428,7 @@ impl<'conn> Statement<'conn> {
                     ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
                 }
             },
-            ValueRef::Blob(b) => unsafe {
+                               ValueRef::Blob(b) => unsafe {
                 let length = b.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
@@ -437,7 +442,7 @@ impl<'conn> Statement<'conn> {
                                            ffi::SQLITE_TRANSIENT())
                 }
             },
-        })
+                           })
     }
 
     fn execute_with_bound_parameters(&mut self) -> Result<c_int> {
@@ -524,7 +529,8 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
                 };
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str().expect("sqlite3_column_text returned invalid UTF-8");
+                let s = s.to_str()
+                    .expect("sqlite3_column_text returned invalid UTF-8");
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
@@ -570,15 +576,17 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
 
-        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)]).unwrap(),
+        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])
+                       .unwrap(),
                    1);
-        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)]).unwrap(),
+        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])
+                       .unwrap(),
                    1);
 
         assert_eq!(3i32,
                    db.query_row_named::<i32, _>("SELECT SUM(x) FROM foo WHERE x > :x",
-                                                  &[(":x", &0i32)],
-                                                  |r| r.get(0))
+                                                &[(":x", &0i32)],
+                                                |r| r.get(0))
                        .unwrap());
     }
 
@@ -589,13 +597,14 @@ mod test {
                    INTEGER)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (name) VALUES (:name)").unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (name) VALUES (:name)")
+            .unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
         assert_eq!(1i32,
                    db.query_row_named::<i32, _>("SELECT COUNT(*) FROM test WHERE name = :name",
-                                                  &[(":name", &"one")],
-                                                  |r| r.get(0))
+                                                &[(":name", &"one")],
+                                                |r| r.get(0))
                        .unwrap());
     }
 
@@ -608,7 +617,8 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name").unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name")
+            .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
         let id: i32 = rows.next().unwrap().unwrap().get(0);
@@ -624,7 +634,8 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name").unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name")
+            .unwrap();
         let mut rows = stmt.query_map_named(&[(":name", &"one")], |row| {
                 let id: i32 = row.get(0);
                 2 * id
@@ -676,7 +687,8 @@ mod test {
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)").unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
+            .unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
 
         let result: Option<String> =
@@ -691,7 +703,8 @@ mod test {
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)").unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
+            .unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
         stmt.execute_named(&[(":y", &"two")]).unwrap();
 
@@ -704,15 +717,18 @@ mod test {
     #[test]
     fn test_insert() {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)").unwrap();
-        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)")
+            .unwrap();
+        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")
+            .unwrap();
         assert_eq!(stmt.insert(&[&1i32]).unwrap(), 1);
         assert_eq!(stmt.insert(&[&2i32]).unwrap(), 2);
         match stmt.insert(&[&1i32]).unwrap_err() {
             Error::StatementChangedRows(0) => (),
             err => panic!("Unexpected error {}", err),
         }
-        let mut multi = db.prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4").unwrap();
+        let mut multi = db.prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
+            .unwrap();
         match multi.insert(&[]).unwrap_err() {
             Error::StatementChangedRows(2) => (),
             err => panic!("Unexpected error {}", err),
@@ -729,9 +745,15 @@ mod test {
         ")
             .unwrap();
 
-        assert_eq!(db.prepare("INSERT INTO foo VALUES (10)").unwrap().insert(&[]).unwrap(),
+        assert_eq!(db.prepare("INSERT INTO foo VALUES (10)")
+                       .unwrap()
+                       .insert(&[])
+                       .unwrap(),
                    1);
-        assert_eq!(db.prepare("INSERT INTO bar VALUES (10)").unwrap().insert(&[]).unwrap(),
+        assert_eq!(db.prepare("INSERT INTO bar VALUES (10)")
+                       .unwrap()
+                       .insert(&[])
+                       .unwrap(),
                    1);
     }
 

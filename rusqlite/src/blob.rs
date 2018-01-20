@@ -91,13 +91,14 @@ impl Connection {
                                    if read_only { 0 } else { 1 },
                                    &mut blob)
         };
-        c.decode_result(rc).map(|_| {
-            Blob {
-                conn: self,
-                blob: blob,
-                pos: 0,
-            }
-        })
+        c.decode_result(rc)
+            .map(|_| {
+                     Blob {
+                         conn: self,
+                         blob: blob,
+                         pos: 0,
+                     }
+                 })
     }
 }
 
@@ -158,9 +159,9 @@ impl<'conn> io::Read for Blob<'conn> {
         self.conn
             .decode_result(rc)
             .map(|_| {
-                self.pos += n;
-                n as usize
-            })
+                     self.pos += n;
+                     n as usize
+                 })
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 }
@@ -188,9 +189,9 @@ impl<'conn> io::Write for Blob<'conn> {
         self.conn
             .decode_result(rc)
             .map(|_| {
-                self.pos += n;
-                n as usize
-            })
+                     self.pos += n;
+                     n as usize
+                 })
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
@@ -265,7 +266,8 @@ mod test {
     fn test_blob() {
         let (db, rowid) = db_with_test_blob().unwrap();
 
-        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+            .unwrap();
         assert_eq!(4, blob.write(b"Clob").unwrap());
         assert_eq!(6, blob.write(b"567890xxxxxx").unwrap()); // cannot write past 10
         assert_eq!(0, blob.write(b"5678").unwrap()); // still cannot write past 10
@@ -273,7 +275,8 @@ mod test {
         blob.reopen(rowid).unwrap();
         blob.close().unwrap();
 
-        blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true).unwrap();
+        blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true)
+            .unwrap();
         let mut bytes = [0u8; 5];
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"Clob5");
@@ -313,7 +316,8 @@ mod test {
     fn test_blob_in_bufreader() {
         let (db, rowid) = db_with_test_blob().unwrap();
 
-        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+            .unwrap();
         assert_eq!(8, blob.write(b"one\ntwo\n").unwrap());
 
         blob.reopen(rowid).unwrap();
@@ -337,7 +341,8 @@ mod test {
         let (db, rowid) = db_with_test_blob().unwrap();
 
         {
-            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+                .unwrap();
             let mut writer = BufWriter::new(blob);
 
             // trying to write too much and then flush should fail
@@ -356,7 +361,8 @@ mod test {
         }
 
         {
-            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+                .unwrap();
             let mut writer = BufWriter::new(blob);
 
             // trying to write_all too much should fail

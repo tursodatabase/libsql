@@ -30,11 +30,15 @@ impl From<bool> for Value {
     }
 }
 
+impl From<isize> for Value {
+    fn from(i: isize) -> Value { Value::Integer(i as i64) }
+}
+
 macro_rules! from_i64(
     ($t:ty) => (
         impl From<$t> for Value {
             fn from(i: $t) -> Value {
-                Value::Integer(i as i64)
+                Value::Integer(i64::from(i))
             }
         }
     )
@@ -43,7 +47,6 @@ macro_rules! from_i64(
 from_i64!(i8);
 from_i64!(i16);
 from_i64!(i32);
-from_i64!(isize);
 from_i64!(u8);
 from_i64!(u16);
 from_i64!(u32);

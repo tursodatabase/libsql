@@ -1,4 +1,5 @@
 sudo: false
+dist: trusty
 
 language: rust
 
@@ -13,12 +14,10 @@ matrix:
 
 addons:
   apt:
-    sources:
-      - llvm-toolchain-precise-3.9
-      - ubuntu-toolchain-r-test
     packages: # recommanded versions for rust-bindgen
       - llvm-3.9-dev
       - libclang-3.9-dev
+      - libsqlcipher-dev
 
 env: # specify the clang path for rust-bindgen
   - LIBCLANG_PATH=/usr/lib/llvm-3.9/lib
@@ -26,6 +25,7 @@ env: # specify the clang path for rust-bindgen
 script:
   - cargo build
   - cargo build --features bundled
+  - cargo build --features sqlcipher
   - cargo test
   - cargo test --features backup
   - cargo test --features blob
@@ -37,6 +37,7 @@ script:
   - cargo test --features chrono
   - cargo test --features serde_json
   - cargo test --features bundled
+  - cargo test --features sqlcipher
   - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace"
   - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace buildtime_bindgen"
   - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace bundled"

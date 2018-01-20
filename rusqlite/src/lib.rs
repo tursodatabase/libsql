@@ -82,7 +82,7 @@ use cache::StatementCache;
 pub use statement::Statement;
 use statement::StatementCrateImpl;
 
-pub use row::{Row, Rows, MappedRows, AndThenRows};
+pub use row::{Row, Rows, MappedRows, AndThenRows, RowIndex};
 use row::RowsCrateImpl;
 
 #[allow(deprecated)]
@@ -146,7 +146,7 @@ fn str_to_cstring(s: &str) -> Result<CString> {
 }
 
 fn path_to_cstring(p: &Path) -> Result<CString> {
-    let s = try!(p.to_str().ok_or(Error::InvalidPath(p.to_owned())));
+    let s = try!(p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned())));
     str_to_cstring(s)
 }
 
@@ -189,6 +189,12 @@ pub struct Connection {
 
 unsafe impl Send for Connection {}
 
+impl Drop for Connection {
+    fn drop(&mut self) {
+        self.flush_prepared_statement_cache();
+    }
+}
+
 impl Connection {
     /// Open a new connection to a SQLite database.
     ///
@@ -226,12 +232,12 @@ impl Connection {
     pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: OpenFlags) -> Result<Connection> {
         let c_path = try!(path_to_cstring(path.as_ref()));
         InnerConnection::open_with_flags(&c_path, flags).map(|db| {
-            Connection {
+                                                                 Connection {
                 db: RefCell::new(db),
                 cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
                 path: Some(path.as_ref().to_path_buf()),
             }
-        })
+                                                             })
     }
 
     /// Open a new connection to an in-memory SQLite database.
@@ -245,12 +251,12 @@ impl Connection {
     pub fn open_in_memory_with_flags(flags: OpenFlags) -> Result<Connection> {
         let c_memory = try!(str_to_cstring(":memory:"));
         InnerConnection::open_with_flags(&c_memory, flags).map(|db| {
-            Connection {
+                                                                   Connection {
                 db: RefCell::new(db),
                 cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
                 path: None,
             }
-        })
+                                                               })
     }
 
     /// Convenience method to run multiple SQL statements (that cannot take any parameters).
@@ -299,7 +305,8 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn execute(&self, sql: &str, params: &[&ToSql]) -> Result<c_int> {
-        self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
+        self.prepare(sql)
+            .and_then(|mut stmt| stmt.execute(params))
     }
 
     /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
@@ -321,7 +328,8 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<c_int> {
-        self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
+        self.prepare(sql)
+            .and_then(|mut stmt| stmt.execute_named(params))
     }
 
     /// Get the SQLite rowid of the most recent successful INSERT.
@@ -410,7 +418,9 @@ impl Connection {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query(params));
 
-        rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
+        rows.get_expected_row()
+            .map_err(E::from)
+            .and_then(|r| f(&r))
     }
 
     /// Convenience method to execute a query that is expected to return a single row.
@@ -538,7 +548,9 @@ impl Connection {
                                           dylib_path: P,
                                           entry_point: Option<&str>)
                                           -> Result<()> {
-        self.db.borrow_mut().load_extension(dylib_path.as_ref(), entry_point)
+        self.db
+            .borrow_mut()
+            .load_extension(dylib_path.as_ref(), entry_point)
     }
 
     /// Get access to the underlying SQLite database connection handle.
@@ -582,22 +594,23 @@ bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
     #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
     #[repr(C)]
-    pub flags OpenFlags: ::std::os::raw::c_int {
-        const SQLITE_OPEN_READ_ONLY     = 0x00000001,
-        const SQLITE_OPEN_READ_WRITE    = 0x00000002,
-        const SQLITE_OPEN_CREATE        = 0x00000004,
-        const SQLITE_OPEN_URI           = 0x00000040,
-        const SQLITE_OPEN_MEMORY        = 0x00000080,
-        const SQLITE_OPEN_NO_MUTEX      = 0x00008000,
-        const SQLITE_OPEN_FULL_MUTEX    = 0x00010000,
-        const SQLITE_OPEN_SHARED_CACHE  = 0x00020000,
-        const SQLITE_OPEN_PRIVATE_CACHE = 0x00040000,
+    pub struct OpenFlags: ::std::os::raw::c_int {
+        const SQLITE_OPEN_READ_ONLY     = ffi::SQLITE_OPEN_READONLY;
+        const SQLITE_OPEN_READ_WRITE    = ffi::SQLITE_OPEN_READWRITE;
+        const SQLITE_OPEN_CREATE        = ffi::SQLITE_OPEN_CREATE;
+        const SQLITE_OPEN_URI           = 0x0000_0040;
+        const SQLITE_OPEN_MEMORY        = 0x0000_0080;
+        const SQLITE_OPEN_NO_MUTEX      = ffi::SQLITE_OPEN_NOMUTEX;
+        const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX;
+        const SQLITE_OPEN_SHARED_CACHE  = 0x0002_0000;
+        const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
     }
 }
 
 impl Default for OpenFlags {
     fn default() -> OpenFlags {
-        SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NO_MUTEX | SQLITE_OPEN_URI
+        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE | 
+        OpenFlags::SQLITE_OPEN_NO_MUTEX | OpenFlags::SQLITE_OPEN_URI
     }
 }
 
@@ -636,7 +649,7 @@ fn ensure_valid_sqlite_version() {
         let version_number = version_number();
 
         // Check our hard floor.
-        if version_number < 3006008 {
+        if version_number < 3_006_008 {
             panic!("rusqlite requires SQLite 3.6.8 or newer");
         }
 
@@ -689,7 +702,7 @@ fn ensure_safe_sqlite_threading_mode() -> Result<()> {
     //    will fail if someone else has already initialized SQLite even if they initialized it
     //    safely. That's not ideal either, which is why we expose bypass_sqlite_initialization
     //    above.
-    if version_number() >= 3007000 {
+    if version_number() >= 3_007_000 {
         const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
         let is_singlethreaded = unsafe {
             let mutex_ptr = ffi::sqlite3_mutex_alloc(0);
@@ -735,9 +748,9 @@ impl InnerConnection {
 
         // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
         // wasn't added until version 3.7.3.
-        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits == 0x02);
-        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits == 0x04);
-        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE).bits == 0x40);
+        debug_assert_eq!(1 << OpenFlags::SQLITE_OPEN_READ_ONLY.bits, 0x02);
+        debug_assert_eq!(1 << OpenFlags::SQLITE_OPEN_READ_WRITE.bits, 0x04);
+        debug_assert_eq!(1 << (OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE).bits, 0x40);
         if (1 << (flags.bits & 0x7)) & 0x46 == 0 {
             return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_MISUSE), None));
         }
@@ -857,7 +870,8 @@ impl InnerConnection {
                                     &mut c_stmt,
                                     ptr::null_mut())
         };
-        self.decode_result(r).map(|_| Statement::new(conn, RawStatement::new(c_stmt)))
+        self.decode_result(r)
+            .map(|_| Statement::new(conn, RawStatement::new(c_stmt)))
     }
 
     fn changes(&mut self) -> c_int {
@@ -872,7 +886,15 @@ impl InnerConnection {
 impl Drop for InnerConnection {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
-        self.close();
+        use std::thread::panicking;
+
+        if let Err(e) = self.close() {
+            if panicking() {
+                eprintln!("Error while closing SQLite connection: {:?}", e);
+            } else {
+                panic!("Error while closing SQLite connection: {:?}", e);
+            }
+        }
     }
 }
 
@@ -923,7 +945,7 @@ mod test {
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-                   db.execute_batch(sql).unwrap();
+            db.execute_batch(sql).unwrap();
         }
 
         let path_string = path.to_str().unwrap();
@@ -981,8 +1003,8 @@ mod test {
     #[test]
     fn test_open_with_flags() {
         for bad_flags in &[OpenFlags::empty(),
-                           SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
-                           SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE] {
+                           OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_READ_WRITE,
+                           OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_CREATE] {
             assert!(Connection::open_in_memory_with_flags(*bad_flags).is_err());
         }
     }
@@ -1011,12 +1033,15 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
 
         assert_eq!(1,
-                   db.execute("INSERT INTO foo(x) VALUES (?)", &[&1i32]).unwrap());
+                   db.execute("INSERT INTO foo(x) VALUES (?)", &[&1i32])
+                       .unwrap());
         assert_eq!(1,
-                   db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap());
+                   db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32])
+                       .unwrap());
 
         assert_eq!(3i32,
-                   db.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+                   db.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+                       .unwrap());
     }
 
     #[test]
@@ -1073,7 +1098,8 @@ mod test {
         assert_eq!(insert_stmt.execute(&[&2i32]).unwrap(), 1);
         assert_eq!(insert_stmt.execute(&[&3i32]).unwrap(), 1);
 
-        let mut query = db.prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC").unwrap();
+        let mut query = db.prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC")
+            .unwrap();
         {
             let mut rows = query.query(&[&4i32]).unwrap();
             let mut v = Vec::<i32>::new();
@@ -1158,8 +1184,10 @@ mod test {
     #[test]
     fn test_last_insert_rowid() {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)").unwrap();
-        db.execute_batch("INSERT INTO foo DEFAULT VALUES").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")
+            .unwrap();
+        db.execute_batch("INSERT INTO foo DEFAULT VALUES")
+            .unwrap();
 
         assert_eq!(db.last_insert_rowid(), 1);
 

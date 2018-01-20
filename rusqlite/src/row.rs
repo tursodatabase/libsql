@@ -28,22 +28,23 @@ impl<'stmt> Rows<'stmt> {
     /// "streaming iterator". For a more natural interface, consider using `query_map`
     /// or `query_and_then` instead, which return types that implement `Iterator`.
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
-        self.stmt.and_then(|stmt| match stmt.step() {
-            Ok(true) => {
-                Some(Ok(Row {
-                    stmt: stmt,
-                    phantom: PhantomData,
-                }))
-            }
-            Ok(false) => {
-                self.reset();
-                None
-            }
-            Err(err) => {
-                self.reset();
-                Some(Err(err))
-            }
-        })
+        self.stmt
+            .and_then(|stmt| match stmt.step() {
+                Ok(true) => {
+                    Some(Ok(Row {
+                        stmt: stmt,
+                        phantom: PhantomData,
+                    }))
+                }
+                Ok(false) => {
+                    self.reset();
+                    None
+                }
+                Err(err) => {
+                    self.reset();
+                    Some(Err(err))
+                }
+            })
     }
 }
 
@@ -89,10 +90,7 @@ impl<'stmt, T, F> MappedRowsCrateImpl<'stmt, T, F> for MappedRows<'stmt, F>
     where F: FnMut(&Row) -> T
 {
     fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
-        MappedRows {
-            rows: rows,
-            map: f,
-        }
+        MappedRows { rows: rows, map: f }
     }
 }
 
@@ -103,7 +101,9 @@ impl<'conn, T, F> Iterator for MappedRows<'conn, F>
 
     fn next(&mut self) -> Option<Result<T>> {
         let map = &mut self.map;
-        self.rows.next().map(|row_result| row_result.map(|row| (map)(&row)))
+        self.rows
+            .next()
+            .map(|row_result| row_result.map(|row| (map)(&row)))
     }
 }
 
@@ -124,10 +124,7 @@ impl<'stmt, T, E, F> AndThenRowsCrateImpl<'stmt, T, E, F> for AndThenRows<'stmt,
     where F: FnMut(&Row) -> result::Result<T, E>
 {
     fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
-        AndThenRows {
-            rows: rows,
-            map: f,
-        }
+        AndThenRows { rows: rows, map: f }
     }
 }
 
@@ -139,10 +136,9 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
 
     fn next(&mut self) -> Option<Self::Item> {
         let map = &mut self.map;
-        self.rows.next().map(|row_result| {
-            row_result.map_err(E::from)
-                .and_then(|row| (map)(&row))
-        })
+        self.rows
+            .next()
+            .map(|row_result| row_result.map_err(E::from).and_then(|row| (map)(&row)))
     }
 }
 
@@ -182,12 +178,17 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let idx = try!(idx.idx(self.stmt));
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
-            FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
-            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
-            FromSqlError::Other(err) => {
+                                                  FromSqlError::InvalidType => {
+                                                      Error::InvalidColumnType(idx,
+                                                                               value.data_type())
+                                                  }
+                                                  FromSqlError::OutOfRange(i) => {
+                                                      Error::IntegralValueOutOfRange(idx, i)
+                                                  }
+                                                  FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
-        })
+                                              })
     }
 
     /// Return the number of columns in the current row.

@@ -74,6 +74,9 @@ pub enum Error {
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
     UserFunctionError(Box<error::Error + Send + Sync>),
+
+    /// Error available for the implementors of the `ToSql` trait.
+    ToSqlConversionFailure(Box<error::Error + Send + Sync>),
 }
 
 impl From<str::Utf8Error> for Error {
@@ -128,6 +131,7 @@ impl fmt::Display for Error {
             }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
+            Error::ToSqlConversionFailure(ref err) => err.fmt(f),
         }
     }
 }
@@ -137,18 +141,14 @@ impl error::Error for Error {
         match *self {
             Error::SqliteFailure(ref err, None) => err.description(),
             Error::SqliteFailure(_, Some(ref s)) => s,
-            Error::SqliteSingleThreadedMode => {
-                "SQLite was compiled or configured for single-threaded use only"
-            }
+            Error::SqliteSingleThreadedMode => "SQLite was compiled or configured for single-threaded use only",
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
             Error::IntegralValueOutOfRange(_, _) => "integral value out of range of requested type",
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
             Error::InvalidPath(_) => "invalid path",
-            Error::ExecuteReturnedResults => {
-                "execute returned results - did you mean to call query?"
-            }
+            Error::ExecuteReturnedResults => "execute returned results - did you mean to call query?",
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
@@ -159,13 +159,13 @@ impl error::Error for Error {
             Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
+            Error::ToSqlConversionFailure(ref err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
-            Error::FromSqlConversionFailure(_, _, ref err) => Some(&**err),
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
@@ -185,6 +185,9 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
+
+            Error::FromSqlConversionFailure(_, _, ref err) |
+            Error::ToSqlConversionFailure(ref err) => Some(&**err),
         }
     }
 }
