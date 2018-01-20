@@ -1,5 +1,5 @@
-C Use\sa\sloop\sto\savoid\srecursion\sin\sthe\sheightOfSelect()\sfunction.
-D 2018-01-18T19:00:54.739
+C Allow\sthe\sshell\sto\sbe\sbuilt\sfrom\sthe\sconfigure\sscript\swith\nSQLITE_OMIT_VIRTUALTABLE\sdefined.
+D 2018-01-20T15:48:45.590
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -350,8 +350,8 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 2111f685ae07988622c241f819b56fea60782f56e32f97e334473c59f6083481
-F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
+F ext/rtree/rtree.c d941e44ad901da039caebb9f9fa99d81f2a4fc822e67cafe33fa4f6f789074a0
+F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 82a353747fcab1083d114b2ac84723dfefdbf86c1a6e1df57bf588c7d4285436
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
 F ext/rtree/rtree3.test 2cafe8265d1ff28f206fce88d114f208349df482
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ecd13a1b38e58d4464585c388c1aa27d1f056dba0db239316623e81d3eb5284
-R 9a4e211a827ab99465bb99e30ad64851
+P 86de43595cb2ecebd680fe654affcfb9fbcfff6575c893293ae298124a357bfe
+R 2aef84e59a8aa705a9da75b37e8e2525
 U dan
-Z e6a246820ca47f13d6230f5df19d2f34
+Z bdb13a1015e901b31413d002f63ee72f
