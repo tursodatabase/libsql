@@ -1,5 +1,5 @@
-C On\sthe\swalro2-X.4.2.2\stest\scase,\sshow\sthe\ssize\sas\spart\sof\sthe\stest\soutput.
-D 2018-01-22T14:49:15.357
+C Fix\sa\stest\scase\sin\swalro2.test\sso\sthat\sit\sworks\swith\sencryption\sextensions\n(when\seach\spage\shas\sa\slittle\sless\susable\sspace\savailable\sthan\susual).
+D 2018-01-22T15:20:59.941
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -1553,7 +1553,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
-F test/walro2.test 71064938e9361bcaefaf5c49bf1be43d7abf44191775eb420e2a1b49dc24824c
+F test/walro2.test 6c73e8e4b5ccc55f907f4603ba36458b45c085fb6dfb04f30e3c0babbc1c2f41
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 136bf323e42dc90e1780199a381bcbb084b069eca5c7343ee6fc6e2550831536
-R bce02ef85f0218ef6af27099f7e6faff
-U drh
-Z d37652af866e22c18f57c4be2ebbb16f
+P ac5091d7f870f1d0659a576723de454d544e5bfa2bdbba307d7c81eb5ab34e3b
+R 9a2bdae57204fedd8fbbe0575e4c9803
+U dan
+Z 65b36c011f8ff7d800b7cbb8bc8e96b2
