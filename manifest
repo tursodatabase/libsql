@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\swalro2.test\sso\sthat\sit\sworks\swith\sencryption\sextensions\n(when\seach\spage\shas\sa\slittle\sless\susable\sspace\savailable\sthan\susual).
-D 2018-01-22T15:20:59.941
+C Avoid\sunnecessary\sOOM\sdetection\swarnings\sin\sa\sdebugging\sroutine.
+D 2018-01-22T15:45:12.922
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -428,7 +428,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 0a1f63b50ab1ac5d4b1637c30cb1ae123fbc162ec8cb6336ddb9491a0bc1e363
+F src/btree.c bfc453babec9aa8196ab5db5e588ac5d3f0c398d72faa37296167a84a61c9f2f
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c 9f9647454f236cab097f266ae970f899b53c71cadab6756c47e2b2e81392c2a1
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac5091d7f870f1d0659a576723de454d544e5bfa2bdbba307d7c81eb5ab34e3b
-R 9a2bdae57204fedd8fbbe0575e4c9803
-U dan
-Z 65b36c011f8ff7d800b7cbb8bc8e96b2
+P b79521d255a4aa2a7b4424f3498443f27d329ab5428171ba6b87c987f3ccdfc2
+R e7cccb4f976b9eb07c1586193cc26ec5
+U drh
+Z b64137fc7f67b8d25a73e5d06cbfe718

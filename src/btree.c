@@ -123,9 +123,12 @@ int sqlite3_enable_shared_cache(int enable){
 */
 #ifdef SQLITE_DEBUG
 int corruptPageError(int lineno, MemPage *p){
-  char *zMsg = sqlite3_mprintf("database corruption page %d of %s",
+  char *zMsg;
+  sqlite3BeginBenignMalloc();
+  zMsg = sqlite3_mprintf("database corruption page %d of %s",
       (int)p->pgno, sqlite3PagerFilename(p->pBt->pPager, 0)
   );
+  sqlite3EndBenignMalloc();
   if( zMsg ){
     sqlite3ReportError(SQLITE_CORRUPT, lineno, zMsg);
   }
