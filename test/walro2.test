@@ -263,6 +263,7 @@ do_multiclient_test tn {
   } {500}
   do_test $TN.4.2.2 {
     set sz [file size test.db-wal]
+    puts -nonewline " (sz=$sz)"
     expr {$sz>400000 && $sz<500000}
   } {1}
   do_test $TN.4.2.4 {
