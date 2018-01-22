@@ -4801,15 +4801,32 @@ WhereInfo *sqlite3WhereBegin(
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
+  **
+  ** A one-pass approach can be used if the caller has requested one
+  ** and either (a) the scan visits at most one row or (b) each
+  ** of the following are true:
+  **
+  **   * the caller has indicated that a one-pass approach can be used
+  **     with multiple rows (by setting WHERE_ONEPASS_MULTIROW), and
+  **   * the table is not a virtual table, and
+  **   * either the scan does not use the OR optimization or the caller
+  **     is a DELETE operation (WHERE_DUPLICATES_OK is only specified
+  **     for DELETE).
+  **
+  ** The last qualification is because an UPDATE statement uses
+  ** WhereInfo.aiCurOnePass[1] to determine whether or not it really can
+  ** use a one-pass approach, and this is not set accurately for scans
+  ** that use the OR optimization.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
     int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
     int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
-    if( bOnerow
-     || ((wctrlFlags & WHERE_ONEPASS_MULTIROW)!=0
-           && 0==(wsFlags & WHERE_VIRTUALTABLE))
-    ){
+    if( bOnerow || (
+        0!=(wctrlFlags & WHERE_ONEPASS_MULTIROW)
+     && 0==(wsFlags & WHERE_VIRTUALTABLE)
+     && (0==(wsFlags & WHERE_MULTI_OR) || (wctrlFlags & WHERE_DUPLICATES_OK))
+    )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
         if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){

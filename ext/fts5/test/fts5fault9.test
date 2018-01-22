@@ -24,6 +24,8 @@ ifcapable !fts5 {
 
 foreach_detail_mode $testprefix {
 
+if {"%DETAIL%" != "none"} continue
+
 fts5_aux_test_functions db
 
 do_execsql_test 1.0 {
@@ -98,14 +100,16 @@ do_faultsim_test 4.1 -faults oom-t* -body {
   execsql { SELECT rowid, fts5_test_collist(t4) FROM t4('2') }
 } -test {
   faultsim_test_result \
-      {0 {1 {0.0 0.1 0.2} 2 {0.0 0.1 0.2} 3 {0.0 0.1 0.2}}} {1 SQLITE_NOMEM}
+      {0 {1 {0.0 0.1 0.2} 2 {0.0 0.1 0.2} 3 {0.0 0.1 0.2}}} \
+      {1 SQLITE_NOMEM} {1 SQLITE_ERROR} {1 {SQL logic error}}
 }
 
 do_faultsim_test 4.2 -faults oom-t* -body {
   execsql { SELECT rowid, fts5_test_collist(t4) FROM t4('a5 OR b5 OR c5') }
 } -test {
   faultsim_test_result \
-      {0 {4 {0.0 0.1 0.2} 5 {1.0 1.1 1.2} 6 {2.0 2.1 2.2}}} {1 SQLITE_NOMEM}
+      {0 {4 {0.0 0.1 0.2} 5 {1.0 1.1 1.2} 6 {2.0 2.1 2.2}}} \
+      {1 SQLITE_NOMEM} {1 SQLITE_ERROR} {1 {SQL logic error}}
 }
 
 

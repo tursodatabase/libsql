@@ -771,7 +771,7 @@ static int zipfileDeflate(
     int res;
     z_stream str;
     memset(&str, 0, sizeof(str));
-    str.next_in = (z_const Bytef*)aIn;
+    str.next_in = (Bytef*)aIn;
     str.avail_in = nIn;
     str.next_out = aOut;
     str.avail_out = nAlloc;
@@ -1337,14 +1337,16 @@ static int zipfileUpdate(
       nData = nIn;
       if( iMethod!=0 && iMethod!=8 ){
         rc = SQLITE_CONSTRAINT;
-      }else if( bAuto || iMethod ){
-        int nCmp;
-        rc = zipfileDeflate(pTab, aIn, nIn, &pFree, &nCmp);
-        if( rc==SQLITE_OK ){
-          if( iMethod || nCmp<nIn ){
-            iMethod = 8;
-            pData = pFree;
-            nData = nCmp;
+      }else{
+        if( bAuto || iMethod ){
+          int nCmp;
+          rc = zipfileDeflate(pTab, aIn, nIn, &pFree, &nCmp);
+          if( rc==SQLITE_OK ){
+            if( iMethod || nCmp<nIn ){
+              iMethod = 8;
+              pData = pFree;
+              nData = nCmp;
+            }
           }
         }
         iCrc32 = crc32(0, aIn, nIn);

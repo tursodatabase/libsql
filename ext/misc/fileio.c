@@ -372,6 +372,7 @@ static void lsModeFunc(
   int i;
   int iMode = sqlite3_value_int(argv[0]);
   char z[16];
+  (void)argc;
   if( S_ISLNK(iMode) ){
     z[0] = 'l';
   }else if( S_ISREG(iMode) ){
@@ -437,7 +438,10 @@ static int fsdirConnect(
 ){
   fsdir_tab *pNew = 0;
   int rc;
-
+  (void)pAux;
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
   rc = sqlite3_declare_vtab(db, "CREATE TABLE x" FSDIR_SCHEMA);
   if( rc==SQLITE_OK ){
     pNew = (fsdir_tab*)sqlite3_malloc( sizeof(*pNew) );
@@ -461,6 +465,7 @@ static int fsdirDisconnect(sqlite3_vtab *pVtab){
 */
 static int fsdirOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   fsdir_cursor *pCur;
+  (void)p;
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
@@ -664,7 +669,7 @@ static int fsdirFilter(
 ){
   const char *zDir = 0;
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
-
+  (void)idxStr;
   fsdirResetCursor(pCur);
 
   if( idxNum==0 ){
@@ -722,8 +727,9 @@ static int fsdirBestIndex(
   int i;                 /* Loop over constraints */
   int idx4 = -1;
   int idx5 = -1;
-
   const struct sqlite3_index_constraint *pConstraint;
+
+  (void)tab;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
     if( pConstraint->usable==0 ) continue;
@@ -777,6 +783,9 @@ static int fsdirRegister(sqlite3 *db){
     0,                         /* xRollback */
     0,                         /* xFindMethod */
     0,                         /* xRename */
+    0,                         /* xSavepoint */
+    0,                         /* xRelease */
+    0                          /* xRollbackTo */
   };
 
   int rc = sqlite3_create_module(db, "fsdir", &fsdirModule, 0);

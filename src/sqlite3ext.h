@@ -294,6 +294,7 @@ struct sqlite3_api_routines {
   void *(*value_pointer)(sqlite3_value*,const char*);
   int (*vtab_nochange)(sqlite3_context*);
   int (*value_nochange)(sqlite3_value*);
+  const char *(*vtab_collation)(sqlite3_index_info*,int);
 };
 
 /*
@@ -563,6 +564,7 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.22.0 and later */
 #define sqlite3_vtab_nochange          sqlite3_api->vtab_nochange
 #define sqlite3_value_nochange         sqltie3_api->value_nochange
+#define sqlite3_vtab_collation         sqltie3_api->vtab_collation
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

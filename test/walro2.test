@@ -261,9 +261,9 @@ do_multiclient_test tn {
         SELECT count(*) FROM t2;
     } 
   } {500}
-  do_test $TN.4.2.2 {
-    set sz [file size test.db-wal]
-    expr {$sz>400000 && $sz<500000}
+  set sz [file size test.db-wal]
+  do_test $TN.4.2.2.(sz=$sz) {
+    expr {$sz>400000}
   } {1}
   do_test $TN.4.2.4 {
     file_control_persist_wal db 1; db close

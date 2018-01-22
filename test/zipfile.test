@@ -75,6 +75,17 @@ do_execsql_test 1.4 {
   h.txt 1000000004 aaaaaaaaaabbbbbbbbbb 8
 }
 
+ifcapable json1 {
+  do_execsql_test 1.4.1 {
+    SELECT name, json_extract( zipfile_cds(z) , '$.crc32')!=0
+    FROM zipfile('test.zip');
+  } {
+    f.txt 1
+    g.txt 1
+    h.txt 1
+  }
+}
+
 do_execsql_test 1.5.1 {
   BEGIN;
     INSERT INTO zz(name, mode, mtime, data, method)

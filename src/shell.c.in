@@ -865,6 +865,7 @@ static void shellModuleSchema(
 ){
   const char *zName = (const char*)sqlite3_value_text(apVal[0]);
   char *zFake = shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName);
+  UNUSED_PARAMETER(nVal);
   if( zFake ){
     sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
                         -1, sqlite3_free);
@@ -909,6 +910,7 @@ static void shellAddSchemaName(
   const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
   const char *zName = (const char*)sqlite3_value_text(apVal[2]);
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  UNUSED_PARAMETER(nVal);
   if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
     for(i=0; i<(int)(sizeof(aPrefix)/sizeof(aPrefix[0])); i++){
       int n = strlen30(aPrefix[i]);
@@ -1152,6 +1154,7 @@ static void shellPutsFunc(
   sqlite3_value **apVal
 ){
   ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
+  (void)nVal;
   utf8_printf(p->out, "%s\n", sqlite3_value_text(apVal[0]));
   sqlite3_result_value(pCtx, apVal[0]);
 }
@@ -7537,6 +7540,20 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
     utf8_printf(p->out, "SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
+#if SQLITE_HAVE_ZLIB
+    utf8_printf(p->out, "zlib version %s\n", zlibVersion());
+#endif
+#define CTIMEOPT_VAL_(opt) #opt
+#define CTIMEOPT_VAL(opt) CTIMEOPT_VAL_(opt)
+#if defined(__clang__) && defined(__clang_major__)
+    utf8_printf(p->out, "clang-" CTIMEOPT_VAL(__clang_major__) "."
+                    CTIMEOPT_VAL(__clang_minor__) "."
+                    CTIMEOPT_VAL(__clang_patchlevel__) "\n");
+#elif defined(_MSC_VER)
+    utf8_printf(p->out, "msvc-" CTIMEOPT_VAL(_MSC_VER) "\n");
+#elif defined(__GNUC__) && defined(__VERSION__)
+    utf8_printf(p->out, "gcc-" __VERSION__ "\n");
+#endif
   }else
 
   if( c=='v' && strncmp(azArg[0], "vfsinfo", n)==0 ){

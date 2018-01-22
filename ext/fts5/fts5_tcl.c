@@ -482,7 +482,7 @@ static int SQLITE_TCLAPI xF5tApi(
 
       rc = p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
       if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
         return TCL_ERROR;
       }
       for( ; iCol>=0; p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)){
@@ -924,7 +924,7 @@ static int SQLITE_TCLAPI f5tTokenizerReturn(
 
   rc = p->xToken(p->pCtx, tflags, zToken, nToken, iStart, iEnd);
   Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  return rc==SQLITE_OK ? TCL_OK : TCL_ERROR;
 
  usage:
   Tcl_WrongNumArgs(interp, 1, objv, "?-colocated? TEXT START END");

@@ -21,6 +21,12 @@ ifcapable !vtab {
 }
 set CLI [test_find_cli]
 
+# Check to make sure the shell has been compiled with ".archive" support.
+#
+if {[string match {*unknown command*} [catchcmd :memory: .archive]]} {
+  finish_test; return
+}
+
 proc populate_dir {dirname spec} {
   # First delete the current tree, if one exists.
   file delete -force $dirname
