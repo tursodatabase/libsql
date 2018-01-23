@@ -102,8 +102,6 @@ static void lengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int len;
-
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
@@ -115,13 +113,17 @@ static void lengthFunc(
     }
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
+      const unsigned char *z0;
+      unsigned char c;
       if( z==0 ) return;
-      len = 0;
-      while( *z ){
-        len++;
-        SQLITE_SKIP_UTF8(z);
+      z0 = z;
+      while( (c = *z)!=0 ){
+        z++;
+        if( c>=0xc0 ){
+          while( (*z & 0xc0)==0x80 ){ z++; z0++; }
+        }
       }
-      sqlite3_result_int(context, len);
+      sqlite3_result_int(context, (int)(z-z0));
       break;
     }
     default: {
