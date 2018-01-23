@@ -1203,12 +1203,14 @@ do_faultsim_test pagerfault-26 -prep {
   set contents [db eval {SELECT * FROM t1}]
   if {$contents != "1 2"} { error "Bad database contents ($contents)" }
 
-  set sz [file size test.db]
-  if {$testrc!=0 && $sz!=1024*3 && $sz!=4096*3} { 
-    error "Expected file size to be 3072 or 12288 bytes - actual size $sz bytes"
-  }
-  if {$testrc==0 && $sz!=4096*3} { 
-    error "Expected file size to be 12288 bytes - actual size $sz bytes"
+  if {[atomic_batch_write test.db]==0} {
+    set sz [file size test.db]
+    if {$testrc!=0 && $sz!=1024*3 && $sz!=4096*3} { 
+      error "Expected file size 3072 or 12288 bytes - actual size $sz bytes"
+    }
+    if {$testrc==0 && $sz!=4096*3} { 
+      error "Expected file size to be 12288 bytes - actual size $sz bytes"
+    }
   }
 } 
 
