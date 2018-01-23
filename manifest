@@ -1,5 +1,5 @@
-C Skip\sdefining\sWIN32_LEAN_AND_MEAN\swhen\sit\sis\salready\sdefined.
-D 2018-01-23T07:11:05.143
+C Fix\scomment\stypos.\s\sNo\schanges\sto\scode.
+D 2018-01-23T13:30:38.622
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -428,7 +428,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c bfc453babec9aa8196ab5db5e588ac5d3f0c398d72faa37296167a84a61c9f2f
+F src/btree.c 1beceb1c5f9563271241fd0c294484668e4ad28cf6aa970eab70e50ff6f75e25
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
 F src/build.c 9f9647454f236cab097f266ae970f899b53c71cadab6756c47e2b2e81392c2a1
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9a4199aedb039141a50a68943ef863d7df9637ada318793cce6c12b9d39bcdc5
-R fc52a77923ed3abf898f25d3a24aab55
-U mistachkin
-Z 3cd93d9679b9898485b5f29a3393d5bf
+P 195f5323df800f7963df2ea251c497c72e4d7ff0b88a70f1fa60f13bb1a9fd3b
+R 7c865206c0c32ef523d258872610a2c7
+U drh
+Z b85d901c66e70c5307b2badbaae893be

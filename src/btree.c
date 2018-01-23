@@ -6189,9 +6189,8 @@ static void freePage(MemPage *pPage, int *pRC){
 }
 
 /*
-** Free any overflow pages associated with the given Cell.  Write the
-** local Cell size (the number of bytes on the original page, omitting
-** overflow) into *pnSize.
+** Free any overflow pages associated with the given Cell.  Store
+** size information about the cell in pInfo.
 */
 static int clearCell(
   MemPage *pPage,          /* The page that contains the Cell */
@@ -7395,7 +7394,7 @@ static int balance_nonroot(
     }
 
     /* Load b.apCell[] with pointers to all cells in pOld.  If pOld
-    ** constains overflow cells, include them in the b.apCell[] array
+    ** contains overflow cells, include them in the b.apCell[] array
     ** in the correct spot.
     **
     ** Note that when there are multiple overflow cells, it is always the
