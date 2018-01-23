@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2018-01-23T00:05:18.184
+C Simplify\sone\sof\sthe\scompiler\swarning\sfixes\sfrom\sthe\sprevious\scheck-in.
+D 2018-01-23T00:17:27.230
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -400,7 +400,7 @@ F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 63cfde70155b597480b2d01e65031f8e60d204103db7adf6156fe48e3e379392
+F ext/session/sqlite3session.c a5b7aed647abe7e366254b755597fce3f2719d82c98990cb0e1e07a3d203fe2b
 F ext/session/sqlite3session.h 01774161cbd328fe3d496323655b9cc142317ff1fb1ae15c1232075ea240e3a4
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c55d179733b46d8d0ba4d88e01a25e10677046ee3da1d5b1581e86726f2171d
-R 8f662370d27c0dbf362ba912c090e456
+P 76a11a80e94d1e9c9645e6e348948f3fd508266d4569c85d80a3879862d0a819
+R 47270bb77ce74e463612a801d427faba
 U mistachkin
-Z fc242cf748005a9ff5528ff032a48505
+Z c93f87a6596350b67f49dd4ebf8496b6
