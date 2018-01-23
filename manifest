@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\sspurious\s"sub-select\sreturns\sN\scolumns\sexpected\s1"\serrors\nin\sjoin\squeries\swith\sa\sterm\slike\s"(a,\sb)\sIN\s(SELECT\s...)"\sin\sthe\sWHERE\sclause.
-D 2018-01-23T16:38:57.346
+C Work\saround\sa\sproblem\swith\sGCC\son\s32-bit\smachines\sthat\scause\sthe\sCAST\noperator\sto\sgenerate\sa\sfloating-point\sresult\sfor\sstrings\sthat\scould\sbe\nrepresented\sas\svery\slarge\sintegers.
+D 2018-01-23T17:33:42.218
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -561,7 +561,7 @@ F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
 F src/vdbeaux.c 2756ac68ac259c416554100598fc291870063288cd7e1af22847f57b3e130e56
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 7548dd5af03d24d534a5dbc41e3bbdf1fab83e9c8856a8d2549ed2ccf33d0e80
+F src/vdbemem.c 943e41881e6317c9f93c77c1d60d3b37ddc8d26a3f852233ce7423d3e581523e
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f785b9041556912edbacdbfb3dfc38705058d7c10d874544295c25db54628bc2
-R e2c75936c44819f701f68ae9ff6a70d2
-U dan
-Z d0f66b0bfa51e27a550c6dffd5ce24ce
+P 14dfd96f9bca2df5033b2d894bf63cc8bf450a45ca11df5e3bbb814fdf96b656
+R aad1a01a1cf0d877a8df52447d73431f
+U drh
+Z 57954c94bf10856d82150b78a27b3537

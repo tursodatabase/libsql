@@ -582,6 +582,18 @@ int sqlite3VdbeMemRealify(Mem *pMem){
   return SQLITE_OK;
 }
 
+/* Compare a floating point value to an integer.  Return true if the two
+** values are the same within the precision of the floating point value.
+**
+** For some versions of GCC on 32-bit machines, if you do the more obvious
+** comparison of "r1==(double)i" you sometimes get an answer of false even
+** though the r1 and (double)i values are bit-for-bit the same.
+*/
+static int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
+  double r2 = (double)i;
+  return memcmp(&r1, &r2, sizeof(r1))==0;
+}
+
 /*
 ** Convert pMem so that it has types MEM_Real or MEM_Int or both.
 ** Invalidate any prior representations.
@@ -601,7 +613,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     }else{
       i64 i = pMem->u.i;
       sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
-      if( rc==1 && pMem->u.r==(double)i ){
+      if( rc==1 && sqlite3RealSameAsInt(pMem->u.r, i) ){
         pMem->u.i = i;
         MemSetTypeFlag(pMem, MEM_Int);
       }else{
