@@ -1272,9 +1272,10 @@ static void editFunc(
     goto edit_func_end;
   }
   if( bBin ){
-    sqlite3_result_blob(context, p, sz, sqlite3_free);
+    sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
-    sqlite3_result_text(context, (const char*)p, sz, sqlite3_free);
+    sqlite3_result_text64(context, (const char*)p, sz,
+                          sqlite3_free, SQLITE_UTF8);
   }
   p = 0;
 
@@ -3435,7 +3436,7 @@ static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
     sqlite3_initialize();
     if( p->openMode==SHELL_OPEN_UNSPEC && access(p->zDbFilename,0)==0 ){
-      p->openMode = deduceDatabaseType(p->zDbFilename);
+      p->openMode = (u8)deduceDatabaseType(p->zDbFilename);
     }
     switch( p->openMode ){
       case SHELL_OPEN_APPENDVFS: {
@@ -5715,7 +5716,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( strcmp(azArg[1],"trigger")==0 ){
         p->autoEQP = AUTOEQP_trigger;
       }else{
-        p->autoEQP = booleanValue(azArg[1]);
+        p->autoEQP = (u8)booleanValue(azArg[1]);
       }
     }else{
       raw_printf(stderr, "Usage: .eqp off|on|trigger|full\n");
@@ -6488,7 +6489,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
-      p->scanstatsOn = booleanValue(azArg[1]);
+      p->scanstatsOn = (u8)booleanValue(azArg[1]);
 #ifndef SQLITE_ENABLE_STMT_SCANSTATUS
       raw_printf(stderr, "Warning: .scanstats not available in this build.\n");
 #endif
@@ -7139,7 +7140,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
     if( nArg==2 ){
-      p->statsOn = booleanValue(azArg[1]);
+      p->statsOn = (u8)booleanValue(azArg[1]);
     }else if( nArg==1 ){
       display_stats(p->db, p, 0);
     }else{

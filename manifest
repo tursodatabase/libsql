@@ -1,5 +1,5 @@
-C Version\s3.22.0
-D 2018-01-22T18:45:57.681
+C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
+D 2018-01-23T00:05:18.184
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -400,7 +400,7 @@ F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 989466bba4dff0ede8d4c450b1fc65ca222b87e31193eddbf3931b88bf898a57
+F ext/session/sqlite3session.c 63cfde70155b597480b2d01e65031f8e60d204103db7adf6156fe48e3e379392
 F ext/session/sqlite3session.h 01774161cbd328fe3d496323655b9cc142317ff1fb1ae15c1232075ea240e3a4
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -487,7 +487,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
-F src/shell.c.in 4e1bcf8c70b8fb97c7cbaca6602e2a291d7fe17eff23a5de003d6fabd87f27d1
+F src/shell.c.in 06ffe417973eacbee77a8402e26553b938e7c07f735c811701fc5cd1e642fb5c
 F src/sqlite.h.in 959deaad89679e31d7f68fda668b0c5d1f592fffed7a9c1740fb8ded4e4e754a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 99189e7611eb0bf98f21c7835dc74730a84e2e809c98e1e31c33896dee7a2849
@@ -1700,10 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 395f8ea790e6e295800fa8927f0585b2419b9521ef4fd591d51d2a48db2a90c4
-R e7cccb4f976b9eb07c1586193cc26ec5
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.22.0 *
-U drh
-Z 9c0e858ece53e1ee810a8a479ae4dc82
+P 0c55d179733b46d8d0ba4d88e01a25e10677046ee3da1d5b1581e86726f2171d
+R 8f662370d27c0dbf362ba912c090e456
+U mistachkin
+Z fc242cf748005a9ff5528ff032a48505

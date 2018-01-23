@@ -1115,7 +1115,7 @@ static void sessionPreupdateOneChange(
   int iHash; 
   int bNull = 0; 
   int rc = SQLITE_OK;
-  SessionStat1Ctx stat1;
+  SessionStat1Ctx stat1 = {0, 0};
 
   if( pSession->rc ) return;
 
