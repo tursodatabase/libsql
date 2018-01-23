@@ -237,7 +237,9 @@ void sqlite3Update(
   chngRowid = chngPk = 0;
   for(i=0; i<pChanges->nExpr; i++){
 #if defined(SQLITE_ENABLE_NOOP_UPDATE) && !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-    if( db->flags & SQLITE_NoopUpdate ){
+    if( 0!=sqlite3GetVdbe(pParse)
+     && 0!=(sqlite3VdbePrepareFlags(pParse->pVdbe) & SQLITE_PREPARE_NOOP_UPDATE)
+    ){
       Token x;
       sqlite3ExprDelete(db, pChanges->a[i].pExpr);
       x.z = pChanges->a[i].zName;

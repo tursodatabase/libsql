@@ -3553,6 +3553,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
+#define SQLITE_PREPARE_NOOP_UPDATE             0x02
 
 /*
 ** CAPI3REF: Compiling An SQL Statement

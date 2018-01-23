@@ -679,6 +679,9 @@ static int sqlite3LockAndPrepare(
   }
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
+#if defined(SQLITE_ENABLE_NOOP_UPDATE) && !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+  if( db->flags & SQLITE_NoopUpdate ) prepFlags |= SQLITE_PREPARE_NOOP_UPDATE;
+#endif
   rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
   if( rc==SQLITE_SCHEMA ){
     sqlite3ResetOneSchema(db, -1);
