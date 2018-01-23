@@ -6204,12 +6204,17 @@ case OP_AggStep0: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem+1 - p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRawNN(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  pCtx = sqlite3DbMallocRawNN(db, n*sizeof(sqlite3_value*) +
+               (sizeof(pCtx[0]) + sizeof(Mem) - sizeof(sqlite3_value*)));
   if( pCtx==0 ) goto no_mem;
   pCtx->pMem = 0;
+  pCtx->pOut = (Mem*)&(pCtx->argv[n]);
+  sqlite3VdbeMemInit(pCtx->pOut, db, MEM_Null);
   pCtx->pFunc = pOp->p4.pFunc;
   pCtx->iOp = (int)(pOp - aOp);
   pCtx->pVdbe = p;
+  pCtx->skipFlag = 0;
+  pCtx->isError = 0;
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
@@ -6220,7 +6225,6 @@ case OP_AggStep: {
   int i;
   sqlite3_context *pCtx;
   Mem *pMem;
-  Mem t;
 
   assert( pOp->p4type==P4_FUNCCTX );
   pCtx = pOp->p4.pCtx;
@@ -6243,26 +6247,28 @@ case OP_AggStep: {
 #endif
 
   pMem->n++;
-  sqlite3VdbeMemInit(&t, db, MEM_Null);
-  pCtx->pOut = &t;
-  pCtx->fErrorOrAux = 0;
-  pCtx->skipFlag = 0;
+  assert( pCtx->pOut->flags==MEM_Null );
+  assert( pCtx->isError==0 );
+  assert( pCtx->skipFlag==0 );
   (pCtx->pFunc->xSFunc)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
-  if( pCtx->fErrorOrAux ){
-    if( pCtx->isError ){
-      sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));
+  if( pCtx->isError ){
+    if( pCtx->isError>0 ){
+      sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
       rc = pCtx->isError;
     }
-    sqlite3VdbeMemRelease(&t);
+    if( pCtx->skipFlag ){
+      assert( pOp[-1].opcode==OP_CollSeq );
+      i = pOp[-1].p1;
+      if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
+      pCtx->skipFlag = 0;
+    }
+    sqlite3VdbeMemRelease(pCtx->pOut);
+    pCtx->pOut->flags = MEM_Null;
+    pCtx->isError = 0;
     if( rc ) goto abort_due_to_error;
-  }else{
-    assert( t.flags==MEM_Null );
   }
-  if( pCtx->skipFlag ){
-    assert( pOp[-1].opcode==OP_CollSeq );
-    i = pOp[-1].p1;
-    if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
-  }
+  assert( pCtx->pOut->flags==MEM_Null );
+  assert( pCtx->skipFlag==0 );
   break;
 }
 
@@ -6749,7 +6755,7 @@ case OP_VColumn: {
   }
   rc = pModule->xColumn(pCur->uc.pVCur, &sContext, pOp->p2);
   sqlite3VtabImportErrmsg(p, pVtab);
-  if( sContext.isError ){
+  if( sContext.isError>0 ){
     rc = sContext.isError;
   }
   sqlite3VdbeChangeEncoding(pDest, encoding);
@@ -7014,6 +7020,7 @@ case OP_Function0: {
   pCtx->pFunc = pOp->p4.pFunc;
   pCtx->iOp = (int)(pOp - aOp);
   pCtx->pVdbe = p;
+  pCtx->isError = 0;
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
@@ -7048,16 +7055,17 @@ case OP_Function: {
   }
 #endif
   MemSetTypeFlag(pOut, MEM_Null);
-  pCtx->fErrorOrAux = 0;
+  assert( pCtx->isError==0 );
   (*pCtx->pFunc->xSFunc)(pCtx, pCtx->argc, pCtx->argv);/* IMP: R-24505-23230 */
 
   /* If the function returned an error, throw an exception */
-  if( pCtx->fErrorOrAux ){
-    if( pCtx->isError ){
+  if( pCtx->isError ){
+    if( pCtx->isError>0 ){
       sqlite3VdbeError(p, "%s", sqlite3_value_text(pOut));
       rc = pCtx->isError;
     }
     sqlite3VdbeDeleteAuxData(db, &p->pAuxData, pCtx->iOp, pOp->p1);
+    pCtx->isError = 0;
     if( rc ) goto abort_due_to_error;
   }
 

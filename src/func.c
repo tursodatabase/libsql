@@ -35,6 +35,7 @@ static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
 ** iteration of the aggregate loop.
 */
 static void sqlite3SkipAccumulatorLoad(sqlite3_context *context){
+  if( context->isError==0 ) context->isError = -1;
   context->skipFlag = 1;
 }
 

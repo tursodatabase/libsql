@@ -372,14 +372,12 @@ void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
@@ -485,8 +483,7 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   return SQLITE_OK;
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
-  pCtx->isError = errCode;
-  pCtx->fErrorOrAux = 1;
+  pCtx->isError = errCode ? errCode : -1;
 #ifdef SQLITE_DEBUG
   if( pCtx->pVdbe ) pCtx->pVdbe->rcApp = errCode;
 #endif
@@ -500,7 +497,6 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_TOOBIG;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, "string or blob too big", -1, 
                        SQLITE_UTF8, SQLITE_STATIC);
 }
@@ -510,7 +506,6 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
   pCtx->isError = SQLITE_NOMEM_BKPT;
-  pCtx->fErrorOrAux = 1;
   sqlite3OomFault(pCtx->pOut->db);
 }
 
@@ -917,10 +912,7 @@ void sqlite3_set_auxdata(
     pAuxData->iAuxArg = iArg;
     pAuxData->pNextAux = pVdbe->pAuxData;
     pVdbe->pAuxData = pAuxData;
-    if( pCtx->fErrorOrAux==0 ){
-      pCtx->isError = 0;
-      pCtx->fErrorOrAux = 1;
-    }
+    if( pCtx->isError==0 ) pCtx->isError = -1;
   }else if( pAuxData->xDeleteAux ){
     pAuxData->xDeleteAux(pAuxData->pAux);
   }
