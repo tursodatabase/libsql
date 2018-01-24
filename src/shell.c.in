@@ -7681,6 +7681,16 @@ static int line_is_command_terminator(const char *zLine){
 }
 
 /*
+** We need a default sqlite3_complete() implementation to use in case
+** the shell is compiled with SQLITE_OMIT_COMPLETE.  The default assumes
+** any arbitrary text is a complete SQL statement.  This is not very
+** user-friendly, but it does seem to work.
+*/
+#ifdef SQLITE_OMIT_COMPLETE
+int sqlite3_complete(const char *zSql){ return 1; }
+#endif
+
+/*
 ** Return true if zSql is a complete SQL statement.  Return false if it
 ** ends in the middle of a string literal or C-style comment.
 */
