@@ -4345,7 +4345,7 @@ int sqlite3BtreeCursorSize(void){
 ** of run-time by skipping the initialization of those elements.
 */
 void sqlite3BtreeCursorZero(BtCursor *p){
-  memset(p, 0, offsetof(BtCursor, iPage));
+  memset(p, 0, offsetof(BtCursor, BTCURSOR_FIRST_UNINIT));
 }
 
 /*
@@ -4668,14 +4668,15 @@ static int accessPayload(
     */
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
-      if( nOvfl>pCur->nOvflAlloc ){
+      if( pCur->aOverflow==0
+       || nOvfl*sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
+      ){
         Pgno *aNew = (Pgno*)sqlite3Realloc(
             pCur->aOverflow, nOvfl*2*sizeof(Pgno)
         );
         if( aNew==0 ){
           return SQLITE_NOMEM_BKPT;
         }else{
-          pCur->nOvflAlloc = nOvfl*2;
           pCur->aOverflow = aNew;
         }
       }

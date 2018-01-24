@@ -1,5 +1,5 @@
-C Add\sthe\snormalize.c\sextension.
-D 2018-01-24T15:07:37.708
+C Rearrange\sfields\sof\sthe\sBtCursor\sobject\sso\sthat\sit\sis\ssmaller\sand\srequires\sless\ninitialization,\sfor\sa\ssmall\sperformance\simprovement.
+D 2018-01-24T16:04:21.587
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -429,9 +429,9 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 1beceb1c5f9563271241fd0c294484668e4ad28cf6aa970eab70e50ff6f75e25
+F src/btree.c d711228cac336fb35fff21f3f4a0efe2ad58aa9a800dd02929cdf184be1e78a3
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
-F src/btreeInt.h 6e70d15435b60a29386ae9864875618ca225c31bf815038bbd8f510a66bb9cb1
+F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 9f9647454f236cab097f266ae970f899b53c71cadab6756c47e2b2e81392c2a1
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -1702,8 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0f192ea6dda4fa0b243d58c8ce41932519141bcae0689a90318b4f866f54edd 658f42257d56a3562dfa8e55023c6e497f55c565cd751d942de3a9e0cb2fa708
-R 01bd832eb21dc9b5a19a52a2b0f11c48
-T +closed 658f42257d56a3562dfa8e55023c6e497f55c565cd751d942de3a9e0cb2fa708
+P 16ebe558d2f0982f630c39b6c1b00d14d27011d454cced213f17c26491a2c06e
+R fc9e02eb09b9540ef2f7fa9944ac0566
 U drh
-Z 043a35201b0c771ecddffe95c53bb65f
+Z c7e32730b85a19ed6c94c7a445674e7d
