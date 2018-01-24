@@ -636,7 +636,7 @@ char *sqlite3DbSpanDup(sqlite3 *db, const char *zStart, const char *zEnd){
   int n;
   while( sqlite3Isspace(zStart[0]) ) zStart++;
   n = (int)(zEnd - zStart);
-  while( n>0 && sqlite3Isspace(zStart[n-1]) ) n--;
+  while( ALWAYS(n>0) && sqlite3Isspace(zStart[n-1]) ) n--;
   return sqlite3DbStrNDup(db, zStart, n);
 }
 

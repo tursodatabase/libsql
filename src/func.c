@@ -35,6 +35,8 @@ static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
 ** iteration of the aggregate loop.
 */
 static void sqlite3SkipAccumulatorLoad(sqlite3_context *context){
+  assert( context->isError<=0 );
+  context->isError = -1;
   context->skipFlag = 1;
 }
 
@@ -101,8 +103,6 @@ static void lengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int len;
-
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
@@ -114,13 +114,17 @@ static void lengthFunc(
     }
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
+      const unsigned char *z0;
+      unsigned char c;
       if( z==0 ) return;
-      len = 0;
-      while( *z ){
-        len++;
-        SQLITE_SKIP_UTF8(z);
+      z0 = z;
+      while( (c = *z)!=0 ){
+        z++;
+        if( c>=0xc0 ){
+          while( (*z & 0xc0)==0x80 ){ z++; z0++; }
+        }
       }
-      sqlite3_result_int(context, len);
+      sqlite3_result_int(context, (int)(z-z0));
       break;
     }
     default: {
@@ -1800,8 +1804,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION2(affinity,          1, 0, 0, noopFunc,  SQLITE_FUNC_AFFINITY),
 #endif
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-    FUNCTION2(sqlite_unsupported_offset,
-                                 1, 0, 0, noopFunc,  SQLITE_FUNC_OFFSET|
+    FUNCTION2(sqlite_offset,     1, 0, 0, noopFunc,  SQLITE_FUNC_OFFSET|
                                                      SQLITE_FUNC_TYPEOF),
 #endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),

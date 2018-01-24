@@ -2184,9 +2184,14 @@ static int multiSelectOrderBy(
 ** on a VALUES clause.
 **
 ** Because the Select object originates from a VALUES clause:
-**   (1) It has no LIMIT or OFFSET
+**   (1) There is no LIMIT or OFFSET or else there is a LIMIT of exactly 1
 **   (2) All terms are UNION ALL
 **   (3) There is no ORDER BY clause
+**
+** The "LIMIT of exactly 1" case of condition (1) comes about when a VALUES
+** clause occurs within scalar expression (ex: "SELECT (VALUES(1),(2),(3))").
+** The sqlite3CodeSubselect will have added the LIMIT 1 clause in tht case.
+** Since the limit is exactly 1, we only need to evalutes the left-most VALUES.
 */
 static int multiSelectValues(
   Parse *pParse,        /* Parsing context */
@@ -2194,13 +2199,13 @@ static int multiSelectValues(
   SelectDest *pDest     /* What to do with query results */
 ){
   Select *pPrior;
+  Select *pRightmost = p;
   int nRow = 1;
   int rc = 0;
   assert( p->selFlags & SF_MultiValue );
   do{
     assert( p->selFlags & SF_Values );
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
-    assert( p->pLimit==0 );
     assert( p->pNext==0 || p->pEList->nExpr==p->pNext->pEList->nExpr );
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
@@ -2212,7 +2217,7 @@ static int multiSelectValues(
     p->pPrior = 0;
     rc = sqlite3Select(pParse, p, pDest);
     p->pPrior = pPrior;
-    if( rc ) break;
+    if( rc || pRightmost->pLimit ) break;
     p->nSelectRow = nRow;
     p = p->pNext;
   }

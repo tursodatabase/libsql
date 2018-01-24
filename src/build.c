@@ -2124,7 +2124,7 @@ void sqlite3CreateView(
   ** the end.
   */
   sEnd = pParse->sLastToken;
-  assert( sEnd.z[0]!=0 );
+  assert( sEnd.z[0]!=0 || sEnd.n==0 );
   if( sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
   }

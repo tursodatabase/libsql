@@ -15,6 +15,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE 
+
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
@@ -495,7 +497,7 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
     }
   }
 
-  pIdxInfo->estimatedCost = 1000000.0 / n;
+  pIdxInfo->estimatedCost = 1000000.0 / (n+1);
   return rc;
 }
 
@@ -505,6 +507,10 @@ static int expertUpdate(
   sqlite3_value **azData, 
   sqlite_int64 *pRowid
 ){
+  (void)pVtab;
+  (void)nData;
+  (void)azData;
+  (void)pRowid;
   return SQLITE_OK;
 }
 
@@ -514,6 +520,7 @@ static int expertUpdate(
 static int expertOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_OK;
   ExpertCsr *pCsr;
+  (void)pVTab;
   pCsr = idxMalloc(&rc, sizeof(ExpertCsr));
   *ppCursor = (sqlite3_vtab_cursor*)pCsr;
   return rc;
@@ -563,6 +570,7 @@ static int expertNext(sqlite3_vtab_cursor *cur){
 ** Virtual table module xRowid method.
 */
 static int expertRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  (void)cur;
   *pRowid = 0;
   return SQLITE_OK;
 }
@@ -593,6 +601,10 @@ static int expertFilter(
   sqlite3expert *pExpert = pVtab->pExpert;
   int rc;
 
+  (void)idxNum;
+  (void)idxStr;
+  (void)argc;
+  (void)argv;
   rc = sqlite3_finalize(pCsr->pData);
   pCsr->pData = 0;
   if( rc==SQLITE_OK ){
@@ -754,7 +766,7 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
       zRet = (char*)sqlite3_malloc(nIn + nAppend + 1);
     }
     if( zAppend && zRet ){
-      memcpy(zRet, zIn, nIn);
+      if( nIn ) memcpy(zRet, zIn, nIn);
       memcpy(&zRet[nIn], zAppend, nAppend+1);
     }else{
       sqlite3_free(zRet);
@@ -908,7 +920,7 @@ static int idxCreateFromCons(
     char *zCols = 0;
     char *zIdx = 0;
     IdxConstraint *pCons;
-    int h = 0;
+    unsigned int h = 0;
     const char *zFmt;
 
     for(pCons=pEq; pCons; pCons=pCons->pLink){
@@ -1003,7 +1015,7 @@ static int idxCreateFromWhere(
 ** Create candidate indexes in database [dbm] based on the data in 
 ** linked-list pScan.
 */
-static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
+static int idxCreateCandidates(sqlite3expert *p){
   int rc = SQLITE_OK;
   IdxScan *pIter;
 
@@ -1166,6 +1178,8 @@ static int idxAuthCallback(
   const char *zTrigger
 ){
   int rc = SQLITE_OK;
+  (void)z4;
+  (void)zTrigger;
   if( eOp==SQLITE_INSERT || eOp==SQLITE_UPDATE || eOp==SQLITE_DELETE ){
     if( sqlite3_stricmp(zDb, "main")==0 ){
       sqlite3expert *p = (sqlite3expert*)pCtx;
@@ -1368,6 +1382,7 @@ static void idxSampleFunc(
   struct IdxSampleCtx *p = (struct IdxSampleCtx*)sqlite3_user_data(pCtx);
   int bRet;
 
+  (void)argv;
   assert( argc==0 );
   if( p->nRow==0.0 ){
     bRet = 1;
@@ -1523,6 +1538,7 @@ static int idxPopulateOneStat1(
     );
     zOrder = idxAppendText(&rc, zOrder, "%s%d", zComma, ++nCol);
   }
+  sqlite3_reset(pIndexXInfo);
   if( rc==SQLITE_OK ){
     if( p->iSample==100 ){
       zQuery = sqlite3_mprintf(
@@ -1852,7 +1868,7 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
 
   /* Create candidate indexes within the in-memory database file */
   if( rc==SQLITE_OK ){
-    rc = idxCreateCandidates(p, pzErr);
+    rc = idxCreateCandidates(p);
   }
 
   /* Generate the stat1 data */
@@ -1932,3 +1948,5 @@ void sqlite3_expert_destroy(sqlite3expert *p){
     sqlite3_free(p);
   }
 }
+
+#endif /* ifndef SQLITE_OMIT_VIRTUAL_TABLE */

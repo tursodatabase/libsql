@@ -317,7 +317,6 @@ struct sqlite3_context {
   int iOp;                /* Instruction number of OP_Function */
   int isError;            /* Error code returned by the function. */
   u8 skipFlag;            /* Skip accumulator loading if true */
-  u8 fErrorOrAux;         /* isError!=0 or pVdbe->pAuxData modified */
   u8 argc;                /* Number of arguments */
   sqlite3_value *argv[1]; /* Argument set */
 };

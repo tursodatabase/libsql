@@ -866,6 +866,7 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
     case P4_REAL:
     case P4_INT64:
     case P4_DYNAMIC:
+    case P4_DYNBLOB:
     case P4_INTARRAY: {
       sqlite3DbFree(db, p4);
       break;
@@ -1407,6 +1408,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3XPrintf(&x, "program");
       break;
     }
+    case P4_DYNBLOB:
     case P4_ADVANCE: {
       zTemp[0] = 0;
       break;
@@ -3452,7 +3454,13 @@ u32 sqlite3VdbeSerialGet(
   Mem *pMem                     /* Memory cell to write value into */
 ){
   switch( serial_type ){
-    case 10:   /* Reserved for future use */
+    case 10: { /* Internal use only: NULL with virtual table
+               ** UPDATE no-change flag set */
+      pMem->flags = MEM_Null|MEM_Zero;
+      pMem->n = 0;
+      pMem->u.nZero = 0;
+      break;
+    }
     case 11:   /* Reserved for future use */
     case 0: {  /* Null */
       /* EVIDENCE-OF: R-24078-09375 Value is a NULL. */

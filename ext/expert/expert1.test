@@ -23,6 +23,11 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 set testprefix expert1
 
+if {[info commands sqlite3_expert_new]==""} {
+  finish_test
+  return
+}
+
 set CLI [test_binary_name sqlite3]
 set CMD [test_binary_name sqlite3_expert]
 

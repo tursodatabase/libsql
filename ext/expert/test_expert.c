@@ -26,6 +26,8 @@
 #  endif
 #endif
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Extract an sqlite3* db handle from the object passed as the second
 ** argument. If successful, set *pDb to point to the db handle and return
@@ -195,7 +197,10 @@ static int SQLITE_TCLAPI test_sqlite3_expert_new(
   return rc;
 }
 
+#endif  /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
 int TestExpert_Init(Tcl_Interp *interp){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   struct Cmd {
     const char *zCmd;
     Tcl_ObjCmdProc *xProc;
@@ -208,7 +213,7 @@ int TestExpert_Init(Tcl_Interp *interp){
     struct Cmd *p = &aCmd[i];
     Tcl_CreateObjCommand(interp, p->zCmd, p->xProc, 0, 0);
   }
-
+#endif
   return TCL_OK;
 }
 

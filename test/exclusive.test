@@ -252,7 +252,9 @@ db2 close
 # opens the journal file for exclusive access, preventing its contents 
 # from being inspected externally.
 #
-if {$tcl_platform(platform) != "windows"} {
+if {$tcl_platform(platform) != "windows"
+ && [atomic_batch_write test.db]==0
+} {
 
   # Return a list of two booleans (either 0 or 1). The first is true
   # if the named file exists. The second is true only if the file
@@ -391,6 +393,7 @@ do_test exclusive-4.5 {
 # Tests exclusive-5.X - test that statement journals are truncated
 # instead of deleted when in exclusive access mode.
 #
+if {[atomic_batch_write test.db]==0} {
 
 # Close and reopen the database so that the temp database is no
 # longer active.
@@ -507,5 +510,7 @@ do_execsql_test exclusive-6.5 {
   PRAGMA locking_mode = EXCLUSIVE;
   SELECT * FROM sqlite_master;
 } {exclusive}
+
+} ;# atomic_batch_write==0
 
 finish_test

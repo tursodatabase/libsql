@@ -3865,7 +3865,6 @@ static int winOpenSharedMemory(winFile *pDbFd){
   struct winShm *p;                  /* The connection to be opened */
   winShmNode *pShmNode = 0;          /* The underlying mmapped file */
   int rc = SQLITE_OK;                /* Result code */
-  int rc2 = SQLITE_ERROR;            /* winOpen result code */
   winShmNode *pNew;                  /* Newly allocated winShmNode */
   int nName;                         /* Size of zName in bytes */
 
@@ -3899,6 +3898,9 @@ static int winOpenSharedMemory(winFile *pDbFd){
   if( pShmNode ){
     sqlite3_free(pNew);
   }else{
+    int inFlags = SQLITE_OPEN_WAL;
+    int outFlags = 0;
+
     pShmNode = pNew;
     pNew = 0;
     ((winFile*)(&pShmNode->hFile))->h = INVALID_HANDLE_VALUE;
@@ -3914,25 +3916,19 @@ static int winOpenSharedMemory(winFile *pDbFd){
     }
 
     if( 0==sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
-      rc2 = winOpen(pDbFd->pVfs,
-                    pShmNode->zFilename,
-                    (sqlite3_file*)&pShmNode->hFile,
-                    SQLITE_OPEN_WAL|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,
-                    0);
+      inFlags |= SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    }else{
+      inFlags |= SQLITE_OPEN_READONLY;
     }
-    if( rc2!=SQLITE_OK ){
-      rc2 = winOpen(pDbFd->pVfs,
-                    pShmNode->zFilename,
-                    (sqlite3_file*)&pShmNode->hFile,
-                    SQLITE_OPEN_WAL|SQLITE_OPEN_READONLY,
-                    0);
-      if( rc2!=SQLITE_OK ){
-        rc = winLogError(rc2, osGetLastError(), "winOpenShm",
-                         pShmNode->zFilename);
-        goto shm_open_err;
-      }
-      pShmNode->isReadonly = 1;
+    rc = winOpen(pDbFd->pVfs, pShmNode->zFilename,
+                 (sqlite3_file*)&pShmNode->hFile,
+                 inFlags, &outFlags);
+    if( rc!=SQLITE_OK ){
+      rc = winLogError(rc, osGetLastError(), "winOpenShm",
+                       pShmNode->zFilename);
+      goto shm_open_err;
     }
+    if( outFlags==SQLITE_OPEN_READONLY ) pShmNode->isReadonly = 1;
 
     rc = winLockSharedMemory(pShmNode);
     if( rc!=SQLITE_OK && rc!=SQLITE_READONLY_CANTINIT ) goto shm_open_err;
@@ -5118,8 +5114,10 @@ static int winOpen(
                         &extendedParameters);
       if( h!=INVALID_HANDLE_VALUE ) break;
       if( isReadWrite ){
-        int isRO = 0;
-        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        int rc2, isRO = 0;
+        sqlite3BeginBenignMalloc();
+        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
     }while( winRetryIoerr(&cnt, &lastErrno) );
@@ -5133,8 +5131,10 @@ static int winOpen(
                         NULL);
       if( h!=INVALID_HANDLE_VALUE ) break;
       if( isReadWrite ){
-        int isRO = 0;
-        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        int rc2, isRO = 0;
+        sqlite3BeginBenignMalloc();
+        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
     }while( winRetryIoerr(&cnt, &lastErrno) );
@@ -5151,8 +5151,10 @@ static int winOpen(
                         NULL);
       if( h!=INVALID_HANDLE_VALUE ) break;
       if( isReadWrite ){
-        int isRO = 0;
-        int rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        int rc2, isRO = 0;
+        sqlite3BeginBenignMalloc();
+        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
     }while( winRetryIoerr(&cnt, &lastErrno) );

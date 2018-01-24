@@ -13,13 +13,17 @@
 ** POSIX functions on Win32 using the MSVCRT.
 */
 
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER) && !defined(SQLITE_WINDIRENT_H)
+#define SQLITE_WINDIRENT_H
 
 /*
 ** We need several data types from the Windows SDK header.
 */
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "windows.h"
 
 /*
@@ -37,6 +41,33 @@
 #include <errno.h>
 #include <io.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+/*
+** We may need several defines that should have been in "sys/stat.h".
+*/
+
+#ifndef S_ISREG
+#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#endif
+
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#endif
+
+#ifndef S_ISLNK
+#define S_ISLNK(mode) (0)
+#endif
+
+/*
+** We may need to provide the "mode_t" type.
+*/
+
+#ifndef MODE_T_DEFINED
+  #define MODE_T_DEFINED
+  typedef unsigned short mode_t;
+#endif
 
 /*
 ** We may need to provide the "ino_t" type.
@@ -75,22 +106,27 @@
 ** We need to provide the necessary structures and related types.
 */
 
+#ifndef DIRENT_DEFINED
+#define DIRENT_DEFINED
 typedef struct DIRENT DIRENT;
-typedef struct DIR DIR;
 typedef DIRENT *LPDIRENT;
-typedef DIR *LPDIR;
-
 struct DIRENT {
   ino_t d_ino;               /* Sequence number, do not use. */
   unsigned d_attributes;     /* Win32 file attributes. */
   char d_name[NAME_MAX + 1]; /* Name within the directory. */
 };
+#endif
 
+#ifndef DIR_DEFINED
+#define DIR_DEFINED
+typedef struct DIR DIR;
+typedef DIR *LPDIR;
 struct DIR {
   intptr_t d_handle; /* Value returned by "_findfirst". */
   DIRENT d_first;    /* DIRENT constructed based on "_findfirst". */
   DIRENT d_next;     /* DIRENT constructed based on "_findnext". */
 };
+#endif
 
 /*
 ** Provide a macro, for use by the implementation, to determine if a

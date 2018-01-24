@@ -234,6 +234,10 @@ static void openStatTable(
            "DELETE FROM %Q.%s WHERE %s=%Q",
            pDb->zDbSName, zTab, zWhereType, zWhere
         );
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+      }else if( db->xPreUpdateCallback ){
+        sqlite3NestedParse(pParse, "DELETE FROM %Q.%s", pDb->zDbSName, zTab);
+#endif
       }else{
         /* The sqlite_stat[134] table already exists.  Delete all rows. */
         sqlite3VdbeAddOp2(v, OP_Clear, aRoot[i], iDb);
@@ -998,6 +1002,9 @@ static void analyzeOneTable(
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
   int regPrev = iMem;          /* MUST BE LAST (see below) */
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  Table *pStat1 = 0; 
+#endif
 
   pParse->nMem = MAX(pParse->nMem, iMem);
   v = sqlite3GetVdbe(pParse);
@@ -1020,6 +1027,18 @@ static void analyzeOneTable(
   if( sqlite3AuthCheck(pParse, SQLITE_ANALYZE, pTab->zName, 0,
       db->aDb[iDb].zDbSName ) ){
     return;
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  if( db->xPreUpdateCallback ){
+    pStat1 = (Table*)sqlite3DbMallocZero(db, sizeof(Table) + 13);
+    if( pStat1==0 ) return;
+    pStat1->zName = (char*)&pStat1[1];
+    memcpy(pStat1->zName, "sqlite_stat1", 13);
+    pStat1->nCol = 3;
+    pStat1->iPKey = -1;
+    sqlite3VdbeAddOp4(pParse->pVdbe, OP_Noop, 0, 0, 0,(char*)pStat1,P4_DYNBLOB);
   }
 #endif
 
@@ -1224,6 +1243,9 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    sqlite3VdbeChangeP4(v, -1, (char*)pStat1, P4_TABLE);
+#endif
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
 
     /* Add the entries to the stat3 or stat4 table. */
@@ -1287,6 +1309,9 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    sqlite3VdbeChangeP4(v, -1, (char*)pStat1, P4_TABLE);
+#endif
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
 }

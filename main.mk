@@ -371,9 +371,10 @@ TESTSRC += \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
+  $(TOP)/ext/misc/zipfile.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
-  $(TOP)/ext/fts5/fts5_test_tok.c 
+  $(TOP)/ext/fts5/fts5_test_tok.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -422,6 +423,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
+  $(TOP)/ext/misc/stmt.c \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/test_session.c 
 
@@ -487,7 +489,8 @@ TESTPROGS = \
   sqlite3_analyzer$(EXE) \
   sqlite3_checker$(EXE) \
   sqldiff$(EXE) \
-  dbhash$(EXE)
+  dbhash$(EXE) \
+  sqltclsh$(EXE)
 
 # Databases containing fuzzer test cases
 #
@@ -505,6 +508,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra compiler options for various shell tools
 #
 SHELL_OPT += -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+SHELL_OPT += -DSQLITE_ENABLE_RTREE
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
@@ -693,11 +697,15 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source files that go into making shell.c
 SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
+        $(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \
+	$(TOP)/ext/misc/sqlar.c \
 	$(TOP)/ext/expert/sqlite3expert.c \
-	$(TOP)/ext/expert/sqlite3expert.h
+	$(TOP)/ext/expert/sqlite3expert.h \
+	$(TOP)/ext/misc/zipfile.c \
+        $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
 	tclsh $(TOP)/tool/mkshellc.tcl >shell.c
@@ -815,6 +823,12 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
+
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl
+	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
+
+sqltclsh$(EXE): sqltclsh.c
+	$(TCCX) $(TCL_FLAGS) sqltclsh.c -o $@ $(LIBTCL) $(THREADLIB) 
 
 sqlite3_expert$(EXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
 	$(TCCX) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert$(EXE) $(THREADLIB)

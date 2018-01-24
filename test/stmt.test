@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
+
 do_test stmt-1.1 {
   execsql { CREATE TABLE t1(a integer primary key, b INTEGER NOT NULL) }
 } {}

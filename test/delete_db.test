@@ -17,6 +17,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix delete_db
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
+
 proc delete_all {} {
   foreach f [glob -nocomplain test2*] { file delete $f }
   foreach f [glob -nocomplain test3*] { file delete $f }

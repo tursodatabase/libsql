@@ -5252,16 +5252,15 @@ static int doLsmSingleWork(
   /* If the in-memory part of the free-list is too large, write a new 
   ** top-level containing just the in-memory free-list entries to disk. */
   if( rc==LSM_OK && pDb->pWorker->freelist.nEntry > pDb->nMaxFreelist ){
-    int nPg = 0;
     while( rc==LSM_OK && lsmDatabaseFull(pDb) ){
+      int nPg = 0;
       rc = sortedWork(pDb, 16, nMerge, 1, &nPg);
       nRem -= nPg;
     }
     if( rc==LSM_OK ){
       rc = sortedNewFreelistOnly(pDb);
     }
-    nRem -= nPg;
-    if( nPg ) bDirty = 1;
+    bDirty = 1;
   }
 
   if( rc==LSM_OK ){
