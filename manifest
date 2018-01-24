@@ -1,5 +1,5 @@
-C Improved\serror\smessage\soutput\swhen\sthe\sbtreeinfo.c\sextension\sis\srun\sin\na\sconnection\sthat\slacks\ssqlite_dbpage\ssupport.
-D 2018-01-24T13:15:56.698
+C Adjust\sthe\sfts3rank.test\smodule\sso\sthat\sit\sworks\son\sbig-endian\ssystems\n(hopefully\s-\sI\sdon't\shave\sa\sbig-endian\smachine\sto\stest\sthe\schange\son.)
+D 2018-01-24T14:39:18.624
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -894,7 +894,7 @@ F test/fts3offsets.test b85fd382abdc78ebce721d8117bd552dfb75094c
 F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test f33eb71a1fe1084ea585eeb7ee76b390729f5170
-F test/fts3rank.test e4d2e16a28c98cae95001a75e2b4b05b19b051ffd6aaab15491c5e0595127b9b
+F test/fts3rank.test cd99bc83a3c923c8d52afd90d86979cf05fc41849f892faeac3988055ef37b99
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
 F test/fts3snippet.test 01a4231816e03a0660ae53ba2404fe69012fe0db
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61a44961b5811c993ae8d4f820a21a0ee739fe5e88cbfe5e4190e0091912ca19
-R 9aa3fb89b7c642ba6cb5e4ab21b67bf7
+P 461b0b81b2acedb1b9ca520657518d6778417c375aeb58c41ead840b75a6d985
+R d7da84a0a0cbf9001c093c5227ed5c74
 U drh
-Z 08e16fd59762f7c574401c408bcad9ff
+Z d9c76d204a4febeaadf3db9edf524e66
