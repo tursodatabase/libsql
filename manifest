@@ -1,5 +1,5 @@
-C Reorganize\sspellfix.c\sto\smake\sit\seasier\sto\sedit\sautomatically\s(e.g.\susing\sa\s\nscript).\sNo\schanges\sto\sfunctionality.
-D 2018-01-24T18:28:39.575
+C When\sunpacking\sa\ssorter\srecord,\sdo\sso\sfrom\sright\sto\sleft\sinstead\sof\sleft\sto\nright,\ssince\sby\sstarting\swith\sthe\sright-most\scolumn,\sthe\swork\sdone\sby\nOP_Column\sopcodes\sis\sreduced.
+D 2018-01-24T20:42:42.319
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -487,7 +487,7 @@ F src/printf.c 9506b4b96e59c0467047155f09015750cb2878aeda3d39e5610c1192ddc3c41c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
+F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
 F src/shell.c.in 7cea439c3f7f2e4ed6eb4b3a633cd93dccb1349241400de4da0c1291285ed514
 F src/sqlite.h.in 51f9acf52c80113d793ddd38b3940ad6895d97b4752503b19291fb8fcbf54c5e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ddf5292cc0411ec6fcb7399ecf2904c899e0488404d3f65490fbe1db15efdf4
-R 9f30c4a7d442a62a313819b7586e7fb7
-U dan
-Z 5b6a5ad739adf30d436b457769ddc2cb
+P 090a64faaac579c6ed1cddb02d14e7089468a4aeaeec11e78d461790bcb6eb0a
+R 36fadb5748a2d2919f267681ce3c3a75
+U drh
+Z 4006c7b9f32358fa0bed65eb183dba8e
