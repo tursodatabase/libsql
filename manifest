@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.23.0\sfor\sthe\snext\sdevelopment\scycle.
-D 2018-01-23T20:22:15.707
+C Invoke\sthe\ssqlite3_complete()\sinterface\sfrom\sthe\sfuzzer.
+D 2018-01-24T01:02:23.624
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -1114,7 +1114,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c 7f5cc87a0280a5854c1bfa7d5c4d07d34731f08ec34dc9c916aa35ed292b1468
+F test/ossfuzz.c b4bb024f9713a4c4e6442df1e6882ef53e29b4a3c27190a0562c16edab69052a
 F test/ossshell.c 296ab63067841bd1b1e97b46a0b2af48ee7f69d50d1a723008bee12dd7122622
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test f596d3bd53ce96e1d87d44d223d2ae6c8867dd782c425e5eb28b5721fa6aaa97
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b9c8eab60b692e45c55a718d76b70e63040416040696907463692cbf83fb0c5
-R 9d516b9e9b7b18aa4204187b9b851494
+P b58b60b2c0729b73c0ef35bd1a5aa90965d1c01043413ca45b412d8b68f59bce
+R 77d670e2fdf91ca12668cb80fdb4cad4
 U drh
-Z 99c4b4459effdc8153fba53651e59b2d
+Z 7daabf9677fc11b22b33a4599e9eabe2
