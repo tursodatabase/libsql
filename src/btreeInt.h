@@ -566,8 +566,8 @@ struct BtCursor {
 **   Do nothing else with this cursor.  Any attempt to use the cursor
 **   should return the error code stored in BtCursor.skipNext
 */
-#define CURSOR_INVALID           0
-#define CURSOR_VALID             1
+#define CURSOR_VALID             0
+#define CURSOR_INVALID           1
 #define CURSOR_SKIPNEXT          2
 #define CURSOR_REQUIRESEEK       3
 #define CURSOR_FAULT             4

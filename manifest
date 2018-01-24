@@ -1,5 +1,5 @@
-C Adjust\sthe\sfts3rank.test\smodule\sso\sthat\sit\sworks\son\sbig-endian\ssystems\n(hopefully\s-\sI\sdon't\shave\sa\sbig-endian\smachine\sto\stest\sthe\schange\son.)
-D 2018-01-24T14:39:18.624
+C Interchange\sthe\snumeric\scodes\sfor\sCURSOR_VALID\sand\sCURSOR_INVALID\sto\sobtain\na\ssmall\ssize\sdecrease\sand\sperformance\sincrease.
+D 2018-01-24T14:40:01.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -430,7 +430,7 @@ F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 1beceb1c5f9563271241fd0c294484668e4ad28cf6aa970eab70e50ff6f75e25
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
-F src/btreeInt.h 55b702efce17e5d1941865464227d3802cfc9c7c832fac81d4c94dced47a71fc
+F src/btreeInt.h 6e70d15435b60a29386ae9864875618ca225c31bf815038bbd8f510a66bb9cb1
 F src/build.c 9f9647454f236cab097f266ae970f899b53c71cadab6756c47e2b2e81392c2a1
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 461b0b81b2acedb1b9ca520657518d6778417c375aeb58c41ead840b75a6d985
-R d7da84a0a0cbf9001c093c5227ed5c74
+P e4766cabdf64d8e998048ae43154466fc9c3fad0b86102a42b65122abfcbbe55
+R db620f4cdcf6bbd9d15c47f8bc8f1349
 U drh
-Z d9c76d204a4febeaadf3db9edf524e66
+Z 93685aa7f4c0affe18e092c9d91e885b
