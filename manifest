@@ -1,5 +1,5 @@
-C Fix\sa\sformatting\sissue\sin\ssqlite3_prepare_v3()\sdocumentation.\s\sNo\schanges\nto\scode.
-D 2018-01-24T11:29:42.778
+C Prevent\sa\sharmless\sunused\svariable\swarning\swhen\scompiling\swith\nSQLITE_OMIT_TRACE.
+D 2018-01-24T12:14:43.331
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -555,7 +555,7 @@ F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c ef4a5f904d942e660abade7fbf3e6bdb402dabe9e7c27f3361ecf40b945538b5
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 5aa6fb85281b6af058d2a87b65c1a8a8e0bd2fe554fb3391497ee3702b61e0be
+F src/vdbe.c d4684bd5efad095d9e4405e5ca2e1168dc7aff643cae04c424e4bade70641d70
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
 F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6185d190e250faae0d979a24cb1039c7fce178478ae75df8e4af1d94cd38c18e
-R 6dab6bedb07a7e4f2ba5c731abd1af01
+P 9e6066de84285252fb8999a8d8e02a46c5bb6c822e4f7421ad3911687357ee5d
+R 7e73e9644a1ec009a08fcc00aee933cc
 U drh
-Z b088841a3f96415d8879d1e430cf291c
+Z e8177042bd88031a5c0c9d9fb215dabd

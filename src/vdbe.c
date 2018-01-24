@@ -7107,8 +7107,10 @@ case OP_Function: {
 */
 case OP_Trace:
 case OP_Init: {          /* jump */
-  char *zTrace;
   int i;
+#ifndef SQLITE_OMIT_TRACE
+  char *zTrace;
+#endif
 
   /* If the P4 argument is not NULL, then it must be an SQL comment string.
   ** The "--" string is broken up to prevent false-positives with srcck1.c.
