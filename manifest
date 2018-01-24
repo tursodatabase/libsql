@@ -1,5 +1,5 @@
-C Update\sa\scouple\sof\stest\sscripts\sso\sthat\sthey\swork\son\sF2FS\sfile-systems\sthat\nsupport\satomic\stransactions.
-D 2018-01-24T06:30:10.922
+C Fix\sthe\ssqlite3ext.h\sheader\sfile\sso\sthat\sit\scorrectly\saccesses\sthe\nnew\ssqlite3_value_nochange()\sand\ssqlite3_vtab_collation()\sinterfaces.
+D 2018-01-24T11:25:59.042
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -490,7 +490,7 @@ F src/select.c bebe7cce45d899d2237c76bce059d525abf5b861f2fce92f6b53914a961c01ba
 F src/shell.c.in 7cea439c3f7f2e4ed6eb4b3a633cd93dccb1349241400de4da0c1291285ed514
 F src/sqlite.h.in 959deaad89679e31d7f68fda668b0c5d1f592fffed7a9c1740fb8ded4e4e754a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 99189e7611eb0bf98f21c7835dc74730a84e2e809c98e1e31c33896dee7a2849
+F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
 F src/sqliteInt.h 9c70315598b34810a83e4894455acb18e95cf63ce4e6cbb451ac2d17eabc2544
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
@@ -1700,7 +1700,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c3e816cca4ddf0967c4c790cdde2345101dde3f2d854e62589f1ac1d7f3c60b8
-R 43ada520e2e68e9100c12d4e5015a43b
-U dan
-Z 212cc80a5ee1b25bc75e6299ee001b27
+P 49e58e645e0c114c71935a3b7fa4771e8a23e28127efd2efe0f2f18813c8f391
+R f4b5f9525aa88d51005feed4871dc3a5
+U drh
+Z 5d5ae0811eec10d9ce697f3704c67092
