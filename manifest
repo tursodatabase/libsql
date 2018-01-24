@@ -1,10 +1,10 @@
-C Interchange\sthe\snumeric\scodes\sfor\sCURSOR_VALID\sand\sCURSOR_INVALID\sto\sobtain\na\ssmall\ssize\sdecrease\sand\sperformance\sincrease.
-D 2018-01-24T14:40:01.721
+C Add\sthe\snormalize.c\sextension.
+D 2018-01-24T15:07:37.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
+F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc ede26e3fb675e0b3b07627640ce5917154a6ee7f8f2c97424eb5ab5f651cbd56
+F Makefile.msc b5e9eb7212c5a61d4800172c710376d1158fd5eea2edc0be8e05c0c372e767e4
 F README.md d748f58e3ab0fe0307fb4ae0942b415d93dcc4288756e366cc9e7cf8260c093f
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -284,6 +284,7 @@ F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
+F ext/misc/normalize.c 19262ef3ef29d4de2f281b423326865c8916c63d0cb09f1dc98d24d5c1e8ba64
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
@@ -409,7 +410,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 4d19895cb268021474ade6244119c80b8a3f1d910cb5b13cf5e04f5f37c3d61b
+F main.mk c8c473bd91d553acab3fb0608ddb69fc769c7bcf6d9e258800504bfda86c792b
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -496,7 +497,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 11a2618c227fd13ccad73ee02d1199f9880c59db2b3144fd7432db1980a2577d
-F src/test1.c b52f9e7fe62016d357c3266fcfa0793cc1883d3cb2b11dfa39fcba2e70b0305c
+F src/test1.c 1ab7cbbb6693e08364c1a9241e2aee17f8c4925e4cc52396be77ae6845a05828
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1095,6 +1096,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 9a436a7213ba5ef7a32304998d386d3ea3f76c9d
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
+F test/normalize.test 501630ab49b0b26b65c74124bf03e3374c1b57fa97aae750f84803609141d167
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1700,7 +1702,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4766cabdf64d8e998048ae43154466fc9c3fad0b86102a42b65122abfcbbe55
-R db620f4cdcf6bbd9d15c47f8bc8f1349
+P e0f192ea6dda4fa0b243d58c8ce41932519141bcae0689a90318b4f866f54edd 658f42257d56a3562dfa8e55023c6e497f55c565cd751d942de3a9e0cb2fa708
+R 01bd832eb21dc9b5a19a52a2b0f11c48
+T +closed 658f42257d56a3562dfa8e55023c6e497f55c565cd751d942de3a9e0cb2fa708
 U drh
-Z 93685aa7f4c0affe18e092c9d91e885b
+Z 043a35201b0c771ecddffe95c53bb65f
