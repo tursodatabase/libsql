@@ -2289,11 +2289,11 @@ case OP_IfNot: {            /* jump, in1 */
   if( pIn1->flags & MEM_Null ){
     c = pOp->p3;
   }else{
-#ifdef SQLITE_OMIT_FLOATING_POINT
-    c = sqlite3VdbeIntValue(pIn1)!=0;
-#else
-    c = sqlite3VdbeRealValue(pIn1)!=0.0;
-#endif
+    if( pIn1->flags & MEM_Int ){
+      c = pIn1->u.i!=0;
+    }else{
+      c = sqlite3VdbeRealValue(pIn1)!=0.0;
+    }
     if( pOp->opcode==OP_IfNot ) c = !c;
   }
   VdbeBranchTaken(c!=0, 2);

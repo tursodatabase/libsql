@@ -1,5 +1,5 @@
-C When\sunpacking\sa\ssorter\srecord,\sdo\sso\sfrom\sright\sto\sleft\sinstead\sof\sleft\sto\nright,\ssince\sby\sstarting\swith\sthe\sright-most\scolumn,\sthe\swork\sdone\sby\nOP_Column\sopcodes\sis\sreduced.
-D 2018-01-24T20:42:42.319
+C Slightly\ssmaller\sand\sfaster\simplementation\sof\sOP_If\sand\sOP_IfNot.
+D 2018-01-25T01:20:29.953
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -556,7 +556,7 @@ F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c ef4a5f904d942e660abade7fbf3e6bdb402dabe9e7c27f3361ecf40b945538b5
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c d4684bd5efad095d9e4405e5ca2e1168dc7aff643cae04c424e4bade70641d70
+F src/vdbe.c 0e13b8c33a9ecf236b3045f190fb58933049582307b621cbd924b6582a2b705f
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
 F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 090a64faaac579c6ed1cddb02d14e7089468a4aeaeec11e78d461790bcb6eb0a
-R 36fadb5748a2d2919f267681ce3c3a75
+P 8055e4f42446ceb5bcf752bbf41a73289c3ca759c56c9f779edc3d7f202b7881
+R 3a57ffa9e8084df96fa05ea7edc4d068
 U drh
-Z 4006c7b9f32358fa0bed65eb183dba8e
+Z 1f11fb78272f5afcdf3b192bdf3cca0d
