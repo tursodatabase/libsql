@@ -595,7 +595,7 @@ static int compare2pow63(const char *zNum, int incr){
 ** Returns:
 **
 **     0    Successful transformation.  Fits in a 64-bit signed integer.
-**     1    Excess text after the integer value
+**     1    Excess non-space text after the integer value
 **     2    Integer too large for a 64-bit signed integer or is malformed
 **     3    Special case of 9223372036854775808
 **
@@ -638,47 +638,51 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
     u = u*10 + c - '0';
   }
-  if( u>LARGEST_INT64 ){
-    *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
-  }else if( neg ){
+  testcase( i==18*incr );
+  testcase( i==19*incr );
+  testcase( i==20*incr );
+  if( neg ){
     *pNum = -(i64)u;
   }else{
     *pNum = (i64)u;
   }
-  testcase( i==18 );
-  testcase( i==19 );
-  testcase( i==20 );
-  if( &zNum[i]<zEnd              /* Extra bytes at the end */
-   || (i==0 && zStart==zNum)     /* No digits */
+  rc = 0;
+  if( (i==0 && zStart==zNum)     /* No digits */
    || nonNum                     /* UTF16 with high-order bytes non-zero */
   ){
     rc = 1;
-  }else{
-    rc = 0;
+  }else if( &zNum[i]<zEnd ){     /* Extra bytes at the end */
+    int jj = i;
+    do{
+      if( !sqlite3Isspace(zNum[jj]) ){
+        rc = 1;          /* Extra non-space text after the integer */
+        break;
+      }
+      jj += incr;
+    }while( &zNum[jj]<zEnd );
   }
-  if( i>19*incr ){                /* Too many digits */
-    /* zNum is empty or contains non-numeric text or is longer
-    ** than 19 digits (thus guaranteeing that it is too large) */
-    return 2;
-  }else if( i<19*incr ){
+  if( i<19*incr ){
     /* Less than 19 digits, so we know that it fits in 64 bits */
     assert( u<=LARGEST_INT64 );
     return rc;
   }else{
     /* zNum is a 19-digit numbers.  Compare it against 9223372036854775808. */
-    c = compare2pow63(zNum, incr);
+    c = i>19*incr ? 1 : compare2pow63(zNum, incr);
     if( c<0 ){
       /* zNum is less than 9223372036854775808 so it fits */
       assert( u<=LARGEST_INT64 );
       return rc;
-    }else if( c>0 ){
-      /* zNum is greater than 9223372036854775808 so it overflows */
-      return 2;
     }else{
-      /* zNum is exactly 9223372036854775808.  Fits if negative.  The
-      ** special case 2 overflow if positive */
-      assert( u-1==LARGEST_INT64 );
-      return neg ? rc : 3;
+      *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
+      if( c>0 ){
+        /* zNum is greater than 9223372036854775808 so it overflows */
+        return 2;
+      }else{
+        /* zNum is exactly 9223372036854775808.  Fits if negative.  The
+        ** special case 2 overflow if positive */
+        assert( u-1==LARGEST_INT64 );
+        return neg ? rc : 3;
+      }
     }
   }
 }
