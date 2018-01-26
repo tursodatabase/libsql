@@ -22,6 +22,20 @@ if {[catch {load_static_extension db zipfile} error]} {
   finish_test; return
 }
 
+proc do_zipfile_blob_test {tn file} {
+  set res1 [
+    db eval { SELECT name,mode,mtime,method,quote(data) FROM zipfile($file) }
+  ]
+
+  set fd [open $file]
+  fconfigure $fd -translation binary -encoding binary
+  set data [read $fd]
+  close $fd
+
+  set res2 [db eval { SELECT name,mode,mtime,method,quote(data) FROM zipfile($data) }]
+  uplevel [list do_test $tn [list set {} $res2] $res1]
+}
+
 forcedelete test.zip
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE temp.zz USING zipfile('test.zip');
@@ -60,12 +74,14 @@ do_execsql_test 1.2 {
   f.txt 1000000000 abcde 
   g.txt 1000000002 12345
 }
+do_zipfile_blob_test 1.2.1 test.zip
 
 do_execsql_test 1.3 {
   INSERT INTO zz(name, mode, mtime, data) VALUES('h.txt', 
     '-rw-r--r--', 1000000004, 'aaaaaaaaaabbbbbbbbbb'
   );
 }
+do_zipfile_blob_test 1.3.1 test.zip
 
 do_execsql_test 1.4 {
   SELECT name, mtime, data, method FROM zipfile('test.zip');
@@ -112,6 +128,7 @@ do_execsql_test 1.6.1 {
   h.txt 33188 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 1000000006 zxcvb 0
 }
+do_zipfile_blob_test 1.6.1a test.zip
 
 do_execsql_test 1.6.2 {
   UPDATE zz SET mtime=4 WHERE name='i.txt';
@@ -130,6 +147,7 @@ do_execsql_test 1.6.3 {
   h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 4 zxcvb 0
 }
+do_zipfile_blob_test 1.6.3a test.zip
 
 do_execsql_test 1.6.4 {
   UPDATE zz SET name = 'blue.txt' WHERE name='f.txt';
@@ -139,6 +157,7 @@ do_execsql_test 1.6.4 {
   h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 4 zxcvb 0
 }
+do_zipfile_blob_test 1.6.4a test.zip
 
 do_execsql_test 1.6.5 {
   UPDATE zz SET data = 'edcba' WHERE name='blue.txt';
@@ -199,6 +218,7 @@ do_execsql_test 2.4 {
   dirname2/ 16877 {}
   dirname2/file1.txt 33188 abcdefghijklmnop
 }
+do_zipfile_blob_test 2.4.1 test.zip
 
 # If on unix, check that the [unzip] utility can unpack our archive.
 #
