@@ -1,5 +1,5 @@
-C If\sthe\sargument\sto\stable\sfunction\szipfile()\sis\sa\sblob\s(not\stext),\sassume\sthat\nit\scontains\sa\szip\sfile\simage\sto\sinterpret,\snot\sthe\sname\sof\sa\sfile\son\sdisk.
-D 2018-01-26T18:59:25.439
+C Fix\sthe\squery\splanner\sso\sthat\sit\stakes\sinto\saccount\sdependencies\sin\sthe\narguments\sto\stable-valued\sfunctions\sin\ssubexpressions\sin\sthe\sWHERE\sclause.\nFix\sfor\sticket\s[80177f0c226ff54f6dd].
+D 2018-01-26T22:41:59.788
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -573,7 +573,7 @@ F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c caf0b6c9d31f22f0b2c91aba723858de52b5d665aaa89034099015aaf9bb8219
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c cb360c511f69294ddf00340d7b390e6b1d601a1cfb77b42c4d316fe2f4cd01c3
-F src/whereexpr.c 427ea8e96ec24f2a7814c67b8024ad664a9c7656264c4566c34743cb23186e46
+F src/whereexpr.c 22dbfd3bf5f6051a61523dd0ebef7a944fb29ee4aa7d2a62feb8aac6ffbbc0eb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1012,7 +1012,7 @@ F test/journal3.test c9c29883f5bf535ae82ae21c472df6263806a22e467b6db7cd0d6d54530
 F test/jrnlmode.test a6693f2bed4541a21e703aaa37bb3e10de154130645952933b82b2dec0a8b539
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test d7cdf3e6731d41e0c4bde1c88806abd17f1f478486a1409933c1d8eac9120095
+F test/json101.test 24e97954e3bd6404f3715888c7f8f835e36e19c7ae6513b5d9ab2d381498962d
 F test/json102.test eeb54efa221e50b74a2d6fb9259963b48d7414dca3ce2fdfdeed45cb28487bc1
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/json104.test 877d5845f6303899b7889ea5dd1bea99076e3100574d5c536082245c5805dcaa
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ace0644a1a2a42a3ea42d44f00a31915b8a7e56c9ba90f90a6c02001f89f9c86
-R 6f618424b3fb9707a3fb679f6f287314
-U dan
-Z ab7fcdd492fa54ea891500a7623bc431
+P 029ebcd30cb261d949f7587ac54c23d7479796b6716fd4ca7512361b8f32de3e
+R 53bd80b0955af3fa0129a178c0e00c7d
+U drh
+Z 5dfc01b033acb2ff4461347ae9c97b23
