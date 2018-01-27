@@ -47,7 +47,7 @@ bitflags! {
         // output in descending order
         const DESC  = 8;
         // Both start and stop
-        const BOTH  = START.bits | STOP.bits;
+        const BOTH  = QueryPlanFlags::START.bits | QueryPlanFlags::STOP.bits;
     }
 }
 
@@ -84,21 +84,21 @@ impl VTab<SeriesTabCursor> for SeriesTab {
             if !constraint.is_usable() {
                 continue;
             }
-            if constraint.operator() != vtab::SQLITE_INDEX_CONSTRAINT_EQ {
+            if constraint.operator() != vtab::IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
                 continue;
             }
             match constraint.column() {
                 SERIES_COLUMN_START => {
                     start_idx = Some(i);
-                    idx_num |= START;
+                    idx_num |= QueryPlanFlags::START;
                 }
                 SERIES_COLUMN_STOP => {
                     stop_idx = Some(i);
-                    idx_num |= STOP;
+                    idx_num |= QueryPlanFlags::STOP;
                 }
                 SERIES_COLUMN_STEP => {
                     step_idx = Some(i);
-                    idx_num |= STEP;
+                    idx_num |= QueryPlanFlags::STEP;
                 }
                 _ => {}
             };
@@ -123,13 +123,13 @@ impl VTab<SeriesTabCursor> for SeriesTab {
             constraint_usage.set_argv_index(num_of_arg);
             constraint_usage.set_omit(true);
         }
-        if idx_num.contains(BOTH) {
+        if idx_num.contains(QueryPlanFlags::BOTH) {
             // Both start= and stop= boundaries are available.
-            info.set_estimated_cost((2 - if idx_num.contains(STEP) { 1 } else { 0 }) as f64);
+            info.set_estimated_cost((2 - if idx_num.contains(QueryPlanFlags::STEP) { 1 } else { 0 }) as f64);
             info.set_estimated_rows(1000);
             if info.num_of_order_by() == 1 {
                 if info.is_order_by_desc(0) {
-                    idx_num |= DESC;
+                    idx_num |= QueryPlanFlags::DESC;
                 }
                 info.set_order_by_consumed(true);
             }
@@ -182,19 +182,19 @@ impl VTabCursor<SeriesTab> for SeriesTabCursor {
               -> Result<()> {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;
-        if idx_num.contains(START) {
+        if idx_num.contains(QueryPlanFlags::START) {
             self.min_value = try!(args.get(i));
             i += 1;
         } else {
             self.min_value = 0;
         }
-        if idx_num.contains(STOP) {
+        if idx_num.contains(QueryPlanFlags::STOP) {
             self.max_value = try!(args.get(i));
             i += 1;
         } else {
             self.max_value = 0xffffffff;
         }
-        if idx_num.contains(STEP) {
+        if idx_num.contains(QueryPlanFlags::STEP) {
             self.step = try!(args.get(i));
             if self.step < 1 {
                 self.step = 1;
@@ -202,7 +202,7 @@ impl VTabCursor<SeriesTab> for SeriesTabCursor {
         } else {
             self.step = 1;
         };
-        self.is_desc = idx_num.contains(DESC);
+        self.is_desc = idx_num.contains(QueryPlanFlags::DESC);
         if self.is_desc {
             self.value = self.max_value;
             if self.step > 1 {
