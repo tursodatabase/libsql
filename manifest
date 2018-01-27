@@ -1,5 +1,5 @@
-C Fix\sthe\squery\splanner\sso\sthat\sit\stakes\sinto\saccount\sdependencies\sin\sthe\narguments\sto\stable-valued\sfunctions\sin\ssubexpressions\sin\sthe\sWHERE\sclause.\nFix\sfor\sticket\s[80177f0c226ff54f6dd].
-D 2018-01-26T22:41:59.788
+C Fix\scompiler\swarnings\sin\szipfile.c.
+D 2018-01-27T03:26:10.457
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -304,7 +304,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 071fb5af4d0e6403f01cfac755d78ed2008b04793ec6f87a1078755a6359a26f
+F ext/misc/zipfile.c 40195c1cfb43e0ebdf176d37346fea1cb18246e35fbfce477eadc2ff5f7490df
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 029ebcd30cb261d949f7587ac54c23d7479796b6716fd4ca7512361b8f32de3e
-R 53bd80b0955af3fa0129a178c0e00c7d
+P 7daa687340e475972d6849f84fe1419a1f5700934f53fd80656849adc73d6d04
+R db0d53a567e4f3bfdfebf8c5b2a2a369
 U drh
-Z 5dfc01b033acb2ff4461347ae9c97b23
+Z 1789fd20b7b2fb64dfc10fb2cef79caf

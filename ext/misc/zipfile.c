@@ -504,10 +504,6 @@ static void zipfilePutU32(u8 *aBuf, u32 val){
 #define zipfileWrite32(aBuf,val) { zipfilePutU32(aBuf,val); aBuf+=4; }
 #define zipfileWrite16(aBuf,val) { zipfilePutU16(aBuf,val); aBuf+=2; }
 
-static u8* zipfileCsrBuffer(ZipfileCsr *pCsr){
-  return ((ZipfileTab*)(pCsr->base.pVtab))->aBuffer;
-}
-
 /*
 ** Magic numbers used to read CDS records.
 */
@@ -649,7 +645,7 @@ static int zipfileGetEntry(
   int rc = SQLITE_OK;
 
   if( aBlob==0 ){
-    aRead = pTab->aBuffer;
+    aRead = (u8*)pTab->aBuffer;
     rc = zipfileReadData(pFile, aRead, ZIPFILE_CDS_FIXED_SZ, iOff, pzErr);
   }else{
     aRead = (u8*)&aBlob[iOff];
@@ -703,7 +699,7 @@ static int zipfileGetEntry(
       if( pFile ){
         rc = zipfileReadData(pFile, aRead, szFix, pNew->cds.iOffset, pzErr);
       }else{
-        aRead = &aBlob[pNew->cds.iOffset];
+        aRead = (u8*)&aBlob[pNew->cds.iOffset];
       }
 
       rc = zipfileReadLFH(aRead, &lfh);
