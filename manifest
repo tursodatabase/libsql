@@ -1,5 +1,5 @@
-C If\sa\szipfile\svirtual\stable\sis\screated\swith\sno\sargument\s-\s"CREATE\sVIRTUAL\sTABLE\nzzz\sUSING\szipfile()"\s-\saccumulate\sdata\sin\smemory.\sSupport\s"SELECT\nzipfile_blob(z)\sFROM\szzz\sLIMIT\s1"\sto\sretrieve\sa\szip\sarchive\simage.
-D 2018-01-27T16:29:59.042
+C Fix\smissing\sheader\scomments\sand\sother\scode\sissues\sin\szipfile.c.
+D 2018-01-27T18:55:18.394
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -304,7 +304,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c df57128d9ad2a1e60097d7971e787b582fb66ce0926577cb6f5978f7af210b8c
+F ext/misc/zipfile.c 398f53469ed90076dd5d69494eb7f1bd01a42d402fc5dbe92374178887244805
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19f5c1400054df10688ab448e7e23afef97cab4a7c7a3e411f7527509b515dd8
-R 8b2b96d9b8d1e07c4df7e0d2971e5e57
+P e63185edfe0c316aa60c1fa085d032425ecc7db54536dfa5a977772eaf3c240e
+R 347b5f95fee3abc6c3f7640c1a70a4d4
 U dan
-Z e468bfc5bd8b08bb5b9404b26ad000bc
+Z faf05f7eafa9394c044e435efe4a986b

@@ -93,6 +93,9 @@ static const char ZIPFILE_SCHEMA[] =
 **
 ** ZIPFILE_SIGNATURE_LFH:
 **   First 4 bytes of a valid LFH record.
+**
+** ZIPFILE_SIGNATURE_EOCD
+**   First 4 bytes of a valid EOCD record.
 */
 #define ZIPFILE_EXTRA_TIMESTAMP   0x5455
 #define ZIPFILE_NEWENTRY_MADEBY   ((3<<8) + 30)
@@ -101,24 +104,14 @@ static const char ZIPFILE_SCHEMA[] =
 #define ZIPFILE_SIGNATURE_CDS     0x02014b50
 #define ZIPFILE_SIGNATURE_LFH     0x04034b50
 #define ZIPFILE_SIGNATURE_EOCD    0x06054b50
-#define ZIPFILE_LFH_FIXED_SZ      30
-
-#define ZIPFILE_EOCD_FIXED_SZ     22
 
 /*
-** Set the error message contained in context ctx to the results of
-** vprintf(zFmt, ...).
+** The sizes of the fixed-size part of each of the three main data 
+** structures in a zip archive.
 */
-static void zipfileCtxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
-  char *zMsg = 0;
-  va_list ap;
-  va_start(ap, zFmt);
-  zMsg = sqlite3_vmprintf(zFmt, ap);
-  sqlite3_result_error(ctx, zMsg, -1);
-  sqlite3_free(zMsg);
-  va_end(ap);
-}
-
+#define ZIPFILE_LFH_FIXED_SZ      30
+#define ZIPFILE_EOCD_FIXED_SZ     22
+#define ZIPFILE_CDS_FIXED_SZ      46
 
 /*
 *** 4.3.16  End of central directory record:
@@ -227,13 +220,13 @@ struct ZipfileEntry {
   ZipfileCDS cds;            /* Parsed CDS record */
   u32 mUnixTime;             /* Modification time, in UNIX format */
   u8 *aExtra;                /* cds.nExtra+cds.nComment bytes of extra data */
-  i64 iDataOff;
+  i64 iDataOff;              /* Offset to data in file (if aData==0) */
   u8 *aData;                 /* cds.szCompressed bytes of compressed data */
   ZipfileEntry *pNext;       /* Next element in in-memory CDS */
 };
 
 /* 
-** Cursor type for recursively iterating through a directory structure.
+** Cursor type for zipfile tables.
 */
 typedef struct ZipfileCsr ZipfileCsr;
 struct ZipfileCsr {
@@ -247,22 +240,10 @@ struct ZipfileCsr {
   i64 iNextOff;              /* Offset of next record in central directory */
   ZipfileEOCD eocd;          /* Parse of central directory record */
 
-  ZipfileEntry *pFreeEntry;
-
+  ZipfileEntry *pFreeEntry;  /* Free this list when cursor is closed or reset */
   ZipfileEntry *pCurrent;    /* Current entry */
   ZipfileCsr *pCsrNext;      /* Next cursor on same virtual table */
 };
-
-/*
-** Possible values for ZipfileCsr.eType. Set in zipfileFilter().
-*/
-#define ZIPFILE_CSR_LIST 1        /* Cursor reads from ZipfileTab.pFirstEntry */
-#define ZIPFILE_CSR_FILE 2        /* Cursor reads from file on disk */
-
-/*
-** Values for ZipfileCsr.flags.
-*/
-#define ZIPFILE_NOOP_NEXT   0x0002     /* Next xNext() is a no-op */
 
 typedef struct ZipfileTab ZipfileTab;
 struct ZipfileTab {
@@ -281,6 +262,24 @@ struct ZipfileTab {
   i64 szOrig;                /* Size of archive at start of transaction */
 };
 
+/*
+** Set the error message contained in context ctx to the results of
+** vprintf(zFmt, ...).
+*/
+static void zipfileCtxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
+  char *zMsg = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+  zMsg = sqlite3_vmprintf(zFmt, ap);
+  sqlite3_result_error(ctx, zMsg, -1);
+  sqlite3_free(zMsg);
+  va_end(ap);
+}
+
+/*
+** If string zIn is quoted, dequote it in place. Otherwise, if the string
+** is not quoted, do nothing.
+*/
 static void zipfileDequote(char *zIn){
   char q = zIn[0];
   if( q=='"' || q=='\'' || q=='`' || q=='[' ){
@@ -340,6 +339,9 @@ static int zipfileConnect(
   return rc;
 }
 
+/*
+** Free the ZipfileEntry structure indicated by the only argument.
+*/
 static void zipfileEntryFree(ZipfileEntry *p){
   if( p ){
     sqlite3_free(p->cds.zFile);
@@ -347,6 +349,10 @@ static void zipfileEntryFree(ZipfileEntry *p){
   }
 }
 
+/*
+** Release resources that should be freed at the end of a write 
+** transaction.
+*/
 static void zipfileCleanupTransaction(ZipfileTab *pTab){
   ZipfileEntry *pEntry;
   ZipfileEntry *pNext;
@@ -446,6 +452,16 @@ static void zipfileSetErrmsg(ZipfileCsr *pCsr, const char *zFmt, ...){
   va_end(ap);
 }
 
+/*
+** Read nRead bytes of data from offset iOff of file pFile into buffer
+** aRead[]. Return SQLITE_OK if successful, or an SQLite error code
+** otherwise. 
+**
+** If an error does occur, output variable (*pzErrmsg) may be set to point
+** to an English language error message. It is the responsibility of the
+** caller to eventually free this buffer using
+** sqlite3_free().
+*/
 static int zipfileReadData(
   FILE *pFile,                    /* Read from this file */
   u8 *aRead,                      /* Read into this buffer */
@@ -479,9 +495,16 @@ static int zipfileAppendData(
   return SQLITE_OK;
 }
 
+/*
+** Read and return a 16-bit little-endian unsigned integer from buffer aBuf.
+*/
 static u16 zipfileGetU16(const u8 *aBuf){
   return (aBuf[1] << 8) + aBuf[0];
 }
+
+/*
+** Read and return a 32-bit little-endian unsigned integer from buffer aBuf.
+*/
 static u32 zipfileGetU32(const u8 *aBuf){
   return ((u32)(aBuf[3]) << 24)
        + ((u32)(aBuf[2]) << 16)
@@ -489,10 +512,17 @@ static u32 zipfileGetU32(const u8 *aBuf){
        + ((u32)(aBuf[0]) <<  0);
 }
 
+/*
+** Write a 16-bit little endiate integer into buffer aBuf.
+*/
 static void zipfilePutU16(u8 *aBuf, u16 val){
   aBuf[0] = val & 0xFF;
   aBuf[1] = (val>>8) & 0xFF;
 }
+
+/*
+** Write a 32-bit little endiate integer into buffer aBuf.
+*/
 static void zipfilePutU32(u8 *aBuf, u32 val){
   aBuf[0] = val & 0xFF;
   aBuf[1] = (val>>8) & 0xFF;
@@ -509,7 +539,6 @@ static void zipfilePutU32(u8 *aBuf, u32 val){
 /*
 ** Magic numbers used to read CDS records.
 */
-#define ZIPFILE_CDS_FIXED_SZ         46
 #define ZIPFILE_CDS_NFILE_OFF        28
 #define ZIPFILE_CDS_SZCOMPRESSED_OFF 20
 
@@ -548,6 +577,44 @@ static int zipfileReadCDS(u8 *aBuf, ZipfileCDS *pCDS){
 }
 
 /*
+** Decode the LFH record in buffer aBuf into (*pLFH). Return SQLITE_ERROR
+** if the record is not well-formed, or SQLITE_OK otherwise.
+*/
+static int zipfileReadLFH(
+  u8 *aBuffer,
+  ZipfileLFH *pLFH
+){
+  u8 *aRead = aBuffer;
+  int rc = SQLITE_OK;
+
+  u32 sig = zipfileRead32(aRead);
+  if( sig!=ZIPFILE_SIGNATURE_LFH ){
+    rc = SQLITE_ERROR;
+  }else{
+    pLFH->iVersionExtract = zipfileRead16(aRead);
+    pLFH->flags = zipfileRead16(aRead);
+    pLFH->iCompression = zipfileRead16(aRead);
+    pLFH->mTime = zipfileRead16(aRead);
+    pLFH->mDate = zipfileRead16(aRead);
+    pLFH->crc32 = zipfileRead32(aRead);
+    pLFH->szCompressed = zipfileRead32(aRead);
+    pLFH->szUncompressed = zipfileRead32(aRead);
+    pLFH->nFile = zipfileRead16(aRead);
+    pLFH->nExtra = zipfileRead16(aRead);
+  }
+  return rc;
+}
+
+
+/*
+** Buffer aExtra (size nExtra bytes) contains zip archive "extra" fields.
+** Scan through this buffer to find an "extra-timestamp" field. If one
+** exists, extract the 32-bit modification-timestamp from it and store
+** the value in output parameter *pmTime.
+**
+** Zero is returned if no extra-timestamp record could be found (and so
+** *pmTime is left unchanged), or non-zero otherwise.
+**
 ** The general format of an extra field is:
 **
 **   Header ID    2 bytes
@@ -580,6 +647,10 @@ static int zipfileScanExtra(u8 *aExtra, int nExtra, u32 *pmTime){
 }
 
 /*
+** Convert the standard MS-DOS timestamp stored in the mTime and mDate
+** fields of the CDS structure passed as the only argument to a 32-bit
+** UNIX seconds-since-the-epoch timestamp. Return the result.
+**
 ** "Standard" MS-DOS time format:
 **
 **   File modification time:
@@ -590,6 +661,8 @@ static int zipfileScanExtra(u8 *aExtra, int nExtra, u32 *pmTime){
 **     Bits 00-04: day
 **     Bits 05-08: month (1-12)
 **     Bits 09-15: years from 1980 
+**
+** https://msdn.microsoft.com/en-us/library/9kkf9tah.aspx
 */
 static time_t zipfileMtime(ZipfileCDS *pCDS){
   struct tm t;
@@ -605,42 +678,50 @@ static time_t zipfileMtime(ZipfileCDS *pCDS){
   return mktime(&t);
 }
 
-static int zipfileReadLFH(
-  u8 *aBuffer,
-  ZipfileLFH *pLFH
-){
-  u8 *aRead = aBuffer;
-  int rc = SQLITE_OK;
+/*
+** The opposite of zipfileMtime(). This function populates the mTime and
+** mDate fields of the CDS structure passed as the first argument according
+** to the UNIX timestamp value passed as the second.
+*/
+static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
+  time_t t = (time_t)mUnixTime;
+  struct tm res;
 
-  u32 sig = zipfileRead32(aRead);
-  if( sig!=ZIPFILE_SIGNATURE_LFH ){
-    rc = SQLITE_ERROR;
-  }else{
-    pLFH->iVersionExtract = zipfileRead16(aRead);
-    pLFH->flags = zipfileRead16(aRead);
-    pLFH->iCompression = zipfileRead16(aRead);
-    pLFH->mTime = zipfileRead16(aRead);
-    pLFH->mDate = zipfileRead16(aRead);
-    pLFH->crc32 = zipfileRead32(aRead);
-    pLFH->szCompressed = zipfileRead32(aRead);
-    pLFH->szUncompressed = zipfileRead32(aRead);
-    pLFH->nFile = zipfileRead16(aRead);
-    pLFH->nExtra = zipfileRead16(aRead);
-  }
-  return rc;
+#if !defined(_WIN32) && !defined(WIN32)
+  localtime_r(&t, &res);
+#else
+  memcpy(&res, localtime(&t), sizeof(struct tm));
+#endif
+
+  pCds->mTime = (u16)(
+    (res.tm_sec / 2) + 
+    (res.tm_min << 5) +
+    (res.tm_hour << 11));
+
+  pCds->mDate = (u16)(
+    (res.tm_mday-1) +
+    ((res.tm_mon+1) << 5) +
+    ((res.tm_year-80) << 9));
 }
 
 /*
-** Read a Zip archive CDS header from offset iOff of file pFile. Return
-** SQLITE_OK if successful, or an SQLite error code otherwise.
+** If aBlob is not NULL, then it is a pointer to a buffer (nBlob bytes in
+** size) containing an entire zip archive image. Or, if aBlob is NULL,
+** then pFile is a file-handle open on a zip file. In either case, this
+** function creates a ZipfileEntry object based on the zip archive entry
+** for which the CDS record is at offset iOff.
+**
+** If successful, SQLITE_OK is returned and (*ppEntry) set to point to
+** the new object. Otherwise, an SQLite error code is returned and the
+** final value of (*ppEntry) undefined.
 */
 static int zipfileGetEntry(
   ZipfileTab *pTab,               /* Store any error message here */
   const u8 *aBlob,                /* Pointer to in-memory file image */
   int nBlob,                      /* Size of aBlob[] in bytes */
   FILE *pFile,                    /* If aBlob==0, read from this file */
-  i64 iOff,
-  ZipfileEntry **ppEntry
+  i64 iOff,                       /* Offset of CDS record */
+  ZipfileEntry **ppEntry          /* OUT: Pointer to new object */
 ){
   u8 *aRead;
   char **pzErr = &pTab->base.zErrMsg;
@@ -729,12 +810,6 @@ static int zipfileGetEntry(
   return rc;
 }
 
-static FILE *zipfileGetFd(ZipfileCsr *pCsr){
-  if( pCsr->pFile ) return pCsr->pFile;
-  return ((ZipfileTab*)(pCsr->base.pVtab))->pWriteFd;
-}
-
-
 /*
 ** Advance an ZipfileCsr to its next row of output.
 */
@@ -771,27 +846,17 @@ static int zipfileNext(sqlite3_vtab_cursor *cur){
   return rc;
 }
 
-static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mTime){
-  time_t t = (time_t)mTime;
-  struct tm res;
-
-#if !defined(_WIN32) && !defined(WIN32)
-  localtime_r(&t, &res);
-#else
-  memcpy(&res, localtime(&t), sizeof(struct tm));
-#endif
-
-  pCds->mTime = (u16)(
-    (res.tm_sec / 2) + 
-    (res.tm_min << 5) +
-    (res.tm_hour << 11));
-
-  pCds->mDate = (u16)(
-    (res.tm_mday-1) +
-    ((res.tm_mon+1) << 5) +
-    ((res.tm_year-80) << 9));
+static void zipfileFree(void *p) { 
+  sqlite3_free(p); 
 }
 
+/*
+** Buffer aIn (size nIn bytes) contains compressed data. Uncompressed, the
+** size is nOut bytes. This function uncompresses the data and sets the
+** return value in context pCtx to the result (a blob).
+**
+** If an error occurs, an error code is left in pCtx instead.
+*/
 static void zipfileInflate(
   sqlite3_context *pCtx,          /* Store error here, if any */
   const u8 *aIn,                  /* Compressed data */
@@ -819,7 +884,8 @@ static void zipfileInflate(
       if( err!=Z_STREAM_END ){
         zipfileCtxErrorMsg(pCtx, "inflate() failed (%d)", err);
       }else{
-        sqlite3_result_blob(pCtx, aRes, nOut, SQLITE_TRANSIENT);
+        sqlite3_result_blob(pCtx, aRes, nOut, zipfileFree);
+        aRes = 0;
       }
     }
     sqlite3_free(aRes);
@@ -827,6 +893,18 @@ static void zipfileInflate(
   }
 }
 
+/*
+** Buffer aIn (size nIn bytes) contains uncompressed data. This function
+** compresses it and sets (*ppOut) to point to a buffer containing the
+** compressed data. The caller is responsible for eventually calling
+** sqlite3_free() to release buffer (*ppOut). Before returning, (*pnOut) 
+** is set to the size of buffer (*ppOut) in bytes.
+**
+** If no error occurs, SQLITE_OK is returned. Otherwise, an SQLite error
+** code is returned and an error message left in virtual-table handle
+** pTab. The values of (*ppOut) and (*pnOut) are left unchanged in this
+** case.
+*/
 static int zipfileDeflate(
   ZipfileTab *pTab,               /* Set error message here */
   const u8 *aIn, int nIn,         /* Input */
@@ -913,12 +991,13 @@ static int zipfileColumn(
             if( aBuf==0 ){
               rc = SQLITE_NOMEM;
             }else{
-              FILE *pFile = zipfileGetFd(pCsr);
-              if( rc==SQLITE_OK ){
-                rc = zipfileReadData(pFile, aBuf, sz, pCsr->pCurrent->iDataOff,
-                    &pCsr->base.pVtab->zErrMsg
-                );
+              FILE *pFile = pCsr->pFile;
+              if( pFile==0 ){
+                pFile = ((ZipfileTab*)(pCsr->base.pVtab))->pWriteFd;
               }
+              rc = zipfileReadData(pFile, aBuf, sz, pCsr->pCurrent->iDataOff,
+                  &pCsr->base.pVtab->zErrMsg
+              );
             }
           }
           if( rc==SQLITE_OK ){
@@ -953,16 +1032,7 @@ static int zipfileColumn(
 }
 
 /*
-** Return the rowid for the current row.
-*/
-static int zipfileRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  assert( 0 );
-  return SQLITE_OK;
-}
-
-/*
-** Return TRUE if the cursor has been moved off of the last
-** row of output.
+** Return TRUE if the cursor is at EOF.
 */
 static int zipfileEof(sqlite3_vtab_cursor *cur){
   ZipfileCsr *pCsr = (ZipfileCsr*)cur;
@@ -970,6 +1040,14 @@ static int zipfileEof(sqlite3_vtab_cursor *cur){
 }
 
 /*
+** If aBlob is not NULL, then it points to a buffer nBlob bytes in size
+** containing an entire zip archive image. Or, if aBlob is NULL, then pFile
+** is guaranteed to be a file-handle open on a zip file.
+**
+** This function attempts to locate the EOCD record within the zip archive
+** and populate *pEOCD with the results of decoding it. SQLITE_OK is
+** returned if successful. Otherwise, an SQLite error code is returned and
+** an English language error message may be left in virtual-table pTab.
 */
 static int zipfileReadEOCD(
   ZipfileTab *pTab,               /* Return errors here */
@@ -1030,8 +1108,10 @@ static int zipfileReadEOCD(
 }
 
 /*
-** Add object pNew to the end of the linked list that begins at
-** ZipfileTab.pFirstEntry and ends with pLastEntry.
+** Add object pNew to the linked list that begins at ZipfileTab.pFirstEntry 
+** and ends with pLastEntry. If argument pBefore is NULL, then pNew is added
+** to the end of the list. Otherwise, it is added to the list immediately
+** before pBefore (which is guaranteed to be a part of said list).
 */
 static void zipfileAddEntry(
   ZipfileTab *pTab, 
@@ -1647,8 +1727,6 @@ static void zipfileFunctionCds(
   }
 }
 
-static void zipfileFree(void *p) { sqlite3_free(p); }
-
 static void zipfileFunctionBlob(
   sqlite3_context *context,
   int argc,
@@ -1758,7 +1836,7 @@ static int zipfileRegister(sqlite3 *db){
     zipfileNext,               /* xNext - advance a cursor */
     zipfileEof,                /* xEof - check for end of scan */
     zipfileColumn,             /* xColumn - read data */
-    zipfileRowid,              /* xRowid - read data */
+    0,                         /* xRowid - read data */
     zipfileUpdate,             /* xUpdate */
     zipfileBegin,              /* xBegin */
     0,                         /* xSync */
