@@ -280,5 +280,33 @@ do_execsql_test 7.2 {
     FROM t1;
 } {2}
 
+# The fix for ticket ec32177c99ccac2b180fd3ea2083 only makes a difference
+# in the output when there is a TERM_VNULL entry in the WhereClause array.
+# And TERM_VNULL entries are only generated when compiling with 
+# SQLITE_ENABLE_STAT4.  Nevertheless, it is correct that TERM_VIRTUAL terms
+# should not participate in the factoring optimization.  In all cases other
+# than TERM_VNULL, participation is harmless, but it does consume a few
+# extra CPU cycles.
+#
+# The following test verifies that the TERM_VIRTUAL terms resulting from
+# a GLOB operator do not appear anywhere in the generated code.  This
+# confirms that the problem is fixed, even on builds that omit STAT4.
+#
+do_execsql_test 7.3 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1(a,b) VALUES(1,'abcxyz');
+  CREATE TABLE t2(aa INTEGER PRIMARY KEY, bb TEXT);
+  INSERT INTO t2(aa,bb) VALUES(1,'abc'),(2,'wxyz'),(3,'xyz');
+  CREATE INDEX t2bb ON t2(bb);
+  EXPLAIN SELECT (
+    SELECT COUNT(*) FROM t2
+     WHERE ( t1.b GLOB 'a*z' AND t2.bb='xyz' )
+        OR ( t2.bb = t1.b )
+        OR ( t2.aa = t1.a )
+    )
+    FROM t1;
+} {~/ (Lt|Ge) /}
 
 finish_test
