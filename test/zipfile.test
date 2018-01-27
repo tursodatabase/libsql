@@ -32,8 +32,23 @@ proc do_zipfile_blob_test {tn file} {
   set data [read $fd]
   close $fd
 
-  set res2 [db eval { SELECT name,mode,mtime,method,quote(data) FROM zipfile($data) }]
-  uplevel [list do_test $tn [list set {} $res2] $res1]
+  set res2 [db eval { 
+    SELECT name,mode,mtime,method,quote(data) FROM zipfile($data) 
+  }]
+
+  uplevel [list do_test $tn.1 [list set {} $res2] $res1]
+
+  set T "$file.test_zip"
+  set fd [open $T w]
+  fconfigure $fd -translation binary -encoding binary
+  puts -nonewline $fd $data
+  close $fd
+
+  set res3 [
+    db eval { SELECT name,mode,mtime,method,quote(data) FROM zipfile($T) }
+  ]
+
+  uplevel [list do_test $tn.2 [list set {} $res3] $res1]
 }
 
 forcedelete test.zip
@@ -270,6 +285,27 @@ foreach {tn fname} {
 do_catchsql_test 3.2 {
   SELECT rowid FROM x1
 } {1 {no such column: rowid}}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.zip
+load_static_extension db zipfile
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x2 USING zipfile();
+  INSERT INTO x2(name, data) VALUES('dir1/', NULL);
+  INSERT INTO x2(name, data) VALUES('file1', '1234');
+  INSERT INTO x2(name, data) VALUES('dir1/file2', '5678');
+  SELECT name, data FROM x2
+} {
+  dir1/ {} file1 1234 dir1/file2 5678
+}
+
+do_test 4.1 {
+  set data [db one {SELECT zipfile_blob(z) FROM x2 LIMIT 1}]
+  db eval { SELECT name, data FROM zipfile($data) }
+} {dir1/ {} file1 1234 dir1/file2 5678}
+
 
 
 finish_test
