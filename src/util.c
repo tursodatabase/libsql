@@ -641,7 +641,13 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   testcase( i==18*incr );
   testcase( i==19*incr );
   testcase( i==20*incr );
-  if( neg ){
+  if( u>LARGEST_INT64 ){
+    /* This test and assignment is needed only to suppress UB warnings
+    ** from clang and -fsanitize=undefined.  This test and assignment make
+    ** the code a little larger and slower, and no harm comes from omitting
+    ** them, but we must appaise the undefined-behavior pharisees. */
+    *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
+  }else if( neg ){
     *pNum = -(i64)u;
   }else{
     *pNum = (i64)u;

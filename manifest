@@ -1,5 +1,5 @@
-C New\stest\scase\sfor\sticket\s[ec32177c99ccac2b1]\sthat\sworks\swithout\sthe\sSTAT4.
-D 2018-01-27T13:55:56.815
+C Changes\sto\savoid\sa\sharmless\sUB\swarning\sfrom\sclang.
+D 2018-01-27T14:25:27.955
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -554,7 +554,7 @@ F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec
 F src/trigger.c a34539c69433276d37b0da9a89c117726ff2d292c0902895af1f393a983cd3a1
 F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
-F src/util.c 8628fe1daa9f5db9fa3a70d6fcfd828b73e839feafe7d7faecd7073be56eaec2
+F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
 F src/vdbe.c 0e13b8c33a9ecf236b3045f190fb58933049582307b621cbd924b6582a2b705f
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eef8cbef3c49e6331301a8f3f8a5fd12090b1e99e68487c2d405e53ef771f688
-R a57e94d6d2f924366bc9079a11d7258c
+P 5259d4847f2b73f26b2385f9d8cff8fe0cabc54b4deab8477c87c8d1bb5535b1
+R dc25ffafa3daf6e245ccddfac4936cfd
 U drh
-Z 5c67b72d2f152607d54502c89af32425
+Z 83f6cfb83d43c9463ef36c14a8c84938
