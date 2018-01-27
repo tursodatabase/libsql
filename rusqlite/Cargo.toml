@@ -47,7 +47,7 @@ path = "libsqlite3-sys"
 version = "0.9"
 
 [dependencies.csv]
-version = "0.14"
+version = "0.15"
 optional = true
 
 [[test]]
