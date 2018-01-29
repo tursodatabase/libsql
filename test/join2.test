@@ -155,18 +155,63 @@ do_execsql_test 4.1.4 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 LEFT JOIN c3 ON (c3.k=v1+1);
 } {2 v3 2 v3 1112 {} 1112 {}}
 
-do_eqp_test 4.2.1 {
+do_eqp_test 4.1.5 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
 } {
   0 0 0 {SCAN TABLE c1} 
   0 1 1 {SEARCH TABLE c2 USING INTEGER PRIMARY KEY (rowid=?)}
   0 2 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
 }
-do_eqp_test 4.2.2 {
+do_eqp_test 4.1.6 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
 } {
   0 0 0 {SCAN TABLE c1} 
   0 1 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
+}
+
+do_execsql_test 4.2.0 {
+  DROP TABLE c1;
+  DROP TABLE c2;
+  DROP TABLE c3;
+  CREATE TABLE c1(k UNIQUE, v1);
+  CREATE TABLE c2(k UNIQUE, v2);
+  CREATE TABLE c3(k UNIQUE, v3);
+
+  INSERT INTO c1 VALUES(1, 2);
+  INSERT INTO c2 VALUES(2, 3);
+  INSERT INTO c3 VALUES(3, 'v3');
+
+  INSERT INTO c1 VALUES(111, 1112);
+  INSERT INTO c2 VALUES(112, 1113);
+  INSERT INTO c3 VALUES(113, 'v1113');
+}
+do_execsql_test 4.2.1 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
+} {2 v3 1112 {}}
+do_execsql_test 4.2.2 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
+} {2 v3 1112 {}}
+
+do_execsql_test 4.2.3 {
+  SELECT DISTINCT v1, v3 FROM c1 LEFT JOIN c2 LEFT JOIN c3 ON (c3.k=v1+1);
+} {2 v3 1112 {}}
+
+do_execsql_test 4.2.4 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 LEFT JOIN c3 ON (c3.k=v1+1);
+} {2 v3 2 v3 1112 {} 1112 {}}
+
+do_eqp_test 4.2.5 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
+} {
+  0 0 0 {SCAN TABLE c1} 
+  0 1 1 {SEARCH TABLE c2 USING INDEX sqlite_autoindex_c2_1 (k=?)}
+  0 2 2 {SEARCH TABLE c3 USING INDEX sqlite_autoindex_c3_1 (k=?)}
+}
+do_eqp_test 4.2.6 {
+  SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
+} {
+  0 0 0 {SCAN TABLE c1} 
+  0 1 2 {SEARCH TABLE c3 USING INDEX sqlite_autoindex_c3_1 (k=?)}
 }
 
 # 2017-11-23 (Thanksgiving day)
@@ -191,5 +236,22 @@ do_execsql_test 4.3.1 {
     LEFT JOIN t1 AS b ON (a.x=b.x)
     LEFT JOIN t2 AS c ON (a.x=c.x);
 } {1 {} 2 {} 3 {} 4 {} 5 {} 6 {} 7 {} 8 {} 9 {} 10 10}
+
+do_execsql_test 5.0 {
+  CREATE TABLE s1 (a INTEGER PRIMARY KEY);
+  CREATE TABLE s2 (a INTEGER PRIMARY KEY);
+  CREATE TABLE s3 (a INTEGER);
+  CREATE UNIQUE INDEX ndx on s3(a);
+}
+do_eqp_test 5.1 {
+  SELECT s1.a FROM s1 left join s2 using (a);
+} {
+  0 0 0 {SCAN TABLE s1}
+}
+do_eqp_test 5.2 {
+  SELECT s1.a FROM s1 left join s3 using (a);
+} {
+  0 0 0 {SCAN TABLE s1}
+}
 
 finish_test
