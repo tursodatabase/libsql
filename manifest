@@ -1,5 +1,5 @@
-C Fix\smissing\sheader\scomments\sand\sother\scode\sissues\sin\szipfile.c.
-D 2018-01-27T18:55:18.394
+C Ensure\sthe\s"unique-not-null"\sflag\sis\sset\sfor\sautomatic\sindexes\son\scolumns\ndeclared\swith\s"col\sUNIQUE\sNOT\sNULL"\s(where\sthe\sNOT\sNULL\scomes\safter\sthe\nUNIQUE).
+D 2018-01-29T16:22:39.280
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -432,7 +432,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c d711228cac336fb35fff21f3f4a0efe2ad58aa9a800dd02929cdf184be1e78a3
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 9f9647454f236cab097f266ae970f899b53c71cadab6756c47e2b2e81392c2a1
+F src/build.c 672022c06e1a5c2653f80c77a687de11f7e65ce81d20fe2825aadfa13a875c33
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -492,7 +492,7 @@ F src/shell.c.in 7cea439c3f7f2e4ed6eb4b3a633cd93dccb1349241400de4da0c1291285ed51
 F src/sqlite.h.in 51f9acf52c80113d793ddd38b3940ad6895d97b4752503b19291fb8fcbf54c5e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 9c70315598b34810a83e4894455acb18e95cf63ce4e6cbb451ac2d17eabc2544
+F src/sqliteInt.h 119e240796d23054148005524f1d54a61e27dbef53bef3bc7ab65001405f4751
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1100,7 +1100,7 @@ F test/normalize.test 501630ab49b0b26b65c74124bf03e3374c1b57fa97aae750f848036091
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
-F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
+F test/notnull.test b6999231221df3534827e45e2005dd7a815fdd5f2c2e1afb9be21ead410816f8
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e63185edfe0c316aa60c1fa085d032425ecc7db54536dfa5a977772eaf3c240e
-R 347b5f95fee3abc6c3f7640c1a70a4d4
+P 6ea8ba312c38365d3e28cfb2a367d729dd2751d1d853843eea0e18126777a320
+R 3ff6b96757835180119359cd3166f741
 U dan
-Z faf05f7eafa9394c044e435efe4a986b
+Z 6c5f0f4d34834e8c6ccf2da8ff3a018a
