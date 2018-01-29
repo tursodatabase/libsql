@@ -906,9 +906,9 @@ static void zipfileInflate(
 ** case.
 */
 static int zipfileDeflate(
-  ZipfileTab *pTab,               /* Set error message here */
   const u8 *aIn, int nIn,         /* Input */
-  u8 **ppOut, int *pnOut          /* Output */
+  u8 **ppOut, int *pnOut,         /* Output */
+  char **pzErr                    /* OUT: Error message */
 ){
   int nAlloc = (int)compressBound(nIn);
   u8 *aOut;
@@ -934,7 +934,7 @@ static int zipfileDeflate(
       *pnOut = (int)str.total_out;
     }else{
       sqlite3_free(aOut);
-      pTab->base.zErrMsg = sqlite3_mprintf("zipfile: deflate() error");
+      *pzErr = sqlite3_mprintf("zipfile: deflate() error");
       rc = SQLITE_ERROR;
     }
     deflateEnd(&str);
@@ -1315,15 +1315,15 @@ static int zipfileAppendEntry(
 }
 
 static int zipfileGetMode(
-  ZipfileTab *pTab, 
   sqlite3_value *pVal, 
-  u32 defaultMode,                /* Value to use if pVal IS NULL */
-  u32 *pMode
+  int bIsDir,                     /* If true, default to directory */
+  u32 *pMode,                     /* OUT: Mode value */
+  char **pzErr                    /* OUT: Error message */
 ){
   const char *z = (const char*)sqlite3_value_text(pVal);
   u32 mode = 0;
   if( z==0 ){
-    mode = defaultMode;
+    mode = (bIsDir ? (S_IFDIR + 0755) : (S_IFREG + 0644));
   }else if( z[0]>='0' && z[0]<='9' ){
     mode = (unsigned int)sqlite3_value_int(pVal);
   }else{
@@ -1343,11 +1343,16 @@ static int zipfileGetMode(
       else if( z[i]!='-' ) goto parse_error;
     }
   }
+  if( (bIsDir == ((mode & S_IFDIR)==0)) ){
+    /* The "mode" attribute is a directory, but data has been specified.
+    ** Or vice-versa - no data but "mode" is a file or symlink.  */
+    return SQLITE_CONSTRAINT;
+  }
   *pMode = mode;
   return SQLITE_OK;
 
  parse_error:
-  pTab->base.zErrMsg = sqlite3_mprintf("zipfile: parse error in mode: %s", z);
+  *pzErr = sqlite3_mprintf("zipfile: parse error in mode: %s", z);
   return SQLITE_ERROR;
 }
 
@@ -1432,7 +1437,7 @@ static int zipfileUpdate(
         }else{
           if( bAuto || iMethod ){
             int nCmp;
-            rc = zipfileDeflate(pTab, aIn, nIn, &pFree, &nCmp);
+            rc = zipfileDeflate(aIn, nIn, &pFree, &nCmp, &pTab->base.zErrMsg);
             if( rc==SQLITE_OK ){
               if( iMethod || nCmp<nIn ){
                 iMethod = 8;
@@ -1447,14 +1452,7 @@ static int zipfileUpdate(
     }
 
     if( rc==SQLITE_OK ){
-      rc = zipfileGetMode(pTab, apVal[3], 
-          (bIsDir ? (S_IFDIR + 0755) : (S_IFREG + 0644)), &mode
-      );
-      if( rc==SQLITE_OK && (bIsDir == ((mode & S_IFDIR)==0)) ){
-        /* The "mode" attribute is a directory, but data has been specified.
-        ** Or vice-versa - no data but "mode" is a file or symlink.  */
-        rc = SQLITE_CONSTRAINT;
-      }
+      rc = zipfileGetMode(apVal[3], bIsDir, &mode, &pTab->base.zErrMsg);
     }
 
     if( rc==SQLITE_OK ){
@@ -1819,6 +1817,251 @@ static int zipfileFindFunction(
   return 0;
 }
 
+typedef struct ZipfileBuffer ZipfileBuffer;
+struct ZipfileBuffer {
+  u8 *a;                          /* Pointer to buffer */
+  int n;                          /* Size of buffer in bytes */
+  int nAlloc;                     /* Byte allocated at a[] */
+};
+
+typedef struct ZipfileCtx ZipfileCtx;
+struct ZipfileCtx {
+  int nEntry;
+  ZipfileBuffer body;
+  ZipfileBuffer cds;
+};
+
+static int zipfileBufferGrow(ZipfileBuffer *pBuf, int nByte){
+  if( pBuf->n+nByte>pBuf->nAlloc ){
+    u8 *aNew;
+    int nNew = pBuf->n ? pBuf->n*2 : 512;
+    int nReq = pBuf->n + nByte;
+
+    while( nNew<nReq ) nNew = nNew*2;
+    aNew = sqlite3_realloc(pBuf->a, nNew);
+    if( aNew==0 ) return SQLITE_NOMEM;
+    pBuf->a = aNew;
+    pBuf->nAlloc = nNew;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** xStep() callback for the zipfile() aggregate. This can be called in
+** any of the following ways:
+**
+**   SELECT zipfile(name,data) ...
+**   SELECT zipfile(name,mode,mtime,data) ...
+**   SELECT zipfile(name,mode,mtime,data,method) ...
+*/
+void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
+  ZipfileCtx *p;                  /* Aggregate function context */
+  ZipfileEntry e;                 /* New entry to add to zip archive */
+
+  sqlite3_value *pName = 0;
+  sqlite3_value *pMode = 0;
+  sqlite3_value *pMtime = 0;
+  sqlite3_value *pData = 0;
+  sqlite3_value *pMethod = 0;
+
+  int bIsDir = 0;
+  u32 mode;
+  int rc = SQLITE_OK;
+  char *zErr = 0;
+
+  int iMethod = -1;               /* Compression method to use (0 or 8) */
+
+  const u8 *aData = 0;            /* Possibly compressed data for new entry */
+  int nData = 0;                  /* Size of aData[] in bytes */
+  int szUncompressed = 0;         /* Size of data before compression */
+  u8 *aFree = 0;                  /* Free this before returning */
+  u32 iCrc32 = 0;                 /* crc32 of uncompressed data */
+
+  char *zName = 0;                /* Path (name) of new entry */
+  int nName = 0;                  /* Size of zName in bytes */
+  char *zFree = 0;                /* Free this before returning */
+  int nByte;
+
+  memset(&e, 0, sizeof(e));
+  p = (ZipfileCtx*)sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
+  if( p==0 ) return;
+
+  /* Martial the arguments into stack variables */
+  if( nVal!=2 && nVal!=4 && nVal!=5 ){
+    zErr = sqlite3_mprintf("wrong number of arguments to function zipfile()");
+    rc = SQLITE_ERROR;
+    goto zipfile_step_out;
+  }
+  pName = apVal[0];
+  if( nVal==2 ){
+    pData = apVal[1];
+  }else{
+    pMode = apVal[1];
+    pMtime = apVal[2];
+    pData = apVal[3];
+    if( nVal==5 ){
+      pMethod = apVal[4];
+    }
+  }
+
+  /* Check that the 'name' parameter looks ok. */
+  zName = (char*)sqlite3_value_text(pName);
+  nName = sqlite3_value_bytes(pName);
+  if( zName==0 ){
+    zErr = sqlite3_mprintf("first argument to zipfile() must be non-NULL");
+    rc = SQLITE_ERROR;
+    goto zipfile_step_out;
+  }
+
+  /* Inspect the 'method' parameter. This must be either 0 (store), 8 (use
+  ** deflate compression) or NULL (choose automatically).  */
+  if( pMethod && SQLITE_NULL!=sqlite3_value_type(pMethod) ){
+    iMethod = sqlite3_value_int64(pMethod);
+    if( iMethod!=0 && iMethod!=8 ){
+      zErr = sqlite3_mprintf("illegal method value: %d", iMethod);
+      rc = SQLITE_ERROR;
+      goto zipfile_step_out;
+    }
+  }
+
+  /* Now inspect the data. If this is NULL, then the new entry must be a
+  ** directory.  Otherwise, figure out whether or not the data should
+  ** be deflated or simply stored in the zip archive. */
+  if( sqlite3_value_type(pData)==SQLITE_NULL ){
+    bIsDir = 1;
+    iMethod = 0;
+  }else{
+    aData = sqlite3_value_blob(pData);
+    szUncompressed = nData = sqlite3_value_bytes(pData);
+    iCrc32 = crc32(0, aData, nData);
+    if( iMethod<0 || iMethod==8 ){
+      int nOut = 0;
+      rc = zipfileDeflate(aData, nData, &aFree, &nOut, &zErr);
+      if( rc!=SQLITE_OK ){
+        goto zipfile_step_out;
+      }
+      if( iMethod==8 || nOut<nData ){
+        aData = aFree;
+        nData = nOut;
+        iMethod = 8;
+      }else{
+        iMethod = 0;
+      }
+    }
+  }
+
+  /* Decode the "mode" argument. */
+  rc = zipfileGetMode(pMode, bIsDir, &mode, &zErr);
+  if( rc ) goto zipfile_step_out;
+
+  /* Decode the "mtime" argument. */
+  if( pMtime==0 || sqlite3_value_type(pMtime)==SQLITE_NULL ){
+    e.mUnixTime = (u32)time(0);
+  }else{
+    e.mUnixTime = (u32)sqlite3_value_int64(pMtime);
+  }
+
+  /* If this is a directory entry, ensure that there is exactly one '/'
+  ** at the end of the path. Or, if this is not a directory and the path
+  ** ends in '/' it is an error. */
+  if( bIsDir==0 ){
+    if( zName[nName-1]=='/' ){
+      zErr = sqlite3_mprintf("non-directory name must not end with /");
+      rc = SQLITE_ERROR;
+      goto zipfile_step_out;
+    }
+  }else{
+    if( zName[nName-1]!='/' ){
+      zName = zFree = sqlite3_mprintf("%s/", zName);
+      nName++;
+      if( zName==0 ){
+        rc = SQLITE_NOMEM;
+        goto zipfile_step_out;
+      }
+    }else{
+      while( nName>1 && zName[nName-2]=='/' ) nName--;
+    }
+  }
+
+  /* Assemble the ZipfileEntry object for the new zip archive entry */
+  e.cds.iVersionMadeBy = ZIPFILE_NEWENTRY_MADEBY;
+  e.cds.iVersionExtract = ZIPFILE_NEWENTRY_REQUIRED;
+  e.cds.flags = ZIPFILE_NEWENTRY_FLAGS;
+  e.cds.iCompression = iMethod;
+  zipfileMtimeToDos(&e.cds, (u32)e.mUnixTime);
+  e.cds.crc32 = iCrc32;
+  e.cds.szCompressed = nData;
+  e.cds.szUncompressed = szUncompressed;
+  e.cds.iExternalAttr = (mode<<16);
+  e.cds.iOffset = p->body.n;
+  e.cds.nFile = nName;
+  e.cds.zFile = zName;
+
+  /* Append the LFH to the body of the new archive */
+  nByte = ZIPFILE_LFH_FIXED_SZ + e.cds.nFile + 9;
+  if( (rc = zipfileBufferGrow(&p->body, nByte)) ) goto zipfile_step_out;
+  p->body.n += zipfileSerializeLFH(&e, &p->body.a[p->body.n]);
+
+  /* Append the data to the body of the new archive */
+  if( (rc = zipfileBufferGrow(&p->body, nData)) ) goto zipfile_step_out;
+  memcpy(&p->body.a[p->body.n], aData, nData);
+  p->body.n += nData;
+
+  /* Append the CDS record to the directory of the new archive */
+  nByte = ZIPFILE_CDS_FIXED_SZ + e.cds.nFile + 9;
+  if( (rc = zipfileBufferGrow(&p->cds, nByte)) ) goto zipfile_step_out;
+  p->cds.n += zipfileSerializeCDS(&e, &p->cds.a[p->cds.n]);
+
+  /* Increment the count of entries in the archive */
+  p->nEntry++;
+
+ zipfile_step_out:
+  sqlite3_free(aFree);
+  sqlite3_free(zFree);
+  if( rc ){
+    if( zErr ){
+      sqlite3_result_error(pCtx, zErr, -1);
+    }else{
+      sqlite3_result_error_code(pCtx, rc);
+    }
+  }
+  sqlite3_free(zErr);
+}
+
+/*
+** xFinalize() callback for zipfile aggregate function.
+*/
+void zipfileFinal(sqlite3_context *pCtx){
+  ZipfileCtx *p;
+  ZipfileEOCD eocd;
+  int nZip;
+  u8 *aZip;
+
+  p = (ZipfileCtx*)sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
+  if( p==0 || p->nEntry==0 ) return;
+
+  memset(&eocd, 0, sizeof(eocd));
+  eocd.nEntry = p->nEntry;
+  eocd.nEntryTotal = p->nEntry;
+  eocd.nSize = p->cds.n;
+  eocd.iOffset = p->body.n;
+
+  nZip = p->body.n + p->cds.n + ZIPFILE_EOCD_FIXED_SZ;
+  aZip = (u8*)sqlite3_malloc(nZip);
+  if( aZip==0 ){
+    sqlite3_result_error_nomem(pCtx);
+  }else{
+    memcpy(aZip, p->body.a, p->body.n);
+    memcpy(&aZip[p->body.n], p->cds.a, p->cds.n);
+    zipfileSerializeEOCD(&eocd, &aZip[p->body.n + p->cds.n]);
+    sqlite3_result_blob(pCtx, aZip, nZip, zipfileFree);
+  }
+
+  sqlite3_free(p->body.a);
+  sqlite3_free(p->cds.a);
+}
+
+
 /*
 ** Register the "zipfile" virtual table.
 */
@@ -1849,6 +2092,11 @@ static int zipfileRegister(sqlite3 *db){
   int rc = sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
   if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_cds", -1);
   if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_blob", -1);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "zipfile", -1, SQLITE_UTF8, 0, 0, 
+        zipfileStep, zipfileFinal
+    );
+  }
   return rc;
 }
 #else         /* SQLITE_OMIT_VIRTUALTABLE */

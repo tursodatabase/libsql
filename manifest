@@ -1,5 +1,5 @@
-C Ensure\sthe\s"unique-not-null"\sflag\sis\sset\sfor\sautomatic\sindexes\son\scolumns\ndeclared\swith\s"col\sUNIQUE\sNOT\sNULL"\s(where\sthe\sNOT\sNULL\scomes\safter\sthe\nUNIQUE).
-D 2018-01-29T16:22:39.280
+C Add\saggregate\sfunction\szipfile()\sto\sthe\szipfile\sextension.\sFor\scomposing\snew\nzip\sarchives\sin\smemory.
+D 2018-01-29T18:41:07.175
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -304,7 +304,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 398f53469ed90076dd5d69494eb7f1bd01a42d402fc5dbe92374178887244805
+F ext/misc/zipfile.c 73d932caf69fea8ba42b58ce2cea0fbea2c126a355498fd215008f61651ec661
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -1603,7 +1603,7 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 1b213bdc31eddd4a41042875dbdb29b6ea12b7da7a372a8eb07f61d0d76d800f
+F test/zipfile.test 12199631759785b0185ceb1ff3cffdcc91985ef61475ab1c69139686b09a87c8
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ea8ba312c38365d3e28cfb2a367d729dd2751d1d853843eea0e18126777a320
-R 3ff6b96757835180119359cd3166f741
+P 8767f7b880f2e4112f75f0b6ef7be3f50ab1ae20e103e7d03d8bfe77e6c79438
+R 5f1a0bf3bc3038aabd0aee2df4b1bd63
 U dan
-Z 6c5f0f4d34834e8c6ccf2da8ff3a018a
+Z eba1cb16b20a1e223d496488c50326dc

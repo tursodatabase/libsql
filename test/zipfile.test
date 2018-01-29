@@ -22,33 +22,43 @@ if {[catch {load_static_extension db zipfile} error]} {
   finish_test; return
 }
 
-proc do_zipfile_blob_test {tn file} {
-  set res1 [
-    db eval { SELECT name,mode,mtime,method,quote(data) FROM zipfile($file) }
-  ]
-
-  set fd [open $file]
+proc readfile {f} {
+  set fd [open $f]
   fconfigure $fd -translation binary -encoding binary
   set data [read $fd]
   close $fd
+  set data
+}
 
-  set res2 [db eval { 
-    SELECT name,mode,mtime,method,quote(data) FROM zipfile($data) 
-  }]
+# Argument $file is the name of a zip archive on disk. This function
+# executes test cases to check that the results of each of the following 
+# are the same:
+#
+#         SELECT * FROM zipfile($file)
+#         SELECT * FROM zipfile( readfile($file) )
+#         SELECT * FROM zipfile( 
+#           (SELECT zipfile(name,mode,mtime,data,method) FROM zipfile($file))
+#         )
+#
+proc do_zipfile_blob_test {tn file} {
 
-  uplevel [list do_test $tn.1 [list set {} $res2] $res1]
+  db func r readfile
+  set q1 {SELECT name,mode,mtime,method,quote(data) FROM zipfile($file)}
+  set q2 {SELECT name,mode,mtime,method,quote(data) FROM zipfile( r($file) )}
+  set q3 {SELECT name,mode,mtime,method,quote(data) FROM zipfile(
+    ( SELECT zipfile(name,mode,mtime,data,method) FROM zipfile($file) )
+  )}
 
-  set T "$file.test_zip"
-  set fd [open $T w]
-  fconfigure $fd -translation binary -encoding binary
-  puts -nonewline $fd $data
-  close $fd
 
-  set res3 [
-    db eval { SELECT name,mode,mtime,method,quote(data) FROM zipfile($T) }
-  ]
+  set r1 [db eval $q1]
+  set r2 [db eval $q2]
+  set r3 [db eval $q3]
+  #puts $r1
+  #puts $r2
+  #puts $r3
 
-  uplevel [list do_test $tn.2 [list set {} $res3] $res1]
+  uplevel [list do_test $tn.1 [list set {} $r2] $r1]
+  uplevel [list do_test $tn.1 [list set {} $r3] $r1]
 }
 
 forcedelete test.zip
