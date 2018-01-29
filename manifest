@@ -1,5 +1,5 @@
-C Add\saggregate\sfunction\szipfile()\sto\sthe\szipfile\sextension.\sFor\scomposing\snew\nzip\sarchives\sin\smemory.
-D 2018-01-29T18:41:07.175
+C Add\sunix-only\stests\sto\scheck\sthat\sthe\s"unzip"\sprogram\scan\sunpack\sarchives\ngenerated\sby\sthe\szipfile\sextension.
+D 2018-01-29T19:47:32.262
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -277,7 +277,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
-F ext/misc/fileio.c bd2f717be63a9ae9ff85977a756c43a96d47a7763d98ae913636c64b714c232b
+F ext/misc/fileio.c 4cad3a78bfbbea9b1414b4405fd704ee57fbe2621254b011888dae7b0ba8c513
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -1603,7 +1603,7 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 12199631759785b0185ceb1ff3cffdcc91985ef61475ab1c69139686b09a87c8
+F test/zipfile.test c40ae3a5d3fd0a31a8c6bdae1dbef55dd7140acb0d3b316c8edb744085ea6134
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1702,7 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8767f7b880f2e4112f75f0b6ef7be3f50ab1ae20e103e7d03d8bfe77e6c79438
-R 5f1a0bf3bc3038aabd0aee2df4b1bd63
+P e364eeac76a8225146b37d801bc6cabe03e9abede5a1412ebe9d94a32d8838cc
+R 78b9ab6ccbbf51cef503aff35913fad6
 U dan
-Z eba1cb16b20a1e223d496488c50326dc
+Z 634d51e6967cb83c15fce21d55a23989

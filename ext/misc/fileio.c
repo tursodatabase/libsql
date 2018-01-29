@@ -491,6 +491,7 @@ static void fsdirResetCursor(fsdir_cursor *pCur){
     sqlite3_free(pLvl->zDir);
   }
   sqlite3_free(pCur->zPath);
+  sqlite3_free(pCur->aLvl);
   pCur->aLvl = 0;
   pCur->zPath = 0;
   pCur->zBase = 0;
@@ -506,7 +507,6 @@ static int fsdirClose(sqlite3_vtab_cursor *cur){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
 
   fsdirResetCursor(pCur);
-  sqlite3_free(pCur->aLvl);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }

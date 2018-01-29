@@ -30,6 +30,24 @@ proc readfile {f} {
   set data
 }
 
+if {$::tcl_platform(platform)=="unix" && [catch {exec unzip}]==0} {
+  set ::UNZIP 1
+  load_static_extension db fileio
+  proc do_unzip {file} {
+    forcedelete test_unzip
+    file mkdir test_unzip
+    exec unzip -d test_unzip $file
+  
+    set res [db eval { 
+      SELECT replace(name,'test_unzip/',''),mode,mtime,data 
+      FROM fsdir('test_unzip') 
+      WHERE name!='test_unzip'
+      ORDER BY name
+    }]
+    set res
+  }
+}
+
 # Argument $file is the name of a zip archive on disk. This function
 # executes test cases to check that the results of each of the following 
 # are the same:
@@ -58,7 +76,49 @@ proc do_zipfile_blob_test {tn file} {
   #puts $r3
 
   uplevel [list do_test $tn.1 [list set {} $r2] $r1]
-  uplevel [list do_test $tn.1 [list set {} $r3] $r1]
+  uplevel [list do_test $tn.2 [list set {} $r3] $r1]
+}
+
+# Argument $file is a zip file on disk. This command runs tests to:
+#
+#   1. Unpack the archive with unix command [unzip] and compare the 
+#      results to reading the same archive using the zipfile() table
+#      valued function.
+#
+#   2. Creates a new archive with the same contents using the zipfile()
+#      aggregate function as follows:
+#
+#      SELECT writefile('test_unzip.zip',
+#          ( SELECT zipfile(name,mode,mtime,data,method) FROM zipfile($file) )
+#      );
+#
+#      Then tests that unpacking the new archive using [unzip] produces
+#      the same results as in (1).
+#
+proc do_unzip_test {tn file} {
+  if {[info vars ::UNZIP]==""} { return }
+  db func sss strip_slash
+
+  db eval {
+    SELECT writefile('test_unzip.zip',
+        ( SELECT zipfile(name,mode,mtime,data,method) FROM zipfile($file) )
+    );
+  }
+
+  set r1 [db eval { 
+    SELECT sss(name),mode,mtime,data FROM zipfile($file) ORDER BY name
+  }]
+  set r2 [do_unzip $file]
+  set r3 [do_unzip test_unzip.zip]
+
+  uplevel [list do_test $tn.1 [list set {} $r2] $r1]
+  uplevel [list do_test $tn.2 [list set {} $r3] $r1]
+}
+proc strip_slash {in} { regsub {/$} $in {} }
+
+proc do_zip_tests {tn file} {
+  uplevel do_zipfile_blob_test $tn.1 $file
+  uplevel do_unzip_test $tn.2 $file
 }
 
 forcedelete test.zip
@@ -99,14 +159,14 @@ do_execsql_test 1.2 {
   f.txt 1000000000 abcde 
   g.txt 1000000002 12345
 }
-do_zipfile_blob_test 1.2.1 test.zip
+do_zip_tests 1.2a test.zip
 
 do_execsql_test 1.3 {
   INSERT INTO zz(name, mode, mtime, data) VALUES('h.txt', 
     '-rw-r--r--', 1000000004, 'aaaaaaaaaabbbbbbbbbb'
   );
 }
-do_zipfile_blob_test 1.3.1 test.zip
+do_zip_tests 1.3a test.zip
 
 do_execsql_test 1.4 {
   SELECT name, mtime, data, method FROM zipfile('test.zip');
@@ -153,7 +213,7 @@ do_execsql_test 1.6.1 {
   h.txt 33188 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 1000000006 zxcvb 0
 }
-do_zipfile_blob_test 1.6.1a test.zip
+do_zip_tests 1.6.1a test.zip
 
 do_execsql_test 1.6.2 {
   UPDATE zz SET mtime=4 WHERE name='i.txt';
@@ -172,7 +232,7 @@ do_execsql_test 1.6.3 {
   h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 4 zxcvb 0
 }
-do_zipfile_blob_test 1.6.3a test.zip
+do_zip_tests 1.6.3a test.zip
 
 do_execsql_test 1.6.4 {
   UPDATE zz SET name = 'blue.txt' WHERE name='f.txt';
@@ -182,7 +242,7 @@ do_execsql_test 1.6.4 {
   h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 4 zxcvb 0
 }
-do_zipfile_blob_test 1.6.4a test.zip
+do_zip_tests 1.6.4a test.zip
 
 do_execsql_test 1.6.5 {
   UPDATE zz SET data = 'edcba' WHERE name='blue.txt';
@@ -217,6 +277,7 @@ do_execsql_test 1.6.8 {
 db close
 forcedelete test.zip
 reset_db
+load_static_extension db fileio
 load_static_extension db zipfile
 do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE zzz USING zipfile('test.zip');
@@ -243,7 +304,7 @@ do_execsql_test 2.4 {
   dirname2/ 16877 {}
   dirname2/file1.txt 33188 abcdefghijklmnop
 }
-do_zipfile_blob_test 2.4.1 test.zip
+do_zip_tests 2.4a test.zip
 
 # If on unix, check that the [unzip] utility can unpack our archive.
 #
