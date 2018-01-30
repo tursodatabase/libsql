@@ -152,15 +152,13 @@ do_execsql_test 4.0 {
   a.txt 1000000 aaaaaaaaaaaaaaaaaaaaaaa 8
 }
 
-breakpoint
 set L [findall 17000000 $archive2]
 set a $archive2
 foreach i $L { set a [string replace $a $i [expr $i+7] 16000000] }
 set blob [blob $a]
 do_catchsql_test 4.1 {
   SELECT name,mtime,data,method FROM zipfile($blob)
-} {1 {SQL logic error}}
-
+} {1 {inflate() failed (0)}}
 
 
 finish_test

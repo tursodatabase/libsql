@@ -1,5 +1,5 @@
-C Add\stests\scases\sfor\sthe\szipfile\sextension.
-D 2018-01-30T17:43:22.142
+C If\sa\svirtual\stable\sxColumn\smethod\ssets\san\serror\smessage\susing\nsqlite3_result_error(),\suse\sthat\smessage\sin\spreference\sto\sany\serror\smessage\nleft\sin\sthe\ssqlite3_vtab\sobject.
+D 2018-01-30T18:33:23.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -556,7 +556,7 @@ F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 0e13b8c33a9ecf236b3045f190fb58933049582307b621cbd924b6582a2b705f
+F src/vdbe.c 619d385ff1798fab7c549deb04b078f5a8ec466e2ad315939bc824593a2f9fde
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
 F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
@@ -1604,7 +1604,7 @@ F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501d
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
 F test/zipfile.test 368a5a0c97be0caaf8c3efa8293bfe18436d546805678fa00b6aa81bc98727ec
-F test/zipfile2.test 2855c993641935b51dfb3f9005173114538c7a2eb2a60fe3fc47a802e6794406
+F test/zipfile2.test 1066dd9769028d6f0bf1c87303b24f087cc064d9bbcacefc95613380f642de18
 F test/zipfilefault.test df4fa9e16116e0cb21d09037a6b0a7d93fecd8767d82154b66044b4ca43fca58
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 81fdbe0cc5a360f818078d47a5888d0a29d555927da279a9a0213702d74ef09a
-R 63c2b54c1a4defd96e22435ea8f5b625
+P 13b786dafd308b7aef42328f26fe64981c83d524e4bf82ceb7d58afc7146c7d3
+R 48ccd51e910d5d576747af2d5e64e430
 U dan
-Z 6717becc48c95c87eb42213e9c88ecb3
+Z 9d867999d41b646c89b308fd5587d517
