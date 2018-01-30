@@ -318,6 +318,21 @@ static int zipfileConnect(
   ZipfileTab *pNew = 0;
   int rc;
 
+  /* If the table name is not "zipfile", require that the argument be
+  ** specified. This stops zipfile tables from being created as:
+  **
+  **   CREATE VIRTUAL TABLE zzz USING zipfile();
+  **
+  ** It does not prevent:
+  **
+  **   CREATE VIRTUAL TABLE zipfile USING zipfile();
+  */
+  assert( 0==sqlite3_stricmp(argv[0], "zipfile") );
+  if( (0!=sqlite3_stricmp(argv[2], "zipfile") && argc<4) || argc>4 ){
+    *pzErr = sqlite3_mprintf("zipfile constructor requires one argument");
+    return SQLITE_ERROR;
+  }
+
   if( argc>3 ){
     zFile = argv[3];
     nFile = (int)strlen(zFile)+1;
@@ -1725,72 +1740,6 @@ static void zipfileFunctionCds(
   }
 }
 
-static void zipfileFunctionBlob(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  ZipfileCsr *pCsr;
-  ZipfileTab *pTab = (ZipfileTab*)sqlite3_user_data(context);
-  ZipfileEntry *p;
-  int nBody = 0;
-  int nCds = 0;
-  int nEocd = ZIPFILE_EOCD_FIXED_SZ;
-  ZipfileEOCD eocd;
-
-  u8 *aZip;
-  int nZip;
-
-  u8 *aBody;
-  u8 *aCds;
-
-  pCsr = zipfileFindCursor(pTab, sqlite3_value_int64(argv[0]));
-  if( pCsr->pFile || pTab->zFile ){
-    sqlite3_result_error(context, "illegal use of zipfile_blob()", -1);
-    return;
-  }
-
-  /* Figure out how large the final file will be */
-  for(p=pTab->pFirstEntry; p; p=p->pNext){
-    nBody += ZIPFILE_LFH_FIXED_SZ + p->cds.nFile + 9 + p->cds.szCompressed;
-    nCds += ZIPFILE_CDS_FIXED_SZ + p->cds.nFile + 9;
-  }
-
-  /* Allocate space to create the serialized file */
-  nZip = nBody + nCds + nEocd;
-  aZip = (u8*)sqlite3_malloc(nZip);
-  if( aZip==0 ){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-  aBody = aZip;
-  aCds = &aZip[nBody];
-
-  /* Populate the body and CDS */
-  memset(&eocd, 0, sizeof(eocd));
-  for(p=pTab->pFirstEntry; p; p=p->pNext){
-    p->cds.iOffset = (aBody - aZip);
-    aBody += zipfileSerializeLFH(p, aBody);
-    if( p->cds.szCompressed ){
-      memcpy(aBody, p->aData, p->cds.szCompressed);
-      aBody += p->cds.szCompressed;
-    }
-    aCds += zipfileSerializeCDS(p, aCds);
-    eocd.nEntry++;
-  }
-
-  /* Append the EOCD record */
-  assert( aBody==&aZip[nBody] );
-  assert( aCds==&aZip[nBody+nCds] );
-  eocd.nEntryTotal = eocd.nEntry;
-  eocd.nSize = nCds;
-  eocd.iOffset = nBody;
-  zipfileSerializeEOCD(&eocd, aCds);
-
-  sqlite3_result_blob(context, aZip, nZip, zipfileFree);
-}
-
-
 /*
 ** xFindFunction method.
 */
@@ -1804,11 +1753,6 @@ static int zipfileFindFunction(
   if( nArg>0 ){
     if( sqlite3_stricmp("zipfile_cds", zName)==0 ){
       *pxFunc = zipfileFunctionCds;
-      *ppArg = (void*)pVtab;
-      return 1;
-    }
-    if( sqlite3_stricmp("zipfile_blob", zName)==0 ){
-      *pxFunc = zipfileFunctionBlob;
       *ppArg = (void*)pVtab;
       return 1;
     }
@@ -2091,7 +2035,6 @@ static int zipfileRegister(sqlite3 *db){
 
   int rc = sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
   if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_cds", -1);
-  if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_blob", -1);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "zipfile", -1, SQLITE_UTF8, 0, 0, 
         zipfileStep, zipfileFinal
