@@ -48,12 +48,25 @@ SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 #ifndef SQLITE_AMALGAMATION
+
 typedef sqlite3_int64 i64;
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned long u32;
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
+
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define ALWAYS(X)      (1)
+# define NEVER(X)       (0)
+#elif !defined(NDEBUG)
+# define ALWAYS(X)      ((X)?1:(assert(0),0))
+# define NEVER(X)       ((X)?(assert(0),1):0)
+#else
+# define ALWAYS(X)      (X)
+# define NEVER(X)       (X)
 #endif
+
+#endif   /* SQLITE_AMALGAMATION */
 
 static const char ZIPFILE_SCHEMA[] = 
   "CREATE TABLE y("
@@ -283,14 +296,12 @@ static void zipfileCtxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
 static void zipfileDequote(char *zIn){
   char q = zIn[0];
   if( q=='"' || q=='\'' || q=='`' || q=='[' ){
-    char c;
     int iIn = 1;
     int iOut = 0;
     if( q=='[' ) q = ']';
-    while( (c = zIn[iIn++]) ){
-      if( c==q ){
-        if( zIn[iIn++]!=q ) break;
-      }
+    while( ALWAYS(zIn[iIn]) ){
+      char c = zIn[iIn++];
+      if( c==q && zIn[iIn++]!=q ) break;
       zIn[iOut++] = c;
     }
     zIn[iOut] = '\0';
@@ -445,12 +456,8 @@ static int zipfileClose(sqlite3_vtab_cursor *cur){
   zipfileResetCursor(pCsr);
 
   /* Remove this cursor from the ZipfileTab.pCsrList list. */
-  for(pp=&pTab->pCsrList; *pp; pp=&((*pp)->pCsrNext)){
-    if( *pp==pCsr ){ 
-      *pp = pCsr->pCsrNext;
-      break;
-    }
-  }
+  for(pp=&pTab->pCsrList; *pp!=pCsr; pp=&((*pp)->pCsrNext));
+  *pp = pCsr->pCsrNext;
 
   sqlite3_free(pCsr);
   return SQLITE_OK;
@@ -873,7 +880,7 @@ static void zipfileFree(void *p) {
 ** If an error occurs, an error code is left in pCtx instead.
 */
 static void zipfileInflate(
-  sqlite3_context *pCtx,          /* Store error here, if any */
+  sqlite3_context *pCtx,          /* Store result here */
   const u8 *aIn,                  /* Compressed data */
   int nIn,                        /* Size of buffer aIn[] in bytes */
   int nOut                        /* Expected output size */
@@ -1119,7 +1126,7 @@ static int zipfileReadEOCD(
     pEOCD->iOffset = zipfileRead32(aRead);
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
