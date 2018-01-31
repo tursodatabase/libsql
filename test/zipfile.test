@@ -48,6 +48,18 @@ if {$::tcl_platform(platform)=="unix" && [catch {exec unzip}]==0} {
   }
 }
 
+
+# The argument is a blob (not a hex string) containing a zip archive.
+# This proc removes the extended timestamp fields from the archive
+# and returns the result.
+#
+proc remove_timestamps {blob} {
+  set hex [binary encode hex $blob]
+  set hex [string map {55540500 00000500} $hex]
+  binary decode hex $hex
+}
+
+
 # Argument $file is the name of a zip archive on disk. This function
 # executes test cases to check that the results of each of the following 
 # are the same:
@@ -367,6 +379,48 @@ do_catchsql_test 4.2 {
   CREATE VIRTUAL TABLE yyy USING zipfile('test.zip', 'test.zip');
 } {1 {zipfile constructor requires one argument}}
 
+#--------------------------------------------------------------------------
+
+db func rt remove_timestamps
+do_execsql_test 5.0 {
+  WITH c(name,mtime,data) AS (
+    SELECT 'a.txt', 946684800, 'abc'
+  )
+  SELECT name,mtime,data FROM zipfile(
+    ( SELECT rt( zipfile(name,NULL,mtime,data) ) FROM c )
+  )
+} {
+  a.txt 946684800 abc
+}
+
+if {[info vars ::UNZIP]!=""} { 
+  load_static_extension db fileio
+  forcedelete test.zip
+  do_test 6.0 {
+    execsql {
+      WITH c(name,mtime,data) AS (
+        SELECT 'a.txt', 946684800, 'abc' UNION ALL
+        SELECT 'b.txt', 1000000000, 'abc' UNION ALL
+        SELECT 'c.txt', 1111111000, 'abc'
+      )
+      SELECT writefile('test.zip',
+          ( SELECT rt ( zipfile(name,NULL,mtime,data) ) FROM c )
+      );
+    }
+    forcedelete test_unzip
+    file mkdir test_unzip
+    exec unzip -d test_unzip test.zip
+
+    db eval {
+      SELECT name, mtime FROM fsdir('test_unzip') WHERE name!='test_unzip'
+      ORDER BY name
+    }
+  } [list {*}{
+    test_unzip/a.txt 946684800
+    test_unzip/b.txt 1000000000 
+    test_unzip/c.txt 1111111000 
+  }]
+}
 
 
 finish_test
