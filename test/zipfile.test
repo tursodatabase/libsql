@@ -394,8 +394,9 @@ do_execsql_test 5.0 {
 }
 
 if {[info vars ::UNZIP]!=""} { 
+ifcapable datetime {
   load_static_extension db fileio
-  forcedelete test.zip
+  forcedelete test1.zip test2.zip
   do_test 6.0 {
     execsql {
       WITH c(name,mtime,data) AS (
@@ -403,16 +404,17 @@ if {[info vars ::UNZIP]!=""} {
         SELECT 'b.txt', 1000000000, 'abc' UNION ALL
         SELECT 'c.txt', 1111111000, 'abc'
       )
-      SELECT writefile('test.zip',
-          ( SELECT rt ( zipfile(name,NULL,mtime,data) ) FROM c )
-      );
+      SELECT writefile('test1.zip', rt( zipfile(name, NULL, mtime, data) ) ),
+             writefile('test2.zip',   ( zipfile(name, NULL, mtime, data) ) ) 
+      FROM c;
     }
     forcedelete test_unzip
     file mkdir test_unzip
-    exec unzip -d test_unzip test.zip
+    exec unzip -d test_unzip test1.zip
 
     db eval {
-      SELECT name, mtime FROM fsdir('test_unzip') WHERE name!='test_unzip'
+      SELECT name, strftime('%s', mtime, 'unixepoch', 'localtime') 
+      FROM fsdir('test_unzip') WHERE name!='test_unzip'
       ORDER BY name
     }
   } [list {*}{
@@ -420,6 +422,23 @@ if {[info vars ::UNZIP]!=""} {
     test_unzip/b.txt 1000000000 
     test_unzip/c.txt 1111111000 
   }]
+
+  do_test 6.1 {
+    forcedelete test_unzip
+    file mkdir test_unzip
+    exec unzip -d test_unzip test2.zip
+
+    db eval {
+      SELECT name, mtime 
+      FROM fsdir('test_unzip') WHERE name!='test_unzip'
+      ORDER BY name
+    }
+  } [list {*}{
+    test_unzip/a.txt 946684800
+    test_unzip/b.txt 1000000000 
+    test_unzip/c.txt 1111111000 
+  }]
+}
 }
 
 
