@@ -254,4 +254,15 @@ do_eqp_test 5.2 {
   0 0 0 {SCAN TABLE s1}
 }
 
+do_execsql_test 6.0 {
+  CREATE TABLE u1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE u2(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX u1ab ON u1(b, c);
+}
+do_eqp_test 6.1 {
+  SELECT u2.* FROM u2 LEFT JOIN u1 ON( u1.a=u2.a AND u1.b=u2.b AND u1.c=u2.c );
+} {
+  0 0 0 {SCAN TABLE u2}
+}
+
 finish_test

@@ -1,5 +1,5 @@
-C Update\sthe\somit-left-join\soptimization\sso\sthat\sit\sworks\sin\ssome\scases\swhen\sthe\nRHS\sis\ssubject\sto\sa\sUNIQUE\sbut\snot\sNOT\sNULL\sconstraint.
-D 2018-01-29T17:08:52.190
+C Fix\sa\sfailing\sassert()\sin\sthe\snew\scode\son\sthis\sbranch.
+D 2018-01-31T14:07:01.020
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -570,7 +570,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c eb37882608c30f7361cf3309b8128c3a2887ff0099886e3685ededb7a7e6b051
+F src/where.c 7cae47e813393d70c6d327fdf000fcb30f76b1b0b5a5b52ff6402e0c658de32c
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
 F src/wherecode.c cb360c511f69294ddf00340d7b390e6b1d601a1cfb77b42c4d316fe2f4cd01c3
 F src/whereexpr.c 22dbfd3bf5f6051a61523dd0ebef7a944fb29ee4aa7d2a62feb8aac6ffbbc0eb
@@ -1001,7 +1001,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/join.test 442c462eea85cf065d70a663c626b780a95af6e11585d909bb63b87598afe678
-F test/join2.test 96f56ccf0a8fe6dbd7bb2e1a90bc61540febeaf9b6fdee14506f6fc140b93185
+F test/join2.test f1b5ba94ba70a791df2d99e61adcebf62edacad1eca57881c97eb3e2ca718595
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test bc98ea4b4e5003f5b1453701ebb8cd7d1c01a550
@@ -1702,10 +1702,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8767f7b880f2e4112f75f0b6ef7be3f50ab1ae20e103e7d03d8bfe77e6c79438
-R f19810b3aa9bfaa7d3b666e31ece61ec
-T *branch * omit-left-join-fix
-T *sym-omit-left-join-fix *
-T -sym-trunk *
+P 88411a402b29f19d69e0d06d9099eabb98c238ddb7c07ce110236316f008753e
+R d723a0554461743d1cc2169a56c72b46
 U dan
-Z ff1cffb196461bca97e3f8e467ebcd67
+Z 54f22eae691d89833b1c2792d257ce0d
