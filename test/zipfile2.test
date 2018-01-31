@@ -70,12 +70,17 @@ set archive {
   00007A0000000000
 }
 
-do_execsql_test 3.1 {
-  WITH contents(name,mtime,data) AS (
-    VALUES('a.txt', 1000000, 'contents of a.txt') UNION ALL
-    VALUES('b.txt', 1000000, 'contents of b.txt')
-  ) SELECT quote( zipfile(name,NULL,mtime,data) ) FROM contents;
-} [blobliteral $archive]
+if 0 {
+  # This test is broken - the archive generated is slightly different
+  # depending on the zlib version used.
+  do_execsql_test 3.1 {
+    WITH contents(name,mtime,data) AS (
+        VALUES('a.txt', 1000000, 'contents of a.txt') UNION ALL
+        VALUES('b.txt', 1000000, 'contents of b.txt')
+    ) SELECT quote( zipfile(name,NULL,mtime,data) ) FROM contents;
+  } [blobliteral $archive]
+}
+
 
 set blob [blob $archive]
 do_execsql_test 3.2 {
@@ -98,6 +103,7 @@ for {set i 0} {$i < [llength $L]} {incr i} {
   } {/1 .*/}
 }
 
+# Change the "extra info id" for all extended-timestamp fields.
 set L [findall 5554 $archive]
 for {set i 0} {$i < [llength $L]} {incr i} {
   set idx [lindex $L $i]
@@ -123,20 +129,18 @@ for {set i 0} {$i < [llength $L]} {incr i} {
   }
 }
 
-if 0 {
-set blob [db one {
-  WITH contents(name,mtime,data) AS (
-    VALUES('a.txt', 1000000, 'aaaaaaaaaaaaaaaaaaaaaaa')
-  ) SELECT quote( zipfile(name,NULL,mtime,data) ) FROM contents;
-}]
-set blob [string range $blob 2 end]
-set blob [string range $blob 0 end-1]
-while {[string length $blob]>0} {
-  puts [string range $blob 0 63]
-  set blob [string range $blob 64 end]
-}
-exit
-}
+# set blob [db one {
+#   WITH contents(name,mtime,data) AS (
+#     VALUES('a.txt', 1000000, 'aaaaaaaaaaaaaaaaaaaaaaa')
+#   ) SELECT quote( zipfile(name,NULL,mtime,data) ) FROM contents;
+# }]
+# set blob [string range $blob 2 end]
+# set blob [string range $blob 0 end-1]
+# while {[string length $blob]>0} {
+#   puts [string range $blob 0 63]
+#   set blob [string range $blob 64 end]
+# }
+# exit
 
 set archive2 {
   504B0304140000080800D4A52BEC08F54C6E050000001700000005000900612E
@@ -159,6 +163,7 @@ set blob [blob $a]
 do_catchsql_test 4.1 {
   SELECT name,mtime,data,method FROM zipfile($blob)
 } {1 {inflate() failed (0)}}
+
 
 
 finish_test

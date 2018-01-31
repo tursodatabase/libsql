@@ -686,18 +686,34 @@ static int zipfileScanExtra(u8 *aExtra, int nExtra, u32 *pmTime){
 **
 ** https://msdn.microsoft.com/en-us/library/9kkf9tah.aspx
 */
-static time_t zipfileMtime(ZipfileCDS *pCDS){
-  struct tm t;
-  memset(&t, 0, sizeof(t));
-  t.tm_sec = (pCDS->mTime & 0x1F)*2;
-  t.tm_min = (pCDS->mTime >> 5) & 0x2F;
-  t.tm_hour = (pCDS->mTime >> 11) & 0x1F;
+static u32 zipfileMtime(ZipfileCDS *pCDS){
+  int Y = (1980 + ((pCDS->mDate >> 9) & 0x7F));
+  int M = ((pCDS->mDate >> 5) & 0x0F);
+  int D = (pCDS->mDate & 0x1F);
+  int B = -13;
 
-  t.tm_mday = (pCDS->mDate & 0x1F);
-  t.tm_mon = ((pCDS->mDate >> 5) & 0x0F) - 1;
-  t.tm_year = 80 + ((pCDS->mDate >> 9) & 0x7F);
+  int sec = (pCDS->mTime & 0x1F)*2;
+  int min = (pCDS->mTime >> 5) & 0x3F;
+  int hr = (pCDS->mTime >> 11) & 0x1F;
 
-  return mktime(&t);
+  /* JD = INT(365.25 * (Y+4716)) + INT(30.6001 * (M+1)) + D + B - 1524.5 */
+
+  /* Calculate the JD in seconds for noon on the day in question */
+  if( M<3 ){
+    Y = Y-1;
+    M = M+12;
+  }
+  i64 JD = (i64)(24*60*60) * (
+      (int)(365.25 * (Y + 4716))
+    + (int)(30.6001 * (M + 1))
+    + D + B - 1524
+  );
+
+  /* Correct the JD for the time within the day */
+  JD += (hr-12) * 3600 + min * 60 + sec;
+
+  /* Convert JD to unix timestamp (the JD epoch is 2440587.5) */
+  return (u32)(JD - (i64)(24405875) * 24*60*6);
 }
 
 /*
@@ -706,24 +722,36 @@ static time_t zipfileMtime(ZipfileCDS *pCDS){
 ** to the UNIX timestamp value passed as the second.
 */
 static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
-  time_t t = (time_t)mUnixTime;
-  struct tm res;
+  /* Convert unix timestamp to JD (2440588 is noon on 1/1/1970) */
+  i64 JD = (i64)2440588 + mUnixTime / (24*60*60);
 
-#if !defined(_WIN32) && !defined(WIN32)
-  localtime_r(&t, &res);
-#else
-  memcpy(&res, localtime(&t), sizeof(struct tm));
-#endif
+  int A, B, C, D, E;
+  int yr, mon, day;
+  int hr, min, sec;
 
-  pCds->mTime = (u16)(
-    (res.tm_sec / 2) + 
-    (res.tm_min << 5) +
-    (res.tm_hour << 11));
+  A = (int)((JD - 1867216.25)/36524.25);
+  A = JD + 1 + A - (A/4);
+  B = A + 1524;
+  C = (int)((B - 122.1)/365.25);
+  D = (36525*(C&32767))/100;
+  E = (int)((B-D)/30.6001);
 
-  pCds->mDate = (u16)(
-    (res.tm_mday-1) +
-    ((res.tm_mon+1) << 5) +
-    ((res.tm_year-80) << 9));
+  day = B - D - (int)(30.6001*E);
+  mon = (E<14 ? E-1 : E-13);
+  yr = mon>2 ? C-4716 : C-4715;
+
+  hr = (mUnixTime % (24*60*60)) / (60*60);
+  min = (mUnixTime % (60*60)) / 60;
+  sec = (mUnixTime % 60);
+
+  pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
+  pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
+
+  assert( mUnixTime<315507600 
+       || mUnixTime==zipfileMtime(pCds) 
+       || ((mUnixTime % 2) && mUnixTime-1==zipfileMtime(pCds)) 
+       /* || (mUnixTime % 2) */
+  );
 }
 
 /*
