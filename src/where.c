@@ -2481,10 +2481,12 @@ static int whereLoopAddBtreeIndex(
       if( iCol==XN_ROWID 
        || (iCol>=0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
       ){
-        if( iCol>=0 && pProbe->uniqNotNull==0 ){
-          pNew->wsFlags |= WHERE_UNQ_WANTED;
-        }else{
+        if( iCol==XN_ROWID || pProbe->uniqNotNull 
+         || (pProbe->nKeyCol==1 && pProbe->onError && eOp==WO_EQ) 
+        ){
           pNew->wsFlags |= WHERE_ONEROW;
+        }else{
+          pNew->wsFlags |= WHERE_UNQ_WANTED;
         }
       }
     }else if( eOp & WO_ISNULL ){
