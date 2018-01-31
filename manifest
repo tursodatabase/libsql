@@ -1,5 +1,5 @@
-C If\sa\svirtual\stable\sxColumn\smethod\ssets\san\serror\smessage\susing\nsqlite3_result_error(),\suse\sthat\smessage\sin\spreference\sto\sany\serror\smessage\nleft\sin\sthe\ssqlite3_vtab\sobject.
-D 2018-01-30T18:33:23.120
+C Changes\sto\sthe\sautoconf\starball\sso\sthat\sit\sdoes\snot\stry\sto\suse\ssystem()\swhen\nbuilding\son\siOS.
+D 2018-01-31T01:38:44.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -12,11 +12,11 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 6cca3f797c649b40c762484ce26491839fec54de72d376d774969e76ed13931f
+F autoconf/Makefile.am 2c274948734e03c51790ff51468f91db8d570bcca864284d9c6d6e777264cd7e
 F autoconf/Makefile.msc 2c50a59319af7da4eaca8c13e3240881b1bc245fd175845a055faab7d03d6e67
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac aeeed858e5e54e79052ae44ba774e56595dcb787f23a2155aa98a8aa27327b66
+F autoconf/configure.ac 18fca06f884213be062dd5e07c5297079cc45893d9cd3f522ce426e715033e3d
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -488,7 +488,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
-F src/shell.c.in 7cea439c3f7f2e4ed6eb4b3a633cd93dccb1349241400de4da0c1291285ed514
+F src/shell.c.in ada6d184a5cdaada15a330ca97ad0126125f0aaed40b5c04385278fcaa78aafa
 F src/sqlite.h.in 51f9acf52c80113d793ddd38b3940ad6895d97b4752503b19291fb8fcbf54c5e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13b786dafd308b7aef42328f26fe64981c83d524e4bf82ceb7d58afc7146c7d3
-R 48ccd51e910d5d576747af2d5e64e430
-U dan
-Z 9d867999d41b646c89b308fd5587d517
+P 71e3b715ad36c2132a587b84221be6359c31d7a17c3fba201b7ed3baf17922f1
+R bcc68c8a2653dd62fee16c20bb3144f0
+U drh
+Z ff1bd702823e7d15c0a453ffcea5582a
