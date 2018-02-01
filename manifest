@@ -1,5 +1,5 @@
-C When\screating\sa\snew\sarchive\sentry,\shave\szipfile\sstore\sUTC\sinstead\sof\slocal\ntime\sin\sthe\slegacy\sMS-DOS\sformat\stimestamp\sfield.
-D 2018-01-31T20:18:26.779
+C When\san\sindex\sis\sbased\son\sa\stext\srepresentation\sof\sa\snumeric\scolumn\sin\sthe\noriginal\stable,\smake\ssure\sthe\sindexed\svalue\suses\sthe\scanonical\stext\s\nrepresentation\sof\sthe\snumeric\svalue\sin\sthe\stable.\nProposed\sfix\sfor\sticket\s[343634942dd54ab57b70].
+D 2018-02-01T01:13:33.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -556,7 +556,7 @@ F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 90839322fd5f00df9617eb21b68beda9b6e2a2937576b0d65985e4aeb1c53739
-F src/vdbe.c 619d385ff1798fab7c549deb04b078f5a8ec466e2ad315939bc824593a2f9fde
+F src/vdbe.c a6892805df427bb9d554c37641406438bff568f99d26e72c1fb7e45f2ed6ce5b
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
 F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
@@ -978,7 +978,7 @@ F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test faa585e315e868f09bce0eb39c41d6134649b13d2801638294d3ae616edf1609
-F test/indexexpr1.test ace1ad489adc25325ad298434f13b1a515b36bf5dca9fe2a4b66cdf17aea3fa0
+F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
 F test/indexexpr2.test 13247bac49143196556eb3f65e97ef301bd3e993f4511558b5db322ddc370ea6
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1704,8 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02ba8a7ba7ba71cd7abd5dd3093ea486f53a025f6972bb444f2da37e0e2fc3b2 4eb5b24c64ee5907c18371f563b79fa0caf58285a62b8f09e639a690e6727eaa
-R 1aa884bc5be6161439d6cdee8401a11e
-T +closed 4eb5b24c64ee5907c18371f563b79fa0caf58285a62b8f09e639a690e6727eaa
-U dan
-Z a1436cfe5518dde187c59fef646e7300
+P b730d187f2202e5b5d31ed6c94c9bb04d7c289f7086a9b44b3d9050ea3586d3a
+R 03c296c6343c0711547e5b14fdc5c828
+U drh
+Z 93daef2f8ab3c187bf34c937a8efe1d7

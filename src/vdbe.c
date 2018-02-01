@@ -264,6 +264,11 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
     pRec->flags |= MEM_Real;
     if( bTryForInt ) sqlite3VdbeIntegerAffinity(pRec);
   }
+  /* TEXT->NUMERIC is many->one.  Hence, it is important to invalidate the
+  ** string representation after computing a numeric equivalent, because the
+  ** string representation might not be the canonical representation for the
+  ** numeric value.  Ticket [343634942dd54ab57b7024] 2018-01-31. */
+  pRec->flags &= ~MEM_Str;
 }
 
 /*
