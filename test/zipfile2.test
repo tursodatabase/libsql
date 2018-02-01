@@ -164,6 +164,44 @@ do_catchsql_test 4.1 {
   SELECT name,mtime,data,method FROM zipfile($blob)
 } {1 {inflate() failed (0)}}
 
+# Check the response to an unknown compression method (set data to NULL).
+set blob [blob [string map {0800 0900} $archive2]]
+do_execsql_test 4.2 {
+  SELECT name,mtime,data IS NULL,method FROM zipfile($blob)
+} {a.txt 1000000 1 9}
+
+# Corrupt the EOCDS signature bytes in various ways.
+foreach {tn sub} {
+  1 {504B0500}
+  2 {504B0006}
+  3 {50000506}
+  4 {004B0506}
+} {
+  set blob [blob [string map [list 504B0506 $sub] $archive2]]
+  do_catchsql_test 4.3.$tn {
+    SELECT * FROM zipfile($blob)
+  } {1 {cannot find end of central directory record}}
+}
+
+#-------------------------------------------------------------------------
+# Test that a zero-length file with a '/' at the end is treated as
+# a directory (data IS NULL). Even if the mode doesn't indicate
+# that it is a directory.
+
+do_test 5.0 {
+  set blob [db one {
+    WITH c(n, d) AS (
+      SELECT 'notadir', ''
+    )
+    SELECT zipfile(n, d) FROM c
+ }]
+
+  set hex [binary encode hex $blob]
+  set hex [string map {6e6f7461646972 6e6f746164692f} $hex] 
+  set blob2 [binary decode hex $hex]
+
+  execsql { SELECT name, data IS NULL FROM zipfile($blob2) }
+} {notadi/ 1}
 
 
 finish_test

@@ -151,9 +151,17 @@ do_catchsql_test 1.1.0.1 {
   INSERT INTO zz(name, mode, mtime, sz, rawdata, method) 
   VALUES('f.txt', '-rw-r--r--', 1000000000, 5, 'abcde', 0);
 } {1 {constraint failed}}
-do_catchsql_test 1.1.0.1 {
-  INSERT INTO zz(name, mtime, sz, rawdata, method) 
+do_catchsql_test 1.1.0.2 {
+  INSERT INTO zz(name, mtime, sz, data, method) 
   VALUES('g.txt', 1000000002, 5, '12345', 0);
+} {1 {constraint failed}}
+do_catchsql_test 1.1.0.3 {
+  INSERT INTO zz(name, mtime, rawdata, method) 
+  VALUES('g.txt', 1000000002, '12345', 0);
+} {1 {constraint failed}}
+do_catchsql_test 1.1.0.4 {
+  INSERT INTO zz(name, data, method) 
+  VALUES('g.txt', '12345', 7);
 } {1 {constraint failed}}
 
 do_execsql_test 1.1.1 {
@@ -198,6 +206,9 @@ ifcapable json1 {
     h.txt 1
   }
 }
+do_catchsql_test 1.4.2 {
+  SELECT zipfile_cds(mode) FROM zipfile('test.zip');
+} {0 {{} {} {}}}
 
 do_execsql_test 1.5.1 {
   BEGIN;
@@ -284,6 +295,37 @@ do_execsql_test 1.6.8 {
   h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
   i.txt 33188 4 zxcvb 0
 }
+
+do_execsql_test 1.6.8 {
+  UPDATE zz SET data = '' WHERE name='i.txt';
+  SELECT name,mode,mtime,data,method from zipfile('test.zip');
+} {
+  blue.txt/ 16877 1000000000 {} 0
+  h.txt 33189 1000000004 aaaaaaaaaabbbbbbbbbb 8
+  i.txt 33188 4 {} 0
+}
+
+do_execsql_test 1.6.9 {
+  SELECT a.name, a.data 
+  FROM zz AS a, zz AS b 
+  WHERE a.name=+b.name AND +a.mode=b.mode
+} {
+  blue.txt/ {}
+  h.txt aaaaaaaaaabbbbbbbbbb
+  i.txt {}
+}
+
+do_execsql_test 1.6.10 {
+  SELECT name, data FROM zz WHERE name LIKE '%txt'
+} {
+  h.txt aaaaaaaaaabbbbbbbbbb
+  i.txt {}
+}
+
+do_execsql_test 1.7 {
+  DELETE FROM zz;
+  SELECT * FROM zz;
+} {}
 
 #-------------------------------------------------------------------------
 db close
@@ -379,6 +421,25 @@ do_catchsql_test 4.2 {
   CREATE VIRTUAL TABLE yyy USING zipfile('test.zip', 'test.zip');
 } {1 {zipfile constructor requires one argument}}
 
+do_catchsql_test 4.3 {
+  SELECT * FROM zipfile()
+} {1 {zipfile() function requires an argument}}
+
+do_catchsql_test 4.4 {
+  SELECT * FROM zipfile('/path/that/does/not/exist')
+} {1 {cannot open file: /path/that/does/not/exist}}
+
+foreach {tn mode} {
+  1 abcd
+  2 brwxrwxrwx
+  3 lrwxrrxrwx
+} {
+  do_catchsql_test 4.5.$tn {
+    WITH m(m) AS ( SELECT $mode)
+    SELECT zipfile('a.txt', m, 1000, 'xyz') FROM m
+  } [list 1 "zipfile: parse error in mode: $mode"]
+}
+
 #--------------------------------------------------------------------------
 
 db func rt remove_timestamps
@@ -448,16 +509,18 @@ ifcapable datetime {
   }]
 
   do_execsql_test 6.3 {
-    SELECT name, mtime, data FROM zipfile('test2.zip')
+    SELECT name, mtime, sz, rawdata, data FROM zipfile('test2.zip')
   } {
-    a.txt 946684800   abc
-    b.txt 1000000000  abc
-    c.txt 1111111000  abc
+    a.txt 946684800   3 abc abc
+    b.txt 1000000000  3 abc abc
+    c.txt 1111111000  3 abc abc
   }
 }
 }
 
 #-------------------------------------------------------------------------
+# Force an IO error by truncating the zip archive to zero bytes in size
+# while it is being read.
 forcedelete test.zip
 do_test 7.0 {
   execsql {
@@ -476,6 +539,58 @@ do_test 7.0 {
   } msg] $msg
 } {1 {error in fread()}}
 
+forcedelete test.zip
+do_execsql_test 8.0.1 {
+  CREATE VIRTUAL TABLE zz USING zipfile('test.zip');
+  BEGIN;
+    INSERT INTO zz(name, data) VALUES('a.txt', '1');
+    INSERT INTO zz(name, data) VALUES('b.txt', '2');
+    INSERT INTO zz(name, data) VALUES('c.txt', '1');
+    INSERT INTO zz(name, data) VALUES('d.txt', '2');
+    SELECT name, data FROM zz;
+} {
+  a.txt 1 b.txt 2 c.txt 1 d.txt 2
+}
+do_test 8.0.2 {
+  db eval { SELECT name, data FROM zz } {
+    if { $data=="2" } { db eval { DELETE FROM zz WHERE name=$name } }
+  }
+  execsql { SELECT name, data FROM zz } 
+} {a.txt 1 c.txt 1}
+do_test 8.0.3 {
+  db eval { SELECT name, data FROM zz } {
+    db eval { DELETE FROM zz WHERE name=$name }
+  }
+  execsql { SELECT name, data FROM zz } 
+} {}
+execsql COMMIT
+
+do_execsql_test 8.1.1 {
+  CREATE VIRTUAL TABLE nogood USING zipfile('test_unzip');
+}
+do_catchsql_test 8.1.2 {
+  INSERT INTO nogood(name, data) VALUES('abc', 'def');
+} {1 {zipfile: failed to open file test_unzip for writing}}
+
+do_execsql_test 8.2.1 {
+  DROP TABLE nogood;
+  BEGIN;
+    CREATE VIRTUAL TABLE nogood USING zipfile('test_unzip');
+}
+do_catchsql_test 8.2.2 {
+    INSERT INTO nogood(name, data) VALUES('abc', 'def');
+} {1 {zipfile: failed to open file test_unzip for writing}}
+do_execsql_test 8.2.3 {
+  COMMIT;
+}
+
+forcedelete test.zip
+do_execsql_test 8.3.1 {
+  BEGIN;
+    CREATE VIRTUAL TABLE ok USING zipfile('test.zip');
+    INSERT INTO ok(name, data) VALUES ('sqlite3', 'elf');
+  COMMIT;
+}
 
 finish_test
 

@@ -1073,7 +1073,8 @@ static int zipfileColumn(
     case 6:   /* method */
       sqlite3_result_int(ctx, pCDS->iCompression);
       break;
-    case 7:   /* z */
+    default:  /* z */
+      assert( i==7 );
       sqlite3_result_int64(ctx, pCsr->iId);
       break;
   }
@@ -1217,7 +1218,7 @@ static int zipfileFilter(
 ){
   ZipfileTab *pTab = (ZipfileTab*)cur->pVtab;
   ZipfileCsr *pCsr = (ZipfileCsr*)cur;
-  const char *zFile;              /* Zip file to scan */
+  const char *zFile = 0;          /* Zip file to scan */
   int rc = SQLITE_OK;             /* Return Code */
   int bInMemory = 0;              /* True for an in-memory zipfile */
 
@@ -1226,7 +1227,8 @@ static int zipfileFilter(
   if( pTab->zFile ){
     zFile = pTab->zFile;
   }else if( idxNum==0 ){
-    bInMemory = 1;
+    zipfileSetErrmsg(pCsr, "zipfile() function requires an argument");
+    return SQLITE_ERROR;
   }else if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
     const u8 *aBlob = (const u8*)sqlite3_value_blob(argv[0]);
     int nBlob = sqlite3_value_bytes(argv[0]);
@@ -1295,14 +1297,11 @@ static int zipfileBestIndex(
   return SQLITE_OK;
 }
 
-static ZipfileEntry *zipfileNewEntry(const char *zPath, int nData){
+static ZipfileEntry *zipfileNewEntry(const char *zPath){
   ZipfileEntry *pNew;
-  pNew = sqlite3_malloc(sizeof(ZipfileEntry) + nData);
+  pNew = sqlite3_malloc(sizeof(ZipfileEntry));
   if( pNew ){
     memset(pNew, 0, sizeof(ZipfileEntry));
-    if( nData ){
-      pNew->aData = (u8*)&pNew[1];
-    }
     pNew->cds.zFile = sqlite3_mprintf("%s", zPath);
     if( pNew->cds.zFile==0 ){
       sqlite3_free(pNew);
@@ -1358,6 +1357,7 @@ static int zipfileAppendEntry(
   nBuf = zipfileSerializeLFH(pEntry, aBuf);
   rc = zipfileAppendData(pTab, aBuf, nBuf);
   if( rc==SQLITE_OK ){
+    pEntry->iDataOff = pTab->szCurrent;
     rc = zipfileAppendData(pTab, pData, nData);
   }
 
@@ -1418,6 +1418,35 @@ static int zipfileComparePath(const char *zA, const char *zB, int nB){
   return 1;
 }
 
+static int zipfileBegin(sqlite3_vtab *pVtab){
+  ZipfileTab *pTab = (ZipfileTab*)pVtab;
+  int rc = SQLITE_OK;
+
+  assert( pTab->pWriteFd==0 );
+
+  /* Open a write fd on the file. Also load the entire central directory
+  ** structure into memory. During the transaction any new file data is 
+  ** appended to the archive file, but the central directory is accumulated
+  ** in main-memory until the transaction is committed.  */
+  pTab->pWriteFd = fopen(pTab->zFile, "ab+");
+  if( pTab->pWriteFd==0 ){
+    pTab->base.zErrMsg = sqlite3_mprintf(
+        "zipfile: failed to open file %s for writing", pTab->zFile
+        );
+    rc = SQLITE_ERROR;
+  }else{
+    fseek(pTab->pWriteFd, 0, SEEK_END);
+    pTab->szCurrent = pTab->szOrig = (i64)ftell(pTab->pWriteFd);
+    rc = zipfileLoadDirectory(pTab, 0, 0);
+  }
+
+  if( rc!=SQLITE_OK ){
+    zipfileCleanupTransaction(pTab);
+  }
+
+  return rc;
+}
+
 /*
 ** xUpdate method.
 */
@@ -1445,7 +1474,10 @@ static int zipfileUpdate(
   int bIsDir = 0;
   u32 iCrc32 = 0;
 
-  assert( (pTab->zFile==0)==(pTab->pWriteFd==0) );
+  if( pTab->pWriteFd==0 ){
+    rc = zipfileBegin(pVtab);
+    if( rc!=SQLITE_OK ) return rc;
+  }
 
   /* If this is a DELETE or UPDATE, find the archive entry to delete. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
@@ -1541,7 +1573,7 @@ static int zipfileUpdate(
 
     if( rc==SQLITE_OK ){
       /* Create the new CDS record. */
-      pNew = zipfileNewEntry(zPath, pTab->zFile ? 0 : (nData+1));
+      pNew = zipfileNewEntry(zPath);
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -1557,11 +1589,7 @@ static int zipfileUpdate(
         pNew->cds.iOffset = (u32)pTab->szCurrent;
         pNew->cds.nFile = nPath;
         pNew->mUnixTime = (u32)mTime;
-        if( pTab->zFile ){
-          rc = zipfileAppendEntry(pTab, pNew, pData, nData);
-        }else{
-          memcpy(pNew->aData, pData, nData);
-        }
+        rc = zipfileAppendEntry(pTab, pNew, pData, nData);
         zipfileAddEntry(pTab, pOld, pNew);
       }
     }
@@ -1604,36 +1632,6 @@ static int zipfileAppendEOCD(ZipfileTab *pTab, ZipfileEOCD *p){
   int nBuf = zipfileSerializeEOCD(p, pTab->aBuffer);
   assert( nBuf==ZIPFILE_EOCD_FIXED_SZ );
   return zipfileAppendData(pTab, pTab->aBuffer, nBuf);
-}
-
-static int zipfileBegin(sqlite3_vtab *pVtab){
-  ZipfileTab *pTab = (ZipfileTab*)pVtab;
-  int rc = SQLITE_OK;
-
-  assert( pTab->pWriteFd==0 );
-  if( pTab->zFile ){
-    /* Open a write fd on the file. Also load the entire central directory
-    ** structure into memory. During the transaction any new file data is 
-    ** appended to the archive file, but the central directory is accumulated
-    ** in main-memory until the transaction is committed.  */
-    pTab->pWriteFd = fopen(pTab->zFile, "ab+");
-    if( pTab->pWriteFd==0 ){
-      pTab->base.zErrMsg = sqlite3_mprintf(
-          "zipfile: failed to open file %s for writing", pTab->zFile
-      );
-      rc = SQLITE_ERROR;
-    }else{
-      fseek(pTab->pWriteFd, 0, SEEK_END);
-      pTab->szCurrent = pTab->szOrig = (i64)ftell(pTab->pWriteFd);
-      rc = zipfileLoadDirectory(pTab, 0, 0);
-    }
-
-    if( rc!=SQLITE_OK ){
-      zipfileCleanupTransaction(pTab);
-    }
-  }
-
-  return rc;
 }
 
 /*
@@ -1785,14 +1783,11 @@ static int zipfileFindFunction(
   void (**pxFunc)(sqlite3_context*,int,sqlite3_value**), /* OUT: Result */
   void **ppArg                    /* OUT: User data for *pxFunc */
 ){
-  if( nArg>0 ){
-    if( sqlite3_stricmp("zipfile_cds", zName)==0 ){
-      *pxFunc = zipfileFunctionCds;
-      *ppArg = (void*)pVtab;
-      return 1;
-    }
+  if( sqlite3_stricmp("zipfile_cds", zName)==0 ){
+    *pxFunc = zipfileFunctionCds;
+    *ppArg = (void*)pVtab;
+    return 1;
   }
-
   return 0;
 }
 
