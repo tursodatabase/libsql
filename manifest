@@ -1,5 +1,5 @@
-C When\san\sindex\sis\sbased\son\sa\stext\srepresentation\sof\sa\snumeric\scolumn\sin\sthe\noriginal\stable,\smake\ssure\sthe\sindexed\svalue\suses\sthe\scanonical\stext\s\nrepresentation\sof\sthe\snumeric\svalue\sin\sthe\stable.\nProposed\sfix\sfor\sticket\s[343634942dd54ab57b70].
-D 2018-02-01T01:13:33.559
+C Fix\sa\smemory\sleak\sthat\scould\sfollow\san\sIO\serror\sin\sthe\szipfile\sextension.\sAnd\nadd\sother\stests.
+D 2018-02-01T15:19:54.965
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -304,7 +304,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 56028f7e74d948b7bef834624d128f563eb63f5950248d538afa9d0f6c3365dc
+F ext/misc/zipfile.c 28f06977290c28361dcb7279016194c8e632c841e8586eb1520bbf494f487a5f
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
@@ -1603,9 +1603,9 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test a16528022b08789168adc9c79646e41fb55c4f94b26a2aca97085ebc591ca84d
+F test/zipfile.test 37cc584afebc6b64691a5df13deef0623f4bb42be21f1421930c34d9817ba1f2
 F test/zipfile2.test 5f93611307c131e83f226a471231d769b794b9e8c6a675cfa3d34b1a79df23fe
-F test/zipfilefault.test df4fa9e16116e0cb21d09037a6b0a7d93fecd8767d82154b66044b4ca43fca58
+F test/zipfilefault.test e287d6783d95b7bbad3478701834a353675f48502f95d6d58e07d954b8278639
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b730d187f2202e5b5d31ed6c94c9bb04d7c289f7086a9b44b3d9050ea3586d3a
-R 03c296c6343c0711547e5b14fdc5c828
-U drh
-Z 93daef2f8ab3c187bf34c937a8efe1d7
+P 88e2ce916791d488076584f3795a89eb4277fcb812af9e4c2f383815d55ff6f1
+R 59b5173dc10fbd02f5f4a286751c0af4
+U dan
+Z 2f13a257a067155eca38f77c87e4d0a0

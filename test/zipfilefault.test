@@ -56,10 +56,23 @@ do_execsql_test 3.0 {
   INSERT INTO setup(name, data) VALUES('a.txt', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaa');
 }
 
-do_faultsim_test 2 -faults oom* -body {
+do_faultsim_test 3 -faults oom* -body {
   execsql { SELECT name,data FROM zipfile('test.zip') }
 } -test {
   faultsim_test_result {0 {a.txt aaaaaaaaaaaaaaaaaaaaaaaaaaaa}} 
+}
+
+do_faultsim_test 4 -faults oom* -body {
+  execsql {
+    WITH c(n, d) AS (
+      SELECT 1, 'aaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbb'
+    )
+    SELECT name, data FROM zipfile(
+      (SELECT zipfile(n, d) FROM c)
+    );
+  }
+} -test {
+  faultsim_test_result {0 {1 aaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbb}}
 }
 
 

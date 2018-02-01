@@ -423,7 +423,15 @@ ifcapable datetime {
     test_unzip/c.txt 1111111000 
   }]
 
-  do_test 6.1 {
+  do_execsql_test 6.1 {
+    SELECT name, mtime, data FROM zipfile('test1.zip')
+  } {
+    a.txt 946684800   abc
+    b.txt 1000000000  abc
+    c.txt 1111111000  abc
+  }
+
+  do_test 6.2 {
     forcedelete test_unzip
     file mkdir test_unzip
     exec unzip -d test_unzip test2.zip
@@ -438,8 +446,35 @@ ifcapable datetime {
     test_unzip/b.txt 1000000000 
     test_unzip/c.txt 1111111000 
   }]
+
+  do_execsql_test 6.3 {
+    SELECT name, mtime, data FROM zipfile('test2.zip')
+  } {
+    a.txt 946684800   abc
+    b.txt 1000000000  abc
+    c.txt 1111111000  abc
+  }
 }
 }
+
+#-------------------------------------------------------------------------
+forcedelete test.zip
+do_test 7.0 {
+  execsql {
+    WITH c(name,data) AS (
+        SELECT '1', randomblob(1000000) UNION ALL
+        SELECT '2', randomblob(1000000) UNION ALL
+        SELECT '3', randomblob(1000000) 
+    )
+    SELECT writefile('test.zip', zipfile(name, data) ) FROM c;
+  }
+
+  list [catch {
+    db eval { SELECT name, data FROM zipfile('test.zip') } {
+      if {$name==2} { close [open test.zip w+] }
+    }
+  } msg] $msg
+} {1 {error in fread()}}
 
 
 finish_test

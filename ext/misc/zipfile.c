@@ -2017,23 +2017,24 @@ void zipfileFinal(sqlite3_context *pCtx){
   u8 *aZip;
 
   p = (ZipfileCtx*)sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
-  if( p==0 || p->nEntry==0 ) return;
+  if( p==0 ) return;
+  if( p->nEntry>0 ){
+    memset(&eocd, 0, sizeof(eocd));
+    eocd.nEntry = p->nEntry;
+    eocd.nEntryTotal = p->nEntry;
+    eocd.nSize = p->cds.n;
+    eocd.iOffset = p->body.n;
 
-  memset(&eocd, 0, sizeof(eocd));
-  eocd.nEntry = p->nEntry;
-  eocd.nEntryTotal = p->nEntry;
-  eocd.nSize = p->cds.n;
-  eocd.iOffset = p->body.n;
-
-  nZip = p->body.n + p->cds.n + ZIPFILE_EOCD_FIXED_SZ;
-  aZip = (u8*)sqlite3_malloc(nZip);
-  if( aZip==0 ){
-    sqlite3_result_error_nomem(pCtx);
-  }else{
-    memcpy(aZip, p->body.a, p->body.n);
-    memcpy(&aZip[p->body.n], p->cds.a, p->cds.n);
-    zipfileSerializeEOCD(&eocd, &aZip[p->body.n + p->cds.n]);
-    sqlite3_result_blob(pCtx, aZip, nZip, zipfileFree);
+    nZip = p->body.n + p->cds.n + ZIPFILE_EOCD_FIXED_SZ;
+    aZip = (u8*)sqlite3_malloc(nZip);
+    if( aZip==0 ){
+      sqlite3_result_error_nomem(pCtx);
+    }else{
+      memcpy(aZip, p->body.a, p->body.n);
+      memcpy(&aZip[p->body.n], p->cds.a, p->cds.n);
+      zipfileSerializeEOCD(&eocd, &aZip[p->body.n + p->cds.n]);
+      sqlite3_result_blob(pCtx, aZip, nZip, zipfileFree);
+    }
   }
 
   sqlite3_free(p->body.a);
