@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\striggered\swhen\sa\szipfile\svirtual\stable\sis\screated\sand\swritten\sto\nwithin\sthe\ssame\stransaction.\sAnd\sadd\sother\szipfile\stest.
-D 2018-02-01T19:41:23.066
+C Add\sa\sfew\smore\szipfile\stests.\sNo\schanges\sto\scode.
+D 2018-02-01T20:42:23.543
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1603,9 +1603,9 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 1f066994bd77493c87e8ee4bd94db0651d180cff19ffbbe0b70085eb9a2cb34c
+F test/zipfile.test 44aa8af115cc3e8c905468768dc761260650a8fdfca57e10f9818f5f8008d340
 F test/zipfile2.test 67d5f08a202796d4b7a71dfa4b8dcb74aa7a9d1f42c5f17bedff9855c1ba7aa5
-F test/zipfilefault.test 73b08e3d0bbeb275e325ee7e3678ca98781de0737f9153ca23bde1f48a93d728
+F test/zipfilefault.test 050be76778d2ec83566a542800fc3967f65ce719671a819016ada8b654bc14f7
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a70af1e9c567f12c997d25d0a305a8d42bf2cc92f2811e9d5fdde720665e213
-R ec6ac070bff5134b5a74e8c3afc721f5
+P 48f1c556994d7f8f359c649a1da81eec02306106b68946a9a20b276742c4610d
+R cdbed97cc578ccd9e756b9f206f65092
 U dan
-Z 34f839c0a19e1ff6432f6acef976c132
+Z 07c3c59583bca5bfb67bba61fc8753c1

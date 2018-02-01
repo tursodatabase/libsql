@@ -440,6 +440,37 @@ foreach {tn mode} {
   } [list 1 "zipfile: parse error in mode: $mode"]
 }
 
+do_catchsql_test 4.6 {
+  WITH c(name,data) AS ( SELECT 'a.txt', 'abc')
+  SELECT zipfile(name) FROM c
+} {1 {wrong number of arguments to function zipfile()}}
+
+do_catchsql_test 4.7 {
+  WITH c(name,data) AS ( 
+    SELECT 'a.txt', 'abc' UNION ALL
+    SELECT NULL, 'def'
+  )
+  SELECT zipfile(name,data) FROM c
+} {1 {first argument to zipfile() must be non-NULL}}
+
+do_catchsql_test 4.7 {
+  WITH c(name,data,method) AS ( 
+    SELECT 'a.txt', 'abc', 0
+    UNION SELECT 'b.txt', 'def', 8
+    UNION SELECT 'c.txt', 'ghi', 16
+  )
+  SELECT zipfile(name,NULL,NULL,data,method) FROM c
+} {1 {illegal method value: 16}}
+
+do_catchsql_test 4.8 {
+  WITH c(name,data) AS ( 
+    SELECT 'a.txt', 'abc'
+    UNION SELECT 'b.txt', 'def'
+    UNION SELECT 'c.txt/', 'ghi'
+  )
+  SELECT zipfile(name,NULL,NULL,data) FROM c
+} {1 {non-directory name must not end with /}}
+
 #--------------------------------------------------------------------------
 
 db func rt remove_timestamps
@@ -448,7 +479,7 @@ do_execsql_test 5.0 {
     SELECT 'a.txt', 946684800, 'abc'
   )
   SELECT name,mtime,data FROM zipfile(
-    ( SELECT rt( zipfile(name,NULL,mtime,data) ) FROM c )
+    ( SELECT rt( zipfile(name,NULL,mtime,data,NULL) ) FROM c )
   )
 } {
   a.txt 946684800 abc
@@ -592,5 +623,18 @@ do_execsql_test 8.3.1 {
   COMMIT;
 }
 
+#-------------------------------------------------------------------------
+# Test that the zipfile aggregate correctly adds and removes "/" from
+# the ends of directory file names.
+do_execsql_test 9.0 {
+  WITH src(nm) AS (
+    VALUES('dir1') UNION ALL
+    VALUES('dir2/') UNION ALL
+    VALUES('dir3//') UNION ALL
+    VALUES('dir4///') UNION ALL
+    VALUES('/') 
+  )
+  SELECT name FROM zipfile((SELECT zipfile(nm, NULL) FROM src))
+} {dir1/ dir2/ dir3/ dir4/ /}
 finish_test
 

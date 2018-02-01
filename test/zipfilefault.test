@@ -84,6 +84,7 @@ do_faultsim_test 4 -faults oom* -body {
 }
 
 reset_db
+sqlite3_db_config_lookaside db 0 0 0
 load_static_extension db zipfile
 
 do_execsql_test 5.0 {
@@ -125,6 +126,38 @@ do_faultsim_test 5.3 -faults oom* -prep {
 } -test {
   catchsql { COMMIT }
   faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 6.1 -faults oom* -body {
+  execsql {
+    WITH c(n, d) AS (
+      VALUES('a.txt', '1234567890') UNION ALL
+      VALUES('dir', NULL)
+    )
+    SELECT zipfile(n, d) IS NULL FROM c;
+  }
+} -test {
+  faultsim_test_result {0 0}
+}
+
+set big [string repeat 0123456789 1000]
+do_faultsim_test 6.2 -faults oom* -body {
+  execsql {
+    WITH c(n, d) AS (
+      VALUES('a.txt', $big)
+    )
+    SELECT zipfile(n, NULL, NULL, d, 0) IS NULL FROM c;
+  }
+} -test {
+  faultsim_test_result {0 0}
+}
+
+do_faultsim_test 7.0 -faults oom* -prep {
+  catch { db close }
+  sqlite3 db ""
+} -body {
+  load_static_extension db zipfile
+} -test {
 }
 
 
