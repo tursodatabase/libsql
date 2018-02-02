@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\stest\sfile\scrash8.test.
-D 2018-01-13T14:07:24.871
+C Update\sa\scouple\sof\stest\sscripts\sso\sthat\sthey\swork\son\sF2FS\sfile-systems\sthat\nsupport\satomic\stransactions.
+D 2018-02-02T08:08:14.635
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -901,7 +901,7 @@ F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
 F test/interrupt2.test e4408ca770a6feafbadb0801e54a0dcd1a8d108d
 F test/intpkey.test ac71107a49a06492b69b82aafaf225400598d3c8
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
-F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
+F test/ioerr.test 470fcc78e9cd352d162baf782fe301ea807d764241f58a48fc58109c2dfcdb6b
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
@@ -945,7 +945,7 @@ F test/lock_common.tcl 7ffb45accf6ee91c736df9bafe0806a44358f035
 F test/lookaside.test 90052e87282de256d613fcf8c9cbb845e4001d2f
 F test/main.test bb75e406c9b64931f3dc7e7f04626633365bb22f
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
+F test/malloc.test 18dd1c4188c81ca79cf123527c71b19ee0c31feb9947fdffb0dc6ceb1436816a
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test a591be066ebc6ad34adaa4b38939a037a59ebd80ad681e79dedac7b4a9e7bc09
@@ -1582,7 +1582,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a296d4d4d326f34f104a6632008050d1fff0e55118a428bc2df15cdef773b22
-R 47f453fe230e6d2e922e6d8659420e7f
+P 4951d91d40ad3298b14e77f12dc27a43f261afc111e1ff61e1076217d5c43216
+Q +49e58e645e0c114c71935a3b7fa4771e8a23e28127efd2efe0f2f18813c8f391
+R fa266906f1cb36e6fc524d518fc3a971
 U dan
-Z bc4db4501f68833508f4972c23c5187e
+Z 281ad70d78f82578be19fc55ca125d90
