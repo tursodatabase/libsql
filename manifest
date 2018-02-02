@@ -1,5 +1,5 @@
-C Update\sa\scouple\sof\stest\sscripts\sso\sthat\sthey\swork\son\sF2FS\sfile-systems\sthat\nsupport\satomic\stransactions.
-D 2018-02-02T08:08:14.635
+C In\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE\sbuilds\son\s\sF2FS\sfile-systems,\sinvoke\nSQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE\sif\san\sSQLITE_FCNTL_COMMIT_ATOMIC_WRITE\scall\nfails.\sAlso,\sdo\snot\suse\san\satomic\stransaction\sto\screate\sthe\sinitial\sdatabase.\nThis\sis\sbecause\sif\san\serror\soccurs\swhile\swriting\sto\sthe\sdb\sfile,\sany\schanges\nto\sthe\sfile-size\sdo\snot\sseem\sto\sbe\srolled\sback\sautomatically.\sThe\sonly\stime\nthis\smatters\sis\swhen\sthe\sfile\swas\s0\sbytes\sin\ssize\sto\sstart\swith.\sCherrypick\sof\n[b3122db154].
+D 2018-02-02T08:14:21.615
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -390,7 +390,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 0681c6ef336fcb6a111f45b60a5faea38992ed6c4ae9fbd57a6f8e247724fa68
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 930dace8819cf569331bca24be8fe362d337208bc6e12dc4acb19c596630f1f4
+F src/pager.c 8b45b866507f6ead21ffc3907d8474b9157be46f853dae534bd86b3bd186cd6c
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -946,7 +946,7 @@ F test/lookaside.test 90052e87282de256d613fcf8c9cbb845e4001d2f
 F test/main.test bb75e406c9b64931f3dc7e7f04626633365bb22f
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 18dd1c4188c81ca79cf123527c71b19ee0c31feb9947fdffb0dc6ceb1436816a
-F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
+F test/malloc3.test 6e88bae6312854a4adb4ecc2a6a5ea8c59b4db778b724ba718e1c43fc8c3c136
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test a591be066ebc6ad34adaa4b38939a037a59ebd80ad681e79dedac7b4a9e7bc09
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
@@ -984,7 +984,7 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
 F test/misc5.test fff0f75e834bc09a39f6079320dd8c37de956f4f
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
+F test/misc7.test e26355e3260fdb2334bb48de81329e7f1bebf4fb49cd2c45d3939bc4301ab675
 F test/misc8.test ba03aaa08f02d62fbb8d3b2f5595c1b33aa9bbc5
 F test/misuse.test 3c34719944ba045cc6c188a4852ba04680728912
 F test/mmap1.test d2cfc1635171c434dcff0ece2f1c8e0a658807ce
@@ -1027,7 +1027,7 @@ F test/pager1.test 9475f2a48c5b86ae15ef48a420939e0ae744bc5cb688de8aba64120694d18
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 4e9a83d6ca0838d7c602c9eb93d1357562d9059c1e02ffb138a8271020838370
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
-F test/pagerfault.test 42ff797b1e6426c141cc7ee8b7417c9f27427950
+F test/pagerfault.test e33a182da37b3ca8d8595861ae0a3f190accf84b4bb16622e4b7ca37b3ecb1f7
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 84e4cc5cbca285357f7906e99b21be4f2bf5abc0
@@ -1449,7 +1449,7 @@ F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
 F test/walro.test 4ab7ac01b77c2f894235c699d59e3e3c7f15a160
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
-F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
+F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/where.test f0c325563acde44f2c4ea6ba348e9e29f7121757
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 54cdeb02157acc979de41530b804ae7b09552bf1
@@ -1582,8 +1582,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4951d91d40ad3298b14e77f12dc27a43f261afc111e1ff61e1076217d5c43216
-Q +49e58e645e0c114c71935a3b7fa4771e8a23e28127efd2efe0f2f18813c8f391
-R fa266906f1cb36e6fc524d518fc3a971
+P 1b3946792730b536d0084cf9936624a456749c0059cee49fd69f36bec174c9c7
+Q +b3122db1545aeb48b7c28d480534b4b0fe04e83d5336225714c3cad926e5960e
+R fda32929e512dbf5e4b115f154d26451
 U dan
-Z 281ad70d78f82578be19fc55ca125d90
+Z 1fe44c3c6a216301f3d7002913fff518
