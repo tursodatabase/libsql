@@ -1,5 +1,5 @@
-C Add\snew\sinterfaces\ssqlite3_result_pointer(),\sand\nsqlite3_value_pointer()\sand\suse\sthem\sto\stransfer\sthe\seponymous\sFTS3\scolumn\npointer\sto\sthe\ssnippet()\sand\soffsets()\sroutines.\s\sThis\schanges\sis\sa\s\ncherry-pick\sof\s[f0f49224]\swith\sversion-specific\sedits.\s\sThat\scheck-in\swas\ninspired\sby\scheck-in\s[72de49f2].
-D 2017-07-21T07:45:23.406
+C Enable\sthe\s".wheretrace"\sand\s".selecttrace"\soptions\sin\sthe\sshell\swhen\nconfigure\sis\srun\susing\s--enable-debug.\s\sThis\smirrors\sa\ssimilar\schange\nthat\shas\salready\soccurred\son\strunk.
+D 2018-02-02T16:46:41.480
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -38,8 +38,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure f0b449016511057506dae6a525433b004df9cc4c x
-F configure.ac 1e87304e51af110950c48a1eea6ffc7a577f600e
+F configure 88b3b01a8050e19e7d5bafc0baa989c9d177ee4e1017faf3a9846060badd5474 x
+F configure.ac 7acb42566064f2908fae511dae8000eaae812a7c1247e1e3227cae1ba0d9da9e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1390,11 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bda77dda9697c463c3d0704014d51627fceee328
-Q +f0f492245e957f5339c5aef02716321e45c18914b9a78387e4158f87fc2d83f9
-R d9726a99cce883b83c0b86ff1601f729
-T *branch * branch-3.9.2
-T *sym-branch-3.9.2 *
-T -sym-branch-3.9 *
+P 69906880cee1f246cce494672402e0c7f29bd4ec19c437d26d603870d2bd625d
+R 1c9ff6f9f2a51b4e10808de5fcbea36c
 U drh
-Z 02632e8a008083bfd94c6f55cee630d7
+Z c934654d63304f50d0c8486eb20a3584
