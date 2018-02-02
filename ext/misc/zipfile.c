@@ -30,10 +30,6 @@ SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
 
-#if defined(_WIN32) || defined(WIN32)
-#  include <io.h>
-#endif
-
 #include <zlib.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
