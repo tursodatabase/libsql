@@ -30,18 +30,9 @@ SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#if !defined(_WIN32) && !defined(WIN32)
-#  include <unistd.h>
-#  include <dirent.h>
-#  include <utime.h>
-#else
+#if defined(_WIN32) || defined(WIN32)
 #  include <io.h>
 #endif
-#include <time.h>
-#include <errno.h>
 
 #include <zlib.h>
 
@@ -67,6 +58,25 @@ typedef unsigned long u32;
 #endif
 
 #endif   /* SQLITE_AMALGAMATION */
+
+/*
+** Definitions for mode bitmasks S_IFDIR, S_IFREG and S_IFLNK.
+**
+** In some ways it would be better to obtain these values from system 
+** header files. But, the dependency is undesirable and (a) these
+** have been stable for decades, (b) the values are part of POSIX and
+** are also made explicit in [man stat], and (c) are part of the 
+** file format for zip archives.
+*/
+#ifndef S_IFDIR
+# define S_IFDIR 0040000
+#endif
+#ifndef S_IFREG
+# define S_IFREG 0100000
+#endif
+#ifndef S_IFLNK
+# define S_IFLNK 0120000
+#endif
 
 static const char ZIPFILE_SCHEMA[] = 
   "CREATE TABLE y("
@@ -1448,6 +1458,39 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
 }
 
 /*
+** Return the current time as a 32-bit timestamp in UNIX epoch format (like
+** time(2)).
+*/
+static u32 zipfileTime(void){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  u32 ret;
+  if( pVfs->iVersion>=2 && pVfs->xCurrentTimeInt64 ){
+    i64 ms;
+    pVfs->xCurrentTimeInt64(pVfs, &ms);
+    ret = (u32)((ms/1000) - ((i64)24405875 * 8640));
+  }else{
+    double day;
+    pVfs->xCurrentTime(pVfs, &day);
+    ret = (u32)((day - 2440587.5) * 86400);
+  }
+  return ret;
+}
+
+/*
+** Return a 32-bit timestamp in UNIX epoch format.
+**
+** If the value passed as the only argument is either NULL or an SQL NULL,
+** return the current time. Otherwise, return the value stored in (*pVal)
+** cast to a 32-bit unsigned integer.
+*/
+static u32 zipfileGetTime(sqlite3_value *pVal){
+  if( pVal==0 || sqlite3_value_type(pVal)==SQLITE_NULL ){
+    return zipfileTime();
+  }
+  return (u32)sqlite3_value_int64(pVal);
+}
+
+/*
 ** xUpdate method.
 */
 static int zipfileUpdate(
@@ -1461,7 +1504,7 @@ static int zipfileUpdate(
   ZipfileEntry *pNew = 0;         /* New in-memory CDS entry */
 
   u32 mode = 0;                   /* Mode for new entry */
-  i64 mTime = 0;                  /* Modification time for new entry */
+  u32 mTime = 0;                  /* Modification time for new entry */
   i64 sz = 0;                     /* Uncompressed size */
   const char *zPath = 0;          /* Path for new entry */
   int nPath = 0;                  /* strlen(zPath) */
@@ -1540,11 +1583,7 @@ static int zipfileUpdate(
     if( rc==SQLITE_OK ){
       zPath = (const char*)sqlite3_value_text(apVal[2]);
       nPath = (int)strlen(zPath);
-      if( sqlite3_value_type(apVal[4])==SQLITE_NULL ){
-        mTime = (sqlite3_int64)time(0);
-      }else{
-        mTime = sqlite3_value_int64(apVal[4]);
-      }
+      mTime = zipfileGetTime(apVal[4]);
     }
 
     if( rc==SQLITE_OK && bIsDir ){
@@ -1581,7 +1620,7 @@ static int zipfileUpdate(
         pNew->cds.iVersionExtract = ZIPFILE_NEWENTRY_REQUIRED;
         pNew->cds.flags = ZIPFILE_NEWENTRY_FLAGS;
         pNew->cds.iCompression = (u16)iMethod;
-        zipfileMtimeToDos(&pNew->cds, (u32)mTime);
+        zipfileMtimeToDos(&pNew->cds, mTime);
         pNew->cds.crc32 = iCrc32;
         pNew->cds.szCompressed = nData;
         pNew->cds.szUncompressed = (u32)sz;
@@ -1929,11 +1968,7 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   if( rc ) goto zipfile_step_out;
 
   /* Decode the "mtime" argument. */
-  if( pMtime==0 || sqlite3_value_type(pMtime)==SQLITE_NULL ){
-    e.mUnixTime = (u32)time(0);
-  }else{
-    e.mUnixTime = (u32)sqlite3_value_int64(pMtime);
-  }
+  e.mUnixTime = zipfileGetTime(pMtime);
 
   /* If this is a directory entry, ensure that there is exactly one '/'
   ** at the end of the path. Or, if this is not a directory and the path
