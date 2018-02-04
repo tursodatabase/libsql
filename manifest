@@ -1,5 +1,5 @@
-C Move\svariable\sdeclaration\sin\szipfile\sextension\sto\sfix\sMSVC\scompiler\serror.
-D 2018-02-04T01:29:01.007
+C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
+D 2018-02-04T01:30:54.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -429,7 +429,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c d711228cac336fb35fff21f3f4a0efe2ad58aa9a800dd02929cdf184be1e78a3
+F src/btree.c f7bb37c27b3734d58796febb30b5d818b3b4eb592b57b88039e5d92b3ebd9dab
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 672022c06e1a5c2653f80c77a687de11f7e65ce81d20fe2825aadfa13a875c33
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb3feb3bc33718625159eddbf8ef608cd641af84e97d433d6b11ba6da94dad2e
-R 8b8d4f678534b218d44a7c7eccfb3100
+P ac6a32482e675871c3ce5ecc727e50e4bba649e80e3c55bf99025fed5667da94
+R 996f708603528b0dbd58b1571407dd89
 U mistachkin
-Z e519063d0405ad8f0532efc454c9e10a
+Z c8cfe40d98eaa63e42dbf121b7e80b46

@@ -4669,7 +4669,7 @@ static int accessPayload(
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
       if( pCur->aOverflow==0
-       || nOvfl*sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
+       || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
       ){
         Pgno *aNew = (Pgno*)sqlite3Realloc(
             pCur->aOverflow, nOvfl*2*sizeof(Pgno)
