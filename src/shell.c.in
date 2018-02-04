@@ -8094,8 +8094,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
   main_init(&data);
-#if !SQLITE_SHELL_IS_UTF8
   sqlite3_initialize();
+#if !SQLITE_SHELL_IS_UTF8
   argv = sqlite3_malloc64(sizeof(argv[0])*argc);
   if( argv==0 ){
     raw_printf(stderr, "out of memory\n");

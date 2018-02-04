@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2018-02-04T01:30:54.482
+C In\sthe\sCLI,\nmake\ssure\ssqlite3_initialize()\sis\scalled\scorrectly\seven\sfor\snon-UTF8\shosts.
+D 2018-02-04T20:33:13.165
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -488,7 +488,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
-F src/shell.c.in ada6d184a5cdaada15a330ca97ad0126125f0aaed40b5c04385278fcaa78aafa
+F src/shell.c.in 0b2c8d55e3703723a22610d75ccd4037962c3bcb5ad5570efd781e8c521811c4
 F src/sqlite.h.in 51f9acf52c80113d793ddd38b3940ad6895d97b4752503b19291fb8fcbf54c5e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac6a32482e675871c3ce5ecc727e50e4bba649e80e3c55bf99025fed5667da94
-R 996f708603528b0dbd58b1571407dd89
-U mistachkin
-Z c8cfe40d98eaa63e42dbf121b7e80b46
+P 63a914410b5750bd08836864ae456ff09549487c5ce49706fedffa3d4f973059
+R e1e5372ebf3735de49eb34feee943e70
+U drh
+Z 839d4cdabfa93aa0b085a28f8c75bf19
