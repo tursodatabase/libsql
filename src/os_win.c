@@ -6063,7 +6063,10 @@ int sqlite3_os_init(void){
   sqlite3_vfs_register(&winLongPathNolockVfs, 0);
 #endif
 
+#ifndef SQLITE_OMIT_WAL
   winBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+#endif
+
   return SQLITE_OK;
 }
 
@@ -6074,7 +6077,11 @@ int sqlite3_os_end(void){
     sleepObj = NULL;
   }
 #endif
+
+#ifndef SQLITE_OMIT_WAL
   winBigLock = 0;
+#endif
+
   return SQLITE_OK;
 }
 
