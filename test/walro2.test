@@ -39,6 +39,18 @@ proc copy_to_test2 {bZeroShm} {
   }
 }
 
+# Most systems allocate the *-shm file in 32KB trunks. But on UNIX systems
+# for which the getpagesize() call returns greater than 32K, the *-shm
+# file is allocated in page-sized units (since you cannot mmap part of
+# a page). The following code sets variable $MINSHMSZ to the smallest
+# possible *-shm file (i.e. the greater of 32KB and the system page-size).
+#
+do_execsql_test 0.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x);
+}
+set MINSHMSZ [file size test.db-shm]
+
 foreach bZeroShm {0 1} {
 set TN [expr $bZeroShm+1]
 do_multiclient_test tn {
@@ -169,7 +181,7 @@ do_multiclient_test tn {
   } {a b c d e f g h 1 2}
   do_test $TN.3.2.2 {
     list [file size test.db-wal] [file size test.db-shm]
-  } {0 32768}
+  } [list 0 $MINSHMSZ]
 
   do_test $TN.3.3.0 {
     code2 { sqlite3 db2 test.db }
@@ -182,7 +194,7 @@ do_multiclient_test tn {
     code2 { db2 close }
     code1 { db close }
     list [file size test.db-wal] [file size test.db-shm]
-  } [list [wal_file_size 4 1024] 32768]
+  } [list [wal_file_size 4 1024] $MINSHMSZ]
   do_test $TN.3.3.1 {
     code1 { sqlite3 db file:test.db?readonly_shm=1 }
     sql1 { SELECT * FROM t1 }
@@ -196,7 +208,7 @@ do_multiclient_test tn {
     }
     code2 { db2 close }
     list [file size test.db-wal] [file size test.db-shm]
-  } [list [wal_file_size 4 1024] 32768]
+  } [list [wal_file_size 4 1024] $MINSHMSZ]
   do_test $TN.3.3.3 {
     sql1 { SELECT * FROM t1 }
   } {i ii}
