@@ -1,5 +1,5 @@
-C Update\stest\sfile\swalro2.test\sto\saccount\sfor\ssystems\swith\sa\spage-size\n(getpagesize())\slarger\sthan\s32KB.
-D 2018-02-05T13:28:51.262
+C Fix\sanother\sminor\sproblem\sin\swalro2.test.
+D 2018-02-05T13:42:45.777
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1555,7 +1555,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
-F test/walro2.test ff7e493ce65a4dadf878d89aab4c385f8ddd3c1919333a18890013fce3feeb68
+F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3591fb54178b8f124207ff16e3ef9e58a62585feb3a56ced2b862222aea19d8
-R 6c73de726d0398e2d66d996a80d76264
+P d9e59cfb8476e1ec1ca458b8382172526c0557ab785f41e31971d03045c9344c
+R f3585ddda6ecfb38609942de6c6ce298
 U dan
-Z ca72fcd07de53b3665abd69681f9d461
+Z 93b8cc01dad51cf808b345d2ca0944f2

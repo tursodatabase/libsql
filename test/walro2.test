@@ -48,7 +48,7 @@ proc copy_to_test2 {bZeroShm} {
 do_execsql_test 0.0 {
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(x);
-}
+} {wal}
 set MINSHMSZ [file size test.db-shm]
 
 foreach bZeroShm {0 1} {
