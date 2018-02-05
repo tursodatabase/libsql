@@ -1,5 +1,5 @@
-C Fix\sanother\sminor\sproblem\sin\swalro2.test.
-D 2018-02-05T13:42:45.777
+C Allocation\sthe\smutex\sused\sby\sthe\sunix\sVFS\sonly\sonce\sat\sinitialization,\sinstead\nof\severy\stime\sit\sis\sneeded.
+D 2018-02-05T16:39:12.754
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -471,7 +471,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c a82505be158d8ce42b38dcc9b426187d776904c12cdc68dc8925e1dfcc5cb6ce
+F src/os_unix.c ce491421b3a54b63094a155eeac668a3bc8e5b86a5a58551d906e5b5affb443f
 F src/os_win.c 501dde1ee770f4ffa458bfe1cf376a556de3ab00bb8320d659c5984403991d62
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c cd194a8793ce061e184ddc369fadbc1020c6f431014d22093f6c5e55c9234033
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9e59cfb8476e1ec1ca458b8382172526c0557ab785f41e31971d03045c9344c
-R f3585ddda6ecfb38609942de6c6ce298
-U dan
-Z 93b8cc01dad51cf808b345d2ca0944f2
+P ba0631de60ca38bf7efa6dbd86ec8774bf6f438c804155968e97f17eabe3b20a
+R 07658fd89f10e428329340f4fdba337c
+U drh
+Z f93cbf0dc0e4b2bfb043a63cd29cee7e

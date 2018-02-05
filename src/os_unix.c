@@ -696,15 +696,16 @@ static int robust_open(const char *z, int f, mode_t m){
 **     assert( unixMutexHeld() );
 **   unixEnterLeave()
 */
+static sqlite3_mutex *unixBigLock = 0;
 static void unixEnterMutex(void){
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
+  sqlite3_mutex_enter(unixBigLock);
 }
 static void unixLeaveMutex(void){
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
+  sqlite3_mutex_leave(unixBigLock);
 }
 #ifdef SQLITE_DEBUG
 static int unixMutexHeld(void) {
-  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
+  return sqlite3_mutex_held(unixBigLock);
 }
 #endif
 
@@ -5846,7 +5847,6 @@ static int unixOpen(
     randomnessPid = osGetpid(0);
     sqlite3_randomness(0,0);
   }
-
   memset(p, 0, sizeof(unixFile));
 
   if( eType==SQLITE_OPEN_MAIN_DB ){
@@ -7721,6 +7721,7 @@ int sqlite3_os_init(void){
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
     sqlite3_vfs_register(&aVfs[i], i==0);
   }
+  unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
   return SQLITE_OK; 
 }
 
@@ -7732,6 +7733,7 @@ int sqlite3_os_init(void){
 ** This routine is a no-op for unix.
 */
 int sqlite3_os_end(void){ 
+  unixBigLock = 0;
   return SQLITE_OK; 
 }
  
