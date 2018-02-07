@@ -1908,6 +1908,7 @@ static int fts3WriteSegment(
     sqlite3_bind_blob(pStmt, 2, z, n, SQLITE_STATIC);
     sqlite3_step(pStmt);
     rc = sqlite3_reset(pStmt);
+    sqlite3_bind_null(pStmt, 2);
   }
   return rc;
 }
@@ -1964,6 +1965,7 @@ static int fts3WriteSegdir(
     sqlite3_bind_blob(pStmt, 6, zRoot, nRoot, SQLITE_STATIC);
     sqlite3_step(pStmt);
     rc = sqlite3_reset(pStmt);
+    sqlite3_bind_null(pStmt, 6);
   }
   return rc;
 }
@@ -3443,6 +3445,7 @@ static void fts3UpdateDocTotals(
   sqlite3_bind_blob(pStmt, 2, pBlob, nBlob, SQLITE_STATIC);
   sqlite3_step(pStmt);
   *pRC = sqlite3_reset(pStmt);
+  sqlite3_bind_null(pStmt, 2);
   sqlite3_free(a);
 }
 
@@ -4631,6 +4634,7 @@ static int fts3TruncateSegment(
       sqlite3_bind_int(pChomp, 4, iIdx);
       sqlite3_step(pChomp);
       rc = sqlite3_reset(pChomp);
+      sqlite3_bind_null(pChomp, 2);
     }
   }
 
@@ -4710,6 +4714,7 @@ static int fts3IncrmergeHintStore(Fts3Table *p, Blob *pHint){
     sqlite3_bind_blob(pReplace, 2, pHint->a, pHint->n, SQLITE_STATIC);
     sqlite3_step(pReplace);
     rc = sqlite3_reset(pReplace);
+    sqlite3_bind_null(pReplace, 2);
   }
 
   return rc;
