@@ -1,5 +1,5 @@
-C In\sextensions\srtree,\sfts3\sand\sfts5,\sensure\sthat\swhen\sdynamic\sbuffers\sare\sbound\nto\spersistent\sSQL\sstatements\susing\sSQLITE_STATIC,\sthe\sbinding\sis\sreplaced\swith\nan\sSQL\sNULL\sbefore\sthe\sbuffer\sis\sfreed.\sOtherwise,\sa\suser\smay\sobtain\sa\spointer\nto\sthe\spersistent\sstatement\susing\ssqlite3_next_stmt()\sand\sattempt\sto\saccess\nthe\sfreed\sbuffer\susing\ssqlite3_expanded_sql()\sor\ssimilar.
-D 2018-02-07T18:02:50.375
+C Fix\stypo\sin\scomment.\s\sSkip\stests\sadded\sby\scheck-in\s[4761db83b6]\swhen\srunning\son\sWindows.
+D 2018-02-07T18:45:00.417
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -474,7 +474,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c ce491421b3a54b63094a155eeac668a3bc8e5b86a5a58551d906e5b5affb443f
 F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c a3834a40acc2f3ab247d846f850d8c9313587d9c99c57a4dc194f2d4d7bf9d15
+F src/pager.c 0b6bd5442733b2e08d0673de6cdafe3e7ab0b5715e4844ac836ab346b1d9ed89
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
 F src/parse.y 4e750e1b261ff9f1d0b6b5d40a829c66d691899f48953fde839d8b52d41aa148
 F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
@@ -1094,7 +1094,7 @@ F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test ea2cc74d97f077b9e74c84cbd024f14d79a8126f
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
-F test/nockpt.test d291d618c934a453683cb2eff95f633d406f7147fa0403e10055db19dcc3842a
+F test/nockpt.test fd5473e30a84848b25ab06524750c05095383e191be83ccb4e6951c8beddfb5b
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/normalize.test 501630ab49b0b26b65c74124bf03e3374c1b57fa97aae750f84803609141d167
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4761db83b6d3d57f281370899403c102e39ad0021d315dd6a6912d250436782a
-R 43f41f7fb61c314e4ad3b5665d35c1a5
-U dan
-Z 58e2db6aa4428ce3cec59e835a85dfcd
+P 2a5f813bc61f9e780f2ccbda425611f65ad523b6d486a1e5e2b9d5e9f1d260a2
+R c941c05feb1d90fa13b7661ff1c5c31d
+U mistachkin
+Z 34b282be56160e3c52f85502f9e831c9

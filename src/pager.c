@@ -4103,7 +4103,7 @@ static void pagerFreeMapHdrs(Pager *pPager){
 }
 
 /* Verify that the database file has not be deleted or renamed out from
-** under the pager.  Return SQLITE_OK if the database is still were it ought
+** under the pager.  Return SQLITE_OK if the database is still where it ought
 ** to be on disk.  Return non-zero (SQLITE_READONLY_DBMOVED or some other error
 ** code from sqlite3OsAccess()) if the database has gone missing.
 */

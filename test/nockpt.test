@@ -61,6 +61,7 @@ do_test 1.14 { sqlite3_db_config db NO_CKPT_ON_CLOSE 1 } {1}
 do_execsql_test 1.14 { PRAGMA main.journal_mode = delete } {delete}
 do_test 1.15 { file exists test.db-wal } {0}
 
+if {$::tcl_platform(platform)!="windows"} {
 #-------------------------------------------------------------------------
 # Test an unusual scenario:
 #
@@ -139,6 +140,7 @@ do_test 2.5 {
     SELECT * FROM y1;
   } db3
 } {ok a b c d e g}
+}
 
 
 finish_test
