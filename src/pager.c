@@ -4102,6 +4102,30 @@ static void pagerFreeMapHdrs(Pager *pPager){
   }
 }
 
+/* Verify that the database file has not be deleted or renamed out from
+** under the pager.  Return SQLITE_OK if the database is still were it ought
+** to be on disk.  Return non-zero (SQLITE_READONLY_DBMOVED or some other error
+** code from sqlite3OsAccess()) if the database has gone missing.
+*/
+static int databaseIsUnmoved(Pager *pPager){
+  int bHasMoved = 0;
+  int rc;
+
+  if( pPager->tempFile ) return SQLITE_OK;
+  if( pPager->dbSize==0 ) return SQLITE_OK;
+  assert( pPager->zFilename && pPager->zFilename[0] );
+  rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_HAS_MOVED, &bHasMoved);
+  if( rc==SQLITE_NOTFOUND ){
+    /* If the HAS_MOVED file-control is unimplemented, assume that the file
+    ** has not been moved.  That is the historical behavior of SQLite: prior to
+    ** version 3.8.3, it never checked */
+    rc = SQLITE_OK;
+  }else if( rc==SQLITE_OK && bHasMoved ){
+    rc = SQLITE_READONLY_DBMOVED;
+  }
+  return rc;
+}
+
 
 /*
 ** Shutdown the page cache.  Free all memory and close all files.
@@ -4118,8 +4142,7 @@ static void pagerFreeMapHdrs(Pager *pPager){
 ** to the caller.
 */
 int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
-  u8 *pTmp = (u8 *)pPager->pTmpSpace;
-
+  u8 *pTmp = (u8*)pPager->pTmpSpace;
   assert( db || pagerUseWal(pPager)==0 );
   assert( assert_pager_state(pPager) );
   disable_simulated_io_errors();
@@ -4128,11 +4151,17 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  assert( db || pPager->pWal==0 );
-  sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,
-      (db && (db->flags & SQLITE_NoCkptOnClose) ? 0 : pTmp)
-  );
-  pPager->pWal = 0;
+  {
+    u8 *a = 0;
+    assert( db || pPager->pWal==0 );
+    if( db && 0==(db->flags & SQLITE_NoCkptOnClose) 
+     && SQLITE_OK==databaseIsUnmoved(pPager)
+    ){
+      a = pTmp;
+    }
+    sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,a);
+    pPager->pWal = 0;
+  }
 #endif
   pager_reset(pPager);
   if( MEMDB ){
@@ -4966,30 +4995,6 @@ act_like_temp_file:
   return SQLITE_OK;
 }
 
-
-/* Verify that the database file has not be deleted or renamed out from
-** under the pager.  Return SQLITE_OK if the database is still were it ought
-** to be on disk.  Return non-zero (SQLITE_READONLY_DBMOVED or some other error
-** code from sqlite3OsAccess()) if the database has gone missing.
-*/
-static int databaseIsUnmoved(Pager *pPager){
-  int bHasMoved = 0;
-  int rc;
-
-  if( pPager->tempFile ) return SQLITE_OK;
-  if( pPager->dbSize==0 ) return SQLITE_OK;
-  assert( pPager->zFilename && pPager->zFilename[0] );
-  rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_HAS_MOVED, &bHasMoved);
-  if( rc==SQLITE_NOTFOUND ){
-    /* If the HAS_MOVED file-control is unimplemented, assume that the file
-    ** has not been moved.  That is the historical behavior of SQLite: prior to
-    ** version 3.8.3, it never checked */
-    rc = SQLITE_OK;
-  }else if( rc==SQLITE_OK && bHasMoved ){
-    rc = SQLITE_READONLY_DBMOVED;
-  }
-  return rc;
-}
 
 
 /*
