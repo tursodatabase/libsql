@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2018-02-09T15:04:51.897
+C Make\sthe\stests\sin\sfunc6.test\smore\srobust\sagainst\simplementation\schanges.
+D 2018-02-09T15:42:40.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -926,7 +926,7 @@ F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test d202a7606d23f90988a664e88e268aed1087c11c
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
-F test/func6.test a4281c8fcd42b56f7a60f28e8e4d444e8b2256f9e82658b7ab87699f8318f564
+F test/func6.test 612311a51adad23326d15353eea8d90394798acb26dd1f7c7cad59bd8ac982d2
 F test/fuzz-oss1.test e58330d01cbbd8215ee636b17a03fe220b37dbfa
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad5d3bdc739a0997786f94fb5789b726b9f53ff883226093924338fe5000922b
-R b0cb95e907260417df10582a6a66e391
-U drh
-Z cf86aa36db1eb294d8bf4ad196d065d9
+P a6c3115483d597fc77ab19fdcfd1d3437cad7e467081ad8c5315fb98c115eed9
+R f6c1b3a83bf1fd9e6dbd920e348c4245
+U dan
+Z baeba07272c3f575c3e3036aa614a6dd
