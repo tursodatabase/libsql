@@ -1,5 +1,5 @@
-C Enhance\ssqlite3ErrStr()\sto\sinclude\sseveral\smore\serror\scodes.
-D 2018-02-08T01:00:11.430
+C Fix\sa\sharmless\scompiler\swarning.
+D 2018-02-09T15:04:51.897
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1624,7 +1624,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 7f7735326ca9c3b48327b241063cee52d35d44e20ebe1b3624a81658052a4d39
-F tool/lempar.c da840fc8a6fbac23599a65ff075e6e3d01320417c794ff577088e09f5d74b689
+F tool/lempar.c 468a155e8729cfbccfe1d85bf60d064f1dab76167a51149ec5c7928a2de63953
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1704,7 +1704,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 468a389cdc8b6f92c77b11f682e210ad8cce7e3dbc0df308a898f4115e85fce2
-R 1a5e19bb7fec633fe466598d51b2a7e2
-U mistachkin
-Z 7e5222f5afb9dd9d9137e335880f687f
+P ad5d3bdc739a0997786f94fb5789b726b9f53ff883226093924338fe5000922b
+R b0cb95e907260417df10582a6a66e391
+U drh
+Z cf86aa36db1eb294d8bf4ad196d065d9

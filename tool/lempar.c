@@ -511,7 +511,8 @@ static unsigned int yy_find_shift_action(
 #endif
   do{
     i = yy_shift_ofst[stateno];
-    assert( i>=0 && i+YYNTOKEN<=sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
+    assert( i>=0 );
+    assert( i+YYNTOKEN<=(int)sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
     assert( iLookAhead!=YYNOCODE );
     assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
