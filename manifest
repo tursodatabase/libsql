@@ -1,5 +1,5 @@
-C Fix\smisplaced\stestcase()\smacros\sfrom\sthe\sprevious\scheck-in.
-D 2018-02-10T02:31:30.872
+C Add\sthe\sstart\sof\sthe\s"zonefile"\sextension.
+D 2018-02-10T17:41:01.882
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -408,10 +408,13 @@ F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
+F ext/zonefile/README.md d675dbdffe2cd6d54681b958a13c88433a5022d39ab9ef3d4f487a272603f902
+F ext/zonefile/zonefile.c da7c63bfc0332e61cff28712ff75b08164c3a5eceef6273cac82f1fe2703b1ce
+F ext/zonefile/zonefile1.test ba4ca1166bb39a4121e6e7b3ef40a57cdff47a7432c816ab90ca61c02d9648d3
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk c8c473bd91d553acab3fb0608ddb69fc769c7bcf6d9e258800504bfda86c792b
+F main.mk 0efdf6ac125eb810494d72dd7016ab07ddf3e3fa8615a14aef8491b69818fbe4
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -498,7 +501,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 11a2618c227fd13ccad73ee02d1199f9880c59db2b3144fd7432db1980a2577d
-F src/test1.c 1ab7cbbb6693e08364c1a9241e2aee17f8c4925e4cc52396be77ae6845a05828
+F src/test1.c 6b0dfd4f0a1996805bc04381b45df71ead9ed84634d2a47a757ab292febf9026
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1705,7 +1708,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fab2c2b07b5d3cd851db3e6f5c8a44155e32b0df22905ea33412b153b825a928
-R ec6c39c5f311f4ee60e0b56f01a82df2
-U drh
-Z 0f7daa30b8fefb9cfc3cc8e0bb044dd7
+P 3aed949a18a251c5795f21f0385c205a127502b7e9cf06bc7f4c763951cd7984
+R 49b6c60b83f70d70fd5fce453b29eb31
+T *branch * zonefile
+T *sym-zonefile *
+T -sym-trunk *
+U dan
+Z c26dc1aef1bc29dda740f0f5df0c6eab

@@ -6992,6 +6992,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
 #ifdef SQLITE_HAVE_ZLIB
   extern int sqlite3_zipfile_init(sqlite3*,char**,const sqlite3_api_routines*);
 #endif
+  extern int sqlite3_zonefile_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7016,6 +7017,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
 #ifdef SQLITE_HAVE_ZLIB
     { "zipfile",               sqlite3_zipfile_init              },
 #endif
+    { "zonefile",              sqlite3_zonefile_init             },
   };
   sqlite3 *db;
   const char *zName;
