@@ -16,7 +16,7 @@ rm -f $SQLITE3_LIB_DIR/bindgen_bundled_version.rs
 SQLITE3_INCLUDE_DIR=$SQLITE3_LIB_DIR
 cargo update
 # Just to make sure there is only one bingen.rs file in target dir
-cargo clean
+find $SCRIPT_DIR/target -type f -name bindgen.rs -exec rm {} \;
 cargo build --features "buildtime_bindgen" --no-default-features
 find $SCRIPT_DIR/target -type f -name bindgen.rs -exec cp {} $SQLITE3_LIB_DIR/bindgen_bundled_version.rs \;
 # Sanity check
