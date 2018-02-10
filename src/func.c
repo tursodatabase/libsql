@@ -1239,13 +1239,13 @@ static void replaceFunc(
     }else{
       if( nRep>nPattern ){
         nOut += nRep - nPattern;
+        testcase( nOut-1==db->aLimit[SQLITE_LIMIT_LENGTH] );
+        testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
         if( nOut-1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
           sqlite3_result_error_toobig(context);
           sqlite3_free(zOut);
           return;
         }
-        testcase( nOut-1==db->aLimit[SQLITE_LIMIT_LENGTH] );
-        testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
         cntExpand++;
         if( (cntExpand&(cntExpand-1))==0 ){
           /* Grow the size of the output buffer only on substitutions

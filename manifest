@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sof\sthe\sbuilt-in\sREPLACE()\sfunction\sin\scases\swhere\nit\sdoes\smany\ssubstitutions\sthat\smake\sthe\sstring\slarger.\s\sOSSFuzz\sis\sreporting\nintermittant\stimeouts\swhen\srunning\sa\stest\swhere\sit\sdoes\sa\sREPLACE()\son\sa\s\n930KB\srandom\sblob.\sPerhaps\sthis\senhancement\swill\sfix\sthat.
-D 2018-02-09T23:25:14.764
+C Fix\smisplaced\stestcase()\smacros\sfrom\sthe\sprevious\scheck-in.
+D 2018-02-10T02:31:30.872
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -444,7 +444,7 @@ F src/delete.c 20c8788451dc737a967c87ea53ad43544d617f5b57d32ccce8bd52a0daf9e89b
 F src/expr.c 9e06de431c09f144438aa6895ea4d4290fa3c6875bfcc3ba331012ca78deadf0
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
-F src/func.c 385b9b01851f55c6547f2592ac378572298eb979b02516387ec6f21379d85507
+F src/func.c 94f42cba2cc1c34aeaa441022ba0170ec3fec4bba54db4e0ded085c6dc0fdc51
 F src/global.c ac3094f1dc59fbeb919aef7cc0cc827a8459d1fb1adb7972ef75bd9e0c10b75b
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -1705,7 +1705,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a57a77dc0cc9fbaa9d5b134422f7a8cc8d4c2851ed3c2bdd449800c6a5d2aae0
-R adb83e680df996ddba44e43de1a05c6b
+P fab2c2b07b5d3cd851db3e6f5c8a44155e32b0df22905ea33412b153b825a928
+R ec6c39c5f311f4ee60e0b56f01a82df2
 U drh
-Z 6ead8882aba40c327286a8b049f64ee5
+Z 0f7daa30b8fefb9cfc3cc8e0bb044dd7
