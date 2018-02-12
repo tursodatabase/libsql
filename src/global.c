@@ -258,6 +258,13 @@ const Token sqlite3IntTokens[] = {
    { "1", 1 }
 };
 
+#ifdef VDBE_PROFILE
+/*
+** The following performance counter can be used in place of
+** sqlite3Hwtime() for profiling.  This is a no-op on standard builds.
+*/
+sqlite3_uint64 sqlite3NProfileCnt = 0;
+#endif
 
 /*
 ** The value of the "pending" byte must be 0x40000000 (1 byte past the
