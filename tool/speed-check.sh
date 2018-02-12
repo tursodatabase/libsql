@@ -39,6 +39,7 @@ LEAN_OPTS="$LEAN_OPTS -DSQLITE_USE_ALLOCA"
 BASELINE="trunk"
 doExplain=0
 doCachegrind=1
+doVdbeProfile=0
 while test "$1" != ""; do
   case $1 in
     --reprepare)
@@ -78,6 +79,7 @@ while test "$1" != ""; do
         rm -f vdbe_profile.out
         CC_OPTS="$CC_OPTS -DVDBE_PROFILE"
         doCachegrind=0
+        doVdbeProfile=1
         ;;
     --lean)
         CC_OPTS="$CC_OPTS $LEAN_OPTS"
@@ -137,6 +139,9 @@ echo "NAME           = $NAME" | tee summary-$NAME.txt
 echo "SPEEDTEST_OPTS = $SPEEDTEST_OPTS" | tee -a summary-$NAME.txt
 echo "CC_OPTS        = $CC_OPTS" | tee -a summary-$NAME.txt
 rm -f cachegrind.out.* speedtest1 speedtest1.db sqlite3.o
+if test $doVdbeProfile -eq 1; then
+  rm -f vdbe_profile.out
+fi
 $CC -g -Os -Wall -I. $CC_OPTS -c sqlite3.c
 size sqlite3.o | tee -a summary-$NAME.txt
 if test $doExplain -eq 1; then
@@ -163,6 +168,10 @@ fi
 if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt
 fi
-if test "$NAME" != "$BASELINE"; then
+if test $doVdbeProfile -eq 1; then
+  tclsh ../sqlite/tool/vdbe_profile.tcl >vdbeprofile-$NAME.txt
+  open vdbeprofile-$NAME.txt
+fi
+if test "$NAME" != "$BASELINE" -a $doVdbeProfile -ne 1; then
   fossil test-diff --tk -c 20 cout-$BASELINE.txt cout-$NAME.txt
 fi

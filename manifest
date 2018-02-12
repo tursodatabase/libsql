@@ -1,5 +1,5 @@
-C When\scompiling\swith\sVDBE_PROFILE,\sadd\sthe\ssqlite3NProfileCnt\sglobal\svariable\nwhich\scan\sbe\sused\sto\smeasure\sper-opcode\svalues\sother\sthan\selapse\stime,\sif\nnon-zero.
-D 2018-02-12T20:27:34.197
+C Updates\sto\sthe\sspeed-check.sh\sscript\sfor\simprovements\sto\sthe\s--vdbeprofile\noption.
+D 2018-02-12T20:50:28.825
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1663,7 +1663,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 4bfd19aad7eb3ce0372ef0255f58035e0bba4ff5e9acfd763a10c6fb365c8dec
-F tool/speed-check.sh 9ae425da8819e54e780cf494fc6d8175dfb16e109ae3214a45a5c9bb2b74e2c4
+F tool/speed-check.sh c6239c71ba6951ac5d093bbea55aadf019246c8e7a0c079422e62312a6ab1247
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1705,7 +1705,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e128d72f1a565551d3b6fdb3807fcb1c2a2bf355f0c09d04562b62f49d01fdbc
-R ea7b0f8bed7883637ff159eaee70912b
+P d44d5936428859b6d3e089d9835acb8ca1f3c0a85b59eeaa619170623e7dcc30
+R ed478e21f56ba8798873dd31125e1435
 U drh
-Z 7df15e7989dc925e831e6a33868c90fa
+Z b17fd438653dec89029ec54019e16fa1
