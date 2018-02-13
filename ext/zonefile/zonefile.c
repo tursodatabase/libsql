@@ -37,7 +37,7 @@ typedef unsigned long u32;
 
 #define ZONEFILE_MAGIC_NUMBER 0x464B3138
 
-#define ZONEFILE_SZ_HEADER           26
+#define ZONEFILE_SZ_HEADER           32
 #define ZONEFILE_SZ_KEYOFFSETS_ENTRY 20
 
 #define ZONEFILE_DEFAULT_MAXAUTOFRAMESIZE (64*1024)
@@ -209,9 +209,43 @@ static int zonefileGetParams(
   const char *zJson,              /* JSON configuration parameter (or NULL) */
   ZonefileWrite *p                /* Populate this object before returning */
 ){
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  sqlite3_stmt *pStmt = 0;
+  char *zErr = 0;
+  int rc = SQLITE_OK;
+  int rc2;
+
   memset(p, 0, sizeof(ZonefileWrite));
   p->maxAutoFrameSize = ZONEFILE_DEFAULT_MAXAUTOFRAMESIZE;
-  return SQLITE_OK;
+
+  rc = zonefilePrepare(db, &pStmt, &zErr,"SELECT key, value FROM json_each(?)");
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+    const char *zKey = (const char*)sqlite3_column_text(pStmt, 0);
+    int iVal = sqlite3_column_int(pStmt, 1);
+    if( sqlite3_stricmp("maxAutoFrameSize", zKey)==0 ){
+      p->maxAutoFrameSize = iVal;
+    }else
+    if( sqlite3_stricmp("compressionTypeIndexData", zKey)==0 ){
+      p->compressionTypeIndexData = iVal;
+    }else
+    if( sqlite3_stricmp("compressionTypeContent", zKey)==0 ){
+      p->compressionTypeContent = iVal;
+    }else
+    if( sqlite3_stricmp("encryptionType", zKey)==0 ){
+      p->encryptionType = iVal;
+    }else{
+      rc = SQLITE_ERROR;
+      zErr = sqlite3_mprintf("unknown parameter name: \"%s\"", zKey);
+    }
+  }
+  rc2 = sqlite3_finalize(pStmt);
+  if( rc==SQLITE_OK ) rc = rc2;
+
+  if( zErr ){
+    sqlite3_result_error(pCtx, zErr, -1);
+    sqlite3_free(zErr);
+  }
+  return rc;
 }
 
 /*
@@ -405,6 +439,7 @@ static void zonefileWriteFunc(
   pPrev = 0;
 
   /* Create the zonefile header in the in-memory buffer */
+  memset(aHdr, 0, ZONEFILE_SZ_HEADER);
   zonefilePut32(&aHdr[0], ZONEFILE_MAGIC_NUMBER);
   aHdr[4] = sWrite.compressionTypeIndexData;
   aHdr[5] = sWrite.compressionTypeContent;
@@ -416,7 +451,7 @@ static void zonefileWriteFunc(
   aHdr[23] = 0;                   /* Encryption key index */
   aHdr[24] = 0;                   /* extended header version */
   aHdr[25] = 0;                   /* extended header size */
-  assert( ZONEFILE_SZ_HEADER==26 );
+  assert( ZONEFILE_SZ_HEADER>=26 );
 
   rc = zonefileFileWrite(pFd, aHdr, ZONEFILE_SZ_HEADER);
   if( rc==SQLITE_OK ) rc = zonefileFileWrite(pFd, sFrameIdx.a, sFrameIdx.n);
