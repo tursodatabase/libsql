@@ -31,8 +31,9 @@ is the name of the database table to read and optional argument
 influence creation of the zonefile file. 
 
 Currently the only &lt;parameters&gt; attribute supported is 
-<i>maxAutoFrameSize</i>, which sets the maximum frame size in bytes for
-automatically generated zonefile frames. 
+<i>maxAutoFrameSize</i> (default value 65536), which sets the maximum 
+uncompressed frame size in bytes for automatically generated zonefile 
+frames.
 
 For example, to create a zonefile named "test.zonefile" based on the
 contents of database table "test_input" and with a maximum automatic

@@ -67,6 +67,10 @@ typedef unsigned long u32;
 #include <string.h>
 #include <assert.h>
 
+/*
+** A structure to store the parameters for a single zonefile_write()
+** invocation. 
+*/
 typedef struct ZonefileWrite ZonefileWrite;
 struct ZonefileWrite {
   int compressionTypeIndexData;
@@ -75,6 +79,9 @@ struct ZonefileWrite {
   int maxAutoFrameSize;
 };
 
+/*
+** A structure to store a deserialized zonefile header in.
+*/
 typedef struct ZonefileHeader ZonefileHeader;
 struct ZonefileHeader {
   u32 magicNumber;
@@ -90,6 +97,9 @@ struct ZonefileHeader {
   u8 extendedHeaderSize;
 };
 
+/*
+** Buffer structure used by the zonefile_write() implementation.
+*/
 typedef struct ZonefileBuffer ZonefileBuffer;
 struct ZonefileBuffer {
   u8 *a;
@@ -218,6 +228,9 @@ static int zonefileGetParams(
   p->maxAutoFrameSize = ZONEFILE_DEFAULT_MAXAUTOFRAMESIZE;
 
   rc = zonefilePrepare(db, &pStmt, &zErr,"SELECT key, value FROM json_each(?)");
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_text(pStmt, 1, zJson, -1, SQLITE_STATIC);
+  }
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
     const char *zKey = (const char*)sqlite3_column_text(pStmt, 0);
     int iVal = sqlite3_column_int(pStmt, 1);
