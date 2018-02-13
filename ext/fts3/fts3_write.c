@@ -5639,7 +5639,7 @@ int sqlite3Fts3UpdateMethod(
         rc = FTS_CORRUPT_VTAB;
       }
     }
-    if( rc==SQLITE_OK && (!isRemove || *pRowid!=p->iPrevDocid ) ){
+    if( rc==SQLITE_OK ){
       rc = fts3PendingTermsDocid(p, 0, iLangid, *pRowid);
     }
     if( rc==SQLITE_OK ){
