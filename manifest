@@ -1,5 +1,5 @@
-C Pad\sthe\s26\sbyte\sZonefile\sheader\sto\s32\sbytes\sso\sthat\sthe\sZonefileIndex\sobject\nis\s8-byte\saligned.
-D 2018-02-13T17:33:28.294
+C Remove,\sfor\snow,\sthe\s"priority"\scolumn\sfrom\sthe\szonefile_files\svirtual\stable.
+D 2018-02-13T18:02:00.303
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -408,8 +408,8 @@ F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
-F ext/zonefile/README.md d675dbdffe2cd6d54681b958a13c88433a5022d39ab9ef3d4f487a272603f902
-F ext/zonefile/zonefile.c ed633fa36e07eb7f23484bc05d791c4d694b3b4e9d35badf49e53abdb7d579bc
+F ext/zonefile/README.md 1b5c62cad3ec25d48b28f2550d390768fdfef6d088ff9db8af676ab64f6c4530
+F ext/zonefile/zonefile.c 212c9a8778759c292685a0915ff5bcbdb9d279c2fe791021572617971c896c5b
 F ext/zonefile/zonefile1.test 8904658bd8332dc0d0c77c0c74c9c83dce4123a442bb971d5baf00170f6d0afe
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dba42f0e1efae7bad4579d23ad98e2c06e38053abe55f5cb277d7eecea42c56c
-R a2267f09422e3c7541908b968634faac
+P fdb6c0c5dc5a67ca16dfafc6e677f73936f36e357a2ff288b4958ddee0544603
+R 7ee10389f1633a4ccc7da396851ded16
 U dan
-Z 6e2ce05e6036b2dfe07f6724215b9f81
+Z 0a6dede478fe88813cd34fe2d513e5c6

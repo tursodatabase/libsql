@@ -58,7 +58,6 @@ typedef unsigned long u32;
 #define ZONEFILE_FILES_SCHEMA    \
   "CREATE TABLE z2("             \
   "  filename TEXT,"             \
-  "  priority INTEGER,"          \
   "  ekey BLOB,"                 \
   "  header JSON HIDDEN"         \
   ")"
@@ -745,11 +744,9 @@ static int zffColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
     case 0: /* filename */
       sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pSelect, 0));
       break;
-    case 1: /* priority */
+    case 1: /* ekey */
       break;
-    case 2: /* ekey */
-      break;
-    case 3: { /* header */
+    case 2: { /* header */
       const char *zFile = (const char*)sqlite3_column_text(pCsr->pSelect, 0);
       zonefileJsonHeader(ctx, zFile);
       break;
@@ -872,7 +869,7 @@ static int zonefilePopulateIndex(
 **
 **   1. The "old" rowid, or NULL.
 **   2. The "new" rowid.
-**   3. Values for each of the 4 columns: (filename,priority,ekey,header)
+**   3. Values for each of the 3 columns: (filename,ekey,header)
 */
 static int zffUpdate(
   sqlite3_vtab *pVtab, 
@@ -995,7 +992,6 @@ static int zonefileCreateConnect(
           ");"
           "CREATE TABLE %Q.'%q_shadow_file'(" 
           "  filename TEXT,"
-          "  priority INTEGER,"
           "  fileid INTEGER PRIMARY KEY"
           ");" 
           "CREATE VIRTUAL TABLE %Q.'%q_files' USING zonefile_files;",
