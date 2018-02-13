@@ -1,5 +1,5 @@
-C Ensure\sthat\smultiple\supdates\sof\sthe\ssame\sFTS4\srow\s(i.e.\sthe\srow\swith\sthe\ssame\nrowid)\swithin\sa\ssingle\stransaction\sare\swritten\sto\sseparate\ssegments.\sFix\sfor\n[d6ec09ec].
-D 2018-02-13T16:21:32.960
+C Remove\san\sunused\svariable\sfrom\sFTS4.
+D 2018-02-13T16:30:19.084
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 525a3bd9a7564603c5c061b7de55403a565307758a94600e8a2f6b00d1c40d9d
 F ext/fts3/fts3_unicode2.c cc04fc672bfd42b1e650398cb0bf71f64f9aae032cfe75bbcfe75b9cf966029c
-F ext/fts3/fts3_write.c 434fe5eaf6b848e9fa18dd269ab2450732f776ffb4d8051cfd0eef2c510ec5da
+F ext/fts3/fts3_write.c b583dede85eb0c3c3026f8d7ccb781ea4e845ae583754fecb2ca425b5907d87d
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1705,7 +1705,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f89c8f8ecd67f72ee730a2a334dff69b406a3dd00f50abbb54c4dc86cfab1bd1
-R 6201bc04be1c8ea59cb7f6218616fce1
-U dan
-Z a105e3a27f3cee541040c34c5a8f6a03
+P d2a81a3752a8298ee65fddcf32dee2147ba6467f770315a41966b3533977aa64
+R 24596befc5c0ec11ef119fbee4890efb
+U drh
+Z ec945a84da77652b5b990130e3b70870
