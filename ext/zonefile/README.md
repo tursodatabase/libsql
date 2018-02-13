@@ -113,4 +113,8 @@ key from one of the zonefile files in the index:
 
   *  Currently there is no support at all for encryption or compression.
 
+  *  Zonefile currently uses json1 to parse the json argument to
+     zonefile_write(). And so must be used with an SQLITE_ENABLE_JSON1
+     or otherwise json1-enabled SQLite.
+
 
