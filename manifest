@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\stable\slookup\sused\sto\sfind\sthe\sappropriate\ssearch\soperator\nfor\sa\sWHERE\sclause\son\sa\srow-value\sinequality.\s\sThe\sincorrect\stable\slookup\nwas\scausing\san\sincorrect\sanswer\sfor\sthe\sless-than\soperator.\nFix\sfor\sticket\s[f484b65f3d6230593c34f11]
-D 2018-02-13T18:48:08.593
+C Improved\stest\scases\sfor\sthe\s[f484b65f3d6230593c34f]\sbug.
+D 2018-02-13T19:13:05.932
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1166,7 +1166,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test a786af333ab4d64e2ac91e4a234851a959ab61ea74b4fc9db333f5f8a9cb24f0
+F test/rowvalue.test 0bc33483f2ef5e69ff4bdd2ae58e36fc598bfd1605fb718c8329bcfc0c10cfd1
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1705,7 +1705,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27ea783b281606196ad1e7e6e6dcbd80c75d4bafcf3e58756a71c213320e4db2
-R db63889646c3d3e78e93aa0d3ea314fa
+P f3112e67cdb27c1aec8d2cee3cb91ade061d093e13505894698e26336898b336
+R 5562ebb89ed1db5735eb0527fd19eb1a
 U drh
-Z e60bc3e5bf72f574703087920d14128f
+Z 5c7cba3bc5ff7309961a0180cc01b405
