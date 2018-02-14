@@ -18,6 +18,12 @@
 SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_AMALGAMATION
+# if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
+#  define NDEBUG 1
+# endif
+# if defined(NDEBUG) && defined(SQLITE_DEBUG)
+#  undef NDEBUG
+# endif
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
