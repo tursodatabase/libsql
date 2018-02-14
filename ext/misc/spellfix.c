@@ -2492,7 +2492,7 @@ static int spellfix1FilterForMatch(
   nPattern = (int)strlen(zPattern);
   if( zPattern[nPattern-1]=='*' ) nPattern--;
   zSql = sqlite3_mprintf(
-     "SELECT id, word, rank, k1"
+     "SELECT id, word, rank, coalesce(k1,word)"
      "  FROM \"%w\".\"%w_vocab\""
      " WHERE langid=%d AND k2>=?1 AND k2<?2",
      p->zDbName, p->zTableName, iLang
@@ -2826,17 +2826,17 @@ static int spellfix1Update(
       if( sqlite3_value_type(argv[1])==SQLITE_NULL ){
         spellfix1DbExec(&rc, db,
                "INSERT INTO \"%w\".\"%w_vocab\"(rank,langid,word,k1,k2) "
-               "VALUES(%d,%d,%Q,%Q,%Q)",
+               "VALUES(%d,%d,%Q,nullif(%Q,%Q),%Q)",
                p->zDbName, p->zTableName,
-               iRank, iLang, zWord, zK1, zK2
+               iRank, iLang, zWord, zK1, zWord, zK2
         );
       }else{
         newRowid = sqlite3_value_int64(argv[1]);
         spellfix1DbExec(&rc, db,
             "INSERT OR %s INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
-            "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
+            "VALUES(%lld,%d,%d,%Q,nullif(%Q,%Q),%Q)",
             zConflict, p->zDbName, p->zTableName,
-            newRowid, iRank, iLang, zWord, zK1, zK2
+            newRowid, iRank, iLang, zWord, zK1, zWord, zK2
         );
       }
       *pRowid = sqlite3_last_insert_rowid(db);
@@ -2845,9 +2845,9 @@ static int spellfix1Update(
       newRowid = *pRowid = sqlite3_value_int64(argv[1]);
       spellfix1DbExec(&rc, db,
              "UPDATE OR %s \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
-             " word=%Q, k1=%Q, k2=%Q WHERE id=%lld",
+             " word=%Q, k1=nullif(%Q,%Q), k2=%Q WHERE id=%lld",
              zConflict, p->zDbName, p->zTableName, newRowid, iRank, iLang,
-             zWord, zK1, zK2, rowid
+             zWord, zK1, zWord, zK2, rowid
       );
     }
     sqlite3_free(zK1);

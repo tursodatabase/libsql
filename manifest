@@ -1,5 +1,5 @@
-C Improved\stest\scases\sfor\sthe\s[f484b65f3d6230593c34f]\sbug.
-D 2018-02-13T19:13:05.932
+C Try\sto\soptimize\sspellfix1\sby\sstoring\sa\sNULL\sin\sthe\sk1\scolumn\sof\s%_vocab\nif\sit\swould\sotherwise\shave\sthe\ssame\svalue\sas\sthe\sword\scolumn.
+D 2018-02-14T14:13:09.238
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -294,7 +294,7 @@ F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681d
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c 9e960ba50483214c6a7a4b1517f8d8cef799e9db381195178c3fd3ad207e10c0
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 705ce1ed701b38f43c8ee7dd848877ff51c09eda322e39ccac6873adb4b74735
+F ext/misc/spellfix.c efe188bdd84d283e1c82e4bcf7058ffc1856176d9ba2ba14fd5efc4aa2d8661f
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -1262,7 +1262,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c a5faf4cbe5769eee4b721b3875cb3f12520a9b99d9026b1063b47c39603375b8
-F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
+F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
@@ -1705,7 +1705,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3112e67cdb27c1aec8d2cee3cb91ade061d093e13505894698e26336898b336
-R 5562ebb89ed1db5735eb0527fd19eb1a
+P 1f300514e6cdd32c755dc1b05dfa125b10eda2eb55a1024b66f66dbf5cf96289
+R 255e72ba75e81cf4ca1d4ef198b4e2a9
 U drh
-Z 5c7cba3bc5ff7309961a0180cc01b405
+Z 21f5c49e8ec82780f55a5436de6c983b
