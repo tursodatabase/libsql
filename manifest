@@ -1,5 +1,5 @@
-C Try\sto\soptimize\sspellfix1\sby\sstoring\sa\sNULL\sin\sthe\sk1\scolumn\sof\s%_vocab\nif\sit\swould\sotherwise\shave\sthe\ssame\svalue\sas\sthe\sword\scolumn.
-D 2018-02-14T14:13:09.238
+C New\stest\scases\sfor\sthe\seditdist3()\sfunction\sin\sthe\sspellfix\sextension.
+D 2018-02-14T15:30:48.110
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1265,6 +1265,7 @@ F test/speedtest1.c a5faf4cbe5769eee4b721b3875cb3f12520a9b99d9026b1063b47c396033
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
+F test/spellfix4.test eaae7a334516e09896a684fb552d338fa2844c65db9817d900701fe7598327e6
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
 F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
@@ -1705,7 +1706,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f300514e6cdd32c755dc1b05dfa125b10eda2eb55a1024b66f66dbf5cf96289
-R 255e72ba75e81cf4ca1d4ef198b4e2a9
+P b76ec7cb5841f9ad02b342271e91c5f5a598006f69df7953a6213c706e01f7a2
+R 955df0b8bc6bab58cd406ae281f344ae
 U drh
-Z 21f5c49e8ec82780f55a5436de6c983b
+Z d19bf6cab5bd800e73ca3fefa0386288
