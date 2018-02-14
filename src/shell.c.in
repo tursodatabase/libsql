@@ -1069,6 +1069,7 @@ struct ShellState {
 #define SHELL_OPEN_NORMAL     1      /* Normal database file */
 #define SHELL_OPEN_APPENDVFS  2      /* Use appendvfs */
 #define SHELL_OPEN_ZIPFILE    3      /* Use the zipfile virtual table */
+#define SHELL_OPEN_READONLY   4      /* Open a normal database read-only */
 
 /*
 ** These are the allowed shellFlgs values
@@ -3258,6 +3259,7 @@ static char zHelp[] =
   "                         on the output.\n"
   ".open ?OPTIONS? ?FILE? Close existing database and reopen FILE\n"
   "                         The --new option starts with an empty file\n"
+  "                         Other options: --readonly --append --zip\n"
   ".output ?FILE?         Send output to FILE or stdout\n"
   ".print STRING...       Print literal STRING\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
@@ -3452,6 +3454,10 @@ static void open_db(ShellState *p, int keepAlive){
       }
       case SHELL_OPEN_ZIPFILE: {
         sqlite3_open(":memory:", &p->db);
+        break;
+      }
+      case SHELL_OPEN_READONLY: {
+        sqlite3_open_v2(p->zDbFilename, &p->db, SQLITE_OPEN_READONLY, 0);
         break;
       }
       case SHELL_OPEN_UNSPEC:
@@ -6307,6 +6313,8 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif
       }else if( optionMatch(z, "append") ){
         p->openMode = SHELL_OPEN_APPENDVFS;
+      }else if( optionMatch(z, "readonly") ){
+        p->openMode = SHELL_OPEN_READONLY;
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
@@ -7985,6 +7993,7 @@ static const char zOptions[] =
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -quote               set output mode to 'quote'\n"
+  "   -readonly            open the database read-only\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
@@ -8234,6 +8243,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
+    }else if( strcmp(z,"-readonly")==0 ){
+      data.openMode = SHELL_OPEN_READONLY;
     }
   }
   if( data.zDbFilename==0 ){
