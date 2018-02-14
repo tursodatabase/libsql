@@ -691,6 +691,7 @@ static int editDist3ConfigLoad(
     assert( zTo!=0 || nTo==0 );
     if( nFrom>100 || nTo>100 ) continue;
     if( iCost<0 ) continue;
+    if( iCost>10000 ) continue;   /* Costs above 10K are considered infinite */
     if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
       pNew = sqlite3_realloc64(p->a, (p->nLang+1)*sizeof(p->a[0]));
@@ -782,7 +783,7 @@ static int matchFromTo(
 ){
   int b1 = pStr->a[n1].nByte;
   if( b1>n2 ) return 0;
-  if( memcmp(pStr->z+n1, z2, b1)!=0 ) return 0;
+  if( strncmp(pStr->z+n1, z2, b1)!=0 ) return 0;
   return 1;
 }
 
@@ -864,9 +865,6 @@ static EditDist3FromString *editDist3FromStringNew(
 /*
 ** Update entry m[i] such that it is the minimum of its current value
 ** and m[j]+iCost.
-**
-** If the iCost is 1,000,000 or greater, then consider the cost to be
-** infinite and skip the update.
 */
 static void updateCost(
   unsigned int *m,
@@ -874,11 +872,11 @@ static void updateCost(
   int j,
   int iCost
 ){
+  unsigned int b;
   assert( iCost>=0 );
-  if( iCost<10000 ){
-    unsigned int b = m[j] + iCost;
-    if( b<m[i] ) m[i] = b;
-  }
+  assert( iCost<10000 );
+  b = m[j] + iCost;
+  if( b<m[i] ) m[i] = b;
 }
 
 /*
