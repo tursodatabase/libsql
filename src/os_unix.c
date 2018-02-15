@@ -209,6 +209,10 @@ struct unixFile {
   unsigned char eFileLock;            /* The type of lock held on this fd */
   unsigned short int ctrlFlags;       /* Behavioral bits.  UNIXFILE_* flags */
   int lastErrno;                      /* The unix errno from last I/O error */
+#ifdef SQLITE_WRITE_QUEUE_FLUSH_HACK
+  unsigned int nUnsyncWrite;          /* Bytes written since last fsync() */
+  unsigned int nUnsyncLimit;          /* Maximum bytes written before fsync() */
+#endif
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pPreallocatedUnused;  /* Pre-allocated UnixUnusedFd */
   const char *zPath;                  /* Name of the file */
@@ -3368,7 +3372,18 @@ static int unixWrite(
   }
 #endif
  
-  while( (wrote = seekAndWrite(pFile, offset, pBuf, amt))<amt && wrote>0 ){
+  while( 1 ){
+    wrote = seekAndWrite(pFile, offset, pBuf, amt);
+#ifdef SQLITE_WRITE_QUEUE_FLUSH_HACK
+    if( pFile->nUnsyncLimit ){
+      pFile->nUnsyncWrite += wrote;
+      if( pFile->nUnsyncWrite>=pFile->nUnsyncLimit ){
+        fdatasync(pFile->h);
+        pFile->nUnsyncWrite = 0;
+      }
+    }
+#endif
+    if( wrote>=amt || wrote<=0 ) break;
     amt -= wrote;
     offset += wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -3597,6 +3612,9 @@ static int unixSync(sqlite3_file *id, int flags){
   assert( pFile );
   OSTRACE(("SYNC    %-3d\n", pFile->h));
   rc = full_fsync(pFile->h, isFullsync, isDataOnly);
+#ifdef SQLITE_WRITE_QUEUE_FLUSH_HACK
+  pFile->nUnsyncWrite = 0;
+#endif
   SimulateIOError( rc=1 );
   if( rc ){
     storeLastErrno(pFile, errno);
@@ -3817,6 +3835,17 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return rc ? SQLITE_IOERR_ROLLBACK_ATOMIC : SQLITE_OK;
     }
 #endif /* __linux__ && SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
+
+#ifdef SQLITE_WRITE_QUEUE_FLUSH_HACK
+    case SQLITE_FCNTL_PRAGMA: {
+      char **azParam = (char**)pArg;
+      if( sqlite3_stricmp(azParam[1],"fsync_interval")==0 ){
+        pFile->nUnsyncLimit = atoi(azParam[2]);
+        return SQLITE_OK;
+      }
+      return SQLITE_NOTFOUND;
+    }
+#endif
 
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
