@@ -380,6 +380,7 @@ static void zonefileWriteFunc(
   FILE *pFd = 0;
   int rc;
   sqlite3_value *pPrev = 0;
+  char *zErr = 0;
 
   ZonefileBuffer sFrameIdx = {0, 0, 0};
   ZonefileBuffer sKeyIdx = {0, 0, 0};
@@ -402,10 +403,11 @@ static void zonefileWriteFunc(
   if( pStmt==0 ) return;
 
   /* Open a file-handle used to write out the zonefile */ 
-  pFd = fopen(zFile, "w");
+  pFd = zonefileFileOpen(zFile, 1, &zErr);
   if( pFd==0 ){
-    zonefileCtxError(pCtx, "error opening file \"%s\" (fopen())", zFile);
+    sqlite3_result_error(pCtx, zErr, -1);
     sqlite3_finalize(pStmt);
+    sqlite3_free(zErr);
     return;
   }
 
@@ -676,14 +678,6 @@ static int zffEof(sqlite3_vtab_cursor *cur){
   return pCsr->pSelect==0;
 }
 
-static FILE *zonefileOpenFile(sqlite3_context *pCtx, const char *zFile){
-  FILE *pFd = fopen(zFile, "r");
-  if( pFd==0 ){
-    zonefileCtxError(pCtx, "failed to open file for reading: \"%s\"", zFile);
-  }
-  return pFd;
-}
-
 static void zonefileHeaderDeserialize(u8 *aBuf, ZonefileHeader *pHdr){
   pHdr->magicNumber = zonefileGet32(&aBuf[0]);
   pHdr->compressionTypeIndexData = aBuf[4];
@@ -699,7 +693,8 @@ static void zonefileHeaderDeserialize(u8 *aBuf, ZonefileHeader *pHdr){
 }
 
 static void zonefileJsonHeader(sqlite3_context *pCtx, const char *zFile){
-  FILE *pFd = zonefileOpenFile(pCtx, zFile);
+  char *zErr = 0;
+  FILE *pFd = zonefileFileOpen(zFile, 0, &zErr);
   if( pFd ){
     int rc;
     ZonefileHeader hdr;
@@ -745,6 +740,9 @@ static void zonefileJsonHeader(sqlite3_context *pCtx, const char *zFile){
       }
     }
     fclose(pFd);
+  }else{
+    sqlite3_result_error(pCtx, zErr, -1);
+    sqlite3_free(zErr);
   }
 }
 
