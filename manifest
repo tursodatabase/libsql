@@ -1,5 +1,5 @@
-C Fix\sthe\s--heap,\s--pagecache,\s--lookaside\sand\sother\soptions\sto\sthe\scommand-line\nshell\sthat\sinvoke\ssqlite3_config()\sso\sthat\sthey\swork\sagain.
-D 2018-02-15T01:03:37.596
+C Reduce\sthe\snumber\sof\scalls\sto\sstrncmp()\srequired\sto\srun\seditDist3Core().
+D 2018-02-15T03:05:56.872
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -294,7 +294,7 @@ F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681d
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c 9e960ba50483214c6a7a4b1517f8d8cef799e9db381195178c3fd3ad207e10c0
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c fcf23b0746bfefbec46a54cfb2cd0720c442a6e382247b4049748f882ad26b94
+F ext/misc/spellfix.c ad435d8d84a64a7287f67ba618d5fc4a775e73d8489b1c7ae85a339ed5d20c34
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -1706,7 +1706,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06870bb15656b50b0e14d4364bb21afac76500e313ecf67aaef3688d603fd076
-R 4e71ff1498e1cda7e0d47e08c283419f
+P 00707f2f2f746a6421f3e2de995e68cc8adba7225a04db6b28db52944e7e988e
+R bf16a0c80a0f655a42b9a2dc09fe803f
 U drh
-Z 76196b3bed6ed8589ed1fea48a14df1f
+Z 2ab397c1e9ab0ece50ec14a24b630ce7

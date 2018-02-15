@@ -756,6 +756,7 @@ static int utf8Len(unsigned char c, int N){
 ** the given string.
 */
 static int matchTo(EditDist3Cost *p, const char *z, int n){
+  if( p->a[p->nFrom]!=z[0] ) return 0;
   if( p->nTo>n ) return 0;
   if( strncmp(p->a+p->nFrom, z, p->nTo)!=0 ) return 0;
   return 1;
@@ -767,6 +768,7 @@ static int matchTo(EditDist3Cost *p, const char *z, int n){
 */
 static int matchFrom(EditDist3Cost *p, const char *z, int n){
   assert( p->nFrom<=n );
+  if( p->a[0]!=z[0] ) return 0;
   if( strncmp(p->a, z, p->nFrom)!=0 ) return 0;
   return 1;
 }
@@ -783,6 +785,7 @@ static int matchFromTo(
 ){
   int b1 = pStr->a[n1].nByte;
   if( b1>n2 ) return 0;
+  if( pStr->z[n1]!=z2[0] ) return 0;
   if( strncmp(pStr->z+n1, z2, b1)!=0 ) return 0;
   return 1;
 }
