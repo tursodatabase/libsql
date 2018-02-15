@@ -66,85 +66,96 @@ do_execsql_test 1.7 { DROP TABLE z1 }
 
 #-------------------------------------------------------------------------
 
-reset_db
-load_static_extension db zonefile
-
-do_execsql_test 2.0 {
-  CREATE TABLE zz(
-    k INTEGER PRIMARY KEY, 
-    frame INTEGER DEFAULT -1, 
-    idx INTEGER DEFAULT -1, 
-    v BLOB
-  );
-  CREATE TABLE rt(k INTEGER PRIMARY KEY, v BLOB);
-  CREATE VIRTUAL TABLE zone USING zonefile;
-}
-
-set nMinByte   0
-set nMaxByte 444
-foreach {zonefile lKey} {
-  test1.zonefile {195 1238 298 405 297}
-  test2.zonefile {124 1624 82 1929}
-  test3.zonefile {932 683 1751 410 41}
-  test4.zonefile {427 1491}
-  test5.zonefile {1004 473 801 394 1672 816 1577}
-  test6.zonefile {1374 1454 1005}
-  test7.zonefile {450 241 319 133}
-  test8.zonefile {1414 900 1406 1917 127 673}
-  test9.zonefile {1192 226 988 1292 718 1345 1675}
-  test10.zonefile {314}
-  test11.zonefile {1177 1597 60 532 291 1164 812}
-  test12.zonefile {1168 1290 1585 939 1916}
-  test13.zonefile {644 1784 1476 1283 433 506}
-  test14.zonefile {1141 1547 1506 364}
-  test15.zonefile {1756 1885 844 1880 1896 354}
-  test16.zonefile {1383 1928 1371}
-  test17.zonefile {93}
-  test18.zonefile {1067}
-  test19.zonefile {642}
-  test20.zonefile {1380 1857}
-  test21.zonefile {288 293 1968 1207 1739 231 300}
-  test22.zonefile {651 1007 607 830 299 1431}
-  test23.zonefile {81 1651 543 1949 256 119 1088}
-  test24.zonefile {1278 2024 682 1115 194 636 1804}
-  test25.zonefile {514 1155 171 2015 791}
-  test26.zonefile {1615 1228 147 1464}
-  test27.zonefile {55 1130 781 678 78}
-  test28.zonefile {1981 1401 1178}
-  test29.zonefile {1754 864 183 1953 1901}
-  test30.zonefile {1461 817}
-  test31.zonefile {1720 1722 686 1833}
+foreach {tn cmp cmpidx} {
+  1 none none
+  2 zlib none
+  3 none zlib
+  4 zlib zlib
 } {
-  forcedelete $zonefile
-  execsql { DELETE FROM zz; }
-  foreach k $lKey {
-    execsql { INSERT INTO zz(k, v) VALUES($k, randomblob($k)) }
+  reset_db
+  load_static_extension db zonefile
+  
+  do_execsql_test 2.$tn.0 {
+    CREATE TABLE zz(
+      k INTEGER PRIMARY KEY, 
+      frame INTEGER DEFAULT -1, 
+      idx INTEGER DEFAULT -1, 
+      v BLOB
+    );
+    CREATE TABLE rt(k INTEGER PRIMARY KEY, v BLOB);
+    CREATE VIRTUAL TABLE zone USING zonefile;
   }
-  execsql { INSERT INTO rt SELECT k, v FROM zz }
-  breakpoint
-  execsql { 
-    SELECT zonefile_write($zonefile, 'zz', '{"maxAutoFrameSize":2000}');
-    INSERT INTO zone_files(filename) VALUES($zonefile);
+  
+  set nMinByte   0
+  set nMaxByte 444
+  foreach {zonefile lKey} {
+    test1.zonefile {195 1238 298 405 297}
+    test2.zonefile {124 1624 82 1929}
+    test3.zonefile {932 683 1751 410 41}
+    test4.zonefile {427 1491}
+    test5.zonefile {1004 473 801 394 1672 816 1577}
+    test6.zonefile {1374 1454 1005}
+    test7.zonefile {450 241 319 133}
+    test8.zonefile {1414 900 1406 1917 127 673}
+    test9.zonefile {1192 226 988 1292 718 1345 1675}
+    test10.zonefile {314}
+    test11.zonefile {1177 1597 60 532 291 1164 812}
+    test12.zonefile {1168 1290 1585 939 1916}
+    test13.zonefile {644 1784 1476 1283 433 506}
+    test14.zonefile {1141 1547 1506 364}
+    test15.zonefile {1756 1885 844 1880 1896 354}
+    test16.zonefile {1383 1928 1371}
+    test17.zonefile {93}
+    test18.zonefile {1067}
+    test19.zonefile {642}
+    test20.zonefile {1380 1857}
+    test21.zonefile {288 293 1968 1207 1739 231 300}
+    test22.zonefile {651 1007 607 830 299 1431}
+    test23.zonefile {81 1651 543 1949 256 119 1088}
+    test24.zonefile {1278 2024 682 1115 194 636 1804}
+    test25.zonefile {514 1155 171 2015 791}
+    test26.zonefile {1615 1228 147 1464}
+    test27.zonefile {55 1130 781 678 78}
+    test28.zonefile {1981 1401 1178}
+    test29.zonefile {1754 864 183 1953 1901}
+    test30.zonefile {1461 817}
+    test31.zonefile {1720 1722 686 1833}
+  } {
+    forcedelete $zonefile
+    execsql { DELETE FROM zz; }
+    foreach k $lKey {
+      execsql { INSERT INTO zz(k, v) VALUES($k, randomblob($k)) }
+    }
+    execsql { INSERT INTO rt SELECT k, v FROM zz }
+    execsql { 
+      WITH p(n,v) AS (
+        VALUES('maxAutoFrameSize', 2000) UNION ALL
+        VALUES('compressionTypeIndexData', $cmpidx) UNION ALL
+        VALUES('compressionTypeContent', $cmp)
+      )
+      SELECT zonefile_write($zonefile, 'zz', json_group_object(n, v)) FROM p;
+      INSERT INTO zone_files(filename) VALUES($zonefile);
+    }
   }
-}
-
-do_execsql_test 2.1 {
-  SELECT k FROM zone JOIN rt USING (k) WHERE zone.v!=rt.v
-}
-do_execsql_test 2.2 {
-  SELECT count(*) FROM zone JOIN rt USING (k);
-} {135}
-do_execsql_test 2.3 {
-  SELECT filename, 
-         json_extract(header, '$.numKeys'),
-         json_extract(header, '$.numFrames')
-  FROM zone_files 
-  WHERE filename IN ('test19.zonefile', 'test20.zonefile', 'test21.zonefile')
-  ORDER BY 1
-} {
-  test19.zonefile 1 1
-  test20.zonefile 2 2
-  test21.zonefile 7 4
+  
+  do_execsql_test 2.$tn.1 {
+    SELECT k FROM zone JOIN rt USING (k) WHERE zone.v!=rt.v
+  }
+  do_execsql_test 2.$tn.2 {
+    SELECT count(*) FROM zone JOIN rt USING (k);
+  } {135}
+  do_execsql_test 2.$tn.3 {
+    SELECT filename, 
+           json_extract(header, '$.numKeys'),
+           json_extract(header, '$.numFrames')
+    FROM zone_files 
+    WHERE filename IN ('test19.zonefile', 'test20.zonefile', 'test21.zonefile')
+    ORDER BY 1
+  } {
+    test19.zonefile 1 1
+    test20.zonefile 2 2
+    test21.zonefile 7 4
+  }
 }
 
 
