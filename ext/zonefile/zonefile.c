@@ -348,7 +348,7 @@ static int zonefileFileRead(FILE *pFd, u8 *aBuf, int nBuf, i64 iOff){
 }
 
 static FILE *zonefileFileOpen(const char *zFile, int bWrite, char **pzErr){
-  FILE *pFd = fopen(zFile, bWrite ? "w" : "r");
+  FILE *pFd = fopen(zFile, bWrite ? "wb" : "rb");
   if( pFd==0 ){
     *pzErr = sqlite3_mprintf("failed to open file \"%s\" for %s",
         zFile, bWrite ? "writing" : "reading"
