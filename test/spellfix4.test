@@ -97,22 +97,22 @@ do_execsql_test 300 {
     (0, 'a', 'e', 50),
     (0, 'a', 'i', 70),
     (0, 'a', 'o', 75),
-    (0, 'a', 'u', 85),
+    (0, 'a', 'u', 81),
     (0, 'e', 'a', 50),
-    (0, 'e', 'i', 50),
-    (0, 'e', 'o', 75),
-    (0, 'e', 'u', 85),
+    (0, 'e', 'i', 52),
+    (0, 'e', 'o', 72),
+    (0, 'e', 'u', 82),
     (0, 'i', 'a', 70),
-    (0, 'i', 'e', 50),
+    (0, 'i', 'e', 52),
     (0, 'i', 'o', 75),
-    (0, 'i', 'u', 85),
+    (0, 'i', 'u', 83),
     (0, 'o', 'a', 75),
-    (0, 'o', 'e', 75),
+    (0, 'o', 'e', 72),
     (0, 'o', 'i', 75),
     (0, 'o', 'u', 40),
-    (0, 'u', 'a', 85),
-    (0, 'u', 'e', 85),
-    (0, 'u', 'i', 85),
+    (0, 'u', 'a', 81),
+    (0, 'u', 'e', 82),
+    (0, 'u', 'i', 83),
     (0, 'u', 'o', 40),
     (0, 'm', 'n', 45),
     (0, 'n', 'm', 45)
@@ -340,7 +340,14 @@ do_execsql_test 310 {
    WHERE a.x<b.x
    ORDER BY 1, 2
    LIMIT 20
-} {139 bucket pocket 149 manual mental 150 meter motor 169 crack trick 173 sinatra sonata 174 edition emotion 174 major motor 174 risk rose 174 state stone 194 deal detail 196 alert talent 196 analog catalog 196 deal legal 196 ford forum 196 risk trick 196 stone strong 197 china tina 197 congo logo 197 diana tina 197 florida gloria}
-
+} {139 bucket pocket 144 meter motor 149 manual mental 169 crack trick 173 sinatra sonata 174 edition emotion 174 major motor 174 risk rose 174 state stone 194 deal detail 196 alert talent 196 analog catalog 196 deal legal 196 ford forum 196 risk trick 196 stone strong 197 china tina 197 congo logo 197 diana tina 197 florida gloria}
+do_execsql_test 320 {
+  SELECT md5sum(ed||'/'||sx||'/'||sy||',') FROM (
+      SELECT editdist3(a.x,b.x) AS ed, a.x AS sx, b.x AS sy
+        FROM words a, words b
+       WHERE a.x<b.x
+       ORDER BY 1, 2
+  )
+} {69d0a31872203a775e19325ea98cd053}
 
 finish_test

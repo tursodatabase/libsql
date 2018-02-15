@@ -658,6 +658,79 @@ static void editDist3ConfigDelete(void *pIn){
   sqlite3_free(p);
 }
 
+/* Compare the FROM values of two EditDist3Cost objects, for sorting.
+** Return negative, zero, or positive if the A is less than, equal to,
+** or greater than B.
+*/
+static int editDist3CostCompare(EditDist3Cost *pA, EditDist3Cost *pB){
+  int n = pA->nFrom;
+  int rc;
+  if( n>pB->nFrom ) n = pB->nFrom;
+  rc = strncmp(pA->a, pB->a, n);
+  if( rc==0 ) rc = pA->nFrom - pB->nFrom;
+  return rc;
+}
+
+/*
+** Merge together two sorted lists of EditDist3Cost objects, in order
+** of increasing FROM.
+*/
+static EditDist3Cost *editDist3CostMerge(
+  EditDist3Cost *pA,
+  EditDist3Cost *pB
+){
+  EditDist3Cost *pHead = 0;
+  EditDist3Cost **ppTail = &pHead;
+  EditDist3Cost *p;
+  while( pA && pB ){
+    if( editDist3CostCompare(pA,pB)<=0 ){
+      p = pA;
+      pA = pA->pNext;
+    }else{
+      p = pB;
+      pB = pB->pNext;
+    }
+    *ppTail = p;
+    ppTail =  &p->pNext;
+  }
+  if( pA ){
+    *ppTail = pA;
+  }else{
+    *ppTail = pB;
+  }
+  return pHead;
+}
+
+/*
+** Sort a list of EditDist3Cost objects into order of increasing FROM
+*/
+static EditDist3Cost *editDist3CostSort(EditDist3Cost *pList){
+  EditDist3Cost *ap[60], *p;
+  int i;
+  int mx = 0;
+  ap[0] = 0;
+  ap[1] = 0;
+  while( pList ){
+    p = pList;
+    pList = p->pNext;
+    p->pNext = 0;
+    for(i=0; ap[i]; i++){
+      p = editDist3CostMerge(ap[i],p);
+      ap[i] = 0;
+    }
+    ap[i] = p;
+    if( i>mx ){
+      mx = i;
+      ap[i+1] = 0;
+    }
+  }
+  p = 0;
+  for(i=0; i<=mx; i++){
+    if( ap[i] ) p = editDist3CostMerge(p,ap[i]);
+  }
+  return p;
+}
+
 /*
 ** Load all edit-distance weights from a table.
 */
@@ -729,6 +802,12 @@ static int editDist3ConfigLoad(
   }
   rc2 = sqlite3_finalize(pStmt);
   if( rc==SQLITE_OK ) rc = rc2;
+  if( rc==SQLITE_OK ){
+    int iLang;
+    for(iLang=0; iLang<p->nLang; iLang++){
+      p->a[iLang].pCost = editDist3CostSort(p->a[iLang].pCost);
+    }
+  }
   return rc;
 }
 
@@ -943,8 +1022,9 @@ static int editDist3Core(
     a2[i2].nByte = utf8Len((unsigned char)z2[i2], n2-i2);
     for(p=pLang->pCost; p; p=p->pNext){
       EditDist3Cost **apNew;
-      if( p->nFrom>0 ) continue;
+      if( p->nFrom>0 ) break;
       if( i2+p->nTo>n2 ) continue;
+      if( p->a[0]>z2[i2] ) break;
       if( matchTo(p, z2+i2, n2-i2)==0 ) continue;
       a2[i2].nIns++;
       apNew = sqlite3_realloc64(a2[i2].apIns, sizeof(*apNew)*a2[i2].nIns);
