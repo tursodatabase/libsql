@@ -8103,21 +8103,39 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
   main_init(&data);
-  sqlite3_initialize();
+
+  /* On Windows, we must translate command-line arguments into UTF-8.
+  ** The SQLite memory allocator subsystem has to be enabled in order to
+  ** do this.  But we want to run an sqlite3_shutdown() afterwards so that
+  ** subsequent sqlite3_config() calls will work.  So copy all results into
+  ** memory that does not come from the SQLite memory allocator.
+  */
 #if !SQLITE_SHELL_IS_UTF8
-  argv = sqlite3_malloc64(sizeof(argv[0])*argc);
+  sqlite3_initialize();
+  argv = malloc(sizeof(argv[0])*argc);
   if( argv==0 ){
     raw_printf(stderr, "out of memory\n");
     exit(1);
   }
   for(i=0; i<argc; i++){
-    argv[i] = sqlite3_win32_unicode_to_utf8(wargv[i]);
+    char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
+    int n;
+    if( z==0 ){
+      raw_printf(stderr, "out of memory\n");
+      exit(1);
+    }
+    n = (int)strlen(z);
+    argv[i] = malloc( n+1 );
     if( argv[i]==0 ){
       raw_printf(stderr, "out of memory\n");
       exit(1);
     }
+    memcpy(argv[i], z, n+1);
+    sqlite3_free(z);
   }
+  sqlite3_shutdown();
 #endif
+
   assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
 
