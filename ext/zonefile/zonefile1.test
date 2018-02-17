@@ -65,16 +65,56 @@ do_execsql_test 1.6 { SELECT count(*) FROM z1_shadow_idx } 0
 do_execsql_test 1.7 { DROP TABLE z1 }
 
 #-------------------------------------------------------------------------
-
-foreach {tn cmp cmpidx} {
-  1 none none
-  2 zlib none
-  3 none zlib
-  4 zlib zlib
+# Figure out which compression algorithms, if any, are supported by
+# this build. Populate the global list $COMPRESSION_METHODS with the
+# result.
+reset_db
+load_static_extension db zonefile
+do_execsql_test 2.0 {
+  CREATE TABLE bb(
+    k INTEGER PRIMARY KEY, 
+    frame INTEGER DEFAULT -1, 
+    idx INTEGER DEFAULT -1, 
+    v BLOB
+  );
+  INSERT INTO bb(k, v) VALUES(1, randomblob(100));
+}
+set COMPRESSION_METHODS [list]
+foreach cmp {
+  none zlib zstd zstd_global_dict lz4 lz4hc brotli
 } {
+  set res [catchsql {
+    WITH p(n,v) AS (
+        VALUES('compressionTypeContent', $cmp)
+    )
+    SELECT zonefile_write('test.zonefile', 'bb', json_group_object(n,v)) FROM p;
+  }]
+
+  if {[lindex $res 0]==0} {
+    lappend COMPRESSION_METHODS $cmp
+  }
+}
+
+# Check that it is not possible to use zstd_global_dict to compress
+# the zonefile index.
+#
+if {[lsearch $COMPRESSION_METHODS zstd_global_dict]>=0} {
+  do_catchsql_test 2.1 {
+    WITH p(n,v) AS (
+        VALUES('compressionTypeIndexData', 'zstd_global_dict')
+    )
+    SELECT zonefile_write('test.zonefile', 'bb', json_group_object(n,v)) FROM p;
+  } {1 {compressor "zstd_global_dict" may not be used to compress the zonefile index}}
+}
+# puts $COMPRESSION_METHODS
+
+foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
+  if {$cmpidx == "zstd_global_dict"} continue
   reset_db
   load_static_extension db zonefile
-  
+
+  set tn "$cmp/$cmpidx"
+
   do_execsql_test 2.$tn.0 {
     CREATE TABLE zz(
       k INTEGER PRIMARY KEY, 
@@ -156,7 +196,7 @@ foreach {tn cmp cmpidx} {
     test20.zonefile 2 2
     test21.zonefile 7 4
   }
-}
+}}
 
 
 finish_test
