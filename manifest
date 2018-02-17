@@ -1,5 +1,5 @@
-C Do\snot\sallow\sparameters\sor\sschema\sreferences\sinside\sof\sWITH\sclause\sof\ntriggers\sand\sviews.\s\sThis\sfixes\sa\sbug\sdiscovered\sby\sOSSFuzz\sand\spresent\nsince\scommon-table-expressions\swere\sfirst\sadded\sin\s2014-02-03.
-D 2018-02-15T21:00:37.044
+C Fix\sa\sdata\srace\scausing\sa\stsan\scomplaint\swith\sSQLITE_ENABLE_API_ARMOR\sbuilds\non\sunix.\sThe\srace\scondition\sis\snot\sdangerous\sin\spractice,\sit\sjust\supsets\stsan.
+D 2018-02-17T07:38:50.155
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -465,7 +465,7 @@ F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
+F src/mutex_unix.c aaf9ebc3f89df28483c52208497a99a02cc3650011422fc9d4c57e4392f7fe58
 F src/mutex_w32.c a898fa969823b100c0f5fdc57e54c9a1e419ab4d
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc734c5b61464dfd6bfa7963f2ecce32e405a0c2ba1ef6f453ec9389da080256
-R 8b09aca00d46d50dd4b70270c44a2f05
-U drh
-Z bc5ab0c5d5dc21d5926f6e1994fc1380
+P b918d4b4e546d3903ff20efc3c8ca26dd9761cc8ed9ef7d2799b66ff9ae1ae51
+R f2c9c538fa5937452e735a3a9fd538f8
+U dan
+Z 36b8ef4562da3a84a51e82bfb896975f
