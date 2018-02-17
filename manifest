@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\scompression\stypes\s"lz4"\sand\s"lz4hc"\sto\sthe\szonefile\smodule.
-D 2018-02-17T19:38:02.757
+C Add\ssupport\sfor\s"brotli"\scompression\sto\sthe\szonefile\smodule.
+D 2018-02-17T20:22:23.498
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -409,7 +409,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F ext/zonefile/README.md 387ad2b748e98eeea21fd4dbb609fefe313263fadb3fc6c01c512b4c95e55ae4
-F ext/zonefile/zonefile.c cb0e2d294bc064bd995e9df7737636395e3101b17de688b2cf0e2159e561482c
+F ext/zonefile/zonefile.c 95233e917f4bdcc28fead61c4ad991b1ee18ea44fdba30a7e50e6484ea79fe31
 F ext/zonefile/zonefile1.test 0f84e56cd4f7b2c05443d1a2632c20ef635cc7f92de2868d92a2a6c09a9258ad
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a993a50bb8d5a3bf7cf79e09204814e172ba0bf9b3949e81912ef83f0d4bb44e
-R 446a2537d684855afb526eb1141b7e7d
+P bbe5b21ffab3cd312680ca9f179c5847790c17fb91d4174985153c6c398d48e3
+R 4ceb71e701bfbb226e3bec90adf489aa
 U dan
-Z 61481f5925196a4938887596830579d3
+Z 3bc85025f17818043a52cc73d7feb53a

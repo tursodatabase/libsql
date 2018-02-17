@@ -72,14 +72,21 @@ static u32 zonefileGet32(const u8 *aBuf){
 #include <string.h>
 #include <assert.h>
 
-#ifdef SQLITE_HAVE_ZLIB 
-#include <zlib.h>
-static int zfZlibOpen(void **pp, u8 *aDict, int nDict){
+static int zfGenericOpen(void **pp, u8 *aDict, int nDict){
   *pp = 0;
   return SQLITE_OK;
 }
-static void zfZlibClose(void *p){
+static void zfGenericClose(void *p){
 }
+static int zfGenericUncompressSize(
+  void *p, 
+  const u8 *aSrc, int nSrc
+){
+  return (int)zonefileGet32(aSrc);
+}
+
+#ifdef SQLITE_HAVE_ZLIB 
+#include <zlib.h>
 static int zfZlibCompressBound(void *p, int nSrc){
   return (int)compressBound((uLong)nSrc) + 4;
 }
@@ -94,12 +101,6 @@ static int zfZlibCompress(
   zonefilePut32(aDest, nSrc);
   return rc==Z_OK ? SQLITE_OK : SQLITE_ERROR;
 }
-static int zfZlibUncompressSize(
-  void *p, 
-  const u8 *aSrc, int nSrc
-){
-  return (int)zonefileGet32(aSrc);
-}
 static int zfZlibUncompress(
   void *p, 
   u8 *aDest, int nDest, 
@@ -112,12 +113,6 @@ static int zfZlibUncompress(
 #endif
 #ifdef SQLITE_HAVE_ZSTD 
 #include <zstd.h>
-static int zfZstdOpen(void **pp, u8 *aDict, int nDict){
-  *pp = 0;
-  return SQLITE_OK;
-}
-static void zfZstdClose(void *p){
-}
 static int zfZstdCompressBound(void *p, int nSrc){
   return (int)ZSTD_compressBound((size_t)nSrc);
 }
@@ -197,9 +192,6 @@ static int zfZstddictTrain(
   *pnDict = (int)sz;
   return SQLITE_OK;
 }
-static int zfZstddictCompressBound(void *p, int nSrc){
-  return (int)ZSTD_compressBound((size_t)nSrc);
-}
 static int zfZstddictCompress(
   void *p, 
   u8 *aDest, int *pnDest, 
@@ -215,9 +207,6 @@ static int zfZstddictCompress(
   if( ZSTD_isError(rc) ) return SQLITE_ERROR;
   *pnDest = (int)rc;
   return SQLITE_OK;
-}
-static int zfZstddictUncompressSize(void *p, const u8 *aSrc, int nSrc){
-  return (int)ZSTD_getFrameContentSize(aSrc, (size_t)nSrc);
 }
 static int zfZstddictUncompress(
   void *p, 
@@ -236,12 +225,6 @@ static int zfZstddictUncompress(
 #ifdef SQLITE_HAVE_LZ4 
 #include <lz4.h>
 #include <lz4hc.h>
-static int zfLz4Open(void **pp, u8 *aDict, int nDict){
-  *pp = 0;
-  return SQLITE_OK;
-}
-static void zfLz4Close(void *p){
-}
 static int zfLz4CompressBound(void *p, int nSrc){
   return (int)LZ4_compressBound((uLong)nSrc) + 4;
 }
@@ -267,9 +250,6 @@ static int zfLz4Compress(
   zonefilePut32(aDest, nSrc);
   return rc==0 ? SQLITE_ERROR : SQLITE_OK;
 }
-static int zfLz4UncompressSize(void *p, const u8 *aSrc, int nSrc){
-  return (int)zonefileGet32(aSrc);
-}
 static int zfLz4hcCompress(
   void *p, 
   u8 *aDest, int *pnDest, 
@@ -281,6 +261,38 @@ static int zfLz4hcCompress(
   *pnDest = rc+4;
   zonefilePut32(aDest, nSrc);
   return rc==0 ? SQLITE_ERROR : SQLITE_OK;
+}
+#endif
+
+#ifdef SQLITE_HAVE_BROTLI 
+#include <brotli/encode.h>
+#include <brotli/decode.h>
+
+static int zfBrotliCompressBound(void *p, int nSrc){
+  return (int)BrotliEncoderMaxCompressedSize((size_t)nSrc) + 4;
+}
+static int zfBrotliCompress(
+  void *p, 
+  u8 *aDest, int *pnDest, 
+  const u8 *aSrc, int nSrc
+){
+  size_t nDest = (size_t)*pnDest - 4;
+  BROTLI_BOOL rc = BrotliEncoderCompress(
+      BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
+      (size_t)nSrc, aSrc, &nDest, &aDest[4]
+  );
+  *pnDest = (int)nDest + 4;
+  zonefilePut32(aDest, nSrc);
+  return rc==0 ? SQLITE_ERROR : SQLITE_OK;
+}
+static int zfBrotliUncompress(
+  void *p, 
+  u8 *aDest, int nDest, 
+  const u8 *aSrc, int nSrc
+){
+  size_t n = nDest;
+  BrotliDecoderResult rc = BrotliDecoderDecompress(nSrc-4, &aSrc[4], &n, aDest);
+  return rc==BROTLI_DECODER_RESULT_SUCCESS ? SQLITE_OK : SQLITE_ERROR;
 }
 #endif
 
@@ -301,7 +313,7 @@ static struct ZonefileCompress {
   },
 #ifdef SQLITE_HAVE_ZSTD
   { ZONEFILE_COMPRESSION_ZSTD,             "zstd",
-    zfZstdOpen, zfZstdClose, 
+    zfGenericOpen, zfGenericClose, 
     0,
     zfZstdCompressBound, zfZstdCompress, 
     zfZstdUncompressSize, zfZstdUncompress
@@ -309,35 +321,38 @@ static struct ZonefileCompress {
   { ZONEFILE_COMPRESSION_ZSTD_GLOBAL_DICT, "zstd_global_dict",
     zfZstddictOpen, zfZstddictClose, 
     zfZstddictTrain,
-    zfZstddictCompressBound, zfZstddictCompress, 
-    zfZstddictUncompressSize, zfZstddictUncompress
+    zfZstdCompressBound, zfZstddictCompress, 
+    zfZstdUncompressSize, zfZstddictUncompress
   },
 #endif /* SQLITE_HAVE_ZSTD */
 #ifdef SQLITE_HAVE_ZLIB
   { ZONEFILE_COMPRESSION_ZLIB,             "zlib",
-    zfZlibOpen, zfZlibClose, 
+    zfGenericOpen, zfGenericClose, 
     0,
     zfZlibCompressBound, zfZlibCompress, 
-    zfZlibUncompressSize, zfZlibUncompress
+    zfGenericUncompressSize, zfZlibUncompress
   },
 #endif /* SQLITE_HAVE_ZLIB */
 #ifdef SQLITE_HAVE_BROTLI
   { ZONEFILE_COMPRESSION_BROTLI,           "brotli",
-    0, 0, 0, 0, 0, 0, 0
+    zfGenericOpen, zfGenericClose, 
+    0,
+    zfBrotliCompressBound, zfBrotliCompress, 
+    zfGenericUncompressSize, zfBrotliUncompress
   },
 #endif /* SQLITE_HAVE_BROTLI */
 #ifdef SQLITE_HAVE_LZ4
   { ZONEFILE_COMPRESSION_LZ4,              "lz4",
-    zfLz4Open, zfLz4Close, 
+    zfGenericOpen, zfGenericClose, 
     0,
     zfLz4CompressBound, zfLz4Compress, 
-    zfLz4UncompressSize, zfLz4Uncompress
+    zfGenericUncompressSize, zfLz4Uncompress
   },
   { ZONEFILE_COMPRESSION_LZ4HC,            "lz4hc",
-    zfLz4Open, zfLz4Close, 
+    zfGenericOpen, zfGenericClose, 
     0,
     zfLz4CompressBound, zfLz4hcCompress, 
-    zfLz4UncompressSize, zfLz4Uncompress
+    zfGenericUncompressSize, zfLz4Uncompress
   },
 #endif /* SQLITE_HAVE_LZ4 */
 };
