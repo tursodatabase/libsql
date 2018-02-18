@@ -540,4 +540,10 @@ do_execsql_test 19.36 {
   SELECT * FROM t1 WHERE (3,32)>=(a,b) ORDER BY a DESC;
 } {2 22 1 11}
 
+# 2018-02-18: Memory leak nexted row-value.  Detected by OSSFuzz.
+#
+do_catchsql_test 20.1 {
+  SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
+} {0 1}
+
 finish_test
