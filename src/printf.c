@@ -668,15 +668,16 @@ void sqlite3VXPrintf(
         }else{
           length = 0x7fffffff & (int)strlen(bufpt);
         }
+      adjust_width_for_utf8:
         if( flag_altform2 && width>0 ){
           /* Adjust width to account for extra bytes in UTF-8 characters */
           int ii = length - 1;
           while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
-      case etSQLESCAPE:           /* Escape ' characters */
-      case etSQLESCAPE2:          /* Escape ' and enclose in '...' */
-      case etSQLESCAPE3: {        /* Escape " characters */
+      case etSQLESCAPE:           /* %q: Escape ' characters */
+      case etSQLESCAPE2:          /* %Q: Escape ' and enclose in '...' */
+      case etSQLESCAPE3: {        /* %w: Escape " characters */
         int i, j, k, n, isnull;
         int needQuote;
         char ch;
@@ -690,9 +691,17 @@ void sqlite3VXPrintf(
         }
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        /* For %q, %Q, and %w, the precision is the number of byte (or
+        ** characters if the ! flags is present) to use from the input.
+        ** Because of the extra quoting characters inserted, the number
+        ** of output characters may be larger than the precision.
+        */
         k = precision;
         for(i=n=0; k!=0 && (ch=escarg[i])!=0; i++, k--){
           if( ch==q )  n++;
+          if( flag_altform2 && (ch&0xc0)==0xc0 ){
+            while( (escarg[i+1]&0xc0)==0x80 ){ i++; }
+          }
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 3;
@@ -715,10 +724,7 @@ void sqlite3VXPrintf(
         if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;
         length = j;
-        /* The precision in %q and %Q means how many input bytes to
-        ** consume, not the length of the output...
-        ** if( precision>=0 && precision<length ) length = precision; */
-        break;
+        goto adjust_width_for_utf8;
       }
       case etTOKEN: {
         Token *pToken;
