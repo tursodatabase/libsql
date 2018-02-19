@@ -624,15 +624,16 @@ void sqlite3VXPrintf(
       case etCHARX:
         if( bArgList ){
           bufpt = getTextArg(pArgList);
-          length = 0;
+          length = 1;
           if( bufpt ){
             buf[0] = c = *(bufpt++);
-            length = 1;
             if( (c&0xc0)==0xc0 ){
               while( length<4 && (bufpt[0]&0xc0)==0x80 ){
                 buf[length++] = *(bufpt++);
               }
             }
+          }else{
+            buf[0] = 0;
           }
         }else{
           unsigned int ch = va_arg(ap,unsigned int);
