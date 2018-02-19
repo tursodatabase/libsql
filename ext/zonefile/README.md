@@ -111,7 +111,17 @@ key from one of the zonefile files in the index:
      necessary as we may not know the offset of the start of the frame data
      until after the ZoneFileIndex structure is compressed.
 
-  *  Currently there is no support at all for encryption or compression.
+  *  The offsets in the ZoneFileIndex.byteOffsetZoneFrame[] array are the
+     offsets for the first byte past the end of the corresponding frame.
+     For example, byteOffsetZoneFrame[] identifies the first byte of the
+     second frame, and byteOffsetZoneFrame[numFrames-1] is one byte past
+     the end of the last frame in the file.
+
+     This is better as if we store the starting offset of each frame, there
+     is no way to determine the size of the last frame in the file without
+     trusting the filesize itself.
+
+  *  Currently there is no support at all for encryption.
 
   *  Zonefile currently uses json1 to parse the json argument to
      zonefile\_write(). And so must be used with an SQLITE\_ENABLE\_JSON1

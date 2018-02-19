@@ -788,7 +788,7 @@ static void zonefileWriteFunc(
   );
   if( pStmt==0 ) goto zone_write_out;
 
-  /* Open a file-handle used to write out the zonefile */ 
+  /* Open the file-handle used to write out the zonefile */ 
   pFd = zonefileFileOpen(zFile, 1, &zErr);
   if( pFd==0 ){
     sqlite3_result_error(pCtx, zErr, -1);
@@ -797,7 +797,7 @@ static void zonefileWriteFunc(
   }
 
   /* If the data compressor uses a global dictionary, create the dictionary
-  ** now.  */
+  ** and store it in buffer sDict.  */
   if( sWrite.pCmpData->xTrain ){
     int nSample = 0;
 
@@ -847,24 +847,30 @@ static void zonefileWriteFunc(
     const u8 *pBlob = (const u8*)sqlite3_column_blob(pStmt, 2);
 
     int bAuto = zonefileIsAutoFrame(pFrame);
-    if( zonefileCompareValue(pFrame, pPrev) 
-     || (bAuto && sFrame.n && (sFrame.n+nBlob)>sWrite.maxAutoFrameSize)
-    ){
-      /* Add new entry to sFrame */
-      if( zonefileBufferGrow(pCtx, &sFrameIdx, 4) 
-       || zonefileAppendCompressed(pCtx, sWrite.pCmpData, pCmp, &sData, &sFrame)
+    if( sFrame.n>0 ){
+      if( zonefileCompareValue(pFrame, pPrev) 
+       || (bAuto && (sFrame.n+nBlob)>sWrite.maxAutoFrameSize)
       ){
-        goto zone_write_out;
+        /* Add new entry to sFrame */
+        if( zonefileBufferGrow(pCtx, &sFrameIdx, 4) 
+         || zonefileAppendCompressed(pCtx, sWrite.pCmpData, pCmp,&sData,&sFrame)
+        ){
+          goto zone_write_out;
+        }
+        sFrame.n = 0;
+        zonefileAppend32(&sFrameIdx, sData.n);
+        sqlite3_value_free(pPrev);
+        pPrev = 0;
+        nFrame++;
       }
-      sFrame.n = 0;
-      zonefileAppend32(&sFrameIdx, sData.n);
-      sqlite3_value_free(pPrev);
+    }
+
+    if( pPrev==0 ){
       pPrev = sqlite3_value_dup(pFrame);
       if( pPrev==0 ){
         sqlite3_result_error_nomem(pCtx);
         goto zone_write_out;
       }
-      nFrame++;
     }
 
     /* Add new entry to sKeyIdx */
@@ -872,7 +878,7 @@ static void zonefileWriteFunc(
       goto zone_write_out;
     }
     zonefileAppend64(&sKeyIdx, k);
-    zonefileAppend32(&sKeyIdx, nFrame-1);
+    zonefileAppend32(&sKeyIdx, nFrame);
     zonefileAppend32(&sKeyIdx, sFrame.n);
     zonefileAppend32(&sKeyIdx, nBlob);
 
@@ -881,13 +887,16 @@ static void zonefileWriteFunc(
     zonefileAppendBlob(&sFrame, pBlob, nBlob);
     nKey++;
   }
-  if( sFrame.n>0
-   && zonefileAppendCompressed(pCtx, sWrite.pCmpData, pCmp, &sData, &sFrame) 
-  ){
-    goto zone_write_out;
+
+  if( sFrame.n>0 ){
+    if( zonefileBufferGrow(pCtx, &sFrameIdx, 4) 
+     || zonefileAppendCompressed(pCtx, sWrite.pCmpData, pCmp, &sData, &sFrame)
+    ){
+      goto zone_write_out;
+    }
+    zonefileAppend32(&sFrameIdx, sData.n);
+    nFrame++;
   }
-  sqlite3_value_free(pPrev);
-  pPrev = 0;
 
   /* If a compression method was specified, compress the key-index here */
   if( sWrite.pCmpIdx->eType!=ZONEFILE_COMPRESSION_NONE ){
@@ -933,6 +942,7 @@ static void zonefileWriteFunc(
  zone_write_out:
   if( pCmp ) sWrite.pCmpData->xClose(pCmp);
   if( pFd ) fclose(pFd);
+  sqlite3_value_free(pPrev);
   sqlite3_finalize(pStmt);
   zonefileBufferFree(&sFrameIdx);
   zonefileBufferFree(&sKeyIdx);
@@ -1908,16 +1918,14 @@ static int zonefileGetValue(sqlite3_context *pCtx, ZonefileCsr *pCsr){
     if( hdr.compressionTypeIndexData ){
       int nFree = 0;
       rc = zonefileLoadIndex(&hdr, pFd, &aFree, &nFree, &zErr);
-      if( rc==SQLITE_OK ) aOff = &aFree[4*iFrame];
+      if( rc==SQLITE_OK ) aOff = &aFree[4*(iFrame-1)];
     }else{
-      rc = zonefileFileRead(pFd, aOff, 8, ZONEFILE_SZ_HEADER + 4 * iFrame);
+      rc = zonefileFileRead(pFd, aOff, 8, ZONEFILE_SZ_HEADER + 4 * (iFrame-1));
     }
-    iOff = zonefileGet32(aOff);
-    if( iFrame+1<hdr.numFrames ){
-      szFrame = zonefileGet32(&aOff[4]) - iOff;
-    }else{
-      fseek(pFd, 0, SEEK_END);
-      szFrame = (u32)ftell(pFd) - iOff - hdr.byteOffsetFrames;
+    szFrame = zonefileGet32(&aOff[4]);
+    if( iFrame>0 ){
+      iOff = zonefileGet32(aOff);
+      szFrame = szFrame - iOff;
     }
     sqlite3_free(aFree);
   }
