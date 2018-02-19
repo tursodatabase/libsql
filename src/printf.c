@@ -654,9 +654,24 @@ void sqlite3VXPrintf(
           zExtra = bufpt;
         }
         if( precision>=0 ){
-          for(length=0; length<precision && bufpt[length]; length++){}
+          if( flag_altform2 ){
+            /* Set length to the number of bytes needed in order to display
+            ** precision characters */
+            unsigned char *z = (unsigned char*)bufpt;
+            while( precision-- > 0 && z[0] ){
+              SQLITE_SKIP_UTF8(z);
+            }
+            length = (int)(z - (unsigned char*)bufpt);
+          }else{
+            for(length=0; length<precision && bufpt[length]; length++){}
+          }
         }else{
           length = 0x7fffffff & (int)strlen(bufpt);
+        }
+        if( flag_altform2 && width>0 ){
+          /* Adjust width to account for extra bytes in UTF-8 characters */
+          int ii = length - 1;
+          while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
       case etSQLESCAPE:           /* Escape ' characters */
@@ -700,7 +715,7 @@ void sqlite3VXPrintf(
         if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;
         length = j;
-        /* The precision in %q and %Q means how many input characters to
+        /* The precision in %q and %Q means how many input bytes to
         ** consume, not the length of the output...
         ** if( precision>=0 && precision<length ) length = precision; */
         break;
@@ -742,7 +757,10 @@ void sqlite3VXPrintf(
     /*
     ** The text of the conversion is pointed to by "bufpt" and is
     ** "length" characters long.  The field width is "width".  Do
-    ** the output.
+    ** the output.  Both length and width are in bytes, not characters,
+    ** at this point.  If the "!" flag was present on string conversions
+    ** indicating that width and precision should be expressed in characters,
+    ** then the values have been translated prior to reaching this point.
     */
     width -= length;
     if( width>0 ){
