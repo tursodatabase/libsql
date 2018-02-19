@@ -624,9 +624,37 @@ void sqlite3VXPrintf(
       case etCHARX:
         if( bArgList ){
           bufpt = getTextArg(pArgList);
-          c = bufpt ? bufpt[0] : 0;
+          length = 0;
+          if( bufpt ){
+            buf[0] = c = *(bufpt++);
+            length = 1;
+            if( (c&0xc0)==0xc0 ){
+              while( length<4 && (bufpt[0]&0xc0)==0x80 ){
+                buf[length++] = *(bufpt++);
+              }
+            }
+          }
         }else{
-          c = va_arg(ap,int);
+          unsigned int ch = va_arg(ap,unsigned int);
+          if( ch<0x00080 ){
+            buf[0] = ch & 0xff;
+            length = 1;
+          }else if( ch<0x00800 ){
+            buf[0] = 0xc0 + (u8)((ch>>6)&0x1f);
+            buf[1] = 0x80 + (u8)(ch & 0x3f);
+            length = 2;
+          }else if( ch<0x10000 ){
+            buf[0] = 0xe0 + (u8)((ch>>12)&0x0f);
+            buf[1] = 0x80 + (u8)((ch>>6) & 0x3f);
+            buf[2] = 0x80 + (u8)(ch & 0x3f);
+            length = 3;
+          }else{
+            buf[0] = 0xf0 + (u8)((ch>>18) & 0x07);
+            buf[1] = 0x80 + (u8)((ch>>12) & 0x3f);
+            buf[2] = 0x80 + (u8)((ch>>6) & 0x3f);
+            buf[3] = 0x80 + (u8)(ch & 0x3f);
+            length = 4;
+          }
         }
         if( precision>1 ){
           width -= precision-1;
@@ -634,10 +662,10 @@ void sqlite3VXPrintf(
             sqlite3AppendChar(pAccum, width-1, ' ');
             width = 0;
           }
-          sqlite3AppendChar(pAccum, precision-1, c);
+          while( precision-- > 1 ){
+            sqlite3StrAccumAppend(pAccum, buf, length);
+          }
         }
-        length = 1;
-        buf[0] = c;
         bufpt = buf;
         break;
       case etSTRING:
