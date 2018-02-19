@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sprocessing\sof\snested\srow\svalues.\s\sThis\sproblem\shas\nexisted\severy\ssince\srow\svalues\ssupport\swas\sadded\s(version\s3.15.0,\s2016-10-14)\nbut\swas\sonly\sjust\snow\sdetected\sby\sOSSFuzz.
-D 2018-02-18T17:50:03.135
+C Fix\san\sassert\sso\sthat\sit\scompares\stwo\sCellInfo\sobjects\sfield\sby\sfield\ninstead\sof\susing\smemcmp().\s\sMemcmp()\sdoes\snot\swork\son\sx86\nbecause\sof\suninitialized\spadding\sbytes.
+D 2018-02-19T13:53:56.396
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -430,7 +430,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c f7bb37c27b3734d58796febb30b5d818b3b4eb592b57b88039e5d92b3ebd9dab
+F src/btree.c 18a53540aa35dbdf77f715ea928422a4ed9011dc16ea7b50f803fd1617fcc4f5
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 672022c06e1a5c2653f80c77a687de11f7e65ce81d20fe2825aadfa13a875c33
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74bb7225d132c80fd5758bb8c120448e3b3e951d0ca2fa0c57cac0a9c6c27045
-R 31bbf28c288f447f1b599c906d481780
+P 2df6bbf1b8ca881c8a465d6624de66fde4c5975ccae6b2f2dda392b137f577de
+R e03e92857318b640fae3aae1181693fa
 U drh
-Z 61189c02e04bfbbf029a1ddaa686693e
+Z 8b8a951294db4a887bc90d59e44c7680
