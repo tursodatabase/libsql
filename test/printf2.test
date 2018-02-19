@@ -148,6 +148,31 @@ do_execsql_test printf2-4.10 {
   SELECT printf('|%,d|%,d|',1234567890,-1234567890);
 } {|1,234,567,890|-1,234,567,890|}
 
+# 2018-02-19.  Unicode characters with %c
+do_execsql_test printf2-5.100 {
+  SELECT printf('(%8c)',char(11106));
+} {{(       ⭢)}}
+do_execsql_test printf2-5.101 {
+  SELECT printf('(%-8c)',char(11106));
+} {{(⭢       )}}
+do_execsql_test printf2-5.102 {
+  SELECT printf('(%5.3c)',char(1492));
+} {{(  ההה)}}
+do_execsql_test printf2-5.103 {
+  SELECT printf('(%-5.3c)',char(1492));
+} {{(ההה  )}}
+do_execsql_test printf2-5.104 {
+  SELECT printf('(%3.3c)',char(1492));
+} {{(ההה)}}
+do_execsql_test printf2-5.105 {
+  SELECT printf('(%-3.3c)',char(1492));
+} {{(ההה)}}
+do_execsql_test printf2-5.104 {
+  SELECT printf('(%2c)',char(1513));
+} {{( ש)}}
+do_execsql_test printf2-5.106 {
+  SELECT printf('(%-2c)',char(1513));
+} {{(ש )}}
 
 
 finish_test

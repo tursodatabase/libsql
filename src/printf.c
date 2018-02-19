@@ -667,7 +667,8 @@ void sqlite3VXPrintf(
           }
         }
         bufpt = buf;
-        break;
+        flag_altform2 = 1;
+        goto adjust_width_for_utf8;
       case etSTRING:
       case etDYNSTRING:
         if( bArgList ){
