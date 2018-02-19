@@ -201,6 +201,41 @@ foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
   }
 }}
 
+#--------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 3.0 {
+  CREATE TABLE dd(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+  INSERT INTO dd VALUES(1000, 1, -1, randomblob(44));
+  INSERT INTO dd VALUES(1001, 1, -1, randomblob(55));
+  INSERT INTO dd VALUES(1002, 2, -1, randomblob(66));
+  WITH p(n,v) AS (
+      VALUES('maxAutoFrameSize', 2000) UNION ALL
+      VALUES('encryptionType', 'xor') UNION ALL
+      VALUES('encryptionKey', '0123456789')
+  )
+  SELECT zonefile_write('test.zonefile', 'dd', json_group_object(n, v)) FROM p;
+} {{}}
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE cc USING zonefile;
+  INSERT INTO cc_files(filename,ekey) VALUES('test.zonefile','0123456789');
+  SELECT quote(dd.v)==quote(cc.v) FROM cc JOIN dd USING (k)
+} {1 1 1}
+
+do_execsql_test 3.2 {
+  DELETE FROM cc_files;
+  INSERT INTO cc_files(filename,ekey) VALUES('test.zonefile','abcdefghij');
+  SELECT quote(dd.v)==quote(cc.v) FROM cc JOIN dd USING (k)
+} {0 0 0}
+
+do_execsql_test 3.3 {
+  UPDATE cc_files SET ekey = '0123456789';
+  SELECT quote(dd.v)==quote(cc.v) FROM cc JOIN dd USING (k)
+} {1 1 1}
+
+
 
 finish_test
 

@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\sExtendedHeaderSize\sheader\sfield\sto\szonefile.
-D 2018-02-19T16:28:42.025
+C Add\ssupport\sfor\sinvoking\sencryption\shooks\sto\szonefile.\sAnd\smock\sencryption\nmethod\s"xor"\sfor\stesting.
+D 2018-02-19T21:07:20.566
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -409,8 +409,8 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F ext/zonefile/README.md 1a95a93c865e196bc6301581e5a702f449ea9ce0e307cdbdbbdfd58377f1ec7e
-F ext/zonefile/zonefile.c f97d9816be14a7bc03341801de429cac75a713a00b0577836ecc36379953187e
-F ext/zonefile/zonefile1.test 2ad39bf0423816e0c741dbb1c49dc46965a2270187f648a2fad8ae934fbdd262
+F ext/zonefile/zonefile.c afee047df23badc77ff088613723f08fdda8c645e6e7df60fff7d6f8487c560f
+F ext/zonefile/zonefile1.test 6eb9e28b7cb5cd9dcac40b2c2b206e9763242d07f7a44e099221d1cfdcb2b30b
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4dbe0cba3fad9a752834d795127cf35eed21fab63b18a48f75d5c1e96ca77447
-R df0bf0743cc1db7d7fb8cb2a2aaffa81
+P 78267a091307e2c29a4fb1606fa9c79939fe010b801749614f4c48dc8715810e
+R c6e7b11c5fa6bd69655eefd536ffcebb
 U dan
-Z a68e2d7c6d62c55f7dc86940c3dba82e
+Z 818fddc92c78d4ee6aea120c041035ad
