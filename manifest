@@ -1,5 +1,5 @@
-C Test\scases\sand\sa\sbug\sfix\son\sthe\snew\sunicode\shandling\sin\s%c.
-D 2018-02-19T20:23:20.986
+C More\stest\scases\sfor\sunicode\shandling\sin\sprintf.
+D 2018-02-19T20:41:01.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -1141,7 +1141,7 @@ F test/pragma4.test 3046501bee2f652dc2a4f9c87781e2741361d6864439c8381aba6c3b774b
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
-F test/printf2.test e2bb746fdc8bbf45bbd495ba6f3a8b2256a47428a333274ae01b30bfeb938ca1
+F test/printf2.test 30b5dd0b4b992dc5626496846ecce17ff592cacbcb11c3e589f3ac4d7e129dae
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/pushdown.test 5e72c51c5e33253ed639ccee1e01ce62d62b6eee5ca893cd82334e4ee7b1d7fc
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c35be1d9e9132fbadc74d207c1088e5a710a151c0835c38a63bf3c8e6fd711a0
-R fe2c99c67a288621be87056c5aacba15
+P e41d64e95b9b6fec5dc329553822925e7d648a41912b420cfa1ba198736e6bab
+R c809a7387d4329cd8d06217ca9198d46
 U drh
-Z fd62d4a92d36a20a423e3f08ea4c3a69
+Z c256c2f346298486ba50767fa31b18cb
