@@ -1,5 +1,5 @@
-C Fix\san\sassert\sso\sthat\sit\scompares\stwo\sCellInfo\sobjects\sfield\sby\sfield\ninstead\sof\susing\smemcmp().\s\sMemcmp()\sdoes\snot\swork\son\sx86\nbecause\sof\suninitialized\spadding\sbytes.
-D 2018-02-19T13:53:56.396
+C Only\stry\sto\suse\sthe\sgeteuid()\sinterface\son\sunix\sif\sHAVE_FCHOWN\sis\sdefined.\nThis\sfixes\sthe\sbuild\sfor\svxWorks,\swe\sare\stold.
+D 2018-02-19T16:34:31.891
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -472,7 +472,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c ce491421b3a54b63094a155eeac668a3bc8e5b86a5a58551d906e5b5affb443f
+F src/os_unix.c 9e02186f0dcde77d3ec27d4409664eb692c4e8ea0257e30c0b7f25969fa69fec
 F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 0b6bd5442733b2e08d0673de6cdafe3e7ab0b5715e4844ac836ab346b1d9ed89
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2df6bbf1b8ca881c8a465d6624de66fde4c5975ccae6b2f2dda392b137f577de
-R e03e92857318b640fae3aae1181693fa
+P 88258770adead70fa101c74e266a37bb9aaffac0ba738a4b345617feb8c46477
+R 2e4bdb0c045376ff7154d29ff239bf61
 U drh
-Z 8b8a951294db4a887bc90d59e44c7680
+Z 37b9f8fa92af1d03e78cb9f20faaf7e7
