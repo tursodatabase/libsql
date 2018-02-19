@@ -108,12 +108,14 @@ if {[lsearch $COMPRESSION_METHODS zstd_global_dict]>=0} {
 }
 # puts $COMPRESSION_METHODS
 
+set extra_header 0
 foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
   if {$cmpidx == "zstd_global_dict"} continue
   reset_db
   load_static_extension db zonefile
 
   set tn "$cmp/$cmpidx"
+  set extra_header [expr {$extra_header ? 0 : 100}]
 
   do_execsql_test 2.$tn.0 {
     CREATE TABLE zz(
@@ -171,7 +173,8 @@ foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
       WITH p(n,v) AS (
         VALUES('maxAutoFrameSize', 2000) UNION ALL
         VALUES('compressionTypeIndexData', $cmpidx) UNION ALL
-        VALUES('compressionTypeContent', $cmp)
+        VALUES('compressionTypeContent', $cmp) UNION ALL
+        VALUES('debugExtendedHeaderSize', $extra_header)
       )
       SELECT zonefile_write($zonefile, 'zz', json_group_object(n, v)) FROM p;
       INSERT INTO zone_files(filename) VALUES($zonefile);

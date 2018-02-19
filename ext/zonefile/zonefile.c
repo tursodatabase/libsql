@@ -411,6 +411,7 @@ struct ZonefileWrite {
   ZonefileCompress *pCmpData;     /* For compressing each frame */
   int encryptionType;
   int maxAutoFrameSize;
+  int debugExtendedHeaderSize;    /* Size of extended header */
 };
 
 /*
@@ -569,6 +570,15 @@ static int zonefileGetParams(
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
     const char *zKey = (const char*)sqlite3_column_text(pStmt, 0);
     int iVal = sqlite3_column_int(pStmt, 1);
+    if( sqlite3_stricmp("debugExtendedHeaderSize", zKey)==0 ){
+      if( iVal<0 || iVal>255 ){
+        zErr = sqlite3_mprintf(
+            "debugExtendedHeaderSize value out of range: %d", iVal
+        );
+        rc = SQLITE_ERROR;
+      }
+      p->debugExtendedHeaderSize = iVal;
+    }else
     if( sqlite3_stricmp("maxAutoFrameSize", zKey)==0 ){
       p->maxAutoFrameSize = iVal;
     }else
@@ -715,6 +725,27 @@ static int zonefileAppendCompressed(
       if( rc!=SQLITE_OK ){
         return rc;
       }
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Append nByte bytes of garbage data to the file opened with pFd. Return
+** SQLITE_OK if successful, or SQLITE_ERROR if an error occurs.
+**
+** Parameter nByte is only ever non-zero when running tests. So it doesn't
+** matter if this function is inefficient in those cases.
+*/
+static int zonefilePad(FILE *pFd, int nByte){
+  assert( nByte>=0 && nByte<256 );
+  if( nByte ){
+    int nRem = nByte;
+    u8 buf[16] = "0123456789ABCDEF";
+    while( nRem>0 ){
+      int n = MIN(nRem, sizeof(buf));
+      if( zonefileFileWrite(pFd, buf, n) ) return SQLITE_ERROR;
+      nRem -= n;
     }
   }
   return SQLITE_OK;
@@ -914,17 +945,18 @@ static void zonefileWriteFunc(
   aHdr[4] = sWrite.pCmpIdx->eType;
   aHdr[5] = sWrite.pCmpData->eType;
   iOff = ZONEFILE_SZ_HEADER + sFrameIdx.n + sKeyIdx.n;
-  zonefilePut32(&aHdr[6], sDict.n ? iOff : 0);
-  zonefilePut32(&aHdr[10], iOff + sDict.n);
+  zonefilePut32(&aHdr[6], sDict.n ? iOff+sWrite.debugExtendedHeaderSize : 0);
+  zonefilePut32(&aHdr[10], iOff + sWrite.debugExtendedHeaderSize + sDict.n);
   zonefilePut32(&aHdr[14], nFrame);
   zonefilePut32(&aHdr[18], nKey);
   aHdr[22] = sWrite.encryptionType;
   aHdr[23] = 0;                   /* Encryption key index */
   aHdr[24] = 0;                   /* extended header version */
-  aHdr[25] = 0;                   /* extended header size */
+  aHdr[25] = sWrite.debugExtendedHeaderSize;
   assert( ZONEFILE_SZ_HEADER>=26 );
 
   rc = zonefileFileWrite(pFd, aHdr, ZONEFILE_SZ_HEADER);
+  if( rc==SQLITE_OK ) rc = zonefilePad(pFd, sWrite.debugExtendedHeaderSize);
   if( rc==SQLITE_OK ) rc = zonefileFileWrite(pFd, sFrameIdx.a, sFrameIdx.n);
   if( rc==SQLITE_OK ) rc = zonefileFileWrite(pFd, sKeyIdx.a, sKeyIdx.n);
   if( rc==SQLITE_OK ) rc = zonefileFileWrite(pFd, sDict.a, sDict.n);
@@ -1331,12 +1363,14 @@ static int zonefileLoadIndex(
     }else{
       nIdx = pHdr->byteOffsetFrames - ZONEFILE_SZ_HEADER;
     }
+    nIdx -= pHdr->extendedHeaderSize;
     aIdx = (u8*)sqlite3_malloc(nIdx);
 
     if( aIdx==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = zonefileFileRead(pFd, aIdx, nIdx, ZONEFILE_SZ_HEADER);
+      i64 iOff = ZONEFILE_SZ_HEADER + pHdr->extendedHeaderSize;
+      rc = zonefileFileRead(pFd, aIdx, nIdx, iOff);
     }
   }
 
@@ -1920,7 +1954,9 @@ static int zonefileGetValue(sqlite3_context *pCtx, ZonefileCsr *pCsr){
       rc = zonefileLoadIndex(&hdr, pFd, &aFree, &nFree, &zErr);
       if( rc==SQLITE_OK ) aOff = &aFree[4*(iFrame-1)];
     }else{
-      rc = zonefileFileRead(pFd, aOff, 8, ZONEFILE_SZ_HEADER + 4 * (iFrame-1));
+      rc = zonefileFileRead(pFd, aOff, 8, 
+          ZONEFILE_SZ_HEADER + hdr.extendedHeaderSize + 4 * (iFrame-1)
+      );
     }
     szFrame = zonefileGet32(&aOff[4]);
     if( iFrame>0 ){
