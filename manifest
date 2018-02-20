@@ -1,5 +1,5 @@
-C Fix\sproblem\scausing\sfree-list\scorruption\swhen\smerging\sfree-lists\sfor\stwo\nconcurrent\stransactions\sthat\shave\sboth\sused\spage\sX\sas\san\sin-memory\sfree-list\ntrunk\spage,\swhere\sX\slies\spast\sthe\send\sof\sthe\sinitial\sdatabase\simages.
-D 2018-01-04T18:36:39.212
+C Add\sextra\scode\sto\slog\sdetails\swhen\scorruption\sis\sdetected\sin\sthe\spointer-map\nstructure\smaintained\sby\sthe\sb-tree\slayer\sin\sbegin-concurrent\stransactions.
+D 2018-02-20T21:00:45.475
 F Makefile.in b142eb20482922153ebc77b261cdfd0a560ed05a81e9f6d9a2b0e8192922a1d2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a55372a22454e742ba7c8f6edf05b83213ec01125166ad7dcee0567e2f7fc81b
@@ -416,7 +416,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 8433d9e98dd6f2ea3286e0d2fe5d65de1bfc18a706486eb2026b01be066b5806
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 8cbe0ce25607b0a64b44dbf9d018d0d667569b5966ad1bd40f27f95d65ce4284
+F src/btree.c 8c6b975926e62c88dfc146c71eb8629e25318a326948b8694de8b87261d5a961
 F src/btree.h feafd0647331366f4ef17f7e68597e9029f001e7ab16a125e2f176c598a7ef4a
 F src/btreeInt.h 0e0abe97427b4139092ec8782d396a4ad18566964e992c60043e370d4c86fd99
 F src/build.c f890a66f2b78cd820b21b580f37605f8dd77f19d0b35f5850a675c88a815adca
@@ -1688,7 +1688,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50c8952c92b9f0c61935fb0df04ed1426d9e266a812071b7bf5b0215c5552757
-R 27d77b980c6b081a9288d237e34b2379
+P dc0fc2aa7cbefeb5f0ba8c992fd3e9adcfb5a4d61e2321c1bd93f4d36ba9aafc
+R 374752e5ff248b7c36b763a5149c6f74
 U dan
-Z 38a96e74ef2f420253bcb0ab74b036ef
+Z f6098e8b2b3786dd4ba01a06d1e8ac97

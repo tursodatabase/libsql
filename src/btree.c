@@ -628,11 +628,48 @@ static void btreePtrmapDelete(BtShared *pBt){
     pBt->pMap = 0;
   }
 }
+
+/*
+** Check that the pointer-map does not contain any entries with a parent
+** page of 0. Call sqlite3_log() multiple times to output the entire
+** data structure if it does.
+*/
+static void btreePtrmapCheck(BtShared *pBt, Pgno nPage){
+  Pgno i;
+  int bProblem = 0;
+  BtreePtrmap *p = pBt->pMap;
+
+  for(i=p->iFirst; i<=nPage; i++){
+    PtrmapEntry *pEntry = &p->aPtr[i-p->iFirst];
+    if( pEntry->eType==PTRMAP_OVERFLOW1
+     || pEntry->eType==PTRMAP_OVERFLOW2
+     || pEntry->eType==PTRMAP_BTREE
+    ){
+      if( pEntry->parent==0 ){
+        bProblem = 1;
+        break;
+      }
+    }
+  }
+
+  if( bProblem ){
+    for(i=p->iFirst; i<=nPage; i++){
+      PtrmapEntry *pEntry = &p->aPtr[i-p->iFirst];
+      sqlite3_log(SQLITE_CORRUPT, 
+          "btreePtrmapCheck: pgno=%d eType=%d parent=%d", 
+          (int)i, (int)pEntry->eType, (int)pEntry->parent
+      );
+    }
+    abort();
+  }
+}
+
 #else  /* SQLITE_OMIT_CONCURRENT */
 # define btreePtrmapAllocate(x) SQLITE_OK
 # define btreePtrmapDelete(x) 
 # define btreePtrmapBegin(x,y)  SQLITE_OK
 # define btreePtrmapEnd(x,y,z) 
+# define btreePtrmapCheck(y,z) 
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
@@ -4155,6 +4192,8 @@ static int btreeFixUnlocked(Btree *p){
     if( sqlite3PagerIswriteable(pPage1->pDbPage) ){
       Pgno iHTrunk = get4byte(&p1[32]);
       u32 nHFree = get4byte(&p1[36]);
+
+      btreePtrmapCheck(pBt, nPage);
 
       /* Attach the head database free list to the end of the current
       ** transactions free-list (if any).  */
