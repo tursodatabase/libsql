@@ -1,5 +1,5 @@
-C Enhance\sthe\sstring\sformatter\s(used\sby\sprintf())\sso\sthat\sthe\swidth\sand\nprecision\sof\sstring\ssubstitution\soperators\srefer\sto\scharacters\sinstead\sof\nbytes\swhen\sthe\salternate-form-2\sflag\s("!")\sis\sused.\s\sAlso\sfix\sthe\s%c\nsubstition\sto\salways\swork\swithin\sunicode,\sregardless\sof\sthe\s\nalternate-form-2\sflag.
-D 2018-02-19T22:46:19.020
+C Remove\sa\slot\sof\sthe\stext\sdescribing\sextended\sformat\soptions\sfrom\sthe\ndocumentation\son\ssqlite3_mprintf()\sand\sfriends,\ssince\sthat\sinformation\sis\nnow\scovered\sby\sthe\sseparate\sprintf.html\sdocument.\s\sProvide\slinks\sto\sthat\nother\sdocument.\s\sNo\schanges\sto\scode.
+D 2018-02-20T13:46:20.902
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -490,7 +490,7 @@ F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
 F src/shell.c.in c1b14bc0bc1fe73a97dfaad55ca09f5d6e44f6019977d94e7e3d1861616035e1
-F src/sqlite.h.in 51f9acf52c80113d793ddd38b3940ad6895d97b4752503b19291fb8fcbf54c5e
+F src/sqlite.h.in 235e942dd8c01b414c2996828b4d0d2500faf8850f8b24ae17d31c172f519e69
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
 F src/sqliteInt.h fd8943e9d6b8bd04b3a22ef806b843c2c06f022db3f37f1436ac3a9b04e5b8a1
@@ -1707,8 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38f654dc117bb11d61407327884b5c913cfaf920547bebc4ce5a4cf983e5c20e 255612f0a131f2f522cbca3cc5a1edcf7e38938abca25ba421e7e38a422db9c9
-R 508c3db0e2913d65a43c01bb9b80f5ab
-T +closed 255612f0a131f2f522cbca3cc5a1edcf7e38938abca25ba421e7e38a422db9c9
+P c883c4d33f4cd722982aca17eeb355d19eeed793991d923b5494d173b1d0c73a
+R 2031e9cc56213989aa9a3f7b2af81256
 U drh
-Z 1886f73e61ed30038df9856ac6df181f
+Z 242cc6a18e31e977a6ec01c768dc69ec
