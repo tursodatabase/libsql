@@ -1,10 +1,10 @@
-C Remove\sa\slot\sof\sthe\stext\sdescribing\sextended\sformat\soptions\sfrom\sthe\ndocumentation\son\ssqlite3_mprintf()\sand\sfriends,\ssince\sthat\sinformation\sis\nnow\scovered\sby\sthe\sseparate\sprintf.html\sdocument.\s\sProvide\slinks\sto\sthat\nother\sdocument.\s\sNo\schanges\sto\scode.
-D 2018-02-20T13:46:20.902
+C Optimize\scalls\sto\ssqlite3_mprintf("%z...")\sso\sthat\sthey\sattempt\sto\sappend\ntext\sonto\sthe\send\sof\sthe\sexisting\smemory\sallocation\srather\sthan\sreallocating\nand\scopying.
+D 2018-02-20T15:23:37.534
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
+F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b5e9eb7212c5a61d4800172c710376d1158fd5eea2edc0be8e05c0c372e767e4
+F Makefile.msc b53ebf2538324c914e4308a6cd44610eb1ae50bdbd17d7ee65f680918e54da88
 F README.md d748f58e3ab0fe0307fb4ae0942b415d93dcc4288756e366cc9e7cf8260c093f
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -411,7 +411,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk c8c473bd91d553acab3fb0608ddb69fc769c7bcf6d9e258800504bfda86c792b
+F main.mk 04969462bfd32c9f08d4a6d40622e8c43c8c5ecfb2ee52ffb5737c5eca4b0c03
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -484,7 +484,7 @@ F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c bea56df3ae0637768c0da4fbbb8f2492f780980d95000034a105ff291bf7ca69
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 259f4e7960c47082c9653f3d5f0c294abd68bb9c3aab86de7630700cba1c20fb
-F src/printf.c 07244a9e1755247c9543db551acd2f3cce461b28d13e9f3ab87053c35fd62717
+F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c883c4d33f4cd722982aca17eeb355d19eeed793991d923b5494d173b1d0c73a
-R 2031e9cc56213989aa9a3f7b2af81256
+P 99eec556f065ad19548e48d1f4ae0a3767b4e82e1c83fa2365062e3c5e0071fb
+R 7c8988fb832914bacef8f6a6a302789a
 U drh
-Z 242cc6a18e31e977a6ec01c768dc69ec
+Z 0178b35e80c45b1a39d6c8cc991625e8

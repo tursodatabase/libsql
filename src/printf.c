@@ -206,6 +206,11 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
+  /* pAccum never starts out with an empty buffer that was obtained from 
+  ** malloc().  This precondition is required by the mprintf("%z...")
+  ** optimization. */
+  assert( pAccum->nChar>0 || (pAccum->printfFlags&SQLITE_PRINTF_MALLOCED)==0 );
+
   bufpt = 0;
   if( (pAccum->printfFlags & SQLITE_PRINTF_SQLFUNC)!=0 ){
     pArgList = va_arg(ap, PrintfArguments*);
@@ -681,6 +686,18 @@ void sqlite3VXPrintf(
         if( bufpt==0 ){
           bufpt = "";
         }else if( xtype==etDYNSTRING ){
+          if( pAccum->nChar==0 && pAccum->mxAlloc && width==0 && precision<0 ){
+            /* Special optimization for sqlite3_mprintf("%z..."):
+            ** Extend an existing memory allocation rather than creating
+            ** a new one. */
+            assert( (pAccum->printfFlags&SQLITE_PRINTF_MALLOCED)==0 );
+            pAccum->zText = bufpt;
+            pAccum->nAlloc = sqlite3DbMallocSize(pAccum->db, bufpt);
+            pAccum->nChar = 0x7fffffff & (int)strlen(bufpt);
+            pAccum->printfFlags |= SQLITE_PRINTF_MALLOCED;
+            length = 0;
+            break;
+          }
           zExtra = bufpt;
         }
         if( precision>=0 ){
