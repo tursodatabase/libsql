@@ -30,10 +30,37 @@ is the name of the database table to read and optional argument
 &lt;parameters&gt; is a JSON object containing various attributes that
 influence creation of the zonefile file. 
 
-Currently the only &lt;parameters&gt; attribute supported is 
-<i>maxAutoFrameSize</i> (default value 65536), which sets the maximum 
-uncompressed frame size in bytes for automatically generated zonefile 
-frames.
+Currently, the following &lt;parameters&gt; attributes are supported:
+
+<table border=1>
+<tr align=left><th>Attribute<th>Default<th>Interpretation
+<tr valign=top><td>maxAutoFrameSize<td>65536
+<td>The maximum uncompressed frame size in bytes for automatically generated
+zonefile frames.
+
+<tr valign=top><td>compressionTypeContent<td>"none"
+<td>The compression type used to compress each frame in the zonefile. 
+Valid values are "none" (no compression), "zstd", "zstd_global_dict",
+"zlib", "brotli", "lz4" and "lz4hc". Not all compression methods are
+supported by all builds. The compression method supported by a build
+depends on the combination of SQLITE_HAVE_ZSTD, SQLITE_HAVE_ZLIB,
+SQLITE_HAVE_BROTLI and SQLITE_HAVE_LZ4 pre-processor symbols defined
+at build time.
+
+<tr valign=top><td>compressionTypeIndexData<td>"none"
+<td>The compression type used to compress the zonefile index structure.
+All values that are valid for the <i>compressionTypeContent</i> parameter,
+except for "zstd_global_dict", are also valid for this option.
+
+<tr valign=top><td>encryptionType<td>"none"
+<td>The encryption type to use. At present the only valid values are
+"none" (no encryption) and "xor" (an insecure mock encryption method
+useful for testing only).
+
+<tr valign=top><td>encryptionKey<td>""
+<td>The encryption key (a string) to use. The value of this option is
+ignored if <i>encryptionType</i> is set to "none".
+</table>
 
 For example, to create a zonefile named "test.zonefile" based on the
 contents of database table "test_input" and with a maximum automatic
@@ -53,12 +80,10 @@ This creates two virtual tables in the database schema. One read-only table
 named "z1", with a schema equivalent to:
 
 >     CREATE TABLE z1(  -- this whole table is read-only
->       k INTEGER PRIMARY KEY,
->       v BLOB,
->       fileid INTEGER,
->       frame INTEGER,
->       ofst INTEGER,
->       sz INTEGER
+>       k INTEGER PRIMARY KEY,     -- key value
+>       v BLOB,                    -- associated blob of data
+>       file TEXT,                 -- file this key is read from 
+>       sz INTEGER                 -- size of blob of data in bytes
 >     );
 
 And a read-write table named "z1_files" with a schema like:

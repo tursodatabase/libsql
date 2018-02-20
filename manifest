@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sreading\sthe\s"file"\scolumn\sof\sa\szonefile\svirtual\stable.
-D 2018-02-20T19:25:49.291
+C Update\sREADME.md\sin\sext/zonefile.
+D 2018-02-20T20:57:20.401
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -408,7 +408,7 @@ F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
-F ext/zonefile/README.md 1a95a93c865e196bc6301581e5a702f449ea9ce0e307cdbdbbdfd58377f1ec7e
+F ext/zonefile/README.md df86ef5b4f9aa8b07e1c8124b3f2dcea616927385aad59d525b784f0a06d446c
 F ext/zonefile/zonefile.c e65e17336a635ab1a7745924c2a9801427fcb7d90faf27495a18818c2873cf43
 F ext/zonefile/zonefile1.test a30f9604cede51f699af8192a34fac96dc05b860ffa10d6040baeda7df350ccd
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56801c461c5d19cf96146fe0fa7f725c81da5cd7495c9608cd044125d00fecfe
-R ba7ae0ba2f81b939f32aa56d85d21a90
+P d8d0bdcb405610978393bb8f3ef30ee868fddda0d129036f8d0102012fe0d5d4
+R 330350d65a5b59e381d4f9046562bedf
 U dan
-Z d1c74b9a3c2d2e5fb68ce19cfd3af3bc
+Z dfd577d68bb047c0ff359adce6e8e2de
