@@ -504,7 +504,6 @@ int sqlite3FixSelect(
     if( sqlite3FixExpr(pFix, pSelect->pLimit) ){
       return 1;
     }
-#if 1
     if( pSelect->pWith ){
       int i;
       for(i=0; i<pSelect->pWith->nCte; i++){
@@ -513,7 +512,6 @@ int sqlite3FixSelect(
         }
       }
     }
-#endif
     pSelect = pSelect->pPrior;
   }
   return 0;

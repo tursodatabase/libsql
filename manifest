@@ -1,5 +1,5 @@
-C Optimize\scalls\sto\ssqlite3_mprintf("%z...")\sso\sthat\sthey\sattempt\sto\sappend\ntext\sonto\sthe\send\sof\sthe\sexisting\smemory\sallocation\srather\sthan\sreallocating\nand\scopying.
-D 2018-02-20T15:23:37.534
+C Remove\sa\ssuperfluous\s"#if\s1".\s\sNo\slogic\schanges.
+D 2018-02-20T16:39:11.853
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -425,7 +425,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
 F src/analyze.c 6b42e36a5dcc2703a771f2411bd5e99524bd62c7ecde209bb88dfb04c72f046e
-F src/attach.c e1c0d72dd0747da84aa1352f8729906b1d8d2a162ba7f6c475980be202b37c46
+F src/attach.c 79cb6b365d79b96b15dd429aa3e4c3b99335039e059baca8df28f1708fbff261
 F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99eec556f065ad19548e48d1f4ae0a3767b4e82e1c83fa2365062e3c5e0071fb
-R 7c8988fb832914bacef8f6a6a302789a
+P 4bc8a48e644562f6e6192f4c6fc4a70f6bb59f8126ed6c6dc876bedf65d74cda
+R b395f52b369116e5af9544f274df7b1d
 U drh
-Z 0178b35e80c45b1a39d6c8cc991625e8
+Z 0f63b7ed04628440113fb474f826bbce
