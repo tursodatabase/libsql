@@ -40,6 +40,7 @@ BASELINE="trunk"
 doExplain=0
 doCachegrind=1
 doVdbeProfile=0
+doWal=1
 while test "$1" != ""; do
   case $1 in
     --reprepare)
@@ -63,8 +64,11 @@ while test "$1" != ""; do
     --temp)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --temp 6"
         ;;
+    --legacy)
+	doWal=0
+        ;;
     --wal)
-        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --journal wal"
+        doWal=1
         ;;
     --size)
         shift; SIZE=$1
@@ -134,6 +138,9 @@ while test "$1" != ""; do
   esac
   shift
 done
+if test $doWal -eq 1; then
+  SPEEDTEST_OPTS="$SPEEDTEST_OPTS --journal wal"
+fi
 SPEEDTEST_OPTS="$SPEEDTEST_OPTS --size $SIZE"
 echo "NAME           = $NAME" | tee summary-$NAME.txt
 echo "SPEEDTEST_OPTS = $SPEEDTEST_OPTS" | tee -a summary-$NAME.txt

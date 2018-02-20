@@ -1,5 +1,5 @@
-C Remove\sa\ssuperfluous\s"#if\s1".\s\sNo\slogic\schanges.
-D 2018-02-20T16:39:11.853
+C In\sthe\sspeed-check.sh\sscript,\smake\sWAL\smode\sthe\sdefault.\s\sAdd\sthe\s--legacy\noption\sto\sdo\sDELETE\smode.\s\sContinue\sto\suse\sDELETE\smode\sfor\slong-term\sperformance\ngraphs\ssince\sWAL\smode\swas\snot\salways\savailable,\sbut\suse\sWAL\smode\sfor\s\nday-to-day\sperformance\smeasurements.
+D 2018-02-20T17:02:31.731
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -1665,7 +1665,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 4bfd19aad7eb3ce0372ef0255f58035e0bba4ff5e9acfd763a10c6fb365c8dec
-F tool/speed-check.sh c6239c71ba6951ac5d093bbea55aadf019246c8e7a0c079422e62312a6ab1247
+F tool/speed-check.sh 4ff9b095cf1a7643f0264e7fb7d23f0b12b7cce587a9de315877c378e90eeaf4
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4bc8a48e644562f6e6192f4c6fc4a70f6bb59f8126ed6c6dc876bedf65d74cda
-R b395f52b369116e5af9544f274df7b1d
+P caaffd32001ff44c31f2d6dbe921f9d294f869c2c4a81e943fdf3f43f8d9313c
+R fbade0c89f4079ed24b0fd1c0a4dd6f0
 U drh
-Z 0f63b7ed04628440113fb474f826bbce
+Z 870fe7a9ea537077e2a70e18f17526cf
