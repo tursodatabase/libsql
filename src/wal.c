@@ -554,7 +554,11 @@ struct WalIterator {
 ** page and SQLITE_OK is returned. If an error (an OOM or VFS error) occurs,
 ** then an SQLite error code is returned and *ppPage is set to 0.
 */
-static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
+static SQLITE_NOINLINE int walIndexPageRealloc(
+  Wal *pWal,               /* The WAL context */
+  int iPage,               /* The page we seek */
+  volatile u32 **ppPage    /* Write the page pointer here */
+){
   int rc = SQLITE_OK;
 
   /* Enlarge the pWal->apWiData[] array if required */
@@ -595,6 +599,16 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   *ppPage = pWal->apWiData[iPage];
   assert( iPage==0 || *ppPage || rc!=SQLITE_OK );
   return rc;
+}
+static int walIndexPage(
+  Wal *pWal,               /* The WAL context */
+  int iPage,               /* The page we seek */
+  volatile u32 **ppPage    /* Write the page pointer here */
+){
+  if( pWal->nWiData<=iPage || (*ppPage = pWal->apWiData[iPage])==0 ){
+    return walIndexPageRealloc(pWal, iPage, ppPage);
+  }
+  return SQLITE_OK;
 }
 
 /*

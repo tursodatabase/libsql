@@ -1,5 +1,5 @@
-C In\sthe\sspeed-check.sh\sscript,\smake\sWAL\smode\sthe\sdefault.\s\sAdd\sthe\s--legacy\noption\sto\sdo\sDELETE\smode.\s\sContinue\sto\suse\sDELETE\smode\sfor\slong-term\sperformance\ngraphs\ssince\sWAL\smode\swas\snot\salways\savailable,\sbut\suse\sWAL\smode\sfor\s\nday-to-day\sperformance\smeasurements.
-D 2018-02-20T17:02:31.731
+C Make\sthe\swalIndexPage()\sroutine\sabout\s3x\sfaster\sby\sfactoring\sout\sthe\sseldom\nused\sreallocation\slogic\sinto\sa\sseparate\ssubroutine.
+D 2018-02-20T22:20:57.397
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -568,7 +568,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 5a3f464edd64596f601683ed321d12e6fd93c5fb9afdfb3653d6ffd0fee9c48f
+F src/wal.c fff06582a9611cd472fe67ba2b37da1ba052b48a41e3ee60ad55e87faf724c75
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 7cae47e813393d70c6d327fdf000fcb30f76b1b0b5a5b52ff6402e0c658de32c
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P caaffd32001ff44c31f2d6dbe921f9d294f869c2c4a81e943fdf3f43f8d9313c
-R fbade0c89f4079ed24b0fd1c0a4dd6f0
+P cd81613850c0458b4b5b2460b9b38ce7ff6e557f7add9615058bb96f5a344ccd
+R 1787f3579805a4f44923446da8d3d679
 U drh
-Z 870fe7a9ea537077e2a70e18f17526cf
+Z 192c58e6de32e2b3cf41a7ef956f2494
