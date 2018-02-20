@@ -2312,9 +2312,13 @@ static int zonefileColumn(
     case 1: /* v */
       rc = zonefileGetValue(pCtx, pCsr);
       break;
-    case 2: /* file */
-      sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pSelect, 1));
+    case 2: { /* file */
+      const char *zFile = 0;
+      rc = zonefileGetFile(pCtx, pCsr, &zFile);
+      sqlite3_result_text(pCtx, zFile, -1, SQLITE_TRANSIENT);
+      zonefileReleaseFile(pCsr);
       break;
+    }
     default: { /* sz */
       int iCol;
       if( sqlite3_column_type(pCsr->pSelect, 5)==SQLITE_NULL ){
