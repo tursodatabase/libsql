@@ -16,8 +16,63 @@ SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+/*
+** Default values for various zonefile_write() parameters.
+*/
+#define ZONEFILE_DEFAULT_MAXAUTOFRAMESIZE (64*1024)
+#define ZONEFILE_DEFAULT_ENCRYPTION       1
+#define ZONEFILE_DEFAULT_COMPRESSION      0
+#define ZONEFILE_DEFAULT_DICTSIZE         (64*1024)
+
+/* 
+** Value to use for the first 4 bytes of a zonefile file header.
+*/
+#define ZONEFILE_MAGIC_NUMBER 0x464B3138
+
+/*
+** Size of a zonefile header. And of each entry in the 
+** ZonefileIndex.keyOffsets array.
+*/
+#define ZONEFILE_SZ_HEADER           32
+#define ZONEFILE_SZ_KEYOFFSETS_ENTRY 20
+
+/*
+** Constants for supported compression types. These are copied from the
+** published file format spec.
+*/
+#define ZONEFILE_COMPRESSION_NONE             0
+#define ZONEFILE_COMPRESSION_ZSTD             1
+#define ZONEFILE_COMPRESSION_ZSTD_GLOBAL_DICT 2
+#define ZONEFILE_COMPRESSION_ZLIB             3
+#define ZONEFILE_COMPRESSION_BROTLI           4
+#define ZONEFILE_COMPRESSION_LZ4              5
+#define ZONEFILE_COMPRESSION_LZ4HC            6
+
+/*
+** Schema for "zonefile" virtual table.
+*/
+#define ZONEFILE_SCHEMA          \
+  "CREATE TABLE z1("             \
+  "  k INTEGER PRIMARY KEY,"     \
+  "  v BLOB,"                    \
+  "  fileid INTEGER,"            \
+  "  sz INTEGER"                 \
+  ")"
+
+/*
+** Schema for "zonefile_files" virtual table.
+*/
+#define ZONEFILE_FILES_SCHEMA    \
+  "CREATE TABLE z2("             \
+  "  filename TEXT,"             \
+  "  ekey BLOB,"                 \
+  "  header JSON HIDDEN"         \
+  ")"
+
 
 #ifndef SQLITE_AMALGAMATION
 typedef sqlite3_int64 i64;
@@ -38,6 +93,23 @@ typedef unsigned long u32;
 # define NEVER(X)       (X)
 #endif
 #endif   /* SQLITE_AMALGAMATION */
+
+/*
+** Forward declarations for encryption/decryption functions.
+**
+** If this module is not compiled with SQLITE_HAVE_ZONEFILE_CODEC, then
+** implementations of the following type and functions that support the
+** mock encryption method "xor" only are provided. Alternatively, the
+** application may append a more functional implementation of the following 
+** type and functions to this file before compiling it with
+** SQLITE_HAVE_ZONEFILE_CODEC defined.
+*/
+typedef struct ZonefileCodec ZonefileCodec;
+static int zonefileCodecCreate(int,unsigned char*,int,ZonefileCodec**,char**);
+static int zonefileCodecNonceSize(ZonefileCodec*);
+static void zonefileCodecEncode(ZonefileCodec*, unsigned char*, int);
+static void zonefileCodecDecode(ZonefileCodec*, unsigned char*, int);
+static void zonefileCodecDestroy(ZonefileCodec*);
 
 #ifndef SQLITE_HAVE_ZONEFILE_CODEC
 typedef struct ZonefileCodec ZonefileCodec;
@@ -157,6 +229,9 @@ struct ZonefileKey {
   ZonefileKey *pHashNext;         /* Next colliding key in hash table */
 };
 
+/*
+** Return a 32-bit hash value for the three arguments.
+*/
 static u32 zonefileKeyHash(
   const char *zDb,
   const char *zTab,
@@ -302,33 +377,19 @@ static void zonefileKeyDestroy(void *p){
   sqlite3_free(pGlobal);
 }
 
-
-#define ZONEFILE_DEFAULT_MAXAUTOFRAMESIZE (64*1024)
-#define ZONEFILE_DEFAULT_ENCRYPTION       1
-#define ZONEFILE_DEFAULT_COMPRESSION      0
-#define ZONEFILE_DEFAULT_DICTSIZE         (64*1024)
-
-#define ZONEFILE_MAGIC_NUMBER 0x464B3138
-
-#define ZONEFILE_SZ_HEADER           32
-#define ZONEFILE_SZ_KEYOFFSETS_ENTRY 20
-
-
-#define ZONEFILE_COMPRESSION_NONE             0
-#define ZONEFILE_COMPRESSION_ZSTD             1
-#define ZONEFILE_COMPRESSION_ZSTD_GLOBAL_DICT 2
-#define ZONEFILE_COMPRESSION_ZLIB             3
-#define ZONEFILE_COMPRESSION_BROTLI           4
-#define ZONEFILE_COMPRESSION_LZ4              5
-#define ZONEFILE_COMPRESSION_LZ4HC            6
-
-
+/*
+** Write value v to buffer aBuf as an unsigned 32-bit big-endian integer.
+*/
 static void zonefilePut32(u8 *aBuf, u32 v){
   aBuf[0] = (v >> 24) & 0xFF;
   aBuf[1] = (v >> 16) & 0xFF;
   aBuf[2] = (v >>  8) & 0xFF;
   aBuf[3] = v & 0xFF;
 }
+
+/*
+** Read and return an unsigned 32-bit big-endian integer from buffer aBuf.
+*/
 static u32 zonefileGet32(const u8 *aBuf){
   return (((u32)aBuf[0]) << 24)
        + (((u32)aBuf[1]) << 16)
@@ -336,6 +397,10 @@ static u32 zonefileGet32(const u8 *aBuf){
        + (((u32)aBuf[3]) <<  0);
 }
 
+/*
+** Generic xOpen, xClose and xUncompressSize methods used by a few
+** different compression method bindings.
+*/
 static int zfGenericOpen(void **pp, u8 *aDict, int nDict){
   *pp = 0;
   return SQLITE_OK;
@@ -652,27 +717,11 @@ static ZonefileCompress *zonefileCompressByValue(int eType){
 **************************************************************************/
 
 
-
-#define ZONEFILE_SCHEMA          \
-  "CREATE TABLE z1("             \
-  "  k INTEGER PRIMARY KEY,"     \
-  "  v BLOB,"                    \
-  "  fileid INTEGER,"            \
-  "  sz INTEGER"                 \
-  ")"
-
-#define ZONEFILE_FILES_SCHEMA    \
-  "CREATE TABLE z2("             \
-  "  filename TEXT,"             \
-  "  ekey BLOB,"                 \
-  "  header JSON HIDDEN"         \
-  ")"
-
-
-
 /*
 ** A structure to store the parameters for a single zonefile_write()
-** invocation. 
+** invocation. An instance of this structure is populated based on
+** the json parameters passed to zonefile_write() by function
+** zonefileGetParams();
 */
 typedef struct ZonefileParam ZonefileParam;
 struct ZonefileParam {
@@ -703,7 +752,7 @@ struct ZonefileHeader {
 };
 
 /*
-** Buffer structure used by the zonefile_write() implementation.
+** Resizable buffer structure used by the zonefile_write() implementation.
 */
 typedef struct ZonefileBuffer ZonefileBuffer;
 struct ZonefileBuffer {
@@ -755,30 +804,6 @@ static int zonefilePrepare(
     rc = SQLITE_NOMEM;
   }
   return rc;
-}
-
-
-static sqlite3_stmt *zonefileCtxPrepare(
-  sqlite3_context *pCtx,
-  const char *zFmt,
-  ...
-){
-  sqlite3_stmt *pRet = 0;
-  va_list ap;
-  char *zSql;
-  va_start(ap, zFmt);
-  zSql = sqlite3_vmprintf(zFmt, ap);
-  if( zSql ){
-    sqlite3 *db = sqlite3_context_db_handle(pCtx);
-    int rc = sqlite3_prepare(db, zSql, -1, &pRet, 0);
-    if( rc!=SQLITE_OK ){
-      zonefileTransferError(pCtx);
-    }
-    sqlite3_free(zSql);
-  }else{
-    sqlite3_result_error_nomem(pCtx);
-  }
-  return pRet;
 }
 
 /*
@@ -1134,13 +1159,14 @@ static void zonefileWriteFunc(
 
   /* Prepare the SQL statement used to read data from the source table. This
   ** also serves to verify the suitability of the source table schema. */
-  pStmt = zonefileCtxPrepare(pCtx, 
+  rc = zonefilePrepare(sqlite3_context_db_handle(pCtx), &pStmt, &zErr,
       "SELECT k, frame, v FROM %Q ORDER BY frame, idx, k", zTbl
   );
-  if( pStmt==0 ) goto zone_write_out;
 
   /* Open the file-handle used to write out the zonefile */ 
-  pFd = zonefileFileOpen(zFile, 1, &zErr);
+  if( rc==SQLITE_OK ){
+    pFd = zonefileFileOpen(zFile, 1, &zErr);
+  }
   if( pFd==0 ){
     sqlite3_result_error(pCtx, zErr, -1);
     sqlite3_free(zErr);
@@ -1893,6 +1919,7 @@ struct ZonefileTab {
   ZonefileGlobal *pGlobal;
   char *zName;               /* Name of this table */
   char *zDb;                 /* Name of db containing this table */
+  int nCacheSize;
 };
 
 typedef struct ZonefileCsr ZonefileCsr;
@@ -1900,6 +1927,81 @@ struct ZonefileCsr {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   sqlite3_stmt *pSelect;     /* SELECT on %_shadow_idx table */
 };
+
+typedef struct ZonefileFrame ZonefileFrame;
+struct ZonefileFrame {
+  i64 iFileid;               /* Fileid for this frame */
+  i64 iFrameOff;             /* Offset of frame in file */
+  int nBuf;                  /* Size of aBuf[] in bytes */
+  u8 *aBuf;                  /* Buffer containing uncompressed frame data */
+};
+
+/*
+** Attempt to interpret the contents of string z as an integer. If
+** successful, set (*piVal) to the integer value and return SQLITE_OK.
+** Otherwise, return SQLITE_ERROR.
+*/
+static int zonefileParseInteger(const char *z, int *piVal){
+  *piVal = atoi(z);
+  return SQLITE_OK;
+}
+
+/*
+** Return true character i is considered to be whitespace.
+*/
+static int zonefile_isspace(char i){
+  return (i==' ');
+}
+
+/*
+** This function is called as part of constructing zonefile virtual table
+** pTab. Argument zOption is the full text of a parameter (column name)
+** specified as part of the CREATE VIRTUAL TABLE statement. This function
+** attempts to interpret the parameter and update structure pTab 
+** accordingly. If successful, SQLITE_OK is returned. Otherwise, an
+** SQLite error code is returned and (*pzErr) is left pointing to
+** a buffer containing an English language error message. It is the
+** responsibility of the caller to eventually free this buffer using
+** sqlite3_free().
+*/
+static int zonefileParseOption(
+  ZonefileTab *pTab,              /* Zonefile vtab under construction */
+  const char *zOption,            /* Text of option (column name) */
+  char **pzErr                    /* OUT: Error message */
+){
+  const char *z = zOption;
+  const char *zOpt;
+  int nOpt;
+  const char *zVal;
+  int rc = SQLITE_OK;
+
+  /* Skip leading whitespace */
+  while( zonefile_isspace(*z) ) z++;
+  zOpt = z;
+
+  /* Skip until EOF, whitespace or "=" */
+  while( *z && !zonefile_isspace(*z) && *z!='=' ) z++;
+  nOpt = z-zOpt;
+
+  /* Skip whitespace. Then check there is an "=". */
+  while( zonefile_isspace(*z) ) z++;
+  if( *z!='=' ) goto parse_error;
+  z++;
+  while( zonefile_isspace(*z) ) z++;
+  zVal = z;
+
+  if( nOpt==9 && sqlite3_strnicmp(zOpt, "cachesize", 9)==0 ){
+    rc = zonefileParseInteger(zVal, &pTab->nCacheSize);
+  }else{
+    goto parse_error;
+  }
+
+  return rc;
+
+ parse_error:
+  *pzErr = sqlite3_mprintf("parse error in option: %s", zOption);
+  return SQLITE_ERROR;
+}
 
 /*
 ** This function does the work of xCreate (if bCreate!=0) or xConnect
@@ -1928,6 +2030,7 @@ static int zonefileCreateConnect(
   if( !p ){
     rc = SQLITE_NOMEM;
   }else{
+    int i;
     memset(p, 0, sizeof(ZonefileTab));
     p->zName = (char*)&p[1];
     memcpy(p->zName, zName, nName+1);
@@ -1964,6 +2067,10 @@ static int zonefileCreateConnect(
     
     if( rc==SQLITE_OK ){
       rc = sqlite3_declare_vtab(db, ZONEFILE_SCHEMA);
+    }
+
+    for(i=3; i<argc && rc==SQLITE_OK; i++){
+      zonefileParseOption(p, argv[i], pzErr);
     }
   }
 
@@ -2276,119 +2383,194 @@ static void zonefileReleaseFile(ZonefileCsr *pCsr){
   sqlite3_reset(pTab->pIdToName);
 }
 
-static int zonefileGetValue(sqlite3_context *pCtx, ZonefileCsr *pCsr){
-  ZonefileTab *pTab = (ZonefileTab*)pCsr->base.pVtab;
-  const char *zFile = 0;
-  char *zErr = 0;
-  FILE *pFd = 0;
+static int zonefileValueReadDirect(sqlite3_context *pCtx, ZonefileCsr *pCsr){
+  i64 iOff = sqlite3_column_int64(pCsr->pSelect, 2);
+  int sz = sqlite3_column_int(pCsr->pSelect, 3);
+
+  FILE *pFd = 0;                  /* File handle open on zonefile */
+  u8 *aBuf;                       /* Buffer to read blob into */
+  int rc;                         /* Return code */
+
+  aBuf = sqlite3_malloc(sz);
+  if( aBuf==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    const char *zFile = 0;
+    /* Open the file to read the blob from */
+    rc = zonefileGetFile(pCtx, pCsr, &zFile);
+    if( rc==SQLITE_OK ){
+      char *zErr = 0;
+      pFd = zonefileFileOpen(zFile, 0, &zErr);
+      if( pFd==0 ){ 
+        sqlite3_result_error(pCtx, zErr, -1);
+        sqlite3_free(zErr);
+        rc = SQLITE_ERROR;
+      }
+      zonefileReleaseFile(pCsr);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = zonefileFileRead(pFd, aBuf, sz, iOff);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_blob(pCtx, aBuf, sz, zonefileFree);
+      aBuf = 0;
+    }
+  }
+
+  zonefileFileClose(pFd);
+  sqlite3_free(aBuf);
+  return rc;
+}
+
+static ZonefileFrame *zonefileCacheFind(
+  ZonefileTab *pTab, 
+  i64 iFile, 
+  i64 iFrameOff
+){
+  return 0;
+}
+
+static void zonefileCacheStore(
+  ZonefileTab *pTab,
+  ZonefileFrame *pFrame
+){
+}
+
+static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
   int rc = SQLITE_OK;
-  ZonefileHeader hdr;
-  ZonefileCompress *pCmpMethod = 0;
-  ZonefileCodec *pCodec = 0;
-  void *pCmp = 0;
+  ZonefileTab *pTab = (ZonefileTab*)pCsr->base.pVtab;
+  ZonefileFrame *pFrame = 0;
+  i64 iFile = sqlite3_column_int64(pCsr->pSelect, 1);
+  i64 iFrameOff = sqlite3_column_int64(pCsr->pSelect, 2);
+  i64 iKeyOff = sqlite3_column_int64(pCsr->pSelect, 4);
+  int nKeySz = sqlite3_column_int64(pCsr->pSelect, 5);
 
-  /* Open the file to read the blob from */
-  rc = zonefileGetFile(pCtx, pCsr, &zFile);
-  if( rc==SQLITE_OK ){
-    pFd = zonefileFileOpen(zFile, 0, &zErr);
-    if( pFd==0 ) rc = SQLITE_ERROR;
-  }
+  /* Check if this frame is already in the cache. If not, read it from 
+  ** the file.  */
+  pFrame = zonefileCacheFind(pTab, iFile, iFrameOff);
+  if( pFrame==0 ){
+    const char *zFile = 0;
+    char *zErr = 0;
+    FILE *pFd = 0;
+    ZonefileHeader hdr;
+    ZonefileCompress *pCmpMethod = 0;
+    ZonefileCodec *pCodec = 0;
+    void *pCmp = 0;
 
-  /* Read the zonefile header */
-  if( rc==SQLITE_OK ){
-    rc = zonefileReadHeader(pFd, zFile, &hdr, &zErr);
-  }
+    /* Open the file to read the blob from */
+    rc = zonefileGetFile(pCtx, pCsr, &zFile);
+    if( rc==SQLITE_OK ){
+      pFd = zonefileFileOpen(zFile, 0, &zErr);
+      if( pFd==0 ) rc = SQLITE_ERROR;
+    }
 
-  /* Find the compression method and open the compressor handle. */
-  if( rc==SQLITE_OK ){
-    rc = zfFindCompress(hdr.compressionTypeContent, &pCmpMethod, &zErr);
-  }
-  if( pCmpMethod ){
-    int nDict = 0;
-    u8 *aDict = 0;
-    assert( rc==SQLITE_OK );
-    if( hdr.byteOffsetDictionary ){
-      nDict = hdr.byteOffsetFrames - hdr.byteOffsetDictionary;
-      aDict = sqlite3_malloc(nDict);
-      if( aDict==0 ){
+    /* Read the zonefile header */
+    if( rc==SQLITE_OK ){
+      rc = zonefileReadHeader(pFd, zFile, &hdr, &zErr);
+    }
+
+    /* Find the compression method and open the compressor handle. */
+    if( rc==SQLITE_OK ){
+      rc = zfFindCompress(hdr.compressionTypeContent, &pCmpMethod, &zErr);
+    }
+    if( pCmpMethod ){
+      int nDict = 0;
+      u8 *aDict = 0;
+      assert( rc==SQLITE_OK );
+      if( hdr.byteOffsetDictionary ){
+        nDict = hdr.byteOffsetFrames - hdr.byteOffsetDictionary;
+        aDict = sqlite3_malloc(nDict);
+        if( aDict==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          rc = zonefileFileRead(pFd, aDict, nDict, hdr.byteOffsetDictionary);
+        }
+      }
+      if( rc==SQLITE_OK ){
+        rc = pCmpMethod->xOpen(&pCmp, aDict, nDict);
+      }
+      sqlite3_free(aDict);
+    }
+
+    /* Find the encryption method and key. */
+    if( hdr.encryptionType ){
+      const char *z = 0;
+      int n = zonefileKeyFind(pTab->pGlobal, pTab->zDb, pTab->zName, iFile, &z);
+      if( n==0 ){
+        zErr = sqlite3_mprintf("missing encryption key for file \"%s\"", zFile);
+        rc = SQLITE_ERROR;
+      }else{
+        rc = zonefileCodecCreate(hdr.encryptionType, (u8*)z, n, &pCodec, &zErr);
+      }
+    }
+
+    /* Read some data into memory. */
+    if( rc==SQLITE_OK ){
+      int szFrame = sqlite3_column_int(pCsr->pSelect, 3);
+
+      pFrame = (ZonefileFrame*)sqlite3_malloc(szFrame + sizeof(ZonefileFrame));
+      if( pFrame==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = zonefileFileRead(pFd, aDict, nDict, hdr.byteOffsetDictionary);
-      }
-    }
-    if( rc==SQLITE_OK ){
-      rc = pCmpMethod->xOpen(&pCmp, aDict, nDict);
-    }
-    sqlite3_free(aDict);
-  }
-
-  /* Find the encryption method and key. */
-  if( hdr.encryptionType ){
-    i64 iFileid = sqlite3_column_int64(pCsr->pSelect, 1);
-    const char *z = 0;
-    int n = zonefileKeyFind(pTab->pGlobal, pTab->zDb, pTab->zName, iFileid, &z);
-    if( n==0 ){
-      zErr = sqlite3_mprintf("missing encryption key for file \"%s\"", zFile);
-      rc = SQLITE_ERROR;
-    }else{
-      rc = zonefileCodecCreate(hdr.encryptionType, (u8*)z, n, &pCodec, &zErr);
-    }
-  }
-
-  /* Read some data into memory. If the data is uncompressed, then just
-  ** the required record is read. Otherwise, the entire frame is read
-  ** into memory.  */
-  if( rc==SQLITE_OK ){
-    i64 iFrameOff = sqlite3_column_int64(pCsr->pSelect, 2);
-    int szFrame = sqlite3_column_int(pCsr->pSelect, 3);
-    u8 *aBuf = sqlite3_malloc(szFrame);
-
-    if( aBuf==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      rc = zonefileFileRead(pFd, aBuf, szFrame, iFrameOff);
-      if( rc!=SQLITE_OK ){
-        zErr = sqlite3_mprintf(
-            "failed to read %d bytes at offset %d from file \"%s\"", 
-            szFrame, iFrameOff, zFile
-        );
+        memset(pFrame, 0, sizeof(ZonefileFrame));
+        pFrame->aBuf = (u8*)&pFrame[1];
+        pFrame->nBuf = szFrame;
+        pFrame->iFrameOff = iFrameOff;
+        pFrame->iFileid = iFile;
+        rc = zonefileFileRead(pFd, pFrame->aBuf, szFrame, iFrameOff);
       }
     }
 
-    if( rc==SQLITE_OK ){
-      if( pCodec==0 && pCmpMethod==0 ){
-        sqlite3_result_blob(pCtx, aBuf, szFrame, zonefileFree);
-        aBuf = 0;
+    /* Decrypt data if necessary */
+    if( rc==SQLITE_OK && pCodec ){
+      zonefileCodecDecode(pCodec, pFrame->aBuf, pFrame->nBuf);
+      pFrame->nBuf -= zonefileCodecNonceSize(pCodec);
+    }
+
+    /* Uncompress data if required */
+    if( rc==SQLITE_OK && pCmpMethod ){
+      ZonefileFrame *p = 0;
+      int nOut = pCmpMethod->xUncompressSize(pCmp, pFrame->aBuf, pFrame->nBuf);
+
+      p = (ZonefileFrame*)sqlite3_malloc(nOut + sizeof(ZonefileFrame));
+      if( p==0 ){
+        rc = SQLITE_NOMEM;
       }else{
-        i64 iOff = sqlite3_column_int64(pCsr->pSelect, 4);
-        int sz = sqlite3_column_int(pCsr->pSelect, 5);
-
-        /* Decrypt the data if necessary */
-        if( pCodec ){
-          zonefileCodecDecode(pCodec, aBuf, szFrame);
-          szFrame -= zonefileCodecNonceSize(pCodec);
-        }
-        if( pCmpMethod ){
-          rc = zonefileCtxUncompress(
-              pCtx, pCmpMethod, pCmp, aBuf, szFrame, iOff, sz
-          );
-        }else{
-          sqlite3_result_blob(pCtx, &aBuf[iOff], sz, SQLITE_TRANSIENT);
-        }
+        p->aBuf = (u8*)&p[1];
+        p->nBuf = nOut;
+        p->iFrameOff = iFrameOff;
+        p->iFileid = iFile;
+        rc = pCmpMethod->xUncompress(
+            pCmp, p->aBuf, p->nBuf, pFrame->aBuf, pFrame->nBuf
+        );
+        sqlite3_free(pFrame);
+        pFrame = p;
       }
     }
-    sqlite3_free(aBuf);
+
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pFrame);
+      pFrame = 0;
+    }
+    zonefileReleaseFile(pCsr);
+    zonefileFileClose(pFd);
+    zonefileCodecDestroy(pCodec);
+    if( pCmpMethod ) pCmpMethod->xClose(pCmp);
+
+    if( zErr ){
+      assert( rc!=SQLITE_OK );
+      sqlite3_result_error(pCtx, zErr, -1);
+      sqlite3_free(zErr);
+    }
   }
 
-  zonefileReleaseFile(pCsr);
-  if( zErr ){
-    assert( rc!=SQLITE_OK );
-    sqlite3_result_error(pCtx, zErr, -1);
-    sqlite3_free(zErr);
+  if( pFrame ){
+    assert( rc==SQLITE_OK );
+    sqlite3_result_blob(pCtx, &pFrame->aBuf[iKeyOff], nKeySz, SQLITE_TRANSIENT);
+    sqlite3_free(pFrame);
   }
-  zonefileFileClose(pFd);
-  zonefileCodecDestroy(pCodec);
-  if( pCmpMethod ) pCmpMethod->xClose(pCmp);
+
   return rc;
 }
 
@@ -2407,7 +2589,11 @@ static int zonefileColumn(
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pSelect, 0));
       break;
     case 1: /* v */
-      rc = zonefileGetValue(pCtx, pCsr);
+      if( sqlite3_column_type(pCsr->pSelect, 5)==SQLITE_NULL ){
+        rc = zonefileValueReadDirect(pCtx, pCsr);
+      }else{
+        rc = zonefileValueReadCache(pCtx, pCsr);
+      }
       break;
     case 2: /* fileid */
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pSelect, 1));
