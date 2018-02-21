@@ -2882,7 +2882,7 @@ int sqlite3WalFindFrame(
   **     table after the current read-transaction had started.
   */
   iMinHash = walFramePage(pWal->minFrame);
-  for(iHash=walFramePage(iLast); iHash>=iMinHash && iRead==0; iHash--){
+  for(iHash=walFramePage(iLast); iHash>=iMinHash; iHash--){
     volatile ht_slot *aHash;      /* Pointer to hash table */
     volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
@@ -2905,6 +2905,7 @@ int sqlite3WalFindFrame(
         return SQLITE_CORRUPT_BKPT;
       }
     }
+    if( iRead ) break;
   }
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
