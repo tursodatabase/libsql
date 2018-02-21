@@ -4180,12 +4180,10 @@ static int unixShmSystemLock(
 
   if( pShmNode->h>=0 ){
     /* Initialize the locking parameters */
-    memset(&f, 0, sizeof(f));
     f.l_type = lockType;
     f.l_whence = SEEK_SET;
     f.l_start = ofst;
     f.l_len = n;
-
     rc = osFcntl(pShmNode->h, F_SETLK, &f);
     rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
   }
