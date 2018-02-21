@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sin\ssqltie3WalFindFrame().
-D 2018-02-21T01:05:37.077
+C Remove\san\sunreachable\sbranch\sin\sthe\swalIndexPage()\slogic.
+D 2018-02-21T01:48:22.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -568,7 +568,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 634908f6bc2b5147c1a4218381393fc5f19cfc16bef2d9fa8029c2a7f31b73ae
+F src/wal.c 0ba9af2589b67c4bc60c773c7d2080491099037af21e73545f932bb29bf70b65
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 7cae47e813393d70c6d327fdf000fcb30f76b1b0b5a5b52ff6402e0c658de32c
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7b7f5884a78630c6ba6a217c36247397e62f1928d4b480df929efcfc4a01893
-R cec4fbff2931f49a6ea05bd82279c171
+P 52013cad0e6ce2d694f25e2984a76d438cef724f0e07c8bb9d3dce8a3caf4350
+R 85b71d55df961ca31201d9b641eb44c9
 U drh
-Z ba266545389d418145bdf93b79a10d36
+Z e9ca7c00b9c8d598dec87551eaa9cc3d

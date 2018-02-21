@@ -577,21 +577,20 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
   }
 
   /* Request a pointer to the required page from the VFS */
-  if( pWal->apWiData[iPage]==0 ){
-    if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
-      pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
-      if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM_BKPT;
-    }else{
-      rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
-          pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
-      );
-      assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
-      testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
-      if( (rc&0xff)==SQLITE_READONLY ){
-        pWal->readOnly |= WAL_SHM_RDONLY;
-        if( rc==SQLITE_READONLY ){
-          rc = SQLITE_OK;
-        }
+  assert( pWal->apWiData[iPage]==0 );
+  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
+    pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
+    if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM_BKPT;
+  }else{
+    rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
+        pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
+    );
+    assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
+    testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
+    if( (rc&0xff)==SQLITE_READONLY ){
+      pWal->readOnly |= WAL_SHM_RDONLY;
+      if( rc==SQLITE_READONLY ){
+        rc = SQLITE_OK;
       }
     }
   }
