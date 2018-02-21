@@ -15,6 +15,10 @@
 SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
 #ifndef SQLITE_AMALGAMATION
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
@@ -130,19 +134,173 @@ static void zonefileCodecDestroy(ZonefileCodec *pCodec){
 }
 #endif                           /* SQLITE_HAVE_ZONEFILE_CODEC */
 
+/*
+** All zonefile and zonefile_files virtual table instances that belong
+** to the same database handle (sqlite3*) share a single instance of the
+** ZonefileGlobal object. This global object contains a table of 
+** configured encryption keys for the various zonefiles in the system.
+*/
 typedef struct ZonefileGlobal ZonefileGlobal;
 typedef struct ZonefileKey ZonefileKey;
 struct ZonefileGlobal {
-  ZonefileKey *pList;
+  int nEntry;                     /* Number of entries in the hash table */
+  int nHash;                      /* Size of aHash[] array */
+  ZonefileKey **aHash;            /* Hash buckets */
 };
 struct ZonefileKey {
-  const char *zName;              /* Table name */
-  const char *zDb;                /* Database name */
+  const char *zName;              /* Zonefile table name */
+  const char *zDb;                /* Database name ("main", "temp" etc.) */
   i64 iFileid;                    /* File id */
   const char *zKey;               /* Key buffer */
   int nKey;                       /* Size of zKey in bytes */
-  ZonefileKey *pNext;             /* Next key on same db connection */
+  u32 iHash;                      /* zonefileKeyHash() value */
+  ZonefileKey *pHashNext;         /* Next colliding key in hash table */
 };
+
+static u32 zonefileKeyHash(
+  const char *zDb,
+  const char *zTab,
+  i64 iFileid
+){
+  u32 iHash = 0;
+  int i;
+  for(i=0; zDb[i]; i++) iHash += (iHash<<3) + (u8)zDb[i];
+  for(i=0; zTab[i]; i++) iHash += (iHash<<3) + (u8)zTab[i];
+  return (iHash ^ (iFileid & 0xFFFFFFFF));
+}
+
+/* 
+** Store encryption key zKey in the key-store passed as the first argument.
+** Return SQLITE_OK if successful, or an SQLite error code (SQLITE_NOMEM)
+** otherwise.
+*/
+static int zonefileKeyStore(
+  ZonefileGlobal *pGlobal,
+  const char *zDb,                /* Database containing zonefile table */
+  const char *zTab,               /* Name of zonefile table */
+  i64 iFileid,                    /* File-id to configure key for */
+  const char *zKey                /* Key to store */
+){
+  ZonefileKey **pp;
+  u32 iHash = zonefileKeyHash(zDb, zTab, iFileid);
+
+  /* Remove any old entry */
+  if( pGlobal->nHash ){
+    for(pp=&pGlobal->aHash[iHash%pGlobal->nHash]; *pp; pp=&((*pp)->pHashNext)){
+      ZonefileKey *pThis = *pp;
+      if( pThis->iFileid==iFileid 
+          && 0==sqlite3_stricmp(zTab, pThis->zName)
+          && 0==sqlite3_stricmp(zDb, pThis->zDb)
+        ){
+        pGlobal->nEntry--;
+        *pp = pThis->pHashNext;
+        sqlite3_free(pThis);
+        break;
+      }
+    }
+  }
+
+  if( zKey ){
+    int nKey = strlen(zKey);
+    int nDb = strlen(zDb);
+    int nTab = strlen(zTab);
+    ZonefileKey *pNew;
+
+    /* Resize the hash-table, if necessary */
+    if( pGlobal->nEntry>=pGlobal->nHash ){
+      int i;
+      int n = pGlobal->nHash ? pGlobal->nHash*2 : 16;
+      ZonefileKey **a = (ZonefileKey**)sqlite3_malloc(n*sizeof(ZonefileKey*));
+      if( a==0 ) return SQLITE_NOMEM;
+      memset(a, 0, n*sizeof(ZonefileKey*));
+      for(i=0; i<pGlobal->nHash; i++){
+        ZonefileKey *p;
+        ZonefileKey *pNext;
+        for(p=pGlobal->aHash[i]; p; p=pNext){
+          pNext = p->pHashNext;
+          p->pHashNext = a[p->iHash % n];
+          a[p->iHash % n] = p;
+        }
+      }
+      sqlite3_free(pGlobal->aHash);
+      pGlobal->aHash = a;
+      pGlobal->nHash = n;
+    }
+
+    pNew = (ZonefileKey*)sqlite3_malloc(
+        sizeof(ZonefileKey) + nKey+1 + nDb+1 + nTab+1
+    );
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(ZonefileKey));
+    pNew->iFileid = iFileid;
+    pNew->iHash = iHash;
+    pNew->zKey = (const char*)&pNew[1];
+    pNew->nKey = nKey;
+    pNew->zDb = &pNew->zKey[nKey+1];
+    pNew->zName = &pNew->zDb[nDb+1];
+    memcpy((char*)pNew->zKey, zKey, nKey+1);
+    memcpy((char*)pNew->zDb, zDb, nDb+1);
+    memcpy((char*)pNew->zName, zTab, nTab+1);
+
+    pNew->pHashNext = pGlobal->aHash[iHash % pGlobal->nHash];
+    pGlobal->aHash[iHash % pGlobal->nHash] = pNew;
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Search the key-store passed as the first argument for an encryption
+** key to use with the file with file-id iFileid in zonefile table zTab
+** in database zDb. If successful, set (*pzKey) to point to the key
+** buffer and return the size of the key in bytes.
+**
+** If no key is found, return 0. The final value of (*pzKey) is undefined
+** in this case.
+*/
+static int zonefileKeyFind(
+  ZonefileGlobal *pGlobal,
+  const char *zDb,                /* Database containing zonefile table */
+  const char *zTab,               /* Name of zonefile table */
+  i64 iFileid,                    /* File-id to configure key for */
+  const char **pzKey              /* OUT: Pointer to key buffer */
+){
+  if( pGlobal->nHash ){
+    ZonefileKey *pKey;
+    u32 iHash = zonefileKeyHash(zDb, zTab, iFileid);
+    for(pKey=pGlobal->aHash[iHash%pGlobal->nHash]; pKey; pKey=pKey->pHashNext){
+      if( pKey->iFileid==iFileid 
+       && 0==sqlite3_stricmp(zDb, pKey->zDb)
+       && 0==sqlite3_stricmp(zTab, pKey->zName)
+      ){
+        *pzKey = pKey->zKey;
+        return pKey->nKey;
+      }
+    }
+  }
+
+  return 0;
+}
+
+/*
+** The pointer passed as the only argument must actually point to a
+** ZonefileGlobal structure. This function frees the structure and all
+** of its components.
+*/
+static void zonefileKeyDestroy(void *p){
+  ZonefileGlobal *pGlobal = (ZonefileGlobal*)p;
+  int i;
+  for(i=0; i<pGlobal->nHash; i++){
+    ZonefileKey *pKey;
+    ZonefileKey *pNext;
+    for(pKey=pGlobal->aHash[i]; pKey; pKey=pNext){
+      pNext = pKey->pHashNext;
+      sqlite3_free(pKey);
+    }
+  }
+  sqlite3_free(pGlobal->aHash);
+  sqlite3_free(pGlobal);
+}
 
 
 #define ZONEFILE_DEFAULT_MAXAUTOFRAMESIZE (64*1024)
@@ -177,10 +335,6 @@ static u32 zonefileGet32(const u8 *aBuf){
        + (((u32)aBuf[2]) <<  8)
        + (((u32)aBuf[3]) <<  0);
 }
-
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
 
 static int zfGenericOpen(void **pp, u8 *aDict, int nDict){
   *pp = 0;
@@ -1644,50 +1798,6 @@ static int zonefilePopulateIndex(
   return rc;
 }
 
-static int zonefileStoreKey(
-  ZonefileFilesTab *pTab, 
-  i64 iFileid, 
-  const char *zKey
-){
-  ZonefileKey **pp;
-
-  for(pp=&pTab->pGlobal->pList; *pp; pp=&((*pp)->pNext)){
-    ZonefileKey *pThis = *pp;
-    if( pThis->iFileid==iFileid 
-     && 0==sqlite3_stricmp(pTab->zBase, pThis->zName)
-     && 0==sqlite3_stricmp(pTab->zDb, pThis->zDb)
-    ){
-      *pp = pThis->pNext;
-      sqlite3_free(pThis);
-      break;
-    }
-  }
-
-  if( zKey ){
-    int nKey = strlen(zKey);
-    int nDb = strlen(pTab->zDb);
-    int nName = strlen(pTab->zBase);
-    ZonefileKey *pNew;
-    pNew = (ZonefileKey*)sqlite3_malloc(
-        sizeof(ZonefileKey) + nKey+1 + nDb+1 + nName+1
-        );
-    if( pNew==0 ) return SQLITE_NOMEM;
-    memset(pNew, 0, sizeof(ZonefileKey));
-    pNew->iFileid = iFileid;
-    pNew->zKey = (const char*)&pNew[1];
-    pNew->nKey = nKey;
-    pNew->zDb = &pNew->zKey[nKey+1];
-    pNew->zName = &pNew->zDb[nDb+1];
-    memcpy((char*)pNew->zKey, zKey, nKey+1);
-    memcpy((char*)pNew->zDb, pTab->zDb, nDb+1);
-    memcpy((char*)pNew->zName, pTab->zBase, nName+1);
-
-    pNew->pNext = pTab->pGlobal->pList;
-    pTab->pGlobal->pList = pNew;
-  }
-  return SQLITE_OK;
-}
-
 /*
 ** zonefile_files virtual table module xUpdate method.
 **
@@ -1712,7 +1822,9 @@ static int zffUpdate(
     if( nVal>1 && sqlite3_value_nochange(apVal[2]) ){
       const char *zKey = (const char*)sqlite3_value_text(apVal[3]);
       i64 iFileid = sqlite3_value_int64(apVal[0]);
-      return zonefileStoreKey(pTab, iFileid, zKey);
+      return zonefileKeyStore(
+          pTab->pGlobal, pTab->zDb, pTab->zBase, iFileid, zKey
+      );
     }else{
       if( pTab->pDelete==0 ){
         rc = zonefilePrepare(pTab->db, &pTab->pDelete, &pVtab->zErrMsg,
@@ -1766,7 +1878,7 @@ static int zffUpdate(
 
     if( rc==SQLITE_OK ){
       const char *zKey = (const char*)sqlite3_value_text(apVal[3]);
-      rc = zonefileStoreKey(pTab, iFileid, zKey);
+      rc = zonefileKeyStore(pTab->pGlobal, pTab->zDb, pTab->zBase,iFileid,zKey);
     }
   }
 
@@ -2123,22 +2235,6 @@ static int zonefileCtxUncompress(
   return rc;
 }
 
-static int zonefileFindKey(ZonefileTab *pTab, i64 iFileid, const char **pzKey){
-  ZonefileKey *pKey;
-
-  for(pKey=pTab->pGlobal->pList; pKey; pKey=pKey->pNext){
-    if( pKey->iFileid==iFileid 
-     && 0==sqlite3_stricmp(pTab->zName, pKey->zName)
-     && 0==sqlite3_stricmp(pTab->zDb, pKey->zDb)
-    ){
-      *pzKey = pKey->zKey;
-      return pKey->nKey;
-    }
-  }
-
-  return 0;
-}
-
 static int zonefileGetFile(
   sqlite3_context *pCtx,          /* Leave error message here */
   ZonefileCsr *pCsr,              /* Cursor object */
@@ -2228,13 +2324,14 @@ static int zonefileGetValue(sqlite3_context *pCtx, ZonefileCsr *pCsr){
 
   /* Find the encryption method and key. */
   if( hdr.encryptionType ){
-    const char *z= 0;
-    int nKey = zonefileFindKey(pTab, sqlite3_column_int64(pCsr->pSelect,1), &z);
-    if( nKey==0 ){
+    i64 iFileid = sqlite3_column_int64(pCsr->pSelect, 1);
+    const char *z = 0;
+    int n = zonefileKeyFind(pTab->pGlobal, pTab->zDb, pTab->zName, iFileid, &z);
+    if( n==0 ){
       zErr = sqlite3_mprintf("missing encryption key for file \"%s\"", zFile);
       rc = SQLITE_ERROR;
     }else{
-      rc = zonefileCodecCreate(hdr.encryptionType,(u8*)z, nKey, &pCodec, &zErr);
+      rc = zonefileCodecCreate(hdr.encryptionType, (u8*)z, n, &pCodec, &zErr);
     }
   }
 
@@ -2338,17 +2435,6 @@ static int zonefileRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
-static void zonefileGlobalFree(void *p){
-  ZonefileGlobal *pGlobal = (ZonefileGlobal*)p;
-  ZonefileKey *pKey;
-  ZonefileKey *pNext;
-  for(pKey=pGlobal->pList; pKey; pKey=pNext){
-    pNext = pKey->pNext;
-    sqlite3_free(pKey);
-  }
-  sqlite3_free(pGlobal);
-}
-
 /*
 ** Register the "zonefile" extensions.
 */
@@ -2438,7 +2524,7 @@ static int zonefileRegister(sqlite3 *db){
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_module_v2(db, "zonefile", &zonefileModule, 
-        (void*)pGlobal, zonefileGlobalFree
+        (void*)pGlobal, zonefileKeyDestroy
     );
     pGlobal = 0;
   }

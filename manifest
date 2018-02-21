@@ -1,5 +1,5 @@
-C In\szonefile,\schange\sthe\s"file\sTEXT"\scolumn\sback\sto\s"fileid\sINTEGER".\sThe\nfileid\scan\sbe\sused\sas\sa\skey\swith\sthe\sassociated\szonefile_files\stable,\swhich\ncontains\smore\sinformation\sthan\sjust\sthe\sfilename.
-D 2018-02-21T10:43:19.310
+C Have\szonefile\sstore\sencryption\skeys\sin\sa\shash-table\sinstead\sof\sa\slinked\slist.\nAdd\sextra\stests\sfor\skey\smanagement.
+D 2018-02-21T16:36:08.835
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7a3f714b4fcf793108042b7b0a5c720b0b310ec84314d61ba7f3f49f27e550ea
@@ -409,8 +409,9 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F ext/zonefile/README.md df86ef5b4f9aa8b07e1c8124b3f2dcea616927385aad59d525b784f0a06d446c
-F ext/zonefile/zonefile.c 36ee984120fcfecab65d1b0f54cc6e7a440d71b6847e5d042c9c3acebaec1362
+F ext/zonefile/zonefile.c cd19e711853a13c16c0926b61f670b041c3a19926493e2b872c8ef1fa97991f4
 F ext/zonefile/zonefile1.test 4cd9fa8d333c195f59792c4d5c1e8387e778e46354580fbef0b84efc932c6a47
+F ext/zonefile/zonefileenc.test 5cc89a1e716b127a5220f03162ced3bd9d7df8819fe04a87f2d962315e8ebdc1
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -1708,7 +1709,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a13b2b38137025d04bbfc1b12f0d0563dcf7e0ab1d4b06ffc7cacf994f00e188
-R 6d843fda370cef6d5f337c17aede902e
+P 38d23888cf5a7117c51bd9211bd93ec52a30360f7eb2bc83a13910c5d85fe739
+R 60f734b7b910cc2f794eaa1390ac35ea
 U dan
-Z bc3200ce14e90f9591a4b7905d759f8a
+Z 89722e52aeff8e71e402a249ff14e24d

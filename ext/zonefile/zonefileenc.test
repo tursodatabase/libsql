@@ -1,0 +1,92 @@
+# 2018 Feb 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the zonefile extension.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source [file join $testdir tester.tcl]
+set testprefix zonefileenc
+load_static_extension db zonefile
+
+set K {
+  braking bramble brambles brambly
+  bran branch branched branches
+  branching branchings brand branded
+}
+
+set nFile 100
+
+do_execsql_test 1.0 {
+  CREATE TABLE zz(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+  CREATE TABLE rr(k INTEGER PRIMARY KEY, v);
+}
+do_test 1.1 {
+  for {set i 0} {$i < $nFile} {incr i} {
+    set k [lindex $K [expr $i % [llength $K]]]
+    execsql {
+      DELETE FROM zz;
+      INSERT INTO zz VALUES($i*10+1, 1, -1, randomblob(100));
+      INSERT INTO zz VALUES($i*10+2, 2, -1, randomblob(100));
+      INSERT INTO zz VALUES($i*10+3, 1, -1, randomblob(100));
+      INSERT INTO rr SELECT k,v FROM zz;
+
+      WITH p(n,v) AS (
+          VALUES('encryptionType', 'xor') UNION ALL
+          VALUES('encryptionKey', $k)
+      )
+      SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
+        json_group_object(n, v)
+      ) FROM p;
+    }
+  }
+} {}
+
+do_test 1.2 {
+  execsql {
+    CREATE VIRTUAL TABLE gg USING zonefile;
+  }
+  for {set i 0} {$i < $nFile} {incr i} {
+    execsql { 
+      INSERT INTO gg_files(filename) VALUES('test' || $i || '.zonefile')
+    }
+  }
+} {}
+
+do_catchsql_test 1.3 {
+  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+} {1 {missing encryption key for file "test0.zonefile"}}
+do_execsql_test 1.4 {
+  UPDATE gg_files SET ekey = 'braking' WHERE filename='test0.zonefile';
+}
+do_catchsql_test 1.5 {
+  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+} {1 {missing encryption key for file "test1.zonefile"}}
+
+proc k {i} {
+  lindex $::K [expr $i % [llength $::K]]
+}
+db func k k
+do_execsql_test 1.6 {
+  UPDATE gg_files SET ekey = k(rowid-1);
+}
+do_execsql_test 1.7 {
+  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+} {0}
+do_execsql_test 1.8 {
+  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
+} {300}
+
+
+finish_test
+
