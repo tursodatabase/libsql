@@ -503,7 +503,7 @@ static ZonefileCompress *zonefileCompressByValue(int eType){
   "CREATE TABLE z1("             \
   "  k INTEGER PRIMARY KEY,"     \
   "  v BLOB,"                    \
-  "  file TEXT,"                 \
+  "  fileid INTEGER,"            \
   "  sz INTEGER"                 \
   ")"
 
@@ -2312,13 +2312,9 @@ static int zonefileColumn(
     case 1: /* v */
       rc = zonefileGetValue(pCtx, pCsr);
       break;
-    case 2: { /* file */
-      const char *zFile = 0;
-      rc = zonefileGetFile(pCtx, pCsr, &zFile);
-      sqlite3_result_text(pCtx, zFile, -1, SQLITE_TRANSIENT);
-      zonefileReleaseFile(pCsr);
+    case 2: /* fileid */
+      sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pSelect, 1));
       break;
-    }
     default: { /* sz */
       int iCol;
       if( sqlite3_column_type(pCsr->pSelect, 5)==SQLITE_NULL ){
