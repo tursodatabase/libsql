@@ -1,0 +1,77 @@
+# 2018 Feb 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the zonefile extension.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source [file join $testdir tester.tcl]
+source [file join $testdir malloc_common.tcl]
+set testprefix zonefilefault
+load_static_extension db zonefile
+
+do_execsql_test 1.0 {
+  CREATE TABLE tt(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+  INSERT INTO tt VALUES(1, -1, -1, randomblob(100));
+  INSERT INTO tt VALUES(2, -1, -1, randomblob(200));
+  INSERT INTO tt VALUES(3,  1, -1, randomblob(300));
+  INSERT INTO tt VALUES(4,  2, -1, randomblob(400));
+}
+
+do_faultsim_test 1.1 -faults oom* -prep {
+  sqlite3 db test.db
+  load_static_extension db zonefile
+} -body {
+  execsql {
+    SELECT zonefile_write('test.zonefile', 'tt',
+        '{"encryptionType":"xor", "encryptionKey":"secret"}'
+    );
+  }
+} -test {
+  faultsim_test_result {0 {{}}}
+}
+
+do_faultsim_test 1.2 -faults oom* -prep {
+  sqlite3 db test.db
+  load_static_extension db zonefile
+} -body {
+  execsql {
+    SELECT zonefile_write('test.zonefile', 'tt',
+        '{"compressionTypeContent":"zstd_global_dict"}'
+    );
+  }
+} -test {
+  faultsim_test_result {0 {{}}}
+}
+
+do_execsql_test 2.0 {
+  SELECT zonefile_write('test.zonefile', 'tt',
+      '{"encryptionType":"xor", "encryptionKey":"secret"}'
+  );
+  CREATE VIRTUAL TABLE zz USING zonefile;
+} {{}}
+
+faultsim_save_and_close
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  load_static_extension db zonefile
+} -body {
+  execsql {
+    INSERT INTO zz_files(filename, ekey) VALUES('test.zonefile', 'secret')
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+finish_test
+

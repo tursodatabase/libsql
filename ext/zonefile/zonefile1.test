@@ -80,7 +80,7 @@ do_execsql_test 2.0 {
 }
 set COMPRESSION_METHODS [list]
 foreach cmp {
-  none zlib zstd zstd_global_dict lz4 lz4hc brotli
+  none zlib zstd zstd_global_dict lz4 lz4hc brotli nosuchcmp
 } {
   set res [catchsql {
     WITH p(n,v) AS (

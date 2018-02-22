@@ -319,6 +319,7 @@ static int zonefileKeyStore(
 
     pNew->pHashNext = pGlobal->aHash[iHash % pGlobal->nHash];
     pGlobal->aHash[iHash % pGlobal->nHash] = pNew;
+    pGlobal->nEntry++;
   }
 
   return SQLITE_OK;
@@ -795,7 +796,7 @@ static int zonefilePrepare(
   zSql = sqlite3_vmprintf(zFmt, ap);
   *ppStmt = 0;
   if( zSql ){
-    rc = sqlite3_prepare(db, zSql, -1, ppStmt, 0);
+    rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
     if( rc!=SQLITE_OK ){
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }
@@ -930,6 +931,8 @@ static int zonefileGetParams(
   if( zErr ){
     sqlite3_result_error(pCtx, zErr, -1);
     sqlite3_free(zErr);
+  }else if( rc ){
+    sqlite3_result_error_code(pCtx, rc);
   }else{
     if( p->encryptionKey==0 ){
       p->encryptionType = 0;
@@ -1130,7 +1133,11 @@ static void zonefileWriteFunc(
         sParam.encryptionType, (u8*)sParam.encryptionKey, n, &pCodec, &zErr
     );
     if( rc!=SQLITE_OK ){
-      sqlite3_result_error(pCtx, zErr, -1);
+      if( zErr ){
+        sqlite3_result_error(pCtx, zErr, -1);
+      }else{
+        sqlite3_result_error_code(pCtx, rc);
+      }
       sqlite3_free(zErr);
       goto zone_write_out;
     }
@@ -1331,6 +1338,9 @@ static void zonefileWriteFunc(
   zonefileBufferFree(&sSample);
   sqlite3_free(aSample);
   sqlite3_free(sParam.encryptionKey);
+  if( rc==SQLITE_NOMEM ){
+    sqlite3_result_error_nomem(pCtx);
+  }
 }
 
 typedef struct ZonefileFilesTab ZonefileFilesTab;
@@ -2577,7 +2587,7 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
     }
 
     /* Find the encryption method and key. */
-    if( hdr.encryptionType ){
+    if( rc==SQLITE_OK && hdr.encryptionType ){
       const char *z = 0;
       int n = zonefileKeyFind(pTab->pGlobal, pTab->zDb, pTab->zName, iFile, &z);
       if( n==0 ){

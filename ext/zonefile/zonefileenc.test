@@ -87,6 +87,47 @@ do_execsql_test 1.8 {
   SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
 } {300}
 
+forcedelete test.db2
+do_execsql_test 1.9.1 {
+  ATTACH 'test.db2' AS maing;
+  CREATE VIRTUAL TABLE maing.g USING zonefile;
+  INSERT INTO g_files(filename) SELECT filename FROM gg_files;
+}
+do_catchsql_test 1.9.2 {
+  SELECT count(*) FROM rr JOIN g USING(k) WHERE rr.v!=g.v;
+} {1 {missing encryption key for file "test0.zonefile"}}
+do_execsql_test 1.9.3 {
+  UPDATE g_files SET ekey = k(rowid-1);
+  SELECT count(*) FROM rr JOIN g USING(k) WHERE rr.v==g.v;
+} {300}
+
+do_execsql_test 1.10 {
+  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
+} {300}
+#-------------------------------------------------------------------------
+
+reset_db
+load_static_extension db zonefile
+
+do_execsql_test 2.0 {
+  CREATE TABLE zz(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+}
+foreach {tn alg id} {
+  1 aes_128_ctr 1
+  2 aes_128_cbc 2
+  3 AES_256_CTR 3
+  4 Aes_256_CBC 4
+} {
+  do_catchsql_test 2.$tn {
+    WITH p(n,v) AS (
+        VALUES('encryptionType', $alg) UNION ALL
+        VALUES('encryptionKey', 'secret')
+    )
+    SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
+          json_group_object(n, v)
+    ) FROM p;
+  } "1 {unsupported encryption method: $id}"
+}
 
 finish_test
 
