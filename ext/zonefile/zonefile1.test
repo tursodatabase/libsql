@@ -108,6 +108,7 @@ if {[lsearch $COMPRESSION_METHODS zstd_global_dict]>=0} {
 # puts $COMPRESSION_METHODS
 
 set extra_header 0
+set cachesize 0
 foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
   if {$cmpidx == "zstd_global_dict"} continue
   reset_db
@@ -115,8 +116,9 @@ foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
 
   set tn "$cmp/$cmpidx"
   set extra_header [expr {$extra_header ? 0 : 100}]
+  set cachesize [expr {$cachesize ? 0 : 10}]
 
-  do_execsql_test 2.$tn.0 {
+  do_execsql_test 2.$tn.0.1 {
     CREATE TABLE zz(
       k INTEGER PRIMARY KEY, 
       frame INTEGER DEFAULT -1, 
@@ -124,8 +126,11 @@ foreach cmp $COMPRESSION_METHODS { foreach cmpidx $COMPRESSION_METHODS {
       v BLOB
     );
     CREATE TABLE rt(k INTEGER PRIMARY KEY, v BLOB);
-    CREATE VIRTUAL TABLE zone USING zonefile;
   }
+
+  do_execsql_test 2.$tn.0.2 "
+    CREATE VIRTUAL TABLE zone USING zonefile(cachesize = $cachesize)
+  " {}
   
   set nMinByte   0
   set nMaxByte 444

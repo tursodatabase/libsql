@@ -1911,6 +1911,19 @@ static int zffUpdate(
   return rc;
 }
 
+/* Each entry in the frame-cache is represented by an instance of the
+** following structure.  */
+typedef struct ZonefileFrame ZonefileFrame;
+struct ZonefileFrame {
+  i64 iFileid;               /* Fileid for this frame */
+  i64 iFrameOff;             /* Offset of frame in file */
+  int nBuf;                  /* Size of aBuf[] in bytes */
+  u8 *aBuf;                  /* Buffer containing uncompressed frame data */
+  ZonefileFrame *pLruNext;   /* Next element in LRU list */
+  ZonefileFrame *pLruPrev;   /* Previous element in LRU list */
+  ZonefileFrame *pHashNext;  /* Next element in same hash bucket */
+};
+
 typedef struct ZonefileTab ZonefileTab;
 struct ZonefileTab {
   sqlite3_vtab base;         /* Base class - must be first */
@@ -1919,21 +1932,20 @@ struct ZonefileTab {
   ZonefileGlobal *pGlobal;
   char *zName;               /* Name of this table */
   char *zDb;                 /* Name of db containing this table */
-  int nCacheSize;
+
+  /* The following variables are used to implement the frame-cache */
+  int nCacheSize;            /* Configured cache size */
+  int nCacheEntry;           /* Current number of entries in cache */
+  int nCacheBucket;          /* Number of buckets in frame cache hash table */
+  ZonefileFrame **aCache;    /* Array of hash buckets */
+  ZonefileFrame *pCacheFirst;/* Most recently used frame */
+  ZonefileFrame *pCacheLast; /* Least recently used frame (first to discard) */
 };
 
 typedef struct ZonefileCsr ZonefileCsr;
 struct ZonefileCsr {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   sqlite3_stmt *pSelect;     /* SELECT on %_shadow_idx table */
-};
-
-typedef struct ZonefileFrame ZonefileFrame;
-struct ZonefileFrame {
-  i64 iFileid;               /* Fileid for this frame */
-  i64 iFrameOff;             /* Offset of frame in file */
-  int nBuf;                  /* Size of aBuf[] in bytes */
-  u8 *aBuf;                  /* Buffer containing uncompressed frame data */
 };
 
 /*
@@ -2072,6 +2084,7 @@ static int zonefileCreateConnect(
     for(i=3; i<argc && rc==SQLITE_OK; i++){
       zonefileParseOption(p, argv[i], pzErr);
     }
+    if( rc==SQLITE_OK && p->nCacheSize<1 ) p->nCacheSize = 1;
   }
 
   if( rc!=SQLITE_OK ){
@@ -2106,16 +2119,6 @@ static int zonefileConnect(
   char **pzErr
 ){
   return zonefileCreateConnect(0, pAux, db, argc, argv, ppVtab, pzErr);
-}
-
-/* 
-** zonefile virtual table module xDisconnect method.
-*/
-static int zonefileDisconnect(sqlite3_vtab *pVtab){
-  ZonefileTab *pTab = (ZonefileTab*)pVtab;
-  sqlite3_finalize(pTab->pIdToName);
-  sqlite3_free(pTab);
-  return SQLITE_OK;
 }
 
 /* 
@@ -2189,32 +2192,6 @@ static int zonefileBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pInfo){
   pInfo->estimatedCost = cost;
 
   return SQLITE_OK;
-}
-
-/* 
-** zonefile virtual table module xDestroy method.
-*/
-static int zonefileDestroy(sqlite3_vtab *pVtab){
-  ZonefileTab *pTab = (ZonefileTab*)pVtab;
-  int rc = SQLITE_OK;
-  char *zSql = sqlite3_mprintf(
-      "DROP TABLE IF EXISTS %Q.'%q_shadow_idx';"
-      "DROP TABLE IF EXISTS %Q.'%q_shadow_file';"
-      "DROP TABLE IF EXISTS %Q.'%q_shadow_frame';"
-      "DROP TABLE IF EXISTS %Q.'%q_files';",
-      pTab->zDb, pTab->zName, pTab->zDb, pTab->zName, pTab->zDb, pTab->zName
-  );
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_exec(pTab->db, zSql, 0, 0, 0);
-    sqlite3_free(zSql);
-  }
-
-  if( rc==SQLITE_OK ){
-    zonefileDisconnect(pVtab);
-  }
-  return rc;
 }
 
 /* 
@@ -2320,28 +2297,6 @@ static void zonefileFree(void *p){
   sqlite3_free(p);
 }
 
-static int zonefileCtxUncompress(
-  sqlite3_context *pCtx, 
-  ZonefileCompress *pMethod, 
-  void *pCmp, 
-  u8 *aBuf, int nBuf,
-  int iKeyOff, int nKey
-){
-  int rc;
-  u8 *aUn = 0;
-  int nUn = 0;
-    
-  rc = zonefileUncompress(pMethod, pCmp, aBuf, nBuf, &aUn, &nUn);
-  if( rc==SQLITE_OK ){
-    sqlite3_result_blob(pCtx, &aUn[iKeyOff], nKey, SQLITE_TRANSIENT);
-  }else if( rc==SQLITE_ERROR ){
-    zonefileCtxError(pCtx, "failed to uncompress frame");
-  }
-
-  sqlite3_free(aUn);
-  return rc;
-}
-
 static int zonefileGetFile(
   sqlite3_context *pCtx,          /* Leave error message here */
   ZonefileCsr *pCsr,              /* Cursor object */
@@ -2423,18 +2378,146 @@ static int zonefileValueReadDirect(sqlite3_context *pCtx, ZonefileCsr *pCsr){
   return rc;
 }
 
+#ifndef NDEBUG
+static void zonefileCacheCheck(ZonefileTab *pTab){
+  ZonefileFrame *p;
+  int n = 0;
+  for(p=pTab->pCacheFirst; p; p=p->pLruNext){
+    assert( p!=pTab->pCacheFirst || p->pLruPrev==0 );
+    assert( p!=pTab->pCacheLast || p->pLruNext==0 );
+    assert( p==pTab->pCacheFirst || p->pLruPrev->pLruNext==p );
+    assert( p==pTab->pCacheLast || p->pLruNext->pLruPrev==p );
+    n++;
+  }
+  assert( n==pTab->nCacheEntry );
+}
+#else
+# define zonefileCacheCheck(x)
+#endif
+
+/*
+** Search the frame-cache belonging to virtual table pTab for an entry
+** corresponding to the frame at byte offset iFrameOff of the file with
+** file id iFile. If such an entry is found, return a pointer to it.
+** Otherwise, if no such entry exists, return NULL.
+*/
 static ZonefileFrame *zonefileCacheFind(
   ZonefileTab *pTab, 
   i64 iFile, 
   i64 iFrameOff
 ){
+  ZonefileFrame *pFrame;
+  for(pFrame=pTab->pCacheFirst; pFrame; pFrame=pFrame->pLruNext){
+    if( pFrame->iFileid==iFile && pFrame->iFrameOff==iFrameOff ){
+      /* Found a match. Move it to the front of the LRU list and return
+      ** a pointer to it. */
+      assert( (pFrame->pLruPrev==0)==(pFrame==pTab->pCacheFirst) );
+      assert( (pFrame->pLruNext==0)==(pFrame==pTab->pCacheLast) );
+      if( pFrame->pLruPrev ){
+        assert( pFrame==pFrame->pLruPrev->pLruNext );
+        pFrame->pLruPrev->pLruNext = pFrame->pLruNext;
+
+        if( pFrame->pLruNext ){
+          assert( pFrame==pFrame->pLruNext->pLruPrev );
+          pFrame->pLruNext->pLruPrev = pFrame->pLruPrev;
+        }else{
+          assert( pFrame==pTab->pCacheLast );
+          pTab->pCacheLast = pFrame->pLruPrev;
+          pTab->pCacheLast->pLruNext = 0;
+        }
+
+        pFrame->pLruPrev = 0;
+        pFrame->pLruNext = pTab->pCacheFirst;
+        pTab->pCacheFirst->pLruPrev = pFrame;
+        pTab->pCacheFirst = pFrame;
+      }
+
+      zonefileCacheCheck(pTab);
+      return pFrame;
+    }
+  }
   return 0;
 }
 
-static void zonefileCacheStore(
-  ZonefileTab *pTab,
-  ZonefileFrame *pFrame
-){
+/*
+** Return the index of the hash bucket that iFileid/iFrameOff belongs to.
+*/
+int zonefileCacheHash(ZonefileTab *pTab, i64 iFileid, i64 iFrameOff){
+  u32 h;
+  h = (iFileid & 0xFFFFFFFF) ^ (iFrameOff & 0xFFFFFFFF);
+  return (h % pTab->nCacheBucket);
+}
+
+/*
+** Store the frame object passed as the second argument in the frame
+** cache belonging to table pTab.
+*/
+static int zonefileCacheStore(ZonefileTab *pTab, ZonefileFrame *pFrame){
+  int h;
+
+  /* Allocate the hash table if it has not already been allocated. */
+  if( pTab->aCache==0 ){
+    int nByte = pTab->nCacheSize * 2 * sizeof(ZonefileFrame*);
+    pTab->aCache = (ZonefileFrame**)sqlite3_malloc(nByte);
+    if( pTab->aCache==0 ){
+      sqlite3_free(pFrame);
+      return SQLITE_NOMEM;
+    }
+    memset(pTab->aCache, 0, nByte);
+    pTab->nCacheBucket = pTab->nCacheSize * 2;
+  }
+
+  /* Add the new entry to the hash table */
+  h = zonefileCacheHash(pTab, pFrame->iFileid, pFrame->iFrameOff);
+  assert( h>=0 && h<pTab->nCacheBucket );
+  pFrame->pHashNext = pTab->aCache[h];
+  pTab->aCache[h] = pFrame;
+
+  /* Add the new entry to the LRU list */
+  pFrame->pLruPrev = 0;
+  pFrame->pLruNext = pTab->pCacheFirst;
+  pTab->pCacheFirst = pFrame;
+  if( pFrame->pLruNext==0 ){
+    pTab->pCacheLast = pFrame;
+  }else{
+    pFrame->pLruNext->pLruPrev = pFrame;
+  }
+  pTab->nCacheEntry++;
+
+  if( pTab->nCacheEntry>pTab->nCacheSize ){
+    ZonefileFrame **pp;
+
+    /* Remove the oldest entry from the LRU list. */
+    ZonefileFrame *pLast = pTab->pCacheLast;
+    assert( pTab->pCacheLast );
+    assert( pTab->nCacheEntry>1 );
+    pTab->pCacheLast = pLast->pLruPrev;
+    pTab->pCacheLast->pLruNext = 0;
+    pTab->nCacheEntry--;
+
+    /* Remove the same entry from the hash table. */
+    h = zonefileCacheHash(pTab, pLast->iFileid, pLast->iFrameOff);
+    assert( h>=0 && h<pTab->nCacheBucket );
+    for(pp=&pTab->aCache[h]; *pp!=pLast; pp=&((*pp)->pHashNext));
+    *pp = pLast->pHashNext;
+    sqlite3_free(pLast);
+  }
+  zonefileCacheCheck(pTab);
+
+  return SQLITE_OK;
+}
+
+/*
+** Delete all resources associated with the frame-cache for table pTab.
+*/
+static void zonefileCacheDelete(ZonefileTab *pTab){
+  ZonefileFrame *p;
+  ZonefileFrame *pNext;
+  for(p=pTab->pCacheFirst; p; p=pNext){
+    pNext = p->pLruNext;
+    sqlite3_free(p);
+  }
+  sqlite3_free(pTab->aCache);
 }
 
 static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
@@ -2537,6 +2620,7 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
       if( p==0 ){
         rc = SQLITE_NOMEM;
       }else{
+        memset(p, 0, sizeof(ZonefileFrame));
         p->aBuf = (u8*)&p[1];
         p->nBuf = nOut;
         p->iFrameOff = iFrameOff;
@@ -2552,6 +2636,9 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
     if( rc!=SQLITE_OK ){
       sqlite3_free(pFrame);
       pFrame = 0;
+    }else{
+      rc = zonefileCacheStore(pTab, pFrame);
+      if( rc!=SQLITE_OK ) pFrame = 0;
     }
     zonefileReleaseFile(pCsr);
     zonefileFileClose(pFd);
@@ -2568,7 +2655,6 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
   if( pFrame ){
     assert( rc==SQLITE_OK );
     sqlite3_result_blob(pCtx, &pFrame->aBuf[iKeyOff], nKeySz, SQLITE_TRANSIENT);
-    sqlite3_free(pFrame);
   }
 
   return rc;
@@ -2608,6 +2694,43 @@ static int zonefileColumn(
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pSelect, iCol));
       break;
     }
+  }
+  return rc;
+}
+
+/* 
+** zonefile virtual table module xDisconnect method.
+*/
+static int zonefileDisconnect(sqlite3_vtab *pVtab){
+  ZonefileTab *pTab = (ZonefileTab*)pVtab;
+  zonefileCacheDelete(pTab);
+  sqlite3_finalize(pTab->pIdToName);
+  sqlite3_free(pTab);
+  return SQLITE_OK;
+}
+
+/* 
+** zonefile virtual table module xDestroy method.
+*/
+static int zonefileDestroy(sqlite3_vtab *pVtab){
+  ZonefileTab *pTab = (ZonefileTab*)pVtab;
+  int rc = SQLITE_OK;
+  char *zSql = sqlite3_mprintf(
+      "DROP TABLE IF EXISTS %Q.'%q_shadow_idx';"
+      "DROP TABLE IF EXISTS %Q.'%q_shadow_file';"
+      "DROP TABLE IF EXISTS %Q.'%q_shadow_frame';"
+      "DROP TABLE IF EXISTS %Q.'%q_files';",
+      pTab->zDb, pTab->zName, pTab->zDb, pTab->zName, pTab->zDb, pTab->zName
+  );
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_exec(pTab->db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+  }
+
+  if( rc==SQLITE_OK ){
+    zonefileDisconnect(pVtab);
   }
   return rc;
 }
