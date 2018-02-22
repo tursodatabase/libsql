@@ -1,11 +1,11 @@
-C Updates\sto\sthe\sREADME.md\sfile.\s\sMention\sthe\sability\sto\suse\sSQLite-archives\sfor\ndownload.
-D 2018-02-22T18:28:19.974
+C For\sthe\s"SQLite\sarchive"\slink\sin\sthe\sREADME.md\sfile,\spoint\sto\sthe\nCLI\s.archive\scommand\sdocumentation,\snot\sthe\soriginal\s"sqlar"\swebsite.
+D 2018-02-22T18:30:53.011
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b53ebf2538324c914e4308a6cd44610eb1ae50bdbd17d7ee65f680918e54da88
-F README.md 7c0991bd30eab5f377cd1508a619fc7ccd8014897da31e57f60d9675c0779abd
+F README.md 1d5342ebda97420f114283e604e5fe99b0da939d63b76d492eabbaae23488276
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e61a9731f5949dcf05c541106b56be16add04a7730613481fc8519d3e4f493b
-R aa9874414cd1a4e6c530b39e5a39ec09
+P ab9a7ae4eec0aaa5e0b472998f6de7212055d93c163f0b66da60b956bcc45add
+R 3cb70dc7ae645278be920e32ff6e511f
 U drh
-Z 856f42b132f15d59c7f2cba2fefa2460
+Z c1c7fcd61cd44109ceb9fbe2b0c63c1e

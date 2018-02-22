@@ -14,7 +14,7 @@ SQLite sources are managed using the
 [Fossil](https://www.fossil-scm.org/), a distributed version control system
 that was specifically designed to support SQLite development.
 If you do not want to use Fossil, you can download tarballs or ZIP
-archives or [SQLite archives](https://sqlite.org/sqlar) as follows:
+archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
 
   *  Lastest trunk check-in as
      [Tarball](https://www.sqlite.org/src/tarball/sqlite.tar.gz),
