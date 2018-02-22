@@ -14,15 +14,17 @@ SQLite sources are managed using the
 [Fossil](https://www.fossil-scm.org/), a distributed version control system
 that was specifically designed to support SQLite development.
 If you do not want to use Fossil, you can download tarballs or ZIP
-archives as follows:
+archives or [SQLite archives](https://sqlite.org/sqlar) as follows:
 
-  *  Lastest trunk check-in:
-     <https://www.sqlite.org/src/tarball/sqlite.tar.gz> or
-     <https://www.sqlite.org/src/zip/sqlite.zip>.
+  *  Lastest trunk check-in as
+     [Tarball](https://www.sqlite.org/src/tarball/sqlite.tar.gz),
+     [ZIP-archive](https://www.sqlite.org/src/zip/sqlite.zip), or
+     [SQLite-archive](https://www.sqlite.org/src/sqlar/sqlite.sqlar).
 
-  *  Latest release:
-     <https://www.sqlite.org/src/tarball/sqlite.tar.gz?r=release> or
-     <https://www.sqlite.org/src/zip/sqlite.zip?r=release>.
+  *  Latest release as
+     [Tarball](https://www.sqlite.org/src/tarball/sqlite.tar.gz?r=release),
+     [ZIP-archive](https://www.sqlite.org/src/zip/sqlite.zip?r=release), or
+     [SQLite-archive](https://www.sqlite.org/src/sqlar/sqlite.sqlar?r=release).
 
   *  For other check-ins, substitute an appropriate branch name or
      tag or hash prefix for "release" in the URLs of the previous
