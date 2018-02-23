@@ -556,7 +556,7 @@ static int zfZstddictUncompress(
 #include <lz4.h>
 #include <lz4hc.h>
 static int zfLz4CompressBound(void *p, int nSrc){
-  return (int)LZ4_compressBound((uLong)nSrc) + 4;
+  return (int)LZ4_compressBound(nSrc) + 4;
 }
 static int zfLz4Uncompress(
   void *p, 

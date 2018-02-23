@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sDROP\sTABLE\sstatements\son\szonefile\svirtual\stables.
-D 2018-02-23T14:02:37.758
+C Fix\sa\sproblem\scausing\sSQLITE_HAVE_LZ4\sbuilds\sof\szonefile\sto\sfail\sunless\nSQLITE_HAVE_ZLIB\sis\salso\sdefined.
+D 2018-02-23T14:09:59.252
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -409,7 +409,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F ext/zonefile/README.md df86ef5b4f9aa8b07e1c8124b3f2dcea616927385aad59d525b784f0a06d446c
-F ext/zonefile/zonefile.c 7c04566deab0f0f73ca51a362a5956ff2deedf13e7d075a3a1a8c2ce0616a06d
+F ext/zonefile/zonefile.c f07d553228cf0446e7d2882348a142dd9e9ebc0037402ef058c15b9f2fe2f670
 F ext/zonefile/zonefile1.test c73fb68d6b91e4047ee96915b91fa21c9df4afa23a4d4a259bce154857a35610
 F ext/zonefile/zonefileenc.test f23e16fc8810c95588dfd528af8e4332f0d1d13370fdd7163226ec886715058e
 F ext/zonefile/zonefilefault.test 7f93ba8420d6f6a461d2fbbce30a04f744764f584c0c17361a867db8088f5595
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d28003941ceca7fb707fcdb09bf8b00a6c1b728956e018d7ecfb6852d7dd469b
-R 849892d2fa074127eff1001fda11445f
+P d2ed6910b86a086911d3c0670c9778e222186d8733fc81bcc081932d70e0452a
+R 598da87d52fb6d14f38c03e06c0538c9
 U dan
-Z 7bc772e52758d21df20545fe5c18ee0c
+Z 7f5f483a874eaf4d6775a13d7db50d60
