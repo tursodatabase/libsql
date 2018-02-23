@@ -1,5 +1,5 @@
-C Enable\sthe\sJSON1\sextension\swhen\scompiling\sthe\stest\sfixture\swith\sMSVC.
-D 2018-02-23T13:38:20.020
+C Fix\sharmless\scompiler\swarnings\sin\sthe\szipfile\sextension\sseen\swith\sMSVC.
+D 2018-02-23T13:38:54.742
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -304,7 +304,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 3c3e21d0351a44c34c67ca7e833ba04e0de34421b4c9359aa764919ee36b37ef
+F ext/misc/zipfile.c bc88dbf9aa26c24595d158c1398208786ef34e7aee19ea29e8f0110c752fca03
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4290faf5f7223ebe35b8ed5c4f0ba2444c1764501cabc09a79000f9c1d0890c7
-R 3d31ca3626fb7de7ae6ca98028d90678
+P e9e9f27b3d496531905ad7459cf60366ad3798f507266134dd6388cdec50fdc4
+R 654cd747b1d6661b630741ec0eabab23
 U mistachkin
-Z 415294341d4b98b1263aa22d9cb61bd0
+Z f6be006b93932e4aec25faabbec16d8c

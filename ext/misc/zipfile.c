@@ -737,7 +737,7 @@ static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
   int hr, min, sec;
 
   A = (int)((JD - 1867216.25)/36524.25);
-  A = JD + 1 + A - (A/4);
+  A = (int)(JD + 1 + A - (A/4));
   B = A + 1524;
   C = (int)((B - 122.1)/365.25);
   D = (36525*(C&32767))/100;
@@ -1623,7 +1623,7 @@ static int zipfileUpdate(
         pNew->cds.szUncompressed = (u32)sz;
         pNew->cds.iExternalAttr = (mode<<16);
         pNew->cds.iOffset = (u32)pTab->szCurrent;
-        pNew->cds.nFile = nPath;
+        pNew->cds.nFile = (u16)nPath;
         pNew->mUnixTime = (u32)mTime;
         rc = zipfileAppendEntry(pTab, pNew, pData, nData);
         zipfileAddEntry(pTab, pOld, pNew);
@@ -1926,7 +1926,7 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   /* Inspect the 'method' parameter. This must be either 0 (store), 8 (use
   ** deflate compression) or NULL (choose automatically).  */
   if( pMethod && SQLITE_NULL!=sqlite3_value_type(pMethod) ){
-    iMethod = sqlite3_value_int64(pMethod);
+    iMethod = (int)sqlite3_value_int64(pMethod);
     if( iMethod!=0 && iMethod!=8 ){
       zErr = sqlite3_mprintf("illegal method value: %d", iMethod);
       rc = SQLITE_ERROR;
@@ -1993,14 +1993,14 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   e.cds.iVersionMadeBy = ZIPFILE_NEWENTRY_MADEBY;
   e.cds.iVersionExtract = ZIPFILE_NEWENTRY_REQUIRED;
   e.cds.flags = ZIPFILE_NEWENTRY_FLAGS;
-  e.cds.iCompression = iMethod;
+  e.cds.iCompression = (u16)iMethod;
   zipfileMtimeToDos(&e.cds, (u32)e.mUnixTime);
   e.cds.crc32 = iCrc32;
   e.cds.szCompressed = nData;
   e.cds.szUncompressed = szUncompressed;
   e.cds.iExternalAttr = (mode<<16);
   e.cds.iOffset = p->body.n;
-  e.cds.nFile = nName;
+  e.cds.nFile = (u16)nName;
   e.cds.zFile = zName;
 
   /* Append the LFH to the body of the new archive */
@@ -2047,8 +2047,8 @@ void zipfileFinal(sqlite3_context *pCtx){
   if( p==0 ) return;
   if( p->nEntry>0 ){
     memset(&eocd, 0, sizeof(eocd));
-    eocd.nEntry = p->nEntry;
-    eocd.nEntryTotal = p->nEntry;
+    eocd.nEntry = (u16)p->nEntry;
+    eocd.nEntryTotal = (u16)p->nEntry;
     eocd.nSize = p->cds.n;
     eocd.iOffset = p->body.n;
 
