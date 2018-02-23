@@ -1,10 +1,10 @@
-C For\sthe\s"SQLite\sarchive"\slink\sin\sthe\sREADME.md\sfile,\spoint\sto\sthe\nCLI\s.archive\scommand\sdocumentation,\snot\sthe\soriginal\s"sqlar"\swebsite.
-D 2018-02-22T18:30:53.011
+C Enable\sthe\sJSON1\sextension\swhen\scompiling\sthe\stest\sfixture\swith\sMSVC.
+D 2018-02-23T13:38:20.020
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b53ebf2538324c914e4308a6cd44610eb1ae50bdbd17d7ee65f680918e54da88
+F Makefile.msc bf19d3a0eb849bd3b114653b0e455aa5b2799a96f413287a5866013db0e47f30
 F README.md 1d5342ebda97420f114283e604e5fe99b0da939d63b76d492eabbaae23488276
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab9a7ae4eec0aaa5e0b472998f6de7212055d93c163f0b66da60b956bcc45add
-R 3cb70dc7ae645278be920e32ff6e511f
-U drh
-Z c1c7fcd61cd44109ceb9fbe2b0c63c1e
+P 4290faf5f7223ebe35b8ed5c4f0ba2444c1764501cabc09a79000f9c1d0890c7
+R 3d31ca3626fb7de7ae6ca98028d90678
+U mistachkin
+Z 415294341d4b98b1263aa22d9cb61bd0
