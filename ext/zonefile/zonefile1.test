@@ -63,6 +63,10 @@ do_execsql_test 1.6 { SELECT count(*) FROM z1_shadow_idx } 0
 
 do_execsql_test 1.7 { DROP TABLE z1 }
 
+do_execsql_test 1.8 {
+  SELECT * FROM sqlite_master WHERE name LIKE 'z1%';
+}
+
 #-------------------------------------------------------------------------
 # Figure out which compression algorithms, if any, are supported by
 # this build. Populate the global list $COMPRESSION_METHODS with the

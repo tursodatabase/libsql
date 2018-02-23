@@ -2730,7 +2730,8 @@ static int zonefileDestroy(sqlite3_vtab *pVtab){
       "DROP TABLE IF EXISTS %Q.'%q_shadow_file';"
       "DROP TABLE IF EXISTS %Q.'%q_shadow_frame';"
       "DROP TABLE IF EXISTS %Q.'%q_files';",
-      pTab->zDb, pTab->zName, pTab->zDb, pTab->zName, pTab->zDb, pTab->zName
+      pTab->zDb, pTab->zName, pTab->zDb, pTab->zName, 
+      pTab->zDb, pTab->zName, pTab->zDb, pTab->zName
   );
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
