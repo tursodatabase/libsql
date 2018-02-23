@@ -22,6 +22,11 @@ ifcapable !offset_sql_func {
   return
 }
 
+set bNullTrim 0
+ifcapable null_trim {
+  set bNullTrim 1
+}
+
 do_execsql_test func6-100 {
   PRAGMA page_size=4096;
   PRAGMA auto_vacuum=NONE;
@@ -51,6 +56,13 @@ proc loadhex {file} {
 proc hexrecord {args} {
   set hdr ""
   set body ""
+
+  if {$::bNullTrim} {
+    while {[llength $args] && [lindex $args end]=={}} {
+      set args [lrange $args 0 end-1]
+    }
+  }
+
   foreach x $args {
     if {$x==""} {
       append hdr 00
@@ -103,12 +115,17 @@ set F [loadhex test.db]
 db func offrec offrec
 
 # Test the sanity of the tests.
+if {$bNullTrim} {
+  set offset 8180
+} else {
+  set offset 8179
+}
 do_execsql_test func6-105 {
   SELECT sqlite_offset(d) FROM t1 ORDER BY rowid LIMIT 1;
-} {8179}
+} $offset
 do_test func6-106 {
   set r [hexrecord abc001 1 999 {}]
-  offset_contains_record 8179 $F $r
+  offset_contains_record $offset $F $r
 } 0
 
 set z100 [string trim [string repeat "0 " 100]]

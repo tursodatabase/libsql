@@ -18,6 +18,12 @@
 SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_AMALGAMATION
+# if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
+#  define NDEBUG 1
+# endif
+# if defined(NDEBUG) && defined(SQLITE_DEBUG)
+#  undef NDEBUG
+# endif
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -652,6 +658,79 @@ static void editDist3ConfigDelete(void *pIn){
   sqlite3_free(p);
 }
 
+/* Compare the FROM values of two EditDist3Cost objects, for sorting.
+** Return negative, zero, or positive if the A is less than, equal to,
+** or greater than B.
+*/
+static int editDist3CostCompare(EditDist3Cost *pA, EditDist3Cost *pB){
+  int n = pA->nFrom;
+  int rc;
+  if( n>pB->nFrom ) n = pB->nFrom;
+  rc = strncmp(pA->a, pB->a, n);
+  if( rc==0 ) rc = pA->nFrom - pB->nFrom;
+  return rc;
+}
+
+/*
+** Merge together two sorted lists of EditDist3Cost objects, in order
+** of increasing FROM.
+*/
+static EditDist3Cost *editDist3CostMerge(
+  EditDist3Cost *pA,
+  EditDist3Cost *pB
+){
+  EditDist3Cost *pHead = 0;
+  EditDist3Cost **ppTail = &pHead;
+  EditDist3Cost *p;
+  while( pA && pB ){
+    if( editDist3CostCompare(pA,pB)<=0 ){
+      p = pA;
+      pA = pA->pNext;
+    }else{
+      p = pB;
+      pB = pB->pNext;
+    }
+    *ppTail = p;
+    ppTail =  &p->pNext;
+  }
+  if( pA ){
+    *ppTail = pA;
+  }else{
+    *ppTail = pB;
+  }
+  return pHead;
+}
+
+/*
+** Sort a list of EditDist3Cost objects into order of increasing FROM
+*/
+static EditDist3Cost *editDist3CostSort(EditDist3Cost *pList){
+  EditDist3Cost *ap[60], *p;
+  int i;
+  int mx = 0;
+  ap[0] = 0;
+  ap[1] = 0;
+  while( pList ){
+    p = pList;
+    pList = p->pNext;
+    p->pNext = 0;
+    for(i=0; ap[i]; i++){
+      p = editDist3CostMerge(ap[i],p);
+      ap[i] = 0;
+    }
+    ap[i] = p;
+    if( i>mx ){
+      mx = i;
+      ap[i+1] = 0;
+    }
+  }
+  p = 0;
+  for(i=0; i<=mx; i++){
+    if( ap[i] ) p = editDist3CostMerge(p,ap[i]);
+  }
+  return p;
+}
+
 /*
 ** Load all edit-distance weights from a table.
 */
@@ -685,6 +764,7 @@ static int editDist3ConfigLoad(
     assert( zTo!=0 || nTo==0 );
     if( nFrom>100 || nTo>100 ) continue;
     if( iCost<0 ) continue;
+    if( iCost>10000 ) continue;   /* Costs above 10K are considered infinite */
     if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
       pNew = sqlite3_realloc64(p->a, (p->nLang+1)*sizeof(p->a[0]));
@@ -722,6 +802,12 @@ static int editDist3ConfigLoad(
   }
   rc2 = sqlite3_finalize(pStmt);
   if( rc==SQLITE_OK ) rc = rc2;
+  if( rc==SQLITE_OK ){
+    int iLang;
+    for(iLang=0; iLang<p->nLang; iLang++){
+      p->a[iLang].pCost = editDist3CostSort(p->a[iLang].pCost);
+    }
+  }
   return rc;
 }
 
@@ -749,6 +835,7 @@ static int utf8Len(unsigned char c, int N){
 ** the given string.
 */
 static int matchTo(EditDist3Cost *p, const char *z, int n){
+  if( p->a[p->nFrom]!=z[0] ) return 0;
   if( p->nTo>n ) return 0;
   if( strncmp(p->a+p->nFrom, z, p->nTo)!=0 ) return 0;
   return 1;
@@ -760,6 +847,7 @@ static int matchTo(EditDist3Cost *p, const char *z, int n){
 */
 static int matchFrom(EditDist3Cost *p, const char *z, int n){
   assert( p->nFrom<=n );
+  if( p->a[0]!=z[0] ) return 0;
   if( strncmp(p->a, z, p->nFrom)!=0 ) return 0;
   return 1;
 }
@@ -776,7 +864,8 @@ static int matchFromTo(
 ){
   int b1 = pStr->a[n1].nByte;
   if( b1>n2 ) return 0;
-  if( memcmp(pStr->z+n1, z2, b1)!=0 ) return 0;
+  if( pStr->z[n1]!=z2[0] ) return 0;
+  if( strncmp(pStr->z+n1, z2, b1)!=0 ) return 0;
   return 1;
 }
 
@@ -858,9 +947,6 @@ static EditDist3FromString *editDist3FromStringNew(
 /*
 ** Update entry m[i] such that it is the minimum of its current value
 ** and m[j]+iCost.
-**
-** If the iCost is 1,000,000 or greater, then consider the cost to be
-** infinite and skip the update.
 */
 static void updateCost(
   unsigned int *m,
@@ -868,11 +954,11 @@ static void updateCost(
   int j,
   int iCost
 ){
+  unsigned int b;
   assert( iCost>=0 );
-  if( iCost<10000 ){
-    unsigned int b = m[j] + iCost;
-    if( b<m[i] ) m[i] = b;
-  }
+  assert( iCost<10000 );
+  b = m[j] + iCost;
+  if( b<m[i] ) m[i] = b;
 }
 
 /*
@@ -936,8 +1022,9 @@ static int editDist3Core(
     a2[i2].nByte = utf8Len((unsigned char)z2[i2], n2-i2);
     for(p=pLang->pCost; p; p=p->pNext){
       EditDist3Cost **apNew;
-      if( p->nFrom>0 ) continue;
+      if( p->nFrom>0 ) break;
       if( i2+p->nTo>n2 ) continue;
+      if( p->a[0]>z2[i2] ) break;
       if( matchTo(p, z2+i2, n2-i2)==0 ) continue;
       a2[i2].nIns++;
       apNew = sqlite3_realloc64(a2[i2].apIns, sizeof(*apNew)*a2[i2].nIns);
@@ -2492,7 +2579,7 @@ static int spellfix1FilterForMatch(
   nPattern = (int)strlen(zPattern);
   if( zPattern[nPattern-1]=='*' ) nPattern--;
   zSql = sqlite3_mprintf(
-     "SELECT id, word, rank, k1"
+     "SELECT id, word, rank, coalesce(k1,word)"
      "  FROM \"%w\".\"%w_vocab\""
      " WHERE langid=%d AND k2>=?1 AND k2<?2",
      p->zDbName, p->zTableName, iLang
@@ -2826,17 +2913,17 @@ static int spellfix1Update(
       if( sqlite3_value_type(argv[1])==SQLITE_NULL ){
         spellfix1DbExec(&rc, db,
                "INSERT INTO \"%w\".\"%w_vocab\"(rank,langid,word,k1,k2) "
-               "VALUES(%d,%d,%Q,%Q,%Q)",
+               "VALUES(%d,%d,%Q,nullif(%Q,%Q),%Q)",
                p->zDbName, p->zTableName,
-               iRank, iLang, zWord, zK1, zK2
+               iRank, iLang, zWord, zK1, zWord, zK2
         );
       }else{
         newRowid = sqlite3_value_int64(argv[1]);
         spellfix1DbExec(&rc, db,
             "INSERT OR %s INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
-            "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
+            "VALUES(%lld,%d,%d,%Q,nullif(%Q,%Q),%Q)",
             zConflict, p->zDbName, p->zTableName,
-            newRowid, iRank, iLang, zWord, zK1, zK2
+            newRowid, iRank, iLang, zWord, zK1, zWord, zK2
         );
       }
       *pRowid = sqlite3_last_insert_rowid(db);
@@ -2845,9 +2932,9 @@ static int spellfix1Update(
       newRowid = *pRowid = sqlite3_value_int64(argv[1]);
       spellfix1DbExec(&rc, db,
              "UPDATE OR %s \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
-             " word=%Q, k1=%Q, k2=%Q WHERE id=%lld",
+             " word=%Q, k1=nullif(%Q,%Q), k2=%Q WHERE id=%lld",
              zConflict, p->zDbName, p->zTableName, newRowid, iRank, iLang,
-             zWord, zK1, zK2, rowid
+             zWord, zK1, zWord, zK2, rowid
       );
     }
     sqlite3_free(zK1);

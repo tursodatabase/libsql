@@ -40,7 +40,7 @@ struct sqlite3_mutex {
 #ifdef SQLITE_DEBUG
   volatile int nRef;         /* Number of enterances */
   volatile DWORD owner;      /* Thread holding this mutex */
-  volatile int trace;        /* True to trace changes */
+  volatile LONG trace;       /* True to trace changes */
 #endif
 };
 
@@ -52,10 +52,10 @@ struct sqlite3_mutex {
 #define SQLITE_W32_MUTEX_INITIALIZER { 0 }
 
 #ifdef SQLITE_DEBUG
-#define SQLITE3_MUTEX_INITIALIZER { SQLITE_W32_MUTEX_INITIALIZER, 0, \
+#define SQLITE3_MUTEX_INITIALIZER(id) { SQLITE_W32_MUTEX_INITIALIZER, id, \
                                     0L, (DWORD)0, 0 }
 #else
-#define SQLITE3_MUTEX_INITIALIZER { SQLITE_W32_MUTEX_INITIALIZER, 0 }
+#define SQLITE3_MUTEX_INITIALIZER(id) { SQLITE_W32_MUTEX_INITIALIZER, id }
 #endif
 
 #ifdef SQLITE_DEBUG
@@ -98,18 +98,18 @@ void sqlite3MemoryBarrier(void){
 ** Initialize and deinitialize the mutex subsystem.
 */
 static sqlite3_mutex winMutex_staticMutexes[] = {
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER,
-  SQLITE3_MUTEX_INITIALIZER
+  SQLITE3_MUTEX_INITIALIZER(2),
+  SQLITE3_MUTEX_INITIALIZER(3),
+  SQLITE3_MUTEX_INITIALIZER(4),
+  SQLITE3_MUTEX_INITIALIZER(5),
+  SQLITE3_MUTEX_INITIALIZER(6),
+  SQLITE3_MUTEX_INITIALIZER(7),
+  SQLITE3_MUTEX_INITIALIZER(8),
+  SQLITE3_MUTEX_INITIALIZER(9),
+  SQLITE3_MUTEX_INITIALIZER(10),
+  SQLITE3_MUTEX_INITIALIZER(11),
+  SQLITE3_MUTEX_INITIALIZER(12),
+  SQLITE3_MUTEX_INITIALIZER(13)
 };
 
 static int winMutex_isInit = 0;
@@ -239,15 +239,15 @@ static sqlite3_mutex *winMutexAlloc(int iType){
       }
 #endif
       p = &winMutex_staticMutexes[iType-2];
-      p->id = iType;
 #ifdef SQLITE_DEBUG
 #ifdef SQLITE_WIN32_MUTEX_TRACE_STATIC
-      p->trace = 1;
+      InterlockedCompareExchange(&p->trace, 1, 0);
 #endif
 #endif
       break;
     }
   }
+  assert( p==0 || p->id==iType );
   return p;
 }
 

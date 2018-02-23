@@ -437,6 +437,113 @@ do_execsql_test 18.6 {
 } {1 1 1 1 2 1}
 
  
-finish_test
+# 2018-02-13 Ticket https://www.sqlite.org/src/tktview/f484b65f3d6230593c3
+# Incorrect result from a row-value comparison in the WHERE clause.
+#
+do_execsql_test 19.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t1(a,b) VALUES(1,11),(2,22),(3,33),(4,44);
+  SELECT * FROM t1 WHERE (a,b)>(0,0) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.2 {
+  SELECT * FROM t1 WHERE (a,b)>=(0,0) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.3 {
+  SELECT * FROM t1 WHERE (a,b)<(5,0) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.4 {
+  SELECT * FROM t1 WHERE (a,b)<=(5,0) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.5 {
+  SELECT * FROM t1 WHERE (a,b)>(3,0) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.6 {
+  SELECT * FROM t1 WHERE (a,b)>=(3,0) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.7 {
+  SELECT * FROM t1 WHERE (a,b)<(3,0) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.8 {
+  SELECT * FROM t1 WHERE (a,b)<=(3,0) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.9 {
+  SELECT * FROM t1 WHERE (a,b)>(3,32) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.10 {
+  SELECT * FROM t1 WHERE (a,b)>(3,33) ORDER BY a;
+} {4 44}
+do_execsql_test 19.11 {
+  SELECT * FROM t1 WHERE (a,b)>=(3,33) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.12 {
+  SELECT * FROM t1 WHERE (a,b)>=(3,34) ORDER BY a;
+} {4 44}
+do_execsql_test 19.13 {
+  SELECT * FROM t1 WHERE (a,b)<(3,34) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.14 {
+  SELECT * FROM t1 WHERE (a,b)<(3,33) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.15 {
+  SELECT * FROM t1 WHERE (a,b)<=(3,33) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.16 {
+  SELECT * FROM t1 WHERE (a,b)<=(3,32) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.21 {
+  SELECT * FROM t1 WHERE (0,0)<(a,b) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.22 {
+  SELECT * FROM t1 WHERE (0,0)<=(a,b) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.23 {
+  SELECT * FROM t1 WHERE (5,0)>(a,b) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.24 {
+  SELECT * FROM t1 WHERE (5,0)>=(a,b) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.25 {
+  SELECT * FROM t1 WHERE (3,0)<(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.26 {
+  SELECT * FROM t1 WHERE (3,0)<=(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.27 {
+  SELECT * FROM t1 WHERE (3,0)>(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.28 {
+  SELECT * FROM t1 WHERE (3,0)>=(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.29 {
+  SELECT * FROM t1 WHERE (3,32)<(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.30 {
+  SELECT * FROM t1 WHERE (3,33)<(a,b) ORDER BY a;
+} {4 44}
+do_execsql_test 19.31 {
+  SELECT * FROM t1 WHERE (3,33)<=(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.32 {
+  SELECT * FROM t1 WHERE (3,34)<=(a,b) ORDER BY a;
+} {4 44}
+do_execsql_test 19.33 {
+  SELECT * FROM t1 WHERE (3,34)>(a,b) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.34 {
+  SELECT * FROM t1 WHERE (3,33)>(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.35 {
+  SELECT * FROM t1 WHERE (3,33)>=(a,b) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.36 {
+  SELECT * FROM t1 WHERE (3,32)>=(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+
+# 2018-02-18: Memory leak nexted row-value.  Detected by OSSFuzz.
+#
+do_catchsql_test 20.1 {
+  SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
+} {0 1}
 
 finish_test
