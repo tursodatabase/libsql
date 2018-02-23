@@ -1002,11 +1002,11 @@ static void zonefileAppendBlob(ZonefileBuffer *pBuf, const u8 *p, int n){
 
 static int zonefileFileWrite(FILE *pFd, const u8 *aBuf, int nBuf){
   size_t res = fwrite(aBuf, 1, nBuf, pFd);
-  return res!=nBuf ? SQLITE_ERROR : SQLITE_OK;
+  return res!=(size_t)nBuf ? SQLITE_ERROR : SQLITE_OK;
 }
 
 static int zonefileFileRead(FILE *pFd, u8 *aBuf, int nBuf, i64 iOff){
-  int rc = fseek(pFd, iOff, SEEK_SET);
+  int rc = fseek(pFd, (long)iOff, SEEK_SET);
   if( rc==0 ){
     rc = fread(aBuf, 1, nBuf, pFd);
     rc = (rc==nBuf) ? SQLITE_OK : SQLITE_ERROR;
@@ -1076,7 +1076,7 @@ static int zonefilePad(FILE *pFd, int nByte){
   assert( nByte>=0 && nByte<256 );
   if( nByte ){
     int nRem = nByte;
-    u8 buf[16] = "0123456789ABCDEF";
+    u8 buf[17] = "0123456789ABCDEF";
     while( nRem>0 ){
       int n = MIN(nRem, sizeof(buf));
       if( zonefileFileWrite(pFd, buf, n) ) return SQLITE_ERROR;
@@ -1102,7 +1102,7 @@ static void zonefileWriteFunc(
   int nFrame = 0;                 /* Number of frames in new zonefile */
   sqlite3_stmt *pStmt = 0;        /* SQL used to read data from source table */
   FILE *pFd = 0;
-  int rc;
+  int rc = SQLITE_OK;
   sqlite3_value *pPrev = 0;
   char *zErr = 0;
   void *pCmp = 0;                 /* Data compressor handle */
@@ -1295,17 +1295,17 @@ static void zonefileWriteFunc(
   /* Create the zonefile header in the in-memory buffer */
   memset(aHdr, 0, ZONEFILE_SZ_HEADER);
   zonefilePut32(&aHdr[0], ZONEFILE_MAGIC_NUMBER);
-  aHdr[4] = sParam.pCmpIdx->eType;
-  aHdr[5] = sParam.pCmpData->eType;
+  aHdr[4] = (u8)sParam.pCmpIdx->eType;
+  aHdr[5] = (u8)sParam.pCmpData->eType;
   iOff = ZONEFILE_SZ_HEADER + sFrameIdx.n + sKeyIdx.n;
   zonefilePut32(&aHdr[6], sDict.n ? iOff+sParam.debugExtendedHeaderSize : 0);
   zonefilePut32(&aHdr[10], iOff + sParam.debugExtendedHeaderSize + sDict.n);
   zonefilePut32(&aHdr[14], nFrame);
   zonefilePut32(&aHdr[18], nKey);
-  aHdr[22] = sParam.encryptionType;
+  aHdr[22] = (u8)sParam.encryptionType;
   aHdr[23] = 0;                   /* Encryption key index */
   aHdr[24] = 0;                   /* extended header version */
-  aHdr[25] = sParam.debugExtendedHeaderSize;
+  aHdr[25] = (u8)sParam.debugExtendedHeaderSize;
   assert( ZONEFILE_SZ_HEADER>=26 );
 
   rc = zonefileFileWrite(pFd, aHdr, ZONEFILE_SZ_HEADER);
@@ -1554,7 +1554,7 @@ static void zonefileJsonHeader(sqlite3_context *pCtx, const char *zFile){
   FILE *pFd = zonefileFileOpen(zFile, 0, &zErr);
   if( pFd ){
     int rc;
-    ZonefileHeader hdr;
+    ZonefileHeader hdr = { 0 };
     u8 aBuf[ZONEFILE_SZ_HEADER];
 
     rc = zonefileFileRead(pFd, aBuf, ZONEFILE_SZ_HEADER, 0);
@@ -1767,7 +1767,7 @@ static int zonefilePopulateIndex(
   const char *zFile,
   i64 iFileid
 ){
-  ZonefileHeader hdr;
+  ZonefileHeader hdr = { 0 };
   int rc;
   FILE *pFd = zonefileFileOpen(zFile, 0, &pTab->base.zErrMsg);
 
@@ -1792,7 +1792,7 @@ static int zonefilePopulateIndex(
       );
     }
 
-    for(i=0; i<hdr.numKeys && rc==SQLITE_OK; i++){
+    for(i=0; (u32)i<hdr.numKeys && rc==SQLITE_OK; i++){
       u8 *aEntry = &aKey[4*hdr.numFrames + ZONEFILE_SZ_KEYOFFSETS_ENTRY * i];
       int iFrame = zonefileGet32(&aEntry[8]);
       i64 iFrameOff = 0;          /* Offset of frame */
@@ -1803,7 +1803,7 @@ static int zonefilePopulateIndex(
       szFrame = zonefileGet32(&aKey[iFrame*4]);
       if( iFrame>0 ){
         iFrameOff = zonefileGet32(&aKey[(iFrame-1)*4]);
-        szFrame -= iFrameOff;
+        szFrame -= (int)iFrameOff;
       }
       iFrameOff += hdr.byteOffsetFrames;
       iOff = (i64)zonefileGet32(&aEntry[12]);
@@ -2537,7 +2537,7 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
   i64 iFile = sqlite3_column_int64(pCsr->pSelect, 1);
   i64 iFrameOff = sqlite3_column_int64(pCsr->pSelect, 2);
   i64 iKeyOff = sqlite3_column_int64(pCsr->pSelect, 4);
-  int nKeySz = sqlite3_column_int64(pCsr->pSelect, 5);
+  int nKeySz = sqlite3_column_int(pCsr->pSelect, 5);
 
   /* Check if this frame is already in the cache. If not, read it from 
   ** the file.  */
@@ -2546,7 +2546,7 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
     const char *zFile = 0;
     char *zErr = 0;
     FILE *pFd = 0;
-    ZonefileHeader hdr;
+    ZonefileHeader hdr = { 0 };
     ZonefileCompress *pCmpMethod = 0;
     ZonefileCodec *pCodec = 0;
     void *pCmp = 0;
