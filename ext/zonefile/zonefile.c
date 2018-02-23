@@ -1987,16 +1987,13 @@ static int zonefileParseOption(
   char **pzErr                    /* OUT: Error message */
 ){
   const char *z = zOption;
-  const char *zOpt;
+  const char *zOpt = z;
   int nOpt;
   const char *zVal;
   int rc = SQLITE_OK;
 
-  /* Skip leading whitespace */
-  while( zonefile_isspace(*z) ) z++;
-  zOpt = z;
-
   /* Skip until EOF, whitespace or "=" */
+  assert( 0==zonefile_isspace(*z) );
   while( *z && !zonefile_isspace(*z) && *z!='=' ) z++;
   nOpt = z-zOpt;
 
@@ -2087,7 +2084,7 @@ static int zonefileCreateConnect(
     }
 
     for(i=3; i<argc && rc==SQLITE_OK; i++){
-      zonefileParseOption(p, argv[i], pzErr);
+      rc = zonefileParseOption(p, argv[i], pzErr);
     }
     if( rc==SQLITE_OK && p->nCacheSize<1 ) p->nCacheSize = 1;
   }
@@ -2270,7 +2267,7 @@ static int zonefileFilter(
     if( idxNum & 0x02 ) { z1 = "k < ?"; }
     if( idxNum & 0x04 ) { z1 = "k <= ?"; }
     if( idxNum & 0x08 ) { if( z1 ) z2 = "k > ?"; else z1 = "k > ?"; }
-    if( idxNum & 0x10 ) { if( z1 ) z2 = "k <= ?"; else z1 = "k <= ?"; }
+    if( idxNum & 0x10 ) { if( z1 ) z2 = "k >= ?"; else z1 = "k >= ?"; }
   }
 
   rc = zonefilePrepare(pTab->db, &pCsr->pSelect, &pTab->base.zErrMsg, 

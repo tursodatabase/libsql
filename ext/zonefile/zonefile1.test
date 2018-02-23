@@ -419,6 +419,155 @@ do_catchsql_test 8.2 {
   CREATE VIRTUAL TABLE onetwothree USING zonefile_files;
 } {1 {do not create zonefile_files tables directly!}}
 
+#-------------------------------------------------------------------------
+# A zone file containing zero keys.
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 9.0 {
+  CREATE TABLE s(k INTEGER PRIMARY KEY,frame INTEGER,idx INTEGER,v BLOB);
+  SELECT zonefile_write('test.zonefile', 's');
+} {{}}
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE ss USING zonefile;
+  INSERT INTO ss_files(filename) VALUES('test.zonefile');
+  SELECT * FROM ss;
+} {}
+
+#-------------------------------------------------------------------------
+# Test UPDATE and DELETE statements on the %_files virtual table.
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 10.0 {
+  CREATE TABLE data(k INTEGER PRIMARY KEY, v BLOB);
+  INSERT INTO data(k, v) VALUES(1, randomblob(100));
+  INSERT INTO data(k, v) VALUES(2, randomblob(100));
+  INSERT INTO data(k, v) VALUES(3, randomblob(100));
+  INSERT INTO data(k, v) VALUES(4, randomblob(100));
+  INSERT INTO data(k, v) VALUES(5, randomblob(100));
+  INSERT INTO data(k, v) VALUES(6, randomblob(100));
+  INSERT INTO data(k, v) VALUES(7, randomblob(100));
+  INSERT INTO data(k, v) VALUES(8, randomblob(100));
+  INSERT INTO data(k, v) VALUES(9, randomblob(100));
+
+  CREATE VIEW v1 AS 
+    SELECT k, -1 AS frame, -1 AS idx, v
+    FROM data WHERE k IN (1,2,3);
+  SELECT zonefile_write('test1.zonefile', 'v1');
+
+  CREATE VIEW v2 AS 
+    SELECT k, -1 AS frame, -1 AS idx, v
+    FROM data WHERE k IN (4,5,6);
+  SELECT zonefile_write('test2.zonefile', 'v2');
+
+  CREATE VIEW v3 AS 
+    SELECT k, -1 AS frame, -1 AS idx, v
+    FROM data WHERE k IN (7,8,9);
+  SELECT zonefile_write('test3.zonefile', 'v3');
+} {{} {} {}}
+
+do_execsql_test 10.1 {
+  CREATE VIRTUAL TABLE "a b" USING zonefile;
+  INSERT INTO "a b_files"(filename) VALUES('test1.zonefile');
+  SELECT k FROM "a b"
+} {1 2 3}
+
+do_execsql_test 10.2 {
+  UPDATE "a b_files" SET filename = 'test2.zonefile';
+  SELECT k FROM "a b"
+} {4 5 6}
+
+do_execsql_test 10.3 {
+  INSERT INTO "a b_files"(filename) VALUES('test1.zonefile');
+  INSERT INTO "a b_files"(filename) VALUES('test3.zonefile');
+  SELECT k FROM "a b"
+} {1 2 3 4 5 6 7 8 9}
+
+do_execsql_test 10.4 {
+  DELETE FROM "a b_files" WHERE filename = 'test2.zonefile';
+  SELECT k FROM "a b"
+} {1 2 3 7 8 9}
+
+do_execsql_test 10.5 {
+  DELETE FROM "a b_files" WHERE filename = 'test1.zonefile';
+  SELECT k FROM "a b"
+} {7 8 9}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 11.0 {
+  CREATE TABLE data(k INTEGER PRIMARY KEY, v BLOB);
+  INSERT INTO data(k, v) VALUES(-1, randomblob(100));
+  INSERT INTO data(k, v) VALUES(1000, randomblob(100));
+  INSERT INTO data(k, v) VALUES(-1000, randomblob(100));
+  INSERT INTO data(k, v) VALUES(9223372036854775807, randomblob(100));
+  INSERT INTO data(k, v) VALUES(-9223372036854775807, randomblob(100));
+  INSERT INTO data(k, v) VALUES(-9223372036854775808, randomblob(100));
+
+  CREATE VIEW v1 AS SELECT k, -1 AS frame, -1 AS idx, v FROM data;
+  SELECT zonefile_write('test1.zonefile', 'v1');
+} {{}}
+
+do_execsql_test 11.1 {
+  CREATE VIRTUAL TABLE one USING zonefile;
+  INSERT INTO "one_files"(filename) VALUES('test1.zonefile');
+  SELECT k FROM one
+} {-9223372036854775808 -9223372036854775807 -1000 -1 1000 9223372036854775807}
+
+do_execsql_test 11.2 {
+  SELECT count(*) FROM data JOIN one USING (k) WHERE one.v==data.v
+} 6
+
+#-------------------------------------------------------------------------
+#
+do_catchsql_test 12.1 {
+  CREATE VIRTUAL TABLE nm USING zonefile(abcd)
+} {1 {parse error in option: abcd}}
+do_catchsql_test 12.2 {
+  CREATE VIRTUAL TABLE nm USING zonefile(a=b)
+} {1 {parse error in option: a=b}}
+do_catchsql_test 12.3 {
+  CREATE VIRTUAL TABLE nm USING zonefile(cachesiza=b)
+} {1 {parse error in option: cachesiza=b}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 11.0 {
+  CREATE TABLE data(k INTEGER PRIMARY KEY, v BLOB);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<250
+  )
+  INSERT INTO data SELECT i, randomblob(100) FROM s;
+  CREATE VIEW v1 AS SELECT k, -1 AS frame, -1 AS idx, v FROM data;
+  SELECT zonefile_write('test1.zonefile', 'v1');
+
+  CREATE VIRTUAL TABLE nm USING zonefile;
+  INSERT INTO nm_files(filename) VALUES('test1.zonefile');
+} {{}}
+
+foreach {tn cond} {
+  1   "k > 30"
+  2   "k >= 100"
+  3   "k <= 100"
+  4   "k < 55"
+  5   "k LIKE '1%'"
+  6   "k BETWEEN 10 AND 20"
+  7   "k > 100 AND k < 200"
+} {
+  do_execsql_test 11.$tn.1 [subst {
+    SELECT count(*) FROM nm WHERE $cond
+  }] [db one "SELECT count(*) FROM data WHERE $cond"]
+
+  do_execsql_test 11.$tn.2 [subst {
+    SELECT count(*) FROM nm WHERE $cond AND
+      v!=(SELECT v FROM data WHERE k=nm.k);
+  }] 0
+}
 
 finish_test
 
