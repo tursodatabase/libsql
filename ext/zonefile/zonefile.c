@@ -346,8 +346,8 @@ static int zonefileKeyFind(
     u32 iHash = zonefileKeyHash(zDb, zTab, iFileid);
     for(pKey=pGlobal->aHash[iHash%pGlobal->nHash]; pKey; pKey=pKey->pHashNext){
       if( pKey->iFileid==iFileid 
-       && 0==sqlite3_stricmp(zDb, pKey->zDb)
        && 0==sqlite3_stricmp(zTab, pKey->zName)
+       && 0==sqlite3_stricmp(zDb, pKey->zDb)
       ){
         *pzKey = pKey->zKey;
         return pKey->nKey;
@@ -815,7 +815,6 @@ static int zonefilePrepare(
 static int zonefileCompareValue(sqlite3_value *p1, sqlite3_value *p2){
   int eType;
   assert( p1 );
-  if( p2==0 ) return 1;
   eType = sqlite3_value_type(p1);
   if( sqlite3_value_type(p2)!=eType ) return 1;
   switch( eType ){
@@ -865,7 +864,7 @@ static int zonefileEncryption(const char *zName, int *peType, char **pzErr){
     }
   }
 
-  *pzErr = sqlite3_mprintf("unknown encryption type: %s", zName);
+  *pzErr = sqlite3_mprintf("unknown encryption method: %s", zName);
   return SQLITE_ERROR;
 }
 
@@ -1037,32 +1036,27 @@ static int zonefileAppendData(
   ZonefileBuffer *pFrom           /* Input buffer */
 ){
   int rc = SQLITE_OK;
-  if( pFrom->n ){
-    int nNonce = pCodec ? zonefileCodecNonceSize(pCodec) : 0;
-    int nOrig = pTo->n;
-    if( pMethod->eType==ZONEFILE_COMPRESSION_NONE ){
-      if( zonefileBufferGrow(pCtx, pTo, pFrom->n + nNonce) ){
-        rc = SQLITE_ERROR;
-      }else{
-        zonefileAppendBlob(pTo, pFrom->a, pFrom->n);
-      }
+  int nNonce = pCodec ? zonefileCodecNonceSize(pCodec) : 0;
+  int nOrig = pTo->n;
+  if( pMethod->eType==ZONEFILE_COMPRESSION_NONE ){
+    if( zonefileBufferGrow(pCtx, pTo, pFrom->n + nNonce) ){
+      rc = SQLITE_ERROR;
     }else{
-      int nReq = pMethod->xCompressBound(pCmp, pFrom->n);
-      if( zonefileBufferGrow(pCtx, pTo, nReq + nNonce) ) return SQLITE_ERROR;
-      rc = pMethod->xCompress(pCmp, &pTo->a[pTo->n], &nReq, pFrom->a, pFrom->n);
-      pTo->n += nReq;
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+      zonefileAppendBlob(pTo, pFrom->a, pFrom->n);
     }
-
-    /* Encrypt the data just appended to buffer pTo. */
-    if( pCodec ){
-      zonefileCodecEncode(pCodec, &pTo->a[nOrig], pTo->n - nOrig);
-      pTo->n += nNonce;
-    }
+  }else{
+    int nReq = pMethod->xCompressBound(pCmp, pFrom->n);
+    if( zonefileBufferGrow(pCtx, pTo, nReq + nNonce) ) return SQLITE_ERROR;
+    rc = pMethod->xCompress(pCmp, &pTo->a[pTo->n], &nReq, pFrom->a, pFrom->n);
+    pTo->n += nReq;
   }
-  return SQLITE_OK;
+
+  /* Encrypt the data just appended to buffer pTo. */
+  if( rc==SQLITE_OK && pCodec ){
+    zonefileCodecEncode(pCodec, &pTo->a[nOrig], pTo->n - nOrig);
+    pTo->n += nNonce;
+  }
+  return rc;
 }
 
 /*
@@ -1617,9 +1611,10 @@ static int zffColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
       break;
     case 1: /* ekey */
       break;
-    case 2: { /* header */
+    default: {
       const char *zFile = (const char*)sqlite3_column_text(pCsr->pSelect, 0);
       zonefileJsonHeader(ctx, zFile);
+      assert( i==2 );
       break;
     }
   }
@@ -1684,10 +1679,10 @@ static int zonefileUncompress(
     rc = SQLITE_NOMEM;
   }else{
     rc = pMethod->xUncompress(pCmp, aOut, nOut, aIn, nIn);
-    if( rc ){
-      sqlite3_free(aOut);
-      aOut = 0;
-    }
+  }
+  if( rc ){
+    sqlite3_free(aOut);
+    aOut = 0;
   }
 
   *paOut = aOut;

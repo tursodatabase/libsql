@@ -52,16 +52,24 @@ do_test 1.1 {
   }
 } {}
 
-do_test 1.2 {
-  execsql {
-    CREATE VIRTUAL TABLE gg USING zonefile;
-  }
-  for {set i 0} {$i < $nFile} {incr i} {
-    execsql { 
-      INSERT INTO gg_files(filename) VALUES('test' || $i || '.zonefile')
-    }
-  }
-} {}
+proc k {i} { lindex $::K [expr $i % [llength $::K]] }
+db func k k
+
+do_execsql_test 1.2 {
+  CREATE VIRTUAL TABLE gg USING zonefile;
+}
+for {set i 0} {$i < $nFile} {incr i} {
+  do_execsql_test 1.2.$i { 
+    INSERT INTO gg_files(filename, ekey) 
+    VALUES('test' || $i || '.zonefile', k($i));
+    SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+  } 0
+}
+
+db close
+sqlite3 db test.db
+load_static_extension db zonefile
+db func k k
 
 do_catchsql_test 1.3 {
   SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
@@ -73,10 +81,6 @@ do_catchsql_test 1.5 {
   SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
 } {1 {missing encryption key for file "test1.zonefile"}}
 
-proc k {i} {
-  lindex $::K [expr $i % [llength $::K]]
-}
-db func k k
 do_execsql_test 1.6 {
   UPDATE gg_files SET ekey = k(rowid-1);
 }
@@ -118,7 +122,7 @@ foreach {tn alg id} {
   3 AES_256_CTR 3
   4 Aes_256_CBC 4
 } {
-  do_catchsql_test 2.$tn {
+  do_catchsql_test 2.1.$tn {
     WITH p(n,v) AS (
         VALUES('encryptionType', $alg) UNION ALL
         VALUES('encryptionKey', 'secret')
@@ -128,6 +132,108 @@ foreach {tn alg id} {
     ) FROM p;
   } "1 {unsupported encryption method: $id}"
 }
+
+foreach {tn alg} {
+  1 nosuchmethod! 
+} {
+  do_catchsql_test 2.1.$tn {
+    WITH p(n,v) AS (
+        VALUES('encryptionType', $alg) UNION ALL
+        VALUES('encryptionKey', 'secret')
+    )
+    SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
+          json_group_object(n, v)
+    ) FROM p;
+  } "1 {unknown encryption method: $alg}"
+}
+
+#-------------------------------------------------------------------------
+# Test some hash collisions in the encryption key table.
+#
+
+# This is the same hash function used internally to store keys.
+#
+proc hash {zDb zTab iFile} {
+  binary scan $zDb c*  A
+  binary scan $zTab c* B
+  set h 0
+  foreach i $A { set h [expr ($h + ($h << 3) + $i) & 0xFFFFFFFF] }
+  foreach i $B { set h [expr ($h + ($h << 3) + $i) & 0xFFFFFFFF] }
+  return [expr $h ^ $iFile]
+}
+
+do_test 3.0 {
+  set h1 [expr [hash main zone 1] % 512]
+  for {set i 0} {1} {incr i} {
+    set h2 [expr [hash "aux$i" zone 1] % 512]
+    if {$h1==$h2} break
+  }
+  set i
+} 52
+
+reset_db
+load_static_extension db zonefile
+forcedelete test.db2
+
+do_execsql_test 3.1 {
+  CREATE TABLE zz(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+  INSERT INTO zz VALUES(222, -1, -1, randomblob(60));
+  WITH p(n,v) AS (
+      VALUES('encryptionType', 'xor') UNION ALL
+      VALUES('encryptionKey', 'pass')
+  )
+  SELECT zonefile_write('test1.zonefile', 'zz', 
+      json_group_object(n, v)
+  ) FROM p;
+
+  DELETE FROM zz;
+  INSERT INTO zz VALUES(333, -1, -1, randomblob(80));
+  WITH p(n,v) AS (
+      VALUES('encryptionType', 'xor') UNION ALL
+      VALUES('encryptionKey', 'pass')
+  )
+  SELECT zonefile_write('test2.zonefile', 'zz', 
+      json_group_object(n, v)
+  ) FROM p;
+} {{} {}}
+
+do_execsql_test 3.2 {
+  ATTACH 'test.db2' AS aux52;
+  CREATE VIRTUAL TABLE main.zone USING zonefile;
+  CREATE VIRTUAL TABLE aux52.zone USING zonefile;
+  INSERT INTO main.zone_files(filename, ekey) VALUES('test1.zonefile', 'pass');
+  INSERT INTO aux52.zone_files(filename, ekey) VALUES('test2.zonefile', 'pass');
+}
+
+do_execsql_test 3.3 {
+  SELECT v IS NULL FROM main.zone;
+  SELECT v IS NULL FROM aux52.zone;
+} {0 0}
+
+do_test 3.4 {
+  set h1 [expr [hash main zone 1] % 512]
+  for {set i 0} {1} {incr i} {
+    set h2 [expr [hash "aux$i" zone 2] % 512]
+    if {$h1==$h2} break
+  }
+  set i
+} 682
+
+forcedelete test.db3
+do_execsql_test 3.5 {
+  ATTACH 'test.db3' AS aux682;
+  CREATE VIRTUAL TABLE aux682.zone USING zonefile;
+  INSERT INTO aux682.zone_files(filename, ekey) VALUES('test1.zonefile','pass');
+  INSERT INTO aux682.zone_files(filename, ekey) VALUES('test2.zonefile','pass');
+  INSERT INTO main.zone_files(filename, ekey) VALUES('test2.zonefile','pass');
+}
+
+do_execsql_test 3.6 {
+  SELECT v IS NULL FROM main.zone;
+  SELECT v IS NULL FROM aux682.zone;
+  SELECT v IS NULL FROM main.zone;
+} {0 0 0 0 0 0}
+
 
 finish_test
 

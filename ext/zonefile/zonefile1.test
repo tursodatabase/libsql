@@ -109,7 +109,6 @@ if {[lsearch $COMPRESSION_METHODS zstd_global_dict]>=0} {
     SELECT zonefile_write('test.zonefile', 'bb', json_group_object(n,v)) FROM p;
   } {1 {compressor "zstd_global_dict" may not be used to compress the zonefile index}}
 }
-# puts $COMPRESSION_METHODS
 
 set extra_header 0
 set cachesize 0
@@ -243,6 +242,182 @@ do_execsql_test 3.3 {
   SELECT quote(dd.v)==quote(cc.v) FROM cc JOIN dd USING (k)
 } {1 1 1}
 
+close [open test.zonefile w+]
+do_catchsql_test 3.4 {
+  SELECT header FROM cc_files
+} {1 {failed to read header from file: "test.zonefile"}}
+
+forcedelete test.zonefile
+do_catchsql_test 3.5 {
+  SELECT header FROM cc_files
+} {1 {failed to open file "test.zonefile" for reading}}
+
+do_execsql_test 3.6 {
+  SELECT ekey FROM cc_files
+} {{}}
+
+#-------------------------------------------------------------------------
+# Check that a file that uses an unknown compression method is handled
+# correctly (an error is returned).
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 4.0 {
+  CREATE TABLE dd(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+  INSERT INTO dd VALUES(1000, 1, -1, randomblob(44));
+  INSERT INTO dd VALUES(1001, 1, -1, randomblob(55));
+  INSERT INTO dd VALUES(1002, 2, -1, randomblob(66));
+  SELECT zonefile_write('test.zonefile', 'dd');
+  CREATE VIRTUAL TABLE x1 USING zonefile;
+} {{}}
+
+do_test 4.1 {
+  hexio_write test.zonefile 5 77
+} {1}
+do_execsql_test 4.2 {
+  INSERT INTO x1_files(filename) VALUES('test.zonefile');
+} {}
+do_catchsql_test 4.3 {
+  SELECT * FROM x1
+} {1 {unsupported compression method: 119}}
+do_test 4.4 {
+  hexio_write test.zonefile 4 77
+} {1}
+do_catchsql_test 4.5 {
+  DELETE FROM x1_files;
+  INSERT INTO x1_files(filename) VALUES('test.zonefile');
+} {1 {unsupported compression method: 119}}
+
+do_test 4.6 {
+  hexio_write test.zonefile 0 00
+} {1}
+do_catchsql_test 4.7 {
+  INSERT INTO x1_files(filename) VALUES('test.zonefile');
+} {1 {failed to read zonefile header from file "test.zonefile"}}
+
+#-------------------------------------------------------------------------
+# Test using various types in the "frame" field of an input table.
+#
+reset_db
+load_static_extension db zonefile
+if {[lsearch $COMPRESSION_METHODS zlib]>=0} {
+  do_execsql_test 5.0 {
+    CREATE TABLE "a b"(k INTEGER PRIMARY KEY,frame INTEGER,idx INTEGER,v BLOB);
+    INSERT INTO "a b" VALUES(1, 0.5, -1, randomblob(44));
+    INSERT INTO "a b" VALUES(2, 0.5, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(3, 1.5, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(4, 1.5, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(5,   2, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(6,   2, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(7, 200, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(8, 200, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(9, 300, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(10, 300, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(11, NULL, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(12, NULL, -1, randomblob(55));
+    INSERT INTO "a b" VALUES(13, 'f1', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(14, 'f1', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(15, 'frame2', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(16, 'frame2', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(17, x'1234', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(18, x'1234', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(19, x'abcd', -1, randomblob(55));
+    INSERT INTO "a b" VALUES(20, x'abcd', -1, randomblob(55));
+  
+    SELECT zonefile_write('test.zonefile', 'a b',
+      '{"compressionTypeContent":"zlib"}'
+    );
+  } {{}}
+
+  do_execsql_test 5.1 {
+    CREATE VIRTUAL TABLE abc USING zonefile; 
+    INSERT INTO abc_files(filename) VALUES('test.zonefile');
+    SELECT group_concat(k) FROM abc_shadow_idx GROUP BY fofst
+  } {
+    11,12   1,2   3,4   5,6   7,8  
+     9,10  13,14 15,16 17,18 19,20
+  }
+}
+
+do_execsql_test 6.0 {
+  CREATE TABLE "ab"(k INTEGER PRIMARY KEY,frame INTEGER,idx INTEGER,v BLOB);
+  INSERT INTO "ab" VALUES(1, 0.5, -1, randomblob(44));
+  INSERT INTO "ab" VALUES(2, 0.5, -1, randomblob(55));
+  INSERT INTO "ab" VALUES(3, 1.5, -1, randomblob(55));
+  INSERT INTO "ab" VALUES(4, 1.5, -1, randomblob(55));
+}
+do_catchsql_test 6.1.1 {
+  SELECT zonefile_write('test.zonefile', 'ab',
+      '{"debugExtendedHeaderSize":-1}'
+  );
+} {1 {debugExtendedHeaderSize value out of range: -1}}
+do_catchsql_test 6.1.2 {
+  SELECT zonefile_write('test.zonefile', 'ab',
+      '{"debugExtendedHeaderSize":256}'
+  );
+} {1 {debugExtendedHeaderSize value out of range: 256}}
+
+do_catchsql_test 6.2 {
+  SELECT zonefile_write('test.zonefile', 'ab',
+      '{"unknown":256}'
+  );
+} {1 {unknown parameter name: "unknown"}}
+
+forcedelete test.dir
+file mkdir test.dir
+do_catchsql_test 6.3 {
+  SELECT zonefile_write('test.dir', 'ab');
+} {1 {failed to open file "test.dir" for writing}}
+
+do_catchsql_test 6.4 {
+  CREATE VIRTUAL TABLE zzz USING zonefile;
+  INSERT INTO zzz_files(filename) VALUES('nosuchfile.zonefile');
+} {1 {failed to open file "nosuchfile.zonefile" for reading}}
+
+do_catchsql_test 6.4 {
+  INSERT INTO zzz_files(filename) VALUES('test.dir');
+} {1 {failed to read zonefile header from file "test.dir"}}
+
+#-------------------------------------------------------------------------
+# Check that errors generated when building a dictionary are handled.
+# The zstd library routines for building a dictionary throw an error
+# if they are provided with too little data.
+#
+# Also test that zstd_global_dict cannot be used to compress the zonefile
+# index (as there is nowhere in the file format to store the dictionary
+# for this compression).
+#
+reset_db
+load_static_extension db zonefile
+if {[lsearch $COMPRESSION_METHODS zstd_global_dict]>=0} {
+  do_execsql_test 7.0 {
+    CREATE TABLE "ab"(k INTEGER PRIMARY KEY,frame INTEGER,idx INTEGER,v BLOB);
+    INSERT INTO "ab" VALUES(1, -1, -1, 'abc');
+  }
+
+  do_catchsql_test 7.1 {
+    SELECT zonefile_write('test.zonefile', 'ab',
+      '{"compressionTypeContent":"zstd_global_dict"}'
+    );
+  } {1 {error generating dictionary}}
+
+  do_catchsql_test 7.2 {
+    SELECT zonefile_write('test.zonefile', 'ab',
+      '{"compressionTypeIndexData":"zstd_global_dict"}'
+    );
+  } {1 {compressor "zstd_global_dict" may not be used to compress the zonefile index}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db zonefile
+do_catchsql_test 8.1 {
+  CREATE VIRTUAL TABLE one USING zonefile_files;
+} {1 {do not create zonefile_files tables directly!}}
+do_catchsql_test 8.2 {
+  CREATE VIRTUAL TABLE onetwothree USING zonefile_files;
+} {1 {do not create zonefile_files tables directly!}}
 
 
 finish_test
