@@ -2313,22 +2313,21 @@ static int zonefileGetFile(
         "SELECT filename FROM %Q.'%q_shadow_file' WHERE fileid=?",
         pTab->zDb, pTab->zName
     );
-    if( rc!=SQLITE_OK ){
-      zonefileTransferError(pCtx);
-      return SQLITE_ERROR;
-    }
+    if( rc==SQLITE_ERROR ) zonefileTransferError(pCtx);
   }
 
-  iFileid = sqlite3_column_int64(pCsr->pSelect,1);
-  sqlite3_bind_int64(pTab->pIdToName, 1, iFileid);
-  if( SQLITE_ROW==sqlite3_step(pTab->pIdToName) ){
-    *pzFile = (const char*)sqlite3_column_text(pTab->pIdToName, 0);
-  }else{
-    rc = sqlite3_reset(pTab->pIdToName);
-    if( rc==SQLITE_OK ){
-      rc = SQLITE_CORRUPT_VTAB;
+  if( rc==SQLITE_OK ){
+    iFileid = sqlite3_column_int64(pCsr->pSelect,1);
+    sqlite3_bind_int64(pTab->pIdToName, 1, iFileid);
+    if( SQLITE_ROW==sqlite3_step(pTab->pIdToName) ){
+      *pzFile = (const char*)sqlite3_column_text(pTab->pIdToName, 0);
     }else{
-      zonefileTransferError(pCtx);
+      rc = sqlite3_reset(pTab->pIdToName);
+      if( rc==SQLITE_OK ){
+        rc = SQLITE_CORRUPT_VTAB;
+      }else{
+        zonefileTransferError(pCtx);
+      }
     }
   }
 

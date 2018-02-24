@@ -46,8 +46,12 @@ set sql {
         '{"compressionTypeContent":"zstd_global_dict"}'
     );
 }
-
+set HAVE_ZSTD 0
 if {[catch { db eval $sql }]==0} {
+  set HAVE_ZSTD 1
+}
+
+if {$HAVE_ZSTD} {
   do_faultsim_test 1.2 -faults oom* -prep {
     sqlite3 db test.db
     load_static_extension db zonefile
@@ -82,7 +86,7 @@ do_execsql_test 1.4.0 {
   INSERT INTO tt VALUES(9, -1, -1, randomblob(100));
   CREATE VIRTUAL TABLE ttz USING zonefile;
 }
-if {[catch { db eval $sql }]==0} {
+if {$HAVE_ZSTD} {
   faultsim_save_and_close
   do_faultsim_test 1.4 -faults oom* -prep {
     faultsim_restore_and_reopen
@@ -151,15 +155,87 @@ do_faultsim_test 2.3 -faults oom* -prep {
 }
 
 #-------------------------------------------------------------------------
+#
 reset_db
 faultsim_save_and_close
-do_faultsim_test 3 -faults oom* -prep {
+do_faultsim_test 3.1 -faults oom* -prep {
   faultsim_restore_and_reopen
   load_static_extension db zonefile
 } -body {
   execsql { CREATE VIRTUAL TABLE t1 USING zonefile(cachesize=5) }
 } -test {
   faultsim_test_result {0 {}}
+}
+
+faultsim_save_and_close
+do_faultsim_test 3.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  load_static_extension db zonefile
+} -body {
+  execsql { DROP TABLE t1 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db zonefile
+do_execsql_test 4.0 {
+  CREATE TABLE zz(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+  INSERT INTO zz VALUES(1, -1, -1, randomblob(100));
+  INSERT INTO zz VALUES(2, -1, -1, randomblob(100));
+  INSERT INTO zz VALUES(3, -1, -1, randomblob(100));
+  SELECT zonefile_write('test.zonefile', 'zz');
+  CREATE VIRTUAL TABLE zone USING zonefile;
+  INSERT INTO zone_files(filename) VALUES('test.zonefile');
+} {{}}
+
+faultsim_save_and_close
+do_faultsim_test 4.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  load_static_extension db zonefile
+} -body {
+  execsql { SELECT v IS NULL FROM zone WHERE k = 2 }
+} -test {
+  faultsim_test_result {0 0}
+}
+
+
+if {$HAVE_ZSTD} {
+  set params {
+      {"encryptionType":"xor","encryptionKey":"pass",
+       "compressionTypeContent":"zstd_global_dict"
+      }
+  }
+} else {
+  set params { {"encryptionType":"xor","encryptionKey":"pass" } }
+}
+do_execsql_test 4.2 {
+  SELECT zonefile_write('test.zonefile', 'zz', $params);
+  CREATE VIRTUAL TABLE zone2 USING zonefile;
+  INSERT INTO zone2_files(filename,ekey) VALUES('test.zonefile','pass');
+} {{}}
+
+faultsim_save_and_close
+do_faultsim_test 4.3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  load_static_extension db zonefile
+  execsql { UPDATE zone2_files SET ekey='pass' }
+} -body {
+  execsql { SELECT v IS NULL FROM zone2 WHERE k = 2 }
+} -test {
+  faultsim_test_result {0 0}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_faultsim_test 4.3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  load_static_extension db zonefile
+} -test {
+  faultsim_test_result {0 {}} {1 {initialization of zonefile failed: }}
 }
 
 finish_test

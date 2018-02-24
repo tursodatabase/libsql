@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\shandling\s"k\s>=\s?"\sconstraints\sin\sthe\szonefile\smodule.
-D 2018-02-23T21:01:15.048
+C Test\sedge\scases\sin\sthe\szonefile\smodule.\sFix\sa\sbroken\serror\smessage\sin\sthe\ssame.
+D 2018-02-24T08:26:21.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -409,10 +409,10 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F ext/zonefile/README.md df86ef5b4f9aa8b07e1c8124b3f2dcea616927385aad59d525b784f0a06d446c
-F ext/zonefile/zonefile.c 886dc98b402cbfce902327725bcdb7e209e4ac4d41270be312f966023ca77b9b
-F ext/zonefile/zonefile1.test f9d80a9138b34953d25387b094b886a3c66ddfb3ce07cd6e11bae20ef0bc5b02
+F ext/zonefile/zonefile.c eeba1f8a353661998b2e54d499c0fd7241946d48285d1e20fc86ac1c81651b6c
+F ext/zonefile/zonefile1.test 43e10166a74187d997a224c4f199cabfdbf4c17f704759fd37b0fcb8616c26a3
 F ext/zonefile/zonefileenc.test 10e770105edeff6a05df6be8db5481eaa8fcda2422ec5446ad21b34ed70d02d7
-F ext/zonefile/zonefilefault.test 319dc0df65ee9dd89da5c7a9b72b88decfafbe627ab29ca11d93678732cca35e
+F ext/zonefile/zonefilefault.test 6f0b10364972981380de65e8665b7a8f882a70ec7ee188695fe199f2851e180e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dbbcbf0066ef82c789981feff78d95861a836e6e23a22ad3bb698dd257062f75
-R a381dedf59b4651a47fa5bb736b93522
+P 9a99afafa3fb9ec4823e5030cb04a685d64942ec04a1154b729dc4c0f313dc4a
+R 6618d746fdec54fbaf0229c804a7cf37
 U dan
-Z e0cceed6c3e6fbf110dfbc3e5d5a0f09
+Z 6cb0aff8f941832f5fc5365c2afb34dd
