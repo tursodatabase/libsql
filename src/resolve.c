@@ -799,7 +799,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
         if( pRight->op==TK_TRUEFALSE ){
-          assert( pRight->iTable==0 || pRight->iTable==1 );
           pExpr->op2 = pExpr->op;
           pExpr->op = TK_TRUTH;
           return WRC_Continue;
