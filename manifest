@@ -1,5 +1,5 @@
-C Refactor\sfor\scorrect\sNULL\shandling\sin\sthe\sIS\sTRUE,\sIS\sFALSE,\sIS\sNOT\sTRUE,\nand\sIS\sNOT\sFALSE\soperators.
-D 2018-02-26T18:49:05.668
+C Enhance\sTreeView\sso\sthat\sit\scan\sdisplay\sthe\snew\sIS\sTRUE\sexpression\strees.
+D 2018-02-26T19:03:25.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -551,7 +551,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
-F src/treeview.c eae35972ff44f67064de2eaf35f04afe94e7aea3271a8b3bcebb3f954880fec3
+F src/treeview.c bdc8ca85b6f9b56b10381801b656f0ec0f4a86a3f5006cd3f9faa24fc15ea443
 F src/trigger.c a34539c69433276d37b0da9a89c117726ff2d292c0902895af1f393a983cd3a1
 F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 003dc140536d0dd4384252ae1b82827b5d8b2b399520f99549b9266a482009fb
-R e29768d7d377928f9be17fdcc6f50028
+P cf2abd59be9971a55bd3d6c5df374c6aaa23bf81819482b42f01ee2484dcd739
+R 6f6e40c4ec384ce48a27d1e80052a614
 U drh
-Z 99658c0596100aeaf925626dd549f8e1
+Z deaee9f4cadd8927720fc9b75136faa8

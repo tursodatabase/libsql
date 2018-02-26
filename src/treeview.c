@@ -292,6 +292,10 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewLine(pView,"NULL");
       break;
     }
+    case TK_TRUEFALSE: {
+      sqlite3TreeViewLine(pView, pExpr->iTable ? "TRUE":"FALSE");
+      break;
+    }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
       sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
@@ -347,6 +351,20 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_NOT:     zUniOp = "NOT";    break;
     case TK_ISNULL:  zUniOp = "ISNULL"; break;
     case TK_NOTNULL: zUniOp = "NOTNULL"; break;
+
+    case TK_TRUTH: {
+      assert( pExpr->op2==TK_IS || pExpr->op2==TK_ISNOT );
+      assert( pExpr->pRight );
+      assert( pExpr->pRight->op==TK_TRUEFALSE );
+      assert( pExpr->pRight->iTable==0 || pExpr->pRight->iTable==1 );
+      switch( (pExpr->op2==TK_ISNOT)*2 + pExpr->pRight->iTable ){
+        case 0: zUniOp = "IS-FALSE";     break;
+        case 1: zUniOp = "IS-TRUE";      break;
+        case 2: zUniOp = "IS-NOT-FALSE"; break;
+        case 3: zUniOp = "IS-NOT-TRUE";  break;
+      }
+      break;
+    }
 
     case TK_SPAN: {
       sqlite3TreeViewLine(pView, "SPAN %Q", pExpr->u.zToken);
