@@ -432,15 +432,13 @@ static int lookupName(
   ** fields are not changed in any context.
   */
   if( cnt==0 && zTab==0 ){
+    assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted) ){
       pExpr->op = TK_STRING;
       pExpr->pTab = 0;
       return WRC_Prune;
     }
-    if( sqlite3StrICmp(zCol, "true")==0 || sqlite3StrICmp(zCol, "false")==0 ){
-      pExpr->op = TK_TRUEFALSE;
-      pExpr->iTable = zCol[4]==0;
-      pExpr->pTab = 0;
+    if( sqlite3ExprIdToTrueFalse(pExpr) ){
       return WRC_Prune;
     }
   }

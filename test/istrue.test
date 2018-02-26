@@ -77,5 +77,16 @@ do_execsql_test istrue-410 {
   SELECT x FROM t1 WHERE false;
 } {}
 
+do_execsql_test istrue-500 {
+  CREATE TABLE t2(
+     a INTEGER PRIMARY KEY,
+     b BOOLEAN DEFAULT true,
+     c BOOLEAN DEFAULT(true),
+     d BOOLEAN DEFAULT false,
+     e BOOLEAN DEFAULT(false)
+  );
+  INSERT INTO t2 DEFAULT VALUES;
+  SELECT * FROM t2;
+} {1 1 1 0 0}
 
 finish_test
