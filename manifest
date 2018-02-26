@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\sIS\sTRUE\sand\sIS\sFALSE\soperators.\s\sAll\sTRUE\sand\nFALSE\sto\sact\slike\sconstants\sif\sthe\snames\sdo\snot\sresolve\sto\sa\scolumn\sname.
-D 2018-02-26T03:20:18.624
+C Merge\sthe\sfix\sfor\sdetermining\struth\sof\sfloating\spoint\svalues\sfrom\strunk.
+D 2018-02-26T15:31:39.919
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -557,13 +557,13 @@ F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
-F src/vdbe.c d221ab77e0997d410004d46cb373f3b848d994b64b439dc69db9d7d43b255397
+F src/vdbe.c 2d1338273ff6d6430c0d7b88afbd8f4683df0d23980ab1e638a6b490e9766e80
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
-F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
+F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
 F src/vdbeaux.c 2756ac68ac259c416554100598fc291870063288cd7e1af22847f57b3e130e56
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 21c1d00f0b901dda0a2eccf56bf0d86648cae1bde37de0606ae4e7cdb0ff6d3d
+F src/vdbemem.c 414e28d3a7e2a8bee2bb247de115dcbc68e3cbac284d5862d077002f7a93bce1
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
@@ -792,7 +792,7 @@ F test/exclusive.test 1206b87e192497d78c7f35552e86a9d05421498da300fb1cce5ca5351c
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/expr.test 66a2c9ac34f74f036faa4092f5402c7d3162fc93
+F test/expr.test 4d34609c823fb0b856a6f71ffd75a2d03e7ccc366f8d182ae901b4467abb9caa
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 07416bd593a116d5893cb244f45a94d5c6fe030561df3bd972e6135f8106e509
@@ -1707,10 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 15c587cf6ffc920dc37f67cacb4f0db6a603fb998a22a639f755387910516414
-R b02e960cb9fe764e3ce324741c78d420
-T *branch * is-true-operator
-T *sym-is-true-operator *
-T -sym-trunk *
+P 40314bc999af08ab10e654241208842b4bb95b19858d11249444372250ea4160 a983fa857048c748112c2f805f13aadeae43b43b3d27fa55433a3699b51c9a0e
+R 38dbfe1b01398cfde35ddf8702196d69
 U drh
-Z 2f211764040206a38839d885e0d3c8ec
+Z bda364b06b801f317fc0151c8a36021e
