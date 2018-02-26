@@ -3543,6 +3543,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       codeInteger(pParse, pExpr, 0, target);
       return target;
     }
+    case TK_TRUE: {
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
+      return target;
+    }
+    case TK_FALSE: {
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
+      return target;
+    }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
@@ -3696,6 +3704,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
       sqlite3VdbeAddOp2(v, op, r1, inReg);
+      break;
+    }
+    case TK_ISTRUE: {
+      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
+      testcase( regFree1==0 );
+      sqlite3VdbeAddOp2(v, OP_Not, r1, inReg);
+      sqlite3VdbeAddOp2(v, OP_Not, inReg, inReg);
       break;
     }
     case TK_ISNULL:
@@ -4473,6 +4488,11 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
+    case TK_ISTRUE: {
+      testcase( jumpIfNull==0 );
+      sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
+      break;
+    }
     case TK_IS:
     case TK_ISNOT:
       testcase( op==TK_IS );
@@ -4625,6 +4645,11 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_NOT: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
+      break;
+    }
+    case TK_ISTRUE: {
+      testcase( jumpIfNull==0 );
+      sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
     case TK_IS:

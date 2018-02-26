@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\szipfile\sextension\sseen\swith\sMSVC.
-D 2018-02-23T13:38:54.742
+C Experimental\simplementation\sof\sIS\sTRUE\sand\sIS\sFALSE\soperators.\s\sAll\sTRUE\sand\nFALSE\sto\sact\slike\sconstants\sif\sthe\snames\sdo\snot\sresolve\sto\sa\scolumn\sname.
+D 2018-02-26T03:20:18.624
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -441,7 +441,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 20c8788451dc737a967c87ea53ad43544d617f5b57d32ccce8bd52a0daf9e89b
-F src/expr.c 9e06de431c09f144438aa6895ea4d4290fa3c6875bfcc3ba331012ca78deadf0
+F src/expr.c 56bfb9937e14c8daf3e94d23ee9c516f35573afcbf973dc2fae2d60405e18862
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 94f42cba2cc1c34aeaa441022ba0170ec3fec4bba54db4e0ded085c6dc0fdc51
@@ -486,7 +486,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 259f4e7960c47082c9653f3d5f0c294abd68bb9c3aab86de7630700cba1c20fb
 F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
+F src/resolve.c e3555b156d60407c23692c1e99c05cdf8257f1b7530684dce85247012e58bd8a
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
 F src/shell.c.in c1b14bc0bc1fe73a97dfaad55ca09f5d6e44f6019977d94e7e3d1861616035e1
@@ -557,7 +557,7 @@ F src/update.c a90a32ffc0100265b0693dbbdbe490756447af181f5ea2c138cce515b08c8795
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
-F src/vdbe.c 72f5a4b95be486170104779aeef000423acabf55ac0c661afdae889be72c8922
+F src/vdbe.c d221ab77e0997d410004d46cb373f3b848d994b64b439dc69db9d7d43b255397
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
 F src/vdbeInt.h 8d7d07f13cb3c4cbca91e22ba4a1920e542dda7c5d9299920432a0b3d5b009f5
 F src/vdbeapi.c fea41171884a4de119f8b10ab514c788674eeeb7f27218bb6d008e1310bfd07f
@@ -1612,7 +1612,7 @@ F test/zipfilefault.test 050be76778d2ec83566a542800fc3967f65ce719671a819016ada8b
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
-F tool/addopcodes.tcl 7181c041d495e3f26acc36d15c86923ed722285f9015f017f41a3efdb9a0dab4
+F tool/addopcodes.tcl 92514b0db662868f1ec803ea95d8f5cf31213ba022fdfd5b7d289518d2e1eecf
 F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
@@ -1707,7 +1707,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e9e9f27b3d496531905ad7459cf60366ad3798f507266134dd6388cdec50fdc4
-R 654cd747b1d6661b630741ec0eabab23
-U mistachkin
-Z f6be006b93932e4aec25faabbec16d8c
+P 15c587cf6ffc920dc37f67cacb4f0db6a603fb998a22a639f755387910516414
+R b02e960cb9fe764e3ce324741c78d420
+T *branch * is-true-operator
+T *sym-is-true-operator *
+T -sym-trunk *
+U drh
+Z 2f211764040206a38839d885e0d3c8ec

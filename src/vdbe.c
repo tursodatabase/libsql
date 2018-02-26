@@ -2211,10 +2211,10 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
 case OP_Not: {                /* same as TK_NOT, in1, out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
-  sqlite3VdbeMemSetNull(pOut);
   if( (pIn1->flags & MEM_Null)==0 ){
-    pOut->flags = MEM_Int;
-    pOut->u.i = !sqlite3VdbeIntValue(pIn1);
+    sqlite3VdbeMemSetInt64(pOut, !sqlite3VdbeIntValue(pIn1));
+  }else{
+    sqlite3VdbeMemSetNull(pOut);
   }
   break;
 }

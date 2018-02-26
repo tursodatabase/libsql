@@ -431,10 +431,22 @@ static int lookupName(
   ** Because no reference was made to outer contexts, the pNC->nRef
   ** fields are not changed in any context.
   */
-  if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
-    pExpr->op = TK_STRING;
-    pExpr->pTab = 0;
-    return WRC_Prune;
+  if( cnt==0 && zTab==0 ){
+    if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+      pExpr->op = TK_STRING;
+      pExpr->pTab = 0;
+      return WRC_Prune;
+    }
+    if( sqlite3StrICmp(zCol, "true")==0 ){
+      pExpr->op = TK_TRUE;
+      pExpr->pTab = 0;
+      return WRC_Prune;
+    }
+    if( sqlite3StrICmp(zCol, "false")==0 ){
+      pExpr->op = TK_FALSE;
+      pExpr->pTab = 0;
+      return WRC_Prune;
+    }
   }
 
   /*
@@ -783,6 +795,21 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
+    case TK_IS:
+      /* Handle special cases of "x IS TRUE" and "x IS FALSE".  The first
+      ** is transformed into "+x" and the second into "NOT x". */
+      if( pExpr->pRight->op==TK_ID ){
+        int rc = resolveExprStep(pWalker, pExpr->pRight);
+        if( rc==WRC_Abort ) return WRC_Abort;
+        if( pExpr->pRight->op==TK_TRUE ){
+          pExpr->op = TK_ISTRUE;
+          return WRC_Continue;
+        }else if( pExpr->pRight->op==TK_FALSE ){
+          pExpr->op = TK_NOT;
+          return WRC_Continue;
+        }
+      }
+      /* Fall thru */
     case TK_BETWEEN:
     case TK_EQ:
     case TK_NE:
@@ -790,7 +817,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     case TK_LE:
     case TK_GT:
     case TK_GE:
-    case TK_IS:
     case TK_ISNOT: {
       int nLeft, nRight;
       if( pParse->db->mallocFailed ) break;

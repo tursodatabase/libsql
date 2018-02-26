@@ -22,6 +22,8 @@ close $in
 # ILLEGAL *must* be the last two token codes and they must be in that order.
 #
 set extras {
+  TRUE
+  FALSE
   ISNOT
   FUNCTION
   COLUMN
@@ -29,6 +31,7 @@ set extras {
   AGG_COLUMN
   UMINUS
   UPLUS
+  ISTRUE
   REGISTER
   VECTOR
   SELECT_COLUMN
