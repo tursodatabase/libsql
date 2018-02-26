@@ -2191,6 +2191,34 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
   break;
 }
 
+/* Opcode: IsTrue P1 P2 P3 P4 *
+** Synopsis: r[P2] = coalesce(r[P1]==TRUE,P3) ^ P4
+**
+** This opcode implements the IS TRUE, IS FALSE, IS NOT TRUE, and
+** IS NOT FALSE operators.
+**
+** Interpret the value in register P1 as a boolean value.  Store the that
+** boolean (a 0 or 1) in register P2.  Or if the value in register P1 is 
+** NULL, then the P3 is stored in register P2.  Invert the answer if P4
+** is 1.
+**
+** The logic is summarized like this:
+**
+** <ul> 
+** <li> P3==0, P4==0  &rarr;  r[P2] = r[P1] IS TRUE
+** <li> P3==1, P4==1  &rarr;  r[P2] = r[P1] IS FALSE
+** <li> P3==0, P4==1  &rarr;  r[P2] = r[P1] IS NOT TRUE
+** <li> P3==1, P4==0  &rarr;  r[P2] = r[P1] IS NOT FALSE
+** </ul>
+*/
+case OP_IsTrue: {               /* in1, out2 */
+  assert( pOp->p4type==P4_INT32 );
+  assert( pOp->p4.i==0 || pOp->p4.i==1 );
+  sqlite3VdbeMemSetInt64(&aMem[pOp->p2],
+      sqlite3VdbeBooleanValue(&aMem[pOp->p1], pOp->p3) ^ pOp->p4.i);
+  break;
+}
+
 /* Opcode: Not P1 P2 * * *
 ** Synopsis: r[P2]= !r[P1]
 **

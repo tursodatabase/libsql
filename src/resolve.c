@@ -437,13 +437,9 @@ static int lookupName(
       pExpr->pTab = 0;
       return WRC_Prune;
     }
-    if( sqlite3StrICmp(zCol, "true")==0 ){
-      pExpr->op = TK_TRUE;
-      pExpr->pTab = 0;
-      return WRC_Prune;
-    }
-    if( sqlite3StrICmp(zCol, "false")==0 ){
-      pExpr->op = TK_FALSE;
+    if( sqlite3StrICmp(zCol, "true")==0 || sqlite3StrICmp(zCol, "false")==0 ){
+      pExpr->op = TK_TRUEFALSE;
+      pExpr->iTable = zCol[4]==0;
       pExpr->pTab = 0;
       return WRC_Prune;
     }
@@ -796,28 +792,30 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
     case TK_IS:
-      /* Handle special cases of "x IS TRUE" and "x IS FALSE".  The first
-      ** is transformed into "+x" and the second into "NOT x". */
-      if( pExpr->pRight->op==TK_ID ){
-        int rc = resolveExprStep(pWalker, pExpr->pRight);
+    case TK_ISNOT: {
+      Expr *pRight;
+      assert( !ExprHasProperty(pExpr, EP_Reduced) );
+      /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
+      ** and "x IS NOT FALSE". */
+      if( (pRight = pExpr->pRight)->op==TK_ID ){
+        int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
-        if( pExpr->pRight->op==TK_TRUE ){
-          pExpr->op = TK_ISTRUE;
-          return WRC_Continue;
-        }else if( pExpr->pRight->op==TK_FALSE ){
-          pExpr->op = TK_NOT;
+        if( pRight->op==TK_TRUEFALSE ){
+          assert( pRight->iTable==0 || pRight->iTable==1 );
+          pExpr->op2 = pExpr->op;
+          pExpr->op = TK_TRUTH;
           return WRC_Continue;
         }
       }
       /* Fall thru */
+    }
     case TK_BETWEEN:
     case TK_EQ:
     case TK_NE:
     case TK_LT:
     case TK_LE:
     case TK_GT:
-    case TK_GE:
-    case TK_ISNOT: {
+    case TK_GE: {
       int nLeft, nRight;
       if( pParse->db->mallocFailed ) break;
       assert( pExpr->pLeft!=0 );

@@ -1,0 +1,81 @@
+# 2018-02-26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing expressions of the form
+#
+#        x IS TRUE
+#        x IS FALSE
+#        x IS NOT TRUE
+#        x IS NOT FALSE
+#
+# Tests are also included for the use of TRUE and FALSE as
+# literal values.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test istrue-100 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y BOOLEAN);
+  INSERT INTO t1 VALUES(1, true),(2, false),(3, null);
+  SELECT x FROM t1 WHERE y IS TRUE;
+} {1}
+do_execsql_test istrue-110 {
+  SELECT x FROM t1 WHERE y IS FALSE;
+} {2}
+do_execsql_test istrue-120 {
+  SELECT x FROM t1 WHERE y IS NULL;
+} {3}
+do_execsql_test istrue-130 {
+  SELECT x FROM t1 WHERE y IS NOT TRUE;
+} {2 3}
+do_execsql_test istrue-140 {
+  SELECT x FROM t1 WHERE y IS NOT FALSE;
+} {1 3}
+do_execsql_test istrue-150 {
+  SELECT x FROM t1 WHERE y IS NOT NULL;
+} {1 2}
+unset -nocomplain X
+set X 9
+do_execsql_test istrue-160 {
+  SELECT x FROM t1 WHERE y IS TRUE OR (8==$X)
+} {1}
+do_execsql_test istrue-170 {
+  SELECT x FROM t1 WHERE y IS FALSE OR (8==$X)
+} {2}
+do_execsql_test istrue-180 {
+  SELECT x FROM t1 WHERE y IS NULL OR (8==$X);
+} {3}
+do_execsql_test istrue-190 {
+  SELECT x FROM t1 WHERE y IS NOT TRUE OR (8==$X);
+} {2 3}
+do_execsql_test istrue-200 {
+  SELECT x FROM t1 WHERE y IS NOT FALSE OR (8==$X);
+} {1 3}
+do_execsql_test istrue-210 {
+  SELECT x FROM t1 WHERE y IS NOT NULL OR (8==$X);
+} {1 2}
+
+do_execsql_test istrue-300 {
+  SELECT x,
+         y IS TRUE, y IS FALSE, y is NULL,
+         y IS NOT TRUE, y IS NOT FALSE, y IS NOT NULL, '|'
+    FROM t1 ORDER BY x;
+} {1 1 0 0 0 1 1 | 2 0 1 0 1 0 1 | 3 0 0 1 1 1 0 |}
+
+do_execsql_test istrue-400 {
+  SELECT x FROM t1 WHERE true;
+} {1 2 3}
+do_execsql_test istrue-410 {
+  SELECT x FROM t1 WHERE false;
+} {}
+
+
+finish_test

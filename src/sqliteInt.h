@@ -2387,7 +2387,8 @@ struct Expr {
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
                          ** EP_Unlikely:  134217728 times likelihood
-                         ** TK_SELECT: 1st register of result vector */
+                         ** TK_SELECT: 1st register of result vector
+                         ** TK_TRUEFALSE: 1 for true, 0 for false */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
                          ** TK_VARIABLE: variable number (always >= 1).
                          ** TK_SELECT_COLUMN: column of the result vector */
