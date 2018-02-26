@@ -8490,8 +8490,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   data.doXdgOpen = 0;
   clearTempFile(&data);
 #if !SQLITE_SHELL_IS_UTF8
-  for(i=0; i<argc; i++) sqlite3_free(argv[i]);
-  sqlite3_free(argv);
+  for(i=0; i<argc; i++) free(argv[i]);
+  free(argv);
 #endif
   return rc;
 }

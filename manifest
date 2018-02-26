@@ -1,5 +1,5 @@
-C Always\sinterpret\snon-zero\sfloating-point\svalues\sas\strue\seven\sif\stheir\ninteger\spart\sis\szero.\s\sFix\sfor\sticket\s[36fae083b450e3af857a459e20].
-D 2018-02-26T15:27:31.204
+C Fix\sheap\sissue\sin\sthe\sshell\son\sWin32\scaused\sby\sallocator\smismatch.
+D 2018-02-26T16:49:20.522
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -489,7 +489,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bbee7e31d369a18a2f4836644769882e9c5d40ef4a3af911db06410b65cb3730
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
-F src/shell.c.in c1b14bc0bc1fe73a97dfaad55ca09f5d6e44f6019977d94e7e3d1861616035e1
+F src/shell.c.in 47dac081e15544f4d4373a837215391459971b312c8bed15903e7e9045c3e652
 F src/sqlite.h.in 235e942dd8c01b414c2996828b4d0d2500faf8850f8b24ae17d31c172f519e69
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 15c587cf6ffc920dc37f67cacb4f0db6a603fb998a22a639f755387910516414
-R ff7cf472c64b844ed90baa6da5e6de1d
-U drh
-Z 4ad98123770e35c50780573ab58f9c3a
+P a983fa857048c748112c2f805f13aadeae43b43b3d27fa55433a3699b51c9a0e
+R 1433684d91ba65f3b7614e9fa9c71d0a
+U mistachkin
+Z b329981237c7dadda32eba65e163ae21
