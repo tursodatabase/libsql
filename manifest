@@ -1,5 +1,5 @@
-C Fix\sheap\sissue\sin\sthe\sshell\son\sWin32\scaused\sby\sallocator\smismatch.
-D 2018-02-26T16:49:20.522
+C More\stests\spursuant\sto\sticket\s[36fae083b450e3af857a459e20].
+D 2018-02-26T17:03:03.328
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -792,7 +792,7 @@ F test/exclusive.test 1206b87e192497d78c7f35552e86a9d05421498da300fb1cce5ca5351c
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/expr.test 4d34609c823fb0b856a6f71ffd75a2d03e7ccc366f8d182ae901b4467abb9caa
+F test/expr.test 7cb55e80aeb41d65fec968c08212505123063fea60bdc355d764d747670e9eea
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 07416bd593a116d5893cb244f45a94d5c6fe030561df3bd972e6135f8106e509
@@ -1707,7 +1707,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a983fa857048c748112c2f805f13aadeae43b43b3d27fa55433a3699b51c9a0e
-R 1433684d91ba65f3b7614e9fa9c71d0a
+P 7b3a75519aa72a6b49a125ee84946ba2c0722dd6644ee0c80ba567eb85daf5c9
+R 54e3679053cfb34f03d5fc5a51c25e95
 U mistachkin
-Z b329981237c7dadda32eba65e163ae21
+Z 67d82893997d32bf8b3a9fa69332f798
