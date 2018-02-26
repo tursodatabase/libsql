@@ -105,7 +105,8 @@ typedef unsigned long u32;
 ** SQLITE_HAVE_ZONEFILE_CODEC defined.
 */
 typedef struct ZonefileCodec ZonefileCodec;
-static int zonefileCodecCreate(int,unsigned char*,int,ZonefileCodec**,char**);
+static int zonefileCodecCreate(
+    int,int,unsigned char*,int,ZonefileCodec**,char**);
 static int zonefileCodecNonceSize(ZonefileCodec*);
 static void zonefileCodecEncode(ZonefileCodec*, unsigned char*, int);
 static void zonefileCodecDecode(ZonefileCodec*, unsigned char*, int);
@@ -116,6 +117,7 @@ typedef struct ZonefileCodec ZonefileCodec;
 
 struct ZonefileCodec {
   u8 aKey[16];
+  int bEncrypt;                   /* Second parameter passed to Create() */
 };
 
 /* Create a new encryption module instance using algorithm iAlg.
@@ -133,6 +135,7 @@ struct ZonefileCodec {
 */
 static int zonefileCodecCreate(
   int iAlg, 
+  int bEncrypt,                   /* True for encryption, zero for decryption */
   unsigned char *pKey, int nKey, 
   ZonefileCodec **pp, 
   char **pzErr
@@ -152,6 +155,7 @@ static int zonefileCodecCreate(
       for(i=0; i<sizeof(pRet->aKey); i++){
         pRet->aKey[i] = pKey[i % nKey];
       }
+      pRet->bEncrypt = bEncrypt;
     }
   }
 
@@ -176,6 +180,7 @@ static void zonefileCodecEncode(
 ){
   int i;
   u8 *aNonce = &pIn[nIn];
+  assert( pCodec->bEncrypt );
   sqlite3_randomness(16, aNonce);
   for(i=0; i<nIn; i++){
     pIn[i] = pIn[i] ^ aNonce[i%16] ^ pCodec->aKey[i%16];
@@ -193,6 +198,7 @@ static void zonefileCodecDecode(
 ){
   int i;
   u8 *aNonce = &pIn[nIn-16];
+  assert( pCodec->bEncrypt==0 );
   for(i=0; i<nIn-16; i++){
     pIn[i] = pIn[i] ^ aNonce[i%16] ^ pCodec->aKey[i%16];
   }
@@ -1124,7 +1130,7 @@ static void zonefileWriteFunc(
   if( sParam.encryptionType!=0 ){
     int n = strlen(sParam.encryptionKey);
     rc = zonefileCodecCreate(
-        sParam.encryptionType, (u8*)sParam.encryptionKey, n, &pCodec, &zErr
+        sParam.encryptionType, 1, (u8*)sParam.encryptionKey, n, &pCodec, &zErr
     );
     if( rc!=SQLITE_OK ){
       if( zErr ){
@@ -2585,7 +2591,7 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
         zErr = sqlite3_mprintf("missing encryption key for file \"%s\"", zFile);
         rc = SQLITE_ERROR;
       }else{
-        rc = zonefileCodecCreate(hdr.encryptionType, (u8*)z, n, &pCodec, &zErr);
+        rc = zonefileCodecCreate(hdr.encryptionType, 0, (u8*)z,n,&pCodec,&zErr);
       }
     }
 

@@ -627,5 +627,11 @@ foreach id {1 2 3 2 3 1} {
   incr i
 }
 
+if {[file exists /dev/null]} {
+  do_catchsql_test 11.2 {
+    INSERT INTO nm_files(filename) VALUES('/dev/null');
+  } {1 {failed to read zonefile header from file "/dev/null"}}
+}
+
 finish_test
 
