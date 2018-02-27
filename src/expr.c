@@ -1734,8 +1734,8 @@ int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
 
 /*
 ** If the input expression is an ID with the name "true" or "false"
-** then convert it into an appropriate TK_TRUEFALSE term.  Return true
-** if a conversion occurred, and false if the expression is unaltered.
+** then convert it into an TK_TRUEFALSE term.  Return non-zero if
+** the conversion happened, and zero if the expression is unaltered.
 */
 int sqlite3ExprIdToTrueFalse(Expr *pExpr){
   assert( pExpr->op==TK_ID || pExpr->op==TK_STRING );
@@ -1749,10 +1749,10 @@ int sqlite3ExprIdToTrueFalse(Expr *pExpr){
 }
 
 /*
-** The argument is one of a TK_TRUEFALSE term.  Return 1 if it is TRUE
+** The argument must be a TK_TRUEFALSE Expr node.  Return 1 if it is TRUE
 ** and 0 if it is FALSE.
 */
-int sqlite3ExprTruthOperand(const Expr *pExpr){
+int sqlite3ExprTruthValue(const Expr *pExpr){
   assert( pExpr->op==TK_TRUEFALSE );
   assert( sqlite3StrICmp(pExpr->u.zToken,"true")==0
        || sqlite3StrICmp(pExpr->u.zToken,"false")==0 );
@@ -3578,7 +3578,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       return target;
     }
     case TK_TRUEFALSE: {
-      sqlite3VdbeAddOp2(v, OP_Integer, sqlite3ExprTruthOperand(pExpr), target);
+      sqlite3VdbeAddOp2(v, OP_Integer, sqlite3ExprTruthValue(pExpr), target);
       return target;
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -3737,12 +3737,15 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_TRUTH: {
-      int isTrue;
+      int isTrue;    /* IS TRUE or IS NOT TRUE */
+      int bNormal;   /* IS TRUE or IS FALSE */
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
-      isTrue = sqlite3ExprTruthOperand(pExpr->pRight);
-      sqlite3VdbeAddOp4Int(v, OP_IsTrue, r1, inReg, !isTrue,
-                           isTrue ^ (pExpr->op2==TK_IS));
+      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      bNormal = pExpr->op2==TK_IS;
+      testcase( isTrue && bNormal);
+      testcase( !isTrue && bNormal);
+      sqlite3VdbeAddOp4Int(v, OP_IsTrue, r1, inReg, !isTrue, isTrue ^ bNormal);
       break;
     }
     case TK_ISNULL:
@@ -4521,13 +4524,13 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_TRUTH: {
-      int isNot;
-      int isTrue;
+      int isNot;      /* IS NOT TRUE or IS NOT FALSE */
+      int isTrue;     /* IS TRUE or IS NOT TRUE */
       testcase( jumpIfNull==0 );
       isNot = pExpr->op2==TK_ISNOT;
-      isTrue = sqlite3ExprTruthOperand(pExpr->pRight);
+      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
       testcase( isTrue && isNot );
-      testcase( isTrue && !isNot );
+      testcase( !isTrue && isNot );
       if( isTrue ^ isNot ){
         sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest,
                           isNot ? SQLITE_JUMPIFNULL : 0);
@@ -4692,14 +4695,13 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_TRUTH: {
-      int isNot;
-      int isTrue;
+      int isNot;   /* IS NOT TRUE or IS NOT FALSE */
+      int isTrue;  /* IS TRUE or IS NOT TRUE */
       testcase( jumpIfNull==0 );
-      assert( pExpr->op2==TK_IS || pExpr->op2==TK_ISNOT );
       isNot = pExpr->op2==TK_ISNOT;
-      isTrue = sqlite3ExprTruthOperand(pExpr->pRight);
+      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
       testcase( isTrue && isNot );
-      testcase( isTrue && !isNot );
+      testcase( !isTrue && isNot );
       if( isTrue ^ isNot ){
         /* IS TRUE and IS NOT FALSE */
         sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest,
@@ -4708,7 +4710,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       }else{
         /* IS FALSE and IS NOT TRUE */
         sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest,
-                          isNot ? 0: SQLITE_JUMPIFNULL);
+                          isNot ? 0 : SQLITE_JUMPIFNULL);
       }
       break;
     }

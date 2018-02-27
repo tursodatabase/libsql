@@ -3840,7 +3840,7 @@ void sqlite3Savepoint(Parse*, int, Token*);
 void sqlite3CloseSavepoints(sqlite3 *);
 void sqlite3LeaveMutexAndCloseZombie(sqlite3*);
 int sqlite3ExprIdToTrueFalse(Expr*);
-int sqlite3ExprTruthOperand(const Expr*);
+int sqlite3ExprTruthValue(const Expr*);
 int sqlite3ExprIsConstant(Expr*);
 int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);

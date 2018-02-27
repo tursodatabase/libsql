@@ -294,7 +294,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
     case TK_TRUEFALSE: {
       sqlite3TreeViewLine(pView,
-         sqlite3ExprTruthOperand(pExpr) ? "TRUE" : "FALSE");
+         sqlite3ExprTruthValue(pExpr) ? "TRUE" : "FALSE");
       break;
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
@@ -361,7 +361,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       assert( pExpr->op2==TK_IS || pExpr->op2==TK_ISNOT );
       assert( pExpr->pRight );
       assert( pExpr->pRight->op==TK_TRUEFALSE );
-      x = (pExpr->op2==TK_ISNOT)*2 + sqlite3ExprTruthOperand(pExpr->pRight);
+      x = (pExpr->op2==TK_ISNOT)*2 + sqlite3ExprTruthValue(pExpr->pRight);
       zUniOp = azOp[x];
       break;
     }
