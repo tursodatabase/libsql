@@ -1,5 +1,5 @@
-C Enhance\stest\s'zonefile1-6.5'\sto\saccount\sfor\splatform\sdifferences.
-D 2018-02-27T15:47:41.523
+C Rationalize\ssome\scode\sin\szonefile.c.\sFix\sother\sminor\sissues\sin\sthe\ssame.
+D 2018-02-27T19:50:28.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -408,9 +408,9 @@ F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
-F ext/zonefile/README.md 5beb84b8f8326d23319003d57d88be88759fdc3296071a2c5f13c0209703738a
-F ext/zonefile/zonefile.c b83136e629c6768e9ff06bb37ae7d102b5b267f8ff5d9481bd65dc87d7f2d483
-F ext/zonefile/zonefile1.test 4bf76f5ad4d818576cdd97f436226bb83bf743fbbd677911645d875892ec5108
+F ext/zonefile/README.md dcf953e519a153e10e6b75aafa44d2865666b66b1c6d152d85d6c0618255d304
+F ext/zonefile/zonefile.c ce917d60a62c8e384087954f482ab703b75a0660385e7a685bcafc0cff1c3038
+F ext/zonefile/zonefile1.test 3719e1d069064f4e12e915f8d9f6256c769b1582258b3997e0492076a01d5f36
 F ext/zonefile/zonefileenc.test e8624853ac224bfdeab8d2a231796499c3032e2a8bb1d2208f52fddf9507e38f
 F ext/zonefile/zonefilefault.test 6df281fc1ec7859d4ae2a3133d8783184a263edf6d081218958b6ae86b22ee13
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55de6f14d49342394397c0dc29c1e98c927ef99d57ec1f71c79099f584be20d1
-R fc611854e763802d1a0d828294c3f825
-U mistachkin
-Z 6a6ffe92b9cb183673ef4c86cb11d527
+P 8b6178403fb6a7f87502c42026caf3da1c355b2ed9e780b347f4a05d7ffc1e18
+R c87480dddaa8bbeda004ab3a9673ad61
+U dan
+Z 889fdff2d5ef75d6ead6cee236eee7c1

@@ -250,7 +250,7 @@ do_execsql_test 3.3 {
 close [open test.zonefile w+]
 do_catchsql_test 3.4 {
   SELECT header FROM cc_files
-} {1 {failed to read header from file: "test.zonefile"}}
+} {1 {failed to read zonefile header from file "test.zonefile"}}
 
 forcedelete test.zonefile
 do_catchsql_test 3.5 {

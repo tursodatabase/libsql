@@ -55,7 +55,14 @@ except for "zstd_global_dict", are also valid for this option.
 <tr valign=top><td>encryptionType<td>"none"
 <td>The encryption type to use. At present the only valid values are
 "none" (no encryption) and "xor" (an insecure mock encryption method
-useful for testing only).
+useful for testing only). Enhanced implementations may support any or
+all of the following encryption schemes:
+<ul>
+  <li> "AES_128_CTR"
+  <li> "AES_128_CBC"
+  <li> "AES_256_CTR"
+  <li> "AES_256_CBC"
+</ul>
 
 <tr valign=top><td>encryptionKey<td>""
 <td>The encryption key to use. The encryption key must be specified as an
@@ -89,7 +96,7 @@ named "z1", with a schema equivalent to:
 >     CREATE TABLE z1(  -- this whole table is read-only
 >       k INTEGER PRIMARY KEY,     -- key value
 >       v BLOB,                    -- associated blob of data
->       file TEXT,                 -- file this key is read from 
+>       fileid INTEGER,            -- file id (rowid value for z1_files)
 >       sz INTEGER                 -- size of blob of data in bytes
 >     );
 
@@ -98,7 +105,6 @@ And a read-write table named "z1_files" with a schema like:
 >     CREATE TABLE z1_files(
 >       filename TEXT PRIMARY KEY,
 >       ekey BLOB,         -- encryption key
->       fileid INTEGER,    -- read-only
 >       header JSON HIDDEN -- read-only
 >     );
 
