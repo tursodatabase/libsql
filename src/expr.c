@@ -1809,7 +1809,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
     case TK_ID:
       /* Convert "true" or "false" in a DEFAULT clause into the
       ** appropriate TK_TRUEFALSE operator */
-      if( pWalker->eCode>=4 && sqlite3ExprIdToTrueFalse(pExpr) ){
+      if( sqlite3ExprIdToTrueFalse(pExpr) ){
         return WRC_Prune;
       }
       /* Fall thru */

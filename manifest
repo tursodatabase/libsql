@@ -1,5 +1,5 @@
-C Code\ssimplifications.\s\sNew\stest\scases.
-D 2018-02-26T21:26:27.326
+C Remove\san\sunnecessary\sdecision.
+D 2018-02-27T00:58:13.219
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -441,7 +441,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 20c8788451dc737a967c87ea53ad43544d617f5b57d32ccce8bd52a0daf9e89b
-F src/expr.c ee29e9c2af181dd8fe4476f7e983aa13aa1634d00dd955a90ffbeb4732d7bc39
+F src/expr.c 03975fff227cd24b17e86b5bcc64e0fb9deecccd1b50d23c5f1f8a6852b99064
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 94f42cba2cc1c34aeaa441022ba0170ec3fec4bba54db4e0ded085c6dc0fdc51
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8002f87d96b3f885cd208e7d204907a33ba60c4057ce2338b71e2de41215b0e5
-R 5cfd707edda06e1acf2e2d72bf60da27
+P 57508518ef9d003d259ba98dcc32e5104aca26731a7161808741fe10bc0830d0
+R 8ef9da63ad321cc3596e92a715293098
 U drh
-Z d672c3ecc0520c79d23db3920b6bc66e
+Z 8fed3cfabeba6ea8fc4880d89a25745b
