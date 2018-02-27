@@ -313,6 +313,8 @@ ccons ::= DEFAULT MINUS(A) term(X) scanpt(Z).      {
 }
 ccons ::= DEFAULT scanpt id(X).       {
   Expr *p = tokenExpr(pParse, TK_STRING, X);
+  sqlite3ExprIdToTrueFalse(p);
+  testcase( p->op==TK_TRUEFALSE && sqlite3ExprTruthValue(p) );
   sqlite3AddDefaultValue(pParse,p,X.z,X.z+X.n);
 }
 
