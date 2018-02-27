@@ -17,97 +17,137 @@ if {![info exists testdir]} {
 }
 source [file join $testdir tester.tcl]
 set testprefix zonefileenc
-load_static_extension db zonefile
 
-set K {
-  braking bramble brambles brambly
-  bran branch branched branches
-  branching branchings brand branded
-}
 
-set nFile 100
-
-do_execsql_test 1.0 {
-  CREATE TABLE zz(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
-  CREATE TABLE rr(k INTEGER PRIMARY KEY, v);
-}
-do_test 1.1 {
-  for {set i 0} {$i < $nFile} {incr i} {
-    set k [lindex $K [expr $i % [llength $K]]]
-    execsql {
-      DELETE FROM zz;
-      INSERT INTO zz VALUES($i*10+1, 1, -1, randomblob(100));
-      INSERT INTO zz VALUES($i*10+2, 2, -1, randomblob(100));
-      INSERT INTO zz VALUES($i*10+3, 1, -1, randomblob(100));
-      INSERT INTO rr SELECT k,v FROM zz;
-
-      WITH p(n,v) AS (
-          VALUES('encryptionType', 'xor') UNION ALL
-          VALUES('encryptionKey', $k)
-      )
-      SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
-        json_group_object(n, v)
-      ) FROM p;
+foreach {tn code} {
+  1 { 
+    set K {
+      braking bramble brambles brambly
+      bran branch branched branches
+      branching branchings brand branded
     }
+    set textkey 1
   }
-} {}
+  2 {
+    set K {
+      5e008542742ce0442e37cbf2512e9492    c91c26e0573ca3464e037568c51126da
+      e90e17489c1aef80ac620c9059271a5a    163338707cbe4c72b18d1058a42c5c78
+      5c6b1e7c7c9e8e4a8d8fdc30dfc11bea    ff1012687828ecaac6c9ca86ea0f895e
+      a203f25eb11d4c6afa841dfcf7cd0be0    b6c71e38ca914c460926ef90db39dba0
+      b38255d031d026c258a0a41a9a75d46a    adccca5e5ffa3a7625144a345713aef0
+      cd423b38b73e42ce5894405e6d0e08c0    b460ad2e370a0386726d6ea46e7b0bac
+      503b81de72cb3ef87d9346a850040000    369c290a464a6b88bfd9d1c4755afd42
+      a8a9343efca528f2bf23a972be49dd66    e366b5226bfe3fd0010fa814aae3b996
+      4cad7e80124c2cd447131bae377e60f6    4a0fd2f054e1b08cad0de2dc6aa93246
+      8a23c85e3337da2c97d498f806870fa8    8d14e1f055fd9bec7d07cf0e8baae042
+      7f6954b0dc373028ab3b030aaf44dd58    d220164c3898435a946de6bcbb478cc4
+      566af7ea88ba4ff87fd868e858cf98ea    a5405832235e8f601516f9c49767bdac
+      1bd5b4dc6b54e5ca92ba67d20bf65740    59da30e203bf73840e38e108b83ddb82
+      e516924c2cdf3114f10f2f0e1bdabbc6    b55dd27222a39764222838007e749984
+      190ae9f81b86a5a024e3b97ee2a7121c    469660843a9a9e507d0fb43e92029296
+      e6e600bc063aad12f6387beef650c48a    3097be5c3a52a2f00747587add01b550
+    }
+    set textkey 0
+  }
+} {
+  reset_db
+  load_static_extension db zonefile
+  set nFile 100
+  eval $code
 
-proc k {i} { lindex $::K [expr $i % [llength $::K]] }
-db func k k
-
-do_execsql_test 1.2 {
-  CREATE VIRTUAL TABLE gg USING zonefile;
-}
-for {set i 0} {$i < $nFile} {incr i} {
-  do_execsql_test 1.2.$i { 
-    INSERT INTO gg_files(filename, ekey) 
-    VALUES('test' || $i || '.zonefile', k($i));
+  do_execsql_test 1.$tn.0 {
+    CREATE TABLE zz(k INTEGER PRIMARY KEY, frame INTEGER, idx INTEGER, v BLOB);
+    CREATE TABLE rr(k INTEGER PRIMARY KEY, v);
+  }
+  do_test 1.$tn.1 {
+    for {set i 0} {$i < $nFile} {incr i} {
+      set k [lindex $K [expr $i % [llength $K]]]
+      execsql {
+        DELETE FROM zz;
+        INSERT INTO zz VALUES($i*10+1, 1, -1, randomblob(100));
+        INSERT INTO zz VALUES($i*10+2, 2, -1, randomblob(100));
+        INSERT INTO zz VALUES($i*10+3, 1, -1, randomblob(100));
+        INSERT INTO rr SELECT k,v FROM zz;
+  
+        WITH p(n,v) AS (
+            VALUES('encryptionType', 'xor') UNION ALL
+            VALUES('debugEncryptionKeyText', $textkey) UNION ALL
+            VALUES('encryptionKey', $k)
+        )
+        SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
+            json_group_object(n, v)
+        ) FROM p;
+      }
+    }
+  } {}
+  
+  proc k {i} { 
+    set val [lindex $::K [expr $i % [llength $::K]]]
+    if {$::textkey==0} {
+      return [binary decode hex $val]
+    }
+    return $val
+  }
+  db func k k
+  
+  do_execsql_test 1.$tn.2 {
+    CREATE VIRTUAL TABLE gg USING zonefile;
+  }
+  for {set i 0} {$i < $nFile} {incr i} {
+    do_execsql_test 1.$tn.2.$i { 
+      INSERT INTO gg_files(filename, ekey) 
+        VALUES('test' || $i || '.zonefile', k($i));
+      SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+    } 0
+  }
+  
+  db close
+  sqlite3 db test.db
+  load_static_extension db zonefile
+  db func k k
+  
+  do_catchsql_test 1.$tn.3 {
     SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
-  } 0
+  } {1 {missing encryption key for file "test0.zonefile"}}
+  do_execsql_test 1.$tn.4 {
+    UPDATE gg_files SET ekey = k(0) WHERE filename='test0.zonefile';
+  }
+  do_execsql_test 1.$tn.4.2 {
+    SELECT count(*) FROM rr JOIN gg USING(k) 
+      WHERE rr.v==gg.v AND k IN (1,2,3);
+  } {3}
+  do_catchsql_test 1.5 {
+    SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+  } {1 {missing encryption key for file "test1.zonefile"}}
+  
+  do_execsql_test 1.$tn.6 {
+    UPDATE gg_files SET ekey = k(rowid-1);
+  }
+  do_execsql_test 1.$tn.7 {
+    SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
+  } {0}
+  do_execsql_test 1.$tn.8 {
+    SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
+  } {300}
+  
+  forcedelete test.db2
+  do_execsql_test 1.$tn.9.1 {
+    ATTACH 'test.db2' AS maing;
+    CREATE VIRTUAL TABLE maing.g USING zonefile;
+    INSERT INTO g_files(filename) SELECT filename FROM gg_files;
+  }
+  do_catchsql_test 1.$tn.9.2 {
+    SELECT count(*) FROM rr JOIN g USING(k) WHERE rr.v!=g.v;
+  } {1 {missing encryption key for file "test0.zonefile"}}
+  do_execsql_test 1.$tn.9.3 {
+    UPDATE g_files SET ekey = k(rowid-1);
+    SELECT count(*) FROM rr JOIN g USING(k) WHERE rr.v==g.v;
+  } {300}
+  
+  do_execsql_test 1.$tn.10 {
+    SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
+  } {300}
 }
-
-db close
-sqlite3 db test.db
-load_static_extension db zonefile
-db func k k
-
-do_catchsql_test 1.3 {
-  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
-} {1 {missing encryption key for file "test0.zonefile"}}
-do_execsql_test 1.4 {
-  UPDATE gg_files SET ekey = 'braking' WHERE filename='test0.zonefile';
-}
-do_catchsql_test 1.5 {
-  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
-} {1 {missing encryption key for file "test1.zonefile"}}
-
-do_execsql_test 1.6 {
-  UPDATE gg_files SET ekey = k(rowid-1);
-}
-do_execsql_test 1.7 {
-  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v!=gg.v;
-} {0}
-do_execsql_test 1.8 {
-  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
-} {300}
-
-forcedelete test.db2
-do_execsql_test 1.9.1 {
-  ATTACH 'test.db2' AS maing;
-  CREATE VIRTUAL TABLE maing.g USING zonefile;
-  INSERT INTO g_files(filename) SELECT filename FROM gg_files;
-}
-do_catchsql_test 1.9.2 {
-  SELECT count(*) FROM rr JOIN g USING(k) WHERE rr.v!=g.v;
-} {1 {missing encryption key for file "test0.zonefile"}}
-do_execsql_test 1.9.3 {
-  UPDATE g_files SET ekey = k(rowid-1);
-  SELECT count(*) FROM rr JOIN g USING(k) WHERE rr.v==g.v;
-} {300}
-
-do_execsql_test 1.10 {
-  SELECT count(*) FROM rr JOIN gg USING(k) WHERE rr.v==gg.v;
-} {300}
 #-------------------------------------------------------------------------
 
 reset_db
@@ -125,10 +165,11 @@ foreach {tn alg id} {
   do_catchsql_test 2.1.$tn {
     WITH p(n,v) AS (
         VALUES('encryptionType', $alg) UNION ALL
+        VALUES('debugEncryptionKeyText', 1) UNION ALL
         VALUES('encryptionKey', 'secret')
     )
     SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
-          json_group_object(n, v)
+        json_group_object(n, v)
     ) FROM p;
   } "1 {unsupported encryption method: $id}"
 }
@@ -139,10 +180,11 @@ foreach {tn alg} {
   do_catchsql_test 2.1.$tn {
     WITH p(n,v) AS (
         VALUES('encryptionType', $alg) UNION ALL
+        VALUES('debugEncryptionKeyText', 1) UNION ALL
         VALUES('encryptionKey', 'secret')
     )
     SELECT zonefile_write('test' || $i || '.zonefile', 'zz', 
-          json_group_object(n, v)
+        json_group_object(n, v)
     ) FROM p;
   } "1 {unknown encryption method: $alg}"
 }
@@ -155,19 +197,19 @@ foreach {tn alg} {
 #
 proc hash {zDb zTab iFile} {
   binary scan $zDb c*  A
-  binary scan $zTab c* B
-  set h 0
-  foreach i $A { set h [expr ($h + ($h << 3) + $i) & 0xFFFFFFFF] }
+    binary scan $zTab c* B
+    set h 0
+    foreach i $A { set h [expr ($h + ($h << 3) + $i) & 0xFFFFFFFF] }
   foreach i $B { set h [expr ($h + ($h << 3) + $i) & 0xFFFFFFFF] }
   return [expr $h ^ $iFile]
 }
 
 do_test 3.0 {
   set h1 [expr [hash main zone 1] % 512]
-  for {set i 0} {1} {incr i} {
-    set h2 [expr [hash "aux$i" zone 1] % 512]
-    if {$h1==$h2} break
-  }
+    for {set i 0} {1} {incr i} {
+      set h2 [expr [hash "aux$i" zone 1] % 512]
+        if {$h1==$h2} break
+    }
   set i
 } 52
 
@@ -180,6 +222,7 @@ do_execsql_test 3.1 {
   INSERT INTO zz VALUES(222, -1, -1, randomblob(60));
   WITH p(n,v) AS (
       VALUES('encryptionType', 'xor') UNION ALL
+      VALUES('debugEncryptionKeyText', 1) UNION ALL
       VALUES('encryptionKey', 'pass')
   )
   SELECT zonefile_write('test1.zonefile', 'zz', 
@@ -190,6 +233,7 @@ do_execsql_test 3.1 {
   INSERT INTO zz VALUES(333, -1, -1, randomblob(80));
   WITH p(n,v) AS (
       VALUES('encryptionType', 'xor') UNION ALL
+      VALUES('debugEncryptionKeyText', 1) UNION ALL
       VALUES('encryptionKey', 'pass')
   )
   SELECT zonefile_write('test2.zonefile', 'zz', 

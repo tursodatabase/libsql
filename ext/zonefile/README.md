@@ -58,16 +58,23 @@ except for "zstd_global_dict", are also valid for this option.
 useful for testing only).
 
 <tr valign=top><td>encryptionKey<td>""
-<td>The encryption key (a string) to use. The value of this option is
-ignored if <i>encryptionType</i> is set to "none".
+<td>The encryption key to use. The encryption key must be specified as an
+even number of hexadecimal that will be converted to a binary key before
+use. It is the responsibility of the caller to specify a key of the optimal
+length for each encryption algorithm (e.g. 16 bytes (32 hex digits) for
+a 128-bit encryption, or 32 bytes (64 digits) for a 256-bit method).
+This option is ignored if <i>encryptionType</i> is set to "none".
 </table>
 
 For example, to create a zonefile named "test.zonefile" based on the
-contents of database table "test_input" and with a maximum automatic
-frame size of 4096 bytes:
+contents of database table "test_input", with a maximum automatic
+frame size of 4096 bytes and using "xor" encryption with a 128-bit key:
 
 >     SELECT zonefile_write('test.zonefile', 'test_input',
->       '{"maxAutoFrameSize":4096}'
+>       '{"maxAutoFrameSize":4096,
+>         "encryptionType":"xor",
+>         "encryptionKey":"e6e600bc063aad12f6387beab650c48a"
+>       }'
 >     );
 
 ### Using (Reading) Zonefile Files
@@ -100,9 +107,21 @@ row into the "z1_files" table:
 
 >     INSERT INTO z1_files(filename) VALUES(<filename>);
 
-Currently, any value provided for any column other than "filename" is 
-ignored. Files are removed from the index by deleting rows from the
-z1_files table:
+If the file is an encrypted file, then the encryption key (a blob) must
+be inserted into the "ekey" column. Encryption keys are not stored in the
+database, they are held in main-memory only. This means that each new
+connection must configure encryption key using UPDATE statements before
+accessing any encrypted files. For example:
+
+>     -- Add new encrypted file to database:
+>     INSERT INTO z1_files(filename, ekey) VALUES(<filename>, <ekey>);
+>
+>     -- Configure encryption key for existing file after opening database:
+>     UPDATE z1_files SET ekey = <ekey> WHERE filename = <filename>;
+
+Currently, values provided for any columns other than "filename" and
+"ekey" are ignored. Files are removed from the index by deleting rows 
+from the z1_files table:
 
 >     DELETE FROM z1_files WHERE filename = <filename>;
 

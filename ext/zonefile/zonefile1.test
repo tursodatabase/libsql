@@ -220,6 +220,7 @@ do_execsql_test 3.0 {
   WITH p(n,v) AS (
       VALUES('maxAutoFrameSize', 2000) UNION ALL
       VALUES('encryptionType', 'xor') UNION ALL
+      VALUES('debugEncryptionKeyText', 1) UNION ALL
       VALUES('encryptionKey', '0123456789')
   )
   SELECT zonefile_write('test.zonefile', 'dd', json_group_object(n, v)) FROM p;
@@ -612,7 +613,7 @@ do_execsql_test 11.0 {
   INSERT INTO data VALUES(2, 2, -1, randomblob(200));
   INSERT INTO data VALUES(3, 3, -1, randomblob(200));
   SELECT zonefile_write('test.zonefile', 'data',
-      '{"encryptionType":"xor","encryptionKey":"pass"}'
+  '{"encryptionType":"xor","encryptionKey":"pass","debugEncryptionKeyText":1}'
   );
 
   CREATE VIRTUAL TABLE nm USING zonefile(cachesize=2);

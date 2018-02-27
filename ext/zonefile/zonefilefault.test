@@ -34,7 +34,9 @@ do_faultsim_test 1.1 -faults oom* -prep {
 } -body {
   execsql {
     SELECT zonefile_write('test.zonefile', 'tt',
-        '{"encryptionType":"xor", "encryptionKey":"secret"}'
+        '{"encryptionType":"xor", "encryptionKey":"secret",
+          "debugEncryptionKeyText":1
+        }'
     );
   }
 } -test {
@@ -118,7 +120,9 @@ if {$HAVE_ZSTD} {
 #
 do_execsql_test 2.0 {
   SELECT zonefile_write('test.zonefile', 'tt',
-      '{"encryptionType":"xor", "encryptionKey":"secret"}'
+      '{"encryptionType":"xor", "encryptionKey":"secret",
+          "debugEncryptionKeyText":1
+      }'
   );
   CREATE VIRTUAL TABLE zz USING zonefile;
 } {{}}
@@ -205,11 +209,16 @@ do_faultsim_test 4.1 -faults oom* -prep {
 if {$HAVE_ZSTD} {
   set params {
       {"encryptionType":"xor","encryptionKey":"pass",
-       "compressionTypeContent":"zstd_global_dict"
+       "compressionTypeContent":"zstd_global_dict",
+          "debugEncryptionKeyText":1
       }
   }
 } else {
-  set params { {"encryptionType":"xor","encryptionKey":"pass" } }
+  set params { 
+      {"encryptionType":"xor","encryptionKey":"pass",
+          "debugEncryptionKeyText":1
+      }
+  }
 }
 do_execsql_test 4.2 {
   SELECT zonefile_write('test.zonefile', 'zz', $params);

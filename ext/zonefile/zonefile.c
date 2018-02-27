@@ -175,7 +175,7 @@ static int zonefileCodecNonceSize(ZonefileCodec *pCodec){
 ** sure to include the extra bytes.
 */
 static void zonefileCodecEncode(
-  ZonefileCodec *pCodec, 
+  ZonefileCodec *pCodec,
   unsigned char *pIn, int nIn
 ){
   int i;
@@ -229,7 +229,7 @@ struct ZonefileKey {
   const char *zName;              /* Zonefile table name */
   const char *zDb;                /* Database name ("main", "temp" etc.) */
   i64 iFileid;                    /* File id */
-  const char *zKey;               /* Key buffer */
+  const u8 *aKey;                 /* Key buffer */
   int nKey;                       /* Size of zKey in bytes */
   u32 iHash;                      /* zonefileKeyHash() value */
   ZonefileKey *pHashNext;         /* Next colliding key in hash table */
@@ -251,7 +251,7 @@ static u32 zonefileKeyHash(
 }
 
 /* 
-** Store encryption key zKey in the key-store passed as the first argument.
+** Store encryption key aKey in the key-store passed as the first argument.
 ** Return SQLITE_OK if successful, or an SQLite error code (SQLITE_NOMEM)
 ** otherwise.
 */
@@ -260,7 +260,8 @@ static int zonefileKeyStore(
   const char *zDb,                /* Database containing zonefile table */
   const char *zTab,               /* Name of zonefile table */
   i64 iFileid,                    /* File-id to configure key for */
-  const char *zKey                /* Key to store */
+  const u8 *aKey,                 /* Key to store */
+  int nKey                        /* Size of aKey[] in bytes */
 ){
   ZonefileKey **pp;
   u32 iHash = zonefileKeyHash(zDb, zTab, iFileid);
@@ -281,8 +282,7 @@ static int zonefileKeyStore(
     }
   }
 
-  if( zKey ){
-    int nKey = strlen(zKey);
+  if( aKey ){
     int nDb = strlen(zDb);
     int nTab = strlen(zTab);
     ZonefileKey *pNew;
@@ -315,11 +315,11 @@ static int zonefileKeyStore(
     memset(pNew, 0, sizeof(ZonefileKey));
     pNew->iFileid = iFileid;
     pNew->iHash = iHash;
-    pNew->zKey = (const char*)&pNew[1];
+    pNew->aKey = (const u8*)&pNew[1];
     pNew->nKey = nKey;
-    pNew->zDb = &pNew->zKey[nKey+1];
+    pNew->zDb = (const char*)&pNew->aKey[nKey+1];
     pNew->zName = &pNew->zDb[nDb+1];
-    memcpy((char*)pNew->zKey, zKey, nKey+1);
+    memcpy((u8*)pNew->aKey, aKey, nKey+1);
     memcpy((char*)pNew->zDb, zDb, nDb+1);
     memcpy((char*)pNew->zName, zTab, nTab+1);
 
@@ -345,7 +345,7 @@ static int zonefileKeyFind(
   const char *zDb,                /* Database containing zonefile table */
   const char *zTab,               /* Name of zonefile table */
   i64 iFileid,                    /* File-id to configure key for */
-  const char **pzKey              /* OUT: Pointer to key buffer */
+  const u8 **paKey                /* OUT: Pointer to key buffer */
 ){
   if( pGlobal->nHash ){
     ZonefileKey *pKey;
@@ -355,7 +355,7 @@ static int zonefileKeyFind(
        && 0==sqlite3_stricmp(zTab, pKey->zName)
        && 0==sqlite3_stricmp(zDb, pKey->zDb)
       ){
-        *pzKey = pKey->zKey;
+        *paKey = pKey->aKey;
         return pKey->nKey;
       }
     }
@@ -737,6 +737,7 @@ struct ZonefileParam {
   int encryptionType;
   int maxAutoFrameSize;
   int debugExtendedHeaderSize;    /* Size of extended header */
+  int debugEncryptionKeyText;     /* True to allow text keys */
   char *encryptionKey;            /* Encryption key */
 };
 
@@ -849,16 +850,21 @@ int zonefileIsAutoFrame(sqlite3_value *pFrame){
   );
 }
 
+#define SQLITE_ZONEFILE_AES_128_CTR 1
+#define SQLITE_ZONEFILE_AES_128_CBC 2
+#define SQLITE_ZONEFILE_AES_256_CTR 3
+#define SQLITE_ZONEFILE_AES_256_CBC 4
+
 static int zonefileEncryption(const char *zName, int *peType, char **pzErr){
   struct Encryption {
     const char *zName;
     int eType;
   } a[] = {
     {"NONE", 0}, 
-    {"AES_128_CTR", 1}, 
-    {"AES_128_CBC", 2}, 
-    {"AES_256_CTR", 3}, 
-    {"AES_256_CBC", 4}, 
+    {"AES_128_CTR", SQLITE_ZONEFILE_AES_128_CTR}, 
+    {"AES_128_CBC", SQLITE_ZONEFILE_AES_128_CBC}, 
+    {"AES_256_CTR", SQLITE_ZONEFILE_AES_256_CTR}, 
+    {"AES_256_CBC", SQLITE_ZONEFILE_AES_256_CBC}, 
     {"XOR",         5}, 
   };
   int i;
@@ -905,6 +911,9 @@ static int zonefileGetParams(
         rc = SQLITE_ERROR;
       }
       p->debugExtendedHeaderSize = iVal;
+    }else
+    if( sqlite3_stricmp("debugEncryptionKeyText", zKey)==0 ){
+      p->debugEncryptionKeyText = iVal;
     }else
     if( sqlite3_stricmp("maxAutoFrameSize", zKey)==0 ){
       p->maxAutoFrameSize = iVal;
@@ -1086,6 +1095,34 @@ static int zonefilePad(FILE *pFd, int nByte){
   return SQLITE_OK;
 }
 
+static int zonefileHexChar(char c){
+  if( c>='0' && c<='9' ) return c-'0';
+  c = c & ~0x20;
+  if( c>='A' && c<='F' ) return c-('A'-10);
+  return -1;
+}
+
+static int zonefileDecodeEncryptionKey(ZonefileParam *p, int *pn, char **pzErr){
+  if( p->debugEncryptionKeyText==0 ){
+    u8 *z = (u8*)p->encryptionKey;
+    int n = *pn;
+    int i;
+    if( n&0x01 ) goto bad_format;
+    for(i=0; i<n; i+=2){
+      int a = zonefileHexChar(z[i]);
+      int b = zonefileHexChar(z[i+1]);
+      if( a<0 || b<0 ) goto bad_format;
+      z[i/2] = (u8)(a<<4) + (u8)b;
+    }
+    *pn = n/2;
+  }
+  return SQLITE_OK;
+
+ bad_format:
+  *pzErr = sqlite3_mprintf("badly formatted hex string");
+  return SQLITE_ERROR;
+}
+
 /*
 ** Function:     zonefile_write(F,T[,J])
 */
@@ -1129,9 +1166,12 @@ static void zonefileWriteFunc(
 
   if( sParam.encryptionType!=0 ){
     int n = strlen(sParam.encryptionKey);
-    rc = zonefileCodecCreate(
-        sParam.encryptionType, 1, (u8*)sParam.encryptionKey, n, &pCodec, &zErr
-    );
+    rc = zonefileDecodeEncryptionKey(&sParam, &n, &zErr);
+    if( rc==SQLITE_OK ){
+      rc = zonefileCodecCreate(sParam.encryptionType, 
+          1, (u8*)sParam.encryptionKey, n, &pCodec, &zErr
+      );
+    }
     if( rc!=SQLITE_OK ){
       if( zErr ){
         sqlite3_result_error(pCtx, zErr, -1);
@@ -1853,15 +1893,12 @@ static int zffUpdate(
   sqlite_int64 *pRowid
 ){
   int rc = SQLITE_OK;
+  int bUpdateKey = 0;
   ZonefileFilesTab *pTab = (ZonefileFilesTab*)pVtab;
 
   if( sqlite3_value_type(apVal[0])==SQLITE_INTEGER ){
     if( nVal>1 && sqlite3_value_nochange(apVal[2]) ){
-      const char *zKey = (const char*)sqlite3_value_text(apVal[3]);
-      i64 iFileid = sqlite3_value_int64(apVal[0]);
-      return zonefileKeyStore(
-          pTab->pGlobal, pTab->zDb, pTab->zBase, iFileid, zKey
-      );
+      bUpdateKey = 1;
     }else{
       if( pTab->pDelete==0 ){
         rc = zonefilePrepare(pTab->db, &pTab->pDelete, &pVtab->zErrMsg,
@@ -1890,32 +1927,39 @@ static int zffUpdate(
   }
   if( nVal>1 ){
     i64 iFileid = 0;
-    const char *zFile = (const char*)sqlite3_value_text(apVal[2]);
+    if( bUpdateKey ){
+      iFileid = sqlite3_value_int64(apVal[0]);
+    }else{
+      const char *zFile = (const char*)sqlite3_value_text(apVal[2]);
 
-    if( pTab->pInsert==0 ){
-      rc = zonefilePrepare(pTab->db, &pTab->pInsert, &pVtab->zErrMsg,
-          "INSERT INTO %Q.'%q_shadow_file'(filename) VALUES(?)",
-          pTab->zDb, pTab->zBase
+      if( pTab->pInsert==0 ){
+        rc = zonefilePrepare(pTab->db, &pTab->pInsert, &pVtab->zErrMsg,
+            "INSERT INTO %Q.'%q_shadow_file'(filename) VALUES(?)",
+            pTab->zDb, pTab->zBase
+        );
+      }
+
+      /* Add the new entry to the %_shadow_file table. */
+      if( rc==SQLITE_OK ){
+        sqlite3_bind_text(pTab->pInsert, 1, zFile, -1, SQLITE_TRANSIENT);
+        sqlite3_step(pTab->pInsert);
+        rc = sqlite3_reset(pTab->pInsert);
+      }
+
+      /* Populate the %_shadow_idx table with entries for all keys in
+      ** the zonefile just added to %_shadow_file.  */
+      if( rc==SQLITE_OK ){
+        iFileid = sqlite3_last_insert_rowid(pTab->db);
+        rc = zonefilePopulateIndex(pTab, zFile, iFileid);
+      }
+    }
+
+    if( rc==SQLITE_OK ){
+      int nKey = sqlite3_value_bytes(apVal[3]);
+      const u8 *aKey = (const u8*)sqlite3_value_blob(apVal[3]);
+      rc = zonefileKeyStore(
+          pTab->pGlobal, pTab->zDb, pTab->zBase, iFileid, aKey, nKey
       );
-    }
-
-    /* Add the new entry to the %_shadow_file table. */
-    if( rc==SQLITE_OK ){
-      sqlite3_bind_text(pTab->pInsert, 1, zFile, -1, SQLITE_TRANSIENT);
-      sqlite3_step(pTab->pInsert);
-      rc = sqlite3_reset(pTab->pInsert);
-    }
-
-    /* Populate the %_shadow_idx table with entries for all keys in
-    ** the zonefile just added to %_shadow_file.  */
-    if( rc==SQLITE_OK ){
-      iFileid = sqlite3_last_insert_rowid(pTab->db);
-      rc = zonefilePopulateIndex(pTab, zFile, iFileid);
-    }
-
-    if( rc==SQLITE_OK ){
-      const char *zKey = (const char*)sqlite3_value_text(apVal[3]);
-      rc = zonefileKeyStore(pTab->pGlobal, pTab->zDb, pTab->zBase,iFileid,zKey);
     }
   }
 
@@ -2585,13 +2629,13 @@ static int zonefileValueReadCache(sqlite3_context *pCtx, ZonefileCsr *pCsr){
 
     /* Find the encryption method and key. */
     if( rc==SQLITE_OK && hdr.encryptionType ){
-      const char *z = 0;
-      int n = zonefileKeyFind(pTab->pGlobal, pTab->zDb, pTab->zName, iFile, &z);
+      const u8 *a = 0;
+      int n = zonefileKeyFind(pTab->pGlobal, pTab->zDb, pTab->zName, iFile, &a);
       if( n==0 ){
         zErr = sqlite3_mprintf("missing encryption key for file \"%s\"", zFile);
         rc = SQLITE_ERROR;
       }else{
-        rc = zonefileCodecCreate(hdr.encryptionType, 0, (u8*)z,n,&pCodec,&zErr);
+        rc = zonefileCodecCreate(hdr.encryptionType, 0, (u8*)a,n,&pCodec,&zErr);
       }
     }
 
