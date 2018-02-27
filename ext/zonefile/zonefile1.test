@@ -384,9 +384,15 @@ do_catchsql_test 6.4 {
   INSERT INTO zzz_files(filename) VALUES('nosuchfile.zonefile');
 } {1 {failed to open file "nosuchfile.zonefile" for reading}}
 
-do_catchsql_test 6.5 {
-  INSERT INTO zzz_files(filename) VALUES('test.dir');
-} {1 {failed to read zonefile header from file "test.dir"}}
+if {$tcl_platform(platform)=="windows"} {
+  do_catchsql_test 6.5 {
+    INSERT INTO zzz_files(filename) VALUES('test.dir');
+  } {1 {failed to open file "test.dir" for reading}}
+} else {
+  do_catchsql_test 6.5 {
+    INSERT INTO zzz_files(filename) VALUES('test.dir');
+  } {1 {failed to read zonefile header from file "test.dir"}}
+}
 
 #-------------------------------------------------------------------------
 # Check that errors generated when building a dictionary are handled.

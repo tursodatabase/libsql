@@ -1,5 +1,5 @@
-C Adjustments\sto\stest\snumbers\sfor\sthe\s'zonefile'\sextension.
-D 2018-02-27T15:42:29.507
+C Enhance\stest\s'zonefile1-6.5'\sto\saccount\sfor\splatform\sdifferences.
+D 2018-02-27T15:47:41.523
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -410,7 +410,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F ext/zonefile/README.md 5beb84b8f8326d23319003d57d88be88759fdc3296071a2c5f13c0209703738a
 F ext/zonefile/zonefile.c b83136e629c6768e9ff06bb37ae7d102b5b267f8ff5d9481bd65dc87d7f2d483
-F ext/zonefile/zonefile1.test e10670c41d82299fbf300004cb7c557c0d42a62cbdb0b1e13ee4d4dd901a6726
+F ext/zonefile/zonefile1.test 4bf76f5ad4d818576cdd97f436226bb83bf743fbbd677911645d875892ec5108
 F ext/zonefile/zonefileenc.test e8624853ac224bfdeab8d2a231796499c3032e2a8bb1d2208f52fddf9507e38f
 F ext/zonefile/zonefilefault.test 6df281fc1ec7859d4ae2a3133d8783184a263edf6d081218958b6ae86b22ee13
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39a4267fc9cec77fd8d9be25c73b848e77a68906253cc75d61fe90e549bafa27
-R 6631ad1e9a6da71e129b866cc5249dc9
+P 55de6f14d49342394397c0dc29c1e98c927ef99d57ec1f71c79099f584be20d1
+R fc611854e763802d1a0d828294c3f825
 U mistachkin
-Z 7bdde0999bac4dc25ee12cad1b2341f4
+Z 6a6ffe92b9cb183673ef4c86cb11d527
