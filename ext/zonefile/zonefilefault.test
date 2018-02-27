@@ -239,7 +239,7 @@ do_faultsim_test 4.3 -faults oom* -prep {
 
 #-------------------------------------------------------------------------
 reset_db
-do_faultsim_test 4.3 -faults oom* -prep {
+do_faultsim_test 4.4 -faults oom* -prep {
   faultsim_restore_and_reopen
 } -body {
   load_static_extension db zonefile

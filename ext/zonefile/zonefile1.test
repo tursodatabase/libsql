@@ -384,7 +384,7 @@ do_catchsql_test 6.4 {
   INSERT INTO zzz_files(filename) VALUES('nosuchfile.zonefile');
 } {1 {failed to open file "nosuchfile.zonefile" for reading}}
 
-do_catchsql_test 6.4 {
+do_catchsql_test 6.5 {
   INSERT INTO zzz_files(filename) VALUES('test.dir');
 } {1 {failed to read zonefile header from file "test.dir"}}
 
@@ -547,7 +547,7 @@ do_catchsql_test 12.3 {
 #
 reset_db
 load_static_extension db zonefile
-do_execsql_test 11.0 {
+do_execsql_test 13.0 {
   CREATE TABLE data(k INTEGER PRIMARY KEY, v BLOB);
   WITH s(i) AS (
     SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<250
@@ -569,37 +569,37 @@ foreach {tn cond} {
   6   "k BETWEEN 10 AND 20"
   7   "k > 100 AND k < 200"
 } {
-  do_execsql_test 11.1.$tn.1 [subst {
+  do_execsql_test 13.1.$tn.1 [subst {
     SELECT count(*) FROM nm WHERE $cond
   }] [db one "SELECT count(*) FROM data WHERE $cond"]
 
-  do_execsql_test 11.1.$tn.2 [subst {
+  do_execsql_test 13.1.$tn.2 [subst {
     SELECT count(*) FROM nm WHERE $cond AND
       v!=(SELECT v FROM data WHERE k=nm.k);
   }] 0
 }
 
 close [open test1.zonefile w+]
-do_catchsql_test 11.2.1 {
+do_catchsql_test 13.2.1 {
   SELECT * FROM nm WHERE k=24;
 } {1 {SQL logic error}}
 forcedelete test1.zonefile
-do_catchsql_test 11.2.2 {
+do_catchsql_test 13.2.2 {
   SELECT * FROM nm WHERE k=24;
 } {1 {failed to open file "test1.zonefile" for reading}}
 
-do_catchsql_test 11.3.1 {
+do_catchsql_test 13.3.1 {
   DELETE FROM nm_shadow_file;
   SELECT * FROM nm WHERE k=24;
 } {1 {database disk image is malformed}}
-do_catchsql_test 11.3.2 {
+do_catchsql_test 13.3.2 {
   DROP TABLE nm_shadow_file;
   SELECT * FROM nm WHERE k=24;
 } {1 {no such table: main.nm_shadow_file}}
 db close
 sqlite3 db test.db
 load_static_extension db zonefile
-do_catchsql_test 11.3.3 {
+do_catchsql_test 13.3.3 {
   SELECT * FROM nm WHERE k=24;
 } {1 {no such table: main.nm_shadow_file}}
 
@@ -607,7 +607,7 @@ do_catchsql_test 11.3.3 {
 #
 reset_db
 load_static_extension db zonefile
-do_execsql_test 11.0 {
+do_execsql_test 14.0 {
   CREATE TABLE data(k INTEGER PRIMARY KEY, frame, idx, v BLOB);
   INSERT INTO data VALUES(1, 1, -1, randomblob(200));
   INSERT INTO data VALUES(2, 2, -1, randomblob(200));
@@ -622,14 +622,14 @@ do_execsql_test 11.0 {
 
 set i 0
 foreach id {1 2 3 2 3 1} {
-  do_execsql_test 11.1.$i {
+  do_execsql_test 14.1.$i {
     SELECT data.v=nm.v FROM data,nm WHERE data.k=$id AND nm.k=$id
   } 1
   incr i
 }
 
 if {[file exists /dev/null]} {
-  do_catchsql_test 11.2 {
+  do_catchsql_test 14.2 {
     INSERT INTO nm_files(filename) VALUES('/dev/null');
   } {1 {failed to read zonefile header from file "/dev/null"}}
 }
