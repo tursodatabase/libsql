@@ -86,12 +86,18 @@ frame size of 4096 bytes and using "xor" encryption with a 128-bit key:
 
 ### Using (Reading) Zonefile Files
 
-To create a new zonefile table:
+To create a new zonefile table, one of the following:
 
 >     CREATE VIRTUAL TABLE z1 USING zonefile;
+>     CREATE VIRTUAL TABLE z1 USING zonefile(cachesize=N);
 
-This creates two virtual tables in the database schema. One read-only table
-named "z1", with a schema equivalent to:
+where <i>N</i> is any non-zero positive integer. If the zonefile is used
+to access any files containing compressed or encrypted data, it maintains
+an LRU cache of uncompressed frame data <i>N</i> frames in size. The
+default value of <i>N</i> is 1.
+
+Creating a "zonefile" virtual table actually creates two virtual tables in the
+database schema. One read-only table named "z1", with a schema equivalent to:
 
 >     CREATE TABLE z1(  -- this whole table is read-only
 >       k INTEGER PRIMARY KEY,     -- key value
