@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sTRUE\sand\sFALSE\skeywords\sand\sfor\soperators\sIS\sTRUE,\sIS\sFALSE,\nIS\sNOT\sTRUE,\sand\sIS\sNOT\sFALSE.\s\sIf\sthere\sis\sare\scolumns\snamed\sTRUE\sor\sFALSE,\nthen\sthe\skeywords\sresolve\sto\sthe\scolumn\snames,\sfor\scompatibility.\s\sThe\nbehavior\sof\sthe\s"DEFAULT\strue"\sphrase\sis\schanged\sto\smean\swhat\sit\ssays,\nrather\sthan\sbeing\san\salias\sfor\s"DEFAULT\s'true'".
-D 2018-02-27T15:40:59.030
+C Fix\sa\spotential\sNULL\spointer\sderef\sfollowing\sOOM\sin\sthe\snew\sIS\sTRUE\nlogic.
+D 2018-02-28T04:30:55.210
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -477,7 +477,7 @@ F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 0b6bd5442733b2e08d0673de6cdafe3e7ab0b5715e4844ac836ab346b1d9ed89
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
-F src/parse.y 97b31a676ec1cb049970883a317efcd07ca8c7daded950c8de49199cdfdb1dfa
+F src/parse.y 3be4b2b5e33ef7dab3128b765898ee786fc6cd698a7f053f756a68f2f238f0aa
 F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1708,8 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c26f236da61aef7c7a8fe38f1c7f33eea894c8fae38de6a085d4cce933a70502 6445519e91c4f98b4a9a45d5091d733c31497ebf0eb23a76edce3091f626035d
-R 74016598c506c5fb19fa13d7ec93e943
-T +closed 6445519e91c4f98b4a9a45d5091d733c31497ebf0eb23a76edce3091f626035d
+P 9a7f02c50e6c8a3dc3addf4e51b7e04bd31670d6ce58d26d55273c43b5ecc8b0
+R 8cff6bf49e22739f377b0c86155b1f52
 U drh
-Z 4b60eba7ac8a552c151e343e027ad980
+Z 08a4a2d4426a2c0bef4340ae5149b6ad
