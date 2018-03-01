@@ -158,5 +158,5 @@ do_execsql_test rtree6-3.5 {
     x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>1.1
 } {}
 
-
+expand_all_sql db
 finish_test

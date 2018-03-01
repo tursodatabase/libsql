@@ -554,7 +554,11 @@ struct WalIterator {
 ** page and SQLITE_OK is returned. If an error (an OOM or VFS error) occurs,
 ** then an SQLite error code is returned and *ppPage is set to 0.
 */
-static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
+static SQLITE_NOINLINE int walIndexPageRealloc(
+  Wal *pWal,               /* The WAL context */
+  int iPage,               /* The page we seek */
+  volatile u32 **ppPage    /* Write the page pointer here */
+){
   int rc = SQLITE_OK;
 
   /* Enlarge the pWal->apWiData[] array if required */
@@ -573,21 +577,20 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   }
 
   /* Request a pointer to the required page from the VFS */
-  if( pWal->apWiData[iPage]==0 ){
-    if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
-      pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
-      if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM_BKPT;
-    }else{
-      rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
-          pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
-      );
-      assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
-      testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
-      if( (rc&0xff)==SQLITE_READONLY ){
-        pWal->readOnly |= WAL_SHM_RDONLY;
-        if( rc==SQLITE_READONLY ){
-          rc = SQLITE_OK;
-        }
+  assert( pWal->apWiData[iPage]==0 );
+  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
+    pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
+    if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM_BKPT;
+  }else{
+    rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
+        pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
+    );
+    assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
+    testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
+    if( (rc&0xff)==SQLITE_READONLY ){
+      pWal->readOnly |= WAL_SHM_RDONLY;
+      if( rc==SQLITE_READONLY ){
+        rc = SQLITE_OK;
       }
     }
   }
@@ -595,6 +598,16 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   *ppPage = pWal->apWiData[iPage];
   assert( iPage==0 || *ppPage || rc!=SQLITE_OK );
   return rc;
+}
+static int walIndexPage(
+  Wal *pWal,               /* The WAL context */
+  int iPage,               /* The page we seek */
+  volatile u32 **ppPage    /* Write the page pointer here */
+){
+  if( pWal->nWiData<=iPage || (*ppPage = pWal->apWiData[iPage])==0 ){
+    return walIndexPageRealloc(pWal, iPage, ppPage);
+  }
+  return SQLITE_OK;
 }
 
 /*
@@ -2868,7 +2881,7 @@ int sqlite3WalFindFrame(
   **     table after the current read-transaction had started.
   */
   iMinHash = walFramePage(pWal->minFrame);
-  for(iHash=walFramePage(iLast); iHash>=iMinHash && iRead==0; iHash--){
+  for(iHash=walFramePage(iLast); iHash>=iMinHash; iHash--){
     volatile ht_slot *aHash;      /* Pointer to hash table */
     volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
@@ -2891,6 +2904,7 @@ int sqlite3WalFindFrame(
         return SQLITE_CORRUPT_BKPT;
       }
     }
+    if( iRead ) break;
   }
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT

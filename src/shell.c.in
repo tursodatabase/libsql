@@ -1069,6 +1069,7 @@ struct ShellState {
 #define SHELL_OPEN_NORMAL     1      /* Normal database file */
 #define SHELL_OPEN_APPENDVFS  2      /* Use appendvfs */
 #define SHELL_OPEN_ZIPFILE    3      /* Use the zipfile virtual table */
+#define SHELL_OPEN_READONLY   4      /* Open a normal database read-only */
 
 /*
 ** These are the allowed shellFlgs values
@@ -1175,6 +1176,7 @@ static void shellPutsFunc(
 **
 ** Also throw an error if the EDITOR program returns a non-zero exit code.
 */
+#ifndef SQLITE_NOHAVE_SYSTEM
 static void editFunc(
   sqlite3_context *context,
   int argc,
@@ -1285,6 +1287,7 @@ edit_func_end:
   sqlite3_free(zTempFile);
   sqlite3_free(p);
 }
+#endif /* SQLITE_NOHAVE_SYSTEM */
 
 /*
 ** Save or restore the current output mode
@@ -3256,6 +3259,7 @@ static char zHelp[] =
   "                         on the output.\n"
   ".open ?OPTIONS? ?FILE? Close existing database and reopen FILE\n"
   "                         The --new option starts with an empty file\n"
+  "                         Other options: --readonly --append --zip\n"
   ".output ?FILE?         Send output to FILE or stdout\n"
   ".print STRING...       Print literal STRING\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
@@ -3273,10 +3277,14 @@ static char zHelp[] =
   ".session CMD ...       Create or control sessions\n"
 #endif
   ".sha3sum ?OPTIONS...?  Compute a SHA3 hash of database content\n"
+#ifndef SQLITE_NOHAVE_SYSTEM
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
+#endif
   ".show                  Show the current values for various settings\n"
   ".stats ?on|off?        Show stats or turn stats on or off\n"
+#ifndef SQLITE_NOHAVE_SYSTEM
   ".system CMD ARGS...    Run CMD ARGS... in a system shell\n"
+#endif
   ".tables ?TABLE?        List names of tables\n"
   "                         If TABLE specified, only list tables matching\n"
   "                         LIKE pattern TABLE.\n"
@@ -3448,6 +3456,10 @@ static void open_db(ShellState *p, int keepAlive){
         sqlite3_open(":memory:", &p->db);
         break;
       }
+      case SHELL_OPEN_READONLY: {
+        sqlite3_open_v2(p->zDbFilename, &p->db, SQLITE_OPEN_READONLY, 0);
+        break;
+      }
       case SHELL_OPEN_UNSPEC:
       case SHELL_OPEN_NORMAL: {
         sqlite3_open(p->zDbFilename, &p->db);
@@ -3477,10 +3489,12 @@ static void open_db(ShellState *p, int keepAlive){
                             shellModuleSchema, 0, 0);
     sqlite3_create_function(p->db, "shell_putsnl", 1, SQLITE_UTF8, p,
                             shellPutsFunc, 0, 0);
+#ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
     sqlite3_create_function(p->db, "edit", 2, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
+#endif
     if( p->openMode==SHELL_OPEN_ZIPFILE ){
       char *zSql = sqlite3_mprintf(
          "CREATE VIRTUAL TABLE zip USING zipfile(%Q);", p->zDbFilename);
@@ -4095,6 +4109,7 @@ static void output_reset(ShellState *p){
 #endif
   }else{
     output_file_close(p->out);
+#ifndef SQLITE_NOHAVE_SYSTEM
     if( p->doXdgOpen ){
       const char *zXdgOpenCmd =
 #if defined(_WIN32)
@@ -4113,6 +4128,7 @@ static void output_reset(ShellState *p){
       outputModePop(p);
       p->doXdgOpen = 0;
     }
+#endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
   }
   p->outfile[0] = 0;
   p->out = stdout;
@@ -6297,6 +6313,8 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif
       }else if( optionMatch(z, "append") ){
         p->openMode = SHELL_OPEN_APPENDVFS;
+      }else if( optionMatch(z, "readonly") ){
+        p->openMode = SHELL_OPEN_READONLY;
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
@@ -6353,6 +6371,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     output_reset(p);
     if( zFile[0]=='-' && zFile[1]=='-' ) zFile++;
+#ifndef SQLITE_NOHAVE_SYSTEM
     if( strcmp(zFile, "-e")==0 || strcmp(zFile, "-x")==0 ){
       p->doXdgOpen = 1;
       outputModePush(p);
@@ -6367,6 +6386,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
       zFile = p->zTempFile;
     }
+#endif /* SQLITE_NOHAVE_SYSTEM */
     if( zFile[0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
       raw_printf(stderr, "Error: pipes are not supported in this OS\n");
@@ -6485,7 +6505,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_close(pSrc);
   }else
-
 
   if( c=='s' && strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
@@ -7082,6 +7101,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zSql);
   }else
 
+#ifndef SQLITE_NOHAVE_SYSTEM
   if( c=='s'
    && (strncmp(azArg[0], "shell", n)==0 || strncmp(azArg[0],"system",n)==0)
   ){
@@ -7101,6 +7121,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zCmd);
     if( x ) raw_printf(stderr, "System command returns %d\n", x);
   }else
+#endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
 
   if( c=='s' && strncmp(azArg[0], "show", n)==0 ){
     static const char *azBool[] = { "off", "on", "trigger", "full"};
@@ -7972,6 +7993,7 @@ static const char zOptions[] =
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -quote               set output mode to 'quote'\n"
+  "   -readonly            open the database read-only\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
@@ -8081,21 +8103,39 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
   main_init(&data);
+
+  /* On Windows, we must translate command-line arguments into UTF-8.
+  ** The SQLite memory allocator subsystem has to be enabled in order to
+  ** do this.  But we want to run an sqlite3_shutdown() afterwards so that
+  ** subsequent sqlite3_config() calls will work.  So copy all results into
+  ** memory that does not come from the SQLite memory allocator.
+  */
 #if !SQLITE_SHELL_IS_UTF8
   sqlite3_initialize();
-  argv = sqlite3_malloc64(sizeof(argv[0])*argc);
+  argv = malloc(sizeof(argv[0])*argc);
   if( argv==0 ){
     raw_printf(stderr, "out of memory\n");
     exit(1);
   }
   for(i=0; i<argc; i++){
-    argv[i] = sqlite3_win32_unicode_to_utf8(wargv[i]);
+    char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
+    int n;
+    if( z==0 ){
+      raw_printf(stderr, "out of memory\n");
+      exit(1);
+    }
+    n = (int)strlen(z);
+    argv[i] = malloc( n+1 );
     if( argv[i]==0 ){
       raw_printf(stderr, "out of memory\n");
       exit(1);
     }
+    memcpy(argv[i], z, n+1);
+    sqlite3_free(z);
   }
+  sqlite3_shutdown();
 #endif
+
   assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
 
@@ -8221,6 +8261,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
+    }else if( strcmp(z,"-readonly")==0 ){
+      data.openMode = SHELL_OPEN_READONLY;
     }
   }
   if( data.zDbFilename==0 ){
@@ -8448,8 +8490,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   data.doXdgOpen = 0;
   clearTempFile(&data);
 #if !SQLITE_SHELL_IS_UTF8
-  for(i=0; i<argc; i++) sqlite3_free(argv[i]);
-  sqlite3_free(argv);
+  for(i=0; i<argc; i++) free(argv[i]);
+  free(argv);
 #endif
   return rc;
 }

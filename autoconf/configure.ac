@@ -169,6 +169,9 @@ AC_CHECK_HEADERS(zlib.h,[
 ])
 AC_SUBST(ZLIB_FLAGS)
 
+AC_SEARCH_LIBS(system,,,[SHELL_CFLAGS="-DSQLITE_NOHAVE_SYSTEM"])
+AC_SUBST(SHELL_CFLAGS)
+
 #-----------------------------------------------------------------------
 # UPDATE: Maybe it's better if users just set CFLAGS before invoking
 # configure. This option doesn't really add much...

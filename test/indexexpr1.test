@@ -425,4 +425,25 @@ do_execsql_test indexexpr-1510 {
   REPLACE INTO t1 SELECT a, randomblob(a) FROM t1
 } {}
 
+# 2018-01-31 https://www.sqlite.org/src/tktview/343634942dd54ab57b702411
+# When an index on an expression depends on the string representation of
+# a numeric table column, trouble can arise since there are multiple
+# string that can map to the same numeric value.  (Ex: 123, 0123, 000123).
+#
+do_execsql_test indexexpr-1600 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1 (a INTEGER, b);
+  CREATE INDEX idx1 ON t1 (lower(a));
+  INSERT INTO t1 VALUES('0001234',3);
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test indexexpr-1610 {
+  INSERT INTO t1 VALUES('1234',0),('001234',2),('01234',1);
+  SELECT b FROM t1 WHERE lower(a)='1234' ORDER BY +b;
+} {0 1 2 3}
+do_execsql_test indexexpr-1620 {
+  SELECT b FROM t1 WHERE lower(a)='01234' ORDER BY +b;
+} {}
+
+
 finish_test
