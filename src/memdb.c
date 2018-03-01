@@ -421,8 +421,8 @@ unsigned char *sqlite3_serialize(
   sqlite3_int64 *piSize,    /* Write size here, if not NULL */
   unsigned int mFlags       /* Maybe SQLITE_SERIALIZE_NOCOPY */
 ){
-  MemFile *p = memdbFromDbSchema(db, zSchema);
-  int iDb = sqlite3FindDbName(db, zSchema);
+  MemFile *p;
+  int iDb;
   Btree *pBt;
   sqlite3_int64 sz;
   int szPage = 0;
@@ -431,6 +431,9 @@ unsigned char *sqlite3_serialize(
   char *zSql;
   int rc;
 
+  if( zSchema==0 ) zSchema = db->aDb[0].zDbSName;
+  p = memdbFromDbSchema(db, zSchema);
+  iDb = sqlite3FindDbName(db, zSchema);
   if( piSize ) *piSize = -1;
   if( iDb<0 ) return 0;
   if( p ){

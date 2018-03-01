@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\senhancements\sfrom\strunk.
-D 2018-03-01T13:44:40.762
+C Allow\sthe\szSchema\sargument\sto\ssqlite3_serialize()\sto\sbe\sNULL\sto\smean\sthe\nmain\sdatabase.
+D 2018-03-01T22:18:26.726
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1d5a68043cc4d8a6e45b37e2639b148cdd7973aa75e90ec71e12d55cd95e32c0
@@ -460,7 +460,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c d58bb51e6029a7bd91b2148b98ab00c3a271c6cd2632eb756cfcd91e1252930b
+F src/memdb.c f01e30a224d22e0487bf42028249d09ddccfed18ac03002d24b70a832d53ac1e
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
@@ -1710,7 +1710,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ef3de810d54563c227045b16197b8011ce285ea867261946f93b2de55344f29 745a9a7fef0f28a57ea3f44899058993f6ecdedda52c81a09a4a9ce09c9004d6
-R 130ade233524cab0a0641e76e7f210be
+P c8083de14b54fba1071385f8530d03d5684efd4963fde0f83ddc53ae3118a75b
+R 4b7ab64dd9b0ddcbf834b7f0ea1bb2ba
 U drh
-Z 8606a5979f84a0a30cbed3690217d5a2
+Z fef65347c0470682ba0a8e9f51beb02d
