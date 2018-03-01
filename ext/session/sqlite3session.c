@@ -2718,15 +2718,18 @@ static int sessionReadRecord(
   for(i=0; i<nCol && rc==SQLITE_OK; i++){
     int eType = 0;                /* Type of value (SQLITE_NULL, TEXT etc.) */
     if( abPK && abPK[i]==0 ) continue;
-    rc = sessionInputBuffer(pIn, 9);
+    if( pIn->iNext>=pIn->nData ){
+      rc = SQLITE_CORRUPT;
+    }else{
+      rc = sessionInputBuffer(pIn, 9);
+    }
     if( rc==SQLITE_OK ){
       eType = pIn->aData[pIn->iNext++];
-    }
-
-    assert( apOut[i]==0 );
-    if( eType ){
-      apOut[i] = sqlite3ValueNew(0);
-      if( !apOut[i] ) rc = SQLITE_NOMEM;
+      assert( apOut[i]==0 );
+      if( eType ){
+        apOut[i] = sqlite3ValueNew(0);
+        if( !apOut[i] ) rc = SQLITE_NOMEM;
+      }
     }
 
     if( rc==SQLITE_OK ){
@@ -2857,11 +2860,15 @@ static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
     int nByte;
     int nVarint;
     nVarint = sessionVarintGet(&p->in.aData[p->in.iNext], &p->nCol);
-    nCopy -= nVarint;
-    p->in.iNext += nVarint;
-    nByte = p->nCol * sizeof(sqlite3_value*) * 2 + nCopy;
-    p->tblhdr.nBuf = 0;
-    sessionBufferGrow(&p->tblhdr, nByte, &rc);
+    if( p->nCol>0 ){
+      nCopy -= nVarint;
+      p->in.iNext += nVarint;
+      nByte = p->nCol * sizeof(sqlite3_value*) * 2 + nCopy;
+      p->tblhdr.nBuf = 0;
+      sessionBufferGrow(&p->tblhdr, nByte, &rc);
+    }else{
+      rc = SQLITE_CORRUPT;
+    }
   }
 
   if( rc==SQLITE_OK ){
@@ -2937,6 +2944,13 @@ static int sessionChangesetNext(
     p->in.iCurrent = p->in.iNext;
     if( p->in.iNext>=p->in.nData ) return SQLITE_DONE;
     op = p->in.aData[p->in.iNext++];
+  }
+
+  if( p->zTab==0 ){
+    /* The first record in the changeset is not a table header. Must be a
+    ** corrupt changeset. */
+    assert( p->in.iNext==1 );
+    return (p->rc = SQLITE_CORRUPT_BKPT);
   }
 
   p->op = op;
@@ -3708,7 +3722,13 @@ static int sessionBindRow(
     if( !abPK || abPK[i] ){
       sqlite3_value *pVal;
       (void)xValue(pIter, i, &pVal);
-      rc = sessionBindValue(pStmt, i+1, pVal);
+      if( pVal==0 ){
+        /* The value in the changeset was "undefined". This indicates a
+        ** corrupt changeset blob.  */
+        rc = SQLITE_CORRUPT;
+      }else{
+        rc = sessionBindValue(pStmt, i+1, pVal);
+      }
     }
   }
   return rc;

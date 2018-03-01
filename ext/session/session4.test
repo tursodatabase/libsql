@@ -64,4 +64,29 @@ do_test 1.3 {
   list [catch { sqlite3changeset_apply db $x xConflict } msg] $msg
 } {1 SQLITE_CORRUPT}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c,d);
+  CREATE TABLE t2(e TEXT PRIMARY KEY NOT NULL,f,g);
+  CREATE TABLE t3(w REAL PRIMARY KEY NOT NULL,x,y);
+  CREATE TABLE t4(z PRIMARY KEY) WITHOUT ROWID;
+}
+
+foreach {tn blob} {
+  1 {54010174340012000000}
+  2 {54fefe8bcb0012000300}
+  3 {5480809280808001017434001200fb}
+  4 {50af9c939c9c9cb09c9c6400b09c9c6400}
+  5 {12000300}
+  6 {09847304}
+  7 {5401017434001208}
+} {
+if {$tn==7} breakpoint
+  do_test 2.$tn {
+    set changeset [binary decode hex $blob]
+    list [catch { sqlite3changeset_apply db $changeset xConflict } msg] $msg
+  } {1 SQLITE_CORRUPT}
+}
+
 finish_test
