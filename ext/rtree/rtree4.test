@@ -250,4 +250,5 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
   do_rtree_integrity_test rtree4-$nDim.3 rx
 }
 
+expand_all_sql db
 finish_test

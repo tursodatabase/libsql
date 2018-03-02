@@ -35,6 +35,8 @@ static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
 ** iteration of the aggregate loop.
 */
 static void sqlite3SkipAccumulatorLoad(sqlite3_context *context){
+  assert( context->isError<=0 );
+  context->isError = -1;
   context->skipFlag = 1;
 }
 
@@ -101,8 +103,6 @@ static void lengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int len;
-
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
@@ -114,13 +114,17 @@ static void lengthFunc(
     }
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
+      const unsigned char *z0;
+      unsigned char c;
       if( z==0 ) return;
-      len = 0;
-      while( *z ){
-        len++;
-        SQLITE_SKIP_UTF8(z);
+      z0 = z;
+      while( (c = *z)!=0 ){
+        z++;
+        if( c>=0xc0 ){
+          while( (*z & 0xc0)==0x80 ){ z++; z0++; }
+        }
       }
-      sqlite3_result_int(context, len);
+      sqlite3_result_int(context, (int)(z-z0));
       break;
     }
     default: {
@@ -1195,6 +1199,8 @@ static void replaceFunc(
   i64 nOut;                /* Maximum size of zOut */
   int loopLimit;           /* Last zStr[] that might match zPattern[] */
   int i, j;                /* Loop counters */
+  unsigned cntExpand;      /* Number zOut expansions */
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   assert( argc==3 );
   UNUSED_PARAMETER(argc);
@@ -1226,33 +1232,40 @@ static void replaceFunc(
     return;
   }
   loopLimit = nStr - nPattern;  
+  cntExpand = 0;
   for(i=j=0; i<=loopLimit; i++){
     if( zStr[i]!=zPattern[0] || memcmp(&zStr[i], zPattern, nPattern) ){
       zOut[j++] = zStr[i];
     }else{
-      u8 *zOld;
-      sqlite3 *db = sqlite3_context_db_handle(context);
-      nOut += nRep - nPattern;
-      testcase( nOut-1==db->aLimit[SQLITE_LIMIT_LENGTH] );
-      testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
-      if( nOut-1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
-        sqlite3_result_error_toobig(context);
-        sqlite3_free(zOut);
-        return;
-      }
-      zOld = zOut;
-      zOut = sqlite3_realloc64(zOut, (int)nOut);
-      if( zOut==0 ){
-        sqlite3_result_error_nomem(context);
-        sqlite3_free(zOld);
-        return;
+      if( nRep>nPattern ){
+        nOut += nRep - nPattern;
+        testcase( nOut-1==db->aLimit[SQLITE_LIMIT_LENGTH] );
+        testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
+        if( nOut-1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+          sqlite3_result_error_toobig(context);
+          sqlite3_free(zOut);
+          return;
+        }
+        cntExpand++;
+        if( (cntExpand&(cntExpand-1))==0 ){
+          /* Grow the size of the output buffer only on substitutions
+          ** whose index is a power of two: 1, 2, 4, 8, 16, 32, ... */
+          u8 *zOld;
+          zOld = zOut;
+          zOut = sqlite3_realloc64(zOut, (int)nOut + (nOut - nStr - 1));
+          if( zOut==0 ){
+            sqlite3_result_error_nomem(context);
+            sqlite3_free(zOld);
+            return;
+          }
+        }
       }
       memcpy(&zOut[j], zRep, nRep);
       j += nRep;
       i += nPattern-1;
     }
   }
-  assert( j+nStr-i+1==nOut );
+  assert( j+nStr-i+1<=nOut );
   memcpy(&zOut[j], &zStr[i], nStr-i);
   j += nStr - i;
   assert( j<=nOut );
@@ -1798,6 +1811,10 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION2(likely,            1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
 #ifdef SQLITE_DEBUG
     FUNCTION2(affinity,          1, 0, 0, noopFunc,  SQLITE_FUNC_AFFINITY),
+#endif
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+    FUNCTION2(sqlite_offset,     1, 0, 0, noopFunc,  SQLITE_FUNC_OFFSET|
+                                                     SQLITE_FUNC_TYPEOF),
 #endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),

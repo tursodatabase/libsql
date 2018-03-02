@@ -32,7 +32,7 @@ static const char zHelp[] =
   "  --size N            Relative test size.  Default=100\n"
   "  --stats             Show statistics at the end\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -1120,7 +1120,77 @@ void testset_cte(void){
   );
   speedtest1_run();
   speedtest1_end_test();
+}
 
+/*
+** Compute a pseudo-random floating point ascii number.
+*/
+void speedtest1_random_ascii_fp(char *zFP){
+  int x = speedtest1_random();
+  int y = speedtest1_random();
+  int z;
+  z = y%10;
+  if( z<0 ) z = -z;
+  y /= 10;
+  sqlite3_snprintf(100,zFP,"%d.%de%d",y,z,x%200);
+}
+
+/*
+** A testset for floating-point numbers.
+*/
+void testset_fp(void){
+  int n;
+  int i;
+  char zFP1[100];
+  char zFP2[100];
+  
+  n = g.szTest*5000;
+  speedtest1_begin_test(100, "Fill a table with %d FP values", n*2);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t1(a REAL %s, b REAL %s);",
+                  isTemp(1), g.zNN, g.zNN);
+  speedtest1_prepare("INSERT INTO t1 VALUES(?1,?2); -- %d times", n);
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  n = g.szTest/25 + 2;
+  speedtest1_begin_test(110, "%d range queries", n);
+  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "CREATE INDEX three times");
+  speedtest1_exec("BEGIN;");
+  speedtest1_exec("CREATE INDEX t1a ON t1(a);");
+  speedtest1_exec("CREATE INDEX t1b ON t1(b);");
+  speedtest1_exec("CREATE INDEX t1ab ON t1(a,b);");
+  speedtest1_exec("COMMIT;");
+  speedtest1_end_test();
+
+  n = g.szTest/3 + 2;
+  speedtest1_begin_test(130, "%d indexed range queries", n);
+  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
 }
 
 #ifdef SQLITE_ENABLE_RTREE
@@ -1873,6 +1943,8 @@ int main(int argc, char **argv){
     testset_orm();
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
+  }else if( strcmp(zTSet,"fp")==0 ){
+    testset_fp();
   }else if( strcmp(zTSet,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
     testset_rtree(6, 147);
@@ -1881,7 +1953,7 @@ int main(int argc, char **argv){
                 "the R-Tree tests\n");
 #endif
   }else{
-    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
+    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree fp\n",
                  zTSet);
   }
   speedtest1_final();

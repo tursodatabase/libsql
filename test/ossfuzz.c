@@ -160,6 +160,9 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Run the SQL.  The sqlite_exec() interface expects a zero-terminated
   ** string, so make a copy. */
   zSql = sqlite3_mprintf("%.*s", (int)size, data);
+#ifndef SQLITE_OMIT_COMPLETE
+  sqlite3_complete(zSql);
+#endif
   sqlite3_exec(cx.db, zSql, exec_handler, (void*)&execCnt, &zErrMsg);
 
   /* Show any errors */

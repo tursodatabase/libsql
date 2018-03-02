@@ -27,6 +27,17 @@ if {!$MEMDEBUG} {
    return
 }
 
+# Do not run these tests if F2FS batch writes are supported. In this case,
+# it is possible for a single DML statement in an implicit transaction
+# to fail with SQLITE_NOMEM, but for the transaction to still end up
+# committed to disk. Which confuses the tests in this module.
+#
+if {[atomic_batch_write test.db]} {
+   puts "Skipping malloc3 tests: atomic-batch support"
+   finish_test
+   return
+}
+
 
 # Do not run these tests with an in-memory journal.
 #

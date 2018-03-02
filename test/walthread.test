@@ -327,59 +327,61 @@ do_thread_test2 walthread-1 -seconds $seconds(walthread-1) -init {
 # the number of write-transactions performed using a rollback journal.
 # For example, "192 w, 185 r".
 #
-do_thread_test2 walthread-2 -seconds $seconds(walthread-2) -init {
-  execsql { CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE) }
-} -thread RB 2 {
+if {[atomic_batch_write test.db]==0} {
+  do_thread_test2 walthread-2 -seconds $seconds(walthread-2) -init {
+    execsql { CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE) }
+  } -thread RB 2 {
 
-  db close
-  set nRun 0
-  set nDel 0
-  while {[tt_continue]} {
-    sqlite3 db test.db
-    db busy busyhandler
-    db eval { SELECT * FROM sqlite_master }
-    catch { db eval { PRAGMA journal_mode = DELETE } }
-    db eval {
-      BEGIN;
-      INSERT INTO t1 VALUES(NULL, randomblob(100+$E(pid)));
-    }
-    incr nRun 1
-    incr nDel [file exists test.db-journal]
-    if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
-      error "File-system looks bad..."
-    }
-    db eval COMMIT
-
-    integrity_check
     db close
-  }
-  list $nRun $nDel
-  set {} "[expr $nRun-$nDel] w, $nDel r"
-
-} -thread WAL 2 {
-  db close
-  set nRun 0
-  set nDel 0
-  while {[tt_continue]} {
-    sqlite3 db test.db
-    db busy busyhandler
-    db eval { SELECT * FROM sqlite_master }
-    catch { db eval { PRAGMA journal_mode = WAL } }
-    db eval {
-      BEGIN;
-      INSERT INTO t1 VALUES(NULL, randomblob(110+$E(pid)));
+    set nRun 0
+    set nDel 0
+    while {[tt_continue]} {
+      sqlite3 db test.db
+      db busy busyhandler
+      db eval { SELECT * FROM sqlite_master }
+      catch { db eval { PRAGMA journal_mode = DELETE } }
+      db eval {
+        BEGIN;
+        INSERT INTO t1 VALUES(NULL, randomblob(100+$E(pid)));
+      }
+      incr nRun 1
+      incr nDel [file exists test.db-journal]
+      if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
+        error "File-system looks bad..."
+      }
+      db eval COMMIT
+  
+      integrity_check
+      db close
     }
-    incr nRun 1
-    incr nDel [file exists test.db-journal]
-    if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
-      error "File-system looks bad..."
-    }
-    db eval COMMIT
-
-    integrity_check
+    list $nRun $nDel
+    set {} "[expr $nRun-$nDel] w, $nDel r"
+  
+  } -thread WAL 2 {
     db close
+    set nRun 0
+    set nDel 0
+    while {[tt_continue]} {
+      sqlite3 db test.db
+      db busy busyhandler
+      db eval { SELECT * FROM sqlite_master }
+      catch { db eval { PRAGMA journal_mode = WAL } }
+      db eval {
+        BEGIN;
+        INSERT INTO t1 VALUES(NULL, randomblob(110+$E(pid)));
+      }
+      incr nRun 1
+      incr nDel [file exists test.db-journal]
+      if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
+        error "File-system looks bad..."
+      }
+      db eval COMMIT
+  
+      integrity_check
+      db close
+    }
+    set {} "[expr $nRun-$nDel] w, $nDel r"
   }
-  set {} "[expr $nRun-$nDel] w, $nDel r"
 }
 
 do_thread_test walthread-3 -seconds $seconds(walthread-3) -init {

@@ -59,6 +59,7 @@ do_test rtreeG-1.4log {
   set ::log
 } {}
 
+expand_all_sql db
 db close
 sqlite3_shutdown
 test_sqlite3_log

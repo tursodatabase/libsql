@@ -10,23 +10,33 @@
 **
 ******************************************************************************
 **
-** This is an in-memory read-only VFS implementation.  The application
-** supplies a block of memory which is the database file, and this VFS
-** uses that block of memory.
+** This is an in-memory VFS implementation.  The application supplies
+** a chunk of memory to hold the database file.
 **
-** Because there is no place to store journals and no good way to lock
-** the "file", this VFS is read-only.
+** Because there is place to store a rollback or wal journal, the database
+** must use one of journal_mode=MEMORY or journal_mode=NONE.
 **
 ** USAGE:
 **
-**    sqlite3_open_v2("file:/whatever?ptr=0xf05538&sz=14336", &db,
-**                    SQLITE_OPEN_READONLY | SQLITE_OPEN_URI,
+**    sqlite3_open_v2("file:/whatever?ptr=0xf05538&sz=14336&max=65536", &db,
+**                    SQLITE_OPEN_READWRITE | SQLITE_OPEN_URI,
 **                    "memvfs");
 **
-** The ptr= and sz= query parameters are required or the open will fail.
-** The ptr= parameter gives the memory address of the buffer holding the
-** read-only database and sz= gives the size of the database.  The parameter
-** values may be in hexadecimal or decimal.  The filename is ignored.
+** These are the query parameters:
+**
+**    ptr=          The address of the memory buffer that holds the database.
+**
+**    sz=           The current size the database file
+**
+**    maxsz=        The maximum size of the database.  In other words, the
+**                  amount of space allocated for the ptr= buffer.
+**
+**    freeonclose=  If true, then sqlite3_free() is called on the ptr=
+**                  value when the connection closes.
+**
+** The ptr= and sz= query parameters are required.  If maxsz= is omitted,
+** then it defaults to the sz= value.  Parameter values can be in either
+** decimal or hexadecimal.  The filename in the URI is ignored.
 */
 #include <sqlite3ext.h>
 SQLITE_EXTENSION_INIT1
@@ -49,7 +59,9 @@ typedef struct MemFile MemFile;
 struct MemFile {
   sqlite3_file base;              /* IO methods */
   sqlite3_int64 sz;               /* Size of the file */
+  sqlite3_int64 szMax;            /* Space allocated to aData */
   unsigned char *aData;           /* content of the file */
+  int bFreeOnClose;               /* Invoke sqlite3_free() on aData at close */
 };
 
 /*
@@ -144,6 +156,8 @@ static const sqlite3_io_methods mem_io_methods = {
 ** to free.
 */
 static int memClose(sqlite3_file *pFile){
+  MemFile *p = (MemFile *)pFile;
+  if( p->bFreeOnClose ) sqlite3_free(p->aData);
   return SQLITE_OK;
 }
 
@@ -170,21 +184,34 @@ static int memWrite(
   int iAmt,
   sqlite_int64 iOfst
 ){
-  return SQLITE_READONLY;
+  MemFile *p = (MemFile *)pFile;
+  if( iOfst+iAmt>p->sz ){
+    if( iOfst+iAmt>p->szMax ) return SQLITE_FULL;
+    if( iOfst>p->sz ) memset(p->aData+p->sz, 0, iOfst-p->sz);
+    p->sz = iOfst+iAmt;
+  }
+  memcpy(p->aData+iOfst, z, iAmt);
+  return SQLITE_OK;
 }
 
 /*
 ** Truncate an mem-file.
 */
 static int memTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  return SQLITE_READONLY;
+  MemFile *p = (MemFile *)pFile;
+  if( size>p->sz ){
+    if( size>p->szMax ) return SQLITE_FULL;
+    memset(p->aData+p->sz, 0, size-p->sz);
+  }
+  p->sz = size; 
+  return SQLITE_OK;
 }
 
 /*
 ** Sync an mem-file.
 */
 static int memSync(sqlite3_file *pFile, int flags){
-  return SQLITE_READONLY;
+  return SQLITE_OK;
 }
 
 /*
@@ -200,7 +227,7 @@ static int memFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 ** Lock an mem-file.
 */
 static int memLock(sqlite3_file *pFile, int eLock){
-  return SQLITE_READONLY;
+  return SQLITE_OK;
 }
 
 /*
@@ -242,7 +269,10 @@ static int memSectorSize(sqlite3_file *pFile){
 ** Return the device characteristic flags supported by an mem-file.
 */
 static int memDeviceCharacteristics(sqlite3_file *pFile){
-  return SQLITE_IOCAP_IMMUTABLE;
+  return SQLITE_IOCAP_ATOMIC | 
+         SQLITE_IOCAP_POWERSAFE_OVERWRITE |
+         SQLITE_IOCAP_SAFE_APPEND |
+         SQLITE_IOCAP_SEQUENTIAL;
 }
 
 /* Create a shared memory file mapping */
@@ -253,12 +283,12 @@ static int memShmMap(
   int bExtend,
   void volatile **pp
 ){
-  return SQLITE_READONLY;
+  return SQLITE_IOERR_SHMMAP;
 }
 
 /* Perform locking on a shared-memory segment */
 static int memShmLock(sqlite3_file *pFile, int offset, int n, int flags){
-  return SQLITE_READONLY;
+  return SQLITE_IOERR_SHMLOCK;
 }
 
 /* Memory barrier operation on shared memory */
@@ -305,6 +335,9 @@ static int memOpen(
   if( p->aData==0 ) return SQLITE_CANTOPEN;
   p->sz = sqlite3_uri_int64(zName,"sz",0);
   if( p->sz<0 ) return SQLITE_CANTOPEN;
+  p->szMax = sqlite3_uri_int64(zName,"max",p->sz);
+  if( p->szMax<p->sz ) return SQLITE_CANTOPEN;
+  p->bFreeOnClose = sqlite3_uri_boolean(zName,"freeonclose",0);
   pFile->pMethods = &mem_io_methods;
   return SQLITE_OK;
 }
@@ -315,7 +348,7 @@ static int memOpen(
 ** returning.
 */
 static int memDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  return SQLITE_READONLY;
+  return SQLITE_IOERR_DELETE;
 }
 
 /*
@@ -328,14 +361,7 @@ static int memAccess(
   int flags, 
   int *pResOut
 ){
-  /* The spec says there are three possible values for flags.  But only
-  ** two of them are actually used */
-  assert( flags==SQLITE_ACCESS_EXISTS || flags==SQLITE_ACCESS_READWRITE );
-  if( flags==SQLITE_ACCESS_READWRITE ){
-    *pResOut = 0;
-  }else{
-    *pResOut = 1;
-  }
+  *pResOut = 0;
   return SQLITE_OK;
 }
 
@@ -416,31 +442,43 @@ static int memCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *p){
 
 #ifdef MEMVFS_TEST
 /*
-**       memload(FILENAME)
+**       memvfs_from_file(FILENAME, MAXSIZE)
 **
 ** This an SQL function used to help in testing the memvfs VFS.  The
 ** function reads the content of a file into memory and then returns
-** a string that gives the locate and size of the in-memory buffer.
+** a URI that can be handed to ATTACH to attach the memory buffer as
+** a database.  Example:
+**
+**       ATTACH memvfs_from_file('test.db',1048576) AS inmem;
+**
+** The optional MAXSIZE argument gives the size of the memory allocation
+** used to hold the database.  If omitted, it defaults to the size of the
+** file on disk.
 */
 #include <stdio.h>
-static void memvfsMemloadFunc(
+static void memvfsFromFileFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
   unsigned char *p;
   sqlite3_int64 sz;
+  sqlite3_int64 szMax;
   FILE *in;
   const char *zFilename = (const char*)sqlite3_value_text(argv[0]);
-  char zReturn[100];
+  char *zUri;
 
   if( zFilename==0 ) return;
   in = fopen(zFilename, "rb");
   if( in==0 ) return;
   fseek(in, 0, SEEK_END);
-  sz = ftell(in);
+  szMax = sz = ftell(in);
   rewind(in);
-  p = sqlite3_malloc( sz );
+  if( argc>=2 ){
+    szMax = sqlite3_value_int64(argv[1]);
+    if( szMax<sz ) szMax = sz;
+  }
+  p = sqlite3_malloc64( szMax );
   if( p==0 ){
     fclose(in);
     sqlite3_result_error_nomem(context);
@@ -448,18 +486,60 @@ static void memvfsMemloadFunc(
   }
   fread(p, sz, 1, in);
   fclose(in);
-  sqlite3_snprintf(sizeof(zReturn),zReturn,"ptr=%lld&sz=%lld",
-                   (sqlite3_int64)p, sz);
-  sqlite3_result_text(context, zReturn, -1, SQLITE_TRANSIENT);
+  zUri = sqlite3_mprintf(
+           "file:/mem?vfs=memvfs&ptr=%lld&sz=%lld&max=%lld&freeonclose=1",
+                         (sqlite3_int64)p, sz, szMax);
+  sqlite3_result_text(context, zUri, -1, sqlite3_free);
 }
+#endif /* MEMVFS_TEST */
+
+#ifdef MEMVFS_TEST
+/*
+**       memvfs_to_file(SCHEMA, FILENAME)
+**
+** The schema identified by SCHEMA must be a memvfs database.  Write
+** the content of this database into FILENAME.
+*/
+static void memvfsToFileFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  MemFile *p = 0;
+  FILE *out;
+  int rc;
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  sqlite3_vfs *pVfs = 0;
+  const char *zSchema = (const char*)sqlite3_value_text(argv[0]);
+  const char *zFilename = (const char*)sqlite3_value_text(argv[1]);
+
+  if( zFilename==0 ) return;
+  out = fopen(zFilename, "wb");
+  if( out==0 ) return;
+  rc = sqlite3_file_control(db, zSchema, SQLITE_FCNTL_VFS_POINTER, &pVfs);
+  if( rc || pVfs==0 ) return;
+  if( strcmp(pVfs->zName,"memvfs")!=0 ) return;
+  rc = sqlite3_file_control(db, zSchema, SQLITE_FCNTL_FILE_POINTER, &p);
+  if( rc ) return;
+  fwrite(p->aData, 1, (size_t)p->sz, out);
+  fclose(out);
+}
+#endif /* MEMVFS_TEST */
+
+#ifdef MEMVFS_TEST
 /* Called for each new database connection */
 static int memvfsRegister(
   sqlite3 *db,
-  const char **pzErrMsg,
+  char **pzErrMsg,
   const struct sqlite3_api_routines *pThunk
 ){
-  return sqlite3_create_function(db, "memload", 1, SQLITE_UTF8, 0,
-                                 memvfsMemloadFunc, 0, 0);
+  sqlite3_create_function(db, "memvfs_from_file", 1, SQLITE_UTF8, 0,
+                          memvfsFromFileFunc, 0, 0);
+  sqlite3_create_function(db, "memvfs_from_file", 2, SQLITE_UTF8, 0,
+                          memvfsFromFileFunc, 0, 0);
+  sqlite3_create_function(db, "memvfs_to_file", 2, SQLITE_UTF8, 0,
+                          memvfsToFileFunc, 0, 0);
+  return SQLITE_OK;
 }
 #endif /* MEMVFS_TEST */
 
@@ -484,6 +564,9 @@ int sqlite3_memvfs_init(
 #ifdef MEMVFS_TEST
   if( rc==SQLITE_OK ){
     rc = sqlite3_auto_extension((void(*)(void))memvfsRegister);
+  }
+  if( rc==SQLITE_OK ){
+    rc = memvfsRegister(db, pzErrMsg, pApi);
   }
 #endif
   if( rc==SQLITE_OK ) rc = SQLITE_OK_LOAD_PERMANENTLY;

@@ -552,7 +552,7 @@ do_faultsim_test walfault-14 -prep {
 #-------------------------------------------------------------------------
 # Test fault-handling when switching out of exclusive-locking mode.
 #
-do_test walfault-14-pre {
+do_test walfault-15-pre {
   faultsim_delete_and_reopen
   execsql {
     PRAGMA auto_vacuum = 0;
@@ -565,7 +565,7 @@ do_test walfault-14-pre {
   }
   faultsim_save_and_close
 } {}
-do_faultsim_test walfault-14 -prep {
+do_faultsim_test walfault-15 -prep {
   faultsim_restore_and_reopen
   execsql {
     SELECT count(*) FROM abc;

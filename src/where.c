@@ -19,6 +19,21 @@
 #include "sqliteInt.h"
 #include "whereInt.h"
 
+/*
+** Extra information appended to the end of sqlite3_index_info but not
+** visible to the xBestIndex function, at least not directly.  The
+** sqlite3_vtab_collation() interface knows how to reach it, however.
+**
+** This object is not an API and can be changed from one release to the
+** next.  As long as allocateIndexInfo() and sqlite3_vtab_collation()
+** agree on the structure, all will be well.
+*/
+typedef struct HiddenIndexInfo HiddenIndexInfo;
+struct HiddenIndexInfo {
+  WhereClause *pWC;   /* The Where clause being analyzed */
+  Parse *pParse;      /* The parsing context */
+};
+
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
 
@@ -841,11 +856,11 @@ end_auto_index_create:
 ** by passing the pointer returned by this function to sqlite3_free().
 */
 static sqlite3_index_info *allocateIndexInfo(
-  Parse *pParse,
-  WhereClause *pWC,
+  Parse *pParse,                  /* The parsing context */
+  WhereClause *pWC,               /* The WHERE clause being analyzed */
   Bitmask mUnusable,              /* Ignore terms with these prereqs */
-  struct SrcList_item *pSrc,
-  ExprList *pOrderBy,
+  struct SrcList_item *pSrc,      /* The FROM clause term that is the vtab */
+  ExprList *pOrderBy,             /* The ORDER BY clause */
   u16 *pmNoOmit                   /* Mask of terms not to omit */
 ){
   int i, j;
@@ -853,6 +868,7 @@ static sqlite3_index_info *allocateIndexInfo(
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_orderby *pIdxOrderBy;
   struct sqlite3_index_constraint_usage *pUsage;
+  struct HiddenIndexInfo *pHidden;
   WhereTerm *pTerm;
   int nOrderBy;
   sqlite3_index_info *pIdxInfo;
@@ -894,7 +910,7 @@ static sqlite3_index_info *allocateIndexInfo(
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
                            + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy );
+                           + sizeof(*pIdxOrderBy)*nOrderBy + sizeof(*pHidden) );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
@@ -905,7 +921,8 @@ static sqlite3_index_info *allocateIndexInfo(
   ** changing them.  We have to do some funky casting in order to
   ** initialize those fields.
   */
-  pIdxCons = (struct sqlite3_index_constraint*)&pIdxInfo[1];
+  pHidden = (struct HiddenIndexInfo*)&pIdxInfo[1];
+  pIdxCons = (struct sqlite3_index_constraint*)&pHidden[1];
   pIdxOrderBy = (struct sqlite3_index_orderby*)&pIdxCons[nTerm];
   pUsage = (struct sqlite3_index_constraint_usage*)&pIdxOrderBy[nOrderBy];
   *(int*)&pIdxInfo->nConstraint = nTerm;
@@ -915,6 +932,8 @@ static sqlite3_index_info *allocateIndexInfo(
   *(struct sqlite3_index_constraint_usage**)&pIdxInfo->aConstraintUsage =
                                                                    pUsage;
 
+  pHidden->pWC = pWC;
+  pHidden->pParse = pParse;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
@@ -2460,12 +2479,14 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       assert( saved_nEq==pNew->u.btree.nEq );
       if( iCol==XN_ROWID 
-       || (iCol>0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
+       || (iCol>=0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
       ){
-        if( iCol>=0 && pProbe->uniqNotNull==0 ){
-          pNew->wsFlags |= WHERE_UNQ_WANTED;
-        }else{
+        if( iCol==XN_ROWID || pProbe->uniqNotNull 
+         || (pProbe->nKeyCol==1 && pProbe->onError && eOp==WO_EQ) 
+        ){
           pNew->wsFlags |= WHERE_ONEROW;
+        }else{
+          pNew->wsFlags |= WHERE_UNQ_WANTED;
         }
       }
     }else if( eOp & WO_ISNULL ){
@@ -2879,6 +2900,7 @@ static int whereLoopAddBtree(
       testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
       continue;  /* Partial index inappropriate for this query */
     }
+    if( pProbe->bNoQuery ) continue;
     rSize = pProbe->aiRowLogEst[0];
     pNew->u.btree.nEq = 0;
     pNew->u.btree.nBtm = 0;
@@ -3137,6 +3159,27 @@ static int whereLoopAddVirtualOne(
   return rc;
 }
 
+/*
+** If this function is invoked from within an xBestIndex() callback, it
+** returns a pointer to a buffer containing the name of the collation
+** sequence associated with element iCons of the sqlite3_index_info.aConstraint
+** array. Or, if iCons is out of range or there is no active xBestIndex
+** call, return NULL.
+*/
+const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  const char *zRet = 0;
+  if( iCons>=0 && iCons<pIdxInfo->nConstraint ){
+    CollSeq *pC = 0;
+    int iTerm = pIdxInfo->aConstraint[iCons].iTermOffset;
+    Expr *pX = pHidden->pWC->a[iTerm].pExpr;
+    if( pX->pLeft ){
+      pC = sqlite3BinaryCompareCollSeq(pHidden->pParse, pX->pLeft, pX->pRight);
+    }
+    zRet = (pC ? pC->zName : "BINARY");
+  }
+  return zRet;
+}
 
 /*
 ** Add all WhereLoop objects for a table of the join identified by
@@ -4590,6 +4633,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   for(ii=0; ii<sWLB.pWC->nTerm; ii++){
     WhereTerm *pT = &sWLB.pWC->a[ii];
+    if( pT->wtFlags & TERM_VIRTUAL ) continue;
     if( pT->prereqAll==0 && (nTabList==0 || exprIsDeterministic(pT->pExpr)) ){
       sqlite3ExprIfFalse(pParse, pT->pExpr, pWInfo->iBreak, SQLITE_JUMPIFNULL);
       pT->wtFlags |= TERM_CODED;
@@ -4677,35 +4721,80 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 #endif
-  /* Attempt to omit tables from the join that do not effect the result */
+
+  /* Attempt to omit tables from the join that do not affect the result.
+  ** For a table to not affect the result, the following must be true:
+  **
+  **   1) The query must not be an aggregate.
+  **   2) The table must be the RHS of a LEFT JOIN.
+  **   3) Either the query must be DISTINCT, or else the ON or USING clause
+  **      must contain a constraint that limits the scan of the table to 
+  **      at most a single row.
+  **   4) The table must not be referenced by any part of the query apart
+  **      from its own USING or ON clause.
+  **
+  ** For example, given:
+  **
+  **     CREATE TABLE t1(ipk INTEGER PRIMARY KEY, v1);
+  **     CREATE TABLE t2(ipk INTEGER PRIMARY KEY, v2);
+  **     CREATE TABLE t3(ipk INTEGER PRIMARY KEY, v3);
+  **
+  ** then table t2 can be omitted from the following:
+  **
+  **     SELECT v1, v3 FROM t1 
+  **       LEFT JOIN t2 USING (t1.ipk=t2.ipk)
+  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  **
+  ** or from:
+  **
+  **     SELECT DISTINCT v1, v3 FROM t1 
+  **       LEFT JOIN t2
+  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  */
+  notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2
-   && pResultSet!=0
+   && pResultSet!=0               /* guarantees condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
+    int i;
     Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
     if( sWLB.pOrderBy ){
       tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
     }
-    while( pWInfo->nLevel>=2 ){
+    for(i=pWInfo->nLevel-1; i>=1; i--){
       WhereTerm *pTerm, *pEnd;
-      pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
-      if( (pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0 ) break;
+      struct SrcList_item *pItem;
+      pLoop = pWInfo->a[i].pWLoop;
+      pItem = &pWInfo->pTabList->a[pLoop->iTab];
+      if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
       if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
        && (pLoop->wsFlags & WHERE_ONEROW)==0
       ){
-        break;
+        continue;
       }
-      if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+      if( (tabUsed & pLoop->maskSelf)!=0 ) continue;
       pEnd = sWLB.pWC->a + sWLB.pWC->nTerm;
       for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
-        if( (pTerm->prereqAll & pLoop->maskSelf)!=0
-         && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
-        ){
-          break;
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+          if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+           || pTerm->pExpr->iRightJoinTable!=pItem->iCursor
+          ){
+            break;
+          }
         }
       }
-      if( pTerm<pEnd ) break;
+      if( pTerm<pEnd ) continue;
       WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+      notReady &= ~pLoop->maskSelf;
+      for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+          pTerm->wtFlags |= TERM_CODED;
+        }
+      }
+      if( i!=pWInfo->nLevel-1 ){
+        int nByte = (pWInfo->nLevel-1-i) * sizeof(WhereLevel);
+        memmove(&pWInfo->a[i], &pWInfo->a[i+1], nByte);
+      }
       pWInfo->nLevel--;
       nTabList--;
     }
@@ -4715,15 +4804,32 @@ WhereInfo *sqlite3WhereBegin(
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
+  **
+  ** A one-pass approach can be used if the caller has requested one
+  ** and either (a) the scan visits at most one row or (b) each
+  ** of the following are true:
+  **
+  **   * the caller has indicated that a one-pass approach can be used
+  **     with multiple rows (by setting WHERE_ONEPASS_MULTIROW), and
+  **   * the table is not a virtual table, and
+  **   * either the scan does not use the OR optimization or the caller
+  **     is a DELETE operation (WHERE_DUPLICATES_OK is only specified
+  **     for DELETE).
+  **
+  ** The last qualification is because an UPDATE statement uses
+  ** WhereInfo.aiCurOnePass[1] to determine whether or not it really can
+  ** use a one-pass approach, and this is not set accurately for scans
+  ** that use the OR optimization.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
     int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
     int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
-    if( bOnerow
-     || ((wctrlFlags & WHERE_ONEPASS_MULTIROW)!=0
-           && 0==(wsFlags & WHERE_VIRTUALTABLE))
-    ){
+    if( bOnerow || (
+        0!=(wctrlFlags & WHERE_ONEPASS_MULTIROW)
+     && 0==(wsFlags & WHERE_VIRTUALTABLE)
+     && (0==(wsFlags & WHERE_MULTI_OR) || (wctrlFlags & WHERE_DUPLICATES_OK))
+    )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
         if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){
@@ -4860,7 +4966,6 @@ WhereInfo *sqlite3WhereBegin(
   ** loop below generates code for a single nested loop of the VM
   ** program.
   */
-  notReady = ~(Bitmask)0;
   for(ii=0; ii<nTabList; ii++){
     int addrExplain;
     int wsFlags;
@@ -4924,6 +5029,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       Index *pIdx;
       int n;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
+       && i==pWInfo->nLevel-1  /* Ticket [ef9318757b152e3] 2017-10-21 */
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
        && (n = pLoop->u.btree.nIdxCol)>0
@@ -4990,7 +5096,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
       assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
       if( (ws & WHERE_IDX_ONLY)==0 ){
-        sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
+        assert( pLevel->iTabCur==pTabList->a[pLevel->iFrom].iCursor );
+        sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
       }
       if( (ws & WHERE_INDEXED) 
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
@@ -5059,7 +5166,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       pOp = sqlite3VdbeGetOp(v, k);
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
-        if( pOp->opcode==OP_Column ){
+        if( pOp->opcode==OP_Column
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+         || pOp->opcode==OP_Offset
+#endif
+        ){
           int x = pOp->p2;
           assert( pIdx->pTable==pTab );
           if( !HasRowid(pTab) ){

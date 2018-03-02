@@ -79,4 +79,5 @@ do_test rtree5-1.13 {
 } {2 2147483643 2147483647 -2147483648 -2147483643}
 do_rtree_integrity_test rtree5-1.14 t1
 
+expand_all_sql db
 finish_test

@@ -507,6 +507,17 @@ if {$encoding=="UTF-16le"} {
     execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
   } {616161616161626364656667}
 }
+do_execsql_test func-9.14 {
+  WITH RECURSIVE c(x) AS (
+     VALUES(1)
+     UNION ALL
+     SELECT x+1 FROM c WHERE x<1040
+  )
+  SELECT 
+    count(*),
+    sum(length(replace(printf('abc%.*cxyz',x,'m'),'m','nnnn'))-(6+x*4))
+  FROM c;
+} {1040 0}
   
 # Use the "sqlite_register_test_function" TCL command which is part of
 # the text fixture in order to verify correct operation of some of

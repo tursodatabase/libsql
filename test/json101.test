@@ -759,7 +759,30 @@ do_execsql_test json-12.120 {
     FROM t12;
 } {0}
 
-
+# 2018-01-26
+# ticket https://www.sqlite.org/src/tktview/80177f0c226ff54f6ddd41
+# Make sure the query planner knows about the arguments to table-valued functions.
+#
+do_execsql_test json-13.100 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(id, json);
+  INSERT INTO t1(id,json) VALUES(1,'{"items":[3,5]}');
+  CREATE TABLE t2(id, json);
+  INSERT INTO t2(id,json) VALUES(2,'{"value":2}');
+  INSERT INTO t2(id,json) VALUES(3,'{"value":3}');
+  INSERT INTO t2(id,json) VALUES(4,'{"value":4}');
+  INSERT INTO t2(id,json) VALUES(5,'{"value":5}');
+  INSERT INTO t2(id,json) VALUES(6,'{"value":6}');
+  SELECT * FROM t1 CROSS JOIN t2
+   WHERE EXISTS(SELECT 1 FROM json_each(t1.json,'$.items') AS Z
+                 WHERE Z.value==t2.id);
+} {1 {{"items":[3,5]}} 3 {{"value":3}} 1 {{"items":[3,5]}} 5 {{"value":5}}}
+do_execsql_test json-13.110 {
+  SELECT * FROM t2 CROSS JOIN t1
+   WHERE EXISTS(SELECT 1 FROM json_each(t1.json,'$.items') AS Z
+                 WHERE Z.value==t2.id);
+} {3 {{"value":3}} 1 {{"items":[3,5]}} 5 {{"value":5}} 1 {{"items":[3,5]}}}
 
 
 finish_test

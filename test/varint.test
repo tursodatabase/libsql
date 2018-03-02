@@ -30,3 +30,5 @@ foreach start {0 100 10000 1000000 0x10000000} {
     }
   }
 }
+
+finish_test

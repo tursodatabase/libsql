@@ -2271,13 +2271,17 @@ proc test_restore_config_pagecache {} {
   sqlite3 db test.db
 }
 
-proc test_find_binary {nm} {
+proc test_binary_name {nm} {
   if {$::tcl_platform(platform)=="windows"} {
     set ret "$nm.exe"
   } else {
     set ret $nm
   }
-  set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
+  file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]
+}
+
+proc test_find_binary {nm} {
+  set ret [test_binary_name $nm]
   if {![file executable $ret]} {
     finish_test
     return ""
@@ -2303,6 +2307,16 @@ proc test_find_sqldiff {} {
   set prog [test_find_binary sqldiff]
   if {$prog==""} { return -code return }
   return $prog
+}
+
+# Call sqlite3_expanded_sql() on all statements associated with database
+# connection $db. This sometimes finds use-after-free bugs if run with
+# valgrind or address-sanitizer.
+proc expand_all_sql {db} {
+  set stmt ""
+  while {[set stmt [sqlite3_next_stmt $db $stmt]]!=""} {
+    sqlite3_expanded_sql $stmt
+  }
 }
 
 

@@ -92,7 +92,6 @@ void sqlite3MaterializeView(
   Expr *pWhere,        /* Optional WHERE clause to be added */
   ExprList *pOrderBy,  /* Optional ORDER BY clause */
   Expr *pLimit,        /* Optional LIMIT clause */
-  Expr *pOffset,       /* Optional OFFSET clause */
   int iCur             /* Cursor number for ephemeral table */
 ){
   SelectDest dest;
@@ -110,7 +109,7 @@ void sqlite3MaterializeView(
     assert( pFrom->a[0].pUsing==0 );
   }
   pSel = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, pOrderBy, 
-                          SF_IncludeHidden, pLimit, pOffset);
+                          SF_IncludeHidden, pLimit);
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pSel, &dest);
   sqlite3SelectDelete(db, pSel);
@@ -132,7 +131,6 @@ Expr *sqlite3LimitWhere(
   Expr *pWhere,                /* The WHERE clause.  May be null */
   ExprList *pOrderBy,          /* The ORDER BY clause.  May be null */
   Expr *pLimit,                /* The LIMIT clause.  May be null */
-  Expr *pOffset,               /* The OFFSET clause.  May be null */
   char *zStmtType              /* Either DELETE or UPDATE.  For err msgs. */
 ){
   sqlite3 *db = pParse->db;
@@ -149,8 +147,6 @@ Expr *sqlite3LimitWhere(
     sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on %s", zStmtType);
     sqlite3ExprDelete(pParse->db, pWhere);
     sqlite3ExprListDelete(pParse->db, pOrderBy);
-    sqlite3ExprDelete(pParse->db, pLimit);
-    sqlite3ExprDelete(pParse->db, pOffset);
     return 0;
   }
 
@@ -158,8 +154,6 @@ Expr *sqlite3LimitWhere(
   ** is a limit/offset term to enforce.
   */
   if( pLimit == 0 ) {
-    /* if pLimit is null, pOffset will always be null as well. */
-    assert( pOffset == 0 );
     return pWhere;
   }
 
@@ -206,7 +200,7 @@ Expr *sqlite3LimitWhere(
 
   /* generate the SELECT expression tree. */
   pSelect = sqlite3SelectNew(pParse, pEList, pSelectSrc, pWhere, 0 ,0, 
-      pOrderBy,0,pLimit,pOffset
+      pOrderBy,0,pLimit
   );
 
   /* now generate the new WHERE rowid IN clause for the DELETE/UDPATE */
@@ -229,8 +223,7 @@ void sqlite3DeleteFrom(
   SrcList *pTabList,     /* The table from which we should delete things */
   Expr *pWhere,          /* The WHERE clause.  May be null */
   ExprList *pOrderBy,    /* ORDER BY clause. May be null */
-  Expr *pLimit,          /* LIMIT clause. May be null */
-  Expr *pOffset          /* OFFSET clause. May be null */
+  Expr *pLimit           /* LIMIT clause. May be null */
 ){
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
@@ -290,11 +283,11 @@ void sqlite3DeleteFrom(
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
   isView = pTab->pSelect!=0;
-  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #else
 # define pTrigger 0
 # define isView 0
 #endif
+  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0
@@ -303,10 +296,10 @@ void sqlite3DeleteFrom(
 #ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
   if( !isView ){
     pWhere = sqlite3LimitWhere(
-        pParse, pTabList, pWhere, pOrderBy, pLimit, pOffset, "DELETE"
+        pParse, pTabList, pWhere, pOrderBy, pLimit, "DELETE"
     );
     pOrderBy = 0;
-    pLimit = pOffset = 0;
+    pLimit = 0;
   }
 #endif
 
@@ -358,11 +351,11 @@ void sqlite3DeleteFrom(
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
     sqlite3MaterializeView(pParse, pTab, 
-        pWhere, pOrderBy, pLimit, pOffset, iTabCur
+        pWhere, pOrderBy, pLimit, iTabCur
     );
     iDataCur = iIdxCur = iTabCur;
     pOrderBy = 0;
-    pLimit = pOffset = 0;
+    pLimit = 0;
   }
 #endif
 
@@ -609,7 +602,6 @@ delete_from_cleanup:
 #if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) 
   sqlite3ExprListDelete(db, pOrderBy);
   sqlite3ExprDelete(db, pLimit);
-  sqlite3ExprDelete(db, pOffset);
 #endif
   sqlite3DbFree(db, aToOpen);
   return;
@@ -768,7 +760,7 @@ void sqlite3GenerateRowDelete(
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( pParse->nested==0 ){
+    if( pParse->nested==0 || 0==sqlite3_stricmp(pTab->zName, "sqlite_stat1") ){
       sqlite3VdbeAppendP4(v, (char*)pTab, P4_TABLE);
     }
     if( eMode!=ONEPASS_OFF ){

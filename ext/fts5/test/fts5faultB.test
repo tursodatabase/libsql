@@ -130,5 +130,22 @@ do_faultsim_test 4.2 -faults oom* -body {
   faultsim_test_result {0 {2 3}}
 }
 
+#-------------------------------------------------------------------------
+# Test OOM injection while parsing a CARET expression
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('a b c d');  -- 1
+  INSERT INTO t1 VALUES('d a b c');  -- 2
+  INSERT INTO t1 VALUES('c d a b');  -- 3
+  INSERT INTO t1 VALUES('b c d a');  -- 4
+}
+do_faultsim_test 5.1 -faults oom* -body {
+  execsql { SELECT rowid FROM t1('^a OR ^b') }
+} -test {
+  faultsim_test_result {0 {1 4}}
+}
+
 
 finish_test

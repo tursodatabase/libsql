@@ -609,4 +609,5 @@ do_execsql_test 15.2 {
   COMMIT;
 }
 
+expand_all_sql db
 finish_test
