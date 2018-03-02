@@ -220,7 +220,9 @@ if {[catch {sqlite3 db $file_to_analyze} res]} {
 if {$bFreelistCheck || $bAll} {
   puts -nonewline "freelist-check: "
   flush stdout
+  db eval BEGIN
   puts [db one {SELECT checkfreelist('main')}]
+  db eval END
 }
 if {$bSummary} {
   set scale 0

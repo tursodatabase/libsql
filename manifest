@@ -1,5 +1,5 @@
-C In\sa\scheckpoint,\sfigure\sout\sif\sit\sis\spossible\sto\scheckpoint\sany\sframes\sat\sall\nbefore\screating\sthe\swal-iterator.
-D 2018-03-02T16:52:47.523
+C In\ssqlite3_checker,\swrap\sthe\scall\sto\s"SELECT\scheckfreelist()"\sin\sa\ntransaction.
+D 2018-03-02T20:00:42.454
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -346,7 +346,7 @@ F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b14469
 F ext/repair/checkfreelist.c 0dbae18c1b552f58d64f8969e4fb1e7f11930c60a8c2a9a8d50b7f15bdfd54bd
 F ext/repair/checkindex.c 7d28c01a2e012ac64257d230fc452b2cafb78311a91a343633d01d95220f66f3
 F ext/repair/sqlite3_checker.c.in 4a5a3af3f450fe503e5a2985e98516dc2a6b9ad247449e284c1cf140fc91720f
-F ext/repair/sqlite3_checker.tcl cc69e7fbc163f94da4a6400609be001543442d9f8f57a797d1eeb7b897585730
+F ext/repair/sqlite3_checker.tcl a9a2caa9660567257c177a91124d8c0dccdfa341e25c51e6da7f1fd9e601eafa
 F ext/repair/test/README.md 34b2f542cf5be7bffe479242b33ee3492cea30711e447cc4a1a86cb5915f419e
 F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc78249442da72ff3f8297398a69
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f5057dffa9be1bccab04894709d25bf1f066c4b1aef50d67ee635d46d300a4d
-R de1a2fcd17a7874df266511eaa97ccfc
+P 044b0b65e716bffeddedbd1b0360c4c332f6d2359167c1d327a5ff96539474cb
+R 5617c0cb2b4786d2069667d5badd72e3
 U dan
-Z 77af2128f3c4feb420234b4cd2eef89e
+Z c724546c7342e99a479e8d8eca82215b
