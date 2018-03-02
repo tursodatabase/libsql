@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2018-03-02T17:40:23.911
+C Update\sthis\sbranch\swith\srecent\scheckpoint\srelated\schanges\sfrom\strunk.
+D 2018-03-02T17:59:37.964
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -572,7 +572,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 44e8d9f9b42dba0dd6253d67574307ff1892ee56f3ae99cabfcec5a2676763b4
+F src/wal.c b6ad12df144846d02db4a18cadf9e5fcf39f1d7b7156f94131ab4076384dec07
 F src/wal.h 1713fefe4587678c295bbeb91c4e7442998ad74f19249869ce49dda9e8ce5d53
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 7cae47e813393d70c6d327fdf000fcb30f76b1b0b5a5b52ff6402e0c658de32c
@@ -1719,7 +1719,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 163c870950f386f6b0bb1ff9b3886cf95ba0deed414cae75baf87621ed3528c2 1293d4f64f322ee57510bdff497c54e0be2c9205217e1fd96887bba1f36bec40
-R d95135aa69ebdf39b1d9aaa7d36a2c84
+P 36801effa9ec67b551f58972e21794466420f10cd0420701fcd87695e6cd11ee 044b0b65e716bffeddedbd1b0360c4c332f6d2359167c1d327a5ff96539474cb
+R db5621b69ea924f8256c1ea108391b00
 U dan
-Z 069d19cd10e378f6784afc839a1c9bac
+Z 5f73e55771155cb4923ea7c8cff8af6b
