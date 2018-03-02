@@ -78,3 +78,5 @@ db cache flush
 do_execsql_test stmtvtab1-160 {
   SELECT * FROM sqlite_stmt WHERE NOT busy;
 } {}
+
+finish_test

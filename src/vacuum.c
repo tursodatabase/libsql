@@ -39,8 +39,8 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
     const char *zSubSql = (const char*)sqlite3_column_text(pStmt,0);
     assert( sqlite3_strnicmp(zSql,"SELECT",6)==0 );
-    if( zSubSql ){
-      assert( zSubSql[0]!='S' );
+    assert( sqlite3_strnicmp(zSubSql,"SELECT",6)!=0 || CORRUPT_DB );
+    if( zSubSql && zSubSql[0]!='S' ){
       rc = execSql(db, pzErrMsg, zSubSql);
       if( rc!=SQLITE_OK ) break;
     }

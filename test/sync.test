@@ -26,6 +26,10 @@ ifcapable !pager_pragmas||!attach {
   finish_test
   return
 }
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
 
 set sqlite_sync_count 0
 proc cond_incr_sync_count {adj} {

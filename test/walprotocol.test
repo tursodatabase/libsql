@@ -52,21 +52,21 @@ do_test 1.1 {
   set ::locks [list]
   sqlite3 db test.db -vfs T
   execsql { SELECT * FROM x }
-  lrange $::locks 0 3
-} [list {0 1 lock exclusive} {1 7 lock exclusive}      \
-        {1 7 unlock exclusive} {0 1 unlock exclusive}  \
+  lrange $::locks 0 5
+} [list {0 1 lock exclusive} {1 2 lock exclusive} {4 4 lock exclusive} \
+        {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}  \
 ]
 do_test 1.2 {
   db close
   set ::locks [list]
   sqlite3 db test.db -vfs T
   execsql { SELECT * FROM x }
-  lrange $::locks 0 3
-} [list {0 1 lock exclusive} {1 7 lock exclusive}      \
-        {1 7 unlock exclusive} {0 1 unlock exclusive}  \
+  lrange $::locks 0 5
+} [list {0 1 lock exclusive} {1 2 lock exclusive} {4 4 lock exclusive} \
+        {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}  \
 ]
 proc lock_callback {method filename handle lock} {
-  if {$lock == "1 7 lock exclusive"} { return SQLITE_BUSY }
+  if {$lock == "1 2 lock exclusive"} { return SQLITE_BUSY }
   return SQLITE_OK
 }
 puts "# Warning: This next test case causes SQLite to call xSleep(1) 100 times."
@@ -85,6 +85,18 @@ proc lock_callback {method filename handle lock} {
   return SQLITE_OK
 }
 do_test 1.4 {
+  db close
+  set ::locks [list]
+  sqlite3 db test.db -vfs T
+  catchsql { SELECT * FROM x }
+} {1 {locking protocol}}
+
+puts "# Warning: Third time!"
+proc lock_callback {method filename handle lock} {
+  if {$lock == "4 4 lock exclusive"} { return SQLITE_BUSY }
+  return SQLITE_OK
+}
+do_test 1.5 {
   db close
   set ::locks [list]
   sqlite3 db test.db -vfs T
@@ -135,13 +147,14 @@ T filter xShmLock
 T script lock_callback
 
 proc lock_callback {method file handle spec} {
-  if {$spec == "1 7 unlock exclusive"} {
+  if {$spec == "1 2 unlock exclusive"} {
     T filter {}
     set ::r [catchsql { SELECT * FROM b } db2]
   }
 }
 sqlite3 db test.db
 sqlite3 db2 test.db
+puts "# Warning: Another slow test!"
 do_test 2.5 {
   execsql { SELECT * FROM b }
 } {Tehran Qom Markazi Qazvin Gilan Ardabil}
@@ -157,12 +170,13 @@ sqlite3 db2 test.db
 T filter xShmLock
 T script lock_callback
 proc lock_callback {method file handle spec} {
-  if {$spec == "1 7 unlock exclusive"} {
+  if {$spec == "1 2 unlock exclusive"} {
     T filter {}
     set ::r [catchsql { SELECT * FROM b } db2]
   }
 }
 unset ::r
+puts "# Warning: Last one!"
 do_test 2.7 {
   execsql { SELECT * FROM b }
 } {Tehran Qom Markazi Qazvin Gilan Ardabil}

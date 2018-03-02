@@ -43,7 +43,7 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   if( p->flags & MEM_Null ){
     /* Cannot be both MEM_Null and some other type */
     assert( (p->flags & (MEM_Int|MEM_Real|MEM_Str|MEM_Blob
-                         |MEM_RowSet|MEM_Frame|MEM_Agg|MEM_Zero))==0 );
+                         |MEM_RowSet|MEM_Frame|MEM_Agg))==0 );
 
     /* If MEM_Null is set, then either the value is a pure NULL (the usual
     ** case) or it is a pointer set using sqlite3_bind_pointer() or
@@ -93,6 +93,51 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
 }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Check that string value of pMem agrees with its integer or real value.
+**
+** A single int or real value always converts to the same strings.  But
+** many different strings can be converted into the same int or real.
+** If a table contains a numeric value and an index is based on the
+** corresponding string value, then it is important that the string be
+** derived from the numeric value, not the other way around, to ensure
+** that the index and table are consistent.  See ticket
+** https://www.sqlite.org/src/info/343634942dd54ab (2018-01-31) for
+** an example.
+**
+** This routine looks at pMem to verify that if it has both a numeric
+** representation and a string representation then the string rep has
+** been derived from the numeric and not the other way around.  It returns
+** true if everything is ok and false if there is a problem.
+**
+** This routine is for use inside of assert() statements only.
+*/
+int sqlite3VdbeMemConsistentDualRep(Mem *p){
+  char zBuf[100];
+  char *z;
+  int i, j, incr;
+  if( (p->flags & MEM_Str)==0 ) return 1;
+  if( (p->flags & (MEM_Int|MEM_Real))==0 ) return 1;
+  if( p->flags & MEM_Int ){
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%lld",p->u.i);
+  }else{
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%!.15g",p->u.r);
+  }
+  z = p->z;
+  i = j = 0;
+  incr = 1;
+  if( p->enc!=SQLITE_UTF8 ){
+    incr = 2;
+    if( p->enc==SQLITE_UTF16BE ) z++;
+  }
+  while( zBuf[j] ){
+    if( zBuf[j++]!=z[i] ) return 0;
+    i += incr;
+  }
+  return 1;
+}
+#endif /* SQLITE_DEBUG */
 
 /*
 ** If pMem is an object with a valid string representation, this routine
@@ -528,6 +573,16 @@ double sqlite3VdbeRealValue(Mem *pMem){
 }
 
 /*
+** Return 1 if pMem represents true, and return 0 if pMem represents false.
+** Return the value ifNull if pMem is NULL.  
+*/
+int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
+  if( pMem->flags & MEM_Int ) return pMem->u.i!=0;
+  if( pMem->flags & MEM_Null ) return ifNull;
+  return sqlite3VdbeRealValue(pMem)!=0.0;
+}
+
+/*
 ** The MEM structure is already a MEM_Real.  Try to also make it a
 ** MEM_Int if we can.
 */
@@ -582,6 +637,18 @@ int sqlite3VdbeMemRealify(Mem *pMem){
   return SQLITE_OK;
 }
 
+/* Compare a floating point value to an integer.  Return true if the two
+** values are the same within the precision of the floating point value.
+**
+** For some versions of GCC on 32-bit machines, if you do the more obvious
+** comparison of "r1==(double)i" you sometimes get an answer of false even
+** though the r1 and (double)i values are bit-for-bit the same.
+*/
+static int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
+  double r2 = (double)i;
+  return memcmp(&r1, &r2, sizeof(r1))==0;
+}
+
 /*
 ** Convert pMem so that it has types MEM_Real or MEM_Int or both.
 ** Invalidate any prior representations.
@@ -601,7 +668,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     }else{
       i64 i = pMem->u.i;
       sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
-      if( rc==1 && pMem->u.r==(double)i ){
+      if( rc==1 && sqlite3RealSameAsInt(pMem->u.r, i) ){
         pMem->u.i = i;
         MemSetTypeFlag(pMem, MEM_Int);
       }else{
@@ -1084,6 +1151,7 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
               || pVal->db->mallocFailed );
   if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
+    assert( sqlite3VdbeMemConsistentDualRep(pVal) );
     return pVal->z;
   }else{
     return 0;
@@ -1106,6 +1174,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
   assert( (pVal->flags & MEM_RowSet)==0 );
   if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
+    assert( sqlite3VdbeMemConsistentDualRep(pVal) );
     return pVal->z;
   }
   if( pVal->flags&MEM_Null ){
@@ -1321,7 +1390,11 @@ static int valueFromExpr(
 
   assert( pExpr!=0 );
   while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
+#if defined(SQLITE_ENABLE_STAT3_OR_STAT4)
+  if( op==TK_REGISTER ) op = pExpr->op2;
+#else
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+#endif
 
   /* Compressed expressions only appear when parsing the DEFAULT clause
   ** on a table column definition, and hence only when pCtx==0.  This
@@ -1416,7 +1489,10 @@ static int valueFromExpr(
   return rc;
 
 no_mem:
-  sqlite3OomFault(db);
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  if( pCtx==0 || pCtx->pParse->nErr==0 )
+#endif
+    sqlite3OomFault(db);
   sqlite3DbFree(db, zVal);
   assert( *ppVal==0 );
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4

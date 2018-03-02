@@ -18,6 +18,11 @@ ifcapable {!pager_pragmas} {
   return
 }
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
+
 #-------------------------------------------------------------------------
 # The tests in this file check that the following two bugs (both now fixed)
 # do not reappear.

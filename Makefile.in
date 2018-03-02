@@ -89,6 +89,9 @@ TCC += $(OPT_FEATURE_FLAGS)
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC += $(OPTS)
 
+# Add in compile-time options for some libraries used by extensions
+TCC += @HAVE_ZLIB@
+
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = @VERSION@
@@ -422,6 +425,8 @@ TESTSRC = \
 # Statically linked extensions
 #
 TESTSRC += \
+  $(TOP)/ext/expert/sqlite3expert.c \
+  $(TOP)/ext/expert/test_expert.c \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/closure.c \
@@ -435,6 +440,7 @@ TESTSRC += \
   $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/mmapwarm.c \
   $(TOP)/ext/misc/nextchar.c \
+  $(TOP)/ext/misc/normalize.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
   $(TOP)/ext/misc/remember.c \
@@ -442,7 +448,8 @@ TESTSRC += \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/unionvtab.c \
-  $(TOP)/ext/misc/wholenumber.c
+  $(TOP)/ext/misc/wholenumber.c \
+  $(TOP)/ext/misc/zipfile.c
 
 # Source code to the library files needed by the test fixture
 #
@@ -553,7 +560,8 @@ TESTPROGS = \
   sqlite3$(TEXE) \
   sqlite3_analyzer$(TEXE) \
   sqldiff$(TEXE) \
-  dbhash$(TEXE)
+  dbhash$(TEXE) \
+  sqltclsh$(TEXE)
 
 # Databases containing fuzzer test cases
 #
@@ -571,15 +579,19 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra compiler options for various shell tools
 #
 SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4
-# SHELL_OPT += -DSQLITE_ENABLE_FTS5
+#SHELL_OPT += -DSQLITE_ENABLE_FTS5
+SHELL_OPT += -DSQLITE_ENABLE_RTREE
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+SHELL_OPT += -DSQLITE_INTROSPECTION_PRAGMAS
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
+FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c
 DBFUZZ_OPT = 
 
@@ -985,9 +997,15 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source files that go into making shell.c
 SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
+        $(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
-	$(TOP)/ext/misc/completion.c
+	$(TOP)/ext/misc/completion.c \
+	$(TOP)/ext/misc/sqlar.c \
+	$(TOP)/ext/expert/sqlite3expert.c \
+	$(TOP)/ext/expert/sqlite3expert.h \
+	$(TOP)/ext/misc/zipfile.c \
+        $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
@@ -1186,6 +1204,15 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
+
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in	
+	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
+
+sqltclsh$(TEXE): sqltclsh.c
+	$(LTLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
+
+sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
+	$(LTLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(TLIBS)
 
 CHECKER_DEPS =\
   $(TOP)/tool/mkccode.tcl \

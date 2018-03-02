@@ -722,6 +722,8 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
   int bPrefix
 );
 
+void sqlite3Fts5ParseSetCaret(Fts5ExprPhrase*);
+
 Fts5ExprNearset *sqlite3Fts5ParseNearset(
   Fts5Parse*, 
   Fts5ExprNearset*,

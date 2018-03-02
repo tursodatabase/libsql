@@ -200,5 +200,20 @@ do_test 5.2 {
   set A(NotExists)
 } {1}
 
+#-------------------------------------------------------------------------
+do_execsql_test 6.0 {
+  CREATE TABLE d1(a,b);
+  CREATE INDEX d1b ON d1(a);
+  CREATE INDEX d1c ON d1(b);
+  INSERT INTO d1 VALUES(1,2);
+}
+
+do_execsql_test 6.1 {
+  UPDATE d1 SET a = a+2 WHERE a>0 OR b>0;
+}
+
+do_execsql_test 6.2 {
+  SELECT * FROM d1;
+} {3 2}
 
 finish_test

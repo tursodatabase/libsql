@@ -1080,6 +1080,7 @@ void sqlite3Pragma(
   ** type:       Column declaration type.
   ** notnull:    True if 'NOT NULL' is part of column declaration
   ** dflt_value: The default value for the column, if any.
+  ** pk:         Non-zero for PK fields.
   */
   case PragTyp_TABLE_INFO: if( zRight ){
     Table *pTab;

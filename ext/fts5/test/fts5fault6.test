@@ -253,7 +253,7 @@ do_faultsim_test 5.2 -faults oom* -prep {
     SELECT rowid, mit(matchinfo(t1, 'x')) FROM t1 WHERE t1 MATCH 'a AND c'
   }
 } -test {
-  faultsim_test_result [list 0 $::res]
+  faultsim_test_result [list 0 $::res] {1 {SQL logic error}}
 }
 
 do_faultsim_test 5.3 -faults oom* -prep {
@@ -264,7 +264,7 @@ do_faultsim_test 5.3 -faults oom* -prep {
     SELECT count(*) FROM t1 WHERE t1 MATCH 'd AND e AND f'
   }
 } -test {
-  faultsim_test_result {0 29}
+  faultsim_test_result {0 29} {1 {SQL logic error}}
 }
 
 do_faultsim_test 5.4 -faults oom* -prep {
@@ -275,7 +275,7 @@ do_faultsim_test 5.4 -faults oom* -prep {
     SELECT count(*) FROM t1 WHERE t1 MATCH 'x + e'
   }
 } -test {
-  faultsim_test_result {0 1}
+  faultsim_test_result {0 1} {1 {SQL logic error}}
 }
 
 #-------------------------------------------------------------------------

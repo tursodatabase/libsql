@@ -163,7 +163,7 @@ do_test capi2-3.2 {
       sqlite3_prepare $DB {select bogus from } -1 TAIL
   } msg]
   lappend rc $msg $TAIL
-} {1 {(1) near " ": syntax error} {}}
+} {1 {(1) incomplete input} {}}
 do_test capi2-3.3 {
   set rc [catch {
       sqlite3_prepare $DB {;;;;select bogus from sqlite_master} -1 TAIL
@@ -184,7 +184,7 @@ do_test capi2-3.5 {
 } {1 {(1) no such column: bogus} {;;x;}}
 do_test capi2-3.6 {
   set rc [catch {
-      sqlite3_prepare $DB {select 5/0} -1 TAIL
+      sqlite3_prepare $DB {select 5/0;} -1 TAIL
   } VM]
   lappend rc $TAIL
 } {0 {}}

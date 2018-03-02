@@ -93,8 +93,7 @@ void sqlite3Update(
   Expr *pWhere,          /* The WHERE clause.  May be null */
   int onError,           /* How to handle constraint errors */
   ExprList *pOrderBy,    /* ORDER BY clause. May be null */
-  Expr *pLimit,          /* LIMIT clause. May be null */
-  Expr *pOffset          /* OFFSET clause. May be null */
+  Expr *pLimit           /* LIMIT clause. May be null */
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
@@ -182,10 +181,10 @@ void sqlite3Update(
 #ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
   if( !isView ){
     pWhere = sqlite3LimitWhere(
-        pParse, pTabList, pWhere, pOrderBy, pLimit, pOffset, "UPDATE"
+        pParse, pTabList, pWhere, pOrderBy, pLimit, "UPDATE"
     );
     pOrderBy = 0;
-    pLimit = pOffset = 0;
+    pLimit = 0;
   }
 #endif
 
@@ -358,10 +357,10 @@ void sqlite3Update(
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
     sqlite3MaterializeView(pParse, pTab, 
-        pWhere, pOrderBy, pLimit, pOffset, iDataCur
+        pWhere, pOrderBy, pLimit, iDataCur
     );
     pOrderBy = 0;
-    pLimit = pOffset = 0;
+    pLimit = 0;
   }
 #endif
 
@@ -748,7 +747,6 @@ update_cleanup:
 #if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) 
   sqlite3ExprListDelete(db, pOrderBy);
   sqlite3ExprDelete(db, pLimit);
-  sqlite3ExprDelete(db, pOffset);
 #endif
   return;
 }
@@ -809,7 +807,7 @@ static void updateVirtualTable(
   int bOnePass;                   /* True to use onepass strategy */
   int addr;                       /* Address of OP_OpenEphemeral */
 
-  /* Allocate nArg registers to martial the arguments to VUpdate. Then
+  /* Allocate nArg registers in which to gather the arguments for VUpdate. Then
   ** create and open the ephemeral table in which the records created from
   ** these arguments will be temporarily stored. */
   assert( v );
@@ -830,6 +828,7 @@ static void updateVirtualTable(
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
+      sqlite3VdbeChangeP5(v, 1); /* Enable sqlite3_vtab_nochange() */
     }
   }
   if( HasRowid(pTab) ){
@@ -864,6 +863,11 @@ static void updateVirtualTable(
     /* Create a record from the argument register contents and insert it into
     ** the ephemeral table. */
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
+#ifdef SQLITE_DEBUG
+    /* Signal an assert() within OP_MakeRecord that it is allowed to
+    ** accept no-change records with serial_type 10 */
+    sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
+#endif
     sqlite3VdbeAddOp2(v, OP_NewRowid, ephemTab, regRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
   }

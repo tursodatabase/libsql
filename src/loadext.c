@@ -430,7 +430,11 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_prepare16_v3,
   sqlite3_bind_pointer,
   sqlite3_result_pointer,
-  sqlite3_value_pointer
+  sqlite3_value_pointer,
+  /* Version 3.22.0 and later */
+  sqlite3_vtab_nochange,
+  sqlite3_value_nochange,
+  sqlite3_vtab_collation
 };
 
 /*
@@ -496,8 +500,10 @@ static int sqlite3LoadExtension(
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
   for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
     char *zAltFile = sqlite3_mprintf("%s.%s", zFile, azEndings[ii]);
+    int bExists = 0;
     if( zAltFile==0 ) return SQLITE_NOMEM_BKPT;
-    handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    sqlite3OsAccess(pVfs, zAltFile, SQLITE_ACCESS_EXISTS, &bExists);
+    if( bExists )  handle = sqlite3OsDlOpen(pVfs, zAltFile);
     sqlite3_free(zAltFile);
   }
 #endif

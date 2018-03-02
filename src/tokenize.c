@@ -526,7 +526,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       }else{
         tokenType = TK_SEMI;
       }
-      zSql -= n;
+      n = 0;
     }
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );

@@ -14,7 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix fts3expr5
+set testprefix fts3rank
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
@@ -56,9 +56,14 @@ do_catchsql_test 1.4 {
   SELECT * FROM t1 ORDER BY rank(x'0000000000000000') DESC, rowid
 } {0 {{one two} one {one two} three {one two} two}}
 
-do_catchsql_test 1.5 {
-  SELECT * FROM t1 ORDER BY rank(x'0100000001000000') DESC, rowid
-} {1 {invalid matchinfo blob passed to function rank()}}
+if {$tcl_platform(byteOrder)=="littleEndian"} {
+  do_catchsql_test 1.5le {
+    SELECT * FROM t1 ORDER BY rank(x'0100000001000000') DESC, rowid
+  } {1 {invalid matchinfo blob passed to function rank()}}
+} else {
+  do_catchsql_test 1.5be {
+    SELECT * FROM t1 ORDER BY rank(x'0000000100000001') DESC, rowid
+  } {1 {invalid matchinfo blob passed to function rank()}}
+}
 
 finish_test
-

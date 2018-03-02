@@ -52,7 +52,8 @@
 **      child page.
 */
 
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
+#if !defined(SQLITE_CORE) \
+  || (defined(SQLITE_ENABLE_RTREE) && !defined(SQLITE_OMIT_VIRTUALTABLE))
 
 #ifndef SQLITE_CORE
   #include "sqlite3ext.h"
@@ -784,6 +785,7 @@ static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
     sqlite3_step(p);
     pNode->isDirty = 0;
     rc = sqlite3_reset(p);
+    sqlite3_bind_null(p, 2);
     if( pNode->iNode==0 && rc==SQLITE_OK ){
       pNode->iNode = sqlite3_last_insert_rowid(pRtree->db);
       nodeHashInsert(pRtree, pNode);
@@ -2021,7 +2023,7 @@ static int ChooseLeaf(
 ){
   int rc;
   int ii;
-  RtreeNode *pNode;
+  RtreeNode *pNode = 0;
   rc = nodeAcquire(pRtree, 1, 0, &pNode);
 
   for(ii=0; rc==SQLITE_OK && ii<(pRtree->iDepth-iHeight); ii++){
@@ -2896,7 +2898,7 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   */
   if( rc==SQLITE_OK && pRtree->iDepth>0 && NCELL(pRoot)==1 ){
     int rc2;
-    RtreeNode *pChild;
+    RtreeNode *pChild = 0;
     i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
     rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
     if( rc==SQLITE_OK ){

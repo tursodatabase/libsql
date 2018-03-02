@@ -172,7 +172,7 @@ ifcapable crashtest&&attach {
 # These tests can't be run on windows because the windows version of 
 # SQLite holds a mandatory exclusive lock on journal files it has open.
 #
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform)!="windows" && ![atomic_batch_write test.db]} {
   do_ioerr_test ioerr-7 -tclprep {
     db close
     sqlite3 db2 test2.db
@@ -211,7 +211,7 @@ do_ioerr_test ioerr-8 -ckrefcount true -tclprep {
 
 # For test coverage: Cause an IO error whilst reading the master-journal
 # name from a journal file.
-if {$tcl_platform(platform)=="unix"} {
+if {$tcl_platform(platform)=="unix" && [atomic_batch_write test.db]==0} {
   do_ioerr_test ioerr-9 -ckrefcount true -tclprep {
     execsql {
       CREATE TABLE t1(a,b,c);

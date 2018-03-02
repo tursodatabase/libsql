@@ -91,3 +91,5 @@ do_execsql_test 4.5 {
 do_execsql_test 4.6 {
   SELECT '1234x'/'10y';
 } {123.4}
+
+finish_test
