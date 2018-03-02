@@ -1789,13 +1789,6 @@ static int walCheckpoint(
   pInfo = walCkptInfo(pWal);
   if( pInfo->nBackfill<pWal->hdr.mxFrame ){
 
-    /* Allocate the iterator */
-    rc = walIteratorInit(pWal, pInfo->nBackfill, &pIter);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    assert( pIter );
-
     /* EVIDENCE-OF: R-62920-47450 The busy-handler callback is never invoked
     ** in the SQLITE_CHECKPOINT_PASSIVE mode. */
     assert( eMode!=SQLITE_CHECKPOINT_PASSIVE || xBusy==0 );
@@ -1832,7 +1825,13 @@ static int walCheckpoint(
       }
     }
 
-    if( pInfo->nBackfill<mxSafeFrame
+    /* Allocate the iterator */
+    if( pInfo->nBackfill<mxSafeFrame ){
+      rc = walIteratorInit(pWal, pInfo->nBackfill, &pIter);
+      assert( rc==SQLITE_OK || pIter==0 );
+    }
+
+    if( pIter
      && (rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(0),1))==SQLITE_OK
     ){
       i64 nSize;                    /* Current size of database file */
