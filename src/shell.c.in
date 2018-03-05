@@ -7968,7 +7968,7 @@ static void process_sqliterc(
 */
 static const char zOptions[] =
 #if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  "   -Aopts ARGS...       run \".archive -opts ARGS\" and exit\n"
+  "   -A ARGS...           run \".archive ARGS\" and exit\n"
 #endif
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
