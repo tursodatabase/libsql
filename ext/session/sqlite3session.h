@@ -22,7 +22,7 @@ typedef struct sqlite3_session sqlite3_session;
 /*
 ** CAPI3REF: Changeset Iterator Handle
 **
-** An instance of this object is as as a cursor for iterating
+** An instance of this object acts as a cursor for iterating
 ** over the elements of a [changeset] or [patchset].
 */
 typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;

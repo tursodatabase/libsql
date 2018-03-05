@@ -2718,17 +2718,17 @@ static int sessionReadRecord(
   for(i=0; i<nCol && rc==SQLITE_OK; i++){
     int eType = 0;                /* Type of value (SQLITE_NULL, TEXT etc.) */
     if( abPK && abPK[i]==0 ) continue;
-    if( pIn->iNext>=pIn->nData ){
-      rc = SQLITE_CORRUPT;
-    }else{
-      rc = sessionInputBuffer(pIn, 9);
-    }
+    rc = sessionInputBuffer(pIn, 9);
     if( rc==SQLITE_OK ){
-      eType = pIn->aData[pIn->iNext++];
-      assert( apOut[i]==0 );
-      if( eType ){
-        apOut[i] = sqlite3ValueNew(0);
-        if( !apOut[i] ) rc = SQLITE_NOMEM;
+      if( pIn->iNext>=pIn->nData ){
+        rc = SQLITE_CORRUPT_BKPT;
+      }else{
+        eType = pIn->aData[pIn->iNext++];
+        assert( apOut[i]==0 );
+        if( eType ){
+          apOut[i] = sqlite3ValueNew(0);
+          if( !apOut[i] ) rc = SQLITE_NOMEM;
+        }
       }
     }
 
@@ -2739,10 +2739,14 @@ static int sessionReadRecord(
         pIn->iNext += sessionVarintGet(aVal, &nByte);
         rc = sessionInputBuffer(pIn, nByte);
         if( rc==SQLITE_OK ){
-          u8 enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
-          rc = sessionValueSetStr(apOut[i],&pIn->aData[pIn->iNext],nByte,enc);
+          if( nByte<0 || nByte>pIn->nData-pIn->iNext ){
+            rc = SQLITE_CORRUPT_BKPT;
+          }else{
+            u8 enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
+            rc = sessionValueSetStr(apOut[i],&pIn->aData[pIn->iNext],nByte,enc);
+            pIn->iNext += nByte;
+          }
         }
-        pIn->iNext += nByte;
       }
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
         sqlite3_int64 v = sessionGetI64(aVal);
@@ -2782,8 +2786,12 @@ static int sessionChangesetBufferTblhdr(SessionInput *pIn, int *pnByte){
   rc = sessionInputBuffer(pIn, 9);
   if( rc==SQLITE_OK ){
     nRead += sessionVarintGet(&pIn->aData[pIn->iNext + nRead], &nCol);
-    rc = sessionInputBuffer(pIn, nRead+nCol+100);
-    nRead += nCol;
+    if( nCol<0 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      rc = sessionInputBuffer(pIn, nRead+nCol+100);
+      nRead += nCol;
+    }
   }
 
   while( rc==SQLITE_OK ){
@@ -2867,7 +2875,7 @@ static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
       p->tblhdr.nBuf = 0;
       sessionBufferGrow(&p->tblhdr, nByte, &rc);
     }else{
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_BKPT;
     }
   }
 
@@ -2995,9 +3003,9 @@ static int sessionChangesetNext(
       ** new.* to old.*, to accommodate the code that reads these arrays.  */
       for(i=0; i<p->nCol; i++){
         assert( p->apValue[i]==0 );
-        assert( p->abPK[i]==0 || p->apValue[i+p->nCol] );
         if( p->abPK[i] ){
           p->apValue[i] = p->apValue[i+p->nCol];
+          if( p->apValue[i]==0 ) return (p->rc = SQLITE_CORRUPT_BKPT);
           p->apValue[i+p->nCol] = 0;
         }
       }
@@ -3725,7 +3733,7 @@ static int sessionBindRow(
       if( pVal==0 ){
         /* The value in the changeset was "undefined". This indicates a
         ** corrupt changeset blob.  */
-        rc = SQLITE_CORRUPT;
+        rc = SQLITE_CORRUPT_BKPT;
       }else{
         rc = sessionBindValue(pStmt, i+1, pVal);
       }

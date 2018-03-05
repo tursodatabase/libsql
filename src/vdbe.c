@@ -2379,7 +2379,7 @@ case OP_IfNullRow: {         /* jump */
 ** P2 is the column number for the argument to the sqlite_offset() function.
 ** This opcode does not use P2 itself, but the P2 value is used by the
 ** code generator.  The P1, P2, and P3 operands to this opcode are the
-** as as for OP_Column.
+** same as for OP_Column.
 **
 ** This opcode is only available if SQLite is compiled with the
 ** -DSQLITE_ENABLE_OFFSET_SQL_FUNC option.
