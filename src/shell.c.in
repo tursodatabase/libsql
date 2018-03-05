@@ -7967,6 +7967,9 @@ static void process_sqliterc(
 ** Show available command line options
 */
 static const char zOptions[] =
+#if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
+  "   -archive ARGS...     pass ARGS to the \".archive\" command\n"
+#endif
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
@@ -8263,6 +8266,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openMode = SHELL_OPEN_APPENDVFS;
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+    }else if( strcmp(z, "-archive")==0 || strcmp(z, "-ar")==0 ){
+      /* All remaining command-line arguments are passed to the ".archive"
+      ** command, so ignore them */
+      break;
+#endif
     }
   }
   if( data.zDbFilename==0 ){
@@ -8408,6 +8417,17 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
           if( bail_on_error ) return rc;
         }
       }
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+    }else if( strcmp(z, "-archive")==0 || strcmp(z, "-ar")==0 ){
+      if( nCmd>0 ){
+        utf8_printf(stderr, "Error: cannot mix regular SQL or dot-commands"
+                            " with \"%s\"\n", z);
+        return 1;
+      }
+      arDotCommand(&data, argv+i, argc-i);
+      readStdin = 0;
+      break;
+#endif
     }else{
       utf8_printf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       raw_printf(stderr,"Use -help for a list of options.\n");
