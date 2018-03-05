@@ -1,5 +1,5 @@
-C Fix\sanother\scrash\sin\sthe\ssessions\smodule\striggered\sby\smalformed\sinput.
-D 2018-03-05T21:17:20.992
+C Fix\swalIteratorInit()\sso\sthat\sit\salways\sleaves\sthe\siterator\sas\sa\sNULL\spointer\nif\san\sOOM\soccurs.\s\sThis\sfixes\san\sassertion\sfault\sintroduced\sby\s\ncheck-in\s[044b0b65e716bff].
+D 2018-03-05T23:23:28.467
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -568,7 +568,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 48e11ebe040c6b41d146abed2602e3d00d621d7ebe4eb29b0a0f1617fd3c2f6c
 F src/vtab.c 0e4885495172e1bdf54b12cce23b395ac74ef5729031f15e1bc1e3e6b360ed1a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 60e5c938c4858c72f0cb0c7220282d3066efa215ad5e82f3cf4c0b833fbe60dc
+F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 7cae47e813393d70c6d327fdf000fcb30f76b1b0b5a5b52ff6402e0c658de32c
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d937ac181c5c78b9e5068db4ff1dab6becdba8c22cd27a3cfa0d4c12da1ec7ad
-R 81faf4bc4e37be1b18b8f0d06bd24da5
-U dan
-Z b0ded38a3d14d974acb7e101a7fd9d64
+P 7e70c9b86af557e86152748ddf1da467e62817b35df1da0d7d3b67941b198897
+R 8e40d6345e942fd404ec54ebfeaa69d8
+U drh
+Z f09301629be2ce9f9dae3a5519749c5f
