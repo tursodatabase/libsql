@@ -7968,7 +7968,7 @@ static void process_sqliterc(
 */
 static const char zOptions[] =
 #if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  "   -archive ARGS...     pass ARGS to the \".archive\" command\n"
+  "   -Aopts ARGS...       run \".archive -opts ARGS\" and exit\n"
 #endif
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
@@ -8267,7 +8267,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
-    }else if( strcmp(z, "-archive")==0 || strcmp(z, "-ar")==0 ){
+    }else if( strncmp(z, "-A",2)==0 ){
       /* All remaining command-line arguments are passed to the ".archive"
       ** command, so ignore them */
       break;
@@ -8418,13 +8418,19 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         }
       }
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
-    }else if( strcmp(z, "-archive")==0 || strcmp(z, "-ar")==0 ){
+    }else if( strncmp(z, "-A", 2)==0 ){
       if( nCmd>0 ){
         utf8_printf(stderr, "Error: cannot mix regular SQL or dot-commands"
                             " with \"%s\"\n", z);
         return 1;
       }
-      arDotCommand(&data, argv+i, argc-i);
+      open_db(&data, 0);
+      if( z[2] ){
+        argv[i] = &z[2];
+        arDotCommand(&data, argv+(i-1), argc-(i-1));
+      }else{
+        arDotCommand(&data, argv+i, argc-i);
+      }
       readStdin = 0;
       break;
 #endif

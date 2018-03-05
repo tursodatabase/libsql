@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sadd\sa\snew\scommand-line\soption\s"--archive"\s(also\s"--ar")\sthat\npasses\sall\ssubsequent\sarguments\sto\sthe\s".archive"\scommand.
-D 2018-03-05T19:34:05.494
+C A\snew\sway\sof\sdoing\sarchive\scommands\son\sthe\scommand-line\sfor\sthe\sCLI.\s\sThe\s-A\noption\smeans\sthat\severything\sthat\sfollows\sis\sa\s".archive"\scommand,\sincluding\nany\ssuffix\son\sthe\s-A\soption.
+D 2018-03-05T20:20:22.408
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -489,7 +489,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
-F src/shell.c.in 2115621cbc5a45ad5031f45c5473585963d061d8af184ffdf0c1ac86a4b9dd80
+F src/shell.c.in 4b2b00d2818b6bf11650f0cb15a4b20c61e854a8021fd9c7ea366910bc7ff9c4
 F src/sqlite.h.in 235e942dd8c01b414c2996828b4d0d2500faf8850f8b24ae17d31c172f519e69
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02906e55d73ea3521ad1e6807cffed5c759147f7b2d89efc4add984e53e3ad49
-R 62ee6aafe33e5110a232a85ca1148daf
+P a5c4d30af1271dea2d322b0679fe963bbd0d5db6bba8904caf5e30e510d01832
+R a4b2268f5e0028154fa1ed86e680a46b
 U drh
-Z 2528010afb5b7373fd589a90e5b5beae
+Z 4b53179cde3abacde999cf5c4a9643a2
