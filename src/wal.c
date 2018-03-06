@@ -1667,6 +1667,7 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
 
   if( rc!=SQLITE_OK ){
     walIteratorFree(p);
+    p = 0;
   }
   *pp = p;
   return rc;
