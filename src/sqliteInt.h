@@ -4024,7 +4024,7 @@ int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrName(int);
 #endif
 
-#ifdef SQLITE_ENABLE_MEMDB
+#ifdef SQLITE_ENABLE_DESERIALIZE
 int sqlite3MemdbInit(void);
 #endif
 

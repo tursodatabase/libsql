@@ -84,7 +84,7 @@ static void attachFunc(
   if( zFile==0 ) zFile = "";
   if( zName==0 ) zName = "";
 
-#ifdef SQLITE_ENABLE_MEMDB
+#ifdef SQLITE_ENABLE_DESERIALIZE
 # define REOPEN_AS_MEMDB(db)  (db->init.reopenMemdb)
 #else
 # define REOPEN_AS_MEMDB(db)  (0)

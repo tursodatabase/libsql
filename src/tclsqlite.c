@@ -2420,7 +2420,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   ** Reopen DATABASE (default "main") using the content in $VALUE
   */
   case DB_DESERIALIZE: {
-#ifndef SQLITE_ENABLE_MEMDB
+#ifndef SQLITE_ENABLE_DESERIALIZE
     Tcl_AppendResult(interp, "MEMDB not available in this build",
                      (char*)0);
     rc = TCL_ERROR;
@@ -2942,7 +2942,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   ** Return a serialization of a database.  
   */
   case DB_SERIALIZE: {
-#ifndef SQLITE_ENABLE_MEMDB
+#ifndef SQLITE_ENABLE_DESERIALIZE
     Tcl_AppendResult(interp, "MEMDB not available in this build",
                      (char*)0);
     rc = TCL_ERROR;
