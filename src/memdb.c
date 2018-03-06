@@ -53,7 +53,7 @@ static int memdbFileSize(sqlite3_file*, sqlite3_int64 *pSize);
 static int memdbLock(sqlite3_file*, int);
 static int memdbCheckReservedLock(sqlite3_file*, int *pResOut);
 static int memdbFileControl(sqlite3_file*, int op, void *pArg);
-static int memdbSectorSize(sqlite3_file*);
+/* static int memdbSectorSize(sqlite3_file*); // not used */
 static int memdbDeviceCharacteristics(sqlite3_file*);
 static int memdbFetch(sqlite3_file*, sqlite3_int64 iOfst, int iAmt, void **pp);
 static int memdbUnfetch(sqlite3_file*, sqlite3_int64 iOfst, void *p);
@@ -109,7 +109,7 @@ static const sqlite3_io_methods memdb_io_methods = {
   memdbLock,                       /* xUnlock - same as xLock in this case */ 
   memdbCheckReservedLock,          /* xCheckReservedLock */
   memdbFileControl,                /* xFileControl */
-  memdbSectorSize,                 /* xSectorSize */
+  0, /* memdbSectorSize,*/         /* xSectorSize */
   memdbDeviceCharacteristics,      /* xDeviceCharacteristics */
   0,                               /* xShmMap */
   0,                               /* xShmLock */
@@ -157,10 +157,11 @@ static int memdbRead(
 */
 static int memdbEnlarge(MemFile *p, sqlite3_int64 newSz){
   unsigned char *pNew;
-  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 ) return SQLITE_FULL;
-  if( p->nMmap>0 ) return SQLITE_FULL;
+  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 || p->nMmap>0 ){
+    return SQLITE_FULL;
+  }
   pNew = sqlite3_realloc64(p->aData, newSz);
-  if( pNew==0 ) return SQLITE_FULL;
+  if( pNew==0 ) return SQLITE_NOMEM;
   p->aData = pNew;
   p->szMax = newSz;
   return SQLITE_OK;
@@ -177,8 +178,11 @@ static int memdbWrite(
 ){
   MemFile *p = (MemFile *)pFile;
   if( iOfst+iAmt>p->sz ){
-    if( iOfst+iAmt>p->szMax && memdbEnlarge(p, (iOfst+iAmt)*2) ){
-      return SQLITE_FULL;
+    int rc;
+    if( iOfst+iAmt>p->szMax
+     && (rc = memdbEnlarge(p, (iOfst+iAmt)*2))!=SQLITE_OK
+    ){
+      return rc;
     }
     if( iOfst>p->sz ) memset(p->aData+p->sz, 0, iOfst-p->sz);
     p->sz = iOfst+iAmt;
@@ -193,7 +197,10 @@ static int memdbWrite(
 static int memdbTruncate(sqlite3_file *pFile, sqlite_int64 size){
   MemFile *p = (MemFile *)pFile;
   if( size>p->sz ){
-    if( size>p->szMax && memdbEnlarge(p, size) ) return SQLITE_FULL;
+    int rc;
+    if( size>p->szMax && (rc = memdbEnlarge(p, size))!=SQLITE_OK ){
+      return rc;
+    }
     memset(p->aData+p->sz, 0, size-p->sz);
   }
   p->sz = size; 
@@ -246,12 +253,14 @@ static int memdbFileControl(sqlite3_file *pFile, int op, void *pArg){
   return rc;
 }
 
+#if 0  /* Not used because of SQLITE_IOCAP_POWERSAFE_OVERWRITE */
 /*
 ** Return the sector-size in bytes for an memdb-file.
 */
 static int memdbSectorSize(sqlite3_file *pFile){
   return 1024;
 }
+#endif
 
 /*
 ** Return the device characteristic flags supported by an memdb-file.
@@ -294,10 +303,12 @@ static int memdbOpen(
   int *pOutFlags
 ){
   MemFile *p = (MemFile*)pFile;
+  if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
+    return ORIGVFS(pVfs)->xOpen(ORIGVFS(pVfs), zName, pFile, flags, pOutFlags);
+  }
   memset(p, 0, sizeof(*p));
-  if( (flags & SQLITE_OPEN_MAIN_DB)==0 ) return SQLITE_CANTOPEN;
   p->mFlags = SQLITE_DESERIALIZE_RESIZEABLE | SQLITE_DESERIALIZE_FREEONCLOSE;
-  *pOutFlags = flags | SQLITE_OPEN_MEMORY;
+  if( pOutFlags ) *pOutFlags = flags | SQLITE_OPEN_MEMORY;
   p->base.pMethods = &memdb_io_methods;
   return SQLITE_OK;
 }
@@ -537,8 +548,11 @@ end_deserialize:
 ** Register the new VFS.
 */
 int sqlite3MemdbInit(void){
-  memdb_vfs.pAppData = sqlite3_vfs_find(0);
-  memdb_vfs.szOsFile = sizeof(MemFile);
+  sqlite3_vfs *pLower = sqlite3_vfs_find(0);
+  int sz = pLower->szOsFile;
+  memdb_vfs.pAppData = pLower;
+  if( sz<sizeof(MemFile) ) sz = sizeof(MemFile);
+  memdb_vfs.szOsFile = sz;
   return sqlite3_vfs_register(&memdb_vfs, 0);
 }
 #endif /* SQLITE_ENABLE_MEMDB */
