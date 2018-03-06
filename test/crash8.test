@@ -352,7 +352,11 @@ ifcapable pragma {
 # Since the following tests (crash8-5.*) rely upon being able
 # to copy a file while open, they will not work on Windows.
 #
-if {$::tcl_platform(platform)=="unix"} {
+# They also depend on being able to copy the journal file, which
+# is not created on F2FS file-systems that support atomic
+# write. So do not run these tests in that case either.
+#
+if {$::tcl_platform(platform)=="unix" && [atomic_batch_write test.db]==0 } {
   for {set i 1} {$i < 10} {incr i} {
     catch { db close }
     forcedelete test.db test.db-journal

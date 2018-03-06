@@ -1,5 +1,5 @@
-C In\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE\sbuilds\son\s\sF2FS\sfile-systems,\sinvoke\nSQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE\sif\san\sSQLITE_FCNTL_COMMIT_ATOMIC_WRITE\scall\nfails.\sAlso,\sdo\snot\suse\san\satomic\stransaction\sto\screate\sthe\sinitial\sdatabase.\nThis\sis\sbecause\sif\san\serror\soccurs\swhile\swriting\sto\sthe\sdb\sfile,\sany\schanges\nto\sthe\sfile-size\sdo\snot\sseem\sto\sbe\srolled\sback\sautomatically.\sThe\sonly\stime\nthis\smatters\sis\swhen\sthe\sfile\swas\s0\sbytes\sin\ssize\sto\sstart\swith.\sCherrypick\sof\n[b3122db154].
-D 2018-02-02T08:14:21.615
+C Avoid\srunning\sa\scouple\sof\stests\sin\scrash8.test\sthat\sdepend\son\sthe\spresence\sof\nthe\sjournal\sfile\sif\srunning\son\san\sF2FS\sfile-system\sthat\sdoes\snot\srequire\sa\njournal\sfile.\sCherrypick\sof\s[797e02e0].
+D 2018-03-06T11:49:09.084
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -638,7 +638,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 63cd5aea313222d7a69637cf7174c34d151676cc187d57193b66d4c89dedede3
+F test/crash8.test 64366e459c28dd62edfb7ad87253a409c7533b92d16fcc479a6a8131bdcc3100
 F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
@@ -1159,7 +1159,7 @@ F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
-F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
+F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest1.c 7b1ab42b097b484c18d99e1d1c71a6a0c9c87a7a
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
@@ -1582,8 +1582,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b3946792730b536d0084cf9936624a456749c0059cee49fd69f36bec174c9c7
-Q +b3122db1545aeb48b7c28d480534b4b0fe04e83d5336225714c3cad926e5960e
-R fda32929e512dbf5e4b115f154d26451
+P 22a228edad3edf139b4cc78beaffb15a6f1999aa0ff198ee7b4ebe8074b42f48
+Q +797e02e0ee703ab0fd53e26ba5c96ac7429b8022522bec201423718d508acf24
+R 5b98b1ad46c6fbe900d0416cec39095b
 U dan
-Z 1fe44c3c6a216301f3d7002913fff518
+Z f616954f19da2f4df8e7233f926bf2f1
