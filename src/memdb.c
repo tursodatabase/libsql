@@ -472,27 +472,31 @@ unsigned char *sqlite3_serialize(
   rc = zSql ? sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0) : SQLITE_NOMEM;
   sqlite3_free(zSql);
   if( rc ) return 0;
-  sqlite3_step(pStmt);
-  sz = sqlite3_column_int64(pStmt, 0)*szPage;
-  if( piSize ) *piSize = sz;
-  if( mFlags & SQLITE_SERIALIZE_NOCOPY ){
+  rc = sqlite3_step(pStmt);
+  if( rc!=SQLITE_ROW ){
     pOut = 0;
   }else{
-    pOut = sqlite3_malloc64( sz );
-    if( pOut ){
-      int nPage = sqlite3_column_int(pStmt, 0);
-      Pager *pPager = sqlite3BtreePager(pBt);
-      int pgno;
-      for(pgno=1; pgno<=nPage; pgno++){
-        DbPage *pPage = 0;
-        unsigned char *pTo = pOut + szPage*(sqlite3_int64)(pgno-1);
-        rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pPage, 0);
-        if( rc==SQLITE_OK ){
-          memcpy(pTo, sqlite3PagerGetData(pPage), szPage);
-        }else{
-          memset(pTo, 0, szPage);
+    sz = sqlite3_column_int64(pStmt, 0)*szPage;
+    if( piSize ) *piSize = sz;
+    if( mFlags & SQLITE_SERIALIZE_NOCOPY ){
+      pOut = 0;
+    }else{
+      pOut = sqlite3_malloc64( sz );
+      if( pOut ){
+        int nPage = sqlite3_column_int(pStmt, 0);
+        Pager *pPager = sqlite3BtreePager(pBt);
+        int pgno;
+        for(pgno=1; pgno<=nPage; pgno++){
+          DbPage *pPage = 0;
+          unsigned char *pTo = pOut + szPage*(sqlite3_int64)(pgno-1);
+          rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pPage, 0);
+          if( rc==SQLITE_OK ){
+            memcpy(pTo, sqlite3PagerGetData(pPage), szPage);
+          }else{
+            memset(pTo, 0, szPage);
+          }
+          sqlite3PagerUnref(pPage);       
         }
-        sqlite3PagerUnref(pPage);       
       }
     }
   }
@@ -536,15 +540,16 @@ int sqlite3_deserialize(
     goto end_deserialize;
   }
   p = memdbFromDbSchema(db, zSchema);
-  /* The memdbFromDbSchema() call can only fail if zSchema is not
-  ** a valid schema name or if the schema is not a memdb schema.  But
-  ** neither of those things can be true here, so failure is not possible */
-  assert( p!=0 );
-  p->aData = pData;
-  p->sz = szDb;
-  p->szMax = szBuf;
-  p->mFlags = mFlags;
-  rc = SQLITE_OK;
+  if( p==0 ){
+    rc = SQLITE_ERROR;
+  }else{
+    p->aData = pData;
+    p->sz = szDb;
+    p->szMax = szBuf;
+    p->mFlags = mFlags;
+    rc = SQLITE_OK;
+  }
+
 end_deserialize:
   sqlite3_finalize(pStmt);
   sqlite3_mutex_leave(db->mutex);

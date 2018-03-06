@@ -97,7 +97,7 @@ static void attachFunc(
     pVfs = sqlite3_vfs_find("memdb");
     if( pVfs==0 ) return;
     pNew = &db->aDb[db->init.iDb];
-    sqlite3BtreeClose(pNew->pBt);
+    if( pNew->pBt ) sqlite3BtreeClose(pNew->pBt);
     pNew->pBt = 0;
     pNew->pSchema = 0;
     rc = sqlite3BtreeOpen(pVfs, "x", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
@@ -232,6 +232,7 @@ static void attachFunc(
     db->init.iDb = 0;
     rc = sqlite3Init(db, &zErrDyn);
     sqlite3BtreeLeaveAll(db);
+    assert( zErrDyn==0 || rc!=SQLITE_OK );
   }
 #ifdef SQLITE_USER_AUTHENTICATION
   if( rc==SQLITE_OK ){
@@ -242,22 +243,24 @@ static void attachFunc(
     }
   }
 #endif
-  if( rc && !REOPEN_AS_MEMDB(db) ){
-    int iDb = db->nDb - 1;
-    assert( iDb>=2 );
-    if( db->aDb[iDb].pBt ){
-      sqlite3BtreeClose(db->aDb[iDb].pBt);
-      db->aDb[iDb].pBt = 0;
-      db->aDb[iDb].pSchema = 0;
-    }
-    sqlite3ResetAllSchemasOfConnection(db);
-    db->nDb = iDb;
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-      sqlite3OomFault(db);
-      sqlite3DbFree(db, zErrDyn);
-      zErrDyn = sqlite3MPrintf(db, "out of memory");
-    }else if( zErrDyn==0 ){
-      zErrDyn = sqlite3MPrintf(db, "unable to open database: %s", zFile);
+  if( rc ){
+    if( !REOPEN_AS_MEMDB(db) ){
+      int iDb = db->nDb - 1;
+      assert( iDb>=2 );
+      if( db->aDb[iDb].pBt ){
+        sqlite3BtreeClose(db->aDb[iDb].pBt);
+        db->aDb[iDb].pBt = 0;
+        db->aDb[iDb].pSchema = 0;
+      }
+      sqlite3ResetAllSchemasOfConnection(db);
+      db->nDb = iDb;
+      if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+        sqlite3OomFault(db);
+        sqlite3DbFree(db, zErrDyn);
+        zErrDyn = sqlite3MPrintf(db, "out of memory");
+      }else if( zErrDyn==0 ){
+        zErrDyn = sqlite3MPrintf(db, "unable to open database: %s", zFile);
+      }
     }
     goto attach_error;
   }
