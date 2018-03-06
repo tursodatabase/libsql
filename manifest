@@ -1,5 +1,5 @@
-C Fix\swalIteratorInit()\sso\sthat\sit\salways\sleaves\sthe\siterator\sas\sa\sNULL\spointer\nif\san\sOOM\soccurs.\s\sThis\sfixes\san\sassertion\sfault\sintroduced\sby\s\ncheck-in\s[044b0b65e716bff].
-D 2018-03-05T23:23:28.467
+C Avoid\srunning\sa\scouple\sof\stests\sin\scrash8.test\sthat\sdepend\son\sthe\spresence\sof\nthe\sjournal\sfile\sif\srunning\son\san\sF2FS\sfile-system\sthat\sdoes\snot\srequire\sa\njournal\sfile.
+D 2018-03-06T11:46:34.560
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a2d2fb8d17c39ab5ec52beb27850b903949080848236923f436156b72a958737
@@ -727,7 +727,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 63cd5aea313222d7a69637cf7174c34d151676cc187d57193b66d4c89dedede3
+F test/crash8.test 64366e459c28dd62edfb7ad87253a409c7533b92d16fcc479a6a8131bdcc3100
 F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
@@ -1261,7 +1261,7 @@ F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
-F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
+F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest1.c a5faf4cbe5769eee4b721b3875cb3f12520a9b99d9026b1063b47c39603375b8
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
@@ -1708,7 +1708,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e70c9b86af557e86152748ddf1da467e62817b35df1da0d7d3b67941b198897
-R 8e40d6345e942fd404ec54ebfeaa69d8
-U drh
-Z f09301629be2ce9f9dae3a5519749c5f
+P e5ce256aa1f7a8ae995b79c9da895827bee5d8d0724fc15413ff203dc9e2602d
+R 86215704ed447a309e260641c8831065
+U dan
+Z a677dbe568f73fc26f67f245e10dea7a
