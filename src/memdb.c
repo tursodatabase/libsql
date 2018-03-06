@@ -51,7 +51,7 @@ static int memdbTruncate(sqlite3_file*, sqlite3_int64 size);
 static int memdbSync(sqlite3_file*, int flags);
 static int memdbFileSize(sqlite3_file*, sqlite3_int64 *pSize);
 static int memdbLock(sqlite3_file*, int);
-static int memdbCheckReservedLock(sqlite3_file*, int *pResOut);
+/* static int memdbCheckReservedLock(sqlite3_file*, int *pResOut);// not used */
 static int memdbFileControl(sqlite3_file*, int op, void *pArg);
 /* static int memdbSectorSize(sqlite3_file*); // not used */
 static int memdbDeviceCharacteristics(sqlite3_file*);
@@ -62,7 +62,7 @@ static int memdbUnfetch(sqlite3_file*, sqlite3_int64 iOfst, void *p);
 ** Methods for MemVfs
 */
 static int memdbOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
-static int memdbDelete(sqlite3_vfs*, const char *zName, int syncDir);
+/* static int memdbDelete(sqlite3_vfs*, const char *zName, int syncDir); */
 static int memdbAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int memdbFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 static void *memdbDlOpen(sqlite3_vfs*, const char *zFilename);
@@ -71,7 +71,7 @@ static void (*memdbDlSym(sqlite3_vfs *pVfs, void *p, const char*zSym))(void);
 static void memdbDlClose(sqlite3_vfs*, void*);
 static int memdbRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int memdbSleep(sqlite3_vfs*, int microseconds);
-static int memdbCurrentTime(sqlite3_vfs*, double*);
+/* static int memdbCurrentTime(sqlite3_vfs*, double*); */
 static int memdbGetLastError(sqlite3_vfs*, int, char *);
 static int memdbCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
@@ -83,7 +83,7 @@ static sqlite3_vfs memdb_vfs = {
   "memdb",                     /* zName */
   0,                           /* pAppData (set when registered) */ 
   memdbOpen,                   /* xOpen */
-  memdbDelete,                 /* xDelete */
+  0, /* memdbDelete, */        /* xDelete */
   memdbAccess,                 /* xAccess */
   memdbFullPathname,           /* xFullPathname */
   memdbDlOpen,                 /* xDlOpen */
@@ -92,7 +92,7 @@ static sqlite3_vfs memdb_vfs = {
   memdbDlClose,                /* xDlClose */
   memdbRandomness,             /* xRandomness */
   memdbSleep,                  /* xSleep */
-  memdbCurrentTime,            /* xCurrentTime */
+  0, /* memdbCurrentTime, */   /* xCurrentTime */
   memdbGetLastError,           /* xGetLastError */
   memdbCurrentTimeInt64        /* xCurrentTimeInt64 */
 };
@@ -107,7 +107,7 @@ static const sqlite3_io_methods memdb_io_methods = {
   memdbFileSize,                   /* xFileSize */
   memdbLock,                       /* xLock */
   memdbLock,                       /* xUnlock - same as xLock in this case */ 
-  memdbCheckReservedLock,          /* xCheckReservedLock */
+  0, /* memdbCheckReservedLock, */ /* xCheckReservedLock */
   memdbFileControl,                /* xFileControl */
   0, /* memdbSectorSize,*/         /* xSectorSize */
   memdbDeviceCharacteristics,      /* xDeviceCharacteristics */
@@ -193,16 +193,14 @@ static int memdbWrite(
 
 /*
 ** Truncate an memdb-file.
+**
+** In rollback mode (which is always the case for memdb, as it does not
+** support WAL mode) the truncate() method is only used to reduce
+** the size of a file, never to increase the size.
 */
 static int memdbTruncate(sqlite3_file *pFile, sqlite_int64 size){
   MemFile *p = (MemFile *)pFile;
-  if( size>p->sz ){
-    int rc;
-    if( size>p->szMax && (rc = memdbEnlarge(p, size))!=SQLITE_OK ){
-      return rc;
-    }
-    memset(p->aData+p->sz, 0, size-p->sz);
-  }
+  if( NEVER(size>p->sz) ) return SQLITE_FULL;
   p->sz = size; 
   return SQLITE_OK;
 }
@@ -232,6 +230,7 @@ static int memdbLock(sqlite3_file *pFile, int eLock){
   return SQLITE_OK;
 }
 
+#if 0 /* Never used because memdbAccess() always returns false */
 /*
 ** Check if another file-handle holds a RESERVED lock on an memdb-file.
 */
@@ -239,6 +238,7 @@ static int memdbCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   *pResOut = 0;
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** File control method. For custom operations on an memdb-file.
@@ -308,11 +308,14 @@ static int memdbOpen(
   }
   memset(p, 0, sizeof(*p));
   p->mFlags = SQLITE_DESERIALIZE_RESIZEABLE | SQLITE_DESERIALIZE_FREEONCLOSE;
-  if( pOutFlags ) *pOutFlags = flags | SQLITE_OPEN_MEMORY;
+  assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
+  *pOutFlags = flags | SQLITE_OPEN_MEMORY;
   p->base.pMethods = &memdb_io_methods;
   return SQLITE_OK;
 }
 
+#if 0 /* Only used to delete rollback journals, master journals, and WAL
+      ** files, none of which exist in memdb.  So this routine is never used */
 /*
 ** Delete the file located at zPath. If the dirSync argument is true,
 ** ensure the file-system modifications are synced to disk before
@@ -321,10 +324,13 @@ static int memdbOpen(
 static int memdbDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   return SQLITE_IOERR_DELETE;
 }
+#endif
 
 /*
 ** Test for access permissions. Return true if the requested permission
 ** is available, or false otherwise.
+**
+** With memdb, no files ever exist on disk.  So always return false.
 */
 static int memdbAccess(
   sqlite3_vfs *pVfs, 
@@ -397,12 +403,14 @@ static int memdbSleep(sqlite3_vfs *pVfs, int nMicro){
   return ORIGVFS(pVfs)->xSleep(ORIGVFS(pVfs), nMicro);
 }
 
+#if 0  /* Never used.  Modern cores only call xCurrentTimeInt64() */
 /*
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int memdbCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return ORIGVFS(pVfs)->xCurrentTime(ORIGVFS(pVfs), pTimeOut);
 }
+#endif
 
 static int memdbGetLastError(sqlite3_vfs *pVfs, int a, char *b){
   return ORIGVFS(pVfs)->xGetLastError(ORIGVFS(pVfs), a, b);
@@ -528,15 +536,15 @@ int sqlite3_deserialize(
     goto end_deserialize;
   }
   p = memdbFromDbSchema(db, zSchema);
-  if( p==0 ){
-    rc = SQLITE_ERROR;
-  }else{
-    p->aData = pData;
-    p->sz = szDb;
-    p->szMax = szBuf;
-    p->mFlags = mFlags;
-    rc = SQLITE_OK;
-  }
+  /* The memdbFromDbSchema() call can only fail if zSchema is not
+  ** a valid schema name or if the schema is not a memdb schema.  But
+  ** neither of those things can be true here, so failure is not possible */
+  assert( p!=0 );
+  p->aData = pData;
+  p->sz = szDb;
+  p->szMax = szBuf;
+  p->mFlags = mFlags;
+  rc = SQLITE_OK;
 end_deserialize:
   sqlite3_finalize(pStmt);
   sqlite3_mutex_leave(db->mutex);
