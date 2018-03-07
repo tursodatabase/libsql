@@ -293,7 +293,6 @@ static char **tableColumnList(DState *p, const char *zTab){
         ** ordinary column in the table.  Verify that azRowid[j] is a valid
         ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
         ** tables will fail this last check */
-        int rc;
         rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
         if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
         break;
@@ -455,12 +454,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   if( strcmp(zType, "table")==0 ){
     DText sSelect;
     DText sTable;
-    char **azCol;
+    char **azTCol;
     int i;
     int nCol;
 
-    azCol = tableColumnList(p, zTable);
-    if( azCol==0 ) return 0;
+    azTCol = tableColumnList(p, zTable);
+    if( azTCol==0 ) return 0;
 
     initText(&sTable);
     appendText(&sTable, "INSERT INTO ", 0);
@@ -473,12 +472,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     ** In other words:  "INSERT INTO tab(rowid,a,b,c,...) VALUES(...)"
     ** instead of the usual "INSERT INTO tab VALUES(...)".
     */
-    if( azCol[0] ){
+    if( azTCol[0] ){
       appendText(&sTable, "(", 0);
-      appendText(&sTable, azCol[0], 0);
-      for(i=1; azCol[i]; i++){
+      appendText(&sTable, azTCol[0], 0);
+      for(i=1; azTCol[i]; i++){
         appendText(&sTable, ",", 0);
-        appendText(&sTable, azCol[i], quoteChar(azCol[i]));
+        appendText(&sTable, azTCol[i], quoteChar(azTCol[i]));
       }
       appendText(&sTable, ")", 0);
     }
@@ -487,19 +486,19 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     /* Build an appropriate SELECT statement */
     initText(&sSelect);
     appendText(&sSelect, "SELECT ", 0);
-    if( azCol[0] ){
-      appendText(&sSelect, azCol[0], 0);
+    if( azTCol[0] ){
+      appendText(&sSelect, azTCol[0], 0);
       appendText(&sSelect, ",", 0);
     }
-    for(i=1; azCol[i]; i++){
-      appendText(&sSelect, azCol[i], quoteChar(azCol[i]));
-      if( azCol[i+1] ){
+    for(i=1; azTCol[i]; i++){
+      appendText(&sSelect, azTCol[i], quoteChar(azTCol[i]));
+      if( azTCol[i+1] ){
         appendText(&sSelect, ",", 0);
       }
     }
     nCol = i;
-    if( azCol[0]==0 ) nCol--;
-    freeColumnList(azCol);
+    if( azTCol[0]==0 ) nCol--;
+    freeColumnList(azTCol);
     appendText(&sSelect, " FROM ", 0);
     appendText(&sSelect, zTable, quoteChar(zTable));
 

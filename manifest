@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2018-03-07T21:29:15.655
+C Fix\sharmless\scompiler\swarnings\sin\sthe\s'dbdump'\stool.
+D 2018-03-07T21:39:25.185
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -275,7 +275,7 @@ F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
-F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
+F ext/misc/dbdump.c 22018e00eb50e9ebf9067c92d4e7162dc5006a3efc4e0c19bc3829825a1043b0
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c 4cad3a78bfbbea9b1414b4405fd704ee57fbe2621254b011888dae7b0ba8c513
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c58de43b8f2723d659fc9820caf667e215fdfa9aa2d7337fc82ba5b6f8db2e4c
-R b5cfebcb148b6bd12ea0f9c75b98d805
+P 706800ba377e4a1f615ee6ab44530742f23e1d1be5b658608ca2fd352b363cb2
+R e2a5b0d26438383f9f88dd639ce8d76f
 U mistachkin
-Z d81d750d5f0547895baa87956059aaca
+Z f5b3b21114d3dd71d665bb1ec24db52c
