@@ -940,7 +940,7 @@ int main(int argc, char **argv){
        && memcmp(pChgset, "SQLite format 3", 16)==0 
       ){
         sqlite3 *db2;
-        sqlite3_stmt *pStmt;
+        sqlite3_stmt *pStmt2;
         int nCase = 0;
         /* This file is an SQL Archive containing many changesets */
         if( !bVerbose ){ printf("%s: ", fileTail(argv[i])); fflush(stdout); }
@@ -951,19 +951,19 @@ int main(int argc, char **argv){
         sqlite3_create_function(db2, "sqlar_uncompress", 2, SQLITE_UTF8, 0,
                                  sqlarUncompressFunc, 0, 0);        
         rc = sqlite3_prepare_v2(db2, "SELECT name, sqlar_uncompress(data,sz)"
-                                     "  FROM sqlar", -1, &pStmt, 0);
+                                     "  FROM sqlar", -1, &pStmt2, 0);
         if( rc ){
           fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db2));
           exit(1);
         }
-        while( SQLITE_ROW==sqlite3_step(pStmt) ){
+        while( SQLITE_ROW==sqlite3_step(pStmt2) ){
           if( bVerbose ){
-            printf("%s/%s:", fileTail(argv[i]), sqlite3_column_text(pStmt,0));
+            printf("%s/%s:", fileTail(argv[i]), sqlite3_column_text(pStmt2,0));
             fflush(stdout);
           }
           runSql(db, "BEGIN");
-          pChgset = (unsigned char*)sqlite3_column_blob(pStmt, 1);
-          nChgset = sqlite3_column_bytes(pStmt, 1);
+          pChgset = (unsigned char*)sqlite3_column_blob(pStmt2, 1);
+          nChgset = sqlite3_column_bytes(pStmt2, 1);
           rc = sqlite3changeset_apply(db, nChgset, pChgset, 0, conflictCall, 0);
           if( bVerbose ){
             printf(" Ok.  rc=%d\n", rc);
@@ -972,7 +972,7 @@ int main(int argc, char **argv){
           runSql(db, "ROLLBACK");
           nCase++;
         }
-        sqlite3_finalize(pStmt);
+        sqlite3_finalize(pStmt2);
         sqlite3_close(db2);
         if( bVerbose ) printf("%s: ", fileTail(argv[i]));
         printf(" %d cases, 0 crashes\n", nCase);

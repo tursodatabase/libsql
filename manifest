@@ -1,5 +1,5 @@
-C Enable\scompilation\sof\s'sessionfuzz'\stool\susing\sMSVC.
-D 2018-03-07T21:13:49.693
+C Fix\sharmless\scompiler\swarning.
+D 2018-03-07T21:29:15.655
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1216,7 +1216,7 @@ F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
-F test/sessionfuzz.c e23de0749df7d100aae33c1c3e371eaad2a1a1dab316f4ed62f73b2b0497e487
+F test/sessionfuzz.c b0fcdcf757451957e17396a3af5171f1fdf9b2babc81da9fa35675df46c4729a
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ab693f9b6e156b8bfb2a0ad94f29fe69602a5d38
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ecaedfe596d4c05546bfd798fdca94aff6a81f55be7b17ddb65fc5547c4b5aa6
-R b75a518c9fa7503c62c63e3b78fba859
+P c58de43b8f2723d659fc9820caf667e215fdfa9aa2d7337fc82ba5b6f8db2e4c
+R b5cfebcb148b6bd12ea0f9c75b98d805
 U mistachkin
-Z d724806c5b56199e78b36c783819acb6
+Z d81d750d5f0547895baa87956059aaca
