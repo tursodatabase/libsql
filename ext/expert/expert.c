@@ -93,8 +93,9 @@ int main(int argc, char **argv){
   }else{
     for(i=1; i<(argc-1); i++){
       char *zArg = argv[i];
+      int nArg;
       if( zArg[0]=='-' && zArg[1]=='-' && zArg[2]!=0 ) zArg++;
-      int nArg = (int)strlen(zArg);
+      nArg = (int)strlen(zArg);
       if( nArg>=2 && 0==sqlite3_strnicmp(zArg, "-file", nArg) ){
         if( ++i==(argc-1) ) option_requires_argument("-file");
         rc = readSqlFromFile(p, argv[i], &zErr);

@@ -132,7 +132,9 @@ static const char zHelp[] =
 # define access _access
 #endif
 
-#include <stdint.h>
+#if !defined(_MSC_VER)
+# include <stdint.h>
+#endif
 
 /*
 ** The following macros are used to cast pointers to integers and
@@ -557,7 +559,7 @@ static int exportMain(int argc, char **argv){
                        iKey/10000, (iKey/100)%100, iKey%100);
     }
     out = fopen(zFN, "wb");      
-    nWrote = fwrite(pData, 1, nData, out);
+    nWrote = fwrite(pData, 1, (size_t)nData, out);
     fclose(out);
     printf("\r%s   ", zTail); fflush(stdout);
     if( nWrote!=nData ){

@@ -1621,7 +1621,6 @@ FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 KV_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
-DBSELFTEST_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
 ST_COMPILE_OPTS = -DSQLITE_THREADSAFE=0
 
 # Standard options to testfixture.
@@ -1689,7 +1688,7 @@ dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+	$(LTLINK) $(NO_WARN) -DSCRUB_STANDALONE=1 $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 srcck1.exe:	$(TOP)\tool\srcck1.c
 	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
@@ -2370,11 +2369,11 @@ sqlite3_checker.exe:	sqlite3_checker.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_checker.c \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
-dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H)
+dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS)
 
-testloadext.lo:	$(TOP)\src\test_loadext.c
+testloadext.lo:	$(TOP)\src\test_loadext.c $(SQLITE3H)
 	$(LTCOMPILE) $(NO_WARN) -c $(TOP)\src\test_loadext.c
 
 testloadext.dll:	testloadext.lo
@@ -2427,9 +2426,6 @@ kvtest.exe:	$(TOP)\test\kvtest.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(KV_COMPILE_OPTS) \
 		$(TOP)\test\kvtest.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-dbselftest.exe:	$(TOP)\test\dbselftest.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(DBSELFTEST_COMPILE_OPTS) $(TOP)\test\dbselftest.c $(SQLITE3C)
-
 rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2470,6 +2466,9 @@ clean:
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.exe 2>NUL
+	del /Q dbfuzz.exe 2>NUL
+	del /Q kvtest.exe ossshell.exe scrub.exe 2>NUL
+	del /Q showshm.exe sqlite3_checker.exe sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
 # <</mark>>
