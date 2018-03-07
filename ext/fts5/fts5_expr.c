@@ -1676,7 +1676,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
       ** no token characters at all. (e.g ... MATCH '""'). */
       sCtx.pPhrase = sqlite3Fts5MallocZero(&pParse->rc, sizeof(Fts5ExprPhrase));
     }else if( sCtx.pPhrase->nTerm ){
-      sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = bPrefix;
+      sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = (u8)bPrefix;
     }
     pParse->apPhrase[pParse->nPhrase-1] = sCtx.pPhrase;
   }

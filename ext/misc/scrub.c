@@ -131,7 +131,7 @@ static void scrubBackupWrite(ScrubState *p, int pgno, const u8 *pData){
     scrubBackupErr(p, "write failed for page %d", pgno);
     p->rcErr = SQLITE_IOERR;
   }
-  if( pgno>p->iLastPage ) p->iLastPage = pgno;
+  if( (u32)pgno>p->iLastPage ) p->iLastPage = pgno;
 }
 
 /* Prepare a statement against the "db" database. */
@@ -459,7 +459,7 @@ static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
     nLocal = K<=X ? K : M;
     if( pc+nLocal > p->szUsable-4 ){ ln=__LINE__; goto btree_corrupt; }
     iChild = scrubBackupInt32(&a[pc+nLocal]);
-    scrubBackupOverflow(p, iChild, P-nLocal);
+    scrubBackupOverflow(p, iChild, (u32)(P-nLocal));
   }
 
   /* Walk the right-most tree */
