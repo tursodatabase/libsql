@@ -1708,6 +1708,9 @@ fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+sessionfuzz.exe:	zlib $(TOP)\test\sessionfuzz.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -I$(ZLIBINCDIR) $(TOP)\test\sessionfuzz.c /link $(LDFLAGS) $(LTLINKOPTS) /LIBPATH:$(ZLIBLIBDIR) $(ZLIBLIB)
+
 mptester.exe:	$(TOP)\mptest\mptest.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(MPTESTER_COMPILE_OPTS) $(TOP)\mptest\mptest.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 

@@ -50,6 +50,14 @@
 /*
 ** We will import the entire SQLite source file to make compiling easier
 */
+#ifdef SQLITE_DEBUG
+#undef SQLITE_DEBUG
+#endif
+
+#ifdef SQLITE_THREADSAFE
+#undef SQLITE_THREADSAFE
+#endif
+
 #define SQLITE_DEBUG 1
 #define SQLITE_THREADSAFE 0
 #define SQLITE_OMIT_LOAD_EXTENSION 0
@@ -802,7 +810,7 @@ static void readFile(const char *zName, void **ppData, int *pnData){
   }
   nRead = fread(pBuf, 1, nIn, in);
   fclose(in);
-  if( nRead!=nIn ){
+  if( nRead!=(size_t)nIn ){
     fprintf(stderr, "Read only %d of %d bytes from %s\n", (int)nRead, (int)nIn,
                     zName);
     exit(1);
