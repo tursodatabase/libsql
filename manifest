@@ -1,5 +1,5 @@
-C Fix\svarious\scompilation\sissues\sseen\swith\sMSVC.
-D 2018-03-07T15:19:22.741
+C Update\sthe\sautoconf\sMakefile\sfor\sMSVC.
+D 2018-03-07T15:54:39.405
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1d5a68043cc4d8a6e45b37e2639b148cdd7973aa75e90ec71e12d55cd95e32c0
@@ -13,7 +13,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 2c274948734e03c51790ff51468f91db8d570bcca864284d9c6d6e777264cd7e
-F autoconf/Makefile.msc 2c50a59319af7da4eaca8c13e3240881b1bc245fd175845a055faab7d03d6e67
+F autoconf/Makefile.msc 1223d1520e0b833041ad87b377fae61cc3e08d14c5aae4c1a9e36249225bd4e6
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 18fca06f884213be062dd5e07c5297079cc45893d9cd3f522ce426e715033e3d
@@ -1710,8 +1710,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc42d31d6fca21abc5377a463ed800e3066b2f3fbd2d85cb486f402d2ae7cb15 493abf10bf7b2ea5a4bc430bec786598776f76985ab2d99c7d5117a9a9ff632c
-R c3c40587d5d534a8ffacd8dd767d10ed
-T +closed 493abf10bf7b2ea5a4bc430bec786598776f76985ab2d99c7d5117a9a9ff632c
+P d6fa938919dbb3fe73ccdd3cbf0e9264d524ed79125f93f977a7d91c425db821
+R 2a9575451278c1a4c315fccdfdca1672
 U mistachkin
-Z e2b35eb80754b116b2f8675d8dc4cf43
+Z e57bc875167796d343177373820c09eb
