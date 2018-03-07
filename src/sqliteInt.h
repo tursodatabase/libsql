@@ -1365,8 +1365,9 @@ struct sqlite3 {
     int newTnum;                /* Rootpage of table being initialized */
     u8 iDb;                     /* Which db file is being initialized */
     u8 busy;                    /* TRUE if currently initializing */
-    u8 orphanTrigger;           /* Last statement is orphaned TEMP trigger */
-    u8 imposterTable;           /* Building an imposter table */
+    unsigned orphanTrigger : 1; /* Last statement is orphaned TEMP trigger */
+    unsigned imposterTable : 1; /* Building an imposter table */
+    unsigned reopenMemdb : 1;   /* ATTACH is really a reopen using MemDB */
   } init;
   int nVdbeActive;              /* Number of VDBEs currently running */
   int nVdbeRead;                /* Number of active VDBEs that read or write */
@@ -4021,6 +4022,10 @@ int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
 #if defined(SQLITE_NEED_ERR_NAME)
 const char *sqlite3ErrName(int);
+#endif
+
+#ifdef SQLITE_ENABLE_DESERIALIZE
+int sqlite3MemdbInit(void);
 #endif
 
 const char *sqlite3ErrStr(int);

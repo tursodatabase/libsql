@@ -180,7 +180,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          func.lo global.lo hash.lo \
          icu.lo insert.lo json1.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
-         memjournal.lo \
+         memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
@@ -240,6 +240,7 @@ SRC = \
   $(TOP)/src/mem2.c \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
+  $(TOP)/src/memdb.c \
   $(TOP)/src/memjournal.c \
   $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \
@@ -828,6 +829,9 @@ mem3.lo:	$(TOP)/src/mem3.c $(HDR)
 
 mem5.lo:	$(TOP)/src/mem5.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem5.c
+
+memdb.lo:	$(TOP)/src/memdb.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memdb.c
 
 memjournal.lo:	$(TOP)/src/memjournal.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memjournal.c
