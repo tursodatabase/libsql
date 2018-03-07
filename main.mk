@@ -575,6 +575,9 @@ ossshell$(EXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) \
 		$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+sessionfuzz$(EXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
+	$(TCC) -o sessionfuzz$(EXE) $(TOP)/test/sessionfuzz.c -lz $(TLIBS) $(THREADLIB)
+
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
@@ -895,14 +898,17 @@ fulltestonly:	$(TESTPROGS) fuzztest
 queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner $(TESTOPTS)
 
-fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
+fuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
 	./fuzzcheck$(EXE) $(FUZZDATA)
+	./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
-fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
+fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
 	./fuzzcheck$(EXE) --limit-mem 100M $(FUZZDATA)
+	./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
-valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
+valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
 	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
+	valgrind ./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
 # The veryquick.test TCL tests.
 #
@@ -1066,6 +1072,7 @@ clean:
 	rm -f mptester mptester.exe
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
+	rm -f sessionfuzz
 	rm -f sqldiff sqldiff.exe
 	rm -f fts5.* fts5parse.*
 	rm -f lsm.h lsm1.c

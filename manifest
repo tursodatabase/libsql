@@ -1,8 +1,8 @@
-C Update\sthe\sautoconf\sMakefile\sfor\sMSVC.
-D 2018-03-07T15:54:39.405
+C Add\sthe\ssessionfuzz\stest\sprogram\sand\sdata\sobtained\sfrom\sa\sweek\sof\srunning\nAFL.\s\sAutomatically\srun\sthis\stest\sprogram\son\sany\s"make\stest"\son\sunix.
+D 2018-03-07T20:48:21.666
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 1d5a68043cc4d8a6e45b37e2639b148cdd7973aa75e90ec71e12d55cd95e32c0
+F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9d5201ef7e4f575d94ec6cd8a29a40ec3e4e150a01903afad385ccde72b30759
 F README.md 1d5342ebda97420f114283e604e5fe99b0da939d63b76d492eabbaae23488276
@@ -411,7 +411,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 761e48fd24449071b8f8480449122fa59c052904666f72d803c64ae09b139298
+F main.mk 63668484c95454af7fc04a384da27ac556f27368d6d0c345e405e1677c66768f
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1215,6 +1215,8 @@ F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae8840
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
+F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
+F test/sessionfuzz.c 8167652afa13b6363825151c44ebcad9c993651e84537be94ec58e5004823f3d
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ab693f9b6e156b8bfb2a0ad94f29fe69602a5d38
@@ -1710,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6fa938919dbb3fe73ccdd3cbf0e9264d524ed79125f93f977a7d91c425db821
-R 2a9575451278c1a4c315fccdfdca1672
-U mistachkin
-Z e57bc875167796d343177373820c09eb
+P 36fec7a4a75006d860aaf3ea6707cea25c5e16f2ac05c21c27fde80f3bfeec63
+R e9b5633f22c17863b715b8220bf589aa
+U drh
+Z 0dea7c28192df29380ebcdd90caa6963
