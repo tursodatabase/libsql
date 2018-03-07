@@ -564,7 +564,10 @@ int sqlite3MemdbInit(void){
   sqlite3_vfs *pLower = sqlite3_vfs_find(0);
   int sz = pLower->szOsFile;
   memdb_vfs.pAppData = pLower;
-  if( sz<sizeof(MemFile) ) sz = sizeof(MemFile);
+  /* In all known configurations of SQLite, the size of a default
+  ** sqlite3_file is greater than the size of a memdb sqlite3_file.
+  ** Should that ever change, remove the following NEVER() */
+  if( NEVER(sz<sizeof(MemFile)) ) sz = sizeof(MemFile);
   memdb_vfs.szOsFile = sz;
   return sqlite3_vfs_register(&memdb_vfs, 0);
 }
