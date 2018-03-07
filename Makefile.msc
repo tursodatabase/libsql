@@ -2465,10 +2465,10 @@ clean:
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
-	del /Q sqltclsh.exe 2>NUL
+	del /Q sqltclsh.* 2>NUL
 	del /Q dbfuzz.exe 2>NUL
 	del /Q kvtest.exe ossshell.exe scrub.exe 2>NUL
-	del /Q showshm.exe sqlite3_checker.exe sqlite3_expert.exe 2>NUL
+	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
 # <</mark>>
