@@ -1,5 +1,5 @@
-C Add\sthe\s--append\sand\s--zip\soptions\sof\sthe\sCLI\sto\sthe\s--help\smessage.
-D 2018-03-08T18:14:41.098
+C Enable\sAPI\sarmor\shandling\sfor\sthe\snew\sdeserialize\sAPIs.
+D 2018-03-08T19:56:52.999
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -460,7 +460,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 00ece105cf2cc1fcf0faf8151a1bcde50d19ae99437ee646b0cad457e469a896
+F src/memdb.c 2bcebf99f77270e4b30ee5fad749347a6296db1662b3a196593e5410780aea85
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c b021263554c8a3995e9d53193b8194b96d1ed28e06c3b532dd7f7d29cf0c7d53
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f5a8666b8b479bb6e470590659c1775fb9b0d6a9eee931cb48f98651cd7ffcb
-R ce1d77085644868fc33b4f8c93cfe769
-U drh
-Z 904d1e9f892c4a18cbcf09fc2991f0df
+P f010c86ecef4a1aaad986fa8ceb8230814d6c909cc28ce19e55d63f592fee9d0
+R 2cf64c7279465827e47c06ffb1b6ff5e
+U mistachkin
+Z 6649db53fbf91dfe5807c11f88365132

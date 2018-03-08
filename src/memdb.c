@@ -450,6 +450,13 @@ unsigned char *sqlite3_serialize(
   char *zSql;
   int rc;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+
   if( zSchema==0 ) zSchema = db->aDb[0].zDbSName;
   p = memdbFromDbSchema(db, zSchema);
   iDb = sqlite3FindDbName(db, zSchema);
@@ -519,6 +526,14 @@ int sqlite3_deserialize(
   sqlite3_stmt *pStmt = 0;
   int rc;
   int iDb;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+  if( szDb<0 ) return SQLITE_MISUSE_BKPT;
+  if( szBuf<0 ) return SQLITE_MISUSE_BKPT;
+#endif
 
   sqlite3_mutex_enter(db->mutex);
   if( zSchema==0 ) zSchema = db->aDb[0].zDbSName;
