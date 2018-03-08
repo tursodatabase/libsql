@@ -8731,7 +8731,6 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
 /*
 ** CAPI3REF: Serialize a database
-** EXPERIMENTAL
 **
 ** The sqlite3_serialize(D,S,P,F) interface returns a pointer to memory
 ** that is a serialization of the S database on [database connection] D.
@@ -8751,7 +8750,7 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 ** are made, and the sqlite3_serialize() function will return a pointer
 ** to the contiguous memory representation of the database that SQLite
 ** is currently using for that database, or NULL if the no such contiguous
-** memory representation of the database exists.  A contigous memory
+** memory representation of the database exists.  A contiguous memory
 ** representation of the database will usually only exist if there has
 ** been a prior call to [sqlite3_deserialize(D,S,...)] with the same
 ** values of D and S.
@@ -8775,7 +8774,6 @@ unsigned char *sqlite3_serialize(
 
 /*
 ** CAPI3REF: Flags for sqlite3_serialize
-** EXPERIMENTAL
 **
 ** Zero or more of the following constants can be OR-ed together for
 ** the F argument to [sqlite3_serialize(D,S,P,F)].
@@ -8792,7 +8790,6 @@ unsigned char *sqlite3_serialize(
 
 /*
 ** CAPI3REF: Deserialize a database
-** EXPERIMENTAL
 **
 ** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the 
 ** [database connection] D to disconnection from database S and then
@@ -8831,7 +8828,6 @@ int sqlite3_deserialize(
 
 /*
 ** CAPI3REF: Flags for sqlite3_deserialize()
-** EXPERIMENTAL
 **
 ** The following are allowed values for 6th argument (the F argument) to
 ** the [sqlite3_deserialize(D,S,P,N,M,F)] interface.

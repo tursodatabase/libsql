@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\s'dbdump'\stool.
-D 2018-03-07T21:39:25.185
+C Updates\sto\sdocumentation\son\ssqlite3_serialize()\sand\ssqlite3_deserialize().\nNo\schanges\sto\scode.
+D 2018-03-08T16:36:23.940
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -491,7 +491,7 @@ F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
 F src/shell.c.in 8c6ea9b4da9450c26551bbe7de24170e5c6c6e3af4dedaa663e3f5ef05659a96
-F src/sqlite.h.in 8125abd15ff083591e53e1bc874319fbfaf239b1c57563c9685bd42723f8926a
+F src/sqlite.h.in 49d776d536076894e38de837a6c999e5150949baf008aa02d91fea70471eae78
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
 F src/sqliteInt.h 2ef60a6d9a50e6eef224e9eae71b29a9fb91c301e882d9fbbb77afd50b6cf815
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 706800ba377e4a1f615ee6ab44530742f23e1d1be5b658608ca2fd352b363cb2
-R e2a5b0d26438383f9f88dd639ce8d76f
-U mistachkin
-Z f5b3b21114d3dd71d665bb1ec24db52c
+P 2b9bb2664c56dd3280b4aad05b7f64dd23e5b992b5621a48dbfdb7c358d0f3ae
+R a4ddb21e887f89343503f6fedbd962f4
+U drh
+Z 8348571f1e5e7d50ec4cea61e99d0d9b
