@@ -3432,13 +3432,21 @@ static int session_filter(void *pCtx, const char *zTab){
 /*
 ** Try to deduce the type of file for zName based on its content.  Return
 ** one of the SHELL_OPEN_* constants.
+**
+** If the file does not exist or is empty but its name looks like a ZIP
+** archive and the dfltZip flag is true, then assume it is a ZIP archive.
+** Otherwise, assume an ordinary database regardless of the filename if
+** the type cannot be determined from content.
 */
-static int deduceDatabaseType(const char *zName){
+static int deduceDatabaseType(const char *zName, int dfltZip){
   FILE *f = fopen(zName, "rb");
   size_t n;
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
-  if( f==0 ) return SHELL_OPEN_NORMAL;
+  if( f==0 ){
+    if( dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ) return SHELL_OPEN_ZIPFILE;
+    return SHELL_OPEN_NORMAL;
+  }
   fseek(f, -25, SEEK_END);
   n = fread(zBuf, 25, 1, f);
   if( n==1 && memcmp(zBuf, "Start-Of-SQLite3-", 17)==0 ){
@@ -3449,6 +3457,8 @@ static int deduceDatabaseType(const char *zName){
     if( n==1 && zBuf[0]==0x50 && zBuf[1]==0x4b && zBuf[2]==0x05
        && zBuf[3]==0x06 ){
       rc = SHELL_OPEN_ZIPFILE;
+    }else if( n==0 && dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ){
+      return SHELL_OPEN_ZIPFILE;
     }
   }
   fclose(f);
@@ -3463,7 +3473,7 @@ static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
     sqlite3_initialize();
     if( p->openMode==SHELL_OPEN_UNSPEC && access(p->zDbFilename,0)==0 ){
-      p->openMode = (u8)deduceDatabaseType(p->zDbFilename);
+      p->openMode = (u8)deduceDatabaseType(p->zDbFilename, 0);
     }
     switch( p->openMode ){
       case SHELL_OPEN_APPENDVFS: {
@@ -5258,8 +5268,8 @@ static int arCreateOrUpdateCommand(
       "  data BLOB               -- compressed content\n"
       ")";
   const char *zDrop = "DROP TABLE IF EXISTS sqlar";
-  const char *zInsertFmt = 
-     "REPLACE INTO sqlar(name,mode,mtime,sz,data)\n"
+  const char *zInsertFmt[2] = {
+     "REPLACE INTO %s(name,mode,mtime,sz,data)\n"
      "  SELECT\n"
      "    %s,\n"
      "    mode,\n"
@@ -5268,30 +5278,70 @@ static int arCreateOrUpdateCommand(
      "      WHEN '-' THEN length(data)\n"
      "      WHEN 'd' THEN 0\n"
      "      ELSE -1 END,\n"
-     "    CASE WHEN lsmode(mode) LIKE 'd%%' THEN NULL else data END\n"
+     "    data\n"
      "  FROM fsdir(%Q,%Q)\n"
-     "  WHERE lsmode(mode) NOT LIKE '?%%';";
+     "  WHERE lsmode(mode) NOT LIKE '?%%';",
+     "REPLACE INTO %s(name,mode,mtime,data)\n"
+     "  SELECT\n"
+     "    %s,\n"
+     "    mode,\n"
+     "    mtime,\n"
+     "    data\n"
+     "  FROM fsdir(%Q,%Q)\n"
+     "  WHERE lsmode(mode) NOT LIKE '?%%';"
+  };
   int i;                          /* For iterating through azFile[] */
   int rc;                         /* Return code */
+  const char *zTab = 0;           /* SQL table into which to insert */
+  char *zSql;
+  char zTemp[50];
 
+  arExecSql(pAr, "PRAGMA page_size=512");
   rc = arExecSql(pAr, "SAVEPOINT ar;");
   if( rc!=SQLITE_OK ) return rc;
-  if( bUpdate==0 ){
-    rc = arExecSql(pAr, zDrop);
-    if( rc!=SQLITE_OK ) return rc;
+  zTemp[0] = 0; 
+  if( pAr->bZip ){
+    /* Initialize the zipfile virtual table, if necessary */
+    if( pAr->zFile ){
+      sqlite3_uint64 r;
+      sqlite3_randomness(sizeof(r),&r);
+      sqlite3_snprintf(sizeof(zTemp),zTemp,"zip%016llx",r);
+      zTab = zTemp;
+      zSql = sqlite3_mprintf(
+         "CREATE VIRTUAL TABLE temp.%s USING zipfile(%Q)",
+         zTab, pAr->zFile
+      );
+      rc = arExecSql(pAr, zSql);
+      sqlite3_free(zSql);
+    }else{
+      zTab = "zip";
+    }
+  }else{
+    /* Initialize the table for an SQLAR */
+    zTab = "sqlar";
+    if( bUpdate==0 ){
+      rc = arExecSql(pAr, zDrop);
+      if( rc!=SQLITE_OK ) goto end_ar_transaction;
+    }
+    rc = arExecSql(pAr, zCreate);
   }
-  rc = arExecSql(pAr, zCreate);
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
-    char *zSql = sqlite3_mprintf(zInsertFmt,
+    char *zSql = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
         pAr->bVerbose ? "shell_putsnl(name)" : "name",
         pAr->azArg[i], pAr->zDir);
     rc = arExecSql(pAr, zSql);
     sqlite3_free(zSql);
   }
+end_ar_transaction:
   if( rc!=SQLITE_OK ){
     arExecSql(pAr, "ROLLBACK TO ar; RELEASE ar;");
   }else{
     rc = arExecSql(pAr, "RELEASE ar;");
+    if( pAr->bZip && pAr->zFile ){
+      zSql = sqlite3_mprintf("DROP TABLE %s", zTemp);
+      arExecSql(pAr, zSql);
+      sqlite3_free(zSql);
+    }
   }
   return rc;
 }
@@ -5313,20 +5363,17 @@ static int arDotCommand(
     cmd.p = pState;
     cmd.db = pState->db;
     if( cmd.zFile ){
-      eDbType = deduceDatabaseType(cmd.zFile);
+      eDbType = deduceDatabaseType(cmd.zFile, 1);
     }else{
       eDbType = pState->openMode;
     }
     if( eDbType==SHELL_OPEN_ZIPFILE ){
-      if( cmd.zFile==0 ){
-        cmd.zSrcTable = sqlite3_mprintf("zip");
-      }else{
-        cmd.zSrcTable = sqlite3_mprintf("zipfile(%Q)", cmd.zFile);
-      }
-      if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_UPDATE ){
-        utf8_printf(stderr, "zip archives are read-only\n");
-        rc = SQLITE_ERROR;
-        goto end_ar_command;
+      if( cmd.eCmd==AR_CMD_EXTRACT || cmd.eCmd==AR_CMD_LIST ){
+        if( cmd.zFile==0 ){
+          cmd.zSrcTable = sqlite3_mprintf("zip");
+        }else{
+          cmd.zSrcTable = sqlite3_mprintf("zipfile(%Q)", cmd.zFile);
+        }
       }
       cmd.bZip = 1;
     }else if( cmd.zFile ){
@@ -5358,7 +5405,7 @@ static int arDotCommand(
                               shellPutsFunc, 0, 0);
 
     }
-    if( cmd.zSrcTable==0 ){
+    if( cmd.zSrcTable==0 && cmd.bZip==0 ){
       if( cmd.eCmd!=AR_CMD_CREATE
        && sqlite3_table_column_metadata(cmd.db,0,"sqlar","name",0,0,0,0,0)
       ){
