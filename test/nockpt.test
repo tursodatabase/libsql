@@ -110,6 +110,7 @@ forcedelete test.db test.db-wal test.db-shm
 sqlite3 db  test.db
 sqlite3 db2 test.db
 do_execsql_test 2.1 {
+  PRAGMA auto_vacuum=OFF;
   PRAGMA journal_mode = wal;
   CREATE TABLE y1(a PRIMARY KEY, b UNIQUE, c);
   INSERT INTO y1 VALUES('a', 'b', 'c');

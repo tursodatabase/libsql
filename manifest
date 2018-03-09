@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\szipfilefault.test\sso\sthat\sit\sonly\sruns\sif\sJSON1\sis\navailable.
-D 2018-03-09T14:06:11.274
+C Fix\sa\sproblem\sin\stest\sfile\snockpt.test\scausing\serrors\swith\nSQLITE_DEFAULT_AUTOVACUUM\sbuilds.
+D 2018-03-09T14:11:36.226
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1098,7 +1098,7 @@ F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test ea2cc74d97f077b9e74c84cbd024f14d79a8126f
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
-F test/nockpt.test fd5473e30a84848b25ab06524750c05095383e191be83ccb4e6951c8beddfb5b
+F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/normalize.test 501630ab49b0b26b65c74124bf03e3374c1b57fa97aae750f84803609141d167
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bba1bfbde62733e14f458bf3b71cb00d4899a4ebae2553d6ed24d48495cdced1
-R 496e24bddf44b574e82eb8175834be8d
-U drh
-Z 073b37ca69ee0603afa6670c9845f5c1
+P 072b244790893a699dc49d7a2cead85bed016f8e28d18ae7662fbeb3298cb235
+R 6dc3b230fc06bcdb426f0d9df4507aae
+U dan
+Z 04fd8a7a5b286ff443a6e6914aaf294b
