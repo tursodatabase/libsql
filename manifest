@@ -1,5 +1,5 @@
-C Attempt\sto\sfix\sa\sharmless\scompiler\swarning\sfrom\sClang.
-D 2018-03-09T12:46:34.612
+C Fix\sa\stest\scase\sin\szipfilefault.test\sso\sthat\sit\sonly\sruns\sif\sJSON1\sis\navailable.
+D 2018-03-09T14:06:11.274
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1613,7 +1613,7 @@ F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
 F test/zipfile.test 44aa8af115cc3e8c905468768dc761260650a8fdfca57e10f9818f5f8008d340
 F test/zipfile2.test 67d5f08a202796d4b7a71dfa4b8dcb74aa7a9d1f42c5f17bedff9855c1ba7aa5
-F test/zipfilefault.test 050be76778d2ec83566a542800fc3967f65ce719671a819016ada8b654bc14f7
+F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0798c91aa9d5d347680a9d80d420224297360e03341365d48aca829cd7c423db
-R a4a63f736128503f57643dafdbf79b24
+P bba1bfbde62733e14f458bf3b71cb00d4899a4ebae2553d6ed24d48495cdced1
+R 496e24bddf44b574e82eb8175834be8d
 U drh
-Z be320216d4ac5b5f28d3cdb731b32cdb
+Z 073b37ca69ee0603afa6670c9845f5c1
