@@ -2564,8 +2564,7 @@ static void restore_debug_trace_modes(void){
 */
 static void exec_prepared_stmt(
   ShellState *pArg,                                /* Pointer to ShellState */
-  sqlite3_stmt *pStmt,                             /* Statment to run */
-  int (*xCallback)(void*,int,char**,char**,int*)   /* Callback function */
+  sqlite3_stmt *pStmt                              /* Statment to run */
 ){
   int rc;
 
@@ -2575,54 +2574,47 @@ static void exec_prepared_stmt(
   rc = sqlite3_step(pStmt);
   /* if we have a result set... */
   if( SQLITE_ROW == rc ){
-    /* if we have a callback... */
-    if( xCallback ){
-      /* allocate space for col name ptr, value ptr, and type */
-      int nCol = sqlite3_column_count(pStmt);
-      void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
-      if( !pData ){
-        rc = SQLITE_NOMEM;
-      }else{
-        char **azCols = (char **)pData;      /* Names of result columns */
-        char **azVals = &azCols[nCol];       /* Results */
-        int *aiTypes = (int *)&azVals[nCol]; /* Result types */
-        int i, x;
-        assert(sizeof(int) <= sizeof(char *));
-        /* save off ptrs to column names */
-        for(i=0; i<nCol; i++){
-          azCols[i] = (char *)sqlite3_column_name(pStmt, i);
-        }
-        do{
-          /* extract the data and data types */
-          for(i=0; i<nCol; i++){
-            aiTypes[i] = x = sqlite3_column_type(pStmt, i);
-            if( x==SQLITE_BLOB && pArg && pArg->cMode==MODE_Insert ){
-              azVals[i] = "";
-            }else{
-              azVals[i] = (char*)sqlite3_column_text(pStmt, i);
-            }
-            if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
-              rc = SQLITE_NOMEM;
-              break; /* from for */
-            }
-          } /* end for */
-
-          /* if data and types extracted successfully... */
-          if( SQLITE_ROW == rc ){
-            /* call the supplied callback with the result row data */
-            if( xCallback(pArg, nCol, azVals, azCols, aiTypes) ){
-              rc = SQLITE_ABORT;
-            }else{
-              rc = sqlite3_step(pStmt);
-            }
-          }
-        } while( SQLITE_ROW == rc );
-        sqlite3_free(pData);
-      }
+    /* allocate space for col name ptr, value ptr, and type */
+    int nCol = sqlite3_column_count(pStmt);
+    void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
+    if( !pData ){
+      rc = SQLITE_NOMEM;
     }else{
+      char **azCols = (char **)pData;      /* Names of result columns */
+      char **azVals = &azCols[nCol];       /* Results */
+      int *aiTypes = (int *)&azVals[nCol]; /* Result types */
+      int i, x;
+      assert(sizeof(int) <= sizeof(char *));
+      /* save off ptrs to column names */
+      for(i=0; i<nCol; i++){
+        azCols[i] = (char *)sqlite3_column_name(pStmt, i);
+      }
       do{
-        rc = sqlite3_step(pStmt);
-      } while( rc == SQLITE_ROW );
+        /* extract the data and data types */
+        for(i=0; i<nCol; i++){
+          aiTypes[i] = x = sqlite3_column_type(pStmt, i);
+          if( x==SQLITE_BLOB && pArg && pArg->cMode==MODE_Insert ){
+            azVals[i] = "";
+          }else{
+            azVals[i] = (char*)sqlite3_column_text(pStmt, i);
+          }
+          if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
+            rc = SQLITE_NOMEM;
+            break; /* from for */
+          }
+        } /* end for */
+
+        /* if data and types extracted successfully... */
+        if( SQLITE_ROW == rc ){
+          /* call the supplied callback with the result row data */
+          if( shell_callback(pArg, nCol, azVals, azCols, aiTypes) ){
+            rc = SQLITE_ABORT;
+          }else{
+            rc = sqlite3_step(pStmt);
+          }
+        }
+      } while( SQLITE_ROW == rc );
+      sqlite3_free(pData);
     }
   }
 }
@@ -2768,17 +2760,15 @@ static int expertDotCommand(
 ** and callback data argument.
 */
 static int shell_exec(
-  sqlite3 *db,                              /* An open database */
-  const char *zSql,                         /* SQL to be evaluated */
-  int (*xCallback)(void*,int,char**,char**,int*),   /* Callback function */
-                                            /* (not the same as sqlite3_exec) */
   ShellState *pArg,                         /* Pointer to ShellState */
+  const char *zSql,                         /* SQL to be evaluated */
   char **pzErrMsg                           /* Error msg written here */
 ){
   sqlite3_stmt *pStmt = NULL;     /* Statement to execute. */
   int rc = SQLITE_OK;             /* Return Code */
   int rc2;
   const char *zLeftover;          /* Tail of unprocessed SQL */
+  sqlite3 *db = pArg->db;
 
   if( pzErrMsg ){
     *pzErrMsg = NULL;
@@ -2849,7 +2839,7 @@ static int shell_exec(
           if( rc==SQLITE_OK ){
             pArg->cMode = MODE_Explain;
             explain_data_prepare(pArg, pExplain);
-            exec_prepared_stmt(pArg, pExplain, xCallback);
+            exec_prepared_stmt(pArg, pExplain);
             explain_data_delete(pArg);
           }
           sqlite3_finalize(pExplain);
@@ -2875,7 +2865,7 @@ static int shell_exec(
         }
       }
 
-      exec_prepared_stmt(pArg, pStmt, xCallback);
+      exec_prepared_stmt(pArg, pStmt);
       explain_data_delete(pArg);
 
       /* print usage stats if stats on */
@@ -3138,11 +3128,11 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     savedMode = p->mode;
     p->zDestTable = sTable.z;
     p->mode = p->cMode = MODE_Insert;
-    rc = shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+    rc = shell_exec(p, sSelect.z, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       raw_printf(p->out, "/****** CORRUPTION ERROR *******/\n");
       toggleSelectOrder(p->db);
-      shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+      shell_exec(p, sSelect.z, 0);
       toggleSelectOrder(p->db);
     }
     p->zDestTable = savedDestTable;
@@ -5819,14 +5809,11 @@ static int do_meta_command(char *zLine, ShellState *p){
                    callback, &data, &zErrMsg);
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
-      shell_exec(p->db, "SELECT * FROM sqlite_stat1",
-                 shell_callback, &data,&zErrMsg);
+      shell_exec(p, "SELECT * FROM sqlite_stat1", &zErrMsg);
       data.zDestTable = "sqlite_stat3";
-      shell_exec(p->db, "SELECT * FROM sqlite_stat3",
-                 shell_callback, &data,&zErrMsg);
+      shell_exec(p, "SELECT * FROM sqlite_stat3", &zErrMsg);
       data.zDestTable = "sqlite_stat4";
-      shell_exec(p->db, "SELECT * FROM sqlite_stat4",
-                 shell_callback, &data, &zErrMsg);
+      shell_exec(p, "SELECT * FROM sqlite_stat4", &zErrMsg);
       raw_printf(p->out, "ANALYZE sqlite_master;\n");
     }
   }else
@@ -7096,7 +7083,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( bDebug ){
       utf8_printf(p->out, "%s\n", zSql);
     }else{
-      shell_exec(p->db, zSql, shell_callback, p, 0);
+      shell_exec(p, zSql, 0);
     }
     sqlite3_free(zSql);
   }else
@@ -7735,7 +7722,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
   open_db(p, 0);
   if( ShellHasFlag(p,SHFLG_Backslash) ) resolve_backslashes(zSql);
   BEGIN_TIMER;
-  rc = shell_exec(p->db, zSql, shell_callback, p, &zErrMsg);
+  rc = shell_exec(p, zSql, &zErrMsg);
   END_TIMER;
   if( rc || zErrMsg ){
     char zPrefix[100];
@@ -8412,7 +8399,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         if( rc && bail_on_error ) return rc==2 ? 0 : rc;
       }else{
         open_db(&data, 0);
-        rc = shell_exec(data.db, z, shell_callback, &data, &zErrMsg);
+        rc = shell_exec(&data, z, &zErrMsg);
         if( zErrMsg!=0 ){
           utf8_printf(stderr,"Error: %s\n", zErrMsg);
           if( bail_on_error ) return rc!=0 ? rc : 1;
@@ -8457,7 +8444,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         if( rc ) return rc==2 ? 0 : rc;
       }else{
         open_db(&data, 0);
-        rc = shell_exec(data.db, azCmd[i], shell_callback, &data, &zErrMsg);
+        rc = shell_exec(&data, azCmd[i], &zErrMsg);
         if( zErrMsg!=0 ){
           utf8_printf(stderr,"Error: %s\n", zErrMsg);
           return rc!=0 ? rc : 1;
