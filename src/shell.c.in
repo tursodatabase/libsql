@@ -2273,29 +2273,52 @@ static int display_stats(
 ){
   int iCur;
   int iHiwtr;
+  FILE *out;
+  if( pArg==0 || pArg->out==0 ) return 0;
+  out = pArg->out;
 
-  if( pArg && pArg->out ){
-    displayStatLine(pArg, "Memory Used:",
-       "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
-    displayStatLine(pArg, "Number of Outstanding Allocations:",
-       "%lld (max %lld)", SQLITE_STATUS_MALLOC_COUNT, bReset);
-    if( pArg->shellFlgs & SHFLG_Pagecache ){
-      displayStatLine(pArg, "Number of Pcache Pages Used:",
-         "%lld (max %lld) pages", SQLITE_STATUS_PAGECACHE_USED, bReset);
+  if( pArg->pStmt && (pArg->statsOn & 2) ){
+    int nCol, i, x;
+    sqlite3_stmt *pStmt = pArg->pStmt;
+    char z[100];
+    nCol = sqlite3_column_count(pStmt);
+    raw_printf(out, "%-36s %d\n", "Number of output columns:", nCol);
+    for(i=0; i<nCol; i++){
+      sqlite3_snprintf(sizeof(z),z,"Column %d %nname:", i, &x);
+      utf8_printf(out, "%-36s %s\n", z, sqlite3_column_name(pStmt,i));
+      sqlite3_snprintf(30, z+x, "declared type:");
+      utf8_printf(out, "%-36s %s\n", z, sqlite3_column_decltype(pStmt, i));
+  #ifdef SQLITE_ENABLE_COLUMN_METADATA
+      sqlite3_snprintf(30, z+x, "database name:");
+      utf8_printf(out, "%-36s %s\n", z, sqlite3_column_database_name(pStmt,i));
+      sqlite3_snprintf(30, z+x, "table name:");
+      utf8_printf(out, "%-36s %s\n", z, sqlite3_column_table_name(pStmt,i));
+      sqlite3_snprintf(30, z+x, "origin name:");
+      utf8_printf(out, "%-36s %s\n", z, sqlite3_column_origin_name(pStmt,i));
+  #endif
     }
-    displayStatLine(pArg, "Number of Pcache Overflow Bytes:",
-       "%lld (max %lld) bytes", SQLITE_STATUS_PAGECACHE_OVERFLOW, bReset);
-    displayStatLine(pArg, "Largest Allocation:",
-       "%lld bytes", SQLITE_STATUS_MALLOC_SIZE, bReset);
-    displayStatLine(pArg, "Largest Pcache Allocation:",
-       "%lld bytes", SQLITE_STATUS_PAGECACHE_SIZE, bReset);
-#ifdef YYTRACKMAXSTACKDEPTH
-    displayStatLine(pArg, "Deepest Parser Stack:",
-       "%lld (max %lld)", SQLITE_STATUS_PARSER_STACK, bReset);
-#endif
-  }
+    }
 
-  if( pArg && pArg->out && db ){
+  displayStatLine(pArg, "Memory Used:",
+     "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
+  displayStatLine(pArg, "Number of Outstanding Allocations:",
+     "%lld (max %lld)", SQLITE_STATUS_MALLOC_COUNT, bReset);
+  if( pArg->shellFlgs & SHFLG_Pagecache ){
+    displayStatLine(pArg, "Number of Pcache Pages Used:",
+       "%lld (max %lld) pages", SQLITE_STATUS_PAGECACHE_USED, bReset);
+  }
+  displayStatLine(pArg, "Number of Pcache Overflow Bytes:",
+     "%lld (max %lld) bytes", SQLITE_STATUS_PAGECACHE_OVERFLOW, bReset);
+  displayStatLine(pArg, "Largest Allocation:",
+     "%lld bytes", SQLITE_STATUS_MALLOC_SIZE, bReset);
+  displayStatLine(pArg, "Largest Pcache Allocation:",
+     "%lld bytes", SQLITE_STATUS_PAGECACHE_SIZE, bReset);
+#ifdef YYTRACKMAXSTACKDEPTH
+  displayStatLine(pArg, "Deepest Parser Stack:",
+     "%lld (max %lld)", SQLITE_STATUS_PARSER_STACK, bReset);
+#endif
+
+  if( db ){
     if( pArg->shellFlgs & SHFLG_Lookaside ){
       iHiwtr = iCur = -1;
       sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED,
@@ -2339,7 +2362,7 @@ static int display_stats(
             iCur);
   }
 
-  if( pArg && pArg->out && db && pArg->pStmt ){
+  if( pArg->pStmt ){
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FULLSCAN_STEP,
                                bReset);
     raw_printf(pArg->out, "Fullscan Steps:                      %d\n", iCur);
@@ -2349,6 +2372,12 @@ static int display_stats(
     raw_printf(pArg->out, "Autoindex Inserts:                   %d\n", iCur);
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
     raw_printf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_REPREPARE, bReset);
+    raw_printf(pArg->out, "Reprepare operations:                %d\n", iCur);
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_RUN, bReset);
+    raw_printf(pArg->out, "Number of times run:                 %d\n", iCur);
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_MEMUSED, bReset);
+    raw_printf(pArg->out, "Memory used by prepared stmt:        %d\n", iCur);
   }
 
 #ifdef __linux__
