@@ -1400,7 +1400,7 @@ static int zipfileGetMode(
       else if( z[i]!='-' ) goto parse_error;
     }
   }
-  if( (bIsDir == ((mode & S_IFDIR)==0)) ){
+  if( ((mode & S_IFDIR)==0)==bIsDir ){
     /* The "mode" attribute is a directory, but data has been specified.
     ** Or vice-versa - no data but "mode" is a file or symlink.  */
     return SQLITE_CONSTRAINT;
