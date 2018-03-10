@@ -36,6 +36,7 @@ bitflags = "1.0"
 lru-cache = "0.1"
 chrono = { version = "0.4", optional = true }
 serde_json = { version = "1.0", optional = true }
+csv = { version = "0.15", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
@@ -45,10 +46,6 @@ regex = "0.2"
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
 version = "0.9"
-
-[dependencies.csv]
-version = "0.15"
-optional = true
 
 [[test]]
 name = "config_log"

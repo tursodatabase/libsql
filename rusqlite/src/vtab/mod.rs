@@ -35,7 +35,7 @@ use types::{FromSql, FromSqlError, ToSql, ValueRef};
 // \-> vtab.xbestindex
 // stmt.query().next();
 // \-> vtab.xopen
-//  |-> let cursor: Cursor = ...; // on the heap
+//  |-> let cursor: VTabCursor = ...; // on the heap
 //  |-> cursor.xfilter or xnext
 //  |-> cursor.xeof
 //  \-> if not eof { cursor.column or xrowid } else { cursor.xclose }
