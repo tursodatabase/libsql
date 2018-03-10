@@ -751,8 +751,12 @@ static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
   min = (mUnixTime % (60*60)) / 60;
   sec = (mUnixTime % 60);
 
-  pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
-  pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
+  if( yr>=1980 ){
+    pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
+    pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
+  }else{
+    pCds->mDate = pCds->mTime = 0;
+  }
 
   assert( mUnixTime<315507600 
        || mUnixTime==zipfileMtime(pCds) 
