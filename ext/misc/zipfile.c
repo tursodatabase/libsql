@@ -268,6 +268,7 @@ typedef struct ZipfileTab ZipfileTab;
 struct ZipfileTab {
   sqlite3_vtab base;         /* Base class - must be first */
   char *zFile;               /* Zip file this table accesses (may be NULL) */
+  sqlite3 *db;               /* Host database connection */
   u8 *aBuffer;               /* Temporary buffer used for various tasks */
 
   ZipfileCsr *pCsrList;      /* List of cursors */
@@ -360,6 +361,7 @@ static int zipfileConnect(
     pNew = (ZipfileTab*)sqlite3_malloc(nByte+nFile);
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, nByte+nFile);
+    pNew->db = db;
     pNew->aBuffer = (u8*)&pNew[1];
     if( zFile ){
       pNew->zFile = (char*)&pNew->aBuffer[ZIPFILE_BUFFER_SIZE];
@@ -1616,8 +1618,20 @@ static int zipfileUpdate(
       ZipfileEntry *p;
       for(p=pTab->pFirstEntry; p; p=p->pNext){
         if( zipfileComparePath(p->cds.zFile, zPath, nPath)==0 ){
-          zipfileTableErr(pTab, "duplicate name: \"%s\"", zPath);
-          rc = SQLITE_CONSTRAINT;
+          switch( sqlite3_vtab_on_conflict(pTab->db) ){
+            case SQLITE_IGNORE: {
+              goto zipfile_update_done;
+            }
+            case SQLITE_REPLACE: {
+              pOld = p;
+              break;
+            }
+            default: {
+              zipfileTableErr(pTab, "duplicate name: \"%s\"", zPath);
+              rc = SQLITE_CONSTRAINT;
+              break;
+            }
+          }
           break;
         }
       }
@@ -1661,6 +1675,7 @@ static int zipfileUpdate(
     zipfileEntryFree(pOld);
   }
 
+zipfile_update_done:
   sqlite3_free(pFree);
   sqlite3_free(zFree);
   return rc;

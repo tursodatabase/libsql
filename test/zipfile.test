@@ -636,4 +636,35 @@ do_execsql_test 9.0 {
   )
   SELECT name FROM zipfile((SELECT zipfile(nm, NULL) FROM src))
 } {dir1/ dir2/ dir3/ dir4/ /}
+
+#-------------------------------------------------------------------------
+# INSERT OR REPLACE and INSERT OR IGNORE
+#
+catch {db close}
+forcedelete test.zip test.db
+sqlite3 db :memory:
+load_static_extension db zipfile
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE z USING zipfile('test.zip');
+} {}
+do_catchsql_test 10.1 {
+  INSERT INTO z(name,data) VALUES('a0','one'),('a0','two');
+} {1 {duplicate name: "a0"}}
+do_execsql_test 10.2 {
+  SELECT name, data FROM z;
+} {a0 one}
+do_execsql_test 10.3 {
+  REPLACE INTO z(name,data) VALUES('a0','three'),('a0','four');
+} {}
+do_execsql_test 10.4 {
+  SELECT name, data FROM z;
+} {a0 four}
+do_execsql_test 10.5 {
+  INSERT OR IGNORE INTO z(name,data) VALUES('a0','five'),('a0','six');
+} {}
+do_execsql_test 10.6 {
+  SELECT name, data FROM z;
+} {a0 four}
+
+
 finish_test
