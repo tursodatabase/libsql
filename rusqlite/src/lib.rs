@@ -756,9 +756,14 @@ impl InnerConnection {
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
             if r != ffi::SQLITE_OK {
                 let e = if db.is_null() {
-                    error_from_sqlite_code(r, None)
+                    error_from_sqlite_code(r, Some(c_path.to_string_lossy().to_string()))
                 } else {
-                    let e = error_from_handle(db, r);
+                    let mut e = error_from_handle(db, r);
+                    if let Error::SqliteFailure(
+                        ffi::Error{code: ffi::ErrorCode::CannotOpen, extended_code: _}, Some(msg)) = e {
+                        e = Error::SqliteFailure(
+                            ffi::Error::new(r), Some(format!("{}: {}", msg, c_path.to_string_lossy())));
+                    }
                     ffi::sqlite3_close(db);
                     e
                 };
@@ -949,6 +954,21 @@ mod test {
 
         let db = checked_memory_handle();
         assert!(db.close().is_ok());
+    }
+
+    #[test]
+    fn test_open_failure() {
+        let filename = "no_such_file.db";
+        let result = Connection::open_with_flags(filename, OpenFlags::SQLITE_OPEN_READ_ONLY);
+        assert!(!result.is_ok());
+        let err = result.err().unwrap();
+        if let Error::SqliteFailure(e, Some(msg)) = err {
+            assert_eq!(ErrorCode::CannotOpen, e.code);
+            assert_eq!(ffi::SQLITE_CANTOPEN, e.extended_code);
+            assert!(msg.contains(filename), "error message '{}' does not contain '{}'", msg, filename);
+        } else {
+            panic!("SqliteFailure expected");
+        }
     }
 
     #[test]
