@@ -648,7 +648,7 @@ static int DbTraceV2Handler(
     }
     case SQLITE_TRACE_PROFILE: {
       sqlite3_stmt *pStmt = (sqlite3_stmt *)pd;
-      sqlite3_int64 ns = (sqlite3_int64)xd;
+      sqlite3_int64 ns = *(sqlite3_int64*)xd;
 
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);

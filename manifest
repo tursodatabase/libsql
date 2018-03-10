@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sINSERT\sOR\sREPLACE\sand\sINSERT\sOR\sIGNORE\son\sthe\szipfile\nextension.
-D 2018-03-10T14:17:01.651
+C Fix\sthe\ssecond\scallback\sargument\sto\sthe\s"profile"\sresponse\sof\sthe\n"trace_v2"\smethod\sin\sthe\sTCL\sinterface\sso\sthat\sit\sshows\sthe\sactual\nnumber\sof\snanoseconds\sfor\sthe\scommand,\snot\sthe\saddress\sof\sthe\svariable\ncontaining\sthe\snumber\sof\snanoseconds.
+D 2018-03-10T20:25:08.263
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -498,7 +498,7 @@ F src/sqliteInt.h 2ef60a6d9a50e6eef224e9eae71b29a9fb91c301e882d9fbbb77afd50b6cf8
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9737ed017279a9e0c5da748701c3c7bf1e8ae0dae459aad20dd64fcff97a7e35
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 3c3e085e02edf4c416792050d288944fd0fad3f7b283a81fa45241a633d78c80
+F src/tclsqlite.c 916a92de77ec5cbe27818ca194d8cf0c58aa7ad5b87527098f6aa5a6068800ce
 F src/test1.c 1ab7cbbb6693e08364c1a9241e2aee17f8c4925e4cc52396be77ae6845a05828
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f634a7e386918b829389f20c330d312315fdd61125cd2c5f66cf17a5d74bce49
-R 7cc91e86ee07cd0fc984888021d66796
+P 8ad35d483e4293d5571eeacc20fd26cdc4064fbee7b63d974879d507a0ee5792
+R 279cd3192a7c1f331d05cc752480bd6c
 U drh
-Z 9fc20201e1cf7d0b9deeae9a18f08a6b
+Z 18b5539ad20c19ffcad336c52433ff73
