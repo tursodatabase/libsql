@@ -1,5 +1,5 @@
-C Fix\sthe\s.archive\scommand\sin\sthe\sCLI\sso\sthat\sit\sactually\scompresses\scontent.
-D 2018-03-09T22:18:53.260
+C Fix\sthe\szipfile\sextension\sso\sthat\sit\sis\sable\sto\screate\ssymbolic\slink\sentries\nin\sthe\sZIP\sfile\seven\son\ssystems\slike\sWin32\sthat\sdo\snot\ssupport\ssymbolic\slinks\non\sthe\snative\sfilesystem.
+D 2018-03-10T12:34:08.954
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -304,7 +304,7 @@ F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtablog.c 31d0d8f4406795679dcd3a67917c213d3a2a5fb3ea5de35f6e773491ed7e13c9
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c b326d0e789daf41faa9641609143c5be4aa5b76b7919955085f8d95359316251
+F ext/misc/zipfile.c ac84e5d65715746936d1c04ce172af0fbedb548823edd0cf33a76a2c0404e684
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9404765ef7487013f01ecf24c0a1f70040cd11e7dbb6378646d15de4e5660a40
-R 1cd3e74076aeeddb27298f9b682d994e
+P 3c2e3c2d3dd5d951099ad8d9f74d3c20dae11dd5615d86a6e2283b28ff5b19aa
+R e466aae4911321d84355a45be2eb40b1
 U drh
-Z bc56d5f75527153520ea094ccb89c567
+Z 99fcb9daa2a8873fb80c767ff438d914

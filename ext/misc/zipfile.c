@@ -1390,9 +1390,7 @@ static int zipfileGetMode(
     switch( z[0] ){
       case '-': mode |= S_IFREG; break;
       case 'd': mode |= S_IFDIR; break;
-#if !defined(_WIN32) && !defined(WIN32)
       case 'l': mode |= S_IFLNK; break;
-#endif
       default: goto parse_error;
     }
     for(i=1; i<10; i++){
