@@ -1,5 +1,5 @@
-C Add\smore\stests\sfor\sthe\sprofile\soutput\sof\sthe\sTcl\strace_v2\smethod.
-D 2018-03-10T20:45:44.303
+C Fix\sa\stypo\scausing\sSQLITE_LOG_CACHE_SPILL\sbuilds\sto\sfail.
+D 2018-03-12T21:09:16.462
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -479,7 +479,7 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c aa764a01a5548e633ea083521f48c2b128245fae1a8157a16a3490b9b9718f55
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
 F src/parse.y 3be4b2b5e33ef7dab3128b765898ee786fc6cd698a7f053f756a68f2f238f0aa
-F src/pcache.c 7ae91a4557a43d77d449accbfdc68846e6516f8e2eda46e8bbe4536fb669b201
+F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c bea56df3ae0637768c0da4fbbb8f2492f780980d95000034a105ff291bf7ca69
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f9a12518642e5be9760956ff345fe54ed5bd3cab55328e88312278d3d78bc76
-R 48d81d5066bd833c124296a55bfd94e5
-U mistachkin
-Z 000a9a6266d4feb17fadafdd3f3d2026
+P 61eeb48f03f8a9a32330a5cae4387bb4e5618078cf669a5831910f99126900ec
+R cc8ceb6c97c49d267aa8c6c8a3936381
+U dan
+Z 467f1d68de166a5be6bc42e03b4e2dce
