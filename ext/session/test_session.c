@@ -711,10 +711,8 @@ static int testStreamInput(
 }
 
 
-/*
-** sqlite3changeset_apply DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
-*/
-static int SQLITE_TCLAPI test_sqlite3changeset_apply(
+static int SQLITE_TCLAPI testSqlite3changesetApply(
+  int bV2,
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -727,6 +725,8 @@ static int SQLITE_TCLAPI test_sqlite3changeset_apply(
   int nChangeset;                 /* Size of buffer aChangeset in bytes */
   TestConflictHandler ctx;
   TestStreamInput sStr;
+  void *pRebase = 0;
+  int nRebase = 0;
 
   memset(&sStr, 0, sizeof(sStr));
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
@@ -748,9 +748,16 @@ static int SQLITE_TCLAPI test_sqlite3changeset_apply(
   ctx.interp = interp;
 
   if( sStr.nStream==0 ){
-    rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 
-        (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
-    );
+    if( bV2==0 ){
+      rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 
+          (objc==5)?test_filter_handler:0, test_conflict_handler, (void *)&ctx
+      );
+    }else{
+      rc = sqlite3changeset_apply_v2(db, nChangeset, pChangeset, 
+          (objc==5)?test_filter_handler:0, test_conflict_handler, (void *)&ctx,
+          &pRebase, &nRebase
+      );
+    }
   }else{
     sStr.aData = (unsigned char*)pChangeset;
     sStr.nData = nChangeset;
@@ -761,9 +768,37 @@ static int SQLITE_TCLAPI test_sqlite3changeset_apply(
 
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc, 0);
+  }else{
+    Tcl_ResetResult(interp);
+    if( bV2 && pRebase ){
+      Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pRebase, nRebase));
+    }
   }
-  Tcl_ResetResult(interp);
+  sqlite3_free(pRebase);
   return TCL_OK;
+}
+
+/*
+** sqlite3changeset_apply DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
+*/
+static int SQLITE_TCLAPI test_sqlite3changeset_apply(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  return testSqlite3changesetApply(0, clientData, interp, objc, objv);
+}
+/*
+** sqlite3changeset_apply_v2 DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
+*/
+static int SQLITE_TCLAPI test_sqlite3changeset_apply_v2(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  return testSqlite3changesetApply(1, clientData, interp, objc, objv);
 }
 
 /*
@@ -1029,6 +1064,7 @@ int TestSession_Init(Tcl_Interp *interp){
     { "sqlite3changeset_invert", test_sqlite3changeset_invert },
     { "sqlite3changeset_concat", test_sqlite3changeset_concat },
     { "sqlite3changeset_apply", test_sqlite3changeset_apply },
+    { "sqlite3changeset_apply_v2", test_sqlite3changeset_apply_v2 },
     { "sqlite3changeset_apply_replace_all", 
       test_sqlite3changeset_apply_replace_all },
     { "sql_exec_changeset", test_sql_exec_changeset },
