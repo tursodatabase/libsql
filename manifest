@@ -1,5 +1,5 @@
-C Add\ssqlite3_changeset_apply_v2()\sand\sapply_v2_strm()\sto\sthe\ssessions\smodule.
-D 2018-03-13T20:31:23.940
+C Add\slargely\suntested\sAPIs\sfor\srebasing\schangesets.
+D 2018-03-14T21:06:58.004
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -403,9 +403,9 @@ F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionrebase.test b4ac7545e3c69deaeab061c2bf36ad9e99aa6c38db94c340d7e48a230a9d4be8
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 564e609f3086510d319e8abc0899fa79131d071b7dc01138e1b75bbf4a43cb03
-F ext/session/sqlite3session.h 8fe499b736633021094b814cf128691587f19c1943e372a23db37175bdeb8c67
-F ext/session/test_session.c 6c45bee58063f2c3d1edc213833d72f0a3ec651cbe27393b9e4a054e711b7c44
+F ext/session/sqlite3session.c 16561ad7eb8270bd3d2ee42c434043e68831bbd452fbea82d83922a1066a7cc8
+F ext/session/sqlite3session.h 74ba48151f3593a66a975ac095d7b53efa6c1e12fe83a903e10bf8d85a1429dd
+F ext/session/test_session.c 8c04dc8cada82bd4e12f18ada3e35b56a8fd4d8dee7caac324ae28091c2b492f
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
@@ -1713,10 +1713,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0171d4a71ca7911a9fd409a42eeed0eda4521b6e48df5cd058364c0a736313b7
-R 1a6994480e1e2c2b73e68977f31547a3
-T *branch * sessions-rebase
-T *sym-sessions-rebase *
-T -sym-trunk *
+P 445bfe977d9f3a891e08ef33237862ed047fe83e134ef3ed8b47ee0f5abd8cd6
+R 485a23056d6edbdb25721aa9069ac291
 U dan
-Z d8bbc56681a1d6ff1f4fb97dc44d1b66
+Z e2563dee69381fb6fb02a6ddaa823fec

@@ -761,9 +761,18 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   }else{
     sStr.aData = (unsigned char*)pChangeset;
     sStr.nData = nChangeset;
-    rc = sqlite3changeset_apply_strm(db, testStreamInput, (void*)&sStr,
-        (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
-    );
+    if( bV2==0 ){
+      rc = sqlite3changeset_apply_strm(db, testStreamInput, (void*)&sStr,
+          (objc==5) ? test_filter_handler : 0, 
+          test_conflict_handler, (void *)&ctx
+      );
+    }else{
+      rc = sqlite3changeset_apply_v2_strm(db, testStreamInput, (void*)&sStr,
+          (objc==5) ? test_filter_handler : 0, 
+          test_conflict_handler, (void *)&ctx,
+          &pRebase, &nRebase
+      );
+    }
   }
 
   if( rc!=SQLITE_OK ){

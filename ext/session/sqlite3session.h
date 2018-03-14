@@ -1216,6 +1216,27 @@ int sqlite3changeset_apply_v2(
 #define SQLITE_CHANGESET_REPLACE    1
 #define SQLITE_CHANGESET_ABORT      2
 
+typedef struct sqlite3_rebaser sqlite3_rebaser;
+
+/* Create a new rebaser object */
+int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
+
+/* Call this one or more times to configure a rebaser */
+int sqlite3rebaser_configure(
+  sqlite3_rebaser*, 
+  int nRebase, const void *pRebase
+); 
+
+/* Rebase a changeset according to current rebaser configuration */
+int sqlite3rebaser_rebase(
+  sqlite3_rebaser*,
+  int nIn, const void *pIn, 
+  int *pnOut, void **ppOut 
+);
+
+/* Destroy a rebaser object */
+void sqlite3rebaser_destroy(sqlite3_rebaser *p); 
+
 /*
 ** CAPI3REF: Streaming Versions of API functions.
 **
@@ -1372,6 +1393,13 @@ int sqlite3changegroup_add_strm(sqlite3_changegroup*,
 int sqlite3changegroup_output_strm(sqlite3_changegroup*,
     int (*xOutput)(void *pOut, const void *pData, int nData), 
     void *pOut
+);
+int sqlite3rebaser_rebase_strm(
+  sqlite3_rebaser *pRebaser,
+  int (*xInput)(void *pIn, void *pData, int *pnData),
+  void *pIn,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
 );
 
 
