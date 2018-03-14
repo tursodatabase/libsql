@@ -433,8 +433,10 @@ do_test 5.1 {
   sqlite3_reset $::stmt
 } {SQLITE_OK}
 
-do_test 5.2 { sqlite3_stmt_status $::stmt -1 0 } 0
-do_test 5.3 { sqlite3_stmt_status $::stmt  7 0 } 0
+ifcapable api_armor {
+  do_test 5.2 { sqlite3_stmt_status $::stmt -1 0 } 0
+}
+do_test 5.3 { sqlite3_stmt_status $::stmt  0 0 } 0
 do_test 5.4 { 
   expr [sqlite3_stmt_status $::stmt 99 0]>0 
 } 1
@@ -453,4 +455,3 @@ if {$tn==2} breakpoint
 
 sqlite3_finalize $::stmt
 finish_test
-
