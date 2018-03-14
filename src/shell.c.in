@@ -2353,6 +2353,9 @@ static int display_stats(
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
     raw_printf(pArg->out, "Page cache writes:                   %d\n", iCur);
     iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_SPILL, &iCur, &iHiwtr, 1);
+    raw_printf(pArg->out, "Page cache spills:                   %d\n", iCur);
+    iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     raw_printf(pArg->out, "Schema Heap Usage:                   %d bytes\n",
             iCur);
