@@ -242,6 +242,11 @@ int sqlite3_initialize(void){
       sqlite3GlobalConfig.isPCacheInit = 1;
       rc = sqlite3OsInit();
     }
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    if( rc==SQLITE_OK ){
+      rc = sqlite3MemdbInit();
+    }
+#endif
     if( rc==SQLITE_OK ){
       sqlite3PCacheBufferSetup( sqlite3GlobalConfig.pPage, 
           sqlite3GlobalConfig.szPage, sqlite3GlobalConfig.nPage);
@@ -274,7 +279,7 @@ int sqlite3_initialize(void){
 #ifndef NDEBUG
 #ifndef SQLITE_OMIT_FLOATING_POINT
   /* This section of code's only "output" is via assert() statements. */
-  if ( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK ){
     u64 x = (((u64)1)<<63)-1;
     double y;
     assert(sizeof(x)==8);
@@ -1446,11 +1451,21 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_FORMAT      */ 0,
     /* SQLITE_RANGE       */ "column index out of range",
     /* SQLITE_NOTADB      */ "file is not a database",
+    /* SQLITE_NOTICE      */ "notification message",
+    /* SQLITE_WARNING     */ "warning message",
   };
   const char *zErr = "unknown error";
   switch( rc ){
     case SQLITE_ABORT_ROLLBACK: {
       zErr = "abort due to ROLLBACK";
+      break;
+    }
+    case SQLITE_ROW: {
+      zErr = "another row available";
+      break;
+    }
+    case SQLITE_DONE: {
+      zErr = "no more rows available";
       break;
     }
     default: {

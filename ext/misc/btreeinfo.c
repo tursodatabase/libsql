@@ -339,7 +339,8 @@ static int binfoColumn(
     sqlite3 *db = sqlite3_context_db_handle(ctx);
     int rc = binfoCompute(db, pgno, pCsr);
     if( rc ){
-      return rc;
+      pCursor->pVtab->zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+      return SQLITE_ERROR;
     }
   }
   switch( i ){

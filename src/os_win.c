@@ -3640,15 +3640,16 @@ static SYSTEM_INFO winSysInfo;
 **     assert( winShmMutexHeld() );
 **   winShmLeaveMutex()
 */
+static sqlite3_mutex *winBigLock = 0;
 static void winShmEnterMutex(void){
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
+  sqlite3_mutex_enter(winBigLock);
 }
 static void winShmLeaveMutex(void){
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
+  sqlite3_mutex_leave(winBigLock);
 }
 #ifndef NDEBUG
 static int winShmMutexHeld(void) {
-  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
+  return sqlite3_mutex_held(winBigLock);
 }
 #endif
 
@@ -6071,6 +6072,10 @@ int sqlite3_os_init(void){
   sqlite3_vfs_register(&winLongPathNolockVfs, 0);
 #endif
 
+#ifndef SQLITE_OMIT_WAL
+  winBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+#endif
+
   return SQLITE_OK;
 }
 
@@ -6081,6 +6086,11 @@ int sqlite3_os_end(void){
     sleepObj = NULL;
   }
 #endif
+
+#ifndef SQLITE_OMIT_WAL
+  winBigLock = 0;
+#endif
+
   return SQLITE_OK;
 }
 

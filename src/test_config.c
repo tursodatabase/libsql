@@ -148,6 +148,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "hiddencolumns", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_DESERIALIZE
+  Tcl_SetVar2(interp, "sqlite_options", "deserialize", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "deserialize", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_MEMSYS3
   Tcl_SetVar2(interp, "sqlite_options", "mem3", "1", TCL_GLOBAL_ONLY);
 #else
@@ -500,6 +506,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
 #endif
 
 Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
+
+#ifdef SQLITE_ENABLE_NULL_TRIM
+  Tcl_SetVar2(interp, "sqlite_options", "null_trim", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "null_trim", "0", TCL_GLOBAL_ONLY);
+#endif
 
 #ifdef SQLITE_OMIT_OR_OPTIMIZATION
   Tcl_SetVar2(interp, "sqlite_options", "or_opt", "0", TCL_GLOBAL_ONLY);

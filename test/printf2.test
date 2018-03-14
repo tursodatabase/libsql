@@ -148,6 +148,63 @@ do_execsql_test printf2-4.10 {
   SELECT printf('|%,d|%,d|',1234567890,-1234567890);
 } {|1,234,567,890|-1,234,567,890|}
 
+# 2018-02-19.  Unicode characters with %c
+do_execsql_test printf2-5.100 {
+  SELECT printf('(%8c)',char(11106));
+} {{(       ⭢)}}
+do_execsql_test printf2-5.101 {
+  SELECT printf('(%-8c)',char(11106));
+} {{(⭢       )}}
+do_execsql_test printf2-5.102 {
+  SELECT printf('(%5.3c)',char(1492));
+} {{(  ההה)}}
+do_execsql_test printf2-5.103 {
+  SELECT printf('(%-5.3c)',char(1492));
+} {{(ההה  )}}
+do_execsql_test printf2-5.104 {
+  SELECT printf('(%3.3c)',char(1492));
+} {{(ההה)}}
+do_execsql_test printf2-5.105 {
+  SELECT printf('(%-3.3c)',char(1492));
+} {{(ההה)}}
+do_execsql_test printf2-5.104 {
+  SELECT printf('(%2c)',char(1513));
+} {{( ש)}}
+do_execsql_test printf2-5.106 {
+  SELECT printf('(%-2c)',char(1513));
+} {{(ש )}}
+
+# 2018-02-19.  Unicode characters with the "!" flag in %s and friends.
+do_execsql_test printf2-6.100 {
+  SELECT printf('(%!.3s)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {(הנה)}
+do_execsql_test printf2-6.101 {
+  SELECT printf('(%.6s)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {(הנה)}
+do_execsql_test printf2-6.102 {
+  SELECT printf('(%!5.3s)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {{(  הנה)}}
+do_execsql_test printf2-6.103 {
+  SELECT printf('(%8.6s)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {{(  הנה)}}
+do_execsql_test printf2-6.104 {
+  SELECT printf('(%!-5.3s)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {{(הנה  )}}
+do_execsql_test printf2-6.105 {
+  SELECT printf('(%-8.6s)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {{(הנה  )}}
+do_execsql_test printf2-6.106 {
+  SELECT printf('(%!.3Q)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {('הנה')}
+do_execsql_test printf2-6.107 {
+  SELECT printf('(%.6Q)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {('הנה')}
+do_execsql_test printf2-6.108 {
+  SELECT printf('(%!7.3Q)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {{(  'הנה')}}
+do_execsql_test printf2-6.109 {
+  SELECT printf('(%10.6Q)','הנה מה־טוב ומה־נעים שבת אחים גם־יחד');
+} {{(  'הנה')}}
 
 
 finish_test

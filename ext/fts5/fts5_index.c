@@ -758,6 +758,7 @@ static void fts5DataWrite(Fts5Index *p, i64 iRowid, const u8 *pData, int nData){
   sqlite3_bind_blob(p->pWriter, 2, pData, nData, SQLITE_STATIC);
   sqlite3_step(p->pWriter);
   p->rc = sqlite3_reset(p->pWriter);
+  sqlite3_bind_null(p->pWriter, 2);
 }
 
 /*
@@ -2386,6 +2387,7 @@ static void fts5SegIterSeekInit(
     bDlidx = (val & 0x0001);
   }
   p->rc = sqlite3_reset(pIdxSelect);
+  sqlite3_bind_null(pIdxSelect, 2);
 
   if( iPg<pSeg->pgnoFirst ){
     iPg = pSeg->pgnoFirst;
@@ -3598,6 +3600,7 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
           sqlite3_bind_blob(pIdxSelect, 2, aBlob, 2, SQLITE_STATIC);
           assert( sqlite3_step(pIdxSelect)!=SQLITE_ROW );
           p->rc = sqlite3_reset(pIdxSelect);
+          sqlite3_bind_null(pIdxSelect, 2);
         }
       }
 #endif
@@ -3724,6 +3727,7 @@ static void fts5WriteFlushBtree(Fts5Index *p, Fts5SegWriter *pWriter){
     sqlite3_bind_int64(p->pIdxWriter, 3, bFlag + ((i64)pWriter->iBtPage<<1));
     sqlite3_step(p->pIdxWriter);
     p->rc = sqlite3_reset(p->pIdxWriter);
+    sqlite3_bind_null(p->pIdxWriter, 2);
   }
   pWriter->iBtPage = 0;
 }

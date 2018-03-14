@@ -64,7 +64,9 @@
 # define GETPID getpid
 #elif !defined(_WIN32_WCE)
 # ifndef SQLITE_AMALGAMATION
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 # endif
 # define GETPID (int)GetCurrentProcessId
@@ -646,7 +648,7 @@ static int DbTraceV2Handler(
     }
     case SQLITE_TRACE_PROFILE: {
       sqlite3_stmt *pStmt = (sqlite3_stmt *)pd;
-      sqlite3_int64 ns = (sqlite3_int64)xd;
+      sqlite3_int64 ns = *(sqlite3_int64*)xd;
 
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);
@@ -1846,35 +1848,35 @@ static int SQLITE_TCLAPI DbObjCmd(
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",         "backup",            "busy",
-    "cache",              "changes",           "close",
-    "collate",            "collation_needed",  "commit_hook",
-    "complete",           "copy",              "enable_load_extension",
-    "errorcode",          "eval",              "exists",
-    "function",           "incrblob",          "interrupt",
-    "last_insert_rowid",  "nullvalue",         "onecolumn",
-    "preupdate",          "profile",           "progress",
-    "rekey",              "restore",           "rollback_hook",
-    "status",             "timeout",           "total_changes",
-    "trace",              "trace_v2",          "transaction",
-    "unlock_notify",      "update_hook",       "version",
-    "wal_hook",
-    0
+    "authorizer",             "backup",                "busy",
+    "cache",                  "changes",               "close",
+    "collate",                "collation_needed",      "commit_hook",
+    "complete",               "copy",                  "deserialize",
+    "enable_load_extension",  "errorcode",             "eval",
+    "exists",                 "function",              "incrblob",
+    "interrupt",              "last_insert_rowid",     "nullvalue",
+    "onecolumn",              "preupdate",             "profile",
+    "progress",               "rekey",                 "restore",
+    "rollback_hook",          "serialize",             "status",
+    "timeout",                "total_changes",         "trace",
+    "trace_v2",               "transaction",           "unlock_notify",
+    "update_hook",            "version",               "wal_hook",
+    0                        
   };
   enum DB_enum {
-    DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
-    DB_CACHE,             DB_CHANGES,          DB_CLOSE,
-    DB_COLLATE,           DB_COLLATION_NEEDED, DB_COMMIT_HOOK,
-    DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
-    DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
-    DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
-    DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
-    DB_PREUPDATE,         DB_PROFILE,          DB_PROGRESS,
-    DB_REKEY,             DB_RESTORE,          DB_ROLLBACK_HOOK,
-    DB_STATUS,            DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_TRACE_V2,         DB_TRANSACTION,
-    DB_UNLOCK_NOTIFY,     DB_UPDATE_HOOK,      DB_VERSION,
-    DB_WAL_HOOK,
+    DB_AUTHORIZER,            DB_BACKUP,               DB_BUSY,
+    DB_CACHE,                 DB_CHANGES,              DB_CLOSE,
+    DB_COLLATE,               DB_COLLATION_NEEDED,     DB_COMMIT_HOOK,
+    DB_COMPLETE,              DB_COPY,                 DB_DESERIALIZE,
+    DB_ENABLE_LOAD_EXTENSION, DB_ERRORCODE,            DB_EVAL,
+    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
+    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
+    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
+    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
+    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
+    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
+    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
+    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2413,6 +2415,53 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
+  **     $db deserialize ?DATABASE? VALUE
+  **
+  ** Reopen DATABASE (default "main") using the content in $VALUE
+  */
+  case DB_DESERIALIZE: {
+#ifndef SQLITE_ENABLE_DESERIALIZE
+    Tcl_AppendResult(interp, "MEMDB not available in this build",
+                     (char*)0);
+    rc = TCL_ERROR;
+#else
+    const char *zSchema;
+    Tcl_Obj *pValue;
+    unsigned char *pBA;
+    unsigned char *pData;
+    int len, xrc;
+    
+    if( objc==3 ){
+      zSchema = 0;
+      pValue = objv[2];
+    }else if( objc==4 ){
+      zSchema = Tcl_GetString(objv[2]);
+      pValue = objv[3];
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? VALUE");
+      rc = TCL_ERROR;
+      break;
+    }
+    pBA = Tcl_GetByteArrayFromObj(pValue, &len);
+    pData = sqlite3_malloc64( len );
+    if( pData==0 && len>0 ){
+      Tcl_AppendResult(interp, "out of memory", (char*)0);
+      rc = TCL_ERROR;
+    }else{
+      if( len>0 ) memcpy(pData, pBA, len);
+      xrc = sqlite3_deserialize(pDb->db, zSchema, pData, len, len,
+                SQLITE_DESERIALIZE_FREEONCLOSE |
+                SQLITE_DESERIALIZE_RESIZEABLE);
+      if( xrc ){
+        Tcl_AppendResult(interp, "unable to set MEMDB content", (char*)0);
+        rc = TCL_ERROR;
+      }
+    }
+#endif
+    break; 
+  }
+
+  /*
   **    $db enable_load_extension BOOLEAN
   **
   ** Turn the extension loading feature on or off.  It if off by
@@ -2888,6 +2937,39 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
+  **     $db serialize ?DATABASE?
+  **
+  ** Return a serialization of a database.  
+  */
+  case DB_SERIALIZE: {
+#ifndef SQLITE_ENABLE_DESERIALIZE
+    Tcl_AppendResult(interp, "MEMDB not available in this build",
+                     (char*)0);
+    rc = TCL_ERROR;
+#else
+    const char *zSchema = objc>=3 ? Tcl_GetString(objv[2]) : "main";
+    sqlite3_int64 sz = 0;
+    unsigned char *pData;
+    if( objc!=2 && objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE?");
+      rc = TCL_ERROR;
+    }else{
+      int needFree;
+      pData = sqlite3_serialize(pDb->db, zSchema, &sz, SQLITE_SERIALIZE_NOCOPY);
+      if( pData ){
+        needFree = 0;
+      }else{
+        pData = sqlite3_serialize(pDb->db, zSchema, &sz, 0);
+        needFree = 1;
+      }
+      Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pData,sz));
+      if( needFree ) sqlite3_free(pData);
+    }
+#endif
+    break;
+  }
+
+  /*
   **     $db status (step|sort|autoindex|vmstep)
   **
   ** Display SQLITE_STMTSTATUS_FULLSCAN_STEP or
@@ -3348,6 +3430,24 @@ static int SQLITE_TCLAPI DbObjCmdAdaptor(
 #endif /* SQLITE_TCL_NRE */
 
 /*
+** Issue the usage message when the "sqlite3" command arguments are
+** incorrect.
+*/
+static int sqliteCmdUsage(
+  Tcl_Interp *interp,
+  Tcl_Obj *const*objv
+){
+  Tcl_WrongNumArgs(interp, 1, objv,
+    "HANDLE ?FILENAME? ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+    " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
+    " ?-key CODECKEY?"
+#endif
+  );
+  return TCL_ERROR;
+}
+
+/*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
 **                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
 **
@@ -3372,7 +3472,7 @@ static int SQLITE_TCLAPI DbMain(
   const char *zArg;
   char *zErrMsg;
   int i;
-  const char *zFile;
+  const char *zFile = 0;
   const char *zVfs = 0;
   int flags;
   Tcl_DString translatedFilename;
@@ -3383,7 +3483,7 @@ static int SQLITE_TCLAPI DbMain(
   int rc;
 
   /* In normal use, each TCL interpreter runs in a single thread.  So
-  ** by default, we can turn of mutexing on SQLite database connections.
+  ** by default, we can turn off mutexing on SQLite database connections.
   ** However, for testing purposes it is useful to have mutexes turned
   ** on.  So, by default, mutexes default off.  But if compiled with
   ** SQLITE_TCL_DEFAULT_FULLMUTEX then mutexes default on.
@@ -3412,18 +3512,26 @@ static int SQLITE_TCLAPI DbMain(
 #endif
       return TCL_OK;
     }
+    if( zArg[0]=='-' ) return sqliteCmdUsage(interp, objv);
   }
-  for(i=3; i+1<objc; i+=2){
+  for(i=2; i<objc; i++){
     zArg = Tcl_GetString(objv[i]);
+    if( zArg[0]!='-' ){
+      if( zFile!=0 ) return sqliteCmdUsage(interp, objv);
+      zFile = zArg;
+      continue;
+    }
+    if( i==objc-1 ) return sqliteCmdUsage(interp, objv);
+    i++;
     if( strcmp(zArg,"-key")==0 ){
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-      pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
+      pKey = Tcl_GetByteArrayFromObj(objv[i], &nKey);
 #endif
     }else if( strcmp(zArg, "-vfs")==0 ){
-      zVfs = Tcl_GetString(objv[i+1]);
+      zVfs = Tcl_GetString(objv[i]);
     }else if( strcmp(zArg, "-readonly")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
         flags |= SQLITE_OPEN_READONLY;
@@ -3433,7 +3541,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-create")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b && (flags & SQLITE_OPEN_READONLY)==0 ){
         flags |= SQLITE_OPEN_CREATE;
       }else{
@@ -3441,7 +3549,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-nomutex")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_NOMUTEX;
         flags &= ~SQLITE_OPEN_FULLMUTEX;
@@ -3450,7 +3558,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-fullmutex")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_FULLMUTEX;
         flags &= ~SQLITE_OPEN_NOMUTEX;
@@ -3459,7 +3567,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-uri")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_URI;
       }else{
@@ -3470,20 +3578,10 @@ static int SQLITE_TCLAPI DbMain(
       return TCL_ERROR;
     }
   }
-  if( objc<3 || (objc&1)!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv,
-      "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
-      " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
-#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-      " ?-key CODECKEY?"
-#endif
-    );
-    return TCL_ERROR;
-  }
   zErrMsg = 0;
   p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
   memset(p, 0, sizeof(*p));
-  zFile = Tcl_GetStringFromObj(objv[2], 0);
+  if( zFile==0 ) zFile = "";
   zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
   rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
   Tcl_DStringFree(&translatedFilename);

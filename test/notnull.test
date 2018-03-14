@@ -561,4 +561,49 @@ do_test notnull-5.5 {
   execsql { SELECT * FROM t1 }
 } {1 2}
 
+#-------------------------------------------------------------------------
+# Check that UNIQUE NOT NULL indexes are always recognized as such.
+#
+proc uses_op_next {sql} {
+  db eval "EXPLAIN $sql" a {
+    if {$a(opcode)=="Next"} { return 1 }
+  }
+  return 0
+}
+
+proc do_uses_op_next_test {tn sql res} {
+  uplevel [list do_test $tn [list uses_op_next $sql] $res]
+}
+
+reset_db
+do_execsql_test notnull-6.0 {
+  CREATE TABLE t1(a UNIQUE);
+  CREATE TABLE t2(a NOT NULL UNIQUE);
+  CREATE TABLE t3(a UNIQUE NOT NULL);
+  CREATE TABLE t4(a NOT NULL);
+  CREATE UNIQUE INDEX t4a ON t4(a);
+
+  CREATE TABLE t5(a PRIMARY KEY);
+  CREATE TABLE t6(a PRIMARY KEY NOT NULL);
+  CREATE TABLE t7(a NOT NULL PRIMARY KEY);
+  CREATE TABLE t8(a PRIMARY KEY) WITHOUT ROWID;
+
+  CREATE TABLE t9(a PRIMARY KEY UNIQUE NOT NULL);
+  CREATE TABLE t10(a UNIQUE PRIMARY KEY NOT NULL);
+}
+
+do_uses_op_next_test notnull-6.1 "SELECT * FROM t1 WHERE a IS ?" 1
+do_uses_op_next_test notnull-6.2 "SELECT * FROM t2 WHERE a IS ?" 0
+do_uses_op_next_test notnull-6.3 "SELECT * FROM t3 WHERE a IS ?" 0
+do_uses_op_next_test notnull-6.4 "SELECT * FROM t4 WHERE a IS ?" 0
+
+do_uses_op_next_test notnull-6.5 "SELECT * FROM t5 WHERE a IS ?" 1
+do_uses_op_next_test notnull-6.6 "SELECT * FROM t6 WHERE a IS ?" 0
+do_uses_op_next_test notnull-6.7 "SELECT * FROM t7 WHERE a IS ?" 0
+do_uses_op_next_test notnull-6.8 "SELECT * FROM t8 WHERE a IS ?" 0
+
+do_uses_op_next_test notnull-6.9 "SELECT * FROM t8 WHERE a IS ?" 0
+do_uses_op_next_test notnull-6.10 "SELECT * FROM t8 WHERE a IS ?" 0
+
 finish_test
+

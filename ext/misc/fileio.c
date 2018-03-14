@@ -270,15 +270,20 @@ static int writeFile(
     SYSTEMTIME currentTime;
     LONGLONG intervals;
     HANDLE hFile;
+    LPWSTR zUnicodeName;
+    extern LPWSTR sqlite3_win32_utf8_to_unicode(const char*);
+
     GetSystemTime(&currentTime);
     SystemTimeToFileTime(&currentTime, &lastAccess);
     intervals = Int32x32To64(mtime, 10000000) + 116444736000000000;
     lastWrite.dwLowDateTime = (DWORD)intervals;
     lastWrite.dwHighDateTime = intervals >> 32;
-    hFile = CreateFile(
-      zFile, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
+    zUnicodeName = sqlite3_win32_utf8_to_unicode(zFile);
+    hFile = CreateFileW(
+      zUnicodeName, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
       FILE_FLAG_BACKUP_SEMANTICS, NULL
     );
+    sqlite3_free(zUnicodeName);
     if( hFile!=INVALID_HANDLE_VALUE ){
       BOOL bResult = SetFileTime(hFile, NULL, &lastAccess, &lastWrite);
       CloseHandle(hFile);
@@ -486,6 +491,7 @@ static void fsdirResetCursor(fsdir_cursor *pCur){
     sqlite3_free(pLvl->zDir);
   }
   sqlite3_free(pCur->zPath);
+  sqlite3_free(pCur->aLvl);
   pCur->aLvl = 0;
   pCur->zPath = 0;
   pCur->zBase = 0;
@@ -501,7 +507,6 @@ static int fsdirClose(sqlite3_vtab_cursor *cur){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
 
   fsdirResetCursor(pCur);
-  sqlite3_free(pCur->aLvl);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
