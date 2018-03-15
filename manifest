@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBSTATUS_CACHE_SPILL\soption\sto\ssqlite3_db_status().
-D 2018-03-14T15:25:43.797
+C Draft\sfix\sfor\san\sfsdir()\sissue\sreported\svia\sthe\smailing\slist.
+D 2018-03-15T05:25:57.098
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -277,7 +277,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 22018e00eb50e9ebf9067c92d4e7162dc5006a3efc4e0c19bc3829825a1043b0
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
-F ext/misc/fileio.c 4cad3a78bfbbea9b1414b4405fd704ee57fbe2621254b011888dae7b0ba8c513
+F ext/misc/fileio.c 673d6bde25cab00ad40cc95b89fa99c9f00870c565de3beaab9d6a9658bbc3e0
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -1712,8 +1712,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8fb23d4281915b4507e4d42a300f4b5f958ad88ad408218659c7459775d7b114 3faeb851374471a6f94a6fab3a62c73d03330eae6fc72cd1a277b03ad12dcdd0
-R 447376723b1921d647ac6ba35140d6b2
-T +closed 3faeb851374471a6f94a6fab3a62c73d03330eae6fc72cd1a277b03ad12dcdd0
-U drh
-Z 289c0efb0552dcd852e2b3f3f5063bbc
+P 48a06eb02b42a021b835ff9766535805723259b9701b87fb17fa488b133cb53a
+R f348889711b0641611a4541c43f0ef77
+T *branch * fsDirFix
+T *sym-fsDirFix *
+T -sym-trunk *
+U mistachkin
+Z e35ad5809ec8c5cee9fda8092826113a
