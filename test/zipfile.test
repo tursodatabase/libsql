@@ -515,6 +515,14 @@ ifcapable datetime {
     test_unzip/c.txt 1111111000 
   }]
 
+  # fsdir() issue reported on the mailing list on 2018-03-14 by Jack Thaw.
+  do_test 6.0b {
+    db eval {
+      SELECT sum(name LIKE '%/a.txt')
+      FROM (VALUES(1),(2),(3)) CROSS JOIN fsdir('test_unzip')
+    }
+  } {3}
+
   do_execsql_test 6.1 {
     SELECT name, mtime, data FROM zipfile('test1.zip')
   } {

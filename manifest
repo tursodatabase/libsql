@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBSTATUS_CACHE_SPILL\soption\sto\ssqlite3_db_status().
-D 2018-03-14T15:25:43.797
+C Fix\san\sissue\swith\sthe\sfsdir()\stable-valued\sfunction\snot\sresetting\scorrectly\nafter\seach\spass\sof\sa\sjoin.
+D 2018-03-15T15:09:45.238
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -277,7 +277,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 22018e00eb50e9ebf9067c92d4e7162dc5006a3efc4e0c19bc3829825a1043b0
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
-F ext/misc/fileio.c 4cad3a78bfbbea9b1414b4405fd704ee57fbe2621254b011888dae7b0ba8c513
+F ext/misc/fileio.c 673d6bde25cab00ad40cc95b89fa99c9f00870c565de3beaab9d6a9658bbc3e0
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -1611,7 +1611,7 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test a9806a86e5a153d897f320de624a83a9e9774515eb79ad2419496187b1acc7d7
+F test/zipfile.test fd865048725bb138ef3024cee704cd9da9250de4b6f78ad27ff8e7e6d46caefe
 F test/zipfile2.test 67d5f08a202796d4b7a71dfa4b8dcb74aa7a9d1f42c5f17bedff9855c1ba7aa5
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1712,8 +1712,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8fb23d4281915b4507e4d42a300f4b5f958ad88ad408218659c7459775d7b114 3faeb851374471a6f94a6fab3a62c73d03330eae6fc72cd1a277b03ad12dcdd0
-R 447376723b1921d647ac6ba35140d6b2
-T +closed 3faeb851374471a6f94a6fab3a62c73d03330eae6fc72cd1a277b03ad12dcdd0
+P 48a06eb02b42a021b835ff9766535805723259b9701b87fb17fa488b133cb53a 48641010c24bf37f13d68c4d19c5c3e9b41404af12a4947705cc53a31db04178
+R 330f102279784dfe2b3068c419da3e7a
+T +closed 48641010c24bf37f13d68c4d19c5c3e9b41404af12a4947705cc53a31db04178
 U drh
-Z 289c0efb0552dcd852e2b3f3f5063bbc
+Z 5d98223a84f13b8cca1846191fd9b4d5
