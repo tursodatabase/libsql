@@ -4278,10 +4278,18 @@ static int sessionChangesetApply(
       sqlite3_finalize(sApply.pUpdate); 
       sqlite3_finalize(sApply.pInsert);
       sqlite3_finalize(sApply.pSelect);
-      memset(&sApply, 0, sizeof(sApply));
       sApply.db = db;
+      sApply.pDelete = 0;
+      sApply.pUpdate = 0;
+      sApply.pInsert = 0;
+      sApply.pSelect = 0;
+      sApply.nCol = 0;
+      sApply.azCol = 0;
+      sApply.abPK = 0;
+      sApply.bStat1 = 0;
       sApply.bDeferConstraints = 1;
       sApply.bRebaseStarted = 0;
+      memset(&sApply.constraints, 0, sizeof(SessionBuffer));
 
       /* If an xFilter() callback was specified, invoke it now. If the 
       ** xFilter callback returns zero, skip this table. If it returns
@@ -4658,7 +4666,6 @@ static int sessionChangesetToHash(
   int rc = SQLITE_OK;
   SessionTable *pTab = 0;
 
-
   while( SQLITE_ROW==sessionChangesetNext(pIter, &aRec, &nRec, 0) ){
     const char *zNew;
     int nCol;
@@ -5010,9 +5017,12 @@ static void sessionAppendRecordMerge(
           pOut += nn1;
         }
       }
-      a1 += n1;
-      a2 += n2;
+      a1 += nn1;
+      a2 += nn2;
     }
+
+    pBuf->nBuf = pOut-pBuf->aBuf;
+    assert( pBuf->nBuf<=pBuf->nAlloc );
   }
 }
 
@@ -5031,7 +5041,7 @@ static int sessionRebase(
   SessionTable *pTab = 0;
   SessionBuffer sOut = {0,0,0};
 
-  while( SQLITE_OK==sessionChangesetNext(pIter, &aRec, &nRec, &bNew) ){
+  while( SQLITE_ROW==sessionChangesetNext(pIter, &aRec, &nRec, &bNew) ){
     SessionChange *pChange = 0;
 
     if( bNew ){
@@ -5078,8 +5088,11 @@ static int sessionRebase(
             if( pIter->op==SQLITE_INSERT ){
               sessionAppendBlob(&sOut, aRec, nRec, &rc);
             }else{
+              u8 *pCsr = aRec;
+              sessionSkipRecord(&pCsr, pIter->nCol);
               sessionAppendRecordMerge(&sOut, pIter->nCol, 1,
-                  aRec, nRec, pChange->aRecord, pChange->nRecord, &rc
+                  pCsr, nRec-(pCsr-aRec), 
+                  pChange->aRecord, pChange->nRecord, &rc
               );
             }
           }
@@ -5143,6 +5156,8 @@ int sqlite3rebaser_create(sqlite3_rebaser **ppNew){
   pNew = sqlite3_malloc(sizeof(sqlite3_rebaser));
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
+  }else{
+    memset(pNew, 0, sizeof(sqlite3_rebaser));
   }
   *ppNew = pNew;
   return rc;
@@ -5208,7 +5223,7 @@ int sqlite3rebaser_rebase_strm(
 /* 
 ** Destroy a rebaser object 
 */
-void sqlite3rebaser_destroy(sqlite3_rebaser *p){
+void sqlite3rebaser_delete(sqlite3_rebaser *p){
   if( p ){
     sessionDeleteTable(p->grp.pList);
     sqlite3_free(p);

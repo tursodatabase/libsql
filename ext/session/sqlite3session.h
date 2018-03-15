@@ -1235,7 +1235,7 @@ int sqlite3rebaser_rebase(
 );
 
 /* Destroy a rebaser object */
-void sqlite3rebaser_destroy(sqlite3_rebaser *p); 
+void sqlite3rebaser_delete(sqlite3_rebaser *p); 
 
 /*
 ** CAPI3REF: Streaming Versions of API functions.

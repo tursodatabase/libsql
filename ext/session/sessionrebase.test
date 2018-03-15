@@ -121,5 +121,131 @@ do_apply_v2_test 1.3.2 {
   {DELETE t1 0 X. {i 1 {} {}} {}}
 }
 
+#-------------------------------------------------------------------------
+# Test cases 2.* - simple tests of rebasing actual changesets.
+#
+#    2.1.1 - 1u2u1r
+#    2.1.2 - 1u2u2r
+#    2.1.3 - 1d2d
+#    2.1.4 - 1d2u1r
+#    2.1.5 - 1d2u2r !!
+#    2.1.6 - 1u2d1r
+
+proc xConflictAbort {args} {
+  return "ABORT"
+}
+
+# Take a copy of database test.db in file test.db2. Execute $sql1
+# against test.db and $sql2 against test.db2. Capture a changeset
+# for each. Then send the test.db2 changeset to test.db and apply
+# it with the conflict handlers in $conflict_handler. Patch the
+# test.db changeset and then execute it against test.db2. Test that
+# the two databases come out the same.
+#
+proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
+
+  forcedelete test.db2 test.db2-journal test.db2-wal
+  forcecopy test.db test.db2
+  sqlite3 db2 test.db2
+
+  db eval BEGIN
+
+  sqlite3session S1 db main
+  S1 attach *
+  execsql $sql1 db
+  set c1 [S1 changeset]
+  S1 delete
+
+  sqlite3session S2 db2 main
+  S2 attach *
+  execsql $sql2 db2
+  set c2 [S2 changeset]
+  S2 delete
+
+  set ::lConflict $conflict_handler
+  set rebase [sqlite3changeset_apply_v2 db $c2 xConflict]
+  #puts [changeset_to_list $rebase]
+
+  sqlite3rebaser_create R
+  R configure $rebase
+  set c1r [R rebase $c1]
+  R delete
+  #puts [changeset_to_list $c1r]
+
+  sqlite3changeset_apply_v2 db2 $c1r xConflictAbort
+
+  uplevel [list do_test $tn.1 [list compare_db db db2] {}]
+  db2 close
+
+  if {$testsql!=""} {
+    uplevel [list do_execsql_test $tn.2 $testsql $testres]
+  }
+
+  db eval ROLLBACK
+}
+
+reset_db
+do_execsql_test 2.1.0 {
+  CREATE TABLE t1 (a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+}
+do_rebase_test 2.1.1 {
+  UPDATE t1 SET b = 'two.1' WHERE a=2;
+} {
+  UPDATE t1 SET b = 'two.2' WHERE a=2;
+} {
+  OMIT
+} { SELECT * FROM t1 } {1 one 2 two.1 3 three}
+
+do_rebase_test 2.1.2 {
+  UPDATE t1 SET b = 'two.1' WHERE a=2;
+} {
+  UPDATE t1 SET b = 'two.2' WHERE a=2;
+} {
+  REPLACE
+} { SELECT * FROM t1 } {1 one 2 two.2 3 three}
+
+do_rebase_test 2.1.3 {
+  DELETE FROM t1 WHERE a=3;
+} {
+  DELETE FROM t1 WHERE a=3;
+} {
+  OMIT
+} { SELECT * FROM t1 } {1 one 2 two}
+
+do_rebase_test 2.1.4 {
+  DELETE FROM t1 WHERE a=1;
+} {
+  UPDATE t1 SET b='one.2' WHERE a=1
+} {
+  OMIT
+} { SELECT * FROM t1 } {2 two 3 three}
+
+#do_rebase_test 2.1.5 {
+  #DELETE FROM t1 WHERE a=1;
+#} {
+  #UPDATE t1 SET b='one.2' WHERE a=1
+#} {
+  #REPLACE
+#} { SELECT * FROM t1 } {2 two 3 three}
+
+do_rebase_test 2.1.6 {
+  UPDATE t1 SET b='three.1' WHERE a=3;
+} {
+  DELETE FROM t1 WHERE a=3;
+} {
+  OMIT
+} { SELECT * FROM t1 } {1 one 2 two 3 three.1}
+
+do_rebase_test 2.1.7 {
+  UPDATE t1 SET b='three.1' WHERE a=3;
+} {
+  DELETE FROM t1 WHERE a=3;
+} {
+  REPLACE
+} { SELECT * FROM t1 } {1 one 2 two}
 
 finish_test
+
