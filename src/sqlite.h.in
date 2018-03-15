@@ -8849,7 +8849,7 @@ int sqlite3_deserialize(
 ** is resposible for freeing any dynamically allocated memory.
 **
 ** The SQLITE_DESERIALIZE_RESIZEABLE flag means that SQLite is allowed to
-** grow the size of the database usign calls to [sqlite3_realloc64()].  This
+** grow the size of the database using calls to [sqlite3_realloc64()].  This
 ** flag should only be used if SQLITE_DESERIALIZE_FREEONCLOSE is also used.
 ** Without this flag, the deserialized database cannot increase in size beyond
 ** the number of bytes specified by the M parameter.
