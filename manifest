@@ -1,5 +1,5 @@
-C Avoid\srunning\sa\scouple\sof\stests\sin\scrash8.test\sthat\sdepend\son\sthe\spresence\sof\nthe\sjournal\sfile\sif\srunning\son\san\sF2FS\sfile-system\sthat\sdoes\snot\srequire\sa\njournal\sfile.\sCherrypick\sof\s[797e02e0].
-D 2018-03-06T11:49:09.084
+C Fix\sa\sproblem\sin\stest\sscript\sthread001.test\scausing\sa\sspurious\s"-1\sfiles\swere\nleft\sopen"\serror\swhen\srun\sseparately.\sCherrypick\sof\s[1774f1c3b].
+D 2018-03-16T07:49:49.484
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -1195,7 +1195,7 @@ F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl eb7ec55fe074a909423c1de701f7c545417b8aa96787b8c3e7a79203f2cebec8
-F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
+F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
 F test/thread004.test f51dfc3936184aaf73ee85f315224baad272a87f
@@ -1582,8 +1582,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22a228edad3edf139b4cc78beaffb15a6f1999aa0ff198ee7b4ebe8074b42f48
-Q +797e02e0ee703ab0fd53e26ba5c96ac7429b8022522bec201423718d508acf24
-R 5b98b1ad46c6fbe900d0416cec39095b
+P eeedfc74d28a21305abf855f49e4418c9252c6918208d6ce110c001a628c7e3c
+Q +1774f1c3baf0bc3d83a53c52702696ff21814fa1de07cc38fd098832e6757b09
+R b6d28c13608fc9cabd4dd894ea41fe6f
 U dan
-Z f616954f19da2f4df8e7233f926bf2f1
+Z 7dd5edab4c19cd4954e93f0afef508c4
