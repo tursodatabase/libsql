@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.\s\sNo\scode\schanges.
-D 2018-03-15T17:46:42.911
+C Fix\sa\sproblem\sin\stest\sscript\sthread001.test\scausing\sa\sspurious\s"-1\sfiles\swere\nleft\sopen"\serror\swhen\srun\sseparately.
+D 2018-03-16T07:48:43.361
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1307,7 +1307,7 @@ F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 94901a4625d9a2229666dd5c44120ddf7f0fb639470710ef74a4cefc7b039e07
-F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
+F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
 F test/thread004.test f51dfc3936184aaf73ee85f315224baad272a87f
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ce4e71c1b7251be9e922b21dfeba1f9aef6a47ce6495ecb7f94fd785ab564f2
-R 89b0b99e50f1168361f0a0d02a7a50f5
-U drh
-Z 77e08b27601e854563175f463a1b9793
+P f1784aff4e6ff1c84d3fa0069034290154220fd2fa85c7df342c717ad54f4b91
+R 6365d4cb8120ab9ac72d818a9b1d70a0
+U dan
+Z b450edce4db91ca834c891cd7015f37d
