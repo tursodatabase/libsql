@@ -1216,6 +1216,41 @@ int sqlite3changeset_apply_v2(
 #define SQLITE_CHANGESET_REPLACE    1
 #define SQLITE_CHANGESET_ABORT      2
 
+/* 
+** CAPI3REF: Rebasing changesets
+**
+** Changes are rebased as follows:
+**
+** <dl>
+** <dt>INSERT<dd>
+**   This may only conflict with a remote INSERT. If the conflict 
+**   resolution was OMIT, then add an UPDATE change to the rebased
+**   changeset. Or, if the conflict resolution was REPLACE, add
+**   nothing to the rebased changeset.
+**
+** <dt>DELETE<dd>
+**   This may conflict with a remote UPDATE or DELETE. In both cases the
+**   only possible resolution is OMIT. If the remote operation was a
+**   DELETE, then add no change to the rebased changeset. If the remote
+**   operation was an UPDATE, then the old.* fields of the are updated to
+**   reflect the new.* values in the UPDATE.
+**
+** <dt>UPDATE<dd>
+**   This may conflict with a remote UPDATE or DELETE. If it conflicts
+**   with a DELETE, and the conflict resolution was OMIT, then the update
+**   is changed into an INSERT. Any undefined values in the new.* record
+**   from the update change are filled in using hte old.* values from 
+**   the conflicting DELETE. Or, if the conflict resolution was REPLACE,
+**   the UPDATE change is simply omitted from the rebased changeset.
+**
+**   If conflict is with a remote UPDATE and the resolution is OMIT, then
+**   the old.* values are rebased using the new.* values in the remote
+**   change. Or, if the resolution is REPLACE, then the change is copied
+**   into the rebased changeset with updates to columns also updated by
+**   the conflicting UPDATE removed. If this means no columns would be
+**   updated, the change is omitted.
+** </dl>
+*/
 typedef struct sqlite3_rebaser sqlite3_rebaser;
 
 /* Create a new rebaser object */
