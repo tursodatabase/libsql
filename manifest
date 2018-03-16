@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sscript\sthread001.test\scausing\sa\sspurious\s"-1\sfiles\swere\nleft\sopen"\serror\swhen\srun\sseparately.
-D 2018-03-16T07:48:43.361
+C Avoid\swriting\sthe\ssqlite_sequence\stable\swhen\sit\shas\snot\sactually\schanged.
+D 2018-03-16T18:46:30.654
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -450,7 +450,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 14686083cedc198540b15a79586cdd4be2acf6d5fa97627e355f817ab07e9fee
+F src/insert.c b9ff71cc2913d1d57698a1e22bf853261a9a642baf62bdf40ddeb3809adb85b5
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c c1e97e4c6fffff1fb1a6f1c48807386819af78657b4ae4acfd6d6d17353b8277
@@ -1712,7 +1712,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f1784aff4e6ff1c84d3fa0069034290154220fd2fa85c7df342c717ad54f4b91
-R 6365d4cb8120ab9ac72d818a9b1d70a0
-U dan
-Z b450edce4db91ca834c891cd7015f37d
+P 1774f1c3baf0bc3d83a53c52702696ff21814fa1de07cc38fd098832e6757b09
+R d0bd8d3f666390fa87cc4ce598933023
+T *branch * autoinc-enhancement
+T *sym-autoinc-enhancement *
+T -sym-trunk *
+U drh
+Z 5d34c90db248f39c50f1168b98361d2f
