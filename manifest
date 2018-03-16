@@ -1,5 +1,5 @@
-C Make\sa\scouple\stests\sless\ssensitive\sto\stiming.
-D 2018-03-16T23:54:12.517
+C Enable\smore\s'zipfile'\stests\son\sWin32.
+D 2018-03-16T23:54:26.457
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1611,8 +1611,8 @@ F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test fd865048725bb138ef3024cee704cd9da9250de4b6f78ad27ff8e7e6d46caefe
-F test/zipfile2.test 67d5f08a202796d4b7a71dfa4b8dcb74aa7a9d1f42c5f17bedff9855c1ba7aa5
+F test/zipfile.test dbad090b506b9da943400e285e6723a53bdb3591aaa8f3138df892eae6ccb243
+F test/zipfile2.test fb68e022bf759060be041e3a1e3f955e21f3fa02a7fa1dcba0a01c88ab6deee6
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56d11c250961790579a7aeee65e83fdb29462ae37f9de93da13fbd890fc0a01d
-R f872f68a9ea8d96d06313f821ac22957
+P bc2af8e0aa28d8d10612ab9464c008a970348b4720bb34d0c546d341e2bc09e0
+R 7a8f6991afcb70824bbbe5f92582fa58
 U mistachkin
-Z 1ea7ec4ed43cecff4ee6039be766ced0
+Z 9baa572ff0bb0d7155a0ba438dc60407
