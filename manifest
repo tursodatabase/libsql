@@ -1,5 +1,5 @@
-C Enable\smore\s'zipfile'\stests\son\sWin32.
-D 2018-03-16T23:54:26.457
+C Win32\sportability\sfixes\sto\sthe\s'fileio'\sextension.
+D 2018-03-16T23:54:36.667
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -277,7 +277,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 22018e00eb50e9ebf9067c92d4e7162dc5006a3efc4e0c19bc3829825a1043b0
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
-F ext/misc/fileio.c 673d6bde25cab00ad40cc95b89fa99c9f00870c565de3beaab9d6a9658bbc3e0
+F ext/misc/fileio.c da441efc13c0fa96a41b168bb8aa1014b12d36f3a0d619a2b77b3bdf2a3ccf5e
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc2af8e0aa28d8d10612ab9464c008a970348b4720bb34d0c546d341e2bc09e0
-R 7a8f6991afcb70824bbbe5f92582fa58
+P 49d2566c8e7d0df37494ee001fc6eae5f47f95e16f6a575f2d8d6777b62e6068
+R 2df366b18e22b23cff08d7e7d1c0c31e
 U mistachkin
-Z 9baa572ff0bb0d7155a0ba438dc60407
+Z 0697d74ec8216cbe655401008c52a666
