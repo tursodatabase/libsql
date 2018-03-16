@@ -1,5 +1,5 @@
-C Fix\sa\sparsing\sissue\sassociated\swith\sa\scorrupt\ssqlite_master\stable.
-D 2018-03-16T19:10:05.855
+C Better\serror\smessage\stext\swhen\sthe\sschema\sis\scorrupted\sby\sa\sCREATE\sTABLE\sAS\nentry.
+D 2018-03-16T20:15:58.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -433,7 +433,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 18a53540aa35dbdf77f715ea928422a4ed9011dc16ea7b50f803fd1617fcc4f5
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 672022c06e1a5c2653f80c77a687de11f7e65ce81d20fe2825aadfa13a875c33
+F src/build.c 8b53aacc26944bb7fd9ab5ddeedecb4cc7c4b84df3a420cf6d2b8f772ad421df
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c ff1be3eed7bdd75aaca61ca8dc848f7c9f850ef2fb9cb56f2734e922a098f9c0
@@ -478,13 +478,13 @@ F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3e3b659b6b3f40b5a5efef6b8890ced490c397a81d96feb5266fde1f7362e608
 F src/pager.h 581698f2177e8bd4008fe4760898ce20b6133d1df22139b9101b5155f900df7a
-F src/parse.y 927e287566764c08e3dbf663a433518e2599fe1d3780386db69df64b4d70a146
+F src/parse.y 3be4b2b5e33ef7dab3128b765898ee786fc6cd698a7f053f756a68f2f238f0aa
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c bea56df3ae0637768c0da4fbbb8f2492f780980d95000034a105ff291bf7ca69
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
-F src/prepare.c 259f4e7960c47082c9653f3d5f0c294abd68bb9c3aab86de7630700cba1c20fb
+F src/prepare.c b086fea6a1952db88beca31fdd621201ee5e4ce3f02905248cc3035a8174aa89
 F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1774f1c3baf0bc3d83a53c52702696ff21814fa1de07cc38fd098832e6757b09
-R 28201db53ed454b9421b2d31c19681b6
-U mistachkin
-Z 278594336baa790fc171fbd2e9db3256
+P 5f779ff6b48ec97efacd49b1715b7e5272694fa839be349c90667812bbffe22b
+R a2c5b8eddcb12d3bb2fe3e3879b722e7
+U drh
+Z 082ab73893d53982ab87629d2ac22c11

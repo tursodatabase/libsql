@@ -169,13 +169,8 @@ create_table_args ::= LP columnlist conslist_opt(X) RP(E) table_options(F). {
   sqlite3EndTable(pParse,&X,&E,F,0);
 }
 create_table_args ::= AS select(S). {
-  if( pParse->db->init.busy==0 ){
-    sqlite3EndTable(pParse,0,0,0,S);
-    sqlite3SelectDelete(pParse->db, S);
-  }else{
-    sqlite3SelectDelete(pParse->db, S);
-    sqlite3ErrorMsg(pParse, "corrupt schema");
-  }
+  sqlite3EndTable(pParse,0,0,0,S);
+  sqlite3SelectDelete(pParse->db, S);
 }
 %type table_options {int}
 table_options(A) ::= .    {A = 0;}
