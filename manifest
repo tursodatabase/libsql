@@ -1,5 +1,5 @@
-C Fix\sa\sduplicate\stest\snumber\sand\scleanup\sa\sbit\sof\sMakefile\swhitespace.
-D 2018-03-16T23:53:47.037
+C Make\sa\scouple\stests\sless\ssensitive\sto\stiming.
+D 2018-03-16T23:54:12.517
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1464,7 +1464,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test a659a9862957f4789e37a92b3bf6d2caf5c86b02cdeefc41e850ae53acf6992a
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
-F test/trace3.test b41076f536876b6edf661c0cf8f9216771316efd0fe78905576cc23ce269e7f2
+F test/trace3.test 1dff966888773ff1bfea01c080caf15417892b3f998408fe920c4791f7337144
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
@@ -1712,10 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d75e67654aa9620b9617786553a002f54e8c6dcbbcc58948a06bd98a0916d75a
-R 4a619632af606d9d72c75aaca13e1f50
-T *branch * testFixes
-T *sym-testFixes *
-T -sym-trunk *
+P 56d11c250961790579a7aeee65e83fdb29462ae37f9de93da13fbd890fc0a01d
+R f872f68a9ea8d96d06313f821ac22957
 U mistachkin
-Z 79b2c410c6577c669500afd03012f496
+Z 1ea7ec4ed43cecff4ee6039be766ced0
