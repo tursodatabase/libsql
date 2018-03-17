@@ -1,5 +1,5 @@
-C Win32\sportability\sfixes\sto\sthe\s'fileio'\sextension.
-D 2018-03-16T23:54:36.667
+C Another\sWin32\sportability\sfix\sfor\sthe\s'zipfile'\stests.
+D 2018-03-17T00:44:29.550
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1612,7 +1612,7 @@ F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501d
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
 F test/zipfile.test dbad090b506b9da943400e285e6723a53bdb3591aaa8f3138df892eae6ccb243
-F test/zipfile2.test fb68e022bf759060be041e3a1e3f955e21f3fa02a7fa1dcba0a01c88ab6deee6
+F test/zipfile2.test 63bfa89686d12f87f77f8813cd64e948a71dc006e1d6e4c75f5cd1b371010421
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49d2566c8e7d0df37494ee001fc6eae5f47f95e16f6a575f2d8d6777b62e6068
-R 2df366b18e22b23cff08d7e7d1c0c31e
+P 9d2b0f8b84aac862b0572b183e3ba53ea8c0d8742aaa3c3fbe59f6036054fd1a
+R 6c26f8c914e1431f7c5f7a3d351a4cdb
 U mistachkin
-Z 0697d74ec8216cbe655401008c52a666
+Z c29417f3c6894392a7bcf8dd9bbc8937

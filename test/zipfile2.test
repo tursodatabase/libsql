@@ -52,12 +52,17 @@ do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE fff USING zipfile('test''zip');
 }
 
+if {$::tcl_platform(platform)=="windows"} {
+  set res {1 {cannot open file: testdir}}
+} else {
+  set res {1 {error in fread()}}
+}
 do_test 2.0 {
   forcedelete testdir
   file mkdir testdir
   execsql { CREATE VIRTUAL TABLE hhh USING zipfile('testdir') }
   catchsql { SELECT * FROM hhh } 
-} {1 {error in fread()}}
+} $res
 
 
 set archive {
