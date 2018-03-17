@@ -1,5 +1,5 @@
-C Detect\scorruption\sin\sthe\sform\sof\sthe\ssqlite_sequence\stable\spointing\sto\sthe\nwrong\stype\sof\sbtree.
-D 2018-03-16T23:59:36.251
+C Do\snot\suse\ssqlite3_column_decltype()\sin\sthe\sCLI\sif\sit\sis\scompiled\swith\nSQLITE_OMIT_DECLTYPE.
+D 2018-03-17T16:26:36.591
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -490,7 +490,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f02352ac5cbb6fad3804add825743b924cfb6c742ba2e8666d726828a9985d73
-F src/shell.c.in 9b7e7ac1ccdbc045e285e745ff6d21dbec6ce91330f2bdd5db50d5c39f40679e
+F src/shell.c.in 52b1b3f52159144391d598f43ef7ce13f58f35fcc18ae04df68e879695a1747f
 F src/sqlite.h.in 2619d00bccc0454e875bce5e90b1dc986f87975c267dd7bbbe251f1be297d2f3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d75e67654aa9620b9617786553a002f54e8c6dcbbcc58948a06bd98a0916d75a
-R f10ec81e9dd7a9fb3bb6a420e0c1ce3e
+P 525deb7a67fbd64726c89d5cc36a54b090111e31239431efeeb2bda9836828e0
+R 6c453226fb8e12f07481da05e5a67557
 U drh
-Z 47544520ddc0ffb0778dcedfa74bdb17
+Z 8727ea63840dc9ecc5e33e6710240d8e
