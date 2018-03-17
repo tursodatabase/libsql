@@ -717,5 +717,44 @@ do_execsql_test 10.6 {
   SELECT name, data FROM z;
 } {a0 four}
 
+do_execsql_test 11.1 {
+  DELETE FROM z;
+} {}
+do_execsql_test 11.2 {
+  SELECT name, data FROM z;
+} {}
+do_execsql_test 11.3 {
+  INSERT INTO z (name,data) VALUES ('b0','one');
+  SELECT name, data FROM z;
+} {b0 one}
+do_execsql_test 11.4 {
+  UPDATE z SET name = 'b1' WHERE name = 'b0';
+  SELECT name, data FROM z;
+} {b1 one}
+do_execsql_test 11.5 {
+  INSERT INTO z (name,data) VALUES ('b0','one');
+  SELECT name, data FROM z ORDER BY name;
+} {b0 one b1 one}
+do_catchsql_test 11.6 {
+  UPDATE z SET name = 'b1' WHERE name = 'b0';
+} {1 {duplicate name: "b1"}}
+do_execsql_test 11.7 {
+  UPDATE z SET data = 'two' WHERE name = 'b0';
+  SELECT name, data FROM z ORDER BY name;
+} {b0 two b1 one}
+do_catchsql_test 11.8 {
+  UPDATE z SET name = 'b1';
+} {1 {duplicate name: "b1"}}
+do_catchsql_test 11.9 {
+  UPDATE z SET name = 'b2';
+} {1 {duplicate name: "b2"}}
+do_execsql_test 11.10 {
+  UPDATE z SET name = name;
+  SELECT name, data FROM z ORDER BY name;
+} {b0 two b2 one}
+do_execsql_test 11.11 {
+  UPDATE z SET name = name || 'suffix';
+  SELECT name, data FROM z ORDER BY name;
+} {b0suffix two b2suffix one}
 
 finish_test

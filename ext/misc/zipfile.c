@@ -1524,6 +1524,7 @@ static int zipfileUpdate(
   u8 *pFree = 0;                  /* Free this */
   char *zFree = 0;                /* Also free this */
   ZipfileEntry *pOld = 0;
+  int bUpdate = 0;
   int bIsDir = 0;
   u32 iCrc32 = 0;
 
@@ -1536,6 +1537,12 @@ static int zipfileUpdate(
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
     const char *zDelete = (const char*)sqlite3_value_text(apVal[0]);
     int nDelete = (int)strlen(zDelete);
+    if( nVal>1 ){
+      const char *zUpdate = (const char*)sqlite3_value_text(apVal[1]);
+      if( zUpdate && zipfileComparePath(zUpdate, zDelete, nDelete)!=0 ){
+        bUpdate = 1;
+      }
+    }
     for(pOld=pTab->pFirstEntry; 1; pOld=pOld->pNext){
       if( zipfileComparePath(pOld->cds.zFile, zDelete, nDelete)==0 ){
         break;
@@ -1613,8 +1620,9 @@ static int zipfileUpdate(
       }
     }
 
-    /* Check that we're not inserting a duplicate entry */
-    if( pOld==0 && rc==SQLITE_OK ){
+    /* Check that we're not inserting a duplicate entry -OR- updating an
+    ** entry with a path, thereby making it into a duplicate. */
+    if( (pOld==0 || bUpdate) && rc==SQLITE_OK ){
       ZipfileEntry *p;
       for(p=pTab->pFirstEntry; p; p=p->pNext){
         if( zipfileComparePath(p->cds.zFile, zPath, nPath)==0 ){
