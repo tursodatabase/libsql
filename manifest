@@ -1,5 +1,5 @@
-C In\sthe\scompile_options\spragma,\sshow\sthe\sactual\svalue\sof\sthe\nSQLITE_ENABLE_CEROD\scompile-time\soption,\sif\sit\sexists.
-D 2018-03-19T16:09:36.383
+C Enhance\sthe\scommand-line\scompletion\sextension\sto\sreturn\sthe\snames\sof\ntriggers\sand\sviews\salong\swith\sthe\snames\sof\stables.
+D 2018-03-19T19:05:45.247
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -272,7 +272,7 @@ F ext/misc/appendvfs.c 3777f22ec1057dc4e5fd89f2fbddcc7a29fbeef1ad038c736c54411bb
 F ext/misc/btreeinfo.c 78c8c57d325185ccc04b7679e5b020e34a4d9c87453e6b7ac943d0a26cee3256
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
-F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
+F ext/misc/completion.c 0d0bd16378415b982e7119baddef52a0d2cc25860c238a9d2832b0cc6a84a16d
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c 1a009b93650732e22334edc92459c4630b9fa703397cbb3c8ca279921a36ca11
 F ext/misc/dbdump.c 22018e00eb50e9ebf9067c92d4e7162dc5006a3efc4e0c19bc3829825a1043b0
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30704d2a52d37717d8b34a402c99ea32453e5c1a9840037dba96591f4acc1503
-R 948fd22db623d1822c5dd56df59e09be
+P 1ec339fd109b31e1d2b1e73345bd7a00c3d755f2c45c14d050a8203969163d60
+R 69307f298767656da036188fd7e04892
 U drh
-Z ea6de7e0ab684bd3025cd78cad9267f5
+Z 6ac86335f2d36be7a35b1bb439cc07e4
