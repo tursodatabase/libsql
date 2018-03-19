@@ -2993,7 +2993,6 @@ struct Parse {
   int nMaxArg;         /* Max args passed to user function by sub-program */
 #if SELECTTRACE_ENABLED
   int nSelect;         /* Number of SELECT statements seen */
-  int nSelectIndent;   /* How far to indent SELECTTRACE() output */
 #endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
