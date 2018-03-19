@@ -2613,6 +2613,12 @@ int sqlite3CodeSubselect(
         pExpr->op==TK_IN?"LIST":"SCALAR",
         pParse->iNextSelectId
     );
+#if SELECTTRACE_ENABLED
+    if( ExprHasProperty(pExpr, EP_xIsSelect) && pExpr->x.pSelect!=0 ){
+       zMsg = sqlite3MPrintf(pParse->db, "%z (%s)", zMsg,
+                             pExpr->x.pSelect->zSelName);
+    }
+#endif
     sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
   }
 #endif

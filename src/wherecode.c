@@ -153,7 +153,12 @@ int sqlite3WhereExplainOneScan(
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
+#if SELECTTRACE_ENABLED
+      sqlite3XPrintf(&str, " SUBQUERY %d (%s)",
+                     pItem->iSelectId, pItem->pSelect->zSelName);
+#else
       sqlite3XPrintf(&str, " SUBQUERY %d", pItem->iSelectId);
+#endif
     }else{
       sqlite3XPrintf(&str, " TABLE %s", pItem->zName);
     }
