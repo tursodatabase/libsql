@@ -21,7 +21,7 @@
 /***/ int sqlite3SelectTrace = 0;
 # define SELECTTRACE(K,P,S,X)  \
   if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%*s%s.%p: ",(P)->nSelectIndent*2-2,"",\
+    sqlite3DebugPrintf("%*s%s/%p: ",(P)->nSelectIndent*2-2,"",\
         (S)->zSelName,(S)),\
     sqlite3DebugPrintf X
 #else
