@@ -1501,6 +1501,19 @@ static u32 zipfileGetTime(sqlite3_value *pVal){
 }
 
 /*
+** Unless it is NULL, entry pOld is currently part of the pTab->pFirstEntry
+** linked list.  Remove it from the list and free the object.
+*/
+static void zipfileRemoveEntryFromList(ZipfileTab *pTab, ZipfileEntry *pOld){
+  if( pOld ){
+    ZipfileEntry **pp;
+    for(pp=&pTab->pFirstEntry; (*pp)!=pOld; pp=&((*pp)->pNext));
+    *pp = (*pp)->pNext;
+    zipfileEntryFree(pOld);
+  }
+}
+
+/*
 ** xUpdate method.
 */
 static int zipfileUpdate(
@@ -1524,6 +1537,7 @@ static int zipfileUpdate(
   u8 *pFree = 0;                  /* Free this */
   char *zFree = 0;                /* Also free this */
   ZipfileEntry *pOld = 0;
+  ZipfileEntry *pOld2 = 0;
   int bUpdate = 0;                /* True for an update that modifies "name" */
   int bIsDir = 0;
   u32 iCrc32 = 0;
@@ -1631,7 +1645,7 @@ static int zipfileUpdate(
               goto zipfile_update_done;
             }
             case SQLITE_REPLACE: {
-              pOld = p;
+              pOld2 = p;
               break;
             }
             default: {
@@ -1669,18 +1683,17 @@ static int zipfileUpdate(
     }
   }
 
-  if( rc==SQLITE_OK && pOld ){
-    ZipfileEntry **pp;
+  if( rc==SQLITE_OK && (pOld || pOld2) ){
     ZipfileCsr *pCsr;
     for(pCsr=pTab->pCsrList; pCsr; pCsr=pCsr->pCsrNext){
-      if( pCsr->pCurrent==pOld ){
-        pCsr->pCurrent = pOld->pNext;
+      if( pCsr->pCurrent && (pCsr->pCurrent==pOld || pCsr->pCurrent==pOld2) ){
+        pCsr->pCurrent = pCsr->pCurrent->pNext;
         pCsr->bNoop = 1;
       }
     }
-    for(pp=&pTab->pFirstEntry; (*pp)!=pOld; pp=&((*pp)->pNext));
-    *pp = (*pp)->pNext;
-    zipfileEntryFree(pOld);
+
+    zipfileRemoveEntryFromList(pTab, pOld);
+    zipfileRemoveEntryFromList(pTab, pOld2);
   }
 
 zipfile_update_done:
