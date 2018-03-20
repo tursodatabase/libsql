@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sdisable\sthe\spush-down\soptimization\susing\sthe\s0x1000\sbit\s\nof\sSQLITE_TESTCTRL_OPTIMIZATIONS.\s\sAlso\ssome\sdocumentation\sfixes\sand\san\nenhancement\sto\s".eqp\sfull"\sin\sthe\sCLI.
-D 2018-03-20T13:26:03.966
+C Avoid\sunnecessary\swrite\sto\sthe\ssqlite_sequence\stable\swhen\san\sinsert\nis\sdone\sinto\san\sautoincrement\stable\swith\san\sapplication-specified\srowid\nthat\sis\sless\sthan\sthe\smaximum.
+D 2018-03-20T13:44:10.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -450,7 +450,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 14686083cedc198540b15a79586cdd4be2acf6d5fa97627e355f817ab07e9fee
+F src/insert.c b9ff71cc2913d1d57698a1e22bf853261a9a642baf62bdf40ddeb3809adb85b5
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c c1e97e4c6fffff1fb1a6f1c48807386819af78657b4ae4acfd6d6d17353b8277
@@ -1712,8 +1712,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03e541f606ead1a13e1084db88e168278c82a2ba72b18c89baafeab3141367b4 85a31557ac0d0401c1bf2e23a502dc2ea57d9b1bc23c01de693f5d3fe22d8341
-R d3a1ae3cc198f0c3a9d536dfeb97a4db
-T +closed 85a31557ac0d0401c1bf2e23a502dc2ea57d9b1bc23c01de693f5d3fe22d8341
+P ae34edb7f4fa7b37a66cdf3a1d851980cb013e9abe72bdeca23e5323051e0646 3e3849a9d1a06673e6c713a42194f5da339fbf6533fa418c38f63d09bc045867
+R b14ad23178f33348049b37fe5dfca3b5
+T +closed 3e3849a9d1a06673e6c713a42194f5da339fbf6533fa418c38f63d09bc045867
 U drh
-Z 4e66c314e6b23501a920064c96634976
+Z 2e0c8bc153c99ae88009245613a69afa
