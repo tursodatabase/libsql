@@ -538,8 +538,7 @@ oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
   if( A!=0 ){
     const char *z = s.z+6;
     int i;
-    sqlite3_snprintf(sizeof(A->zSelName), A->zSelName, "#%d",
-                     ++pParse->nSelect);
+    sqlite3_snprintf(sizeof(A->zSelName), A->zSelName,"#%d",++pParse->nSelect);
     while( z[0]==' ' ) z++;
     if( z[0]=='/' && z[1]=='*' ){
       z += 2;

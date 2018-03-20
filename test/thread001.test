@@ -141,5 +141,6 @@ foreach {tn same_db shared_cache} [list \
 }
 
 sqlite3_enable_shared_cache $::enable_shared_cache
+catch { db close }
 set sqlite_open_file_count 0
 finish_test

@@ -337,6 +337,9 @@ int sqlite3_db_status(
     ** pagers the database handle is connected to. *pHighwater is always set 
     ** to zero.
     */
+    case SQLITE_DBSTATUS_CACHE_SPILL:
+      op = SQLITE_DBSTATUS_CACHE_WRITE+1;
+      /* Fall through into the next case */
     case SQLITE_DBSTATUS_CACHE_HIT:
     case SQLITE_DBSTATUS_CACHE_MISS:
     case SQLITE_DBSTATUS_CACHE_WRITE:{

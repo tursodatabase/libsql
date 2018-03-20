@@ -496,6 +496,7 @@ static void fsdirResetCursor(fsdir_cursor *pCur){
   pCur->zPath = 0;
   pCur->zBase = 0;
   pCur->nBase = 0;
+  pCur->nLvl = 0;
   pCur->iLvl = -1;
   pCur->iRowid = 1;
 }

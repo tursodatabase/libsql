@@ -11,7 +11,7 @@ while {![eof stdin]} {
   if {$line==""} continue
   regsub -all "\[ \t\n,\]+" [string trim $line] { } line
   foreach token [split $line { }] {
-    if {![regexp {(([a-zA-Z]+)_)?([_a-zA-Z]+)} $token all px p2 name]} continue
+    if {![regexp {(([a-zA-Z]+)_)?([_a-zA-Z0-9]+)} $token all px p2 name]} continue
     lappend namelist [string tolower $name]
     if {$px!=""} {set prefix $p2}
   }
@@ -23,7 +23,7 @@ proc put_item x {
   global col
   if {$col==0} {puts -nonewline "   "}
   if {$col<2} {
-    puts -nonewline [format " %-21s" $x]
+    puts -nonewline [format " %-25s" $x]
     incr col
   } else {
     puts $x

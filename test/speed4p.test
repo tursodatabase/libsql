@@ -168,7 +168,6 @@ speed_trial_tcl speed4p-subselect1 10000 stmt $script
 set script {
   db eval BEGIN
   for {set ii 1} {$ii < 10000} {incr ii} {
-    set v [expr {$ii*3}]
     db eval {UPDATE t1 SET i=i+1 WHERE rowid=$ii}
   }
   db eval COMMIT

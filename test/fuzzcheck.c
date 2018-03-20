@@ -81,7 +81,13 @@
 
 #ifdef SQLITE_OSS_FUZZ
 # include <stddef.h>
-# include <stdint.h>
+# if !defined(_MSC_VER)
+#  include <stdint.h>
+# endif
+#endif
+
+#if defined(_MSC_VER)
+typedef unsigned char uint8_t;
 #endif
 
 /*
