@@ -1,5 +1,5 @@
-C If\sterms\sof\sthe\sWHERE\sclause\srequire\sthat\sthe\sright\stable\sin\sa\sLEFT\sJOIN\nnot\sbe\sa\snull\srow,\sthen\ssimplify\sthe\sLEFT\sJOIN\sinto\san\sordinary\sJOIN.
-D 2018-03-20T21:16:15.180
+C Do\sa\smore\sthorough\sjob\sof\scleaning\serasing\straces\sof\sthe\sstrength-reduced\nLEFT\sJOIN.
+D 2018-03-20T22:52:27.787
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -489,7 +489,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 965e1791b10d9384bc9d42bc8109ba5863dfa094e3584b3f0643970aa507ccfc
+F src/select.c 926d122e87dcd82b3bb1c2fd5879163abc957916ae168ee91017ccd459fe58d5
 F src/shell.c.in 911b9e3bce40413c78fdba28efa28363e98183819bd4b300780bf57bacfc4b84
 F src/sqlite.h.in 19762b57baa1ade67531f254de94374428fb9c82452ef305017847945f9c2911
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -736,7 +736,7 @@ F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test 526fc6aefd052badd5a0283f86b4b395c3df76bfe98d96c801f494f5e2c7836c
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
-F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
+F test/cursorhint2.test 0078ae1ded4afcf5eb80d06e3a72b6e1c3f1a646aab26eeb583b0a9ec6f0d56e
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
@@ -1712,10 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4661ac81c9589b06a07df8b7931fbd0a7f9a4e9ba1448192b70701dc85a29bd2
-R 1fe493b73142e6f35ada0785e4320aab
-T *branch * join-strength-reduction
-T *sym-join-strength-reduction *
-T -sym-trunk *
+P 5b7abecc7ab8ccbbb8cb5e0f672e67625c2555ad03442efbf34cb395f5bb71a8
+R 600bea19530f5a14859b1c8b3c822982
 U drh
-Z 28874e198dec3af552f1abf3ec72242e
+Z 1305d962d2e1b706271862008b361453

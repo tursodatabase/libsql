@@ -5215,7 +5215,7 @@ int sqlite3Select(
     ){
       SELECTTRACE(0x100,pParse,p,
                 ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
-      pItem->fg.jointype &= ~JT_LEFT;
+      pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
       unsetJoinExpr(p->pWhere, pItem->iCursor);
     }
 
