@@ -27,7 +27,10 @@ ifcapable !concurrent {
 db close
 sqlite3_shutdown
 test_sqlite3_log xLog
-proc xLog {error_code msg} { puts "$error_code: $msg" }
+proc xLog {error_code msg} {
+  # puts "$error_code: $msg"
+  # Enable the previous for debugging
+}
 reset_db
 
 proc create_schema {} {
@@ -218,12 +221,11 @@ foreach {tn nRepeat oplist} {
   foreach db $DBLIST { 
     $db close 
   }
-  foreach k [lsort [array names used]] {
-    puts "$k: $stats($k,0) committed, $stats($k,1) rolled back"
-  }
+  # foreach k [lsort [array names used]] {
+  #   puts "$k: $stats($k,0) committed, $stats($k,1) rolled back"
+  # }
 }
 
 
 
 finish_test
-

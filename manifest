@@ -1,5 +1,5 @@
-C Merge\sall\srecent\senhancements\sfrom\strunk.
-D 2018-03-20T13:52:42.504
+C Remove\sdebugging\sputs\sfrom\sconcurrrent3.test.
+D 2018-03-20T13:54:22.689
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -702,7 +702,7 @@ F test/colname.test fb28b3687e03625425bc216edf8b186ce974aa71008e2aa1f426a7dcb75a
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 86661967a680670127a62a819e60dc93c2d3d49043ac95b26dfa70d3e60dbde5
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
-F test/concurrent3.test f4af1cf1220908c6dd5694923621c19e999b78cd997e2646285f08a52bcb4170
+F test/concurrent3.test 530671ac706f6a1d0f4992dbdd33a86408330d03cd90fb9e82ecb1b27f5fd081
 F test/concurrent4.test e0b12cd467137e50259df3b4f837507e82aaa07c35941c88664dc8ed1d089c44
 F test/concurrent5.test d5d7d9d404a9b4502464fc097c1fc5c3012bb4f1b063fae7ad707ca983fc86c5
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
@@ -1723,7 +1723,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb6b7938601505186c0b1f0df6c45630039027f85ff394d290bc2c86b16a3a07 ec7addc87f97bcff3c3694b14a680453b52de3f8c106436f0708a1cc04b90faa
-R 43c5e6204e5e1e748f1b8270da37c665
+P b0c2f760a637ee973f4dcc27308eec44950e6d0a9c5ab5c828c1210c1f868efa
+R ca9cb1d929805c71db9b6a05a48b9513
 U drh
-Z dfd53febd46dc841536127bb8e42a571
+Z ae9c4938206a0b6e0c232c0b2ca9588b
