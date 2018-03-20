@@ -3853,7 +3853,6 @@ static int pushDownWhereTerms(
   Expr *pNew;
   int nChng = 0;
   if( pWhere==0 ) return 0;
-return 0;
   if( pSubq->selFlags & SF_Recursive ) return 0;  /* restriction (2) */
 
 #ifdef SQLITE_DEBUG
