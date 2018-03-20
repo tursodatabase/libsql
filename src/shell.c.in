@@ -2879,7 +2879,12 @@ static int shell_exec(
           sqlite3_finalize(pExplain);
           sqlite3_free(zEQP);
         }
-        sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, triggerEQP, 0);
+        if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
+          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
+          /* Reprepare pStmt before reactiving trace modes */
+          sqlite3_finalize(pStmt);
+          sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+        }
         restore_debug_trace_modes();
       }
 

@@ -5334,6 +5334,7 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( (pItem->fg.jointype & JT_OUTER)==0
+     && OptimizationEnabled(db, SQLITE_PushDown)
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor)
     ){
 #if SELECTTRACE_ENABLED
@@ -5342,6 +5343,8 @@ int sqlite3Select(
         sqlite3TreeViewSelect(0, p, 0);
       }
 #endif
+    }else{
+      SELECTTRACE(0x100,pParse,p,("Push-down not possible\n"));
     }
 
     zSavedAuthContext = pParse->zAuthContext;

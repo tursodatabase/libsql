@@ -1532,6 +1532,7 @@ struct sqlite3 {
 #define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
 #define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
    /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
+#define SQLITE_PushDown       0x1000   /* The push-down optimization */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
