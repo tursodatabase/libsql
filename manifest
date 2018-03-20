@@ -1,5 +1,5 @@
-C Minor\simprovements\sto\s".selecttrace".\s\sNo\schanges\sto\snon-debug\scode.
-D 2018-03-19T22:28:34.252
+C Add\sthe\sability\sto\sdisable\sthe\spush-down\soptimization\susing\sthe\s0x1000\sbit\sof\nSQLITE_TESTCTRL_OPTIMIZATIONS.
+D 2018-03-20T11:24:30.894
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -489,12 +489,12 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c a69962ae4faa8afd8149ca2897714580ff212c19bdcc2c733c3f5375295ffe98
+F src/select.c 0502980145d371c2e9ab31bdaef62c65355f4f815059324f8d764359cc1dcc21
 F src/shell.c.in 52b1b3f52159144391d598f43ef7ce13f58f35fcc18ae04df68e879695a1747f
 F src/sqlite.h.in 2619d00bccc0454e875bce5e90b1dc986f87975c267dd7bbbe251f1be297d2f3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 51d03b44036108edf29cec31765c4b9706a2189cce17f25e9eed83efe80bbf14
+F src/sqliteInt.h 5c07bbc55d9eb3389a10536bd008e2d6f20f586871972610431d943595b40ca4
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10e32204e1850354ff16fc052145726e903f87185a37f172831dddad1955184e
-R 012c6c14620983eaab087972d93c496b
+P 03e541f606ead1a13e1084db88e168278c82a2ba72b18c89baafeab3141367b4
+R 1ece0ada3df1cea55ee78c94a52ab76c
 U drh
-Z c34bb330da7e0cc04245a4c39fd98568
+Z 21a1dc5431382fcb6e69355078bceb48
