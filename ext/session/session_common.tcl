@@ -169,3 +169,4 @@ proc changeset_to_list {c} {
   sqlite3session_foreach elem $c { lappend list $elem }
   lsort $list
 }
+

@@ -1219,27 +1219,51 @@ int sqlite3changeset_apply_v2(
 /* 
 ** CAPI3REF: Rebasing changesets
 **
-** Changes are rebased as follows:
+** Suppose there is a site hosting a database in state S0. And that
+** modifications are made that move that database to state S1 and a
+** changeset recorded (the "local" changeset). Then, a changeset based
+** on S0 is received from another site (the "remote" changeset) and 
+** applied to the database. The database is then in state 
+** (S1+"remote"), where the exact state depends on any conflict
+** resolution decisions (OMIT or REPLACE) made while applying "remote".
+** Rebasing a changeset is to update it to take those conflict 
+** resolution decisions into account, so that the same conflicts
+** do not have to be resolved elsewhere in the network. 
+**
+** For example, if both the local and remote changesets contain an
+** INSERT of the same key on "CREATE TABLE t1(a PRIMARY KEY, b)":
+**
+**   local:  INSERT INTO t1 VALUES(1, 'v1');
+**   remote: INSERT INTO t1 VALUES(1, 'v2');
+**
+** and the conflict resolution is REPLACE, then the INSERT change is
+** removed from the local changeset (it was overridden). Or, if the
+** conflict resolution was "OMIT", then the local changeset is modified
+** to instead contain:
+**
+**           UPDATE t1 SET b = 'v2' WHERE a=1;
+**
+** Changes within the local changeset are rebased as follows:
 **
 ** <dl>
-** <dt>INSERT<dd>
+** <dt>Local INSERT<dd>
 **   This may only conflict with a remote INSERT. If the conflict 
 **   resolution was OMIT, then add an UPDATE change to the rebased
 **   changeset. Or, if the conflict resolution was REPLACE, add
 **   nothing to the rebased changeset.
 **
-** <dt>DELETE<dd>
+** <dt>Local DELETE<dd>
 **   This may conflict with a remote UPDATE or DELETE. In both cases the
 **   only possible resolution is OMIT. If the remote operation was a
 **   DELETE, then add no change to the rebased changeset. If the remote
-**   operation was an UPDATE, then the old.* fields of the are updated to
-**   reflect the new.* values in the UPDATE.
+**   operation was an UPDATE, then the old.* fields of change are updated 
+**   to reflect the new.* values in the UPDATE.
 **
-** <dt>UPDATE<dd>
+** <dt>Local UPDATE<dd>
 **   This may conflict with a remote UPDATE or DELETE. If it conflicts
 **   with a DELETE, and the conflict resolution was OMIT, then the update
 **   is changed into an INSERT. Any undefined values in the new.* record
-**   from the update change are filled in using hte old.* values from 
+**   from the update change are filled in using the old.* values from 
 **   the conflicting DELETE. Or, if the conflict resolution was REPLACE,
 **   the UPDATE change is simply omitted from the rebased changeset.
 **
@@ -1250,6 +1274,9 @@ int sqlite3changeset_apply_v2(
 **   the conflicting UPDATE removed. If this means no columns would be
 **   updated, the change is omitted.
 ** </dl>
+**
+** A local change may be rebased against multiple remote changes 
+** simultaneously.
 */
 typedef struct sqlite3_rebaser sqlite3_rebaser;
 

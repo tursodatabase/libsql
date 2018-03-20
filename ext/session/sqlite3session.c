@@ -596,7 +596,7 @@ static int sessionChangeEqual(
       int n1 = sessionSerialLen(a1);
       int n2 = sessionSerialLen(a2);
 
-      if( pTab->abPK[iCol] && (n1!=n2 || memcmp(a1, a2, n1)) ){
+      if( n1!=n2 || memcmp(a1, a2, n1) ){
         return 0;
       }
       a1 += n1;
@@ -2183,6 +2183,7 @@ static int sessionSelectStmt(
         "SELECT tbl, ?2, stat FROM %Q.sqlite_stat1 WHERE tbl IS ?1 AND "
         "idx IS (CASE WHEN ?2=X'' THEN NULL ELSE ?2 END)", zDb
     );
+    if( zSql==0 ) rc = SQLITE_NOMEM;
   }else{
     int i;
     const char *zSep = "";
@@ -4539,7 +4540,12 @@ static int sessionChangeMerge(
     pNew->aRecord = (u8*)&pNew[1];
     memcpy(pNew->aRecord, aRec, nRec);
   }else if( bRebase){
-    assert( 0 );
+    /* 
+    **   op1=INSERT/R, op2=INSERT/R  ->
+    **   op1=INSERT/R, op2=INSERT/O  ->
+    **   op1=INSERT/O, op2=INSERT/R  ->
+    **   op1=INSERT/O, op2=INSERT/O  ->
+    */   
   }else{
     int op1 = pExist->op;
 
@@ -5169,59 +5175,6 @@ static int sessionRebase(
       sessionAppendByte(&sOut, pIter->bIndirect, &rc);
       sessionAppendBlob(&sOut, aRec, nRec, &rc);
     }
-#if 0
-      /* If pChange is an INSERT, then rebase the change. If it is a
-      ** DELETE, omit the change from the output altogether.  */
-      if( pChange->op==SQLITE_INSERT ){
-        if( pChange->bIndirect ){
-          /* The change being rebased against was a DELETE. So, if the
-          ** input is a:
-          **
-          **   DELETE - omit the change altogether.
-          **   UPDATE - change to an INSERT,
-          **   INSERT - no change (output the record as is).
-          */
-          if( pIter->op!=SQLITE_DELETE ){
-            sessionAppendByte(&sOut, SQLITE_INSERT, &rc);
-            sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-            if( pIter->op==SQLITE_INSERT ){
-              sessionAppendBlob(&sOut, aRec, nRec, &rc);
-            }else{
-              u8 *pCsr = aRec;
-              sessionSkipRecord(&pCsr, pIter->nCol);
-              sessionAppendRecordMerge(&sOut, pIter->nCol, 1,
-                  pCsr, nRec-(pCsr-aRec), 
-                  pChange->aRecord, pChange->nRecord, &rc
-              );
-            }
-          }
-        }else{
-          if( pIter->op==SQLITE_INSERT ){
-            sessionAppendByte(&sOut, SQLITE_UPDATE, &rc);
-            sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-            sessionAppendBlob(&sOut, pChange->aRecord, pChange->nRecord, &rc);
-            sessionAppendBlob(&sOut, aRec, nRec, &rc);
-          }else{
-            u8 *pCsr = aRec;
-            sessionAppendByte(&sOut, pIter->op, &rc);
-            sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-            sessionAppendRecordMerge(&sOut, pIter->nCol, 0,
-                aRec, nRec, pChange->aRecord, pChange->nRecord, &rc
-            );
-            if( pIter->op==SQLITE_UPDATE ){
-              sessionSkipRecord(&pCsr, pIter->nCol);
-              sessionAppendBlob(&sOut, pCsr, nRec - (pCsr-aRec), &rc);
-            }
-          }
-        }
-      }
-    }else{
-      sessionAppendByte(&sOut, pIter->op, &rc);
-      sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-      sessionAppendBlob(&sOut, aRec, nRec, &rc);
-    }
-#endif
-
     if( rc==SQLITE_OK && xOutput && sOut.nBuf>SESSIONS_STRM_CHUNK_SIZE ){
       rc = xOutput(pOut, sOut.aBuf, sOut.nBuf);
       sOut.nBuf = 0;
