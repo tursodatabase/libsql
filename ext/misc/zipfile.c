@@ -268,6 +268,7 @@ typedef struct ZipfileTab ZipfileTab;
 struct ZipfileTab {
   sqlite3_vtab base;         /* Base class - must be first */
   char *zFile;               /* Zip file this table accesses (may be NULL) */
+  sqlite3 *db;               /* Host database connection */
   u8 *aBuffer;               /* Temporary buffer used for various tasks */
 
   ZipfileCsr *pCsrList;      /* List of cursors */
@@ -360,6 +361,7 @@ static int zipfileConnect(
     pNew = (ZipfileTab*)sqlite3_malloc(nByte+nFile);
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, nByte+nFile);
+    pNew->db = db;
     pNew->aBuffer = (u8*)&pNew[1];
     if( zFile ){
       pNew->zFile = (char*)&pNew->aBuffer[ZIPFILE_BUFFER_SIZE];
@@ -473,9 +475,17 @@ static int zipfileClose(sqlite3_vtab_cursor *cur){
 ** Set the error message for the virtual table associated with cursor
 ** pCsr to the results of vprintf(zFmt, ...).
 */
-static void zipfileSetErrmsg(ZipfileCsr *pCsr, const char *zFmt, ...){
+static void zipfileTableErr(ZipfileTab *pTab, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
+  sqlite3_free(pTab->base.zErrMsg);
+  pTab->base.zErrMsg = sqlite3_vmprintf(zFmt, ap);
+  va_end(ap);
+}
+static void zipfileCursorErr(ZipfileCsr *pCsr, const char *zFmt, ...){
+  va_list ap;
+  va_start(ap, zFmt);
+  sqlite3_free(pCsr->base.pVtab->zErrMsg);
   pCsr->base.pVtab->zErrMsg = sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
 }
@@ -751,8 +761,12 @@ static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
   min = (mUnixTime % (60*60)) / 60;
   sec = (mUnixTime % 60);
 
-  pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
-  pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
+  if( yr>=1980 ){
+    pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
+    pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
+  }else{
+    pCds->mDate = pCds->mTime = 0;
+  }
 
   assert( mUnixTime<315507600 
        || mUnixTime==zipfileMtime(pCds) 
@@ -1234,7 +1248,7 @@ static int zipfileFilter(
   if( pTab->zFile ){
     zFile = pTab->zFile;
   }else if( idxNum==0 ){
-    zipfileSetErrmsg(pCsr, "zipfile() function requires an argument");
+    zipfileCursorErr(pCsr, "zipfile() function requires an argument");
     return SQLITE_ERROR;
   }else if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
     const u8 *aBlob = (const u8*)sqlite3_value_blob(argv[0]);
@@ -1252,7 +1266,7 @@ static int zipfileFilter(
   if( 0==pTab->pWriteFd && 0==bInMemory ){
     pCsr->pFile = fopen(zFile, "rb");
     if( pCsr->pFile==0 ){
-      zipfileSetErrmsg(pCsr, "cannot open file: %s", zFile);
+      zipfileCursorErr(pCsr, "cannot open file: %s", zFile);
       rc = SQLITE_ERROR;
     }else{
       rc = zipfileReadEOCD(pTab, 0, 0, pCsr->pFile, &pCsr->eocd);
@@ -1390,9 +1404,7 @@ static int zipfileGetMode(
     switch( z[0] ){
       case '-': mode |= S_IFREG; break;
       case 'd': mode |= S_IFDIR; break;
-#if !defined(_WIN32) && !defined(WIN32)
       case 'l': mode |= S_IFLNK; break;
-#endif
       default: goto parse_error;
     }
     for(i=1; i<10; i++){
@@ -1400,9 +1412,10 @@ static int zipfileGetMode(
       else if( z[i]!='-' ) goto parse_error;
     }
   }
-  if( (bIsDir == ((mode & S_IFDIR)==0)) ){
+  if( ((mode & S_IFDIR)==0)==bIsDir ){
     /* The "mode" attribute is a directory, but data has been specified.
     ** Or vice-versa - no data but "mode" is a file or symlink.  */
+    *pzErr = sqlite3_mprintf("zipfile: mode does not match data");
     return SQLITE_CONSTRAINT;
   }
   *pMode = mode;
@@ -1533,9 +1546,12 @@ static int zipfileUpdate(
 
   if( nVal>1 ){
     /* Check that "sz" and "rawdata" are both NULL: */
-    if( sqlite3_value_type(apVal[5])!=SQLITE_NULL
-     || sqlite3_value_type(apVal[6])!=SQLITE_NULL
-    ){
+    if( sqlite3_value_type(apVal[5])!=SQLITE_NULL ){
+      zipfileTableErr(pTab, "sz must be NULL");
+      rc = SQLITE_CONSTRAINT;
+    }
+    if( sqlite3_value_type(apVal[6])!=SQLITE_NULL ){
+      zipfileTableErr(pTab, "rawdata must be NULL"); 
       rc = SQLITE_CONSTRAINT;
     }
 
@@ -1555,6 +1571,7 @@ static int zipfileUpdate(
         pData = aIn;
         nData = nIn;
         if( iMethod!=0 && iMethod!=8 ){
+          zipfileTableErr(pTab, "unknown compression method: %d", iMethod);
           rc = SQLITE_CONSTRAINT;
         }else{
           if( bAuto || iMethod ){
@@ -1601,7 +1618,20 @@ static int zipfileUpdate(
       ZipfileEntry *p;
       for(p=pTab->pFirstEntry; p; p=p->pNext){
         if( zipfileComparePath(p->cds.zFile, zPath, nPath)==0 ){
-          rc = SQLITE_CONSTRAINT;
+          switch( sqlite3_vtab_on_conflict(pTab->db) ){
+            case SQLITE_IGNORE: {
+              goto zipfile_update_done;
+            }
+            case SQLITE_REPLACE: {
+              pOld = p;
+              break;
+            }
+            default: {
+              zipfileTableErr(pTab, "duplicate name: \"%s\"", zPath);
+              rc = SQLITE_CONSTRAINT;
+              break;
+            }
+          }
           break;
         }
       }
@@ -1645,6 +1675,7 @@ static int zipfileUpdate(
     zipfileEntryFree(pOld);
   }
 
+zipfile_update_done:
   sqlite3_free(pFree);
   sqlite3_free(zFree);
   return rc;

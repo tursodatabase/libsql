@@ -4318,6 +4318,10 @@ case OP_NewRowid: {           /* out2 */
   pOut = out2Prerelease(p, pOp);
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
+  if( !pC->isTable ){
+    rc = SQLITE_CORRUPT_BKPT;
+    goto abort_due_to_error;
+  }
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );

@@ -2807,7 +2807,14 @@ static int sessionChangesetBufferTblhdr(SessionInput *pIn, int *pnByte){
   rc = sessionInputBuffer(pIn, 9);
   if( rc==SQLITE_OK ){
     nRead += sessionVarintGet(&pIn->aData[pIn->iNext + nRead], &nCol);
-    if( nCol<0 ){
+    /* The hard upper limit for the number of columns in an SQLite
+    ** database table is, according to sqliteLimit.h, 32676. So 
+    ** consider any table-header that purports to have more than 65536 
+    ** columns to be corrupt. This is convenient because otherwise, 
+    ** if the (nCol>65536) condition below were omitted, a sufficiently 
+    ** large value for nCol may cause nRead to wrap around and become 
+    ** negative. Leading to a crash. */
+    if( nCol<0 || nCol>65536 ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       rc = sessionInputBuffer(pIn, nRead+nCol+100);

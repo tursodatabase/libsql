@@ -6,11 +6,17 @@
 ** command line and passes them one by one into ossfuzz.c.
 */
 #include <stddef.h>
-#include <stdint.h>
+#if !defined(_MSC_VER)
+# include <stdint.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "sqlite3.h"
+
+#if defined(_MSC_VER)
+typedef unsigned char uint8_t;
+#endif
 
 /*
 ** The entry point in ossfuzz.c that this routine will be calling

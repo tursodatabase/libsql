@@ -320,6 +320,7 @@ foreach file {
 
    os_unix.c
    os_win.c
+   memdb.c
 
    bitvec.c
    pcache.c
