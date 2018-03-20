@@ -2054,8 +2054,9 @@ struct sqlite3_mem_methods {
 ** connections at all to the database. If so, it performs a checkpoint 
 ** operation before closing the connection. This option may be used to
 ** override this behaviour. The first parameter passed to this operation
-** is an integer - non-zero to disable checkpoints-on-close, or zero (the
-** default) to enable them. The second parameter is a pointer to an integer
+** is an integer - positive to disable checkpoints-on-close, or zero (the
+** default) to enable them, and negative to leave the setting unchanged.
+** The second parameter is a pointer to an integer
 ** into which is written 0 or 1 to indicate whether checkpoints-on-close
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
@@ -2069,6 +2070,11 @@ struct sqlite3_mem_methods {
 ** slower.  But the QPSG has the advantage of more predictable behavior.  With
 ** the QPSG active, SQLite will always use the same query plan in the field as
 ** was used during testing in the lab.
+** The first argument to this setting is an integer which is 0 to disable 
+** the QPSG, positive to enable QPSG, or negative to leave the setting
+** unchanged. The second parameter is a pointer to an integer into which
+** is written 0 or 1 to indicate whether the QPSG is disabled or enabled
+** following this call.
 ** </dd>
 **
 ** <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
@@ -2076,7 +2082,8 @@ struct sqlite3_mem_methods {
 ** include output for any operations performed by trigger programs. This
 ** option is used to set or clear (the default) a flag that governs this
 ** behavior. The first parameter passed to this operation is an integer -
-** non-zero to enable output for trigger programs, or zero to disable it.
+** positive to enable output for trigger programs, or zero to disable it,
+** or negative to leave the setting unchanged.
 ** The second parameter is a pointer to an integer into which is written 
 ** 0 or 1 to indicate whether output-for-triggers has been disabled - 0 if 
 ** it is not disabled, 1 if it is.  
