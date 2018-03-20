@@ -1533,6 +1533,7 @@ struct sqlite3 {
 #define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
    /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_PushDown       0x1000   /* The push-down optimization */
+#define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -3823,6 +3824,7 @@ int sqlite3ExprCompare(Parse*,Expr*, Expr*, int);
 int sqlite3ExprCompareSkip(Expr*, Expr*, int);
 int sqlite3ExprListCompare(ExprList*, ExprList*, int);
 int sqlite3ExprImpliesExpr(Parse*,Expr*, Expr*, int);
+int sqlite3ExprImpliesNonNullRow(Expr*,int);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 int sqlite3ExprCoveredByIndex(Expr*, int iCur, Index *pIdx);

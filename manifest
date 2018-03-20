@@ -1,5 +1,5 @@
-C Fix\sincorrect\stestcase\slabels\son\stwo\scases\sin\sjoin5.test.\s\sNo\schanges\sto\scode.
-D 2018-03-20T19:02:03.726
+C If\sterms\sof\sthe\sWHERE\sclause\srequire\sthat\sthe\sright\stable\sin\sa\sLEFT\sJOIN\nnot\sbe\sa\snull\srow,\sthen\ssimplify\sthe\sLEFT\sJOIN\sinto\san\sordinary\sJOIN.
+D 2018-03-20T21:16:15.180
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -441,7 +441,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 20c8788451dc737a967c87ea53ad43544d617f5b57d32ccce8bd52a0daf9e89b
-F src/expr.c 904f85e5f5fa232488cbb662fcf3306ae203728751468670fb9840a9b1886abc
+F src/expr.c 21ba8e1f8b9bc035053941d4f8df3ca5376be5e63ff62f945c2bc4f9b8890362
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 94f42cba2cc1c34aeaa441022ba0170ec3fec4bba54db4e0ded085c6dc0fdc51
@@ -489,12 +489,12 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 69ed6ca9d1bf4adb41472b0740b7b90868438dedcdd5ab2fd608070eca30d073
+F src/select.c 965e1791b10d9384bc9d42bc8109ba5863dfa094e3584b3f0643970aa507ccfc
 F src/shell.c.in 911b9e3bce40413c78fdba28efa28363e98183819bd4b300780bf57bacfc4b84
 F src/sqlite.h.in 19762b57baa1ade67531f254de94374428fb9c82452ef305017847945f9c2911
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 7e9deb145c110289f50fcf72a8742d030834885676482391fe83c3cee75f97d4
+F src/sqliteInt.h 541896393a2ac07de571bcb0ce05b9422b94a6fb3900b005fa095d70b4d9545a
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -771,7 +771,7 @@ F test/e_fts3.test 8cf40550bb088a6aa187c818c00fabe26ef82900a4cd5c66b427ccafe28be
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2bebf7b393e519198b7c654407221cf171a439b8
 F test/e_resolve.test a61751c368b109db73df0f20fc75fb47e166b1d8
-F test/e_select.test 16651bb681e83a1a2875ff4a595ed2b4b4dee375
+F test/e_select.test 6fd45fd4a59ec82b6dda7468699dcc0ec1a72538577750b4f90357a62c1d2723
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
@@ -1004,7 +1004,7 @@ F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 2d89873d72248b7a0ef7b5457120100cce75a19181bcf4b30e90a3f96a5c5558
 F test/join.test 442c462eea85cf065d70a663c626b780a95af6e11585d909bb63b87598afe678
-F test/join2.test f1b5ba94ba70a791df2d99e61adcebf62edacad1eca57881c97eb3e2ca718595
+F test/join2.test 2339e3a8089178607a718c7fa1f6c3826579132396f5304a0f8e9dbefa60c84f
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test c6bd62effc37a152bea735f9ef241b19bb967bd4593dc99b20e2fc55ae707e38
@@ -1712,7 +1712,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ad668d4339397fe66fe085e0527e37a1930917da88d462a8d89a465faa15e28
-R de2d87ae55e8927dcebc8ba7daa8abff
+P 4661ac81c9589b06a07df8b7931fbd0a7f9a4e9ba1448192b70701dc85a29bd2
+R 1fe493b73142e6f35ada0785e4320aab
+T *branch * join-strength-reduction
+T *sym-join-strength-reduction *
+T -sym-trunk *
 U drh
-Z 13d930ad372c9908126067c6c04be90c
+Z 28874e198dec3af552f1abf3ec72242e

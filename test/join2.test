@@ -86,7 +86,7 @@ do_execsql_test 2.0 {
 }
 
 do_catchsql_test 2.1 {
-  SELECT * FROM aa LEFT JOIN cc ON (a=b) JOIN bb ON (b=c);
+  SELECT * FROM aa LEFT JOIN cc ON (a=b) JOIN bb ON (b=coalesce(c,1));
 } {1 {ON clause references tables to its right}}
 do_catchsql_test 2.2 {
   SELECT * FROM aa JOIN cc ON (a=b) JOIN bb ON (b=c);

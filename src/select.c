@@ -382,6 +382,28 @@ static void setJoinExpr(Expr *p, int iTable){
   } 
 }
 
+/* Undo the work of setJoinExpr().  In the expression tree p, convert every
+** term that is marked with EP_FromJoin and iRightJoinTable==iTable into
+** an ordinary term that omits the EP_FromJoin mark.
+**
+** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
+*/
+static void unsetJoinExpr(Expr *p, int iTable){
+  while( p ){
+    if( ExprHasProperty(p, EP_FromJoin) && p->iRightJoinTable==iTable ){
+      ExprClearProperty(p, EP_FromJoin);
+    }
+    if( p->op==TK_FUNCTION && p->x.pList ){
+      int i;
+      for(i=0; i<p->x.pList->nExpr; i++){
+        unsetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+      }
+    }
+    unsetJoinExpr(p->pLeft, iTable);
+    p = p->pRight;
+  } 
+}
+
 /*
 ** This routine processes the join information for a SELECT statement.
 ** ON and USING clauses are converted into extra terms of the WHERE clause.
@@ -5175,13 +5197,29 @@ int sqlite3Select(
     generateColumnNames(pParse, p);
   }
 
-  /* Try to flatten subqueries in the FROM clause up into the main query
+  /* Try to various optimizations (flattening subqueries, and strength
+  ** reduction of join operators) in the FROM clause up into the main query
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
     Select *pSub = pItem->pSelect;
     Table *pTab = pItem->pTab;
+
+    /* Convert LEFT JOIN into JOIN if there are terms of the right table
+    ** of the LEFT JOIN used in the WHERE clause.
+    */
+    if( (pItem->fg.jointype & JT_LEFT)!=0
+     && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
+     && OptimizationEnabled(db, SQLITE_SimplifyJoin)
+    ){
+      SELECTTRACE(0x100,pParse,p,
+                ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
+      pItem->fg.jointype &= ~JT_LEFT;
+      unsetJoinExpr(p->pWhere, pItem->iCursor);
+    }
+
+    /* No futher action if this term of the FROM clause is no a subquery */
     if( pSub==0 ) continue;
 
     /* Catch mismatch in the declared columns of a view and the number of
