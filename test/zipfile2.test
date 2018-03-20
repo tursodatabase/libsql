@@ -210,6 +210,30 @@ do_test 5.0 {
   execsql { SELECT name, data IS NULL FROM zipfile($blob2) }
 } {notadi/ 1}
 
+#-------------------------------------------------------------------------
+# Test that duplicate entries may not be created using UPDATE
+# statements.
+#
+forcedelete test.zip
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE temp.zip USING zipfile('test.zip'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test1','test'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test2','test'); 
+}
+do_catchsql_test 6.1 {
+  UPDATE temp.zip SET name='test1' WHERE name='test2'
+} {1 {duplicate name: "test1"}}
+
+forcedelete test.zip
+do_catchsql_test 6.2 {
+  DROP TABLE zip;
+  CREATE VIRTUAL TABLE temp.zip USING zipfile('test.zip'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test','test'); 
+  UPDATE  temp.zip set name=name||'new' where name='test'; 
+  INSERT INTO temp.zip (name,data) VALUES ('test','test'); 
+  UPDATE  temp.zip set name=name||'new' where name='test'; 
+} {1 {duplicate name: "testnew"}}
+
 
 finish_test
 
