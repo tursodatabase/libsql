@@ -4913,14 +4913,6 @@ static void explainSimpleCount(
 #endif
 
 /*
-** Context object for havingToWhereExprCb().
-*/
-struct HavingToWhereCtx {
-  Expr **ppWhere;
-  ExprList *pGroupBy;
-};
-
-/*
 ** sqlite3WalkExpr() callback used by havingToWhere().
 **
 ** If the node passed to the callback is a TK_AND node, return 
@@ -4933,15 +4925,16 @@ struct HavingToWhereCtx {
 */
 static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
   if( pExpr->op!=TK_AND ){
-    struct HavingToWhereCtx *p = pWalker->u.pHavingCtx;
-    if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, p->pGroupBy) ){
+    Select *pS = pWalker->u.pSelect;
+    if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, pS->pGroupBy) ){
       sqlite3 *db = pWalker->pParse->db;
       Expr *pNew = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
       if( pNew ){
-        Expr *pWhere = *(p->ppWhere);
+        Expr *pWhere = pS->pWhere;
         SWAP(Expr, *pNew, *pExpr);
         pNew = sqlite3ExprAnd(db, pWhere, pNew);
-        *(p->ppWhere) = pNew;
+        pS->pWhere = pNew;
+        pWalker->eCode = 1;
       }
     }
     return WRC_Prune;
@@ -4964,23 +4957,19 @@ static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
 ** entirely of constants and expressions that are also GROUP BY terms that
 ** use the "BINARY" collation sequence.
 */
-static void havingToWhere(
-  Parse *pParse,
-  ExprList *pGroupBy,
-  Expr *pHaving, 
-  Expr **ppWhere
-){
-  struct HavingToWhereCtx sCtx;
+static void havingToWhere(Parse *pParse, Select *p){
   Walker sWalker;
-
-  sCtx.ppWhere = ppWhere;
-  sCtx.pGroupBy = pGroupBy;
-
   memset(&sWalker, 0, sizeof(sWalker));
   sWalker.pParse = pParse;
   sWalker.xExprCallback = havingToWhereExprCb;
-  sWalker.u.pHavingCtx = &sCtx;
-  sqlite3WalkExpr(&sWalker, pHaving);
+  sWalker.u.pSelect = p;
+  sqlite3WalkExpr(&sWalker, p->pHaving);
+#if SELECTTRACE_ENABLED
+  if( sWalker.eCode && (sqlite3SelectTrace & 0x100)!=0 ){
+    SELECTTRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
 }
 
 /*
@@ -5649,7 +5638,9 @@ int sqlite3Select(
     if( pHaving ){
       if( pGroupBy ){
         assert( pWhere==p->pWhere );
-        havingToWhere(pParse, pGroupBy, pHaving, &p->pWhere);
+        assert( pHaving==p->pHaving );
+        assert( pGroupBy==p->pGroupBy );
+        havingToWhere(pParse, p);
         pWhere = p->pWhere;
       }
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);

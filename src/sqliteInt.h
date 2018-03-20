@@ -3357,9 +3357,9 @@ struct Walker {
     struct CCurHint *pCCurHint;               /* Used by codeCursorHint() */
     int *aiCol;                               /* array of column indexes */
     struct IdxCover *pIdxCover;               /* Check for index coverage */
-    struct IdxExprTrans *pIdxTrans;           /* Convert indexed expr to column */
+    struct IdxExprTrans *pIdxTrans;           /* Convert idxed expr to column */
     ExprList *pGroupBy;                       /* GROUP BY clause */
-    struct HavingToWhereCtx *pHavingCtx;      /* HAVING to WHERE clause ctx */
+    Select *pSelect;                          /* HAVING to WHERE clause ctx */
   } u;
 };
 
