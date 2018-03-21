@@ -376,6 +376,13 @@ foreach {tn p} {
     INSERT INTO abcdefghijkl VALUES(22, 25, 26);
     UPDATE abcdefghijkl SET y=400 WHERE x=22;
   } [list $p $p $p $p $p $p $p $p]
+
+  do_rebase_test 3.4.$tn {
+    INSERT INTO abcdefghijkl VALUES(22, 23, 24);
+  } {
+    INSERT INTO abcdefghijkl VALUES(22, 25, 26);
+    UPDATE abcdefghijkl SET y=400 WHERE x=22;
+  } [list REPLACE $p]
 }
 
 finish_test

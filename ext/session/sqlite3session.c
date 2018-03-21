@@ -3681,7 +3681,6 @@ static int sessionStat1Sql(sqlite3 *db, SessionApplyCtx *p){
         "AND (?4 OR stat IS ?3)"
     );
   }
-  assert( rc==SQLITE_OK );
   return rc;
 }
 
@@ -4384,7 +4383,7 @@ static int sessionChangesetApply(
     sqlite3_exec(db, "RELEASE changeset_apply", 0, 0, 0);
   }
 
-  if( rc==SQLITE_OK && ppRebase && pnRebase ){
+  if( rc==SQLITE_OK && bPatchset==0 && ppRebase && pnRebase ){
     *ppRebase = (void*)sApply.rebase.aBuf;
     *pnRebase = sApply.rebase.nBuf;
     sApply.rebase.aBuf = 0;
@@ -5145,6 +5144,11 @@ static int sessionRebase(
         if( 0==sqlite3_stricmp(pTab->zName, zTab) ) break;
       }
       bNew = 0;
+
+      /* A patchset may not be rebased */
+      if( pIter->bPatchset ){
+        rc = SQLITE_ERROR;
+      }
 
       /* Append a table header to the output for this new table */
       sessionAppendByte(&sOut, pIter->bPatchset ? 'P' : 'T', &rc);
