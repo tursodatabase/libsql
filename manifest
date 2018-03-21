@@ -1,5 +1,5 @@
-C Fix\sincorrect\stestcase\slabels\son\stwo\scases\sin\sjoin5.test.\s\sNo\schanges\sto\scode.
-D 2018-03-20T19:02:03.726
+C Add\sthe\soptfuzz.c\sprogram\sfor\sverifying\sthe\squery\splanner\susing\sa\sfuzzer.\nThis\sis\san\sinitial\scode\scheck-in.
+D 2018-03-21T19:25:59.092
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1110,6 +1110,9 @@ F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
+F test/optfuzz-db01.c a0c256905c8ac79f9a5de2f374a3d9f757bef0dca2a238dc7c10cc8a38031834 w test/testdb01.c
+F test/optfuzz-db01.txt 21f6bdeadc701cf11528276e2a55c70bfcb846ba42df327f979bd9e7b6ce7041 w test/testdb01.txt
+F test/optfuzz.c b5f8c4d1af09e98592331d8598d58d7088bdad085703a37cf6b3a12f3b1a3ae8
 F test/orderby1.test 4d22a7c75f6a83fc1f188cc7bb5192285fdf2552
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
@@ -1712,7 +1715,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ad668d4339397fe66fe085e0527e37a1930917da88d462a8d89a465faa15e28
-R de2d87ae55e8927dcebc8ba7daa8abff
+P 4661ac81c9589b06a07df8b7931fbd0a7f9a4e9ba1448192b70701dc85a29bd2
+R 4dcfbf1bcde15e35f7fd5f585699a49d
 U drh
-Z 13d930ad372c9908126067c6c04be90c
+Z af967147daedd09b6c6ab5f21381279c
