@@ -83,7 +83,10 @@ static int optfuzz_exec(
   sqlite3 *dbRun,             /* The database on which the SQL executes */
   const char *zSql,           /* The SQL to be executed */
   sqlite3 *dbOut,             /* Store results in this database */
-  const char *zOutTab         /* Store results in this table of dbOut */
+  const char *zOutTab,        /* Store results in this table of dbOut */
+  int *pnStmt,                /* Write the number of statements here */
+  int *pnRow,                 /* Write the number of rows here */
+  int bTrace                  /* Print query results if true */
 ){
   int rc = SQLITE_OK;         /* Return code */
   const char *zLeftover;      /* Tail of unprocessed SQL */
@@ -94,19 +97,25 @@ static int optfuzz_exec(
   char zLine[4000];           /* Complete row value */
 
   run_sql(dbOut, "BEGIN");
-  run_sql(dbOut, "CREATE TABLE IF NOT EXISTS staging(x TEXT);");
-  run_sql(dbOut, "CREATE TABLE IF NOT EXISTS \"w\"(x TEXT);", zOutTab);
+  run_sql(dbOut, "CREATE TABLE IF NOT EXISTS staging(x TEXT)");
+  run_sql(dbOut, "CREATE TABLE IF NOT EXISTS \"%w\"(x TEXT)", zOutTab);
   pIns = prepare_sql(dbOut, "INSERT INTO staging(x) VALUES(?1)");
-  while( rc==SQLITE_OK && zSql[0] ){
+  *pnRow = *pnStmt = 0;
+  while( rc==SQLITE_OK && zSql && zSql[0] ){
+    zLeftover = 0;
     rc = sqlite3_prepare_v2(dbRun, zSql, -1, &pStmt, &zLeftover);
+    zSql = zLeftover;
     assert( rc==SQLITE_OK || pStmt==0 );
-    if( rc!=SQLITE_OK ) break;
+    if( rc!=SQLITE_OK ){
+      printf("Error with [%s]\n%s\n", zSql, sqlite3_errmsg(dbRun));
+      break;
+    }
     if( !pStmt ) continue;
+    (*pnStmt)++;
     nCol = sqlite3_column_count(pStmt);
     run_sql(dbOut, "DELETE FROM staging;");
-    while( 1 ){
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
       int i, j;
-      rc = sqlite3_step(pStmt);
       for(i=j=0; i<nCol && j<sizeof(zLine)-50; i++){
         int eType = sqlite3_column_type(pStmt, i);
         if( eType==SQLITE_NULL ){
@@ -128,24 +137,27 @@ static int optfuzz_exec(
         printf("Excessively long output line: %d bytes\n" ,j);
         exit(1);
       }
+      if( bTrace ){
+        printf("%s\n", zLine);
+      }
+      (*pnRow)++;
       sqlite3_bind_text(pIns, 1, zLine, j, SQLITE_TRANSIENT);
       rc = sqlite3_step(pIns);
       assert( rc==SQLITE_DONE );
-      sqlite3_reset(pIns);
+      rc = sqlite3_reset(pIns);
     }
     run_sql(dbOut,
       "INSERT INTO \"%w\"(x) VALUES('### %q ###')",
-      sqlite3_sql(pStmt)
+      zOutTab, sqlite3_sql(pStmt)
     );
     run_sql(dbOut, 
       "INSERT INTO \"%w\"(x) SELECT group_concat(x,char(10))"
-      "  FROM staging ORDER BY x",
+      "  FROM (SELECT x FROM staging ORDER BY x)",
       zOutTab
     );
     run_sql(dbOut, "COMMIT");
     sqlite3_finalize(pStmt);
     pStmt = 0;
-    zSql = zLeftover;
   }
   sqlite3_finalize(pStmt);
   sqlite3_finalize(pIns);
@@ -194,14 +206,22 @@ int main(int argc, char **argv){
   char **azIn = 0;           /* Names of input files */
   sqlite3 *dbOut = 0;        /* Database to hold results */
   sqlite3 *dbRun = 0;        /* Database used for tests */
+  int bTrace = 0;            /* Show query results */
+  int nRow, nStmt;           /* Number of rows and statements */
   int i, rc;
 
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' && z[1]=='-' ) z++;
     if( strcmp(z,"-help")==0 ){
-      printf("Usage: %s FILENAME ...\n", argv[0]);
+      printf("Usage: %s [OPTIONS] FILENAME ...\n", argv[0]);
+      printf("Options:\n");
+      printf("  --help               Show his message\n");
+      printf("  --output-trace       Show each line of SQL output\n");
       return 0;
+    }
+    else if( strcmp(z,"-output-trace")==0 ){
+      bTrace = 1;
     }
     else if( z[0]=='-' ){
       printf("unknown option \"%s\".  Use --help for details\n", argv[i]);
@@ -226,25 +246,41 @@ int main(int argc, char **argv){
     char *zSql = readFile(azIn[i], 0);
     sqlite3_stmt *pCk;
     sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, dbRun, 0);
-    rc = optfuzz_exec(dbRun, zSql, dbOut, "opt");
-    if( rc==SQLITE_OK ){
+    if( bTrace ) printf("%s: Optimized\n", azIn[i]);
+    rc = optfuzz_exec(dbRun, zSql, dbOut, "opt", &nStmt, &nRow, bTrace);
+    if( rc ){
+      printf("%s: optimized run failed: %s\n",
+            azIn[i], sqlite3_errmsg(dbRun));
+    }else{
       sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, dbRun, 0xffff);
-      rc = optfuzz_exec(dbRun, zSql, dbOut, "noopt");
+      if( bTrace ) printf("%s: Non-optimized\n", azIn[i]);
+      rc = optfuzz_exec(dbRun, zSql, dbOut, "noopt", &nStmt, &nRow, bTrace);
       if( rc ){
-        printf("Non-optimized run failed.  Error: %s\n", sqlite3_errmsg(dbRun));
+        printf("%s: non-optimized run failed: %s\n",
+              azIn[i], sqlite3_errmsg(dbRun));
         exit(1);
       }
       pCk = prepare_sql(dbOut,
-           "SELECT (SELECT group_concat(x) FROM opt)=="
-           "       (SELECT group_concat(x) FROM noopt)");
+           "SELECT (SELECT group_concat(x,char(10)) FROM opt)=="
+           "       (SELECT group_concat(x,char(10)) FROM noopt)");
       rc = sqlite3_step(pCk);
       if( rc!=SQLITE_ROW ){
-        printf("Comparison failed. %s\n", sqlite3_errmsg(dbOut));
+        printf("%s: comparison failed\n", sqlite3_errmsg(dbOut));
         exit(1);
       }
       if( !sqlite3_column_int(pCk, 0) ){
-        printf("Opt/no-opt outputs differ for %s\n", azIn[i]);
+        printf("%s: opt/no-opt outputs differ\n", azIn[i]);
+        pCk = prepare_sql(dbOut,
+           "SELECT group_concat(x,char(10)) FROM opt "
+           "UNION ALL "
+           "SELECT group_concat(x,char(10)) FROM noopt");
+        sqlite3_step(pCk);
+        printf("opt:\n%s\n", sqlite3_column_text(pCk,0));
+        sqlite3_step(pCk);
+        printf("noopt:\n%s\n", sqlite3_column_text(pCk,0));
         exit(1);
+      }else{
+        printf("%s: %d stmts %d rows ok\n", azIn[i], nStmt, nRow);
       }
       sqlite3_finalize(pCk);
     }
