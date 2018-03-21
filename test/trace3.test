@@ -129,7 +129,7 @@ do_test trace3-4.3 {
   }
   set stmt [lindex [lindex $::stmtlist(record) 0] 0]
   set ns [lindex [lindex $::stmtlist(record) 0] 1]
-  list $stmt [expr {$ns >= 0 && $ns <= 1000000}]; # less than 0.001 second
+  list $stmt [expr {$ns >= 0 && $ns <= 9999999}]; # less than 0.010 seconds
 } {/^-?\d+ 1$/}
 do_test trace3-4.4 {
   set ::stmtlist(record) {}
@@ -139,7 +139,7 @@ do_test trace3-4.4 {
   }
   set stmt [lindex [lindex $::stmtlist(record) 0] 0]
   set ns [lindex [lindex $::stmtlist(record) 0] 1]
-  list $stmt [expr {$ns >= 0 && $ns <= 1000000}]; # less than 0.001 second
+  list $stmt [expr {$ns >= 0 && $ns <= 9999999}]; # less than 0.010 seconds
 } {/^-?\d+ 1$/}
 
 do_test trace3-5.1 {

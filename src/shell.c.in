@@ -2286,18 +2286,20 @@ static int display_stats(
     for(i=0; i<nCol; i++){
       sqlite3_snprintf(sizeof(z),z,"Column %d %nname:", i, &x);
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_name(pStmt,i));
+#ifndef SQLITE_OMIT_DECLTYPE
       sqlite3_snprintf(30, z+x, "declared type:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_decltype(pStmt, i));
-  #ifdef SQLITE_ENABLE_COLUMN_METADATA
+#endif
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
       sqlite3_snprintf(30, z+x, "database name:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_database_name(pStmt,i));
       sqlite3_snprintf(30, z+x, "table name:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_table_name(pStmt,i));
       sqlite3_snprintf(30, z+x, "origin name:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_origin_name(pStmt,i));
-  #endif
+#endif
     }
-    }
+  }
 
   displayStatLine(pArg, "Memory Used:",
      "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
@@ -2352,6 +2354,9 @@ static int display_stats(
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
     raw_printf(pArg->out, "Page cache writes:                   %d\n", iCur);
+    iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_SPILL, &iCur, &iHiwtr, 1);
+    raw_printf(pArg->out, "Page cache spills:                   %d\n", iCur);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     raw_printf(pArg->out, "Schema Heap Usage:                   %d bytes\n",
@@ -2874,7 +2879,12 @@ static int shell_exec(
           sqlite3_finalize(pExplain);
           sqlite3_free(zEQP);
         }
-        sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, triggerEQP, 0);
+        if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
+          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
+          /* Reprepare pStmt before reactiving trace modes */
+          sqlite3_finalize(pStmt);
+          sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+        }
         restore_debug_trace_modes();
       }
 
