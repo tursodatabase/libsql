@@ -516,7 +516,7 @@ static int sessionPreupdateHash(
 static int sessionSerialLen(u8 *a){
   int e = *a;
   int n;
-  if( e==0 ) return 1;
+  if( e==0 || e==0xFF ) return 1;
   if( e==SQLITE_NULL ) return 1;
   if( e==SQLITE_INTEGER || e==SQLITE_FLOAT ) return 9;
   return sessionVarintGet(&a[1], &n) + 1 + n;
@@ -4527,6 +4527,7 @@ static int sessionChangeMerge(
   SessionChange **ppNew           /* OUT: Merged change */
 ){
   SessionChange *pNew = 0;
+  int rc = SQLITE_OK;
 
   if( !pExist ){
     pNew = (SessionChange *)sqlite3_malloc(sizeof(SessionChange) + nRec);
@@ -4536,16 +4537,66 @@ static int sessionChangeMerge(
     memset(pNew, 0, sizeof(SessionChange));
     pNew->op = op2;
     pNew->bIndirect = bIndirect;
-    pNew->nRecord = nRec;
     pNew->aRecord = (u8*)&pNew[1];
-    memcpy(pNew->aRecord, aRec, nRec);
-  }else if( bRebase){
-    /* 
-    **   op1=INSERT/R, op2=INSERT/R  ->
-    **   op1=INSERT/R, op2=INSERT/O  ->
-    **   op1=INSERT/O, op2=INSERT/R  ->
-    **   op1=INSERT/O, op2=INSERT/O  ->
-    */   
+    if( bIndirect==0 || bRebase==0 ){
+      pNew->nRecord = nRec;
+      memcpy(pNew->aRecord, aRec, nRec);
+    }else{
+      int i;
+      u8 *pIn = aRec;
+      u8 *pOut = pNew->aRecord;
+      for(i=0; i<pTab->nCol; i++){
+        int nIn = sessionSerialLen(pIn);
+        if( *pIn==0 ){
+          *pOut++ = 0;
+        }else if( pTab->abPK[i]==0 ){
+          *pOut++ = 0xFF;
+        }else{
+          memcpy(pOut, pIn, nIn);
+          pOut += nIn;
+        }
+        pIn += nIn;
+      }
+      pNew->nRecord = pOut - pNew->aRecord;
+    }
+  }else if( bRebase ){
+    if( pExist->op==SQLITE_DELETE && pExist->bIndirect ){
+      *ppNew = pExist;
+    }else{
+      int nByte = nRec + pExist->nRecord + sizeof(SessionChange);
+      pNew = (SessionChange*)sqlite3_malloc(nByte);
+      if( pNew==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        int i;
+        u8 *a1 = pExist->aRecord;
+        u8 *a2 = aRec;
+        u8 *pOut;
+
+        memset(pNew, 0, nByte);
+        pNew->bIndirect = bIndirect || pExist->bIndirect;
+        pNew->op = op2;
+        pOut = pNew->aRecord = (u8*)&pNew[1];
+
+        for(i=0; i<pTab->nCol; i++){
+          int n1 = sessionSerialLen(a1);
+          int n2 = sessionSerialLen(a2);
+          if( *a1==0xFF || *a2==0xFF ){
+            *pOut++ = 0xFF;
+          }else if( *a2==0 ){
+            memcpy(pOut, a1, n1);
+            pOut += n1;
+          }else{
+            memcpy(pOut, a2, n2);
+            pOut += n2;
+          }
+          a1 += n1;
+          a2 += n2;
+        }
+        pNew->nRecord = pOut - pNew->aRecord;
+      }
+      sqlite3_free(pExist);
+    }
   }else{
     int op1 = pExist->op;
 
@@ -4639,7 +4690,7 @@ static int sessionChangeMerge(
   }
 
   *ppNew = pNew;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -4999,7 +5050,7 @@ static void sessionAppendRecordMerge(
           pOut += nn1;
         }
       }else{
-        if( *a1==0 ){
+        if( *a1==0 || *a1==0xFF ){
           memcpy(pOut, a2, nn2);
           pOut += nn2;
         }else{
@@ -5017,11 +5068,11 @@ static void sessionAppendRecordMerge(
 }
 
 static void sessionAppendPartialUpdate(
-  SessionBuffer *pBuf,
-  sqlite3_changeset_iter *pIter,
-  u8 *aRec, int nRec,
-  u8 *aChange, int nChange,
-  int *pRc
+  SessionBuffer *pBuf,            /* Append record here */
+  sqlite3_changeset_iter *pIter,  /* Iterator pointed at local change */
+  u8 *aRec, int nRec,             /* Local change */
+  u8 *aChange, int nChange,       /* Record to rebase against */
+  int *pRc                        /* IN/OUT: Return Code */
 ){
   sessionBufferGrow(pBuf, 2+nRec+nChange, pRc);
   if( *pRc==SQLITE_OK ){
@@ -5040,6 +5091,10 @@ static void sessionAppendPartialUpdate(
         if( !pIter->abPK[i] ) bData = 1;
         memcpy(pOut, a1, n1);
         pOut += n1;
+      }else if( a2[0]!=0xFF ){
+        bData = 1;
+        memcpy(pOut, a2, n2);
+        pOut += n2;
       }else{
         *pOut++ = '\0';
       }
@@ -5051,7 +5106,7 @@ static void sessionAppendPartialUpdate(
       for(i=0; i<pIter->nCol; i++){
         int n1 = sessionSerialLen(a1);
         int n2 = sessionSerialLen(a2);
-        if( pIter->abPK[i] || a2[0]==0 ){
+        if( pIter->abPK[i] || a2[0]!=0xFF ){
           memcpy(pOut, a1, n1);
           pOut += n1;
         }else{
@@ -5064,7 +5119,6 @@ static void sessionAppendPartialUpdate(
     }
   }
 }
-
 
 static int sessionRebase(
   sqlite3_rebaser *p,             /* Rebaser hash table */
@@ -5139,20 +5193,9 @@ static int sessionRebase(
               );
             }
           }else{
-            if( pChange->bIndirect==0 ){
-              u8 *pCsr = aRec;
-              sessionAppendByte(&sOut, SQLITE_UPDATE, &rc);
-              sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-              sessionAppendRecordMerge(&sOut, pIter->nCol, 0,
-                  aRec, nRec, pChange->aRecord, pChange->nRecord, &rc
-              );
-              sessionSkipRecord(&pCsr, pIter->nCol);
-              sessionAppendBlob(&sOut, pCsr, nRec - (pCsr-aRec), &rc);
-            }else{
-              sessionAppendPartialUpdate(&sOut, pIter,
-                 aRec, nRec, pChange->aRecord, pChange->nRecord, &rc
-              );
-            }
+            sessionAppendPartialUpdate(&sOut, pIter,
+                aRec, nRec, pChange->aRecord, pChange->nRecord, &rc
+            );
           }
           break;
 

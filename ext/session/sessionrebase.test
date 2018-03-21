@@ -120,10 +120,8 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
     #puts [changeset_to_list [lindex $rebase 0]] ; breakpoint
     #puts [llength $rebase]
   
-if {$i==2 && $tn=="3.3.1"} breakpoint
     sqlite3rebaser_create R
     foreach r $rebase {
-puts [changeset_to_list $r]
       R configure $r
     }
     set c1r [R rebase $c1]

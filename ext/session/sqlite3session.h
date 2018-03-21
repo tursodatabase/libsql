@@ -1256,14 +1256,14 @@ int sqlite3changeset_apply_v2(
 **   This may conflict with a remote UPDATE or DELETE. In both cases the
 **   only possible resolution is OMIT. If the remote operation was a
 **   DELETE, then add no change to the rebased changeset. If the remote
-**   operation was an UPDATE, then the old.* fields of change are updated 
+**   operation was an UPDATE, then the old.* fields of change are updated
 **   to reflect the new.* values in the UPDATE.
 **
 ** <dt>Local UPDATE<dd>
 **   This may conflict with a remote UPDATE or DELETE. If it conflicts
 **   with a DELETE, and the conflict resolution was OMIT, then the update
 **   is changed into an INSERT. Any undefined values in the new.* record
-**   from the update change are filled in using the old.* values from 
+**   from the update change are filled in using the old.* values from
 **   the conflicting DELETE. Or, if the conflict resolution was REPLACE,
 **   the UPDATE change is simply omitted from the rebased changeset.
 **
@@ -1271,12 +1271,29 @@ int sqlite3changeset_apply_v2(
 **   the old.* values are rebased using the new.* values in the remote
 **   change. Or, if the resolution is REPLACE, then the change is copied
 **   into the rebased changeset with updates to columns also updated by
-**   the conflicting UPDATE removed. If this means no columns would be
-**   updated, the change is omitted.
+**   the conflicting remote UPDATE removed. If this means no columns would 
+**   be updated, the change is omitted.
 ** </dl>
 **
 ** A local change may be rebased against multiple remote changes 
-** simultaneously.
+** simultaneously. If a single key is modified by multiple remote 
+** changesets, they are combined as follows before the local changeset
+** is rebased:
+**
+** <ul>
+**    <li> If there has been one or more REPLACE resolutions on a
+**         key, it is rebased according to a REPLACE.
+**
+**    <li> If there have been no REPLACE resolutions on a key, then
+**         the local changeset is rebased according to the most recent
+**         of the OMIT resolutions.
+** </ul>
+**
+** Note that conflict resolutions from multiple remote changesets are 
+** combined on a per-field basis, not per-row. This means that in the 
+** case of multiple remote UPDATE operations, some fields of a single 
+** local change may be rebased for REPLACE while others are rebased for 
+** OMIT.
 */
 typedef struct sqlite3_rebaser sqlite3_rebaser;
 
