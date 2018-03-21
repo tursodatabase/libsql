@@ -1,5 +1,5 @@
-C Do\sa\smore\sthorough\sjob\sof\scleaning\serasing\straces\sof\sthe\sstrength-reduced\nLEFT\sJOIN.
-D 2018-03-20T22:52:27.787
+C Relax\sLEFT-JOIN\srestrictions\son\sthe\spush-down\soptimization.
+D 2018-03-21T01:59:46.055
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -489,7 +489,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 926d122e87dcd82b3bb1c2fd5879163abc957916ae168ee91017ccd459fe58d5
+F src/select.c 2c408ab9b4bfc807e6a9d3d45337d20ebe72a8b7ac793854710bf9d572e7ab6d
 F src/shell.c.in 911b9e3bce40413c78fdba28efa28363e98183819bd4b300780bf57bacfc4b84
 F src/sqlite.h.in 19762b57baa1ade67531f254de94374428fb9c82452ef305017847945f9c2911
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1712,7 +1712,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5b7abecc7ab8ccbbb8cb5e0f672e67625c2555ad03442efbf34cb395f5bb71a8
-R 600bea19530f5a14859b1c8b3c822982
+P 08833dda3a25965cc509d0244d7cd68bdb2306351ca52862f347e1efe5db4508
+R ec5a139322d92c7ba66f92f44103e585
 U drh
-Z 1305d962d2e1b706271862008b361453
+Z 2e81978b7831515aef1bcc77d7672624
