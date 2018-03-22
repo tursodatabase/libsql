@@ -5169,7 +5169,7 @@ static int sessionRebase(
   SessionTable *pTab = 0;
   SessionBuffer sOut = {0,0,0};
 
-    while( SQLITE_ROW==sessionChangesetNext(pIter, &aRec, &nRec, &bNew) ){
+  while( SQLITE_ROW==sessionChangesetNext(pIter, &aRec, &nRec, &bNew) ){
     SessionChange *pChange = 0;
     int bDone = 0;
 
@@ -5192,12 +5192,11 @@ static int sessionRebase(
       sessionAppendBlob(&sOut, (u8*)pIter->zTab, strlen(pIter->zTab)+1, &rc);
     }
 
-    if( pTab ){
-      int bPkOnly = (pIter->bPatchset && pIter->op==SQLITE_DELETE);
-      int iHash = sessionChangeHash(pTab, bPkOnly, aRec, pTab->nChange);
+    if( pTab && rc==SQLITE_OK ){
+      int iHash = sessionChangeHash(pTab, 0, aRec, pTab->nChange);
 
       for(pChange=pTab->apChange[iHash]; pChange; pChange=pChange->pNext){
-        if( sessionChangeEqual(pTab, bPkOnly, aRec, 0, pChange->aRecord) ){
+        if( sessionChangeEqual(pTab, 0, aRec, 0, pChange->aRecord) ){
           break;
         }
       }
