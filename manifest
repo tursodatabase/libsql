@@ -1,5 +1,5 @@
-C Add\sthe\sleft\sjoin\sstrength\sreduction\soptimization.\s\sEnhance\sthe\spush-down\noptimization\sso\sthat\sit\sworks\swith\smany\sLEFT\sJOINs.
-D 2018-03-22T12:00:43.103
+C Fix\sa\stest\sscript\sproblem\scausing\srbuvacuum.test\sto\sfail\swhen\srun\salong\swith\nother\stests.
+D 2018-03-22T17:02:37.286
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -322,7 +322,7 @@ F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test 4e58e46e60d4064248614c43303d71f1b18cc804dd834ce6a913b3861828b28d
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
-F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
+F ext/rbu/rbu_common.tcl ebb8d81f44dc20e360cff1f34eb2ad0def33128805c5b36afcc44ab338509589
 F ext/rbu/rbucrash.test 61470d977a06a0abc2ec35b05d82a1d7d87d10f4ffabad14c1c231edc942ad66
 F ext/rbu/rbucrash2.test b2ecbdd7bb72c88bd217c65bd00dafa07f7f2d4d
 F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
@@ -1715,8 +1715,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8dfeec73b069f2dd7371c2792b36f152945d32120843db5361ff7e04de177bc b5d3dd8cb0b1e42ed0671a12d22af05194ea9522e4f41fd4bb0deff70b8b0757
-R 829b4bcd2ce5d178bebfa1657a2d3cee
-T +closed b5d3dd8cb0b1e42ed0671a12d22af05194ea9522e4f41fd4bb0deff70b8b0757
-U drh
-Z f7b572645a2b0a1f5c79c87cac8e08a9
+P dd568c27b1d7656388ea5b4132cc0265aedd7348d265d8e8c7412b00b28a31aa
+R 2386137d4550db0601b1a7cb99eb881e
+U dan
+Z f4da3cf6c564d28e257654eb05164b13
