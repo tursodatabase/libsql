@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\scausing\srbuvacuum.test\sto\sfail\swhen\srun\salong\swith\nother\stests.
-D 2018-03-22T17:02:37.286
+C Fix\san\sRBU\sproblem\scausing\serrors\swhen\supdating\stables\swith\sdefault\scollation\nsequences\sthat\srequire\squoting\s(e.g.\sCOLLATE\s"ICU_root-u-kn-on").
+D 2018-03-22T17:13:44.592
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -323,6 +323,7 @@ F ext/rbu/rbuA.test 4e58e46e60d4064248614c43303d71f1b18cc804dd834ce6a913b3861828
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl ebb8d81f44dc20e360cff1f34eb2ad0def33128805c5b36afcc44ab338509589
+F ext/rbu/rbucollate.test 86d6fc9b8f59a27b7b5a6e20b5e29816d338a0dbdea8c54bfcc549a0d437f3ea
 F ext/rbu/rbucrash.test 61470d977a06a0abc2ec35b05d82a1d7d87d10f4ffabad14c1c231edc942ad66
 F ext/rbu/rbucrash2.test b2ecbdd7bb72c88bd217c65bd00dafa07f7f2d4d
 F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
@@ -339,9 +340,9 @@ F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbutemplimit.test cd553a9288d515d0b5f87d277e76fd18c4aa740b761e7880fab11ce986ea18d1
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c 64bd08c1011456f90564ed167abce3a9c2af421a924b21eb57231e078da04feb
+F ext/rbu/sqlite3rbu.c f6e9ca388b5d4680fbf266a4d10a21aec11d6baf48f6d06fd53f6b205fad959f
 F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d007e79b2
-F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd7822997533a
+F ext/rbu/test_rbu.c baa23eb28457580673d2175e5f0c29ced0cd320ee819b13ad362398c53b96e90
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0dbae18c1b552f58d64f8969e4fb1e7f11930c60a8c2a9a8d50b7f15bdfd54bd
 F ext/repair/checkindex.c 7d28c01a2e012ac64257d230fc452b2cafb78311a91a343633d01d95220f66f3
@@ -1715,7 +1716,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd568c27b1d7656388ea5b4132cc0265aedd7348d265d8e8c7412b00b28a31aa
-R 2386137d4550db0601b1a7cb99eb881e
+P 901cb3b6a2c8d0cc33bd34ec1dbeea49c779ae1ac3ed6733dd9826c8e0eb80c8
+R ea4beed5a6f5a13ca5aa6b2ab2f884d0
 U dan
-Z f4da3cf6c564d28e257654eb05164b13
+Z 1a6cc6f516e2cd588ac4c5f3e803854c

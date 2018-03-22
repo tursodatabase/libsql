@@ -81,6 +81,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
     {"close_no_error", 2, ""},       /* 9 */
     {"temp_size_limit", 3, "LIMIT"}, /* 10 */
     {"temp_size", 2, ""},            /* 11 */
+    {"dbRbu_eval", 3, "SQL"},        /* 12 */
     {0,0,0}
   };
   int iCmd;
@@ -146,8 +147,9 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
       break;
     }
 
-    case 4: /* dbMain_eval */ {
-      sqlite3 *db = sqlite3rbu_db(pRbu, 0);
+    case 12: /* dbRbu_eval */ 
+    case 4:  /* dbMain_eval */ {
+      sqlite3 *db = sqlite3rbu_db(pRbu, (iCmd==12));
       int rc = sqlite3_exec(db, Tcl_GetString(objv[2]), 0, 0, 0);
       if( rc!=SQLITE_OK ){
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3_errmsg(db), -1));
