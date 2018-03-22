@@ -3795,10 +3795,20 @@ static int sessionSeekToRow(
   return rc;
 }
 
+/*
+** This function is called from within sqlite3changset_apply_v2() when
+** a conflict is encountered and resolved using conflict resolution
+** mode eType (either SQLITE_CHANGESET_OMIT or SQLITE_CHANGESET_REPLACE)..
+** It adds a conflict resolution record to the buffer in 
+** SessionApplyCtx.rebase, which will eventually be returned to the caller
+** of apply_v2() as the "rebase" buffer.
+**
+** Return SQLITE_OK if successful, or an SQLite error code otherwise.
+*/
 static int sessionRebaseAdd(
-  SessionApplyCtx *p, 
-  int eType, 
-  sqlite3_changeset_iter *pIter
+  SessionApplyCtx *p,             /* Apply context */
+  int eType,                      /* Conflict resolution (OMIT or REPLACE) */
+  sqlite3_changeset_iter *pIter   /* Iterator pointing at current change */
 ){
   int rc = SQLITE_OK;
   int i;
@@ -4399,6 +4409,10 @@ static int sessionChangesetApply(
   return rc;
 }
 
+/*
+** Apply the changeset passed via pChangeset/nChangeset to the main 
+** database attached to handle "db".
+*/
 int sqlite3changeset_apply_v2(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int nChangeset,                 /* Size of changeset in bytes */
@@ -5017,21 +5031,15 @@ struct sqlite3_rebaser {
 /*
 ** Buffers a1 and a2 must both contain a sessions module record nCol
 ** fields in size. This function appends an nCol sessions module 
-** record to buffer pBuf that is a copy of a1, except that:
-**
-**   + If bUndefined is 0, for each field that is not "undefined" in either
-**     a1[] or a2[], swap in the field from a2[].
-**
-**   + If bUndefined is 1, for each field that is "undefined" in a1[]
-**     swap in the field from a2[].
+** record to buffer pBuf that is a copy of a1, except that for
+** each field that is undefined in a1[], swap in the field from a2[].
 */
 static void sessionAppendRecordMerge(
-  SessionBuffer *pBuf,
-  int nCol,
-  int bUndefined,
-  u8 *a1, int n1,
-  u8 *a2, int n2,
-  int *pRc
+  SessionBuffer *pBuf,            /* Buffer to append to */
+  int nCol,                       /* Number of columns in each record */
+  u8 *a1, int n1,                 /* Record 1 */
+  u8 *a2, int n2,                 /* Record 2 */
+  int *pRc                        /* IN/OUT: error code */
 ){
   sessionBufferGrow(pBuf, n1+n2, pRc);
   if( *pRc==SQLITE_OK ){
@@ -5040,22 +5048,12 @@ static void sessionAppendRecordMerge(
     for(i=0; i<nCol; i++){
       int nn1 = sessionSerialLen(a1);
       int nn2 = sessionSerialLen(a2);
-      if( bUndefined==0 ){
-        if( *a1 && *a2 ){
-          memcpy(pOut, a2, nn2);
-          pOut += nn2;
-        }else{
-          memcpy(pOut, a1, nn1);
-          pOut += nn1;
-        }
+      if( *a1==0 || *a1==0xFF ){
+        memcpy(pOut, a2, nn2);
+        pOut += nn2;
       }else{
-        if( *a1==0 || *a1==0xFF ){
-          memcpy(pOut, a2, nn2);
-          pOut += nn2;
-        }else{
-          memcpy(pOut, a1, nn1);
-          pOut += nn1;
-        }
+        memcpy(pOut, a1, nn1);
+        pOut += nn1;
       }
       a1 += nn1;
       a2 += nn2;
@@ -5191,7 +5189,7 @@ static int sessionRebase(
               sessionSkipRecord(&pCsr, pIter->nCol);
               sessionAppendByte(&sOut, SQLITE_INSERT, &rc);
               sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-              sessionAppendRecordMerge(&sOut, pIter->nCol, 1,
+              sessionAppendRecordMerge(&sOut, pIter->nCol,
                   pCsr, nRec-(pCsr-aRec), 
                   pChange->aRecord, pChange->nRecord, &rc
               );
@@ -5209,7 +5207,7 @@ static int sessionRebase(
           if( pChange->op==SQLITE_INSERT ){
             sessionAppendByte(&sOut, SQLITE_DELETE, &rc);
             sessionAppendByte(&sOut, pIter->bIndirect, &rc);
-            sessionAppendRecordMerge(&sOut, pIter->nCol, 1,
+            sessionAppendRecordMerge(&sOut, pIter->nCol,
                 pChange->aRecord, pChange->nRecord, aRec, nRec, &rc
             );
           }

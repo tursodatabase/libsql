@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2018-03-21T20:13:56.529
+C Remove\ssome\sunused\scode\sfrom\sthe\ssessions\smodule.
+D 2018-03-22T11:15:59.453
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -403,7 +403,7 @@ F ext/session/sessionfault2.test 883c8919ebcf6c140ba86b480bc14ae642ee9969c009e0b
 F ext/session/sessionrebase.test 7cb11b80e6bc13756ac8a51a0601a11f124ee1aa3b1e9eab61ed660b8cab0ef4
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c f817bf0360da914bf353797347ed53dd08fda46bcef0d9e827a4c8cf956008aa
+F ext/session/sqlite3session.c 8cea7c63efa1e217d99ffeb3e67199c9538cf7fe5373c1d2ac2b62a691a2dc55
 F ext/session/sqlite3session.h 5f40a0660ff972c0c50f5fd6b33488fdbd2eb0c1244ea95777f8dbd5e529be04
 F ext/session/test_session.c f253742ea01b089326f189b5ae15a5b55c1c9e97452e4a195ee759ba51b404d5
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1716,7 +1716,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9ec68627a4533ca6aa7cc1b73f864db615a80e86eda9e33660f22d269a1ba1e 3fb21251b0c9c731513e8fb137867c2710a77d99411c99348d3ac45d3babffd7
-R 3c085a679a5c6bacbd79a8bf650ad04f
+P d00b71ecf857bc6d903442d91418d5a313c584dcdd8e9c8ff3b5d940dd45bcc5
+R 1a609de137c9dc0274aa7feaed1a7236
 U dan
-Z de87c26f5f363c23e40146da082bca9e
+Z 10aaa03ec1ff02e2361d604078258cf8
