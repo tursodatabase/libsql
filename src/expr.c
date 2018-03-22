@@ -5002,6 +5002,58 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
 }
 
 /*
+** This is the Expr node callback for sqlite3ExprImpliesNotNullRow().
+** If the expression node requires that the table at pWalker->iCur
+** have a non-NULL column, then set pWalker->eCode to 1 and abort.
+*/
+static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
+  switch( pExpr->op ){
+    case TK_ISNULL:
+    case TK_IS:
+    case TK_OR:
+    case TK_FUNCTION:
+    case TK_AGG_FUNCTION:
+      return WRC_Prune;
+    case TK_COLUMN:
+    case TK_AGG_COLUMN:
+      if( pWalker->u.iCur==pExpr->iTable ){
+        pWalker->eCode = 1;
+        return WRC_Abort;
+      }
+      return WRC_Prune;
+    default:
+      return WRC_Continue;
+  }
+}
+
+/*
+** Return true (non-zero) if expression p can only be true if at least
+** one column of table iTab is non-null.  In other words, return true
+** if expression p will always be NULL or false if every column of iTab
+** is NULL.
+**
+** Terms of p that are marked with EP_FromJoin (and hence that come from
+** the ON or USING clauses of LEFT JOINS) are excluded from the analysis.
+**
+** This routine is used to check if a LEFT JOIN can be converted into
+** an ordinary JOIN.  The p argument is the WHERE clause.  If the WHERE
+** clause requires that some column of the right table of the LEFT JOIN
+** be non-NULL, then the LEFT JOIN can be safely converted into an
+** ordinary join.
+*/
+int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
+  Walker w;
+  w.xExprCallback = impliesNotNullRow;
+  w.xSelectCallback = 0;
+  w.xSelectCallback2 = 0;
+  w.eCode = 0;
+  w.u.iCur = iTab;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
+}
+
+/*
 ** An instance of the following structure is used by the tree walker
 ** to determine if an expression can be evaluated by reference to the
 ** index only, without having to do a search for the corresponding
