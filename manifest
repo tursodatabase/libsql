@@ -1,5 +1,5 @@
-C Version\s3.22.0
-D 2018-01-22T18:45:57.681
+C Fix\san\sRBU\sproblem\scausing\serrors\swhen\supdating\stables\swith\sdefault\scollation\nsequences\sthat\srequire\squoting\s(e.g.\sCOLLATE\s"ICU_root-u-kn-on").\sCherrypick\nof\s[eb4f452e].
+D 2018-03-22T17:17:44.075
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -321,6 +321,7 @@ F ext/rbu/rbuA.test 4e58e46e60d4064248614c43303d71f1b18cc804dd834ce6a913b3861828
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
+F ext/rbu/rbucollate.test 86d6fc9b8f59a27b7b5a6e20b5e29816d338a0dbdea8c54bfcc549a0d437f3ea
 F ext/rbu/rbucrash.test 61470d977a06a0abc2ec35b05d82a1d7d87d10f4ffabad14c1c231edc942ad66
 F ext/rbu/rbucrash2.test b2ecbdd7bb72c88bd217c65bd00dafa07f7f2d4d
 F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
@@ -337,9 +338,9 @@ F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbutemplimit.test cd553a9288d515d0b5f87d277e76fd18c4aa740b761e7880fab11ce986ea18d1
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c 64bd08c1011456f90564ed167abce3a9c2af421a924b21eb57231e078da04feb
+F ext/rbu/sqlite3rbu.c f6e9ca388b5d4680fbf266a4d10a21aec11d6baf48f6d06fd53f6b205fad959f
 F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d007e79b2
-F ext/rbu/test_rbu.c 7073979b9cc80912bb03599ac8d85ab5d3bf03cfacd3463f2dcdd7822997533a
+F ext/rbu/test_rbu.c baa23eb28457580673d2175e5f0c29ced0cd320ee819b13ad362398c53b96e90
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c 0dbae18c1b552f58d64f8969e4fb1e7f11930c60a8c2a9a8d50b7f15bdfd54bd
 F ext/repair/checkindex.c 7d28c01a2e012ac64257d230fc452b2cafb78311a91a343633d01d95220f66f3
@@ -1700,10 +1701,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 395f8ea790e6e295800fa8927f0585b2419b9521ef4fd591d51d2a48db2a90c4
-R e7cccb4f976b9eb07c1586193cc26ec5
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.22.0 *
-U drh
-Z 9c0e858ece53e1ee810a8a479ae4dc82
+P 0c55d179733b46d8d0ba4d88e01a25e10677046ee3da1d5b1581e86726f2171d
+Q +eb4f452e354065d610ff57a6a9312ad119b6b0cc467f9dff105f0718bc27ef01
+R b6008d2d762b1131f1fdaad97a2b467b
+T *branch * branch-3.22
+T *sym-branch-3.22 *
+T -sym-trunk *
+U dan
+Z 4e60b1e6591da954a37dad5c8789ccc3
