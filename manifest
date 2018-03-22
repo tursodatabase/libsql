@@ -1,5 +1,5 @@
-C Add\stests\sto\sensure\sthat\spatchsets\sare\shandled\scorrectly\sby\sthe\ssession\srebase\nAPIs.
-D 2018-03-22T14:07:36.942
+C Fix\sanother\sproblem\swith\srebasing\supdates\sagainst\smultiple\sremote\schanges.
+D 2018-03-22T19:52:22.516
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -399,11 +399,11 @@ F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28f0c1cc142c3ec
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
-F ext/session/sessionfault2.test 883c8919ebcf6c140ba86b480bc14ae642ee9969c009e0b355c8981a5266f9ed
-F ext/session/sessionrebase.test cfcbb5649d0fb2568651413d0b1bcf462f2d67a7f31f7a30feb84eaaaada2638
+F ext/session/sessionfault2.test c76c76fe3c47737cb55cad7a254c0f05d0e3122f13e16de94d3dd3a4c6653913
+F ext/session/sessionrebase.test 4e1bcfd26fd8ed8ac571746f56cceeb45184f4d65490ea0d405227cfc8a9cba8
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c c2e9047c95d769b6e2c3fb28bbdb4972489b08f614bfd95c1a7f86ac0db7ac54
+F ext/session/sqlite3session.c 53beee879f98922892c95b765e72dd1e9e3651d6755970a6a9895598bc70643c
 F ext/session/sqlite3session.h 5f40a0660ff972c0c50f5fd6b33488fdbd2eb0c1244ea95777f8dbd5e529be04
 F ext/session/test_session.c f253742ea01b089326f189b5ae15a5b55c1c9e97452e4a195ee759ba51b404d5
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1716,7 +1716,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a09518ab63a1ef1b7f56b9f9b16269fd83920469d4c4e179b1f68b35df4e0c4b
-R 540efa4ba550adb2ed0df3b20fe42653
+P 0e45baaec01947f6cbf47d5d5922a4cabe7d27181c04c0a08259c952fd023947
+R 227b9a8775d98d07c0c6cbd43198ca86
 U dan
-Z d881b19a01a687698d13e50ca6bf2cbd
+Z 00a58fea2b4ecd8fcd2737991a02005b

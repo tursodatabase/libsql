@@ -4594,7 +4594,7 @@ static int sessionChangeMerge(
         for(i=0; i<pTab->nCol; i++){
           int n1 = sessionSerialLen(a1);
           int n2 = sessionSerialLen(a2);
-          if( *a1==0xFF || *a2==0xFF ){
+          if( *a1==0xFF || (pTab->abPK[i]==0 && bIndirect) ){
             *pOut++ = 0xFF;
           }else if( *a2==0 ){
             memcpy(pOut, a1, n1);

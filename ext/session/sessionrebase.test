@@ -113,8 +113,10 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
       lappend rebase [sqlite3changeset_apply_v2 db $c2 xConflict]
     } else {
       foreach c $c2 {
+#puts "apply_v2: [changeset_to_list $c]"
         lappend rebase [sqlite3changeset_apply_v2 db $c xConflict]
       }
+      #puts "llength: [llength $rebase]"
     }
     #if {$tn=="2.1.4"} { puts [changeset_to_list $rebase] ; breakpoint }
     #puts [changeset_to_list [lindex $rebase 0]] ; breakpoint
@@ -122,6 +124,7 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
   
     sqlite3rebaser_create R
     foreach r $rebase {
+#puts [changeset_to_list $r]
       R configure $r
     }
     set c1r [R rebase $c1]
@@ -130,7 +133,9 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
   
     sqlite3changeset_apply_v2 db2 $c1r xConflictAbort
   
-    uplevel [list do_test $tn.$i.1 [list compare_db db db2] {}]
+    if {[string range $tn end end]!="*"} {
+      uplevel [list do_test $tn.$i.1 [list compare_db db db2] {}]
+    }
     db2 close
   
     if {$testsql!=""} {
@@ -351,6 +356,14 @@ do_execsql_test 3.0 {
   INSERT INTO abcdefghijkl VALUES('g', 'h', 'i');
 }
 
+breakpoint
+#  do_rebase_test 3.6.tn {
+#    UPDATE abcdefghijkl SET z='X', y='X' WHERE x='d';
+#  } {
+#    UPDATE abcdefghijkl SET y=1 WHERE x='d';
+#    UPDATE abcdefghijkl SET z=1 WHERE x='d';
+#  } [list REPLACE REPLACE REPLACE]
+
 foreach {tn p} {
     1 OMIT 2 REPLACE
 } {
@@ -383,6 +396,26 @@ foreach {tn p} {
     INSERT INTO abcdefghijkl VALUES(22, 25, 26);
     UPDATE abcdefghijkl SET y=400 WHERE x=22;
   } [list REPLACE $p]
+
+  do_rebase_test 3.5.$tn* {
+    UPDATE abcdefghijkl SET y='X' WHERE x='d';
+  } {
+    DELETE FROM abcdefghijkl WHERE x='d';
+    INSERT INTO abcdefghijkl VALUES('d', NULL, NULL);
+  } [list $p $p $p]
+  do_rebase_test 3.5.$tn {
+    UPDATE abcdefghijkl SET y='X' WHERE x='d';
+  } {
+    DELETE FROM abcdefghijkl WHERE x='d';
+    INSERT INTO abcdefghijkl VALUES('d', NULL, NULL);
+  } [list REPLACE $p $p]
+
+  do_rebase_test 3.6.$tn {
+    UPDATE abcdefghijkl SET z='X', y='X' WHERE x='d';
+  } {
+    UPDATE abcdefghijkl SET y=1 WHERE x='d';
+    UPDATE abcdefghijkl SET z=1 WHERE x='d';
+  } [list REPLACE $p $p]
 }
 
 #-------------------------------------------------------------------------
