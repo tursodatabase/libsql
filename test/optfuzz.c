@@ -207,6 +207,7 @@ int main(int argc, char **argv){
   sqlite3 *dbOut = 0;        /* Database to hold results */
   sqlite3 *dbRun = 0;        /* Database used for tests */
   int bTrace = 0;            /* Show query results */
+  int bShowValid = 0;        /* Just list inputs that are valid SQL */
   int nRow, nStmt;           /* Number of rows and statements */
   int i, rc;
 
@@ -218,10 +219,14 @@ int main(int argc, char **argv){
       printf("Options:\n");
       printf("  --help               Show his message\n");
       printf("  --output-trace       Show each line of SQL output\n");
+      printf("  --valid-sql          List FILEs that are valid SQL\n");
       return 0;
     }
     else if( strcmp(z,"-output-trace")==0 ){
       bTrace = 1;
+    }
+    else if( strcmp(z,"-valid-sql")==0 ){
+      bShowValid = 1;
     }
     else if( z[0]=='-' ){
       printf("unknown option \"%s\".  Use --help for details\n", argv[i]);
@@ -245,6 +250,13 @@ int main(int argc, char **argv){
   for(i=0; i<nIn; i++){
     char *zSql = readFile(azIn[i], 0);
     sqlite3_stmt *pCk;
+    sqlite3_exec(dbRun, "ROLLBACK", 0, 0, 0);
+    if( bShowValid ){
+      rc = sqlite3_exec(dbRun, zSql, 0, 0, 0);
+      if( rc==SQLITE_OK ) printf("%s\n", azIn[i]);
+      sqlite3_free(zSql);
+      continue;
+    }
     sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, dbRun, 0);
     if( bTrace ) printf("%s: Optimized\n", azIn[i]);
     rc = optfuzz_exec(dbRun, zSql, dbOut, "opt", &nStmt, &nRow, bTrace);

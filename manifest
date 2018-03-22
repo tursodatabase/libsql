@@ -1,5 +1,5 @@
-C Get\sthe\soptfuzz\sprogram\sworking.
-D 2018-03-21T20:21:29.680
+C Add\sthe\s--valid-sql\soption\sto\sthe\soptfuzz\stest\sprogram.
+D 2018-03-22T11:28:31.684
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1112,7 +1112,7 @@ F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/optfuzz-db01.c a0c256905c8ac79f9a5de2f374a3d9f757bef0dca2a238dc7c10cc8a38031834
 F test/optfuzz-db01.txt 21f6bdeadc701cf11528276e2a55c70bfcb846ba42df327f979bd9e7b6ce7041
-F test/optfuzz.c dc11a3cc93afe00d1db2c9de01dbe362d58e21e8c3567b6df2e075de8f956bbd
+F test/optfuzz.c 50e330304eb1992e15ddd11f3daaad9bcc0d9aaad09cb2bcc77f9515df2e88b1
 F test/orderby1.test 4d22a7c75f6a83fc1f188cc7bb5192285fdf2552
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
@@ -1715,7 +1715,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3fb21251b0c9c731513e8fb137867c2710a77d99411c99348d3ac45d3babffd7
-R 5d431b6a6c3a3244c6c0494b0f1ea1d5
+P 21346bbce9fd161e8a2037834a6e8eb443a901109ddb3a52c1b7a29000ffeac8
+R 338666e76c5adcc84ca67c4306a8f3fb
 U drh
-Z 646af13398a9d2c2d0f4f3bb80ed216e
+Z 865cfc6e4e0c84a2365c19e9bd9ce995
