@@ -385,5 +385,60 @@ foreach {tn p} {
   } [list REPLACE $p]
 }
 
+#-------------------------------------------------------------------------
+# Check that apply_v2() does not create a rebase buffer for a patchset.
+# And that it is not possible to rebase a patchset.
+#
+do_execsql_test 4.0 {
+  CREATE TABLE t5(o PRIMARY KEY, p, q);
+  INSERT INTO t5 VALUES(1, 2, 3);
+  INSERT INTO t5 VALUES(4, 5, 6);
+}
+foreach {tn cmd rebasable} {
+  1 patchset 0
+  2 changeset 1
+} {
+  proc xConflict {args} { return "OMIT" }
+  do_test 4.1.$tn {
+    execsql {
+      BEGIN;
+      DELETE FROM t5 WHERE o=4;
+    }
+
+    sqlite3session S db main
+    S attach *
+    execsql {
+      INSERT INTO t5 VALUES(4, 'five', 'six');
+    }
+    set P [S $cmd]
+    S delete
+
+    execsql ROLLBACK;
+
+    set ::rebase [sqlite3changeset_apply_v2 db $P xConflict]
+    expr [llength $::rebase]>0
+  } $rebasable
+}
+
+foreach {tn cmd rebasable} {
+  1 patchset 0
+  2 changeset 1
+} {
+  do_test 4.2.$tn {
+    sqlite3session S db main
+    S attach *
+    execsql {
+      INSERT INTO t5 VALUES(5+$tn, 'five', 'six');
+    }
+    set P [S $cmd]
+    S delete
+
+    sqlite3rebaser_create R
+    R configure $::rebase
+    expr [catch {R rebase $P}]==0
+  } $rebasable
+
+  catch { R delete }
+}
 finish_test
 

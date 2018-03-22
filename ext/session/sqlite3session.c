@@ -5024,6 +5024,9 @@ int sqlite3changeset_concat_strm(
   return rc;
 }
 
+/*
+** Changeset rebaser handle.
+*/
 struct sqlite3_rebaser {
   sqlite3_changegroup grp;        /* Hash table */
 };
@@ -5064,6 +5067,25 @@ static void sessionAppendRecordMerge(
   }
 }
 
+/*
+** This function is called when rebasing a local UPDATE change against one 
+** or more remote UPDATE changes. The aRec/nRec buffer contains the current
+** old.* and new.* records for the change. The rebase buffer (a single
+** record) is in aChange/nChange. The rebased change is appended to buffer
+** pBuf.
+**
+** Rebasing the UPDATE involves: 
+**
+**   * Removing any changes to fields for which the corresponding field
+**     in the rebase buffer is set to "replaced" (type 0xFF). If this
+**     means the UPDATE change updates no fields, nothing is appended
+**     to the output buffer.
+**
+**   * For each field modified by the local change for which the 
+**     corresponding field in the rebase buffer is not "undefined" (0x00)
+**     or "replaced" (0xFF), the old.* value is replaced by the value
+**     in the rebase buffer.
+*/
 static void sessionAppendPartialUpdate(
   SessionBuffer *pBuf,            /* Append record here */
   sqlite3_changeset_iter *pIter,  /* Iterator pointed at local change */
@@ -5117,6 +5139,21 @@ static void sessionAppendPartialUpdate(
   }
 }
 
+/*
+** pIter is configured to iterate through a changeset. This function rebases 
+** that changeset according to the current configuration of the rebaser 
+** object passed as the first argument. If no error occurs and argument xOutput
+** is not NULL, then the changeset is returned to the caller by invoking
+** xOutput zero or more times and SQLITE_OK returned. Or, if xOutput is NULL,
+** then (*ppOut) is set to point to a buffer containing the rebased changeset
+** before this function returns. In this case (*pnOut) is set to the size of
+** the buffer in bytes.  It is the responsibility of the caller to eventually
+** free the (*ppOut) buffer using sqlite3_free(). 
+**
+** If an error occurs, an SQLite error code is returned. If ppOut and
+** pnOut are not NULL, then the two output parameters are set to 0 before
+** returning.
+*/
 static int sessionRebase(
   sqlite3_rebaser *p,             /* Rebaser hash table */
   sqlite3_changeset_iter *pIter,  /* Input data */
@@ -5132,7 +5169,7 @@ static int sessionRebase(
   SessionTable *pTab = 0;
   SessionBuffer sOut = {0,0,0};
 
-  while( SQLITE_ROW==sessionChangesetNext(pIter, &aRec, &nRec, &bNew) ){
+    while( SQLITE_ROW==sessionChangesetNext(pIter, &aRec, &nRec, &bNew) ){
     SessionChange *pChange = 0;
     int bDone = 0;
 
