@@ -6621,8 +6621,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( zName!=0 ){
-      int isMaster = sqlite3_strlike(zName, "sqlite\\_master", '\\')==0;
-      if( isMaster || sqlite3_strlike(zName,"sqlite\\_temp\\_master",'\\')==0 ){
+      int isMaster = sqlite3_strlike(zName, "sqlite_master", 0)==0;
+      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master",0)==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = sqlite3_mprintf(
                       "CREATE TABLE %s (\n"
