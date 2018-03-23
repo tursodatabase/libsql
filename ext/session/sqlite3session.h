@@ -1226,6 +1226,7 @@ int sqlite3changeset_apply_v2(
 
 /* 
 ** CAPI3REF: Rebasing changesets
+** EXPERIMENTAL
 **
 ** Suppose there is a site hosting a database in state S0. And that
 ** modifications are made that move that database to state S1 and a
@@ -1324,7 +1325,8 @@ int sqlite3changeset_apply_v2(
 typedef struct sqlite3_rebaser sqlite3_rebaser;
 
 /*
-** CAPIREF: Create a changeset rebaser object.
+** CAPI3REF: Create a changeset rebaser object.
+** EXPERIMENTAL
 **
 ** Allocate a new changeset rebaser object. If successful, set (*ppNew) to
 ** point to the new object and return SQLITE_OK. Otherwise, if an error
@@ -1334,7 +1336,8 @@ typedef struct sqlite3_rebaser sqlite3_rebaser;
 int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
 
 /*
-** CAPIREF: Configure a changeset rebaser object.
+** CAPI3REF: Configure a changeset rebaser object.
+** EXPERIMENTAL
 **
 ** Configure the changeset rebaser object to rebase changesets according
 ** to the conflict resolutions described by buffer pRebase (size nRebase
@@ -1347,7 +1350,8 @@ int sqlite3rebaser_configure(
 ); 
 
 /*
-** CAPIREF: Rebase a changeset
+** CAPI3REF: Rebase a changeset
+** EXPERIMENTAL
 **
 ** Argument pIn must point to a buffer containing a changeset nIn bytes
 ** in size. This function allocates and populates a buffer with a copy
@@ -1366,7 +1370,8 @@ int sqlite3rebaser_rebase(
 );
 
 /*
-** CAPIREF: Delete a changeset rebaser object.
+** CAPI3REF: Delete a changeset rebaser object.
+** EXPERIMENTAL
 **
 ** Delete the changeset rebaser object and all associated resources. There
 ** should be one call to this function for each successful invocation
