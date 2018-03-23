@@ -1015,7 +1015,7 @@ static void analyzeOneTable(
     /* Do not gather statistics on views or virtual tables */
     return;
   }
-  if( sqlite3_strlike("sqlite_%", pTab->zName, 0)==0 ){
+  if( sqlite3_strlike("sqlite\\_%", pTab->zName, '\\')==0 ){
     /* Do not gather statistics on system tables */
     return;
   }

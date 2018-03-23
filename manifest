@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2018-03-23T00:31:53.096
+C Fix\sthe\sANALYZE\scommand\sso\sthat\sit\swill\sprocess\stables\swhose\snames\sbegin\nwith\s"sqlite"\sas\slong\sas\sthey\sdo\snot\sbeing\swith\s"sqlite_".
+D 2018-03-23T12:59:10.538
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -426,7 +426,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
-F src/analyze.c 6b42e36a5dcc2703a771f2411bd5e99524bd62c7ecde209bb88dfb04c72f046e
+F src/analyze.c 71fbbeb7b25417592f54d869fe90c28b48e4cecb9926ef9b06d90fb0aec48941
 F src/attach.c f6f212c43dddba79dfcb723fb9470785f3ff55bde8953cd9d2546f3022070a41
 F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
@@ -492,7 +492,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2c408ab9b4bfc807e6a9d3d45337d20ebe72a8b7ac793854710bf9d572e7ab6d
-F src/shell.c.in 211a99f5a5feb97ef0a689f4c9607320712487a60f43d14a54c658bb745a5c8f
+F src/shell.c.in f56873521e7332cca3540d282b8611eb8a962efdfa12631e02bdd5bfd1ffcac9
 F src/sqlite.h.in 19762b57baa1ade67531f254de94374428fb9c82452ef305017847945f9c2911
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -591,7 +591,7 @@ F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
-F test/analyze.test 3eb35a4af972f98422e5dc0586501b17d103d321
+F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
 F test/analyze3.test 8b3ef8ba6d1096b76c40e0925c0fe51e700d2b779cdda40914580de3f9b9d80f
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 509506c76b7c104961826721013889d6c6b2ed9b563dcd029e0cb5cb5c34693a
-R 9884042b83d3753d91bf11ac0d587c76
-U mistachkin
-Z 8db234a6a3cd7acffac41b5e4d6d0ba6
+P 2f2be1b1811e6b83fc8945da06e57b8b54233ff8a6ebd9d71b22c6bab2e74afb
+R 45a4363f6f35eb7cc0f860e55cf67317
+U drh
+Z 36a568676f869d90f030488be1c88c22
