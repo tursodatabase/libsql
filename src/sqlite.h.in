@@ -8811,7 +8811,7 @@ unsigned char *sqlite3_serialize(
 ** CAPI3REF: Deserialize a database
 **
 ** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the 
-** [database connection] D to disconnection from database S and then
+** [database connection] D to disconnect from database S and then
 ** reopen S as an in-memory database based on the serialization contained
 ** in P.  The serialized database P is N bytes in size.  M is the size of
 ** the buffer P, which might be larger than N.  If M is larger than N, and
