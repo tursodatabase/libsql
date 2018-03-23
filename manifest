@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sa\scomment\sused\sfor\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2018-03-23T14:50:51.574
+C Add\ssome\smore\stests\sfor\sthe\sIS\sTRUE\s/\sIS\sFALSE\soperators.
+D 2018-03-23T14:56:05.693
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1004,7 +1004,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/istrue.test 2d89873d72248b7a0ef7b5457120100cce75a19181bcf4b30e90a3f96a5c5558
+F test/istrue.test d6e659764da5ccc03adcdba18fe77d7917ba5e4abd04ef14bd4e4cf43e024b5b
 F test/join.test 442c462eea85cf065d70a663c626b780a95af6e11585d909bb63b87598afe678
 F test/join2.test 2339e3a8089178607a718c7fa1f6c3826579132396f5304a0f8e9dbefa60c84f
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 98e3f5247a6012f58642a2fcdc9be062f7afe8f2e154d06007f4935a0fd87aac
-R d44e1ba83fa682c88deaed0a49575bfd
-U drh
-Z ea91ae1b449668d5f42e41d5126127d7
+P 49974d3b30faaad0891a43d5e840f5dd2dc50ad6c4e6c408292de04e9e8a8868
+R c0fc1058414b2a4acf5ee26fb9f31098
+U mistachkin
+Z 3cdf7139693840a5fa55cb1e5d001d6e
