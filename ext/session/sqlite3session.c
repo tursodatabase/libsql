@@ -839,7 +839,7 @@ static int sessionPreupdateEqual(
         }else{
           z = sqlite3_value_blob(pVal);
         }
-        if( memcmp(a, z, n) ) return 0;
+        if( n>0 && memcmp(a, z, n) ) return 0;
         a += n;
       }
     }

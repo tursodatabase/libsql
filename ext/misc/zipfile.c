@@ -2061,9 +2061,11 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   p->body.n += zipfileSerializeLFH(&e, &p->body.a[p->body.n]);
 
   /* Append the data to the body of the new archive */
-  if( (rc = zipfileBufferGrow(&p->body, nData)) ) goto zipfile_step_out;
-  memcpy(&p->body.a[p->body.n], aData, nData);
-  p->body.n += nData;
+  if( nData>0 ){
+    if( (rc = zipfileBufferGrow(&p->body, nData)) ) goto zipfile_step_out;
+    memcpy(&p->body.a[p->body.n], aData, nData);
+    p->body.n += nData;
+  }
 
   /* Append the CDS record to the directory of the new archive */
   nByte = ZIPFILE_CDS_FIXED_SZ + e.cds.nFile + 9;
