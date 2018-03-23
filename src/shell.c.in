@@ -6621,8 +6621,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( zName!=0 ){
-      int isMaster = sqlite3_strlike(zName, "sqlite_master", 0)==0;
-      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master",0)==0 ){
+      int isMaster = sqlite3_strlike(zName, "sqlite_master", '\\')==0;
+      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = sqlite3_mprintf(
                       "CREATE TABLE %s (\n"
@@ -6682,13 +6682,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       appendText(&sSelect, ") WHERE ", 0);
       if( zName ){
         char *zQarg = sqlite3_mprintf("%Q", zName);
+        int bGlob = strchr(zName, '*') != 0 || strchr(zName, '?') != 0 ||
+                    strchr(zName, '[') != 0;
         if( strchr(zName, '.') ){
           appendText(&sSelect, "lower(printf('%s.%s',sname,tbl_name))", 0);
         }else{
           appendText(&sSelect, "lower(tbl_name)", 0);
         }
-        appendText(&sSelect, strchr(zName, '*') ? " GLOB " : " LIKE ", 0);
+        appendText(&sSelect, bGlob ? " GLOB " : " LIKE ", 0);
         appendText(&sSelect, zQarg, 0);
+        if( !bGlob ){
+          appendText(&sSelect, " ESCAPE '\\' ", 0);
+        }
         appendText(&sSelect, " AND ", 0);
         sqlite3_free(zQarg);
       }
