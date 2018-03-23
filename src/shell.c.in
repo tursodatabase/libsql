@@ -132,6 +132,9 @@ typedef unsigned char u8;
 # ifndef access
 #  define access(f,m) _access((f),(m))
 # endif
+# ifndef unlink
+#  define unlink _unlink
+# endif
 # undef popen
 # define popen _popen
 # undef pclose
@@ -5336,11 +5339,11 @@ static int arCreateOrUpdateCommand(
     rc = arExecSql(pAr, zCreate);
   }
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
-    char *zSql = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
+    char *zSql2 = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
         pAr->bVerbose ? "shell_putsnl(name)" : "name",
         pAr->azArg[i], pAr->zDir);
-    rc = arExecSql(pAr, zSql);
-    sqlite3_free(zSql);
+    rc = arExecSql(pAr, zSql2);
+    sqlite3_free(zSql2);
   }
 end_ar_transaction:
   if( rc!=SQLITE_OK ){

@@ -93,6 +93,9 @@ SQLITE_EXTENSION_INIT1
 #  include <direct.h>
 #  include "test_windirent.h"
 #  define dirent DIRENT
+#  ifndef chmod
+#    define chmod _chmod
+#  endif
 #  ifndef stat
 #    define stat _stat
 #  endif
