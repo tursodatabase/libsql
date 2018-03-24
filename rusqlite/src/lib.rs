@@ -875,7 +875,7 @@ impl InnerConnection {
                         &mut c_stmt,
                         ptr::null_mut(),
                     );
-                    if rc != ffi::SQLITE_LOCKED {
+                    if (rc & 0xFF) != ffi::SQLITE_LOCKED {
                         break;
                     }
                     rc = unlock_notify::wait_for_unlock_notify(self.db);

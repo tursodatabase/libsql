@@ -38,6 +38,7 @@ script:
   - cargo test --features serde_json
   - cargo test --features bundled
   - cargo test --features sqlcipher
+  - cargo test --features "unlock_notify bundled"
   - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace"
   - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace buildtime_bindgen"
   - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace bundled"

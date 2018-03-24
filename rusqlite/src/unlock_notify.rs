@@ -71,7 +71,9 @@ pub fn wait_for_unlock_notify(db: *mut ffi::sqlite3) -> c_int {
             &mut un as *mut UnlockNotification as *mut c_void,
         )
     };
-    debug_assert!(rc == ffi::SQLITE_LOCKED || rc == ffi::SQLITE_OK);
+    debug_assert!(rc == ffi::SQLITE_LOCKED ||
+                  rc == ffi::SQLITE_LOCKED_SHAREDCACHE ||
+                  rc == ffi::SQLITE_OK);
     if rc == ffi::SQLITE_OK {
         un.wait();
     }
@@ -89,27 +91,25 @@ mod test {
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time;
-    use {Connection, Result, Transaction, TransactionBehavior, SQLITE_OPEN_READ_WRITE,
-         SQLITE_OPEN_URI};
+    use {Connection, OpenFlags, Result, Transaction, TransactionBehavior};
 
     #[test]
     fn test_unlock_notify() {
         let url = "file::memory:?cache=shared";
-        let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_URI;
+        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_URI;
         let db1 = Connection::open_with_flags(url, flags).unwrap();
         db1.execute_batch("CREATE TABLE foo (x)").unwrap();
-        let (sender, receiver) = sync_channel(0);
-        let sender2 = sender.clone();
+        let (rx, tx) = sync_channel(0);
         let child = thread::spawn(move || {
             let mut db2 = Connection::open_with_flags(url, flags).unwrap();
             let tx2 = Transaction::new(&mut db2, TransactionBehavior::Immediate).unwrap();
             tx2.execute_batch("INSERT INTO foo VALUES (42)").unwrap();
-            sender2.send(1).unwrap();
+            rx.send(1).unwrap();
             let ten_millis = time::Duration::from_millis(10);
             thread::sleep(ten_millis);
             tx2.commit().unwrap();
         });
-        assert_eq!(receiver.recv().unwrap(), 1);
+        assert_eq!(tx.recv().unwrap(), 1);
         let the_answer: Result<i64> = db1.query_row("SELECT x FROM foo", &[], |r| r.get(0));
         assert_eq!(42i64, the_answer.unwrap());
         child.join().unwrap();
