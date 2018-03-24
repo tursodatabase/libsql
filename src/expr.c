@@ -5007,6 +5007,15 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
 ** have a non-NULL column, then set pWalker->eCode to 1 and abort.
 */
 static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
+  /* This routine is only called for WHERE clause expressions and so it
+  ** cannot have any TK_AGG_COLUMN entries because those are only found
+  ** in HAVING clauses.  We can get a TK_AGG_FUNCTION in a WHERE clause,
+  ** but that is an illegal construct and the query will be rejected at
+  ** a later stage of processing, so the TK_AGG_FUNCTION case does not
+  ** need to be considered here. */
+  assert( pExpr->op!=TK_AGG_COLUMN );
+  testcase( pExpr->op==TK_AGG_FUNCTION );
+
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
   switch( pExpr->op ){
     case TK_ISNULL:
@@ -5015,10 +5024,14 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_CASE:
     case TK_IN:
     case TK_FUNCTION:
-    case TK_AGG_FUNCTION:
+      testcase( pExpr->op==TK_ISNULL );
+      testcase( pExpr->op==TK_IS );
+      testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_CASE );
+      testcase( pExpr->op==TK_IN );
+      testcase( pExpr->op==TK_FUNCTION );
       return WRC_Prune;
     case TK_COLUMN:
-    case TK_AGG_COLUMN:
       if( pWalker->u.iCur==pExpr->iTable ){
         pWalker->eCode = 1;
         return WRC_Abort;
@@ -5034,6 +5047,13 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 ** one column of table iTab is non-null.  In other words, return true
 ** if expression p will always be NULL or false if every column of iTab
 ** is NULL.
+**
+** False negatives are acceptable.  In other words, it is ok to return
+** zero even if expression p will never be true of every column of iTab
+** is NULL.  A false negative is merely a missed optimization opportunity.
+**
+** False positives are not allowed, however.  A false positive may result
+** in an incorrect answer.
 **
 ** Terms of p that are marked with EP_FromJoin (and hence that come from
 ** the ON or USING clauses of LEFT JOINS) are excluded from the analysis.
