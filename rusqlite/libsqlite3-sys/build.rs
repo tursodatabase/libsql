@@ -215,6 +215,7 @@ mod build {
             bindgen::builder()
                 .header(header.clone())
                 .parse_callbacks(Box::new(SqliteTypeChooser))
+                .rustfmt_bindings(true)
                 .generate()
                 .expect(&format!("could not run bindgen on header {}", header))
                 .write(Box::new(&mut output))
