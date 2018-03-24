@@ -32,3 +32,4 @@ rusqlite contributors
 * [twistedfall](https://github.com/twistedfall)
 * [Nick Fitzgerald](https://github.com/fitzgen)
 * [Lorenzo Villani](https://github.com/lvillani)
+* [traviscross](https://github.com/traviscross)
