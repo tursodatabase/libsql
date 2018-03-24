@@ -1101,6 +1101,10 @@ db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
 
+# The shell tool ".schema" command uses virtual table "pragma_database_list"
+#
+ifcapable vtab {
+
 do_test shell1-7.1.1 {
   db eval {
     CREATE TABLE Z (x TEXT PRIMARY KEY);
@@ -1132,5 +1136,7 @@ CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.7 {
   catchcmd "test.db" ".schema \\\\_\\\\_\\\\_"
 } {0 {CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
+
+}
 
 finish_test

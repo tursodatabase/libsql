@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\sLEFT\sJOIN\sstrength\sreduction\soptimization\sof\ncheck-in\s[dd568c27b1d76563].\s\sThe\ssqlite3ExprImpliesNotNull()\sroutine\swas\nmistakenly\sassuming\sthat\sa\sCASE\sexpression\smust\salways\sbe\sNULL\sif\scontained\nany\sreference\sto\sa\svariable\sthat\swas\sNULL.
-D 2018-03-24T13:24:02.696
+C Fix\sa\stest\sscript\sproblem\scausing\sshell1.test\sto\sfail\swith\n-DSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.
+D 2018-03-24T15:08:48.677
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1234,7 +1234,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 7c55993f26e45bf4b06b81c15250544b8b73f506ad90f60658c01524f09a7fce
+F test/shell1.test e2f7d375ae80eb16590af23d6c40cd0140b6d1f92642c1b71eb94630a144ee08
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c64e8f377fe4fa321ebd04806cc27b19287e6fc3523b9988c0a70cad9fce1c18
-R ee78cea46d41e1faef615dfed55546a7
-U drh
-Z 1b638429618a7e928141a9385c5b609e
+P cf171abe954a5f25262161dd69f2e8cecdbf9446c3f6b298201507dbc743567e
+R 461dece6f48dae565c1f3eeac9cdfdca
+U dan
+Z ac26a7372d2fbc702dbe91b2ace955c2
