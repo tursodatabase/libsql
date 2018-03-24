@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2018-03-24T20:06:52.581
+C Fix\sa\scouple\sissues\sin\sthe\s'session'\smodule\stests.
+D 2018-03-24T23:16:05.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -382,7 +382,7 @@ F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 736d7ff178662f0b717c37f46531b84a5ce0210ccb0c4edf629c55dbcbbc3ea1
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test ce9ce3dfa489473987f899e9f6a0f2db9bde3479
-F ext/session/session4.test 3eea8058643e5adbd3293a5c553255c35e774ed90e7cbec09c9b010d176ad396
+F ext/session/session4.test 6778997065b44d99c51ff9cece047ff9244a32856b328735ae27ddef68979c40
 F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
@@ -400,7 +400,7 @@ F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28f0c1cc142c3ec
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
-F ext/session/sessionfault2.test c76c76fe3c47737cb55cad7a254c0f05d0e3122f13e16de94d3dd3a4c6653913
+F ext/session/sessionfault2.test 555a8504de03d59b369ef20209585da5aeb2671dedabc4584e9ffe6269689185
 F ext/session/sessionrebase.test 4e1bcfd26fd8ed8ac571746f56cceeb45184f4d65490ea0d405227cfc8a9cba8
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5613457714dd74d6da8e387132a0d8e64980ba4a921a9f53773540b02c0ccec6
-R 0aa3bacda11fd108425b06610baed102
+P e9508ab1f86ac70a3ca5622ce44141bc05186b199bf32fb8739aef36b95aa05c
+R de9420725ca99af792cd3c9ae4ce3441
 U mistachkin
-Z ed8e715d512fa64d4d25caa48e36df87
+Z a9de85b0f2a0fdbb101a3351b879b919

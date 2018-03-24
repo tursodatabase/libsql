@@ -160,6 +160,7 @@ do_execsql_test 2.0 {
   INSERT INTO t4 VALUES('g', 'h', 'i');
 }
 faultsim_save_and_close
+db2 close
 
 proc xConflict {ret args} { return $ret }
 
