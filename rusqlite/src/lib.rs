@@ -121,6 +121,10 @@ pub mod functions;
 pub mod blob;
 #[cfg(feature = "limits")]
 pub mod limits;
+#[cfg(feature = "hooks")]
+mod hooks;
+#[cfg(feature = "hooks")]
+pub use hooks::*;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
@@ -792,6 +796,10 @@ impl InnerConnection {
     }
 
     fn close(&mut self) -> Result<()> {
+        if self.db.is_null() {
+            return Ok(());
+        }
+        self.remove_hooks();
         unsafe {
             let r = ffi::sqlite3_close(self.db());
             let r = self.decode_result(r);
@@ -868,6 +876,10 @@ impl InnerConnection {
 
     fn changes(&mut self) -> c_int {
         unsafe { ffi::sqlite3_changes(self.db()) }
+    }
+
+    #[cfg(not(feature = "hooks"))]
+    fn remove_hooks(&mut self) {
     }
 }
 
