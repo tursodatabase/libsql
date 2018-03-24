@@ -5012,6 +5012,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_ISNULL:
     case TK_IS:
     case TK_OR:
+    case TK_CASE:
     case TK_FUNCTION:
     case TK_AGG_FUNCTION:
       return WRC_Prune;
