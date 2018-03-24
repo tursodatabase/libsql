@@ -1,7 +1,8 @@
 # Version 0.14.0 (TODO)
 
-* Update to latest version of SQLite3 3.22.0 (#326).
-* Implementation of `sqlite3_update_hook` (#260) and `sqlite3_commit_hook`, `sqlite3_rollback_hook`.
+* Update the bundled SQLite version to 3.22.0 (#326).
+* Add DropBehavior::Panic to enforce intentional commit or rollback.
+* Implement `sqlite3_update_hook` (#260), `sqlite3_commit_hook` and `sqlite3_rollback_hook`.
 * Add comment to justify `&mut Connection` in `Transaction`.
 * Fix `tyvar_behind_raw_pointer` warnings.
 * Fix handful of clippy warnings.

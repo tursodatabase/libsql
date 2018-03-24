@@ -33,3 +33,4 @@ rusqlite contributors
 * [Nick Fitzgerald](https://github.com/fitzgen)
 * [Lorenzo Villani](https://github.com/lvillani)
 * [traviscross](https://github.com/traviscross)
+* [Richard Newman](https://github.com/rnewman)
