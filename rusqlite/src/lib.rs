@@ -199,7 +199,7 @@ impl Connection {
     /// Open a new connection to a SQLite database.
     ///
     /// `Connection::open(path)` is equivalent to `Connection::open_with_flags(path,
-    /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
+    /// OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE)`.
     ///
     /// # Failure
     ///
