@@ -1,5 +1,5 @@
-C Avoid\sa\srace\scondition\sthat\smight\scause\sa\sbusy_timeout\sto\slast\slonger\sthan\nit\sshould.
-D 2018-03-26T20:43:05.286
+C Do\snot\sinject\sOOM\serrors\son\sSQLITE_FCNTL_LOCK_TIMEOUT\scalls\sas\san\sOOM\sis\nnot\spossible\sin\sthat\scontext.
+D 2018-03-26T21:05:47.026
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -471,7 +471,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c aaf9ebc3f89df28483c52208497a99a02cc3650011422fc9d4c57e4392f7fe58
 F src/mutex_w32.c 7670d770c94bbfe8289bec9d7f1394c5a00a57c37f892aab6b6612d085255235
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
-F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
+F src/os.c 750d7dca7eff3d76566fc71057e6960316914e3557776e8f50d4314f01090317
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2e54a7433ece4eb27e71bda6f2d121d5aa46ddd5a481357d8543d1432aaad689
-R 9a06c4f711bb138e77b576e4f0584ff2
+P b81960561b47a1b49646f2f8870dd0684dc4ca7c0b9e11076fd713de66b75972
+R 0d3c70b064d7081aae7c053c9180f1ca
 U drh
-Z cae5f0752336b48b9e35b37383c91a64
+Z 20d1835935e71c19ea4ee96db7282960
