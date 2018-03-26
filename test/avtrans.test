@@ -22,7 +22,7 @@ source $testdir/tester.tcl
 # Create several tables to work with.
 #
 do_test avtrans-1.0 {
-  execsql { PRAGMA auto_vacuum=ON }
+  execsql { PRAGMA auto_vacuum=full }
   wal_set_journal_mode
   execsql { 
     CREATE TABLE one(a int PRIMARY KEY, b text);
@@ -32,6 +32,7 @@ do_test avtrans-1.0 {
     SELECT b FROM one ORDER BY a;
   }
 } {one two three}
+do_test avtrans-1.0.1 { execsql { PRAGMA auto_vacuum } } 1
 do_test avtrans-1.1 {
   execsql {
     CREATE TABLE two(a int PRIMARY KEY, b text);

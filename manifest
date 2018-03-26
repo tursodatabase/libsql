@@ -1,5 +1,5 @@
-C Refactor\ssome\sinternal\sobject\selement\snames\sused\sby\sthe\sbusy\shandler,\sto\nsimplify\sanalysis.
-D 2018-03-26T16:37:53.692
+C Fix\sa\stypo\spreventing\stest\sscript\savtrans.test\sfrom\srunning\sin\sauto-vacuum\nmode.
+D 2018-03-26T17:56:39.447
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -630,7 +630,7 @@ F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
-F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
+F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
 F test/backup2.test 1fd1ad8c5b3d2d5b9c0cce4143a4fc610d51ddc6ae16a7a122973d43e6b50bbd
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ccf734f7d2bf8f99f3c55124b05c1835e4371bc269f27700f40afc26e7c1bc55
-R 42faacca8d8dbebe884c9c4e27968819
-U drh
-Z 75261b9def207f89f5a0f0c85f301bfc
+P 6c40c5574f4ae9795a142d01a8f84afd1b72678ea5f6bfca14a8646c4e862605
+R c81abc7e56dd78df80782822f6e039e7
+U dan
+Z 393c2c2ceb87c77ccf0677a60f409dee
