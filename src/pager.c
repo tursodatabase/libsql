@@ -5693,6 +5693,7 @@ void sqlite3PagerUnrefPageOne(DbPage *pPg){
   assert( pPg->pgno==1 );
   assert( (pPg->flags & PGHDR_MMAP)==0 ); /* Page1 is never memory mapped */
   pPager = pPg->pPager;
+  sqlite3PagerResetLockTimeout(pPager);
   sqlite3PcacheRelease(pPg);
   pagerUnlockIfUnused(pPager);
 }
@@ -6970,6 +6971,18 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
 }
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+/*
+** Reset the lock timeout for pager.
+*/
+void sqlite3PagerResetLockTimeout(Pager *pPager){
+  if( isOpen(pPager->fd) ){
+    int x = 0;
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCK_TIMEOUT, &x);
+  }
+}
+#endif
+
 /*
 ** Return the file handle for the journal file (if it exists).
 ** This will be either the rollback journal or the WAL file.
@@ -7430,6 +7443,7 @@ int sqlite3PagerCheckpoint(
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt
     );
+    sqlite3PagerResetLockTimeout(pPager);
   }
   return rc;
 }

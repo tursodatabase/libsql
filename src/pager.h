@@ -212,6 +212,11 @@ int sqlite3PagerIsMemdb(Pager*);
 void sqlite3PagerCacheStat(Pager *, int, int, int *);
 void sqlite3PagerClearCache(Pager*);
 int sqlite3SectorSize(sqlite3_file *);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+void sqlite3PagerResetLockTimeout(Pager *pPager);
+#else
+# define sqlite3PagerResetLockTimeout(X)
+#endif
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);

@@ -1490,18 +1490,15 @@ static int osSetPosixAdvisoryLock(
   unixFile *pFile       /* Structure holding timeout value */
 ){
   int rc = osFcntl(h,F_SETLK,pLock);
-  if( rc<0 && pFile->iBusyTimeout>0 ){
+  while( rc<0 && pFile->iBusyTimeout>0 ){
     /* On systems that support some kind of blocking file lock with a timeout,
     ** make appropriate changes here to invoke that blocking file lock.  On
     ** generic posix, however, there is no such API.  So we simply try the
     ** lock once every millisecond until either the timeout expires, or until
     ** the lock is obtained. */
-    do{
-      usleep(1000);
-      rc = osFcntl(h,F_SETLK,pLock);
-      pFile->iBusyTimeout--;
-    }while( rc<0 && pFile->iBusyTimeout>0 );
-    pFile->iBusyTimeout = 0;
+    usleep(1000);
+    rc = osFcntl(h,F_SETLK,pLock);
+    pFile->iBusyTimeout--;
   }
   return rc;
 }

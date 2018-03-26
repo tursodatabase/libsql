@@ -1,5 +1,5 @@
-C Add\sinfrastructure\sto\ssupport\sfor\susing\sF_SETLKW\swith\sa\stimeout\son\ssystem\nthat\ssupport\sthat\sfunctionality.\s\sRequires\sSQLITE_ENABLE_SETLK_TIMEOUT.
-D 2018-03-26T17:40:53.817
+C Avoid\sa\srace\scondition\sthat\smight\scause\sa\sbusy_timeout\sto\slast\slonger\sthan\nit\sshould.
+D 2018-03-26T20:43:05.286
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -432,7 +432,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 4c30691becf0524c2f490291c93a9bdaf5cfb15cc42cf96737982c5ae14b773f
+F src/btree.c 9eb9531c65346bbfccf5325384b7db1849daf4db6601dcfe21ba5c5b20623b64
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 8b53aacc26944bb7fd9ab5ddeedecb4cc7c4b84df3a420cf6d2b8f772ad421df
@@ -475,11 +475,11 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 8aaa2ee9c87f7323d741454dc62d70f93990031d0d937f86b0d4f40d45a9b8d4
+F src/os_unix.c 2b53b0b8ddc580db096252c721729e5f5f2f355b4fc056f8f3fb328aeb3c9e8a
 F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 941cba7d6acaf43598c4c33f655d2a2910c3c6c5fd92169269cff964bb8eadda
-F src/pager.h 868d177d847238d9c282275465d256a2c2ddccc4ae08a1eb097d8a953d7e4acb
+F src/pager.c 8f2611ef1eb92a18e1605cb4ff37dfcc05acc6000eb6c6c263105ef5aba54661
+F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
 F src/parse.y 140bbc53b5f67f731239f7fc8704a4f1e60cbbc10fb84bf9577322f974725f19
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
@@ -1717,10 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c40c5574f4ae9795a142d01a8f84afd1b72678ea5f6bfca14a8646c4e862605
-R b2318b0232c803ad8fe7d3fa9a19c19e
-T *branch * lowlevel-lock-timeout
-T *sym-lowlevel-lock-timeout *
-T -sym-trunk *
+P 2e54a7433ece4eb27e71bda6f2d121d5aa46ddd5a481357d8543d1432aaad689
+R 9a06c4f711bb138e77b576e4f0584ff2
 U drh
-Z a47300717ce425457190ed008e7aa2a5
+Z cae5f0752336b48b9e35b37383c91a64
