@@ -1,5 +1,5 @@
-C Refactor\ssome\sinternal\sobject\selement\snames\sused\sby\sthe\sbusy\shandler,\sto\nsimplify\sanalysis.
-D 2018-03-26T16:37:53.692
+C Add\sinfrastructure\sto\ssupport\sfor\susing\sF_SETLKW\swith\sa\stimeout\son\ssystem\nthat\ssupport\sthat\sfunctionality.\s\sRequires\sSQLITE_ENABLE_SETLK_TIMEOUT.
+D 2018-03-26T17:40:53.817
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -432,7 +432,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c dc9fda9c841c0bb937d4e778e6c4932b5f876d8a09e11a6b290f0b1fa3c44a55
+F src/btree.c 4c30691becf0524c2f490291c93a9bdaf5cfb15cc42cf96737982c5ae14b773f
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 8b53aacc26944bb7fd9ab5ddeedecb4cc7c4b84df3a420cf6d2b8f772ad421df
@@ -455,7 +455,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c b9ff71cc2913d1d57698a1e22bf853261a9a642baf62bdf40ddeb3809adb85b5
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
-F src/main.c 83fb2d0f9c70140f121839fe0f9ccffacf4ba8ac14c5e84ab4106e1b57298c9d
+F src/main.c ffe71c007fc943adfdc638796a80581fb8e2f035bcfa2312b579a2e852d836ec
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -475,7 +475,7 @@ F src/os.c 22d31db3ca5a96a408fbf1ceeaaebcaf64c87024d2ff9fe1cf2ddbec3e75c104
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 928586cbde31890538854f1657463392d63b2d7794f577774573ae53ec283d7b
+F src/os_unix.c 8aaa2ee9c87f7323d741454dc62d70f93990031d0d937f86b0d4f40d45a9b8d4
 F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 941cba7d6acaf43598c4c33f655d2a2910c3c6c5fd92169269cff964bb8eadda
@@ -493,10 +493,10 @@ F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2c408ab9b4bfc807e6a9d3d45337d20ebe72a8b7ac793854710bf9d572e7ab6d
 F src/shell.c.in d6a07811aa9f3b10200c15ab8dd4b6b998849a3b0c8b125bfa980329a33c26a6
-F src/sqlite.h.in a80cde49e73fcad462798d9ac74cd2c476e0ad96a49ef9966780e474a1829f40
+F src/sqlite.h.in 56e6c8fb785b09dac31331d19680f7133d84cb96fc073a47847f1066e03fc2ff
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h bf922890d3f5673675302dd8aeb0a8aa30fa9afd43fa81cfc1a16b4b4f58664c
+F src/sqliteInt.h a4837c57f9a3e2af100bc59f4be60d16b823f18131f8cef6a6685440f775eebd
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1717,7 +1717,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ccf734f7d2bf8f99f3c55124b05c1835e4371bc269f27700f40afc26e7c1bc55
-R 42faacca8d8dbebe884c9c4e27968819
+P 6c40c5574f4ae9795a142d01a8f84afd1b72678ea5f6bfca14a8646c4e862605
+R b2318b0232c803ad8fe7d3fa9a19c19e
+T *branch * lowlevel-lock-timeout
+T *sym-lowlevel-lock-timeout *
+T -sym-trunk *
 U drh
-Z 75261b9def207f89f5a0f0c85f301bfc
+Z a47300717ce425457190ed008e7aa2a5

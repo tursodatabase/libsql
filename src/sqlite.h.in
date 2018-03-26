@@ -1064,6 +1064,12 @@ struct sqlite3_io_methods {
 ** so that all subsequent write operations are independent.
 ** ^SQLite will never invoke SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE without
 ** a prior successful call to [SQLITE_FCNTL_BEGIN_ATOMIC_WRITE].
+**
+** <li>[[SQLITE_FCNTL_LOCK_TIMEOUT]]
+** The [SQLITE_FCNTL_LOCK_TIMEOUT] opcode causes attempts to obtain
+** a file lock using the xLock or xShmLock methods of the VFS to wait
+** for up to M milliseconds before failing, where M is the single 
+** unsigned integer parameter.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1098,6 +1104,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_BEGIN_ATOMIC_WRITE     31
 #define SQLITE_FCNTL_COMMIT_ATOMIC_WRITE    32
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
+#define SQLITE_FCNTL_LOCK_TIMEOUT           34
+#define SQLITE_FCNTL_LAST                   34 /* Last value */
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE

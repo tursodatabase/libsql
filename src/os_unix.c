@@ -229,6 +229,9 @@ struct unixFile {
 #if SQLITE_ENABLE_LOCKING_STYLE || defined(__APPLE__)
   unsigned fsFlags;                   /* cached details from statfs() */
 #endif
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  unsigned iBusyTimeout;              /* Wait this many millisec on locks */
+#endif
 #if OS_VXWORKS
   struct vxworksFileId *pId;          /* Unique file ID */
 #endif
@@ -1466,6 +1469,46 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 }
 
 /*
+** Set a posix-advisory-lock.
+**
+** There are two versions of this routine.  If compiled with
+** SQLITE_ENABLE_SETLK_TIMEOUT then the routine has an extra parameter
+** which is a pointer to a unixFile.  If the unixFile->iBusyTimeout
+** value is set, then it is the number of milliseconds to wait before
+** failing the lock.  The iBusyTimeout value is always reset back to
+** zero on each call.
+**
+** If SQLITE_ENABLE_SETLK_TIMEOUT is not defined, then do a non-blocking
+** attempt to set the lock.
+*/
+#ifndef SQLITE_ENABLE_SETLK_TIMEOUT
+# define osSetPosixAdvisoryLock(h,x,t) osFcntl(h,F_SETLK,x)
+#else
+static int osSetPosixAdvisoryLock(
+  int h,                /* The file descriptor on which to take the lock */
+  struct flock *pLock,  /* The description of the lock */
+  unixFile *pFile       /* Structure holding timeout value */
+){
+  int rc = osFcntl(h,F_SETLK,pLock);
+  if( rc<0 && pFile->iBusyTimeout>0 ){
+    /* On systems that support some kind of blocking file lock with a timeout,
+    ** make appropriate changes here to invoke that blocking file lock.  On
+    ** generic posix, however, there is no such API.  So we simply try the
+    ** lock once every millisecond until either the timeout expires, or until
+    ** the lock is obtained. */
+    do{
+      usleep(1000);
+      rc = osFcntl(h,F_SETLK,pLock);
+      pFile->iBusyTimeout--;
+    }while( rc<0 && pFile->iBusyTimeout>0 );
+    pFile->iBusyTimeout = 0;
+  }
+  return rc;
+}
+#endif /* SQLITE_ENABLE_SETLK_TIMEOUT */
+
+
+/*
 ** Attempt to set a system-lock on the file pFile.  The lock is 
 ** described by pLock.
 **
@@ -1497,7 +1540,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
       lock.l_start = SHARED_FIRST;
       lock.l_len = SHARED_SIZE;
       lock.l_type = F_WRLCK;
-      rc = osFcntl(pFile->h, F_SETLK, &lock);
+      rc = osSetPosixAdvisoryLock(pFile->h, &lock, pFile);
       if( rc<0 ) return rc;
       pInode->bProcessLock = 1;
       pInode->nLock++;
@@ -1505,7 +1548,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
       rc = 0;
     }
   }else{
-    rc = osFcntl(pFile->h, F_SETLK, pLock);
+    rc = osSetPosixAdvisoryLock(pFile->h, pLock, pFile);
   }
   return rc;
 }
@@ -3865,6 +3908,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = fileHasMoved(pFile);
       return SQLITE_OK;
     }
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    case SQLITE_FCNTL_LOCK_TIMEOUT: {
+      pFile->iBusyTimeout = *(int*)pArg;
+      return SQLITE_OK;
+    }
+#endif
 #if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
@@ -4184,7 +4233,7 @@ static int unixShmSystemLock(
     f.l_whence = SEEK_SET;
     f.l_start = ofst;
     f.l_len = n;
-    rc = osFcntl(pShmNode->h, F_SETLK, &f);
+    rc = osSetPosixAdvisoryLock(pShmNode->h, &f, pFile);
     rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
   }
 
