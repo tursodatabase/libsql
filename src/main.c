@@ -1525,8 +1525,8 @@ static int sqliteDefaultBusyCallback(
 */
 int sqlite3InvokeBusyHandler(BusyHandler *p){
   int rc;
-  if( NEVER(p==0) || p->xFunc==0 || p->nBusy<0 ) return 0;
-  rc = p->xFunc(p->pArg, p->nBusy);
+  if( p->xBusyHandler==0 || p->nBusy<0 ) return 0;
+  rc = p->xBusyHandler(p->pBusyArg, p->nBusy);
   if( rc==0 ){
     p->nBusy = -1;
   }else{
@@ -1548,8 +1548,8 @@ int sqlite3_busy_handler(
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   sqlite3_mutex_enter(db->mutex);
-  db->busyHandler.xFunc = xBusy;
-  db->busyHandler.pArg = pArg;
+  db->busyHandler.xBusyHandler = xBusy;
+  db->busyHandler.pBusyArg = pArg;
   db->busyHandler.nBusy = 0;
   db->busyTimeout = 0;
   sqlite3_mutex_leave(db->mutex);

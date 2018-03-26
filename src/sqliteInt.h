@@ -961,9 +961,9 @@ typedef INT16_TYPE LogEst;
 */
 typedef struct BusyHandler BusyHandler;
 struct BusyHandler {
-  int (*xFunc)(void *,int);  /* The busy callback */
-  void *pArg;                /* First arg to busy callback */
-  int nBusy;                 /* Incremented with each busy call */
+  int (*xBusyHandler)(void *,int);  /* The busy callback */
+  void *pBusyArg;                   /* First arg to busy callback */
+  int nBusy;                        /* Incremented with each busy call */
 };
 
 /*

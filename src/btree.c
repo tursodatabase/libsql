@@ -2409,7 +2409,7 @@ int sqlite3BtreeOpen(
     }
     pBt->openFlags = (u8)flags;
     pBt->db = db;
-    sqlite3PagerSetBusyhandler(pBt->pPager, btreeInvokeBusyHandler, pBt);
+    sqlite3PagerSetBusyHandler(pBt->pPager, btreeInvokeBusyHandler, pBt);
     p->pBt = pBt;
   
     pBt->pCursor = 0;

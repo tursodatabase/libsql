@@ -3704,7 +3704,7 @@ static int pagerOpentemp(
 ** retried. If it returns zero, then the SQLITE_BUSY error is
 ** returned to the caller of the pager API function.
 */
-void sqlite3PagerSetBusyhandler(
+void sqlite3PagerSetBusyHandler(
   Pager *pPager,                       /* Pager object */
   int (*xBusyHandler)(void *),         /* Pointer to busy-handler function */
   void *pBusyHandlerArg                /* Argument to pass to xBusyHandler */
