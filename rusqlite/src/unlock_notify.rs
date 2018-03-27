@@ -61,7 +61,14 @@ unsafe extern "C" fn unlock_notify_cb(ap_arg: *mut *mut c_void, n_arg: c_int) {
 /// this case the caller should not retry the operation and should roll
 /// back the current transaction (if any).
 #[cfg(feature = "unlock_notify")]
-pub fn wait_for_unlock_notify(db: *mut ffi::sqlite3) -> c_int {
+pub fn wait_for_unlock_notify(db: *mut ffi::sqlite3, rc: c_int) -> c_int {
+    if rc == ffi::SQLITE_LOCKED {
+        if unsafe { ffi::sqlite3_extended_errcode(self.1) } != ffi::SQLITE_LOCKED_SHAREDCACHE {
+            return rc;
+        }
+    } else if rc != ffi::SQLITE_LOCKED_SHAREDCACHE {
+        return rc;
+    }
     let mut un = UnlockNotification::new();
     /* Register for an unlock-notify callback. */
     let rc = unsafe {
@@ -71,9 +78,9 @@ pub fn wait_for_unlock_notify(db: *mut ffi::sqlite3) -> c_int {
             &mut un as *mut UnlockNotification as *mut c_void,
         )
     };
-    debug_assert!(rc == ffi::SQLITE_LOCKED ||
-                  rc == ffi::SQLITE_LOCKED_SHAREDCACHE ||
-                  rc == ffi::SQLITE_OK);
+    debug_assert!(
+        rc == ffi::SQLITE_LOCKED || rc == ffi::SQLITE_LOCKED_SHAREDCACHE || rc == ffi::SQLITE_OK
+    );
     if rc == ffi::SQLITE_OK {
         un.wait();
     }
@@ -81,7 +88,7 @@ pub fn wait_for_unlock_notify(db: *mut ffi::sqlite3) -> c_int {
 }
 
 #[cfg(not(feature = "unlock_notify"))]
-pub fn wait_for_unlock_notify(_db: *mut ffi::sqlite3) -> c_int {
+pub fn wait_for_unlock_notify(_db: *mut ffi::sqlite3, _code: c_int) -> c_int {
     unreachable!()
 }
 

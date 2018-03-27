@@ -34,16 +34,7 @@ impl RawStatement {
             let mut rc;
             loop {
                 rc = unsafe { ffi::sqlite3_step(self.0) };
-                if rc == ffi::SQLITE_LOCKED {
-                    if unsafe { ffi::sqlite3_extended_errcode(self.1) }
-                        != ffi::SQLITE_LOCKED_SHAREDCACHE
-                    {
-                        break;
-                    }
-                } else if rc != ffi::SQLITE_LOCKED_SHAREDCACHE {
-                    break;
-                }
-                rc = unlock_notify::wait_for_unlock_notify(self.1);
+                rc = unlock_notify::wait_for_unlock_notify(self.1, rc);
                 if rc != ffi::SQLITE_OK {
                     break;
                 }
