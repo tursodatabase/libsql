@@ -964,6 +964,7 @@ struct BusyHandler {
   int (*xBusyHandler)(void *,int);  /* The busy callback */
   void *pBusyArg;                   /* First arg to busy callback */
   int nBusy;                        /* Incremented with each busy call */
+  u8 bExtraFileArg;                 /* Include sqlite3_file as callback arg */
 };
 
 /*
@@ -4103,7 +4104,7 @@ void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
 char sqlite3AffinityType(const char*, u8*);
 void sqlite3Analyze(Parse*, Token*, Token*);
-int sqlite3InvokeBusyHandler(BusyHandler*);
+int sqlite3InvokeBusyHandler(BusyHandler*, sqlite3_file*);
 int sqlite3FindDb(sqlite3*, Token*);
 int sqlite3FindDbName(sqlite3 *, const char *);
 int sqlite3AnalysisLoad(sqlite3*,int iDB);
