@@ -46,6 +46,7 @@ impl Connection {
         self.cache.set_capacity(capacity)
     }
 
+    /// Remove/finalize all prepared statements currently in the cache.
     pub fn flush_prepared_statement_cache(&self) {
         self.cache.flush()
     }
@@ -124,7 +125,7 @@ impl StatementCache {
                   sql: &str)
                   -> Result<CachedStatement<'conn>> {
         let mut cache = self.0.borrow_mut();
-        let stmt = match cache.remove(sql) {
+        let stmt = match cache.remove(sql.trim()) {
             Some(raw_stmt) => Ok(Statement::new(conn, raw_stmt)),
             None => conn.prepare(sql),
         };
@@ -135,7 +136,7 @@ impl StatementCache {
     fn cache_stmt(&self, stmt: RawStatement) {
         let mut cache = self.0.borrow_mut();
         stmt.clear_bindings();
-        let sql = String::from_utf8_lossy(stmt.sql().to_bytes()).to_string();
+        let sql = String::from_utf8_lossy(stmt.sql().to_bytes()).trim().to_string();
         cache.insert(sql, stmt);
     }
 
@@ -284,5 +285,28 @@ mod test {
             .unwrap();
 
         conn.close().expect("connection not closed");
+    }
+
+    #[test]
+    fn test_cache_key() {
+        let db = Connection::open_in_memory().unwrap();
+        let cache = &db.cache;
+        assert_eq!(0, cache.len());
+
+        //let sql = " PRAGMA schema_version; -- comment";
+        let sql = "PRAGMA schema_version; ";
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!(0, cache.len());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+        }
+        assert_eq!(1, cache.len());
+
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!(0, cache.len());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+        }
+        assert_eq!(1, cache.len());
     }
 }
