@@ -1,5 +1,5 @@
-C The\spush-down\soptimization\swas\sbeing\stoo\saggressive\ssuch\sthat\sit\ssometimes\ngenerated\sincorrect\sresults.\s\sReinstate\sthe\srestriction\s(4)\s(with\nqualifications)\sthat\swas\sremoved\sby\scheck-ins\n[b5d3dd8cb0b1e4]\sand\s[dd568c27b1d765].
-D 2018-03-27T15:13:43.312
+C Fix\sa\stypo\sin\sthe\sREADME\sfile\sfor\sICU.\s\sNo\scode\schanges.
+D 2018-03-27T22:58:45.583
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -217,7 +217,7 @@ F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
-F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
+F ext/icu/README.txt a295e91db742b153e8dce8f7efd31d28ad1eea4df31ef4daa3eedc85be2f5138
 F ext/icu/icu.c c2c7592574c08cd1270d909b8fb8797f6ea1f49e931e71dbcc25506b9b224580
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile 98b0a24b45e248283d6bea4b6cb3e58d7b394edd8e96a0ac28c5fa5104813bad
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7dff982be753bc93123db6a0e8fefd56f2a14fd1c9a8699af0b6b75bc88fc15
-R 8a3586de3bb11cc1f485806813b62194
+P f08c1731b0b1dddcba190b094a35306a159713d3db939330f73075ff1d72c81e
+R ba88e0a1711d3943f6f329daa241a952
 U drh
-Z b155dbaac537f3a53a88186e0aba231b
+Z 19bd536bc6eae8d3a551b7ba8c933fa5
