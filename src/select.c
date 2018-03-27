@@ -3857,8 +3857,9 @@ static int flattenSubquery(
 **   (3) The inner query has a LIMIT clause (since the changes to the WHERE
 **       close would change the meaning of the LIMIT).
 **
-**   (4) (** This restriction was removed on 2018-03-21.  It used to read:
-**       The inner query is the right operand of a LEFT JOIN. **)
+**   (4) The inner query is the right operand of a LEFT JOIN and the
+**       expression to be pushed down does not come from the ON clause
+**       on that LEFT JOIN.
 **
 **   (5) The WHERE clause expression originates in the ON or USING clause
 **       of a LEFT JOIN where iCursor is not the right-hand table of that
@@ -3880,7 +3881,8 @@ static int pushDownWhereTerms(
   Parse *pParse,        /* Parse context (for malloc() and error reporting) */
   Select *pSubq,        /* The subquery whose WHERE clause is to be augmented */
   Expr *pWhere,         /* The WHERE clause of the outer query */
-  int iCursor           /* Cursor number of the subquery */
+  int iCursor,          /* Cursor number of the subquery */
+  int isLeftJoin        /* True if pSubq is the right term of a LEFT JOIN */
 ){
   Expr *pNew;
   int nChng = 0;
@@ -3904,8 +3906,15 @@ static int pushDownWhereTerms(
     return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
-    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, iCursor);
+    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight,
+                                iCursor, isLeftJoin);
     pWhere = pWhere->pLeft;
+  }
+  if( isLeftJoin
+   && (ExprHasProperty(pWhere,EP_FromJoin)==0
+         || pWhere->iRightJoinTable!=iCursor)
+  ){
+    return 0; /* restriction (4) */
   }
   if( ExprHasProperty(pWhere,EP_FromJoin) && pWhere->iRightJoinTable!=iCursor ){
     return 0; /* restriction (5) */
@@ -5374,7 +5383,8 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( OptimizationEnabled(db, SQLITE_PushDown)
-     && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor)
+     && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
+                           (pItem->fg.jointype & JT_OUTER)!=0)
     ){
 #if SELECTTRACE_ENABLED
       if( sqlite3SelectTrace & 0x100 ){

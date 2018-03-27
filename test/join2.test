@@ -265,4 +265,18 @@ do_eqp_test 6.1 {
   0 0 0 {SCAN TABLE u2}
 }
 
+db close
+sqlite3 db :memory:
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a,b);  INSERT INTO t1 VALUES(1,2),(3,4),(5,6);
+  CREATE TABLE t2(c,d);  INSERT INTO t2 VALUES(2,4),(3,6);
+  CREATE TABLE t3(x);    INSERT INTO t3 VALUES(9);
+  CREATE VIEW test AS
+    SELECT *, 'x'
+      FROM t1 LEFT JOIN (SELECT * FROM t2, t3) ON (c=b AND x=9)
+      WHERE c IS NULL;
+  SELECT * FROM test;
+} {3 4 {} {} {} x 5 6 {} {} {} x}
+
+
 finish_test
