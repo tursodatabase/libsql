@@ -3,9 +3,11 @@
 * Update the bundled SQLite version to 3.22.0 (#326).
 * Add DropBehavior::Panic to enforce intentional commit or rollback.
 * Implement `sqlite3_update_hook` (#260), `sqlite3_commit_hook` and `sqlite3_rollback_hook`.
+* Make `Statement::column_index` case insensitive (#330).
 * Add comment to justify `&mut Connection` in `Transaction`.
 * Fix `tyvar_behind_raw_pointer` warnings.
 * Fix handful of clippy warnings.
+* Fix `Connection::open` documentation (#332)
 
 # Version 0.13.0 (2017-11-13)
 
