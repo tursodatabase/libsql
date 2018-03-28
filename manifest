@@ -1,5 +1,5 @@
-C Remove\stab\scharacters.\s\sNo\slogical\schanges\sto\scode.
-D 2018-03-28T15:56:55.038
+C Add\s-DSQLITE_ENABLE_DESERIALIZE\sto\sthe\s"Device-Two"\sconfiguration\sin\nreleasetest.tcl.
+D 2018-03-28T20:29:04.465
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1166,7 +1166,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 6aaa853f7a7bbdc458d4cb42c0425228729b0f3e5769e9b41088c08eee999a49 x
+F test/releasetest.tcl 5f15ab8056799e9a6e26a310d49236d2e774d6a30d0ec74601e18d4ce146b79c x
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d282f064698782cf7b584138549a6b27befa0b945ae96b52a3ef6f8a13448077
-R 9b811086214abffbba5fc08fb3e365c3
-U drh
-Z 4a768cdb66258692ad20965d4325892a
+P eb29b3369e76ec1df25a5484d8ec5fb924e23d5c70aaa4d794b2b17ee18784c8
+R 71a05562272c73dbed64b449e261b473
+U dan
+Z eeaba887c09de1fa4d00dda8e30f28e3
