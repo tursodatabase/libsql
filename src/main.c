@@ -1507,6 +1507,8 @@ static int sqliteDefaultBusyCallback(
       return 1;
     }
   }
+#else
+  UNUSED_PARAMETER(pFile);
 #endif
   assert( count>=0 );
   if( count < NDELAY ){
@@ -1527,6 +1529,7 @@ static int sqliteDefaultBusyCallback(
   ** must be done in increments of whole seconds */
   sqlite3 *db = (sqlite3 *)ptr;
   int tmout = ((sqlite3 *)ptr)->busyTimeout;
+  UNUSED_PARAMETER(pFile);
   if( (count+1)*1000 > tmout ){
     return 0;
   }

@@ -1,5 +1,5 @@
-C Add\s-DSQLITE_ENABLE_DESERIALIZE\sto\sthe\s"Device-Two"\sconfiguration\sin\nreleasetest.tcl.
-D 2018-03-28T20:29:04.465
+C Fix\sa\sharmless\scompiler\swarning.
+D 2018-03-28T21:45:03.716
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -455,7 +455,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c b9ff71cc2913d1d57698a1e22bf853261a9a642baf62bdf40ddeb3809adb85b5
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
-F src/main.c ffe71c007fc943adfdc638796a80581fb8e2f035bcfa2312b579a2e852d836ec
+F src/main.c 224f7faaf60426d77b6ef7552e98734e1d884840116fa21e24a2ed3f503f5a6b
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb29b3369e76ec1df25a5484d8ec5fb924e23d5c70aaa4d794b2b17ee18784c8
-R 71a05562272c73dbed64b449e261b473
-U dan
-Z eeaba887c09de1fa4d00dda8e30f28e3
+P 765a014d8e91be18ac0f12f0fe94f4126bf8ce101f5c9d7f234376e2368f6db3
+R 225d96e3cb7f56a60322a7fe8d01c40f
+U drh
+Z 4980d1090eb7625ce65fe2257aa0df43
