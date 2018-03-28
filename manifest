@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2018-03-28T21:45:03.716
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\skvtest.exe\sprogram.
+D 2018-03-28T22:08:44.216
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1022,7 +1022,7 @@ F test/json102.test eeb54efa221e50b74a2d6fb9259963b48d7414dca3ce2fdfdeed45cb2848
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/json104.test 877d5845f6303899b7889ea5dd1bea99076e3100574d5c536082245c5805dcaa
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
-F test/kvtest.c 23452e653e6b0254dc2fd1d242d4c7c65644504de8951d7d60f7e4291c52c231
+F test/kvtest.c 94da54bb66aae7a54e47cf7e4ea4acecc0f217560f79ad3abfcc0361d6d557ba
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 11cfd7d4ef8625389df9efc46735ff0b0b41d5e62047ef0f3bc24c380d28a7a6
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 765a014d8e91be18ac0f12f0fe94f4126bf8ce101f5c9d7f234376e2368f6db3
-R 225d96e3cb7f56a60322a7fe8d01c40f
+P f0d12354bba96056f930e5ed3e88c37ec139211be09e6cd6eb7310e979de56c8
+R 004b9437e05feb65d78e62ec6aeba171
 U drh
-Z 4980d1090eb7625ce65fe2257aa0df43
+Z dea8768ba4562e65093102bd376c96e4
