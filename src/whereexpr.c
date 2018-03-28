@@ -312,48 +312,84 @@ static int isLikeOrGlob(
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
-** Check to see if the given expression is of the form
+** Check to see if the pExpr expression is a form that needs to be passed
+** to the xBestIndex method of virtual tables.  Forms of interest include:
 **
-**         column OP expr
+**          Expression                   Virtual Table Operator
+**          -----------------------      ---------------------------------
+**      1.  column MATCH expr            SQLITE_INDEX_CONSTRAINT_MATCH
+**      2.  column GLOB expr             SQLITE_INDEX_CONSTRAINT_GLOB
+**      3.  column LIKE expr             SQLITE_INDEX_CONSTRAINT_LIKE
+**      4.  column REGEXP expr           SQLITE_INDEX_CONSTRAINT_REGEXP
+**      5.  column != expr               SQLITE_INDEX_CONSTRAINT_NE
+**      6.  expr != column               SQLITE_INDEX_CONSTRAINT_NE
+**      7.  column IS NOT expr           SQLITE_INDEX_CONSTRAINT_ISNOT
+**      8.  expr IS NOT column           SQLITE_INDEX_CONSTRAINT_ISNOT
+**      9.  column IS NOT NULL           SQLITE_INDEX_CONSTRAINT_ISNOTNULL
 **
-** where OP is one of MATCH, GLOB, LIKE or REGEXP and "column" is a 
-** column of a virtual table.
+** In every case, "column" must be a column of a virtual table.  If there
+** is a match, set *ppLeft to the "column" expression, set *ppRight to the 
+** "expr" expression (even though in forms (6) and (8) the column is on the
+** right and the expression is on the left).  Also set *peOp2 to the
+** appropriate virtual table operator.  The return value is 1 or 2 if there
+** is a match.  The usual return is 1, but if the RHS is also a column
+** of virtual table in forms (5) or (7) then return 2.
 **
-** If it is then return TRUE.  If not, return FALSE.
+** If the expression matches none of the patterns above, return 0.
 */
-static int isMatchOfColumn(
+static int isAuxiliaryVtabOperator(
   Expr *pExpr,                    /* Test this expression */
-  unsigned char *peOp2            /* OUT: 0 for MATCH, or else an op2 value */
+  unsigned char *peOp2,           /* OUT: 0 for MATCH, or else an op2 value */
+  Expr **ppLeft,                  /* Column expression to left of MATCH/op2 */
+  Expr **ppRight                  /* Expression to left of MATCH/op2 */
 ){
-  static const struct Op2 {
-    const char *zOp;
-    unsigned char eOp2;
-  } aOp[] = {
-    { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
-    { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
-    { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
-    { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
-  };
-  ExprList *pList;
-  Expr *pCol;                     /* Column reference */
-  int i;
+  if( pExpr->op==TK_FUNCTION ){
+    static const struct Op2 {
+      const char *zOp;
+      unsigned char eOp2;
+    } aOp[] = {
+      { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
+      { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
+      { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
+      { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
+    };
+    ExprList *pList;
+    Expr *pCol;                     /* Column reference */
+    int i;
 
-  if( pExpr->op!=TK_FUNCTION ){
-    return 0;
-  }
-  pList = pExpr->x.pList;
-  if( pList==0 || pList->nExpr!=2 ){
-    return 0;
-  }
-  pCol = pList->a[1].pExpr;
-  if( pCol->op!=TK_COLUMN || !IsVirtual(pCol->pTab) ){
-    return 0;
-  }
-  for(i=0; i<ArraySize(aOp); i++){
-    if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
-      *peOp2 = aOp[i].eOp2;
-      return 1;
+    pList = pExpr->x.pList;
+    if( pList==0 || pList->nExpr!=2 ){
+      return 0;
     }
+    pCol = pList->a[1].pExpr;
+    if( pCol->op!=TK_COLUMN || !IsVirtual(pCol->pTab) ){
+      return 0;
+    }
+    for(i=0; i<ArraySize(aOp); i++){
+      if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+        *peOp2 = aOp[i].eOp2;
+        *ppRight = pList->a[0].pExpr;
+        *ppLeft = pCol;
+        return 1;
+      }
+    }
+  }else if( pExpr->op==TK_NE || pExpr->op==TK_ISNOT || pExpr->op==TK_NOTNULL ){
+    int res = 0;
+    Expr *pLeft = pExpr->pLeft;
+    Expr *pRight = pExpr->pRight;
+    if( pLeft->op==TK_COLUMN && IsVirtual(pLeft->pTab) ){
+      res++;
+    }
+    if( pRight && pRight->op==TK_COLUMN && IsVirtual(pRight->pTab) ){
+      res++;
+      SWAP(Expr*, pLeft, pRight);
+    }
+    *ppLeft = pLeft;
+    *ppRight = pRight;
+    if( pExpr->op==TK_NE ) *peOp2 = SQLITE_INDEX_CONSTRAINT_NE;
+    if( pExpr->op==TK_ISNOT ) *peOp2 = SQLITE_INDEX_CONSTRAINT_ISNOT;
+    if( pExpr->op==TK_NOTNULL ) *peOp2 = SQLITE_INDEX_CONSTRAINT_ISNOTNULL;
+    return res;
   }
   return 0;
 }
@@ -604,7 +640,7 @@ static void exprAnalyzeOrTerm(
           for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
             assert( pAndTerm->pExpr );
             if( allowedOp(pAndTerm->pExpr->op) 
-             || pAndTerm->eOperator==WO_MATCH 
+             || pAndTerm->eOperator==WO_AUX
             ){
               b |= sqlite3WhereGetMask(&pWInfo->sMaskSet, pAndTerm->leftCursor);
             }
@@ -806,7 +842,6 @@ static void exprAnalyzeOrTerm(
 static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   char aff1, aff2;
   CollSeq *pColl;
-  const char *zColl1, *zColl2;
   if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
@@ -819,11 +854,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   }
   pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
   if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
-  pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  zColl1 = pColl ? pColl->zName : 0;
-  pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-  zColl2 = pColl ? pColl->zName : 0;
-  return sqlite3_stricmp(zColl1, zColl2)==0;
+  return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
 }
 
 /*
@@ -845,6 +876,9 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
       for(i=0; i<pSrc->nSrc; i++){
         mask |= exprSelectUsage(pMaskSet, pSrc->a[i].pSelect);
         mask |= sqlite3WhereExprUsage(pMaskSet, pSrc->a[i].pOn);
+        if( pSrc->a[i].fg.isTabFunc ){
+          mask |= sqlite3WhereExprListUsage(pMaskSet, pSrc->a[i].u1.pFuncArg);
+        }
       }
     }
     pS = pS->pPrior;
@@ -952,7 +986,7 @@ static void exprAnalyze(
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
-  unsigned char eOp2;              /* op2 value for LIKE/REGEXP/GLOB */
+  unsigned char eOp2 = 0;          /* op2 value for LIKE/REGEXP/GLOB */
   int nLeft;                       /* Number of elements on left side vector */
 
   if( db->mallocFailed ){
@@ -1186,41 +1220,46 @@ static void exprAnalyze(
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  /* Add a WO_MATCH auxiliary term to the constraint set if the
-  ** current expression is of the form:  column MATCH expr.
+  /* Add a WO_AUX auxiliary term to the constraint set if the
+  ** current expression is of the form "column OP expr" where OP
+  ** is an operator that gets passed into virtual tables but which is
+  ** not normally optimized for ordinary tables.  In other words, OP
+  ** is one of MATCH, LIKE, GLOB, REGEXP, !=, IS, IS NOT, or NOT NULL.
   ** This information is used by the xBestIndex methods of
   ** virtual tables.  The native query optimizer does not attempt
   ** to do anything with MATCH functions.
   */
-  if( pWC->op==TK_AND && isMatchOfColumn(pExpr, &eOp2) ){
-    int idxNew;
-    Expr *pRight, *pLeft;
-    WhereTerm *pNewTerm;
-    Bitmask prereqColumn, prereqExpr;
+  if( pWC->op==TK_AND ){
+    Expr *pRight = 0, *pLeft = 0;
+    int res = isAuxiliaryVtabOperator(pExpr, &eOp2, &pLeft, &pRight);
+    while( res-- > 0 ){
+      int idxNew;
+      WhereTerm *pNewTerm;
+      Bitmask prereqColumn, prereqExpr;
 
-    pRight = pExpr->x.pList->a[0].pExpr;
-    pLeft = pExpr->x.pList->a[1].pExpr;
-    prereqExpr = sqlite3WhereExprUsage(pMaskSet, pRight);
-    prereqColumn = sqlite3WhereExprUsage(pMaskSet, pLeft);
-    if( (prereqExpr & prereqColumn)==0 ){
-      Expr *pNewExpr;
-      pNewExpr = sqlite3PExpr(pParse, TK_MATCH, 
-                              0, sqlite3ExprDup(db, pRight, 0));
-      if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
-        ExprSetProperty(pNewExpr, EP_FromJoin);
+      prereqExpr = sqlite3WhereExprUsage(pMaskSet, pRight);
+      prereqColumn = sqlite3WhereExprUsage(pMaskSet, pLeft);
+      if( (prereqExpr & prereqColumn)==0 ){
+        Expr *pNewExpr;
+        pNewExpr = sqlite3PExpr(pParse, TK_MATCH, 
+            0, sqlite3ExprDup(db, pRight, 0));
+        if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
+          ExprSetProperty(pNewExpr, EP_FromJoin);
+        }
+        idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+        testcase( idxNew==0 );
+        pNewTerm = &pWC->a[idxNew];
+        pNewTerm->prereqRight = prereqExpr;
+        pNewTerm->leftCursor = pLeft->iTable;
+        pNewTerm->u.leftColumn = pLeft->iColumn;
+        pNewTerm->eOperator = WO_AUX;
+        pNewTerm->eMatchOp = eOp2;
+        markTermAsChild(pWC, idxNew, idxTerm);
+        pTerm = &pWC->a[idxTerm];
+        pTerm->wtFlags |= TERM_COPIED;
+        pNewTerm->prereqAll = pTerm->prereqAll;
       }
-      idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
-      testcase( idxNew==0 );
-      pNewTerm = &pWC->a[idxNew];
-      pNewTerm->prereqRight = prereqExpr;
-      pNewTerm->leftCursor = pLeft->iTable;
-      pNewTerm->u.leftColumn = pLeft->iColumn;
-      pNewTerm->eOperator = WO_MATCH;
-      pNewTerm->eMatchOp = eOp2;
-      markTermAsChild(pWC, idxNew, idxTerm);
-      pTerm = &pWC->a[idxTerm];
-      pTerm->wtFlags |= TERM_COPIED;
-      pNewTerm->prereqAll = pTerm->prereqAll;
+      SWAP(Expr*, pLeft, pRight);
     }
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -1252,7 +1291,7 @@ static void exprAnalyze(
       exprAnalyze(pSrc, pWC, idxNew);
     }
     pTerm = &pWC->a[idxTerm];
-    pTerm->wtFlags = TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
+    pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
     pTerm->eOperator = 0;
   }
 

@@ -114,7 +114,7 @@ array set ::Configs [strip_comments {
   }
   "Debug-One" {
     --disable-shared
-    -O2
+    -O2 -funsigned-char
     -DSQLITE_DEBUG=1
     -DSQLITE_MEMDEBUG=1
     -DSQLITE_MUTEX_NOOP=1
@@ -126,6 +126,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_MUTATION_TEST
   }
   "Fast-One" {
     -O6
@@ -733,6 +734,9 @@ proc makeCommand { targets makeOpts cflags opts } {
     set nmakeDir [file nativename $::SRCDIR]
     set nmakeFile [file nativename [file join $nmakeDir Makefile.msc]]
     lappend result nmake /f $nmakeFile TOP=$nmakeDir
+    set tclDir [file nativename [file normalize \
+        [file dirname [file dirname [info nameofexecutable]]]]]
+    lappend result "TCLDIR=$tclDir"
     if {[regexp {USE_STDCALL=1} $cflags]} {
       lappend result USE_STDCALL=1
     }

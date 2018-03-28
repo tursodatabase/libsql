@@ -191,12 +191,9 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
         p->eCreate = 2;
       }
     }
-    pPage->pDirtyNext = 0;
-    pPage->pDirtyPrev = 0;
   }
   if( addRemove & PCACHE_DIRTYLIST_ADD ){
-    assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
-  
+    pPage->pDirtyPrev = 0;
     pPage->pDirtyNext = p->pDirty;
     if( pPage->pDirtyNext ){
       assert( pPage->pDirtyNext->pDirtyPrev==0 );
@@ -434,7 +431,7 @@ int sqlite3PcacheFetchStress(
       sqlite3_log(SQLITE_FULL, 
                   "spill page %d making room for %d - cache used: %d/%d",
                   pPg->pgno, pgno,
-                  sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache),
+                  sqlite3GlobalConfig.pcache2.xPagecount(pCache->pCache),
                 numberOfCachePages(pCache));
 #endif
       pcacheTrace(("%p.SPILL %d\n",pCache,pPg->pgno));
@@ -513,11 +510,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   if( (--p->nRef)==0 ){
     if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
-    }else if( p->pDirtyPrev!=0 ){ /*OPTIMIZATION-IF-FALSE*/
-      /* Move the page to the head of the dirty list. If p->pDirtyPrev==0,
-      ** then page p is already at the head of the dirty list and the
-      ** following call would be a no-op. Hence the OPTIMIZATION-IF-FALSE
-      ** tag above.  */
+    }else{
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
     }
   }
@@ -573,16 +566,15 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 */
 void sqlite3PcacheMakeClean(PgHdr *p){
   assert( sqlite3PcachePageSanity(p) );
-  if( ALWAYS((p->flags & PGHDR_DIRTY)!=0) ){
-    assert( (p->flags & PGHDR_CLEAN)==0 );
-    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
-    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
-    p->flags |= PGHDR_CLEAN;
-    pcacheTrace(("%p.CLEAN %d\n",p->pCache,p->pgno));
-    assert( sqlite3PcachePageSanity(p) );
-    if( p->nRef==0 ){
-      pcacheUnpin(p);
-    }
+  assert( (p->flags & PGHDR_DIRTY)!=0 );
+  assert( (p->flags & PGHDR_CLEAN)==0 );
+  pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
+  p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
+  p->flags |= PGHDR_CLEAN;
+  pcacheTrace(("%p.CLEAN %d\n",p->pCache,p->pgno));
+  assert( sqlite3PcachePageSanity(p) );
+  if( p->nRef==0 ){
+    pcacheUnpin(p);
   }
 }
 

@@ -33,14 +33,6 @@ int sqlite3_release_memory(int n){
 }
 
 /*
-** An instance of the following object records the location of
-** each unused scratch buffer.
-*/
-typedef struct ScratchFreeslot {
-  struct ScratchFreeslot *pNext;   /* Next unused scratch buffer */
-} ScratchFreeslot;
-
-/*
 ** State information local to the memory allocation subsystem.
 */
 static SQLITE_WSD struct Mem0Global {
@@ -48,21 +40,11 @@ static SQLITE_WSD struct Mem0Global {
   sqlite3_int64 alarmThreshold; /* The soft heap limit */
 
   /*
-  ** Pointers to the end of sqlite3GlobalConfig.pScratch memory
-  ** (so that a range test can be used to determine if an allocation
-  ** being freed came from pScratch) and a pointer to the list of
-  ** unused scratch allocations.
-  */
-  void *pScratchEnd;
-  ScratchFreeslot *pScratchFree;
-  u32 nScratchFree;
-
-  /*
   ** True if heap is nearly "full" where "full" is defined by the
   ** sqlite3_soft_heap_limit() setting.
   */
   int nearlyFull;
-} mem0 = { 0, 0, 0, 0, 0, 0 };
+} mem0 = { 0, 0, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
 
@@ -132,28 +114,6 @@ int sqlite3MallocInit(void){
   }
   memset(&mem0, 0, sizeof(mem0));
   mem0.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
-  if( sqlite3GlobalConfig.pScratch && sqlite3GlobalConfig.szScratch>=100
-      && sqlite3GlobalConfig.nScratch>0 ){
-    int i, n, sz;
-    ScratchFreeslot *pSlot;
-    sz = ROUNDDOWN8(sqlite3GlobalConfig.szScratch);
-    sqlite3GlobalConfig.szScratch = sz;
-    pSlot = (ScratchFreeslot*)sqlite3GlobalConfig.pScratch;
-    n = sqlite3GlobalConfig.nScratch;
-    mem0.pScratchFree = pSlot;
-    mem0.nScratchFree = n;
-    for(i=0; i<n-1; i++){
-      pSlot->pNext = (ScratchFreeslot*)(sz+(char*)pSlot);
-      pSlot = pSlot->pNext;
-    }
-    pSlot->pNext = 0;
-    mem0.pScratchEnd = (void*)&pSlot[1];
-  }else{
-    mem0.pScratchEnd = 0;
-    sqlite3GlobalConfig.pScratch = 0;
-    sqlite3GlobalConfig.szScratch = 0;
-    sqlite3GlobalConfig.nScratch = 0;
-  }
   if( sqlite3GlobalConfig.pPage==0 || sqlite3GlobalConfig.szPage<512
       || sqlite3GlobalConfig.nPage<=0 ){
     sqlite3GlobalConfig.pPage = 0;
@@ -305,105 +265,6 @@ void *sqlite3_malloc64(sqlite3_uint64 n){
 }
 
 /*
-** Each thread may only have a single outstanding allocation from
-** xScratchMalloc().  We verify this constraint in the single-threaded
-** case by setting scratchAllocOut to 1 when an allocation
-** is outstanding clearing it when the allocation is freed.
-*/
-#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-static int scratchAllocOut = 0;
-#endif
-
-
-/*
-** Allocate memory that is to be used and released right away.
-** This routine is similar to alloca() in that it is not intended
-** for situations where the memory might be held long-term.  This
-** routine is intended to get memory to old large transient data
-** structures that would not normally fit on the stack of an
-** embedded processor.
-*/
-void *sqlite3ScratchMalloc(int n){
-  void *p;
-  assert( n>0 );
-
-  sqlite3_mutex_enter(mem0.mutex);
-  sqlite3StatusHighwater(SQLITE_STATUS_SCRATCH_SIZE, n);
-  if( mem0.nScratchFree && sqlite3GlobalConfig.szScratch>=n ){
-    p = mem0.pScratchFree;
-    mem0.pScratchFree = mem0.pScratchFree->pNext;
-    mem0.nScratchFree--;
-    sqlite3StatusUp(SQLITE_STATUS_SCRATCH_USED, 1);
-    sqlite3_mutex_leave(mem0.mutex);
-  }else{
-    sqlite3_mutex_leave(mem0.mutex);
-    p = sqlite3Malloc(n);
-    if( sqlite3GlobalConfig.bMemstat && p ){
-      sqlite3_mutex_enter(mem0.mutex);
-      sqlite3StatusUp(SQLITE_STATUS_SCRATCH_OVERFLOW, sqlite3MallocSize(p));
-      sqlite3_mutex_leave(mem0.mutex);
-    }
-    sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
-  }
-  assert( sqlite3_mutex_notheld(mem0.mutex) );
-
-
-#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-  /* EVIDENCE-OF: R-12970-05880 SQLite will not use more than one scratch
-  ** buffers per thread.
-  **
-  ** This can only be checked in single-threaded mode.
-  */
-  assert( scratchAllocOut==0 );
-  if( p ) scratchAllocOut++;
-#endif
-
-  return p;
-}
-void sqlite3ScratchFree(void *p){
-  if( p ){
-
-#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-    /* Verify that no more than two scratch allocation per thread
-    ** is outstanding at one time.  (This is only checked in the
-    ** single-threaded case since checking in the multi-threaded case
-    ** would be much more complicated.) */
-    assert( scratchAllocOut>=1 && scratchAllocOut<=2 );
-    scratchAllocOut--;
-#endif
-
-    if( SQLITE_WITHIN(p, sqlite3GlobalConfig.pScratch, mem0.pScratchEnd) ){
-      /* Release memory from the SQLITE_CONFIG_SCRATCH allocation */
-      ScratchFreeslot *pSlot;
-      pSlot = (ScratchFreeslot*)p;
-      sqlite3_mutex_enter(mem0.mutex);
-      pSlot->pNext = mem0.pScratchFree;
-      mem0.pScratchFree = pSlot;
-      mem0.nScratchFree++;
-      assert( mem0.nScratchFree <= (u32)sqlite3GlobalConfig.nScratch );
-      sqlite3StatusDown(SQLITE_STATUS_SCRATCH_USED, 1);
-      sqlite3_mutex_leave(mem0.mutex);
-    }else{
-      /* Release memory back to the heap */
-      assert( sqlite3MemdebugHasType(p, MEMTYPE_SCRATCH) );
-      assert( sqlite3MemdebugNoType(p, (u8)~MEMTYPE_SCRATCH) );
-      sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-      if( sqlite3GlobalConfig.bMemstat ){
-        int iSize = sqlite3MallocSize(p);
-        sqlite3_mutex_enter(mem0.mutex);
-        sqlite3StatusDown(SQLITE_STATUS_SCRATCH_OVERFLOW, iSize);
-        sqlite3StatusDown(SQLITE_STATUS_MEMORY_USED, iSize);
-        sqlite3StatusDown(SQLITE_STATUS_MALLOC_COUNT, 1);
-        sqlite3GlobalConfig.m.xFree(p);
-        sqlite3_mutex_leave(mem0.mutex);
-      }else{
-        sqlite3GlobalConfig.m.xFree(p);
-      }
-    }
-  }
-}
-
-/*
 ** TRUE if p is a lookaside memory allocation from db
 */
 #ifndef SQLITE_OMIT_LOOKASIDE
@@ -493,7 +354,6 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
 #endif
       pBuf->pNext = db->lookaside.pFree;
       db->lookaside.pFree = pBuf;
-      db->lookaside.nOut--;
       return;
     }
   }
@@ -654,16 +514,16 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
     assert( db->mallocFailed==0 );
     if( n>db->lookaside.sz ){
       db->lookaside.anStat[1]++;
-    }else if( (pBuf = db->lookaside.pFree)==0 ){
-      db->lookaside.anStat[2]++;
-    }else{
+    }else if( (pBuf = db->lookaside.pFree)!=0 ){
       db->lookaside.pFree = pBuf->pNext;
-      db->lookaside.nOut++;
       db->lookaside.anStat[0]++;
-      if( db->lookaside.nOut>db->lookaside.mxOut ){
-        db->lookaside.mxOut = db->lookaside.nOut;
-      }
       return (void*)pBuf;
+    }else if( (pBuf = db->lookaside.pInit)!=0 ){
+      db->lookaside.pInit = pBuf->pNext;
+      db->lookaside.anStat[0]++;
+      return (void*)pBuf;
+    }else{
+      db->lookaside.anStat[2]++;
     }
   }else if( db->mallocFailed ){
     return 0;
@@ -765,6 +625,19 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
     zNew[n] = 0;
   }
   return zNew;
+}
+
+/*
+** The text between zStart and zEnd represents a phrase within a larger
+** SQL statement.  Make a copy of this phrase in space obtained form
+** sqlite3DbMalloc().  Omit leading and trailing whitespace.
+*/
+char *sqlite3DbSpanDup(sqlite3 *db, const char *zStart, const char *zEnd){
+  int n;
+  while( sqlite3Isspace(zStart[0]) ) zStart++;
+  n = (int)(zEnd - zStart);
+  while( ALWAYS(n>0) && sqlite3Isspace(zStart[n-1]) ) n--;
+  return sqlite3DbStrNDup(db, zStart, n);
 }
 
 /*

@@ -98,7 +98,7 @@ int sqlite3OsTruncate(sqlite3_file *id, i64 size){
 }
 int sqlite3OsSync(sqlite3_file *id, int flags){
   DO_OS_MALLOC_TEST(id);
-  return id->pMethods->xSync(id, flags);
+  return flags ? id->pMethods->xSync(id, flags) : SQLITE_OK;
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
   DO_OS_MALLOC_TEST(id);
@@ -126,7 +126,9 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
 */
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
 #ifdef SQLITE_TEST
-  if( op!=SQLITE_FCNTL_COMMIT_PHASETWO ){
+  if( op!=SQLITE_FCNTL_COMMIT_PHASETWO
+   && op!=SQLITE_FCNTL_LOCK_TIMEOUT
+  ){
     /* Faults are not injected into COMMIT_PHASETWO because, assuming SQLite
     ** is using a regular VFS, it is called after the corresponding
     ** transaction has been committed. Injecting a fault at this point
@@ -153,6 +155,7 @@ int sqlite3OsSectorSize(sqlite3_file *id){
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
 }
+#ifndef SQLITE_OMIT_WAL
 int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
   return id->pMethods->xShmLock(id, offset, n, flags);
 }
@@ -172,6 +175,7 @@ int sqlite3OsShmMap(
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
+#endif /* SQLITE_OMIT_WAL */
 
 #if SQLITE_MAX_MMAP_SIZE>0
 /* The real implementation of xFetch and xUnfetch */

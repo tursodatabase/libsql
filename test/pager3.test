@@ -16,6 +16,10 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
 
 foreach {tn sql res j} {
   1 "PRAGMA journal_mode = DELETE"  delete        0

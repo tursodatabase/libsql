@@ -105,6 +105,7 @@ CollSeq *sqlite3GetCollSeq(
   assert( !p || p->xCmp );
   if( p==0 ){
     sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
+    pParse->rc = SQLITE_ERROR_MISSING_COLLSEQ;
   }
   return p;
 }
@@ -457,8 +458,8 @@ void sqlite3SchemaClear(void *p){
   pSchema->pSeqTab = 0;
   if( pSchema->schemaFlags & DB_SchemaLoaded ){
     pSchema->iGeneration++;
-    pSchema->schemaFlags &= ~DB_SchemaLoaded;
   }
+  pSchema->schemaFlags &= ~(DB_SchemaLoaded|DB_ResetWanted);
 }
 
 /*

@@ -142,6 +142,7 @@ proc write_file {zFile zData} {
 #    b) Less than 512, or
 #    c) Greater than SQLITE_MAX_PAGE_SIZE
 #
+if {[atomic_batch_write test.db]==0} {
 do_test crash8-3.1 {
   list [file exists test.db-joural] [file exists test.db]
 } {0 1}
@@ -228,6 +229,7 @@ do_test crash8-3.11 {
     PRAGMA integrity_check
   }
 } {6 ok}
+}
 
 
 # If a connection running in persistent-journal mode is part of a 
@@ -266,8 +268,12 @@ ifcapable pragma {
       UPDATE aux.ab SET b = randstr(1000,1000) WHERE a>=1;
       UPDATE ab SET b = randstr(1000,1000) WHERE a>=1;
     }
-    list [file exists test.db-journal] [file exists test2.db-journal]
-  } {1 1}
+  } {persist persist}
+  if {[atomic_batch_write test.db]==0} {
+    do_test crash8.4.1.1 {
+      list [file exists test.db-journal] [file exists test2.db-journal]
+    } {1 1}
+  }
 
   do_test crash8-4.2 {
     execsql {
@@ -346,7 +352,11 @@ ifcapable pragma {
 # Since the following tests (crash8-5.*) rely upon being able
 # to copy a file while open, they will not work on Windows.
 #
-if {$::tcl_platform(platform)=="unix"} {
+# They also depend on being able to copy the journal file, which
+# is not created on F2FS file-systems that support atomic
+# write. So do not run these tests in that case either.
+#
+if {$::tcl_platform(platform)=="unix" && [atomic_batch_write test.db]==0 } {
   for {set i 1} {$i < 10} {incr i} {
     catch { db close }
     forcedelete test.db test.db-journal

@@ -122,8 +122,8 @@ do_test wal2-1.1 {
 } {4 10}
 
 set RECOVER [list                                      \
-  {0 1 lock exclusive}   {1 7 lock exclusive}          \
-  {1 7 unlock exclusive} {0 1 unlock exclusive}        \
+  {0 1 lock exclusive}   {1 2 lock exclusive} {4 4 lock exclusive} \
+  {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}  \
 ]
 set READ [list                                         \
   {4 1 lock shared}    {4 1 unlock shared}             \
@@ -393,8 +393,10 @@ tvfs delete
 set expected_locks [list]
 lappend expected_locks {1 1 lock exclusive}   ;# Lock checkpoint
 lappend expected_locks {0 1 lock exclusive}   ;# Lock writer
-lappend expected_locks {2 6 lock exclusive}   ;# Lock recovery & all aReadMark[]
-lappend expected_locks {2 6 unlock exclusive} ;# Unlock recovery & aReadMark[]
+lappend expected_locks {2 1 lock exclusive}   ;# Lock recovery
+lappend expected_locks {4 4 lock exclusive}   ;# Lock all aReadMark[]
+lappend expected_locks {2 1 unlock exclusive} ;# Unlock recovery 
+lappend expected_locks {4 4 unlock exclusive} ;# Unlock all aReadMark[] 
 lappend expected_locks {0 1 unlock exclusive} ;# Unlock writer
 lappend expected_locks {3 1 lock exclusive}   ;# Lock aReadMark[0]
 lappend expected_locks {3 1 unlock exclusive} ;# Unlock aReadMark[0]
@@ -582,15 +584,23 @@ do_test wal2-6.3.4 {
     BEGIN;
       INSERT INTO t1 VALUES('Groucho');
   }
-  list [file exists test.db-wal] [file exists test.db-journal]
-} {0 1}
+} {}
+if {[atomic_batch_write test.db]==0} {
+  do_test wal2-6.3.4.1 {
+    list [file exists test.db-wal] [file exists test.db-journal]
+  } {0 1}
+}
 do_test wal2-6.3.5 {
   execsql { PRAGMA lock_status }
 } {main exclusive temp closed}
 do_test wal2-6.3.6 {
   execsql { COMMIT }
-  list [file exists test.db-wal] [file exists test.db-journal]
-} {0 1}
+} {}
+if {[atomic_batch_write test.db]==0} {
+  do_test wal2-6.3.6.1 {
+    list [file exists test.db-wal] [file exists test.db-journal]
+  } {0 1}
+}
 do_test wal2-6.3.7 {
   execsql { PRAGMA lock_status }
 } {main exclusive temp closed}
@@ -615,8 +625,8 @@ do_test wal2-6.4.1 {
 } {}
 
 set RECOVERY {
-  {0 1 lock exclusive} {1 7 lock exclusive} 
-  {1 7 unlock exclusive} {0 1 unlock exclusive}
+  {0 1 lock exclusive} {1 2 lock exclusive} {4 4 lock exclusive}
+  {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}
 }
 set READMARK0_READ {
   {3 1 lock shared} {3 1 unlock shared}
@@ -1128,7 +1138,7 @@ if {$::tcl_platform(platform) == "unix"} {
   foreach {tn db_perm wal_perm shm_perm can_open can_read can_write} {
     2   00644   00644   00644   1   1   1
     3   00644   00400   00644   1   1   0
-    4   00644   00644   00400   1   0   0
+    4   00644   00644   00400   1   1   0
     5   00400   00644   00644   1   1   0
 
     7   00644   00000   00644   1   0   0
@@ -1191,7 +1201,7 @@ if {$::tcl_platform(platform) == "unix"} {
 #
 foreach {tn sql reslist} {
   1 { }                                 {10 0 4 0 6 0}
-  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {10 6 4 3 6 3}
   3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
 } {
   ifcapable default_ckptfullfsync {
@@ -1261,8 +1271,8 @@ foreach {tn settings restart_sync commit_sync ckpt_sync} {
   6  {0 1 full}    {0 2}  {0 1}  {0 2}
 
   7  {1 0 off}     {0 0}  {0 0}  {0 0}
-  8  {1 0 normal}  {1 0}  {0 0}  {0 2}
-  9  {1 0 full}    {2 0}  {1 0}  {0 2}
+  8  {1 0 normal}  {0 1}  {0 0}  {0 2}
+  9  {1 0 full}    {1 1}  {1 0}  {0 2}
 
   10 {1 1 off}     {0 0}  {0 0}  {0 0}
   11 {1 1 normal}  {0 1}  {0 0}  {0 2}

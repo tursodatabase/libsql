@@ -14,6 +14,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 
@@ -64,6 +65,7 @@ do_test rtree8-1.2.2 { nested_select 1 } {51}
 # nodes internally.
 #
 populate_t1 1500
+do_rtree_integrity_test rtree8-1.3.0 t1
 do_execsql_test rtree8-1.3.1 { SELECT max(nodeno) FROM t1_node } {164}
 do_test rtree8-1.3.2 {
   set rowids [execsql {SELECT min(rowid) FROM t1_rowid GROUP BY nodeno}]
@@ -158,13 +160,15 @@ do_test rtree8-5.2 {
   }
   execsql COMMIT
 } {}
-do_test rtree8-5.3 {
+do_rtree_integrity_test rtree8-5.3 t2
+do_test rtree8-5.4 {
   execsql BEGIN
   for {set i 0} {$i < 200} {incr i} {
     execsql { DELETE FROM t2 WHERE id = $i }
   }
   execsql COMMIT
 } {}
+do_rtree_integrity_test rtree8-5.5 t2
 
 
 finish_test

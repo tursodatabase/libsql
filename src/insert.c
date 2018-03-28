@@ -210,11 +210,12 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
 ** first use of table pTab.  On 2nd and subsequent uses, the original
 ** AutoincInfo structure is used.
 **
-** Three memory locations are allocated:
+** Four consecutive registers are allocated:
 **
-**   (1)  Register to hold the name of the pTab table.
-**   (2)  Register to hold the maximum ROWID of pTab.
-**   (3)  Register to hold the rowid in sqlite_sequence of pTab
+**   (1)  The name of the pTab table.
+**   (2)  The maximum ROWID of pTab.
+**   (3)  The rowid in sqlite_sequence of pTab
+**   (4)  The original value of the max ROWID in pTab, or NULL if none
 **
 ** The 2nd register is the one that is returned.  That is all the
 ** insert routine needs to know about.
@@ -242,7 +243,7 @@ static int autoIncBegin(
       pInfo->iDb = iDb;
       pToplevel->nMem++;                  /* Register to hold name of table */
       pInfo->regCtr = ++pToplevel->nMem;  /* Max rowid register */
-      pToplevel->nMem++;                  /* Rowid in sqlite_sequence */
+      pToplevel->nMem +=2;       /* Rowid in sqlite_sequence + orig max val */
     }
     memId = pInfo->regCtr;
   }
@@ -270,15 +271,17 @@ void sqlite3AutoincrementBegin(Parse *pParse){
     static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList autoInc[] = {
       /* 0  */ {OP_Null,    0,  0, 0},
-      /* 1  */ {OP_Rewind,  0,  9, 0},
+      /* 1  */ {OP_Rewind,  0, 10, 0},
       /* 2  */ {OP_Column,  0,  0, 0},
-      /* 3  */ {OP_Ne,      0,  7, 0},
+      /* 3  */ {OP_Ne,      0,  9, 0},
       /* 4  */ {OP_Rowid,   0,  0, 0},
       /* 5  */ {OP_Column,  0,  1, 0},
-      /* 6  */ {OP_Goto,    0,  9, 0},
-      /* 7  */ {OP_Next,    0,  2, 0},
-      /* 8  */ {OP_Integer, 0,  0, 0},
-      /* 9  */ {OP_Close,   0,  0, 0} 
+      /* 6  */ {OP_AddImm,  0,  0, 0},
+      /* 7  */ {OP_Copy,    0,  0, 0},
+      /* 8  */ {OP_Goto,    0, 11, 0},
+      /* 9  */ {OP_Next,    0,  2, 0},
+      /* 10 */ {OP_Integer, 0,  0, 0},
+      /* 11 */ {OP_Close,   0,  0, 0} 
     };
     VdbeOp *aOp;
     pDb = &db->aDb[p->iDb];
@@ -289,14 +292,17 @@ void sqlite3AutoincrementBegin(Parse *pParse){
     aOp = sqlite3VdbeAddOpList(v, ArraySize(autoInc), autoInc, iLn);
     if( aOp==0 ) break;
     aOp[0].p2 = memId;
-    aOp[0].p3 = memId+1;
+    aOp[0].p3 = memId+2;
     aOp[2].p3 = memId;
     aOp[3].p1 = memId-1;
     aOp[3].p3 = memId;
     aOp[3].p5 = SQLITE_JUMPIFNULL;
     aOp[4].p2 = memId+1;
     aOp[5].p3 = memId;
-    aOp[8].p2 = memId;
+    aOp[6].p1 = memId;
+    aOp[7].p2 = memId+2;
+    aOp[7].p1 = memId;
+    aOp[10].p2 = memId;
   }
 }
 
@@ -343,6 +349,8 @@ static SQLITE_NOINLINE void autoIncrementEnd(Parse *pParse){
 
     iRec = sqlite3GetTempReg(pParse);
     assert( sqlite3SchemaMutexHeld(db, 0, pDb->pSchema) );
+    sqlite3VdbeAddOp3(v, OP_Le, memId+2, sqlite3VdbeCurrentAddr(v)+7, memId);
+    VdbeCoverage(v);
     sqlite3OpenTable(pParse, 0, p->iDb, pDb->pSchema->pSeqTab, OP_OpenWrite);
     aOp = sqlite3VdbeAddOpList(v, ArraySize(autoIncEnd), autoIncEnd, iLn);
     if( aOp==0 ) break;
@@ -484,7 +492,6 @@ void sqlite3Insert(
 ){
   sqlite3 *db;          /* The main database structure */
   Table *pTab;          /* The table to insert into.  aka TABLE */
-  char *zTab;           /* Name of the table into which we are inserting */
   int i, j;             /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
@@ -540,8 +547,6 @@ void sqlite3Insert(
   /* Locate the table into which we will be inserting new information.
   */
   assert( pTabList->nSrc==1 );
-  zTab = pTabList->a[0].zName;
-  if( NEVER(zTab==0) ) goto insert_cleanup;
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ){
     goto insert_cleanup;
@@ -912,7 +917,8 @@ void sqlite3Insert(
         VdbeOp *pOp;
         sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regRowid);
         pOp = sqlite3VdbeGetOp(v, -1);
-        if( ALWAYS(pOp) && pOp->opcode==OP_Null && !IsVirtual(pTab) ){
+        assert( pOp!=0 );
+        if( pOp->opcode==OP_Null && !IsVirtual(pTab) ){
           appendFlag = 1;
           pOp->opcode = OP_NewRowid;
           pOp->p1 = iDataCur;
@@ -1573,6 +1579,7 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Check to see if the new index entry will be unique */
+    sqlite3ExprCachePush(pParse);
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol); VdbeCoverage(v);
 
@@ -1661,6 +1668,7 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     sqlite3VdbeResolveLabel(v, addrUniqueOk);
+    sqlite3ExprCachePop(pParse);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
   }
   if( ipkTop ){
@@ -2009,7 +2017,6 @@ static int xferOptimization(
   if( pSelect->pLimit ){
     return 0;   /* SELECT may not have a LIMIT clause */
   }
-  assert( pSelect->pOffset==0 );  /* Must be so if pLimit==0 */
   if( pSelect->pPrior ){
     return 0;   /* SELECT may not be a compound query */
   }

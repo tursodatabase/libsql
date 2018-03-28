@@ -683,7 +683,6 @@ static int fts5VocabColumnMethod(
       iVal = pCsr->aCnt[0];
     }
   }else{
-    int eDetail = pCsr->pConfig->eDetail;
     assert( eType==FTS5_VOCAB_INSTANCE );
     switch( iCol ){
       case 1:
@@ -694,7 +693,7 @@ static int fts5VocabColumnMethod(
         if( eDetail==FTS5_DETAIL_FULL ){
           ii = FTS5_POS2COLUMN(pCsr->iInstPos);
         }else if( eDetail==FTS5_DETAIL_COLUMNS ){
-          ii = pCsr->iInstPos;
+          ii = (int)pCsr->iInstPos;
         }
         if( ii>=0 && ii<pCsr->pConfig->nCol ){
           const char *z = pCsr->pConfig->azCol[ii];

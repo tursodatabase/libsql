@@ -81,9 +81,7 @@ foreach module {rtree_i32 rtree} {
       set rc
     } {1}
   
-    do_test rtree2-$module.$nDim.3 {
-      rtree_check db t1
-    } 0
+    do_rtree_integrity_test rtree2-$module.$nDim.3 t1
   
     set OPS [list < > <= >= =]
     for {set ii 0} {$ii < $::NSELECT} {incr ii} {
@@ -133,9 +131,7 @@ foreach module {rtree_i32 rtree} {
         }
         set rc
       } {1}
-      do_test rtree2-$module.$nDim.5.$ii.2 {
-        rtree_check db t1
-      } {0}
+      do_rtree_integrity_test rtree2-$module.$nDim.5.$ii.2 t1
     }
   
     do_test rtree2-$module.$nDim.6 {

@@ -15,6 +15,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 
@@ -37,6 +38,7 @@ do_execsql_test rtreeG-1.2 {
   INSERT INTO t1 VALUES(1,10,15,5,23),(2,20,21,5,23),(3,10,15,20,30);
   SELECT id from t1 WHERE x0>8 AND x1<16 AND y0>2 AND y1<25;
 } {1}
+do_rtree_integrity_test rtreeG-1.2.integrity t1
 do_test rtreeG-1.2log {
   set ::log
 } {}
@@ -57,6 +59,7 @@ do_test rtreeG-1.4log {
   set ::log
 } {}
 
+expand_all_sql db
 db close
 sqlite3_shutdown
 test_sqlite3_log

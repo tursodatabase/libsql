@@ -37,6 +37,10 @@ proc db_write {db {reset 0}} {
   sqlite3_db_status $db CACHE_WRITE $reset
 }
 
+proc db_spill {db {reset 0}} {
+  sqlite3_db_status $db CACHE_SPILL $reset
+}
+
 do_test 1.1 {
   db close
   sqlite3 db test.db
@@ -98,5 +102,14 @@ do_test 2.7 {
 } {0 4 0}
 do_test 2.8 { db_write db 1 } {0 4 0}
 do_test 2.9 { db_write db 0 } {0 0 0}
+
+do_test 3.0 { db_spill db 1 } {0 0 0}
+do_test 3.1 { db_spill db 0 } {0 0 0}
+do_execsql_test 3.2 {
+  PRAGMA journal_mode=DELETE;
+  PRAGMA cache_size=3;
+  UPDATE t1 SET b=randomblob(1000);
+} {delete}
+do_test 3.3 { db_spill db 0 } {0 8 0}
  
 finish_test

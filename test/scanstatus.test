@@ -30,7 +30,7 @@ do_execsql_test 1.0 {
 }
 
 proc do_scanstatus_test {tn res} {
-  set stmt [db_last_stmt_ptr db]
+  set stmt [db version -last-stmt-ptr]
   set idx 0
   set ret [list]
   while {1} {
@@ -79,7 +79,7 @@ do_scanstatus_test 1.9 {
 }
 
 do_test 1.9 {
-  sqlite3_stmt_scanstatus_reset [db_last_stmt_ptr db]
+  sqlite3_stmt_scanstatus_reset [db version -last-stmt-ptr]
 } {}
 
 do_scanstatus_test 1.10 {

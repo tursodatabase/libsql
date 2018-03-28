@@ -71,6 +71,7 @@ proc step_rbu {target rbu} {
 }
 
 proc do_rbu_vacuum_test {tn step} {
+  forcedelete state.db
   uplevel [list do_test $tn.1 {
     if {$step==0} { sqlite3rbu_vacuum rbu test.db state.db }
     while 1 {

@@ -175,6 +175,16 @@ do_execsql_test 5.1 {
   SELECT snippet(p1, 0, '[', ']', '...', 6) FROM p1('x');
 } {{[x] a a a a a...}}
 
+do_execsql_test 5.2 {
+  SELECT snippet(p1, 0, '[', ']', NULL, 6) FROM p1('x');
+} {{[x] a a a a a}}
+do_execsql_test 5.3 {
+  SELECT snippet(p1, 0, NULL, ']', '...', 6) FROM p1('x');
+} {{x] a a a a a...}}
+do_execsql_test 5.4 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 6) FROM p1('x');
+} {{[x a a a a a...}}
+
 } ;# foreach_detail_mode 
 
 finish_test

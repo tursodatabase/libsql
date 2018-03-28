@@ -148,6 +148,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "hiddencolumns", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_DESERIALIZE
+  Tcl_SetVar2(interp, "sqlite_options", "deserialize", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "deserialize", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_MEMSYS3
   Tcl_SetVar2(interp, "sqlite_options", "mem3", "1", TCL_GLOBAL_ONLY);
 #else
@@ -158,6 +164,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "mem5", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "mem5", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+  Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","0",TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
@@ -212,6 +224,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "json1", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "json1", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_HAS_CODEC
+  Tcl_SetVar2(interp, "sqlite_options", "has_codec", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "has_codec", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
@@ -423,6 +441,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "icu", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_ICU_COLLATIONS
+  Tcl_SetVar2(interp, "sqlite_options", "icu_collations", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "icu_collations", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_INCRBLOB
   Tcl_SetVar2(interp, "sqlite_options", "incrblob", "0", TCL_GLOBAL_ONLY);
 #else
@@ -482,6 +506,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
 #endif
 
 Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
+
+#ifdef SQLITE_ENABLE_NULL_TRIM
+  Tcl_SetVar2(interp, "sqlite_options", "null_trim", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "null_trim", "0", TCL_GLOBAL_ONLY);
+#endif
 
 #ifdef SQLITE_OMIT_OR_OPTIMIZATION
   Tcl_SetVar2(interp, "sqlite_options", "or_opt", "0", TCL_GLOBAL_ONLY);
@@ -688,6 +718,12 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "unlock_notify", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "unlock_notify", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_FAST_SECURE_DELETE
+  Tcl_SetVar2(interp, "sqlite_options", "fast_secure_delete", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "fast_secure_delete", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_SECURE_DELETE

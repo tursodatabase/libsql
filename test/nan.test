@@ -366,8 +366,10 @@ do_realnum_test nan-4.35 {
   }
 } {0.0 real}
 
-  
-
-
+do_realnum_test nan-4.40 {
+  db eval {
+    SELECT cast('-1e999' AS real);
+  }
+} {-inf}
 
 finish_test

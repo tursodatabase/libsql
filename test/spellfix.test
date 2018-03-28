@@ -279,7 +279,7 @@ ifcapable trace {
   do_tracesql_test 6.2.3 {
     SELECT word, distance FROM t3 WHERE rowid = 10 AND word MATCH 'kiiner';
   } {keener 300
-    {SELECT id, word, rank, k1  FROM "main"."t3_vocab" WHERE langid=0 AND k2>=?1 AND k2<?2}
+    {SELECT id, word, rank, coalesce(k1,word)  FROM "main"."t3_vocab" WHERE langid=0 AND k2>=?1 AND k2<?2}
   }
 }
 

@@ -72,13 +72,15 @@
 **                       defined, then do no error processing.
 **    YYNSTATE           the combined number of states.
 **    YYNRULE            the number of rules in the grammar
+**    YYNTOKEN           Number of terminal symbols
 **    YY_MAX_SHIFT       Maximum value for shift actions
 **    YY_MIN_SHIFTREDUCE Minimum value for shift-reduce actions
 **    YY_MAX_SHIFTREDUCE Maximum value for shift-reduce actions
-**    YY_MIN_REDUCE      Maximum value for reduce actions
 **    YY_ERROR_ACTION    The yy_action[] code for syntax error
 **    YY_ACCEPT_ACTION   The yy_action[] code for accept
 **    YY_NO_ACTION       The yy_action[] code for no-op
+**    YY_MIN_REDUCE      Minimum value for reduce actions
+**    YY_MAX_REDUCE      Maximum value for reduce actions
 */
 #ifndef INTERFACE
 # define INTERFACE 1
@@ -114,9 +116,6 @@
 **   N between YY_MIN_SHIFTREDUCE       Shift to an arbitrary state then
 **     and YY_MAX_SHIFTREDUCE           reduce by rule N-YY_MIN_SHIFTREDUCE.
 **
-**   N between YY_MIN_REDUCE            Reduce by rule N-YY_MIN_REDUCE
-**     and YY_MAX_REDUCE
-**
 **   N == YY_ERROR_ACTION               A syntax error has occurred.
 **
 **   N == YY_ACCEPT_ACTION              The parser accepts its input.
@@ -124,25 +123,22 @@
 **   N == YY_NO_ACTION                  No such action.  Denotes unused
 **                                      slots in the yy_action[] table.
 **
+**   N between YY_MIN_REDUCE            Reduce by rule N-YY_MIN_REDUCE
+**     and YY_MAX_REDUCE
+**
 ** The action table is constructed as a single large table named yy_action[].
 ** Given state S and lookahead X, the action is computed as either:
 **
 **    (A)   N = yy_action[ yy_shift_ofst[S] + X ]
 **    (B)   N = yy_default[S]
 **
-** The (A) formula is preferred.  The B formula is used instead if:
-**    (1)  The yy_shift_ofst[S]+X value is out of range, or
-**    (2)  yy_lookahead[yy_shift_ofst[S]+X] is not equal to X, or
-**    (3)  yy_shift_ofst[S] equal YY_SHIFT_USE_DFLT.
-** (Implementation note: YY_SHIFT_USE_DFLT is chosen so that
-** YY_SHIFT_USE_DFLT+X will be out of range for all possible lookaheads X.
-** Hence only tests (1) and (2) need to be evaluated.)
+** The (A) formula is preferred.  The B formula is used instead if
+** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X.
 **
 ** The formulas above are for computing the action when the lookahead is
 ** a terminal symbol.  If the lookahead is a non-terminal (as occurs after
 ** a reduce action) then the yy_reduce_ofst[] array is used in place of
-** the yy_shift_ofst[] array and YY_REDUCE_USE_DFLT is used in place of
-** YY_SHIFT_USE_DFLT.
+** the yy_shift_ofst[] array.
 **
 ** The following are the tables generated in this section:
 **
@@ -258,13 +254,13 @@ void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
 }
 #endif /* NDEBUG */
 
-#ifndef NDEBUG
+#if defined(YYCOVERAGE) || !defined(NDEBUG)
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
 static const char *const yyTokenName[] = { 
 %%
 };
-#endif /* NDEBUG */
+#endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
 #ifndef NDEBUG
 /* For tracing reduce actions, the names of all rules are required.
@@ -460,6 +456,43 @@ int ParseStackPeak(void *p){
 }
 #endif
 
+/* This array of booleans keeps track of the parser statement
+** coverage.  The element yycoverage[X][Y] is set when the parser
+** is in state X and has a lookahead token Y.  In a well-tested
+** systems, every element of this matrix should end up being set.
+*/
+#if defined(YYCOVERAGE)
+static unsigned char yycoverage[YYNSTATE][YYNTOKEN];
+#endif
+
+/*
+** Write into out a description of every state/lookahead combination that
+**
+**   (1)  has not been used by the parser, and
+**   (2)  is not a syntax error.
+**
+** Return the number of missed state/lookahead combinations.
+*/
+#if defined(YYCOVERAGE)
+int ParseCoverage(FILE *out){
+  int stateno, iLookAhead, i;
+  int nMissed = 0;
+  for(stateno=0; stateno<YYNSTATE; stateno++){
+    i = yy_shift_ofst[stateno];
+    for(iLookAhead=0; iLookAhead<YYNTOKEN; iLookAhead++){
+      if( yy_lookahead[i+iLookAhead]!=iLookAhead ) continue;
+      if( yycoverage[stateno][iLookAhead]==0 ) nMissed++;
+      if( out ){
+        fprintf(out,"State %d lookahead %s %s\n", stateno,
+                yyTokenName[iLookAhead],
+                yycoverage[stateno][iLookAhead] ? "ok" : "missed");
+      }
+    }
+  }
+  return nMissed;
+}
+#endif
+
 /*
 ** Find the appropriate action for a parser given the terminal
 ** look-ahead token iLookAhead.
@@ -471,13 +504,19 @@ static unsigned int yy_find_shift_action(
   int i;
   int stateno = pParser->yytos->stateno;
  
-  if( stateno>=YY_MIN_REDUCE ) return stateno;
+  if( stateno>YY_MAX_SHIFT ) return stateno;
   assert( stateno <= YY_SHIFT_COUNT );
+#if defined(YYCOVERAGE)
+  yycoverage[stateno][iLookAhead] = 1;
+#endif
   do{
     i = yy_shift_ofst[stateno];
+    assert( i>=0 );
+    assert( i+YYNTOKEN<=(int)sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
     assert( iLookAhead!=YYNOCODE );
+    assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
-    if( i<0 || i>=YY_ACTTAB_COUNT || yy_lookahead[i]!=iLookAhead ){
+    if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
@@ -540,7 +579,6 @@ static int yy_find_reduce_action(
   assert( stateno<=YY_REDUCE_COUNT );
 #endif
   i = yy_reduce_ofst[stateno];
-  assert( i!=YY_REDUCE_USE_DFLT );
   assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
 #ifdef YYERRORSYMBOL
@@ -577,20 +615,21 @@ static void yyStackOverflow(yyParser *yypParser){
 ** Print tracing information for a SHIFT action
 */
 #ifndef NDEBUG
-static void yyTraceShift(yyParser *yypParser, int yyNewState){
+static void yyTraceShift(yyParser *yypParser, int yyNewState, const char *zTag){
   if( yyTraceFILE ){
     if( yyNewState<YYNSTATE ){
-      fprintf(yyTraceFILE,"%sShift '%s', go to state %d\n",
-         yyTracePrompt,yyTokenName[yypParser->yytos->major],
+      fprintf(yyTraceFILE,"%s%s '%s', go to state %d\n",
+         yyTracePrompt, zTag, yyTokenName[yypParser->yytos->major],
          yyNewState);
     }else{
-      fprintf(yyTraceFILE,"%sShift '%s'\n",
-         yyTracePrompt,yyTokenName[yypParser->yytos->major]);
+      fprintf(yyTraceFILE,"%s%s '%s', pending reduce %d\n",
+         yyTracePrompt, zTag, yyTokenName[yypParser->yytos->major],
+         yyNewState - YY_MIN_REDUCE);
     }
   }
 }
 #else
-# define yyTraceShift(X,Y)
+# define yyTraceShift(X,Y,Z)
 #endif
 
 /*
@@ -632,7 +671,7 @@ static void yy_shift(
   yytos->stateno = (YYACTIONTYPE)yyNewState;
   yytos->major = (YYCODETYPE)yyMajor;
   yytos->minor.yy0 = yyMinor;
-  yyTraceShift(yypParser, yyNewState);
+  yyTraceShift(yypParser, yyNewState, "Shift");
 }
 
 /* The following table contains information about every rule that
@@ -650,22 +689,38 @@ static void yy_accept(yyParser*);  /* Forward Declaration */
 /*
 ** Perform a reduce action and the shift that must immediately
 ** follow the reduce.
+**
+** The yyLookahead and yyLookaheadToken parameters provide reduce actions
+** access to the lookahead token (if any).  The yyLookahead will be YYNOCODE
+** if the lookahead token has already been consumed.  As this procedure is
+** only called from one place, optimizing compilers will in-line it, which
+** means that the extra parameters have no performance impact.
 */
 static void yy_reduce(
   yyParser *yypParser,         /* The parser */
-  unsigned int yyruleno        /* Number of the rule by which to reduce */
+  unsigned int yyruleno,       /* Number of the rule by which to reduce */
+  int yyLookahead,             /* Lookahead token, or YYNOCODE if none */
+  ParseTOKENTYPE yyLookaheadToken  /* Value of the lookahead token */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
   yyStackEntry *yymsp;            /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
   ParseARG_FETCH;
+  (void)yyLookahead;
+  (void)yyLookaheadToken;
   yymsp = yypParser->yytos;
 #ifndef NDEBUG
   if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfo[yyruleno].nrhs;
-    fprintf(yyTraceFILE, "%sReduce [%s], go to state %d.\n", yyTracePrompt,
-      yyRuleName[yyruleno], yymsp[yysize].stateno);
+    if( yysize ){
+      fprintf(yyTraceFILE, "%sReduce %d [%s], go to state %d.\n",
+        yyTracePrompt,
+        yyruleno, yyRuleName[yyruleno], yymsp[yysize].stateno);
+    }else{
+      fprintf(yyTraceFILE, "%sReduce %d [%s].\n",
+        yyTracePrompt, yyruleno, yyRuleName[yyruleno]);
+    }
   }
 #endif /* NDEBUG */
 
@@ -720,16 +775,11 @@ static void yy_reduce(
   /* It is not possible for a REDUCE to be followed by an error */
   assert( yyact!=YY_ERROR_ACTION );
 
-  if( yyact==YY_ACCEPT_ACTION ){
-    yypParser->yytos += yysize;
-    yy_accept(yypParser);
-  }else{
-    yymsp += yysize+1;
-    yypParser->yytos = yymsp;
-    yymsp->stateno = (YYACTIONTYPE)yyact;
-    yymsp->major = (YYCODETYPE)yygoto;
-    yyTraceShift(yypParser, yyact);
-  }
+  yymsp += yysize+1;
+  yypParser->yytos = yymsp;
+  yymsp->stateno = (YYACTIONTYPE)yyact;
+  yymsp->major = (YYCODETYPE)yygoto;
+  yyTraceShift(yypParser, yyact, "... then shift");
 }
 
 /*
@@ -839,20 +889,31 @@ void Parse(
 
 #ifndef NDEBUG
   if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sInput '%s'\n",yyTracePrompt,yyTokenName[yymajor]);
+    int stateno = yypParser->yytos->stateno;
+    if( stateno < YY_MIN_REDUCE ){
+      fprintf(yyTraceFILE,"%sInput '%s' in state %d\n",
+              yyTracePrompt,yyTokenName[yymajor],stateno);
+    }else{
+      fprintf(yyTraceFILE,"%sInput '%s' with pending reduce %d\n",
+              yyTracePrompt,yyTokenName[yymajor],stateno-YY_MIN_REDUCE);
+    }
   }
 #endif
 
   do{
     yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
-    if( yyact <= YY_MAX_SHIFTREDUCE ){
+    if( yyact >= YY_MIN_REDUCE ){
+      yy_reduce(yypParser,yyact-YY_MIN_REDUCE,yymajor,yyminor);
+    }else if( yyact <= YY_MAX_SHIFTREDUCE ){
       yy_shift(yypParser,yyact,yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY
       yypParser->yyerrcnt--;
 #endif
       yymajor = YYNOCODE;
-    }else if( yyact <= YY_MAX_REDUCE ){
-      yy_reduce(yypParser,yyact-YY_MIN_REDUCE);
+    }else if( yyact==YY_ACCEPT_ACTION ){
+      yypParser->yytos--;
+      yy_accept(yypParser);
+      return;
     }else{
       assert( yyact == YY_ERROR_ACTION );
       yyminorunion.yy0 = yyminor;

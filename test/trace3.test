@@ -121,6 +121,27 @@ do_test trace3-4.2 {
   set ::stmtlist(record)
 } {/^\{-?\d+ -?\d+\}$/}
 
+do_test trace3-4.3 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record profile
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set stmt [lindex [lindex $::stmtlist(record) 0] 0]
+  set ns [lindex [lindex $::stmtlist(record) 0] 1]
+  list $stmt [expr {$ns >= 0 && $ns <= 9999999}]; # less than 0.010 seconds
+} {/^-?\d+ 1$/}
+do_test trace3-4.4 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record 2
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set stmt [lindex [lindex $::stmtlist(record) 0] 0]
+  set ns [lindex [lindex $::stmtlist(record) 0] 1]
+  list $stmt [expr {$ns >= 0 && $ns <= 9999999}]; # less than 0.010 seconds
+} {/^-?\d+ 1$/}
+
 do_test trace3-5.1 {
   set ::stmtlist(record) {}
   db trace_v2 trace_v2_record row

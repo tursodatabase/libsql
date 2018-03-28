@@ -134,7 +134,7 @@ struct sqlite3_api_routines {
   int  (*set_authorizer)(sqlite3*,int(*)(void*,int,const char*,const char*,
                          const char*,const char*),void*);
   void  (*set_auxdata)(sqlite3_context*,int,void*,void (*)(void*));
-  char * (*snprintf)(int,char*,const char*,...);
+  char * (*xsnprintf)(int,char*,const char*,...);
   int  (*step)(sqlite3_stmt*);
   int  (*table_column_metadata)(sqlite3*,const char*,const char*,const char*,
                                 char const**,char const**,int*,int*,int*);
@@ -292,6 +292,9 @@ struct sqlite3_api_routines {
   int (*bind_pointer)(sqlite3_stmt*,int,void*,const char*,void(*)(void*));
   void (*result_pointer)(sqlite3_context*,void*,const char*,void(*)(void*));
   void *(*value_pointer)(sqlite3_value*,const char*);
+  int (*vtab_nochange)(sqlite3_context*);
+  int (*value_nochange)(sqlite3_value*);
+  const char *(*vtab_collation)(sqlite3_index_info*,int);
 };
 
 /*
@@ -418,7 +421,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_rollback_hook          sqlite3_api->rollback_hook
 #define sqlite3_set_authorizer         sqlite3_api->set_authorizer
 #define sqlite3_set_auxdata            sqlite3_api->set_auxdata
-#define sqlite3_snprintf               sqlite3_api->snprintf
+#define sqlite3_snprintf               sqlite3_api->xsnprintf
 #define sqlite3_step                   sqlite3_api->step
 #define sqlite3_table_column_metadata  sqlite3_api->table_column_metadata
 #define sqlite3_thread_cleanup         sqlite3_api->thread_cleanup
@@ -558,6 +561,10 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_bind_pointer           sqlite3_api->bind_pointer
 #define sqlite3_result_pointer         sqlite3_api->result_pointer
 #define sqlite3_value_pointer          sqlite3_api->value_pointer
+/* Version 3.22.0 and later */
+#define sqlite3_vtab_nochange          sqlite3_api->vtab_nochange
+#define sqlite3_value_nochange         sqlite3_api->value_nochange
+#define sqlite3_vtab_collation         sqlite3_api->vtab_collation
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

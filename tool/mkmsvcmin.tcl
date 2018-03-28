@@ -54,7 +54,7 @@ proc substVars { data } {
 set blocks(1) [string trimleft [string map [list \\\\ \\] {
 _HASHCHAR=^#
 !IF ![echo !IFNDEF VERSION > rcver.vc] && \\
-    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| find "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \\
+    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| "%SystemRoot%\System32\find.exe" "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \\
     ![echo !ENDIF >> rcver.vc]
 !INCLUDE rcver.vc
 !ENDIF

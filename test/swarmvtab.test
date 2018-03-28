@@ -15,6 +15,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix swarmvtab
+do_not_use_codec
 
 ifcapable !vtab {
   finish_test
@@ -212,7 +213,7 @@ do_catchsql_test 3.1 {
         ("test.db2", "t1", 11, 20)
     ', 'fetch_db_no_such_function'
   );
-} {1 {no such function: fetch_db_no_such_function}}
+} {1 {sql error: no such function: fetch_db_no_such_function}}
 
 do_catchsql_test 3.2 {
   CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
@@ -243,4 +244,3 @@ do_catchsql_test 3.3.2 { SELECT * FROM xyz } {1 {fetch_db error!}}
 
 
 finish_test
-

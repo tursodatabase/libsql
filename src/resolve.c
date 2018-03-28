@@ -431,10 +431,16 @@ static int lookupName(
   ** Because no reference was made to outer contexts, the pNC->nRef
   ** fields are not changed in any context.
   */
-  if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
-    pExpr->op = TK_STRING;
-    pExpr->pTab = 0;
-    return WRC_Prune;
+  if( cnt==0 && zTab==0 ){
+    assert( pExpr->op==TK_ID );
+    if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+      pExpr->op = TK_STRING;
+      pExpr->pTab = 0;
+      return WRC_Prune;
+    }
+    if( sqlite3ExprIdToTrueFalse(pExpr) ){
+      return WRC_Prune;
+    }
   }
 
   /*
@@ -596,7 +602,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       SrcList *pSrcList = pNC->pSrcList;
       struct SrcList_item *pItem;
       assert( pSrcList && pSrcList->nSrc==1 );
-      pItem = pSrcList->a; 
+      pItem = pSrcList->a;
+      assert( HasRowid(pItem->pTab) && pItem->pTab->pSelect==0 );
       pExpr->op = TK_COLUMN;
       pExpr->pTab = pItem->pTab;
       pExpr->iTable = pItem->iCursor;
@@ -782,15 +789,30 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
+    case TK_IS:
+    case TK_ISNOT: {
+      Expr *pRight;
+      assert( !ExprHasProperty(pExpr, EP_Reduced) );
+      /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
+      ** and "x IS NOT FALSE". */
+      if( (pRight = pExpr->pRight)->op==TK_ID ){
+        int rc = resolveExprStep(pWalker, pRight);
+        if( rc==WRC_Abort ) return WRC_Abort;
+        if( pRight->op==TK_TRUEFALSE ){
+          pExpr->op2 = pExpr->op;
+          pExpr->op = TK_TRUTH;
+          return WRC_Continue;
+        }
+      }
+      /* Fall thru */
+    }
     case TK_BETWEEN:
     case TK_EQ:
     case TK_NE:
     case TK_LT:
     case TK_LE:
     case TK_GT:
-    case TK_GE:
-    case TK_IS:
-    case TK_ISNOT: {
+    case TK_GE: {
       int nLeft, nRight;
       if( pParse->db->mallocFailed ) break;
       assert( pExpr->pLeft!=0 );
@@ -959,12 +981,10 @@ static int resolveCompoundOrderBy(
   pOrderBy = pSelect->pOrderBy;
   if( pOrderBy==0 ) return 0;
   db = pParse->db;
-#if SQLITE_MAX_COLUMN
   if( pOrderBy->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many terms in ORDER BY clause");
     return 1;
   }
-#endif
   for(i=0; i<pOrderBy->nExpr; i++){
     pOrderBy->a[i].done = 0;
   }
@@ -1056,12 +1076,10 @@ int sqlite3ResolveOrderGroupBy(
   struct ExprList_item *pItem;
 
   if( pOrderBy==0 || pParse->db->mallocFailed ) return 0;
-#if SQLITE_MAX_COLUMN
   if( pOrderBy->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many terms in %s BY clause", zType);
     return 1;
   }
-#endif
   pEList = pSelect->pEList;
   assert( pEList!=0 );  /* sqlite3SelectNew() guarantees this */
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
@@ -1199,8 +1217,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     */
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
-    if( sqlite3ResolveExprNames(&sNC, p->pLimit) ||
-        sqlite3ResolveExprNames(&sNC, p->pOffset) ){
+    if( sqlite3ResolveExprNames(&sNC, p->pLimit) ){
       return WRC_Abort;
     }
 

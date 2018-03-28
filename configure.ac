@@ -120,7 +120,7 @@ USE_AMALGAMATION=1
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 # 
-AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.6 tclsh8.5 tclsh], none)
+AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.7 tclsh8.6 tclsh8.5 tclsh], none)
 if test "$TCLSH_CMD" = "none"; then
   # If we can't find a local tclsh, then building the amalgamation will fail.
   # We act as though --disable-amalgamation has been used.
@@ -577,6 +577,12 @@ fi
 AC_SUBST(USE_AMALGAMATION)
 
 #########
+# Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+AC_CHECK_HEADERS(zlib.h)
+AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
+AC_SUBST(HAVE_ZLIB)
+
+#########
 # See whether we should allow loadable extensions
 AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--disable-load-extension],
       [Disable loading of external extensions]),
@@ -642,6 +648,16 @@ AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],
       [enable_json1=yes],[enable_json1=no])
 if test "${enable_json1}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
+fi
+
+#########
+# See whether we should enable the LIMIT clause on UPDATE and DELETE
+# statements.
+AC_ARG_ENABLE(update-limit, AC_HELP_STRING([--enable-update-limit],
+      [Enable the UPDATE/DELETE LIMIT clause]),
+      [enable_udlimit=yes],[enable_udlimit=no])
+if test "${enable_udlimit}" = "yes" ; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
 fi
 
 #########

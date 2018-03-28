@@ -1245,14 +1245,6 @@ proc show_memstats {} {
   set x [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0]
   set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
   output1 "Page-cache overflow:  $val"
-  set x [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0]
-  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-  output1 "Scratch memory used:  $val"
-  set x [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0]
-  set y [sqlite3_status SQLITE_STATUS_SCRATCH_SIZE 0]
-  set val [format {now %10d  max %10d  max-size %10d} \
-               [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-  output1 "Scratch overflow:     $val"
   ifcapable yytrackmaxstackdepth {
     set x [sqlite3_status SQLITE_STATUS_PARSER_STACK 0]
     set val [format {               max %10d} [lindex $x 2]]
@@ -2283,13 +2275,17 @@ proc test_restore_config_pagecache {} {
   sqlite3 db test.db
 }
 
-proc test_find_binary {nm} {
+proc test_binary_name {nm} {
   if {$::tcl_platform(platform)=="windows"} {
     set ret "$nm.exe"
   } else {
     set ret $nm
   }
-  set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
+  file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]
+}
+
+proc test_find_binary {nm} {
+  set ret [test_binary_name $nm]
   if {![file executable $ret]} {
     finish_test
     return ""
@@ -2315,6 +2311,16 @@ proc test_find_sqldiff {} {
   set prog [test_find_binary sqldiff]
   if {$prog==""} { return -code return }
   return $prog
+}
+
+# Call sqlite3_expanded_sql() on all statements associated with database
+# connection $db. This sometimes finds use-after-free bugs if run with
+# valgrind or address-sanitizer.
+proc expand_all_sql {db} {
+  set stmt ""
+  while {[set stmt [sqlite3_next_stmt $db $stmt]]!=""} {
+    sqlite3_expanded_sql $stmt
+  }
 }
 
 

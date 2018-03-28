@@ -230,6 +230,7 @@ int sqlite3BtreeCursor(
   struct KeyInfo*,                     /* First argument to compare function */
   BtCursor *pCursor                    /* Space to write cursor structure */
 );
+BtCursor *sqlite3BtreeFakeValidCursor(void);
 int sqlite3BtreeCursorSize(void);
 void sqlite3BtreeCursorZero(BtCursor*);
 void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
@@ -290,6 +291,9 @@ int sqlite3BtreeNext(BtCursor*, int flags);
 int sqlite3BtreeEof(BtCursor*);
 int sqlite3BtreePrevious(BtCursor*, int flags);
 i64 sqlite3BtreeIntegerKey(BtCursor*);
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+i64 sqlite3BtreeOffset(BtCursor*);
+#endif
 int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
 u32 sqlite3BtreePayloadSize(BtCursor*);

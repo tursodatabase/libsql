@@ -25,7 +25,6 @@ static const char zHelp[] =
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
-  "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --serialized        Set serialized threading mode\n"
   "  --singlethread      Set single-threaded mode - disables all mutexing\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
@@ -33,7 +32,7 @@ static const char zHelp[] =
   "  --size N            Relative test size.  Default=100\n"
   "  --stats             Show statistics at the end\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -1121,7 +1120,77 @@ void testset_cte(void){
   );
   speedtest1_run();
   speedtest1_end_test();
+}
 
+/*
+** Compute a pseudo-random floating point ascii number.
+*/
+void speedtest1_random_ascii_fp(char *zFP){
+  int x = speedtest1_random();
+  int y = speedtest1_random();
+  int z;
+  z = y%10;
+  if( z<0 ) z = -z;
+  y /= 10;
+  sqlite3_snprintf(100,zFP,"%d.%de%d",y,z,x%200);
+}
+
+/*
+** A testset for floating-point numbers.
+*/
+void testset_fp(void){
+  int n;
+  int i;
+  char zFP1[100];
+  char zFP2[100];
+  
+  n = g.szTest*5000;
+  speedtest1_begin_test(100, "Fill a table with %d FP values", n*2);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t1(a REAL %s, b REAL %s);",
+                  isTemp(1), g.zNN, g.zNN);
+  speedtest1_prepare("INSERT INTO t1 VALUES(?1,?2); -- %d times", n);
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  n = g.szTest/25 + 2;
+  speedtest1_begin_test(110, "%d range queries", n);
+  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "CREATE INDEX three times");
+  speedtest1_exec("BEGIN;");
+  speedtest1_exec("CREATE INDEX t1a ON t1(a);");
+  speedtest1_exec("CREATE INDEX t1b ON t1(b);");
+  speedtest1_exec("CREATE INDEX t1ab ON t1(a,b);");
+  speedtest1_exec("COMMIT;");
+  speedtest1_end_test();
+
+  n = g.szTest/3 + 2;
+  speedtest1_begin_test(130, "%d indexed range queries", n);
+  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
 }
 
 #ifdef SQLITE_ENABLE_RTREE
@@ -1636,6 +1705,11 @@ static void displayLinuxIoStats(FILE *out){
 #  define sqlite3_sourceid(X) "(before 3.6.18)"
 #endif
 
+static int xCompileOptions(void *pCtx, int nVal, char **azVal, char **azCol){
+  printf("-- Compile option: %s\n", azVal[0]);
+  return SQLITE_OK;
+}
+
 int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
@@ -1649,7 +1723,6 @@ int main(int argc, char **argv){
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
   int doPCache = 0;             /* True if --pcache is seen */
-  int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
   int mmapSize = 0;             /* How big of a memory map to use */
@@ -1661,7 +1734,6 @@ int main(int argc, char **argv){
   void *pHeap = 0;              /* Allocated heap space */
   void *pLook = 0;              /* Allocated lookaside space */
   void *pPCache = 0;            /* Allocated storage for pcache */
-  void *pScratch = 0;           /* Allocated storage for scratch */
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
@@ -1741,11 +1813,6 @@ int main(int argc, char **argv){
         i += 1;
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
-      }else if( strcmp(z,"scratch")==0 ){
-        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
-        nScratch = integerValue(argv[i+1]);
-        szScratch = integerValue(argv[i+2]);
-        i += 2;
 #if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"serialized")==0 ){
         sqlite3_config(SQLITE_CONFIG_SERIALIZED);
@@ -1816,13 +1883,6 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
     if( rc ) fatal_error("pcache configuration failed: %d\n", rc);
   }
-  if( nScratch>0 && szScratch>0 ){
-    pScratch = malloc( nScratch*(sqlite3_int64)szScratch );
-    if( pScratch==0 ) fatal_error("cannot allocate %lld-byte scratch\n",
-                                 nScratch*(sqlite3_int64)szScratch);
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
-    if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
-  }
   if( nLook>=0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
@@ -1883,6 +1943,8 @@ int main(int argc, char **argv){
     testset_orm();
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
+  }else if( strcmp(zTSet,"fp")==0 ){
+    testset_fp();
   }else if( strcmp(zTSet,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
     testset_rtree(6, 147);
@@ -1891,10 +1953,14 @@ int main(int argc, char **argv){
                 "the R-Tree tests\n");
 #endif
   }else{
-    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
+    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree fp\n",
                  zTSet);
   }
   speedtest1_final();
+
+  if( showStats ){
+    sqlite3_exec(g.db, "PRAGMA compile_options", xCompileOptions, 0, 0);
+  }
 
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */
@@ -1939,14 +2005,10 @@ int main(int argc, char **argv){
 #endif
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHi, 0);
     printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHi);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHi, 0);
-    printf("-- Scratch Overflow Bytes:      %d (max %d)\n", iCur,iHi);
     sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Allocation:          %d bytes\n",iHi);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Pcache Allocation:   %d bytes\n",iHi);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHi, 0);
-    printf("-- Largest Scratch Allocation:  %d bytes\n", iHi);
   }
 #endif
 
@@ -1959,7 +2021,6 @@ int main(int argc, char **argv){
   /* Release memory */
   free( pLook );
   free( pPCache );
-  free( pScratch );
   free( pHeap );
   return 0;
 }

@@ -206,6 +206,11 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
+  /* pAccum never starts out with an empty buffer that was obtained from 
+  ** malloc().  This precondition is required by the mprintf("%z...")
+  ** optimization. */
+  assert( pAccum->nChar>0 || (pAccum->printfFlags&SQLITE_PRINTF_MALLOCED)==0 );
+
   bufpt = 0;
   if( (pAccum->printfFlags & SQLITE_PRINTF_SQLFUNC)!=0 ){
     pArgList = va_arg(ap, PrintfArguments*);
@@ -624,9 +629,38 @@ void sqlite3VXPrintf(
       case etCHARX:
         if( bArgList ){
           bufpt = getTextArg(pArgList);
-          c = bufpt ? bufpt[0] : 0;
+          length = 1;
+          if( bufpt ){
+            buf[0] = c = *(bufpt++);
+            if( (c&0xc0)==0xc0 ){
+              while( length<4 && (bufpt[0]&0xc0)==0x80 ){
+                buf[length++] = *(bufpt++);
+              }
+            }
+          }else{
+            buf[0] = 0;
+          }
         }else{
-          c = va_arg(ap,int);
+          unsigned int ch = va_arg(ap,unsigned int);
+          if( ch<0x00080 ){
+            buf[0] = ch & 0xff;
+            length = 1;
+          }else if( ch<0x00800 ){
+            buf[0] = 0xc0 + (u8)((ch>>6)&0x1f);
+            buf[1] = 0x80 + (u8)(ch & 0x3f);
+            length = 2;
+          }else if( ch<0x10000 ){
+            buf[0] = 0xe0 + (u8)((ch>>12)&0x0f);
+            buf[1] = 0x80 + (u8)((ch>>6) & 0x3f);
+            buf[2] = 0x80 + (u8)(ch & 0x3f);
+            length = 3;
+          }else{
+            buf[0] = 0xf0 + (u8)((ch>>18) & 0x07);
+            buf[1] = 0x80 + (u8)((ch>>12) & 0x3f);
+            buf[2] = 0x80 + (u8)((ch>>6) & 0x3f);
+            buf[3] = 0x80 + (u8)(ch & 0x3f);
+            length = 4;
+          }
         }
         if( precision>1 ){
           width -= precision-1;
@@ -634,12 +668,13 @@ void sqlite3VXPrintf(
             sqlite3AppendChar(pAccum, width-1, ' ');
             width = 0;
           }
-          sqlite3AppendChar(pAccum, precision-1, c);
+          while( precision-- > 1 ){
+            sqlite3StrAccumAppend(pAccum, buf, length);
+          }
         }
-        length = 1;
-        buf[0] = c;
         bufpt = buf;
-        break;
+        flag_altform2 = 1;
+        goto adjust_width_for_utf8;
       case etSTRING:
       case etDYNSTRING:
         if( bArgList ){
@@ -651,17 +686,45 @@ void sqlite3VXPrintf(
         if( bufpt==0 ){
           bufpt = "";
         }else if( xtype==etDYNSTRING ){
+          if( pAccum->nChar==0 && pAccum->mxAlloc && width==0 && precision<0 ){
+            /* Special optimization for sqlite3_mprintf("%z..."):
+            ** Extend an existing memory allocation rather than creating
+            ** a new one. */
+            assert( (pAccum->printfFlags&SQLITE_PRINTF_MALLOCED)==0 );
+            pAccum->zText = bufpt;
+            pAccum->nAlloc = sqlite3DbMallocSize(pAccum->db, bufpt);
+            pAccum->nChar = 0x7fffffff & (int)strlen(bufpt);
+            pAccum->printfFlags |= SQLITE_PRINTF_MALLOCED;
+            length = 0;
+            break;
+          }
           zExtra = bufpt;
         }
         if( precision>=0 ){
-          for(length=0; length<precision && bufpt[length]; length++){}
+          if( flag_altform2 ){
+            /* Set length to the number of bytes needed in order to display
+            ** precision characters */
+            unsigned char *z = (unsigned char*)bufpt;
+            while( precision-- > 0 && z[0] ){
+              SQLITE_SKIP_UTF8(z);
+            }
+            length = (int)(z - (unsigned char*)bufpt);
+          }else{
+            for(length=0; length<precision && bufpt[length]; length++){}
+          }
         }else{
-          length = sqlite3Strlen30(bufpt);
+          length = 0x7fffffff & (int)strlen(bufpt);
+        }
+      adjust_width_for_utf8:
+        if( flag_altform2 && width>0 ){
+          /* Adjust width to account for extra bytes in UTF-8 characters */
+          int ii = length - 1;
+          while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
-      case etSQLESCAPE:           /* Escape ' characters */
-      case etSQLESCAPE2:          /* Escape ' and enclose in '...' */
-      case etSQLESCAPE3: {        /* Escape " characters */
+      case etSQLESCAPE:           /* %q: Escape ' characters */
+      case etSQLESCAPE2:          /* %Q: Escape ' and enclose in '...' */
+      case etSQLESCAPE3: {        /* %w: Escape " characters */
         int i, j, k, n, isnull;
         int needQuote;
         char ch;
@@ -675,9 +738,17 @@ void sqlite3VXPrintf(
         }
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        /* For %q, %Q, and %w, the precision is the number of byte (or
+        ** characters if the ! flags is present) to use from the input.
+        ** Because of the extra quoting characters inserted, the number
+        ** of output characters may be larger than the precision.
+        */
         k = precision;
         for(i=n=0; k!=0 && (ch=escarg[i])!=0; i++, k--){
           if( ch==q )  n++;
+          if( flag_altform2 && (ch&0xc0)==0xc0 ){
+            while( (escarg[i+1]&0xc0)==0x80 ){ i++; }
+          }
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 3;
@@ -700,10 +771,7 @@ void sqlite3VXPrintf(
         if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;
         length = j;
-        /* The precision in %q and %Q means how many input characters to
-        ** consume, not the length of the output...
-        ** if( precision>=0 && precision<length ) length = precision; */
-        break;
+        goto adjust_width_for_utf8;
       }
       case etTOKEN: {
         Token *pToken;
@@ -742,7 +810,10 @@ void sqlite3VXPrintf(
     /*
     ** The text of the conversion is pointed to by "bufpt" and is
     ** "length" characters long.  The field width is "width".  Do
-    ** the output.
+    ** the output.  Both length and width are in bytes, not characters,
+    ** at this point.  If the "!" flag was present on string conversions
+    ** indicating that width and precision should be expressed in characters,
+    ** then the values have been translated prior to reaching this point.
     */
     width -= length;
     if( width>0 ){
@@ -1092,8 +1163,15 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   sqlite3VXPrintf(&acc, zFormat, ap);
   va_end(ap);
   sqlite3StrAccumFinish(&acc);
+#ifdef SQLITE_OS_TRACE_PROC
+  {
+    extern void SQLITE_OS_TRACE_PROC(const char *zBuf, int nBuf);
+    SQLITE_OS_TRACE_PROC(zBuf, sizeof(zBuf));
+  }
+#else
   fprintf(stdout,"%s", zBuf);
   fflush(stdout);
+#endif
 }
 #endif
 

@@ -61,6 +61,87 @@ do_test 1.14 { sqlite3_db_config db NO_CKPT_ON_CLOSE 1 } {1}
 do_execsql_test 1.14 { PRAGMA main.journal_mode = delete } {delete}
 do_test 1.15 { file exists test.db-wal } {0}
 
+if {$::tcl_platform(platform)!="windows"} {
+#-------------------------------------------------------------------------
+# Test an unusual scenario:
+#
+#   1. A wal mode db is opened and written. Then sqlite3_close_v2() used
+#      to close the db handle while there is still an unfinalized
+#      statement (so the db handle stays open).
+#
+#   2. The db, wal and *-shm files are deleted from the file system.
+#
+#   3. Another connection creates a new wal mode db at the same file-system
+#      location as the previous one.
+#
+#   4. The statement left unfinalized in (1) is finalized.
+#
+# The test is to ensure that the connection left open in step (1) does
+# not try to delete the wal file from the file-system as part of step
+# 4.
+#
+reset_db
+db close
+
+# Open a connection on a wal database. Write to it a bit. Then prepare
+# a statement and call sqlite3_close_v2() (so that the statement handle
+# holds the db connection open).
+#
+set ::db1 [sqlite3_open_v2 test.db SQLITE_OPEN_READWRITE ""]
+do_test 2.0 {
+  lindex [
+    sqlite3_exec $::db1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x PRIMARY KEY, y UNIQUE, z);
+      INSERT INTO t1 VALUES(1, 2, 3);
+      PRAGMA wal_checkpoint;
+    }] 0
+} {0}
+set ::stmt [sqlite3_prepare $::db1 "SELECT * FROM t1" -1 dummy]
+sqlite3_close_v2 $::db1
+
+# Delete the database, wal and shm files.
+#
+forcedelete test.db test.db-wal test.db-shm
+
+# Open and populate a new database file at the same file-system location
+# as the one just deleted. Contrive a partial checkpoint on it.
+#
+sqlite3 db  test.db
+sqlite3 db2 test.db
+do_execsql_test 2.1 {
+  PRAGMA auto_vacuum=OFF;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE y1(a PRIMARY KEY, b UNIQUE, c);
+  INSERT INTO y1 VALUES('a', 'b', 'c');
+  INSERT INTO y1 VALUES('d', 'e', 'f');
+} {wal}
+do_execsql_test -db db2 2.2 {
+  BEGIN;
+    SELECT * FROM y1;
+} {a b c d e f}
+do_execsql_test 2.3 {
+  UPDATE y1 SET c='g' WHERE a='d';
+  PRAGMA wal_checkpoint;
+} {0 11 10}
+do_execsql_test -db db2 2.4 {
+  COMMIT
+}
+
+# Finalize the statement handle, causing the first connection to be
+# closed. Test that this has not corrupted the database file by 
+# deleting the new wal file from the file-system. If it has, this
+# test should fail with an IO or corruption error.
+#
+do_test 2.5 {
+  sqlite3_finalize $::stmt
+  sqlite3 db3 test.db
+  execsql { 
+    PRAGMA integrity_check; 
+    SELECT * FROM y1;
+  } db3
+} {ok a b c d e g}
+}
 
 
 finish_test
