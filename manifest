@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\skvtest.exe\sprogram.
-D 2018-03-28T22:08:44.216
+C Update\smemdb1.test\sso\sthat\sit\sworks\swith\sSQLITE_DEFAULT_AUTOVACUUM\sbuilds.
+D 2018-03-29T11:02:19.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1069,7 +1069,7 @@ F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test fbe47f36c12725ebdd2760f846371e6eb09f403bd7236fbdddb21aa6e3c652b4
+F test/memdb1.test 61aa1dbdeea6320791d2ff42a9a6149d5716be674bf06ee0ffa0aad1bf3eb5f8
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0d12354bba96056f930e5ed3e88c37ec139211be09e6cd6eb7310e979de56c8
-R 004b9437e05feb65d78e62ec6aeba171
-U drh
-Z dea8768ba4562e65093102bd376c96e4
+P d48972cf873f8e2499f7c77f8062fde439e7426b616514c147810763469d7c6a
+R eaeb36cbe79b741ce3f9b476b16e7ffd
+U dan
+Z 0ac0323c1eb893fa6bc372ad04256f86
