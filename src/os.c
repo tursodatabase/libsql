@@ -142,10 +142,11 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
     DO_OS_MALLOC_TEST(id);
   }
 #endif
+  if( id->pMethods==0 ) return SQLITE_NOTFOUND;
   return id->pMethods->xFileControl(id, op, pArg);
 }
 void sqlite3OsFileControlHint(sqlite3_file *id, int op, void *pArg){
-  (void)id->pMethods->xFileControl(id, op, pArg);
+  if( id->pMethods ) (void)id->pMethods->xFileControl(id, op, pArg);
 }
 
 int sqlite3OsSectorSize(sqlite3_file *id){
