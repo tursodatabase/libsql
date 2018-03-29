@@ -158,7 +158,9 @@ proc strip_slash {in} { regsub {/$} $in {} }
 
 proc do_zip_tests {tn file} {
   uplevel do_zipfile_blob_test $tn.1 $file
-  uplevel do_unzip_test $tn.2 $file
+  if {[info exists ::UNZIP]} {
+    uplevel do_unzip_test $tn.2 $file
+  }
 }
 
 forcedelete test.zip
