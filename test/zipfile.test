@@ -647,6 +647,8 @@ do_test 8.0.3 {
 } {}
 execsql COMMIT
 
+catch { forcedelete test_unzip }
+catch { file mkdir test_unzip }
 do_execsql_test 8.1.1 {
   CREATE VIRTUAL TABLE nogood USING zipfile('test_unzip');
 }
