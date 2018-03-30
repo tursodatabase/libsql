@@ -764,7 +764,7 @@ static int editDist3ConfigLoad(
     assert( zTo!=0 || nTo==0 );
     if( nFrom>100 || nTo>100 ) continue;
     if( iCost<0 ) continue;
-    if( iCost>10000 ) continue;   /* Costs above 10K are considered infinite */
+    if( iCost>=10000 ) continue;  /* Costs above 10K are considered infinite */
     if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
       pNew = sqlite3_realloc64(p->a, (p->nLang+1)*sizeof(p->a[0]));
