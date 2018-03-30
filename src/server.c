@@ -140,6 +140,9 @@ struct Server {
   Server *pNext;                  /* Next in pCommit or pReader list */
 };
 
+/*
+** Global variables used by this module.
+*/
 struct ServerGlobal {
   ServerDb *pDb;                  /* Linked list of all ServerDb objects */
 };
@@ -160,10 +163,6 @@ typedef struct ServerFcntlArg ServerFcntlArg;
 #define SERVER_TRANS_NONE      0
 #define SERVER_TRANS_READONLY  1
 #define SERVER_TRANS_READWRITE 2
-
-#define SERVER_WRITE_LOCK 3
-#define SERVER_READ_LOCK  2
-#define SERVER_NO_LOCK    1
 
 /*
 ** Global mutex functions used by code in this file.
@@ -224,12 +223,20 @@ static int serverFindDatabase(Server *pNew, i64 *aFileId){
   return rc;
 }
 
+/*
+** Roll back journal iClient. This is a hot-journal rollback - the
+** connection passed as the first argument does not currently have an
+** open transaction that uses the journal (although it may have an
+** open transaction that uses some other journal).
+*/
 static int serverClientRollback(Server *p, int iClient){
   ServerDb *pDb = p->pDb;
   ServerJournal *pJ = &pDb->aJrnl[iClient];
   int bExist = 1;
   int rc = SQLITE_OK;
 
+  /* If it is not exists on disk but is not already open, open the
+  ** journal file in question. */
   if( fdOpen(pJ->jfd)==0 ){
     bExist = 0;
     rc = sqlite3OsAccess(pDb->pVfs, pJ->zJournal, SQLITE_ACCESS_EXISTS,&bExist);

@@ -5,35 +5,48 @@
 </center>
 
 <p>
-The "server-process-edition" branch contains two modifications to stock SQLite
-that work together to provide concurrent read/write transactions using
-page-level-locking provided that:
+The "server-process-edition" branch contains two modifications to stock 
+SQLite that work together to provide concurrent read/write transactions 
+using pessimistic page-level-locking. The system runs in two modes:
 
 <ul>
-  <li><p> All clients are in the same process, and
-  <li><p> The application uses "PRAGMA synchronous=off".
+  <li><p> Single-process mode - where all clients must be within the
+          same address space, and 
+  <li><p> Multi-process mode - where clients may be distributed between
+          multiple OS processes.
 </ul>
+
+<p> The system is designed to be most efficient when used with 
+<a href="https://www.sqlite.org/pragma.html#pragma_synchronous">
+  "PRAGMA synchronous=OFF"</a>, although it does not require this.
 
 <p>
 Up to 16 simultaneous read/write transactions controlled by page-level-locking
-are possible. Additionally, there may be any number of read-only transactions
-started using "BEGIN READONLY" commands. Read-only transactions do not block
-read-write transactions, and read-write transactions do not block read-only
-transactions.
+are possible. Additionally, in single-process mode there may be any number of
+read-only transactions started using the "BEGIN READONLY" command. Read-only
+transactions do not block read-write transactions, and read-write transactions
+do not block read-only transactions. Read-only transactions access a consistent
+snapshot of the database - writes committed by other clients after the
+transaction has started are never visible to read-only transactions. In
+multi-process mode, the "BEGIN READONLY" command is equivalent to a stock
+"BEGIN".
 
 <p>
 The two features on this branch are:
 <ol>
-  <li><p> An alternative layout for the database free-page list. This is intended
-       to reduce contention between writers when allocating new database pages,
-       either from the free-list or by extending the database file.
+  <li><p> An 
+    <a href=#freelist>alternative layout for the database free-page list</a>. 
+    This is intended to reduce contention between writers when allocating
+    new database pages, either from the free-list or by extending the
+    database file.
 
-  <li><p> The "server-mode" extension, which provides the read/write
-       page-level-locking and read-only MVCC concurrency mentioned above.
+  <li><p> The <a href=#servermode>"server-mode" extension</a>, which
+    provides read/write page-level-locking concurrency and (in
+    single-process mode) read-only MVCC concurrency mentioned above.
 </ol>
 
 
-<h2> Alternative Free-List Format </h2>
+<h2 id=freelist> 1.0 Alternative Free-List Format </h2>
 
 <p>
 The alternative free-list format is very similar to the current format. It
@@ -80,15 +93,19 @@ completely empty. Which, as the implementation ensures that a free-list that
 uses the alternative format is never completely emptied, effectively precludes
 changing the format from 2 (alternative) to 1 (legacy).
 
-<h2> Page level locking - "Server Mode" </h2>
+<p>
+For databases that use the "alternative" free-list format, the read and write
+versions in the database header (byte offsets 18 and 19) are set to 3 for
+rollback mode or 4 for wal mode (instead of 1 and 2 respectively).
+
+<h2 id=servermode> 2.0 Page level locking - "Server Mode" </h2>
 
 <p>
-A database client automatically enters "server mode" if (a) it is using a VFS
-that takes a process-wide exclusive lock on the db file (like "unix-excl"
-does), and (b) there exists a directory named "&lt;database&gt;-journal" in the
-file system alongside the database file "&lt;database&gt;" There is currently no
-provision for creating this directory, although it could be safely done for
-a database in rollback mode using something like:
+A database client automatically enters "server mode" if there exists a
+<i>directory</i> named "&lt;database&gt;-journal" in the file system alongside
+the database file "&lt;database&gt;" There is currently no provision for
+creating this directory, although it could be safely done for a database in
+rollback mode using something like:
 
 <pre>
   PRAGMA journal_mode = off;
@@ -97,49 +114,238 @@ a database in rollback mode using something like:
   END;
 </pre>
 
-<p>
-To check the status of these two conditions, a new file-control is added -
-SQLITE_FCNTL_SERVER_MODE. SQLite invokes this file-control as part of the
-procedure for detecting a hot journal (after it has established that there is a
-file-system entry named &lt;database&gt;-journal and that no other process
-holds a RESERVED lock). If the VFS does support an exclusive process-wide lock
-and if the directory is present, the VFS indicates that the client should enter
-server mode. If the VFS does not indicate this, or if it returns
-SQLITE_NOTFOUND, then SQLite proceeds with the hot-journal rollback.
+<p> As well as signalling new clients that they should enter server-mode,
+creating a directory named "&lt;database&gt;-journal" has the helpful 
+side-effect of preventing legacy clients from accessing the database file at
+all.
 
-<p>
-There is also a new file-control named SQLITE_FCNTL_FILEID, which requests a
-128-bit value that uniquely identifies an open file on disk from the VFS. This
-is used to ensure that all connections to the same database from within a
-process use the same shared state, even if they connect to the db using
-different file-system paths.
+<p> If the VFS is one that takes an exclusive lock on the db file (to 
+guarantee that no other process accesses the db file), then the system
+automatically enters single-process mode. Otherwise, multi-process mode.
 
-<p>
-The heap-memory data structure shared between all connections to the same
-database is protected by a mutex. Clients take and release the mutex each
-time a transaction is opened or closed, and each time a read or write lock
-is taken on a specific database page. Ordinary read/write transactions lock
-each page that they access - each page can support any number of concurrent
-read locks or a single write lock. 
+<p> In both single and multi-process modes, page-level-locking is managed
+by allocating a fixed-size array of "locking slots". Each locking slot is
+32-bits in size. By default, the array contains 262144 (2^18) slots. Pages are
+assigned to locking slots using the formula (pgno % 262144) - so pages 1,
+262145, 524289 etc. share a single locking slot.
 
-<p>
-Write transactions use a journal file stored in the &lt;database&gt;-journal 
-directory. Journal files are named "&lt;id&gt;-journal", where &lt;id&gt; is an
-integer value betwen 0 and 15, inclusive. A client may use multiple different
-journal files throughout its lifetime.
+<p> In single-process mode, the array of locking slots is allocated on 
+the process heap and access is protected by a mutex. In multi-process mode, it
+is created by memory-mapping a file on disk (similar to the *-shm file in
+SQLite wal mode) and access is performed using 
+<a href="https://en.wikipedia.org/wiki/Compare-and-swap">atomic CAS
+  primitives</a> exclusively.
 
-<p>Before database pages are overwritten in server-mode, entries are added to
-an in-memory hash table containing the old page content. These entries are
-used by read-only transactions to ensure that they access a consistent snapshot
-of the database. Hash table entries are automatically removed when they are
-no longer required.
+<p> Each time a read/write transaction is opened, the client assumes a client 
+id between 0 and 15 for the duration of the transaction. Client ids are unique
+at any point in time - concurrently executing transactions must use different
+client ids. So there may exist a maximum of 16 concurrent read/write
+transactions at any one time.
 
-<p>
-It is not difficult to extend the kind of page level locking used by read/write
-transactions to clients in multiple processes. It might be more difficult to
-extend the read-only MVCC capability though.
+<p> Read/write transactions in server-mode are similar to regular SQLite
+transactions in rollback mode. The most significant differences are that:
 
-<h2> Performance Test </h2>
+<ul>
+  <li> <p>Instead of using journal file &lt;database&gt;-journal, server-mode
+    clients use &lt;database&gt;-journal/&lt;client-id&gt;-journal. If 
+    there are multiple concurrent transactions, each uses a separate 
+    journal file.
+
+    <li> <p>No database-wide lock is taken. Instead, individual read and write
+    locks are taken on the pages accessed by the transaction.
+</ul>
+
+<p> Each locking slot is 32-bits in size. A locking slot may simultaneously
+support a single write-lock, up to 16 read-locks from read/write clients, and
+(in single process mode) up 1024 read-locks from "BEGIN READONLY" clients.
+Locking slot bits are used as follows:
+
+<ul>
+  <li> <p> The least-significant 16-bits are used for read-locks taken by
+    read/write clients. To take a read-lock, bit &lt;client-id&gt; of the
+    locking slot is set.
+
+  <li> <p> The next 5 bytes are used for the write-lock. If no write-lock
+    is held on the slot, then this 5 byte integer is set to 0. Otherwise,
+    it is set to (<i>C</i> + 1), where <i>C</i> is the &lt;client-id&gt; of
+    the client holding the write-lock.
+
+  <li> <p> The next 10 bits contain the total number of read-locks held by
+    "BEGIN READONLY" clients on the locking slot. See the section below
+    for a description of how these are used.
+</ul>
+
+<p> Currently, if a client requests a lock that cannot be granted due to
+a conflicting lock, SQLITE_BUSY is returned to the caller and either the
+entire transaction or statement transaction must be rolled back. See 
+<a href=#problems>Problems and Issues</a> below for more details.
+
+<h3> 2.1 Single-Process Mode </h3>
+
+<p> Single process mode is simpler than multi-process mode because it does
+not have to deal with runtime client failure - it is assumed that if one
+client fails mid-transaction the entire process crashes. As a result the 
+only time hot-journal rollback is required in single-process mode is as
+part of startup. The first client to connect to a database in single-process
+mode attempts to open and rollback all 16 potential hot journal files.
+
+<p> But, in order to support non-blocking "BEGIN READONLY" transactions, it is
+also in some ways more complicated than multi-process mode. "BEGIN READONLY"
+support works as follows:
+
+<ul>
+  <li> <p>Clients executing "BEGIN READONLY" transactions are not assigned
+    a &lt;client-id&gt;. Instead, they have a transaction-id that is unique
+    within the lifetime of the process. Transaction-ids are assigned using a 
+    monotonically increasing function.
+
+  <li> <p>In single-process mode, writers never spill the cache mid-transaction.
+    Data is only written to the database as part of committing a transaction.
+
+  <li> <p>As well as writing the contents of overwritten pages out to the journal
+    file, a writer in single-process mode also accumulates a list of buffers
+    containing the original data for each page overwritten by the current
+    transaction in main-memory.
+
+  <li> <p>When a transaction is to be committed, a writer first obtains a
+    transaction-id (in the same way as a BEGIN READONLY client) and then adds
+    all of its "old data" buffers to a hash table accessible to all database
+    clients. Associated with each hash table entry is the newly assigned
+    transaction-id. It then waits (spin-locks) for all "BEGIN READONLY"
+    read-locks to clear on all pages that will be written out by the
+    transaction. Following this, it commits the transaction as normal (writes
+    out the dirty pages and zeroes the journal file header).
+
+  <li> <p>When a "BEGIN READONLY" transaction reads a page, it first checks
+    the aforementioned hash table for a suitable entry. A suitable entry
+    is one with the right page-number and a transaction-id greater than that
+    of the "BEGIN READONLY" transaction (i.e. one added to the hash table 
+    <i>after</i> the BEGIN READONLY transaction started). If such an entry
+    can be found, the client uses the associated data instead of reading
+    from the db file. Or, if no such entry is found, the client:
+    <ol>
+      <li> Increments the number of BEGIN READONLY read-locks on the page.
+      <li> Reads the contents of the page from the database file.
+      <li> Decrements the number of BEGIN READONLY read-locks on the page.
+    </ol>
+    <p> The mutex used to protect access to the array of locking slots and
+    the shared hash table is relinquished for step 2 above.
+
+  <li> <p>After each transaction is commited in single-process mode, the 
+    client searches the hash table for entries that can be discarded. An
+    entry can be discarded if it has a transaction-id older than any still
+    in use (either by BEGIN READONLY transactions or committers).
+</ul>
+
+<h3> 2.2 Multi-Process Mode </h3>
+
+<p> Multi-process mode differs from single-process mode in two important ways:
+
+<ul>
+  <li> <p>Individual clients may fail mid-transaction and the system must recover
+    from this.
+
+  <li> <p>Partly as a consequence of the above, there are no convenient 
+    primitives like mutexes or malloc() with which to build complicated data
+    structures like the hash-table used in single-process mode. As a result,
+    there is no support for "BEGIN READONLY" transactions in multi-process
+    mode.  
+</ul>
+
+<p> Unlike single-process mode clients, which may be assigned a different
+client-id for each transaction, clients in multi-process mode are assigned a
+client-id when they connect to the database and do not relinquish it until
+they disconnect. As such, a database in multi-process server-mode supports
+at most 16 concurrent client connections.
+
+<p> As well as the array of locking slots, the shared-memory mapping used
+by clients in multi-process mode contains 16 "client slots". When a client
+connects, it takes a posix WRITE lock on the client slot that corresponds
+to its client id. This lock is not released until the client disconnects.
+Additionally, whenever a client starts a transaction, it sets the value 
+in its client locking slot to 1, and clears it again after the transaction
+is concluded.
+
+<p> This assists with handling client failure mid-transaction in two ways:
+
+<ul>
+  <li><p> If client A cannot obtain a lock due to a conflicting lock held by
+    client B, it can check whether or not client B has failed by attempting a
+    WRITE lock on its client locking slot. If successful, then client B must
+    have failed and client A may: 
+    <ul>
+      <li> Roll back client B's journal, and
+      <li> By iterating through the entire locking slot array, release all
+        locks held by client B when it failed.
+    </ul>
+
+  <li><p> When a client first connects and locks its client locking slot, it
+    can check whether or not the previous user of the client locking slot failed
+    mid-transaction (since if it did, the locking slot value will still be
+    non-zero). If it did, the new owner of the client locking slot can release
+    any locks and roll back any hot-journal before proceeding.
+</ul>
+
+<h3> 2.3 Required VFS Support </h3>
+
+<p> The server-mode extension requires that the VFS support various special
+file-control commands. Currently support is limited to the "unix" VFS.
+
+<dl>
+  <dt> SQLITE_FCNTL_SERVER_MODE
+  <dd><p> This is used by SQLite to query the VFS as to whether the
+  connection should use single-process server-mode, multi-process server-mode,
+  or continue in legacy mode.
+
+  <p>SQLite invokes this file-control as part of the procedure for detecting a
+  hot journal (after it has established that there is a file-system entry named
+  &lt;database&gt;-journal and that no other process holds a RESERVED lock).
+  If the &lt;database&gt;-journal directory is present in the file-system and
+  the current VFS takes an exclusive lock on the database file (i.e. is
+  "unix-excl"), then this file-control indicates that the connection should use
+  single-process server-mode. Or, if the directory exists but the VFS does not
+  take an exclusive lock on the database file, that the connection should use
+  multi-proces server-mode. Or, if there is no directory of the required name,
+  that the connection should use legacy mode.
+
+  <dt> SQLITE_FCNTL_FILEID
+  <dd><p> Return a 128-bit value that uniquely identifies an open file on disk
+  from the VFS. This is used to ensure that all connections to the same
+  database from within a process use the same shared state, even if they
+  connect to the db using different file-system paths.
+
+  <dt> SQLITE_FCNTL_SHMOPEN
+  <dd>
+
+  <dt> SQLITE_FCNTL_SHMOPEN2
+  <dd>
+
+  <dt> SQLITE_FCNTL_SHMLOCK
+  <dd>
+
+  <dt> SQLITE_FCNTL_SHMCLOSE
+  <dd>
+</dl>
+
+
+<h2 id=problems> 3.0 Problems and Issues </h2>
+
+<ul>
+
+  <li> <p>Writer starvation might be the biggest issue. How can it be
+       prevented?
+
+  <li> <p>Blocking locks of some sort would likely improve things. The issue
+       here is deadlock detection.
+
+  <li> <p>The limit of 16 concurrent clients in multi-process mode could be 
+       raised to 27 (since the locking-slot bits used for BEGIN READONLY
+       locks in single-process mode can be reassigned to support more 
+       read/write client read-locks).
+
+</ul>
+
+<h2> 4.0 Performance Test </h2>
 
 <p>
 The test uses a single table with the following schema:
