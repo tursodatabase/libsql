@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sspellfix\sextension\scausing\sit\sto\scompute\ssuboptimal\sanswers.\nThe\sproblem\swas\sintroduced\sby\scheck-in\s[afd6fbc01052ccfc9].
-D 2018-03-30T16:34:04.007
+C Fix\san\sassertion\sfailure\striggered\sby\sa\sSELECT\swith\sa\scompound\ssub-query\sthat\ncontains\san\sincorrectly\splaced\sORDER\sBY\sclause.\sThis\sproblem\sis\sjust\san\nassert()\sfailure\s-\snon-DEBUG\sbuilds\sare\snot\saffected.\sProblem\sfound\sby\nOSSFuzz.
+D 2018-03-31T16:31:51.059
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -491,7 +491,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c e51efe5479d1cb4f48defe0b97cdba7391df42a755ba9592b9159510d03cf738
+F src/select.c 16d1f3510cef527e25067d04253e347c899346800d74f31629735295e9fac8ae
 F src/shell.c.in d6a07811aa9f3b10200c15ab8dd4b6b998849a3b0c8b125bfa980329a33c26a6
 F src/sqlite.h.in e0be726ea6e4e6571724d39d242472ecd8bd1ba6f84ade88e1641bde98a6d02b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1285,7 +1285,7 @@ F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec7
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
-F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
+F test/subquery2.test 8250dfd6a773b04c7a5c37ac63276f62b329157ce171244d0cbe1acc365e3303
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c34af7b975598bbe20751dfdd346f43031cb2bcb6b78f1bbdb2b51b398de182
-R 32840bd2fcaf07eb6e9e19cb2e0114c1
-U drh
-Z c20632532889bc7014eaf94ce0826931
+P 3bf28fd9a70ebefc464dceda124d6ed342dd83f71eeeb0568f79e34e731a073e
+R 5ae65ce361d1d084f7cd6c6b61f7415d
+U dan
+Z 91a0f14cdcc4b2b7b3eccd0f8c52ef32
