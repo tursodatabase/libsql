@@ -1,5 +1,5 @@
-C Fix\san\sassertion\sfailure\striggered\sby\sa\sSELECT\swith\sa\scompound\ssub-query\sthat\ncontains\san\sincorrectly\splaced\sORDER\sBY\sclause.\sThis\sproblem\sis\sjust\san\nassert()\sfailure\s-\snon-DEBUG\sbuilds\sare\snot\saffected.\sProblem\sfound\sby\nOSSFuzz.
-D 2018-03-31T16:31:51.059
+C Fix\sa\slogic\serror\sdiscovered\sby\sOSSFuzz.
+D 2018-03-31T23:28:55.602
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -576,7 +576,7 @@ F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 7cae47e813393d70c6d327fdf000fcb30f76b1b0b5a5b52ff6402e0c658de32c
 F src/whereInt.h 82c04c5075308abbac59180c8bad5ecb45b07453981f60a53f3c7dee21e1e971
-F src/wherecode.c e1aaadd8fec650037cfbf27d1b3470338fb3b58fec34d11082df16fe9a08fbd7
+F src/wherecode.c e75c351bb4a2b2ef9dc03e4758fc3282e65cabf7ad7fbd9d170136c50fa97b48
 F src/whereexpr.c 53532be687e12f3cd314f1e204cd4fbdac7ad250e918a182b048121e16e828ae
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bf28fd9a70ebefc464dceda124d6ed342dd83f71eeeb0568f79e34e731a073e
-R 5ae65ce361d1d084f7cd6c6b61f7415d
-U dan
-Z 91a0f14cdcc4b2b7b3eccd0f8c52ef32
+P 823779d31eb09cda5effe747d9adb35e600a52d4274226586437f674e7824d91
+R 729c06f2ccb0b2877746921649749e7f
+U drh
+Z 43a1f355cf5a93ba205c5e2d257a2751
