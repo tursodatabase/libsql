@@ -194,10 +194,6 @@ also in some ways more complicated than multi-process mode. "BEGIN READONLY"
 support works as follows:
 
 <ul>
-  <li> <p>Clients executing "BEGIN READONLY" transactions are not assigned
-    a &lt;client-id&gt;. Instead, they have a transaction-id that is unique
-    within the lifetime of the process. Transaction-ids are assigned using a 
-    monotonically increasing function.
 
   <li> <p>In single-process mode, writers never spill the cache mid-transaction.
     Data is only written to the database as part of committing a transaction.
@@ -207,22 +203,29 @@ support works as follows:
     containing the original data for each page overwritten by the current
     transaction in main-memory.
 
-  <li> <p>When a transaction is to be committed, a writer first obtains a
-    transaction-id (in the same way as a BEGIN READONLY client) and then adds
-    all of its "old data" buffers to a hash table accessible to all database
-    clients. Associated with each hash table entry is the newly assigned
-    transaction-id. It then waits (spin-locks) for all "BEGIN READONLY"
-    read-locks to clear on all pages that will be written out by the
-    transaction. Following this, it commits the transaction as normal (writes
-    out the dirty pages and zeroes the journal file header).
+  <li> <p>When a transaction is ready to be committed, a writer obtains a
+    transaction-id. Transaction-ids are assigned to writers using a
+    monotonically increasing function. The writer then adds all of its "old
+    data" buffers to a hash table accessible to all database clients.
+    Associated with each hash table entry is the newly assigned transaction-id.
+    It then waits (spin-locks) for all "BEGIN READONLY" read-locks to clear on
+    all pages that will be written out by the transaction. Following this, it
+    commits the transaction as normal (writes out the dirty pages and zeroes
+    the journal file header).
+
+  <li> <p>Clients executing "BEGIN READONLY" transactions are not assigned
+    a &lt;client-id&gt;. Instead, they are assigned a transaction-id that is 
+    either (a) that of the oldest transaction-id belonging to a writer that has
+    not yet finished committing, or (b) if there are currently no writers
+    committing then the value that will be assigned to the next committer.
 
   <li> <p>When a "BEGIN READONLY" transaction reads a page, it first checks
     the aforementioned hash table for a suitable entry. A suitable entry
-    is one with the right page-number and a transaction-id greater than that
-    of the "BEGIN READONLY" transaction (i.e. one added to the hash table 
-    <i>after</i> the BEGIN READONLY transaction started). If such an entry
-    can be found, the client uses the associated data instead of reading
-    from the db file. Or, if no such entry is found, the client:
+    is one with the right page-number and a transaction-id greater than or
+    equal to that of the "BEGIN READONLY" transaction (i.e. one that had not
+    finished committing when the BEGIN READONLY transaction started). If such 
+    an entry can be found, the client uses the associated data instead of
+    reading from the db file. Or, if no such entry is found, the client:
     <ol>
       <li> Increments the number of BEGIN READONLY read-locks on the page.
       <li> Reads the contents of the page from the database file.

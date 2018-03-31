@@ -1,11 +1,11 @@
-C Update\sand\sadd\sfurther\sdetail\sto\sREADME-server-edition.html.
-D 2018-03-30T20:42:25.654
+C Fix\san\serror\sin\sREADME-server-edition.html.
+D 2018-03-31T18:43:20.756
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bdcad21b027a56a73e54a1121cfb9edd0a35c0abfa53aa12c2f996006ff99960
-F README-server-edition.html 2065bc7f89b84ec9e4199aeae3786399a3bb88cd8ed3f7398067d010d7c4cf8b
+F README-server-edition.html b98409c486d6f02871b20a9e29e1e18cd050a02e03062569ffb051774b4d6861
 F README.md 1d5342ebda97420f114283e604e5fe99b0da939d63b76d492eabbaae23488276
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df52e89fff54dbb650cd1fb2b7afe0467acea96a0056728ef48e0c3fea40eeb2
-R 7d4ea8fb7a75fedab49e62a0da9de0ed
+P 337a0b67e30f1030fdc59f712e5914f4801b0e9e4ae19a1e82c10b73eb3f4773
+R 5045a1c8302fea1a74fa92a9ce0972dd
 U dan
-Z c5379dcb0a548050240d2cfa8c04d0d8
+Z d3c495daa23a1fc63d551424dd8817b7
