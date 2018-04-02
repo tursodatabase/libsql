@@ -1,5 +1,5 @@
-C Better\ssolution\sto\sthe\sLIKE\sproblem\sfrom\sthe\sprevious\scheck-in\sthat\sworks\neven\sif\sthe\sSQLITE_LIKE_DOESNT_MATCH_BLOBS\scompile-time\soption\sis\sused.
-D 2018-04-02T00:16:36.624
+C Version\s3.23.0
+D 2018-04-02T11:04:16.044
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1717,7 +1717,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc06ddd458fc1028b33b3927cc3b113b7106caa67136993de2e57926a8a19623
+P b850dd159918af568c55c00ff146ba9c9c04d33ff384fe1eb0ad74164bc401bb
 R 7b7a30931830e96714db59b77704b857
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.23.0 *
 U drh
-Z 4d51a8db2ce4cd583168b066b4500b79
+Z 386b4344740e610e0c3078bd00d99ed8
