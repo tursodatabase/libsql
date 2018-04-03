@@ -6,11 +6,11 @@ use super::unlock_notify;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
-pub struct RawStatement(*mut ffi::sqlite3_stmt, *mut ffi::sqlite3);
+pub struct RawStatement(*mut ffi::sqlite3_stmt);
 
 impl RawStatement {
-    pub fn new(stmt: *mut ffi::sqlite3_stmt, db: *mut ffi::sqlite3) -> RawStatement {
-        RawStatement(stmt, db)
+    pub fn new(stmt: *mut ffi::sqlite3_stmt) -> RawStatement {
+        RawStatement(stmt)
     }
 
     pub unsafe fn ptr(&self) -> *mut ffi::sqlite3_stmt {
@@ -31,13 +31,14 @@ impl RawStatement {
 
     pub fn step(&self) -> c_int {
         if cfg!(feature = "unlock_notify") {
+            let db = unsafe { ffi::sqlite3_db_handle(self.0) };
             let mut rc;
             loop {
                 rc = unsafe { ffi::sqlite3_step(self.0) };
-                if !unlock_notify::is_locked(self.1, rc) {
+                if !unlock_notify::is_locked(db, rc) {
                     break;
                 }
-                rc = unlock_notify::wait_for_unlock_notify(self.1);
+                rc = unlock_notify::wait_for_unlock_notify(db);
                 if rc != ffi::SQLITE_OK {
                     break;
                 }

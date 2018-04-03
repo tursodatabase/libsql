@@ -895,7 +895,7 @@ impl InnerConnection {
             }
         };
         self.decode_result(r).map(|_| {
-            Statement::new(conn, RawStatement::new(c_stmt, self.db()))
+            Statement::new(conn, RawStatement::new(c_stmt))
         })
     }
 
