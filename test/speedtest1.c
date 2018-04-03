@@ -1651,8 +1651,8 @@ void testset_trigger(void){
   int jj, ii;
   char zNum[2000];              /* A number name */
 
-  const int NROW  = 50000;
-  const int NROW2 = 10000;
+  const int NROW  = 500*g.szTest;
+  const int NROW2 = 100*g.szTest;
 
   speedtest1_exec(
       "BEGIN;"
@@ -2156,7 +2156,8 @@ int main(int argc, char **argv){
                 "the R-Tree tests\n");
 #endif
   }else{
-    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree fp\n",
+    fatal_error("unknown testset: \"%s\"\n"
+                "Choices: cte debug1 fp main orm rtree trigger\n",
                  zTSet);
   }
   speedtest1_final();
