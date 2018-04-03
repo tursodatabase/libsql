@@ -1,5 +1,5 @@
-C Fix\sa\sfew\ssmall\stest\sscript\sissues\saffecting\sSQLITE_TEMP_STORE=3\sbuilds.
-D 2018-04-03T17:05:13.814
+C Update\sspeedtest1.c\swith\snew\stestset\s"trigger"\sbased\son\sthe\stests\sin\nspeed4p.test.
+D 2018-04-03T20:00:09.543
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1271,7 +1271,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c a5faf4cbe5769eee4b721b3875cb3f12520a9b99d9026b1063b47c39603375b8
+F test/speedtest1.c 3f17427600e858bcdaa0eb3075c1a2921c02db6d35a176c24a9dcd9b13d20812
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3328e828e28ca7198fd1ce84503e649ab2278913a2cf85a0f0391f31d0c9c8d7
-R c600f0dbbfcdccc3c37d773350506968
+P e171f3722f78c58d2f20443e3bbcce2bd9701b8537f6e8d482ae804154d7a17f
+R e402f9a2982145c160d4e44decc8af99
 U dan
-Z 3446c82a2fe0b428ce0106172b072bb3
+Z 88086f03d47fff48f3d9b964051d594b
