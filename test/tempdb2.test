@@ -16,6 +16,9 @@ set testprefix tempdb2
 db close
 sqlite3 db ""
 
+set unlocked unlocked
+if {$::TEMP_STORE>=2} { set unlocked unknown }
+
 proc int2str {i} { string range [string repeat "$i." 450] 0 899 }
 db func int2str int2str
 
@@ -55,7 +58,7 @@ do_execsql_test 1.1 {
   COMMIT;
 
   PRAGMA lock_status;
-} {main unlocked temp closed}
+} [list main $unlocked temp closed]
 
 do_execsql_test 1.2 {
   UPDATE t1 SET b=int2str(2);
