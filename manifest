@@ -1,5 +1,5 @@
-C Change\sthe\sLEFT\sJOIN\sstrength\sreduction\soptimization\sso\sthat\sassumes\sthat\nvirtual\stable\sconstraints\scan\sbe\strue\seven\sif\sterms\swithin\sthe\sconstraint\nare\sNULL.\s\sThis\sworks\saround\sdodgy\svirtual\stable\simplementations.
-D 2018-04-03T14:04:48.605
+C Fix\sthe\sgenerate_series\svirtual\stable\sso\sthat\sit\scorrectly\sreturns\sno\nrows\sif\sany\sof\sits\sconstraints\sare\sNULL.\nTicket\s[fac496b61722daf28].
+D 2018-04-03T14:25:51.057
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -290,7 +290,7 @@ F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
-F ext/misc/series.c f3c0dba5c5c749ce1782b53076108f87cf0b71041eb6023f727a9c50681da564
+F ext/misc/series.c c7197db304f7009b08d6459a9de02e7f51ad0e1a3fdacbc1ebf5252a9a346959
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c 9e960ba50483214c6a7a4b1517f8d8cef799e9db381195178c3fd3ad207e10c0
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 736b53f57f70b23172c30880186dce7ad9baa3b74e3838cae5847cffb98f5cd2
-R a6d2722715be08607b96fd599acd9dc9
+P cbb977fe1908431f3aad8e67668588b119e7d491724f2042af436f509a4f6623
+R 5b7b20e665a772d980f17b735b0b3b92
 U drh
-Z 96e5d106455d94d4a1b52de8a15d2af8
+Z fb5a524110a9f8b3673f29dc99fb5db6
