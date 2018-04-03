@@ -10,12 +10,13 @@
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
 //!
-//! Additionally, because it is such a common data type, implementations are provided for
-//! `time::Timespec` that use a string for storage (using the same format string,
-//! `"%Y-%m-%d %H:%M:%S"`, as SQLite's builtin
-//! [datetime](https://www.sqlite.org/lang_datefunc.html) function.  Note that this storage
-//! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
-//! use a newtype. For example, to store timespecs as `f64`s:
+//! Additionally, because it is such a common data type, implementations are
+//! provided for `time::Timespec` that use the RFC 3339 date/time format,
+//! `"%Y-%m-%dT%H:%M:%S.%fZ"`, to store time values as strings.  These values
+//! can be parsed by SQLite's builtin
+//! [datetime](https://www.sqlite.org/lang_datefunc.html) functions.  If you
+//! want different storage for timespecs, you can use a newtype. For example, to
+//! store timespecs as `f64`s:
 //!
 //! ```rust
 //! extern crate rusqlite;
