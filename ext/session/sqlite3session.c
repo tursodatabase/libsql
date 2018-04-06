@@ -68,7 +68,7 @@ struct SessionBuffer {
 **  sqlite3changeset_start_strm()).
 */
 struct SessionInput {
-  int bNoDiscard;                 /* If true, discard no data */
+  int bNoDiscard;                 /* If true, do not discard in InputBuffer() */
   int iCurrent;                   /* Offset in aData[] of current change */
   int iNext;                      /* Offset in aData[] of next change */
   u8 *aData;                      /* Pointer to buffer containing changeset */
@@ -2593,7 +2593,7 @@ int sqlite3changeset_start_strm(
 ** object and the buffer is full, discard some data to free up space.
 */
 static void sessionDiscardData(SessionInput *pIn){
-  if( pIn->bEof && pIn->xInput && pIn->iNext>=SESSIONS_STRM_CHUNK_SIZE ){
+  if( pIn->xInput && pIn->iNext>=SESSIONS_STRM_CHUNK_SIZE ){
     int nMove = pIn->buf.nBuf - pIn->iNext;
     assert( nMove>=0 );
     if( nMove>0 ){

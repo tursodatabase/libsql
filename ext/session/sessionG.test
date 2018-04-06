@@ -204,7 +204,47 @@ do_test 5.1 {
   }
 } {1 2 3 7 8 9}
 
+#-------------------------------------------------------------------------
 
+reset_db 
+db func number_name number_name
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE UNIQUE INDEX t1b ON t1(b);
+  WITH s(i) AS (
+    SELECT 1
+    UNION ALL
+    SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO t1 SELECT i, number_name(i) FROM s;
+}
+
+do_test 6.1 {
+  db eval BEGIN
+  set ::C [changeset_from_sql {
+    DELETE FROM t1;
+    WITH s(i) AS (
+        SELECT 1
+        UNION ALL
+        SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO t1 SELECT i, number_name(i+1) FROM s;
+  }]
+  db eval ROLLBACK
+  execsql { SELECT count(*) FROM t1 WHERE number_name(a) IS NOT b }
+} {0}
+
+proc xConflict {args} { exit ; return "OMIT" }
+do_test 6.2 {
+  sqlite3changeset_apply db $C xConflict
+} {}
+
+do_execsql_test 6.3 { SELECT count(*) FROM t1; } {1000}
+do_execsql_test 6.4 { 
+  SELECT count(*) FROM t1 WHERE number_name(a+1) IS NOT b; 
+} {0}
+
+# db eval { SELECT * FROM t1 } { puts "$a || $b" }
 
 
 finish_test
