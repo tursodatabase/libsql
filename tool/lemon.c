@@ -3254,6 +3254,7 @@ void ReportOutput(struct lemon *lemp)
   struct state *stp;
   struct config *cfp;
   struct action *ap;
+  struct rule *rp;
   FILE *fp;
 
   fp = file_open(lemp,".out","wb");
@@ -3306,7 +3307,20 @@ void ReportOutput(struct lemon *lemp)
         }
       }
     }
+    if( sp->prec>=0 ) fprintf(fp," (precedence=%d)", sp->prec);
     fprintf(fp, "\n");
+  }
+  fprintf(fp, "----------------------------------------------------\n");
+  fprintf(fp, "Rules:\n");
+  for(rp=lemp->rule; rp; rp=rp->next){
+    fprintf(fp, "%4d: ", rp->iRule);
+    rule_print(fp, rp);
+    fprintf(fp,".");
+    if( rp->precsym ){
+      fprintf(fp," [%s precedence=%d]",
+              rp->precsym->name, rp->precsym->prec);
+    }
+    fprintf(fp,"\n");
   }
   fclose(fp);
   return;
