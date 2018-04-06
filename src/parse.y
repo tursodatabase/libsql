@@ -239,6 +239,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %left CONCAT.
 %left COLLATE.
 %right BITNOT.
+%nonassoc ON.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -678,10 +679,27 @@ joinop(X) ::= JOIN_KW(A) nm(B) JOIN.
 joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
                   {X = sqlite3JoinType(pParse,&A,&B,&C);/*X-overwrites-A*/}
 
+// There is a parsing abiguity in an upsert statement that uses a
+// SELECT on the RHS of a the INSERT:
+//
+//      INSERT INTO tab SELECT * FROM aaa JOIN bbb ON CONFLICT ...
+//                                        here ----^^
+//
+// When the ON token is encountered, the parser does not know if it is
+// the beginning of an ON CONFLICT clause, or the beginning of an ON
+// clause associated with the JOIN.  The conflict is resolved in favor
+// of the JOIN.  If an ON CONFLICT clause is intended, insert a dummy
+// WHERE clause in between, like this:
+//
+//      INSERT INTO tab SELECT * FROM aaa JOIN bbb WHERE true ON CONFLICT ...
+//
+// The [AND] and [OR] precedence marks in the rules for on_opt cause the
+// ON in this context to always be interpreted as belonging to the JOIN.
+//
 %type on_opt {Expr*}
 %destructor on_opt {sqlite3ExprDelete(pParse->db, $$);}
-on_opt(N) ::= ON expr(E).   {N = E;}
-on_opt(N) ::= .             {N = 0;}
+on_opt(N) ::= ON expr(E).  {N = E;}
+on_opt(N) ::= .     [OR]   {N = 0;}
 
 // Note that this block abuses the Token type just a little. If there is
 // no "INDEXED BY" clause, the returned token is empty (z==0 && n==0). If
@@ -824,7 +842,7 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S). {
+cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S) upsert. {
   sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, S, F, R);
 }
@@ -833,6 +851,9 @@ cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
   sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, 0, F, R);
 }
+
+upsert ::= .
+upsert ::= ON CONFLICT SET setlist.
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}

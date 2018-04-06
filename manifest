@@ -1,5 +1,5 @@
-C Enhance\sLEMON\sto\sshow\sprecendence\sof\ssymbols\sand\sall\srules\sin\sthe\sreport\nthat\sis\sgenerated\sin\sparallel\sto\sthe\sparser.
-D 2018-04-06T19:12:55.023
+C Demonstration\sof\show\sthe\sparser\scan\sbe\saugmented\sto\srecognize\sa\nPostgreSQL-style\sUPSERT.\s\sThis\scheck-in\simplements\sparsing\sonly.
+D 2018-04-06T19:36:49.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -480,7 +480,7 @@ F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 140bbc53b5f67f731239f7fc8704a4f1e60cbbc10fb84bf9577322f974725f19
+F src/parse.y b6f9277147926f21ef287fbb8bc6592d801bc8f369d414af47ff2f230f026ea0
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1717,7 +1717,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7594e60935b0b5dcf764476dccdf9b403303818a0419a30bc2c16d58e44f6d04
-R ef1c977dfaed4c346b10d938399c3d50
+P 602fbd8149b53d8f0e9a223cc1aec912e7df03fca35071e8d707776ce225371c
+R 944a876dd463c4d747f0489cc93d0c37
+T *branch * upsert
+T *sym-upsert *
+T -sym-trunk *
 U drh
-Z 131d6c9ff99d8e76f2b61b25cec666a3
+Z e91165cd71d725e31774ced0fb05304c
