@@ -38,7 +38,7 @@ serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
-lazy_static = "0.2"
+lazy_static = "1.0"
 regex = "0.2"
 
 [dependencies.libsqlite3-sys]
