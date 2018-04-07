@@ -416,6 +416,7 @@ TriggerStep *sqlite3TriggerInsertStep(
   IdList *pColumn,    /* List of columns in pTableName to insert into */
   Select *pSelect,    /* A SELECT statement that supplies values */
   u8 orconf,          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
+  ExprList *pUpsert,  /* Upsert values */
   const char *zStart, /* Start of SQL text */
   const char *zEnd    /* End of SQL text */
 ){
@@ -430,6 +431,7 @@ TriggerStep *sqlite3TriggerInsertStep(
     pTriggerStep->orconf = orconf;
   }else{
     sqlite3IdListDelete(db, pColumn);
+    sqlite3ExprListDelete(db, pUpsert);
   }
   sqlite3SelectDelete(db, pSelect);
 
@@ -755,7 +757,8 @@ static int codeTriggerProgram(
           targetSrcList(pParse, pStep),
           sqlite3SelectDup(db, pStep->pSelect, 0), 
           sqlite3IdListDup(db, pStep->pIdList), 
-          pParse->eOrconf
+          pStep->pExprList ? OE_Update : pParse->eOrconf,
+          sqlite3ExprListDup(db, pStep->pExprList, 0)
         );
         break;
       }

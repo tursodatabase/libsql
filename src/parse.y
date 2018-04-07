@@ -99,6 +99,22 @@
 struct TrigEvent { int a; IdList * b; };
 
 /*
+** An instance of this object holds the argument of the ON CONFLICT
+** clause of an UPSERT.
+**
+** The ON CONFLICT clause takes three forms, identified by the Upsert.e
+** field:
+**
+**   OE_None:      No ON CONFLICT clause
+**   OE_Ignore:    ON CONFLICT DO NOTHING
+**   OE_Update:    ON CONFLICT DO UPDATE ...
+*/
+struct Upsert {
+  ExprList *p;    /* column=expr entries for the UPDATE.  Or NULL */
+  int e;          /* OE_None, OE_Replace, or OE_Ignore */
+};
+
+/*
 ** Disable lookaside memory allocation for objects that might be
 ** shared across database connections.
 */
@@ -205,7 +221,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 //
 %fallback ID
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
-  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
+  CONFLICT DATABASE DEFERRED DESC DETACH DO EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
@@ -842,18 +858,48 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S) upsert. {
+cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S)
+        upsert(U). {
   sqlite3WithPush(pParse, W, 1);
-  sqlite3Insert(pParse, X, S, F, R);
+  sqlite3Insert(pParse, X, S, F, upsertType(pParse, R, U.e), U.p);
 }
 cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 {
   sqlite3WithPush(pParse, W, 1);
-  sqlite3Insert(pParse, X, 0, F, R);
+  sqlite3Insert(pParse, X, 0, F, R, 0);
 }
 
-upsert ::= .
-upsert ::= ON CONFLICT SET setlist.
+%type upsert {struct Upsert}
+%destructor upsert {sqlite3ExprListDelete(pParse->db,$$.p);}
+upsert(A) ::= . {
+  A.p = 0;
+  A.e = OE_None;
+}
+upsert(A) ::= ON CONFLICT DO UPDATE SET setlist(X). {
+  A.p = X;  /*A-overwrites-X*/
+  A.e = OE_Update;
+}
+upsert(A) ::= ON CONFLICT DO NOTHING. {
+  A.p = 0;
+  A.e = OE_Ignore;
+}
+
+%include {
+  /* Compute and return the correct conflict resolution strategy for an
+  ** INSERT statement.  If the statement begins with REPLACE or with
+  ** INSERT OR, and it contains an ON CONFLICT clause, throw an error.
+  */
+  static int upsertType(Parse *pParse, int orconf, int upsertType){
+    if( upsertType!=OE_None ){
+      if( orconf!=OE_Default ){
+        sqlite3ErrorMsg(pParse, "ON CONFLICT clause not allowed");
+      }
+      return upsertType;
+    }else{
+      return orconf;
+    }
+  }
+}
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
@@ -1400,9 +1446,10 @@ trigger_cmd(A) ::=
 
 // INSERT
 trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
-                      trnm(X) idlist_opt(F) select(S) scanpt(Z).
-   {A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,R,B,Z);/*A-overwrites-R*/}
-
+                      trnm(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
+   A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,upsertType(pParse,R,U.e),
+                                U.p,B,Z);/*A-overwrites-R*/
+}
 // DELETE
 trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
    {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y, B.z, E);}
