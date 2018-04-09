@@ -1496,7 +1496,7 @@ void sqlite3ChangeCookie(Parse *pParse, int iDb){
   Vdbe *v = pParse->pVdbe;
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_SCHEMA_VERSION, 
-                    db->aDb[iDb].pSchema->schema_cookie+1);
+                   (int)(1+(unsigned)db->aDb[iDb].pSchema->schema_cookie));
 }
 
 /*
