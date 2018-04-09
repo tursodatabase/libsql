@@ -4378,9 +4378,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
-  if( OK_IF_ALWAYS_TRUE(p->pWith) ){
-    sqlite3WithPush(pParse, p->pWith, 0);
-  }
+  sqlite3WithPush(pParse, p->pWith, 0);
 
   /* Make sure cursor numbers have been assigned to all entries in
   ** the FROM clause of the SELECT statement.
