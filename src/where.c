@@ -3099,9 +3099,9 @@ static int whereLoopAddVirtualOne(
        || pNew->aLTerm[iTerm]!=0
        || pIdxCons->usable==0
       ){
-        rc = SQLITE_ERROR;
         sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
-        return rc;
+        testcase( pIdxInfo->needToFreeIdxStr );
+        return SQLITE_ERROR;
       }
       testcase( iTerm==nConstraint-1 );
       testcase( j==0 );
@@ -3129,6 +3129,15 @@ static int whereLoopAddVirtualOne(
   pNew->u.vtab.omitMask &= ~mNoOmit;
 
   pNew->nLTerm = mxTerm+1;
+  for(i=0; i<=mxTerm; i++){
+    if( pNew->aLTerm[i]==0 ){
+      /* The non-zero argvIdx values must be contiguous.  Raise an
+      ** error if they are not */
+      sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
+      testcase( pIdxInfo->needToFreeIdxStr );
+      return SQLITE_ERROR;
+    }
+  }
   assert( pNew->nLTerm<=pNew->nLSlot );
   pNew->u.vtab.idxNum = pIdxInfo->idxNum;
   pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;

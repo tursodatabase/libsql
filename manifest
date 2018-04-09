@@ -1,5 +1,5 @@
-C Fix\sthe\sfts5\sxBestIndex\smethod\sso\sthat\sit\sis\snot\sconfused\sby\s"IS",\s"!=",\n"REGEXP",\s"GLOB"\sor\s"LIKE"\soperators.
-D 2018-04-09T14:26:44.938
+C Enhance\sthe\squery\splanner\sso\sthat\sit\sdetects\swhen\sthe\sxBestIndex\smethod\nof\sa\svirtual\stable\sgives\sout-of-sequence\sargvIndex\svalues\sand\sreports\san\nerror.\s\sSecondary\sfix\sfor\sticket\s[2b8aed9f7c9e6].
+D 2018-04-09T15:57:54.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -574,7 +574,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c f24ffd41cd3a186731817bb7f05ea9a6c4f0474235b6b8a718985db5f8cb9822
+F src/where.c d6e5f2056e9a60251e79780fc598a5943e88a3c0fa0019d54922e59f99019287
 F src/whereInt.h 2610cb87dd95509995b63decc674c60f2757697a206cfe0c085ee53d9c43cfff
 F src/wherecode.c 982b7450c53fb272f61a1d20c93e960260ea4dfe8e2e9bacc190e2a041a1f1a4
 F src/whereexpr.c 53532be687e12f3cd314f1e204cd4fbdac7ad250e918a182b048121e16e828ae
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea2e5b34bf35ade602dfcef359b64f810674f304fda14326b7f2dedefcc5f340
-R 8f9fac69a6facd3d2fe7d071e9eeb654
-U dan
-Z 8f666f7374638cab02f381eabf013e4e
+P a0ca4ddbbf179b8f0a5f30c127f2f8c92b6d45a08be3e1ef2194e44ebcc28120
+R 1af7937ba1b801b99e6369015e55beae
+U drh
+Z d6c99c4e35e451694f089e81619701c1
