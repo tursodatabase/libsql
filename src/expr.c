@@ -5018,6 +5018,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
   switch( pExpr->op ){
+    case TK_NOT:
     case TK_ISNULL:
     case TK_IS:
     case TK_OR:
