@@ -1,11 +1,11 @@
-C Minor\schanges\sto\sthe\sinput\sgrammar\sresulting\sin\sa\sfaster\sand\sslightly\ssmaller\nparser.
-D 2018-04-09T20:36:09.127
+C Update\sthe\stop-level\sREADME.md\sfile\sto\spoint\sto\sthe\swhynotget.html\sdocument.\nPut\sit\son\sthe\scorrect\sbranch,\sthis\stime.
+D 2018-04-10T00:53:36.702
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bdcad21b027a56a73e54a1121cfb9edd0a35c0abfa53aa12c2f996006ff99960
-F README.md 1d5342ebda97420f114283e604e5fe99b0da939d63b76d492eabbaae23488276
+F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1717,7 +1717,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9506ec14fb9e58986c1b79a3ca78430ad94b10966944c864e0429a7688dd1454
-R e690430bc32db63ab4d1aceaf2f9c6b6
+P a2c443c0ee9a0e0b2d10298b8a74ff00a1a66e3f96f4093348f0fef977587204
+Q +7dfd4543da7ef741852252d3c78ba89a919d737787e9e5118579e35fdfdeb24c
+R 0f6e1b77512b319f22d2d1b23202330f
 U drh
-Z b10e98c6c331ff64a752723ddb2a8a6c
+Z d8f4c1112385d7bbc06fc019e3a5dc65
