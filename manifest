@@ -1,10 +1,10 @@
-C Version\s3.23.1
-D 2018-04-10T17:39:29.721
+C Include\sthe\s'sqlite3rebaser_'\sAPIs\sin\sthe\sWindows\s'.def'\sfile.
+D 2018-04-10T18:56:21.837
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc bdcad21b027a56a73e54a1121cfb9edd0a35c0abfa53aa12c2f996006ff99960
+F Makefile.msc 43dd6ae2e5a2bb8df7bfc9ed85935129caffeafb8c1803d24c5d038b1e74c8ca
 F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
 F VERSION 7169eb6959db9ad1b7004ae3b754ef6e703eb7d8dde3b07d2e63103413eb25fb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -13,7 +13,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 2c274948734e03c51790ff51468f91db8d570bcca864284d9c6d6e777264cd7e
-F autoconf/Makefile.msc 1223d1520e0b833041ad87b377fae61cc3e08d14c5aae4c1a9e36249225bd4e6
+F autoconf/Makefile.msc 6a46d0659d6e4a25346102bcba40a7fb4b0b8b2dc4faabdf0187488c6dd580d6
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 18fca06f884213be062dd5e07c5297079cc45893d9cd3f522ce426e715033e3d
@@ -1646,7 +1646,7 @@ F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c7
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
 F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0fe2033c
-F tool/mkmsvcmin.tcl 8baf26690b80d861d0ac341b29880eec6ade39e4f11fe690271ded9cb90563a3
+F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6a13ea
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
@@ -1717,10 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1fdaf2c34431adcac1c7ff29aae0623c4cbaa6a7f38e843c786bd407d8b3e730
-R 4cac5ebce3c2344d130b0b75df1b28c6
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.23.1 *
-U drh
-Z 96974a1a3d914d4bcb8af6c333b7c418
+P 4bb2294022060e61de7da5c227a69ccd846ba330e31626ebcd59a94efd148b3b
+R cf8331c45ba4583fd3f926761aab3520
+U mistachkin
+Z 052337a7502d1a648ca59d978c462084
