@@ -1,11 +1,11 @@
-C More\scomplete\sparsing\sof\sUPSERT,\sincluding\sUPSERT\swithin\sa\strigger.\nThe\ssqlite3Insert()\slogic\sto\sactually\sperform\sthe\sUPSERT\sis\snot\syet\nimplemented,\showever.
-D 2018-04-07T15:04:05.872
+C Update\sthe\stop-level\sREADME.md\sfile\sto\spoint\sto\sthe\swhynotget.html\sdocument.
+D 2018-04-10T00:30:47.835
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bdcad21b027a56a73e54a1121cfb9edd0a35c0abfa53aa12c2f996006ff99960
-F README.md 1d5342ebda97420f114283e604e5fe99b0da939d63b76d492eabbaae23488276
+F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
 F VERSION cdf91ac446255ecf3d8f6d8c3ee40d64123235ae5b3cef29d344e61b45ec3759
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b22905b15791170998a5d1bcf42c7b60b5064f6848fff827bd55e864bf724aa
-R 1c5f4cdb7d88fb6bd739d670ffaa88be
+P 5cc2a5a315a2f26b392811de45b3dc352873a173c2c6c65f37ce2e5f88a71cd2
+R 016bd43547f1b597517ec5be295b6171
 U drh
-Z 62c48cab2b4c90f71fb632bd2119d13f
+Z 9f4176f366ae165e6c012c7b6ab0f60d
