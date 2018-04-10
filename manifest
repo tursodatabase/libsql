@@ -1,5 +1,5 @@
-C Update\sthe\stop-level\sREADME.md\sfile\sto\spoint\sto\sthe\swhynotget.html\sdocument.\nPut\sit\son\sthe\scorrect\sbranch,\sthis\stime.
-D 2018-04-10T00:53:36.702
+C Remove\san\sunnecessary\sSQLITE_UNTESTABLE\scompile-time\sconditional\sfrom\nthe\scommand-line\sshell.
+D 2018-04-10T10:37:33.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -492,7 +492,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c dfcd77a9bec9d2bcb221ed93c153cb38cc609faa6404e2dc0ae9491aac110112
-F src/shell.c.in d6a07811aa9f3b10200c15ab8dd4b6b998849a3b0c8b125bfa980329a33c26a6
+F src/shell.c.in cc960721e56ebc1a78773bb5d2f5608b54275f945cbe49e4afe919d6888062a7
 F src/sqlite.h.in e0be726ea6e4e6571724d39d242472ecd8bd1ba6f84ade88e1641bde98a6d02b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1717,8 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a2c443c0ee9a0e0b2d10298b8a74ff00a1a66e3f96f4093348f0fef977587204
-Q +7dfd4543da7ef741852252d3c78ba89a919d737787e9e5118579e35fdfdeb24c
-R 0f6e1b77512b319f22d2d1b23202330f
+P a52e3cddea58b838e94e09a8488220a4406ff37d2cad8da05799d47fcf95ea38
+R 1ca2d9126463cf9663e1c4be8dfad8da
 U drh
-Z d8f4c1112385d7bbc06fc019e3a5dc65
+Z b4d5a07dae0cf868c3649de369a52705
