@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.23.1.
-D 2018-04-10T12:33:42.665
+C When\stesting,\savoid\sinjecting\san\sOOM\sfault\sinto\sa\sfile-control\scall\smade\sby\nSQLite\son\san\sunopened\sfile-descriptor.
+D 2018-04-10T14:29:51.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -471,7 +471,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c aaf9ebc3f89df28483c52208497a99a02cc3650011422fc9d4c57e4392f7fe58
 F src/mutex_w32.c 7670d770c94bbfe8289bec9d7f1394c5a00a57c37f892aab6b6612d085255235
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
-F src/os.c 4d83f700d77ac5ad598c970041669040cb3c21147356dffa558f5f8b9291fda7
+F src/os.c 1cb0d1d1b3a4267966dee6e292d2b2cdf88e47c0c59cebff27ecafac052dd165
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38d319c153641ea4138fab2d5a47c31a86f57a071a1e1c299ca54c980cfb2b60
-R 5db76e2402f7f79c269b14c320c75348
-U drh
-Z eb997ef34dc2cc6ec584fc96a7895aa6
+P 9488c87b54ace8a92a52a368e8cf161dfdd24201bd6b60d50e88c2d92d592f0c
+R a4afc80fcfd3b80f6df302d3be0764c0
+U dan
+Z a59b86949016abdeb8b70bf8aab7af70
