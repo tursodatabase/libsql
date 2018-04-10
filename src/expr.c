@@ -5018,6 +5018,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
   switch( pExpr->op ){
+    case TK_ISNOT:
     case TK_NOT:
     case TK_ISNULL:
     case TK_IS:
@@ -5025,6 +5026,8 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_CASE:
     case TK_IN:
     case TK_FUNCTION:
+      testcase( pExpr->op==TK_ISNOT );
+      testcase( pExpr->op==TK_NOT );
       testcase( pExpr->op==TK_ISNULL );
       testcase( pExpr->op==TK_IS );
       testcase( pExpr->op==TK_OR );
