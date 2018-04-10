@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sthe\sLEFT\sJOIN\sstrength\sreduction\soptimization\sto\sbe\nincorrectly\sapplied\sin\ssome\scases\swhere\sthe\sWHERE\sclause\sof\sthe\squery\scontains\na\sfilter\sexpression\sof\sthe\sform\s"lhs.x\sIS\sNOT\s?".
-D 2018-04-10T15:31:56.297
+C Version\s3.23.1
+D 2018-04-10T17:39:29.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -1717,7 +1717,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c1a5eba3ec37c877af4b83c6f8c05b7140304f3d23e49832ba63e321247fc8d
+P 1fdaf2c34431adcac1c7ff29aae0623c4cbaa6a7f38e843c786bd407d8b3e730
 R 4cac5ebce3c2344d130b0b75df1b28c6
-U dan
-Z b1aec716bc0469f55f9b3573e327725e
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.23.1 *
+U drh
+Z 96974a1a3d914d4bcb8af6c333b7c418
