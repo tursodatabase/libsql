@@ -57,6 +57,10 @@ do_catchsql_test misc8-1.7 {
    ORDER BY rowid;
 } {1 {abort due to ROLLBACK}}
 
+do_catchsql_test misc8-1.8 {
+  PRAGMA empty_result_callbacks = 1;
+  SELECT eval('SELECT * FROM t1 WHERE 1 = 0;');
+} {0 {{}}}
 
 reset_db
 

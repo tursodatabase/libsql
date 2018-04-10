@@ -562,7 +562,7 @@ static int exportMain(int argc, char **argv){
     nWrote = fwrite(pData, 1, (size_t)nData, out);
     fclose(out);
     printf("\r%s   ", zTail); fflush(stdout);
-    if( nWrote!=nData ){
+    if( nWrote!=(size_t)nData ){
       fatalError("Wrote only %d of %d bytes to %s\n",
                   (int)nWrote, nData, zFN);
     }

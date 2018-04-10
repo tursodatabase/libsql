@@ -73,6 +73,7 @@ catch { db close }
 forcedelete test.db
 sqlite3 db test.db -vfs tvfs
 execsql { CREATE TABLE t1(x) }
+execsql { PRAGMA temp_store = 1 }
 
 # Each iteration of the following loop attempts to sort 10001 records
 # each a bit over 100 bytes in size. In total a little more than 1MiB 
@@ -88,6 +89,9 @@ foreach {tn pgsz cachesz bTemp} {
   5 4096  -9000  0
   6 1024  -9000  0
 } {
+  if {$::TEMP_STORE>2} {
+    set bTemp 0
+  }
   do_execsql_test 2.$tn.0 "
     PRAGMA page_size = $pgsz;
     VACUUM;

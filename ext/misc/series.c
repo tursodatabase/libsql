@@ -270,6 +270,15 @@ static int seriesFilter(
   }else{
     pCur->iStep = 1;
   }
+  for(i=0; i<argc; i++){
+    if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
+      /* If any of the constraints have a NULL value, then return no rows.
+      ** See ticket https://www.sqlite.org/src/info/fac496b61722daf2 */
+      pCur->mnValue = 1;
+      pCur->mxValue = 0;
+      break;
+    }
+  }
   if( idxNum & 8 ){
     pCur->isDesc = 1;
     pCur->iValue = pCur->mxValue;

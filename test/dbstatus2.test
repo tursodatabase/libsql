@@ -113,6 +113,6 @@ do_execsql_test 3.2 {
   PRAGMA cache_size=3;
   UPDATE t1 SET b=randomblob(1000);
 } {delete}
-do_test 3.2 { db_spill db 0 } {0 8 0}
+do_test 3.3 { db_spill db 0 } {0 8 0}
  
 finish_test

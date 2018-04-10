@@ -148,5 +148,54 @@ do_execsql_test 3.2 {
   );
 } {a 4 b 3 c 2 d 1}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 4.0 {
+  CREATE TABLE t6(x);
+}
+
+foreach {tn sql} {
+  1 {
+    SELECT 'abc' FROM (
+        SELECT x FROM t6 ORDER BY 1
+        UNION ALL
+        SELECT x FROM t6
+    )
+  }
+  2 {
+    SELECT 'abc' FROM (
+        SELECT x FROM t6
+        UNION ALL
+        SELECT x FROM t6 ORDER BY 1
+        UNION ALL
+        SELECT x FROM t6
+    )
+  }
+  3 {
+    SELECT 'abc' FROM (
+        SELECT x FROM t6 ORDER BY 1
+        UNION ALL
+        SELECT x FROM t6 ORDER BY 1
+        UNION ALL
+        SELECT x FROM t6
+    )
+  }
+  4 {
+    SELECT 'abc' FROM (
+        SELECT x FROM t6
+        UNION ALL
+        SELECT x FROM t6 ORDER BY 1
+        UNION ALL
+        SELECT x FROM t6 ORDER BY 1
+        UNION ALL
+        SELECT x FROM t6
+    )
+  }
+} {
+  do_catchsql_test 4.$tn $sql [list {*}{
+    1 {ORDER BY clause should come after UNION ALL not before}
+  }]
+}
+
 
 finish_test

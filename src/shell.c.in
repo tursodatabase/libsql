@@ -132,6 +132,9 @@ typedef unsigned char u8;
 # ifndef access
 #  define access(f,m) _access((f),(m))
 # endif
+# ifndef unlink
+#  define unlink _unlink
+# endif
 # undef popen
 # define popen _popen
 # undef pclose
@@ -2286,18 +2289,20 @@ static int display_stats(
     for(i=0; i<nCol; i++){
       sqlite3_snprintf(sizeof(z),z,"Column %d %nname:", i, &x);
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_name(pStmt,i));
+#ifndef SQLITE_OMIT_DECLTYPE
       sqlite3_snprintf(30, z+x, "declared type:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_decltype(pStmt, i));
-  #ifdef SQLITE_ENABLE_COLUMN_METADATA
+#endif
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
       sqlite3_snprintf(30, z+x, "database name:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_database_name(pStmt,i));
       sqlite3_snprintf(30, z+x, "table name:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_table_name(pStmt,i));
       sqlite3_snprintf(30, z+x, "origin name:");
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_origin_name(pStmt,i));
-  #endif
+#endif
     }
-    }
+  }
 
   displayStatLine(pArg, "Memory Used:",
      "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
@@ -2877,7 +2882,12 @@ static int shell_exec(
           sqlite3_finalize(pExplain);
           sqlite3_free(zEQP);
         }
-        sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, triggerEQP, 0);
+        if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
+          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
+          /* Reprepare pStmt before reactiving trace modes */
+          sqlite3_finalize(pStmt);
+          sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+        }
         restore_debug_trace_modes();
       }
 
@@ -3723,7 +3733,6 @@ static FILE *output_file_open(const char *zFile, int bTextMode){
   return f;
 }
 
-#if !defined(SQLITE_UNTESTABLE)
 #if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
 /*
 ** A routine for handling output from sqlite3_trace().
@@ -3745,7 +3754,6 @@ static int sql_trace_callback(
   }
   return 0;
 }
-#endif
 #endif
 
 /*
@@ -5329,11 +5337,11 @@ static int arCreateOrUpdateCommand(
     rc = arExecSql(pAr, zCreate);
   }
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
-    char *zSql = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
+    char *zSql2 = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
         pAr->bVerbose ? "shell_putsnl(name)" : "name",
         pAr->azArg[i], pAr->zDir);
-    rc = arExecSql(pAr, zSql);
-    sqlite3_free(zSql);
+    rc = arExecSql(pAr, zSql2);
+    sqlite3_free(zSql2);
   }
 end_ar_transaction:
   if( rc!=SQLITE_OK ){
@@ -6611,8 +6619,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( zName!=0 ){
-      int isMaster = sqlite3_strlike(zName, "sqlite_master", 0)==0;
-      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master",0)==0 ){
+      int isMaster = sqlite3_strlike(zName, "sqlite_master", '\\')==0;
+      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = sqlite3_mprintf(
                       "CREATE TABLE %s (\n"
@@ -6672,13 +6680,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       appendText(&sSelect, ") WHERE ", 0);
       if( zName ){
         char *zQarg = sqlite3_mprintf("%Q", zName);
+        int bGlob = strchr(zName, '*') != 0 || strchr(zName, '?') != 0 ||
+                    strchr(zName, '[') != 0;
         if( strchr(zName, '.') ){
           appendText(&sSelect, "lower(printf('%s.%s',sname,tbl_name))", 0);
         }else{
           appendText(&sSelect, "lower(tbl_name)", 0);
         }
-        appendText(&sSelect, strchr(zName, '*') ? " GLOB " : " LIKE ", 0);
+        appendText(&sSelect, bGlob ? " GLOB " : " LIKE ", 0);
         appendText(&sSelect, zQarg, 0);
+        if( !bGlob ){
+          appendText(&sSelect, " ESCAPE '\\' ", 0);
+        }
         appendText(&sSelect, " AND ", 0);
         sqlite3_free(zQarg);
       }
@@ -7093,7 +7106,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         zLike = z;
         bSeparate = 1;
-        if( sqlite3_strlike("sqlite_%", zLike, 0)==0 ) bSchema = 1;
+        if( sqlite3_strlike("sqlite\\_%", zLike, '\\')==0 ) bSchema = 1;
       }
     }
     if( bSchema ){
@@ -8399,6 +8412,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
+    }else if( strcmp(z,"-readonly")==0 ){
+      data.openMode = SHELL_OPEN_READONLY;
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
