@@ -502,6 +502,9 @@ int sqlite3FixSrcList(
     if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
     if( sqlite3FixExpr(pFix, pItem->pOn) ) return 1;
 #endif
+    if( pItem->fg.isTabFunc && sqlite3FixExprList(pFix, pItem->u1.pFuncArg) ){
+      return 1;
+    }
   }
   return 0;
 }

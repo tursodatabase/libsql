@@ -1,5 +1,5 @@
-C Minor\ssimplification\sto\sinternal\sfunction\sgenerateSortTail().
-D 2018-04-11T14:11:53.499
+C Prohibit\sbound\sparameters\sin\sthe\sarguments\sto\stable-valued\sfunctions\swithin\na\strigger.\s\sProblem\sdiscovered\sby\sOSSFuzz.
+D 2018-04-11T16:04:01.145
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -427,7 +427,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
 F src/analyze.c 71fbbeb7b25417592f54d869fe90c28b48e4cecb9926ef9b06d90fb0aec48941
-F src/attach.c f6f212c43dddba79dfcb723fb9470785f3ff55bde8953cd9d2546f3022070a41
+F src/attach.c bbdf97bb366d94d2bafff8ef611b3bee7b5f54d695531790d896a7a17e126317
 F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1487,7 +1487,7 @@ F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
-F test/triggerE.test 15fa63f1097db1f83dd62d121616006978063d1f
+F test/triggerE.test d9e9b364dfd527c84ac0de53045406325487feecb32888d482eca64421a50d99
 F test/triggerF.test 6a8c22bd058cf467f0c7d112afe87f7a8c579c0c4681b914b8f19020f48528a4
 F test/triggerG.test d5caeef6144ede2426dd13211fd72248241ff2ebc68e12a4c0bf30f5faa21499
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56e4965f7ac850c59596120878434f5ef023e77919ef9416d20812eac764bac1
-R 48bda25c5666e906d4ef80813706fd24
-U dan
-Z 085cbe7783541af0757121e42293d25a
+P f32cdb41ca213cfcfe0bb5bfe56930d43e55525fa5640274b00f1ccce7f69634
+R 7c8229c67bab778254c73d883b02f8cd
+U drh
+Z d47d1a7f91fccc9da7ff7a7b98373d3d
