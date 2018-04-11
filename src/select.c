@@ -1247,7 +1247,6 @@ static void generateSortTail(
   int iCol;
   int nKey;
   int iSortTab;                   /* Sorter cursor to read from */
-  int nSortData;                  /* Trailing values to read from sorter */
   int i;
   int bSeq;                       /* True if sorter record includes seq. no. */
   struct ExprList_item *aOutEx = p->pEList->a;
@@ -1262,11 +1261,9 @@ static void generateSortTail(
   if( eDest==SRT_Output || eDest==SRT_Coroutine || eDest==SRT_Mem ){
     regRowid = 0;
     regRow = pDest->iSdst;
-    nSortData = nColumn;
   }else{
     regRowid = sqlite3GetTempReg(pParse);
     regRow = sqlite3GetTempRange(pParse, nColumn);
-    nSortData = nColumn;
   }
   nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
@@ -1275,7 +1272,7 @@ static void generateSortTail(
     if( pSort->labelBkOut ){
       addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp3(v, OP_OpenPseudo, iSortTab, regSortOut, nKey+1+nSortData);
+    sqlite3VdbeAddOp3(v, OP_OpenPseudo, iSortTab, regSortOut, nKey+1+nColumn);
     if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
     VdbeCoverage(v);
@@ -1288,10 +1285,10 @@ static void generateSortTail(
     iSortTab = iTab;
     bSeq = 1;
   }
-  for(i=0, iCol=nKey+bSeq-1; i<nSortData; i++){
+  for(i=0, iCol=nKey+bSeq-1; i<nColumn; i++){
     if( aOutEx[i].u.x.iOrderByCol==0 ) iCol++;
   }
-  for(i=nSortData-1; i>=0; i--){
+  for(i=nColumn-1; i>=0; i--){
     int iRead;
     if( aOutEx[i].u.x.iOrderByCol ){
       iRead = aOutEx[i].u.x.iOrderByCol-1;
