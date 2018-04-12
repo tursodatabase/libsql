@@ -4483,6 +4483,7 @@ void sqlite3UpsertDelete(sqlite3 *db, Upsert *p){
     Upsert *pNext = p->pUpsertNext;
     sqlite3ExprListDelete(db, p->pUpsertTarget);
     sqlite3ExprListDelete(db, p->pUpsertSet);
+    sqlite3ExprDelete(db, p->pUpsertWhere);
     sqlite3DbFree(db, p);
     p = pNext;
   }
@@ -4491,17 +4492,16 @@ void sqlite3UpsertDelete(sqlite3 *db, Upsert *p){
 
 #ifndef SQLITE_OMIT_UPSERT
 /*
-** Duplicate an Upsert object
+** Duplicate an Upsert object.
 */
 Upsert *sqlite3UpsertDup(sqlite3 *db, Upsert *p){
-  Upsert *pNew;
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRaw(db, sizeof(Upsert));
-  if( pNew==0 ) return 0;
-  pNew->pUpsertTarget = sqlite3ExprListDup(db, p->pUpsertTarget, 0);
-  pNew->pUpsertSet = sqlite3ExprListDup(db, p->pUpsertSet, 0);
-  pNew->pUpsertNext = sqlite3UpsertDup(db, p->pUpsertNext);
-  return pNew;
+  return sqlite3UpsertNew(db,
+           sqlite3UpsertDup(db, p->pUpsertNext),
+           sqlite3ExprListDup(db, p->pUpsertTarget, 0),
+           sqlite3ExprListDup(db, p->pUpsertSet, 0),
+           sqlite3ExprDup(db, p->pUpsertWhere, 0)
+         );
 }
 #endif /* SQLITE_OMIT_UPSERT */
 
@@ -4511,9 +4511,10 @@ Upsert *sqlite3UpsertDup(sqlite3 *db, Upsert *p){
 */
 Upsert *sqlite3UpsertNew(
   sqlite3 *db,           /* Determines which memory allocator to use */
-  Upsert *pPrior,        /* Append new upsert to the end of this one */
+  Upsert *pPrior,        /* Append this upsert to the end of the new one */
   ExprList *pTarget,     /* Target argument to ON CONFLICT, or NULL */
-  ExprList *pSet         /* UPDATE columns, or NULL for a DO NOTHING */
+  ExprList *pSet,        /* UPDATE columns, or NULL for a DO NOTHING */
+  Expr *pWhere           /* WHERE clause for the ON CONFLICT UPDATE */
 ){
   Upsert *pNew;
   pNew = sqlite3DbMallocRaw(db, sizeof(Upsert));
@@ -4521,11 +4522,13 @@ Upsert *sqlite3UpsertNew(
     sqlite3UpsertDelete(db, pPrior);
     sqlite3ExprListDelete(db, pTarget);
     sqlite3ExprListDelete(db, pSet);
+    sqlite3ExprDelete(db, pWhere);
     return 0;
   }else{
     pNew->pUpsertTarget = pTarget;
     pNew->pUpsertSet = pSet;
     pNew->pUpsertNext = pPrior;
+    pNew->pUpsertWhere = pWhere;
   }
   return pNew;
 }

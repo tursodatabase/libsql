@@ -2717,6 +2717,7 @@ struct NameContext {
 struct Upsert {
   ExprList *pUpsertTarget;  /* Optional description of conflicting index */
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
+  Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
   Upsert *pUpsertNext;      /* Next ON CONFLICT clause in the list */
 };
 
@@ -4270,11 +4271,11 @@ const char *sqlite3JournalModename(int);
 #define sqlite3WithDelete(x,y)
 #endif
 #ifndef SQLITE_OMIT_UPSERT
-  Upsert *sqlite3UpsertNew(sqlite3*,Upsert*,ExprList*,ExprList*);
+  Upsert *sqlite3UpsertNew(sqlite3*,Upsert*,ExprList*,ExprList*,Expr*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
 #else
-#define sqlite3UpsertNew(x,y,z)   ((Upsert*)0)
+#define sqlite3UpsertNew(x,y,z,w) ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)
 #define sqlite3UpsertDup(x,y)     ((Upsert*)0)
 #endif

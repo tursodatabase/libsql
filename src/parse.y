@@ -870,14 +870,15 @@ cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 %type upsert {Upsert*}
 %destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
 upsert(A) ::= . { A = 0; }
-upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP DO UPDATE SET setlist(Z).
-              { A = sqlite3UpsertNew(pParse->db,X,Y,Z); /*X-overwrites-A*/ }
-upsert(A) ::= upsert(X) ON DUPLIATE KEY UPDATE setlist(Z).
-              { A = sqlite3UpsertNew(pParse->db,X,0,Z); /*X-overwrites-A*/ }
+upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP
+              DO UPDATE SET setlist(Z) where_opt(W).
+              { A = sqlite3UpsertNew(pParse->db,X,Y,Z,W); /*X-overwrites-A*/ }
+upsert(A) ::= upsert(X) ON DUPLIATE KEY UPDATE setlist(Z) where_opt(W).
+              { A = sqlite3UpsertNew(pParse->db,X,0,Z,W); /*X-overwrites-A*/ }
 upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP DO NOTHING.
-              { A = sqlite3UpsertNew(pParse->db,X,Y,0); /*X-overwrites-A*/ }
+              { A = sqlite3UpsertNew(pParse->db,X,Y,0,0); /*X-overwrites-A*/ }
 upsert(A) ::= upsert(X) ON CONFLICT DO NOTHING.
-              { A = sqlite3UpsertNew(pParse->db,X,0,0); /*X-overwrites-A*/ }
+              { A = sqlite3UpsertNew(pParse->db,X,0,0,0); /*X-overwrites-A*/ }
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
