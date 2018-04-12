@@ -731,18 +731,34 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   TestStreamInput sStr;
   void *pRebase = 0;
   int nRebase = 0;
+  int flags = 0;                  /* Flags for apply_v2() */
 
   memset(&sStr, 0, sizeof(sStr));
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
 
+  /* Check for the -nosavepoint flag */
+  if( bV2 && objc>1 ){
+    const char *z1 = Tcl_GetString(objv[1]);
+    int n = strlen(z1);
+    if( n>1 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
+      flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+      objc--;
+      objv++;
+    }
+  }
+
   if( objc!=4 && objc!=5 ){
-    Tcl_WrongNumArgs(interp, 1, objv, 
-        "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?"
-    );
+    const char *zMsg;
+    if( bV2 ){
+      zMsg = "?-nosavepoint? DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
+    }else{
+      zMsg = "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
+    }
+    Tcl_WrongNumArgs(interp, 1, objv, zMsg);
     return TCL_ERROR;
   }
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &info) ){
-    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), 0);
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[1]), 0);
     return TCL_ERROR;
   }
   db = *(sqlite3 **)info.objClientData;
@@ -759,7 +775,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
     }else{
       rc = sqlite3changeset_apply_v2(db, nChangeset, pChangeset, 
           (objc==5)?test_filter_handler:0, test_conflict_handler, (void *)&ctx,
-          &pRebase, &nRebase
+          &pRebase, &nRebase, flags
       );
     }
   }else{
@@ -774,7 +790,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
       rc = sqlite3changeset_apply_v2_strm(db, testStreamInput, (void*)&sStr,
           (objc==5) ? test_filter_handler : 0, 
           test_conflict_handler, (void *)&ctx,
-          &pRebase, &nRebase
+          &pRebase, &nRebase, flags
       );
     }
   }

@@ -130,9 +130,9 @@ input ::= cmdlist.
 cmdlist ::= cmdlist ecmd.
 cmdlist ::= ecmd.
 ecmd ::= SEMI.
-ecmd ::= explain cmdx SEMI.
-explain ::= .
+ecmd ::= cmdx SEMI.
 %ifndef SQLITE_OMIT_EXPLAIN
+ecmd ::= explain cmdx.
 explain ::= EXPLAIN.              { pParse->explain = 1; }
 explain ::= EXPLAIN QUERY PLAN.   { pParse->explain = 2; }
 %endif  SQLITE_OMIT_EXPLAIN
@@ -481,7 +481,7 @@ cmd ::= select(X).  {
   }
 }
 
-select(A) ::= with(W) selectnowith(X). {
+select(A) ::= WITH wqlist(W) selectnowith(X). {
   Select *p = X;
   if( p ){
     p->pWith = W;
@@ -489,7 +489,24 @@ select(A) ::= with(W) selectnowith(X). {
   }else{
     sqlite3WithDelete(pParse->db, W);
   }
-  A = p; /*A-overwrites-W*/
+  A = p;
+}
+select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X). {
+  Select *p = X;
+  if( p ){
+    p->pWith = W;
+    parserDoubleLinkSelect(pParse, p);
+  }else{
+    sqlite3WithDelete(pParse->db, W);
+  }
+  A = p;
+}
+select(A) ::= selectnowith(X). {
+  Select *p = X;
+  if( p ){
+    parserDoubleLinkSelect(pParse, p);
+  }
+  A = p; /*A-overwrites-X*/
 }
 
 selectnowith(A) ::= oneselect(A).
@@ -683,7 +700,9 @@ dbnm(A) ::= DOT nm(X). {A = X;}
 
 %type fullname {SrcList*}
 %destructor fullname {sqlite3SrcListDelete(pParse->db, $$);}
-fullname(A) ::= nm(X) dbnm(Y).  
+fullname(A) ::= nm(X).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/}
+fullname(A) ::= nm(X) DOT nm(Y).  
    {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
 
 %type joinop {int}
@@ -796,16 +815,14 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 /////////////////////////// The DELETE statement /////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W) 
+cmd ::= with DELETE FROM fullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
-  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,O,L);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
-  sqlite3WithPush(pParse, C, 1);
+cmd ::= with DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,0,0);
 }
@@ -820,18 +837,16 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
-  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   sqlite3Update(pParse,X,Y,W,R,O,L);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W).  {
-  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   sqlite3Update(pParse,X,Y,W,R,0,0);
@@ -858,14 +873,12 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S)
+cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S)
         upsert(U). {
-  sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, S, F, upsertType(pParse, R, U.e), U.p);
 }
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
+cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 {
-  sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, 0, F, R, 0);
 }
 
@@ -1556,15 +1569,13 @@ anylist ::= anylist ANY.
 
 
 //////////////////////// COMMON TABLE EXPRESSIONS ////////////////////////////
-%type with {With*}
 %type wqlist {With*}
-%destructor with {sqlite3WithDelete(pParse->db, $$);}
 %destructor wqlist {sqlite3WithDelete(pParse->db, $$);}
 
-with(A) ::= . {A = 0;}
+with ::= .
 %ifndef SQLITE_OMIT_CTE
-with(A) ::= WITH wqlist(W).              { A = W; }
-with(A) ::= WITH RECURSIVE wqlist(W).    { A = W; }
+with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
+with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
 wqlist(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
   A = sqlite3WithAdd(pParse, 0, &X, Y, Z); /*A-overwrites-X*/

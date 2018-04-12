@@ -2373,8 +2373,8 @@ static int whereLoopAddBtreeIndex(
 
   pNew = pBuilder->pNew;
   if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
-  WHERETRACE(0x800, ("BEGIN addBtreeIdx(%s), nEq=%d\n",
-                     pProbe->zName, pNew->u.btree.nEq));
+  WHERETRACE(0x800, ("BEGIN %s.addBtreeIdx(%s), nEq=%d\n",
+                     pProbe->pTable->zName,pProbe->zName, pNew->u.btree.nEq));
 
   assert( (pNew->wsFlags & WHERE_VIRTUALTABLE)==0 );
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
@@ -2660,8 +2660,8 @@ static int whereLoopAddBtreeIndex(
     pNew->wsFlags = saved_wsFlags;
   }
 
-  WHERETRACE(0x800, ("END addBtreeIdx(%s), nEq=%d, rc=%d\n",
-                      pProbe->zName, saved_nEq, rc));
+  WHERETRACE(0x800, ("END %s.addBtreeIdx(%s), nEq=%d, rc=%d\n",
+                      pProbe->pTable->zName, pProbe->zName, saved_nEq, rc));
   return rc;
 }
 
@@ -3099,9 +3099,9 @@ static int whereLoopAddVirtualOne(
        || pNew->aLTerm[iTerm]!=0
        || pIdxCons->usable==0
       ){
-        rc = SQLITE_ERROR;
         sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
-        return rc;
+        testcase( pIdxInfo->needToFreeIdxStr );
+        return SQLITE_ERROR;
       }
       testcase( iTerm==nConstraint-1 );
       testcase( j==0 );
@@ -3129,6 +3129,15 @@ static int whereLoopAddVirtualOne(
   pNew->u.vtab.omitMask &= ~mNoOmit;
 
   pNew->nLTerm = mxTerm+1;
+  for(i=0; i<=mxTerm; i++){
+    if( pNew->aLTerm[i]==0 ){
+      /* The non-zero argvIdx values must be contiguous.  Raise an
+      ** error if they are not */
+      sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
+      testcase( pIdxInfo->needToFreeIdxStr );
+      return SQLITE_ERROR;
+    }
+  }
   assert( pNew->nLTerm<=pNew->nLSlot );
   pNew->u.vtab.idxNum = pIdxInfo->idxNum;
   pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;
@@ -3244,6 +3253,7 @@ static int whereLoopAddVirtual(
   }
 
   /* First call xBestIndex() with all constraints usable. */
+  WHERETRACE(0x800, ("BEGIN %s.addVirtual()\n", pSrc->pTab->zName));
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
   rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn);
 
@@ -3319,6 +3329,7 @@ static int whereLoopAddVirtual(
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   sqlite3DbFreeNN(pParse->db, p);
+  WHERETRACE(0x800, ("END %s.addVirtual(), rc=%d\n", pSrc->pTab->zName, rc));
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

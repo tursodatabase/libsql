@@ -806,6 +806,16 @@ do_execsql_test join-15.105 {
     FROM t1 LEFT JOIN t2
    WHERE a IN (1,3,x,y);
 } {1 2 {} {} x 3 4 {} {} x}
+do_execsql_test join-15.106 {
+  SELECT *, 'x' 
+    FROM t1 LEFT JOIN t2 
+   WHERE NOT ( 'x'='y' AND t2.y=1 );
+} {1 2 {} {} x 3 4 {} {} x}
+do_execsql_test join-15.107 {
+  SELECT *, 'x' 
+    FROM t1 LEFT JOIN t2 
+   WHERE t2.y IS NOT 'abc'
+} {1 2 {} {} x 3 4 {} {} x}
 do_execsql_test join-15.110 {
   DROP TABLE t1;
   DROP TABLE t2;
