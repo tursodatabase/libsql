@@ -25,6 +25,7 @@ void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerStep){
     sqlite3ExprListDelete(db, pTmp->pExprList);
     sqlite3SelectDelete(db, pTmp->pSelect);
     sqlite3IdListDelete(db, pTmp->pIdList);
+    sqlite3UpsertDelete(db, pTmp->pUpsert);
     sqlite3DbFree(db, pTmp->zSpan);
 
     sqlite3DbFree(db, pTmp);
@@ -416,7 +417,7 @@ TriggerStep *sqlite3TriggerInsertStep(
   IdList *pColumn,    /* List of columns in pTableName to insert into */
   Select *pSelect,    /* A SELECT statement that supplies values */
   u8 orconf,          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
-  ExprList *pUpsert,  /* Upsert values */
+  Upsert *pUpsert,    /* ON CONFLICT clauses for upsert */
   const char *zStart, /* Start of SQL text */
   const char *zEnd    /* End of SQL text */
 ){
@@ -428,10 +429,11 @@ TriggerStep *sqlite3TriggerInsertStep(
   if( pTriggerStep ){
     pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
     pTriggerStep->pIdList = pColumn;
+    pTriggerStep->pUpsert = pUpsert;
     pTriggerStep->orconf = orconf;
   }else{
     sqlite3IdListDelete(db, pColumn);
-    sqlite3ExprListDelete(db, pUpsert);
+    sqlite3UpsertDelete(db, pUpsert);
   }
   sqlite3SelectDelete(db, pSelect);
 
@@ -757,8 +759,8 @@ static int codeTriggerProgram(
           targetSrcList(pParse, pStep),
           sqlite3SelectDup(db, pStep->pSelect, 0), 
           sqlite3IdListDup(db, pStep->pIdList), 
-          pStep->pExprList ? OE_Update : pParse->eOrconf,
-          sqlite3ExprListDup(db, pStep->pExprList, 0)
+          pParse->eOrconf,
+          sqlite3UpsertDup(db, pStep->pUpsert)
         );
         break;
       }

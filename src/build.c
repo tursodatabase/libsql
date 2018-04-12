@@ -4473,3 +4473,34 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
   }
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */
+
+#ifndef SQLITE_OMIT_UPSERT
+/*
+** Free a list of Upsert objects
+*/
+void sqlite3UpsertDelete(sqlite3 *db, Upsert *p){
+  while( p ){
+    Upsert *pNext = p->pUpsertNext;
+    sqlite3ExprListDelete(db, p->pUpsertTarget);
+    sqlite3ExprListDelete(db, p->pUpsertSet);
+    sqlite3DbFree(db, p);
+    p = pNext;
+  }
+}
+#endif /* SQLITE_OMIT_UPSERT */
+
+#ifndef SQLITE_OMIT_UPSERT
+/*
+** Duplicate an Upsert object
+*/
+Upsert *sqlite3UpsertDup(sqlite3 *db, Upsert *p){
+  Upsert *pNew;
+  if( p==0 ) return 0;
+  pNew = sqlite3DbMallocRaw(db, sizeof(Upsert));
+  if( pNew==0 ) return 0;
+  pNew->pUpsertTarget = sqlite3ExprListDup(db, p->pUpsertTarget, 0);
+  pNew->pUpsertSet = sqlite3ExprListDup(db, p->pUpsertSet, 0);
+  pNew->pUpsertNext = sqlite3UpsertDup(db, p->pUpsertNext);
+  return pNew;
+}
+#endif /* SQLITE_OMIT_UPSERT */

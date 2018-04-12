@@ -489,7 +489,7 @@ void sqlite3Insert(
   Select *pSelect,      /* A SELECT statement to use as the data source */
   IdList *pColumn,      /* Column names corresponding to IDLIST. */
   int onError,          /* How to handle constraint errors */
-  ExprList *pUpsert     /* Upsert values */
+  Upsert *pUpsert       /* ON CONFLICT clauses for upsert, or NULL */
 ){
   sqlite3 *db;          /* The main database structure */
   Table *pTab;          /* The table to insert into.  aka TABLE */
@@ -527,11 +527,6 @@ void sqlite3Insert(
   Trigger *pTrigger;          /* List of triggers on pTab, if required */
   int tmask;                  /* Mask of trigger times */
 #endif
-
-  /* The conflict resolution type is always OE_Update or OE_Replace when
-  ** there is an upsert clause */
-  assert( onError==OE_Update || pUpsert==0 );
-  assert( OE_Update==OE_Replace );
 
   db = pParse->db;
   if( pParse->nErr || db->mallocFailed ){
@@ -1080,7 +1075,7 @@ insert_end:
 insert_cleanup:
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprListDelete(db, pList);
-  sqlite3ExprListDelete(db, pUpsert);
+  sqlite3UpsertDelete(db, pUpsert);
   sqlite3SelectDelete(db, pSelect);
   sqlite3IdListDelete(db, pColumn);
   sqlite3DbFree(db, aRegIdx);
