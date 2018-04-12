@@ -1532,7 +1532,7 @@ void sqlite3ResolveSelfReference(
   Table *pTab,        /* The table being referenced */
   int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
-  ExprList *pList     /* Expression list to resolve.  May be NUL. */
+  ExprList *pList     /* Expression list to resolve.  May be NULL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
