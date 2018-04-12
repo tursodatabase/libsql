@@ -4504,3 +4504,29 @@ Upsert *sqlite3UpsertDup(sqlite3 *db, Upsert *p){
   return pNew;
 }
 #endif /* SQLITE_OMIT_UPSERT */
+
+#ifndef SQLITE_OMIT_UPSERT
+/*
+** Create a new Upsert object.
+*/
+Upsert *sqlite3UpsertNew(
+  sqlite3 *db,           /* Determines which memory allocator to use */
+  Upsert *pPrior,        /* Append new upsert to the end of this one */
+  ExprList *pTarget,     /* Target argument to ON CONFLICT, or NULL */
+  ExprList *pSet         /* UPDATE columns, or NULL for a DO NOTHING */
+){
+  Upsert *pNew;
+  pNew = sqlite3DbMallocRaw(db, sizeof(Upsert));
+  if( pNew==0 ){
+    sqlite3UpsertDelete(db, pPrior);
+    sqlite3ExprListDelete(db, pTarget);
+    sqlite3ExprListDelete(db, pSet);
+    return 0;
+  }else{
+    pNew->pUpsertTarget = pTarget;
+    pNew->pUpsertSet = pSet;
+    pNew->pUpsertNext = pPrior;
+  }
+  return pNew;
+}
+#endif /* SQLITE_OMIT_UPSERT */

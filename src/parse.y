@@ -205,7 +205,8 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 //
 %fallback ID
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
-  CONFLICT DATABASE DEFERRED DESC DETACH DO EACH END EXCLUSIVE EXPLAIN FAIL FOR
+  CONFLICT DATABASE DEFERRED DESC DETACH DO DUPLICATE
+  EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
@@ -869,8 +870,14 @@ cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 %type upsert {Upsert*}
 %destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
 upsert(A) ::= . { A = 0; }
-upsert(A) ::= ON CONFLICT DO UPDATE SET setlist. { A = 0; }
-upsert(A) ::= ON CONFLICT DO NOTHING. { A = 0; }
+upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP DO UPDATE SET setlist(Z).
+              { A = sqlite3UpsertNew(pParse->db,X,Y,Z); /*X-overwrites-A*/ }
+upsert(A) ::= upsert(X) ON DUPLIATE KEY UPDATE setlist(Z).
+              { A = sqlite3UpsertNew(pParse->db,X,0,Z); /*X-overwrites-A*/ }
+upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP DO NOTHING.
+              { A = sqlite3UpsertNew(pParse->db,X,Y,0); /*X-overwrites-A*/ }
+upsert(A) ::= upsert(X) ON CONFLICT DO NOTHING.
+              { A = sqlite3UpsertNew(pParse->db,X,0,0); /*X-overwrites-A*/ }
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}

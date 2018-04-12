@@ -1,5 +1,5 @@
-C Add\sthe\sUpsert\sobject\sfor\sholding\supsert\sclause\sinformation.
-D 2018-04-12T13:15:43.659
+C Update\sthe\supsert\sparsing\sso\sthat\sit\saccepts\sconflict-target\slabels\susing\nthe\sPostgreSQL\ssyntax,\sand\salso\saccepts\sthe\sMySQL\s"ON\sDUPLICATE\sKEY"\nsyntax.
+D 2018-04-12T15:43:05.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -435,7 +435,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 9eb9531c65346bbfccf5325384b7db1849daf4db6601dcfe21ba5c5b20623b64
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 1932d05343aa5cf8462c10ac3c738be411908694482745682cc6f88370a83cab
+F src/build.c 6da67b1fbb4ed390fcbcb6b5c0c035ed4ace124b9abcea96a183c4c734d670d2
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c bd9da3f1ff21b432564a16ef0b154cff03585dc43742842e99c58907c6cb4bef
@@ -480,7 +480,7 @@ F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y d12dad9be6676ec6d71375ee4daf12446479c37c3e67b5d161ced94770ed891f
+F src/parse.y 0345f039b4877e9fce8ef82c7df639ce2af3ac8f95d2004c642275ee81b8f8ca
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -496,7 +496,7 @@ F src/shell.c.in cc960721e56ebc1a78773bb5d2f5608b54275f945cbe49e4afe919d6888062a
 F src/sqlite.h.in e0be726ea6e4e6571724d39d242472ecd8bd1ba6f84ade88e1641bde98a6d02b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 1c6d9e73447dedb745332f13e721ae286c89a2608229ff2766c551f7e82cb59f
+F src/sqliteInt.h 8b21b9168989cfac7d54798a6b417493841260ec5a2455bd4e63e4287034839b
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1645,7 +1645,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c736fdeca5e
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
-F tool/mkkeywordhash.c 9f5fee138b7f8d0ccde7baad1564db8de36e76e1bd1ee7a417a1fe6cecf599fb
+F tool/mkkeywordhash.c 9daf08059d76b27b7d7b5729763ad01c5479d04ffe9d5ead87a864a01607e619
 F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6a13ea
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f6f11805eb7cc02f7eb3044250f3981d46d2dbf0c421bd73e7f8b437390db25
-R 9c9bfe6b21b590d3496b5647552569d5
+P d83eaed539b274c2abd650d07522f491865d4917acbb64d05d01b3ba5c3cd446
+R 479e2c0e2cb408787189201f512b77ff
 U drh
-Z 1c9e24d2d854f92e297db13f4513adcb
+Z 336c436d4ba882e148bf060e11472826

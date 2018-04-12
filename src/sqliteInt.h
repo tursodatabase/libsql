@@ -4270,11 +4270,13 @@ const char *sqlite3JournalModename(int);
 #define sqlite3WithDelete(x,y)
 #endif
 #ifndef SQLITE_OMIT_UPSERT
+  Upsert *sqlite3UpsertNew(sqlite3*,Upsert*,ExprList*,ExprList*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
 #else
+#define sqlite3UpsertNew(x,y,z)   ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)
-#define sqlite3UpsertDup(x,y) ((Upsert*)0)
+#define sqlite3UpsertDup(x,y)     ((Upsert*)0)
 #endif
 
 
