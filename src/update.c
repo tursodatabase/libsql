@@ -514,8 +514,8 @@ void sqlite3Update(
     VdbeCoverage(v);
   }
 
-  /* If the record number will change, set register regNewRowid to
-  ** contain the new value. If the record number is not being modified,
+  /* If the rowid value will change, set register regNewRowid to
+  ** contain the new value. If the rowid is not being modified,
   ** then regNewRowid is the same register as regOldRowid, which is
   ** already populated.  */
   assert( chngKey || pTrigger || hasFK || regOldRowid==regNewRowid );

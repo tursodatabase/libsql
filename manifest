@@ -1,5 +1,5 @@
-C Extend\sthe\supsert\ssyntax\sto\sallow\sa\sWHERE\sclause\son\sthe\sUPDATE.
-D 2018-04-12T17:28:06.890
+C Simple\scomment\sclarification.\s\sNo\scode\sor\slogic\schanges.
+D 2018-04-12T19:51:22.089
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -556,7 +556,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 00ef0b16ab3f0063439e6582086f57f3beb93cd7e7ba46569a8bdc490c16283d
-F src/update.c 97d4c9514229f540f8c441e124d5af7f93c5b030c9574539d01e99462e273998
+F src/update.c a72ab172860c73c16fe25a2a3d5ae675fbdd63918cddfa2aaad5f402a86637c9
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c48f64d8ae2625a19267b02e4a173a07766934235ad3052cd9d38f5ecbcbfbc3
-R 5f3eb9c7a284b62fc6dc3a835a71fa01
+P e4396c540a22fbc087a01050a32bfad514259d700c2381d7ac912580d7dca00f
+R 22fbb5021d19678093f1d201eaa0fbb3
 U drh
-Z bebabff71801057aabbe7cfa080f554f
+Z be0b50840621519acf6f657a01003aac
