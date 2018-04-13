@@ -86,6 +86,7 @@ int sqlite3UpsertAnalyzeTarget(
   Index *pIdx;
   ExprList *pTarget;
   Expr *pTerm;
+  Expr sCol[2];
   int rc;
 
   assert( pTabList->nSrc==1 );
@@ -118,6 +119,18 @@ int sqlite3UpsertAnalyzeTarget(
     return SQLITE_OK;
   }
 
+  /* Initialize sCol[0..1] to be an expression parse tree for a
+  ** single column of an index.  The sCol[0] node will be the TK_COLLATE
+  ** operator and sCol[1] will be the TK_COLUMN operator.  Code below
+  ** will populate the specific collation and column number values
+  ** prior to comparing against the conflict-target expression.
+  */
+  memset(sCol, 0, sizeof(sCol));
+  sCol[0].op = TK_COLLATE;
+  sCol[0].pLeft = &sCol[1];
+  sCol[1].op = TK_COLUMN;
+  sCol[1].iTable = pTabList->a[0].iCursor;
+
   /* Check for matches against other indexes */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int ii, jj, nn;
@@ -132,26 +145,33 @@ int sqlite3UpsertAnalyzeTarget(
     }
     nn = pIdx->nKeyCol;
     for(ii=0; ii<nn; ii++){
-      if( pIdx->aiColumn[ii]!=XN_EXPR ){
-        for(jj=0; jj<nn; jj++){
-          if( pTarget->a[jj].pExpr->op!=TK_COLUMN ) continue;
-          if( pTarget->a[jj].pExpr->iColumn!=pIdx->aiColumn[ii] ) continue;
-          break;
-        }
-      }else{
-        Expr *pExpr;
+      Expr *pExpr;
+      if( pIdx->aiColumn[ii]==XN_EXPR ){
         assert( pIdx->aColExpr!=0 );
         assert( pIdx->aColExpr->nExpr>ii );
         pExpr = pIdx->aColExpr->a[ii].pExpr;
-        for(jj=0; jj<nn; jj++){
-          if( sqlite3ExprCompare(pParse, pTarget->a[jj].pExpr, pExpr, -1)==0 ){
-            break;
-          }
+      }else{
+        sCol[1].iColumn = pIdx->aiColumn[ii];
+        sCol[0].u.zToken = (char*)pIdx->azColl[ii];
+        pExpr = &sCol[0];
+      }
+      for(jj=0; jj<nn; jj++){
+        if( sqlite3ExprCompare(pParse, pTarget->a[jj].pExpr, pExpr,
+                               pTabList->a[0].iCursor)<2
+        ){
+          break;  /* Column ii of the index matches column jj of target */
         }
       }
-      if( jj<nn ) break;
+      if( jj>=nn ){
+        /* The target contains no match for column jj of the index */
+        break;
+      }
     }
-    if( ii>=nn ) continue;
+    if( ii<nn ){
+      /* Column ii of the index did not match any term of the conflict target.
+      ** Continue the search with the next index. */
+      continue;
+    }
     pUpsert->pUpsertIdx = pIdx;
     return SQLITE_OK;
   }
