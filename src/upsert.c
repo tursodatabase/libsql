@@ -19,13 +19,12 @@
 ** Free a list of Upsert objects
 */
 void sqlite3UpsertDelete(sqlite3 *db, Upsert *p){
-  while( p ){
-    Upsert *pNext = p->pUpsertNext;
+  if( p ){
     sqlite3ExprListDelete(db, p->pUpsertTarget);
+    sqlite3ExprDelete(db, p->pUpsertTargetWhere);
     sqlite3ExprListDelete(db, p->pUpsertSet);
     sqlite3ExprDelete(db, p->pUpsertWhere);
     sqlite3DbFree(db, p);
-    p = pNext;
   }
 }
 
@@ -35,8 +34,8 @@ void sqlite3UpsertDelete(sqlite3 *db, Upsert *p){
 Upsert *sqlite3UpsertDup(sqlite3 *db, Upsert *p){
   if( p==0 ) return 0;
   return sqlite3UpsertNew(db,
-           sqlite3UpsertDup(db, p->pUpsertNext),
            sqlite3ExprListDup(db, p->pUpsertTarget, 0),
+           sqlite3ExprDup(db, p->pUpsertTargetWhere, 0),
            sqlite3ExprListDup(db, p->pUpsertSet, 0),
            sqlite3ExprDup(db, p->pUpsertWhere, 0)
          );
@@ -47,84 +46,118 @@ Upsert *sqlite3UpsertDup(sqlite3 *db, Upsert *p){
 */
 Upsert *sqlite3UpsertNew(
   sqlite3 *db,           /* Determines which memory allocator to use */
-  Upsert *pPrior,        /* Append this upsert to the end of the new one */
   ExprList *pTarget,     /* Target argument to ON CONFLICT, or NULL */
+  Expr *pTargetWhere,    /* Optional WHERE clause on the target */
   ExprList *pSet,        /* UPDATE columns, or NULL for a DO NOTHING */
   Expr *pWhere           /* WHERE clause for the ON CONFLICT UPDATE */
 ){
   Upsert *pNew;
   pNew = sqlite3DbMallocRaw(db, sizeof(Upsert));
   if( pNew==0 ){
-    sqlite3UpsertDelete(db, pPrior);
     sqlite3ExprListDelete(db, pTarget);
+    sqlite3ExprDelete(db, pTargetWhere);
     sqlite3ExprListDelete(db, pSet);
     sqlite3ExprDelete(db, pWhere);
     return 0;
   }else{
     pNew->pUpsertTarget = pTarget;
+    pNew->pUpsertTargetWhere = pTargetWhere;
     pNew->pUpsertSet = pSet;
-    pNew->pUpsertNext = pPrior;
     pNew->pUpsertWhere = pWhere;
+    pNew->pUpsertIdx = 0;
   }
   return pNew;
 }
 
 /*
-** Analyze the ON CONFLICT clause(s) described by pUpsert.  Resolve all
-** symbols in the conflict-target clausees.  Fill in the pUpsertIdx pointers.
+** Analyze the ON CONFLICT clause described by pUpsert.  Resolve all
+** symbols in the conflict-target.
 **
-** Return non-zero if there are errors.
+** Return SQLITE_OK if everything works, or an error code is something
+** is wrong.
 */
-int sqlite3UpsertAnalyze(
+int sqlite3UpsertAnalyzeTarget(
   Parse *pParse,     /* The parsing context */
   SrcList *pTabList, /* Table into which we are inserting */
-  Upsert *pUpsert    /* The list of ON CONFLICT clauses */
+  Upsert *pUpsert    /* The ON CONFLICT clauses */
 ){
   NameContext sNC;
-  Upsert *p;
   Table *pTab;
   Index *pIdx;
-  int rc = SQLITE_OK;
-  int nDoNothing = 0;
+  ExprList *pTarget;
+  Expr *pTerm;
+  int rc;
 
   assert( pTabList->nSrc==1 );
   assert( pTabList->a[0].pTab!=0 );
+  assert( pUpsert!=0 );
+  assert( pUpsert->pUpsertTarget!=0 );
+
+  /* Resolve all symbolic names in the conflict-target clause, which
+  ** includes both the list of columns and the optional partial-index
+  ** WHERE clause.
+  */
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pParse;
   sNC.pSrcList = pTabList;
+  rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
+  if( rc ) return rc;
+  rc = sqlite3ResolveExprNames(&sNC, pUpsert->pUpsertTargetWhere);
+  if( rc ) return rc;
+
+  /* Check to see if the conflict target matches the rowid. */  
   pTab = pTabList->a[0].pTab;
-  for(p=pUpsert; p; p=p->pUpsertNext){
-    if( p->pUpsertTarget==0 ){
-      if( p->pUpsertSet ){
-        /* This is a MySQL-style ON DUPLICATE KEY clause.  The ON DUPLICATE
-        ** KEY clause can only be used if there is exactly one uniqueness
-        ** constraint and/or PRIMARY KEY */
-        int nUnique = 0;
-        for(pIdx = pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( IsUniqueIndex(pIdx) ){
-            p->pUpsertIdx = pIdx;
-            nUnique++;
-          }
-        }
-        if( pTab->iPKey>=0 ) nUnique++;
-        if( nUnique!=0 ){
-          sqlite3ErrorMsg(pParse, "ON DUPLICATE KEY may only be used if there "
-               "is exactly one UNIQUE or PRIMARY KEY constraint");
-          return SQLITE_ERROR;
+  pTarget = pUpsert->pUpsertTarget;
+  if( HasRowid(pTab) 
+   && pTarget->nExpr==1
+   && (pTerm = pTarget->a[0].pExpr)->op==TK_COLUMN
+   && (pTerm->iColumn==XN_ROWID || pTerm->iColumn==pTab->iPKey)
+  ){
+    /* The conflict-target is the rowid of the primary table */
+    assert( pUpsert->pUpsertIdx==0 );
+    return SQLITE_OK;
+  }
+
+  /* Check for matches against other indexes */
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    int ii, jj, nn;
+    if( !IsUniqueIndex(pIdx) ) continue;
+    if( pTarget->nExpr!=pIdx->nKeyCol ) continue;
+    if( pIdx->pPartIdxWhere ){
+      if( pUpsert->pUpsertTargetWhere==0 ) continue;
+      if( sqlite3ExprCompare(pParse, pUpsert->pUpsertTargetWhere,
+                             pIdx->pPartIdxWhere, pTabList->a[0].iCursor)!=0 ){
+        continue;
+      }
+    }
+    nn = pIdx->nKeyCol;
+    for(ii=0; ii<nn; ii++){
+      if( pIdx->aiColumn[ii]!=XN_EXPR ){
+        for(jj=0; jj<nn; jj++){
+          if( pTarget->a[jj].pExpr->op!=TK_COLUMN ) continue;
+          if( pTarget->a[jj].pExpr->iColumn!=pIdx->aiColumn[ii] ) continue;
+          break;
         }
       }else{
-        nDoNothing++;
-        if( nDoNothing>1 ){
-          sqlite3ErrorMsg(pParse, "multiple unconstrained DO NOTHING clauses");
-          return SQLITE_ERROR;
+        Expr *pExpr;
+        assert( pIdx->aColExpr!=0 );
+        assert( pIdx->aColExpr->nExpr>ii );
+        pExpr = pIdx->aColExpr->a[ii].pExpr;
+        for(jj=0; jj<nn; jj++){
+          if( sqlite3ExprCompare(pParse, pTarget->a[jj].pExpr, pExpr, -1)==0 ){
+            break;
+          }
         }
       }
-      continue;
+      if( jj<nn ) break;
     }
-    rc = sqlite3ResolveExprListNames(&sNC, p->pUpsertTarget);
-    if( rc ) return rc;
+    if( ii>=nn ) continue;
+    pUpsert->pUpsertIdx = pIdx;
+    return SQLITE_OK;
   }
-  return rc;
+  sqlite3ErrorMsg(pParse, "ON CONFLICT clause does not match any "
+                          "PRIMARY KEY or UNIQUE constraint");
+  return SQLITE_ERROR;
 }
 
 #endif /* SQLITE_OMIT_UPSERT */

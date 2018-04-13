@@ -16,31 +16,42 @@ source $testdir/tester.tcl
 set testprefix zipfile
 
 do_execsql_test upsert1-100 {
-  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c DEFAULT 0);
+  CREATE UNIQUE INDEX t1x1 ON t1(b);
   INSERT INTO t1(a,b) VALUES(1,2) ON CONFLICT DO NOTHING;
   SELECT * FROM t1;
-} {1 2}
+} {1 2 0}
 do_execsql_test upsert1-101 {
   DELETE FROM t1;
   INSERT INTO t1(a,b) VALUES(2,3) ON CONFLICT(a) DO NOTHING;
   SELECT * FROM t1;
-} {2 3}
+} {2 3 0}
 do_execsql_test upsert1-102 {
   DELETE FROM t1;
-  INSERT INTO t1(a,b) VALUES(3,4)
-      ON CONFLICT(a) DO NOTHING
-      ON CONFLICT(b) DO NOTHING;
+  INSERT INTO t1(a,b) VALUES(3,4) ON CONFLICT(b) DO NOTHING;
   SELECT * FROM t1;
-} {3 4}
+} {3 4 0}
 do_catchsql_test upsert1-110 {
-  DELETE FROM t1;
-  INSERT INTO t1(a,b) VALUES(3,4)
-      ON CONFLICT DO NOTHING
-      ON CONFLICT DO NOTHING;
-} {1 {multiple unconstrained DO NOTHING clauses}}
+  INSERT INTO t1(a,b) VALUES(5,6) ON CONFLICT(x) DO NOTHING;
+  SELECT * FROM t1;
+} {1 {no such column: x}}
 do_catchsql_test upsert1-120 {
-  INSERT INTO t1(a,b) VALUES(3,4)
-      ON DUPLICATE KEY UPDATE a=99;
-} {1 {ON DUPLICATE KEY may only be used if there is exactly one UNIQUE or PRIMARY KEY constraint}}
+  INSERT INTO t1(a,b) VALUES(5,6) ON CONFLICT(c) DO NOTHING;
+  SELECT * FROM t1;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+do_catchsql_test upsert1-130 {
+  INSERT INTO t1(a,b) VALUES(5,6) ON CONFLICT(b COLLATE nocase) DO NOTHING;
+  SELECT * FROM t1;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+
+if 0 {
+do_catchsql_test upsert1-200 {
+  DROP INDEX t1x1;
+  DELETE FROM t1;
+  CREATE UNIQUE INDEX t1x1 ON t1(a||b);
+  INSERT INTO t1(a,b) VALUES(5,6) ON CONFLICT(a||b) DO NOTHING;
+  SELECT * FROM t1;
+} {0 {5 6}}
+}
 
 finish_test
