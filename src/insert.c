@@ -805,9 +805,12 @@ void sqlite3Insert(
     }
   }
 #ifndef SQLITE_OMIT_UPSERT
-  if( pUpsert && pUpsert->pUpsertTarget ){
+  if( pUpsert ){
     pTabList->a[0].iCursor = iDataCur;
-    sqlite3UpsertAnalyzeTarget(pParse, pTabList, pUpsert);
+    pUpsert->pUpsertSrc = pTabList;
+    if( pUpsert->pUpsertTarget ){
+      sqlite3UpsertAnalyzeTarget(pParse, pTabList, pUpsert);
+    }
   }
 #endif
 

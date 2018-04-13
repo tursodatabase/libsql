@@ -2728,6 +2728,7 @@ struct Upsert {
   Index *pUpsertIdx;        /* Constraint that pUpsertTarget identifies */
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
+  SrcList *pUpsertSrc;      /* Table to be updated */
 };
 
 /*

@@ -189,11 +189,46 @@ void sqlite3UpsertDoUpdate(
   Table *pTab,          /* The table being updated */
   Index *pIdx,          /* The UNIQUE constraint that failed */
   int iDataCur,         /* Cursor for the pTab, table being updated */
-  int iIdxCur           /* Cursor for the pIdx */
+  int iIdxCur           /* Cursor for pIdx */
 ){
   Vdbe *v = pParse->pVdbe;
+  sqlite3 *db = pParse->db;
+  int regKey;               /* Register(s) containing the key */
+  Expr *pWhere;             /* Where clause for the UPDATE */
+  Expr *pE1, *pE2;
+  SrcList *pSrc;            /* FROM clause for the UPDATE */
+
   assert( v!=0 );
   VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
+  pWhere = sqlite3ExprDup(db, pUpsert->pUpsertWhere, 0);
+  if( pIdx==0 || HasRowid(pTab) ){
+    /* We are dealing with an IPK */
+    regKey = ++pParse->nMem;
+    if( pIdx ){
+      sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, regKey);
+    }else{
+      sqlite3VdbeAddOp2(v, OP_Rowid, iDataCur, regKey);
+    }
+    pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
+    if( pE1 ){
+      pE1->pTab = pTab;
+      pE1->iTable = pParse->nTab;
+      pE1->iColumn = -1;
+    }
+    pE2 = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
+    if( pE2 ){
+      pE2->iTable = regKey;
+      pE2->affinity = SQLITE_AFF_INTEGER;
+    }
+    pWhere = sqlite3ExprAnd(db,pWhere,sqlite3PExpr(pParse, TK_EQ, pE1, pE2));
+    pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
+    sqlite3Update(pParse, pSrc, 
+        sqlite3ExprListDup(db, pUpsert->pUpsertSet, 0),
+        pWhere, OE_Abort, 0, 0);
+  }else{
+    /* a WITHOUT ROWID table */
+    sqlite3ExprDelete(db, pWhere);
+  }
   VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
 }
 
