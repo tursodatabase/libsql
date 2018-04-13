@@ -1484,6 +1484,12 @@ void sqlite3GenerateConstraintChecks(
         seenReplace = 1;
         break;
       }
+#ifndef SQLITE_OMIT_UPSERT
+      case OE_Update: {
+        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, 0, iDataCur, 0);
+        /* Fall through */
+      }
+#endif
       case OE_Ignore: {
         sqlite3VdbeGoto(v, ignoreDest);
         break;
@@ -1666,7 +1672,7 @@ void sqlite3GenerateConstraintChecks(
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
-        || onError==OE_Ignore || onError==OE_Replace );
+        || onError==OE_Ignore || onError==OE_Replace || onError==OE_Update );
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:
@@ -1674,6 +1680,12 @@ void sqlite3GenerateConstraintChecks(
         sqlite3UniqueConstraint(pParse, onError, pIdx);
         break;
       }
+#ifndef SQLITE_OMIT_UPSERT
+      case OE_Update: {
+        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, pIdx, iDataCur, iIdxCur);
+        /* Fall through */
+      }
+#endif
       case OE_Ignore: {
         sqlite3VdbeGoto(v, ignoreDest);
         break;

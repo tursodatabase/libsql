@@ -180,4 +180,21 @@ int sqlite3UpsertAnalyzeTarget(
   return SQLITE_ERROR;
 }
 
+/*
+** Generate bytecode that does an UPDATE as part of an upsert.
+*/
+void sqlite3UpsertDoUpdate(
+  Parse *pParse,        /* The parsing and code-generating context */
+  Upsert *pUpsert,      /* The ON CONFLICT clause for the upsert */
+  Table *pTab,          /* The table being updated */
+  Index *pIdx,          /* The UNIQUE constraint that failed */
+  int iDataCur,         /* Cursor for the pTab, table being updated */
+  int iIdxCur           /* Cursor for the pIdx */
+){
+  Vdbe *v = pParse->pVdbe;
+  assert( v!=0 );
+  VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
+  VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
+}
+
 #endif /* SQLITE_OMIT_UPSERT */
