@@ -81,13 +81,14 @@ int sqlite3UpsertAnalyzeTarget(
   SrcList *pTabList, /* Table into which we are inserting */
   Upsert *pUpsert    /* The ON CONFLICT clauses */
 ){
-  NameContext sNC;
-  Table *pTab;
-  Index *pIdx;
-  ExprList *pTarget;
-  Expr *pTerm;
-  Expr sCol[2];
-  int rc;
+  Table *pTab;            /* That table into which we are inserting */
+  int rc;                 /* Result code */
+  int iCursor;            /* Cursor used by pTab */
+  Index *pIdx;            /* One of the indexes of pTab */
+  ExprList *pTarget;      /* The conflict-target clause */
+  Expr *pTerm;            /* One term of the conflict-target clause */
+  NameContext sNC;        /* Context for resolving symbolic names */
+  Expr sCol[2];           /* Index column converted into an Expr */
 
   assert( pTabList->nSrc==1 );
   assert( pTabList->a[0].pTab!=0 );
@@ -109,6 +110,7 @@ int sqlite3UpsertAnalyzeTarget(
   /* Check to see if the conflict target matches the rowid. */  
   pTab = pTabList->a[0].pTab;
   pTarget = pUpsert->pUpsertTarget;
+  iCursor = pTabList->a[0].iCursor;
   if( HasRowid(pTab) 
    && pTarget->nExpr==1
    && (pTerm = pTarget->a[0].pExpr)->op==TK_COLUMN
@@ -139,7 +141,7 @@ int sqlite3UpsertAnalyzeTarget(
     if( pIdx->pPartIdxWhere ){
       if( pUpsert->pUpsertTargetWhere==0 ) continue;
       if( sqlite3ExprCompare(pParse, pUpsert->pUpsertTargetWhere,
-                             pIdx->pPartIdxWhere, pTabList->a[0].iCursor)!=0 ){
+                             pIdx->pPartIdxWhere, iCursor)!=0 ){
         continue;
       }
     }
@@ -156,9 +158,7 @@ int sqlite3UpsertAnalyzeTarget(
         pExpr = &sCol[0];
       }
       for(jj=0; jj<nn; jj++){
-        if( sqlite3ExprCompare(pParse, pTarget->a[jj].pExpr, pExpr,
-                               pTabList->a[0].iCursor)<2
-        ){
+        if( sqlite3ExprCompare(pParse, pTarget->a[jj].pExpr, pExpr,iCursor)<2 ){
           break;  /* Column ii of the index matches column jj of target */
         }
       }

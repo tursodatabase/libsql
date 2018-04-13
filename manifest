@@ -1,5 +1,5 @@
-C Improved\sconflict-target\smatching\slogic.
-D 2018-04-13T13:44:48.035
+C Get\sthe\sconflict-target\sclause\sparsing\sworking\scorrectly,\swith\stest\ncases.\s\sThis\schange\sinvolves\san\senhancement\sto\ssqlite3ExprCompare()\swhich\nneeds\sto\sbe\sreviewed\son\strunk\sprior\sto\smerging.
+D 2018-04-13T14:27:01.434
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -443,7 +443,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 20c8788451dc737a967c87ea53ad43544d617f5b57d32ccce8bd52a0daf9e89b
-F src/expr.c 6a41ceb27924dcfb6dc910a283ce74e136c9c305aba87a5acbfca32f5c49caa7
+F src/expr.c a4e99a560768708331921cc8a04c3caef1f68710b5c49e7b4602046cb45579c5
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 94f42cba2cc1c34aeaa441022ba0170ec3fec4bba54db4e0ded085c6dc0fdc51
@@ -557,7 +557,7 @@ F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 00ef0b16ab3f0063439e6582086f57f3beb93cd7e7ba46569a8bdc490c16283d
 F src/update.c f5210fb55d26e20d14d0106c9479a83c63a005b70b1b5291481c48d6dac6fb9f
-F src/upsert.c 5012bea924018c69cfc3cb12a9fa6089efe9895bda70732c7fa60d2320de4d1f
+F src/upsert.c 1535f4270ff200c2ad750c78d95dc377e1b5486f14e5469894ba8cbd85aabf90
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
@@ -1507,7 +1507,7 @@ F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2313e
-F test/upsert1.test 6eb6c5bb63bdc86001ca547d9af715034fc3cf234a70bfc5d75ccc31d8a308db
+F test/upsert1.test 81966c8ef85a17dc3876df83ef79d7b52406ee5b65844b1712fab511fbff0e12
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1719,7 +1719,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c1b1987d8de1efa8ed7e1f199710e32ff20edf8ceec570514fc63bb1ef264e0
-R 9c391c2b4558210a880a408a3702ba04
+P 98d32ba661f4ba662b639994b74352b695d53a33bc8a498bd09b9e02f794c81e
+R f8a0c129a96135656330bef5f8887505
 U drh
-Z c59a31f6f872acbe917575a2e26812a5
+Z 96fe68f62146018e2ed5b3343db81409
