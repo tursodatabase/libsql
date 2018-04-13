@@ -1,0 +1,46 @@
+# 2018-04-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases for UPSERT
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix zipfile
+
+do_execsql_test upsert1-100 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  INSERT INTO t1(a,b) VALUES(1,2) ON CONFLICT DO NOTHING;
+  SELECT * FROM t1;
+} {1 2}
+do_execsql_test upsert1-101 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b) VALUES(2,3) ON CONFLICT(a) DO NOTHING;
+  SELECT * FROM t1;
+} {2 3}
+do_execsql_test upsert1-102 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b) VALUES(3,4)
+      ON CONFLICT(a) DO NOTHING
+      ON CONFLICT(b) DO NOTHING;
+  SELECT * FROM t1;
+} {3 4}
+do_catchsql_test upsert1-110 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b) VALUES(3,4)
+      ON CONFLICT DO NOTHING
+      ON CONFLICT DO NOTHING;
+} {1 {multiple unconstrained DO NOTHING clauses}}
+do_catchsql_test upsert1-120 {
+  INSERT INTO t1(a,b) VALUES(3,4)
+      ON DUPLICATE KEY UPDATE a=99;
+} {1 {ON DUPLICATE KEY may only be used if there is exactly one UNIQUE or PRIMARY KEY constraint}}
+
+finish_test

@@ -804,6 +804,13 @@ void sqlite3Insert(
       pParse->nMem += pIdx->nColumn;
     }
   }
+#ifndef SQLITE_OMIT_UPSERT
+  if( pUpsert ){
+    pTabList->a[0].iCursor = iDataCur;
+    sqlite3UpsertAnalyze(pParse, pTabList, pUpsert);
+  }
+#endif
+
 
   /* This is the top of the main insertion loop */
   if( useTempTable ){
@@ -1006,7 +1013,7 @@ void sqlite3Insert(
       int isReplace;    /* Set to true if constraints may cause a replace */
       int bUseSeek;     /* True to use OPFLAG_SEEKRESULT */
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0
+          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0, pUpsert
       );
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
 
@@ -1242,7 +1249,8 @@ void sqlite3GenerateConstraintChecks(
   u8 overrideError,    /* Override onError to this if not OE_Default */
   int ignoreDest,      /* Jump to this label on an OE_Ignore resolution */
   int *pbMayReplace,   /* OUT: Set to true if constraint may cause a replace */
-  int *aiChng          /* column i is unchanged if aiChng[i]<0 */
+  int *aiChng,         /* column i is unchanged if aiChng[i]<0 */
+  Upsert *pUpsert      /* ON CONFLICT clauses, if any.  NULL otherwise */
 ){
   Vdbe *v;             /* VDBE under constrution */
   Index *pIdx;         /* Pointer to one of the indices */

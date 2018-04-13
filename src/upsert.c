@@ -69,4 +69,62 @@ Upsert *sqlite3UpsertNew(
   return pNew;
 }
 
+/*
+** Analyze the ON CONFLICT clause(s) described by pUpsert.  Resolve all
+** symbols in the conflict-target clausees.  Fill in the pUpsertIdx pointers.
+**
+** Return non-zero if there are errors.
+*/
+int sqlite3UpsertAnalyze(
+  Parse *pParse,     /* The parsing context */
+  SrcList *pTabList, /* Table into which we are inserting */
+  Upsert *pUpsert    /* The list of ON CONFLICT clauses */
+){
+  NameContext sNC;
+  Upsert *p;
+  Table *pTab;
+  Index *pIdx;
+  int rc = SQLITE_OK;
+  int nDoNothing = 0;
+
+  assert( pTabList->nSrc==1 );
+  assert( pTabList->a[0].pTab!=0 );
+  memset(&sNC, 0, sizeof(sNC));
+  sNC.pParse = pParse;
+  sNC.pSrcList = pTabList;
+  pTab = pTabList->a[0].pTab;
+  for(p=pUpsert; p; p=p->pUpsertNext){
+    if( p->pUpsertTarget==0 ){
+      if( p->pUpsertSet ){
+        /* This is a MySQL-style ON DUPLICATE KEY clause.  The ON DUPLICATE
+        ** KEY clause can only be used if there is exactly one uniqueness
+        ** constraint and/or PRIMARY KEY */
+        int nUnique = 0;
+        for(pIdx = pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( IsUniqueIndex(pIdx) ){
+            p->pUpsertIdx = pIdx;
+            nUnique++;
+          }
+        }
+        if( pTab->iPKey>=0 ) nUnique++;
+        if( nUnique!=0 ){
+          sqlite3ErrorMsg(pParse, "ON DUPLICATE KEY may only be used if there "
+               "is exactly one UNIQUE or PRIMARY KEY constraint");
+          return SQLITE_ERROR;
+        }
+      }else{
+        nDoNothing++;
+        if( nDoNothing>1 ){
+          sqlite3ErrorMsg(pParse, "multiple unconstrained DO NOTHING clauses");
+          return SQLITE_ERROR;
+        }
+      }
+      continue;
+    }
+    rc = sqlite3ResolveExprListNames(&sNC, p->pUpsertTarget);
+    if( rc ) return rc;
+  }
+  return rc;
+}
+
 #endif /* SQLITE_OMIT_UPSERT */

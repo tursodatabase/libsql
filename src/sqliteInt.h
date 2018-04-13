@@ -2713,11 +2713,27 @@ struct NameContext {
 ** An instance of the following object describes a single ON CONFLICT
 ** clause in an upsert.  A list of these objects may be attached to
 ** an INSERT statement in order to form an upsert.
+**
+** The pUpsertTarget field is only set if the ON CONFLICT clause includes
+** conflict-target clause.  (In "ON CONFLICT(a,b)" the "(a,b)" is the
+** conflict-target clause.)
+**
+** pUpsertSet is the list of column=expr terms of the UPDATE statement. 
+** The pUpsertSet field is NULL for a ON CONFLICT DO NOTHING.  The
+** pUpsertWhere is the WHERE clause for the UPDATE and is NULL if the
+** WHERE clause is omitted.
+**
+** The pUpsertIdx is a transient pointer to the unique index described
+** by pUpsertTarget.  If pUpsertTarget describes the rowid, then pUpsertIdx
+** will be NULL.  pUpsertIdx does not own the Index object it points to.
+** Care must be taken to ensure that the Index object does not expire while
+** the pointer is valid.
 */
 struct Upsert {
   ExprList *pUpsertTarget;  /* Optional description of conflicting index */
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
+  Index *pUpsertIdx;        /* UNIQUE index referenced by pUpsertTarget */
   Upsert *pUpsertNext;      /* Next ON CONFLICT clause in the list */
 };
 
@@ -3877,7 +3893,7 @@ void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*, int);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
-                                     u8,u8,int,int*,int*);
+                                     u8,u8,int,int*,int*,Upsert*);
 #ifdef SQLITE_ENABLE_NULL_TRIM
   void sqlite3SetMakeRecordP5(Vdbe*,Table*);
 #else
@@ -4274,6 +4290,7 @@ const char *sqlite3JournalModename(int);
   Upsert *sqlite3UpsertNew(sqlite3*,Upsert*,ExprList*,ExprList*,Expr*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
+  int sqlite3UpsertAnalyze(Parse*,SrcList*,Upsert*);
 #else
 #define sqlite3UpsertNew(x,y,z,w) ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)

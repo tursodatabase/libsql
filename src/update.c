@@ -626,7 +626,7 @@ void sqlite3Update(
     assert( regOldRowid>0 );
     sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
         regNewRowid, regOldRowid, chngKey, onError, labelContinue, &bReplace,
-        aXRef);
+        aXRef, 0);
 
     /* Do FK constraint checks. */
     if( hasFK ){

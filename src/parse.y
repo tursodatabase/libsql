@@ -873,7 +873,7 @@ upsert(A) ::= . { A = 0; }
 upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP
               DO UPDATE SET setlist(Z) where_opt(W).
               { A = sqlite3UpsertNew(pParse->db,X,Y,Z,W); /*X-overwrites-A*/ }
-upsert(A) ::= upsert(X) ON DUPLIATE KEY UPDATE setlist(Z) where_opt(W).
+upsert(A) ::= upsert(X) ON DUPLICATE KEY UPDATE setlist(Z) where_opt(W).
               { A = sqlite3UpsertNew(pParse->db,X,0,Z,W); /*X-overwrites-A*/ }
 upsert(A) ::= upsert(X) ON CONFLICT LP sortlist(Y) RP DO NOTHING.
               { A = sqlite3UpsertNew(pParse->db,X,Y,0,0); /*X-overwrites-A*/ }
