@@ -1,5 +1,5 @@
-C Get\sthe\sON\sCONFLICT\sDO\sNOTHING\sform\sof\supsert\sworking\sby\smapping\sit\ninto\sINSERT\sOR\sIGNORE.
-D 2018-04-13T15:14:33.373
+C Merge\sthe\spreupdate\shook\schange\sfrom\strunk.
+D 2018-04-13T16:29:50.650
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -452,7 +452,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c c98142d22fd01ff0202707f0303ebaec9130fc82ad0ea5ab80e680db3cdddb68
+F src/insert.c 289011fe99770c884ab713f3a77f93d47d4cb749100d42b6ef96f0da977201a9
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 1648fc7a9bcfdbfd9a9a04af96ff2796c3164b3f3c7e56ed63a3c51cd11d198d
@@ -1719,7 +1719,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5bf704256206f84b3db7a5d8523215604eeb218ef8db86316d1e43ecd7248d6a
-R b55b644f71d34f63deccb0bd6658d5b2
+P d07f05e98bb9ce0f9b46db159d9df161b7499d6face6a5299ecd2d00a94fb8d0 0ab4518811b23bdb57feba55014cef07de66028f8fcbf8cf0831a712b2954b91
+R c5c36ad1c34d1576c6b4d6cddee03ec0
 U drh
-Z ce27c0e93f96216c50bc25467b98e880
+Z 80469515ff3b27140302095b20f66527

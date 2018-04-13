@@ -1468,14 +1468,13 @@ void sqlite3GenerateConstraintChecks(
                                    regNewData, 1, 0, OE_Replace, 1, -1);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-          if( HasRowid(pTab) ){
-            /* This OP_Delete opcode fires the pre-update-hook only. It does
-            ** not modify the b-tree. It is more efficient to let the coming
-            ** OP_Insert replace the existing entry than it is to delete the
-            ** existing entry and then insert a new one. */
-            sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, OPFLAG_ISNOOP);
-            sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
-          }
+          assert( HasRowid(pTab) );
+          /* This OP_Delete opcode fires the pre-update-hook only. It does
+          ** not modify the b-tree. It is more efficient to let the coming
+          ** OP_Insert replace the existing entry than it is to delete the
+          ** existing entry and then insert a new one. */
+          sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, OPFLAG_ISNOOP);
+          sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
           if( pTab->pIndex ){
             sqlite3MultiWrite(pParse);
