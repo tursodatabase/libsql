@@ -2047,13 +2047,12 @@ struct FKey {
 #define OE_Fail     3   /* Stop the operation but leave all prior changes */
 #define OE_Ignore   4   /* Ignore the error. Do not do the INSERT or UPDATE */
 #define OE_Replace  5   /* Delete existing record, then do INSERT or UPDATE */
-
-#define OE_Restrict 6   /* OE_Abort for IMMEDIATE, OE_Rollback for DEFERRED */
-#define OE_SetNull  7   /* Set the foreign key value to NULL */
-#define OE_SetDflt  8   /* Set the foreign key value to its default */
-#define OE_Cascade  9   /* Cascade the changes */
-
-#define OE_Default  10  /* Do whatever the default action is */
+#define OE_Update   6   /* Process as a DO UPDATE in an upsert */
+#define OE_Restrict 7   /* OE_Abort for IMMEDIATE, OE_Rollback for DEFERRED */
+#define OE_SetNull  8   /* Set the foreign key value to NULL */
+#define OE_SetDflt  9   /* Set the foreign key value to its default */
+#define OE_Cascade  10  /* Cascade the changes */
+#define OE_Default  11  /* Do whatever the default action is */
 
 
 /*

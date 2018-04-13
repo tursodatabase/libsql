@@ -1396,6 +1396,15 @@ void sqlite3GenerateConstraintChecks(
       VdbeCoverage(v);
     }
 
+    /* figure out whether or not upsert applies in this case */
+    if( pUpsert && (pUpsert->pUpsertTarget==0 || pUpsert->pUpsertIdx==0) ){
+      if( pUpsert->pUpsertSet==0 ){
+        onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
+      }else{
+        onError = OE_Update;  /* DO UPDATE */
+      }
+    }
+
     /* If the response to a rowid conflict is REPLACE but the response
     ** to some other UNIQUE constraint is FAIL or IGNORE, then we need
     ** to defer the running of the rowid conflict checking until after
@@ -1415,7 +1424,6 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
     VdbeCoverage(v);
 
-    /* Generate code that deals with a rowid collision */
     switch( onError ){
       default: {
         onError = OE_Abort;
@@ -1478,7 +1486,6 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Ignore: {
-        /*assert( seenReplace==0 );*/
         sqlite3VdbeGoto(v, ignoreDest);
         break;
       }
@@ -1567,6 +1574,15 @@ void sqlite3GenerateConstraintChecks(
       onError = overrideError;
     }else if( onError==OE_Default ){
       onError = OE_Abort;
+    }
+
+    /* Figure out if the upsert clause applies to this index */
+    if( pUpsert && (pUpsert->pUpsertTarget==0 || pUpsert->pUpsertIdx==pIdx) ){
+      if( pUpsert->pUpsertSet==0 ){
+        onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
+      }else{
+        onError = OE_Update;  /* DO UPDATE */
+      }
     }
 
     /* Collision detection may be omitted if all of the following are true:
