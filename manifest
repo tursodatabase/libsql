@@ -1,5 +1,5 @@
-C Remove\san\salways-true\sbranch\sfrom\sthe\spreupdate\shook\slogic.
-D 2018-04-13T16:23:22.787
+C Experimental\schange\sto\s"SELECT\s*\sFROM\s...\sORDER\sBY"\sprocessing\sto\sload\ssome\ncolumn\svalues\sfrom\sthe\sdb\safter\ssorting.
+D 2018-04-14T18:46:20.429
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -443,7 +443,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 20c8788451dc737a967c87ea53ad43544d617f5b57d32ccce8bd52a0daf9e89b
-F src/expr.c 6a41ceb27924dcfb6dc910a283ce74e136c9c305aba87a5acbfca32f5c49caa7
+F src/expr.c 2448a255ce627c4e772bd68cf5529877c2bdfb6b580803d5fadc8528bdf7c1ef
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 94f42cba2cc1c34aeaa441022ba0170ec3fec4bba54db4e0ded085c6dc0fdc51
@@ -491,12 +491,12 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 41e857c107be5fb972b87a4cbb948c8b1191f339c1e32a65742581573932e119
+F src/select.c c87425f0d56340a4ccc5aac52d07264b73c348ca45103caef9f289b09cb0e052
 F src/shell.c.in cc960721e56ebc1a78773bb5d2f5608b54275f945cbe49e4afe919d6888062a7
 F src/sqlite.h.in e0be726ea6e4e6571724d39d242472ecd8bd1ba6f84ade88e1641bde98a6d02b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h a4837c57f9a3e2af100bc59f4be60d16b823f18131f8cef6a6685440f775eebd
+F src/sqliteInt.h 31a7f214a6b52d413f144d303d22c6e9a940059d9fb86e6f49e5ec7ad65636e9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1262,6 +1262,7 @@ F test/sort2.test cc23b7c19d684657559e8a55b02f7fcee03851d0
 F test/sort3.test 1480ed7c4c157682542224e05e3b75faf4a149e5
 F test/sort4.test 5c34d9623a4ae5921d956dfa2b70e77ed0fc6e5c
 F test/sort5.test 6b43ae0e2169b5ceed441844492e55ba7f1ae0790528395ddf7888ab3094525d
+F test/sorterref.test a13ed207a0eea3c7898f308f979bfb518f68c598ec737d2c494dfd3deaa83506
 F test/sortfault.test d4ccf606a0c77498e2beb542764fd9394acb4d66
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1717,7 +1718,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7ec7b5970df9e542401f8299e098a5039d1875e2e3383dad06a0ec998589b6e
-R f9cb5caefaf1e23db60ecde977cce853
-U drh
-Z 2e05817b48e1d8380863fbfa532bc935
+P 0ab4518811b23bdb57feba55014cef07de66028f8fcbf8cf0831a712b2954b91
+R 58c773e5cd03f7f4dcbed950a8e0accb
+T *branch * sorter-reference
+T *sym-sorter-reference *
+T +closed caee77d9a8e1da2551cef44ba7a11e2de36eb8c047273148b4126bfc1edd21da
+T -sym-trunk *
+U dan
+Z 5d1ae4ddc55c798d695f83fc2835288d

@@ -2499,6 +2499,7 @@ struct ExprList {
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
+    unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     union {
       struct {
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
