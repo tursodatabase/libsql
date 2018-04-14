@@ -221,14 +221,37 @@ void sqlite3UpsertDoUpdate(
       pE2->affinity = SQLITE_AFF_INTEGER;
     }
     pWhere = sqlite3ExprAnd(db,pWhere,sqlite3PExpr(pParse, TK_EQ, pE1, pE2));
-    pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
-    sqlite3Update(pParse, pSrc, 
-        sqlite3ExprListDup(db, pUpsert->pUpsertSet, 0),
-        pWhere, OE_Abort, 0, 0);
   }else{
     /* a WITHOUT ROWID table */
-    sqlite3ExprDelete(db, pWhere);
+    int i, j;
+    int iTab = pParse->nTab+1;
+    Index *pX;
+    for(pX=pTab->pIndex; ALWAYS(pX) && !IsPrimaryKeyIndex(pX); pX=pX->pNext){
+      iTab++;
+    }
+    for(i=0; i<pIdx->nKeyCol; i++){
+      regKey = ++pParse->nMem;
+      sqlite3VdbeAddOp3(v, OP_Column, iDataCur, i, regKey);
+      j = pIdx->aiColumn[i];
+      VdbeComment((v, "%s", pTab->aCol[j].zName));
+      pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
+      if( pE1 ){
+        pE1->pTab = pTab;
+        pE1->iTable = iTab;
+        pE1->iColumn = j;
+      }
+      pE2 = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
+      if( pE2 ){
+        pE2->iTable = regKey;
+        pE2->affinity = pTab->zColAff[j];
+      }
+      pWhere = sqlite3ExprAnd(db,pWhere,sqlite3PExpr(pParse, TK_EQ, pE1, pE2));
+    }
   }
+  pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
+  sqlite3Update(pParse, pSrc, 
+      sqlite3ExprListDup(db, pUpsert->pUpsertSet, 0),
+      pWhere, OE_Abort, 0, 0);
   VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
 }
 

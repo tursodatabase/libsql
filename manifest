@@ -1,5 +1,5 @@
-C Make\ssure\sconstraint\schecks\soccur\sin\sthe\scorrect\sorder,\seven\sin\sthe\npresence\sof\supserts.
-D 2018-04-14T20:24:36.183
+C Get\supsert\sworking\son\sWITHOUT\sROWID\stables.
+D 2018-04-14T22:35:34.588
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -557,7 +557,7 @@ F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 00ef0b16ab3f0063439e6582086f57f3beb93cd7e7ba46569a8bdc490c16283d
 F src/update.c f5210fb55d26e20d14d0106c9479a83c63a005b70b1b5291481c48d6dac6fb9f
-F src/upsert.c a82eacec45fa54a194401a1bb18745f1a65d1c964e8d86c56372c6b36a80598f
+F src/upsert.c 3baeab51df965e8442ff0c338be89d1b940f0e56cfe2b0a59ef90b4bb5f55da2
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
@@ -1719,7 +1719,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9080bc8b8c5f3b399eb1819bb5009581f178d85bb2b2cca7bc16a7b81b06863
-R 314a81d3ecdf7de20737770688132742
+P 07fb30c3de7ff396ae2ce8a0d20352b56f17a5db0af99a921c7bfe9bd4018115
+R 4db011ba75166206f017b4defb2c5177
 U drh
-Z 5b6df9744700f2b62c7a81bfca411a19
+Z 1de9b79ae25e971c9be7a72547deaf79
