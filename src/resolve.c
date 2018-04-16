@@ -383,10 +383,12 @@ static int lookupName(
     ** is supported for backwards compatibility only. Hence, we issue a warning
     ** on sqlite3_log() whenever the capability is used.
     */
-    if( (pEList = pNC->pEList)!=0
-     && zTab==0
+    if( (pNC->ncFlags & NC_UEList)!=0
      && cnt==0
+     && zTab==0
     ){
+      pEList = pNC->uNC.pEList;
+      assert( pEList!=0 );
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
@@ -915,8 +917,8 @@ static int resolveOrderByTermToExprList(
   memset(&nc, 0, sizeof(nc));
   nc.pParse = pParse;
   nc.pSrcList = pSelect->pSrc;
-  nc.pEList = pEList;
-  nc.ncFlags = NC_AllowAgg;
+  nc.uNC.pEList = pEList;
+  nc.ncFlags = NC_AllowAgg|NC_UEList;
   nc.nErr = 0;
   db = pParse->db;
   savedSuppErr = db->suppressErr;
@@ -1299,7 +1301,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** Minor point: If this is the case, then the expression will be
     ** re-evaluated for each reference to it.
     */
-    sNC.pEList = p->pEList;
+    assert( (sNC.ncFlags & (NC_UAggInfo))==0 );
+    sNC.uNC.pEList = p->pEList;
+    sNC.ncFlags |= NC_UEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
 
