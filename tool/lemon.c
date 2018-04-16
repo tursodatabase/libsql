@@ -1663,8 +1663,6 @@ int main(int argc, char **argv)
   lem.basisflag = basisflag;
   lem.nolinenosflag = nolinenosflag;
   Symbol_new("$");
-  lem.errsym = Symbol_new("error");
-  lem.errsym->useCnt = 0;
 
   /* Parse the input file */
   Parse(&lem);
@@ -1673,6 +1671,7 @@ int main(int argc, char **argv)
     fprintf(stderr,"Empty grammar.\n");
     exit(1);
   }
+  lem.errsym = Symbol_find("error");
 
   /* Count and index the symbols of the grammar */
   Symbol_new("{default}");
@@ -3994,7 +3993,7 @@ void print_stack_union(
     fprintf(out,"  %s yy%d;\n",types[i],i+1); lineno++;
     free(types[i]);
   }
-  if( lemp->errsym->useCnt ){
+  if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"  int yy%d;\n",lemp->errsym->dtnum); lineno++;
   }
   free(stddt);
@@ -4144,8 +4143,8 @@ void ReportTable(
 
   /* Generate the defines */
   fprintf(out,"#define YYCODETYPE %s\n",
-    minimum_size_type(0, lemp->nsymbol+1, &szCodeType)); lineno++;
-  fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
+    minimum_size_type(0, lemp->nsymbol, &szCodeType)); lineno++;
+  fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
     minimum_size_type(0,lemp->maxAction,&szActionType)); lineno++;
   if( lemp->wildcard ){
@@ -4183,7 +4182,7 @@ void ReportTable(
   if( mhflag ){
     fprintf(out,"#endif\n"); lineno++;
   }
-  if( lemp->errsym->useCnt ){
+  if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index); lineno++;
     fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum); lineno++;
   }
