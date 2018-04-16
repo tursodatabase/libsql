@@ -750,7 +750,7 @@ static int codeTriggerProgram(
           targetSrcList(pParse, pStep),
           sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3ExprDup(db, pStep->pWhere, 0), 
-          pParse->eOrconf, 0, 0
+          pParse->eOrconf, 0, 0, 0
         );
         break;
       }

@@ -826,7 +826,7 @@ cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,W,R,O,L);
+  sqlite3Update(pParse,X,Y,W,R,O,L,0);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
@@ -834,7 +834,7 @@ cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,W,R,0,0);
+  sqlite3Update(pParse,X,Y,W,R,0,0,0);
 }
 %endif
 

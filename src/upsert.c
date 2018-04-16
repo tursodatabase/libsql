@@ -251,7 +251,7 @@ void sqlite3UpsertDoUpdate(
   pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
   sqlite3Update(pParse, pSrc, 
       sqlite3ExprListDup(db, pUpsert->pUpsertSet, 0),
-      pWhere, OE_Abort, 0, 0);
+      pWhere, OE_Abort, 0, 0, pUpsert);
   VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
 }
 

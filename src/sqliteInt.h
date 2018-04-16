@@ -2685,6 +2685,7 @@ struct NameContext {
   union {
     ExprList *pEList;    /* Optional list of result-set columns */
     AggInfo *pAggInfo;   /* Information about aggregates at this level */
+    Upsert *pUpsert;     /* ON CONFLICT clause information from an upsert */
   } uNC;
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
@@ -2709,6 +2710,7 @@ struct NameContext {
 #define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
 #define NC_UEList    0x0080  /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x0100  /* True if uNC.pAggInfo is used */
+#define NC_UUpsert   0x0200  /* True if uNC.pUpsert is used */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 
@@ -2733,6 +2735,7 @@ struct Upsert {
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
   SrcList *pUpsertSrc;      /* Table to be updated */
+  int regData;              /* First register holding array of VALUES */
 };
 
 /*
@@ -3798,7 +3801,8 @@ void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
 Expr *sqlite3LimitWhere(Parse*,SrcList*,Expr*,ExprList*,Expr*,char*);
 #endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*, ExprList*, Expr*);
-void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*);
+void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*,
+                   Upsert*);
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 LogEst sqlite3WhereOutputRowCount(WhereInfo*);

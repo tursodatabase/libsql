@@ -93,7 +93,8 @@ void sqlite3Update(
   Expr *pWhere,          /* The WHERE clause.  May be null */
   int onError,           /* How to handle constraint errors */
   ExprList *pOrderBy,    /* ORDER BY clause. May be null */
-  Expr *pLimit           /* LIMIT clause. May be null */
+  Expr *pLimit,          /* LIMIT clause. May be null */
+  Upsert *pUpsert        /* ON CONFLICT clause, or null */
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
@@ -226,6 +227,8 @@ void sqlite3Update(
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pParse;
   sNC.pSrcList = pTabList;
+  sNC.uNC.pUpsert = pUpsert;
+  sNC.ncFlags = NC_UUpsert;
 
   /* Resolve the column names in all the expressions of the
   ** of the UPDATE statement.  Also find the column index

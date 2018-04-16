@@ -808,6 +808,7 @@ void sqlite3Insert(
   if( pUpsert ){
     pTabList->a[0].iCursor = iDataCur;
     pUpsert->pUpsertSrc = pTabList;
+    pUpsert->regData = regData;
     if( pUpsert->pUpsertTarget ){
       sqlite3UpsertAnalyzeTarget(pParse, pTabList, pUpsert);
     }
