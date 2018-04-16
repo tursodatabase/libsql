@@ -1,12 +1,12 @@
-C Reduce\sthe\ssize\sof\sthe\sNameContext\sobject\sby\sgrouping\sseldom-used\sfields\ninto\sa\sunion.
-D 2018-04-16T10:34:13.460
+C Increase\sthe\sversion\snumber\sto\s3.24.0
+D 2018-04-16T10:41:15.351
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 43dd6ae2e5a2bb8df7bfc9ed85935129caffeafb8c1803d24c5d038b1e74c8ca
 F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
-F VERSION 7169eb6959db9ad1b7004ae3b754ef6e703eb7d8dde3b07d2e63103413eb25fb
+F VERSION b7c9d1d11cb70ef8e90cfcf3c944aa58a9f801cc2ad487eebb0a110c16dfc2df
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -32,7 +32,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 41d0e05b0d289c1c981aafe5c4070713c8e70b5a7d3472360764a3fce08a82a8 x
+F configure 80e2dcad8ab88aacc58b55eb0e395f79184b45fcfaa3f36fc20d2e71cfa0a7e4 x
 F configure.ac d4529ebb26ae046269334f1dac65f2b1d6927c2efe22b2ec24dce24dfe4f83dd
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 278113807f49d12d04179a93fab92b5b917a08771152ca7949d34e928efa3941
@@ -1717,7 +1717,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ab4518811b23bdb57feba55014cef07de66028f8fcbf8cf0831a712b2954b91
-R 80124f5c46813a79081d38ccf28ed65d
+P dba3095feeeb55b5c0ebe33bdd4be8ba1f24478406685d3a042a69d9c380e742
+R 50577be4101ba6800e0ceb3fdb5a7f41
 U drh
-Z 0ede432c15c5cbd49352341f017c0dd7
+Z fd8d37ec919dd409461d7d6bfec613a5
