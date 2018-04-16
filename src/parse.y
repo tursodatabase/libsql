@@ -205,7 +205,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 //
 %fallback ID
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
-  CONFLICT DATABASE DEFERRED DESC DETACH DO DUPLICATE
+  CONFLICT DATABASE DEFERRED DESC DETACH DO
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
@@ -862,6 +862,11 @@ cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S)
         upsert(U). {
   sqlite3Insert(pParse, X, S, F, R, U);
 }
+cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) AS nm(A) select(S)
+        upsert(U). {
+  if( X ) X->a[0].zAlias = sqlite3NameFromToken(pParse->db, &A);
+  sqlite3Insert(pParse, X, S, F, R, U);
+}
 cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 {
   sqlite3Insert(pParse, X, 0, F, R, 0);
@@ -873,8 +878,6 @@ upsert(A) ::= . { A = 0; }
 upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW)
               DO UPDATE SET setlist(Z) where_opt(W).
               { A = sqlite3UpsertNew(pParse->db,T,TW,Z,W);}
-upsert(A) ::= ON DUPLICATE KEY UPDATE setlist(Z) where_opt(W).
-              { A = sqlite3UpsertNew(pParse->db,0,0,Z,W); }
 upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW) DO NOTHING.
               { A = sqlite3UpsertNew(pParse->db,T,TW,0,0); }
 upsert(A) ::= ON CONFLICT DO NOTHING.

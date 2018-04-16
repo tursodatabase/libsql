@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\s"excluded.*"\snames\sin\sthe\sUPDATE\sclause\sof\san\supsert.
-D 2018-04-16T13:00:50.958
+C Remove\sthe\sMySQL\supsert\ssyntax.\s\s\sAs\san\soptional\salias\sto\sthe\sinsert\stable\nname\sin\sorder\sto\sfinish\sout\sPostgreSQL\supsert\ssyntax\semulation.
+D 2018-04-16T13:26:53.730
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -480,7 +480,7 @@ F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 22da8d033498cb10f1a74e7a9e48359fd1f0fb5d34298f8232d972df68dbe797
+F src/parse.y 06555966b12b7c71b5c3e0ced8c36f4cab6ba11c2af0ec29307597310129eda6
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -489,7 +489,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c b086fea6a1952db88beca31fdd621201ee5e4ce3f02905248cc3035a8174aa89
 F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 16715d4fe35694a6992335fc2896a90c3bc2f8328cefc25592cdfec824218678
+F src/resolve.c f0efb32b5d6a45ded839cc1bae7e57d6c27b7c7259c2ebeaa7ee361b66ab6164
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3e84cb869930aa8fcacd3acbb1a0ec2d82736c8479d6a4367a5f1a926fb8a763
 F src/shell.c.in cc960721e56ebc1a78773bb5d2f5608b54275f945cbe49e4afe919d6888062a7
@@ -1647,7 +1647,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c736fdeca5e
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
-F tool/mkkeywordhash.c 9daf08059d76b27b7d7b5729763ad01c5479d04ffe9d5ead87a864a01607e619
+F tool/mkkeywordhash.c 98d7ce6f8ed32f23d6b30fbde6d9ed466d4ae38a9f8add20a36bebd3df56171c
 F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6a13ea
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 4ee2a30ccbd900dc4d5cdb61bdab87cd2166cd2affcc78c9cc0b8d22a65b2eee
@@ -1719,7 +1719,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54d96772e78b7f57d5b590aebe34a139ade73629aebe16677372650b33513b1d
-R bdaf4436c6e5d9601bf3da500ee61f0e
+P 0203f34faae07fbea0bff2d23b81fb37df8854cded4cdadac5a034132a096b6d
+R 16a23a99570059dda96879cb45289d18
 U drh
-Z 75b8643425669c47908a06e24f421b91
+Z 35bd09850d2fa1954c923b0a7bd25a8f

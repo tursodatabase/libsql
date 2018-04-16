@@ -193,7 +193,6 @@ static Keyword aKeywordTable[] = {
   { "DISTINCT",         "TK_DISTINCT",     ALWAYS                 },
   { "DO",               "TK_DO",           UPSERT                 },
   { "DROP",             "TK_DROP",         ALWAYS                 },
-  { "DUPLICATE",        "TK_DUPLICATE",    UPSERT                 },
   { "END",              "TK_END",          ALWAYS                 },
   { "EACH",             "TK_EACH",         TRIGGER                },
   { "ELSE",             "TK_ELSE",         ALWAYS                 },

@@ -349,7 +349,7 @@ static int lookupName(
             pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
             eNewExprOp = TK_REGISTER;
           }else
-#endif
+#endif /* SQLITE_OMIT_UPSERT */
           {
 #ifndef SQLITE_OMIT_TRIGGER
             if( iCol<0 ){
@@ -366,7 +366,7 @@ static int lookupName(
             pExpr->pTab = pTab;
             pExpr->iColumn = (i16)iCol;
             eNewExprOp = TK_TRIGGER;
-#endif /* SQLITE_OMIT_TRIGGER
+#endif /* SQLITE_OMIT_TRIGGER */
           }
         }
       }
