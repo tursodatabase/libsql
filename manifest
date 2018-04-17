@@ -1,5 +1,5 @@
-C Add\ssome\smore\ssimple\stest\scases\sfor\sUPSERT.\sAnd\sa\sminor\sfix.
-D 2018-04-17T18:16:10.913
+C Simplification\sto\sthe\supsert\slogic.
+D 2018-04-17T18:18:05.768
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -452,7 +452,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 6d9c6ab7ae76a038725e30385168686b9861e3eba9815e2c6d7c84698a419a7f
+F src/insert.c 771dc7631afe203f867c74c37357d57d16127a7e5075e0d735564b9160eb6516
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 1648fc7a9bcfdbfd9a9a04af96ff2796c3164b3f3c7e56ed63a3c51cd11d198d
@@ -1722,7 +1722,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 907b5a37c539ea67c285c87399b494c7fe15014389a2ea3d49e90640b58946ae
-R 9c3fbe02ac36c51a4bbb1c96ff0a3457
-U dan
-Z e4d8b74153527e8788840ae3c8608438
+P 27cd3b2fb2ad0cf2b36741bd1057cb7973954d40456e9db158261a38b049d2b5
+R 837c4599d1e54bae4359625ba7dd9074
+U drh
+Z 92d6b1e9c0f6d90ac70b51eff037a9bb

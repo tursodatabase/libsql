@@ -1440,24 +1440,17 @@ void sqlite3GenerateConstraintChecks(
   ** in the list.  See sqlite3CreateIndex() for where that happens.
   */
 
-  /* If there is an ON CONFLICT clause without a constraint-target
-  ** (In other words, one of "ON CONFLICT DO NOTHING" or
-  ** "ON DUPLICATION KEY UPDATE") then change the overrideError to
-  ** whichever is appropriate.
-  */
   if( pUpsert ){
     if( pUpsert->pUpsertTarget==0 ){
-      if( pUpsert->pUpsertSet==0 ){
-        /* An ON CONFLICT DO NOTHING clause, without a constraint-target.
-        ** Make all unique constraint resolution be OE_Ignore */
-        overrideError = OE_Ignore;
-        pUpsert = 0;
-      }else{
-        /* An ON DUPLICATE KEY UPDATE clause.  All unique constraints
-        ** do upsert processing */
-        overrideError = OE_Update;
-      }
+      /* An ON CONFLICT DO NOTHING clause, without a constraint-target.
+      ** Make all unique constraint resolution be OE_Ignore */
+      assert( pUpsert->pUpsertSet==0 );
+      overrideError = OE_Ignore;
+      pUpsert = 0;
     }else if( (pUpIdx = pUpsert->pUpsertIdx)!=0 ){
+      /* If the constraint-target is on some column other than
+      ** then ROWID, then we might need to move the UPSERT around
+      ** so that it occurs in the correct order. */
       sAddr.upsertTop = sqlite3VdbeMakeLabel(v);
       sAddr.upsertBtm = sqlite3VdbeMakeLabel(v);
     }
