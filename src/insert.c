@@ -1580,7 +1580,7 @@ void sqlite3GenerateConstraintChecks(
       }
 #ifndef SQLITE_OMIT_UPSERT
       case OE_Update: {
-        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, 0, iDataCur, 0);
+        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, 0, iDataCur);
         /* Fall through */
       }
 #endif
@@ -1787,7 +1787,7 @@ void sqlite3GenerateConstraintChecks(
       }
 #ifndef SQLITE_OMIT_UPSERT
       case OE_Update: {
-        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, pIdx, iDataCur, iIdxCur);
+        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, pIdx, iIdxCur+ix);
         /* Fall through */
       }
 #endif

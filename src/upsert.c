@@ -182,14 +182,19 @@ int sqlite3UpsertAnalyzeTarget(
 
 /*
 ** Generate bytecode that does an UPDATE as part of an upsert.
+**
+** If pIdx is NULL, then the UNIQUE constraint that failed was the IPK.
+** In this case parameter iCur is a cursor open on the table b-tree that
+** currently points to the conflicting table row. Otherwise, if pIdx
+** is not NULL, then pIdx is the constraint that failed and iCur is a
+** cursor points to the conflicting row.
 */
 void sqlite3UpsertDoUpdate(
   Parse *pParse,        /* The parsing and code-generating context */
   Upsert *pUpsert,      /* The ON CONFLICT clause for the upsert */
   Table *pTab,          /* The table being updated */
   Index *pIdx,          /* The UNIQUE constraint that failed */
-  int iDataCur,         /* Cursor for the pTab, table being updated */
-  int iIdxCur           /* Cursor for pIdx */
+  int iCur              /* Cursor for pIdx (or pTab if pIdx==NULL) */
 ){
   Vdbe *v = pParse->pVdbe;
   sqlite3 *db = pParse->db;
@@ -205,9 +210,9 @@ void sqlite3UpsertDoUpdate(
     /* We are dealing with an IPK */
     regKey = ++pParse->nMem;
     if( pIdx ){
-      sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, regKey);
+      sqlite3VdbeAddOp2(v, OP_IdxRowid, iCur, regKey);
     }else{
-      sqlite3VdbeAddOp2(v, OP_Rowid, iDataCur, regKey);
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regKey);
     }
     pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
     if( pE1 ){
@@ -231,7 +236,7 @@ void sqlite3UpsertDoUpdate(
     }
     for(i=0; i<pIdx->nKeyCol; i++){
       regKey = ++pParse->nMem;
-      sqlite3VdbeAddOp3(v, OP_Column, iDataCur, i, regKey);
+      sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regKey);
       j = pIdx->aiColumn[i];
       VdbeComment((v, "%s", pTab->aCol[j].zName));
       pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);

@@ -4293,7 +4293,7 @@ const char *sqlite3JournalModename(int);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
   int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
-  void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int,int);
+  void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
 #else
 #define sqlite3UpsertNew(x,y,z,w) ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)
