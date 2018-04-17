@@ -392,6 +392,11 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   assert( j<p->nLabel );
   assert( j>=0 );
   if( p->aLabel ){
+#ifdef SQLITE_DEBUG
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
+    }
+#endif
     p->aLabel[j] = v->nOp;
   }
 }
