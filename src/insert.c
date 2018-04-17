@@ -1507,7 +1507,7 @@ void sqlite3GenerateConstraintChecks(
 
     /* Check to see if the new rowid already exists in the table.  Skip
     ** the following conflict logic if it does not. */
-    VdbeNoopComment((v, "constraint checks for ROWID"));
+    VdbeNoopComment((v, "uniqueness check for ROWID"));
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
     VdbeCoverage(v);
 
@@ -1603,17 +1603,21 @@ void sqlite3GenerateConstraintChecks(
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
-    VdbeNoopComment((v, "constraint checks for %s", pIdx->zName));
+    if( pUpIdx==pIdx ){
+      addrUniqueOk = sAddr.upsertBtm;
+      upsertBypass = sqlite3VdbeGoto(v, 0);
+      VdbeComment((v, "Skip upsert subroutine"));
+      sqlite3VdbeResolveLabel(v, sAddr.upsertTop);
+    }else{
+      addrUniqueOk = sqlite3VdbeMakeLabel(v);
+    }
+    VdbeNoopComment((v, "uniqueness check for %s", pIdx->zName));
     if( bAffinityDone==0 ){
       sqlite3TableAffinity(v, pTab, regNewData+1);
       bAffinityDone = 1;
     }
     iThisCur = iIdxCur+ix;
-    if( pUpIdx==pIdx ){
-      addrUniqueOk = sAddr.upsertBtm;
-    }else{
-      addrUniqueOk = sqlite3VdbeMakeLabel(v);
-    }
+
 
     /* Skip partial indices for which the WHERE clause is not true */
     if( pIdx->pPartIdxWhere ){
@@ -1683,9 +1687,6 @@ void sqlite3GenerateConstraintChecks(
       }else{
         onError = OE_Update;  /* DO UPDATE */
       }
-      upsertBypass = sqlite3VdbeGoto(v, 0);
-      VdbeComment((v, "Upsert bypass"));
-      sqlite3VdbeResolveLabel(v, sAddr.upsertTop);
     }
 
     /* Collision detection may be omitted if all of the following are true:
@@ -1802,10 +1803,13 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    sqlite3VdbeResolveLabel(v, addrUniqueOk);
+    if( pUpIdx==pIdx ){
+      sqlite3VdbeJumpHere(v, upsertBypass);
+    }else{
+      sqlite3VdbeResolveLabel(v, addrUniqueOk);
+    }
     sqlite3ExprCachePop(pParse);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
-    if( pUpIdx==pIdx ) sqlite3VdbeJumpHere(v, upsertBypass);
 
   }
   reorderConstraintChecks(v, &sAddr);

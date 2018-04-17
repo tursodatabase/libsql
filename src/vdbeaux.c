@@ -397,6 +397,7 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
       printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
     }
 #endif
+    assert( p->aLabel[j]==(-1) );
     p->aLabel[j] = v->nOp;
   }
 }
