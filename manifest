@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\slogic\sfor\sconstraint\scheck\sreordering\sduring\supsert.\nImproved\scomments\son\sconstraint\scheck\sbytecode.\s\sAdd\san\sassert\sthat\nprevents\sthe\ssame\slabel\sfrom\sbeing\sresolved\smore\sthan\sonce.
-D 2018-04-17T20:06:24.300
+C Added\sa\scomment\son\sthe\sassert()\sadded\sto\sthe\sprevious\scheck-in.
+D 2018-04-17T20:09:27.587
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -565,7 +565,7 @@ F src/vdbe.c 066a4e1de2ed83e253adfd2e97a684cf562eaa41d31ee7f3d3e4c8aea4485a55
 F src/vdbe.h 134beb7a12a6213c00eba58febaede33447cc4441bc568a0d9c144b33fc3720a
 F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
 F src/vdbeapi.c 29d2baf9c1233131ec467d7bed1b7c8a03c27579048d768c4b04acf427838858
-F src/vdbeaux.c 42c40f64bb718088d0d838cf2396c8c478be52c66dcbf3af2d3c353df6162b76
+F src/vdbeaux.c 1edb8a07e929eb2cb3b9cc225e0d9803614b82152e1d651d6633b932742bac94
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 414e28d3a7e2a8bee2bb247de115dcbc68e3cbac284d5862d077002f7a93bce1
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1722,7 +1722,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ff07a06cef6e04777d2d5b81f96e8626e835382e62320ecf17b3ff73573e23e
-R 2511be33be4d6ad227cb9bb37ba0a227
+P 1ddbb0ff5586ef5ca987e4309979f24f95eea883ed68937094a2db2d61e75657
+R 4b15eb8ad168544401a47db62c30df7b
 U drh
-Z 7a27698f9fbf02f710a4c8fd1b269116
+Z cc1dfa21474d817de97141d68ee2edec
