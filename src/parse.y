@@ -864,7 +864,10 @@ cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S)
 }
 cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) AS nm(A) select(S)
         upsert(U). {
-  if( X ) X->a[0].zAlias = sqlite3NameFromToken(pParse->db, &A);
+  /* X could only be NULL following a OOM, but an OOM would have been detected
+  ** and stopped the parse long before this rule reduces. */
+  assert( X!=0 );
+  X->a[0].zAlias = sqlite3NameFromToken(pParse->db, &A);
   sqlite3Insert(pParse, X, S, F, R, U);
 }
 cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
@@ -873,7 +876,12 @@ cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 }
 
 %type upsert {Upsert*}
-%destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
+
+// Because upsert only occurs at the tip end of the INSERT rule for cmd,
+// there is never a case where the value of the upsert pointer will not
+// be destroyed by the cmd action.  So comment-out the destructor to
+// avoid unreachable code.
+//%destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
 upsert(A) ::= . { A = 0; }
 upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW)
               DO UPDATE SET setlist(Z) where_opt(W).

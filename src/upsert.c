@@ -114,7 +114,7 @@ int sqlite3UpsertAnalyzeTarget(
   if( HasRowid(pTab) 
    && pTarget->nExpr==1
    && (pTerm = pTarget->a[0].pExpr)->op==TK_COLUMN
-   && (pTerm->iColumn==XN_ROWID || pTerm->iColumn==pTab->iPKey)
+   && pTerm->iColumn==XN_ROWID
   ){
     /* The conflict-target is the rowid of the primary table */
     assert( pUpsert->pUpsertIdx==0 );
