@@ -1,5 +1,5 @@
-C Add\snew\stestcase()\smacros\sand\sfix\sa\sbug\sthat\swas\srevealed\swhen\strying\sto\ncover\sall\sthe\snew\stest\scases.
-D 2018-04-18T01:34:39.665
+C Fix\sthe\sbuild\sfor\sSQLITE_OMIT_UPSERT
+D 2018-04-18T15:33:21.840
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -496,7 +496,7 @@ F src/shell.c.in cc960721e56ebc1a78773bb5d2f5608b54275f945cbe49e4afe919d6888062a
 F src/sqlite.h.in e0be726ea6e4e6571724d39d242472ecd8bd1ba6f84ade88e1641bde98a6d02b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 36471fded3bb07f247b8b6b1641f4793f10c72503508d2e1cdcb83c066164a1c
+F src/sqliteInt.h 1d4317da12c4a555edf1630c02336708ae57bd6acc6effec73bd6ceca6c50afc
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1722,7 +1722,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 558865d5c3c297155e1be5ea73effb46a995ea146bd745b23330c94782c6c45b
-R 5325c58ad9aebb44156b57d725814085
+P 266a99f7c068aadbd08157d1d495a428109ad7a32d872f8026e8db0f89c40f91
+R beffe4e8f99a4b145e65920ae4da634c
 U drh
-Z 2b55e94eff4090db1ea2fec8a1bfbc7a
+Z 073869083639ed1dafae01fc922c591d

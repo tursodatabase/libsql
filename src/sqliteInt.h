@@ -4295,9 +4295,9 @@ const char *sqlite3JournalModename(int);
   int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
   void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
 #else
-#define sqlite3UpsertNew(x,y,z,w) ((Upsert*)0)
+#define sqlite3UpsertNew(v,w,x,y,z) ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)
-#define sqlite3UpsertDup(x,y)     ((Upsert*)0)
+#define sqlite3UpsertDup(x,y)       ((Upsert*)0)
 #endif
 
 
