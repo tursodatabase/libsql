@@ -1940,10 +1940,12 @@ struct sqlite3_mem_methods {
 ** sorted records. However, if SQLite determines based on the declared type
 ** of a table column that its values are likely to be very large - larger
 ** than the configured sorter-reference size threshold - then a reference
-** is stored in each sorted records and the required column values loaded
+** is stored in each sorted record and the required column values loaded
 ** from the database as records are returned in sorted order. The default
 ** value for this option is to never use this optimization. Specifying a 
 ** negative value for this option restores the default behaviour.
+** This option is only available if SQLite is compiled with the
+** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */

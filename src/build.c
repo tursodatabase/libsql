@@ -1095,12 +1095,14 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
  
   if( pType->n==0 ){
     /* If there is no type specified, columns have the default affinity
-    ** 'BLOB' and a default size of 4 bytes. */
+    ** 'BLOB' with a default size of 4 bytes. */
     pCol->affinity = SQLITE_AFF_BLOB;
     pCol->szEst = 1;
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
     if( 4>=sqlite3GlobalConfig.szSorterRef ){
       pCol->colFlags |= COLFLAG_SORTERREF;
     }
+#endif
   }else{
     zType = z + sqlite3Strlen30(z) + 1;
     memcpy(zType, pType->z, pType->n);
@@ -1221,9 +1223,11 @@ char sqlite3AffinityType(const char *zIn, Column *pCol){
         v = 16;   /* BLOB, TEXT, CLOB -> r=5  (approx 20 bytes)*/
       }
     }
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
     if( v>=sqlite3GlobalConfig.szSorterRef ){
       pCol->colFlags |= COLFLAG_SORTERREF;
     }
+#endif
     v = v/4 + 1;
     if( v>255 ) v = 255;
     pCol->szEst = v;

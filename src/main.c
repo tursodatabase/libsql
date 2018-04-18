@@ -642,16 +642,16 @@ int sqlite3_config(int op, ...){
       break;
     }
 
-    case SQLITE_CONFIG_SORTERREF_SIZE: {
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    case SQLITE_CONFIG_SORTERREF_SIZE: {
       int iVal = va_arg(ap, int);
       if( iVal<0 ){
         iVal = SQLITE_DEFAULT_SORTERREF_SIZE;
       }
       sqlite3GlobalConfig.szSorterRef = (u32)iVal;
-#endif /* SQLITE_ENABLE_SORTER_REFERENCES */
       break;
     }
+#endif /* SQLITE_ENABLE_SORTER_REFERENCES */
 
     default: {
       rc = SQLITE_ERROR;
