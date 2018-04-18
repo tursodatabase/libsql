@@ -148,13 +148,18 @@ int sqlite3UpsertAnalyzeTarget(
     nn = pIdx->nKeyCol;
     for(ii=0; ii<nn; ii++){
       Expr *pExpr;
+      sCol[0].u.zToken = (char*)pIdx->azColl[ii];
       if( pIdx->aiColumn[ii]==XN_EXPR ){
         assert( pIdx->aColExpr!=0 );
         assert( pIdx->aColExpr->nExpr>ii );
         pExpr = pIdx->aColExpr->a[ii].pExpr;
+        if( pExpr->op!=TK_COLLATE ){
+          sCol[0].pLeft = pExpr;
+          pExpr = &sCol[0];
+        }
       }else{
+        sCol[0].pLeft = &sCol[1];
         sCol[1].iColumn = pIdx->aiColumn[ii];
-        sCol[0].u.zToken = (char*)pIdx->azColl[ii];
         pExpr = &sCol[0];
       }
       for(jj=0; jj<nn; jj++){
