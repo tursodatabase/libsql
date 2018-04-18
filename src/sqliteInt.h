@@ -638,6 +638,13 @@
 #endif
 
 /*
+** Default value for the SQLITE_CONFIG_SORTERREF_SIZE option.
+*/
+#ifndef SQLITE_DEFAULT_SORTERREF_SIZE
+# define SQLITE_DEFAULT_SORTERREF_SIZE 0x7fffffff
+#endif
+
+/*
 ** The compile-time options SQLITE_MMAP_READWRITE and 
 ** SQLITE_ENABLE_BATCH_ATOMIC_WRITE are not compatible with one another.
 ** You must choose one or the other (or neither) but not both.
@@ -1760,6 +1767,7 @@ struct Column {
 #define COLFLAG_HIDDEN   0x0002    /* A hidden column in a virtual table */
 #define COLFLAG_HASTYPE  0x0004    /* Type name follows column name */
 #define COLFLAG_UNIQUE   0x0008    /* Column def contains "UNIQUE" or "PK" */
+#define COLFLAG_SORTERREF 0x0010   /* Use sorter-refs with this column */
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following
@@ -2499,6 +2507,7 @@ struct ExprList {
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
+    unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     union {
       struct {
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
@@ -3351,6 +3360,7 @@ struct Sqlite3Config {
 #endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
+  u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
 };
 
 /*
@@ -4135,7 +4145,7 @@ void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
-char sqlite3AffinityType(const char*, u8*);
+char sqlite3AffinityType(const char*, Column*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*, sqlite3_file*);
 int sqlite3FindDb(sqlite3*, Token*);

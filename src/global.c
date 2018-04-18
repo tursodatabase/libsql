@@ -240,7 +240,8 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* xTestCallback */
 #endif
    0,                         /* bLocaltimeFault */
-   0x7ffffffe                 /* iOnceResetThreshold */
+   0x7ffffffe,                /* iOnceResetThreshold */
+   SQLITE_DEFAULT_SORTERREF_SIZE   /* szSorterRef */
 };
 
 /*

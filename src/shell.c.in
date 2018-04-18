@@ -8074,6 +8074,9 @@ static const char zOptions[] =
   "   -quote               set output mode to 'quote'\n"
   "   -readonly            open the database read-only\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+  "   -sorterref SIZE      sorter references threshold size\n"
+#endif
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
@@ -8343,6 +8346,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-mmap")==0 ){
       sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
       sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    }else if( strcmp(z,"-sorterref")==0 ){
+      sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
+      sqlite3_config(SQLITE_CONFIG_SORTERREF_SIZE, (int)sz);
+#endif
     }else if( strcmp(z,"-vfs")==0 ){
       zVfs = cmdline_option_value(argc, argv, ++i);
 #ifdef SQLITE_HAVE_ZLIB
@@ -8489,6 +8497,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       i+=2;
     }else if( strcmp(z,"-mmap")==0 ){
       i++;
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    }else if( strcmp(z,"-sorterref")==0 ){
+      i++;
+#endif
     }else if( strcmp(z,"-vfs")==0 ){
       i++;
 #ifdef SQLITE_ENABLE_VFSTRACE

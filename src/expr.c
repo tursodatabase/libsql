@@ -1363,6 +1363,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
     pItem->bSpanIsTab = pOldItem->bSpanIsTab;
+    pItem->bSorterRef = pOldItem->bSorterRef;
     pItem->u = pOldItem->u;
   }
   return pNew;
@@ -4373,6 +4374,12 @@ int sqlite3ExprCodeExprList(
   if( !ConstFactorOk(pParse) ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    if( pItem->bSorterRef ){
+      i--;
+      n--;
+    }else
+#endif
     if( (flags & SQLITE_ECEL_REF)!=0 && (j = pItem->u.x.iOrderByCol)>0 ){
       if( flags & SQLITE_ECEL_OMITREF ){
         i--;
