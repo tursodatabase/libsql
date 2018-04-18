@@ -1,5 +1,5 @@
-C Add\sSQLITE_CONFIG_SORTERREF_SIZE\sconfiguration\soption.
-D 2018-04-16T21:12:42.011
+C Remove\san\sunused\slocal\svariable.
+D 2018-04-18T14:04:19.741
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 7016fc56c6b9bfe5daac4f34be8be38d8c0b5fab79ccbfb764d3b23bf1c6fff3
@@ -491,7 +491,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 66c73fcb7719b8ff0e841b58338f13604ff3e2b50a723f9b8f383595735262f6
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 875b63fd9658701cb468dfecb251d2f93c4f7106028fd34624559e44c171813a
+F src/select.c 6cf4c11b2f258940acc289ea57eaae1fba16689ae62e3a09ebbc6487d440bf09
 F src/shell.c.in cc960721e56ebc1a78773bb5d2f5608b54275f945cbe49e4afe919d6888062a7
 F src/sqlite.h.in 51a98c2a112df85bd32eef1cbe0f89257180d64100efc85e6dac6fb1f93ff5cc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1718,7 +1718,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9719cb46bbf501ce80f185159d594f593dd0b2639b9ef5a71a6c7b70046cb08d
-R b51a7eb766ea2611d831b0e6f1e9c6dd
-U dan
-Z 811f1b43e3ad404510c72b9e701b11d8
+P b25a7bb769b8397a00736bd922bd24b1200b2f82d36d42ecb4c3eb17efb4b84d
+R eba9a240e0de928e991f348803303439
+U drh
+Z 5d665bfe789699fa240c154efc829ec2

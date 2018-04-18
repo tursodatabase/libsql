@@ -1451,10 +1451,9 @@ static void generateSortTail(
         sqlite3VdbeAddOp3(v, OP_SeekRowid, iCsr, 
             sqlite3VdbeCurrentAddr(v)+1, regKey);
       }else{
-        Index *pPk = sqlite3PrimaryKeyIndex(pTab);
         int k;
         int iJmp;
-        assert( pPk->nKeyCol==nKey );
+        assert( sqlite3PrimaryKeyIndex(pTab)->nKeyCol==nKey );
         for(k=0; k<nKey; k++){
           sqlite3VdbeAddOp3(v, OP_Column, iSortTab, iKey++, regKey+k);
         }
