@@ -3484,7 +3484,6 @@ static int deduceDatabaseType(const char *zName, int dfltZip){
 */
 static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
-    sqlite3_initialize();
     if( p->openMode==SHELL_OPEN_UNSPEC && access(p->zDbFilename,0)==0 ){
       p->openMode = (u8)deduceDatabaseType(p->zDbFilename, 0);
     }
@@ -8025,7 +8024,6 @@ static void process_sqliterc(
                       " cannot read ~/.sqliterc\n");
       return;
     }
-    sqlite3_initialize();
     zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
     sqliterc = zBuf;
   }
@@ -8173,6 +8171,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int readStdin = 1;
   int nCmd = 0;
   char **azCmd = 0;
+  const char *zVfs = 0;           /* Value of -vfs command-line option */
 
   setBinaryMode(stdin, 0);
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
@@ -8332,13 +8331,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
       sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
     }else if( strcmp(z,"-vfs")==0 ){
-      sqlite3_vfs *pVfs = sqlite3_vfs_find(cmdline_option_value(argc,argv,++i));
-      if( pVfs ){
-        sqlite3_vfs_register(pVfs, 1);
-      }else{
-        utf8_printf(stderr, "no such VFS: \"%s\"\n", argv[i]);
-        exit(1);
-      }
+      zVfs = cmdline_option_value(argc, argv, ++i);
 #ifdef SQLITE_HAVE_ZLIB
     }else if( strcmp(z,"-zip")==0 ){
       data.openMode = SHELL_OPEN_ZIPFILE;
@@ -8355,6 +8348,20 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }
   }
+
+  /* All the sqlite3_config() calls have now been made. So it is safe
+  ** to call sqlite3_initialize() and process any command line -vfs option. */
+  sqlite3_initialize();
+  if( zVfs ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
+    if( pVfs ){
+      sqlite3_vfs_register(pVfs, 1);
+    }else{
+      utf8_printf(stderr, "no such VFS: \"%s\"\n", argv[i]);
+      exit(1);
+    }
+  }
+
   if( data.zDbFilename==0 ){
 #ifndef SQLITE_OMIT_MEMORYDB
     data.zDbFilename = ":memory:";
