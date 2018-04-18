@@ -1095,6 +1095,7 @@ typedef struct Trigger Trigger;
 typedef struct TriggerPrg TriggerPrg;
 typedef struct TriggerStep TriggerStep;
 typedef struct UnpackedRecord UnpackedRecord;
+typedef struct Upsert Upsert;
 typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
@@ -2046,13 +2047,12 @@ struct FKey {
 #define OE_Fail     3   /* Stop the operation but leave all prior changes */
 #define OE_Ignore   4   /* Ignore the error. Do not do the INSERT or UPDATE */
 #define OE_Replace  5   /* Delete existing record, then do INSERT or UPDATE */
-
-#define OE_Restrict 6   /* OE_Abort for IMMEDIATE, OE_Rollback for DEFERRED */
-#define OE_SetNull  7   /* Set the foreign key value to NULL */
-#define OE_SetDflt  8   /* Set the foreign key value to its default */
-#define OE_Cascade  9   /* Cascade the changes */
-
-#define OE_Default  10  /* Do whatever the default action is */
+#define OE_Update   6   /* Process as a DO UPDATE in an upsert */
+#define OE_Restrict 7   /* OE_Abort for IMMEDIATE, OE_Rollback for DEFERRED */
+#define OE_SetNull  8   /* Set the foreign key value to NULL */
+#define OE_SetDflt  9   /* Set the foreign key value to its default */
+#define OE_Cascade  10  /* Cascade the changes */
+#define OE_Default  11  /* Do whatever the default action is */
 
 
 /*
@@ -2685,6 +2685,7 @@ struct NameContext {
   union {
     ExprList *pEList;    /* Optional list of result-set columns */
     AggInfo *pAggInfo;   /* Information about aggregates at this level */
+    Upsert *pUpsert;     /* ON CONFLICT clause information from an upsert */
   } uNC;
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
@@ -2709,8 +2710,33 @@ struct NameContext {
 #define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
 #define NC_UEList    0x0080  /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x0100  /* True if uNC.pAggInfo is used */
+#define NC_UUpsert   0x0200  /* True if uNC.pUpsert is used */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
+
+/*
+** An instance of the following object describes a single ON CONFLICT
+** clause in an upsert.
+**
+** The pUpsertTarget field is only set if the ON CONFLICT clause includes
+** conflict-target clause.  (In "ON CONFLICT(a,b)" the "(a,b)" is the
+** conflict-target clause.)  The pUpsertTargetWhere is the optional
+** WHERE clause used to identify partial unique indexes.
+**
+** pUpsertSet is the list of column=expr terms of the UPDATE statement. 
+** The pUpsertSet field is NULL for a ON CONFLICT DO NOTHING.  The
+** pUpsertWhere is the WHERE clause for the UPDATE and is NULL if the
+** WHERE clause is omitted.
+*/
+struct Upsert {
+  ExprList *pUpsertTarget;  /* Optional description of conflicting index */
+  Expr *pUpsertTargetWhere; /* WHERE clause for partial index targets */
+  Index *pUpsertIdx;        /* Constraint that pUpsertTarget identifies */
+  ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
+  Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
+  SrcList *pUpsertSrc;      /* Table to be updated */
+  int regData;              /* First register holding array of VALUES */
+};
 
 /*
 ** An instance of the following structure contains all information
@@ -3211,8 +3237,9 @@ struct TriggerStep {
   Select *pSelect;     /* SELECT statement or RHS of INSERT INTO SELECT ... */
   char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
-  ExprList *pExprList; /* SET clause for UPDATE. */
+  ExprList *pExprList; /* SET clause for UPDATE */
   IdList *pIdList;     /* Column names for INSERT */
+  Upsert *pUpsert;     /* Upsert clauses on an INSERT */
   char *zSpan;         /* Original SQL text of this command */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
@@ -3744,7 +3771,7 @@ void sqlite3DeleteTable(sqlite3*, Table*);
 # define sqlite3AutoincrementBegin(X)
 # define sqlite3AutoincrementEnd(X)
 #endif
-void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int);
+void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int, Upsert*);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
@@ -3774,7 +3801,8 @@ void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
 Expr *sqlite3LimitWhere(Parse*,SrcList*,Expr*,ExprList*,Expr*,char*);
 #endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*, ExprList*, Expr*);
-void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*);
+void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*,
+                   Upsert*);
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 LogEst sqlite3WhereOutputRowCount(WhereInfo*);
@@ -3867,7 +3895,7 @@ void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*, int);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
-                                     u8,u8,int,int*,int*);
+                                     u8,u8,int,int*,int*,Upsert*);
 #ifdef SQLITE_ENABLE_NULL_TRIM
   void sqlite3SetMakeRecordP5(Vdbe*,Table*);
 #else
@@ -3920,7 +3948,8 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
                                         const char*,const char*);
   TriggerStep *sqlite3TriggerInsertStep(sqlite3*,Token*, IdList*,
-                                        Select*,u8,const char*,const char*);
+                                        Select*,u8,Upsert*,
+                                        const char*,const char*);
   TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8,
                                         const char*,const char*);
   TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*,
@@ -4259,6 +4288,18 @@ const char *sqlite3JournalModename(int);
 #define sqlite3WithPush(x,y,z)
 #define sqlite3WithDelete(x,y)
 #endif
+#ifndef SQLITE_OMIT_UPSERT
+  Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*);
+  void sqlite3UpsertDelete(sqlite3*,Upsert*);
+  Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
+  int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
+  void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
+#else
+#define sqlite3UpsertNew(v,w,x,y,z) ((Upsert*)0)
+#define sqlite3UpsertDelete(x,y)
+#define sqlite3UpsertDup(x,y)       ((Upsert*)0)
+#endif
+
 
 /* Declarations for functions in fkey.c. All of these are replaced by
 ** no-op macros if OMIT_FOREIGN_KEY is defined. In this case no foreign

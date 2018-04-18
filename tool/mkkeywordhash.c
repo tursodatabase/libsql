@@ -143,6 +143,11 @@ struct Keyword {
 #else
 #  define CTE        0x00040000
 #endif
+#ifdef SQLITE_OMIT_UPSERT
+#  define UPSERT     0
+#else
+#  define UPSERT     0x00080000
+#endif
 
 /*
 ** These are the keywords
@@ -186,6 +191,7 @@ static Keyword aKeywordTable[] = {
   { "DESC",             "TK_DESC",         ALWAYS                 },
   { "DETACH",           "TK_DETACH",       ATTACH                 },
   { "DISTINCT",         "TK_DISTINCT",     ALWAYS                 },
+  { "DO",               "TK_DO",           UPSERT                 },
   { "DROP",             "TK_DROP",         ALWAYS                 },
   { "END",              "TK_END",          ALWAYS                 },
   { "EACH",             "TK_EACH",         TRIGGER                },
@@ -226,6 +232,7 @@ static Keyword aKeywordTable[] = {
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS                 },
   { "NO",               "TK_NO",           FKEY                   },
   { "NOT",              "TK_NOT",          ALWAYS                 },
+  { "NOTHING",          "TK_NOTHING",      UPSERT                 },
   { "NOTNULL",          "TK_NOTNULL",      ALWAYS                 },
   { "NULL",             "TK_NULL",         ALWAYS                 },
   { "OF",               "TK_OF",           ALWAYS                 },

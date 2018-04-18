@@ -392,9 +392,28 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   assert( j<p->nLabel );
   assert( j>=0 );
   if( p->aLabel ){
+#ifdef SQLITE_DEBUG
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
+    }
+#endif
+    assert( p->aLabel[j]==(-1) ); /* Labels may only be resolved once */
     p->aLabel[j] = v->nOp;
   }
 }
+
+#ifdef SQLITE_COVERAGE_TEST
+/*
+** Return TRUE if and only if the label x has already been resolved.
+** Return FALSE (zero) if label x is still unresolved.
+**
+** This routine is only used inside of testcase() macros, and so it
+** only exists when measuring test coverage.
+*/
+int sqlite3VdbeLabelHasBeenResolved(Vdbe *v, int x){
+  return v->pParse->aLabel && v->pParse->aLabel[ADDR(x)]>=0;
+}
+#endif /* SQLITE_COVERAGE_TEST */
 
 /*
 ** Mark the VDBE as one that can only be run one time.

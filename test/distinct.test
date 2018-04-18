@@ -168,7 +168,7 @@ foreach {tn sql temptables res} {
   6   "b FROM t1 ORDER BY +b COLLATE binary"          {btree hash} {B b}
   7   "a FROM t1"                                          {}      {A a}
   8   "b COLLATE nocase FROM t1"                           {}      {b}
-  9   "b COLLATE nocase FROM t1 ORDER BY b COLLATE nocase" {}      {b}
+  9   "b COLLATE nocase FROM t1 ORDER BY b COLLATE nocase" {}      {B}
 } {
   do_execsql_test    2.$tn.1 "SELECT DISTINCT $sql" $res
   do_temptables_test 2.$tn.2 "SELECT DISTINCT $sql" $temptables

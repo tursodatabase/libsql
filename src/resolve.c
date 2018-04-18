@@ -191,7 +191,7 @@ static int lookupName(
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
-  int isTrigger = 0;                /* True if resolved to a trigger column */
+  int eNewExprOp = TK_COLUMN;       /* New value for pExpr->op on success */
   Table *pTab = 0;                  /* Table hold the row */
   Column *pCol;                     /* A column of pTab */
 
@@ -296,22 +296,35 @@ static int lookupName(
       }
     } /* if( pSrcList ) */
 
-#ifndef SQLITE_OMIT_TRIGGER
+#if !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_UPSERT)
     /* If we have not already resolved the name, then maybe 
-    ** it is a new.* or old.* trigger argument reference
+    ** it is a new.* or old.* trigger argument reference.  Or
+    ** maybe it is an excluded.* from an upsert.
     */
-    if( zDb==0 && zTab!=0 && cntTab==0 && pParse->pTriggerTab!=0 ){
-      int op = pParse->eTriggerOp;
-      assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
-      if( op!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
-        pExpr->iTable = 1;
-        pTab = pParse->pTriggerTab;
-      }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
-        pExpr->iTable = 0;
-        pTab = pParse->pTriggerTab;
-      }else{
-        pTab = 0;
+    if( zDb==0 && zTab!=0 && cntTab==0 ){
+      pTab = 0;
+#ifndef SQLITE_OMIT_TRIGGER
+      if( pParse->pTriggerTab!=0 ){
+        int op = pParse->eTriggerOp;
+        assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
+        if( op!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
+          pExpr->iTable = 1;
+          pTab = pParse->pTriggerTab;
+        }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
+          pExpr->iTable = 0;
+          pTab = pParse->pTriggerTab;
+        }
       }
+#endif /* SQLITE_OMIT_TRIGGER */
+#ifndef SQLITE_OMIT_UPSERT
+      if( (pNC->ncFlags & NC_UUpsert)!=0 ){
+        Upsert *pUpsert = pNC->uNC.pUpsert;
+        if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
+          pTab = pUpsert->pUpsertSrc->a[0].pTab;
+          pExpr->iTable = 2;
+        }
+      }
+#endif /* SQLITE_OMIT_UPSERT */
 
       if( pTab ){ 
         int iCol;
@@ -331,24 +344,35 @@ static int lookupName(
         }
         if( iCol<pTab->nCol ){
           cnt++;
-          if( iCol<0 ){
-            pExpr->affinity = SQLITE_AFF_INTEGER;
-          }else if( pExpr->iTable==0 ){
-            testcase( iCol==31 );
-            testcase( iCol==32 );
-            pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
-          }else{
-            testcase( iCol==31 );
-            testcase( iCol==32 );
-            pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+#ifndef SQLITE_OMIT_UPSERT
+          if( pExpr->iTable==2 ){
+            testcase( iCol==(-1) );
+            pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
+            eNewExprOp = TK_REGISTER;
+          }else
+#endif /* SQLITE_OMIT_UPSERT */
+          {
+#ifndef SQLITE_OMIT_TRIGGER
+            if( iCol<0 ){
+              pExpr->affinity = SQLITE_AFF_INTEGER;
+            }else if( pExpr->iTable==0 ){
+              testcase( iCol==31 );
+              testcase( iCol==32 );
+              pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+            }else{
+              testcase( iCol==31 );
+              testcase( iCol==32 );
+              pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+            }
+            pExpr->pTab = pTab;
+            pExpr->iColumn = (i16)iCol;
+            eNewExprOp = TK_TRIGGER;
+#endif /* SQLITE_OMIT_TRIGGER */
           }
-          pExpr->iColumn = (i16)iCol;
-          pExpr->pTab = pTab;
-          isTrigger = 1;
         }
       }
     }
-#endif /* !defined(SQLITE_OMIT_TRIGGER) */
+#endif /* !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_UPSERT) */
 
     /*
     ** Perhaps the name is a reference to the ROWID
@@ -485,7 +509,7 @@ static int lookupName(
   pExpr->pLeft = 0;
   sqlite3ExprDelete(db, pExpr->pRight);
   pExpr->pRight = 0;
-  pExpr->op = (isTrigger ? TK_TRIGGER : TK_COLUMN);
+  pExpr->op = eNewExprOp;
   ExprSetProperty(pExpr, EP_Leaf);
 lookupname_end:
   if( cnt==1 ){
@@ -1301,7 +1325,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** Minor point: If this is the case, then the expression will be
     ** re-evaluated for each reference to it.
     */
-    assert( (sNC.ncFlags & (NC_UAggInfo))==0 );
+    assert( (sNC.ncFlags & (NC_UAggInfo|NC_UUpsert))==0 );
     sNC.uNC.pEList = p->pEList;
     sNC.ncFlags |= NC_UEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
@@ -1536,7 +1560,7 @@ void sqlite3ResolveSelfReference(
   Table *pTab,        /* The table being referenced */
   int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
-  ExprList *pList     /* Expression list to resolve.  May be NUL. */
+  ExprList *pList     /* Expression list to resolve.  May be NULL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */

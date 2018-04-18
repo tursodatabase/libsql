@@ -1825,6 +1825,8 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       }
       /* Fall through */
     case TK_IF_NULL_ROW:
+    case TK_REGISTER:
+      testcase( pExpr->op==TK_REGISTER );
       testcase( pExpr->op==TK_IF_NULL_ROW );
       pWalker->eCode = 0;
       return WRC_Abort;
@@ -1842,8 +1844,8 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       }
       /* Fall through */
     default:
-      testcase( pExpr->op==TK_SELECT ); /* sqlite3SelectWalkFail will disallow */
-      testcase( pExpr->op==TK_EXISTS ); /* sqlite3SelectWalkFail will disallow */
+      testcase( pExpr->op==TK_SELECT ); /* sqlite3SelectWalkFail() disallows */
+      testcase( pExpr->op==TK_EXISTS ); /* sqlite3SelectWalkFail() disallows */
       return WRC_Continue;
   }
 }
@@ -4899,8 +4901,10 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
   if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( pA->op==TK_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
+    }else if( pA->op==TK_COLLATE ){
+      return sqlite3_stricmp(pA->u.zToken,pB->u.zToken)!=0 ? 2 : 0;
     }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
-      return pA->op==TK_COLLATE ? 1 : 2;
+      return 2;
     }
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;

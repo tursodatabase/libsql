@@ -1193,7 +1193,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
-         update.lo util.lo vacuum.lo \
+         update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
          utf.lo vtab.lo
@@ -1292,6 +1292,7 @@ SRC01 = \
   $(TOP)\src\trigger.c \
   $(TOP)\src\utf.c \
   $(TOP)\src\update.c \
+  $(TOP)\src\upsert.c \
   $(TOP)\src\util.c \
   $(TOP)\src\vacuum.c \
   $(TOP)\src\vdbe.c \
@@ -1992,6 +1993,9 @@ trigger.lo:	$(TOP)\src\trigger.c $(HDR)
 
 update.lo:	$(TOP)\src\update.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\update.c
+
+upsert.lo:	$(TOP)\src\upsert.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\upsert.c
 
 utf.lo:	$(TOP)\src\utf.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\utf.c
