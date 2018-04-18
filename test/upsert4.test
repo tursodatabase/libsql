@@ -13,7 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix upsert2
+set testprefix upsert4
 
 foreach {tn sql} {
   1 { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c UNIQUE) }
@@ -63,7 +63,108 @@ foreach {tn sql} {
   do_execsql_test 1.$tn.6 {
     SELECT * FROM t1;
   } {1 {} one 2 2 two 3 {} three}
+
+  do_execsql_test 1.$tn.7 {
+    INSERT INTO t1 VALUES(2, NULL, 'zero') ON CONFLICT (a) 
+      DO UPDATE SET (b, c) = (SELECT 'x', 'y');
+    SELECT * FROM t1;
+  } {1 {} one 2 x y 3 {} three}
+
+  do_execsql_test 1.$tn.8 {
+    INSERT INTO t1 VALUES(1, NULL, NULL) ON CONFLICT (a) 
+      DO UPDATE SET (c, a) = ('four', 4);
+    SELECT * FROM t1 ORDER BY 1;
+  } {2 x y 3 {} three 4 {} four}
 }
+
+#-------------------------------------------------------------------------
+# Test target analysis.
+#
+set rtbl(0) {0 {}}
+set rtbl(1) {/1 .*failed.*/}
+set rtbl(2) {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+
+foreach {tn sql} {
+  1 { 
+      CREATE TABLE xyz(a INTEGER PRIMARY KEY, b, c, d);
+      CREATE UNIQUE INDEX xyz1 ON xyz(d, c, b COLLATE nocase);
+  }
+
+  2 { 
+      CREATE TABLE xyz(a INT PRIMARY KEY, b, c, d);
+      CREATE UNIQUE INDEX xyz1 ON xyz(d, c, b COLLATE nocase);
+  }
+
+  3 { 
+      CREATE TABLE xyz(a INT PRIMARY KEY, b, c, d) WITHOUT ROWID;
+      CREATE UNIQUE INDEX xyz1 ON xyz(d, c, b COLLATE nocase);
+  }
+} {
+  reset_db
+  execsql $sql
+  do_execsql_test 2.$tn.1 {
+    INSERT INTO xyz VALUES(10, 1, 1, 'one');
+  }
+
+
+  foreach {tn2 oc res} {
+    1 "ON CONFLICT (b COLLATE nocase, c, d) DO NOTHING"   0
+    2 "ON CONFLICT (b, c, d) DO NOTHING"                  0
+    3 "ON CONFLICT (b, c COLLATE nocase, d) DO NOTHING"   2
+    4 "ON CONFLICT (a) DO NOTHING"                        1
+    5 "ON CONFLICT DO NOTHING"                            0
+    6 "ON CONFLICT (b, c, d) WHERE a!=0 DO NOTHING"       0
+    7 "ON CONFLICT (d, c, c) WHERE a!=0 DO NOTHING"       2
+  } {
+
+    do_catchsql_test 2.$tn.2.$tn2 "
+      INSERT INTO xyz VALUES(11, 1, 1, 'one') $oc
+    " $rtbl($res)
+  }
+
+  do_execsql_test 2.$tn.3 {
+    SELECT * FROM xyz;
+  } {10 1 1 one}
+}
+
+foreach {tn sql} {
+  1 { 
+    CREATE TABLE abc(a INTEGER PRIMARY KEY, x, y);
+    CREATE UNIQUE INDEX abc1 ON abc(('x' || x) COLLATE nocase);
+  }
+  2 { 
+    CREATE TABLE abc(a INT PRIMARY KEY, x, y);
+    CREATE UNIQUE INDEX abc1 ON abc(('x' || x) COLLATE nocase);
+  }
+  3 { 
+    CREATE TABLE abc(a INT PRIMARY KEY, x, y) WITHOUT ROWID;
+    CREATE UNIQUE INDEX abc1 ON abc(('x' || x) COLLATE nocase);
+  }
+} {
+  reset_db
+  execsql $sql
+  do_execsql_test 2.$tn.1 {
+    INSERT INTO abc VALUES(1, 'one', 'two');
+  }
+
+  foreach {tn2 oc res} {
+    1 "ON CONFLICT DO NOTHING"                             0
+    2 "ON CONFLICT ('x' || x) DO NOTHING"                  0
+    3 "ON CONFLICT (('x' || x) COLLATE nocase) DO NOTHING" 0
+    4 "ON CONFLICT (('x' || x) COLLATE binary) DO NOTHING" 2
+    5 "ON CONFLICT (x || 'x') DO NOTHING"                  2
+    6 "ON CONFLICT ((('x' || x))) DO NOTHING"              0
+  } {
+    do_catchsql_test 2.$tn.2.$tn2 "
+      INSERT INTO abc VALUES(2, 'one', NULL) $oc;
+    " $rtbl($res)
+  }
+
+  do_execsql_test 2.$tn.3 {
+    SELECT * FROM abc
+  } {1 one two}
+}
+
 
 finish_test
 

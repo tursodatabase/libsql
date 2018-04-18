@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\ssqlite3ExprCompare()\sfunction\sthat\scaused\stwo\ndissimilar\sexpressions\sto\smatch\sif\sthey\shave\sthe\ssame\s"COLLATE\sname"\sat\nthe\souter\slayer.
-D 2018-04-18T17:52:28.271
+C Add\sextra\stest\scases\sfor\sUPSERT.
+D 2018-04-18T17:56:37.901
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1510,7 +1510,7 @@ F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2
 F test/upsert1.test 3b4e8e5932516115bfffb2269a44c416c5c26d0d57cc7dd16954d0b77fbc4cd9
 F test/upsert2.test 82ed5cbd4a13ff74240ece8ec97b6afd07446eac554ad5e93c12b42197844e0b
 F test/upsert3.test 46ee74a7d7ee797ca0ab79d44e78572d6778b7520e4ebb8f8c1553765b4eae2c
-F test/upsert4.test 490c82a37048b0258c94498ff3687b20cdbadfefe4d8a4e2d28f09e84f3b98a6
+F test/upsert4.test 42b737568914a7bfb1135c641ae96bc75fbfd7b55785a4eaae279a067a373420
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1722,7 +1722,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fba24aec235dd6f124c1ece66cdac485c9d96e0578c4fbacd8f49d7b767a5b4a
-R 30a97c4d09d6fc30a117693d1fff8a6c
-U drh
-Z b4241c44da2068f85d9b7d3cc18d532b
+P fb16348a5bd52752098c9aeacc3281c4e1e8eb5a868d131ea6c3271dc4226b40
+R bf451bcdfd0a3cb7daf666d841400ba4
+U dan
+Z c15e182adb19b110e30902ffd8c90113
