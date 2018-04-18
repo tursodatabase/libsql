@@ -115,6 +115,7 @@ foreach {tn sql} {
     5 "ON CONFLICT DO NOTHING"                            0
     6 "ON CONFLICT (b, c, d) WHERE a!=0 DO NOTHING"       0
     7 "ON CONFLICT (d, c, c) WHERE a!=0 DO NOTHING"       2
+    8 "ON CONFLICT (b COLLATE nocase, c COLLATE nocase, d) DO NOTHING"   2
   } {
 
     do_catchsql_test 2.$tn.2.$tn2 "
@@ -128,11 +129,11 @@ foreach {tn sql} {
 }
 
 foreach {tn sql} {
-  1 { 
+  1 {
     CREATE TABLE abc(a INTEGER PRIMARY KEY, x, y);
     CREATE UNIQUE INDEX abc1 ON abc(('x' || x) COLLATE nocase);
   }
-  2 { 
+  2 {
     CREATE TABLE abc(a INT PRIMARY KEY, x, y);
     CREATE UNIQUE INDEX abc1 ON abc(('x' || x) COLLATE nocase);
   }
@@ -165,6 +166,12 @@ foreach {tn sql} {
   } {1 one two}
 }
 
+do_catchsql_test 3.0 {
+  CREATE TABLE w1(a INT PRIMARY KEY, x, y);
+  CREATE UNIQUE INDEX w1expr ON w1(('x' || x));
+  INSERT INTO w1 VALUES(2, 'one', NULL)
+    ON CONFLICT (('x' || x) COLLATE nocase) DO NOTHING;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
 
 finish_test
 
