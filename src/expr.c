@@ -4902,7 +4902,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     if( pA->op==TK_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
     }else if( pA->op==TK_COLLATE ){
-      return sqlite3_stricmp(pA->u.zToken,pB->u.zToken)!=0 ? 2 : 0;
+      if( sqlite3_stricmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
     }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
     }
