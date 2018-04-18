@@ -346,6 +346,7 @@ static int lookupName(
           cnt++;
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==2 ){
+            testcase( iCol==(-1) );
             pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
             eNewExprOp = TK_REGISTER;
           }else

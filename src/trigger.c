@@ -432,7 +432,9 @@ TriggerStep *sqlite3TriggerInsertStep(
     pTriggerStep->pUpsert = pUpsert;
     pTriggerStep->orconf = orconf;
   }else{
+    testcase( pColumn );
     sqlite3IdListDelete(db, pColumn);
+    testcase( pUpsert );
     sqlite3UpsertDelete(db, pUpsert);
   }
   sqlite3SelectDelete(db, pSelect);

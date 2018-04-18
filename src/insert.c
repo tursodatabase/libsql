@@ -1171,8 +1171,9 @@ typedef struct ConstraintAddr ConstraintAddr;
 struct ConstraintAddr {
   int ipkTop;          /* Subroutine for rowid constraint check */
   int upsertTop;       /* Label for upsert constraint check subroutine */
-  int ipkBtm;          /* Return opcode rowid constraint check */
+  int upsertTop2;      /* Copy of upsertTop not cleared by the call */
   int upsertBtm;       /* upsert constraint returns to this label */
+  int ipkBtm;          /* Return opcode rowid constraint check */
 };
 
 /*
@@ -1181,6 +1182,7 @@ struct ConstraintAddr {
 */
 static void reorderConstraintChecks(Vdbe *v, ConstraintAddr *p){
   if( p->upsertTop ){
+    testcase( sqlite3VdbeLabelHasBeenResolved(v, p->upsertTop) );
     sqlite3VdbeGoto(v, p->upsertTop);
     VdbeComment((v, "call upsert subroutine"));
     sqlite3VdbeResolveLabel(v, p->upsertBtm);
@@ -1188,7 +1190,7 @@ static void reorderConstraintChecks(Vdbe *v, ConstraintAddr *p){
   }
   if( p->ipkTop ){
     sqlite3VdbeGoto(v, p->ipkTop);
-    VdbeComment((v, "call rowid constraint-check subroutine"));
+    VdbeComment((v, "call rowid unique-check subroutine"));
     sqlite3VdbeJumpHere(v, p->ipkBtm);
     p->ipkTop = 0;
   }
@@ -1315,8 +1317,7 @@ void sqlite3GenerateConstraintChecks(
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   nCol = pTab->nCol;
-  sAddr.ipkTop = 0;
-  sAddr.upsertTop = 0;
+  memset(&sAddr, 0, sizeof(sAddr));
   
   /* pPk is the PRIMARY KEY index for WITHOUT ROWID tables and NULL for
   ** normal rowid tables.  nPkField is the number of key fields in the 
@@ -1451,7 +1452,7 @@ void sqlite3GenerateConstraintChecks(
       /* If the constraint-target is on some column other than
       ** then ROWID, then we might need to move the UPSERT around
       ** so that it occurs in the correct order. */
-      sAddr.upsertTop = sqlite3VdbeMakeLabel(v);
+      sAddr.upsertTop = sAddr.upsertTop2 = sqlite3VdbeMakeLabel(v);
       sAddr.upsertBtm = sqlite3VdbeMakeLabel(v);
     }
   }
@@ -1519,6 +1520,9 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
+        testcase( onError==OE_Rollback );
+        testcase( onError==OE_Abort );
+        testcase( onError==OE_Fail );
         sqlite3RowidConstraint(pParse, onError, pTab);
         break;
       }
@@ -1578,6 +1582,7 @@ void sqlite3GenerateConstraintChecks(
       }
 #endif
       case OE_Ignore: {
+        testcase( onError==OE_Ignore );
         sqlite3VdbeGoto(v, ignoreDest);
         break;
       }
@@ -1607,7 +1612,7 @@ void sqlite3GenerateConstraintChecks(
       addrUniqueOk = sAddr.upsertBtm;
       upsertBypass = sqlite3VdbeGoto(v, 0);
       VdbeComment((v, "Skip upsert subroutine"));
-      sqlite3VdbeResolveLabel(v, sAddr.upsertTop);
+      sqlite3VdbeResolveLabel(v, sAddr.upsertTop2);
     }else{
       addrUniqueOk = sqlite3VdbeMakeLabel(v);
     }
@@ -1676,9 +1681,6 @@ void sqlite3GenerateConstraintChecks(
     }else if( onError==OE_Default ){
       onError = OE_Abort;
     }
-    if( onError==OE_Replace ){
-      reorderConstraintChecks(v, &sAddr);
-    }
 
     /* Figure out if the upsert clause applies to this index */
     if( pUpIdx==pIdx ){
@@ -1687,6 +1689,15 @@ void sqlite3GenerateConstraintChecks(
       }else{
         onError = OE_Update;  /* DO UPDATE */
       }
+    }
+
+    /* Invoke subroutines to handle IPK replace and upsert prior to running
+    ** the first REPLACE constraint check. */
+    if( onError==OE_Replace ){
+      testcase( sAddr.ipkTop );
+      testcase( sAddr.upsertTop
+             && sqlite3VdbeLabelHasBeenResolved(v,sAddr.upsertTop) );
+      reorderConstraintChecks(v, &sAddr);
     }
 
     /* Collision detection may be omitted if all of the following are true:
@@ -1776,6 +1787,9 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
+        testcase( onError==OE_Rollback );
+        testcase( onError==OE_Abort );
+        testcase( onError==OE_Fail );
         sqlite3UniqueConstraint(pParse, onError, pIdx);
         break;
       }
@@ -1786,6 +1800,7 @@ void sqlite3GenerateConstraintChecks(
       }
 #endif
       case OE_Ignore: {
+        testcase( onError==OE_Ignore );
         sqlite3VdbeGoto(v, ignoreDest);
         break;
       }
@@ -1812,6 +1827,9 @@ void sqlite3GenerateConstraintChecks(
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
 
   }
+  testcase( sAddr.ipkTop!=0 );
+  testcase( sAddr.upsertTop
+         && sqlite3VdbeLabelHasBeenResolved(v,sAddr.upsertTop) );
   reorderConstraintChecks(v, &sAddr);
   
   *pbMayReplace = seenReplace;
