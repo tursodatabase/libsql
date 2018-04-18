@@ -884,7 +884,7 @@ static void selectInnerLoop(
       }
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
       selectExprDefer(pParse, pSort, p->pEList, &pExtra);
-      if( pExtra ){
+      if( pExtra && pParse->db->mallocFailed==0 ){
         /* If there are any extra PK columns to add to the sorter records,
         ** allocate extra memory cells and adjust the OpenEphemeral 
         ** instruction to account for the larger records. This is only
