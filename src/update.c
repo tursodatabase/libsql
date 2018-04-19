@@ -384,7 +384,11 @@ void sqlite3Update(
 #endif
 
   /* Initialize the count of updated rows */
-  if( (db->flags & SQLITE_CountRows) && !pParse->pTriggerTab ){
+  if( (db->flags&SQLITE_CountRows)!=0
+   && !pParse->pTriggerTab
+   && !pParse->nested
+   && !pUpsert
+  ){
     regRowCount = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
   }
@@ -699,7 +703,7 @@ void sqlite3Update(
 
   /* Increment the row counter 
   */
-  if( (db->flags & SQLITE_CountRows) && !pParse->pTriggerTab){
+  if( regRowCount ){
     sqlite3VdbeAddOp2(v, OP_AddImm, regRowCount, 1);
   }
 
@@ -731,11 +735,10 @@ void sqlite3Update(
   }
 
   /*
-  ** Return the number of rows that were changed. If this routine is 
-  ** generating code because of a call to sqlite3NestedParse(), do not
-  ** invoke the callback function.
+  ** Return the number of rows that were changed, if we are tracking
+  ** that information.
   */
-  if( (db->flags&SQLITE_CountRows) && !pParse->pTriggerTab && !pParse->nested ){
+  if( regRowCount ){
     sqlite3VdbeAddOp2(v, OP_ResultRow, regRowCount, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows updated", SQLITE_STATIC);

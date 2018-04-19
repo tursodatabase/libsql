@@ -89,4 +89,19 @@ do_execsql_test upsert1-320 {
   SELECT *, 'x' FROM t1 ORDER BY b, a;
 } {1 2 0 x 3 2 0 x 4 20 0 x}
 
+# Upsert works with count_changes=on;
+do_execsql_test upsert1-400 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a TEXT UNIQUE, b INT DEFAULT 1);
+  INSERT INTO t2(a) VALUES('one'),('two'),('three');
+  PRAGMA count_changes=ON;
+  INSERT INTO t2(a) VALUES('one'),('one'),('three'),('four')
+      ON CONFLICT(a) DO UPDATE SET b=b+1;
+} {1}
+do_execsql_test upsert1-410 {
+  PRAGMA count_changes=OFF;
+  SELECT a, b FROM t2 ORDER BY a;
+} {four 1 one 3 three 2 two 1}
+
+
 finish_test
