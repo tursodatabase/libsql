@@ -1,5 +1,5 @@
-C Add\sthe\s--upsert\soption\sto\sthe\swordcount\stest\sprogram.
-D 2018-04-19T16:52:37.885
+C Modify\sa\stest\scase\sin\szipfile2.test\sto\stake\sinto\saccount\sthat\swith\ssome\nplatform/file-system\scombinations\sit\sis\spossible\sto\sfopen()\sand\sfread()\s(but\nnot\sfwrite())\sa\sdirectory.
+D 2018-04-19T20:06:10.752
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1624,7 +1624,7 @@ F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501d
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
 F test/zipfile.test a61f6ba6dbaaf4983849df84a31df140c7ddd1362e2fa9ecd3cdf5cd123b7f18
-F test/zipfile2.test fc2f08d5ec19c18c83289fbed32e378dc5116519972166e57a244da7bf2e5805
+F test/zipfile2.test 8a18965530258140ce301b2c2f4245bc505ffead2e17a97fa34c7ace379ea5e0
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22358fb5495c727a4dde129128fe409a7b929a5ffa143b1e2879f84d7680ec3c
-R a7b654c566d8bf5093f4f641ac4c2186
-U drh
-Z 0b3b7a1ecad6bb8c912a235e1f89d43e
+P ee1e750baaf4c66b4e1f103d8b80362f57e711ac601e57f99ed6a33913f443d2
+R 27b9c4d047fe10a6fe824ea5e9fc1b46
+U dan
+Z 99ccb5e549410d2d811e162fd8fbacbf
