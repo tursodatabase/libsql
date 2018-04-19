@@ -1,5 +1,5 @@
-C Modify\sa\stest\scase\sin\szipfile2.test\sto\stake\sinto\saccount\sthat\swith\ssome\nplatform/file-system\scombinations\sit\sis\spossible\sto\sfopen()\sand\sfread()\s(but\nnot\sfwrite())\sa\sdirectory.
-D 2018-04-19T20:06:10.752
+C Minor\ssimplification\sto\sthe\supsert\slogic.
+D 2018-04-19T21:29:52.191
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -558,7 +558,7 @@ F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 5787acf0a12a20cf31c0c50db644a667590f720e404b3616bc2efeb9bd5bbc06
-F src/upsert.c ed50cfcf0d3ae6b0b1c4b6456e64216e54c948733f0d9f9ae4e4d02572334100
+F src/upsert.c ee5c9e44fac181e86a561c2d315c28f4c0f94e9d3283544bd39aa0e201b0c61c
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee1e750baaf4c66b4e1f103d8b80362f57e711ac601e57f99ed6a33913f443d2
-R 27b9c4d047fe10a6fe824ea5e9fc1b46
-U dan
-Z 99ccb5e549410d2d811e162fd8fbacbf
+P 893e6089c875e947ddadb23f031a81bc36da8b060d2212363098992ddb90378b
+R 55c8d974783bb4b8502a146618675105
+U drh
+Z 7c8bbf0c90fa7ebf24724a77ea4ecc1b

@@ -258,10 +258,12 @@ void sqlite3UpsertDoUpdate(
       pWhere = sqlite3ExprAnd(db,pWhere,sqlite3PExpr(pParse, TK_EQ, pE1, pE2));
     }
   }
+  /* pUpsert does not own pUpsertSrc - the outer INSERT statement does.  So
+  ** we have to make a copy before passing it down into sqlite3Update() */
   pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
-  sqlite3Update(pParse, pSrc, 
-      sqlite3ExprListDup(db, pUpsert->pUpsertSet, 0),
+  sqlite3Update(pParse, pSrc, pUpsert->pUpsertSet,
       pWhere, OE_Abort, 0, 0, pUpsert);
+  pUpsert->pUpsertSet = 0;  /* Will have been deleted by sqlite3Update() */
   VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
 }
 
