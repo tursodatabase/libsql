@@ -1,5 +1,5 @@
-C Add\sthe\sext/misc/tmeplatevtab.c\stemplate\sfor\svirtual\stables.\s\sThis\sis\sa\nwork-in-progress\sas\sit\sstill\sneeds\simprovements\sto\sthe\scomments\sin\sorder\sto\nbe\suseful\sas\sa\stemplate.
-D 2018-04-19T16:14:59.612
+C Add\sthe\s--upsert\soption\sto\sthe\swordcount\stest\sprogram.
+D 2018-04-19T16:52:37.885
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1619,7 +1619,7 @@ F test/without_rowid3.test 2724c787a51a5dce09d078453a758117b4b728f1
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
-F test/wordcount.c cb589cec469a1d90add05b1f8cee75c7210338d87a5afd65260ed5c0f4bbf8ac
+F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6d5ea59fe83716f464e408b7eef0310c6d30b3493e3f966362db2e30b36e821
-R 4146a3c1f6cf5cee510b4dc0190bc8f5
+P 22358fb5495c727a4dde129128fe409a7b929a5ffa143b1e2879f84d7680ec3c
+R a7b654c566d8bf5093f4f641ac4c2186
 U drh
-Z 44dfccccf923e5b7ed9b322a17bb80ee
+Z 0b3b7a1ecad6bb8c912a235e1f89d43e
