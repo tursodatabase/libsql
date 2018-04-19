@@ -1,5 +1,5 @@
-C Fix\sthe\stable\sname\saliasing\son\sINSERT\sso\sthat\sit\soccurs\sbefore\sthe\scolumn\slist\nrather\sthan\safterwards,\sjust\sas\sit\sdoes\sfor\sPostgreSQL.\s\sAdd\stable\sname\naliasing\sto\sUPDATE\sand\sDELETE.
-D 2018-04-19T11:45:16.962
+C Fix\sa\sproblem\sin\sthe\snew\supsert\simplemention,\sdiscovered\sby\sOSSFuzz.
+D 2018-04-19T13:52:39.607
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -452,7 +452,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 5fa74146492f5da33e42c35f5f58fb8d56e047c42746fdbd52c8ebdb21160e27
+F src/insert.c b382941c8f86cda8aa91452e80d02cea2c2631d52ab7cf7523314ee46bab7f39
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 10e3897f5d78cef6bcbd1eedc8ccc3fe9e9783d07e052d9d70e57364ded19274
@@ -1506,7 +1506,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
-F test/update.test 17f93464d311f4b9e396be9a26f70372b380f7af8b0df309d0c2f03ea206933c
+F test/update.test 1148de8d913e9817717990603aadeca07aab9ddbb10a30f167cbfd8d3a3ccb60
 F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2313e
 F test/upsert1.test 3b4e8e5932516115bfffb2269a44c416c5c26d0d57cc7dd16954d0b77fbc4cd9
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
@@ -1723,7 +1723,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef74090a40ceaef2fd93a7613ec99a191ce986811c852e96f4a19719f18af4f0
-R b8ecc539094b35008277eb5c4de80d78
+P 861a2e2a4895f96a5d8e1730e744983b2ac4311d0c2cf201c0e59f409030d5d7
+R 5193df4cf3e6845634d41cc8788c808f
 U drh
-Z 8fcf02099940e8c7360c9b4125c9a140
+Z 90e6c0b9939b6f41ccf20e0efc9fa0c1

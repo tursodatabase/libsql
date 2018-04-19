@@ -1471,15 +1471,6 @@ void sqlite3GenerateConstraintChecks(
       onError = OE_Abort;
     }
 
-    if( isUpdate ){
-      /* pkChng!=0 does not mean that the rowid has changed, only that
-      ** it might have changed.  Skip the conflict logic below if the rowid
-      ** is unchanged. */
-      sqlite3VdbeAddOp3(v, OP_Eq, regNewData, addrRowidOk, regOldData);
-      sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
-      VdbeCoverage(v);
-    }
-
     /* figure out whether or not upsert applies in this case */
     if( pUpsert && pUpsert->pUpsertIdx==0 ){
       if( pUpsert->pUpsertSet==0 ){
@@ -1504,6 +1495,15 @@ void sqlite3GenerateConstraintChecks(
      && pTab->pIndex
     ){
       sAddr.ipkTop = sqlite3VdbeAddOp0(v, OP_Goto)+1;
+    }
+
+    if( isUpdate ){
+      /* pkChng!=0 does not mean that the rowid has changed, only that
+      ** it might have changed.  Skip the conflict logic below if the rowid
+      ** is unchanged. */
+      sqlite3VdbeAddOp3(v, OP_Eq, regNewData, addrRowidOk, regOldData);
+      sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
+      VdbeCoverage(v);
     }
 
     /* Check to see if the new rowid already exists in the table.  Skip
