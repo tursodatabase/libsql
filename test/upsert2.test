@@ -44,13 +44,13 @@ do_execsql_test upsert2-201 {
   DELETE FROM t1;
   INSERT INTO t1(a,b) VALUES(1,2),(3,4);
   WITH nx(a,b) AS (VALUES(1,8),(2,11),(3,1),(2,15),(1,4),(1,99))
-  INSERT INTO t1(a,b) AS t2 SELECT a, b FROM nx WHERE true
+  INSERT INTO main.t1 AS t2(a,b) SELECT a, b FROM nx WHERE true
     ON CONFLICT(a) DO UPDATE SET b=excluded.b, c=t2.c+1 WHERE t2.b<excluded.b;
   SELECT *, 'x' FROM t1 ORDER BY a;
 } {1 99 2 x 2 15 1 x 3 4 0 x}
 do_catchsql_test upsert2-202 {
   WITH nx(a,b) AS (VALUES(1,8),(2,11),(3,1),(2,15),(1,4),(1,99))
-  INSERT INTO t1(a,b) AS t2 SELECT a, b FROM nx WHERE true
+  INSERT INTO t1 AS t2(a,b) SELECT a, b FROM nx WHERE true
     ON CONFLICT(a) DO UPDATE SET b=excluded.b, c=t1.c+1 WHERE t1.b<excluded.b;
 } {1 {no such column: t1.c}}
 do_execsql_test upsert2-210 {

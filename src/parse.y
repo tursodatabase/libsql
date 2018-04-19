@@ -690,6 +690,21 @@ fullname(A) ::= nm(X).
 fullname(A) ::= nm(X) DOT nm(Y).  
    {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
 
+%type xfullname {SrcList*}
+%destructor xfullname {sqlite3SrcListDelete(pParse->db, $$);}
+xfullname(A) ::= nm(X).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/}
+xfullname(A) ::= nm(X) DOT nm(Y).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
+xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z).  {
+   A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/
+   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+}
+xfullname(A) ::= nm(X) AS nm(Z). {  
+   A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/
+   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+}
+
 %type joinop {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
 joinop(X) ::= JOIN_KW(A) JOIN.
@@ -800,14 +815,14 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 /////////////////////////// The DELETE statement /////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with DELETE FROM fullname(X) indexed_opt(I) where_opt(W) 
+cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,O,L);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
+cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,0,0);
 }
@@ -822,7 +837,7 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
@@ -830,7 +845,7 @@ cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
@@ -858,19 +873,11 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S)
+cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) select(S)
         upsert(U). {
   sqlite3Insert(pParse, X, S, F, R, U);
 }
-cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) AS nm(A) select(S)
-        upsert(U). {
-  /* X could only be NULL following a OOM, but an OOM would have been detected
-  ** and stopped the parse long before this rule reduces. */
-  assert( X!=0 );
-  X->a[0].zAlias = sqlite3NameFromToken(pParse->db, &A);
-  sqlite3Insert(pParse, X, S, F, R, U);
-}
-cmd ::= with insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
+cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES.
 {
   sqlite3Insert(pParse, X, 0, F, R, 0);
 }
