@@ -1,5 +1,5 @@
-C Add\sthe\s--upsert\soption\sto\sthe\swordcount\stest\sprogram.
-D 2018-04-19T16:52:37.885
+C Avoid\sunnecessary\sOP_Goto\sinstructions\son\san\supsert\sof\sa\stable\sthat\sonly\nhas\sa\ssingle\ssecondary\sindex.
+D 2018-04-19T20:18:18.746
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -453,7 +453,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c b382941c8f86cda8aa91452e80d02cea2c2631d52ab7cf7523314ee46bab7f39
+F src/insert.c b87039f822781847237498069e014f98b5a5fb8f9c3ea804461ee64d969097d2
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 10e3897f5d78cef6bcbd1eedc8ccc3fe9e9783d07e052d9d70e57364ded19274
@@ -1724,7 +1724,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22358fb5495c727a4dde129128fe409a7b929a5ffa143b1e2879f84d7680ec3c
-R a7b654c566d8bf5093f4f641ac4c2186
+P ee1e750baaf4c66b4e1f103d8b80362f57e711ac601e57f99ed6a33913f443d2
+R cf741dc3783c378e8b5d6eb6db48dd7f
+T *branch * upsert-opt
+T *sym-upsert-opt *
+T -sym-trunk *
 U drh
-Z 0b3b7a1ecad6bb8c912a235e1f89d43e
+Z dc803168d010de649f7e5b10205dcfc5

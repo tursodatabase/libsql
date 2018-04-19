@@ -1448,7 +1448,7 @@ void sqlite3GenerateConstraintChecks(
       assert( pUpsert->pUpsertSet==0 );
       overrideError = OE_Ignore;
       pUpsert = 0;
-    }else if( (pUpIdx = pUpsert->pUpsertIdx)!=0 ){
+    }else if( (pUpIdx = pUpsert->pUpsertIdx)!=0 && pUpIdx->pNext!=0 ){
       /* If the constraint-target is on some column other than
       ** then ROWID, then we might need to move the UPSERT around
       ** so that it occurs in the correct order. */
@@ -1608,7 +1608,7 @@ void sqlite3GenerateConstraintChecks(
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
-    if( pUpIdx==pIdx ){
+    if( pUpIdx==pIdx && pIdx->pNext!=0 ){
       addrUniqueOk = sAddr.upsertBtm;
       upsertBypass = sqlite3VdbeGoto(v, 0);
       VdbeComment((v, "Skip upsert subroutine"));
@@ -1818,7 +1818,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    if( pUpIdx==pIdx ){
+    if( pUpIdx==pIdx && pIdx->pNext!=0 ){
       sqlite3VdbeJumpHere(v, upsertBypass);
     }else{
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
