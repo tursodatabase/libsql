@@ -219,14 +219,147 @@ do_catchsql_test 5.0 {
 } {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
 
 #-------------------------------------------------------------------------
+# Test that ON CONFLICT constraint processing occurs before any REPLACE
+# constraint processing.
 #
-do_execsql_test 6.0 {
-  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c);
-  INSERT INTO t1 VALUES(1, 1, 'one');
-  INSERT INTO t1 VALUES(2, 2, 'two');
-  INSERT OR REPLACE INTO t1 VALUES(1, 2, 'two') ON CONFLICT(b) DO NOTHING;
-  PRAGMA integrity_check;
-} {ok}
+foreach {tn sql} {
+  1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c);
+  }
+  2 {
+    CREATE TABLE t1(a INT PRIMARY KEY, b UNIQUE, c);
+  }
+  3 {
+    CREATE TABLE t1(a INT PRIMARY KEY, b UNIQUE, c) WITHOUT ROWID;
+  }
+} {
+  reset_db
+  execsql $sql
+  do_execsql_test 6.1.$tn {
+    INSERT INTO t1 VALUES(1, 1, 'one');
+    INSERT INTO t1 VALUES(2, 2, 'two');
+    INSERT OR REPLACE INTO t1 VALUES(1, 2, 'two') ON CONFLICT(b) DO NOTHING;
+    PRAGMA integrity_check;
+  } {ok}
+}
+
+foreach {tn sql} {
+  1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c UNIQUE);
+  }
+} {
+  reset_db
+  execsql $sql
+
+  do_execsql_test 6.2.$tn.1 {
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+  }
+
+  do_execsql_test 6.2.$tn.2 {
+    INSERT OR REPLACE INTO t1 VALUES(3, 1, 1) ON CONFLICT(b) DO NOTHING;
+    SELECT * FROM t1;
+    PRAGMA integrity_check;
+  } {1 1 1 2 2 2 ok}
+
+  do_execsql_test 6.2.$tn.3 {
+    INSERT OR REPLACE INTO t1 VALUES(3, 2, 2) ON CONFLICT(c) DO NOTHING;
+    SELECT * FROM t1;
+    PRAGMA integrity_check;
+  } {1 1 1 2 2 2 ok}
+
+  do_execsql_test 6.2.$tn.2 {
+    INSERT OR REPLACE INTO t1 VALUES(3, 1, 1) ON CONFLICT(b) 
+      DO UPDATE SET b=b||'x';
+    SELECT * FROM t1;
+    PRAGMA integrity_check;
+  } {1 1x 1 2 2 2 ok}
+
+  do_execsql_test 6.2.$tn.2 {
+    INSERT OR REPLACE INTO t1 VALUES(3, 2, 2) ON CONFLICT(c) 
+      DO UPDATE SET c=c||'x';
+    SELECT * FROM t1;
+    PRAGMA integrity_check;
+  } {1 1x 1 2 2 2x ok}
+}
+
+#-------------------------------------------------------------------------
+# Test references to "excluded". And using an alias in an INSERT 
+# statement.
+#
+foreach {tn sql} {
+  1 {
+    CREATE TABLE t1(w, x, y, z, PRIMARY KEY(x, y));
+    CREATE UNIQUE INDEX zz ON t1(z);
+  }
+  2 {
+    CREATE TABLE t1(w, x, y, z, PRIMARY KEY(x, y)) WITHOUT ROWID;
+    CREATE UNIQUE INDEX zz ON t1(z);
+  }
+} {
+  reset_db
+  execsql $sql
+  do_execsql_test 7.$tn.0 {
+    INSERT INTO t1 VALUES('a', 1, 1, 1);
+    INSERT INTO t1 VALUES('b', 2, 2, 2);
+  }
+
+  do_execsql_test 7.$tn.1 {
+    INSERT INTO t1 VALUES('c', 3, 3, 1) ON CONFLICT(z) 
+      DO UPDATE SET w = excluded.w;
+    SELECT * FROM t1;
+  } {c 1 1 1 b 2 2 2}
+
+  do_execsql_test 7.$tn.2 {
+    INSERT INTO t1 VALUES('c', 2, 2, 3) ON CONFLICT(y, x) 
+      DO UPDATE SET w = w||w;
+    SELECT * FROM t1;
+  } {c 1 1 1 bb 2 2 2}
+
+  do_execsql_test 7.$tn.3 {
+    INSERT INTO t1 VALUES('c', 2, 2, 3) ON CONFLICT(y, x) 
+      DO UPDATE SET w = w||t1.w;
+    SELECT * FROM t1;
+  } {c 1 1 1 bbbb 2 2 2}
+
+  do_execsql_test 7.$tn.4 {
+    INSERT INTO t1 AS tbl VALUES('c', 2, 2, 3) ON CONFLICT(y, x) 
+      DO UPDATE SET w = w||tbl.w;
+    SELECT * FROM t1;
+  } {c 1 1 1 bbbbbbbb 2 2 2}
+}
+
+foreach {tn sql} {
+  1 {
+    CREATE TABLE excluded(w, x, 'a b', z, PRIMARY KEY(x, 'a b'));
+    CREATE UNIQUE INDEX zz ON excluded(z);
+  }
+  2 {
+    CREATE TABLE excluded(w, x, 'a b', z, PRIMARY KEY(x, 'a b')) WITHOUT ROWID;
+    CREATE UNIQUE INDEX zz ON excluded(z);
+  }
+} {
+  reset_db
+  execsql $sql
+  do_execsql_test 8.$tn.0 {
+    INSERT INTO excluded VALUES('a', 1, 1, 1);
+    INSERT INTO excluded VALUES('b', 2, 2, 2);
+  }
+
+  # Note: An error in Postgres: "table reference "excluded" is ambiguous".
+  #
+  do_execsql_test 8.$tn.1 {
+    INSERT INTO excluded VALUES('hello', 1, 1, NULL) ON CONFLICT(x, "a b")
+      DO UPDATE SET w=excluded.w;
+    SELECT * FROM excluded;
+  } {a 1 1 1 b 2 2 2}
+
+  do_execsql_test 8.$tn.2 {
+    INSERT INTO excluded AS x1 VALUES('hello', 1, 1, NULL) ON CONFLICT(x, [a b])
+      DO UPDATE SET w=excluded.w;
+    SELECT * FROM excluded;
+  } {hello 1 1 1 b 2 2 2}
+}
+
 
 finish_test
-

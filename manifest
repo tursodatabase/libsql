@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scursor\sseeking\swhen\sperforming\san\sUPSERT.
-D 2018-04-20T17:02:16.531
+C Add\stests\sfor\sname\sresolution\sin\sON\sCONFLICT\sclauses.
+D 2018-04-20T17:50:49.589
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1512,7 +1512,7 @@ F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2
 F test/upsert1.test 934315888a04b4e119ebb6abf558d92bf01d9f94fc8ff0bbc1c7c6015005340f
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
-F test/upsert4.test c70b9dd9ae9952d8942ae2558dcecdeb1128097b1d03a22d8ae42660112ffc73
+F test/upsert4.test 1674e23c9d831e39464865a9fa63d855e148eeced8a147e8911febfe7c11f771
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1724,8 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8eb9f8d9b61400c7e12f01ef5c233257b03532221f7c7a8386f7ac2db439626 131ed95e1452a5b0d92341c48a5d3915b328ccfce2cf605f702428ae7ee3e21b
-R 18734526551b7a3f2bbebfc4bb6f5573
-T +closed 131ed95e1452a5b0d92341c48a5d3915b328ccfce2cf605f702428ae7ee3e21b
-U drh
-Z 23a2cba3b6d85936a323e52ae5cb1690
+P 693a3dcbdd8fb2d516c0f46fdbb478838cde675afc1026740e942705aac3c07f
+R edb0f8d75d196edc7e220a2b21ed76d2
+U dan
+Z 98b6f0b67bad58c0b46cab1188f88f7f
