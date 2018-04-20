@@ -1,5 +1,5 @@
-C Enhance\sUPSERT\sso\sthat\sthe\sUPDATE\suses\sthe\ssame\sset\sof\scursors\sas\sthe\sINSERT.
-D 2018-04-20T13:18:51.643
+C Add\stest\scases\sfor\sUPSERT.\sAnd\sa\sfix\sfor\sa\s"REPLACE\sINTO\s...\sON\sCONFLICT"\nstatement\swhere\sthe\snew\srow\sconflicts\swith\sboth\sthe\sIPK\sand\sthe\sON\sCONFLICT\nindexes.
+D 2018-04-20T15:34:08.067
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -453,7 +453,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 465e927874e602a66d6d20bb9cf73099f25a3c067b87725ed7b4ddb0c3fdb327
+F src/insert.c 33a2c72b6182e8ddf697d604cc087c77ff5fc512a32b8b624641d41b390e249e
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 10e3897f5d78cef6bcbd1eedc8ccc3fe9e9783d07e052d9d70e57364ded19274
@@ -1512,7 +1512,7 @@ F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2
 F test/upsert1.test 934315888a04b4e119ebb6abf558d92bf01d9f94fc8ff0bbc1c7c6015005340f
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
-F test/upsert4.test 83b37a92f315217c9319f320966c044ddccf8bc525501fa09e2ee47779e3920b
+F test/upsert4.test c70b9dd9ae9952d8942ae2558dcecdeb1128097b1d03a22d8ae42660112ffc73
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fdf71be65835e7e8915d16dd64114de35c4754ef5b94a2af6cac88a94817fb75
-R 326ed33577c38b92a582a5286c34af37
-U drh
-Z c39fcdbaadf5ac0f8b6a71ef409492a9
+P c37f39d18d41ae5ba6c4561d87cbbf71f3b6896b86cc5cff9cdf046b02dc521a
+R ae514c5e5a987302d42c4363153aaf33
+U dan
+Z a0358cccdac92456839b19732d4467cc

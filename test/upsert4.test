@@ -116,6 +116,7 @@ foreach {tn sql} {
     6 "ON CONFLICT (b, c, d) WHERE a!=0 DO NOTHING"       0
     7 "ON CONFLICT (d, c, c) WHERE a!=0 DO NOTHING"       2
     8 "ON CONFLICT (b COLLATE nocase, c COLLATE nocase, d) DO NOTHING"   2
+    9 "ON CONFLICT (b, c, d) WHERE b==45 DO NOTHING"      0
   } {
 
     do_catchsql_test 2.$tn.2.$tn2 "
@@ -144,7 +145,7 @@ foreach {tn sql} {
 } {
   reset_db
   execsql $sql
-  do_execsql_test 2.$tn.1 {
+  do_execsql_test 3.$tn.1 {
     INSERT INTO abc VALUES(1, 'one', 'two');
   }
 
@@ -156,22 +157,76 @@ foreach {tn sql} {
     5 "ON CONFLICT (x || 'x') DO NOTHING"                  2
     6 "ON CONFLICT ((('x' || x))) DO NOTHING"              0
   } {
-    do_catchsql_test 2.$tn.2.$tn2 "
+    do_catchsql_test 3.$tn.2.$tn2 "
       INSERT INTO abc VALUES(2, 'one', NULL) $oc;
     " $rtbl($res)
   }
 
-  do_execsql_test 2.$tn.3 {
+  do_execsql_test 3.$tn.3 {
     SELECT * FROM abc
   } {1 one two}
 }
 
-do_catchsql_test 3.0 {
+foreach {tn sql} {
+  1 {
+    CREATE TABLE abc(a INTEGER PRIMARY KEY, x, y);
+    CREATE UNIQUE INDEX abc1 ON abc(x) WHERE y>0;
+    CREATE UNIQUE INDEX abc2 ON abc(y) WHERE x='xyz' COLLATE nocase;
+  }
+} {
+  reset_db
+  execsql $sql
+  do_execsql_test 4.$tn.1 {
+    INSERT INTO abc VALUES(1, 'one', 1);
+    INSERT INTO abc VALUES(2, 'two', 2);
+    INSERT INTO abc VALUES(3, 'xyz', 3);
+    INSERT INTO abc VALUES(4, 'XYZ', 4);
+  }
+
+  foreach {tn2 oc res} {
+    1 "ON CONFLICT DO NOTHING"                                 0
+    2 "ON CONFLICT(x) WHERE y>0 DO NOTHING"                    0
+    3 "ON CONFLICT(x) DO NOTHING"                              2
+    4 "ON CONFLICT(x) WHERE y>=0 DO NOTHING"                   2
+    5 "ON CONFLICT(y) WHERE x='xyz' COLLATE nocase DO NOTHING" 1
+  } {
+    do_catchsql_test 4.$tn.2.$tn2 "
+      INSERT INTO abc VALUES(5, 'one', 10) $oc
+    " $rtbl($res)
+  }
+
+  do_execsql_test 4.$tn.3 {
+    SELECT * FROM abc
+  } {1 one 1 2 two 2 3 xyz 3 4 XYZ 4}
+
+  foreach {tn2 oc res} {
+    1 "ON CONFLICT DO NOTHING"                                 0
+    2 "ON CONFLICT(y) WHERE x='xyz' COLLATE nocase DO NOTHING" 0
+    3 "ON CONFLICT(y) WHERE x='xyz' COLLATE binary DO NOTHING" 2
+    4 "ON CONFLICT(x) WHERE y>0 DO NOTHING"                    1
+  } {
+    do_catchsql_test 4.$tn.2.$tn2 "
+      INSERT INTO abc VALUES(5, 'xYz', 3) $oc
+    " $rtbl($res)
+  }
+}
+
+do_catchsql_test 5.0 {
   CREATE TABLE w1(a INT PRIMARY KEY, x, y);
   CREATE UNIQUE INDEX w1expr ON w1(('x' || x));
   INSERT INTO w1 VALUES(2, 'one', NULL)
     ON CONFLICT (('x' || x) COLLATE nocase) DO NOTHING;
 } {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c);
+  INSERT INTO t1 VALUES(1, 1, 'one');
+  INSERT INTO t1 VALUES(2, 2, 'two');
+  INSERT OR REPLACE INTO t1 VALUES(1, 2, 'two') ON CONFLICT(b) DO NOTHING;
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test
 

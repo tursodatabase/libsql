@@ -1496,7 +1496,7 @@ void sqlite3GenerateConstraintChecks(
     assert( OE_Abort<OE_Replace );
     assert( OE_Rollback<OE_Replace );
     if( onError>=OE_Replace
-     && onError!=overrideError
+     && (pUpsert || onError!=overrideError)
      && pTab->pIndex
     ){
       sAddr.ipkTop = sqlite3VdbeAddOp0(v, OP_Goto)+1;
