@@ -212,6 +212,7 @@ void sqlite3Update(
     pParse->nTab++;
   }
   if( pUpsert ){
+    /* On an UPSERT, reuse the same cursors already opened by INSERT */
     iDataCur = pUpsert->iDataCur;
     iIdxCur = pUpsert->iIdxCur;
     pParse->nTab = iBaseCur;
@@ -389,64 +390,85 @@ void sqlite3Update(
   }
 #endif
 
-  /* Initialize the count of updated rows */
-  if( (db->flags&SQLITE_CountRows)!=0
-   && !pParse->pTriggerTab
-   && !pParse->nested
-   && !pUpsert
-  ){
-    regRowCount = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
-  }
+  /* Jump to labelBreak to abandon further processing of this UPDATE */
+  labelBreak = sqlite3VdbeMakeLabel(v);
 
-  if( HasRowid(pTab) ){
-    sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
-  }else{
-    assert( pPk!=0 );
-    nPk = pPk->nKeyCol;
-    iPk = pParse->nMem+1;
-    pParse->nMem += nPk;
-    regKey = ++pParse->nMem;
-    iEph = pParse->nTab++;
-
-    sqlite3VdbeAddOp3(v, OP_Null, 0, iPk, iPk+nPk-1);
-    addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
-    sqlite3VdbeSetP4KeyInfo(pParse, pPk);
-  }
-
-  /* Begin the database scan. 
-  **
-  ** Do not consider a single-pass strategy for a multi-row update if
-  ** there are any triggers or foreign keys to process, or rows may
-  ** be deleted as a result of REPLACE conflict handling. Any of these
-  ** things might disturb a cursor being used to scan through the table
-  ** or index, causing a single-pass approach to malfunction.  */
-  flags = WHERE_ONEPASS_DESIRED|WHERE_SEEK_UNIQ_TABLE;
-  if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
-    flags |= WHERE_ONEPASS_MULTIROW;
-  }
-  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, flags, iIdxCur);
-  if( pWInfo==0 ) goto update_cleanup;
-
-  /* A one-pass strategy that might update more than one row may not
-  ** be used if any column of the index used for the scan is being
-  ** updated. Otherwise, if there is an index on "b", statements like
-  ** the following could create an infinite loop:
-  **
-  **   UPDATE t1 SET b=b+1 WHERE b>?
-  **
-  ** Fall back to ONEPASS_OFF if where.c has selected a ONEPASS_MULTI
-  ** strategy that uses an index for which one or more columns are being
-  ** updated.  */
-  eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
-  if( eOnePass==ONEPASS_MULTI ){
-    int iCur = aiCurOnePass[1];
-    if( iCur>=0 && iCur!=iDataCur && aToOpen[iCur-iBaseCur] ){
-      eOnePass = ONEPASS_OFF;
+  if( pUpsert ){
+    /* If this is an UPSERT, then all cursors have already been opened by
+    ** the outer INSERT and the data cursor should be pointing at the row
+    ** that is to be updated.  So bypass the code that searches for the
+    ** row(s) to be updated.
+    */
+    pWInfo = 0;
+    eOnePass = ONEPASS_SINGLE;
+    labelContinue = labelBreak;
+    if( !HasRowid(pTab) ){
+      nPk = pPk->nKeyCol;
+      iPk = pParse->nMem+1;
+      pParse->nMem += nPk;
+      regKey = ++pParse->nMem;
     }
-    assert( iCur!=iDataCur || !HasRowid(pTab) );
-  }
+    sqlite3ExprIfFalse(pParse, pWhere, labelBreak, SQLITE_JUMPIFNULL);
+  }else{
+    /* Not an UPSERT.  Normal processing.  Begin by
+    ** initialize the count of updated rows */
+    if( (db->flags&SQLITE_CountRows)!=0
+     && !pParse->pTriggerTab
+     && !pParse->nested
+    ){
+      regRowCount = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
+    }
   
+    if( HasRowid(pTab) ){
+      sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
+    }else{
+      assert( pPk!=0 );
+      nPk = pPk->nKeyCol;
+      iPk = pParse->nMem+1;
+      pParse->nMem += nPk;
+      regKey = ++pParse->nMem;
+      iEph = pParse->nTab++;
+  
+      sqlite3VdbeAddOp3(v, OP_Null, 0, iPk, iPk+nPk-1);
+      addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
+      sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+    }
+  
+    /* Begin the database scan. 
+    **
+    ** Do not consider a single-pass strategy for a multi-row update if
+    ** there are any triggers or foreign keys to process, or rows may
+    ** be deleted as a result of REPLACE conflict handling. Any of these
+    ** things might disturb a cursor being used to scan through the table
+    ** or index, causing a single-pass approach to malfunction.  */
+    flags = WHERE_ONEPASS_DESIRED|WHERE_SEEK_UNIQ_TABLE;
+    if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
+      flags |= WHERE_ONEPASS_MULTIROW;
+    }
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, flags, iIdxCur);
+    if( pWInfo==0 ) goto update_cleanup;
+  
+    /* A one-pass strategy that might update more than one row may not
+    ** be used if any column of the index used for the scan is being
+    ** updated. Otherwise, if there is an index on "b", statements like
+    ** the following could create an infinite loop:
+    **
+    **   UPDATE t1 SET b=b+1 WHERE b>?
+    **
+    ** Fall back to ONEPASS_OFF if where.c has selected a ONEPASS_MULTI
+    ** strategy that uses an index for which one or more columns are being
+    ** updated.  */
+    eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
+    if( eOnePass==ONEPASS_MULTI ){
+      int iCur = aiCurOnePass[1];
+      if( iCur>=0 && iCur!=iDataCur && aToOpen[iCur-iBaseCur] ){
+        eOnePass = ONEPASS_OFF;
+      }
+      assert( iCur!=iDataCur || !HasRowid(pTab) );
+    }
+  }
+
   if( HasRowid(pTab) ){
     /* Read the rowid of the current row of the WHERE scan. In ONEPASS_OFF
     ** mode, write the rowid into the FIFO. In either of the one-pass modes,
@@ -466,7 +488,7 @@ void sqlite3Update(
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur,pPk->aiColumn[i],iPk+i);
     }
     if( eOnePass ){
-      sqlite3VdbeChangeToNoop(v, addrOpen);
+      if( addrOpen ) sqlite3VdbeChangeToNoop(v, addrOpen);
       nKey = nPk;
       regKey = iPk;
     }else{
@@ -476,55 +498,56 @@ void sqlite3Update(
     }
   }
 
-  if( eOnePass!=ONEPASS_MULTI ){
-    sqlite3WhereEnd(pWInfo);
-  }
-
-  labelBreak = sqlite3VdbeMakeLabel(v);
-  if( !isView && pUpsert==0 ){
-    int addrOnce = 0;
-
-    /* Open every index that needs updating. */
+  if( pUpsert==0 ){
+    if( eOnePass!=ONEPASS_MULTI ){
+      sqlite3WhereEnd(pWInfo);
+    }
+  
+    if( !isView ){
+      int addrOnce = 0;
+  
+      /* Open every index that needs updating. */
+      if( eOnePass!=ONEPASS_OFF ){
+        if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iBaseCur] = 0;
+        if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iBaseCur] = 0;
+      }
+  
+      if( eOnePass==ONEPASS_MULTI && (nIdx-(aiCurOnePass[1]>=0))>0 ){
+        addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+      }
+      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur,
+                                 aToOpen, 0, 0);
+      if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
+    }
+  
+    /* Top of the update loop */
     if( eOnePass!=ONEPASS_OFF ){
-      if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iBaseCur] = 0;
-      if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iBaseCur] = 0;
-    }
-
-    if( eOnePass==ONEPASS_MULTI && (nIdx-(aiCurOnePass[1]>=0))>0 ){
-      addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
-    }
-    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur, aToOpen,
-                               0, 0);
-    if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
-  }
-
-  /* Top of the update loop */
-  if( eOnePass!=ONEPASS_OFF ){
-    if( !isView && aiCurOnePass[0]!=iDataCur && aiCurOnePass[1]!=iDataCur ){
-      assert( pPk );
-      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
-      VdbeCoverageNeverTaken(v);
-    }
-    if( eOnePass==ONEPASS_SINGLE ){
-      labelContinue = labelBreak;
-    }else{
+      if( !isView && aiCurOnePass[0]!=iDataCur && aiCurOnePass[1]!=iDataCur ){
+        assert( pPk );
+        sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey,nKey);
+        VdbeCoverageNeverTaken(v);
+      }
+      if( eOnePass==ONEPASS_SINGLE ){
+        labelContinue = labelBreak;
+      }else{
+        labelContinue = sqlite3VdbeMakeLabel(v);
+      }
+      sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
+      VdbeCoverageIf(v, pPk==0);
+      VdbeCoverageIf(v, pPk!=0);
+    }else if( pPk ){
       labelContinue = sqlite3VdbeMakeLabel(v);
+      sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
+      addrTop = sqlite3VdbeAddOp2(v, OP_RowData, iEph, regKey);
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
+      VdbeCoverage(v);
+    }else{
+      labelContinue = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet,labelBreak,
+                               regOldRowid);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
+      VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
-    VdbeCoverageIf(v, pPk==0);
-    VdbeCoverageIf(v, pPk!=0);
-  }else if( pPk ){
-    labelContinue = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
-    addrTop = sqlite3VdbeAddOp2(v, OP_RowData, iEph, regKey);
-    sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
-    VdbeCoverage(v);
-  }else{
-    labelContinue = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, labelBreak,
-                             regOldRowid);
-    VdbeCoverage(v);
-    sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
-    VdbeCoverage(v);
   }
 
   /* If the rowid value will change, set register regNewRowid to

@@ -203,62 +203,43 @@ void sqlite3UpsertDoUpdate(
 ){
   Vdbe *v = pParse->pVdbe;
   sqlite3 *db = pParse->db;
-  int regKey;               /* Register(s) containing the key */
-  Expr *pWhere;             /* Where clause for the UPDATE */
-  Expr *pE1, *pE2;
   SrcList *pSrc;            /* FROM clause for the UPDATE */
+  int iDataCur = pUpsert->iDataCur;
 
   assert( v!=0 );
   VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
-  pWhere = sqlite3ExprDup(db, pUpsert->pUpsertWhere, 0);
-  if( pIdx==0 || HasRowid(pTab) ){
-    /* We are dealing with an IPK */
-    regKey = ++pParse->nMem;
-    if( pIdx ){
-      sqlite3VdbeAddOp2(v, OP_IdxRowid, iCur, regKey);
+  if( pIdx && iCur!=iDataCur ){
+    if( HasRowid(pTab) ){
+      int regRowid = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp2(v, OP_IdxRowid, iCur, regRowid);
+      sqlite3VdbeAddOp3(v, OP_SeekRowid, iDataCur, 0, regRowid);
+      VdbeCoverage(v);
+      sqlite3ReleaseTempReg(pParse, regRowid);
     }else{
-      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regKey);
-    }
-    pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
-    if( pE1 ){
-      pE1->pTab = pTab;
-      pE1->iTable = pUpsert->iDataCur;
-      pE1->iColumn = -1;
-    }
-    pE2 = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
-    if( pE2 ){
-      pE2->iTable = regKey;
-      pE2->affinity = SQLITE_AFF_INTEGER;
-    }
-    pWhere = sqlite3ExprAnd(db,pWhere,sqlite3PExpr(pParse, TK_EQ, pE1, pE2));
-  }else{
-    /* a WITHOUT ROWID table */
-    int i, j;
-    for(i=0; i<pIdx->nKeyCol; i++){
-      regKey = ++pParse->nMem;
-      sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regKey);
-      j = pIdx->aiColumn[i];
-      VdbeComment((v, "%s", pTab->aCol[j].zName));
-      pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
-      if( pE1 ){
-        pE1->pTab = pTab;
-        pE1->iTable = pUpsert->iDataCur;
-        pE1->iColumn = j;
+      Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+      int nPk = pPk->nKeyCol;
+      int iPk = pParse->nMem+1;
+      int i;
+      pParse->nMem += nPk;
+      for(i=0; i<nPk; i++){
+        int k;
+        assert( pPk->aiColumn[i]>=0 );
+        k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
+        sqlite3VdbeAddOp3(v, OP_Column, iCur, k, iPk+i);
       }
-      pE2 = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
-      if( pE2 ){
-        pE2->iTable = regKey;
-        pE2->affinity = pTab->zColAff[j];
-      }
-      pWhere = sqlite3ExprAnd(db,pWhere,sqlite3PExpr(pParse, TK_EQ, pE1, pE2));
+      i = sqlite3VdbeAddOp4Int(v, OP_Found, iDataCur, 0, iPk, nPk);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_CORRUPT, OE_Abort);
+      sqlite3VdbeJumpHere(v, i);
     }
   }
   /* pUpsert does not own pUpsertSrc - the outer INSERT statement does.  So
   ** we have to make a copy before passing it down into sqlite3Update() */
   pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
   sqlite3Update(pParse, pSrc, pUpsert->pUpsertSet,
-      pWhere, OE_Abort, 0, 0, pUpsert);
-  pUpsert->pUpsertSet = 0;  /* Will have been deleted by sqlite3Update() */
+      pUpsert->pUpsertWhere, OE_Abort, 0, 0, pUpsert);
+  pUpsert->pUpsertSet = 0;    /* Will have been deleted by sqlite3Update() */
+  pUpsert->pUpsertWhere = 0;  /* Will have been deleted by sqlite3Update() */
   VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
 }
 
