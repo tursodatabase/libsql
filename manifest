@@ -1,5 +1,5 @@
-C Add\stests\sfor\sname\sresolution\sin\sON\sCONFLICT\sclauses.
-D 2018-04-20T17:50:49.589
+C Fix\sa\sVDBE\scomment\son\supsert.\s\sProvide\san\serror\smessage\swhen\supsert\sdetects\nindex\scorruption.
+D 2018-04-20T18:01:31.106
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -558,7 +558,7 @@ F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c ae56e307cf9009290845b79a5f930b7c71613dc9d3ff1d290cdc91c4bd0487d9
-F src/upsert.c 23b386d71adea0350ad829244fb3f9580eb0b95f119b3d6d56e7362e883605e4
+F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 693a3dcbdd8fb2d516c0f46fdbb478838cde675afc1026740e942705aac3c07f
-R edb0f8d75d196edc7e220a2b21ed76d2
-U dan
-Z 98b6f0b67bad58c0b46cab1188f88f7f
+P cf253584ecf7aed04406b4bae78b536818fadfb3fb96c05f2c99954b841db85f
+R f900a0112e9d240a88403e46a25d1dbd
+U drh
+Z 9ce8371b47cee8e5430793df80417131

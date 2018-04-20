@@ -226,11 +226,13 @@ void sqlite3UpsertDoUpdate(
         assert( pPk->aiColumn[i]>=0 );
         k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iCur, k, iPk+i);
-        VdbeComment((v, "%s.%s", pIdx->zName, pTab->aCol[i].zName));
+        VdbeComment((v, "%s.%s", pIdx->zName,
+                    pTab->aCol[pPk->aiColumn[i]].zName));
       }
       i = sqlite3VdbeAddOp4Int(v, OP_Found, iDataCur, 0, iPk, nPk);
       VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_CORRUPT, OE_Abort);
+      sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CORRUPT, OE_Abort, 0, 
+            "corrupt database", P4_STATIC);
       sqlite3VdbeJumpHere(v, i);
     }
   }
