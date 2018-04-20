@@ -2743,8 +2743,14 @@ struct Upsert {
   Index *pUpsertIdx;        /* Constraint that pUpsertTarget identifies */
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
+  /* The fields above comprise the parse tree for the upsert clause.
+  ** The fields below are used to transfer information from the INSERT
+  ** processing down into the UPDATE processing while generating code.
+  ** Upsert owns the memory allocated above, but not the memory below. */
   SrcList *pUpsertSrc;      /* Table to be updated */
   int regData;              /* First register holding array of VALUES */
+  int iDataCur;             /* Index of the data cursor */
+  int iIdxCur;              /* Index of the first index cursor */
 };
 
 /*

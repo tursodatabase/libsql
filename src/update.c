@@ -211,6 +211,11 @@ void sqlite3Update(
     }
     pParse->nTab++;
   }
+  if( pUpsert ){
+    iDataCur = pUpsert->iDataCur;
+    iIdxCur = pUpsert->iIdxCur;
+    pParse->nTab = iBaseCur;
+  }
   pTabList->a[0].iCursor = iDataCur;
 
   /* Allocate space for aXRef[], aRegIdx[], and aToOpen[].  
@@ -476,7 +481,7 @@ void sqlite3Update(
   }
 
   labelBreak = sqlite3VdbeMakeLabel(v);
-  if( !isView ){
+  if( !isView && pUpsert==0 ){
     int addrOnce = 0;
 
     /* Open every index that needs updating. */

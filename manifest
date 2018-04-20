@@ -1,5 +1,5 @@
-C Minor\ssimplification\sof\sthe\scursor\sallocation\slogic\sfor\supdate.
-D 2018-04-20T00:40:19.244
+C Enhance\sUPSERT\sso\sthat\sthe\sUPDATE\suses\sthe\ssame\sset\sof\scursors\sas\sthe\sINSERT.
+D 2018-04-20T13:18:51.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -453,7 +453,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 87b1854f48145d1db15b97128922348d90fbb2a0bd317e4d0ad6eee1361f4b66
+F src/insert.c 465e927874e602a66d6d20bb9cf73099f25a3c067b87725ed7b4ddb0c3fdb327
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
 F src/main.c 10e3897f5d78cef6bcbd1eedc8ccc3fe9e9783d07e052d9d70e57364ded19274
@@ -497,7 +497,7 @@ F src/shell.c.in 8ab4687da814ddc4adf6ea0fcd43ea1eb2784ee6915674dd690759241b7a24b
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h a5c534cda7ec61f7180eee99804a63ee2e4a6412a9da6c4e2a77dee7f8caafb5
+F src/sqliteInt.h 6f26888c81854b1cc8c9a285d75411636a7c6444227e1953a39b2c52323441d5
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -557,8 +557,8 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
-F src/update.c 74ba1a99a5f0c852dff23f4519d7c1623c0b34562343e183ec0fd0656304eb7d
-F src/upsert.c ee5c9e44fac181e86a561c2d315c28f4c0f94e9d3283544bd39aa0e201b0c61c
+F src/update.c 86e6563430a05d9df439cb0253ade0616e3320ef38fa0ed20fb1634e2d9aca0a
+F src/upsert.c 71ebb84f330b0d72675c694303a3801633ff4079af9a40569f7e528219484969
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c6f71115eb933c2aee295bc31e5139112463c28e15a3b3ea242fd9bac168aed9
-R 07cdec54847d408d1664bb947679d0b8
+P fdf71be65835e7e8915d16dd64114de35c4754ef5b94a2af6cac88a94817fb75
+R 326ed33577c38b92a582a5286c34af37
 U drh
-Z ddabed43abbf787bd70f75ea21871bd3
+Z c39fcdbaadf5ac0f8b6a71ef409492a9

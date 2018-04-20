@@ -222,7 +222,7 @@ void sqlite3UpsertDoUpdate(
     pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
     if( pE1 ){
       pE1->pTab = pTab;
-      pE1->iTable = pParse->nTab;
+      pE1->iTable = pUpsert->iDataCur;
       pE1->iColumn = -1;
     }
     pE2 = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
@@ -234,11 +234,6 @@ void sqlite3UpsertDoUpdate(
   }else{
     /* a WITHOUT ROWID table */
     int i, j;
-    int iTab = pParse->nTab+1;
-    Index *pX;
-    for(pX=pTab->pIndex; ALWAYS(pX) && !IsPrimaryKeyIndex(pX); pX=pX->pNext){
-      iTab++;
-    }
     for(i=0; i<pIdx->nKeyCol; i++){
       regKey = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regKey);
@@ -247,7 +242,7 @@ void sqlite3UpsertDoUpdate(
       pE1 = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
       if( pE1 ){
         pE1->pTab = pTab;
-        pE1->iTable = iTab;
+        pE1->iTable = pUpsert->iDataCur;
         pE1->iColumn = j;
       }
       pE2 = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
