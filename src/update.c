@@ -393,6 +393,33 @@ void sqlite3Update(
   /* Jump to labelBreak to abandon further processing of this UPDATE */
   labelBreak = sqlite3VdbeMakeLabel(v);
 
+  /* Not an UPSERT.  Normal processing.  Begin by
+  ** initialize the count of updated rows */
+  if( (db->flags&SQLITE_CountRows)!=0
+   && !pParse->pTriggerTab
+   && !pParse->nested
+   && pUpsert==0
+  ){
+    regRowCount = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
+  }
+
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
+  }else{
+    assert( pPk!=0 );
+    nPk = pPk->nKeyCol;
+    iPk = pParse->nMem+1;
+    pParse->nMem += nPk;
+    regKey = ++pParse->nMem;
+    if( pUpsert==0 ){
+      iEph = pParse->nTab++;
+        sqlite3VdbeAddOp3(v, OP_Null, 0, iPk, iPk+nPk-1);
+      addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
+      sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+    }
+  }
+  
   if( pUpsert ){
     /* If this is an UPSERT, then all cursors have already been opened by
     ** the outer INSERT and the data cursor should be pointing at the row
@@ -402,39 +429,8 @@ void sqlite3Update(
     pWInfo = 0;
     eOnePass = ONEPASS_SINGLE;
     labelContinue = labelBreak;
-    if( !HasRowid(pTab) ){
-      nPk = pPk->nKeyCol;
-      iPk = pParse->nMem+1;
-      pParse->nMem += nPk;
-      regKey = ++pParse->nMem;
-    }
     sqlite3ExprIfFalse(pParse, pWhere, labelBreak, SQLITE_JUMPIFNULL);
   }else{
-    /* Not an UPSERT.  Normal processing.  Begin by
-    ** initialize the count of updated rows */
-    if( (db->flags&SQLITE_CountRows)!=0
-     && !pParse->pTriggerTab
-     && !pParse->nested
-    ){
-      regRowCount = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
-    }
-  
-    if( HasRowid(pTab) ){
-      sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
-    }else{
-      assert( pPk!=0 );
-      nPk = pPk->nKeyCol;
-      iPk = pParse->nMem+1;
-      pParse->nMem += nPk;
-      regKey = ++pParse->nMem;
-      iEph = pParse->nTab++;
-  
-      sqlite3VdbeAddOp3(v, OP_Null, 0, iPk, iPk+nPk-1);
-      addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
-      sqlite3VdbeSetP4KeyInfo(pParse, pPk);
-    }
-  
     /* Begin the database scan. 
     **
     ** Do not consider a single-pass strategy for a multi-row update if

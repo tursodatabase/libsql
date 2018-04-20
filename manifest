@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scursor\sseeks\sduring\supsert\sprocessing.
-D 2018-04-20T15:56:24.816
+C Minor\ssimplification\sof\sthe\sprevious\scheckin.
+D 2018-04-20T16:27:57.105
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -557,7 +557,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
-F src/update.c 2f460e57440cd673bb375b5601029d736f3d604cad2b476e31b1f63b10356bce
+F src/update.c ae56e307cf9009290845b79a5f930b7c71613dc9d3ff1d290cdc91c4bd0487d9
 F src/upsert.c 4f1d04b8cbae727c066cb2203dcefb6c4a4e3c54ba6345e5ec0b515e48381299
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1724,10 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8eb9f8d9b61400c7e12f01ef5c233257b03532221f7c7a8386f7ac2db439626
-R 75119827b876db768b1909c51e8a9eca
-T *branch * upsert-opt2
-T *sym-upsert-opt2 *
-T -sym-trunk *
+P 7c4b6d5475092a3e205f01a6972366e27a404568e8e7ba327f2feefac2ce2c7c
+R ba9fca97057e7381fd94c7852f29e2a1
 U drh
-Z 388a812d3bddf28e9c1a7fb5f5cfd19e
+Z 4f1c2dd14e09fbddc1a4bf8066b62778
