@@ -1535,6 +1535,18 @@ static void handle_D_option(char *z){
   *z = 0;
 }
 
+/* Rember the name of the output directory 
+*/
+static char *outputDir = NULL;
+static void handle_d_option(char *z){
+  outputDir = (char *) malloc( lemonStrlen(z)+1 );
+  if( outputDir==0 ){
+    fprintf(stderr,"out of memory\n");
+    exit(1);
+  }
+  lemon_strcpy(outputDir, z);
+}
+
 static char *user_templatename = NULL;
 static void handle_T_option(char *z){
   user_templatename = (char *) malloc( lemonStrlen(z)+1 );
@@ -1616,9 +1628,11 @@ int main(int argc, char **argv)
   static int mhflag = 0;
   static int nolinenosflag = 0;
   static int noResort = 0;
+  
   static struct s_options options[] = {
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
+    {OPT_FSTR, "d", (char*)&handle_d_option, "Output directory.  Default '.'"},
     {OPT_FSTR, "D", (char*)handle_D_option, "Define an %ifdef macro."},
     {OPT_FSTR, "f", 0, "Ignored.  (Placeholder for -f compiler options.)"},
     {OPT_FLAG, "g", (char*)&rpflag, "Print grammar without actions."},
@@ -3025,13 +3039,28 @@ PRIVATE char *file_makename(struct lemon *lemp, const char *suffix)
 {
   char *name;
   char *cp;
+  char *filename = lemp->filename;
+  int sz;
 
-  name = (char*)malloc( lemonStrlen(lemp->filename) + lemonStrlen(suffix) + 5 );
+  if( outputDir ){
+    cp = strrchr(filename, '/');
+    if( cp ) filename = cp + 1;
+  }
+  sz = lemonStrlen(filename);
+  sz += lemonStrlen(suffix);
+  if( outputDir ) sz += lemonStrlen(outputDir) + 1;
+  sz += 5;
+  name = (char*)malloc( sz );
   if( name==0 ){
     fprintf(stderr,"Can't allocate space for a filename.\n");
     exit(1);
   }
-  lemon_strcpy(name,lemp->filename);
+  name[0] = 0;
+  if( outputDir ){
+    lemon_strcpy(name, outputDir);
+    lemon_strcat(name, "/");
+  }
+  lemon_strcat(name,filename);
   cp = strrchr(name,'.');
   if( cp ) *cp = 0;
   lemon_strcat(name,suffix);
