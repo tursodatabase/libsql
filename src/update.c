@@ -339,7 +339,7 @@ void sqlite3Update(
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, 1, iDb);
+  sqlite3BeginWriteOperation(pParse, pTrigger || hasFK, iDb);
 
   /* Allocate required registers. */
   if( !IsVirtual(pTab) ){
@@ -456,12 +456,15 @@ void sqlite3Update(
     ** strategy that uses an index for which one or more columns are being
     ** updated.  */
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
-    if( eOnePass==ONEPASS_MULTI ){
-      int iCur = aiCurOnePass[1];
-      if( iCur>=0 && iCur!=iDataCur && aToOpen[iCur-iBaseCur] ){
-        eOnePass = ONEPASS_OFF;
+    if( eOnePass!=ONEPASS_SINGLE ){
+      sqlite3MultiWrite(pParse);
+      if( eOnePass==ONEPASS_MULTI ){
+        int iCur = aiCurOnePass[1];
+        if( iCur>=0 && iCur!=iDataCur && aToOpen[iCur-iBaseCur] ){
+          eOnePass = ONEPASS_OFF;
+        }
+        assert( iCur!=iDataCur || !HasRowid(pTab) );
       }
-      assert( iCur!=iDataCur || !HasRowid(pTab) );
     }
   }
 
@@ -884,15 +887,12 @@ static void updateVirtualTable(
 
   if( bOnePass ){
     /* If using the onepass strategy, no-op out the OP_OpenEphemeral coded
-    ** above. Also, if this is a top-level parse (not a trigger), clear the
-    ** multi-write flag so that the VM does not open a statement journal */
+    ** above. */
     sqlite3VdbeChangeToNoop(v, addr);
-    if( sqlite3IsToplevel(pParse) ){
-      pParse->isMultiWrite = 0;
-    }
   }else{
     /* Create a record from the argument register contents and insert it into
     ** the ephemeral table. */
+    sqlite3MultiWrite(pParse);
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
 #ifdef SQLITE_DEBUG
     /* Signal an assert() within OP_MakeRecord that it is allowed to

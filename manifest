@@ -1,5 +1,5 @@
-C Fix\sa\sVDBE\scomment\son\supsert.\s\sProvide\san\serror\smessage\swhen\supsert\sdetects\nindex\scorruption.
-D 2018-04-20T18:01:31.106
+C Avoid\sopening\sa\sstatement\sjournal\son\ssingle-row\sUPDATEs\swithout\striggers\sor\nFK\sconstraints.
+D 2018-04-20T19:32:35.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -557,7 +557,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
-F src/update.c ae56e307cf9009290845b79a5f930b7c71613dc9d3ff1d290cdc91c4bd0487d9
+F src/update.c 9db686e67ba51bb44f268620943a9c4bb43c3e6f44a97b80dc29005382a9e2da
 F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf253584ecf7aed04406b4bae78b536818fadfb3fb96c05f2c99954b841db85f
-R f900a0112e9d240a88403e46a25d1dbd
+P 279c48f6061f766f5437edd6964c0dd1e10399314eb17b6e5ee34df925a776ed
+R f59d9c8d7506cfee5d11867351ba9adc
 U drh
-Z 9ce8371b47cee8e5430793df80417131
+Z f6c31c0d19eadcc475691d30218d7dbb
