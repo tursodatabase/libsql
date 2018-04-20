@@ -201,16 +201,17 @@ void sqlite3Update(
   ** need to occur right after the database cursor.  So go ahead and
   ** allocate enough space, just in case.
   */
-  pTabList->a[0].iCursor = iBaseCur = iDataCur = pParse->nTab++;
+  iBaseCur = iDataCur = pParse->nTab++;
   iIdxCur = iDataCur+1;
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
+  testcase( pPk!=0 && pPk!=pTab->pIndex );
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){
-    if( IsPrimaryKeyIndex(pIdx) && pPk!=0 ){
+    if( pPk==pIdx ){
       iDataCur = pParse->nTab;
-      pTabList->a[0].iCursor = iDataCur;
     }
     pParse->nTab++;
   }
+  pTabList->a[0].iCursor = iDataCur;
 
   /* Allocate space for aXRef[], aRegIdx[], and aToOpen[].  
   ** Initialize aXRef[] and aToOpen[] to their default values.
