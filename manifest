@@ -1,5 +1,5 @@
-C Enhance\sLEMON\sto\strack\swhich\ssymbols\sactually\scarry\ssemantic\scontent.\nOutput\sthe\slist\sof\ssymbols\sthat\sdo\snot\scarry\scontent\sat\sthe\send\sof\sthe\nreport,\sbut\sdo\snot\s(yet)\sdo\sanything\selse\swith\sthe\sinformation.
-D 2018-04-21T20:24:19.958
+C Performance\simprovements\son\sthe\smain\sloop\sof\sthe\sLEMON-generated\sparser.
+D 2018-04-21T22:40:08.247
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1645,7 +1645,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 33892e2a243865f73e6c6e7cecce3c6eb4bb95db4a3d9d86d146c8064feb92fd
-F tool/lempar.c 8ce83cbec62cba95819760de2ebab98a1b0d00861af5876bd456a29e1158229d
+F tool/lempar.c 01f28a4d245f0ea480fab1147c1244fe50434cea924ce258b3e8570a6340a0d3
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b78005b6d41640203c163ffde4faf9336f11f47f42e8b7fe10b95415bbaed028
-R bdad1972dfc51eb7c1aa0a96e8529d8a
+P dcf2bafc159179859b91ffea3a4ebd70b5ca6de9e1d515eaf9afde8cfff26c6c
+R 30c687ea8cbf9562ea971a83f0b60716
 U drh
-Z c5d80323466004edd7fb02f443feea52
+Z 5f81242a2fad2cc1a6991b9a8c5f4a01
