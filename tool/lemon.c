@@ -270,6 +270,8 @@ struct symbol {
   int dtnum;               /* The data type number.  In the parser, the value
                            ** stack is a union.  The .yy%d element of this
                            ** union is the correct data type for this object */
+  int bContent;            /* True if this symbol ever carries content - if
+                           ** it is ever more than just syntax */
   /* The following fields are used by MULTITERMINALs only */
   int nsubsym;             /* Number of constituent symbols in the MULTI */
   struct symbol **subsym;  /* Array of constituent symbols */
@@ -2377,6 +2379,7 @@ to follow the previous rule.");
           for(i=0; i<psp->nrhs; i++){
             rp->rhs[i] = psp->rhs[i];
             rp->rhsalias[i] = psp->alias[i];
+            if( rp->rhsalias[i]!=0 ){ rp->rhs[i]->bContent = 1; }
           }
           rp->lhs = psp->lhs;
           rp->lhsalias = psp->lhsalias;
@@ -3282,7 +3285,7 @@ int PrintAction(
 /* Generate the "*.out" log file */
 void ReportOutput(struct lemon *lemp)
 {
-  int i;
+  int i, n;
   struct state *stp;
   struct config *cfp;
   struct action *ap;
@@ -3322,6 +3325,7 @@ void ReportOutput(struct lemon *lemp)
   }
   fprintf(fp, "----------------------------------------------------\n");
   fprintf(fp, "Symbols:\n");
+  fprintf(fp, "The first-set of non-terminals is shown after the name.\n\n");
   for(i=0; i<lemp->nsymbol; i++){
     int j;
     struct symbol *sp;
@@ -3342,6 +3346,26 @@ void ReportOutput(struct lemon *lemp)
     if( sp->prec>=0 ) fprintf(fp," (precedence=%d)", sp->prec);
     fprintf(fp, "\n");
   }
+  fprintf(fp, "----------------------------------------------------\n");
+  fprintf(fp, "Syntax-only Symbols:\n");
+  fprintf(fp, "The following symbols never carry semantic content.\n\n");
+  for(i=n=0; i<lemp->nsymbol; i++){
+    int w;
+    struct symbol *sp = lemp->symbols[i];
+    if( sp->bContent ) continue;
+    w = (int)strlen(sp->name);
+    if( n>0 && n+w>75 ){
+      fprintf(fp,"\n");
+      n = 0;
+    }
+    if( n>0 ){
+      fprintf(fp, " ");
+      n++;
+    }
+    fprintf(fp, "%s", sp->name);
+    n += w;
+  }
+  if( n>0 ) fprintf(fp, "\n");
   fprintf(fp, "----------------------------------------------------\n");
   fprintf(fp, "Rules:\n");
   for(rp=lemp->rule; rp; rp=rp->next){
