@@ -1,5 +1,5 @@
-C Add\sthe\s%extra_context\sdirective\sto\slemon,\sas\san\salternative\sto\s%extra_argument.\nUse\sthis\sto\simprove\sthe\sperformance\sof\sthe\sparser.
-D 2018-04-21T13:51:42.935
+C A\sfew\smore\stests\sfor\supsert.
+D 2018-04-21T14:11:18.088
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1512,7 +1512,8 @@ F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2
 F test/upsert1.test 934315888a04b4e119ebb6abf558d92bf01d9f94fc8ff0bbc1c7c6015005340f
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
-F test/upsert4.test 1674e23c9d831e39464865a9fa63d855e148eeced8a147e8911febfe7c11f771
+F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
+F test/upsertfault.test f21ca47740841fdb4d61acfa7b17646d773e67724fe8c185b71c018db8a94b35
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1724,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 359725ab36339b443b7745e84f6d27991038ceb063c653805dde17f3eb5a03c5
-R f18739f01eafa1a7e4d368678c4dae1f
-U drh
-Z 626b0434bcf85f73e88ad9b2ab679a11
+P be47a6f5262a43f477700579512fe7112a0872faedcbbe5c3383d13a08af6440
+R 3d53f1674a09601b7b69d45626b4c7ca
+U dan
+Z 2cb81c69429d6672e5a93f24af655a26
