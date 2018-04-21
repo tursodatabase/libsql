@@ -1,5 +1,5 @@
-C Add\sthe\s-dDIRECTORY\scommand-line\soption\sto\sLEMON.
-D 2018-04-20T20:47:49.473
+C Fix\sUPSERT\sso\sthat\sit\splays\snicely\swith\sAUTOINCREMENT.
+D 2018-04-21T03:06:29.663
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -557,7 +557,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
-F src/update.c 78c2e91bcc598f00d5770903c7db55ddb7ffa8ddd91aa1b77e6bbc1a773b45fc
+F src/update.c 0d53281948be1c7f7242151fe9adcdcb02eb9faeb1ee4c98cffd67c12adc3599
 F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -624,7 +624,7 @@ F test/auth.test 3d6cd8f3978ba55b1202574e6ecd79c6e00914ca44b9bfd6c1fe6fb873fcac8
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test db21405b95257c24d29273b6b31d0efc59e1d337e3d5804ba2d1fd4897b1ae49
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
-F test/autoinc.test 6ae8fb69c9f656962464ae4e6667045d0dfc3b46
+F test/autoinc.test 83aad64411583aac9ff0b629159ab4662029ab4e3f47090fce4efd132b304484
 F test/autoindex1.test 788d0894aa3aee1220036d20696e98733fb7ca02265cb1e801700177120c1aeb
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61eb516f83d1a7fe44f72bebe2a2745ab904a02e06e38fb6d932348c49607976
-R 2e3699916a271d97bd14586c4c2b85d2
+P 9cd20475ff3b2ca1a58e441194c921780d25bdb9b9c744a6b4541b888194efb8
+R 1a3926e888b44fb26b041e4405035512
 U drh
-Z 1b705604071ba48d495987879b565b84
+Z a5448d6a099bd200ea71d047714044d6
