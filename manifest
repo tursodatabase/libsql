@@ -1,5 +1,5 @@
-C Fix\sUPSERT\sso\sthat\sit\splays\snicely\swith\sAUTOINCREMENT.
-D 2018-04-21T03:06:29.663
+C Add\sthe\s%extra_context\sdirective\sto\slemon,\sas\san\salternative\sto\s%extra_argument.\nUse\sthis\sto\simprove\sthe\sperformance\sof\sthe\sparser.
+D 2018-04-21T13:51:42.935
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -35,7 +35,7 @@ F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure 80e2dcad8ab88aacc58b55eb0e395f79184b45fcfaa3f36fc20d2e71cfa0a7e4 x
 F configure.ac d4529ebb26ae046269334f1dac65f2b1d6927c2efe22b2ec24dce24dfe4f83dd
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
-F doc/lemon.html 278113807f49d12d04179a93fab92b5b917a08771152ca7949d34e928efa3941
+F doc/lemon.html ac63db056bce24b7368e29319cd1a7eb5f1798cc85922d96a80b6c3a4ff9f51b
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
@@ -481,7 +481,7 @@ F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 1095d04ac7bc6d2cc69167daf6969c1276970c5d14578e259561d2a5477312f3
+F src/parse.y 07784439d25f0bc64a656eece4caecc549b147d213f513cdbeb8430345ec2911
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -497,7 +497,7 @@ F src/shell.c.in 8ab4687da814ddc4adf6ea0fcd43ea1eb2784ee6915674dd690759241b7a24b
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 6f26888c81854b1cc8c9a285d75411636a7c6444227e1953a39b2c52323441d5
+F src/sqliteInt.h e62bf3794b21b073ebeb484833b451f4d0e11abb0cf263c7371ac8375dc68523
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -554,7 +554,7 @@ F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 5b0c661a85f783d35b9883830736eeb63be4aefc4f6b7d9cd081d48782c041e2
+F src/tokenize.c bbde32eac9eb1280f5292bcdfef66f5a57e43176cbf9347e0efab9f75e133f97
 F src/treeview.c 14d5d1254702ec96876aa52642cb31548612384134970409fae333b25b39d6bb
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 0d53281948be1c7f7242151fe9adcdcb02eb9faeb1ee4c98cffd67c12adc3599
@@ -1643,8 +1643,8 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 56eb42d92187547c58646482a49686e114eb4c0e8363820c70b5134bd6bb954f
-F tool/lempar.c 468a155e8729cfbccfe1d85bf60d064f1dab76167a51149ec5c7928a2de63953
+F tool/lemon.c 735516a0aac3aeebc548b5db2acdda7a518e8d7f642b8debb0f46b01cd6ce5af
+F tool/lempar.c 8ce83cbec62cba95819760de2ebab98a1b0d00861af5876bd456a29e1158229d
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1724,7 +1724,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9cd20475ff3b2ca1a58e441194c921780d25bdb9b9c744a6b4541b888194efb8
-R 1a3926e888b44fb26b041e4405035512
+P 359725ab36339b443b7745e84f6d27991038ceb063c653805dde17f3eb5a03c5
+R f18739f01eafa1a7e4d368678c4dae1f
 U drh
-Z a5448d6a099bd200ea71d047714044d6
+Z 626b0434bcf85f73e88ad9b2ab679a11

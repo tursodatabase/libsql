@@ -396,6 +396,7 @@ struct lemon {
   struct symbol *wildcard; /* Token that matches anything */
   char *name;              /* Name of the generated parser */
   char *arg;               /* Declaration of the 3th argument to parser */
+  char *ctx;               /* Declaration of 2nd argument to constructor */
   char *tokentype;         /* Type of terminal symbols in the parser stack */
   char *vartype;           /* The default type of non-terminal symbols */
   char *start;             /* Name of the start symbol for the grammar */
@@ -2493,6 +2494,9 @@ to follow the previous rule.");
         }else if( strcmp(x,"extra_argument")==0 ){
           psp->declargslot = &(psp->gp->arg);
           psp->insertLineMacro = 0;
+        }else if( strcmp(x,"extra_context")==0 ){
+          psp->declargslot = &(psp->gp->ctx);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"token_type")==0 ){
           psp->declargslot = &(psp->gp->tokentype);
           psp->insertLineMacro = 0;
@@ -4198,15 +4202,35 @@ void ReportTable(
     while( i>=1 && (ISALNUM(lemp->arg[i-1]) || lemp->arg[i-1]=='_') ) i--;
     fprintf(out,"#define %sARG_SDECL %s;\n",name,lemp->arg);  lineno++;
     fprintf(out,"#define %sARG_PDECL ,%s\n",name,lemp->arg);  lineno++;
-    fprintf(out,"#define %sARG_FETCH %s = yypParser->%s\n",
+    fprintf(out,"#define %sARG_PARAM ,%s\n",name,&lemp->arg[i]);  lineno++;
+    fprintf(out,"#define %sARG_FETCH %s=yypParser->%s;\n",
                  name,lemp->arg,&lemp->arg[i]);  lineno++;
-    fprintf(out,"#define %sARG_STORE yypParser->%s = %s\n",
+    fprintf(out,"#define %sARG_STORE yypParser->%s=%s;\n",
                  name,&lemp->arg[i],&lemp->arg[i]);  lineno++;
   }else{
-    fprintf(out,"#define %sARG_SDECL\n",name);  lineno++;
-    fprintf(out,"#define %sARG_PDECL\n",name);  lineno++;
+    fprintf(out,"#define %sARG_SDECL\n",name); lineno++;
+    fprintf(out,"#define %sARG_PDECL\n",name); lineno++;
+    fprintf(out,"#define %sARG_PARAM\n",name); lineno++;
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
+  }
+  if( lemp->ctx && lemp->ctx[0] ){
+    i = lemonStrlen(lemp->ctx);
+    while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
+    while( i>=1 && (ISALNUM(lemp->ctx[i-1]) || lemp->ctx[i-1]=='_') ) i--;
+    fprintf(out,"#define %sCTX_SDECL %s;\n",name,lemp->ctx);  lineno++;
+    fprintf(out,"#define %sCTX_PDECL ,%s\n",name,lemp->ctx);  lineno++;
+    fprintf(out,"#define %sCTX_PARAM ,%s\n",name,&lemp->ctx[i]);  lineno++;
+    fprintf(out,"#define %sCTX_FETCH %s=yypParser->%s;\n",
+                 name,lemp->ctx,&lemp->ctx[i]);  lineno++;
+    fprintf(out,"#define %sCTX_STORE yypParser->%s=%s;\n",
+                 name,&lemp->ctx[i],&lemp->ctx[i]);  lineno++;
+  }else{
+    fprintf(out,"#define %sCTX_SDECL\n",name); lineno++;
+    fprintf(out,"#define %sCTX_PDECL\n",name); lineno++;
+    fprintf(out,"#define %sCTX_PARAM\n",name); lineno++;
+    fprintf(out,"#define %sCTX_FETCH\n",name); lineno++;
+    fprintf(out,"#define %sCTX_STORE\n",name); lineno++;
   }
   if( mhflag ){
     fprintf(out,"#endif\n"); lineno++;

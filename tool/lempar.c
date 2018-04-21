@@ -66,8 +66,10 @@
 **                       zero the stack is dynamically sized using realloc()
 **    ParseARG_SDECL     A static variable declaration for the %extra_argument
 **    ParseARG_PDECL     A parameter declaration for the %extra_argument
+**    ParseARG_PARAM     Code to pass %extra_argument as a subroutine parameter
 **    ParseARG_STORE     Code to store %extra_argument into yypParser
 **    ParseARG_FETCH     Code to extract %extra_argument from yypParser
+**    ParseCTX_*         As ParseARG_ except for %extra_context
 **    YYERRORSYMBOL      is the code number of the error symbol.  If not
 **                       defined, then do no error processing.
 **    YYNSTATE           the combined number of states.
@@ -211,6 +213,7 @@ struct yyParser {
   int yyerrcnt;                 /* Shifts left before out of the error */
 #endif
   ParseARG_SDECL                /* A place to hold %extra_argument */
+  ParseCTX_SDECL                /* A place to hold %extra_context */
 #if YYSTACKDEPTH<=0
   int yystksz;                  /* Current side of the stack */
   yyStackEntry *yystack;        /* The parser's stack */
@@ -315,28 +318,29 @@ static int yyGrowStack(yyParser *p){
 
 /* Initialize a new parser that has already been allocated.
 */
-void ParseInit(void *yypParser){
-  yyParser *pParser = (yyParser*)yypParser;
+void ParseInit(void *yypRawParser ParseCTX_PDECL){
+  yyParser *yypParser = (yyParser*)yypRawParser;
+  ParseCTX_STORE
 #ifdef YYTRACKMAXSTACKDEPTH
-  pParser->yyhwm = 0;
+  yypParser->yyhwm = 0;
 #endif
 #if YYSTACKDEPTH<=0
-  pParser->yytos = NULL;
-  pParser->yystack = NULL;
-  pParser->yystksz = 0;
-  if( yyGrowStack(pParser) ){
-    pParser->yystack = &pParser->yystk0;
-    pParser->yystksz = 1;
+  yypParser->yytos = NULL;
+  yypParser->yystack = NULL;
+  yypParser->yystksz = 0;
+  if( yyGrowStack(yypParser) ){
+    yypParser->yystack = &yypParser->yystk0;
+    yypParser->yystksz = 1;
   }
 #endif
 #ifndef YYNOERRORRECOVERY
-  pParser->yyerrcnt = -1;
+  yypParser->yyerrcnt = -1;
 #endif
-  pParser->yytos = pParser->yystack;
-  pParser->yystack[0].stateno = 0;
-  pParser->yystack[0].major = 0;
+  yypParser->yytos = yypParser->yystack;
+  yypParser->yystack[0].stateno = 0;
+  yypParser->yystack[0].major = 0;
 #if YYSTACKDEPTH>0
-  pParser->yystackEnd = &pParser->yystack[YYSTACKDEPTH-1];
+  yypParser->yystackEnd = &yypParser->yystack[YYSTACKDEPTH-1];
 #endif
 }
 
@@ -353,11 +357,14 @@ void ParseInit(void *yypParser){
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE)){
-  yyParser *pParser;
-  pParser = (yyParser*)(*mallocProc)( (YYMALLOCARGTYPE)sizeof(yyParser) );
-  if( pParser ) ParseInit(pParser);
-  return pParser;
+void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE) ParseCTX_PDECL){
+  yyParser *yypParser;
+  yypParser = (yyParser*)(*mallocProc)( (YYMALLOCARGTYPE)sizeof(yyParser) );
+  if( yypParser ){
+    ParseCTX_STORE
+    ParseInit(yypParser ParseCTX_PARAM);
+  }
+  return (void*)yypParser;
 }
 #endif /* Parse_ENGINEALWAYSONSTACK */
 
@@ -374,7 +381,8 @@ static void yy_destructor(
   YYCODETYPE yymajor,     /* Type code for object to destroy */
   YYMINORTYPE *yypminor   /* The object to be destroyed */
 ){
-  ParseARG_FETCH;
+  ParseARG_FETCH
+  ParseCTX_FETCH
   switch( yymajor ){
     /* Here is inserted the actions which take place when a
     ** terminal or non-terminal is destroyed.  This can happen
@@ -596,7 +604,8 @@ static int yy_find_reduce_action(
 ** The following routine is called if the stack overflows.
 */
 static void yyStackOverflow(yyParser *yypParser){
-   ParseARG_FETCH;
+   ParseARG_FETCH
+   ParseCTX_FETCH
 #ifndef NDEBUG
    if( yyTraceFILE ){
      fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
@@ -608,7 +617,8 @@ static void yyStackOverflow(yyParser *yypParser){
 /******** Begin %stack_overflow code ******************************************/
 %%
 /******** End %stack_overflow code ********************************************/
-   ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
+   ParseARG_STORE /* Suppress warning about unused %extra_argument var */
+   ParseCTX_STORE
 }
 
 /*
@@ -701,12 +711,13 @@ static void yy_reduce(
   unsigned int yyruleno,       /* Number of the rule by which to reduce */
   int yyLookahead,             /* Lookahead token, or YYNOCODE if none */
   ParseTOKENTYPE yyLookaheadToken  /* Value of the lookahead token */
+  ParseCTX_PDECL                   /* %extra_context */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
   yyStackEntry *yymsp;            /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
-  ParseARG_FETCH;
+  ParseARG_FETCH
   (void)yyLookahead;
   (void)yyLookaheadToken;
   yymsp = yypParser->yytos;
@@ -789,7 +800,8 @@ static void yy_reduce(
 static void yy_parse_failed(
   yyParser *yypParser           /* The parser */
 ){
-  ParseARG_FETCH;
+  ParseARG_FETCH
+  ParseCTX_FETCH
 #ifndef NDEBUG
   if( yyTraceFILE ){
     fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
@@ -801,7 +813,8 @@ static void yy_parse_failed(
 /************ Begin %parse_failure code ***************************************/
 %%
 /************ End %parse_failure code *****************************************/
-  ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
+  ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
+  ParseCTX_STORE
 }
 #endif /* YYNOERRORRECOVERY */
 
@@ -813,12 +826,14 @@ static void yy_syntax_error(
   int yymajor,                   /* The major type of the error token */
   ParseTOKENTYPE yyminor         /* The minor type of the error token */
 ){
-  ParseARG_FETCH;
+  ParseARG_FETCH
+  ParseCTX_FETCH
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
 %%
 /************ End %syntax_error code ******************************************/
-  ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
+  ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
+  ParseCTX_STORE
 }
 
 /*
@@ -827,7 +842,8 @@ static void yy_syntax_error(
 static void yy_accept(
   yyParser *yypParser           /* The parser */
 ){
-  ParseARG_FETCH;
+  ParseARG_FETCH
+  ParseCTX_FETCH
 #ifndef NDEBUG
   if( yyTraceFILE ){
     fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
@@ -842,7 +858,8 @@ static void yy_accept(
 /*********** Begin %parse_accept code *****************************************/
 %%
 /*********** End %parse_accept code *******************************************/
-  ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
+  ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
+  ParseCTX_STORE
 }
 
 /* The main parser program.
@@ -878,14 +895,14 @@ void Parse(
 #ifdef YYERRORSYMBOL
   int yyerrorhit = 0;   /* True if yymajor has invoked an error */
 #endif
-  yyParser *yypParser;  /* The parser */
+  yyParser *yypParser = (yyParser*)yyp;  /* The parser */
+  ParseCTX_FETCH
+  ParseARG_STORE
 
-  yypParser = (yyParser*)yyp;
   assert( yypParser->yytos!=0 );
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   yyendofinput = (yymajor==0);
 #endif
-  ParseARG_STORE;
 
 #ifndef NDEBUG
   if( yyTraceFILE ){
@@ -903,7 +920,7 @@ void Parse(
   do{
     yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
     if( yyact >= YY_MIN_REDUCE ){
-      yy_reduce(yypParser,yyact-YY_MIN_REDUCE,yymajor,yyminor);
+      yy_reduce(yypParser,yyact-YY_MIN_REDUCE,yymajor,yyminor ParseCTX_PARAM);
     }else if( yyact <= YY_MAX_SHIFTREDUCE ){
       yy_shift(yypParser,yyact,yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY

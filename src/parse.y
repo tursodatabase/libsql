@@ -24,8 +24,9 @@
 %token_type {Token}
 %default_type {Token}
 
-// The generated parser function takes a 4th argument as follows:
-%extra_argument {Parse *pParse}
+// An extra argument to the constructor for the parser, which is available
+// to all actions.
+%extra_context {Parse *pParse}
 
 // This code runs whenever there is a syntax error
 //
