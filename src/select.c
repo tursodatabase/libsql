@@ -5486,10 +5486,10 @@ int sqlite3Select(
   */
   if( p->pPrior ){
     rc = multiSelect(pParse, p, pDest);
-    explainSetInteger(pParse->iSelectId, iRestoreSelectId);
 #if SELECTTRACE_ENABLED
     SELECTTRACE(1,pParse,p,("end compound-select processing\n"));
 #endif
+    explainSetInteger(pParse->iSelectId, iRestoreSelectId);
     return rc;
   }
 #endif
@@ -6274,12 +6274,12 @@ int sqlite3Select(
   ** successful coding of the SELECT.
   */
 select_end:
-  explainSetInteger(pParse->iSelectId, iRestoreSelectId);
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
   sqlite3DbFree(db, sAggInfo.aCol);
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p,("end processing\n"));
 #endif
+  explainSetInteger(pParse->iSelectId, iRestoreSelectId);
   return rc;
 }
