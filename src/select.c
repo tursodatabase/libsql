@@ -3819,9 +3819,8 @@ static int flattenSubquery(
       if( pPrior ) pPrior->pNext = pNew;
       pNew->pNext = p;
       p->pPrior = pNew;
-      SELECTTRACE(2,pParse,p,
-         ("compound-subquery flattener creates %s.%p as peer\n",
-         pNew->zSelName, pNew));
+      SELECTTRACE(2,pParse,p,("compound-subquery flattener"
+                              " creates %s.%p as peer\n",pNew->zSelName, pNew));
     }
     if( db->mallocFailed ) return 1;
   }
@@ -5384,8 +5383,8 @@ int sqlite3Select(
   assert( p->pEList!=0 );
   isAgg = (p->selFlags & SF_Aggregate)!=0;
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x100 ){
-    SELECTTRACE(0x100,pParse,p, ("after name resolution:\n"));
+  if( sqlite3SelectTrace & 0x104 ){
+    SELECTTRACE(0x104,pParse,p, ("after name resolution:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
