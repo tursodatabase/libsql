@@ -1,5 +1,5 @@
-C Ensure\sthat\sthere\sare\sno\sbind-parameters\sor\sincorrect\sschema\sreferences\sin\nthe\sUPSERT\sportions\sof\san\sINSERT\swithin\sa\sTRIGGER.
-D 2018-04-23T13:28:55.513
+C In\sthe\s".selecttrace"\soutput,\sinclude\sthe\sEXPLAIN\sQUERY\sPLAN\siSelectId\sas\npart\sof\seach\sSelect\sidentifier.
+D 2018-04-23T17:02:14.478
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -492,7 +492,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 04ae9b4a30992bf428ec27027972ea9e8b31c59e4cbead8adebda1512be2e450
+F src/select.c f8ce94703bd9a4058202d1858c3bf0041a7e3badf58e545ffe3b6500823cd50f
 F src/shell.c.in 8ab4687da814ddc4adf6ea0fcd43ea1eb2784ee6915674dd690759241b7a24b3
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3064ba3b68ca2a1c54561756e8c898866a19ef6e785d315171cd47827a50c85
-R 3b19cb8d59be4ed87382201d3d4187f9
+P d47a6bdda0ce967a7b70bc6eb56278c8b79525622381ff4adcf04525eafc1461
+R b537b2500de8fa9b5f3090ec22fa10dc
 U drh
-Z a603cee382abca6110f3f281186ab136
+Z 87f373dcce10833c43fff9f08e681aae

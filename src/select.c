@@ -21,7 +21,7 @@
 /***/ int sqlite3SelectTrace = 0;
 # define SELECTTRACE(K,P,S,X)  \
   if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%s/%p: ",(S)->zSelName,(S)),\
+    sqlite3DebugPrintf("%s/%d/%p: ",(S)->zSelName,(P)->iSelectId,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
@@ -5353,7 +5353,7 @@ int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 #if SELECTTRACE_ENABLED
-  SELECTTRACE(1,pParse,p, ("begin processing:\n"));
+  SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->iSelectId));
   if( sqlite3SelectTrace & 0x100 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
