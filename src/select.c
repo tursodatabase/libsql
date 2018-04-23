@@ -5343,6 +5343,9 @@ int sqlite3Select(
 #ifndef SQLITE_OMIT_EXPLAIN
   int iRestoreSelectId = pParse->iSelectId;
   pParse->iSelectId = pParse->iNextSelectId++;
+#if SELECTTRACE_ENABLED
+  p->iSelectId = pParse->iSelectId;
+#endif
 #endif
 
   db = pParse->db;
@@ -5486,7 +5489,10 @@ int sqlite3Select(
   if( p->pPrior ){
     rc = multiSelect(pParse, p, pDest);
 #if SELECTTRACE_ENABLED
-    SELECTTRACE(1,pParse,p,("end compound-select processing\n"));
+    SELECTTRACE(0x1,pParse,p,("end compound-select processing\n"));
+    if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x2000)!=0 ){
+      sqlite3TreeViewSelect(0, p, 0);
+    }
 #endif
     explainSetInteger(pParse->iSelectId, iRestoreSelectId);
     return rc;
@@ -6277,7 +6283,10 @@ select_end:
   sqlite3DbFree(db, sAggInfo.aCol);
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED
-  SELECTTRACE(1,pParse,p,("end processing\n"));
+  SELECTTRACE(0x1,pParse,p,("end processing\n"));
+  if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x2000)!=0 ){
+    sqlite3TreeViewSelect(0, p, 0);
+  }
 #endif
   explainSetInteger(pParse->iSelectId, iRestoreSelectId);
   return rc;

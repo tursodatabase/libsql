@@ -139,10 +139,10 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   do{
 #if SELECTTRACE_ENABLED
     sqlite3TreeViewLine(pView,
-      "SELECT%s%s (%s/%p) selFlags=0x%x nSelectRow=%d",
+      "SELECT%s%s (%s/%d/%p) selFlags=0x%x nSelectRow=%d",
       ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
       ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""),
-      p->zSelName, p, p->selFlags,
+      p->zSelName, p->iSelectId, p, p->selFlags,
       (int)p->nSelectRow
     );
 #else

@@ -2781,6 +2781,7 @@ struct Select {
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
 #if SELECTTRACE_ENABLED
   char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
+  u32 iSelectId;         /* EXPLAIN QUERY PLAN select ID */
 #endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   SrcList *pSrc;         /* The FROM clause */
