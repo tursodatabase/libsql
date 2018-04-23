@@ -103,5 +103,13 @@ do_execsql_test upsert1-410 {
   SELECT a, b FROM t2 ORDER BY a;
 } {four 1 one 3 three 2 two 1}
 
+# Problem found by AFL prior to any release
+do_execsql_test upsert1-500 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y INT UNIQUE);
+  INSERT INTO t1(x,y) SELECT 1,2 WHERE true
+    ON CONFLICT(x) DO UPDATE SET y=max(t1.y,excluded.y) AND true;
+  SELECT * FROM t1;
+} {1 2}
 
 finish_test
