@@ -747,13 +747,19 @@ static YYACTIONTYPE yy_reduce(
 #if YYSTACKDEPTH>0 
     if( yypParser->yytos>=yypParser->yystackEnd ){
       yyStackOverflow(yypParser);
-      return YY_ACCEPT_ACTION;
+      /* The call to yyStackOverflow() above pops the stack until it is
+      ** empty, causing the main parser loop to exit.  So the return value
+      ** is never used and does not matter. */
+      return 0;
     }
 #else
     if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz-1] ){
       if( yyGrowStack(yypParser) ){
         yyStackOverflow(yypParser);
-        return YY_ACCEPT_ACTION;
+        /* The call to yyStackOverflow() above pops the stack until it is
+        ** empty, causing the main parser loop to exit.  So the return value
+        ** is never used and does not matter. */
+        return 0;
       }
       yymsp = yypParser->yytos;
     }
@@ -930,14 +936,8 @@ void Parse(
 #endif
       break;
     }else if( yyact==YY_ACCEPT_ACTION ){
-      /* YY_ACCEPT_ACTION also happens on a stack overflow.  We distingush
-      ** the two cases by observing that on a true accept, there should be
-      ** a single token left on the stack, whereas on a stack overflow,
-      ** the stack has been popped (by yyStackOverflow()) to be empty */
-      if( yypParser->yytos > yypParser->yystack ){
-        yypParser->yytos--;
-        yy_accept(yypParser);
-      }
+      yypParser->yytos--;
+      yy_accept(yypParser);
       return;
     }else{
       assert( yyact == YY_ERROR_ACTION );
