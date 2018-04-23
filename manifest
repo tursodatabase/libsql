@@ -1,5 +1,5 @@
-C Add\sthe\s".imposter\soff"\svariant\sof\sthe\s".imposter"\sdot-command\sin\sthe\sCLI.
-D 2018-04-23T18:38:48.966
+C Fix\sa\sformatting\sissue\sin\sthe\sTreeView\soutput\sfor\sbare\sexpression\slists.
+D 2018-04-23T20:04:38.377
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -555,7 +555,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bbde32eac9eb1280f5292bcdfef66f5a57e43176cbf9347e0efab9f75e133f97
-F src/treeview.c 538eda2ca02fb669a1813cbfc992edae3f62f27c22d1a17d0c1d63f279fa88ff
+F src/treeview.c 6cea286ca9af8b126dae9714799265353387244eba0d451c3cc2cd60946cc4c7
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 0d53281948be1c7f7242151fe9adcdcb02eb9faeb1ee4c98cffd67c12adc3599
 F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca34c2dd20ee071e6f8d60f91dbf474515a688ba57949143483da1641246cb25
-R 135c8cd426c2d9327e1c99d7e5c72174
+P d3dad06ff1b163040c54dd215f30d6669cc2bc339001a362605f26f06eddf98c
+R 6a79ae3f9e3009be6a033ee247894fe2
 U drh
-Z 69ab57c9b66a084942b53eff2c942b4a
+Z 779ffbf89adc6e5e826d930bfdb731f2
