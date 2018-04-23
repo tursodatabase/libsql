@@ -6120,12 +6120,17 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_stmt *pStmt;
     int tnum = 0;
     int i;
-    if( nArg!=3 ){
-      utf8_printf(stderr, "Usage: .imposter INDEX IMPOSTER\n");
+    if( !(nArg==3 || (nArg==2 && sqlite3_stricmp(azArg[1],"off")==0)) ){
+      utf8_printf(stderr, "Usage: .imposter INDEX IMPOSTER\n"
+                          "       .imposter off\n");
       rc = 1;
       goto meta_command_exit;
     }
     open_db(p, 0);
+    if( nArg==2 ){
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
+      goto meta_command_exit;
+    }
     zSql = sqlite3_mprintf("SELECT rootpage FROM sqlite_master"
                            " WHERE name='%q' AND type='index'", azArg[1]);
     sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
