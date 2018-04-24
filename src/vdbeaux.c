@@ -1645,6 +1645,9 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 ** p->explain==2, only OP_Explain instructions are listed and these
 ** are shown in a different format.  p->explain==2 is used to implement
 ** EXPLAIN QUERY PLAN.
+** 2018-04-24:  In p->explain==2 mode, the OP_Init opcodes of triggers
+** are also shown, so that the boundaries between the main program and
+** each trigger are clear.
 **
 ** When p->explain==1, first the main program is listed, then each of
 ** the trigger subprograms are listed one by one.
@@ -1707,7 +1710,7 @@ int sqlite3VdbeList(
     }
   }
 
-  do{
+  while(1){  /* Loop exits via break */
     i = p->pc++;
     if( i>=nRow ){
       p->rc = SQLITE_OK;
@@ -1753,7 +1756,10 @@ int sqlite3VdbeList(
         nRow += pOp->p4.pProgram->nOp;
       }
     }
-  }while( p->explain==2 && pOp->opcode!=OP_Explain );
+    if( p->explain<2 ) break;
+    if( pOp->opcode==OP_Explain ) break;
+    if( pOp->opcode==OP_Init && p->pc>1 ) break;
+  }
 
   if( rc==SQLITE_OK ){
     if( db->u1.isInterrupted ){
