@@ -1753,7 +1753,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** expression may be evaluated after OP_NullRow has been executed on
     ** the cursor. In this case it is important to do the full evaluation,
     ** as the result of the expression may not be NULL, even if all table
-    ** column values are.
+    ** column values are.  https://www.sqlite.org/src/info/7fa8049685b50b5a
     */
     if( pLevel->iLeftJoin==0 ){
       whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);

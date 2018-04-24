@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sread\svalues\sfrom\sindexes-on-expressions\sif\sthe\sindex\sis\son\nthe\sRHS\sof\sa\sLEFT\sJOIN.\sThis\swon't\swork\sif\sthe\sindex\scursor\spoints\sat\sa\nnull-row.\sFix\sfor\s[7fa80496].
-D 2018-04-24T14:05:14.035
+C Add\sa\shyperlink\sto\sthe\sticket\son\sthe\scode\scomment\sfor\sthe\sfix\sto\nticket\s[7fa8049685b50b5aeb0c2].
+D 2018-04-24T14:18:49.272
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -578,7 +578,7 @@ F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c d6e5f2056e9a60251e79780fc598a5943e88a3c0fa0019d54922e59f99019287
 F src/whereInt.h 2610cb87dd95509995b63decc674c60f2757697a206cfe0c085ee53d9c43cfff
-F src/wherecode.c 4de722661ba6195b021a74cc1e83b16371c915bdc85bea64fcf6eb2393e7ec34
+F src/wherecode.c 52225f6b519c7742a593341a13308d8fd08af7f91af0fa765c6adad85978d525
 F src/whereexpr.c 53532be687e12f3cd314f1e204cd4fbdac7ad250e918a182b048121e16e828ae
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f53716ee2ab5a6d47a5551529aae526bb39058f4a8e11e6243b32c1ddc25a19e
-R 576dda7dc4ffa6d3127f5299077dad5b
-U dan
-Z ae1de0364f217c69ebe7b240252e823b
+P b8ef967ab1bebf2846c06c4f7200d6fa1c60e52e55711ea171c25ef1331f8a24
+R f150cf8d1e1e1e2c389bb10ba8bf92e4
+U drh
+Z 0702240697f01da315eec49a319fa211
