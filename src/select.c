@@ -5343,9 +5343,6 @@ int sqlite3Select(
 #ifndef SQLITE_OMIT_EXPLAIN
   int iRestoreSelectId = pParse->iSelectId;
   pParse->iSelectId = pParse->iNextSelectId++;
-#if SELECTTRACE_ENABLED
-  p->iSelectId = pParse->iSelectId;
-#endif
 #endif
 
   db = pParse->db;
@@ -5355,6 +5352,9 @@ int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 #if SELECTTRACE_ENABLED
+#ifndef SQLITE_OMIT_EXPLAIN
+  p->iSelectId = pParse->iSelectId;
+#endif
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->iSelectId));
   if( sqlite3SelectTrace & 0x100 ){
     sqlite3TreeViewSelect(0, p, 0);

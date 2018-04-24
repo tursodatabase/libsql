@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\ssqlite3ExprCompare()\sassociated\swith\sUPSERT.
-D 2018-04-23T20:38:40.741
+C Fix\sto\scheck-in\s[ca34c2dd20ee071e]\s-\savoid\sa\sNULL\spointer\sdereference\nfollowing\san\sOOM.
+D 2018-04-24T00:08:09.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -492,7 +492,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 9da61170e4177c47b5f60450d479eaf37e83715aeedb29584087942acba28e49
+F src/select.c 3dbce4379836189acbc5719f40125f3d1e0dbaee024ec4550ab449744a8cb074
 F src/shell.c.in 4115df367fab829469079b04557f09fcd60ed56bdcbafa97ec62f3a62290a998
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6356817815fe986c4d89475194e0537ebd46582d6df1034482bf08521182bdf
-R fe6fd22c7cdf5526786a828a2e820405
+P 67d0b2c15299dd20bca7254ecb33e71b5eee6024e2709bfdc36f877bf2a5679f
+R 556098d74f6fb1b5877f2775f0fb7380
 U drh
-Z c8b6a3bd0cfd45a9a813206f1c431636
+Z 1ba8e0d3dcb0f7f253eb4d139ecc7c4d
