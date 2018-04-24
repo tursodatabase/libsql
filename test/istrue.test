@@ -123,4 +123,39 @@ do_catchsql_test istrue-524 {
   INSERT INTO t2 VALUES(2,true,false,null,false);
 } {1 {CHECK constraint failed: t2}}
 
+foreach {tn val} [list 1 NaN 2 -NaN 3 NaN0 4 -NaN0 5 Inf 6 -Inf] {
+  do_execsql_test istrue-600.$tn.1 {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x);
+  }
+  do_test istrue-600.$tn.2 {
+    set ::STMT [sqlite3_prepare db "INSERT INTO t1 VALUES(?)" -1 TAIL]
+    sqlite3_bind_double $::STMT 1 $val
+    sqlite3_step $::STMT
+    sqlite3_reset $::STMT
+    sqlite3_finalize $::STMT
+  } {SQLITE_OK}
+  do_execsql_test istrue-600.$tn.3 {
+    SELECT x IS TRUE FROM t1;
+  } [expr {$tn in [list 5 6] ? {1} : {0}}]
+  do_execsql_test istrue-600.$tn.4 {
+    SELECT x IS FALSE FROM t1;
+  } {0}
+}
+
+do_execsql_test istrue-700 {
+  CREATE TABLE t7(
+    a INTEGER PRIMARY KEY,
+    b BOOLEAN DEFAULT false,
+    c BOOLEAN DEFAULT true
+  );
+  INSERT INTO t7(a) VALUES(1);
+  INSERT INTO t7(a,b,c) VALUES(2,true,false);
+  ALTER TABLE t7 ADD COLUMN d BOOLEAN DEFAULT false;
+  ALTER TABLE t7 ADD COLUMN e BOOLEAN DEFAULT true;
+  INSERT INTO t7(a,b,c) VALUES(3,true,false);
+  INSERT INTO t7 VALUES(4,false,true,true,false);
+  SELECT *,'x' FROM t7 ORDER BY a;
+} {1 0 1 0 1 x 2 1 0 0 1 x 3 1 0 0 1 x 4 0 1 1 0 x}
+
 finish_test

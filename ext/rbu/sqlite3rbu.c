@@ -1806,7 +1806,7 @@ static void rbuCreateImposterTable2(sqlite3rbu *p, RbuObjIter *pIter){
         int iCid = sqlite3_column_int(pXInfo, 1);
         int bDesc = sqlite3_column_int(pXInfo, 3);
         const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
-        zCols = rbuMPrintf(p, "%z%sc%d %s COLLATE %s", zCols, zComma, 
+        zCols = rbuMPrintf(p, "%z%sc%d %s COLLATE %Q", zCols, zComma, 
             iCid, pIter->azTblType[iCid], zCollate
         );
         zPk = rbuMPrintf(p, "%z%sc%d%s", zPk, zComma, iCid, bDesc?" DESC":"");
@@ -1867,7 +1867,7 @@ static void rbuCreateImposterTable(sqlite3rbu *p, RbuObjIter *pIter){
         ** "PRIMARY KEY" to the imposter table column declaration. */
         zPk = "PRIMARY KEY ";
       }
-      zSql = rbuMPrintf(p, "%z%s\"%w\" %s %sCOLLATE %s%s", 
+      zSql = rbuMPrintf(p, "%z%s\"%w\" %s %sCOLLATE %Q%s", 
           zSql, zComma, zCol, pIter->azTblType[iCol], zPk, zColl,
           (pIter->abNotNull[iCol] ? " NOT NULL" : "")
       );

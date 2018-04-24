@@ -238,7 +238,7 @@ void sqlite3DeleteFrom(
   AuthContext sContext;  /* Authorization context */
   NameContext sNC;       /* Name context to resolve expressions in */
   int iDb;               /* Database number */
-  int memCnt = -1;       /* Memory cell used for change counting */
+  int memCnt = 0;        /* Memory cell used for change counting */
   int rcauth;            /* Value returned by authorization callback */
   int eOnePass;          /* ONEPASS_OFF or _SINGLE or _MULTI */
   int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
@@ -343,7 +343,7 @@ void sqlite3DeleteFrom(
     goto delete_from_cleanup;
   }
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, 1, iDb);
+  sqlite3BeginWriteOperation(pParse, bComplex, iDb);
 
   /* If we are trying to delete from a view, realize that view into
   ** an ephemeral table.
@@ -371,7 +371,10 @@ void sqlite3DeleteFrom(
   /* Initialize the counter of the number of rows deleted, if
   ** we are counting rows.
   */
-  if( db->flags & SQLITE_CountRows ){
+  if( (db->flags & SQLITE_CountRows)!=0
+   && !pParse->nested
+   && !pParse->pTriggerTab
+  ){
     memCnt = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, memCnt);
   }
@@ -399,7 +402,7 @@ void sqlite3DeleteFrom(
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
     if( HasRowid(pTab) ){
-      sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
+      sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt ? memCnt : -1,
                         pTab->zName, P4_STATIC);
     }
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -444,9 +447,10 @@ void sqlite3DeleteFrom(
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     assert( IsVirtual(pTab)==0 || eOnePass!=ONEPASS_MULTI );
     assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
+    if( eOnePass!=ONEPASS_SINGLE ) sqlite3MultiWrite(pParse);
   
     /* Keep track of the number of rows to be deleted */
-    if( db->flags & SQLITE_CountRows ){
+    if( memCnt ){
       sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
     }
   
@@ -589,7 +593,7 @@ void sqlite3DeleteFrom(
   ** generating code because of a call to sqlite3NestedParse(), do not
   ** invoke the callback function.
   */
-  if( (db->flags&SQLITE_CountRows) && !pParse->nested && !pParse->pTriggerTab ){
+  if( memCnt ){
     sqlite3VdbeAddOp2(v, OP_ResultRow, memCnt, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows deleted", SQLITE_STATIC);

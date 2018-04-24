@@ -59,7 +59,6 @@ do_eqp_test 1.2 {
   SELECT * FROM x1 WHERE a IN ('abc', 'def');
 } {
   0 0 0 {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
-  0 0 0 {EXECUTE LIST SUBQUERY 1}
 }
 
 #-------------------------------------------------------------------------
@@ -146,17 +145,14 @@ foreach {tn mode} {
 
   set plan(use) {
     0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'}
-    0 0 0 {EXECUTE LIST SUBQUERY 1}
     0 0 0 {USE TEMP B-TREE FOR ORDER BY}
   }
   set plan(omit) {
     0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'}
-    0 0 0 {EXECUTE LIST SUBQUERY 1}
     0 0 0 {USE TEMP B-TREE FOR ORDER BY}
   }
   set plan(use2) {
     0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x}
-    0 0 0 {EXECUTE LIST SUBQUERY 1}
     0 0 0 {USE TEMP B-TREE FOR ORDER BY}
   }
 

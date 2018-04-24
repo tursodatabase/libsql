@@ -961,19 +961,18 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 /*
 ** CAPI3REF: Apply A Changeset To A Database
 **
-** Apply a changeset to a database. This function attempts to update the
-** "main" database attached to handle db with the changes found in the
-** changeset passed via the second and third arguments.
+** Apply a changeset or patchset to a database. These functions attempt to
+** update the "main" database attached to handle db with the changes found in
+** the changeset passed via the second and third arguments. 
 **
-** The fourth argument (xFilter) passed to this function is the "filter
+** The fourth argument (xFilter) passed to these functions is the "filter
 ** callback". If it is not NULL, then for each table affected by at least one
 ** change in the changeset, the filter callback is invoked with
 ** the table name as the second argument, and a copy of the context pointer
-** passed as the sixth argument to this function as the first. If the "filter
-** callback" returns zero, then no attempt is made to apply any changes to 
-** the table. Otherwise, if the return value is non-zero or the xFilter
-** argument to this function is NULL, all changes related to the table are
-** attempted.
+** passed as the sixth argument as the first. If the "filter callback"
+** returns zero, then no attempt is made to apply any changes to the table.
+** Otherwise, if the return value is non-zero or the xFilter argument to
+** is NULL, all changes related to the table are attempted.
 **
 ** For each table that is not excluded by the filter callback, this function 
 ** tests that the target database contains a compatible table. A table is 
@@ -1018,7 +1017,7 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 **
 ** <dl>
 ** <dt>DELETE Changes<dd>
-**   For each DELETE change, this function checks if the target database 
+**   For each DELETE change, the function checks if the target database 
 **   contains a row with the same primary key value (or values) as the 
 **   original row values stored in the changeset. If it does, and the values 
 **   stored in all non-primary key columns also match the values stored in 
@@ -1063,7 +1062,7 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 **   [SQLITE_CHANGESET_REPLACE].
 **
 ** <dt>UPDATE Changes<dd>
-**   For each UPDATE change, this function checks if the target database 
+**   For each UPDATE change, the function checks if the target database 
 **   contains a row with the same primary key value (or values) as the 
 **   original row values stored in the changeset. If it does, and the values 
 **   stored in all modified non-primary key columns also match the values
@@ -1094,11 +1093,28 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** This can be used to further customize the applications conflict
 ** resolution strategy.
 **
-** All changes made by this function are enclosed in a savepoint transaction.
+** All changes made by these functions are enclosed in a savepoint transaction.
 ** If any other error (aside from a constraint failure when attempting to
 ** write to the target database) occurs, then the savepoint transaction is
 ** rolled back, restoring the target database to its original state, and an 
 ** SQLite error code returned.
+**
+** If the output parameters (ppRebase) and (pnRebase) are non-NULL and
+** the input is a changeset (not a patchset), then sqlite3changeset_apply_v2()
+** may set (*ppRebase) to point to a "rebase" that may be used with the 
+** sqlite3_rebaser APIs buffer before returning. In this case (*pnRebase)
+** is set to the size of the buffer in bytes. It is the responsibility of the
+** caller to eventually free any such buffer using sqlite3_free(). The buffer
+** is only allocated and populated if one or more conflicts were encountered
+** while applying the patchset. See comments surrounding the sqlite3_rebaser
+** APIs for further details.
+**
+** The behavior of sqlite3changeset_apply_v2() and its streaming equivalent
+** may be modified by passing a combination of
+** [SQLITE_CHANGESETAPPLY_NOSAVEPOINT | supported flags] as the 9th parameter.
+**
+** Note that the sqlite3changeset_apply_v2() API is still <b>experimental</b>
+** and therefore subject to change.
 */
 int sqlite3changeset_apply(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
@@ -1115,6 +1131,41 @@ int sqlite3changeset_apply(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 );
+int sqlite3changeset_apply_v2(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int nChangeset,                 /* Size of changeset in bytes */
+  void *pChangeset,               /* Changeset blob */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    const char *zTab              /* Table name */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase, /* OUT: Rebase data */
+  int flags                       /* Combination of SESSION_APPLY_* flags */
+);
+
+/*
+** CAPI3REF: Flags for sqlite3changeset_apply_v2
+**
+** The following flags may passed via the 9th parameter to
+** [sqlite3changeset_apply_v2] and [sqlite3changeset_apply_v2_strm]:
+**
+** <dl>
+** <dt>SQLITE_CHANGESETAPPLY_NOSAVEPOINT <dd>
+**   Usually, the sessions module encloses all operations performed by
+**   a single call to apply_v2() or apply_v2_strm() in a [SAVEPOINT]. The
+**   SAVEPOINT is committed if the changeset or patchset is successfully
+**   applied, or rolled back if an error occurs. Specifying this flag
+**   causes the sessions module to omit this savepoint. In this case, if the
+**   caller has an open transaction or savepoint when apply_v2() is called, 
+**   it may revert the partially applied changeset by rolling it back.
+*/
+#define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
 
 /* 
 ** CAPI3REF: Constants Passed To The Conflict Handler
@@ -1212,6 +1263,161 @@ int sqlite3changeset_apply(
 #define SQLITE_CHANGESET_REPLACE    1
 #define SQLITE_CHANGESET_ABORT      2
 
+/* 
+** CAPI3REF: Rebasing changesets
+** EXPERIMENTAL
+**
+** Suppose there is a site hosting a database in state S0. And that
+** modifications are made that move that database to state S1 and a
+** changeset recorded (the "local" changeset). Then, a changeset based
+** on S0 is received from another site (the "remote" changeset) and 
+** applied to the database. The database is then in state 
+** (S1+"remote"), where the exact state depends on any conflict
+** resolution decisions (OMIT or REPLACE) made while applying "remote".
+** Rebasing a changeset is to update it to take those conflict 
+** resolution decisions into account, so that the same conflicts
+** do not have to be resolved elsewhere in the network. 
+**
+** For example, if both the local and remote changesets contain an
+** INSERT of the same key on "CREATE TABLE t1(a PRIMARY KEY, b)":
+**
+**   local:  INSERT INTO t1 VALUES(1, 'v1');
+**   remote: INSERT INTO t1 VALUES(1, 'v2');
+**
+** and the conflict resolution is REPLACE, then the INSERT change is
+** removed from the local changeset (it was overridden). Or, if the
+** conflict resolution was "OMIT", then the local changeset is modified
+** to instead contain:
+**
+**           UPDATE t1 SET b = 'v2' WHERE a=1;
+**
+** Changes within the local changeset are rebased as follows:
+**
+** <dl>
+** <dt>Local INSERT<dd>
+**   This may only conflict with a remote INSERT. If the conflict 
+**   resolution was OMIT, then add an UPDATE change to the rebased
+**   changeset. Or, if the conflict resolution was REPLACE, add
+**   nothing to the rebased changeset.
+**
+** <dt>Local DELETE<dd>
+**   This may conflict with a remote UPDATE or DELETE. In both cases the
+**   only possible resolution is OMIT. If the remote operation was a
+**   DELETE, then add no change to the rebased changeset. If the remote
+**   operation was an UPDATE, then the old.* fields of change are updated
+**   to reflect the new.* values in the UPDATE.
+**
+** <dt>Local UPDATE<dd>
+**   This may conflict with a remote UPDATE or DELETE. If it conflicts
+**   with a DELETE, and the conflict resolution was OMIT, then the update
+**   is changed into an INSERT. Any undefined values in the new.* record
+**   from the update change are filled in using the old.* values from
+**   the conflicting DELETE. Or, if the conflict resolution was REPLACE,
+**   the UPDATE change is simply omitted from the rebased changeset.
+**
+**   If conflict is with a remote UPDATE and the resolution is OMIT, then
+**   the old.* values are rebased using the new.* values in the remote
+**   change. Or, if the resolution is REPLACE, then the change is copied
+**   into the rebased changeset with updates to columns also updated by
+**   the conflicting remote UPDATE removed. If this means no columns would 
+**   be updated, the change is omitted.
+** </dl>
+**
+** A local change may be rebased against multiple remote changes 
+** simultaneously. If a single key is modified by multiple remote 
+** changesets, they are combined as follows before the local changeset
+** is rebased:
+**
+** <ul>
+**    <li> If there has been one or more REPLACE resolutions on a
+**         key, it is rebased according to a REPLACE.
+**
+**    <li> If there have been no REPLACE resolutions on a key, then
+**         the local changeset is rebased according to the most recent
+**         of the OMIT resolutions.
+** </ul>
+**
+** Note that conflict resolutions from multiple remote changesets are 
+** combined on a per-field basis, not per-row. This means that in the 
+** case of multiple remote UPDATE operations, some fields of a single 
+** local change may be rebased for REPLACE while others are rebased for 
+** OMIT.
+**
+** In order to rebase a local changeset, the remote changeset must first
+** be applied to the local database using sqlite3changeset_apply_v2() and
+** the buffer of rebase information captured. Then:
+**
+** <ol>
+**   <li> An sqlite3_rebaser object is created by calling 
+**        sqlite3rebaser_create().
+**   <li> The new object is configured with the rebase buffer obtained from
+**        sqlite3changeset_apply_v2() by calling sqlite3rebaser_configure().
+**        If the local changeset is to be rebased against multiple remote
+**        changesets, then sqlite3rebaser_configure() should be called
+**        multiple times, in the same order that the multiple
+**        sqlite3changeset_apply_v2() calls were made.
+**   <li> Each local changeset is rebased by calling sqlite3rebaser_rebase().
+**   <li> The sqlite3_rebaser object is deleted by calling
+**        sqlite3rebaser_delete().
+** </ol>
+*/
+typedef struct sqlite3_rebaser sqlite3_rebaser;
+
+/*
+** CAPI3REF: Create a changeset rebaser object.
+** EXPERIMENTAL
+**
+** Allocate a new changeset rebaser object. If successful, set (*ppNew) to
+** point to the new object and return SQLITE_OK. Otherwise, if an error
+** occurs, return an SQLite error code (e.g. SQLITE_NOMEM) and set (*ppNew) 
+** to NULL. 
+*/
+int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
+
+/*
+** CAPI3REF: Configure a changeset rebaser object.
+** EXPERIMENTAL
+**
+** Configure the changeset rebaser object to rebase changesets according
+** to the conflict resolutions described by buffer pRebase (size nRebase
+** bytes), which must have been obtained from a previous call to
+** sqlite3changeset_apply_v2().
+*/
+int sqlite3rebaser_configure(
+  sqlite3_rebaser*, 
+  int nRebase, const void *pRebase
+); 
+
+/*
+** CAPI3REF: Rebase a changeset
+** EXPERIMENTAL
+**
+** Argument pIn must point to a buffer containing a changeset nIn bytes
+** in size. This function allocates and populates a buffer with a copy
+** of the changeset rebased rebased according to the configuration of the
+** rebaser object passed as the first argument. If successful, (*ppOut)
+** is set to point to the new buffer containing the rebased changset and 
+** (*pnOut) to its size in bytes and SQLITE_OK returned. It is the
+** responsibility of the caller to eventually free the new buffer using
+** sqlite3_free(). Otherwise, if an error occurs, (*ppOut) and (*pnOut)
+** are set to zero and an SQLite error code returned.
+*/
+int sqlite3rebaser_rebase(
+  sqlite3_rebaser*,
+  int nIn, const void *pIn, 
+  int *pnOut, void **ppOut 
+);
+
+/*
+** CAPI3REF: Delete a changeset rebaser object.
+** EXPERIMENTAL
+**
+** Delete the changeset rebaser object and all associated resources. There
+** should be one call to this function for each successful invocation
+** of sqlite3rebaser_create().
+*/
+void sqlite3rebaser_delete(sqlite3_rebaser *p); 
+
 /*
 ** CAPI3REF: Streaming Versions of API functions.
 **
@@ -1221,6 +1427,7 @@ int sqlite3changeset_apply(
 ** <table border=1 style="margin-left:8ex;margin-right:8ex">
 **   <tr><th>Streaming function<th>Non-streaming equivalent</th>
 **   <tr><td>sqlite3changeset_apply_strm<td>[sqlite3changeset_apply] 
+**   <tr><td>sqlite3changeset_apply_strm_v2<td>[sqlite3changeset_apply_v2] 
 **   <tr><td>sqlite3changeset_concat_strm<td>[sqlite3changeset_concat] 
 **   <tr><td>sqlite3changeset_invert_strm<td>[sqlite3changeset_invert] 
 **   <tr><td>sqlite3changeset_start_strm<td>[sqlite3changeset_start] 
@@ -1316,6 +1523,23 @@ int sqlite3changeset_apply_strm(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 );
+int sqlite3changeset_apply_v2_strm(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
+  void *pIn,                                          /* First arg for xInput */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    const char *zTab              /* Table name */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase,
+  int flags
+);
 int sqlite3changeset_concat_strm(
   int (*xInputA)(void *pIn, void *pData, int *pnData),
   void *pInA,
@@ -1352,6 +1576,13 @@ int sqlite3changegroup_add_strm(sqlite3_changegroup*,
 int sqlite3changegroup_output_strm(sqlite3_changegroup*,
     int (*xOutput)(void *pOut, const void *pData, int nData), 
     void *pOut
+);
+int sqlite3rebaser_rebase_strm(
+  sqlite3_rebaser *pRebaser,
+  int (*xInput)(void *pIn, void *pData, int *pnData),
+  void *pIn,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
 );
 
 

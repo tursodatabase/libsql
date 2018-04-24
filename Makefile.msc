@@ -1193,7 +1193,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
-         update.lo util.lo vacuum.lo \
+         update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
          utf.lo vtab.lo
@@ -1292,6 +1292,7 @@ SRC01 = \
   $(TOP)\src\trigger.c \
   $(TOP)\src\utf.c \
   $(TOP)\src\update.c \
+  $(TOP)\src\upsert.c \
   $(TOP)\src\util.c \
   $(TOP)\src\vacuum.c \
   $(TOP)\src\vdbe.c \
@@ -1672,7 +1673,7 @@ $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 sqlite3.def:	libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup)?_[^@]*)(?:@\d+)?$$" \1 \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup|rebaser)?_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
 # <</block2>>
 
@@ -1993,6 +1994,9 @@ trigger.lo:	$(TOP)\src\trigger.c $(HDR)
 update.lo:	$(TOP)\src\update.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\update.c
 
+upsert.lo:	$(TOP)\src\upsert.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\upsert.c
+
 utf.lo:	$(TOP)\src\utf.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\utf.c
 
@@ -2091,7 +2095,7 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 # Source files that go into making shell.c
 SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
-        $(TOP)\ext\misc\appendvfs.c \
+	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\completion.c \

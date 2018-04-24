@@ -392,9 +392,28 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   assert( j<p->nLabel );
   assert( j>=0 );
   if( p->aLabel ){
+#ifdef SQLITE_DEBUG
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
+    }
+#endif
+    assert( p->aLabel[j]==(-1) ); /* Labels may only be resolved once */
     p->aLabel[j] = v->nOp;
   }
 }
+
+#ifdef SQLITE_COVERAGE_TEST
+/*
+** Return TRUE if and only if the label x has already been resolved.
+** Return FALSE (zero) if label x is still unresolved.
+**
+** This routine is only used inside of testcase() macros, and so it
+** only exists when measuring test coverage.
+*/
+int sqlite3VdbeLabelHasBeenResolved(Vdbe *v, int x){
+  return v->pParse->aLabel && v->pParse->aLabel[ADDR(x)]>=0;
+}
+#endif /* SQLITE_COVERAGE_TEST */
 
 /*
 ** Mark the VDBE as one that can only be run one time.
@@ -1626,6 +1645,9 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 ** p->explain==2, only OP_Explain instructions are listed and these
 ** are shown in a different format.  p->explain==2 is used to implement
 ** EXPLAIN QUERY PLAN.
+** 2018-04-24:  In p->explain==2 mode, the OP_Init opcodes of triggers
+** are also shown, so that the boundaries between the main program and
+** each trigger are clear.
 **
 ** When p->explain==1, first the main program is listed, then each of
 ** the trigger subprograms are listed one by one.
@@ -1688,7 +1710,7 @@ int sqlite3VdbeList(
     }
   }
 
-  do{
+  while(1){  /* Loop exits via break */
     i = p->pc++;
     if( i>=nRow ){
       p->rc = SQLITE_OK;
@@ -1734,7 +1756,10 @@ int sqlite3VdbeList(
         nRow += pOp->p4.pProgram->nOp;
       }
     }
-  }while( p->explain==2 && pOp->opcode!=OP_Explain );
+    if( p->explain<2 ) break;
+    if( pOp->opcode==OP_Explain ) break;
+    if( pOp->opcode==OP_Init && p->pc>1 ) break;
+  }
 
   if( rc==SQLITE_OK ){
     if( db->u1.isInterrupted ){

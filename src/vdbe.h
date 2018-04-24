@@ -220,6 +220,9 @@ void sqlite3VdbeClearObject(sqlite3*,Vdbe*);
 void sqlite3VdbeMakeReady(Vdbe*,Parse*);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);
+#ifdef SQLITE_COVERAGE_TEST
+  int sqlite3VdbeLabelHasBeenResolved(Vdbe*,int);
+#endif
 int sqlite3VdbeCurrentAddr(Vdbe*);
 #ifdef SQLITE_DEBUG
   int sqlite3VdbeAssertMayAbort(Vdbe *, int);

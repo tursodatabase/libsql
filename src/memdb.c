@@ -10,7 +10,7 @@
 **
 ******************************************************************************
 **
-** This file implements in-memory VFS.  A database is held as a contiguous
+** This file implements an in-memory VFS. A database is held as a contiguous
 ** block of memory.
 **
 ** This file also implements interface sqlite3_serialize() and

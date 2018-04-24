@@ -1363,6 +1363,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
     pItem->bSpanIsTab = pOldItem->bSpanIsTab;
+    pItem->bSorterRef = pOldItem->bSorterRef;
     pItem->u = pOldItem->u;
   }
   return pNew;
@@ -1825,6 +1826,8 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       }
       /* Fall through */
     case TK_IF_NULL_ROW:
+    case TK_REGISTER:
+      testcase( pExpr->op==TK_REGISTER );
       testcase( pExpr->op==TK_IF_NULL_ROW );
       pWalker->eCode = 0;
       return WRC_Abort;
@@ -1842,8 +1845,8 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       }
       /* Fall through */
     default:
-      testcase( pExpr->op==TK_SELECT ); /* sqlite3SelectWalkFail will disallow */
-      testcase( pExpr->op==TK_EXISTS ); /* sqlite3SelectWalkFail will disallow */
+      testcase( pExpr->op==TK_SELECT ); /* sqlite3SelectWalkFail() disallows */
+      testcase( pExpr->op==TK_EXISTS ); /* sqlite3SelectWalkFail() disallows */
       return WRC_Continue;
   }
 }
@@ -2606,17 +2609,6 @@ int sqlite3CodeSubselect(
     jmpIfDynamic = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
 
-#ifndef SQLITE_OMIT_EXPLAIN
-  if( pParse->explain==2 ){
-    char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %s%s SUBQUERY %d",
-        jmpIfDynamic>=0?"":"CORRELATED ",
-        pExpr->op==TK_IN?"LIST":"SCALAR",
-        pParse->iNextSelectId
-    );
-    sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
-  }
-#endif
-
   switch( pExpr->op ){
     case TK_IN: {
       int addr;                   /* Address of OP_OpenEphemeral instruction */
@@ -2653,6 +2645,17 @@ int sqlite3CodeSubselect(
         */
         Select *pSelect = pExpr->x.pSelect;
         ExprList *pEList = pSelect->pEList;
+
+#ifndef SQLITE_OMIT_EXPLAIN
+        if( pParse->explain==2 ){
+          char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %sLIST SUBQUERY %d",
+            jmpIfDynamic>=0?"":"CORRELATED ",
+            pParse->iNextSelectId
+          );
+          sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg,
+                            P4_DYNAMIC);
+        }
+#endif
 
         assert( !isRowid );
         /* If the LHS and RHS of the IN operator do not match, that
@@ -2695,7 +2698,6 @@ int sqlite3CodeSubselect(
         ExprList *pList = pExpr->x.pList;
         struct ExprList_item *pItem;
         int r1, r2, r3;
-
         affinity = sqlite3ExprAffinity(pLeft);
         if( !affinity ){
           affinity = SQLITE_AFF_BLOB;
@@ -2774,6 +2776,17 @@ int sqlite3CodeSubselect(
       testcase( pExpr->op==TK_SELECT );
       assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
       assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+
+#ifndef SQLITE_OMIT_EXPLAIN
+      if( pParse->explain==2 ){
+        char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %sSCALAR SUBQUERY %d",
+            jmpIfDynamic>=0?"":"CORRELATED ",
+            pParse->iNextSelectId
+        );
+        sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg,
+                          P4_DYNAMIC);
+      }
+#endif
 
       pSel = pExpr->x.pSelect;
       nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
@@ -4371,6 +4384,12 @@ int sqlite3ExprCodeExprList(
   if( !ConstFactorOk(pParse) ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    if( pItem->bSorterRef ){
+      i--;
+      n--;
+    }else
+#endif
     if( (flags & SQLITE_ECEL_REF)!=0 && (j = pItem->u.x.iOrderByCol)>0 ){
       if( flags & SQLITE_ECEL_OMITREF ){
         i--;
@@ -4899,8 +4918,10 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
   if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( pA->op==TK_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
+    }else if( pA->op==TK_COLLATE ){
+      if( sqlite3_stricmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
     }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
-      return pA->op==TK_COLLATE ? 1 : 2;
+      return 2;
     }
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
@@ -4909,7 +4930,8 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     if( sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
     if( sqlite3ExprCompare(pParse, pA->pRight, pB->pRight, iTab) ) return 2;
     if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
-    if( ALWAYS((combinedFlags & EP_Reduced)==0) && pA->op!=TK_STRING ){
+    assert( (combinedFlags & EP_Reduced)==0 );
+    if( pA->op!=TK_STRING && pA->op!=TK_TRUEFALSE ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
@@ -4999,6 +5021,105 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
     if( sqlite3ExprCompare(pParse, pX, pE2->pLeft, iTab)==0 ) return 1;
   }
   return 0;
+}
+
+/*
+** This is the Expr node callback for sqlite3ExprImpliesNotNullRow().
+** If the expression node requires that the table at pWalker->iCur
+** have a non-NULL column, then set pWalker->eCode to 1 and abort.
+*/
+static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
+  /* This routine is only called for WHERE clause expressions and so it
+  ** cannot have any TK_AGG_COLUMN entries because those are only found
+  ** in HAVING clauses.  We can get a TK_AGG_FUNCTION in a WHERE clause,
+  ** but that is an illegal construct and the query will be rejected at
+  ** a later stage of processing, so the TK_AGG_FUNCTION case does not
+  ** need to be considered here. */
+  assert( pExpr->op!=TK_AGG_COLUMN );
+  testcase( pExpr->op==TK_AGG_FUNCTION );
+
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
+  switch( pExpr->op ){
+    case TK_ISNOT:
+    case TK_NOT:
+    case TK_ISNULL:
+    case TK_IS:
+    case TK_OR:
+    case TK_CASE:
+    case TK_IN:
+    case TK_FUNCTION:
+      testcase( pExpr->op==TK_ISNOT );
+      testcase( pExpr->op==TK_NOT );
+      testcase( pExpr->op==TK_ISNULL );
+      testcase( pExpr->op==TK_IS );
+      testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_CASE );
+      testcase( pExpr->op==TK_IN );
+      testcase( pExpr->op==TK_FUNCTION );
+      return WRC_Prune;
+    case TK_COLUMN:
+      if( pWalker->u.iCur==pExpr->iTable ){
+        pWalker->eCode = 1;
+        return WRC_Abort;
+      }
+      return WRC_Prune;
+
+    /* Virtual tables are allowed to use constraints like x=NULL.  So
+    ** a term of the form x=y does not prove that y is not null if x
+    ** is the column of a virtual table */
+    case TK_EQ:
+    case TK_NE:
+    case TK_LT:
+    case TK_LE:
+    case TK_GT:
+    case TK_GE:
+      testcase( pExpr->op==TK_EQ );
+      testcase( pExpr->op==TK_NE );
+      testcase( pExpr->op==TK_LT );
+      testcase( pExpr->op==TK_LE );
+      testcase( pExpr->op==TK_GT );
+      testcase( pExpr->op==TK_GE );
+      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->pTab))
+       || (pExpr->pRight->op==TK_COLUMN && IsVirtual(pExpr->pRight->pTab))
+      ){
+       return WRC_Prune;
+      }
+    default:
+      return WRC_Continue;
+  }
+}
+
+/*
+** Return true (non-zero) if expression p can only be true if at least
+** one column of table iTab is non-null.  In other words, return true
+** if expression p will always be NULL or false if every column of iTab
+** is NULL.
+**
+** False negatives are acceptable.  In other words, it is ok to return
+** zero even if expression p will never be true of every column of iTab
+** is NULL.  A false negative is merely a missed optimization opportunity.
+**
+** False positives are not allowed, however.  A false positive may result
+** in an incorrect answer.
+**
+** Terms of p that are marked with EP_FromJoin (and hence that come from
+** the ON or USING clauses of LEFT JOINS) are excluded from the analysis.
+**
+** This routine is used to check if a LEFT JOIN can be converted into
+** an ordinary JOIN.  The p argument is the WHERE clause.  If the WHERE
+** clause requires that some column of the right table of the LEFT JOIN
+** be non-NULL, then the LEFT JOIN can be safely converted into an
+** ordinary join.
+*/
+int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
+  Walker w;
+  w.xExprCallback = impliesNotNullRow;
+  w.xSelectCallback = 0;
+  w.xSelectCallback2 = 0;
+  w.eCode = 0;
+  w.u.iCur = iTab;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
 }
 
 /*
@@ -5156,8 +5277,9 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   NameContext *pNC = pWalker->u.pNC;
   Parse *pParse = pNC->pParse;
   SrcList *pSrcList = pNC->pSrcList;
-  AggInfo *pAggInfo = pNC->pAggInfo;
+  AggInfo *pAggInfo = pNC->uNC.pAggInfo;
 
+  assert( pNC->ncFlags & NC_UAggInfo );
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
     case TK_COLUMN: {

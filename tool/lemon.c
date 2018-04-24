@@ -270,6 +270,8 @@ struct symbol {
   int dtnum;               /* The data type number.  In the parser, the value
                            ** stack is a union.  The .yy%d element of this
                            ** union is the correct data type for this object */
+  int bContent;            /* True if this symbol ever carries content - if
+                           ** it is ever more than just syntax */
   /* The following fields are used by MULTITERMINALs only */
   int nsubsym;             /* Number of constituent symbols in the MULTI */
   struct symbol **subsym;  /* Array of constituent symbols */
@@ -396,6 +398,7 @@ struct lemon {
   struct symbol *wildcard; /* Token that matches anything */
   char *name;              /* Name of the generated parser */
   char *arg;               /* Declaration of the 3th argument to parser */
+  char *ctx;               /* Declaration of 2nd argument to constructor */
   char *tokentype;         /* Type of terminal symbols in the parser stack */
   char *vartype;           /* The default type of non-terminal symbols */
   char *start;             /* Name of the start symbol for the grammar */
@@ -1535,6 +1538,18 @@ static void handle_D_option(char *z){
   *z = 0;
 }
 
+/* Rember the name of the output directory 
+*/
+static char *outputDir = NULL;
+static void handle_d_option(char *z){
+  outputDir = (char *) malloc( lemonStrlen(z)+1 );
+  if( outputDir==0 ){
+    fprintf(stderr,"out of memory\n");
+    exit(1);
+  }
+  lemon_strcpy(outputDir, z);
+}
+
 static char *user_templatename = NULL;
 static void handle_T_option(char *z){
   user_templatename = (char *) malloc( lemonStrlen(z)+1 );
@@ -1616,9 +1631,11 @@ int main(int argc, char **argv)
   static int mhflag = 0;
   static int nolinenosflag = 0;
   static int noResort = 0;
+  
   static struct s_options options[] = {
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
+    {OPT_FSTR, "d", (char*)&handle_d_option, "Output directory.  Default '.'"},
     {OPT_FSTR, "D", (char*)handle_D_option, "Define an %ifdef macro."},
     {OPT_FSTR, "f", 0, "Ignored.  (Placeholder for -f compiler options.)"},
     {OPT_FLAG, "g", (char*)&rpflag, "Print grammar without actions."},
@@ -1663,8 +1680,6 @@ int main(int argc, char **argv)
   lem.basisflag = basisflag;
   lem.nolinenosflag = nolinenosflag;
   Symbol_new("$");
-  lem.errsym = Symbol_new("error");
-  lem.errsym->useCnt = 0;
 
   /* Parse the input file */
   Parse(&lem);
@@ -1673,6 +1688,7 @@ int main(int argc, char **argv)
     fprintf(stderr,"Empty grammar.\n");
     exit(1);
   }
+  lem.errsym = Symbol_find("error");
 
   /* Count and index the symbols of the grammar */
   Symbol_new("{default}");
@@ -2363,6 +2379,7 @@ to follow the previous rule.");
           for(i=0; i<psp->nrhs; i++){
             rp->rhs[i] = psp->rhs[i];
             rp->rhsalias[i] = psp->alias[i];
+            if( rp->rhsalias[i]!=0 ){ rp->rhs[i]->bContent = 1; }
           }
           rp->lhs = psp->lhs;
           rp->lhsalias = psp->lhsalias;
@@ -2479,6 +2496,9 @@ to follow the previous rule.");
           psp->declargslot = &(psp->gp->overflow);
         }else if( strcmp(x,"extra_argument")==0 ){
           psp->declargslot = &(psp->gp->arg);
+          psp->insertLineMacro = 0;
+        }else if( strcmp(x,"extra_context")==0 ){
+          psp->declargslot = &(psp->gp->ctx);
           psp->insertLineMacro = 0;
         }else if( strcmp(x,"token_type")==0 ){
           psp->declargslot = &(psp->gp->tokentype);
@@ -3026,13 +3046,28 @@ PRIVATE char *file_makename(struct lemon *lemp, const char *suffix)
 {
   char *name;
   char *cp;
+  char *filename = lemp->filename;
+  int sz;
 
-  name = (char*)malloc( lemonStrlen(lemp->filename) + lemonStrlen(suffix) + 5 );
+  if( outputDir ){
+    cp = strrchr(filename, '/');
+    if( cp ) filename = cp + 1;
+  }
+  sz = lemonStrlen(filename);
+  sz += lemonStrlen(suffix);
+  if( outputDir ) sz += lemonStrlen(outputDir) + 1;
+  sz += 5;
+  name = (char*)malloc( sz );
   if( name==0 ){
     fprintf(stderr,"Can't allocate space for a filename.\n");
     exit(1);
   }
-  lemon_strcpy(name,lemp->filename);
+  name[0] = 0;
+  if( outputDir ){
+    lemon_strcpy(name, outputDir);
+    lemon_strcat(name, "/");
+  }
+  lemon_strcat(name,filename);
   cp = strrchr(name,'.');
   if( cp ) *cp = 0;
   lemon_strcat(name,suffix);
@@ -3250,10 +3285,11 @@ int PrintAction(
 /* Generate the "*.out" log file */
 void ReportOutput(struct lemon *lemp)
 {
-  int i;
+  int i, n;
   struct state *stp;
   struct config *cfp;
   struct action *ap;
+  struct rule *rp;
   FILE *fp;
 
   fp = file_open(lemp,".out","wb");
@@ -3289,6 +3325,7 @@ void ReportOutput(struct lemon *lemp)
   }
   fprintf(fp, "----------------------------------------------------\n");
   fprintf(fp, "Symbols:\n");
+  fprintf(fp, "The first-set of non-terminals is shown after the name.\n\n");
   for(i=0; i<lemp->nsymbol; i++){
     int j;
     struct symbol *sp;
@@ -3306,7 +3343,40 @@ void ReportOutput(struct lemon *lemp)
         }
       }
     }
+    if( sp->prec>=0 ) fprintf(fp," (precedence=%d)", sp->prec);
     fprintf(fp, "\n");
+  }
+  fprintf(fp, "----------------------------------------------------\n");
+  fprintf(fp, "Syntax-only Symbols:\n");
+  fprintf(fp, "The following symbols never carry semantic content.\n\n");
+  for(i=n=0; i<lemp->nsymbol; i++){
+    int w;
+    struct symbol *sp = lemp->symbols[i];
+    if( sp->bContent ) continue;
+    w = (int)strlen(sp->name);
+    if( n>0 && n+w>75 ){
+      fprintf(fp,"\n");
+      n = 0;
+    }
+    if( n>0 ){
+      fprintf(fp, " ");
+      n++;
+    }
+    fprintf(fp, "%s", sp->name);
+    n += w;
+  }
+  if( n>0 ) fprintf(fp, "\n");
+  fprintf(fp, "----------------------------------------------------\n");
+  fprintf(fp, "Rules:\n");
+  for(rp=lemp->rule; rp; rp=rp->next){
+    fprintf(fp, "%4d: ", rp->iRule);
+    rule_print(fp, rp);
+    fprintf(fp,".");
+    if( rp->precsym ){
+      fprintf(fp," [%s precedence=%d]",
+              rp->precsym->name, rp->precsym->prec);
+    }
+    fprintf(fp,"\n");
   }
   fclose(fp);
   return;
@@ -3980,7 +4050,7 @@ void print_stack_union(
     fprintf(out,"  %s yy%d;\n",types[i],i+1); lineno++;
     free(types[i]);
   }
-  if( lemp->errsym->useCnt ){
+  if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"  int yy%d;\n",lemp->errsym->dtnum); lineno++;
   }
   free(stddt);
@@ -4130,8 +4200,8 @@ void ReportTable(
 
   /* Generate the defines */
   fprintf(out,"#define YYCODETYPE %s\n",
-    minimum_size_type(0, lemp->nsymbol+1, &szCodeType)); lineno++;
-  fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
+    minimum_size_type(0, lemp->nsymbol, &szCodeType)); lineno++;
+  fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
     minimum_size_type(0,lemp->maxAction,&szActionType)); lineno++;
   if( lemp->wildcard ){
@@ -4156,20 +4226,40 @@ void ReportTable(
     while( i>=1 && (ISALNUM(lemp->arg[i-1]) || lemp->arg[i-1]=='_') ) i--;
     fprintf(out,"#define %sARG_SDECL %s;\n",name,lemp->arg);  lineno++;
     fprintf(out,"#define %sARG_PDECL ,%s\n",name,lemp->arg);  lineno++;
-    fprintf(out,"#define %sARG_FETCH %s = yypParser->%s\n",
+    fprintf(out,"#define %sARG_PARAM ,%s\n",name,&lemp->arg[i]);  lineno++;
+    fprintf(out,"#define %sARG_FETCH %s=yypParser->%s;\n",
                  name,lemp->arg,&lemp->arg[i]);  lineno++;
-    fprintf(out,"#define %sARG_STORE yypParser->%s = %s\n",
+    fprintf(out,"#define %sARG_STORE yypParser->%s=%s;\n",
                  name,&lemp->arg[i],&lemp->arg[i]);  lineno++;
   }else{
-    fprintf(out,"#define %sARG_SDECL\n",name);  lineno++;
-    fprintf(out,"#define %sARG_PDECL\n",name);  lineno++;
+    fprintf(out,"#define %sARG_SDECL\n",name); lineno++;
+    fprintf(out,"#define %sARG_PDECL\n",name); lineno++;
+    fprintf(out,"#define %sARG_PARAM\n",name); lineno++;
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
+  }
+  if( lemp->ctx && lemp->ctx[0] ){
+    i = lemonStrlen(lemp->ctx);
+    while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
+    while( i>=1 && (ISALNUM(lemp->ctx[i-1]) || lemp->ctx[i-1]=='_') ) i--;
+    fprintf(out,"#define %sCTX_SDECL %s;\n",name,lemp->ctx);  lineno++;
+    fprintf(out,"#define %sCTX_PDECL ,%s\n",name,lemp->ctx);  lineno++;
+    fprintf(out,"#define %sCTX_PARAM ,%s\n",name,&lemp->ctx[i]);  lineno++;
+    fprintf(out,"#define %sCTX_FETCH %s=yypParser->%s;\n",
+                 name,lemp->ctx,&lemp->ctx[i]);  lineno++;
+    fprintf(out,"#define %sCTX_STORE yypParser->%s=%s;\n",
+                 name,&lemp->ctx[i],&lemp->ctx[i]);  lineno++;
+  }else{
+    fprintf(out,"#define %sCTX_SDECL\n",name); lineno++;
+    fprintf(out,"#define %sCTX_PDECL\n",name); lineno++;
+    fprintf(out,"#define %sCTX_PARAM\n",name); lineno++;
+    fprintf(out,"#define %sCTX_FETCH\n",name); lineno++;
+    fprintf(out,"#define %sCTX_STORE\n",name); lineno++;
   }
   if( mhflag ){
     fprintf(out,"#endif\n"); lineno++;
   }
-  if( lemp->errsym->useCnt ){
+  if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index); lineno++;
     fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum); lineno++;
   }

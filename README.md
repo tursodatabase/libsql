@@ -4,9 +4,10 @@ This repository contains the complete source code for the SQLite database
 engine.  Some test scripts are also included.  However, many other test scripts
 and most of the documentation are managed separately.
 
-If you are reading this on a Git mirror someplace, you are doing it wrong.
-The [official repository](https://www.sqlite.org/src/) is better.  Go there
-now.
+SQLite [does not use Git](https://sqlite.org/whynotgit.html).
+If you are reading this on GitHub, then you are looking at an
+unofficial mirror. See <https://sqlite.org/src> for the official
+repository.
 
 ## Obtaining The Code
 

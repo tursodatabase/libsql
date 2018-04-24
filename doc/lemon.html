@@ -99,6 +99,9 @@ Show only the basis for each parser state in the report file.
 <li><b>-c</b>
 Do not compress the generated action tables.  The parser will be a
 little larger and slower, but it will detect syntax errors sooner.
+<li><b>-d</b><i>directory</i>
+Write all output files into <i>directory</i>.  Normally, output files
+are written into the directory that contains the input grammar file.
 <li><b>-D<i>name</i></b>
 Define C preprocessor macro <i>name</i>.  This macro is usable by
 "<tt><a href='#pifdef'>%ifdef</a></tt>" and
@@ -678,6 +681,30 @@ and so forth.  For example, if the grammar file contains:</p>
 of type "MyStruct*" and all action routines will have access to
 a variable named "pAbc" that is the value of the 4th parameter
 in the most recent call to Parse().</p>
+
+<p>The <tt>%extra_context</tt> directive works the same except that it
+is passed in on the ParseAlloc() or ParseInit() routines instead of
+on Parse().
+
+<a name='extractx'></a>
+<h4>The <tt>%extra_context</tt> directive</h4>
+
+The <tt>%extra_context</tt> directive instructs Lemon to add a 2th parameter
+to the parameter list of the ParseAlloc() and ParseInif() functions.  Lemon
+doesn't do anything itself with these extra argument, but it does
+store the value make it available to C-code action routines, destructors,
+and so forth.  For example, if the grammar file contains:</p>
+
+<p><pre>
+    %extra_context { MyStruct *pAbc }
+</pre></p>
+
+<p>Then the ParseAlloc() and ParseInit() functions will have an 2th parameter
+of type "MyStruct*" and all action routines will have access to
+a variable named "pAbc" that is the value of that 2th parameter.</p>
+
+<p>The <tt>%extra_argument</tt> directive works the same except that it
+is passed in on the Parse() routine instead of on ParseAlloc()/ParseInit().
 
 <a name='pfallback'></a>
 <h4>The <tt>%fallback</tt> directive</h4>

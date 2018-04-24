@@ -10,6 +10,8 @@
 #***********************************************************************
 #
 
+package require Tcl 8.6
+
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix zipfile2
@@ -54,8 +56,11 @@ do_test 2.0 {
   forcedelete testdir
   file mkdir testdir
   execsql { CREATE VIRTUAL TABLE hhh USING zipfile('testdir') }
-  catchsql { SELECT * FROM hhh } 
-} {1 {error in fread()}}
+  lindex [catchsql { 
+    SELECT * FROM hhh;
+    INSERT INTO hhh(name, data) VALUES('1.txt', 'file data');
+  }] 0 
+} 1
 
 
 set archive {
@@ -203,6 +208,37 @@ do_test 5.0 {
   execsql { SELECT name, data IS NULL FROM zipfile($blob2) }
 } {notadi/ 1}
 
+#-------------------------------------------------------------------------
+# Test that duplicate entries may not be created using UPDATE
+# statements.
+#
+forcedelete test.zip
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE temp.zip USING zipfile('test.zip'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test1','test'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test2','test'); 
+}
+do_catchsql_test 6.1 {
+  UPDATE temp.zip SET name='test1' WHERE name='test2'
+} {1 {duplicate name: "test1"}}
+
+forcedelete test.zip
+do_catchsql_test 6.2 {
+  DROP TABLE zip;
+  CREATE VIRTUAL TABLE temp.zip USING zipfile('test.zip'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test','test'); 
+  UPDATE  temp.zip set name=name||'new' where name='test'; 
+  INSERT INTO temp.zip (name,data) VALUES ('test','test'); 
+  UPDATE  temp.zip set name=name||'new' where name='test'; 
+} {1 {duplicate name: "testnew"}}
+
+forcedelete test.zip
+do_execsql_test 6.3 {
+  INSERT INTO temp.zip (name,data) VALUES ('test1','test'); 
+  INSERT INTO temp.zip (name,data) VALUES ('test2','test'); 
+  UPDATE OR REPLACE zip SET name='test2' WHERE name='test1';
+  SELECT name FROM zip;
+} {test2}
 
 finish_test
 

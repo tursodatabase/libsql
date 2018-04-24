@@ -488,7 +488,8 @@ void sqlite3Insert(
   SrcList *pTabList,    /* Name of table into which we are inserting */
   Select *pSelect,      /* A SELECT statement to use as the data source */
   IdList *pColumn,      /* Column names corresponding to IDLIST. */
-  int onError           /* How to handle constraint errors */
+  int onError,          /* How to handle constraint errors */
+  Upsert *pUpsert       /* ON CONFLICT clauses for upsert, or NULL */
 ){
   sqlite3 *db;          /* The main database structure */
   Table *pTab;          /* The table to insert into.  aka TABLE */
@@ -783,7 +784,10 @@ void sqlite3Insert(
     
   /* Initialize the count of rows to be inserted
   */
-  if( db->flags & SQLITE_CountRows ){
+  if( (db->flags & SQLITE_CountRows)!=0
+   && !pParse->nested
+   && !pParse->pTriggerTab
+  ){
     regRowCount = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
   }
@@ -803,6 +807,19 @@ void sqlite3Insert(
       pParse->nMem += pIdx->nColumn;
     }
   }
+#ifndef SQLITE_OMIT_UPSERT
+  if( pUpsert ){
+    pTabList->a[0].iCursor = iDataCur;
+    pUpsert->pUpsertSrc = pTabList;
+    pUpsert->regData = regData;
+    pUpsert->iDataCur = iDataCur;
+    pUpsert->iIdxCur = iIdxCur;
+    if( pUpsert->pUpsertTarget ){
+      sqlite3UpsertAnalyzeTarget(pParse, pTabList, pUpsert);
+    }
+  }
+#endif
+
 
   /* This is the top of the main insertion loop */
   if( useTempTable ){
@@ -1005,7 +1022,7 @@ void sqlite3Insert(
       int isReplace;    /* Set to true if constraints may cause a replace */
       int bUseSeek;     /* True to use OPFLAG_SEEKRESULT */
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0
+          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0, pUpsert
       );
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
 
@@ -1028,7 +1045,7 @@ void sqlite3Insert(
 
   /* Update the count of rows that are inserted
   */
-  if( (db->flags & SQLITE_CountRows)!=0 ){
+  if( regRowCount ){
     sqlite3VdbeAddOp2(v, OP_AddImm, regRowCount, 1);
   }
 
@@ -1065,7 +1082,7 @@ insert_end:
   ** generating code because of a call to sqlite3NestedParse(), do not
   ** invoke the callback function.
   */
-  if( (db->flags&SQLITE_CountRows) && !pParse->nested && !pParse->pTriggerTab ){
+  if( regRowCount ){
     sqlite3VdbeAddOp2(v, OP_ResultRow, regRowCount, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows inserted", SQLITE_STATIC);
@@ -1074,6 +1091,7 @@ insert_end:
 insert_cleanup:
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprListDelete(db, pList);
+  sqlite3UpsertDelete(db, pUpsert);
   sqlite3SelectDelete(db, pSelect);
   sqlite3IdListDelete(db, pColumn);
   sqlite3DbFree(db, aRegIdx);
@@ -1143,6 +1161,44 @@ static int checkConstraintUnchanged(Expr *pExpr, int *aiChng, int chngRowid){
   testcase( w.eCode==CKCNSTRNT_ROWID );
   testcase( w.eCode==(CKCNSTRNT_ROWID|CKCNSTRNT_COLUMN) );
   return !w.eCode;
+}
+
+/*
+** An instance of the ConstraintAddr object remembers the byte-code addresses
+** for sections of the constraint checks that deal with uniqueness constraints
+** on the rowid and on the upsert constraint.
+**
+** This information is passed into checkReorderConstraintChecks() to insert
+** some OP_Goto operations so that the rowid and upsert constraints occur
+** in the correct order relative to other constraints.
+*/
+typedef struct ConstraintAddr ConstraintAddr;
+struct ConstraintAddr {
+  int ipkTop;          /* Subroutine for rowid constraint check */
+  int upsertTop;       /* Label for upsert constraint check subroutine */
+  int upsertTop2;      /* Copy of upsertTop not cleared by the call */
+  int upsertBtm;       /* upsert constraint returns to this label */
+  int ipkBtm;          /* Return opcode rowid constraint check */
+};
+
+/*
+** Generate any OP_Goto operations needed to cause constraints to be
+** run that haven't already been run.
+*/
+static void reorderConstraintChecks(Vdbe *v, ConstraintAddr *p){
+  if( p->upsertTop ){
+    testcase( sqlite3VdbeLabelHasBeenResolved(v, p->upsertTop) );
+    sqlite3VdbeGoto(v, p->upsertTop);
+    VdbeComment((v, "call upsert subroutine"));
+    sqlite3VdbeResolveLabel(v, p->upsertBtm);
+    p->upsertTop = 0;
+  }
+  if( p->ipkTop ){
+    sqlite3VdbeGoto(v, p->ipkTop);
+    VdbeComment((v, "call rowid unique-check subroutine"));
+    sqlite3VdbeJumpHere(v, p->ipkBtm);
+    p->ipkTop = 0;
+  }
 }
 
 /*
@@ -1240,7 +1296,8 @@ void sqlite3GenerateConstraintChecks(
   u8 overrideError,    /* Override onError to this if not OE_Default */
   int ignoreDest,      /* Jump to this label on an OE_Ignore resolution */
   int *pbMayReplace,   /* OUT: Set to true if constraint may cause a replace */
-  int *aiChng          /* column i is unchanged if aiChng[i]<0 */
+  int *aiChng,         /* column i is unchanged if aiChng[i]<0 */
+  Upsert *pUpsert      /* ON CONFLICT clauses, if any.  NULL otherwise */
 ){
   Vdbe *v;             /* VDBE under constrution */
   Index *pIdx;         /* Pointer to one of the indices */
@@ -1253,10 +1310,11 @@ void sqlite3GenerateConstraintChecks(
   int addr1;           /* Address of jump instruction */
   int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int nPkField;        /* Number of fields in PRIMARY KEY. 1 for ROWID tables */
-  int ipkTop = 0;      /* Top of the rowid change constraint check */
-  int ipkBottom = 0;   /* Bottom of the rowid change constraint check */
+  ConstraintAddr sAddr;/* Address information for constraint reordering */
+  Index *pUpIdx = 0;   /* Index to which to apply the upsert */
   u8 isUpdate;         /* True if this is an UPDATE operation */
   u8 bAffinityDone = 0;  /* True if the OP_Affinity operation has been run */
+  int upsertBypass = 0;  /* Address of Goto to bypass upsert subroutine */
 
   isUpdate = regOldData!=0;
   db = pParse->db;
@@ -1264,6 +1322,7 @@ void sqlite3GenerateConstraintChecks(
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   nCol = pTab->nCol;
+  memset(&sAddr, 0, sizeof(sAddr));
   
   /* pPk is the PRIMARY KEY index for WITHOUT ROWID tables and NULL for
   ** normal rowid tables.  nPkField is the number of key fields in the 
@@ -1363,6 +1422,46 @@ void sqlite3GenerateConstraintChecks(
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 
+  /* UNIQUE and PRIMARY KEY constraints should be handled in the following
+  ** order:
+  **
+  **   (1)  OE_Abort, OE_Fail, OE_Rollback, OE_Ignore
+  **   (2)  OE_Update
+  **   (3)  OE_Replace
+  **
+  ** OE_Fail and OE_Ignore must happen before any changes are made.
+  ** OE_Update guarantees that only a single row will change, so it
+  ** must happen before OE_Replace.  Technically, OE_Abort and OE_Rollback
+  ** could happen in any order, but they are grouped up front for
+  ** convenience.
+  **
+  ** Constraint checking code is generated in this order:
+  **   (A)  The rowid constraint
+  **   (B)  Unique index constraints that do not have OE_Replace as their
+  **        default conflict resolution strategy
+  **   (C)  Unique index that do use OE_Replace by default.
+  **
+  ** The ordering of (2) and (3) is accomplished by making sure the linked
+  ** list of indexes attached to a table puts all OE_Replace indexes last
+  ** in the list.  See sqlite3CreateIndex() for where that happens.
+  */
+
+  if( pUpsert ){
+    if( pUpsert->pUpsertTarget==0 ){
+      /* An ON CONFLICT DO NOTHING clause, without a constraint-target.
+      ** Make all unique constraint resolution be OE_Ignore */
+      assert( pUpsert->pUpsertSet==0 );
+      overrideError = OE_Ignore;
+      pUpsert = 0;
+    }else if( (pUpIdx = pUpsert->pUpsertIdx)!=0 ){
+      /* If the constraint-target is on some column other than
+      ** then ROWID, then we might need to move the UPSERT around
+      ** so that it occurs in the correct order. */
+      sAddr.upsertTop = sAddr.upsertTop2 = sqlite3VdbeMakeLabel(v);
+      sAddr.upsertBtm = sqlite3VdbeMakeLabel(v);
+    }
+  }
+
   /* If rowid is changing, make sure the new rowid does not previously
   ** exist in the table.
   */
@@ -1377,6 +1476,32 @@ void sqlite3GenerateConstraintChecks(
       onError = OE_Abort;
     }
 
+    /* figure out whether or not upsert applies in this case */
+    if( pUpsert && pUpsert->pUpsertIdx==0 ){
+      if( pUpsert->pUpsertSet==0 ){
+        onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
+      }else{
+        onError = OE_Update;  /* DO UPDATE */
+      }
+    }
+
+    /* If the response to a rowid conflict is REPLACE but the response
+    ** to some other UNIQUE constraint is FAIL or IGNORE, then we need
+    ** to defer the running of the rowid conflict checking until after
+    ** the UNIQUE constraints have run.
+    */
+    assert( OE_Update>OE_Replace );
+    assert( OE_Ignore<OE_Replace );
+    assert( OE_Fail<OE_Replace );
+    assert( OE_Abort<OE_Replace );
+    assert( OE_Rollback<OE_Replace );
+    if( onError>=OE_Replace
+     && (pUpsert || onError!=overrideError)
+     && pTab->pIndex
+    ){
+      sAddr.ipkTop = sqlite3VdbeAddOp0(v, OP_Goto)+1;
+    }
+
     if( isUpdate ){
       /* pkChng!=0 does not mean that the rowid has changed, only that
       ** it might have changed.  Skip the conflict logic below if the rowid
@@ -1386,26 +1511,12 @@ void sqlite3GenerateConstraintChecks(
       VdbeCoverage(v);
     }
 
-    /* If the response to a rowid conflict is REPLACE but the response
-    ** to some other UNIQUE constraint is FAIL or IGNORE, then we need
-    ** to defer the running of the rowid conflict checking until after
-    ** the UNIQUE constraints have run.
-    */
-    if( onError==OE_Replace && overrideError!=OE_Replace ){
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        if( pIdx->onError==OE_Ignore || pIdx->onError==OE_Fail ){
-          ipkTop = sqlite3VdbeAddOp0(v, OP_Goto);
-          break;
-        }
-      }
-    }
-
     /* Check to see if the new rowid already exists in the table.  Skip
     ** the following conflict logic if it does not. */
+    VdbeNoopComment((v, "uniqueness check for ROWID"));
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
     VdbeCoverage(v);
 
-    /* Generate code that deals with a rowid collision */
     switch( onError ){
       default: {
         onError = OE_Abort;
@@ -1414,6 +1525,9 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
+        testcase( onError==OE_Rollback );
+        testcase( onError==OE_Abort );
+        testcase( onError==OE_Fail );
         sqlite3RowidConstraint(pParse, onError, pTab);
         break;
       }
@@ -1450,14 +1564,13 @@ void sqlite3GenerateConstraintChecks(
                                    regNewData, 1, 0, OE_Replace, 1, -1);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-          if( HasRowid(pTab) ){
-            /* This OP_Delete opcode fires the pre-update-hook only. It does
-            ** not modify the b-tree. It is more efficient to let the coming
-            ** OP_Insert replace the existing entry than it is to delete the
-            ** existing entry and then insert a new one. */
-            sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, OPFLAG_ISNOOP);
-            sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
-          }
+          assert( HasRowid(pTab) );
+          /* This OP_Delete opcode fires the pre-update-hook only. It does
+          ** not modify the b-tree. It is more efficient to let the coming
+          ** OP_Insert replace the existing entry than it is to delete the
+          ** existing entry and then insert a new one. */
+          sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, OPFLAG_ISNOOP);
+          sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
           if( pTab->pIndex ){
             sqlite3MultiWrite(pParse);
@@ -1467,16 +1580,22 @@ void sqlite3GenerateConstraintChecks(
         seenReplace = 1;
         break;
       }
+#ifndef SQLITE_OMIT_UPSERT
+      case OE_Update: {
+        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, 0, iDataCur);
+        /* Fall through */
+      }
+#endif
       case OE_Ignore: {
-        /*assert( seenReplace==0 );*/
+        testcase( onError==OE_Ignore );
         sqlite3VdbeGoto(v, ignoreDest);
         break;
       }
     }
     sqlite3VdbeResolveLabel(v, addrRowidOk);
-    if( ipkTop ){
-      ipkBottom = sqlite3VdbeAddOp0(v, OP_Goto);
-      sqlite3VdbeJumpHere(v, ipkTop);
+    if( sAddr.ipkTop ){
+      sAddr.ipkBtm = sqlite3VdbeAddOp0(v, OP_Goto);
+      sqlite3VdbeJumpHere(v, sAddr.ipkTop-1);
     }
   }
 
@@ -1494,12 +1613,21 @@ void sqlite3GenerateConstraintChecks(
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
+    if( pUpIdx==pIdx ){
+      addrUniqueOk = sAddr.upsertBtm;
+      upsertBypass = sqlite3VdbeGoto(v, 0);
+      VdbeComment((v, "Skip upsert subroutine"));
+      sqlite3VdbeResolveLabel(v, sAddr.upsertTop2);
+    }else{
+      addrUniqueOk = sqlite3VdbeMakeLabel(v);
+    }
+    VdbeNoopComment((v, "uniqueness check for %s", pIdx->zName));
     if( bAffinityDone==0 ){
       sqlite3TableAffinity(v, pTab, regNewData+1);
       bAffinityDone = 1;
     }
     iThisCur = iIdxCur+ix;
-    addrUniqueOk = sqlite3VdbeMakeLabel(v);
+
 
     /* Skip partial indices for which the WHERE clause is not true */
     if( pIdx->pPartIdxWhere ){
@@ -1557,6 +1685,24 @@ void sqlite3GenerateConstraintChecks(
       onError = overrideError;
     }else if( onError==OE_Default ){
       onError = OE_Abort;
+    }
+
+    /* Figure out if the upsert clause applies to this index */
+    if( pUpIdx==pIdx ){
+      if( pUpsert->pUpsertSet==0 ){
+        onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
+      }else{
+        onError = OE_Update;  /* DO UPDATE */
+      }
+    }
+
+    /* Invoke subroutines to handle IPK replace and upsert prior to running
+    ** the first REPLACE constraint check. */
+    if( onError==OE_Replace ){
+      testcase( sAddr.ipkTop );
+      testcase( sAddr.upsertTop
+             && sqlite3VdbeLabelHasBeenResolved(v,sAddr.upsertTop) );
+      reorderConstraintChecks(v, &sAddr);
     }
 
     /* Collision detection may be omitted if all of the following are true:
@@ -1641,15 +1787,25 @@ void sqlite3GenerateConstraintChecks(
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
-        || onError==OE_Ignore || onError==OE_Replace );
+        || onError==OE_Ignore || onError==OE_Replace || onError==OE_Update );
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
+        testcase( onError==OE_Rollback );
+        testcase( onError==OE_Abort );
+        testcase( onError==OE_Fail );
         sqlite3UniqueConstraint(pParse, onError, pIdx);
         break;
       }
+#ifndef SQLITE_OMIT_UPSERT
+      case OE_Update: {
+        sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, pIdx, iIdxCur+ix);
+        /* Fall through */
+      }
+#endif
       case OE_Ignore: {
+        testcase( onError==OE_Ignore );
         sqlite3VdbeGoto(v, ignoreDest);
         break;
       }
@@ -1667,14 +1823,19 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    sqlite3VdbeResolveLabel(v, addrUniqueOk);
+    if( pUpIdx==pIdx ){
+      sqlite3VdbeJumpHere(v, upsertBypass);
+    }else{
+      sqlite3VdbeResolveLabel(v, addrUniqueOk);
+    }
     sqlite3ExprCachePop(pParse);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
+
   }
-  if( ipkTop ){
-    sqlite3VdbeGoto(v, ipkTop+1);
-    sqlite3VdbeJumpHere(v, ipkBottom);
-  }
+  testcase( sAddr.ipkTop!=0 );
+  testcase( sAddr.upsertTop
+         && sqlite3VdbeLabelHasBeenResolved(v,sAddr.upsertTop) );
+  reorderConstraintChecks(v, &sAddr);
   
   *pbMayReplace = seenReplace;
   VdbeModuleComment((v, "END: GenCnstCks(%d)", seenReplace));

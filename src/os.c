@@ -125,8 +125,11 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** routine has no return value since the return value would be meaningless.
 */
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
+  if( id->pMethods==0 ) return SQLITE_NOTFOUND;
 #ifdef SQLITE_TEST
-  if( op!=SQLITE_FCNTL_COMMIT_PHASETWO ){
+  if( op!=SQLITE_FCNTL_COMMIT_PHASETWO
+   && op!=SQLITE_FCNTL_LOCK_TIMEOUT
+  ){
     /* Faults are not injected into COMMIT_PHASETWO because, assuming SQLite
     ** is using a regular VFS, it is called after the corresponding
     ** transaction has been committed. Injecting a fault at this point
@@ -143,7 +146,7 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
   return id->pMethods->xFileControl(id, op, pArg);
 }
 void sqlite3OsFileControlHint(sqlite3_file *id, int op, void *pArg){
-  (void)id->pMethods->xFileControl(id, op, pArg);
+  if( id->pMethods ) (void)id->pMethods->xFileControl(id, op, pArg);
 }
 
 int sqlite3OsSectorSize(sqlite3_file *id){
