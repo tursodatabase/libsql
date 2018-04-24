@@ -2420,15 +2420,12 @@ static int whereLoopAddBtreeIndex(
     ** to mix with a lower range bound from some other source */
     if( pTerm->wtFlags & TERM_LIKEOPT && pTerm->eOperator==WO_LT ) continue;
 
-    /* Do not allow IS constraints from the WHERE clause to be used by the
+    /* Do not allow constraints from the WHERE clause to be used by the
     ** right table of a LEFT JOIN.  Only constraints in the ON clause are
     ** allowed */
     if( (pSrc->fg.jointype & JT_LEFT)!=0
      && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
-     && (eOp & (WO_IS|WO_ISNULL))!=0
     ){
-      testcase( eOp & WO_IS );
-      testcase( eOp & WO_ISNULL );
       continue;
     }
 

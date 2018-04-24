@@ -5543,7 +5543,7 @@ int sqlite3Select(
     ** a view or the co-routine to implement a view.  The first instance
     ** is sufficient, though the subroutine to manifest the view does need
     ** to be invoked again. */
-    if( pItem->addrFillSub ){
+    if( NEVER(pItem->addrFillSub) ){
       if( pItem->fg.viaCoroutine==0 ){
         /* The subroutine that manifests the view might be a one-time routine,
         ** or it might need to be rerun on each iteration because it

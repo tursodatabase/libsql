@@ -1379,5 +1379,17 @@ do_execsql_test where-19.0 {
   SELECT t191.rowid FROM t192, t191 WHERE (a=y OR b=y) AND x=?1;
 } {/.* sqlite_autoindex_t191_1 .* sqlite_autoindex_t191_2 .*/}
 
+# 2018-04-24 ticket [https://www.sqlite.org/src/info/4ba5abf65c5b0f9a]
+# Index on expressions leads to an incorrect answer for a LEFT JOIN
+#
+do_execsql_test where-20.0 {
+  CREATE TABLE t201(x);
+  CREATE TABLE t202(y, z);
+  INSERT INTO t201 VALUES('key');
+  INSERT INTO t202 VALUES('key', -1);
+  CREATE INDEX t202i ON t202(y, ifnull(z, 0));
+  SELECT count(*) FROM t201 LEFT JOIN t202 ON (x=y) WHERE ifnull(z, 0) >=0;
+} {0}
+
 
 finish_test

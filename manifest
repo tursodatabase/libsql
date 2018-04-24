@@ -1,5 +1,5 @@
-C Update\sthe\sexpert\sextension\stest\scases\sto\saccount\sfor\sthe\sfact\sthat\nEXPLAIN\sQUERY\sPLAN\snow\sshows\sthe\sstart\sof\seach\strigger\sin\sits\soutput.
-D 2018-04-24T16:51:38.267
+C Do\snot\sattempt\sto\suse\sterms\sfrom\sthe\sWHERE\sclause\sto\sdrive\sindexes\son\sthe\nright\stable\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\s[4ba5abf65c5b0f9a96a7a40cd18b]
+D 2018-04-24T17:34:03.981
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -492,7 +492,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 3dbce4379836189acbc5719f40125f3d1e0dbaee024ec4550ab449744a8cb074
+F src/select.c 95dff4409d5a5a7cee215194241048644b9dfe3371ea10df5828ba09e34b66b9
 F src/shell.c.in fc3f9e47198c6baea6987b6ec86fb99e7c79cee8109ce9bdece790345d8c246f
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -576,7 +576,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c d6e5f2056e9a60251e79780fc598a5943e88a3c0fa0019d54922e59f99019287
+F src/where.c 7a1c5555c00bcf49c677472ae83bb49bf24c8d8e9a060d475e86dee39be2fb3a
 F src/whereInt.h 2610cb87dd95509995b63decc674c60f2757697a206cfe0c085ee53d9c43cfff
 F src/wherecode.c 52225f6b519c7742a593341a13308d8fd08af7f91af0fa765c6adad85978d525
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
@@ -1580,7 +1580,7 @@ F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cf
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
-F test/where.test ad770ad7025c7167e7583f083315065424524b76f903f7a3bbbc31aab56c0821
+F test/where.test b895199587ff81ae61cee4a0e401db14145c30dcab64204b0905028510cc8426
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 54cdeb02157acc979de41530b804ae7b09552bf1
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e252c6540db266b93beeb47a8f7dbf3b275f8c782cd2d36ba4c00648c382f63f
-R 15f1773843c8a62145274849544ab48b
+P 8acb42f48929d908fe67a8536e240ca252a9ab780dce79eaa85b8fba35d52250
+R 4eebdb5072e10414126cf7987af3576c
 U drh
-Z d4f18ad91a8c9b54d4d2a63158263fee
+Z 0f34fac3f1b4f07abfd291b9539f090e
