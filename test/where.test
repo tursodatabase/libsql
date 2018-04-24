@@ -1391,5 +1391,26 @@ do_execsql_test where-20.0 {
   SELECT count(*) FROM t201 LEFT JOIN t202 ON (x=y) WHERE ifnull(z, 0) >=0;
 } {0}
 
+do_execsql_test where-21.0 {
+  CREATE TABLE t12(a, b, c);
+  CREATE TABLE t13(x);
+  CREATE INDEX t12ab ON t12(b, a);
+  CREATE INDEX t12ac ON t12(c, a);
+
+  INSERT INTO t12 VALUES(4, 0, 1);
+  INSERT INTO t12 VALUES(4, 1, 0);
+  INSERT INTO t12 VALUES(5, 0, 1);
+  INSERT INTO t12 VALUES(5, 1, 0);
+
+  INSERT INTO t13 VALUES(1), (2), (3), (4);
+}
+do_execsql_test where-21.1 {
+  SELECT * FROM t12 WHERE 
+  a = (SELECT * FROM (SELECT count(*) FROM t13 LIMIT 5) ORDER BY 1 LIMIT 10) 
+  AND (b=1 OR c=1);
+} {
+  4 1 0
+  4 0 1
+}
 
 finish_test
