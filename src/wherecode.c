@@ -1215,6 +1215,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** initialize a memory cell that records if this table matches any
   ** row of the left table of the join.
   */
+  assert( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)
+       || pLevel->iFrom>0 || (pTabItem[0].fg.jointype & JT_LEFT)==0
+  );
   if( pLevel->iFrom>0 && (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
     pLevel->iLeftJoin = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
@@ -1913,7 +1916,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       for(iTerm=0; iTerm<pWC->nTerm; iTerm++){
         Expr *pExpr = pWC->a[iTerm].pExpr;
         if( &pWC->a[iTerm] == pTerm ) continue;
-        if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
         testcase( pWC->a[iTerm].wtFlags & TERM_VIRTUAL );
         testcase( pWC->a[iTerm].wtFlags & TERM_CODED );
         if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED))!=0 ) continue;
@@ -1938,7 +1940,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         WhereInfo *pSubWInfo;           /* Info for single OR-term scan */
         Expr *pOrExpr = pOrTerm->pExpr; /* Current OR clause term */
         int jmp1 = 0;                   /* Address of jump operation */
-        if( pAndExpr && !ExprHasProperty(pOrExpr, EP_FromJoin) ){
+        assert( (pTabItem[0].fg.jointype & JT_LEFT)==0 
+             || ExprHasProperty(pOrExpr, EP_FromJoin) 
+        );
+        if( pAndExpr ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;
         }
@@ -2121,7 +2126,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       pE = pTerm->pExpr;
       assert( pE!=0 );
-      if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
+      if( (pTabItem->fg.jointype&JT_LEFT) && !ExprHasProperty(pE,EP_FromJoin) ){
         continue;
       }
       

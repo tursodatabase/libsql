@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\suse\sterms\sfrom\sthe\sWHERE\sclause\sto\sdrive\sindexes\son\sthe\nright\stable\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\s[4ba5abf65c5b0f9a96a7a40cd18b]
-D 2018-04-24T17:34:03.981
+C Fix\sa\sproblem\swith\sprocessing\s"LEFT\sJOIN\stbl\sON\stbl.a\s=\s?\sAND\s(tbl.b=?\sOR\ntbl.c=?)"\sin\scases\swhere\sthere\sare\sindexes\son\sboth\stbl(a,\sb)\sand\stbl(a,\sc).
+D 2018-04-24T18:53:24.943
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -578,7 +578,7 @@ F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c 7a1c5555c00bcf49c677472ae83bb49bf24c8d8e9a060d475e86dee39be2fb3a
 F src/whereInt.h 2610cb87dd95509995b63decc674c60f2757697a206cfe0c085ee53d9c43cfff
-F src/wherecode.c 52225f6b519c7742a593341a13308d8fd08af7f91af0fa765c6adad85978d525
+F src/wherecode.c 3cb591fe7323e1bfd49059d75fcab75e383dfcf16a51c0e4f9368ac1b93e291b
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1011,7 +1011,7 @@ F test/join.test 2ad9d7fe10e0cc06bc7803c22e5533be11cdadbc592f5f95d789a873b57a5a6
 F test/join2.test f5ea0fd3b0a441c8e439706339dcd17cec63a896a755c04a30bfd442ecce1190
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test cb052e7126fe3492dce2e851b980b487a823a0a4cb2ce2d773c92f14a453dad7
+F test/join5.test 000a18e9ccc9fc716e550eb2337729d3aee99031d0ddd9682f6b7d73aa99b924
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8acb42f48929d908fe67a8536e240ca252a9ab780dce79eaa85b8fba35d52250
-R 4eebdb5072e10414126cf7987af3576c
-U drh
-Z 0f34fac3f1b4f07abfd291b9539f090e
+P aeb694e3f787f1f8b55650c17f90c197eee3f7f9b890a88f458c33e43009a082
+R 56c49ae18195fa15548a505c9f447aff
+U dan
+Z 3395e9aff5f6302e6b05ef897c94003f
