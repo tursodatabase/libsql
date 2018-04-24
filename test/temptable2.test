@@ -344,7 +344,7 @@ do_execsql_test 10.1 {
 }
 
 ifcapable mmap {
-  if {[permutation]!="journaltest"} {
+  if {[permutation]!="journaltest" && $::TEMP_STORE<2} {
     # The journaltest permutation does not support mmap, so this part of
     # the test is omitted.
     do_execsql_test 10.2 { PRAGMA mmap_size = 512000 } 512000

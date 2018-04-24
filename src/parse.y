@@ -24,8 +24,9 @@
 %token_type {Token}
 %default_type {Token}
 
-// The generated parser function takes a 4th argument as follows:
-%extra_argument {Parse *pParse}
+// An extra argument to the constructor for the parser, which is available
+// to all actions.
+%extra_context {Parse *pParse}
 
 // This code runs whenever there is a syntax error
 //
@@ -121,9 +122,9 @@ input ::= cmdlist.
 cmdlist ::= cmdlist ecmd.
 cmdlist ::= ecmd.
 ecmd ::= SEMI.
-ecmd ::= explain cmdx SEMI.
-explain ::= .
+ecmd ::= cmdx SEMI.
 %ifndef SQLITE_OMIT_EXPLAIN
+ecmd ::= explain cmdx.
 explain ::= EXPLAIN.              { pParse->explain = 1; }
 explain ::= EXPLAIN QUERY PLAN.   { pParse->explain = 2; }
 %endif  SQLITE_OMIT_EXPLAIN
@@ -221,7 +222,8 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 //
 %fallback ID
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
-  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
+  CONFLICT DATABASE DEFERRED DESC DETACH DO
+  EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
@@ -255,6 +257,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %left CONCAT.
 %left COLLATE.
 %right BITNOT.
+%nonassoc ON.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -479,7 +482,7 @@ cmd ::= select(X).  {
   }
 }
 
-select(A) ::= with(W) selectnowith(X). {
+select(A) ::= WITH wqlist(W) selectnowith(X). {
   Select *p = X;
   if( p ){
     p->pWith = W;
@@ -487,7 +490,24 @@ select(A) ::= with(W) selectnowith(X). {
   }else{
     sqlite3WithDelete(pParse->db, W);
   }
-  A = p; /*A-overwrites-W*/
+  A = p;
+}
+select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X). {
+  Select *p = X;
+  if( p ){
+    p->pWith = W;
+    parserDoubleLinkSelect(pParse, p);
+  }else{
+    sqlite3WithDelete(pParse->db, W);
+  }
+  A = p;
+}
+select(A) ::= selectnowith(X). {
+  Select *p = X;
+  if( p ){
+    parserDoubleLinkSelect(pParse, p);
+  }
+  A = p; /*A-overwrites-X*/
 }
 
 selectnowith(A) ::= oneselect(A).
@@ -681,8 +701,25 @@ dbnm(A) ::= DOT nm(X). {A = X;}
 
 %type fullname {SrcList*}
 %destructor fullname {sqlite3SrcListDelete(pParse->db, $$);}
-fullname(A) ::= nm(X) dbnm(Y).  
+fullname(A) ::= nm(X).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/}
+fullname(A) ::= nm(X) DOT nm(Y).  
    {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
+
+%type xfullname {SrcList*}
+%destructor xfullname {sqlite3SrcListDelete(pParse->db, $$);}
+xfullname(A) ::= nm(X).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/}
+xfullname(A) ::= nm(X) DOT nm(Y).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
+xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z).  {
+   A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/
+   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+}
+xfullname(A) ::= nm(X) AS nm(Z). {  
+   A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/
+   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+}
 
 %type joinop {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
@@ -693,10 +730,27 @@ joinop(X) ::= JOIN_KW(A) nm(B) JOIN.
 joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
                   {X = sqlite3JoinType(pParse,&A,&B,&C);/*X-overwrites-A*/}
 
+// There is a parsing abiguity in an upsert statement that uses a
+// SELECT on the RHS of a the INSERT:
+//
+//      INSERT INTO tab SELECT * FROM aaa JOIN bbb ON CONFLICT ...
+//                                        here ----^^
+//
+// When the ON token is encountered, the parser does not know if it is
+// the beginning of an ON CONFLICT clause, or the beginning of an ON
+// clause associated with the JOIN.  The conflict is resolved in favor
+// of the JOIN.  If an ON CONFLICT clause is intended, insert a dummy
+// WHERE clause in between, like this:
+//
+//      INSERT INTO tab SELECT * FROM aaa JOIN bbb WHERE true ON CONFLICT ...
+//
+// The [AND] and [OR] precedence marks in the rules for on_opt cause the
+// ON in this context to always be interpreted as belonging to the JOIN.
+//
 %type on_opt {Expr*}
 %destructor on_opt {sqlite3ExprDelete(pParse->db, $$);}
-on_opt(N) ::= ON expr(E).   {N = E;}
-on_opt(N) ::= .             {N = 0;}
+on_opt(N) ::= ON expr(E).  {N = E;}
+on_opt(N) ::= .     [OR]   {N = 0;}
 
 // Note that this block abuses the Token type just a little. If there is
 // no "INDEXED BY" clause, the returned token is empty (z==0 && n==0). If
@@ -777,16 +831,14 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 /////////////////////////// The DELETE statement /////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W) 
+cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
-  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,O,L);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
-  sqlite3WithPush(pParse, C, 1);
+cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,0,0);
 }
@@ -801,21 +853,19 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
-  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,W,R,O,L);
+  sqlite3Update(pParse,X,Y,W,R,O,L,0);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W).  {
-  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,W,R,0,0);
+  sqlite3Update(pParse,X,Y,W,R,0,0,0);
 }
 %endif
 
@@ -839,15 +889,30 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S). {
-  sqlite3WithPush(pParse, W, 1);
-  sqlite3Insert(pParse, X, S, F, R);
+cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) select(S)
+        upsert(U). {
+  sqlite3Insert(pParse, X, S, F, R, U);
 }
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
+cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES.
 {
-  sqlite3WithPush(pParse, W, 1);
-  sqlite3Insert(pParse, X, 0, F, R);
+  sqlite3Insert(pParse, X, 0, F, R, 0);
 }
+
+%type upsert {Upsert*}
+
+// Because upsert only occurs at the tip end of the INSERT rule for cmd,
+// there is never a case where the value of the upsert pointer will not
+// be destroyed by the cmd action.  So comment-out the destructor to
+// avoid unreachable code.
+//%destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
+upsert(A) ::= . { A = 0; }
+upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW)
+              DO UPDATE SET setlist(Z) where_opt(W).
+              { A = sqlite3UpsertNew(pParse->db,T,TW,Z,W);}
+upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW) DO NOTHING.
+              { A = sqlite3UpsertNew(pParse->db,T,TW,0,0); }
+upsert(A) ::= ON CONFLICT DO NOTHING.
+              { A = sqlite3UpsertNew(pParse->db,0,0,0,0); }
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
@@ -1394,9 +1459,9 @@ trigger_cmd(A) ::=
 
 // INSERT
 trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
-                      trnm(X) idlist_opt(F) select(S) scanpt(Z).
-   {A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,R,B,Z);/*A-overwrites-R*/}
-
+                      trnm(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
+   A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
+}
 // DELETE
 trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
    {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y, B.z, E);}
@@ -1503,15 +1568,13 @@ anylist ::= anylist ANY.
 
 
 //////////////////////// COMMON TABLE EXPRESSIONS ////////////////////////////
-%type with {With*}
 %type wqlist {With*}
-%destructor with {sqlite3WithDelete(pParse->db, $$);}
 %destructor wqlist {sqlite3WithDelete(pParse->db, $$);}
 
-with(A) ::= . {A = 0;}
+with ::= .
 %ifndef SQLITE_OMIT_CTE
-with(A) ::= WITH wqlist(W).              { A = W; }
-with(A) ::= WITH RECURSIVE wqlist(W).    { A = W; }
+with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
+with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
 wqlist(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
   A = sqlite3WithAdd(pParse, 0, &X, Y, Z); /*A-overwrites-X*/

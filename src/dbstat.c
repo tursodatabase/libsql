@@ -424,7 +424,7 @@ static void statSizeAndOffset(StatCursor *pCsr){
   */
   fd = sqlite3PagerFile(pPager);
   x[0] = pCsr->iPageno;
-  if( fd->pMethods!=0 && sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
+  if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
     pCsr->iOffset = x[0];
     pCsr->szPage = (int)x[1];
   }

@@ -169,3 +169,30 @@ proc changeset_to_list {c} {
   sqlite3session_foreach elem $c { lappend list $elem }
   lsort $list
 }
+
+set ones {zero one two three four five six seven eight nine
+          ten eleven twelve thirteen fourteen fifteen sixteen seventeen
+          eighteen nineteen}
+set tens {{} ten twenty thirty forty fifty sixty seventy eighty ninety}
+proc number_name {n} {
+  if {$n>=1000} {
+    set txt "[number_name [expr {$n/1000}]] thousand"
+    set n [expr {$n%1000}]
+  } else {
+    set txt {}
+  }
+  if {$n>=100} {
+    append txt " [lindex $::ones [expr {$n/100}]] hundred"
+    set n [expr {$n%100}]
+  }
+  if {$n>=20} {
+    append txt " [lindex $::tens [expr {$n/10}]]"
+    set n [expr {$n%10}]
+  }
+  if {$n>0} {
+    append txt " [lindex $::ones $n]"
+  }
+  set txt [string trim $txt]
+  if {$txt==""} {set txt zero}
+  return $txt
+}

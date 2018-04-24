@@ -642,6 +642,17 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    case SQLITE_CONFIG_SORTERREF_SIZE: {
+      int iVal = va_arg(ap, int);
+      if( iVal<0 ){
+        iVal = SQLITE_DEFAULT_SORTERREF_SIZE;
+      }
+      sqlite3GlobalConfig.szSorterRef = (u32)iVal;
+      break;
+    }
+#endif /* SQLITE_ENABLE_SORTER_REFERENCES */
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -1476,21 +1487,40 @@ const char *sqlite3ErrStr(int rc){
 ** again until a timeout value is reached.  The timeout value is
 ** an integer number of milliseconds passed in as the first
 ** argument.
+**
+** Return non-zero to retry the lock.  Return zero to stop trying
+** and cause SQLite to return SQLITE_BUSY.
 */
 static int sqliteDefaultBusyCallback(
- void *ptr,               /* Database connection */
- int count                /* Number of times table has been busy */
+  void *ptr,               /* Database connection */
+  int count,               /* Number of times table has been busy */
+  sqlite3_file *pFile      /* The file on which the lock occurred */
 ){
 #if SQLITE_OS_WIN || HAVE_USLEEP
+  /* This case is for systems that have support for sleeping for fractions of
+  ** a second.  Examples:  All windows systems, unix systems with usleep() */
   static const u8 delays[] =
      { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50, 100 };
   static const u8 totals[] =
      { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228 };
 # define NDELAY ArraySize(delays)
   sqlite3 *db = (sqlite3 *)ptr;
-  int timeout = db->busyTimeout;
+  int tmout = db->busyTimeout;
   int delay, prior;
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  if( sqlite3OsFileControl(pFile,SQLITE_FCNTL_LOCK_TIMEOUT,&tmout)==SQLITE_OK ){
+    if( count ){
+      tmout = 0;
+      sqlite3OsFileControl(pFile, SQLITE_FCNTL_LOCK_TIMEOUT, &tmout);
+      return 0;
+    }else{
+      return 1;
+    }
+  }
+#else
+  UNUSED_PARAMETER(pFile);
+#endif
   assert( count>=0 );
   if( count < NDELAY ){
     delay = delays[count];
@@ -1499,16 +1529,19 @@ static int sqliteDefaultBusyCallback(
     delay = delays[NDELAY-1];
     prior = totals[NDELAY-1] + delay*(count-(NDELAY-1));
   }
-  if( prior + delay > timeout ){
-    delay = timeout - prior;
+  if( prior + delay > tmout ){
+    delay = tmout - prior;
     if( delay<=0 ) return 0;
   }
   sqlite3OsSleep(db->pVfs, delay*1000);
   return 1;
 #else
+  /* This case for unix systems that lack usleep() support.  Sleeping
+  ** must be done in increments of whole seconds */
   sqlite3 *db = (sqlite3 *)ptr;
-  int timeout = ((sqlite3 *)ptr)->busyTimeout;
-  if( (count+1)*1000 > timeout ){
+  int tmout = ((sqlite3 *)ptr)->busyTimeout;
+  UNUSED_PARAMETER(pFile);
+  if( (count+1)*1000 > tmout ){
     return 0;
   }
   sqlite3OsSleep(db->pVfs, 1000000);
@@ -1519,14 +1552,25 @@ static int sqliteDefaultBusyCallback(
 /*
 ** Invoke the given busy handler.
 **
-** This routine is called when an operation failed with a lock.
+** This routine is called when an operation failed to acquire a
+** lock on VFS file pFile.
+**
 ** If this routine returns non-zero, the lock is retried.  If it
 ** returns 0, the operation aborts with an SQLITE_BUSY error.
 */
-int sqlite3InvokeBusyHandler(BusyHandler *p){
+int sqlite3InvokeBusyHandler(BusyHandler *p, sqlite3_file *pFile){
   int rc;
-  if( NEVER(p==0) || p->xFunc==0 || p->nBusy<0 ) return 0;
-  rc = p->xFunc(p->pArg, p->nBusy);
+  if( p->xBusyHandler==0 || p->nBusy<0 ) return 0;
+  if( p->bExtraFileArg ){
+    /* Add an extra parameter with the pFile pointer to the end of the
+    ** callback argument list */
+    int (*xTra)(void*,int,sqlite3_file*);
+    xTra = (int(*)(void*,int,sqlite3_file*))p->xBusyHandler;
+    rc = xTra(p->pBusyArg, p->nBusy, pFile);
+  }else{
+    /* Legacy style busy handler callback */
+    rc = p->xBusyHandler(p->pBusyArg, p->nBusy);
+  }
   if( rc==0 ){
     p->nBusy = -1;
   }else{
@@ -1548,9 +1592,10 @@ int sqlite3_busy_handler(
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   sqlite3_mutex_enter(db->mutex);
-  db->busyHandler.xFunc = xBusy;
-  db->busyHandler.pArg = pArg;
+  db->busyHandler.xBusyHandler = xBusy;
+  db->busyHandler.pBusyArg = pArg;
   db->busyHandler.nBusy = 0;
+  db->busyHandler.bExtraFileArg = 0;
   db->busyTimeout = 0;
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
@@ -1598,8 +1643,10 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   if( ms>0 ){
-    sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)db);
+    sqlite3_busy_handler(db, (int(*)(void*,int))sqliteDefaultBusyCallback,
+                             (void*)db);
     db->busyTimeout = ms;
+    db->busyHandler.bExtraFileArg = 1;
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
@@ -3592,10 +3639,8 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }else if( op==SQLITE_FCNTL_JOURNAL_POINTER ){
       *(sqlite3_file**)pArg = sqlite3PagerJrnlFile(pPager);
       rc = SQLITE_OK;
-    }else if( fd->pMethods ){
-      rc = sqlite3OsFileControl(fd, op, pArg);
     }else{
-      rc = SQLITE_NOTFOUND;
+      rc = sqlite3OsFileControl(fd, op, pArg);
     }
     sqlite3BtreeLeave(pBtree);
   }

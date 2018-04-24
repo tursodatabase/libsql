@@ -19,7 +19,7 @@
 ** Trace output macros
 */
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-/***/ int sqlite3WhereTrace;
+/***/ extern int sqlite3WhereTrace;
 #endif
 #if defined(SQLITE_DEBUG) \
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))

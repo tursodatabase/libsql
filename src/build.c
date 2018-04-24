@@ -1097,15 +1097,20 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
  
   if( pType->n==0 ){
     /* If there is no type specified, columns have the default affinity
-    ** 'BLOB'. */
+    ** 'BLOB' with a default size of 4 bytes. */
     pCol->affinity = SQLITE_AFF_BLOB;
     pCol->szEst = 1;
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    if( 4>=sqlite3GlobalConfig.szSorterRef ){
+      pCol->colFlags |= COLFLAG_SORTERREF;
+    }
+#endif
   }else{
     zType = z + sqlite3Strlen30(z) + 1;
     memcpy(zType, pType->z, pType->n);
     zType[pType->n] = 0;
     sqlite3Dequote(zType);
-    pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
+    pCol->affinity = sqlite3AffinityType(zType, pCol);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
   p->nCol++;
@@ -1165,7 +1170,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** If none of the substrings in the above table are found,
 ** SQLITE_AFF_NUMERIC is returned.
 */
-char sqlite3AffinityType(const char *zIn, u8 *pszEst){
+char sqlite3AffinityType(const char *zIn, Column *pCol){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
   const char *zChar = 0;
@@ -1202,27 +1207,32 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
     }
   }
 
-  /* If pszEst is not NULL, store an estimate of the field size.  The
+  /* If pCol is not NULL, store an estimate of the field size.  The
   ** estimate is scaled so that the size of an integer is 1.  */
-  if( pszEst ){
-    *pszEst = 1;   /* default size is approx 4 bytes */
+  if( pCol ){
+    int v = 0;   /* default size is approx 4 bytes */
     if( aff<SQLITE_AFF_NUMERIC ){
       if( zChar ){
         while( zChar[0] ){
           if( sqlite3Isdigit(zChar[0]) ){
-            int v = 0;
+            /* BLOB(k), VARCHAR(k), CHAR(k) -> r=(k/4+1) */
             sqlite3GetInt32(zChar, &v);
-            v = v/4 + 1;
-            if( v>255 ) v = 255;
-            *pszEst = v; /* BLOB(k), VARCHAR(k), CHAR(k) -> r=(k/4+1) */
             break;
           }
           zChar++;
         }
       }else{
-        *pszEst = 5;   /* BLOB, TEXT, CLOB -> r=5  (approx 20 bytes)*/
+        v = 16;   /* BLOB, TEXT, CLOB -> r=5  (approx 20 bytes)*/
       }
     }
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    if( v>=sqlite3GlobalConfig.szSorterRef ){
+      pCol->colFlags |= COLFLAG_SORTERREF;
+    }
+#endif
+    v = v/4 + 1;
+    if( v>255 ) v = 255;
+    pCol->szEst = v;
   }
   return aff;
 }
@@ -1254,7 +1264,7 @@ void sqlite3AddDefaultValue(
           pCol->zName);
     }else{
       /* A copy of pExpr is used instead of the original, as pExpr contains
-      ** tokens that point to volatile memory.	
+      ** tokens that point to volatile memory.
       */
       Expr x;
       sqlite3ExprDelete(db, pCol->pDflt);
@@ -1498,7 +1508,7 @@ void sqlite3ChangeCookie(Parse *pParse, int iDb){
   Vdbe *v = pParse->pVdbe;
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_SCHEMA_VERSION, 
-                    db->aDb[iDb].pSchema->schema_cookie+1);
+                   (int)(1+(unsigned)db->aDb[iDb].pSchema->schema_cookie));
 }
 
 /*
@@ -2176,7 +2186,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   int nErr = 0;     /* Number of errors encountered */
   int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
-#ifndef SQLITE_OMIT_VIRTUALTABLE	
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   int rc;
 #endif
 #ifndef SQLITE_OMIT_AUTHORIZATION

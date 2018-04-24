@@ -675,6 +675,13 @@ do_execsql_test autoinc-10.1 {
   SELECT * FROM sqlite_sequence;
 } {t10a 888 t10b 888}
 
-
+# 2018-04-21 autoincrement does not cause problems for upsert
+#
+do_execsql_test autoinc-11.1 {
+  CREATE TABLE t11(a INTEGER PRIMARY KEY AUTOINCREMENT,b UNIQUE);
+  INSERT INTO t11(a,b) VALUES(2,3),(5,6),(4,3),(1,2)
+    ON CONFLICT(b) DO UPDATE SET a=a+1000;
+  SELECT seq FROM sqlite_sequence WHERE name='t11';
+} {5}
 
 finish_test

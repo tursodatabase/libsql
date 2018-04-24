@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {[permutation]=="sorterref"} {
+  finish_test
+  return
+}
+
 # Test organization:
 #
 #   where8-1.*: Tests to demonstrate simple cases work with a single table

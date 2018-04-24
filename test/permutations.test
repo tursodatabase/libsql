@@ -1072,6 +1072,26 @@ test_suite "prepare" -description {
       stmtvtab1.test index9.test
 ]
 
+test_suite "sorterref" -prefix "" -description {
+  Run the "veryquick" test suite with SQLITE_CONFIG_SORTERREF_SIZE set
+  to 0 so that sorter-references are used whenever possible.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj*
+] -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_sorterref 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_sorterref -1
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
 # End of tests
 #############################################################################
 

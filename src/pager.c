@@ -2180,7 +2180,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     rc = pager_truncate(pPager, pPager->dbSize);
   }
 
-  if( rc==SQLITE_OK && bCommit && isOpen(pPager->fd) ){
+  if( rc==SQLITE_OK && bCommit ){
     rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_COMMIT_PHASETWO, 0);
     if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
@@ -2999,9 +2999,7 @@ end_playback:
   ** assertion that the transaction counter was modified.
   */
 #ifdef SQLITE_DEBUG
-  if( pPager->fd->pMethods ){
-    sqlite3OsFileControlHint(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0);
-  }
+  sqlite3OsFileControlHint(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0);
 #endif
 
   /* If this playback is happening automatically as a result of an IO or 
@@ -3766,20 +3764,18 @@ static int pagerOpentemp(
 ** retried. If it returns zero, then the SQLITE_BUSY error is
 ** returned to the caller of the pager API function.
 */
-void sqlite3PagerSetBusyhandler(
+void sqlite3PagerSetBusyHandler(
   Pager *pPager,                       /* Pager object */
   int (*xBusyHandler)(void *),         /* Pointer to busy-handler function */
   void *pBusyHandlerArg                /* Argument to pass to xBusyHandler */
 ){
+  void **ap;
   pPager->xBusyHandler = xBusyHandler;
   pPager->pBusyHandlerArg = pBusyHandlerArg;
-
-  if( isOpen(pPager->fd) ){
-    void **ap = (void **)&pPager->xBusyHandler;
-    assert( ((int(*)(void *))(ap[0]))==xBusyHandler );
-    assert( ap[1]==pBusyHandlerArg );
-    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
-  }
+  ap = (void **)&pPager->xBusyHandler;
+  assert( ((int(*)(void *))(ap[0]))==xBusyHandler );
+  assert( ap[1]==pBusyHandlerArg );
+  sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
 }
 
 /*
@@ -5773,6 +5769,7 @@ void sqlite3PagerUnrefPageOne(DbPage *pPg){
   assert( pPg->pgno==1 );
   assert( (pPg->flags & PGHDR_MMAP)==0 ); /* Page1 is never memory mapped */
   pPager = pPg->pPager;
+  sqlite3PagerResetLockTimeout(pPager);
   sqlite3PcacheRelease(pPg);
   pagerUnlockIfUnused(pPager);
 }
@@ -6371,12 +6368,9 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 */
 int sqlite3PagerSync(Pager *pPager, const char *zMaster){
   int rc = SQLITE_OK;
-
-  if( isOpen(pPager->fd) ){
-    void *pArg = (void*)zMaster;
-    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC, pArg);
-    if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
-  }
+  void *pArg = (void*)zMaster;
+  rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC, pArg);
+  if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   if( rc==SQLITE_OK && !pPager->noSync ){
     assert( !MEMDB );
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
@@ -7125,6 +7119,16 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
 }
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+/*
+** Reset the lock timeout for pager.
+*/
+void sqlite3PagerResetLockTimeout(Pager *pPager){
+  int x = 0;
+  sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCK_TIMEOUT, &x);
+}
+#endif
+
 /*
 ** Return the file handle for the journal file (if it exists).
 ** This will be either the rollback journal or the WAL file.
@@ -7585,6 +7589,7 @@ int sqlite3PagerCheckpoint(
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt
     );
+    sqlite3PagerResetLockTimeout(pPager);
   }
   return rc;
 }

@@ -173,6 +173,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
+    -DSQLITE_ENABLE_DESERIALIZE=1
     --enable-json1 --enable-fts5 --enable-session
   }
   "Locking-Style" {

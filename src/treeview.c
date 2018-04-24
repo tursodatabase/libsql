@@ -62,11 +62,13 @@ static void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
     }
     sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|-- " : "'-- ", 4);
   }
-  va_start(ap, zFormat);
-  sqlite3VXPrintf(&acc, zFormat, ap);
-  va_end(ap);
-  assert( acc.nChar>0 );
-  if( zBuf[acc.nChar-1]!='\n' ) sqlite3StrAccumAppend(&acc, "\n", 1);
+  if( zFormat!=0 ){
+    va_start(ap, zFormat);
+    sqlite3VXPrintf(&acc, zFormat, ap);
+    va_end(ap);
+    assert( acc.nChar>0 );
+    sqlite3StrAccumAppend(&acc, "\n", 1);
+  }
   sqlite3StrAccumFinish(&acc);
   fprintf(stdout,"%s", zBuf);
   fflush(stdout);
@@ -139,10 +141,10 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   do{
 #if SELECTTRACE_ENABLED
     sqlite3TreeViewLine(pView,
-      "SELECT%s%s (%s/%p) selFlags=0x%x nSelectRow=%d",
+      "SELECT%s%s (%s/%d/%p) selFlags=0x%x nSelectRow=%d",
       ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
       ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""),
-      p->zSelName, p, p->selFlags,
+      p->zSelName, p->iSelectId, p, p->selFlags,
       (int)p->nSelectRow
     );
 #else
@@ -536,16 +538,21 @@ void sqlite3TreeViewBareExprList(
     for(i=0; i<pList->nExpr; i++){
       int j = pList->a[i].u.x.iOrderByCol;
       char *zName = pList->a[i].zName;
+      int moreToFollow = i<pList->nExpr - 1;
       if( j || zName ){
-        sqlite3TreeViewPush(pView, 0);
+        sqlite3TreeViewPush(pView, moreToFollow);
+        moreToFollow = 0;
+        sqlite3TreeViewLine(pView, 0);
+        if( zName ){
+          fprintf(stdout, "AS %s ", zName);
+        }
+        if( j ){
+          fprintf(stdout, "iOrderByCol=%d", j);
+        }
+        fprintf(stdout, "\n");
+        fflush(stdout);
       }
-      if( zName ){
-        sqlite3TreeViewLine(pView, "AS %s", zName);
-      }
-      if( j ){
-        sqlite3TreeViewLine(pView, "iOrderByCol=%d", j);
-      }
-      sqlite3TreeViewExpr(pView, pList->a[i].pExpr, i<pList->nExpr-1);
+      sqlite3TreeViewExpr(pView, pList->a[i].pExpr, moreToFollow);
       if( j || zName ){
         sqlite3TreeViewPop(pView);
       }

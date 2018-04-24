@@ -764,7 +764,7 @@ static int editDist3ConfigLoad(
     assert( zTo!=0 || nTo==0 );
     if( nFrom>100 || nTo>100 ) continue;
     if( iCost<0 ) continue;
-    if( iCost>10000 ) continue;   /* Costs above 10K are considered infinite */
+    if( iCost>=10000 ) continue;  /* Costs above 10K are considered infinite */
     if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
       pNew = sqlite3_realloc64(p->a, (p->nLang+1)*sizeof(p->a[0]));
@@ -835,6 +835,7 @@ static int utf8Len(unsigned char c, int N){
 ** the given string.
 */
 static int matchTo(EditDist3Cost *p, const char *z, int n){
+  assert( n>0 );
   if( p->a[p->nFrom]!=z[0] ) return 0;
   if( p->nTo>n ) return 0;
   if( strncmp(p->a+p->nFrom, z, p->nTo)!=0 ) return 0;
@@ -847,8 +848,10 @@ static int matchTo(EditDist3Cost *p, const char *z, int n){
 */
 static int matchFrom(EditDist3Cost *p, const char *z, int n){
   assert( p->nFrom<=n );
-  if( p->a[0]!=z[0] ) return 0;
-  if( strncmp(p->a, z, p->nFrom)!=0 ) return 0;
+  if( p->nFrom ){
+    if( p->a[0]!=z[0] ) return 0;
+    if( strncmp(p->a, z, p->nFrom)!=0 ) return 0;
+  }
   return 1;
 }
 
@@ -864,6 +867,7 @@ static int matchFromTo(
 ){
   int b1 = pStr->a[n1].nByte;
   if( b1>n2 ) return 0;
+  assert( b1>0 );
   if( pStr->z[n1]!=z2[0] ) return 0;
   if( strncmp(pStr->z+n1, z2, b1)!=0 ) return 0;
   return 1;

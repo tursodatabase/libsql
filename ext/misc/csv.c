@@ -132,6 +132,7 @@ static int csv_reader_open(
     }
     p->in = fopen(zFilename, "rb");
     if( p->in==0 ){
+      sqlite3_free(p->zIn);
       csv_reader_reset(p);
       csv_errmsg(p, "cannot open '%s' for reading", zFilename);
       return 1;

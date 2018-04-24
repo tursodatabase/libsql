@@ -1064,6 +1064,12 @@ struct sqlite3_io_methods {
 ** so that all subsequent write operations are independent.
 ** ^SQLite will never invoke SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE without
 ** a prior successful call to [SQLITE_FCNTL_BEGIN_ATOMIC_WRITE].
+**
+** <li>[[SQLITE_FCNTL_LOCK_TIMEOUT]]
+** The [SQLITE_FCNTL_LOCK_TIMEOUT] opcode causes attempts to obtain
+** a file lock using the xLock or xShmLock methods of the VFS to wait
+** for up to M milliseconds before failing, where M is the single 
+** unsigned integer parameter.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1098,6 +1104,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_BEGIN_ATOMIC_WRITE     31
 #define SQLITE_FCNTL_COMMIT_ATOMIC_WRITE    32
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
+#define SQLITE_FCNTL_LOCK_TIMEOUT           34
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1923,6 +1930,22 @@ struct sqlite3_mem_methods {
 ** I/O required to support statement rollback.
 ** The default value for this setting is controlled by the
 ** [SQLITE_STMTJRNL_SPILL] compile-time option.
+**
+** [[SQLITE_CONFIG_SORTERREF_SIZE]]
+** <dt>SQLITE_CONFIG_SORTERREF_SIZE
+** <dd>The SQLITE_CONFIG_SORTERREF_SIZE option accepts a single parameter
+** of type (int) - the new value of the sorter-reference size threshold.
+** Usually, when SQLite uses an external sort to order records according
+** to an ORDER BY clause, all fields required by the caller are present in the
+** sorted records. However, if SQLite determines based on the declared type
+** of a table column that its values are likely to be very large - larger
+** than the configured sorter-reference size threshold - then a reference
+** is stored in each sorted record and the required column values loaded
+** from the database as records are returned in sorted order. The default
+** value for this option is to never use this optimization. Specifying a 
+** negative value for this option restores the default behaviour.
+** This option is only available if SQLite is compiled with the
+** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -1952,6 +1975,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_PMASZ               25  /* unsigned int szPma */
 #define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 #define SQLITE_CONFIG_SMALL_MALLOC        27  /* boolean */
+#define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
@@ -8836,7 +8860,7 @@ unsigned char *sqlite3_serialize(
 ** CAPI3REF: Deserialize a database
 **
 ** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the 
-** [database connection] D to disconnection from database S and then
+** [database connection] D to disconnect from database S and then
 ** reopen S as an in-memory database based on the serialization contained
 ** in P.  The serialized database P is N bytes in size.  M is the size of
 ** the buffer P, which might be larger than N.  If M is larger than N, and

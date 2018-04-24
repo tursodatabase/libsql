@@ -502,6 +502,9 @@ int sqlite3FixSrcList(
     if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
     if( sqlite3FixExpr(pFix, pItem->pOn) ) return 1;
 #endif
+    if( pItem->fg.isTabFunc && sqlite3FixExprList(pFix, pItem->u1.pFuncArg) ){
+      return 1;
+    }
   }
   return 0;
 }
@@ -601,6 +604,18 @@ int sqlite3FixTriggerStep(
     if( sqlite3FixExprList(pFix, pStep->pExprList) ){
       return 1;
     }
+#ifndef SQLITE_OMIT_UPSERT
+    if( pStep->pUpsert ){
+      Upsert *pUp = pStep->pUpsert;
+      if( sqlite3FixExprList(pFix, pUp->pUpsertTarget)
+       || sqlite3FixExpr(pFix, pUp->pUpsertTargetWhere)
+       || sqlite3FixExprList(pFix, pUp->pUpsertSet)
+       || sqlite3FixExpr(pFix, pUp->pUpsertWhere)
+      ){
+        return 1;
+      }
+    }
+#endif
     pStep = pStep->pNext;
   }
   return 0;

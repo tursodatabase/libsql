@@ -57,6 +57,7 @@ do_execsql_test 110 {
 # What happens when we try to VACUUM a MEMDB database?
 #
 do_execsql_test 120 {
+  PRAGMA auto_vacuum = off;
   VACUUM;
 } {}
 do_execsql_test 130 {
