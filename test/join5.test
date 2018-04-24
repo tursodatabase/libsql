@@ -212,4 +212,34 @@ do_execsql_test 5.5 {
   SELECT * FROM ( SELECT * FROM y1 ) LEFT JOIN y2 ON x
 } {0 0 1 {}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.1 {
+  CREATE TABLE t1(x); 
+  INSERT INTO t1 VALUES(1);
+
+  CREATE TABLE t2(y INTEGER PRIMARY KEY,a,b);
+  INSERT INTO t2 VALUES(1,2,3);
+  CREATE INDEX t2a ON t2(a); 
+  CREATE INDEX t2b ON t2(b); 
+}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON a=2 OR b=3 WHERE y IS NULL;
+} {}
+
+do_execsql_test 6.3.1 {
+  CREATE TABLE t3(x);
+  INSERT INTO t3 VALUES(1);
+  CREATE TABLE t4(y, z);
+  SELECT ifnull(z, '!!!') FROM t3 LEFT JOIN t4 ON (x=y);
+} {!!!}
+
+do_execsql_test 6.3.2 {
+  CREATE INDEX t4i ON t4(y, ifnull(z, '!!!'));
+  SELECT ifnull(z, '!!!') FROM t3 LEFT JOIN t4 ON (x=y);
+} {!!!}
+
 finish_test
+

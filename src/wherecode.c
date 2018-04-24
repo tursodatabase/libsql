@@ -1748,9 +1748,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     /* If pIdx is an index on one or more expressions, then look through
     ** all the expressions in pWInfo and try to transform matching expressions
     ** into reference to index columns.
+    **
+    ** Do not do this for the RHS of a LEFT JOIN. This is because the 
+    ** expression may be evaluated after OP_NullRow has been executed on
+    ** the cursor. In this case it is important to do the full evaluation,
+    ** as the result of the expression may not be NULL, even if all table
+    ** column values are.
     */
-    whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
-
+    if( pLevel->iLeftJoin==0 ){
+      whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
+    }
 
     /* Record the instruction used to terminate the loop. */
     if( pLoop->wsFlags & WHERE_ONEROW ){
