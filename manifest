@@ -1,5 +1,5 @@
-C All\sthe\sOR\soptimization\sto\sproceed\seven\sif\sthe\sOR\sis\salso\sconverted\sinto\nan\sIN\soperator.
-D 2018-04-24T16:41:37.256
+C Update\sthe\sexpert\sextension\stest\scases\sto\saccount\sfor\sthe\sfact\sthat\nEXPLAIN\sQUERY\sPLAN\snow\sshows\sthe\sstart\sof\seach\strigger\sin\sits\soutput.
+D 2018-04-24T16:51:38.267
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -44,7 +44,7 @@ F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test fd21496d8e52c817a7741f467f42b0502c0ac7e07dcdd1d6e15a3e8154ed4e41
+F ext/expert/expert1.test 00fb67256755a5194dab3d462f8ed3ad4640b4731fe465e5e28cea42c59ce05e
 F ext/expert/sqlite3expert.c 1dfa561e64dc0f89d56b96e6afda87468c34b43604c2df50c47e3f4362778fb2
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45247c7f291bc0cc42600a4aa4ff7cdcd0a703fdfadcb0e12174c5250e70d503
-R 840e7a1ead09663021554557fd6b1472
+P e252c6540db266b93beeb47a8f7dbf3b275f8c782cd2d36ba4c00648c382f63f
+R 15f1773843c8a62145274849544ab48b
 U drh
-Z f87f6e70114eeb74bfe0f62e1b23d556
+Z d4f18ad91a8c9b54d4d2a63158263fee
