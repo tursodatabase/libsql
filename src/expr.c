@@ -2609,17 +2609,6 @@ int sqlite3CodeSubselect(
     jmpIfDynamic = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
 
-#ifndef SQLITE_OMIT_EXPLAIN
-  if( pParse->explain==2 ){
-    char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %s%s SUBQUERY %d",
-        jmpIfDynamic>=0?"":"CORRELATED ",
-        pExpr->op==TK_IN?"LIST":"SCALAR",
-        pParse->iNextSelectId
-    );
-    sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
-  }
-#endif
-
   switch( pExpr->op ){
     case TK_IN: {
       int addr;                   /* Address of OP_OpenEphemeral instruction */
@@ -2656,6 +2645,17 @@ int sqlite3CodeSubselect(
         */
         Select *pSelect = pExpr->x.pSelect;
         ExprList *pEList = pSelect->pEList;
+
+#ifndef SQLITE_OMIT_EXPLAIN
+        if( pParse->explain==2 ){
+          char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %sLIST SUBQUERY %d",
+            jmpIfDynamic>=0?"":"CORRELATED ",
+            pParse->iNextSelectId
+          );
+          sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg,
+                            P4_DYNAMIC);
+        }
+#endif
 
         assert( !isRowid );
         /* If the LHS and RHS of the IN operator do not match, that
@@ -2698,7 +2698,6 @@ int sqlite3CodeSubselect(
         ExprList *pList = pExpr->x.pList;
         struct ExprList_item *pItem;
         int r1, r2, r3;
-
         affinity = sqlite3ExprAffinity(pLeft);
         if( !affinity ){
           affinity = SQLITE_AFF_BLOB;
@@ -2777,6 +2776,17 @@ int sqlite3CodeSubselect(
       testcase( pExpr->op==TK_SELECT );
       assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
       assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+
+#ifndef SQLITE_OMIT_EXPLAIN
+      if( pParse->explain==2 ){
+        char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %sSCALAR SUBQUERY %d",
+            jmpIfDynamic>=0?"":"CORRELATED ",
+            pParse->iNextSelectId
+        );
+        sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg,
+                          P4_DYNAMIC);
+      }
+#endif
 
       pSel = pExpr->x.pSelect;
       nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
