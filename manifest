@@ -1,5 +1,5 @@
-C Add\sa\shyperlink\sto\sthe\sticket\son\sthe\scode\scomment\sfor\sthe\sfix\sto\nticket\s[7fa8049685b50b5aeb0c2].
-D 2018-04-24T14:18:49.272
+C All\sthe\sOR\soptimization\sto\sproceed\seven\sif\sthe\sOR\sis\salso\sconverted\sinto\nan\sIN\soperator.
+D 2018-04-24T16:41:37.256
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -579,7 +579,7 @@ F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c d6e5f2056e9a60251e79780fc598a5943e88a3c0fa0019d54922e59f99019287
 F src/whereInt.h 2610cb87dd95509995b63decc674c60f2757697a206cfe0c085ee53d9c43cfff
 F src/wherecode.c 52225f6b519c7742a593341a13308d8fd08af7f91af0fa765c6adad85978d525
-F src/whereexpr.c 53532be687e12f3cd314f1e204cd4fbdac7ad250e918a182b048121e16e828ae
+F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1580,7 +1580,7 @@ F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cf
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
-F test/where.test f0c325563acde44f2c4ea6ba348e9e29f7121757
+F test/where.test ad770ad7025c7167e7583f083315065424524b76f903f7a3bbbc31aab56c0821
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 54cdeb02157acc979de41530b804ae7b09552bf1
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8ef967ab1bebf2846c06c4f7200d6fa1c60e52e55711ea171c25ef1331f8a24
-R f150cf8d1e1e1e2c389bb10ba8bf92e4
+P 45247c7f291bc0cc42600a4aa4ff7cdcd0a703fdfadcb0e12174c5250e70d503
+R 840e7a1ead09663021554557fd6b1472
 U drh
-Z 0702240697f01da315eec49a319fa211
+Z f87f6e70114eeb74bfe0f62e1b23d556
