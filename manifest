@@ -1,5 +1,5 @@
-C Add\sthe\snew\sSQLITE_SHELL_INIT_PROC\scompile-time\sentry\spoint\sto\sthe\sCLI.\s\sThis\nis\sneeded\sto\swork\saround\sthe\stighter\ssqlite3_config()\sconstraints\snow\sin\sthe\nCLI.
-D 2018-04-25T13:27:07.163
+C Add\sthe\snew\sDO\sand\sNOTHING\skeywords\sto\sthe\skeyword\slists\smaintained\nby\svarious\sextensions\sand\sauxiliary\sprograms.
+D 2018-04-25T17:10:30.576
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -272,10 +272,10 @@ F ext/misc/appendvfs.c 3777f22ec1057dc4e5fd89f2fbddcc7a29fbeef1ad038c736c54411bb
 F ext/misc/btreeinfo.c 78c8c57d325185ccc04b7679e5b020e34a4d9c87453e6b7ac943d0a26cee3256
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
-F ext/misc/completion.c 0d0bd16378415b982e7119baddef52a0d2cc25860c238a9d2832b0cc6a84a16d
+F ext/misc/completion.c ba0f8ecc6ff016e52cbd3d44dd0c990f2845e3b29ddbde744d476bacd9b6bd00
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c d1e324fac3f87f818d684a3d752d1ef76dbcd4fc0db6746ac4034c19d0bcda21
-F ext/misc/dbdump.c 22018e00eb50e9ebf9067c92d4e7162dc5006a3efc4e0c19bc3829825a1043b0
+F ext/misc/dbdump.c 4469a3b6d967e4a6bf6a7b8124f1cf33c362096020e923ca27ee592854d90cf6
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -493,7 +493,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3dbce4379836189acbc5719f40125f3d1e0dbaee024ec4550ab449744a8cb074
-F src/shell.c.in 38aa5740e462bd3f4466ae1939d645349ea10fea65673e169cae1b018134b71a
+F src/shell.c.in be819b84dc08e65bec15836cea6bf05303abe2ed7b46208bde76ef5ee0cdeb3d
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1690,7 +1690,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
-F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
+F tool/sqldiff.c c86f7e70453626f8949e23c4116947e02779eaa14242e8fd6c2b899ac807b555
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58cf812fd81329e82b3fdd61b7ad2040c9b90d2d80f592b9231e0e1902c8d577
-R c07173975a3bfb0a4bc14f3247bfcc39
+P 3bcdbccf530e2a5aab7b91f4b9e5535cced91f242c49ff69b05a75d643b8b4a3
+R 9e60a6dd36d20684c5f81effe9563b16
 U drh
-Z bcde754701772f8aaf655db1a8e0f6db
+Z 6dc12a942162208a495a5570be5abedc
