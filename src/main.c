@@ -3861,24 +3861,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-#ifdef SQLITE_N_KEYWORD
-    /* sqlite3_test_control(SQLITE_TESTCTRL_ISKEYWORD, const char *zWord)
-    **
-    ** If zWord is a keyword recognized by the parser, then return the
-    ** number of keywords.  Or if zWord is not a keyword, return 0.
-    ** 
-    ** This test feature is only available in the amalgamation since
-    ** the SQLITE_N_KEYWORD macro is not defined in this file if SQLite
-    ** is built using separate source files.
-    */
-    case SQLITE_TESTCTRL_ISKEYWORD: {
-      const char *zWord = va_arg(ap, const char*);
-      int n = sqlite3Strlen30(zWord);
-      rc = (sqlite3KeywordCode((u8*)zWord, n)!=TK_ID) ? SQLITE_N_KEYWORD : 0;
-      break;
-    }
-#endif 
-
     /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
     **
     ** If parameter onoff is non-zero, configure the wrappers so that all
