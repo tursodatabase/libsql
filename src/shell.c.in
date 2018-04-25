@@ -8471,9 +8471,21 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   verify_uninitialized();
 
 
+#ifdef SQLITE_SHELL_INIT_PROC
+  {
+    /* If the SQLITE_SHELL_INIT_PROC macro is defined, then it is the name
+    ** of a C-function that will perform initialization actions on SQLite that
+    ** occur just before or after sqlite3_initialize(). Use this compile-time
+    ** option to embed this shell program in larger applications. */
+    extern void SQLITE_SHELL_INIT_PROC(void);
+    SQLITE_SHELL_INIT_PROC();
+  }
+#else
   /* All the sqlite3_config() calls have now been made. So it is safe
   ** to call sqlite3_initialize() and process any command line -vfs option. */
   sqlite3_initialize();
+#endif
+
   if( zVfs ){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
     if( pVfs ){

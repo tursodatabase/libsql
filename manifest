@@ -1,5 +1,5 @@
-C Avoid\smany\sunnecessary\scalls\sto\ssqlite3ReadSchema()\sand\ssqlite3Init()\swhen\nthe\sschema\sis\sknown\sto\sbe\svalid\salready.
-D 2018-04-25T12:01:45.412
+C Add\sthe\snew\sSQLITE_SHELL_INIT_PROC\scompile-time\sentry\spoint\sto\sthe\sCLI.\s\sThis\nis\sneeded\sto\swork\saround\sthe\stighter\ssqlite3_config()\sconstraints\snow\sin\sthe\nCLI.
+D 2018-04-25T13:27:07.163
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -493,7 +493,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3dbce4379836189acbc5719f40125f3d1e0dbaee024ec4550ab449744a8cb074
-F src/shell.c.in fc3f9e47198c6baea6987b6ec86fb99e7c79cee8109ce9bdece790345d8c246f
+F src/shell.c.in 38aa5740e462bd3f4466ae1939d645349ea10fea65673e169cae1b018134b71a
 F src/sqlite.h.in aa9bd3ae4a077c7002059cb418271abe52214b0227b2a734bc44736b24cbcc40
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8b46290bb75c695dac523cf9a50d1b43e773802e3b95fd722feca16162ab7c5
-R 214110ad6fdf7789b7b7a9c6d65bc1a8
+P 58cf812fd81329e82b3fdd61b7ad2040c9b90d2d80f592b9231e0e1902c8d577
+R c07173975a3bfb0a4bc14f3247bfcc39
 U drh
-Z 468a9bdbe012765b3a0a759e796a254f
+Z bcde754701772f8aaf655db1a8e0f6db
