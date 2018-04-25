@@ -1,5 +1,5 @@
-C Remove\sa\srecently\sadded\sNEVER()\smacro\sfrom\sa\sbranch\sthat\scan\sbe\staken\sin\nobscure\scircumstances.
-D 2018-04-24T18:59:18.950
+C Add\san\sassert()\sto\sensure\sthat\sschema\smutexes\sare\sheld\sprior\sto\saccessing\nthe\sDB_SchemaLoaded\sflag\sinside\sof\ssqlite3Init().
+D 2018-04-25T10:30:46.214
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -487,7 +487,7 @@ F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c bea56df3ae0637768c0da4fbbb8f2492f780980d95000034a105ff291bf7ca69
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
-F src/prepare.c b086fea6a1952db88beca31fdd621201ee5e4ce3f02905248cc3035a8174aa89
+F src/prepare.c 2243890992597ded6358121a25567efb4482369c3685692a2444ff3f46c5b434
 F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce35e39c5cc2b00dd6b4a9ffaa9d5eb7d9b862759e87d5f053729de7643eee9c
-R b81c41d41f6d79a1f11e2959c7e48fbd
-U dan
-Z d6a8a882b554cae8ae80a8c6e35bf17b
+P 2aa210030ae414782adab9291cc43a149a780f39bd3d306dc2892a8c20422a51
+R 445070ffd3b1be1286b1b020beb181c5
+U drh
+Z c5a11b92ab72681e9cb438ff2daf1afb

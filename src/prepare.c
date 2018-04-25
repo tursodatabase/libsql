@@ -374,6 +374,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   }
   /* All other schemas after the main schema. The "temp" schema must be last */
   for(i=db->nDb-1; i>0; i--){
+    assert( i==1 || sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
     if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
       rc = sqlite3InitOne(db, i, pzErrMsg);
       if( rc ) return rc;
