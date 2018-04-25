@@ -1362,7 +1362,7 @@ struct sqlite3 {
   u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
-  u8 skipBtreeMutex;            /* True if no shared-cache backends */
+  u8 noSharedCache;             /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
@@ -1522,6 +1522,7 @@ struct sqlite3 {
 #define DBFLAG_SchemaChange   0x0001  /* Uncommitted Hash table changes */
 #define DBFLAG_PreferBuiltin  0x0002  /* Preference to built-in funcs */
 #define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
+#define DBFLAG_SchemaKnownOk  0x0008  /* Schema is known to be valid */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the

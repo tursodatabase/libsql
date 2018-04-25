@@ -343,24 +343,27 @@ Table *sqlite3LocateTable(
   const char *zDbase     /* Name of the database.  Might be NULL */
 ){
   Table *p;
+  sqlite3 *db = pParse->db;
 
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+  if( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 
+   && SQLITE_OK!=sqlite3ReadSchema(pParse)
+  ){
     return 0;
   }
 
-  p = sqlite3FindTable(pParse->db, zName, zDbase);
+  p = sqlite3FindTable(db, zName, zDbase);
   if( p==0 ){
     const char *zMsg = flags & LOCATE_VIEW ? "no such view" : "no such table";
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( sqlite3FindDbName(pParse->db, zDbase)<1 ){
+    if( sqlite3FindDbName(db, zDbase)<1 ){
       /* If zName is the not the name of a table in the schema created using
       ** CREATE, then check to see if it is the name of an virtual table that
       ** can be an eponymous virtual table. */
-      Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
+      Module *pMod = (Module*)sqlite3HashFind(&db->aModule, zName);
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
-        pMod = sqlite3PragmaVtabRegister(pParse->db, zName);
+        pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
         return pMod->pEpoTab;
@@ -525,6 +528,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     DbSetProperty(db, iDb, DB_ResetWanted);
     DbSetProperty(db, 1, DB_ResetWanted);
+    db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
   }
 
   if( db->nSchemaLock==0 ){
@@ -550,7 +554,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
       sqlite3SchemaClear(pDb->pSchema);
     }
   }
-  db->mDbFlags &= ~DBFLAG_SchemaChange;
+  db->mDbFlags &= ~(DBFLAG_SchemaChange|DBFLAG_SchemaKnownOk);
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
   sqlite3CollapseDatabaseArray(db);

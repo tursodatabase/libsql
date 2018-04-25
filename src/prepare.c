@@ -145,6 +145,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   const char *zMasterName;
   int openedTransaction = 0;
 
+  assert( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 );
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pSchema );
   assert( sqlite3_mutex_held(db->mutex) );
@@ -396,10 +397,12 @@ int sqlite3ReadSchema(Parse *pParse){
   assert( sqlite3_mutex_held(db->mutex) );
   if( !db->init.busy ){
     rc = sqlite3Init(db, &pParse->zErrMsg);
-  }
-  if( rc!=SQLITE_OK ){
-    pParse->rc = rc;
-    pParse->nErr++;
+    if( rc!=SQLITE_OK ){
+      pParse->rc = rc;
+      pParse->nErr++;
+    }else if( db->noSharedCache ){
+      db->mDbFlags |= DBFLAG_SchemaKnownOk;
+    }
   }
   return rc;
 }

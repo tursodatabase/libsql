@@ -158,7 +158,7 @@ static void attachFunc(
     sqlite3_free( zPath );
     db->nDb++;
   }
-  db->skipBtreeMutex = 0;
+  db->noSharedCache = 0;
   if( rc==SQLITE_CONSTRAINT ){
     rc = SQLITE_ERROR;
     zErrDyn = sqlite3MPrintf(db, "database is already attached");
@@ -230,6 +230,7 @@ static void attachFunc(
   if( rc==SQLITE_OK ){
     sqlite3BtreeEnterAll(db);
     db->init.iDb = 0;
+    db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
     rc = sqlite3Init(db, &zErrDyn);
     sqlite3BtreeLeaveAll(db);
     assert( zErrDyn==0 || rc!=SQLITE_OK );
