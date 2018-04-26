@@ -200,7 +200,6 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
-void sqlite3VdbeSwapOpcode(Vdbe*, u32 addr, u8, u8);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, u32 addr, int P2);
 void sqlite3VdbeChangeP3(Vdbe*, u32 addr, int P3);

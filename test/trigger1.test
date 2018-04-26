@@ -761,5 +761,11 @@ do_execsql_test trigger1-19.0 {
   UPDATE t19 SET c=b WHERE a=1;
   SELECT * FROM t19;
 } {1 2 2}
+do_execsql_test trigger1-19.1 {
+  DELETE FROM t19;
+  INSERT INTO t19(a,b,c) VALUES(1,2,3);
+  UPDATE t19 SET c=CASE WHEN b=2 THEN b ELSE b+99 END WHERE a=1;
+  SELECT * FROM t19;
+} {1 2 2}
 
 finish_test
