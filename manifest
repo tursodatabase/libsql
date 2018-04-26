@@ -1,5 +1,5 @@
-C Improved\sVDBE\scomment\son\sthe\sOP_Param\sopcode.\s\sNo\ssubstantial\schanges.
-D 2018-04-26T12:27:03.691
+C Clarification\sof\sthe\sbehavior\sof\sa\sBEFORE\sUPDATE\strigger\swhen\sthe\strigger\nchanges\sthe\svalues\sof\ssome\sof\sthe\scolumns\sused\sto\scompute\snew\scolumns\sin\nthe\sUPDATE.
+D 2018-04-26T15:04:18.138
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -557,7 +557,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bbde32eac9eb1280f5292bcdfef66f5a57e43176cbf9347e0efab9f75e133f97
 F src/treeview.c 6cea286ca9af8b126dae9714799265353387244eba0d451c3cc2cd60946cc4c7
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
-F src/update.c 0d53281948be1c7f7242151fe9adcdcb02eb9faeb1ee4c98cffd67c12adc3599
+F src/update.c 2946cf3c6995f9d5cdccedcc08339d18b8eae72c15f06c011ef3230550c0583b
 F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1477,7 +1477,7 @@ F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test 293300f46916569f08875cdb2fe2134be2c27677
-F test/trigger1.test ea9624cc1dae05645469df6119fa815f9e6f1e8c
+F test/trigger1.test d7bdbff72c65293dddc8a443c3fd90b957869ac274c5e25ea6acc326f5e3c233
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a956363cf6881be590120c7718976b54b12c4bd0d9228d8142b45e0fe1826f7e
-R 67e4930e9711eb625aa31c5083fa85ba
+P 368c14da868a843767344f6cc17c499fddd83244c0510337ed9a918e64ee2413
+R d67c07078741cec11cd337cb536cdcc8
 U drh
-Z bd6cee7c5fa35b400b9c5a8450cb9640
+Z aca21fa0a22205b706503004c2920563

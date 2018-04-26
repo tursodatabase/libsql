@@ -639,10 +639,13 @@ void sqlite3Update(
       VdbeCoverage(v);
     }
 
-    /* If it did not delete it, the row-trigger may still have modified 
+    /* If it did not delete it, the BEFORE trigger may still have modified 
     ** some of the columns of the row being updated. Load the values for 
-    ** all columns not modified by the update statement into their 
-    ** registers in case this has happened.
+    ** all columns not modified by the update statement into their registers
+    ** in case this has happened. Only unmodified columns are reloaded.
+    ** The values computed for modified columns use the values before the
+    ** BEFORE trigger runs.  See test case trigger1-18.0 (added 2018-04-26)
+    ** for an example.
     */
     for(i=0; i<pTab->nCol; i++){
       if( aXRef[i]<0 && i!=pTab->iPKey ){
