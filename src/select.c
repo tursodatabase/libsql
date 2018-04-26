@@ -579,7 +579,6 @@ static void pushOntoSorter(
   if( nPrefixReg==0 && nData>0 ){
     sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+bSeq, nData);
   }
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
   if( nOBSat>0 ){
     int regPrevKey;   /* The first nOBSat columns of the previous row */
     int addrFirst;    /* Address of the OP_IfNot opcode */
@@ -588,6 +587,7 @@ static void pushOntoSorter(
     int nKey;         /* Number of sorting key columns, including OP_Sequence */
     KeyInfo *pKI;     /* Original KeyInfo on the sorter table */
 
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat,regRecord);
     regPrevKey = pParse->nMem+1;
     pParse->nMem += pSort->nOBSat;
     nKey = nExpr - pSort->nOBSat + bSeq;
@@ -621,6 +621,35 @@ static void pushOntoSorter(
     sqlite3ExprCodeMove(pParse, regBase, regPrevKey, pSort->nOBSat);
     sqlite3VdbeJumpHere(v, addrJmp);
   }
+  if( iLimit ){
+    /* At this point the values for the new sorter entry are stored
+    ** in an array of registers. They need to be composed into a record
+    ** and inserted into the sorter if either (a) there are currently
+    ** less than LIMIT+OFFSET items or (b) the new record is smaller than 
+    ** the largest record currently in the sorter. If (b) is true and there
+    ** are already LIMIT+OFFSET items in the sorter, delete the largest
+    ** entry before inserting the new one. This way there are never more 
+    ** than LIMIT+OFFSET items in the sorter.
+    **
+    ** If the new record does not need to be inserted into the sorter,
+    ** jump to the next iteration of the loop. Or, if the
+    ** pSort->bOrderedInnerLoop flag is set to indicate that the inner
+    ** loop delivers items in sorted order, jump to the next iteration
+    ** of the outer loop.
+    */
+    int iCsr = pSort->iECursor;
+    int iJmp = sqlite3VdbeCurrentAddr(v)+5+(nOBSat<=0)+pSort->bOrderedInnerLoop;
+    assert( pSort->bOrderedInnerLoop==0 || pSort->bOrderedInnerLoop==1 );
+    sqlite3VdbeAddOp2(v, OP_IfNotZero, iLimit, sqlite3VdbeCurrentAddr(v)+4);
+    VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_Last, iCsr, 0);
+    sqlite3VdbeAddOp4Int(v, OP_IdxLE, iCsr, iJmp, regBase+nOBSat, nExpr-nOBSat);
+    VdbeCoverage(v);
+    sqlite3VdbeAddOp1(v, OP_Delete, iCsr);
+  }
+  if( nOBSat<=0 ){
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat,regRecord);
+  }
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
     op = OP_SorterInsert;
   }else{
@@ -628,34 +657,6 @@ static void pushOntoSorter(
   }
   sqlite3VdbeAddOp4Int(v, op, pSort->iECursor, regRecord,
                        regBase+nOBSat, nBase-nOBSat);
-  if( iLimit ){
-    int addr;
-    int r1 = 0;
-    /* Fill the sorter until it contains LIMIT+OFFSET entries.  (The iLimit
-    ** register is initialized with value of LIMIT+OFFSET.)  After the sorter
-    ** fills up, delete the least entry in the sorter after each insert.
-    ** Thus we never hold more than the LIMIT+OFFSET rows in memory at once */
-    addr = sqlite3VdbeAddOp1(v, OP_IfNotZero, iLimit); VdbeCoverage(v);
-    sqlite3VdbeAddOp1(v, OP_Last, pSort->iECursor);
-    if( pSort->bOrderedInnerLoop ){
-      r1 = ++pParse->nMem;
-      sqlite3VdbeAddOp3(v, OP_Column, pSort->iECursor, nExpr, r1);
-      VdbeComment((v, "seq"));
-    }
-    sqlite3VdbeAddOp1(v, OP_Delete, pSort->iECursor);
-    if( pSort->bOrderedInnerLoop ){
-      /* If the inner loop is driven by an index such that values from
-      ** the same iteration of the inner loop are in sorted order, then
-      ** immediately jump to the next iteration of an inner loop if the
-      ** entry from the current iteration does not fit into the top
-      ** LIMIT+OFFSET entries of the sorter. */
-      int iBrk = sqlite3VdbeCurrentAddr(v) + 2;
-      sqlite3VdbeAddOp3(v, OP_Eq, regBase+nExpr, iBrk, r1);
-      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
-      VdbeCoverage(v);
-    }
-    sqlite3VdbeJumpHere(v, addr);
-  }
 }
 
 /*

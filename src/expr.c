@@ -4049,10 +4049,9 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( p1>=0 && p1<(pTab->nCol*2+2) );
 
       sqlite3VdbeAddOp2(v, OP_Param, p1, target);
-      VdbeComment((v, "%s.%s -> $%d",
+      VdbeComment((v, "r[%d]=%s.%s", target,
         (pExpr->iTable ? "new" : "old"),
-        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName),
-        target
+        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName)
       ));
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
