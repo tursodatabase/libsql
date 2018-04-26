@@ -59,7 +59,12 @@ proc do_fuzzy_malloc_test {testname args} {
     # puts fuzyy-sql=\[$::sql\]; flush stdout
     foreach {rc res} [catchsql "$::sql"] {}
     if {$rc==0} {
+      set nErr1 [set_test_counter errors]
       do_malloc_test $testname-$ii -sqlbody $::sql -sqlprep $::prep
+      if {[set_test_counter errors]>$nErr1} {
+        puts "Previous fuzzy-sql=\[$::sql\]"
+        flush stdout
+      }
     } else {
       incr ii -1
     }
