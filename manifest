@@ -1,5 +1,5 @@
-C Ensure\sthat\snew.*\svalues\sof\san\sUPDATE\sdo\snot\sget\sclobbered\safter\sthe\nBEFORE\striggers\srun\swhen\sunmodified\scolumns\sof\sthe\srow\sbeing\supdated\sare\nreloaded.\s\sFix\sfor\sticket\s[d85fffd6ffe856092ed8da]
-D 2018-04-26T15:50:10.476
+C When\sprocessing\san\s"ORDER\sBY\s...\sLIMIT"\sthat\sdoes\snot\suse\san\sindex,\scheck\nwhether\sor\snot\sa\srecord\smay\sappear\sin\sthe\sfinal\sresult\sset\sbefore\sadding\sit\sto\nthe\stemp\sb-tree\sused\sfor\ssorting.
+D 2018-04-26T17:43:35.709
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -492,7 +492,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 3dbce4379836189acbc5719f40125f3d1e0dbaee024ec4550ab449744a8cb074
+F src/select.c daf07d8defce3311f9e69f1280a874d78bc1d16c305f6aa689640f7afa02842f
 F src/shell.c.in d63f06c870ec1761ea98bd1cae651ff0ea6beadf8be892105dabd913f94cb3da
 F src/sqlite.h.in 8e70752a57597c08f64f3d49fc1fc46926b862d2e23b038b0d23b9cc748d88ea
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1725,7 +1725,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7bb23c2a3d37f0d5e5515b917860818906819d54a0066e1ba8e9792a82f7d279
-R fca770ecccc439d6123031b9ede2b90c
-U drh
-Z 0f59500027b236c3f3feca2847bff4bf
+P 0a514e62ad1ebe5c12da8daed429ae2f9d9910471d3c5cef3b6870bdadfefca1 71bf91c218334381b1b4bdba6a093e623b62e17f3e8550e154a11f0cb0b404f3
+R 4228df14b2641be536d92a6cbe9f519e
+T +closed 71bf91c218334381b1b4bdba6a093e623b62e17f3e8550e154a11f0cb0b404f3
+U dan
+Z 8a2a73a40bbf3e885ec761eb0e674078
