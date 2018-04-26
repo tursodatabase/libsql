@@ -616,6 +616,16 @@ int main(int argc, char **argv){
   printf("  return id;\n");
   printf("}\n");
   printf("#define SQLITE_N_KEYWORD %d\n", nKeyword);
+  printf("int sqlite3_keyword_name(int i,const char **pzName,int *pnName){\n");
+  printf("  if( i<0 || i>=SQLITE_N_KEYWORD ) return SQLITE_ERROR;\n");
+  printf("  *pzName = zKWText + aKWOffset[i];\n");
+  printf("  *pnName = aKWLen[i];\n");
+  printf("  return SQLITE_OK;\n");
+  printf("}\n");
+  printf("int sqlite3_keyword_count(void){ return SQLITE_N_KEYWORD; }\n");
+  printf("int sqlite3_keyword_check(const char *zName, int nName){\n");
+  printf("  return TK_ID!=sqlite3KeywordCode((const u8*)zName, nName);\n");
+  printf("}\n");
 
   return 0;
 }
