@@ -843,6 +843,12 @@ void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
   if( p->nOp>0 ) p->aOp[p->nOp-1].p5 = p5;
 }
 
+/* Change the opcode to iNew if it was previously iOld */
+void sqlite3VdbeSwapOpcode(Vdbe *p, u32 addr, u8 iOld, u8 iNew){
+  VdbeOp *pOp = sqlite3VdbeGetOp(p,addr);
+  if( pOp->opcode==iOld ) pOp->opcode = iNew;
+}
+
 /*
 ** Change the P2 operand of instruction addr so that it points to
 ** the address of the next instruction to be coded.

@@ -1,5 +1,5 @@
-C Clarification\sof\sthe\sbehavior\sof\sa\sBEFORE\sUPDATE\strigger\swhen\sthe\strigger\nchanges\sthe\svalues\sof\ssome\sof\sthe\scolumns\sused\sto\scompute\snew\scolumns\sin\nthe\sUPDATE.
-D 2018-04-26T15:04:18.138
+C Ensure\sthat\snew.*\svalues\sof\san\sUPDATE\sdo\snot\sget\sclobbered\safter\sthe\nBEFORE\striggers\srun\swhen\sunmodified\scolumns\sof\sthe\srow\sbeing\supdated\sare\nreloaded.\s\sFix\sfor\sticket\s[d85fffd6ffe856092ed8da]
+D 2018-04-26T15:50:10.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -557,16 +557,16 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bbde32eac9eb1280f5292bcdfef66f5a57e43176cbf9347e0efab9f75e133f97
 F src/treeview.c 6cea286ca9af8b126dae9714799265353387244eba0d451c3cc2cd60946cc4c7
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
-F src/update.c 2946cf3c6995f9d5cdccedcc08339d18b8eae72c15f06c011ef3230550c0583b
+F src/update.c 75ac1102d791d999ca918d7b3dced4b3023fb0ed1167a4b11591c5bc3cfbb439
 F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 762ee9bbf8733d87d8cd06f58d950e881982e416f8c767334a40ffd341b6bff5
 F src/vdbe.c 066a4e1de2ed83e253adfd2e97a684cf562eaa41d31ee7f3d3e4c8aea4485a55
-F src/vdbe.h 574ce9a0d57b026fc93ac379a339b8d391977f335ab4176a7e21ba902e9184bd
+F src/vdbe.h fff31fb658cf1aac5a2fb4d06f8d16589aef38a906e78a1565a78b8c5df7fc0a
 F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
 F src/vdbeapi.c 29d2baf9c1233131ec467d7bed1b7c8a03c27579048d768c4b04acf427838858
-F src/vdbeaux.c 944bae5207bbce456c466d01dcf2aac3ad49c957325d35c0ba7de882d3e5c25c
+F src/vdbeaux.c b82ca213e6b5461ef773beb76a2cfb720b301372dd4797007eb13ef6cf6f18c4
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 0cbe9b9560e42b72983cf9e1bceba48f297e51142bfb6b57f3747cf60106b92d
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1477,7 +1477,7 @@ F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test 293300f46916569f08875cdb2fe2134be2c27677
-F test/trigger1.test d7bdbff72c65293dddc8a443c3fd90b957869ac274c5e25ea6acc326f5e3c233
+F test/trigger1.test 254eb5245c472af5fd5a6d8c321f7af97b8532db2eff7a24c31ac67155a12c27
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 368c14da868a843767344f6cc17c499fddd83244c0510337ed9a918e64ee2413
-R d67c07078741cec11cd337cb536cdcc8
+P 7bb23c2a3d37f0d5e5515b917860818906819d54a0066e1ba8e9792a82f7d279
+R fca770ecccc439d6123031b9ede2b90c
 U drh
-Z aca21fa0a22205b706503004c2920563
+Z 0f59500027b236c3f3feca2847bff4bf

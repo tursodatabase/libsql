@@ -602,6 +602,12 @@ void sqlite3Update(
       j = aXRef[i];
       if( j>=0 ){
         sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
+        if( tmask&TRIGGER_BEFORE ){
+          /* Must preserve copied values even in case the original is
+          ** reloaded in the After-BEFORE-trigger-reload-loop below.
+          ** Ticket d85fffd6ffe856092ed8daefa811b1e399706b28 */
+          sqlite3VdbeSwapOpcode(v, -1, OP_SCopy, OP_Copy);
+        }
       }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i)) ){
         /* This branch loads the value of a column that will not be changed 
         ** into a register. This is done if there are no BEFORE triggers, or
@@ -639,7 +645,8 @@ void sqlite3Update(
       VdbeCoverage(v);
     }
 
-    /* If it did not delete it, the BEFORE trigger may still have modified 
+    /* After-BEFORE-trigger-reload-loop:
+    ** If it did not delete it, the BEFORE trigger may still have modified 
     ** some of the columns of the row being updated. Load the values for 
     ** all columns not modified by the update statement into their registers
     ** in case this has happened. Only unmodified columns are reloaded.
