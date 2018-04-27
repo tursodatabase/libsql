@@ -7154,15 +7154,25 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && n==3 && strncmp(azArg[0],"set",3)==0 ){
     int x;
-    if( nArg<2 ){
-      raw_printf(stderr, "Usage: .set KEY=VALUE\n");
+    char *zKey = 0;
+    char *zToFree = 0;
+    if( nArg==2 ){
+      zKey = azArg[1];
+    }else if( nArg==3 ){
+      zKey = zToFree = sqlite3_mprintf("%s=%s",azArg[1],azArg[2]);
+    }else{
+      raw_printf(stderr,
+         "Usage: .set KEY VALUE\n   Or: .set KEY=VALUE\n"
+         "Use SQL on the \"shell_bindings\" table to query or delete keys.\n"
+      );
       rc = 1;
       goto meta_command_exit;
     }
-    x = shell_bindings_new_text(azArg[1]);
+    x = shell_bindings_new_text(zKey);
     if( x ){
-      utf8_printf(stderr, "Error: bad setting: %s\n", azArg[1]);
+      utf8_printf(stderr, "Error: bad setting: %s\n", zKey);
     }
+    sqlite3_free(zToFree);
   }else
 
 
