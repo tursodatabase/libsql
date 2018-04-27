@@ -1,5 +1,5 @@
-C Update\stest\sscript\sfts3expr4.test\sso\sthat\sit\salways\screates\sfts3\stokenizers\sin\nthe\s"en_US"\slocality.
-D 2018-04-27T18:05:01.487
+C Document\sand\sexpose\ssqlite3_win32_set_directory()\sfunction\sfor\suse\son\sWin32.
+D 2018-04-27T22:42:37.415
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -477,7 +477,7 @@ F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 2b53b0b8ddc580db096252c721729e5f5f2f355b4fc056f8f3fb328aeb3c9e8a
-F src/os_win.c eb03c6d52f893bcd7fdd4c6006674c13c1b5e49543fec98d605201af2997171c
+F src/os_win.c a8f39484f3b9162250f510bcceb2826638c00847c9c271b770289f672ebe5372
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
@@ -494,7 +494,7 @@ F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c daf07d8defce3311f9e69f1280a874d78bc1d16c305f6aa689640f7afa02842f
 F src/shell.c.in d63f06c870ec1761ea98bd1cae651ff0ea6beadf8be892105dabd913f94cb3da
-F src/sqlite.h.in 8e70752a57597c08f64f3d49fc1fc46926b862d2e23b038b0d23b9cc748d88ea
+F src/sqlite.h.in cce7da74536701fa72a65f3127f9fd698ed107d22b2d542e8d1c47ba7b15cf83
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
 F src/sqliteInt.h c1deb023eb117b4437a69d8c5a753deb36581f1933015cd262ad32b45c4d8431
@@ -1725,7 +1725,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 462b52b121c1882e0eca819bc30c0f6e94d7fdd60047d2c32adeff3a1eb70546
-R 330eca5f95eacfc2db564f6137a9dfe2
-U dan
-Z a32eb6502eb10fd4922091ca79205291
+P 576a8f69ae25883f752e58953624e9f7126db998bebaa1f07f7c2ec47aaecabe
+R aa1ef23de768d8b20858596899c9b5a8
+T *branch * win32dir
+T *sym-win32dir *
+T -sym-trunk *
+U mistachkin
+Z fc8c1c84b4f3c1bc834f88386ed5cafe
