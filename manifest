@@ -1,5 +1,5 @@
-C The\sprevious\sfix\sfor\sticket\s[d85fffd6ffe856092ed8da]\sin\scheck-in\s\n[0a514e62ad1ebe5c12da8dae]\sdid\snot\scompletely\saddress\sthe\nprobably\sin\sthat\sit\sonly\sworked\sfor\scases\swhere\sthe\sOP_SCopy\sthat\sloaded\nthe\sregister\swas\sthe\slast\sinstruction\sin\sthe\ssequence\sfor\sthe\sexpression,\swhich\nis\snot\snecessarily\sthe\scase\sfor\sexpressions\slike\sCASE...END.\s\sThis\srevision\nprevents\sthe\sregistered\sthat\swill\sbe\srecomputed\sfrom\sbeing\scached\sin\sthe\sfirst\nplace.
-D 2018-04-26T18:34:26.853
+C Enhance\sthe\scomments\sin\sthe\stemplatevtab.c\simplementation.
+D 2018-04-27T15:17:08.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -297,7 +297,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 54d650f44f3a69a851814791bd4d304575cdbbf78d96d4f0801b44a8f31a58c5
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
-F ext/misc/templatevtab.c 52b9363de0ae4a695728a52769a2e2dab8a0a2db77ca753ad9e1a0d0f32d1f89
+F ext/misc/templatevtab.c 8251b31011dd00fc38e739c78c234c930be42b3b274bbe0493b79cd40db02a9e
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/unionvtab.c 0b3173f69b8899da640a13a345dc5ef1400199405f738abe6145b2454195b8ff
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0fcfc36ceb820fc70136b799a0405fe92e50646e697be2872bbe9a53a05ed5a9
-R 678fd436c8bb55088cd3e5add9e902ed
+P 9fd0faf517993587d2f54212638545fc85fbbc84a031bcfae8c1e5894825d83b
+R 408ce2695c1a501e1640fcd4bee57806
 U drh
-Z f084b8f7ac201c9b316a44eacae3d476
+Z 4384bff1ecbee30802e6ddd37b479122
