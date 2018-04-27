@@ -940,6 +940,7 @@ INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
 INCLUDE ../ext/misc/appendvfs.c
+INCLUDE ../ext/misc/bindvtab.c
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -3007,6 +3008,7 @@ static int shell_exec(
         }
       }
 
+      shell_bindings_apply(pStmt);
       exec_prepared_stmt(pArg, pStmt);
       explain_data_delete(pArg);
       eqp_render(pArg);
@@ -3406,6 +3408,7 @@ static char zHelp[] =
 #if defined(SQLITE_ENABLE_SESSION)
   ".session CMD ...       Create or control sessions\n"
 #endif
+  ".set KEY=VALUE         Set bind parameter KEY to be string VALUE\n"
   ".sha3sum ?OPTIONS...?  Compute a SHA3 hash of database content\n"
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
@@ -3618,6 +3621,7 @@ static void open_db(ShellState *p, int keepAlive){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
+    sqlite3_bindvtab_init(p->db, 0, 0);
 #ifdef SQLITE_HAVE_ZLIB
     sqlite3_zipfile_init(p->db, 0, 0);
     sqlite3_sqlar_init(p->db, 0, 0);
@@ -7148,6 +7152,20 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='s' && n==3 && strncmp(azArg[0],"set",3)==0 ){
+    int x;
+    if( nArg<2 ){
+      raw_printf(stderr, "Usage: .set KEY=VALUE\n");
+      rc = 1;
+      goto meta_command_exit;
+    }
+    x = shell_bindings_new_text(azArg[1]);
+    if( x ){
+      utf8_printf(stderr, "Error: bad setting: %s\n", azArg[1]);
+    }
+  }else
+
+
   if( c=='s' && n>=4 && strncmp(azArg[0],"sha3sum",n)==0 ){
     const char *zLike = 0;   /* Which table to checksum. 0 means everything */
     int i;                   /* Loop counter */
@@ -8116,6 +8134,7 @@ static const char zOptions[] =
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
+  "   -Dkey=value          set shell binding variable \"key\" to \"value\"\n"
   "   -echo                print commands before execution\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
@@ -8419,6 +8438,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       ** command, so ignore them */
       break;
 #endif
+    }else if( strncmp(z, "-D",2)==0 ){
+      int x;
+      x = shell_bindings_new_text(z+2);
+      if( x ){
+        utf8_printf(stderr, "Error: bad binding: %s\n", z);
+      }
     }
   }
   verify_uninitialized();
@@ -8615,6 +8640,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       readStdin = 0;
       break;
 #endif
+    }else if( strncmp(z, "-D", 2)==0 ){
+      /* Noop */
     }else{
       utf8_printf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       raw_printf(stderr,"Use -help for a list of options.\n");
@@ -8693,6 +8720,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
   sqlite3_free(data.zFreeOnClose);
   find_home_dir(1);
+  shell_bindings_clear();
   output_reset(&data);
   data.doXdgOpen = 0;
   clearTempFile(&data);

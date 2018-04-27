@@ -707,6 +707,7 @@ SHELL_SRC = \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \
+        $(TOP)/ext/misc/bindvtab.c \
 	$(TOP)/ext/misc/sqlar.c \
 	$(TOP)/ext/expert/sqlite3expert.c \
 	$(TOP)/ext/expert/sqlite3expert.h \
