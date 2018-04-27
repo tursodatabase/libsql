@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\serror\scausing\stests\sto\sfail\sin\ssoak.test.
-D 2018-04-27T16:35:44.321
+C Update\stest\sscript\sfts3expr4.test\sso\sthat\sit\salways\screates\sfts3\stokenizers\sin\nthe\s"en_US"\slocality.
+D 2018-04-27T18:05:01.487
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -78,11 +78,11 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f1c58503bc81c3dab1a70b25e146878ae40fccc716fd7c9b817995b661bc896f
+F ext/fts3/fts3.c b577921c7e56ea27893da06691f15721801375ebd411a0e24ec5f6fec3c572c3
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
+F ext/fts3/fts3Int.h 3378157f383540857a466420b8279626204434c3eb0dc948ad9bcd3991fc41f5
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
-F ext/fts3/fts3_expr.c dfd571a24412779ac01f25c01d888c6ef7b2d0ef
+F ext/fts3/fts3_expr.c 84c827c8adc8d5fffb3cd3632feba543c18e479bc8ae115d555fc641a7436c9d
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c deb46f7020d87ea7a14a433fb7a7f4bef42a9652
@@ -887,7 +887,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 9466627007804d855bf9df2a0cfb3dac23686fdc
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
-F test/fts3expr4.test c39a15d676b14fc439d9bf845aa7bddcf4a74dc3
+F test/fts3expr4.test cac5dd815fe6b5921741abdccdde3b7f50b86394de91e13308ee7986859c4a9f
 F test/fts3expr5.test f9abfffbf5e53d48a33e12a1e8f8ba2c551c9b49
 F test/fts3fault.test 9fb7d6266a38806de841f7244bac1b0fe3a1477184bbb10b172d19d2ca6ad692
 F test/fts3fault2.test 6a17a11d8034b1c4eca9f3091649273d56c49ff049e2173df8060f94341e9da0
@@ -1725,7 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05f6278a02e5cde89f76ced5af7d508e26576d7291dad7ee9e06b1a3be516cb0
-R ce6b5d477950780636718aaaaed16610
+P 462b52b121c1882e0eca819bc30c0f6e94d7fdd60047d2c32adeff3a1eb70546
+R 330eca5f95eacfc2db564f6137a9dfe2
 U dan
-Z 1e8f0b656d8a36cb9e04758d22e86e0c
+Z a32eb6502eb10fd4922091ca79205291
