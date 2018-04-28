@@ -1,5 +1,5 @@
-C Fix\san\sRBU\sproblem\scausing\sspurious\sSQLITE_CONSTRAINT\serrors\swhen\srestarting\nan\sRBU\supdate\sin\swhich\smore\sthan\sone\ssource\stable\swrites\sto\sa\ssingle\starget\ndatabase\stable.
-D 2018-04-28T18:20:01.187
+C Test\scases\sadded\sfor\sSQLITE_DBCONFIG_RESET_DATABASE.
+D 2018-04-28T19:08:02.897
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -1170,6 +1170,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.tcl 5f15ab8056799e9a6e26a310d49236d2e774d6a30d0ec74601e18d4ce146b79c x
+F test/resetdb.test 7fda92e443233208ec5e1825b176a9df63fb5bf962248e08b76eb4296c630cdf
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1726,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a200a49edeaca5a787a3036070f7ced3cb6e9495f8afe7b74d5cde02c79b20dc
-R a57111df9a8d9421276a0abc4d9ce2ed
-U dan
-Z ad185b98451d11b0164183c41426fb3b
+P 564ae8297d417ba4b7978e430d41f125007177673163f6ed9adc3a3974f73d24
+R f62951ddf79b7c70897c7cedc3fc5902
+U drh
+Z d48406f4893f856e5db8717a8971e33f
