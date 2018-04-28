@@ -316,22 +316,6 @@ struct winVfsAppData {
 #endif
 
 /*
- * The value used with sqlite3_win32_set_directory() to specify that
- * the data directory should be changed.
- */
-#ifndef SQLITE_WIN32_DATA_DIRECTORY_TYPE
-#  define SQLITE_WIN32_DATA_DIRECTORY_TYPE (1)
-#endif
-
-/*
- * The value used with sqlite3_win32_set_directory() to specify that
- * the temporary directory should be changed.
- */
-#ifndef SQLITE_WIN32_TEMP_DIRECTORY_TYPE
-#  define SQLITE_WIN32_TEMP_DIRECTORY_TYPE (2)
-#endif
-
-/*
  * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
  * various Win32 API heap functions instead of our own.
  */
@@ -1933,7 +1917,10 @@ char *sqlite3_win32_utf8_to_mbcs_v2(const char *zText, int useAnsi){
 ** argument is the name of the directory to use.  The return value will be
 ** SQLITE_OK if successful.
 */
-int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
+int sqlite3_win32_set_directory(
+  unsigned long type, /* Identifier for directory being set or reset */
+  void *zValue        /* New value for directory being set or reset */
+){
   char **ppDirectory = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   int rc = sqlite3_initialize();
@@ -1949,9 +1936,10 @@ int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
   );
   assert( !ppDirectory || sqlite3MemdebugHasType(*ppDirectory, MEMTYPE_HEAP) );
   if( ppDirectory ){
+    LPCWSTR zStrValue = zValue;
     char *zValueUtf8 = 0;
-    if( zValue && zValue[0] ){
-      zValueUtf8 = winUnicodeToUtf8(zValue);
+    if( zStrValue && zStrValue[0] ){
+      zValueUtf8 = winUnicodeToUtf8(zStrValue);
       if ( zValueUtf8==0 ){
         return SQLITE_NOMEM_BKPT;
       }
