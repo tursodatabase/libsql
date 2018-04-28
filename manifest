@@ -1,5 +1,5 @@
-C Document\sand\sexpose\ssqlite3_win32_set_directory()\sfunction\sfor\suse\son\sWin32.
-D 2018-04-28T01:46:22.766
+C Fix\scompiler\swarnings\sin\sFTS3.
+D 2018-04-28T04:10:55.343
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c b577921c7e56ea27893da06691f15721801375ebd411a0e24ec5f6fec3c572
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3378157f383540857a466420b8279626204434c3eb0dc948ad9bcd3991fc41f5
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
-F ext/fts3/fts3_expr.c 84c827c8adc8d5fffb3cd3632feba543c18e479bc8ae115d555fc641a7436c9d
+F ext/fts3/fts3_expr.c 3b1dbceddd8622599f3cc2626897667fe40487aaa1676707d6c37ec5a8422fc1
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c deb46f7020d87ea7a14a433fb7a7f4bef42a9652
@@ -884,7 +884,7 @@ F test/fts3defer2.test c540f5f5c2840f70c68fd9b597df817ec7170468
 F test/fts3defer3.test dd53fc13223c6d8264a98244e9b19abd35ed71cd
 F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test 9466627007804d855bf9df2a0cfb3dac23686fdc
+F test/fts3expr.test ebae205a7a89446c32583bcd492dcb817b9f6b31819bb4dde2583bb99c77e526
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
 F test/fts3expr4.test cac5dd815fe6b5921741abdccdde3b7f50b86394de91e13308ee7986859c4a9f
@@ -1725,8 +1725,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 576a8f69ae25883f752e58953624e9f7126db998bebaa1f07f7c2ec47aaecabe d11c419756ce28fcc1f58df6bbe59a3d8d19d0441970aa7bfa216ba915ceddf5
-R 789673b5ae135eb7ca65c7e275b34852
-T +closed d11c419756ce28fcc1f58df6bbe59a3d8d19d0441970aa7bfa216ba915ceddf5
-U mistachkin
-Z 9dd13bb2cb42def20613b95feb0b21f4
+P 7626b593405ca720e371b9f698b72b499b7c829bfe00f758140bc542cf970689
+R bc4e19febfa29f170cd1236e27a6cd06
+U drh
+Z f3d84a2a64c7f56d5340275e017905e0

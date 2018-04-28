@@ -1181,7 +1181,6 @@ static void fts3ExprTestCommon(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3_tokenizer_module const *pModule = 0;
   sqlite3_tokenizer *pTokenizer = 0;
   int rc;
   char **azCol = 0;
@@ -1191,7 +1190,6 @@ static void fts3ExprTestCommon(
   int ii;
   Fts3Expr *pExpr;
   char *zBuf = 0;
-  sqlite3 *db = sqlite3_context_db_handle(context);
   Fts3Hash *pHash = (Fts3Hash*)sqlite3_user_data(context);
   const char *zTokenizer = 0;
   char *zErr = 0;
@@ -1203,7 +1201,7 @@ static void fts3ExprTestCommon(
     return;
   }
 
-  zTokenizer = sqlite3_value_text(argv[0]);
+  zTokenizer = (const char*)sqlite3_value_text(argv[0]);
   rc = sqlite3Fts3InitTokenizer(pHash, zTokenizer, &pTokenizer, &zErr);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ){
