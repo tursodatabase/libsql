@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBCONFIG_RESET_DATABASE\scontrol\sfor\sresetting\sa\scorrupt\ndatabase\sfile\swithout\sclosing\sany\sdatabase\sconnections.\s\sAdded\sthe\n".dbconfig"\scommand\sto\sthe\sCLI.
-D 2018-04-28T13:21:00.131
+C Fix\san\sRBU\sproblem\scausing\sspurious\sSQLITE_CONSTRAINT\serrors\swhen\srestarting\nan\sRBU\supdate\sin\swhich\smore\sthan\sone\ssource\stable\swrites\sto\sa\ssingle\starget\ndatabase\stable.
+D 2018-04-28T18:20:01.187
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -308,7 +308,7 @@ F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/misc/zipfile.c c4de8f0ad446ce4a49aae11ff7b771cd7af60d7136c0bcfb53da1475b9075e79
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 4ae41f01d78dfae2204a63bcf39d5eb3548d039b094c29eec9a8d6683a66a5d3
-F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
+F ext/rbu/rbu1.test 41123c64e8c88bd14eb7d3f8562f37fa87aaeb154b1eade2881de21d3504be55
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
 F ext/rbu/rbu12.test bde22ed0004dd5d1888c72a84ae407e574aeae16
@@ -323,7 +323,7 @@ F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test 4e58e46e60d4064248614c43303d71f1b18cc804dd834ce6a913b3861828b28d
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
-F ext/rbu/rbu_common.tcl ebb8d81f44dc20e360cff1f34eb2ad0def33128805c5b36afcc44ab338509589
+F ext/rbu/rbu_common.tcl acfb7fbbaf8d46a9f6f6a5ec795616c84d705e1565d918afe43f0ff53ea0efa5
 F ext/rbu/rbucollate.test 86d6fc9b8f59a27b7b5a6e20b5e29816d338a0dbdea8c54bfcc549a0d437f3ea
 F ext/rbu/rbucrash.test 61470d977a06a0abc2ec35b05d82a1d7d87d10f4ffabad14c1c231edc942ad66
 F ext/rbu/rbucrash2.test b2ecbdd7bb72c88bd217c65bd00dafa07f7f2d4d
@@ -338,10 +338,11 @@ F ext/rbu/rbumulti.test 2cf153ab3d5861ff26517dc6cbaec430787a59f1d50e8771fe7a7529
 F ext/rbu/rbuprogress.test 1849d4e0e50616edf5ce75ce7db86622e656b5cf
 F ext/rbu/rburesume.test 8acb77f4a422ff55acfcfc9cc15a5cb210b1de83
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
+F ext/rbu/rbusplit.test 69271c790732b28bd465551d80b0a9a3f074e189896ee8490ce56d22078c124d
 F ext/rbu/rbutemplimit.test cd553a9288d515d0b5f87d277e76fd18c4aa740b761e7880fab11ce986ea18d1
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c f6e9ca388b5d4680fbf266a4d10a21aec11d6baf48f6d06fd53f6b205fad959f
+F ext/rbu/sqlite3rbu.c f438fea899d15d13ff3e3133242b9e378c37b5a3d76add8c342c68bdd65c6819
 F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d007e79b2
 F ext/rbu/test_rbu.c baa23eb28457580673d2175e5f0c29ced0cd320ee819b13ad362398c53b96e90
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1725,7 +1726,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e098ee415f1a530e17a942c9ba51d67c25a3ebff6b97377b7858d0b10bcec92 ff836cb8b0377c5970ecb2b797702e2b5d208eda443ecbd55f4c238a3094b28a
-R edbc587ec4dfbdf46b4ab916ffe47e60
-U drh
-Z 995979318a529c573ca1f05b93ed22e0
+P a200a49edeaca5a787a3036070f7ced3cb6e9495f8afe7b74d5cde02c79b20dc
+R a57111df9a8d9421276a0abc4d9ce2ed
+U dan
+Z ad185b98451d11b0164183c41426fb3b
