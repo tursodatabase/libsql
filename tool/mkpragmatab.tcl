@@ -123,6 +123,11 @@ set pragma_def {
   ARG:  SQLITE_WriteSchema
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
+  NAME: reset_database
+  TYPE: FLAG
+  ARG:  SQLITE_WriteSchema|SQLITE_ResetDatabase
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+
   NAME: read_uncommitted
   TYPE: FLAG
   ARG:  SQLITE_ReadUncommit
