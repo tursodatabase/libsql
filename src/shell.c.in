@@ -3340,6 +3340,7 @@ static char zHelp[] =
   ".check GLOB            Fail if output since .testcase does not match\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
+  ".dbconfig ?op? ?val?   List or change sqlite3_db_config() options\n"
   ".dbinfo ?DB?           Show status information about the database\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   "                         If TABLE specified, only dump tables matching\n"
@@ -5782,7 +5783,35 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  if( c=='d' && strncmp(azArg[0], "dbinfo", n)==0 ){
+  if( c=='d' && n>=3 && strncmp(azArg[0], "dbconfig", n)==0 ){
+    static const struct DbConfigChoices {const char *zName; int op;} aDbConfig[] = {
+        { "enable_fkey",      SQLITE_DBCONFIG_ENABLE_FKEY            },
+        { "enable_trigger",   SQLITE_DBCONFIG_ENABLE_TRIGGER         },
+        { "fts3_tokenizer",   SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER  },
+        { "load_extension",   SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION  },
+        { "no_ckpt_on_close", SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE       },
+        { "enable_qpsg",      SQLITE_DBCONFIG_ENABLE_QPSG            },
+        { "trigger_eqp",      SQLITE_DBCONFIG_TRIGGER_EQP            },
+        { "reset_database",   SQLITE_DBCONFIG_RESET_DATABASE         },
+    };
+    int ii, v;
+    open_db(p, 0);
+    for(ii=0; ii<ArraySize(aDbConfig); ii++){
+      if( nArg>1 && strcmp(azArg[1], aDbConfig[ii].zName)!=0 ) continue;
+      if( nArg>=3 ){
+        sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+      }
+      sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
+      utf8_printf(p->out, "%18s %s\n", aDbConfig[ii].zName, v ? "on" : "off");
+      if( nArg>1 ) break;
+    }
+    if( nArg>1 && ii==ArraySize(aDbConfig) ){
+      utf8_printf(stderr, "Error: unknown dbconfig \"%s\"\n", azArg[1]);
+      utf8_printf(stderr, "Enter \".dbconfig\" with no arguments for a list\n");
+    }   
+  }else
+
+  if( c=='d' && n>=3 && strncmp(azArg[0], "dbinfo", n)==0 ){
     rc = shell_dbinfo_command(p, nArg, azArg);
   }else
 
