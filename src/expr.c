@@ -3551,6 +3551,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     return 0;
   }
 
+expr_code_doover:
   if( pExpr==0 ){
     op = TK_NULL;
   }else{
@@ -4011,7 +4012,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_SPAN:
     case TK_COLLATE: 
     case TK_UPLUS: {
-      return sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      pExpr = pExpr->pLeft;
+      goto expr_code_doover;
     }
 
     case TK_TRIGGER: {
