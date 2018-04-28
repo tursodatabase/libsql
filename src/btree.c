@@ -2972,6 +2972,10 @@ static void setDefaultSyncFlag(BtShared *pBt, u8 safety_level){
 # define setDefaultSyncFlag(pBt,safety_level)
 #endif
 
+/* Forward declaration */
+static int newDatabase(BtShared*);
+
+
 /*
 ** Get a reference to pPage1 of the database file.  This will
 ** also acquire a readlock on that file.
@@ -3002,6 +3006,9 @@ static int lockBtree(BtShared *pBt){
   sqlite3PagerPagecount(pBt->pPager, &nPageFile);
   if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
     nPage = nPageFile;
+  }
+  if( (pBt->db->flags & SQLITE_ResetDatabase)!=0 ){
+    nPage = 0;
   }
   if( nPage>0 ){
     u32 pageSize;
