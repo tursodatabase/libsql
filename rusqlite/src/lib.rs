@@ -121,6 +121,10 @@ pub mod functions;
 pub mod blob;
 #[cfg(feature = "limits")]
 pub mod limits;
+#[cfg(feature = "hooks")]
+mod hooks;
+#[cfg(feature = "hooks")]
+pub use hooks::*;
 #[cfg(all(feature = "vtab", feature = "functions"))]
 pub mod vtab;
 
@@ -197,7 +201,7 @@ impl Connection {
     /// Open a new connection to a SQLite database.
     ///
     /// `Connection::open(path)` is equivalent to `Connection::open_with_flags(path,
-    /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
+    /// OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE)`.
     ///
     /// # Failure
     ///
@@ -794,6 +798,10 @@ impl InnerConnection {
     }
 
     fn close(&mut self) -> Result<()> {
+        if self.db.is_null() {
+            return Ok(());
+        }
+        self.remove_hooks();
         unsafe {
             let r = ffi::sqlite3_close(self.db());
             let r = self.decode_result(r);
@@ -870,6 +878,10 @@ impl InnerConnection {
 
     fn changes(&mut self) -> c_int {
         unsafe { ffi::sqlite3_changes(self.db()) }
+    }
+
+    #[cfg(not(feature = "hooks"))]
+    fn remove_hooks(&mut self) {
     }
 }
 

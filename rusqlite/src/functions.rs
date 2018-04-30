@@ -443,7 +443,7 @@ impl InnerConnection {
                 }
             };
 
-            if (*pac).is_null() {
+            if (*pac as *mut A).is_null() {
                 *pac = Box::into_raw(Box::new((*boxed_aggr).init()));
             }
 
@@ -470,7 +470,7 @@ impl InnerConnection {
             // sqlite3_aggregate_context(C,N) so that no pointless memory allocations occur.
             let a: Option<A> = match aggregate_context(ctx, 0) {
                 Some(pac) => {
-                    if (*pac).is_null() {
+                    if (*pac as *mut A).is_null() {
                         None
                     } else {
                         let a = Box::from_raw(*pac);
