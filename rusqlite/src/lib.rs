@@ -125,7 +125,7 @@ pub mod limits;
 mod hooks;
 #[cfg(feature = "hooks")]
 pub use hooks::*;
-#[cfg(all(feature = "vtab", feature = "functions"))]
+#[cfg(feature = "vtab")]
 pub mod vtab;
 
 // Number of cached prepared statements we'll hold on to.

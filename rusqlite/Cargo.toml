@@ -28,8 +28,8 @@ buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
-vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
-csvtab = ["csv"]
+vtab = ["functions", "libsqlite3-sys/min_sqlite_version_3_7_7"]
+csvtab = ["csv", "vtab"]
 
 [dependencies]
 time = "0.1.0"
