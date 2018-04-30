@@ -1,5 +1,5 @@
-C Test\scases\sadded\sfor\sSQLITE_DBCONFIG_RESET_DATABASE.
-D 2018-04-28T19:08:02.897
+C Defer\sloading\sresult\scolumn\svalues\sinto\sregisters\son\san\sORDER\sBY\sLIMIT\suntil\nwe\sknow\sthat\sthe\sLIMIT\sdoes\snot\sexclude\sthe\scurrent\srow.
+D 2018-04-30T19:32:49.040
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -493,12 +493,12 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c daf07d8defce3311f9e69f1280a874d78bc1d16c305f6aa689640f7afa02842f
+F src/select.c 170834c5b9710676b192fc9b0fe0cf7970250b1a72b396435deb923f3670a58f
 F src/shell.c.in 54b902ab7d840f60ddfabc13124c85d4980342c88aff7679f2cc25f67c21ade7
 F src/sqlite.h.in d669de545f18f2f01362de02e309cd7f15185958c71bac8f53cd5438b46d2bea
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 83a3c4ce93d650bedfd1aa558cb85a516bd6d094445ee989740827d0d944368d
-F src/sqliteInt.h 8ac0138eae10337b745b03dad0124fd63ae911c0503e795729503e7fc6234d57
+F src/sqliteInt.h 3e354edb3090e31b51593e21ae54c541330987cfd87d69d86adf6e4d186408ca
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1727,7 +1727,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 564ae8297d417ba4b7978e430d41f125007177673163f6ed9adc3a3974f73d24
-R f62951ddf79b7c70897c7cedc3fc5902
+P 08665a9e2e50a0a1e62529884cf65f8090debe89a306a3904b53268729ab5ad5
+R 4667c6ddbdfa5ae61d508da23236434a
+T *branch * faster-order-by-limit
+T *sym-faster-order-by-limit *
+T -sym-trunk *
 U drh
-Z d48406f4893f856e5db8717a8971e33f
+Z 8bfebc9ee79b135d90912539998ba9b3

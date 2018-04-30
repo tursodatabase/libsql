@@ -78,6 +78,7 @@ struct SortCtx {
     int nKey;           /* Number of PK columns for table pTab (>=1) */
   } aDefer[4];
 #endif
+  struct RowLoadInfo *pDeferredRowLoad;  /* Deferred row loading info or NULL */
 };
 #define SORTFLAG_UseSorter  0x01   /* Use SorterOpen instead of OpenEphemeral */
 
@@ -537,6 +538,62 @@ static KeyInfo *keyInfoFromExprList(
 );
 
 /*
+** An instance of this object holds information (beyond pParse and pSelect)
+** needed to load the next result row that is to be added to the sorter.
+*/
+typedef struct RowLoadInfo RowLoadInfo;
+struct RowLoadInfo {
+  int regResult;               /* Store results in array of registers here */
+  u8 ecelFlags;                /* Flag argument to ExprCodeExprList() */
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+  ExprList *pExtra;            /* Extra columns needed by sorter refs */
+  int regExtraResult;          /* Where to load the extra columns */
+#endif
+};
+
+/*
+** This routine does the work of loading query data into an array of
+** registers so that it can be added to the sorter.
+*/
+static void innerLoopLoadRow(
+  Parse *pParse,             /* Statement under construction */
+  Select *pSelect,           /* The query being coded */
+  RowLoadInfo *pInfo         /* Info needed to complete the row load */
+){
+  sqlite3ExprCodeExprList(pParse, pSelect->pEList, pInfo->regResult,
+                          0, pInfo->ecelFlags);
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+  if( pInfo->pExtra ){
+    sqlite3ExprCodeExprList(pParse, pInfo->pExtra, pInfo->regExtraResult, 0, 0);
+    sqlite3ExprListDelete(pParse->db, pInfo->pExtra);
+  }
+#endif
+}
+
+/*
+** Code the OP_MakeRecord instruction that generates the entry to be
+** added into the sorter.
+**
+** Return the register in which the result is stored.
+*/
+static int makeSorterRecord(
+  Parse *pParse,
+  SortCtx *pSort,
+  Select *pSelect,
+  int regBase,
+  int nBase
+){
+  int nOBSat = pSort->nOBSat;
+  Vdbe *v = pParse->pVdbe;
+  int regOut = ++pParse->nMem;
+  if( pSort->pDeferredRowLoad ){
+    innerLoopLoadRow(pParse, pSelect, pSort->pDeferredRowLoad);
+  }
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regOut);
+  return regOut;
+}
+
+/*
 ** Generate code that will push the record in registers regData
 ** through regData+nData-1 onto the sorter.
 */
@@ -546,7 +603,7 @@ static void pushOntoSorter(
   Select *pSelect,       /* The whole SELECT statement */
   int regData,           /* First register holding data to be sorted */
   int regOrigData,       /* First register holding data before packing */
-  int nData,             /* Number of elements in the data array */
+  int nData,             /* Number of elements in the regData data array */
   int nPrefixReg         /* No. of reg prior to regData available for use */
 ){
   Vdbe *v = pParse->pVdbe;                         /* Stmt under construction */
@@ -554,16 +611,31 @@ static void pushOntoSorter(
   int nExpr = pSort->pOrderBy->nExpr;              /* No. of ORDER BY terms */
   int nBase = nExpr + bSeq + nData;                /* Fields in sorter record */
   int regBase;                                     /* Regs for sorter record */
-  int regRecord = ++pParse->nMem;                  /* Assembled sorter record */
+  int regRecord = 0;                               /* Assembled sorter record */
   int nOBSat = pSort->nOBSat;                      /* ORDER BY terms to skip */
   int op;                            /* Opcode to add sorter record to sorter */
   int iLimit;                        /* LIMIT counter */
+  int iSkip = 0;                     /* End of the sorter insert loop */
 
   assert( bSeq==0 || bSeq==1 );
+
+  /* Three cases:
+  **   (1) The data to be sorted has already been packed into a Record
+  **       by a prior OP_MakeRecord.  In this case nData==1 and regData
+  **       will be completely unrelated to regOrigData.
+  **   (2) All output columns are included in the sort record.  In that
+  **       case regData==regOrigData.
+  **   (3) Some output columns are omitted from the sort record due to
+  **       the SQLITE_ENABLE_SORTER_REFERENCE optimization, or due to the
+  **       SQLITE_ECEL_OMITREF optimization.  In that case, regOrigData==0
+  **       to prevent this routine from trying to copy values that might
+  **       not exist.
+  */
   assert( nData==1 || regData==regOrigData || regOrigData==0 );
+
   if( nPrefixReg ){
     assert( nPrefixReg==nExpr+bSeq );
-    regBase = regData - nExpr - bSeq;
+    regBase = regData - nPrefixReg;
   }else{
     regBase = pParse->nMem + 1;
     pParse->nMem += nBase;
@@ -587,7 +659,7 @@ static void pushOntoSorter(
     int nKey;         /* Number of sorting key columns, including OP_Sequence */
     KeyInfo *pKI;     /* Original KeyInfo on the sorter table */
 
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat,regRecord);
+    regRecord = makeSorterRecord(pParse, pSort, pSelect, regBase, nBase);
     regPrevKey = pParse->nMem+1;
     pParse->nMem += pSort->nOBSat;
     nKey = nExpr - pSort->nOBSat + bSeq;
@@ -638,17 +710,16 @@ static void pushOntoSorter(
     ** of the outer loop.
     */
     int iCsr = pSort->iECursor;
-    int iJmp = sqlite3VdbeCurrentAddr(v)+5+(nOBSat<=0)+pSort->bOrderedInnerLoop;
-    assert( pSort->bOrderedInnerLoop==0 || pSort->bOrderedInnerLoop==1 );
     sqlite3VdbeAddOp2(v, OP_IfNotZero, iLimit, sqlite3VdbeCurrentAddr(v)+4);
     VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Last, iCsr, 0);
-    sqlite3VdbeAddOp4Int(v, OP_IdxLE, iCsr, iJmp, regBase+nOBSat, nExpr-nOBSat);
+    iSkip = sqlite3VdbeAddOp4Int(v, OP_IdxLE,
+                                 iCsr, 0, regBase+nOBSat, nExpr-nOBSat);
     VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_Delete, iCsr);
   }
-  if( nOBSat<=0 ){
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat,regRecord);
+  if( regRecord==0 ){
+    regRecord = makeSorterRecord(pParse, pSort, pSelect, regBase, nBase);
   }
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
     op = OP_SorterInsert;
@@ -657,6 +728,11 @@ static void pushOntoSorter(
   }
   sqlite3VdbeAddOp4Int(v, op, pSort->iECursor, regRecord,
                        regBase+nOBSat, nBase-nOBSat);
+  if( iSkip ){
+    assert( pSort->bOrderedInnerLoop==0 || pSort->bOrderedInnerLoop==1 );
+    sqlite3VdbeChangeP2(v, iSkip,
+         sqlite3VdbeCurrentAddr(v) + pSort->bOrderedInnerLoop);
+  }
 }
 
 /*
@@ -742,9 +818,6 @@ static void selectExprDefer(
       Table *pTab = pExpr->pTab;
       if( pExpr->op==TK_COLUMN && pTab && !IsVirtual(pTab)
        && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
-#if 0
-          && pTab->pSchema && pTab->pSelect==0 && !IsVirtual(pTab)
-#endif
       ){
         int j;
         for(j=0; j<nDefer; j++){
@@ -811,6 +884,7 @@ static void selectInnerLoop(
   int iParm = pDest->iSDParm; /* First argument to disposal method */
   int nResultCol;             /* Number of result columns */
   int nPrefixReg = 0;         /* Number of extra registers before regResult */
+  RowLoadInfo sRowLoadInfo;   /* Info for deferred row loading */
 
   /* Usually, regResult is the first cell in an array of memory cells
   ** containing the current result row. In this case regOrig is set to the
@@ -863,7 +937,8 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    u8 ecelFlags;
+    u8 ecelFlags;    /* "ecel" is an abbreviation of "ExprCodeExprList" */
+    ExprList *pEList;
     if( eDest==SRT_Mem || eDest==SRT_Output || eDest==SRT_Coroutine ){
       ecelFlags = SQLITE_ECEL_DUP;
     }else{
@@ -877,6 +952,7 @@ static void selectInnerLoop(
       ** This allows the p->pEList field to be omitted from the sorted record,
       ** saving space and CPU cycles.  */
       ecelFlags |= (SQLITE_ECEL_OMITREF|SQLITE_ECEL_REF);
+
       for(i=pSort->nOBSat; i<pSort->pOrderBy->nExpr; i++){
         int j;
         if( (j = pSort->pOrderBy->a[i].u.x.iOrderByCol)>0 ){
@@ -897,20 +973,46 @@ static void selectInnerLoop(
         pParse->nMem += pExtra->nExpr;
       }
 #endif
-      regOrig = 0;
+
+      /* Adjust nResultCol to account for columns that are omitted
+      ** from the sorter by the optimizations in this branch */
+      pEList = p->pEList;
+      for(i=0; i<pEList->nExpr; i++){
+        if( pEList->a[i].u.x.iOrderByCol>0
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+         || pEList->a[i].bSorterRef
+#endif
+        ){
+          nResultCol--;
+          regOrig = 0;
+        }
+      }
+
+      testcase( regOrig );
+      testcase( eDest==SRT_Set );
+      testcase( eDest==SRT_Mem );
+      testcase( eDest==SRT_Coroutine );
+      testcase( eDest==SRT_Output );
       assert( eDest==SRT_Set || eDest==SRT_Mem 
            || eDest==SRT_Coroutine || eDest==SRT_Output );
     }
-    nResultCol = sqlite3ExprCodeExprList(pParse,p->pEList,regResult,
-                                         0,ecelFlags);
+    sRowLoadInfo.regResult = regResult;
+    sRowLoadInfo.ecelFlags = ecelFlags;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( pExtra ){
-      nResultCol += sqlite3ExprCodeExprList(
-          pParse, pExtra, regResult + nResultCol, 0, 0
-      );
-      sqlite3ExprListDelete(pParse->db, pExtra);
-    }
+    sRowLoadInfo.pExtra = pExtra;
+    sRowLoadInfo.regExtraResult = regResult + nResultCol;
+    if( pExtra ) nResultCol += pExtra->nExpr;
 #endif
+    if( p->iLimit
+     && (ecelFlags & SQLITE_ECEL_OMITREF)!=0 
+     && nPrefixReg>0
+    ){
+      assert( pSort!=0 );
+      assert( hasDistinct==0 );
+      pSort->pDeferredRowLoad = &sRowLoadInfo;
+    }else{
+      innerLoopLoadRow(pParse, p, &sRowLoadInfo);
+    }
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -1026,7 +1128,8 @@ static void selectInnerLoop(
       }
 #endif
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, r1+nPrefixReg,regResult,1,nPrefixReg);
+        assert( regResult==regOrig );
+        pushOntoSorter(pParse, pSort, p, r1+nPrefixReg, regOrig, 1, nPrefixReg);
       }else{
         int r2 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, r2);

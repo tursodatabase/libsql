@@ -2759,11 +2759,8 @@ struct Upsert {
 ** An instance of the following structure contains all information
 ** needed to generate code for a single SELECT statement.
 **
-** nLimit is set to -1 if there is no LIMIT clause.  nOffset is set to 0.
-** If there is a LIMIT clause, the parser sets nLimit to the value of the
-** limit and nOffset to the value of the offset (or 0 if there is not
-** offset).  But later on, nLimit and nOffset become the memory locations
-** in the VDBE that record the limit and offset counters.
+** See the header comment on the computeLimitRegisters() routine for a
+** detailed description of the meaning of the iLimit and iOffset fields.
 **
 ** addrOpenEphm[] entries contain the address of OP_OpenEphemeral opcodes.
 ** These addresses must be stored so that we can go back and fill in
