@@ -1,5 +1,5 @@
-C Test\scases\sadded\sfor\sSQLITE_DBCONFIG_RESET_DATABASE.
-D 2018-04-28T19:08:02.897
+C The\sSQLITE_ALLOW_SQLITE_MASTER_INDEX\scompile-time\soption\sallows\sa\sCREATE\sINDEX\nstatement\sagainst\sthe\ssqlite_master\stable.\s\sOnce\screated,\sthe\sindex\sworks,\sand\nis\susable\sby\slegacy\sinstances\sof\sSQLite.
+D 2018-05-01T18:39:31.984
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -437,7 +437,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c fa7da0a5584e5182b92536bc4b7622a154a468997a075d5901345efb79a05ffe
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c c4227d058d52c24ffce2d33cd3a11234d8e8603901243cdb5165eddf64ee2177
+F src/build.c 0c2be5839f22aa2938f217c6c6c2120d9fc96872a546a37541a8271541cb355e
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 849d4cebe008cfc6e4799b034a172b4eaf8856b100739632a852732ba66eee48
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 564ae8297d417ba4b7978e430d41f125007177673163f6ed9adc3a3974f73d24
-R f62951ddf79b7c70897c7cedc3fc5902
+P 08665a9e2e50a0a1e62529884cf65f8090debe89a306a3904b53268729ab5ad5
+R 65d0d1f1b897970475b65cf976ea92c3
 U drh
-Z d48406f4893f856e5db8717a8971e33f
+Z fbedda4f45c8a34310211b3e1037138b
