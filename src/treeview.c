@@ -570,4 +570,488 @@ void sqlite3TreeViewExprList(
   sqlite3TreeViewPop(pView);
 }
 
+/****************************************************************************
+** Experimental (demonstration-only) routines for printing a AST as a
+** relation:
+**
+**     CREATE TABLE AstNode(
+**        nodeId INTEGER PRIMARY KEY,
+**        parentId INTEGER REFERENCES AstNode,
+**        name TEXT,
+**        value ANY
+**     );
+*/
+
+#define ASTVT_NULL   0
+#define ASTVT_TEXT   1
+#define ASTVT_INT    2
+
+/*
+** Output a single row of the AstNode relation
+*/
+static int sqlite3AstOneRow(
+  int *pNodeCnt,
+  int parentId,
+  const char *zName,
+  int eValtype,
+  int iValue,
+  const char *zValue
+){
+  int nodeId = ++(*pNodeCnt);
+  printf("%d,", nodeId);
+  if( parentId ){
+    printf("%d,", parentId);
+  }else{
+    printf("NULL,");
+  }
+  printf("'%s',", zName);
+  switch( eValtype ){
+    case ASTVT_INT:  printf("%d\n", iValue);   break;
+    case ASTVT_TEXT: printf("'%s'\n", zValue); break;
+    default:         printf("NULL\n");         break;
+  }
+  return nodeId;
+}
+static int sqlite3AstOneRowInt(
+  int *pNodeCnt,
+  int parentId,
+  const char *zName,
+  int iValue
+){
+  return sqlite3AstOneRow(pNodeCnt,parentId,zName,ASTVT_INT,iValue,0);
+}
+static int sqlite3AstOneRowText(
+  int *pNodeCnt,
+  int parentId,
+  const char *zName,
+  const char *zValue
+){
+  return sqlite3AstOneRow(pNodeCnt,parentId,zName,ASTVT_TEXT,0,zValue);
+}
+static int sqlite3AstOneRowNull(
+  int *pNodeCnt,
+  int parentId,
+  const char *zName
+){
+  return sqlite3AstOneRow(pNodeCnt,parentId,zName,ASTVT_NULL,0,0);
+}
+static int sqlite3AstOneRowOp(
+  int *pNodeCnt,
+  int parentId,
+  const char *zName,
+  const Expr *pExpr
+){
+  char zFlg[30];
+  sqlite3_snprintf(sizeof(zFlg),zFlg,"0x%6x",pExpr->flags);
+  return sqlite3AstOneRow(pNodeCnt,parentId,zName,ASTVT_TEXT,0,zFlg);
+}
+
+
+void sqlite3AstExpr(const Expr *pExpr, int *pNodeCnt, int iParentId){
+  int iNodeId;
+  const char *zBinOp = 0;
+  const char *zUniOp = 0;
+
+  if( pExpr==0 ) return;
+  switch( pExpr->op ){
+    case TK_AGG_COLUMN: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "agg_column", pExpr);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "table", pExpr->iTable);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "column", pExpr->iColumn);
+      break;
+    }
+    case TK_COLUMN: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "column", pExpr);
+      if( pExpr->iTable>=0 ){
+        sqlite3AstOneRowInt(pNodeCnt, iNodeId, "table", pExpr->iTable);
+      }
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "column", pExpr->iColumn);
+      break;
+    }
+    case TK_INTEGER: {
+      if( pExpr->flags & EP_IntValue ){
+        iNodeId = sqlite3AstOneRowInt(pNodeCnt, iParentId,
+                                      "integer", pExpr->u.iValue);
+      }else{
+        iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId,
+                                       "integer", pExpr->u.zToken);
+      }
+      break;
+    }
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    case TK_FLOAT: {
+      iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId,
+                                     "float", pExpr->u.zToken);
+      break;
+    }
+#endif
+    case TK_STRING: {
+      iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId,
+                                     "string", pExpr->u.zToken);
+      break;
+    }
+    case TK_NULL: {
+      iNodeId = sqlite3AstOneRowNull(pNodeCnt, iParentId, "null");
+      break;
+    }
+    case TK_TRUEFALSE: {
+      iNodeId = sqlite3AstOneRowNull(pNodeCnt, iParentId,
+           sqlite3ExprTruthValue(pExpr) ? "true" : "false");
+      break;
+    }
+#ifndef SQLITE_OMIT_BLOB_LITERAL
+    case TK_BLOB: {
+      iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId, "blob",
+                                     pExpr->u.zToken);
+      break;
+    }
+#endif
+    case TK_VARIABLE: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "variable", pExpr);
+      sqlite3AstOneRowText(pNodeCnt, iNodeId, "name", pExpr->u.zToken);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "column", pExpr->iColumn);
+      break;
+    }
+    case TK_REGISTER: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "register", pExpr);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "registerNumber", 
+                           pExpr->iTable);
+      break;
+    }
+    case TK_ID: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "id", pExpr);
+      sqlite3AstOneRowText(pNodeCnt, iNodeId, "Name", pExpr->u.zToken);
+      break;
+    }
+    case TK_LT:      zBinOp = "LT";     break;
+    case TK_LE:      zBinOp = "LE";     break;
+    case TK_GT:      zBinOp = "GT";     break;
+    case TK_GE:      zBinOp = "GE";     break;
+    case TK_NE:      zBinOp = "NE";     break;
+    case TK_EQ:      zBinOp = "EQ";     break;
+    case TK_IS:      zBinOp = "IS";     break;
+    case TK_ISNOT:   zBinOp = "ISNOT";  break;
+    case TK_AND:     zBinOp = "AND";    break;
+    case TK_OR:      zBinOp = "OR";     break;
+    case TK_PLUS:    zBinOp = "ADD";    break;
+    case TK_STAR:    zBinOp = "MUL";    break;
+    case TK_MINUS:   zBinOp = "SUB";    break;
+    case TK_REM:     zBinOp = "REM";    break;
+    case TK_BITAND:  zBinOp = "BITAND"; break;
+    case TK_BITOR:   zBinOp = "BITOR";  break;
+    case TK_SLASH:   zBinOp = "DIV";    break;
+    case TK_LSHIFT:  zBinOp = "LSHIFT"; break;
+    case TK_RSHIFT:  zBinOp = "RSHIFT"; break;
+    case TK_CONCAT:  zBinOp = "CONCAT"; break;
+    case TK_DOT:     zBinOp = "DOT";    break;
+
+    case TK_CAST:    zUniOp = "CAST";   break;
+    case TK_UMINUS:  zUniOp = "UMINUS"; break;
+    case TK_UPLUS:   zUniOp = "UPLUS";  break;
+    case TK_BITNOT:  zUniOp = "BITNOT"; break;
+    case TK_NOT:     zUniOp = "NOT";    break;
+    case TK_ISNULL:  zUniOp = "ISNULL"; break;
+    case TK_NOTNULL: zUniOp = "NOTNULL"; break;
+    case TK_IF_NULL_ROW: zUniOp = "IFNULLROW"; break;
+
+    case TK_TRUTH: {
+      int x;
+      const char *azOp[] = {
+         "IS-FALSE", "IS-TRUE", "IS-NOT-FALSE", "IS-NOT-TRUE"
+      };
+      assert( pExpr->op2==TK_IS || pExpr->op2==TK_ISNOT );
+      assert( pExpr->pRight );
+      assert( pExpr->pRight->op==TK_TRUEFALSE );
+      x = (pExpr->op2==TK_ISNOT)*2 + sqlite3ExprTruthValue(pExpr->pRight);
+      zUniOp = azOp[x];
+      break;
+    }
+
+    case TK_SPAN: {
+      iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId, "span", 
+                                     pExpr->u.zToken);
+      sqlite3AstExpr(pExpr->pLeft, pNodeCnt, iNodeId);
+      break;
+    }
+
+    case TK_COLLATE: {
+      iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId, "collate", 
+                                     pExpr->u.zToken);
+      sqlite3AstExpr(pExpr->pLeft, pNodeCnt, iNodeId);
+      break;
+    }
+
+    case TK_AGG_FUNCTION:
+    case TK_FUNCTION: {
+      ExprList *pFarg;       /* List of function arguments */
+      if( ExprHasProperty(pExpr, EP_TokenOnly) ){
+        pFarg = 0;
+      }else{
+        pFarg = pExpr->x.pList;
+      }
+      if( pExpr->op==TK_AGG_FUNCTION ){
+        char zId[20];
+        sqlite3_snprintf(sizeof(zId),zId,"agg_function%d", pExpr->op2);
+        iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId, zId, 
+                                       pExpr->u.zToken);
+      }else{
+        iNodeId = sqlite3AstOneRowText(pNodeCnt, iParentId, "function", 
+                                       pExpr->u.zToken);
+      }
+      if( pFarg ){
+        sqlite3AstExprList(pFarg, pNodeCnt, iNodeId, 0);
+      }
+      break;
+    }
+#ifndef SQLITE_OMIT_SUBQUERY
+    case TK_EXISTS: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "exists-expr", pExpr);
+      sqlite3AstSelect(pExpr->x.pSelect, pNodeCnt, iNodeId);
+      break;
+    }
+    case TK_SELECT: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "select-expr", pExpr);
+      sqlite3AstSelect(pExpr->x.pSelect, pNodeCnt, iNodeId);
+      break;
+    }
+    case TK_IN: {
+      int id;
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "in", pExpr);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "left");
+      sqlite3AstExpr(pExpr->pLeft, pNodeCnt, id);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "right");
+      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+        sqlite3AstSelect(pExpr->x.pSelect, pNodeCnt, id);
+      }else{
+        sqlite3AstExprList(pExpr->x.pList, pNodeCnt, id, 0);
+      }
+      break;
+    }
+#endif /* SQLITE_OMIT_SUBQUERY */
+
+    /*
+    **    x BETWEEN y AND z
+    **
+    ** This is equivalent to
+    **
+    **    x>=y AND x<=z
+    **
+    ** X is stored in pExpr->pLeft.
+    ** Y is stored in pExpr->pList->a[0].pExpr.
+    ** Z is stored in pExpr->pList->a[1].pExpr.
+    */
+    case TK_BETWEEN: {
+      int id;
+      Expr *pX = pExpr->pLeft;
+      Expr *pY = pExpr->x.pList->a[0].pExpr;
+      Expr *pZ = pExpr->x.pList->a[1].pExpr;
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "between", pExpr);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "left");
+      sqlite3AstExpr(pX, pNodeCnt, id);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "lower");
+      sqlite3AstExpr(pY, pNodeCnt, id);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "upper");
+      sqlite3AstExpr(pZ, pNodeCnt, id);
+      break;
+    }
+    case TK_TRIGGER: {
+      /* If the opcode is TK_TRIGGER, then the expression is a reference
+      ** to a column in the new.* or old.* pseudo-tables available to
+      ** trigger programs. In this case Expr.iTable is set to 1 for the
+      ** new.* pseudo-table, or 0 for the old.* pseudo-table. Expr.iColumn
+      ** is set to the column of the pseudo-table to read, or to -1 to
+      ** read the rowid field.
+      */
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, 
+          pExpr->iTable ? "new-column" : "old-column", pExpr);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "column", pExpr->iColumn);
+      break;
+    }
+    case TK_CASE: {
+      int id;
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "case", pExpr);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "left");
+      sqlite3AstExpr(pExpr->pLeft, pNodeCnt, id);
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "list");
+      sqlite3AstExprList(pExpr->x.pList, pNodeCnt, id, 0);
+      break;
+    }
+    case TK_RAISE: {
+      const char *zType = "unk";
+      switch( pExpr->affinity ){
+        case OE_Rollback:   zType = "rollback";  break;
+        case OE_Abort:      zType = "abort";     break;
+        case OE_Fail:       zType = "fail";      break;
+        case OE_Ignore:     zType = "ignore";    break;
+      }
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "raise", pExpr);
+      sqlite3AstOneRowText(pNodeCnt, iNodeId, "type", zType);
+      sqlite3AstOneRowText(pNodeCnt, iNodeId, "arg", pExpr->u.zToken);
+      break;
+    }
+    case TK_MATCH: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "match", pExpr);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "table", pExpr->iTable);
+      sqlite3AstOneRowInt(pNodeCnt, iNodeId, "column", pExpr->iColumn);
+      break;
+    }
+    case TK_VECTOR: {
+      iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, "vector", pExpr);
+      sqlite3AstExprList(pExpr->x.pList, pNodeCnt, iNodeId, 0);
+      break;
+    }
+    case TK_SELECT_COLUMN: {
+      iNodeId = sqlite3AstOneRowInt(pNodeCnt, iParentId, "select-column",
+                                    pExpr->iColumn);
+      sqlite3AstSelect(pExpr->pLeft->x.pSelect, pNodeCnt, iNodeId);
+      break;
+    }
+    default: {
+      sqlite3AstOneRowInt(pNodeCnt, iParentId, "unknown", pExpr->op);
+      break;
+    }
+  }
+  if( zBinOp ){
+    iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, zBinOp, pExpr);
+    if( pExpr->pLeft ){
+      int id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "left");
+      sqlite3AstExpr(pExpr->pLeft, pNodeCnt, id);
+    }
+    if( pExpr->pRight ){
+      int id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "right");
+      sqlite3AstExpr(pExpr->pRight, pNodeCnt, id);
+    }
+  }
+  if( zUniOp ){
+    iNodeId = sqlite3AstOneRowOp(pNodeCnt, iParentId, zUniOp, pExpr);
+    if( pExpr->pLeft ){
+      sqlite3AstExpr(pExpr->pLeft, pNodeCnt, iNodeId);
+    }
+  }
+}
+
+void sqlite3AstExprList(
+  const ExprList *pList,
+  int *pNodeCnt,
+  int iParentId,
+  int showSortOrder
+){
+  int i;
+  if( pList==0 ) return;
+  for(i=0; i<pList->nExpr; i++){
+    const struct ExprList_item *pItem = pList->a + i;
+    int id = sqlite3AstOneRowNull(pNodeCnt, iParentId, "listitem");
+    if( pItem->zName && pItem->zName[0] ){
+      sqlite3AstOneRowText(pNodeCnt, id, "name", pItem->zName);
+    }
+    if( showSortOrder && pItem->sortOrder ){
+      sqlite3AstOneRowInt(pNodeCnt, id, "desc", 1);
+    }
+    sqlite3AstExpr(pList->a[i].pExpr, pNodeCnt, id);
+  }
+}
+
+
+/*
+** Generate a human-readable description of a WITH clause.
+*/
+void sqlite3AstWith(const With *pWith, int *pNodeCnt, int iParentId){
+  int i;
+  if( pWith==0 ) return;
+  if( pWith->nCte==0 ) return;
+  if( pWith && pWith->nCte>0 ){
+    int iNodeId = sqlite3AstOneRowNull(pNodeCnt, iParentId, "WITH");
+    for(i=0; i<pWith->nCte; i++){
+      const struct Cte *pCte = &pWith->a[i];
+      int id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "with-cte");
+      sqlite3AstOneRowText(pNodeCnt, id, "name", pCte->zName);
+      if( pCte->pCols && pCte->pCols->nExpr>0 ){
+        int x = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "column-list");
+        sqlite3AstExprList(pCte->pCols, pNodeCnt, x, 0);
+      }
+      sqlite3AstSelect(pCte->pSelect, pNodeCnt, iNodeId);
+    }
+  }
+}
+
+
+/*
+** Generate a human-readable description of a Select object.
+*/
+void sqlite3AstSelect(const Select *p, int *pNodeCnt, int iParentId){
+  if( p==0 ) return;
+  if( p->pWith ){
+    sqlite3AstWith(p->pWith, pNodeCnt, iParentId);
+  }
+  do{
+    int iNodeId = sqlite3AstOneRowNull(pNodeCnt, iParentId, "SELECT");
+    int id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "result-set");
+    sqlite3AstExprList(p->pEList, pNodeCnt, id, 0);
+    if( p->pSrc && p->pSrc->nSrc ){
+      int i;
+      for(i=0; i<p->pSrc->nSrc; i++){
+        struct SrcList_item *pItem = &p->pSrc->a[i];
+        int iFrom = sqlite3AstOneRowInt(pNodeCnt, iNodeId,
+                                        "from-item", pItem->iCursor);
+        if( pItem->zDatabase ){
+          sqlite3AstOneRowText(pNodeCnt, iFrom, "database", pItem->zDatabase);
+        }
+        if( pItem->zName ){
+          sqlite3AstOneRowText(pNodeCnt, iFrom, "name", pItem->zName);
+        }
+        if( pItem->pTab ){
+          sqlite3AstOneRowText(pNodeCnt, iFrom, "tabname", pItem->pTab->zName);
+        }
+        if( pItem->zAlias ){
+          sqlite3AstOneRowText(pNodeCnt, iFrom, "as", pItem->zAlias);
+        }
+        if( pItem->fg.jointype & JT_LEFT ){
+          sqlite3AstOneRowInt(pNodeCnt, iFrom, "left-join", 1);
+        }
+        if( pItem->pSelect ){
+          sqlite3AstSelect(pItem->pSelect, pNodeCnt, iFrom);
+        }
+        if( pItem->fg.isTabFunc ){
+          int x = sqlite3AstOneRowNull(pNodeCnt, iFrom, "func-args");
+          sqlite3AstExprList(pItem->u1.pFuncArg, pNodeCnt, x, 0);
+        }
+      }
+    }
+    if( p->pWhere ){
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "where");
+      sqlite3AstExpr(p->pWhere, pNodeCnt, id);
+    }
+    if( p->pGroupBy ){
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "groupby");
+      sqlite3AstExprList(p->pGroupBy, pNodeCnt, id, 0);
+    }
+    if( p->pHaving ){
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "having");
+      sqlite3AstExpr(p->pHaving, pNodeCnt, id);
+    }
+    if( p->pOrderBy ){
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "orderby");
+      sqlite3AstExprList(p->pOrderBy, pNodeCnt, id, 1);
+    }
+    if( p->pLimit ){
+      id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "limit");
+      sqlite3AstExpr(p->pLimit->pLeft, pNodeCnt, id);
+      if( p->pLimit->pRight ){
+        id = sqlite3AstOneRowNull(pNodeCnt, iNodeId, "offset");
+        sqlite3AstExpr(p->pLimit->pRight, pNodeCnt, id);
+      }
+    }
+    if( p->pPrior ){
+      const char *zOp = "UNION";
+      switch( p->op ){
+        case TK_ALL:         zOp = "UNION ALL";  break;
+        case TK_INTERSECT:   zOp = "INTERSECT";  break;
+        case TK_EXCEPT:      zOp = "EXCEPT";     break;
+      }
+      iParentId = sqlite3AstOneRowNull(pNodeCnt, iNodeId, zOp);
+    }
+    p = p->pPrior;
+  }while( p!=0 );
+}
+
 #endif /* SQLITE_DEBUG */

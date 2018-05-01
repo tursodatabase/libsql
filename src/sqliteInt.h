@@ -3678,6 +3678,11 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
+
+  void sqlite3AstExpr(const Expr*,int*,int);
+  void sqlite3AstExprList(const ExprList*,int*,int,int);
+  void sqlite3AstSelect(const Select*,int*,int);
+  void sqlite3AstWith(const With*,int*,int);
 #endif
 
 

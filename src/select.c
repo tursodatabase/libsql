@@ -5494,6 +5494,10 @@ int sqlite3Select(
     if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x2000)!=0 ){
       sqlite3TreeViewSelect(0, p, 0);
     }
+    if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x4000)!=0 ){
+      int iNodeId = 0;
+      sqlite3AstSelect(p, &iNodeId, 0);
+    }
 #endif
     explainSetInteger(pParse->iSelectId, iRestoreSelectId);
     return rc;
@@ -6287,6 +6291,10 @@ select_end:
   SELECTTRACE(0x1,pParse,p,("end processing\n"));
   if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x2000)!=0 ){
     sqlite3TreeViewSelect(0, p, 0);
+  }
+  if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x4000)!=0 ){
+    int iNodeId = 0;
+    sqlite3AstSelect(p, &iNodeId, 0);
   }
 #endif
   explainSetInteger(pParse->iSelectId, iRestoreSelectId);
