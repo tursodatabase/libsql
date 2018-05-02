@@ -512,8 +512,9 @@ do_execsql_test 8.0 {
 do_eqp_test 8.1 {
   SELECT * FROM t1 ORDER BY a, b;
 } {
-  0 0 0 {SCAN TABLE t1 USING INDEX i1} 
-  0 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING INDEX i1
+  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
 }
 
 do_execsql_test 8.2 {

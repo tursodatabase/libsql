@@ -402,9 +402,7 @@ do_eqp_test 3.4 {
     a = 4 AND b BETWEEN 20 AND 80           -- Matches 80 rows
       AND
     c BETWEEN 150 AND 160                   -- Matches 10 rows
-} {
-  0 0 0 {SEARCH TABLE t1 USING INDEX idx_c (c>? AND c<?)}
-}
+} {SEARCH TABLE t1 USING INDEX idx_c (c>? AND c<?)}
 
 # This one should use index "idx_ab".
 do_eqp_test 3.5 {
@@ -412,9 +410,7 @@ do_eqp_test 3.5 {
     a = 5 AND b BETWEEN 20 AND 80           -- Matches 1 row
       AND
     c BETWEEN 150 AND 160                   -- Matches 10 rows
-} {
-  0 0 0 {SEARCH TABLE t1 USING INDEX idx_ab (a=? AND b>? AND b<?)}
-}
+} {SEARCH TABLE t1 USING INDEX idx_ab (a=? AND b>? AND b<?)}
 
 ###########################################################################################
 
