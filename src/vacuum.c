@@ -247,7 +247,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   rc = execSqlF(db, pzErrMsg,
       "SELECT sql FROM \"%w\".sqlite_master"
       " WHERE type='table'AND name<>'sqlite_sequence'"
-      " AND coalesce(rootpage,1)>0",
+      " AND coalesce(rootpage,1)>0 AND sql LIKE 'CREATE%%'",
       zDbMain
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
