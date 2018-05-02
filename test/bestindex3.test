@@ -145,11 +145,11 @@ ifcapable !icu {
 
   do_eqp_test 2.2 {
     SELECT * FROM t2 WHERE x LIKE 'abc%' OR y = 'def'
-  } {
-  QUERY PLAN
-  |--SEARCH TABLE t2 USING INDEX t2x (x>? AND x<?)
-  `--SEARCH TABLE t2 USING INDEX t2y (y=?)
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SEARCH TABLE t2 USING INDEX t2x (x>? AND x<?)
+    `--SEARCH TABLE t2 USING INDEX t2y (y=?)
+  }]
 }
 
 #-------------------------------------------------------------------------

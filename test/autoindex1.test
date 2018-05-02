@@ -177,34 +177,35 @@ do_execsql_test autoindex1-500 {
   INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t501',null,'1000000');
   INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t502',null,'1000');
   ANALYZE sqlite_master;
-  EXPLAIN QUERY PLAN
+}
+do_eqp_test autoindex1-500.1 {
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
 } {
-  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)} 
-  0 0 0 {EXECUTE LIST SUBQUERY 1} 
-  1 0 0 {SCAN TABLE t502}
+  QUERY PLAN
+  |--SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)
+  `--LIST SUBQUERY
+     `--SCAN TABLE t502
 }
-do_execsql_test autoindex1-501 {
-  EXPLAIN QUERY PLAN
+do_eqp_test autoindex1-501 {
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
-  0 0 0 {SCAN TABLE t501} 
-  0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
-  1 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?)}
+  QUERY PLAN
+  |--SCAN TABLE t501
+  `--CORRELATED LIST SUBQUERY
+     `--SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?)
 }
-do_execsql_test autoindex1-502 {
-  EXPLAIN QUERY PLAN
+do_eqp_test autoindex1-502 {
   SELECT b FROM t501
    WHERE t501.a=123
      AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
-  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)} 
-  0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
-  1 0 0 {SCAN TABLE t502}
+  QUERY PLAN
+  |--SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)
+  `--CORRELATED LIST SUBQUERY
+     `--SCAN TABLE t502
 }
-
 
 # The following code checks a performance regression reported on the
 # mailing list on 2010-10-19.  The problem is that the nRowEst field
@@ -257,7 +258,8 @@ do_execsql_test autoindex1-600 {
            ON sheep (originating_flock);
   CREATE INDEX sheep_reg_flock_index  
            ON sheep (registering_flock);
-  EXPLAIN QUERY PLAN
+}
+do_eqp_test autoindex1-600a {
   SELECT x.sheep_no, x.registering_flock, x.date_of_registration
    FROM sheep x LEFT JOIN
        (SELECT s.sheep_no, prev.flock_no, prev.owner_person_id,
@@ -274,21 +276,26 @@ do_execsql_test autoindex1-600 {
    WHERE y.sheep_no IS NULL
    ORDER BY x.registering_flock;
 } {
-  1 0 0 {SCAN TABLE sheep AS s} 
-  1 1 1 {SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)} 
-  1 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 2} 
-  2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)} 
-  0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index} 
-  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)}
+  QUERY PLAN
+  |--MATERIALIZE xxxxxx
+  |  |--SCAN TABLE sheep AS s
+  |  |--SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)
+  |  `--CORRELATED SCALAR SUBQUERY
+  |     `--SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)
+  |--SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index
+  `--SEARCH SUBQUERY xxxxxx AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)
 }
 
 
 do_execsql_test autoindex1-700 {
   CREATE TABLE t5(a, b, c);
-  EXPLAIN QUERY PLAN SELECT a FROM t5 WHERE b=10 ORDER BY c;
+}
+do_eqp_test autoindex1-700a {
+  SELECT a FROM t5 WHERE b=10 ORDER BY c;
 } {
-  0 0 0 {SCAN TABLE t5} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--SCAN TABLE t5
+  `--USE TEMP B-TREE FOR ORDER BY
 }
 
 # The following checks a performance issue reported on the sqlite-dev

@@ -60,6 +60,6 @@ do_eqp_test 1.4 {
 
 do_eqp_test 1.5 {
   SELECT * FROM f1 WHERE rank MATCH ?
-} {SCAN TABLE f1 VIRTUAL TABLE INDEX 2:
+} {SCAN TABLE f1 VIRTUAL TABLE INDEX 2:}
 
 finish_test

@@ -84,8 +84,7 @@ do_execsql_test autoindex5-1.0 {
 # The following query should use an automatic index for the view
 # in FROM clause of the subquery of the second result column.
 #
-do_execsql_test autoindex5-1.1 {
-  EXPLAIN QUERY PLAN
+do_eqp_test autoindex5-1.1 {
   SELECT
     st.bug_name,
     (SELECT ALL debian_cve.bug FROM debian_cve
@@ -103,7 +102,7 @@ do_execsql_test autoindex5-1.1 {
      AND ( sp.release = 'sid' OR sp.release = 'stretch' OR sp.release = 'jessie'
             OR sp.release = 'wheezy' OR sp.release = 'squeeze' )
   ORDER BY sp.name, st.bug_name, sp.release, sp.subrelease;
-} {/SEARCH SUBQUERY 2 USING AUTOMATIC COVERING INDEX .bug_name=/}
+} {SEARCH SUBQUERY * USING AUTOMATIC COVERING INDEX (bug_name=?)}
 
 #-------------------------------------------------------------------------
 # Test that ticket [8a2adec1] has been fixed.
