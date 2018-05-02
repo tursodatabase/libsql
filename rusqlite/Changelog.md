@@ -1,5 +1,7 @@
 # Version 0.14.0 (TODO)
 
+It would be wise to run rustfmt just after merging all the relevant PRs...
+
 * BREAKING CHANGE: `ToSql` implementation for `time::Timespec` uses RFC 3339 (%Y-%m-%dT%H:%M:%S.%fZ).
   Previous format was %Y-%m-%d %H:%M:%S:%f %Z.
 * Update the bundled SQLite version to 3.22.0 (#326).
