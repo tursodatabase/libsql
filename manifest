@@ -1,5 +1,5 @@
-C Begin\sreengineering\sthe\sEXPLAIN\sQUERY\sPLAN\sfunction\sto\sprovide\smore\nintuitive\soutput.
-D 2018-05-02T00:33:43.157
+C Improvements\sto\sthe\sEQP\sdisplay\sfor\scompound\sselect\sstatements.
+D 2018-05-02T02:22:22.993
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -493,7 +493,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 8481fa6ec8bb3b24465da8e81438d4d85056d69232f501c153ab8402409c8619
+F src/select.c 41962df2f21593db4eb5e0d7d8f15848b9ebd3ffed9b7584677033a8db37223b
 F src/shell.c.in 29309f2ab656c8817fbc3b7910b9af8464557b91cba75277a03669399c8e2730
 F src/sqlite.h.in d669de545f18f2f01362de02e309cd7f15185958c71bac8f53cd5438b46d2bea
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1727,10 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 853f3163597b9946c0cbeb808ea6fd33a0cf48ae6b8f4459c4165db377f33a9e
-R 4157eb92d30294276c327d965c794c5a
-T *branch * rework-EQP
-T *sym-rework-EQP *
-T -sym-trunk *
+P 70b48a7972dfbb44af3ccd8ccd830e984bec88d80a78b3566a5de86a16e7fc14
+R 21b35e2f4fb3267c4b0452fc48ac12e8
 U drh
-Z 60e64f1bce0fa6f0f61a0e5e536f0823
+Z 26b206c16e8cc64ca80991a86c32cf32

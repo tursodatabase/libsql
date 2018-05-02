@@ -1314,33 +1314,6 @@ static void explainTempTable(Parse *pParse, const char *zUsage){
 # define explainSetInteger(y,z)
 #endif
 
-#if !defined(SQLITE_OMIT_EXPLAIN) && !defined(SQLITE_OMIT_COMPOUND_SELECT)
-/*
-** Unless an "EXPLAIN QUERY PLAN" command is being processed, this function
-** is a no-op. Otherwise, it adds a single row of output to the EQP result,
-** where the caption is of one of the two forms:
-**
-**   "COMPOSITE (op)"
-**   "COMPOSITE USING TEMP B-TREE (op)"
-**
-** where op is the text representation of the parameter
-** of the same name. The parameter "op" must be one of TK_UNION, TK_EXCEPT,
-** TK_INTERSECT or TK_ALL. The first form is used if argument bUseTmp is 
-** false, or the second form if it is true.
-*/
-static void explainComposite(
-  Parse *pParse,                  /* Parse context */
-  int op,                         /* One of TK_UNION, TK_EXCEPT etc. */
-  int bUseTmp                     /* True if a temp table was used */
-){
-  assert( op==TK_UNION || op==TK_EXCEPT || op==TK_INTERSECT || op==TK_ALL );
-  ExplainQueryPlan((pParse, 1, "COMPOUND %s(%s)",
-        bUseTmp?"USING TEMP B-TREE ":"", selectOpName(op)));
-}
-#else
-/* No-op versions of the explainXXX() functions and macros. */
-# define explainComposite(v,y,z)
-#endif
 
 /*
 ** If the inner loop was generated using a non-null pOrderBy argument,
@@ -2516,9 +2489,16 @@ static int multiSelect(
     return multiSelectOrderBy(pParse, p, pDest);
   }else
 
+#ifndef SQLITE_OMIT_EXPLAIN
+  if( pPrior->pPrior==0 ){
+    ExplainQueryPlan((pParse, 1, "COMPOUND QUERY"));
+    ExplainQueryPlan((pParse, 1, "LEFT-MOST SUBQUERY"));
+    ExplainQueryPlanSetId(pParse, pPrior);
+  }
+#endif
+
   /* Generate code for the left and right SELECT statements.
   */
-  explainComposite(pParse, p->op, p->op!=TK_ALL);
   switch( p->op ){
     case TK_ALL: {
       int addr = 0;
@@ -2543,6 +2523,8 @@ static int multiSelect(
                             p->iLimit, p->iOffset+1, p->iOffset);
         }
       }
+      ExplainQueryPlan((pParse, 1, "UNION ALL"));
+      ExplainQueryPlanSetId(pParse, p);
       rc = sqlite3Select(pParse, p, &dest);
       testcase( rc!=SQLITE_OK );
       pDelete = p->pPrior;
@@ -2611,6 +2593,9 @@ static int multiSelect(
       pLimit = p->pLimit;
       p->pLimit = 0;
       uniondest.eDest = op;
+      ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
+                        selectOpName(p->op)));
+      ExplainQueryPlanSetId(pParse, p);
       rc = sqlite3Select(pParse, p, &uniondest);
       testcase( rc!=SQLITE_OK );
       /* Query flattening in sqlite3Select() might refill p->pOrderBy.
@@ -2687,6 +2672,9 @@ static int multiSelect(
       pLimit = p->pLimit;
       p->pLimit = 0;
       intersectdest.iSDParm = tab2;
+      ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
+                        selectOpName(p->op)));
+      ExplainQueryPlanSetId(pParse, p);
       rc = sqlite3Select(pParse, p, &intersectdest);
       testcase( rc!=SQLITE_OK );
       pDelete = p->pPrior;
@@ -2718,7 +2706,11 @@ static int multiSelect(
     }
   }
 
-  ExplainQueryPlanPop(pParse);
+#ifndef SQLITE_OMIT_EXPLAIN
+  if( p->pNext==0 ){
+    ExplainQueryPlanPop(pParse);
+  }
+#endif
 
   /* Compute collating sequences used by 
   ** temporary tables needed to implement the compound select.
@@ -3175,8 +3167,8 @@ static int multiSelectOrderBy(
   regOutB = ++pParse->nMem;
   sqlite3SelectDestInit(&destA, SRT_Coroutine, regAddrA);
   sqlite3SelectDestInit(&destB, SRT_Coroutine, regAddrB);
-  explainComposite(pParse, p->op, 0);
 
+  ExplainQueryPlan((pParse, 1, "MERGE (%s)", selectOpName(p->op)));
 
   /* Generate a coroutine to evaluate the SELECT statement to the
   ** left of the compound operator - the "A" select.
@@ -3185,6 +3177,8 @@ static int multiSelectOrderBy(
   addr1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrA, 0, addrSelectA);
   VdbeComment((v, "left SELECT"));
   pPrior->iLimit = regLimitA;
+  ExplainQueryPlan((pParse, 1, "LEFT"));
+  ExplainQueryPlanSetId(pParse, pPrior);
   sqlite3Select(pParse, pPrior, &destA);
   sqlite3VdbeEndCoroutine(v, regAddrA);
   sqlite3VdbeJumpHere(v, addr1);
@@ -3199,6 +3193,8 @@ static int multiSelectOrderBy(
   savedOffset = p->iOffset;
   p->iLimit = regLimitB;
   p->iOffset = 0;  
+  ExplainQueryPlan((pParse, 1, "RIGHT"));
+  ExplainQueryPlanSetId(pParse, p);
   sqlite3Select(pParse, p, &destB);
   p->iLimit = savedLimit;
   p->iOffset = savedOffset;
@@ -5322,12 +5318,6 @@ int sqlite3Select(
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
-#ifndef SQLITE_OMIT_EXPLAIN
-  if( p->iSelectId==0 && pParse->addrExplain ){
-    ExplainQueryPlan((pParse, 1, "SUBQUERY"));
-    p->iSelectId = pParse->addrExplain;
-  }
-#endif
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
   if( sqlite3SelectTrace & 0x100 ){
@@ -5464,7 +5454,7 @@ int sqlite3Select(
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
-    sqlite3VdbeExplainPop(pParse);
+    if( p->pNext==0 ) ExplainQueryPlanPop(pParse);
     return rc;
   }
 #endif
