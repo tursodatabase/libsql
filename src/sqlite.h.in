@@ -5506,12 +5506,17 @@ SQLITE_EXTERN char *sqlite3_data_directory;
 ** or [SQLITE_NOMEM] if memory could not be allocated.  The value of the
 ** [sqlite3_data_directory] variable is intended to act as a replacement for
 ** the current directory on the sub-platforms of Win32 where that concept is
-** not present, e.g. WinRT and UWP.
+** not present, e.g. WinRT and UWP.  The [sqlite3_win32_set_directory8] and
+** [sqlite3_win32_set_directory16] interfaces behave exactly the same as the
+** sqlite3_win32_set_directory interface except the string parameter must be
+** UTF-8 or UTF-16, respectively.
 */
 int sqlite3_win32_set_directory(
   unsigned long type, /* Identifier for directory being set or reset */
   void *zValue        /* New value for directory being set or reset */
 );
+int sqlite3_win32_set_directory8(unsigned long type, const char *zValue);
+int sqlite3_win32_set_directory16(unsigned long type, const void *zValue);
 
 /*
 ** CAPI3REF: Win32 Directory Types

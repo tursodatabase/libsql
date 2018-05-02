@@ -1911,15 +1911,12 @@ char *sqlite3_win32_utf8_to_mbcs_v2(const char *zText, int useAnsi){
 }
 
 /*
-** This function sets the data directory or the temporary directory based on
-** the provided arguments.  The type argument must be 1 in order to set the
-** data directory or 2 in order to set the temporary directory.  The zValue
-** argument is the name of the directory to use.  The return value will be
-** SQLITE_OK if successful.
+** This function is the same as sqlite3_win32_set_directory (below); however,
+** it accepts a UTF-8 string.
 */
-int sqlite3_win32_set_directory(
+int sqlite3_win32_set_directory8(
   unsigned long type, /* Identifier for directory being set or reset */
-  void *zValue        /* New value for directory being set or reset */
+  const char *zValue  /* New value for directory being set or reset */
 ){
   char **ppDirectory = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
@@ -1936,19 +1933,51 @@ int sqlite3_win32_set_directory(
   );
   assert( !ppDirectory || sqlite3MemdebugHasType(*ppDirectory, MEMTYPE_HEAP) );
   if( ppDirectory ){
-    LPCWSTR zStrValue = zValue;
-    char *zValueUtf8 = 0;
-    if( zStrValue && zStrValue[0] ){
-      zValueUtf8 = winUnicodeToUtf8(zStrValue);
-      if ( zValueUtf8==0 ){
+    char *zCopy = 0;
+    if( zValue && zValue[0] ){
+      zCopy = sqlite3_mprintf("%s", zValue);
+      if ( zCopy==0 ){
         return SQLITE_NOMEM_BKPT;
       }
     }
     sqlite3_free(*ppDirectory);
-    *ppDirectory = zValueUtf8;
+    *ppDirectory = zCopy;
     return SQLITE_OK;
   }
   return SQLITE_ERROR;
+}
+
+/*
+** This function is the same as sqlite3_win32_set_directory (below); however,
+** it accepts a UTF-16 string.
+*/
+int sqlite3_win32_set_directory16(
+  unsigned long type, /* Identifier for directory being set or reset */
+  const void *zValue  /* New value for directory being set or reset */
+){
+  int rc;
+  char *zUtf8 = 0;
+  if( zValue ){
+    zUtf8 = sqlite3_win32_unicode_to_utf8(zValue);
+    if( zUtf8==0 ) return SQLITE_NOMEM_BKPT;
+  }
+  rc = sqlite3_win32_set_directory8(type, zUtf8);
+  if( zUtf8 ) sqlite3_free(zUtf8);
+  return rc;
+}
+
+/*
+** This function sets the data directory or the temporary directory based on
+** the provided arguments.  The type argument must be 1 in order to set the
+** data directory or 2 in order to set the temporary directory.  The zValue
+** argument is the name of the directory to use.  The return value will be
+** SQLITE_OK if successful.
+*/
+int sqlite3_win32_set_directory(
+  unsigned long type, /* Identifier for directory being set or reset */
+  void *zValue        /* New value for directory being set or reset */
+){
+  return sqlite3_win32_set_directory16(type, zValue);
 }
 
 /*
