@@ -2290,6 +2290,8 @@ static void generateWithRecursiveQuery(
 
   /* Store the results of the setup-query in Queue. */
   pSetup->pNext = 0;
+  ExplainQueryPlan((pParse, 1, "SETUP"));
+  ExplainQueryPlanSetId(pParse, pSetup);
   rc = sqlite3Select(pParse, pSetup, &destQueue);
   pSetup->pNext = p;
   if( rc ) goto end_of_recursive_query;
@@ -2324,6 +2326,8 @@ static void generateWithRecursiveQuery(
     sqlite3ErrorMsg(pParse, "recursive aggregate queries not supported");
   }else{
     p->pPrior = 0;
+    ExplainQueryPlan((pParse, 1, "RECURSIVE STEP"));
+    ExplainQueryPlanSetId(pParse, p);
     sqlite3Select(pParse, p, &destQueue);
     assert( p->pPrior==0 );
     p->pPrior = pSetup;
@@ -2383,6 +2387,7 @@ static int multiSelectValues(
     p = p->pPrior;
     nRow++;
   }while(1);
+  ExplainQueryPlan((pParse, 0, "SCAN %d CONSTANT ROWS", nRow));
   while( p ){
     pPrior = p->pPrior;
     p->pPrior = 0;
