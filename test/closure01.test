@@ -273,4 +273,23 @@ do_execsql_test 5.1 {
   ORDER BY id;
 } {8 9 10 11 12 13 14 15}
 
+#-------------------------------------------------------------------------
+# At one point the following join query was causing a malfunction in
+# xBestIndex.
+#
+do_execsql_test 6.0 {
+  CREATE TABLE t4 (
+    id INTEGER PRIMARY KEY, 
+    name TEXT NOT NULL,
+    parent_id INTEGER
+  );
+  CREATE VIRTUAL TABLE vt4 USING transitive_closure (
+    idcolumn=id, parentcolumn=parent_id, tablename=t4
+  );
+}
+
+do_execsql_test 6.1 {
+  SELECT * FROM t4, vt4 WHERE t4.id = vt4.root AND vt4.id=4 AND vt4.depth=2;
+}
+
 finish_test

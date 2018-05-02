@@ -1,5 +1,5 @@
-C Add\ssqlite3_win32_set_directory8()\sand\ssqlite3_win32_set_directory16()\sfunctions.
-D 2018-05-02T03:01:50.355
+C Fix\sa\sproblem\sin\sthe\sxBestIndex\smethod\sof\sthe\sclosure\sextension\scausing\sit\sto\nallocate\snon-contiguous\sargvIndex\svalues\sin\ssome\scases\s(an\s"xBestIndex\nmalfunction"\serror).
+D 2018-05-02T08:12:22.566
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -271,7 +271,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/appendvfs.c 3777f22ec1057dc4e5fd89f2fbddcc7a29fbeef1ad038c736c54411bb1967af7
 F ext/misc/btreeinfo.c 78c8c57d325185ccc04b7679e5b020e34a4d9c87453e6b7ac943d0a26cee3256
 F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
-F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
+F ext/misc/closure.c fe928228e8dfb2f00227311c203ccba9c2e5561f4f6de6da87e5b4a30cd8af15
 F ext/misc/completion.c e75b8886a2531f9a7ec02dab5f179bb37e6bd46b5da7665a6cbf2dfbe2daa483
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c d1e324fac3f87f818d684a3d752d1ef76dbcd4fc0db6746ac4034c19d0bcda21
@@ -684,7 +684,7 @@ F test/cast.test 5ceb920718d280b61163500a7d29e0e0a86458b1cbd92d96f962c9d970aa385
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test 33a698e8c63613449d85d624a38ef669bf20331daabebe3891c9405dd6df463a
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
-F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
+F test/closure01.test 9905883f1b171a4638f98fc764879f154e214a306d3d8daf412a15e7f3a9b1e0
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test 08c18e7512a5a32c97938854263fa15362eeb846
 F test/collate2.test 9aaa410a00734e48bcb27f3872617d6f69b2a621
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 853f3163597b9946c0cbeb808ea6fd33a0cf48ae6b8f4459c4165db377f33a9e
-R 7d36afb40ceca70451bc2c1787c2fa2c
-U mistachkin
-Z c462fe799d29c04b823cce6378b0f174
+P 22089ea2bbea93eb1da7f08344789a5455077169443e40025f053d2a117f1c08
+R 4366c3e52bbd0f10fc2d8dde8b988b3b
+U dan
+Z d8568d2c99d0406cb3f7adcc92b802b9
