@@ -134,7 +134,6 @@ int sqlite3WhereExplainOneScan(
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
     Vdbe *v = pParse->pVdbe;      /* VM being constructed */
     sqlite3 *db = pParse->db;     /* Database handle */
-    int iId = pParse->iSelectId;  /* Select id (left-most output column) */
     int isSearch;                 /* True for a SEARCH. False for SCAN. */
     WhereLoop *pLoop;             /* The controlling WhereLoop object */
     u32 flags;                    /* Flags that describe this loop */
@@ -153,7 +152,7 @@ int sqlite3WhereExplainOneScan(
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
-      sqlite3XPrintf(&str, " SUBQUERY %d", pItem->iSelectId);
+      sqlite3XPrintf(&str, " SUBQUERY %p", pItem->pSelect);
     }else{
       sqlite3XPrintf(&str, " TABLE %s", pItem->zName);
     }
@@ -214,7 +213,8 @@ int sqlite3WhereExplainOneScan(
     }
 #endif
     zMsg = sqlite3StrAccumFinish(&str);
-    ret = sqlite3VdbeAddOp4(v, OP_Explain, iId, iLevel, iFrom, zMsg,P4_DYNAMIC);
+    ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
+                            pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
   }
   return ret;
 }

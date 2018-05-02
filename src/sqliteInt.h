@@ -2609,9 +2609,6 @@ struct SrcList {
       unsigned viaCoroutine :1;  /* Implemented as a co-routine */
       unsigned isRecursive :1;   /* True for recursive reference in WITH */
     } fg;
-#ifndef SQLITE_OMIT_EXPLAIN
-    u8 iSelectId;     /* If pSelect!=0, the id of the sub-select in EQP */
-#endif
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
@@ -2783,6 +2780,8 @@ struct Select {
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
 #if SELECTTRACE_ENABLED
   char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
+#endif
+#if defined(SQLITETRACE_ENABLED) || !defined(SQLITE_OMIT_EXPLAIN)
   u32 iSelectId;         /* EXPLAIN QUERY PLAN select ID */
 #endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
@@ -3095,8 +3094,7 @@ struct Parse {
 #endif
   int nHeight;              /* Expression tree height of current sub-select */
 #ifndef SQLITE_OMIT_EXPLAIN
-  int iSelectId;            /* ID of current select for EXPLAIN output */
-  int iNextSelectId;        /* Next available select ID for EXPLAIN output */
+  int addrExplain;          /* Address of current OP_Explain opcode */
 #endif
   VList *pVList;            /* Mapping between variable names and numbers */
   Vdbe *pReprepare;         /* VM being reprepared (sqlite3Reprepare()) */

@@ -197,7 +197,21 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 # define sqlite3VdbeVerifyNoMallocRequired(A,B)
 # define sqlite3VdbeVerifyNoResultRow(A)
 #endif
-VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
+VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
+#ifndef SQLITE_OMIT_EXPLAIN
+  void sqlite3VdbeExplain(Parse*,u8,const char*,...);
+  void sqlite3VdbeExplainPop(Parse*);
+  int sqlite3VdbeExplainParent(Parse*);
+# define ExplainQueryPlan(P)        sqlite3VdbeExplain P
+# define ExplainQueryPlanPop(P)     sqlite3VdbeExplainPop(P)
+# define ExplainQueryPlanParent(P)  sqlite3VdbeExplainParent(P)
+# define ExplainQueryPlanSetId(P,S) (S)->iSelectId=(P)->addrExplain
+#else
+# define ExplainQueryPlan(P)
+# define ExplainQueryPlanPop(P)
+# define ExplainQueryPlanParent(P) 0
+# define ExplainQueryPlanSetId(P,S)
+#endif
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);

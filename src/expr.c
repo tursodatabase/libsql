@@ -2410,11 +2410,8 @@ int sqlite3FindInIndex(
           if( colUsed==(MASKBIT(nExpr)-1) ){
             /* If we reach this point, that means the index pIdx is usable */
             int iAddr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
-#ifndef SQLITE_OMIT_EXPLAIN
-            sqlite3VdbeAddOp4(v, OP_Explain, 0, 0, 0,
-              sqlite3MPrintf(db, "USING INDEX %s FOR IN-OPERATOR",pIdx->zName),
-              P4_DYNAMIC);
-#endif
+            ExplainQueryPlan((pParse, 0,
+                              "USING INDEX %s FOR IN-OPERATOR",pIdx->zName));
             sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
             sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
             VdbeComment((v, "%s", pIdx->zName));
@@ -2646,17 +2643,10 @@ int sqlite3CodeSubselect(
         Select *pSelect = pExpr->x.pSelect;
         ExprList *pEList = pSelect->pEList;
 
-#ifndef SQLITE_OMIT_EXPLAIN
-        if( pParse->explain==2 ){
-          char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %sLIST SUBQUERY %d",
-            jmpIfDynamic>=0?"":"CORRELATED ",
-            pParse->iNextSelectId
-          );
-          sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg,
-                            P4_DYNAMIC);
-        }
-#endif
-
+        ExplainQueryPlan((pParse, 1, "%sLIST SUBQUERY",
+            jmpIfDynamic>=0?"":"CORRELATED "
+        ));
+        ExplainQueryPlanSetId(pParse, pSelect);
         assert( !isRowid );
         /* If the LHS and RHS of the IN operator do not match, that
         ** error will have been caught long before we reach this point. */
@@ -2777,18 +2767,10 @@ int sqlite3CodeSubselect(
       assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
       assert( ExprHasProperty(pExpr, EP_xIsSelect) );
 
-#ifndef SQLITE_OMIT_EXPLAIN
-      if( pParse->explain==2 ){
-        char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %sSCALAR SUBQUERY %d",
-            jmpIfDynamic>=0?"":"CORRELATED ",
-            pParse->iNextSelectId
-        );
-        sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg,
-                          P4_DYNAMIC);
-      }
-#endif
-
       pSel = pExpr->x.pSelect;
+      ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY",
+            jmpIfDynamic>=0?"":"CORRELATED "));
+      ExplainQueryPlanSetId(pParse, pSel);
       nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
       sqlite3SelectDestInit(&dest, 0, pParse->nMem+1);
       pParse->nMem += nReg;
