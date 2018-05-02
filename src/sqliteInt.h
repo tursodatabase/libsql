@@ -2823,8 +2823,7 @@ struct Select {
 #define SF_MaybeConvert   0x08000  /* Need convertCompoundSelectToSubquery() */
 #define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
 #define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
-#define SF_ComplexResult  0x40000  /* Result set contains subquery or function */
-
+#define SF_ComplexResult  0x40000  /* Result contains subquery or function */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
