@@ -92,13 +92,13 @@ for {set i 0} {$i < 9} {incr i} {
       SELECT * FROM t$t AS o WHERE 
         NOT EXISTS( SELECT * FROM t$t AS i WHERE a=o.a AND +b=o.b AND +c=o.c )
       ORDER BY b, c;
-    " "
-      0 0 0 {SCAN TABLE t$t AS o USING COVERING INDEX sqlite_autoindex_t${t}_1}
-      0 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 1}
-      1 0 0 {SEARCH TABLE t$t AS i USING INTEGER PRIMARY KEY (rowid=?)}
-    "
+    " [string map {"\n    " "\n"} "
+      QUERY PLAN
+      |--SCAN TABLE t$t AS o USING COVERING INDEX sqlite_autoindex_t${t}_1
+      `--CORRELATED SCALAR SUBQUERY
+         `--SEARCH TABLE t$t AS i USING INTEGER PRIMARY KEY (rowid=?)
+    "]
   }
 }
 
 finish_test
-

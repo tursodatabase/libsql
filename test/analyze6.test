@@ -61,14 +61,18 @@ do_test analyze6-1.0 {
 #
 do_test analyze6-1.1 {
   eqp {SELECT count(*) FROM ev, cat WHERE x=y}
-} {0 0 1 {SCAN TABLE cat USING COVERING INDEX catx} 0 1 0 {SEARCH TABLE ev USING COVERING INDEX evy (y=?)}}
+} {/*SCAN TABLE cat USING COVERING INDEX catx*SEARCH TABLE ev USING COVERING INDEX evy (y=?)*/}
 
 # The same plan is chosen regardless of the order of the tables in the
 # FROM clause.
 #
-do_test analyze6-1.2 {
-  eqp {SELECT count(*) FROM cat, ev WHERE x=y}
-} {0 0 0 {SCAN TABLE cat USING COVERING INDEX catx} 0 1 1 {SEARCH TABLE ev USING COVERING INDEX evy (y=?)}}
+do_eqp_test analyze6-1.2 {
+  SELECT count(*) FROM cat, ev WHERE x=y
+} {
+  QUERY PLAN
+  |--SCAN TABLE cat USING COVERING INDEX catx
+  `--SEARCH TABLE ev USING COVERING INDEX evy (y=?)
+}
 
 
 # Ticket [83ea97620bd3101645138b7b0e71c12c5498fe3d] 2011-03-30
@@ -82,26 +86,26 @@ do_test analyze6-2.1 {
     ANALYZE;
   }
   eqp {SELECT * FROM t201 WHERE z=5}
-} {0 0 0 {SEARCH TABLE t201 USING INDEX t201z (z=?)}}
+} {/*SEARCH TABLE t201 USING INDEX t201z (z=?)*/}
 do_test analyze6-2.2 {
   eqp {SELECT * FROM t201 WHERE y=5}
-} {0 0 0 {SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?)}}
+} {/*SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?)*/}
 do_test analyze6-2.3 {
   eqp {SELECT * FROM t201 WHERE x=5}
-} {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)}}
+} {/*SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)*/}
 do_test analyze6-2.4 {
   execsql {
     INSERT INTO t201 VALUES(1,2,3),(2,3,4),(3,4,5);
     ANALYZE t201;
   }
   eqp {SELECT * FROM t201 WHERE z=5}
-} {0 0 0 {SEARCH TABLE t201 USING INDEX t201z (z=?)}}
+} {/*SEARCH TABLE t201 USING INDEX t201z (z=?)*/}
 do_test analyze6-2.5 {
   eqp {SELECT * FROM t201 WHERE y=5}
-} {0 0 0 {SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?)}}
+} {/*SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?)*/}
 do_test analyze6-2.6 {
   eqp {SELECT * FROM t201 WHERE x=5}
-} {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)}}
+} {/*SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)*/}
 do_test analyze6-2.7 {
   execsql {
     INSERT INTO t201 VALUES(4,5,7);
@@ -111,12 +115,12 @@ do_test analyze6-2.7 {
     ANALYZE t201;
   }
   eqp {SELECT * FROM t201 WHERE z=5}
-} {0 0 0 {SEARCH TABLE t201 USING INDEX t201z (z=?)}}
+} {/*SEARCH TABLE t201 USING INDEX t201z (z=?)*/}
 do_test analyze6-2.8 {
   eqp {SELECT * FROM t201 WHERE y=5}
-} {0 0 0 {SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?)}}
+} {/*SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?)*/}
 do_test analyze6-2.9 {
   eqp {SELECT * FROM t201 WHERE x=5}
-} {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)}}
+} {/*SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)*/}
 
 finish_test

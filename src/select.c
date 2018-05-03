@@ -21,7 +21,7 @@
 /***/ int sqlite3SelectTrace = 0;
 # define SELECTTRACE(K,P,S,X)  \
   if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%s/%d/%p: ",(S)->zSelName,(P)->iSelectId,(S)),\
+    sqlite3DebugPrintf("%s/%d/%p: ",(S)->zSelName,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
@@ -1293,11 +1293,7 @@ static const char *selectOpName(int id){
 ** is determined by the zUsage argument.
 */
 static void explainTempTable(Parse *pParse, const char *zUsage){
-  if( pParse->explain==2 ){
-    Vdbe *v = pParse->pVdbe;
-    char *zMsg = sqlite3MPrintf(pParse->db, "USE TEMP B-TREE FOR %s", zUsage);
-    sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
-  }
+  ExplainQueryPlan((pParse, 0, "USE TEMP B-TREE FOR %s", zUsage));
 }
 
 /*
@@ -1315,42 +1311,6 @@ static void explainTempTable(Parse *pParse, const char *zUsage){
 # define explainSetInteger(y,z)
 #endif
 
-#if !defined(SQLITE_OMIT_EXPLAIN) && !defined(SQLITE_OMIT_COMPOUND_SELECT)
-/*
-** Unless an "EXPLAIN QUERY PLAN" command is being processed, this function
-** is a no-op. Otherwise, it adds a single row of output to the EQP result,
-** where the caption is of one of the two forms:
-**
-**   "COMPOSITE SUBQUERIES iSub1 and iSub2 (op)"
-**   "COMPOSITE SUBQUERIES iSub1 and iSub2 USING TEMP B-TREE (op)"
-**
-** where iSub1 and iSub2 are the integers passed as the corresponding
-** function parameters, and op is the text representation of the parameter
-** of the same name. The parameter "op" must be one of TK_UNION, TK_EXCEPT,
-** TK_INTERSECT or TK_ALL. The first form is used if argument bUseTmp is 
-** false, or the second form if it is true.
-*/
-static void explainComposite(
-  Parse *pParse,                  /* Parse context */
-  int op,                         /* One of TK_UNION, TK_EXCEPT etc. */
-  int iSub1,                      /* Subquery id 1 */
-  int iSub2,                      /* Subquery id 2 */
-  int bUseTmp                     /* True if a temp table was used */
-){
-  assert( op==TK_UNION || op==TK_EXCEPT || op==TK_INTERSECT || op==TK_ALL );
-  if( pParse->explain==2 ){
-    Vdbe *v = pParse->pVdbe;
-    char *zMsg = sqlite3MPrintf(
-        pParse->db, "COMPOUND SUBQUERIES %d AND %d %s(%s)", iSub1, iSub2,
-        bUseTmp?"USING TEMP B-TREE ":"", selectOpName(op)
-    );
-    sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
-  }
-}
-#else
-/* No-op versions of the explainXXX() functions and macros. */
-# define explainComposite(v,w,x,y,z)
-#endif
 
 /*
 ** If the inner loop was generated using a non-null pOrderBy argument,
@@ -2327,6 +2287,7 @@ static void generateWithRecursiveQuery(
 
   /* Store the results of the setup-query in Queue. */
   pSetup->pNext = 0;
+  ExplainQueryPlan((pParse, 1, "SETUP"));
   rc = sqlite3Select(pParse, pSetup, &destQueue);
   pSetup->pNext = p;
   if( rc ) goto end_of_recursive_query;
@@ -2361,6 +2322,7 @@ static void generateWithRecursiveQuery(
     sqlite3ErrorMsg(pParse, "recursive aggregate queries not supported");
   }else{
     p->pPrior = 0;
+    ExplainQueryPlan((pParse, 1, "RECURSIVE STEP"));
     sqlite3Select(pParse, p, &destQueue);
     assert( p->pPrior==0 );
     p->pPrior = pSetup;
@@ -2406,10 +2368,9 @@ static int multiSelectValues(
   Select *p,            /* The right-most of SELECTs to be coded */
   SelectDest *pDest     /* What to do with query results */
 ){
-  Select *pPrior;
-  Select *pRightmost = p;
   int nRow = 1;
   int rc = 0;
+  int bShowAll = p->pLimit==0;
   assert( p->selFlags & SF_MultiValue );
   do{
     assert( p->selFlags & SF_Values );
@@ -2418,14 +2379,13 @@ static int multiSelectValues(
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
     p = p->pPrior;
-    nRow++;
+    nRow += bShowAll;
   }while(1);
+  ExplainQueryPlan((pParse, 0, "SCAN %d CONSTANT ROW%s", nRow,
+                    nRow==1 ? "" : "S"));
   while( p ){
-    pPrior = p->pPrior;
-    p->pPrior = 0;
-    rc = sqlite3Select(pParse, p, pDest);
-    p->pPrior = pPrior;
-    if( rc || pRightmost->pLimit ) break;
+    selectInnerLoop(pParse, p, -1, 0, 0, pDest, 1, 1);
+    if( !bShowAll ) break;
     p->nSelectRow = nRow;
     p = p->pNext;
   }
@@ -2474,10 +2434,6 @@ static int multiSelect(
   SelectDest dest;      /* Alternative data destination */
   Select *pDelete = 0;  /* Chain of simple selects to delete */
   sqlite3 *db;          /* Database connection */
-#ifndef SQLITE_OMIT_EXPLAIN
-  int iSub1 = 0;        /* EQP id of left-hand query */
-  int iSub2 = 0;        /* EQP id of right-hand query */
-#endif
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
@@ -2528,217 +2484,231 @@ static int multiSelect(
   */
   if( p->pOrderBy ){
     return multiSelectOrderBy(pParse, p, pDest);
-  }else
+  }else{
 
-  /* Generate code for the left and right SELECT statements.
-  */
-  switch( p->op ){
-    case TK_ALL: {
-      int addr = 0;
-      int nLimit;
-      assert( !pPrior->pLimit );
-      pPrior->iLimit = p->iLimit;
-      pPrior->iOffset = p->iOffset;
-      pPrior->pLimit = p->pLimit;
-      explainSetInteger(iSub1, pParse->iNextSelectId);
-      rc = sqlite3Select(pParse, pPrior, &dest);
-      p->pLimit = 0;
-      if( rc ){
-        goto multi_select_end;
-      }
-      p->pPrior = 0;
-      p->iLimit = pPrior->iLimit;
-      p->iOffset = pPrior->iOffset;
-      if( p->iLimit ){
-        addr = sqlite3VdbeAddOp1(v, OP_IfNot, p->iLimit); VdbeCoverage(v);
-        VdbeComment((v, "Jump ahead if LIMIT reached"));
-        if( p->iOffset ){
-          sqlite3VdbeAddOp3(v, OP_OffsetLimit,
-                            p->iLimit, p->iOffset+1, p->iOffset);
-        }
-      }
-      explainSetInteger(iSub2, pParse->iNextSelectId);
-      rc = sqlite3Select(pParse, p, &dest);
-      testcase( rc!=SQLITE_OK );
-      pDelete = p->pPrior;
-      p->pPrior = pPrior;
-      p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
-      if( pPrior->pLimit
-       && sqlite3ExprIsInteger(pPrior->pLimit->pLeft, &nLimit)
-       && nLimit>0 && p->nSelectRow > sqlite3LogEst((u64)nLimit) 
-      ){
-        p->nSelectRow = sqlite3LogEst((u64)nLimit);
-      }
-      if( addr ){
-        sqlite3VdbeJumpHere(v, addr);
-      }
-      break;
+#ifndef SQLITE_OMIT_EXPLAIN
+    if( pPrior->pPrior==0 ){
+      ExplainQueryPlan((pParse, 1, "COMPOUND QUERY"));
+      ExplainQueryPlan((pParse, 1, "LEFT-MOST SUBQUERY"));
     }
-    case TK_EXCEPT:
-    case TK_UNION: {
-      int unionTab;    /* Cursor number of the temporary table holding result */
-      u8 op = 0;       /* One of the SRT_ operations to apply to self */
-      int priorOp;     /* The SRT_ operation to apply to prior selects */
-      Expr *pLimit;    /* Saved values of p->nLimit  */
-      int addr;
-      SelectDest uniondest;
+#endif
 
-      testcase( p->op==TK_EXCEPT );
-      testcase( p->op==TK_UNION );
-      priorOp = SRT_Union;
-      if( dest.eDest==priorOp ){
-        /* We can reuse a temporary table generated by a SELECT to our
-        ** right.
+    /* Generate code for the left and right SELECT statements.
+    */
+    switch( p->op ){
+      case TK_ALL: {
+        int addr = 0;
+        int nLimit;
+        assert( !pPrior->pLimit );
+        pPrior->iLimit = p->iLimit;
+        pPrior->iOffset = p->iOffset;
+        pPrior->pLimit = p->pLimit;
+        rc = sqlite3Select(pParse, pPrior, &dest);
+        p->pLimit = 0;
+        if( rc ){
+          goto multi_select_end;
+        }
+        p->pPrior = 0;
+        p->iLimit = pPrior->iLimit;
+        p->iOffset = pPrior->iOffset;
+        if( p->iLimit ){
+          addr = sqlite3VdbeAddOp1(v, OP_IfNot, p->iLimit); VdbeCoverage(v);
+          VdbeComment((v, "Jump ahead if LIMIT reached"));
+          if( p->iOffset ){
+            sqlite3VdbeAddOp3(v, OP_OffsetLimit,
+                              p->iLimit, p->iOffset+1, p->iOffset);
+          }
+        }
+        ExplainQueryPlan((pParse, 1, "UNION ALL"));
+        rc = sqlite3Select(pParse, p, &dest);
+        testcase( rc!=SQLITE_OK );
+        pDelete = p->pPrior;
+        p->pPrior = pPrior;
+        p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
+        if( pPrior->pLimit
+         && sqlite3ExprIsInteger(pPrior->pLimit->pLeft, &nLimit)
+         && nLimit>0 && p->nSelectRow > sqlite3LogEst((u64)nLimit) 
+        ){
+          p->nSelectRow = sqlite3LogEst((u64)nLimit);
+        }
+        if( addr ){
+          sqlite3VdbeJumpHere(v, addr);
+        }
+        break;
+      }
+      case TK_EXCEPT:
+      case TK_UNION: {
+        int unionTab;    /* Cursor number of the temp table holding result */
+        u8 op = 0;       /* One of the SRT_ operations to apply to self */
+        int priorOp;     /* The SRT_ operation to apply to prior selects */
+        Expr *pLimit;    /* Saved values of p->nLimit  */
+        int addr;
+        SelectDest uniondest;
+  
+        testcase( p->op==TK_EXCEPT );
+        testcase( p->op==TK_UNION );
+        priorOp = SRT_Union;
+        if( dest.eDest==priorOp ){
+          /* We can reuse a temporary table generated by a SELECT to our
+          ** right.
+          */
+          assert( p->pLimit==0 );      /* Not allowed on leftward elements */
+          unionTab = dest.iSDParm;
+        }else{
+          /* We will need to create our own temporary table to hold the
+          ** intermediate results.
+          */
+          unionTab = pParse->nTab++;
+          assert( p->pOrderBy==0 );
+          addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, unionTab, 0);
+          assert( p->addrOpenEphm[0] == -1 );
+          p->addrOpenEphm[0] = addr;
+          findRightmost(p)->selFlags |= SF_UsesEphemeral;
+          assert( p->pEList );
+        }
+  
+        /* Code the SELECT statements to our left
         */
-        assert( p->pLimit==0 );      /* Not allowed on leftward elements */
-        unionTab = dest.iSDParm;
-      }else{
-        /* We will need to create our own temporary table to hold the
-        ** intermediate results.
+        assert( !pPrior->pOrderBy );
+        sqlite3SelectDestInit(&uniondest, priorOp, unionTab);
+        rc = sqlite3Select(pParse, pPrior, &uniondest);
+        if( rc ){
+          goto multi_select_end;
+        }
+  
+        /* Code the current SELECT statement
         */
-        unionTab = pParse->nTab++;
+        if( p->op==TK_EXCEPT ){
+          op = SRT_Except;
+        }else{
+          assert( p->op==TK_UNION );
+          op = SRT_Union;
+        }
+        p->pPrior = 0;
+        pLimit = p->pLimit;
+        p->pLimit = 0;
+        uniondest.eDest = op;
+        ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
+                          selectOpName(p->op)));
+        rc = sqlite3Select(pParse, p, &uniondest);
+        testcase( rc!=SQLITE_OK );
+        /* Query flattening in sqlite3Select() might refill p->pOrderBy.
+        ** Be sure to delete p->pOrderBy, therefore, to avoid a memory leak. */
+        sqlite3ExprListDelete(db, p->pOrderBy);
+        pDelete = p->pPrior;
+        p->pPrior = pPrior;
+        p->pOrderBy = 0;
+        if( p->op==TK_UNION ){
+          p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
+        }
+        sqlite3ExprDelete(db, p->pLimit);
+        p->pLimit = pLimit;
+        p->iLimit = 0;
+        p->iOffset = 0;
+  
+        /* Convert the data in the temporary table into whatever form
+        ** it is that we currently need.
+        */
+        assert( unionTab==dest.iSDParm || dest.eDest!=priorOp );
+        if( dest.eDest!=priorOp ){
+          int iCont, iBreak, iStart;
+          assert( p->pEList );
+          iBreak = sqlite3VdbeMakeLabel(v);
+          iCont = sqlite3VdbeMakeLabel(v);
+          computeLimitRegisters(pParse, p, iBreak);
+          sqlite3VdbeAddOp2(v, OP_Rewind, unionTab, iBreak); VdbeCoverage(v);
+          iStart = sqlite3VdbeCurrentAddr(v);
+          selectInnerLoop(pParse, p, unionTab,
+                          0, 0, &dest, iCont, iBreak);
+          sqlite3VdbeResolveLabel(v, iCont);
+          sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart); VdbeCoverage(v);
+          sqlite3VdbeResolveLabel(v, iBreak);
+          sqlite3VdbeAddOp2(v, OP_Close, unionTab, 0);
+        }
+        break;
+      }
+      default: assert( p->op==TK_INTERSECT ); {
+        int tab1, tab2;
+        int iCont, iBreak, iStart;
+        Expr *pLimit;
+        int addr;
+        SelectDest intersectdest;
+        int r1;
+  
+        /* INTERSECT is different from the others since it requires
+        ** two temporary tables.  Hence it has its own case.  Begin
+        ** by allocating the tables we will need.
+        */
+        tab1 = pParse->nTab++;
+        tab2 = pParse->nTab++;
         assert( p->pOrderBy==0 );
-        addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, unionTab, 0);
+  
+        addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tab1, 0);
         assert( p->addrOpenEphm[0] == -1 );
         p->addrOpenEphm[0] = addr;
         findRightmost(p)->selFlags |= SF_UsesEphemeral;
         assert( p->pEList );
-      }
-
-      /* Code the SELECT statements to our left
-      */
-      assert( !pPrior->pOrderBy );
-      sqlite3SelectDestInit(&uniondest, priorOp, unionTab);
-      explainSetInteger(iSub1, pParse->iNextSelectId);
-      rc = sqlite3Select(pParse, pPrior, &uniondest);
-      if( rc ){
-        goto multi_select_end;
-      }
-
-      /* Code the current SELECT statement
-      */
-      if( p->op==TK_EXCEPT ){
-        op = SRT_Except;
-      }else{
-        assert( p->op==TK_UNION );
-        op = SRT_Union;
-      }
-      p->pPrior = 0;
-      pLimit = p->pLimit;
-      p->pLimit = 0;
-      uniondest.eDest = op;
-      explainSetInteger(iSub2, pParse->iNextSelectId);
-      rc = sqlite3Select(pParse, p, &uniondest);
-      testcase( rc!=SQLITE_OK );
-      /* Query flattening in sqlite3Select() might refill p->pOrderBy.
-      ** Be sure to delete p->pOrderBy, therefore, to avoid a memory leak. */
-      sqlite3ExprListDelete(db, p->pOrderBy);
-      pDelete = p->pPrior;
-      p->pPrior = pPrior;
-      p->pOrderBy = 0;
-      if( p->op==TK_UNION ){
-        p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
-      }
-      sqlite3ExprDelete(db, p->pLimit);
-      p->pLimit = pLimit;
-      p->iLimit = 0;
-      p->iOffset = 0;
-
-      /* Convert the data in the temporary table into whatever form
-      ** it is that we currently need.
-      */
-      assert( unionTab==dest.iSDParm || dest.eDest!=priorOp );
-      if( dest.eDest!=priorOp ){
-        int iCont, iBreak, iStart;
+  
+        /* Code the SELECTs to our left into temporary table "tab1".
+        */
+        sqlite3SelectDestInit(&intersectdest, SRT_Union, tab1);
+        rc = sqlite3Select(pParse, pPrior, &intersectdest);
+        if( rc ){
+          goto multi_select_end;
+        }
+  
+        /* Code the current SELECT into temporary table "tab2"
+        */
+        addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tab2, 0);
+        assert( p->addrOpenEphm[1] == -1 );
+        p->addrOpenEphm[1] = addr;
+        p->pPrior = 0;
+        pLimit = p->pLimit;
+        p->pLimit = 0;
+        intersectdest.iSDParm = tab2;
+        ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
+                          selectOpName(p->op)));
+        rc = sqlite3Select(pParse, p, &intersectdest);
+        testcase( rc!=SQLITE_OK );
+        pDelete = p->pPrior;
+        p->pPrior = pPrior;
+        if( p->nSelectRow>pPrior->nSelectRow ){
+          p->nSelectRow = pPrior->nSelectRow;
+        }
+        sqlite3ExprDelete(db, p->pLimit);
+        p->pLimit = pLimit;
+  
+        /* Generate code to take the intersection of the two temporary
+        ** tables.
+        */
         assert( p->pEList );
         iBreak = sqlite3VdbeMakeLabel(v);
         iCont = sqlite3VdbeMakeLabel(v);
         computeLimitRegisters(pParse, p, iBreak);
-        sqlite3VdbeAddOp2(v, OP_Rewind, unionTab, iBreak); VdbeCoverage(v);
-        iStart = sqlite3VdbeCurrentAddr(v);
-        selectInnerLoop(pParse, p, unionTab,
+        sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak); VdbeCoverage(v);
+        r1 = sqlite3GetTempReg(pParse);
+        iStart = sqlite3VdbeAddOp2(v, OP_RowData, tab1, r1);
+        sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0);
+        VdbeCoverage(v);
+        sqlite3ReleaseTempReg(pParse, r1);
+        selectInnerLoop(pParse, p, tab1,
                         0, 0, &dest, iCont, iBreak);
         sqlite3VdbeResolveLabel(v, iCont);
-        sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart); VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart); VdbeCoverage(v);
         sqlite3VdbeResolveLabel(v, iBreak);
-        sqlite3VdbeAddOp2(v, OP_Close, unionTab, 0);
+        sqlite3VdbeAddOp2(v, OP_Close, tab2, 0);
+        sqlite3VdbeAddOp2(v, OP_Close, tab1, 0);
+        break;
       }
-      break;
     }
-    default: assert( p->op==TK_INTERSECT ); {
-      int tab1, tab2;
-      int iCont, iBreak, iStart;
-      Expr *pLimit;
-      int addr;
-      SelectDest intersectdest;
-      int r1;
-
-      /* INTERSECT is different from the others since it requires
-      ** two temporary tables.  Hence it has its own case.  Begin
-      ** by allocating the tables we will need.
-      */
-      tab1 = pParse->nTab++;
-      tab2 = pParse->nTab++;
-      assert( p->pOrderBy==0 );
-
-      addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tab1, 0);
-      assert( p->addrOpenEphm[0] == -1 );
-      p->addrOpenEphm[0] = addr;
-      findRightmost(p)->selFlags |= SF_UsesEphemeral;
-      assert( p->pEList );
-
-      /* Code the SELECTs to our left into temporary table "tab1".
-      */
-      sqlite3SelectDestInit(&intersectdest, SRT_Union, tab1);
-      explainSetInteger(iSub1, pParse->iNextSelectId);
-      rc = sqlite3Select(pParse, pPrior, &intersectdest);
-      if( rc ){
-        goto multi_select_end;
-      }
-
-      /* Code the current SELECT into temporary table "tab2"
-      */
-      addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tab2, 0);
-      assert( p->addrOpenEphm[1] == -1 );
-      p->addrOpenEphm[1] = addr;
-      p->pPrior = 0;
-      pLimit = p->pLimit;
-      p->pLimit = 0;
-      intersectdest.iSDParm = tab2;
-      explainSetInteger(iSub2, pParse->iNextSelectId);
-      rc = sqlite3Select(pParse, p, &intersectdest);
-      testcase( rc!=SQLITE_OK );
-      pDelete = p->pPrior;
-      p->pPrior = pPrior;
-      if( p->nSelectRow>pPrior->nSelectRow ) p->nSelectRow = pPrior->nSelectRow;
-      sqlite3ExprDelete(db, p->pLimit);
-      p->pLimit = pLimit;
-
-      /* Generate code to take the intersection of the two temporary
-      ** tables.
-      */
-      assert( p->pEList );
-      iBreak = sqlite3VdbeMakeLabel(v);
-      iCont = sqlite3VdbeMakeLabel(v);
-      computeLimitRegisters(pParse, p, iBreak);
-      sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak); VdbeCoverage(v);
-      r1 = sqlite3GetTempReg(pParse);
-      iStart = sqlite3VdbeAddOp2(v, OP_RowData, tab1, r1);
-      sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0); VdbeCoverage(v);
-      sqlite3ReleaseTempReg(pParse, r1);
-      selectInnerLoop(pParse, p, tab1,
-                      0, 0, &dest, iCont, iBreak);
-      sqlite3VdbeResolveLabel(v, iCont);
-      sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart); VdbeCoverage(v);
-      sqlite3VdbeResolveLabel(v, iBreak);
-      sqlite3VdbeAddOp2(v, OP_Close, tab2, 0);
-      sqlite3VdbeAddOp2(v, OP_Close, tab1, 0);
-      break;
+  
+  #ifndef SQLITE_OMIT_EXPLAIN
+    if( p->pNext==0 ){
+      ExplainQueryPlanPop(pParse);
     }
+  #endif
   }
-
-  explainComposite(pParse, p->op, iSub1, iSub2, p->op!=TK_ALL);
-
+  
   /* Compute collating sequences used by 
   ** temporary tables needed to implement the compound select.
   ** Attach the KeyInfo structure to all temporary tables.
@@ -3076,10 +3046,6 @@ static int multiSelectOrderBy(
   ExprList *pOrderBy;   /* The ORDER BY clause */
   int nOrderBy;         /* Number of terms in the ORDER BY clause */
   int *aPermute;        /* Mapping from ORDER BY terms to result set columns */
-#ifndef SQLITE_OMIT_EXPLAIN
-  int iSub1;            /* EQP id of left-hand query */
-  int iSub2;            /* EQP id of right-hand query */
-#endif
 
   assert( p->pOrderBy!=0 );
   assert( pKeyDup==0 ); /* "Managed" code needs this.  Ticket #3382. */
@@ -3199,6 +3165,8 @@ static int multiSelectOrderBy(
   sqlite3SelectDestInit(&destA, SRT_Coroutine, regAddrA);
   sqlite3SelectDestInit(&destB, SRT_Coroutine, regAddrB);
 
+  ExplainQueryPlan((pParse, 1, "MERGE (%s)", selectOpName(p->op)));
+
   /* Generate a coroutine to evaluate the SELECT statement to the
   ** left of the compound operator - the "A" select.
   */
@@ -3206,7 +3174,7 @@ static int multiSelectOrderBy(
   addr1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrA, 0, addrSelectA);
   VdbeComment((v, "left SELECT"));
   pPrior->iLimit = regLimitA;
-  explainSetInteger(iSub1, pParse->iNextSelectId);
+  ExplainQueryPlan((pParse, 1, "LEFT"));
   sqlite3Select(pParse, pPrior, &destA);
   sqlite3VdbeEndCoroutine(v, regAddrA);
   sqlite3VdbeJumpHere(v, addr1);
@@ -3221,7 +3189,7 @@ static int multiSelectOrderBy(
   savedOffset = p->iOffset;
   p->iLimit = regLimitB;
   p->iOffset = 0;  
-  explainSetInteger(iSub2, pParse->iNextSelectId);
+  ExplainQueryPlan((pParse, 1, "RIGHT"));
   sqlite3Select(pParse, p, &destB);
   p->iLimit = savedLimit;
   p->iOffset = savedOffset;
@@ -3333,7 +3301,7 @@ static int multiSelectOrderBy(
 
   /*** TBD:  Insert subroutine calls to close cursors on incomplete
   **** subqueries ****/
-  explainComposite(pParse, p->op, iSub1, iSub2, 0);
+  ExplainQueryPlanPop(pParse);
   return pParse->nErr!=0;
 }
 #endif
@@ -5121,13 +5089,10 @@ static void explainSimpleCount(
 ){
   if( pParse->explain==2 ){
     int bCover = (pIdx!=0 && (HasRowid(pTab) || !IsPrimaryKeyIndex(pIdx)));
-    char *zEqp = sqlite3MPrintf(pParse->db, "SCAN TABLE %s%s%s",
+    sqlite3VdbeExplain(pParse, 0, "SCAN TABLE %s%s%s",
         pTab->zName,
         bCover ? " USING COVERING INDEX " : "",
         bCover ? pIdx->zName : ""
-    );
-    sqlite3VdbeAddOp4(
-        pParse->pVdbe, OP_Explain, pParse->iSelectId, 0, 0, zEqp, P4_DYNAMIC
     );
   }
 }
@@ -5341,22 +5306,15 @@ int sqlite3Select(
   ExprList *pMinMaxOrderBy = 0;  /* Added ORDER BY for min/max queries */
   u8 minMaxFlag;                 /* Flag for min/max queries */
 
-#ifndef SQLITE_OMIT_EXPLAIN
-  int iRestoreSelectId = pParse->iSelectId;
-  pParse->iSelectId = pParse->iNextSelectId++;
-#endif
-
   db = pParse->db;
+  v = sqlite3GetVdbe(pParse);
   if( p==0 || db->mallocFailed || pParse->nErr ){
     return 1;
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 #if SELECTTRACE_ENABLED
-#ifndef SQLITE_OMIT_EXPLAIN
-  p->iSelectId = pParse->iSelectId;
-#endif
-  SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->iSelectId));
+  SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
   if( sqlite3SelectTrace & 0x100 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -5393,10 +5351,6 @@ int sqlite3Select(
   }
 #endif
 
-  /* Get a pointer the VDBE under construction, allocating a new VDBE if one
-  ** does not already exist */
-  v = sqlite3GetVdbe(pParse);
-  if( v==0 ) goto select_end;
   if( pDest->eDest==SRT_Output ){
     generateColumnNames(pParse, p);
   }
@@ -5491,11 +5445,11 @@ int sqlite3Select(
     rc = multiSelect(pParse, p, pDest);
 #if SELECTTRACE_ENABLED
     SELECTTRACE(0x1,pParse,p,("end compound-select processing\n"));
-    if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x2000)!=0 ){
+    if( (sqlite3SelectTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
-    explainSetInteger(pParse->iSelectId, iRestoreSelectId);
+    if( p->pNext==0 ) ExplainQueryPlanPop(pParse);
     return rc;
   }
 #endif
@@ -5607,7 +5561,7 @@ int sqlite3Select(
       VdbeComment((v, "%s", pItem->pTab->zName));
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+      ExplainQueryPlan((pParse, 1, "CO-ROUTINE 0x%p", pSub));
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
@@ -5642,12 +5596,11 @@ int sqlite3Select(
       pPrior = isSelfJoinView(pTabList, pItem);
       if( pPrior ){
         sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
-        explainSetInteger(pItem->iSelectId, pPrior->iSelectId);
         assert( pPrior->pSelect!=0 );
         pSub->nSelectRow = pPrior->pSelect->nSelectRow;
       }else{
         sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-        explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+        ExplainQueryPlan((pParse, 1, "MATERIALIZE 0x%p", pSub));
         sqlite3Select(pParse, pSub, &dest);
       }
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
@@ -6285,10 +6238,10 @@ select_end:
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED
   SELECTTRACE(0x1,pParse,p,("end processing\n"));
-  if( pParse->iSelectId==0 && (sqlite3SelectTrace & 0x2000)!=0 ){
+  if( (sqlite3SelectTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
-  explainSetInteger(pParse->iSelectId, iRestoreSelectId);
+  ExplainQueryPlanPop(pParse);
   return rc;
 }

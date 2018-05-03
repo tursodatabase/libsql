@@ -136,10 +136,10 @@ foreach {tn analyze_cmd} {
 
   do_eqp_test 1.$tn.2.5 {
     SELECT * FROM t1 WHERE b = 31 AND c = 0;
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
+  } {SEARCH TABLE t1 USING INDEX t1b (b=?)}
   do_eqp_test 1.$tn.2.6 {
     SELECT * FROM t1 WHERE b = 125 AND c = 16;
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?)}}
+  } {SEARCH TABLE t1 USING INDEX t1c (c=?)}
 
   do_execsql_test 1.$tn.3.1 { 
     SELECT count(*) FROM t1 WHERE b BETWEEN 0 AND 50
@@ -156,31 +156,31 @@ foreach {tn analyze_cmd} {
 
   do_eqp_test 1.$tn.3.5 {
     SELECT * FROM t1 WHERE b BETWEEN 0 AND 50 AND c BETWEEN 0 AND 50
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+  } {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}
 
   do_eqp_test 1.$tn.3.6 {
     SELECT * FROM t1 WHERE b BETWEEN 75 AND 125 AND c BETWEEN 75 AND 125
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+  } {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}
 
   do_eqp_test 1.$tn.3.7 {
     SELECT * FROM t1 WHERE b BETWEEN +0 AND +50 AND c BETWEEN +0 AND +50
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+  } {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}
 
   do_eqp_test 1.$tn.3.8 {
     SELECT * FROM t1
      WHERE b BETWEEN cast('0' AS int) AND cast('50.0' AS real)
        AND c BETWEEN cast('0' AS numeric) AND cast('50.0' AS real)
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+  } {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}
 
   do_eqp_test 1.$tn.3.9 {
     SELECT * FROM t1 WHERE b BETWEEN +75 AND +125 AND c BETWEEN +75 AND +125
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+  } {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}
 
   do_eqp_test 1.$tn.3.10 {
     SELECT * FROM t1
      WHERE b BETWEEN cast('75' AS int) AND cast('125.0' AS real)
        AND c BETWEEN cast('75' AS numeric) AND cast('125.0' AS real)
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+  } {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}
 }
 
 finish_test

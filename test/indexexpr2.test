@@ -91,10 +91,11 @@ ifcapable json1 {
     WHERE json_extract(x, '$.b') IS NOT NULL AND json_extract(x, '$.a') IS NULL 
     GROUP BY json_extract(x, '$.b') COLLATE nocase
     ORDER BY json_extract(x, '$.b') COLLATE nocase;
-  } {
-    0 0 0 {SCAN TABLE t2} 
-    0 0 0 {USE TEMP B-TREE FOR GROUP BY}
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SCAN TABLE t2
+    `--USE TEMP B-TREE FOR GROUP BY
+  }]
   
   do_execsql_test 3.3.2 {
     CREATE INDEX i3 ON t3(json_extract(x, '$.a'), json_extract(x, '$.b'));
@@ -105,10 +106,11 @@ ifcapable json1 {
     WHERE json_extract(x, '$.b') IS NOT NULL AND json_extract(x, '$.a') IS NULL 
     GROUP BY json_extract(x, '$.b') COLLATE nocase
     ORDER BY json_extract(x, '$.b') COLLATE nocase;
-  } {
-    0 0 0 {SEARCH TABLE t3 USING INDEX i3 (<expr>=?)} 
-    0 0 0 {USE TEMP B-TREE FOR GROUP BY}
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SEARCH TABLE t3 USING INDEX i3 (<expr>=?)
+    `--USE TEMP B-TREE FOR GROUP BY
+  }]
 }
 
 do_execsql_test 3.4.0 {
