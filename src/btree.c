@@ -8176,7 +8176,9 @@ static int btreeOverwriteContent(
     if( nData<iAmt ){
       /* Mixed read data and zeros at the end.  Make a recursive call
       ** to write the zeros then fall through to write the real data */
-      btreeOverwriteContent(pPage, pDest+nData, pX, iOffset+nData, iAmt-nData);
+      int rc = btreeOverwriteContent(pPage, pDest+nData, pX, iOffset+nData,
+                                 iAmt-nData);
+      if( rc ) return rc;
       iAmt = nData;
     }
     if( memcmp(pDest, ((u8*)pX->pData) + iOffset, iAmt)!=0 ){
@@ -8219,18 +8221,19 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
     rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
     if( rc ) return rc;
     if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 ){
-      return SQLITE_CORRUPT_BKPT;
-    }
-    if( iOffset+ovflPageSize<nTotal ){
-      ovflPgno = get4byte(pPage->aData);
+      rc = SQLITE_CORRUPT_BKPT;
     }else{
-      ovflPageSize = nTotal - iOffset;
+      if( iOffset+ovflPageSize<nTotal ){
+        ovflPgno = get4byte(pPage->aData);
+      }else{
+        ovflPageSize = nTotal - iOffset;
+      }
+      rc = btreeOverwriteContent(pPage, pPage->aData+4, pX,
+                                 iOffset, ovflPageSize);
     }
-    rc = btreeOverwriteContent(pPage, pPage->aData+4, pX,
-                               iOffset, ovflPageSize);
+    sqlite3PagerUnref(pPage->pDbPage);
     if( rc ) return rc;
     iOffset += ovflPageSize;
-    sqlite3PagerUnref(pPage->pDbPage);
   }while( iOffset<nTotal );
   return SQLITE_OK;    
 }
