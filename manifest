@@ -1,5 +1,5 @@
-C Improved\ssecurity\sfor\sVACUUM.\s\sThis\scheck-in\scombines\sthe\sfixes\nof\s[ab0d99d0b5ede]\sand\s[27754b74ddf646]\sin\sa\sway\sthat\sis\sless\slikely\sto\nto\sbe\sbroken\sby\sfuture\schanges.
-D 2018-05-03T21:51:30.697
+C Fix\sa\sbranch\sthat\shas\sbecome\sunreachable\sdue\sto\srecent\senhancements.
+D 2018-05-03T22:52:56.038
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -493,7 +493,7 @@ F src/printf.c d3b7844ddeb11fbbdd38dd84d09c9c1ac171d21fb038473c3aa97981201cc660
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 75ae3000bef42ea6a7271cf49f6bc5e94bdbf73026ddea251f2a8b6cf14960fd
+F src/select.c c937eb1fc32417fb0be022ab8372dd27ff8138242a8d377724996d817258bd8a
 F src/shell.c.in 29309f2ab656c8817fbc3b7910b9af8464557b91cba75277a03669399c8e2730
 F src/sqlite.h.in 469aed42e75193b7f5d88d812befa961c04746869475f96fcf434c9f67079f66
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff01bbdabc4b9db3db8b928979442c91b32d72082158e4f5fe62ae51a73649d2
-R 89cb977cf2a7974b23a1ffc22bfe7f69
+P 260fc696538b195e8decabaab46771f664fb829b539efa86fb0b8170db01fa0a
+R 9efc9c5b7f70976e1122ef5263d6cddb
 U drh
-Z b164f882a3399333cea7fc0c8706c738
+Z f48c0146f4c18019bae878d6a3510a09

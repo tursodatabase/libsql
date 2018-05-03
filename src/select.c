@@ -1760,7 +1760,7 @@ static void generateColumnNames(
   }
 #endif
 
-  if( pParse->colNamesSet || db->mallocFailed ) return;
+  if( pParse->colNamesSet ) return;
   /* Column names are determined by the left-most term of a compound select */
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   SELECTTRACE(1,pParse,pSelect,("generating column names\n"));
