@@ -148,9 +148,6 @@ Select *sqlite3SelectNew(
 #if SELECTTRACE_ENABLED
   pNew->zSelName[0] = 0;
 #endif
-#if SELECTTRACE_ENABLED || !defined(SQLITE_OMIT_EXPLAIN)
-  pNew->iSelectId = 0;
-#endif
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = 0;
@@ -2291,7 +2288,6 @@ static void generateWithRecursiveQuery(
   /* Store the results of the setup-query in Queue. */
   pSetup->pNext = 0;
   ExplainQueryPlan((pParse, 1, "SETUP"));
-  ExplainQueryPlanSetId(pParse, pSetup);
   rc = sqlite3Select(pParse, pSetup, &destQueue);
   pSetup->pNext = p;
   if( rc ) goto end_of_recursive_query;
@@ -2327,7 +2323,6 @@ static void generateWithRecursiveQuery(
   }else{
     p->pPrior = 0;
     ExplainQueryPlan((pParse, 1, "RECURSIVE STEP"));
-    ExplainQueryPlanSetId(pParse, p);
     sqlite3Select(pParse, p, &destQueue);
     assert( p->pPrior==0 );
     p->pPrior = pSetup;
@@ -2492,12 +2487,9 @@ static int multiSelect(
   }else{
 
 #ifndef SQLITE_OMIT_EXPLAIN
-    if( p->pNext==0 ){
-      ExplainQueryPlan((pParse, 1, "COMPOUND QUERY"));
-    }
     if( pPrior->pPrior==0 ){
+      ExplainQueryPlan((pParse, 1, "COMPOUND QUERY"));
       ExplainQueryPlan((pParse, 1, "LEFT-MOST SUBQUERY"));
-      ExplainQueryPlanSetId(pParse, pPrior);
     }
 #endif
 
@@ -2528,7 +2520,6 @@ static int multiSelect(
           }
         }
         ExplainQueryPlan((pParse, 1, "UNION ALL"));
-        ExplainQueryPlanSetId(pParse, p);
         rc = sqlite3Select(pParse, p, &dest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -2599,7 +2590,6 @@ static int multiSelect(
         uniondest.eDest = op;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           selectOpName(p->op)));
-        ExplainQueryPlanSetId(pParse, p);
         rc = sqlite3Select(pParse, p, &uniondest);
         testcase( rc!=SQLITE_OK );
         /* Query flattening in sqlite3Select() might refill p->pOrderBy.
@@ -2678,7 +2668,6 @@ static int multiSelect(
         intersectdest.iSDParm = tab2;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           selectOpName(p->op)));
-        ExplainQueryPlanSetId(pParse, p);
         rc = sqlite3Select(pParse, p, &intersectdest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -3186,7 +3175,6 @@ static int multiSelectOrderBy(
   VdbeComment((v, "left SELECT"));
   pPrior->iLimit = regLimitA;
   ExplainQueryPlan((pParse, 1, "LEFT"));
-  ExplainQueryPlanSetId(pParse, pPrior);
   sqlite3Select(pParse, pPrior, &destA);
   sqlite3VdbeEndCoroutine(v, regAddrA);
   sqlite3VdbeJumpHere(v, addr1);
@@ -3202,7 +3190,6 @@ static int multiSelectOrderBy(
   p->iLimit = regLimitB;
   p->iOffset = 0;  
   ExplainQueryPlan((pParse, 1, "RIGHT"));
-  ExplainQueryPlanSetId(pParse, p);
   sqlite3Select(pParse, p, &destB);
   p->iLimit = savedLimit;
   p->iOffset = savedOffset;
@@ -5575,7 +5562,6 @@ int sqlite3Select(
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
       ExplainQueryPlan((pParse, 1, "CO-ROUTINE 0x%p", pSub));
-      ExplainQueryPlanSetId(pParse, pSub);
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
@@ -5615,7 +5601,6 @@ int sqlite3Select(
       }else{
         sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
         ExplainQueryPlan((pParse, 1, "MATERIALIZE 0x%p", pSub));
-        ExplainQueryPlanSetId(pParse,pSub);
         sqlite3Select(pParse, pSub, &dest);
       }
       pItem->pTab->nRowLogEst = pSub->nSelectRow;

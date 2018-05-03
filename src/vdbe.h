@@ -205,12 +205,10 @@ VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 # define ExplainQueryPlan(P)        sqlite3VdbeExplain P
 # define ExplainQueryPlanPop(P)     sqlite3VdbeExplainPop(P)
 # define ExplainQueryPlanParent(P)  sqlite3VdbeExplainParent(P)
-# define ExplainQueryPlanSetId(P,S) (S)->iSelectId=(P)->addrExplain
 #else
 # define ExplainQueryPlan(P)
 # define ExplainQueryPlanPop(P)
 # define ExplainQueryPlanParent(P) 0
-# define ExplainQueryPlanSetId(P,S)
 #endif
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);

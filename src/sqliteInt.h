@@ -2781,9 +2781,6 @@ struct Select {
 #if SELECTTRACE_ENABLED
   char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
 #endif
-#if defined(SQLITETRACE_ENABLED) || !defined(SQLITE_OMIT_EXPLAIN)
-  u32 iSelectId;         /* EXPLAIN QUERY PLAN select ID */
-#endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */

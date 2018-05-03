@@ -2646,7 +2646,6 @@ int sqlite3CodeSubselect(
         ExplainQueryPlan((pParse, 1, "%sLIST SUBQUERY",
             jmpIfDynamic>=0?"":"CORRELATED "
         ));
-        ExplainQueryPlanSetId(pParse, pSelect);
         assert( !isRowid );
         /* If the LHS and RHS of the IN operator do not match, that
         ** error will have been caught long before we reach this point. */
@@ -2770,7 +2769,6 @@ int sqlite3CodeSubselect(
       pSel = pExpr->x.pSelect;
       ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY",
             jmpIfDynamic>=0?"":"CORRELATED "));
-      ExplainQueryPlanSetId(pParse, pSel);
       nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
       sqlite3SelectDestInit(&dest, 0, pParse->nMem+1);
       pParse->nMem += nReg;
