@@ -8335,7 +8335,7 @@ int sqlite3BtreeInsert(
     if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey ){
       /* The current is currently pointing to the entry that is to be
       ** overwritten */
-      if( pCur->info.nPayload==pX->nData+pX->nZero ){
+      if( pCur->info.nSize!=0 && pCur->info.nPayload==pX->nData+pX->nZero ){
         return btreeOverwriteCell(pCur, pX);
       }
       loc = 0;
