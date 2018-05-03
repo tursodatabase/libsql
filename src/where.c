@@ -4592,7 +4592,7 @@ WhereInfo *sqlite3WhereBegin(
     if( wctrlFlags & WHERE_WANT_DISTINCT ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
-    /* ExplainQueryPlan((pParse, 0, "SCAN CONSTANT ROW")); */
+    ExplainQueryPlan((pParse, 0, "SCAN CONSTANT ROW"));
   }else{
     /* Assign a bit from the bitmask to every term in the FROM clause.
     **

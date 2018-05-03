@@ -1005,6 +1005,7 @@ do_eqp_test 19.1b {
 } {
   QUERY PLAN
   |--MATERIALIZE xxxxxx
+  |  `--SCAN CONSTANT ROW
   |--SCAN SUBQUERY xxxxxx
   `--SCAN SUBQUERY xxxxxx
 }

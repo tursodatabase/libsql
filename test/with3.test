@@ -83,6 +83,7 @@ ifcapable analyze {
     QUERY PLAN
     |--MATERIALIZE xxxxxx
     |  |--SETUP
+    |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
     |     `--SCAN TABLE cnt
     |--SCAN SUBQUERY xxxxxx
@@ -96,6 +97,7 @@ ifcapable analyze {
     QUERY PLAN
     |--MATERIALIZE xxxxxx
     |  |--SETUP
+    |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
     |     `--SCAN TABLE cnt
     |--SCAN TABLE y1
@@ -117,6 +119,7 @@ do_eqp_test 3.2.2 {
   QUERY PLAN
   |--MATERIALIZE xxxxxx
   |  |--SETUP
+  |  |  |--SCAN CONSTANT ROW
   |  |  `--SCALAR SUBQUERY
   |  |     `--SCAN TABLE w2
   |  `--RECURSIVE STEP

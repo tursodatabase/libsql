@@ -89,6 +89,7 @@ do_eqp_test 1.7 {
 } {
   QUERY PLAN
   |--MATERIALIZE xxxxxx
+  |  `--SCAN CONSTANT ROW
   |--SCAN SUBQUERY xxxxxx
   `--SCAN TABLE t3
 }
@@ -99,7 +100,9 @@ do_eqp_test 1.8 {
   |--MATERIALIZE xxxxxx
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
+  |     |  `--SCAN CONSTANT ROW
   |     `--UNION USING TEMP B-TREE
+  |        `--SCAN CONSTANT ROW
   |--SCAN SUBQUERY xxxxxx
   `--SCAN TABLE t3
 }
@@ -110,6 +113,7 @@ do_eqp_test 1.9 {
   |--MATERIALIZE xxxxxx
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
+  |     |  `--SCAN CONSTANT ROW
   |     `--EXCEPT USING TEMP B-TREE
   |        `--SCAN TABLE t3
   |--SCAN SUBQUERY xxxxxx
@@ -122,6 +126,7 @@ do_eqp_test 1.10 {
   |--MATERIALIZE xxxxxx
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
+  |     |  `--SCAN CONSTANT ROW
   |     `--INTERSECT USING TEMP B-TREE
   |        `--SCAN TABLE t3
   |--SCAN SUBQUERY xxxxxx
@@ -135,6 +140,7 @@ do_eqp_test 1.11 {
   |--MATERIALIZE xxxxxx
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
+  |     |  `--SCAN CONSTANT ROW
   |     `--UNION ALL
   |        `--SCAN TABLE t3
   |--SCAN SUBQUERY xxxxxx

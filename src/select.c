@@ -2373,10 +2373,9 @@ static int multiSelectValues(
   Select *p,            /* The right-most of SELECTs to be coded */
   SelectDest *pDest     /* What to do with query results */
 ){
-  Select *pPrior;
-  Select *pRightmost = p;
   int nRow = 1;
   int rc = 0;
+  int bShowAll = p->pLimit==0;
   assert( p->selFlags & SF_MultiValue );
   do{
     assert( p->selFlags & SF_Values );
@@ -2385,15 +2384,13 @@ static int multiSelectValues(
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
     p = p->pPrior;
-    nRow++;
+    nRow += bShowAll;
   }while(1);
-  ExplainQueryPlan((pParse, 0, "SCAN %d CONSTANT ROWS", nRow));
+  ExplainQueryPlan((pParse, 0, "SCAN %d CONSTANT ROW%s", nRow,
+                    nRow==1 ? "" : "S"));
   while( p ){
-    pPrior = p->pPrior;
-    p->pPrior = 0;
-    rc = sqlite3Select(pParse, p, pDest);
-    p->pPrior = pPrior;
-    if( rc || pRightmost->pLimit ) break;
+    selectInnerLoop(pParse, p, -1, 0, 0, pDest, 1, 1);
+    if( !bShowAll ) break;
     p->nSelectRow = nRow;
     p = p->pNext;
   }

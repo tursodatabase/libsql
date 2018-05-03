@@ -454,9 +454,12 @@ do_test 4.0 {
 
 # No sorting of queries that omit the FROM clause.
 #
-do_execsql_test 5.0 {
-  EXPLAIN QUERY PLAN SELECT 5 ORDER BY 1
-} {}
+do_eqp_test 5.0 {
+  SELECT 5 ORDER BY 1
+} {
+  QUERY PLAN
+  `--SCAN CONSTANT ROW
+}
 do_execsql_test 5.1 {
   EXPLAIN QUERY PLAN SELECT 5 UNION ALL SELECT 3 ORDER BY 1
 } {~/B-TREE/}
