@@ -1,5 +1,5 @@
-C Overhaul\sof\sEXPLAIN\sQUERY\sPLAN.\sThe\soutput\sis\snow\sin\sthe\sform\sof\sa\stree.\nMore\sdetails\sof\sthe\squery\splan\sare\sshown,\sand\swhat\sis\sshown\sis\struer\sto\swhat\nactually\shappens.
-D 2018-05-03T19:56:50.453
+C Improved\ssecurity\sfor\sVACUUM.\s\sThis\scheck-in\scombines\sthe\sfixes\nof\s[ab0d99d0b5ede]\sand\s[27754b74ddf646]\sin\sa\sway\sthat\sis\sless\slikely\sto\nto\sbe\sbroken\sby\sfuture\schanges.
+D 2018-05-03T21:51:30.697
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -562,7 +562,7 @@ F src/update.c 5be2f501ddc704fc04183bdb28b25eab930bb8553d973429a089ec94fa85cf2b
 F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
-F src/vacuum.c 593498d6d1f1f3c5561c1476132d3b03af33881ff9f27ce4e48d4ba60be3615d
+F src/vacuum.c 37730af7540033135909ecaee3667dddec043293428d8718546d0d64ba4a5025
 F src/vdbe.c 066a4e1de2ed83e253adfd2e97a684cf562eaa41d31ee7f3d3e4c8aea4485a55
 F src/vdbe.h d970d9738efdd09cb2df73e3a40856e7df13e88a3486789c49fcdd322c9eb8a2
 F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
@@ -1727,8 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab0d99d0b5edece4c639baa47ce1ca2c02774cb2515e5b7f36d9bd312ccd3310 956fef361a795bd081d8e23ce4075dc8aafcee63ab7275d13b657b529d185b30
-R 067c5aa8ed93f027a9f18eeeee2f55ff
-T +closed 956fef361a795bd081d8e23ce4075dc8aafcee63ab7275d13b657b529d185b30
+P ff01bbdabc4b9db3db8b928979442c91b32d72082158e4f5fe62ae51a73649d2
+R 89cb977cf2a7974b23a1ffc22bfe7f69
 U drh
-Z b328f3a1ea4d4f9e8fb3fe9715c4ed00
+Z b164f882a3399333cea7fc0c8706c738
