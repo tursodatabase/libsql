@@ -8215,12 +8215,12 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   do{
     rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
     if( rc ) return rc;
-    if( iOffset+ovflPageSize>nTotal ){
-      ovflPgno = get4byte(pPage->aData + ovflPageSize);
+    if( iOffset+ovflPageSize<nTotal ){
+      ovflPgno = get4byte(pPage->aData);
     }else{
       ovflPageSize = nTotal - iOffset;
     }
-    rc = btreeOverwriteContent(pPage, pPage->aData, pX,
+    rc = btreeOverwriteContent(pPage, pPage->aData+4, pX,
                                iOffset, ovflPageSize);
     if( rc ) return rc;
     iOffset += ovflPageSize;
