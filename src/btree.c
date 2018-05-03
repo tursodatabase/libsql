@@ -8201,6 +8201,9 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   Pgno ovflPgno;                      /* Next overflow page to write */
   u32 ovflPageSize;                   /* Size to write on overflow page */
 
+  if( pCur->info.pPayload + pCur->info.nLocal > pPage->aDataEnd ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   /* Overwrite the local portion first */
   rc = btreeOverwriteContent(pPage, pCur->info.pPayload, pX,
                              0, pCur->info.nLocal);
@@ -8215,6 +8218,9 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   do{
     rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
     if( rc ) return rc;
+    if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 ){
+      return SQLITE_CORRUPT_BKPT;
+    }
     if( iOffset+ovflPageSize<nTotal ){
       ovflPgno = get4byte(pPage->aData);
     }else{

@@ -1,5 +1,5 @@
-C Bug\sfixes\sin\sthe\soverwrite\soptimization.
-D 2018-05-03T12:57:48.671
+C Add\smore\scorruption\schecking\sto\sthe\scell\soverwrite\slogic.
+D 2018-05-03T13:56:23.121
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -434,7 +434,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 7216dac5e870868de7429e71727fb87cca8057fd01814c18df2e59a5d00d20d5
+F src/btree.c ffaf0f6524095774527460de0ffe362fb463fed2ceecf79acbd93ad517a6f26d
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 0c2be5839f22aa2938f217c6c6c2120d9fc96872a546a37541a8271541cb355e
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 489451b378819621537231c1c8a07704437e11c1f5384fd53b09f3977d2213a4
-R b89660c58e0d48e704d46836e0da0214
+P 0cb6cd2a6a596afaa1cca6c5f5abc2ea75d04f254c7debaf36ecd6a90b66aed6
+R 8c38a5f8c55025ab9be63aa068eb2853
 U drh
-Z 41261a1ee8ebfd1f0c3b6e3f166f7f4d
+Z 78d645c2f5a7df7e355a3c554b462bfa
