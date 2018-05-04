@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk.
-D 2018-05-04T19:33:34.574
+C Bring\sthe\scode\sthat\schanges\sthe\sowner\sof\sWAL\sand\srollback\sfiles\swhen\srunning\nas\sroot\sinto\salignment\swith\strunk.
+D 2018-05-04T20:00:13.195
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 96f7c276cecf864a8abcd1b8f2b0064e28284715fe06d3def14812c81668d847
@@ -480,7 +480,7 @@ F src/os.c c46d15f4cbe775cd9eb703cc3a1d59a1c32f7dd4e79f01e0123dc7daa54b24b8
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 801cc679b77b6d949d2cbd818d2e8fe38be77c2eed28a8cd2800da0f2b939c0c
+F src/os_unix.c c8eaf4f6515540e9929a588419539cdc43e3eca23b1b22c0248d2347abe36ac1
 F src/os_win.c 9f0d1f91afc260dd95d02218c8816b49dd083f25e651739a4b27a85f0cdf15e8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a6f2fcf933b872db6c6987a10da651f87c14253fccccc3fa35de2491da9474e3
@@ -1732,7 +1732,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e20fcb5159f2a74ea60ac6a0287165d114fc71d7510a6d9068962f239dde619f 7fdad122a21e4b01bd678198fd5131dc32febe3af366bd6368505398255f9822
-R e841bdf514232c3e4d6fb79a4933a9c6
+P e17bca2cdb5f31a802e1a1870deb6bf17e332117ab272537f26351f1145de690
+R 44a53bf6621d31dd928bb370b084a0be
 U drh
-Z 40c30c08e4840475aa021ef22c0de316
+Z fd63f96833cdf5b1062ab51228464a2a

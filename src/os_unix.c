@@ -7146,14 +7146,8 @@ static int unixOpen(
 
     /* if we're opening the wal or journal and running as root, set the
     ** journal uid/gid */
-    if( !isReadonly && (flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL)) ){
-      uid_t euid = geteuid();
-      if( euid==0 && (euid!=uid || getegid()!=gid) ){
-        if( robustFchown(fd, uid, gid) ){
-          rc = SQLITE_CANTOPEN_BKPT;
-          goto open_finished;
-        }
-      }
+    if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
+      robustFchown(fd, uid, gid);
     }
   }
   assert( fd>=0 );
