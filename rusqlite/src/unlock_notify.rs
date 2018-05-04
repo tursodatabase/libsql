@@ -30,7 +30,7 @@ impl UnlockNotification {
 
     fn wait(&mut self) -> bool {
         let mut fired = self.mutex.lock().unwrap();
-        if !*fired {
+        while !*fired {
             fired = self.cond.wait(fired).unwrap();
         }
         *fired
