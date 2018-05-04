@@ -1,7 +1,6 @@
 //! Commit, Data Change and Rollback Notification Callbacks
 #![allow(non_camel_case_types)]
 
-use std::mem;
 use std::ptr;
 use std::os::raw::{c_int, c_char, c_void};
 
@@ -154,7 +153,7 @@ impl InnerConnection {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
             where F: FnMut() -> bool
         {
-            let boxed_hook: *mut F = mem::transmute(p_arg);
+            let boxed_hook: *mut F = p_arg as *mut F;
             assert!(!boxed_hook.is_null(),
                     "Internal error - null function pointer");
 
@@ -178,7 +177,7 @@ impl InnerConnection {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void)
             where F: FnMut()
         {
-            let boxed_hook: *mut F = mem::transmute(p_arg);
+            let boxed_hook: *mut F = p_arg as *mut F;
             assert!(!boxed_hook.is_null(),
                     "Internal error - null function pointer");
 
@@ -209,7 +208,7 @@ impl InnerConnection {
             use std::ffi::CStr;
             use std::str;
 
-            let boxed_hook: *mut F = mem::transmute(p_arg);
+            let boxed_hook: *mut F = p_arg as *mut F;
             assert!(!boxed_hook.is_null(),
                     "Internal error - null function pointer");
 

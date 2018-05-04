@@ -779,7 +779,7 @@ impl InnerConnection {
             // attempt to turn on extended results code; don't fail if we can't.
             ffi::sqlite3_extended_result_codes(db, 1);
 
-            Ok(InnerConnection { db: db })
+            Ok(InnerConnection { db })
         }
     }
 

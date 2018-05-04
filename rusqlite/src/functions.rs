@@ -51,7 +51,6 @@
 //! ```
 use std::error::Error as StdError;
 use std::ffi::CStr;
-use std::mem;
 use std::ptr;
 use std::slice;
 use std::os::raw::{c_int, c_char, c_void};
@@ -183,7 +182,7 @@ impl<'a> ValueRef<'a> {
 }
 
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
-    let _: Box<T> = Box::from_raw(mem::transmute(p));
+    let _: Box<T> = Box::from_raw(p as *mut T);
 }
 
 /// Context is a wrapper for the SQLite function evaluation context.
@@ -234,7 +233,7 @@ impl<'a> Context<'a> {
         unsafe {
             ffi::sqlite3_set_auxdata(self.ctx,
                                      arg,
-                                     mem::transmute(boxed),
+                                     boxed as *mut c_void,
                                      Some(free_boxed_value::<T>))
         };
     }
@@ -370,10 +369,10 @@ impl InnerConnection {
                   T: ToSql
         {
             let ctx = Context {
-                ctx: ctx,
+                ctx,
                 args: slice::from_raw_parts(argv, argc as usize),
             };
-            let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
+            let boxed_f: *mut F = ffi::sqlite3_user_data(ctx.ctx) as *mut F;
             assert!(!boxed_f.is_null(), "Internal error - null function pointer");
 
             let t = (*boxed_f)(&ctx);
@@ -397,7 +396,7 @@ impl InnerConnection {
                                             c_name.as_ptr(),
                                             n_arg,
                                             flags,
-                                            mem::transmute(boxed_f),
+                                            boxed_f as *mut c_void,
                                             Some(call_boxed_closure::<F, T>),
                                             None,
                                             None,
@@ -431,7 +430,7 @@ impl InnerConnection {
             where D: Aggregate<A, T>,
                   T: ToSql
         {
-            let boxed_aggr: *mut D = mem::transmute(ffi::sqlite3_user_data(ctx));
+            let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
             assert!(!boxed_aggr.is_null(),
                     "Internal error - null aggregate pointer");
 
@@ -448,7 +447,7 @@ impl InnerConnection {
             }
 
             let mut ctx = Context {
-                ctx: ctx,
+                ctx,
                 args: slice::from_raw_parts(argv, argc as usize),
             };
 
@@ -462,7 +461,7 @@ impl InnerConnection {
             where D: Aggregate<A, T>,
                   T: ToSql
         {
-            let boxed_aggr: *mut D = mem::transmute(ffi::sqlite3_user_data(ctx));
+            let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
             assert!(!boxed_aggr.is_null(),
                     "Internal error - null aggregate pointer");
 
@@ -500,7 +499,7 @@ impl InnerConnection {
                                             c_name.as_ptr(),
                                             n_arg,
                                             flags,
-                                            mem::transmute(boxed_aggr),
+                                            boxed_aggr as *mut c_void,
                                             None,
                                             Some(call_boxed_step::<A, D, T>),
                                             Some(call_boxed_final::<A, D, T>),

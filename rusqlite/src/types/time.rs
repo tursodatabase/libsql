@@ -24,7 +24,7 @@ impl FromSql for time::Timespec {
                 time::strptime(s, SQLITE_DATETIME_FMT)
                     .or_else(|err| {
                         time::strptime(s, SQLITE_DATETIME_FMT_LEGACY)
-                            .or(Err(FromSqlError::Other(Box::new(err))))})})
+                            .or_else(|_| Err(FromSqlError::Other(Box::new(err))))})})
             .map(|tm| tm.to_timespec())
     }
 }
