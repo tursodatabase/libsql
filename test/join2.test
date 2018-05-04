@@ -112,15 +112,17 @@ do_execsql_test 3.0 {
 do_eqp_test 3.1 {
   SELECT v2 FROM t1 LEFT JOIN t2 USING (k2) LEFT JOIN t3_1 USING (k3);
 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 do_eqp_test 3.2 {
   SELECT v2 FROM t1 LEFT JOIN t2 USING (k2) LEFT JOIN t3_2 USING (k3);
 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 #-------------------------------------------------------------------------
@@ -158,15 +160,17 @@ do_execsql_test 4.1.4 {
 do_eqp_test 4.1.5 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
 } {
-  0 0 0 {SCAN TABLE c1} 
-  0 1 1 {SEARCH TABLE c2 USING INTEGER PRIMARY KEY (rowid=?)}
-  0 2 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE c1
+  |--SEARCH TABLE c2 USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)
 }
 do_eqp_test 4.1.6 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
 } {
-  0 0 0 {SCAN TABLE c1} 
-  0 1 2 {SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE c1
+  `--SEARCH TABLE c3 USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 do_execsql_test 4.2.0 {
@@ -203,15 +207,17 @@ do_execsql_test 4.2.4 {
 do_eqp_test 4.2.5 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v2);
 } {
-  0 0 0 {SCAN TABLE c1} 
-  0 1 1 {SEARCH TABLE c2 USING INDEX sqlite_autoindex_c2_1 (k=?)}
-  0 2 2 {SEARCH TABLE c3 USING INDEX sqlite_autoindex_c3_1 (k=?)}
+  QUERY PLAN
+  |--SCAN TABLE c1
+  |--SEARCH TABLE c2 USING INDEX sqlite_autoindex_c2_1 (k=?)
+  `--SEARCH TABLE c3 USING INDEX sqlite_autoindex_c3_1 (k=?)
 }
 do_eqp_test 4.2.6 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
 } {
-  0 0 0 {SCAN TABLE c1} 
-  0 1 2 {SEARCH TABLE c3 USING INDEX sqlite_autoindex_c3_1 (k=?)}
+  QUERY PLAN
+  |--SCAN TABLE c1
+  `--SEARCH TABLE c3 USING INDEX sqlite_autoindex_c3_1 (k=?)
 }
 
 # 2017-11-23 (Thanksgiving day)
@@ -245,14 +251,11 @@ do_execsql_test 5.0 {
 }
 do_eqp_test 5.1 {
   SELECT s1.a FROM s1 left join s2 using (a);
-} {
-  0 0 0 {SCAN TABLE s1}
-}
+} {SCAN TABLE s1}
+
 do_eqp_test 5.2 {
   SELECT s1.a FROM s1 left join s3 using (a);
-} {
-  0 0 0 {SCAN TABLE s1}
-}
+} {SCAN TABLE s1}
 
 do_execsql_test 6.0 {
   CREATE TABLE u1(a INTEGER PRIMARY KEY, b, c);
@@ -261,9 +264,7 @@ do_execsql_test 6.0 {
 }
 do_eqp_test 6.1 {
   SELECT u2.* FROM u2 LEFT JOIN u1 ON( u1.a=u2.a AND u1.b=u2.b AND u1.c=u2.c );
-} {
-  0 0 0 {SCAN TABLE u2}
-}
+} {SCAN TABLE u2}
 
 db close
 sqlite3 db :memory:

@@ -235,17 +235,20 @@ do_execsql_test where3-3.0 {
   CREATE TABLE t302(x, y);
   INSERT INTO t302 VALUES(4,5);
   ANALYZE;
-  explain query plan SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
-} {
-  0 0 0 {SCAN TABLE t302} 
-  0 1 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)}
 }
-do_execsql_test where3-3.1 {
-  explain query plan
+do_eqp_test where3-3.0a {
+  SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
+} {
+  QUERY PLAN
+  |--SCAN TABLE t302
+  `--SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)
+}
+do_eqp_test where3-3.1 {
   SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
 } {
-  0 0 1 {SCAN TABLE t302} 
-  0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE t302
+  `--SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)
 }
 do_execsql_test where3-3.2 {
   SELECT * FROM t301 WHERE c=3 AND a IS NULL;
@@ -308,8 +311,8 @@ do_execsql_test where3-5.0 {
   CREATE INDEX bbb_111 ON bbb (fk, type);
   CREATE INDEX bbb_222 ON bbb (parent, position);
   CREATE INDEX bbb_333 ON bbb (fk, lastModified);
-
-  EXPLAIN QUERY PLAN
+}
+do_eqp_test where3-5.0a {
    SELECT bbb.title AS tag_title 
      FROM aaa JOIN bbb ON bbb.id = aaa.parent  
     WHERE aaa.fk = 'constant'
@@ -317,12 +320,12 @@ do_execsql_test where3-5.0 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
-  0 1 1 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
-do_execsql_test where3-5.1 {
-  EXPLAIN QUERY PLAN
+do_eqp_test where3-5.1 {
    SELECT bbb.title AS tag_title 
      FROM aaa JOIN aaa AS bbb ON bbb.id = aaa.parent  
     WHERE aaa.fk = 'constant'
@@ -330,12 +333,12 @@ do_execsql_test where3-5.1 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
-  0 1 1 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
-do_execsql_test where3-5.2 {
-  EXPLAIN QUERY PLAN
+do_eqp_test where3-5.2 {
    SELECT bbb.title AS tag_title 
      FROM bbb JOIN aaa ON bbb.id = aaa.parent  
     WHERE aaa.fk = 'constant'
@@ -343,12 +346,12 @@ do_execsql_test where3-5.2 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
-  0 1 0 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
-do_execsql_test where3-5.3 {
-  EXPLAIN QUERY PLAN
+do_eqp_test where3-5.3 {
    SELECT bbb.title AS tag_title 
      FROM aaa AS bbb JOIN aaa ON bbb.id = aaa.parent  
     WHERE aaa.fk = 'constant'
@@ -356,9 +359,10 @@ do_execsql_test where3-5.3 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
-  0 1 0 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
 
 # Name resolution with NATURAL JOIN and USING

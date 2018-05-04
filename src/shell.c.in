@@ -981,7 +981,8 @@ struct ExpertInfo {
 /* A single line in the EQP output */
 typedef struct EQPGraphRow EQPGraphRow;
 struct EQPGraphRow {
-  int iSelectId;        /* The SelectID for this row */
+  int iEqpId;           /* ID for this row */
+  int iParentId;        /* ID of the parent row */
   EQPGraphRow *pNext;   /* Next row in sequence */
   char zText[1];        /* Text to display for this row */
 };
@@ -1003,6 +1004,7 @@ struct ShellState {
   sqlite3 *db;           /* The database */
   u8 autoExplain;        /* Automatically turn on .explain mode */
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
+  u8 autoEQPtest;        /* autoEQP is in test mode */
   u8 statsOn;            /* True to display memory stats before each finalize */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
@@ -1053,10 +1055,10 @@ struct ShellState {
 
 /* Allowed values for ShellState.autoEQP
 */
-#define AUTOEQP_off      0
-#define AUTOEQP_on       1
-#define AUTOEQP_trigger  2
-#define AUTOEQP_full     3
+#define AUTOEQP_off      0           /* Automatic EXPLAIN QUERY PLAN is off */
+#define AUTOEQP_on       1           /* Automatic EQP is on */
+#define AUTOEQP_trigger  2           /* On and also show plans for triggers */
+#define AUTOEQP_full     3           /* Show full EXPLAIN */
 
 /* Allowed values for ShellState.openMode
 */
@@ -1667,12 +1669,16 @@ static int wsToEol(const char *z){
 /*
 ** Add a new entry to the EXPLAIN QUERY PLAN data
 */
-static void eqp_append(ShellState *p, int iSelectId, const char *zText){
+static void eqp_append(ShellState *p, int iEqpId, int p2, const char *zText){
   EQPGraphRow *pNew;
   int nText = strlen30(zText);
+  if( p->autoEQPtest ){
+    utf8_printf(p->out, "%d,%d,%s\n", iEqpId, p2, zText);
+  }
   pNew = sqlite3_malloc64( sizeof(*pNew) + nText );
   if( pNew==0 ) shell_out_of_memory();
-  pNew->iSelectId = iSelectId;
+  pNew->iEqpId = iEqpId;
+  pNew->iParentId = p2;
   memcpy(pNew->zText, zText, nText+1);
   pNew->pNext = 0;
   if( p->sGraph.pLast ){
@@ -1696,46 +1702,29 @@ static void eqp_reset(ShellState *p){
   memset(&p->sGraph, 0, sizeof(p->sGraph));
 }
 
-/* Return the next EXPLAIN QUERY PLAN line with iSelectId that occurs after
+/* Return the next EXPLAIN QUERY PLAN line with iEqpId that occurs after
 ** pOld, or return the first such line if pOld is NULL
 */
-static EQPGraphRow *eqp_next_row(ShellState *p, int iSelectId, EQPGraphRow *pOld){
+static EQPGraphRow *eqp_next_row(ShellState *p, int iEqpId, EQPGraphRow *pOld){
   EQPGraphRow *pRow = pOld ? pOld->pNext : p->sGraph.pRow;
-  while( pRow && pRow->iSelectId!=iSelectId ) pRow = pRow->pNext;
+  while( pRow && pRow->iParentId!=iEqpId ) pRow = pRow->pNext;
   return pRow;
 }
 
-/* Render a single level of the graph shell having iSelectId.  Called
+/* Render a single level of the graph that has iEqpId as its parent.  Called
 ** recursively to render sublevels.
 */
-static void eqp_render_level(ShellState *p, int iSelectId){
+static void eqp_render_level(ShellState *p, int iEqpId){
   EQPGraphRow *pRow, *pNext;
-  int i;
   int n = strlen30(p->sGraph.zPrefix);
   char *z;
-  for(pRow = eqp_next_row(p, iSelectId, 0); pRow; pRow = pNext){
-    pNext = eqp_next_row(p, iSelectId, pRow);
+  for(pRow = eqp_next_row(p, iEqpId, 0); pRow; pRow = pNext){
+    pNext = eqp_next_row(p, iEqpId, pRow);
     z = pRow->zText;
     utf8_printf(p->out, "%s%s%s\n", p->sGraph.zPrefix, pNext ? "|--" : "`--", z);
-    if( n<sizeof(p->sGraph.zPrefix)-7 && (z = strstr(z, " SUBQUER"))!=0 ){
+    if( n<sizeof(p->sGraph.zPrefix)-7 ){
       memcpy(&p->sGraph.zPrefix[n], pNext ? "|  " : "   ", 4);
-      if( strncmp(z, " SUBQUERY ", 9)==0 && (i = atoi(z+10))>iSelectId ){
-        eqp_render_level(p, i);
-      }else if( strncmp(z, " SUBQUERIES ", 12)==0 ){
-        i = atoi(z+12);
-        if( i>iSelectId ){
-          utf8_printf(p->out, "%s|--SUBQUERY %d\n", p->sGraph.zPrefix, i);
-          memcpy(&p->sGraph.zPrefix[n+3],"|  ",4);
-          eqp_render_level(p, i);
-        }
-        z = strstr(z, " AND ");
-        if( z && (i = atoi(z+5))>iSelectId ){
-          p->sGraph.zPrefix[n+3] = 0;
-          utf8_printf(p->out, "%s`--SUBQUERY %d\n", p->sGraph.zPrefix, i);
-          memcpy(&p->sGraph.zPrefix[n+3],"   ",4);
-          eqp_render_level(p, i);
-        }
-      }
+      eqp_render_level(p, pRow->iEqpId);
       p->sGraph.zPrefix[n] = 0;
     }
   }
@@ -2114,7 +2103,7 @@ static int shell_callback(
       break;
     }
     case MODE_EQP: {
-      eqp_append(p, atoi(azArg[0]), azArg[3]);
+      eqp_append(p, atoi(azArg[0]), atoi(azArg[1]), azArg[3]);
       break;
     }
   }
@@ -2956,9 +2945,10 @@ static int shell_exec(
         if( rc==SQLITE_OK ){
           while( sqlite3_step(pExplain)==SQLITE_ROW ){
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
-            int iSelectId = sqlite3_column_int(pExplain, 0);
+            int iEqpId = sqlite3_column_int(pExplain, 0);
+            int iParentId = sqlite3_column_int(pExplain, 1);
             if( zEQPLine[0]=='-' ) eqp_render(pArg);
-            eqp_append(pArg, iSelectId, zEQPLine);
+            eqp_append(pArg, iEqpId, iParentId, zEQPLine);
           }
           eqp_render(pArg);
         }
@@ -5914,10 +5904,14 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='e' && strncmp(azArg[0], "eqp", n)==0 ){
     if( nArg==2 ){
+      p->autoEQPtest = 0;
       if( strcmp(azArg[1],"full")==0 ){
         p->autoEQP = AUTOEQP_full;
       }else if( strcmp(azArg[1],"trigger")==0 ){
         p->autoEQP = AUTOEQP_trigger;
+      }else if( strcmp(azArg[1],"test")==0 ){
+        p->autoEQP = AUTOEQP_on;
+        p->autoEQPtest = 1;
       }else{
         p->autoEQP = (u8)booleanValue(azArg[1]);
       }
