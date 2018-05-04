@@ -118,10 +118,10 @@ do_execsql_test analyze3-1.1.x {
 #
 do_eqp_test analyze3-1.1.2 {
   SELECT sum(y) FROM t1 WHERE x>200 AND x<300
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+} {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}
 do_eqp_test analyze3-1.1.3 {
   SELECT sum(y) FROM t1 WHERE x>0 AND x<1100 
-} {0 0 0 {SCAN TABLE t1}}
+} {SCAN TABLE t1}
 
 # 2017-06-26:  Verify that the SQLITE_DBCONFIG_ENABLE_QPSG setting disables
 # the use of bound parameters by STAT4
@@ -131,27 +131,27 @@ unset -nocomplain l
 unset -nocomplain u
 do_eqp_test analyze3-1.1.3.100 {
   SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+} {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}
 set l 200
 set u 300
 do_eqp_test analyze3-1.1.3.101 {
   SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+} {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}
 set l 0
 set u 1100
 do_eqp_test analyze3-1.1.3.102 {
   SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
-} {0 0 0 {SCAN TABLE t1}}
+} {SCAN TABLE t1}
 db cache flush
 sqlite3_db_config db ENABLE_QPSG 1
 do_eqp_test analyze3-1.1.3.103 {
   SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+} {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}
 db cache flush
 sqlite3_db_config db ENABLE_QPSG 0
 do_eqp_test analyze3-1.1.3.104 {
   SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
-} {0 0 0 {SCAN TABLE t1}}
+} {SCAN TABLE t1}
 
 do_test analyze3-1.1.4 {
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>200 AND x<300 }
@@ -201,10 +201,10 @@ do_execsql_test analyze3-2.1.x {
 } {200 990}
 do_eqp_test analyze3-1.2.2 {
   SELECT sum(y) FROM t2 WHERE x>1 AND x<2
-} {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?)}}
+} {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?)}
 do_eqp_test analyze3-1.2.3 {
   SELECT sum(y) FROM t2 WHERE x>0 AND x<99
-} {0 0 0 {SCAN TABLE t2}}
+} {SCAN TABLE t2}
 
 do_test analyze3-1.2.4 {
   sf_execsql { SELECT sum(y) FROM t2 WHERE x>12 AND x<20 }
@@ -253,10 +253,10 @@ do_execsql_test analyze3-1.3.x {
 } {99 1000}
 do_eqp_test analyze3-1.3.2 {
   SELECT sum(y) FROM t3 WHERE x>200 AND x<300
-} {0 0 0 {SEARCH TABLE t3 USING INDEX i3 (x>? AND x<?)}}
+} {SEARCH TABLE t3 USING INDEX i3 (x>? AND x<?)}
 do_eqp_test analyze3-1.3.3 {
   SELECT sum(y) FROM t3 WHERE x>0 AND x<1100
-} {0 0 0 {SCAN TABLE t3}}
+} {SCAN TABLE t3}
 
 do_test analyze3-1.3.4 {
   sf_execsql { SELECT sum(y) FROM t3 WHERE x>200 AND x<300 }
@@ -308,10 +308,10 @@ do_test analyze3-2.1 {
 } {}
 do_eqp_test analyze3-2.2 {
   SELECT count(a) FROM t1 WHERE b LIKE 'a%'
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (b>? AND b<?)}}
+} {SEARCH TABLE t1 USING INDEX i1 (b>? AND b<?)}
 do_eqp_test analyze3-2.3 {
   SELECT count(a) FROM t1 WHERE b LIKE '%a'
-} {0 0 0 {SCAN TABLE t1}}
+} {SCAN TABLE t1}
 
 # Return the first argument if like_match_blobs is true (the default)
 # or the second argument if not
@@ -698,11 +698,11 @@ do_test analyze3-6.1 {
 
 do_eqp_test analyze3-6-3 {
   SELECT * FROM t1 WHERE a = 5 AND c = 13;
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (c=?)}}
+} {SEARCH TABLE t1 USING INDEX i2 (c=?)}
 
 do_eqp_test analyze3-6-2 {
   SELECT * FROM t1 WHERE a = 5 AND b > 'w' AND c = 13;
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (c=?)}}
+} {SEARCH TABLE t1 USING INDEX i2 (c=?)}
 
 #-----------------------------------------------------------------------------
 # 2015-04-20.

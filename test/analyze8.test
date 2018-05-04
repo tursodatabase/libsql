@@ -61,25 +61,25 @@ do_test 1.0 {
 #
 do_test 1.1 {
   eqp {SELECT * FROM t1 WHERE a=100 AND b=55}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1b (b=?)*/}
 do_test 1.2 {
   eqp {SELECT * FROM t1 WHERE a=99 AND b=55}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
 do_test 1.3 {
   eqp {SELECT * FROM t1 WHERE a=101 AND b=55}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
 do_test 1.4 {
   eqp {SELECT * FROM t1 WHERE a=100 AND b=56}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1b (b=?)*/}
 do_test 1.5 {
   eqp {SELECT * FROM t1 WHERE a=99 AND b=56}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
 do_test 1.6 {
   eqp {SELECT * FROM t1 WHERE a=101 AND b=56}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
 do_test 2.1 {
   eqp {SELECT * FROM t1 WHERE a=100 AND b BETWEEN 50 AND 54}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)*/}
 
 # There are many more values of c between 0 and 100000 than there are
 # between 800000 and 900000.  So t1c is more selective for the latter
@@ -99,17 +99,17 @@ do_execsql_test 3.0 {
 } {50 376 32}
 do_test 3.1 {
   eqp {SELECT * FROM t1 WHERE b BETWEEN 30 AND 34 AND c BETWEEN 0 AND 100000}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)*/}
 do_test 3.2 {
   eqp {SELECT * FROM t1
        WHERE b BETWEEN 30 AND 34 AND c BETWEEN 800000 AND 900000}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)*/}
 do_test 3.3 {
   eqp {SELECT * FROM t1 WHERE a=100 AND c BETWEEN 0 AND 100000}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
 do_test 3.4 {
   eqp {SELECT * FROM t1
        WHERE a=100 AND c BETWEEN 800000 AND 900000}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+} {/*SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)*/}
 
 finish_test

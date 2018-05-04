@@ -57,9 +57,20 @@ proc do_fuzzy_malloc_test {testname args} {
     incr jj
     set ::sql [subst $::fuzzyopts(-template)]
     # puts fuzyy-sql=\[$::sql\]; flush stdout
-    foreach {rc res} [catchsql "$::sql"] {}
+    foreach {rc ::fmtres} [catchsql "$::sql"] {}
     if {$rc==0} {
-      do_malloc_test $testname-$ii -sqlbody $::sql -sqlprep $::prep
+      set nErr1 [set_test_counter errors]
+      do_faultsim_test $testname-$ii -faults oom* -body {
+        execsql $::sql
+      } -test {
+        if {$testrc && $testresult!="datatype mismatch"} { 
+          faultsim_test_result {0 {}}
+        }
+      }
+      if {[set_test_counter errors]>$nErr1} {
+        puts "Previous fuzzy-sql=\[$::sql\]"
+        flush stdout
+      }
     } else {
       incr ii -1
     }

@@ -728,4 +728,44 @@ do_execsql_test trigger1-17.0 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2018-04-26
+# When a BEFORE UPDATE trigger changes a column value in a row being
+# updated, and that column value is used by the UPDATE to change other
+# column, the value used to compute the update is from before the trigger.
+# In the example that follows, the value of "b" in "c=b" is 2 (the value
+# prior to running the BEFORE UPDATE trigger) not 1000.
+#
+do_execsql_test trigger1-18.0 {
+  CREATE TABLE t18(a PRIMARY KEY,b,c);
+  INSERT INTO t18(a,b,c) VALUES(1,2,3);
+  CREATE TRIGGER t18r1 BEFORE UPDATE ON t18 BEGIN
+    UPDATE t18 SET b=1000 WHERE a=old.a;
+  END;
+  UPDATE t18 SET c=b WHERE a=1;
+  SELECT * FROM t18;
+} {1 1000 2}  ;# Not: 1 1000 1000 
+do_execsql_test trigger1-18.1 {
+  DELETE FROM t18;
+  INSERT INTO t18(a,b,c) VALUES(1,2,3);
+  UPDATE t18 SET c=b, b=b+1 WHERE a=1;
+  SELECT * FROM t18;
+} {1 3 2}     ;# Not: 1 1001 1000
+
+# 2018-04-26 ticket [https://www.sqlite.org/src/tktview/d85fffd6ffe856092e]
+# VDBE Program uses an expired value.
+#
+do_execsql_test trigger1-19.0 {
+  CREATE TABLE t19(a INT PRIMARY KEY, b, c)WITHOUT ROWID;
+  INSERT INTO t19(a,b,c) VALUES(1,2,3);
+  CREATE TRIGGER t19r3 BEFORE UPDATE ON t19 BEGIN SELECT new.b; END;
+  UPDATE t19 SET c=b WHERE a=1;
+  SELECT * FROM t19;
+} {1 2 2}
+do_execsql_test trigger1-19.1 {
+  DELETE FROM t19;
+  INSERT INTO t19(a,b,c) VALUES(1,2,3);
+  UPDATE t19 SET c=CASE WHEN b=2 THEN b ELSE b+99 END WHERE a=1;
+  SELECT * FROM t19;
+} {1 2 2}
+
 finish_test

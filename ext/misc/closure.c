@@ -826,17 +826,12 @@ static int closureBestIndex(
   int iPlan = 0;
   int i;
   int idx = 1;
-  int seenMatch = 0;
   const struct sqlite3_index_constraint *pConstraint;
   closure_vtab *pVtab = (closure_vtab*)pTab;
   double rCost = 10000000.0;
 
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->iColumn==CLOSURE_COL_ROOT
-     && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
-      seenMatch = 1;
-    }
     if( pConstraint->usable==0 ) continue;
     if( (iPlan & 1)==0 
      && pConstraint->iColumn==CLOSURE_COL_ROOT
@@ -893,6 +888,18 @@ static int closureBestIndex(
     ** or else the result is an empty set. */
     iPlan = 0;
   }
+  if( (iPlan&1)==0 ){
+    /* If there is no usable "root=?" term, then set the index-type to 0.
+    ** Also clear any argvIndex variables already set. This is necessary
+    ** to prevent the core from throwing an "xBestIndex malfunction error"
+    ** error (because the argvIndex values are not contiguously assigned
+    ** starting from 1).  */
+    rCost *= 1e30;
+    for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+      pIdxInfo->aConstraintUsage[i].argvIndex = 0;
+    }
+    iPlan = 0;
+  }
   pIdxInfo->idxNum = iPlan;
   if( pIdxInfo->nOrderBy==1
    && pIdxInfo->aOrderBy[0].iColumn==CLOSURE_COL_ID
@@ -900,7 +907,6 @@ static int closureBestIndex(
   ){
     pIdxInfo->orderByConsumed = 1;
   }
-  if( seenMatch && (iPlan&1)==0 ) rCost *= 1e30;
   pIdxInfo->estimatedCost = rCost;
    
   return SQLITE_OK;

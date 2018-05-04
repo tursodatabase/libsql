@@ -62,7 +62,7 @@ foreach {tn where idx} {
   11 "x = nullif('19', 0) AND y = nullif('4', 0)" {t1y (y=?)}
   12 "x = nullif('4', 0) AND y = nullif('19', 0)" {t1y (y=?)}
 } {
-  set res "0 0 0 {SEARCH TABLE t1 USING INDEX $idx}"
+  set res "SEARCH TABLE t1 USING INDEX $idx"
   do_eqp_test 1.$tn "SELECT * FROM t1 WHERE $where" $res
 }
 
@@ -92,7 +92,7 @@ foreach {tn where idx} {
   3 "x = nondet4() AND y = nondet19()"     {t1y (y=?)}
   4 "x = nondet19() AND y = nondet4()"     {t1y (y=?)}
 } {
-  set res "0 0 0 {SEARCH TABLE t1 USING INDEX $idx}"
+  set res "SEARCH TABLE t1 USING INDEX $idx"
   do_eqp_test 3.$tn "SELECT * FROM t1 WHERE $where" $res
 }
 

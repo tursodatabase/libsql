@@ -67,12 +67,12 @@ set SOAKTESTS {
 
 set G(isquick) 1
 
-set soak_starttime  [clock seconds]
+set soak_starttime  [clock_seconds]
 set soak_finishtime [expr {$soak_starttime + $TIMEOUT}]
 
 # Loop until the timeout is reached or an error occurs.
 #
-for {set iRun 0} {[clock seconds] < $soak_finishtime} {incr iRun} {
+for {set iRun 0} {[clock_seconds] < $soak_finishtime} {incr iRun} {
 
   set iIdx [expr {$iRun % [llength $SOAKTESTS]}]
   source [file join $testdir [lindex $SOAKTESTS $iIdx]]

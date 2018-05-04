@@ -364,6 +364,7 @@ foreach file {
    table.c
    trigger.c
    update.c
+   upsert.c
    vacuum.c
    vtab.c
    wherecode.c

@@ -645,6 +645,17 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
+    case SQLITE_CONFIG_SORTERREF_SIZE: {
+      int iVal = va_arg(ap, int);
+      if( iVal<0 ){
+        iVal = SQLITE_DEFAULT_SORTERREF_SIZE;
+      }
+      sqlite3GlobalConfig.szSorterRef = (u32)iVal;
+      break;
+    }
+#endif /* SQLITE_ENABLE_SORTER_REFERENCES */
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -826,6 +837,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
         { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
         { SQLITE_DBCONFIG_TRIGGER_EQP,           SQLITE_TriggerEQP     },
+        { SQLITE_DBCONFIG_RESET_DATABASE,        SQLITE_ResetDatabase  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -3978,24 +3990,6 @@ int sqlite3_test_control(int op, ...){
       db->dbOptFlags = (u16)(va_arg(ap, int) & 0xffff);
       break;
     }
-
-#ifdef SQLITE_N_KEYWORD
-    /* sqlite3_test_control(SQLITE_TESTCTRL_ISKEYWORD, const char *zWord)
-    **
-    ** If zWord is a keyword recognized by the parser, then return the
-    ** number of keywords.  Or if zWord is not a keyword, return 0.
-    ** 
-    ** This test feature is only available in the amalgamation since
-    ** the SQLITE_N_KEYWORD macro is not defined in this file if SQLite
-    ** is built using separate source files.
-    */
-    case SQLITE_TESTCTRL_ISKEYWORD: {
-      const char *zWord = va_arg(ap, const char*);
-      int n = sqlite3Strlen30(zWord);
-      rc = (sqlite3KeywordCode((u8*)zWord, n)!=TK_ID) ? SQLITE_N_KEYWORD : 0;
-      break;
-    }
-#endif 
 
     /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
     **

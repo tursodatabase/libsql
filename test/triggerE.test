@@ -57,6 +57,7 @@ foreach {tn defn} {
   7 { BEFORE DELETE ON t1 BEGIN SELECT * FROM t2 ORDER BY ?; END; }
   8 { BEFORE UPDATE ON t1 BEGIN UPDATE t2 SET c = ?; END; }
   9 { BEFORE UPDATE ON t1 BEGIN UPDATE t2 SET c = 1 WHERE d = ?; END; }
+ 10 { AFTER INSERT ON t1 BEGIN SELECT * FROM pragma_stats(?); END; }
 } {
   catchsql {drop trigger tr1}
   do_catchsql_test 1.1.$tn "CREATE TRIGGER tr1 $defn" [list 1 $errmsg]

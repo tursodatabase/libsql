@@ -2257,6 +2257,27 @@ static int SQLITE_TCLAPI test_config_sqllog(
 #endif
 
 /*
+** Usage:  sqlite3_config_sorterref
+**
+** Set the SQLITE_CONFIG_SORTERREF_SIZE configuration option
+*/
+static int SQLITE_TCLAPI test_config_sorterref(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int iVal;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &iVal) ) return TCL_ERROR;
+  sqlite3_config(SQLITE_CONFIG_SORTERREF_SIZE, iVal);
+  return TCL_OK;
+}
+
+/*
 ** Usage: vfs_current_time_int64
 **
 ** Return the value returned by the default VFS's xCurrentTimeInt64 method.
@@ -7588,6 +7609,8 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
     { "NO_CKPT_ON_CLOSE",SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE },
     { "QPSG",            SQLITE_DBCONFIG_ENABLE_QPSG },
+    { "TRIGGER_EQP",     SQLITE_DBCONFIG_TRIGGER_EQP },
+    { "RESET_DB",        SQLITE_DBCONFIG_RESET_DATABASE },
   };
   int i;
   int v;
@@ -7949,6 +7972,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_delete_database", test_delete_database,    0 },
      { "atomic_batch_write",      test_atomic_batch_write, 0 },
      { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
+     { "sqlite3_config_sorterref", test_config_sorterref,   0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

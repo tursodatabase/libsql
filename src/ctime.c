@@ -286,6 +286,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_SNAPSHOT
   "ENABLE_SNAPSHOT",
 #endif
+#if SQLITE_ENABLE_SORTER_REFERENCES
+  "ENABLE_SORTER_REFERENCES",
+#endif
 #if SQLITE_ENABLE_SQLLOG
   "ENABLE_SQLLOG",
 #endif

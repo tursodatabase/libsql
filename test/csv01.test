@@ -140,5 +140,12 @@ do_catchsql_test 4.2 {
       );
 } {1 {vtable constructor failed: t5}}
 
+# 2018-04-24
+# Memory leak reported on the sqlite-users mailing list by Ralf Junker.
+#
+do_catchsql_test 4.3 {
+  CREATE VIRTUAL TABLE IF NOT EXISTS temp.t1
+  USING csv(filename='FileDoesNotExist.csv');
+} {1 {cannot open 'FileDoesNotExist.csv' for reading}}
 
 finish_test

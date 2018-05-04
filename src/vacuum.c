@@ -39,8 +39,14 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
     const char *zSubSql = (const char*)sqlite3_column_text(pStmt,0);
     assert( sqlite3_strnicmp(zSql,"SELECT",6)==0 );
-    assert( sqlite3_strnicmp(zSubSql,"SELECT",6)!=0 || CORRUPT_DB );
-    if( zSubSql && zSubSql[0]!='S' ){
+    /* The secondary SQL must be one of CREATE TABLE, CREATE INDEX,
+    ** or INSERT.  Historically there have been attacks that first
+    ** corrupt the sqlite_master.sql field with other kinds of statements
+    ** then run VACUUM to get those statements to execute at inappropriate
+    ** times. */
+    if( zSubSql
+     && (strncmp(zSubSql,"CRE",3)==0 || strncmp(zSubSql,"INS",3)==0)
+    ){
       rc = execSql(db, pzErrMsg, zSubSql);
       if( rc!=SQLITE_OK ) break;
     }
@@ -253,7 +259,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = execSqlF(db, pzErrMsg,
       "SELECT sql FROM \"%w\".sqlite_master"
-      " WHERE type='index' AND length(sql)>10",
+      " WHERE type='index'",
       zDbMain
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
