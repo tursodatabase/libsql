@@ -656,11 +656,11 @@ do_createtable_tests 2.1 -tclquery {
   5    "CREATE TABLE x1 AS SELECT count(a) AS a, max(b) FROM t1" {a max(b)}
 }
 
-# EVIDENCE-OF: R-37111-22855 The declared type of each column is
+# EVIDENCE-OF: R-55407-45319 The declared type of each column is
 # determined by the expression affinity of the corresponding expression
 # in the result set of the SELECT statement, as follows: Expression
 # Affinity Column Declared Type TEXT "TEXT" NUMERIC "NUM" INTEGER "INT"
-# REAL "REAL" NONE "" (empty string)
+# REAL "REAL" BLOB (a.k.a "NONE") "" (empty string)
 #
 do_createtable_tests 2.2 -tclquery {
   table_column_decltypes x1

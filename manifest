@@ -1,5 +1,5 @@
-C For\sthe\samalgamation-tarball,\senable\sFTS5\sand\sJSON1\sby\sdefault\sand\nprovide\sa\snew\s--enable-debug\soption\sthat\sactives\sdebugging\sfacilities.
-D 2018-05-04T04:49:55.408
+C Fix\srequirements\smarks.\s\sNo\scode\schanges.
+D 2018-05-04T18:32:11.376
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -766,7 +766,7 @@ F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
 F test/e_blobopen.test e95e1d40f995056f6f322cd5e1a1b83a27e1a145
 F test/e_blobwrite.test f87ff598b67af5b3ec002a8d83e804dc8d23808e88cf0080c176612fc9ffce14
 F test/e_changes.test fd66105385153dbf21fdb35eb8ef6c3e1eade579
-F test/e_createtable.test ef30054d1e4cec4d1da2ffcebcc15f1ded3ed7ae80f009019485be973f449917
+F test/e_createtable.test e1c4512b9e15fe7bedbbfc0c6daac8a4af65f32dc3c48310b0135b5735857b26
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 21ce09c361227ddbc9819a5608ee2700c276bdd5
@@ -984,7 +984,7 @@ F test/index6.test d07ea75b8c21f125c6f325522e8df8c05c91e9251ec923a31d0582b2ba4a6
 F test/index7.test 72b59b8ddc5c13f4962886b4011eb9975014317d17ef36c6297921362fb7dd98
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
-F test/indexedby.test 5a4a451412e3723b36214f2f98acc4ecbb7fd67fd11bbe9fa46ffb6e18cfd987
+F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
 F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
 F test/indexexpr2.test 08551aa8956a91582979e17b6d369f321a5cb6ed6d3e952925a3e54e9e7de216
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75ac7b4e4fd0811ca80c719badacff207e0bbd00ac64dde3b3d4ec676fad472d
-R 74880026e25b8db18c05670aad508c79
+P 03edecaf9dcfc927aa60c2a17590a432b17de1647d480d277b4aafc8018c2d20
+R 4f52e7dcc458ba7f262595157e6a17d1
 U drh
-Z b5c68263fba58051d7215e48b06b8ab2
+Z 0166ce191b6e6f7de3de6a7872e950dc

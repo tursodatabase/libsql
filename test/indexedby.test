@@ -59,7 +59,7 @@ do_eqp_test indexedby-1.4 {
 # SQL view. Also test that specifying an index that does not exist or
 # is attached to a different table is detected as an error.
 #
-# EVIDENCE-OF: R-07004-11522 -- syntax diagram qualified-table-name
+# X-EVIDENCE-OF: R-07004-11522 -- syntax diagram qualified-table-name
 # 
 # EVIDENCE-OF: R-58230-57098 The "INDEXED BY index-name" phrase
 # specifies that the named index must be used in order to look up values
