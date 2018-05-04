@@ -1934,6 +1934,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
     */
     wctrlFlags =  WHERE_OR_SUBCLAUSE | (pWInfo->wctrlFlags & WHERE_SEEK_TABLE);
+    ExplainQueryPlan((pParse, 1, "MULTI-INDEX OR"));
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -2054,6 +2055,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
       }
     }
+    ExplainQueryPlanPop(pParse);
     pLevel->u.pCovidx = pCov;
     if( pCov ) pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){

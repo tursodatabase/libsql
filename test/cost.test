@@ -57,9 +57,10 @@ do_eqp_test 3.2 {
   ORDER BY a;
 } {
   QUERY PLAN
-  |--SEARCH TABLE t5 USING INDEX t5b (b=?)
-  |--SEARCH TABLE t5 USING INDEX t5c (c=?)
-  |--SEARCH TABLE t5 USING INDEX t5d (d=?)
+  |--MULTI-INDEX OR
+  |  |--SEARCH TABLE t5 USING INDEX t5b (b=?)
+  |  |--SEARCH TABLE t5 USING INDEX t5c (c=?)
+  |  `--SEARCH TABLE t5 USING INDEX t5d (d=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -122,8 +123,9 @@ do_eqp_test 6.2 {
   SELECT a FROM t3 WHERE (b BETWEEN 2 AND 4) OR c=100 ORDER BY a
 } {
   QUERY PLAN
-  |--SEARCH TABLE t3 USING INDEX t3i1 (b>? AND b<?)
-  |--SEARCH TABLE t3 USING INDEX t3i2 (c=?)
+  |--MULTI-INDEX OR
+  |  |--SEARCH TABLE t3 USING INDEX t3i1 (b>? AND b<?)
+  |  `--SEARCH TABLE t3 USING INDEX t3i2 (c=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -146,8 +148,9 @@ do_eqp_test 7.2 {
   ORDER BY a
 } {
   QUERY PLAN
-  |--SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)
-  |--SEARCH TABLE t1 USING INDEX t1b (b=?)
+  |--MULTI-INDEX OR
+  |  |--SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)
+  |  `--SEARCH TABLE t1 USING INDEX t1b (b=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 

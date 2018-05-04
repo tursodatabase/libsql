@@ -363,8 +363,9 @@ ifcapable explain {
   } [string map {"\n  " \n} {
     QUERY PLAN
     |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
-    |--SEARCH TABLE t2 USING INDEX t2d (d=?)
-    `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+    `--MULTI-INDEX OR
+       |--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
   }]
   do_eqp_test where9-3.2 {
     SELECT coalesce(t2.a,9999)
@@ -373,8 +374,9 @@ ifcapable explain {
   } [string map {"\n  " \n} {
     QUERY PLAN
     |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
-    |--SEARCH TABLE t2 USING INDEX t2d (d=?)
-    `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+    `--MULTI-INDEX OR
+       |--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
   }]
 } 
 
@@ -453,8 +455,9 @@ do_eqp_test where9-5.1 {
   SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
 } {
   QUERY PLAN
-  |--SEARCH TABLE t1 USING INDEX t1c (c=?)
-  `--SEARCH TABLE t1 USING INDEX t1d (d=?)
+  `--MULTI-INDEX OR
+     |--SEARCH TABLE t1 USING INDEX t1c (c=?)
+     `--SEARCH TABLE t1 USING INDEX t1d (d=?)
 }
 
 # In contrast, b=1000 is preferred over any OR-clause.
