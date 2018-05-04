@@ -2,6 +2,7 @@ use std::ffi::CStr;
 use std::ptr;
 use std::os::raw::c_int;
 use super::ffi;
+use super::unlock_notify;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
@@ -29,7 +30,24 @@ impl RawStatement {
     }
 
     pub fn step(&self) -> c_int {
-        unsafe { ffi::sqlite3_step(self.0) }
+        if cfg!(feature = "unlock_notify") {
+            let db = unsafe { ffi::sqlite3_db_handle(self.0) };
+            let mut rc;
+            loop {
+                rc = unsafe { ffi::sqlite3_step(self.0) };
+                if !unlock_notify::is_locked(db, rc) {
+                    break;
+                }
+                rc = unlock_notify::wait_for_unlock_notify(db);
+                if rc != ffi::SQLITE_OK {
+                    break;
+                }
+                self.reset();
+            }
+            rc
+        } else {
+            unsafe { ffi::sqlite3_step(self.0) }
+        }
     }
 
     pub fn reset(&self) -> c_int {
