@@ -1,5 +1,5 @@
-C Make\sa\sseparate\slimb\sin\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\sthe\svarious\slines\nassociated\swith\sthe\sOR-optimization.
-D 2018-05-04T00:39:43.856
+C For\sthe\samalgamation-tarball,\senable\sFTS5\sand\sJSON1\sby\sdefault\sand\nprovide\sa\snew\s--enable-debug\soption\sthat\sactives\sdebugging\sfacilities.
+D 2018-05-04T04:49:55.408
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -12,11 +12,11 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 2c274948734e03c51790ff51468f91db8d570bcca864284d9c6d6e777264cd7e
+F autoconf/Makefile.am f8c274ee0022cb6d48ff103ab6c6b0733c41b3b02cb8566228dfd602f701e0c2
 F autoconf/Makefile.msc 6a46d0659d6e4a25346102bcba40a7fb4b0b8b2dc4faabdf0187488c6dd580d6
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 18fca06f884213be062dd5e07c5297079cc45893d9cd3f522ce426e715033e3d
+F autoconf/configure.ac 5f6cf281ae675685335ce7f43f8c2d59d3ac8ba4174a57b8e83097c5e10dcf4e
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c381f0ea57002a264fd958b28e4921cb9c9e73a10fb592f6bb64e6bc9bd16d39
-R 7ee652618bc90464537faa57c51e2376
+P 75ac7b4e4fd0811ca80c719badacff207e0bbd00ac64dde3b3d4ec676fad472d
+R 74880026e25b8db18c05670aad508c79
 U drh
-Z 3b006aad05b3a8fada8579b5e6d167ef
+Z b5c68263fba58051d7215e48b06b8ab2
