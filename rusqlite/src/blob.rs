@@ -95,7 +95,7 @@ impl Connection {
             .map(|_| {
                      Blob {
                          conn: self,
-                         blob: blob,
+                         blob,
                          pos: 0,
                      }
                  })
@@ -205,14 +205,14 @@ impl<'conn> io::Seek for Blob<'conn> {
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         let pos = match pos {
             io::SeekFrom::Start(offset) => offset as i64,
-            io::SeekFrom::Current(offset) => self.pos as i64 + offset,
-            io::SeekFrom::End(offset) => self.size() as i64 + offset,
+            io::SeekFrom::Current(offset) => i64::from(self.pos) + offset,
+            io::SeekFrom::End(offset) => i64::from(self.size()) + offset,
         };
 
         if pos < 0 {
             Err(io::Error::new(io::ErrorKind::InvalidInput,
                                "invalid seek to negative position"))
-        } else if pos > self.size() as i64 {
+        } else if pos > i64::from(self.size()) {
             Err(io::Error::new(io::ErrorKind::InvalidInput,
                                "invalid seek to position past end of blob"))
         } else {

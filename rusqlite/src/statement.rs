@@ -506,8 +506,8 @@ pub trait StatementCrateImpl<'conn> {
 impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
     fn new(conn: &Connection, stmt: RawStatement) -> Statement {
         Statement {
-            conn: conn,
-            stmt: stmt,
+            conn,
+            stmt,
         }
     }
 

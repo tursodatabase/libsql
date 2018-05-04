@@ -92,7 +92,7 @@ impl<'conn> CachedStatement<'conn> {
     fn new(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
         CachedStatement {
             stmt: Some(stmt),
-            cache: cache,
+            cache,
         }
     }
 
