@@ -6226,7 +6226,9 @@ static int clearCell(
   if( pInfo->nLocal==pInfo->nPayload ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
-  if( pCell+pInfo->nSize-1 > pPage->aData+pPage->maskPage ){
+  testcase( pCell + pInfo->nSize == pPage->aDataEnd );
+  testcase( pCell + (pInfo->nSize-1) == pPage->aDataEnd );
+  if( pCell + pInfo->nSize > pPage->aDataEnd ){
     /* Cell extends past end of page */
     return SQLITE_CORRUPT_PAGE(pPage);
   }

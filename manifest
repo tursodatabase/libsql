@@ -1,5 +1,5 @@
-C Fix\srequirements\smarks.\s\sNo\scode\schanges.
-D 2018-05-04T18:32:11.376
+C Fix\sa\sslightly\sincorrect\scorruption\sdetection\sbranch\sin\sthe\sbtree\slogic.
+D 2018-05-05T01:23:28.506
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -434,7 +434,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c fa7da0a5584e5182b92536bc4b7622a154a468997a075d5901345efb79a05ffe
+F src/btree.c 79982b0779c27e5ccde8c3e540f14b4e82586d6ec0394a7eb08be72d20c3e894
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 0c2be5839f22aa2938f217c6c6c2120d9fc96872a546a37541a8271541cb355e
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03edecaf9dcfc927aa60c2a17590a432b17de1647d480d277b4aafc8018c2d20
-R 4f52e7dcc458ba7f262595157e6a17d1
+P 7fdad122a21e4b01bd678198fd5131dc32febe3af366bd6368505398255f9822
+R c749c0665814a70e6af52cc6400bfbb1
 U drh
-Z 0166ce191b6e6f7de3de6a7872e950dc
+Z e525a0897d0f2a68d316a072398c9145
