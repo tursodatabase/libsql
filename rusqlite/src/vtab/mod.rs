@@ -46,6 +46,11 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
+    fn create(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self> {
+        Self::connect(db, aux, args)
+    }
+    /// Similar to `create`. The difference is that `connect` is called to establish a new connection
+    /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
     fn connect(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
@@ -336,6 +341,54 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 #[macro_export]
 macro_rules! init_module {
     ($module_name: ident, $vtab: ident, $cursor: ty,
+        $create: ident, $connect: ident, $best_index: ident,
+        $disconnect: ident, $destroy: ident,
+        $open: ident, $close: ident,
+        $filter: ident, $next: ident, $eof: ident,
+        $column: ident, $rowid: ident) => {
+
+static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
+    iVersion: 1,
+    xCreate: Some($create),
+    xConnect: Some($connect),
+    xBestIndex: Some($best_index),
+    xDisconnect: Some($disconnect),
+    xDestroy: Some($destroy),
+    xOpen: Some($open),
+    xClose: Some($close),
+    xFilter: Some($filter),
+    xNext: Some($next),
+    xEof: Some($eof),
+    xColumn: Some($column),
+    xRowid: Some($rowid),
+    xUpdate: None, // TODO
+    xBegin: None,
+    xSync: None,
+    xCommit: None,
+    xRollback: None,
+    xFindFunction: None,
+    xRename: None,
+    xSavepoint: None,
+    xRelease: None,
+    xRollbackTo: None,
+};
+
+// The xConnect and xCreate methods do the same thing, but they must be
+// different so that the virtual table is not an eponymous virtual table.
+create_or_connect!($vtab, $create, create);
+common_decl!($vtab, $cursor,
+    $connect, $best_index,
+    $disconnect, $destroy,
+    $open, $close,
+    $filter, $next, $eof,
+    $column, $rowid
+);
+    }
+} // init_module macro end
+
+#[macro_export]
+macro_rules! eponymous_module {
+    ($module_name: ident, $vtab: ident, $cursor: ty,
         $create: expr, $connect: ident, $best_index: ident,
         $disconnect: ident, $destroy: expr,
         $open: ident, $close: ident,
@@ -369,7 +422,19 @@ static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
     xRollbackTo: None,
 };
 
-unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
+common_decl!($vtab, $cursor,
+    $connect, $best_index,
+    $disconnect, $destroy,
+    $open, $close,
+    $filter, $next, $eof,
+    $column, $rowid
+);
+    }
+} // eponymous_module macro end
+
+macro_rules! create_or_connect {
+    ($vtab: ident, $create_or_connect: ident, $vtab_func: ident) => {
+unsafe extern "C" fn $create_or_connect(db: *mut ffi::sqlite3,
                               aux: *mut c_void,
                               argc: c_int,
                               argv: *const *const c_char,
@@ -384,7 +449,7 @@ unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
     let vec = args.iter().map(|&cs| {
         CStr::from_ptr(cs).to_bytes()
     }).collect::<Vec<_>>();
-    match $vtab::connect(db, aux, &vec[..]) {
+    match $vtab::$vtab_func(db, aux, &vec[..]) {
         Ok(vtab) => {
             let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
@@ -402,6 +467,17 @@ unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
         }
     }
 }
+    }
+} // create_or_connect macro end
+
+macro_rules! common_decl {
+    ($vtab: ident, $cursor: ty,
+        $connect: ident, $best_index: ident,
+        $disconnect: ident, $destroy: expr,
+        $open: ident, $close: ident,
+        $filter: ident, $next: ident, $eof: ident,
+        $column: ident, $rowid: ident) => {
+create_or_connect!($vtab, $connect, connect);
 unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
                                   info: *mut ffi::sqlite3_index_info)
                                   -> c_int {
@@ -514,7 +590,7 @@ unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
     }
 }
     }
-}
+} // common_decl macro end
 
 /// Virtual table cursors can set an error message by assigning a string to `zErrMsg`.
 pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,

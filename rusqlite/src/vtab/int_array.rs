@@ -37,7 +37,7 @@ pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
 
 }
 
-init_module!(INT_ARRAY_MODULE,
+eponymous_module!(INT_ARRAY_MODULE,
              IntArrayVTab,
              IntArrayVTabCursor,
              Some(int_array_connect),
