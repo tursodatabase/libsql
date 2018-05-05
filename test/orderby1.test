@@ -548,5 +548,15 @@ do_execsql_test 9.0 {
   SELECT (SELECT x||y FROM t2, t1 ORDER BY x, y);
 } {13}
 
+# Problem found by OSSFuzz on 2018-05-05.  This was caused by a new
+# optimization that had not been previously released.
+#
+do_execsql_test 10.0 {
+  CREATE TABLE t10(a,b);
+  INSERT INTO t10 VALUES(1,2),(8,9),(3,4),(5,4),(0,7);
+  CREATE INDEX t10b ON t10(b);
+  SELECT b, rowid, '^' FROM t10 ORDER BY b, a LIMIT 4;
+} {2 1 ^ 4 3 ^ 4 4 ^ 7 5 ^}
+
 
 finish_test

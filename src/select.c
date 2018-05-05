@@ -627,9 +627,10 @@ static void pushOntoSorter(
   **       case regData==regOrigData.
   **   (3) Some output columns are omitted from the sort record due to
   **       the SQLITE_ENABLE_SORTER_REFERENCE optimization, or due to the
-  **       SQLITE_ECEL_OMITREF optimization.  In that case, regOrigData==0
-  **       to prevent this routine from trying to copy values that might
-  **       not exist.
+  **       SQLITE_ECEL_OMITREF optimization, or due to the 
+  **       SortCtx.pDeferredRowLoad optimiation.  In any of these cases
+  **       regOrigData is 0 to prevent this routine from trying to copy
+  **       values that might not yet exist.
   */
   assert( nData==1 || regData==regOrigData || regOrigData==0 );
 
@@ -1010,6 +1011,7 @@ static void selectInnerLoop(
       assert( pSort!=0 );
       assert( hasDistinct==0 );
       pSort->pDeferredRowLoad = &sRowLoadInfo;
+      regOrig = 0;
     }else{
       innerLoopLoadRow(pParse, p, &sRowLoadInfo);
     }
