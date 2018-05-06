@@ -2,7 +2,6 @@
 //! (See http://sqlite.org/vtab.html)
 use std::borrow::Cow::{self, Borrowed, Owned};
 use std::ffi::CString;
-use std::mem;
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
@@ -46,12 +45,12 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
-    fn create(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self> {
+    unsafe fn create(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self> {
         Self::connect(db, aux, args)
     }
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
     /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
-    fn connect(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self>;
+    unsafe fn connect(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
@@ -183,7 +182,7 @@ impl<'a> IndexConstraintUsage<'a> {
 /// Virtual table cursor trait.
 pub trait VTabCursor<V: VTab<Self>>: Sized {
     /// Accessor to the associated virtual table.
-    fn vtab(&self) -> &mut V;
+    fn vtab(&self) -> &V;
     /// Begin a search of a virtual table.
     fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
@@ -206,7 +205,7 @@ impl Context {
     pub fn set_result<T: ToSql>(&mut self, value: &T) {
         let t = value.to_sql();
         match t {
-            Ok(ref value) => set_result(self.0, value),
+            Ok(ref value) => unsafe { set_result(self.0, value) },
             Err(err) => unsafe { report_error(self.0, &err) },
         }
     }
@@ -296,7 +295,7 @@ impl InnerConnection {
                     ffi::sqlite3_create_module_v2(self.db(),
                                                   c_name.as_ptr(),
                                                   module,
-                                                  mem::transmute(boxed_aux),
+                                                  boxed_aux as *mut c_void,
                                                   Some(free_boxed_value::<A>))
                 }
             }
@@ -313,9 +312,9 @@ impl InnerConnection {
 }
 
 /// Declare the schema of a virtual table.
-pub fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
+pub unsafe fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
     let c_sql = try!(CString::new(sql));
-    let rc = unsafe { ffi::sqlite3_declare_vtab(db, c_sql.as_ptr()) };
+    let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
     if rc == ffi::SQLITE_OK {
         Ok(())
     } else {
@@ -335,7 +334,7 @@ pub fn escape_double_quote(identifier: &str) -> Cow<str> {
 
 // FIXME copy/paste from function.rs
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
-    let _: Box<T> = Box::from_raw(mem::transmute(p));
+    let _: Box<T> = Box::from_raw(p as *mut T);
 }
 
 #[macro_export]

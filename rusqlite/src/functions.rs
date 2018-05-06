@@ -63,22 +63,22 @@ use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
 
 use {Result, Error, Connection, str_to_cstring, InnerConnection};
 
-pub fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
+pub unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
     let value = match *result {
         ToSqlOutput::Borrowed(v) => v,
         ToSqlOutput::Owned(ref v) => ValueRef::from(v),
 
         #[cfg(feature = "blob")]
         ToSqlOutput::ZeroBlob(len) => {
-            return unsafe { ffi::sqlite3_result_zeroblob(ctx, len) };
+            return ffi::sqlite3_result_zeroblob(ctx, len);
         }
     };
 
     match value {
-        ValueRef::Null => unsafe { ffi::sqlite3_result_null(ctx) },
-        ValueRef::Integer(i) => unsafe { ffi::sqlite3_result_int64(ctx, i) },
-        ValueRef::Real(r) => unsafe { ffi::sqlite3_result_double(ctx, r) },
-        ValueRef::Text(s) => unsafe {
+        ValueRef::Null => ffi::sqlite3_result_null(ctx),
+        ValueRef::Integer(i) => ffi::sqlite3_result_int64(ctx, i),
+        ValueRef::Real(r) => ffi::sqlite3_result_double(ctx, r),
+        ValueRef::Text(s) => {
             let length = s.len();
             if length > ::std::i32::MAX as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
@@ -96,7 +96,7 @@ pub fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
                 ffi::sqlite3_result_text(ctx, c_str.as_ptr(), length as c_int, destructor);
             }
         },
-        ValueRef::Blob(b) => unsafe {
+        ValueRef::Blob(b) => {
             let length = b.len();
             if length > ::std::i32::MAX as usize {
                 ffi::sqlite3_result_error_toobig(ctx);

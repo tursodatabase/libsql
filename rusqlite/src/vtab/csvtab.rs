@@ -58,7 +58,7 @@ impl CSVTab {
 }
 
 impl VTab<CSVTabCursor> for CSVTab {
-    fn connect(db: *mut ffi::sqlite3, _aux: *mut c_void, args: &[&[u8]]) -> Result<CSVTab> {
+    unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut c_void, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
@@ -159,7 +159,7 @@ impl CSVTabCursor {
     fn new(reader: csv::Reader<File>) -> CSVTabCursor {
         CSVTabCursor {
             base: Default::default(),
-            reader: reader,
+            reader,
             row_number: 0,
             cols: Vec::new(),
             eof: false,
@@ -168,8 +168,8 @@ impl CSVTabCursor {
 }
 
 impl VTabCursor<CSVTab> for CSVTabCursor {
-    fn vtab(&self) -> &mut CSVTab {
-        unsafe { &mut *(self.base.pVtab as *mut CSVTab) }
+    fn vtab(&self) -> &CSVTab {
+        unsafe { & *(self.base.pVtab as *const CSVTab) }
     }
 
     fn filter(&mut self,

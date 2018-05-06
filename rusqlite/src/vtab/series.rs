@@ -61,7 +61,7 @@ struct SeriesTab {
 
 
 impl VTab<SeriesTabCursor> for SeriesTab {
-    fn connect(db: *mut ffi::sqlite3,
+    unsafe fn connect(db: *mut ffi::sqlite3,
                _aux: *mut c_void,
                _args: &[&[u8]])
                -> Result<SeriesTab> {
@@ -172,8 +172,8 @@ impl SeriesTabCursor {
     }
 }
 impl VTabCursor<SeriesTab> for SeriesTabCursor {
-    fn vtab(&self) -> &mut SeriesTab {
-        unsafe { &mut *(self.base.pVtab as *mut SeriesTab) }
+    fn vtab(&self) -> &SeriesTab {
+        unsafe { & *(self.base.pVtab as *const SeriesTab) }
     }
     fn filter(&mut self,
               idx_num: c_int,

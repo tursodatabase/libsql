@@ -2,7 +2,6 @@
 //! Port of C ["intarray"](http://www.sqlite.org/cgi/src/finfo?name=src/test_intarray.h).
 use std::cell::RefCell;
 use std::default::Default;
-use std::mem;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 
@@ -61,14 +60,14 @@ struct IntArrayVTab {
 }
 
 impl VTab<IntArrayVTabCursor> for IntArrayVTab {
-    fn connect(db: *mut ffi::sqlite3,
+    unsafe fn connect(db: *mut ffi::sqlite3,
                aux: *mut c_void,
                _args: &[&[u8]])
                -> Result<IntArrayVTab> {
-        let array = unsafe { mem::transmute(aux) };
+        let array = aux as *const Rc<RefCell<Vec<i64>>>;
         let vtab = IntArrayVTab {
             base: Default::default(),
-            array: array,
+            array,
         };
         try!(declare_vtab(db, "CREATE TABLE x(value INTEGER PRIMARY KEY)"));
         Ok(vtab)
@@ -102,8 +101,8 @@ impl IntArrayVTabCursor {
 }
 
 impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
-    fn vtab(&self) -> &mut IntArrayVTab {
-        unsafe { &mut *(self.base.pVtab as *mut IntArrayVTab) }
+    fn vtab(&self) -> &IntArrayVTab {
+        unsafe { & *(self.base.pVtab as *const IntArrayVTab) }
     }
     fn filter(&mut self,
               _idx_num: c_int,
