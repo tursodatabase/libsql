@@ -5,9 +5,9 @@ use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 
-use {Connection, Error, Result};
 use ffi;
-use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, Values, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, VTab, VTabCursor, Values};
+use {Connection, Error, Result};
 
 /// Create a specific instance of an intarray object.
 /// The new intarray object is returned.
@@ -17,8 +17,10 @@ use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, Values, VTab, 
 pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<i64>>>> {
     let array = Rc::new(RefCell::new(Vec::new()));
     try!(conn.create_module(name, &INT_ARRAY_MODULE, Some(array.clone())));
-    try!(conn.execute_batch(&format!("CREATE VIRTUAL TABLE temp.\"{0}\" USING \"{0}\"",
-                                     escape_double_quote(name))));
+    try!(conn.execute_batch(&format!(
+        "CREATE VIRTUAL TABLE temp.\"{0}\" USING \"{0}\"",
+        escape_double_quote(name)
+    )));
     Ok(array)
 }
 
@@ -28,29 +30,33 @@ pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<
 /// In fact, the intarray is not destroy until the connection is closed
 /// because there is no other way to destroy the associated module.
 pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
-    conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"", escape_double_quote(name)))
+    conn.execute_batch(&format!(
+        "DROP TABLE temp.\"{0}\"",
+        escape_double_quote(name)
+    ))
     // http://www.mail-archive.com/sqlite-users%40mailinglists.sqlite.org/msg08423.html
     // "Once a virtual table module has been created, it cannot be modified or destroyed, except by closing the database connection."
     // let aux: Option<()> = None;
     // conn.create_module(name, ptr::null() as *const ffi::sqlite3_module, aux)
-
 }
 
-eponymous_module!(INT_ARRAY_MODULE,
-             IntArrayVTab,
-             IntArrayVTabCursor,
-             Some(int_array_connect),
-             int_array_connect,
-             int_array_best_index,
-             int_array_disconnect,
-             Some(int_array_disconnect),
-             int_array_open,
-             int_array_close,
-             int_array_filter,
-             int_array_next,
-             int_array_eof,
-             int_array_column,
-             int_array_rowid);
+eponymous_module!(
+    INT_ARRAY_MODULE,
+    IntArrayVTab,
+    IntArrayVTabCursor,
+    Some(int_array_connect),
+    int_array_connect,
+    int_array_best_index,
+    int_array_disconnect,
+    Some(int_array_disconnect),
+    int_array_open,
+    int_array_close,
+    int_array_filter,
+    int_array_next,
+    int_array_eof,
+    int_array_column,
+    int_array_rowid
+);
 
 #[repr(C)]
 struct IntArrayVTab {
@@ -62,16 +68,20 @@ struct IntArrayVTab {
 impl VTab for IntArrayVTab {
     type Cursor = IntArrayVTabCursor;
 
-    unsafe fn connect(db: *mut ffi::sqlite3,
-               aux: *mut c_void,
-               _args: &[&[u8]])
-               -> Result<IntArrayVTab> {
+    unsafe fn connect(
+        db: *mut ffi::sqlite3,
+        aux: *mut c_void,
+        _args: &[&[u8]],
+    ) -> Result<IntArrayVTab> {
         let array = aux as *const Rc<RefCell<Vec<i64>>>;
         let vtab = IntArrayVTab {
             base: Default::default(),
             array,
         };
-        try!(declare_vtab(db, "CREATE TABLE x(value INTEGER PRIMARY KEY)"));
+        try!(declare_vtab(
+            db,
+            "CREATE TABLE x(value INTEGER PRIMARY KEY)"
+        ));
         Ok(vtab)
     }
 
@@ -106,13 +116,9 @@ impl VTabCursor for IntArrayVTabCursor {
     type Table = IntArrayVTab;
 
     fn vtab(&self) -> &IntArrayVTab {
-        unsafe { & *(self.base.pVtab as *const IntArrayVTab) }
+        unsafe { &*(self.base.pVtab as *const IntArrayVTab) }
     }
-    fn filter(&mut self,
-              _idx_num: c_int,
-              _idx_str: Option<&str>,
-              _args: &Values)
-              -> Result<()> {
+    fn filter(&mut self, _idx_num: c_int, _idx_str: Option<&str>, _args: &Values) -> Result<()> {
         self.i = 0;
         Ok(())
     }
@@ -142,8 +148,8 @@ impl VTabCursor for IntArrayVTabCursor {
 
 #[cfg(test)]
 mod test {
-    use Connection;
     use vtab::int_array;
+    use Connection;
 
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]

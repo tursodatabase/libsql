@@ -7,10 +7,13 @@ use std::path::Path;
 use std::result;
 use std::str;
 
-use {Connection, Error, Result};
 use ffi;
 use types::Null;
-use vtab::{declare_vtab, dequote, escape_double_quote, parse_boolean, Context, IndexInfo, Values, VTab, VTabCursor};
+use vtab::{
+    declare_vtab, dequote, escape_double_quote, parse_boolean, Context, IndexInfo, VTab,
+    VTabCursor, Values,
+};
+use {Connection, Error, Result};
 
 /// Register the "csv" module.
 /// ```sql
@@ -28,21 +31,23 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("csv", &CSV_MODULE, aux)
 }
 
-init_module!(CSV_MODULE,
-             CSVTab,
-             CSVTabCursor,
-             csv_create,
-             csv_connect,
-             csv_best_index,
-             csv_disconnect,
-             csv_disconnect,
-             csv_open,
-             csv_close,
-             csv_filter,
-             csv_next,
-             csv_eof,
-             csv_column,
-             csv_rowid);
+init_module!(
+    CSV_MODULE,
+    CSVTab,
+    CSVTabCursor,
+    csv_create,
+    csv_connect,
+    csv_best_index,
+    csv_disconnect,
+    csv_disconnect,
+    csv_open,
+    csv_close,
+    csv_filter,
+    csv_next,
+    csv_eof,
+    csv_column,
+    csv_rowid
+);
 
 /// An instance of the CSV virtual table
 #[repr(C)]
@@ -61,7 +66,8 @@ struct CSVTab {
 impl CSVTab {
     fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
         csv::Reader::from_file(&self.filename).map(|reader| {
-            reader.has_headers(self.has_headers)
+            reader
+                .has_headers(self.has_headers)
                 .delimiter(self.delimiter)
                 .quote(self.quote)
         })
@@ -114,39 +120,55 @@ impl VTab for CSVTab {
             match param {
                 "filename" => {
                     if !Path::new(value).exists() {
-                        return Err(Error::ModuleError(format!("file '{}' does not exist", value)));
+                        return Err(Error::ModuleError(format!(
+                            "file '{}' does not exist",
+                            value
+                        )));
                     }
                     vtab.filename = value.to_owned();
-                },
+                }
                 "schema" => {
                     schema = Some(value.to_owned());
-                },
+                }
                 "columns" => {
                     if let Ok(n) = value.parse::<u16>() {
                         if n_col.is_some() {
-                            return Err(Error::ModuleError("more than one 'columns' parameter".to_owned()));
+                            return Err(Error::ModuleError(
+                                "more than one 'columns' parameter".to_owned(),
+                            ));
                         } else if n == 0 {
-                            return Err(Error::ModuleError("must have at least one column".to_owned()));
+                            return Err(Error::ModuleError(
+                                "must have at least one column".to_owned(),
+                            ));
                         }
                         n_col = Some(n);
                     } else {
-                        return Err(Error::ModuleError(format!("unrecognized argument to 'columns': {}", value)));
+                        return Err(Error::ModuleError(format!(
+                            "unrecognized argument to 'columns': {}",
+                            value
+                        )));
                     }
-                },
+                }
                 "header" => {
                     if let Some(b) = parse_boolean(value) {
                         vtab.has_headers = b;
                     } else {
-                        return Err(Error::ModuleError(format!("unrecognized argument to 'header': {}", value)));
+                        return Err(Error::ModuleError(format!(
+                            "unrecognized argument to 'header': {}",
+                            value
+                        )));
                     }
-                },
+                }
                 "delimiter" => {
                     if let Some(b) = CSVTab::parse_byte(value) {
                         vtab.delimiter = b;
                     } else {
-                        return Err(Error::ModuleError(format!("unrecognized argument to 'delimiter': {}", value)));
+                        return Err(Error::ModuleError(format!(
+                            "unrecognized argument to 'delimiter': {}",
+                            value
+                        )));
                     }
-                },
+                }
                 "quote" => {
                     if let Some(b) = CSVTab::parse_byte(value) {
                         if b == b'0' {
@@ -155,12 +177,18 @@ impl VTab for CSVTab {
                             vtab.quote = b;
                         }
                     } else {
-                        return Err(Error::ModuleError(format!("unrecognized argument to 'quote': {}", value)));
+                        return Err(Error::ModuleError(format!(
+                            "unrecognized argument to 'quote': {}",
+                            value
+                        )));
                     }
-                },
+                }
                 _ => {
-                    return Err(Error::ModuleError(format!("unrecognized parameter '{}'", param)));
-                },
+                    return Err(Error::ModuleError(format!(
+                        "unrecognized parameter '{}'",
+                        param
+                    )));
+                }
             }
         }
 
@@ -176,14 +204,17 @@ impl VTab for CSVTab {
                 vtab.offset_first_row = reader.byte_offset();
                 // headers ignored if cols is not empty
                 if n_col.is_none() && schema.is_none() {
-                    cols = headers.into_iter().map(|header| escape_double_quote(&header).into_owned()).collect();
+                    cols = headers
+                        .into_iter()
+                        .map(|header| escape_double_quote(&header).into_owned())
+                        .collect();
                 }
             } else {
                 let mut count = 0;
                 while let Some(col) = reader.next_bytes().into_iter_result() {
                     try!(col);
                     cols.push(format!("c{}", count));
-                    count+=1;
+                    count += 1;
                 }
             }
         }
@@ -252,16 +283,12 @@ impl VTabCursor for CSVTabCursor {
     type Table = CSVTab;
 
     fn vtab(&self) -> &CSVTab {
-        unsafe { & *(self.base.pVtab as *const CSVTab) }
+        unsafe { &*(self.base.pVtab as *const CSVTab) }
     }
 
     // Only a full table scan is supported.  So `filter` simply rewinds to
     // the beginning.
-    fn filter(&mut self,
-              _idx_num: c_int,
-              _idx_str: Option<&str>,
-              _args: &Values)
-              -> Result<()> {
+    fn filter(&mut self, _idx_num: c_int, _idx_str: Option<&str>, _args: &Values) -> Result<()> {
         {
             let offset_first_row = self.vtab().offset_first_row;
             try!(self.reader.seek(offset_first_row));
@@ -290,7 +317,10 @@ impl VTabCursor for CSVTabCursor {
     }
     fn column(&self, ctx: &mut Context, col: c_int) -> Result<()> {
         if col < 0 || col as usize >= self.cols.len() {
-            return Err(Error::ModuleError(format!("column index out of bounds: {}", col)));
+            return Err(Error::ModuleError(format!(
+                "column index out of bounds: {}",
+                col
+            )));
         }
         if self.cols.is_empty() {
             ctx.set_result(&Null);
@@ -314,14 +344,15 @@ impl From<csv::Error> for Error {
 
 #[cfg(test)]
 mod test {
-    use {Connection, Result};
     use vtab::csvtab;
+    use {Connection, Result};
 
     #[test]
     fn test_csv_module() {
         let db = Connection::open_in_memory().unwrap();
         csvtab::load_module(&db).unwrap();
-        db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv(filename='test.csv', header=yes)").unwrap();
+        db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv(filename='test.csv', header=yes)")
+            .unwrap();
 
         {
             let mut s = db.prepare("SELECT rowid, * FROM vtab").unwrap();
@@ -330,8 +361,9 @@ mod test {
                 assert_eq!(vec!["rowid", "colA", "colB", "colC"], headers);
             }
 
-            let ids: Result<Vec<i32>> =
-                s.query_map(&[], |row| row.get::<i32, i32>(0)).unwrap().collect();
+            let ids: Result<Vec<i32>> = s.query_map(&[], |row| row.get::<i32, i32>(0))
+                .unwrap()
+                .collect();
             let sum = ids.unwrap().iter().fold(0, |acc, &id| acc + id);
             assert_eq!(sum, 15);
         }
@@ -342,13 +374,14 @@ mod test {
     fn test_csv_cursor() {
         let db = Connection::open_in_memory().unwrap();
         csvtab::load_module(&db).unwrap();
-        db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv(filename='test.csv', header=yes)").unwrap();
+        db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv(filename='test.csv', header=yes)")
+            .unwrap();
 
         {
-            let mut s =
-                db.prepare("SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 WHERE \
-                              v1.rowid < v2.rowid")
-                    .unwrap();
+            let mut s = db.prepare(
+                "SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 WHERE \
+                 v1.rowid < v2.rowid",
+            ).unwrap();
 
             let mut rows = s.query(&[]).unwrap();
             let row = rows.next().unwrap().unwrap();

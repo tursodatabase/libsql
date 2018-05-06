@@ -3,9 +3,9 @@
 use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 
-use {Connection, Error, Result};
 use ffi;
-use vtab::{self, declare_vtab, Context, IndexInfo, Values, VTab, VTabCursor};
+use vtab::{self, declare_vtab, Context, IndexInfo, VTab, VTabCursor, Values};
+use {Connection, Error, Result};
 
 /// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
@@ -13,21 +13,23 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("generate_series", &SERIES_MODULE, aux)
 }
 
-eponymous_module!(SERIES_MODULE,
-             SeriesTab,
-             SeriesTabCursor,
-             None,
-             series_connect,
-             series_best_index,
-             series_disconnect,
-             None,
-             series_open,
-             series_close,
-             series_filter,
-             series_next,
-             series_eof,
-             series_column,
-             series_rowid);
+eponymous_module!(
+    SERIES_MODULE,
+    SeriesTab,
+    SeriesTabCursor,
+    None,
+    series_connect,
+    series_best_index,
+    series_disconnect,
+    None,
+    series_open,
+    series_close,
+    series_filter,
+    series_next,
+    series_eof,
+    series_column,
+    series_rowid
+);
 
 // Column numbers
 // const SERIES_COLUMN_VALUE : c_int = 0;
@@ -51,7 +53,6 @@ bitflags! {
     }
 }
 
-
 /// An instance of the Series virtual table
 #[repr(C)]
 struct SeriesTab {
@@ -59,17 +60,21 @@ struct SeriesTab {
     base: ffi::sqlite3_vtab,
 }
 
-
 impl VTab for SeriesTab {
     type Cursor = SeriesTabCursor;
 
-    unsafe fn connect(db: *mut ffi::sqlite3,
-               _aux: *mut c_void,
-               _args: &[&[u8]])
-               -> Result<SeriesTab> {
-        let vtab = SeriesTab { base: Default::default() };
-        try!(declare_vtab(db,
-                          "CREATE TABLE x(value,start hidden,stop hidden,step hidden)"));
+    unsafe fn connect(
+        db: *mut ffi::sqlite3,
+        _aux: *mut c_void,
+        _args: &[&[u8]],
+    ) -> Result<SeriesTab> {
+        let vtab = SeriesTab {
+            base: Default::default(),
+        };
+        try!(declare_vtab(
+            db,
+            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)"
+        ));
         Ok(vtab)
     }
 
@@ -127,7 +132,13 @@ impl VTab for SeriesTab {
         }
         if idx_num.contains(QueryPlanFlags::BOTH) {
             // Both start= and stop= boundaries are available.
-            info.set_estimated_cost((2 - if idx_num.contains(QueryPlanFlags::STEP) { 1 } else { 0 }) as f64);
+            info.set_estimated_cost(
+                (2 - if idx_num.contains(QueryPlanFlags::STEP) {
+                    1
+                } else {
+                    0
+                }) as f64,
+            );
             info.set_estimated_rows(1000);
             if info.num_of_order_by() == 1 {
                 if info.is_order_by_desc(0) {
@@ -177,13 +188,9 @@ impl VTabCursor for SeriesTabCursor {
     type Table = SeriesTab;
 
     fn vtab(&self) -> &SeriesTab {
-        unsafe { & *(self.base.pVtab as *const SeriesTab) }
+        unsafe { &*(self.base.pVtab as *const SeriesTab) }
     }
-    fn filter(&mut self,
-              idx_num: c_int,
-              _idx_str: Option<&str>,
-              args: &Values)
-              -> Result<()> {
+    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;
         if idx_num.contains(QueryPlanFlags::START) {
@@ -251,9 +258,9 @@ impl VTabCursor for SeriesTabCursor {
 
 #[cfg(test)]
 mod test {
-    use Connection;
-    use vtab::series;
     use ffi;
+    use vtab::series;
+    use Connection;
 
     #[test]
     fn test_series_module() {
@@ -267,9 +274,7 @@ mod test {
 
         let mut s = db.prepare("SELECT * FROM generate_series(0,20,5)").unwrap();
 
-
-        let series = s.query_map(&[], |row| row.get::<i32, i32>(0))
-            .unwrap();
+        let series = s.query_map(&[], |row| row.get::<i32, i32>(0)).unwrap();
 
         let mut expected = 0;
         for value in series {

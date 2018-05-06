@@ -6,11 +6,11 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
 
-use {Connection, Error, Result, InnerConnection, str_to_cstring};
 use error::error_from_sqlite_code;
 use ffi;
-use functions::{set_result, report_error};
+use functions::{report_error, set_result};
 use types::{FromSql, FromSqlError, ToSql, ValueRef};
+use {str_to_cstring, Connection, Error, InnerConnection, Result};
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -77,7 +77,9 @@ impl IndexInfo {
     pub fn constraints(&self) -> IndexConstraintIter {
         let constraints =
             unsafe { slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize) };
-        IndexConstraintIter { iter: constraints.iter() }
+        IndexConstraintIter {
+            iter: constraints.iter(),
+        }
     }
 
     /// Number of terms in the ORDER BY clause
@@ -241,7 +243,9 @@ impl<'a> Values<'a> {
     }
 
     pub fn iter(&self) -> ValueIter {
-        ValueIter { iter: self.args.iter() }
+        ValueIter {
+            iter: self.args.iter(),
+        }
     }
 }
 
@@ -262,7 +266,9 @@ impl<'a> Iterator for ValueIter<'a> {
     type Item = ValueRef<'a>;
 
     fn next(&mut self) -> Option<ValueRef<'a>> {
-        self.iter.next().map(|&raw| { unsafe { ValueRef::from_value(raw) } })
+        self.iter
+            .next()
+            .map(|&raw| unsafe { ValueRef::from_value(raw) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -272,41 +278,45 @@ impl<'a> Iterator for ValueIter<'a> {
 
 impl Connection {
     /// Register a virtual table implementation.
-    pub fn create_module<A>(&self,
-                            module_name: &str,
-                            module: *const ffi::sqlite3_module,
-                            aux: Option<A>)
-                            -> Result<()> {
-        self.db
-            .borrow_mut()
-            .create_module(module_name, module, aux)
+    pub fn create_module<A>(
+        &self,
+        module_name: &str,
+        module: *const ffi::sqlite3_module,
+        aux: Option<A>,
+    ) -> Result<()> {
+        self.db.borrow_mut().create_module(module_name, module, aux)
     }
 }
 
 impl InnerConnection {
-    fn create_module<A>(&mut self,
-                        module_name: &str,
-                        module: *const ffi::sqlite3_module,
-                        aux: Option<A>)
-                        -> Result<()> {
+    fn create_module<A>(
+        &mut self,
+        module_name: &str,
+        module: *const ffi::sqlite3_module,
+        aux: Option<A>,
+    ) -> Result<()> {
         let c_name = try!(str_to_cstring(module_name));
         let r = match aux {
             Some(aux) => {
                 let boxed_aux: *mut A = Box::into_raw(Box::new(aux));
                 unsafe {
-                    ffi::sqlite3_create_module_v2(self.db(),
-                                                  c_name.as_ptr(),
-                                                  module,
-                                                  boxed_aux as *mut c_void,
-                                                  Some(free_boxed_value::<A>))
+                    ffi::sqlite3_create_module_v2(
+                        self.db(),
+                        c_name.as_ptr(),
+                        module,
+                        boxed_aux as *mut c_void,
+                        Some(free_boxed_value::<A>),
+                    )
                 }
             }
             None => unsafe {
-                ffi::sqlite3_create_module_v2(self.db(),
-                                              c_name.as_ptr(),
-                                              module,
-                                              ptr::null_mut(),
-                                              None)
+                ffi::sqlite3_create_module_v2(
+                    self.db(),
+                    c_name.as_ptr(),
+                    module,
+                    ptr::null_mut(),
+                    None,
+                )
             },
         };
         self.decode_result(r)
@@ -339,11 +349,9 @@ pub fn dequote(s: &str) -> &str {
         return s;
     }
     match s.bytes().next() {
-        Some(b) if b == b'"' || b == b'\'' => {
-            match s.bytes().rev().next() {
-                Some(e) if e == b => &s[1..s.len()-1],
-                _ => s,
-            }
+        Some(b) if b == b'"' || b == b'\'' => match s.bytes().rev().next() {
+            Some(e) if e == b => &s[1..s.len() - 1],
+            _ => s,
         },
         _ => s,
     }
@@ -354,9 +362,13 @@ pub fn dequote(s: &str) -> &str {
 /// 0 no false off
 /// ```
 pub fn parse_boolean(s: &str) -> Option<bool> {
-    if s.eq_ignore_ascii_case("yes") || s.eq_ignore_ascii_case("on") || s.eq_ignore_ascii_case("true") || s.eq("1") {
+    if s.eq_ignore_ascii_case("yes") || s.eq_ignore_ascii_case("on")
+        || s.eq_ignore_ascii_case("true") || s.eq("1")
+    {
         Some(true)
-    } else if s.eq_ignore_ascii_case("no") || s.eq_ignore_ascii_case("off") || s.eq_ignore_ascii_case("false") || s.eq("0") {
+    } else if s.eq_ignore_ascii_case("no") || s.eq_ignore_ascii_case("off")
+        || s.eq_ignore_ascii_case("false") || s.eq("0")
+    {
         Some(false)
     } else {
         None
@@ -370,262 +382,309 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 
 #[macro_export]
 macro_rules! init_module {
-    ($module_name: ident, $vtab: ident, $cursor: ty,
-        $create: ident, $connect: ident, $best_index: ident,
-        $disconnect: ident, $destroy: ident,
-        $open: ident, $close: ident,
-        $filter: ident, $next: ident, $eof: ident,
-        $column: ident, $rowid: ident) => {
+    (
+        $module_name:ident,
+        $vtab:ident,
+        $cursor:ty,
+        $create:ident,
+        $connect:ident,
+        $best_index:ident,
+        $disconnect:ident,
+        $destroy:ident,
+        $open:ident,
+        $close:ident,
+        $filter:ident,
+        $next:ident,
+        $eof:ident,
+        $column:ident,
+        $rowid:ident
+    ) => {
+        static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
+            iVersion: 1,
+            xCreate: Some($create),
+            xConnect: Some($connect),
+            xBestIndex: Some($best_index),
+            xDisconnect: Some($disconnect),
+            xDestroy: Some($destroy),
+            xOpen: Some($open),
+            xClose: Some($close),
+            xFilter: Some($filter),
+            xNext: Some($next),
+            xEof: Some($eof),
+            xColumn: Some($column),
+            xRowid: Some($rowid),
+            xUpdate: None, // TODO
+            xBegin: None,
+            xSync: None,
+            xCommit: None,
+            xRollback: None,
+            xFindFunction: None,
+            xRename: None,
+            xSavepoint: None,
+            xRelease: None,
+            xRollbackTo: None,
+        };
 
-static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
-    iVersion: 1,
-    xCreate: Some($create),
-    xConnect: Some($connect),
-    xBestIndex: Some($best_index),
-    xDisconnect: Some($disconnect),
-    xDestroy: Some($destroy),
-    xOpen: Some($open),
-    xClose: Some($close),
-    xFilter: Some($filter),
-    xNext: Some($next),
-    xEof: Some($eof),
-    xColumn: Some($column),
-    xRowid: Some($rowid),
-    xUpdate: None, // TODO
-    xBegin: None,
-    xSync: None,
-    xCommit: None,
-    xRollback: None,
-    xFindFunction: None,
-    xRename: None,
-    xSavepoint: None,
-    xRelease: None,
-    xRollbackTo: None,
-};
-
-// The xConnect and xCreate methods do the same thing, but they must be
-// different so that the virtual table is not an eponymous virtual table.
-create_or_connect!($vtab, $create, create);
-common_decl!($vtab, $cursor,
-    $connect, $best_index,
-    $disconnect, $destroy,
-    $open, $close,
-    $filter, $next, $eof,
-    $column, $rowid
-);
-    }
+        // The xConnect and xCreate methods do the same thing, but they must be
+        // different so that the virtual table is not an eponymous virtual table.
+        create_or_connect!($vtab, $create, create);
+        common_decl!(
+            $vtab,
+            $cursor,
+            $connect,
+            $best_index,
+            $disconnect,
+            $destroy,
+            $open,
+            $close,
+            $filter,
+            $next,
+            $eof,
+            $column,
+            $rowid
+        );
+    };
 } // init_module macro end
 
 #[macro_export]
 macro_rules! eponymous_module {
-    ($module_name: ident, $vtab: ident, $cursor: ty,
-        $create: expr, $connect: ident, $best_index: ident,
-        $disconnect: ident, $destroy: expr,
-        $open: ident, $close: ident,
-        $filter: ident, $next: ident, $eof: ident,
-        $column: ident, $rowid: ident) => {
+    (
+        $module_name:ident,
+        $vtab:ident,
+        $cursor:ty,
+        $create:expr,
+        $connect:ident,
+        $best_index:ident,
+        $disconnect:ident,
+        $destroy:expr,
+        $open:ident,
+        $close:ident,
+        $filter:ident,
+        $next:ident,
+        $eof:ident,
+        $column:ident,
+        $rowid:ident
+    ) => {
+        static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
+            iVersion: 1,
+            xCreate: $create, /* For eponymous-only virtual tables, the xCreate method is NULL */
+            xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is
+                                         the exact same function as the xConnect method */
+            xBestIndex: Some($best_index),
+            xDisconnect: Some($disconnect),
+            xDestroy: $destroy,
+            xOpen: Some($open),
+            xClose: Some($close),
+            xFilter: Some($filter),
+            xNext: Some($next),
+            xEof: Some($eof),
+            xColumn: Some($column),
+            xRowid: Some($rowid),
+            xUpdate: None, // TODO
+            xBegin: None,
+            xSync: None,
+            xCommit: None,
+            xRollback: None,
+            xFindFunction: None,
+            xRename: None,
+            xSavepoint: None,
+            xRelease: None,
+            xRollbackTo: None,
+        };
 
-static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
-    iVersion: 1,
-    xCreate: $create, /* For eponymous-only virtual tables, the xCreate method is NULL */
-    xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is
-                                 the exact same function as the xConnect method */
-    xBestIndex: Some($best_index),
-    xDisconnect: Some($disconnect),
-    xDestroy: $destroy,
-    xOpen: Some($open),
-    xClose: Some($close),
-    xFilter: Some($filter),
-    xNext: Some($next),
-    xEof: Some($eof),
-    xColumn: Some($column),
-    xRowid: Some($rowid),
-    xUpdate: None, // TODO
-    xBegin: None,
-    xSync: None,
-    xCommit: None,
-    xRollback: None,
-    xFindFunction: None,
-    xRename: None,
-    xSavepoint: None,
-    xRelease: None,
-    xRollbackTo: None,
-};
-
-common_decl!($vtab, $cursor,
-    $connect, $best_index,
-    $disconnect, $destroy,
-    $open, $close,
-    $filter, $next, $eof,
-    $column, $rowid
-);
-    }
+        common_decl!(
+            $vtab,
+            $cursor,
+            $connect,
+            $best_index,
+            $disconnect,
+            $destroy,
+            $open,
+            $close,
+            $filter,
+            $next,
+            $eof,
+            $column,
+            $rowid
+        );
+    };
 } // eponymous_module macro end
 
 macro_rules! create_or_connect {
-    ($vtab: ident, $create_or_connect: ident, $vtab_func: ident) => {
-unsafe extern "C" fn $create_or_connect(db: *mut ffi::sqlite3,
-                              aux: *mut c_void,
-                              argc: c_int,
-                              argv: *const *const c_char,
-                              pp_vtab: *mut *mut ffi::sqlite3_vtab,
-                              err_msg: *mut *mut c_char)
-                              -> c_int {
-    use std::error::Error as StdError;
-    use std::ffi::CStr;
-    use std::slice;
-    use vtab::mprintf;
-    let args = slice::from_raw_parts(argv, argc as usize);
-    let vec = args.iter().map(|&cs| {
-        CStr::from_ptr(cs).to_bytes()
-    }).collect::<Vec<_>>();
-    match $vtab::$vtab_func(db, aux, &vec[..]) {
-        Ok(vtab) => {
-            let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
-            *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
-            ffi::SQLITE_OK
-        },
-        Err(Error::SqliteFailure(err, s)) => {
-            if let Some(s) = s {
-                *err_msg = mprintf(&s);
+    ($vtab:ident, $create_or_connect:ident, $vtab_func:ident) => {
+        unsafe extern "C" fn $create_or_connect(
+            db: *mut ffi::sqlite3,
+            aux: *mut c_void,
+            argc: c_int,
+            argv: *const *const c_char,
+            pp_vtab: *mut *mut ffi::sqlite3_vtab,
+            err_msg: *mut *mut c_char,
+        ) -> c_int {
+            use std::error::Error as StdError;
+            use std::ffi::CStr;
+            use std::slice;
+            use vtab::mprintf;
+            let args = slice::from_raw_parts(argv, argc as usize);
+            let vec = args.iter()
+                .map(|&cs| CStr::from_ptr(cs).to_bytes())
+                .collect::<Vec<_>>();
+            match $vtab::$vtab_func(db, aux, &vec[..]) {
+                Ok(vtab) => {
+                    let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
+                    *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
+                    ffi::SQLITE_OK
+                }
+                Err(Error::SqliteFailure(err, s)) => {
+                    if let Some(s) = s {
+                        *err_msg = mprintf(&s);
+                    }
+                    err.extended_code
+                }
+                Err(err) => {
+                    *err_msg = mprintf(err.description());
+                    ffi::SQLITE_ERROR
+                }
             }
-            err.extended_code
-        },
-        Err(err) => {
-            *err_msg = mprintf(err.description());
-            ffi::SQLITE_ERROR
         }
-    }
-}
-    }
+    };
 } // create_or_connect macro end
 
 macro_rules! common_decl {
-    ($vtab: ident, $cursor: ty,
-        $connect: ident, $best_index: ident,
-        $disconnect: ident, $destroy: expr,
-        $open: ident, $close: ident,
-        $filter: ident, $next: ident, $eof: ident,
-        $column: ident, $rowid: ident) => {
-create_or_connect!($vtab, $connect, connect);
-unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
-                                  info: *mut ffi::sqlite3_index_info)
-                                  -> c_int {
-    use std::error::Error as StdError;
-    use vtab::set_err_msg;
-    let vt = vtab as *mut $vtab;
-    let mut idx_info = IndexInfo(info);
-    match (*vt).best_index(&mut idx_info) {
-        Ok(_) => ffi::SQLITE_OK,
-        Err(Error::SqliteFailure(err, s)) => {
-            if let Some(err_msg) = s {
-                set_err_msg(vtab, &err_msg);
+    (
+        $vtab:ident,
+        $cursor:ty,
+        $connect:ident,
+        $best_index:ident,
+        $disconnect:ident,
+        $destroy:expr,
+        $open:ident,
+        $close:ident,
+        $filter:ident,
+        $next:ident,
+        $eof:ident,
+        $column:ident,
+        $rowid:ident
+    ) => {
+        create_or_connect!($vtab, $connect, connect);
+        unsafe extern "C" fn $best_index(
+            vtab: *mut ffi::sqlite3_vtab,
+            info: *mut ffi::sqlite3_index_info,
+        ) -> c_int {
+            use std::error::Error as StdError;
+            use vtab::set_err_msg;
+            let vt = vtab as *mut $vtab;
+            let mut idx_info = IndexInfo(info);
+            match (*vt).best_index(&mut idx_info) {
+                Ok(_) => ffi::SQLITE_OK,
+                Err(Error::SqliteFailure(err, s)) => {
+                    if let Some(err_msg) = s {
+                        set_err_msg(vtab, &err_msg);
+                    }
+                    err.extended_code
+                }
+                Err(err) => {
+                    set_err_msg(vtab, err.description());
+                    ffi::SQLITE_ERROR
+                }
             }
-            err.extended_code
-        },
-        Err(err) => {
-            set_err_msg(vtab, err.description());
-            ffi::SQLITE_ERROR
         }
-
-    }
-
-}
-unsafe extern "C" fn $disconnect(vtab: *mut ffi::sqlite3_vtab) -> c_int {
-    let vtab = vtab as *mut $vtab;
-    let _: Box<$vtab> = Box::from_raw(vtab);
-    ffi::SQLITE_OK
-}
-
-unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
-                            pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor)
-                            -> c_int {
-    use std::error::Error as StdError;
-    use vtab::set_err_msg;
-    let vt = vtab as *mut $vtab;
-    match (*vt).open() {
-        Ok(cursor) => {
-            let boxed_cursor: *mut $cursor = Box::into_raw(Box::new(cursor));
-            *pp_cursor = boxed_cursor as *mut ffi::sqlite3_vtab_cursor;
+        unsafe extern "C" fn $disconnect(vtab: *mut ffi::sqlite3_vtab) -> c_int {
+            let vtab = vtab as *mut $vtab;
+            let _: Box<$vtab> = Box::from_raw(vtab);
             ffi::SQLITE_OK
-        },
-        Err(Error::SqliteFailure(err, s)) => {
-            if let Some(err_msg) = s {
-                set_err_msg(vtab, &err_msg);
-            }
-            err.extended_code
-        },
-        Err(err) => {
-            set_err_msg(vtab, err.description());
-            ffi::SQLITE_ERROR
         }
-    }
-}
-unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
-    let cr = cursor as *mut $cursor;
-    let _: Box<$cursor> = Box::from_raw(cr);
-    ffi::SQLITE_OK
-}
 
-unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              idx_num: c_int,
-                              idx_str: *const c_char,
-                              argc: c_int,
-                              argv: *mut *mut ffi::sqlite3_value)
-                              -> c_int {
-    use std::ffi::CStr;
-    use std::slice;
-    use std::str;
-    use vtab::{cursor_error, Values};
-    let idx_name = if idx_str.is_null() {
-        None
-    } else {
-        let c_slice = CStr::from_ptr(idx_str).to_bytes();
-        Some(str::from_utf8_unchecked(c_slice))
+        unsafe extern "C" fn $open(
+            vtab: *mut ffi::sqlite3_vtab,
+            pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor,
+        ) -> c_int {
+            use std::error::Error as StdError;
+            use vtab::set_err_msg;
+            let vt = vtab as *mut $vtab;
+            match (*vt).open() {
+                Ok(cursor) => {
+                    let boxed_cursor: *mut $cursor = Box::into_raw(Box::new(cursor));
+                    *pp_cursor = boxed_cursor as *mut ffi::sqlite3_vtab_cursor;
+                    ffi::SQLITE_OK
+                }
+                Err(Error::SqliteFailure(err, s)) => {
+                    if let Some(err_msg) = s {
+                        set_err_msg(vtab, &err_msg);
+                    }
+                    err.extended_code
+                }
+                Err(err) => {
+                    set_err_msg(vtab, err.description());
+                    ffi::SQLITE_ERROR
+                }
+            }
+        }
+        unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
+            let cr = cursor as *mut $cursor;
+            let _: Box<$cursor> = Box::from_raw(cr);
+            ffi::SQLITE_OK
+        }
+
+        unsafe extern "C" fn $filter(
+            cursor: *mut ffi::sqlite3_vtab_cursor,
+            idx_num: c_int,
+            idx_str: *const c_char,
+            argc: c_int,
+            argv: *mut *mut ffi::sqlite3_value,
+        ) -> c_int {
+            use std::ffi::CStr;
+            use std::slice;
+            use std::str;
+            use vtab::{cursor_error, Values};
+            let idx_name = if idx_str.is_null() {
+                None
+            } else {
+                let c_slice = CStr::from_ptr(idx_str).to_bytes();
+                Some(str::from_utf8_unchecked(c_slice))
+            };
+            let args = slice::from_raw_parts_mut(argv, argc as usize);
+            let values = Values { args: args };
+            let cr = cursor as *mut $cursor;
+            cursor_error(cursor, (*cr).filter(idx_num, idx_name, &values))
+        }
+        unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
+            use vtab::cursor_error;
+            let cr = cursor as *mut $cursor;
+            cursor_error(cursor, (*cr).next())
+        }
+        unsafe extern "C" fn $eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
+            let cr = cursor as *mut $cursor;
+            (*cr).eof() as c_int
+        }
+        unsafe extern "C" fn $column(
+            cursor: *mut ffi::sqlite3_vtab_cursor,
+            ctx: *mut ffi::sqlite3_context,
+            i: c_int,
+        ) -> c_int {
+            use vtab::{result_error, Context};
+            let cr = cursor as *mut $cursor;
+            let mut ctxt = Context(ctx);
+            result_error(ctx, (*cr).column(&mut ctxt, i))
+        }
+        unsafe extern "C" fn $rowid(
+            cursor: *mut ffi::sqlite3_vtab_cursor,
+            p_rowid: *mut ffi::sqlite3_int64,
+        ) -> c_int {
+            use vtab::cursor_error;
+            let cr = cursor as *mut $cursor;
+            match (*cr).rowid() {
+                Ok(rowid) => {
+                    *p_rowid = rowid;
+                    ffi::SQLITE_OK
+                }
+                err => cursor_error(cursor, err),
+            }
+        }
     };
-    let args = slice::from_raw_parts_mut(argv, argc as usize);
-    let values = Values { args: args };
-    let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).filter(idx_num, idx_name, &values))
-}
-unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
-    use vtab::cursor_error;
-    let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).next())
-}
-unsafe extern "C" fn $eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
-    let cr = cursor as *mut $cursor;
-    (*cr).eof() as c_int
-}
-unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              ctx: *mut ffi::sqlite3_context,
-                              i: c_int)
-                              -> c_int {
-    use vtab::{result_error, Context};
-    let cr = cursor as *mut $cursor;
-    let mut ctxt = Context(ctx);
-    result_error(ctx, (*cr).column(&mut ctxt, i))
-}
-unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
-                             p_rowid: *mut ffi::sqlite3_int64)
-                             -> c_int {
-    use vtab::cursor_error;
-    let cr = cursor as *mut $cursor;
-    match (*cr).rowid() {
-        Ok(rowid) => {
-            *p_rowid = rowid;
-            ffi::SQLITE_OK
-        },
-        err => cursor_error(cursor, err)
-    }
-}
-    }
 } // common_decl macro end
 
 /// Virtual table cursors can set an error message by assigning a string to `zErrMsg`.
-pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              result: Result<T>)
-                              -> c_int {
+pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<T>) -> c_int {
     use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
@@ -691,9 +750,9 @@ pub fn mprintf(err_msg: &str) -> *mut c_char {
     unsafe { ffi::sqlite3_mprintf(c_format.as_ptr(), c_err.as_ptr()) }
 }
 
-pub mod int_array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
+pub mod int_array;
 #[cfg(feature = "bundled")]
 pub mod series;
 
