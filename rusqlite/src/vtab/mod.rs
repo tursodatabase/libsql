@@ -42,16 +42,18 @@ use {str_to_cstring, Connection, Error, InnerConnection, Result};
 
 /// Virtual table instance trait.
 pub trait VTab: Sized {
+    type Aux;
     type Cursor: VTabCursor;
+
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
-    unsafe fn create(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self> {
+    unsafe fn create(db: *mut ffi::sqlite3, aux: *mut Self::Aux, args: &[&[u8]]) -> Result<Self> {
         Self::connect(db, aux, args)
     }
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
     /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
-    unsafe fn connect(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self>;
+    unsafe fn connect(db: *mut ffi::sqlite3, aux: *mut Self::Aux, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
@@ -385,6 +387,7 @@ macro_rules! init_module {
     (
         $module_name:ident,
         $vtab:ident,
+        $aux:ty,
         $cursor:ty,
         $create:ident,
         $connect:ident,
@@ -427,9 +430,10 @@ macro_rules! init_module {
 
         // The xConnect and xCreate methods do the same thing, but they must be
         // different so that the virtual table is not an eponymous virtual table.
-        create_or_connect!($vtab, $create, create);
+        create_or_connect!($vtab, $aux, $create, create);
         common_decl!(
             $vtab,
+            $aux,
             $cursor,
             $connect,
             $best_index,
@@ -451,6 +455,7 @@ macro_rules! eponymous_module {
     (
         $module_name:ident,
         $vtab:ident,
+        $aux:ty,
         $cursor:ty,
         $create:expr,
         $connect:ident,
@@ -494,6 +499,7 @@ macro_rules! eponymous_module {
 
         common_decl!(
             $vtab,
+            $aux,
             $cursor,
             $connect,
             $best_index,
@@ -511,7 +517,7 @@ macro_rules! eponymous_module {
 } // eponymous_module macro end
 
 macro_rules! create_or_connect {
-    ($vtab:ident, $create_or_connect:ident, $vtab_func:ident) => {
+    ($vtab:ident, $aux:ty, $create_or_connect:ident, $vtab_func:ident) => {
         unsafe extern "C" fn $create_or_connect(
             db: *mut ffi::sqlite3,
             aux: *mut c_void,
@@ -524,6 +530,8 @@ macro_rules! create_or_connect {
             use std::ffi::CStr;
             use std::slice;
             use vtab::mprintf;
+
+            let aux = aux as *mut $aux;
             let args = slice::from_raw_parts(argv, argc as usize);
             let vec = args.iter()
                 .map(|&cs| CStr::from_ptr(cs).to_bytes())
@@ -552,6 +560,7 @@ macro_rules! create_or_connect {
 macro_rules! common_decl {
     (
         $vtab:ident,
+        $aux:ty,
         $cursor:ty,
         $connect:ident,
         $best_index:ident,
@@ -565,7 +574,7 @@ macro_rules! common_decl {
         $column:ident,
         $rowid:ident
     ) => {
-        create_or_connect!($vtab, $connect, connect);
+        create_or_connect!($vtab, $aux, $connect, connect);
         unsafe extern "C" fn $best_index(
             vtab: *mut ffi::sqlite3_vtab,
             info: *mut ffi::sqlite3_index_info,

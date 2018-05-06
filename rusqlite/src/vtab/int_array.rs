@@ -43,6 +43,7 @@ pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
 eponymous_module!(
     INT_ARRAY_MODULE,
     IntArrayVTab,
+    Rc<RefCell<Vec<i64>>>,
     IntArrayVTabCursor,
     Some(int_array_connect),
     int_array_connect,
@@ -66,11 +67,12 @@ struct IntArrayVTab {
 }
 
 impl VTab for IntArrayVTab {
+    type Aux = Rc<RefCell<Vec<i64>>>;
     type Cursor = IntArrayVTabCursor;
 
     unsafe fn connect(
         db: *mut ffi::sqlite3,
-        aux: *mut c_void,
+        aux: *mut Rc<RefCell<Vec<i64>>>,
         _args: &[&[u8]],
     ) -> Result<IntArrayVTab> {
         let array = aux as *const Rc<RefCell<Vec<i64>>>;

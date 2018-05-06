@@ -16,6 +16,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
 eponymous_module!(
     SERIES_MODULE,
     SeriesTab,
+    (),
     SeriesTabCursor,
     None,
     series_connect,
@@ -61,11 +62,12 @@ struct SeriesTab {
 }
 
 impl VTab for SeriesTab {
+    type Aux = ();
     type Cursor = SeriesTabCursor;
 
     unsafe fn connect(
         db: *mut ffi::sqlite3,
-        _aux: *mut c_void,
+        _aux: *mut (),
         _args: &[&[u8]],
     ) -> Result<SeriesTab> {
         let vtab = SeriesTab {
