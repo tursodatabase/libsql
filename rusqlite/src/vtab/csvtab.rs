@@ -89,7 +89,9 @@ impl CSVTab {
     }
 }
 
-impl VTab<CSVTabCursor> for CSVTab {
+impl VTab for CSVTab {
+    type Cursor = CSVTabCursor;
+
     unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut c_void, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
@@ -246,7 +248,9 @@ impl CSVTabCursor {
     }
 }
 
-impl VTabCursor<CSVTab> for CSVTabCursor {
+impl VTabCursor for CSVTabCursor {
+    type Table = CSVTab;
+
     fn vtab(&self) -> &CSVTab {
         unsafe { & *(self.base.pVtab as *const CSVTab) }
     }

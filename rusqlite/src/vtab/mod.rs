@@ -41,7 +41,8 @@ use types::{FromSql, FromSqlError, ToSql, ValueRef};
 //
 
 /// Virtual table instance trait.
-pub trait VTab<C: VTabCursor<Self>>: Sized {
+pub trait VTab: Sized {
+    type Cursor: VTabCursor;
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
@@ -54,7 +55,7 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
-    fn open(&self) -> Result<C>;
+    fn open(&self) -> Result<Self::Cursor>;
 }
 
 bitflags! {
@@ -180,9 +181,10 @@ impl<'a> IndexConstraintUsage<'a> {
 }
 
 /// Virtual table cursor trait.
-pub trait VTabCursor<V: VTab<Self>>: Sized {
+pub trait VTabCursor: Sized {
+    type Table: VTab;
     /// Accessor to the associated virtual table.
-    fn vtab(&self) -> &V;
+    fn vtab(&self) -> &Self::Table;
     /// Begin a search of a virtual table.
     fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.

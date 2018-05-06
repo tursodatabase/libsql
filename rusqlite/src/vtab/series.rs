@@ -60,7 +60,9 @@ struct SeriesTab {
 }
 
 
-impl VTab<SeriesTabCursor> for SeriesTab {
+impl VTab for SeriesTab {
+    type Cursor = SeriesTabCursor;
+
     unsafe fn connect(db: *mut ffi::sqlite3,
                _aux: *mut c_void,
                _args: &[&[u8]])
@@ -171,7 +173,9 @@ impl SeriesTabCursor {
         Default::default()
     }
 }
-impl VTabCursor<SeriesTab> for SeriesTabCursor {
+impl VTabCursor for SeriesTabCursor {
+    type Table = SeriesTab;
+
     fn vtab(&self) -> &SeriesTab {
         unsafe { & *(self.base.pVtab as *const SeriesTab) }
     }

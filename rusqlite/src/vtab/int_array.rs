@@ -59,7 +59,9 @@ struct IntArrayVTab {
     array: *const Rc<RefCell<Vec<i64>>>,
 }
 
-impl VTab<IntArrayVTabCursor> for IntArrayVTab {
+impl VTab for IntArrayVTab {
+    type Cursor = IntArrayVTabCursor;
+
     unsafe fn connect(db: *mut ffi::sqlite3,
                aux: *mut c_void,
                _args: &[&[u8]])
@@ -100,7 +102,9 @@ impl IntArrayVTabCursor {
     }
 }
 
-impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
+impl VTabCursor for IntArrayVTabCursor {
+    type Table = IntArrayVTab;
+
     fn vtab(&self) -> &IntArrayVTab {
         unsafe { & *(self.base.pVtab as *const IntArrayVTab) }
     }
