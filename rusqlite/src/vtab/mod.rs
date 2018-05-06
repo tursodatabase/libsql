@@ -331,6 +331,35 @@ pub fn escape_double_quote(identifier: &str) -> Cow<str> {
         Borrowed(identifier)
     }
 }
+/// Dequote string
+pub fn dequote(s: &str) -> &str {
+    if s.len() < 2 {
+        return s;
+    }
+    match s.bytes().next() {
+        Some(b) if b == b'"' || b == b'\'' => {
+            match s.bytes().rev().next() {
+                Some(e) if e == b => &s[1..s.len()-1],
+                _ => s,
+            }
+        },
+        _ => s,
+    }
+}
+/// The boolean can be one of:
+/// ```text
+/// 1 yes true on
+/// 0 no false off
+/// ```
+pub fn parse_boolean(s: &str) -> Option<bool> {
+    if s.eq_ignore_ascii_case("yes") || s.eq_ignore_ascii_case("on") || s.eq_ignore_ascii_case("true") || s.eq("1") {
+        Some(true)
+    } else if s.eq_ignore_ascii_case("no") || s.eq_ignore_ascii_case("off") || s.eq_ignore_ascii_case("false") || s.eq("0") {
+        Some(false)
+    } else {
+        None
+    }
+}
 
 // FIXME copy/paste from function.rs
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
@@ -665,3 +694,31 @@ pub mod int_array;
 pub mod csvtab;
 #[cfg(feature = "bundled")]
 pub mod series;
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_dequote() {
+        assert_eq!("", super::dequote(""));
+        assert_eq!("'", super::dequote("'"));
+        assert_eq!("\"", super::dequote("\""));
+        assert_eq!("'\"", super::dequote("'\""));
+        assert_eq!("", super::dequote("''"));
+        assert_eq!("", super::dequote("\"\""));
+        assert_eq!("x", super::dequote("'x'"));
+        assert_eq!("x", super::dequote("\"x\""));
+        assert_eq!("x", super::dequote("x"));
+    }
+    #[test]
+    fn test_parse_boolean() {
+        assert_eq!(None, super::parse_boolean(""));
+        assert_eq!(Some(true), super::parse_boolean("1"));
+        assert_eq!(Some(true), super::parse_boolean("yes"));
+        assert_eq!(Some(true), super::parse_boolean("on"));
+        assert_eq!(Some(true), super::parse_boolean("true"));
+        assert_eq!(Some(false), super::parse_boolean("0"));
+        assert_eq!(Some(false), super::parse_boolean("no"));
+        assert_eq!(Some(false), super::parse_boolean("off"));
+        assert_eq!(Some(false), super::parse_boolean("false"));
+    }
+}
