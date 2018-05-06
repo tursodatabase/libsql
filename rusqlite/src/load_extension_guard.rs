@@ -26,7 +26,7 @@ impl<'conn> LoadExtensionGuard<'conn> {
     /// guard goes out of scope. Cannot be meaningfully nested.
     pub fn new(conn: &Connection) -> Result<LoadExtensionGuard> {
         conn.load_extension_enable()
-            .map(|_| LoadExtensionGuard { conn: conn })
+            .map(|_| LoadExtensionGuard { conn })
     }
 }
 

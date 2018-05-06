@@ -125,6 +125,7 @@ pub mod limits;
 mod hooks;
 #[cfg(feature = "hooks")]
 pub use hooks::*;
+mod unlock_notify;
 #[cfg(feature = "vtab")]
 pub mod vtab;
 
@@ -781,7 +782,7 @@ impl InnerConnection {
             // attempt to turn on extended results code; don't fail if we can't.
             ffi::sqlite3_extended_result_codes(db, 1);
 
-            Ok(InnerConnection { db: db })
+            Ok(InnerConnection { db })
         }
     }
 
@@ -864,16 +865,40 @@ impl InnerConnection {
         }
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
         let c_sql = try!(str_to_cstring(sql));
+        let len_with_nul = (sql.len() + 1) as c_int;
         let r = unsafe {
-            let len_with_nul = (sql.len() + 1) as c_int;
-            ffi::sqlite3_prepare_v2(self.db(),
-                                    c_sql.as_ptr(),
-                                    len_with_nul,
-                                    &mut c_stmt,
-                                    ptr::null_mut())
+            if cfg!(feature = "unlock_notify") {
+                let mut rc;
+                loop {
+                    rc = ffi::sqlite3_prepare_v2(
+                        self.db(),
+                        c_sql.as_ptr(),
+                        len_with_nul,
+                        &mut c_stmt,
+                        ptr::null_mut(),
+                    );
+                    if !unlock_notify::is_locked(self.db, rc) {
+                        break;
+                    }
+                    rc = unlock_notify::wait_for_unlock_notify(self.db);
+                    if rc != ffi::SQLITE_OK {
+                        break;
+                    }
+                }
+                rc
+            } else {
+                ffi::sqlite3_prepare_v2(
+                    self.db(),
+                    c_sql.as_ptr(),
+                    len_with_nul,
+                    &mut c_stmt,
+                    ptr::null_mut(),
+                )
+            }
         };
-        self.decode_result(r)
-            .map(|_| Statement::new(conn, RawStatement::new(c_stmt)))
+        self.decode_result(r).map(|_| {
+            Statement::new(conn, RawStatement::new(c_stmt))
+        })
     }
 
     fn changes(&mut self) -> c_int {

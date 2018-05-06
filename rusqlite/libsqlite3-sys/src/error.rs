@@ -91,7 +91,7 @@ impl Error {
         };
 
         Error {
-            code: code,
+            code,
             extended_code: result_code,
         }
     }

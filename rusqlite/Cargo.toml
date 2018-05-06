@@ -28,6 +28,7 @@ buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
+unlock_notify = ["libsqlite3-sys/unlock_notify"]
 vtab = ["functions", "libsqlite3-sys/min_sqlite_version_3_7_7"]
 csvtab = ["csv", "vtab"]
 
@@ -42,7 +43,7 @@ csv = { version = "0.15", optional = true }
 [dev-dependencies]
 tempdir = "0.3"
 lazy_static = "1.0"
-regex = "0.2"
+regex = "1.0"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"

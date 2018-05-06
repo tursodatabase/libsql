@@ -18,8 +18,8 @@ mod build {
         fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
             .expect("Could not copy bindings to output directory");
 
-        cc::Build::new()
-            .file("sqlite3/sqlite3.c")
+        let mut cfg = cc::Build::new();
+        cfg.file("sqlite3/sqlite3.c")
             .flag("-DSQLITE_CORE")
             .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
             .flag("-DSQLITE_ENABLE_API_ARMOR")
@@ -38,8 +38,11 @@ mod build {
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
-            .flag("-DHAVE_USLEEP=1")
-            .compile("libsqlite3.a");
+            .flag("-DHAVE_USLEEP=1");
+        if cfg!(feature = "unlock_notify") {
+            cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
+        }
+        cfg.compile("libsqlite3.a");
     }
 }
 

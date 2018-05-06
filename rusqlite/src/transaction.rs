@@ -109,7 +109,7 @@ impl<'conn> Transaction<'conn> {
         conn.execute_batch(query)
             .map(move |_| {
                      Transaction {
-                         conn: conn,
+                         conn,
                          drop_behavior: DropBehavior::Rollback,
                          committed: false,
                      }
@@ -227,9 +227,9 @@ impl<'conn> Savepoint<'conn> {
         conn.execute_batch(&format!("SAVEPOINT {}", name))
             .map(|_| {
                 Savepoint {
-                    conn: conn,
-                    name: name,
-                    depth: depth,
+                    conn,
+                    name,
+                    depth,
                     drop_behavior: DropBehavior::Rollback,
                     committed: false,
                 }
