@@ -8214,6 +8214,8 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
 
   /* Now overwrite the overflow pages */
   iOffset = pCur->info.nLocal;
+  assert( nTotal>=0 );
+  assert( iOffset>=0 );
   ovflPgno = get4byte(pCur->info.pPayload + iOffset);
   pBt = pPage->pBt;
   ovflPageSize = pBt->usableSize - 4;
@@ -8223,7 +8225,7 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
     if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
-      if( iOffset+ovflPageSize<nTotal ){
+      if( iOffset+ovflPageSize<(u32)nTotal ){
         ovflPgno = get4byte(pPage->aData);
       }else{
         ovflPageSize = nTotal - iOffset;
@@ -8338,7 +8340,10 @@ int sqlite3BtreeInsert(
     if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey ){
       /* The current is currently pointing to the entry that is to be
       ** overwritten */
-      if( pCur->info.nSize!=0 && pCur->info.nPayload==pX->nData+pX->nZero ){
+      assert( pX->nData>=0 && pX->nZero>=0 );
+      if( pCur->info.nSize!=0
+       && pCur->info.nPayload==(u32)pX->nData+pX->nZero
+      ){
         return btreeOverwriteCell(pCur, pX);
       }
       loc = 0;
