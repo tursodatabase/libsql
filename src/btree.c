@@ -8396,6 +8396,22 @@ int sqlite3BtreeInsert(
       }
       if( rc ) return rc;
     }
+
+    /* If the cursor is currently pointing to an entry to be overwritten
+    ** and the new content is the same as as the old, then use the
+    ** overwrite optimization.
+    */
+    if( loc==0 ){
+      getCellInfo(pCur);
+      if( pCur->info.nKey==pX->nKey ){
+        BtreePayload x2;
+        x2.pData = pX->pKey;
+        x2.nData = pX->nKey;
+        x2.nZero = 0;
+        return btreeOverwriteCell(pCur, &x2);
+      }
+    }
+
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 

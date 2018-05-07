@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\scell-overwrite\soptimization\scode.
-D 2018-05-07T17:27:04.995
+C Activate\sthe\scell-overwrite\soptimization\sfor\sindex\sb-trees.
+D 2018-05-07T18:41:19.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -434,8 +434,8 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 7b21976dc09778f05af0e085c40b735467ffdcea64bd07dace3f12ca0a2defce
-F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
+F src/btree.c abedb349c6624d3efa699b4431d5ef679838236527c694444b38ed48c494b39b
+F src/btree.h 448f15b98ea85dcf7e4eb76f731cadb89636c676ad25dfaac6de77cd66556598
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 0c2be5839f22aa2938f217c6c6c2120d9fc96872a546a37541a8271541cb355e
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5887d8beb502ad62689d31b850f46ab50831a1e9db36adf20d55ad45619d207e
-R e6599f47435d4296a22afaa3f1649f4a
+P a4fe966da2fc479b18bf521ff596000410af3a611f7d8723d126795e595ccf22
+R 69af7d477dcc78b7b8e926f0c6facd33
 U drh
-Z 8048adc03c51022109ca997ec38e8ad8
+Z 8d5036c02e569f6033a8ae94d4ec5845
