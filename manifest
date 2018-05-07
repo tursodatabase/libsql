@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sassociated\swith\sthe\snew\sEXPLAIN\sQUERY\sPLAN\slogic.
-D 2018-05-07T11:37:34.277
+C On\san\sUPDATE,\stry\sto\soverwrite\san\sexisting\sbtree\scell\swith\sthe\smodified\ncontent,\sif\sthe\sold\sand\snew\scell\sare\sthe\ssame\ssize.\s\sUse\smemcmp()\sfirst\nto\savoid\sdirtying\spages\sthat\sare\sunchanged.
+D 2018-05-07T11:48:22.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -434,7 +434,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 79982b0779c27e5ccde8c3e540f14b4e82586d6ec0394a7eb08be72d20c3e894
+F src/btree.c 6be0267a7da8ca04c466094ca9d9a8a26333e175cff794afe5138aeec0cdb7c2
 F src/btree.h 0866c0a08255142ea0e754aabd211c843cab32045c978a592a43152405ed0c84
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 0c2be5839f22aa2938f217c6c6c2120d9fc96872a546a37541a8271541cb355e
@@ -1131,7 +1131,7 @@ F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
 F test/ossfuzz.c c4c4547e2c92ac52f10038b073a03248251a23c1c559728f63a18aeca0e79f03
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
-F test/pager1.test f596d3bd53ce96e1d87d44d223d2ae6c8867dd782c425e5eb28b5721fa6aaa97
+F test/pager1.test a32ce299ed01ffb06e84a3af467ae1f3389786b316f40c4359f442c79144736b
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 4e9a83d6ca0838d7c602c9eb93d1357562d9059c1e02ffb138a8271020838370
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
@@ -1727,7 +1727,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b348d1193a7a3ed4d3e656b6cc95a41f87eae29222e0723850a5eb5ffabffd00
-R d09bdc73f56d4d80e2806c4c66a4e25a
+P 374d8e264487b0437a8d995ced1bc026a92d495a2d0568f65f033e9ebe11d0e2 3e11dc3183bc3e8ec49af244a8e8b3e07d12f7a2e59028b2bf64ce0ab589a91f
+R 891ce8c2c78f1f487f80460b8c248fd0
+T +closed 3e11dc3183bc3e8ec49af244a8e8b3e07d12f7a2e59028b2bf64ce0ab589a91f
 U drh
-Z 7e3b1491b97d0e22d20f39d7466da090
+Z 7955ef5d032aea210d99e8bc24e906bc
