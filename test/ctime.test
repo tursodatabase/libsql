@@ -221,7 +221,7 @@ foreach opt $opts {
     set ans2 [ catchsql {
       SELECT sqlite_compileoption_used($opt);
     } ]
-    list [ lindex $ans1 0 ] [ expr { [lindex [lindex $ans1 1] 0]==$opt } ] \
+    list [ lindex $ans1 0 ] [ expr { [lindex $ans1 1]==$opt } ] \
          [ expr { $ans2 } ]
   } {0 1 {0 1}}
   incr tc 1
