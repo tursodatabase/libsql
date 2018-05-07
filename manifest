@@ -1,5 +1,5 @@
-C In\san\sORDER\sBY\sLIMIT,\smake\ssure\sthe\sORDER\sBY\sexpression\sevaluator\sdoes\snot\ntry\sto\sreuse\svalues\sfrom\sthe\sresult\sset\sif\sthe\sresult\sset\shas\snot\syet\nbe\scomputed.\s\sThis\sfixes\sa\sbug\sin\sthe\srecent\sdeferred-row\sloading\s\noptimization,\scheck-in\s[c381f0ea57002a264fd958b28e].\nOSSFuzz\sdiscovered\sthe\sproblem.
-D 2018-05-05T16:50:35.778
+C Backout\schange\s[05fee1a21ea398f1e4d6f1cf3]\sbecause\sit\sdoes\snot\stake\sinto\naccount\sthe\sLD_LIBRARY_PATH\senvironment\svariable\sused\sby\sdl_open().
+D 2018-05-07T02:50:38.426
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -456,7 +456,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 33a2c72b6182e8ddf697d604cc087c77ff5fc512a32b8b624641d41b390e249e
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
-F src/loadext.c f6e4e416a736369f9e80eba609f0acda97148a8b0453784d670c78d3eed2f302
+F src/loadext.c 5b89b8ca83a2f8d1f0f8c577ca45beff2e6f9124a3204600da8e22ce8b499649
 F src/main.c b56b2d62d5d11e3f5100b25fca34c13c62a0fe73941f6873454a7fa8a454170d
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1727,7 +1727,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9191ff670cb7f36e0b2dac4a22888679b639845687aef8edcc3c05e35ba71eda
-R a56d2b47132e721ba501356936c97e91
+P 5d61e75f32de09c81dbe844443209f063cccb005d60b846900de5b023643fc3b
+R b7e54ff139c007de5ac3db8f0e73a2f9
 U drh
-Z 1741a532a82a49137514437ac680f600
+Z 77e1a082dc787694600210821f90bcd3
