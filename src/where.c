@@ -4988,7 +4988,7 @@ WhereInfo *sqlite3WhereBegin(
     }
 #endif
     addrExplain = sqlite3WhereExplainOneScan(
-        pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags
+        pParse, pTabList, pLevel, wctrlFlags
     );
     pLevel->addrBody = sqlite3VdbeCurrentAddr(v);
     notReady = sqlite3WhereCodeOneLoopStart(pWInfo, ii, notReady);

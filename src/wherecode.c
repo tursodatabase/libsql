@@ -122,8 +122,6 @@ int sqlite3WhereExplainOneScan(
   Parse *pParse,                  /* Parse context */
   SrcList *pTabList,              /* Table list this loop refers to */
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
-  int iLevel,                     /* Value for "level" column of output */
-  int iFrom,                      /* Value for "from" column of output */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
   int ret = 0;
@@ -1956,7 +1954,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
           int addrExplain = sqlite3WhereExplainOneScan(
-              pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
+              pParse, pOrTab, &pSubWInfo->a[0], 0
           );
           sqlite3WhereAddScanStatus(v, pOrTab, &pSubWInfo->a[0], addrExplain);
 

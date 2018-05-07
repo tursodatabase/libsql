@@ -1722,7 +1722,7 @@ static void eqp_render_level(ShellState *p, int iEqpId){
     pNext = eqp_next_row(p, iEqpId, pRow);
     z = pRow->zText;
     utf8_printf(p->out, "%s%s%s\n", p->sGraph.zPrefix, pNext ? "|--" : "`--", z);
-    if( n<sizeof(p->sGraph.zPrefix)-7 ){
+    if( n<(int)sizeof(p->sGraph.zPrefix)-7 ){
       memcpy(&p->sGraph.zPrefix[n], pNext ? "|  " : "   ", 4);
       eqp_render_level(p, pRow->iEqpId);
       p->sGraph.zPrefix[n] = 0;
