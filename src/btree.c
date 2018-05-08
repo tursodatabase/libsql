@@ -8338,43 +8338,86 @@ int sqlite3BtreeInsert(
     invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
 
     /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
-    ** to a row with the same key as the new entry being inserted.  */
-    assert( (flags & BTREE_SAVEPOSITION)==0 || 
-            ((pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey) );
+    ** to a row with the same key as the new entry being inserted.
+    */
+#ifdef SQLITE_DEBUG
+    if( flags & BTREE_SAVEPOSITION ){
+      assert( pCur->curFlags & BTCF_ValidNKey );
+      assert( pX->nKey==pCur->info.nKey );
+      assert( pCur->info.nSize!=0 );
+      assert( loc==0 );
+    }
+#endif
 
-    /* If the cursor is currently on the last row and we are appending a
-    ** new row onto the end, set the "loc" to avoid an unnecessary
-    ** btreeMoveto() call */
+    /* On the other hand, BTREE_SAVEPOSITION==0 does not imply
+    ** that the cursor is not pointing to a row to be overwritten.
+    ** So do a complete check.
+    */
     if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey ){
-      /* The current is currently pointing to the entry that is to be
+      /* The cursor is pointing to the entry that is to be
       ** overwritten */
       assert( pX->nData>=0 && pX->nZero>=0 );
       if( pCur->info.nSize!=0
        && pCur->info.nPayload==(u32)pX->nData+pX->nZero
       ){
+        /* New entry is the same size as the old.  Do an overwrite */
         return btreeOverwriteCell(pCur, pX);
       }
-      loc = 0;
+      assert( loc==0 );
     }else if( loc==0 ){
+      /* The cursor is *not* pointing to the cell to be overwritten, nor
+      ** to an adjacent cell.  Move the cursor so that it is pointing either
+      ** to the cell to be overwritten or an adjacent cell.
+      */
       rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, flags!=0, &loc);
       if( rc ) return rc;
     }
-  }else if( loc==0 && (flags & BTREE_SAVEPOSITION)==0 ){
-    if( pX->nMem ){
-      UnpackedRecord r;
-      r.pKeyInfo = pCur->pKeyInfo;
-      r.aMem = pX->aMem;
-      r.nField = pX->nMem;
-      r.default_rc = 0;
-      r.errCode = 0;
-      r.r1 = 0;
-      r.r2 = 0;
-      r.eqSeen = 0;
-      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, flags!=0, &loc);
-    }else{
-      rc = btreeMoveto(pCur, pX->pKey, pX->nKey, flags!=0, &loc);
+  }else{
+    /* This is an index or a WITHOUT ROWID table */
+
+    /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
+    ** to a row with the same key as the new entry being inserted.
+    */
+    assert( (flags & BTREE_SAVEPOSITION)==0 || loc==0 );
+
+    /* If the cursor is not already pointing either to the cell to be
+    ** overwritten, or if a new cell is being inserted, if the cursor is
+    ** not pointing to an immediately adjacent cell, then move the cursor
+    ** so that it does.
+    */
+    if( loc==0 && (flags & BTREE_SAVEPOSITION)==0 ){
+      if( pX->nMem ){
+        UnpackedRecord r;
+        r.pKeyInfo = pCur->pKeyInfo;
+        r.aMem = pX->aMem;
+        r.nField = pX->nMem;
+        r.default_rc = 0;
+        r.errCode = 0;
+        r.r1 = 0;
+        r.r2 = 0;
+        r.eqSeen = 0;
+        rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, flags!=0, &loc);
+      }else{
+        rc = btreeMoveto(pCur, pX->pKey, pX->nKey, flags!=0, &loc);
+      }
+      if( rc ) return rc;
     }
-    if( rc ) return rc;
+
+    /* If the cursor is currently pointing to an entry to be overwritten
+    ** and the new content is the same as as the old, then use the
+    ** overwrite optimization.
+    */
+    if( loc==0 ){
+      getCellInfo(pCur);
+      if( pCur->info.nKey==pX->nKey ){
+        BtreePayload x2;
+        x2.pData = pX->pKey;
+        x2.nData = pX->nKey;
+        x2.nZero = 0;
+        return btreeOverwriteCell(pCur, &x2);
+      }
+    }
+
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 

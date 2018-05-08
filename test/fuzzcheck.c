@@ -720,11 +720,13 @@ static void rebuild_database(sqlite3 *db){
      "BEGIN;\n"
      "CREATE TEMP TABLE dbx AS SELECT DISTINCT dbcontent FROM db;\n"
      "DELETE FROM db;\n"
-     "INSERT INTO db(dbid, dbcontent) SELECT NULL, dbcontent FROM dbx ORDER BY 2;\n"
+     "INSERT INTO db(dbid, dbcontent) "
+        " SELECT NULL, dbcontent FROM dbx ORDER BY 2;\n"
      "DROP TABLE dbx;\n"
      "CREATE TEMP TABLE sx AS SELECT DISTINCT sqltext FROM xsql;\n"
      "DELETE FROM xsql;\n"
-     "INSERT INTO xsql(sqlid,sqltext) SELECT NULL, sqltext FROM sx ORDER BY 2;\n"
+     "INSERT INTO xsql(sqlid,sqltext) "
+        " SELECT NULL, sqltext FROM sx ORDER BY 2;\n"
      "DROP TABLE sx;\n"
      "COMMIT;\n"
      "PRAGMA page_size=1024;\n"
@@ -807,7 +809,7 @@ static void showHelp(void){
 "  -q|--quiet           Reduced output\n"
 "  --limit-mem N        Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe         Panic if any test runs for more than 100,000 cycles\n"
-"  --load-sql ARGS...   Load SQL scripts fro files into SOURCE-DB\n"
+"  --load-sql ARGS...   Load SQL scripts fron files into SOURCE-DB\n"
 "  --load-db ARGS...    Load template databases from files into SOURCE_DB\n"
 "  -m TEXT              Add a description to the database\n"
 "  --native-vfs         Use the native VFS for initially empty database files\n"
@@ -827,7 +829,7 @@ int main(int argc, char **argv){
   int quietFlag = 0;           /* True if --quiet or -q */
   int verboseFlag = 0;         /* True if --verbose or -v */
   char *zInsSql = 0;           /* SQL statement for --load-db or --load-sql */
-  int iFirstInsArg = 0;        /* First argv[] to use for --load-db or --load-sql */
+  int iFirstInsArg = 0;        /* First argv[] for --load-db or --load-sql */
   sqlite3 *db = 0;             /* The open database connection */
   sqlite3_stmt *pStmt;         /* A prepared statement */
   int rc;                      /* Result code from SQLite interface calls */
@@ -847,9 +849,9 @@ int main(int argc, char **argv){
   int iSrcDb;                  /* Loop over all source databases */
   int nTest = 0;               /* Total number of tests performed */
   char *zDbName = "";          /* Appreviated name of a source database */
-  const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
+  const char *zFailCode = 0;   /* Value of the TEST_FAILURE env variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
-  int sqlFuzz = 0;             /* True for SQL fuzz testing. False for DB fuzz */
+  int sqlFuzz = 0;             /* True for SQL fuzz. False for DB fuzz */
   int iTimeout = 120;          /* Default 120-second timeout */
   int nMem = 0;                /* Memory limit */
   int nMemThisDb = 0;          /* Memory limit set by the CONFIG table */
@@ -860,12 +862,14 @@ int main(int argc, char **argv){
   int ossFuzzThisDb = 0;       /* ossFuzz value for this particular database */
   int nativeMalloc = 0;        /* Turn off MEMSYS3/5 and lookaside if true */
   sqlite3_vfs *pDfltVfs;       /* The default VFS */
+  int openFlags4Data;          /* Flags for sqlite3_open_v2() */
 
   iBegin = timeOfDay();
 #ifdef __unix__
   signal(SIGALRM, timeoutHandler);
 #endif
   g.zArgv0 = argv[0];
+  openFlags4Data = SQLITE_OPEN_READONLY;
   zFailCode = getenv("TEST_FAILURE");
   pDfltVfs = sqlite3_vfs_find(0);
   inmemVfsRegister(1);
@@ -906,18 +910,21 @@ int main(int argc, char **argv){
         vdbeLimitFlag = 1;
       }else
       if( strcmp(z,"load-sql")==0 ){
-        zInsSql = "INSERT INTO xsql(sqltext) VALUES(CAST(readfile(?1) AS text))";
+        zInsSql = "INSERT INTO xsql(sqltext)VALUES(CAST(readfile(?1) AS text))";
         iFirstInsArg = i+1;
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         break;
       }else
       if( strcmp(z,"load-db")==0 ){
         zInsSql = "INSERT INTO db(dbcontent) VALUES(readfile(?1))";
         iFirstInsArg = i+1;
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         break;
       }else
       if( strcmp(z,"m")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         zMsg = argv[++i];
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
       }else
       if( strcmp(z,"native-malloc")==0 ){
         nativeMalloc = 1;
@@ -938,6 +945,7 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"rebuild")==0 ){
         rebuildFlag = 1;
+        openFlags4Data = SQLITE_OPEN_READWRITE;
       }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
@@ -983,7 +991,7 @@ int main(int argc, char **argv){
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
     rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
-                         SQLITE_OPEN_READWRITE, pDfltVfs->zName);
+                         openFlags4Data, pDfltVfs->zName);
     if( rc ){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
@@ -1014,7 +1022,8 @@ int main(int argc, char **argv){
     /* If the CONFIG(name,value) table exists, read db-specific settings
     ** from that table */
     if( sqlite3_table_column_metadata(db,0,"config",0,0,0,0,0,0)==SQLITE_OK ){
-      rc = sqlite3_prepare_v2(db, "SELECT name, value FROM config", -1, &pStmt, 0);
+      rc = sqlite3_prepare_v2(db, "SELECT name, value FROM config",
+                                  -1, &pStmt, 0);
       if( rc ) fatalError("cannot prepare query of CONFIG table: %s",
                           sqlite3_errmsg(db));
       while( SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -1053,7 +1062,8 @@ int main(int argc, char **argv){
       }
       sqlite3_finalize(pStmt);
       rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
-      if( rc ) fatalError("cannot commit the transaction: %s", sqlite3_errmsg(db));
+      if( rc ) fatalError("cannot commit the transaction: %s",
+                          sqlite3_errmsg(db));
       rebuild_database(db);
       sqlite3_close(db);
       return 0;
@@ -1197,7 +1207,8 @@ int main(int argc, char **argv){
         sqlite3_randomness(0,0);
         if( ossFuzzThisDb ){
 #ifndef SQLITE_OSS_FUZZ
-          fatalError("--oss-fuzz not supported: recompile with -DSQLITE_OSS_FUZZ");
+          fatalError("--oss-fuzz not supported: recompile"
+                     " with -DSQLITE_OSS_FUZZ");
 #else
           extern int LLVMFuzzerTestOneInput(const uint8_t*, size_t);
           LLVMFuzzerTestOneInput((const uint8_t*)pSql->a, (size_t)pSql->sz);
@@ -1216,7 +1227,8 @@ int main(int argc, char **argv){
           setAlarm(iTimeout);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
           if( sqlFuzz || vdbeLimitFlag ){
-            sqlite3_progress_handler(db, 100000, progressHandler, &vdbeLimitFlag);
+            sqlite3_progress_handler(db, 100000, progressHandler,
+                                     &vdbeLimitFlag);
           }
 #endif
           do{
