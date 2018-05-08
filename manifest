@@ -1,10 +1,10 @@
-C Activate\sthe\scell-overwrite\soptimization\sfor\sindex\sb-trees.
-D 2018-05-07T18:41:19.103
+C Fuzz\stest\scases\sfor\sUPSERT.
+D 2018-05-08T12:49:53.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
+F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 59179295f6a9b433e3f59a6dc2fcf6db6fcac35d92015294beb5d27f2924ebb9
+F Makefile.msc 681fb88cccf1fd58c0b9648f6a09b75332206ef72ca76012ad11699c320cec5f
 F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
 F VERSION b7c9d1d11cb70ef8e90cfcf3c944aa58a9f801cc2ad487eebb0a110c16dfc2df
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -415,7 +415,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 068618fe288bf9d93091b808be73e26a93fb2db8435328cc5760f9dd35ba168b
+F main.mk 3f50dfe5cb4257c1aca96e417636ed51bc2561e71d31a21e9ccdf66feb912f43
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -940,12 +940,13 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c31
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 5b257a7652d8ee90b22e9cf80d9dbea31a4f3e6fed1d33de57b24b1bdb211d79
-F test/fuzzcheck.c 5eb86c6ac96833ee622f45bf47e8045999c1b4b10d05e4eb809894a4b39f2f84
+F test/fuzzcheck.c ee575af6aaf2895a747592377719fb41f372407ef2026724f2bd16ff2985bbda
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db 1882f0055fb63214d8407ddc7aca9b0b1c59af21
 F test/fuzzdata5.db 9f0cdcc5c6e83b90cf9ae343bd07f684d2da2de7
+F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1727,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4fe966da2fc479b18bf521ff596000410af3a611f7d8723d126795e595ccf22
-R 69af7d477dcc78b7b8e926f0c6facd33
+P a68697d10ef17d452c8279181186faad7bc54e3a35858a336552f717449065ea
+R 1614ac69cf68c4d847f0ba99f9a25462
 U drh
-Z 8d5036c02e569f6033a8ae94d4ec5845
+Z 407f037ea974d860203a22f1c66f9cc1
