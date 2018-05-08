@@ -862,14 +862,14 @@ int main(int argc, char **argv){
   int ossFuzzThisDb = 0;       /* ossFuzz value for this particular database */
   int nativeMalloc = 0;        /* Turn off MEMSYS3/5 and lookaside if true */
   sqlite3_vfs *pDfltVfs;       /* The default VFS */
-  int openFlags;               /* Flags for sqlite3_open_v2() */
+  int openFlags4Data;          /* Flags for sqlite3_open_v2() */
 
   iBegin = timeOfDay();
 #ifdef __unix__
   signal(SIGALRM, timeoutHandler);
 #endif
   g.zArgv0 = argv[0];
-  openFlags = SQLITE_OPEN_READONLY;
+  openFlags4Data = SQLITE_OPEN_READONLY;
   zFailCode = getenv("TEST_FAILURE");
   pDfltVfs = sqlite3_vfs_find(0);
   inmemVfsRegister(1);
@@ -912,19 +912,19 @@ int main(int argc, char **argv){
       if( strcmp(z,"load-sql")==0 ){
         zInsSql = "INSERT INTO xsql(sqltext)VALUES(CAST(readfile(?1) AS text))";
         iFirstInsArg = i+1;
-        openFlags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         break;
       }else
       if( strcmp(z,"load-db")==0 ){
         zInsSql = "INSERT INTO db(dbcontent) VALUES(readfile(?1))";
         iFirstInsArg = i+1;
-        openFlags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         break;
       }else
       if( strcmp(z,"m")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         zMsg = argv[++i];
-        openFlags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
       }else
       if( strcmp(z,"native-malloc")==0 ){
         nativeMalloc = 1;
@@ -945,7 +945,7 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"rebuild")==0 ){
         rebuildFlag = 1;
-        openFlags = SQLITE_OPEN_READWRITE;
+        openFlags4Data = SQLITE_OPEN_READWRITE;
       }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
@@ -991,7 +991,7 @@ int main(int argc, char **argv){
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
     rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
-                         openFlags, pDfltVfs->zName);
+                         openFlags4Data, pDfltVfs->zName);
     if( rc ){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));

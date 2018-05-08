@@ -1,5 +1,5 @@
-C Fuzz\stest\scases\sfor\sUPSERT.
-D 2018-05-08T12:49:53.757
+C Fix\sa\sharmless\scompiler\swarning\sin\sfuzzcheck.\s\sAdd\snew\sOSSFuzz\stest\scases\nto\sthe\stest\scase\slibrary.
+D 2018-05-08T13:03:31.809
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -940,12 +940,12 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c31
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 5b257a7652d8ee90b22e9cf80d9dbea31a4f3e6fed1d33de57b24b1bdb211d79
-F test/fuzzcheck.c ee575af6aaf2895a747592377719fb41f372407ef2026724f2bd16ff2985bbda
+F test/fuzzcheck.c 3885207dc217c4dcdb2de4a3cb169a263afeef51ab9bd0ba8567289f0a19a470
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db 1882f0055fb63214d8407ddc7aca9b0b1c59af21
-F test/fuzzdata5.db 9f0cdcc5c6e83b90cf9ae343bd07f684d2da2de7
+F test/fuzzdata5.db 117d821cde02e30a687f6361a34b98e6e0b05062df523cfee163c58564403b68
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a68697d10ef17d452c8279181186faad7bc54e3a35858a336552f717449065ea
-R 1614ac69cf68c4d847f0ba99f9a25462
+P fd11fbd21893d520de5a2249f825ecb5839fa4943f5c207e9e9bf8b52f4e2695
+R 341265b3833d05f56ac0f5a3c8e3d52d
 U drh
-Z 407f037ea974d860203a22f1c66f9cc1
+Z a9f407a471f5847cacaf3cf8ae748002
