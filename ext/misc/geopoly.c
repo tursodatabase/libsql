@@ -319,7 +319,7 @@ static void geopolyJsonFunc(
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0]);
   if( p ){
-    sqlite3 *db = sqlite3_context_db_pointer(context);
+    sqlite3 *db = sqlite3_context_db_handle(context);
     sqlite3_str *x = sqlite3_str_new(db);
     int i;
     sqlite3_str_append(x, "[", 1);
