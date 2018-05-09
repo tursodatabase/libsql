@@ -7113,7 +7113,7 @@ int sqlite3_test_control(int op, ...);
 ** using keywords as identifiers.  Common techniques used to avoid keyword
 ** name collisions include:
 ** <ul>
-** <li> Put all indentifier names inside double-quotes.  This is the official
+** <li> Put all identifier names inside double-quotes.  This is the official
 **      SQL way to escape identifier names.
 ** <li> Put identifier names inside &#91;...&#93;.  This is not standard SQL,
 **      but it is what SQL Server does and so lots of programmers use this
