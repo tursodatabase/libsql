@@ -2216,26 +2216,26 @@ static int pragmaVtabConnect(
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
-  sqlite3StrAccumAppendAll(&acc, "CREATE TABLE x");
+  sqlite3_str_appendall(&acc, "CREATE TABLE x");
   for(i=0, j=pPragma->iPragCName; i<pPragma->nPragCName; i++, j++){
-    sqlite3XPrintf(&acc, "%c\"%s\"", cSep, pragCName[j]);
+    sqlite3_str_appendf(&acc, "%c\"%s\"", cSep, pragCName[j]);
     cSep = ',';
   }
   if( i==0 ){
-    sqlite3XPrintf(&acc, "(\"%s\"", pPragma->zName);
+    sqlite3_str_appendf(&acc, "(\"%s\"", pPragma->zName);
     cSep = ',';
     i++;
   }
   j = 0;
   if( pPragma->mPragFlg & PragFlg_Result1 ){
-    sqlite3StrAccumAppendAll(&acc, ",arg HIDDEN");
+    sqlite3_str_appendall(&acc, ",arg HIDDEN");
     j++;
   }
   if( pPragma->mPragFlg & (PragFlg_SchemaOpt|PragFlg_SchemaReq) ){
-    sqlite3StrAccumAppendAll(&acc, ",schema HIDDEN");
+    sqlite3_str_appendall(&acc, ",schema HIDDEN");
     j++;
   }
-  sqlite3StrAccumAppend(&acc, ")", 1);
+  sqlite3_str_append(&acc, ")", 1);
   sqlite3StrAccumFinish(&acc);
   assert( strlen(zBuf) < sizeof(zBuf)-1 );
   rc = sqlite3_declare_vtab(db, zBuf);
@@ -2387,13 +2387,13 @@ static int pragmaVtabFilter(
     }
   }
   sqlite3StrAccumInit(&acc, 0, 0, 0, pTab->db->aLimit[SQLITE_LIMIT_SQL_LENGTH]);
-  sqlite3StrAccumAppendAll(&acc, "PRAGMA ");
+  sqlite3_str_appendall(&acc, "PRAGMA ");
   if( pCsr->azArg[1] ){
-    sqlite3XPrintf(&acc, "%Q.", pCsr->azArg[1]);
+    sqlite3_str_appendf(&acc, "%Q.", pCsr->azArg[1]);
   }
-  sqlite3StrAccumAppendAll(&acc, pTab->pName->zName);
+  sqlite3_str_appendall(&acc, pTab->pName->zName);
   if( pCsr->azArg[0] ){
-    sqlite3XPrintf(&acc, "=%Q", pCsr->azArg[0]);
+    sqlite3_str_appendf(&acc, "=%Q", pCsr->azArg[0]);
   }
   zSql = sqlite3StrAccumFinish(&acc);
   if( zSql==0 ) return SQLITE_NOMEM;
