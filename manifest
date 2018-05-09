@@ -1,5 +1,5 @@
-C Add\s14\snew\sinterfaces\sto\sthe\sloadable\sextension\smechanism.
-D 2018-05-09T15:17:02.669
+C Add\sa\stest\scase\sto\scheck\sthat\sthe\sfts5\sunicode64\stokenizer\sis\sdealing\swith\ncodepoints\sgreater\sthan\s65535\scorrectly.
+D 2018-05-09T16:32:00.284
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -204,7 +204,7 @@ F ext/fts5/test/fts5synonym2.test b54cce5c34ec08ed616f646635538ae82e34a0e28f947e
 F ext/fts5/test/fts5tok1.test ce6551e41ff56f30b69963577324624733bed0d1753589f06120d664d9cd45c9
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test 6aeb5e8061ffc0ff9a5299f27beaee3b2b4b8b336d4f107262bca338bea8f8e9
-F ext/fts5/test/fts5unicode.test 1e5570df758f7e0b27ff0e087ee96f559d5cc9ade80afa9421537a8a20a7cfbf
+F ext/fts5/test/fts5unicode.test 17056f4efe6b0a5d4f41fdf7a7dc9af2873004562eaa899d40633b93dc95f5a9
 F ext/fts5/test/fts5unicode2.test 9b3df486de05fb4bde4aa7ee8de2e6dae1df6eb90e3f2e242c9383b95d314e3e
 F ext/fts5/test/fts5unicode3.test c3caecbe8264629ffe653b43ca5790b9793eba4422f92203e5247558e5a534e7
 F ext/fts5/test/fts5unindexed.test 9021af86a0fb9fc616f7a69a996db0116e7936d0db63892db6bafabbec21af4d
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43ea8a6836ccb9910314d35e07d881694200c97ef5969629f62e49f7a2a42f92
-R 0ab9d818caff0518c7251a9db9ba4fd3
-U drh
-Z 45890a3e9e7826346aa8f68581c4f2f3
+P 0e809cdcbd1bb1e269298814d6bb1dcdaea48c5b0bb20e0e1caa4dba27654873
+R e51c8bac32b4be95015c654654bb5e45
+U dan
+Z 5d111675b7a56b1fabb524e83c5ed448

@@ -41,7 +41,6 @@ foreach {tn t} {1 ascii 2 unicode61} {
 #-------------------------------------------------------------------------
 # Check that "unicode61" really is the default tokenizer.
 #
-
 do_execsql_test 2.0 "
   CREATE VIRTUAL TABLE t1 USING fts5(x);
   CREATE VIRTUAL TABLE t2 USING fts5(x, tokenize = unicode61);
@@ -55,6 +54,32 @@ do_execsql_test 2.1 "
   SELECT 't2' FROM t2 WHERE t2 MATCH '\xE0\xE8\xEC';
   SELECT 't3' FROM t3 WHERE t3 MATCH '\xE0\xE8\xEC';
 " {t1 t2}
+
+#-------------------------------------------------------------------------
+# Check that codepoints that require 4 bytes to store in utf-8 (those that
+# require 17 or more bits to store).
+#
+
+set A [db one {SELECT char(0x1F75E)}]    ;# Type So
+set B [db one {SELECT char(0x1F5FD)}]    ;# Type So
+set C [db one {SELECT char(0x2F802)}]    ;# Type Lo
+set D [db one {SELECT char(0x2F808)}]    ;# Type Lo
+
+do_execsql_test 3.0 "
+  CREATE VIRTUAL TABLE xyz USING fts5(x,
+    tokenize = \"unicode61 separators '$C' tokenchars '$A'\"
+  );
+  CREATE VIRTUAL TABLE xyz_v USING fts5vocab(xyz, row);
+
+  INSERT INTO xyz VALUES('$A$B$C$D');
+"
+
+do_execsql_test 3.1 {
+  SELECT * FROM xyz_v;
+} [list $A 1 1 $D 1 1]
+  
+
+
 
 
 finish_test
