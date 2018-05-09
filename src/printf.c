@@ -973,7 +973,7 @@ char *sqlite3_str_finish(sqlite3_str *p){
   char *z;
   if( p ){
     z = sqlite3StrAccumFinish(p);
-    sqlite3DbFree(p->db, p);
+    sqlite3_free(p);
   }else{
     z = 0;
   }
@@ -992,7 +992,9 @@ int sqlite3_str_length(sqlite3_str *p){
 
 /* Return the current value for p */
 char *sqlite3_str_value(sqlite3_str *p){
-  return p ? p->zText : 0;
+  if( p==0 || p->nChar==0 ) return 0;
+  p->zText[p->nChar] = 0;
+  return p->zText;
 }
 
 /*
@@ -1003,6 +1005,8 @@ void sqlite3_str_reset(StrAccum *p){
     sqlite3DbFree(p->db, p->zText);
     p->printfFlags &= ~SQLITE_PRINTF_MALLOCED;
   }
+  p->nAlloc = 0;
+  p->nChar = 0;
   p->zText = 0;
 }
 
@@ -1032,9 +1036,10 @@ void sqlite3StrAccumInit(StrAccum *p, sqlite3 *db, char *zBase, int n, int mx){
 
 /* Allocate and initialize a new dynamic string object */
 sqlite3_str *sqlite3_str_new(sqlite3 *db){
-  sqlite3_str *p = sqlite3DbMallocRaw(db, sizeof(*p));
+  sqlite3_str *p = sqlite3_malloc64(sizeof(*p));
   if( p ){
-    sqlite3StrAccumInit(p, db, 0, 0, SQLITE_MAX_LENGTH);
+    sqlite3StrAccumInit(p, 0, 0, 0,
+            db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
   }
   return p;
 }
