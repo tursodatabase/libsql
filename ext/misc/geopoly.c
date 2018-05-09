@@ -223,10 +223,14 @@ static GeoPoly *geopolyParseJson(const unsigned char *z){
       }
       break;
     }
-    if( geopolySkipSpace(&s)==']' ){
-      int nByte = sizeof(GeoPoly) * (s.nVertex-1)*2*sizeof(GeopolyCoord);
-      GeoPoly *pOut = sqlite3_malloc64( nByte );
-      int x = 1;
+    if( geopolySkipSpace(&s)==']' && s.nVertex>=4 ){
+      int nByte;
+      GeoPoly *pOut;
+      int x = (s.nVertex-1)*2;
+      if( s.a[x]==s.a[0] && s.a[x+1]==s.a[1] ) s.nVertex--;
+      nByte = sizeof(GeoPoly) * (s.nVertex-1)*2*sizeof(GeopolyCoord);
+      pOut = sqlite3_malloc64( nByte );
+      x = 1;
       if( pOut==0 ) goto parse_json_err;
       pOut->nVertex = s.nVertex;
       memcpy(pOut->a, s.a, s.nVertex*2*sizeof(GeopolyCoord));
@@ -324,9 +328,9 @@ static void geopolyJsonFunc(
     int i;
     sqlite3_str_append(x, "[", 1);
     for(i=0; i<p->nVertex; i++){
-      sqlite3_str_appendf(x, "[%g,%g]", p->a[i*2], p->a[i*2+1]);
-      sqlite3_str_append(x, i==p->nVertex-1 ? "]" : ",", 1);
+      sqlite3_str_appendf(x, "[%!g,%!g],", p->a[i*2], p->a[i*2+1]);
     }
+    sqlite3_str_appendf(x, "[%!g,%!g]]", p->a[0], p->a[1]);
     sqlite3_result_text(context, sqlite3_str_finish(x), -1, sqlite3_free);
     sqlite3_free(p);
   }
