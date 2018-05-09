@@ -302,8 +302,36 @@ static void geopolyBlobFunc(
   if( p ){
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
+    sqlite3_free(p);
   }
 }
+
+/*
+** SQL function:     geopoly_json(X)
+**
+** Interpret X as a polygon and render it as a JSON array
+** of coordinates.  Or, if X is not a valid polygon, return NULL.
+*/
+static void geopolyJsonFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  if( p ){
+    sqlite3 *db = sqlite3_context_db_pointer(context);
+    sqlite3_str *x = sqlite3_str_new(db);
+    int i;
+    sqlite3_str_append(x, "[", 1);
+    for(i=0; i<p->nVertex; i++){
+      sqlite3_str_appendf(x, "[%g,%g]", p->a[i*2], p->a[i*2+1]);
+      sqlite3_str_append(x, i==p->nVertex-1 ? "]" : ",", 1);
+    }
+    sqlite3_result_text(context, sqlite3_str_finish(x), -1, sqlite3_free);
+    sqlite3_free(p);
+  }
+}
+
 
 /*
 ** Implementation of the geopoly_area(X) function.
@@ -335,6 +363,7 @@ int sqlite3_geopoly_init(
   } aFunc[] = {
      { geopolyAreaFunc,          1,    "geopoly_area"  },
      { geopolyBlobFunc,          1,    "geopoly_blob"  },
+     { geopolyJsonFunc,          1,    "geopoly_json"  },
   };
   int i;
   SQLITE_EXTENSION_INIT2(pApi);
