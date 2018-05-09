@@ -1093,7 +1093,7 @@ typedef struct Select Select;
 typedef struct SQLiteThread SQLiteThread;
 typedef struct SelectDest SelectDest;
 typedef struct SrcList SrcList;
-typedef struct StrAccum StrAccum;
+typedef struct sqlite3_str StrAccum; /* Internal alias for sqlite3_str */
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
@@ -3273,17 +3273,15 @@ struct DbFixer {
 ** An objected used to accumulate the text of a string where we
 ** do not necessarily know how big the string will be in the end.
 */
-struct StrAccum {
+struct sqlite3_str {
   sqlite3 *db;         /* Optional database for lookaside.  Can be NULL */
   char *zText;         /* The string collected so far */
   u32  nAlloc;         /* Amount of space allocated in zText */
   u32  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u32  nChar;          /* Length of the string so far */
-  u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
+  u8   accError;       /* SQLITE_NOMEM or SQLITE_TOOBIG */
   u8   printfFlags;    /* SQLITE_PRINTF flags below */
 };
-#define STRACCUM_NOMEM   1
-#define STRACCUM_TOOBIG  2
 #define SQLITE_PRINTF_INTERNAL 0x01  /* Internal-use-only converters allowed */
 #define SQLITE_PRINTF_SQLFUNC  0x02  /* SQL function arguments to VXPrintf */
 #define SQLITE_PRINTF_MALLOCED 0x04  /* True if xText is allocated space */
@@ -3652,8 +3650,6 @@ struct PrintfArguments {
   sqlite3_value **apArg;   /* The argument values */
 };
 
-void sqlite3VXPrintf(StrAccum*, const char*, va_list);
-void sqlite3XPrintf(StrAccum*, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
@@ -4176,11 +4172,7 @@ int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
-void sqlite3StrAccumAppend(StrAccum*,const char*,int);
-void sqlite3StrAccumAppendAll(StrAccum*,const char*);
-void sqlite3AppendChar(StrAccum*,int,char);
 char *sqlite3StrAccumFinish(StrAccum*);
-void sqlite3StrAccumReset(StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 

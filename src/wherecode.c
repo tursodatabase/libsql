@@ -51,23 +51,23 @@ static void explainAppendTerm(
   int i;
 
   assert( nTerm>=1 );
-  if( bAnd ) sqlite3StrAccumAppend(pStr, " AND ", 5);
+  if( bAnd ) sqlite3_str_append(pStr, " AND ", 5);
 
-  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, "(", 1);
+  if( nTerm>1 ) sqlite3_str_append(pStr, "(", 1);
   for(i=0; i<nTerm; i++){
-    if( i ) sqlite3StrAccumAppend(pStr, ",", 1);
-    sqlite3StrAccumAppendAll(pStr, explainIndexColumnName(pIdx, iTerm+i));
+    if( i ) sqlite3_str_append(pStr, ",", 1);
+    sqlite3_str_appendall(pStr, explainIndexColumnName(pIdx, iTerm+i));
   }
-  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, ")", 1);
+  if( nTerm>1 ) sqlite3_str_append(pStr, ")", 1);
 
-  sqlite3StrAccumAppend(pStr, zOp, 1);
+  sqlite3_str_append(pStr, zOp, 1);
 
-  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, "(", 1);
+  if( nTerm>1 ) sqlite3_str_append(pStr, "(", 1);
   for(i=0; i<nTerm; i++){
-    if( i ) sqlite3StrAccumAppend(pStr, ",", 1);
-    sqlite3StrAccumAppend(pStr, "?", 1);
+    if( i ) sqlite3_str_append(pStr, ",", 1);
+    sqlite3_str_append(pStr, "?", 1);
   }
-  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, ")", 1);
+  if( nTerm>1 ) sqlite3_str_append(pStr, ")", 1);
 }
 
 /*
@@ -91,11 +91,11 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
   int i, j;
 
   if( nEq==0 && (pLoop->wsFlags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ) return;
-  sqlite3StrAccumAppend(pStr, " (", 2);
+  sqlite3_str_append(pStr, " (", 2);
   for(i=0; i<nEq; i++){
     const char *z = explainIndexColumnName(pIndex, i);
-    if( i ) sqlite3StrAccumAppend(pStr, " AND ", 5);
-    sqlite3XPrintf(pStr, i>=nSkip ? "%s=?" : "ANY(%s)", z);
+    if( i ) sqlite3_str_append(pStr, " AND ", 5);
+    sqlite3_str_appendf(pStr, i>=nSkip ? "%s=?" : "ANY(%s)", z);
   }
 
   j = i;
@@ -106,7 +106,7 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
     explainAppendTerm(pStr, pIndex, pLoop->u.btree.nTop, j, i, "<");
   }
-  sqlite3StrAccumAppend(pStr, ")", 1);
+  sqlite3_str_append(pStr, ")", 1);
 }
 
 /*
@@ -148,15 +148,15 @@ int sqlite3WhereExplainOneScan(
             || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
 
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
-    sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
+    sqlite3_str_appendall(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
-      sqlite3XPrintf(&str, " SUBQUERY 0x%p", pItem->pSelect);
+      sqlite3_str_appendf(&str, " SUBQUERY 0x%p", pItem->pSelect);
     }else{
-      sqlite3XPrintf(&str, " TABLE %s", pItem->zName);
+      sqlite3_str_appendf(&str, " TABLE %s", pItem->zName);
     }
 
     if( pItem->zAlias ){
-      sqlite3XPrintf(&str, " AS %s", pItem->zAlias);
+      sqlite3_str_appendf(&str, " AS %s", pItem->zAlias);
     }
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
       const char *zFmt = 0;
@@ -179,8 +179,8 @@ int sqlite3WhereExplainOneScan(
         zFmt = "INDEX %s";
       }
       if( zFmt ){
-        sqlite3StrAccumAppend(&str, " USING ", 7);
-        sqlite3XPrintf(&str, zFmt, pIdx->zName);
+        sqlite3_str_append(&str, " USING ", 7);
+        sqlite3_str_appendf(&str, zFmt, pIdx->zName);
         explainIndexRange(&str, pLoop);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
@@ -195,19 +195,21 @@ int sqlite3WhereExplainOneScan(
         assert( flags&WHERE_TOP_LIMIT);
         zRangeOp = "<";
       }
-      sqlite3XPrintf(&str, " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
+      sqlite3_str_appendf(&str, 
+          " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
-      sqlite3XPrintf(&str, " VIRTUAL TABLE INDEX %d:%s",
+      sqlite3_str_appendf(&str, " VIRTUAL TABLE INDEX %d:%s",
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
 #ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
     if( pLoop->nOut>=10 ){
-      sqlite3XPrintf(&str, " (~%llu rows)", sqlite3LogEstToInt(pLoop->nOut));
+      sqlite3_str_appendf(&str, " (~%llu rows)",
+             sqlite3LogEstToInt(pLoop->nOut));
     }else{
-      sqlite3StrAccumAppend(&str, " (~1 row)", 9);
+      sqlite3_str_append(&str, " (~1 row)", 9);
     }
 #endif
     zMsg = sqlite3StrAccumFinish(&str);

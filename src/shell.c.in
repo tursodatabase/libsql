@@ -6000,11 +6000,11 @@ static int do_meta_command(char *zLine, ShellState *p){
                    callback, &data, &zErrMsg);
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
-      shell_exec(p, "SELECT * FROM sqlite_stat1", &zErrMsg);
+      shell_exec(&data, "SELECT * FROM sqlite_stat1", &zErrMsg);
       data.zDestTable = "sqlite_stat3";
-      shell_exec(p, "SELECT * FROM sqlite_stat3", &zErrMsg);
+      shell_exec(&data, "SELECT * FROM sqlite_stat3", &zErrMsg);
       data.zDestTable = "sqlite_stat4";
-      shell_exec(p, "SELECT * FROM sqlite_stat4", &zErrMsg);
+      shell_exec(&data, "SELECT * FROM sqlite_stat4", &zErrMsg);
       raw_printf(p->out, "ANALYZE sqlite_master;\n");
     }
   }else

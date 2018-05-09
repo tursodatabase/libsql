@@ -4207,16 +4207,16 @@ void sqlite3UniqueConstraint(
 
   sqlite3StrAccumInit(&errMsg, pParse->db, 0, 0, 200);
   if( pIdx->aColExpr ){
-    sqlite3XPrintf(&errMsg, "index '%q'", pIdx->zName);
+    sqlite3_str_appendf(&errMsg, "index '%q'", pIdx->zName);
   }else{
     for(j=0; j<pIdx->nKeyCol; j++){
       char *zCol;
       assert( pIdx->aiColumn[j]>=0 );
       zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
-      if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-      sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
-      sqlite3StrAccumAppend(&errMsg, ".", 1);
-      sqlite3StrAccumAppendAll(&errMsg, zCol);
+      if( j ) sqlite3_str_append(&errMsg, ", ", 2);
+      sqlite3_str_appendall(&errMsg, pTab->zName);
+      sqlite3_str_append(&errMsg, ".", 1);
+      sqlite3_str_appendall(&errMsg, zCol);
     }
   }
   zErr = sqlite3StrAccumFinish(&errMsg);
