@@ -341,13 +341,30 @@ static void geopolyJsonFunc(
 ** Implementation of the geopoly_area(X) function.
 **
 ** If the input is a well-formed Geopoly BLOB then return the area
-** enclosed by the polygon.  Otherwise return NULL.
+** enclosed by the polygon.  If the polygon circulates clockwise instead
+** of counterclockwise (as it should) then return the negative of the
+** enclosed area.  Otherwise return NULL.
 */
 static void geopolyAreaFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
+  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  if( p ){
+    double rArea = 0.0;
+    int ii;
+    for(ii=0; ii<p->nVertex-1; ii++){
+      rArea += (p->a[ii*2] - p->a[ii*2+2])           /* (x0 - x1) */
+                * (p->a[ii*2+1] + p->a[ii*2+3])      /* (y0 + y1) */
+                * 0.5;
+    }
+    rArea += (p->a[ii*2] - p->a[0])                  /* (xN - x0) */
+             * (p->a[ii*2+1] + p->a[1])              /* (yN + y0) */
+             * 0.5;
+    sqlite3_result_double(context, rArea);
+    sqlite3_free(p);
+  }            
 }
 
 
