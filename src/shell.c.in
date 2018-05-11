@@ -3573,8 +3573,12 @@ static int deduceDatabaseType(const char *zName, int dfltZip){
 */
 static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
-    if( p->openMode==SHELL_OPEN_UNSPEC && access(p->zDbFilename,0)==0 ){
-      p->openMode = (u8)deduceDatabaseType(p->zDbFilename, 0);
+    if( p->openMode==SHELL_OPEN_UNSPEC ){
+      if( p->zDbFilename==0 || p->zDbFilename[0]==0 ){
+        p->openMode = SHELL_OPEN_NORMAL;
+      }else if( access(p->zDbFilename,0)==0 ){
+        p->openMode = (u8)deduceDatabaseType(p->zDbFilename, 0);
+      }
     }
     switch( p->openMode ){
       case SHELL_OPEN_APPENDVFS: {
