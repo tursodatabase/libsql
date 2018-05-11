@@ -367,6 +367,84 @@ static void geopolyAreaFunc(
   }            
 }
 
+/*
+** Determine if point (x0,y0) is beneath line segment (x1,y1)->(x2,y2).
+** Returns:
+**
+**    +2  x0,y0 is on the line segement
+**
+**    +1  x0,y0 is beneath line segment
+**
+**    0   x0,y0 is not on or beneath the line segment or the line segment
+**        is vertical and x0,y0 is not on the line segment
+**
+** The left-most coordinate min(x1,x2) is not considered to be part of
+** the line segment for the purposes of this analysis.
+*/
+static int pointBeneathLine(
+  double x0, double y0,
+  double x1, double y1,
+  double x2, double y2
+){
+  double y;
+  if( x0==x1 && y0==y1 ) return 2;
+  if( x1<x2 ){
+    if( x0<=x1 || x0>x2 ) return 0;
+  }else if( x1>x2 ){
+    if( x0<=x2 || x0>x1 ) return 0;
+  }else{
+    /* Vertical line segment */
+    if( x0!=x1 ) return 0;
+    if( y0<y1 && y0<y2 ) return 0;
+    if( y0>y1 && y0>y2 ) return 0;
+    return 2;
+  }
+  y = y1 + (y2-y1)*(x0-x1)/(x2-x1);
+  if( y0==y ) return 2;
+  if( y0<y ) return 1;
+  return 0;
+}
+
+/*
+** SQL function:    geopoly_within(P,X,Y)
+**
+** Return +2 if point X,Y is within polygon P.
+** Return +1 if point X,Y is on the polygon boundary.
+** Return 0 if point X,Y is outside the polygon
+*/
+static void geopolyWithinFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  double x0 = sqlite3_value_double(argv[1]);
+  double y0 = sqlite3_value_double(argv[2]);
+  if( p ){
+    int v = 0;
+    int cnt = 0;
+    int ii;
+    for(ii=0; ii<p->nVertex-1; ii++){
+      v = pointBeneathLine(x0,y0,p->a[ii*2],p->a[ii*2+1],
+                                 p->a[ii*2+2],p->a[ii*2+3]);
+      if( v==2 ) break;
+      cnt += v;
+    }
+    if( v!=2 ){
+      v = pointBeneathLine(x0,y0,p->a[ii*2],p->a[ii*2+1],
+                                 p->a[0],p->a[1]);
+    }
+    if( v==2 ){
+      sqlite3_result_int(context, 1);
+    }else if( ((v+cnt)&1)==0 ){
+      sqlite3_result_int(context, 0);
+    }else{
+      sqlite3_result_int(context, 2);
+    }
+    sqlite3_free(p);
+  }            
+}
+
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -382,9 +460,10 @@ int sqlite3_geopoly_init(
     int nArg;
     const char *zName;
   } aFunc[] = {
-     { geopolyAreaFunc,          1,    "geopoly_area"  },
-     { geopolyBlobFunc,          1,    "geopoly_blob"  },
-     { geopolyJsonFunc,          1,    "geopoly_json"  },
+     { geopolyAreaFunc,          1,    "geopoly_area"   },
+     { geopolyBlobFunc,          1,    "geopoly_blob"   },
+     { geopolyJsonFunc,          1,    "geopoly_json"   },
+     { geopolyWithinFunc,        3,    "geopoly_within" },
   };
   int i;
   SQLITE_EXTENSION_INIT2(pApi);
