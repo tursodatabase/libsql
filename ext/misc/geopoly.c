@@ -18,6 +18,7 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #define SQLITE_HAVE_GEOPLOY 1
 
 #ifndef JSON_NULL   /* The following stuff repeats things found in json1 */
@@ -82,7 +83,7 @@ static const char geopolyIsSpace[] = {
 
 /* Datatype for coordinates
 */
-typedef float GeopolyCoord;
+typedef float GeoCoord;
 
 /*
 ** Internal representation of a polygon.
@@ -105,7 +106,7 @@ typedef struct GeoPoly GeoPoly;
 struct GeoPoly {
   int nVertex;          /* Number of vertexes */
   unsigned char hdr[4]; /* Header for on-disk representation */
-  GeopolyCoord a[2];    /* 2*nVertex values. X (longitude) first, then Y */
+  GeoCoord a[2];    /* 2*nVertex values. X (longitude) first, then Y */
 };
 
 /*
@@ -117,7 +118,7 @@ struct GeoParse {
   int nVertex;              /* Number of vertexes in a[] */
   int nAlloc;               /* Space allocated to a[] */
   int nErr;                 /* Number of errors encountered */
-  GeopolyCoord *a;          /* Array of vertexes.  From sqlite3_malloc64() */
+  GeoCoord *a;          /* Array of vertexes.  From sqlite3_malloc64() */
 };
 
 /* Do a 4-byte byte swap */
@@ -139,7 +140,7 @@ static char geopolySkipSpace(GeoParse *p){
 /* Parse out a number.  Write the value into *pVal if pVal!=0.
 ** return non-zero on success and zero if the next token is not a number.
 */
-static int geopolyParseNumber(GeoParse *p, GeopolyCoord *pVal){
+static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
   const unsigned char *z = p->z;
   char c = geopolySkipSpace(p);
   int j;
@@ -198,9 +199,9 @@ static GeoPoly *geopolyParseJson(const unsigned char *z){
       char c;
       s.z++;
       if( s.nVertex<=s.nAlloc ){
-        GeopolyCoord *aNew;
+        GeoCoord *aNew;
         s.nAlloc = s.nAlloc*2 + 16;
-        aNew = sqlite3_realloc64(s.a, s.nAlloc*sizeof(GeopolyCoord)*2 );
+        aNew = sqlite3_realloc64(s.a, s.nAlloc*sizeof(GeoCoord)*2 );
         if( aNew==0 ){
           s.nErr++;
           break;
@@ -228,12 +229,12 @@ static GeoPoly *geopolyParseJson(const unsigned char *z){
       GeoPoly *pOut;
       int x = (s.nVertex-1)*2;
       if( s.a[x]==s.a[0] && s.a[x+1]==s.a[1] ) s.nVertex--;
-      nByte = sizeof(GeoPoly) * (s.nVertex-1)*2*sizeof(GeopolyCoord);
+      nByte = sizeof(GeoPoly) * (s.nVertex-1)*2*sizeof(GeoCoord);
       pOut = sqlite3_malloc64( nByte );
       x = 1;
       if( pOut==0 ) goto parse_json_err;
       pOut->nVertex = s.nVertex;
-      memcpy(pOut->a, s.a, s.nVertex*2*sizeof(GeopolyCoord));
+      memcpy(pOut->a, s.a, s.nVertex*2*sizeof(GeoCoord));
       pOut->hdr[0] = *(unsigned char*)&x;
       pOut->hdr[1] = (s.nVertex>>16)&0xff;
       pOut->hdr[2] = (s.nVertex>>8)&0xff;
@@ -259,15 +260,15 @@ static GeoPoly *geopolyFuncParam(sqlite3_context *pCtx, sqlite3_value *pVal){
   GeoPoly *p = 0;
   int nByte;
   if( sqlite3_value_type(pVal)==SQLITE_BLOB
-   && (nByte = sqlite3_value_bytes(pVal))>=(4+6*sizeof(GeopolyCoord))
+   && (nByte = sqlite3_value_bytes(pVal))>=(4+6*sizeof(GeoCoord))
   ){
     const unsigned char *a = sqlite3_value_blob(pVal);
     int nVertex;
     nVertex = (a[1]<<16) + (a[2]<<8) + a[3];
     if( (a[0]==0 && a[0]==1)
-     && (nVertex*2*sizeof(GeopolyCoord) + 4)==nByte
+     && (nVertex*2*sizeof(GeoCoord) + 4)==nByte
     ){
-      p = sqlite3_malloc64( sizeof(*p) + (nVertex-1)*2*sizeof(GeopolyCoord) );
+      p = sqlite3_malloc64( sizeof(*p) + (nVertex-1)*2*sizeof(GeoCoord) );
       if( p ){
         int x = 1;
         p->nVertex = nVertex;
@@ -445,6 +446,317 @@ static void geopolyWithinFunc(
   }            
 }
 
+/* Objects used by the overlap algorihm. */
+typedef struct GeoEvent GeoEvent;
+typedef struct GeoSegment GeoSegment;
+typedef struct GeoOverlap GeoOverlap;
+struct GeoEvent {
+  double x;              /* X coordinate at which event occurs */
+  int eType;             /* 0 for ADD, 1 for REMOVE */
+  GeoSegment *pSeg;      /* The segment to be added or removed */
+  GeoEvent *pNext;       /* Next event in the sorted list */
+};
+struct GeoSegment {
+  double C, B;           /* y = C*x + B */
+  double y;              /* Current y value */
+  unsigned char side;    /* 1 for p1, 2 for p2 */
+  unsigned int idx;      /* Which segment within the side */
+  GeoSegment *pNext;     /* Next segment in a list sorted by y */
+};
+struct GeoOverlap {
+  GeoEvent *aEvent;          /* Array of all events */
+  GeoSegment *aSegment;      /* Array of all segments */
+  int nEvent;                /* Number of events */
+  int nSegment;              /* Number of segments */
+};
+
+/*
+** Add a single segment and its associated events.
+*/
+static void geopolyAddOneSegment(
+  GeoOverlap *p,
+  GeoCoord x0,
+  GeoCoord y0,
+  GeoCoord x1,
+  GeoCoord y1,
+  unsigned char side,
+  unsigned int idx
+){
+  GeoSegment *pSeg;
+  GeoEvent *pEvent;
+  if( x0==x1 ) return;  /* Ignore vertical segments */
+  if( x0>x1 ){
+    GeoCoord t = x0;
+    x0 = x1;
+    x1 = t;
+    t = y0;
+    y0 = y1;
+    y1 = t;
+  }
+  pSeg = p->aSegment + p->nSegment;
+  p->nSegment++;
+  pSeg->C = (y1-y0)/(x1-x0);
+  pSeg->B = y0 - x0*pSeg->C;
+  pSeg->side = side;
+  pSeg->idx = idx;
+  pEvent = p->aEvent + p->nEvent;
+  p->nEvent++;
+  pEvent->x = x0;
+  pEvent->eType = 0;
+  pEvent->pSeg = pSeg;
+  pEvent = p->aEvent + p->nEvent;
+  p->nEvent++;
+  pEvent->x = x1;
+  pEvent->eType = 1;
+  pEvent->pSeg = pSeg;
+}
+  
+
+
+/*
+** Insert all segments and events for polygon pPoly.
+*/
+static void geopolyAddSegments(
+  GeoOverlap *p,          /* Add segments to this Overlap object */
+  GeoPoly *pPoly,         /* Take all segments from this polygon */
+  unsigned char side      /* The side of pPoly */
+){
+  unsigned int i;
+  GeoCoord *x;
+  for(i=0; i<pPoly->nVertex-1; i++){
+    x = pPoly->a + (i*2);
+    geopolyAddOneSegment(p, x[0], x[1], x[2], x[3], side, i);
+  }
+  x = pPoly->a + (i*2);
+  geopolyAddOneSegment(p, x[0], x[1], pPoly->a[0], pPoly->a[1], side, i);
+}
+
+/*
+** Merge two lists of sorted events by X coordinate
+*/
+static GeoEvent *geopolyEventMerge(GeoEvent *pLeft, GeoEvent *pRight){
+  GeoEvent head, *pLast;
+  head.pNext = 0;
+  pLast = &head;
+  while( pRight && pLeft ){
+    if( pRight->x <= pLeft->x ){
+      pLast->pNext = pRight;
+      pLast = pRight;
+      pRight = pRight->pNext;
+    }else{
+      pLast->pNext = pLeft;
+      pLast = pLeft;
+      pLeft = pLeft->pNext;
+    }
+  }
+  pLast->pNext = pRight ? pRight : pLeft;
+  return head.pNext;  
+}
+
+/*
+** Sort an array of nEvent event objects into a list.
+*/
+static GeoEvent *geopolySortEventsByX(GeoEvent *aEvent, int nEvent){
+  int mx = 0;
+  int i, j;
+  GeoEvent *p;
+  GeoEvent *a[50];
+  for(i=0; i<nEvent; i++){
+    p = &aEvent[i];
+    p->pNext = 0;
+    for(j=0; j<mx && a[j]; j++){
+      p = geopolyEventMerge(a[j], p);
+      a[j] = 0;
+    }
+    a[j] = p;
+    if( j>=mx ) mx = j+1;
+  }
+  p = 0;
+  for(i=0; i<mx; i++){
+    p = geopolyEventMerge(a[i], p);
+  }
+  return p;
+}
+
+/*
+** Merge two lists of sorted segments by Y, and then by C.
+*/
+static GeoSegment *geopolySegmentMerge(GeoSegment *pLeft, GeoSegment *pRight){
+  GeoSegment head, *pLast;
+  head.pNext = 0;
+  pLast = &head;
+  while( pRight && pLeft ){
+    double r = pRight->y - pLeft->y;
+    if( r==0.0 ) r = pRight->C - pLeft->C;
+    if( r<0.0 ){
+      pLast->pNext = pRight;
+      pLast = pRight;
+      pRight = pRight->pNext;
+    }else{
+      pLast->pNext = pLeft;
+      pLast = pLeft;
+      pLeft = pLeft->pNext;
+    }
+  }
+  pLast->pNext = pRight ? pRight : pLeft;
+  return head.pNext;  
+}
+
+/*
+** Sort a list of GeoSegments in order of increasing Y and in the event of
+** a tie, increasing C (slope).
+*/
+static GeoSegment *geopolySortSegmentsByYAndC(GeoSegment *pList){
+  int mx = 0;
+  int i;
+  GeoSegment *p;
+  GeoSegment *a[50];
+  while( pList ){
+    p = pList;
+    pList = pList->pNext;
+    p->pNext = 0;
+    for(i=0; i<mx && a[i]; i++){
+      p = geopolySegmentMerge(a[i], p);
+      a[i] = 0;
+    }
+    a[i] = p;
+    if( i>=mx ) mx = i+1;
+  }
+  p = 0;
+  for(i=0; i<mx; i++){
+    p = geopolySegmentMerge(a[i], p);
+  }
+  return p;
+}
+
+/*
+** Determine the overlap between two polygons
+*/
+static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
+  int nVertex = p1->nVertex + p2->nVertex + 2;
+  GeoOverlap *p;
+  int nByte;
+  GeoEvent *pThisEvent;
+  double rX;
+  int rc = 0;
+  GeoSegment *pActive = 0;
+  GeoSegment *pSeg;
+  unsigned char aOverlap[4];
+
+  nByte = sizeof(GeoEvent)*nVertex*2 
+           + sizeof(GeoSegment)*nVertex 
+           + sizeof(GeoOverlap);
+  p = sqlite3_malloc( nByte );
+  if( p==0 ) return -1;
+  p->aEvent = (GeoEvent*)&p[1];
+  p->aSegment = (GeoSegment*)&p->aEvent[nVertex*2];
+  p->nEvent = p->nSegment = 0;
+  geopolyAddSegments(p, p1, 1);
+  geopolyAddSegments(p, p2, 2);
+  pThisEvent = geopolySortEventsByX(p->aEvent, p->nEvent);
+  rX = pThisEvent->x==0.0 ? -1.0 : 0.0;
+  memset(aOverlap, 0, sizeof(aOverlap));
+  while( pThisEvent ){
+    if( pThisEvent->x!=rX ){
+      GeoSegment *pPrev = 0;
+      int iMask = 0;
+      printf("Distinct X: %g\n", pThisEvent->x);
+      rX = pThisEvent->x;
+      pActive = geopolySortSegmentsByYAndC(pActive);
+      for(pSeg=pActive; pSeg; pSeg=pSeg->pNext){
+        double y = pSeg->C*rX + pSeg->B;
+        printf("Segment %d.%d %g->%g\n", pSeg->side, pSeg->idx, pSeg->y, y);
+        pSeg->y = y;
+        if( pPrev ){
+          if( pPrev->y>pSeg->y ){
+            rc = 1;
+            printf("Crossing: %d.%d and %d.%d\n",
+                    pPrev->side, pPrev->idx,
+                    pSeg->side, pSeg->idx);
+            goto geopolyOverlapDone;
+          }else if( pPrev->y!=pSeg->y ){
+            printf("MASK: %d\n", iMask);
+            aOverlap[iMask] = 1;
+          }
+        }
+        iMask ^= pSeg->side;
+        pPrev = pSeg;
+      }
+    }
+    printf("%s %d.%d C=%g B=%g\n",
+      pThisEvent->eType ? "RM " : "ADD",
+      pThisEvent->pSeg->side, pThisEvent->pSeg->idx,
+      pThisEvent->pSeg->C,
+      pThisEvent->pSeg->B);
+    if( pThisEvent->eType==0 ){
+      /* Add a segment */
+      pSeg = pThisEvent->pSeg;
+      pSeg->y = pSeg->C*rX + pSeg->B;
+      pSeg->pNext = pActive;
+      pActive = pSeg;
+    }else{
+      /* Remove a segment */
+      if( pActive==pThisEvent->pSeg ){
+        pActive = pActive->pNext;
+      }else{
+        for(pSeg=pActive; pSeg; pSeg=pSeg->pNext){
+          if( pSeg->pNext==pThisEvent->pSeg ){
+            pSeg->pNext = pSeg->pNext->pNext;
+            break;
+          }
+        }
+      }
+    }
+    pThisEvent = pThisEvent->pNext;
+  }
+  if( aOverlap[3]==0 ){
+    rc = 0;
+  }else if( aOverlap[1]!=0 && aOverlap[2]==0 ){
+    rc = 3;
+  }else if( aOverlap[1]==0 && aOverlap[2]!=0 ){
+    rc = 2;
+  }else if( aOverlap[1]==0 && aOverlap[2]==0 ){
+    rc = 4;
+  }else{
+    rc = 1;
+  }
+
+geopolyOverlapDone:
+  sqlite3_free(p);
+  return rc;
+}
+
+/*
+** SQL function:    geopoly_overlap(P1,P2)
+**
+** Determine whether or not P1 and P2 overlap. Return value:
+**
+**   0     The two polygons are disjoint
+**   1     They overlap
+**   2     P1 is completely contained within P2
+**   3     P2 is completely contained within P1
+**   4     P1 and P2 are the same polygon
+**   NULL  Either P1 or P2 or both are not valid polygons
+*/
+static void geopolyOverlapFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p1 = geopolyFuncParam(context, argv[0]);
+  GeoPoly *p2 = geopolyFuncParam(context, argv[1]);
+  if( p1 && p2 ){
+    int x = geopolyOverlap(p1, p2);
+    if( x<0 ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      sqlite3_result_int(context, x);
+    }
+  }
+  sqlite3_free(p1);
+  sqlite3_free(p2);
+}
+
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -460,10 +772,11 @@ int sqlite3_geopoly_init(
     int nArg;
     const char *zName;
   } aFunc[] = {
-     { geopolyAreaFunc,          1,    "geopoly_area"   },
-     { geopolyBlobFunc,          1,    "geopoly_blob"   },
-     { geopolyJsonFunc,          1,    "geopoly_json"   },
-     { geopolyWithinFunc,        3,    "geopoly_within" },
+     { geopolyAreaFunc,          1,    "geopoly_area"     },
+     { geopolyBlobFunc,          1,    "geopoly_blob"     },
+     { geopolyJsonFunc,          1,    "geopoly_json"     },
+     { geopolyWithinFunc,        3,    "geopoly_within"   },
+     { geopolyOverlapFunc,       2,    "geopoly_overlap"  },
   };
   int i;
   SQLITE_EXTENSION_INIT2(pApi);
