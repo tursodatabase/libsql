@@ -15,6 +15,8 @@ pub enum ToSqlOutput<'a> {
     ZeroBlob(i32),
 }
 
+// Generically allow any type that can be converted into a ValueRef
+// to be converted into a ToSqlOutput as well.
 impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a>
     where &'a T: Into<ValueRef<'a>>
 {
@@ -23,11 +25,31 @@ impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a>
     }
 }
 
-impl<'a, T: Into<Value>> From<T> for ToSqlOutput<'a> {
-    fn from(t: T) -> Self {
-        ToSqlOutput::Owned(t.into())
-    }
-}
+// We cannot also generically allow any type that can be converted
+// into a Value to be converted into a ToSqlOutput because of
+// coherence rules (https://github.com/rust-lang/rust/pull/46192),
+// so we'll manually implement it for all the types we know can
+// be converted into Values.
+macro_rules! from_value(
+    ($t:ty) => (
+        impl<'a> From<$t> for ToSqlOutput<'a> {
+            fn from(t: $t) -> Self { ToSqlOutput::Owned(t.into())}
+        }
+    )
+);
+from_value!(String);
+from_value!(Null);
+from_value!(bool);
+from_value!(i8);
+from_value!(i16);
+from_value!(i32);
+from_value!(i64);
+from_value!(isize);
+from_value!(u8);
+from_value!(u16);
+from_value!(u32);
+from_value!(f64);
+from_value!(Vec<u8>);
 
 impl<'a> ToSql for ToSqlOutput<'a> {
     fn to_sql(&self) -> Result<ToSqlOutput> {
