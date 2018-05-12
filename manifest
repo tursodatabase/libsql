@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\strunk.
-D 2018-05-12T23:56:48.444
+C Add\stest\scases\sfor\sgeopoly_overlap().
+D 2018-05-12T23:59:28.942
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -279,6 +279,7 @@ F ext/misc/dbdump.c 69ef1be5b210538f77dfcc6fcb55b4b5f5e98b1e0bcfd67d818711e10761
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
+F ext/misc/geopoly-test1.txt 5dcca1d88b042ba727b95145ace09056d8ee65c5a3b236c4afc34fdb6256cb12
 F ext/misc/geopoly.c 3a07738e9e07000a7a6cdc8f03391d98d3a63f9aaff4eceafe3f528e9dd21cb3
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -1729,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3c6696f2f39554e968dcd86c87296b0d54e5a1683c2b309071ca70e7631b178 4ee136d6d2e029dad8371faf659d3a0bc0ac6ae76940db81d333848545bc990f
-R b2d69017114a5dc9f75f317c090f3551
+P 715740e3025f7575c1dc7cf220da6bf899d1e1b565eecbc38d2e9ec406fc97b8
+R 8f6d716cd9f8949fa3d68e1f577ea73a
 U drh
-Z f9f5f92a768d6e4f444355f2648a08cf
+Z bf8a50e6e945803943205be8e8db632d
