@@ -345,6 +345,40 @@ static void geopolyJsonFunc(
   }
 }
 
+/*
+** SQL function:     geopoly_svg(X, ....)
+**
+** Interpret X as a polygon and render it as a SVG <polyline>.
+** Additional arguments are added as attributes to the <polyline>.
+*/
+static void geopolySvgFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  if( p ){
+    sqlite3 *db = sqlite3_context_db_handle(context);
+    sqlite3_str *x = sqlite3_str_new(db);
+    int i;
+    char cSep = '\'';
+    sqlite3_str_appendf(x, "<polyline points=");
+    for(i=0; i<p->nVertex; i++){
+      sqlite3_str_appendf(x, "%c%g,%g", cSep, p->a[i*2], p->a[i*2+1]);
+      cSep = ' ';
+    }
+    sqlite3_str_appendf(x, " %g,%g'", p->a[0], p->a[1]);
+    for(i=1; i<argc; i++){
+      const char *z = (const char*)sqlite3_value_text(argv[i]);
+      if( z && z[0] ){
+        sqlite3_str_appendf(x, " %s", z);
+      }
+    }
+    sqlite3_str_appendf(x, "></polyline>");
+    sqlite3_result_text(context, sqlite3_str_finish(x), -1, sqlite3_free);
+    sqlite3_free(p);
+  }
+}
 
 /*
 ** Implementation of the geopoly_area(X) function.
@@ -811,6 +845,7 @@ int sqlite3_geopoly_init(
      { geopolyAreaFunc,          1,    "geopoly_area"     },
      { geopolyBlobFunc,          1,    "geopoly_blob"     },
      { geopolyJsonFunc,          1,    "geopoly_json"     },
+     { geopolySvgFunc,          -1,    "geopoly_svg"      },
      { geopolyWithinFunc,        3,    "geopoly_within"   },
      { geopolyOverlapFunc,       2,    "geopoly_overlap"  },
      { geopolyDebugFunc,         1,    "geopoly_debug"    },
