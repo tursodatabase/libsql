@@ -208,7 +208,7 @@ impl<'a, 'b> Backup<'a, 'b> {
         Ok(Backup {
                phantom_from: PhantomData,
                phantom_to: PhantomData,
-               b: b,
+               b,
            })
     }
 

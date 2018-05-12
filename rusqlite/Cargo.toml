@@ -26,7 +26,9 @@ trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
 bundled = ["libsqlite3-sys/bundled"]
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
+hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
+unlock_notify = ["libsqlite3-sys/unlock_notify"]
 
 [dependencies]
 time = "0.1.0"
@@ -37,8 +39,8 @@ serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
-lazy_static = "0.2"
-regex = "0.2"
+lazy_static = "1.0"
+regex = "1.0"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"

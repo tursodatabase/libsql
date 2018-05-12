@@ -45,7 +45,7 @@ impl<'conn> Statement<'conn> {
         let bytes = name.as_bytes();
         let n = self.column_count();
         for i in 0..n {
-            if bytes == self.stmt.column_name(i).to_bytes() {
+            if bytes.eq_ignore_ascii_case(self.stmt.column_name(i).to_bytes()) {
                 return Ok(i);
             }
         }
@@ -506,8 +506,8 @@ pub trait StatementCrateImpl<'conn> {
 impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
     fn new(conn: &Connection, stmt: RawStatement) -> Statement {
         Statement {
-            conn: conn,
-            stmt: stmt,
+            conn,
+            stmt,
         }
     }
 
@@ -783,6 +783,32 @@ mod test {
         db.execute_batch(sql).unwrap();
         let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?").unwrap();
         let y: Result<i64> = stmt.query_row(&[&1i32], |r| r.get(0));
+        assert_eq!(3i64, y.unwrap());
+    }
+
+    #[test]
+    fn test_query_by_column_name() {
+        let db = Connection::open_in_memory().unwrap();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y INTEGER);
+                   INSERT INTO foo VALUES(1, 3);
+                   END;";
+        db.execute_batch(sql).unwrap();
+        let mut stmt = db.prepare("SELECT y FROM foo").unwrap();
+        let y: Result<i64> = stmt.query_row(&[], |r| r.get("y"));
+        assert_eq!(3i64, y.unwrap());
+    }
+
+    #[test]
+    fn test_query_by_column_name_ignore_case() {
+        let db = Connection::open_in_memory().unwrap();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y INTEGER);
+                   INSERT INTO foo VALUES(1, 3);
+                   END;";
+        db.execute_batch(sql).unwrap();
+        let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
+        let y: Result<i64> = stmt.query_row(&[], |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
     }
 }

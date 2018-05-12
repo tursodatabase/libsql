@@ -32,7 +32,7 @@ impl<'stmt> Rows<'stmt> {
             .and_then(|stmt| match stmt.step() {
                 Ok(true) => {
                     Some(Ok(Row {
-                        stmt: stmt,
+                        stmt,
                         phantom: PhantomData,
                     }))
                 }
@@ -90,7 +90,7 @@ impl<'stmt, T, F> MappedRowsCrateImpl<'stmt, T, F> for MappedRows<'stmt, F>
     where F: FnMut(&Row) -> T
 {
     fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
-        MappedRows { rows: rows, map: f }
+        MappedRows { rows, map: f }
     }
 }
 
@@ -124,7 +124,7 @@ impl<'stmt, T, E, F> AndThenRowsCrateImpl<'stmt, T, E, F> for AndThenRows<'stmt,
     where F: FnMut(&Row) -> result::Result<T, E>
 {
     fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
-        AndThenRows { rows: rows, map: f }
+        AndThenRows { rows, map: f }
     }
 }
 

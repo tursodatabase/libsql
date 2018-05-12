@@ -50,7 +50,6 @@
 //! ```
 use std::io;
 use std::cmp::min;
-use std::mem;
 use std::ptr;
 
 use super::ffi;
@@ -65,7 +64,7 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db`.
+    /// Open a handle to the BLOB located in `row_id`, `column`, `table` in database `db`.
     ///
     /// # Failure
     ///
@@ -75,7 +74,7 @@ impl Connection {
                          db: DatabaseName,
                          table: &str,
                          column: &str,
-                         row: i64,
+                         row_id: i64,
                          read_only: bool)
                          -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
@@ -88,7 +87,7 @@ impl Connection {
                                    db.as_ptr(),
                                    table.as_ptr(),
                                    column.as_ptr(),
-                                   row,
+                                   row_id,
                                    if read_only { 0 } else { 1 },
                                    &mut blob)
         };
@@ -96,7 +95,7 @@ impl Connection {
             .map(|_| {
                      Blob {
                          conn: self,
-                         blob: blob,
+                         blob,
                          pos: 0,
                      }
                  })
@@ -156,7 +155,7 @@ impl<'conn> io::Read for Blob<'conn> {
             return Ok(0);
         }
         let rc =
-            unsafe { ffi::sqlite3_blob_read(self.blob, mem::transmute(buf.as_ptr()), n, self.pos) };
+            unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_ptr() as *mut _, n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {
@@ -185,7 +184,7 @@ impl<'conn> io::Write for Blob<'conn> {
             return Ok(0);
         }
         let rc = unsafe {
-            ffi::sqlite3_blob_write(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
+            ffi::sqlite3_blob_write(self.blob, buf.as_ptr() as *mut _, n, self.pos)
         };
         self.conn
             .decode_result(rc)
@@ -206,14 +205,14 @@ impl<'conn> io::Seek for Blob<'conn> {
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         let pos = match pos {
             io::SeekFrom::Start(offset) => offset as i64,
-            io::SeekFrom::Current(offset) => self.pos as i64 + offset,
-            io::SeekFrom::End(offset) => self.size() as i64 + offset,
+            io::SeekFrom::Current(offset) => i64::from(self.pos) + offset,
+            io::SeekFrom::End(offset) => i64::from(self.size()) + offset,
         };
 
         if pos < 0 {
             Err(io::Error::new(io::ErrorKind::InvalidInput,
                                "invalid seek to negative position"))
-        } else if pos > self.size() as i64 {
+        } else if pos > i64::from(self.size()) {
             Err(io::Error::new(io::ErrorKind::InvalidInput,
                                "invalid seek to position past end of blob"))
         } else {

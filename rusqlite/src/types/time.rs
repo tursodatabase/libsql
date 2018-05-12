@@ -3,7 +3,8 @@ extern crate time;
 use Result;
 use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
-const SQLITE_DATETIME_FMT: &str = "%Y-%m-%d %H:%M:%S:%f %Z";
+const SQLITE_DATETIME_FMT: &str = "%Y-%m-%dT%H:%M:%S.%fZ";
+const SQLITE_DATETIME_FMT_LEGACY: &str = "%Y-%m-%d %H:%M:%S:%f %Z";
 
 impl ToSql for time::Timespec {
     fn to_sql(&self) -> Result<ToSqlOutput> {
@@ -19,10 +20,12 @@ impl FromSql for time::Timespec {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         value
             .as_str()
-            .and_then(|s| match time::strptime(s, SQLITE_DATETIME_FMT) {
-                          Ok(tm) => Ok(tm.to_timespec()),
-                          Err(err) => Err(FromSqlError::Other(Box::new(err))),
-                      })
+            .and_then(|s| {
+                time::strptime(s, SQLITE_DATETIME_FMT)
+                    .or_else(|err| {
+                        time::strptime(s, SQLITE_DATETIME_FMT_LEGACY)
+                            .or_else(|_| Err(FromSqlError::Other(Box::new(err))))})})
+            .map(|tm| tm.to_timespec())
     }
 }
 
