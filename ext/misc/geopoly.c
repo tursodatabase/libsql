@@ -501,6 +501,7 @@ struct GeoEvent {
 struct GeoSegment {
   double C, B;           /* y = C*x + B */
   double y;              /* Current y value */
+  float y0;              /* Initial y value */
   unsigned char side;    /* 1 for p1, 2 for p2 */
   unsigned int idx;      /* Which segment within the side */
   GeoSegment *pNext;     /* Next segment in a list sorted by y */
@@ -538,7 +539,8 @@ static void geopolyAddOneSegment(
   pSeg = p->aSegment + p->nSegment;
   p->nSegment++;
   pSeg->C = (y1-y0)/(x1-x0);
-  pSeg->B = y0 - x0*pSeg->C;
+  pSeg->B = y1 - x1*pSeg->C;
+  pSeg->y0 = y0;
   pSeg->side = side;
   pSeg->idx = idx;
   pEvent = p->aEvent + p->nEvent;
@@ -706,6 +708,7 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
       GEODEBUG(("Distinct X: %g\n", pThisEvent->x));
       rX = pThisEvent->x;
       if( needSort ){
+        GEODEBUG(("SORT\n"));
         pActive = geopolySortSegmentsByYAndC(pActive);
         needSort = 0;
       }
@@ -725,7 +728,7 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
         GEODEBUG(("Segment %d.%d %g->%g\n", pSeg->side, pSeg->idx, pSeg->y, y));
         pSeg->y = y;
         if( pPrev ){
-          if( pPrev->y>pSeg->y ){
+          if( pPrev->y>pSeg->y && pPrev->side!=pSeg->side ){
             rc = 1;
             GEODEBUG(("Crossing: %d.%d and %d.%d\n",
                     pPrev->side, pPrev->idx,
@@ -748,7 +751,7 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
     if( pThisEvent->eType==0 ){
       /* Add a segment */
       pSeg = pThisEvent->pSeg;
-      pSeg->y = pSeg->C*rX + pSeg->B;
+      pSeg->y = pSeg->y0;
       pSeg->pNext = pActive;
       pActive = pSeg;
       needSort = 1;
