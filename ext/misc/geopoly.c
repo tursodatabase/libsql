@@ -21,6 +21,14 @@ SQLITE_EXTENSION_INIT1
 #include <stdio.h>
 #define SQLITE_HAVE_GEOPLOY 1
 
+/* Enable -DGEOPOLY_ENABLE_DEBUG for debugging facilities */
+#ifdef GEOPOLY_ENABLE_DEBUG
+  static int geo_debug = 0;
+# define GEODEBUG(X) if(geo_debug)printf X
+#else
+# define GEODEBUG(X)
+#endif
+
 #ifndef JSON_NULL   /* The following stuff repeats things found in json1 */
 /*
 ** Versions of isspace(), isalnum() and isdigit() to which it is safe
@@ -639,6 +647,7 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
   GeoEvent *pThisEvent;
   double rX;
   int rc = 0;
+  int needSort = 0;
   GeoSegment *pActive = 0;
   GeoSegment *pSeg;
   unsigned char aOverlap[4];
@@ -660,22 +669,36 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
     if( pThisEvent->x!=rX ){
       GeoSegment *pPrev = 0;
       int iMask = 0;
-      printf("Distinct X: %g\n", pThisEvent->x);
+      GEODEBUG(("Distinct X: %g\n", pThisEvent->x));
       rX = pThisEvent->x;
-      pActive = geopolySortSegmentsByYAndC(pActive);
+      if( needSort ){
+        pActive = geopolySortSegmentsByYAndC(pActive);
+        needSort = 0;
+      }
+      for(pSeg=pActive; pSeg; pSeg=pSeg->pNext){
+        if( pPrev ){
+          if( pPrev->y!=pSeg->y ){
+            GEODEBUG(("MASK: %d\n", iMask));
+            aOverlap[iMask] = 1;
+          }
+        }
+        iMask ^= pSeg->side;
+        pPrev = pSeg;
+      }
+      pPrev = 0;
       for(pSeg=pActive; pSeg; pSeg=pSeg->pNext){
         double y = pSeg->C*rX + pSeg->B;
-        printf("Segment %d.%d %g->%g\n", pSeg->side, pSeg->idx, pSeg->y, y);
+        GEODEBUG(("Segment %d.%d %g->%g\n", pSeg->side, pSeg->idx, pSeg->y, y));
         pSeg->y = y;
         if( pPrev ){
           if( pPrev->y>pSeg->y ){
             rc = 1;
-            printf("Crossing: %d.%d and %d.%d\n",
+            GEODEBUG(("Crossing: %d.%d and %d.%d\n",
                     pPrev->side, pPrev->idx,
-                    pSeg->side, pSeg->idx);
+                    pSeg->side, pSeg->idx));
             goto geopolyOverlapDone;
           }else if( pPrev->y!=pSeg->y ){
-            printf("MASK: %d\n", iMask);
+            GEODEBUG(("MASK: %d\n", iMask));
             aOverlap[iMask] = 1;
           }
         }
@@ -683,17 +706,18 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
         pPrev = pSeg;
       }
     }
-    printf("%s %d.%d C=%g B=%g\n",
+    GEODEBUG(("%s %d.%d C=%g B=%g\n",
       pThisEvent->eType ? "RM " : "ADD",
       pThisEvent->pSeg->side, pThisEvent->pSeg->idx,
       pThisEvent->pSeg->C,
-      pThisEvent->pSeg->B);
+      pThisEvent->pSeg->B));
     if( pThisEvent->eType==0 ){
       /* Add a segment */
       pSeg = pThisEvent->pSeg;
       pSeg->y = pSeg->C*rX + pSeg->B;
       pSeg->pNext = pActive;
       pActive = pSeg;
+      needSort = 1;
     }else{
       /* Remove a segment */
       if( pActive==pThisEvent->pSeg ){
@@ -757,6 +781,18 @@ static void geopolyOverlapFunc(
   sqlite3_free(p2);
 }
 
+/*
+** Enable or disable debugging output
+*/
+static void geopolyDebugFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+#ifdef GEOPOLY_ENABLE_DEBUG
+  geo_debug = sqlite3_value_int(argv[0]);
+#endif
+}
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -777,6 +813,7 @@ int sqlite3_geopoly_init(
      { geopolyJsonFunc,          1,    "geopoly_json"     },
      { geopolyWithinFunc,        3,    "geopoly_within"   },
      { geopolyOverlapFunc,       2,    "geopoly_overlap"  },
+     { geopolyDebugFunc,         1,    "geopoly_debug"    },
   };
   int i;
   SQLITE_EXTENSION_INIT2(pApi);
