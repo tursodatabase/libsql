@@ -15,6 +15,7 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * Fix handful of clippy warnings.
 * Fix `Connection::open` documentation (#332)
 * Add binding to `sqlite3_get_autocommit` and `sqlite3_stmt_busy`.
+* Use `rerun-if-env-changed` in libsqlite3-sys (#329).
 
 # Version 0.13.0 (2017-11-13)
 
