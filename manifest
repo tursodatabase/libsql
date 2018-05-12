@@ -1,5 +1,5 @@
-C Resolve\sissues\swith\sfloating-point\sround-off\serror\sin\sthe\sgeopoly_overlap()\nroutine.
-D 2018-05-12T23:31:55.012
+C Merge\schanges\sfrom\strunk.
+D 2018-05-12T23:56:48.444
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -204,7 +204,7 @@ F ext/fts5/test/fts5synonym2.test b54cce5c34ec08ed616f646635538ae82e34a0e28f947e
 F ext/fts5/test/fts5tok1.test ce6551e41ff56f30b69963577324624733bed0d1753589f06120d664d9cd45c9
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test 6aeb5e8061ffc0ff9a5299f27beaee3b2b4b8b336d4f107262bca338bea8f8e9
-F ext/fts5/test/fts5unicode.test 1e5570df758f7e0b27ff0e087ee96f559d5cc9ade80afa9421537a8a20a7cfbf
+F ext/fts5/test/fts5unicode.test 17056f4efe6b0a5d4f41fdf7a7dc9af2873004562eaa899d40633b93dc95f5a9
 F ext/fts5/test/fts5unicode2.test 9b3df486de05fb4bde4aa7ee8de2e6dae1df6eb90e3f2e242c9383b95d314e3e
 F ext/fts5/test/fts5unicode3.test c3caecbe8264629ffe653b43ca5790b9793eba4422f92203e5247558e5a534e7
 F ext/fts5/test/fts5unindexed.test 9021af86a0fb9fc616f7a69a996db0116e7936d0db63892db6bafabbec21af4d
@@ -495,7 +495,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in c625e81758225d64c5b0cb2b431579f7e4e8c63452fac74290c3e439c9fb7924
+F src/shell.c.in df40a09c4098d050bf5a008caa9ca8f25eed8ff9a8468d39b1f4d8a778cd324a
 F src/sqlite.h.in ef7e6fae65cb40ba004abf090ea491751295c11e64b1446322813d3b473b9400
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 318ba5f0c52596fc5ceed23a2b7b1ca18644449809890bfed47ab4ee01075060
-R 1da7cb9cf65004180c616e72e6f418ab
+P a3c6696f2f39554e968dcd86c87296b0d54e5a1683c2b309071ca70e7631b178 4ee136d6d2e029dad8371faf659d3a0bc0ac6ae76940db81d333848545bc990f
+R b2d69017114a5dc9f75f317c090f3551
 U drh
-Z d3afa3a25b44d630c4f3a8b5d634f737
+Z f9f5f92a768d6e4f444355f2648a08cf

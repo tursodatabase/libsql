@@ -3679,7 +3679,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
   char zBuf[1000];
 
   if( nLine>sizeof(zBuf)-30 ) return;
-  if( zLine[0]=='.' ) return;
+  if( zLine[0]=='.' || zLine[0]=='#') return;
   for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
   if( i==nLine-1 ) return;
   iStart = i+1;
@@ -7896,7 +7896,7 @@ static int line_is_complete(char *zSql, int nSql){
 }
 
 /*
-** Run a single line of SQL
+** Run a single line of SQL.  Return the number of errors.
 */
 static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
   int rc;
@@ -7969,13 +7969,15 @@ static int process_input(ShellState *p, FILE *in){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
       continue;
     }
-    if( zLine && zLine[0]=='.' && nSql==0 ){
+    if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
-      rc = do_meta_command(zLine, p);
-      if( rc==2 ){ /* exit requested */
-        break;
-      }else if( rc ){
-        errCnt++;
+      if( zLine[0]=='.' ){
+        rc = do_meta_command(zLine, p);
+        if( rc==2 ){ /* exit requested */
+          break;
+        }else if( rc ){
+          errCnt++;
+        }
       }
       continue;
     }
@@ -8017,7 +8019,7 @@ static int process_input(ShellState *p, FILE *in){
     }
   }
   if( nSql && !_all_whitespace(zSql) ){
-    runOneSqlLine(p, zSql, in, startline);
+    errCnt += runOneSqlLine(p, zSql, in, startline);
   }
   free(zSql);
   free(zLine);
