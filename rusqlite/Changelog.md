@@ -14,6 +14,7 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * Fix `tyvar_behind_raw_pointer` warnings.
 * Fix handful of clippy warnings.
 * Fix `Connection::open` documentation (#332)
+* Add binding to `sqlite3_get_autocommit` and `sqlite3_stmt_busy`.
 
 # Version 0.13.0 (2017-11-13)
 
