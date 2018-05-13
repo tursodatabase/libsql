@@ -61,17 +61,16 @@ struct CSVTab {
     delimiter: u8,
     quote: u8,
     /// Offset to start of data
-    offset_first_row: u64,
+    offset_first_row: csv::Position,
 }
 
 impl CSVTab {
     fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
-        csv::Reader::from_file(&self.filename).map(|reader| {
-            reader
-                .has_headers(self.has_headers)
-                .delimiter(self.delimiter)
-                .quote(self.quote)
-        })
+        csv::ReaderBuilder::new()
+            .has_headers(self.has_headers)
+            .delimiter(self.delimiter)
+            .quote(self.quote)
+            .from_path(&self.filename)
     }
 
     fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
@@ -111,7 +110,7 @@ impl VTab for CSVTab {
             has_headers: false,
             delimiter: b',',
             quote: b'"',
-            offset_first_row: 0,
+            offset_first_row: csv::Position::new(),
         };
         let mut schema = None;
         let mut n_col = None;
@@ -202,21 +201,25 @@ impl VTab for CSVTab {
         if vtab.has_headers || (n_col.is_none() && schema.is_none()) {
             let mut reader = try!(vtab.reader());
             if vtab.has_headers {
-                let headers = try!(reader.headers());
-                vtab.offset_first_row = reader.byte_offset();
-                // headers ignored if cols is not empty
-                if n_col.is_none() && schema.is_none() {
-                    cols = headers
-                        .into_iter()
-                        .map(|header| escape_double_quote(&header).into_owned())
-                        .collect();
+                {
+                    let headers = try!(reader.headers());
+                    // headers ignored if cols is not empty
+                    if n_col.is_none() && schema.is_none() {
+                        cols = headers
+                            .into_iter()
+                            .map(|header| escape_double_quote(&header).into_owned())
+                            .collect();
+                    }
                 }
+                vtab.offset_first_row = reader.position().clone();
             } else {
-                let mut count = 0;
-                while let Some(col) = reader.next_bytes().into_iter_result() {
-                    try!(col);
-                    cols.push(format!("c{}", count));
-                    count += 1;
+                let mut record = csv::ByteRecord::new();
+                if try!(reader.read_byte_record(&mut record)) {
+                    let mut count = 0;
+                    for _ in record.iter() {
+                        cols.push(format!("c{}", count));
+                        count += 1;
+                    }
                 }
             }
         }
@@ -265,7 +268,7 @@ struct CSVTabCursor {
     /// Current cursor position used as rowid
     row_number: usize,
     /// Values of the current row
-    cols: Vec<String>,
+    cols: csv::StringRecord,
     eof: bool,
 }
 
@@ -275,7 +278,7 @@ impl CSVTabCursor {
             base: Default::default(),
             reader,
             row_number: 0,
-            cols: Vec::new(),
+            cols: csv::StringRecord::new(),
             eof: false,
         }
     }
@@ -292,7 +295,7 @@ impl VTabCursor for CSVTabCursor {
     // the beginning.
     fn filter(&mut self, _idx_num: c_int, _idx_str: Option<&str>, _args: &Values) -> Result<()> {
         {
-            let offset_first_row = self.vtab().offset_first_row;
+            let offset_first_row = self.vtab().offset_first_row.clone();
             try!(self.reader.seek(offset_first_row));
         }
         self.row_number = 0;
@@ -300,15 +303,12 @@ impl VTabCursor for CSVTabCursor {
     }
     fn next(&mut self) -> Result<()> {
         {
-            self.eof = self.reader.done();
+            self.eof = self.reader.is_done();
             if self.eof {
                 return Ok(());
             }
 
-            self.cols.clear();
-            while let Some(col) = self.reader.next_str().into_iter_result() {
-                self.cols.push(String::from(try!(col)));
-            }
+            self.eof = !try!(self.reader.read_record(&mut self.cols));
         }
 
         self.row_number += 1;
@@ -329,7 +329,7 @@ impl VTabCursor for CSVTabCursor {
             return Ok(());
         }
         // TODO Affinity
-        ctx.set_result(&self.cols[col as usize]);
+        ctx.set_result(&self.cols[col as usize].to_owned());
         Ok(())
     }
     fn rowid(&self) -> Result<i64> {
