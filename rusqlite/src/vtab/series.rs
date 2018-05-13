@@ -65,11 +65,7 @@ impl VTab for SeriesTab {
     type Aux = ();
     type Cursor = SeriesTabCursor;
 
-    unsafe fn connect(
-        db: *mut ffi::sqlite3,
-        _aux: *mut (),
-        _args: &[&[u8]],
-    ) -> Result<SeriesTab> {
+    unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut (), _args: &[&[u8]]) -> Result<SeriesTab> {
         let vtab = SeriesTab {
             base: Default::default(),
         };

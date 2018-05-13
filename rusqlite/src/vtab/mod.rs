@@ -6,9 +6,9 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
 
+use context::{report_error, set_result};
 use error::error_from_sqlite_code;
 use ffi;
-use functions::{report_error, set_result};
 use types::{FromSql, FromSqlError, ToSql, ValueRef};
 use {str_to_cstring, Connection, Error, InnerConnection, Result};
 
@@ -131,7 +131,7 @@ impl IndexInfo {
     }
 
     /// Estimated number of rows returned
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "bundled")] // SQLite >= 3.8.2
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
         unsafe {
             (*self.0).estimatedRows = estimated_rows;
@@ -204,7 +204,6 @@ pub trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-// FIXME clash with functions::Context
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
@@ -234,9 +233,7 @@ impl<'a> Values<'a> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
-            FromSqlError::InvalidType => {
-                Error::InvalidFunctionParameterType(idx, value.data_type())
-            }
+            FromSqlError::InvalidType => Error::InvalidFilterParameterType(idx, value.data_type()),
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
@@ -474,7 +471,7 @@ macro_rules! eponymous_module {
             iVersion: 1,
             xCreate: $create, /* For eponymous-only virtual tables, the xCreate method is NULL */
             xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is
-                                         the exact same function as the xConnect method */
+                                                 the exact same function as the xConnect method */
             xBestIndex: Some($best_index),
             xDisconnect: Some($disconnect),
             xDestroy: $destroy,
@@ -763,7 +760,7 @@ pub fn mprintf(err_msg: &str) -> *mut c_char {
 pub mod csvtab;
 pub mod int_array;
 #[cfg(feature = "bundled")]
-pub mod series;
+pub mod series; // SQLite >= 3.9.0
 
 #[cfg(test)]
 mod test {

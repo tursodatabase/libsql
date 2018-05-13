@@ -29,7 +29,7 @@ limits = []
 hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
-vtab = ["functions", "libsqlite3-sys/min_sqlite_version_3_7_7"]
+vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
 csvtab = ["csv", "vtab"]
 
 [dependencies]

@@ -128,6 +128,8 @@ pub use hooks::*;
 mod unlock_notify;
 #[cfg(feature = "vtab")]
 pub mod vtab;
+#[cfg(any(feature = "functions", feature = "vtab"))]
+mod context;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;

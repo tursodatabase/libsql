@@ -68,6 +68,10 @@ pub enum Error {
     /// to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType(usize, Type),
+    /// Error returned by `vtab::Values::get` when the filter argument cannot be converted
+    /// to the requested type.
+    #[cfg(feature = "vtab")]
+    InvalidFilterParameterType(usize, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
     /// `create_scalar_function`).
@@ -135,6 +139,10 @@ impl fmt::Display for Error {
             Error::InvalidFunctionParameterType(i, ref t) => {
                 write!(f, "Invalid function parameter type {} at index {}", t, i)
             }
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(i, ref t) => {
+                write!(f, "Invalid filter parameter type {} at index {}", t, i)
+            }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
             Error::ToSqlConversionFailure(ref err) => err.fmt(f),
@@ -165,6 +173,8 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(_, _) => "invalid filter parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
             Error::ToSqlConversionFailure(ref err) => err.description(),
@@ -192,6 +202,8 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => None,
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(_, _) => None,
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
