@@ -4,6 +4,7 @@ use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 
 use ffi;
+use types::Type;
 use vtab::{self, declare_vtab, Context, IndexInfo, VTab, VTabCursor, Values};
 use {Connection, Error, Result};
 
@@ -130,13 +131,13 @@ impl VTab for SeriesTab {
         }
         if idx_num.contains(QueryPlanFlags::BOTH) {
             // Both start= and stop= boundaries are available.
-            info.set_estimated_cost(
-                f64::from(2 - if idx_num.contains(QueryPlanFlags::STEP) {
+            info.set_estimated_cost(f64::from(
+                2 - if idx_num.contains(QueryPlanFlags::STEP) {
                     1
                 } else {
                     0
-                }),
-            );
+                },
+            ));
             info.set_estimated_rows(1000);
             if info.num_of_order_by() == 1 {
                 if info.is_order_by_desc(0) {
@@ -211,16 +212,24 @@ impl VTabCursor for SeriesTabCursor {
         } else {
             self.step = 1;
         };
+        for arg in args.iter() {
+            if arg.data_type() == Type::Null {
+                // If any of the constraints have a NULL value, then return no rows.
+                self.min_value = 1;
+                self.max_value = 0;
+                break;
+            }
+        }
         self.is_desc = idx_num.contains(QueryPlanFlags::DESC);
         if self.is_desc {
             self.value = self.max_value;
-            if self.step > 1 {
+            if self.step > 0 {
                 self.value -= (self.max_value - self.min_value) % self.step;
             }
         } else {
             self.value = self.min_value;
         }
-        self.row_id = 0;
+        self.row_id = 1;
         Ok(())
     }
     fn next(&mut self) -> Result<()> {
