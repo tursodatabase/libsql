@@ -131,11 +131,11 @@ impl VTab for SeriesTab {
         if idx_num.contains(QueryPlanFlags::BOTH) {
             // Both start= and stop= boundaries are available.
             info.set_estimated_cost(
-                (2 - if idx_num.contains(QueryPlanFlags::STEP) {
+                f64::from(2 - if idx_num.contains(QueryPlanFlags::STEP) {
                     1
                 } else {
                     0
-                }) as f64,
+                }),
             );
             info.set_estimated_rows(1000);
             if info.num_of_order_by() == 1 {
@@ -145,8 +145,8 @@ impl VTab for SeriesTab {
                 info.set_order_by_consumed(true);
             }
         } else {
-            info.set_estimated_cost(2147483647f64);
-            info.set_estimated_rows(2147483647);
+            info.set_estimated_cost(2_147_483_647f64);
+            info.set_estimated_rows(2_147_483_647);
         }
         info.set_idx_num(idx_num.bits());
         Ok(())
@@ -201,7 +201,7 @@ impl VTabCursor for SeriesTabCursor {
             self.max_value = try!(args.get(i));
             i += 1;
         } else {
-            self.max_value = 0xffffffff;
+            self.max_value = 0xffff_ffff;
         }
         if idx_num.contains(QueryPlanFlags::STEP) {
             self.step = try!(args.get(i));

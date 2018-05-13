@@ -215,10 +215,8 @@ impl VTab for CSVTab {
             } else {
                 let mut record = csv::ByteRecord::new();
                 if try!(reader.read_byte_record(&mut record)) {
-                    let mut count = 0;
-                    for _ in record.iter() {
-                        cols.push(format!("c{}", count));
-                        count += 1;
+                    for (i, _) in record.iter().enumerate() {
+                        cols.push(format!("c{}", i));
                     }
                 }
             }
@@ -249,7 +247,7 @@ impl VTab for CSVTab {
 
     // Only a forward full table scan is supported.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
-        info.set_estimated_cost(1000000.);
+        info.set_estimated_cost(1_000_000.);
         Ok(())
     }
 
