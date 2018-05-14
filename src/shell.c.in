@@ -3561,7 +3561,7 @@ int deduceDatabaseType(const char *zName, int dfltZip){
        && zBuf[3]==0x06 ){
       rc = SHELL_OPEN_ZIPFILE;
     }else if( n==0 && dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ){
-      return SHELL_OPEN_ZIPFILE;
+      rc = SHELL_OPEN_ZIPFILE;
     }
   }
   fclose(f);

@@ -1,5 +1,5 @@
-C Export\sthe\sdeduceDatabaseType()\sfunction\sthe\sshell.c\ssource\sfile.
-D 2018-05-14T00:41:12.032
+C Fix\stypo\sin\sthe\sshell.c\ssource\sfile.
+D 2018-05-14T12:23:04.441
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -494,7 +494,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in bd7ea498f9d1e366ced57e229ae896c7d7ad00ae5913b8d34b6b649163b8dab9
+F src/shell.c.in 53affa90711f280342f7238f9c9aa9dcaed321ec6218a18043cf92154ef8a704
 F src/sqlite.h.in ef7e6fae65cb40ba004abf090ea491751295c11e64b1446322813d3b473b9400
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0dfdbdee527b0c429703bc2696bf8d8e44a852aafe0aca742b9d7152eb1f932e
-R da900d401b8955dc01f605862cf41fc0
-U drh
-Z 6411cd5f43bf5bc227e5d427558bf3cc
+P d0f35739af3b226c8eef39676407293650cde551acef06fe8628fdd5b59bd66a
+R 489299cac46675755fcab587758ad144
+U mistachkin
+Z 8281898e504b077f3010a87c94a2cdcf
