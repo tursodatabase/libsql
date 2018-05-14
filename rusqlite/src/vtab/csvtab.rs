@@ -220,6 +220,10 @@ impl VTab for CSVTab {
                     }
                 }
             }
+        } else if let Some(n_col) = n_col {
+            for i in 0..n_col {
+                cols.push(format!("c{}", i));
+            }
         }
 
         if cols.is_empty() && schema.is_none() {
