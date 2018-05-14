@@ -1,5 +1,5 @@
-C Experimental\ssyntax\senhancement\sfor\san\s"INDEXED"\skeyword\sfollowing\sa\sFROM-clause\nsubquery\sthat\sindicates\sthat\san\sautomatic\sindex\son\sthat\ssubquery\sis\ssuggested.
-D 2018-05-14T17:12:42.068
+C The\srestriction\son\susing\sautomatic\sindexes\sfor\slow\scardinality\sloops\sonly\napplies\sif\sthe\scardinality\sis\srestricted\sby\sa\sLIMIT\sclause.
+D 2018-05-14T18:09:20.470
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -577,7 +577,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c ebc86f315ef2fdb4a05780f95ce981b965ecc0127ef23851c58d41bb23ccdba9
+F src/where.c 95b25ef0854c62fb6cd0bcd1950e257c28ca18f1cae094693e7da18df7ccc3fa
 F src/whereInt.h cbae2bcd37cfebdb7812a8b188cdb19634ced2b9346470d1c270556b0c33ea53
 F src/wherecode.c 728c7f70731430ccdac807a79969873e1af6968bf1c4745dff3f9dd35f636cc8
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
@@ -1728,10 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd8b8c4196d3f0f6cb129f43ebf473ada86eefdf16181fa70ceee21e1232b5e1
-R 611d7b41a8fe4b803c387fc5e28a4594
-T *branch * exp-indexed-clause
-T *sym-exp-indexed-clause *
-T -sym-trunk *
+P 32b3d1105074529548627dcd63e25fbec6ba5e453b00e03f31ab2e324cf7f38d
+R 53348ecfc5d8e2bfe914b6f08dc1a047
 U drh
-Z 29c7f5f19fc1378727bec6e3ea350831
+Z 46884902f133074c4e29da96f2c0895f

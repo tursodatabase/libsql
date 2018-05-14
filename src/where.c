@@ -4005,9 +4005,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
-        if( (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 && pFrom->nRow<10 ){
+        if( (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
+         && (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0
+         && pWInfo->iLimit<10
+        ){
           /* Do not use an automatic index if the this loop is expected
-          ** to run less than 2 times. */
+          ** to run less than twice due to a LIMIT clause. */
           assert( 10==sqlite3LogEst(2) );
           continue;
         }
