@@ -2872,7 +2872,7 @@ static int whereLoopAddBtree(
           pNew->rSetup += 24;
         }
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
-        if( pNew->rSetup<0 ) pNew->rSetup = 0;
+        if( pNew->rSetup<0 || pSrc->fg.useAutoIdx ) pNew->rSetup = 0;
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way
         ** of knowing how selective the index will ultimately be.  It would

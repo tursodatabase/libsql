@@ -1,5 +1,5 @@
-C Convert\sthe\sschema\screation\slogic\sin\sthe\srtree\sextension\sto\suse\sthe\nnew\ssqlite3_str\sinterface.
-D 2018-05-14T15:26:05.642
+C Experimental\ssyntax\senhancement\sfor\san\s"INDEXED"\skeyword\sfollowing\sa\sFROM-clause\nsubquery\sthat\sindicates\sthat\san\sautomatic\sindex\son\sthat\ssubquery\sis\ssuggested.
+D 2018-05-14T17:12:42.068
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -437,7 +437,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 8270813c8f0ca91b2802e88ded3755d04ee962a923d431c13bcb6cf3e0c18f63
 F src/btree.h 448f15b98ea85dcf7e4eb76f731cadb89636c676ad25dfaac6de77cd66556598
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 50ff3e0fa07646b4d797aae0f773efcdb7602f6a5e2f5da27856503f35200889
+F src/build.c d71b7da8f32ff3ce25f02a611bc65021907b1c957f414fe5f65a6c0758a5c405
 F src/callback.c fe677cb5f5abb02f7a772a62a98c2f516426081df68856e8f2d5f950929b966a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 849d4cebe008cfc6e4799b034a172b4eaf8856b100739632a852732ba66eee48
@@ -482,7 +482,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 07784439d25f0bc64a656eece4caecc549b147d213f513cdbeb8430345ec2911
+F src/parse.y da3ecddde4261fa6adae7463d757a70f45b99f546ceb92c44e7b9f1b0a60ee23
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -498,7 +498,7 @@ F src/shell.c.in 53affa90711f280342f7238f9c9aa9dcaed321ec6218a18043cf92154ef8a70
 F src/sqlite.h.in ef7e6fae65cb40ba004abf090ea491751295c11e64b1446322813d3b473b9400
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h 5abdade4744cf3bd567afb65bb144bb3c61f6132f86813b995a5ca79c7b584e8
+F src/sqliteInt.h beb78cf78e70a19476952e610f0727d4400b8b7059ed54106aa0d84b30dd3982
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -577,7 +577,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c d89b1aa56a75a572cd60ad27ec0fe5958d5f98b0f4391a89c72811287be7c439
+F src/where.c ebc86f315ef2fdb4a05780f95ce981b965ecc0127ef23851c58d41bb23ccdba9
 F src/whereInt.h cbae2bcd37cfebdb7812a8b188cdb19634ced2b9346470d1c270556b0c33ea53
 F src/wherecode.c 728c7f70731430ccdac807a79969873e1af6968bf1c4745dff3f9dd35f636cc8
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
@@ -1728,7 +1728,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 389dc0a901b0ce54c3c773d63e5b288f6dd28b96dffc4b77861db89b275b57d6
-R 6e29d58591c6ddb3e781f9c6f4a089d0
+P fd8b8c4196d3f0f6cb129f43ebf473ada86eefdf16181fa70ceee21e1232b5e1
+R 611d7b41a8fe4b803c387fc5e28a4594
+T *branch * exp-indexed-clause
+T *sym-exp-indexed-clause *
+T -sym-trunk *
 U drh
-Z 737947d21bd079c8c254ee52cdbee001
+Z 29c7f5f19fc1378727bec6e3ea350831

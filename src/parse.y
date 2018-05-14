@@ -652,11 +652,12 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(A) LP select(S) RP
-                    as(Z) on_opt(N) using_opt(U). {
+                    as(Z) indexed_opt(I) on_opt(N) using_opt(U). {
     A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,N,U);
+    sqlite3SrcListIndexedBy(pParse, A, &I);
   }
   seltablist(A) ::= stl_prefix(A) LP seltablist(F) RP
-                    as(Z) on_opt(N) using_opt(U). {
+                    as(Z) indexed_opt(I) on_opt(N) using_opt(U). {
     if( A==0 && Z.n==0 && N==0 && U==0 ){
       A = F;
     }else if( F->nSrc==1 ){
@@ -677,6 +678,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
       pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,SF_NestedFrom,0);
       A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,pSubquery,N,U);
     }
+    sqlite3SrcListIndexedBy(pParse, A, &I);
   }
 %endif  SQLITE_OMIT_SUBQUERY
 
@@ -751,6 +753,7 @@ on_opt(N) ::= .     [OR]   {N = 0;}
 indexed_opt(A) ::= .                 {A.z=0; A.n=0;}
 indexed_opt(A) ::= INDEXED BY nm(X). {A = X;}
 indexed_opt(A) ::= NOT INDEXED.      {A.z=0; A.n=1;}
+indexed_opt(A) ::= INDEXED.          {A.z=0; A.n=2;}
 
 %type using_opt {IdList*}
 %destructor using_opt {sqlite3IdListDelete(pParse->db, $$);}

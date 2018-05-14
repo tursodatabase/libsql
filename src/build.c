@@ -3927,10 +3927,13 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
     assert( pItem->fg.isTabFunc==0 );
-    if( pIndexedBy->n==1 && !pIndexedBy->z ){
-      /* A "NOT INDEXED" clause was supplied. See parse.y 
-      ** construct "indexed_opt" for details. */
-      pItem->fg.notIndexed = 1;
+    if( pIndexedBy->n>=1 && !pIndexedBy->z ){
+      if( pIndexedBy->n==1 ){
+        pItem->fg.notIndexed = 1;
+      }else{
+        assert( pIndexedBy->n==2 );
+        pItem->fg.useAutoIdx = 1;
+      }
     }else{
       pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
       pItem->fg.isIndexedBy = 1;
