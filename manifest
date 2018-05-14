@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sallow\scomment\slines\sthat\sbegin\swith\s'#',\sbut\sonly\sin\sa\scontext\nwhere\sa\sdot-command\sis\sallowed.\s\sIn\sother\swords,\s'#'\sat\sthe\sbeginning\sof\sa\nline\sin\sthe\smiddle\sof\san\sSQL\sstatement\sis\sjust\spart\sof\sthe\sSQL.
-D 2018-05-12T23:56:22.493
+C Add\sthe\s--append\soption\sto\sthe\s".backup"\scommand\sin\sthe\sCLI.
+D 2018-05-14T00:23:08.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -494,7 +494,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in df40a09c4098d050bf5a008caa9ca8f25eed8ff9a8468d39b1f4d8a778cd324a
+F src/shell.c.in 05d9da22231fb422196f61f0a35232473f7002075e66b9ce874969339b09e88a
 F src/sqlite.h.in ef7e6fae65cb40ba004abf090ea491751295c11e64b1446322813d3b473b9400
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1239,7 +1239,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test e2f7d375ae80eb16590af23d6c40cd0140b6d1f92642c1b71eb94630a144ee08
+F test/shell1.test 50154b0c4779df435b9e60ca60104b05f1cc217eab1aa383131359329e73d939
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13e7300a37e379eac564594d78d3f039fd25737493b3b627ef02fab57a6c98e1
-R 6b32792e712eff37702825b507b2e9b6
+P 4ee136d6d2e029dad8371faf659d3a0bc0ac6ae76940db81d333848545bc990f
+R 6bcc8011ac4dc9adf5b8540f2d725295
 U drh
-Z d7c29ce2018cfc34028d7ed7f7fd8bc3
+Z 817f9a2eabe717770b3005d989b97807
