@@ -59,7 +59,7 @@ do_test 1.1.1 {
   catchsql COMMIT db2
 } {1 {database is locked}}
 do_test_conflict_msg 1.1.2 {
-  conflict at page 2 (read-only page; part of db table t1; flags=0x05)
+  conflict at page 2 (read-only page; part of db table t1; content=0500000063021100...)
 }
 
 do_test 1.2.1 {
@@ -78,7 +78,7 @@ do_test 1.2.1 {
 } {1 {database is locked}}
 
 do_test_conflict_msg 1.2.2 {
-  conflict at page 105 (read/write page; part of db table t1; flags=0x0d)
+  conflict at page 105 (read/write page; part of db table t1; content=0D00000002026100...)
 }
 
 do_test 1.3.1 {
@@ -97,7 +97,7 @@ do_test 1.3.1 {
 } {1 {database is locked}}
 
 do_test_conflict_msg 1.3.2 {
-  conflict at page 3 (read/write page; part of db table t2; flags=0x0d)
+  conflict at page 3 (read/write page; part of db table t2; content=0D0000000103FB00...)
 }
 
 do_test 1.4.1 {
@@ -121,7 +121,7 @@ do_test 1.4.1 {
 } {1 {database is locked}}
 
 do_test_conflict_msg 1.3.2 {
-  conflict at page 211 (read/write page; part of db index t3.i3; flags=0x0a)
+  conflict at page 211 (read/write page; part of db index t3.i3; content=0A0310006300D800...)
 }
 
 db close
