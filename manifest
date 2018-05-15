@@ -1,5 +1,5 @@
-C Merge\slatest\schanges\sfrom\strunk.\sIncluding\sthe\s"ORDER\sBY\s...\sLIMIT"\noptimization.
-D 2018-04-26T17:54:11.487
+C Include\sthe\svalue\sof\sthe\s"flags"\sbyte\sof\sthe\srelevant\spage\sin\sthe\slog\smessage\nemitted\swhen\sa\sBEGIN\sCONCURRENT\scommit\sconflict\sis\sdetected.
+D 2018-05-15T08:51:05.745
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 5ce9343cba9c189046f1afe6d2bcc1f68079439febc05267b98aec6ecc752439
@@ -437,7 +437,7 @@ F src/auth.c 6277d63837357549fe14e723490d6dc1a38768d71c795c5eb5c0f8a99f918f73
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 8433d9e98dd6f2ea3286e0d2fe5d65de1bfc18a706486eb2026b01be066b5806
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c a64d302f0fa956af74d2a74538d206c3c854bdb9c6d53b92825b774e8465bcb6
+F src/btree.c 593a90431223ca1dcdd3ff6797e96d36147434431dbfaf213e866e400dd408df
 F src/btree.h 0cd745755efd1f3df4c70544c54253920ea32fe6b179b97e9daeb786ba0de4ba
 F src/btreeInt.h 6c65e6c96f561596f6870c79a64d4706af81613881d7947e3f063e923f14115f
 F src/build.c 1ef8945748702f0069521bafe33df41647bea777fd2353c73530d522a9fedaf8
@@ -708,7 +708,7 @@ F test/concurrent.test 86661967a680670127a62a819e60dc93c2d3d49043ac95b26dfa70d3e
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test 530671ac706f6a1d0f4992dbdd33a86408330d03cd90fb9e82ecb1b27f5fd081
 F test/concurrent4.test e0b12cd467137e50259df3b4f837507e82aaa07c35941c88664dc8ed1d089c44
-F test/concurrent5.test d5d7d9d404a9b4502464fc097c1fc5c3012bb4f1b063fae7ad707ca983fc86c5
+F test/concurrent5.test ff73e642342f02133151c23b0eecab2ec1ea5bc9645c646861a9baa4263d8f50
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
@@ -1736,7 +1736,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b27bd799ea66748b89223044c536813d56d0aa513f077499cbf8ed9c974d7b01 0fcfc36ceb820fc70136b799a0405fe92e50646e697be2872bbe9a53a05ed5a9
-R aacb8135e5d5d61c420d0eb994490898
+P d8ae7ba083551f05b963f13c5164ff60257c7b615cd48d675027cb6289b463da
+R b31f3045e7e18d43f49b3d4aef3b5822
 U dan
-Z 0c0899207e7f0c3c73b0ec6107e8e193
+Z bf3fce17ea47da69e27674ff4f78c20a
