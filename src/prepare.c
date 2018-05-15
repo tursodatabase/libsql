@@ -216,6 +216,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   for(i=0; i<ArraySize(meta); i++){
     sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
   }
+  if( (db->flags & SQLITE_ResetDatabase)!=0 ){
+    memset(meta, 0, sizeof(meta));
+  }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
   /* If opening a non-empty database, check the text encoding. For the
@@ -613,7 +616,7 @@ static int sqlite3Prepare(
   if( rc==SQLITE_OK && sParse.pVdbe && sParse.explain ){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "selectid", "order", "from", "detail"
+       "id", "parent", "notused", "detail"
     };
     int iFirst, mx;
     if( sParse.explain==2 ){

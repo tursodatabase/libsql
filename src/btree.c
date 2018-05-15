@@ -3223,6 +3223,10 @@ static void setDefaultSyncFlag(BtShared *pBt, u8 safety_level){
 # define setDefaultSyncFlag(pBt,safety_level)
 #endif
 
+/* Forward declaration */
+static int newDatabase(BtShared*);
+
+
 /*
 ** Get a reference to pPage1 of the database file.  This will
 ** also acquire a readlock on that file.
@@ -3253,6 +3257,9 @@ static int lockBtree(BtShared *pBt){
   sqlite3PagerPagecount(pBt->pPager, &nPageFile);
   if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
     nPage = nPageFile;
+  }
+  if( (pBt->db->flags & SQLITE_ResetDatabase)!=0 ){
+    nPage = 0;
   }
   if( nPage>0 ){
     u32 pageSize;
@@ -6687,7 +6694,9 @@ static int clearCell(
   if( pInfo->nLocal==pInfo->nPayload ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
-  if( pCell+pInfo->nSize-1 > pPage->aData+pPage->maskPage ){
+  testcase( pCell + pInfo->nSize == pPage->aDataEnd );
+  testcase( pCell + (pInfo->nSize-1) == pPage->aDataEnd );
+  if( pCell + pInfo->nSize > pPage->aDataEnd ){
     /* Cell extends past end of page */
     return SQLITE_CORRUPT_PAGE(pPage);
   }
@@ -8614,6 +8623,94 @@ static int balance(BtCursor *pCur){
   return rc;
 }
 
+/* Overwrite content from pX into pDest.  Only do the write if the
+** content is different from what is already there.
+*/
+static int btreeOverwriteContent(
+  MemPage *pPage,           /* MemPage on which writing will occur */
+  u8 *pDest,                /* Pointer to the place to start writing */
+  const BtreePayload *pX,   /* Source of data to write */
+  int iOffset,              /* Offset of first byte to write */
+  int iAmt                  /* Number of bytes to be written */
+){
+  int nData = pX->nData - iOffset;
+  if( nData<=0 ){
+    /* Overwritting with zeros */
+    int i;
+    for(i=0; i<iAmt && pDest[i]==0; i++){}
+    if( i<iAmt ){
+      int rc = sqlite3PagerWrite(pPage->pDbPage);
+      if( rc ) return rc;
+      memset(pDest + i, 0, iAmt - i);
+    }
+  }else{
+    if( nData<iAmt ){
+      /* Mixed read data and zeros at the end.  Make a recursive call
+      ** to write the zeros then fall through to write the real data */
+      int rc = btreeOverwriteContent(pPage, pDest+nData, pX, iOffset+nData,
+                                 iAmt-nData);
+      if( rc ) return rc;
+      iAmt = nData;
+    }
+    if( memcmp(pDest, ((u8*)pX->pData) + iOffset, iAmt)!=0 ){
+      int rc = sqlite3PagerWrite(pPage->pDbPage);
+      if( rc ) return rc;
+      memcpy(pDest, ((u8*)pX->pData) + iOffset, iAmt);
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Overwrite the cell that cursor pCur is pointing to with fresh content
+** contained in pX.
+*/
+static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
+  int iOffset;                        /* Next byte of pX->pData to write */
+  int nTotal = pX->nData + pX->nZero; /* Total bytes of to write */
+  int rc;                             /* Return code */
+  MemPage *pPage = pCur->pPage;       /* Page being written */
+  BtShared *pBt;                      /* Btree */
+  Pgno ovflPgno;                      /* Next overflow page to write */
+  u32 ovflPageSize;                   /* Size to write on overflow page */
+
+  if( pCur->info.pPayload + pCur->info.nLocal > pPage->aDataEnd ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+  /* Overwrite the local portion first */
+  rc = btreeOverwriteContent(pPage, pCur->info.pPayload, pX,
+                             0, pCur->info.nLocal);
+  if( rc ) return rc;
+  if( pCur->info.nLocal==nTotal ) return SQLITE_OK;
+
+  /* Now overwrite the overflow pages */
+  iOffset = pCur->info.nLocal;
+  assert( nTotal>=0 );
+  assert( iOffset>=0 );
+  ovflPgno = get4byte(pCur->info.pPayload + iOffset);
+  pBt = pPage->pBt;
+  ovflPageSize = pBt->usableSize - 4;
+  do{
+    rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
+    if( rc ) return rc;
+    if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      if( iOffset+ovflPageSize<(u32)nTotal ){
+        ovflPgno = get4byte(pPage->aData);
+      }else{
+        ovflPageSize = nTotal - iOffset;
+      }
+      rc = btreeOverwriteContent(pPage, pPage->aData+4, pX,
+                                 iOffset, ovflPageSize);
+    }
+    sqlite3PagerUnref(pPage->pDbPage);
+    if( rc ) return rc;
+    iOffset += ovflPageSize;
+  }while( iOffset<nTotal );
+  return SQLITE_OK;    
+}
+
 
 /*
 ** Insert a new record into the BTree.  The content of the new record
@@ -8704,35 +8801,86 @@ int sqlite3BtreeInsert(
     invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
 
     /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
-    ** to a row with the same key as the new entry being inserted.  */
-    assert( (flags & BTREE_SAVEPOSITION)==0 || 
-            ((pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey) );
+    ** to a row with the same key as the new entry being inserted.
+    */
+#ifdef SQLITE_DEBUG
+    if( flags & BTREE_SAVEPOSITION ){
+      assert( pCur->curFlags & BTCF_ValidNKey );
+      assert( pX->nKey==pCur->info.nKey );
+      assert( pCur->info.nSize!=0 );
+      assert( loc==0 );
+    }
+#endif
 
-    /* If the cursor is currently on the last row and we are appending a
-    ** new row onto the end, set the "loc" to avoid an unnecessary
-    ** btreeMoveto() call */
+    /* On the other hand, BTREE_SAVEPOSITION==0 does not imply
+    ** that the cursor is not pointing to a row to be overwritten.
+    ** So do a complete check.
+    */
     if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey ){
-      loc = 0;
+      /* The cursor is pointing to the entry that is to be
+      ** overwritten */
+      assert( pX->nData>=0 && pX->nZero>=0 );
+      if( pCur->info.nSize!=0
+       && pCur->info.nPayload==(u32)pX->nData+pX->nZero
+      ){
+        /* New entry is the same size as the old.  Do an overwrite */
+        return btreeOverwriteCell(pCur, pX);
+      }
+      assert( loc==0 );
     }else if( loc==0 ){
+      /* The cursor is *not* pointing to the cell to be overwritten, nor
+      ** to an adjacent cell.  Move the cursor so that it is pointing either
+      ** to the cell to be overwritten or an adjacent cell.
+      */
       rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, flags!=0, &loc);
       if( rc ) return rc;
     }
-  }else if( loc==0 && (flags & BTREE_SAVEPOSITION)==0 ){
-    if( pX->nMem ){
-      UnpackedRecord r;
-      r.pKeyInfo = pCur->pKeyInfo;
-      r.aMem = pX->aMem;
-      r.nField = pX->nMem;
-      r.default_rc = 0;
-      r.errCode = 0;
-      r.r1 = 0;
-      r.r2 = 0;
-      r.eqSeen = 0;
-      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, flags!=0, &loc);
-    }else{
-      rc = btreeMoveto(pCur, pX->pKey, pX->nKey, flags!=0, &loc);
+  }else{
+    /* This is an index or a WITHOUT ROWID table */
+
+    /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
+    ** to a row with the same key as the new entry being inserted.
+    */
+    assert( (flags & BTREE_SAVEPOSITION)==0 || loc==0 );
+
+    /* If the cursor is not already pointing either to the cell to be
+    ** overwritten, or if a new cell is being inserted, if the cursor is
+    ** not pointing to an immediately adjacent cell, then move the cursor
+    ** so that it does.
+    */
+    if( loc==0 && (flags & BTREE_SAVEPOSITION)==0 ){
+      if( pX->nMem ){
+        UnpackedRecord r;
+        r.pKeyInfo = pCur->pKeyInfo;
+        r.aMem = pX->aMem;
+        r.nField = pX->nMem;
+        r.default_rc = 0;
+        r.errCode = 0;
+        r.r1 = 0;
+        r.r2 = 0;
+        r.eqSeen = 0;
+        rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, flags!=0, &loc);
+      }else{
+        rc = btreeMoveto(pCur, pX->pKey, pX->nKey, flags!=0, &loc);
+      }
+      if( rc ) return rc;
     }
-    if( rc ) return rc;
+
+    /* If the cursor is currently pointing to an entry to be overwritten
+    ** and the new content is the same as as the old, then use the
+    ** overwrite optimization.
+    */
+    if( loc==0 ){
+      getCellInfo(pCur);
+      if( pCur->info.nKey==pX->nKey ){
+        BtreePayload x2;
+        x2.pData = pX->pKey;
+        x2.nData = pX->nKey;
+        x2.nZero = 0;
+        return btreeOverwriteCell(pCur, &x2);
+      }
+    }
+
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 
@@ -9575,14 +9723,14 @@ static void checkAppendMsg(
   pCheck->nErr++;
   va_start(ap, zFormat);
   if( pCheck->errMsg.nChar ){
-    sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
+    sqlite3_str_append(&pCheck->errMsg, "\n", 1);
   }
   if( pCheck->zPfx ){
-    sqlite3XPrintf(&pCheck->errMsg, pCheck->zPfx, pCheck->v1, pCheck->v2);
+    sqlite3_str_appendf(&pCheck->errMsg, pCheck->zPfx, pCheck->v1, pCheck->v2);
   }
-  sqlite3VXPrintf(&pCheck->errMsg, zFormat, ap);
+  sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
-  if( pCheck->errMsg.accError==STRACCUM_NOMEM ){
+  if( pCheck->errMsg.accError==SQLITE_NOMEM ){
     pCheck->mallocFailed = 1;
   }
 }
@@ -10168,11 +10316,11 @@ integrity_ck_cleanup:
   sqlite3PageFree(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
   if( sCheck.mallocFailed ){
-    sqlite3StrAccumReset(&sCheck.errMsg);
+    sqlite3_str_reset(&sCheck.errMsg);
     sCheck.nErr++;
   }
   *pnErr = sCheck.nErr;
-  if( sCheck.nErr==0 ) sqlite3StrAccumReset(&sCheck.errMsg);
+  if( sCheck.nErr==0 ) sqlite3_str_reset(&sCheck.errMsg);
   /* Make sure this analysis did not leave any unref() pages. */
   assert( nRef==sqlite3PagerRefcount(pBt->pPager) );
   sqlite3BtreeLeave(p);

@@ -613,12 +613,6 @@ void sqlite3Update(
       j = aXRef[i];
       if( j>=0 ){
         sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
-        if( tmask&TRIGGER_BEFORE ){
-          /* Must preserve copied values even in case the original is
-          ** reloaded in the After-BEFORE-trigger-reload-loop below.
-          ** Ticket d85fffd6ffe856092ed8daefa811b1e399706b28 */
-          sqlite3VdbeSwapOpcode(v, -1, OP_SCopy, OP_Copy);
-        }
       }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i)) ){
         /* This branch loads the value of a column that will not be changed 
         ** into a register. This is done if there are no BEFORE triggers, or
@@ -628,6 +622,12 @@ void sqlite3Update(
         testcase( i==31 );
         testcase( i==32 );
         sqlite3ExprCodeGetColumnToReg(pParse, pTab, i, iDataCur, regNew+i);
+        if( tmask & TRIGGER_BEFORE ){
+          /* This value will be recomputed in After-BEFORE-trigger-reload-loop
+          ** below, so make sure that it is not cached and reused.
+          ** Ticket d85fffd6ffe856092ed8daefa811b1e399706b28. */
+          sqlite3ExprCacheRemove(pParse, regNew+i, 1);
+        }
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
       }

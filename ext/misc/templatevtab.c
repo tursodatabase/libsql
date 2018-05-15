@@ -10,40 +10,45 @@
 **
 *************************************************************************
 **
-** This file implements a template virtual-table implementation.
+** This file implements a template virtual-table.
 ** Developers can make a copy of this file as a baseline for writing
 ** new virtual tables and/or table-valued functions.
 **
 ** Steps for writing a new virtual table implementation:
 **
-**     (1)  Make a copy of this file.  Prehaps "mynewvtab.c"
+**     (1)  Make a copy of this file.  Perhaps call it "mynewvtab.c"
 **
 **     (2)  Replace this header comment with something appropriate for
 **          the new virtual table
 **
 **     (3)  Change every occurrence of "templatevtab" to some other string
 **          appropriate for the new virtual table.  Ideally, the new string
-**          should be the basename of the source file: "mynewvtab".
+**          should be the basename of the source file: "mynewvtab".  Also
+**          globally change "TEMPLATEVTAB" to "MYNEWVTAB".
 **
 **     (4)  Run a test compilation to make sure the unmodified virtual
 **          table works.
 **
-**     (5)  Begin making changes to make the new virtual table do what you
-**          want it to do.
-**
-**     (6)  Ensure that all the "FIXME" comments in the file have been dealt
-**          with.
+**     (5)  Begin making incremental changes, testing as you go, to evolve
+**          the new virtual table to do what you want it to do.
 **
 ** This template is minimal, in the sense that it uses only the required
 ** methods on the sqlite3_module object.  As a result, templatevtab is
 ** a read-only and eponymous-only table.  Those limitation can be removed
 ** by adding new methods.
+**
+** This template implements an eponymous-only virtual table with a rowid and
+** two columns named "a" and "b".  The table as 10 rows with fixed integer
+** values. Usage example:
+**
+**     SELECT rowid, a, b FROM templatevtab;
 */
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
 #endif
 SQLITE_EXTENSION_INIT1
 #include <string.h>
+#include <assert.h>
 
 /* templatevtab_vtab is a subclass of sqlite3_vtab which is
 ** underlying representation of the virtual table
@@ -92,6 +97,9 @@ static int templatevtabConnect(
   rc = sqlite3_declare_vtab(db,
            "CREATE TABLE x(a,b)"
        );
+  /* For convenience, define symbolic names for the index to each column. */
+#define TEMPLATEVTAB_A  0
+#define TEMPLATEVTAB_B  1
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -151,7 +159,15 @@ static int templatevtabColumn(
   int i                       /* Which column to return */
 ){
   templatevtab_cursor *pCur = (templatevtab_cursor*)cur;
-  sqlite3_result_int(ctx, (i+1)*1000 + pCur->iRowid);
+  switch( i ){
+    case TEMPLATEVTAB_A:
+      sqlite3_result_int(ctx, 1000 + pCur->iRowid);
+      break;
+    default:
+      assert( i==TEMPLATEVTAB_B );
+      sqlite3_result_int(ctx, 2000 + pCur->iRowid);
+      break;
+  }
   return SQLITE_OK;
 }
 

@@ -1093,7 +1093,7 @@ typedef struct Select Select;
 typedef struct SQLiteThread SQLiteThread;
 typedef struct SelectDest SelectDest;
 typedef struct SrcList SrcList;
-typedef struct StrAccum StrAccum;
+typedef struct sqlite3_str StrAccum; /* Internal alias for sqlite3_str */
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
@@ -1507,6 +1507,7 @@ struct sqlite3 {
 #define SQLITE_Fts3Tokenizer  0x00400000  /* Enable fts3_tokenizer(2) */
 #define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee*/
 #define SQLITE_TriggerEQP     0x01000000  /* Show trigger EXPLAIN QUERY PLAN */
+#define SQLITE_ResetDatabase  0x02000000  /* Reset the database */
 
 #define SQLITE_NoopUpdate     0x01000000  /* UPDATE operations are no-ops */
 /* Flags used only if debugging */
@@ -2610,9 +2611,6 @@ struct SrcList {
       unsigned viaCoroutine :1;  /* Implemented as a co-routine */
       unsigned isRecursive :1;   /* True for recursive reference in WITH */
     } fg;
-#ifndef SQLITE_OMIT_EXPLAIN
-    u8 iSelectId;     /* If pSelect!=0, the id of the sub-select in EQP */
-#endif
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
@@ -2760,11 +2758,8 @@ struct Upsert {
 ** An instance of the following structure contains all information
 ** needed to generate code for a single SELECT statement.
 **
-** nLimit is set to -1 if there is no LIMIT clause.  nOffset is set to 0.
-** If there is a LIMIT clause, the parser sets nLimit to the value of the
-** limit and nOffset to the value of the offset (or 0 if there is not
-** offset).  But later on, nLimit and nOffset become the memory locations
-** in the VDBE that record the limit and offset counters.
+** See the header comment on the computeLimitRegisters() routine for a
+** detailed description of the meaning of the iLimit and iOffset fields.
 **
 ** addrOpenEphm[] entries contain the address of OP_OpenEphemeral opcodes.
 ** These addresses must be stored so that we can go back and fill in
@@ -2784,7 +2779,6 @@ struct Select {
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
 #if SELECTTRACE_ENABLED
   char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
-  u32 iSelectId;         /* EXPLAIN QUERY PLAN select ID */
 #endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   SrcList *pSrc;         /* The FROM clause */
@@ -2825,8 +2819,7 @@ struct Select {
 #define SF_MaybeConvert   0x08000  /* Need convertCompoundSelectToSubquery() */
 #define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
 #define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
-#define SF_ComplexResult  0x40000  /* Result set contains subquery or function */
-
+#define SF_ComplexResult  0x40000  /* Result contains subquery or function */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -3096,8 +3089,7 @@ struct Parse {
 #endif
   int nHeight;              /* Expression tree height of current sub-select */
 #ifndef SQLITE_OMIT_EXPLAIN
-  int iSelectId;            /* ID of current select for EXPLAIN output */
-  int iNextSelectId;        /* Next available select ID for EXPLAIN output */
+  int addrExplain;          /* Address of current OP_Explain opcode */
 #endif
   VList *pVList;            /* Mapping between variable names and numbers */
   Vdbe *pReprepare;         /* VM being reprepared (sqlite3Reprepare()) */
@@ -3283,17 +3275,15 @@ struct DbFixer {
 ** An objected used to accumulate the text of a string where we
 ** do not necessarily know how big the string will be in the end.
 */
-struct StrAccum {
+struct sqlite3_str {
   sqlite3 *db;         /* Optional database for lookaside.  Can be NULL */
   char *zText;         /* The string collected so far */
   u32  nAlloc;         /* Amount of space allocated in zText */
   u32  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u32  nChar;          /* Length of the string so far */
-  u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
+  u8   accError;       /* SQLITE_NOMEM or SQLITE_TOOBIG */
   u8   printfFlags;    /* SQLITE_PRINTF flags below */
 };
-#define STRACCUM_NOMEM   1
-#define STRACCUM_TOOBIG  2
 #define SQLITE_PRINTF_INTERNAL 0x01  /* Internal-use-only converters allowed */
 #define SQLITE_PRINTF_SQLFUNC  0x02  /* SQL function arguments to VXPrintf */
 #define SQLITE_PRINTF_MALLOCED 0x04  /* True if xText is allocated space */
@@ -3662,8 +3652,6 @@ struct PrintfArguments {
   sqlite3_value **apArg;   /* The argument values */
 };
 
-void sqlite3VXPrintf(StrAccum*, const char*, va_list);
-void sqlite3XPrintf(StrAccum*, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
@@ -4186,11 +4174,7 @@ int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
-void sqlite3StrAccumAppend(StrAccum*,const char*,int);
-void sqlite3StrAccumAppendAll(StrAccum*,const char*);
-void sqlite3AppendChar(StrAccum*,int,char);
 char *sqlite3StrAccumFinish(StrAccum*);
-void sqlite3StrAccumReset(StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 

@@ -3494,18 +3494,18 @@ static int rtreeInit(
     if( (rc = rtreeSqlInit(pRtree, db, argv[1], argv[2], isCreate)) ){
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }else{
-      char *zSql = sqlite3_mprintf("CREATE TABLE x(%s", argv[3]);
-      char *zTmp;
+      sqlite3_str *pSql = sqlite3_str_new(db);
+      char *zSql;
       int ii;
-      for(ii=4; zSql && ii<argc; ii++){
-        zTmp = zSql;
-        zSql = sqlite3_mprintf("%s, %s", zTmp, argv[ii]);
-        sqlite3_free(zTmp);
-      }
-      if( zSql ){
-        zTmp = zSql;
-        zSql = sqlite3_mprintf("%s);", zTmp);
-        sqlite3_free(zTmp);
+      if( pSql==0 ){
+        zSql = 0;
+      }else{
+        sqlite3_str_appendf(pSql, "CREATE TABLE x(%s", argv[3]);
+        for(ii=4; ii<argc; ii++){
+          sqlite3_str_appendf(pSql, ", %s", argv[ii]);
+        }
+        sqlite3_str_appendf(pSql, ");");
+        zSql = sqlite3_str_finish(pSql);
       }
       if( !zSql ){
         rc = SQLITE_NOMEM;
