@@ -3963,7 +3963,7 @@ int sqlite3Fts3Init(sqlite3 *db){
 
 #ifdef SQLITE_TEST
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts3ExprInitTestInterface(db);
+    rc = sqlite3Fts3ExprInitTestInterface(db, pHash);
   }
 #endif
 

@@ -121,10 +121,11 @@ do_execsql_test 6.0 {
 ifcapable stat4 {
   do_eqp_test 6.1 {
     SELECT DISTINCT c FROM t3 WHERE b BETWEEN '.xx..' AND '.xxxx';
-  } {
-    0 0 0 {SEARCH TABLE t3 USING INDEX i3 (ANY(a) AND b>? AND b<?)} 
-    0 0 0 {USE TEMP B-TREE FOR DISTINCT}
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SEARCH TABLE t3 USING INDEX i3 (ANY(a) AND b>? AND b<?)
+    `--USE TEMP B-TREE FOR DISTINCT
+  }]
 }
 
 do_faultsim_test 6 -faults oom* -body {

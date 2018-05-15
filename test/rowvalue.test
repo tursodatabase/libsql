@@ -175,19 +175,19 @@ do_execsql_test 7.0 {
 
 foreach {tn sql res eqp} {
   1 "SELECT * FROM xy WHERE (i, j) IS (2, 2)" {2 2 2} 
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid=?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid=?)"
 
   2 "SELECT * FROM xy WHERE (k, j) < (2, 3)" {1 1 1 2 2 2}
-    "0 0 0 {SCAN TABLE xy}"
+    "SCAN TABLE xy"
 
   3 "SELECT * FROM xy WHERE (i, j) < (2, 3)" {1 1 1 2 2 2}
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid<?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid<?)"
 
   4 "SELECT * FROM xy WHERE (i, j) > (2, 1)" {2 2 2 3 3 3 4 4 4}
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)"
 
   5 "SELECT * FROM xy WHERE (i, j) > ('2', 1)" {2 2 2 3 3 3 4 4 4}
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)"
 
 } {
   do_eqp_test 7.$tn.1 $sql $eqp

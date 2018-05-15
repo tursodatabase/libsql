@@ -318,8 +318,9 @@ do_execsql_test index6-8.0 {
 do_eqp_test index6-8.1 {
   SELECT * FROM t8a LEFT JOIN t8b ON (x = 'value' AND y = a)
 } {
-  0 0 0 {SCAN TABLE t8a} 
-  0 1 1 {SEARCH TABLE t8b USING INDEX i8c (y=?)}
+  QUERY PLAN
+  |--SCAN TABLE t8a
+  `--SEARCH TABLE t8b USING INDEX i8c (y=?)
 }
 
 do_execsql_test index6-8.2 {

@@ -264,9 +264,11 @@ do_eqp_test 7.2 {
     t2.x = t1.x AND (t2.y=? OR (t2.y=? AND t2.z IS NOT NULL))
   );
 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)} 
-  0 1 1 {SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--MULTI-INDEX OR
+     |--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+     `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
 }
 
 do_execsql_test 7.3 {
@@ -285,9 +287,9 @@ do_execsql_test 7.3 {
 do_eqp_test 7.4 {
   SELECT * FROM t3 LEFT JOIN t4 ON (t4.x = t3.x) WHERE (t4.y = ? OR t4.z = ?);
 } {
-  0 0 0 {SCAN TABLE t3} 
-  0 1 1 {SEARCH TABLE t4 USING INDEX t4xz (x=?)}
+  QUERY PLAN
+  |--SCAN TABLE t3
+  `--SEARCH TABLE t4 USING INDEX t4xz (x=?)
 } 
 
 finish_test
-

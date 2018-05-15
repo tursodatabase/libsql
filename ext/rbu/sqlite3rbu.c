@@ -153,6 +153,10 @@
 **
 ** RBU_STATE_OALSZ:
 **   Valid if STAGE==1. The size in bytes of the *-oal file.
+**
+** RBU_STATE_DATATBL:
+**   Only valid if STAGE==1. The RBU database name of the table 
+**   currently being read.
 */
 #define RBU_STATE_STAGE        1
 #define RBU_STATE_TBL          2
@@ -163,6 +167,7 @@
 #define RBU_STATE_COOKIE       7
 #define RBU_STATE_OALSZ        8
 #define RBU_STATE_PHASEONESTEP 9
+#define RBU_STATE_DATATBL     10
 
 #define RBU_STAGE_OAL         1
 #define RBU_STAGE_MOVE        2
@@ -205,6 +210,7 @@ typedef sqlite3_int64 i64;
 struct RbuState {
   int eStage;
   char *zTbl;
+  char *zDataTbl;
   char *zIdx;
   i64 iWalCksum;
   int nRow;
@@ -2268,6 +2274,7 @@ static sqlite3 *rbuOpenDbhandle(
 static void rbuFreeState(RbuState *p){
   if( p ){
     sqlite3_free(p->zTbl);
+    sqlite3_free(p->zDataTbl);
     sqlite3_free(p->zIdx);
     sqlite3_free(p);
   }
@@ -2336,6 +2343,10 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 
       case RBU_STATE_PHASEONESTEP:
         pRet->nPhaseOneStep = sqlite3_column_int64(pStmt, 1);
+        break;
+
+      case RBU_STATE_DATATBL:
+        pRet->zDataTbl = rbuStrndup((char*)sqlite3_column_text(pStmt, 1), &rc);
         break;
 
       default:
@@ -3112,7 +3123,8 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
           "(%d, %lld), "
           "(%d, %lld), "
           "(%d, %lld), "
-          "(%d, %lld) ",
+          "(%d, %lld), "
+          "(%d, %Q)  ",
           p->zStateDb,
           RBU_STATE_STAGE, eStage,
           RBU_STATE_TBL, p->objiter.zTbl, 
@@ -3122,7 +3134,8 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
           RBU_STATE_CKPT, p->iWalCksum,
           RBU_STATE_COOKIE, (i64)pFd->iCookie,
           RBU_STATE_OALSZ, p->iOalSz,
-          RBU_STATE_PHASEONESTEP, p->nPhaseOneStep
+          RBU_STATE_PHASEONESTEP, p->nPhaseOneStep,
+          RBU_STATE_DATATBL, p->objiter.zDataTbl
       )
     );
     assert( pInsert==0 || rc==SQLITE_OK );
@@ -3378,7 +3391,8 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 
     while( rc==SQLITE_OK && pIter->zTbl && (pIter->bCleanup 
        || rbuStrCompare(pIter->zIdx, pState->zIdx)
-       || rbuStrCompare(pIter->zTbl, pState->zTbl) 
+       || (pState->zDataTbl==0 && rbuStrCompare(pIter->zTbl, pState->zTbl))
+       || (pState->zDataTbl && rbuStrCompare(pIter->zDataTbl, pState->zDataTbl))
     )){
       rc = rbuObjIterNext(p, pIter);
     }

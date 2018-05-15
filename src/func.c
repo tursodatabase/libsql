@@ -251,7 +251,7 @@ static void printfFunc(
     x.apArg = argv+1;
     sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
     str.printfFlags = SQLITE_PRINTF_SQLFUNC;
-    sqlite3XPrintf(&str, zFormat, &x);
+    sqlite3_str_appendf(&str, zFormat, &x);
     n = str.nChar;
     sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
                         SQLITE_DYNAMIC);
@@ -1654,20 +1654,20 @@ static void groupConcatStep(
         zSep = ",";
         nSep = 1;
       }
-      if( zSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
+      if( zSep ) sqlite3_str_append(pAccum, zSep, nSep);
     }
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);
-    if( zVal ) sqlite3StrAccumAppend(pAccum, zVal, nVal);
+    if( zVal ) sqlite3_str_append(pAccum, zVal, nVal);
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){
   StrAccum *pAccum;
   pAccum = sqlite3_aggregate_context(context, 0);
   if( pAccum ){
-    if( pAccum->accError==STRACCUM_TOOBIG ){
+    if( pAccum->accError==SQLITE_TOOBIG ){
       sqlite3_result_error_toobig(context);
-    }else if( pAccum->accError==STRACCUM_NOMEM ){
+    }else if( pAccum->accError==SQLITE_NOMEM ){
       sqlite3_result_error_nomem(context);
     }else{    
       sqlite3_result_text(context, sqlite3StrAccumFinish(pAccum), -1, 
