@@ -1,5 +1,5 @@
-C Make\smore\saggressive\suse\sof\sautomatic\sindexes\swhen\sprocessing\smateralized\nviews\sand\ssubqueries.
-D 2018-05-14T22:46:11.640
+C Fix\sa\stest\scase\sproblem\sin\swherelimit.test.
+D 2018-05-15T09:09:00.782
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -1605,7 +1605,7 @@ F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286c
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
-F test/wherelimit.test 1dee70c9cc147330156d75e23de88f771e624998b03ae316cb64e1d249f129d8
+F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
 F test/wherelimit2.test be78ba3aa1831c6358fd7d5b9809bfd520f0c2a7d63a295e8f182e140ff137c3
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd8b8c4196d3f0f6cb129f43ebf473ada86eefdf16181fa70ceee21e1232b5e1
-R 26b23505dddaf3f904e0f57ec8d12e3b
-U drh
-Z 23fd2f5ae4c9da76677cca7468979306
+P 172f5bd27e47cbdaaab54fe4383a5ee505d285257af6153ed626d9493a4adab3
+R 7da5203dafef8c66a62300580fe0275f
+U dan
+Z 4a80e24e85ecddb61714b0411739d5df
