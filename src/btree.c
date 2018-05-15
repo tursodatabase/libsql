@@ -10477,6 +10477,7 @@ int sqlite3BtreeExclusiveLock(Btree *p){
     PgHdr *pPg = 0;
     int rc2 = sqlite3PagerGet(pBt->pPager, pgno, &pPg, 0);
     if( rc2==SQLITE_OK ){
+      u8 pageFlags = 0;
       int bWrite = -1;
       const char *zObj = 0;
       const char *zTab = 0;
@@ -10488,6 +10489,7 @@ int sqlite3BtreeExclusiveLock(Btree *p){
 
         pgnoRoot = ((MemPage*)sqlite3PagerGetExtra(pPg))->pgnoRoot;
         bWrite = sqlite3PagerIswriteable(pPg);
+        pageFlags = ((u8*)sqlite3PagerGetData(pPg))[0];
         sqlite3PagerUnref(pPg);
 
         pSchema = sqlite3SchemaGet(p->db, p);
@@ -10513,11 +10515,12 @@ int sqlite3BtreeExclusiveLock(Btree *p){
       sqlite3_log(SQLITE_OK,
           "cannot commit CONCURRENT transaction "
           "- conflict at page %d "
-          "(%s page; part of db %s %s%s%s)",
+          "(%s page; part of db %s %s%s%s; flags=0x%02x)",
           (int)pgno,
           (bWrite==0?"read-only":(bWrite>0?"read/write":"unknown")),
           (zTab ? "index" : "table"),
-          (zTab ? zTab : ""), (zTab ? "." : ""), (zObj ? zObj : "UNKNOWN")
+          (zTab ? zTab : ""), (zTab ? "." : ""), (zObj ? zObj : "UNKNOWN"),
+          pageFlags
       );
     }
   }
