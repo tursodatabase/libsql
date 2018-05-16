@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sproblem\sin\swherelimit.test.
-D 2018-05-15T09:09:00.782
+C Correct\soutput\sfor\sthe\sfullkey\scolumn\sof\sjson_each()\swhen\sthe\stotal\sJSON\ninput\sis\sa\ssimple\svalue,\snot\san\sarray\sor\sobject.
+D 2018-05-16T12:19:11.651
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -280,7 +280,7 @@ F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
+F ext/misc/json1.c 02f5f0d9c131df79f4ee168d2b426f0f0d273b7771fc0bb5293c4e7692d9a2ee
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -1021,7 +1021,7 @@ F test/journal3.test c9c29883f5bf535ae82ae21c472df6263806a22e467b6db7cd0d6d54530
 F test/jrnlmode.test a6693f2bed4541a21e703aaa37bb3e10de154130645952933b82b2dec0a8b539
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test 24e97954e3bd6404f3715888c7f8f835e36e19c7ae6513b5d9ab2d381498962d
+F test/json101.test b40a9f5395d8e669b0bc3eb550ad2ae9e5ada01fbce23c446c2a30a305a6d575
 F test/json102.test eeb54efa221e50b74a2d6fb9259963b48d7414dca3ce2fdfdeed45cb28487bc1
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/json104.test 877d5845f6303899b7889ea5dd1bea99076e3100574d5c536082245c5805dcaa
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 172f5bd27e47cbdaaab54fe4383a5ee505d285257af6153ed626d9493a4adab3
-R 7da5203dafef8c66a62300580fe0275f
-U dan
-Z 4a80e24e85ecddb61714b0411739d5df
+P 3012df8b2c0b19d27260f389147a96c501aee9a4aee3813834cc9e438dbacede
+R eb478d353e4bc93e5a0dd64ac51f5c7a
+U drh
+Z bc6a18afa5bd2a1c6b59b76709d0f0cf
