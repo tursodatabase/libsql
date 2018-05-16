@@ -753,8 +753,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
                    NC_IdxExpr|NC_PartIdx);
         }
       }
-      if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
-        sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
+      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) 
+       || (pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
+      ){
+        const char *zType = pExpr->pWin ? "window" : "aggregate";
+        sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
         pNC->nErr++;
         is_agg = 0;
       }else if( no_such_func && pParse->db->init.busy==0
@@ -772,19 +775,28 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       if( is_agg ) pNC->ncFlags &= ~NC_AllowAgg;
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
-        NameContext *pNC2 = pNC;
-        pExpr->op = TK_AGG_FUNCTION;
-        pExpr->op2 = 0;
-        while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
-          pExpr->op2++;
-          pNC2 = pNC2->pNext;
+        if( pExpr->pWin ){
+          pExpr->pWin->pNextWin = pNC->pWin;
+          pNC->pWin = pExpr->pWin;
+          pExpr->pWin->pFunc = pDef;
+          pExpr->pWin->nArg = pExpr->x.pList->nExpr;
         }
-        assert( pDef!=0 );
-        if( pNC2 ){
-          assert( SQLITE_FUNC_MINMAX==NC_MinMaxAgg );
-          testcase( (pDef->funcFlags & SQLITE_FUNC_MINMAX)!=0 );
-          pNC2->ncFlags |= NC_HasAgg | (pDef->funcFlags & SQLITE_FUNC_MINMAX);
+        else
+        {
+          NameContext *pNC2 = pNC;
+          pExpr->op = TK_AGG_FUNCTION;
+          pExpr->op2 = 0;
+          while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
+            pExpr->op2++;
+            pNC2 = pNC2->pNext;
+          }
+          assert( pDef!=0 );
+          if( pNC2 ){
+            assert( SQLITE_FUNC_MINMAX==NC_MinMaxAgg );
+            testcase( (pDef->funcFlags & SQLITE_FUNC_MINMAX)!=0 );
+            pNC2->ncFlags |= NC_HasAgg | (pDef->funcFlags & SQLITE_FUNC_MINMAX);
 
+          }
         }
         pNC->ncFlags |= NC_AllowAgg;
       }
@@ -1234,6 +1246,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   nCompound = 0;
   pLeftmost = p;
   while( p ){
+    assert( p->pWin==0 );
     assert( (p->selFlags & SF_Expanded)!=0 );
     assert( (p->selFlags & SF_Resolved)==0 );
     p->selFlags |= SF_Resolved;
@@ -1291,12 +1304,13 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     /* Set up the local name-context to pass to sqlite3ResolveExprNames() to
     ** resolve the result-set expression list.
     */
-    sNC.ncFlags = NC_AllowAgg;
+    sNC.ncFlags = NC_AllowAgg|NC_AllowWin;
     sNC.pSrcList = p->pSrc;
     sNC.pNext = pOuterNC;
   
     /* Resolve names in the result set. */
     if( sqlite3ResolveExprListNames(&sNC, p->pEList) ) return WRC_Abort;
+    sNC.ncFlags &= ~NC_AllowWin;
   
     /* If there are no aggregate functions in the result-set, and no GROUP BY 
     ** expression, do not allow aggregates in any of the other expressions.
@@ -1345,7 +1359,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** outer queries 
     */
     sNC.pNext = 0;
-    sNC.ncFlags |= NC_AllowAgg;
+    sNC.ncFlags |= NC_AllowAgg|NC_AllowWin;
 
     /* If this is a converted compound query, move the ORDER BY clause from 
     ** the sub-query back to the parent query. At this point each term
@@ -1376,6 +1390,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     if( db->mallocFailed ){
       return WRC_Abort;
     }
+    sNC.ncFlags &= ~NC_AllowWin;
   
     /* Resolve the GROUP BY clause.  At the same time, make sure 
     ** the GROUP BY clause does not contain aggregate functions.
@@ -1401,6 +1416,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       sqlite3SelectWrongNumTermsError(pParse, p->pNext);
       return WRC_Abort;
     }
+
+    p->pWin = sNC.pWin;
+    sNC.pWin = 0;
 
     /* Advance to the next term of the compound
     */

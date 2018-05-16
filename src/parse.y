@@ -99,6 +99,8 @@
 */
 struct TrigEvent { int a; IdList * b; };
 
+struct FrameBound     { int eType; Expr *pExpr; };
+
 /*
 ** Disable lookaside memory allocation for objects that might be
 ** shared across database connections.
@@ -209,7 +211,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
   CONFLICT DATABASE DEFERRED DESC DETACH DO
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
-  QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
+  QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
@@ -1001,11 +1003,12 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
   sqlite3ExprAttachSubtrees(pParse->db, A, E, 0);
 }
 %endif  SQLITE_OMIT_CAST
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP. {
+expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP window(Z). {
   if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
   }
   A = sqlite3ExprFunction(pParse, Y, &X);
+  sqlite3WindowAttach(pParse, A, Z);
   if( D==SF_Distinct && A ){
     A->flags |= EP_Distinct;
   }
@@ -1016,6 +1019,59 @@ expr(A) ::= id(X) LP STAR RP. {
 term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP);
 }
+
+
+%type window {Window*}
+%destructor window {sqlite3WindowDelete(pParse->db, $$);}
+
+%type frame_opt {Window*}
+%destructor frame_opt {sqlite3WindowDelete(pParse->db, $$);}
+
+%type part_opt {ExprList*}
+%destructor part_opt {sqlite3ExprListDelete(pParse->db, $$);}
+
+%type filter_opt {Expr*}
+%destructor filter_opt {sqlite3ExprDelete(pParse->db, $$);}
+
+%type range_or_rows {int}
+
+%type frame_bound {struct FrameBound}
+%destructor frame_bound {sqlite3ExprDelete(pParse->db, $$.pExpr);}
+
+window(A) ::= . { A = 0; }
+window(A) ::= filter_opt(W) OVER LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP.{
+  if( Z ){
+    A = Z;
+    A->pFilter = W;
+    A->pPartition = X;
+    A->pOrderBy = Y;
+  }
+}
+
+part_opt(A) ::= PARTITION BY exprlist(X). { A = X; }
+part_opt(A) ::= .                         { A = 0; }
+filter_opt(A) ::= .                            { A = 0; }
+filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
+
+frame_opt(A) ::= .                             { 
+  A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
+}
+frame_opt(A) ::= range_or_rows(X) frame_bound(Y). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0);
+}
+frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound(Y) AND frame_bound(Z). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr);
+}
+
+range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
+range_or_rows(A) ::= ROWS.    { A = TK_ROWS;  }
+
+frame_bound(A) ::= UNBOUNDED PRECEDING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
+frame_bound(A) ::= expr(X) PRECEDING.   { A.eType = TK_PRECEDING; A.pExpr = X; }
+frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
+frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
+frame_bound(A) ::= UNBOUNDED FOLLOWING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
+
 
 expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   ExprList *pList = sqlite3ExprListAppend(pParse, X, Y);

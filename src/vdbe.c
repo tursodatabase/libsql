@@ -6313,7 +6313,11 @@ case OP_AggFinal: {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
-  rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  if( pOp->p3 ){
+    rc = sqlite3VdbeMemAggValue(pMem, &aMem[pOp->p3], pOp->p4.pFunc);
+  }else{
+    rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  }
   if( rc ){
     sqlite3VdbeError(p, "%s", sqlite3_value_text(pMem));
     goto abort_due_to_error;

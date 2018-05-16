@@ -1859,7 +1859,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
-    AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
+    WFUNCTION(sum,               1, 0, sumStep, sumFinalize, sumFinalize, 0),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
     AGGREGATE2(count,            0, 0, 0, countStep,       countFinalize,

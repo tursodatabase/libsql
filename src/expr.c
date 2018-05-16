@@ -1063,6 +1063,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
     }
+    if( !ExprHasProperty(p, EP_Reduced) ){
+      sqlite3WindowDelete(db, p->pWin);
+    }
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
   if( !ExprHasProperty(p, EP_Static) ){
@@ -1305,6 +1308,24 @@ static With *withDup(sqlite3 *db, With *p){
 # define withDup(x,y) 0
 #endif
 
+static Window *winDup(sqlite3 *db, Window *p){
+  Window *pNew = 0;
+  if( p ){
+    pNew = sqlite3DbMallocZero(db, sizeof(Window));
+    if( pNew ){
+      pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
+      pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
+      pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
+      pNew->eType = p->eType;
+      pNew->eEnd = p->eEnd;
+      pNew->eStart = p->eStart;
+      pNew->pStart = sqlite3ExprDup(db, pNew->pStart, 0);
+      pNew->pEnd = sqlite3ExprDup(db, pNew->pEnd, 0);
+    }
+  }
+  return pNew;
+}
+
 /*
 ** The following group of routines make deep copies of expressions,
 ** expression lists, ID lists, and select statements.  The copies can
@@ -1469,6 +1490,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNew->addrOpenEphm[1] = -1;
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = withDup(db, p->pWith);
+    pNew->pWin = winDup(db, p->pWin);
     sqlite3SelectSetName(pNew, p->zSelName);
     *pp = pNew;
     pp = &pNew->pPrior;
@@ -3778,6 +3800,10 @@ expr_code_doover:
       u8 enc = ENC(db);      /* The text encoding used by this database */
       CollSeq *pColl = 0;    /* A collating sequence */
 
+      if( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) && pExpr->pWin ){
+        return pExpr->pWin->regResult;
+      }
+
       if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
         /* SQL functions can be expensive. So try to move constant functions
         ** out of the inner loop, even if that means an extra OP_Copy. */
@@ -3798,7 +3824,7 @@ expr_code_doover:
         pDef = sqlite3FindFunction(db, "unknown", nFarg, enc, 0);
       }
 #endif
-      if( pDef==0 || pDef->xFinalize!=0 ){
+      if( pDef==0 /* || pDef->xFinalize!=0 */ ){
         sqlite3ErrorMsg(pParse, "unknown function: %s()", zId);
         break;
       }

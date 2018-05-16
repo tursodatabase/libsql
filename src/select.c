@@ -162,6 +162,7 @@ Select *sqlite3SelectNew(
   pNew->pNext = 0;
   pNew->pLimit = pLimit;
   pNew->pWith = 0;
+  pNew->pWin = 0;
   if( pParse->db->mallocFailed ) {
     clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;
@@ -3719,6 +3720,8 @@ static int flattenSubquery(
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
 
+  if( p->pWin ) return 0;
+
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
@@ -4588,6 +4591,27 @@ static void selectPopWith(Walker *pWalker, Select *p){
 #define selectPopWith 0
 #endif
 
+static int selectExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
+  Select *pSel = pFrom->pSelect;
+  Table *pTab;
+
+  pFrom->pTab = pTab = sqlite3DbMallocZero(pParse->db, sizeof(Table));
+  if( pTab==0 ) return WRC_Abort;
+  pTab->nTabRef = 1;
+  if( pFrom->zAlias ){
+    pTab->zName = sqlite3DbStrDup(pParse->db, pFrom->zAlias);
+  }else{
+    pTab->zName = sqlite3MPrintf(pParse->db, "subquery_%p", (void*)pTab);
+  }
+  while( pSel->pPrior ){ pSel = pSel->pPrior; }
+  sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
+  pTab->iPKey = -1;
+  pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
+  pTab->tabFlags |= TF_Ephemeral;
+
+  return WRC_Continue;
+}
+
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
 ** "Expanding" means to do the following:
@@ -4660,6 +4684,8 @@ static int selectExpander(Walker *pWalker, Select *p){
       assert( pSel!=0 );
       assert( pFrom->pTab==0 );
       if( sqlite3WalkSelect(pWalker, pSel) ) return WRC_Abort;
+      if( selectExpandSubquery(pParse, pFrom) ) return WRC_Abort;
+#if 0
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nTabRef = 1;
@@ -4673,6 +4699,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       pTab->iPKey = -1;
       pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
       pTab->tabFlags |= TF_Ephemeral;
+#endif
 #endif
     }else{
       /* An ordinary table or view name in the FROM clause */
@@ -5375,6 +5402,201 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
 }
 #endif /* SQLITE_COUNTOFVIEW_OPTIMIZATION */
 
+typedef struct WindowRewrite WindowRewrite;
+struct WindowRewrite {
+  Window *pWin;
+  ExprList *pSub;
+};
+
+static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
+  return WRC_Prune;
+}
+
+static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
+  struct WindowRewrite *p = pWalker->u.pRewrite;
+  Parse *pParse = pWalker->pParse;
+  int rc = WRC_Continue;
+
+  switch( pExpr->op ){
+    case TK_COLUMN: {
+      Expr *pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
+      p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
+      if( p->pSub ){
+        assert( ExprHasProperty(pExpr, EP_Static)==0 );
+        ExprSetProperty(pExpr, EP_Static);
+        sqlite3ExprDelete(pParse->db, pExpr);
+        ExprClearProperty(pExpr, EP_Static);
+        memset(pExpr, 0, sizeof(Expr));
+
+        pExpr->op = TK_COLUMN;
+        pExpr->iColumn = p->pSub->nExpr-1;
+        pExpr->iTable = p->pWin->iEphCsr;
+      }
+
+      break;
+    }
+
+    case TK_FUNCTION:
+      if( pExpr->pWin ){
+        rc = WRC_Prune;
+        pExpr->pWin->pOwner = pExpr;
+      }
+      break;
+
+    default: /* no-op */
+      break;
+  }
+
+  return rc;
+}
+
+static int selectWindowRewriteEList(
+  Parse *pParse, 
+  Window *pWin,
+  ExprList *pEList,               /* Rewrite expressions in this list */
+  ExprList **ppSub                /* IN/OUT: Sub-select expression-list */
+){
+  Walker sWalker;
+  WindowRewrite sRewrite;
+  int rc;
+
+  memset(&sWalker, 0, sizeof(Walker));
+  memset(&sRewrite, 0, sizeof(WindowRewrite));
+
+  sRewrite.pSub = *ppSub;
+  sRewrite.pWin = pWin;
+
+  sWalker.pParse = pParse;
+  sWalker.xExprCallback = selectWindowRewriteExprCb;
+  sWalker.xSelectCallback = selectWindowRewriteSelectCb;
+  sWalker.u.pRewrite = &sRewrite;
+
+  rc = sqlite3WalkExprList(&sWalker, pEList);
+
+  *ppSub = sRewrite.pSub;
+  return rc;
+}
+
+static ExprList *exprListAppendList(
+  Parse *pParse,          /* Parsing context */
+  ExprList *pList,        /* List to which to append. Might be NULL */
+  ExprList *pAppend       /* List of values to append. Might be NULL */
+){
+  if( pAppend ){
+    int i;
+    int nInit = pList ? pList->nExpr : 0;
+    for(i=0; i<pAppend->nExpr; i++){
+      Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
+      pList = sqlite3ExprListAppend(pParse, pList, pDup);
+      if( pList ) pList->a[nInit+i].sortOrder = pAppend->a[i].sortOrder;
+    }
+  }
+  return pList;
+}
+
+/*
+** If the SELECT statement passed as the second argument does not invoke
+** any SQL window functions, this function is a no-op. Otherwise, it 
+** rewrites the SELECT statement so that window function xStep functions
+** are invoked in the correct order. The simplest version of the 
+** transformation is:
+**
+**   SELECT win(args...) OVER (<list1>) FROM <src> ORDER BY <list2>
+**
+** to
+**
+**   SELECT win(args...) FROM (
+**     SELECT args... FROM <src> ORDER BY <list1>
+**   ) ORDER BY <list2>
+**
+** where <src> may contain WHERE, GROUP BY and HAVING clauses, and <list1>
+** is the concatenation of the PARTITION BY and ORDER BY clauses in the
+** OVER clause.
+**
+*/
+static int selectWindowRewrite(Parse *pParse, Select *p){
+  int rc = SQLITE_OK;
+  if( p->pWin ){
+    Vdbe *v = sqlite3GetVdbe(pParse);
+    int i;
+    sqlite3 *db = pParse->db;
+    Select *pSub = 0;             /* The subquery */
+    SrcList *pSrc = p->pSrc;
+    Expr *pWhere = p->pWhere;
+    ExprList *pGroupBy = p->pGroupBy;
+    Expr *pHaving = p->pHaving;
+    ExprList *pSort = 0;
+
+    ExprList *pSublist = 0;       /* Expression list for sub-query */
+    Window *pWin = p->pWin;
+
+    /* TODO: This is of course temporary requirements */
+    assert( pWin->pNextWin==0 );
+
+    p->pSrc = 0;
+    p->pWhere = 0;
+    p->pGroupBy = 0;
+    p->pHaving = 0;
+
+    pWin->regAccum = ++pParse->nMem;
+    pWin->regResult = ++pParse->nMem;
+
+    /* Assign a cursor number for the ephemeral table used to buffer rows.
+    ** The OpenEphemeral instruction is coded later, after it is known how
+    ** many columns the table will have.  */
+    pWin->iEphCsr = pParse->nTab++;
+
+    rc = selectWindowRewriteEList(pParse, pWin, p->pEList, &pSublist);
+    if( rc ) return rc;
+    rc = selectWindowRewriteEList(pParse, pWin, p->pOrderBy, &pSublist);
+    if( rc ) return rc;
+    pWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
+
+    /* Create the ORDER BY clause for the sub-select. This is the concatenation
+    ** of the window PARTITION and ORDER BY clauses. Append the same 
+    ** expressions to the sub-select expression list. They are required to
+    ** figure out where boundaries for partitions and sets of peer rows.  */
+    pSort = sqlite3ExprListDup(db, pWin->pPartition, 0);
+    if( pWin->pOrderBy ){
+      pSort = exprListAppendList(pParse, pSort, pWin->pOrderBy);
+    }
+    pSublist = exprListAppendList(pParse, pSublist, pSort);
+
+    /* Also append the arguments passed to the window function to the
+    ** sub-select expression list. */
+    pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+    pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList);
+
+    pSub = sqlite3SelectNew(
+        pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
+    );
+    p->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+    if( p->pSrc ){
+      int iTab;
+      ExprList *pList = 0;
+      p->pSrc->a[0].pSelect = pSub;
+      sqlite3SrcListAssignCursors(pParse, p->pSrc);
+      if( selectExpandSubquery(pParse, &p->pSrc->a[0]) ){
+        rc = SQLITE_NOMEM;
+      }else{
+        pSub->selFlags |= SF_Expanded;
+      }
+    }
+
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x108 ){
+      SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+    }
+#endif
+
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pWin->iEphCsr, pWin->nBufferCol);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+  }
+
+  return rc;
+}
+
 /*
 ** Generate code for the SELECT statement given in the p argument.  
 **
@@ -5443,7 +5665,6 @@ int sqlite3Select(
   sqlite3SelectPrep(pParse, p, 0);
   memset(&sSort, 0, sizeof(sSort));
   sSort.pOrderBy = p->pOrderBy;
-  pTabList = p->pSrc;
   if( pParse->nErr || db->mallocFailed ){
     goto select_end;
   }
@@ -5459,6 +5680,11 @@ int sqlite3Select(
   if( pDest->eDest==SRT_Output ){
     generateColumnNames(pParse, p);
   }
+
+  if( (rc = selectWindowRewrite(pParse, p)) ){
+    goto select_end;
+  }
+  pTabList = p->pSrc;
 
   /* Try to various optimizations (flattening subqueries, and strength
   ** reduction of join operators) in the FROM clause up into the main query
@@ -5833,10 +6059,23 @@ int sqlite3Select(
   }
 
   if( !isAgg && pGroupBy==0 ){
+    Window *pWin = p->pWin;
+    int regPart = 0;
+
     /* No aggregate functions and no GROUP BY clause */
     u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
     assert( WHERE_USE_LIMIT==SF_FixedLimit );
     wctrlFlags |= p->selFlags & SF_FixedLimit;
+
+    if( pWin ){
+      int nPart = (pWin->pPartition ? pWin->pPartition->nExpr : 0);
+      nPart += (pWin->pOrderBy ? pWin->pOrderBy->nExpr : 0);
+      if( nPart ){
+        regPart = pParse->nMem+1;
+        pParse->nMem += nPart;
+        sqlite3VdbeAddOp3(v, OP_Null, 0, regPart, regPart+nPart-1);
+      }
+    }
 
     /* Begin the database scan. */
     SELECTTRACE(1,pParse,p,("WhereBegin\n"));
@@ -5865,15 +6104,117 @@ int sqlite3Select(
       sqlite3VdbeChangeToNoop(v, sSort.addrSortIndex);
     }
 
-    /* Use the standard inner loop. */
     assert( p->pEList==pEList );
-    selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest,
-                    sqlite3WhereContinueLabel(pWInfo),
-                    sqlite3WhereBreakLabel(pWInfo));
+    if( p->pWin ){
+      int k;
+      int iSubCsr = p->pSrc->a[0].iCursor;
+      int nSub = p->pSrc->a[0].pTab->nCol;
+      int reg = pParse->nMem+1;
+      int regRecord = reg+nSub;
+      int regRowid = regRecord+1;
+      int regGosub = regRowid+1;
+      int addr;
+      int addrGosub;
 
-    /* End the database scan loop.
-    */
-    sqlite3WhereEnd(pWInfo);
+      pParse->nMem += nSub + 3;
+
+      /* Martial the row returned by the sub-select into an array of 
+      ** registers. */
+      for(k=0; k<nSub; k++){
+        sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
+      }
+
+      /* Check if this is the start of a new partition or peer group. */
+      if( regPart ){
+        ExprList *pPart = pWin->pPartition;
+        int nPart = (pPart ? pPart->nExpr : 0);
+        ExprList *pOrderBy = pWin->pOrderBy;
+        int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
+        int addrGoto = 0;
+        int addrJump = 0;
+
+        if( pPart ){
+          int regNewPart = reg + pWin->nBufferCol;
+          KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pPart, 0, 0);
+          addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, regPart, nPart);
+          sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+          addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
+          sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
+          sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+          sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+          if( pOrderBy ){
+            addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
+          }
+        }
+
+        if( pOrderBy ){
+          int regNewPeer = reg + pWin->nBufferCol + nPart;
+          int regPeer = regPart + nPart;
+
+          KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pOrderBy, 0, 0);
+          if( addrJump ) sqlite3VdbeJumpHere(v, addrJump);
+          addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPeer, regPeer, nPeer);
+          sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+          addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
+          sqlite3VdbeAddOp3(v, 
+              OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
+          );
+          sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+
+          if( addrGoto ) sqlite3VdbeJumpHere(v, addrGoto);
+        }
+
+        addrGosub = sqlite3VdbeAddOp1(v, OP_Gosub, regGosub);
+        sqlite3VdbeAddOp1(v, OP_ResetSorter, pWin->iEphCsr);
+        sqlite3VdbeAddOp3(v,OP_Copy,reg+pWin->nBufferCol,regPart,nPart+nPeer-1);
+
+        sqlite3VdbeJumpHere(v, addrJump);
+      }
+
+      /* Invoke step function for window functions */
+      sqlite3VdbeAddOp3(v, OP_AggStep0, 0, reg+pWin->iArgCol, pWin->regAccum);
+      sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+      sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
+
+      /* Buffer the current row in the ephemeral table. */
+      if( pWin->nBufferCol>0 ){
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, pWin->nBufferCol, regRecord);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Blob, 0, regRecord);
+        sqlite3VdbeAppendP4(v, (void*)"", 0);
+      }
+      sqlite3VdbeAddOp2(v, OP_NewRowid, pWin->iEphCsr, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, pWin->iEphCsr, regRecord, regRowid);
+
+      /* End the database scan loop. */
+      sqlite3WhereEnd(pWInfo);
+
+      sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
+      sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+      sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+      sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, sqlite3VdbeCurrentAddr(v)+2);
+
+      sqlite3VdbeAddOp0(v, OP_Goto);
+      if( regPart ){
+        sqlite3VdbeJumpHere(v, addrGosub);
+      }
+      addr = sqlite3VdbeAddOp1(v, OP_Rewind, pWin->iEphCsr);
+      selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, addr+1, 0);
+      sqlite3VdbeAddOp2(v, OP_Next, pWin->iEphCsr, addr+1);
+      sqlite3VdbeJumpHere(v, addr);
+      sqlite3VdbeAddOp1(v, OP_Return, regGosub);
+      sqlite3VdbeJumpHere(v, addr-1);       /* OP_Goto jumps here */
+
+    }else{
+      /* Use the standard inner loop. */
+      selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest,
+          sqlite3WhereContinueLabel(pWInfo),
+          sqlite3WhereBreakLabel(pWInfo));
+
+      /* End the database scan loop.
+      */
+      sqlite3WhereEnd(pWInfo);
+    }
   }else{
     /* This case when there exist aggregate functions or a GROUP BY clause
     ** or both */

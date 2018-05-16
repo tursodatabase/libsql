@@ -485,6 +485,7 @@ static const FuncDef statInitFuncdef = {
   0,               /* pNext */
   statInit,        /* xSFunc */
   0,               /* xFinalize */
+  0, 0,
   "stat_init",     /* zName */
   {0}
 };
@@ -801,6 +802,7 @@ static const FuncDef statPushFuncdef = {
   0,               /* pNext */
   statPush,        /* xSFunc */
   0,               /* xFinalize */
+  0, 0,
   "stat_push",     /* zName */
   {0}
 };
@@ -952,6 +954,7 @@ static const FuncDef statGetFuncdef = {
   0,               /* pNext */
   statGet,         /* xSFunc */
   0,               /* xFinalize */
+  0, 0,
   "stat_get",      /* zName */
   {0}
 };

@@ -1107,6 +1107,7 @@ typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
+typedef struct Window Window;
 typedef struct With With;
 
 /* A VList object records a mapping between parameters/variables/wildcards
@@ -1588,6 +1589,8 @@ struct FuncDef {
   FuncDef *pNext;      /* Next function with same name */
   void (*xSFunc)(sqlite3_context*,int,sqlite3_value**); /* func or agg-step */
   void (*xFinalize)(sqlite3_context*);                  /* Agg finalizer */
+  void (*xValue)(sqlite3_context*);                     /* Current agg value */
+  void (*xInverse)(sqlite3_context*,int,sqlite3_value**); /* inverse agg-step */
   const char *zName;   /* SQL name of the function. */
   union {
     FuncDef *pHash;      /* Next with a different name but the same hash */
@@ -1678,6 +1681,12 @@ struct FuncDestructor {
 **     are interpreted in the same way as the first 4 parameters to
 **     FUNCTION().
 **
+**   WFUNCTION(zName, nArg, iArg, xStep, xFinal, xValue, xInverse)
+**     Used to create an aggregate function definition implemented by
+**     the C functions xStep and xFinal. The first four parameters
+**     are interpreted in the same way as the first 4 parameters to
+**     FUNCTION().
+**
 **   LIKEFUNC(zName, nArg, pArg, flags)
 **     Used to create a scalar function definition of a function zName
 **     that accepts nArg arguments and is implemented by a call to C
@@ -1688,31 +1697,35 @@ struct FuncDestructor {
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, {0} }
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define VFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, {0} }
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
-   0, 0, xFunc, 0, #zName, {0} }
+   0, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define PURE_DATE(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
-   (void*)&sqlite3Config, 0, xFunc, 0, #zName, {0} }
+   (void*)&sqlite3Config, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
   {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, {0} }
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   pArg, 0, xFunc, 0, #zName, }
+   pArg, 0, xFunc, 0, 0, 0, #zName, }
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
-   (void *)arg, 0, likeFunc, 0, #zName, {0} }
+   (void *)arg, 0, likeFunc, 0, 0, 0, #zName, {0} }
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,#zName, {0}}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,0,0,#zName, {0}}
 #define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
-   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,#zName, {0}}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,0,0,#zName, {0}}
+
+#define WFUNCTION(zName, nArg, arg, xStep, xFinal, xValue, xInverse) \
+  {nArg, SQLITE_UTF8, \
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xValue,xInverse,#zName, {0}}
 
 /*
 ** All current savepoints are stored in a linked list starting at
@@ -2413,6 +2426,7 @@ struct Expr {
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   Table *pTab;           /* Table for TK_COLUMN expressions.  Can be NULL
                          ** for a column of an index on an expression */
+  Window *pWin;          /* Window definition for window functions */
 };
 
 /*
@@ -2699,6 +2713,7 @@ struct NameContext {
   int nRef;            /* Number of names resolved by this context */
   int nErr;            /* Number of errors encountered while resolving names */
   u16 ncFlags;         /* Zero or more NC_* flags defined below */
+  Window *pWin;        /* List of window functions in this context */
 };
 
 /*
@@ -2721,6 +2736,7 @@ struct NameContext {
 #define NC_UUpsert   0x0200  /* True if uNC.pUpsert is used */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
+#define NC_AllowWin  0x4000  /* Window functions are allowed here */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -2788,6 +2804,7 @@ struct Select {
   Select *pNext;         /* Next select to the left in a compound */
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   With *pWith;           /* WITH clause attached to this select. Or NULL. */
+  Window *pWin;          /* List of window functions */
 };
 
 /*
@@ -3401,6 +3418,7 @@ struct Walker {
     struct IdxExprTrans *pIdxTrans;           /* Convert idxed expr to column */
     ExprList *pGroupBy;                       /* GROUP BY clause */
     Select *pSelect;                          /* HAVING to WHERE clause ctx */
+    struct WindowRewrite *pRewrite;           /* Window rewrite context */
   } u;
 };
 
@@ -3450,6 +3468,31 @@ struct TreeView {
   u8  bLine[100];         /* Draw vertical in column i if bLine[i] is true */
 };
 #endif /* SQLITE_DEBUG */
+
+struct Window {
+  Expr *pFilter;
+  ExprList *pPartition;
+  ExprList *pOrderBy;
+  u8 eType;               /* TK_RANGE or TK_ROWS */
+  u8 eStart;              /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
+  u8 eEnd;                /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
+  Expr *pStart;           /* Expression for "<expr> PRECEDING" */
+  Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
+  Window *pNextWin;       /* Next window function belonging to this SELECT */
+  int iEphCsr;            /* Temp table used by this window */
+  int regAccum;
+  int regResult;
+  FuncDef *pFunc;
+  int nArg;
+
+  Expr *pOwner;           /* Expression object this window is attached to */
+  int nBufferCol;         /* Number of columns in buffer table */
+  int iArgCol;            /* Offset of first argument for this function */
+};
+
+void sqlite3WindowDelete(sqlite3*, Window*);
+Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
+void sqlite3WindowAttach(Parse*, Expr*, Window*);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
