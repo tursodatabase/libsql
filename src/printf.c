@@ -967,11 +967,21 @@ char *sqlite3StrAccumFinish(StrAccum *p){
   return p->zText;
 }
 
+/*
+** This singleton is an sqlite3_str object that is returned if
+** sqlite3_malloc() fails to provide space for a real one.  This
+** sqlite3_str object accepts no new text and always returns
+** an SQLITE_NOMEM error.
+*/
+static sqlite3_str sqlite3OomStr = {
+   0, 0, 0, 0, 0, SQLITE_NOMEM
+};
+
 /* Finalize a string created using sqlite3_str_new().
 */
 char *sqlite3_str_finish(sqlite3_str *p){
   char *z;
-  if( p ){
+  if( p!=0 && p!=&sqlite3OomStr ){
     z = sqlite3StrAccumFinish(p);
     sqlite3_free(p);
   }else{
@@ -1040,6 +1050,8 @@ sqlite3_str *sqlite3_str_new(sqlite3 *db){
   if( p ){
     sqlite3StrAccumInit(p, 0, 0, 0,
             db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
+  }else{
+    p = &sqlite3OomStr;
   }
   return p;
 }

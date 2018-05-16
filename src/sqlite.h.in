@@ -7155,11 +7155,19 @@ typedef struct sqlite3_str sqlite3_str;
 ** CONSTRUCTOR: sqlite3_str
 **
 ** ^The [sqlite3_str_new(D)] interface allocates and initializes
-** a new [sqlite3_str]
-** object.  ^The [sqlite3_str_new()] interface returns NULL on an out-of-memory
-** condition.  To avoid memory leaks, the object returned by
+** a new [sqlite3_str] object.  To avoid memory leaks, the object returned by
 ** [sqlite3_str_new()] must be freed by a subsequent call to 
 ** [sqlite3_str_finish(X)].
+**
+** ^The [sqlite3_str_new(D)] interface always returns a pointer to a
+** valid [sqlite3_str] object, though in the event of an out-of-memory
+** error the returned object might be a special singleton that will
+** silently reject new text, always return SQLITE_NOMEM from 
+** [sqlite3_str_errcode()], always return 0 for 
+** [sqlite3_str_length()], and always return NULL from
+** [sqlite3_str_finish(X)].  It is always safe to use the value
+** returned by [sqlite3_str_new(D)] as the sqlite3_str parameter
+** to any of the other [sqlite3_str] methods.
 **
 ** The D parameter to [sqlite3_str_new(D)] may be NULL.  If the
 ** D parameter in [sqlite3_str_new(D)] is not NULL, then the maximum
