@@ -1604,7 +1604,8 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   int rc = SQLITE_OK;
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
 
-  if( p==0 || pNode==0 ) return SQLITE_OK;
+  if( rc ) return rc;
+  if( p==0 ) return SQLITE_OK;
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else if( i<=pRtree->nDim2 ){

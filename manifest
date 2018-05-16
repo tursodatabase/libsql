@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sthe\sability\sto\shave\sauxiliary\scolumns\sin\san\srtree\nvirtual\stable\sthat\sstore\sarbitrary\scontent.\s\sIt\smostly\sworks,\sbut\sthere\sare\nsome\sminor\sissues\sin\sOOM\scorner\scases.
-D 2018-05-16T17:57:30.645
+C Fix\sthe\sOOM\sissue\smentioned\sin\sthe\sprevious\scheck-in.
+D 2018-05-16T18:18:24.545
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -355,7 +355,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 74c1157c32d44f0810c56436ff5e2922389a7d9ac81f1ad4fcd85976c3854018
+F ext/rtree/rtree.c 8176ca2bef95655f259b7320ae779e504b9d86edb181fc267cde94f9db3742b1
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 47e2095bebea6813754fd7afa6a20e2b7b4ebcd5cb7dbcb6932b6c9f86bbf972
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1728,10 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed5b09680fd6659ebbe5ace3c1c56f3962bbd75cfdf65c7565651900cf87917a
-R 091cfdce4344d2ad2548902254b1bbe7
-T *branch * aux-data-in-rtree
-T *sym-aux-data-in-rtree *
-T -sym-trunk *
+P 0c87fec970221f954e0a92f3ef0437b382255479fac5b403ee37b1bb5ab29719
+R 1a66dc3ed24af9af189a9d927f133deb
 U drh
-Z 6d7dec46bb0abfe5fe6f07ef3233cda3
+Z 426a969e38bb74296bdc875c7051db68
