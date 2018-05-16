@@ -24,14 +24,15 @@
 **
 **   CREATE TABLE %_node(nodeno INTEGER PRIMARY KEY, data BLOB)
 **   CREATE TABLE %_parent(nodeno INTEGER PRIMARY KEY, parentnode INTEGER)
-**   CREATE TABLE %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER)
+**   CREATE TABLE %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER, ...)
 **
 ** The data for each node of the r-tree structure is stored in the %_node
 ** table. For each node that is not the root node of the r-tree, there is
 ** an entry in the %_parent table associating the node with its parent.
 ** And for each row of data in the table, there is an entry in the %_rowid
 ** table that maps from the entries rowid to the id of the node that it
-** is stored on.
+** is stored on.  If the r-tree contains auxiliary columns, those are stored
+** on the end of the %_rowid table.
 **
 ** The root node of an r-tree always exists, even if the r-tree table is
 ** empty. The nodeno of the root node is always 1. All other nodes in the
@@ -1890,7 +1891,10 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       return SQLITE_OK;
     }
 
-    if( p->usable && (p->iColumn>0 || p->op==SQLITE_INDEX_CONSTRAINT_MATCH) ){
+    if( p->usable
+    && ((p->iColumn>0 && p->iColumn<=pRtree->nDim2)
+        || p->op==SQLITE_INDEX_CONSTRAINT_MATCH)
+    ){
       u8 op;
       switch( p->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ: op = RTREE_EQ; break;
@@ -3584,9 +3588,9 @@ static int rtreeInit(
   pSql = sqlite3_str_new(db);
   sqlite3_str_appendf(pSql, "CREATE TABLE x(%s", argv[3]);
   for(ii=4; ii<argc; ii++){
-    if( sqlite3_strlike("aux:%", argv[ii], 0)==0 ){
+    if( argv[ii][0]=='+' ){
       pRtree->nAux++;
-      sqlite3_str_appendf(pSql, ",%s", argv[ii]+4);
+      sqlite3_str_appendf(pSql, ",%s", argv[ii]+1);
     }else if( pRtree->nAux>0 ){
       break;
     }else{
@@ -3867,7 +3871,7 @@ static u8 *rtreeCheckGetNode(RtreeCheck *pCheck, i64 iNode, int *pnNode){
 ** two tables are:
 **
 **   CREATE TABLE %_parent(nodeno INTEGER PRIMARY KEY, parentnode INTEGER)
-**   CREATE TABLE %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER)
+**   CREATE TABLE %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER, ...)
 **
 ** In both cases, this function checks that there exists an entry with
 ** IPK value iKey and the second column set to iVal.
@@ -3882,8 +3886,8 @@ static void rtreeCheckMapping(
   int rc;
   sqlite3_stmt *pStmt;
   const char *azSql[2] = {
-    "SELECT parentnode FROM %Q.'%q_parent' WHERE nodeno=?",
-    "SELECT nodeno FROM %Q.'%q_rowid' WHERE rowid=?"
+    "SELECT parentnode FROM %Q.'%q_parent' WHERE nodeno=?1",
+    "SELECT nodeno FROM %Q.'%q_rowid' WHERE rowid=?1"
   };
 
   assert( bLeaf==0 || bLeaf==1 );
