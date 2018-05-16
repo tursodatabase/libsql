@@ -1,5 +1,5 @@
-C Do\snot\sallow\sauxiliary\scolumns\sin\sthe\srtree\sto\sinterfere\swith\squery\splanning.\nBegin\sadding\stest\scases.
-D 2018-05-16T19:07:07.322
+C Fix\san\sissue\swith\srtreecheck()\sand\sauxiliary\sdata\scolumns.
+D 2018-05-16T19:56:20.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -355,7 +355,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 762823491d82fccfe51628d4ed4e3c2444c839416e4c9e4fb5ff7267538a8759
+F ext/rtree/rtree.c 90c35907cedf73c7b2a69497f88a17da266616ee6f7bced787f8cc49002d4372
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 47e2095bebea6813754fd7afa6a20e2b7b4ebcd5cb7dbcb6932b6c9f86bbf972
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c489d8e44eac4cd355096ab66bb40f13ef662f31e080c9f1f2ee379fe55b207a
-R f1ba39e4f92eb847a2aa6e82a35e3a11
+P 9abe023e1afa7dc1a7eba7fbb3128401de129873d86b7c71c221decca26a821c
+R 7a064c4cbbc33c8c1ab943f10eb67b1c
 U drh
-Z 5b179b6d81cfc68160024bb335ccee53
+Z 2eb6f867a66e47a61ca5b21b3b9da89e

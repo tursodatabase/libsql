@@ -4071,6 +4071,7 @@ static int rtreeCheckTable(
   RtreeCheck check;               /* Common context for various routines */
   sqlite3_stmt *pStmt = 0;        /* Used to find column count of rtree table */
   int bEnd = 0;                   /* True if transaction should be closed */
+  int nAux = 0;                   /* Number of extra columns. */
 
   /* Initialize the context object */
   memset(&check, 0, sizeof(check));
@@ -4086,11 +4087,21 @@ static int rtreeCheckTable(
     bEnd = 1;
   }
 
+  /* Find the number of auxiliary columns */
+  if( check.rc==SQLITE_OK ){
+    pStmt = rtreeCheckPrepare(&check, "SELECT * FROM %Q.'%q_rowid'", zDb, zTab);
+    if( pStmt ){
+      nAux = sqlite3_column_count(pStmt) - 2;
+      sqlite3_finalize(pStmt);
+    }
+    check.rc = SQLITE_OK;
+  }
+
   /* Find number of dimensions in the rtree table. */
   pStmt = rtreeCheckPrepare(&check, "SELECT * FROM %Q.%Q", zDb, zTab);
   if( pStmt ){
     int rc;
-    check.nDim = (sqlite3_column_count(pStmt) - 1) / 2;
+    check.nDim = (sqlite3_column_count(pStmt) - 1 - nAux) / 2;
     if( check.nDim<1 ){
       rtreeCheckAppendMsg(&check, "Schema corrupt or not an rtree");
     }else if( SQLITE_ROW==sqlite3_step(pStmt) ){
