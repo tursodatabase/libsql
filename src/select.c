@@ -5418,6 +5418,17 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   int rc = WRC_Continue;
 
   switch( pExpr->op ){
+
+    case TK_FUNCTION:
+      if( pExpr->pWin==0 ){
+        break;
+      }else if( pExpr->pWin==p->pWin ){
+        rc = WRC_Prune;
+        pExpr->pWin->pOwner = pExpr;
+        break;
+      }
+      /* Fall through.  */
+
     case TK_COLUMN: {
       Expr *pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
       p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
@@ -5435,13 +5446,6 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
 
       break;
     }
-
-    case TK_FUNCTION:
-      if( pExpr->pWin ){
-        rc = WRC_Prune;
-        pExpr->pWin->pOwner = pExpr;
-      }
-      break;
 
     default: /* no-op */
       break;
@@ -5530,9 +5534,6 @@ static int selectWindowRewrite(Parse *pParse, Select *p){
     ExprList *pSublist = 0;       /* Expression list for sub-query */
     Window *pWin = p->pWin;
 
-    /* TODO: This is of course temporary requirements */
-    assert( pWin->pNextWin==0 );
-
     p->pSrc = 0;
     p->pWhere = 0;
     p->pGroupBy = 0;
@@ -5581,6 +5582,7 @@ static int selectWindowRewrite(Parse *pParse, Select *p){
       }else{
         pSub->selFlags |= SF_Expanded;
       }
+      pWin->pNextWin = 0;
     }
 
 #if SELECTTRACE_ENABLED

@@ -772,6 +772,7 @@ Expr *sqlite3ExprAlloc(
     memset(pNew, 0, sizeof(Expr));
     pNew->op = (u8)op;
     pNew->iAgg = -1;
+    pNew->pWin = 0;
     if( pToken ){
       if( nExtra==0 ){
         pNew->flags |= EP_IntValue|EP_Leaf;
@@ -861,6 +862,7 @@ Expr *sqlite3PExpr(
       memset(p, 0, sizeof(Expr));
       p->op = op & TKFLG_MASK;
       p->iAgg = -1;
+      p->pWin = 0;
     }
     sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
   }
@@ -1180,6 +1182,24 @@ static int dupedExprSize(Expr *p, int flags){
   return nByte;
 }
 
+static Window *winDup(sqlite3 *db, Window *p){
+  Window *pNew = 0;
+  if( p ){
+    pNew = sqlite3DbMallocZero(db, sizeof(Window));
+    if( pNew ){
+      pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
+      pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
+      pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
+      pNew->eType = p->eType;
+      pNew->eEnd = p->eEnd;
+      pNew->eStart = p->eStart;
+      pNew->pStart = sqlite3ExprDup(db, pNew->pStart, 0);
+      pNew->pEnd = sqlite3ExprDup(db, pNew->pEnd, 0);
+    }
+  }
+  return pNew;
+}
+
 /*
 ** This function is similar to sqlite3ExprDup(), except that if pzBuffer 
 ** is not NULL then *pzBuffer is assumed to point to a buffer large enough 
@@ -1266,6 +1286,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         *pzBuffer = zAlloc;
       }
     }else{
+      pNew->pWin = winDup(db, p->pWin);
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
@@ -1307,24 +1328,6 @@ static With *withDup(sqlite3 *db, With *p){
 #else
 # define withDup(x,y) 0
 #endif
-
-static Window *winDup(sqlite3 *db, Window *p){
-  Window *pNew = 0;
-  if( p ){
-    pNew = sqlite3DbMallocZero(db, sizeof(Window));
-    if( pNew ){
-      pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
-      pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
-      pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
-      pNew->eType = p->eType;
-      pNew->eEnd = p->eEnd;
-      pNew->eStart = p->eStart;
-      pNew->pStart = sqlite3ExprDup(db, pNew->pStart, 0);
-      pNew->pEnd = sqlite3ExprDup(db, pNew->pEnd, 0);
-    }
-  }
-  return pNew;
-}
 
 /*
 ** The following group of routines make deep copies of expressions,
@@ -1490,7 +1493,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNew->addrOpenEphm[1] = -1;
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = withDup(db, p->pWith);
-    pNew->pWin = winDup(db, p->pWin);
+    pNew->pWin = 0;
     sqlite3SelectSetName(pNew, p->zSelName);
     *pp = pNew;
     pp = &pNew->pPrior;

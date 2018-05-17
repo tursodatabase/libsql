@@ -1,5 +1,5 @@
-C Start\sof\sexperimental\simplementation\sof\sSQL\swindow\sfunctions.\sDoes\snot\syet\nwork.
-D 2018-05-16T20:58:07.009
+C Handle\smultiple\swindow-functions\sin\sa\ssingle\squery.
+D 2018-05-17T14:26:27.790
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -445,7 +445,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 8db4c97f630e7d83f884ea75caf1ffd0988c160e9d530194d93721c80821e0f6
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c b0f90749e22d5e41a12dbf940f4811138cf97da54b46b737089b93eb64a2896f
-F src/expr.c 6e443e4f9fabd3125800076f2a7cd90c84d2c106ed1815cbe5e9c96af2b9eb74
+F src/expr.c af55e984d86b29f9cc1fbb785fd665ac254806d9ad5f791c668414dcb8ddcf0b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d617daf66b5515e2b42c1405b2b4984c30ca50fb705ab164271a9bf66c69e331
 F src/func.c 03c99a50c69f7d565e13179aad26af703b9df7752a4d690af1540c5e04ababc2
@@ -493,7 +493,7 @@ F src/printf.c 1d1b4a568a58d0f32a5ff26c6b98db8a6e1883467f343a6406263cacd2e60c21
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 8feaf2039bd1b17dd5021e0c5731cde741694b59032d0faf5c73df499c880ebf
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 0e82e32d3bd536c90e778c930cdf7dafa5afd886cc8c467c443ff95c38109e10
+F src/select.c 0b9d051a0b97d9ae20947e74f341dde248f15bbfda1834932b3d21097f4e080c
 F src/shell.c.in 53affa90711f280342f7238f9c9aa9dcaed321ec6218a18043cf92154ef8a704
 F src/sqlite.h.in 34be2d0d18bf4726538793bdc9854cd87f689fda4b3789515134cdbd68188cf4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1613,7 +1613,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test d1766b0cbaf87521a0245b18da8c907cc0d791b287a66e90c70f8b836985794d
+F test/window1.test c088fff1b97ec6dc51bc6c6df936e7d2fd2d4b2708fa9738fe13aa175a7e47c4
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 5e8ce2c585170bbbc0544e2a01a4941fa0be173ba5265e5c92eb588cd99a232d
@@ -1730,11 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed5b09680fd6659ebbe5ace3c1c56f3962bbd75cfdf65c7565651900cf87917a
-R 44bb3242b5e27ab54d0052d5f4fa0103
-T *branch * exp-window-functions
-T *sym-exp-window-functions *
-T +closed d103c041ccb3a009926b6aa34a283a7cb8e4a645711ecd7a3002a90558d02e9d
-T -sym-trunk *
+P 3781e520854808fe02ad3fe77dd11fc917448c58ff1fd79123289dd91937decd
+R ab1ec0d66b6e5c3f79bc48c2607263f7
 U dan
-Z 75ac74ab72bd7e468725d214860f2422
+Z dc655b7af30130730642201f8ff47123
