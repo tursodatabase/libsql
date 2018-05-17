@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3_str_new()\sinterface\sso\sthat\sit\salways\sreturns\sa\svalid\nand\snon-NULL\spointer\seven\sin\san\sOOM\scondition.
-D 2018-05-16T15:35:03.770
+C Fix\smemory\serrors\sassociated\swith\sargv\sin\sthe\sCLI\swhen\sit\sis\ncompiled\son\sWindows.
+D 2018-05-17T13:29:14.965
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -494,7 +494,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in 53affa90711f280342f7238f9c9aa9dcaed321ec6218a18043cf92154ef8a704
+F src/shell.c.in e4086ed1af95dc9430e628e4dc9fadae91111d5f241fca11b68b8105896c5f2c
 F src/sqlite.h.in 34be2d0d18bf4726538793bdc9854cd87f689fda4b3789515134cdbd68188cf4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b45b18850c59f22a163ee482f529f578a8798f96d0e26b5a061d336d480a1540
-R c3a19bb61082b137e0cb5588248c4f0e
+P ed5b09680fd6659ebbe5ace3c1c56f3962bbd75cfdf65c7565651900cf87917a
+R 8f0e11b03bcaa4f31e83d13ec47c0763
 U drh
-Z 26153b062cb510be04ec5eecb2714fde
+Z 09fcdd5831882bd1e0d99424cf0a518a

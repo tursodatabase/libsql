@@ -8285,6 +8285,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int nCmd = 0;
   char **azCmd = 0;
   const char *zVfs = 0;           /* Value of -vfs command-line option */
+#if !SQLITE_SHELL_IS_UTF8
+  char **argvToFree = 0;
+  int argcToFree = 0;
+#endif
 
   setBinaryMode(stdin, 0);
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
@@ -8308,7 +8312,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   */
 #if !SQLITE_SHELL_IS_UTF8
   sqlite3_initialize();
-  argv = malloc(sizeof(argv[0])*argc);
+  argvToFree = malloc(sizeof(argv[0])*argc*2);
+  argcToFree = argc;
+  argv = argvToFree + argc;
   if( argv==0 ) shell_out_of_memory();
   for(i=0; i<argc; i++){
     char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
@@ -8318,6 +8324,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     argv[i] = malloc( n+1 );
     if( argv[i]==0 ) shell_out_of_memory();
     memcpy(argv[i], z, n+1);
+    argvToFree[i] = argv[i];
     sqlite3_free(z);
   }
   sqlite3_shutdown();
@@ -8731,8 +8738,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   data.doXdgOpen = 0;
   clearTempFile(&data);
 #if !SQLITE_SHELL_IS_UTF8
-  for(i=0; i<argc; i++) free(argv[i]);
-  free(argv);
+  for(i=0; i<argcToFree; i++) free(argvToFree[i]);
+  free(argvToFree);
 #endif
   return rc;
 }
