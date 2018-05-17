@@ -776,13 +776,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
         if( pExpr->pWin ){
-          pExpr->pWin->pNextWin = pNC->pWin;
-          pNC->pWin = pExpr->pWin;
+          if( 0==pNC->pWin 
+           || 0==sqlite3WindowCompare(pParse, pNC->pWin, pExpr->pWin) 
+          ){
+            pExpr->pWin->pNextWin = pNC->pWin;
+            pNC->pWin = pExpr->pWin;
+          }
           pExpr->pWin->pFunc = pDef;
-          pExpr->pWin->nArg = pExpr->x.pList->nExpr;
-        }
-        else
-        {
+          pExpr->pWin->nArg = (pExpr->x.pList ? pExpr->x.pList->nExpr : 0);
+        }else{
           NameContext *pNC2 = pNC;
           pExpr->op = TK_AGG_FUNCTION;
           pExpr->op2 = 0;

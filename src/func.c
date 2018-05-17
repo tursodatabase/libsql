@@ -1675,6 +1675,20 @@ static void groupConcatFinalize(sqlite3_context *context){
     }
   }
 }
+static void groupConcatValue(sqlite3_context *context){
+  sqlite3_str *pAccum;
+  pAccum = (sqlite3_str*)sqlite3_aggregate_context(context, 0);
+  if( pAccum ){
+    if( pAccum->accError==SQLITE_TOOBIG ){
+      sqlite3_result_error_toobig(context);
+    }else if( pAccum->accError==SQLITE_NOMEM ){
+      sqlite3_result_error_nomem(context);
+    }else{    
+      const char *zText = sqlite3_str_value(pAccum);
+      sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
+    }
+  }
+}
 
 /*
 ** This routine does per-connection function registration.  Most
@@ -1859,14 +1873,16 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
-    WFUNCTION(sum,               1, 0, sumStep, sumFinalize, sumFinalize, 0),
-    AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
-    AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
+    WAGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize),
+    WAGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
+    WAGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
     AGGREGATE2(count,            0, 0, 0, countStep,       countFinalize,
                SQLITE_FUNC_COUNT  ),
-    AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
-    AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize),
-    AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize),
+    WAGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
+    AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize,
+        groupConcatValue),
+    AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize,
+        groupConcatValue),
   
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
 #ifdef SQLITE_CASE_SENSITIVE_LIKE

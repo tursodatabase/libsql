@@ -51,3 +51,19 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
     sqlite3WindowDelete(pParse->db, pWin);
   }
 }
+
+/*
+** Return 0 if the two window objects are identical, or non-zero otherwise.
+*/
+int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
+  if( p1->eType!=p2->eType ) return 1;
+  if( p1->eStart!=p2->eStart ) return 1;
+  if( p1->eEnd!=p2->eEnd ) return 1;
+  if( sqlite3ExprCompare(pParse, p1->pStart, p2->pStart, -1) ) return 1;
+  if( sqlite3ExprCompare(pParse, p1->pEnd, p2->pEnd, -1) ) return 1;
+  if( sqlite3ExprListCompare(p1->pPartition, p2->pPartition, -1) ) return 1;
+  if( sqlite3ExprListCompare(p1->pOrderBy, p2->pOrderBy, -1) ) return 1;
+  return 0;
+}
+
+

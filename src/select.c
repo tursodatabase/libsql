@@ -5415,17 +5415,20 @@ static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
-  int rc = WRC_Continue;
 
   switch( pExpr->op ){
 
     case TK_FUNCTION:
       if( pExpr->pWin==0 ){
         break;
-      }else if( pExpr->pWin==p->pWin ){
-        rc = WRC_Prune;
-        pExpr->pWin->pOwner = pExpr;
-        break;
+      }else{
+        Window *pWin;
+        for(pWin=p->pWin; pWin; pWin=pWin->pNextWin){
+          if( pExpr->pWin==pWin ){
+            pExpr->pWin->pOwner = pExpr;
+            return WRC_Prune;
+          }
+        }
       }
       /* Fall through.  */
 
@@ -5451,7 +5454,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
       break;
   }
 
-  return rc;
+  return WRC_Continue;
 }
 
 static int selectWindowRewriteEList(
@@ -5532,41 +5535,46 @@ static int selectWindowRewrite(Parse *pParse, Select *p){
     ExprList *pSort = 0;
 
     ExprList *pSublist = 0;       /* Expression list for sub-query */
-    Window *pWin = p->pWin;
+    Window *pMWin = p->pWin;      /* Master window object */
+    Window *pWin;                 /* Window object iterator */
 
     p->pSrc = 0;
     p->pWhere = 0;
     p->pGroupBy = 0;
     p->pHaving = 0;
 
-    pWin->regAccum = ++pParse->nMem;
-    pWin->regResult = ++pParse->nMem;
-
     /* Assign a cursor number for the ephemeral table used to buffer rows.
     ** The OpenEphemeral instruction is coded later, after it is known how
     ** many columns the table will have.  */
-    pWin->iEphCsr = pParse->nTab++;
+    pMWin->iEphCsr = pParse->nTab++;
 
-    rc = selectWindowRewriteEList(pParse, pWin, p->pEList, &pSublist);
+    rc = selectWindowRewriteEList(pParse, pMWin, p->pEList, &pSublist);
     if( rc ) return rc;
-    rc = selectWindowRewriteEList(pParse, pWin, p->pOrderBy, &pSublist);
+    rc = selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
     if( rc ) return rc;
-    pWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
+    pMWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
 
     /* Create the ORDER BY clause for the sub-select. This is the concatenation
     ** of the window PARTITION and ORDER BY clauses. Append the same 
     ** expressions to the sub-select expression list. They are required to
     ** figure out where boundaries for partitions and sets of peer rows.  */
-    pSort = sqlite3ExprListDup(db, pWin->pPartition, 0);
-    if( pWin->pOrderBy ){
-      pSort = exprListAppendList(pParse, pSort, pWin->pOrderBy);
+    pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
+    if( pMWin->pOrderBy ){
+      pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy);
     }
     pSublist = exprListAppendList(pParse, pSublist, pSort);
 
-    /* Also append the arguments passed to the window function to the
-    ** sub-select expression list. */
-    pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
-    pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList);
+    /* Append the arguments passed to each window function to the
+    ** sub-select expression list. Also allocate two registers for each
+    ** window function - one for the accumulator, another for interim
+    ** results.  */
+    for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+      pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList);
+      pWin->regAccum = ++pParse->nMem;
+      pWin->regResult = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+    }
 
     pSub = sqlite3SelectNew(
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
@@ -5582,7 +5590,6 @@ static int selectWindowRewrite(Parse *pParse, Select *p){
       }else{
         pSub->selFlags |= SF_Expanded;
       }
-      pWin->pNextWin = 0;
     }
 
 #if SELECTTRACE_ENABLED
@@ -5592,8 +5599,7 @@ static int selectWindowRewrite(Parse *pParse, Select *p){
     }
 #endif
 
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pWin->iEphCsr, pWin->nBufferCol);
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pMWin->nBufferCol);
   }
 
   return rc;
@@ -6061,7 +6067,7 @@ int sqlite3Select(
   }
 
   if( !isAgg && pGroupBy==0 ){
-    Window *pWin = p->pWin;
+    Window *pMWin = p->pWin;      /* Master window object (or NULL) */
     int regPart = 0;
 
     /* No aggregate functions and no GROUP BY clause */
@@ -6069,9 +6075,9 @@ int sqlite3Select(
     assert( WHERE_USE_LIMIT==SF_FixedLimit );
     wctrlFlags |= p->selFlags & SF_FixedLimit;
 
-    if( pWin ){
-      int nPart = (pWin->pPartition ? pWin->pPartition->nExpr : 0);
-      nPart += (pWin->pOrderBy ? pWin->pOrderBy->nExpr : 0);
+    if( pMWin ){
+      int nPart = (pMWin->pPartition ? pMWin->pPartition->nExpr : 0);
+      nPart += (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
       if( nPart ){
         regPart = pParse->nMem+1;
         pParse->nMem += nPart;
@@ -6107,7 +6113,8 @@ int sqlite3Select(
     }
 
     assert( p->pEList==pEList );
-    if( p->pWin ){
+    if( pMWin ){
+      Window *pWin;
       int k;
       int iSubCsr = p->pSrc->a[0].iCursor;
       int nSub = p->pSrc->a[0].pTab->nCol;
@@ -6128,29 +6135,31 @@ int sqlite3Select(
 
       /* Check if this is the start of a new partition or peer group. */
       if( regPart ){
-        ExprList *pPart = pWin->pPartition;
+        ExprList *pPart = pMWin->pPartition;
         int nPart = (pPart ? pPart->nExpr : 0);
-        ExprList *pOrderBy = pWin->pOrderBy;
+        ExprList *pOrderBy = pMWin->pOrderBy;
         int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
         int addrGoto = 0;
         int addrJump = 0;
 
         if( pPart ){
-          int regNewPart = reg + pWin->nBufferCol;
+          int regNewPart = reg + pMWin->nBufferCol;
           KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pPart, 0, 0);
           addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, regPart, nPart);
           sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
           addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-          sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
-          sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-          sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+          for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+            sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
+            sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+            sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+          }
           if( pOrderBy ){
             addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
           }
         }
 
         if( pOrderBy ){
-          int regNewPeer = reg + pWin->nBufferCol + nPart;
+          int regNewPeer = reg + pMWin->nBufferCol + nPart;
           int regPeer = regPart + nPart;
 
           KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pOrderBy, 0, 0);
@@ -6158,51 +6167,58 @@ int sqlite3Select(
           addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPeer, regPeer, nPeer);
           sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
           addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-          sqlite3VdbeAddOp3(v, 
-              OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
-          );
-          sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-
+          for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+            sqlite3VdbeAddOp3(v, 
+                OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
+            );
+            sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+          }
           if( addrGoto ) sqlite3VdbeJumpHere(v, addrGoto);
         }
 
         addrGosub = sqlite3VdbeAddOp1(v, OP_Gosub, regGosub);
-        sqlite3VdbeAddOp1(v, OP_ResetSorter, pWin->iEphCsr);
-        sqlite3VdbeAddOp3(v,OP_Copy,reg+pWin->nBufferCol,regPart,nPart+nPeer-1);
+        sqlite3VdbeAddOp1(v, OP_ResetSorter, pMWin->iEphCsr);
+        sqlite3VdbeAddOp3(
+            v, OP_Copy, reg+pMWin->nBufferCol, regPart, nPart+nPeer-1
+        );
 
         sqlite3VdbeJumpHere(v, addrJump);
       }
 
       /* Invoke step function for window functions */
-      sqlite3VdbeAddOp3(v, OP_AggStep0, 0, reg+pWin->iArgCol, pWin->regAccum);
-      sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
+      for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+        sqlite3VdbeAddOp3(v, OP_AggStep0, 0, reg+pWin->iArgCol, pWin->regAccum);
+        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+        sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
+      }
 
       /* Buffer the current row in the ephemeral table. */
-      if( pWin->nBufferCol>0 ){
-        sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, pWin->nBufferCol, regRecord);
+      if( pMWin->nBufferCol>0 ){
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, pMWin->nBufferCol, regRecord);
       }else{
         sqlite3VdbeAddOp2(v, OP_Blob, 0, regRecord);
         sqlite3VdbeAppendP4(v, (void*)"", 0);
       }
-      sqlite3VdbeAddOp2(v, OP_NewRowid, pWin->iEphCsr, regRowid);
-      sqlite3VdbeAddOp3(v, OP_Insert, pWin->iEphCsr, regRecord, regRowid);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, pMWin->iEphCsr, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, pMWin->iEphCsr, regRecord, regRowid);
 
       /* End the database scan loop. */
       sqlite3WhereEnd(pWInfo);
 
-      sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
-      sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-      sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+      for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+        sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
+        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+        sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+      }
       sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, sqlite3VdbeCurrentAddr(v)+2);
 
       sqlite3VdbeAddOp0(v, OP_Goto);
       if( regPart ){
         sqlite3VdbeJumpHere(v, addrGosub);
       }
-      addr = sqlite3VdbeAddOp1(v, OP_Rewind, pWin->iEphCsr);
+      addr = sqlite3VdbeAddOp1(v, OP_Rewind, pMWin->iEphCsr);
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, addr+1, 0);
-      sqlite3VdbeAddOp2(v, OP_Next, pWin->iEphCsr, addr+1);
+      sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, addr+1);
       sqlite3VdbeJumpHere(v, addr);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
       sqlite3VdbeJumpHere(v, addr-1);       /* OP_Goto jumps here */

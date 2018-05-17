@@ -1716,16 +1716,16 @@ struct FuncDestructor {
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
    (void *)arg, 0, likeFunc, 0, 0, 0, #zName, {0} }
-#define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
+#define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal, xValue) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,0,0,#zName, {0}}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xValue,0,#zName, {0}}
 #define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
-   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,0,0,#zName, {0}}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xFinal,0,#zName, {0}}
 
-#define WFUNCTION(zName, nArg, arg, xStep, xFinal, xValue, xInverse) \
-  {nArg, SQLITE_UTF8, \
-   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xValue,xInverse,#zName, {0}}
+#define WAGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
+  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xFinal,0,#zName, {0}}
 
 /*
 ** All current savepoints are stored in a linked list starting at
@@ -3493,6 +3493,7 @@ struct Window {
 void sqlite3WindowDelete(sqlite3*, Window*);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
+int sqlite3WindowCompare(Parse*, Window*, Window*);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
