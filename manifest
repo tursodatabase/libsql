@@ -1,5 +1,5 @@
-C Improved\serror\sand\shelp\smessages\sfor\sthe\s".archive"\scommand\sand\s"-A"\soption\nto\sthe\sCLI.\sIf\sa\smemory\sleak\sin\s--list\sprocessing.
-D 2018-05-17T14:09:06.396
+C In\sthe\sCLI\swith\sthe\s-A\scommand,\sif\sthe\sfile\sdoes\snot\spreviously\sexist\sand\nits\sname\slooks\slike\sa\sZIP\sarchive\sname,\sthen\screate\sit\sas\sa\sZIP\sarchive.
+D 2018-05-17T20:04:24.639
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -494,7 +494,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in d9154a6b52ce772717894e4045a336eb7ceeab87dee1976273f4621c809c72ea
+F src/shell.c.in e0f006980883e238555c5ab51bd2dad9fa477c31928419f6d35774288b94853b
 F src/sqlite.h.in 34be2d0d18bf4726538793bdc9854cd87f689fda4b3789515134cdbd68188cf4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1728,7 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4474d69b5c21b4e6f0d1376fbceca0f18c715ff673aea63053a02bfbe041d03b
-R 835a789214eecbe14ece19d570e27697
+P 02541ac6f919a8a8b18ef0525c4ee24fdbc5c1883171fb1a492434cd0f006f7c
+R 5813b43636e3c1dfad760cb10ce61cfe
 U drh
-Z 40bf372b75111f9f6f7fc064ea2d367d
+Z acb1b3ae3afe9e045167e0aeea3fdccf
