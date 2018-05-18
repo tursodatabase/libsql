@@ -1727,6 +1727,7 @@ static int rtreeFilter(
   /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
   freeCursorConstraints(pCsr);
   sqlite3_free(pCsr->aPoint);
+  sqlite3_finalize(pCsr->pReadAux);
   memset(pCsr, 0, sizeof(RtreeCursor));
   pCsr->base.pVtab = (sqlite3_vtab*)pRtree;
 
