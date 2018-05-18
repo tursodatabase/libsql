@@ -95,6 +95,9 @@ typedef struct RtreeSearchPoint RtreeSearchPoint;
 /* The rtree may have between 1 and RTREE_MAX_DIMENSIONS dimensions. */
 #define RTREE_MAX_DIMENSIONS 5
 
+/* Maximum number of auxiliary columns */
+#define RTREE_MAX_AUX_COLUMN 100
+
 /* Size of hash table Rtree.aHash. This hash table is not expected to
 ** ever contain very many entries, so a fixed number of buckets is 
 ** used.
@@ -3554,10 +3557,11 @@ static int rtreeInit(
     "Wrong number of columns for an rtree table",         /* 1 */
     "Too few columns for an rtree table",                 /* 2 */
     "Too many columns for an rtree table",                /* 3 */
-    "AUX: columns must be last"                           /* 4 */
+    "Auxiliary rtree columns must be last"                /* 4 */
   };
 
-  if( argc>=256 ){
+  assert( RTREE_MAX_AUX_COLUMN<256 ); /* Aux columns counted by a u8 */
+  if( argc>RTREE_MAX_AUX_COLUMN+3 ){
     *pzErr = sqlite3_mprintf("%s", aErrMsg[3]);
     return SQLITE_ERROR;
   }

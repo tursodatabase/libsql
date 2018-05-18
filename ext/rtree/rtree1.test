@@ -609,5 +609,37 @@ do_execsql_test 15.2 {
   COMMIT;
 }
 
+# Test cases for the new auxiliary columns feature
+#
+do_catchsql_test 16.100 {
+  CREATE VIRTUAL TABLE t16 USING rtree(id,x0,x1,y0,+aux1,x1);
+} {1 {Auxiliary rtree columns must be last}}
+do_test 16.110 {
+  set sql {
+    CREATE VIRTUAL TABLE t16 USING rtree(
+      id, x00, x01, x10, x11, x20, x21, x30, x31, x40, x41
+  }
+  for {set i 12} {$i<=100} {incr i} {
+     append sql ", +a$i"
+  }
+  append sql ");"
+  execsql $sql
+} {}
+do_test 16.120 {
+  set sql {
+    CREATE VIRTUAL TABLE t16b USING rtree(
+      id, x00, x01, x10, x11, x20, x21, x30, x31, x40, x41
+  }
+  for {set i 12} {$i<=101} {incr i} {
+     append sql ", +a$i"
+  }
+  append sql ");"
+  catchsql $sql
+} {1 {Too many columns for an rtree table}}
+
+
+
+
+
 expand_all_sql db
 finish_test
