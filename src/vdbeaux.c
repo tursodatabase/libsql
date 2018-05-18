@@ -3923,7 +3923,7 @@ static int sqlite3IntFloatCompare(i64 i, double r){
     if( i>y ) return +1;
     s = (double)i;
     if( s<r ) return -1;
-    if( NEVER(s>r) ) return +1;
+    if( s>r ) return +1;
     return 0;
   }
 }
