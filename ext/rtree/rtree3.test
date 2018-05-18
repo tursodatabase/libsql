@@ -81,7 +81,7 @@ do_faultsim_test rtree3-2 -faults oom* -prep {
 do_malloc_test rtree3-3.prep {
   faultsim_delete_and_reopen
   execsql {
-    CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+    CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2, +a1, +a2);
     INSERT INTO rt VALUES(NULL, 3, 5, 7, 9);
   }
   faultsim_save_and_close
