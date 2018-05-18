@@ -1,5 +1,5 @@
-C Improvements\sto\sinteger/float\scomparisons\son\sarchitectures\sthat\slack\sa\n"long\sdouble"\stype.
-D 2018-05-18T14:24:23.139
+C In\sthe\sCLI,\sdetect\sand\sreport\serrors\son\ssqlite3_close().\s\sClear\sglobal\nvariables\sprior\sto\sexit\sto\sso\sthat\svalgrind\scan\sbetter\sdetect\sresource\nleaks.
+D 2018-05-18T17:11:50.887
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -494,7 +494,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in e0f006980883e238555c5ab51bd2dad9fa477c31928419f6d35774288b94853b
+F src/shell.c.in 51c100206f4b7f86cd9affd80b764825e0edc36ca0190c442e4ca7994611bfe2
 F src/sqlite.h.in 34be2d0d18bf4726538793bdc9854cd87f689fda4b3789515134cdbd68188cf4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1728,8 +1728,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33dc8fad7f2b467f259eb78eb7342a760f01d54d95da7fe4cace10e558788a58 3d6625111319c0356c57aaf7b7460fd882c3f00ca668dc43c0abe3403c7c2ba3
-R 95f9dad3dedc0c1d42618371aa8f363f
-T +closed 3d6625111319c0356c57aaf7b7460fd882c3f00ca668dc43c0abe3403c7c2ba3
+P 5139ea62a8a6c6dc6558c337de39bcbadd26f6515742263387be03c862c78cf0
+R b8765ab2a09ad6fd3afc8344422cf1a3
 U drh
-Z 5a624356c837c7a872fedd9425b35399
+Z d089a713f2ba352bce4662bcdd3c7d90
