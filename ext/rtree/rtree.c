@@ -1721,15 +1721,17 @@ static int rtreeFilter(
   int ii;
   int rc = SQLITE_OK;
   int iCell = 0;
+  sqlite3_stmt *pStmt;
 
   rtreeReference(pRtree);
 
   /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
   freeCursorConstraints(pCsr);
   sqlite3_free(pCsr->aPoint);
-  sqlite3_finalize(pCsr->pReadAux);
+  pStmt = pCsr->pReadAux;
   memset(pCsr, 0, sizeof(RtreeCursor));
   pCsr->base.pVtab = (sqlite3_vtab*)pRtree;
+  pCsr->pReadAux = pStmt;
 
   pCsr->iStrategy = idxNum;
   if( idxNum==1 ){
