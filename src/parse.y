@@ -1013,8 +1013,9 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP window(Z). {
     A->flags |= EP_Distinct;
   }
 }
-expr(A) ::= id(X) LP STAR RP. {
+expr(A) ::= id(X) LP STAR RP window(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X);
+  sqlite3WindowAttach(pParse, A, Z);
 }
 term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP);

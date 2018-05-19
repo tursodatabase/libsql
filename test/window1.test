@@ -151,9 +151,24 @@ do_execsql_test 4.9 {
   6  21      3.0
 }
 
-do_execsql_test 4.10 {
+do_execsql_test 4.10.1 {
   SELECT a, 
     count() OVER (ORDER BY a DESC),
+    group_concat(a, '.') OVER (ORDER BY a DESC) 
+  FROM t2 ORDER BY a DESC
+} {
+  6 1 6
+  5 2 6.5
+  4 3 6.5.4
+  3 4 6.5.4.3
+  2 5 6.5.4.3.2
+  1 6 6.5.4.3.2.1
+  0 7 6.5.4.3.2.1.0
+}
+
+do_execsql_test 4.10.2 {
+  SELECT a, 
+    count(*) OVER (ORDER BY a DESC),
     group_concat(a, '.') OVER (ORDER BY a DESC) 
   FROM t2 ORDER BY a DESC
 } {

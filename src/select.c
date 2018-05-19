@@ -4685,21 +4685,6 @@ static int selectExpander(Walker *pWalker, Select *p){
       assert( pFrom->pTab==0 );
       if( sqlite3WalkSelect(pWalker, pSel) ) return WRC_Abort;
       if( selectExpandSubquery(pParse, pFrom) ) return WRC_Abort;
-#if 0
-      pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
-      if( pTab==0 ) return WRC_Abort;
-      pTab->nTabRef = 1;
-      if( pFrom->zAlias ){
-        pTab->zName = sqlite3DbStrDup(db, pFrom->zAlias);
-      }else{
-        pTab->zName = sqlite3MPrintf(db, "subquery_%p", (void*)pTab);
-      }
-      while( pSel->pPrior ){ pSel = pSel->pPrior; }
-      sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
-      pTab->iPKey = -1;
-      pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
-      pTab->tabFlags |= TF_Ephemeral;
-#endif
 #endif
     }else{
       /* An ordinary table or view name in the FROM clause */

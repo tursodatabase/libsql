@@ -167,7 +167,7 @@ test_suite "veryquick" -prefix "" -description {
   that test malloc and IO errors are omitted.
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
-      *fts5corrupt* *fts5big* *fts5aj* *expert* table.test
+      *fts5corrupt* *fts5big* *fts5aj*
 ]
 
 test_suite "extraquick" -prefix "" -description {
