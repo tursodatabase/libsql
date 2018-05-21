@@ -530,14 +530,6 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
   return 0;
 }
 
-/* Forward reference */
-static KeyInfo *keyInfoFromExprList(
-  Parse *pParse,       /* Parsing context */
-  ExprList *pList,     /* Form the KeyInfo object from this ExprList */
-  int iStart,          /* Begin with this column of pList */
-  int nExtra           /* Add this many extra columns to the end */
-);
-
 /*
 ** An instance of this object holds information (beyond pParse and pSelect)
 ** needed to load the next result row that is to be added to the sorter.
@@ -679,7 +671,7 @@ static void pushOntoSorter(
     memset(pKI->aSortOrder, 0, pKI->nKeyField); /* Makes OP_Jump testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
     testcase( pKI->nAllField > pKI->nKeyField+2 );
-    pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat,
+    pOp->p4.pKeyInfo = sqlite3KeyInfoFromExprList(pParse,pSort->pOrderBy,nOBSat,
                                            pKI->nAllField-pKI->nKeyField-1);
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
@@ -1349,7 +1341,7 @@ int sqlite3KeyInfoIsWriteable(KeyInfo *p){ return p->nRef==1; }
 ** function is responsible for seeing that this structure is eventually
 ** freed.
 */
-static KeyInfo *keyInfoFromExprList(
+KeyInfo *sqlite3KeyInfoFromExprList(
   Parse *pParse,       /* Parsing context */
   ExprList *pList,     /* Form the KeyInfo object from this ExprList */
   int iStart,          /* Begin with this column of pList */
@@ -5088,7 +5080,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
            "argument");
         pFunc->iDistinct = -1;
       }else{
-        KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pE->x.pList, 0, 0);
+        KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pE->x.pList,0,0);
         sqlite3VdbeAddOp4(v, OP_OpenEphemeral, pFunc->iDistinct, 0, 0,
                           (char*)pKeyInfo, P4_KEYINFO);
       }
@@ -6008,7 +6000,8 @@ int sqlite3Select(
   */
   if( sSort.pOrderBy ){
     KeyInfo *pKeyInfo;
-    pKeyInfo = keyInfoFromExprList(pParse, sSort.pOrderBy, 0, pEList->nExpr);
+    pKeyInfo = sqlite3KeyInfoFromExprList(
+        pParse, sSort.pOrderBy, 0, pEList->nExpr);
     sSort.iECursor = pParse->nTab++;
     sSort.addrSortIndex =
       sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
@@ -6042,9 +6035,9 @@ int sqlite3Select(
   if( p->selFlags & SF_Distinct ){
     sDistinct.tabTnct = pParse->nTab++;
     sDistinct.addrTnct = sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
-                             sDistinct.tabTnct, 0, 0,
-                             (char*)keyInfoFromExprList(pParse, p->pEList,0,0),
-                             P4_KEYINFO);
+                       sDistinct.tabTnct, 0, 0,
+                       (char*)sqlite3KeyInfoFromExprList(pParse, p->pEList,0,0),
+                       P4_KEYINFO);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     sDistinct.eTnctType = WHERE_DISTINCT_UNORDERED;
   }else{
@@ -6052,22 +6045,15 @@ int sqlite3Select(
   }
 
   if( !isAgg && pGroupBy==0 ){
-    Window *pMWin = p->pWin;      /* Master window object (or NULL) */
-    int regPart = 0;
+    Window *pWin = p->pWin;      /* Master window object (or NULL) */
 
     /* No aggregate functions and no GROUP BY clause */
     u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
     assert( WHERE_USE_LIMIT==SF_FixedLimit );
     wctrlFlags |= p->selFlags & SF_FixedLimit;
 
-    if( pMWin ){
-      int nPart = (pMWin->pPartition ? pMWin->pPartition->nExpr : 0);
-      nPart += (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
-      if( nPart ){
-        regPart = pParse->nMem+1;
-        pParse->nMem += nPart;
-        sqlite3VdbeAddOp3(v, OP_Null, 0, regPart, regPart+nPart-1);
-      }
+    if( pWin ){
+      sqlite3WindowCodeInit(pParse, pWin);
     }
 
     /* Begin the database scan. */
@@ -6098,112 +6084,18 @@ int sqlite3Select(
     }
 
     assert( p->pEList==pEList );
-    if( pMWin ){
-      Window *pWin;
-      int k;
-      int iSubCsr = p->pSrc->a[0].iCursor;
-      int nSub = p->pSrc->a[0].pTab->nCol;
-      int reg = pParse->nMem+1;
-      int regRecord = reg+nSub;
-      int regRowid = regRecord+1;
-      int regGosub = regRowid+1;
+    if( pWin ){
+      int addrGosub = sqlite3VdbeMakeLabel(v);
+      int regGosub = ++pParse->nMem;
       int addr;
-      int addrGosub;
 
-      pParse->nMem += nSub + 3;
-
-      /* Martial the row returned by the sub-select into an array of 
-      ** registers. */
-      for(k=0; k<nSub; k++){
-        sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
-      }
-
-      /* Check if this is the start of a new partition or peer group. */
-      if( regPart ){
-        ExprList *pPart = pMWin->pPartition;
-        int nPart = (pPart ? pPart->nExpr : 0);
-        ExprList *pOrderBy = pMWin->pOrderBy;
-        int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
-        int addrGoto = 0;
-        int addrJump = 0;
-
-        if( pPart ){
-          int regNewPart = reg + pMWin->nBufferCol;
-          KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pPart, 0, 0);
-          addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, regPart, nPart);
-          sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
-          addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-          for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-            sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
-            sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-            sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
-          }
-          if( pOrderBy ){
-            addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
-          }
-        }
-
-        if( pOrderBy ){
-          int regNewPeer = reg + pMWin->nBufferCol + nPart;
-          int regPeer = regPart + nPart;
-
-          KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pOrderBy, 0, 0);
-          if( addrJump ) sqlite3VdbeJumpHere(v, addrJump);
-          addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPeer, regPeer, nPeer);
-          sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
-          addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-          for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-            sqlite3VdbeAddOp3(v, 
-                OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
-            );
-            sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-          }
-          if( addrGoto ) sqlite3VdbeJumpHere(v, addrGoto);
-        }
-
-        addrGosub = sqlite3VdbeAddOp1(v, OP_Gosub, regGosub);
-        sqlite3VdbeAddOp1(v, OP_ResetSorter, pMWin->iEphCsr);
-        sqlite3VdbeAddOp3(
-            v, OP_Copy, reg+pMWin->nBufferCol, regPart, nPart+nPeer-1
-        );
-
-        sqlite3VdbeJumpHere(v, addrJump);
-      }
-
-      /* Invoke step function for window functions */
-      for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-        sqlite3VdbeAddOp3(v, OP_AggStep0, 0, reg+pWin->iArgCol, pWin->regAccum);
-        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-        sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
-      }
-
-      /* Buffer the current row in the ephemeral table. */
-      if( pMWin->nBufferCol>0 ){
-        sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, pMWin->nBufferCol, regRecord);
-      }else{
-        sqlite3VdbeAddOp2(v, OP_Blob, 0, regRecord);
-        sqlite3VdbeAppendP4(v, (void*)"", 0);
-      }
-      sqlite3VdbeAddOp2(v, OP_NewRowid, pMWin->iEphCsr, regRowid);
-      sqlite3VdbeAddOp3(v, OP_Insert, pMWin->iEphCsr, regRecord, regRowid);
-
-      /* End the database scan loop. */
-      sqlite3WhereEnd(pWInfo);
-
-      for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-        sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
-        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-        sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
-      }
-      sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, sqlite3VdbeCurrentAddr(v)+2);
+      sqlite3WindowCodeStep(pParse, p, pWInfo, regGosub, addrGosub);
 
       sqlite3VdbeAddOp0(v, OP_Goto);
-      if( regPart ){
-        sqlite3VdbeJumpHere(v, addrGosub);
-      }
-      addr = sqlite3VdbeAddOp1(v, OP_Rewind, pMWin->iEphCsr);
+      sqlite3VdbeResolveLabel(v, addrGosub);
+      addr = sqlite3VdbeAddOp1(v, OP_Rewind, pWin->iEphCsr);
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, addr+1, 0);
-      sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, addr+1);
+      sqlite3VdbeAddOp2(v, OP_Next, pWin->iEphCsr, addr+1);
       sqlite3VdbeJumpHere(v, addr);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
       sqlite3VdbeJumpHere(v, addr-1);       /* OP_Goto jumps here */
@@ -6346,7 +6238,7 @@ int sqlite3Select(
       ** will be converted into a Noop.  
       */
       sAggInfo.sortingIdx = pParse->nTab++;
-      pKeyInfo = keyInfoFromExprList(pParse, pGroupBy, 0, sAggInfo.nColumn);
+      pKeyInfo = sqlite3KeyInfoFromExprList(pParse,pGroupBy,0,sAggInfo.nColumn);
       addrSortingIdx = sqlite3VdbeAddOp4(v, OP_SorterOpen, 
           sAggInfo.sortingIdx, sAggInfo.nSortingColumn, 
           0, (char*)pKeyInfo, P4_KEYINFO);

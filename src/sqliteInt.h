@@ -3485,6 +3485,7 @@ struct Window {
   FuncDef *pFunc;
   int nArg;
 
+  int regPart;
   Expr *pOwner;           /* Expression object this window is attached to */
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
@@ -3494,6 +3495,8 @@ void sqlite3WindowDelete(sqlite3*, Window*);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 int sqlite3WindowCompare(Parse*, Window*, Window*);
+void sqlite3WindowCodeInit(Parse*, Window*);
+void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
@@ -4202,6 +4205,8 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3*,int,int);
 void sqlite3KeyInfoUnref(KeyInfo*);
 KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
 KeyInfo *sqlite3KeyInfoOfIndex(Parse*, Index*);
+KeyInfo *sqlite3KeyInfoFromExprList(Parse*, ExprList*, int, int);
+
 #ifdef SQLITE_DEBUG
 int sqlite3KeyInfoIsWriteable(KeyInfo*);
 #endif
