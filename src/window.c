@@ -155,21 +155,87 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pWin){
 **
 **========================================================================
 **
-** ROWS BETWEEN UNBOUNDED PRECEDING AND <expr> PRECEDING
-** ROWS BETWEEN <expr> PRECEDING    AND <expr> PRECEDING
-** ROWS BETWEEN <expr> PRECEDING    AND CURRENT ROW
-** ROWS BETWEEN UNBOUNDED PRECEDING AND <expr> FOLLOWING
 ** ROWS BETWEEN <expr> PRECEDING    AND <expr> FOLLOWING
-** ROWS BETWEEN CURRENT ROW         AND <expr> FOLLOWING
-** ROWS BETWEEN <expr> FOLLOWING    AND <expr> FOLLOWING
-** ROWS BETWEEN <expr> PRECEDING    AND UNBOUNDED FOLLOWING
-** ROWS BETWEEN <expr> FOLLOWING    AND UNBOUNDED FOLLOWING
-**
-**   Cases that involve <expr> PRECEDING or <expr> FOLLOWING.
 **
 **   ...
+**     if( new partition ){
+**       Gosub flush_partition
+**     }
 **     Insert (record in eph-table)
 **   sqlite3WhereEnd()
+**   Gosub flush_partition
+**
+** flush_partition:
+**   OpenDup (csr -> csr2)
+**   OpenDup (csr -> csr3)
+**   regPrec = <expr1>            // PRECEDING expression
+**   regFollow = <expr2>          // FOLLOWING expression
+**   if( regPrec<0 || regFollow<0 ) throw exception!
+**   Rewind (csr,csr2,csr3)       // if EOF goto flush_partition_done
+**     Aggstep (csr3)
+**     Next(csr3)                 // if EOF fall-through
+**     if( (regFollow--)<=0 ){
+**       AggFinal (xValue)
+**       Gosub addrGosub
+**       Next(csr)                // if EOF goto flush_partition_done
+**       if( (regPrec--)<=0 ){
+**         AggStep (csr2, xInverse)
+**         Next(csr2)
+**       }
+**     }
+** flush_partition_done:
+**   Close (csr2)
+**   Close (csr3)
+**   ResetSorter (csr)
+**   Return
+**
+** ROWS BETWEEN <expr> PRECEDING    AND CURRENT ROW
+** ROWS BETWEEN CURRENT ROW         AND <expr> FOLLOWING
+** ROWS BETWEEN <expr> PRECEDING    AND UNBOUNDED FOLLOWING
+** ROWS BETWEEN UNBOUNDED PRECEDING AND <expr> FOLLOWING
+**
+**   These are similar to the above. For "CURRENT ROW", intialize the
+**   register to 0. For "UNBOUNDED ..." to infinity.
+**
+** ROWS BETWEEN <expr> PRECEDING    AND <expr> PRECEDING
+**
+**   Replace the bit after "Rewind" in the above with:
+**
+**     if( (regFollow--)<=0 ){
+**       AggStep (csr3)
+**       Next (csr3)
+**     }
+**     AggFinal (xValue)
+**     Gosub addrGosub
+**     Next(csr)                  // if EOF goto flush_partition_done
+**     if( (regPrec--)<=0 ){
+**       AggStep (csr2, xInverse)
+**       Next (csr2)
+**     }
+**
+** ROWS BETWEEN <expr> FOLLOWING    AND <expr> FOLLOWING
+**
+**   regFollow = regFollow - regPrec
+**   Rewind (csr,csr2,csr3)       // if EOF goto flush_partition_done
+**     Aggstep (csr3)
+**     Next(csr3)                 // if EOF fall-through
+**     if( (regFollow--)<=0 ){
+**       AggStep (csr2, xInverse)
+**       Next (csr2)
+**       if( (regPrec--)<=0 ){
+**         AggFinal (xValue)
+**         Gosub addrGosub
+**         Next(csr)              // if EOF goto flush_partition_done
+**       }
+**     }
+**
+** ROWS BETWEEN UNBOUNDED PRECEDING AND <expr> PRECEDING
+** ROWS BETWEEN <expr> FOLLOWING    AND UNBOUNDED FOLLOWING
+**
+**   Similar to the above, except with regPrec or regFollow set to infinity,
+**   as appropriate.
+**
+**
 **
 */
 void sqlite3WindowCodeStep(
@@ -210,7 +276,7 @@ void sqlite3WindowCodeStep(
     if( pPart ){
       int regNewPart = reg + pMWin->nBufferCol;
       KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
-      addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart, nPart);
+      addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
       sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
       addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
       for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
@@ -245,7 +311,7 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeAddOp1(v, OP_ResetSorter, pMWin->iEphCsr);
     sqlite3VdbeAddOp3(
         v, OP_Copy, reg+pMWin->nBufferCol, pMWin->regPart, nPart+nPeer-1
-        );
+    );
 
     sqlite3VdbeJumpHere(v, addrJump);
   }

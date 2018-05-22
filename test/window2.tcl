@@ -160,6 +160,20 @@ execsql_test 2.3 {
   ) FROM t1
 }
 
+execsql_test 2.4 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d
+    ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.5 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d
+    ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING
+  ) FROM t1
+}
+
 finish_test
 
 
