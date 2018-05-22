@@ -178,7 +178,7 @@ do_execsql_test 4.3 {
 reset_db
 do_execsql_test 5.1 {
   CREATE TABLE t1(x PRIMARY KEY, y);
-  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2, +d1);
 
   INSERT INTO t1(x) VALUES(1);
   INSERT INTO t1(x) SELECT x+1 FROM t1;   --   2
@@ -192,7 +192,7 @@ do_execsql_test 5.1 {
   INSERT INTO t1(x) SELECT x+256 FROM t1; -- 512
   INSERT INTO t1(x) SELECT x+512 FROM t1; --1024
 
-  INSERT INTO rt SELECT x, x, x+1 FROM t1 WHERE x<=5;
+  INSERT INTO rt SELECT x, x, x+1, printf('x%04xy',x) FROM t1 WHERE x<=5;
 }
 do_rtree_integrity_test 5.1.1 rt
 

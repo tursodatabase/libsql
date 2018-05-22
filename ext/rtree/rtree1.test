@@ -609,5 +609,43 @@ do_execsql_test 15.2 {
   COMMIT;
 }
 
+# Test cases for the new auxiliary columns feature
+#
+do_catchsql_test 16.100 {
+  CREATE VIRTUAL TABLE t16 USING rtree(id,x0,x1,y0,+aux1,x1);
+} {1 {Auxiliary rtree columns must be last}}
+do_test 16.110 {
+  set sql {
+    CREATE VIRTUAL TABLE t16 USING rtree(
+      id, x00, x01, x10, x11, x20, x21, x30, x31, x40, x41
+  }
+  for {set i 12} {$i<=100} {incr i} {
+     append sql ", +a$i"
+  }
+  append sql ");"
+  execsql $sql
+} {}
+do_test 16.120 {
+  set sql {
+    CREATE VIRTUAL TABLE t16b USING rtree(
+      id, x00, x01, x10, x11, x20, x21, x30, x31, x40, x41
+  }
+  for {set i 12} {$i<=101} {incr i} {
+     append sql ", +a$i"
+  }
+  append sql ");"
+  catchsql $sql
+} {1 {Too many columns for an rtree table}}
+
+do_execsql_test 16.130 {
+  DROP TABLE IF EXISTS rt1;
+  CREATE VIRTUAL TABLE rt1 USING rtree(id, x1, x2, +aux);
+  INSERT INTO rt1 VALUES(1, 1, 2, 'aux1');
+  INSERT INTO rt1 VALUES(2, 2, 3, 'aux2');
+  INSERT INTO rt1 VALUES(3, 3, 4, 'aux3');
+  INSERT INTO rt1 VALUES(4, 4, 5, 'aux4');
+  SELECT * FROM rt1 WHERE id IN (1, 2, 3, 4);
+} {1 1.0 2.0 aux1 2 2.0 3.0 aux2 3 3.0 4.0 aux3 4 4.0 5.0 aux4}
+
 expand_all_sql db
 finish_test

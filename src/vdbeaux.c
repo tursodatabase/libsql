@@ -3917,13 +3917,10 @@ static int sqlite3IntFloatCompare(i64 i, double r){
     i64 y;
     double s;
     if( r<-9223372036854775808.0 ) return +1;
-    if( r>9223372036854775807.0 ) return -1;
+    if( r>=9223372036854775808.0 ) return -1;
     y = (i64)r;
     if( i<y ) return -1;
-    if( i>y ){
-      if( y==SMALLEST_INT64 && r>0.0 ) return -1;
-      return +1;
-    }
+    if( i>y ) return +1;
     s = (double)i;
     if( s<r ) return -1;
     if( s>r ) return +1;
