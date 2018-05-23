@@ -192,7 +192,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     }
 
     /// Return the number of columns in the current row.
-    pub fn column_count(&self) -> i32 {
+    pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 }
@@ -201,13 +201,13 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
 pub trait RowIndex {
     /// Returns the index of the appropriate column, or `None` if no such
     /// column exists.
-    fn idx(&self, stmt: &Statement) -> Result<i32>;
+    fn idx(&self, stmt: &Statement) -> Result<usize>;
 }
 
-impl RowIndex for i32 {
+impl RowIndex for usize {
     #[inline]
-    fn idx(&self, stmt: &Statement) -> Result<i32> {
-        if *self < 0 || *self >= stmt.column_count() {
+    fn idx(&self, stmt: &Statement) -> Result<usize> {
+        if *self >= stmt.column_count() {
             Err(Error::InvalidColumnIndex(*self))
         } else {
             Ok(*self)
@@ -217,7 +217,7 @@ impl RowIndex for i32 {
 
 impl<'a> RowIndex for &'a str {
     #[inline]
-    fn idx(&self, stmt: &Statement) -> Result<i32> {
+    fn idx(&self, stmt: &Statement) -> Result<usize> {
         stmt.column_index(*self)
     }
 }

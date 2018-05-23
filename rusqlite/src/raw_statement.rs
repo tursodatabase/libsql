@@ -17,16 +17,16 @@ impl RawStatement {
         self.0
     }
 
-    pub fn column_count(&self) -> c_int {
-        unsafe { ffi::sqlite3_column_count(self.0) }
+    pub fn column_count(&self) -> usize {
+        unsafe { ffi::sqlite3_column_count(self.0) as usize }
     }
 
-    pub fn column_type(&self, idx: c_int) -> c_int {
-        unsafe { ffi::sqlite3_column_type(self.0, idx) }
+    pub fn column_type(&self, idx: usize) -> c_int {
+        unsafe { ffi::sqlite3_column_type(self.0, idx as c_int) }
     }
 
-    pub fn column_name(&self, idx: c_int) -> &CStr {
-        unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx)) }
+    pub fn column_name(&self, idx: usize) -> &CStr {
+        unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx as c_int)) }
     }
 
     pub fn step(&self) -> c_int {
@@ -54,15 +54,15 @@ impl RawStatement {
         unsafe { ffi::sqlite3_reset(self.0) }
     }
 
-    pub fn bind_parameter_count(&self) -> c_int {
-        unsafe { ffi::sqlite3_bind_parameter_count(self.0) }
+    pub fn bind_parameter_count(&self) -> usize {
+        unsafe { ffi::sqlite3_bind_parameter_count(self.0) as usize }
     }
 
-    pub fn bind_parameter_index(&self, name: &CStr) -> Option<c_int> {
+    pub fn bind_parameter_index(&self, name: &CStr) -> Option<usize> {
         let r = unsafe { ffi::sqlite3_bind_parameter_index(self.0, name.as_ptr()) };
         match r {
             0 => None,
-            i => Some(i),
+            i => Some(i as usize),
         }
     }
 

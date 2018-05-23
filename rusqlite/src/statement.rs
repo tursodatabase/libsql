@@ -29,7 +29,7 @@ impl<'conn> Statement<'conn> {
     }
 
     /// Return the number of columns in the result set returned by the prepared statement.
-    pub fn column_count(&self) -> i32 {
+    pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
@@ -41,7 +41,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return an `Error::InvalidColumnName` when there is no column with the specified `name`.
-    pub fn column_index(&self, name: &str) -> Result<i32> {
+    pub fn column_index(&self, name: &str) -> Result<usize> {
         let bytes = name.as_bytes();
         let n = self.column_count();
         for i in 0..n {
@@ -362,19 +362,19 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
-    pub fn parameter_index(&self, name: &str) -> Result<Option<i32>> {
+    pub fn parameter_index(&self, name: &str) -> Result<Option<usize>> {
         let c_name = try!(str_to_cstring(name));
         Ok(self.stmt.bind_parameter_index(&c_name))
     }
 
     fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
-        assert_eq!(params.len() as c_int, self.stmt.bind_parameter_count(),
+        assert_eq!(params.len(), self.stmt.bind_parameter_count(),
                 "incorrect number of parameters to query(): expected {}, got {}",
                 self.stmt.bind_parameter_count(),
                 params.len());
 
         for (i, p) in params.iter().enumerate() {
-            try!(self.bind_parameter(*p, (i + 1) as c_int));
+            try!(self.bind_parameter(*p, i + 1));
         }
 
         Ok(())
@@ -391,7 +391,7 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()> {
+    fn bind_parameter(&self, param: &ToSql, col: usize) -> Result<()> {
         let value = try!(param.to_sql());
 
         let ptr = unsafe { self.stmt.ptr() };
@@ -402,17 +402,17 @@ impl<'conn> Statement<'conn> {
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
                 return self.conn
-                           .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
+                           .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col as c_int, len) });
             }
         };
         self.conn
             .decode_result(match value {
-                               ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
+                               ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col as c_int) },
                                ValueRef::Integer(i) => unsafe {
-                ffi::sqlite3_bind_int64(ptr, col, i)
+                ffi::sqlite3_bind_int64(ptr, col as c_int, i)
             },
                                ValueRef::Real(r) => unsafe {
-                ffi::sqlite3_bind_double(ptr, col, r)
+                ffi::sqlite3_bind_double(ptr, col as c_int, r)
             },
                                ValueRef::Text(s) => unsafe {
                 let length = s.len();
@@ -425,7 +425,7 @@ impl<'conn> Statement<'conn> {
                     } else {
                         ffi::SQLITE_STATIC()
                     };
-                    ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
+                    ffi::sqlite3_bind_text(ptr, col as c_int, c_str.as_ptr(), length as c_int, destructor)
                 }
             },
                                ValueRef::Blob(b) => unsafe {
@@ -433,10 +433,10 @@ impl<'conn> Statement<'conn> {
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
                 } else if length == 0 {
-                    ffi::sqlite3_bind_zeroblob(ptr, col, 0)
+                    ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
                     ffi::sqlite3_bind_blob(ptr,
-                                           col,
+                                           col as c_int,
                                            b.as_ptr() as *const c_void,
                                            length as c_int,
                                            ffi::SQLITE_TRANSIENT())
@@ -498,7 +498,7 @@ impl<'conn> Drop for Statement<'conn> {
 // once pub(crate) is stable.
 pub trait StatementCrateImpl<'conn> {
     fn new(conn: &'conn Connection, stmt: RawStatement) -> Self;
-    fn value_ref(&self, col: c_int) -> ValueRef;
+    fn value_ref(&self, col: usize) -> ValueRef;
     fn step(&self) -> Result<bool>;
     fn reset(&self) -> c_int;
 }
@@ -511,18 +511,18 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn value_ref(&self, col: c_int) -> ValueRef {
+    fn value_ref(&self, col: usize) -> ValueRef {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {
             ffi::SQLITE_NULL => ValueRef::Null,
             ffi::SQLITE_INTEGER => {
-                ValueRef::Integer(unsafe { ffi::sqlite3_column_int64(raw, col) })
+                ValueRef::Integer(unsafe { ffi::sqlite3_column_int64(raw, col as c_int) })
             }
-            ffi::SQLITE_FLOAT => ValueRef::Real(unsafe { ffi::sqlite3_column_double(raw, col) }),
+            ffi::SQLITE_FLOAT => ValueRef::Real(unsafe { ffi::sqlite3_column_double(raw, col as c_int) }),
             ffi::SQLITE_TEXT => {
                 let s = unsafe {
-                    let text = ffi::sqlite3_column_text(raw, col);
+                    let text = ffi::sqlite3_column_text(raw, col as c_int);
                     assert!(!text.is_null(),
                             "unexpected SQLITE_TEXT column type with NULL data");
                     CStr::from_ptr(text as *const c_char)
@@ -535,7 +535,7 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
             }
             ffi::SQLITE_BLOB => {
                 let (blob, len) = unsafe {
-                    (ffi::sqlite3_column_blob(raw, col), ffi::sqlite3_column_bytes(raw, col))
+                    (ffi::sqlite3_column_blob(raw, col as c_int), ffi::sqlite3_column_bytes(raw, col as c_int))
                 };
 
                 assert!(len >= 0,
