@@ -216,7 +216,7 @@ impl<'a> Context<'a> {
                 Error::InvalidFunctionParameterType(idx, value.data_type())
             }
                                                   FromSqlError::OutOfRange(i) => {
-                                                      Error::IntegralValueOutOfRange(idx as c_int,
+                                                      Error::IntegralValueOutOfRange(idx,
                                                                                      i)
                                                   }
                                                   FromSqlError::Other(err) => {
