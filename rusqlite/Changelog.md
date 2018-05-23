@@ -5,6 +5,8 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * BREAKING CHANGE: `ToSql` implementation for `time::Timespec` uses RFC 3339 (%Y-%m-%dT%H:%M:%S.%fZ).
   Previous format was %Y-%m-%d %H:%M:%S:%f %Z.
 * BREAKING CHANGE: Remove potentially conflicting impl of ToSqlOutput (#313).
+* BREAKING CHANGE: Replace column index/count type (i32) with usize.
+* BREAKING CHANGE: Replace row changes/count type (i32) with usize.
 * Update the bundled SQLite version to 3.22.0 (#326).
 * Add DropBehavior::Panic to enforce intentional commit or rollback.
 * Implement `sqlite3_update_hook` (#260, #328, #331), `sqlite3_commit_hook` and `sqlite3_rollback_hook`.
