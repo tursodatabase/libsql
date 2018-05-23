@@ -1,5 +1,5 @@
-C Verify\sthat\sthe\ssqlite_sequence\stable\sexists\sand\sis\sin\sapproximately\sthe\ncorrect\sformat\sprior\sto\susing\sit\sto\sprocess\san\sautoincrement\stable.\nFix\sfor\sticket\s[d8dc2b3a58cd5dc2918a1d4a].
-D 2018-05-23T16:50:21.007
+C Remove\sa\sbranch\sthat\sis\sno\slonger\sused\sdue\sto\sthe\sfix\sto\sthe\nsqlite_sequence\sschema\sproblem,\sticket\n[d8dc2b3a58cd5dc2918a1d4acbba4676a23ada4c]
+D 2018-05-23T17:53:07.408
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -564,7 +564,7 @@ F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 37730af7540033135909ecaee3667dddec043293428d8718546d0d64ba4a5025
-F src/vdbe.c 066a4e1de2ed83e253adfd2e97a684cf562eaa41d31ee7f3d3e4c8aea4485a55
+F src/vdbe.c b67ec60fe6cb42040a000c30e135ddfb4b1536979ed85a329442bd1c8df77962
 F src/vdbe.h d970d9738efdd09cb2df73e3a40856e7df13e88a3486789c49fcdd322c9eb8a2
 F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
 F src/vdbeapi.c 29d2baf9c1233131ec467d7bed1b7c8a03c27579048d768c4b04acf427838858
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c6071ac99cfa4b6272ac4d739fc61a85acb544f6c1c2ae67b31e92aadcc995bd
-R 58a75d6f197e6b4ac0aaca4c0364c2b3
+P e199e859ace4f8381c6380175206e7a276e3f2228fadbbca9341bca8d2fc445d
+R fcb7bb3e89a5dc882c6d8d40fd26a899
 U drh
-Z c05e2c3d89e368267a2a8ee44da7d50d
+Z 26f7d6a5cd51317fc5937ffe2a0456c5
