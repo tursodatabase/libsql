@@ -301,6 +301,7 @@ struct BtreePayload {
 int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
                        int flags, int seekResult);
 int sqlite3BtreeFirst(BtCursor*, int *pRes);
+void sqlite3BtreeSkipNext(BtCursor*);
 int sqlite3BtreeLast(BtCursor*, int *pRes);
 int sqlite3BtreeNext(BtCursor*, int flags);
 int sqlite3BtreeEof(BtCursor*);

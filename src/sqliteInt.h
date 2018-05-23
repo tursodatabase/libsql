@@ -1723,9 +1723,9 @@ struct FuncDestructor {
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xFinal,0,#zName, {0}}
 
-#define WAGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
+#define WAGGREGATE(zName, nArg, arg, nc, xStep, xInverse, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xFinal,0,#zName, {0}}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xFinal,xInverse,#zName, {0}}
 
 /*
 ** All current savepoints are stored in a linked list starting at
@@ -3496,7 +3496,7 @@ Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 int sqlite3WindowCompare(Parse*, Window*, Window*);
 void sqlite3WindowCodeInit(Parse*, Window*);
-void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
+void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int, int*);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,

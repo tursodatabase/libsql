@@ -136,41 +136,75 @@ execsql_test 1.3 {
   SELECT sum(d) OVER (PARTITION BY b) FROM t1;
 }
 
-puts $::fd finish_test
 ==========
-
 execsql_test 2.1 {
   SELECT a, sum(d) OVER (
-    PARTITION BY b ORDER BY d
-    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+    ORDER BY d
+    ROWS BETWEEN 1000 PRECEDING AND 1 FOLLOWING
   ) FROM t1
 }
-
 execsql_test 2.2 {
   SELECT a, sum(d) OVER (
-    ORDER BY b
-    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+    ORDER BY d
+    ROWS BETWEEN 1000 PRECEDING AND 1000 FOLLOWING
   ) FROM t1
 }
-
 execsql_test 2.3 {
   SELECT a, sum(d) OVER (
     ORDER BY d
-    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ROWS BETWEEN 1 PRECEDING AND 1000 FOLLOWING
   ) FROM t1
 }
-
 execsql_test 2.4 {
   SELECT a, sum(d) OVER (
     ORDER BY d
     ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
   ) FROM t1
 }
-
 execsql_test 2.5 {
   SELECT a, sum(d) OVER (
     ORDER BY d
-    ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING
+    ROWS BETWEEN 1 PRECEDING AND 0 FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.6 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.7 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN 0 PRECEDING AND 0 FOLLOWING
+  ) FROM t1
+}
+
+puts $::fd finish_test
+==========
+
+execsql_test 3.1 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b ORDER BY d
+    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 3.2 {
+  SELECT a, sum(d) OVER (
+    ORDER BY b
+    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 3.3 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
   ) FROM t1
 }
 

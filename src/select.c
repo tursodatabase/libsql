@@ -5576,7 +5576,7 @@ static int selectWindowRewrite(Parse *pParse, Select *p){
     }
 #endif
 
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pMWin->nBufferCol);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pSublist->nExpr);
   }
 
   return rc;
@@ -6087,16 +6087,23 @@ int sqlite3Select(
     if( pWin ){
       int addrGosub = sqlite3VdbeMakeLabel(v);
       int regGosub = ++pParse->nMem;
-      int addr;
+      int addr = 0;
+      int bLoop = 0;
 
-      sqlite3WindowCodeStep(pParse, p, pWInfo, regGosub, addrGosub);
+      sqlite3WindowCodeStep(pParse, p, pWInfo, regGosub, addrGosub, &bLoop);
 
       sqlite3VdbeAddOp0(v, OP_Goto);
       sqlite3VdbeResolveLabel(v, addrGosub);
-      addr = sqlite3VdbeAddOp1(v, OP_Rewind, pWin->iEphCsr);
+      if( bLoop ){
+        addr = sqlite3VdbeAddOp1(v, OP_Rewind, pWin->iEphCsr);
+      }else{
+        addr = sqlite3VdbeCurrentAddr(v);
+      }
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, addr+1, 0);
-      sqlite3VdbeAddOp2(v, OP_Next, pWin->iEphCsr, addr+1);
-      sqlite3VdbeJumpHere(v, addr);
+      if( bLoop ){
+        sqlite3VdbeAddOp2(v, OP_Next, pWin->iEphCsr, addr+1);
+        sqlite3VdbeJumpHere(v, addr);
+      }
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
       sqlite3VdbeJumpHere(v, addr-1);       /* OP_Goto jumps here */
 

@@ -1513,6 +1513,27 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
     }
   }
 }
+static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
+  SumCtx *p;
+  int type;
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  p = sqlite3_aggregate_context(context, sizeof(*p));
+  type = sqlite3_value_numeric_type(argv[0]);
+  if( p && type!=SQLITE_NULL ){
+    p->cnt--;
+    if( type==SQLITE_INTEGER ){
+      i64 v = sqlite3_value_int64(argv[0]);
+      p->rSum -= v;
+      if( (p->approx|p->overflow)==0 && sqlite3AddInt64(&p->iSum, -1*v) ){
+        p->overflow = 1;
+      }
+    }else{
+      p->rSum += sqlite3_value_double(argv[0]);
+      p->approx = 1;
+    }
+  }
+}
 static void sumFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
@@ -1873,12 +1894,12 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
-    WAGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize),
-    WAGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
-    WAGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
+    WAGGREGATE(sum,        1, 0, 0, sumStep, sumInverse,   sumFinalize),
+    WAGGREGATE(total,      1, 0, 0, sumStep, sumInverse,   totalFinalize    ),
+    WAGGREGATE(avg,        1, 0, 0, sumStep, sumInverse,   avgFinalize    ),
     AGGREGATE2(count,            0, 0, 0, countStep,       countFinalize,
                SQLITE_FUNC_COUNT  ),
-    WAGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
+    WAGGREGATE(count,             1, 0, 0, countStep, 0,    countFinalize  ),
     AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize,
         groupConcatValue),
     AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize,

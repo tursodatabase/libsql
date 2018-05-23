@@ -5176,6 +5176,13 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+void sqlite3BtreeSkipNext(BtCursor *pCur){
+  if( pCur->eState==CURSOR_VALID ){
+    pCur->eState = CURSOR_SKIPNEXT;
+    pCur->skipNext = 1;
+  }
+}
+
 /* Move the cursor to the last entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something
 ** or set *pRes to 1 if the table is empty.

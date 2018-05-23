@@ -5018,6 +5018,7 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->uc.pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
+    if( pOp->p5 ) sqlite3BtreeSkipNext(pCrsr);
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
@@ -6273,7 +6274,8 @@ case OP_AggStep: {
   assert( pCtx->pOut->flags==MEM_Null );
   assert( pCtx->isError==0 );
   assert( pCtx->skipFlag==0 );
-  (pCtx->pFunc->xSFunc)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
+  (pOp->p1 ? (pCtx->pFunc->xInverse) : (pCtx->pFunc->xSFunc))
+    (pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
   if( pCtx->isError ){
     if( pCtx->isError>0 ){
       sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
