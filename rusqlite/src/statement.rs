@@ -75,7 +75,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute(&mut self, params: &[&ToSql]) -> Result<c_int> {
+    pub fn execute(&mut self, params: &[&ToSql]) -> Result<usize> {
         try!(self.bind_parameters(params));
         self.execute_with_bound_parameters()
     }
@@ -92,7 +92,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// fn insert(conn: &Connection) -> Result<i32> {
+    /// fn insert(conn: &Connection) -> Result<usize> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
     ///     stmt.execute_named(&[(":name", &"one")])
     /// }
@@ -102,7 +102,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<c_int> {
+    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<usize> {
         try!(self.bind_parameters_named(params));
         self.execute_with_bound_parameters()
     }
@@ -445,7 +445,7 @@ impl<'conn> Statement<'conn> {
                            })
     }
 
-    fn execute_with_bound_parameters(&mut self) -> Result<c_int> {
+    fn execute_with_bound_parameters(&mut self) -> Result<usize> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {

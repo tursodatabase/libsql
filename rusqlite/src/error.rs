@@ -62,7 +62,7 @@ pub enum Error {
     InvalidColumnType(usize, Type),
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
-    StatementChangedRows(c_int),
+    StatementChangedRows(usize),
 
     /// Error returned by `functions::Context::get` when the function argument cannot be converted
     /// to the requested type.

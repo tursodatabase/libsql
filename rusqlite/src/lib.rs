@@ -305,7 +305,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn execute(&self, sql: &str, params: &[&ToSql]) -> Result<c_int> {
+    pub fn execute(&self, sql: &str, params: &[&ToSql]) -> Result<usize> {
         self.prepare(sql)
             .and_then(|mut stmt| stmt.execute(params))
     }
@@ -319,7 +319,7 @@ impl Connection {
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// fn insert(conn: &Connection) -> Result<i32> {
+    /// fn insert(conn: &Connection) -> Result<usize> {
     ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
     /// }
     /// ```
@@ -328,7 +328,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<c_int> {
+    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<usize> {
         self.prepare(sql)
             .and_then(|mut stmt| stmt.execute_named(params))
     }
@@ -570,7 +570,7 @@ impl Connection {
         self.db.borrow_mut().decode_result(code)
     }
 
-    fn changes(&self) -> c_int {
+    fn changes(&self) -> usize {
         self.db.borrow_mut().changes()
     }
 
@@ -911,8 +911,8 @@ impl InnerConnection {
         })
     }
 
-    fn changes(&mut self) -> c_int {
-        unsafe { ffi::sqlite3_changes(self.db()) }
+    fn changes(&mut self) -> usize {
+        unsafe { ffi::sqlite3_changes(self.db()) as usize }
     }
 
     fn is_autocommit(&self) -> bool {

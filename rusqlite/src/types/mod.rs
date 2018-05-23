@@ -77,10 +77,9 @@ mod serde_json;
 /// # extern crate rusqlite;
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
-/// # use std::os::raw::{c_int};
 /// fn main() {
 /// }
-/// fn insert_null(conn: &Connection) -> Result<c_int> {
+/// fn insert_null(conn: &Connection) -> Result<usize> {
 ///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
 /// }
 /// ```
