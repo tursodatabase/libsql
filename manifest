@@ -1,5 +1,5 @@
-C Addition\scases\sfor\srtree\spreformance\stesting\sin\sspeedtest1.c.\s\sAdd\sthe\n--nodiff\soption\sto\sthe\sspeed-check.sh\sscript.
-D 2018-05-24T16:18:35.844
+C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sVDBE\sopcode\sdocumentation.\s\sNo\ncode\schanges.
+D 2018-05-24T17:25:35.177
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -564,7 +564,7 @@ F src/upsert.c ae4a4823b45c4daf87e8aea8c0f582a8844763271f5ed54ee5956c4c612734f4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 37730af7540033135909ecaee3667dddec043293428d8718546d0d64ba4a5025
-F src/vdbe.c b67ec60fe6cb42040a000c30e135ddfb4b1536979ed85a329442bd1c8df77962
+F src/vdbe.c 565f7ccc4153627ef316bcfc2da86cb0766fac4b7dcd07c45a175c347d480f0a
 F src/vdbe.h d970d9738efdd09cb2df73e3a40856e7df13e88a3486789c49fcdd322c9eb8a2
 F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
 F src/vdbeapi.c 29d2baf9c1233131ec467d7bed1b7c8a03c27579048d768c4b04acf427838858
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5bd99abc10b8153aadff5f815ae15fbe375f34f043c65def4be03014d2efdb50
-R 591bbb7140fdca180e7f617066a14131
+P 95f2d62cf3cf8dbe0f12b652b47fe1f8e0f52bc269e269955fafdf802afc47c1
+R feb4f88886f01280dec4144b6c4a9227
 U drh
-Z c305b65d30ddf3884d93283494a49287
+Z ad2bc326f1608b0e430647ea2c2e00b0

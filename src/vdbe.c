@@ -6742,7 +6742,7 @@ case OP_VFilter: {   /* jump */
 ** If the VColumn opcode is being used to fetch the value of
 ** an unchanging column during an UPDATE operation, then the P5
 ** value is 1.  Otherwise, P5 is 0.  The P5 value is returned
-** by sqlite3_vtab_nochange() routine can can be used
+** by sqlite3_vtab_nochange() routine and can be used
 ** by virtual table implementations to return special "no-change"
 ** marks which can be more efficient, depending on the virtual table.
 */
