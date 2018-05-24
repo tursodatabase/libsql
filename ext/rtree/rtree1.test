@@ -476,11 +476,11 @@ foreach {tn sql_template testdata} {
   }
 
   3    "UPDATE %CONF% t1 SET idx = 2 WHERE idx = 4" {
-    ROLLBACK 1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
-    ABORT    1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
-    IGNORE   1 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
-    FAIL     1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
-    REPLACE  1 0 {1 1 2 3 4   2 4 5 6 7   3 3 4 5 6}
+    ROLLBACK 0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    IGNORE   0 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    FAIL     0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    REPLACE  0 0 {1 1 2 3 4   2 4 5 6 7   3 3 4 5 6}
   }
 
   3    "UPDATE %CONF% t1 SET idx = ((idx+1)%5)+1 WHERE idx > 2" {
