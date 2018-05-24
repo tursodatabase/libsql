@@ -93,6 +93,50 @@ static void windowCheckFrameValue(Parse *pParse, int reg, int bEnd){
   sqlite3VdbeAppendP4(v, (void*)azErr[bEnd], P4_STATIC);
 }
 
+/*
+** ROWS BETWEEN <expr> PRECEDING    AND <expr> FOLLOWING
+**
+**   ...
+**     if( new partition ){
+**       Gosub flush_partition
+**     }
+**     Insert (record in eph-table)
+**   sqlite3WhereEnd()
+**   Gosub flush_partition
+**
+** flush_partition:
+**   OpenDup (csr -> csr2)
+**   OpenDup (csr -> csr3)
+**   regPrec = <expr1>            // PRECEDING expression
+**   regFollow = <expr2>          // FOLLOWING expression
+**   if( regPrec<0 || regFollow<0 ) throw exception!
+**   Rewind (csr,csr2,csr3)       // if EOF goto flush_partition_done
+**     Aggstep (csr3)
+**     Next(csr3)                 // if EOF fall-through
+**     if( (regFollow--)<=0 ){
+**       AggFinal (xValue)
+**       Gosub addrGosub
+**       Next(csr)                // if EOF goto flush_partition_done
+**       if( (regPrec--)<=0 ){
+**         AggStep (csr2, xInverse)
+**         Next(csr2)
+**       }
+**     }
+** flush_partition_done:
+**   Close (csr2)
+**   Close (csr3)
+**   ResetSorter (csr)
+**   Return
+**
+** ROWS BETWEEN <expr> PRECEDING    AND CURRENT ROW
+** ROWS BETWEEN CURRENT ROW         AND <expr> FOLLOWING
+** ROWS BETWEEN <expr> PRECEDING    AND UNBOUNDED FOLLOWING
+** ROWS BETWEEN UNBOUNDED PRECEDING AND <expr> FOLLOWING
+**
+**   These are similar to the above. For "CURRENT ROW", intialize the
+**   register to 0. For "UNBOUNDED ..." to infinity.
+**
+*/
 static void windowCodeRowExprStep(
   Parse *pParse, 
   Select *p,
@@ -122,6 +166,15 @@ static void windowCodeRowExprStep(
   int addrGoto;
   int addrIfPos1;
   int addrIfPos2;
+
+  assert( pMWin->eStart==TK_PRECEDING 
+       || pMWin->eStart==TK_CURRENT 
+       || pMWin->eStart==TK_UNBOUNDED 
+  );
+  assert( pMWin->eEnd==TK_FOLLOWING 
+       || pMWin->eEnd==TK_CURRENT 
+       || pMWin->eEnd==TK_UNBOUNDED 
+  );
 
   pParse->nMem += nSub + 2;
 
@@ -173,16 +226,21 @@ static void windowCodeRowExprStep(
   sqlite3VdbeAddOp2(v, OP_OpenDup, csrPrec, pMWin->iEphCsr);
   sqlite3VdbeAddOp2(v, OP_OpenDup, csrFollow, pMWin->iEphCsr);
 
-  sqlite3ExprCode(pParse, pMWin->pStart, regPrec);
-  sqlite3ExprCode(pParse, pMWin->pEnd, regFollow);
+  /* If either regPrec or regFollow are not non-negative integers, throw 
+  ** an exception.  */
+  if( pMWin->pStart ){
+    assert( pMWin->eStart==TK_PRECEDING );
+    sqlite3ExprCode(pParse, pMWin->pStart, regPrec);
+    windowCheckFrameValue(pParse, regPrec, 0);
+  }
+  if( pMWin->pEnd ){
+    assert( pMWin->eEnd==TK_FOLLOWING );
+    sqlite3ExprCode(pParse, pMWin->pEnd, regFollow);
+    windowCheckFrameValue(pParse, regFollow, 1);
+  }
 
   sqlite3VdbeAddOp2(v, OP_Null, 0, pMWin->regResult);
   sqlite3VdbeAddOp2(v, OP_Null, 0, pMWin->regAccum);
-
-  /* If either regPrec or regFollow are not non-negative integers, throw an
-  ** exception.  */
-  windowCheckFrameValue(pParse, regPrec, 0);
-  windowCheckFrameValue(pParse, regFollow, 1);
 
   sqlite3VdbeAddOp2(v, OP_Rewind, pMWin->iEphCsr, addrDone);
   sqlite3VdbeAddOp2(v, OP_Rewind, csrPrec, addrDone);
@@ -205,9 +263,17 @@ static void windowCodeRowExprStep(
     sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
   }
-  sqlite3VdbeJumpHere(v, addrNext+1);
+  if( pMWin->eEnd==TK_UNBOUNDED ){
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrNext);
+    sqlite3VdbeJumpHere(v, addrNext+1);
+    addrNext = sqlite3VdbeCurrentAddr(v);
+  }else{
+    sqlite3VdbeJumpHere(v, addrNext+1);
+  }
 
-  addrIfPos1 = sqlite3VdbeAddOp3(v, OP_IfPos, regFollow, 0 , 1);
+  if( pMWin->eEnd==TK_FOLLOWING ){
+    addrIfPos1 = sqlite3VdbeAddOp3(v, OP_IfPos, regFollow, 0 , 1);
+  }
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     sqlite3VdbeAddOp3(v, 
         OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
@@ -218,20 +284,27 @@ static void windowCodeRowExprStep(
   sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)+2);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, addrDone);
 
-  addrIfPos2 = sqlite3VdbeAddOp3(v, OP_IfPos, regPrec, 0 , 1);
-  sqlite3VdbeAddOp2(v, OP_Next, csrPrec, sqlite3VdbeCurrentAddr(v)+1);
-  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-    int i;
-    for(i=0; i<pWin->nArg; i++){
-      sqlite3VdbeAddOp3(v, OP_Column, csrPrec, pWin->iArgCol+i, reg+i);
+  if( pMWin->eStart==TK_CURRENT || pMWin->eStart==TK_PRECEDING ){
+    if( pMWin->eStart==TK_PRECEDING ){
+      addrIfPos2 = sqlite3VdbeAddOp3(v, OP_IfPos, regPrec, 0 , 1);
     }
-    sqlite3VdbeAddOp3(v, OP_AggStep0, 1, reg, pWin->regAccum);
-    sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
+    sqlite3VdbeAddOp2(v, OP_Next, csrPrec, sqlite3VdbeCurrentAddr(v)+1);
+    for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+      int i;
+      for(i=0; i<pWin->nArg; i++){
+        sqlite3VdbeAddOp3(v, OP_Column, csrPrec, pWin->iArgCol+i, reg+i);
+      }
+      sqlite3VdbeAddOp3(v, OP_AggStep0, 1, reg, pWin->regAccum);
+      sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+      sqlite3VdbeChangeP5(v, (u8)pWin->nArg);
+    }
+    if( pMWin->eStart==TK_PRECEDING ){
+      sqlite3VdbeJumpHere(v, addrIfPos2);
+    }
   }
-  sqlite3VdbeJumpHere(v, addrIfPos2);
-
-  sqlite3VdbeJumpHere(v, addrIfPos1);
+  if( pMWin->eEnd==TK_FOLLOWING ){
+    sqlite3VdbeJumpHere(v, addrIfPos1);
+  }
   sqlite3VdbeAddOp2(v, OP_Goto, 0, addrNext);
 
   /* flush_partition_done: */
@@ -428,48 +501,6 @@ static void windowCodeDefaultStep(
 **
 **========================================================================
 **
-** ROWS BETWEEN <expr> PRECEDING    AND <expr> FOLLOWING
-**
-**   ...
-**     if( new partition ){
-**       Gosub flush_partition
-**     }
-**     Insert (record in eph-table)
-**   sqlite3WhereEnd()
-**   Gosub flush_partition
-**
-** flush_partition:
-**   OpenDup (csr -> csr2)
-**   OpenDup (csr -> csr3)
-**   regPrec = <expr1>            // PRECEDING expression
-**   regFollow = <expr2>          // FOLLOWING expression
-**   if( regPrec<0 || regFollow<0 ) throw exception!
-**   Rewind (csr,csr2,csr3)       // if EOF goto flush_partition_done
-**     Aggstep (csr3)
-**     Next(csr3)                 // if EOF fall-through
-**     if( (regFollow--)<=0 ){
-**       AggFinal (xValue)
-**       Gosub addrGosub
-**       Next(csr)                // if EOF goto flush_partition_done
-**       if( (regPrec--)<=0 ){
-**         AggStep (csr2, xInverse)
-**         Next(csr2)
-**       }
-**     }
-** flush_partition_done:
-**   Close (csr2)
-**   Close (csr3)
-**   ResetSorter (csr)
-**   Return
-**
-** ROWS BETWEEN <expr> PRECEDING    AND CURRENT ROW
-** ROWS BETWEEN CURRENT ROW         AND <expr> FOLLOWING
-** ROWS BETWEEN <expr> PRECEDING    AND UNBOUNDED FOLLOWING
-** ROWS BETWEEN UNBOUNDED PRECEDING AND <expr> FOLLOWING
-**
-**   These are similar to the above. For "CURRENT ROW", intialize the
-**   register to 0. For "UNBOUNDED ..." to infinity.
-**
 ** ROWS BETWEEN <expr> PRECEDING    AND <expr> PRECEDING
 **
 **   Replace the bit after "Rewind" in the above with:
@@ -522,8 +553,8 @@ void sqlite3WindowCodeStep(
   Window *pMWin = p->pWin;
 
   if( pMWin->eType==TK_ROWS 
-   && pMWin->eStart==TK_PRECEDING
-   && pMWin->eEnd==TK_FOLLOWING
+   && (pMWin->eStart==TK_PRECEDING || pMWin->eEnd==TK_FOLLOWING)
+   && (pMWin->eStart!=TK_FOLLOWING || pMWin->eEnd==TK_PRECEDING)
   ){
     *pbLoop = 0;
     windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);

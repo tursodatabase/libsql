@@ -184,6 +184,44 @@ execsql_test 2.7 {
   ) FROM t1
 }
 
+execsql_test 2.8 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.9 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN UNBOUNDED PRECEDING AND 2 FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.10 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.11 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+  ) FROM t1
+}
+
+execsql_test 2.13 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+
+==========
+
 puts $::fd finish_test
 ==========
 
