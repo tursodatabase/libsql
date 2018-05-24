@@ -133,6 +133,7 @@ struct Rtree {
   u32 nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
   u32 nCursor;                /* Number of open cursors */
+  u32 nNodeRef;               /* Number RtreeNodes with positive nRef */
   char *zReadAuxSql;          /* SQL for statement to read aux data */
 
   /* List of nodes removed during a CondenseTree operation. List is
@@ -534,6 +535,7 @@ static int writeInt64(u8 *p, i64 i){
 */
 static void nodeReference(RtreeNode *p){
   if( p ){
+    assert( p->nRef>0 );
     p->nRef++;
   }
 }
@@ -601,6 +603,7 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
     memset(pNode, 0, sizeof(RtreeNode) + pRtree->iNodeSize);
     pNode->zData = (u8 *)&pNode[1];
     pNode->nRef = 1;
+    pRtree->nNodeRef++;
     pNode->pParent = pParent;
     pNode->isDirty = 1;
     nodeReference(pParent);
@@ -634,10 +637,10 @@ static int nodeAcquire(
   /* Check if the requested node is already in the hash table. If so,
   ** increase its reference count and return it.
   */
-  if( (pNode = nodeHashLookup(pRtree, iNode)) ){
+  if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
     assert( !pParent || !pNode->pParent || pNode->pParent==pParent );
     if( pParent && !pNode->pParent ){
-      nodeReference(pParent);
+      pParent->nRef++;
       pNode->pParent = pParent;
     }
     pNode->nRef++;
@@ -676,6 +679,7 @@ static int nodeAcquire(
       pNode->pParent = pParent;
       pNode->zData = (u8 *)&pNode[1];
       pNode->nRef = 1;
+      pRtree->nNodeRef++;
       pNode->iNode = iNode;
       pNode->isDirty = 0;
       pNode->pNext = 0;
@@ -716,7 +720,10 @@ static int nodeAcquire(
     }
     *ppNode = pNode;
   }else{
-    sqlite3_free(pNode);
+    if( pNode ){
+      pRtree->nNodeRef--;
+      sqlite3_free(pNode);
+    }
     *ppNode = 0;
   }
 
@@ -813,8 +820,10 @@ static int nodeRelease(Rtree *pRtree, RtreeNode *pNode){
   int rc = SQLITE_OK;
   if( pNode ){
     assert( pNode->nRef>0 );
+    assert( pRtree->nNodeRef>0 );
     pNode->nRef--;
     if( pNode->nRef==0 ){
+      pRtree->nNodeRef--;
       if( pNode->iNode==1 ){
         pRtree->iDepth = -1;
       }
@@ -931,8 +940,9 @@ static void rtreeRelease(Rtree *pRtree){
   pRtree->nBusy--;
   if( pRtree->nBusy==0 ){
     pRtree->inWrTrans = 0;
-    pRtree->nCursor = 0;
+    assert( pRtree->nCursor==0 );
     nodeBlobReset(pRtree);
+    assert( pRtree->nNodeRef==0 );
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
     sqlite3_finalize(pRtree->pReadRowid);
@@ -1403,7 +1413,7 @@ static RtreeSearchPoint *rtreeSearchPointNew(
       if( ii<RTREE_CACHE_SZ ){
         assert( pCur->aNode[ii]==0 );
         pCur->aNode[ii] = pCur->aNode[0];
-       }else{
+      }else{
         nodeRelease(RTREE_OF_CURSOR(pCur), pCur->aNode[0]);
       }
       pCur->aNode[0] = 0;
@@ -2473,7 +2483,7 @@ static int SplitNode(
   }else{
     pLeft = pNode;
     pRight = nodeNew(pRtree, pLeft->pParent);
-    nodeReference(pLeft);
+    pLeft->nRef++;
   }
 
   if( !pLeft || !pRight ){
@@ -2963,6 +2973,7 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
       rc = reinsertNodeContent(pRtree, pLeaf);
     }
     pRtree->pDeleted = pLeaf->pNext;
+    pRtree->nNodeRef--;
     sqlite3_free(pLeaf);
   }
 
@@ -3067,6 +3078,12 @@ static int rtreeUpdate(
   RtreeCell cell;                 /* New cell to insert if nData>1 */
   int bHaveRowid = 0;             /* Set to 1 after new rowid is determined */
 
+  if( pRtree->nNodeRef ){
+    /* Unable to write to the btree while another cursor is reading from it,
+    ** since the write might do a rebalance which would disrupt the read
+    ** cursor. */
+    return SQLITE_LOCKED_VTAB;
+  }
   rtreeReference(pRtree);
   assert(nData>=1);
 

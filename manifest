@@ -1,5 +1,5 @@
-C In\sthe\sOOM\stesting\slogic,\sadd\sthe\ssqlite3FirstFault()\sroutine\sas\sa\splace\sto\nset\sa\sbreakpoint\sthe\sfirst\stime\sany\ssimulated\sOOM\sfault\soccurs\sfor\sa\ssingle\ntest\scase.
-D 2018-05-24T17:38:00.681
+C Do\snot\sallow\sRTree\swrites\swhen\sa\sread\scursor\sis\sactive\son\sthe\ssame\svirtual\ntable,\sas\sthe\swrites\smight\srebalance\sand\sdisrupt\sthe\sread\scursors.\s\sReturn\nthe\snew\sSQLITE_LOCKED_VTAB\serror\scode\sif\sthis\shappens.
+D 2018-05-24T22:31:01.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -355,7 +355,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 148ae743198ca9fe1dfdf2fed74e5c3b0e69330e5b71ddc0d9df9993324dcedc
+F ext/rtree/rtree.c 204ddbb7cfe0aab0136aea8c8b68c24f102d54aa38ccb88f6b4782ad5a5c61c9
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 587889855b26fb8637417921b0709ca843cb6d36db94a882371fd8b7dcc3aa0b
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -364,7 +364,7 @@ F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd
 F ext/rtree/rtree5.test 49c9041d713d54560b315c2c7ef7207ee287eba1b20f8266968a06f2e55d3142
 F ext/rtree/rtree6.test 593e0d36510d5ac1d1fb39b018274ff17604fe8fdca8cf1f8e16559cea1477f4
 F ext/rtree/rtree7.test c8fb2e555b128dd0f0bdb520c61380014f497f8a23c40f2e820acc9f9e4fdce5
-F ext/rtree/rtree8.test 649f5a37ec656028a4a32674b9b1183104285a7625a09d2a8f52a1cef72c93f2
+F ext/rtree/rtree8.test f8aefd8b92f92333ae00b93eca7c197ab24522b219390a337f2a0c62a5d5f96a
 F ext/rtree/rtree9.test c646f12c8c1c68ef015c6c043d86a0c42488e2e68ed1bb1b0771a7ca246cbabf
 F ext/rtree/rtreeA.test 20623ca337ca3bd7e008cc9fb49e44dbe97f1a80b238e10a12bb4afcd0da3776
 F ext/rtree/rtreeB.test 4cec297f8e5c588654bbf3c6ed0903f10612be8a2878055dd25faf8c71758bc9
@@ -496,7 +496,7 @@ F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
 F src/shell.c.in 51c100206f4b7f86cd9affd80b764825e0edc36ca0190c442e4ca7994611bfe2
-F src/sqlite.h.in ac6aec2abe10585733c1fea06622df5d73f7725c36c6cf054e89affeaccfa42b
+F src/sqlite.h.in e379906b85cc3539c6a37ab972f2c28711b28854a457f54e137d20f75db5db7c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
 F src/sqliteInt.h 5abdade4744cf3bd567afb65bb144bb3c61f6132f86813b995a5ca79c7b584e8
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36cdfbf2ce1811691c790fde3eaeed0238c03b4dc97dc3a20d1e0397520145d1
-R 085dc0bd34d45e9f6435a293683fda7b
+P b4d80bd287ca7f3a6d182ba2435273266035b94fdf6a44047a64a4eff931c571
+R 2c56c09e62f3443ca0fffe92fcd36092
 U drh
-Z 2f994e2ed2922ec0ed95eb384d135eee
+Z 5e9f190f156904a95f9a8ccad0e9448c
