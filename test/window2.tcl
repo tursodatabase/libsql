@@ -219,6 +219,45 @@ execsql_test 2.13 {
   ) FROM t1
 }
 
+execsql_test 2.14 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING
+  ) FROM t1
+}
+
+execsql_test 2.15 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN 1 PRECEDING AND 0 PRECEDING
+  ) FROM t1
+}
+
+execsql_test 2.16 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING
+  ) FROM t1
+}
+
+execsql_test 2.17 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN 1 PRECEDING AND 2 PRECEDING
+  ) FROM t1
+}
+
+execsql_test 2.18 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN UNBOUNDED PRECEDING AND 2 PRECEDING
+  ) FROM t1
+}
+
 
 ==========
 
