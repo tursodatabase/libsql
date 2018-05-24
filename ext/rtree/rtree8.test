@@ -179,5 +179,29 @@ do_test rtree8-5.4 {
 } {}
 do_rtree_integrity_test rtree8-5.5 t2
 
+# 2018-05-24
+# The following script caused an assertion fault and/or segfault
+# prior to the fix that prevents simultaneous reads and writes on
+# the same rtree virtual table.
+#
+do_test rtree8-6.1 {
+  db close
+  sqlite3 db :memory:
+  db eval {
+    PRAGMA page_size=512;
+    CREATE VIRTUAL TABLE t1 USING rtree(id,x1,x2,y1,y2);
+    WITH RECURSIVE c(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM c WHERE x<49)
+    INSERT INTO t1 SELECT x, x, x+1, x, x+1 FROM c;
+  }
+  set rc [catch {
+    db eval {SELECT id FROM t1} x {
+      db eval {DELETE FROM t1 WHERE id=$x(id)}
+    }
+  } msg]
+  lappend rc $msg
+} {1 {database table is locked}}
+
+
+
 
 finish_test

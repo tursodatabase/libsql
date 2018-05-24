@@ -1,5 +1,5 @@
-C Do\snot\sallow\sRTree\swrites\swhen\sa\sread\scursor\sis\sactive\son\sthe\ssame\svirtual\ntable,\sas\sthe\swrites\smight\srebalance\sand\sdisrupt\sthe\sread\scursors.\s\sReturn\nthe\snew\sSQLITE_LOCKED_VTAB\serror\scode\sif\sthis\shappens.
-D 2018-05-24T22:31:01.304
+C New\stest\scase\sfor\sreading\sand\swriting\sthe\ssame\srtree\sconcurrently.
+D 2018-05-24T22:42:27.872
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -364,7 +364,7 @@ F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd
 F ext/rtree/rtree5.test 49c9041d713d54560b315c2c7ef7207ee287eba1b20f8266968a06f2e55d3142
 F ext/rtree/rtree6.test 593e0d36510d5ac1d1fb39b018274ff17604fe8fdca8cf1f8e16559cea1477f4
 F ext/rtree/rtree7.test c8fb2e555b128dd0f0bdb520c61380014f497f8a23c40f2e820acc9f9e4fdce5
-F ext/rtree/rtree8.test f8aefd8b92f92333ae00b93eca7c197ab24522b219390a337f2a0c62a5d5f96a
+F ext/rtree/rtree8.test 924926d7c64ac59fcca0809de472d9dd73c612f54daae1cf992bdd7dac90305b
 F ext/rtree/rtree9.test c646f12c8c1c68ef015c6c043d86a0c42488e2e68ed1bb1b0771a7ca246cbabf
 F ext/rtree/rtreeA.test 20623ca337ca3bd7e008cc9fb49e44dbe97f1a80b238e10a12bb4afcd0da3776
 F ext/rtree/rtreeB.test 4cec297f8e5c588654bbf3c6ed0903f10612be8a2878055dd25faf8c71758bc9
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4d80bd287ca7f3a6d182ba2435273266035b94fdf6a44047a64a4eff931c571
-R 2c56c09e62f3443ca0fffe92fcd36092
+P d4ce66610851c825cb712f985216b63e015c753fdd5521f929c67ad18bfd7664
+R 7c176c4ded679924551c349003268c49
 U drh
-Z 5e9f190f156904a95f9a8ccad0e9448c
+Z 02d192b4b4e1fc5e4499fb6cc57fb084
