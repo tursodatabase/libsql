@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sVDBE\sopcode\sdocumentation.\s\sNo\ncode\schanges.
-D 2018-05-24T17:25:35.177
+C In\sthe\sOOM\stesting\slogic,\sadd\sthe\ssqlite3FirstFault()\sroutine\sas\sa\splace\sto\nset\sa\sbreakpoint\sthe\sfirst\stime\sany\ssimulated\sOOM\sfault\soccurs\sfor\sa\ssingle\ntest\scase.
+D 2018-05-24T17:38:00.681
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -531,7 +531,7 @@ F src/test_intarray.c 988fc61cb0ff539f4172c0d95f15287c92516f64
 F src/test_intarray.h f3b7672f5d1056eac563c0d6ea8480a660b1475c
 F src/test_journal.c 619f2aa10e0d7a5f87c0f06825bc61dfce1c6b9c7f3ad990fb13de6c3b8874a3
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
-F src/test_malloc.c 5201422e2403e66a7a9c2b7d8df806acd8d2a0429822adb7e932f324e7b5b3c6
+F src/test_malloc.c dec0aa821b230773aeb3dd11d652c1193f7cedb18a20b25659bc672288115242
 F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8c
 F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95f2d62cf3cf8dbe0f12b652b47fe1f8e0f52bc269e269955fafdf802afc47c1
-R feb4f88886f01280dec4144b6c4a9227
+P 36cdfbf2ce1811691c790fde3eaeed0238c03b4dc97dc3a20d1e0397520145d1
+R 085dc0bd34d45e9f6435a293683fda7b
 U drh
-Z ad2bc326f1608b0e430647ea2c2e00b0
+Z 2f994e2ed2922ec0ed95eb384d135eee
