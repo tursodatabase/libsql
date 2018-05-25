@@ -163,13 +163,13 @@ static void windowAggStep(
 **     Aggstep (csrEnd)
 **     Next(csrEnd)                 // if EOF fall-through
 **     if( (regEnd--)<=0 ){
-**       AggStep (csrStart, xInverse)
-**       Next (csrStart)
 **       if( (regStart--)<=0 ){
 **         AggFinal (xValue)
 **         Gosub addrGosub
 **         Next(csr)              // if EOF goto flush_partition_done
 **       }
+**       AggStep (csrStart, xInverse)
+**       Next (csrStart)
 **     }
 **
 ** ROWS BETWEEN <expr> PRECEDING    AND <expr> PRECEDING
@@ -222,6 +222,7 @@ static void windowCodeRowExprStep(
 
   assert( pMWin->eStart==TK_PRECEDING 
        || pMWin->eStart==TK_CURRENT 
+       || pMWin->eStart==TK_FOLLOWING 
        || pMWin->eStart==TK_UNBOUNDED 
   );
   assert( pMWin->eEnd==TK_FOLLOWING 
@@ -283,13 +284,16 @@ static void windowCodeRowExprStep(
   /* If either regStart or regEnd are not non-negative integers, throw 
   ** an exception.  */
   if( pMWin->pStart ){
-    assert( pMWin->eStart==TK_PRECEDING );
     sqlite3ExprCode(pParse, pMWin->pStart, regStart);
     windowCheckFrameValue(pParse, regStart, 0);
   }
   if( pMWin->pEnd ){
     sqlite3ExprCode(pParse, pMWin->pEnd, regEnd);
     windowCheckFrameValue(pParse, regEnd, 1);
+    if( pMWin->pStart && pMWin->eStart==TK_FOLLOWING ){
+      assert( pMWin->eEnd==TK_FOLLOWING );
+      sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regEnd);
+    }
   }
 
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
@@ -327,7 +331,11 @@ static void windowCodeRowExprStep(
   if( pMWin->eEnd==TK_FOLLOWING ){
     addrIfPos1 = sqlite3VdbeAddOp3(v, OP_IfPos, regEnd, 0 , 1);
   }
+  if( pMWin->eStart==TK_FOLLOWING ){
+    addrIfPos2 = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0 , 1);
+  }
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
     sqlite3VdbeAddOp3(v, 
         OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
     );
@@ -336,8 +344,14 @@ static void windowCodeRowExprStep(
   sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
   sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)+2);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, lblFlushDone);
+  if( pMWin->eStart==TK_FOLLOWING ){
+    sqlite3VdbeJumpHere(v, addrIfPos2);
+  }
 
-  if( pMWin->eStart==TK_CURRENT || pMWin->eStart==TK_PRECEDING ){
+  if( pMWin->eStart==TK_CURRENT 
+   || pMWin->eStart==TK_PRECEDING 
+   || pMWin->eStart==TK_FOLLOWING 
+  ){
     if( pMWin->eStart==TK_PRECEDING ){
       addrIfPos2 = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0 , 1);
     }
