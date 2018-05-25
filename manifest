@@ -1,10 +1,10 @@
-C When\sdoing\sa\sone-pass\sUPDATE\sor\sDELETE\son\svirtual\stables,\sclose\sthe\scursor\nprior\sto\srunning\sVUpdate.\s\sThis\sallows\sone-pass\sto\swork\son\svirtual\stables\nthat\sdo\snot\sallow\sconcurrent\sreads\sand\swrites.\s\sEnhance\srtree\sto\stake\nadvantage\sof\sthis\snew\scapability.
-D 2018-05-24T23:51:57.743
+C Forward\sport\sthe\sgeopoly\sextension\sfunctions\sinto\sthe\sr-tree\sextension,\nwith\sthe\sidea\sof\screating\sa\snew\sspatial\sindex\sbased\son\ssimply\spolygons.
+D 2018-05-25T19:22:47.258
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
+F Makefile.in 51407f0e371dcb9e65d368bd4f1a08fc17ef8361ff11aac9356f0f63693b38dd
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 681fb88cccf1fd58c0b9648f6a09b75332206ef72ca76012ad11699c320cec5f
+F Makefile.msc 550559948ff2bfccff07186842fcae6c25ec93468f42bace545761543f07c25d
 F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
 F VERSION b7c9d1d11cb70ef8e90cfcf3c944aa58a9f801cc2ad487eebb0a110c16dfc2df
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -32,8 +32,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 80e2dcad8ab88aacc58b55eb0e395f79184b45fcfaa3f36fc20d2e71cfa0a7e4 x
-F configure.ac d4529ebb26ae046269334f1dac65f2b1d6927c2efe22b2ec24dce24dfe4f83dd
+F configure dbc9bec9360ff31571dfd3df4dd5b41f01ba42a5bca44d2d7f49ef16cc34ae58 x
+F configure.ac bfd8b71640bbff1088b7ff7e48012872c697141d46cff24382fd90f4c5919c88
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html ac63db056bce24b7368e29319cd1a7eb5f1798cc85922d96a80b6c3a4ff9f51b
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -355,7 +355,8 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c cb6d4bd43c118354fe5b5213843da058259467ecdbac0c6f71ead0fd89acf4ec
+F ext/rtree/geopoly.c bde931e25e378780f50650bab8810a868e85dbea70f29188193d717eb121c476 w ext/rtree/polygon.c
+F ext/rtree/rtree.c 2fd3c149c6fc4d3fdf602dc610b34ad9abdf75cca26d0c362f903aa02ea2ef47
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -416,7 +417,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 3f50dfe5cb4257c1aca96e417636ed51bc2561e71d31a21e9ccdf66feb912f43
+F main.mk d32db280e80805104f8a9aeadcea268cbb38e89bbc52fb5313d7af820de3b138
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1667,7 +1668,7 @@ F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae42026
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl d532ccbe81234f766bab6e5c0451c99529debcea138caccc1862a9645b2d54f2
+F tool/mksqlite3c.tcl ff9895dc21c300076c7311500e7663db0d837d1dad3f6c91a97ac8a33627a4af
 F tool/mksqlite3h.tcl 080873e3856eceb9d289a08a00c4b30f875ea3feadcbece796bd509b1532792c
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1729,7 +1730,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ba08e53d54165f5541756ad13a4c2f0b18516cb612a256e056ed1ff76c1fa83
-R 52623d992549c096857f92f7f6ff2464
+P b816023ce07d01024d5769e16db924374a49bf909edd12dc1344a0a1ef693db5
+R c65edfd057806e76a349cce4c936be8c
+T *branch * rtree-geopoly
+T *sym-rtree-geopoly *
+T -sym-trunk *
 U drh
-Z 92fa856c89ee79b753ba76005690f976
+Z 27c7d298825e4848f2fc61f45fe7bda5

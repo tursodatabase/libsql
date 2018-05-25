@@ -4222,6 +4222,10 @@ static void rtreecheck(
   }
 }
 
+/* Conditionally include the geopoly code */
+#ifdef SQLITE_ENABLE_GEOPOLY
+# include "geopoly.c"
+#endif
 
 /*
 ** Register the r-tree module with database handle db. This creates the
@@ -4251,6 +4255,11 @@ int sqlite3RtreeInit(sqlite3 *db){
     void *c = (void *)RTREE_COORD_INT32;
     rc = sqlite3_create_module_v2(db, "rtree_i32", &rtreeModule, c, 0);
   }
+#ifdef SQLITE_ENABLE_GEOPOLY
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_geopoly_init(db);
+  }
+#endif
 
   return rc;
 }
