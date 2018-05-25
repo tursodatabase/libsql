@@ -3720,7 +3720,7 @@ static int vdbeRecordCompareDebug(
   /*  mem1.u.i = 0;  // not needed, here to silence compiler warning */
   
   idx1 = getVarint32(aKey1, szHdr1);
-  if( szHdr1>98307 ) return SQLITE_CORRUPT;
+  if( szHdr1>98307 ) return SQLITE_CORRUPT_BKPT;
   d1 = szHdr1;
   assert( pKeyInfo->nAllField>=pPKey2->nField || CORRUPT_DB );
   assert( pKeyInfo->aSortOrder!=0 );

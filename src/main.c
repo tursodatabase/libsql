@@ -1329,6 +1329,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_BUSY_SNAPSHOT:      zName = "SQLITE_BUSY_SNAPSHOT";     break;
       case SQLITE_LOCKED:             zName = "SQLITE_LOCKED";            break;
       case SQLITE_LOCKED_SHAREDCACHE: zName = "SQLITE_LOCKED_SHAREDCACHE";break;
+      case SQLITE_LOCKED_VTAB:        zName = "SQLITE_LOCKED_VTAB";       break;
       case SQLITE_NOMEM:              zName = "SQLITE_NOMEM";             break;
       case SQLITE_READONLY:           zName = "SQLITE_READONLY";          break;
       case SQLITE_READONLY_RECOVERY:  zName = "SQLITE_READONLY_RECOVERY"; break;
@@ -1366,6 +1367,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_IOERR_CONVPATH:     zName = "SQLITE_IOERR_CONVPATH";    break;
       case SQLITE_CORRUPT:            zName = "SQLITE_CORRUPT";           break;
       case SQLITE_CORRUPT_VTAB:       zName = "SQLITE_CORRUPT_VTAB";      break;
+      case SQLITE_CORRUPT_SEQUENCE:   zName = "SQLITE_CORRUPT_SEQUENCE";  break;
       case SQLITE_NOTFOUND:           zName = "SQLITE_NOTFOUND";          break;
       case SQLITE_FULL:               zName = "SQLITE_FULL";              break;
       case SQLITE_CANTOPEN:           zName = "SQLITE_CANTOPEN";          break;

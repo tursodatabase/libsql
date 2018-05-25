@@ -1,5 +1,5 @@
-C When\sdoing\sa\sone-pass\sUPDATE\sor\sDELETE\son\svirtual\stables,\sclose\sthe\scursor\nprior\sto\srunning\sVUpdate.\s\sThis\sallows\sone-pass\sto\swork\son\svirtual\stables\nthat\sdo\snot\sallow\sconcurrent\sreads\sand\swrites.\s\sEnhance\srtree\sto\stake\nadvantage\sof\sthis\snew\scapability.
-D 2018-05-24T23:51:57.743
+C Add\sSQLITE_LOCKED_VTAB\sand\sSQLITE_CORRUPT_SEQUENCE\sto\ssqlite3ErrName().\s\sAlso,\suse\sSQLITE_CORRUPT_BKPT\sin\sone\smore\splace.
+D 2018-05-25T03:46:25.365
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -458,7 +458,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 25f2e3cb93821944dec28921c4cfb7729b3ac6e75d860fd7cd934265404a35b0
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
-F src/main.c b56b2d62d5d11e3f5100b25fca34c13c62a0fe73941f6873454a7fa8a454170d
+F src/main.c 9fdceee82066bd21512f1216b53d96fe77770177a18056d3b1bd136a0f348bf2
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -568,7 +568,7 @@ F src/vdbe.c 565f7ccc4153627ef316bcfc2da86cb0766fac4b7dcd07c45a175c347d480f0a
 F src/vdbe.h d970d9738efdd09cb2df73e3a40856e7df13e88a3486789c49fcdd322c9eb8a2
 F src/vdbeInt.h 95f7adfdc5c8f1353321f55a6c5ec00a90877e3b85af5159e393afb41ff54110
 F src/vdbeapi.c 29d2baf9c1233131ec467d7bed1b7c8a03c27579048d768c4b04acf427838858
-F src/vdbeaux.c 3b0650dbebebb196010d8af830551e61ea7dcc0e414a2b747f897305b0bd0b8f
+F src/vdbeaux.c e4179c8db93d1a3f0dd012119998bb66fd7e763ce5a863854db43bc4e389e023
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 0cbe9b9560e42b72983cf9e1bceba48f297e51142bfb6b57f3747cf60106b92d
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1729,7 +1729,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ba08e53d54165f5541756ad13a4c2f0b18516cb612a256e056ed1ff76c1fa83
-R 52623d992549c096857f92f7f6ff2464
-U drh
-Z 92fa856c89ee79b753ba76005690f976
+P b816023ce07d01024d5769e16db924374a49bf909edd12dc1344a0a1ef693db5
+R 97289e45e62b3bc16820236bc258946c
+T *branch * errCodes
+T *sym-errCodes *
+T -sym-trunk *
+U mistachkin
+Z be33a8461af1f800a3ed8ded44502761
