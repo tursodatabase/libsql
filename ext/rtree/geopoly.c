@@ -270,7 +270,7 @@ static GeoPoly *geopolyFuncParam(sqlite3_context *pCtx, sqlite3_value *pVal){
     const unsigned char *a = sqlite3_value_blob(pVal);
     int nVertex;
     nVertex = (a[1]<<16) + (a[2]<<8) + a[3];
-    if( (a[0]==0 && a[0]==1)
+    if( (a[0]==0 || a[0]==1)
      && (nVertex*2*sizeof(GeoCoord) + 4)==nByte
     ){
       p = sqlite3_malloc64( sizeof(*p) + (nVertex-1)*2*sizeof(GeoCoord) );
@@ -405,6 +405,79 @@ static void geopolyAreaFunc(
     sqlite3_result_double(context, rArea);
     sqlite3_free(p);
   }            
+}
+
+/*
+** Compute a bound-box on a polygon.  Return a new GeoPoly object
+** that describes the bounding box.  Or, if aCoord is not a NULL pointer
+** fill it in with the bounding box instead.
+*/
+static GeoPoly *geopolyBBox(
+  sqlite3_context *context,   /* For recording the error */
+  sqlite3_value *pPoly,       /* The polygon */
+  double *aCoord              /* Results here */
+){
+  GeoPoly *p = geopolyFuncParam(context, pPoly);
+  GeoPoly *pOut;
+  if( p ){
+    int ii;
+    float mnX, mxX, mnY, mxY;
+    mnX = mxX = p->a[0];
+    mnY = mxY = p->a[1];
+    for(ii=1; ii<p->nVertex; ii++){
+      double r = p->a[ii*2];
+      if( r<mnX ) mnX = r;
+      else if( r>mxX ) mxX = r;
+      r = p->a[ii*2+1];
+      if( r<mnY ) mnY = r;
+      else if( r>mxY ) mxY = r;
+    }
+    if( aCoord==0 ){
+      pOut = sqlite3_realloc(p, sizeof(GeoPoly)+sizeof(GeoCoord)*6);
+      if( pOut==0 ){
+        sqlite3_free(p);
+        sqlite3_result_error_nomem(context);
+        return 0;
+      }
+      pOut->nVertex = 4;
+      pOut->hdr[1] = 0;
+      pOut->hdr[2] = 0;
+      pOut->hdr[3] = 4;
+      pOut->a[0] = mnX;
+      pOut->a[1] = mnY;
+      pOut->a[2] = mxX;
+      pOut->a[3] = mnY;
+      pOut->a[4] = mxX;
+      pOut->a[5] = mxY;
+      pOut->a[6] = mnX;
+      pOut->a[7] = mxY;
+      return pOut;
+    }else{
+      sqlite3_free(p);
+      aCoord[0] = mnX;
+      aCoord[1] = mxX;
+      aCoord[2] = mnY;
+      aCoord[3] = mxY;
+      return (GeoPoly*)aCoord;
+    }
+  }
+  return 0;
+}
+
+/*
+** Implementation of the geopoly_bbox(X) SQL function.
+*/
+static void geopolyBBoxFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyBBox(context, argv[0], 0);
+  if( p ){
+    sqlite3_result_blob(context, p->hdr, 
+       4+8*p->nVertex, SQLITE_TRANSIENT);
+    sqlite3_free(p);
+  }
 }
 
 /*
@@ -828,6 +901,429 @@ static void geopolyDebugFunc(
 #endif
 }
 
+/* 
+** This function is the implementation of both the xConnect and xCreate
+** methods of the geopoly virtual table.
+**
+**   argv[0]   -> module name
+**   argv[1]   -> database name
+**   argv[2]   -> table name
+**   argv[...] -> column names...
+*/
+static int geopolyInit(
+  sqlite3 *db,                        /* Database connection */
+  void *pAux,                         /* One of the RTREE_COORD_* constants */
+  int argc, const char *const*argv,   /* Parameters to CREATE TABLE statement */
+  sqlite3_vtab **ppVtab,              /* OUT: New virtual table */
+  char **pzErr,                       /* OUT: Error message, if any */
+  int isCreate                        /* True for xCreate, false for xConnect */
+){
+  int rc = SQLITE_OK;
+  Rtree *pRtree;
+  int nDb;              /* Length of string argv[1] */
+  int nName;            /* Length of string argv[2] */
+  sqlite3_str *pSql;
+  char *zSql;
+  int ii;
+  char cSep;
+
+  sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+
+  /* Allocate the sqlite3_vtab structure */
+  nDb = (int)strlen(argv[1]);
+  nName = (int)strlen(argv[2]);
+  pRtree = (Rtree *)sqlite3_malloc(sizeof(Rtree)+nDb+nName+2);
+  if( !pRtree ){
+    return SQLITE_NOMEM;
+  }
+  memset(pRtree, 0, sizeof(Rtree)+nDb+nName+2);
+  pRtree->nBusy = 1;
+  pRtree->base.pModule = &rtreeModule;
+  pRtree->zDb = (char *)&pRtree[1];
+  pRtree->zName = &pRtree->zDb[nDb+1];
+  pRtree->eCoordType = RTREE_COORD_REAL32;
+  pRtree->nDim = 2;
+  pRtree->nDim2 = 4;
+  memcpy(pRtree->zDb, argv[1], nDb);
+  memcpy(pRtree->zName, argv[2], nName);
+
+
+  /* Create/Connect to the underlying relational database schema. If
+  ** that is successful, call sqlite3_declare_vtab() to configure
+  ** the r-tree table schema.
+  */
+  pSql = sqlite3_str_new(db);
+  sqlite3_str_appendf(pSql, "CREATE TABLE x");
+  cSep = '(';
+  for(ii=3; ii<argc; ii++){
+    pRtree->nAux++;
+    sqlite3_str_appendf(pSql, "%c%s", cSep, argv[ii]+1);
+    cSep = ',';
+  }
+  sqlite3_str_appendf(pSql, "%c _poly HIDDEN, _bbox HIDDEN);", cSep);
+  zSql = sqlite3_str_finish(pSql);
+  if( !zSql ){
+    rc = SQLITE_NOMEM;
+  }else if( SQLITE_OK!=(rc = sqlite3_declare_vtab(db, zSql)) ){
+    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+  }
+  sqlite3_free(zSql);
+  if( rc ) goto geopolyInit_fail;
+  pRtree->nBytesPerCell = 8 + pRtree->nDim2*4;
+
+  /* Figure out the node size to use. */
+  rc = getNodeSize(db, pRtree, isCreate, pzErr);
+  if( rc ) goto geopolyInit_fail;
+  rc = rtreeSqlInit(pRtree, db, argv[1], argv[2], isCreate);
+  if( rc ){
+    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    goto geopolyInit_fail;
+  }
+
+  *ppVtab = (sqlite3_vtab *)pRtree;
+  return SQLITE_OK;
+
+geopolyInit_fail:
+  if( rc==SQLITE_OK ) rc = SQLITE_ERROR;
+  assert( *ppVtab==0 );
+  assert( pRtree->nBusy==1 );
+  rtreeRelease(pRtree);
+  return rc;
+}
+
+
+/* 
+** GEOPOLY virtual table module xCreate method.
+*/
+static int geopolyCreate(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  return geopolyInit(db, pAux, argc, argv, ppVtab, pzErr, 1);
+}
+
+/* 
+** GEOPOLY virtual table module xConnect method.
+*/
+static int geopolyConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  return geopolyInit(db, pAux, argc, argv, ppVtab, pzErr, 0);
+}
+
+
+/*
+** GEOPOLY virtual table module xBestIndex method. There are three
+** table scan strategies to choose from (in order from most to 
+** least desirable):
+**
+**   idxNum     idxStr        Strategy
+**   ------------------------------------------------
+**     1        Unused        Direct lookup by rowid.
+**     2        'Fx'           shape query
+**     2        ''            full-table scan.
+**   ------------------------------------------------
+**
+** If strategy 1 is used, then idxStr is not meaningful. If strategy
+** 2 is used, idxStr is either the two-byte string 'Fx' or an empty
+** string.
+*/
+static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  Rtree *pRtree = (Rtree*)tab;
+  int rc = SQLITE_OK;
+  int ii;
+  int bMatch = 0;                 /* True if there exists a MATCH constraint */
+  i64 nRow;                       /* Estimated rows returned by this scan */
+
+  int iIdx = 0;
+  char zIdxStr[3];
+  memset(zIdxStr, 0, sizeof(zIdxStr));
+
+  /* Check if there exists a MATCH constraint - even an unusable one. If there
+  ** is, do not consider the lookup-by-rowid plan as using such a plan would
+  ** require the VDBE to evaluate the MATCH constraint, which is not currently
+  ** possible. */
+  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
+    if( pIdxInfo->aConstraint[ii].op==SQLITE_INDEX_CONSTRAINT_MATCH ){
+      bMatch = 1;
+    }
+  }
+
+  assert( pIdxInfo->idxStr==0 );
+  for(ii=0; ii<pIdxInfo->nConstraint && iIdx<(int)(sizeof(zIdxStr)-1); ii++){
+    struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
+
+    if( bMatch==0
+     && p->usable 
+     && p->iColumn<0
+     && p->op==SQLITE_INDEX_CONSTRAINT_EQ 
+    ){
+      /* We have an equality constraint on the rowid. Use strategy 1. */
+      int jj;
+      for(jj=0; jj<ii; jj++){
+        pIdxInfo->aConstraintUsage[jj].argvIndex = 0;
+        pIdxInfo->aConstraintUsage[jj].omit = 0;
+      }
+      pIdxInfo->idxNum = 1;
+      pIdxInfo->aConstraintUsage[ii].argvIndex = 1;
+      pIdxInfo->aConstraintUsage[jj].omit = 1;
+
+      /* This strategy involves a two rowid lookups on an B-Tree structures
+      ** and then a linear search of an R-Tree node. This should be 
+      ** considered almost as quick as a direct rowid lookup (for which 
+      ** sqlite uses an internal cost of 0.0). It is expected to return
+      ** a single row.
+      */ 
+      pIdxInfo->estimatedCost = 30.0;
+      pIdxInfo->estimatedRows = 1;
+      pIdxInfo->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
+      return SQLITE_OK;
+    }
+
+    /* A MATCH operator against the _shape column */
+    if( p->usable
+     && p->iColumn==pRtree->nAux
+     && p->op==SQLITE_INDEX_CONSTRAINT_MATCH
+    ){
+      zIdxStr[0] = RTREE_MATCH;
+      zIdxStr[1] = 'x';
+      zIdxStr[2] = 0;
+      pIdxInfo->aConstraintUsage[ii].argvIndex = 0;
+      pIdxInfo->aConstraintUsage[ii].omit = 1;
+    }
+  }
+
+  pIdxInfo->idxNum = 2;
+  pIdxInfo->needToFreeIdxStr = 1;
+  if( iIdx>0 && 0==(pIdxInfo->idxStr = sqlite3_mprintf("%s", zIdxStr)) ){
+    return SQLITE_NOMEM;
+  }
+
+  nRow = pRtree->nRowEst/100 + 5;
+  pIdxInfo->estimatedCost = (double)6.0 * (double)nRow;
+  pIdxInfo->estimatedRows = nRow;
+
+  return rc;
+}
+
+
+/* 
+** GEOPOLY virtual table module xColumn method.
+*/
+static int geopolyColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
+  Rtree *pRtree = (Rtree *)cur->pVtab;
+  RtreeCursor *pCsr = (RtreeCursor *)cur;
+  RtreeSearchPoint *p = rtreeSearchPointFirst(pCsr);
+  int rc = SQLITE_OK;
+  RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
+
+  if( rc ) return rc;
+  if( p==0 ) return SQLITE_OK;
+  if( i<=pRtree->nAux ){
+    if( !pCsr->bAuxValid ){
+      if( pCsr->pReadAux==0 ){
+        rc = sqlite3_prepare_v3(pRtree->db, pRtree->zReadAuxSql, -1, 0,
+                                &pCsr->pReadAux, 0);
+        if( rc ) return rc;
+      }
+      sqlite3_bind_int64(pCsr->pReadAux, 1, 
+          nodeGetRowid(pRtree, pNode, p->iCell));
+      rc = sqlite3_step(pCsr->pReadAux);
+      if( rc==SQLITE_ROW ){
+        pCsr->bAuxValid = 1;
+      }else{
+        sqlite3_reset(pCsr->pReadAux);
+        if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+        return rc;
+      }
+    }
+    sqlite3_result_value(ctx,
+         sqlite3_column_value(pCsr->pReadAux, i - pRtree->nDim2 + 1));
+  }else{
+    /* Must be the _bbox column */
+  }
+  return SQLITE_OK;
+}
+
+
+/*
+** The xUpdate method for GEOPOLY module virtual tables.
+*/
+static int geopolyUpdate(
+  sqlite3_vtab *pVtab, 
+  int nData, 
+  sqlite3_value **aData, 
+  sqlite_int64 *pRowid
+){
+  Rtree *pRtree = (Rtree *)pVtab;
+  int rc = SQLITE_OK;
+//  RtreeCell cell;                 /* New cell to insert if nData>1 */
+//  int bHaveRowid = 0;             /* Set to 1 after new rowid is determined */
+//  int iShapeCol;                  /* Index of the _shape column */
+
+  if( pRtree->nNodeRef ){
+    /* Unable to write to the btree while another cursor is reading from it,
+    ** since the write might do a rebalance which would disrupt the read
+    ** cursor. */
+    return SQLITE_LOCKED_VTAB;
+  }
+  rtreeReference(pRtree);
+  assert(nData>=1);
+
+//  cell.iRowid = 0;  /* Used only to suppress a compiler warning */
+//  iShapeCol = pRtree->nAux;
+
+  rc = SQLITE_ERROR;
+
+#if 0
+
+  /* Constraint handling. A write operation on an r-tree table may return
+  ** SQLITE_CONSTRAINT for two reasons:
+  **
+  **   1. A duplicate rowid value, or
+  **   2. The supplied data violates the "x2>=x1" constraint.
+  **
+  ** In the first case, if the conflict-handling mode is REPLACE, then
+  ** the conflicting row can be removed before proceeding. In the second
+  ** case, SQLITE_CONSTRAINT must be returned regardless of the
+  ** conflict-handling mode specified by the user.
+  */
+  if( nData>1 
+   && (!sqlite3_value_nochange(aData[iShapeCol+2])
+  ){
+
+#ifndef SQLITE_RTREE_INT_ONLY
+    if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
+      for(ii=0; ii<nn; ii+=2){
+        cell.aCoord[ii].f = rtreeValueDown(aData[ii+3]);
+        cell.aCoord[ii+1].f = rtreeValueUp(aData[ii+4]);
+        if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
+          rc = rtreeConstraintError(pRtree, ii+1);
+          goto constraint;
+        }
+      }
+    }else
+#endif
+    {
+      for(ii=0; ii<nn; ii+=2){
+        cell.aCoord[ii].i = sqlite3_value_int(aData[ii+3]);
+        cell.aCoord[ii+1].i = sqlite3_value_int(aData[ii+4]);
+        if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
+          rc = rtreeConstraintError(pRtree, ii+1);
+          goto constraint;
+        }
+      }
+    }
+
+    /* If a rowid value was supplied, check if it is already present in 
+    ** the table. If so, the constraint has failed. */
+    if( sqlite3_value_type(aData[2])!=SQLITE_NULL ){
+      cell.iRowid = sqlite3_value_int64(aData[2]);
+      if( sqlite3_value_type(aData[0])==SQLITE_NULL
+       || sqlite3_value_int64(aData[0])!=cell.iRowid
+      ){
+        int steprc;
+        sqlite3_bind_int64(pRtree->pReadRowid, 1, cell.iRowid);
+        steprc = sqlite3_step(pRtree->pReadRowid);
+        rc = sqlite3_reset(pRtree->pReadRowid);
+        if( SQLITE_ROW==steprc ){
+          if( sqlite3_vtab_on_conflict(pRtree->db)==SQLITE_REPLACE ){
+            rc = rtreeDeleteRowid(pRtree, cell.iRowid);
+          }else{
+            rc = rtreeConstraintError(pRtree, 0);
+            goto constraint;
+          }
+        }
+      }
+      bHaveRowid = 1;
+    }
+  }
+
+  /* If aData[0] is not an SQL NULL value, it is the rowid of a
+  ** record to delete from the r-tree table. The following block does
+  ** just that.
+  */
+  if( sqlite3_value_type(aData[0])!=SQLITE_NULL ){
+    rc = rtreeDeleteRowid(pRtree, sqlite3_value_int64(aData[0]));
+  }
+
+  /* If the aData[] array contains more than one element, elements
+  ** (aData[2]..aData[argc-1]) contain a new record to insert into
+  ** the r-tree structure.
+  */
+  if( rc==SQLITE_OK && nData>1 ){
+    /* Insert the new record into the r-tree */
+    RtreeNode *pLeaf = 0;
+
+    /* Figure out the rowid of the new row. */
+    if( bHaveRowid==0 ){
+      rc = newRowid(pRtree, &cell.iRowid);
+    }
+    *pRowid = cell.iRowid;
+
+    if( rc==SQLITE_OK ){
+      rc = ChooseLeaf(pRtree, &cell, 0, &pLeaf);
+    }
+    if( rc==SQLITE_OK ){
+      int rc2;
+      pRtree->iReinsertHeight = -1;
+      rc = rtreeInsertCell(pRtree, pLeaf, &cell, 0);
+      rc2 = nodeRelease(pRtree, pLeaf);
+      if( rc==SQLITE_OK ){
+        rc = rc2;
+      }
+    }
+    if( pRtree->nAux ){
+      sqlite3_stmt *pUp = pRtree->pWriteAux;
+      int jj;
+      sqlite3_bind_int64(pUp, 1, *pRowid);
+      for(jj=0; jj<pRtree->nAux; jj++){
+        sqlite3_bind_value(pUp, jj+2, aData[pRtree->nDim2+3+jj]);
+      }
+      sqlite3_step(pUp);
+      rc = sqlite3_reset(pUp);
+    }
+  }
+constraint:
+#endif /* 0 */
+
+  rtreeRelease(pRtree);
+  return rc;
+}
+
+static sqlite3_module geopolyModule = {
+  2,                          /* iVersion */
+  geopolyCreate,              /* xCreate - create a table */
+  geopolyConnect,             /* xConnect - connect to an existing table */
+  geopolyBestIndex,           /* xBestIndex - Determine search strategy */
+  rtreeDisconnect,            /* xDisconnect - Disconnect from a table */
+  rtreeDestroy,               /* xDestroy - Drop a table */
+  rtreeOpen,                  /* xOpen - open a cursor */
+  rtreeClose,                 /* xClose - close a cursor */
+  rtreeFilter,                /* xFilter - configure scan constraints */
+  rtreeNext,                  /* xNext - advance a cursor */
+  rtreeEof,                   /* xEof */
+  geopolyColumn,              /* xColumn - read data */
+  rtreeRowid,                 /* xRowid - read data */
+  geopolyUpdate,              /* xUpdate - write data */
+  rtreeBeginTransaction,      /* xBegin - begin transaction */
+  rtreeEndTransaction,        /* xSync - sync transaction */
+  rtreeEndTransaction,        /* xCommit - commit transaction */
+  rtreeEndTransaction,        /* xRollback - rollback transaction */
+  0,                          /* xFindFunction - function overloading */
+  rtreeRename,                /* xRename - rename the table */
+  rtreeSavepoint,             /* xSavepoint */
+  0,                          /* xRelease */
+  0,                          /* xRollbackTo */
+};
+
 static int sqlite3_geopoly_init(sqlite3 *db){
   int rc = SQLITE_OK;
   static const struct {
@@ -842,12 +1338,16 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyWithinFunc,        3,    "geopoly_within"   },
      { geopolyOverlapFunc,       2,    "geopoly_overlap"  },
      { geopolyDebugFunc,         1,    "geopoly_debug"    },
+     { geopolyBBoxFunc,          1,    "geopoly_bbox"     },
   };
   int i;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
                                  SQLITE_UTF8, 0,
                                  aFunc[i].xFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module_v2(db, "geopoly", &geopolyModule, 0, 0);
   }
   return rc;
 }
