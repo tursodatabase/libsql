@@ -3076,8 +3076,11 @@ static int rtreeUpdate(
 ){
   Rtree *pRtree = (Rtree *)pVtab;
   int rc = SQLITE_OK;
-  RtreeCell cell;                 /* New cell to insert if nData>1 */
-  int bHaveRowid = 0;             /* Set to 1 after new rowid is determined */
+  RtreeCell cell;              /* New cell to insert if nData>1 */
+  int bHaveRowid = 0;          /* Set to 1 after new rowid is determined */
+  int bRtreeInsert = 0;        /* True if rtree data is to be inserted */
+  int nCoord;                  /* Number of coordinate columns */
+  int ii;                      /* Loop counter */
 
   if( pRtree->nNodeRef ){
     /* Unable to write to the btree while another cursor is reading from it,
@@ -3090,6 +3093,35 @@ static int rtreeUpdate(
 
   cell.iRowid = 0;  /* Used only to suppress a compiler warning */
 
+  /* Set bRtreeInsert if this is an INSERT statement, or if it is an
+  ** UPDATE statement that changes the rowid or one of the coordinates.
+  ** Leave bRtreeInsert at zero if this is a DELETE or if this is an
+  ** UPDATE that only changes auxiliary columns.
+  */
+  if( nData>1 ){
+    nCoord = pRtree->nDim2;
+
+    /* NB: nData can only be less than nDim2+3 if the rtree is mis-declared
+    ** with "column" that are interpreted as table constraints.
+    ** Example:  CREATE VIRTUAL TABLE bad USING rtree(x,y,CHECK(y>5));
+    ** This problem was discovered after years of use, so we silently ignore
+    ** these kinds of misdeclared tables to avoid breaking any legacy.
+    */
+    if( nCoord > nData-3 ) nCoord = nData - 3;
+
+    if( sqlite3_value_type(aData[0])==SQLITE_NULL ){
+      bRtreeInsert = 1;   /* This is an INSERT statement */
+    }else{
+      /* This is an UPDATE statement.  Check to see if the rowid (aData[2])
+      ** or any coordinate column (aData[3] through aData[nCoord+2])
+      ** has changed. */
+      for(ii=nCoord+2; ii>=2; ii--){
+        if( !sqlite3_value_nochange(aData[ii]) ) break;
+      }
+      bRtreeInsert = ii>=2;
+    }
+  }
+
   /* Constraint handling. A write operation on an r-tree table may return
   ** SQLITE_CONSTRAINT for two reasons:
   **
@@ -3101,23 +3133,10 @@ static int rtreeUpdate(
   ** case, SQLITE_CONSTRAINT must be returned regardless of the
   ** conflict-handling mode specified by the user.
   */
-  if( nData>1 ){
-    int ii;
-    int nn = nData - 4;
-
-    if( nn > pRtree->nDim2 ) nn = pRtree->nDim2;
-    /* Populate the cell.aCoord[] array. The first coordinate is aData[3].
-    **
-    ** NB: nData can only be less than nDim*2+3 if the rtree is mis-declared
-    ** with "column" that are interpreted as table constraints.
-    ** Example:  CREATE VIRTUAL TABLE bad USING rtree(x,y,CHECK(y>5));
-    ** This problem was discovered after years of use, so we silently ignore
-    ** these kinds of misdeclared tables to avoid breaking any legacy.
-    */
-
+  if( bRtreeInsert ){
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
-      for(ii=0; ii<nn; ii+=2){
+      for(ii=0; ii<nCoord; ii+=2){
         cell.aCoord[ii].f = rtreeValueDown(aData[ii+3]);
         cell.aCoord[ii+1].f = rtreeValueUp(aData[ii+4]);
         if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
@@ -3128,7 +3147,7 @@ static int rtreeUpdate(
     }else
 #endif
     {
-      for(ii=0; ii<nn; ii+=2){
+      for(ii=0; ii<nCoord; ii+=2){
         cell.aCoord[ii].i = sqlite3_value_int(aData[ii+3]);
         cell.aCoord[ii+1].i = sqlite3_value_int(aData[ii+4]);
         if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
@@ -3166,7 +3185,9 @@ static int rtreeUpdate(
   ** record to delete from the r-tree table. The following block does
   ** just that.
   */
-  if( sqlite3_value_type(aData[0])!=SQLITE_NULL ){
+  if( sqlite3_value_type(aData[0])!=SQLITE_NULL
+   && (bRtreeInsert || nData==1)
+  ){
     rc = rtreeDeleteRowid(pRtree, sqlite3_value_int64(aData[0]));
   }
 
@@ -3174,13 +3195,14 @@ static int rtreeUpdate(
   ** (aData[2]..aData[argc-1]) contain a new record to insert into
   ** the r-tree structure.
   */
-  if( rc==SQLITE_OK && nData>1 ){
+  if( rc==SQLITE_OK && bRtreeInsert ){
     /* Insert the new record into the r-tree */
     RtreeNode *pLeaf = 0;
 
     /* Figure out the rowid of the new row. */
     if( bHaveRowid==0 ){
       rc = newRowid(pRtree, &cell.iRowid);
+      bHaveRowid = 1;
     }
     *pRowid = cell.iRowid;
 
@@ -3196,10 +3218,31 @@ static int rtreeUpdate(
         rc = rc2;
       }
     }
-    if( pRtree->nAux ){
+  }
+
+  /* Handle INSERT and UPDATE of auxiliary column data */
+  if( rc==SQLITE_OK && nData>1 && pRtree->nAux ){
+    if( sqlite3_value_type(aData[0])==SQLITE_NULL ){
+      /* This is an INSERT statement.  Check to see if any
+      ** auxiliary column is non-NULL and hence needs to be set */
+      for(ii=pRtree->nAux+pRtree->nDim2+3; ii<nData; ii++){
+        if( sqlite3_value_type(aData[ii])!=SQLITE_NULL ) break;
+      }
+    }else{
+      /* This is an UPDATE statement.  Check to see if any
+      ** auxiliary column value has changed. */
+      for(ii=pRtree->nAux+pRtree->nDim2+3; ii<nData; ii++){
+        if( sqlite3_value_nochange(aData[ii])==0 ) break;
+      }
+    }
+    if( ii<nData ){
       sqlite3_stmt *pUp = pRtree->pWriteAux;
       int jj;
-      sqlite3_bind_int64(pUp, 1, *pRowid);
+      if( bHaveRowid ){
+        sqlite3_bind_int64(pUp, 1, cell.iRowid);
+      }else{
+        sqlite3_bind_int64(pUp, 1, sqlite3_value_int64(aData[1]));
+      }
       for(jj=0; jj<pRtree->nAux; jj++){
         sqlite3_bind_value(pUp, jj+2, aData[pRtree->nDim2+3+jj]);
       }
