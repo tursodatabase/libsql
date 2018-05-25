@@ -193,8 +193,9 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
 **
 ** If any error occurs, return NULL.
 */
-static GeoPoly *geopolyParseJson(const unsigned char *z){
+static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
   GeoParse s;
+  int rc = SQLITE_OK;
   memset(&s, 0, sizeof(s));
   s.z = z;
   if( geopolySkipSpace(&s)=='[' ){
@@ -208,6 +209,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z){
         s.nAlloc = s.nAlloc*2 + 16;
         aNew = sqlite3_realloc64(s.a, s.nAlloc*sizeof(GeoCoord)*2 );
         if( aNew==0 ){
+          rc = SQLITE_NOMEM;
           s.nErr++;
           break;
         }
@@ -221,6 +223,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z){
         if( c==',' ) continue;
         if( c==']' ) break;
         s.nErr++;
+        rc = SQLITE_ERROR;
         goto parse_json_err;
       }
       if( geopolySkipSpace(&s)==',' ){
@@ -245,12 +248,15 @@ static GeoPoly *geopolyParseJson(const unsigned char *z){
       pOut->hdr[2] = (s.nVertex>>8)&0xff;
       pOut->hdr[3] = s.nVertex&0xff;
       sqlite3_free(s.a);
+      if( pRc ) *pRc = SQLITE_OK;
       return pOut;
     }else{
       s.nErr++;
+      rc = SQLITE_ERROR;
     }
   }
 parse_json_err:
+  if( pRc ) *pRc = rc;
   sqlite3_free(s.a);
   return 0;
 }
@@ -261,7 +267,11 @@ parse_json_err:
 ** return a pointer to that object.  Or if the input is not a well-formed
 ** polygon, put an error message in sqlite3_context and return NULL.
 */
-static GeoPoly *geopolyFuncParam(sqlite3_context *pCtx, sqlite3_value *pVal){
+static GeoPoly *geopolyFuncParam(
+  sqlite3_context *pCtx,      /* Context for error messages */
+  sqlite3_value *pVal,        /* The value to decode */
+  int *pRc                    /* Write error here */
+){
   GeoPoly *p = 0;
   int nByte;
   if( sqlite3_value_type(pVal)==SQLITE_BLOB
@@ -274,7 +284,10 @@ static GeoPoly *geopolyFuncParam(sqlite3_context *pCtx, sqlite3_value *pVal){
      && (nVertex*2*sizeof(GeoCoord) + 4)==nByte
     ){
       p = sqlite3_malloc64( sizeof(*p) + (nVertex-1)*2*sizeof(GeoCoord) );
-      if( p ){
+      if( p==0 ){
+        if( pRc ) *pRc = SQLITE_NOMEM;
+        if( pCtx ) sqlite3_result_error_nomem(pCtx);
+      }else{
         int x = 1;
         p->nVertex = nVertex;
         memcpy(p->hdr, a, nByte);
@@ -287,13 +300,15 @@ static GeoPoly *geopolyFuncParam(sqlite3_context *pCtx, sqlite3_value *pVal){
         }
       }
     }
+    if( pRc ) *pRc = SQLITE_OK;
+    return p;
   }else if( sqlite3_value_type(pVal)==SQLITE_TEXT ){
-    p = geopolyParseJson(sqlite3_value_text(pVal));
+    return geopolyParseJson(sqlite3_value_text(pVal), pRc);
+  }else{
+    *pRc = SQLITE_ERROR;
+    if( pCtx!=0 ) sqlite3_result_error(pCtx, "not a valid polygon", -1);
+    return 0;
   }
-  if( p==0 ){
-    sqlite3_result_error(pCtx, "not a valid polygon", -1);
-  }
-  return p;
 }
 
 /*
@@ -308,7 +323,7 @@ static void geopolyBlobFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
@@ -327,7 +342,7 @@ static void geopolyJsonFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
     sqlite3 *db = sqlite3_context_db_handle(context);
     sqlite3_str *x = sqlite3_str_new(db);
@@ -353,7 +368,7 @@ static void geopolySvgFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
     sqlite3 *db = sqlite3_context_db_handle(context);
     sqlite3_str *x = sqlite3_str_new(db);
@@ -390,7 +405,7 @@ static void geopolyAreaFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
     double rArea = 0.0;
     int ii;
@@ -415,10 +430,11 @@ static void geopolyAreaFunc(
 static GeoPoly *geopolyBBox(
   sqlite3_context *context,   /* For recording the error */
   sqlite3_value *pPoly,       /* The polygon */
-  double *aCoord              /* Results here */
+  RtreeCoord *aCoord,         /* Results here */
+  int *pRc                    /* Error code here */
 ){
-  GeoPoly *p = geopolyFuncParam(context, pPoly);
-  GeoPoly *pOut;
+  GeoPoly *p = geopolyFuncParam(context, pPoly, pRc);
+  GeoPoly *pOut = 0;
   if( p ){
     int ii;
     float mnX, mxX, mnY, mxY;
@@ -432,11 +448,13 @@ static GeoPoly *geopolyBBox(
       if( r<mnY ) mnY = r;
       else if( r>mxY ) mxY = r;
     }
+    if( pRc ) *pRc = SQLITE_OK;
     if( aCoord==0 ){
       pOut = sqlite3_realloc(p, sizeof(GeoPoly)+sizeof(GeoCoord)*6);
       if( pOut==0 ){
         sqlite3_free(p);
-        sqlite3_result_error_nomem(context);
+        if( context ) sqlite3_result_error_nomem(context);
+        if( pRc ) *pRc = SQLITE_NOMEM;
         return 0;
       }
       pOut->nVertex = 4;
@@ -451,17 +469,15 @@ static GeoPoly *geopolyBBox(
       pOut->a[5] = mxY;
       pOut->a[6] = mnX;
       pOut->a[7] = mxY;
-      return pOut;
     }else{
       sqlite3_free(p);
-      aCoord[0] = mnX;
-      aCoord[1] = mxX;
-      aCoord[2] = mnY;
-      aCoord[3] = mxY;
-      return (GeoPoly*)aCoord;
+      aCoord[0].f = mnX;
+      aCoord[1].f = mxX;
+      aCoord[2].f = mnY;
+      aCoord[3].f = mxY;
     }
   }
-  return 0;
+  return pOut;
 }
 
 /*
@@ -472,7 +488,7 @@ static void geopolyBBoxFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyBBox(context, argv[0], 0);
+  GeoPoly *p = geopolyBBox(context, argv[0], 0, 0);
   if( p ){
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
@@ -530,7 +546,7 @@ static void geopolyWithinFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0]);
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   double x0 = sqlite3_value_double(argv[1]);
   double y0 = sqlite3_value_double(argv[2]);
   if( p ){
@@ -874,8 +890,8 @@ static void geopolyOverlapFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p1 = geopolyFuncParam(context, argv[0]);
-  GeoPoly *p2 = geopolyFuncParam(context, argv[1]);
+  GeoPoly *p1 = geopolyFuncParam(context, argv[0], 0);
+  GeoPoly *p2 = geopolyFuncParam(context, argv[1], 0);
   if( p1 && p2 ){
     int x = geopolyOverlap(p1, p2);
     if( x<0 ){
@@ -955,12 +971,13 @@ static int geopolyInit(
   pSql = sqlite3_str_new(db);
   sqlite3_str_appendf(pSql, "CREATE TABLE x");
   cSep = '(';
+  pRtree->nAux = 1;   /* Add one for _shape */
   for(ii=3; ii<argc; ii++){
     pRtree->nAux++;
     sqlite3_str_appendf(pSql, "%c%s", cSep, argv[ii]+1);
     cSep = ',';
   }
-  sqlite3_str_appendf(pSql, "%c _poly HIDDEN, _bbox HIDDEN);", cSep);
+  sqlite3_str_appendf(pSql, "%c _shape, _bbox HIDDEN);", cSep);
   zSql = sqlite3_str_finish(pSql);
   if( !zSql ){
     rc = SQLITE_NOMEM;
@@ -1164,9 +1181,13 @@ static int geopolyUpdate(
 ){
   Rtree *pRtree = (Rtree *)pVtab;
   int rc = SQLITE_OK;
-//  RtreeCell cell;                 /* New cell to insert if nData>1 */
-//  int bHaveRowid = 0;             /* Set to 1 after new rowid is determined */
-//  int iShapeCol;                  /* Index of the _shape column */
+  RtreeCell cell;                 /* New cell to insert if nData>1 */
+  int iShapeCol;                  /* Index of the _shape column */
+  i64 oldRowid;                   /* The old rowid */
+  int oldRowidValid;              /* True if oldRowid is valid */
+  i64 newRowid;                   /* The new rowid */
+  int newRowidValid;              /* True if newRowid is valid */
+  int coordChange = 0;            /* Change in coordinates */
 
   if( pRtree->nNodeRef ){
     /* Unable to write to the btree while another cursor is reading from it,
@@ -1177,72 +1198,43 @@ static int geopolyUpdate(
   rtreeReference(pRtree);
   assert(nData>=1);
 
-//  cell.iRowid = 0;  /* Used only to suppress a compiler warning */
-//  iShapeCol = pRtree->nAux;
-
+  iShapeCol = pRtree->nAux;
   rc = SQLITE_ERROR;
+  oldRowidValid = sqlite3_value_type(aData[0])!=SQLITE_NULL;;
+  oldRowid = oldRowidValid ? sqlite3_value_int64(aData[0]) : 0;
+  newRowidValid = nData>1 && sqlite3_value_type(aData[1])!=SQLITE_NULL;
+  newRowid = newRowidValid ? sqlite3_value_int64(aData[1]) : 0;
+  cell.iRowid = newRowid;
 
-#if 0
-
-  /* Constraint handling. A write operation on an r-tree table may return
-  ** SQLITE_CONSTRAINT for two reasons:
-  **
-  **   1. A duplicate rowid value, or
-  **   2. The supplied data violates the "x2>=x1" constraint.
-  **
-  ** In the first case, if the conflict-handling mode is REPLACE, then
-  ** the conflicting row can be removed before proceeding. In the second
-  ** case, SQLITE_CONSTRAINT must be returned regardless of the
-  ** conflict-handling mode specified by the user.
-  */
-  if( nData>1 
-   && (!sqlite3_value_nochange(aData[iShapeCol+2])
+  if( nData>1                                           /* not a DELETE */
+   && (!oldRowidValid                                   /* INSERT */
+        || !sqlite3_value_nochange(aData[iShapeCol+2])  /* UPDATE _shape */
+        || oldRowid!=newRowid)                          /* Rowid change */
   ){
-
-#ifndef SQLITE_RTREE_INT_ONLY
-    if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
-      for(ii=0; ii<nn; ii+=2){
-        cell.aCoord[ii].f = rtreeValueDown(aData[ii+3]);
-        cell.aCoord[ii+1].f = rtreeValueUp(aData[ii+4]);
-        if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
-          rc = rtreeConstraintError(pRtree, ii+1);
-          goto constraint;
-        }
+    geopolyBBox(0, aData[iShapeCol+2], cell.aCoord, &rc);
+    if( rc ){
+      if( rc==SQLITE_ERROR ){
+        pVtab->zErrMsg =
+          sqlite3_mprintf("_shape does not contain a valid polygon");
       }
-    }else
-#endif
-    {
-      for(ii=0; ii<nn; ii+=2){
-        cell.aCoord[ii].i = sqlite3_value_int(aData[ii+3]);
-        cell.aCoord[ii+1].i = sqlite3_value_int(aData[ii+4]);
-        if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
-          rc = rtreeConstraintError(pRtree, ii+1);
-          goto constraint;
-        }
-      }
+      return rc;
     }
+    coordChange = 1;
 
     /* If a rowid value was supplied, check if it is already present in 
     ** the table. If so, the constraint has failed. */
-    if( sqlite3_value_type(aData[2])!=SQLITE_NULL ){
-      cell.iRowid = sqlite3_value_int64(aData[2]);
-      if( sqlite3_value_type(aData[0])==SQLITE_NULL
-       || sqlite3_value_int64(aData[0])!=cell.iRowid
-      ){
-        int steprc;
-        sqlite3_bind_int64(pRtree->pReadRowid, 1, cell.iRowid);
-        steprc = sqlite3_step(pRtree->pReadRowid);
-        rc = sqlite3_reset(pRtree->pReadRowid);
-        if( SQLITE_ROW==steprc ){
-          if( sqlite3_vtab_on_conflict(pRtree->db)==SQLITE_REPLACE ){
-            rc = rtreeDeleteRowid(pRtree, cell.iRowid);
-          }else{
-            rc = rtreeConstraintError(pRtree, 0);
-            goto constraint;
-          }
+    if( oldRowidValid && oldRowid!=newRowid ){
+      int steprc;
+      sqlite3_bind_int64(pRtree->pReadRowid, 1, cell.iRowid);
+      steprc = sqlite3_step(pRtree->pReadRowid);
+      rc = sqlite3_reset(pRtree->pReadRowid);
+      if( SQLITE_ROW==steprc ){
+        if( sqlite3_vtab_on_conflict(pRtree->db)==SQLITE_REPLACE ){
+          rc = rtreeDeleteRowid(pRtree, cell.iRowid);
+        }else{
+          rc = rtreeConstraintError(pRtree, 0);
         }
       }
-      bHaveRowid = 1;
     }
   }
 
@@ -1250,24 +1242,18 @@ static int geopolyUpdate(
   ** record to delete from the r-tree table. The following block does
   ** just that.
   */
-  if( sqlite3_value_type(aData[0])!=SQLITE_NULL ){
-    rc = rtreeDeleteRowid(pRtree, sqlite3_value_int64(aData[0]));
+  if( rc==SQLITE_OK && (nData==1 || coordChange) ){
+    rc = rtreeDeleteRowid(pRtree, oldRowid);
   }
 
   /* If the aData[] array contains more than one element, elements
   ** (aData[2]..aData[argc-1]) contain a new record to insert into
   ** the r-tree structure.
   */
-  if( rc==SQLITE_OK && nData>1 ){
+  if( rc==SQLITE_OK && nData>1 && coordChange ){
     /* Insert the new record into the r-tree */
     RtreeNode *pLeaf = 0;
-
-    /* Figure out the rowid of the new row. */
-    if( bHaveRowid==0 ){
-      rc = newRowid(pRtree, &cell.iRowid);
-    }
     *pRowid = cell.iRowid;
-
     if( rc==SQLITE_OK ){
       rc = ChooseLeaf(pRtree, &cell, 0, &pLeaf);
     }
@@ -1280,19 +1266,23 @@ static int geopolyUpdate(
         rc = rc2;
       }
     }
-    if( pRtree->nAux ){
-      sqlite3_stmt *pUp = pRtree->pWriteAux;
-      int jj;
-      sqlite3_bind_int64(pUp, 1, *pRowid);
-      for(jj=0; jj<pRtree->nAux; jj++){
-        sqlite3_bind_value(pUp, jj+2, aData[pRtree->nDim2+3+jj]);
-      }
+  }
+
+  /* Change the data */
+  if( rc==SQLITE_OK && pRtree->nAux>0 ){
+    sqlite3_stmt *pUp = pRtree->pWriteAux;
+    int jj;
+    int nChange = 0;
+    sqlite3_bind_int64(pUp, 1, newRowid);
+    for(jj=0; jj<pRtree->nAux; jj++){
+      if( !sqlite3_value_nochange(aData[jj+2]) ) nChange++;
+      sqlite3_bind_value(pUp, jj+2, aData[jj+2]);
+    }
+    if( nChange ){
       sqlite3_step(pUp);
       rc = sqlite3_reset(pUp);
     }
   }
-constraint:
-#endif /* 0 */
 
   rtreeRelease(pRtree);
   return rc;
