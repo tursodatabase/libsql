@@ -553,13 +553,16 @@ void sqlite3DeleteFrom(
     if( IsVirtual(pTab) ){
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
-      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iKey, pVTab, P4_VTAB);
-      sqlite3VdbeChangeP5(v, OE_Abort);
       assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
       sqlite3MayAbort(pParse);
-      if( eOnePass==ONEPASS_SINGLE && sqlite3IsToplevel(pParse) ){
-        pParse->isMultiWrite = 0;
+      if( eOnePass==ONEPASS_SINGLE ){
+        sqlite3VdbeAddOp1(v, OP_Close, iTabCur);
+        if( sqlite3IsToplevel(pParse) ){
+          pParse->isMultiWrite = 0;
+        }
       }
+      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iKey, pVTab, P4_VTAB);
+      sqlite3VdbeChangeP5(v, OE_Abort);
     }else
 #endif
     {

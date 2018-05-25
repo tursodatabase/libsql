@@ -504,6 +504,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_COMMIT_ATOMIC     (SQLITE_IOERR | (30<<8))
 #define SQLITE_IOERR_ROLLBACK_ATOMIC   (SQLITE_IOERR | (31<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
+#define SQLITE_LOCKED_VTAB             (SQLITE_LOCKED |  (2<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_BUSY_SNAPSHOT           (SQLITE_BUSY   |  (2<<8))
 #define SQLITE_CANTOPEN_NOTEMPDIR      (SQLITE_CANTOPEN | (1<<8))
@@ -511,6 +512,7 @@ int sqlite3_exec(
 #define SQLITE_CANTOPEN_FULLPATH       (SQLITE_CANTOPEN | (3<<8))
 #define SQLITE_CANTOPEN_CONVPATH       (SQLITE_CANTOPEN | (4<<8))
 #define SQLITE_CORRUPT_VTAB            (SQLITE_CORRUPT | (1<<8))
+#define SQLITE_CORRUPT_SEQUENCE        (SQLITE_CORRUPT | (2<<8))
 #define SQLITE_READONLY_RECOVERY       (SQLITE_READONLY | (1<<8))
 #define SQLITE_READONLY_CANTLOCK       (SQLITE_READONLY | (2<<8))
 #define SQLITE_READONLY_ROLLBACK       (SQLITE_READONLY | (3<<8))
@@ -8533,11 +8535,11 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** method of a [virtual table], then it returns true if and only if the
 ** column is being fetched as part of an UPDATE operation during which the
 ** column value will not change.  Applications might use this to substitute
-** a lighter-weight value to return that the corresponding [xUpdate] method
-** understands as a "no-change" value.
+** a return value that is less expensive to compute and that the corresponding
+** [xUpdate] method understands as a "no-change" value.
 **
 ** If the [xColumn] method calls sqlite3_vtab_nochange() and finds that
-** the column is not changed by the UPDATE statement, they the xColumn
+** the column is not changed by the UPDATE statement, then the xColumn
 ** method can optionally return without setting a result, without calling
 ** any of the [sqlite3_result_int|sqlite3_result_xxxxx() interfaces].
 ** In that case, [sqlite3_value_nochange(X)] will return true for the
