@@ -288,6 +288,64 @@ execsql_test 2.22 {
   ) FROM t1
 }
 
+execsql_test 2.23 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.24 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY a%2
+    ORDER BY d 
+    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.25 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.26 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
+execsql_test 2.27 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+  ) FROM t1
+}
+
+execsql_test 2.28 {
+  SELECT a, sum(d) OVER (
+    PARTITION BY b
+    ORDER BY d 
+    ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+  ) FROM t1
+}
+
+execsql_test 2.29 {
+  SELECT a, sum(d) OVER (
+    ORDER BY d 
+    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+execsql_test 2.30 {
+  SELECT a, sum(d) OVER (
+    ORDER BY b 
+    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t1
+}
+
 ==========
 puts $::fd finish_test
 ==========
