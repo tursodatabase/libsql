@@ -350,7 +350,6 @@ static void windowCodeRowExprStep(
   }
 
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
   }
 
@@ -463,6 +462,26 @@ static void windowCodeRowExprStep(
   sqlite3VdbeJumpHere(v, addrGoto);
 }
 
+/*
+** RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+**
+**   ...
+**     if( new partition ){
+**       AggFinal (xFinalize)
+**       Gosub addrGosub
+**       ResetSorter eph-table
+**     }
+**     else if( new peer ){
+**       AggFinal (xValue)
+**       Gosub addrGosub
+**       ResetSorter eph-table
+**     }
+**     AggStep
+**     Insert (record into eph-table)
+**   sqlite3WhereEnd()
+**   AggFinal (xFinalize)
+**   Gosub addrGosub
+*/
 static void windowCodeDefaultStep(
   Parse *pParse, 
   Select *p,
@@ -480,6 +499,10 @@ static void windowCodeDefaultStep(
   int regRecord = reg+nSub;
   int regRowid = regRecord+1;
   int addr;
+
+  assert( pMWin->eType==TK_RANGE 
+      || (pMWin->eStart==TK_UNBOUNDED && pMWin->eEnd==TK_CURRENT)
+  );
 
   pParse->nMem += nSub + 2;
 
@@ -518,11 +541,15 @@ static void windowCodeDefaultStep(
       int regNewPeer = reg + pMWin->nBufferCol + nPart;
       int regPeer = pMWin->regPart + nPart;
 
-      KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOrderBy, 0, 0);
       if( addrJump ) sqlite3VdbeJumpHere(v, addrJump);
-      addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPeer, regPeer, nPeer);
-      sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
-      addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
+      if( pMWin->eType==TK_RANGE ){
+        KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOrderBy, 0, 0);
+        addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPeer, regPeer, nPeer);
+        sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+        addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
+      }else{
+        addrJump = 0;
+      }
       for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
         sqlite3VdbeAddOp3(v, 
             OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
@@ -538,7 +565,7 @@ static void windowCodeDefaultStep(
         v, OP_Copy, reg+pMWin->nBufferCol, pMWin->regPart, nPart+nPeer-1
     );
 
-    sqlite3VdbeJumpHere(v, addrJump);
+    if( addrJump ) sqlite3VdbeJumpHere(v, addrJump);
   }
 
   /* Invoke step function for window functions */
@@ -571,25 +598,6 @@ static void windowCodeDefaultStep(
 
 
 /*
-** RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-**
-**   ...
-**     if( new partition ){
-**       AggFinal (xFinalize)
-**       Gosub addrGosub
-**       ResetSorter eph-table
-**     }
-**     else if( new peer ){
-**       AggFinal (xValue)
-**       Gosub addrGosub
-**       ResetSorter eph-table
-**     }
-**     AggStep
-**     Insert (record into eph-table)
-**   sqlite3WhereEnd()
-**   AggFinal (xFinalize)
-**   Gosub addrGosub
-**
 ** RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
 **
 **   As above, except take no action for a "new peer". Invoke
