@@ -1109,7 +1109,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
      && p->iColumn==pRtree->nAux
      && p->op==SQLITE_INDEX_CONSTRAINT_MATCH
     ){
-      zIdxStr[0] = RTREE_MATCH;
+      zIdxStr[0] = RTREE_QUERY;
       zIdxStr[1] = 'x';
       zIdxStr[2] = 0;
       pIdxInfo->aConstraintUsage[ii].argvIndex = 0;
