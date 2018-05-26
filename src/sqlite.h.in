@@ -6294,6 +6294,10 @@ struct sqlite3_index_info {
 
 /*
 ** CAPI3REF: Virtual Table Scan Flags
+**
+** Virtual table implementations are allowed to set the 
+** [sqlite3_index_info].idxFlags field to some combination of
+** these bits.
 */
 #define SQLITE_INDEX_SCAN_UNIQUE      1     /* Scan visits at most 1 row */
 
@@ -6319,6 +6323,7 @@ struct sqlite3_index_info {
 #define SQLITE_INDEX_CONSTRAINT_ISNOTNULL 70
 #define SQLITE_INDEX_CONSTRAINT_ISNULL    71
 #define SQLITE_INDEX_CONSTRAINT_IS        72
+#define SQLITE_INDEX_CONSTRAINT_FUNCTION 150
 
 /*
 ** CAPI3REF: Register A Virtual Table Implementation
