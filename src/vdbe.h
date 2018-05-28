@@ -193,9 +193,11 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_TEST_REALLOC_STRESS)
   void sqlite3VdbeVerifyNoMallocRequired(Vdbe *p, int N);
   void sqlite3VdbeVerifyNoResultRow(Vdbe *p);
+  void sqlite3VdbeVerifyAbortable(Vdbe *p, int);
 #else
 # define sqlite3VdbeVerifyNoMallocRequired(A,B)
 # define sqlite3VdbeVerifyNoResultRow(A)
+# define sqlite3VdbeVerifyAbortable(A,B)
 #endif
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 #ifndef SQLITE_OMIT_EXPLAIN

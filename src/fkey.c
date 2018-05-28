@@ -331,6 +331,12 @@ static void fkLookupParent(
   int iCur = pParse->nTab - 1;              /* Cursor number to use */
   int iOk = sqlite3VdbeMakeLabel(v);        /* jump here if parent key found */
 
+  sqlite3VdbeVerifyAbortable(v,
+    (!pFKey->isDeferred
+      && !(pParse->db->flags & SQLITE_DeferFKs)
+      && !pParse->pToplevel 
+      && !pParse->isMultiWrite) ? OE_Abort : OE_Ignore);
+
   /* If nIncr is less than zero, then check at runtime if there are any
   ** outstanding constraints to resolve. If there are not, there is no need
   ** to check if deleting this row resolves any outstanding violations.
@@ -738,6 +744,7 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     ** constraints are violated.
     */
     if( (db->flags & SQLITE_DeferFKs)==0 ){
+      sqlite3VdbeVerifyAbortable(v, OE_Abort);
       sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
       sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,

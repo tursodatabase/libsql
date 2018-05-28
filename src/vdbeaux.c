@@ -603,6 +603,32 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
+#ifdef SQLITE_DEBUG
+/*
+** Increment the nWrite counter in the VDBE if the cursor is not an
+** ephemeral cursor, or if the cursor argument is NULL.
+*/
+void sqlite3VdbeIncrWriteCounter(Vdbe *p, VdbeCursor *pC){
+  if( pC==0
+   || (pC->eCurType!=CURTYPE_SORTER
+       && pC->eCurType!=CURTYPE_PSEUDO
+       && !pC->isEphemeral)
+  ){
+    p->nWrite++;
+  }
+}
+#endif
+
+#ifdef SQLITE_DEBUG
+/*
+** Assert if an Abort at this point in time might result in a corrupt
+** database.
+*/
+void sqlite3VdbeAssertAbortable(Vdbe *p){
+  assert( p->nWrite==0 || p->usesStmtJournal );
+}
+#endif
+
 /*
 ** This routine is called after all opcodes have been inserted.  It loops
 ** through all the opcodes and fixes up some details.
@@ -759,6 +785,17 @@ void sqlite3VdbeVerifyNoResultRow(Vdbe *p){
   for(i=0; i<p->nOp; i++){
     assert( p->aOp[i].opcode!=OP_ResultRow );
   }
+}
+#endif
+
+/*
+** Generate code (a single OP_Abortable opcode) that will
+** verify that the VDBE program can safely call Abort in the current
+** context.
+*/
+#if defined(SQLITE_DEBUG)
+void sqlite3VdbeVerifyAbortable(Vdbe *p, int onError){
+  if( onError==OE_Abort ) sqlite3VdbeAddOp0(p, OP_Abortable);
 }
 #endif
 
@@ -2995,6 +3032,9 @@ int sqlite3VdbeReset(Vdbe *p){
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = 0;
   p->pResultSet = 0;
+#ifdef SQLITE_DEBUG
+  p->nWrite = 0;
+#endif
 
   /* Save profiling information from this VDBE run.
   */

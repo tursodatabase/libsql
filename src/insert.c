@@ -1420,6 +1420,7 @@ void sqlite3GenerateConstraintChecks(
       Expr *pExpr = pCheck->a[i].pExpr;
       if( aiChng && checkConstraintUnchanged(pExpr, aiChng, pkChng) ) continue;
       allOk = sqlite3VdbeMakeLabel(v);
+      sqlite3VdbeVerifyAbortable(v, onError);
       sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
@@ -1529,6 +1530,7 @@ void sqlite3GenerateConstraintChecks(
     /* Check to see if the new rowid already exists in the table.  Skip
     ** the following conflict logic if it does not. */
     VdbeNoopComment((v, "uniqueness check for ROWID"));
+    sqlite3VdbeVerifyAbortable(v, onError);
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
     VdbeCoverage(v);
 
@@ -1741,6 +1743,7 @@ void sqlite3GenerateConstraintChecks(
 
     /* Check to see if the new index entry will be unique */
     sqlite3ExprCachePush(pParse);
+    sqlite3VdbeVerifyAbortable(v, onError);
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol); VdbeCoverage(v);
 
@@ -2350,6 +2353,7 @@ static int xferOptimization(
     emptySrcTest = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0); VdbeCoverage(v);
     if( pDest->iPKey>=0 ){
       addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
+      sqlite3VdbeVerifyAbortable(v, onError);
       addr2 = sqlite3VdbeAddOp3(v, OP_NotExists, iDest, 0, regRowid);
       VdbeCoverage(v);
       sqlite3RowidConstraint(pParse, onError, pDest);
