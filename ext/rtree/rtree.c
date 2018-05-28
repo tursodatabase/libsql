@@ -2893,7 +2893,7 @@ static int reinsertNodeContent(Rtree *pRtree, RtreeNode *pNode){
 /*
 ** Select a currently unused rowid for a new r-tree record.
 */
-static int newRowid(Rtree *pRtree, i64 *piRowid){
+static int rtreeNewRowid(Rtree *pRtree, i64 *piRowid){
   int rc;
   sqlite3_bind_null(pRtree->pWriteRowid, 1);
   sqlite3_bind_null(pRtree->pWriteRowid, 2);
@@ -3180,7 +3180,7 @@ static int rtreeUpdate(
 
     /* Figure out the rowid of the new row. */
     if( bHaveRowid==0 ){
-      rc = newRowid(pRtree, &cell.iRowid);
+      rc = rtreeNewRowid(pRtree, &cell.iRowid);
     }
     *pRowid = cell.iRowid;
 

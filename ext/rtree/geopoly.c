@@ -406,7 +406,7 @@ static void geopolySvgFunc(
 **
 ** Rotate by R around the point (0,0):
 **
-**      geopoly_xform(poly, cos(R), sin(R), sin(R), cos(R), 0, 0)
+**      geopoly_xform(poly, cos(R), sin(R), -sin(R), cos(R), 0, 0)
 */
 static void geopolyXformFunc(
   sqlite3_context *context,
@@ -419,7 +419,7 @@ static void geopolyXformFunc(
   double C = sqlite3_value_double(argv[3]);
   double D = sqlite3_value_double(argv[4]);
   double E = sqlite3_value_double(argv[5]);
-  double F = sqlite3_value_double(argv[7]);
+  double F = sqlite3_value_double(argv[6]);
   GeoCoord x1, y1, x0, y0;
   int ii;
   if( p ){
@@ -1017,7 +1017,7 @@ static int geopolyInit(
   pRtree->nAux = 1;   /* Add one for _shape */
   for(ii=3; ii<argc; ii++){
     pRtree->nAux++;
-    sqlite3_str_appendf(pSql, ",%s", argv[ii]+1);
+    sqlite3_str_appendf(pSql, ",%s", argv[ii]);
   }
   sqlite3_str_appendf(pSql, ",_bbox HIDDEN);");
   zSql = sqlite3_str_finish(pSql);
@@ -1149,23 +1149,23 @@ static int geopolyFilter(
       if( p==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        memset(pCsr->aConstraint, 0, sizeof(RtreeConstraint)*argc);
+        memset(pCsr->aConstraint, 0, sizeof(RtreeConstraint)*4);
         memset(pCsr->anQueue, 0, sizeof(u32)*(pRtree->iDepth + 1));
         p->op = 'B';
-        p->iCoord = 'a';
-        p->u.rValue = bbox[0].f;
-        p++;
-        p->op = 'D';
-        p->iCoord = 'b';
+        p->iCoord = 0;
         p->u.rValue = bbox[1].f;
         p++;
+        p->op = 'D';
+        p->iCoord = 1;
+        p->u.rValue = bbox[0].f;
+        p++;
         p->op = 'B';
-        p->iCoord = 'c';
-        p->u.rValue = bbox[2].f;
+        p->iCoord = 2;
+        p->u.rValue = bbox[3].f;
         p++;
         p->op = 'D';
-        p->iCoord = 'd';
-        p->u.rValue = bbox[3].f;
+        p->iCoord = 3;
+        p->u.rValue = bbox[2].f;
       }
     }
     if( rc==SQLITE_OK ){
@@ -1228,7 +1228,8 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   }
   if( iFuncTerm>=0 ){
     pIdxInfo->idxNum = 2;
-    pIdxInfo->aConstraintUsage[iRowidTerm].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[iFuncTerm].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[iFuncTerm].omit = 0;
     pIdxInfo->estimatedCost = 300.0;
     pIdxInfo->estimatedRows = 10;
     return SQLITE_OK;
@@ -1270,8 +1271,7 @@ static int geopolyColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
         return rc;
       }
     }
-    sqlite3_result_value(ctx,
-         sqlite3_column_value(pCsr->pReadAux, i - pRtree->nDim2 + 1));
+    sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pReadAux, i+2));
   }else{
     /* Must be the _bbox column */
   }
@@ -1367,7 +1367,7 @@ static int geopolyUpdate(
   ** record to delete from the r-tree table. The following block does
   ** just that.
   */
-  if( rc==SQLITE_OK && (nData==1 || coordChange) ){
+  if( rc==SQLITE_OK && (nData==1 || (coordChange && oldRowidValid)) ){
     rc = rtreeDeleteRowid(pRtree, oldRowid);
   }
 
@@ -1378,6 +1378,9 @@ static int geopolyUpdate(
   if( rc==SQLITE_OK && nData>1 && coordChange ){
     /* Insert the new record into the r-tree */
     RtreeNode *pLeaf = 0;
+    if( !newRowidValid ){
+      rc = rtreeNewRowid(pRtree, &cell.iRowid);
+    }
     *pRowid = cell.iRowid;
     if( rc==SQLITE_OK ){
       rc = ChooseLeaf(pRtree, &cell, 0, &pLeaf);
@@ -1398,7 +1401,7 @@ static int geopolyUpdate(
     sqlite3_stmt *pUp = pRtree->pWriteAux;
     int jj;
     int nChange = 0;
-    sqlite3_bind_int64(pUp, 1, newRowid);
+    sqlite3_bind_int64(pUp, 1, cell.iRowid);
     for(jj=0; jj<pRtree->nAux; jj++){
       if( !sqlite3_value_nochange(aData[jj+2]) ) nChange++;
       sqlite3_bind_value(pUp, jj+2, aData[jj+2]);
