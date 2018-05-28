@@ -1,5 +1,5 @@
-C When\scompiling\swith\sSQLITE_DEBUG,\sadd\srun-time\schecks\sto\sensure\sthat\sno\nstatement\saborts\sunless\seither\sthere\shave\sbeen\sno\swrites\sor\selse\sthere\sis\na\sstatement\sjournal.
-D 2018-05-28T17:31:20.692
+C Fix\sthe\sbuild\sso\sthat\sit\sworks\swith\s-DSQLITE_TEST_REALLOC_STRESS
+D 2018-05-28T17:43:28.494
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -565,7 +565,7 @@ F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 37730af7540033135909ecaee3667dddec043293428d8718546d0d64ba4a5025
 F src/vdbe.c 3771a25dd8164669ae75716382bf9a4029da727be1c9394ba952003b182856d8
-F src/vdbe.h 3dc7fd3114fb920df93b2aa163f30df1d93c436586a40cf67cd32e3e86d32951
+F src/vdbe.h e3f43bcc27ff30b0f25a6104d0cb5657e1c4b5e1b5cd2dd2216d5bcc2156a746
 F src/vdbeInt.h 42d3e65ea0c664f6d9bc9a53de645c0baf8566ff0188409ff3b8d2abc327bc17
 F src/vdbeapi.c 765a0bbe01311626417de6cb743f7f25f9f98435c98a9df4bb0714d11014633d
 F src/vdbeaux.c b00d35805a2b326d1371ab7ce8f3a95c8af35b1431367ffe482fc2c735d69fb1
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 777189ce88799f93f393fd14fd716111c85bcdcb23690fd561f78ea2bd2ce5da
-R f6573e7421df571e69c7a54cd41179bd
+P 5a4542dbcf17a9f7fed600897555c271e1651fd50eb41d0b126725b486e1d14c
+R c0caa672704433791c5f09e773685fc7
 U drh
-Z f8ccca47c266588a971fd0426acf9a8c
+Z 135e121da290020ae7c2d72d30b3f190
