@@ -393,6 +393,51 @@ static void geopolySvgFunc(
 }
 
 /*
+** SQL Function:      geopoly_xform(poly, A, B, C, D, E, F)
+**
+** Transform and/or translate a polygon as follows:
+**
+**      x1 = A*x0 + B*y0 + E
+**      y1 = C*x0 + D*y0 + F
+**
+** For a translation:
+**
+**      geopoly_xform(poly, 1, 0, 0, 1, x-offset, y-offset)
+**
+** Rotate by R around the point (0,0):
+**
+**      geopoly_xform(poly, cos(R), sin(R), sin(R), cos(R), 0, 0)
+*/
+static void geopolyXformFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  double A = sqlite3_value_double(argv[1]);
+  double B = sqlite3_value_double(argv[2]);
+  double C = sqlite3_value_double(argv[3]);
+  double D = sqlite3_value_double(argv[4]);
+  double E = sqlite3_value_double(argv[5]);
+  double F = sqlite3_value_double(argv[7]);
+  GeoCoord x1, y1, x0, y0;
+  int ii;
+  if( p ){
+    for(ii=0; ii<p->nVertex; ii++){
+      x0 = p->a[ii*2];
+      y0 = p->a[ii*2+1];
+      x1 = A*x0 + B*y0 + E;
+      y1 = C*x0 + D*y0 + F;
+      p->a[ii*2] = x1;
+      p->a[ii*2+1] = y1;
+    }
+    sqlite3_result_blob(context, p->hdr, 
+       4+8*p->nVertex, SQLITE_TRANSIENT);
+    sqlite3_free(p);
+  }
+}
+
+/*
 ** Implementation of the geopoly_area(X) function.
 **
 ** If the input is a well-formed Geopoly BLOB then return the area
@@ -941,7 +986,6 @@ static int geopolyInit(
   sqlite3_str *pSql;
   char *zSql;
   int ii;
-  char cSep;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
 
@@ -969,15 +1013,13 @@ static int geopolyInit(
   ** the r-tree table schema.
   */
   pSql = sqlite3_str_new(db);
-  sqlite3_str_appendf(pSql, "CREATE TABLE x");
-  cSep = '(';
+  sqlite3_str_appendf(pSql, "CREATE TABLE x(_shape");
   pRtree->nAux = 1;   /* Add one for _shape */
   for(ii=3; ii<argc; ii++){
     pRtree->nAux++;
-    sqlite3_str_appendf(pSql, "%c%s", cSep, argv[ii]+1);
-    cSep = ',';
+    sqlite3_str_appendf(pSql, ",%s", argv[ii]+1);
   }
-  sqlite3_str_appendf(pSql, "%c _shape, _bbox HIDDEN);", cSep);
+  sqlite3_str_appendf(pSql, ",_bbox HIDDEN);");
   zSql = sqlite3_str_finish(pSql);
   if( !zSql ){
     rc = SQLITE_NOMEM;
@@ -1036,98 +1078,165 @@ static int geopolyConnect(
 }
 
 
+/* 
+** GEOPOLY virtual table module xFilter method.
+**
+** Query plans:
+**
+**      1         rowid lookup
+**      2         search for objects overlapping the same bounding box
+**                that contains polygon argv[0]
+**      3         full table scan
+*/
+static int geopolyFilter(
+  sqlite3_vtab_cursor *pVtabCursor,     /* The cursor to initialize */
+  int idxNum,                           /* Query plan */
+  const char *idxStr,                   /* Not Used */
+  int argc, sqlite3_value **argv        /* Parameters to the query plan */
+){
+  Rtree *pRtree = (Rtree *)pVtabCursor->pVtab;
+  RtreeCursor *pCsr = (RtreeCursor *)pVtabCursor;
+  RtreeNode *pRoot = 0;
+  int rc = SQLITE_OK;
+  int iCell = 0;
+  sqlite3_stmt *pStmt;
+
+  rtreeReference(pRtree);
+
+  /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
+  freeCursorConstraints(pCsr);
+  sqlite3_free(pCsr->aPoint);
+  pStmt = pCsr->pReadAux;
+  memset(pCsr, 0, sizeof(RtreeCursor));
+  pCsr->base.pVtab = (sqlite3_vtab*)pRtree;
+  pCsr->pReadAux = pStmt;
+
+  pCsr->iStrategy = idxNum;
+  if( idxNum==1 ){
+    /* Special case - lookup by rowid. */
+    RtreeNode *pLeaf;        /* Leaf on which the required cell resides */
+    RtreeSearchPoint *p;     /* Search point for the leaf */
+    i64 iRowid = sqlite3_value_int64(argv[0]);
+    i64 iNode = 0;
+    rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
+    if( rc==SQLITE_OK && pLeaf!=0 ){
+      p = rtreeSearchPointNew(pCsr, RTREE_ZERO, 0);
+      assert( p!=0 );  /* Always returns pCsr->sPoint */
+      pCsr->aNode[0] = pLeaf;
+      p->id = iNode;
+      p->eWithin = PARTLY_WITHIN;
+      rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
+      p->iCell = (u8)iCell;
+      RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
+    }else{
+      pCsr->atEOF = 1;
+    }
+  }else{
+    /* Normal case - r-tree scan. Set up the RtreeCursor.aConstraint array 
+    ** with the configured constraints. 
+    */
+    rc = nodeAcquire(pRtree, 1, 0, &pRoot);
+    if( rc==SQLITE_OK && idxNum==2 ){
+      RtreeCoord bbox[4];
+      RtreeConstraint *p;
+      assert( argc==1 );
+      geopolyBBox(0, argv[0], bbox, &rc);
+      if( rc ){
+        return rc;
+      }
+      pCsr->aConstraint = p = sqlite3_malloc(sizeof(RtreeConstraint)*4);
+      pCsr->nConstraint = 4;
+      if( p==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(pCsr->aConstraint, 0, sizeof(RtreeConstraint)*argc);
+        memset(pCsr->anQueue, 0, sizeof(u32)*(pRtree->iDepth + 1));
+        p->op = 'B';
+        p->iCoord = 'a';
+        p->u.rValue = bbox[0].f;
+        p++;
+        p->op = 'D';
+        p->iCoord = 'b';
+        p->u.rValue = bbox[1].f;
+        p++;
+        p->op = 'B';
+        p->iCoord = 'c';
+        p->u.rValue = bbox[2].f;
+        p++;
+        p->op = 'D';
+        p->iCoord = 'd';
+        p->u.rValue = bbox[3].f;
+      }
+    }
+    if( rc==SQLITE_OK ){
+      RtreeSearchPoint *pNew;
+      pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, (u8)(pRtree->iDepth+1));
+      if( pNew==0 ) return SQLITE_NOMEM;
+      pNew->id = 1;
+      pNew->iCell = 0;
+      pNew->eWithin = PARTLY_WITHIN;
+      assert( pCsr->bPoint==1 );
+      pCsr->aNode[0] = pRoot;
+      pRoot = 0;
+      RTREE_QUEUE_TRACE(pCsr, "PUSH-Fm:");
+      rc = rtreeStepToLeaf(pCsr);
+    }
+  }
+
+  nodeRelease(pRtree, pRoot);
+  rtreeRelease(pRtree);
+  return rc;
+}
+
 /*
-** GEOPOLY virtual table module xBestIndex method. There are three
+** Rtree virtual table module xBestIndex method. There are three
 ** table scan strategies to choose from (in order from most to 
 ** least desirable):
 **
 **   idxNum     idxStr        Strategy
 **   ------------------------------------------------
 **     1        Unused        Direct lookup by rowid.
-**     2        'Fx'           shape query
-**     2        ''            full-table scan.
+**     2        Unused        R-tree query
+**     3        Unused        full-table scan.
 **   ------------------------------------------------
-**
-** If strategy 1 is used, then idxStr is not meaningful. If strategy
-** 2 is used, idxStr is either the two-byte string 'Fx' or an empty
-** string.
 */
 static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-  Rtree *pRtree = (Rtree*)tab;
-  int rc = SQLITE_OK;
   int ii;
-  int bMatch = 0;                 /* True if there exists a MATCH constraint */
-  i64 nRow;                       /* Estimated rows returned by this scan */
+  int iRowidTerm = -1;
+  int iFuncTerm = -1;
 
-  int iIdx = 0;
-  char zIdxStr[3];
-  memset(zIdxStr, 0, sizeof(zIdxStr));
-
-  /* Check if there exists a MATCH constraint - even an unusable one. If there
-  ** is, do not consider the lookup-by-rowid plan as using such a plan would
-  ** require the VDBE to evaluate the MATCH constraint, which is not currently
-  ** possible. */
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
-    if( pIdxInfo->aConstraint[ii].op==SQLITE_INDEX_CONSTRAINT_MATCH ){
-      bMatch = 1;
-    }
-  }
-
-  assert( pIdxInfo->idxStr==0 );
-  for(ii=0; ii<pIdxInfo->nConstraint && iIdx<(int)(sizeof(zIdxStr)-1); ii++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
-
-    if( bMatch==0
-     && p->usable 
-     && p->iColumn<0
-     && p->op==SQLITE_INDEX_CONSTRAINT_EQ 
-    ){
-      /* We have an equality constraint on the rowid. Use strategy 1. */
-      int jj;
-      for(jj=0; jj<ii; jj++){
-        pIdxInfo->aConstraintUsage[jj].argvIndex = 0;
-        pIdxInfo->aConstraintUsage[jj].omit = 0;
-      }
-      pIdxInfo->idxNum = 1;
-      pIdxInfo->aConstraintUsage[ii].argvIndex = 1;
-      pIdxInfo->aConstraintUsage[jj].omit = 1;
-
-      /* This strategy involves a two rowid lookups on an B-Tree structures
-      ** and then a linear search of an R-Tree node. This should be 
-      ** considered almost as quick as a direct rowid lookup (for which 
-      ** sqlite uses an internal cost of 0.0). It is expected to return
-      ** a single row.
-      */ 
-      pIdxInfo->estimatedCost = 30.0;
-      pIdxInfo->estimatedRows = 1;
-      pIdxInfo->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
-      return SQLITE_OK;
+    if( !p->usable ) continue;
+    if( p->iColumn<0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ  ){
+      iRowidTerm = ii;
+      break;
     }
-
-    /* A MATCH operator against the _shape column */
-    if( p->usable
-     && p->iColumn==pRtree->nAux
-     && p->op==SQLITE_INDEX_CONSTRAINT_MATCH
-    ){
-      zIdxStr[0] = RTREE_QUERY;
-      zIdxStr[1] = 'x';
-      zIdxStr[2] = 0;
-      pIdxInfo->aConstraintUsage[ii].argvIndex = 0;
-      pIdxInfo->aConstraintUsage[ii].omit = 1;
+    if( p->iColumn==0 && p->op==SQLITE_INDEX_CONSTRAINT_FUNCTION ){
+      iFuncTerm = ii;
     }
   }
 
-  pIdxInfo->idxNum = 2;
-  pIdxInfo->needToFreeIdxStr = 1;
-  if( iIdx>0 && 0==(pIdxInfo->idxStr = sqlite3_mprintf("%s", zIdxStr)) ){
-    return SQLITE_NOMEM;
+  if( iRowidTerm>=0 ){
+    pIdxInfo->idxNum = 1;
+    pIdxInfo->aConstraintUsage[iRowidTerm].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[iRowidTerm].omit = 1;
+    pIdxInfo->estimatedCost = 30.0;
+    pIdxInfo->estimatedRows = 1;
+    pIdxInfo->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
+    return SQLITE_OK;
   }
-
-  nRow = pRtree->nRowEst/100 + 5;
-  pIdxInfo->estimatedCost = (double)6.0 * (double)nRow;
-  pIdxInfo->estimatedRows = nRow;
-
-  return rc;
+  if( iFuncTerm>=0 ){
+    pIdxInfo->idxNum = 2;
+    pIdxInfo->aConstraintUsage[iRowidTerm].argvIndex = 1;
+    pIdxInfo->estimatedCost = 300.0;
+    pIdxInfo->estimatedRows = 10;
+    return SQLITE_OK;
+  }
+  pIdxInfo->idxNum = 3;
+  pIdxInfo->estimatedCost = 3000000.0;
+  pIdxInfo->estimatedRows = 100000;
+  return SQLITE_OK;
 }
 
 
@@ -1172,6 +1281,24 @@ static int geopolyColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
 
 /*
 ** The xUpdate method for GEOPOLY module virtual tables.
+**
+** For DELETE:
+**
+**     argv[0] = the rowid to be deleted
+**
+** For INSERT:
+**
+**     argv[0] = SQL NULL
+**     argv[1] = rowid to insert, or an SQL NULL to select automatically
+**     argv[2] = _shape column
+**     argv[3] = first application-defined column....
+**
+** For UPDATE:
+**
+**     argv[0] = rowid to modify.  Never NULL
+**     argv[1] = rowid after the change.  Never NULL
+**     argv[2] = new value for _shape
+**     argv[3] = new value for first application-defined column....
 */
 static int geopolyUpdate(
   sqlite3_vtab *pVtab, 
@@ -1182,7 +1309,6 @@ static int geopolyUpdate(
   Rtree *pRtree = (Rtree *)pVtab;
   int rc = SQLITE_OK;
   RtreeCell cell;                 /* New cell to insert if nData>1 */
-  int iShapeCol;                  /* Index of the _shape column */
   i64 oldRowid;                   /* The old rowid */
   int oldRowidValid;              /* True if oldRowid is valid */
   i64 newRowid;                   /* The new rowid */
@@ -1198,7 +1324,6 @@ static int geopolyUpdate(
   rtreeReference(pRtree);
   assert(nData>=1);
 
-  iShapeCol = pRtree->nAux;
   rc = SQLITE_ERROR;
   oldRowidValid = sqlite3_value_type(aData[0])!=SQLITE_NULL;;
   oldRowid = oldRowidValid ? sqlite3_value_int64(aData[0]) : 0;
@@ -1206,12 +1331,12 @@ static int geopolyUpdate(
   newRowid = newRowidValid ? sqlite3_value_int64(aData[1]) : 0;
   cell.iRowid = newRowid;
 
-  if( nData>1                                           /* not a DELETE */
-   && (!oldRowidValid                                   /* INSERT */
-        || !sqlite3_value_nochange(aData[iShapeCol+2])  /* UPDATE _shape */
-        || oldRowid!=newRowid)                          /* Rowid change */
+  if( nData>1                                 /* not a DELETE */
+   && (!oldRowidValid                         /* INSERT */
+        || !sqlite3_value_nochange(aData[2])  /* UPDATE _shape */
+        || oldRowid!=newRowid)                /* Rowid change */
   ){
-    geopolyBBox(0, aData[iShapeCol+2], cell.aCoord, &rc);
+    geopolyBBox(0, aData[2], cell.aCoord, &rc);
     if( rc ){
       if( rc==SQLITE_ERROR ){
         pVtab->zErrMsg =
@@ -1223,7 +1348,7 @@ static int geopolyUpdate(
 
     /* If a rowid value was supplied, check if it is already present in 
     ** the table. If so, the constraint has failed. */
-    if( oldRowidValid && oldRowid!=newRowid ){
+    if( newRowidValid ){
       int steprc;
       sqlite3_bind_int64(pRtree->pReadRowid, 1, cell.iRowid);
       steprc = sqlite3_step(pRtree->pReadRowid);
@@ -1269,7 +1394,7 @@ static int geopolyUpdate(
   }
 
   /* Change the data */
-  if( rc==SQLITE_OK && pRtree->nAux>0 ){
+  if( rc==SQLITE_OK ){
     sqlite3_stmt *pUp = pRtree->pWriteAux;
     int jj;
     int nChange = 0;
@@ -1288,6 +1413,26 @@ static int geopolyUpdate(
   return rc;
 }
 
+/*
+** Report that geopoly_overlap() is an overloaded function suitable
+** for use in xBestIndex.
+*/
+static int geopolyFindFunction(
+  sqlite3_vtab *pVtab,
+  int nArg,
+  const char *zName,
+  void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
+  void **ppArg
+){
+  if( sqlite3_stricmp(zName, "geopoly_overlap")==0 ){
+    *pxFunc = geopolyOverlapFunc;
+    *ppArg = 0;
+    return SQLITE_INDEX_CONSTRAINT_FUNCTION;
+  }
+  return 0;
+}
+
+
 static sqlite3_module geopolyModule = {
   2,                          /* iVersion */
   geopolyCreate,              /* xCreate - create a table */
@@ -1297,7 +1442,7 @@ static sqlite3_module geopolyModule = {
   rtreeDestroy,               /* xDestroy - Drop a table */
   rtreeOpen,                  /* xOpen - open a cursor */
   rtreeClose,                 /* xClose - close a cursor */
-  rtreeFilter,                /* xFilter - configure scan constraints */
+  geopolyFilter,              /* xFilter - configure scan constraints */
   rtreeNext,                  /* xNext - advance a cursor */
   rtreeEof,                   /* xEof */
   geopolyColumn,              /* xColumn - read data */
@@ -1307,7 +1452,7 @@ static sqlite3_module geopolyModule = {
   rtreeEndTransaction,        /* xSync - sync transaction */
   rtreeEndTransaction,        /* xCommit - commit transaction */
   rtreeEndTransaction,        /* xRollback - rollback transaction */
-  0,                          /* xFindFunction - function overloading */
+  geopolyFindFunction,        /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
@@ -1329,6 +1474,7 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyOverlapFunc,       2,    "geopoly_overlap"  },
      { geopolyDebugFunc,         1,    "geopoly_debug"    },
      { geopolyBBoxFunc,          1,    "geopoly_bbox"     },
+     { geopolyXformFunc,         7,    "geopoly_xform"    },
   };
   int i;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
