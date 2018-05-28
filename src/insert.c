@@ -1830,9 +1830,11 @@ void sqlite3GenerateConstraintChecks(
       default: {
         Trigger *pTrigger = 0;
         assert( onError==OE_Replace );
-        sqlite3MultiWrite(pParse);
         if( db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
+        }
+        if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
+          sqlite3MultiWrite(pParse);
         }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
             regR, nPkField, 0, OE_Replace,

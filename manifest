@@ -1,5 +1,5 @@
-C When\scompiling\swith\sSQLITE_DEBUG,\sadd\srun-time\schecks\sto\sensure\sthat\sno\sstatement\saborts\sunless\seither\sthere\shave\sbeen\sno\swrites\sor\selse\sthere\sis\sa\sstatement\sjournal.
-D 2018-05-28T18:25:19.773
+C Do\snot\srequire\sa\sstatement\sjournal\sin\scases\swhere\sREPLACE\sconflict\shandling\sis\nused\sto\sinsert\sa\ssingle\srow,\sso\slong\sas\sthe\sREPLACE\soperation\scannot\sfire\sany\ntriggers\sor\sforeign\skey\sactions.
+D 2018-05-28T18:29:46.779
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -455,7 +455,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c f4be97927906ad338c4a8270612b3a5ba2a1cbdccf4536798463123caadb9c4b
+F src/insert.c 76b1dc902e4c3930d9a17a40cd8ee2e94b1fd8cce766672caef164a6d5d4df1d
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
 F src/main.c 0402e234155e0aad75fe6cd204864f492495be8605a50b4b3d4d72895cced3ce
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 777189ce88799f93f393fd14fd716111c85bcdcb23690fd561f78ea2bd2ce5da 90ba2b2e5ce2619e68879eb325b43639159f27eb462b9fb6795534c91200a3d2
-R c0caa672704433791c5f09e773685fc7
-U drh
-Z ec8ac88e785694af597e74e3636c47b7
+P ce99c7724460b9cf4ccaf7f6bc1a522b5c34d5ad0683d465f7926b10f31f7d05
+R 8ffa7011fa1f11633dceb1e52e841ee7
+U dan
+Z c5da18dad54c31d464c6bb7fad20207f
