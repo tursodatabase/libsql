@@ -113,6 +113,25 @@ static void windowAggStep(
   }
 }
 
+static void windowAggFinal(Parse *pParse, Window *pMWin, int bFinal){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  Window *pWin;
+
+  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+    if( bFinal==0 ){
+      sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
+    }
+    sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
+    sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
+    if( bFinal ){
+      sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+    }else{
+      sqlite3VdbeChangeP3(v, -1, pWin->regResult);
+    }
+  }
+}
+
+
 /*
 ** ROWS BETWEEN <expr1> PRECEDING AND <expr2> FOLLOWING
 ** ----------------------------------------------------
@@ -272,6 +291,7 @@ static void windowCodeRowExprStep(
   int regPeerVal = 0;              /* Array of values identifying peer group */
   int iPeer = 0;                   /* Column offset in eph-table of peer vals */
   int nPeerVal;                    /* Number of peer values */
+  int bRange = 0;
 
   assert( pMWin->eStart==TK_PRECEDING 
        || pMWin->eStart==TK_CURRENT 
@@ -283,6 +303,13 @@ static void windowCodeRowExprStep(
        || pMWin->eEnd==TK_UNBOUNDED 
        || pMWin->eEnd==TK_PRECEDING 
   );
+
+  if( pMWin->eType==TK_RANGE 
+   && pMWin->eStart==TK_CURRENT 
+   && pMWin->eEnd==TK_UNBOUNDED
+  ){
+    bRange = 1;
+  }
 
   pParse->nMem += nSub + 2;
 
@@ -386,7 +413,7 @@ static void windowCodeRowExprStep(
   if( pMWin->eStart==TK_FOLLOWING ){
     addrIfPos2 = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0 , 1);
   }
-  if( pMWin->eType==TK_RANGE ){
+  if( bRange ){
     assert( pMWin->eStart==TK_CURRENT && pMWin->pOrderBy );
     regPeer = ++pParse->nMem;
     regPeerVal = pParse->nMem+1;
@@ -398,20 +425,14 @@ static void windowCodeRowExprStep(
     }
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regPeer);
   }
-  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
-    sqlite3VdbeAddOp3(v, 
-        OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
-    );
-    sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-  }
-  if( pMWin->eType==TK_RANGE ){
+  windowAggFinal(pParse, pMWin, 0);
+  if( bRange ){
     sqlite3VdbeAddOp2(v, OP_AddImm, regPeer, 1);
   }
   sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
   sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)+2);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, lblFlushDone);
-  if( pMWin->eType==TK_RANGE ){
+  if( bRange ){
     KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pMWin->pOrderBy,0,0);
     int addrJump = sqlite3VdbeCurrentAddr(v)-4;
     for(k=0; k<nPeerVal; k++){
@@ -435,13 +456,13 @@ static void windowCodeRowExprStep(
     if( pMWin->eStart==TK_PRECEDING ){
       addrJumpHere = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0 , 1);
     }
-    if( pMWin->eType==TK_RANGE ){
+    if( bRange ){
       sqlite3VdbeAddOp3(v, OP_IfPos, regPeer, sqlite3VdbeCurrentAddr(v)+2, 1);
       addrJumpHere = sqlite3VdbeAddOp0(v, OP_Goto);
     }
     sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
     windowAggStep(pParse, pMWin, csrStart, 1, reg);
-    if( pMWin->eType==TK_RANGE ){
+    if( bRange ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrJumpHere-1);
     }
     if( addrJumpHere ){
@@ -499,10 +520,22 @@ static void windowCodeDefaultStep(
   int regRecord = reg+nSub;
   int regRowid = regRecord+1;
   int addr;
+  ExprList *pPart = pMWin->pPartition;
+  ExprList *pOrderBy = pMWin->pOrderBy;
 
   assert( pMWin->eType==TK_RANGE 
       || (pMWin->eStart==TK_UNBOUNDED && pMWin->eEnd==TK_CURRENT)
   );
+
+  assert( (pMWin->eStart==TK_UNBOUNDED && pMWin->eEnd==TK_CURRENT)
+       || (pMWin->eStart==TK_UNBOUNDED && pMWin->eEnd==TK_UNBOUNDED)
+       || (pMWin->eStart==TK_CURRENT && pMWin->eEnd==TK_CURRENT)
+       || (pMWin->eStart==TK_CURRENT && pMWin->eEnd==TK_UNBOUNDED && !pOrderBy)
+  );
+
+  if( pMWin->eEnd==TK_UNBOUNDED ){
+    pOrderBy = 0;
+  }
 
   pParse->nMem += nSub + 2;
 
@@ -513,13 +546,11 @@ static void windowCodeDefaultStep(
   }
 
   /* Check if this is the start of a new partition or peer group. */
-  if( pMWin->regPart ){
-    ExprList *pPart = pMWin->pPartition;
+  if( pPart || pOrderBy ){
     int nPart = (pPart ? pPart->nExpr : 0);
-    ExprList *pOrderBy = pMWin->pOrderBy;
-    int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
     int addrGoto = 0;
     int addrJump = 0;
+    int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
 
     if( pPart ){
       int regNewPart = reg + pMWin->nBufferCol;
@@ -527,11 +558,7 @@ static void windowCodeDefaultStep(
       addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
       sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
       addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-      for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-        sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
-        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-        sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
-      }
+      windowAggFinal(pParse, pMWin, 1);
       if( pOrderBy ){
         addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
       }
@@ -550,12 +577,7 @@ static void windowCodeDefaultStep(
       }else{
         addrJump = 0;
       }
-      for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-        sqlite3VdbeAddOp3(v, 
-            OP_AggFinal, pWin->regAccum, pWin->nArg, pWin->regResult
-        );
-        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-      }
+      windowAggFinal(pParse, pMWin, pMWin->eStart==TK_CURRENT);
       if( addrGoto ) sqlite3VdbeJumpHere(v, addrGoto);
     }
 
@@ -588,11 +610,7 @@ static void windowCodeDefaultStep(
   /* End the database scan loop. */
   sqlite3WhereEnd(pWInfo);
 
-  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-    sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, pWin->nArg);
-    sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
-    sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
-  }
+  windowAggFinal(pParse, pMWin, 1);
   sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
 }
 
@@ -662,8 +680,8 @@ void sqlite3WindowCodeStep(
   Window *pMWin = p->pWin;
 
   if( (pMWin->eType==TK_ROWS 
-   && (pMWin->eStart!=TK_UNBOUNDED || pMWin->eEnd!=TK_CURRENT))
-   || (pMWin->eStart==TK_CURRENT && pMWin->eEnd==TK_UNBOUNDED)
+   && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy))
+   || (pMWin->eStart==TK_CURRENT&&pMWin->eEnd==TK_UNBOUNDED&&pMWin->pOrderBy)
   ){
     *pbLoop = 0;
     windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);

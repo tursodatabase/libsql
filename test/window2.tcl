@@ -432,6 +432,85 @@ execsql_test 4.3 {
   ) FROM t2 ORDER BY b;
 }
 
+execsql_test 4.4 {
+  SELECT b, sum(b) OVER (
+    ORDER BY b
+    RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY b;
+}
+
+execsql_test 4.5 {
+  SELECT b, sum(b) OVER (
+    ORDER BY b
+    RANGE BETWEEN CURRENT ROW AND CURRENT ROW
+  ) FROM t2 ORDER BY b;
+}
+
+execsql_test 4.6.1 {
+  SELECT b, sum(b) OVER (
+    RANGE BETWEEN CURRENT ROW AND CURRENT ROW
+  ) FROM t2 ORDER BY b;
+}
+execsql_test 4.6.2 {
+  SELECT b, sum(b) OVER () FROM t2 ORDER BY b;
+}
+execsql_test 4.6.3 {
+  SELECT b, sum(b) OVER (
+    RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY b;
+}
+execsql_test 4.6.4 {
+  SELECT b, sum(b) OVER (
+    RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY b;
+}
+
+execsql_test 4.7.1 {
+  SELECT b, sum(b) OVER (
+    ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+  ) FROM t2 ORDER BY 1, 2;
+}
+execsql_test 4.7.2 {
+  SELECT b, sum(b) OVER (
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) FROM t2 ORDER BY 1, 2;
+}
+execsql_test 4.7.3 {
+  SELECT b, sum(b) OVER (
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY 1, 2;
+}
+execsql_test 4.7.4 {
+  SELECT b, sum(b) OVER (
+    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY 1, 2;
+}
+
+execsql_test 4.8.1 {
+  SELECT b, sum(b) OVER (
+    ORDER BY a
+    ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+  ) FROM t2 ORDER BY 1, 2;
+}
+execsql_test 4.8.2 {
+  SELECT b, sum(b) OVER (
+    ORDER BY a
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) FROM t2 ORDER BY 1, 2;
+}
+execsql_test 4.8.3 {
+  SELECT b, sum(b) OVER (
+    ORDER BY a
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY 1, 2;
+}
+execsql_test 4.8.4 {
+  SELECT b, sum(b) OVER (
+    ORDER BY a
+    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t2 ORDER BY 1, 2;
+}
+
 
 
 finish_test
