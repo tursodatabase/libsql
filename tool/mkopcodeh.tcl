@@ -75,6 +75,7 @@ while {![eof $in]} {
   if {[regexp {^case OP_} $line]} {
     set line [split $line]
     set name [string trim [lindex $line 1] :]
+    if {$name=="OP_Abortable"} continue;  # put OP_Abortable last 
     set op($name) -1
     set jump($name) 0
     set in1($name) 0
@@ -113,7 +114,7 @@ while {![eof $in]} {
 #
 puts "/* Automatically generated.  Do not edit */"
 puts "/* See the tool/mkopcodeh.tcl script for details */"
-foreach name {OP_Noop OP_Explain} {
+foreach name {OP_Noop OP_Explain OP_Abortable} {
   set jump($name) 0
   set in1($name) 0
   set in2($name) 0
