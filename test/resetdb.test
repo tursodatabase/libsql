@@ -20,6 +20,16 @@ ifcapable !vtab||!compound {
   return
 }
 
+# In the "inmemory_journal" permutation, each new connection executes 
+# "PRAGMA journal_mode = memory". This fails with SQLITE_BUSY if attempted
+# on a wal mode database with existing connections. For this and a few
+# other reasons, this test is not run as part of "inmemory_journal".
+#
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 # Create a sample database
 do_execsql_test 100 {
   PRAGMA page_size=4096;
