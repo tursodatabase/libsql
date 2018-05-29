@@ -55,11 +55,11 @@ if {![clang_sanitize_address]} {
   do_test 1.1.1 {
     set ::log [list]
     list [catch {
-      for {set i 0} {$i < 2000} {incr i} { sqlite3 dbh_$i test.db -readonly 1 }
+      for {set i 0} {$i < 20000} {incr i} { sqlite3 dbh_$i test.db -readonly 1 }
     } msg] $msg
   } {1 {unable to open database file}}
   do_test 1.1.2 {
-    catch { for {set i 0} {$i < 2000} {incr i} { dbh_$i close } }
+    catch { for {set i 0} {$i < 20000} {incr i} { dbh_$i close } }
   } {1}
   do_re_test 1.1.3 { 
     lindex $::log 0 
