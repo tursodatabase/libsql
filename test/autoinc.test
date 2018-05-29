@@ -730,6 +730,11 @@ do_test autoinc-12.2 {
   }} msg]
   lappend res $msg
 } {1 {database disk image is malformed}}
+ifcapable vtab {
+  set err "database disk image is malformed"
+} else {
+  set err {malformed database schema (sqlite_sequence) - near "VIRTUAL": syntax error}
+}
 do_test autoinc-12.3 {
   db close
   forcedelete test.db
@@ -748,7 +753,7 @@ do_test autoinc-12.3 {
     INSERT INTO t1(b) VALUES('two');
   }} msg]
   lappend res $msg
-} {1 {database disk image is malformed}}
+} [list 1 $err]
 do_test autoinc-12.4 {
   db close
   forcedelete test.db

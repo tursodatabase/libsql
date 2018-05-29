@@ -1,5 +1,5 @@
-C Do\snot\srun\stest\sfile\s"resetdb.test"\sas\spart\sof\spermutation\s"inmemory_journal".
-D 2018-05-29T13:25:14.089
+C Fix\ssome\stest\sscript\sissues\scaused\sby\srecent\sEXPLAIN\sQUERY\sPLAN\senhancements.
+D 2018-05-29T14:06:55.574
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -626,7 +626,7 @@ F test/auth.test 3d6cd8f3978ba55b1202574e6ecd79c6e00914ca44b9bfd6c1fe6fb873fcac8
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test db21405b95257c24d29273b6b31d0efc59e1d337e3d5804ba2d1fd4897b1ae49
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
-F test/autoinc.test c6df81f1de9a5499f912c58e5389d0bcb8d42459df832b65aee24338ad422a42
+F test/autoinc.test 5ecd36e08e44478a3cf91114ff58999234d67cc37f6e86c66a137535071aee1c
 F test/autoindex1.test a09958fa756129af10b6582bcbf3cbdf11e305e027b393f393caef801159dee0
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test 2dd997d6590438b53e4f715f9278aa91c9299cf3f81246a0915269c35beb790e
@@ -772,7 +772,7 @@ F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 21ce09c361227ddbc9819a5608ee2700c276bdd5
 F test/e_expr.test ca8896601ade1e27c6559614c7f32c63d44636fdfa720436a160f09b8bf66c89
-F test/e_fkey.test dcdc6ad26b1d4f07636208de4c1c22aae7c0597a685a6c10fe6da91f3191dd96
+F test/e_fkey.test 9778696ef9fceacebed8d482d02b47287981faaedf6f73db563ea8a7afb546da
 F test/e_fts3.test 8cf40550bb088a6aa187c818c00fabe26ef82900a4cd5c66b427ccafe28bedaa
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2bebf7b393e519198b7c654407221cf171a439b8
@@ -1088,7 +1088,7 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
 F test/misc5.test 60e1fc758a93cacd19eb2fafcd1d40d150a05047546c7a92389c98047d621901
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 567e223b6497da2226a0340befaf2d663c91ad57a48aede21a35a984a2882d41
+F test/misc7.test 349855706310f0de6b91645d199f6874f518627fd057743fa4e3689b60d06efc
 F test/misc8.test 8fb0f31d7a8aed484d759773ab8ad12ec746a477f4a67394a4af0e677494c3ca
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 9d86e697dcbc5da2c4e8caba9b176b5765fe65e80c88c278b8c09a917e436795
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 469a62ca33081854e54f3af6d93ab5a350484b149c8c8c4ee8be0ae5418382d9
-R 6d5a2f28fee740df115b32cacf25c704
+P 4921e5bae4c12c3413cc0b2e58766cf2ac117ad95f92fcd1c2457db6cfabb054
+R ecb10fb0f9635ad295241cdcd77a742e
 U dan
-Z f08e9fad8901a7bd23ea9bccc655ae15
+Z 6a01059d775358f21b5e5396e63246ac

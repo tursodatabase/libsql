@@ -24,7 +24,24 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-proc eqp {sql {db db}} { uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db }
+proc eqp {sql {db db}} { 
+  uplevel [subst -nocommands {
+    set eqpres [list]
+    $db eval "$sql" {
+      lappend eqpres [set detail]
+    }
+    set eqpres
+  }]
+}
+
+proc do_detail_test {tn sql res} {
+  set normalres [list {*}$res]
+  uplevel [subst -nocommands {
+    do_test $tn {
+      eqp { $sql }
+    } {$normalres}
+  }]
+}
 
 ###########################################################################
 ### SECTION 2: Enabling Foreign Key Support
@@ -970,20 +987,20 @@ do_test e_fkey-25.1 {
     );
   }
 } {}
-do_execsql_test e_fkey-25.2 {
+do_detail_test e_fkey-25.2 {
   PRAGMA foreign_keys = OFF;
   EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
   EXPLAIN QUERY PLAN SELECT rowid FROM track WHERE trackartist = ?;
 } {
-  0 0 0 {SCAN TABLE artist} 
-  0 0 0 {SCAN TABLE track}
+  {SCAN TABLE artist} 
+  {SCAN TABLE track}
 }
-do_execsql_test e_fkey-25.3 {
+do_detail_test e_fkey-25.3 {
   PRAGMA foreign_keys = ON;
   EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
 } {
-  0 0 0 {SCAN TABLE artist} 
-  0 0 0 {SCAN TABLE track}
+  {SCAN TABLE artist} 
+  {SCAN TABLE track}
 }
 do_test e_fkey-25.4 {
   execsql {
@@ -1097,20 +1114,19 @@ do_test e_fkey-27.1 {
 do_test e_fkey-27.2 {
   eqp { INSERT INTO artist VALUES(?, ?) }
 } {}
-do_execsql_test e_fkey-27.3 {
+do_detail_test e_fkey-27.3 {
   EXPLAIN QUERY PLAN UPDATE artist SET artistid = ?, artistname = ?
 } {
-  0 0 0 {SCAN TABLE artist} 
-  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)} 
-  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)}
+  {SCAN TABLE artist} 
+  {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)} 
+  {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)}
 }
-do_execsql_test e_fkey-27.4 {
+do_detail_test e_fkey-27.4 {
   EXPLAIN QUERY PLAN DELETE FROM artist
 } {
-  0 0 0 {SCAN TABLE artist} 
-  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)}
+  {SCAN TABLE artist} 
+  {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)}
 }
-
 
 ###########################################################################
 ### SECTION 4.1: Composite Foreign Key Constraints
