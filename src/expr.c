@@ -3993,7 +3993,7 @@ expr_code_doover:
     case TK_COLLATE: 
     case TK_UPLUS: {
       pExpr = pExpr->pLeft;
-      goto expr_code_doover;
+      goto expr_code_doover; /* 2018-04-28: Prevent deep recursion. OSSFuzz. */
     }
 
     case TK_TRIGGER: {
