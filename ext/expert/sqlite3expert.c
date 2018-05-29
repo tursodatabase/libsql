@@ -1152,7 +1152,9 @@ int idxFindIndexes(
         }
       }
 
-      pStmt->zEQP = idxAppendText(&rc, pStmt->zEQP, "%s\n", zDetail);
+      if( zDetail[0]!='-' ){
+        pStmt->zEQP = idxAppendText(&rc, pStmt->zEQP, "%s\n", zDetail);
+      }
     }
 
     for(pEntry=hIdx.pFirst; pEntry; pEntry=pEntry->pNext){

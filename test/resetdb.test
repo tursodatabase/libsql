@@ -32,6 +32,7 @@ if {[permutation]=="inmemory_journal"} {
 
 # Create a sample database
 do_execsql_test 100 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA page_size=4096;
   CREATE TABLE t1(a,b);
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<20)
@@ -92,6 +93,7 @@ db2 close
 forcedelete test.db
 sqlite3 db test.db
 do_execsql_test 300 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA page_size=8192;
   PRAGMA journal_mode=WAL;
   CREATE TABLE t1(a,b);
