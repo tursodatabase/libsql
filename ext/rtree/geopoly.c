@@ -146,8 +146,8 @@ static char geopolySkipSpace(GeoParse *p){
 ** return non-zero on success and zero if the next token is not a number.
 */
 static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
-  const unsigned char *z = p->z;
   char c = geopolySkipSpace(p);
+  const unsigned char *z = p->z;
   int j;
   int seenDP = 0;
   int seenE = 0;
