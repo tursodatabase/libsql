@@ -25,7 +25,11 @@ ifcapable !vtab||!compound {
 # on a wal mode database with existing connections. For this and a few
 # other reasons, this test is not run as part of "inmemory_journal".
 #
-if {[permutation]=="inmemory_journal"} {
+# Permutation "journaltest" does not support wal mode.
+#
+if {[permutation]=="inmemory_journal"
+ || [permutation]=="journaltest"
+} {
   finish_test
   return
 }
@@ -129,6 +133,8 @@ do_test 330 {
     PRAGMA quick_check
   } db2
 } {1 {file is not a database}}
+
+db2 cache flush         ;# Required by permutation "prepare".
 
 # Reset the database yet again.  Verify that the page size and
 # journal mode are preserved.

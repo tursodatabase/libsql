@@ -25,6 +25,11 @@ ifcapable {!autoinc} {
   return
 }
 
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 sqlite3_db_config_lookaside db 0 0 0
 
 # The database is initially empty.
