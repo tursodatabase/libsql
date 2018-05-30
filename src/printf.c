@@ -974,7 +974,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 ** an SQLITE_NOMEM error.
 */
 static sqlite3_str sqlite3OomStr = {
-   0, 0, 0, 0, 0, SQLITE_NOMEM
+   0, 0, 0, 0, 0, SQLITE_NOMEM, 0
 };
 
 /* Finalize a string created using sqlite3_str_new().
