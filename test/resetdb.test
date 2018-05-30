@@ -15,6 +15,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix resetdb
 
+do_not_use_codec
+
 ifcapable !vtab||!compound {
   finish_test
   return
