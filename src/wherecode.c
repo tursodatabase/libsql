@@ -592,6 +592,8 @@ static int codeEqualityTerm(
           if( i==iEq ){
             pIn->iCur = iTab;
             pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
+            pIn->iBase = iReg - i;
+            pIn->nPrefix = i;
           }else{
             pIn->eEndLoopOp = OP_Noop;
           }
