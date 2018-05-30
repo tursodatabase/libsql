@@ -3479,11 +3479,15 @@ struct Window {
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
   Window *pNextWin;       /* Next window function belonging to this SELECT */
+  FuncDef *pFunc;
+  int nArg;
+
   int iEphCsr;            /* Temp table used by this window */
   int regAccum;
   int regResult;
-  FuncDef *pFunc;
-  int nArg;
+
+  int csrApp;             /* Function cursor (used by min/max) */
+  int regApp;             /* Function register (also used by min/max) */
 
   int regPart;
   Expr *pOwner;           /* Expression object this window is attached to */

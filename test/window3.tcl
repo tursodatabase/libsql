@@ -1,0 +1,81 @@
+# 2018 May 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname $argv0] pg_common.tcl]
+
+#=========================================================================
+
+start_test window3 "2018 May 31"
+
+execsql_test 1.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b INTEGER);
+  INSERT INTO t2(a, b) VALUES
+  (1,0), (2,74), (3,41), (4,74), (5,23), (6,99), (7,26), (8,33), (9,2),
+  (10,89), (11,81), (12,96), (13,59), (14,38), (15,68), (16,39), (17,62),
+  (18,91), (19,46), (20,6), (21,99), (22,97), (23,27), (24,46), (25,78),
+  (26,54), (27,97), (28,8), (29,67), (30,29), (31,93), (32,84), (33,77),
+  (34,23), (35,16), (36,16), (37,93), (38,65), (39,35), (40,47), (41,7),
+  (42,86), (43,74), (44,61), (45,91), (46,85), (47,24), (48,85), (49,43),
+  (50,59), (51,12), (52,32), (53,56), (54,3), (55,91), (56,22), (57,90),
+  (58,55), (59,15), (60,28), (61,89), (62,25), (63,47), (64,1), (65,56),
+  (66,40), (67,43), (68,56), (69,16), (70,75), (71,36), (72,89), (73,98),
+  (74,76), (75,81), (76,4), (77,94), (78,42), (79,30), (80,78), (81,33),
+  (82,29), (83,53), (84,63), (85,2), (86,87), (87,37), (88,80), (89,84),
+  (90,72), (91,41), (92,9), (93,61), (94,73), (95,95), (96,65), (97,13),
+  (98,58), (99,96), (100,98), (101,1), (102,21), (103,74), (104,65), (105,35),
+  (106,5), (107,73), (108,11), (109,51), (110,87), (111,41), (112,12), (113,8),
+  (114,20), (115,31), (116,31), (117,15), (118,95), (119,22), (120,73), 
+  (121,79), (122,88), (123,34), (124,8), (125,11), (126,49), (127,34), 
+  (128,90), (129,59), (130,96), (131,60), (132,55), (133,75), (134,77),
+  (135,44), (136,2), (137,7), (138,85), (139,57), (140,74), (141,29), (142,70),
+  (143,59), (144,19), (145,39), (146,26), (147,26), (148,47), (149,80),
+  (150,90), (151,36), (152,58), (153,47), (154,9), (155,72), (156,72), (157,66),
+  (158,33), (159,93), (160,75), (161,64), (162,81), (163,9), (164,23), (165,37),
+  (166,13), (167,12), (168,14), (169,62), (170,91), (171,36), (172,91),
+  (173,33), (174,15), (175,34), (176,36), (177,99), (178,3), (179,95), (180,69),
+  (181,58), (182,52), (183,30), (184,50), (185,84), (186,10), (187,84),
+  (188,33), (189,21), (190,39), (191,44), (192,58), (193,30), (194,38),
+  (195,34), (196,83), (197,27), (198,82), (199,17), (200,7);
+}
+
+execsql_test 1.1 {
+  SELECT max(b) OVER (
+    ORDER BY a
+  ) FROM t2
+}
+
+foreach {tn window} {
+   1 "RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
+   2 "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING"
+   3 "RANGE BETWEEN CURRENT ROW         AND CURRENT ROW"
+   4 "RANGE BETWEEN CURRENT ROW         AND UNBOUNDED FOLLOWING"
+   5 "ROWS BETWEEN UNBOUNDED PRECEDING AND 4 PRECEDING"
+   6 "ROWS BETWEEN 4 PRECEDING    AND 2 PRECEDING"
+   7 "ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
+   8 "ROWS BETWEEN 4 PRECEDING    AND CURRENT ROW"
+   9 "ROWS BETWEEN CURRENT ROW         AND CURRENT ROW"
+  10 "ROWS BETWEEN UNBOUNDED PRECEDING AND 4 FOLLOWING"
+  11 "ROWS BETWEEN 4 PRECEDING    AND 2 FOLLOWING"
+  12 "ROWS BETWEEN CURRENT ROW         AND 4 FOLLOWING"
+  13 "ROWS BETWEEN 2 FOLLOWING    AND 4 FOLLOWING"
+  14 "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING"
+  15 "ROWS BETWEEN 4 PRECEDING    AND UNBOUNDED FOLLOWING"
+  16 "ROWS BETWEEN CURRENT ROW         AND UNBOUNDED FOLLOWING"
+  17 "ROWS BETWEEN 4 FOLLOWING    AND UNBOUNDED FOLLOWING"
+} {
+  execsql_test 1.2.1.$tn "SELECT max(b) OVER ( ORDER BY a $window ) FROM t2"
+  execsql_test 1.2.2.$tn "SELECT min(b) OVER ( ORDER BY a $window ) FROM t2"
+}
+
+finish_test
+
