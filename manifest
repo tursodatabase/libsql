@@ -1,5 +1,5 @@
-C Fix\sthe\sparser\sso\sthat\sit\sbuilds\swith\s-DSQLITE_OMIT_CTE.
-D 2018-05-30T01:14:20.296
+C Fix\sa\stypo\sin\san\serror\smessage\sin\sthe\sCLI.
+D 2018-05-30T07:24:41.663
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -495,7 +495,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6415381a0e9d22c0e7cba33ca4a53f81474190862f5d4838190f5eb5b0b47bc9
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a35d462ee7a3c0856ad7a9d9c8921fbf3d91d911a8f39ad9d61302eb43b24a71
-F src/shell.c.in 51c100206f4b7f86cd9affd80b764825e0edc36ca0190c442e4ca7994611bfe2
+F src/shell.c.in c29cb307d6275131e6f9874e0fa73f87acf40a22c4a82faba2059a93b4d294d1
 F src/sqlite.h.in db327b5de56909e060da241ff89cc3726eadf98e9eb17386fc831bbce80e0820
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d02c7a6a09f7520ad180b0d943db475894cd39b0ccdb2ad2c44009d5f25c8a6
-R 5e322b1c74c142ab4baf4d29b52f2f6c
+P 86ee267ee86f5264774a9f215b1158aeaa2d605e77c205731b5ee3945d7de4c2
+R 66bbaeff13562cd76e5bf0241c60826f
 U drh
-Z 47cabe9c690a8f4e01aebae86ce91cfb
+Z db132c545c10c962e97928b6aad4aa9f
