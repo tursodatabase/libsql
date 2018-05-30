@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2018-05-30T00:59:09.653
+C Fix\sthe\sparser\sso\sthat\sit\sbuilds\swith\s-DSQLITE_OMIT_CTE.
+D 2018-05-30T01:14:20.296
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -483,7 +483,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 07784439d25f0bc64a656eece4caecc549b147d213f513cdbeb8430345ec2911
+F src/parse.y 0b81472496809693a139067fea1fe3f14a7be8aa26c8f18bb327034d1252a06a
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1729,7 +1729,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3b00f73456c65dfc1827fdada9afb49245f9addfa684d5ae35e69a07f39164bf
-R f211e3071292bcbf62c2eee658232f37
+P 8d02c7a6a09f7520ad180b0d943db475894cd39b0ccdb2ad2c44009d5f25c8a6
+R 5e322b1c74c142ab4baf4d29b52f2f6c
 U drh
-Z 1b370e5690510b70fa81dfa1e95cacb2
+Z 47cabe9c690a8f4e01aebae86ce91cfb
