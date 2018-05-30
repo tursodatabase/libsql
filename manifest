@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\scodec\son\sthe\sresetdb.test\sscript.
-D 2018-05-30T07:36:55.419
+C Add\sthe\sMakefile.fallback\smakefile\sto\sthe\samalgamation\starball.
+D 2018-05-30T14:17:09.027
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -12,7 +12,8 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am f8c274ee0022cb6d48ff103ab6c6b0733c41b3b02cb8566228dfd602f701e0c2
+F autoconf/Makefile.am 465fb475ee5a4b8a63d26c889cb36a4edbff0325b6859eb29a13cdf5c91b005c
+F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac w autoconf/Makefile.manual
 F autoconf/Makefile.msc 6a46d0659d6e4a25346102bcba40a7fb4b0b8b2dc4faabdf0187488c6dd580d6
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
@@ -1729,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 808839808141493c1e5122f40b2cdff725be0cd1212e03d609345dbff7af03e4
-R 03e067dd6ca35cf45acd924a017a75af
+P fe55cea0c80ab29120574c5c4a8473b83fc80f79d7e11bc7c326bfdb32aa3902
+R 9c2f9b49ca735d6bfcd221d127ace41c
 U drh
-Z 2baf80154bc7ee58f691608c0b261b48
+Z ff80d3880b7152ab530db1f6a6cf6a2a
