@@ -4749,7 +4749,7 @@ case OP_SorterData: {
 ** If the P1 cursor must be pointing to a valid row (not a NULL row)
 ** of a real table, not a pseudo-table.
 **
-** If P3!=0 then this opcode is allowed to make an ephermeral pointer
+** If P3!=0 then this opcode is allowed to make an ephemeral pointer
 ** into the database page.  That means that the content of the output
 ** register will be invalidated as soon as the cursor moves - including
 ** moves caused by other cursors that "save" the the current cursors

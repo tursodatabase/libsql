@@ -1,5 +1,5 @@
-C Add\sthe\sMakefile.fallback\smakefile\sto\sthe\samalgamation\starball.
-D 2018-05-30T14:17:09.027
+C Fix\sa\sharmless\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.
+D 2018-05-31T19:00:20.782
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -13,7 +13,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 465fb475ee5a4b8a63d26c889cb36a4edbff0325b6859eb29a13cdf5c91b005c
-F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac w autoconf/Makefile.manual
+F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.msc 6a46d0659d6e4a25346102bcba40a7fb4b0b8b2dc4faabdf0187488c6dd580d6
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
@@ -565,7 +565,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 37730af7540033135909ecaee3667dddec043293428d8718546d0d64ba4a5025
-F src/vdbe.c 3771a25dd8164669ae75716382bf9a4029da727be1c9394ba952003b182856d8
+F src/vdbe.c 68ecba9c395e34be66460860d33ba448a17abc52b868616c2018d5aacebb57c3
 F src/vdbe.h e3f43bcc27ff30b0f25a6104d0cb5657e1c4b5e1b5cd2dd2216d5bcc2156a746
 F src/vdbeInt.h 42d3e65ea0c664f6d9bc9a53de645c0baf8566ff0188409ff3b8d2abc327bc17
 F src/vdbeapi.c 765a0bbe01311626417de6cb743f7f25f9f98435c98a9df4bb0714d11014633d
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe55cea0c80ab29120574c5c4a8473b83fc80f79d7e11bc7c326bfdb32aa3902
-R 9c2f9b49ca735d6bfcd221d127ace41c
+P ce3d04563337c9556d66e55acfb454789b0baa49a1be8fcc349251ce88236d62
+R 721b330875e055b4548acec278d6305e
 U drh
-Z ff80d3880b7152ab530db1f6a6cf6a2a
+Z 3bab0ec27936c3d927df6be10536e180
