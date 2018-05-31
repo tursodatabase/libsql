@@ -4752,7 +4752,7 @@ case OP_SorterData: {
 ** If P3!=0 then this opcode is allowed to make an ephemeral pointer
 ** into the database page.  That means that the content of the output
 ** register will be invalidated as soon as the cursor moves - including
-** moves caused by other cursors that "save" the the current cursors
+** moves caused by other cursors that "save" the current cursors
 ** position in order that they can write to the same table.  If P3==0
 ** then a copy of the data is made into memory.  P3!=0 is faster, but
 ** P3==0 is safer.
@@ -5569,7 +5569,7 @@ case OP_ResetSorter: {
 ** Allocate a new b-tree in the main database file if P1==0 or in the
 ** TEMP database file if P1==1 or in an attached database if
 ** P1>1.  The P3 argument must be 1 (BTREE_INTKEY) for a rowid table
-** it must be 2 (BTREE_BLOBKEY) for a index or WITHOUT ROWID table.
+** it must be 2 (BTREE_BLOBKEY) for an index or WITHOUT ROWID table.
 ** The root page number of the new b-tree is stored in register P2.
 */
 case OP_CreateBtree: {          /* out2 */
