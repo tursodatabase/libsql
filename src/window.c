@@ -193,6 +193,59 @@ static void windowAggFinal(Parse *pParse, Window *pMWin, int bFinal){
   }
 }
 
+static void windowPartitionCache(
+  Parse *pParse,
+  Select *p,
+  WhereInfo *pWInfo,
+  int regFlushPart,
+  int lblFlushPart
+){
+  Window *pMWin = p->pWin;
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  Window *pWin;
+  int iSubCsr = p->pSrc->a[0].iCursor;
+  int nSub = p->pSrc->a[0].pTab->nCol;
+  int k;
+
+  int reg = pParse->nMem+1;
+  int regRecord = reg+nSub;
+  int regRowid = regRecord+1;
+
+  pParse->nMem += nSub + 2;
+
+  /* Martial the row returned by the sub-select into an array of 
+  ** registers. */
+  for(k=0; k<nSub; k++){
+    sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
+  }
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, nSub, regRecord);
+
+  /* Check if this is the start of a new partition. If so, call the
+  ** flush_partition sub-routine.  */
+  if( pMWin->pPartition ){
+    int addr;
+    ExprList *pPart = pMWin->pPartition;
+    int nPart = (pPart ? pPart->nExpr : 0);
+    int regNewPart = reg + pMWin->nBufferCol;
+    KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
+
+    addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
+    sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+    sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+4, addr+2);
+    sqlite3VdbeAddOp3(v, OP_Copy, regNewPart, pMWin->regPart, nPart-1);
+    sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
+  }
+
+  /* Buffer the current row in the ephemeral table. */
+  sqlite3VdbeAddOp2(v, OP_NewRowid, pMWin->iEphCsr, regRowid);
+  sqlite3VdbeAddOp3(v, OP_Insert, pMWin->iEphCsr, regRecord, regRowid);
+
+  /* End of the input loop */
+  sqlite3WhereEnd(pWInfo);
+
+  /* Invoke "flush_partition" to deal with the final (or only) partition */
+  sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
+}
 
 /*
 ** ROWS BETWEEN <expr1> PRECEDING AND <expr2> FOLLOWING
@@ -329,15 +382,13 @@ static void windowCodeRowExprStep(
   Vdbe *v = sqlite3GetVdbe(pParse);
   Window *pWin;
   int k;
-  int iSubCsr = p->pSrc->a[0].iCursor;
   int nSub = p->pSrc->a[0].pTab->nCol;
   int regFlushPart;               /* Register for "Gosub flush_partition" */
   int lblFlushPart;               /* Label for "Gosub flush_partition" */
   int lblFlushDone;               /* Label for "Gosub flush_partition_done" */
 
-  int reg = pParse->nMem+1;
-  int regRecord = reg+nSub;
-  int regRowid = regRecord+1;
+  int regArg;
+  int nArg;
   int addr;
   int csrStart = pParse->nTab++;
   int csrEnd = pParse->nTab++;
@@ -373,8 +424,6 @@ static void windowCodeRowExprStep(
     bRange = 1;
   }
 
-  pParse->nMem += nSub + 2;
-
   /* Allocate register and label for the "flush_partition" sub-routine. */
   regFlushPart = ++pParse->nMem;
   lblFlushPart = sqlite3VdbeMakeLabel(v);
@@ -383,37 +432,8 @@ static void windowCodeRowExprStep(
   regStart = ++pParse->nMem;
   regEnd = ++pParse->nMem;
 
-  /* Martial the row returned by the sub-select into an array of 
-  ** registers. */
-  for(k=0; k<nSub; k++){
-    sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
-  }
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, nSub, regRecord);
+  windowPartitionCache(pParse, p, pWInfo, regFlushPart, lblFlushPart);
 
-  /* Check if this is the start of a new partition. If so, call the
-  ** flush_partition sub-routine.  */
-  if( pMWin->pPartition ){
-    ExprList *pPart = pMWin->pPartition;
-    int nPart = (pPart ? pPart->nExpr : 0);
-    int regNewPart = reg + pMWin->nBufferCol;
-    KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
-
-    addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
-    sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
-    sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+4, addr+2);
-    sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
-    sqlite3VdbeAddOp3(v, OP_Copy, regNewPart, pMWin->regPart, nPart);
-  }
-
-  /* Buffer the current row in the ephemeral table. */
-  sqlite3VdbeAddOp2(v, OP_NewRowid, pMWin->iEphCsr, regRowid);
-  sqlite3VdbeAddOp3(v, OP_Insert, pMWin->iEphCsr, regRecord, regRowid);
-
-  /* End of the input loop */
-  sqlite3WhereEnd(pWInfo);
-
-  /* Invoke "flush_partition" to deal with the final (or only) partition */
-  sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
   addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
 
   /* Start of "flush_partition" */
@@ -443,9 +463,13 @@ static void windowCodeRowExprStep(
   }
 
   /* Initialize the accumulator register for each window function to NULL */
+  nArg = 0;
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+    nArg = MAX(nArg, pWin->nArg);
   }
+  regArg = pParse->nMem+1;
+  pParse->nMem += nArg;
 
   sqlite3VdbeAddOp2(v, OP_Rewind, pMWin->iEphCsr, lblFlushDone);
   sqlite3VdbeAddOp2(v, OP_Rewind, csrStart, lblFlushDone);
@@ -462,7 +486,7 @@ static void windowCodeRowExprStep(
   }
   sqlite3VdbeAddOp2(v, OP_Next, csrEnd, sqlite3VdbeCurrentAddr(v)+2);
   addr = sqlite3VdbeAddOp0(v, OP_Goto);
-  windowAggStep(pParse, pMWin, csrEnd, 0, reg);
+  windowAggStep(pParse, pMWin, csrEnd, 0, regArg);
   if( pMWin->eEnd==TK_UNBOUNDED ){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
     sqlite3VdbeJumpHere(v, addr);
@@ -528,7 +552,7 @@ static void windowCodeRowExprStep(
       addrJumpHere = sqlite3VdbeAddOp0(v, OP_Goto);
     }
     sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
-    windowAggStep(pParse, pMWin, csrStart, 1, reg);
+    windowAggStep(pParse, pMWin, csrStart, 1, regArg);
     if( bRange ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrJumpHere-1);
     }
@@ -553,6 +577,146 @@ static void windowCodeRowExprStep(
 /*
 ** RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
 **
+**   flush_partition:
+**     Once {
+**       OpenDup (iEphCsr -> csrLead)
+**     }
+**     Integer ctr 0
+**     foreach row (csrLead){
+**       if( new peer ){
+**         AggFinal (xValue)
+**         for(i=0; i<ctr; i++){
+**           Gosub addrGosub
+**           Next iEphCsr
+**         }
+**         Integer ctr 0
+**       }
+**       AggStep (csrLead)
+**       Incr ctr
+**     }
+**
+**     AggFinal (xFinalize)
+**     for(i=0; i<ctr; i++){
+**       Gosub addrGosub
+**       Next iEphCsr
+**     }
+**
+**     ResetSorter (csr)
+**     Return
+**
+** ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+** RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+** RANGE BETWEEN CURRENT ROW AND CURRENT ROW 
+**
+**   TODO.
+*/
+static void windowCodeCacheStep(
+  Parse *pParse, 
+  Select *p,
+  WhereInfo *pWInfo,
+  int regGosub, 
+  int addrGosub
+){
+  Window *pMWin = p->pWin;
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  Window *pWin;
+  int k;
+  int addr;
+  ExprList *pPart = pMWin->pPartition;
+  ExprList *pOrderBy = pMWin->pOrderBy;
+  int nPeer = pOrderBy->nExpr;
+  int regNewPeer;
+
+  int addrGoto;                   /* Address of Goto used to jump flush_par.. */
+  int addrRewind;                 /* Address of Rewind that starts loop */
+  int regFlushPart;
+  int lblFlushPart;
+  int csrLead;
+  int regCtr;
+  int regArg;                     /* Register array to martial function args */
+  int nArg;
+
+  assert( (pMWin->eStart==TK_UNBOUNDED && pMWin->eEnd==TK_CURRENT) 
+  );
+
+  regNewPeer = pParse->nMem+1;
+  pParse->nMem += nPeer;
+
+  /* Allocate register and label for the "flush_partition" sub-routine. */
+  regFlushPart = ++pParse->nMem;
+  lblFlushPart = sqlite3VdbeMakeLabel(v);
+
+  csrLead = pParse->nTab++;
+  regCtr = ++pParse->nMem;
+
+  windowPartitionCache(pParse, p, pWInfo, regFlushPart, lblFlushPart);
+  addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
+
+  /* Start of "flush_partition" */
+  sqlite3VdbeResolveLabel(v, lblFlushPart);
+  sqlite3VdbeAddOp2(v, OP_Once, 0, sqlite3VdbeCurrentAddr(v)+2);
+  sqlite3VdbeAddOp2(v, OP_OpenDup, csrLead, pMWin->iEphCsr);
+
+  /* Initialize the accumulator register for each window function to NULL */
+  nArg = 0;
+  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+    nArg = MAX(nArg, pWin->nArg);
+  }
+  regArg = pParse->nMem+1;
+  pParse->nMem += nArg;
+
+  sqlite3VdbeAddOp2(v, OP_Integer, 0, regCtr);
+  addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, csrLead);
+  sqlite3VdbeAddOp1(v, OP_Rewind, pMWin->iEphCsr);
+
+  if( pOrderBy ){
+    int addrJump;                 /* Address of OP_Jump below */
+    int iOff = pMWin->nBufferCol + (pPart ? pPart->nExpr : 0);
+    int regPeer = pMWin->regPart + (pPart ? pPart->nExpr : 0);
+    KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOrderBy, 0, 0);
+
+    for(k=0; k<nPeer; k++){
+      sqlite3VdbeAddOp3(v, OP_Column, csrLead, iOff+k, regNewPeer+k);
+    }
+
+    addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPeer, regPeer, nPeer);
+    sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+    addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
+    sqlite3VdbeAddOp3(v, OP_Copy, regNewPeer, regPeer, nPeer-1);
+    windowAggFinal(pParse, pMWin, 0);
+    sqlite3VdbeAddOp3(v, OP_IfPos, regCtr, sqlite3VdbeCurrentAddr(v)+2 , 1);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
+    sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
+    sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)-3);
+    sqlite3VdbeJumpHere(v, addrJump);
+  }
+
+  windowAggStep(pParse, pMWin, csrLead, 0, regArg);
+  sqlite3VdbeAddOp2(v, OP_AddImm, regCtr, 1);
+
+  sqlite3VdbeAddOp2(v, OP_Next, csrLead, addrRewind+2);
+
+  windowAggFinal(pParse, pMWin, 1);
+
+  sqlite3VdbeAddOp3(v, OP_IfPos, regCtr, sqlite3VdbeCurrentAddr(v)+2 , 1);
+  sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
+  sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
+  sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)-3);
+
+  sqlite3VdbeJumpHere(v, addrRewind);
+  sqlite3VdbeJumpHere(v, addrRewind+1);
+  sqlite3VdbeAddOp1(v, OP_ResetSorter, pMWin->iEphCsr);
+  sqlite3VdbeAddOp1(v, OP_Return, regFlushPart);
+
+  /* Jump to here to skip over flush_partition */
+  sqlite3VdbeJumpHere(v, addrGoto);
+}
+
+
+/*
+** RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+**
 **   ...
 **     if( new partition ){
 **       AggFinal (xFinalize)
@@ -569,6 +733,20 @@ static void windowCodeRowExprStep(
 **   sqlite3WhereEnd()
 **   AggFinal (xFinalize)
 **   Gosub addrGosub
+**
+** RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+**
+**   As above, except take no action for a "new peer". Invoke
+**   the sub-routine once only for each partition.
+**
+** RANGE BETWEEN CURRENT ROW AND CURRENT ROW
+**
+**   As above, except that the "new peer" condition is handled in the
+**   same way as "new partition" (so there is no "else if" block).
+**
+** ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+** 
+**   As above, except assume every row is a "new peer".
 */
 static void windowCodeDefaultStep(
   Parse *pParse, 
@@ -742,14 +920,25 @@ void sqlite3WindowCodeStep(
 ){
   Window *pMWin = p->pWin;
 
+  *pbLoop = 0;
   if( (pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy))
    || (pMWin->eStart==TK_CURRENT&&pMWin->eEnd==TK_UNBOUNDED&&pMWin->pOrderBy)
   ){
-    *pbLoop = 0;
     windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);
     return;
   }
+
+#if 0
+  if( pMWin->eType==TK_RANGE
+   && pMWin->eStart==TK_UNBOUNDED
+   && pMWin->eEnd==TK_CURRENT
+   && pMWin->pOrderBy
+  ){
+    windowCodeCacheStep(pParse, p, pWInfo, regGosub, addrGosub);
+    return;
+  }
+#endif
 
   *pbLoop = 1;
   windowCodeDefaultStep(pParse, p, pWInfo, regGosub, addrGosub);
