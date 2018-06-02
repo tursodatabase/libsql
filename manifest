@@ -1,5 +1,5 @@
-C Ensure\sthat\ssqlite3AuthRead()\sis\sonly\scall\sfor\sTK_COLUMN\sand\sTK_TRIGGER\nexpression\snodes.\s\sThis\sfixes\sa\sharmless\sassert()\sidentified\sby\sOSSFuzz.\nMove\sthe\sassert()\sinto\sa\sposition\swhere\sit\sis\stested\seven\sif\sthe\sauthorizer\nis\sdisabled.
-D 2018-06-02T11:31:15.578
+C Fix\sthe\sCSV\sextension\sso\sthat\sit\sworks\swith\ssingle-column\sCSV\sfiles.
+D 2018-06-02T12:05:18.686
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -275,7 +275,7 @@ F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c
 F ext/misc/closure.c fe928228e8dfb2f00227311c203ccba9c2e5561f4f6de6da87e5b4a30cd8af15
 F ext/misc/completion.c e75b8886a2531f9a7ec02dab5f179bb37e6bd46b5da7665a6cbf2dfbe2daa483
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
-F ext/misc/csv.c d1e324fac3f87f818d684a3d752d1ef76dbcd4fc0db6746ac4034c19d0bcda21
+F ext/misc/csv.c 65297bcce8d5acd5aadef42acbe739aef5a2ef5e74c7b73361ca19f3e21de657
 F ext/misc/dbdump.c 69ef1be5b210538f77dfcc6fcb55b4b5f5e98b1e0bcfd67d818711e10761db4d
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
@@ -740,7 +740,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/csv01.test b99db7e57ee66fb3aa6e5d25af119003bee90bf679c5885711cbf7374f025b73
+F test/csv01.test 6e1445b3207d574cff22fc41a8e549dfcf2466ee90546ada97d22a90fa89eb58
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 0078ae1ded4afcf5eb80d06e3a72b6e1c3f1a646aab26eeb583b0a9ec6f0d56e
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cadaf587dc96370f9c8a1dccc366b93021e8cfe4526da9368a088828fd14faf
-R 7d592e3f2af596781ca513b1afb89a05
+P d0c3beef7cdc680c0768ddd18f766a4ca7be822c1eb1776b2f73b7433d9962dc
+R c5d6bccca681ca9136d1b5b551197884
 U drh
-Z c3e8bdeb9ee894ba331668f0f76af04a
+Z ef7b6a7c7262b7fdf581f90ab6dbc4b7
