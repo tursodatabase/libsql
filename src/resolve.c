@@ -776,6 +776,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
         if( pExpr->pWin ){
+          sqlite3WindowUpdate(pParse, pExpr->pWin, pDef);
           if( 0==pNC->pWin 
            || 0==sqlite3WindowCompare(pParse, pNC->pWin, pExpr->pWin) 
           ){

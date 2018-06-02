@@ -73,9 +73,95 @@ foreach {tn window} {
   16 "ROWS BETWEEN CURRENT ROW         AND UNBOUNDED FOLLOWING"
   17 "ROWS BETWEEN 4 FOLLOWING    AND UNBOUNDED FOLLOWING"
 } {
-  execsql_test 1.2.1.$tn "SELECT max(b) OVER ( ORDER BY a $window ) FROM t2"
-  execsql_test 1.2.2.$tn "SELECT min(b) OVER ( ORDER BY a $window ) FROM t2"
+  execsql_test 1.$tn.2.1 "SELECT max(b) OVER ( ORDER BY a $window ) FROM t2"
+  execsql_test 1.$tn.2.2 "SELECT min(b) OVER ( ORDER BY a $window ) FROM t2"
+
+  execsql_test 1.$tn.3.1 "
+    SELECT row_number() OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.3.2 "
+    SELECT row_number() OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+
+  execsql_test 1.$tn.4.1 "
+    SELECT dense_rank() OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.4.2 "
+    SELECT dense_rank() OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.4.3 "
+    SELECT dense_rank() OVER ( ORDER BY b $window ) FROM t2
+  "
+  execsql_test 1.$tn.4.4 "
+    SELECT dense_rank() OVER ( PARTITION BY b%10 ORDER BY b $window ) FROM t2
+  "
+  execsql_test 1.$tn.4.5 "
+    SELECT dense_rank() OVER ( ORDER BY b%10 $window ) FROM t2
+  "
+  execsql_test 1.$tn.4.6 "
+    SELECT dense_rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ) FROM t2
+  "
+
+  execsql_test 1.$tn.5.1 "
+    SELECT rank() OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.5.2 "
+    SELECT rank() OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.5.3 "
+    SELECT rank() OVER ( ORDER BY b $window ) FROM t2
+  "
+  execsql_test 1.$tn.5.4 "
+    SELECT rank() OVER ( PARTITION BY b%10 ORDER BY b $window ) FROM t2
+  "
+  execsql_test 1.$tn.5.5 "
+    SELECT rank() OVER ( ORDER BY b%10 $window ) FROM t2
+  "
+  execsql_test 1.$tn.5.6 "
+    SELECT rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ) FROM t2
+  "
+
+  execsql_test 1.$tn.6.1 "
+    SELECT 
+      row_number() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ),
+      rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ),
+      dense_rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window )
+    FROM t2
+  "
+
+  execsql_test 1.$tn.7.1 "
+  SELECT CAST( round( 100 * 
+      percent_rank() OVER ( ORDER BY a $window )
+  ) AS integer) FROM t2"
+
+  #execsql_test 1.$tn.7.2 "
+  #SELECT CAST( round( 100 * 
+      #percent_rank() OVER ( PARTITION BY b%10 ORDER BY a $window )
+  #) AS integer) FROM t2"
+
+  execsql_test 1.$tn.7.3 "
+  SELECT CAST( round( 100 * 
+      percent_rank() OVER ( ORDER BY b $window )
+  ) AS integer) FROM t2"
+
+  #execsql_test 1.$tn.7.4 "
+  #SELECT CAST( round( 100 * 
+      #percent_rank() OVER ( PARTITION BY b%10 ORDER BY b $window )
+  #) AS integer) FROM t2"
+
+  execsql_test 1.$tn.7.5 "
+  SELECT CAST( round( 100 * 
+      percent_rank() OVER ( ORDER BY b%10 $window )
+  ) AS integer) FROM t2"
+
+  execsql_test 1.$tn.7.6 "
+  SELECT CAST( round( 100 * 
+      percent_rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window )
+  ) AS integer) FROM t2"
+
+
 }
+
 
 finish_test
 

@@ -1584,7 +1584,7 @@ struct sqlite3 {
 */
 struct FuncDef {
   i8 nArg;             /* Number of arguments.  -1 means unlimited */
-  u16 funcFlags;       /* Some combination of SQLITE_FUNC_* */
+  u32 funcFlags;       /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
   void (*xSFunc)(sqlite3_context*,int,sqlite3_value**); /* func or agg-step */
@@ -1647,6 +1647,8 @@ struct FuncDestructor {
                                     ** single query - might change over time */
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
+#define SQLITE_FUNC_WINDOW  0x10000 /* Built-in window-only function */
+#define SQLITE_FUNC_WINDOW_SIZE  0x20000
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -3501,6 +3503,9 @@ void sqlite3WindowAttach(Parse*, Expr*, Window*);
 int sqlite3WindowCompare(Parse*, Window*, Window*);
 void sqlite3WindowCodeInit(Parse*, Window*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int, int*);
+int sqlite3WindowRewrite(Parse*, Select*);
+int sqlite3ExpandSubquery(Parse*, struct SrcList_item*);
+void sqlite3WindowUpdate(Parse*, Window*, FuncDef*);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
@@ -4175,6 +4180,7 @@ extern sqlite3_uint64 sqlite3NProfileCnt;
 void sqlite3RootPageMoved(sqlite3*, int, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
+void sqlite3WindowFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);

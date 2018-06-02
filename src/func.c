@@ -1923,6 +1923,7 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
 #endif
+  sqlite3WindowFunctions();
 #if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
   sqlite3AnalyzeFunctions();
 #endif

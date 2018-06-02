@@ -4583,7 +4583,7 @@ static void selectPopWith(Walker *pWalker, Select *p){
 #define selectPopWith 0
 #endif
 
-static int selectExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
+int sqlite3ExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
   Select *pSel = pFrom->pSelect;
   Table *pTab;
 
@@ -4676,7 +4676,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       assert( pSel!=0 );
       assert( pFrom->pTab==0 );
       if( sqlite3WalkSelect(pWalker, pSel) ) return WRC_Abort;
-      if( selectExpandSubquery(pParse, pFrom) ) return WRC_Abort;
+      if( sqlite3ExpandSubquery(pParse, pFrom) ) return WRC_Abort;
 #endif
     }else{
       /* An ordinary table or view name in the FROM clause */
@@ -5379,209 +5379,6 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
 }
 #endif /* SQLITE_COUNTOFVIEW_OPTIMIZATION */
 
-typedef struct WindowRewrite WindowRewrite;
-struct WindowRewrite {
-  Window *pWin;
-  ExprList *pSub;
-};
-
-static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
-  return WRC_Prune;
-}
-
-static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
-  struct WindowRewrite *p = pWalker->u.pRewrite;
-  Parse *pParse = pWalker->pParse;
-
-  switch( pExpr->op ){
-
-    case TK_FUNCTION:
-      if( pExpr->pWin==0 ){
-        break;
-      }else{
-        Window *pWin;
-        for(pWin=p->pWin; pWin; pWin=pWin->pNextWin){
-          if( pExpr->pWin==pWin ){
-            pExpr->pWin->pOwner = pExpr;
-            return WRC_Prune;
-          }
-        }
-      }
-      /* Fall through.  */
-
-    case TK_COLUMN: {
-      Expr *pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
-      p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
-      if( p->pSub ){
-        assert( ExprHasProperty(pExpr, EP_Static)==0 );
-        ExprSetProperty(pExpr, EP_Static);
-        sqlite3ExprDelete(pParse->db, pExpr);
-        ExprClearProperty(pExpr, EP_Static);
-        memset(pExpr, 0, sizeof(Expr));
-
-        pExpr->op = TK_COLUMN;
-        pExpr->iColumn = p->pSub->nExpr-1;
-        pExpr->iTable = p->pWin->iEphCsr;
-      }
-
-      break;
-    }
-
-    default: /* no-op */
-      break;
-  }
-
-  return WRC_Continue;
-}
-
-static int selectWindowRewriteEList(
-  Parse *pParse, 
-  Window *pWin,
-  ExprList *pEList,               /* Rewrite expressions in this list */
-  ExprList **ppSub                /* IN/OUT: Sub-select expression-list */
-){
-  Walker sWalker;
-  WindowRewrite sRewrite;
-  int rc;
-
-  memset(&sWalker, 0, sizeof(Walker));
-  memset(&sRewrite, 0, sizeof(WindowRewrite));
-
-  sRewrite.pSub = *ppSub;
-  sRewrite.pWin = pWin;
-
-  sWalker.pParse = pParse;
-  sWalker.xExprCallback = selectWindowRewriteExprCb;
-  sWalker.xSelectCallback = selectWindowRewriteSelectCb;
-  sWalker.u.pRewrite = &sRewrite;
-
-  rc = sqlite3WalkExprList(&sWalker, pEList);
-
-  *ppSub = sRewrite.pSub;
-  return rc;
-}
-
-static ExprList *exprListAppendList(
-  Parse *pParse,          /* Parsing context */
-  ExprList *pList,        /* List to which to append. Might be NULL */
-  ExprList *pAppend       /* List of values to append. Might be NULL */
-){
-  if( pAppend ){
-    int i;
-    int nInit = pList ? pList->nExpr : 0;
-    for(i=0; i<pAppend->nExpr; i++){
-      Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
-      pList = sqlite3ExprListAppend(pParse, pList, pDup);
-      if( pList ) pList->a[nInit+i].sortOrder = pAppend->a[i].sortOrder;
-    }
-  }
-  return pList;
-}
-
-/*
-** If the SELECT statement passed as the second argument does not invoke
-** any SQL window functions, this function is a no-op. Otherwise, it 
-** rewrites the SELECT statement so that window function xStep functions
-** are invoked in the correct order. The simplest version of the 
-** transformation is:
-**
-**   SELECT win(args...) OVER (<list1>) FROM <src> ORDER BY <list2>
-**
-** to
-**
-**   SELECT win(args...) FROM (
-**     SELECT args... FROM <src> ORDER BY <list1>
-**   ) ORDER BY <list2>
-**
-** where <src> may contain WHERE, GROUP BY and HAVING clauses, and <list1>
-** is the concatenation of the PARTITION BY and ORDER BY clauses in the
-** OVER clause.
-**
-*/
-static int selectWindowRewrite(Parse *pParse, Select *p){
-  int rc = SQLITE_OK;
-  if( p->pWin ){
-    Vdbe *v = sqlite3GetVdbe(pParse);
-    int i;
-    sqlite3 *db = pParse->db;
-    Select *pSub = 0;             /* The subquery */
-    SrcList *pSrc = p->pSrc;
-    Expr *pWhere = p->pWhere;
-    ExprList *pGroupBy = p->pGroupBy;
-    Expr *pHaving = p->pHaving;
-    ExprList *pSort = 0;
-
-    ExprList *pSublist = 0;       /* Expression list for sub-query */
-    Window *pMWin = p->pWin;      /* Master window object */
-    Window *pWin;                 /* Window object iterator */
-
-    p->pSrc = 0;
-    p->pWhere = 0;
-    p->pGroupBy = 0;
-    p->pHaving = 0;
-
-    /* Assign a cursor number for the ephemeral table used to buffer rows.
-    ** The OpenEphemeral instruction is coded later, after it is known how
-    ** many columns the table will have.  */
-    pMWin->iEphCsr = pParse->nTab++;
-
-    rc = selectWindowRewriteEList(pParse, pMWin, p->pEList, &pSublist);
-    if( rc ) return rc;
-    rc = selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
-    if( rc ) return rc;
-    pMWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
-
-    /* Create the ORDER BY clause for the sub-select. This is the concatenation
-    ** of the window PARTITION and ORDER BY clauses. Append the same 
-    ** expressions to the sub-select expression list. They are required to
-    ** figure out where boundaries for partitions and sets of peer rows.  */
-    pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
-    if( pMWin->pOrderBy ){
-      pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy);
-    }
-    pSublist = exprListAppendList(pParse, pSublist, pSort);
-
-    /* Append the arguments passed to each window function to the
-    ** sub-select expression list. Also allocate two registers for each
-    ** window function - one for the accumulator, another for interim
-    ** results.  */
-    for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-      pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
-      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList);
-      pWin->regAccum = ++pParse->nMem;
-      pWin->regResult = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
-    }
-
-    pSub = sqlite3SelectNew(
-        pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
-    );
-    p->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
-    if( p->pSrc ){
-      int iTab;
-      ExprList *pList = 0;
-      p->pSrc->a[0].pSelect = pSub;
-      sqlite3SrcListAssignCursors(pParse, p->pSrc);
-      if( selectExpandSubquery(pParse, &p->pSrc->a[0]) ){
-        rc = SQLITE_NOMEM;
-      }else{
-        pSub->selFlags |= SF_Expanded;
-      }
-    }
-
-#if SELECTTRACE_ENABLED
-    if( sqlite3SelectTrace & 0x108 ){
-      SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
-      sqlite3TreeViewSelect(0, p, 0);
-    }
-#endif
-
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pSublist->nExpr);
-  }
-
-  return rc;
-}
-
 /*
 ** Generate code for the SELECT statement given in the p argument.  
 **
@@ -5666,9 +5463,15 @@ int sqlite3Select(
     generateColumnNames(pParse, p);
   }
 
-  if( (rc = selectWindowRewrite(pParse, p)) ){
+  if( (rc = sqlite3WindowRewrite(pParse, p)) ){
     goto select_end;
   }
+#if SELECTTRACE_ENABLED
+  if( sqlite3SelectTrace & 0x108 ){
+    SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
   pTabList = p->pSrc;
 
   /* Try to various optimizations (flattening subqueries, and strength
