@@ -1,5 +1,5 @@
-C Fix\sthe\sCSV\sextension\sso\sthat\sit\sworks\swith\ssingle-column\sCSV\sfiles.
-D 2018-06-02T12:05:18.686
+C Work\saround\sa\ssanitizer\swarning\sabout\sa\spointer\sbeing\sonly\s4-byte\saligned\ninstead\sof\s8-byte\saligned.
+D 2018-06-02T16:32:04.483
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -436,7 +436,7 @@ F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 8270813c8f0ca91b2802e88ded3755d04ee962a923d431c13bcb6cf3e0c18f63
+F src/btree.c 44405d03a05496e13b40b3a208bcf941c42c815da90d6ff4b04267a6985e5eb7
 F src/btree.h 448f15b98ea85dcf7e4eb76f731cadb89636c676ad25dfaac6de77cd66556598
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 5fc41458505331bfb0c175f40b9a13cb335f826bed3ae311aaae000c132d7b16
@@ -1730,7 +1730,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0c3beef7cdc680c0768ddd18f766a4ca7be822c1eb1776b2f73b7433d9962dc
-R c5d6bccca681ca9136d1b5b551197884
+P e336cf00486bdc0ec04ecded2b7c874d73a87e6aba3544e3678bedfb9a4af3b6
+R 8f6289962dafd62afd0dcc62419aace8
+T *branch * align8-fix
+T *sym-align8-fix *
+T -sym-trunk *
 U drh
-Z ef7b6a7c7262b7fdf581f90ab6dbc4b7
+Z b4fcb02096c47b5fe0c3d849fd18fe13
