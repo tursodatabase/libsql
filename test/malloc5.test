@@ -174,8 +174,11 @@ do_test malloc5-2.2 {
   execsql {
     COMMIT;
   }
-  list $nRelease $data
-} [list $pgalloc [list 1 2 3 4 5 6]]
+  value_in_range $::pgalloc $::mrange $nRelease
+} [value_in_range $::pgalloc $::mrange]
+do_test malloc5-2.2.1 {
+  set data
+} {1 2 3 4 5 6}
 
 do_test malloc5-3.1 {
   # Simple test to show that if two pagers are opened from within this

@@ -1,5 +1,5 @@
-C Fix\sthe\sCSV\sextension\sso\sthat\sit\sworks\swith\ssingle-column\sCSV\sfiles.
-D 2018-06-02T12:05:18.686
+C Update\sa\stest\scase\sin\smalloc5.test\sto\stake\sinto\saccount\sthat\smalloc()\nsometimes\sreturns\sslightly\smore\sspace\sthan\srequested.
+D 2018-06-02T17:00:57.712
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -1052,7 +1052,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 18dd1c4188c81ca79cf123527c71b19ee0c31feb9947fdffb0dc6ceb1436816a
 F test/malloc3.test 6e88bae6312854a4adb4ecc2a6a5ea8c59b4db778b724ba718e1c43fc8c3c136
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test f6eb6eca07a4c75f2897bf43a404689b6295bb95ab2e07d4b52eda743f925a27
+F test/malloc5.test 2e4ad7684a13389a44a840499cd47173a8d05f22f082d7d083eece433a7a64eb
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0c3beef7cdc680c0768ddd18f766a4ca7be822c1eb1776b2f73b7433d9962dc
-R c5d6bccca681ca9136d1b5b551197884
-U drh
-Z ef7b6a7c7262b7fdf581f90ab6dbc4b7
+P e336cf00486bdc0ec04ecded2b7c874d73a87e6aba3544e3678bedfb9a4af3b6
+R 6e46205cb0ef6ad7de1d5ad2d4fadd35
+U dan
+Z ef3783ba7b32ff9195245e676b3fce8c
