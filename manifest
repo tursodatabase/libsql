@@ -1,5 +1,5 @@
-C Fix\sthe\sCSV\sextension\sso\sthat\sit\sworks\swith\ssingle-column\sCSV\sfiles.
-D 2018-06-02T12:05:18.686
+C Proposed\sfix\sfor\sthe\suse\sof\sposix_fallocate()\sso\sthat\sit\shandles\sEINVAL\nreturns\scorrectly.
+D 2018-06-02T14:37:39.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -479,7 +479,7 @@ F src/os.c 1cb0d1d1b3a4267966dee6e292d2b2cdf88e47c0c59cebff27ecafac052dd165
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 2b53b0b8ddc580db096252c721729e5f5f2f355b4fc056f8f3fb328aeb3c9e8a
+F src/os_unix.c c230a7a24766320d8414afd087edcd43e499fb45e86361f6f4f464f343d965a9
 F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
@@ -1730,7 +1730,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0c3beef7cdc680c0768ddd18f766a4ca7be822c1eb1776b2f73b7433d9962dc
-R c5d6bccca681ca9136d1b5b551197884
+P e336cf00486bdc0ec04ecded2b7c874d73a87e6aba3544e3678bedfb9a4af3b6
+R da9d2a3150755067fb60b396ecd1f393
+T *branch * einval-from-fallocate
+T *sym-einval-from-fallocate *
+T -sym-trunk *
 U drh
-Z ef7b6a7c7262b7fdf581f90ab6dbc4b7
+Z 0912fba33d0304ba068cf7360fbe56ad
