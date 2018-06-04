@@ -75,29 +75,31 @@ static void resolveAlias(
   assert( pOrig!=0 );
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
-  if( pDup==0 ) return;
-  if( zType[0]!='G' ) incrAggFunctionDepth(pDup, nSubquery);
-  if( pExpr->op==TK_COLLATE ){
-    pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
-  }
-  ExprSetProperty(pDup, EP_Alias);
+  if( pDup!=0 ){
+    if( zType[0]!='G' ) incrAggFunctionDepth(pDup, nSubquery);
+    if( pExpr->op==TK_COLLATE ){
+      pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
+    }
+    ExprSetProperty(pDup, EP_Alias);
 
-  /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
-  ** prevents ExprDelete() from deleting the Expr structure itself,
-  ** allowing it to be repopulated by the memcpy() on the following line.
-  ** The pExpr->u.zToken might point into memory that will be freed by the
-  ** sqlite3DbFree(db, pDup) on the last line of this block, so be sure to
-  ** make a copy of the token before doing the sqlite3DbFree().
-  */
-  ExprSetProperty(pExpr, EP_Static);
-  sqlite3ExprDelete(db, pExpr);
-  memcpy(pExpr, pDup, sizeof(*pExpr));
-  if( !ExprHasProperty(pExpr, EP_IntValue) && pExpr->u.zToken!=0 ){
-    assert( (pExpr->flags & (EP_Reduced|EP_TokenOnly))==0 );
-    pExpr->u.zToken = sqlite3DbStrDup(db, pExpr->u.zToken);
-    pExpr->flags |= EP_MemToken;
+    /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
+    ** prevents ExprDelete() from deleting the Expr structure itself,
+    ** allowing it to be repopulated by the memcpy() on the following line.
+    ** The pExpr->u.zToken might point into memory that will be freed by the
+    ** sqlite3DbFree(db, pDup) on the last line of this block, so be sure to
+    ** make a copy of the token before doing the sqlite3DbFree().
+    */
+    ExprSetProperty(pExpr, EP_Static);
+    sqlite3ExprDelete(db, pExpr);
+    memcpy(pExpr, pDup, sizeof(*pExpr));
+    if( !ExprHasProperty(pExpr, EP_IntValue) && pExpr->u.zToken!=0 ){
+      assert( (pExpr->flags & (EP_Reduced|EP_TokenOnly))==0 );
+      pExpr->u.zToken = sqlite3DbStrDup(db, pExpr->u.zToken);
+      pExpr->flags |= EP_MemToken;
+    }
+    sqlite3DbFree(db, pDup);
   }
-  sqlite3DbFree(db, pDup);
+  ExprSetProperty(pExpr, EP_Alias);
 }
 
 
@@ -349,6 +351,7 @@ static int lookupName(
             testcase( iCol==(-1) );
             pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
             eNewExprOp = TK_REGISTER;
+            ExprSetProperty(pExpr, EP_Alias);
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {

@@ -6294,6 +6294,10 @@ struct sqlite3_index_info {
 
 /*
 ** CAPI3REF: Virtual Table Scan Flags
+**
+** Virtual table implementations are allowed to set the 
+** [sqlite3_index_info].idxFlags field to some combination of
+** these bits.
 */
 #define SQLITE_INDEX_SCAN_UNIQUE      1     /* Scan visits at most 1 row */
 
@@ -9034,7 +9038,7 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 ** been a prior call to [sqlite3_deserialize(D,S,...)] with the same
 ** values of D and S.
 ** The size of the database is written into *P even if the 
-** SQLITE_SERIALIZE_NOCOPY bit is set but no contigious copy
+** SQLITE_SERIALIZE_NOCOPY bit is set but no contiguous copy
 ** of the database exists.
 **
 ** A call to sqlite3_serialize(D,S,P,F) might return NULL even if the

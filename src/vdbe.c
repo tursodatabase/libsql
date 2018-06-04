@@ -915,6 +915,9 @@ case OP_Yield: {            /* in1, jump */
 */
 case OP_HaltIfNull: {      /* in3 */
   pIn3 = &aMem[pOp->p3];
+#ifdef SQLITE_DEBUG
+  if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
+#endif
   if( (pIn3->flags & MEM_Null)==0 ) break;
   /* Fall through into OP_Halt */
 }
@@ -954,6 +957,9 @@ case OP_Halt: {
   int pcx;
 
   pcx = (int)(pOp - aOp);
+#ifdef SQLITE_DEBUG
+  if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
+#endif
   if( pOp->p1==SQLITE_OK && p->pFrame ){
     /* Halt the sub-program. Return control to the parent frame. */
     pFrame = p->pFrame;
@@ -3324,6 +3330,8 @@ case OP_ReadCookie: {               /* out2 */
 */
 case OP_SetCookie: {
   Db *pDb;
+
+  sqlite3VdbeIncrWriteCounter(p, 0);
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
@@ -4457,6 +4465,7 @@ case OP_InsertInt: {
   assert( (pOp->p5 & OPFLAG_ISNOOP) || pC->isTable );
   assert( pOp->p4type==P4_TABLE || pOp->p4type>=P4_STATIC );
   REGISTER_TRACE(pOp->p2, pData);
+  sqlite3VdbeIncrWriteCounter(p, pC);
 
   if( pOp->opcode==OP_Insert ){
     pKey = &aMem[pOp->p3];
@@ -4571,6 +4580,7 @@ case OP_Delete: {
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
   assert( pC->deferredMoveto==0 );
+  sqlite3VdbeIncrWriteCounter(p, pC);
 
 #ifdef SQLITE_DEBUG
   if( pOp->p4type==P4_TABLE && HasRowid(pOp->p4.pTab) && pOp->p5==0 ){
@@ -4739,10 +4749,10 @@ case OP_SorterData: {
 ** If the P1 cursor must be pointing to a valid row (not a NULL row)
 ** of a real table, not a pseudo-table.
 **
-** If P3!=0 then this opcode is allowed to make an ephermeral pointer
+** If P3!=0 then this opcode is allowed to make an ephemeral pointer
 ** into the database page.  That means that the content of the output
 ** register will be invalidated as soon as the cursor moves - including
-** moves caused by other cursors that "save" the the current cursors
+** moves caused by other cursors that "save" the current cursors
 ** position in order that they can write to the same table.  If P3==0
 ** then a copy of the data is made into memory.  P3!=0 is faster, but
 ** P3==0 is safer.
@@ -5190,6 +5200,7 @@ case OP_IdxInsert: {        /* in2 */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
+  sqlite3VdbeIncrWriteCounter(p, pC);
   assert( pC!=0 );
   assert( isSorter(pC)==(pOp->opcode==OP_SorterInsert) );
   pIn2 = &aMem[pOp->p2];
@@ -5236,6 +5247,7 @@ case OP_IdxDelete: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
+  sqlite3VdbeIncrWriteCounter(p, pC);
   pCrsr = pC->uc.pCursor;
   assert( pCrsr!=0 );
   assert( pOp->p5==0 );
@@ -5458,6 +5470,7 @@ case OP_Destroy: {     /* out2 */
   int iMoved;
   int iDb;
 
+  sqlite3VdbeIncrWriteCounter(p, 0);
   assert( p->readOnly==0 );
   assert( pOp->p1>1 );
   pOut = out2Prerelease(p, pOp);
@@ -5507,6 +5520,7 @@ case OP_Destroy: {     /* out2 */
 case OP_Clear: {
   int nChange;
  
+  sqlite3VdbeIncrWriteCounter(p, 0);
   nChange = 0;
   assert( p->readOnly==0 );
   assert( DbMaskTest(p->btreeMask, pOp->p2) );
@@ -5556,13 +5570,14 @@ case OP_ResetSorter: {
 ** Allocate a new b-tree in the main database file if P1==0 or in the
 ** TEMP database file if P1==1 or in an attached database if
 ** P1>1.  The P3 argument must be 1 (BTREE_INTKEY) for a rowid table
-** it must be 2 (BTREE_BLOBKEY) for a index or WITHOUT ROWID table.
+** it must be 2 (BTREE_BLOBKEY) for an index or WITHOUT ROWID table.
 ** The root page number of the new b-tree is stored in register P2.
 */
 case OP_CreateBtree: {          /* out2 */
   int pgno;
   Db *pDb;
 
+  sqlite3VdbeIncrWriteCounter(p, 0);
   pOut = out2Prerelease(p, pOp);
   pgno = 0;
   assert( pOp->p3==BTREE_INTKEY || pOp->p3==BTREE_BLOBKEY );
@@ -5582,6 +5597,7 @@ case OP_CreateBtree: {          /* out2 */
 ** Run the SQL statement or statements specified in the P4 string.
 */
 case OP_SqlExec: {
+  sqlite3VdbeIncrWriteCounter(p, 0);
   db->nSqlExec++;
   rc = sqlite3_exec(db, pOp->p4.z, 0, 0, 0);
   db->nSqlExec--;
@@ -5671,6 +5687,7 @@ case OP_LoadAnalysis: {
 ** schema consistent with what is on disk.
 */
 case OP_DropTable: {
+  sqlite3VdbeIncrWriteCounter(p, 0);
   sqlite3UnlinkAndDeleteTable(db, pOp->p1, pOp->p4.z);
   break;
 }
@@ -5684,6 +5701,7 @@ case OP_DropTable: {
 ** schema consistent with what is on disk.
 */
 case OP_DropIndex: {
+  sqlite3VdbeIncrWriteCounter(p, 0);
   sqlite3UnlinkAndDeleteIndex(db, pOp->p1, pOp->p4.z);
   break;
 }
@@ -5697,6 +5715,7 @@ case OP_DropIndex: {
 ** schema consistent with what is on disk.
 */
 case OP_DropTrigger: {
+  sqlite3VdbeIncrWriteCounter(p, 0);
   sqlite3UnlinkAndDeleteTrigger(db, pOp->p1, pOp->p4.z);
   break;
 }
@@ -6911,6 +6930,7 @@ case OP_VUpdate: {
        || pOp->p5==OE_Abort || pOp->p5==OE_Ignore || pOp->p5==OE_Replace
   );
   assert( p->readOnly==0 );
+  sqlite3VdbeIncrWriteCounter(p, 0);
   pVtab = pOp->p4.pVtab->pVtab;
   if( pVtab==0 || NEVER(pVtab->pModule==0) ){
     rc = SQLITE_LOCKED;
@@ -7228,6 +7248,22 @@ case OP_CursorHint: {
 }
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
+#ifdef SQLITE_DEBUG
+/* Opcode:  Abortable   * * * * *
+**
+** Verify that an Abort can happen.  Assert if an Abort at this point
+** might cause database corruption.  This opcode only appears in debugging
+** builds.
+**
+** An Abort is safe if either there have been no writes, or if there is
+** an active statement journal.
+*/
+case OP_Abortable: {
+  sqlite3VdbeAssertAbortable(p);
+  break;
+}
+#endif
+
 /* Opcode: Noop * * * * *
 **
 ** Do nothing.  This instruction is often useful as a jump
@@ -7239,8 +7275,9 @@ case OP_CursorHint: {
 ** This opcode records information from the optimizer.  It is the
 ** the same as a no-op.  This opcodesnever appears in a real VM program.
 */
-default: {          /* This is really OP_Noop and OP_Explain */
+default: {          /* This is really OP_Noop, OP_Explain */
   assert( pOp->opcode==OP_Noop || pOp->opcode==OP_Explain );
+
   break;
 }
 

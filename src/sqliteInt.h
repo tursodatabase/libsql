@@ -4225,6 +4225,7 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*),
   FuncDestructor *pDestructor
 );
+void sqlite3NoopDestructor(void*);
 void sqlite3OomFault(sqlite3*);
 void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
@@ -4327,7 +4328,6 @@ int sqlite3VtabCallConnect(Parse*, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, VTable *);
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
-void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);

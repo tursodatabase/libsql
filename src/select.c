@@ -810,7 +810,7 @@ static void selectExprDefer(
     if( pItem->u.x.iOrderByCol==0 ){
       Expr *pExpr = pItem->pExpr;
       Table *pTab = pExpr->pTab;
-      if( pExpr->op==TK_COLUMN && pTab && !IsVirtual(pTab)
+      if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 && pTab && !IsVirtual(pTab)
        && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
       ){
         int j;

@@ -1808,11 +1808,13 @@ int sqlite3_create_function_v2(
 #endif
   sqlite3_mutex_enter(db->mutex);
   if( xDestroy ){
-    pArg = (FuncDestructor *)sqlite3DbMallocZero(db, sizeof(FuncDestructor));
+    pArg = (FuncDestructor *)sqlite3Malloc(sizeof(FuncDestructor));
     if( !pArg ){
+      sqlite3OomFault(db);
       xDestroy(p);
       goto out;
     }
+    pArg->nRef = 0;
     pArg->xDestroy = xDestroy;
     pArg->pUserData = p;
   }
@@ -1820,7 +1822,7 @@ int sqlite3_create_function_v2(
   if( pArg && pArg->nRef==0 ){
     assert( rc!=SQLITE_OK );
     xDestroy(p);
-    sqlite3DbFree(db, pArg);
+    sqlite3_free(pArg);
   }
 
  out:
@@ -1859,6 +1861,28 @@ int sqlite3_create_function16(
 
 
 /*
+** The following is the implementation of an SQL function that always
+** fails with an error message stating that the function is used in the
+** wrong context.  The sqlite3_overload_function() API might construct
+** SQL function that use this routine so that the functions will exist
+** for name resolution but are actually overloaded by the xFindFunction
+** method of virtual tables.
+*/
+static void sqlite3InvalidFunction(
+  sqlite3_context *context,  /* The function calling context */
+  int NotUsed,               /* Number of arguments to the function */
+  sqlite3_value **NotUsed2   /* Value of each argument */
+){
+  const char *zName = (const char*)sqlite3_user_data(context);
+  char *zErr;
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  zErr = sqlite3_mprintf(
+      "unable to use function %s in the requested context", zName);
+  sqlite3_result_error(context, zErr, -1);
+  sqlite3_free(zErr);
+}
+
+/*
 ** Declare that a function has been overloaded by a virtual table.
 **
 ** If the function already exists as a regular global function, then
@@ -1875,7 +1899,8 @@ int sqlite3_overload_function(
   const char *zName,
   int nArg
 ){
-  int rc = SQLITE_OK;
+  int rc;
+  char *zCopy;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zName==0 || nArg<-2 ){
@@ -1883,13 +1908,13 @@ int sqlite3_overload_function(
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
-  if( sqlite3FindFunction(db, zName, nArg, SQLITE_UTF8, 0)==0 ){
-    rc = sqlite3CreateFunc(db, zName, nArg, SQLITE_UTF8,
-                           0, sqlite3InvalidFunction, 0, 0, 0);
-  }
-  rc = sqlite3ApiExit(db, rc);
+  rc = sqlite3FindFunction(db, zName, nArg, SQLITE_UTF8, 0)!=0;
   sqlite3_mutex_leave(db->mutex);
-  return rc;
+  if( rc ) return SQLITE_OK;
+  zCopy = sqlite3_mprintf(zName);
+  if( zCopy==0 ) return SQLITE_NOMEM;
+  return sqlite3_create_function_v2(db, zName, nArg, SQLITE_UTF8,
+                           zCopy, sqlite3InvalidFunction, 0, 0, sqlite3_free);
 }
 
 #ifndef SQLITE_OMIT_TRACE

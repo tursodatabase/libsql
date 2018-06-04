@@ -286,7 +286,6 @@ do_setup_rec_test $tn.14 {
   INSERT INTO t9 VALUES(?, ?, ?);
 } {
   CREATE INDEX t10_idx_00000062 ON t10(b); 
-  -- TRIGGER t9t
   SEARCH TABLE t10 USING INDEX t10_idx_00000062 (b=?)
 }
 

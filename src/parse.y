@@ -469,6 +469,7 @@ cmd ::= select(X).  {
   }
 }
 
+%ifndef SQLITE_OMIT_CTE
 select(A) ::= WITH wqlist(W) selectnowith(X). {
   Select *p = X;
   if( p ){
@@ -489,6 +490,7 @@ select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X). {
   }
   A = p;
 }
+%endif /* SQLITE_OMIT_CTE */
 select(A) ::= selectnowith(X). {
   Select *p = X;
   if( p ){
