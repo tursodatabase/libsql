@@ -129,36 +129,43 @@ foreach {tn window} {
     FROM t2
   "
 
-  execsql_test 1.$tn.7.1 "
-  SELECT CAST( round( 100 * 
-      percent_rank() OVER ( ORDER BY a $window )
-  ) AS integer) FROM t2"
+  execsql_float_test 1.$tn.7.1 "
+    SELECT percent_rank() OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.7.2 "
+    SELECT percent_rank() OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.7.3 "
+    SELECT percent_rank() OVER ( ORDER BY b $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.7.4 "
+    SELECT percent_rank() OVER ( PARTITION BY b%10 ORDER BY b $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.7.5 "
+    SELECT percent_rank() OVER ( ORDER BY b%10 $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.7.6 "
+    SELECT percent_rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ) FROM t2
+  "
 
-  #execsql_test 1.$tn.7.2 "
-  #SELECT CAST( round( 100 * 
-      #percent_rank() OVER ( PARTITION BY b%10 ORDER BY a $window )
-  #) AS integer) FROM t2"
-
-  execsql_test 1.$tn.7.3 "
-  SELECT CAST( round( 100 * 
-      percent_rank() OVER ( ORDER BY b $window )
-  ) AS integer) FROM t2"
-
-  #execsql_test 1.$tn.7.4 "
-  #SELECT CAST( round( 100 * 
-      #percent_rank() OVER ( PARTITION BY b%10 ORDER BY b $window )
-  #) AS integer) FROM t2"
-
-  execsql_test 1.$tn.7.5 "
-  SELECT CAST( round( 100 * 
-      percent_rank() OVER ( ORDER BY b%10 $window )
-  ) AS integer) FROM t2"
-
-  execsql_test 1.$tn.7.6 "
-  SELECT CAST( round( 100 * 
-      percent_rank() OVER ( PARTITION BY b%2 ORDER BY b%10 $window )
-  ) AS integer) FROM t2"
-
+  execsql_float_test 1.$tn.8.1 "
+    SELECT cume_dist() OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.2 "
+    SELECT cume_dist() OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.3 "
+    SELECT cume_dist() OVER ( ORDER BY b $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.4 "
+    SELECT cume_dist() OVER ( PARTITION BY b%10 ORDER BY b $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.5 "
+    SELECT cume_dist() OVER ( ORDER BY b%10 $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.6 "
+    SELECT cume_dist() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ) FROM t2
+  "
 
 }
 

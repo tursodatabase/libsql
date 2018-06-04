@@ -66,6 +66,25 @@ proc execsql_test {tn sql} {
   puts $::fd ""
 }
 
+# Same as [execsql_test], except coerce all results to floating point values
+# with two decimal points.
+#
+proc execsql_float_test {tn sql} {
+  set F "%.2f"
+  set res [execsql $sql]
+  set res2 [list]
+  foreach r $res { lappend res2 [format $F $r] }
+
+  puts $::fd "do_test $tn {"
+  puts $::fd "  set myres {}"
+  puts $::fd "  foreach r \[db eval {[string trim $sql]}\] {"
+  puts $::fd "    lappend myres \[format $F \[set r\]\]"
+  puts $::fd "  }"
+  puts $::fd "  set myres"
+  puts $::fd "} {$res2}"
+  puts $::fd ""
+}
+
 proc start_test {name date} {
   set dir [file dirname $::argv0]
   set output [file join $dir $name.test]

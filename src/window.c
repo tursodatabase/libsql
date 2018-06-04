@@ -149,6 +149,37 @@ static void percent_rankValueFunc(sqlite3_context *pCtx){
   }
 }
 
+static void cume_distStepFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+  struct CallCount *p;
+  assert( nArg==1 );
+
+  p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p ){
+    if( p->nTotal==0 ){
+      p->nTotal = sqlite3_value_int64(apArg[0]);
+    }
+    p->nStep++;
+  }
+}
+static void cume_distInverseFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+}
+static void cume_distValueFunc(sqlite3_context *pCtx){
+  struct CallCount *p;
+  p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p ){
+    double r = (double)(p->nStep) / (double)(p->nTotal);
+    sqlite3_result_double(pCtx, r);
+  }
+}
+
 static void nth_valueStepFunc(
   sqlite3_context *pCtx, 
   int nArg,
@@ -179,6 +210,7 @@ void sqlite3WindowFunctions(void){
     WINDOWFUNC(dense_rank, 0, 0),
     WINDOWFUNC(rank, 0, 0),
     WINDOWFUNC(percent_rank, 0, SQLITE_FUNC_WINDOW_SIZE),
+    WINDOWFUNC(cume_dist, 0, SQLITE_FUNC_WINDOW_SIZE),
     WINDOWFUNC(nth_value, 2, 0),
   };
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
@@ -197,7 +229,7 @@ void sqlite3WindowUpdate(Parse *pParse, Window *pWin, FuncDef *pFunc){
     }
 
     if( pFunc->xSFunc==dense_rankStepFunc || pFunc->xSFunc==rankStepFunc
-     || pFunc->xSFunc==percent_rankStepFunc
+     || pFunc->xSFunc==percent_rankStepFunc || pFunc->xSFunc==cume_distStepFunc
     ){
       sqlite3ExprDelete(db, pWin->pStart);
       sqlite3ExprDelete(db, pWin->pEnd);
