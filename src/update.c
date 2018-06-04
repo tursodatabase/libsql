@@ -845,7 +845,7 @@ static void updateVirtualTable(
   int regRowid;                   /* Register for ephem table rowid */
   int iCsr = pSrc->a[0].iCursor;  /* Cursor used for virtual table scan */
   int aDummy[2];                  /* Unused arg for sqlite3WhereOkOnePass() */
-  int bOnePass;                   /* True to use onepass strategy */
+  int eOnePass;                   /* True to use onepass strategy */
   int addr;                       /* Address of OP_OpenEphemeral */
 
   /* Allocate nArg registers in which to gather the arguments for VUpdate. Then
@@ -890,12 +890,16 @@ static void updateVirtualTable(
     sqlite3VdbeAddOp2(v, OP_SCopy, regArg+2+iPk, regArg+1);
   }
 
-  bOnePass = sqlite3WhereOkOnePass(pWInfo, aDummy);
+  eOnePass = sqlite3WhereOkOnePass(pWInfo, aDummy);
 
-  if( bOnePass ){
+  /* There is no ONEPASS_MULTI on virtual tables */
+  assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
+
+  if( eOnePass ){
     /* If using the onepass strategy, no-op out the OP_OpenEphemeral coded
     ** above. */
     sqlite3VdbeChangeToNoop(v, addr);
+    sqlite3VdbeAddOp1(v, OP_Close, iCsr);
   }else{
     /* Create a record from the argument register contents and insert it into
     ** the ephemeral table. */
@@ -911,7 +915,7 @@ static void updateVirtualTable(
   }
 
 
-  if( bOnePass==0 ){
+  if( eOnePass==ONEPASS_OFF ){
     /* End the virtual table scan */
     sqlite3WhereEnd(pWInfo);
 
@@ -931,7 +935,7 @@ static void updateVirtualTable(
 
   /* End of the ephemeral table scan. Or, if using the onepass strategy,
   ** jump to here if the scan visited zero rows. */
-  if( bOnePass==0 ){
+  if( eOnePass==ONEPASS_OFF ){
     sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
     sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);

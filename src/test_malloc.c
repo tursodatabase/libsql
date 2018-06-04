@@ -32,6 +32,8 @@ static struct MemFault {
   int nRepeat;            /* Number of times to repeat the failure */
   int nBenign;            /* Number of benign failures seen since last config */
   int nFail;              /* Number of failures seen since last config */
+  int nOkBefore;          /* Successful allocations prior to the first fault */
+  int nOkAfter;           /* Successful allocations after a fault */
   u8 enable;              /* True if enabled */
   int isInstalled;        /* True if the fault simulation layer is installed */
   int isBenignMode;       /* True if malloc failures are considered benign */
@@ -48,17 +50,31 @@ static void sqlite3Fault(void){
 }
 
 /*
+** This routine exists as a place to set a breakpoint that will
+** fire the first time any malloc() fails on a single test case.
+** The sqlite3Fault() routine above runs on every malloc() failure.
+** This routine only runs on the first such failure.
+*/
+static void sqlite3FirstFault(void){
+  static int cnt2 = 0;
+  cnt2++;
+}
+
+/*
 ** Check to see if a fault should be simulated.  Return true to simulate
 ** the fault.  Return false if the fault should not be simulated.
 */
 static int faultsimStep(void){
   if( likely(!memfault.enable) ){
+    memfault.nOkAfter++;
     return 0;
   }
   if( memfault.iCountdown>0 ){
     memfault.iCountdown--;
+    memfault.nOkBefore++;
     return 0;
   }
+  if( memfault.nFail==0 ) sqlite3FirstFault();
   sqlite3Fault();
   memfault.nFail++;
   if( memfault.isBenignMode>0 ){
@@ -133,6 +149,8 @@ static void faultsimConfig(int nDelay, int nRepeat){
   memfault.nRepeat = nRepeat;
   memfault.nBenign = 0;
   memfault.nFail = 0;
+  memfault.nOkBefore = 0;
+  memfault.nOkAfter = 0;
   memfault.enable = nDelay>=0;
 
   /* Sometimes, when running multi-threaded tests, the isBenignMode 

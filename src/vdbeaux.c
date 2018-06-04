@@ -603,6 +603,32 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
+#ifdef SQLITE_DEBUG
+/*
+** Increment the nWrite counter in the VDBE if the cursor is not an
+** ephemeral cursor, or if the cursor argument is NULL.
+*/
+void sqlite3VdbeIncrWriteCounter(Vdbe *p, VdbeCursor *pC){
+  if( pC==0
+   || (pC->eCurType!=CURTYPE_SORTER
+       && pC->eCurType!=CURTYPE_PSEUDO
+       && !pC->isEphemeral)
+  ){
+    p->nWrite++;
+  }
+}
+#endif
+
+#ifdef SQLITE_DEBUG
+/*
+** Assert if an Abort at this point in time might result in a corrupt
+** database.
+*/
+void sqlite3VdbeAssertAbortable(Vdbe *p){
+  assert( p->nWrite==0 || p->usesStmtJournal );
+}
+#endif
+
 /*
 ** This routine is called after all opcodes have been inserted.  It loops
 ** through all the opcodes and fixes up some details.
@@ -759,6 +785,17 @@ void sqlite3VdbeVerifyNoResultRow(Vdbe *p){
   for(i=0; i<p->nOp; i++){
     assert( p->aOp[i].opcode!=OP_ResultRow );
   }
+}
+#endif
+
+/*
+** Generate code (a single OP_Abortable opcode) that will
+** verify that the VDBE program can safely call Abort in the current
+** context.
+*/
+#if defined(SQLITE_DEBUG)
+void sqlite3VdbeVerifyAbortable(Vdbe *p, int onError){
+  if( onError==OE_Abort ) sqlite3VdbeAddOp0(p, OP_Abortable);
 }
 #endif
 
@@ -1306,23 +1343,23 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
   const char *zOp = 0;
   switch( pExpr->op ){
     case TK_STRING:
-      sqlite3XPrintf(p, "%Q", pExpr->u.zToken);
+      sqlite3_str_appendf(p, "%Q", pExpr->u.zToken);
       break;
     case TK_INTEGER:
-      sqlite3XPrintf(p, "%d", pExpr->u.iValue);
+      sqlite3_str_appendf(p, "%d", pExpr->u.iValue);
       break;
     case TK_NULL:
-      sqlite3XPrintf(p, "NULL");
+      sqlite3_str_appendf(p, "NULL");
       break;
     case TK_REGISTER: {
-      sqlite3XPrintf(p, "r[%d]", pExpr->iTable);
+      sqlite3_str_appendf(p, "r[%d]", pExpr->iTable);
       break;
     }
     case TK_COLUMN: {
       if( pExpr->iColumn<0 ){
-        sqlite3XPrintf(p, "rowid");
+        sqlite3_str_appendf(p, "rowid");
       }else{
-        sqlite3XPrintf(p, "c%d", (int)pExpr->iColumn);
+        sqlite3_str_appendf(p, "c%d", (int)pExpr->iColumn);
       }
       break;
     }
@@ -1354,18 +1391,18 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
     case TK_NOTNULL: zOp = "NOTNULL"; break;
 
     default:
-      sqlite3XPrintf(p, "%s", "expr");
+      sqlite3_str_appendf(p, "%s", "expr");
       break;
   }
 
   if( zOp ){
-    sqlite3XPrintf(p, "%s(", zOp);
+    sqlite3_str_appendf(p, "%s(", zOp);
     displayP4Expr(p, pExpr->pLeft);
     if( pExpr->pRight ){
-      sqlite3StrAccumAppend(p, ",", 1);
+      sqlite3_str_append(p, ",", 1);
       displayP4Expr(p, pExpr->pRight);
     }
-    sqlite3StrAccumAppend(p, ")", 1);
+    sqlite3_str_append(p, ")", 1);
   }
 }
 #endif /* VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS) */
@@ -1386,14 +1423,15 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       int j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
       assert( pKeyInfo->aSortOrder!=0 );
-      sqlite3XPrintf(&x, "k(%d", pKeyInfo->nKeyField);
+      sqlite3_str_appendf(&x, "k(%d", pKeyInfo->nKeyField);
       for(j=0; j<pKeyInfo->nKeyField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         const char *zColl = pColl ? pColl->zName : "";
         if( strcmp(zColl, "BINARY")==0 ) zColl = "B";
-        sqlite3XPrintf(&x, ",%s%s", pKeyInfo->aSortOrder[j] ? "-" : "", zColl);
+        sqlite3_str_appendf(&x, ",%s%s", 
+               pKeyInfo->aSortOrder[j] ? "-" : "", zColl);
       }
-      sqlite3StrAccumAppend(&x, ")", 1);
+      sqlite3_str_append(&x, ")", 1);
       break;
     }
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
@@ -1404,31 +1442,31 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 #endif
     case P4_COLLSEQ: {
       CollSeq *pColl = pOp->p4.pColl;
-      sqlite3XPrintf(&x, "(%.20s)", pColl->zName);
+      sqlite3_str_appendf(&x, "(%.20s)", pColl->zName);
       break;
     }
     case P4_FUNCDEF: {
       FuncDef *pDef = pOp->p4.pFunc;
-      sqlite3XPrintf(&x, "%s(%d)", pDef->zName, pDef->nArg);
+      sqlite3_str_appendf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
     case P4_FUNCCTX: {
       FuncDef *pDef = pOp->p4.pCtx->pFunc;
-      sqlite3XPrintf(&x, "%s(%d)", pDef->zName, pDef->nArg);
+      sqlite3_str_appendf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
 #endif
     case P4_INT64: {
-      sqlite3XPrintf(&x, "%lld", *pOp->p4.pI64);
+      sqlite3_str_appendf(&x, "%lld", *pOp->p4.pI64);
       break;
     }
     case P4_INT32: {
-      sqlite3XPrintf(&x, "%d", pOp->p4.i);
+      sqlite3_str_appendf(&x, "%d", pOp->p4.i);
       break;
     }
     case P4_REAL: {
-      sqlite3XPrintf(&x, "%.16g", *pOp->p4.pReal);
+      sqlite3_str_appendf(&x, "%.16g", *pOp->p4.pReal);
       break;
     }
     case P4_MEM: {
@@ -1436,9 +1474,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       if( pMem->flags & MEM_Str ){
         zP4 = pMem->z;
       }else if( pMem->flags & MEM_Int ){
-        sqlite3XPrintf(&x, "%lld", pMem->u.i);
+        sqlite3_str_appendf(&x, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
-        sqlite3XPrintf(&x, "%.16g", pMem->u.r);
+        sqlite3_str_appendf(&x, "%.16g", pMem->u.r);
       }else if( pMem->flags & MEM_Null ){
         zP4 = "NULL";
       }else{
@@ -1450,7 +1488,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     case P4_VTAB: {
       sqlite3_vtab *pVtab = pOp->p4.pVtab->pVtab;
-      sqlite3XPrintf(&x, "vtab:%p", pVtab);
+      sqlite3_str_appendf(&x, "vtab:%p", pVtab);
       break;
     }
 #endif
@@ -1460,14 +1498,14 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       int n = ai[0];   /* The first element of an INTARRAY is always the
                        ** count of the number of elements to follow */
       for(i=1; i<=n; i++){
-        sqlite3XPrintf(&x, ",%d", ai[i]);
+        sqlite3_str_appendf(&x, ",%d", ai[i]);
       }
       zTemp[0] = '[';
-      sqlite3StrAccumAppend(&x, "]", 1);
+      sqlite3_str_append(&x, "]", 1);
       break;
     }
     case P4_SUBPROGRAM: {
-      sqlite3XPrintf(&x, "program");
+      sqlite3_str_appendf(&x, "program");
       break;
     }
     case P4_DYNBLOB:
@@ -1476,7 +1514,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       break;
     }
     case P4_TABLE: {
-      sqlite3XPrintf(&x, "%s", pOp->p4.pTab->zName);
+      sqlite3_str_appendf(&x, "%s", pOp->p4.pTab->zName);
       break;
     }
     default: {
@@ -2994,6 +3032,9 @@ int sqlite3VdbeReset(Vdbe *p){
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = 0;
   p->pResultSet = 0;
+#ifdef SQLITE_DEBUG
+  p->nWrite = 0;
+#endif
 
   /* Save profiling information from this VDBE run.
   */
@@ -3916,13 +3957,10 @@ static int sqlite3IntFloatCompare(i64 i, double r){
     i64 y;
     double s;
     if( r<-9223372036854775808.0 ) return +1;
-    if( r>9223372036854775807.0 ) return -1;
+    if( r>=9223372036854775808.0 ) return -1;
     y = (i64)r;
     if( i<y ) return -1;
-    if( i>y ){
-      if( y==SMALLEST_INT64 && r>0.0 ) return -1;
-      return +1;
-    }
+    if( i>y ) return +1;
     s = (double)i;
     if( s<r ) return -1;
     if( s>r ) return +1;

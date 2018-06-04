@@ -870,7 +870,11 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
 ** back to where it ought to be if this routine returns true.
 */
 int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
-  return pCur->eState!=CURSOR_VALID;
+  assert( EIGHT_BYTE_ALIGNMENT(pCur)
+       || pCur==sqlite3BtreeFakeValidCursor() );
+  assert( offsetof(BtCursor, eState)==0 );
+  assert( sizeof(pCur->eState)==1 );
+  return CURSOR_VALID != *(u8*)pCur;
 }
 
 /*
@@ -9256,14 +9260,14 @@ static void checkAppendMsg(
   pCheck->nErr++;
   va_start(ap, zFormat);
   if( pCheck->errMsg.nChar ){
-    sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
+    sqlite3_str_append(&pCheck->errMsg, "\n", 1);
   }
   if( pCheck->zPfx ){
-    sqlite3XPrintf(&pCheck->errMsg, pCheck->zPfx, pCheck->v1, pCheck->v2);
+    sqlite3_str_appendf(&pCheck->errMsg, pCheck->zPfx, pCheck->v1, pCheck->v2);
   }
-  sqlite3VXPrintf(&pCheck->errMsg, zFormat, ap);
+  sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
-  if( pCheck->errMsg.accError==STRACCUM_NOMEM ){
+  if( pCheck->errMsg.accError==SQLITE_NOMEM ){
     pCheck->mallocFailed = 1;
   }
 }
@@ -9847,11 +9851,11 @@ integrity_ck_cleanup:
   sqlite3PageFree(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
   if( sCheck.mallocFailed ){
-    sqlite3StrAccumReset(&sCheck.errMsg);
+    sqlite3_str_reset(&sCheck.errMsg);
     sCheck.nErr++;
   }
   *pnErr = sCheck.nErr;
-  if( sCheck.nErr==0 ) sqlite3StrAccumReset(&sCheck.errMsg);
+  if( sCheck.nErr==0 ) sqlite3_str_reset(&sCheck.errMsg);
   /* Make sure this analysis did not leave any unref() pages. */
   assert( nRef==sqlite3PagerRefcount(pBt->pPager) );
   sqlite3BtreeLeave(p);

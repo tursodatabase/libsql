@@ -784,5 +784,35 @@ do_execsql_test json-13.110 {
                  WHERE Z.value==t2.id);
 } {3 {{"value":3}} 1 {{"items":[3,5]}} 5 {{"value":5}} 1 {{"items":[3,5]}}}
 
+# 2018-05-16
+# Incorrect fullkey output from json_each()
+# when the input JSON is not an array or object.
+#
+do_execsql_test json-14.100 {
+  SELECT fullkey FROM json_each('123');
+} {$}
+do_execsql_test json-14.110 {
+  SELECT fullkey FROM json_each('123.56');
+} {$}
+do_execsql_test json-14.120 {
+  SELECT fullkey FROM json_each('"hello"');
+} {$}
+do_execsql_test json-14.130 {
+  SELECT fullkey FROM json_each('null');
+} {$}
+do_execsql_test json-14.140 {
+  SELECT fullkey FROM json_tree('123');
+} {$}
+do_execsql_test json-14.150 {
+  SELECT fullkey FROM json_tree('123.56');
+} {$}
+do_execsql_test json-14.160 {
+  SELECT fullkey FROM json_tree('"hello"');
+} {$}
+do_execsql_test json-14.170 {
+  SELECT fullkey FROM json_tree('null');
+} {$}
+
+
 
 finish_test

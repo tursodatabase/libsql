@@ -2862,14 +2862,16 @@ static int whereLoopAddBtree(
         /* TUNING: One-time cost for computing the automatic index is
         ** estimated to be X*N*log2(N) where N is the number of rows in
         ** the table being indexed and where X is 7 (LogEst=28) for normal
-        ** tables or 1.375 (LogEst=4) for views and subqueries.  The value
+        ** tables or 0.5 (LogEst=-10) for views and subqueries.  The value
         ** of X is smaller for views and subqueries so that the query planner
         ** will be more aggressive about generating automatic indexes for
         ** those objects, since there is no opportunity to add schema
         ** indexes on subqueries and views. */
-        pNew->rSetup = rLogSize + rSize + 4;
+        pNew->rSetup = rLogSize + rSize;
         if( pTab->pSelect==0 && (pTab->tabFlags & TF_Ephemeral)==0 ){
-          pNew->rSetup += 24;
+          pNew->rSetup += 28;
+        }else{
+          pNew->rSetup -= 10;
         }
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         if( pNew->rSetup<0 ) pNew->rSetup = 0;
@@ -4005,12 +4007,15 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
-        if( (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 && pFrom->nRow<10 ){
+        if( (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 && pFrom->nRow<3 ){
           /* Do not use an automatic index if the this loop is expected
-          ** to run less than 2 times. */
+          ** to run less than 1.25 times.  It is tempting to also exclude
+          ** automatic index usage on an outer loop, but sometimes an automatic
+          ** index is useful in the outer loop of a correlated subquery. */
           assert( 10==sqlite3LogEst(2) );
           continue;
         }
+
         /* At this point, pWLoop is a candidate to be the next loop. 
         ** Compute its cost */
         rUnsorted = sqlite3LogEstAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);

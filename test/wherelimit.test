@@ -51,15 +51,19 @@ ifcapable {update_delete_limit} {
     catchsql {UPDATE t1 SET y=1 WHERE x=1 ORDER BY x}
   } {1 {ORDER BY without LIMIT on UPDATE}}
 
-  execsql { DROP TABLE t1 }
-
   # no AS on table sources
+  #
+  # UPDATE: As of version 3.24, AS clauses are allowed as part of
+  # UPDATE or DELETE statements.
   do_test wherelimit-0.4 {
-    catchsql {DELETE FROM t1 AS a WHERE x=1}
-  } {1 {near "AS": syntax error}}
-  do_test wherelimit-0.5 {
+    catchsql {DELETE FROM t1 AS a WHERE a.x=1}
+  } {0 {}}
+  do_test wherelimit-0.5.1 {
     catchsql {UPDATE t1 AS a SET y=1 WHERE x=1}
-  } {1 {near "AS": syntax error}}
+  } {0 {}}
+  do_test wherelimit-0.5.2 {
+    catchsql {UPDATE t1 AS a SET y=1 WHERE t1.x=1}
+  } {1 {no such column: t1.x}}
 
   # OFFSET w/o LIMIT
   do_test wherelimit-0.6 {
@@ -69,6 +73,7 @@ ifcapable {update_delete_limit} {
     catchsql {UPDATE t1 SET y=1 WHERE x=1 OFFSET 2}
   } {1 {near "OFFSET": syntax error}}
 
+  execsql { DROP TABLE t1 }
 
   # check deletes w/o where clauses but with limit/offsets
   create_test_data 5

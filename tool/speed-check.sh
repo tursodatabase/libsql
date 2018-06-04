@@ -41,8 +41,12 @@ doExplain=0
 doCachegrind=1
 doVdbeProfile=0
 doWal=1
+doDiff=1
 while test "$1" != ""; do
   case $1 in
+    --nodiff)
+	doDiff=0
+        ;;
     --reprepare)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS $1"
         ;;
@@ -179,6 +183,6 @@ if test $doVdbeProfile -eq 1; then
   tclsh ../sqlite/tool/vdbe_profile.tcl >vdbeprofile-$NAME.txt
   open vdbeprofile-$NAME.txt
 fi
-if test "$NAME" != "$BASELINE" -a $doVdbeProfile -ne 1; then
+if test "$NAME" != "$BASELINE" -a $doVdbeProfile -ne 1 -a $doDiff -ne 0; then
   fossil test-diff --tk -c 20 cout-$BASELINE.txt cout-$NAME.txt
 fi
