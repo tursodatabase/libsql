@@ -180,6 +180,69 @@ static void cume_distValueFunc(sqlite3_context *pCtx){
   }
 }
 
+struct NtileCtx {
+  i64 nTotal;                     /* Total rows in partition */
+  i64 nParam;                     /* Parameter passed to ntile(N) */
+  i64 iRow;                       /* Current row */
+};
+
+/*
+** Implementation of ntile(). This assumes that the window frame has
+** been coerced to:
+**
+**   ROWS UNBOUNDED PRECEDING AND CURRENT ROW
+**
+*/
+static void ntileStepFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+  struct NtileCtx *p;
+  assert( nArg==2 );
+  p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p ){
+    if( p->nTotal==0 ){
+      p->nParam = sqlite3_value_int64(apArg[0]);
+      p->nTotal = sqlite3_value_int64(apArg[1]);
+      if( p->nParam<=0 ){
+        sqlite3_result_error(
+            pCtx, "argument of ntile must be a positive integer", -1
+        );
+      }
+    }
+    p->iRow++;
+  }
+}
+static void ntileInverseFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+}
+static void ntileValueFunc(sqlite3_context *pCtx){
+  struct NtileCtx *p;
+  p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p && p->nParam>0 ){
+    int nSize = (p->nTotal / p->nParam);
+    if( nSize==0 ){
+      sqlite3_result_int64(pCtx, p->iRow);
+    }else{
+      i64 nLarge = p->nTotal - p->nParam*nSize;
+      i64 iSmall = nLarge*(nSize+1);
+      i64 iRow = p->iRow-1;
+
+      assert( (nLarge*(nSize+1) + (p->nParam-nLarge)*nSize)==p->nTotal );
+
+      if( iRow<iSmall ){
+        sqlite3_result_int64(pCtx, 1 + iRow/(nSize+1));
+      }else{
+        sqlite3_result_int64(pCtx, 1 + nLarge + (iRow-iSmall)/nSize);
+      }
+    }
+  }
+}
+
 static void nth_valueStepFunc(
   sqlite3_context *pCtx, 
   int nArg,
@@ -211,6 +274,7 @@ void sqlite3WindowFunctions(void){
     WINDOWFUNC(rank, 0, 0),
     WINDOWFUNC(percent_rank, 0, SQLITE_FUNC_WINDOW_SIZE),
     WINDOWFUNC(cume_dist, 0, SQLITE_FUNC_WINDOW_SIZE),
+    WINDOWFUNC(ntile, 1, SQLITE_FUNC_WINDOW_SIZE),
     WINDOWFUNC(nth_value, 2, 0),
   };
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
@@ -219,7 +283,7 @@ void sqlite3WindowFunctions(void){
 void sqlite3WindowUpdate(Parse *pParse, Window *pWin, FuncDef *pFunc){
   if( pFunc->funcFlags & SQLITE_FUNC_WINDOW ){
     sqlite3 *db = pParse->db;
-    if( pFunc->xSFunc==row_numberStepFunc ){
+    if( pFunc->xSFunc==row_numberStepFunc || pFunc->xSFunc==ntileStepFunc ){
       sqlite3ExprDelete(db, pWin->pStart);
       sqlite3ExprDelete(db, pWin->pEnd);
       pWin->pStart = pWin->pEnd = 0;
@@ -561,16 +625,22 @@ static void windowAggStep(
     int regArg;
     int nArg = pWin->nArg;
 
-    if( flags & SQLITE_FUNC_WINDOW_SIZE ){
-      regArg = regPartSize;
-      nArg++;
-    }else if( csr>=0 ){
+    if( csr>=0 ){
       int i;
       for(i=0; i<pWin->nArg; i++){
         sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+i, reg+i);
       }
       regArg = reg;
+      if( flags & SQLITE_FUNC_WINDOW_SIZE ){
+        if( nArg==0 ){
+          regArg = regPartSize;
+        }else{
+          sqlite3VdbeAddOp2(v, OP_SCopy, regPartSize, reg+nArg);
+        }
+        nArg++;
+      }
     }else{
+      assert( !(flags & SQLITE_FUNC_WINDOW_SIZE) );
       regArg = reg + pWin->iArgCol;
     }
 
@@ -902,7 +972,7 @@ static void windowCodeRowExprStep(
   nArg = 0;
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
-    nArg = MAX(nArg, pWin->nArg);
+    nArg = MAX(nArg, pWin->nArg+1);
   }
   regArg = pParse->nMem+1;
   pParse->nMem += nArg;

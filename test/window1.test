@@ -181,5 +181,19 @@ do_execsql_test 4.10.2 {
   0 7 6.5.4.3.2.1.0
 }
 
+do_catchsql_test 5.1 {
+  SELECT ntile(0) OVER (ORDER BY a) FROM t2;
+} {1 {argument of ntile must be a positive integer}}
+do_catchsql_test 5.2 {
+  SELECT ntile(-1) OVER (ORDER BY a) FROM t2;
+} {1 {argument of ntile must be a positive integer}}
+do_catchsql_test 5.3 {
+  SELECT ntile('zbc') OVER (ORDER BY a) FROM t2;
+} {1 {argument of ntile must be a positive integer}}
+do_execsql_test 5.4 {
+  CREATE TABLE t4(a, b);
+  SELECT ntile(1) OVER (ORDER BY a) FROM t4;
+} {}
+
 
 finish_test

@@ -167,8 +167,26 @@ foreach {tn window} {
     SELECT cume_dist() OVER ( PARTITION BY b%2 ORDER BY b%10 $window ) FROM t2
   "
 
-}
+  execsql_float_test 1.$tn.8.1 "
+    SELECT ntile(100) OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.2 "
+    SELECT ntile(101) OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.3 "
+    SELECT ntile(102) OVER ( ORDER BY b,a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.4 "
+    SELECT ntile(103) OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.5 "
+    SELECT ntile(104) OVER ( ORDER BY b%10,a $window ) FROM t2
+  "
+  execsql_float_test 1.$tn.8.6 "
+    SELECT ntile(105) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
 
+}
 
 finish_test
 
