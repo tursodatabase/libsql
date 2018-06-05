@@ -1664,6 +1664,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** above has already left the cursor sitting on the correct row,
       ** so no further seeking is needed */
     }else{
+      if( pLoop->wsFlags & WHERE_IN_ABLE ){
+        sqlite3VdbeAddOp1(v, OP_SeekHit, iIdxCur);
+      }
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1725,6 +1728,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
       testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
+    }
+
+    if( pLoop->wsFlags & WHERE_IN_ABLE ){
+      sqlite3VdbeAddOp2(v, OP_SeekHit, iIdxCur, 1);
     }
 
     /* Seek the table cursor, if required */
