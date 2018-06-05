@@ -186,6 +186,25 @@ foreach {tn window} {
     SELECT ntile(105) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
   "
 
+  execsql_test 1.$tn.9.1 "
+    SELECT last_value(a+b) OVER ( ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.9.2 "
+    SELECT last_value(a+b) OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
+  "
+  execsql_test 1.$tn.9.3 "
+    SELECT last_value(a+b) OVER ( ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.9.4 "
+    SELECT last_value(a+b) OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.9.5 "
+    SELECT last_value(a+b) OVER ( ORDER BY b%10,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.9.6 "
+    SELECT last_value(a+b) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
+
 }
 
 finish_test

@@ -191,7 +191,6 @@ struct NtileCtx {
 ** been coerced to:
 **
 **   ROWS UNBOUNDED PRECEDING AND CURRENT ROW
-**
 */
 static void ntileStepFunc(
   sqlite3_context *pCtx, 
@@ -243,6 +242,59 @@ static void ntileValueFunc(sqlite3_context *pCtx){
   }
 }
 
+struct LastValueCtx {
+  sqlite3_value *pVal;
+  int nVal;
+};
+
+/*
+** Implementation of last_value().
+*/
+static void last_valueStepFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+  struct LastValueCtx *p;
+  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p ){
+    sqlite3_value_free(p->pVal);
+    p->pVal = sqlite3_value_dup(apArg[0]);
+    p->nVal++;
+  }
+}
+static void last_valueInverseFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+  struct LastValueCtx *p;
+  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p ){
+    p->nVal--;
+    if( p->nVal==0 ){
+      sqlite3_value_free(p->pVal);
+      p->pVal = 0;
+    }
+  }
+}
+static void last_valueValueFunc(sqlite3_context *pCtx){
+  struct LastValueCtx *p;
+  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p && p->pVal ){
+    sqlite3_result_value(pCtx, p->pVal);
+  }
+}
+static void last_valueFinalizeFunc(sqlite3_context *pCtx){
+  struct LastValueCtx *p;
+  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p && p->pVal ){
+    sqlite3_result_value(pCtx, p->pVal);
+    sqlite3_value_free(p->pVal);
+    p->pVal = 0;
+  }
+}
+
 static void nth_valueStepFunc(
   sqlite3_context *pCtx, 
   int nArg,
@@ -264,6 +316,12 @@ static void nth_valueValueFunc(sqlite3_context *pCtx){
   name ## InverseFunc, #name                                               \
 }
 
+#define WINDOWFUNCF(name,nArg,extra) {                                     \
+  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
+  name ## StepFunc, name ## FinalizeFunc, name ## ValueFunc,               \
+  name ## InverseFunc, #name                                               \
+}
+
 /*
 ** Register those built-in window functions that are not also aggregates.
 */
@@ -275,6 +333,7 @@ void sqlite3WindowFunctions(void){
     WINDOWFUNC(percent_rank, 0, SQLITE_FUNC_WINDOW_SIZE),
     WINDOWFUNC(cume_dist, 0, SQLITE_FUNC_WINDOW_SIZE),
     WINDOWFUNC(ntile, 1, SQLITE_FUNC_WINDOW_SIZE),
+    WINDOWFUNCF(last_value, 1, 0),
     WINDOWFUNC(nth_value, 2, 0),
   };
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
