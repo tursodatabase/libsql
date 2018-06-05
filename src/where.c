@@ -5084,8 +5084,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
         if( pIn->eEndLoopOp!=OP_Noop ){
           if( pIn->nPrefix ){
-            sqlite3VdbeAddOp3(v, OP_Noop, pLevel->iIdxCur,
+            sqlite3VdbeAddOp4Int(v, OP_NotFound, pLevel->iIdxCur,
+                              sqlite3VdbeCurrentAddr(v)+2,
                               pIn->iBase, pIn->nPrefix);
+            VdbeCoverage(v);
           }
           sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
           VdbeCoverage(v);

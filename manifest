@@ -1,5 +1,5 @@
-C Merge\strunk\schanges.
-D 2018-06-05T13:54:06.962
+C Use\san\sOP_NotFound\sopcode\sto\scancel\sfutile\sIN\soperators\searly.\s\sThe\scurrent\nimplementation\sis\ssuboptimal\sbecause\sit\salways\sruns\steh\sOP_NotFound.\s\sThis\nstill\sneeds\sto\sbe\senhanced\sto\sonly\sdo\sthe\sOP_NotFound\sif\sno\sresults\shave\sbeen\nseen\son\sthe\scurrent\sloop.
+D 2018-06-05T15:16:25.289
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -579,9 +579,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c a9a270991e5e526151d077959b868481b28db8707bc6d29b76badd536c48225a
+F src/where.c a16f982d998e87067ea64d30602e008a24f767e6e502d7cdcddf0c858cdd9392
 F src/whereInt.h b6ab96d9c1e48d029eaaee8f9b6d05e6a2405af0ad68f684e75f21c46837ae11
-F src/wherecode.c 49256d67b95187f9b49777c0f526362f4eaaa46850700fe5020cf6b154a2fc52
+F src/wherecode.c f941a484fd9f7a197099efe384be7a64c5588f27bbf92151705dae92eea7dbfc
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8df2a8e28acdd9573a9ffc18027553f35f769a989f5dfbf81f31b0656ee6065 8a0b730d0ea640d5cf75febe39b2162411a12eb5275765a85882158b5a085681
-R c016cdaa4deeb52d3fb41752c4ee7460
+P 047295c588e9fdf2ffa4e69e166f177fd193309531dc6a9ac755fb7a763adb72
+R 5115dc97bd8a224dc2a595e1eda36012
 U drh
-Z 7399c1ded5e7ae5c45a8362a80c02d78
+Z 3e5cea1662f3befc7bce81830cbd86be
