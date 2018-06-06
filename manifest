@@ -1,5 +1,5 @@
-C More\sspace\sand\sperformance\senhancements\sto\ssqlite3VdbeRecordCompare().
-D 2018-06-06T20:55:10.915
+C Change\sa\scomma\sinto\sa\slogically\sequivalent\sbut\ssemantically\sclearer\ssemicolon.
+D 2018-06-06T23:31:26.651
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -429,7 +429,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c cf7a8af45cb0ace672f47a1b29ab24092a9e8cd8d945a9974e3b5d925f548594
+F src/alter.c 819b14b58e71565f8da505a9c1d5d9d904605f85cd64179cf9c7d1edcdad6c25
 F src/analyze.c 71fbbeb7b25417592f54d869fe90c28b48e4cecb9926ef9b06d90fb0aec48941
 F src/attach.c 4a3138bd771d5426ae4344d8d5e900440af29fabc5ec2f39f69a45010dfbccd7
 F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e616e256a4fb1b64271706fdfa77dc5790eba0a2f0e619544e169bc61d7c805
-R 190026d18cdaeea82d1546f8bc38f07e
+P 83a60ff056a63f18479030e9dfb10926fbb0d906d51f2cf88233098e15c75534
+R 5d16f56d3b58167452434c091fea89d0
 U drh
-Z d6071b0218e4b21faa51db68b4c17551
+Z 444c916353093e35122e938c5f56cdda
