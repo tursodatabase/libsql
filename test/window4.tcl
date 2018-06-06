@@ -27,4 +27,42 @@ for {set i 1} {$i < 20} {incr i} {
   execsql_test 1.$i "SELECT a, ntile($i) OVER (ORDER BY a) FROM t3"
 }
 
+execsql_test 2.0 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(a INTEGER PRIMARY KEY, b TEXT, c INTEGER);
+  INSERT INTO t4 VALUES(1, 'A', 9);
+  INSERT INTO t4 VALUES(2, 'B', 3);
+  INSERT INTO t4 VALUES(3, 'C', 2);
+  INSERT INTO t4 VALUES(4, 'D', 10);
+  INSERT INTO t4 VALUES(5, 'E', 5);
+  INSERT INTO t4 VALUES(6, 'F', 1);
+  INSERT INTO t4 VALUES(7, 'G', 1);
+  INSERT INTO t4 VALUES(8, 'H', 2);
+  INSERT INTO t4 VALUES(9, 'I', 10);
+  INSERT INTO t4 VALUES(10, 'J', 4);
+}
+
+execsql_test 2.1 {
+  SELECT a, nth_value(b, c) OVER (ORDER BY a) FROM t4
+}
+
+execsql_test 3.0 {
+  DROP TABLE IF EXISTS t5;
+  CREATE TABLE t5(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);
+  INSERT INTO t5 VALUES(1, 'A', 'one',   5);
+  INSERT INTO t5 VALUES(2, 'B', 'two',   4);
+  INSERT INTO t5 VALUES(3, 'A', 'three', 3);
+  INSERT INTO t5 VALUES(4, 'B', 'four',  2);
+  INSERT INTO t5 VALUES(5, 'A', 'five',  1);
+}
+
+execsql_test 3.1 {
+  SELECT a, nth_value(c, d) OVER (ORDER BY b) FROM t5
+}
+
+execsql_test 3.2 {
+  SELECT a, nth_value(c, d) OVER (PARTITION BY b ORDER BY a) FROM t5
+}
+
 finish_test
+
