@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s3.25.0\sfor\sthe\snext\sdevelopment\scycle.
-D 2018-06-05T23:51:52.463
+C Fix\sthe\s".archive"\scommand\sin\sthe\sCLI\s(and\sthe\scorresponding\s-A\scommand-line\noption)\sso\sthat\sit\ssilently\signores\sfilenames\sthat\scontain\s"../"\sin\stheir\nnames.\s\sThis\sprevents\sthe\s"Zip\sSlip"\sattack.
+D 2018-06-06T01:18:01.520
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -496,7 +496,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 14602f46800ba182ea6a490e0f304127d29ac1f724bdadcc639e25d3223fcf6e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8d3176c5258cc83942815ebe75b4c1f8dcf62b5e0f4d37373a14ebf23c046f9f
-F src/shell.c.in c29cb307d6275131e6f9874e0fa73f87acf40a22c4a82faba2059a93b4d294d1
+F src/shell.c.in 099edadacd82abbe38472e2995b140560bb9826cd4af611e6bab662cfba8fbda
 F src/sqlite.h.in 63b07f76731f2b1e55c48fdb9f0508dcc6fbe3971010b8612ffd847c3c56d9a1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e15e100660d290249ef235e7a8927b88296e56ec0f80ec626eecbd542adc7633
-R 9c79e6d517db97b3d75f12832208568b
+P 7598236c356cdb548c6188d69dfef99f7a08b89e512a3addfe1433ccd85e7b68
+R e18f63662d0afb8275af32300ec3f6c3
 U drh
-Z 33fc71c9e82a78478fc654d7337f409f
+Z 67410ec210186d8a0784f53b2ab9e4b9
