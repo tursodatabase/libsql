@@ -3203,7 +3203,6 @@ case OP_AutoCommit: {
 case OP_Transaction: {
   Btree *pBt;
   int iMeta = 0;
-  int iGen = 0;
 
   assert( p->bIsReader );
   assert( p->readOnly==0 || pOp->p2==0 );
@@ -3249,16 +3248,17 @@ case OP_Transaction: {
       p->nStmtDefCons = db->nDeferredCons;
       p->nStmtDefImmCons = db->nDeferredImmCons;
     }
-
-    /* Gather the schema version number for checking:
+  }
+  assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
+  if( pOp->p5
+   && (iMeta!=pOp->p3
+      || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
+  ){
+    /*
     ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
     ** version is checked to ensure that the schema has not changed since the
     ** SQL statement was prepared.
     */
-    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
-  }
-  assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( pOp->p5 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
