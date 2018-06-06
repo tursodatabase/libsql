@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3BeginTrans()\scalls\swithin\sthe\ssnapshot\sextension.
-D 2018-06-06T18:50:50.582
+C Rearrange\sthe\sorder\sof\ssome\schecks\sin\sthe\sintegrity_check\spragma\sfor\sa\svery\nslight\sperformance\sgain.
+D 2018-06-06T19:48:19.360
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -488,7 +488,7 @@ F src/parse.y 0b81472496809693a139067fea1fe3f14a7be8aa26c8f18bb327034d1252a06a
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c c0d13c0e82a9197aef5533d63300c5b0c8a216ae1fd14ada64e1f12f398d7e82
+F src/pragma.c 71c585f1d26e14b931fa4573f587933d6dfddecd9d9001b0f126f74f7306bf87
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c e966ecc97c3671ff0e96227c8c877b83f2d33ea371ee190bbf1698b36b5605c0
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d80077aee3904e5d93164b342cae14d813de8e84e567462412751e06c7487d41
-R 171a49b9aa8a65c0e7fed5c4fb894ba2
+P 1fef7ad25b6a8e59163ac57f5cf0412bfc5b0e9446fd782f5f0a7d7ee11741fc
+R 93609cd66c5b427e1d6471bfc6fce490
 U drh
-Z a4c79e357ad5b38e16700f26935c42bb
+Z f75a4ef6d01483c8588f9c5a8cdbf911
