@@ -15,13 +15,30 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix resetdb
 
+do_not_use_codec
+
 ifcapable !vtab||!compound {
+  finish_test
+  return
+}
+
+# In the "inmemory_journal" permutation, each new connection executes 
+# "PRAGMA journal_mode = memory". This fails with SQLITE_BUSY if attempted
+# on a wal mode database with existing connections. For this and a few
+# other reasons, this test is not run as part of "inmemory_journal".
+#
+# Permutation "journaltest" does not support wal mode.
+#
+if {[permutation]=="inmemory_journal"
+ || [permutation]=="journaltest"
+} {
   finish_test
   return
 }
 
 # Create a sample database
 do_execsql_test 100 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA page_size=4096;
   CREATE TABLE t1(a,b);
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<20)
@@ -82,6 +99,7 @@ db2 close
 forcedelete test.db
 sqlite3 db test.db
 do_execsql_test 300 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA page_size=8192;
   PRAGMA journal_mode=WAL;
   CREATE TABLE t1(a,b);
@@ -117,6 +135,8 @@ do_test 330 {
     PRAGMA quick_check
   } db2
 } {1 {file is not a database}}
+
+db2 cache flush         ;# Required by permutation "prepare".
 
 # Reset the database yet again.  Verify that the page size and
 # journal mode are preserved.

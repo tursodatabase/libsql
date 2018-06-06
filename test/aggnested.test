@@ -65,7 +65,7 @@ do_test aggnested-2.0 {
             t1.* 
     FROM t1;
   }
-} {A,B,B 3 33 333 3333}
+} {A,B,B 1 11 111 1111}
 db2 close
 
 ##################### Test cases for ticket [bfbf38e5e9956ac69f] ############

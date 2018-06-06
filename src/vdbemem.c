@@ -800,7 +800,7 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 }
 
 /* A no-op destructor */
-static void sqlite3NoopDestructor(void *p){ UNUSED_PARAMETER(p); }
+void sqlite3NoopDestructor(void *p){ UNUSED_PARAMETER(p); }
 
 /*
 ** Set the value stored in *pMem should already be a NULL.

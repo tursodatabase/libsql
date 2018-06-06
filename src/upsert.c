@@ -229,6 +229,7 @@ void sqlite3UpsertDoUpdate(
         VdbeComment((v, "%s.%s", pIdx->zName,
                     pTab->aCol[pPk->aiColumn[i]].zName));
       }
+      sqlite3VdbeVerifyAbortable(v, OE_Abort);
       i = sqlite3VdbeAddOp4Int(v, OP_Found, iDataCur, 0, iPk, nPk);
       VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CORRUPT, OE_Abort, 0, 

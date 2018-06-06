@@ -270,22 +270,27 @@ forcedelete test.db-journal
 sqlite3 db test.db
 
 ifcapable explain {
-  do_execsql_test misc7-14.1 {
+  do_execsql_test misc7-14.0 {
     CREATE TABLE abc(a PRIMARY KEY, b, c);
-    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
+  }
+  do_eqp_test misc7-14.1 {
+    SELECT * FROM abc AS t2 WHERE rowid = 1;
   } {
-    0 0 0 {SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?)}
-  }
-  do_execsql_test misc7-14.2 {
-    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
-  } {0 0 0 
-     {SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?)}
-  }
-  do_execsql_test misc7-14.3 {
-    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 ORDER BY a;
-  } {0 0 0 
-     {SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1}
-  }
+  QUERY PLAN
+  `--SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?)
+}
+  do_eqp_test misc7-14.2 {
+    SELECT * FROM abc AS t2 WHERE a = 1;
+} {
+  QUERY PLAN
+  `--SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?)
+}
+  do_eqp_test misc7-14.3 {
+    SELECT * FROM abc AS t2 ORDER BY a;
+  } {
+  QUERY PLAN
+  `--SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1
+}
 }
 
 db close

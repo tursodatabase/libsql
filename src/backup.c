@@ -382,7 +382,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     ** before this function exits.
     */
     if( rc==SQLITE_OK && 0==sqlite3BtreeIsInReadTrans(p->pSrc) ){
-      rc = sqlite3BtreeBeginTrans(p->pSrc, 0);
+      rc = sqlite3BtreeBeginTrans(p->pSrc, 0, 0);
       bCloseTrans = 1;
     }
 
@@ -398,10 +398,10 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
 
     /* Lock the destination database, if it is not locked already. */
     if( SQLITE_OK==rc && p->bDestLocked==0
-     && SQLITE_OK==(rc = sqlite3BtreeBeginTrans(p->pDest, 2)) 
+     && SQLITE_OK==(rc = sqlite3BtreeBeginTrans(p->pDest, 2,
+                                                (int*)&p->iDestSchema)) 
     ){
       p->bDestLocked = 1;
-      sqlite3BtreeGetMeta(p->pDest, BTREE_SCHEMA_VERSION, &p->iDestSchema);
     }
 
     /* Do not allow backup if the destination database is in WAL mode
