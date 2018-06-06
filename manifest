@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\ssqlite3VdbeRecordCompareWithSkip()\sfor\nthe\scommon\scase\swhere\sthe\scomparison\sis\sequal.
-D 2018-06-06T20:29:19.541
+C More\sspace\sand\sperformance\senhancements\sto\ssqlite3VdbeRecordCompare().
+D 2018-06-06T20:55:10.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -569,7 +569,7 @@ F src/vdbe.c ffa02701cda500e0770abf139d860447e546949c5d55acab58ad8239ad92daf0
 F src/vdbe.h e3f43bcc27ff30b0f25a6104d0cb5657e1c4b5e1b5cd2dd2216d5bcc2156a746
 F src/vdbeInt.h 42d3e65ea0c664f6d9bc9a53de645c0baf8566ff0188409ff3b8d2abc327bc17
 F src/vdbeapi.c 765a0bbe01311626417de6cb743f7f25f9f98435c98a9df4bb0714d11014633d
-F src/vdbeaux.c 20c12c6911e5cf0a3e013f3e6b364a2cdc6e9facd2b41cec39ef37d4b4c0c759
+F src/vdbeaux.c adbd21d93209c98c792e4ed03915b541f2c8bce1f672d64c2b023a3fd274352b
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 803323406d8623a7619ea5d5f74016697eeaed19c02b98ce9c3013e77dbe1c38
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4b853f020570bf4af1b14e03f35764c7d7a03a40af58efc783e06f2b883cef78
-R 7344c5deda24a0cfa9adaed6fbe1c4f5
+P 1e616e256a4fb1b64271706fdfa77dc5790eba0a2f0e619544e169bc61d7c805
+R 190026d18cdaeea82d1546f8bc38f07e
 U drh
-Z 8ab3115bce5174cc71ba7755437d5270
+Z d6071b0218e4b21faa51db68b4c17551

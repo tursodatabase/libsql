@@ -4129,7 +4129,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   u32 idx1;                       /* Offset of first type in header */
   int rc = 0;                     /* Return value */
   Mem *pRhs = pPKey2->aMem;       /* Next field of pPKey2 to compare */
-  KeyInfo *pKeyInfo = pPKey2->pKeyInfo;
+  KeyInfo *pKeyInfo;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   Mem mem1;
 
@@ -4224,7 +4224,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         if( (d1+mem1.n) > (unsigned)nKey1 ){
           pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
-        }else if( pKeyInfo->aColl[i] ){
+        }else if( (pKeyInfo = pPKey2->pKeyInfo)->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
           mem1.flags = MEM_Str;
@@ -4275,7 +4275,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     if( rc!=0 ){
-      if( pKeyInfo->aSortOrder[i] ){
+      if( pPKey2->pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
       assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, rc) );
@@ -4300,7 +4300,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   ** value.  */
   assert( CORRUPT_DB 
        || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 
-       || pKeyInfo->db->mallocFailed
+       || pPKey2->pKeyInfo->db->mallocFailed
   );
   pPKey2->eqSeen = 1;
   return pPKey2->default_rc;
@@ -4626,7 +4626,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
+  *res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, pUnpacked, 0);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
