@@ -3202,8 +3202,8 @@ case OP_AutoCommit: {
 */
 case OP_Transaction: {
   Btree *pBt;
-  int iMeta;
-  int iGen;
+  int iMeta = 0;
+  int iGen = 0;
 
   assert( p->bIsReader );
   assert( p->readOnly==0 || pOp->p2==0 );
@@ -3216,7 +3216,7 @@ case OP_Transaction: {
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
-    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
+    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, &iMeta);
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
     if( rc!=SQLITE_OK ){
@@ -3255,10 +3255,7 @@ case OP_Transaction: {
     ** version is checked to ensure that the schema has not changed since the
     ** SQL statement was prepared.
     */
-    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
     iGen = db->aDb[pOp->p1].pSchema->iGeneration;
-  }else{
-    iGen = iMeta = 0;
   }
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
   if( pOp->p5 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
@@ -3626,7 +3623,7 @@ case OP_OpenEphemeral: {
   rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1);
+    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling

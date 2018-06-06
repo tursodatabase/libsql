@@ -3300,7 +3300,7 @@ int sqlite3BtreeNewDb(Btree *p){
 ** when A already has a read lock, we encourage A to give up and let B
 ** proceed.
 */
-int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
+int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   BtShared *pBt = p->pBt;
   int rc = SQLITE_OK;
 
@@ -3428,12 +3428,17 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 
 
 trans_begun:
-  if( rc==SQLITE_OK && wrflag ){
-    /* This call makes sure that the pager has the correct number of
-    ** open savepoints. If the second parameter is greater than 0 and
-    ** the sub-journal is not already open, then it will be opened here.
-    */
-    rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint);
+  if( rc==SQLITE_OK ){
+    if( pSchemaVersion ){
+      *pSchemaVersion = get4byte(&pBt->pPage1->aData[40]);
+    }
+    if( wrflag ){
+      /* This call makes sure that the pager has the correct number of
+      ** open savepoints. If the second parameter is greater than 0 and
+      ** the sub-journal is not already open, then it will be opened here.
+      */
+      rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint);
+    }
   }
 
   btreeIntegrity(p);
@@ -10084,11 +10089,11 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   pBt->btsFlags &= ~BTS_NO_WAL;
   if( iVersion==1 ) pBt->btsFlags |= BTS_NO_WAL;
 
-  rc = sqlite3BtreeBeginTrans(pBtree, 0);
+  rc = sqlite3BtreeBeginTrans(pBtree, 0, 0);
   if( rc==SQLITE_OK ){
     u8 *aData = pBt->pPage1->aData;
     if( aData[18]!=(u8)iVersion || aData[19]!=(u8)iVersion ){
-      rc = sqlite3BtreeBeginTrans(pBtree, 2);
+      rc = sqlite3BtreeBeginTrans(pBtree, 2, 0);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
         if( rc==SQLITE_OK ){
