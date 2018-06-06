@@ -1097,7 +1097,11 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
 ** back to where it ought to be if this routine returns true.
 */
 int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
-  return pCur->eState!=CURSOR_VALID;
+  assert( EIGHT_BYTE_ALIGNMENT(pCur)
+       || pCur==sqlite3BtreeFakeValidCursor() );
+  assert( offsetof(BtCursor, eState)==0 );
+  assert( sizeof(pCur->eState)==1 );
+  return CURSOR_VALID != *(u8*)pCur;
 }
 
 /*
@@ -3547,7 +3551,7 @@ int sqlite3BtreeNewDb(Btree *p){
 ** when A already has a read lock, we encourage A to give up and let B
 ** proceed.
 */
-int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
+int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   BtShared *pBt = p->pBt;
   int rc = SQLITE_OK;
   int bConcurrent = (p->db->bConcurrent && !ISAUTOVACUUM);
@@ -3686,15 +3690,20 @@ trans_begun:
   }
 #endif
 
-  if( rc==SQLITE_OK && wrflag ){
-    /* This call makes sure that the pager has the correct number of
-    ** open savepoints. If the second parameter is greater than 0 and
-    ** the sub-journal is not already open, then it will be opened here.
-    */
-    int nSavepoint = p->db->nSavepoint;
-    rc = sqlite3PagerOpenSavepoint(pBt->pPager, nSavepoint);
-    if( rc==SQLITE_OK && nSavepoint ){
-      rc = btreePtrmapBegin(pBt, nSavepoint);
+  if( rc==SQLITE_OK ){
+    if( pSchemaVersion ){
+      *pSchemaVersion = get4byte(&pBt->pPage1->aData[40]);
+    }
+    if( wrflag ){
+      /* This call makes sure that the pager has the correct number of
+      ** open savepoints. If the second parameter is greater than 0 and
+      ** the sub-journal is not already open, then it will be opened here.
+      */
+      int nSavepoint = p->db->nSavepoint;
+      rc = sqlite3PagerOpenSavepoint(pBt->pPager, nSavepoint);
+      if( rc==SQLITE_OK && nSavepoint ){
+        rc = btreePtrmapBegin(pBt, nSavepoint);
+      }
     }
   }
 
@@ -10555,11 +10564,11 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   pBt->btsFlags &= ~BTS_NO_WAL;
   if( iVersion==1 ) pBt->btsFlags |= BTS_NO_WAL;
 
-  rc = sqlite3BtreeBeginTrans(pBtree, 0);
+  rc = sqlite3BtreeBeginTrans(pBtree, 0, 0);
   if( rc==SQLITE_OK ){
     u8 *aData = pBt->pPage1->aData;
     if( aData[18]!=(u8)iVersion || aData[19]!=(u8)iVersion ){
-      rc = sqlite3BtreeBeginTrans(pBtree, 2);
+      rc = sqlite3BtreeBeginTrans(pBtree, 2, 0);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
         if( rc==SQLITE_OK ){

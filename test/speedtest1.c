@@ -1247,10 +1247,11 @@ void testset_rtree(int p1, int p2){
   unsigned mxCoord;
   unsigned x0, x1, y0, y1, z0, z1;
   unsigned iStep;
+  unsigned mxRowid;
   int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*500 );
 
   mxCoord = 15000;
-  n = g.szTest*500;
+  mxRowid = n = g.szTest*500;
   speedtest1_begin_test(100, "%d INSERTs into an r-tree", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec("CREATE VIRTUAL TABLE rt1 USING rtree(id,x0,x1,y0,y1,z0,z1)");
@@ -1277,7 +1278,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
   speedtest1_end_test();
 
-  n = g.szTest*100;
+  n = g.szTest*200;
   speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
   iStep = mxCoord/n;
@@ -1290,7 +1291,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   if( g.bVerify ){
-    n = g.szTest*100;
+    n = g.szTest*200;
     speedtest1_begin_test(111, "Verify result from 1-D intersect slice queries");
     speedtest1_prepare("SELECT count(*) FROM t1 WHERE x0>=?1 AND x1<=?2");
     iStep = mxCoord/n;
@@ -1306,7 +1307,7 @@ void testset_rtree(int p1, int p2){
     speedtest1_end_test();
   }
   
-  n = g.szTest*100;
+  n = g.szTest*200;
   speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
   iStep = mxCoord/n;
@@ -1319,7 +1320,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   if( g.bVerify ){
-    n = g.szTest*100;
+    n = g.szTest*200;
     speedtest1_begin_test(121, "Verify result from 1-D overlap slice queries");
     speedtest1_prepare("SELECT count(*) FROM t1 WHERE y1>=?1 AND y0<=?2");
     iStep = mxCoord/n;
@@ -1336,7 +1337,7 @@ void testset_rtree(int p1, int p2){
   }
   
 
-  n = g.szTest*100;
+  n = g.szTest*200;
   speedtest1_begin_test(125, "%d custom geometry callback queries", n);
   sqlite3_rtree_geometry_callback(g.db, "xslice", xsliceGeometryCallback, 0);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE id MATCH xslice(?1,?2)");
@@ -1372,6 +1373,52 @@ void testset_rtree(int p1, int p2){
     sqlite3_bind_int(g.pStmt, 1, i);
     speedtest1_run();
   }
+  speedtest1_end_test();
+
+  n = g.szTest*50;
+  speedtest1_begin_test(150, "%d UPDATEs using rowid", n);
+  speedtest1_prepare("UPDATE rt1 SET x0=x0+100, x1=x1+100 WHERE id=?1");
+  for(i=1; i<=n; i++){
+    sqlite3_bind_int(g.pStmt, 1, (i*251)%mxRowid + 1);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*5;
+  speedtest1_begin_test(155, "%d UPDATEs using one-dimensional overlap", n);
+  speedtest1_prepare("UPDATE rt1 SET x0=x0-100, x1=x1-100"
+                     " WHERE y1>=?1 AND y0<=?1+5");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*50;
+  speedtest1_begin_test(160, "%d DELETEs using rowid", n);
+  speedtest1_prepare("DELETE FROM rt1 WHERE id=?1");
+  for(i=1; i<=n; i++){
+    sqlite3_bind_int(g.pStmt, 1, (i*257)%mxRowid + 1);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+
+  n = g.szTest*5;
+  speedtest1_begin_test(165, "%d DELETEs using one-dimensional overlap", n);
+  speedtest1_prepare("DELETE FROM rt1 WHERE y1>=?1 AND y0<=?1+5");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(170, "Restore deleted entries using INSERT OR IGNORE");
+  speedtest1_exec("INSERT OR IGNORE INTO rt1 SELECT * FROM t1");
   speedtest1_end_test();
 }
 #endif /* SQLITE_ENABLE_RTREE */

@@ -148,4 +148,13 @@ do_catchsql_test 4.3 {
   USING csv(filename='FileDoesNotExist.csv');
 } {1 {cannot open 'FileDoesNotExist.csv' for reading}}
 
+# 2018-06-02
+# Problem with single-column CSV support reported on the mailing list
+# by Trent W. Buck.
+#
+do_execsql_test 4.4 {
+  CREATE VIRTUAL TABLE temp.trent USING csv(data='1');
+  SELECT * FROM trent;
+} {1}
+
 finish_test

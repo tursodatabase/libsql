@@ -504,6 +504,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_COMMIT_ATOMIC     (SQLITE_IOERR | (30<<8))
 #define SQLITE_IOERR_ROLLBACK_ATOMIC   (SQLITE_IOERR | (31<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
+#define SQLITE_LOCKED_VTAB             (SQLITE_LOCKED |  (2<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_BUSY_SNAPSHOT           (SQLITE_BUSY   |  (2<<8))
 #define SQLITE_CANTOPEN_NOTEMPDIR      (SQLITE_CANTOPEN | (1<<8))
@@ -511,6 +512,7 @@ int sqlite3_exec(
 #define SQLITE_CANTOPEN_FULLPATH       (SQLITE_CANTOPEN | (3<<8))
 #define SQLITE_CANTOPEN_CONVPATH       (SQLITE_CANTOPEN | (4<<8))
 #define SQLITE_CORRUPT_VTAB            (SQLITE_CORRUPT | (1<<8))
+#define SQLITE_CORRUPT_SEQUENCE        (SQLITE_CORRUPT | (2<<8))
 #define SQLITE_READONLY_RECOVERY       (SQLITE_READONLY | (1<<8))
 #define SQLITE_READONLY_CANTLOCK       (SQLITE_READONLY | (2<<8))
 #define SQLITE_READONLY_ROLLBACK       (SQLITE_READONLY | (3<<8))
@@ -6292,6 +6294,10 @@ struct sqlite3_index_info {
 
 /*
 ** CAPI3REF: Virtual Table Scan Flags
+**
+** Virtual table implementations are allowed to set the 
+** [sqlite3_index_info].idxFlags field to some combination of
+** these bits.
 */
 #define SQLITE_INDEX_SCAN_UNIQUE      1     /* Scan visits at most 1 row */
 
@@ -7155,11 +7161,19 @@ typedef struct sqlite3_str sqlite3_str;
 ** CONSTRUCTOR: sqlite3_str
 **
 ** ^The [sqlite3_str_new(D)] interface allocates and initializes
-** a new [sqlite3_str]
-** object.  ^The [sqlite3_str_new()] interface returns NULL on an out-of-memory
-** condition.  To avoid memory leaks, the object returned by
+** a new [sqlite3_str] object.  To avoid memory leaks, the object returned by
 ** [sqlite3_str_new()] must be freed by a subsequent call to 
 ** [sqlite3_str_finish(X)].
+**
+** ^The [sqlite3_str_new(D)] interface always returns a pointer to a
+** valid [sqlite3_str] object, though in the event of an out-of-memory
+** error the returned object might be a special singleton that will
+** silently reject new text, always return SQLITE_NOMEM from 
+** [sqlite3_str_errcode()], always return 0 for 
+** [sqlite3_str_length()], and always return NULL from
+** [sqlite3_str_finish(X)].  It is always safe to use the value
+** returned by [sqlite3_str_new(D)] as the sqlite3_str parameter
+** to any of the other [sqlite3_str] methods.
 **
 ** The D parameter to [sqlite3_str_new(D)] may be NULL.  If the
 ** D parameter in [sqlite3_str_new(D)] is not NULL, then the maximum
@@ -8525,11 +8539,11 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** method of a [virtual table], then it returns true if and only if the
 ** column is being fetched as part of an UPDATE operation during which the
 ** column value will not change.  Applications might use this to substitute
-** a lighter-weight value to return that the corresponding [xUpdate] method
-** understands as a "no-change" value.
+** a return value that is less expensive to compute and that the corresponding
+** [xUpdate] method understands as a "no-change" value.
 **
 ** If the [xColumn] method calls sqlite3_vtab_nochange() and finds that
-** the column is not changed by the UPDATE statement, they the xColumn
+** the column is not changed by the UPDATE statement, then the xColumn
 ** method can optionally return without setting a result, without calling
 ** any of the [sqlite3_result_int|sqlite3_result_xxxxx() interfaces].
 ** In that case, [sqlite3_value_nochange(X)] will return true for the
@@ -9049,7 +9063,7 @@ SQLITE_EXPERIMENTAL int sqlite3_wal_info(
 ** been a prior call to [sqlite3_deserialize(D,S,...)] with the same
 ** values of D and S.
 ** The size of the database is written into *P even if the 
-** SQLITE_SERIALIZE_NOCOPY bit is set but no contigious copy
+** SQLITE_SERIALIZE_NOCOPY bit is set but no contiguous copy
 ** of the database exists.
 **
 ** A call to sqlite3_serialize(D,S,P,F) might return NULL even if the

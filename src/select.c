@@ -817,7 +817,7 @@ static void selectExprDefer(
     if( pItem->u.x.iOrderByCol==0 ){
       Expr *pExpr = pItem->pExpr;
       Table *pTab = pExpr->pTab;
-      if( pExpr->op==TK_COLUMN && pTab && !IsVirtual(pTab)
+      if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 && pTab && !IsVirtual(pTab)
        && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
       ){
         int j;
@@ -5100,11 +5100,17 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   }
 }
 
+
 /*
 ** Update the accumulator memory cells for an aggregate based on
 ** the current cursor position.
+**
+** If regAcc is non-zero and there are no min() or max() aggregates
+** in pAggInfo, then only populate the pAggInfo->nAccumulator accumulator
+** registers i register regAcc contains 0. The caller will take care
+** of setting and clearing regAcc.
 */
-static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
+static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
   int regHit = 0;
@@ -5168,6 +5174,9 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   ** Another solution would be to change the OP_SCopy used to copy cached
   ** values to an OP_Copy.
   */
+  if( regHit==0 && pAggInfo->nAccumulator ){
+    regHit = regAcc;
+  }
   if( regHit ){
     addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit); VdbeCoverage(v);
   }
@@ -6021,8 +6030,6 @@ int sqlite3Select(
       pParse->nMem += pGroupBy->nExpr;
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iAbortFlag);
       VdbeComment((v, "clear abort flag"));
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
-      VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp3(v, OP_Null, 0, iAMem, iAMem+pGroupBy->nExpr-1);
 
       /* Begin a loop that will extract all source rows in GROUP BY order.
@@ -6155,7 +6162,7 @@ int sqlite3Select(
       ** the current row
       */
       sqlite3VdbeJumpHere(v, addr1);
-      updateAccumulator(pParse, &sAggInfo);
+      updateAccumulator(pParse, iUseFlag, &sAggInfo);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iUseFlag);
       VdbeComment((v, "indicate data in accumulator"));
 
@@ -6207,6 +6214,8 @@ int sqlite3Select(
       */
       sqlite3VdbeResolveLabel(v, addrReset);
       resetAccumulator(pParse, &sAggInfo);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
+      VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp1(v, OP_Return, regReset);
      
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
@@ -6272,6 +6281,23 @@ int sqlite3Select(
       }else
 #endif /* SQLITE_OMIT_BTREECOUNT */
       {
+        int regAcc = 0;           /* "populate accumulators" flag */
+
+        /* If there are accumulator registers but no min() or max() functions,
+        ** allocate register regAcc. Register regAcc will contain 0 the first
+        ** time the inner loop runs, and 1 thereafter. The code generated
+        ** by updateAccumulator() only updates the accumulator registers if
+        ** regAcc contains 0.  */
+        if( sAggInfo.nAccumulator ){
+          for(i=0; i<sAggInfo.nFunc; i++){
+            if( sAggInfo.aFunc[i].pFunc->funcFlags&SQLITE_FUNC_NEEDCOLL ) break;
+          }
+          if( i==sAggInfo.nFunc ){
+            regAcc = ++pParse->nMem;
+            sqlite3VdbeAddOp2(v, OP_Integer, 0, regAcc);
+          }
+        }
+
         /* This case runs if the aggregate has no GROUP BY clause.  The
         ** processing is much simpler since there is only a single row
         ** of output.
@@ -6293,7 +6319,8 @@ int sqlite3Select(
         if( pWInfo==0 ){
           goto select_end;
         }
-        updateAccumulator(pParse, &sAggInfo);
+        updateAccumulator(pParse, regAcc, &sAggInfo);
+        if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);
         if( sqlite3WhereIsOrdered(pWInfo)>0 ){
           sqlite3VdbeGoto(v, sqlite3WhereBreakLabel(pWInfo));
           VdbeComment((v, "%s() by index",

@@ -2118,7 +2118,7 @@ static int jsonEachColumn(
         }
         if( p->eType==JSON_ARRAY ){
           jsonPrintf(30, &x, "[%d]", p->iRowid);
-        }else{
+        }else if( p->eType==JSON_OBJECT ){
           jsonPrintf(pThis->n, &x, ".%.*s", pThis->n-2, pThis->u.zJContent+1);
         }
       }
