@@ -2972,6 +2972,7 @@ static int shell_exec(
           /* Reprepare pStmt before reactiving trace modes */
           sqlite3_finalize(pStmt);
           sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+          if( pArg ) pArg->pStmt = pStmt;
         }
         restore_debug_trace_modes();
       }
