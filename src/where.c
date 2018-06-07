@@ -5084,6 +5084,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
         if( pIn->eEndLoopOp!=OP_Noop ){
           if( pIn->nPrefix ){
+            assert( pLoop->wsFlags & WHERE_IN_EARLYOUT );
             sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
                               sqlite3VdbeCurrentAddr(v)+2,
                               pIn->iBase, pIn->nPrefix);

@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements.
-D 2018-06-07T14:32:16.906
+C Add\sthe\sWHERE_IN_EARLYOUT\sflag\sand\suse\sit\sto\sclarify\sthe\slogic\sof\sthis\noptimization.
+D 2018-06-07T14:59:22.505
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -579,9 +579,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 83b6cf94d98ff9a2185071aeed664a57922999a6dd58a03dbb379d472314e4b2
-F src/whereInt.h b6ab96d9c1e48d029eaaee8f9b6d05e6a2405af0ad68f684e75f21c46837ae11
-F src/wherecode.c 12d88d0195a50b456c5dbeb3c44cb7d7087f591526968e8bde7a38b5534cd0ee
+F src/where.c 6011e6a78efbe9c767eb5316c23f59ea52481be66d5a8e219dda8f657f494e5d
+F src/whereInt.h b09753e74bf92a8b17cf0e41ca94c44432c454544be6699b5311dcc57bf229c6
+F src/wherecode.c 5f005bbdb4d1c27f1ff68e91d92766b15e0f9d0c5d00603538eec7711421c3c4
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1730,7 +1730,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bf251af4347165a470d39457d61ab6d2a06c206db8f30bd8be5dbb388ae8a5b 71f97f0f82b3abfb07feb78d64a182fc50ff396e85d6f5aac479dbf58ba4d00a
-R e30bf4f9e62dead29f35aa7c5dd3eb87
+P e9d7bf4f7b9d6f8dabc4c95d43ebf12f2149bed1c5e750048b1b684128073c38
+R 6d4277fa9b6622056a87cf8567cfc5ae
 U drh
-Z 4167bce53a1d321bedb2c1528b36a7a2
+Z c9c3d95e2b08432c3b21f5302501cc1d
