@@ -208,19 +208,19 @@ foreach {tn window} {
   execsql_test 1.$tn.10.1 "
     SELECT nth_value(b,b+1) OVER (ORDER BY a $window) FROM t2
   "
-  execsql_test 1.$tn.9.2 "
+  execsql_test 1.$tn.10.2 "
     SELECT nth_value(b,b+1) OVER (PARTITION BY b%10 ORDER BY a $window) FROM t2
   "
-  execsql_test 1.$tn.9.3 "
+  execsql_test 1.$tn.10.3 "
     SELECT nth_value(b,b+1) OVER ( ORDER BY b,a $window ) FROM t2
   "
-  execsql_test 1.$tn.9.4 "
+  execsql_test 1.$tn.10.4 "
     SELECT nth_value(b,b+1) OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
   "
-  execsql_test 1.$tn.9.5 "
+  execsql_test 1.$tn.10.5 "
     SELECT nth_value(b,b+1) OVER ( ORDER BY b%10,a $window ) FROM t2
   "
-  execsql_test 1.$tn.9.6 "
+  execsql_test 1.$tn.10.6 "
     SELECT nth_value(b,b+1) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
   "
 }

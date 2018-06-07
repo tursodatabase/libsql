@@ -641,8 +641,6 @@ static void windowAggInit(Parse *pParse, Window *pMWin){
       pWin->regApp = pParse->nMem+1;
       pWin->csrApp = pParse->nTab++;
       pParse->nMem += 2;
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp);
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
       sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
     }
   }
@@ -760,10 +758,6 @@ static void windowAggFinal(Parse *pParse, Window *pMWin, int bFinal){
         sqlite3VdbeAddOp1(v, OP_ResetSorter, pWin->csrApp);
       }
     }else if( pWin->regApp ){
-      if( bFinal ){
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp);
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
-      }
     }else{
       if( bFinal==0 ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
@@ -884,6 +878,25 @@ static void windowReturnRows(
   sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, addr);
   sqlite3VdbeJumpHere(v, addr+1);   /* The OP_Goto */
 }
+
+static int windowInitAccum(Parse *pParse, Window *pMWin){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  int regArg;
+  int nArg = 0;
+  Window *pWin;
+  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+    nArg = MAX(nArg, pWin->nArg);
+    if( pWin->pFunc->xSFunc==nth_valueStepFunc ){
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
+    }
+  }
+  regArg = pParse->nMem+1;
+  pParse->nMem += nArg;
+  return regArg;
+}
+
 
 /*
 ** ROWS BETWEEN <expr1> PRECEDING AND <expr2> FOLLOWING
@@ -1102,13 +1115,7 @@ static void windowCodeRowExprStep(
   }
 
   /* Initialize the accumulator register for each window function to NULL */
-  nArg = 0;
-  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
-    nArg = MAX(nArg, pWin->nArg+1);
-  }
-  regArg = pParse->nMem+1;
-  pParse->nMem += nArg;
+  regArg = windowInitAccum(pParse, pMWin);
 
   sqlite3VdbeAddOp2(v, OP_Rewind, pMWin->iEphCsr, lblFlushDone);
   sqlite3VdbeAddOp2(v, OP_Rewind, csrStart, lblFlushDone);
@@ -1301,13 +1308,7 @@ static void windowCodeCacheStep(
   sqlite3VdbeAddOp2(v, OP_OpenDup, csrLead, pMWin->iEphCsr);
 
   /* Initialize the accumulator register for each window function to NULL */
-  nArg = 0;
-  for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
-    nArg = MAX(nArg, pWin->nArg);
-  }
-  regArg = pParse->nMem+1;
-  pParse->nMem += nArg;
+  regArg = windowInitAccum(pParse, pMWin);
 
   sqlite3VdbeAddOp2(v, OP_Integer, 0, regCtr);
   addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, csrLead);
