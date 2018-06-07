@@ -325,6 +325,36 @@ static void first_valueInverseFunc(
 static void first_valueValueFunc(sqlite3_context *pCtx){
 }
 
+static void leadStepFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+}
+static void leadInverseFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+}
+static void leadValueFunc(sqlite3_context *pCtx){
+}
+
+static void lagStepFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+}
+static void lagInverseFunc(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **apArg
+){
+}
+static void lagValueFunc(sqlite3_context *pCtx){
+}
+
 #define WINDOWFUNC(name,nArg,extra) {                                      \
   nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
   name ## StepFunc, name ## ValueFunc, name ## ValueFunc,                  \
@@ -351,6 +381,8 @@ void sqlite3WindowFunctions(void){
     WINDOWFUNCF(last_value, 1, 0),
     WINDOWFUNC(nth_value, 2, 0),
     WINDOWFUNC(first_value, 1, 0),
+    WINDOWFUNC(lead, 1, 0), WINDOWFUNC(lead, 2, 0), WINDOWFUNC(lead, 3, 0),
+    WINDOWFUNC(lag, 1, 0),  WINDOWFUNC(lag, 2, 0),  WINDOWFUNC(lag, 3, 0),
   };
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
 }
@@ -659,6 +691,11 @@ static void windowAggInit(Parse *pParse, Window *pMWin){
       pParse->nMem += 2;
       sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
     }
+    else if( p->xSFunc==leadStepFunc || p->xSFunc==lagStepFunc ){
+      assert( pMWin->iEphCsr );
+      pWin->csrApp = pParse->nTab++;
+      sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
+    }
   }
 }
 
@@ -747,6 +784,10 @@ static void windowAggStep(
       );
       assert( bInverse==0 || bInverse==1 );
       sqlite3VdbeAddOp2(v, OP_AddImm, pWin->regApp+1-bInverse, 1);
+    }else if( pWin->pFunc->xSFunc==leadStepFunc 
+           || pWin->pFunc->xSFunc==lagStepFunc 
+    ){
+      /* no-op */
     }else{
       if( pWin->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;
@@ -872,6 +913,34 @@ static void windowReturnOneRow(
       }
       sqlite3VdbeAddOp3(v, OP_Add, tmpReg, pWin->regApp, tmpReg);
       sqlite3VdbeAddOp3(v, OP_Gt, pWin->regApp+1, lbl, tmpReg);
+      sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, lbl, tmpReg);
+      sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol, pWin->regResult);
+      sqlite3VdbeResolveLabel(v, lbl);
+      sqlite3ReleaseTempReg(pParse, tmpReg);
+    }
+    else if( pFunc->xSFunc==leadStepFunc || pFunc->xSFunc==lagStepFunc ){
+      int iEph = pWin->iEphCsr;
+      int csr = pWin->csrApp;
+      int lbl = sqlite3VdbeMakeLabel(v);
+      int tmpReg = sqlite3GetTempReg(pParse);
+
+      if( pWin->nArg<3 ){
+        sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
+      }else{
+        sqlite3VdbeAddOp3(v, OP_Column, iEph, pWin->iArgCol+2, pWin->regResult);
+      }
+      sqlite3VdbeAddOp2(v, OP_Rowid, iEph, tmpReg);
+      if( pWin->nArg<2 ){
+        int val = (pFunc->xSFunc==leadStepFunc ? 1 : -1);
+        sqlite3VdbeAddOp2(v, OP_AddImm, tmpReg, val);
+      }else{
+        int op = (pFunc->xSFunc==leadStepFunc ? OP_Add : OP_Subtract);
+        int tmpReg2 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp3(v, OP_Column, iEph, pWin->iArgCol+1, tmpReg2);
+        sqlite3VdbeAddOp3(v, op, tmpReg2, tmpReg, tmpReg);
+        sqlite3ReleaseTempReg(pParse, tmpReg2);
+      }
+
       sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, lbl, tmpReg);
       sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol, pWin->regResult);
       sqlite3VdbeResolveLabel(v, lbl);
@@ -1600,6 +1669,8 @@ void sqlite3WindowCodeStep(
     if( (pFunc->funcFlags & SQLITE_FUNC_WINDOW_SIZE)
      || (pFunc->xSFunc==nth_valueStepFunc)
      || (pFunc->xSFunc==first_valueStepFunc)
+     || (pFunc->xSFunc==leadStepFunc)
+     || (pFunc->xSFunc==lagStepFunc)
     ){
       windowCodeCacheStep(pParse, p, pWInfo, regGosub, addrGosub);
       return;

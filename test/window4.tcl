@@ -46,6 +46,26 @@ execsql_test 2.1 {
   SELECT a, nth_value(b, c) OVER (ORDER BY a) FROM t4
 }
 
+execsql_test 2.2.1 {
+  SELECT a, lead(b) OVER (ORDER BY a) FROM t4
+}
+execsql_test 2.2.2 {
+  SELECT a, lead(b, 2) OVER (ORDER BY a) FROM t4
+}
+execsql_test 2.2.3 {
+  SELECT a, lead(b, 3, 'abc') OVER (ORDER BY a) FROM t4
+}
+
+execsql_test 2.3.1 {
+  SELECT a, lag(b) OVER (ORDER BY a) FROM t4
+}
+execsql_test 2.3.2 {
+  SELECT a, lag(b, 2) OVER (ORDER BY a) FROM t4
+}
+execsql_test 2.3.3 {
+  SELECT a, lag(b, 3, 'abc') OVER (ORDER BY a) FROM t4
+}
+
 execsql_test 3.0 {
   DROP TABLE IF EXISTS t5;
   CREATE TABLE t5(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);

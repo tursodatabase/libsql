@@ -121,6 +121,30 @@ do_execsql_test 2.1 {
   SELECT a, nth_value(b, c) OVER (ORDER BY a) FROM t4
 } {1 {}   2 {}   3 B   4 {}   5 E   6 A   7 A   8 B   9 {}   10 D}
 
+do_execsql_test 2.2.1 {
+  SELECT a, lead(b) OVER (ORDER BY a) FROM t4
+} {1 B   2 C   3 D   4 E   5 F   6 G   7 H   8 I   9 J   10 {}}
+
+do_execsql_test 2.2.2 {
+  SELECT a, lead(b, 2) OVER (ORDER BY a) FROM t4
+} {1 C   2 D   3 E   4 F   5 G   6 H   7 I   8 J   9 {}   10 {}}
+
+do_execsql_test 2.2.3 {
+  SELECT a, lead(b, 3, 'abc') OVER (ORDER BY a) FROM t4
+} {1 D   2 E   3 F   4 G   5 H   6 I   7 J   8 abc   9 abc   10 abc}
+
+do_execsql_test 2.3.1 {
+  SELECT a, lag(b) OVER (ORDER BY a) FROM t4
+} {1 {}   2 A   3 B   4 C   5 D   6 E   7 F   8 G   9 H   10 I}
+
+do_execsql_test 2.3.2 {
+  SELECT a, lag(b, 2) OVER (ORDER BY a) FROM t4
+} {1 {}   2 {}   3 A   4 B   5 C   6 D   7 E   8 F   9 G   10 H}
+
+do_execsql_test 2.3.3 {
+  SELECT a, lag(b, 3, 'abc') OVER (ORDER BY a) FROM t4
+} {1 abc   2 abc   3 abc   4 A   5 B   6 C   7 D   8 E   9 F   10 G}
+
 do_execsql_test 3.0 {
   DROP TABLE IF EXISTS t5;
   CREATE TABLE t5(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);
@@ -135,9 +159,6 @@ do_execsql_test 3.1 {
   SELECT a, nth_value(c, d) OVER (ORDER BY b) FROM t5
 } {1 {}   3 five   5 one   2 two   4 three}
 
-explain_i {
-  SELECT a, nth_value(c, d) OVER (PARTITION BY b ORDER BY a) FROM t5
-  }
 do_execsql_test 3.2 {
   SELECT a, nth_value(c, d) OVER (PARTITION BY b ORDER BY a) FROM t5
 } {1 {}   3 {}   5 one   2 {}   4 four}

@@ -242,6 +242,44 @@ foreach {tn window} {
   execsql_test 1.$tn.11.6 "
     SELECT first_value(b) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
   "
+
+  execsql_test 1.$tn.12.1 "
+    SELECT lead(b,b) OVER (ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.12.2 "
+    SELECT lead(b,b) OVER (PARTITION BY b%10 ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.12.3 "
+    SELECT lead(b,b) OVER ( ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.12.4 "
+    SELECT lead(b,b) OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.12.5 "
+    SELECT lead(b,b) OVER ( ORDER BY b%10,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.12.6 "
+    SELECT lead(b,b) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
+
+  execsql_test 1.$tn.13.1 "
+    SELECT lag(b,b) OVER (ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.13.2 "
+    SELECT lag(b,b) OVER (PARTITION BY b%10 ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.13.3 "
+    SELECT lag(b,b) OVER ( ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.13.4 "
+    SELECT lag(b,b) OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.13.5 "
+    SELECT lag(b,b) OVER ( ORDER BY b%10,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.13.6 "
+    SELECT lag(b,b) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
 }
 
 finish_test
