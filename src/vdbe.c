@@ -4292,7 +4292,7 @@ case OP_NotExists:          /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = 0;
+  pC->seekOp = OP_SeekRowid;
 #endif
   assert( pC->isTable );
   assert( pC->eCurType==CURTYPE_BTREE );
@@ -4946,6 +4946,9 @@ case OP_NullRow: {
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
   }
+#ifdef SQLITE_DEBUG
+  if( pC->seekOp==0 ) pC->seekOp = OP_NullRow;
+#endif
   break;
 }
 
@@ -5185,16 +5188,16 @@ case OP_Next:          /* jump */
   assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
 
-#if 0
-  /* The Next opcode is only used after SeekGT, SeekGE, and Rewind.
+  /* The Next opcode is only used after SeekGT, SeekGE, Rewind, and Found.
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
   assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
-       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found);
+       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found 
+       || pC->seekOp==OP_NullRow);
   assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
-       || pC->seekOp==OP_Last );
-#endif
+       || pC->seekOp==OP_Last 
+       || pC->seekOp==OP_NullRow);
 
   rc = pOp->p4.xAdvance(pC->uc.pCursor, pOp->p3);
 next_tail:

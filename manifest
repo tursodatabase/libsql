@@ -1,5 +1,5 @@
-C Remove\sthe\sNextIfOpen\sand\sPrevIfOpen\sopcodes\swhich\sare\sno\slonger\sneeded\nwhen\sthe\sIN-early-out\soptimization\sis\sworking.
-D 2018-06-07T17:32:59.729
+C Fix\sthe\sassert()s\sin\sthe\sbyte-code\sengine\sthat\sprove\sthat\scursors\nare\sunidirectional.
+D 2018-06-07T18:01:21.263
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -565,7 +565,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c 3b8517d41c514a6e892f20a74c69d9c04849fe45fb676703f5c6672f11fca97f
+F src/vdbe.c d7a475cec51c83daf0d348301a1aec77f535832ea946632b5738ff9f087c0edb
 F src/vdbe.h e3f43bcc27ff30b0f25a6104d0cb5657e1c4b5e1b5cd2dd2216d5bcc2156a746
 F src/vdbeInt.h d299d7a19853463dac418de0d97f2dd9cb4ddb495a45c93364e2daee109ba0ef
 F src/vdbeapi.c 765a0bbe01311626417de6cb743f7f25f9f98435c98a9df4bb0714d11014633d
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 085e863713a3f2d420c0076b275a6ac445a59d4d93f9eb0e8503b4e3f5589249
-R 2dde483ff37edacba64e59586d1522f4
+P 439c8162272795b422a0e01b01b832fbc12b39914c9632a674162af8bdecff98
+R fe7d026f8be3134e2723fc39eeec5ed5
 U drh
-Z b644b027a94a428792d2674b80d687cf
+Z 8c642b57392b756fd19e94b953870085
