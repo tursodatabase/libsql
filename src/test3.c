@@ -133,7 +133,7 @@ static int SQLITE_TCLAPI btree_begin_transaction(
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
   sqlite3BtreeEnter(pBt);
-  rc = sqlite3BtreeBeginTrans(pBt, 1);
+  rc = sqlite3BtreeBeginTrans(pBt, 1, 0);
   sqlite3BtreeLeave(pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

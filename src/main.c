@@ -4115,7 +4115,7 @@ int sqlite3_snapshot_get(
     if( iDb==0 || iDb>1 ){
       Btree *pBt = db->aDb[iDb].pBt;
       if( 0==sqlite3BtreeIsInTrans(pBt) ){
-        rc = sqlite3BtreeBeginTrans(pBt, 0);
+        rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
         if( rc==SQLITE_OK ){
           rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
         }
@@ -4153,7 +4153,7 @@ int sqlite3_snapshot_open(
       if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
         rc = sqlite3PagerSnapshotOpen(sqlite3BtreePager(pBt), pSnapshot);
         if( rc==SQLITE_OK ){
-          rc = sqlite3BtreeBeginTrans(pBt, 0);
+          rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
           sqlite3PagerSnapshotOpen(sqlite3BtreePager(pBt), 0);
         }
       }
@@ -4185,7 +4185,7 @@ int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb){
   if( iDb==0 || iDb>1 ){
     Btree *pBt = db->aDb[iDb].pBt;
     if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
-      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerSnapshotRecover(sqlite3BtreePager(pBt));
         sqlite3BtreeCommit(pBt);
