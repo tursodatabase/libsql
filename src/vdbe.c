@@ -4031,6 +4031,25 @@ seek_not_found:
   break;
 }
 
+/* Opcode: SeekHit P1 P2 * * *
+** Synopsis: seekHit=P2
+**
+** Set the seekHit flag on cursor P1 to the value in P2.
+** The seekHit flag is used by the IfNoHope opcode.
+**
+** P1 must be a valid b-tree cursor.  P2 must be a boolean value,
+** either 0 or 1.
+*/
+case OP_SeekHit: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pOp->p2==0 || pOp->p2==1 );
+  pC->seekHit = pOp->p2 & 1;
+  break;
+}
+
 /* Opcode: Found P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
@@ -4065,7 +4084,34 @@ seek_not_found:
 ** advanced in either direction.  In other words, the Next and Prev
 ** opcodes do not work after this operation.
 **
-** See also: Found, NotExists, NoConflict
+** See also: Found, NotExists, NoConflict, IfNoHope
+*/
+/* Opcode: IfNoHope P1 P2 P3 P4 *
+** Synopsis: key=r[P3@P4]
+**
+** Register P3 is the first of P4 registers that form an unpacked
+** record.
+**
+** Cursor P1 is on an index btree.  If the seekHit flag is set on P1, then
+** this opcode is a no-op.  But if the seekHit flag of P1 is clear, then
+** check to see if there is any entry in P1 that matches the
+** prefix identified by P3 and P4.  If no entry matches the prefix,
+** jump to P2.  Otherwise fall through.
+**
+** This opcode behaves like OP_NotFound if the seekHit
+** flag is clear and it behaves like OP_Noop if the seekHit flag is set.
+**
+** This opcode is used in IN clause processing for a multi-column key.
+** If an IN clause is attached to an element of the key other than the
+** left-most element, and if there are no matches on the most recent
+** seek over the whole key, then it might be that one of the key element
+** to the left is prohibiting a match, and hence there is "no hope" of
+** any match regardless of how many IN clause elements are checked.
+** In such a case, we abandon the IN clause search early, using this
+** opcode.  The opcode name comes from the fact that the
+** jump is taken if there is "no hope" of achieving a match.
+**
+** See also: NotFound, SeekHit
 */
 /* Opcode: NoConflict P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
@@ -4090,6 +4136,14 @@ seek_not_found:
 **
 ** See also: NotFound, Found, NotExists
 */
+case OP_IfNoHope: {     /* jump, in3 */
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  if( pC->seekHit ) break;
+  /* Fall through into OP_NotFound */
+}
 case OP_NoConflict:     /* jump, in3 */
 case OP_NotFound:       /* jump, in3 */
 case OP_Found: {        /* jump, in3 */
@@ -4238,7 +4292,7 @@ case OP_NotExists:          /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = 0;
+  pC->seekOp = OP_SeekRowid;
 #endif
   assert( pC->isTable );
   assert( pC->eCurType==CURTYPE_BTREE );
@@ -4892,6 +4946,9 @@ case OP_NullRow: {
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
   }
+#ifdef SQLITE_DEBUG
+  if( pC->seekOp==0 ) pC->seekOp = OP_NullRow;
+#endif
   break;
 }
 
@@ -5078,12 +5135,7 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 **
-** See also: Prev, NextIfOpen
-*/
-/* Opcode: NextIfOpen P1 P2 P3 P4 P5
-**
-** This opcode works just like Next except that if cursor P1 is not
-** open it behaves a no-op.
+** See also: Prev
 */
 /* Opcode: Prev P1 P2 P3 P4 P5
 **
@@ -5111,11 +5163,6 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-/* Opcode: PrevIfOpen P1 P2 P3 P4 P5
-**
-** This opcode works just like Prev except that if cursor P1 is not
-** open it behaves a no-op.
-*/
 /* Opcode: SorterNext P1 P2 * * P5
 **
 ** This opcode works just like OP_Next except that P1 must be a
@@ -5130,10 +5177,6 @@ case OP_SorterNext: {  /* jump */
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterNext(db, pC);
   goto next_tail;
-case OP_PrevIfOpen:    /* jump */
-case OP_NextIfOpen:    /* jump */
-  if( p->apCsr[pOp->p1]==0 ) break;
-  /* Fall through */
 case OP_Prev:          /* jump */
 case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -5144,17 +5187,17 @@ case OP_Next:          /* jump */
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
-  assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
-  assert( pOp->opcode!=OP_PrevIfOpen || pOp->p4.xAdvance==sqlite3BtreePrevious);
 
-  /* The Next opcode is only used after SeekGT, SeekGE, and Rewind.
+  /* The Next opcode is only used after SeekGT, SeekGE, Rewind, and Found.
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
-  assert( pOp->opcode!=OP_Next || pOp->opcode!=OP_NextIfOpen
+  assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
-       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found);
-  assert( pOp->opcode!=OP_Prev || pOp->opcode!=OP_PrevIfOpen
+       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found 
+       || pC->seekOp==OP_NullRow);
+  assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
-       || pC->seekOp==OP_Last );
+       || pC->seekOp==OP_Last 
+       || pC->seekOp==OP_NullRow);
 
   rc = pOp->p4.xAdvance(pC->uc.pCursor, pOp->p3);
 next_tail:

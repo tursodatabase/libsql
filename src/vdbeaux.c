@@ -689,7 +689,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           break;
         }
         case OP_Next:
-        case OP_NextIfOpen:
         case OP_SorterNext: {
           pOp->p4.xAdvance = sqlite3BtreeNext;
           pOp->p4type = P4_ADVANCE;
@@ -699,8 +698,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           assert( pOp->p2>=0 );
           break;
         }
-        case OP_Prev:
-        case OP_PrevIfOpen: {
+        case OP_Prev: {
           pOp->p4.xAdvance = sqlite3BtreePrevious;
           pOp->p4type = P4_ADVANCE;
           /* The code generator never codes any of these opcodes as a jump
