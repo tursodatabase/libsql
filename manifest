@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sthe\snth_value()\sfunction.
-D 2018-06-07T15:54:26.149
+C Add\ssupport\sfor\swindow\sfunction\sfirst_value().
+D 2018-06-07T17:45:22.248
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -583,7 +583,7 @@ F src/where.c 60ec752fcbe9f9e0271ac60548d159a540a1ee47a4f9fedc85e88a3d0e392dd1
 F src/whereInt.h cbae2bcd37cfebdb7812a8b188cdb19634ced2b9346470d1c270556b0c33ea53
 F src/wherecode.c 728c7f70731430ccdac807a79969873e1af6968bf1c4745dff3f9dd35f636cc8
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
-F src/window.c 7a79e54c37ebe54aba9106f8450c62cdeab487bfc31d5510ac3a4a96ab695e41
+F src/window.c c48dd2d726123532f37d88084119e832ade7f61e4d7ce6a8e9c9b4125f7e6040
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1619,8 +1619,8 @@ F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
 F test/window1.test 905fe0842eacfd61e2f30ef7b0a84a7325ffa5cbbcd717ca30f25a142c3bca90
 F test/window2.tcl 0983de5eade5eeda49469244799d5331bfe3199fca3f6c6d2a836aa08f4fba1b
 F test/window2.test 79747b2edde4ad424e0752b27529aedc86e91f3d8d88846fa17ff0cb67f65086
-F test/window3.tcl 81e74f1462e6ec0cd85c0435618202eb2beec312239d2178cb7ff7c8f9fe8374
-F test/window3.test 82e43e194ee1f59d42e0ce3d18d06c65aaec6d583eb68839ed7ee903ddc55d6d
+F test/window3.tcl 4941d89c74dd12a3d0fa74548887a98cf101b2707b2fe5cb77581197f5074025
+F test/window3.test 4962a83e7f6ad1b5c8538424b4f9797513ab16d78777cd156c2744e402d63d90
 F test/window4.tcl 23918c0c0e3da95087c5993fab4f049962aec3576f9cc158e37faf7dead0351e
 F test/window4.test 0d89f694ffa9857e22b48e4b50a2d5284288c852eb1947a868b51af937b2b9ac
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
@@ -1739,7 +1739,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb1fb420ac70857e7ca4cbad78be15a27bee8f915ba2da080c7efa1879c06c31
-R 2c2ca975db91292e07722982d19a6d3d
+P 63002b9a090397668b94fe341a035c42f84e4837af85395bce4cd1c2777c5209
+R f143e70c0a392b68a47207212ca0721c
 U dan
-Z 07280d595e477b70f467bbf008f0b04e
+Z 4ef45732bba3ef90b00747173eba3b6a

@@ -223,6 +223,25 @@ foreach {tn window} {
   execsql_test 1.$tn.10.6 "
     SELECT nth_value(b,b+1) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
   "
+
+  execsql_test 1.$tn.11.1 "
+    SELECT first_value(b) OVER (ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.11.2 "
+    SELECT first_value(b) OVER (PARTITION BY b%10 ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.11.3 "
+    SELECT first_value(b) OVER ( ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.11.4 "
+    SELECT first_value(b) OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.11.5 "
+    SELECT first_value(b) OVER ( ORDER BY b%10,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.11.6 "
+    SELECT first_value(b) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
 }
 
 finish_test
