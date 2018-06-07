@@ -142,7 +142,7 @@ static void renameParentFunc(
     }
   }
 
-  zResult = sqlite3MPrintf(db, "%s%s", (zOutput?zOutput:""), zInput), 
+  zResult = sqlite3MPrintf(db, "%s%s", (zOutput?zOutput:""), zInput);
   sqlite3_result_text(context, zResult, -1, SQLITE_DYNAMIC);
   sqlite3DbFree(db, zOutput);
 }

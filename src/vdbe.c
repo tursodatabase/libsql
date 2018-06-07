@@ -3202,8 +3202,7 @@ case OP_AutoCommit: {
 */
 case OP_Transaction: {
   Btree *pBt;
-  int iMeta;
-  int iGen;
+  int iMeta = 0;
 
   assert( p->bIsReader );
   assert( p->readOnly==0 || pOp->p2==0 );
@@ -3216,7 +3215,7 @@ case OP_Transaction: {
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
-    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
+    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, &iMeta);
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
     if( rc!=SQLITE_OK ){
@@ -3249,19 +3248,17 @@ case OP_Transaction: {
       p->nStmtDefCons = db->nDeferredCons;
       p->nStmtDefImmCons = db->nDeferredImmCons;
     }
-
-    /* Gather the schema version number for checking:
+  }
+  assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
+  if( pOp->p5
+   && (iMeta!=pOp->p3
+      || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
+  ){
+    /*
     ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
     ** version is checked to ensure that the schema has not changed since the
     ** SQL statement was prepared.
     */
-    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
-    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
-  }else{
-    iGen = iMeta = 0;
-  }
-  assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( pOp->p5 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
@@ -3370,59 +3367,78 @@ case OP_SetCookie: {
 ** values need not be contiguous but all P1 values should be small integers.
 ** It is an error for P1 to be negative.
 **
-** If P5!=0 then use the content of register P2 as the root page, not
-** the value of P2 itself.
-**
-** There will be a read lock on the database whenever there is an
-** open cursor.  If the database was unlocked prior to this instruction
-** then a read lock is acquired as part of this instruction.  A read
-** lock allows other processes to read the database but prohibits
-** any other process from modifying the database.  The read lock is
-** released when all cursors are closed.  If this instruction attempts
-** to get a read lock but fails, the script terminates with an
-** SQLITE_BUSY error code.
+** Allowed P5 bits:
+** <ul>
+** <li>  <b>0x02 OPFLAG_SEEKEQ</b>: This cursor will only be used for
+**       equality lookups (implemented as a pair of opcodes OP_SeekGE/OP_IdxGT
+**       of OP_SeekLE/OP_IdxGT)
+** </ul>
 **
 ** The P4 value may be either an integer (P4_INT32) or a pointer to
 ** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo 
-** structure, then said structure defines the content and collating 
-** sequence of the index being opened. Otherwise, if P4 is an integer 
-** value, it is set to the number of columns in the table.
+** object, then table being opened must be an [index b-tree] where the
+** KeyInfo object defines the content and collating 
+** sequence of that index b-tree. Otherwise, if P4 is an integer 
+** value, then the table being opened must be a [table b-tree] with a
+** number of columns no less than the value of P4.
 **
 ** See also: OpenWrite, ReopenIdx
 */
 /* Opcode: ReopenIdx P1 P2 P3 P4 P5
 ** Synopsis: root=P2 iDb=P3
 **
-** The ReopenIdx opcode works exactly like ReadOpen except that it first
-** checks to see if the cursor on P1 is already open with a root page
-** number of P2 and if it is this opcode becomes a no-op.  In other words,
+** The ReopenIdx opcode works like OP_OpenRead except that it first
+** checks to see if the cursor on P1 is already open on the same
+** b-tree and if it is this opcode becomes a no-op.  In other words,
 ** if the cursor is already open, do not reopen it.
 **
-** The ReopenIdx opcode may only be used with P5==0 and with P4 being
-** a P4_KEYINFO object.  Furthermore, the P3 value must be the same as
-** every other ReopenIdx or OpenRead for the same cursor number.
+** The ReopenIdx opcode may only be used with P5==0 or P5==OPFLAG_SEEKEQ
+** and with P4 being a P4_KEYINFO object.  Furthermore, the P3 value must
+** be the same as every other ReopenIdx or OpenRead for the same cursor
+** number.
 **
-** See the OpenRead opcode documentation for additional information.
+** Allowed P5 bits:
+** <ul>
+** <li>  <b>0x02 OPFLAG_SEEKEQ</b>: This cursor will only be used for
+**       equality lookups (implemented as a pair of opcodes OP_SeekGE/OP_IdxGT
+**       of OP_SeekLE/OP_IdxGT)
+** </ul>
+**
+** See also: OP_OpenRead, OP_OpenWrite
 */
 /* Opcode: OpenWrite P1 P2 P3 P4 P5
 ** Synopsis: root=P2 iDb=P3
 **
 ** Open a read/write cursor named P1 on the table or index whose root
-** page is P2.  Or if P5!=0 use the content of register P2 to find the
-** root page.
+** page is P2 (or whose root page is held in register P2 if the
+** OPFLAG_P2ISREG bit is set in P5 - see below).
 **
 ** The P4 value may be either an integer (P4_INT32) or a pointer to
 ** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo 
-** structure, then said structure defines the content and collating 
-** sequence of the index being opened. Otherwise, if P4 is an integer 
-** value, it is set to the number of columns in the table, or to the
-** largest index of any column of the table that is actually used.
+** object, then table being opened must be an [index b-tree] where the
+** KeyInfo object defines the content and collating 
+** sequence of that index b-tree. Otherwise, if P4 is an integer 
+** value, then the table being opened must be a [table b-tree] with a
+** number of columns no less than the value of P4.
 **
-** This instruction works just like OpenRead except that it opens the cursor
-** in read/write mode.  For a given table, there can be one or more read-only
-** cursors or a single read/write cursor but not both.
+** Allowed P5 bits:
+** <ul>
+** <li>  <b>0x02 OPFLAG_SEEKEQ</b>: This cursor will only be used for
+**       equality lookups (implemented as a pair of opcodes OP_SeekGE/OP_IdxGT
+**       of OP_SeekLE/OP_IdxGT)
+** <li>  <b>0x08 OPFLAG_FORDELETE</b>: This cursor is used only to seek
+**       and subsequently delete entries in an index btree.  This is a
+**       hint to the storage engine that the storage engine is allowed to
+**       ignore.  The hint is not used by the official SQLite b*tree storage
+**       engine, but is used by COMDB2.
+** <li>  <b>0x10 OPFLAG_P2ISREG</b>: Use the content of register P2
+**       as the root page, not the value of P2 itself.
+** </ul>
 **
-** See also OpenRead.
+** This instruction works like OpenRead except that it opens the cursor
+** in read/write mode.
+**
+** See also: OP_OpenRead, OP_ReopenIdx
 */
 case OP_ReopenIdx: {
   int nField;
@@ -3478,6 +3494,7 @@ case OP_OpenWrite:
   if( pOp->p5 & OPFLAG_P2ISREG ){
     assert( p2>0 );
     assert( p2<=(p->nMem+1 - p->nCursor) );
+    assert( pOp->opcode==OP_OpenWrite );
     pIn2 = &aMem[p2];
     assert( memIsValid(pIn2) );
     assert( (pIn2->flags & MEM_Int)!=0 );
@@ -3606,7 +3623,7 @@ case OP_OpenEphemeral: {
   rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1);
+    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling
@@ -4014,6 +4031,25 @@ seek_not_found:
   break;
 }
 
+/* Opcode: SeekHit P1 P2 * * *
+** Synopsis: seekHit=P2
+**
+** Set the seekHit flag on cursor P1 to the value in P2.
+** The seekHit flag is used by the IfNoHope opcode.
+**
+** P1 must be a valid b-tree cursor.  P2 must be a boolean value,
+** either 0 or 1.
+*/
+case OP_SeekHit: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pOp->p2==0 || pOp->p2==1 );
+  pC->seekHit = pOp->p2 & 1;
+  break;
+}
+
 /* Opcode: Found P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
@@ -4048,7 +4084,34 @@ seek_not_found:
 ** advanced in either direction.  In other words, the Next and Prev
 ** opcodes do not work after this operation.
 **
-** See also: Found, NotExists, NoConflict
+** See also: Found, NotExists, NoConflict, IfNoHope
+*/
+/* Opcode: IfNoHope P1 P2 P3 P4 *
+** Synopsis: key=r[P3@P4]
+**
+** Register P3 is the first of P4 registers that form an unpacked
+** record.
+**
+** Cursor P1 is on an index btree.  If the seekHit flag is set on P1, then
+** this opcode is a no-op.  But if the seekHit flag of P1 is clear, then
+** check to see if there is any entry in P1 that matches the
+** prefix identified by P3 and P4.  If no entry matches the prefix,
+** jump to P2.  Otherwise fall through.
+**
+** This opcode behaves like OP_NotFound if the seekHit
+** flag is clear and it behaves like OP_Noop if the seekHit flag is set.
+**
+** This opcode is used in IN clause processing for a multi-column key.
+** If an IN clause is attached to an element of the key other than the
+** left-most element, and if there are no matches on the most recent
+** seek over the whole key, then it might be that one of the key element
+** to the left is prohibiting a match, and hence there is "no hope" of
+** any match regardless of how many IN clause elements are checked.
+** In such a case, we abandon the IN clause search early, using this
+** opcode.  The opcode name comes from the fact that the
+** jump is taken if there is "no hope" of achieving a match.
+**
+** See also: NotFound, SeekHit
 */
 /* Opcode: NoConflict P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
@@ -4073,6 +4136,14 @@ seek_not_found:
 **
 ** See also: NotFound, Found, NotExists
 */
+case OP_IfNoHope: {     /* jump, in3 */
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  if( pC->seekHit ) break;
+  /* Fall through into OP_NotFound */
+}
 case OP_NoConflict:     /* jump, in3 */
 case OP_NotFound:       /* jump, in3 */
 case OP_Found: {        /* jump, in3 */
@@ -4221,7 +4292,7 @@ case OP_NotExists:          /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = 0;
+  pC->seekOp = OP_SeekRowid;
 #endif
   assert( pC->isTable );
   assert( pC->eCurType==CURTYPE_BTREE );
@@ -4875,6 +4946,9 @@ case OP_NullRow: {
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
   }
+#ifdef SQLITE_DEBUG
+  if( pC->seekOp==0 ) pC->seekOp = OP_NullRow;
+#endif
   break;
 }
 
@@ -5062,12 +5136,7 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 **
-** See also: Prev, NextIfOpen
-*/
-/* Opcode: NextIfOpen P1 P2 P3 P4 P5
-**
-** This opcode works just like Next except that if cursor P1 is not
-** open it behaves a no-op.
+** See also: Prev
 */
 /* Opcode: Prev P1 P2 P3 P4 P5
 **
@@ -5095,11 +5164,6 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-/* Opcode: PrevIfOpen P1 P2 P3 P4 P5
-**
-** This opcode works just like Prev except that if cursor P1 is not
-** open it behaves a no-op.
-*/
 /* Opcode: SorterNext P1 P2 * * P5
 **
 ** This opcode works just like OP_Next except that P1 must be a
@@ -5114,10 +5178,6 @@ case OP_SorterNext: {  /* jump */
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterNext(db, pC);
   goto next_tail;
-case OP_PrevIfOpen:    /* jump */
-case OP_NextIfOpen:    /* jump */
-  if( p->apCsr[pOp->p1]==0 ) break;
-  /* Fall through */
 case OP_Prev:          /* jump */
 case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -5128,17 +5188,17 @@ case OP_Next:          /* jump */
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
-  assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
-  assert( pOp->opcode!=OP_PrevIfOpen || pOp->p4.xAdvance==sqlite3BtreePrevious);
 
-  /* The Next opcode is only used after SeekGT, SeekGE, and Rewind.
+  /* The Next opcode is only used after SeekGT, SeekGE, Rewind, and Found.
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
-  assert( pOp->opcode!=OP_Next || pOp->opcode!=OP_NextIfOpen
+  assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
-       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found);
-  assert( pOp->opcode!=OP_Prev || pOp->opcode!=OP_PrevIfOpen
+       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found 
+       || pC->seekOp==OP_NullRow);
+  assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
-       || pC->seekOp==OP_Last );
+       || pC->seekOp==OP_Last 
+       || pC->seekOp==OP_NullRow);
 
   rc = pOp->p4.xAdvance(pC->uc.pCursor, pOp->p3);
 next_tail:
