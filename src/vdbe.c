@@ -5132,12 +5132,7 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 **
-** See also: Prev, NextIfOpen
-*/
-/* Opcode: NextIfOpen P1 P2 P3 P4 P5
-**
-** This opcode works just like Next except that if cursor P1 is not
-** open it behaves a no-op.
+** See also: Prev
 */
 /* Opcode: Prev P1 P2 P3 P4 P5
 **
@@ -5165,11 +5160,6 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-/* Opcode: PrevIfOpen P1 P2 P3 P4 P5
-**
-** This opcode works just like Prev except that if cursor P1 is not
-** open it behaves a no-op.
-*/
 /* Opcode: SorterNext P1 P2 * * P5
 **
 ** This opcode works just like OP_Next except that P1 must be a
@@ -5184,10 +5174,6 @@ case OP_SorterNext: {  /* jump */
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterNext(db, pC);
   goto next_tail;
-case OP_PrevIfOpen:    /* jump */
-case OP_NextIfOpen:    /* jump */
-  if( p->apCsr[pOp->p1]==0 ) break;
-  /* Fall through */
 case OP_Prev:          /* jump */
 case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -5198,17 +5184,17 @@ case OP_Next:          /* jump */
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
-  assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
-  assert( pOp->opcode!=OP_PrevIfOpen || pOp->p4.xAdvance==sqlite3BtreePrevious);
 
+#if 0
   /* The Next opcode is only used after SeekGT, SeekGE, and Rewind.
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
-  assert( pOp->opcode!=OP_Next || pOp->opcode!=OP_NextIfOpen
+  assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
        || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found);
-  assert( pOp->opcode!=OP_Prev || pOp->opcode!=OP_PrevIfOpen
+  assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
        || pC->seekOp==OP_Last );
+#endif
 
   rc = pOp->p4.xAdvance(pC->uc.pCursor, pOp->p3);
 next_tail:

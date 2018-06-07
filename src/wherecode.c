@@ -591,7 +591,7 @@ static int codeEqualityTerm(
           sqlite3VdbeAddOp1(v, OP_IsNull, iOut); VdbeCoverage(v);
           if( i==iEq ){
             pIn->iCur = iTab;
-            pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
+            pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
             if( iEq>0 && (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
               pIn->iBase = iReg - i;
               pIn->nPrefix = i;
