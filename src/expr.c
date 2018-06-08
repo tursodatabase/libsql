@@ -1182,24 +1182,6 @@ static int dupedExprSize(Expr *p, int flags){
   return nByte;
 }
 
-static Window *winDup(sqlite3 *db, Window *p){
-  Window *pNew = 0;
-  if( p ){
-    pNew = sqlite3DbMallocZero(db, sizeof(Window));
-    if( pNew ){
-      pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
-      pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
-      pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
-      pNew->eType = p->eType;
-      pNew->eEnd = p->eEnd;
-      pNew->eStart = p->eStart;
-      pNew->pStart = sqlite3ExprDup(db, pNew->pStart, 0);
-      pNew->pEnd = sqlite3ExprDup(db, pNew->pEnd, 0);
-    }
-  }
-  return pNew;
-}
-
 /*
 ** This function is similar to sqlite3ExprDup(), except that if pzBuffer 
 ** is not NULL then *pzBuffer is assumed to point to a buffer large enough 
@@ -1289,7 +1271,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       if( ExprHasProperty(p, EP_Reduced|EP_TokenOnly) ){
         pNew->pWin = 0;
       }else{
-        pNew->pWin = winDup(db, p->pWin);
+        pNew->pWin = sqlite3WindowDup(db, p->pWin);
       }
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){

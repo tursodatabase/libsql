@@ -3502,10 +3502,11 @@ Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 int sqlite3WindowCompare(Parse*, Window*, Window*);
 void sqlite3WindowCodeInit(Parse*, Window*);
-void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int, int*);
+void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 int sqlite3WindowRewrite(Parse*, Select*);
 int sqlite3ExpandSubquery(Parse*, struct SrcList_item*);
 void sqlite3WindowUpdate(Parse*, Window*, FuncDef*);
+Window *sqlite3WindowDup(sqlite3 *db, Window *p);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,

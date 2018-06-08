@@ -3712,7 +3712,7 @@ static int flattenSubquery(
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
 
-  if( p->pWin ) return 0;
+  if( p->pWin || pSub->pWin ) return 0;
 
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
@@ -5898,26 +5898,18 @@ int sqlite3Select(
     assert( p->pEList==pEList );
     if( pWin ){
       int addrGosub = sqlite3VdbeMakeLabel(v);
+      int iCont = sqlite3VdbeMakeLabel(v);
       int regGosub = ++pParse->nMem;
       int addr = 0;
-      int bLoop = 0;
 
-      sqlite3WindowCodeStep(pParse, p, pWInfo, regGosub, addrGosub, &bLoop);
+      sqlite3WindowCodeStep(pParse, p, pWInfo, regGosub, addrGosub);
 
-      sqlite3VdbeAddOp0(v, OP_Goto);
+      addr = sqlite3VdbeAddOp0(v, OP_Goto);
       sqlite3VdbeResolveLabel(v, addrGosub);
-      if( bLoop ){
-        addr = sqlite3VdbeAddOp1(v, OP_Rewind, pWin->iEphCsr);
-      }else{
-        addr = sqlite3VdbeCurrentAddr(v);
-      }
-      selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, addr+1, 0);
-      if( bLoop ){
-        sqlite3VdbeAddOp2(v, OP_Next, pWin->iEphCsr, addr+1);
-        sqlite3VdbeJumpHere(v, addr);
-      }
+      selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, iCont, 0);
+      sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
-      sqlite3VdbeJumpHere(v, addr-1);       /* OP_Goto jumps here */
+      sqlite3VdbeJumpHere(v, addr);
 
     }else{
       /* Use the standard inner loop. */

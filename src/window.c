@@ -1560,7 +1560,10 @@ static void windowCodeDefaultStep(
       if( addrGoto ) sqlite3VdbeJumpHere(v, addrGoto);
     }
 
+    sqlite3VdbeAddOp2(v, OP_Rewind, pMWin->iEphCsr,sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
+    sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)-1);
+
     sqlite3VdbeAddOp1(v, OP_ResetSorter, pMWin->iEphCsr);
     sqlite3VdbeAddOp3(
         v, OP_Copy, reg+pMWin->nBufferCol, pMWin->regPart, nPart+nPeer-1
@@ -1586,9 +1589,28 @@ static void windowCodeDefaultStep(
   sqlite3WhereEnd(pWInfo);
 
   windowAggFinal(pParse, pMWin, 1);
+  sqlite3VdbeAddOp2(v, OP_Rewind, pMWin->iEphCsr,sqlite3VdbeCurrentAddr(v)+3);
   sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrGosub);
+  sqlite3VdbeAddOp2(v, OP_Next, pMWin->iEphCsr, sqlite3VdbeCurrentAddr(v)-1);
 }
 
+Window *sqlite3WindowDup(sqlite3 *db, Window *p){
+  Window *pNew = 0;
+  if( p ){
+    pNew = sqlite3DbMallocZero(db, sizeof(Window));
+    if( pNew ){
+      pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
+      pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
+      pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
+      pNew->eType = p->eType;
+      pNew->eEnd = p->eEnd;
+      pNew->eStart = p->eStart;
+      pNew->pStart = sqlite3ExprDup(db, pNew->pStart, 0);
+      pNew->pEnd = sqlite3ExprDup(db, pNew->pEnd, 0);
+    }
+  }
+  return pNew;
+}
 
 /*
 ** RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
@@ -1649,13 +1671,11 @@ void sqlite3WindowCodeStep(
   Select *p,
   WhereInfo *pWInfo,
   int regGosub, 
-  int addrGosub,
-  int *pbLoop
+  int addrGosub
 ){
   Window *pMWin = p->pWin;
   Window *pWin;
 
-  *pbLoop = 0;
   if( (pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy))
    || (pMWin->eStart==TK_CURRENT&&pMWin->eEnd==TK_UNBOUNDED&&pMWin->pOrderBy)
@@ -1677,7 +1697,6 @@ void sqlite3WindowCodeStep(
     }
   }
 
-  *pbLoop = 1;
   windowCodeDefaultStep(pParse, p, pWInfo, regGosub, addrGosub);
 }
 
