@@ -2451,7 +2451,7 @@ static int whereLoopAddBtreeIndex(
 
     if( eOp & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
-      pNew->wsFlags |= WHERE_COLUMN_IN;
+      LogEst M, logK;
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
         int i;
@@ -2471,6 +2471,36 @@ static int whereLoopAddBtreeIndex(
         assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
                           ** changes "x IN (?)" into "x=?". */
       }
+      /* Let:
+      **   N = the total number of rows in the table
+      **   K = the number of entries on the right-hand side of the IN operator
+      **   M = the number of rows in the table that match terms to the 
+      **       to the left in the same index.  If the IN operator is on
+      **       the left-most index column, M==N.
+      **
+      ** Given the definitions above, it is better to omit the IN operator
+      ** from the index lookup and instead do a scan of the M elements,
+      ** testing each scanned row against the IN operator separately, if:
+      **
+      **        M*log(K) < K*log(N)
+      **
+      ** Our estimates for M, K, and N might be inaccurate, so we build in
+      ** a safety margin of 2 (LogEst: 10) that favors using the IN operator
+      ** with the index, as using an index has better worst-case behavior.
+      */
+      M = pProbe->aiRowLogEst[saved_nEq+1];
+      logK = sqlite3LogEst(nIn);
+      if( M + logK + 10 < nIn + rLogSize ){
+        WHERETRACE(0x40,
+          ("IN operator costs more than scan on column %d of \"%s\" (%d<%d)\n",
+           saved_nEq, pProbe->zName, M+logK+10, nIn+rLogSize));
+        continue;
+      }else{
+        WHERETRACE(0x40,
+          ("IN operator cheaper than scan on column %d of \"%s\" (%d>=%d)\n",
+           saved_nEq, pProbe->zName, M+logK+10, nIn+rLogSize));
+      }
+      pNew->wsFlags |= WHERE_COLUMN_IN;
     }else if( eOp & (WO_EQ|WO_IS) ){
       int iCol = pProbe->aiColumn[saved_nEq];
       pNew->wsFlags |= WHERE_COLUMN_EQ;
