@@ -387,7 +387,28 @@ void sqlite3WindowFunctions(void){
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
 }
 
-void sqlite3WindowUpdate(Parse *pParse, Window *pWin, FuncDef *pFunc){
+void sqlite3WindowUpdate(
+  Parse *pParse, 
+  Window *pList, 
+  Window *pWin, 
+  FuncDef *pFunc
+){
+  if( pWin->zName ){
+    Window *p;
+    for(p=pList; p; p=p->pNextWin){
+      if( sqlite3StrICmp(p->zName, pWin->zName)==0 ) break;
+    }
+    if( p==0 ){
+      sqlite3ErrorMsg(pParse, "no such window: %s", pWin->zName);
+      return;
+    }
+    pWin->pPartition = sqlite3ExprListDup(pParse->db, p->pPartition, 0);
+    pWin->pOrderBy = sqlite3ExprListDup(pParse->db, p->pOrderBy, 0);
+    pWin->pStart = sqlite3ExprDup(pParse->db, p->pStart, 0);
+    pWin->pEnd = sqlite3ExprDup(pParse->db, p->pEnd, 0);
+    pWin->eStart = p->eStart;
+    pWin->eEnd = p->eEnd;
+  }
   if( pFunc->funcFlags & SQLITE_FUNC_WINDOW ){
     sqlite3 *db = pParse->db;
     if( pFunc->xSFunc==row_numberStepFunc || pFunc->xSFunc==ntileStepFunc ){
@@ -615,7 +636,16 @@ void sqlite3WindowDelete(sqlite3 *db, Window *p){
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pEnd);
     sqlite3ExprDelete(db, p->pStart);
+    sqlite3DbFree(db, p->zName);
     sqlite3DbFree(db, p);
+  }
+}
+
+void sqlite3WindowListDelete(sqlite3 *db, Window *p){
+  while( p ){
+    Window *pNext = p->pNextWin;
+    sqlite3WindowDelete(db, p);
+    p = pNext;
   }
 }
 

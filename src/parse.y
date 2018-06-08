@@ -529,11 +529,13 @@ multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
 multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP; /*A-overwrites-OP*/}
 %endif SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
-                 groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
+                 groupby_opt(P) having_opt(Q) windowdefn_opt(R)
+                 orderby_opt(Z) limit_opt(L). {
 #if SELECTTRACE_ENABLED
   Token s = S; /*A-overwrites-S*/
 #endif
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L);
+  if( A ) A->pWinDefn = R;
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
   ** query planner debugging, to differentiate between multiple Select
@@ -1005,7 +1007,7 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
   sqlite3ExprAttachSubtrees(pParse->db, A, E, 0);
 }
 %endif  SQLITE_OMIT_CAST
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP window(Z). {
+expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP over_opt(Z). {
   if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
   }
@@ -1015,7 +1017,7 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP window(Z). {
     A->flags |= EP_Distinct;
   }
 }
-expr(A) ::= id(X) LP STAR RP window(Z). {
+expr(A) ::= id(X) LP STAR RP over_opt(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X);
   sqlite3WindowAttach(pParse, A, Z);
 }
@@ -1023,12 +1025,40 @@ term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP);
 }
 
+%type windowdefn_opt {Window*}
+%destructor windowdefn_opt {sqlite3WindowDelete(pParse->db, $$);}
+windowdefn_opt(A) ::= . { A = 0; }
+windowdefn_opt(A) ::= WINDOW windowdefn_list(B). { A = B; }
+
+%type windowdefn_list {Window*}
+%destructor windowdefn_list {sqlite3WindowDelete(pParse->db, $$);}
+windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
+windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
+  if( Z ) Z->pNextWin = Y;
+  A = Z;
+}
+
+%type windowdefn {Window*}
+%destructor windowdefn {sqlite3WindowDelete(pParse->db, $$);}
+windowdefn(A) ::= nm(X) AS window(Y). {
+  if( Y ){
+    Y->zName = sqlite3DbStrNDup(pParse->db, X.z, X.n);
+  }
+  A = Y;
+}
+
+%type over_opt {Window*}
+%destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
 
 %type window {Window*}
 %destructor window {sqlite3WindowDelete(pParse->db, $$);}
 
 %type frame_opt {Window*}
 %destructor frame_opt {sqlite3WindowDelete(pParse->db, $$);}
+
+%type window_or_nm {Window*}
+%destructor window_or_nm {
+sqlite3WindowDelete(pParse->db, $$);}
 
 %type part_opt {ExprList*}
 %destructor part_opt {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1041,11 +1071,23 @@ term(A) ::= CTIME_KW(OP). {
 %type frame_bound {struct FrameBound}
 %destructor frame_bound {sqlite3ExprDelete(pParse->db, $$.pExpr);}
 
-window(A) ::= . { A = 0; }
-window(A) ::= filter_opt(W) OVER LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP.{
-  if( Z ){
-    A = Z;
-    A->pFilter = W;
+over_opt(A) ::= . { A = 0; }
+over_opt(A) ::= filter_opt(W) OVER window_or_nm(Z). {
+  A = Z;
+  if( A ) A->pFilter = W;
+}
+
+window_or_nm(A) ::= window(Z). {A = Z;}
+window_or_nm(A) ::= nm(Z). {
+  A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  if( A ){
+    A->zName = sqlite3DbStrNDup(pParse->db, Z.z, Z.n);
+  }
+}
+
+window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
+  A = Z;
+  if( A ){
     A->pPartition = X;
     A->pOrderBy = Y;
   }

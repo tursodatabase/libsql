@@ -1665,7 +1665,7 @@ static void groupConcatStep(
 
   if( pAccum ){
     sqlite3 *db = sqlite3_context_db_handle(context);
-    int firstTerm = pAccum->nChar==0;
+    int firstTerm = pAccum->mxAlloc==0;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( !firstTerm ){
       if( argc==2 ){
@@ -1703,6 +1703,7 @@ static void groupConcatInverse(
       pAccum->nChar -= n;
       memmove(pAccum->zText, &pAccum->zText[n], pAccum->nChar);
     }
+    if( pAccum->nChar==0 ) pAccum->mxAlloc = 0;
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){

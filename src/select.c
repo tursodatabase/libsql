@@ -96,6 +96,9 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     sqlite3ExprDelete(db, p->pHaving);
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pLimit);
+    if( OK_IF_ALWAYS_TRUE(p->pWinDefn) ){
+      sqlite3WindowListDelete(db, p->pWinDefn);
+    }
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
@@ -163,6 +166,7 @@ Select *sqlite3SelectNew(
   pNew->pLimit = pLimit;
   pNew->pWith = 0;
   pNew->pWin = 0;
+  pNew->pWinDefn = 0;
   if( pParse->db->mallocFailed ) {
     clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;

@@ -779,12 +779,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
         if( pExpr->pWin ){
-          sqlite3WindowUpdate(pParse, pExpr->pWin, pDef);
-          if( 0==pNC->pWin 
-           || 0==sqlite3WindowCompare(pParse, pNC->pWin, pExpr->pWin) 
+          Select *pSel = pNC->pWinSelect;
+          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->pWin, pDef);
+          if( 0==pSel->pWin 
+           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->pWin) 
           ){
-            pExpr->pWin->pNextWin = pNC->pWin;
-            pNC->pWin = pExpr->pWin;
+            pExpr->pWin->pNextWin = pSel->pWin;
+            pSel->pWin = pExpr->pWin;
           }
           pExpr->pWin->pFunc = pDef;
           pExpr->pWin->nArg = (pExpr->x.pList ? pExpr->x.pList->nExpr : 0);
@@ -1262,6 +1263,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     */
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
+    sNC.pWinSelect = p;
     if( sqlite3ResolveExprNames(&sNC, p->pLimit) ){
       return WRC_Abort;
     }
@@ -1422,9 +1424,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       sqlite3SelectWrongNumTermsError(pParse, p->pNext);
       return WRC_Abort;
     }
-
-    p->pWin = sNC.pWin;
-    sNC.pWin = 0;
 
     /* Advance to the next term of the compound
     */

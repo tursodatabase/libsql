@@ -2715,7 +2715,7 @@ struct NameContext {
   int nRef;            /* Number of names resolved by this context */
   int nErr;            /* Number of errors encountered while resolving names */
   u16 ncFlags;         /* Zero or more NC_* flags defined below */
-  Window *pWin;        /* List of window functions in this context */
+  Select *pWinSelect;  /* SELECT statement for any window functions */
 };
 
 /*
@@ -2807,6 +2807,7 @@ struct Select {
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   With *pWith;           /* WITH clause attached to this select. Or NULL. */
   Window *pWin;          /* List of window functions */
+  Window *pWinDefn;      /* List of named window definitions */
 };
 
 /*
@@ -3472,15 +3473,18 @@ struct TreeView {
 #endif /* SQLITE_DEBUG */
 
 struct Window {
-  Expr *pFilter;
-  ExprList *pPartition;
-  ExprList *pOrderBy;
+  char *zName;            /* Name of window (may be NULL) */
+  ExprList *pPartition;   /* PARTITION BY clause */
+  ExprList *pOrderBy;     /* ORDER BY clause */
   u8 eType;               /* TK_RANGE or TK_ROWS */
   u8 eStart;              /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   u8 eEnd;                /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
+
   Window *pNextWin;       /* Next window function belonging to this SELECT */
+
+  Expr *pFilter;
   FuncDef *pFunc;
   int nArg;
 
@@ -3498,6 +3502,7 @@ struct Window {
 };
 
 void sqlite3WindowDelete(sqlite3*, Window*);
+void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 int sqlite3WindowCompare(Parse*, Window*, Window*);
@@ -3505,7 +3510,7 @@ void sqlite3WindowCodeInit(Parse*, Window*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 int sqlite3WindowRewrite(Parse*, Select*);
 int sqlite3ExpandSubquery(Parse*, struct SrcList_item*);
-void sqlite3WindowUpdate(Parse*, Window*, FuncDef*);
+void sqlite3WindowUpdate(Parse*, Window*, Window*, FuncDef*);
 Window *sqlite3WindowDup(sqlite3 *db, Window *p);
 
 /*

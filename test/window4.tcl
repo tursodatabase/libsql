@@ -90,5 +90,12 @@ execsql_test 3.2 {
   SELECT a, nth_value(c, d) OVER (PARTITION BY b ORDER BY a) FROM t5
 }
 
+execsql_test 3.3 {
+  SELECT a, count(*) OVER abc, count(*) OVER def FROM t5
+  WINDOW abc AS (ORDER BY a), 
+         def AS (ORDER BY a DESC)
+  ORDER BY a;
+}
+
 finish_test
 

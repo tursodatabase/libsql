@@ -1480,6 +1480,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = withDup(db, p->pWith);
     pNew->pWin = 0;
+    pNew->pWinDefn = 0;           /* TODO!! */
     sqlite3SelectSetName(pNew, p->zSelName);
     *pp = pNew;
     pp = &pNew->pPrior;
