@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\scan\sbe\sfalse\sfor\sa\scorrupt\sdatabase\sand\sa\sstrange\squery\nthat\suses\sa\srecursive\sSQL\sfunction\sto\sdelete\scontent\sfrom\sa\scorrupt\sdatabase\nfile\swhile\sit\sis\sbeing\squeried.
-D 2018-06-08T19:13:57.914
+C When\sthe\squery\splanner\shas\sthe\sopportunity\sto\suse\san\sIN\soperater\sconstraint\non\sa\sterm\sof\san\sindex\sother\sthan\sthe\sleft-most\sterm,\suse\sthe\sestimated\snumber\nof\selements\son\sthe\sright-hand\sside\sof\sthe\sIN\soperator\sto\sdetermine\sif\smakes\nsense\sto\suse\sthe\sIN\soperator\swith\sindex\slooks,\sor\sto\sjust\sdo\sa\sscan\sover\sthe\nrange\sof\sthe\stable\sidentified\sby\sthe\sindex\sterms\sto\sthe\sleft.\s\s\sOnly\sdo\sthis\nif\ssqlite_stat1\smeasurements\sare\savailable\sas\sotherwise\sthe\sperformance\nestimates\swill\snot\sbe\saccurate\senough\sto\sdiscern\sthe\sbest\splan.\s\sBias\sthe\ndecision\sslightly\sin\sfavor\sof\susing\sindex\slookups\son\seach\selement\sof\sthe\sIN\noperator.
+D 2018-06-08T23:23:53.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -579,7 +579,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c 7dcb13bbcfd8c926546946556014c8f5aa0829eb8b65a6c18f8d187d265200a5
+F src/where.c e4d48338ca4718c8034f313cca202cc5ca75639a24d27b959b65578198f63c81
 F src/whereInt.h b09753e74bf92a8b17cf0e41ca94c44432c454544be6699b5311dcc57bf229c6
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
 F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
@@ -967,7 +967,7 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
 F test/in5.test 7ae37fcd4a5e198291c6ab5f31a5bb3d15397efe8b75a6736d7a95a7b8dd9e08
-F test/in6.test 77c3e1d356d8aeb0864051f0677d3c0a032cf97b7f33a0ba8fa2b04a663f6b7b
+F test/in6.test 62d943a02f722948f4410ee0b53c3cb39acd7c41afb083df8d7004238fe90a20
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1185,7 +1185,7 @@ F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test ef851a80f7e6de93b51caca9e4b6b7d2dcd540bbcca7d51860e80435b8b4c0de
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
-F test/rowvalue4.test cbd1cead27a797d11ec93301fd801c89e97eb1809b3d984b7f16a3876e362eac
+F test/rowvalue4.test 2b20468da3775aba971caf3158e9696a4d99c69a7623fb495f332a596daebbee
 F test/rowvalue5.test c81c7d8cf36711ab37675ad7376084ae2a359cb6
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvalue7.test 5d06ff19d9e6969e574a2e662a531dd0c67801a8
@@ -1731,7 +1731,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09fffbdf9f2f6ce31a22d5a6df7a45f19a16628da622f12d6e33171cce09fb21
-R e90ea8c0bc9f17fa862de55346ad01f3
+P 99057383acc8f92093530e216c621d40386a06fe98131ff0af6df524d80a6410 30e874661dcc1a2ecb40df2ef74582151d85bb36c754a38548829a3b6285f18d
+R 54c7353f86aece043f7640340784a722
+T +closed 30e874661dcc1a2ecb40df2ef74582151d85bb36c754a38548829a3b6285f18d
 U drh
-Z dc7dec1a328a3fd8e94df605e9d025f7
+Z 3947665ab12ebd8b4ea54e65ad1b9691
