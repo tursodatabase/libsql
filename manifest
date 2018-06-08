@@ -1,5 +1,5 @@
-C The\sIN-early-out\soptimization:\s\sWhen\sdoing\sa\slook-up\son\sa\smulti-column\sindex\nand\san\sIN\soperator\sis\sused\son\sa\scolumn\sother\sthan\sthe\sleft-most\scolumn,\sthen\nif\sno\srows\smatch\sagainst\sthe\sfirst\sIN\svalue,\scheck\sto\smake\ssure\sthere\sexist\nrows\sthat\smatch\sthe\scolumns\sto\sthe\sright\sbefore\scontinuing\swith\sthe\snext\sIN\nvalue.
-D 2018-06-07T18:13:49.091
+C Fix\san\sassert()\sthat\scan\sbe\sfalse\sfor\sa\scorrupt\sdatabase\sand\sa\sstrange\squery\nthat\suses\sa\srecursive\sSQL\sfunction\sto\sdelete\scontent\sfrom\sa\scorrupt\sdatabase\nfile\swhile\sit\sis\sbeing\squeried.
+D 2018-06-08T19:13:57.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -436,7 +436,7 @@ F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ae7687faa330562d36cede3375fdc316bff068e9216322d0dfbb3749333e5d3d
+F src/btree.c 06690f5ad144c5e69dfb68d5ec8ee4819c6d40f4b8bc77aa97975938f59d928c
 F src/btree.h ab639c4b9b210b8f4cd7a3a922af73df9a3f27c1d124267339fd73ef8619f488
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 5fc41458505331bfb0c175f40b9a13cb335f826bed3ae311aaae000c132d7b16
@@ -1731,8 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb87c054b1b76959e46258ac66b24027f468b390a4148ac67f208a1fbeda4060 4b0b4e14039469b656662312a5f80f086ede293e9ad04c7bc99a202b683a1e55
-R fe7d026f8be3134e2723fc39eeec5ed5
-T +closed 4b0b4e14039469b656662312a5f80f086ede293e9ad04c7bc99a202b683a1e55
+P 09fffbdf9f2f6ce31a22d5a6df7a45f19a16628da622f12d6e33171cce09fb21
+R e90ea8c0bc9f17fa862de55346ad01f3
 U drh
-Z 8a623af2a2288d1935dd9b3507daa5d8
+Z dc7dec1a328a3fd8e94df605e9d025f7
