@@ -145,6 +145,12 @@ do_execsql_test 2.3.3 {
   SELECT a, lag(b, 3, 'abc') OVER (ORDER BY a) FROM t4
 } {1 abc   2 abc   3 abc   4 A   5 B   6 C   7 D   8 E   9 F   10 G}
 
+do_execsql_test 2.4.1 {
+  SELECT group_concat(b, '.') OVER (
+    ORDER BY a ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t4
+} {A.B.C.D.E.F.G.H.I.J   B.C.D.E.F.G.H.I.J   C.D.E.F.G.H.I.J   D.E.F.G.H.I.J   E.F.G.H.I.J   F.G.H.I.J   G.H.I.J   H.I.J   I.J   J}
+
 do_execsql_test 3.0 {
   DROP TABLE IF EXISTS t5;
   CREATE TABLE t5(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);

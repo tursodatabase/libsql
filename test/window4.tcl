@@ -66,6 +66,12 @@ execsql_test 2.3.3 {
   SELECT a, lag(b, 3, 'abc') OVER (ORDER BY a) FROM t4
 }
 
+execsql_test 2.4.1 {
+  SELECT string_agg(b, '.') OVER (
+    ORDER BY a ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM t4
+}
+
 execsql_test 3.0 {
   DROP TABLE IF EXISTS t5;
   CREATE TABLE t5(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);

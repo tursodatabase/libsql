@@ -280,6 +280,26 @@ foreach {tn window} {
   execsql_test 1.$tn.13.6 "
     SELECT lag(b,b) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
   "
+
+  execsql_test 1.$tn.14.1 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER (ORDER BY a $window) FROM t2
+  "
+
+  execsql_test 1.$tn.14.2 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER (PARTITION BY b%10 ORDER BY a $window) FROM t2
+  "
+  execsql_test 1.$tn.14.3 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER ( ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.14.4 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER ( PARTITION BY b%10 ORDER BY b,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.14.5 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER ( ORDER BY b%10,a $window ) FROM t2
+  "
+  execsql_test 1.$tn.14.6 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
 }
 
 finish_test

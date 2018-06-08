@@ -1665,7 +1665,7 @@ static void groupConcatStep(
 
   if( pAccum ){
     sqlite3 *db = sqlite3_context_db_handle(context);
-    int firstTerm = pAccum->mxAlloc==0;
+    int firstTerm = pAccum->nChar==0;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( !firstTerm ){
       if( argc==2 ){
@@ -1680,6 +1680,29 @@ static void groupConcatStep(
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);
     if( zVal ) sqlite3_str_append(pAccum, zVal, nVal);
+  }
+}
+static void groupConcatInverse(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int n;
+  assert( argc==1 || argc==2 );
+  StrAccum *pAccum;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
+  if( pAccum ){
+    n = sqlite3_value_bytes(argv[0]);
+    if( argc==2 ){
+      n += sqlite3_value_bytes(argv[1]);
+    }
+    if( n>=pAccum->nChar ){
+      pAccum->nChar = 0;
+    }else{
+      pAccum->nChar -= n;
+      memmove(pAccum->zText, &pAccum->zText[n], pAccum->nChar);
+    }
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){
@@ -1894,16 +1917,15 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
-    WAGGREGATE(sum,        1, 0, 0, sumStep, sumInverse,   sumFinalize),
-    WAGGREGATE(total,      1, 0, 0, sumStep, sumInverse,   totalFinalize    ),
-    WAGGREGATE(avg,        1, 0, 0, sumStep, sumInverse,   avgFinalize    ),
-    AGGREGATE2(count,            0, 0, 0, countStep,       countFinalize,
-               SQLITE_FUNC_COUNT  ),
-    WAGGREGATE(count,             1, 0, 0, countStep, 0,    countFinalize  ),
-    AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize,
-        groupConcatValue),
-    AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize,
-        groupConcatValue),
+    WAGGREGATE(sum,   1,0,0, sumStep, sumFinalize, sumFinalize, sumInverse),
+    WAGGREGATE(total, 1,0,0, sumStep, totalFinalize, totalFinalize, sumInverse),
+    WAGGREGATE(avg,   1,0,0, sumStep, avgFinalize, avgFinalize, sumInverse),
+    AGGREGATE2(count, 0,0,0, countStep, countFinalize, SQLITE_FUNC_COUNT  ),
+    WAGGREGATE(count, 1,0,0, countStep, countFinalize, 0, 0 ),
+    WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep, 
+        groupConcatFinalize, groupConcatValue, groupConcatInverse),
+    WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep, 
+        groupConcatFinalize, groupConcatValue, groupConcatInverse),
   
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
