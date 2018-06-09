@@ -1,5 +1,5 @@
-C Improved\scomments\san\spresentation\sfor\sthe\srecent\sIN\soperator\sdecision\nimprovement.
-D 2018-06-09T14:13:46.495
+C Slightly\ssmaller\sand\sfaster\scode\sby\sencapsulating\swal-index\shash\stable\nlocation\sinformation\sin\sa\sseparate\sWalHashLoc\sobject\srather\sthan\spassing\naround\sthe\svarious\selements\sas\sseparate\svariables.
+D 2018-06-09T16:49:00.305
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -576,7 +576,7 @@ F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 10ea07dec111de6fb0a4fc87a7ffa4c65fdc088a19dbfaf7d6f2b128f2e8eb7b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
+F src/wal.c d44a0811afd2155b1157c38b33141d4ac028fda6232485bed664015bb05819ca
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
 F src/where.c fe1a6f97c12cc9472ccce86166ba3f827cf61d6ae770c036a6396b63863baac4
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd0934139076848f2f2edfd3d74d54608531031a05a60ca6ac1d7016dcd538df
-R b9ed4417ad4e47d1ad0ea2ffe1b71005
+P 31e480f68dfd887cfd9114f9f9fec53d751d3ecc27e36f55c0166b51b2fbb08c
+R 6ae6039dbf6c75d53dff2e4ab7fb3afb
 U drh
-Z fc8a0aeffe4e41486a64c0cdfcf48c75
+Z 6ec430bc7e585373e73f8d45e5d8a30b
