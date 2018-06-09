@@ -411,6 +411,11 @@ void sqlite3WindowUpdate(
   }
   if( pFunc->funcFlags & SQLITE_FUNC_WINDOW ){
     sqlite3 *db = pParse->db;
+    if( pWin->pFilter ){
+      sqlite3ErrorMsg(pParse, 
+          "FILTER clause may only be used with aggregate window functions"
+      );
+    }else
     if( pFunc->xSFunc==row_numberStepFunc || pFunc->xSFunc==ntileStepFunc ){
       sqlite3ExprDelete(db, pWin->pStart);
       sqlite3ExprDelete(db, pWin->pEnd);
@@ -418,7 +423,7 @@ void sqlite3WindowUpdate(
       pWin->eType = TK_ROWS;
       pWin->eStart = TK_UNBOUNDED;
       pWin->eEnd = TK_CURRENT;
-    }
+    }else
 
     if( pFunc->xSFunc==dense_rankStepFunc || pFunc->xSFunc==rankStepFunc
      || pFunc->xSFunc==percent_rankStepFunc || pFunc->xSFunc==cume_distStepFunc
@@ -602,6 +607,10 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
       pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
       pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList);
+      if( pWin->pFilter ){
+        Expr *pFilter = sqlite3ExprDup(db, pWin->pFilter, 0);
+        pSublist = sqlite3ExprListAppend(pParse, pSublist, pFilter);
+      }
       pWin->regAccum = ++pParse->nMem;
       pWin->regResult = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
@@ -819,14 +828,29 @@ static void windowAggStep(
     ){
       /* no-op */
     }else{
+      int addrIf = 0;
+      if( pWin->pFilter ){
+        int regTmp;
+        if( csr>0 ){
+          regTmp = sqlite3GetTempReg(pParse);
+          sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+pWin->nArg,regTmp);
+        }else{
+          regTmp = regArg + pWin->nArg;
+        }
+        addrIf = sqlite3VdbeAddOp3(v, OP_IfNot, regTmp, 0, 1);
+        if( csr>0 ){
+          sqlite3ReleaseTempReg(pParse, regTmp);
+        }
+      }
       if( pWin->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;
-        pColl = sqlite3ExprCollSeq(pParse, pWin->pOwner->x.pList->a[0].pExpr);
+        pColl = sqlite3ExprNNCollSeq(pParse, pWin->pOwner->x.pList->a[0].pExpr);
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0,0,0, (const char*)pColl, P4_COLLSEQ);
       }
       sqlite3VdbeAddOp3(v, OP_AggStep0, bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nArg);
+      if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
     }
   }
 }
@@ -855,6 +879,7 @@ static void windowAggFinal(Parse *pParse, Window *pMWin, int bFinal){
       sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
       if( bFinal ){
         sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
       }else{
         sqlite3VdbeChangeP3(v, -1, pWin->regResult);
       }

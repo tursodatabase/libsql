@@ -214,5 +214,9 @@ do_execsql_test 6.2 {
   a 1 1 a 2 2 a 3 3 a 4 4 a 5 5 a 6 6 a 7 7
 }
 
+do_catchsql_test 3.5 {
+  SELECT x, lag(x) FILTER (WHERE (x%2)=0) OVER w FROM t1 
+  WINDOW w AS (ORDER BY x)
+} {1 {FILTER clause may only be used with aggregate window functions}}
 
 finish_test

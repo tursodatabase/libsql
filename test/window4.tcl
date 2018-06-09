@@ -97,5 +97,11 @@ execsql_test 3.3 {
   ORDER BY a;
 }
 
+execsql_test 3.4 {
+  SELECT a, max(a) FILTER (WHERE (a%2)=0) OVER w FROM t5 
+  WINDOW w AS (ORDER BY a)
+}
+
+
 finish_test
 
