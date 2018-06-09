@@ -322,6 +322,7 @@ struct WhereClause {
   WhereInfo *pWInfo;       /* WHERE clause processing context */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
+  u8 hasOr;                /* True if any a[].eOperator is WO_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -495,6 +496,7 @@ void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);
 void sqlite3WhereClauseClear(WhereClause*);
 void sqlite3WhereSplit(WhereClause*,Expr*,u8);
 Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
+Bitmask sqlite3WhereExprUsageNN(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
 void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
 void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);

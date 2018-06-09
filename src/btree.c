@@ -5596,7 +5596,16 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
 
   pPage = pCur->pPage;
   idx = ++pCur->ix;
-  assert( pPage->isInit );
+  if( !pPage->isInit ){
+    /* The only known way for this to happen is for there to be a
+    ** recursive SQL function that does a DELETE operation as part of a
+    ** SELECT which deletes content out from under an active cursor
+    ** in a corrupt database file where the table being DELETE-ed from
+    ** has pages in common with the table being queried.  See TH3
+    ** module cov1/btree78.test testcase 220 (2018-06-08) for an
+    ** example. */
+    return SQLITE_CORRUPT_BKPT;
+  }
 
   /* If the database file is corrupt, it is possible for the value of idx 
   ** to be invalid here. This can only occur if a second cursor modifies
