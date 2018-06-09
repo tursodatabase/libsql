@@ -153,7 +153,7 @@ AC_SUBST(SESSION_FLAGS)
 #
 AC_ARG_ENABLE(debug, [AS_HELP_STRING(
   [--enable-debug], [build with debugging features enabled [default=no]])], 
-  [], [enable_session=no])
+  [], [enable_debug=no])
 if test x"$enable_debug" = "xyes"; then
   DEBUG_FLAGS="-DSQLITE_DEBUG -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE"
 fi

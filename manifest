@@ -1,5 +1,5 @@
-C Slightly\ssmaller\sand\sfaster\scode\sby\sencapsulating\swal-index\shash\stable\nlocation\sinformation\sin\sa\sseparate\sWalHashLoc\sobject\srather\sthan\spassing\naround\sthe\svarious\selements\sas\sseparate\svariables.
-D 2018-06-09T16:49:00.305
+C Fix\sa\stypo\sin\sthe\samalgamation\sautoconf\sfile.
+D 2018-06-09T20:52:45.165
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -17,7 +17,7 @@ F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a
 F autoconf/Makefile.msc 6a46d0659d6e4a25346102bcba40a7fb4b0b8b2dc4faabdf0187488c6dd580d6
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 5f6cf281ae675685335ce7f43f8c2d59d3ac8ba4174a57b8e83097c5e10dcf4e
+F autoconf/configure.ac ac680e441d5dd8a55b66fc73cfd7a3c5adb39729ea2af4811f023c3c516057e4
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31e480f68dfd887cfd9114f9f9fec53d751d3ecc27e36f55c0166b51b2fbb08c
-R 6ae6039dbf6c75d53dff2e4ab7fb3afb
+P 538a365b7a32ab7fa84f59d7556242cfb59b76d287b6417eb3a823197a354e8e
+R 77cf712c0701790fbea387864fe5a9e7
 U drh
-Z 6ec430bc7e585373e73f8d45e5d8a30b
+Z 8a05b9e91fe6e55c1781e9d15c271cb0
