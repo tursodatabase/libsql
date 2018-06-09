@@ -672,7 +672,12 @@ static void exprAnalyzeOrTerm(
   ** empty.
   */
   pOrInfo->indexable = indexable;
-  pTerm->eOperator = indexable==0 ? 0 : WO_OR;
+  if( indexable ){
+    pTerm->eOperator = WO_OR;
+    pWC->hasOr = 1;
+  }else{
+    pTerm->eOperator = WO_OR;
+  }
 
   /* For a two-way OR, attempt to implementation case 2.
   */

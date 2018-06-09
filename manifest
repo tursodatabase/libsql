@@ -1,5 +1,5 @@
-C When\sthe\squery\splanner\shas\sthe\sopportunity\sto\suse\san\sIN\soperater\sconstraint\non\sa\sterm\sof\san\sindex\sother\sthan\sthe\sleft-most\sterm,\suse\sthe\sestimated\snumber\nof\selements\son\sthe\sright-hand\sside\sof\sthe\sIN\soperator\sto\sdetermine\sif\smakes\nsense\sto\suse\sthe\sIN\soperator\swith\sindex\slooks,\sor\sto\sjust\sdo\sa\sscan\sover\sthe\nrange\sof\sthe\stable\sidentified\sby\sthe\sindex\sterms\sto\sthe\sleft.\s\s\sOnly\sdo\sthis\nif\ssqlite_stat1\smeasurements\sare\savailable\sas\sotherwise\sthe\sperformance\nestimates\swill\snot\sbe\saccurate\senough\sto\sdiscern\sthe\sbest\splan.\s\sBias\sthe\ndecision\sslightly\sin\sfavor\sof\susing\sindex\slookups\son\seach\selement\sof\sthe\sIN\noperator.
-D 2018-06-08T23:23:53.721
+C Avoid\sinvoking\sthe\swhereLoopAddOr()\sroutine\sin\sthe\squery\splanner\sif\sthere\nare\sno\sOR\soperators\sin\sthe\sWHERE\sclause,\sthus\sspeeding\sup\squery\splanning\nslightly.
+D 2018-06-09T00:09:58.256
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -579,10 +579,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c aa9cffc7a2bad6b826a86c8562dd4978398720ed41cb8ee7aa9d054eb8b456a0
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
-F src/where.c e4d48338ca4718c8034f313cca202cc5ca75639a24d27b959b65578198f63c81
-F src/whereInt.h b09753e74bf92a8b17cf0e41ca94c44432c454544be6699b5311dcc57bf229c6
+F src/where.c b93db8c543ce60bdeb325250665e8fb5374c02b31d581c339ae8723da9b7f889
+F src/whereInt.h 09dbf692741bb5ac4f4ce15e3e124bcff3c1077dd39afd2aa7ef573040252c11
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
-F src/whereexpr.c e90b2e76dcabc81edff56633bf281bc01d93b71e0c81482dc06925ce39f5844a
+F src/whereexpr.c d979cd594c9abbf038b8671a9b05f1e9d02300b06f987f2ea2c06712c60b8077
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1731,8 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99057383acc8f92093530e216c621d40386a06fe98131ff0af6df524d80a6410 30e874661dcc1a2ecb40df2ef74582151d85bb36c754a38548829a3b6285f18d
-R 54c7353f86aece043f7640340784a722
-T +closed 30e874661dcc1a2ecb40df2ef74582151d85bb36c754a38548829a3b6285f18d
+P 2cbbabdf5ef624d809fbb40d2d312a29e0b5f02756fc0dbf6985fc8b0c8d1ade
+R 0b684b2e3c17dc858ffe6bf2e9f152c7
 U drh
-Z 3947665ab12ebd8b4ea54e65ad1b9691
+Z 039981a09de1ec68f373ff429bf5bde6
