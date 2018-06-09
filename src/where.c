@@ -2451,7 +2451,6 @@ static int whereLoopAddBtreeIndex(
 
     if( eOp & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
-      LogEst M, logK;
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
         int i;
@@ -2472,6 +2471,7 @@ static int whereLoopAddBtreeIndex(
                           ** changes "x IN (?)" into "x=?". */
       }
       if( pProbe->hasStat1 ){
+        LogEst M, logK, safetyMargin;
         /* Let:
         **   N = the total number of rows in the table
         **   K = the number of entries on the RHS of the IN operator
@@ -2493,7 +2493,8 @@ static int whereLoopAddBtreeIndex(
         */
         M = pProbe->aiRowLogEst[saved_nEq];
         logK = estLog(nIn);
-        if( M + logK + 10 < nIn + rLogSize ){
+        safetyMargin = 10;  /* TUNING: extra weight for indexed IN */
+        if( M + logK + safetyMargin < nIn + rLogSize ){
           WHERETRACE(0x40,
             ("Scan preferred over IN operator on column %d of \"%s\" (%d<%d)\n",
              saved_nEq, pProbe->zName, M+logK+10, nIn+rLogSize));
