@@ -2734,24 +2734,6 @@ static int indexMightHelpWithOrderBy(
   return 0;
 }
 
-/*
-** Return a bitmask where 1s indicate that the corresponding column of
-** the table is used by an index.  Only the first 63 columns are considered.
-*/
-static Bitmask columnsInIndex(Index *pIdx){
-  Bitmask m = 0;
-  int j;
-  for(j=pIdx->nColumn-1; j>=0; j--){
-    int x = pIdx->aiColumn[j];
-    if( x>=0 ){
-      testcase( x==BMS-1 );
-      testcase( x==BMS-2 );
-      if( x<BMS-1 ) m |= MASKBIT(x);
-    }
-  }
-  return m;
-}
-
 /* Check to see if a partial index with pPartIndexWhere can be used
 ** in the current query.  Return true if it can be and false if not.
 */
@@ -2967,7 +2949,7 @@ static int whereLoopAddBtree(
         pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         m = 0;
       }else{
-        m = pSrc->colUsed & ~columnsInIndex(pProbe);
+        m = pSrc->colUsed & pProbe->colNotIdxed;
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }
 
@@ -4370,7 +4352,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       }
       if( j!=pIdx->nKeyCol ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
-      if( pIdx->isCovering || (pItem->colUsed & ~columnsInIndex(pIdx))==0 ){
+      if( pIdx->isCovering || (pItem->colUsed & pIdx->colNotIdxed)==0 ){
         pLoop->wsFlags |= WHERE_IDX_ONLY;
       }
       pLoop->nLTerm = j;

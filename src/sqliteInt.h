@@ -1109,6 +1109,32 @@ typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
 typedef struct With With;
 
+
+/*
+** The bitmask datatype defined below is used for various optimizations.
+**
+** Changing this from a 64-bit to a 32-bit type limits the number of
+** tables in a join to 32 instead of 64.  But it also reduces the size
+** of the library by 738 bytes on ix86.
+*/
+#ifdef SQLITE_BITMASK_TYPE
+  typedef SQLITE_BITMASK_TYPE Bitmask;
+#else
+  typedef u64 Bitmask;
+#endif
+
+/*
+** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
+*/
+#define BMS  ((int)(sizeof(Bitmask)*8))
+
+/*
+** A bit in a Bitmask
+*/
+#define MASKBIT(n)   (((Bitmask)1)<<(n))
+#define MASKBIT32(n) (((unsigned int)1)<<(n))
+#define ALLBITS      ((Bitmask)-1)
+
 /* A VList object records a mapping between parameters/variables/wildcards
 ** in the SQL statement (such as $abc, @pqr, or :xyz) and the integer
 ** variable number associated with that parameter.  See the format description
@@ -2198,6 +2224,7 @@ struct Index {
   tRowcnt *aiRowEst;       /* Non-logarithmic stat1 data for this index */
   tRowcnt nRowEst0;        /* Non-logarithmic number of rows in the index */
 #endif
+  Bitmask colNotIdxed;     /* 0 for unindexed columns in pTab */
 };
 
 /*
@@ -2542,31 +2569,6 @@ struct IdList {
   } *a;
   int nId;         /* Number of identifiers on the list */
 };
-
-/*
-** The bitmask datatype defined below is used for various optimizations.
-**
-** Changing this from a 64-bit to a 32-bit type limits the number of
-** tables in a join to 32 instead of 64.  But it also reduces the size
-** of the library by 738 bytes on ix86.
-*/
-#ifdef SQLITE_BITMASK_TYPE
-  typedef SQLITE_BITMASK_TYPE Bitmask;
-#else
-  typedef u64 Bitmask;
-#endif
-
-/*
-** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
-*/
-#define BMS  ((int)(sizeof(Bitmask)*8))
-
-/*
-** A bit in a Bitmask
-*/
-#define MASKBIT(n)   (((Bitmask)1)<<(n))
-#define MASKBIT32(n) (((unsigned int)1)<<(n))
-#define ALLBITS      ((Bitmask)-1)
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.
