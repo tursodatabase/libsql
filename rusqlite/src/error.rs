@@ -26,9 +26,9 @@ pub enum Error {
     FromSqlConversionFailure(usize, Type, Box<error::Error + Send + Sync>),
 
     /// Error when SQLite gives us an integral value outside the range of the requested type (e.g.,
-    /// trying to get the value 1000 into a `u8`).  The associated `c_int` is the column index, and
+    /// trying to get the value 1000 into a `u8`).  The associated `usize` is the column index, and
     /// the associated `i64` is the value returned by SQLite.
-    IntegralValueOutOfRange(c_int, i64),
+    IntegralValueOutOfRange(usize, i64),
 
     /// Error converting a string to UTF-8.
     Utf8Error(str::Utf8Error),
@@ -51,7 +51,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the index is out of range
     /// for the statement.
-    InvalidColumnIndex(c_int),
+    InvalidColumnIndex(usize),
 
     /// Error when the value of a named column is requested, but no column matches the name
     /// for the statement.
@@ -59,10 +59,10 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
-    InvalidColumnType(c_int, Type),
+    InvalidColumnType(usize, Type),
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
-    StatementChangedRows(c_int),
+    StatementChangedRows(usize),
 
     /// Error returned by `functions::Context::get` when the function argument cannot be converted
     /// to the requested type.
