@@ -31,6 +31,8 @@ sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
 vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
 csvtab = ["csv", "vtab"]
+# pointer passing interfaces: 3.20.0
+array = ["vtab"]
 
 [dependencies]
 time = "0.1.0"

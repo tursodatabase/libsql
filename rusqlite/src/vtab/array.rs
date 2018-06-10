@@ -1,0 +1,179 @@
+//! Array Virtual Table
+//! Port of [carray](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/carray.c) C extension.
+use std::default::Default;
+use std::os::raw::{c_char, c_int, c_void};
+use std::rc::Rc;
+
+use ffi;
+use types::{ToSql, ToSqlOutput, Value};
+use vtab::{self, declare_vtab, Context, IndexInfo, VTab, VTabCursor, Values};
+use {Connection, Error, Result};
+
+// http://sqlite.org/bindptr.html
+
+pub(crate) const ARRAY_TYPE: *const c_char = b"rarray\0" as *const u8 as *const c_char;
+
+pub(crate) unsafe extern "C" fn free_array(p: *mut c_void) {
+    let _: Array = Rc::from_raw(p as *const Vec<Value>);
+}
+
+pub type Array = Rc<Vec<Value>>;
+
+impl ToSql for Array {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::Array(self.clone()))
+    }
+}
+
+/// Register the "rarray" module.
+pub fn load_module(conn: &Connection) -> Result<()> {
+    let aux: Option<()> = None;
+    conn.create_module("rarray", &ARRAY_MODULE, aux)
+}
+
+eponymous_module!(
+    ARRAY_MODULE,
+    ArrayTab,
+    (),
+    ArrayTabCursor,
+    None,
+    array_connect,
+    array_best_index,
+    array_disconnect,
+    None,
+    array_open,
+    array_close,
+    array_filter,
+    array_next,
+    array_eof,
+    array_column,
+    array_rowid
+);
+
+// Column numbers
+// const CARRAY_COLUMN_VALUE : c_int = 0;
+const CARRAY_COLUMN_POINTER: c_int = 1;
+
+/// An instance of the Array virtual table
+#[repr(C)]
+struct ArrayTab {
+    /// Base class. Must be first
+    base: ffi::sqlite3_vtab,
+}
+
+impl VTab for ArrayTab {
+    type Aux = ();
+    type Cursor = ArrayTabCursor;
+
+    unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut (), _args: &[&[u8]]) -> Result<ArrayTab> {
+        let vtab = ArrayTab {
+            base: Default::default(),
+        };
+        try!(declare_vtab(db, "CREATE TABLE x(value,pointer hidden)"));
+        Ok(vtab)
+    }
+
+    fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
+        // Index of the pointer= constraint
+        let mut ptr_idx = None;
+        for (i, constraint) in info.constraints().enumerate() {
+            if !constraint.is_usable() {
+                continue;
+            }
+            if constraint.operator() != vtab::IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
+                continue;
+            }
+            match constraint.column() {
+                CARRAY_COLUMN_POINTER => {
+                    ptr_idx = Some(i);
+                }
+                _ => {}
+            }
+        }
+        if let Some(ptr_idx) = ptr_idx {
+            {
+                let mut constraint_usage = info.constraint_usage(ptr_idx);
+                constraint_usage.set_argv_index(1);
+                constraint_usage.set_omit(true);
+            }
+            info.set_estimated_cost(1f64);
+            info.set_estimated_rows(100);
+            info.set_idx_num(1);
+        } else {
+            info.set_estimated_cost(2_147_483_647f64);
+            info.set_estimated_rows(2_147_483_647);
+            info.set_idx_num(0);
+        }
+        Ok(())
+    }
+
+    fn open(&self) -> Result<ArrayTabCursor> {
+        Ok(ArrayTabCursor::new())
+    }
+}
+
+/// A cursor for the Array virtual table
+#[repr(C)]
+struct ArrayTabCursor {
+    /// Base class. Must be first
+    base: ffi::sqlite3_vtab_cursor,
+    /// The rowid
+    row_id: i64,
+    /// Pointer to the array of values ("pointer")
+    ptr: Option<Array>,
+}
+
+impl ArrayTabCursor {
+    fn new() -> ArrayTabCursor {
+        ArrayTabCursor {
+            base: Default::default(),
+            row_id: 0,
+            ptr: None,
+        }
+    }
+    fn len(&self) -> i64 {
+        match self.ptr {
+            Some(ref a) => a.len() as i64,
+            _ => 0,
+        }
+    }
+}
+impl VTabCursor for ArrayTabCursor {
+    type Table = ArrayTab;
+
+    fn vtab(&self) -> &ArrayTab {
+        unsafe { &*(self.base.pVtab as *const ArrayTab) }
+    }
+    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
+        if idx_num > 0 {
+            self.ptr = try!(args.get_array(0));
+        } else {
+            self.ptr = None;
+        }
+        self.row_id = 1;
+        Ok(())
+    }
+    fn next(&mut self) -> Result<()> {
+        self.row_id += 1;
+        Ok(())
+    }
+    fn eof(&self) -> bool {
+        self.row_id > self.len()
+    }
+    fn column(&self, ctx: &mut Context, i: c_int) -> Result<()> {
+        match i {
+            CARRAY_COLUMN_POINTER => Ok(()),
+            _ => {
+                if let Some(ref array) = self.ptr {
+                    let value = &array[i as usize];
+                    ctx.set_result(&value)
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    }
+    fn rowid(&self) -> Result<i64> {
+        Ok(self.row_id)
+    }
+}

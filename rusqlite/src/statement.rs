@@ -1,6 +1,8 @@
 use std::{convert, fmt, mem, ptr, result, str};
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
+#[cfg(feature = "array")]
+use std::rc::Rc;
 use std::slice::from_raw_parts;
 
 use super::ffi;
@@ -8,6 +10,8 @@ use super::{Connection, RawStatement, Result, Error, ValueRef, Row, Rows, AndThe
 use super::str_to_cstring;
 use types::{ToSql, ToSqlOutput};
 use row::{RowsCrateImpl, MappedRowsCrateImpl, AndThenRowsCrateImpl};
+#[cfg(feature = "array")]
+use vtab::array::{ARRAY_TYPE, free_array};
 
 /// A prepared statement.
 pub struct Statement<'conn> {
@@ -404,6 +408,11 @@ impl<'conn> Statement<'conn> {
                 return self.conn
                            .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
             }
+            #[cfg(feature = "array")]
+            ToSqlOutput::Array(a) => {
+                return self.conn
+                           .decode_result(unsafe { ffi::sqlite3_bind_pointer(ptr, col, Rc::into_raw(a) as *mut c_void, ARRAY_TYPE, Some(free_array)) });
+            }
         };
         self.conn
             .decode_result(match value {
@@ -442,7 +451,7 @@ impl<'conn> Statement<'conn> {
                                            ffi::SQLITE_TRANSIENT())
                 }
             },
-                           })
+        })
     }
 
     fn execute_with_bound_parameters(&mut self) -> Result<c_int> {

@@ -255,8 +255,7 @@ impl VTabCursor for SeriesTabCursor {
             SERIES_COLUMN_STEP => self.step,
             _ => self.value,
         };
-        ctx.set_result(&x);
-        Ok(())
+        ctx.set_result(&x)
     }
     fn rowid(&self) -> Result<i64> {
         Ok(self.row_id)

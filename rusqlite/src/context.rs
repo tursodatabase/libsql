@@ -1,15 +1,18 @@
 //! Code related to `sqlite3_context` common to `functions` and `vtab` modules.
 
-use std::error::Error as StdError;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
+#[cfg(feature = "array")]
+use std::rc::Rc;
 
 use ffi;
 use ffi::sqlite3_context;
 use ffi::sqlite3_value;
 
+use str_to_cstring;
 use types::{ToSqlOutput, ValueRef};
-use {str_to_cstring, Error};
+#[cfg(feature = "array")]
+use vtab::array::{free_array, ARRAY_TYPE};
 
 impl<'a> ValueRef<'a> {
     pub unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
@@ -28,7 +31,8 @@ impl<'a> ValueRef<'a> {
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str()
+                let s = s
+                    .to_str()
                     .expect("sqlite3_value_text returned invalid UTF-8");
                 ValueRef::Text(s)
             }
@@ -68,6 +72,15 @@ pub unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>
         ToSqlOutput::ZeroBlob(len) => {
             return ffi::sqlite3_result_zeroblob(ctx, len);
         }
+        #[cfg(feature = "array")]
+        ToSqlOutput::Array(ref a) => {
+            return ffi::sqlite3_result_pointer(
+                ctx,
+                Rc::into_raw(a.clone()) as *mut c_void,
+                ARRAY_TYPE,
+                Some(free_array),
+            );
+        }
     };
 
     match value {
@@ -105,36 +118,6 @@ pub unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>
                     length as c_int,
                     ffi::SQLITE_TRANSIENT(),
                 );
-            }
-        }
-    }
-}
-
-pub unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
-    // Extended constraint error codes were added in SQLite 3.7.16. We don't have an explicit
-    // feature check for that, and this doesn't really warrant one. We'll use the extended code
-    // if we're on the bundled version (since it's at least 3.17.0) and the normal constraint
-    // error code if not.
-    #[cfg(feature = "bundled")]
-    fn constraint_error_code() -> i32 {
-        ffi::SQLITE_CONSTRAINT_FUNCTION
-    }
-    #[cfg(not(feature = "bundled"))]
-    fn constraint_error_code() -> i32 {
-        ffi::SQLITE_CONSTRAINT
-    }
-
-    match *err {
-        Error::SqliteFailure(ref err, ref s) => {
-            ffi::sqlite3_result_error_code(ctx, err.extended_code);
-            if let Some(Ok(cstr)) = s.as_ref().map(|s| str_to_cstring(s)) {
-                ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
-            }
-        }
-        _ => {
-            ffi::sqlite3_result_error_code(ctx, constraint_error_code());
-            if let Ok(cstr) = str_to_cstring(err.description()) {
-                ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
             }
         }
     }

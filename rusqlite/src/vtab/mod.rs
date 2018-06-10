@@ -6,7 +6,7 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
 
-use context::{report_error, set_result};
+use context::set_result;
 use error::error_from_sqlite_code;
 use ffi;
 use types::{FromSql, FromSqlError, ToSql, ValueRef};
@@ -207,12 +207,10 @@ pub trait VTabCursor: Sized {
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
-    pub fn set_result<T: ToSql>(&mut self, value: &T) {
-        let t = value.to_sql();
-        match t {
-            Ok(ref value) => unsafe { set_result(self.0, value) },
-            Err(err) => unsafe { report_error(self.0, &err) },
-        }
+    pub fn set_result<T: ToSql>(&mut self, value: &T) -> Result<()> {
+        let t = value.to_sql()?;
+        unsafe { set_result(self.0, &t) };
+        Ok(())
     }
 }
 
@@ -239,6 +237,22 @@ impl<'a> Values<'a> {
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx as c_int, i),
         })
+    }
+
+    // `sqlite3_value_type` returns `SQLITE_NULL` for pointer.
+    // So it seems not possible to enhance `ValueRef::from_value`.
+    #[cfg(feature = "array")]
+    pub fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
+        use types::Value;
+        let arg = self.args[idx];
+        let ptr = unsafe { ffi::sqlite3_value_pointer(arg, array::ARRAY_TYPE) };
+        if ptr.is_null() {
+            Ok(None)
+        } else {
+            Ok(Some(unsafe {
+                array::Array::from_raw(ptr as *const Vec<Value>)
+            }))
+        }
     }
 
     pub fn iter(&self) -> ValueIter {
@@ -361,12 +375,16 @@ pub fn dequote(s: &str) -> &str {
 /// 0 no false off
 /// ```
 pub fn parse_boolean(s: &str) -> Option<bool> {
-    if s.eq_ignore_ascii_case("yes") || s.eq_ignore_ascii_case("on")
-        || s.eq_ignore_ascii_case("true") || s.eq("1")
+    if s.eq_ignore_ascii_case("yes")
+        || s.eq_ignore_ascii_case("on")
+        || s.eq_ignore_ascii_case("true")
+        || s.eq("1")
     {
         Some(true)
-    } else if s.eq_ignore_ascii_case("no") || s.eq_ignore_ascii_case("off")
-        || s.eq_ignore_ascii_case("false") || s.eq("0")
+    } else if s.eq_ignore_ascii_case("no")
+        || s.eq_ignore_ascii_case("off")
+        || s.eq_ignore_ascii_case("false")
+        || s.eq("0")
     {
         Some(false)
     } else {
@@ -530,7 +548,8 @@ macro_rules! create_or_connect {
 
             let aux = aux as *mut $aux;
             let args = slice::from_raw_parts(argv, argc as usize);
-            let vec = args.iter()
+            let vec = args
+                .iter()
                 .map(|&cs| CStr::from_ptr(cs).to_bytes())
                 .collect::<Vec<_>>();
             match $vtab::$vtab_func(db, aux, &vec[..]) {
@@ -756,6 +775,8 @@ pub fn mprintf(err_msg: &str) -> *mut c_char {
     unsafe { ffi::sqlite3_mprintf(c_format.as_ptr(), c_err.as_ptr()) }
 }
 
+#[cfg(feature = "array")]
+pub mod array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
 pub mod int_array;

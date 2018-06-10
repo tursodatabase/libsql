@@ -139,9 +139,8 @@ impl VTabCursor for IntArrayVTabCursor {
         let vtab = self.vtab();
         unsafe {
             let array = (*vtab.array).borrow();
-            ctx.set_result(&array[self.i]);
+            ctx.set_result(&array[self.i])
         }
-        Ok(())
     }
     fn rowid(&self) -> Result<i64> {
         Ok(self.i as i64)

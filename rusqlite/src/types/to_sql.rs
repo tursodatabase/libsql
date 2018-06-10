@@ -1,4 +1,6 @@
 use super::{Null, Value, ValueRef};
+#[cfg(feature = "array")]
+use vtab::array::Array;
 use Result;
 
 /// `ToSqlOutput` represents the possible output types for implementors of the `ToSql` trait.
@@ -13,6 +15,9 @@ pub enum ToSqlOutput<'a> {
     /// A BLOB of the given length that is filled with zeroes.
     #[cfg(feature = "blob")]
     ZeroBlob(i32),
+
+    #[cfg(feature = "array")]
+    Array(Array)
 }
 
 // Generically allow any type that can be converted into a ValueRef
@@ -59,6 +64,8 @@ impl<'a> ToSql for ToSqlOutput<'a> {
 
                #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(i) => ToSqlOutput::ZeroBlob(i),
+               #[cfg(feature = "array")]
+            ToSqlOutput::Array(ref a) => ToSqlOutput::Array(a.clone()),
            })
     }
 }
