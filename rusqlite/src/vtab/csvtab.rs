@@ -364,7 +364,7 @@ mod test {
             }
 
             let ids: Result<Vec<i32>> = s
-                .query_map(&[], |row| row.get::<i32, i32>(0))
+                .query_map(&[], |row| row.get::<_, i32>(0))
                 .unwrap()
                 .collect();
             let sum = ids.unwrap().iter().fold(0, |acc, &id| acc + id);
@@ -389,7 +389,7 @@ mod test {
 
             let mut rows = s.query(&[]).unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<i32, i32>(0), 2);
+            assert_eq!(row.get::<_, i32>(0), 2);
         }
         db.execute_batch("DROP TABLE vtab").unwrap();
     }

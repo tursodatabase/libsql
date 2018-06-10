@@ -235,7 +235,7 @@ impl<'a> Values<'a> {
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
-            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx as c_int, i),
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
         })
     }
 

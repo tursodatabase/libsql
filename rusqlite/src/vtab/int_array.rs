@@ -180,8 +180,8 @@ mod test {
             s.query_map(&[], |row| {
                 let i1: i64 = row.get(0);
                 assert!(i1 == 1 || i1 == 3);
-                assert_eq!(11, row.get::<i32, i32>(1));
-                assert_eq!(-5, row.get::<i32, i32>(2));
+                assert_eq!(11, row.get::<_, i32>(1));
+                assert_eq!(-5, row.get::<_, i32>(2));
             }).unwrap();
         }
 
@@ -195,9 +195,9 @@ mod test {
         {
             let mut rows = s.query(&[]).unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(1, row.get::<i32, i32>(0));
-            assert_eq!(11, row.get::<i32, i32>(1));
-            assert_eq!(-5, row.get::<i32, i32>(2));
+            assert_eq!(1, row.get::<_, i32>(0));
+            assert_eq!(11, row.get::<_, i32>(1));
+            assert_eq!(-5, row.get::<_, i32>(2));
         }
 
         p2.borrow_mut().clear();

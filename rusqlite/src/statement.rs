@@ -411,7 +411,7 @@ impl<'conn> Statement<'conn> {
             #[cfg(feature = "array")]
             ToSqlOutput::Array(a) => {
                 return self.conn
-                           .decode_result(unsafe { ffi::sqlite3_bind_pointer(ptr, col, Rc::into_raw(a) as *mut c_void, ARRAY_TYPE, Some(free_array)) });
+                           .decode_result(unsafe { ffi::sqlite3_bind_pointer(ptr, col as c_int, Rc::into_raw(a) as *mut c_void, ARRAY_TYPE, Some(free_array)) });
             }
         };
         self.conn
