@@ -727,7 +727,7 @@ pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Res
 }
 
 /// Virtual tables methods can set an error message by assigning a string to `zErrMsg`.
-pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
+unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     if !(*vtab).zErrMsg.is_null() {
         ffi::sqlite3_free((*vtab).zErrMsg as *mut c_void);
     }

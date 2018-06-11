@@ -15,7 +15,7 @@ use types::{ToSqlOutput, ValueRef};
 use vtab::array::{free_array, ARRAY_TYPE};
 
 impl<'a> ValueRef<'a> {
-    pub unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
+    pub(crate) unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
         use std::slice::from_raw_parts;
 
         match ffi::sqlite3_value_type(value) {
@@ -63,7 +63,7 @@ impl<'a> ValueRef<'a> {
     }
 }
 
-pub unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
+pub(crate) unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
     let value = match *result {
         ToSqlOutput::Borrowed(v) => v,
         ToSqlOutput::Owned(ref v) => ValueRef::from(v),
