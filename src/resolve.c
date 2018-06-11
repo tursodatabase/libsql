@@ -756,11 +756,24 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
                    NC_IdxExpr|NC_PartIdx);
         }
       }
-      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) 
-       || (pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
+
+      if( is_agg==0 && pExpr->pWin ){
+        sqlite3ErrorMsg(pParse, 
+            "%.*s() may not be used as a window function", nId, zId
+        );
+        pNC->nErr++;
+      }else if( 
+            (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
+         || (is_agg && (pDef->funcFlags & SQLITE_FUNC_WINDOW) && !pExpr->pWin)
+         || (is_agg && pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
       ){
-        const char *zType = pExpr->pWin ? "window" : "aggregate";
-        sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
+        const char *zType;
+        if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->pWin ){
+          zType = "window";
+        }else{
+          zType = "aggregate";
+        }
+        sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()", zType, nId,zId);
         pNC->nErr++;
         is_agg = 0;
       }else if( no_such_func && pParse->db->init.busy==0

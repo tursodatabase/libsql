@@ -1,4 +1,5 @@
 /*
+** 2018 May 08
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -1258,11 +1259,24 @@ static void windowCodeRowExprStep(
 
   /* If this is "ROWS <expr1> FOLLOWING AND ROWS <expr2> FOLLOWING", do:
   **
+  **   if( regEnd<regStart ){
+  **     // The frame always consists of 0 rows
+  **     regStart = regSize;
+  **   }
   **   regEnd = regEnd - regStart;
   */
   if( pMWin->pEnd && pMWin->pStart && pMWin->eStart==TK_FOLLOWING ){
     assert( pMWin->eEnd==TK_FOLLOWING );
+    sqlite3VdbeAddOp3(v, OP_Ge, regStart, sqlite3VdbeCurrentAddr(v)+2, regEnd);
+    sqlite3VdbeAddOp2(v, OP_Copy, regSize, regStart);
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regEnd);
+  }
+
+  if( pMWin->pEnd && pMWin->pStart && pMWin->eEnd==TK_PRECEDING ){
+    assert( pMWin->eStart==TK_PRECEDING );
+    sqlite3VdbeAddOp3(v, OP_Le, regStart, sqlite3VdbeCurrentAddr(v)+3, regEnd);
+    sqlite3VdbeAddOp2(v, OP_Copy, regSize, regStart);
+    sqlite3VdbeAddOp2(v, OP_Copy, regSize, regEnd);
   }
 
   /* Initialize the accumulator register for each window function to NULL */
@@ -1731,6 +1745,14 @@ void sqlite3WindowCodeStep(
   Window *pMWin = p->pWin;
   Window *pWin;
 
+  /*
+  ** Call windowCodeRowExprStep() for all window modes *except*:
+  **
+  **   RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  **   RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  **   RANGE BETWEEN CURRENT ROW AND CURRENT ROW
+  **   ROWS  BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  */
   if( (pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy))
    || (pMWin->eStart==TK_CURRENT&&pMWin->eEnd==TK_UNBOUNDED&&pMWin->pOrderBy)
@@ -1739,6 +1761,11 @@ void sqlite3WindowCodeStep(
     return;
   }
 
+  /*
+  ** Call windowCodeCacheStep() if there is a window function that requires
+  ** that the entire partition be cached in a temp table before any rows
+  ** are returned.
+  */
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *pFunc = pWin->pFunc;
     if( (pFunc->funcFlags & SQLITE_FUNC_WINDOW_SIZE)

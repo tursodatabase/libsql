@@ -102,6 +102,32 @@ execsql_test 3.4 {
   WINDOW w AS (ORDER BY a)
 }
 
+execsql_test 3.5.1 {
+  SELECT a, max(c) OVER (ORDER BY a ROWS BETWEEN 1 PRECEDING AND 2 PRECEDING)
+  FROM t5
+}
+execsql_test 3.5.2 {
+  SELECT a, max(c) OVER (ORDER BY a ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING)
+  FROM t5
+}
+execsql_test 3.5.3 {
+  SELECT a, max(c) OVER (ORDER BY a ROWS BETWEEN 0 PRECEDING AND 0 PRECEDING)
+  FROM t5
+}
+
+execsql_test 3.6.1 {
+  SELECT a, max(c) OVER (ORDER BY a ROWS BETWEEN 2 FOLLOWING AND 1 FOLLOWING)
+  FROM t5
+}
+execsql_test 3.6.2 {
+  SELECT a, max(c) OVER (ORDER BY a ROWS BETWEEN 1 FOLLOWING AND 1 FOLLOWING)
+  FROM t5
+}
+execsql_test 3.6.3 {
+  SELECT a, max(c) OVER (ORDER BY a ROWS BETWEEN 0 FOLLOWING AND 0 FOLLOWING)
+  FROM t5
+}
+
 
 finish_test
 
