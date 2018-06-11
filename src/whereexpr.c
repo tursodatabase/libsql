@@ -1409,6 +1409,7 @@ void sqlite3WhereClauseInit(
   WhereInfo *pWInfo        /* The WHERE processing context */
 ){
   pWC->pWInfo = pWInfo;
+  pWC->hasOr = 0;
   pWC->pOuter = 0;
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
