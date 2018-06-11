@@ -779,7 +779,6 @@ pub fn mprintf(err_msg: &str) -> *mut c_char {
 pub mod array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
-pub mod int_array;
 #[cfg(feature = "bundled")]
 pub mod series; // SQLite >= 3.9.0
 
