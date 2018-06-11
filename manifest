@@ -1,5 +1,5 @@
-C Update\sMakefile.msc\sto\sinclude\swindow.c\sin\sthe\sbuild.
-D 2018-06-10T07:42:35.717
+C Fix\sa\stypon\sin\smain.mk.
+D 2018-06-11T11:19:35.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 498b77b89a8cb42f2ee20fcd6317f279a45c0d6ff40d27825f94b69884c09bbe
@@ -417,7 +417,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 45a1ef2a3360b7808c0c2c73658f6aabf2092af1f23c994d2294a3a34fbd533d
+F main.mk 9cad63ffa8c6b782d35debe0ef933312a0ddc75fed35492c7fe29dbe9701647a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1740,7 +1740,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c71f23590c25b4cecd27722e6c0fc8e3bf320d399c7d9398b7016dd5cf5b05eb
-R 2e58ed5cf6d082d384917693b0e78747
+P 16db73842ade5eb0fe02f257b91d1c7b41d830d3f17f8638b8fbaed309d9a852
+R 96748b81a5c5c17387af91f1f0c0dfa1
 U dan
-Z 07d472def1abd4a4538bf4eac7a242cb
+Z 83b8eb197a3e3709547b1acd87361cc8

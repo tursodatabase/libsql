@@ -183,7 +183,7 @@ SRC = \
   $(TOP)/src/wherecode.c \
   $(TOP)/src/whereexpr.c \
   $(TOP)/src/whereInt.h \
-  $(TOP)/src/window.h
+  $(TOP)/src/window.c
 
 # Source code for extensions
 #
