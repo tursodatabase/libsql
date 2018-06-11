@@ -1,5 +1,5 @@
-C Add\sthe\sOP_SetTabCol\sand\sOP_VerifyTabCol\sopcodes,\sonly\swhen\scompiling\swith\nSQLITE_DEBUG,\sto\sdo\srun-time\sverification\sof\sthe\scolumn\scache.
-D 2018-06-11T17:35:02.447
+C Fix\sthe\scolumn\scache\sinvalidation\slogic\sin\sthe\scode\sfor\sROWID\suniqueness\nconstraint\schecking\sin\sthe\sINSERT\scommand.\s\sThis\sfixes\sticket\n[c2432ef9089ee73bd].
+D 2018-06-11T18:06:48.831
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -456,7 +456,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 76b1dc902e4c3930d9a17a40cd8ee2e94b1fd8cce766672caef164a6d5d4df1d
+F src/insert.c bcacf6a0d277f8fa0e4f9ffecda544a2330ca4478f904cd89564c2dd86d0b16b
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
 F src/main.c a086ab7d6e4e3f07bd5789d16f977d425f9482e7b3baeeb2f17bde0e6bfb2bc1
@@ -993,7 +993,7 @@ F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d2
 F test/indexexpr2.test 08551aa8956a91582979e17b6d369f321a5cb6ed6d3e952925a3e54e9e7de216
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
-F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
+F test/insert.test 5604b1ff5675cc84c34a5b315792b958f48c32edccc0dafcc81d3b776270b70a
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 46bead5f39e181850ee56adcf49d3a3157c460c52249211714612ac89fe34835
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 793e942205a12eedb7ecc5ad8a27e3e52bbd4e1d50a0d1453d04a83ba728884e
-R e32799ffc139aea23a34579bcd80eade
+P b37614a3670770919a7c7f8157c5fd6578d736447998640b52e5cef8174cadc2
+R 43b6e2e7bff8d43b71b0521d42db382b
 U drh
-Z 5651f63d60929e8aa5ef5f44ca04cc41
+Z ba39774432820fe8ba51d6921586d213
