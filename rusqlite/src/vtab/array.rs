@@ -165,7 +165,7 @@ impl VTabCursor for ArrayTabCursor {
             CARRAY_COLUMN_POINTER => Ok(()),
             _ => {
                 if let Some(ref array) = self.ptr {
-                    let value = &array[i as usize];
+                    let value = &array[(self.row_id - 1) as usize];
                     ctx.set_result(&value)
                 } else {
                     Ok(())
@@ -175,5 +175,33 @@ impl VTabCursor for ArrayTabCursor {
     }
     fn rowid(&self) -> Result<i64> {
         Ok(self.row_id)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::rc::Rc;
+    use types::Value;
+    use vtab::array;
+    use Connection;
+
+    #[test]
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn test_array_module() {
+        let db = Connection::open_in_memory().unwrap();
+        array::load_module(&db).unwrap();
+
+        let v = vec![1i64, 2, 3, 4];
+        let values = v.into_iter().map(|i| Value::from(i)).collect();
+        let ptr = Rc::new(values);
+        let mut stmt = db.prepare("SELECT value from rarray(?);").unwrap();
+
+        let rows = stmt.query_map(&[&ptr], |row| row.get::<_, i64>(0)).unwrap();
+        let mut count = 0;
+        for (i, value) in rows.enumerate() {
+            assert_eq!(i as i64, value.unwrap()-1);
+            count += 1;
+        }
+        assert_eq!(4, count);
     }
 }
