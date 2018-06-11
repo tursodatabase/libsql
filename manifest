@@ -1,5 +1,5 @@
-C Fix\sthe\scolumn\scache\sinvalidation\slogic\sin\sthe\scode\sfor\sROWID\suniqueness\nconstraint\schecking\sin\sthe\sINSERT\scommand.\s\sThis\sfixes\sticket\n[c2432ef9089ee73bd].
-D 2018-06-11T18:06:48.831
+C Fix\svarious\s--enable\sand\s--disable\soptions\son\sthe\stop-level\sconfigure\nscript.
+D 2018-06-11T19:47:14.809
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -33,8 +33,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 481df2c668b5c8cd5723dbcda88df8e6796a23884877109d1fe558667a0474bf x
-F configure.ac d4529ebb26ae046269334f1dac65f2b1d6927c2efe22b2ec24dce24dfe4f83dd
+F configure a46cba271ae08d635a1f331384c04563bdd37adb3d63cbdcffb1d91babfb64f5 x
+F configure.ac 18c93e8bbeec8254832c4ea90eb06e7187fd150ef098baed02467eeb374afb17
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html ac63db056bce24b7368e29319cd1a7eb5f1798cc85922d96a80b6c3a4ff9f51b
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b37614a3670770919a7c7f8157c5fd6578d736447998640b52e5cef8174cadc2
-R 43b6e2e7bff8d43b71b0521d42db382b
+P 0b485a571c805a5bc431a231a196ff6034342c6548d92b09c52814dd57c89c75
+R 5eaa6e915a0db5dfed9f95ded349d602
 U drh
-Z ba39774432820fe8ba51d6921586d213
+Z e9b1aa32b7571b8f9809363bacf9d1ed
