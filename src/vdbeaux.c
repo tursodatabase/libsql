@@ -3912,7 +3912,7 @@ static int isAllZero(const char *z, int n){
 ** is less than, equal to, or greater than the second, respectively.
 ** If one blob is a prefix of the other, then the shorter is the lessor.
 */
-static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
+SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   int c;
   int n1 = pB1->n;
   int n2 = pB2->n;

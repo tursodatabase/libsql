@@ -886,7 +886,21 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   Mem *pX;
   for(i=0, pX=pVdbe->aMem; i<pVdbe->nMem; i++, pX++){
     if( pX->pScopyFrom==pMem ){
-      pX->flags |= MEM_Undefined;
+      /* If pX is marked as a shallow copy of pMem, then verify that
+      ** no significant changes have been made to pX since the OP_SCopy.
+      ** A significant change would indicated a missed call to this
+      ** function for pX.  Minor changes, such as adding or removing a
+      ** dual type, are allowed, as long as the underlying value is the
+      ** same. */
+      u16 mFlags = pMem->flags & pX->flags;
+      assert( (mFlags&MEM_Int)==0 || pMem->u.i==pX->u.i );
+      assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r );
+      assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
+      assert( (mFlags&MEM_Blob)==0  || sqlite3BlobCompare(pMem,pX)==0 );
+      
+      /* pMem is the register that is changing.  But also mark pX as
+      ** undefined so that we can quickly detect the shallow-copy error */
+      pX->flags = MEM_Undefined;
       pX->pScopyFrom = 0;
     }
   }
