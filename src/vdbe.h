@@ -343,4 +343,8 @@ void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
 # define sqlite3VdbeScanStatus(a,b,c,d,e)
 #endif
 
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
+#endif
+
 #endif /* SQLITE_VDBE_H */

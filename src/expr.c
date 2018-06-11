@@ -3200,6 +3200,13 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   }
 #endif
 
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+  /* Add a SetTabCol opcode for run-time verification that the column
+  ** cache is working correctly.
+  */
+  sqlite3VdbeAddOp3(pParse->pVdbe, OP_SetTabCol, iTab, iCol, iReg);
+#endif
+
   /* If the cache is already full, delete the least recently used entry */
   if( pParse->nColCache>=SQLITE_N_COLCACHE ){
     minLru = 0x7fffffff;
@@ -3373,6 +3380,9 @@ int sqlite3ExprCodeGetColumn(
     if( p->iTable==iTable && p->iColumn==iColumn ){
       p->lru = pParse->iCacheCnt++;
       sqlite3ExprCachePinRegister(pParse, p->iReg);
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+      sqlite3VdbeAddOp3(v, OP_VerifyTabCol, iTable, iColumn, p->iReg);
+#endif
       return p->iReg;
     }
   }  

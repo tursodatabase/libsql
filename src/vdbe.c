@@ -37,6 +37,18 @@
 #endif
 
 /*
+** Given a cursor number and a column for a table or index, compute a
+** hash value for use in the Mem.iTabColHash value.  The iTabColHash
+** column is only used for verification - it is omitted from production
+** builds.  Collisions are harmless in the sense that the correct answer
+** still results.  The only harm of collisions is that they can potential
+** reduce column-cache error detection during SQLITE_DEBUG builds.
+**
+** No valid hash should be 0.
+*/
+#define TableColumnHash(T,C)  (((u32)(T)<<16)^(u32)(C+2))
+
+/*
 ** The following global variable is incremented every time a cursor
 ** moves, either by the OP_SeekXX, OP_Next, or OP_Prev opcodes.  The test
 ** procedures use this information to make sure that indices are
@@ -7314,6 +7326,34 @@ case OP_CursorHint: {
 */
 case OP_Abortable: {
   sqlite3VdbeAssertAbortable(p);
+  break;
+}
+#endif
+
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+/* Opcode:  SetTabCol   P1 P2 P3 * *
+**
+** Set a flag in register REG[P3] indicating that it holds the value
+** of column P2 from the table on cursor P1.  This flag is checked
+** by a subsequent VerifyTabCol opcode.
+**
+** This opcode only appears SQLITE_DEBUG builds.  It is used to verify
+** that the expression table column cache is working correctly.
+*/
+case OP_SetTabCol: {
+  aMem[pOp->p3].iTabColHash = TableColumnHash(pOp->p1,pOp->p2);
+  break;
+}
+/* Opcode:  VerifyTabCol   P1 P2 P3 * *
+**
+** Verify that register REG[P3] contains the value of column P2 from
+** cursor P1.  Assert() if this is not the case.
+**
+** This opcode only appears SQLITE_DEBUG builds.  It is used to verify
+** that the expression table column cache is working correctly.
+*/
+case OP_VerifyTabCol: {
+  assert( aMem[pOp->p3].iTabColHash == TableColumnHash(pOp->p1,pOp->p2) );
   break;
 }
 #endif
