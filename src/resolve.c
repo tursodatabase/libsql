@@ -800,8 +800,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             pExpr->pWin->pNextWin = pSel->pWin;
             pSel->pWin = pExpr->pWin;
           }
-          pExpr->pWin->pFunc = pDef;
-          pExpr->pWin->nArg = (pExpr->x.pList ? pExpr->x.pList->nExpr : 0);
         }else{
           NameContext *pNC2 = pNC;
           pExpr->op = TK_AGG_FUNCTION;

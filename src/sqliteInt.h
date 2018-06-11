@@ -3488,7 +3488,6 @@ struct Window {
 
   Expr *pFilter;
   FuncDef *pFunc;
-  int nArg;
 
   int iEphCsr;            /* Temp table used by this window */
   int regAccum;
@@ -3513,7 +3512,7 @@ void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 int sqlite3WindowRewrite(Parse*, Select*);
 int sqlite3ExpandSubquery(Parse*, struct SrcList_item*);
 void sqlite3WindowUpdate(Parse*, Window*, Window*, FuncDef*);
-Window *sqlite3WindowDup(sqlite3 *db, Window *p);
+Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,

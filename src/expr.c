@@ -1271,7 +1271,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       if( ExprHasProperty(p, EP_Reduced|EP_TokenOnly) ){
         pNew->pWin = 0;
       }else{
-        pNew->pWin = sqlite3WindowDup(db, p->pWin);
+        pNew->pWin = sqlite3WindowDup(db, pNew, p->pWin);
       }
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
