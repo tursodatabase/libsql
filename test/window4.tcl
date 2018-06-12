@@ -149,6 +149,14 @@ execsql_test 4.1 {
   SELECT max(c), max(b) OVER (ORDER BY b) FROM ttt GROUP BY b;
 }
 
+execsql_test 4.2 {
+  SELECT max(b) OVER (ORDER BY max(c)) FROM ttt GROUP BY b;
+}
+
+execsql_test 4.3 {
+  SELECT abs(max(b) OVER (ORDER BY b)) FROM ttt GROUP BY b;
+}
+
 
 finish_test
 

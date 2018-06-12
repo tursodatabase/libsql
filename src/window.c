@@ -129,6 +129,11 @@
 **     ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
 **
 **   See sqlite3WindowUpdate() for details.
+**
+**   As well as some of the built-in window functions, aggregate window
+**   functions min() and max() are implemented using VDBE instructions if
+**   the start of the window frame is declared as anything other than 
+**   UNBOUNDED PRECEDING.
 */
 
 /*
@@ -471,11 +476,28 @@ void sqlite3WindowFunctions(void){
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
 }
 
+/*
+** This function is called immediately after resolving the function name
+** for a window function within a SELECT statement. Argument pList is a
+** linked list of WINDOW definitions for the current SELECT statement.
+** Argument pFunc is the function definition just resolved and pWin
+** is the Window object representing the associated OVER clause. This
+** function updates the contents of pWin as follows:
+**
+**   * If the OVER clause refered to a named window (as in "max(x) OVER win"),
+**     search list pList for a matching WINDOW definition, and update pWin
+**     accordingly. If no such WINDOW clause can be found, leave an error
+**     in pParse.
+**
+**   * If the function is a built-in window function that requires the
+**     window to be coerced (see "BUILT-IN WINDOW FUNCTIONS" at the top
+**     of this file), pWin is updated here.
+*/
 void sqlite3WindowUpdate(
   Parse *pParse, 
-  Window *pList, 
-  Window *pWin, 
-  FuncDef *pFunc
+  Window *pList,                  /* List of named windows for this SELECT */
+  Window *pWin,                   /* Window frame to update */
+  FuncDef *pFunc                  /* Window function definition */
 ){
   if( pWin->zName ){
     Window *p;
@@ -523,16 +545,21 @@ void sqlite3WindowUpdate(
   pWin->pFunc = pFunc;
 }
 
+/*
+** Context object passed through sqlite3WalkExprList() to
+** selectWindowRewriteExprCb() by selectWindowRewriteEList().
+*/
 typedef struct WindowRewrite WindowRewrite;
 struct WindowRewrite {
   Window *pWin;
   ExprList *pSub;
 };
 
-static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
-  return WRC_Prune;
-}
-
+/*
+** Callback function used by selectWindowRewriteEList(). If necessary,
+** this function appends to the output expression-list and updates 
+** expression (*ppExpr) in place.
+*/
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
@@ -578,7 +605,24 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
 
   return WRC_Continue;
 }
+static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
+  return WRC_Prune;
+}
 
+
+/*
+** Iterate through each expression in expression-list pEList. For each:
+**
+**   * TK_COLUMN,
+**   * aggregate function, or
+**   * window function with a Window object that is not a member of the 
+**     linked list passed as the second argument (pWin)
+**
+** Append the node to output expression-list (*ppSub). And replace it
+** with a TK_COLUMN that reads the (N-1)th element of table 
+** pWin->iEphCsr, where N is the number of elements in (*ppSub) after
+** appending the new one.
+*/
 static int selectWindowRewriteEList(
   Parse *pParse, 
   Window *pWin,
@@ -606,6 +650,10 @@ static int selectWindowRewriteEList(
   return rc;
 }
 
+/*
+** Append a copy of each expression in expression-list pAppend to
+** expression list pList. Return a pointer to the result list.
+*/
 static ExprList *exprListAppendList(
   Parse *pParse,          /* Parsing context */
   ExprList *pList,        /* List to which to append. Might be NULL */
@@ -627,21 +675,8 @@ static ExprList *exprListAppendList(
 ** If the SELECT statement passed as the second argument does not invoke
 ** any SQL window functions, this function is a no-op. Otherwise, it 
 ** rewrites the SELECT statement so that window function xStep functions
-** are invoked in the correct order. The simplest version of the 
-** transformation is:
-**
-**   SELECT win(args...) OVER (<list1>) FROM <src> ORDER BY <list2>
-**
-** to
-**
-**   SELECT win(args...) FROM (
-**     SELECT args... FROM <src> ORDER BY <list1>
-**   ) ORDER BY <list2>
-**
-** where <src> may contain WHERE, GROUP BY and HAVING clauses, and <list1>
-** is the concatenation of the PARTITION BY and ORDER BY clauses in the
-** OVER clause.
-**
+** are invoked in the correct order as described under "SELECT REWRITING"
+** at the top of this file.
 */
 int sqlite3WindowRewrite(Parse *pParse, Select *p){
   int rc = SQLITE_OK;
@@ -726,6 +761,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
   return rc;
 }
 
+/*
+** Free the Window object passed as the second argument.
+*/
 void sqlite3WindowDelete(sqlite3 *db, Window *p){
   if( p ){
     sqlite3ExprDelete(db, p->pFilter);
@@ -738,6 +776,9 @@ void sqlite3WindowDelete(sqlite3 *db, Window *p){
   }
 }
 
+/*
+** Free the linked list of Window objects starting at the second argument.
+*/
 void sqlite3WindowListDelete(sqlite3 *db, Window *p){
   while( p ){
     Window *pNext = p->pNextWin;
@@ -746,6 +787,9 @@ void sqlite3WindowListDelete(sqlite3 *db, Window *p){
   }
 }
 
+/*
+** Allocate and return a new Window object.
+*/
 Window *sqlite3WindowAlloc(
   Parse *pParse, 
   int eType,
@@ -768,6 +812,9 @@ Window *sqlite3WindowAlloc(
   return pWin;
 }
 
+/*
+** Attach window object pWin to expression p.
+*/
 void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
     p->pWin = pWin;
