@@ -128,6 +128,27 @@ execsql_test 3.6.3 {
   FROM t5
 }
 
+#=========================================================================
+execsql_test 4.0 {
+  DROP TABLE IF EXISTS ttt;
+  CREATE TABLE ttt(a INTEGER PRIMARY KEY, b INTEGER, c INTEGER);
+  INSERT INTO ttt VALUES(1, 1, 1);
+  INSERT INTO ttt VALUES(2, 2, 2);
+  INSERT INTO ttt VALUES(3, 3, 3);
+
+  INSERT INTO ttt VALUES(4, 1, 2);
+  INSERT INTO ttt VALUES(5, 2, 3);
+  INSERT INTO ttt VALUES(6, 3, 4);
+
+  INSERT INTO ttt VALUES(7, 1, 3);
+  INSERT INTO ttt VALUES(8, 2, 4);
+  INSERT INTO ttt VALUES(9, 3, 5);
+}
+
+execsql_test 4.1 {
+  SELECT max(c), max(b) OVER (ORDER BY b) FROM ttt GROUP BY b;
+}
+
 
 finish_test
 

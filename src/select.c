@@ -5464,7 +5464,6 @@ int sqlite3Select(
     goto select_end;
   }
   assert( p->pEList!=0 );
-  isAgg = (p->selFlags & SF_Aggregate)!=0;
 #if SELECTTRACE_ENABLED
   if( sqlite3SelectTrace & 0x104 ){
     SELECTTRACE(0x104,pParse,p, ("after name resolution:\n"));
@@ -5486,6 +5485,7 @@ int sqlite3Select(
   }
 #endif
   pTabList = p->pSrc;
+  isAgg = (p->selFlags & SF_Aggregate)!=0;
 
   /* Try to various optimizations (flattening subqueries, and strength
   ** reduction of join operators) in the FROM clause up into the main query
