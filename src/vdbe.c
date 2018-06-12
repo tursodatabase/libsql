@@ -1276,10 +1276,12 @@ case OP_Copy: {
   pOut = &aMem[pOp->p2];
   assert( pOut!=pIn1 );
   while( 1 ){
+    memAboutToChange(p, pOut);
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     Deephemeralize(pOut);
 #ifdef SQLITE_DEBUG
     pOut->pScopyFrom = 0;
+    pOut->iTabColHash = 0;
 #endif
     REGISTER_TRACE(pOp->p2+pOp->p3-n, pOut);
     if( (n--)==0 ) break;
@@ -1308,7 +1310,8 @@ case OP_SCopy: {            /* out2 */
   assert( pOut!=pIn1 );
   sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
 #ifdef SQLITE_DEBUG
-  if( pOut->pScopyFrom==0 ) pOut->pScopyFrom = pIn1;
+  pOut->pScopyFrom = pIn1;
+  pOut->mScopyFlags = pIn1->flags;
 #endif
   break;
 }

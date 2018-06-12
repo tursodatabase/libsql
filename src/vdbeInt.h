@@ -209,7 +209,7 @@ struct sqlite3_value {
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
-  void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
+  u16 mScopyFlags;    /* flags value immediately after the shallow copy */
 #endif
 #ifdef SQLITE_DEBUG_COLUMNCACHE
   u32 iTabColHash;    /* Hash of table.column that is origin of this value */

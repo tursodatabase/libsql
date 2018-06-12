@@ -892,7 +892,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
       ** function for pX.  Minor changes, such as adding or removing a
       ** dual type, are allowed, as long as the underlying value is the
       ** same. */
-      u16 mFlags = pMem->flags & pX->flags;
+      u16 mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
       assert( (mFlags&MEM_Int)==0 || pMem->u.i==pX->u.i );
       assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r );
       assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
