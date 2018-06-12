@@ -2257,7 +2257,7 @@ case OP_Not: {                /* same as TK_NOT, in1, out2 */
 }
 
 /* Opcode: BitNot P1 P2 * * *
-** Synopsis: r[P1]= ~r[P1]
+** Synopsis: r[P2]= ~r[P1]
 **
 ** Interpret the content of register P1 as an integer.  Store the
 ** ones-complement of the P1 value into register P2.  If P1 holds

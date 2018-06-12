@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\s--enable\sand\s--disable\soptions\sfor\sthe\namalgamation\starball.
-D 2018-06-11T21:33:08.080
+C Fix\sthe\s"Synopsis"\son\sthe\sOP_BitNot\sopcode.
+D 2018-06-12T13:16:57.062
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -565,7 +565,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c e0ac1d7cff72b4e8b250c5e698f0fc43f0c8b5a8f35654716d8ab1fa89db669e
+F src/vdbe.c eb9588981fdab2c5a3ac3aaccf6d0289d49c23efb67e01791abf870841b76a3a
 F src/vdbe.h 9c8c245fa3785266c269ab02c135c836ff49a307612186686bcdae500f409945
 F src/vdbeInt.h 8ebc37ead2cfde92a63d74e3940fe0a94d456078c77e6cefbc2ecf15630f9fda
 F src/vdbeapi.c 765a0bbe01311626417de6cb743f7f25f9f98435c98a9df4bb0714d11014633d
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6fd7e8ceb96981cff023653a54b85bea0e1da3d706cd9f4383f5c5533213ef4d
-R 414ca9989648294f080d634663eec938
+P 02e337e0808947c7ef376b5a300cd3c461f1a368c9fe7ffd7ca5744f102641c2
+R 2591c22cb15e250fcbdde34025ae1c5c
 U drh
-Z a4f0ce66e9a0dbb0022d99959c8bd004
+Z ff6163391180b8bdeebeb47ffcfc1ba4
