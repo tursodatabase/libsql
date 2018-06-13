@@ -1,5 +1,5 @@
-C Check\sthat\smalloc()\shas\snot\salready\sfailed\swhen\sinvoking\sthe\sxUpdate()\smethod\nof\sa\svirtual\stable\simplementation.\sThis\sfixes\san\sassert()\sfailure\sin\sFTS5\sthat\ncould\soccur\sfollowing\san\sOOM\scondition.
-D 2018-06-13T11:11:13.092
+C Unless\sSQLITE_OMIT_AUTOINIT\sis\sdefined,\sallow\ssqlite3_vfs_unregister()\sto\sbe\scalled\sbefore\ssqlite3_initialize().
+D 2018-06-13T11:41:54.985
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -475,7 +475,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c aaf9ebc3f89df28483c52208497a99a02cc3650011422fc9d4c57e4392f7fe58
 F src/mutex_w32.c 7670d770c94bbfe8289bec9d7f1394c5a00a57c37f892aab6b6612d085255235
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
-F src/os.c 1cb0d1d1b3a4267966dee6e292d2b2cdf88e47c0c59cebff27ecafac052dd165
+F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f40383eed936a6921ef8dc94775eb55d03a761f36eda7be1b9cdd0a0d30fa80
-R 4bafe6447638b15993b3f38fe7f8476f
+P e9a7e4d58f3716991309ca0e3f080717e473c7c231685954aceee36172f19cf2
+R d7dfa92470fc9df634760f7f9970a415
 U dan
-Z 8be96dc0a0ca0b6fd2e41a312298600e
+Z 362a89dcaaa9c414c5f78831d4181046
