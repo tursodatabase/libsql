@@ -157,6 +157,12 @@ execsql_test 4.3 {
   SELECT abs(max(b) OVER (ORDER BY b)) FROM ttt GROUP BY b;
 }
 
+execsql_test 4.4 {
+  SELECT sum(b) OVER (
+    ORDER BY a RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) FROM ttt;
+}
+
 
 finish_test
 
