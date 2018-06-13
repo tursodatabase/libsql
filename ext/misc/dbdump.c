@@ -485,7 +485,15 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
             }
             case SQLITE_FLOAT: {
               double r = sqlite3_column_double(pStmt,i);
-              output_formatted(p, "%!.20g", r);
+              sqlite3_uint64 ur;
+              memcpy(&ur,&r,sizeof(r));
+              if( ur==0x7ff0000000000000LL ){
+                p->xCallback("1e999", p->pArg);
+              }else if( ur==0xfff0000000000000LL ){
+                p->xCallback("-1e999", p->pArg);
+              }else{
+                output_formatted(p, "%!.20g", r);
+              }
               break;
             }
             case SQLITE_NULL: {
