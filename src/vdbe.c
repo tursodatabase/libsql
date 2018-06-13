@@ -6999,6 +6999,7 @@ case OP_VUpdate: {
        || pOp->p5==OE_Abort || pOp->p5==OE_Ignore || pOp->p5==OE_Replace
   );
   assert( p->readOnly==0 );
+  if( db->mallocFailed ) goto no_mem;
   sqlite3VdbeIncrWriteCounter(p, 0);
   pVtab = pOp->p4.pVtab->pVtab;
   if( pVtab==0 || NEVER(pVtab->pModule==0) ){
