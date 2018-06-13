@@ -1,5 +1,5 @@
-C Unless\sSQLITE_OMIT_AUTOINIT\sis\sdefined,\sallow\ssqlite3_vfs_unregister()\sto\sbe\scalled\sbefore\ssqlite3_initialize().
-D 2018-06-13T11:41:54.985
+C Fix\ssome\stest\scase\snumbers\sin\sexpert1.test.
+D 2018-06-13T16:08:22.822
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -45,7 +45,7 @@ F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test baa05800dc1c569faa7ce6232cead0fcedc07fea038b3a2489eaaf710831d546
+F ext/expert/expert1.test 333d037021c901322f9afc4a5687648ea23d56f1a0a079358a390664babf01be
 F ext/expert/sqlite3expert.c 89b7b59be610b929958db02416539a46ac088fd84f81623c4190aff62e92c3c4
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e9a7e4d58f3716991309ca0e3f080717e473c7c231685954aceee36172f19cf2
-R d7dfa92470fc9df634760f7f9970a415
+P ab6c1ae46d992f91ce0995274f48d545eb02ba92544aee89b188f2fc92b66f2a
+R 85658149b94ca61c586faa481cd99372
 U dan
-Z 362a89dcaaa9c414c5f78831d4181046
+Z 64438bc2ecaee7ab6a78fcd985e0d141
