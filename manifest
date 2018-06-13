@@ -1,5 +1,5 @@
-C Documentation\supdate:\sclarify\sthat\ssqlite3_errcode()\sand\srelated\sinterfaces\ndo\snot\sthemselves\smodify\sthe\serror\scode.
-D 2018-06-12T19:35:51.264
+C Add\sthe\sunused\sSQLITE_CANTOPEN_DIRTYWAL\sresult\scode.\s\sThis\scode\swas\sused\nin\ssome\shistorical\sversions\son\sthe\sapple-osx\sbranch\sbut\swas\sremoved\nby\scheck-in\s[27e20d699872b2b8].\s\sRestore\sit\sso\sthat\sold\scode\sthat\sactually\nreferences\sthat\sresult\scode\swill\sstill\scompile.
+D 2018-06-13T02:20:34.202
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -497,7 +497,7 @@ F src/resolve.c 14602f46800ba182ea6a490e0f304127d29ac1f724bdadcc639e25d3223fcf6e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8d3176c5258cc83942815ebe75b4c1f8dcf62b5e0f4d37373a14ebf23c046f9f
 F src/shell.c.in 4d0ddf10c403710d241bf920163dcf032c21119aebb61e70840942c0eafecdf9
-F src/sqlite.h.in 010a4df00a7bd39df8370c7201c4a703c90993459c1f3034502943f2a7756934
+F src/sqlite.h.in 19de593baa0667854730e7b8bc2e3039c20ee80a4d537e9b5ec2038947fe3daf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
 F src/sqliteInt.h c8d304712b6b4e2150cbb5355b1a80427eee7b3ea1a6b5827afadf557360d7fe
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 428c581e4bed1d140cfb670633c9c61b36be7bb30a862d2e1ae7eaee26dccb4f
-R 3a85648f90f541ed681102c766f78d61
+P 858fc52b237702b5e0381eebf5c158bffd7371ff0053a8583b8c175f8f691c82
+R 6ceedb097c0849604ae5e518ced6ab8b
 U drh
-Z 6d709d086e0bb2aa350c2050a2d0ad34
+Z cf184defe88fa33ab23b824c945dcab2
