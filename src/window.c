@@ -1937,8 +1937,8 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
       pNew->eType = p->eType;
       pNew->eEnd = p->eEnd;
       pNew->eStart = p->eStart;
-      pNew->pStart = sqlite3ExprDup(db, pNew->pStart, 0);
-      pNew->pEnd = sqlite3ExprDup(db, pNew->pEnd, 0);
+      pNew->pStart = sqlite3ExprDup(db, p->pStart, 0);
+      pNew->pEnd = sqlite3ExprDup(db, p->pEnd, 0);
       pNew->pOwner = pOwner;
     }
   }

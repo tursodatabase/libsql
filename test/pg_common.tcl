@@ -74,7 +74,10 @@ proc execsql_float_test {tn sql} {
   set F "%.2f"
   set res [execsql $sql]
   set res2 [list]
-  foreach r $res { lappend res2 [format $F $r] }
+  foreach r $res { 
+    if {$r != ""} { set r [format $F $r] }
+    lappend res2 $r
+  }
 
   puts $::fd "do_test $tn {"
   puts $::fd "  set myres {}"

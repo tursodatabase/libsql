@@ -167,21 +167,29 @@ execsql_test 4.4 {
 set lPart  [list "PARTITION BY b" "PARTITION BY b, a" "" "PARTITION BY a"]
 set lOrder [list "ORDER BY a" "ORDER BY a DESC" "" "ORDER BY b, a"]
 set lRange {
-    "BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
-    "BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING"
-    "BETWEEN CURRENT ROW AND CURRENT ROW"
-    "BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING"
+    "RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
+    "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING"
+    "RANGE BETWEEN CURRENT ROW AND CURRENT ROW"
+    "RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING"
+}
+
+set lRows {
+    "ROWS BETWEEN 3 PRECEDING AND 1 FOLLOWING"
+    "ROWS BETWEEN 3 PRECEDING AND 2 FOLLOWING"
+    "ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING"
+    "ROWS BETWEEN 0 PRECEDING AND 1 PRECEDING"
+    "ROWS BETWEEN 1 FOLLOWING AND 500 FOLLOWING"
 }
 
 set tn 1
 set SQL {
-  SELECT max(c) OVER ($p1 $o1 RANGE $r1), 
-  min(c) OVER ($p2 $o2 RANGE $r2)
+  SELECT max(c) OVER ($p1 $o1 $r1), 
+  min(c) OVER ($p2 $o2 $r2)
   FROM ttt ORDER BY a
 }
 set SQL2 {
-  SELECT avg(c) OVER ($p1 $o1 RANGE $r1), 
-         avg(c) OVER ($p2 $o2 RANGE $r2)
+  SELECT sum(c) OVER ($p1 $o1 $r1), 
+         sum(c) OVER ($p2 $o2 $r2)
   FROM ttt ORDER BY a
 }
 
@@ -191,7 +199,7 @@ set r1 [lindex $lRange 0]
 set r2 [lindex $lRange 0]
 foreach p1 $lPart { foreach p2 $lPart { 
   execsql_test 4.5.$tn.1 [subst $SQL]
-  execsql_float_test 4.5.$tn.2 [subst $SQL2]
+  execsql_test 4.5.$tn.2 [subst $SQL2]
   incr tn
 }}
 
@@ -201,7 +209,12 @@ set p1 [lindex $lPart 0]
 set p2 [lindex $lPart 0]
 foreach r1 $lRange { foreach r2 $lRange { 
   execsql_test 4.5.$tn.1 [subst $SQL]
-  execsql_float_test 4.5.$tn.2 [subst $SQL2]
+  execsql_test 4.5.$tn.2 [subst $SQL2]
+  incr tn
+}}
+foreach r1 $lRows { foreach r2 $lRows { 
+  execsql_test 4.5.$tn.1 [subst $SQL]
+  execsql_test 4.5.$tn.2 [subst $SQL2]
   incr tn
 }}
 
@@ -211,7 +224,7 @@ set p1 [lindex $lPart 0]
 set p2 [lindex $lPart 0]
 foreach o1 $lOrder { foreach o2 $lOrder { 
   execsql_test 4.5.$tn.1 [subst $SQL]
-  execsql_float_test 4.5.$tn.2 [subst $SQL2]
+  execsql_test 4.5.$tn.2 [subst $SQL2]
   incr tn
 }}
 
