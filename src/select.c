@@ -3673,6 +3673,10 @@ static void substSelect(
 **        "SELECT x FROM (SELECT max(y), x FROM t1)" would not necessarily
 **        return the value X for which Y was maximal.)
 **
+**  (25)  If either the subquery or the parent query contains a window
+**        function in the select list or ORDER BY clause, flattening
+**        is not attempted.
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -3716,7 +3720,7 @@ static int flattenSubquery(
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
 
-  if( p->pWin || pSub->pWin ) return 0;
+  if( p->pWin || pSub->pWin ) return 0;                  /* Restriction (25) */
 
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
@@ -4587,12 +4591,20 @@ static void selectPopWith(Walker *pWalker, Select *p){
 #define selectPopWith 0
 #endif
 
+/*
+** The SrcList_item structure passed as the second argument represents a
+** sub-query in the FROM clause of a SELECT statement. This function
+** allocates and populates the SrcList_item.pTab object. If successful,
+** SQLITE_OK is returned. Otherwise, if an OOM error is encountered,
+** SQLITE_NOMEM.
+*/
 int sqlite3ExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
   Select *pSel = pFrom->pSelect;
   Table *pTab;
 
+  assert( pSel );
   pFrom->pTab = pTab = sqlite3DbMallocZero(pParse->db, sizeof(Table));
-  if( pTab==0 ) return WRC_Abort;
+  if( pTab==0 ) return SQLITE_NOMEM;
   pTab->nTabRef = 1;
   if( pFrom->zAlias ){
     pTab->zName = sqlite3DbStrDup(pParse->db, pFrom->zAlias);
@@ -4605,7 +4617,7 @@ int sqlite3ExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   pTab->tabFlags |= TF_Ephemeral;
 
-  return WRC_Continue;
+  return SQLITE_OK;
 }
 
 /*

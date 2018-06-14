@@ -251,6 +251,10 @@ do_catchsql_test 7.1.6 {
   SELECT trim(x) OVER (ORDER BY y) FROM t1;
 } {1 {trim() may not be used as a window function}}
 
+do_catchsql_test 7.1.7 {
+  SELECT max(x) OVER abc FROM t1 WINDOW def AS (ORDER BY y);
+} {1 {no such window: abc}}
+
 
 finish_test
 

@@ -859,6 +859,13 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *p = pWin->pFunc;
     if( (p->funcFlags & SQLITE_FUNC_MINMAX) && pWin->eStart!=TK_UNBOUNDED ){
+      /* The inline versions of min() and max() require a single ephemeral
+      ** table and 3 registers. The registers are used as follows:
+      **
+      **   regApp+0: slot to copy min()/max() argument to for MakeRecord
+      **   regApp+1: integer value used to ensure keys are unique
+      **   regApp+2: output of MakeRecord
+      */
       ExprList *pList = pWin->pOwner->x.pList;
       KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pList, 0, 0);
       pWin->csrApp = pParse->nTab++;
@@ -1248,12 +1255,19 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
   int nArg = 0;
   Window *pWin;
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+    FuncDef *pFunc = pWin->pFunc;
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
     nArg = MAX(nArg, windowArgCount(pWin));
-    if( pWin->pFunc->xSFunc==nth_valueStepFunc
-     || pWin->pFunc->xSFunc==first_valueStepFunc 
+    if( pFunc->xSFunc==nth_valueStepFunc
+     || pFunc->xSFunc==first_valueStepFunc 
     ){
       sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
+    }
+
+    if( (pFunc->funcFlags & SQLITE_FUNC_MINMAX) && pWin->csrApp ){
+      assert( pWin->eStart!=TK_UNBOUNDED );
+      sqlite3VdbeAddOp1(v, OP_ResetSorter, pWin->csrApp);
       sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
     }
   }

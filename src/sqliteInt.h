@@ -1685,7 +1685,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 #define SQLITE_FUNC_WINDOW  0x10000 /* Built-in window-only function */
-#define SQLITE_FUNC_WINDOW_SIZE  0x20000
+#define SQLITE_FUNC_WINDOW_SIZE  0x20000  /* Requires partition size as arg. */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -3485,6 +3485,10 @@ struct TreeView {
 };
 #endif /* SQLITE_DEBUG */
 
+/*
+** Object used to encode the OVER() clause attached to a window-function
+** invocation. And some fields used while generating VM code for the same.
+*/
 struct Window {
   char *zName;            /* Name of window (may be NULL) */
   ExprList *pPartition;   /* PARTITION BY clause */
@@ -3524,6 +3528,7 @@ int sqlite3WindowRewrite(Parse*, Select*);
 int sqlite3ExpandSubquery(Parse*, struct SrcList_item*);
 void sqlite3WindowUpdate(Parse*, Window*, Window*, FuncDef*);
 Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p);
+void sqlite3WindowFunctions(void);
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
@@ -4198,7 +4203,6 @@ extern sqlite3_uint64 sqlite3NProfileCnt;
 void sqlite3RootPageMoved(sqlite3*, int, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
-void sqlite3WindowFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);

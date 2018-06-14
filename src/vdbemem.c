@@ -415,6 +415,14 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
   return ctx.isError;
 }
 
+/*
+** Memory cell pAccum contains the context of an aggregate function.
+** This routine calls the xValue method for that function and stores
+** the results in memory cell pMem.
+**
+** SQLITE_ERROR is returned if xValue() reports an error. SQLITE_OK 
+** otherwise.
+*/
 int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
   sqlite3_context ctx;
   Mem t;
@@ -432,6 +440,7 @@ int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
   pFunc->xValue(&ctx);
   return ctx.isError;
 }
+
 /*
 ** If the memory cell contains a value that must be freed by
 ** invoking the external callback in Mem.xDel, then this routine

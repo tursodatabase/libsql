@@ -414,7 +414,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
     0,                /* pNext */
     detachFunc,       /* xSFunc */
     0,                /* xFinalize */
-    0, 0,
+    0, 0,             /* xValue, xInverse */
     "sqlite_detach",  /* zName */
     {0}
   };
@@ -434,7 +434,7 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
     0,                /* pNext */
     attachFunc,       /* xSFunc */
     0,                /* xFinalize */
-    0, 0,
+    0, 0,             /* xValue, xInverse */
     "sqlite_attach",  /* zName */
     {0}
   };

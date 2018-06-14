@@ -5082,13 +5082,17 @@ case OP_Sort: {        /* jump */
   p->aCounter[SQLITE_STMTSTATUS_SORT]++;
   /* Fall through into OP_Rewind */
 }
-/* Opcode: Rewind P1 P2 * * *
+/* Opcode: Rewind P1 P2 * * P5
 **
 ** The next use of the Rowid or Column or Next instruction for P1 
 ** will refer to the first entry in the database table or index.
 ** If the table or index is empty, jump immediately to P2.
 ** If the table or index is not empty, fall through to the following 
 ** instruction.
+**
+** If P5 is non-zero and the table is not empty, then the "skip-next"
+** flag is set on the cursor so that the next OP_Next instruction 
+** executed on it is a no-op.
 **
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the beginning toward the end.  In other words, the cursor is
@@ -6282,24 +6286,24 @@ case OP_DecrJumpZero: {      /* jump, in1 */
 }
 
 
-/* Opcode: AggStep0 * P2 P3 P4 P5
+/* Opcode: AggStep0 P1 P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
-** Execute the step function for an aggregate.  The
-** function has P5 arguments.   P4 is a pointer to the FuncDef
-** structure that specifies the function.  Register P3 is the
+** Execute the xStep (if P1==0) or xInverse (if P1!=0) function for an
+** aggregate.  The function has P5 arguments.  P4 is a pointer to the 
+** FuncDef structure that specifies the function.  Register P3 is the
 ** accumulator.
 **
 ** The P5 arguments are taken from register P2 and its
 ** successors.
 */
-/* Opcode: AggStep * P2 P3 P4 P5
+/* Opcode: AggStep P1 P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
-** Execute the step function for an aggregate.  The
-** function has P5 arguments.   P4 is a pointer to an sqlite3_context
-** object that is used to run the function.  Register P3 is
-** as the accumulator.
+** Execute the xStep (if P1==0) or xInverse (if P1!=0) function for an
+** aggregate.  The function has P5 arguments.  P4 is a pointer to the 
+** FuncDef structure that specifies the function.  Register P3 is the
+** accumulator.
 **
 ** The P5 arguments are taken from register P2 and its
 ** successors.
@@ -6388,11 +6392,13 @@ case OP_AggStep: {
   break;
 }
 
-/* Opcode: AggFinal P1 P2 * P4 *
+/* Opcode: AggFinal P1 P2 P3 P4 *
 ** Synopsis: accum=r[P1] N=P2
 **
-** Execute the finalizer function for an aggregate.  P1 is
-** the memory location that is the accumulator for the aggregate.
+** P1 is the memory location that is the accumulator for an aggregate
+** or window function. If P3 is zero, then execute the finalizer function 
+** for an aggregate and store the result in P1. Or, if P3 is non-zero,
+** invoke the xValue() function and store the result in register P3.
 **
 ** P2 is the number of arguments that the step function takes and
 ** P4 is a pointer to the FuncDef for this function.  The P2
