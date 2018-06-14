@@ -1613,7 +1613,7 @@ void sqlite3VdbeLeave(Vdbe *p){
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */
-void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
+void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zP4;
   char zPtr[50];
   char zCom[100];
@@ -1646,6 +1646,9 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
     p->szMalloc = 0;
 #ifdef SQLITE_DEBUG
     p->pScopyFrom = 0;
+#endif
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+    p->iTabColHash = 0;
 #endif
     p++;
   }
@@ -3912,7 +3915,7 @@ static int isAllZero(const char *z, int n){
 ** is less than, equal to, or greater than the second, respectively.
 ** If one blob is a prefix of the other, then the shorter is the lessor.
 */
-static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
+SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   int c;
   int n1 = pB1->n;
   int n2 = pB2->n;

@@ -127,6 +127,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_MUTATION_TEST
+    --enable-fts5 --enable-json1
   }
   "Fast-One" {
     -O6

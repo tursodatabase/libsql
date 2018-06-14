@@ -37,6 +37,18 @@
 #endif
 
 /*
+** Given a cursor number and a column for a table or index, compute a
+** hash value for use in the Mem.iTabColHash value.  The iTabColHash
+** column is only used for verification - it is omitted from production
+** builds.  Collisions are harmless in the sense that the correct answer
+** still results.  The only harm of collisions is that they can potential
+** reduce column-cache error detection during SQLITE_DEBUG builds.
+**
+** No valid hash should be 0.
+*/
+#define TableColumnHash(T,C)  (((u32)(T)<<16)^(u32)(C+2))
+
+/*
 ** The following global variable is incremented every time a cursor
 ** moves, either by the OP_SeekXX, OP_Next, or OP_Prev opcodes.  The test
 ** procedures use this information to make sure that indices are
@@ -1264,10 +1276,12 @@ case OP_Copy: {
   pOut = &aMem[pOp->p2];
   assert( pOut!=pIn1 );
   while( 1 ){
+    memAboutToChange(p, pOut);
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     Deephemeralize(pOut);
 #ifdef SQLITE_DEBUG
     pOut->pScopyFrom = 0;
+    pOut->iTabColHash = 0;
 #endif
     REGISTER_TRACE(pOp->p2+pOp->p3-n, pOut);
     if( (n--)==0 ) break;
@@ -1296,7 +1310,8 @@ case OP_SCopy: {            /* out2 */
   assert( pOut!=pIn1 );
   sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
 #ifdef SQLITE_DEBUG
-  if( pOut->pScopyFrom==0 ) pOut->pScopyFrom = pIn1;
+  pOut->pScopyFrom = pIn1;
+  pOut->mScopyFlags = pIn1->flags;
 #endif
   break;
 }
@@ -2245,7 +2260,7 @@ case OP_Not: {                /* same as TK_NOT, in1, out2 */
 }
 
 /* Opcode: BitNot P1 P2 * * *
-** Synopsis: r[P1]= ~r[P1]
+** Synopsis: r[P2]= ~r[P1]
 **
 ** Interpret the content of register P1 as an integer.  Store the
 ** ones-complement of the P1 value into register P2.  If P1 holds
@@ -6990,6 +7005,7 @@ case OP_VUpdate: {
        || pOp->p5==OE_Abort || pOp->p5==OE_Ignore || pOp->p5==OE_Replace
   );
   assert( p->readOnly==0 );
+  if( db->mallocFailed ) goto no_mem;
   sqlite3VdbeIncrWriteCounter(p, 0);
   pVtab = pOp->p4.pVtab->pVtab;
   if( pVtab==0 || NEVER(pVtab->pModule==0) ){
@@ -7320,6 +7336,34 @@ case OP_CursorHint: {
 */
 case OP_Abortable: {
   sqlite3VdbeAssertAbortable(p);
+  break;
+}
+#endif
+
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+/* Opcode:  SetTabCol   P1 P2 P3 * *
+**
+** Set a flag in register REG[P3] indicating that it holds the value
+** of column P2 from the table on cursor P1.  This flag is checked
+** by a subsequent VerifyTabCol opcode.
+**
+** This opcode only appears SQLITE_DEBUG builds.  It is used to verify
+** that the expression table column cache is working correctly.
+*/
+case OP_SetTabCol: {
+  aMem[pOp->p3].iTabColHash = TableColumnHash(pOp->p1,pOp->p2);
+  break;
+}
+/* Opcode:  VerifyTabCol   P1 P2 P3 * *
+**
+** Verify that register REG[P3] contains the value of column P2 from
+** cursor P1.  Assert() if this is not the case.
+**
+** This opcode only appears SQLITE_DEBUG builds.  It is used to verify
+** that the expression table column cache is working correctly.
+*/
+case OP_VerifyTabCol: {
+  assert( aMem[pOp->p3].iTabColHash == TableColumnHash(pOp->p1,pOp->p2) );
   break;
 }
 #endif

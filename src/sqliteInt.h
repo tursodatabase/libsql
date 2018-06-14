@@ -367,6 +367,17 @@
 # undef NDEBUG
 #endif
 
+/* SQLITE_DEBUG_COLUMNCACHE is synomous with SQLITE_DEBUG.  The 
+** SQLITE_DEBUG_COLUMNCACHE symbol only exists to provide a convenient
+** way to search for all code that deals with verifying correct behavior
+** of the column cache.
+*/
+#ifdef SQLITE_DEBUG
+# define SQLITE_DEBUG_COLUMNCACHE 1
+#else
+# undef SQLIT_DEBUG_COLUMNCACHE
+#endif
+
 /*
 ** Enable SQLITE_ENABLE_EXPLAIN_COMMENTS if SQLITE_DEBUG is turned on.
 */

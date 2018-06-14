@@ -261,6 +261,7 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
   char *sqlite3VdbeExpandSql(Vdbe*, const char*);
 #endif
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
+int sqlite3BlobCompare(const Mem*, const Mem*);
 
 void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
@@ -340,6 +341,10 @@ int sqlite3NotPureFunc(sqlite3_context*);
 void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
 #else
 # define sqlite3VdbeScanStatus(a,b,c,d,e)
+#endif
+
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
 #endif
 
 #endif /* SQLITE_VDBE_H */

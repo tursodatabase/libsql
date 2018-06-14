@@ -1533,6 +1533,7 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeVerifyAbortable(v, onError);
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
     VdbeCoverage(v);
+    sqlite3ExprCachePush(pParse);
 
     switch( onError ){
       default: {
@@ -1609,6 +1610,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
+    sqlite3ExprCachePop(pParse);
     sqlite3VdbeResolveLabel(v, addrRowidOk);
     if( sAddr.ipkTop ){
       sAddr.ipkBtm = sqlite3VdbeAddOp0(v, OP_Goto);
