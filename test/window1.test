@@ -265,6 +265,10 @@ do_execsql_test 7.2 {
   4 6 8   6 8 10   8 10 default   10 {} default   {} {} default
 }
 
+do_execsql_test 7.3 {
+  SELECT row_number() OVER (ORDER BY x) FROM t1
+} {1 2 3 4 5}
+
 
 finish_test
 

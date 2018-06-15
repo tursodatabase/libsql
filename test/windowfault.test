@@ -46,6 +46,18 @@ do_faultsim_test 1 -start 1 -faults oom-* -prep {
   faultsim_test_result {0 {1 1 1 1 4 4 {} 8 {} 4 4 2 2 2 1 4 8 8 12 4 8 4 3 3 3 2 4 12 8 {} 8 12 4}}
 }
 
+do_faultsim_test 2 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT min(d) OVER win, max(d) OVER win
+    FROM t1
+    WINDOW win AS (ORDER BY a RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+  }
+} -test {
+  faultsim_test_result {0 {4 12 8 12 12 12}}
+}
+
 
 finish_test
 

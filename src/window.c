@@ -627,7 +627,7 @@ static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
 ** pWin->iEphCsr, where N is the number of elements in (*ppSub) after
 ** appending the new one.
 */
-static int selectWindowRewriteEList(
+static void selectWindowRewriteEList(
   Parse *pParse, 
   Window *pWin,
   ExprList *pEList,               /* Rewrite expressions in this list */
@@ -635,7 +635,6 @@ static int selectWindowRewriteEList(
 ){
   Walker sWalker;
   WindowRewrite sRewrite;
-  int rc;
 
   memset(&sWalker, 0, sizeof(Walker));
   memset(&sRewrite, 0, sizeof(WindowRewrite));
@@ -648,10 +647,9 @@ static int selectWindowRewriteEList(
   sWalker.xSelectCallback = selectWindowRewriteSelectCb;
   sWalker.u.pRewrite = &sRewrite;
 
-  rc = sqlite3WalkExprList(&sWalker, pEList);
+  (void)sqlite3WalkExprList(&sWalker, pEList);
 
   *ppSub = sRewrite.pSub;
-  return rc;
 }
 
 /*
@@ -709,10 +707,8 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** many columns the table will have.  */
     pMWin->iEphCsr = pParse->nTab++;
 
-    rc = selectWindowRewriteEList(pParse, pMWin, p->pEList, &pSublist);
-    if( rc ) return rc;
-    rc = selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
-    if( rc ) return rc;
+    selectWindowRewriteEList(pParse, pMWin, p->pEList, &pSublist);
+    selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
     pMWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
 
     /* Create the ORDER BY clause for the sub-select. This is the concatenation
