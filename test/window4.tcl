@@ -228,6 +228,49 @@ foreach o1 $lOrder { foreach o2 $lOrder {
   incr tn
 }}
 
+==========
+
+execsql_test 7.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INTEGER, y INTEGER);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t1 VALUES(5, 6);
+  INSERT INTO t1 VALUES(7, 8);
+  INSERT INTO t1 VALUES(9, 10);
+}
+
+execsql_test 7.1 {
+  SELECT lead(y) OVER win FROM t1
+  WINDOW win AS (ORDER BY x)
+}
+
+execsql_test 7.2 {
+  SELECT lead(y, 2) OVER win FROM t1
+  WINDOW win AS (ORDER BY x)
+}
+
+execsql_test 7.3 {
+  SELECT lead(y, 3, -1) OVER win FROM t1
+  WINDOW win AS (ORDER BY x)
+}
+
+execsql_test 7.4 {
+  SELECT 
+    lead(y) OVER win, lead(y) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY x)
+}
+
+execsql_test 7.5 {
+  SELECT 
+    lead(y) OVER win, 
+    lead(y, 2) OVER win, 
+    lead(y, 3, -1) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY x)
+}
+
 
 finish_test
 

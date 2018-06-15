@@ -250,10 +250,20 @@ do_catchsql_test 7.1.5 {
 do_catchsql_test 7.1.6 {
   SELECT trim(x) OVER (ORDER BY y) FROM t1;
 } {1 {trim() may not be used as a window function}}
-
 do_catchsql_test 7.1.7 {
   SELECT max(x) OVER abc FROM t1 WINDOW def AS (ORDER BY y);
 } {1 {no such window: abc}}
+
+do_execsql_test 7.2 {
+  SELECT 
+    lead(y) OVER win, 
+    lead(y, 2) OVER win, 
+    lead(y, 3, 'default') OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY x)
+} {
+  4 6 8   6 8 10   8 10 default   10 {} default   {} {} default
+}
 
 
 finish_test

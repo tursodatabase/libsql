@@ -1108,7 +1108,7 @@ static void windowPartitionCache(
   if( pMWin->pPartition ){
     int addr;
     ExprList *pPart = pMWin->pPartition;
-    int nPart = (pPart ? pPart->nExpr : 0);
+    int nPart = pPart->nExpr;
     int regNewPart = reg + pMWin->nBufferCol;
     KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
 
@@ -1175,7 +1175,7 @@ static void windowReturnOneRow(
     }
     else if( pFunc->xSFunc==leadStepFunc || pFunc->xSFunc==lagStepFunc ){
       int nArg = pWin->pOwner->x.pList->nExpr;
-      int iEph = pWin->iEphCsr;
+      int iEph = pMWin->iEphCsr;
       int csr = pWin->csrApp;
       int lbl = sqlite3VdbeMakeLabel(v);
       int tmpReg = sqlite3GetTempReg(pParse);
