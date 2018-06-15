@@ -392,7 +392,11 @@ static void last_valueStepFunc(
   if( p ){
     sqlite3_value_free(p->pVal);
     p->pVal = sqlite3_value_dup(apArg[0]);
-    p->nVal++;
+    if( p->pVal==0 ){
+      sqlite3_result_error_nomem(pCtx);
+    }else{
+      p->nVal++;
+    }
   }
 }
 static void last_valueInvFunc(
@@ -741,6 +745,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
     );
     p->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+    assert( p->pSrc || db->mallocFailed );
     if( p->pSrc ){
       int iTab;
       ExprList *pList = 0;
@@ -753,9 +758,12 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
         p->selFlags &= ~SF_Aggregate;
         sqlite3SelectPrep(pParse, pSub, 0);
       }
-    }
 
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pSublist->nExpr);
+      sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pSublist->nExpr);
+    }else{
+      sqlite3SelectDelete(db, pSub);
+    }
+    if( db->mallocFailed ) rc = SQLITE_NOMEM;
   }
 
   return rc;
@@ -1162,7 +1170,7 @@ static void windowReturnOneRow(
       sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
 
       if( pFunc->xSFunc==nth_valueStepFunc ){
-        sqlite3VdbeAddOp3(v, OP_Column, pWin->iEphCsr, pWin->iArgCol+1, tmpReg);
+        sqlite3VdbeAddOp3(v, OP_Column, pMWin->iEphCsr, pWin->iArgCol+1,tmpReg);
       }else{
         sqlite3VdbeAddOp2(v, OP_Integer, 1, tmpReg);
       }

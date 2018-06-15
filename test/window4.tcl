@@ -271,6 +271,39 @@ execsql_test 7.5 {
   WINDOW win AS (ORDER BY x)
 }
 
+==========
+
+execsql_test 8.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER, b INTEGER, c INTEGER, d INTEGER);
+  INSERT INTO t1 VALUES(1, 2, 3, 4);
+  INSERT INTO t1 VALUES(5, 6, 7, 8);
+  INSERT INTO t1 VALUES(9, 10, 11, 12);
+}
+
+execsql_test 8.1 {
+  SELECT row_number() OVER win,
+         nth_value(d,2) OVER win,
+         lead(d) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY a)
+}
+
+execsql_test 8.2 {
+    SELECT row_number() OVER win,
+           rank() OVER win,
+           dense_rank() OVER win,
+           ntile(2) OVER win,
+           first_value(d) OVER win,
+           last_value(d) OVER win,
+           nth_value(d,2) OVER win,
+           lead(d) OVER win,
+           lag(d) OVER win,
+           max(d) OVER win,
+           min(d) OVER win
+    FROM t1
+    WINDOW win AS (ORDER BY a)
+}
 
 finish_test
 

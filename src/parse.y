@@ -535,7 +535,11 @@ oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
   Token s = S; /*A-overwrites-S*/
 #endif
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L);
-  if( A ) A->pWinDefn = R;
+  if( A ){
+    A->pWinDefn = R;
+  }else{
+    sqlite3WindowListDelete(pParse->db, R);
+  }
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
   ** query planner debugging, to differentiate between multiple Select
