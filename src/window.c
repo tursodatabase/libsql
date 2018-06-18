@@ -503,7 +503,7 @@ void sqlite3WindowUpdate(
   Window *pWin,                   /* Window frame to update */
   FuncDef *pFunc                  /* Window function definition */
 ){
-  if( pWin->zName ){
+  if( pWin->zName && pWin->eType==0 ){
     Window *p;
     for(p=pList; p; p=p->pNextWin){
       if( sqlite3StrICmp(p->zName, pWin->zName)==0 ) break;
@@ -518,6 +518,7 @@ void sqlite3WindowUpdate(
     pWin->pEnd = sqlite3ExprDup(pParse->db, p->pEnd, 0);
     pWin->eStart = p->eStart;
     pWin->eEnd = p->eEnd;
+    pWin->eType = p->eType;
   }
   if( pFunc->funcFlags & SQLITE_FUNC_WINDOW ){
     sqlite3 *db = pParse->db;
@@ -800,6 +801,7 @@ Window *sqlite3WindowAlloc(
   Window *pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
 
   if( pWin ){
+    assert( eType );
     pWin->eType = eType;
     pWin->eStart = eStart;
     pWin->eEnd = eEnd;
@@ -1918,6 +1920,7 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
   if( p ){
     pNew = sqlite3DbMallocZero(db, sizeof(Window));
     if( pNew ){
+      pNew->zName = sqlite3DbStrDup(db, p->zName);
       pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
       pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
       pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
@@ -1930,6 +1933,24 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
     }
   }
   return pNew;
+}
+
+/*
+** Return a copy of the linked list of Window objects passed as the
+** second argument.
+*/
+Window *sqlite3WindowListDup(sqlite3 *db, Window *p){
+  Window *pWin;
+  Window *pRet = 0;
+  Window **pp = &pRet;
+
+  for(pWin=p; pWin; pWin=pWin->pNextWin){
+    *pp = sqlite3WindowDup(db, 0, pWin);
+    if( *pp==0 ) break;
+    pp = &((*pp)->pNextWin);
+  }
+
+  return pRet;
 }
 
 /*
