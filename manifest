@@ -1,5 +1,5 @@
-C Output\sinfinity\sas\s1e999\sin\sthe\s".dump"\scommand\sof\sthe\scommand-line\sshell.
-D 2018-06-13T17:19:20.239
+C Fix\stypo\sin\sthe\s'normalize'\sextension.
+D 2018-06-18T19:09:30.196
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -285,7 +285,7 @@ F ext/misc/json1.c 02f5f0d9c131df79f4ee168d2b426f0f0d273b7771fc0bb5293c4e7692d9a
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
-F ext/misc/normalize.c 19262ef3ef29d4de2f281b423326865c8916c63d0cb09f1dc98d24d5c1e8ba64
+F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f76dc33bde4b2180b935d1261492d9535772ed37e54489c1a33e9f11c7c90433
-R cf377e6954b0f56a42545b5a437be0b1
-U drh
-Z e707adfe00192f8b9a5f1cf3f642b5c6
+P ee431d55eba618cfba414c3946b3162bc205a70dd4e43d74a7623be332b94c92
+R 8ccc7e6cf168963494171d051d6ca8e3
+U mistachkin
+Z 3f8e5d591cbbba9e6925f53475d59dd8
