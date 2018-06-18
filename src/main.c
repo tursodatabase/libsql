@@ -1696,6 +1696,7 @@ int sqlite3CreateFunc(
       (xSFunc && (xFinal || xStep)) || 
       (!xSFunc && (xFinal && !xStep)) ||
       (!xSFunc && (!xFinal && xStep)) ||
+      ((xValue || xInverse) && (!xStep || !xFinal || !xValue || !xInverse)) ||
       (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
       (255<(nName = sqlite3Strlen30( zFunctionName))) ){
     return SQLITE_MISUSE_BKPT;

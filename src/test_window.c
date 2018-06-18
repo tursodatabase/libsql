@@ -176,6 +176,49 @@ static int SQLITE_TCLAPI test_create_window(
   return TCL_OK;
 }
 
+static int SQLITE_TCLAPI test_create_window_misuse(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  rc = sqlite3_create_window_function(db, "fff", -1, SQLITE_UTF8, 0,
+      0, testWindowFinal, testWindowValue, testWindowInverse,
+      0
+  );
+  if( rc!=SQLITE_MISUSE ) goto error;
+  rc = sqlite3_create_window_function(db, "fff", -1, SQLITE_UTF8, 0,
+      testWindowStep, 0, testWindowValue, testWindowInverse,
+      0
+  );
+  if( rc!=SQLITE_MISUSE ) goto error;
+  rc = sqlite3_create_window_function(db, "fff", -1, SQLITE_UTF8, 0,
+      testWindowStep, testWindowFinal, 0, testWindowInverse,
+      0
+  );
+  if( rc!=SQLITE_MISUSE ) goto error;
+  rc = sqlite3_create_window_function(db, "fff", -1, SQLITE_UTF8, 0,
+      testWindowStep, testWindowFinal, testWindowValue, 0,
+      0
+  );
+  if( rc!=SQLITE_MISUSE ) goto error;
+
+  return TCL_OK;
+
+ error:
+  Tcl_SetObjResult(interp, Tcl_NewStringObj("misuse test error", -1));
+  return TCL_ERROR;
+}
+
 int Sqlitetest_window_Init(Tcl_Interp *interp){
   static struct {
      char *zName;
@@ -183,6 +226,7 @@ int Sqlitetest_window_Init(Tcl_Interp *interp){
      int clientData;
   } aObjCmd[] = {
      { "sqlite3_create_window_function", test_create_window, 0 },
+     { "test_create_window_function_misuse", test_create_window_misuse, 0 },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

@@ -50,6 +50,10 @@ proc w_value {ctx} {
 sqlite3_create_window_function db median m_step m_value m_value m_inverse
 sqlite3_create_window_function db win m_step w_value w_value m_inverse
 
+do_test 0.0 {
+  test_create_window_function_misuse db
+} {}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES(4, 'a');
