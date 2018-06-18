@@ -4244,7 +4244,10 @@ int sqlite3KeyInfoIsWriteable(KeyInfo*);
 #endif
 int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **),
-  void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*),
+  void (*)(sqlite3_context*,int,sqlite3_value **), 
+  void (*)(sqlite3_context*),
+  void (*)(sqlite3_context*),
+  void (*)(sqlite3_context*,int,sqlite3_value **), 
   FuncDestructor *pDestructor
 );
 void sqlite3NoopDestructor(void*);

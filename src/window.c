@@ -300,7 +300,7 @@ static void cume_distInvFunc(
 static void cume_distValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  if( p && p->nTotal ){
     double r = (double)(p->nStep) / (double)(p->nTotal);
     sqlite3_result_double(pCtx, r);
   }
@@ -684,7 +684,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
   int rc = SQLITE_OK;
   if( p->pWin ){
     Vdbe *v = sqlite3GetVdbe(pParse);
-    int i;
     sqlite3 *db = pParse->db;
     Select *pSub = 0;             /* The subquery */
     SrcList *pSrc = p->pSrc;
@@ -743,8 +742,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
     assert( p->pSrc || db->mallocFailed );
     if( p->pSrc ){
-      int iTab;
-      ExprList *pList = 0;
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       if( sqlite3ExpandSubquery(pParse, &p->pSrc->a[0]) ){
@@ -1088,7 +1085,6 @@ static void windowPartitionCache(
 ){
   Window *pMWin = p->pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  Window *pWin;
   int iSubCsr = p->pSrc->a[0].iCursor;
   int nSub = p->pSrc->a[0].pTab->nCol;
   int k;
@@ -1410,30 +1406,20 @@ static void windowCodeRowExprStep(
 ){
   Window *pMWin = p->pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  Window *pWin;
-  int k;
-  int nSub = p->pSrc->a[0].pTab->nCol;
   int regFlushPart;               /* Register for "Gosub flush_partition" */
   int lblFlushPart;               /* Label for "Gosub flush_partition" */
   int lblFlushDone;               /* Label for "Gosub flush_partition_done" */
 
   int regArg;
-  int nArg;
   int addr;
   int csrStart = pParse->nTab++;
   int csrEnd = pParse->nTab++;
   int regStart;                    /* Value of <expr> PRECEDING */
   int regEnd;                      /* Value of <expr> FOLLOWING */
-  int addrNext;
   int addrGoto;
   int addrTop;
   int addrIfPos1;
   int addrIfPos2;
-
-  int regPeer = 0;                 /* Number of peers in current group */
-  int regPeerVal = 0;              /* Array of values identifying peer group */
-  int iPeer = 0;                   /* Column offset in eph-table of peer vals */
-  int nPeerVal;                    /* Number of peer values */
   int regSize = 0;
 
   assert( pMWin->eStart==TK_PRECEDING 
@@ -1679,7 +1665,6 @@ static void windowCodeCacheStep(
 ){
   Window *pMWin = p->pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  Window *pWin;
   int k;
   int addr;
   ExprList *pPart = pMWin->pPartition;
@@ -1695,7 +1680,6 @@ static void windowCodeCacheStep(
   int regCtr;
   int regArg;                     /* Register array to martial function args */
   int regSize;
-  int nArg;
   int lblEmpty;
   int bReverse = pMWin->pOrderBy && pMWin->eStart==TK_CURRENT 
           && pMWin->eEnd==TK_UNBOUNDED;
@@ -1822,7 +1806,6 @@ static void windowCodeDefaultStep(
 ){
   Window *pMWin = p->pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  Window *pWin;
   int k;
   int iSubCsr = p->pSrc->a[0].iCursor;
   int nSub = p->pSrc->a[0].pTab->nCol;

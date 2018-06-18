@@ -6414,6 +6414,7 @@ case OP_AggFinal: {
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   if( pOp->p3 ){
     rc = sqlite3VdbeMemAggValue(pMem, &aMem[pOp->p3], pOp->p4.pFunc);
+    pMem = &aMem[pOp->p3];
   }else{
     rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
   }

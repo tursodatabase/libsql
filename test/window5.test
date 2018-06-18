@@ -1,0 +1,68 @@
+# 2018 May 8
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests the sqlite3_create_window_function() API.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix window1
+
+proc m_step {ctx val} {
+  lappend ctx $val
+  return $ctx
+}
+proc m_value {ctx} {
+  set lSort [lsort $ctx]
+
+  set nVal [llength $lSort]
+  set n [expr $nVal/2]
+  
+  if {($nVal % 2)==0 && $nVal>0} {
+    set a [lindex $lSort $n]
+    set b [lindex $lSort $n-1]
+    if {($a+$b) % 2} {
+      set ret [expr ($a+$b)/2.0]
+    } else {
+      set ret [expr ($a+$b)/2]
+    }
+  } else {
+    set ret [lindex $lSort $n]
+  }
+  return $ret
+}
+proc m_inverse {ctx val} {
+  set ctx [lrange $ctx 1 end]
+  return $ctx
+}
+proc w_value {ctx} {
+  lsort $ctx
+}
+
+sqlite3_create_window_function db median m_step m_value m_value m_inverse
+sqlite3_create_window_function db win m_step w_value w_value m_inverse
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(4, 'a');
+  INSERT INTO t1 VALUES(6, 'b');
+  INSERT INTO t1 VALUES(1, 'c');
+  INSERT INTO t1 VALUES(5, 'd');
+  INSERT INTO t1 VALUES(2, 'e');
+  INSERT INTO t1 VALUES(3, 'f');
+}
+
+do_execsql_test 1.1 {
+  SELECT win(a) OVER (ORDER BY b), median(a) OVER (ORDER BY b) FROM t1;
+} {4 4  {4 6} 5  {1 4 6} 4  {1 4 5 6} 4.5  {1 2 4 5 6} 4 {1 2 3 4 5 6} 3.5}
+
+finish_test
+

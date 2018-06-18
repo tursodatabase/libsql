@@ -269,6 +269,13 @@ do_execsql_test 7.3 {
   SELECT row_number() OVER (ORDER BY x) FROM t1
 } {1 2 3 4 5}
 
+do_execsql_test 7.4 {
+  SELECT 
+    row_number() OVER win,
+    lead(x) OVER win
+  FROM t1
+  WINDOW win AS (ORDER BY x ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+} {1 3  2 5  3 7  4 9   5 {}}
 
 finish_test
 
