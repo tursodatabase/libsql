@@ -269,7 +269,6 @@ do_execsql_test 7.3 {
   SELECT row_number() OVER (ORDER BY x) FROM t1
 } {1 2 3 4 5}
 
-breakpoint
 do_execsql_test 7.4 {
   SELECT 
     row_number() OVER win,
@@ -317,6 +316,40 @@ do_execsql_test 8.2.2 {
   SELECT * FROM v2
 } {1 1 1  3 1 2  6 1 3  10 1 4  15 1 5  21 1 6}
 
+#-------------------------------------------------------------------------
+# Attempt to use a window function in a trigger.
+#
+do_execsql_test 9.0 {
+  CREATE TABLE t4(x, y);
+  INSERT INTO t4 VALUES(1, 'g');
+  INSERT INTO t4 VALUES(2, 'i');
+  INSERT INTO t4 VALUES(3, 'l');
+  INSERT INTO t4 VALUES(4, 'g');
+  INSERT INTO t4 VALUES(5, 'a');
+
+  CREATE TABLE t5(x, y, m);
+  CREATE TRIGGER t4i AFTER INSERT ON t4 BEGIN
+    DELETE FROM t5;
+    INSERT INTO t5 
+      SELECT x, y, max(y) OVER xyz FROM t4
+      WINDOW xyz AS (PARTITION BY (x%2) ORDER BY x);
+  END;
+}
+
+do_execsql_test 9.1.1 {
+  SELECT x, y, max(y) OVER xyz FROM t4
+      WINDOW xyz AS (PARTITION BY (x%2) ORDER BY x) ORDER BY 1
+} {1 g g   2 i i   3 l l   4 g i   5 a l}
+
+do_execsql_test 9.1.2 {
+  INSERT INTO t4 VALUES(6, 'm');
+  SELECT x, y, max(y) OVER xyz FROM t4
+      WINDOW xyz AS (PARTITION BY (x%2) ORDER BY x) ORDER BY 1
+} {1 g g   2 i i   3 l l   4 g i   5 a l   6 m m}
+
+do_execsql_test 9.1.3 {
+  SELECT * FROM t5 ORDER BY 1
+} {1 g g   2 i i   3 l l   4 g i   5 a l   6 m m}
 
 
 finish_test

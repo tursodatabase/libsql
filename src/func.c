@@ -1610,7 +1610,7 @@ static void minmaxStep(
   pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));
   if( !pBest ) return;
 
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+  if( sqlite3_value_type(pArg)==SQLITE_NULL ){
     if( pBest->flags ) sqlite3SkipAccumulatorLoad(context);
   }else if( pBest->flags ){
     int max;
@@ -1636,15 +1636,21 @@ static void minmaxStep(
     sqlite3VdbeMemCopy(pBest, pArg);
   }
 }
-static void minMaxFinalize(sqlite3_context *context){
+static void minMaxValueFinalize(sqlite3_context *context, int bValue){
   sqlite3_value *pRes;
   pRes = (sqlite3_value *)sqlite3_aggregate_context(context, 0);
   if( pRes ){
     if( pRes->flags ){
       sqlite3_result_value(context, pRes);
     }
-    sqlite3VdbeMemRelease(pRes);
+    if( bValue==0 ) sqlite3VdbeMemRelease(pRes);
   }
+}
+static void minMaxValue(sqlite3_context *context){
+  return minMaxValueFinalize(context, 1);
+}
+static void minMaxFinalize(sqlite3_context *context){
+  return minMaxValueFinalize(context, 0);
 }
 
 /*
@@ -1883,11 +1889,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(trim,               2, 3, 0, trimFunc         ),
     FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
     FUNCTION(min,                0, 0, 1, 0                ),
-    AGGREGATE2(min,              1, 0, 1, minmaxStep,      minMaxFinalize,
+    WAGGREGATE(min, 1, 0, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                           SQLITE_FUNC_MINMAX ),
     FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
     FUNCTION(max,                0, 1, 1, 0                ),
-    AGGREGATE2(max,              1, 1, 1, minmaxStep,      minMaxFinalize,
+    WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                           SQLITE_FUNC_MINMAX ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
@@ -1918,15 +1924,15 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
-    WAGGREGATE(sum,   1,0,0, sumStep, sumFinalize, sumFinalize, sumInverse),
-    WAGGREGATE(total, 1,0,0, sumStep, totalFinalize, totalFinalize, sumInverse),
-    WAGGREGATE(avg,   1,0,0, sumStep, avgFinalize, avgFinalize, sumInverse),
+    WAGGREGATE(sum,   1,0,0, sumStep, sumFinalize, sumFinalize, sumInverse, 0),
+    WAGGREGATE(total, 1,0,0, sumStep,totalFinalize,totalFinalize,sumInverse, 0),
+    WAGGREGATE(avg,   1,0,0, sumStep, avgFinalize, avgFinalize, sumInverse, 0),
     AGGREGATE2(count, 0,0,0, countStep, countFinalize, SQLITE_FUNC_COUNT  ),
-    WAGGREGATE(count, 1,0,0, countStep, countFinalize, 0, 0 ),
+    WAGGREGATE(count, 1,0,0, countStep, countFinalize, 0, 0, 0 ),
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep, 
-        groupConcatFinalize, groupConcatValue, groupConcatInverse),
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep, 
-        groupConcatFinalize, groupConcatValue, groupConcatInverse),
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
   
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
