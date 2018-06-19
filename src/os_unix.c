@@ -3961,10 +3961,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
 #endif
+#if HAVE_OFD_LOCKS
     case SQLITE_FCNTL_OFD_LOCKS: {
       *(int*)pArg = UsesOfd(pFile);
       return SQLITE_OK;
     }
+#endif
 #if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;

@@ -1,5 +1,5 @@
-C OFD\slocks\sare\snow\smostly\sworking,\sbut\sneed\sadditional\stests.
-D 2018-06-19T19:01:01.578
+C The\sfile_control_ofd_locks\sTCL\scommand\sin\stestfixture\sdistinguishes\sbetween\nOFD\slocks\sunavailable\son\sthe\splatform\sand\sOFD\slocks\snot\sused.
+D 2018-06-19T19:16:13.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -479,7 +479,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 5713c9960370c3a60d7c95a12808aef1c25634291d78bd7bcebe0de90f594b30
+F src/os_unix.c 22faca3167b97188522df5082f606b94dc1141d4253bdfdaac9144087efd27fe
 F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
@@ -505,7 +505,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 916a92de77ec5cbe27818ca194d8cf0c58aa7ad5b87527098f6aa5a6068800ce
-F src/test1.c badad960c27f27130e6146d11c4bb06b1f31ce0216c5ee7878b37ca32c717598
+F src/test1.c 05d8d168c11e419626d34d29e31851d8804987fc16e77f7b21a927215508611f
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d849ade396d2dda4ed18f8e44d19ab218f94ef41a76a99f937238253e716dc05
-R 018a532db3427b0e69c05b2d8fcf6e5e
+P 4f1fb5c94b55c871f9ab70e19ee968f67082f70851c624028967ff11ac856e4a
+R d45744c23bc0ba6c95ae624be64a683c
 U drh
-Z bf846025729235094c8cf265395fdfc1
+Z 4b06752b30319a8308f2262257913604
