@@ -4993,7 +4993,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   struct SrcList_item *pFrom;
 
   assert( p->selFlags & SF_Resolved );
-  assert( (p->selFlags & SF_HasTypeInfo)==0 );
+  if( p->selFlags & SF_HasTypeInfo ) return;
   p->selFlags |= SF_HasTypeInfo;
   pParse = pWalker->pParse;
   pTabList = p->pSrc;

@@ -351,6 +351,21 @@ do_execsql_test 9.1.3 {
   SELECT * FROM t5 ORDER BY 1
 } {1 g g   2 i i   3 l l   4 g i   5 a l   6 m m}
 
+do_execsql_test 9.2 {
+  WITH aaa(x, y, z) AS (
+    SELECT x, y, max(y) OVER xyz FROM t4
+    WINDOW xyz AS (PARTITION BY (x%2) ORDER BY x)
+  )
+  SELECT * FROM aaa ORDER BY 1;
+} {1 g g   2 i i   3 l l   4 g i   5 a l   6 m m}
+
+do_execsql_test 9.3 {
+  WITH aaa(x, y, z) AS (
+    SELECT x, y, max(y) OVER xyz FROM t4
+    WINDOW xyz AS (ORDER BY x)
+  )
+  SELECT *, min(z) OVER (ORDER BY x) FROM aaa ORDER BY 1;
+} {1 g g g   2 i i g   3 l l g   4 g l g   5 a l g   6 m m g}
 
 finish_test
 
