@@ -5964,6 +5964,40 @@ static int SQLITE_TCLAPI file_control_persist_wal(
 }
 
 /*
+** tclcmd:   file_control_ofd_locks DB ?DISABLE?
+**
+** Run sqlite3_file_control() to query the OFD lock capability.  Return
+** true if OFD locks are available and false if not.
+**
+** If the DISABLE argument is true, then disable OFD locking, if it is
+** enabled.  The returned value will show that OFD locks are disabled.
+*/
+static int SQLITE_TCLAPI file_control_ofd_locks(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  int b = 0;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB ?DISABLE?", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 && Tcl_GetIntFromObj(interp, objv[2], &b) ) return TCL_ERROR;
+  b = b ? 0 : -1;
+  rc = sqlite3_file_control(db,NULL,SQLITE_FCNTL_OFD_LOCKS,(void*)&b);
+  Tcl_AppendResult(interp, (rc==SQLITE_OK && b) ? "1" : "0", (char*)0);
+  return TCL_OK;  
+}
+
+/*
 ** tclcmd:   file_control_powersafe_overwrite DB PSOW-FLAG
 **
 ** This TCL command runs the sqlite3_file_control interface with
@@ -5994,7 +6028,6 @@ static int SQLITE_TCLAPI file_control_powersafe_overwrite(
   Tcl_AppendResult(interp, z, (char*)0);
   return TCL_OK;  
 }
-
 
 /*
 ** tclcmd:   file_control_vfsname DB ?AUXDB?
@@ -7705,6 +7738,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_win32_set_handle", file_control_win32_set_handle, 0  },
 #endif
      { "file_control_persist_wal",    file_control_persist_wal,     0   },
+     { "file_control_ofd_locks",      file_control_ofd_locks,       0   },
      { "file_control_powersafe_overwrite",file_control_powersafe_overwrite,0},
      { "file_control_vfsname",        file_control_vfsname,         0   },
      { "file_control_tempfilename",   file_control_tempfilename,    0   },

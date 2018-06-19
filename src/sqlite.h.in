@@ -1073,6 +1073,17 @@ struct sqlite3_io_methods {
 ** a file lock using the xLock or xShmLock methods of the VFS to wait
 ** for up to M milliseconds before failing, where M is the single 
 ** unsigned integer parameter.
+**
+** <li>[[SQLITE_FCNTL_OFD_LOCKS]]
+** The [SQLITE_FCNTL_OFD_LOCKS] opcode will query whether or not OFD
+** locking is currently being used for an open file, or disable the use
+** of OFD locking on the file.  The argument is a pointer to an integer
+** in the callers context.  If that integer is initially -1, then it is
+** set to 1 or 0 if the system is or is not using OFD locks for the file.
+** If the integer is initially 0, then OFD locks are disabled for the file.
+** This file-control is intended for testing and validation use only.
+** Applications that strive for correctness and error-free operation should
+** not mess with this file-control.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1108,6 +1119,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_COMMIT_ATOMIC_WRITE    32
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
 #define SQLITE_FCNTL_LOCK_TIMEOUT           34
+#define SQLITE_FCNTL_OFD_LOCKS              35
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE

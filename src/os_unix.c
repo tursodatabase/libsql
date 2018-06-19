@@ -178,6 +178,17 @@
 */
 #define IS_LOCK_ERROR(x)  ((x != SQLITE_OK) && (x != SQLITE_BUSY))
 
+/*
+** Are OFD locks supported?
+*/
+#if defined(F_OFD_SETLK) && defined(F_OFD_GETLK)
+# define HAVE_OFD_LOCKS 1
+#else
+# define HAVE_OFD_LOCKS 0
+# define F_OFD_SETLK 0    /* Fake value so we can use the identifier */
+# define F_OFD_GETLK 0    /* Fake value so we can use the identifier */
+#endif
+
 /* Forward references */
 typedef struct unixShm unixShm;               /* Connection shared memory */
 typedef struct unixShmNode unixShmNode;       /* Shared memory instance */
@@ -214,6 +225,7 @@ struct unixFile {
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
+  int eGetLk, eSetLk;
 #if SQLITE_MAX_MMAP_SIZE>0
   int nFetchOut;                      /* Number of outstanding xFetch refs */
   sqlite3_int64 mmapSize;             /* Usable size of mapping at pMapRegion */
@@ -748,9 +760,9 @@ static int lockTrace(int fd, int op, struct flock *p){
   char *zOpName, *zType;
   int s;
   int savedErrno;
-  if( op==F_GETLK ){
+  if( op==F_GETLK || op==F_OFD_GETLK ){
     zOpName = "GETLK";
-  }else if( op==F_SETLK ){
+  }else if( op==F_SETLK || op==F_OFD_SETLK ){
     zOpName = "SETLK";
   }else{
     s = osFcntl(fd, op, p);
@@ -772,7 +784,10 @@ static int lockTrace(int fd, int op, struct flock *p){
   sqlite3DebugPrintf("fcntl %d %d %s %s %d %d %d %d\n",
      threadid, fd, zOpName, zType, (int)p->l_start, (int)p->l_len,
      (int)p->l_pid, s);
-  if( s==(-1) && op==F_SETLK && (p->l_type==F_RDLCK || p->l_type==F_WRLCK) ){
+  if( s==(-1)
+   && (op==F_SETLK || op==F_OFD_SETLK)
+   && (p->l_type==F_RDLCK || p->l_type==F_WRLCK)
+  ){
     struct flock l2;
     l2 = *p;
     osFcntl(fd, F_GETLK, &l2);
@@ -994,11 +1009,12 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 *************************** Posix Advisory Locking ****************************
 **
 ** POSIX advisory locks are broken by design.  ANSI STD 1003.1 (1996)
-** section 6.5.2.2 lines 483 through 490 specify that when a process
+** section 6.5.2.2 lines 483 through 490 says that when a process
 ** sets or clears a lock, that operation overrides any prior locks set
-** by the same process.  It does not explicitly say so, but this implies
-** that it overrides locks set by the same process using a different
-** file descriptor.  Consider this test case:
+** by the *same process*.  That means that if two different threads
+** open the same file using different file descriptors, then POSIX
+** advisory locking will not work to coordinate access between those two
+** threads.  Consider this test case:
 **
 **       int fd1 = open("./file1", O_RDWR|O_CREAT, 0644);
 **       int fd2 = open("./file2", O_RDWR|O_CREAT, 0644);
@@ -1006,11 +1022,12 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** Suppose ./file1 and ./file2 are really the same file (because
 ** one is a hard or symbolic link to the other) then if you set
 ** an exclusive lock on fd1, then try to get an exclusive lock
-** on fd2, it works.  I would have expected the second lock to
+** on fd2, it works.  In a reasonable system,  the second lock would
 ** fail since there was already a lock on the file due to fd1.
-** But not so.  Since both locks came from the same process, the
-** second overrides the first, even though they were on different
-** file descriptors opened on different file names.
+** But this is not the case in POSIX advisory locking.  Since both
+** locks came from the same process, the second overrides the first,
+** even though they were on different file descriptors opened on
+** different file names.
 **
 ** This means that we cannot use POSIX locks to synchronize file access
 ** among competing threads of the same process.  POSIX locks will work fine
@@ -1030,21 +1047,17 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** For VxWorks, we have to use the alternative unique ID system based on
 ** canonical filename and implemented in the previous division.)
 **
-** The sqlite3_file structure for POSIX is no longer just an integer file
-** descriptor.  It is now a structure that holds the integer file
-** descriptor and a pointer to a structure that describes the internal
-** locks on the corresponding inode.  There is one locking structure
-** per inode, so if the same inode is opened twice, both unixFile structures
-** point to the same locking structure.  The locking structure keeps
-** a reference count (so we will know when to delete it) and a "cnt"
-** field that tells us its internal lock status.  cnt==0 means the
-** file is unlocked.  cnt==-1 means the file has an exclusive lock.
-** cnt>0 means there are cnt shared locks on the file.
+** The sqlite3_file object for POSIX (a.k.a. the unixFile object) is more
+** than just an integer file descriptor.  It also holds  a pointer
+** a pointer to another object (unixInodeInfo) that describes the
+** internal locks on the corresponding inode.  There is one
+** unixInodeInfo object per inode, so if the same inode is opened twice,
+** both unixFile objects point to the same lunixInodeInfo. The unixInodeInfo
+** keeps a reference count (nRef) so we will know when to delete it.
 **
-** Any attempt to lock or unlock a file first checks the locking
-** structure.  The fcntl() system call is only invoked to set a 
-** POSIX lock if the internal lock structure transitions between
-** a locked and an unlocked state.
+** Any attempt to lock or unlock a unixFile first checks the unixInodeInfo.
+** The fcntl() system call is only invoked to set a POSIX lock if the
+** unixInodeInfo transitions between a locked and an unlocked state.
 **
 ** But wait:  there are yet more problems with POSIX advisory locks.
 **
@@ -1052,14 +1065,14 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** all locks on that file that are owned by the current process are
 ** released.  To work around this problem, each unixInodeInfo object
 ** maintains a count of the number of pending locks on tha inode.
-** When an attempt is made to close an unixFile, if there are
-** other unixFile open on the same inode that are holding locks, the call
+** When an attempt is made to close an unixFile, if there are other
+** unixFile objcts open on the same inode that are holding locks, the call
 ** to close() the file descriptor is deferred until all of the locks clear.
 ** The unixInodeInfo structure keeps a list of file descriptors that need to
 ** be closed and that list is walked (and cleared) when the last lock
 ** clears.
 **
-** Yet another problem:  LinuxThreads do not play well with posix locks.
+** LinuxThreads:
 **
 ** Many older versions of linux use the LinuxThreads library which is
 ** not posix compliant.  Under LinuxThreads, a lock created by thread
@@ -1078,6 +1091,26 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** LinuxThreads provided that (1) there is no more than one connection 
 ** per database file in the same process and (2) database connections
 ** do not move across threads.
+**
+** OFD Locks:
+**
+** Recent unix-like OSes have added support for Open File Description or "OFD"
+** locks.  (This is not a typo: the name is "Open File Description" not
+** "Open File Descriptor".  "-ion" not "-or".  There is a subtle difference
+** between "Discription" and "Descriptor" which is described on the Linux
+** fcntl manpage and will not be repeated here.)  The main difference
+** between OFD locks and POSIX locks is that OFD locks are associated
+** with a single open() system call and do not interfere with with file
+** descriptors obtained from different open() system calls in the same
+** process.  In other words, OFD locks fix the brokenness of POSIX locks.
+**
+** As of 2018-06-19, SQLite will use OFD locks if they are available.
+** But the older work-arounds for POSIX locks are still here in the code
+** since SQLite also needs to work on systems that do not support
+** OFD locks.  Someday, perhaps, all unix systems will have reliable
+** support for OFD locks, and at that time we can omit the unixInodeInfo
+** object and all of its associated complication.  But for now we still
+** have to support the older POSIX lock work-around hack.
 */
 
 /*
@@ -1452,7 +1485,8 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
     lock.l_start = RESERVED_BYTE;
     lock.l_len = 1;
     lock.l_type = F_WRLCK;
-    if( osFcntl(pFile->h, F_GETLK, &lock) ){
+    lock.l_pid = 0;
+    if( osFcntl(pFile->h, pFile->eGetLk, &lock) ){
       rc = SQLITE_IOERR_CHECKRESERVEDLOCK;
       storeLastErrno(pFile, errno);
     } else if( lock.l_type!=F_UNLCK ){
@@ -1482,14 +1516,15 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** attempt to set the lock.
 */
 #ifndef SQLITE_ENABLE_SETLK_TIMEOUT
-# define osSetPosixAdvisoryLock(h,x,t) osFcntl(h,F_SETLK,x)
+# define osSetAdvisoryLock(h,e,x,t) osFcntl(h,e,x)
 #else
-static int osSetPosixAdvisoryLock(
+static int osSetAdvisoryLock(
   int h,                /* The file descriptor on which to take the lock */
+  int eSetLk,           /* ioctl verb for setting the lock */
   struct flock *pLock,  /* The description of the lock */
   unixFile *pFile       /* Structure holding timeout value */
 ){
-  int rc = osFcntl(h,F_SETLK,pLock);
+  int rc = osFcntl(h,eSetLk,pLock);
   while( rc<0 && pFile->iBusyTimeout>0 ){
     /* On systems that support some kind of blocking file lock with a timeout,
     ** make appropriate changes here to invoke that blocking file lock.  On
@@ -1497,7 +1532,7 @@ static int osSetPosixAdvisoryLock(
     ** lock once every millisecond until either the timeout expires, or until
     ** the lock is obtained. */
     usleep(1000);
-    rc = osFcntl(h,F_SETLK,pLock);
+    rc = osFcntl(h,eSetLk,pLock);
     pFile->iBusyTimeout--;
   }
   return rc;
@@ -1537,7 +1572,8 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
       lock.l_start = SHARED_FIRST;
       lock.l_len = SHARED_SIZE;
       lock.l_type = F_WRLCK;
-      rc = osSetPosixAdvisoryLock(pFile->h, &lock, pFile);
+      lock.l_pid = 0;
+      rc = osSetAdvisoryLock(pFile->h, pFile->eSetLk, &lock, pFile);
       if( rc<0 ) return rc;
       pInode->bProcessLock = 1;
       pInode->nLock++;
@@ -1545,7 +1581,8 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
       rc = 0;
     }
   }else{
-    rc = osSetPosixAdvisoryLock(pFile->h, pLock, pFile);
+    pLock->l_pid = 0;
+    rc = osSetAdvisoryLock(pFile->h, pFile->eSetLk, pLock, pFile);
   }
   return rc;
 }
@@ -1664,8 +1701,10 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** has a SHARED or RESERVED lock, then increment reference counts and
   ** return SQLITE_OK.
   */
-  if( eFileLock==SHARED_LOCK && 
-      (pInode->eFileLock==SHARED_LOCK || pInode->eFileLock==RESERVED_LOCK) ){
+  if( eFileLock==SHARED_LOCK
+   && pFile->eGetLk==F_GETLK
+   && (pInode->eFileLock==SHARED_LOCK || pInode->eFileLock==RESERVED_LOCK)
+  ){
     assert( eFileLock==SHARED_LOCK );
     assert( pFile->eFileLock==0 );
     assert( pInode->nShared>0 );
@@ -3911,6 +3950,15 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
 #endif
+    case SQLITE_FCNTL_OFD_LOCKS: {
+      int x = *(int*)pArg;
+      if( x==0 ){
+        pFile->eSetLk = F_SETLK;
+        pFile->eGetLk = F_GETLK;
+      }
+      *(int*)pArg = pFile->eSetLk==F_OFD_SETLK;
+      return SQLITE_OK;
+    }
 #if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
@@ -4230,7 +4278,8 @@ static int unixShmSystemLock(
     f.l_whence = SEEK_SET;
     f.l_start = ofst;
     f.l_len = n;
-    rc = osSetPosixAdvisoryLock(pShmNode->h, &f, pFile);
+    f.l_pid = 0;
+    rc = osSetAdvisoryLock(pShmNode->h, pFile->eSetLk, &f, pFile);
     rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
   }
 
@@ -4355,7 +4404,7 @@ static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
   lock.l_start = UNIX_SHM_DMS;
   lock.l_len = 1;
   lock.l_type = F_WRLCK;
-  if( osFcntl(pShmNode->h, F_GETLK, &lock)!=0 ) {
+  if( osFcntl(pShmNode->h, pDbFd->eGetLk, &lock)!=0 ) {
     rc = SQLITE_IOERR_LOCK;
   }else if( lock.l_type==F_UNLCK ){
     if( pShmNode->isReadonly ){
@@ -5412,6 +5461,22 @@ static int fillInUnixFile(
 
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
+  pNew->eSetLk = F_SETLK;
+  pNew->eGetLk = F_GETLK;
+#if HAVE_OFD_LOCKS
+  {
+    struct flock lock;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = RESERVED_BYTE;
+    lock.l_len = 1;
+    lock.l_type = F_WRLCK;
+    lock.l_pid = 0;
+    if( osFcntl(h, F_OFD_GETLK, &lock)==0 ){
+      pNew->eSetLk = F_OFD_SETLK;
+      pNew->eGetLk = F_OFD_GETLK;
+    }
+  }
+#endif
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
