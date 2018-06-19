@@ -183,8 +183,12 @@
 */
 #if defined(F_OFD_SETLK) && defined(F_OFD_GETLK)
 # define HAVE_OFD_LOCKS 1
+# define UsesOfd(F)                ((F)->eGetLk==F_OFD_GETLK)
+# define UsesOldStylePosixLocks(F) ((F)->eGetLk==F_GETLK)
 #else
 # define HAVE_OFD_LOCKS 0
+# define UsesOfd(F)                0
+# define UsesOldStylePosixLocks(F) 1
 # define F_OFD_SETLK 0    /* Fake value so we can use the identifier */
 # define F_OFD_GETLK 0    /* Fake value so we can use the identifier */
 #endif
@@ -764,6 +768,12 @@ static int lockTrace(int fd, int op, struct flock *p){
     zOpName = "GETLK";
   }else if( op==F_SETLK || op==F_OFD_SETLK ){
     zOpName = "SETLK";
+#if HAVE_OFD_LOCKS
+  }else if( op==F_OFD_GETLK ){
+    zOpName = "OFD_GETLK";
+  }else if( op==F_OFD_SETLK ){
+    zOpName = "OFD_SETLK";
+#endif
   }else{
     s = osFcntl(fd, op, p);
     sqlite3DebugPrintf("fcntl unknown %d %d %d\n", fd, op, s);
@@ -790,7 +800,7 @@ static int lockTrace(int fd, int op, struct flock *p){
   ){
     struct flock l2;
     l2 = *p;
-    osFcntl(fd, F_GETLK, &l2);
+    osFcntl(fd, op==F_SETLK ? F_GETLK : F_OFD_GETLK, &l2);
     if( l2.l_type==F_RDLCK ){
       zType = "RDLCK";
     }else if( l2.l_type==F_WRLCK ){
@@ -1702,7 +1712,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** return SQLITE_OK.
   */
   if( eFileLock==SHARED_LOCK
-   && pFile->eGetLk==F_GETLK
+   && UsesOldStylePosixLocks(pFile)
    && (pInode->eFileLock==SHARED_LOCK || pInode->eFileLock==RESERVED_LOCK)
   ){
     assert( eFileLock==SHARED_LOCK );
@@ -1713,7 +1723,6 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     pInode->nLock++;
     goto end_lock;
   }
-
 
   /* A PENDING lock is needed before acquiring a SHARED lock and before
   ** acquiring an EXCLUSIVE lock.  For the SHARED lock, the PENDING will
@@ -5463,7 +5472,7 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->eSetLk = F_SETLK;
   pNew->eGetLk = F_GETLK;
-#if HAVE_OFD_LOCKS
+#if HAVE_OFD_LOCKS && 0
   {
     struct flock lock;
     lock.l_whence = SEEK_SET;
