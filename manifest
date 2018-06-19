@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scaused\sby\sa\ssub-query\scontaining\sa\swindow\sfunction\sin\sthe\sFROM\nclause\sof\sa\squery\sthat\sitself\suses\sa\swindow\sfunction.
-D 2018-06-19T18:11:05.635
+C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
+D 2018-06-19T19:15:25.540
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -285,7 +285,7 @@ F ext/misc/json1.c 02f5f0d9c131df79f4ee168d2b426f0f0d273b7771fc0bb5293c4e7692d9a
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
-F ext/misc/normalize.c 19262ef3ef29d4de2f281b423326865c8916c63d0cb09f1dc98d24d5c1e8ba64
+F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
@@ -484,7 +484,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 3b5e69c8a94fc59496fd90b9598bccfc2cee7f7bdce1e17d107a03d51caf1d4a
+F src/parse.y 4350d8b79419158667d564177b47a7612bfc43601cc1da195a1faaf09c9ca3d3
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1111,7 +1111,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
-F test/normalize.test 501630ab49b0b26b65c74124bf03e3374c1b57fa97aae750f84803609141d167
+F test/normalize.test 1dedf653ca33b0b55fd0c7967d2861a51f1801a7aa899a02d4c0d7adfcd5acdc
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1743,7 +1743,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 801074ce63d3f4825cc9fa508c42629a9f74e7f9e35c5f238343bb1cff4fbae1
-R 4641575efb36f515d78c6011eec804c4
+P f4b1b6f85b53d72e735a1382f7c3de75af405a7878dd8cdcb10394e859ea3d69 320fa69e6aa2a7d67f6444d6c13de9893e27b85c36a933b06da113d753b6aafc
+R 3f551934a344252426be710507621310
 U dan
-Z 8f9d5637c634d62c951ad6a938d09ca8
+Z d27470b28751518c2f266e1267cc19e0

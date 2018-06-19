@@ -65,6 +65,9 @@ foreach {tnum sql norm} {
   {/* IN list exactly 5 bytes long */
    SELECT * FROM t1 WHERE x IN (1,2,3);}
   {select*from t1 where x in(?,?,?);}
+  180
+  {    }
+  {}
 } {
   do_test $tnum [list sqlite3_normalize $sql] $norm
 }
