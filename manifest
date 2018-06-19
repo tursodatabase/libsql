@@ -1,5 +1,5 @@
-C Minor\schange\sto\sthe\sinput\sgrammar\sto\smake\sthe\sparser\stables\sslightly\ssmaller.
-D 2018-06-19T11:15:19.013
+C Make\sthe\sieee754()\sa\sbuilt-in\sfunction.\s\sAdd\sthe\s--ieee754\soption\sto\sthe\n".dump"\scommand\sin\sthe\sshell\sto\scause\sit\sto\soutput\sfloating-point\svalues\sas\nieee754()\scalls,\sso\sthat\sthe\sfloating\spoint\snumber\swill\sbe\sreproduced\sexactly.\nNot\ssure\syet\sthat\swe\swant\sto\sgo\sthis\sway,\sbut\sit\sis\sone\soption.
+D 2018-06-19T21:15:51.406
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -280,7 +280,7 @@ F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
-F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
+F ext/misc/ieee754.c aea0fff2ae7d031ecb973a5256e612fea14d61386f672ab6179845addbc54dee
 F ext/misc/json1.c 02f5f0d9c131df79f4ee168d2b426f0f0d273b7771fc0bb5293c4e7692d9a2ee
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
@@ -450,7 +450,7 @@ F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
 F src/expr.c 3ab855fb882d8758220edaf261d8d56ad2cb3736f92c818f4ae250ac4a2752a4
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c b1da9ef8dc834603bb0d28972378a7ce65897847f9a1e89ab800bbdf24c788ee
-F src/func.c e2e3c02621a528a472933fd4733a5da635676f1461be73293f6e9f62f18d4eaa
+F src/func.c 23d9499688bc862cbb78026670e22140a0c6129527a1470b9b2913d854576153
 F src/global.c 9bf034fd560bdd514715170ed8460bb7f823cec113f0569ef3f18a20c7ccd128
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -496,7 +496,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 14602f46800ba182ea6a490e0f304127d29ac1f724bdadcc639e25d3223fcf6e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 8d3176c5258cc83942815ebe75b4c1f8dcf62b5e0f4d37373a14ebf23c046f9f
-F src/shell.c.in 8578421c5fb2a972461b2a996f7173646e55e0dbd2a2eee30c8f5dc7d3dbadfd
+F src/shell.c.in 5473740b6985a14a90ce4bf5adb395b39af17baa4a3043604dedaf7df055413f
 F src/sqlite.h.in 19de593baa0667854730e7b8bc2e3039c20ee80a4d537e9b5ec2038947fe3daf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1731,7 +1731,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39434262d5cf1af197ce0abb1f1ee84ee0797823e290a493c5bf8376fbe287a6
-R b6cf2872dc6b136d2f9f02df3a45f74e
+P 320fa69e6aa2a7d67f6444d6c13de9893e27b85c36a933b06da113d753b6aafc
+R 84eaf5b540bd61da1f0a39dda242e449
+T *branch * ieee754
+T *sym-ieee754 *
+T -sym-trunk *
 U drh
-Z ca3608404058acf123d3efb518cfb804
+Z 7780acb924c455e866caa4faf522bb89

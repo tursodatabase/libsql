@@ -1078,6 +1078,7 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+#define SHFLG_UseIeee754Func 0x00000080 /* .dump --ieee754 flag */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -2031,17 +2032,48 @@ static int shell_callback(
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           utf8_printf(p->out,"%s", azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
-          char z[50];
-          double r = sqlite3_column_double(p->pStmt, i);
-          sqlite3_uint64 ur;
-          memcpy(&ur,&r,sizeof(r));
-          if( ur==0x7ff0000000000000LL ){
-            raw_printf(p->out, "1e999");
-          }else if( ur==0xfff0000000000000LL ){
-            raw_printf(p->out, "-1e999");
-          }else{
-            sqlite3_snprintf(50,z,"%!.20g", r);
+          sqlite3_int64 m, a;
+          double r;
+          int e;
+          int isNeg;
+          char z[100];
+          assert( sizeof(m)==sizeof(r) );
+          r = sqlite3_column_double(p->pStmt, i);
+          if( ShellHasFlag(p, SHFLG_UseIeee754Func) ){
+            if( r<0.0 ){
+              isNeg = 1;
+              r = -r;
+            }else{
+              isNeg = 0;
+            }
+            memcpy(&a,&r,sizeof(a));
+            if( a==0 ){
+              e = 0;
+              m = 0;
+            }else{
+              e = a>>52;
+              m = a & ((((sqlite3_int64)1)<<52)-1);
+              m |= ((sqlite3_int64)1)<<52;
+              while( e<1075 && m>0 && (m&1)==0 ){
+                m >>= 1;
+                e++;
+              }
+              if( isNeg ) m = -m;
+            }
+            sqlite3_snprintf(sizeof(z), z, "ieee754(%lld,%d)",
+                             m, e-1075);
             raw_printf(p->out, "%s", z);
+          }else{
+            sqlite3_uint64 ur;
+            memcpy(&ur,&r,sizeof(r));
+            if( ur==0x7ff0000000000000LL ){
+              raw_printf(p->out, "1e999");
+            }else if( ur==0xfff0000000000000LL ){
+              raw_printf(p->out, "-1e999");
+            }else{
+              sqlite3_snprintf(50,z,"%!.20g", r);
+              raw_printf(p->out, "%s", z);
+            }
           }
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
@@ -5862,7 +5894,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zLike = 0;
     int i;
     int savedShowHeader = p->showHeader;
-    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines);
+    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_UseIeee754Func);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -5879,6 +5911,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         }else
         if( strcmp(z,"newlines")==0 ){
           ShellSetFlag(p, SHFLG_Newlines);
+        }else
+        if( strcmp(z,"ieee754")==0 ){
+          ShellSetFlag(p, SHFLG_UseIeee754Func);
         }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
