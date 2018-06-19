@@ -1,5 +1,5 @@
-C Add\stest\scase\sfor\sthe\sfix\sin\sthe\sprevious\scommit.
-D 2018-06-18T20:08:08.076
+C Minor\schange\sto\sthe\sinput\sgrammar\sto\smake\sthe\sparser\stables\sslightly\ssmaller.
+D 2018-06-19T11:15:19.013
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -484,7 +484,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 0b81472496809693a139067fea1fe3f14a7be8aa26c8f18bb327034d1252a06a
+F src/parse.y 4a86c88d1bdd0706bc9b7a24fdf32af45505216767c2434fd0f5866e3effa92f
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1731,7 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c9163ea232d4008105939910565b0d1e533cbb38067d7900dc732b911786d37
-R 828bc1b54e5f114a82b36238956b6c68
-U dan
-Z a2649c28c10e52fc0b8009ae076970c3
+P 39434262d5cf1af197ce0abb1f1ee84ee0797823e290a493c5bf8376fbe287a6
+R b6cf2872dc6b136d2f9f02df3a45f74e
+U drh
+Z ca3608404058acf123d3efb518cfb804

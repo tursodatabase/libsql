@@ -1101,10 +1101,10 @@ expr(A) ::= NOT(B) expr(X).
               {A = sqlite3PExpr(pParse, @B, X, 0);/*A-overwrites-B*/}
 expr(A) ::= BITNOT(B) expr(X).
               {A = sqlite3PExpr(pParse, @B, X, 0);/*A-overwrites-B*/}
-expr(A) ::= MINUS expr(X). [BITNOT]
-              {A = sqlite3PExpr(pParse, TK_UMINUS, X, 0);}
-expr(A) ::= PLUS expr(X). [BITNOT]
-              {A = sqlite3PExpr(pParse, TK_UPLUS, X, 0);}
+expr(A) ::= PLUS|MINUS(B) expr(X). [BITNOT] {
+  A = sqlite3PExpr(pParse, @B==TK_PLUS ? TK_UPLUS : TK_UMINUS, X, 0);
+  /*A-overwrites-B*/
+}
 
 %type between_op {int}
 between_op(A) ::= BETWEEN.     {A = 0;}
