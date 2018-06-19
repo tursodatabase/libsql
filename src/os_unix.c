@@ -1128,6 +1128,7 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** to locate a particular unixInodeInfo object.
 */
 struct unixFileId {
+  void *pExtra;
   dev_t dev;                  /* Device number */
 #if OS_VXWORKS
   struct vxworksFileId *pId;  /* Unique file ID for vxworks. */
@@ -1384,6 +1385,7 @@ static int findInodeInfo(
 
   memset(&fileId, 0, sizeof(fileId));
   fileId.dev = statbuf.st_dev;
+  if( UsesOfd(pFile) ) fileId.pExtra = pFile;
 #if OS_VXWORKS
   fileId.pId = pFile->pId;
 #else
@@ -3960,12 +3962,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
 #endif
     case SQLITE_FCNTL_OFD_LOCKS: {
-      int x = *(int*)pArg;
-      if( x==0 ){
-        pFile->eSetLk = F_SETLK;
-        pFile->eGetLk = F_GETLK;
-      }
-      *(int*)pArg = pFile->eSetLk==F_OFD_SETLK;
+      *(int*)pArg = UsesOfd(pFile);
       return SQLITE_OK;
     }
 #if SQLITE_MAX_MMAP_SIZE>0
@@ -4413,6 +4410,7 @@ static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
   lock.l_start = UNIX_SHM_DMS;
   lock.l_len = 1;
   lock.l_type = F_WRLCK;
+  lock.l_pid = 0;
   if( osFcntl(pShmNode->h, pDbFd->eGetLk, &lock)!=0 ) {
     rc = SQLITE_IOERR_LOCK;
   }else if( lock.l_type==F_UNLCK ){
@@ -5470,22 +5468,6 @@ static int fillInUnixFile(
 
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
-  pNew->eSetLk = F_SETLK;
-  pNew->eGetLk = F_GETLK;
-#if HAVE_OFD_LOCKS && 0
-  {
-    struct flock lock;
-    lock.l_whence = SEEK_SET;
-    lock.l_start = RESERVED_BYTE;
-    lock.l_len = 1;
-    lock.l_type = F_WRLCK;
-    lock.l_pid = 0;
-    if( osFcntl(h, F_OFD_GETLK, &lock)==0 ){
-      pNew->eSetLk = F_OFD_SETLK;
-      pNew->eGetLk = F_OFD_GETLK;
-    }
-  }
-#endif
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
@@ -5499,6 +5481,22 @@ static int fillInUnixFile(
   if( strcmp(pVfs->zName,"unix-excl")==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
+  pNew->eSetLk = F_SETLK;
+  pNew->eGetLk = F_GETLK;
+#if HAVE_OFD_LOCKS
+  if( sqlite3GlobalConfig.bOfdLocks && (pNew->ctrlFlags & UNIXFILE_EXCL)==0 ){
+    struct flock lock;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = RESERVED_BYTE;
+    lock.l_len = 1;
+    lock.l_type = F_WRLCK;
+    lock.l_pid = 0;
+    if( osFcntl(h, F_OFD_GETLK, &lock)==0 ){
+      pNew->eSetLk = F_OFD_SETLK;
+      pNew->eGetLk = F_OFD_GETLK;
+    }
+  }
+#endif
 
 #if OS_VXWORKS
   pNew->pId = vxworksFindFileId(zFilename);

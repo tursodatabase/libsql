@@ -1274,6 +1274,31 @@ static int SQLITE_TCLAPI test_config_pmasz(
   return TCL_OK;
 }
 
+/*
+** Usage:    sqlite3_config_ofd_locks  INTEGER
+**
+** Enable or disable the use of OFD locks.
+*/
+static int SQLITE_TCLAPI test_config_ofd_locks(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int eOk;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &eOk) ){
+    return TCL_ERROR;
+  }
+
+  sqlite3_config(SQLITE_CONFIG_OFD_LOCKS, eOk);
+
+  return TCL_OK;
+}
 
 /*
 ** Usage:    sqlite3_dump_memsys3  FILENAME
@@ -1530,6 +1555,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_uri",         test_config_uri               ,0 },
      { "sqlite3_config_cis",         test_config_cis               ,0 },
      { "sqlite3_config_pmasz",       test_config_pmasz             ,0 },
+     { "sqlite3_config_ofd_locks",   test_config_ofd_locks         ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },

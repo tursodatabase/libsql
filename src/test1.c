@@ -5964,13 +5964,10 @@ static int SQLITE_TCLAPI file_control_persist_wal(
 }
 
 /*
-** tclcmd:   file_control_ofd_locks DB ?DISABLE?
+** tclcmd:   file_control_ofd_locks DB
 **
 ** Run sqlite3_file_control() to query the OFD lock capability.  Return
 ** true if OFD locks are available and false if not.
-**
-** If the DISABLE argument is true, then disable OFD locking, if it is
-** enabled.  The returned value will show that OFD locks are disabled.
 */
 static int SQLITE_TCLAPI file_control_ofd_locks(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -5982,16 +5979,15 @@ static int SQLITE_TCLAPI file_control_ofd_locks(
   int rc;
   int b = 0;
 
-  if( objc!=2 && objc!=3 ){
+  if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB ?DISABLE?", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
     return TCL_ERROR;
   }
-  if( objc==3 && Tcl_GetIntFromObj(interp, objv[2], &b) ) return TCL_ERROR;
-  b = b ? 0 : -1;
+  b = 0;
   rc = sqlite3_file_control(db,NULL,SQLITE_FCNTL_OFD_LOCKS,(void*)&b);
   Tcl_AppendResult(interp, (rc==SQLITE_OK && b) ? "1" : "0", (char*)0);
   return TCL_OK;  

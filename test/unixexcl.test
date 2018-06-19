@@ -24,6 +24,9 @@ if {$::tcl_platform(platform)!="unix" || [info commands test_syscall]==""} {
 } 
 set testprefix unixexcl
 
+catch {db close}
+sqlite3_shutdown
+sqlite3_config_ofd_locks 0
 
 
 # Test that when using VFS "unix-excl", the first time the database is read
@@ -125,5 +128,9 @@ do_multiclient_test tn {
     } {0 7 7}
   }
 }
+
+catch {db close}
+sqlite3_shutdown
+sqlite3_config_ofd_locks 1
 
 finish_test

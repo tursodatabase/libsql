@@ -1076,14 +1076,9 @@ struct sqlite3_io_methods {
 **
 ** <li>[[SQLITE_FCNTL_OFD_LOCKS]]
 ** The [SQLITE_FCNTL_OFD_LOCKS] opcode will query whether or not OFD
-** locking is currently being used for an open file, or disable the use
-** of OFD locking on the file.  The argument is a pointer to an integer
-** in the callers context.  If that integer is initially -1, then it is
-** set to 1 or 0 if the system is or is not using OFD locks for the file.
-** If the integer is initially 0, then OFD locks are disabled for the file.
-** This file-control is intended for testing and validation use only.
-** Applications that strive for correctness and error-free operation should
-** not mess with this file-control.
+** locking is currently being used for an open file.  The argument is
+** a pointer to an integer into which is written a value of 1 if OFD
+** locks are being used for the file and 0 if OFD locks are not used.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1961,6 +1956,13 @@ struct sqlite3_mem_methods {
 ** negative value for this option restores the default behaviour.
 ** This option is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
+**
+** [[SQLITE_CONFIG_OFD_LOCKS]]
+** <dt>SQLITE_CONFIG_OFD_LOCKS
+** <dd>The SQLITE_CONFIG_OFD_LOCKS option accepts a single parameter
+** of type (int).  If the value is true then OFD Locks are used on systems
+** that support that feature.  If the vlaue is false, then OFD locks are
+** never used.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -1991,6 +1993,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 #define SQLITE_CONFIG_SMALL_MALLOC        27  /* boolean */
 #define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
+#define SQLITE_CONFIG_OFD_LOCKS           29  /* int */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options

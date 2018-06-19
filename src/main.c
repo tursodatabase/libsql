@@ -653,6 +653,11 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_ENABLE_SORTER_REFERENCES */
 
+    case SQLITE_CONFIG_OFD_LOCKS: {
+      sqlite3GlobalConfig.bOfdLocks = va_arg(ap, int);
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;
