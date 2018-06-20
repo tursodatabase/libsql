@@ -83,11 +83,8 @@ impl VTab for ArrayTab {
             if constraint.operator() != vtab::IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
                 continue;
             }
-            match constraint.column() {
-                CARRAY_COLUMN_POINTER => {
-                    ptr_idx = Some(i);
-                }
-                _ => {}
+            if let CARRAY_COLUMN_POINTER = constraint.column() {
+                ptr_idx = Some(i);
             }
         }
         if let Some(ptr_idx) = ptr_idx {
