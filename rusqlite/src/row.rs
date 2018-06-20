@@ -27,6 +27,7 @@ impl<'stmt> Rows<'stmt> {
     /// lifetime of the returned row is tied to the lifetime of `self`. This is a
     /// "streaming iterator". For a more natural interface, consider using `query_map`
     /// or `query_and_then` instead, which return types that implement `Iterator`.
+    #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // cannot implement Iterator
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt
             .and_then(|stmt| match stmt.step() {
