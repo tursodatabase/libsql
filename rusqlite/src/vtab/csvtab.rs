@@ -10,7 +10,7 @@ use std::str;
 use ffi;
 use types::Null;
 use vtab::{
-    declare_vtab, dequote, escape_double_quote, parse_boolean, Context, IndexInfo, VTab,
+    declare_vtab, dequote, escape_double_quote, parse_boolean, Context, IndexInfo, Module, VTab,
     VTabCursor, Values,
 };
 use {Connection, Error, Result};
@@ -28,11 +28,12 @@ use {Connection, Error, Result};
 /// ```
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("csv", &CSV_MODULE, aux)
+    conn.create_module("csv", CSVModule(&CSV_MODULE), aux)
 }
 
 init_module!(
     CSV_MODULE,
+    CSVModule,
     CSVTab,
     (),
     CSVTabCursor,
@@ -50,29 +51,9 @@ init_module!(
     csv_rowid
 );
 
-/// An instance of the CSV virtual table
-#[repr(C)]
-struct CSVTab {
-    /// Base class. Must be first
-    base: ffi::sqlite3_vtab,
-    /// Name of the CSV file
-    filename: String,
-    has_headers: bool,
-    delimiter: u8,
-    quote: u8,
-    /// Offset to start of data
-    offset_first_row: csv::Position,
-}
+struct CSVModule(&'static ffi::sqlite3_module);
 
-impl CSVTab {
-    fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
-        csv::ReaderBuilder::new()
-            .has_headers(self.has_headers)
-            .delimiter(self.delimiter)
-            .quote(self.quote)
-            .from_path(&self.filename)
-    }
-
+impl CSVModule {
     fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
         let arg = try!(str::from_utf8(c_slice)).trim();
         let mut split = arg.split('=');
@@ -95,11 +76,15 @@ impl CSVTab {
     }
 }
 
-impl VTab for CSVTab {
+impl Module for CSVModule {
     type Aux = ();
-    type Cursor = CSVTabCursor;
+    type Table = CSVTab;
 
-    unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut (), args: &[&[u8]]) -> Result<CSVTab> {
+    fn as_ptr(&self) -> *const ffi::sqlite3_module {
+        self.0
+    }
+
+    unsafe fn connect(db: *mut ffi::sqlite3, _aux: Option<&()>, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
@@ -117,7 +102,7 @@ impl VTab for CSVTab {
 
         let args = &args[3..];
         for c_slice in args {
-            let (param, value) = try!(CSVTab::parameter(c_slice));
+            let (param, value) = try!(CSVModule::parameter(c_slice));
             match param {
                 "filename" => {
                     if !Path::new(value).exists() {
@@ -161,7 +146,7 @@ impl VTab for CSVTab {
                     }
                 }
                 "delimiter" => {
-                    if let Some(b) = CSVTab::parse_byte(value) {
+                    if let Some(b) = CSVModule::parse_byte(value) {
                         vtab.delimiter = b;
                     } else {
                         return Err(Error::ModuleError(format!(
@@ -171,7 +156,7 @@ impl VTab for CSVTab {
                     }
                 }
                 "quote" => {
-                    if let Some(b) = CSVTab::parse_byte(value) {
+                    if let Some(b) = CSVModule::parse_byte(value) {
                         if b == b'0' {
                             vtab.quote = 0;
                         } else {
@@ -248,6 +233,34 @@ impl VTab for CSVTab {
         try!(declare_vtab(db, &schema.unwrap()));
         Ok(vtab)
     }
+}
+
+/// An instance of the CSV virtual table
+#[repr(C)]
+struct CSVTab {
+    /// Base class. Must be first
+    base: ffi::sqlite3_vtab,
+    /// Name of the CSV file
+    filename: String,
+    has_headers: bool,
+    delimiter: u8,
+    quote: u8,
+    /// Offset to start of data
+    offset_first_row: csv::Position,
+}
+
+impl CSVTab {
+    fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
+        csv::ReaderBuilder::new()
+            .has_headers(self.has_headers)
+            .delimiter(self.delimiter)
+            .quote(self.quote)
+            .from_path(&self.filename)
+    }
+}
+
+impl VTab for CSVTab {
+    type Cursor = CSVTabCursor;
 
     // Only a forward full table scan is supported.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {

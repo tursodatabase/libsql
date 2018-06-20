@@ -40,20 +40,36 @@ use {str_to_cstring, Connection, Error, InnerConnection, Result};
 //  \-> if not eof { cursor.column or xrowid } else { cursor.xclose }
 //
 
-/// Virtual table instance trait.
-pub trait VTab: Sized {
+/// Module instance trait
+pub trait Module {
     type Aux;
-    type Cursor: VTabCursor;
+    type Table: VTab;
+
+    fn as_ptr(&self) -> *const ffi::sqlite3_module;
 
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
-    unsafe fn create(db: *mut ffi::sqlite3, aux: *mut Self::Aux, args: &[&[u8]]) -> Result<Self> {
+    unsafe fn create(
+        db: *mut ffi::sqlite3,
+        aux: Option<&Self::Aux>,
+        args: &[&[u8]],
+    ) -> Result<Self::Table> {
         Self::connect(db, aux, args)
     }
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
     /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
-    unsafe fn connect(db: *mut ffi::sqlite3, aux: *mut Self::Aux, args: &[&[u8]]) -> Result<Self>;
+    unsafe fn connect(
+        db: *mut ffi::sqlite3,
+        aux: Option<&Self::Aux>,
+        args: &[&[u8]],
+    ) -> Result<Self::Table>;
+}
+
+/// Virtual table instance trait.
+pub trait VTab: Sized {
+    type Cursor: VTabCursor;
+
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
@@ -291,34 +307,34 @@ impl<'a> Iterator for ValueIter<'a> {
 
 impl Connection {
     /// Register a virtual table implementation.
-    pub fn create_module<A>(
+    pub fn create_module<M: Module>(
         &self,
         module_name: &str,
-        module: *const ffi::sqlite3_module,
-        aux: Option<A>,
+        module: M,
+        aux: Option<M::Aux>,
     ) -> Result<()> {
         self.db.borrow_mut().create_module(module_name, module, aux)
     }
 }
 
 impl InnerConnection {
-    fn create_module<A>(
+    fn create_module<M: Module>(
         &mut self,
         module_name: &str,
-        module: *const ffi::sqlite3_module,
-        aux: Option<A>,
+        module: M,
+        aux: Option<M::Aux>,
     ) -> Result<()> {
         let c_name = try!(str_to_cstring(module_name));
         let r = match aux {
             Some(aux) => {
-                let boxed_aux: *mut A = Box::into_raw(Box::new(aux));
+                let boxed_aux: *mut M::Aux = Box::into_raw(Box::new(aux));
                 unsafe {
                     ffi::sqlite3_create_module_v2(
                         self.db(),
                         c_name.as_ptr(),
-                        module,
+                        module.as_ptr(),
                         boxed_aux as *mut c_void,
-                        Some(free_boxed_value::<A>),
+                        Some(free_boxed_value::<M::Aux>),
                     )
                 }
             }
@@ -326,7 +342,7 @@ impl InnerConnection {
                 ffi::sqlite3_create_module_v2(
                     self.db(),
                     c_name.as_ptr(),
-                    module,
+                    module.as_ptr(),
                     ptr::null_mut(),
                     None,
                 )
@@ -401,6 +417,7 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 macro_rules! init_module {
     (
         $module_name:ident,
+        $module:ident,
         $vtab:ident,
         $aux:ty,
         $cursor:ty,
@@ -445,8 +462,9 @@ macro_rules! init_module {
 
         // The xConnect and xCreate methods do the same thing, but they must be
         // different so that the virtual table is not an eponymous virtual table.
-        create_or_connect!($vtab, $aux, $create, create);
+        create_or_connect!($module, $vtab, $aux, $create, create);
         common_decl!(
+            $module,
             $vtab,
             $aux,
             $cursor,
@@ -469,6 +487,7 @@ macro_rules! init_module {
 macro_rules! eponymous_module {
     (
         $module_name:ident,
+        $module:ident,
         $vtab:ident,
         $aux:ty,
         $cursor:ty,
@@ -513,6 +532,7 @@ macro_rules! eponymous_module {
         };
 
         common_decl!(
+            $module,
             $vtab,
             $aux,
             $cursor,
@@ -532,7 +552,7 @@ macro_rules! eponymous_module {
 } // eponymous_module macro end
 
 macro_rules! create_or_connect {
-    ($vtab:ident, $aux:ty, $create_or_connect:ident, $vtab_func:ident) => {
+    ($module:ident, $vtab:ident, $aux:ty, $create_or_connect:ident, $module_func:ident) => {
         unsafe extern "C" fn $create_or_connect(
             db: *mut ffi::sqlite3,
             aux: *mut c_void,
@@ -550,9 +570,9 @@ macro_rules! create_or_connect {
             let args = slice::from_raw_parts(argv, argc as usize);
             let vec = args
                 .iter()
-                .map(|&cs| CStr::from_ptr(cs).to_bytes())
+                .map(|&cs| CStr::from_ptr(cs).to_bytes()) // FIXME .to_str() -> Result<&str, Utf8Error>
                 .collect::<Vec<_>>();
-            match $vtab::$vtab_func(db, aux, &vec[..]) {
+            match $module::$module_func(db, aux.as_ref(), &vec[..]) {
                 Ok(vtab) => {
                     let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
                     *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
@@ -575,6 +595,7 @@ macro_rules! create_or_connect {
 
 macro_rules! common_decl {
     (
+        $module:ident,
         $vtab:ident,
         $aux:ty,
         $cursor:ty,
@@ -590,7 +611,7 @@ macro_rules! common_decl {
         $column:ident,
         $rowid:ident
     ) => {
-        create_or_connect!($vtab, $aux, $connect, connect);
+        create_or_connect!($module, $vtab, $aux, $connect, connect);
         unsafe extern "C" fn $best_index(
             vtab: *mut ffi::sqlite3_vtab,
             info: *mut ffi::sqlite3_index_info,

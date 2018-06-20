@@ -5,17 +5,18 @@ use std::os::raw::{c_char, c_int, c_void};
 
 use ffi;
 use types::Type;
-use vtab::{self, declare_vtab, Context, IndexInfo, VTab, VTabCursor, Values};
+use vtab::{self, declare_vtab, Context, IndexInfo, Module, VTab, VTabCursor, Values};
 use {Connection, Error, Result};
 
 /// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("generate_series", &SERIES_MODULE, aux)
+    conn.create_module("generate_series", Series(&SERIES_MODULE), aux)
 }
 
 eponymous_module!(
     SERIES_MODULE,
+    Series,
     SeriesTab,
     (),
     SeriesTabCursor,
@@ -32,6 +33,33 @@ eponymous_module!(
     series_column,
     series_rowid
 );
+
+#[repr(C)]
+struct Series(&'static ffi::sqlite3_module);
+
+impl Module for Series {
+    type Aux = ();
+    type Table = SeriesTab;
+
+    fn as_ptr(&self) -> *const ffi::sqlite3_module {
+        self.0
+    }
+
+    unsafe fn connect(
+        db: *mut ffi::sqlite3,
+        _aux: Option<&()>,
+        _args: &[&[u8]],
+    ) -> Result<SeriesTab> {
+        let vtab = SeriesTab {
+            base: Default::default(),
+        };
+        try!(declare_vtab(
+            db,
+            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)"
+        ));
+        Ok(vtab)
+    }
+}
 
 // Column numbers
 // const SERIES_COLUMN_VALUE : c_int = 0;
@@ -63,19 +91,7 @@ struct SeriesTab {
 }
 
 impl VTab for SeriesTab {
-    type Aux = ();
     type Cursor = SeriesTabCursor;
-
-    unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut (), _args: &[&[u8]]) -> Result<SeriesTab> {
-        let vtab = SeriesTab {
-            base: Default::default(),
-        };
-        try!(declare_vtab(
-            db,
-            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)"
-        ));
-        Ok(vtab)
-    }
 
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
         // The query plan bitmask

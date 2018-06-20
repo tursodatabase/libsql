@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use ffi;
 use types::{ToSql, ToSqlOutput, Value};
-use vtab::{self, declare_vtab, Context, IndexInfo, VTab, VTabCursor, Values};
+use vtab::{self, declare_vtab, Context, IndexInfo, Module, VTab, VTabCursor, Values};
 use {Connection, Error, Result};
 
 // http://sqlite.org/bindptr.html
@@ -28,11 +28,12 @@ impl ToSql for Array {
 /// Register the "rarray" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("rarray", &ARRAY_MODULE, aux)
+    conn.create_module("rarray", ArrayModule(&ARRAY_MODULE), aux)
 }
 
 eponymous_module!(
     ARRAY_MODULE,
+    ArrayModule,
     ArrayTab,
     (),
     ArrayTabCursor,
@@ -50,6 +51,30 @@ eponymous_module!(
     array_rowid
 );
 
+#[repr(C)]
+struct ArrayModule(&'static ffi::sqlite3_module);
+
+impl Module for ArrayModule {
+    type Aux = ();
+    type Table = ArrayTab;
+
+    fn as_ptr(&self) -> *const ffi::sqlite3_module {
+        self.0
+    }
+
+    unsafe fn connect(
+        db: *mut ffi::sqlite3,
+        _aux: Option<&()>,
+        _args: &[&[u8]],
+    ) -> Result<ArrayTab> {
+        let vtab = ArrayTab {
+            base: Default::default(),
+        };
+        try!(declare_vtab(db, "CREATE TABLE x(value,pointer hidden)"));
+        Ok(vtab)
+    }
+}
+
 // Column numbers
 // const CARRAY_COLUMN_VALUE : c_int = 0;
 const CARRAY_COLUMN_POINTER: c_int = 1;
@@ -62,16 +87,7 @@ struct ArrayTab {
 }
 
 impl VTab for ArrayTab {
-    type Aux = ();
     type Cursor = ArrayTabCursor;
-
-    unsafe fn connect(db: *mut ffi::sqlite3, _aux: *mut (), _args: &[&[u8]]) -> Result<ArrayTab> {
-        let vtab = ArrayTab {
-            base: Default::default(),
-        };
-        try!(declare_vtab(db, "CREATE TABLE x(value,pointer hidden)"));
-        Ok(vtab)
-    }
 
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
         // Index of the pointer= constraint
