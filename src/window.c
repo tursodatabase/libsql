@@ -172,7 +172,10 @@ struct CallCount {
 };
 
 /*
-** Implementation of built-in window function dense_rank().
+** Implementation of built-in window function dense_rank(). Assumes that
+** the window frame has been set to:
+**
+**   RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW 
 */
 static void dense_rankStepFunc(
   sqlite3_context *pCtx, 
@@ -202,7 +205,10 @@ static void dense_rankValueFunc(sqlite3_context *pCtx){
 }
 
 /*
-** Implementation of built-in window function rank().
+** Implementation of built-in window function rank(). Assumes that
+** the window frame has been set to:
+**
+**   RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW 
 */
 static void rankStepFunc(
   sqlite3_context *pCtx, 
@@ -234,7 +240,10 @@ static void rankValueFunc(sqlite3_context *pCtx){
 }
 
 /*
-** Implementation of built-in window function percent_rank().
+** Implementation of built-in window function percent_rank(). Assumes that
+** the window frame has been set to:
+**
+**   RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW 
 */
 static void percent_rankStepFunc(
   sqlite3_context *pCtx, 
@@ -244,8 +253,9 @@ static void percent_rankStepFunc(
   struct CallCount *p;
   assert( nArg==1 );
 
+  assert( sqlite3VdbeAssertAggContext(pCtx) );
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  if( ALWAYS(p) ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -275,6 +285,12 @@ static void percent_rankValueFunc(sqlite3_context *pCtx){
   }
 }
 
+/*
+** Implementation of built-in window function cume_dist(). Assumes that
+** the window frame has been set to:
+**
+**   RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW 
+*/
 static void cume_distStepFunc(
   sqlite3_context *pCtx, 
   int nArg,
@@ -283,8 +299,9 @@ static void cume_distStepFunc(
   struct CallCount *p;
   assert( nArg==1 );
 
+  assert( sqlite3VdbeAssertAggContext(pCtx) );
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  if( ALWAYS(p) ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -328,8 +345,9 @@ static void ntileStepFunc(
 ){
   struct NtileCtx *p;
   assert( nArg==2 );
+  assert( sqlite3VdbeAssertAggContext(pCtx) );
   p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  if( ALWAYS(p) ){
     if( p->nTotal==0 ){
       p->nParam = sqlite3_value_int64(apArg[0]);
       p->nTotal = sqlite3_value_int64(apArg[1]);
@@ -388,7 +406,7 @@ static void last_valueStepFunc(
   sqlite3_value **apArg
 ){
   struct LastValueCtx *p;
-  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
     sqlite3_value_free(p->pVal);
     p->pVal = sqlite3_value_dup(apArg[0]);
@@ -405,8 +423,8 @@ static void last_valueInvFunc(
   sqlite3_value **apArg
 ){
   struct LastValueCtx *p;
-  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( ALWAYS(p) ){
     p->nVal--;
     if( p->nVal==0 ){
       sqlite3_value_free(p->pVal);
@@ -416,14 +434,14 @@ static void last_valueInvFunc(
 }
 static void last_valueValueFunc(sqlite3_context *pCtx){
   struct LastValueCtx *p;
-  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p && p->pVal ){
     sqlite3_result_value(pCtx, p->pVal);
   }
 }
 static void last_valueFinalizeFunc(sqlite3_context *pCtx){
   struct LastValueCtx *p;
-  p = (struct LastValueCtx *)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p && p->pVal ){
     sqlite3_result_value(pCtx, p->pVal);
     sqlite3_value_free(p->pVal);
@@ -735,6 +753,18 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       pWin->regAccum = ++pParse->nMem;
       pWin->regResult = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
+    }
+
+    /* If there is no ORDER BY or PARTITION BY clause, and the window
+    ** function accepts zero arguments, and there are no other columns
+    ** selected (e.g. "SELECT row_number() OVER () FROM t1"), it is possible
+    ** that pSublist is still NULL here. Add a constant expression here to 
+    ** keep everything legal in this case. 
+    */
+    if( pSublist==0 ){
+      pSublist = sqlite3ExprListAppend(pParse, 0, 
+          sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0)
+      );
     }
 
     pSub = sqlite3SelectNew(

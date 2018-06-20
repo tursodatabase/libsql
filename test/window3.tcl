@@ -82,6 +82,9 @@ foreach {tn window} {
   execsql_test 1.$tn.3.2 "
     SELECT row_number() OVER ( PARTITION BY b%10 ORDER BY a $window ) FROM t2
   "
+  execsql_test 1.$tn.3.3 "
+    SELECT row_number() OVER ( $window ) FROM t2
+  "
 
   execsql_test 1.$tn.4.1 "
     SELECT dense_rank() OVER ( ORDER BY a $window ) FROM t2
@@ -184,6 +187,9 @@ foreach {tn window} {
   "
   execsql_float_test 1.$tn.8.6 "
     SELECT ntile(105) OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
+  execsql_float_test 1.$tn.8.7 "
+    SELECT ntile(105) OVER ( $window ) FROM t2
   "
 
   execsql_test 1.$tn.9.1 "
