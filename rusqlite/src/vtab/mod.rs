@@ -64,6 +64,17 @@ pub trait Module {
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
     ) -> Result<Self::Table>;
+
+    /// Declare the schema of a virtual table.
+    fn declare_vtab(db: &mut ffi::sqlite3, sql: &str) -> Result<()> {
+        let c_sql = try!(CString::new(sql));
+        let rc = unsafe { ffi::sqlite3_declare_vtab(db, c_sql.as_ptr()) };
+        if rc == ffi::SQLITE_OK {
+            Ok(())
+        } else {
+            Err(error_from_sqlite_code(rc, None))
+        }
+    }
 }
 
 /// Virtual table instance trait.
@@ -349,17 +360,6 @@ impl InnerConnection {
             },
         };
         self.decode_result(r)
-    }
-}
-
-/// Declare the schema of a virtual table.
-pub fn declare_vtab(db: &mut ffi::sqlite3, sql: &str) -> Result<()> {
-    let c_sql = try!(CString::new(sql));
-    let rc = unsafe { ffi::sqlite3_declare_vtab(db, c_sql.as_ptr()) };
-    if rc == ffi::SQLITE_OK {
-        Ok(())
-    } else {
-        Err(error_from_sqlite_code(rc, None))
     }
 }
 

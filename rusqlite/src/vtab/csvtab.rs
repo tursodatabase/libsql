@@ -10,8 +10,8 @@ use std::str;
 use ffi;
 use types::Null;
 use vtab::{
-    declare_vtab, dequote, escape_double_quote, parse_boolean, Context, IndexInfo, Module, VTab,
-    VTabCursor, Values,
+    dequote, escape_double_quote, parse_boolean, Context, IndexInfo, Module, VTab, VTabCursor,
+    Values,
 };
 use {Connection, Error, Result};
 
@@ -230,7 +230,7 @@ impl Module for CSVModule {
             schema = Some(sql);
         }
 
-        try!(declare_vtab(db, &schema.unwrap()));
+        try!(CSVModule::declare_vtab(db, &schema.unwrap()));
         Ok(vtab)
     }
 }

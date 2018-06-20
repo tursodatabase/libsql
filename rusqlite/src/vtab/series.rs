@@ -5,7 +5,7 @@ use std::os::raw::{c_char, c_int, c_void};
 
 use ffi;
 use types::Type;
-use vtab::{self, declare_vtab, Context, IndexInfo, Module, VTab, VTabCursor, Values};
+use vtab::{self, Context, IndexInfo, Module, VTab, VTabCursor, Values};
 use {Connection, Error, Result};
 
 /// Register the "generate_series" module.
@@ -49,7 +49,7 @@ impl Module for Series {
         let vtab = SeriesTab {
             base: Default::default(),
         };
-        try!(declare_vtab(
+        try!(Series::declare_vtab(
             db,
             "CREATE TABLE x(value,start hidden,stop hidden,step hidden)"
         ));

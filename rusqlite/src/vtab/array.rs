@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use ffi;
 use types::{ToSql, ToSqlOutput, Value};
-use vtab::{self, declare_vtab, Context, IndexInfo, Module, VTab, VTabCursor, Values};
+use vtab::{self, Context, IndexInfo, Module, VTab, VTabCursor, Values};
 use {Connection, Error, Result};
 
 // http://sqlite.org/bindptr.html
@@ -66,7 +66,10 @@ impl Module for ArrayModule {
         let vtab = ArrayTab {
             base: Default::default(),
         };
-        try!(declare_vtab(db, "CREATE TABLE x(value,pointer hidden)"));
+        try!(ArrayModule::declare_vtab(
+            db,
+            "CREATE TABLE x(value,pointer hidden)"
+        ));
         Ok(vtab)
     }
 }
