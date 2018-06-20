@@ -45,11 +45,7 @@ impl Module for Series {
         self.0
     }
 
-    unsafe fn connect(
-        db: *mut ffi::sqlite3,
-        _aux: Option<&()>,
-        _args: &[&[u8]],
-    ) -> Result<SeriesTab> {
+    fn connect(db: &mut ffi::sqlite3, _aux: Option<&()>, _args: &[&[u8]]) -> Result<SeriesTab> {
         let vtab = SeriesTab {
             base: Default::default(),
         };

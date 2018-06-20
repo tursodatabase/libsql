@@ -50,8 +50,8 @@ pub trait Module {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
-    unsafe fn create(
-        db: *mut ffi::sqlite3,
+    fn create(
+        db: &mut ffi::sqlite3,
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
     ) -> Result<Self::Table> {
@@ -59,8 +59,8 @@ pub trait Module {
     }
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
     /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
-    unsafe fn connect(
-        db: *mut ffi::sqlite3,
+    fn connect(
+        db: &mut ffi::sqlite3,
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
     ) -> Result<Self::Table>;
@@ -353,9 +353,9 @@ impl InnerConnection {
 }
 
 /// Declare the schema of a virtual table.
-pub unsafe fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
+pub fn declare_vtab(db: &mut ffi::sqlite3, sql: &str) -> Result<()> {
     let c_sql = try!(CString::new(sql));
-    let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
+    let rc = unsafe { ffi::sqlite3_declare_vtab(db, c_sql.as_ptr()) };
     if rc == ffi::SQLITE_OK {
         Ok(())
     } else {
@@ -572,7 +572,7 @@ macro_rules! create_or_connect {
                 .iter()
                 .map(|&cs| CStr::from_ptr(cs).to_bytes()) // FIXME .to_str() -> Result<&str, Utf8Error>
                 .collect::<Vec<_>>();
-            match $module::$module_func(db, aux.as_ref(), &vec[..]) {
+            match $module::$module_func(db.as_mut().expect("non null db pointer"), aux.as_ref(), &vec[..]) {
                 Ok(vtab) => {
                     let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
                     *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;

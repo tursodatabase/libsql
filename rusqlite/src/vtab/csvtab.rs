@@ -84,7 +84,7 @@ impl Module for CSVModule {
         self.0
     }
 
-    unsafe fn connect(db: *mut ffi::sqlite3, _aux: Option<&()>, args: &[&[u8]]) -> Result<CSVTab> {
+    fn connect(db: &mut ffi::sqlite3, _aux: Option<&()>, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
