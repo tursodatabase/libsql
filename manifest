@@ -1,5 +1,5 @@
-C Make\sthe\sieee754()\sa\sbuilt-in\sfunction.\s\sAdd\sthe\s--ieee754\soption\sto\sthe\n".dump"\scommand\sin\sthe\sshell\sto\scause\sit\sto\soutput\sfloating-point\svalues\sas\nieee754()\scalls,\sso\sthat\sthe\sfloating\spoint\snumber\swill\sbe\sreproduced\sexactly.\nNot\ssure\syet\sthat\swe\swant\sto\sgo\sthis\sway,\sbut\sit\sis\sone\soption.
-D 2018-06-19T21:15:51.406
+C Improved\scontext\sfor\serror_log\smessage\scoming\sfrom\ssqlite3_prepare().
+D 2018-06-21T23:43:05.259
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in bfc40f350586923e0419d2ea4b559c37ec10ee4b6e210e08c14401f8e340f0da
@@ -557,7 +557,7 @@ F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c bbde32eac9eb1280f5292bcdfef66f5a57e43176cbf9347e0efab9f75e133f97
+F src/tokenize.c b42aa952b05df665ed10d54f02c467159cd9fcb8cbbe5ff3c9cd74781fa2803c
 F src/treeview.c 2c5c4bc0a443401db5fd621542150452ddf5055d38edd4eef868bc2b6bfb0260
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 46dc24c6158446aaab45caee09b6d99327cb479268b83ffeb5b701823da3b67b
@@ -1731,10 +1731,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 320fa69e6aa2a7d67f6444d6c13de9893e27b85c36a933b06da113d753b6aafc
-R 84eaf5b540bd61da1f0a39dda242e449
-T *branch * ieee754
-T *sym-ieee754 *
-T -sym-trunk *
+P 7fa8f16e586a52ac8b7f4991bdd31912ee61bd4845bdeced4c0dac363b7e823d
+R bc882190cfb9ed43a2af8feb638e1bcf
 U drh
-Z 7780acb924c455e866caa4faf522bb89
+Z 16532450a2d4cea215b2aca9aeb35a1d
