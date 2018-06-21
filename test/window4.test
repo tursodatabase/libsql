@@ -1200,4 +1200,28 @@ do_execsql_test 8.2 {
     WINDOW win AS (ORDER BY a)
 } {1 1 1 1 4 4 {} 8 {} 4 4   2 2 2 1 4 8 8 12 4 8 4   3 3 3 2 4 12 8 {} 8 12 4}
 
+#==========================================================================
+
+do_execsql_test 9.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INTEGER);
+  INSERT INTO t2 VALUES(1), (1), (1), (4), (4), (6), (7);
+} {}
+
+do_execsql_test 9.1 {
+  SELECT rank() OVER () FROM t2
+} {1   1   1   1   1   1   1}
+
+do_execsql_test 9.2 {
+  SELECT dense_rank() OVER (PARTITION BY x) FROM t2
+} {1   1   1   1   1   1   1}
+
+do_test 9.3 {
+  set myres {}
+  foreach r [db eval {SELECT x, percent_rank() OVER (PARTITION BY x ORDER BY x) FROM t2}] {
+    lappend myres [format %.2f [set r]]
+  }
+  set myres
+} {1.00 0.00 1.00 0.00 1.00 0.00 4.00 0.00 4.00 0.00 6.00 0.00 7.00 0.00}
+
 finish_test

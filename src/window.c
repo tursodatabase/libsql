@@ -279,7 +279,7 @@ static void percent_rankValueFunc(sqlite3_context *pCtx){
       double r = (double)(p->nValue-1) / (double)(p->nTotal-1);
       sqlite3_result_double(pCtx, r);
     }else{
-      sqlite3_result_double(pCtx, 100.0);
+      sqlite3_result_double(pCtx, 0.0);
     }
     p->nValue = 0;
   }

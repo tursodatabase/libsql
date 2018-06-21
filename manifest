@@ -1,5 +1,5 @@
-C Add\stests\sto\simprove\scoverage\sof\scode\sin\swindow.c.\sFix\sa\sproblem\swith\s"SELECT\nrow_number()\sOVER\s()".
-D 2018-06-20T09:23:49.155
+C Fix\sa\sproblem\swith\shandling\ssingle\srow\spartitions\sin\sthe\spercent_rank()\swindow\nfunction.
+D 2018-06-21T19:20:39.296
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -584,7 +584,7 @@ F src/where.c 0bcbf9e191ca07f9ea2008aa80e70ded46bcdffd26560c83397da501f00aece6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
 F src/whereexpr.c 19cf35cdd9bf6d5589d8a5c960d99259761136187a2319a6e14d11cf1abe14c2
-F src/window.c 79be282a3602a435ec4991163823cf8af0a8a86187fe7e0518873c8814cdfcf3
+F src/window.c 358312db1cf5462a3bed074a82afa0b8f98e5d74677e40ab5d920023fab85634
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1623,8 +1623,8 @@ F test/window2.tcl 0983de5eade5eeda49469244799d5331bfe3199fca3f6c6d2a836aa08f4fb
 F test/window2.test 79747b2edde4ad424e0752b27529aedc86e91f3d8d88846fa17ff0cb67f65086
 F test/window3.tcl c770a8a8eff32eec632d2745894bfdb2b732d6e450caa7258cf264196592429f
 F test/window3.test 3c2c768e053453dd12176df0d420b4a3b2661bf1116d67c926b1a0083608fe3e
-F test/window4.tcl ce0c14185ba651de53994df8ac11da472b6bbd3534e148ad3ce87de6aa0426ed
-F test/window4.test 13b8cac12e78017d6c1873742efcb120f3d5b2debfdb412271bfb84969087037
+F test/window4.tcl 1ac3c81a214fc70288dcd68d13e7be7559f864964ce5607cb0e5c790158fead2
+F test/window4.test c07c80aa042fce3ced0300f01c403b06f1b728822a82516ef0febca0fdea2d74
 F test/window5.test fbf14119adb71a2640ec876436c5cc0c304a72f863bff41673c413a2a194646b
 F test/windowfault.test a3f239a78557554140ccde491371e17d7b58380aafd796554fc9a43527af9dfc
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
@@ -1743,7 +1743,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ad0e64b465959c50d4c895c053b15ee7efed11b6427604d2eab88635d9f7319
-R 30e5379558b21c58011238fd5e61a227
+P f41b6b7317e2b5ac5721a3adff49f298ded29f9e0f887af98faeb0cb7e865ab6
+R aa86dcfdc887728898a48848c8a25c49
 U dan
-Z 2a2f3fa673903a56da8ae784bde98feb
+Z 0617679bb8a6150dd38744804d96b1d7

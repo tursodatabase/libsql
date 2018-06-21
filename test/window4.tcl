@@ -305,5 +305,23 @@ execsql_test 8.2 {
     WINDOW win AS (ORDER BY a)
 }
 
+==========
+
+execsql_test 9.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INTEGER);
+  INSERT INTO t2 VALUES(1), (1), (1), (4), (4), (6), (7);
+}
+
+execsql_test 9.1 {
+  SELECT rank() OVER () FROM t2
+}
+execsql_test 9.2 {
+  SELECT dense_rank() OVER (PARTITION BY x) FROM t2
+}
+execsql_float_test 9.3 {
+  SELECT x, percent_rank() OVER (PARTITION BY x ORDER BY x) FROM t2
+}
+
 finish_test
 
