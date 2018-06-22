@@ -60,6 +60,18 @@ do_faultsim_test 1.1 -faults oom-t* -prep {
   faultsim_test_result {0 {1 1 1 2 2 2 1 1 1}}
 }
 
+do_faultsim_test 1.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT ntile(105) 
+    OVER ( RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ) 
+    FROM t1
+  }
+} -test {
+  faultsim_test_result {0 {1 2 3}}
+}
+
 do_faultsim_test 2 -start 1 -faults oom-* -prep {
   faultsim_restore_and_reopen
 } -body {

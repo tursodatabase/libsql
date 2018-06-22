@@ -345,9 +345,8 @@ static void ntileStepFunc(
 ){
   struct NtileCtx *p;
   assert( nArg==2 );
-  assert( sqlite3VdbeAssertAggContext(pCtx) );
   p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( ALWAYS(p) ){
+  if( p ){
     if( p->nTotal==0 ){
       p->nParam = sqlite3_value_int64(apArg[0]);
       p->nTotal = sqlite3_value_int64(apArg[1]);
