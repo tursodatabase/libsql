@@ -757,6 +757,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( is_agg==0 && pExpr->pWin ){
         sqlite3ErrorMsg(pParse, 
             "%.*s() may not be used as a window function", nId, zId
@@ -773,6 +774,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }else{
           zType = "aggregate";
         }
+#else
+      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
+        const char *zType = "aggregate";
+#endif
         sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()", zType, nId,zId);
         pNC->nErr++;
         is_agg = 0;
@@ -791,6 +796,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       if( is_agg ) pNC->ncFlags &= ~NC_AllowAgg;
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
+#ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->pWin ){
           Select *pSel = pNC->pWinSelect;
           sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->pWin, pDef);
@@ -800,7 +806,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             pExpr->pWin->pNextWin = pSel->pWin;
             pSel->pWin = pExpr->pWin;
           }
-        }else{
+        }else
+#endif /* SQLITE_OMIT_WINDOWFUNC */
+        {
           NameContext *pNC2 = pNC;
           pExpr->op = TK_AGG_FUNCTION;
           pExpr->op2 = 0;
@@ -1264,7 +1272,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   nCompound = 0;
   pLeftmost = p;
   while( p ){
-    assert( p->pWin==0 );
     assert( (p->selFlags & SF_Expanded)!=0 );
     assert( (p->selFlags & SF_Resolved)==0 );
     p->selFlags |= SF_Resolved;

@@ -1513,6 +1513,7 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
     }
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
 static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
   SumCtx *p;
   int type;
@@ -1534,6 +1535,9 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
     }
   }
 }
+#else
+# define sumInverse 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 static void sumFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
@@ -1646,9 +1650,13 @@ static void minMaxValueFinalize(sqlite3_context *context, int bValue){
     if( bValue==0 ) sqlite3VdbeMemRelease(pRes);
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
 static void minMaxValue(sqlite3_context *context){
   return minMaxValueFinalize(context, 1);
 }
+#else
+# define minMaxValue 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 static void minMaxFinalize(sqlite3_context *context){
   return minMaxValueFinalize(context, 0);
 }
@@ -1688,6 +1696,7 @@ static void groupConcatStep(
     if( zVal ) sqlite3_str_append(pAccum, zVal, nVal);
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
 static void groupConcatInverse(
   sqlite3_context *context,
   int argc,
@@ -1712,6 +1721,9 @@ static void groupConcatInverse(
     if( pAccum->nChar==0 ) pAccum->mxAlloc = 0;
   }
 }
+#else
+# define groupConcatInverse 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 static void groupConcatFinalize(sqlite3_context *context){
   StrAccum *pAccum;
   pAccum = sqlite3_aggregate_context(context, 0);
@@ -1726,6 +1738,7 @@ static void groupConcatFinalize(sqlite3_context *context){
     }
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
 static void groupConcatValue(sqlite3_context *context){
   sqlite3_str *pAccum;
   pAccum = (sqlite3_str*)sqlite3_aggregate_context(context, 0);
@@ -1740,6 +1753,9 @@ static void groupConcatValue(sqlite3_context *context){
     }
   }
 }
+#else
+# define groupConcatValue 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
 ** This routine does per-connection function registration.  Most

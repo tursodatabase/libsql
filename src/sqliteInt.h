@@ -2466,7 +2466,9 @@ struct Expr {
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   Table *pTab;           /* Table for TK_COLUMN expressions.  Can be NULL
                          ** for a column of an index on an expression */
+#ifndef SQLITE_OMIT_WINDOWFUNC
   Window *pWin;          /* Window definition for window functions */
+#endif
 };
 
 /*
@@ -2819,8 +2821,10 @@ struct Select {
   Select *pNext;         /* Next select to the left in a compound */
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   With *pWith;           /* WITH clause attached to this select. Or NULL. */
+#ifndef SQLITE_OMIT_WINDOWFUNC
   Window *pWin;          /* List of window functions */
   Window *pWinDefn;      /* List of named window definitions */
+#endif
 };
 
 /*
@@ -3517,6 +3521,7 @@ struct Window {
   int iArgCol;            /* Offset of first argument for this function */
 };
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
@@ -3530,6 +3535,11 @@ void sqlite3WindowUpdate(Parse*, Window*, Window*, FuncDef*);
 Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p);
 Window *sqlite3WindowListDup(sqlite3 *db, Window *p);
 void sqlite3WindowFunctions(void);
+#else
+# define sqlite3WindowDelete(a,b)
+# define sqlite3WindowFunctions()
+# define sqlite3WindowAttach(a,b,c)
+#endif
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,

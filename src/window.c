@@ -12,6 +12,8 @@
 */
 #include "sqliteInt.h"
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
+
 /*
 ** SELECT REWRITING
 **
@@ -2066,3 +2068,4 @@ void sqlite3WindowCodeStep(
   }
 }
 
+#endif /* SQLITE_OMIT_WINDOWFUNC */

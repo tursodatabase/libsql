@@ -15,6 +15,7 @@ source [file join [file dirname $argv0] pg_common.tcl]
 #=========================================================================
 
 start_test window3 "2018 May 31"
+ifcapable !windowfunc
 
 execsql_test 1.0 {
   DROP TABLE IF EXISTS t2;

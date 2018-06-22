@@ -5118,7 +5118,9 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->uc.pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pOp->p5 ) sqlite3BtreeSkipNext(pCrsr);
+#endif
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
@@ -6369,8 +6371,13 @@ case OP_AggStep: {
   assert( pCtx->pOut->flags==MEM_Null );
   assert( pCtx->isError==0 );
   assert( pCtx->skipFlag==0 );
-  (pOp->p1 ? (pCtx->pFunc->xInverse) : (pCtx->pFunc->xSFunc))
-    (pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( pOp->p1 ){
+    (pCtx->pFunc->xInverse)(pCtx,pCtx->argc,pCtx->argv);
+  }else
+#endif
+  (pCtx->pFunc->xSFunc)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
+
   if( pCtx->isError ){
     if( pCtx->isError>0 ){
       sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
@@ -6412,12 +6419,14 @@ case OP_AggFinal: {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
+#ifndef SQLITE_OMIT_WINDOWFUNC
   if( pOp->p3 ){
     rc = sqlite3VdbeMemAggValue(pMem, &aMem[pOp->p3], pOp->p4.pFunc);
     pMem = &aMem[pOp->p3];
-  }else{
-    rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
-  }
+  }else
+#endif
+  rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  
   if( rc ){
     sqlite3VdbeError(p, "%s", sqlite3_value_text(pMem));
     goto abort_due_to_error;

@@ -5190,12 +5190,14 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
 ** Otherwise, if pCur is valid, configure it so that the next call to
 ** sqlite3BtreeNext() is a no-op.
 */
+#ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3BtreeSkipNext(BtCursor *pCur){
   if( pCur->eState==CURSOR_VALID ){
     pCur->eState = CURSOR_SKIPNEXT;
     pCur->skipNext = 1;
   }
 }
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /* Move the cursor to the last entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something

@@ -772,7 +772,6 @@ Expr *sqlite3ExprAlloc(
     memset(pNew, 0, sizeof(Expr));
     pNew->op = (u8)op;
     pNew->iAgg = -1;
-    pNew->pWin = 0;
     if( pToken ){
       if( nExtra==0 ){
         pNew->flags |= EP_IntValue|EP_Leaf;
@@ -862,7 +861,6 @@ Expr *sqlite3PExpr(
       memset(p, 0, sizeof(Expr));
       p->op = op & TKFLG_MASK;
       p->iAgg = -1;
-      p->pWin = 0;
     }
     sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
   }
@@ -1128,7 +1126,11 @@ static int dupedExprStructSize(Expr *p, int flags){
   assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   assert( EXPR_FULLSIZE<=0xfff );
   assert( (0xfff & (EP_Reduced|EP_TokenOnly))==0 );
-  if( 0==flags || p->op==TK_SELECT_COLUMN || p->pWin ){
+  if( 0==flags || p->op==TK_SELECT_COLUMN 
+#ifndef SQLITE_OMIT_WINDOWFUNC
+   || p->pWin 
+#endif
+  ){
     nSize = EXPR_FULLSIZE;
   }else{
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
@@ -1268,11 +1270,13 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         *pzBuffer = zAlloc;
       }
     }else{
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( ExprHasProperty(p, EP_Reduced|EP_TokenOnly) ){
         pNew->pWin = 0;
       }else{
         pNew->pWin = sqlite3WindowDup(db, pNew, p->pWin);
       }
+#endif /* SQLITE_OMIT_WINDOWFUNC */
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
@@ -1479,8 +1483,10 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNew->addrOpenEphm[1] = -1;
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = withDup(db, p->pWith);
+#ifndef SQLITE_OMIT_WINDOWFUNC
     pNew->pWin = 0;
     pNew->pWinDefn = sqlite3WindowListDup(db, p->pWinDefn);
+#endif
     sqlite3SelectSetName(pNew, p->zSelName);
     *pp = pNew;
     pp = &pNew->pPrior;
@@ -3800,9 +3806,11 @@ expr_code_doover:
       u8 enc = ENC(db);      /* The text encoding used by this database */
       CollSeq *pColl = 0;    /* A collating sequence */
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) && pExpr->pWin ){
         return pExpr->pWin->regResult;
       }
+#endif
 
       if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
         /* SQL functions can be expensive. So try to move constant functions

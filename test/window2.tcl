@@ -17,6 +17,8 @@ source [file join [file dirname $argv0] pg_common.tcl]
 
 start_test window2 "2018 May 19"
 
+ifcapable !windowfunc
+
 execsql_test 1.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);

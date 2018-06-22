@@ -19,6 +19,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix window2
 
+ifcapable !windowfunc { finish_test ; return }
 do_execsql_test 1.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);

@@ -96,9 +96,11 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     sqlite3ExprDelete(db, p->pHaving);
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pLimit);
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( OK_IF_ALWAYS_TRUE(p->pWinDefn) ){
       sqlite3WindowListDelete(db, p->pWinDefn);
     }
+#endif
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
@@ -165,8 +167,10 @@ Select *sqlite3SelectNew(
   pNew->pNext = 0;
   pNew->pLimit = pLimit;
   pNew->pWith = 0;
+#ifndef SQLITE_OMIT_WINDOWFUNC
   pNew->pWin = 0;
   pNew->pWinDefn = 0;
+#endif
   if( pParse->db->mallocFailed ) {
     clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;
@@ -3720,7 +3724,9 @@ static int flattenSubquery(
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
   if( p->pWin || pSub->pWin ) return 0;                  /* Restriction (25) */
+#endif
 
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
@@ -5487,7 +5493,8 @@ int sqlite3Select(
     generateColumnNames(pParse, p);
   }
 
-  if( (rc = sqlite3WindowRewrite(pParse, p)) ){
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( sqlite3WindowRewrite(pParse, p) ){
     goto select_end;
   }
 #if SELECTTRACE_ENABLED
@@ -5496,6 +5503,7 @@ int sqlite3Select(
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
+#endif /* SQLITE_OMIT_WINDOWFUNC */
   pTabList = p->pSrc;
   isAgg = (p->selFlags & SF_Aggregate)!=0;
 
@@ -5873,16 +5881,17 @@ int sqlite3Select(
   }
 
   if( !isAgg && pGroupBy==0 ){
-    Window *pWin = p->pWin;      /* Master window object (or NULL) */
-
     /* No aggregate functions and no GROUP BY clause */
-    u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
-    assert( WHERE_USE_LIMIT==SF_FixedLimit );
-    wctrlFlags |= p->selFlags & SF_FixedLimit;
-
+    u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0)
+                   | (p->selFlags & SF_FixedLimit);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    Window *pWin = p->pWin;      /* Master window object (or NULL) */
     if( pWin ){
       sqlite3WindowCodeInit(pParse, pWin);
     }
+#endif
+    assert( WHERE_USE_LIMIT==SF_FixedLimit );
+
 
     /* Begin the database scan. */
     SELECTTRACE(1,pParse,p,("WhereBegin\n"));
@@ -5912,6 +5921,7 @@ int sqlite3Select(
     }
 
     assert( p->pEList==pEList );
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pWin ){
       int addrGosub = sqlite3VdbeMakeLabel(v);
       int iCont = sqlite3VdbeMakeLabel(v);
@@ -5927,7 +5937,9 @@ int sqlite3Select(
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
       sqlite3VdbeJumpHere(v, addr);
 
-    }else{
+    }else
+#endif /* SQLITE_OMIT_WINDOWFUNC */
+    {
       /* Use the standard inner loop. */
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest,
           sqlite3WhereContinueLabel(pWInfo),

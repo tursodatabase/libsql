@@ -14,7 +14,12 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix window1
+set testprefix window5
+
+ifcapable !windowfunc {
+  finish_test
+  return
+}
 
 proc m_step {ctx val} {
   lappend ctx $val

@@ -131,3 +131,7 @@ proc finish_test {} {
   close $::fd
 }
 
+proc ifcapable {arg} {
+   puts $::fd "ifcapable $arg { finish_test ; return }"
+}
+

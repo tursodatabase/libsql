@@ -529,17 +529,22 @@ multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
 multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP; /*A-overwrites-OP*/}
 %endif SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
-                 groupby_opt(P) having_opt(Q) windowdefn_opt(R)
+                 groupby_opt(P) having_opt(Q) 
+%ifndef SQLITE_OMIT_WINDOWFUNC
+                 windowdefn_opt(R)
+%endif
                  orderby_opt(Z) limit_opt(L). {
 #if SELECTTRACE_ENABLED
   Token s = S; /*A-overwrites-S*/
 #endif
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L);
+#ifndef SQLITE_OMIT_WINDOWFUNC
   if( A ){
     A->pWinDefn = R;
   }else{
     sqlite3WindowListDelete(pParse->db, R);
   }
+#endif // SQLITE_OMIT_WINDOWFUNC
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
   ** query planner debugging, to differentiate between multiple Select
@@ -1011,7 +1016,11 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
   sqlite3ExprAttachSubtrees(pParse->db, A, E, 0);
 }
 %endif  SQLITE_OMIT_CAST
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP over_opt(Z). {
+expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP 
+%ifndef SQLITE_OMIT_WINDOWFUNC
+  over_opt(Z)
+%endif
+. {
   if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
   }
@@ -1021,13 +1030,19 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP over_opt(Z). {
     A->flags |= EP_Distinct;
   }
 }
-expr(A) ::= id(X) LP STAR RP over_opt(Z). {
+expr(A) ::= id(X) LP STAR RP
+%ifndef SQLITE_OMIT_WINDOWFUNC
+  over_opt(Z)
+%endif
+. {
   A = sqlite3ExprFunction(pParse, 0, &X);
   sqlite3WindowAttach(pParse, A, Z);
 }
 term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP);
 }
+
+%ifndef SQLITE_OMIT_WINDOWFUNC
 
 %type windowdefn_opt {Window*}
 %destructor windowdefn_opt {sqlite3WindowDelete(pParse->db, $$);}
@@ -1121,6 +1136,7 @@ frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
 frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
 frame_bound(A) ::= UNBOUNDED FOLLOWING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
 
+%endif // SQLITE_OMIT_WINDOWFUNC
 
 expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   ExprList *pList = sqlite3ExprListAppend(pParse, X, Y);

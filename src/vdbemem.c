@@ -423,6 +423,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 ** SQLITE_ERROR is returned if xValue() reports an error. SQLITE_OK 
 ** otherwise.
 */
+#ifndef SQLITE_OMIT_WINDOWFUNC
 int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
   sqlite3_context ctx;
   Mem t;
@@ -440,6 +441,7 @@ int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
   pFunc->xValue(&ctx);
   return ctx.isError;
 }
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
 ** If the memory cell contains a value that must be freed by
