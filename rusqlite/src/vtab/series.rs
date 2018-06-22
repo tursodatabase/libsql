@@ -3,6 +3,7 @@
 use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 
+use error::error_from_sqlite_code;
 use ffi;
 use types::Type;
 use vtab::{self, Context, IndexInfo, Module, VTab, VTabCursor, Values};
@@ -45,15 +46,18 @@ impl Module for Series {
         self.0
     }
 
-    fn connect(db: &mut ffi::sqlite3, _aux: Option<&()>, _args: &[&[u8]]) -> Result<SeriesTab> {
+    fn connect(
+        _: &mut ffi::sqlite3,
+        _aux: Option<&()>,
+        _args: &[&[u8]],
+    ) -> Result<(String, SeriesTab)> {
         let vtab = SeriesTab {
             base: Default::default(),
         };
-        try!(Series::declare_vtab(
-            db,
-            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)"
-        ));
-        Ok(vtab)
+        Ok((
+            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)".to_owned(),
+            vtab,
+        ))
     }
 }
 

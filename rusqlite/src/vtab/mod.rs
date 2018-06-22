@@ -7,7 +7,6 @@ use std::ptr;
 use std::slice;
 
 use context::set_result;
-use error::error_from_sqlite_code;
 use ffi;
 use types::{FromSql, FromSqlError, ToSql, ValueRef};
 use {str_to_cstring, Connection, Error, InnerConnection, Result};
@@ -54,7 +53,7 @@ pub trait Module {
         db: &mut ffi::sqlite3,
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
-    ) -> Result<Self::Table> {
+    ) -> Result<(String, Self::Table)> {
         Self::connect(db, aux, args)
     }
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
@@ -63,18 +62,7 @@ pub trait Module {
         db: &mut ffi::sqlite3,
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
-    ) -> Result<Self::Table>;
-
-    /// Declare the schema of a virtual table.
-    fn declare_vtab(db: &mut ffi::sqlite3, sql: &str) -> Result<()> {
-        let c_sql = try!(CString::new(sql));
-        let rc = unsafe { ffi::sqlite3_declare_vtab(db, c_sql.as_ptr()) };
-        if rc == ffi::SQLITE_OK {
-            Ok(())
-        } else {
-            Err(error_from_sqlite_code(rc, None))
-        }
-    }
+    ) -> Result<(String, Self::Table)>;
 }
 
 /// Virtual table instance trait.
@@ -573,10 +561,25 @@ macro_rules! create_or_connect {
                 .map(|&cs| CStr::from_ptr(cs).to_bytes()) // FIXME .to_str() -> Result<&str, Utf8Error>
                 .collect::<Vec<_>>();
             match $module::$module_func(db.as_mut().expect("non null db pointer"), aux.as_ref(), &vec[..]) {
-                Ok(vtab) => {
-                    let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
-                    *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
-                    ffi::SQLITE_OK
+                Ok((sql, vtab)) => {
+                    match ::std::ffi::CString::new(sql) {
+                        Ok(c_sql) => {
+                            let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
+                            if rc == ffi::SQLITE_OK {
+                                        let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
+                                        *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
+                                        ffi::SQLITE_OK
+                            } else {
+                                let err = error_from_sqlite_code(rc, None);
+                                *err_msg = mprintf(err.description());
+                                rc
+                            }
+                        }
+                        Err(err) => {
+                            *err_msg = mprintf(err.description());
+                            ffi::SQLITE_ERROR
+                        }
+                    }
                 }
                 Err(Error::SqliteFailure(err, s)) => {
                     if let Some(s) = s {

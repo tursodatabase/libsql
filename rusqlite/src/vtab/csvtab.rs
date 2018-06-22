@@ -7,6 +7,7 @@ use std::path::Path;
 use std::result;
 use std::str;
 
+use error::error_from_sqlite_code;
 use ffi;
 use types::Null;
 use vtab::{
@@ -84,7 +85,11 @@ impl Module for CSVModule {
         self.0
     }
 
-    fn connect(db: &mut ffi::sqlite3, _aux: Option<&()>, args: &[&[u8]]) -> Result<CSVTab> {
+    fn connect(
+        _: &mut ffi::sqlite3,
+        _aux: Option<&()>,
+        args: &[&[u8]],
+    ) -> Result<(String, CSVTab)> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
@@ -230,8 +235,7 @@ impl Module for CSVModule {
             schema = Some(sql);
         }
 
-        try!(CSVModule::declare_vtab(db, &schema.unwrap()));
-        Ok(vtab)
+        Ok((schema.unwrap().to_owned(), vtab))
     }
 }
 

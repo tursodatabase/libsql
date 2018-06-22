@@ -4,6 +4,7 @@ use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 
+use error::error_from_sqlite_code;
 use ffi;
 use types::{ToSql, ToSqlOutput, Value};
 use vtab::{self, Context, IndexInfo, Module, VTab, VTabCursor, Values};
@@ -62,15 +63,15 @@ impl Module for ArrayModule {
         self.0
     }
 
-    fn connect(db: &mut ffi::sqlite3, _aux: Option<&()>, _args: &[&[u8]]) -> Result<ArrayTab> {
+    fn connect(
+        _: &mut ffi::sqlite3,
+        _aux: Option<&()>,
+        _args: &[&[u8]],
+    ) -> Result<(String, ArrayTab)> {
         let vtab = ArrayTab {
             base: Default::default(),
         };
-        try!(ArrayModule::declare_vtab(
-            db,
-            "CREATE TABLE x(value,pointer hidden)"
-        ));
-        Ok(vtab)
+        Ok(("CREATE TABLE x(value,pointer hidden)".to_owned(), vtab))
     }
 }
 
