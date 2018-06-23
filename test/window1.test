@@ -249,7 +249,7 @@ do_catchsql_test 7.1.4 {
   SELECT count(*) FROM t1 GROUP BY nth_value(x, 1) OVER (ORDER BY y);
 } {1 {misuse of window function nth_value()}}
 do_catchsql_test 7.1.5 {
-  SELECT count(*) FROM t1 LIMIT nth_value(x, 1) OVER (ORDER BY y);
+  SELECT count(*) FROM t1 LIMIT nth_value(x, 1) OVER ();
 } {1 {no such column: x}}
 do_catchsql_test 7.1.6 {
   SELECT trim(x) OVER (ORDER BY y) FROM t1;
@@ -440,6 +440,73 @@ do_execsql_test 10.4 {
   Frank South      30 
   Grant South      53 
 }
+
+do_execsql_test 10.5 {
+  SELECT emp, region, sum(total) OVER win FROM sales
+  WINDOW win AS (
+    PARTITION BY region ORDER BY total 
+    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  )
+} {
+  Horace East       1  
+  Brad North      101
+  Alice North      79 
+  Charles North    45 
+  Darrell South   152
+  Frank South     144 
+  Grant South     122 
+  Elizabeth South  99
+}
+
+do_execsql_test 10.6 {
+  SELECT emp, region, sum(total) OVER win FROM sales
+  WINDOW win AS (
+    PARTITION BY region ORDER BY total 
+    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+  ) LIMIT 5 OFFSET 2
+} {
+  Alice North      79 
+  Charles North    45 
+  Darrell South   152
+  Frank South     144 
+  Grant South     122 
+}
+
+do_execsql_test 10.7 {
+  SELECT emp, region, (
+    SELECT sum(total) OVER (
+      ORDER BY total RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) || outer.emp FROM sales
+  ) FROM sales AS outer;
+} {
+  Alice North 254Alice 
+  Frank South 254Frank 
+  Charles North 254Charles 
+  Darrell South 254Darrell 
+  Grant South 254Grant 
+  Brad North 254Brad 
+  Elizabeth South 254Elizabeth 
+  Horace East 254Horace
+}
+
+breakpoint
+do_execsql_test 10.8 {
+  SELECT emp, region, (
+    SELECT sum(total) FILTER (WHERE sales.emp!=outer.emp) OVER (
+      ORDER BY total RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) FROM sales
+  ) FROM sales AS outer;
+} {
+  Alice North 220 
+  Frank South 232 
+  Charles North 209 
+  Darrell South 246
+  Grant South 231 
+  Brad North 232 
+  Elizabeth South 155 
+  Horace East 253
+}
+
 
 finish_test
 

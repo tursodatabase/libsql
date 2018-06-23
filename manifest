@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\sLIMIT\sin\swindow-function\squeries.
-D 2018-06-23T16:26:20.289
+C Fix\sproblems\swith\susing\swindow-functions\sin\scorrelated\ssub-queries.
+D 2018-06-23T19:29:56.897
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -493,7 +493,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c e966ecc97c3671ff0e96227c8c877b83f2d33ea371ee190bbf1698b36b5605c0
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 0934ce541d3d0b2b9127e960bdabb3d2f837f1ef8f469453b712ff6b5dae8abe
+F src/resolve.c 43b97be1b1bfbe7aa6a0e8608f5a022eac8cd2d727bdf4d0287371ba32218e7b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c e364e5ea8f2b61da53800a56c9ea5d26e9ddf667f10b9459112e26607df5b62c
 F src/shell.c.in 8578421c5fb2a972461b2a996f7173646e55e0dbd2a2eee30c8f5dc7d3dbadfd
@@ -579,7 +579,7 @@ F src/vtab.c 10ea07dec111de6fb0a4fc87a7ffa4c65fdc088a19dbfaf7d6f2b128f2e8eb7b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d44a0811afd2155b1157c38b33141d4ac028fda6232485bed664015bb05819ca
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
-F src/walker.c da987a20d40145c0a03c07d8fefcb2ed363becc7680d0500d9c79915591f5b1f
+F src/walker.c 14c43912f0e95f66146cb482a9260b74412fe07f16d67a74e74a1a2314b7474a
 F src/where.c 0bcbf9e191ca07f9ea2008aa80e70ded46bcdffd26560c83397da501f00aece6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
@@ -1618,7 +1618,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test a28ea12169f00e3d432682d839e3782c494d946d5242b25c677b2e485a2ae291
+F test/window1.test 0e0867fd8dceafef972d7c698d9283760e703e70b39e750b8e90f20853de618b
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 9b82055c8977bdcab164fb4f71dabf86c511c9010c44f958352b610d313182c3
@@ -1743,7 +1743,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11d733396f75ef1f206cd6f35630ff176484279861772918b9ea69412c13c62d
-R ddbc3143ac8e172194c66b5644ba016f
+P c1abd2dda4154cb573bdf627cdef794d3697f874c3b70357aaf5e4ed95ad1d5c
+R 276bb5b8abb4de986dcdc92f069c30eb
 U dan
-Z fc8062e5579df2de82bec15da0145aee
+Z a54ebb0c6a6d2cbc797608724c2753d3

@@ -774,14 +774,18 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }else{
           zType = "aggregate";
         }
-#else
-      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
-        const char *zType = "aggregate";
-#endif
         sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()", zType, nId,zId);
         pNC->nErr++;
         is_agg = 0;
-      }else if( no_such_func && pParse->db->init.busy==0
+      }
+#else
+      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
+        sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
+        pNC->nErr++;
+        is_agg = 0;
+      }
+#endif
+      else if( no_such_func && pParse->db->init.busy==0
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
                 && pParse->explain==0
 #endif
@@ -793,12 +797,17 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
              nId, zId);
         pNC->nErr++;
       }
-      if( is_agg ) pNC->ncFlags &= ~NC_AllowAgg;
+      if( is_agg ){
+        pNC->ncFlags &= ~(pExpr->pWin ? NC_AllowWin : NC_AllowAgg);
+      }
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->pWin ){
           Select *pSel = pNC->pWinSelect;
+          sqlite3WalkExprList(pWalker, pExpr->pWin->pPartition);
+          sqlite3WalkExprList(pWalker, pExpr->pWin->pOrderBy);
+          sqlite3WalkExpr(pWalker, pExpr->pWin->pFilter);
           sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->pWin, pDef);
           if( 0==pSel->pWin 
            || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->pWin) 
@@ -806,6 +815,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             pExpr->pWin->pNextWin = pSel->pWin;
             pSel->pWin = pExpr->pWin;
           }
+          pNC->ncFlags |= NC_AllowWin;
         }else
 #endif /* SQLITE_OMIT_WINDOWFUNC */
         {
@@ -823,8 +833,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             pNC2->ncFlags |= NC_HasAgg | (pDef->funcFlags & SQLITE_FUNC_MINMAX);
 
           }
+          pNC->ncFlags |= NC_AllowAgg;
         }
-        pNC->ncFlags |= NC_AllowAgg;
       }
       /* FIX ME:  Compute pExpr->affinity based on the expected return
       ** type of the function 
