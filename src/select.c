@@ -5933,18 +5933,17 @@ int sqlite3Select(
     if( pWin ){
       int addrGosub = sqlite3VdbeMakeLabel(v);
       int iCont = sqlite3VdbeMakeLabel(v);
+      int iBreak = sqlite3VdbeMakeLabel(v);
       int regGosub = ++pParse->nMem;
-      int addr = 0;
 
       sqlite3WindowCodeStep(pParse, p, pWInfo, regGosub, addrGosub);
 
-      addr = sqlite3VdbeAddOp0(v, OP_Goto);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
       sqlite3VdbeResolveLabel(v, addrGosub);
-      selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, iCont, 0);
+      selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
-      sqlite3VdbeJumpHere(v, addr);
-
+      sqlite3VdbeResolveLabel(v, iBreak);
     }else
 #endif /* SQLITE_OMIT_WINDOWFUNC */
     {

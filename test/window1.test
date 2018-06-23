@@ -403,5 +403,43 @@ do_execsql_test 10.1 {
   Grant       South   23
 }
 
+do_execsql_test 10.2 {
+  SELECT emp, region, sum(total) OVER win FROM sales
+  WINDOW win AS (PARTITION BY region ORDER BY total)
+} {
+  Horace East       1  
+  Brad North       22 
+  Alice North      56 
+  Charles North   101 
+  Darrell South     8 
+  Frank South      30 
+  Grant South      53 
+  Elizabeth South 152
+}
+
+do_execsql_test 10.3 {
+  SELECT emp, region, sum(total) OVER win FROM sales
+  WINDOW win AS (PARTITION BY region ORDER BY total)
+  LIMIT 5
+} {
+  Horace East       1  
+  Brad North       22 
+  Alice North      56 
+  Charles North   101 
+  Darrell South     8 
+}
+
+do_execsql_test 10.4 {
+  SELECT emp, region, sum(total) OVER win FROM sales
+  WINDOW win AS (PARTITION BY region ORDER BY total)
+  LIMIT 5 OFFSET 2
+} {
+  Alice North      56 
+  Charles North   101 
+  Darrell South     8 
+  Frank South      30 
+  Grant South      53 
+}
+
 finish_test
 
