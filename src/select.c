@@ -4118,7 +4118,7 @@ static int flattenSubquery(
 **   (2) The inner query is the recursive part of a common table expression.
 **
 **   (3) The inner query has a LIMIT clause (since the changes to the WHERE
-**       close would change the meaning of the LIMIT).
+**       clause would change the meaning of the LIMIT).
 **
 **   (4) The inner query is the right operand of a LEFT JOIN and the
 **       expression to be pushed down does not come from the ON clause
@@ -4137,6 +4137,10 @@ static int flattenSubquery(
 **       But if the (b2=2) term were to be pushed down into the bb subquery,
 **       then the (1,1,NULL) row would be suppressed.
 **
+**   (6) The inner query features one or more window-functions (since 
+**       changes to the WHERE clause of the inner query could change the 
+**       window over which window functions are calculated).
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -4151,6 +4155,10 @@ static int pushDownWhereTerms(
   int nChng = 0;
   if( pWhere==0 ) return 0;
   if( pSubq->selFlags & SF_Recursive ) return 0;  /* restriction (2) */
+
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( pSubq->pWin ) return 0;
+#endif
 
 #ifdef SQLITE_DEBUG
   /* Only the first term of a compound can have a WITH clause.  But make
