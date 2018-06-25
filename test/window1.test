@@ -489,7 +489,6 @@ do_execsql_test 10.7 {
   Horace East 254Horace
 }
 
-breakpoint
 do_execsql_test 10.8 {
   SELECT emp, region, (
     SELECT sum(total) FILTER (WHERE sales.emp!=outer.emp) OVER (
@@ -507,6 +506,25 @@ do_execsql_test 10.8 {
   Horace East 253
 }
 
+#-------------------------------------------------------------------------
+# Check that it is not possible to use a window function in a CREATE INDEX
+# statement.
+#
+do_execsql_test 11.0 { CREATE TABLE t6(a, b, c); }
+
+do_catchsql_test 11.1 {
+  CREATE INDEX t6i ON t6(a) WHERE sum(b) OVER ();
+} {1 {misuse of window function sum()}}
+do_catchsql_test 11.2 {
+  CREATE INDEX t6i ON t6(a) WHERE lead(b) OVER ();
+} {1 {misuse of window function lead()}}
+
+do_catchsql_test 11.3 {
+  CREATE INDEX t6i ON t6(sum(b) OVER ());
+} {1 {misuse of window function sum()}}
+do_catchsql_test 11.4 {
+  CREATE INDEX t6i ON t6(lead(b) OVER ());
+} {1 {misuse of window function lead()}}
 
 finish_test
 

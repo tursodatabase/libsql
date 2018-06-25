@@ -1225,4 +1225,12 @@ do_test 9.3 {
   set myres
 } {1.00 0.00 1.00 0.00 1.00 0.00 4.00 0.00 4.00 0.00 6.00 0.00 7.00 0.00}
 
+do_execsql_test 9.4 {
+  SELECT x, rank() OVER (ORDER BY x) FROM t2 ORDER BY 1,2
+} {1 1   1 1   1 1   4 4   4 4   6 6   7 7}
+
+do_execsql_test 9.5 {
+  SELECT DISTINCT x, rank() OVER (ORDER BY x) FROM t2 ORDER BY 1,2
+} {1 1   4 4   6 6   7 7}
+
 finish_test

@@ -324,5 +324,13 @@ execsql_float_test 9.3 {
   SELECT x, percent_rank() OVER (PARTITION BY x ORDER BY x) FROM t2
 }
 
+execsql_test 9.4 {
+  SELECT x, rank() OVER (ORDER BY x) FROM t2 ORDER BY 1,2
+}
+
+execsql_test 9.5 {
+  SELECT DISTINCT x, rank() OVER (ORDER BY x) FROM t2 ORDER BY 1,2
+}
+
 finish_test
 
