@@ -73,5 +73,15 @@ do_execsql_test 1.1 {
   SELECT win(a) OVER (ORDER BY b), median(a) OVER (ORDER BY b) FROM t1;
 } {4 4  {4 6} 5  {1 4 6} 4  {1 4 5 6} 4.5  {1 2 4 5 6} 4 {1 2 3 4 5 6} 3.5}
 
+test_create_sumint db
+do_execsql_test 2.0 {
+  SELECT sumint(a) OVER (ORDER BY rowid) FROM t1 ORDER BY rowid;
+} {4 10 11 16 18 21}
+
+do_execsql_test 2.1 {
+  SELECT sumint(a) OVER (ORDER BY rowid ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t1 ORDER BY rowid;
+} {10 11 12 8 10 5}
+
+
 finish_test
 

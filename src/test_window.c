@@ -219,6 +219,89 @@ static int SQLITE_TCLAPI test_create_window_misuse(
   return TCL_ERROR;
 }
 
+/*
+** xStep for sumint().
+*/
+static void sumintStep(
+  sqlite3_context *ctx, 
+  int nArg, 
+  sqlite3_value *apArg[]
+){
+  sqlite3_int64 *pInt;
+
+  assert( nArg==1 );
+  if( sqlite3_value_type(apArg[0])!=SQLITE_INTEGER ){
+    sqlite3_result_error(ctx, "invalid argument", -1);
+    return;
+  }
+  pInt = (sqlite3_int64*)sqlite3_aggregate_context(ctx, sizeof(sqlite3_int64));
+  if( pInt ){
+    *pInt += sqlite3_value_int64(apArg[0]);
+  }
+}
+
+/*
+** xInverse for sumint().
+*/
+static void sumintInverse(
+  sqlite3_context *ctx, 
+  int nArg, 
+  sqlite3_value *apArg[]
+){
+  sqlite3_int64 *pInt;
+  pInt = (sqlite3_int64*)sqlite3_aggregate_context(ctx, sizeof(sqlite3_int64));
+  *pInt -= sqlite3_value_int64(apArg[0]);
+}
+
+/*
+** xFinal for sumint().
+*/
+static void sumintFinal(sqlite3_context *ctx){
+  sqlite3_int64 res = 0;
+  sqlite3_int64 *pInt;
+  pInt = (sqlite3_int64*)sqlite3_aggregate_context(ctx, 0);
+  if( pInt ) res = *pInt;
+  sqlite3_result_int64(ctx, res);
+}
+
+/*
+** xValue for sumint().
+*/
+static void sumintValue(sqlite3_context *ctx){
+  sqlite3_int64 res = 0;
+  sqlite3_int64 *pInt;
+  pInt = (sqlite3_int64*)sqlite3_aggregate_context(ctx, 0);
+  if( pInt ) res = *pInt;
+  sqlite3_result_int64(ctx, res);
+}
+
+static int SQLITE_TCLAPI test_create_sumint(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  rc = sqlite3_create_window_function(db, "sumint", 1, SQLITE_UTF8, 0,
+      sumintStep, sumintFinal, sumintValue, sumintInverse,
+      0
+  );
+
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 int Sqlitetest_window_Init(Tcl_Interp *interp){
   static struct {
      char *zName;
@@ -227,6 +310,7 @@ int Sqlitetest_window_Init(Tcl_Interp *interp){
   } aObjCmd[] = {
      { "sqlite3_create_window_function", test_create_window, 0 },
      { "test_create_window_function_misuse", test_create_window_misuse, 0 },
+     { "test_create_sumint", test_create_sumint, 0 },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
