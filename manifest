@@ -1,5 +1,5 @@
-C Add\sdocumentation\scomment\sfor\ssqlite3_create_window_function().\sAnd\sfurther\ntests.
-D 2018-06-25T20:34:28.258
+C Merge\slatest\strunk\schanges.
+D 2018-06-26T20:19:44.663
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -558,7 +558,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c add59ee68568868129516999f30a68e8ab2afd276e272aba4f633c9fc52c1bb1
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c bbde32eac9eb1280f5292bcdfef66f5a57e43176cbf9347e0efab9f75e133f97
+F src/tokenize.c b42aa952b05df665ed10d54f02c467159cd9fcb8cbbe5ff3c9cd74781fa2803c
 F src/treeview.c 2c5c4bc0a443401db5fd621542150452ddf5055d38edd4eef868bc2b6bfb0260
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 46dc24c6158446aaab45caee09b6d99327cb479268b83ffeb5b701823da3b67b
@@ -1743,7 +1743,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e954145a3addf60247954b9161473cd02ae2400f469840523093e25e23fbc54d
-R d66c96e9060f0a54279eff7175b44d69
+P 3f2705b93368f7b0dfd2e03387c3d0b55eddb04940ec83e226e420d8ab10c77f fea7ade649ae72303078782f7bc510e0a17f082ffde10e769f1aeb1cf37b5554
+R 5d248a73d4f312b53ee7540b1896f8d9
 U dan
-Z 9407c201682f0eca4726a782256639b4
+Z a5991bab062363f4d30e377c87862931
