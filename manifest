@@ -1,5 +1,5 @@
-C Avoid\sredundant\sORDER\sBY\soperations\swhen\srewriting\sSELECT\sstatements\sthat\ncontain\swindow\sfunctions.
-D 2018-06-27T19:48:50.544
+C Add\smissing\sVdbeCoverage()\sand\sVdbeCoverageNeverTaken()\smacros\sto\swindow.c.
+D 2018-06-27T20:24:59.489
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -584,7 +584,7 @@ F src/where.c 0bcbf9e191ca07f9ea2008aa80e70ded46bcdffd26560c83397da501f00aece6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
 F src/whereexpr.c 19cf35cdd9bf6d5589d8a5c960d99259761136187a2319a6e14d11cf1abe14c2
-F src/window.c 14c64e0717cab5764c7ace19f9c72be123639c051f7017b47ef6cf74528daaa8
+F src/window.c 4403ae36b9645f105ad8ae16d986929c6db5f3bc7d3d3db43f5fa51c6bbfcbe8
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1743,7 +1743,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9f814b4437eae4c49ba8abec7b58ef9dbb49d4ba8d1c95e08a2e717ef3839ee
-R cc5ef730994398d66ba6df8a9035456a
+P 336de43a47e206fe7629072e5b8c80d4ede17ead8ef4dcf5d8da6833ff22d2f9
+R b7bd98ed0e43c8f2d4cb4f0d7b13d574
 U dan
-Z cdcaab38ea26a5b321640bb9e7f7a848
+Z 38db85555459c758350756078d19d70e
