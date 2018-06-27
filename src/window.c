@@ -721,6 +721,18 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pGroupBy = 0;
     p->pHaving = 0;
 
+    /* Create the ORDER BY clause for the sub-select. This is the concatenation
+    ** of the window PARTITION and ORDER BY clauses. Then, if this makes it
+    ** redundant, remove the ORDER BY from the parent SELECT.  */
+    pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
+    pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy);
+    if( pSort && p->pOrderBy ){
+      if( sqlite3ExprListCompare(pSort, p->pOrderBy, -1)==0 ){
+        sqlite3ExprListDelete(db, p->pOrderBy);
+        p->pOrderBy = 0;
+      }
+    }
+
     /* Assign a cursor number for the ephemeral table used to buffer rows.
     ** The OpenEphemeral instruction is coded later, after it is known how
     ** many columns the table will have.  */
@@ -730,15 +742,11 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
     pMWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
 
-    /* Create the ORDER BY clause for the sub-select. This is the concatenation
-    ** of the window PARTITION and ORDER BY clauses. Append the same 
-    ** expressions to the sub-select expression list. They are required to
-    ** figure out where boundaries for partitions and sets of peer rows.  */
-    pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
-    if( pMWin->pOrderBy ){
-      pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy);
-    }
-    pSublist = exprListAppendList(pParse, pSublist, pSort);
+    /* Append the PARTITION BY and ORDER BY expressions to the to the 
+    ** sub-select expression list. They are required to figure out where 
+    ** boundaries for partitions and sets of peer rows lie.  */
+    pSublist = exprListAppendList(pParse, pSublist, pMWin->pPartition);
+    pSublist = exprListAppendList(pParse, pSublist, pMWin->pOrderBy);
 
     /* Append the arguments passed to each window function to the
     ** sub-select expression list. Also allocate two registers for each

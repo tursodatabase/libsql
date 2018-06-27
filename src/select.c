@@ -5484,8 +5484,6 @@ int sqlite3Select(
     p->selFlags &= ~SF_Distinct;
   }
   sqlite3SelectPrep(pParse, p, 0);
-  memset(&sSort, 0, sizeof(sSort));
-  sSort.pOrderBy = p->pOrderBy;
   if( pParse->nErr || db->mallocFailed ){
     goto select_end;
   }
@@ -5514,6 +5512,8 @@ int sqlite3Select(
 #endif /* SQLITE_OMIT_WINDOWFUNC */
   pTabList = p->pSrc;
   isAgg = (p->selFlags & SF_Aggregate)!=0;
+  memset(&sSort, 0, sizeof(sSort));
+  sSort.pOrderBy = p->pOrderBy;
 
   /* Try to various optimizations (flattening subqueries, and strength
   ** reduction of join operators) in the FROM clause up into the main query
