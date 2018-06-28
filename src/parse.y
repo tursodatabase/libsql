@@ -217,8 +217,8 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
   EXCEPT INTERSECT UNION
 %endif SQLITE_OMIT_COMPOUND_SELECT
 %ifndef SQLITE_OMIT_WINDOWFUNC
-  CURRENT FILTER FOLLOWING ?OVER PARTITION 
-  PRECEDING RANGE UNBOUNDED ?WINDOW 
+  CURRENT FILTER FOLLOWING OVER PARTITION 
+  PRECEDING RANGE UNBOUNDED 
 %endif SQLITE_OMIT_WINDOWFUNC
   REINDEX RENAME CTIME_KW IF
   .
@@ -257,7 +257,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 
 // And "ids" is an identifer-or-string.
 //
-%token_class ids  ID|STRING.
+%token_class ids ID|STRING.
 
 // The name of a column or table can be any of the following:
 //
@@ -265,6 +265,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 nm(A) ::= id(A).
 nm(A) ::= STRING(A).
 nm(A) ::= JOIN_KW(A).
+nm(A) ::= WINDOW(A).
 
 // A typetoken is really zero or more tokens that form a type name such
 // as can be found after the column name in a CREATE TABLE statement.
@@ -280,8 +281,8 @@ typetoken(A) ::= typename(A) LP signed COMMA signed RP(Y). {
   A.n = (int)(&Y.z[Y.n] - A.z);
 }
 %type typename {Token}
-typename(A) ::= ids(A).
-typename(A) ::= typename(A) ids(Y). {A.n=Y.n+(int)(Y.z-A.z);}
+typename(A) ::= nm(A).
+typename(A) ::= typename(A) nm(Y). {A.n=Y.n+(int)(Y.z-A.z);}
 signed ::= plus_num.
 signed ::= minus_num.
 
@@ -342,7 +343,7 @@ ccons ::= CHECK LP expr(X) RP.   {sqlite3AddCheckConstraint(pParse,X);}
 ccons ::= REFERENCES nm(T) eidlist_opt(TA) refargs(R).
                                  {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).    {sqlite3DeferForeignKey(pParse,D);}
-ccons ::= COLLATE ids(C).        {sqlite3AddCollateType(pParse, &C);}
+ccons ::= COLLATE nm(C).        {sqlite3AddCollateType(pParse, &C);}
 
 // The optional AUTOINCREMENT keyword
 %type autoinc {int}
@@ -988,6 +989,7 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
 }
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= STRING(X).          {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
+term(A) ::= WINDOW(X).          {A=tokenExpr(pParse,TK_ID,X);/*A-overwrites-X*/}
 term(A) ::= INTEGER(X). {
   A = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
 }
@@ -1011,7 +1013,7 @@ expr(A) ::= VARIABLE(X).     {
     }
   }
 }
-expr(A) ::= expr(A) COLLATE ids(C). {
+expr(A) ::= expr(A) COLLATE nm(C). {
   A = sqlite3ExprAddCollateToken(pParse, A, &C, 1);
 }
 %ifndef SQLITE_OMIT_CAST
@@ -1020,7 +1022,7 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
   sqlite3ExprAttachSubtrees(pParse->db, A, E, 0);
 }
 %endif  SQLITE_OMIT_CAST
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP 
+expr(A) ::= nm(X) LP distinct(D) exprlist(Y) RP 
 %ifndef SQLITE_OMIT_WINDOWFUNC
   over_opt(Z)
 %endif
@@ -1034,7 +1036,7 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP
     A->flags |= EP_Distinct;
   }
 }
-expr(A) ::= id(X) LP STAR RP
+expr(A) ::= nm(X) LP STAR RP
 %ifndef SQLITE_OMIT_WINDOWFUNC
   over_opt(Z)
 %endif
@@ -1443,7 +1445,7 @@ eidlist(A) ::= nm(Y) collate(C) sortorder(Z). {
 
 %type collate {int}
 collate(C) ::= .              {C = 0;}
-collate(C) ::= COLLATE ids.   {C = 1;}
+collate(C) ::= COLLATE nm.    {C = 1;}
 
 
 ///////////////////////////// The DROP INDEX command /////////////////////////

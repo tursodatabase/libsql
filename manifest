@@ -1,5 +1,5 @@
-C Introduce\sthe\sconcept\sof\s"weak\sfallback"\sin\sthe\sparser.\s\sA\sweak\sfallback\nonly\soccurs\sif\sa\ssyntax\serror\swould\sresult\sotherwise.
-D 2018-06-28T03:38:49.164
+C Modifications\sto\sparse.y\sto\sbetter\ssupport\sbackwards\scompatibility\sfor\sthe\n"window"\skeyword.
+D 2018-06-28T20:05:04.235
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -484,7 +484,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 9517b50d35e5e495a241541b49f5512b8e9bcbac3fbfdc659215555efa5c4f40
+F src/parse.y 9b5eb0e61e615832647a7a77f9e675f1da536a133426327e6812316d83f275e7
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1743,10 +1743,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4383cb68a1241768ddb3f180f8cbb9ea1638f8806210b10aac1384b8a7ecdca2
-R 341c5aa0d73cc2ef03cecacf95853224
-T *branch * weak-fallback
-T *sym-weak-fallback *
-T -sym-exp-window-functions *
-U drh
-Z 196c50a9819aa6d1d98f4a403b164e6b
+P c41d7079fb63831bd2f009b64cbf5a423e8119e6b841bfd9bd5a2d85fba3b142
+R 4e74da2117f8f8cceb7bb5b15336dc74
+U dan
+Z e15fe89d6d9f69693116ca5d610ea195
