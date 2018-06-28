@@ -208,7 +208,7 @@ impl Connection {
     /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
     /// underlying SQLite open call fails.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Connection> {
-        let flags = Default::default();
+        let flags = OpenFlags::default();
         Connection::open_with_flags(path, flags)
     }
 
@@ -218,7 +218,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite open call fails.
     pub fn open_in_memory() -> Result<Connection> {
-        let flags = Default::default();
+        let flags = OpenFlags::default();
         Connection::open_in_memory_with_flags(flags)
     }
 
