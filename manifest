@@ -1,5 +1,5 @@
-C Add\smissing\sVdbeCoverage()\sand\sVdbeCoverageNeverTaken()\smacros\sto\swindow.c.
-D 2018-06-27T20:24:59.489
+C Introduce\sthe\sconcept\sof\s"weak\sfallback"\sin\sthe\sparser.\s\sA\sweak\sfallback\nonly\soccurs\sif\sa\ssyntax\serror\swould\sresult\sotherwise.
+D 2018-06-28T03:38:49.164
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -484,7 +484,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 4661ac1382c18bc67e1680ea3e44a6835ebc770667fe32ee1720c38454304165
+F src/parse.y 9517b50d35e5e495a241541b49f5512b8e9bcbac3fbfdc659215555efa5c4f40
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1662,8 +1662,8 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 33892e2a243865f73e6c6e7cecce3c6eb4bb95db4a3d9d86d146c8064feb92fd
-F tool/lempar.c bf7db78e7213f1d51516710483eab506fd52bf632c7abfb3e2e9b885c90c03e1
+F tool/lemon.c 93a321bd82b5c73191e95b2f27203048bf4d054fdab4a257b7a6c9541f31828d
+F tool/lempar.c c7371bad027fd516b7eaed36d03353972df35163672637cddd00f472889932f9
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1743,7 +1743,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 336de43a47e206fe7629072e5b8c80d4ede17ead8ef4dcf5d8da6833ff22d2f9
-R b7bd98ed0e43c8f2d4cb4f0d7b13d574
-U dan
-Z 38db85555459c758350756078d19d70e
+P 4383cb68a1241768ddb3f180f8cbb9ea1638f8806210b10aac1384b8a7ecdca2
+R 341c5aa0d73cc2ef03cecacf95853224
+T *branch * weak-fallback
+T *sym-weak-fallback *
+T -sym-exp-window-functions *
+U drh
+Z 196c50a9819aa6d1d98f4a403b164e6b

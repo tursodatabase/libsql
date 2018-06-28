@@ -272,6 +272,7 @@ struct symbol {
                            ** union is the correct data type for this object */
   int bContent;            /* True if this symbol ever carries content - if
                            ** it is ever more than just syntax */
+  int bWeakFallback;       /* True for a weak fallback */
   /* The following fields are used by MULTITERMINALs only */
   int nsubsym;             /* Number of constituent symbols in the MULTI */
   struct symbol **subsym;  /* Array of constituent symbols */
@@ -2209,6 +2210,7 @@ enum e_state {
   WAITING_FOR_DESTRUCTOR_SYMBOL,
   WAITING_FOR_DATATYPE_SYMBOL,
   WAITING_FOR_FALLBACK_ID,
+  WAITING_FOR_WEAK_FALLBACK_ID,
   WAITING_FOR_WILDCARD_ID,
   WAITING_FOR_CLASS_ID,
   WAITING_FOR_CLASS_TOKEN,
@@ -2667,6 +2669,12 @@ to follow the previous rule.");
       }
       break;
     case WAITING_FOR_FALLBACK_ID:
+      if( x[0]=='?' ){
+        psp->state = WAITING_FOR_WEAK_FALLBACK_ID;
+        break;
+      }
+      /* Fall through */
+    case WAITING_FOR_WEAK_FALLBACK_ID:
       if( x[0]=='.' ){
         psp->state = WAITING_FOR_DECL_OR_RULE;
       }else if( !ISUPPER(x[0]) ){
@@ -2683,6 +2691,8 @@ to follow the previous rule.");
           psp->errorcnt++;
         }else{
           sp->fallback = psp->fallback;
+          sp->bWeakFallback = (psp->state==WAITING_FOR_WEAK_FALLBACK_ID);
+          psp->state = WAITING_FOR_FALLBACK_ID;
           psp->gp->has_fallback = 1;
         }
       }
@@ -4493,6 +4503,9 @@ void ReportTable(
       struct symbol *p = lemp->symbols[i];
       if( p->fallback==0 ){
         fprintf(out, "    0,  /* %10s => nothing */\n", p->name);
+      }else if( p->bWeakFallback ){
+        fprintf(out, " %4d,  /* %10s => %s (weak) */\n",
+          -p->fallback->index, p->name, p->fallback->name);
       }else{
         fprintf(out, "  %3d,  /* %10s => %s */\n", p->fallback->index,
           p->name, p->fallback->name);
@@ -5112,18 +5125,12 @@ struct symbol *Symbol_new(const char *x)
   if( sp==0 ){
     sp = (struct symbol *)calloc(1, sizeof(struct symbol) );
     MemoryCheck(sp);
+    memset(sp, 0, sizeof(*sp));
     sp->name = Strsafe(x);
     sp->type = ISUPPER(*x) ? TERMINAL : NONTERMINAL;
-    sp->rule = 0;
-    sp->fallback = 0;
     sp->prec = -1;
     sp->assoc = UNK;
-    sp->firstset = 0;
     sp->lambda = LEMON_FALSE;
-    sp->destructor = 0;
-    sp->destLineno = 0;
-    sp->datatype = 0;
-    sp->useCnt = 0;
     Symbol_insert(sp,sp->name);
   }
   sp->useCnt++;
