@@ -69,7 +69,7 @@ impl Module for ArrayModule {
         _args: &[&[u8]],
     ) -> Result<(String, ArrayTab)> {
         let vtab = ArrayTab {
-            base: Default::default(),
+            base: ffi::sqlite3_vtab::default(),
         };
         Ok(("CREATE TABLE x(value,pointer hidden)".to_owned(), vtab))
     }
@@ -139,7 +139,7 @@ struct ArrayTabCursor {
 impl ArrayTabCursor {
     fn new() -> ArrayTabCursor {
         ArrayTabCursor {
-            base: Default::default(),
+            base: ffi::sqlite3_vtab_cursor::default(),
             row_id: 0,
             ptr: None,
         }

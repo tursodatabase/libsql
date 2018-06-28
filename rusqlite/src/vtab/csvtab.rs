@@ -95,7 +95,7 @@ impl Module for CSVModule {
         }
 
         let mut vtab = CSVTab {
-            base: Default::default(),
+            base: ffi::sqlite3_vtab::default(),
             filename: "".to_owned(),
             has_headers: false,
             delimiter: b',',
@@ -294,7 +294,7 @@ struct CSVTabCursor {
 impl CSVTabCursor {
     fn new(reader: csv::Reader<File>) -> CSVTabCursor {
         CSVTabCursor {
-            base: Default::default(),
+            base: ffi::sqlite3_vtab_cursor::default(),
             reader,
             row_number: 0,
             cols: csv::StringRecord::new(),

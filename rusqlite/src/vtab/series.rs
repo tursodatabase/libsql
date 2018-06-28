@@ -52,7 +52,7 @@ impl Module for Series {
         _args: &[&[u8]],
     ) -> Result<(String, SeriesTab)> {
         let vtab = SeriesTab {
-            base: Default::default(),
+            base: ffi::sqlite3_vtab::default(),
         };
         Ok((
             "CREATE TABLE x(value,start hidden,stop hidden,step hidden)".to_owned(),
@@ -196,7 +196,7 @@ struct SeriesTabCursor {
 
 impl SeriesTabCursor {
     fn new() -> SeriesTabCursor {
-        Default::default()
+        SeriesTabCursor::default()
     }
 }
 impl VTabCursor for SeriesTabCursor {
