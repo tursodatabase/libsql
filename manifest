@@ -1,5 +1,5 @@
-C Improve\son\sthe\sprevious\scheckin.\sStill\sa\sbit\sslow.
-D 2018-06-29T19:54:51.681
+C Further\stweaks\sto\ssqlite3RunParser().
+D 2018-06-29T20:21:24.547
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -558,7 +558,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c add59ee68568868129516999f30a68e8ab2afd276e272aba4f633c9fc52c1bb1
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c c747c0bd913957db6c8d04b990dc89cd7e386403ef32fe23f77182f83fe1c422
+F src/tokenize.c 1a774b6a5763356075611829db77fcdd71d19e8b62e04ada2465452d035fa29a
 F src/treeview.c 2c5c4bc0a443401db5fd621542150452ddf5055d38edd4eef868bc2b6bfb0260
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 46dc24c6158446aaab45caee09b6d99327cb479268b83ffeb5b701823da3b67b
@@ -1744,7 +1744,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 022079cb0d67be5ac0a50dd9a4d41ee55ce8df681ecd0a544170d75fc8649978
-R 80db462d4d1bca4df50e900a3c59e228
+P c1fb41aa7b7207b81ee1d5d32da3380b36d694033b87a2873981e0c6437ba956
+R c80a7a4c6f0c2361268be820ff770081
 U dan
-Z d426a5a866f464dd5bcd7eefbf14a41b
+Z f55b75e859bb2a1b9b8dde585520a141

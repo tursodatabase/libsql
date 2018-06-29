@@ -559,24 +559,11 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVar==0 );
   assert( pParse->pVList==0 );
   while( 1 ){
-    if( zSql[0]!=0 ){
-      n = sqlite3GetToken((u8*)zSql, &tokenType);
-      mxSqlLen -= n;
-      if( mxSqlLen<0 ){
-        pParse->rc = SQLITE_TOOBIG;
-        break;
-      }
-    }else{
-      /* Upon reaching the end of input, call the parser two more times
-      ** with tokens TK_SEMI and 0, in that order. */
-      if( lastTokenParsed==TK_SEMI ){
-        tokenType = 0;
-      }else if( lastTokenParsed==0 ){
-        break;
-      }else{
-        tokenType = TK_SEMI;
-      }
-      n = 0;
+    n = sqlite3GetToken((u8*)zSql, &tokenType);
+    mxSqlLen -= n;
+    if( mxSqlLen<0 ){
+      pParse->rc = SQLITE_TOOBIG;
+      break;
     }
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
@@ -584,22 +571,35 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         pParse->rc = SQLITE_INTERRUPT;
         break;
       }
-      if( tokenType==TK_ILLEGAL ){
+      if( tokenType==TK_SPACE ){
+        zSql += n;
+        continue;
+      }
+      if( zSql[0]==0 ){
+        /* Upon reaching the end of input, call the parser two more times
+        ** with tokens TK_SEMI and 0, in that order. */
+        if( lastTokenParsed==TK_SEMI ){
+          tokenType = 0;
+        }else if( lastTokenParsed==0 ){
+          break;
+        }else{
+          tokenType = TK_SEMI;
+        }
+        n = 0;
+      }else{
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
         break;
       }
-      zSql += n;
-    }else{
-      if( tokenType==TK_WINDOW ){
-        tokenType = analyzeWindowKeyword((const u8*)&zSql[6]);
-      }
-      pParse->sLastToken.z = zSql;
-      pParse->sLastToken.n = n;
-      sqlite3Parser(pEngine, tokenType, pParse->sLastToken);
-      lastTokenParsed = tokenType;
-      zSql += n;
-      if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
     }
+    else if( tokenType==TK_WINDOW ){
+      tokenType = analyzeWindowKeyword((const u8*)&zSql[6]);
+    }
+    pParse->sLastToken.z = zSql;
+    pParse->sLastToken.n = n;
+    sqlite3Parser(pEngine, tokenType, pParse->sLastToken);
+    lastTokenParsed = tokenType;
+    zSql += n;
+    if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
   }
   assert( nErr==0 );
 #ifdef YYTRACKMAXSTACKDEPTH
