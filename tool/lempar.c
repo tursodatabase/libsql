@@ -1068,3 +1068,17 @@ void Parse(
 #endif
   return;
 }
+
+/*
+** Return the fallback token corresponding to canonical token iToken, or
+** 0 if iToken has no fallback.
+*/
+int ParseFallback(int iToken){
+#ifdef YYFALLBACK
+  if( iToken<sizeof(yyFallback)/sizeof(yyFallback[0]) ){
+    return yyFallback[iToken];
+  }
+#endif
+  return 0;
+}
+

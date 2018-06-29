@@ -188,6 +188,55 @@ const char sqlite3IsEbcdicIdChar[] = {
 int sqlite3IsIdChar(u8 c){ return IdChar(c); }
 #endif
 
+/*
+** Return the id of the next token in string (*pz). Before returning, set
+** (*pz) to point to the byte following the parsed token.
+**
+** This function assumes that any keywords that start with "w" are 
+** actually TK_ID.
+*/
+static int windowGetToken(const unsigned char **pz){
+  int ret;
+  const unsigned char *z = *pz;
+  if( z[0]=='w' || z[0]=='W' ){
+    do { z++; }while( IdChar(z[0]) );
+    ret = TK_ID;
+  }else{
+    z += sqlite3GetToken(z, &ret);
+  }
+  *pz = z;
+  return ret;
+}
+
+/*
+** The tokenizer has just parsed the keyword WINDOW. In this case the token
+** may really be the keyword (TK_WINDOW), or may be an identifier (TK_ID).
+** This function determines which it is by inspecting the next two tokens
+** in the input stream. Specifically, the token is TK_WINDOW if the following
+** two tokens are:
+**
+**   * TK_ID, or something else that can be used as a window name, and
+**   * TK_AS.
+**
+** Instead of using sqlite3GetToken() to parse tokens directly, this function
+** uses windowGetToken(). This is to avoid recursion if the input is similar
+** to "window window window window".
+*/
+static void analyzeWindowKeyword(const unsigned char *z, int *tokenType){
+  int t;
+  assert( *tokenType==TK_WINDOW );
+  while( (t = windowGetToken(&z))==TK_SPACE );
+  if( t!=TK_ID && t!=TK_STRING 
+   && t!=TK_JOIN_KW && sqlite3ParserFallback(t)!=TK_ID 
+  ){
+    *tokenType = TK_ID;
+  }else{
+    while( (t = windowGetToken(&z))==TK_SPACE );
+    if( t!=TK_AS ){
+      *tokenType = TK_ID;
+    }
+  }
+}
 
 /*
 ** Return the length (in bytes) of the token that begins at z[0]. 
@@ -433,7 +482,12 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         break;
       }
       *tokenType = TK_ID;
-      return keywordCode((char*)z, i, tokenType);
+      keywordCode((char*)z, i, tokenType);
+      if( *tokenType==TK_WINDOW ){
+        assert( i==6 );
+        analyzeWindowKeyword(&z[6], tokenType);
+      }
+      return i;
     }
     case CC_X: {
 #ifndef SQLITE_OMIT_BLOB_LITERAL

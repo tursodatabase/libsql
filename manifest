@@ -1,5 +1,5 @@
-C Modifications\sto\sparse.y\sto\sbetter\ssupport\sbackwards\scompatibility\sfor\sthe\n"window"\skeyword.
-D 2018-06-28T20:05:04.235
+C Instead\sof\susing\sa\slemon\s%fallback\sdirective,\shave\sthe\stokenizer\stry\sto\sfigure\nout\swhether\san\sinstance\sof\s"WINDOW"\sshould\sbe\sTK_WINDOW\sor\sTK_ID.
+D 2018-06-29T17:44:52.692
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -484,7 +484,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 9b5eb0e61e615832647a7a77f9e675f1da536a133426327e6812316d83f275e7
+F src/parse.y 216e0e953df076ef89668614e5aab8b489e0c2c24f7ff17cf42e7bea802793a9
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -500,7 +500,7 @@ F src/shell.c.in 8578421c5fb2a972461b2a996f7173646e55e0dbd2a2eee30c8f5dc7d3dbadf
 F src/sqlite.h.in 243e0b1d302c237372c06002fe84f731fd22587eccd142d15de834a5296514ff
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h 74728a0b20e9d2173470186a8ca1e3229c79abb19d1ac4eedc4562e8905d798d
+F src/sqliteInt.h c14c850bf0c4dd3860cc5092f140ae9faf93b77737b3febf38454088e1ab3988
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -558,7 +558,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c add59ee68568868129516999f30a68e8ab2afd276e272aba4f633c9fc52c1bb1
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c b42aa952b05df665ed10d54f02c467159cd9fcb8cbbe5ff3c9cd74781fa2803c
+F src/tokenize.c e25caaeb2ad912a378e528771d843badbaee560f2eb8c25dbface05a32c2e4cf
 F src/treeview.c 2c5c4bc0a443401db5fd621542150452ddf5055d38edd4eef868bc2b6bfb0260
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 46dc24c6158446aaab45caee09b6d99327cb479268b83ffeb5b701823da3b67b
@@ -1626,6 +1626,7 @@ F test/window3.test 47884c240d0d5234ad9c6da65452cfec1bfa69ec6f9c4158cd9750c3d88d
 F test/window4.tcl 7cec7e578aa9f78b7265bff8d552cda17a1d8d89f0449d0e74970a527b8846f5
 F test/window4.test dcd8767869988e0d23d56bc3f8b46ec116de23127b81b5f66fd48d5529072ed1
 F test/window5.test a4835b96d30eb3b81a1dbc683e333e57a614645eb6f2ae476a7ed2addf0b0f1f
+F test/window6.test 97bd18d5cccd612b8a93be4017a7a26c2968a1c868a458d0d66d8d8cc62e33f8
 F test/windowfault.test 97d5fc404308edb579a5a183e294ed874c844ecf01f0a28ba46df3141ebaee1f
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
@@ -1663,7 +1664,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 93a321bd82b5c73191e95b2f27203048bf4d054fdab4a257b7a6c9541f31828d
-F tool/lempar.c c7371bad027fd516b7eaed36d03353972df35163672637cddd00f472889932f9
+F tool/lempar.c afc03d26f33db130c0ca7d5942000aea7eedd638455845ca76f792818896df19
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1743,7 +1744,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c41d7079fb63831bd2f009b64cbf5a423e8119e6b841bfd9bd5a2d85fba3b142
-R 4e74da2117f8f8cceb7bb5b15336dc74
+P 7c4b879bdb10f30260f0fb28fcb559ab0949865d10f4ff2cf13834a326198998
+R 53ad10aee784d2508443a129bf20d430
 U dan
-Z e15fe89d6d9f69693116ca5d610ea195
+Z a766b00041899c4982e4087a15ea2a82
