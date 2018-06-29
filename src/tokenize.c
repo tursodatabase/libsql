@@ -222,20 +222,21 @@ static int windowGetToken(const unsigned char **pz){
 ** uses windowGetToken(). This is to avoid recursion if the input is similar
 ** to "window window window window".
 */
-static void analyzeWindowKeyword(const unsigned char *z, int *tokenType){
+static int analyzeWindowKeyword(const unsigned char *z){
   int t;
-  assert( *tokenType==TK_WINDOW );
+  int ret = TK_WINDOW;
   while( (t = windowGetToken(&z))==TK_SPACE );
   if( t!=TK_ID && t!=TK_STRING 
    && t!=TK_JOIN_KW && sqlite3ParserFallback(t)!=TK_ID 
   ){
-    *tokenType = TK_ID;
+    ret = TK_ID;
   }else{
     while( (t = windowGetToken(&z))==TK_SPACE );
     if( t!=TK_AS ){
-      *tokenType = TK_ID;
+      ret = TK_ID;
     }
   }
+  return ret;
 }
 
 /*
@@ -482,12 +483,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         break;
       }
       *tokenType = TK_ID;
-      keywordCode((char*)z, i, tokenType);
-      if( *tokenType==TK_WINDOW ){
-        assert( i==6 );
-        analyzeWindowKeyword(&z[6], tokenType);
-      }
-      return i;
+      return keywordCode((char*)z, i, tokenType);
     }
     case CC_X: {
 #ifndef SQLITE_OMIT_BLOB_LITERAL
@@ -594,6 +590,9 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       }
       zSql += n;
     }else{
+      if( tokenType==TK_WINDOW ){
+        tokenType = analyzeWindowKeyword((const u8*)&zSql[6]);
+      }
       pParse->sLastToken.z = zSql;
       pParse->sLastToken.n = n;
       sqlite3Parser(pEngine, tokenType, pParse->sLastToken);
