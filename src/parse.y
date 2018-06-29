@@ -1046,102 +1046,6 @@ term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP);
 }
 
-%ifndef SQLITE_OMIT_WINDOWFUNC
-
-%type windowdefn_opt {Window*}
-%destructor windowdefn_opt {sqlite3WindowDelete(pParse->db, $$);}
-windowdefn_opt(A) ::= . { A = 0; }
-windowdefn_opt(A) ::= WINDOW windowdefn_list(B). { A = B; }
-
-%type windowdefn_list {Window*}
-%destructor windowdefn_list {sqlite3WindowDelete(pParse->db, $$);}
-windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
-windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
-  if( Z ) Z->pNextWin = Y;
-  A = Z;
-}
-
-%type windowdefn {Window*}
-%destructor windowdefn {sqlite3WindowDelete(pParse->db, $$);}
-windowdefn(A) ::= nm(X) AS window(Y). {
-  if( Y ){
-    Y->zName = sqlite3DbStrNDup(pParse->db, X.z, X.n);
-  }
-  A = Y;
-}
-
-%type over_opt {Window*}
-%destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
-
-%type window {Window*}
-%destructor window {sqlite3WindowDelete(pParse->db, $$);}
-
-%type frame_opt {Window*}
-%destructor frame_opt {sqlite3WindowDelete(pParse->db, $$);}
-
-%type window_or_nm {Window*}
-%destructor window_or_nm {
-sqlite3WindowDelete(pParse->db, $$);}
-
-%type part_opt {ExprList*}
-%destructor part_opt {sqlite3ExprListDelete(pParse->db, $$);}
-
-%type filter_opt {Expr*}
-%destructor filter_opt {sqlite3ExprDelete(pParse->db, $$);}
-
-%type range_or_rows {int}
-
-%type frame_bound {struct FrameBound}
-%destructor frame_bound {sqlite3ExprDelete(pParse->db, $$.pExpr);}
-
-over_opt(A) ::= . { A = 0; }
-over_opt(A) ::= filter_opt(W) OVER window_or_nm(Z). {
-  A = Z;
-  if( A ) A->pFilter = W;
-}
-
-window_or_nm(A) ::= window(Z). {A = Z;}
-window_or_nm(A) ::= nm(Z). {
-  A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
-  if( A ){
-    A->zName = sqlite3DbStrNDup(pParse->db, Z.z, Z.n);
-  }
-}
-
-window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
-  A = Z;
-  if( A ){
-    A->pPartition = X;
-    A->pOrderBy = Y;
-  }
-}
-
-part_opt(A) ::= PARTITION BY exprlist(X). { A = X; }
-part_opt(A) ::= .                         { A = 0; }
-filter_opt(A) ::= .                            { A = 0; }
-filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
-
-frame_opt(A) ::= .                             { 
-  A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
-}
-frame_opt(A) ::= range_or_rows(X) frame_bound(Y). { 
-  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0);
-}
-frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound(Y) AND frame_bound(Z). { 
-  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr);
-}
-
-range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
-range_or_rows(A) ::= ROWS.    { A = TK_ROWS;  }
-
-frame_bound(A) ::= UNBOUNDED PRECEDING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
-frame_bound(A) ::= expr(X) PRECEDING.   { A.eType = TK_PRECEDING; A.pExpr = X; }
-frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
-frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
-frame_bound(A) ::= UNBOUNDED FOLLOWING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
-
-%endif // SQLITE_OMIT_WINDOWFUNC
-
 expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   ExprList *pList = sqlite3ExprListAppend(pParse, X, Y);
   A = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
@@ -1693,3 +1597,104 @@ wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
   A = sqlite3WithAdd(pParse, A, &X, Y, Z);
 }
 %endif  SQLITE_OMIT_CTE
+
+//////////////////////// WINDOW FUNCTION EXPRESSIONS /////////////////////////
+// These must be at the end of this file. Specifically, the windowdefn_opt
+// rule must be the very last in the file. This causes the integer value
+// assigned to the TK_WINDOW token to be larger than all other tokens that
+// may be output by the tokenizer except TK_SPACE and TK_ILLEGAL.
+//
+%ifndef SQLITE_OMIT_WINDOWFUNC
+%type windowdefn_list {Window*}
+%destructor windowdefn_list {sqlite3WindowDelete(pParse->db, $$);}
+windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
+windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
+  if( Z ) Z->pNextWin = Y;
+  A = Z;
+}
+
+%type windowdefn {Window*}
+%destructor windowdefn {sqlite3WindowDelete(pParse->db, $$);}
+windowdefn(A) ::= nm(X) AS window(Y). {
+  if( Y ){
+    Y->zName = sqlite3DbStrNDup(pParse->db, X.z, X.n);
+  }
+  A = Y;
+}
+
+%type over_opt {Window*}
+%destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
+
+%type window {Window*}
+%destructor window {sqlite3WindowDelete(pParse->db, $$);}
+
+%type frame_opt {Window*}
+%destructor frame_opt {sqlite3WindowDelete(pParse->db, $$);}
+
+%type window_or_nm {Window*}
+%destructor window_or_nm {
+sqlite3WindowDelete(pParse->db, $$);}
+
+%type part_opt {ExprList*}
+%destructor part_opt {sqlite3ExprListDelete(pParse->db, $$);}
+
+%type filter_opt {Expr*}
+%destructor filter_opt {sqlite3ExprDelete(pParse->db, $$);}
+
+%type range_or_rows {int}
+
+%type frame_bound {struct FrameBound}
+%destructor frame_bound {sqlite3ExprDelete(pParse->db, $$.pExpr);}
+
+over_opt(A) ::= . { A = 0; }
+over_opt(A) ::= filter_opt(W) OVER window_or_nm(Z). {
+  A = Z;
+  if( A ) A->pFilter = W;
+}
+
+window_or_nm(A) ::= window(Z). {A = Z;}
+window_or_nm(A) ::= nm(Z). {
+  A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  if( A ){
+    A->zName = sqlite3DbStrNDup(pParse->db, Z.z, Z.n);
+  }
+}
+
+window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
+  A = Z;
+  if( A ){
+    A->pPartition = X;
+    A->pOrderBy = Y;
+  }
+}
+
+part_opt(A) ::= PARTITION BY exprlist(X). { A = X; }
+part_opt(A) ::= .                         { A = 0; }
+filter_opt(A) ::= .                            { A = 0; }
+filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
+
+frame_opt(A) ::= .                             { 
+  A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
+}
+frame_opt(A) ::= range_or_rows(X) frame_bound(Y). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0);
+}
+frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound(Y) AND frame_bound(Z). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr);
+}
+
+range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
+range_or_rows(A) ::= ROWS.    { A = TK_ROWS;  }
+
+frame_bound(A) ::= UNBOUNDED PRECEDING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
+frame_bound(A) ::= expr(X) PRECEDING.   { A.eType = TK_PRECEDING; A.pExpr = X; }
+frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
+frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
+frame_bound(A) ::= UNBOUNDED FOLLOWING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
+
+%type windowdefn_opt {Window*}
+%destructor windowdefn_opt {sqlite3WindowDelete(pParse->db, $$);}
+windowdefn_opt(A) ::= . { A = 0; }
+windowdefn_opt(A) ::= WINDOW windowdefn_list(B). { A = B; }
+%endif // SQLITE_OMIT_WINDOWFUNC
+

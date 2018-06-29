@@ -188,6 +188,7 @@ const char sqlite3IsEbcdicIdChar[] = {
 int sqlite3IsIdChar(u8 c){ return IdChar(c); }
 #endif
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
 /*
 ** Return the id of the next token in string (*pz). Before returning, set
 ** (*pz) to point to the byte following the parsed token.
@@ -207,7 +208,9 @@ static int windowGetToken(const unsigned char **pz){
   *pz = z;
   return ret;
 }
+#endif // SQLITE_OMIT_WINDOWFUNC
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
 /*
 ** The tokenizer has just parsed the keyword WINDOW. In this case the token
 ** may really be the keyword (TK_WINDOW), or may be an identifier (TK_ID).
@@ -238,6 +241,7 @@ static int analyzeWindowKeyword(const unsigned char *z){
   }
   return ret;
 }
+#endif // SQLITE_OMIT_WINDOWFUNC
 
 /*
 ** Return the length (in bytes) of the token that begins at z[0]. 
@@ -565,8 +569,15 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       pParse->rc = SQLITE_TOOBIG;
       break;
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    if( tokenType>=TK_WINDOW ){
+      assert( tokenType==TK_SPACE 
+           || tokenType==TK_ILLEGAL || tokenType==TK_WINDOW 
+      );
+#else
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
+#endif // SQLITE_OMIT_WINDOWFUNC
       if( db->u1.isInterrupted ){
         pParse->rc = SQLITE_INTERRUPT;
         break;
@@ -586,13 +597,14 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
           tokenType = TK_SEMI;
         }
         n = 0;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      }else if( tokenType==TK_WINDOW ){
+        tokenType = analyzeWindowKeyword((const u8*)&zSql[6]);
+#endif // SQLITE_OMIT_WINDOWFUNC
       }else{
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
         break;
       }
-    }
-    else if( tokenType==TK_WINDOW ){
-      tokenType = analyzeWindowKeyword((const u8*)&zSql[6]);
     }
     pParse->sLastToken.z = zSql;
     pParse->sLastToken.n = n;
