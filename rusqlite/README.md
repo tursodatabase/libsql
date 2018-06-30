@@ -68,7 +68,7 @@ newer SQLite version; see details below.
 ### Optional Features
 
 Rusqlite provides several features that are behind [Cargo
-features](http://doc.crates.io/manifest.html#the-features-section). They are:
+features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section). They are:
 
 * [`load_extension`](http://jgallagher.github.io/rusqlite/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
