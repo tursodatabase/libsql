@@ -1,5 +1,5 @@
-C Merge\simplementation\sof\sSQL\swindow\sfunctions\sfrom\sthe\sexp-window-functions\ninto\strunk.
-D 2018-06-30T20:15:58.324
+C Avoid\sa\swarning\sin\sfts5.c\sdue\sto\snot\susing\sgenerated\sroutine\nsqlite3Fts5ParserFallback().
+D 2018-06-30T20:26:52.878
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -112,7 +112,7 @@ F ext/fts5/fts5Int.h eda28e3a0a5d87c412e8355fe35da875b04cb389908c8eb0d867ad662ad
 F ext/fts5/fts5_aux.c ca666a3bbe07c5a3bbe9fffaea19c935a1efaf337333e28bad7bdd1971ffd093
 F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bfd13e973ff
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
-F ext/fts5/fts5_expr.c c23a2e4c14c401a147c4a730460e5b37057627bf4be95515ee281cd87f4d277c
+F ext/fts5/fts5_expr.c 4ff82037692dcaf42ddf4f379a08815b4bd8784194a083994fec51eef31ef2dd
 F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301546dd55
 F ext/fts5/fts5_index.c 22b71d0e9e4b3ddd123a39ae27174e0012da2806f91b64087a68584f13f189de
 F ext/fts5/fts5_main.c da46761a7e9b582083fcb9f5a3ee50086205fb91f4e68d984a9946e64218e297
@@ -1744,8 +1744,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fea7ade649ae72303078782f7bc510e0a17f082ffde10e769f1aeb1cf37b5554 763e6c9e2bbc0a6ef8d8361069bf7160790c9064f24f0e336b7ed85668735da9
-R 6cfae24b0260985fdb1b9447231b1548
-T +closed 763e6c9e2bbc0a6ef8d8361069bf7160790c9064f24f0e336b7ed85668735da9
+P 17198a1206e2fbc9e555881468e8c6980b00e25b5b78a6798a6264ca7384f1ca
+R ebb046d75f3c51ba97ee728039ef9b02
 U dan
-Z 1885d8ec849367bf64a9296ff8188f0c
+Z 8fbb7dd79d8c07df0e6632e04176732a
