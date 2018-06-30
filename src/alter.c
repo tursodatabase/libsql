@@ -74,7 +74,7 @@ static void renameTableFunc(
         zCsr += len;
         len = sqlite3GetToken(zCsr, &token);
       } while( token==TK_SPACE );
-      assert( len>0 );
+      assert( len>0 || !*zCsr );
     } while( token!=TK_LP && token!=TK_USING );
 
     zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", (int)(((u8*)tname.z) - zSql),
@@ -198,7 +198,7 @@ static void renameTriggerFunc(
         zCsr += len;
         len = sqlite3GetToken(zCsr, &token);
       }while( token==TK_SPACE );
-      assert( len>0 );
+      assert( len>0 || !*zCsr );
 
       /* Variable 'dist' stores the number of tokens read since the most
       ** recent TK_DOT or TK_ON. This means that when a WHEN, FOR or BEGIN 

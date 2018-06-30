@@ -90,6 +90,7 @@
 /************* Begin control #defines *****************************************/
 %%
 /************* End control #defines *******************************************/
+#define YY_NLOOKAHEAD ((int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])))
 
 /* Define the yytestcase() macro to be a no-op if is not already defined
 ** otherwise.
@@ -519,11 +520,11 @@ static YYACTIONTYPE yy_find_shift_action(
   do{
     i = yy_shift_ofst[stateno];
     assert( i>=0 );
-    assert( i+YYNTOKEN<=(int)sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
+    /* assert( i+YYNTOKEN<=(int)YY_NLOOKAHEAD ); */
     assert( iLookAhead!=YYNOCODE );
     assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
-    if( yy_lookahead[i]!=iLookAhead ){
+    if( i>=YY_NLOOKAHEAD || yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
@@ -1056,4 +1057,17 @@ void Parse(
   }
 #endif
   return;
+}
+
+/*
+** Return the fallback token corresponding to canonical token iToken, or
+** 0 if iToken has no fallback.
+*/
+int ParseFallback(int iToken){
+#ifdef YYFALLBACK
+  if( iToken<sizeof(yyFallback)/sizeof(yyFallback[0]) ){
+    return yyFallback[iToken];
+  }
+#endif
+  return 0;
 }

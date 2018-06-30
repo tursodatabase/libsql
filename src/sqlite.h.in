@@ -4621,11 +4621,13 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **
 ** ^These functions (collectively known as "function creation routines")
 ** are used to add SQL functions or aggregates or to redefine the behavior
-** of existing SQL functions or aggregates.  The only differences between
-** these routines are the text encoding expected for
-** the second parameter (the name of the function being created)
-** and the presence or absence of a destructor callback for
-** the application data pointer.
+** of existing SQL functions or aggregates. The only differences between
+** the three "sqlite3_create_function*" routines are the text encoding 
+** expected for the second parameter (the name of the function being 
+** created) and the presence or absence of a destructor callback for
+** the application data pointer. Function sqlite3_create_window_function()
+** is similar, but allows the user to supply the extra callback functions
+** needed by [aggregate window functions].
 **
 ** ^The first parameter is the [database connection] to which the SQL
 ** function is to be added.  ^If an application uses more than one database
@@ -4671,7 +4673,8 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
 ** function can gain access to this pointer using [sqlite3_user_data()].)^
 **
-** ^The sixth, seventh and eighth parameters, xFunc, xStep and xFinal, are
+** ^The sixth, seventh and eighth parameters passed to the three
+** "sqlite3_create_function*" functions, xFunc, xStep and xFinal, are
 ** pointers to C-language functions that implement the SQL function or
 ** aggregate. ^A scalar SQL function requires an implementation of the xFunc
 ** callback only; NULL pointers must be passed as the xStep and xFinal
@@ -4680,15 +4683,24 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** SQL function or aggregate, pass NULL pointers for all three function
 ** callbacks.
 **
-** ^(If the ninth parameter to sqlite3_create_function_v2() is not NULL,
-** then it is destructor for the application data pointer. 
-** The destructor is invoked when the function is deleted, either by being
-** overloaded or when the database connection closes.)^
-** ^The destructor is also invoked if the call to
-** sqlite3_create_function_v2() fails.
-** ^When the destructor callback of the tenth parameter is invoked, it
-** is passed a single argument which is a copy of the application data 
-** pointer which was the fifth parameter to sqlite3_create_function_v2().
+** ^The sixth, seventh, eighth and ninth parameters (xStep, xFinal, xValue 
+** and xInverse) passed to sqlite3_create_window_function are pointers to
+** C-lanugage callbacks that implement the new function. xStep and xFinal
+** must both be non-NULL. xValue and xInverse may either both be NULL, in
+** which case a regular aggregate function is created, or must both be 
+** non-NULL, in which case the new function may be used as either an aggregate
+** or aggregate window function. More details regarding the implementation
+** of aggregate window functions are 
+** [user-defined window functions|available here].
+**
+** ^(If the final parameter to sqlite3_create_function_v2() or
+** sqlite3_create_window_function() is not NULL, then it is destructor for
+** the application data pointer. The destructor is invoked when the function 
+** is deleted, either by being overloaded or when the database connection 
+** closes.)^ ^The destructor is also invoked if the call to 
+** sqlite3_create_function_v2() fails.  ^When the destructor callback is
+** invoked, it is passed a single argument which is a copy of the application
+** data pointer which was the fifth parameter to sqlite3_create_function_v2().
 **
 ** ^It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
@@ -4739,6 +4751,18 @@ int sqlite3_create_function_v2(
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*),
+  void(*xDestroy)(void*)
+);
+int sqlite3_create_window_function(
+  sqlite3 *db,
+  const char *zFunctionName,
+  int nArg,
+  int eTextRep,
+  void *pApp,
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+  void (*xFinal)(sqlite3_context*),
+  void (*xValue)(sqlite3_context*),
+  void (*xInverse)(sqlite3_context*,int,sqlite3_value**),
   void(*xDestroy)(void*)
 );
 

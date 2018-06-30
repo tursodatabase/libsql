@@ -416,6 +416,34 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 }
 
 /*
+** Memory cell pAccum contains the context of an aggregate function.
+** This routine calls the xValue method for that function and stores
+** the results in memory cell pMem.
+**
+** SQLITE_ERROR is returned if xValue() reports an error. SQLITE_OK 
+** otherwise.
+*/
+#ifndef SQLITE_OMIT_WINDOWFUNC
+int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
+  sqlite3_context ctx;
+  Mem t;
+  assert( pFunc!=0 );
+  assert( pFunc->xValue!=0 );
+  assert( (pAccum->flags & MEM_Null)!=0 || pFunc==pAccum->u.pDef );
+  assert( pAccum->db==0 || sqlite3_mutex_held(pAccum->db->mutex) );
+  memset(&ctx, 0, sizeof(ctx));
+  memset(&t, 0, sizeof(t));
+  t.flags = MEM_Null;
+  t.db = pAccum->db;
+  ctx.pOut = pOut;
+  ctx.pMem = pAccum;
+  ctx.pFunc = pFunc;
+  pFunc->xValue(&ctx);
+  return ctx.isError;
+}
+#endif /* SQLITE_OMIT_WINDOWFUNC */
+
+/*
 ** If the memory cell contains a value that must be freed by
 ** invoking the external callback in Mem.xDel, then this routine
 ** will free that value.  It also sets Mem.flags to MEM_Null.

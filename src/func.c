@@ -1513,6 +1513,31 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
     }
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
+  SumCtx *p;
+  int type;
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  p = sqlite3_aggregate_context(context, sizeof(*p));
+  type = sqlite3_value_numeric_type(argv[0]);
+  if( p && type!=SQLITE_NULL ){
+    p->cnt--;
+    if( type==SQLITE_INTEGER ){
+      i64 v = sqlite3_value_int64(argv[0]);
+      p->rSum -= v;
+      if( (p->approx|p->overflow)==0 && sqlite3AddInt64(&p->iSum, -1*v) ){
+        p->overflow = 1;
+      }
+    }else{
+      p->rSum += sqlite3_value_double(argv[0]);
+      p->approx = 1;
+    }
+  }
+}
+#else
+# define sumInverse 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 static void sumFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
@@ -1589,7 +1614,7 @@ static void minmaxStep(
   pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));
   if( !pBest ) return;
 
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+  if( sqlite3_value_type(pArg)==SQLITE_NULL ){
     if( pBest->flags ) sqlite3SkipAccumulatorLoad(context);
   }else if( pBest->flags ){
     int max;
@@ -1615,15 +1640,25 @@ static void minmaxStep(
     sqlite3VdbeMemCopy(pBest, pArg);
   }
 }
-static void minMaxFinalize(sqlite3_context *context){
+static void minMaxValueFinalize(sqlite3_context *context, int bValue){
   sqlite3_value *pRes;
   pRes = (sqlite3_value *)sqlite3_aggregate_context(context, 0);
   if( pRes ){
     if( pRes->flags ){
       sqlite3_result_value(context, pRes);
     }
-    sqlite3VdbeMemRelease(pRes);
+    if( bValue==0 ) sqlite3VdbeMemRelease(pRes);
   }
+}
+#ifndef SQLITE_OMIT_WINDOWFUNC
+static void minMaxValue(sqlite3_context *context){
+  return minMaxValueFinalize(context, 1);
+}
+#else
+# define minMaxValue 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
+static void minMaxFinalize(sqlite3_context *context){
+  return minMaxValueFinalize(context, 0);
 }
 
 /*
@@ -1661,6 +1696,34 @@ static void groupConcatStep(
     if( zVal ) sqlite3_str_append(pAccum, zVal, nVal);
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+static void groupConcatInverse(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int n;
+  assert( argc==1 || argc==2 );
+  StrAccum *pAccum;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
+  if( pAccum ){
+    n = sqlite3_value_bytes(argv[0]);
+    if( argc==2 ){
+      n += sqlite3_value_bytes(argv[1]);
+    }
+    if( n>=pAccum->nChar ){
+      pAccum->nChar = 0;
+    }else{
+      pAccum->nChar -= n;
+      memmove(pAccum->zText, &pAccum->zText[n], pAccum->nChar);
+    }
+    if( pAccum->nChar==0 ) pAccum->mxAlloc = 0;
+  }
+}
+#else
+# define groupConcatInverse 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 static void groupConcatFinalize(sqlite3_context *context){
   StrAccum *pAccum;
   pAccum = sqlite3_aggregate_context(context, 0);
@@ -1675,6 +1738,24 @@ static void groupConcatFinalize(sqlite3_context *context){
     }
   }
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+static void groupConcatValue(sqlite3_context *context){
+  sqlite3_str *pAccum;
+  pAccum = (sqlite3_str*)sqlite3_aggregate_context(context, 0);
+  if( pAccum ){
+    if( pAccum->accError==SQLITE_TOOBIG ){
+      sqlite3_result_error_toobig(context);
+    }else if( pAccum->accError==SQLITE_NOMEM ){
+      sqlite3_result_error_nomem(context);
+    }else{    
+      const char *zText = sqlite3_str_value(pAccum);
+      sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
+    }
+  }
+}
+#else
+# define groupConcatValue 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
 ** This routine does per-connection function registration.  Most
@@ -1712,10 +1793,10 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
   }else{
     pInfo = (struct compareInfo*)&likeInfoNorm;
   }
-  sqlite3CreateFunc(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0);
-  sqlite3CreateFunc(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0);
+  sqlite3CreateFunc(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
+  sqlite3CreateFunc(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
   sqlite3CreateFunc(db, "glob", 2, SQLITE_UTF8, 
-      (struct compareInfo*)&globInfo, likeFunc, 0, 0, 0);
+      (struct compareInfo*)&globInfo, likeFunc, 0, 0, 0, 0, 0);
   setLikeOptFlag(db, "glob", SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE);
   setLikeOptFlag(db, "like", 
       caseSensitive ? (SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE) : SQLITE_FUNC_LIKE);
@@ -1824,11 +1905,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(trim,               2, 3, 0, trimFunc         ),
     FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
     FUNCTION(min,                0, 0, 1, 0                ),
-    AGGREGATE2(min,              1, 0, 1, minmaxStep,      minMaxFinalize,
+    WAGGREGATE(min, 1, 0, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                           SQLITE_FUNC_MINMAX ),
     FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
     FUNCTION(max,                0, 1, 1, 0                ),
-    AGGREGATE2(max,              1, 1, 1, minmaxStep,      minMaxFinalize,
+    WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                           SQLITE_FUNC_MINMAX ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
@@ -1859,14 +1940,15 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
-    AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
-    AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
-    AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
-    AGGREGATE2(count,            0, 0, 0, countStep,       countFinalize,
-               SQLITE_FUNC_COUNT  ),
-    AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
-    AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize),
-    AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize),
+    WAGGREGATE(sum,   1,0,0, sumStep, sumFinalize, sumFinalize, sumInverse, 0),
+    WAGGREGATE(total, 1,0,0, sumStep,totalFinalize,totalFinalize,sumInverse, 0),
+    WAGGREGATE(avg,   1,0,0, sumStep, avgFinalize, avgFinalize, sumInverse, 0),
+    AGGREGATE2(count, 0,0,0, countStep, countFinalize, SQLITE_FUNC_COUNT  ),
+    WAGGREGATE(count, 1,0,0, countStep, countFinalize, 0, 0, 0 ),
+    WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep, 
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
+    WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep, 
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
   
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
@@ -1886,6 +1968,7 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
 #endif
+  sqlite3WindowFunctions();
 #if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
   sqlite3AnalyzeFunctions();
 #endif
