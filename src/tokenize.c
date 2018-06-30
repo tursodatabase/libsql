@@ -54,11 +54,12 @@
 #define CC_TILDA     25    /* '~' */
 #define CC_DOT       26    /* '.' */
 #define CC_ILLEGAL   27    /* Illegal character */
+#define CC_NUL       28    /* 0x00 */
 
 static const unsigned char aiClass[] = {
 #ifdef SQLITE_ASCII
 /*         x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xa  xb  xc  xd  xe  xf */
-/* 0x */   27, 27, 27, 27, 27, 27, 27, 27, 27,  7,  7, 27,  7,  7, 27, 27,
+/* 0x */   28, 27, 27, 27, 27, 27, 27, 27, 27,  7,  7, 27,  7,  7, 27, 27,
 /* 1x */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
 /* 2x */    7, 15,  8,  5,  4, 22, 24,  8, 17, 18, 21, 20, 23, 11, 26, 16,
 /* 3x */    3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  5, 19, 12, 14, 13,  6,
@@ -531,6 +532,10 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case CC_ID: {
       i = 1;
       break;
+    }
+    case CC_NUL: {
+      *tokenType = TK_ILLEGAL;
+      return 0;
     }
     default: {
       *tokenType = TK_ILLEGAL;
