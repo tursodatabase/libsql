@@ -4299,6 +4299,7 @@ char sqlite3IndexColumnAffinity(sqlite3*, Index*, int);
   void sqlite3ParserFree(void*, void(*)(void*));
 #endif
 void sqlite3Parser(void*, int, Token);
+int sqlite3ParserFallback(int);
 #ifdef YYTRACKMAXSTACKDEPTH
   int sqlite3ParserStackPeak(void*);
 #endif

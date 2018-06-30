@@ -1,0 +1,143 @@
+# 2018 May 8
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests the sqlite3_create_window_function() API.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix window6
+
+ifcapable !windowfunc {
+  finish_test
+  return
+}
+
+set setup {
+  CREATE TABLE %t1(%x, %y %typename);
+  INSERT INTO %t1 VALUES(1, 'a');
+  INSERT INTO %t1 VALUES(2, 'b');
+  INSERT INTO %t1 VALUES(3, 'c');
+  INSERT INTO %t1 VALUES(4, 'd');
+  INSERT INTO %t1 VALUES(5, 'e');
+}
+
+foreach {tn vars} {
+  1 {}
+  2 { set A(%t1) over }
+  3 { set A(%x)  over }
+  4 { 
+    set A(%alias)   over 
+    set A(%x)       following 
+    set A(%y)       over 
+  }
+  5 { 
+    set A(%t1)      over
+    set A(%x)       following 
+    set A(%y)       preceding 
+    set A(%w)       current 
+    set A(%alias)   filter
+    set A(%typename)  window
+  }
+
+  6 { 
+    set A(%x)       window 
+  }
+} {
+  set A(%t1)    t1
+  set A(%x)     x
+  set A(%y)     y
+  set A(%w)     w
+  set A(%alias) alias
+  set A(%typename) integer
+  eval $vars
+
+  set MAP [array get A]
+  set setup_sql [string map $MAP $setup]
+  reset_db
+  execsql $setup_sql
+
+  do_execsql_test 1.$tn.1 [string map $MAP {
+    SELECT group_concat(%x, '.') OVER (ORDER BY %y) FROM %t1
+  }] {1 1.2 1.2.3 1.2.3.4 1.2.3.4.5}
+
+  do_execsql_test 1.$tn.2 [string map $MAP {
+    SELECT sum(%x) OVER %w FROM %t1 WINDOW %w AS (ORDER BY %y)
+  }] {1 3 6 10 15}
+
+  do_execsql_test 1.$tn.3 [string map $MAP {
+    SELECT sum(%alias.%x) OVER %w FROM %t1 %alias WINDOW %w AS (ORDER BY %y)
+  }] {1 3 6 10 15}
+
+  do_execsql_test 1.$tn.4 [string map $MAP {
+    SELECT sum(%x) %alias FROM %t1
+  }] {15}
+}
+
+
+proc winproc {args} { return "window: $args" }
+db func window winproc
+do_execsql_test 2.0 {
+  SELECT window('hello world');
+} {{window: {hello world}}}
+
+proc wincmp {a b} { string compare $b $a }
+db collate window wincmp
+do_execsql_test 3.0 {
+  CREATE TABLE window(x COLLATE window);
+  INSERT INTO window VALUES('bob'), ('alice'), ('cate');
+  SELECT * FROM window ORDER BY x COLLATE window;
+} {cate bob alice}
+do_execsql_test 3.1 {
+  DROP TABLE window;
+  CREATE TABLE x1(x);
+  INSERT INTO x1 VALUES('bob'), ('alice'), ('cate');
+  CREATE INDEX window ON x1(x COLLATE window);
+  SELECT * FROM x1 ORDER BY x COLLATE window;
+} {cate bob alice}
+
+
+do_execsql_test 4.0 { CREATE TABLE t4(x, y); }
+
+# do_execsql_test 4.1 { PRAGMA parser_trace = 1 }
+do_execsql_test 4.1 { 
+  SELECT * FROM t4 window, t4;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE TABLE over(x, over);
+  CREATE TABLE window(x, window);
+  INSERT INTO over VALUES(1, 2), (3, 4), (5, 6);
+  INSERT INTO window VALUES(1, 2), (3, 4), (5, 6);
+  SELECT sum(x) over FROM over
+} {9}
+
+do_execsql_test 5.1 {
+  SELECT sum(x) over over FROM over WINDOW over AS ()
+} {9 9 9}
+
+do_execsql_test 5.2 {
+  SELECT sum(over) over over over FROM over over WINDOW over AS (ORDER BY over)
+} {2 6 12}
+
+do_execsql_test 5.3 {
+  SELECT sum(over) over over over FROM over over WINDOW over AS (ORDER BY over);
+} {2 6 12}
+
+do_execsql_test 5.4 {
+  SELECT sum(window) OVER window window FROM window window window window AS (ORDER BY window);
+} {2 6 12}
+
+finish_test
+
