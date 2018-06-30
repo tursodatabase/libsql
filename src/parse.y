@@ -217,8 +217,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
   EXCEPT INTERSECT UNION
 %endif SQLITE_OMIT_COMPOUND_SELECT
 %ifndef SQLITE_OMIT_WINDOWFUNC
-  CURRENT FILTER FOLLOWING OVER PARTITION
-  PRECEDING RANGE UNBOUNDED
+  CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
 %endif SQLITE_OMIT_WINDOWFUNC
   REINDEX RENAME CTIME_KW IF
   .
@@ -1599,10 +1598,10 @@ wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
 %endif  SQLITE_OMIT_CTE
 
 //////////////////////// WINDOW FUNCTION EXPRESSIONS /////////////////////////
-// These must be at the end of this file. Specifically, the windowdefn_opt
-// rule must be the very last in the file. This causes the integer value
-// assigned to the TK_WINDOW token to be larger than all other tokens that
-// may be output by the tokenizer except TK_SPACE and TK_ILLEGAL.
+// These must be at the end of this file. Specifically, the rules that
+// introduce tokens WINDOW, OVER and FILTER must appear last. This causes 
+// the integer values assigned to these tokens to be larger than all other 
+// tokens that may be output by the tokenizer except TK_SPACE and TK_ILLEGAL.
 //
 %ifndef SQLITE_OMIT_WINDOWFUNC
 %type windowdefn_list {Window*}
@@ -1621,9 +1620,6 @@ windowdefn(A) ::= nm(X) AS window(Y). {
   }
   A = Y;
 }
-
-%type over_opt {Window*}
-%destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
 
 %type window {Window*}
 %destructor window {sqlite3WindowDelete(pParse->db, $$);}
@@ -1646,12 +1642,6 @@ sqlite3WindowDelete(pParse->db, $$);}
 %type frame_bound {struct FrameBound}
 %destructor frame_bound {sqlite3ExprDelete(pParse->db, $$.pExpr);}
 
-over_opt(A) ::= . { A = 0; }
-over_opt(A) ::= filter_opt(W) OVER window_or_nm(Z). {
-  A = Z;
-  if( A ) A->pFilter = W;
-}
-
 window_or_nm(A) ::= window(Z). {A = Z;}
 window_or_nm(A) ::= nm(Z). {
   A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
@@ -1670,8 +1660,6 @@ window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
 
 part_opt(A) ::= PARTITION BY exprlist(X). { A = X; }
 part_opt(A) ::= .                         { A = 0; }
-filter_opt(A) ::= .                            { A = 0; }
-filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 
 frame_opt(A) ::= .                             { 
   A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
@@ -1696,5 +1684,16 @@ frame_bound(A) ::= UNBOUNDED FOLLOWING. { A.eType = TK_UNBOUNDED; A.pExpr = 0; }
 %destructor windowdefn_opt {sqlite3WindowDelete(pParse->db, $$);}
 windowdefn_opt(A) ::= . { A = 0; }
 windowdefn_opt(A) ::= WINDOW windowdefn_list(B). { A = B; }
+
+%type over_opt {Window*}
+%destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
+over_opt(A) ::= . { A = 0; }
+over_opt(A) ::= filter_opt(W) OVER window_or_nm(Z). {
+  A = Z;
+  if( A ) A->pFilter = W;
+}
+
+filter_opt(A) ::= .                            { A = 0; }
+filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 %endif // SQLITE_OMIT_WINDOWFUNC
 

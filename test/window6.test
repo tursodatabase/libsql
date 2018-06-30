@@ -22,7 +22,7 @@ ifcapable !windowfunc {
 }
 
 set setup {
-  CREATE TABLE %t1(%a, %b %typename);
+  CREATE TABLE %t1(%x, %y %typename);
   INSERT INTO %t1 VALUES(1, 'a');
   INSERT INTO %t1 VALUES(2, 'b');
   INSERT INTO %t1 VALUES(3, 'c');
@@ -33,28 +33,28 @@ set setup {
 foreach {tn vars} {
   1 {}
   2 { set A(%t1) over }
-  3 { set A(%a)  over }
+  3 { set A(%x)  over }
   4 { 
     set A(%alias)   over 
-    set A(%a)       following 
-    set A(%b)       over 
+    set A(%x)       following 
+    set A(%y)       over 
   }
   5 { 
-    set A(%t1)      over 
-    set A(%a)       following 
-    set A(%b)       preceding 
+    set A(%t1)      over
+    set A(%x)       following 
+    set A(%y)       preceding 
     set A(%w)       current 
-    set A(%alias)   filter 
-    set A(%typename)  window 
+    set A(%alias)   filter
+    set A(%typename)  window
   }
 
   6 { 
-    set A(%a)       window 
+    set A(%x)       window 
   }
 } {
   set A(%t1)    t1
-  set A(%a)     a
-  set A(%b)     b
+  set A(%x)     x
+  set A(%y)     y
   set A(%w)     w
   set A(%alias) alias
   set A(%typename) integer
@@ -66,19 +66,19 @@ foreach {tn vars} {
   execsql $setup_sql
 
   do_execsql_test 1.$tn.1 [string map $MAP {
-    SELECT group_concat(%a, '.') OVER (ORDER BY %b) FROM %t1
+    SELECT group_concat(%x, '.') OVER (ORDER BY %y) FROM %t1
   }] {1 1.2 1.2.3 1.2.3.4 1.2.3.4.5}
 
   do_execsql_test 1.$tn.2 [string map $MAP {
-    SELECT sum(%a) OVER %w FROM %t1 WINDOW %w AS (ORDER BY %b)
+    SELECT sum(%x) OVER %w FROM %t1 WINDOW %w AS (ORDER BY %y)
   }] {1 3 6 10 15}
 
   do_execsql_test 1.$tn.3 [string map $MAP {
-    SELECT sum(%alias.%a) OVER %w FROM %t1 %alias WINDOW %w AS (ORDER BY %b)
+    SELECT sum(%alias.%x) OVER %w FROM %t1 %alias WINDOW %w AS (ORDER BY %y)
   }] {1 3 6 10 15}
 
   do_execsql_test 1.$tn.4 [string map $MAP {
-    SELECT sum(%a) %alias FROM %t1
+    SELECT sum(%x) %alias FROM %t1
   }] {15}
 }
 
@@ -112,6 +112,32 @@ do_execsql_test 4.1 {
   SELECT * FROM t4 window, t4;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE TABLE over(x, over);
+  CREATE TABLE window(x, window);
+  INSERT INTO over VALUES(1, 2), (3, 4), (5, 6);
+  INSERT INTO window VALUES(1, 2), (3, 4), (5, 6);
+  SELECT sum(x) over FROM over
+} {9}
+
+do_execsql_test 5.1 {
+  SELECT sum(x) over over FROM over WINDOW over AS ()
+} {9 9 9}
+
+do_execsql_test 5.2 {
+  SELECT sum(over) over over over FROM over over WINDOW over AS (ORDER BY over)
+} {2 6 12}
+
+do_execsql_test 5.3 {
+  SELECT sum(over) over over over FROM over over WINDOW over AS (ORDER BY over);
+} {2 6 12}
+
+do_execsql_test 5.4 {
+  SELECT sum(window) OVER window window FROM window window window window AS (ORDER BY window);
+} {2 6 12}
 
 finish_test
 

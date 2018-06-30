@@ -192,54 +192,76 @@ int sqlite3IsIdChar(u8 c){ return IdChar(c); }
 /*
 ** Return the id of the next token in string (*pz). Before returning, set
 ** (*pz) to point to the byte following the parsed token.
-**
-** This function assumes that any keywords that start with "w" are 
-** actually TK_ID.
 */
-static int windowGetToken(const unsigned char **pz){
-  int ret;
+static int getToken(const unsigned char **pz){
   const unsigned char *z = *pz;
-  if( z[0]=='w' || z[0]=='W' ){
-    do { z++; }while( IdChar(z[0]) );
-    ret = TK_ID;
-  }else{
-    z += sqlite3GetToken(z, &ret);
+  int t;                          /* Token type to return */
+  do {
+    z += sqlite3GetToken(z, &t);
+  }while( t==TK_SPACE );
+  if( t==TK_ID 
+   || t==TK_STRING 
+   || t==TK_JOIN_KW 
+   || t==TK_WINDOW 
+   || t==TK_OVER 
+   || sqlite3ParserFallback(t)==TK_ID 
+  ){
+    t = TK_ID;
   }
   *pz = z;
-  return ret;
+  return t;
 }
-#endif // SQLITE_OMIT_WINDOWFUNC
 
-#ifndef SQLITE_OMIT_WINDOWFUNC
 /*
-** The tokenizer has just parsed the keyword WINDOW. In this case the token
-** may really be the keyword (TK_WINDOW), or may be an identifier (TK_ID).
-** This function determines which it is by inspecting the next two tokens
-** in the input stream. Specifically, the token is TK_WINDOW if the following
-** two tokens are:
+** The following three functions are called immediately after the tokenizer
+** reads the keywords WINDOW, OVER and FILTER, respectively, to determine
+** whether the token should be treated as a keyword or an SQL identifier.
+** This cannot be handled by the usual lemon %fallback method, due to
+** the ambiguity in some constructions. e.g.
 **
-**   * TK_ID, or something else that can be used as a window name, and
-**   * TK_AS.
+**   SELECT sum(x) OVER ...
 **
-** Instead of using sqlite3GetToken() to parse tokens directly, this function
-** uses windowGetToken(). This is to avoid recursion if the input is similar
-** to "window window window window".
+** In the above, "OVER" might be a keyword, or it might be an alias for the 
+** sum(x) expression. If a "%fallback ID OVER" directive were added to 
+** grammar, then SQLite would always treat "OVER" as an alias, making it
+** impossible to call a window-function without a FILTER clause.
+**
+** WINDOW is treated as a keyword if:
+**
+**   * the following token is an identifier, or a keyword that can fallback
+**     to being an identifier, and
+**   * the token after than one is TK_AS.
+**
+** OVER is a keyword if:
+**
+**   * the previous token was TK_RP, and
+**   * the next token is either TK_LP or an identifier.
+**
+** FILTER is a keyword if:
+**
+**   * the previous token was TK_RP, and
+**   * the next token is TK_LP.
 */
 static int analyzeWindowKeyword(const unsigned char *z){
   int t;
-  int ret = TK_WINDOW;
-  while( (t = windowGetToken(&z))==TK_SPACE );
-  if( t!=TK_ID && t!=TK_STRING 
-   && t!=TK_JOIN_KW && sqlite3ParserFallback(t)!=TK_ID 
-  ){
-    ret = TK_ID;
-  }else{
-    while( (t = windowGetToken(&z))==TK_SPACE );
-    if( t!=TK_AS ){
-      ret = TK_ID;
-    }
+  t = getToken(&z);
+  if( t!=TK_ID ) return TK_ID;
+  t = getToken(&z);
+  if( t!=TK_AS ) return TK_ID;
+  return TK_WINDOW;
+}
+static int analyzeOverKeyword(const unsigned char *z, int lastToken){
+  if( lastToken==TK_RP ){
+    int t = getToken(&z);
+    if( t==TK_LP || t==TK_ID ) return TK_OVER;
   }
-  return ret;
+  return TK_ID;
+}
+static int analyzeFilterKeyword(const unsigned char *z, int lastToken){
+  if( lastToken==TK_RP && getToken(&z)==TK_LP ){
+    return TK_FILTER;
+  }
+  return TK_ID;
 }
 #endif // SQLITE_OMIT_WINDOWFUNC
 
@@ -571,7 +593,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     }
 #ifndef SQLITE_OMIT_WINDOWFUNC
     if( tokenType>=TK_WINDOW ){
-      assert( tokenType==TK_SPACE 
+      assert( tokenType==TK_SPACE || tokenType==TK_OVER || tokenType==TK_FILTER
            || tokenType==TK_ILLEGAL || tokenType==TK_WINDOW 
       );
 #else
@@ -599,7 +621,14 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         n = 0;
 #ifndef SQLITE_OMIT_WINDOWFUNC
       }else if( tokenType==TK_WINDOW ){
+        assert( n==6 );
         tokenType = analyzeWindowKeyword((const u8*)&zSql[6]);
+      }else if( tokenType==TK_OVER ){
+        assert( n==4 );
+        tokenType = analyzeOverKeyword((const u8*)&zSql[4], lastTokenParsed);
+      }else if( tokenType==TK_FILTER ){
+        assert( n==6 );
+        tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
 #endif // SQLITE_OMIT_WINDOWFUNC
       }else{
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
