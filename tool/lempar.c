@@ -550,6 +550,7 @@ static YYACTIONTYPE yy_find_shift_action(
 #if YY_SHIFT_MAX+YYWILDCARD>=YY_ACTTAB_COUNT
           j<YY_ACTTAB_COUNT &&
 #endif
+          j<sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) &&
           yy_lookahead[j]==YYWILDCARD && iLookAhead>0
         ){
 #ifndef NDEBUG
