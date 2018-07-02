@@ -256,11 +256,13 @@ static int isLikeOrGlob(
 
     /* The optimization is possible only if (1) the pattern does not begin
     ** with a wildcard and if (2) the non-wildcard prefix does not end with
-    ** an (illegal 0xff) character.  The second condition is necessary so
+    ** an (illegal 0xff) character, or (3) the pattern does not consist of
+    ** a single escape character. The second condition is necessary so
     ** that we can increment the prefix key to find an upper bound for the
-    ** range search. 
-    */
-    if( cnt!=0 && 255!=(u8)z[cnt-1] ){
+    ** range search. The third is because the caller assumes that the pattern
+    ** consists of at least one character after all escapes have been
+    ** removed.  */
+    if( cnt!=0 && 255!=(u8)z[cnt-1] && (cnt>1 || z[0]!=wc[3]) ){
       Expr *pPrefix;
 
       /* A "complete" match if the pattern ends with "*" or "%" */

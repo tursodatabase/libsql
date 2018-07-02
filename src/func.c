@@ -1612,7 +1612,9 @@ static void countInverse(sqlite3_context *ctx, int argc, sqlite3_value **argv){
 #endif
   }
 }   
-#endif
+#else
+# define countInverse 0
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
 ** Routines to implement min() and max() aggregate functions.

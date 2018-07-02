@@ -146,12 +146,30 @@ do_execsql_test 5.5 {
 
 #-------------------------------------------------------------------------
 #
+
 do_execsql_test 6.0 {
+  SELECT LIKE('!', '', '!') x WHERE x;
+} {}
+
+do_execsql_test 6.1 {
   SELECT LIKE("!","","!")""WHeRE"";
-} {1}
-do_catchsql_test 6.1 {
+} {}
+
+do_catchsql_test 6.2 {
   SELECT LIKE("!","","!")""window"";
 } {1 {near "window": syntax error}}
+
+reset_db 
+do_execsql_test 7.0 {
+  CREATE TABLE t1(x TEXT);
+  CREATE INDEX i1 ON t1(x COLLATE nocase);
+  INSERT INTO t1 VALUES('');
+}
+
+do_execsql_test 7.1 {
+  SELECT count(*) FROM t1 WHERE x LIKE '!' ESCAPE '!';
+} {0}
+
 
 finish_test
 
