@@ -1,5 +1,5 @@
-C Fix\sa\scrash\scaused\sby\sa\sLIKE\spattern\sthat\sconsists\sof\sa\ssingle\sescape\ncharacter.
-D 2018-07-02T15:03:50.160
+C Fix\sa\ssegfault\scaused\sby\shaving\sidentical\swindow\sfunctions\sin\sthe\sselect-list\nand\sORDER\sBY\sclause\sof\sa\sSELECT\sstatement.
+D 2018-07-02T17:14:37.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -493,7 +493,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c e966ecc97c3671ff0e96227c8c877b83f2d33ea371ee190bbf1698b36b5605c0
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c f2f5533afd25cef8fa9d01cfd1ae0ef1e62872a9c7080778099b220b223b3816
+F src/resolve.c 1f965d00b4c26b7eb886b90c687069f5db0d05157dbc1ca406fe88e990eac671
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 82aa95aa1cfeadef5ecae1126afff1efca64c49050bbf7116425a8a1d4fc5e6c
 F src/shell.c.in 8578421c5fb2a972461b2a996f7173646e55e0dbd2a2eee30c8f5dc7d3dbadfd
@@ -1626,7 +1626,7 @@ F test/window3.test 87fb18021903fc4d1659b8b2092aea55d611a9606cfa7272686234e5197c
 F test/window4.tcl 7cec7e578aa9f78b7265bff8d552cda17a1d8d89f0449d0e74970a527b8846f5
 F test/window4.test dcd8767869988e0d23d56bc3f8b46ec116de23127b81b5f66fd48d5529072ed1
 F test/window5.test 8187f46597c90b73e8f96659e893353cbda337479cc582f7a488eab351ba08d3
-F test/window6.test 6e817df58449ec92db67a76d4840ad5f4a6662af0d2e22328288523e2ba537e4
+F test/window6.test 6a7df4ab43b3acaf21486d023f0ae7401e189837c4d10a244f06ef5b809965fa
 F test/windowfault.test 97d5fc404308edb579a5a183e294ed874c844ecf01f0a28ba46df3141ebaee1f
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
@@ -1744,7 +1744,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4f3c8a82fd1c5b14d84f2301e34cfc8d52fe4b3a60840c39e895c11f2da529d9
-R 947603f57703a72e98c481cdb1471c29
+P bb9bfc3a12dfb89b1c58f5551cdc89ab7b0fbe03f285f2ed86611786ed02ffd9
+R 869ea010a75065e221583f71c948b611
 U dan
-Z b6e0a0e0cc4dd2ca9103d3009ba7802b
+Z 376f884c9201b63aa371e9665eabb618

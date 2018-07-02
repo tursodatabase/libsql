@@ -1243,6 +1243,17 @@ static int resolveOrderGroupBy(
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
       if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
+#ifndef SQLITE_OMIT_WINDOWFUNC
+        if( pE->pWin ){
+          Window **pp;
+          for(pp=&pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
+            if( *pp==pE->pWin ){
+              *pp = (*pp)->pNextWin;
+              break;
+            }    
+          }
+        }
+#endif
         pItem->u.x.iOrderByCol = j+1;
       }
     }

@@ -170,6 +170,26 @@ do_execsql_test 7.1 {
   SELECT count(*) FROM t1 WHERE x LIKE '!' ESCAPE '!';
 } {0}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 8.0 {
+  CREATE TABLE IF NOT EXISTS "sample" (
+      "id" INTEGER NOT NULL PRIMARY KEY, 
+      "counter" INTEGER NOT NULL, 
+      "value" REAL NOT NULL
+  );
+
+  INSERT INTO "sample" (counter, value) 
+  VALUES (1, 10.), (1, 20.), (2, 1.), (2, 3.), (3, 100.);
+}
+
+do_execsql_test 8.1 {
+  SELECT "counter", "value", RANK() OVER w AS "rank" 
+  FROM "sample"
+  WINDOW w AS (PARTITION BY "counter" ORDER BY "value" DESC) 
+  ORDER BY "counter", RANK() OVER w
+} {
+  1 20.0 1   1 10.0 2   2 3.0 1   2 1.0 2  3 100.0 1
+}
 
 finish_test
-
