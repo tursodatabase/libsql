@@ -1594,17 +1594,21 @@ static void windowCodeRowExprStep(
    || pMWin->eStart==TK_PRECEDING 
    || pMWin->eStart==TK_FOLLOWING 
   ){
-    int addrJumpHere = 0;
+    int lblSkipInverse = sqlite3VdbeMakeLabel(v);;
     if( pMWin->eStart==TK_PRECEDING ){
-      addrJumpHere = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0 , 1);
+      sqlite3VdbeAddOp3(v, OP_IfPos, regStart, lblSkipInverse, 1);
       VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
-    VdbeCoverage(v);
-    windowAggStep(pParse, pMWin, csrStart, 1, regArg, regSize);
-    if( addrJumpHere ){
-      sqlite3VdbeJumpHere(v, addrJumpHere);
+    if( pMWin->eStart==TK_FOLLOWING ){
+      sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+2);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, lblSkipInverse);
+    }else{
+      sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
+      VdbeCoverage(v);
     }
+    windowAggStep(pParse, pMWin, csrStart, 1, regArg, regSize);
+    sqlite3VdbeResolveLabel(v, lblSkipInverse);
   }
   if( pMWin->eEnd==TK_FOLLOWING ){
     sqlite3VdbeJumpHere(v, addrIfPos1);

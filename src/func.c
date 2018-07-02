@@ -1572,6 +1572,9 @@ static void totalFinalize(sqlite3_context *context){
 typedef struct CountCtx CountCtx;
 struct CountCtx {
   i64 n;
+#ifdef SQLITE_DEBUG
+  int bInverse;                   /* True if xInverse() ever called */
+#endif
 };
 
 /*
@@ -1589,7 +1592,7 @@ static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   ** sure it still operates correctly, verify that its count agrees with our 
   ** internal count when using count(*) and when the total count can be
   ** expressed as a 32-bit integer. */
-  assert( argc==1 || p==0 || p->n>0x7fffffff
+  assert( argc==1 || p==0 || p->n>0x7fffffff || p->bInverse
           || p->n==sqlite3_aggregate_count(context) );
 #endif
 }   
@@ -1598,6 +1601,18 @@ static void countFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   sqlite3_result_int64(context, p ? p->n : 0);
 }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+static void countInverse(sqlite3_context *ctx, int argc, sqlite3_value **argv){
+  CountCtx *p;
+  p = sqlite3_aggregate_context(ctx, sizeof(*p));
+  if( (argc==0 || SQLITE_NULL!=sqlite3_value_type(argv[0])) && p ){
+    p->n--;
+#ifdef SQLITE_DEBUG
+    p->bInverse = 1;
+#endif
+  }
+}   
+#endif
 
 /*
 ** Routines to implement min() and max() aggregate functions.
@@ -1943,8 +1958,10 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(sum,   1,0,0, sumStep, sumFinalize, sumFinalize, sumInverse, 0),
     WAGGREGATE(total, 1,0,0, sumStep,totalFinalize,totalFinalize,sumInverse, 0),
     WAGGREGATE(avg,   1,0,0, sumStep, avgFinalize, avgFinalize, sumInverse, 0),
-    AGGREGATE2(count, 0,0,0, countStep, countFinalize, SQLITE_FUNC_COUNT  ),
-    WAGGREGATE(count, 1,0,0, countStep, countFinalize, 0, 0, 0 ),
+    WAGGREGATE(count, 0,0,0, countStep, 
+        countFinalize, countFinalize, countInverse, SQLITE_FUNC_COUNT  ),
+    WAGGREGATE(count, 1,0,0, countStep, 
+        countFinalize, countFinalize, countInverse, 0  ),
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep, 
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep, 

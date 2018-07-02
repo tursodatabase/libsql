@@ -82,6 +82,16 @@ do_execsql_test 2.1 {
   SELECT sumint(a) OVER (ORDER BY rowid ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t1 ORDER BY rowid;
 } {10 11 12 8 10 5}
 
+test_override_sum db
+do_catchsql_test 3.0 {
+  SELECT sum(a) OVER 
+  (ORDER BY b ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) 
+  FROM t1;
+} {1 {sum() may not be used as a window function}}
+do_execsql_test 3.1 {
+  SELECT sum(a) FROM t1;
+} {21}
+
 
 finish_test
 

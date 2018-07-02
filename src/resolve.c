@@ -758,7 +758,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      if( is_agg==0 && pExpr->pWin ){
+      assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
+          || (pDef->xValue==0 && pDef->xInverse==0)
+          || (pDef->xValue && pDef->xInverse && pDef->xSFunc && pDef->xFinalize)
+      );
+      if( pDef && pDef->xValue==0 && pExpr->pWin ){
         sqlite3ErrorMsg(pParse, 
             "%.*s() may not be used as a window function", nId, zId
         );

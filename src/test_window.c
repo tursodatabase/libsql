@@ -302,6 +302,32 @@ static int SQLITE_TCLAPI test_create_sumint(
   return TCL_OK;
 }
 
+static int SQLITE_TCLAPI test_override_sum(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  rc = sqlite3_create_function(db, "sum", -1, SQLITE_UTF8, 0,
+      0, sumintStep, sumintFinal
+  );
+
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 int Sqlitetest_window_Init(Tcl_Interp *interp){
   static struct {
      char *zName;
@@ -311,6 +337,7 @@ int Sqlitetest_window_Init(Tcl_Interp *interp){
      { "sqlite3_create_window_function", test_create_window, 0 },
      { "test_create_window_function_misuse", test_create_window_misuse, 0 },
      { "test_create_sumint", test_create_sumint, 0 },
+     { "test_override_sum", test_override_sum, 0 },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

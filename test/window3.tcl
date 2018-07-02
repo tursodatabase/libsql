@@ -308,24 +308,29 @@ foreach {tn window} {
   "
 
   execsql_test 1.$tn.15.1 "
-    SELECT string_agg(CAST(b AS TEXT), '.') 
-    FILTER (WHERE a%2=0) OVER (ORDER BY a $window) FROM t2
+    SELECT count(*) OVER win, string_agg(CAST(b AS TEXT), '.') 
+    FILTER (WHERE a%2=0) OVER win FROM t2
+    WINDOW win AS (ORDER BY a $window)
   "
 
   execsql_test 1.$tn.15.2 "
-    SELECT string_agg(CAST(b AS TEXT), '.') 
-    FILTER (WHERE 0=1) OVER (ORDER BY a $window) FROM t2
+    SELECT count(*) OVER win, string_agg(CAST(b AS TEXT), '.') 
+    FILTER (WHERE 0=1) OVER win FROM t2
+    WINDOW win AS (ORDER BY a $window)
   "
 
   execsql_test 1.$tn.15.3 "
-    SELECT string_agg(CAST(b AS TEXT), '.') 
-    FILTER (WHERE 1=0) OVER (PARTITION BY (a%10) ORDER BY a $window) FROM t2
+    SELECT count(*) OVER win, string_agg(CAST(b AS TEXT), '.') 
+    FILTER (WHERE 1=0) OVER win FROM t2
+    WINDOW win AS (PARTITION BY (a%10) ORDER BY a $window)
   "
 
   execsql_test 1.$tn.15.4 "
-    SELECT string_agg(CAST(b AS TEXT), '.') 
-    FILTER (WHERE a%2=0) OVER (PARTITION BY (a%10) ORDER BY a $window) FROM t2
+    SELECT count(*) OVER win, string_agg(CAST(b AS TEXT), '.') 
+    FILTER (WHERE a%2=0) OVER win FROM t2
+    WINDOW win AS (PARTITION BY (a%10) ORDER BY a $window)
   "
+
 }
 
 finish_test

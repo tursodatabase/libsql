@@ -139,5 +139,19 @@ do_execsql_test 5.4 {
   SELECT sum(window) OVER window window FROM window window window window AS (ORDER BY window);
 } {2 6 12}
 
+do_execsql_test 5.5 {
+  SELECT count(*) OVER win FROM over
+  WINDOW win AS (ORDER BY x ROWS BETWEEN +2 FOLLOWING AND +3 FOLLOWING)
+} {1 0 0}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.0 {
+  SELECT LIKE("!","","!")""WHeRE"";
+} {1}
+do_catchsql_test 6.1 {
+  SELECT LIKE("!","","!")""window"";
+} {1 {near "window": syntax error}}
+
 finish_test
 
