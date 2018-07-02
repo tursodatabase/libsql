@@ -1530,7 +1530,7 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
         p->overflow = 1;
       }
     }else{
-      p->rSum += sqlite3_value_double(argv[0]);
+      p->rSum -= sqlite3_value_double(argv[0]);
       p->approx = 1;
     }
   }

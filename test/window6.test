@@ -192,4 +192,22 @@ do_execsql_test 8.1 {
   1 20.0 1   1 10.0 2   2 3.0 1   2 1.0 2  3 100.0 1
 }
 
+do_execsql_test 8.2 {
+  SELECT "counter", "value", SUM("value") OVER 
+  (ORDER BY "id" ROWS 2 PRECEDING) 
+    FROM "sample" 
+  ORDER BY "id"
+} {
+  1 10.0 10.0   1 20.0 30.0   2 1.0 31.0   2 3.0 24.0   3 100.0 104.0
+}
+
+do_execsql_test 8.3 {
+  SELECT SUM("value") OVER 
+  (ORDER BY "id" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) 
+    FROM "sample" 
+  ORDER BY "id"
+} {
+  10.0   30.0   31.0   24.0   104.0
+}
+
 finish_test
