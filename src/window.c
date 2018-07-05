@@ -988,7 +988,7 @@ static int windowArgCount(Window *pWin){
 ** the first register in an array of registers guaranteed to be large
 ** enough to hold the array of arguments for each function. In this case
 ** the arguments are extracted from the current row of csr into the
-** array of registers before invoking OP_AggStep.
+** array of registers before invoking OP_AggStep or OP_AggInverse
 **
 ** Or, if csr is less than zero, then the array of registers at reg is
 ** already populated with all columns from the current row of the sub-query.
@@ -1076,7 +1076,8 @@ static void windowAggStep(
         pColl = sqlite3ExprNNCollSeq(pParse, pWin->pOwner->x.pList->a[0].pExpr);
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0,0,0, (const char*)pColl, P4_COLLSEQ);
       }
-      sqlite3VdbeAddOp3(v, OP_AggStep0, bInverse, regArg, pWin->regAccum);
+      sqlite3VdbeAddOp3(v, bInverse? OP_AggInverse : OP_AggStep, 
+                        bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nArg);
       if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
@@ -1108,16 +1109,15 @@ static void windowAggFinal(Parse *pParse, Window *pMWin, int bFinal){
       }
     }else if( pWin->regApp ){
     }else{
-      if( bFinal==0 ){
-        sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
-      }
-      sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, windowArgCount(pWin));
-      sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
       if( bFinal ){
+        sqlite3VdbeAddOp2(v, OP_AggFinal, pWin->regAccum, windowArgCount(pWin));
+        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
         sqlite3VdbeAddOp2(v, OP_Copy, pWin->regAccum, pWin->regResult);
         sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
       }else{
-        sqlite3VdbeChangeP3(v, -1, pWin->regResult);
+        sqlite3VdbeAddOp3(v, OP_AggValue, pWin->regAccum, windowArgCount(pWin),
+                             pWin->regResult);
+        sqlite3VdbeAppendP4(v, pWin->pFunc, P4_FUNCDEF);
       }
     }
   }
@@ -1273,7 +1273,7 @@ static void windowReturnOneRow(
 **     regCtr--;
 **     windowReturnOneRow()
 **     if( bInverse ){
-**       AggStep (xInverse)
+**       AggInverse
 **     }
 **     Next (Window.iEphCsr)
 **   }
@@ -1367,7 +1367,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
 **         Gosub addrGosub
 **         Next(csr)                // if EOF goto flush_partition_done
 **         if( (regStart--)<=0 ){
-**           AggStep (csrStart, xInverse)
+**           AggInverse (csrStart)
 **           Next(csrStart)
 **         }
 **       }
@@ -1395,7 +1395,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
 **       Gosub addrGosub
 **       Next(csr)                     // if EOF goto flush_partition_done
 **       if( (regStart--)<=0 ){
-**         AggStep (csrStart, xInverse)
+**         AggInverse (csrStart)
 **         Next(csrStart)
 **       }
 **     }
@@ -1418,7 +1418,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
 **         if( new peer ) break;
 **       }
 **       while( (regPeer--)>0 ){
-**         AggStep (csrStart, xInverse)
+**         AggInverse (csrStart)
 **         Next(csrStart)
 **       }
 **     }
@@ -1435,7 +1435,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
 **         Gosub addrGosub
 **         Next(csr)              // if EOF goto flush_partition_done
 **       }
-**       AggStep (csrStart, xInverse)
+**       AggInverse (csrStart)
 **       Next (csrStart)
 **     }
 **
@@ -1451,7 +1451,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
 **     Gosub addrGosub
 **     Next(csr)                  // if EOF goto flush_partition_done
 **     if( (regStart--)<=0 ){
-**       AggStep (csr2, xInverse)
+**       AggInverse (csr2)
 **       Next (csr2)
 **     }
 **
@@ -1682,7 +1682,7 @@ static void windowCodeRowExprStep(
 **
 **         for(i=0; i<ctr; i++){
 **           Gosub addrGosub
-**           AggStep (xInverse, iEphCsr)
+**           AggInverse (iEphCsr)
 **           Next iEphCsr
 **         }
 **
@@ -1715,7 +1715,7 @@ static void windowCodeRowExprStep(
 **         AggFinal (xValue)
 **         for(i=0; i<ctr; i++){
 **           Gosub addrGosub
-**           AggStep (xInverse, iEphCsr)
+**           AggInverse (iEphCsr)
 **           Next iEphCsr
 **         }
 **         Integer ctr 0

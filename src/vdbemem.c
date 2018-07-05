@@ -435,6 +435,7 @@ int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
   memset(&t, 0, sizeof(t));
   t.flags = MEM_Null;
   t.db = pAccum->db;
+  sqlite3VdbeMemSetNull(pOut);
   ctx.pOut = pOut;
   ctx.pMem = pAccum;
   ctx.pFunc = pFunc;

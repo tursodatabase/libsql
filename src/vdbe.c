@@ -6288,18 +6288,29 @@ case OP_DecrJumpZero: {      /* jump, in1 */
 }
 
 
-/* Opcode: AggStep0 P1 P2 P3 P4 P5
+/* Opcode: AggStep * P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
-** Execute the xStep (if P1==0) or xInverse (if P1!=0) function for an
-** aggregate.  The function has P5 arguments.  P4 is a pointer to the 
+** Execute the xStep function for an aggregate.
+** The function has P5 arguments.  P4 is a pointer to the 
 ** FuncDef structure that specifies the function.  Register P3 is the
 ** accumulator.
 **
 ** The P5 arguments are taken from register P2 and its
 ** successors.
 */
-/* Opcode: AggStep P1 P2 P3 P4 P5
+/* Opcode: AggInverse * P2 P3 P4 P5
+** Synopsis: accum=r[P3] inverse(r[P2@P5])
+**
+** Execute the xInverse function for an aggregate.
+** The function has P5 arguments.  P4 is a pointer to the 
+** FuncDef structure that specifies the function.  Register P3 is the
+** accumulator.
+**
+** The P5 arguments are taken from register P2 and its
+** successors.
+*/
+/* Opcode: AggStep1 P1 P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
 ** Execute the xStep (if P1==0) or xInverse (if P1!=0) function for an
@@ -6316,7 +6327,8 @@ case OP_DecrJumpZero: {      /* jump, in1 */
 ** sqlite3_context only happens once, instead of on each call to the
 ** step function.
 */
-case OP_AggStep0: {
+case OP_AggInverse:
+case OP_AggStep: {
   int n;
   sqlite3_context *pCtx;
 
@@ -6339,10 +6351,11 @@ case OP_AggStep0: {
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
-  pOp->opcode = OP_AggStep;
+  assert( pOp->p1==(pOp->opcode==OP_AggInverse) );
+  pOp->opcode = OP_AggStep1;
   /* Fall through into OP_AggStep */
 }
-case OP_AggStep: {
+case OP_AggStep1: {
   int i;
   sqlite3_context *pCtx;
   Mem *pMem;
@@ -6399,13 +6412,12 @@ case OP_AggStep: {
   break;
 }
 
-/* Opcode: AggFinal P1 P2 P3 P4 *
+/* Opcode: AggFinal P1 P2 * P4 *
 ** Synopsis: accum=r[P1] N=P2
 **
 ** P1 is the memory location that is the accumulator for an aggregate
-** or window function. If P3 is zero, then execute the finalizer function 
-** for an aggregate and store the result in P1. Or, if P3 is non-zero,
-** invoke the xValue() function and store the result in register P3.
+** or window function.  Execute the finalizer function 
+** for an aggregate and store the result in P1.
 **
 ** P2 is the number of arguments that the step function takes and
 ** P4 is a pointer to the FuncDef for this function.  The P2
@@ -6414,9 +6426,23 @@ case OP_AggStep: {
 ** P4 argument is only needed for the case where
 ** the step function was not previously called.
 */
+/* Opcode: AggValue * P2 P3 P4 *
+** Synopsis: r[P3]=value N=P2
+**
+** Invoke the xValue() function and store the result in register P3.
+**
+** P2 is the number of arguments that the step function takes and
+** P4 is a pointer to the FuncDef for this function.  The P2
+** argument is not used by this opcode.  It is only there to disambiguate
+** functions that can take varying numbers of arguments.  The
+** P4 argument is only needed for the case where
+** the step function was not previously called.
+*/
+case OP_AggValue:
 case OP_AggFinal: {
   Mem *pMem;
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
+  assert( pOp->p3==0 || pOp->opcode==OP_AggValue );
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -6425,7 +6451,9 @@ case OP_AggFinal: {
     pMem = &aMem[pOp->p3];
   }else
 #endif
-  rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  {
+    rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  }
   
   if( rc ){
     sqlite3VdbeError(p, "%s", sqlite3_value_text(pMem));
