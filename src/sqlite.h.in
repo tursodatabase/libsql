@@ -2122,6 +2122,12 @@ struct sqlite3_mem_methods {
 ** with no schema and no content. The following process works even for
 ** a badly corrupted database file:
 ** <ol>
+** <li> If the database connection is newly opened, make sure it has read the
+**      database schema by preparing then discarding some query against the
+**      database, or calling sqlite3_table_column_metadata(), ignoring any
+**      errors.  This step is only necessary if the application desires to keep
+**      the database in WAL mode after the reset if it was in WAL mode before
+**      the reset.  
 ** <li> sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
 ** <li> [sqlite3_exec](db, "[VACUUM]", 0, 0, 0);
 ** <li> sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
