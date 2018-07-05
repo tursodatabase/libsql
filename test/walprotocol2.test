@@ -72,7 +72,7 @@ do_catchsql_test 2.2 {
 } {1 {database is locked}}
 do_test 2.3 {
   sqlite3_extended_errcode db
-} {SQLITE_BUSY_SNAPSHOT}
+} {SQLITE_BUSY}
 
 #---------------------------------------------------------------
 # Same again, but with a busy-handler. This time, following the

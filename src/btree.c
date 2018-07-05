@@ -3424,6 +3424,14 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
         }
       }
     }
+  }else if( rc==SQLITE_BUSY_SNAPSHOT && pBt->inTransaction==TRANS_NONE ){
+    /* Even if there was no transaction opened when this function was
+    ** called, a race condition may cause an SQLITE_BUSY_SNAPSHOT error
+    ** in wal mode (since the code above opens a read-transaction and then
+    ** upgrades it to a write-transaction - it does not take the write lock
+    ** atomically). In this case change the error code to SQLITE_BUSY.  */
+    assert( wrFlag );
+    rc = SQLITE_BUSY;
   }
 
 
