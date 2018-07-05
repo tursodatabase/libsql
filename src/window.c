@@ -837,7 +837,15 @@ Window *sqlite3WindowAlloc(
   int eStart, Expr *pStart,
   int eEnd, Expr *pEnd
 ){
-  Window *pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  Window *pWin = 0;
+
+  if( eType==TK_RANGE && (pStart || pEnd) ){
+    sqlite3ErrorMsg(pParse, "RANGE %s is only supported with UNBOUNDED",
+        (pStart ? "PRECEDING" : "FOLLOWING")
+    );
+  }else{
+    pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  }
 
   if( pWin ){
     assert( eType );

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sxInverse\smethod\sof\swindow-function\sgroup_concat(1).
-D 2018-07-05T18:19:29.792
+C Return\san\serror\sif\sa\s"RANGE"\swindow-frame\suses\s"<expr>\sPRECEDING"\sor\s"<expr>\nFOLLOWING".
+D 2018-07-05T18:34:53.220
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -584,7 +584,7 @@ F src/where.c 0bcbf9e191ca07f9ea2008aa80e70ded46bcdffd26560c83397da501f00aece6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
-F src/window.c 7df0313f9b21c904e51226b24c0203aa26be502202f469143bacc5e74ebc0d38
+F src/window.c 00df6e1bb85b5f4d07259303316277e8725edaaa01f156a395ce09a2f253656c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1627,7 +1627,7 @@ F test/window3.test 87fb18021903fc4d1659b8b2092aea55d611a9606cfa7272686234e5197c
 F test/window4.tcl 7cec7e578aa9f78b7265bff8d552cda17a1d8d89f0449d0e74970a527b8846f5
 F test/window4.test dcd8767869988e0d23d56bc3f8b46ec116de23127b81b5f66fd48d5529072ed1
 F test/window5.test 8187f46597c90b73e8f96659e893353cbda337479cc582f7a488eab351ba08d3
-F test/window6.test 378d6acda7c1a459ca28a364a894cfda8541db65333f4a9a8a34535ef30cdd63
+F test/window6.test 601baeb467fb2e877b3ad89f87a098bf9977a6d197e14913b93cdb509de2d7cd
 F test/windowfault.test 97d5fc404308edb579a5a183e294ed874c844ecf01f0a28ba46df3141ebaee1f
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11763cac33fa809bcf0294d1a381394fcf860b020b51fff81217ee709ba99272
-R 684aa1b485b1ad0a8c1edc1d870381d5
+P 73391283101288251fe5d030ba12bcdabe8a781d41086afe3564c58c05d0fd5c
+R e2d8bd888d8359c89112b96b5805f3f9
 U dan
-Z 3c7d5920ae853aa57c78a77e8dae9dd5
+Z 61151c44890df0915ca49d8561fa462d
