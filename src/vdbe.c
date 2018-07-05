@@ -6411,7 +6411,7 @@ case OP_AggStep: {
 ** P4 is a pointer to the FuncDef for this function.  The P2
 ** argument is not used by this opcode.  It is only there to disambiguate
 ** functions that can take varying numbers of arguments.  The
-** P4 argument is only needed for the degenerate case where
+** P4 argument is only needed for the case where
 ** the step function was not previously called.
 */
 case OP_AggFinal: {

@@ -1802,7 +1802,7 @@ static void jsonArrayStep(
     jsonAppendValue(pStr, argv[0]);
   }
 }
-static void jsonArrayFinal(sqlite3_context *ctx){
+static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
@@ -1811,16 +1811,60 @@ static void jsonArrayFinal(sqlite3_context *ctx){
     if( pStr->bErr ){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
-    }else{
+    }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
       pStr->bStatic = 1;
+    }else{
+      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed, SQLITE_TRANSIENT);
+      pStr->nUsed--;
     }
   }else{
     sqlite3_result_text(ctx, "[]", 2, SQLITE_STATIC);
   }
   sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
+static void jsonArrayValue(sqlite3_context *ctx){
+  jsonArrayCompute(ctx, 0);
+}
+static void jsonArrayFinal(sqlite3_context *ctx){
+  jsonArrayCompute(ctx, 1);
+}
+
+#ifndef SQLITE_OMIT_WINDOWFUNC
+/*
+** This method works for both json_group_array() and json_group_object().
+** It works by removing the first element of the group by searching forward
+** to the first comma (",") that is not within a string and deleting all
+** text through that comma.
+*/
+static void jsonGroupInverse(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  int i;
+  int inStr = 0;
+  char *z;
+  JsonString *pStr;
+  pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
+  if( !pStr ) return;
+  z = pStr->zBuf;
+  for(i=1; z[i]!=',' || inStr; i++){
+    assert( i<pStr->nUsed );
+    if( z[i]=='"' ){
+      inStr = !inStr;
+    }else if( z[i]=='\\' ){
+      i++;
+    }
+  }
+  pStr->nUsed -= i;      
+  memmove(&z[1], &z[i+1], pStr->nUsed-1);
+}
+#else
+# define jsonGroupInverse 0
+#endif
+
 
 /*
 ** json_group_obj(NAME,VALUE)
@@ -1852,7 +1896,7 @@ static void jsonObjectStep(
     jsonAppendValue(pStr, argv[1]);
   }
 }
-static void jsonObjectFinal(sqlite3_context *ctx){
+static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
@@ -1860,16 +1904,26 @@ static void jsonObjectFinal(sqlite3_context *ctx){
     if( pStr->bErr ){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
-    }else{
+    }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
       pStr->bStatic = 1;
+    }else{
+      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed, SQLITE_TRANSIENT);
+      pStr->nUsed--;
     }
   }else{
     sqlite3_result_text(ctx, "{}", 2, SQLITE_STATIC);
   }
   sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
+static void jsonObjectValue(sqlite3_context *ctx){
+  jsonObjectCompute(ctx, 0);
+}
+static void jsonObjectFinal(sqlite3_context *ctx){
+  jsonObjectCompute(ctx, 1);
+}
+
 
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2377,9 +2431,12 @@ int sqlite3Json1Init(sqlite3 *db){
      int nArg;
      void (*xStep)(sqlite3_context*,int,sqlite3_value**);
      void (*xFinal)(sqlite3_context*);
+     void (*xValue)(sqlite3_context*);
   } aAgg[] = {
-    { "json_group_array",     1,   jsonArrayStep,   jsonArrayFinal  },
-    { "json_group_object",    2,   jsonObjectStep,  jsonObjectFinal },
+    { "json_group_array",     1,
+      jsonArrayStep,   jsonArrayFinal,  jsonArrayValue  },
+    { "json_group_object",    2,
+      jsonObjectStep,  jsonObjectFinal, jsonObjectValue },
   };
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   static const struct {
@@ -2397,9 +2454,10 @@ int sqlite3Json1Init(sqlite3 *db){
                                  aFunc[i].xFunc, 0, 0);
   }
   for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aAgg[i].zName, aAgg[i].nArg,
+    rc = sqlite3_create_window_function(db, aAgg[i].zName, aAgg[i].nArg,
                                  SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-                                 0, aAgg[i].xStep, aAgg[i].xFinal);
+                                 aAgg[i].xStep, aAgg[i].xFinal,
+                                 aAgg[i].xValue, jsonGroupInverse, 0);
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   for(i=0; i<sizeof(aMod)/sizeof(aMod[0]) && rc==SQLITE_OK; i++){

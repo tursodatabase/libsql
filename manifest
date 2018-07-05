@@ -1,5 +1,5 @@
-C Return\san\serror\sif\sa\s"RANGE"\swindow-frame\suses\s"<expr>\sPRECEDING"\sor\s"<expr>\nFOLLOWING".
-D 2018-07-05T18:34:53.220
+C Get\sthe\sjson_group_array()\sand\sjson_group_object()\sSQL\sfunctions\sworking\nas\swindow\sfunctions.
+D 2018-07-05T20:05:29.904
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -281,7 +281,7 @@ F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 02f5f0d9c131df79f4ee168d2b426f0f0d273b7771fc0bb5293c4e7692d9a2ee
+F ext/misc/json1.c 8dca18a64560481f566fe03e26b60dfc95b665c709be86934d261ac21d6f1c2f
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -566,7 +566,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c 37b942ccdd224dd51bd80312b8d236f27c7c728e76c3f425c50e9d8ecff3b7b4
+F src/vdbe.c ff748307932fac5a5a983a20a4d8805aff7b0f310ca58cff4051df96d34a4dc8
 F src/vdbe.h 847735b3e083285aa225d2bf1fe97107a0a2b8942c80d643cdb764990705820d
 F src/vdbeInt.h 6b5cbd338dc9aaad343fb11b455e47463b0474d9f79710f50e647158941146e0
 F src/vdbeapi.c e35f813312b0f6e8e2835b357f121e0d1da6d3013bac3e367fe4efd518e7a2ec
@@ -1028,7 +1028,7 @@ F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd7
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test b40a9f5395d8e669b0bc3eb550ad2ae9e5ada01fbce23c446c2a30a305a6d575
 F test/json102.test eeb54efa221e50b74a2d6fb9259963b48d7414dca3ce2fdfdeed45cb28487bc1
-F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
+F test/json103.test aff6b7a4c17d5a20b487a7bc1a274bfdc63b829413bdfb83bedac42ec7f67e3b
 F test/json104.test 877d5845f6303899b7889ea5dd1bea99076e3100574d5c536082245c5805dcaa
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 94da54bb66aae7a54e47cf7e4ea4acecc0f217560f79ad3abfcc0361d6d557ba
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73391283101288251fe5d030ba12bcdabe8a781d41086afe3564c58c05d0fd5c
-R e2d8bd888d8359c89112b96b5805f3f9
-U dan
-Z 61151c44890df0915ca49d8561fa462d
+P 786c87ba4150509e141baab32c51e64bbd3ce323735e0f47d65ed54d14215bc4
+R d772fd50a83277dafc7b2d62ea89dd92
+U drh
+Z fcfb43d365d0b34e61224fdf77a12270
