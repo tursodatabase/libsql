@@ -1,5 +1,5 @@
-C Test\sthat\sa\srace\scondition\scan\scause\sa\s"BEGIN\sEXCLUSIVE"\sto\sreturn\nSQLITE_BUSY_SNAPSHOT\sin\swal\smode.
-D 2018-07-03T20:17:27.649
+C In\swal\smode,\sif\sa\s"BEGIN\sEXCLUSIVE"\scommand\s(or\sany\sother\scommand\sthat\nupgrades\sfrom\sno\stransaction\sdirectly\sto\sa\swrite\stransaction)\shits\san\nSQLITE_BUSY_SNAPSHOT\serror,\schange\sthe\serror\scode\sto\sSQLITE_BUSY\sto\sindicate\nto\sthe\scaller\sthat\sthe\scondition\smay\sbe\stransient.
+D 2018-07-05T17:16:55.340
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -436,7 +436,7 @@ F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c bb23e5470ec0c9b9ae8e17c86cb686bc4112642d8f457bd42b3b3727d5ef78be
+F src/btree.c 0c27fb9b4bfd610261e2ac8956090fbf04b607b0d12bc0f1d77b6c5bf3ab3c7d
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 3b3bfa88800739e1f11313dcecfba5ef8e4757b6c929cdf7de9fcfc01002b81f
@@ -1583,7 +1583,7 @@ F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
-F test/walprotocol2.test ad92f036102f722b2d7f7ca7c1faf72d75f501a50c80a92d7fd87f8b1da6608c
+F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
@@ -1745,7 +1745,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6563647382634588ebe5c6a3c35c65a321dc1b3732c809d48ce46759b9dd80f
-R 85d71bbec8ad4dcf2f8e9507c907b291
+P 5a12db75d1da65daa92413a6b5892309e9d9479bb3610764e1015abe5bf28dbe e3357728472d5e57db6d7eef0ce008bdee071b5b07b60e242f383440eebe85bd
+R 033b09a0f95c9e18f2482abfb8812158
+T +closed e3357728472d5e57db6d7eef0ce008bdee071b5b07b60e242f383440eebe85bd
 U dan
-Z 38cb85199c9d8fc14bf46fba2bfb3f49
+Z e957a80e23c286301ec669959e08c13c

@@ -3375,6 +3375,11 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
         rc = sqlite3PagerBegin(pBt->pPager,wrflag>1,sqlite3TempInMemory(p->db));
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
+        }else if( rc==SQLITE_BUSY_SNAPSHOT && pBt->inTransaction==TRANS_NONE ){
+          /* if there was no transaction opened when this function was
+          ** called and SQLITE_BUSY_SNAPSHOT is returned, change the error
+          ** code to SQLITE_BUSY. */
+          rc = SQLITE_BUSY;
         }
       }
     }
@@ -3425,7 +3430,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
       }
     }
   }
-
 
 trans_begun:
   if( rc==SQLITE_OK ){
