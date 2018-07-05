@@ -1728,6 +1728,8 @@ static void groupConcatInverse(
     n = sqlite3_value_bytes(argv[0]);
     if( argc==2 ){
       n += sqlite3_value_bytes(argv[1]);
+    }else{
+      n++;
     }
     if( n>=pAccum->nChar ){
       pAccum->nChar = 0;
