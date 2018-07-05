@@ -1,5 +1,5 @@
-C In\swal\smode,\sif\sa\s"BEGIN\sEXCLUSIVE"\scommand\s(or\sany\sother\scommand\sthat\nupgrades\sfrom\sno\stransaction\sdirectly\sto\sa\swrite\stransaction)\shits\san\nSQLITE_BUSY_SNAPSHOT\serror,\schange\sthe\serror\scode\sto\sSQLITE_BUSY\sto\sindicate\nto\sthe\scaller\sthat\sthe\scondition\smay\sbe\stransient.
-D 2018-07-05T15:46:55.944
+C Fix\sa\stypo\sinside\san\sassert()\sstatement\sintroduced\sby\sthe\sprevious\scommit.
+D 2018-07-05T17:03:43.644
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -436,7 +436,7 @@ F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c c2b55e3a31ad28c380e71053210fb3b28cc9c8d80b1a0aa2cb8566594f01e154
+F src/btree.c 757b29862c2fa6db149cf92117a6d22591bcad4b5ff1388fd480e479852a9694
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 3b3bfa88800739e1f11313dcecfba5ef8e4757b6c929cdf7de9fcfc01002b81f
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a12db75d1da65daa92413a6b5892309e9d9479bb3610764e1015abe5bf28dbe
-R 00aacb5685c6162d17656913a07b3ca6
+P 221ff63e7902226ebf728bb7442727420636831163708f360724506ce9487ab6
+R 6292256afd58b3bdc21661c68c4c01f5
 U dan
-Z 4f4ad7f92fd320b45a2f26133826954c
+Z 7030dc2937cfaf6aca4912e5a05c04a5

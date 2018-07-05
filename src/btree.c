@@ -3430,7 +3430,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     ** in wal mode (since the code above opens a read-transaction and then
     ** upgrades it to a write-transaction - it does not take the write lock
     ** atomically). In this case change the error code to SQLITE_BUSY.  */
-    assert( wrFlag );
+    assert( wrflag );
     rc = SQLITE_BUSY;
   }
 
