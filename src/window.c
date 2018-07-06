@@ -827,18 +827,52 @@ void sqlite3WindowListDelete(sqlite3 *db, Window *p){
 }
 
 /*
-** Allocate and return a new Window object.
+** The argument expression is an PRECEDING or FOLLOWING offset.  The
+** value should be a non-negative integer.  If the value is not a
+** constant, change it to NULL.  The fact that it is then a non-negative
+** integer will be caught later.  But it is important not to leave
+** variable values in the expression tree.
+*/
+static Expr *sqlite3WindowOffsetExpr(Parse *pParse, Expr *pExpr){
+  if( 0==sqlite3ExprIsConstant(pExpr) ){
+    sqlite3ExprDelete(pParse->db, pExpr);
+    pExpr = sqlite3ExprAlloc(pParse->db, TK_NULL, 0, 0);
+  }
+  return pExpr;
+}
+
+/*
+** Allocate and return a new Window object describing a Window Definition.
 */
 Window *sqlite3WindowAlloc(
-  Parse *pParse, 
-  int eType,
-  int eStart, Expr *pStart,
-  int eEnd, Expr *pEnd
+  Parse *pParse,    /* Parsing context */
+  int eType,        /* Frame type. TK_RANGE or TK_ROWS */
+  int eStart,       /* Start type: CURRENT, PRECEDING, FOLLOWING, UNBOUNDED */
+  Expr *pStart,     /* Start window size if TK_PRECEDING or FOLLOWING */
+  int eEnd,         /* End type: CURRENT, FOLLOWING, TK_UNBOUNDED, PRECEDING */
+  Expr *pEnd        /* End window size if TK_FOLLOWING or PRECEDING */
 ){
   Window *pWin = 0;
 
+  /* Parser assures the following: */
+  assert( eType==TK_RANGE || eType==TK_ROWS );
+  assert( eStart==TK_CURRENT || eStart==TK_PRECEDING
+           || eStart==TK_UNBOUNDED || eStart==TK_FOLLOWING );
+  assert( eEnd==TK_CURRENT || eEnd==TK_FOLLOWING
+           || eEnd==TK_UNBOUNDED || eEnd==TK_PRECEDING );
+  assert( (eStart==TK_PRECEDING || eStart==TK_FOLLOWING)==(pStart!=0) );
+  assert( (eEnd==TK_FOLLOWING || eEnd==TK_PRECEDING)==(pEnd!=0) );
+
+
   /* If a frame is declared "RANGE" (not "ROWS"), then it may not use
-  ** either "<expr> PRECEDING" or "<expr> FOLLOWING". Additionally, the
+  ** either "<expr> PRECEDING" or "<expr> FOLLOWING".
+  */
+  if( eType==TK_RANGE && (pStart!=0 || pEnd!=0) ){
+    sqlite3ErrorMsg(pParse, "RANGE must use only UNBOUNDED or CURRENT ROW");
+    goto windowAllocErr;
+  }
+
+  /* Additionally, the
   ** starting boundary type may not occur earlier in the following list than
   ** the ending boundary type:
   **
@@ -852,30 +886,26 @@ Window *sqlite3WindowAlloc(
   ** boundary, and than "UNBOUNDED FOLLOWING" cannot be used as a starting
   ** frame boundary.
   */
-  if( eType==TK_RANGE && (pStart || pEnd) 
-   || (eStart==TK_CURRENT && eEnd==TK_PRECEDING)
+  if( (eStart==TK_CURRENT && eEnd==TK_PRECEDING)
    || (eStart==TK_FOLLOWING && (eEnd==TK_PRECEDING || eEnd==TK_CURRENT))
-   || (0==sqlite3ExprIsConstantOrFunction(pStart, 0))
-   || (0==sqlite3ExprIsConstantOrFunction(pEnd, 0))
   ){
-    sqlite3ErrorMsg(pParse, "unsupported window-frame type");
-  }else{
-    pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+    sqlite3ErrorMsg(pParse, "unsupported frame delimiter for ROWS");
+    goto windowAllocErr;
   }
 
-  if( pWin ){
-    assert( eType );
-    pWin->eType = eType;
-    pWin->eStart = eStart;
-    pWin->eEnd = eEnd;
-    pWin->pEnd = pEnd;
-    pWin->pStart = pStart;
-  }else{
-    sqlite3ExprDelete(pParse->db, pEnd);
-    sqlite3ExprDelete(pParse->db, pStart);
-  }
-
+  pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  if( pWin==0 ) goto windowAllocErr;
+  pWin->eType = eType;
+  pWin->eStart = eStart;
+  pWin->eEnd = eEnd;
+  pWin->pEnd = sqlite3WindowOffsetExpr(pParse, pEnd);
+  pWin->pStart = sqlite3WindowOffsetExpr(pParse, pStart);
   return pWin;
+
+windowAllocErr:
+  sqlite3ExprDelete(pParse->db, pEnd);
+  sqlite3ExprDelete(pParse->db, pStart);
+  return 0;
 }
 
 /*
@@ -887,7 +917,8 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
       p->pWin = pWin;
       pWin->pOwner = p;
       if( p->flags & EP_Distinct ){
-        sqlite3ErrorMsg(pParse,"DISTINCT is not supported for window functions");
+        sqlite3ErrorMsg(pParse,
+           "DISTINCT is not supported for window functions");
       }
     }
   }else{
@@ -973,7 +1004,7 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
 ** VM code to check that the value is a non-negative integer and throws
 ** an exception if it is not.
 */
-static void windowCheckFrameValue(Parse *pParse, int reg, int bEnd){
+static void windowCheckFrameOffset(Parse *pParse, int reg, int bEnd){
   static const char *azErr[] = {
     "frame starting offset must be a non-negative integer",
     "frame ending offset must be a non-negative integer"
@@ -1536,11 +1567,11 @@ static void windowCodeRowExprStep(
   ** an exception.  */
   if( pMWin->pStart ){
     sqlite3ExprCode(pParse, pMWin->pStart, regStart);
-    windowCheckFrameValue(pParse, regStart, 0);
+    windowCheckFrameOffset(pParse, regStart, 0);
   }
   if( pMWin->pEnd ){
     sqlite3ExprCode(pParse, pMWin->pEnd, regEnd);
-    windowCheckFrameValue(pParse, regEnd, 1);
+    windowCheckFrameOffset(pParse, regEnd, 1);
   }
 
   /* If this is "ROWS <expr1> FOLLOWING AND ROWS <expr2> FOLLOWING", do:
