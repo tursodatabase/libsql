@@ -1028,10 +1028,10 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
   }
   A = sqlite3ExprFunction(pParse, Y, &X);
-  sqlite3WindowAttach(pParse, A, Z);
   if( D==SF_Distinct && A ){
     A->flags |= EP_Distinct;
   }
+  sqlite3WindowAttach(pParse, A, Z);
 }
 expr(A) ::= id(X) LP STAR RP
 %ifndef SQLITE_OMIT_WINDOWFUNC

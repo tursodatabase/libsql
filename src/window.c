@@ -867,8 +867,13 @@ Window *sqlite3WindowAlloc(
 */
 void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
-    p->pWin = pWin;
-    if( pWin ) pWin->pOwner = p;
+    if( pWin ){
+      p->pWin = pWin;
+      pWin->pOwner = p;
+      if( p->flags & EP_Distinct ){
+        sqlite3ErrorMsg(pParse,"DISTINCT is not supported for window functions");
+      }
+    }
   }else{
     sqlite3WindowDelete(pParse->db, pWin);
   }
