@@ -332,5 +332,13 @@ execsql_test 9.5 {
   SELECT DISTINCT x, rank() OVER (ORDER BY x) FROM t2 ORDER BY 1,2
 }
 
+execsql_float_test 9.6 {
+  SELECT percent_rank() OVER () FROM t1
+}
+
+execsql_float_test 9.7 {
+  SELECT cume_dist() OVER () FROM t1
+}
+
 finish_test
 

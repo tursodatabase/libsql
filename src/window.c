@@ -255,9 +255,8 @@ static void percent_rankStepFunc(
   struct CallCount *p;
   assert( nArg==1 );
 
-  assert( sqlite3VdbeAssertAggContext(pCtx) );
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( ALWAYS(p) ){
+  if( p ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -301,9 +300,8 @@ static void cume_distStepFunc(
   struct CallCount *p;
   assert( nArg==1 );
 
-  assert( sqlite3VdbeAssertAggContext(pCtx) );
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( ALWAYS(p) ){
+  if( p ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }

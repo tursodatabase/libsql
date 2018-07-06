@@ -825,18 +825,6 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 }
 
 /*
-** This function is only used within assert() statements to check that the
-** aggregate context has already been allocated. i.e.:
-**
-**   assert( sqlite3VdbeAssertAggContext(p) );
-*/
-#ifdef SQLITE_DEBUG
-int sqlite3VdbeAssertAggContext(sqlite3_context *p){
-  return ((p->pMem->flags & MEM_Agg)!=0);
-}
-#endif /* SQLITE_DEBUG */
-
-/*
 ** Return the auxiliary data pointer, if any, for the iArg'th argument to
 ** the user-function defined by pCtx.
 **
