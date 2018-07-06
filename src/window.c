@@ -855,6 +855,8 @@ Window *sqlite3WindowAlloc(
   if( eType==TK_RANGE && (pStart || pEnd) 
    || (eStart==TK_CURRENT && eEnd==TK_PRECEDING)
    || (eStart==TK_FOLLOWING && (eEnd==TK_PRECEDING || eEnd==TK_CURRENT))
+   || (0==sqlite3ExprIsConstantOrFunction(pStart, 0))
+   || (0==sqlite3ExprIsConstantOrFunction(pEnd, 0))
   ){
     sqlite3ErrorMsg(pParse, "unsupported window-frame type");
   }else{
