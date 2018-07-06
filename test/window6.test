@@ -221,13 +221,13 @@ do_catchsql_test 9.1 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<5)
   SELECT x, group_concat(x) OVER (ORDER BY x RANGE 2 PRECEDING)
   FROM c;
-} {1 {RANGE PRECEDING is only supported with UNBOUNDED}}
+} {1 {unsupported window-frame type}}
 
 do_catchsql_test 9.2 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<5)
   SELECT x, group_concat(x) OVER (ORDER BY x RANGE BETWEEN UNBOUNDED PRECEDING AND 2 FOLLOWING)
   FROM c;
-} {1 {RANGE FOLLOWING is only supported with UNBOUNDED}}
+} {1 {unsupported window-frame type}}
 
 do_catchsql_test 9.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<5)
@@ -248,6 +248,20 @@ do_catchsql_test 9.6 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<5)
   SELECT count() OVER (ORDER BY x RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING) FROM c;
 } {1 {near "PRECEDING": syntax error}}
+
+foreach {tn frame} {
+  1 "BETWEEN CURRENT ROW AND 4 PRECEDING"
+  2 "4 FOLLOWING"
+  3 "BETWEEN 4 FOLLOWING AND CURRENT ROW"
+  4 "BETWEEN 4 FOLLOWING AND 2 PRECEDING"
+} {
+  do_catchsql_test 9.7.$tn "
+    WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<5)
+    SELECT count() OVER (
+        ORDER BY x ROWS $frame 
+    ) FROM c;
+  " {1 {unsupported window-frame type}}
+}
 
 finish_test
 

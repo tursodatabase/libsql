@@ -1,5 +1,5 @@
-C Prevent\s"UNBOUNDED\sFOLLOWING"\sfrom\sbeing\sused\sas\sthe\sstarting\sboundary\sof\sa\nwindow-frame.\sAnd\s"UNBOUNDED\sPRECEDING"\sfrom\sbeing\sused\sas\sthe\sending\nboundary.
-D 2018-07-06T13:48:09.421
+C Ensure\san\serror\sis\sreturned\sif\sthe\suser\sspecifies\san\sunsupported\sframe\stype.
+D 2018-07-06T14:15:49.619
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -584,7 +584,7 @@ F src/where.c 0bcbf9e191ca07f9ea2008aa80e70ded46bcdffd26560c83397da501f00aece6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
-F src/window.c 5bb6f305800d1502047d37ed8278a153f984fc4e3365c7eec2b9129f9dbec6af
+F src/window.c 8f977b355ddcfd20677cf424da6efea14949ddb58244c642f9739bd345ac194f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1627,7 +1627,7 @@ F test/window3.test 87fb18021903fc4d1659b8b2092aea55d611a9606cfa7272686234e5197c
 F test/window4.tcl a7f0e514602c8a6c43bc68c25ecc4def4f3e2abc5f721c4e6cf70eade1a6cfdf
 F test/window4.test 048b4760d0335ccefda73403ff2c054085383cbe5a0e5c175f56eda9d2f419f6
 F test/window5.test 8187f46597c90b73e8f96659e893353cbda337479cc582f7a488eab351ba08d3
-F test/window6.test 5509d5f1bda018f4fe120d2754a5bd212a0d0f860b36dff9e4d9b7cca504c800
+F test/window6.test 117bf6d18f7bd2dda17e84a3b0f281973cb81b847ba1a5801f8556593be722c5
 F test/windowfault.test a44baa1b0bdf339d7792623ad3a6ebe057b1a6d7a7fd7ae880c8b744cfc0dafb
 F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 443f0c286f1659937fd61b4ef2de17d0d015369e5ff5249a9e0c3d0ee4925158
-R a48a84cc2d41a40318598711b1661a2a
+P e51fdf66a24c27ba6491391fffcc88fc5ca2ae79cfc4ab769a149b19c394e308
+R faa6a48363dce21b42a492cc35567e42
 U dan
-Z c0ee56347c475dd4c9047b4f4e322e08
+Z ac7b3250ed71ba8294bcb0eefd9636e9

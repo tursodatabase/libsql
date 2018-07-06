@@ -837,10 +837,26 @@ Window *sqlite3WindowAlloc(
 ){
   Window *pWin = 0;
 
-  if( eType==TK_RANGE && (pStart || pEnd) ){
-    sqlite3ErrorMsg(pParse, "RANGE %s is only supported with UNBOUNDED",
-        (pStart ? "PRECEDING" : "FOLLOWING")
-    );
+  /* If a frame is declared "RANGE" (not "ROWS"), then it may not use
+  ** either "<expr> PRECEDING" or "<expr> FOLLOWING". Additionally, the
+  ** starting boundary type may not occur earlier in the following list than
+  ** the ending boundary type:
+  **
+  **   UNBOUNDED PRECEDING
+  **   <expr> PRECEDING
+  **   CURRENT ROW
+  **   <expr> FOLLOWING
+  **   UNBOUNDED FOLLOWING
+  **
+  ** The parser ensures that "UNBOUNDED PRECEDING" cannot be used as an ending
+  ** boundary, and than "UNBOUNDED FOLLOWING" cannot be used as a starting
+  ** frame boundary.
+  */
+  if( eType==TK_RANGE && (pStart || pEnd) 
+   || (eStart==TK_CURRENT && eEnd==TK_PRECEDING)
+   || (eStart==TK_FOLLOWING && (eEnd==TK_PRECEDING || eEnd==TK_CURRENT))
+  ){
+    sqlite3ErrorMsg(pParse, "unsupported window-frame type");
   }else{
     pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
   }
