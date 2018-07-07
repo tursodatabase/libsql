@@ -1155,6 +1155,9 @@ case OP_Null: {           /* out2 */
   assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
   pOut->flags = nullFlag = pOp->p1 ? (MEM_Null|MEM_Cleared) : MEM_Null;
   pOut->n = 0;
+#ifdef SQLITE_DEBUG
+  pOut->uTemp = 0;
+#endif
   while( cnt>0 ){
     pOut++;
     memAboutToChange(p, pOut);
@@ -6351,7 +6354,10 @@ case OP_AggStep: {
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
+
+  /* OP_AggInverse must have P1==1 and OP_AggStep must have P1==0 */
   assert( pOp->p1==(pOp->opcode==OP_AggInverse) );
+
   pOp->opcode = OP_AggStep1;
   /* Fall through into OP_AggStep */
 }
@@ -6363,6 +6369,17 @@ case OP_AggStep1: {
   assert( pOp->p4type==P4_FUNCCTX );
   pCtx = pOp->p4.pCtx;
   pMem = &aMem[pOp->p3];
+
+#ifdef SQLITE_DEBUG
+  if( pOp->p1 ){
+    /* This is an OP_AggInverse call.  Verify that xStep has always
+    ** been called at least once prior to any xInverse call. */
+    assert( pMem->uTemp==0x1122e0e3 );
+  }else{
+    /* This is an OP_AggStep call.  Mark it as such. */
+    pMem->uTemp = 0x1122e0e3;
+  }
+#endif
 
   /* If this function is inside of a trigger, the register array in aMem[]
   ** might change from one evaluation to the next.  The next block of code
