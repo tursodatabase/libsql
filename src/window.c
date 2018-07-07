@@ -1013,6 +1013,7 @@ static void windowCheckFrameOffset(Parse *pParse, int reg, int bEnd){
   int regZero = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp2(v, OP_Integer, 0, regZero);
   sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
+  VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, OP_Ge, regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
   VdbeCoverage(v);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
