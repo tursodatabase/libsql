@@ -1,5 +1,5 @@
-C Fix\sthe\sJSON\sextension\sso\sthat\sit\scan\sbe\scompiled\sseparately\sfrom\sthe\namalgamation.
-D 2018-07-07T20:23:46.817
+C Fix\sanother\sproblem\swith\sreusing\sLSM\scursors\sfor\srange\sscans.
+D 2018-07-07T20:26:30.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -243,7 +243,7 @@ F ext/lsm1/lsm-test/lsmtest_mem.c 4e63c764345ab1df59d4f13a77980c6f3643798210b10d
 F ext/lsm1/lsm-test/lsmtest_tdb.c 618a8619183fda4f5540fcde15f9068293c5e3180e1a246e34409b0c148758b3
 F ext/lsm1/lsm-test/lsmtest_tdb.h 8733eee249b12956a9df8322994b43d19bd8c02ad2e8b0bb5164db4d6ccc1735
 F ext/lsm1/lsm-test/lsmtest_tdb2.cc 99ea7f2dd9c7536c8fb9bdd329e4cfeb76899f3ddf6f48bdd3926e016922b715
-F ext/lsm1/lsm-test/lsmtest_tdb3.c c38bb8994e7416e6b2be480e095f4f4cda582126204e632d165c4b1feefc5aea
+F ext/lsm1/lsm-test/lsmtest_tdb3.c 7a7ccae189f5bb25bcd1ec3bbd740529706eded7f6729a5a0a9eeaeb57785320
 F ext/lsm1/lsm-test/lsmtest_tdb4.c 47e8bb5eba266472d690fb8264f1855ebdba0ae5a0e541e35fcda61ebf1d277f
 F ext/lsm1/lsm-test/lsmtest_util.c 241622db5a332a09c8e6e7606b617d288a37b557f7d3bce0bb97809f67cc2806
 F ext/lsm1/lsm-test/lsmtest_win32.c 0e0a224674c4d3170631c41b026b56c7e1672b151f5261e1b4cc19068641da2d
@@ -256,7 +256,7 @@ F ext/lsm1/lsm_main.c b5703f8042e71d3a2d65e671f6832e077e79e89e9975818f67f9699226
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c 76adfc1ed9ffebaf92746dde4b370ccc48143ca8b05b563816eadd2aadf1c525
-F ext/lsm1/lsm_sorted.c 1abed5e7bc0332bb33fc565249aa7d15e98b7510a4898d86237bc07e82e45d06
+F ext/lsm1/lsm_sorted.c 6f7d8cf7a7d3d3f1ab5d9ba6347e8f39f3d73c00ec48afcd0c4bcbefd806f9b8
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f05bead371d41ca5beef1f82e4c920c90e2eb9cd9fd537a5c91973bf9bd4eedb
-R 616db2e38aab8dbe40d723034c2ec165
-U drh
-Z e80665d045601ffc0b281bf3fb95a878
+P 4b8cfe7bfe5f049eb4607fd480429fcd2060e691891d8bffc9917f13fa373988
+R 30589e318928e413de309a69449a613b
+U dan
+Z 36c3a96195f8670c51ccae820f038ab1

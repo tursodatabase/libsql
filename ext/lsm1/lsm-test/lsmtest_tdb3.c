@@ -669,6 +669,18 @@ static int test_lsm_scan(
     csr = pDb->pCsr;
   }
 
+  /* To enhance testing, if both pLast and pFirst are defined, seek the
+  ** cursor to the "end" boundary here. Then the next block seeks it to
+  ** the "start" ready for the scan. The point is to test that cursors
+  ** can be reused.  */
+  if( pLast && pFirst ){
+    if( bReverse ){
+      rc = lsm_csr_seek(csr, pFirst, nFirst, LSM_SEEK_LE);
+    }else{
+      rc = lsm_csr_seek(csr, pLast, nLast, LSM_SEEK_GE);
+    }
+  }
+
   if( bReverse ){
     if( pLast ){
       rc = lsm_csr_seek(csr, pLast, nLast, LSM_SEEK_LE);
