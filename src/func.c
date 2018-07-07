@@ -1521,7 +1521,9 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
   UNUSED_PARAMETER(argc);
   p = sqlite3_aggregate_context(context, sizeof(*p));
   type = sqlite3_value_numeric_type(argv[0]);
-  if( p && type!=SQLITE_NULL ){
+  /* p is always non-NULL because sumStep() will have been called first
+  ** to initialize it */
+  if( ALWAYS(p) && type!=SQLITE_NULL ){
     p->cnt--;
     if( type==SQLITE_INTEGER ){
       i64 v = sqlite3_value_int64(argv[0]);
@@ -1605,7 +1607,8 @@ static void countFinalize(sqlite3_context *context){
 static void countInverse(sqlite3_context *ctx, int argc, sqlite3_value **argv){
   CountCtx *p;
   p = sqlite3_aggregate_context(ctx, sizeof(*p));
-  if( (argc==0 || SQLITE_NULL!=sqlite3_value_type(argv[0])) && p ){
+  /* p is always non-NULL since countStep() will have been called first */
+  if( (argc==0 || SQLITE_NULL!=sqlite3_value_type(argv[0])) && ALWAYS(p) ){
     p->n--;
 #ifdef SQLITE_DEBUG
     p->bInverse = 1;
@@ -1724,7 +1727,9 @@ static void groupConcatInverse(
   StrAccum *pAccum;
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
-  if( pAccum ){
+  /* pAccum is always non-NULL since groupConcatStep() will have always
+  ** run frist to initialize it */
+  if( ALWAYS(pAccum) ){
     n = sqlite3_value_bytes(argv[0]);
     if( argc==2 ){
       n += sqlite3_value_bytes(argv[1]);

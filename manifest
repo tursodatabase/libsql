@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\shelp\sverify\sthat\sOP_AggInverse\sis\snever\scalled\son\san\naccumulator\sthat\shas\snot\spreviously\sbeen\sprocessed\sby\sOP_AggStep.
-D 2018-07-07T19:36:04.960
+C Add\sALWAYS()\smacros\son\sresults\sof\ssqlite3_aggregate_context()\scalls\sin\nxInverse()\simplements,\ssince\sthey\scan\snever\sfail.
+D 2018-07-07T19:47:21.666
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -281,7 +281,7 @@ F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 8dca18a64560481f566fe03e26b60dfc95b665c709be86934d261ac21d6f1c2f
+F ext/misc/json1.c 0af57bdc87936345a0198c7b0ccca1d8f3bca7d8f4d3c157b335620c78e7363d
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -450,7 +450,7 @@ F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
 F src/expr.c 7e257eeffe9553c10a6ac0a1f0177bf740c4da834e7d6e2cbb7d3ebaa3d7f3e1
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c b1da9ef8dc834603bb0d28972378a7ce65897847f9a1e89ab800bbdf24c788ee
-F src/func.c edbd402a742605bf984c56ed818bf0d59c4ba8085a391c7545cc9cbfc4224f83
+F src/func.c e3174d1f10dbaef9478a243d4a4d51135a9092d73ceaeafac3663aeff60737c4
 F src/global.c 9bf034fd560bdd514715170ed8460bb7f823cec113f0569ef3f18a20c7ccd128
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63f4d306ba19f6ba900a7d7480ccaa3d1e4a204e7c82bf5eb2e4bd849ef3a22f
-R f7d5332c6156e78db8011d9c3f819c01
+P 4213889103fa37f3f11802aea81989522048a0752820603dd556f612128ddfee
+R b4bd6637a560cc2b671471c6eee21129
 U drh
-Z 3827c8ff60b89edfd852655ba9c60594
+Z a050e55c29dd8997b8d0c52a34704773
