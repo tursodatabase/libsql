@@ -2868,7 +2868,7 @@ static int multiCursorEnd(MultiCursor *pCsr, int bLast){
   int rc = LSM_OK;
   int i;
 
-  pCsr->flags &= ~(CURSOR_NEXT_OK | CURSOR_PREV_OK);
+  pCsr->flags &= ~(CURSOR_NEXT_OK | CURSOR_PREV_OK | CURSOR_SEEK_EQ);
   pCsr->flags |= (bLast ? CURSOR_PREV_OK : CURSOR_NEXT_OK);
   pCsr->iFree = 0;
 
