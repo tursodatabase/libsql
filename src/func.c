@@ -1505,7 +1505,7 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
       i64 v = sqlite3_value_int64(argv[0]);
       p->rSum += v;
       if( (p->approx|p->overflow)==0 && sqlite3AddInt64(&p->iSum, v) ){
-        p->overflow = 1;
+        p->approx = p->overflow = 1;
       }
     }else{
       p->rSum += sqlite3_value_double(argv[0]);
@@ -1524,16 +1524,15 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
   /* p is always non-NULL because sumStep() will have been called first
   ** to initialize it */
   if( ALWAYS(p) && type!=SQLITE_NULL ){
+    assert( p->cnt>0 );
     p->cnt--;
-    if( type==SQLITE_INTEGER ){
+    assert( type==SQLITE_INTEGER || p->approx );
+    if( type==SQLITE_INTEGER && p->approx==0 ){
       i64 v = sqlite3_value_int64(argv[0]);
       p->rSum -= v;
-      if( (p->approx|p->overflow)==0 && sqlite3AddInt64(&p->iSum, -1*v) ){
-        p->overflow = 1;
-      }
+      p->iSum -= v;
     }else{
       p->rSum -= sqlite3_value_double(argv[0]);
-      p->approx = 1;
     }
   }
 }
