@@ -1085,6 +1085,8 @@ static void windowAggStep(
     if( (pWin->pFunc->funcFlags & SQLITE_FUNC_MINMAX) 
       && pWin->eStart!=TK_UNBOUNDED 
     ){
+      int addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, regArg);
+      VdbeCoverage(v);
       if( bInverse==0 ){
         sqlite3VdbeAddOp2(v, OP_AddImm, pWin->regApp+1, 1);
         sqlite3VdbeAddOp2(v, OP_SCopy, regArg, pWin->regApp);
@@ -1096,6 +1098,7 @@ static void windowAggStep(
         sqlite3VdbeAddOp1(v, OP_Delete, pWin->csrApp);
         sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
       }
+      sqlite3VdbeJumpHere(v, addrIsNull);
     }else if( pWin->regApp ){
       assert( pWin->pFunc->xSFunc==nth_valueStepFunc 
            || pWin->pFunc->xSFunc==first_valueStepFunc 
