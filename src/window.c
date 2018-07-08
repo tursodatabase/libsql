@@ -152,12 +152,6 @@ static void row_numberStepFunc(
   i64 *p = (i64*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ) (*p)++;
 }
-static void row_numberInvFunc(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **apArg
-){
-}
 static void row_numberValueFunc(sqlite3_context *pCtx){
   i64 *p = (i64*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   sqlite3_result_int64(pCtx, (p ? *p : 0));
@@ -187,12 +181,6 @@ static void dense_rankStepFunc(
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ) p->nStep = 1;
-}
-static void dense_rankInvFunc(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **apArg
-){
 }
 static void dense_rankValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
@@ -225,12 +213,6 @@ static void rankStepFunc(
       p->nValue = p->nStep;
     }
   }
-}
-static void rankInvFunc(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **apArg
-){
 }
 static void rankValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
@@ -265,12 +247,6 @@ static void percent_rankStepFunc(
       p->nValue = p->nStep;
     }
   }
-}
-static void percent_rankInvFunc(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **apArg
-){
 }
 static void percent_rankValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
@@ -307,12 +283,6 @@ static void cume_distStepFunc(
     }
     p->nStep++;
   }
-}
-static void cume_distInvFunc(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **apArg
-){
 }
 static void cume_distValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
@@ -358,12 +328,6 @@ static void ntileStepFunc(
     }
     p->iRow++;
   }
-}
-static void ntileInvFunc(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **apArg
-){
 }
 static void ntileValueFunc(sqlite3_context *pCtx){
   struct NtileCtx *p;
@@ -449,50 +413,89 @@ static void last_valueFinalizeFunc(sqlite3_context *pCtx){
 }
 
 /*
-** No-op implementations of nth_value(), first_value(), lead() and lag().
-** These are all implemented inline using VDBE instructions. 
+** Static names for the built-in window function names.  These static
+** names are used, rather than string literals, so that FuncDef objects
+** can be associated with a particular window function by direct
+** comparison of the zName pointer.  Example:
+**
+**       if( pFuncDef->zName==row_valueName ){ ... }
 */
-static void nth_valueStepFunc(sqlite3_context *pCtx, int n, sqlite3_value **a){}
-static void nth_valueInvFunc(sqlite3_context *pCtx, int n, sqlite3_value **ap){}
-static void nth_valueValueFunc(sqlite3_context *pCtx){}
-static void first_valueStepFunc(sqlite3_context *p, int n, sqlite3_value **ap){}
-static void first_valueInvFunc(sqlite3_context *p, int n, sqlite3_value **ap){}
-static void first_valueValueFunc(sqlite3_context *pCtx){}
-static void leadStepFunc(sqlite3_context *pCtx, int n, sqlite3_value **ap){}
-static void leadInvFunc(sqlite3_context *pCtx, int n, sqlite3_value **ap){}
-static void leadValueFunc(sqlite3_context *pCtx){}
-static void lagStepFunc(sqlite3_context *pCtx, int n, sqlite3_value **ap){}
-static void lagInvFunc(sqlite3_context *pCtx, int n, sqlite3_value **ap){}
-static void lagValueFunc(sqlite3_context *pCtx){}
+static const char row_numberName[] =   "row_number";
+static const char dense_rankName[] =   "dense_rank";
+static const char rankName[] =         "rank";
+static const char percent_rankName[] = "percent_rank";
+static const char cume_distName[] =    "cume_dist";
+static const char ntileName[] =        "ntile";
+static const char last_valueName[] =   "last_value";
+static const char nth_valueName[] =    "nth_value";
+static const char first_valueName[] =  "first_value";
+static const char leadName[] =         "lead";
+static const char lagName[] =          "lag";
 
-#define WINDOWFUNC(name,nArg,extra) {                                      \
-  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
-  name ## StepFunc, name ## ValueFunc, name ## ValueFunc,                  \
-  name ## InvFunc, #name                                               \
-}
+/*
+** No-op implementations of xStep() and xFinalize().  Used as place-holders
+** for built-in window functions that never call those interfaces.
+**
+** The noopValueFunc() is called but is expected to do nothing.  The
+** noopStepFunc() is never called, and so it is marked with NO_TEST to
+** let the test coverage routine know not to expect this function to be
+** invoked.
+*/
+static void noopStepFunc(    /*NO_TEST*/
+  sqlite3_context *p,        /*NO_TEST*/
+  int n,                     /*NO_TEST*/
+  sqlite3_value **a          /*NO_TEST*/
+){                           /*NO_TEST*/
+  assert(0);                 /*NO_TEST*/
+}                            /*NO_TEST*/
+static void noopValueFunc(sqlite3_context *p){ /*no-op*/; }
 
-#define WINDOWFUNCF(name,nArg,extra) {                                     \
+/* Window functions that use all window interfaces: xStep, xFinal,
+** xValue, and xInverse */
+#define WINDOWFUNCALL(name,nArg,extra) {                                   \
   nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
   name ## StepFunc, name ## FinalizeFunc, name ## ValueFunc,               \
-  name ## InvFunc, #name                                               \
+  name ## InvFunc, name ## Name                                            \
 }
+
+/* Window functions that are implemented using bytecode and thus have
+** no-op routines for their methods */
+#define WINDOWFUNCNOOP(name,nArg,extra) {                                  \
+  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
+  noopStepFunc, noopValueFunc, noopValueFunc,                              \
+  noopStepFunc, name ## Name                                               \
+}
+
+/* Window functions that use all window interfaces: xStep, the
+** same routine for xFinalize and xValue and which never call
+** xInverse. */
+#define WINDOWFUNCX(name,nArg,extra) {                                     \
+  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
+  name ## StepFunc, name ## ValueFunc, name ## ValueFunc,                  \
+  noopStepFunc, name ## Name                                               \
+}
+
 
 /*
 ** Register those built-in window functions that are not also aggregates.
 */
 void sqlite3WindowFunctions(void){
   static FuncDef aWindowFuncs[] = {
-    WINDOWFUNC(row_number, 0, 0),
-    WINDOWFUNC(dense_rank, 0, 0),
-    WINDOWFUNC(rank, 0, 0),
-    WINDOWFUNC(percent_rank, 0, SQLITE_FUNC_WINDOW_SIZE),
-    WINDOWFUNC(cume_dist, 0, SQLITE_FUNC_WINDOW_SIZE),
-    WINDOWFUNC(ntile, 1, SQLITE_FUNC_WINDOW_SIZE),
-    WINDOWFUNCF(last_value, 1, 0),
-    WINDOWFUNC(nth_value, 2, 0),
-    WINDOWFUNC(first_value, 1, 0),
-    WINDOWFUNC(lead, 1, 0), WINDOWFUNC(lead, 2, 0), WINDOWFUNC(lead, 3, 0),
-    WINDOWFUNC(lag, 1, 0),  WINDOWFUNC(lag, 2, 0),  WINDOWFUNC(lag, 3, 0),
+    WINDOWFUNCX(row_number, 0, 0),
+    WINDOWFUNCX(dense_rank, 0, 0),
+    WINDOWFUNCX(rank, 0, 0),
+    WINDOWFUNCX(percent_rank, 0, SQLITE_FUNC_WINDOW_SIZE),
+    WINDOWFUNCX(cume_dist, 0, SQLITE_FUNC_WINDOW_SIZE),
+    WINDOWFUNCX(ntile, 1, SQLITE_FUNC_WINDOW_SIZE),
+    WINDOWFUNCALL(last_value, 1, 0),
+    WINDOWFUNCNOOP(nth_value, 2, 0),
+    WINDOWFUNCNOOP(first_value, 1, 0),
+    WINDOWFUNCNOOP(lead, 1, 0),
+    WINDOWFUNCNOOP(lead, 2, 0),
+    WINDOWFUNCNOOP(lead, 3, 0),
+    WINDOWFUNCNOOP(lag, 1, 0),
+    WINDOWFUNCNOOP(lag, 2, 0),
+    WINDOWFUNCNOOP(lag, 3, 0),
   };
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
 }
@@ -544,7 +547,7 @@ void sqlite3WindowUpdate(
           "FILTER clause may only be used with aggregate window functions"
       );
     }else
-    if( pFunc->xSFunc==row_numberStepFunc || pFunc->xSFunc==ntileStepFunc ){
+    if( pFunc->zName==row_numberName || pFunc->zName==ntileName ){
       sqlite3ExprDelete(db, pWin->pStart);
       sqlite3ExprDelete(db, pWin->pEnd);
       pWin->pStart = pWin->pEnd = 0;
@@ -553,8 +556,8 @@ void sqlite3WindowUpdate(
       pWin->eEnd = TK_CURRENT;
     }else
 
-    if( pFunc->xSFunc==dense_rankStepFunc || pFunc->xSFunc==rankStepFunc
-     || pFunc->xSFunc==percent_rankStepFunc || pFunc->xSFunc==cume_distStepFunc
+    if( pFunc->zName==dense_rankName || pFunc->zName==rankName
+     || pFunc->zName==percent_rankName || pFunc->zName==cume_distName
     ){
       sqlite3ExprDelete(db, pWin->pStart);
       sqlite3ExprDelete(db, pWin->pEnd);
@@ -981,7 +984,7 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
       sqlite3VdbeAppendP4(v, pKeyInfo, P4_KEYINFO);
       sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
     }
-    else if( p->xSFunc==nth_valueStepFunc || p->xSFunc==first_valueStepFunc ){
+    else if( p->zName==nth_valueName || p->zName==first_valueName ){
       /* Allocate two registers at pWin->regApp. These will be used to
       ** store the start and end index of the current frame.  */
       assert( pMWin->iEphCsr );
@@ -990,7 +993,7 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
       pParse->nMem += 2;
       sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
     }
-    else if( p->xSFunc==leadStepFunc || p->xSFunc==lagStepFunc ){
+    else if( p->zName==leadName || p->zName==lagName ){
       assert( pMWin->iEphCsr );
       pWin->csrApp = pParse->nTab++;
       sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
@@ -1101,13 +1104,13 @@ static void windowAggStep(
       }
       sqlite3VdbeJumpHere(v, addrIsNull);
     }else if( pWin->regApp ){
-      assert( pWin->pFunc->xSFunc==nth_valueStepFunc 
-           || pWin->pFunc->xSFunc==first_valueStepFunc 
+      assert( pWin->pFunc->zName==nth_valueName
+           || pWin->pFunc->zName==first_valueName
       );
       assert( bInverse==0 || bInverse==1 );
       sqlite3VdbeAddOp2(v, OP_AddImm, pWin->regApp+1-bInverse, 1);
-    }else if( pWin->pFunc->xSFunc==leadStepFunc 
-           || pWin->pFunc->xSFunc==lagStepFunc 
+    }else if( pWin->pFunc->zName==leadName
+           || pWin->pFunc->zName==lagName
     ){
       /* no-op */
     }else{
@@ -1263,15 +1266,15 @@ static void windowReturnOneRow(
   Window *pWin;
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *pFunc = pWin->pFunc;
-    if( pFunc->xSFunc==nth_valueStepFunc 
-     || pFunc->xSFunc==first_valueStepFunc 
+    if( pFunc->zName==nth_valueName
+     || pFunc->zName==first_valueName
     ){
       int csr = pWin->csrApp;
       int lbl = sqlite3VdbeMakeLabel(v);
       int tmpReg = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
 
-      if( pFunc->xSFunc==nth_valueStepFunc ){
+      if( pFunc->zName==nth_valueName ){
         sqlite3VdbeAddOp3(v, OP_Column, pMWin->iEphCsr, pWin->iArgCol+1,tmpReg);
       }else{
         sqlite3VdbeAddOp2(v, OP_Integer, 1, tmpReg);
@@ -1285,7 +1288,7 @@ static void windowReturnOneRow(
       sqlite3VdbeResolveLabel(v, lbl);
       sqlite3ReleaseTempReg(pParse, tmpReg);
     }
-    else if( pFunc->xSFunc==leadStepFunc || pFunc->xSFunc==lagStepFunc ){
+    else if( pFunc->zName==leadName || pFunc->zName==lagName ){
       int nArg = pWin->pOwner->x.pList->nExpr;
       int iEph = pMWin->iEphCsr;
       int csr = pWin->csrApp;
@@ -1299,10 +1302,10 @@ static void windowReturnOneRow(
       }
       sqlite3VdbeAddOp2(v, OP_Rowid, iEph, tmpReg);
       if( nArg<2 ){
-        int val = (pFunc->xSFunc==leadStepFunc ? 1 : -1);
+        int val = (pFunc->zName==leadName ? 1 : -1);
         sqlite3VdbeAddOp2(v, OP_AddImm, tmpReg, val);
       }else{
-        int op = (pFunc->xSFunc==leadStepFunc ? OP_Add : OP_Subtract);
+        int op = (pFunc->zName==leadName ? OP_Add : OP_Subtract);
         int tmpReg2 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_Column, iEph, pWin->iArgCol+1, tmpReg2);
         sqlite3VdbeAddOp3(v, op, tmpReg2, tmpReg, tmpReg);
@@ -1373,8 +1376,8 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
     FuncDef *pFunc = pWin->pFunc;
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
     nArg = MAX(nArg, windowArgCount(pWin));
-    if( pFunc->xSFunc==nth_valueStepFunc
-     || pFunc->xSFunc==first_valueStepFunc 
+    if( pFunc->zName==nth_valueName
+     || pFunc->zName==first_valueName
     ){
       sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp);
       sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
@@ -2160,10 +2163,10 @@ void sqlite3WindowCodeStep(
       for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
         FuncDef *pFunc = pWin->pFunc;
         if( (pFunc->funcFlags & SQLITE_FUNC_WINDOW_SIZE)
-         || (pFunc->xSFunc==nth_valueStepFunc)
-         || (pFunc->xSFunc==first_valueStepFunc)
-         || (pFunc->xSFunc==leadStepFunc)
-         || (pFunc->xSFunc==lagStepFunc)
+         || (pFunc->zName==nth_valueName)
+         || (pFunc->zName==first_valueName)
+         || (pFunc->zName==leadName)
+         || (pFunc->zName==lagName)
         ){
           bCache = 1;
           break;
