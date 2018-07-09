@@ -6,7 +6,7 @@ use std::os::raw::{c_char, c_int, c_void};
 use error::error_from_sqlite_code;
 use ffi;
 use types::Type;
-use vtab::{self, Context, IndexInfo, Module, VTab, VTabCursor, Values};
+use vtab::{self, Context, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
 use {Connection, Error, Result};
 
 /// Register the "generate_series" module.
@@ -47,7 +47,7 @@ impl Module for Series {
     }
 
     fn connect(
-        _: &mut ffi::sqlite3,
+        _: &mut VTabConnection,
         _aux: Option<&()>,
         _args: &[&[u8]],
     ) -> Result<(String, SeriesTab)> {
@@ -155,10 +155,18 @@ impl VTab for SeriesTab {
                 },
             ));
             info.set_estimated_rows(1000);
-            if info.num_of_order_by() == 1 {
-                if info.is_order_by_desc(0) {
-                    idx_num |= QueryPlanFlags::DESC;
+            let order_by_consumed = {
+                let mut order_bys = info.order_bys();
+                if let Some(order_by) = order_bys.next() {
+                    if order_by.is_order_by_desc() {
+                        idx_num |= QueryPlanFlags::DESC;
+                    }
+                    true
+                } else {
+                    false
                 }
+            };
+            if order_by_consumed {
                 info.set_order_by_consumed(true);
             }
         } else {

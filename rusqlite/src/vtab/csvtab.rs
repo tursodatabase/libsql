@@ -11,8 +11,8 @@ use error::error_from_sqlite_code;
 use ffi;
 use types::Null;
 use vtab::{
-    dequote, escape_double_quote, parse_boolean, Context, IndexInfo, Module, VTab, VTabCursor,
-    Values,
+    dequote, escape_double_quote, parse_boolean, Context, IndexInfo, Module, VTab, VTabConnection,
+    VTabCursor, Values,
 };
 use {Connection, Error, Result};
 
@@ -86,7 +86,7 @@ impl Module for CSVModule {
     }
 
     fn connect(
-        _: &mut ffi::sqlite3,
+        _: &mut VTabConnection,
         _aux: Option<&()>,
         args: &[&[u8]],
     ) -> Result<(String, CSVTab)> {

@@ -39,6 +39,28 @@ use {str_to_cstring, Connection, Error, InnerConnection, Result};
 //  \-> if not eof { cursor.column or xrowid } else { cursor.xclose }
 //
 
+// db: *mut ffi::sqlite3
+// module: *const ffi::sqlite3_module => Module
+// aux: *mut c_void => Module::Aux
+// ffi::sqlite3_vtab => VTab
+// ffi::sqlite3_vtab_cursor => VTabCursor
+
+pub struct VTabConnection(*mut ffi::sqlite3);
+
+impl VTabConnection {
+    /// Get access to the underlying SQLite database connection handle.
+    ///
+    /// # Warning
+    ///
+    /// You should not need to use this function. If you do need to, please [open an issue
+    /// on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
+    /// your use case. This function is unsafe because it gives you raw access to the SQLite
+    /// connection, and what you do with it could impact the safety of this `Connection`.
+    pub unsafe fn handle(&mut self) -> *mut ffi::sqlite3 {
+        self.0
+    }
+}
+
 /// Module instance trait
 pub trait Module {
     type Aux;
@@ -50,7 +72,7 @@ pub trait Module {
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
     fn create(
-        db: &mut ffi::sqlite3,
+        db: &mut VTabConnection,
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
     ) -> Result<(String, Self::Table)> {
@@ -59,7 +81,7 @@ pub trait Module {
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
     /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
     fn connect(
-        db: &mut ffi::sqlite3,
+        db: &mut VTabConnection,
         aux: Option<&Self::Aux>,
         args: &[&[u8]],
     ) -> Result<(String, Self::Table)>;
@@ -99,23 +121,17 @@ impl IndexInfo {
         }
     }
 
+    pub fn order_bys(&self) -> OrderByIter {
+        let order_bys =
+            unsafe { slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize) };
+        OrderByIter {
+            iter: order_bys.iter(),
+        }
+    }
+
     /// Number of terms in the ORDER BY clause
     pub fn num_of_order_by(&self) -> usize {
         unsafe { (*self.0).nOrderBy as usize }
-    }
-    /// Column number
-    pub fn order_by_column(&self, order_by_idx: usize) -> c_int {
-        unsafe {
-            let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
-            order_bys[order_by_idx].iColumn
-        }
-    }
-    /// True for DESC.  False for ASC.
-    pub fn is_order_by_desc(&self, order_by_idx: usize) -> bool {
-        unsafe {
-            let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
-            order_bys[order_by_idx].desc != 0
-        }
     }
 
     /// if `argv_index` > 0, constraint is part of argv to xFilter
@@ -153,6 +169,7 @@ impl IndexInfo {
         }
     }
 }
+
 pub struct IndexConstraintIter<'a> {
     iter: slice::Iter<'a, ffi::sqlite3_index_constraint>,
 }
@@ -196,6 +213,35 @@ impl<'a> IndexConstraintUsage<'a> {
     /// if `omit`, do not code a test for this constraint
     pub fn set_omit(&mut self, omit: bool) {
         self.0.omit = if omit { 1 } else { 0 };
+    }
+}
+
+pub struct OrderByIter<'a> {
+    iter: slice::Iter<'a, ffi::sqlite3_index_info_sqlite3_index_orderby>,
+}
+
+impl<'a> Iterator for OrderByIter<'a> {
+    type Item = OrderBy<'a>;
+
+    fn next(&mut self) -> Option<OrderBy<'a>> {
+        self.iter.next().map(|raw| OrderBy(raw))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
+
+impl<'a> OrderBy<'a> {
+    /// Column number
+    pub fn column(&self) -> c_int {
+        self.0.iColumn
+    }
+    /// True for DESC.  False for ASC.
+    pub fn is_order_by_desc(&self) -> bool {
+        self.0.desc != 0
     }
 }
 
@@ -554,13 +600,14 @@ macro_rules! create_or_connect {
             use std::slice;
             use vtab::mprintf;
 
+            let mut conn = VTabConnection(db);
             let aux = aux as *mut $aux;
             let args = slice::from_raw_parts(argv, argc as usize);
             let vec = args
                 .iter()
                 .map(|&cs| CStr::from_ptr(cs).to_bytes()) // FIXME .to_str() -> Result<&str, Utf8Error>
                 .collect::<Vec<_>>();
-            match $module::$module_func(db.as_mut().expect("non null db pointer"), aux.as_ref(), &vec[..]) {
+            match $module::$module_func(&mut conn, aux.as_ref(), &vec[..]) {
                 Ok((sql, vtab)) => {
                     match ::std::ffi::CString::new(sql) {
                         Ok(c_sql) => {

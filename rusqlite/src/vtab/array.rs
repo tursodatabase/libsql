@@ -7,7 +7,7 @@ use std::rc::Rc;
 use error::error_from_sqlite_code;
 use ffi;
 use types::{ToSql, ToSqlOutput, Value};
-use vtab::{self, Context, IndexInfo, Module, VTab, VTabCursor, Values};
+use vtab::{self, Context, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
 use {Connection, Error, Result};
 
 // http://sqlite.org/bindptr.html
@@ -64,7 +64,7 @@ impl Module for ArrayModule {
     }
 
     fn connect(
-        _: &mut ffi::sqlite3,
+        _: &mut VTabConnection,
         _aux: Option<&()>,
         _args: &[&[u8]],
     ) -> Result<(String, ArrayTab)> {
