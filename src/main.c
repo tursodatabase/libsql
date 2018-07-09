@@ -1692,13 +1692,14 @@ int sqlite3CreateFunc(
   int extraFlags;
 
   assert( sqlite3_mutex_held(db->mutex) );
-  if( zFunctionName==0 ||
-      (xSFunc && (xFinal || xStep)) || 
-      (!xSFunc && (xFinal && !xStep)) ||
-      (!xSFunc && (!xFinal && xStep)) ||
-      ((xValue || xInverse) && (!xStep || !xFinal || !xValue || !xInverse)) ||
-      (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
-      (255<(nName = sqlite3Strlen30( zFunctionName))) ){
+  assert( xValue==0 || xSFunc==0 );
+  if( zFunctionName==0                /* Must have a valid name */
+   || (xSFunc!=0 && xFinal!=0)        /* Not both xSFunc and xFinal */
+   || ((xFinal==0)!=(xStep==0))       /* Both or neither of xFinal and xStep */
+   || ((xValue==0)!=(xInverse==0))    /* Both or neither of xValue, xInverse */
+   || (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG)
+   || (255<(nName = sqlite3Strlen30( zFunctionName)))
+  ){
     return SQLITE_MISUSE_BKPT;
   }
 

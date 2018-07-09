@@ -1,5 +1,5 @@
-C During\sWITHOUT\sROWID\stable\screation,\sif\sthe\ssqlite3CreateTable()\scall\sfails\ndue\sto\san\sauthorizer\sdenying\sthe\sINSERT\sinto\sthe\ssqlite_master\stable,\sthen\ndetect\sthis\sfact\sand\sabort\sthe\sCREATE\sTABLE\searly,\sto\savoid\san\sassertion\nfault.
-D 2018-07-09T02:02:09.330
+C Simplification\sto\sthe\slogic\sthat\sdetects\smisuse\sof\sthe\sapplication-defined\nfunction\screation\sinterfaces.
+D 2018-07-09T02:37:12.305
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -459,7 +459,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c bcacf6a0d277f8fa0e4f9ffecda544a2330ca4478f904cd89564c2dd86d0b16b
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
-F src/main.c 0087639013e4b62ce16a92e4b0cb6127876224fadeea72016396626078dc8736
+F src/main.c f3d3ec74368c97bd6121bfc5c3bad2c6a4e82dbbd967f45dfaa5a2f33c253ca8
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 410e13b0e0fb6e040808f076014d55ecf2b541c5439b4fd53c5bdcb8d800098e
-R 7580721a29f9835b066952065ed520c6
+P 164b1641e346994f0b9f91261c3cbc86b68e1c96cc401b78e48e186e26916abe
+R 5ef1abf7334b1553c130201729c88651
 U drh
-Z 1e6f0a4c59931b85bd500573a9df5b2a
+Z a05977d596ec32f50af0c6fe3387bd66
