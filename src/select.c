@@ -4157,7 +4157,7 @@ static int pushDownWhereTerms(
   if( pSubq->selFlags & SF_Recursive ) return 0;  /* restriction (2) */
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  if( pSubq->pWin ) return 0;
+  if( pSubq->pWin ) return 0;    /* restriction (6) */
 #endif
 
 #ifdef SQLITE_DEBUG

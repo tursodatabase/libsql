@@ -1,5 +1,5 @@
-C Add\san\sALWAYS()\saround\sa\sbranch\sin\ssqlite3BtreeSkipNext()\sthat\swe\sbelieve\nmust\salways\sbe\strue.
-D 2018-07-09T20:41:39.352
+C Add\sa\scomment\sto\srestriction\s(6)\sof\sthe\spush-down\soptimization.\s\sNo\schanges\nto\scode.
+D 2018-07-09T20:58:43.825
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -495,7 +495,7 @@ F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1f965d00b4c26b7eb886b90c687069f5db0d05157dbc1ca406fe88e990eac671
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 7b7c67731f87df39150e6218468d5672c260fd48ec808454609725aea9831236
+F src/select.c ac70f376d02875dac5349b824f9dbd4d444cb27aeb98edf72ae5bc8dec91f20e
 F src/shell.c.in f1c79c537117ee61317a5ed85cdbcb854998cd690eb34ab803779358a2ace780
 F src/sqlite.h.in 36f0b3f88241863530f4b7e57e673e19311dd609ec4edad83b23291928cdf853
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ddbb5372e7ea8407369b88698b3fb922b62dcac72be633a17bd0e41baa369f4
-R 5c66b9951afcd0bf7776359106bb8565
+P 12be361a532df0c22a7e4d97658b82a69b1a205d4cca8d092b9e6b7790c1ee40
+R c48727f54db5812cf689e7e6c4d566ea
 U drh
-Z f22409bd8b8c4945971d6235026966ec
+Z c78a3161fc1cafaf82d835b065410dcc
