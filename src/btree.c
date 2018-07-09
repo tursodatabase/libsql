@@ -5196,7 +5196,10 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
 */
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3BtreeSkipNext(BtCursor *pCur){
-  if( pCur->eState==CURSOR_VALID ){
+  /* We believe that the cursor must always be in the valid state when
+  ** this routine is called, but the proof is difficult, so we add an
+  ** ALWaYS() test just in case we are wrong. */
+  if( ALWAYS(pCur->eState==CURSOR_VALID) ){
     pCur->eState = CURSOR_SKIPNEXT;
     pCur->skipNext = 1;
   }

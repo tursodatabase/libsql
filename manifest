@@ -1,5 +1,5 @@
-C Avoid\sleaving\sview-definitions\swith\san\sincomplete\sset\sof\scolumn\snames/types\sin\nthe\sin-memory\sschema\sif\san\sOOM\sstrikes\swhile\sallocating\sthe\ssame.
-D 2018-07-09T18:55:44.491
+C Add\san\sALWAYS()\saround\sa\sbranch\sin\ssqlite3BtreeSkipNext()\sthat\swe\sbelieve\nmust\salways\sbe\strue.
+D 2018-07-09T20:41:39.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -436,7 +436,7 @@ F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 0c27fb9b4bfd610261e2ac8956090fbf04b607b0d12bc0f1d77b6c5bf3ab3c7d
+F src/btree.c d9dcccd604aa8b128a20b195001570a46c354525d7abe165b1256ba1ffc307d1
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c d8f6ac1e9e484eb3f3921a8336d3dc6c87273d9db8729702162ef045997a1463
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50de2a0d2d96b6b5b8de7ac6277d60859a8d9a56f6a792950734386bb9f10b79
-R 7606975cd5d0fe66f1e471238e1161bc
-U dan
-Z 6456109cb43b1ee3a3c96b1c08ab8aa9
+P 1ddbb5372e7ea8407369b88698b3fb922b62dcac72be633a17bd0e41baa369f4
+R 5c66b9951afcd0bf7776359106bb8565
+U drh
+Z f22409bd8b8c4945971d6235026966ec
