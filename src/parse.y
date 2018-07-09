@@ -1605,17 +1605,18 @@ wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
 //
 %ifndef SQLITE_OMIT_WINDOWFUNC
 %type windowdefn_list {Window*}
-%destructor windowdefn_list {sqlite3WindowDelete(pParse->db, $$);}
+%destructor windowdefn_list {sqlite3WindowListDelete(pParse->db, $$);}
 windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
 windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
-  if( Z ) Z->pNextWin = Y;
+  assert( Z!=0 );
+  Z->pNextWin = Y;
   A = Z;
 }
 
 %type windowdefn {Window*}
 %destructor windowdefn {sqlite3WindowDelete(pParse->db, $$);}
 windowdefn(A) ::= nm(X) AS window(Y). {
-  if( Y ){
+  if( ALWAYS(Y) ){
     Y->zName = sqlite3DbStrNDup(pParse->db, X.z, X.n);
   }
   A = Y;
@@ -1626,10 +1627,6 @@ windowdefn(A) ::= nm(X) AS window(Y). {
 
 %type frame_opt {Window*}
 %destructor frame_opt {sqlite3WindowDelete(pParse->db, $$);}
-
-%type window_or_nm {Window*}
-%destructor window_or_nm {
-sqlite3WindowDelete(pParse->db, $$);}
 
 %type part_opt {ExprList*}
 %destructor part_opt {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1646,17 +1643,9 @@ sqlite3WindowDelete(pParse->db, $$);}
 %type frame_bound_e {struct FrameBound}
 %destructor frame_bound_e {sqlite3ExprDelete(pParse->db, $$.pExpr);}
 
-window_or_nm(A) ::= window(Z). {A = Z;}
-window_or_nm(A) ::= nm(Z). {
-  A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
-  if( A ){
-    A->zName = sqlite3DbStrNDup(pParse->db, Z.z, Z.n);
-  }
-}
-
 window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
   A = Z;
-  if( A ){
+  if( ALWAYS(A) ){
     A->pPartition = X;
     A->pOrderBy = Y;
   }
@@ -1689,19 +1678,28 @@ frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
 frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
 
 %type windowdefn_opt {Window*}
-%destructor windowdefn_opt {sqlite3WindowDelete(pParse->db, $$);}
+%destructor windowdefn_opt {sqlite3WindowListDelete(pParse->db, $$);}
 windowdefn_opt(A) ::= . { A = 0; }
 windowdefn_opt(A) ::= WINDOW windowdefn_list(B). { A = B; }
 
 %type over_opt {Window*}
 %destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
 over_opt(A) ::= . { A = 0; }
-over_opt(A) ::= filter_opt(W) OVER window_or_nm(Z). {
+over_opt(A) ::= filter_opt(W) OVER window(Z). {
   A = Z;
-  if( A ) A->pFilter = W;
+  assert( A!=0 );
+  A->pFilter = W;
+}
+over_opt(A) ::= filter_opt(W) OVER nm(Z). {
+  A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  if( A ){
+    A->zName = sqlite3DbStrNDup(pParse->db, Z.z, Z.n);
+    A->pFilter = W;
+  }else{
+    sqlite3ExprDelete(pParse->db, W);
+  }
 }
 
 filter_opt(A) ::= .                            { A = 0; }
 filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 %endif // SQLITE_OMIT_WINDOWFUNC
-

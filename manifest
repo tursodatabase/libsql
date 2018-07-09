@@ -1,5 +1,5 @@
-C Throw\san\serror\sif\sthe\ssecond\sargument\spassed\sto\snth_value()\sis\snot\sa\spositive\ninteger.
-D 2018-07-09T13:31:18.482
+C Simplification\sto\sthe\sgrammar\srules\sfor\swindow\sfunctions.\s\sFix\sa\smemory\nleak\sthat\scan\sfollow\san\sOOM\swhile\sparsing\sa\scomma-separated\slist\sof\nwindow\sdefinitions.
+D 2018-07-09T16:24:00.700
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -484,7 +484,7 @@ F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y 5bd226187d991bc2fccd3c0f36de40b2230b397903893028b4e9e39811b027b2
+F src/parse.y a7e0fb377d6ef98245cd4adc0b19f5d9216b65a090f29d1974c4feec95b1810b
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe8aaf0c806413965f50a03e34b5fdfaaa8b09dc0af73f41e830f7b664bd1ced
-R 36a1b3786e652c733a23427414a09e4c
-U dan
-Z fa36ac2705a3a1bf25d5a3791daaa70e
+P 1a06e57a0b4279fa580c7ff4f152645f005794aaf86eeabf694637b7da11f763
+R 68b331bbe992415b47d75f345acd25ff
+U drh
+Z 9b6563bb4ca3160cec686f0fd2ef1fbc
