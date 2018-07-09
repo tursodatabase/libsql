@@ -1,5 +1,5 @@
-C Identify\sspecific\sFuncDef\sobjects\sfor\swindow\sfunctions\susing\sthe\spointer\sto\nthe\sfunction\sname\s(FuncDef.zName)\srather\sthan\sthe\spointer\sto\sthe\sxStep\smethod.\nThis\sallows\sxStep\smethod\spointer\sto\sbe\sreplaced\swith\sa\ssingle\snoopStepFunc()\nprocedure,\sand\sthus\ssave\shaving\slots\sof\sdifferent\sno-op\sstep\sfunctions.
-D 2018-07-08T01:02:26.110
+C During\sWITHOUT\sROWID\stable\screation,\sif\sthe\ssqlite3CreateTable()\scall\sfails\ndue\sto\san\sauthorizer\sdenying\sthe\sINSERT\sinto\sthe\ssqlite_master\stable,\sthen\ndetect\sthis\sfact\sand\sabort\sthe\sCREATE\sTABLE\searly,\sto\savoid\san\sassertion\nfault.
+D 2018-07-09T02:02:09.330
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -439,7 +439,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 0c27fb9b4bfd610261e2ac8956090fbf04b607b0d12bc0f1d77b6c5bf3ab3c7d
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 3b3bfa88800739e1f11313dcecfba5ef8e4757b6c929cdf7de9fcfc01002b81f
+F src/build.c 1f0d06978a2b9f32c92aaf46bff00d5770aed96560374e257a25592769833fa2
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 849d4cebe008cfc6e4799b034a172b4eaf8856b100739632a852732ba66eee48
@@ -1745,7 +1745,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8b13002378fc4ef0b41c367b44b67bf2b28b6624303c087a3c6d657b5bfe32e
-R 8358a593d4ce0687282d59db38a347ed
+P 410e13b0e0fb6e040808f076014d55ecf2b541c5439b4fd53c5bdcb8d800098e
+R 7580721a29f9835b066952065ed520c6
 U drh
-Z 0694fc0bf0c4178f6f522b94761738e7
+Z 1e6f0a4c59931b85bd500573a9df5b2a

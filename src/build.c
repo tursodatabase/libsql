@@ -1788,7 +1788,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
-    if( db->mallocFailed ) return;
+    if( db->mallocFailed || pParse->nErr ) return;
     pPk = sqlite3PrimaryKeyIndex(pTab);
     pTab->iPKey = -1;
   }else{
