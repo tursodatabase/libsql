@@ -547,7 +547,7 @@ oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
   }else{
     sqlite3WindowListDelete(pParse->db, R);
   }
-#endif // SQLITE_OMIT_WINDOWFUNC
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
   ** query planner debugging, to differentiate between multiple Select
@@ -1702,4 +1702,4 @@ over_opt(A) ::= filter_opt(W) OVER nm(Z). {
 
 filter_opt(A) ::= .                            { A = 0; }
 filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
-%endif // SQLITE_OMIT_WINDOWFUNC
+%endif /* SQLITE_OMIT_WINDOWFUNC */

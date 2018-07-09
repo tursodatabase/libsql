@@ -151,6 +151,8 @@ static void row_numberStepFunc(
 ){
   i64 *p = (i64*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ) (*p)++;
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(apArg);
 }
 static void row_numberValueFunc(sqlite3_context *pCtx){
   i64 *p = (i64*)sqlite3_aggregate_context(pCtx, sizeof(*p));
@@ -181,6 +183,8 @@ static void dense_rankStepFunc(
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ) p->nStep = 1;
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(apArg);
 }
 static void dense_rankValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
@@ -213,6 +217,8 @@ static void rankStepFunc(
       p->nValue = p->nStep;
     }
   }
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(apArg);
 }
 static void rankValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
@@ -235,7 +241,7 @@ static void percent_rankStepFunc(
   sqlite3_value **apArg
 ){
   struct CallCount *p;
-  assert( nArg==1 );
+  UNUSED_PARAMETER(nArg); assert( nArg==1 );
 
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
@@ -274,7 +280,7 @@ static void cume_distStepFunc(
   sqlite3_value **apArg
 ){
   struct CallCount *p;
-  assert( nArg==1 );
+  assert( nArg==1 ); UNUSED_PARAMETER(nArg);
 
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
@@ -314,7 +320,7 @@ static void ntileStepFunc(
   sqlite3_value **apArg
 ){
   struct NtileCtx *p;
-  assert( nArg==2 );
+  assert( nArg==2 ); UNUSED_PARAMETER(nArg);
   p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
     if( p->nTotal==0 ){
@@ -369,6 +375,7 @@ static void last_valueStepFunc(
   sqlite3_value **apArg
 ){
   struct LastValueCtx *p;
+  UNUSED_PARAMETER(nArg);
   p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
     sqlite3_value_free(p->pVal);
@@ -386,6 +393,8 @@ static void last_valueInvFunc(
   sqlite3_value **apArg
 ){
   struct LastValueCtx *p;
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(apArg);
   p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( ALWAYS(p) ){
     p->nVal--;
@@ -446,16 +455,19 @@ static void noopStepFunc(    /*NO_TEST*/
   int n,                     /*NO_TEST*/
   sqlite3_value **a          /*NO_TEST*/
 ){                           /*NO_TEST*/
+  UNUSED_PARAMETER(p);       /*NO_TEST*/
+  UNUSED_PARAMETER(n);       /*NO_TEST*/
+  UNUSED_PARAMETER(a);       /*NO_TEST*/
   assert(0);                 /*NO_TEST*/
 }                            /*NO_TEST*/
-static void noopValueFunc(sqlite3_context *p){ /*no-op*/; }
+static void noopValueFunc(sqlite3_context *p){ UNUSED_PARAMETER(p); /*no-op*/ }
 
 /* Window functions that use all window interfaces: xStep, xFinal,
 ** xValue, and xInverse */
 #define WINDOWFUNCALL(name,nArg,extra) {                                   \
   nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
   name ## StepFunc, name ## FinalizeFunc, name ## ValueFunc,               \
-  name ## InvFunc, name ## Name                                            \
+  name ## InvFunc, name ## Name, {0}                                       \
 }
 
 /* Window functions that are implemented using bytecode and thus have
@@ -463,7 +475,7 @@ static void noopValueFunc(sqlite3_context *p){ /*no-op*/; }
 #define WINDOWFUNCNOOP(name,nArg,extra) {                                  \
   nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
   noopStepFunc, noopValueFunc, noopValueFunc,                              \
-  noopStepFunc, name ## Name                                               \
+  noopStepFunc, name ## Name, {0}                                          \
 }
 
 /* Window functions that use all window interfaces: xStep, the
@@ -472,7 +484,7 @@ static void noopValueFunc(sqlite3_context *p){ /*no-op*/; }
 #define WINDOWFUNCX(name,nArg,extra) {                                     \
   nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
   name ## StepFunc, name ## ValueFunc, name ## ValueFunc,                  \
-  noopStepFunc, name ## Name                                               \
+  noopStepFunc, name ## Name, {0}                                          \
 }
 
 
@@ -631,6 +643,8 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pWalker);
+  UNUSED_PARAMETER(pSelect);
   return WRC_Prune;
 }
 
@@ -1543,8 +1557,8 @@ static void windowCodeRowExprStep(
   int regEnd;                      /* Value of <expr> FOLLOWING */
   int addrGoto;
   int addrTop;
-  int addrIfPos1;
-  int addrIfPos2;
+  int addrIfPos1 = 0;
+  int addrIfPos2 = 0;
   int regSize = 0;
 
   assert( pMWin->eStart==TK_PRECEDING 
@@ -1864,9 +1878,9 @@ static void windowCodeCacheStep(
   VdbeCoverageNeverTaken(v);
 
   if( bReverse ){
-    int addr = sqlite3VdbeCurrentAddr(v);
+    int addr2 = sqlite3VdbeCurrentAddr(v);
     windowAggStep(pParse, pMWin, csrLead, 0, regArg, regSize);
-    sqlite3VdbeAddOp2(v, OP_Next, csrLead, addr);
+    sqlite3VdbeAddOp2(v, OP_Next, csrLead, addr2);
     VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, csrLead, lblEmpty);
     VdbeCoverageNeverTaken(v);

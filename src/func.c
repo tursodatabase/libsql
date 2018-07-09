@@ -1671,13 +1671,13 @@ static void minMaxValueFinalize(sqlite3_context *context, int bValue){
 }
 #ifndef SQLITE_OMIT_WINDOWFUNC
 static void minMaxValue(sqlite3_context *context){
-  return minMaxValueFinalize(context, 1);
+  minMaxValueFinalize(context, 1);
 }
 #else
 # define minMaxValue 0
 #endif /* SQLITE_OMIT_WINDOWFUNC */
 static void minMaxFinalize(sqlite3_context *context){
-  return minMaxValueFinalize(context, 0);
+  minMaxValueFinalize(context, 0);
 }
 
 /*
@@ -1722,8 +1722,8 @@ static void groupConcatInverse(
   sqlite3_value **argv
 ){
   int n;
-  assert( argc==1 || argc==2 );
   StrAccum *pAccum;
+  assert( argc==1 || argc==2 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
   /* pAccum is always non-NULL since groupConcatStep() will have always
@@ -1735,7 +1735,7 @@ static void groupConcatInverse(
     }else{
       n++;
     }
-    if( n>=pAccum->nChar ){
+    if( n>=(int)pAccum->nChar ){
       pAccum->nChar = 0;
     }else{
       pAccum->nChar -= n;

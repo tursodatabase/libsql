@@ -1740,7 +1740,7 @@ int sqlite3CreateFunc(
   ** operation to continue but invalidate all precompiled statements.
   */
   p = sqlite3FindFunction(db, zFunctionName, nArg, (u8)enc, 0);
-  if( p && (p->funcFlags & SQLITE_FUNC_ENCMASK)==enc && p->nArg==nArg ){
+  if( p && (p->funcFlags & SQLITE_FUNC_ENCMASK)==(u32)enc && p->nArg==nArg ){
     if( db->nVdbeActive ){
       sqlite3ErrorWithMsg(db, SQLITE_BUSY, 
         "unable to delete/modify user-function due to active statements");

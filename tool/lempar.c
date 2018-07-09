@@ -550,7 +550,7 @@ static YYACTIONTYPE yy_find_shift_action(
 #if YY_SHIFT_MAX+YYWILDCARD>=YY_ACTTAB_COUNT
           j<YY_ACTTAB_COUNT &&
 #endif
-          j<sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) &&
+          j<(int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])) &&
           yy_lookahead[j]==YYWILDCARD && iLookAhead>0
         ){
 #ifndef NDEBUG
@@ -1066,9 +1066,11 @@ void Parse(
 */
 int ParseFallback(int iToken){
 #ifdef YYFALLBACK
-  if( iToken<sizeof(yyFallback)/sizeof(yyFallback[0]) ){
+  if( iToken<(int)(sizeof(yyFallback)/sizeof(yyFallback[0])) ){
     return yyFallback[iToken];
   }
+#else
+  (void)iToken;
 #endif
   return 0;
 }

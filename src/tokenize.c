@@ -264,7 +264,7 @@ static int analyzeFilterKeyword(const unsigned char *z, int lastToken){
   }
   return TK_ID;
 }
-#endif // SQLITE_OMIT_WINDOWFUNC
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
 ** Return the length (in bytes) of the token that begins at z[0]. 
@@ -604,7 +604,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 #else
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
-#endif // SQLITE_OMIT_WINDOWFUNC
+#endif /* SQLITE_OMIT_WINDOWFUNC */
       if( db->u1.isInterrupted ){
         pParse->rc = SQLITE_INTERRUPT;
         break;
@@ -634,7 +634,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       }else if( tokenType==TK_FILTER ){
         assert( n==6 );
         tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
-#endif // SQLITE_OMIT_WINDOWFUNC
+#endif /* SQLITE_OMIT_WINDOWFUNC */
       }else{
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
         break;

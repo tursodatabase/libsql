@@ -1847,6 +1847,8 @@ static void jsonGroupInverse(
   int inStr = 0;
   char *z;
   JsonString *pStr;
+  UNUSED_PARAM(argc);
+  UNUSED_PARAM(argv);
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
 #ifdef NEVER
   /* pStr is always non-NULL since jsonArrayStep() or jsonObjectStep() will
