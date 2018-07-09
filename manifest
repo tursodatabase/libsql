@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\sOOM\stests.
-D 2018-07-09T18:11:52.197
+C Avoid\sleaving\sview-definitions\swith\san\sincomplete\sset\sof\scolumn\snames/types\sin\nthe\sin-memory\sschema\sif\san\sOOM\sstrikes\swhile\sallocating\sthe\ssame.
+D 2018-07-09T18:55:44.491
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -439,7 +439,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 0c27fb9b4bfd610261e2ac8956090fbf04b607b0d12bc0f1d77b6c5bf3ab3c7d
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 1f0d06978a2b9f32c92aaf46bff00d5770aed96560374e257a25592769833fa2
+F src/build.c d8f6ac1e9e484eb3f3921a8336d3dc6c87273d9db8729702162ef045997a1463
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 849d4cebe008cfc6e4799b034a172b4eaf8856b100739632a852732ba66eee48
@@ -1211,6 +1211,7 @@ F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
 F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce1f9b
+F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972a5a2a51e
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test 2e760bab8f3658b3b97debcf52860d0d2e20aa6cbe8b40e678ddb99871a15491
@@ -1745,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8fdaf3f37e5ddac9b7337a50f32f5d2bcdd64780797f08cfd3fccfa95819edfe
-R 348d3c2a796f11e9680e7516dfc49047
+P 50de2a0d2d96b6b5b8de7ac6277d60859a8d9a56f6a792950734386bb9f10b79
+R 7606975cd5d0fe66f1e471238e1161bc
 U dan
-Z 50043a55d41d03ee3d59e79822528993
+Z 6456109cb43b1ee3a3c96b1c08ab8aa9
