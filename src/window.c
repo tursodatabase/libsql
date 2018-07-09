@@ -1596,7 +1596,8 @@ static void windowCodeRowExprStep(
   **   }
   **   regEnd = regEnd - regStart;
   */
-  if( pMWin->pEnd && pMWin->pStart && pMWin->eStart==TK_FOLLOWING ){
+  if( pMWin->pEnd && pMWin->eStart==TK_FOLLOWING ){
+    assert( pMWin->pStart!=0 );
     assert( pMWin->eEnd==TK_FOLLOWING );
     sqlite3VdbeAddOp3(v, OP_Ge, regStart, sqlite3VdbeCurrentAddr(v)+2, regEnd);
     VdbeCoverage(v);
@@ -1604,7 +1605,8 @@ static void windowCodeRowExprStep(
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regEnd);
   }
 
-  if( pMWin->pEnd && pMWin->pStart && pMWin->eEnd==TK_PRECEDING ){
+  if( pMWin->pStart && pMWin->eEnd==TK_PRECEDING ){
+    assert( pMWin->pEnd!=0 );
     assert( pMWin->eStart==TK_PRECEDING );
     sqlite3VdbeAddOp3(v, OP_Le, regStart, sqlite3VdbeCurrentAddr(v)+3, regEnd);
     VdbeCoverage(v);
