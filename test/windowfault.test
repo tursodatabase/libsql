@@ -139,5 +139,28 @@ do_faultsim_test 6 -faults oom-* -prep {
   faultsim_test_result {0 {0.0 1.0 0.0 1.0 0.0 1.0}}
 }
 
+do_faultsim_test 7 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT percent_rank() OVER (), cume_dist() OVER () FROM t1
+  }
+} -test {
+  faultsim_test_result {0 {0.0 1.0 0.0 1.0 0.0 1.0}}
+}
+
+do_faultsim_test 8 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT a, sum(b) OVER win1 FROM t1
+      WINDOW win1 AS (PARTITION BY a ),
+             win2 AS (PARTITION BY b )
+    ORDER BY a;
+  }
+} -test {
+  faultsim_test_result {0 {1 2 5 6 9 10}}
+}
+
 finish_test
 
