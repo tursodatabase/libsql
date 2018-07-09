@@ -1117,7 +1117,8 @@ static void windowAggStep(
       int addrIf = 0;
       if( pWin->pFilter ){
         int regTmp;
-        assert( nArg==pWin->pOwner->x.pList->nExpr );
+        assert( nArg==0 || nArg==pWin->pOwner->x.pList->nExpr );
+        assert( nArg || pWin->pOwner->x.pList==0 );
         if( csr>0 ){
           regTmp = sqlite3GetTempReg(pParse);
           sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+nArg,regTmp);
@@ -1132,6 +1133,7 @@ static void windowAggStep(
       }
       if( pWin->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;
+        assert( nArg>0 );
         pColl = sqlite3ExprNNCollSeq(pParse, pWin->pOwner->x.pList->a[0].pExpr);
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0,0,0, (const char*)pColl, P4_COLLSEQ);
       }
