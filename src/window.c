@@ -1002,25 +1002,29 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
 }
 
 /*
-** A "PRECEDING <expr>" (bEnd==0) or "FOLLOWING <expr>" (bEnd==1) has just 
-** been evaluated and the result left in register reg. This function generates
-** VM code to check that the value is a non-negative integer and throws
-** an exception if it is not.
+** A "PRECEDING <expr>" (eCond==0) or "FOLLOWING <expr>" (eCond==1) or the
+** value of the second argument to nth_value() (eCond==2) has just been
+** evaluated and the result left in register reg. This function generates VM
+** code to check that the value is a non-negative integer and throws an
+** exception if it is not.
 */
-static void windowCheckFrameOffset(Parse *pParse, int reg, int bEnd){
+static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
   static const char *azErr[] = {
     "frame starting offset must be a non-negative integer",
-    "frame ending offset must be a non-negative integer"
+    "frame ending offset must be a non-negative integer",
+    "second argument to nth_value must be a positive integer"
   };
+  static int aOp[] = { OP_Ge, OP_Ge, OP_Gt };
   Vdbe *v = sqlite3GetVdbe(pParse);
   int regZero = sqlite3GetTempReg(pParse);
+  assert( eCond==0 || eCond==1 || eCond==2 );
   sqlite3VdbeAddOp2(v, OP_Integer, 0, regZero);
   sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
   VdbeCoverage(v);
-  sqlite3VdbeAddOp3(v, OP_Ge, regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
+  sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
   VdbeCoverage(v);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
-  sqlite3VdbeAppendP4(v, (void*)azErr[bEnd], P4_STATIC);
+  sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
   sqlite3ReleaseTempReg(pParse, regZero);
 }
 
@@ -1278,6 +1282,7 @@ static void windowReturnOneRow(
 
       if( pFunc->zName==nth_valueName ){
         sqlite3VdbeAddOp3(v, OP_Column, pMWin->iEphCsr, pWin->iArgCol+1,tmpReg);
+        windowCheckIntValue(pParse, tmpReg, 2);
       }else{
         sqlite3VdbeAddOp2(v, OP_Integer, 1, tmpReg);
       }
@@ -1576,11 +1581,11 @@ static void windowCodeRowExprStep(
   ** an exception.  */
   if( pMWin->pStart ){
     sqlite3ExprCode(pParse, pMWin->pStart, regStart);
-    windowCheckFrameOffset(pParse, regStart, 0);
+    windowCheckIntValue(pParse, regStart, 0);
   }
   if( pMWin->pEnd ){
     sqlite3ExprCode(pParse, pMWin->pEnd, regEnd);
-    windowCheckFrameOffset(pParse, regEnd, 1);
+    windowCheckIntValue(pParse, regEnd, 1);
   }
 
   /* If this is "ROWS <expr1> FOLLOWING AND ROWS <expr2> FOLLOWING", do:

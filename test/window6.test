@@ -283,4 +283,31 @@ do_execsql_test 10.0 {
     WINDOW w1 AS (ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING);
 } {1}
 
+foreach {tn stmt} {
+  1 "SELECT nth_value(b, 0) OVER (ORDER BY a) FROM t1"
+  2 "SELECT nth_value(b, -1) OVER (ORDER BY a) FROM t1"
+  3 "SELECT nth_value(b, '4ab') OVER (ORDER BY a) FROM t1"
+  4 "SELECT nth_value(b, NULL) OVER (ORDER BY a) FROM t1"
+  5 "SELECT nth_value(b, 8.5) OVER (ORDER BY a) FROM t1"
+} {
+  do_catchsql_test 10.1.$tn "
+    WITH t1(a,b) AS ( VALUES(1, 2), (2, 3), (3, 4) )
+    $stmt
+  " {1 {second argument to nth_value must be a positive integer}}
+}
+
+foreach {tn stmt res} {
+  1 "SELECT nth_value(b, 1) OVER (ORDER BY a) FROM t1"         {2 2 2}
+  2 "SELECT nth_value(b, 2) OVER (ORDER BY a) FROM t1"         {{} 3 3}
+  3 "SELECT nth_value(b, '2') OVER (ORDER BY a) FROM t1"       {{} 3 3}
+  4 "SELECT nth_value(b, 2.0) OVER (ORDER BY a) FROM t1"       {{} 3 3}
+  5 "SELECT nth_value(b, '2.0') OVER (ORDER BY a) FROM t1"     {{} 3 3}
+  6 "SELECT nth_value(b, 10000000) OVER (ORDER BY a) FROM t1"  {{} {} {}}
+} {
+  do_execsql_test 10.2.$tn "
+    WITH t1(a,b) AS ( VALUES(1, 2), (2, 3), (3, 4) )
+    $stmt
+  " $res
+}
+
 finish_test

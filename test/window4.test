@@ -1261,4 +1261,12 @@ do_execsql_test 10.1 {
   SELECT id, min(b) OVER (PARTITION BY a ORDER BY id) FROM t7;
 } {1 2   2 2   3 2   4 {}   5 8   6 1}
 
+do_execsql_test 10.2 {
+  SELECT id, lead(b, -1) OVER (PARTITION BY a ORDER BY id) FROM t7;
+} {1 {}   2 2   3 {}   4 {}   5 {}   6 8}
+
+do_execsql_test 10.3 {
+  SELECT id, lag(b, -1) OVER (PARTITION BY a ORDER BY id) FROM t7;
+} {1 {}   2 4   3 {}   4 8   5 1   6 {}}
+
 finish_test

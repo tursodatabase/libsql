@@ -351,6 +351,14 @@ execsql_test 10.1 {
   SELECT id, min(b) OVER (PARTITION BY a ORDER BY id) FROM t7;
 }
 
+execsql_test 10.2 {
+  SELECT id, lead(b, -1) OVER (PARTITION BY a ORDER BY id) FROM t7;
+}
+execsql_test 10.3 {
+  SELECT id, lag(b, -1) OVER (PARTITION BY a ORDER BY id) FROM t7;
+}
+
+
 
 finish_test
 
