@@ -1,5 +1,5 @@
-C Minor\scomment\schanges.\s\sAdd\sALWAYS()\smacros\son\ssome\sunreachable\sbranches\nin\sthe\sxStep()\smethods\sof\sbuilt-in\swindow\sfunctions.
-D 2018-07-10T20:50:27.275
+C Add\sVdbeModuleComment()s\son\sthe\sthree\smain\scode\sgenerators\sfor\swindow\nfunctions.
+D 2018-07-10T22:24:14.549
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -584,7 +584,7 @@ F src/where.c 7afd00cf7fb57a2770e7ab35deae105dc5b70b414c5018543850da999bfec8d6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c fe23a55294b4c94bf658d2a6eb7996170dd563bf33af4c3e5d71aff3483e4b08
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
-F src/window.c ba6d7cf7f41733dab55822394733c93c55e4dca776cca8eae9de463f43448871
+F src/window.c f0ff13192d38f9f182c30d47f8a2dffccdacccc442c988e364d31cfa27a45122
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7cdc5bc85e0edfcc38f920c2ce91599bcbfdb49522d88b08c64596546d13881
-R 76be4b1d5fb13864cac21cdf96aca0b8
+P f2057542cf6860badb4ae6b1a0df94a78d5b2661dabf16f5705b3f8236521bea
+R 647957a7a9f19e01284084867c547bba
 U drh
-Z cf84a518c5d826e8c071d33066873bdf
+Z 1dad2193c988f774f424a6011e48f04c

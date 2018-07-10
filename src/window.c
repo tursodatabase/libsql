@@ -2219,6 +2219,7 @@ void sqlite3WindowCodeStep(
   if( pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy)
   ){
+    VdbeModuleComment((pParse->pVdbe, "Begin RowExprStep()"));
     windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);
   }else{
     Window *pWin;
@@ -2243,8 +2244,10 @@ void sqlite3WindowCodeStep(
 
     /* Otherwise, call windowCodeDefaultStep().  */
     if( bCache ){
+      VdbeModuleComment((pParse->pVdbe, "Begin CacheStep()"));
       windowCodeCacheStep(pParse, p, pWInfo, regGosub, addrGosub);
     }else{
+      VdbeModuleComment((pParse->pVdbe, "Begin DefaultStep()"));
       windowCodeDefaultStep(pParse, p, pWInfo, regGosub, addrGosub);
     }
   }
