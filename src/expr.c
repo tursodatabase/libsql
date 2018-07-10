@@ -4953,7 +4953,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     }
 #ifndef SQLITE_OMIT_WINDOWFUNC
     /* Justification for the assert():
-    /* window functions have p->op==TK_FUNCTION but aggregate functions
+    ** window functions have p->op==TK_FUNCTION but aggregate functions
     ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
     ** function and a window function should have failed before reaching
     ** this point.  And, it is not possible to have a window function and

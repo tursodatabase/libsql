@@ -1245,11 +1245,13 @@ static int resolveOrderGroupBy(
       if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pE->pWin ){
+          /* Since this window function is being changed into a reference
+          ** to the same window function the result set, remove the instance
+          ** of this window function from the Select.pWin list. */
           Window **pp;
           for(pp=&pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
             if( *pp==pE->pWin ){
               *pp = (*pp)->pNextWin;
-              break;
             }    
           }
         }

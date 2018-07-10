@@ -1,5 +1,5 @@
-C Assert\sthat\sif\stwo\sfunctions\scompare\sequal\sin\severy\sother\sway,\sthen\sthey\nmust\sboth\shave\sOVER\sclauses,\sor\sneither\shas\san\sOVER\sclause.\s\sUse\sthis\sfact\nto\ssimplify\sexpression\scomparison.
-D 2018-07-10T07:25:42.133
+C Fix\sa\sharmless\swarning\sabout\scomment\sformatting\sin\sthe\sprevious\ncheck-in.\s\sSimplify\sthe\sORDER\sBY\sdereferencing\slogic\sso\sthat\sit\savoids\nunreachable\sbranches.
+D 2018-07-10T07:39:23.889
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -447,7 +447,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
-F src/expr.c 61ae1a229b8c0b4a44314fcbceecbd8801a4e784cd8c5d6d78da86fb5a0c3ddb
+F src/expr.c 0abe1e6931ea3527549993d66a4e010231059c79a62cd9ed51c6ca5cc5b87c30
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c b1da9ef8dc834603bb0d28972378a7ce65897847f9a1e89ab800bbdf24c788ee
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -493,7 +493,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c e966ecc97c3671ff0e96227c8c877b83f2d33ea371ee190bbf1698b36b5605c0
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 1f965d00b4c26b7eb886b90c687069f5db0d05157dbc1ca406fe88e990eac671
+F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c06d56c1d5931456b2507ac8cf8205e83492a309b685e3978953f0b0156af191
 F src/shell.c.in f1c79c537117ee61317a5ed85cdbcb854998cd690eb34ab803779358a2ace780
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a7649afebc9349bf44a0e3588e81ab595ea85be1c70de08859ea76a7b271f62
-R b915cbd3a3a1dcccf34bbc81d9e850ba
+P 52559ad58ce412af40f1f34e80bfe9fadc6a93f3ca0cfaf69f94d615bbb99831
+R af867e8f2830341644b32312137b8d37
 U drh
-Z b899de7df69efd022bef2da0986ac912
+Z 9b7ea72c6158564396d1f1dc7cb1a0c3
