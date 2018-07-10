@@ -3974,7 +3974,8 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_VDBE_COVERAGE: {
 #ifdef SQLITE_VDBE_COVERAGE
-      typedef void (*branch_callback)(void*,int,u8,u8);
+      typedef void (*branch_callback)(void*,unsigned int,
+                                      unsigned char,unsigned char);
       sqlite3GlobalConfig.xVdbeBranch = va_arg(ap,branch_callback);
       sqlite3GlobalConfig.pVdbeBranchArg = va_arg(ap,void*);
 #endif
