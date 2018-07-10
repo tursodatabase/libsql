@@ -1274,10 +1274,7 @@ static void analyzeOneTable(
       callStatGet(v, regStat4, STAT_GET_NLT, regLt);
       callStatGet(v, regStat4, STAT_GET_NDLT, regDLt);
       sqlite3VdbeAddOp4Int(v, seekOp, iTabCur, addrNext, regSampleRowid, 0);
-      /* We know that the regSampleRowid row exists because it was read by
-      ** the previous loop.  Thus the not-found jump of seekOp will never
-      ** be taken */
-      VdbeCoverageNeverTaken(v);
+      VdbeCoverage(v);
 #ifdef SQLITE_ENABLE_STAT3
       sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, 0, regSample);
 #else

@@ -180,7 +180,7 @@ int sqlite3_found_count = 0;
     if( M==2 ) I |= 0x04;
     if( M==4 ){
       I |= 0x08;
-      if( (I&0x05)!=0 ) I |= 0x05;
+      if( (mNever&0x08)!=0 && (I&0x05)!=0) I |= 0x05; /*NO_TEST*/
     }
     sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg,
                                     iSrcLine&0xffffff, I, M);

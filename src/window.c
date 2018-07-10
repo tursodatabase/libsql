@@ -1038,9 +1038,9 @@ static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
   VdbeCoverageIf(v, eCond==1);
   VdbeCoverageIf(v, eCond==2);
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
-  VdbeCoverageIf(v, eCond==0);
-  VdbeCoverageIf(v, eCond==1);
-  VdbeCoverageIf(v, eCond==2);
+  VdbeCoverageNeverNullIf(v, eCond==0);
+  VdbeCoverageNeverNullIf(v, eCond==1);
+  VdbeCoverageNeverNullIf(v, eCond==2);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
   sqlite3ReleaseTempReg(pParse, regZero);
@@ -1308,7 +1308,7 @@ static void windowReturnOneRow(
       }
       sqlite3VdbeAddOp3(v, OP_Add, tmpReg, pWin->regApp, tmpReg);
       sqlite3VdbeAddOp3(v, OP_Gt, pWin->regApp+1, lbl, tmpReg);
-      VdbeCoverage(v);
+      VdbeCoverageNeverNull(v);
       sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, lbl, tmpReg);
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol, pWin->regResult);
@@ -1621,7 +1621,7 @@ static void windowCodeRowExprStep(
     assert( pMWin->pStart!=0 );
     assert( pMWin->eEnd==TK_FOLLOWING );
     sqlite3VdbeAddOp3(v, OP_Ge, regStart, sqlite3VdbeCurrentAddr(v)+2, regEnd);
-    VdbeCoverage(v);
+    VdbeCoverageNeverNull(v);
     sqlite3VdbeAddOp2(v, OP_Copy, regSize, regStart);
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regEnd);
   }
@@ -1630,7 +1630,7 @@ static void windowCodeRowExprStep(
     assert( pMWin->pEnd!=0 );
     assert( pMWin->eStart==TK_PRECEDING );
     sqlite3VdbeAddOp3(v, OP_Le, regStart, sqlite3VdbeCurrentAddr(v)+3, regEnd);
-    VdbeCoverage(v);
+    VdbeCoverageNeverNull(v);
     sqlite3VdbeAddOp2(v, OP_Copy, regSize, regStart);
     sqlite3VdbeAddOp2(v, OP_Copy, regSize, regEnd);
   }

@@ -351,6 +351,8 @@ int sqlite3NotPureFunc(sqlite3_context*);
          sqlite3VdbeSetLineNumber(v,__LINE__|0x6000000);
 # define VdbeCoverageNeverNull(v) \
          sqlite3VdbeSetLineNumber(v,__LINE__|0x4000000);
+# define VdbeCoverageNeverNullIf(v,x) \
+         if(x)sqlite3VdbeSetLineNumber(v,__LINE__|0x4000000);
 # define VdbeCoverageEqNe(v) \
          sqlite3VdbeSetLineNumber(v,__LINE__|0x8000000);
 # define VDBE_OFFSET_LINENO(x) (__LINE__+x)
@@ -360,6 +362,7 @@ int sqlite3NotPureFunc(sqlite3_context*);
 # define VdbeCoverageAlwaysTaken(v)
 # define VdbeCoverageNeverTaken(v)
 # define VdbeCoverageNeverNull(v)
+# define VdbeCoverageNeverNullIf(v,x)
 # define VdbeCoverageEqNe(v)
 # define VDBE_OFFSET_LINENO(x) 0
 #endif

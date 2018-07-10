@@ -523,7 +523,7 @@ void sqlite3Update(
       if( !isView && aiCurOnePass[0]!=iDataCur && aiCurOnePass[1]!=iDataCur ){
         assert( pPk );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey,nKey);
-        VdbeCoverageNeverTaken(v);
+        VdbeCoverage(v);
       }
       if( eOnePass!=ONEPASS_SINGLE ){
         labelContinue = sqlite3VdbeMakeLabel(v);
