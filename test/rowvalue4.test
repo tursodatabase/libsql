@@ -224,7 +224,7 @@ do_execsql_test 5.0 {
   WITH i(i) AS (
     VALUES(1) UNION ALL SELECT i+1 FROM i WHERE i<1000
   )
-  INSERT INTO d2 SELECT i/3, i%3, i/3 FROM i;
+  INSERT INTO d2 SELECT i/100, i%100, i/100 FROM i;
   ANALYZE;
 }
 

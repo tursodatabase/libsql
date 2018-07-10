@@ -85,6 +85,7 @@ struct VdbeCursor {
   Bool isEphemeral:1;     /* True for an ephemeral table */
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
+  Bool seekHit:1;         /* See the OP_SeekHit and OP_IfNoHope opcodes */
   Btree *pBtx;            /* Separate file holding temporary table */
   i64 seqCount;           /* Sequence counter */
   int *aAltMap;           /* Mapping from table to index column numbers */
@@ -208,7 +209,11 @@ struct sqlite3_value {
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
-  void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
+  u16 mScopyFlags;    /* flags value immediately after the shallow copy */
+#endif
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+  u32 iTabColHash;    /* Hash of table.column that is origin of this value */
+  u32 iPadding;       /* sqlite3_value objects must be 8-byte aligned */
 #endif
 };
 
@@ -448,9 +453,6 @@ void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(VdbeCursor**, int*);
 int sqlite3VdbeCursorRestore(VdbeCursor*);
-#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
-void sqlite3VdbePrintOp(FILE*, int, Op*);
-#endif
 u32 sqlite3VdbeSerialTypeLen(u32);
 u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 u32 sqlite3VdbeSerialType(Mem*, int, u32*);
@@ -495,6 +497,9 @@ void sqlite3VdbeMemCast(Mem*,u8,u8);
 int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+int sqlite3VdbeMemAggValue(Mem*, Mem*, FuncDef*);
+#endif
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int n);

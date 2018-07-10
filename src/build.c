@@ -1697,6 +1697,31 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
   return 0;
 }
 
+/* Recompute the colNotIdxed field of the Index.
+**
+** colNotIdxed is a bitmask that has a 0 bit representing each indexed
+** columns that are within the first 63 columns of the table.  The
+** high-order bit of colNotIdxed is always 1.  All unindexed columns
+** of the table have a 1.
+**
+** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
+** to determine if the index is covering index.
+*/
+static void recomputeColumnsNotIndexed(Index *pIdx){
+  Bitmask m = 0;
+  int j;
+  for(j=pIdx->nColumn-1; j>=0; j--){
+    int x = pIdx->aiColumn[j];
+    if( x>=0 ){
+      testcase( x==BMS-1 );
+      testcase( x==BMS-2 );
+      if( x<BMS-1 ) m |= MASKBIT(x);
+    }
+  }
+  pIdx->colNotIdxed = ~m;
+  assert( (pIdx->colNotIdxed>>63)==1 );
+}
+
 /*
 ** This routine runs at the end of parsing a CREATE TABLE statement that
 ** has a WITHOUT ROWID clause.  The job of this routine is to convert both
@@ -1765,7 +1790,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
-    if( db->mallocFailed ) return;
+    if( db->mallocFailed || pParse->nErr ) return;
     pPk = sqlite3PrimaryKeyIndex(pTab);
     pTab->iPKey = -1;
   }else{
@@ -1845,6 +1870,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }else{
     pPk->nColumn = pTab->nCol;
   }
+  recomputeColumnsNotIndexed(pPk);
 }
 
 /*
@@ -2295,6 +2321,11 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     nErr++;
   }
   pTable->pSchema->schemaFlags |= DB_UnresetViews;
+  if( db->mallocFailed ){
+    sqlite3DeleteColumnNames(db, pTable);
+    pTable->aCol = 0;
+    pTable->nCol = 0;
+  }
 #endif /* SQLITE_OMIT_VIEW */
   return nErr;  
 }
@@ -3278,6 +3309,7 @@ void sqlite3CreateIndex(
   ** it as a covering index */
   assert( HasRowid(pTab) 
       || pTab->iPKey<0 || sqlite3ColumnOfIndex(pIndex, pTab->iPKey)>=0 );
+  recomputeColumnsNotIndexed(pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){

@@ -274,6 +274,7 @@ static void doDataTest1(
   int rc = LSM_OK;
   Datasource *pData;
   TestDb *pDb;
+  int iToggle = 0;
 
   /* Start the test case, open a database and allocate the datasource. */
   pDb = testOpen(zSystem, 1, &rc);
@@ -287,8 +288,11 @@ static void doDataTest1(
     testWriteDatasourceRange(pDb, pData, i, p->nVerify, &rc);
     i += p->nVerify;
 
+    if( iToggle ) testBegin(pDb, 1, &rc);
     /* Check that the db content is correct. */
     testDbContents(pDb, pData, p->nRow, 0, i-1, p->nTest, p->bTestScan, &rc);
+    if( iToggle ) testCommit(pDb, 0, &rc);
+    iToggle = (iToggle+1)%2;
 
     if( bRecover ){
       testReopenRecover(&pDb, &rc);

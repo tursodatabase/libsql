@@ -182,7 +182,7 @@ AC_SUBST(BUILD_CC)
 # Do we want to support multithreaded use of sqlite
 #
 AC_ARG_ENABLE(threadsafe, 
-AC_HELP_STRING([--disable-threadsafe],[Disable mutexing]),,enable_threadsafe=yes)
+AC_HELP_STRING([--disable-threadsafe],[Disable mutexing]))
 AC_MSG_CHECKING([whether to support threadsafe operation])
 if test "$enable_threadsafe" = "no"; then
   SQLITE_THREADSAFE=0
@@ -557,9 +557,8 @@ AC_SEARCH_LIBS(fdatasync, [rt])
 
 #########
 # check for debug enabled
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]),
-      [use_debug=$enableval],[use_debug=no])
-if test "${use_debug}" = "yes" ; then
+AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]))
+if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
 else
   TARGET_DEBUG="-DNDEBUG"
@@ -569,9 +568,8 @@ AC_SUBST(TARGET_DEBUG)
 #########
 # See whether we should use the amalgamation to build
 AC_ARG_ENABLE(amalgamation, AC_HELP_STRING([--disable-amalgamation],
-      [Disable the amalgamation and instead build all files separately]),
-      [use_amalgamation=$enableval],[use_amalgamation=yes])
-if test "${use_amalgamation}" != "yes" ; then
+      [Disable the amalgamation and instead build all files separately]))
+if test "${enable_amalgamation}" == "no" ; then
   USE_AMALGAMATION=0
 fi
 AC_SUBST(USE_AMALGAMATION)
@@ -585,9 +583,8 @@ AC_SUBST(HAVE_ZLIB)
 #########
 # See whether we should allow loadable extensions
 AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--disable-load-extension],
-      [Disable loading of external extensions]),
-      [use_loadextension=$enableval],[use_loadextension=yes])
-if test "${use_loadextension}" = "yes" ; then
+      [Disable loading of external extensions]),,[enable_load_extension=yes])
+if test "${enable_load_extension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
   AC_SEARCH_LIBS(dlopen, dl)
 else
@@ -598,8 +595,7 @@ fi
 # Do we want to support memsys3 and/or memsys5
 #
 AC_ARG_ENABLE(memsys5, 
-  AC_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]),
-  [enable_memsys5=yes],[enable_memsys5=no])
+  AC_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]))
 AC_MSG_CHECKING([whether to support MEMSYS5])
 if test "${enable_memsys5}" = "yes"; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
@@ -608,8 +604,7 @@ else
   AC_MSG_RESULT([no])
 fi
 AC_ARG_ENABLE(memsys3, 
-  AC_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]),
-  [enable_memsys3=yes],[enable_memsys3=no])
+  AC_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]))
 AC_MSG_CHECKING([whether to support MEMSYS3])
 if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
@@ -621,21 +616,18 @@ fi
 #########
 # See whether we should enable Full Text Search extensions
 AC_ARG_ENABLE(fts3, AC_HELP_STRING([--enable-fts3],
-      [Enable the FTS3 extension]),
-      [enable_fts3=yes],[enable_fts3=no])
+      [Enable the FTS3 extension]))
 if test "${enable_fts3}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
 fi
 AC_ARG_ENABLE(fts4, AC_HELP_STRING([--enable-fts4],
-      [Enable the FTS4 extension]),
-      [enable_fts4=yes],[enable_fts4=no])
+      [Enable the FTS4 extension]))
 if test "${enable_fts4}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
   AC_SEARCH_LIBS([log],[m])
 fi
 AC_ARG_ENABLE(fts5, AC_HELP_STRING([--enable-fts5],
-      [Enable the FTS5 extension]),
-      [enable_fts5=yes],[enable_fts5=no])
+      [Enable the FTS5 extension]))
 if test "${enable_fts5}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   AC_SEARCH_LIBS([log],[m])
@@ -643,9 +635,7 @@ fi
 
 #########
 # See whether we should enable JSON1
-AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],
-      [Enable the JSON1 extension]),
-      [enable_json1=yes],[enable_json1=no])
+AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],[Enable the JSON1 extension]))
 if test "${enable_json1}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
 fi
@@ -654,8 +644,7 @@ fi
 # See whether we should enable the LIMIT clause on UPDATE and DELETE
 # statements.
 AC_ARG_ENABLE(update-limit, AC_HELP_STRING([--enable-update-limit],
-      [Enable the UPDATE/DELETE LIMIT clause]),
-      [enable_udlimit=yes],[enable_udlimit=no])
+      [Enable the UPDATE/DELETE LIMIT clause]))
 if test "${enable_udlimit}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
 fi
@@ -663,8 +652,7 @@ fi
 #########
 # See whether we should enable RTREE
 AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
-      [Enable the RTREE extension]),
-      [enable_rtree=yes],[enable_rtree=no])
+      [Enable the RTREE extension]))
 if test "${enable_rtree}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
 fi
@@ -672,8 +660,7 @@ fi
 #########
 # See whether we should enable the SESSION extension
 AC_ARG_ENABLE(session, AC_HELP_STRING([--enable-session],
-      [Enable the SESSION extension]),
-      [enable_session=yes],[enable_session=no])
+      [Enable the SESSION extension]))
 if test "${enable_session}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
@@ -733,8 +720,7 @@ BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
 #########
 # See whether we should use GCOV
 AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
-      [Enable coverage testing using gcov]),
-      [use_gcov=$enableval],[use_gcov=no])
+      [Enable coverage testing using gcov]))
 if test "${use_gcov}" = "yes" ; then
   USE_GCOV=1
 else

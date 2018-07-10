@@ -881,48 +881,51 @@ static int walNextHash(int iPriorHash){
   return (iPriorHash+1)&(HASHTABLE_NSLOT-1);
 }
 
+/*
+** An instance of the WalHashLoc object is used to describe the location
+** of a page hash table in the wal-index.  This becomes the return value
+** from walHashGet().
+*/
+typedef struct WalHashLoc WalHashLoc;
+struct WalHashLoc {
+  volatile ht_slot *aHash;  /* Start of the wal-index hash table */
+  volatile u32 *aPgno;      /* aPgno[1] is the page of first frame indexed */
+  u32 iZero;                /* One less than the frame number of first indexed*/
+};
+
 /* 
 ** Return pointers to the hash table and page number array stored on
 ** page iHash of the wal-index. The wal-index is broken into 32KB pages
 ** numbered starting from 0.
 **
-** Set output variable *paHash to point to the start of the hash table
-** in the wal-index file. Set *piZero to one less than the frame 
+** Set output variable pLoc->aHash to point to the start of the hash table
+** in the wal-index file. Set pLoc->iZero to one less than the frame 
 ** number of the first frame indexed by this hash table. If a
 ** slot in the hash table is set to N, it refers to frame number 
-** (*piZero+N) in the log.
+** (pLoc->iZero+N) in the log.
 **
-** Finally, set *paPgno so that *paPgno[1] is the page number of the
-** first frame indexed by the hash table, frame (*piZero+1).
+** Finally, set pLoc->aPgno so that pLoc->aPgno[1] is the page number of the
+** first frame indexed by the hash table, frame (pLoc->iZero+1).
 */
 static int walHashGet(
   Wal *pWal,                      /* WAL handle */
   int iHash,                      /* Find the iHash'th table */
-  volatile ht_slot **paHash,      /* OUT: Pointer to hash index */
-  volatile u32 **paPgno,          /* OUT: Pointer to page number array */
-  u32 *piZero                     /* OUT: Frame associated with *paPgno[0] */
+  WalHashLoc *pLoc                /* OUT: Hash table location */
 ){
   int rc;                         /* Return code */
-  volatile u32 *aPgno;
 
-  rc = walIndexPage(pWal, iHash, &aPgno);
+  rc = walIndexPage(pWal, iHash, &pLoc->aPgno);
   assert( rc==SQLITE_OK || iHash>0 );
 
   if( rc==SQLITE_OK ){
-    u32 iZero;
-    volatile ht_slot *aHash;
-
-    aHash = (volatile ht_slot *)&aPgno[HASHTABLE_NPAGE];
+    pLoc->aHash = (volatile ht_slot *)&pLoc->aPgno[HASHTABLE_NPAGE];
     if( iHash==0 ){
-      aPgno = &aPgno[WALINDEX_HDR_SIZE/sizeof(u32)];
-      iZero = 0;
+      pLoc->aPgno = &pLoc->aPgno[WALINDEX_HDR_SIZE/sizeof(u32)];
+      pLoc->iZero = 0;
     }else{
-      iZero = HASHTABLE_NPAGE_ONE + (iHash-1)*HASHTABLE_NPAGE;
+      pLoc->iZero = HASHTABLE_NPAGE_ONE + (iHash-1)*HASHTABLE_NPAGE;
     }
-  
-    *paPgno = &aPgno[-1];
-    *paHash = aHash;
-    *piZero = iZero;
+    pLoc->aPgno = &pLoc->aPgno[-1];
   }
   return rc;
 }
@@ -968,9 +971,7 @@ static u32 walFramePgno(Wal *pWal, u32 iFrame){
 ** actually needed.
 */
 static void walCleanupHash(Wal *pWal){
-  volatile ht_slot *aHash = 0;    /* Pointer to hash table to clear */
-  volatile u32 *aPgno = 0;        /* Page number array for hash table */
-  u32 iZero = 0;                  /* frame == (aHash[x]+iZero) */
+  WalHashLoc sLoc;                /* Hash table location */
   int iLimit = 0;                 /* Zero values greater than this */
   int nByte;                      /* Number of bytes to zero in aPgno[] */
   int i;                          /* Used to iterate through aHash[] */
@@ -988,24 +989,24 @@ static void walCleanupHash(Wal *pWal){
   */
   assert( pWal->nWiData>walFramePage(pWal->hdr.mxFrame) );
   assert( pWal->apWiData[walFramePage(pWal->hdr.mxFrame)] );
-  walHashGet(pWal, walFramePage(pWal->hdr.mxFrame), &aHash, &aPgno, &iZero);
+  walHashGet(pWal, walFramePage(pWal->hdr.mxFrame), &sLoc);
 
   /* Zero all hash-table entries that correspond to frame numbers greater
   ** than pWal->hdr.mxFrame.
   */
-  iLimit = pWal->hdr.mxFrame - iZero;
+  iLimit = pWal->hdr.mxFrame - sLoc.iZero;
   assert( iLimit>0 );
   for(i=0; i<HASHTABLE_NSLOT; i++){
-    if( aHash[i]>iLimit ){
-      aHash[i] = 0;
+    if( sLoc.aHash[i]>iLimit ){
+      sLoc.aHash[i] = 0;
     }
   }
   
   /* Zero the entries in the aPgno array that correspond to frames with
   ** frame numbers greater than pWal->hdr.mxFrame. 
   */
-  nByte = (int)((char *)aHash - (char *)&aPgno[iLimit+1]);
-  memset((void *)&aPgno[iLimit+1], 0, nByte);
+  nByte = (int)((char *)sLoc.aHash - (char *)&sLoc.aPgno[iLimit+1]);
+  memset((void *)&sLoc.aPgno[iLimit+1], 0, nByte);
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
   /* Verify that the every entry in the mapping region is still reachable
@@ -1015,10 +1016,10 @@ static void walCleanupHash(Wal *pWal){
     int j;           /* Loop counter */
     int iKey;        /* Hash key */
     for(j=1; j<=iLimit; j++){
-      for(iKey=walHash(aPgno[j]); aHash[iKey]; iKey=walNextHash(iKey)){
-        if( aHash[iKey]==j ) break;
+      for(iKey=walHash(sLoc.aPgno[j]);sLoc.aHash[iKey];iKey=walNextHash(iKey)){
+        if( sLoc.aHash[iKey]==j ) break;
       }
-      assert( aHash[iKey]==j );
+      assert( sLoc.aHash[iKey]==j );
     }
   }
 #endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
@@ -1031,11 +1032,9 @@ static void walCleanupHash(Wal *pWal){
 */
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   int rc;                         /* Return code */
-  u32 iZero = 0;                  /* One less than frame number of aPgno[1] */
-  volatile u32 *aPgno = 0;        /* Page number array */
-  volatile ht_slot *aHash = 0;    /* Hash table */
+  WalHashLoc sLoc;                /* Wal-index hash table location */
 
-  rc = walHashGet(pWal, walFramePage(iFrame), &aHash, &aPgno, &iZero);
+  rc = walHashGet(pWal, walFramePage(iFrame), &sLoc);
 
   /* Assuming the wal-index file was successfully mapped, populate the
   ** page number array and hash table entry.
@@ -1045,15 +1044,16 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     int idx;                      /* Value to write to hash-table slot */
     int nCollide;                 /* Number of hash collisions */
 
-    idx = iFrame - iZero;
+    idx = iFrame - sLoc.iZero;
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
     
     /* If this is the first entry to be added to this hash-table, zero the
     ** entire hash table and aPgno[] array before proceeding. 
     */
     if( idx==1 ){
-      int nByte = (int)((u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1]);
-      memset((void*)&aPgno[1], 0, nByte);
+      int nByte = (int)((u8 *)&sLoc.aHash[HASHTABLE_NSLOT]
+                               - (u8 *)&sLoc.aPgno[1]);
+      memset((void*)&sLoc.aPgno[1], 0, nByte);
     }
 
     /* If the entry in aPgno[] is already set, then the previous writer
@@ -1062,18 +1062,18 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     ** Remove the remnants of that writers uncommitted transaction from 
     ** the hash-table before writing any new entries.
     */
-    if( aPgno[idx] ){
+    if( sLoc.aPgno[idx] ){
       walCleanupHash(pWal);
-      assert( !aPgno[idx] );
+      assert( !sLoc.aPgno[idx] );
     }
 
     /* Write the aPgno[] array entry and the hash-table slot. */
     nCollide = idx;
-    for(iKey=walHash(iPage); aHash[iKey]; iKey=walNextHash(iKey)){
+    for(iKey=walHash(iPage); sLoc.aHash[iKey]; iKey=walNextHash(iKey)){
       if( (nCollide--)==0 ) return SQLITE_CORRUPT_BKPT;
     }
-    aPgno[idx] = iPage;
-    aHash[iKey] = (ht_slot)idx;
+    sLoc.aPgno[idx] = iPage;
+    sLoc.aHash[iKey] = (ht_slot)idx;
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
     /* Verify that the number of entries in the hash table exactly equals
@@ -1082,7 +1082,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     {
       int i;           /* Loop counter */
       int nEntry = 0;  /* Number of entries in the hash table */
-      for(i=0; i<HASHTABLE_NSLOT; i++){ if( aHash[i] ) nEntry++; }
+      for(i=0; i<HASHTABLE_NSLOT; i++){ if( sLoc.aHash[i] ) nEntry++; }
       assert( nEntry==idx );
     }
 
@@ -1094,10 +1094,12 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     if( (idx&0x3ff)==0 ){
       int i;           /* Loop counter */
       for(i=1; i<=idx; i++){
-        for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
-          if( aHash[iKey]==i ) break;
+        for(iKey=walHash(sLoc.aPgno[i]);
+            sLoc.aHash[iKey];
+            iKey=walNextHash(iKey)){
+          if( sLoc.aHash[iKey]==i ) break;
         }
-        assert( aHash[iKey]==i );
+        assert( sLoc.aHash[iKey]==i );
       }
     }
 #endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
@@ -1635,33 +1637,31 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   }
 
   for(i=walFramePage(nBackfill+1); rc==SQLITE_OK && i<nSegment; i++){
-    volatile ht_slot *aHash;
-    u32 iZero;
-    volatile u32 *aPgno;
+    WalHashLoc sLoc;
 
-    rc = walHashGet(pWal, i, &aHash, &aPgno, &iZero);
+    rc = walHashGet(pWal, i, &sLoc);
     if( rc==SQLITE_OK ){
       int j;                      /* Counter variable */
       int nEntry;                 /* Number of entries in this segment */
       ht_slot *aIndex;            /* Sorted index for this segment */
 
-      aPgno++;
+      sLoc.aPgno++;
       if( (i+1)==nSegment ){
-        nEntry = (int)(iLast - iZero);
+        nEntry = (int)(iLast - sLoc.iZero);
       }else{
-        nEntry = (int)((u32*)aHash - (u32*)aPgno);
+        nEntry = (int)((u32*)sLoc.aHash - (u32*)sLoc.aPgno);
       }
-      aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[iZero];
-      iZero++;
+      aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[sLoc.iZero];
+      sLoc.iZero++;
   
       for(j=0; j<nEntry; j++){
         aIndex[j] = (ht_slot)j;
       }
-      walMergesort((u32 *)aPgno, aTmp, aIndex, &nEntry);
-      p->aSegment[i].iZero = iZero;
+      walMergesort((u32 *)sLoc.aPgno, aTmp, aIndex, &nEntry);
+      p->aSegment[i].iZero = sLoc.iZero;
       p->aSegment[i].nEntry = nEntry;
       p->aSegment[i].aIndex = aIndex;
-      p->aSegment[i].aPgno = (u32 *)aPgno;
+      p->aSegment[i].aPgno = (u32 *)sLoc.aPgno;
     }
   }
   sqlite3_free(aTmp);
@@ -2690,16 +2690,14 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
       }else{
         u32 i = pInfo->nBackfillAttempted;
         for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
-          volatile ht_slot *dummy;
-          volatile u32 *aPgno;      /* Array of page numbers */
-          u32 iZero;                /* Frame corresponding to aPgno[0] */
+          WalHashLoc sLoc;          /* Hash table location */
           u32 pgno;                 /* Page number in db file */
           i64 iDbOff;               /* Offset of db file entry */
           i64 iWalOff;              /* Offset of wal file entry */
 
-          rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+          rc = walHashGet(pWal, walFramePage(i), &sLoc);
           if( rc!=SQLITE_OK ) break;
-          pgno = aPgno[i-iZero];
+          pgno = sLoc.aPgno[i-sLoc.iZero];
           iDbOff = (i64)(pgno-1) * szPage;
 
           if( iDbOff+szPage<=szDb ){
@@ -2882,21 +2880,20 @@ static int walFindFrame(
   */
   iMinHash = walFramePage(pWal->minFrame);
   for(iHash=walFramePage(iLast); iHash>=iMinHash; iHash--){
-    volatile ht_slot *aHash;      /* Pointer to hash table */
-    volatile u32 *aPgno;          /* Pointer to array of page numbers */
-    u32 iZero;                    /* Frame number corresponding to aPgno[0] */
+    WalHashLoc sLoc;              /* Hash table location */
     int iKey;                     /* Hash slot index */
     int nCollide;                 /* Number of hash collisions remaining */
     int rc;                       /* Error code */
 
-    rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
+    rc = walHashGet(pWal, iHash, &sLoc);
     if( rc!=SQLITE_OK ){
       return rc;
     }
     nCollide = HASHTABLE_NSLOT;
-    for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
-      u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && iFrame>=pWal->minFrame && aPgno[aHash[iKey]]==pgno ){
+    for(iKey=walHash(pgno); sLoc.aHash[iKey]; iKey=walNextHash(iKey)){
+      u32 iFrame = sLoc.aHash[iKey] + sLoc.iZero;
+      if( iFrame<=iLast && iFrame>=pWal->minFrame
+       && sLoc.aPgno[sLoc.aHash[iKey]]==pgno ){
         assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }
@@ -3149,20 +3146,18 @@ int sqlite3WalLockForCommit(
         iFirst = 1;
       }
       for(iHash=walFramePage(iFirst); iHash<=iLastHash; iHash++){
-        volatile ht_slot *aHash;
-        volatile u32 *aPgno;
-        u32 iZero;
+        WalHashLoc sLoc;
 
-        rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
+        rc = walHashGet(pWal, iHash, &sLoc);
         if( rc==SQLITE_OK ){
           u32 i, iMin, iMax;
-          assert( head.mxFrame>=iZero );
-          iMin = (iZero >= iFirst) ? 1 : (iFirst - iZero);
+          assert( head.mxFrame>=sLoc.iZero );
+          iMin = (sLoc.iZero >= iFirst) ? 1 : (iFirst - sLoc.iZero);
           iMax = (iHash==0) ? HASHTABLE_NPAGE_ONE : HASHTABLE_NPAGE;
-          if( iMax>(head.mxFrame-iZero) ) iMax = (head.mxFrame-iZero);
+          if( iMax>(head.mxFrame-sLoc.iZero) ) iMax = (head.mxFrame-sLoc.iZero);
           for(i=iMin; rc==SQLITE_OK && i<=iMax; i++){
             PgHdr *pPg;
-            if( aPgno[i]==1 ){
+            if( sLoc.aPgno[i]==1 ){
               /* Check that the schema cookie has not been modified. If
               ** it has not, the commit can proceed. */
               u8 aNew[4];
@@ -3171,15 +3166,15 @@ int sqlite3WalLockForCommit(
               i64 iOffset;
               sz = pWal->hdr.szPage;
               sz = (sz&0xfe00) + ((sz&0x0001)<<16);
-              iOffset = walFrameOffset(i+iZero, sz) + WAL_FRAME_HDRSIZE + 40;
+              iOffset = walFrameOffset(i+sLoc.iZero, sz) + WAL_FRAME_HDRSIZE+40;
               rc = sqlite3OsRead(pWal->pWalFd, aNew, sizeof(aNew), iOffset);
               if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
                 rc = SQLITE_BUSY_SNAPSHOT;
               }
-            }else if( sqlite3BitvecTestNotNull(pAllRead, aPgno[i]) ){
-              *piConflict = aPgno[i];
+            }else if( sqlite3BitvecTestNotNull(pAllRead, sLoc.aPgno[i]) ){
+              *piConflict = sLoc.aPgno[i];
               rc = SQLITE_BUSY_SNAPSHOT;
-            }else if( (pPg = sqlite3PagerLookup(pPager, aPgno[i])) ){
+            }else if( (pPg = sqlite3PagerLookup(pPager, sLoc.aPgno[i])) ){
               /* Page aPgno[i], which is present in the pager cache, has been
               ** modified since the current CONCURRENT transaction was started.
               ** However it was not read by the current transaction, so is not

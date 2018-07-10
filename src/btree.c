@@ -3591,6 +3591,11 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
         rc = sqlite3PagerBegin(pBt->pPager, exFlag, sqlite3TempInMemory(p->db));
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
+        }else if( rc==SQLITE_BUSY_SNAPSHOT && pBt->inTransaction==TRANS_NONE ){
+          /* if there was no transaction opened when this function was
+          ** called and SQLITE_BUSY_SNAPSHOT is returned, change the error
+          ** code to SQLITE_BUSY. */
+          rc = SQLITE_BUSY;
         }
       }
     }
@@ -3641,7 +3646,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
       }
     }
   }
-
 
 trans_begun:
 #ifndef SQLITE_OMIT_CONCURRENT
@@ -5599,6 +5603,23 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+/*
+** This function is a no-op if cursor pCur does not point to a valid row.
+** Otherwise, if pCur is valid, configure it so that the next call to
+** sqlite3BtreeNext() is a no-op.
+*/
+#ifndef SQLITE_OMIT_WINDOWFUNC
+void sqlite3BtreeSkipNext(BtCursor *pCur){
+  /* We believe that the cursor must always be in the valid state when
+  ** this routine is called, but the proof is difficult, so we add an
+  ** ALWaYS() test just in case we are wrong. */
+  if( ALWAYS(pCur->eState==CURSOR_VALID) ){
+    pCur->eState = CURSOR_SKIPNEXT;
+    pCur->skipNext = 1;
+  }
+}
+#endif /* SQLITE_OMIT_WINDOWFUNC */
+
 /* Move the cursor to the last entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something
 ** or set *pRes to 1 if the table is empty.
@@ -6003,7 +6024,16 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
 
   pPage = pCur->pPage;
   idx = ++pCur->ix;
-  assert( pPage->isInit );
+  if( !pPage->isInit ){
+    /* The only known way for this to happen is for there to be a
+    ** recursive SQL function that does a DELETE operation as part of a
+    ** SELECT which deletes content out from under an active cursor
+    ** in a corrupt database file where the table being DELETE-ed from
+    ** has pages in common with the table being queried.  See TH3
+    ** module cov1/btree78.test testcase 220 (2018-06-08) for an
+    ** example. */
+    return SQLITE_CORRUPT_BKPT;
+  }
 
   /* If the database file is corrupt, it is possible for the value of idx 
   ** to be invalid here. This can only occur if a second cursor modifies

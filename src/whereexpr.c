@@ -256,11 +256,13 @@ static int isLikeOrGlob(
 
     /* The optimization is possible only if (1) the pattern does not begin
     ** with a wildcard and if (2) the non-wildcard prefix does not end with
-    ** an (illegal 0xff) character.  The second condition is necessary so
+    ** an (illegal 0xff) character, or (3) the pattern does not consist of
+    ** a single escape character. The second condition is necessary so
     ** that we can increment the prefix key to find an upper bound for the
-    ** range search. 
-    */
-    if( cnt!=0 && 255!=(u8)z[cnt-1] ){
+    ** range search. The third is because the caller assumes that the pattern
+    ** consists of at least one character after all escapes have been
+    ** removed.  */
+    if( cnt!=0 && 255!=(u8)z[cnt-1] && (cnt>1 || z[0]!=wc[3]) ){
       Expr *pPrefix;
 
       /* A "complete" match if the pattern ends with "*" or "%" */
@@ -672,7 +674,12 @@ static void exprAnalyzeOrTerm(
   ** empty.
   */
   pOrInfo->indexable = indexable;
-  pTerm->eOperator = indexable==0 ? 0 : WO_OR;
+  if( indexable ){
+    pTerm->eOperator = WO_OR;
+    pWC->hasOr = 1;
+  }else{
+    pTerm->eOperator = WO_OR;
+  }
 
   /* For a two-way OR, attempt to implementation case 2.
   */
@@ -1011,7 +1018,7 @@ static void exprAnalyze(
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
   }
   pMaskSet->bVarSelect = 0;
-  prereqAll = sqlite3WhereExprUsage(pMaskSet, pExpr);
+  prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
   if( pMaskSet->bVarSelect ) pTerm->wtFlags |= TERM_VARSELECT;
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
     Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->iRightJoinTable);
@@ -1404,6 +1411,7 @@ void sqlite3WhereClauseInit(
   WhereInfo *pWInfo        /* The WHERE processing context */
 ){
   pWC->pWInfo = pWInfo;
+  pWC->hasOr = 0;
   pWC->pOuter = 0;
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
@@ -1440,17 +1448,18 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
 ** a bitmask indicating which tables are used in that expression
 ** tree.
 */
-Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
+Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   Bitmask mask;
-  if( p==0 ) return 0;
   if( p->op==TK_COLUMN ){
     return sqlite3WhereGetMask(pMaskSet, p->iTable);
+  }else if( ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
+    assert( p->op!=TK_IF_NULL_ROW );
+    return 0;
   }
   mask = (p->op==TK_IF_NULL_ROW) ? sqlite3WhereGetMask(pMaskSet, p->iTable) : 0;
-  assert( !ExprHasProperty(p, EP_TokenOnly) );
-  if( p->pLeft ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pLeft);
+  if( p->pLeft ) mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pLeft);
   if( p->pRight ){
-    mask |= sqlite3WhereExprUsage(pMaskSet, p->pRight);
+    mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pRight);
     assert( p->x.pList==0 );
   }else if( ExprHasProperty(p, EP_xIsSelect) ){
     if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
@@ -1459,6 +1468,9 @@ Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
   }
   return mask;
+}
+Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
+  return p ? sqlite3WhereExprUsageNN(pMaskSet,p) : 0;
 }
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet *pMaskSet, ExprList *pList){
   int i;

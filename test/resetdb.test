@@ -154,5 +154,27 @@ do_test 400 {
 } {0 {1 8192 wal ok}}
 db2 close
 
+# Reset the database yet again. This time immediately after it is closed
+# and reopened. So that the VACUUM is the first statement run.
+#
+db close
+sqlite3 db test.db
+do_test 500 {
+  sqlite3_finalize [
+    sqlite3_prepare db "SELECT 1 FROM sqlite_master LIMIT 1" -1 tail
+  ]
+  sqlite3_db_config db RESET_DB 1
+  db eval VACUUM
+  sqlite3_db_config db RESET_DB 0
+  sqlite3 db2 test.db
+  catchsql {
+     PRAGMA page_count;
+     PRAGMA page_size;
+     PRAGMA journal_mode;
+     PRAGMA quick_check;
+  } db2
+} {0 {1 8192 wal ok}}
+db2 close
 
 finish_test
+

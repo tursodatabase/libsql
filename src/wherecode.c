@@ -591,7 +591,14 @@ static int codeEqualityTerm(
           sqlite3VdbeAddOp1(v, OP_IsNull, iOut); VdbeCoverage(v);
           if( i==iEq ){
             pIn->iCur = iTab;
-            pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
+            pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
+            if( iEq>0 && (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
+              pIn->iBase = iReg - i;
+              pIn->nPrefix = i;
+              pLoop->wsFlags |= WHERE_IN_EARLYOUT;
+            }else{
+              pIn->nPrefix = 0;
+            }
           }else{
             pIn->eEndLoopOp = OP_Noop;
           }
@@ -1658,6 +1665,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** above has already left the cursor sitting on the correct row,
       ** so no further seeking is needed */
     }else{
+      if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
+        sqlite3VdbeAddOp1(v, OP_SeekHit, iIdxCur);
+      }
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1719,6 +1729,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
       testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
+    }
+
+    if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
+      sqlite3VdbeAddOp2(v, OP_SeekHit, iIdxCur, 1);
     }
 
     /* Seek the table cursor, if required */

@@ -511,6 +511,7 @@ int sqlite3_exec(
 #define SQLITE_CANTOPEN_ISDIR          (SQLITE_CANTOPEN | (2<<8))
 #define SQLITE_CANTOPEN_FULLPATH       (SQLITE_CANTOPEN | (3<<8))
 #define SQLITE_CANTOPEN_CONVPATH       (SQLITE_CANTOPEN | (4<<8))
+#define SQLITE_CANTOPEN_DIRTYWAL       (SQLITE_CANTOPEN | (5<<8)) /* Not Used */
 #define SQLITE_CORRUPT_VTAB            (SQLITE_CORRUPT | (1<<8))
 #define SQLITE_CORRUPT_SEQUENCE        (SQLITE_CORRUPT | (2<<8))
 #define SQLITE_READONLY_RECOVERY       (SQLITE_READONLY | (1<<8))
@@ -2121,6 +2122,12 @@ struct sqlite3_mem_methods {
 ** with no schema and no content. The following process works even for
 ** a badly corrupted database file:
 ** <ol>
+** <li> If the database connection is newly opened, make sure it has read the
+**      database schema by preparing then discarding some query against the
+**      database, or calling sqlite3_table_column_metadata(), ignoring any
+**      errors.  This step is only necessary if the application desires to keep
+**      the database in WAL mode after the reset if it was in WAL mode before
+**      the reset.  
 ** <li> sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
 ** <li> [sqlite3_exec](db, "[VACUUM]", 0, 0, 0);
 ** <li> sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
@@ -3354,12 +3361,23 @@ sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
 ** [database connection] D failed, then the sqlite3_errcode(D) interface
 ** returns the numeric [result code] or [extended result code] for that
 ** API call.
-** If the most recent API call was successful,
-** then the return value from sqlite3_errcode() is undefined.
 ** ^The sqlite3_extended_errcode()
 ** interface is the same except that it always returns the 
 ** [extended result code] even when extended result codes are
 ** disabled.
+**
+** The values returned by sqlite3_errcode() and/or
+** sqlite3_extended_errcode() might change with each API call.
+** Except, there are some interfaces that are guaranteed to never
+** change the value of the error code.  The error-code preserving
+** interfaces are:
+**
+** <ul>
+** <li> sqlite3_errcode()
+** <li> sqlite3_extended_errcode()
+** <li> sqlite3_errmsg()
+** <li> sqlite3_errmsg16()
+** </ul>
 **
 ** ^The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
 ** text that describes the error, as either UTF-8 or UTF-16 respectively.
@@ -4514,11 +4532,25 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** from [sqlite3_column_blob()], [sqlite3_column_text()], etc. into
 ** [sqlite3_free()].
 **
-** ^(If a memory allocation error occurs during the evaluation of any
-** of these routines, a default value is returned.  The default value
-** is either the integer 0, the floating point number 0.0, or a NULL
-** pointer.  Subsequent calls to [sqlite3_errcode()] will return
-** [SQLITE_NOMEM].)^
+** As long as the input parameters are correct, these routines will only
+** fail if an out-of-memory error occurs during a format conversion.
+** Only the following subset of interfaces are subject to out-of-memory
+** errors:
+**
+** <ul>
+** <li> sqlite3_column_blob()
+** <li> sqlite3_column_text()
+** <li> sqlite3_column_text16()
+** <li> sqlite3_column_bytes()
+** <li> sqlite3_column_bytes16()
+** </ul>
+**
+** If an out-of-memory error occurs, then the return value from these
+** routines is the same as if the column had contained an SQL NULL value.
+** Valid SQL NULL returns can be distinguished from out-of-memory errors
+** by invoking the [sqlite3_errcode()] immediately after the suspect
+** return value is obtained and before any
+** other SQLite interface is called on the same [database connection].
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
 double sqlite3_column_double(sqlite3_stmt*, int iCol);
@@ -4595,11 +4627,13 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **
 ** ^These functions (collectively known as "function creation routines")
 ** are used to add SQL functions or aggregates or to redefine the behavior
-** of existing SQL functions or aggregates.  The only differences between
-** these routines are the text encoding expected for
-** the second parameter (the name of the function being created)
-** and the presence or absence of a destructor callback for
-** the application data pointer.
+** of existing SQL functions or aggregates. The only differences between
+** the three "sqlite3_create_function*" routines are the text encoding 
+** expected for the second parameter (the name of the function being 
+** created) and the presence or absence of a destructor callback for
+** the application data pointer. Function sqlite3_create_window_function()
+** is similar, but allows the user to supply the extra callback functions
+** needed by [aggregate window functions].
 **
 ** ^The first parameter is the [database connection] to which the SQL
 ** function is to be added.  ^If an application uses more than one database
@@ -4645,7 +4679,8 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
 ** function can gain access to this pointer using [sqlite3_user_data()].)^
 **
-** ^The sixth, seventh and eighth parameters, xFunc, xStep and xFinal, are
+** ^The sixth, seventh and eighth parameters passed to the three
+** "sqlite3_create_function*" functions, xFunc, xStep and xFinal, are
 ** pointers to C-language functions that implement the SQL function or
 ** aggregate. ^A scalar SQL function requires an implementation of the xFunc
 ** callback only; NULL pointers must be passed as the xStep and xFinal
@@ -4654,15 +4689,24 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** SQL function or aggregate, pass NULL pointers for all three function
 ** callbacks.
 **
-** ^(If the ninth parameter to sqlite3_create_function_v2() is not NULL,
-** then it is destructor for the application data pointer. 
-** The destructor is invoked when the function is deleted, either by being
-** overloaded or when the database connection closes.)^
-** ^The destructor is also invoked if the call to
-** sqlite3_create_function_v2() fails.
-** ^When the destructor callback of the tenth parameter is invoked, it
-** is passed a single argument which is a copy of the application data 
-** pointer which was the fifth parameter to sqlite3_create_function_v2().
+** ^The sixth, seventh, eighth and ninth parameters (xStep, xFinal, xValue 
+** and xInverse) passed to sqlite3_create_window_function are pointers to
+** C-lanugage callbacks that implement the new function. xStep and xFinal
+** must both be non-NULL. xValue and xInverse may either both be NULL, in
+** which case a regular aggregate function is created, or must both be 
+** non-NULL, in which case the new function may be used as either an aggregate
+** or aggregate window function. More details regarding the implementation
+** of aggregate window functions are 
+** [user-defined window functions|available here].
+**
+** ^(If the final parameter to sqlite3_create_function_v2() or
+** sqlite3_create_window_function() is not NULL, then it is destructor for
+** the application data pointer. The destructor is invoked when the function 
+** is deleted, either by being overloaded or when the database connection 
+** closes.)^ ^The destructor is also invoked if the call to 
+** sqlite3_create_function_v2() fails.  ^When the destructor callback is
+** invoked, it is passed a single argument which is a copy of the application
+** data pointer which was the fifth parameter to sqlite3_create_function_v2().
 **
 ** ^It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
@@ -4713,6 +4757,18 @@ int sqlite3_create_function_v2(
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*),
+  void(*xDestroy)(void*)
+);
+int sqlite3_create_window_function(
+  sqlite3 *db,
+  const char *zFunctionName,
+  int nArg,
+  int eTextRep,
+  void *pApp,
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+  void (*xFinal)(sqlite3_context*),
+  void (*xValue)(sqlite3_context*),
+  void (*xInverse)(sqlite3_context*,int,sqlite3_value**),
   void(*xDestroy)(void*)
 );
 
@@ -4857,6 +4913,28 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 **
 ** These routines must be called from the same thread as
 ** the SQL function that supplied the [sqlite3_value*] parameters.
+**
+** As long as the input parameter is correct, these routines can only
+** fail if an out-of-memory error occurs during a format conversion.
+** Only the following subset of interfaces are subject to out-of-memory
+** errors:
+**
+** <ul>
+** <li> sqlite3_value_blob()
+** <li> sqlite3_value_text()
+** <li> sqlite3_value_text16()
+** <li> sqlite3_value_text16le()
+** <li> sqlite3_value_text16be()
+** <li> sqlite3_value_bytes()
+** <li> sqlite3_value_bytes16()
+** </ul>
+**
+** If an out-of-memory error occurs, then the return value from these
+** routines is the same as if the column had contained an SQL NULL value.
+** Valid SQL NULL returns can be distinguished from out-of-memory errors
+** by invoking the [sqlite3_errcode()] immediately after the suspect
+** return value is obtained and before any
+** other SQLite interface is called on the same [database connection].
 */
 const void *sqlite3_value_blob(sqlite3_value*);
 double sqlite3_value_double(sqlite3_value*);

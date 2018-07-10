@@ -2451,7 +2451,6 @@ static int whereLoopAddBtreeIndex(
 
     if( eOp & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
-      pNew->wsFlags |= WHERE_COLUMN_IN;
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
         int i;
@@ -2471,6 +2470,42 @@ static int whereLoopAddBtreeIndex(
         assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
                           ** changes "x IN (?)" into "x=?". */
       }
+      if( pProbe->hasStat1 ){
+        LogEst M, logK, safetyMargin;
+        /* Let:
+        **   N = the total number of rows in the table
+        **   K = the number of entries on the RHS of the IN operator
+        **   M = the number of rows in the table that match terms to the 
+        **       to the left in the same index.  If the IN operator is on
+        **       the left-most index column, M==N.
+        **
+        ** Given the definitions above, it is better to omit the IN operator
+        ** from the index lookup and instead do a scan of the M elements,
+        ** testing each scanned row against the IN operator separately, if:
+        **
+        **        M*log(K) < K*log(N)
+        **
+        ** Our estimates for M, K, and N might be inaccurate, so we build in
+        ** a safety margin of 2 (LogEst: 10) that favors using the IN operator
+        ** with the index, as using an index has better worst-case behavior.
+        ** If we do not have real sqlite_stat1 data, always prefer to use
+        ** the index.
+        */
+        M = pProbe->aiRowLogEst[saved_nEq];
+        logK = estLog(nIn);
+        safetyMargin = 10;  /* TUNING: extra weight for indexed IN */
+        if( M + logK + safetyMargin < nIn + rLogSize ){
+          WHERETRACE(0x40,
+            ("Scan preferred over IN operator on column %d of \"%s\" (%d<%d)\n",
+             saved_nEq, pProbe->zName, M+logK+10, nIn+rLogSize));
+          continue;
+        }else{
+          WHERETRACE(0x40,
+            ("IN operator preferred on column %d of \"%s\" (%d>=%d)\n",
+             saved_nEq, pProbe->zName, M+logK+10, nIn+rLogSize));
+        }
+      }
+      pNew->wsFlags |= WHERE_COLUMN_IN;
     }else if( eOp & (WO_EQ|WO_IS) ){
       int iCol = pProbe->aiColumn[saved_nEq];
       pNew->wsFlags |= WHERE_COLUMN_EQ;
@@ -2700,24 +2735,6 @@ static int indexMightHelpWithOrderBy(
   return 0;
 }
 
-/*
-** Return a bitmask where 1s indicate that the corresponding column of
-** the table is used by an index.  Only the first 63 columns are considered.
-*/
-static Bitmask columnsInIndex(Index *pIdx){
-  Bitmask m = 0;
-  int j;
-  for(j=pIdx->nColumn-1; j>=0; j--){
-    int x = pIdx->aiColumn[j];
-    if( x>=0 ){
-      testcase( x==BMS-1 );
-      testcase( x==BMS-2 );
-      if( x<BMS-1 ) m |= MASKBIT(x);
-    }
-  }
-  return m;
-}
-
 /* Check to see if a partial index with pPartIndexWhere can be used
 ** in the current query.  Return true if it can be and false if not.
 */
@@ -2933,7 +2950,7 @@ static int whereLoopAddBtree(
         pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         m = 0;
       }else{
-        m = pSrc->colUsed & ~columnsInIndex(pProbe);
+        m = pSrc->colUsed & pProbe->colNotIdxed;
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }
 
@@ -3500,7 +3517,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     {
       rc = whereLoopAddBtree(pBuilder, mPrereq);
     }
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && pBuilder->pWC->hasOr ){
       rc = whereLoopAddOr(pBuilder, mPrereq, mUnusable);
     }
     mPrior |= pNew->maskSelf;
@@ -4336,7 +4353,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       }
       if( j!=pIdx->nKeyCol ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
-      if( pIdx->isCovering || (pItem->colUsed & ~columnsInIndex(pIdx))==0 ){
+      if( pIdx->isCovering || (pItem->colUsed & pIdx->colNotIdxed)==0 ){
         pLoop->wsFlags |= WHERE_IDX_ONLY;
       }
       pLoop->nLTerm = j;
@@ -5017,6 +5034,26 @@ whereBeginError:
 }
 
 /*
+** Part of sqlite3WhereEnd() will rewrite opcodes to reference the
+** index rather than the main table.  In SQLITE_DEBUG mode, we want
+** to trace those changes if PRAGMA vdbe_addoptrace=on.  This routine
+** does that.
+*/
+#ifndef SQLITE_DEBUG
+# define OpcodeRewriteTrace(D,K,P) /* no-op */
+#else
+# define OpcodeRewriteTrace(D,K,P) sqlite3WhereOpcodeRewriteTrace(D,K,P)
+  static void sqlite3WhereOpcodeRewriteTrace(
+    sqlite3 *db,
+    int pc,
+    VdbeOp *pOp
+  ){
+    if( (db->flags & SQLITE_VdbeAddopTrace)==0 ) return;
+    sqlite3VdbePrintOp(0, pc, pOp);
+  }
+#endif
+
+/*
 ** Generate the end of the WHERE loop.  See comments on 
 ** sqlite3WhereBegin() for additional information.
 */
@@ -5083,10 +5120,17 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(j=pLevel->u.in.nIn, pIn=&pLevel->u.in.aInLoop[j-1]; j>0; j--, pIn--){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
         if( pIn->eEndLoopOp!=OP_Noop ){
+          if( pIn->nPrefix ){
+            assert( pLoop->wsFlags & WHERE_IN_EARLYOUT );
+            sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
+                              sqlite3VdbeCurrentAddr(v)+2,
+                              pIn->iBase, pIn->nPrefix);
+            VdbeCoverage(v);
+          }
           sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
           VdbeCoverage(v);
-          VdbeCoverageIf(v, pIn->eEndLoopOp==OP_PrevIfOpen);
-          VdbeCoverageIf(v, pIn->eEndLoopOp==OP_NextIfOpen);
+          VdbeCoverageIf(v, pIn->eEndLoopOp==OP_Prev);
+          VdbeCoverageIf(v, pIn->eEndLoopOp==OP_Next);
         }
         sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
@@ -5177,6 +5221,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ){
       last = sqlite3VdbeCurrentAddr(v);
       k = pLevel->addrBody;
+#ifdef SQLITE_DEBUG
+      if( db->flags & SQLITE_VdbeAddopTrace ){
+        printf("TRANSLATE opcodes in range %d..%d\n", k, last-1);
+      }
+#endif
       pOp = sqlite3VdbeGetOp(v, k);
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
@@ -5196,16 +5245,22 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
           if( x>=0 ){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
+            OpcodeRewriteTrace(db, k, pOp);
           }
           assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 
               || pWInfo->eOnePass );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;
+          OpcodeRewriteTrace(db, k, pOp);
         }else if( pOp->opcode==OP_IfNullRow ){
           pOp->p1 = pLevel->iIdxCur;
+          OpcodeRewriteTrace(db, k, pOp);
         }
       }
+#ifdef SQLITE_DEBUG
+      if( db->flags & SQLITE_VdbeAddopTrace ) printf("TRANSLATE complete\n");
+#endif
     }
   }
 

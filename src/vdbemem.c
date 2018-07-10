@@ -416,6 +416,35 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 }
 
 /*
+** Memory cell pAccum contains the context of an aggregate function.
+** This routine calls the xValue method for that function and stores
+** the results in memory cell pMem.
+**
+** SQLITE_ERROR is returned if xValue() reports an error. SQLITE_OK 
+** otherwise.
+*/
+#ifndef SQLITE_OMIT_WINDOWFUNC
+int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
+  sqlite3_context ctx;
+  Mem t;
+  assert( pFunc!=0 );
+  assert( pFunc->xValue!=0 );
+  assert( (pAccum->flags & MEM_Null)!=0 || pFunc==pAccum->u.pDef );
+  assert( pAccum->db==0 || sqlite3_mutex_held(pAccum->db->mutex) );
+  memset(&ctx, 0, sizeof(ctx));
+  memset(&t, 0, sizeof(t));
+  t.flags = MEM_Null;
+  t.db = pAccum->db;
+  sqlite3VdbeMemSetNull(pOut);
+  ctx.pOut = pOut;
+  ctx.pMem = pAccum;
+  ctx.pFunc = pFunc;
+  pFunc->xValue(&ctx);
+  return ctx.isError;
+}
+#endif /* SQLITE_OMIT_WINDOWFUNC */
+
+/*
 ** If the memory cell contains a value that must be freed by
 ** invoking the external callback in Mem.xDel, then this routine
 ** will free that value.  It also sets Mem.flags to MEM_Null.
@@ -886,11 +915,28 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   Mem *pX;
   for(i=0, pX=pVdbe->aMem; i<pVdbe->nMem; i++, pX++){
     if( pX->pScopyFrom==pMem ){
-      pX->flags |= MEM_Undefined;
+      /* If pX is marked as a shallow copy of pMem, then verify that
+      ** no significant changes have been made to pX since the OP_SCopy.
+      ** A significant change would indicated a missed call to this
+      ** function for pX.  Minor changes, such as adding or removing a
+      ** dual type, are allowed, as long as the underlying value is the
+      ** same. */
+      u16 mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
+      assert( (mFlags&MEM_Int)==0 || pMem->u.i==pX->u.i );
+      assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r );
+      assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
+      assert( (mFlags&MEM_Blob)==0  || sqlite3BlobCompare(pMem,pX)==0 );
+      
+      /* pMem is the register that is changing.  But also mark pX as
+      ** undefined so that we can quickly detect the shallow-copy error */
+      pX->flags = MEM_Undefined;
       pX->pScopyFrom = 0;
     }
   }
   pMem->pScopyFrom = 0;
+#ifdef SQLITE_DEBUG_COLUMN_CACHE
+  pMem->iTabColHash = 0;
+#endif
 }
 #endif /* SQLITE_DEBUG */
 
@@ -911,6 +957,9 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( pTo->db==pFrom->db );
   if( VdbeMemDynamic(pTo) ){ vdbeClrCopy(pTo,pFrom,srcType); return; }
   memcpy(pTo, pFrom, MEMCELLSIZE);
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+  pTo->iTabColHash = pFrom->iTabColHash;
+#endif
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
@@ -928,6 +977,9 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   assert( (pFrom->flags & MEM_RowSet)==0 );
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+  pTo->iTabColHash = pFrom->iTabColHash;
+#endif
   pTo->flags &= ~MEM_Dyn;
   if( pTo->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pFrom->flags&MEM_Static) ){

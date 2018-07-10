@@ -10455,8 +10455,6 @@ fi
 # Check whether --enable-threadsafe was given.
 if test "${enable_threadsafe+set}" = set; then :
   enableval=$enable_threadsafe;
-else
-  enable_threadsafe=yes
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support threadsafe operation" >&5
@@ -11249,12 +11247,10 @@ fi
 # check for debug enabled
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :
-  enableval=$enable_debug; use_debug=$enableval
-else
-  use_debug=no
+  enableval=$enable_debug;
 fi
 
-if test "${use_debug}" = "yes" ; then
+if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
 else
   TARGET_DEBUG="-DNDEBUG"
@@ -11265,12 +11261,10 @@ fi
 # See whether we should use the amalgamation to build
 # Check whether --enable-amalgamation was given.
 if test "${enable_amalgamation+set}" = set; then :
-  enableval=$enable_amalgamation; use_amalgamation=$enableval
-else
-  use_amalgamation=yes
+  enableval=$enable_amalgamation;
 fi
 
-if test "${use_amalgamation}" != "yes" ; then
+if test "${enable_amalgamation}" == "no" ; then
   USE_AMALGAMATION=0
 fi
 
@@ -11353,12 +11347,12 @@ fi
 # See whether we should allow loadable extensions
 # Check whether --enable-load-extension was given.
 if test "${enable_load_extension+set}" = set; then :
-  enableval=$enable_load_extension; use_loadextension=$enableval
+  enableval=$enable_load_extension;
 else
-  use_loadextension=yes
+  enable_load_extension=yes
 fi
 
-if test "${use_loadextension}" = "yes" ; then
+if test "${enable_load_extension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5
 $as_echo_n "checking for library containing dlopen... " >&6; }
@@ -11425,9 +11419,7 @@ fi
 #
 # Check whether --enable-memsys5 was given.
 if test "${enable_memsys5+set}" = set; then :
-  enableval=$enable_memsys5; enable_memsys5=yes
-else
-  enable_memsys5=no
+  enableval=$enable_memsys5;
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS5" >&5
@@ -11442,9 +11434,7 @@ $as_echo "no" >&6; }
 fi
 # Check whether --enable-memsys3 was given.
 if test "${enable_memsys3+set}" = set; then :
-  enableval=$enable_memsys3; enable_memsys3=yes
-else
-  enable_memsys3=no
+  enableval=$enable_memsys3;
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS3" >&5
@@ -11462,9 +11452,7 @@ fi
 # See whether we should enable Full Text Search extensions
 # Check whether --enable-fts3 was given.
 if test "${enable_fts3+set}" = set; then :
-  enableval=$enable_fts3; enable_fts3=yes
-else
-  enable_fts3=no
+  enableval=$enable_fts3;
 fi
 
 if test "${enable_fts3}" = "yes" ; then
@@ -11472,9 +11460,7 @@ if test "${enable_fts3}" = "yes" ; then
 fi
 # Check whether --enable-fts4 was given.
 if test "${enable_fts4+set}" = set; then :
-  enableval=$enable_fts4; enable_fts4=yes
-else
-  enable_fts4=no
+  enableval=$enable_fts4;
 fi
 
 if test "${enable_fts4}" = "yes" ; then
@@ -11538,9 +11524,7 @@ fi
 fi
 # Check whether --enable-fts5 was given.
 if test "${enable_fts5+set}" = set; then :
-  enableval=$enable_fts5; enable_fts5=yes
-else
-  enable_fts5=no
+  enableval=$enable_fts5;
 fi
 
 if test "${enable_fts5}" = "yes" ; then
@@ -11607,9 +11591,7 @@ fi
 # See whether we should enable JSON1
 # Check whether --enable-json1 was given.
 if test "${enable_json1+set}" = set; then :
-  enableval=$enable_json1; enable_json1=yes
-else
-  enable_json1=no
+  enableval=$enable_json1;
 fi
 
 if test "${enable_json1}" = "yes" ; then
@@ -11621,9 +11603,7 @@ fi
 # statements.
 # Check whether --enable-update-limit was given.
 if test "${enable_update_limit+set}" = set; then :
-  enableval=$enable_update_limit; enable_udlimit=yes
-else
-  enable_udlimit=no
+  enableval=$enable_update_limit;
 fi
 
 if test "${enable_udlimit}" = "yes" ; then
@@ -11634,9 +11614,7 @@ fi
 # See whether we should enable RTREE
 # Check whether --enable-rtree was given.
 if test "${enable_rtree+set}" = set; then :
-  enableval=$enable_rtree; enable_rtree=yes
-else
-  enable_rtree=no
+  enableval=$enable_rtree;
 fi
 
 if test "${enable_rtree}" = "yes" ; then
@@ -11647,9 +11625,7 @@ fi
 # See whether we should enable the SESSION extension
 # Check whether --enable-session was given.
 if test "${enable_session+set}" = set; then :
-  enableval=$enable_session; enable_session=yes
-else
-  enable_session=no
+  enableval=$enable_session;
 fi
 
 if test "${enable_session}" = "yes" ; then
@@ -11712,9 +11688,7 @@ BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
 # See whether we should use GCOV
 # Check whether --enable-gcov was given.
 if test "${enable_gcov+set}" = set; then :
-  enableval=$enable_gcov; use_gcov=$enableval
-else
-  use_gcov=no
+  enableval=$enable_gcov;
 fi
 
 if test "${use_gcov}" = "yes" ; then
