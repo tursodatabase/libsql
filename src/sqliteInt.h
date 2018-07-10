@@ -3490,8 +3490,22 @@ struct TreeView {
 #endif /* SQLITE_DEBUG */
 
 /*
-** Object used to encode the OVER() clause attached to a window-function
-** invocation. And some fields used while generating VM code for the same.
+** This object is used in varioius ways, all related to window functions
+**
+**   (1) A single instance of this structure is attached to the
+**       the Expr.pWin field for each window function in an expression tree.
+**       This object holds the information contained in the OVER clause,
+**       plus additional fields used during code generation.
+**
+**   (2) All window functions in a single SELECT form a linked-list
+**       attached to Select.pWin.  The Window.pFunc and Window.pExpr
+**       fields point back to the expression that is the window function.
+**
+**   (3) The terms of the WINDOW clause of a SELECT are instances of this
+**       object on a linked list attached to Select.pWinDefn.
+**
+** The uses (1) and (2) are really the same Window object that just happens
+** to be accessible in two different ways.  Use (3) is are separate objects.
 */
 struct Window {
   char *zName;            /* Name of window (may be NULL) */
@@ -3502,20 +3516,16 @@ struct Window {
   u8 eEnd;                /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
-
   Window *pNextWin;       /* Next window function belonging to this SELECT */
-
-  Expr *pFilter;
-  FuncDef *pFunc;
-
+  Expr *pFilter;          /* The FILTER expression */
+  FuncDef *pFunc;         /* The function */
   int iEphCsr;            /* Temp table used by this window */
   int regAccum;
   int regResult;
-
   int csrApp;             /* Function cursor (used by min/max) */
   int regApp;             /* Function register (also used by min/max) */
-
-  int regPart;
+  int regPart;            /* First in a set of registers holding PARTITION BY
+                          ** and ORDER BY values for the window */
   Expr *pOwner;           /* Expression object this window is attached to */
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
@@ -3755,6 +3765,10 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  void sqlite3TreeViewWindow(TreeView*, const Window*, u8);
+  void sqlite3TreeViewWinFunc(TreeView*, const Window*, u8);
+#endif
 #endif
 
 
