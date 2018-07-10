@@ -1487,7 +1487,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNew->pWin = 0;
     pNew->pWinDefn = sqlite3WindowListDup(db, p->pWinDefn);
 #endif
-    sqlite3SelectSetName(pNew, p->zSelName);
+    pNew->selId = p->selId;
     *pp = pNew;
     pp = &pNew->pPrior;
     pNext = pNew;
