@@ -4952,11 +4952,18 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
 #ifndef SQLITE_OMIT_WINDOWFUNC
+    /* Justification for the assert():
+    /* window functions have p->op==TK_FUNCTION but aggregate functions
+    ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
+    ** function and a window function should have failed before reaching
+    ** this point.  And, it is not possible to have a window function and
+    ** a scalar function with the same name and number of arguments.  So
+    ** if we reach this point, either A and B both window functions or
+    ** neither are a window functions. */
+    assert( (pA->pWin==0)==(pB->pWin==0) );
+
     if( pA->pWin!=0 ){
-      if( pB->pWin==0 ) return 2;
       if( sqlite3WindowCompare(pParse,pA->pWin,pB->pWin)!=0 ) return 2;
-    }else if( pB->pWin!=0 ){
-      return 2;
     }
 #endif
   }
