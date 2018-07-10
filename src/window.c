@@ -1034,9 +1034,13 @@ static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
   assert( eCond==0 || eCond==1 || eCond==2 );
   sqlite3VdbeAddOp2(v, OP_Integer, 0, regZero);
   sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
-  VdbeCoverage(v);
+  VdbeCoverageIf(v, eCond==0);
+  VdbeCoverageIf(v, eCond==1);
+  VdbeCoverageIf(v, eCond==2);
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
-  VdbeCoverage(v);
+  VdbeCoverageIf(v, eCond==0);
+  VdbeCoverageIf(v, eCond==1);
+  VdbeCoverageIf(v, eCond==2);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
   sqlite3ReleaseTempReg(pParse, regZero);
@@ -1250,6 +1254,7 @@ static void windowPartitionCache(
     VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_Copy, regNewPart, pMWin->regPart, nPart-1);
     sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
+    VdbeComment((v, "call flush_partition"));
   }
 
   /* Buffer the current row in the ephemeral table. */
@@ -1261,6 +1266,7 @@ static void windowPartitionCache(
 
   /* Invoke "flush_partition" to deal with the final (or only) partition */
   sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
+  VdbeComment((v, "call flush_partition"));
 }
 
 /*
@@ -1588,6 +1594,7 @@ static void windowCodeRowExprStep(
   sqlite3VdbeResolveLabel(v, lblFlushPart);
   sqlite3VdbeAddOp2(v, OP_Once, 0, sqlite3VdbeCurrentAddr(v)+3);
   VdbeCoverage(v);
+  VdbeComment((v, "Flush_partition subroutine"));
   sqlite3VdbeAddOp2(v, OP_OpenDup, csrStart, pMWin->iEphCsr);
   sqlite3VdbeAddOp2(v, OP_OpenDup, csrEnd, pMWin->iEphCsr);
 
@@ -1709,6 +1716,7 @@ static void windowCodeRowExprStep(
   sqlite3VdbeResolveLabel(v, lblFlushDone);
   sqlite3VdbeAddOp1(v, OP_ResetSorter, pMWin->iEphCsr);
   sqlite3VdbeAddOp1(v, OP_Return, regFlushPart);
+  VdbeComment((v, "end flush_partition subroutine"));
 
   /* Jump to here to skip over flush_partition */
   sqlite3VdbeJumpHere(v, addrGoto);

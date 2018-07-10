@@ -5940,9 +5940,11 @@ int sqlite3Select(
 
       sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
       sqlite3VdbeResolveLabel(v, addrGosub);
+      VdbeNoopComment((v, "SELECT inner-loop subroutine"));
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
+      VdbeComment((v, "end inner-loop subroutine"));
       sqlite3VdbeResolveLabel(v, iBreak);
     }else
 #endif /* SQLITE_OMIT_WINDOWFUNC */
