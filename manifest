@@ -1,5 +1,5 @@
-C Merge\sbegin-concurrent\schanges\sinto\sthis\sbranch.
-D 2018-07-10T15:48:39.705
+C Experimental\splanner\schange\sto\savoid\sa\sskip-scan\sif\sa\sregular\sindex\sscan\son\nthe\ssame\sindex\scolumns\scan\sbe\sdone\sinstead.
+D 2018-07-10T15:55:29.487
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -584,7 +584,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c a49089219d0421ad172918ec8d7a3c637ee6f1c56026e45f0678073d9e346097
 F src/wal.h 1713fefe4587678c295bbeb91c4e7442998ad74f19249869ce49dda9e8ce5d53
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
-F src/where.c 0bcbf9e191ca07f9ea2008aa80e70ded46bcdffd26560c83397da501f00aece6
+F src/where.c a38a485f36335c299f1810bcba11fa3cfe7ac10bc6148e4c13500a9c79d59219
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 3317f2b083a66d3e65a03edf316ade4ccb0a99c9956273282ebb579b95d4ba96
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
@@ -616,6 +616,7 @@ F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test e50cd0b3e6063216cc0c88a1776e8645dc0bd65a6bb275769cbee33b7fd8d90c
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 9e1a0537949eb5483642b1140a5c39e5b4025939024b935398471fa552f4dabb
+F test/analyzeG.test 266499f54bb42a56382ac5c8d2efafe7a0d52290395c5bc5b4a1f5254569132f
 F test/analyzer1.test 459fa02c445ddbf0101a3bad47b34290a35f2e49
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1759,7 +1760,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be7004a971a174ae5c862cb3fa29f3586882d9ed1630d3e50e686d7310ccbc91 e9a3e8642e7acc8e63b35662ffae3a5a0da8d4f1ecefcb1db3110be19cbdab2b
-R 47be50798c4616a010a2e74703e49152
+P af17432eb135895f9a55115c0eb364745715bb2dc14da01cbb2dc498e61c1853 32924446db0d07e5b2661a6626136a7bcdda629de23f98f3e1e862dd52d2f8a5
+R f2540424fa1966c3ffd1261f4537ae2b
+T *branch * exp-begin-concurrent-pnu
+T *sym-exp-begin-concurrent-pnu *
+T -sym-begin-concurrent-pnu *
 U dan
-Z 5dd9ea69c1fd7265f2be69ef45731b41
+Z e38693e9dae103965eb5d4da237ebd63

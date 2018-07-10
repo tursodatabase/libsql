@@ -2043,6 +2043,29 @@ static WhereLoop **whereLoopFindLesser(
       return 0;  /* Discard pTemplate */
     }
 
+    /* If pTemplate:
+    **
+    **   (1) uses the same index as existing where-loop p, 
+    **   (2) requires the same or a superset of tables to be scanned first, 
+    **   (3) constraints the same or fewer columns with ==, and
+    **   (4) skips more leading columns (skip-scan optimization).
+    **
+    ** the discard the template. This ensures that if stat4 data shows that:
+    **
+    **   WHERE (a=1 AND b=2)
+    **
+    ** is prohibitively expensive the planner does not instead do:
+    **
+    **   WHERE (ANY(a) AND b=2)
+    */
+    if( pTemplate->nSkip>p->nSkip                            /* (4) */
+     && pTemplate->u.btree.pIndex==p->u.btree.pIndex         /* (1) */
+     && pTemplate->u.btree.nEq<=p->u.btree.nEq               /* (3) */
+     && (pTemplate->prereq & p->prereq)==p->prereq           /* (2) */
+    ){
+      return 0;  /* Discard pTemplate */
+    }
+
     /* If pTemplate is always better than p, then cause p to be overwritten
     ** with pTemplate.  pTemplate is better than p if:
     **   (1)  pTemplate has no more dependences than p, and
