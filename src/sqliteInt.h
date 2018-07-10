@@ -3515,7 +3515,7 @@ struct Window {
   Window *pNextWin;       /* Next window function belonging to this SELECT */
   Expr *pFilter;          /* The FILTER expression */
   FuncDef *pFunc;         /* The function */
-  int iEphCsr;            /* Temp table used by this window */
+  int iEphCsr;            /* Partition buffer or Peer buffer */
   int regAccum;
   int regResult;
   int csrApp;             /* Function cursor (used by min/max) */

@@ -150,7 +150,9 @@ static void row_numberStepFunc(
   sqlite3_value **apArg
 ){
   i64 *p = (i64*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ) (*p)++;
+  /* row_numberValueFunc() is always called first, so the aggregate context
+  ** is guaranteed to already exist. */
+  if( ALWAYS(p) ) (*p)++;
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
 }
@@ -182,7 +184,8 @@ static void dense_rankStepFunc(
 ){
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ) p->nStep = 1;
+  /* p is not NULL because dense_rankValueFunc() will have been called first */
+  if( ALWAYS(p) ) p->nStep = 1;
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
 }
@@ -211,7 +214,8 @@ static void rankStepFunc(
 ){
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  /* p is not NULL because rankValueFunc() will have been called first */
+  if( ALWAYS(p) ){
     p->nStep++;
     if( p->nValue==0 ){
       p->nValue = p->nStep;
@@ -244,7 +248,8 @@ static void percent_rankStepFunc(
   UNUSED_PARAMETER(nArg); assert( nArg==1 );
 
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  /* p is not NULL because percent_rankValueFunc() will have been called */
+  if( ALWAYS(p) ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -283,7 +288,8 @@ static void cume_distStepFunc(
   assert( nArg==1 ); UNUSED_PARAMETER(nArg);
 
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  /* p is not NULL because cume_distValueFunc() will have been called first */
+  if( ALWAYS(p) ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -322,7 +328,8 @@ static void ntileStepFunc(
   struct NtileCtx *p;
   assert( nArg==2 ); UNUSED_PARAMETER(nArg);
   p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p ){
+  /* p is not NULL because ntimeValueFunc() will have been called first */
+  if( ALWAYS(p) ){
     if( p->nTotal==0 ){
       p->nParam = sqlite3_value_int64(apArg[0]);
       p->nTotal = sqlite3_value_int64(apArg[1]);
@@ -1261,8 +1268,8 @@ static void windowPartitionCache(
   *pRegSize = regRowid;
   pParse->nMem += nSub + 2;
 
-  /* Martial the row returned by the sub-select into an array of 
-  ** registers. */
+  /* Load the column values for the row returned by the sub-select
+  ** into an array of registers starting at reg. */
   for(k=0; k<nSub; k++){
     sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
   }
@@ -2034,8 +2041,8 @@ static void windowCodeDefaultStep(
 
   pParse->nMem += nSub + 2;
 
-  /* Martial the row returned by the sub-select into an array of 
-  ** registers. */
+  /* Load the individual column values of the row returned by
+  ** the sub-select into an array of registers. */
   for(k=0; k<nSub; k++){
     sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
   }

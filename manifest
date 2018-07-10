@@ -1,5 +1,5 @@
-C Identify\sSelect\sobjects\swithin\sa\ssingle\sstatement\susing\ssmall\ssequential\nintegers\srather\sthan\s"0x%p".\s\sThis\sis\smore\sreadable\sand\syields\sthe\ssame\sresult\non\ssuccessive\sruns.
-D 2018-07-10T19:48:35.321
+C Minor\scomment\schanges.\s\sAdd\sALWAYS()\smacros\son\ssome\sunreachable\sbranches\nin\sthe\sxStep()\smethods\sof\sbuilt-in\swindow\sfunctions.
+D 2018-07-10T20:50:27.275
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -495,12 +495,12 @@ F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 313460e5a86fcc84f6296ff11b0884684e10bd98ef056acf9e4ff74dcbe8e5e5
+F src/select.c 2e9661d4424f43ccf595c4a7b4acdf32db523c0f6b31cbd62e6e5a2f43118981
 F src/shell.c.in f1c79c537117ee61317a5ed85cdbcb854998cd690eb34ab803779358a2ace780
 F src/sqlite.h.in 36f0b3f88241863530f4b7e57e673e19311dd609ec4edad83b23291928cdf853
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h dea40711d967bd7173c42c8b6815323929791670a974f31e483192f34d286b80
+F src/sqliteInt.h 8570eb9ecb21b87d6b43c77c49b3645b107eb213e759b498f8c27463c84ad329
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -584,7 +584,7 @@ F src/where.c 7afd00cf7fb57a2770e7ab35deae105dc5b70b414c5018543850da999bfec8d6
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c fe23a55294b4c94bf658d2a6eb7996170dd563bf33af4c3e5d71aff3483e4b08
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
-F src/window.c 8d53b6178212deab779624b1fd12b32c4581d33a8a0dfe29f869a81356a7acdd
+F src/window.c ba6d7cf7f41733dab55822394733c93c55e4dca776cca8eae9de463f43448871
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c26c443e7f6455ca7f11f640e42285b42d95c9ae5f2e19e9c066d6d9cdcceb2
-R a481558d7aac9f1ac936ca32ac359bd5
+P a7cdc5bc85e0edfcc38f920c2ce91599bcbfdb49522d88b08c64596546d13881
+R 76be4b1d5fb13864cac21cdf96aca0b8
 U drh
-Z 610bdee716bbc867970e4db482c43068
+Z cf84a518c5d826e8c071d33066873bdf
