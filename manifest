@@ -1,5 +1,5 @@
-C Enhance\sthe\sTreeView\smechanism\sso\sthat\sit\sshows\sthe\swindow\sfunction\ndata\sstructures\sas\spart\sof\sthe\sabstract\ssyntax\stree.
-D 2018-07-10T06:32:53.781
+C Enhance\sthe\ssqlite3ExprCompare()\sroutine\sso\sthat\sit\sknows\sto\scompare\sthe\nOVER\sclause\sof\swindow\sfunctions.
+D 2018-07-10T06:47:07.491
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -447,7 +447,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
-F src/expr.c 7e257eeffe9553c10a6ac0a1f0177bf740c4da834e7d6e2cbb7d3ebaa3d7f3e1
+F src/expr.c e5861888a30d63611f59861d9b8c7adb591f04a6924d3683484e4f47ce59e148
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c b1da9ef8dc834603bb0d28972378a7ce65897847f9a1e89ab800bbdf24c788ee
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9a307265b0626b3e9df69534c8eacf18413ea31784c9d931eadcff515d3dd84
-R 55502084a84a2e2884b7442095b4ff11
+P a2c0e1bec0d8a6f982572c4c5a8166319b8db0fe586057f7900f0ab72af6554e
+R d511286d824e78f6045de8ea27dbb818
 U drh
-Z c5933f33cc5508d96ff93ada77827be8
+Z 254538629d66367cc0a68844114b45e9

@@ -4951,6 +4951,14 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
       if( pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    if( pA->pWin!=0 ){
+      if( pB->pWin==0 ) return 2;
+      if( sqlite3WindowCompare(pParse,pA->pWin,pB->pWin)!=0 ) return 2;
+    }else if( pB->pWin!=0 ){
+      return 2;
+    }
+#endif
   }
   return 0;
 }
