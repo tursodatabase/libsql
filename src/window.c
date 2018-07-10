@@ -150,9 +150,7 @@ static void row_numberStepFunc(
   sqlite3_value **apArg
 ){
   i64 *p = (i64*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  /* row_numberValueFunc() is always called first, so the aggregate context
-  ** is guaranteed to already exist. */
-  if( ALWAYS(p) ) (*p)++;
+  if( p ) (*p)++;
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
 }
@@ -184,8 +182,7 @@ static void dense_rankStepFunc(
 ){
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  /* p is not NULL because dense_rankValueFunc() will have been called first */
-  if( ALWAYS(p) ) p->nStep = 1;
+  if( p ) p->nStep = 1;
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
 }
@@ -214,8 +211,7 @@ static void rankStepFunc(
 ){
   struct CallCount *p;
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  /* p is not NULL because rankValueFunc() will have been called first */
-  if( ALWAYS(p) ){
+  if( p ){
     p->nStep++;
     if( p->nValue==0 ){
       p->nValue = p->nStep;
@@ -248,8 +244,7 @@ static void percent_rankStepFunc(
   UNUSED_PARAMETER(nArg); assert( nArg==1 );
 
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  /* p is not NULL because percent_rankValueFunc() will have been called */
-  if( ALWAYS(p) ){
+  if( p ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -288,8 +283,7 @@ static void cume_distStepFunc(
   assert( nArg==1 ); UNUSED_PARAMETER(nArg);
 
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  /* p is not NULL because cume_distValueFunc() will have been called first */
-  if( ALWAYS(p) ){
+  if( p ){
     if( p->nTotal==0 ){
       p->nTotal = sqlite3_value_int64(apArg[0]);
     }
@@ -328,8 +322,7 @@ static void ntileStepFunc(
   struct NtileCtx *p;
   assert( nArg==2 ); UNUSED_PARAMETER(nArg);
   p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  /* p is not NULL because ntimeValueFunc() will have been called first */
-  if( ALWAYS(p) ){
+  if( p ){
     if( p->nTotal==0 ){
       p->nParam = sqlite3_value_int64(apArg[0]);
       p->nTotal = sqlite3_value_int64(apArg[1]);
