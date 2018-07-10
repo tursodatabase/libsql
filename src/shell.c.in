@@ -2033,8 +2033,16 @@ static int shell_callback(
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
           char z[50];
           double r = sqlite3_column_double(p->pStmt, i);
-          sqlite3_snprintf(50,z,"%!.20g", r);
-          raw_printf(p->out, "%s", z);
+          sqlite3_uint64 ur;
+          memcpy(&ur,&r,sizeof(r));
+          if( ur==0x7ff0000000000000LL ){
+            raw_printf(p->out, "1e999");
+          }else if( ur==0xfff0000000000000LL ){
+            raw_printf(p->out, "-1e999");
+          }else{
+            sqlite3_snprintf(50,z,"%!.20g", r);
+            raw_printf(p->out, "%s", z);
+          }
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
           int nBlob = sqlite3_column_bytes(p->pStmt, i);
@@ -2567,8 +2575,7 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
   int nAlloc = 0;                 /* Allocated size of p->aiIndent[], abYield */
   int iOp;                        /* Index of operation in p->aiIndent[] */
 
-  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext",
-                           "NextIfOpen", "PrevIfOpen", 0 };
+  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext", 0 };
   const char *azYield[] = { "Yield", "SeekLT", "SeekGT", "RowSetRead",
                             "Rewind", 0 };
   const char *azGoto[] = { "Goto", 0 };
@@ -2972,6 +2979,7 @@ static int shell_exec(
           /* Reprepare pStmt before reactiving trace modes */
           sqlite3_finalize(pStmt);
           sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+          if( pArg ) pArg->pStmt = pStmt;
         }
         restore_debug_trace_modes();
       }
@@ -5854,7 +5862,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zLike = 0;
     int i;
     int savedShowHeader = p->showHeader;
-    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines);
+    int savedShellFlags = p->shellFlgs;
+    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -5936,6 +5945,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
     raw_printf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
     p->showHeader = savedShowHeader;
+    p->shellFlgs = savedShellFlags;
   }else
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 ){

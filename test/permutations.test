@@ -282,6 +282,12 @@ test_suite "fts5-light" -prefix "" -description {
       -exclude *corrupt* *fault* *big* *fts5aj*
 ]
 
+test_suite "window" -prefix "" -description {
+  All window function related tests .
+} -files [
+  test_set [glob -nocomplain $::testdir/window*.test]
+]
+
 test_suite "lsm1" -prefix "" -description {
   All LSM1 tests.
 } -files [glob -nocomplain $::testdir/../ext/lsm1/test/*.test]

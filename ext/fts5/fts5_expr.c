@@ -36,6 +36,7 @@ void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 #include <stdio.h>
 void sqlite3Fts5ParserTrace(FILE*, char*);
 #endif
+int sqlite3Fts5ParserFallback(int);
 
 
 struct Fts5Expr {
@@ -2591,10 +2592,12 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
 
-  /* Avoid a warning indicating that sqlite3Fts5ParserTrace() is unused */
+  /* Avoid warnings indicating that sqlite3Fts5ParserTrace() and
+  ** sqlite3Fts5ParserFallback() are unused */
 #ifndef NDEBUG
   (void)sqlite3Fts5ParserTrace;
 #endif
+  (void)sqlite3Fts5ParserFallback;
 
   return rc;
 }

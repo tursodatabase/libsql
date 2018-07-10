@@ -1196,7 +1196,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
-         utf.lo vtab.lo
+         window.lo utf.lo vtab.lo
 # <</mark>>
 
 # Object files for the amalgamation.
@@ -1307,7 +1307,8 @@ SRC01 = \
   $(TOP)\src\walker.c \
   $(TOP)\src\where.c \
   $(TOP)\src\wherecode.c \
-  $(TOP)\src\whereexpr.c
+  $(TOP)\src\whereexpr.c \
+  $(TOP)\src\window.c
 
 # Core miscellaneous files.
 #
@@ -1478,6 +1479,7 @@ TESTSRC = \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vfs.c \
   $(TOP)\src\test_windirent.c \
+  $(TOP)\src\test_window.c \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
@@ -2045,6 +2047,9 @@ wherecode.lo:	$(TOP)\src\wherecode.c $(HDR)
 
 whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\whereexpr.c
+
+window.lo:	$(TOP)\src\window.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\window.c
 
 tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c

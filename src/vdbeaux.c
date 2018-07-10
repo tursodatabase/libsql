@@ -689,7 +689,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           break;
         }
         case OP_Next:
-        case OP_NextIfOpen:
         case OP_SorterNext: {
           pOp->p4.xAdvance = sqlite3BtreeNext;
           pOp->p4type = P4_ADVANCE;
@@ -699,8 +698,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           assert( pOp->p2>=0 );
           break;
         }
-        case OP_Prev:
-        case OP_PrevIfOpen: {
+        case OP_Prev: {
           pOp->p4.xAdvance = sqlite3BtreePrevious;
           pOp->p4type = P4_ADVANCE;
           /* The code generator never codes any of these opcodes as a jump
@@ -1615,7 +1613,7 @@ void sqlite3VdbeLeave(Vdbe *p){
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */
-void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
+void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zP4;
   char zPtr[50];
   char zCom[100];
@@ -1648,6 +1646,9 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
     p->szMalloc = 0;
 #ifdef SQLITE_DEBUG
     p->pScopyFrom = 0;
+#endif
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+    p->iTabColHash = 0;
 #endif
     p++;
   }
@@ -3934,7 +3935,7 @@ static int isAllZero(const char *z, int n){
 ** is less than, equal to, or greater than the second, respectively.
 ** If one blob is a prefix of the other, then the shorter is the lessor.
 */
-static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
+SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   int c;
   int n1 = pB1->n;
   int n2 = pB2->n;
@@ -4149,7 +4150,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   u32 idx1;                       /* Offset of first type in header */
   int rc = 0;                     /* Return value */
   Mem *pRhs = pPKey2->aMem;       /* Next field of pPKey2 to compare */
-  KeyInfo *pKeyInfo = pPKey2->pKeyInfo;
+  KeyInfo *pKeyInfo;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   Mem mem1;
 
@@ -4244,7 +4245,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         if( (d1+mem1.n) > (unsigned)nKey1 ){
           pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
-        }else if( pKeyInfo->aColl[i] ){
+        }else if( (pKeyInfo = pPKey2->pKeyInfo)->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
           mem1.flags = MEM_Str;
@@ -4295,7 +4296,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     if( rc!=0 ){
-      if( pKeyInfo->aSortOrder[i] ){
+      if( pPKey2->pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
       assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, rc) );
@@ -4304,10 +4305,11 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     i++;
+    if( i==pPKey2->nField ) break;
     pRhs++;
     d1 += sqlite3VdbeSerialTypeLen(serial_type);
     idx1 += sqlite3VarintLen(serial_type);
-  }while( idx1<(unsigned)szHdr1 && i<pPKey2->nField && d1<=(unsigned)nKey1 );
+  }while( idx1<(unsigned)szHdr1 && d1<=(unsigned)nKey1 );
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a
@@ -4319,7 +4321,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   ** value.  */
   assert( CORRUPT_DB 
        || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 
-       || pKeyInfo->db->mallocFailed
+       || pPKey2->pKeyInfo->db->mallocFailed
   );
   pPKey2->eqSeen = 1;
   return pPKey2->default_rc;
@@ -4645,7 +4647,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
+  *res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, pUnpacked, 0);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }

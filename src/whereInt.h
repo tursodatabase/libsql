@@ -82,6 +82,8 @@ struct WhereLevel {
       struct InLoop {
         int iCur;              /* The VDBE cursor used by this IN operator */
         int addrInTop;         /* Top of the IN loop */
+        int iBase;             /* Base register of multi-key index record */
+        int nPrefix;           /* Number of prior entires in the key */
         u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when pWLoop->wsFlags&WHERE_IN_ABLE */
@@ -320,6 +322,7 @@ struct WhereClause {
   WhereInfo *pWInfo;       /* WHERE clause processing context */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
+  u8 hasOr;                /* True if any a[].eOperator is WO_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -493,6 +496,7 @@ void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);
 void sqlite3WhereClauseClear(WhereClause*);
 void sqlite3WhereSplit(WhereClause*,Expr*,u8);
 Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
+Bitmask sqlite3WhereExprUsageNN(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
 void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
 void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
@@ -555,3 +559,4 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
 #define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */
+#define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */

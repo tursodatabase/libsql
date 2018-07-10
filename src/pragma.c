@@ -1564,6 +1564,11 @@ void sqlite3Pragma(
         assert( sqlite3NoTempsInRange(pParse,1,7+j) );
         sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0); VdbeCoverage(v);
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
+        if( !isQuick ){
+          /* Sanity check on record header decoding */
+          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
+          sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+        }
         /* Verify that all NOT NULL columns really are NOT NULL */
         for(j=0; j<pTab->nCol; j++){
           char *zErr;
@@ -1606,9 +1611,6 @@ void sqlite3Pragma(
           sqlite3ExprListDelete(db, pCheck);
         }
         if( !isQuick ){ /* Omit the remaining tests for quick_check */
-          /* Sanity check on record header decoding */
-          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
-          sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
           /* Validate index entries for the current row */
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
             int jmp2, jmp3, jmp4, jmp5;

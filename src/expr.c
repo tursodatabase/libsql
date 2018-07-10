@@ -1063,6 +1063,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
     }
+    if( !ExprHasProperty(p, EP_Reduced) ){
+      sqlite3WindowDelete(db, p->pWin);
+    }
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
   if( !ExprHasProperty(p, EP_Static) ){
@@ -1111,7 +1114,7 @@ static int exprStructSize(Expr *p){
 ** Note that with flags==EXPRDUP_REDUCE, this routines works on full-size
 ** (unreduced) Expr objects as they or originally constructed by the parser.
 ** During expression analysis, extra information is computed and moved into
-** later parts of teh Expr object and that extra information might get chopped
+** later parts of the Expr object and that extra information might get chopped
 ** off if the expression is reduced.  Note also that it does not work to
 ** make an EXPRDUP_REDUCE copy of a reduced expression.  It is only legal
 ** to reduce a pristine expression tree from the parser.  The implementation
@@ -1123,7 +1126,11 @@ static int dupedExprStructSize(Expr *p, int flags){
   assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   assert( EXPR_FULLSIZE<=0xfff );
   assert( (0xfff & (EP_Reduced|EP_TokenOnly))==0 );
-  if( 0==flags || p->op==TK_SELECT_COLUMN ){
+  if( 0==flags || p->op==TK_SELECT_COLUMN 
+#ifndef SQLITE_OMIT_WINDOWFUNC
+   || p->pWin 
+#endif
+  ){
     nSize = EXPR_FULLSIZE;
   }else{
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
@@ -1263,6 +1270,13 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         *pzBuffer = zAlloc;
       }
     }else{
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      if( ExprHasProperty(p, EP_Reduced|EP_TokenOnly) ){
+        pNew->pWin = 0;
+      }else{
+        pNew->pWin = sqlite3WindowDup(db, pNew, p->pWin);
+      }
+#endif /* SQLITE_OMIT_WINDOWFUNC */
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
@@ -1469,6 +1483,10 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNew->addrOpenEphm[1] = -1;
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = withDup(db, p->pWith);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    pNew->pWin = 0;
+    pNew->pWinDefn = sqlite3WindowListDup(db, p->pWinDefn);
+#endif
     sqlite3SelectSetName(pNew, p->zSelName);
     *pp = pNew;
     pp = &pNew->pPrior;
@@ -3200,6 +3218,13 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   }
 #endif
 
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+  /* Add a SetTabCol opcode for run-time verification that the column
+  ** cache is working correctly.
+  */
+  sqlite3VdbeAddOp3(pParse->pVdbe, OP_SetTabCol, iTab, iCol, iReg);
+#endif
+
   /* If the cache is already full, delete the least recently used entry */
   if( pParse->nColCache>=SQLITE_N_COLCACHE ){
     minLru = 0x7fffffff;
@@ -3373,6 +3398,9 @@ int sqlite3ExprCodeGetColumn(
     if( p->iTable==iTable && p->iColumn==iColumn ){
       p->lru = pParse->iCacheCnt++;
       sqlite3ExprCachePinRegister(pParse, p->iReg);
+#ifdef SQLITE_DEBUG_COLUMNCACHE
+      sqlite3VdbeAddOp3(v, OP_VerifyTabCol, iTable, iColumn, p->iReg);
+#endif
       return p->iReg;
     }
   }  
@@ -3777,6 +3805,12 @@ expr_code_doover:
       sqlite3 *db = pParse->db;  /* The database connection */
       u8 enc = ENC(db);      /* The text encoding used by this database */
       CollSeq *pColl = 0;    /* A collating sequence */
+
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      if( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) && pExpr->pWin ){
+        return pExpr->pWin->regResult;
+      }
+#endif
 
       if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
         /* SQL functions can be expensive. So try to move constant functions
@@ -4917,6 +4951,21 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
       if( pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    /* Justification for the assert():
+    ** window functions have p->op==TK_FUNCTION but aggregate functions
+    ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
+    ** function and a window function should have failed before reaching
+    ** this point.  And, it is not possible to have a window function and
+    ** a scalar function with the same name and number of arguments.  So
+    ** if we reach this point, either A and B both window functions or
+    ** neither are a window functions. */
+    assert( (pA->pWin==0)==(pB->pWin==0) );
+
+    if( pA->pWin!=0 ){
+      if( sqlite3WindowCompare(pParse,pA->pWin,pB->pWin)!=0 ) return 2;
+    }
+#endif
   }
   return 0;
 }

@@ -1922,6 +1922,7 @@ static int seekInLevel(
   ** is not a composite level and there is no split-key). Search the 
   ** left-hand-side of the level in this case.  */
   if( res<0 ){
+    int i;
     int iPtr = 0;
     if( nRhs==0 ) iPtr = (int)*piPgno;
 
@@ -1931,12 +1932,16 @@ static int seekInLevel(
     if( rc==LSM_OK && nRhs>0 && eSeek==LSM_SEEK_GE && aPtr[0].pPg==0 ){
       res = 0;
     }
+    for(i=1; i<=nRhs; i++){
+      segmentPtrReset(&aPtr[i], LSM_SEGMENTPTR_FREE_THRESHOLD);
+    }
   }
   
   if( res>=0 ){
     int bHit = 0;                 /* True if at least one rhs is not EOF */
     int iPtr = (int)*piPgno;
     int i;
+    segmentPtrReset(&aPtr[0], LSM_SEGMENTPTR_FREE_THRESHOLD);
     for(i=1; rc==LSM_OK && i<=nRhs && bStop==0; i++){
       SegmentPtr *pPtr = &aPtr[i];
       iOut = 0;
@@ -2868,7 +2873,7 @@ static int multiCursorEnd(MultiCursor *pCsr, int bLast){
   int rc = LSM_OK;
   int i;
 
-  pCsr->flags &= ~(CURSOR_NEXT_OK | CURSOR_PREV_OK);
+  pCsr->flags &= ~(CURSOR_NEXT_OK | CURSOR_PREV_OK | CURSOR_SEEK_EQ);
   pCsr->flags |= (bLast ? CURSOR_PREV_OK : CURSOR_NEXT_OK);
   pCsr->iFree = 0;
 
