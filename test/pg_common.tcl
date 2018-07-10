@@ -71,7 +71,8 @@ proc execsql_test {tn sql} {
 # with two decimal points.
 #
 proc execsql_float_test {tn sql} {
-  set F "%.2f"
+  set F "%.4f"
+  set T 0.0001
   set res [execsql $sql]
   set res2 [list]
   foreach r $res { 
@@ -79,14 +80,22 @@ proc execsql_float_test {tn sql} {
     lappend res2 $r
   }
 
-  puts $::fd "do_test $tn {"
-  puts $::fd "  set myres {}"
-  puts $::fd "  foreach r \[db eval {[string trim $sql]}\] {"
-  puts $::fd "    lappend myres \[format $F \[set r\]\]"
-  puts $::fd "  }"
-  puts $::fd "  set myres"
-  puts $::fd "} {$res2}"
-  puts $::fd ""
+  set sql [string trim $sql]
+puts $::fd [subst -nocommands {
+do_test $tn {
+  set myres {}
+  foreach r [db eval {$sql}] {
+    lappend myres [format $F [set r]]
+  }
+  set res2 {$res2}
+  foreach r [set myres] r2 [set res2] {
+    if {[set r]<([set r2]-$T) || [set r]>([set r2]+$T)} {
+      error "list element [set i] does not match: got=[set r] expected=[set r2]"
+    }
+  }
+  set {} {}
+} {}
+}]
 }
 
 proc start_test {name date} {

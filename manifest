@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\sscalar\ssub-selects\sin\swindow\sfunction\squeries.
-D 2018-07-10T17:26:12.992
+C Modify\stests\sin\swindow3.test\sto\sbe\stolerant\sof\srounding\serrors\swhen\scomparing\nfloating\spoint\svalues.
+D 2018-07-10T18:50:01.938
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -1151,7 +1151,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 5c2167e03dc55ff697e11bb3abf10c66ba452e4afb2dbd85a2b144048355300e
-F test/pg_common.tcl 3bf36b30d7b09e5896a1fb0268ace22f2ebfa91d07a422d8ffbf57551d9ce0dc
+F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test 7c8cfc328a1717a95663cf8edb06c52ddfeaf97bb0aee69ae7457132e8d39e7d
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1624,7 +1624,7 @@ F test/window1.test 7cb260079cd88d6d6177b0f592686f2bbbc2d10f4f415c8a37cd153eb83c
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
-F test/window3.test 87fb18021903fc4d1659b8b2092aea55d611a9606cfa7272686234e5197c4b31
+F test/window3.test e274b7f8952ca4ed25996e0e45c047192b066e0aaff2a822d4293c8c4f1d8d98
 F test/window4.tcl 871364059b7d320d556ec6ef804d604a4e8cc1547a3102c5d56067371bb200af
 F test/window4.test 323b118eb592932036388643ca6dcaead87f699bbea2984bbca49ba4ad6c2509
 F test/window5.test 8187f46597c90b73e8f96659e893353cbda337479cc582f7a488eab351ba08d3
@@ -1746,8 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76e42b7071a71137c0da4f10db4e653ae94a89b56e95cd3f036bff08c9500d08
-R 5a928f31195aa92936976582dda769cc
-T +closed dcac190277fab9c6a9bdf651d18b25d97e0db49b3cc709ca145403c8b556bce3
+P 687fe532c274265ca77451f97829743fcb8a714d0f6b1ceb9a147ab9babdc5b5
+R dc1af1dd774d9448adb88c0e0a2d5b5d
 U dan
-Z 21618f80bf768e7efd03a702d30b034d
+Z 5fc52a823e6add523cc10ecd81aa5cb1
