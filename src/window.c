@@ -589,7 +589,9 @@ void sqlite3WindowUpdate(
 typedef struct WindowRewrite WindowRewrite;
 struct WindowRewrite {
   Window *pWin;
+  SrcList *pSrc;
   ExprList *pSub;
+  Select *pSubSelect;             /* Current sub-select, if any */
 };
 
 /*
@@ -600,6 +602,24 @@ struct WindowRewrite {
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
+
+  /* If this function is being called from within a scalar sub-select
+  ** that used by the SELECT statement being processed, only process
+  ** TK_COLUMN expressions that refer to it (the outer SELECT). Do
+  ** not process aggregates or window functions at all, as they belong
+  ** to the scalar sub-select.  */
+  if( p->pSubSelect ){
+    if( pExpr->op!=TK_COLUMN ){
+      return WRC_Continue;
+    }else{
+      int nSrc = p->pSrc->nSrc;
+      int i;
+      for(i=0; i<nSrc; i++){
+        if( pExpr->iTable==p->pSrc->a[i].iCursor ) break;
+      }
+      if( i==nSrc ) return WRC_Continue;
+    }
+  }
 
   switch( pExpr->op ){
 
@@ -643,8 +663,15 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pWalker);
-  UNUSED_PARAMETER(pSelect);
+  struct WindowRewrite *p = pWalker->u.pRewrite;
+  Select *pSave = p->pSubSelect;
+  if( pSave==pSelect ){
+    return WRC_Continue;
+  }else{
+    p->pSubSelect = pSelect;
+    sqlite3WalkSelect(pWalker, pSelect);
+    p->pSubSelect = pSave;
+  }
   return WRC_Prune;
 }
 
@@ -655,7 +682,7 @@ static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
 **   * TK_COLUMN,
 **   * aggregate function, or
 **   * window function with a Window object that is not a member of the 
-**     linked list passed as the second argument (pWin)
+**     Window list passed as the second argument (pWin).
 **
 ** Append the node to output expression-list (*ppSub). And replace it
 ** with a TK_COLUMN that reads the (N-1)th element of table 
@@ -665,6 +692,7 @@ static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
 static void selectWindowRewriteEList(
   Parse *pParse, 
   Window *pWin,
+  SrcList *pSrc,
   ExprList *pEList,               /* Rewrite expressions in this list */
   ExprList **ppSub                /* IN/OUT: Sub-select expression-list */
 ){
@@ -676,6 +704,7 @@ static void selectWindowRewriteEList(
 
   sRewrite.pSub = *ppSub;
   sRewrite.pWin = pWin;
+  sRewrite.pSrc = pSrc;
 
   sWalker.pParse = pParse;
   sWalker.xExprCallback = selectWindowRewriteExprCb;
@@ -753,8 +782,8 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** many columns the table will have.  */
     pMWin->iEphCsr = pParse->nTab++;
 
-    selectWindowRewriteEList(pParse, pMWin, p->pEList, &pSublist);
-    selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
+    selectWindowRewriteEList(pParse, pMWin, pSrc, p->pEList, &pSublist);
+    selectWindowRewriteEList(pParse, pMWin, pSrc, p->pOrderBy, &pSublist);
     pMWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
 
     /* Append the PARTITION BY and ORDER BY expressions to the to the 
