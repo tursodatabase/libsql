@@ -1,5 +1,5 @@
-C Adjustments\sto\sVdbeCoverage\smacros\sto\sdeal\swith\sbyte-code\sbranches\sthat\ncan\snever\sbe\staken\sin\ssome\sdirections.
-D 2018-07-11T03:27:52.496
+C On\san\sUPSERT\swhen\sthe\sorder\sof\sconstraint\schecks\sis\srearranged,\smake\ssure\nthat\sthe\saffinity\stransformations\son\sthe\sinserted\scontent\soccur\sbefore\nany\sof\sthe\sconstraint\schecks.\s\sFix\sfor\sticket\s[79cad5e4b2e219dd197242e9e5f4e].
+D 2018-07-11T13:34:24.107
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -456,7 +456,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c bcacf6a0d277f8fa0e4f9ffecda544a2330ca4478f904cd89564c2dd86d0b16b
+F src/insert.c 8613af9c5ba1503bc68f4e9432c6c024e0fdafdc791575c50f380f73ec91189f
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
 F src/main.c fa70bde00ebe7865cfa3fe1e2de87a003d575c1ec4598ff0a1f414ecb1404928
@@ -1519,7 +1519,7 @@ F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ffeea7747d5ba962a8009a20b7e53d68cbae05b063604c68702c5998eb50c981
 F test/update.test 1148de8d913e9817717990603aadeca07aab9ddbb10a30f167cbfd8d3a3ccb60
 F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2313e
-F test/upsert1.test d587db593f131e112a98a05685c418e0eacc28df5905403e4ca04cd74c39a3fc
+F test/upsert1.test ecd8f69e20183f298464992762fee24750508b3cbefc5badba8a259a3fc887ec
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94ac51cc4e7fdf484214e1936fc96104b96134632a8eb99558b3af743ac8bb8b
-R 3c2abc82cb054facab44530a72038375
+P b170c0092b1d0c47dd700843f0c870e51181939607a897fbcae55a58042160f9
+R 4e20b30ebb2786512420ded6a69628a8
 U drh
-Z 9468a70529339ad8af6a1cde8d80384d
+Z c205c0467ded819bcfac5905085375c4
