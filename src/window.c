@@ -1149,7 +1149,7 @@ static void windowAggStep(
         sqlite3VdbeAddOp2(v, OP_IdxInsert, pWin->csrApp, pWin->regApp+2);
       }else{
         sqlite3VdbeAddOp4Int(v, OP_SeekGE, pWin->csrApp, 0, regArg, 1);
-        VdbeCoverage(v);
+        VdbeCoverageNeverTaken(v);
         sqlite3VdbeAddOp1(v, OP_Delete, pWin->csrApp);
         sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
       }
@@ -1280,7 +1280,7 @@ static void windowPartitionCache(
     addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
     sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
     sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+4, addr+2);
-    VdbeCoverage(v);
+    VdbeCoverageEqNe(v);
     sqlite3VdbeAddOp3(v, OP_Copy, regNewPart, pMWin->regPart, nPart-1);
     sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
     VdbeComment((v, "call flush_partition"));
@@ -1338,8 +1338,8 @@ static void windowReturnOneRow(
       sqlite3VdbeAddOp3(v, OP_Add, tmpReg, pWin->regApp, tmpReg);
       sqlite3VdbeAddOp3(v, OP_Gt, pWin->regApp+1, lbl, tmpReg);
       VdbeCoverageNeverNull(v);
-      sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, lbl, tmpReg);
-      VdbeCoverage(v);
+      sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, 0, tmpReg);
+      VdbeCoverageNeverTaken(v);
       sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol, pWin->regResult);
       sqlite3VdbeResolveLabel(v, lbl);
       sqlite3ReleaseTempReg(pParse, tmpReg);
@@ -1731,7 +1731,7 @@ static void windowCodeRowExprStep(
       sqlite3VdbeAddOp2(v, OP_Goto, 0, lblSkipInverse);
     }else{
       sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
-      VdbeCoverage(v);
+      VdbeCoverageAlwaysTaken(v);
     }
     windowAggStep(pParse, pMWin, csrStart, 1, regArg, regSize);
     sqlite3VdbeResolveLabel(v, lblSkipInverse);
@@ -2053,7 +2053,7 @@ static void windowCodeDefaultStep(
       addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
       sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
       addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-      VdbeCoverage(v);
+      VdbeCoverageEqNe(v);
       windowAggFinal(pParse, pMWin, 1);
       if( pOrderBy ){
         addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
