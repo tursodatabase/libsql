@@ -1,5 +1,5 @@
-C On\san\sUPSERT\swhen\sthe\sorder\sof\sconstraint\schecks\sis\srearranged,\smake\ssure\nthat\sthe\saffinity\stransformations\son\sthe\sinserted\scontent\soccur\sbefore\nany\sof\sthe\sconstraint\schecks.\s\sFix\sfor\sticket\s[79cad5e4b2e219dd197242e9e5f4e].
-D 2018-07-11T13:34:24.107
+C Add\sa\stest\scase\sto\scheck\sthat\sSQLITE_DBCONFIG_RESET_DATABASE\scan\sbe\sused\swith\nwal\smode\sdatabases\seven\sif\sthere\sare\sactive\sreaders.
+D 2018-07-12T11:28:42.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -1177,7 +1177,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.tcl 769892f81050b3f59c66f274d478d855159b474ea27019dec82f1215c0b91ef7 x
-F test/resetdb.test 46abce317cb093f37c26c8ecebc518d24f84a627b9f3babde8e0b7904f45fcd8
+F test/resetdb.test c70ac9b8ceef3ccb094e22df19d5e7c283b1fb2f729c544c5c211aa58057f4aa
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b170c0092b1d0c47dd700843f0c870e51181939607a897fbcae55a58042160f9
-R 4e20b30ebb2786512420ded6a69628a8
-U drh
-Z c205c0467ded819bcfac5905085375c4
+P d120c45f3dc79f67afed0e44e5133569f784bc6792b15f5d79529deac2d13072
+R 9aeff0f8261e05b78f380028eaa2535f
+U dan
+Z bbb5b116e0122d7bd666d9a4c5c9b10a
