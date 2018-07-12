@@ -1632,6 +1632,10 @@ void sqlite3GenerateConstraintChecks(
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
+    if( bAffinityDone==0 ){
+      sqlite3TableAffinity(v, pTab, regNewData+1);
+      bAffinityDone = 1;
+    }
     if( pUpIdx==pIdx ){
       addrUniqueOk = sAddr.upsertBtm;
       upsertBypass = sqlite3VdbeGoto(v, 0);
@@ -1641,10 +1645,6 @@ void sqlite3GenerateConstraintChecks(
       addrUniqueOk = sqlite3VdbeMakeLabel(v);
     }
     VdbeNoopComment((v, "uniqueness check for %s", pIdx->zName));
-    if( bAffinityDone==0 ){
-      sqlite3TableAffinity(v, pTab, regNewData+1);
-      bAffinityDone = 1;
-    }
     iThisCur = iIdxCur+ix;
 
 

@@ -310,4 +310,30 @@ foreach {tn stmt res} {
   " $res
 }
 
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1 VALUES(10),(15),(20),(20),(25),(30),(30),(50);
+  CREATE TABLE t3(x INT, y VARCHAR);
+  INSERT INTO t3(x,y) VALUES(10,'ten'),('15','fifteen'),(30,'thirty');
+}
+
+do_execsql_test 11.1 {
+  SELECT a, (SELECT y FROM t3 WHERE x=a) FROM t1 ORDER BY a;
+} {
+  10 ten 15 fifteen 20 {} 20 {} 25 {} 30 thirty 30 thirty 50 {}
+}
+
+do_execsql_test 11.2 {
+  SELECT a, (SELECT y FROM t3 WHERE x=a), sum(a) OVER (ORDER BY a)
+    FROM t1 ORDER BY a;
+} {
+  10 ten 10   15 fifteen 25   20 {} 65        20 {} 65   
+  25 {} 90    30 thirty 150   30 thirty 150   50 {} 200
+}
+
 finish_test
+

@@ -134,32 +134,56 @@ int sqlite3_found_count = 0;
 ** feature is used for test suite validation only and does not appear an
 ** production builds.
 **
-** M is an integer, 2 or 3, that indices how many different ways the
-** branch can go.  It is usually 2.  "I" is the direction the branch
-** goes.  0 means falls through.  1 means branch is taken.  2 means the
-** second alternative branch is taken.
+** M is an integer between 2 and 4.  2 indicates a ordinary two-way
+** branch (I=0 means fall through and I=1 means taken).  3 indicates
+** a 3-way branch where the third way is when one of the operands is
+** NULL.  4 indicates the OP_Jump instruction which has three destinations
+** depending on whether the first operand is less than, equal to, or greater
+** than the second. 
 **
 ** iSrcLine is the source code line (from the __LINE__ macro) that
-** generated the VDBE instruction.  This instrumentation assumes that all
-** source code is in a single file (the amalgamation).  Special values 1
-** and 2 for the iSrcLine parameter mean that this particular branch is
-** always taken or never taken, respectively.
+** generated the VDBE instruction combined with flag bits.  The source
+** code line number is in the lower 24 bits of iSrcLine and the upper
+** 8 bytes are flags.  The lower three bits of the flags indicate
+** values for I that should never occur.  For example, if the branch is
+** always taken, the flags should be 0x05 since the fall-through and
+** alternate branch are never taken.  If a branch is never taken then
+** flags should be 0x06 since only the fall-through approach is allowed.
+**
+** Bit 0x04 of the flags indicates an OP_Jump opcode that is only
+** interested in equal or not-equal.  In other words, I==0 and I==2
+** should be treated the same.
+**
+** Since only a line number is retained, not the filename, this macro
+** only works for amalgamation builds.  But that is ok, since these macros
+** should be no-ops except for special builds used to measure test coverage.
 */
 #if !defined(SQLITE_VDBE_COVERAGE)
 # define VdbeBranchTaken(I,M)
 #else
 # define VdbeBranchTaken(I,M) vdbeTakeBranch(pOp->iSrcLine,I,M)
-  static void vdbeTakeBranch(int iSrcLine, u8 I, u8 M){
-    if( iSrcLine<=2 && ALWAYS(iSrcLine>0) ){
-      M = iSrcLine;
-      /* Assert the truth of VdbeCoverageAlwaysTaken() and 
-      ** VdbeCoverageNeverTaken() */
-      assert( (M & I)==I );
-    }else{
-      if( sqlite3GlobalConfig.xVdbeBranch==0 ) return;  /*NO_TEST*/
-      sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg,
-                                      iSrcLine,I,M);
+  static void vdbeTakeBranch(u32 iSrcLine, u8 I, u8 M){
+    u8 mNever;
+    assert( I<=2 );  /* 0: fall through,  1: taken,  2: alternate taken */
+    assert( M<=4 );  /* 2: two-way branch, 3: three-way branch, 4: OP_Jump */
+    assert( I<M );   /* I can only be 2 if M is 3 or 4 */
+    /* Transform I from a integer [0,1,2] into a bitmask of [1,2,4] */
+    I = 1<<I;
+    /* The upper 8 bits of iSrcLine are flags.  The lower three bits of
+    ** the flags indicate directions that the branch can never go.  If
+    ** a branch really does go in one of those directions, assert right
+    ** away. */
+    mNever = iSrcLine >> 24;
+    assert( (I & mNever)==0 );
+    if( sqlite3GlobalConfig.xVdbeBranch==0 ) return;  /*NO_TEST*/
+    I |= mNever;
+    if( M==2 ) I |= 0x04;
+    if( M==4 ){
+      I |= 0x08;
+      if( (mNever&0x08)!=0 && (I&0x05)!=0) I |= 0x05; /*NO_TEST*/
     }
+    sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg,
+                                    iSrcLine&0xffffff, I, M);
   }
 #endif
 
@@ -2162,11 +2186,11 @@ case OP_Compare: {
 */
 case OP_Jump: {             /* jump */
   if( iCompare<0 ){
-    VdbeBranchTaken(0,3); pOp = &aOp[pOp->p1 - 1];
+    VdbeBranchTaken(0,4); pOp = &aOp[pOp->p1 - 1];
   }else if( iCompare==0 ){
-    VdbeBranchTaken(1,3); pOp = &aOp[pOp->p2 - 1];
+    VdbeBranchTaken(1,4); pOp = &aOp[pOp->p2 - 1];
   }else{
-    VdbeBranchTaken(2,3); pOp = &aOp[pOp->p3 - 1];
+    VdbeBranchTaken(2,4); pOp = &aOp[pOp->p3 - 1];
   }
   break;
 }

@@ -810,7 +810,7 @@ static void constructAutomaticIndex(
     sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
     VdbeCoverage(v);
-    VdbeComment((v, "next row of \"%s\"", pTabItem->pTab->zName));
+    VdbeComment((v, "next row of %s", pTabItem->pTab->zName));
   }else{
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
   }
@@ -2672,6 +2672,7 @@ static int whereLoopAddBtreeIndex(
   if( saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
    && pProbe->noSkipScan==0
+   && OptimizationEnabled(db, SQLITE_SkipScan)
    && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
   ){

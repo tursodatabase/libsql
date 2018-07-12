@@ -1585,6 +1585,7 @@ struct sqlite3 {
    /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_PushDown       0x1000   /* The push-down optimization */
 #define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
+#define SQLITE_SkipScan       0x4000   /* Skip-scans */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -2810,9 +2811,7 @@ struct Select {
   LogEst nSelectRow;     /* Estimated number of result rows */
   u32 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
-#if SELECTTRACE_ENABLED
-  char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
-#endif
+  u32 selId;             /* Unique identifier number for this SELECT */
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
@@ -3073,9 +3072,7 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
-#if SELECTTRACE_ENABLED
-  int nSelect;         /* Number of SELECT statements seen */
-#endif
+  int nSelect;         /* Number of SELECT stmts. Counter for Select.selId */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -3389,7 +3386,7 @@ struct Sqlite3Config {
   /* The following callback (if not NULL) is invoked on every VDBE branch
   ** operation.  Set the callback using SQLITE_TESTCTRL_VDBE_COVERAGE.
   */
-  void (*xVdbeBranch)(void*,int iSrcLine,u8 eThis,u8 eMx);  /* Callback */
+  void (*xVdbeBranch)(void*,unsigned iSrcLine,u8 eThis,u8 eMx);  /* Callback */
   void *pVdbeBranchArg;                                     /* 1st argument */
 #endif
 #ifndef SQLITE_UNTESTABLE
@@ -3521,7 +3518,7 @@ struct Window {
   Window *pNextWin;       /* Next window function belonging to this SELECT */
   Expr *pFilter;          /* The FILTER expression */
   FuncDef *pFunc;         /* The function */
-  int iEphCsr;            /* Temp table used by this window */
+  int iEphCsr;            /* Partition buffer or Peer buffer */
   int regAccum;
   int regResult;
   int csrApp;             /* Function cursor (used by min/max) */
@@ -4026,11 +4023,6 @@ ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
-#if SELECTTRACE_ENABLED
-void sqlite3SelectSetName(Select*,const char*);
-#else
-# define sqlite3SelectSetName(A,B)
-#endif
 void sqlite3InsertBuiltinFuncs(FuncDef*,int);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(void);

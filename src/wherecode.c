@@ -150,7 +150,7 @@ int sqlite3WhereExplainOneScan(
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     sqlite3_str_appendall(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
-      sqlite3_str_appendf(&str, " SUBQUERY 0x%p", pItem->pSelect);
+      sqlite3_str_appendf(&str, " SUBQUERY %u", pItem->pSelect->selId);
     }else{
       sqlite3_str_appendf(&str, " TABLE %s", pItem->zName);
     }
@@ -1242,7 +1242,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     pLevel->p2 =  sqlite3VdbeAddOp2(v, OP_Yield, regYield, addrBrk);
     VdbeCoverage(v);
-    VdbeComment((v, "next row of \"%s\"", pTabItem->pTab->zName));
+    VdbeComment((v, "next row of %s", pTabItem->pTab->zName));
     pLevel->op = OP_Goto;
   }else
 
