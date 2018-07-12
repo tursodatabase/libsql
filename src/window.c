@@ -589,7 +589,9 @@ void sqlite3WindowUpdate(
 typedef struct WindowRewrite WindowRewrite;
 struct WindowRewrite {
   Window *pWin;
+  SrcList *pSrc;
   ExprList *pSub;
+  Select *pSubSelect;             /* Current sub-select, if any */
 };
 
 /*
@@ -600,6 +602,24 @@ struct WindowRewrite {
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
+
+  /* If this function is being called from within a scalar sub-select
+  ** that used by the SELECT statement being processed, only process
+  ** TK_COLUMN expressions that refer to it (the outer SELECT). Do
+  ** not process aggregates or window functions at all, as they belong
+  ** to the scalar sub-select.  */
+  if( p->pSubSelect ){
+    if( pExpr->op!=TK_COLUMN ){
+      return WRC_Continue;
+    }else{
+      int nSrc = p->pSrc->nSrc;
+      int i;
+      for(i=0; i<nSrc; i++){
+        if( pExpr->iTable==p->pSrc->a[i].iCursor ) break;
+      }
+      if( i==nSrc ) return WRC_Continue;
+    }
+  }
 
   switch( pExpr->op ){
 
@@ -643,8 +663,15 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pWalker);
-  UNUSED_PARAMETER(pSelect);
+  struct WindowRewrite *p = pWalker->u.pRewrite;
+  Select *pSave = p->pSubSelect;
+  if( pSave==pSelect ){
+    return WRC_Continue;
+  }else{
+    p->pSubSelect = pSelect;
+    sqlite3WalkSelect(pWalker, pSelect);
+    p->pSubSelect = pSave;
+  }
   return WRC_Prune;
 }
 
@@ -655,7 +682,7 @@ static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
 **   * TK_COLUMN,
 **   * aggregate function, or
 **   * window function with a Window object that is not a member of the 
-**     linked list passed as the second argument (pWin)
+**     Window list passed as the second argument (pWin).
 **
 ** Append the node to output expression-list (*ppSub). And replace it
 ** with a TK_COLUMN that reads the (N-1)th element of table 
@@ -665,6 +692,7 @@ static int selectWindowRewriteSelectCb(Walker *pWalker, Select *pSelect){
 static void selectWindowRewriteEList(
   Parse *pParse, 
   Window *pWin,
+  SrcList *pSrc,
   ExprList *pEList,               /* Rewrite expressions in this list */
   ExprList **ppSub                /* IN/OUT: Sub-select expression-list */
 ){
@@ -676,6 +704,7 @@ static void selectWindowRewriteEList(
 
   sRewrite.pSub = *ppSub;
   sRewrite.pWin = pWin;
+  sRewrite.pSrc = pSrc;
 
   sWalker.pParse = pParse;
   sWalker.xExprCallback = selectWindowRewriteExprCb;
@@ -753,8 +782,8 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** many columns the table will have.  */
     pMWin->iEphCsr = pParse->nTab++;
 
-    selectWindowRewriteEList(pParse, pMWin, p->pEList, &pSublist);
-    selectWindowRewriteEList(pParse, pMWin, p->pOrderBy, &pSublist);
+    selectWindowRewriteEList(pParse, pMWin, pSrc, p->pEList, &pSublist);
+    selectWindowRewriteEList(pParse, pMWin, pSrc, p->pOrderBy, &pSublist);
     pMWin->nBufferCol = (pSublist ? pSublist->nExpr : 0);
 
     /* Append the PARTITION BY and ORDER BY expressions to the to the 
@@ -1038,9 +1067,9 @@ static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
   VdbeCoverageIf(v, eCond==1);
   VdbeCoverageIf(v, eCond==2);
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
-  VdbeCoverageIf(v, eCond==0);
-  VdbeCoverageIf(v, eCond==1);
-  VdbeCoverageIf(v, eCond==2);
+  VdbeCoverageNeverNullIf(v, eCond==0);
+  VdbeCoverageNeverNullIf(v, eCond==1);
+  VdbeCoverageNeverNullIf(v, eCond==2);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
   sqlite3ReleaseTempReg(pParse, regZero);
@@ -1120,7 +1149,7 @@ static void windowAggStep(
         sqlite3VdbeAddOp2(v, OP_IdxInsert, pWin->csrApp, pWin->regApp+2);
       }else{
         sqlite3VdbeAddOp4Int(v, OP_SeekGE, pWin->csrApp, 0, regArg, 1);
-        VdbeCoverage(v);
+        VdbeCoverageNeverTaken(v);
         sqlite3VdbeAddOp1(v, OP_Delete, pWin->csrApp);
         sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
       }
@@ -1232,8 +1261,8 @@ static void windowPartitionCache(
   *pRegSize = regRowid;
   pParse->nMem += nSub + 2;
 
-  /* Martial the row returned by the sub-select into an array of 
-  ** registers. */
+  /* Load the column values for the row returned by the sub-select
+  ** into an array of registers starting at reg. */
   for(k=0; k<nSub; k++){
     sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
   }
@@ -1251,7 +1280,7 @@ static void windowPartitionCache(
     addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
     sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
     sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+4, addr+2);
-    VdbeCoverage(v);
+    VdbeCoverageEqNe(v);
     sqlite3VdbeAddOp3(v, OP_Copy, regNewPart, pMWin->regPart, nPart-1);
     sqlite3VdbeAddOp2(v, OP_Gosub, regFlushPart, lblFlushPart);
     VdbeComment((v, "call flush_partition"));
@@ -1308,9 +1337,9 @@ static void windowReturnOneRow(
       }
       sqlite3VdbeAddOp3(v, OP_Add, tmpReg, pWin->regApp, tmpReg);
       sqlite3VdbeAddOp3(v, OP_Gt, pWin->regApp+1, lbl, tmpReg);
-      VdbeCoverage(v);
-      sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, lbl, tmpReg);
-      VdbeCoverage(v);
+      VdbeCoverageNeverNull(v);
+      sqlite3VdbeAddOp3(v, OP_SeekRowid, csr, 0, tmpReg);
+      VdbeCoverageNeverTaken(v);
       sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol, pWin->regResult);
       sqlite3VdbeResolveLabel(v, lbl);
       sqlite3ReleaseTempReg(pParse, tmpReg);
@@ -1621,7 +1650,7 @@ static void windowCodeRowExprStep(
     assert( pMWin->pStart!=0 );
     assert( pMWin->eEnd==TK_FOLLOWING );
     sqlite3VdbeAddOp3(v, OP_Ge, regStart, sqlite3VdbeCurrentAddr(v)+2, regEnd);
-    VdbeCoverage(v);
+    VdbeCoverageNeverNull(v);
     sqlite3VdbeAddOp2(v, OP_Copy, regSize, regStart);
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regEnd);
   }
@@ -1630,7 +1659,7 @@ static void windowCodeRowExprStep(
     assert( pMWin->pEnd!=0 );
     assert( pMWin->eStart==TK_PRECEDING );
     sqlite3VdbeAddOp3(v, OP_Le, regStart, sqlite3VdbeCurrentAddr(v)+3, regEnd);
-    VdbeCoverage(v);
+    VdbeCoverageNeverNull(v);
     sqlite3VdbeAddOp2(v, OP_Copy, regSize, regStart);
     sqlite3VdbeAddOp2(v, OP_Copy, regSize, regEnd);
   }
@@ -1702,7 +1731,7 @@ static void windowCodeRowExprStep(
       sqlite3VdbeAddOp2(v, OP_Goto, 0, lblSkipInverse);
     }else{
       sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
-      VdbeCoverage(v);
+      VdbeCoverageAlwaysTaken(v);
     }
     windowAggStep(pParse, pMWin, csrStart, 1, regArg, regSize);
     sqlite3VdbeResolveLabel(v, lblSkipInverse);
@@ -2005,8 +2034,8 @@ static void windowCodeDefaultStep(
 
   pParse->nMem += nSub + 2;
 
-  /* Martial the row returned by the sub-select into an array of 
-  ** registers. */
+  /* Load the individual column values of the row returned by
+  ** the sub-select into an array of registers. */
   for(k=0; k<nSub; k++){
     sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
   }
@@ -2024,7 +2053,7 @@ static void windowCodeDefaultStep(
       addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart,nPart);
       sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
       addrJump = sqlite3VdbeAddOp3(v, OP_Jump, addr+2, 0, addr+2);
-      VdbeCoverage(v);
+      VdbeCoverageEqNe(v);
       windowAggFinal(pParse, pMWin, 1);
       if( pOrderBy ){
         addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -2183,6 +2212,7 @@ void sqlite3WindowCodeStep(
   if( pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy)
   ){
+    VdbeModuleComment((pParse->pVdbe, "Begin RowExprStep()"));
     windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);
   }else{
     Window *pWin;
@@ -2207,8 +2237,10 @@ void sqlite3WindowCodeStep(
 
     /* Otherwise, call windowCodeDefaultStep().  */
     if( bCache ){
+      VdbeModuleComment((pParse->pVdbe, "Begin CacheStep()"));
       windowCodeCacheStep(pParse, p, pWInfo, regGosub, addrGosub);
     }else{
+      VdbeModuleComment((pParse->pVdbe, "Begin DefaultStep()"));
       windowCodeDefaultStep(pParse, p, pWInfo, regGosub, addrGosub);
     }
   }

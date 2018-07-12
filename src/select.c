@@ -21,7 +21,7 @@
 /***/ int sqlite3SelectTrace = 0;
 # define SELECTTRACE(K,P,S,X)  \
   if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%s/%d/%p: ",(S)->zSelName,(P)->addrExplain,(S)),\
+    sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
@@ -151,9 +151,7 @@ Select *sqlite3SelectNew(
   pNew->selFlags = selFlags;
   pNew->iLimit = 0;
   pNew->iOffset = 0;
-#if SELECTTRACE_ENABLED
-  pNew->zSelName[0] = 0;
-#endif
+  pNew->selId = ++pParse->nSelect;
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = 0;
@@ -180,17 +178,6 @@ Select *sqlite3SelectNew(
   assert( pNew!=&standin );
   return pNew;
 }
-
-#if SELECTTRACE_ENABLED
-/*
-** Set the name of a Select object
-*/
-void sqlite3SelectSetName(Select *p, const char *zName){
-  if( p && zName ){
-    sqlite3_snprintf(sizeof(p->zSelName), p->zSelName, "%s", zName);
-  }
-}
-#endif
 
 
 /*
@@ -3838,8 +3825,8 @@ static int flattenSubquery(
   assert( (p->selFlags & SF_Recursive)==0 || pSub->pPrior==0 );
 
   /***** If we reach this point, flattening is permitted. *****/
-  SELECTTRACE(1,pParse,p,("flatten %s.%p from term %d\n",
-                   pSub->zSelName, pSub, iFrom));
+  SELECTTRACE(1,pParse,p,("flatten %u.%p from term %d\n",
+                   pSub->selId, pSub, iFrom));
 
   /* Authorize the subquery */
   pParse->zAuthContext = pSubitem->zName;
@@ -3890,7 +3877,6 @@ static int flattenSubquery(
     p->pPrior = 0;
     p->pLimit = 0;
     pNew = sqlite3SelectDup(db, p, 0);
-    sqlite3SelectSetName(pNew, pSub->zSelName);
     p->pLimit = pLimit;
     p->pOrderBy = pOrderBy;
     p->pSrc = pSrc;
@@ -3903,7 +3889,7 @@ static int flattenSubquery(
       pNew->pNext = p;
       p->pPrior = pNew;
       SELECTTRACE(2,pParse,p,("compound-subquery flattener"
-                              " creates %s.%p as peer\n",pNew->zSelName, pNew));
+                              " creates %u as peer\n",pNew->selId));
     }
     if( db->mallocFailed ) return 1;
   }
@@ -4623,7 +4609,7 @@ int sqlite3ExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
   if( pFrom->zAlias ){
     pTab->zName = sqlite3DbStrDup(pParse->db, pFrom->zAlias);
   }else{
-    pTab->zName = sqlite3MPrintf(pParse->db, "subquery_%p", (void*)pTab);
+    pTab->zName = sqlite3MPrintf(pParse->db, "subquery_%u", pSel->selId);
   }
   while( pSel->pPrior ){ pSel = pSel->pPrior; }
   sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
@@ -4729,7 +4715,6 @@ static int selectExpander(Walker *pWalker, Select *p){
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
-        sqlite3SelectSetName(pFrom->pSelect, pTab->zName);
         nCol = pTab->nCol;
         pTab->nCol = -1;
         sqlite3WalkSelect(pWalker, pFrom->pSelect);
@@ -5721,7 +5706,7 @@ int sqlite3Select(
       VdbeComment((v, "%s", pItem->pTab->zName));
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-      ExplainQueryPlan((pParse, 1, "CO-ROUTINE 0x%p", pSub));
+      ExplainQueryPlan((pParse, 1, "CO-ROUTINE %u", pSub->selId));
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
@@ -5760,7 +5745,7 @@ int sqlite3Select(
         pSub->nSelectRow = pPrior->pSelect->nSelectRow;
       }else{
         sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-        ExplainQueryPlan((pParse, 1, "MATERIALIZE 0x%p", pSub));
+        ExplainQueryPlan((pParse, 1, "MATERIALIZE %u", pSub->selId));
         sqlite3Select(pParse, pSub, &dest);
       }
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
@@ -5940,7 +5925,7 @@ int sqlite3Select(
 
       sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
       sqlite3VdbeResolveLabel(v, addrGosub);
-      VdbeNoopComment((v, "SELECT inner-loop subroutine"));
+      VdbeNoopComment((v, "inner-loop subroutine"));
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
