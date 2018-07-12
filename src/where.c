@@ -2672,6 +2672,7 @@ static int whereLoopAddBtreeIndex(
   if( saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
    && pProbe->noSkipScan==0
+   && OptimizationEnabled(db, SQLITE_SkipScan)
    && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
   ){

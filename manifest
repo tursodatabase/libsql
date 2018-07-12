@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\scheck\sthat\sSQLITE_DBCONFIG_RESET_DATABASE\scan\sbe\sused\swith\nwal\smode\sdatabases\seven\sif\sthere\sare\sactive\sreaders.
-D 2018-07-12T11:28:42.914
+C Add\sa\stest-control\sto\sdisable\sthe\sskip-scan\soptimization.
+D 2018-07-12T19:14:39.361
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -500,12 +500,12 @@ F src/shell.c.in f1c79c537117ee61317a5ed85cdbcb854998cd690eb34ab803779358a2ace78
 F src/sqlite.h.in 36f0b3f88241863530f4b7e57e673e19311dd609ec4edad83b23291928cdf853
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h 8570eb9ecb21b87d6b43c77c49b3645b107eb213e759b498f8c27463c84ad329
+F src/sqliteInt.h c2ceebe60d1d2e11674b90c8b55fdffd91386ce8d7ae38613fbcc61659b8fcac
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 916a92de77ec5cbe27818ca194d8cf0c58aa7ad5b87527098f6aa5a6068800ce
-F src/test1.c b5e21f2ec8386cabb67346c9399603ddb33f76094a0941f280b403aa93631717
+F src/test1.c ca6bdbbffcf8322de014570741c0d627e81d441b9e6464cc349538bd899ef2ca
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -580,7 +580,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d44a0811afd2155b1157c38b33141d4ac028fda6232485bed664015bb05819ca
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
-F src/where.c 7afd00cf7fb57a2770e7ab35deae105dc5b70b414c5018543850da999bfec8d6
+F src/where.c cd6710e24d3d5c29d6890df93865c22d896453907eb83988c505a3098e90179f
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c fe23a55294b4c94bf658d2a6eb7996170dd563bf33af4c3e5d71aff3483e4b08
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
@@ -1258,7 +1258,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/skipscan1.test 8ab5d2c7c5cd3fe7f172d366e6e74e887cb33cb4
+F test/skipscan1.test 3ea1cccca8f1b0e1cf3e73a63b43dd796f34d4aaee815e641f0d2ebb3fa448d4
 F test/skipscan2.test ef143c6e4a5ba4f19c1d1e3f517811f7942bdf2142736cc568feb34e0b5fb763
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
@@ -1746,7 +1746,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d120c45f3dc79f67afed0e44e5133569f784bc6792b15f5d79529deac2d13072
-R 9aeff0f8261e05b78f380028eaa2535f
+P 6145f5b3bacdee8f377892ac8b885941336c4cc543052f6373e21c1f99e1eca8
+R cc992c4b8820025ab207851df0931eaf
 U dan
-Z bbb5b116e0122d7bd666d9a4c5c9b10a
+Z 0f26e8f4a97d1c9c90af6cbfe9ae4cb9
