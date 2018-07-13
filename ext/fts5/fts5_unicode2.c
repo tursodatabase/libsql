@@ -231,9 +231,11 @@ int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic){
 }
 
 
+#if 0
 int sqlite3Fts5UnicodeNCat(void) { 
   return 32;
 }
+#endif
 
 int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
   aArray[0] = 1;
