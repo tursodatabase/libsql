@@ -1,5 +1,5 @@
-C Add\sa\stest-control\sto\sdisable\sthe\sskip-scan\soptimization.
-D 2018-07-12T19:14:39.361
+C Add\sthe\s"categories"\soption\sto\sthe\sunicode61\stokenizer\sin\sfts5.
+D 2018-07-13T19:52:43.227
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -104,15 +104,15 @@ F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87
 F ext/fts3/tool/fts3view.c 202801a2056995b763864d60c2dee744d46f1677
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl ab0543a3b2399092ea2dd75df1bef333405b0d7f6b8c4951a0fbb60e780cb69f
-F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
+F ext/fts3/unicode/mkunicode.tcl 0069320b64db6ee269c5e95f1f150d070fbf0a863fc7b3549d7e52bd068fb118
+F ext/fts3/unicode/parseunicode.tcl 024ae0bdd96309d7b8fc479148191e9b3001dc74017a3f65f9a27de3b3ff968b
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 62f3e33ceeb9a428db139f9c012186b371da1cc7
-F ext/fts5/fts5Int.h eda28e3a0a5d87c412e8355fe35da875b04cb389908c8eb0d867ad662adbc491
+F ext/fts5/fts5Int.h 6354c8f830487a48b7a0872c9eb33b4258a57f9e3c315df9da95c896d70a732b
 F ext/fts5/fts5_aux.c ca666a3bbe07c5a3bbe9fffaea19c935a1efaf337333e28bad7bdd1971ffd093
 F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bfd13e973ff
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
-F ext/fts5/fts5_expr.c 4ff82037692dcaf42ddf4f379a08815b4bd8784194a083994fec51eef31ef2dd
+F ext/fts5/fts5_expr.c 5aef080ba3c8947e22f38ce1ff9fe548e4a740e72b77241f35ed941ae128d2c7
 F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301546dd55
 F ext/fts5/fts5_index.c 22b71d0e9e4b3ddd123a39ae27174e0012da2806f91b64087a68584f13f189de
 F ext/fts5/fts5_main.c da46761a7e9b582083fcb9f5a3ee50086205fb91f4e68d984a9946e64218e297
@@ -120,8 +120,8 @@ F ext/fts5/fts5_storage.c 4bec8a1b3905978b22a67bca5f4a3cfdb94af234cf51efb36f4f2d
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086abacd66c2a9b26
-F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
-F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
+F ext/fts5/fts5_tokenize.c ebd13d034f3dc7c841e1c32c364a4fca5cc2e05a0b91682a93fa1e6defcd4292
+F ext/fts5/fts5_unicode2.c bcf4afd86a00be1608deac305b914ca101161e43feed026818fcdde19e9b30e2
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c 1cd79854cb21543e66507b25b0578bc1b20aa6a1349b7feceb8e8fed0e7a77a6
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
@@ -145,6 +145,7 @@ F ext/fts5/test/fts5aux.test 8e7f9c96f8570f48402f2fd7b74e1ccfadd319fa56ef6773218
 F ext/fts5/test/fts5auxdata.test eacc97ff04892f1a5f3d4df5a73f8bcbc3955ea1d12c9f24137eb1fc079e7611
 F ext/fts5/test/fts5bigpl.test 6466c89b38439f0aba26ac09e232a6b963f29b1cbe1304f6a664fe1e7a8f5fd3
 F ext/fts5/test/fts5bigtok.test 541119e616c637caea925a8c028c37c2c29e94383e00aa2f9198d530724b6e36
+F ext/fts5/test/fts5cat.test daba0b80659460b0cb60bd1f40b402478a761fe7ea414c3c94c2be25568cc33a
 F ext/fts5/test/fts5colset.test a30473451321bbf0b6218af62e96b4ae5fa99931cfdb210b5ecc804623b30f75
 F ext/fts5/test/fts5columnsize.test 45459ce4dd9fd853b6044cdc9674921bff89e3d840f348ca8c1630f9edbf5482
 F ext/fts5/test/fts5config.test 60094712debc59286c59aef0e6cf511c37d866802776a825ce437d26afe0817f
@@ -1746,7 +1747,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6145f5b3bacdee8f377892ac8b885941336c4cc543052f6373e21c1f99e1eca8
-R cc992c4b8820025ab207851df0931eaf
+P 650a3fe03d61068e06f3097878a777ca8ed713a769444cdb3f8be7d1e19a0b83
+R dca8016ca1ceb389549f1bc1385b49e3
+T +closed 8e59dc7807d15d4fca6ee7b6a624447748eb24afb48f902fca27c2d550d84f1c
 U dan
-Z 0f26e8f4a97d1c9c90af6cbfe9ae4cb9
+Z 28a0d1fcc85b29bafa0cd6ceb5a53164
