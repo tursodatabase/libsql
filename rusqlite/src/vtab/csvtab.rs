@@ -272,14 +272,15 @@ impl CSVTabCursor {
             eof: false,
         }
     }
+
+    /// Accessor to the associated virtual table.
+    fn vtab(&self) -> &CSVTab {
+        unsafe { &*(self.base.pVtab as *const CSVTab) }
+    }
 }
 
 impl VTabCursor for CSVTabCursor {
     type Table = CSVTab;
-
-    fn vtab(&self) -> &CSVTab {
-        unsafe { &*(self.base.pVtab as *const CSVTab) }
-    }
 
     // Only a full table scan is supported.  So `filter` simply rewinds to
     // the beginning.

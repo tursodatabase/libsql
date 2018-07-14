@@ -57,9 +57,6 @@ fn test_dummy_module() {
     impl VTabCursor for DummyTabCursor {
         type Table = DummyTab;
 
-        fn vtab(&self) -> &DummyTab {
-            unsafe { &*(self.base.pVtab as *const DummyTab) }
-        }
         fn filter(
             &mut self,
             _idx_num: c_int,
