@@ -1,14 +1,16 @@
 //! Ensure Virtual tables can be declared outside `rusqlite` crate.
 
+extern crate libsqlite3_sys as ffi;
 #[cfg(feature = "vtab")]
 extern crate rusqlite;
-extern crate libsqlite3_sys as ffi;
 
 #[cfg(feature = "vtab")]
 #[test]
 fn test_dummy_module() {
     use ffi;
-    use rusqlite::vtab::{eponymous_only_module, Context, IndexInfo, VTab, VTabConnection, VTabCursor, Values};
+    use rusqlite::vtab::{
+        eponymous_only_module, Context, IndexInfo, VTab, VTabConnection, VTabCursor, Values,
+    };
     use rusqlite::{Connection, Result};
     use std::os::raw::c_int;
 
@@ -83,7 +85,8 @@ fn test_dummy_module() {
 
     let db = Connection::open_in_memory().unwrap();
 
-    db.create_module::<DummyTab>("dummy", &module, None).unwrap();
+    db.create_module::<DummyTab>("dummy", &module, None)
+        .unwrap();
 
     let version = unsafe { ffi::sqlite3_libversion_number() };
     if version < 3008012 {

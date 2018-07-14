@@ -5,7 +5,10 @@ use std::os::raw::c_int;
 
 use ffi;
 use types::Type;
-use vtab::{eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
+use vtab::{
+    eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
+    VTabCursor, Values,
+};
 use {Connection, Result};
 
 /// Register the "generate_series" module.

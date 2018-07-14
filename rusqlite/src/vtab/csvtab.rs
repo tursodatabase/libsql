@@ -10,8 +10,8 @@ use std::str;
 use ffi;
 use types::Null;
 use vtab::{
-    dequote, escape_double_quote, parse_boolean, simple_module, Context, IndexInfo, Module, VTab, VTabConnection,
-    VTabCursor, Values,
+    dequote, escape_double_quote, parse_boolean, simple_module, Context, IndexInfo, Module, VTab,
+    VTabConnection, VTabCursor, Values,
 };
 use {Connection, Error, Result};
 

@@ -6,7 +6,10 @@ use std::rc::Rc;
 
 use ffi;
 use types::{ToSql, ToSqlOutput, Value};
-use vtab::{eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
+use vtab::{
+    eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
+    VTabCursor, Values,
+};
 use {Connection, Result};
 
 // http://sqlite.org/bindptr.html
