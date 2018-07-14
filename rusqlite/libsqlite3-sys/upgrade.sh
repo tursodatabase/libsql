@@ -4,7 +4,7 @@ cd $SCRIPT_DIR
 SQLITE3_LIB_DIR=$SCRIPT_DIR/sqlite3
 
 # Download and extract amalgamation
-SQLITE=sqlite-amalgamation-3220000
+SQLITE=sqlite-amalgamation-3240000
 curl -O http://sqlite.org/2018/$SQLITE.zip
 unzip -p $SQLITE.zip $SQLITE/sqlite3.c > $SQLITE3_LIB_DIR/sqlite3.c
 unzip -p $SQLITE.zip $SQLITE/sqlite3.h > $SQLITE3_LIB_DIR/sqlite3.h
