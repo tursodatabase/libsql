@@ -1,5 +1,5 @@
-C Remove\san\sunused\sfunction\sdeclaration\sfrom\sfts5.
-D 2018-07-13T20:28:54.141
+C If\san\sSQLITE_IOERR\serror\sis\sencountered\sas\spart\sof\san\satomic\scommit\son\san\sF2FS\nfile-system,\sretry\sthe\scommit\sin\slegacy\sjournal\smode.
+D 2018-07-14T20:25:13.305
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -483,7 +483,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c c230a7a24766320d8414afd087edcd43e499fb45e86361f6f4f464f343d965a9
 F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 1bb6a57fa0465296a4d6109a1a64610a0e7adde1f3acf3ef539a9d972908ce8f
+F src/pager.c 26959078356a658e152de9faf0cd870a36d881e92666c1b80a75938e30a29964
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
 F src/parse.y 3bd43415ea974b9921b0ff2c0bd3e9100f6e501ede0b6d3b90cca2ab6af25485
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
@@ -552,7 +552,7 @@ F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
 F src/test_tclsh.c 06317648b0d85a85fd823f7973b55535c59a3156c1ef59394fe511f932cfa78d
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
-F src/test_vfs.c f0186261a24de2671d080bcd8050732f0cb64f6e
+F src/test_vfs.c 112f1f9271c33c211812e0e681830a84262dac065da58579ff49f9cefec97d4f
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
@@ -621,6 +621,7 @@ F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
+F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/attach.test f4b8918ba2f3e88e6883b8452340545f10a1388af808343c37fc5c577be8281c
 F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
@@ -1747,7 +1748,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80d2b9e635e3100f90cffdcffa5b5038da6fbbfccc9f5777c59a4ae760d4cb62
-R 81cc2fe2a6c094c9b67be82b05d8bc76
+P 148d9b61471a874a16a9ec9c9603da03cadb3a40662fb550af51cb36212426b1
+R 49a0ed84c0ce130af574e6c49ed456cc
+T *branch * exp-retry-atomic-commit
+T *sym-exp-retry-atomic-commit *
+T -sym-trunk *
 U dan
-Z 27c2f249d1d32a1646d5c8126ba109c2
+Z b2768f20163b2f8528694b9d7a295551

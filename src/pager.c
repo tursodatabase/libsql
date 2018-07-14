@@ -6382,9 +6382,10 @@ int sqlite3PagerCommitPhaseOne(
     ** backup in progress needs to be restarted.  */
     sqlite3BackupRestart(pPager->pBackup);
   }else{
+    PgHdr *pList;
     if( pagerUseWal(pPager) ){
-      PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       PgHdr *pPageOne = 0;
+      pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList==0 ){
         /* Must have at least one page for the WAL commit flag.
         ** Ticket [2d1a5c67dfc2363e44f29d9bbd57f] 2011-05-18 */
@@ -6407,7 +6408,7 @@ int sqlite3PagerCommitPhaseOne(
       */
       sqlite3_file *fd = pPager->fd;
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
-      const int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
+      int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
         && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
         && !pPager->noSync
         && sqlite3JournalIsInMemory(pPager->jfd);
@@ -6464,15 +6465,16 @@ int sqlite3PagerCommitPhaseOne(
           }
         }
       }
-#else 
+#else  /* SQLITE_ENABLE_ATOMIC_WRITE */
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
       if( zMaster ){
         rc = sqlite3JournalCreate(pPager->jfd);
         if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
+        assert( bBatch==0 );
       }
 #endif
       rc = pager_incr_changecounter(pPager, 0);
-#endif
+#endif /* !SQLITE_ENABLE_ATOMIC_WRITE */
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
       /* Write the master journal name into the journal file. If a master 
@@ -6496,22 +6498,32 @@ int sqlite3PagerCommitPhaseOne(
       rc = syncJournal(pPager, 0);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
 
+      pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( bBatch ){
-        /* The pager is now in DBMOD state. But regardless of what happens
-        ** next, attempting to play the journal back into the database would
-        ** be unsafe. Close it now to make sure that does not happen.  */
-        sqlite3OsClose(pPager->jfd);
         rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, 0);
-        if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-      }
-      rc = pager_write_pagelist(pPager,sqlite3PcacheDirtyList(pPager->pPCache));
-      if( bBatch ){
         if( rc==SQLITE_OK ){
-          rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
+          rc = pager_write_pagelist(pPager, pList);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
+          }
+          if( rc!=SQLITE_OK ){
+            sqlite3OsFileControlHint(fd, SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE, 0);
+          }
         }
-        if( rc!=SQLITE_OK ){
-          sqlite3OsFileControlHint(fd, SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE, 0);
+
+        if( (rc&0xFF)==SQLITE_IOERR && rc!=SQLITE_IOERR_NOMEM ){
+          rc = sqlite3JournalCreate(pPager->jfd);
+          if( rc!=SQLITE_OK ){
+            sqlite3OsClose(pPager->jfd);
+          }
+          bBatch = 0;
+        }else{
+          sqlite3OsClose(pPager->jfd);
         }
+      }
+
+      if( bBatch==0 && rc==SQLITE_OK ){
+        rc = pager_write_pagelist(pPager, pList);
       }
 
       if( rc!=SQLITE_OK ){
