@@ -1,64 +1,21 @@
 //! generate series virtual table.
 //! Port of C [generate series "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c).
 use std::default::Default;
-use std::os::raw::{c_char, c_int, c_void};
+use std::os::raw::c_int;
 
-use error::error_from_sqlite_code;
 use ffi;
 use types::Type;
-use vtab::{self, Context, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
-use {Connection, Error, Result};
+use vtab::{eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
+use {Connection, Result};
 
 /// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("generate_series", Series(&SERIES_MODULE), aux)
+    conn.create_module::<SeriesTab>("generate_series", &SERIES_MODULE, aux)
 }
 
-eponymous_module!(
-    SERIES_MODULE,
-    Series,
-    SeriesTab,
-    (),
-    SeriesTabCursor,
-    None,
-    series_connect,
-    series_best_index,
-    series_disconnect,
-    None,
-    series_open,
-    series_close,
-    series_filter,
-    series_next,
-    series_eof,
-    series_column,
-    series_rowid
-);
-
-#[repr(C)]
-struct Series(&'static ffi::sqlite3_module);
-
-impl Module for Series {
-    type Aux = ();
-    type Table = SeriesTab;
-
-    fn as_ptr(&self) -> *const ffi::sqlite3_module {
-        self.0
-    }
-
-    fn connect(
-        _: &mut VTabConnection,
-        _aux: Option<&()>,
-        _args: &[&[u8]],
-    ) -> Result<(String, SeriesTab)> {
-        let vtab = SeriesTab {
-            base: ffi::sqlite3_vtab::default(),
-        };
-        Ok((
-            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)".to_owned(),
-            vtab,
-        ))
-    }
+lazy_static! {
+    static ref SERIES_MODULE: Module<SeriesTab> = eponymous_only_module::<SeriesTab>();
 }
 
 // Column numbers
@@ -91,7 +48,22 @@ struct SeriesTab {
 }
 
 impl VTab for SeriesTab {
+    type Aux = ();
     type Cursor = SeriesTabCursor;
+
+    fn connect(
+        _: &mut VTabConnection,
+        _aux: Option<&()>,
+        _args: &[&[u8]],
+    ) -> Result<(String, SeriesTab)> {
+        let vtab = SeriesTab {
+            base: ffi::sqlite3_vtab::default(),
+        };
+        Ok((
+            "CREATE TABLE x(value,start hidden,stop hidden,step hidden)".to_owned(),
+            vtab,
+        ))
+    }
 
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
         // The query plan bitmask
@@ -106,7 +78,7 @@ impl VTab for SeriesTab {
             if !constraint.is_usable() {
                 continue;
             }
-            if constraint.operator() != vtab::IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
+            if constraint.operator() != IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
                 continue;
             }
             match constraint.column() {

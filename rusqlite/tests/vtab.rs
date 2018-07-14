@@ -1,7 +1,6 @@
 //! Ensure Virtual tables can be declared outside `rusqlite` crate.
 
 #[cfg(feature = "vtab")]
-#[macro_use]
 extern crate rusqlite;
 extern crate libsqlite3_sys as ffi;
 
@@ -9,40 +8,21 @@ extern crate libsqlite3_sys as ffi;
 #[test]
 fn test_dummy_module() {
     use ffi;
-    use rusqlite::vtab::{Context, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
-    use rusqlite::{error_from_sqlite_code, Connection, Error, Result};
-    use std::os::raw::{c_char, c_int, c_void};
+    use rusqlite::vtab::{eponymous_only_module, Context, IndexInfo, VTab, VTabConnection, VTabCursor, Values};
+    use rusqlite::{Connection, Result};
+    use std::os::raw::c_int;
 
-    eponymous_module!(
-        DUMMY_MODULE,
-        DummyModule,
-        DummyTab,
-        (),
-        DummyTabCursor,
-        None,
-        dummy_connect,
-        dummy_best_index,
-        dummy_disconnect,
-        None,
-        dummy_open,
-        dummy_close,
-        dummy_filter,
-        dummy_next,
-        dummy_eof,
-        dummy_column,
-        dummy_rowid
-    );
+    let module = eponymous_only_module::<DummyTab>();
 
     #[repr(C)]
-    struct DummyModule(&'static ffi::sqlite3_module);
+    struct DummyTab {
+        /// Base class. Must be first
+        base: ffi::sqlite3_vtab,
+    }
 
-    impl Module for DummyModule {
+    impl VTab for DummyTab {
         type Aux = ();
-        type Table = DummyTab;
-
-        fn as_ptr(&self) -> *const ffi::sqlite3_module {
-            self.0
-        }
+        type Cursor = DummyTabCursor;
 
         fn connect(
             _: &mut VTabConnection,
@@ -54,16 +34,6 @@ fn test_dummy_module() {
             };
             Ok(("CREATE TABLE x(value)".to_owned(), vtab))
         }
-    }
-
-    #[repr(C)]
-    struct DummyTab {
-        /// Base class. Must be first
-        base: ffi::sqlite3_vtab,
-    }
-
-    impl VTab for DummyTab {
-        type Cursor = DummyTabCursor;
 
         fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
             info.set_estimated_cost(1.);
@@ -116,9 +86,7 @@ fn test_dummy_module() {
 
     let db = Connection::open_in_memory().unwrap();
 
-    let module = DummyModule(&DUMMY_MODULE);
-
-    db.create_module("dummy", module, None).unwrap();
+    db.create_module::<DummyTab>("dummy", &module, None).unwrap();
 
     let version = unsafe { ffi::sqlite3_libversion_number() };
     if version < 3008012 {

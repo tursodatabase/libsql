@@ -4,11 +4,10 @@ use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 
-use error::error_from_sqlite_code;
 use ffi;
 use types::{ToSql, ToSqlOutput, Value};
-use vtab::{self, Context, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
-use {Connection, Error, Result};
+use vtab::{eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection, VTabCursor, Values};
+use {Connection, Result};
 
 // http://sqlite.org/bindptr.html
 
@@ -29,50 +28,11 @@ impl ToSql for Array {
 /// Register the "rarray" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("rarray", ArrayModule(&ARRAY_MODULE), aux)
+    conn.create_module::<ArrayTab>("rarray", &ARRAY_MODULE, aux)
 }
 
-eponymous_module!(
-    ARRAY_MODULE,
-    ArrayModule,
-    ArrayTab,
-    (),
-    ArrayTabCursor,
-    None,
-    array_connect,
-    array_best_index,
-    array_disconnect,
-    None,
-    array_open,
-    array_close,
-    array_filter,
-    array_next,
-    array_eof,
-    array_column,
-    array_rowid
-);
-
-#[repr(C)]
-struct ArrayModule(&'static ffi::sqlite3_module);
-
-impl Module for ArrayModule {
-    type Aux = ();
-    type Table = ArrayTab;
-
-    fn as_ptr(&self) -> *const ffi::sqlite3_module {
-        self.0
-    }
-
-    fn connect(
-        _: &mut VTabConnection,
-        _aux: Option<&()>,
-        _args: &[&[u8]],
-    ) -> Result<(String, ArrayTab)> {
-        let vtab = ArrayTab {
-            base: ffi::sqlite3_vtab::default(),
-        };
-        Ok(("CREATE TABLE x(value,pointer hidden)".to_owned(), vtab))
-    }
+lazy_static! {
+    static ref ARRAY_MODULE: Module<ArrayTab> = eponymous_only_module::<ArrayTab>();
 }
 
 // Column numbers
@@ -87,7 +47,19 @@ struct ArrayTab {
 }
 
 impl VTab for ArrayTab {
+    type Aux = ();
     type Cursor = ArrayTabCursor;
+
+    fn connect(
+        _: &mut VTabConnection,
+        _aux: Option<&()>,
+        _args: &[&[u8]],
+    ) -> Result<(String, ArrayTab)> {
+        let vtab = ArrayTab {
+            base: ffi::sqlite3_vtab::default(),
+        };
+        Ok(("CREATE TABLE x(value,pointer hidden)".to_owned(), vtab))
+    }
 
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
         // Index of the pointer= constraint
@@ -96,7 +68,7 @@ impl VTab for ArrayTab {
             if !constraint.is_usable() {
                 continue;
             }
-            if constraint.operator() != vtab::IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
+            if constraint.operator() != IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ {
                 continue;
             }
             if let CARRAY_COLUMN_POINTER = constraint.column() {

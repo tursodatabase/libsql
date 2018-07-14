@@ -56,7 +56,7 @@ extern crate libsqlite3_sys as ffi;
 extern crate lru_cache;
 #[macro_use]
 extern crate bitflags;
-#[cfg(all(test, feature = "trace"))]
+#[cfg(any(all(test, feature = "trace"), feature = "vtab"))]
 #[macro_use]
 extern crate lazy_static;
 
@@ -75,7 +75,7 @@ use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
 use std::os::raw::{c_int, c_char};
 
 use types::{ToSql, ValueRef};
-use error::error_from_handle;
+use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
 
@@ -91,7 +91,7 @@ pub use transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior}
 
 #[allow(deprecated)]
 pub use error::SqliteError;
-pub use error::{Error, error_from_sqlite_code};
+pub use error::Error;
 pub use ffi::ErrorCode;
 
 pub use cache::CachedStatement;
