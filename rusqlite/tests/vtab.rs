@@ -120,6 +120,11 @@ fn test_dummy_module() {
 
     db.create_module("dummy", module, None).unwrap();
 
+    let version = unsafe { ffi::sqlite3_libversion_number() };
+    if version < 3008012 {
+        return;
+    }
+
     let mut s = db.prepare("SELECT * FROM dummy()").unwrap();
 
     let dummy = s.query_row(&[], |row| row.get::<_, i32>(0)).unwrap();
