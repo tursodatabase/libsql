@@ -45,7 +45,7 @@ use {str_to_cstring, Connection, Error, InnerConnection, Result};
 // ffi::sqlite3_vtab => VTab
 // ffi::sqlite3_vtab_cursor => VTabCursor
 
-pub struct VTabConnection(*mut ffi::sqlite3);
+pub struct VTabConnection(pub *mut ffi::sqlite3);
 
 impl VTabConnection {
     /// Get access to the underlying SQLite database connection handle.
@@ -110,7 +110,7 @@ bitflags! {
     }
 }
 
-pub struct IndexInfo(*mut ffi::sqlite3_index_info);
+pub struct IndexInfo(pub *mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
     pub fn constraints(&self) -> IndexConstraintIter {
@@ -265,7 +265,7 @@ pub trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-pub struct Context(*mut ffi::sqlite3_context);
+pub struct Context(pub *mut ffi::sqlite3_context);
 
 impl Context {
     pub fn set_result<T: ToSql>(&mut self, value: &T) -> Result<()> {
@@ -276,7 +276,7 @@ impl Context {
 }
 
 pub struct Values<'a> {
-    args: &'a [*mut ffi::sqlite3_value],
+    pub args: &'a [*mut ffi::sqlite3_value],
 }
 
 impl<'a> Values<'a> {
@@ -585,6 +585,7 @@ macro_rules! eponymous_module {
     };
 } // eponymous_module macro end
 
+#[macro_export]
 macro_rules! create_or_connect {
     ($module:ident, $vtab:ident, $aux:ty, $create_or_connect:ident, $module_func:ident) => {
         unsafe extern "C" fn $create_or_connect(
@@ -598,7 +599,7 @@ macro_rules! create_or_connect {
             use std::error::Error as StdError;
             use std::ffi::CStr;
             use std::slice;
-            use vtab::mprintf;
+            use $crate::vtab::mprintf;
 
             let mut conn = VTabConnection(db);
             let aux = aux as *mut $aux;
@@ -643,6 +644,7 @@ macro_rules! create_or_connect {
     };
 } // create_or_connect macro end
 
+#[macro_export]
 macro_rules! common_decl {
     (
         $module:ident,
@@ -667,7 +669,7 @@ macro_rules! common_decl {
             info: *mut ffi::sqlite3_index_info,
         ) -> c_int {
             use std::error::Error as StdError;
-            use vtab::set_err_msg;
+            use $crate::vtab::set_err_msg;
             let vt = vtab as *mut $vtab;
             let mut idx_info = IndexInfo(info);
             match (*vt).best_index(&mut idx_info) {
@@ -695,7 +697,7 @@ macro_rules! common_decl {
             pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor,
         ) -> c_int {
             use std::error::Error as StdError;
-            use vtab::set_err_msg;
+            use $crate::vtab::set_err_msg;
             let vt = vtab as *mut $vtab;
             match (*vt).open() {
                 Ok(cursor) => {
@@ -731,7 +733,7 @@ macro_rules! common_decl {
             use std::ffi::CStr;
             use std::slice;
             use std::str;
-            use vtab::{cursor_error, Values};
+            use $crate::vtab::{cursor_error, Values};
             let idx_name = if idx_str.is_null() {
                 None
             } else {
@@ -744,7 +746,7 @@ macro_rules! common_decl {
             cursor_error(cursor, (*cr).filter(idx_num, idx_name, &values))
         }
         unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
-            use vtab::cursor_error;
+            use $crate::vtab::cursor_error;
             let cr = cursor as *mut $cursor;
             cursor_error(cursor, (*cr).next())
         }
@@ -757,7 +759,7 @@ macro_rules! common_decl {
             ctx: *mut ffi::sqlite3_context,
             i: c_int,
         ) -> c_int {
-            use vtab::{result_error, Context};
+            use $crate::vtab::{result_error, Context};
             let cr = cursor as *mut $cursor;
             let mut ctxt = Context(ctx);
             result_error(ctx, (*cr).column(&mut ctxt, i))
@@ -766,7 +768,7 @@ macro_rules! common_decl {
             cursor: *mut ffi::sqlite3_vtab_cursor,
             p_rowid: *mut ffi::sqlite3_int64,
         ) -> c_int {
-            use vtab::cursor_error;
+            use $crate::vtab::cursor_error;
             let cr = cursor as *mut $cursor;
             match (*cr).rowid() {
                 Ok(rowid) => {
@@ -798,7 +800,7 @@ pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Res
 }
 
 /// Virtual tables methods can set an error message by assigning a string to `zErrMsg`.
-unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
+pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     if !(*vtab).zErrMsg.is_null() {
         ffi::sqlite3_free((*vtab).zErrMsg as *mut c_void);
     }
@@ -807,7 +809,7 @@ unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
 
 /// To raise an error, the `column` method should use this method to set the error message
 /// and return the error code.
-unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> c_int {
+pub unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> c_int {
     use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,

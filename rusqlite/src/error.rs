@@ -216,11 +216,11 @@ impl error::Error for Error {
     }
 }
 
-// These are public but not re-exported by lib.rs, so only visible within crate.
-
 pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
+
+// These are public but not re-exported by lib.rs, so only visible within crate.
 
 pub fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     let message = if db.is_null() {
