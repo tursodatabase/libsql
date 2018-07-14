@@ -434,7 +434,7 @@ impl Connection {
     ) -> Result<()> {
         self.db
             .borrow_mut()
-            .create_module::<T>(module_name, module, aux)
+            .create_module(module_name, module, aux)
     }
 }
 
@@ -722,7 +722,7 @@ where
         Some(str::from_utf8_unchecked(c_slice))
     };
     let args = slice::from_raw_parts_mut(argv, argc as usize);
-    let values = Values { args: args };
+    let values = Values { args };
     let cr = cursor as *mut C;
     cursor_error(cursor, (*cr).filter(idx_num, idx_name, &values))
 }

@@ -31,7 +31,7 @@ impl ToSql for Array {
 /// Register the "rarray" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module::<ArrayTab>("rarray", &ARRAY_MODULE, aux)
+    conn.create_module("rarray", &ARRAY_MODULE, aux)
 }
 
 lazy_static! {

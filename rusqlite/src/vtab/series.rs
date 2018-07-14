@@ -14,7 +14,7 @@ use {Connection, Result};
 /// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module::<SeriesTab>("generate_series", &SERIES_MODULE, aux)
+    conn.create_module("generate_series", &SERIES_MODULE, aux)
 }
 
 lazy_static! {

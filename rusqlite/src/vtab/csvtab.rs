@@ -28,7 +28,7 @@ use {Connection, Error, Result};
 /// ```
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module::<CSVTab>("csv", &CSV_MODULE, aux)
+    conn.create_module("csv", &CSV_MODULE, aux)
 }
 
 lazy_static! {
