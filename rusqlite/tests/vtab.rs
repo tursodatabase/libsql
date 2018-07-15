@@ -1,17 +1,15 @@
 //! Ensure Virtual tables can be declared outside `rusqlite` crate.
 
-extern crate libsqlite3_sys as ffi;
 #[cfg(feature = "vtab")]
 extern crate rusqlite;
 
 #[cfg(feature = "vtab")]
 #[test]
 fn test_dummy_module() {
-    use ffi;
     use rusqlite::vtab::{
-        eponymous_only_module, Context, IndexInfo, VTab, VTabConnection, VTabCursor, Values,
+        eponymous_only_module, sqlite3_vtab, sqlite3_vtab_cursor, Context, IndexInfo, VTab, VTabConnection, VTabCursor, Values,
     };
-    use rusqlite::{Connection, Result};
+    use rusqlite::{version_number, Connection, Result};
     use std::os::raw::c_int;
 
     let module = eponymous_only_module::<DummyTab>();
@@ -19,7 +17,7 @@ fn test_dummy_module() {
     #[repr(C)]
     struct DummyTab {
         /// Base class. Must be first
-        base: ffi::sqlite3_vtab,
+        base: sqlite3_vtab,
     }
 
     impl VTab for DummyTab {
@@ -32,7 +30,7 @@ fn test_dummy_module() {
             _args: &[&[u8]],
         ) -> Result<(String, DummyTab)> {
             let vtab = DummyTab {
-                base: ffi::sqlite3_vtab::default(),
+                base: sqlite3_vtab::default(),
             };
             Ok(("CREATE TABLE x(value)".to_owned(), vtab))
         }
@@ -51,7 +49,7 @@ fn test_dummy_module() {
     #[repr(C)]
     struct DummyTabCursor {
         /// Base class. Must be first
-        base: ffi::sqlite3_vtab_cursor,
+        base: sqlite3_vtab_cursor,
         /// The rowid
         row_id: i64,
     }
@@ -88,7 +86,7 @@ fn test_dummy_module() {
     db.create_module::<DummyTab>("dummy", &module, None)
         .unwrap();
 
-    let version = unsafe { ffi::sqlite3_libversion_number() };
+    let version = version_number();
     if version < 3008012 {
         return;
     }

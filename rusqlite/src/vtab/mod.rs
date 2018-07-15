@@ -18,6 +18,7 @@ use std::slice;
 use context::set_result;
 use error::error_from_sqlite_code;
 use ffi;
+pub use ffi::{sqlite3_vtab, sqlite3_vtab_cursor};
 use types::{FromSql, FromSqlError, ToSql, ValueRef};
 use {str_to_cstring, Connection, Error, InnerConnection, Result};
 
