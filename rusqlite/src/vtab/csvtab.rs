@@ -1,4 +1,5 @@
-//! CSV Virtual Table
+//! CSV Virtual Table.
+//!
 //! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C extension.
 extern crate csv;
 use std::fs::File;

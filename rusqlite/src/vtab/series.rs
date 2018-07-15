@@ -1,4 +1,5 @@
 //! generate series virtual table.
+//!
 //! Port of C [generate series "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c).
 use std::default::Default;
 use std::os::raw::c_int;

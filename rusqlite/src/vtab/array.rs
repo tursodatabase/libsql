@@ -1,4 +1,5 @@
-//! Array Virtual Table
+//! Array Virtual Table.
+//!
 //! Port of [carray](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/carray.c) C extension.
 use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
