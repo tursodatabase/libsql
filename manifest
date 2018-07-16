@@ -1,5 +1,5 @@
-C Remove\san\sunused\sfunction\sdeclaration\sfrom\sfts5.
-D 2018-07-13T20:28:54.141
+C Minor\ssimplification\sto\ssqlite3RollbackAll().
+D 2018-07-16T11:32:59.740
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -460,7 +460,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8613af9c5ba1503bc68f4e9432c6c024e0fdafdc791575c50f380f73ec91189f
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
-F src/main.c fa70bde00ebe7865cfa3fe1e2de87a003d575c1ec4598ff0a1f414ecb1404928
+F src/main.c a67aa346d68608a449aca06a975056c4a5b6c193290e09539efaeb3664ed3707
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1747,7 +1747,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80d2b9e635e3100f90cffdcffa5b5038da6fbbfccc9f5777c59a4ae760d4cb62
-R 81cc2fe2a6c094c9b67be82b05d8bc76
-U dan
-Z 27c2f249d1d32a1646d5c8126ba109c2
+P 148d9b61471a874a16a9ec9c9603da03cadb3a40662fb550af51cb36212426b1
+R 9731515b749f0bceaf8a9239bf3b3da0
+U drh
+Z 7d83889f4fd55f54443283ec8ab17e29

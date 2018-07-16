@@ -1291,7 +1291,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   sqlite3VtabRollback(db);
   sqlite3EndBenignMalloc();
 
-  if( (db->mDbFlags&DBFLAG_SchemaChange)!=0 && db->init.busy==0 ){
+  if( schemaChange ){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }
