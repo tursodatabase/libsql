@@ -7,12 +7,13 @@ extern crate rusqlite;
 #[test]
 fn test_dummy_module() {
     use rusqlite::vtab::{
-        eponymous_only_module, sqlite3_vtab, sqlite3_vtab_cursor, Context, IndexInfo, VTab, VTabConnection, VTabCursor, Values,
+        eponymous_only_module, sqlite3_vtab, sqlite3_vtab_cursor, Context, IndexInfo, VTab,
+        VTabConnection, VTabCursor, Values,
     };
     use rusqlite::{version_number, Connection, Result};
     use std::os::raw::c_int;
 
-    let module = eponymous_only_module::<DummyTab>();
+    let module = eponymous_only_module::<DummyTab>(1);
 
     #[repr(C)]
     struct DummyTab {

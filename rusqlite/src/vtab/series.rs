@@ -19,7 +19,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
 }
 
 lazy_static! {
-    static ref SERIES_MODULE: Module<SeriesTab> = eponymous_only_module::<SeriesTab>();
+    static ref SERIES_MODULE: Module<SeriesTab> = eponymous_only_module::<SeriesTab>(1);
 }
 
 // Column numbers

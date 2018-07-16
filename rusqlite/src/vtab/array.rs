@@ -36,7 +36,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
 }
 
 lazy_static! {
-    static ref ARRAY_MODULE: Module<ArrayTab> = eponymous_only_module::<ArrayTab>();
+    static ref ARRAY_MODULE: Module<ArrayTab> = eponymous_only_module::<ArrayTab>(1);
 }
 
 // Column numbers

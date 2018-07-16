@@ -70,16 +70,16 @@ unsafe impl<T: VTab> Sync for Module<T> {}
 /// Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
-pub fn simple_module<T: VTab>() -> Module<T> {
+pub fn read_only_module<T: VTab>(version: c_int) -> Module<T> {
     // The xConnect and xCreate methods do the same thing, but they must be
     // different so that the virtual table is not an eponymous virtual table.
     let ffi_module = ffi::sqlite3_module {
-        iVersion: 1,
+        iVersion: version,
         xCreate: Some(rust_create::<T>),
         xConnect: Some(rust_connect::<T>),
         xBestIndex: Some(rust_best_index::<T>),
         xDisconnect: Some(rust_disconnect::<T>),
-        xDestroy: Some(rust_disconnect::<T>), // TODO Validate: no rust_destroy
+        xDestroy: Some(rust_destroy::<T>),
         xOpen: Some(rust_open::<T>),
         xClose: Some(rust_close::<T::Cursor>),
         xFilter: Some(rust_filter::<T::Cursor>),
@@ -107,11 +107,11 @@ pub fn simple_module<T: VTab>() -> Module<T> {
 /// Create an eponymous only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
-pub fn eponymous_only_module<T: VTab>() -> Module<T> {
+pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
     // A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method
     // For eponymous-only virtual tables, the xCreate method is NULL
     let ffi_module = ffi::sqlite3_module {
-        iVersion: 1,
+        iVersion: version,
         xCreate: None,
         xConnect: Some(rust_connect::<T>),
         xBestIndex: Some(rust_best_index::<T>),
@@ -177,6 +177,8 @@ pub trait VTab: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
+    ///
+    /// Unused by eponymous virtual table. Call `connect` by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xcreate_method))
     fn create(
         db: &mut VTabConnection,
@@ -186,10 +188,17 @@ pub trait VTab: Sized {
         Self::connect(db, aux, args)
     }
 
-    // TODO Validate: no destroy
+    /// Destroy the underlying table implementation. This method undoes the work of `create`.
+    ///
+    /// Unused by eponymous virtual table. Do nothing by default.
+    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xdestroy_method))
+    fn destroy(&self) -> Result<()> {
+        Ok(())
+    }
 
     /// Similar to `create`. The difference is that `connect` is called to establish a new connection
     /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
+    ///
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xconnect_method))
     fn connect(
         db: &mut VTabConnection,
@@ -717,9 +726,39 @@ unsafe extern "C" fn rust_disconnect<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
 where
     T: VTab,
 {
+    if vtab.is_null() {
+        return ffi::SQLITE_OK;
+    }
     let vtab = vtab as *mut T;
     let _: Box<T> = Box::from_raw(vtab);
     ffi::SQLITE_OK
+}
+
+unsafe extern "C" fn rust_destroy<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
+where
+    T: VTab,
+{
+    use std::error::Error as StdError;
+    if vtab.is_null() {
+        return ffi::SQLITE_OK;
+    }
+    let vt = vtab as *mut T;
+    match (*vt).destroy() {
+        Ok(_) => {
+            let _: Box<T> = Box::from_raw(vt);
+            ffi::SQLITE_OK
+        }
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(err_msg) = s {
+                set_err_msg(vtab, &err_msg);
+            }
+            err.extended_code
+        }
+        Err(err) => {
+            set_err_msg(vtab, err.description());
+            ffi::SQLITE_ERROR
+        }
+    }
 }
 
 unsafe extern "C" fn rust_open<T>(

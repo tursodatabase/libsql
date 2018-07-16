@@ -11,8 +11,8 @@ use std::str;
 use ffi;
 use types::Null;
 use vtab::{
-    dequote, escape_double_quote, parse_boolean, simple_module, Context, IndexInfo, Module, VTab,
-    VTabConnection, VTabCursor, Values,
+    dequote, escape_double_quote, parse_boolean, read_only_module, Context, IndexInfo, Module,
+    VTab, VTabConnection, VTabCursor, Values,
 };
 use {Connection, Error, Result};
 
@@ -33,7 +33,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
 }
 
 lazy_static! {
-    static ref CSV_MODULE: Module<CSVTab> = simple_module::<CSVTab>();
+    static ref CSV_MODULE: Module<CSVTab> = read_only_module::<CSVTab>(1);
 }
 
 /// An instance of the CSV virtual table
