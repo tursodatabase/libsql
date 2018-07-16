@@ -1,5 +1,5 @@
-C If\san\sSQLITE_IOERR\serror\sis\sencountered\sas\spart\sof\san\satomic\scommit\son\san\sF2FS\nfile-system,\sretry\sthe\scommit\sin\slegacy\sjournal\smode.
-D 2018-07-14T20:25:13.305
+C Add\snew\sfile\sdoc/F2FS.txt,\scontaining\snotes\son\sthe\sway\sSQLite\suses\sthe\sF2FS\satomic\scommit\sfeature.
+D 2018-07-16T20:44:00.735
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -36,6 +36,7 @@ F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure a46cba271ae08d635a1f331384c04563bdd37adb3d63cbdcffb1d91babfb64f5 x
 F configure.ac 18c93e8bbeec8254832c4ea90eb06e7187fd150ef098baed02467eeb374afb17
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
+F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html ac63db056bce24b7368e29319cd1a7eb5f1798cc85922d96a80b6c3a4ff9f51b
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1748,10 +1749,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 148d9b61471a874a16a9ec9c9603da03cadb3a40662fb550af51cb36212426b1
-R 49a0ed84c0ce130af574e6c49ed456cc
-T *branch * exp-retry-atomic-commit
-T *sym-exp-retry-atomic-commit *
-T -sym-trunk *
+P 1c41250f67ac5de423b0426ef2ab8fe3303278a270225920033933ca9609592a
+R 2220ce8debd68fb6b704ee2986103f77
 U dan
-Z b2768f20163b2f8528694b9d7a295551
+Z 3478246bf34685cf426f48a9a3e3b106
