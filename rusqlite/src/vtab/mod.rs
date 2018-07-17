@@ -144,6 +144,10 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
 pub struct VTabConnection(*mut ffi::sqlite3);
 
 impl VTabConnection {
+    // TODO sqlite3_vtab_config (http://sqlite.org/c3ref/vtab_config.html)
+
+    // TODO sqlite3_vtab_on_conflict (http://sqlite.org/c3ref/vtab_on_conflict.html)
+
     /// Get access to the underlying SQLite database connection handle.
     ///
     /// # Warning
@@ -288,6 +292,11 @@ impl IndexInfo {
             (*self.0).estimatedRows = estimated_rows;
         }
     }
+
+    // TODO idxFlags
+    // TODO colUsed
+
+    // TODO sqlite3_vtab_collation (http://sqlite.org/c3ref/vtab_collation.html)
 }
 
 pub struct IndexConstraintIter<'a> {
@@ -412,6 +421,8 @@ impl Context {
         unsafe { set_result(self.0, &t) };
         Ok(())
     }
+
+    // TODO sqlite3_vtab_nochange (http://sqlite.org/c3ref/vtab_nochange.html)
 }
 
 /// Wrapper to `VTabCursor.filter` arguments, the values requested by `VTab.best_index`.
