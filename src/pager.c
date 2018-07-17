@@ -6499,6 +6499,7 @@ int sqlite3PagerCommitPhaseOne(
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
 
       pList = sqlite3PcacheDirtyList(pPager->pPCache);
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
       if( bBatch ){
         rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, 0);
         if( rc==SQLITE_OK ){
@@ -6521,6 +6522,7 @@ int sqlite3PagerCommitPhaseOne(
           sqlite3OsClose(pPager->jfd);
         }
       }
+#endif /* SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 
       if( bBatch==0 && rc==SQLITE_OK ){
         rc = pager_write_pagelist(pPager, pList);
