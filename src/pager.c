@@ -6406,14 +6406,14 @@ int sqlite3PagerCommitPhaseOne(
       ** should be used.  No rollback journal is created if batch-atomic-write
       ** is enabled.
       */
-      sqlite3_file *fd = pPager->fd;
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+      sqlite3_file *fd = pPager->fd;
       int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
         && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
         && !pPager->noSync
         && sqlite3JournalIsInMemory(pPager->jfd);
 #else
-# define bBatch 0
+#     define bBatch 0
 #endif
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE

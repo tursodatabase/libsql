@@ -2276,12 +2276,17 @@ void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 ** program, the value returned reflects the number of rows modified by the 
 ** previous INSERT, UPDATE or DELETE statement within the same trigger.
 **
-** See also the [sqlite3_total_changes()] interface, the
-** [count_changes pragma], and the [changes() SQL function].
-**
 ** If a separate thread makes changes on the same database connection
 ** while [sqlite3_changes()] is running then the value returned
 ** is unpredictable and not meaningful.
+**
+** See also:
+** <ul>
+** <li> the [sqlite3_total_changes()] interface
+** <li> the [count_changes pragma]
+** <li> the [changes() SQL function]
+** <li> the [data_version pragma]
+** </ul>
 */
 int sqlite3_changes(sqlite3*);
 
@@ -2300,12 +2305,17 @@ int sqlite3_changes(sqlite3*);
 ** not. ^Changes to a view that are intercepted by INSTEAD OF triggers 
 ** are not counted.
 ** 
-** See also the [sqlite3_changes()] interface, the
-** [count_changes pragma], and the [total_changes() SQL function].
-**
 ** If a separate thread makes changes on the same database connection
 ** while [sqlite3_total_changes()] is running then the value
 ** returned is unpredictable and not meaningful.
+**
+** See also:
+** <ul>
+** <li> the [sqlite3_changes()] interface
+** <li> the [count_changes pragma]
+** <li> the [changes() SQL function]
+** <li> the [data_version pragma]
+** </ul>
 */
 int sqlite3_total_changes(sqlite3*);
 

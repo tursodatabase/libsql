@@ -1,5 +1,5 @@
-C If\san\sSQLITE_IOERR\serror\sis\sencountered\sas\spart\sof\san\satomic\scommit\son\san\sF2FS\sfile-system,\sretry\sthe\scommit\sin\slegacy\sjournal\smode.
-D 2018-07-17T14:01:55.153
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\spager.\s\sEnhance\sthe\sdocs\sfor\nsqlite3_changes()\sand\ssqlite3_total_changes()\sto\srefer\sto\sthe\sdata_version\npragma.
+D 2018-07-18T17:37:51.142
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -484,7 +484,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c c230a7a24766320d8414afd087edcd43e499fb45e86361f6f4f464f343d965a9
 F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 84996f4ff32bd4c556254241106c531473c75880df6fa8e698b921a5ec2bf89a
+F src/pager.c c4269e3481aa3cc5325a52b2d2663bf80f0c6eb0b0adfef7691cd6b113619eb9
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
 F src/parse.y 3bd43415ea974b9921b0ff2c0bd3e9100f6e501ede0b6d3b90cca2ab6af25485
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
@@ -499,7 +499,7 @@ F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2e9661d4424f43ccf595c4a7b4acdf32db523c0f6b31cbd62e6e5a2f43118981
 F src/shell.c.in f1c79c537117ee61317a5ed85cdbcb854998cd690eb34ab803779358a2ace780
-F src/sqlite.h.in 36f0b3f88241863530f4b7e57e673e19311dd609ec4edad83b23291928cdf853
+F src/sqlite.h.in 679a25353c90ccd83b16207888704d09bc0e5d5bd6fc1828e7ac653336ee4575
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
 F src/sqliteInt.h c2ceebe60d1d2e11674b90c8b55fdffd91386ce8d7ae38613fbcc61659b8fcac
@@ -1749,8 +1749,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 432fdc221550b3cca4140b1ae411da22201f689c30c72c5472dfdbc79bec9d90 b10ec14ef7edcc5d7b0ad298c8230d1eca5508e8cf673fbbc97a0928b76c92fb
-R 87d1309d70d437ae68a1599993e70cbb
-T +closed b10ec14ef7edcc5d7b0ad298c8230d1eca5508e8cf673fbbc97a0928b76c92fb
-U dan
-Z f77b0e3b42ed0976545721536fc22e40
+P 2e0357c2ed30927921cd17129e348a18a6f3fd086d1fc0a42756036b321a084d
+R 471d432eb2ed159696aafa5a0bf72e5a
+U drh
+Z 5df8cf4ea35c08c158f5d1145417612b
