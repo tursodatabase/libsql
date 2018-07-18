@@ -1764,7 +1764,6 @@ static void pager_reset(Pager *pPager){
 ** Return the pPager->iDataVersion value
 */
 u32 sqlite3PagerDataVersion(Pager *pPager){
-  assert( pPager->eState>PAGER_OPEN );
   return pPager->iDataVersion;
 }
 

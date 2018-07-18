@@ -4354,6 +4354,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
        "SELECT total(length(sql)) FROM %s" },
   };
   int i;
+  unsigned iDataVersion;
   char *zSchemaTab;
   char *zDb = nArg>=2 ? azArg[1] : "main";
   sqlite3_stmt *pStmt = 0;
@@ -4406,6 +4407,8 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
     utf8_printf(p->out, "%-20s %d\n", aQuery[i].zName, val);
   }
   sqlite3_free(zSchemaTab);
+  sqlite3_file_control(p->db, zDb, SQLITE_FCNTL_DATA_VERSION, &iDataVersion);
+  utf8_printf(p->out, "%-20s %u\n", "data version", iDataVersion);
   return 0;
 }
 
