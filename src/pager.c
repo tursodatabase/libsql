@@ -6515,6 +6515,7 @@ int sqlite3PagerCommitPhaseOne(
           rc = sqlite3JournalCreate(pPager->jfd);
           if( rc!=SQLITE_OK ){
             sqlite3OsClose(pPager->jfd);
+            goto commit_phase_one_exit;
           }
           bBatch = 0;
         }else{
@@ -6523,10 +6524,9 @@ int sqlite3PagerCommitPhaseOne(
       }
 #endif /* SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 
-      if( bBatch==0 && rc==SQLITE_OK ){
+      if( bBatch==0 ){
         rc = pager_write_pagelist(pPager, pList);
       }
-
       if( rc!=SQLITE_OK ){
         assert( rc!=SQLITE_IOERR_BLOCKED );
         goto commit_phase_one_exit;

@@ -1,5 +1,5 @@
-C Allow\sthe\sVACUUM\sfollowing\sSQLITE_DBCONFIG_RESET_DATABASE\sto\sproceed\seven\nif\sthe\swrite-version\sin\sthe\sheader\sindicates\sthat\sthe\sdatabase\sfile\sis\snot\nwritable.
-D 2018-07-19T14:40:41.861
+C Avoid\sa\sbranch\sin\sthe\scommit\slogic\sthat\sis\sunreachable\swhen\scompiled\nwithout\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE.
+D 2018-07-19T15:27:35.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -484,7 +484,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c c230a7a24766320d8414afd087edcd43e499fb45e86361f6f4f464f343d965a9
 F src/os_win.c ac29c25cde4cfb4adacc59cdec4aa45698ca0e29164ea127859585ccd9faa354
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 29c48653efacf4f3a0b0e193515b789a1e9eee7d232816704cef95216906baa3
+F src/pager.c 76d29b8a960dcb8b67210f095899d91e4a90673a6674ea58cfd1115b705a7fb9
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
 F src/parse.y 3bd43415ea974b9921b0ff2c0bd3e9100f6e501ede0b6d3b90cca2ab6af25485
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
@@ -1750,8 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a5087c5c87ad65f92e3bc96bbc84afb43faf10ab6b9ed3ba16304b5c60ad069f e2394002d02754bb45d56e805df9bc5a2ef0d14e5d94262c1f8ab7643bc27c8f
-R cc038e87dc659a807799369c4759d0af
-T +closed e2394002d02754bb45d56e805df9bc5a2ef0d14e5d94262c1f8ab7643bc27c8f
+P 3dca8b9d5ab1f35f17fc527d8f2a20b6bac989d1406c883d5b4d6719953ef6b4
+R 9d87f8b3543e4885b3df693f32810d50
 U drh
-Z ef1b233b53118b1e787b272f555289dd
+Z 8ce51e79b3fa48485d8d0335e63cb9ef
