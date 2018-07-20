@@ -9840,6 +9840,24 @@ char *sqlite3BtreeIntegrityCheck(
 
   /* Check all the tables.
   */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( pBt->autoVacuum ){
+    int mx = 0;
+    int mxInHdr;
+    for(i=0; (int)i<nRoot; i++) if( mx<aRoot[i] ) mx = aRoot[i];
+    mxInHdr = get4byte(&pBt->pPage1->aData[52]);
+    if( mx!=mxInHdr ){
+      checkAppendMsg(&sCheck,
+        "max rootpage (%d) disagrees with header (%d)",
+        mx, mxInHdr
+      );
+    }
+  }else if( get4byte(&pBt->pPage1->aData[64])!=0 ){
+    checkAppendMsg(&sCheck,
+      "incremental_vacuum enabled with a max rootpage of zero"
+    );
+  }
+#endif
   testcase( pBt->db->flags & SQLITE_CellSizeCk );
   pBt->db->flags &= ~SQLITE_CellSizeCk;
   for(i=0; (int)i<nRoot && sCheck.mxErr; i++){
