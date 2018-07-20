@@ -1,5 +1,5 @@
-C New\schecked\sin\sPRAGMA\sintegrity_check\sto\svalidate\sthe\sautovacuum\ssettings\nin\sthe\sheader.
-D 2018-07-20T15:44:09.800
+C Change\sthe\sSQLITE_Stat34\sbit\sof\sthe\soptimization\stest-control\sso\sthat\sit\nprevents\sSTAT4\sdata\sfrom\sbeing\sused\sbut\sallows\sit\sto\sbe\sloaded\sinto\sthe\nIndex\sobjects.\s\sThis\spermits\sSTAT4\sto\sbe\sturned\son\sand\soff\son\sa\sper-statement\nbasis.
+D 2018-07-20T19:24:02.431
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -432,7 +432,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 6beb476095a4cfeb95ebedb2e5e17894d1687b24fddd5b8761a4de120e0392c6
-F src/analyze.c 91b5e7c0f4a08dbb1f7a24b24e7ab49be8b0a2fd1906a35add62a855d1c0ceb9
+F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
@@ -582,7 +582,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d44a0811afd2155b1157c38b33141d4ac028fda6232485bed664015bb05819ca
 F src/wal.h 8de5d2d3de0956d6f6cb48c83a4012d5f227b8fe940f3a349a4b7e85ebcb492a
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
-F src/where.c cd6710e24d3d5c29d6890df93865c22d896453907eb83988c505a3098e90179f
+F src/where.c 2d313b446758317b60626763d0e1285e04b04c061ce94945dcfffad9525badc1
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c fe23a55294b4c94bf658d2a6eb7996170dd563bf33af4c3e5d71aff3483e4b08
 F src/whereexpr.c 571618c67a3eb5ce0f1158c2792c1aee9b4a4a264392fc4fb1b35467f80abf9a
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11e58f5b37d99848978007d834d187c262d904eb9d58924742e028d7cb324e64
-R c0acde69723fe0b5e3fbc25297e0d544
+P a4663f09c91d1381a831f61a2b8e8a113eb6083932c4aea2ad0c011ece1418c5
+R 92bbbb13f79b62d8c050503e495d0c69
 U drh
-Z 0f08918d98de0383295ceae1a107394a
+Z 3d92f0bafb408ca7e67c911625997c83
