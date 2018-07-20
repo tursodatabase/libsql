@@ -1,5 +1,5 @@
-C Change\sthe\sSQLITE_Stat34\sbit\sof\sthe\soptimization\stest-control\sso\sthat\sit\nprevents\sSTAT4\sdata\sfrom\sbeing\sused\sbut\sallows\sit\sto\sbe\sloaded\sinto\sthe\nIndex\sobjects.\s\sThis\spermits\sSTAT4\sto\sbe\sturned\son\sand\soff\son\sa\sper-statement\nbasis.
-D 2018-07-20T19:24:02.431
+C When\sdropping\sa\sview,\sskip\strying\sto\sdelete\sfrom\s'sqlite_stat*'.
+D 2018-07-20T20:56:22.700
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -441,7 +441,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c d8f6ac1e9e484eb3f3921a8336d3dc6c87273d9db8729702162ef045997a1463
+F src/build.c 80cd1c21e0c4fc92c6d57bdd4343e81557a0bfde7d883e00937f50e7733d78a6
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 849d4cebe008cfc6e4799b034a172b4eaf8856b100739632a852732ba66eee48
@@ -1540,7 +1540,7 @@ F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 765802c7a66d37fabd5ac8e2f2dbe572b43eb9ab
+F test/view.test 42b97dcd3d7c2f5f9439e41b0983e0c6a5718d8b874e9d5e82d3cd25a50ffcf7
 F test/vtab1.test 8f91b9538d1404c3932293a588c4344218a0c94792d4289bb55e41020e7b3fff
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1750,7 +1750,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4663f09c91d1381a831f61a2b8e8a113eb6083932c4aea2ad0c011ece1418c5
-R 92bbbb13f79b62d8c050503e495d0c69
-U drh
-Z 3d92f0bafb408ca7e67c911625997c83
+P 489f3caf5dcc8cace20a0da58ceb32fdea5770ba570fa3c9f712cd35e726846a
+R 3f6b04b00398c1c2ef246fa87ef97b67
+T *branch * dropViewNoStat
+T *sym-dropViewNoStat *
+T -sym-trunk *
+U mistachkin
+Z 38c445a25934f5d7f055153013691fd1
