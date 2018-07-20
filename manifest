@@ -1,5 +1,5 @@
-C Avoid\sa\sbranch\sin\sthe\scommit\slogic\sthat\sis\sunreachable\swhen\scompiled\nwithout\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE.
-D 2018-07-19T15:27:35.652
+C Enhanced\sdetection\sof\sproblems\son\sthe\sfreelist\sand\son\soverflow\slist\sin\nPRAGMA\sintegrity_check.
+D 2018-07-20T13:39:28.100
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -438,7 +438,7 @@ F src/auth.c a38f3c63c974787ecf75e3213f8cac6568b9a7af7591fb0372ec0517dd16dca8
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 4b91880ab0f6595c52f13b17f3ef269062073341c254311b3c38925db5b89b9a
+F src/btree.c 76395ea8cb88e7075af1ba6465b1d2751b92cbaa0bcbc8618b6e1787c61c10d9
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c d8f6ac1e9e484eb3f3921a8336d3dc6c87273d9db8729702162ef045997a1463
@@ -711,8 +711,8 @@ F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
-F test/corrupt2.test b6281ceadd6114d55e89b25e01c617af930dda71567f6a0996a719c385ac142e
-F test/corrupt3.test e676f478fe602915d721472811f6f410b75ddc7e
+F test/corrupt2.test fdfdffab9bc37d6d173f56ffb82472206f11dd4a68caad9360ac4db2eddb34c8
+F test/corrupt3.test f95d7bf78109e0b84eb285a787ce91a3fd6a2dd7d0cb55882abff3bdc081a57e
 F test/corrupt4.test 8d1d86b850fcc43e417450454f2044e52d55778a
 F test/corrupt5.test 8ead52af76006f3286e9396cb41898018ccea107
 F test/corrupt6.test fc6a891716139665dae0073b6945e3670bf92568
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3dca8b9d5ab1f35f17fc527d8f2a20b6bac989d1406c883d5b4d6719953ef6b4
-R 9d87f8b3543e4885b3df693f32810d50
+P 271b8980c3bcd0403a40aec26681ec111be1d88d2d5d35199a85a10f09ad6920
+R 12f9a839a98e388a878641cfa671f691
 U drh
-Z 8ce51e79b3fa48485d8d0335e63cb9ef
+Z 9f541998dc72c18645337f8a0e2a985a

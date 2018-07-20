@@ -9337,8 +9337,7 @@ static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 ** Also check that the page number is in bounds.
 */
 static int checkRef(IntegrityCk *pCheck, Pgno iPage){
-  if( iPage==0 ) return 1;
-  if( iPage>pCheck->nPage ){
+  if( iPage>pCheck->nPage || iPage==0 ){
     checkAppendMsg(pCheck, "invalid page number %d", iPage);
     return 1;
   }
@@ -9393,17 +9392,12 @@ static void checkList(
 ){
   int i;
   int expected = N;
-  int iFirst = iPage;
-  while( N-- > 0 && pCheck->mxErr ){
+  int nErrAtStart = pCheck->nErr;
+  while( iPage!=0 && pCheck->mxErr ){
     DbPage *pOvflPage;
     unsigned char *pOvflData;
-    if( iPage<1 ){
-      checkAppendMsg(pCheck,
-         "%d of %d pages missing from overflow list starting at %d",
-          N+1, expected, iFirst);
-      break;
-    }
     if( checkRef(pCheck, iPage) ) break;
+    N--;
     if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0) ){
       checkAppendMsg(pCheck, "failed to get page %d", iPage);
       break;
@@ -9447,10 +9441,12 @@ static void checkList(
 #endif
     iPage = get4byte(pOvflData);
     sqlite3PagerUnref(pOvflPage);
-
-    if( isFreeList && N<(iPage!=0) ){
-      checkAppendMsg(pCheck, "free-page count in header is too small");
-    }
+  }
+  if( N && nErrAtStart==pCheck->nErr ){
+    checkAppendMsg(pCheck,
+      "%s is %d but should be %d",
+      isFreeList ? "size" : "overflow list length",
+      expected-N, expected);
   }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
