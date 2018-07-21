@@ -1,5 +1,5 @@
-C Change\sthe\sSQLITE_Stat34\sbit\sof\sthe\soptimization\stest-control\sso\sthat\sit\nprevents\sSTAT4\sdata\sfrom\sbeing\sused\sbut\sallows\sit\sto\sbe\sloaded\sinto\sthe\nIndex\sobjects.\s\sThis\spermits\sSTAT4\sto\sbe\sturned\son\sand\soff\son\sa\sper-statement\nbasis.
-D 2018-07-20T19:24:02.431
+C In\s'resetdb.test',\sclose\sa\sdatabase\sprior\sto\strying\sto\sdelete\sit.
+D 2018-07-21T23:15:55.399
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -1181,7 +1181,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.tcl 769892f81050b3f59c66f274d478d855159b474ea27019dec82f1215c0b91ef7 x
-F test/resetdb.test b7df373608a56b1fc7a9ed942e8d91fa3ad25b87b63bdb36c88811ad1d0a9c90
+F test/resetdb.test d8750cc9d241fc01810d9d333e7b84a2716e8e97170fa796818c86f0ddf83ad9
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4663f09c91d1381a831f61a2b8e8a113eb6083932c4aea2ad0c011ece1418c5
-R 92bbbb13f79b62d8c050503e495d0c69
-U drh
-Z 3d92f0bafb408ca7e67c911625997c83
+P 489f3caf5dcc8cace20a0da58ceb32fdea5770ba570fa3c9f712cd35e726846a
+R e84942c529b96d262f5ac6a49ad06eb8
+U mistachkin
+Z ec1ae19a2021f5d3e44f3773bdfba892
