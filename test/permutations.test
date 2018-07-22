@@ -122,7 +122,7 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test rbu.test walprotocol.test mmap4.test fuzzer2.test
+  bigsort.test walprotocol.test mmap4.test fuzzer2.test
   walcrash2.test e_fkey.test backup.test
 
   fts4merge.test fts4merge2.test fts4merge4.test fts4check.test
