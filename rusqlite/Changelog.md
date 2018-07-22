@@ -8,7 +8,7 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * BREAKING CHANGE: Replace column index/count type (i32) with usize.
 * BREAKING CHANGE: Replace parameter index/count type (i32) with usize.
 * BREAKING CHANGE: Replace row changes/count type (i32) with usize.
-* Update the bundled SQLite version to 3.22.0 (#326).
+* Update the bundled SQLite version to 3.24.0 (#326).
 * Add DropBehavior::Panic to enforce intentional commit or rollback.
 * Implement `sqlite3_update_hook` (#260, #328), `sqlite3_commit_hook` and `sqlite3_rollback_hook`.
 * Add support to unlock notification behind `unlock_notify` feature (#294, #331).

@@ -41,3 +41,6 @@ rusqlite contributors
 * [Sean Griffin](https://github.com/sgrif)
 * [Joshua Schneider](https://github.com/jshs)
 * [Hoàng Đức Hiếu](https://github.com/hdhoang)
+* [Tom](https://github.com/bedax)
+* [Hampus Bengtsson](https://github.com/miniyou)
+* [casret](https://github.com/casret)
