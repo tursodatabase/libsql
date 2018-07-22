@@ -60,6 +60,7 @@
 
 /* Used to get the current process ID */
 #if !defined(_WIN32)
+# include <signal.h>
 # include <unistd.h>
 # define GETPID getpid
 #elif !defined(_WIN32_WCE)
@@ -69,6 +70,8 @@
 #  endif
 #  include <windows.h>
 # endif
+# include <io.h>
+# define isatty(h) _isatty(h)
 # define GETPID (int)GetCurrentProcessId
 #endif
 
@@ -3733,11 +3736,19 @@ int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
 #endif
 
 #if !defined(_WIN32_WCE)
-  if( getenv("BREAK") ){
-    fprintf(stderr,
-        "attach debugger to process %d and press any key to continue.\n",
-        GETPID());
-    fgetc(stdin);
+  if( getenv("SQLITE_DEBUG_BREAK") ){
+    if( isatty(0) && isatty(2) ){
+      fprintf(stderr,
+          "attach debugger to process %d and press any key to continue.\n",
+          GETPID());
+      fgetc(stdin);
+    }else{
+#if defined(_WIN32) || defined(WIN32)
+      DebugBreak();
+#elif defined(SIGTRAP)
+      raise(SIGTRAP);
+#endif
+    }
   }
 #endif
 

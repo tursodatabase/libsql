@@ -2904,6 +2904,9 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   winFile *pFile = (winFile*)id;  /* File handle object */
   int rc = SQLITE_OK;             /* Return code for this function */
   DWORD lastErrno;
+#if SQLITE_MAX_MMAP_SIZE>0
+  sqlite3_int64 oldMmapSize;
+#endif
 
   assert( pFile );
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
@@ -2919,6 +2922,15 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
     nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
   }
 
+#if SQLITE_MAX_MMAP_SIZE>0
+  if( pFile->pMapRegion ){
+    oldMmapSize = pFile->mmapSize;
+  }else{
+    oldMmapSize = 0;
+  }
+  winUnmapfile(pFile);
+#endif
+
   /* SetEndOfFile() returns non-zero when successful, or zero when it fails. */
   if( winSeekFile(pFile, nByte) ){
     rc = winLogError(SQLITE_IOERR_TRUNCATE, pFile->lastErrno,
@@ -2931,12 +2943,12 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   }
 
 #if SQLITE_MAX_MMAP_SIZE>0
-  /* If the file was truncated to a size smaller than the currently
-  ** mapped region, reduce the effective mapping size as well. SQLite will
-  ** use read() and write() to access data beyond this point from now on.
-  */
-  if( pFile->pMapRegion && nByte<pFile->mmapSize ){
-    pFile->mmapSize = nByte;
+  if( rc==SQLITE_OK && oldMmapSize>0 ){
+    if( oldMmapSize>nByte ){
+      winMapfile(pFile, -1);
+    }else{
+      winMapfile(pFile, oldMmapSize);
+    }
   }
 #endif
 
