@@ -1,5 +1,5 @@
-C In\sthe\sWin32\sVFS,\swhen\struncating\sa\sfile,\sunmap\sit\sfirst.
-D 2018-07-22T06:25:35.628
+C Fix\sharmless\scompiler\swarning.
+D 2018-07-22T20:24:38.583
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -557,7 +557,7 @@ F src/test_vfs.c 112f1f9271c33c211812e0e681830a84262dac065da58579ff49f9cefec97d4
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
-F src/test_window.c 0d19b33e7a262d3b55e85bc0fb84a70f503686cbd769939176162fe866ce7f9e
+F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 01e96d1b639c3eb0b9ef90616e766d453935c554f1f7aa86b6db937b79554b97
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45137053a511b976f5447b0668e3f3a636785d242f44b110a1107898e847e95e
-R 4d371b6c751e8a4167cbe1e1406e13ab
+P 21510a66dce4d0843ccfe20f092a01f5a52563ef244a94f1d5d2563305cab925
+R 8ba74e2b6733eeef2af1d3e7be2b3e82
 U mistachkin
-Z ad8056df2b1c5e2a584433b5604fada6
+Z e0a5249e4c04275baa17e7720a945ccf
