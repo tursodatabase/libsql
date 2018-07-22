@@ -1,5 +1,5 @@
-C When\sdropping\sa\sview,\sskip\strying\sto\sdelete\sfrom\s'sqlite_stat*'.
-D 2018-07-20T20:56:22.700
+C Remove\san\sunused\sbranch\sin\sthe\sFK\slogic.
+D 2018-07-22T00:45:11.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -451,7 +451,7 @@ F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
 F src/expr.c bb148f4c45b6e53b5b58a912974253547e8862685cb001fbdfaef0ab24812e6f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c b1da9ef8dc834603bb0d28972378a7ce65897847f9a1e89ab800bbdf24c788ee
+F src/fkey.c f59253c0be4b1e9dfcb073b6d6d6ab83090ae50c08b5c113b76013c4b157cd6a
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
 F src/global.c 9bf034fd560bdd514715170ed8460bb7f823cec113f0569ef3f18a20c7ccd128
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
@@ -1750,10 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 489f3caf5dcc8cace20a0da58ceb32fdea5770ba570fa3c9f712cd35e726846a
-R 3f6b04b00398c1c2ef246fa87ef97b67
-T *branch * dropViewNoStat
-T *sym-dropViewNoStat *
-T -sym-trunk *
-U mistachkin
-Z 38c445a25934f5d7f055153013691fd1
+P 2f5be3a2ddf469bd1b37b9e357545ce872b90c479a07094de2101d0a43ad70a4
+R e0000bc54eae37361f9929961ff6e6b2
+U drh
+Z 18bbbe031e5d9c4a1f1bd3bf41814fc9
