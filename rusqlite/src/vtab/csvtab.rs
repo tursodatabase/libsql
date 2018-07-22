@@ -283,8 +283,6 @@ impl CSVTabCursor {
 }
 
 impl VTabCursor for CSVTabCursor {
-    type Table = CSVTab;
-
     // Only a full table scan is supported.  So `filter` simply rewinds to
     // the beginning.
     fn filter(&mut self, _idx_num: c_int, _idx_str: Option<&str>, _args: &Values) -> Result<()> {

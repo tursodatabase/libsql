@@ -397,7 +397,6 @@ impl<'a> OrderBy<'a> {
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab_cursor.html))
 pub trait VTabCursor: Sized {
-    type Table: VTab;
     /// Begin a search of a virtual table.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xfilter_method))
     fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;

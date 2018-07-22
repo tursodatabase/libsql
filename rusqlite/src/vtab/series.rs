@@ -184,8 +184,6 @@ impl SeriesTabCursor {
     }
 }
 impl VTabCursor for SeriesTabCursor {
-    type Table = SeriesTab;
-
     fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;

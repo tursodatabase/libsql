@@ -56,8 +56,6 @@ fn test_dummy_module() {
     }
 
     impl VTabCursor for DummyTabCursor {
-        type Table = DummyTab;
-
         fn filter(
             &mut self,
             _idx_num: c_int,
