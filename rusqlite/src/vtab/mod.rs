@@ -70,7 +70,7 @@ unsafe impl<T: VTab> Sync for Module<T> {}
 /// Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
-pub fn read_only_module<T: VTab>(version: c_int) -> Module<T> {
+pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
     // The xConnect and xCreate methods do the same thing, but they must be
     // different so that the virtual table is not an eponymous virtual table.
     let ffi_module = ffi::sqlite3_module {
@@ -178,11 +178,33 @@ pub trait VTab: Sized {
     type Aux;
     type Cursor: VTabCursor;
 
+    /// Establish a new connection to an existing virtual table.
+    ///
+    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xconnect_method))
+    fn connect(
+        db: &mut VTabConnection,
+        aux: Option<&Self::Aux>,
+        args: &[&[u8]],
+    ) -> Result<(String, Self)>;
+
+    /// Determine the best way to access the virtual table.
+    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xbestindex_method))
+    fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
+
+    /// Create a new cursor used for accessing a virtual table.
+    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xopen_method))
+    fn open(&self) -> Result<Self::Cursor>;
+}
+
+/// Non-eponymous virtual table instance trait.
+///
+/// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
+pub trait CreateVTab: VTab {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
     ///
-    /// Unused by eponymous virtual table. Call `connect` by default.
+    /// Call `connect` by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xcreate_method))
     fn create(
         db: &mut VTabConnection,
@@ -194,27 +216,11 @@ pub trait VTab: Sized {
 
     /// Destroy the underlying table implementation. This method undoes the work of `create`.
     ///
-    /// Unused by eponymous virtual table. Do nothing by default.
+    /// Do nothing by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xdestroy_method))
     fn destroy(&self) -> Result<()> {
         Ok(())
     }
-
-    /// Similar to `create`. The difference is that `connect` is called to establish a new connection
-    /// to an _existing_ virtual table whereas `create` is called to create a new virtual table from scratch.
-    ///
-    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xconnect_method))
-    fn connect(
-        db: &mut VTabConnection,
-        aux: Option<&Self::Aux>,
-        args: &[&[u8]],
-    ) -> Result<(String, Self)>;
-    /// Determine the best way to access the virtual table.
-    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xbestindex_method))
-    fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
-    /// Create a new cursor used for accessing a virtual table.
-    /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xopen_method))
-    fn open(&self) -> Result<Self::Cursor>;
 }
 
 bitflags! {
@@ -609,7 +615,7 @@ unsafe extern "C" fn rust_create<T>(
     err_msg: *mut *mut c_char,
 ) -> c_int
 where
-    T: VTab,
+    T: CreateVTab,
 {
     use std::error::Error as StdError;
     use std::ffi::CStr;
@@ -747,7 +753,7 @@ where
 
 unsafe extern "C" fn rust_destroy<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
 where
-    T: VTab,
+    T: CreateVTab,
 {
     use std::error::Error as StdError;
     if vtab.is_null() {

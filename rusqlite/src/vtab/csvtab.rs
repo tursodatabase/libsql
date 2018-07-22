@@ -11,8 +11,8 @@ use std::str;
 use ffi;
 use types::Null;
 use vtab::{
-    dequote, escape_double_quote, parse_boolean, read_only_module, Context, IndexInfo, Module,
-    VTab, VTabConnection, VTabCursor, Values,
+    dequote, escape_double_quote, parse_boolean, read_only_module, Context, CreateVTab, IndexInfo,
+    Module, VTab, VTabConnection, VTabCursor, Values,
 };
 use {Connection, Error, Result};
 
@@ -248,6 +248,8 @@ impl VTab for CSVTab {
         Ok(CSVTabCursor::new(try!(self.reader())))
     }
 }
+
+impl CreateVTab for CSVTab {}
 
 /// A cursor for the CSV virtual table
 #[repr(C)]
