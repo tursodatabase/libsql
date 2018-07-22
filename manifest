@@ -1,5 +1,5 @@
-C Another\sminor\srevision\sto\sthe\s'fulltestonly'\sset\sof\stests.
-D 2018-07-22T21:08:35.561
+C Fix\smore\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
+D 2018-07-22T21:23:19.364
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -122,7 +122,7 @@ F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c ffd657dd67e7fcdb31bf63fb60b6d867299a581d0f46e97086abacd66c2a9b26
 F ext/fts5/fts5_tokenize.c ebd13d034f3dc7c841e1c32c364a4fca5cc2e05a0b91682a93fa1e6defcd4292
-F ext/fts5/fts5_unicode2.c f074475acb251e9deb2fd4c72b2fe175f596ff25cf330fb044f869cf742da644
+F ext/fts5/fts5_unicode2.c 543cf0987c27ad59e5a7a6222480b917b5431009b7b139027c9581a63e39e37e
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c 1cd79854cb21543e66507b25b0578bc1b20aa6a1349b7feceb8e8fed0e7a77a6
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
@@ -310,7 +310,7 @@ F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/misc/zipfile.c c4de8f0ad446ce4a49aae11ff7b771cd7af60d7136c0bcfb53da1475b9075e79
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
-F ext/rbu/rbu.c 4ae41f01d78dfae2204a63bcf39d5eb3548d039b094c29eec9a8d6683a66a5d3
+F ext/rbu/rbu.c 8681f6157db6adc82c34af24b14ea8a3be0146ad2a3b6c1d5da6cb8a5796c8ce
 F ext/rbu/rbu1.test 41123c64e8c88bd14eb7d3f8562f37fa87aaeb154b1eade2881de21d3504be55
 F ext/rbu/rbu10.test 1846519a438697f45e9dcb246908af81b551c29e1078d0304fae83f1fed7e9ee
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
@@ -1670,7 +1670,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 33892e2a243865f73e6c6e7cecce3c6eb4bb95db4a3d9d86d146c8064feb92fd
-F tool/lempar.c 428a050780425be2d699e939605fcbc54a161c20884f11b476b2eea961394bbe
+F tool/lempar.c 6020ce61dd7a536a3866952eb1e616c7e8b14b8f623368ed5a98f0639cedf048
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ead4762dfcd284127e60483e14f88aa4f4f034c2e1efb68a150359ba8f307776
-R 8ae422253c6d9f82752a102d54b5d17e
+P 61f8e2a4c6c146ffba498c8bb40f2b5627fdc14020057eab63b7e900bf88a9ed
+R 862d4b20f2f5a0218839c7d34462c954
 U mistachkin
-Z 633e5c02e757c867c16f916aa50f510f
+Z c89b915c22f0a4aa95abfee0ec86429f
