@@ -1,5 +1,5 @@
-C Fix\sthe\smacros\sused\sto\sgenerate\sthe\soutput\sof\s"PRAGMA\scompile_options"\sso\sthat\nthey\shandle\svalid\svalues\sfor\sthe\sSQLITE_DEFAULT_LOOKASIDE\smacro\s(which\ncontain\sa\s","\scharacter).
-D 2018-07-23T10:57:53.983
+C Attempt\sto\simprove\sthe\sdocumentation\sfor\ssnapshots.\s\sNo\schanges\sto\scode.
+D 2018-07-23T18:32:42.936
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -499,7 +499,7 @@ F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2e9661d4424f43ccf595c4a7b4acdf32db523c0f6b31cbd62e6e5a2f43118981
 F src/shell.c.in f6ebd05c461805a7c708333cd645e74e0a93560d2118f5adb73a75d8c9cf6b01
-F src/sqlite.h.in 6203acde410e38d96ffb24e9b6349f87eb80914ba5676466ac5d8478b6b8f144
+F src/sqlite.h.in 37615597574060538595ea0b8ceee2bdcdc5a8757455a703733847654d5957d0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
 F src/sqliteInt.h c2ceebe60d1d2e11674b90c8b55fdffd91386ce8d7ae38613fbcc61659b8fcac
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edab5666f8470b37e6031dfd80e615b1aab95d1d85ccbe4ece1a813f8b3d4d95
-R ab08c735d580e80bb905333523d50aa1
-U dan
-Z ed7583eb4e8fa40c5de2beb0e331302c
+P 1cc72845f92198f2f6c1d34957921cd8f5bc82eaccab9f844006993f0b8d7a96
+R 16a67761ea0f9460199dbe384d3dc3c5
+U drh
+Z 8f0ee2824f9a0341e2a813799c934102
