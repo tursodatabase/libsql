@@ -1,5 +1,5 @@
-C Attempt\sto\simprove\sthe\sdocumentation\sfor\ssnapshots.\s\sNo\schanges\sto\scode.
-D 2018-07-23T18:32:42.936
+C Fix\stypo\sof\s'SQLITE_OMIT_WINDOWFUNC'.
+D 2018-07-23T18:53:49.829
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -561,7 +561,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 01e96d1b639c3eb0b9ef90616e766d453935c554f1f7aa86b6db937b79554b97
-F src/treeview.c 462346b82a892316a62291791c77e3dd5f1927745fe4a44b846ab4fd16eb28c3
+F src/treeview.c 26c5674083674377b0f41737647802e93ac31f1da89c9b9648501d8a34a44698
 F src/trigger.c 4ace6d1d5ba9a89822deb287317f33c810440526eafe185c2d8a48c31df1e995
 F src/update.c 7b7c768dc415a8d2eb9fd2cea8b524cb29cf354f319700e22f94f262d3f507cb
 F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1cc72845f92198f2f6c1d34957921cd8f5bc82eaccab9f844006993f0b8d7a96
-R 16a67761ea0f9460199dbe384d3dc3c5
-U drh
-Z 8f0ee2824f9a0341e2a813799c934102
+P 46dd076af5880e6e9a7de974758b26bc43d0dc074f8143234038fa9cdcc726ee
+R 386d9db3da1c3cf3e08fdb519ac6201a
+U mistachkin
+Z 0f7169e4827257e93fc7e2c2fe7438e0
