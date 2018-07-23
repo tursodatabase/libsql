@@ -1373,7 +1373,13 @@ static int findInodeInfo(
     }
     memset(pInode, 0, sizeof(*pInode));
     memcpy(&pInode->fileId, &fileId, sizeof(fileId));
-    pInode->pLockMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if( sqlite3GlobalConfig.bCoreMutex ){
+      pInode->pLockMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      if( pInode->pLockMutex==0 ){
+        sqlite3_free(pInode);
+        return SQLITE_NOMEM_BKPT;
+      }
+    }
     pInode->nRef = 1;
     pInode->pNext = inodeList;
     pInode->pPrev = 0;
