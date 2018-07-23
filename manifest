@@ -1,5 +1,5 @@
-C Fix\smore\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2018-07-22T21:23:19.364
+C Fix\sthe\smacros\sused\sto\sgenerate\sthe\soutput\sof\s"PRAGMA\scompile_options"\sso\sthat\nthey\shandle\svalid\svalues\sfor\sthe\sSQLITE_DEFAULT_LOOKASIDE\smacro\s(which\ncontain\sa\s","\scharacter).
+D 2018-07-23T10:57:53.983
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -444,7 +444,7 @@ F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd9
 F src/build.c d8f6ac1e9e484eb3f3921a8336d3dc6c87273d9db8729702162ef045997a1463
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 849d4cebe008cfc6e4799b034a172b4eaf8856b100739632a852732ba66eee48
+F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61f8e2a4c6c146ffba498c8bb40f2b5627fdc14020057eab63b7e900bf88a9ed
-R 862d4b20f2f5a0218839c7d34462c954
-U mistachkin
-Z c89b915c22f0a4aa95abfee0ec86429f
+P edab5666f8470b37e6031dfd80e615b1aab95d1d85ccbe4ece1a813f8b3d4d95
+R ab08c735d580e80bb905333523d50aa1
+U dan
+Z ed7583eb4e8fa40c5de2beb0e331302c
