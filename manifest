@@ -1,5 +1,5 @@
-C Fix\stypo\sof\s'SQLITE_OMIT_WINDOWFUNC'.
-D 2018-07-23T18:53:49.829
+C Add\smissing\sSQLITE_OMIT_WINDOWFUNC\scheck\sto\sthe\sjson1\sextension.
+D 2018-07-24T13:57:44.003
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -283,7 +283,7 @@ F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 933ace99a1880e014f35fbf6444fb24e3cf9920c3a6a75e9aa70f0caf683e3fe
+F ext/misc/json1.c 696c596de45d991e6c4617b5a3cb4cc60d231aa4be10edea7d27a4008df2f545
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -1750,7 +1750,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 46dd076af5880e6e9a7de974758b26bc43d0dc074f8143234038fa9cdcc726ee
-R 386d9db3da1c3cf3e08fdb519ac6201a
+P 8607b84a5c53d8c9218c90802160a3000f1138b1f188e411a3af46253e0a69cc
+R 04e27003b3e25ff2b1b306cb41502a3f
 U mistachkin
-Z 0f7169e4827257e93fc7e2c2fe7438e0
+Z fd864996daa329dbed22fdd8a051a565

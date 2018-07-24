@@ -2459,12 +2459,14 @@ int sqlite3Json1Init(sqlite3 *db){
                                  (void*)&aFunc[i].flag,
                                  aFunc[i].xFunc, 0, 0);
   }
+#ifndef SQLITE_OMIT_WINDOWFUNC
   for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_window_function(db, aAgg[i].zName, aAgg[i].nArg,
                                  SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
                                  aAgg[i].xStep, aAgg[i].xFinal,
                                  aAgg[i].xValue, jsonGroupInverse, 0);
   }
+#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   for(i=0; i<sizeof(aMod)/sizeof(aMod[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_module(db, aMod[i].zName, aMod[i].pModule, 0);
