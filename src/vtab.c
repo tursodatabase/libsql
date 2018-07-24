@@ -262,7 +262,7 @@ void sqlite3VtabUnlockList(sqlite3 *db){
   assert( sqlite3_mutex_held(db->mutex) );
 
   if( p ){
-    sqlite3ExpirePreparedStatements(db);
+    sqlite3ExpirePreparedStatements(db, 0);
     do {
       VTable *pNext = p->pNext;
       sqlite3VtabUnlock(p);

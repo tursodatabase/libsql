@@ -3468,7 +3468,7 @@ void sqlite3CreateIndex(
       sqlite3ChangeCookie(pParse, iDb);
       sqlite3VdbeAddParseSchemaOp(v, iDb,
          sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
-      sqlite3VdbeAddOp0(v, OP_Expire);
+      sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
     }
 
     sqlite3VdbeJumpHere(v, pIndex->tnum);

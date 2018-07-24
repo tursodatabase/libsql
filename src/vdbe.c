@@ -3102,7 +3102,7 @@ case OP_Savepoint: {
           }
         }
         if( isSchemaChange ){
-          sqlite3ExpirePreparedStatements(db);
+          sqlite3ExpirePreparedStatements(db, 0);
           sqlite3ResetAllSchemasOfConnection(db);
           db->mDbFlags |= DBFLAG_SchemaChange;
         }
@@ -3391,7 +3391,7 @@ case OP_SetCookie: {
   if( pOp->p1==1 ){
     /* Invalidate all prepared statements whenever the TEMP database
     ** schema is changed.  Ticket #1644 */
-    sqlite3ExpirePreparedStatements(db);
+    sqlite3ExpirePreparedStatements(db, 0);
     p->expired = 0;
   }
   if( rc ) goto abort_due_to_error;
@@ -3509,7 +3509,7 @@ case OP_OpenWrite:
   assert( pOp->opcode==OP_OpenRead || pOp->opcode==OP_ReopenIdx
           || p->readOnly==0 );
 
-  if( p->expired ){
+  if( p->expired==1 ){
     rc = SQLITE_ABORT_ROLLBACK;
     goto abort_due_to_error;
   }
@@ -6690,7 +6690,7 @@ case OP_IncrVacuum: {        /* jump */
 }
 #endif
 
-/* Opcode: Expire P1 * * * *
+/* Opcode: Expire P1 P2 * * *
 **
 ** Cause precompiled statements to expire.  When an expired statement
 ** is executed using sqlite3_step() it will either automatically
@@ -6699,12 +6699,19 @@ case OP_IncrVacuum: {        /* jump */
 ** 
 ** If P1 is 0, then all SQL statements become expired. If P1 is non-zero,
 ** then only the currently executing statement is expired.
+**
+** If P2 is 0, then SQL statements are expired immediately.  If P2 is 1,
+** then running SQL statements are allowed to continue to run to completion.
+** The P2==1 case occurs when a CREATE INDEX or similar schema change happens
+** that might help the statement run faster but which does not affect the
+** correctness of operation.
 */
 case OP_Expire: {
+  assert( pOp->p2==0 || pOp->p2==1 );
   if( !pOp->p1 ){
-    sqlite3ExpirePreparedStatements(db);
+    sqlite3ExpirePreparedStatements(db, pOp->p2);
   }else{
-    p->expired = 1;
+    p->expired = pOp->p2+1;
   }
   break;
 }

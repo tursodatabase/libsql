@@ -4659,11 +4659,19 @@ void sqlite3VdbeCountChanges(Vdbe *v){
 ** programs obsolete.  Removing user-defined functions or collating
 ** sequences, or changing an authorization function are the types of
 ** things that make prepared statements obsolete.
+**
+** If iCode is 1, then expiration is advisory.  The statement should
+** be reprepared before being restarted, but if it is already running
+** it is allowed to run to completion.
+**
+** Internally, this function just sets the Vdbe.expired flag on all
+** prepared statements.  The flag is set to 1 for an immediate expiration
+** and set to 2 for an advisory expiration.
 */
-void sqlite3ExpirePreparedStatements(sqlite3 *db){
+void sqlite3ExpirePreparedStatements(sqlite3 *db, int iCode){
   Vdbe *p;
   for(p = db->pVdbe; p; p=p->pNext){
-    p->expired = 1;
+    p->expired = iCode+1;
   }
 }
 
