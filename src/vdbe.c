@@ -3892,10 +3892,10 @@ case OP_ColumnsUsed: {
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
-case OP_SeekLT:         /* jump, in3 */
-case OP_SeekLE:         /* jump, in3 */
-case OP_SeekGE:         /* jump, in3 */
-case OP_SeekGT: {       /* jump, in3 */
+case OP_SeekLT:         /* jump, in3, group */
+case OP_SeekLE:         /* jump, in3, group */
+case OP_SeekGE:         /* jump, in3, group */
+case OP_SeekGT: {       /* jump, in3, group */
   int res;           /* Comparison result */
   int oc;            /* Opcode */
   VdbeCursor *pC;    /* The cursor to seek */
@@ -7219,8 +7219,8 @@ case OP_MaxPgcnt: {            /* out2 */
 **
 ** See also: Function0, AggStep, AggFinal
 */
-case OP_PureFunc0:
-case OP_Function0: {
+case OP_PureFunc0:              /* group */
+case OP_Function0: {            /* group */
   int n;
   sqlite3_context *pCtx;
 
@@ -7244,8 +7244,8 @@ case OP_Function0: {
   pOp->opcode += 2;
   /* Fall through into OP_Function */
 }
-case OP_PureFunc:
-case OP_Function: {
+case OP_PureFunc:              /* group */
+case OP_Function: {            /* group */
   int i;
   sqlite3_context *pCtx;
 

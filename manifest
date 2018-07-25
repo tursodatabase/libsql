@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_snapshot_get().
-D 2018-07-25T07:29:20.225
+C Keep\sgenerated\sopcode\svalues\sgrouped\stogether\swhen\srequired,\seven\swhen\sthey\sdo\snot\scorrespond\sto\sa\stoken.
+D 2018-07-25T15:12:29.938
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -568,7 +568,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c f5e6c0eab497c34f695a9b40800bbc09cd9488cabbd434048f3cbb3e85aaec38
+F src/vdbe.c f6358d397d3c53c8cb2d20a71db7a712097e6f50f8465838500e916b0ecf66a6
 F src/vdbe.h d93abdc8bc9295e0a256e582c19f548c545dc498319d108bbc9dd29de31c48a2
 F src/vdbeInt.h 2a45270d7f44870ca5452f48cdf3c56387019ae03331c008d670a7d0a3e1ba3f
 F src/vdbeapi.c af4a3de00d1851bcbc55b85dfbe52849aa2b1e17b4a5a1f3d9c257df7af361ff
@@ -1682,7 +1682,7 @@ F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9
 F tool/mkkeywordhash.c 1f7f2ac1d9f262c08b67faaca47e6a68262ff39113fa4b27d1db2843b4c33e73
 F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6a13ea
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
-F tool/mkopcodeh.tcl 17d1ccc05a926e19e3a9679ea3e4d1aaa15ba753e2fa7363e6e81c80e0ef8b86
+F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
@@ -1751,7 +1751,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2bd593332da0aade467e7a4ee89e966aa6302f37540a2c5e23671f98a6cb599c
-R ec4b7ae75f333dd2e05c5e6caef8a051
-U dan
-Z c5f5094bf24e926b943d16fe8beeac07
+P cd9713c9a88cd30887c67f477abbbf8ef90299051a0b9bb52a04cf4132987c9c
+R 9757c642db2dc2dbf7799a759390f32b
+U mistachkin
+Z 98b1409b0cc6a8622023bca641aabc7a
