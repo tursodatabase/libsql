@@ -9000,7 +9000,7 @@ typedef struct sqlite3_snapshot {
 ** in this case. 
 **
 ** <ul>
-**   <li> The database handle must be in [autocommit mode].
+**   <li> The database handle must not be in [autocommit mode].
 **
 **   <li> Schema S of [database connection] D must be a [WAL mode] database.
 **
