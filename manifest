@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\sfts5.
-D 2018-07-25T15:25:55.074
+C In\sthe\sunix\sVFS,\sgive\severy\sunixInodeInfo\sobject\sits\sown\smutex,\srather\nthan\susing\sthe\sglobal\sVFS\smutex,\sto\simprove\sconcurrency\sin\scases\swhere\sthere\nare\smany\sthreads\soperating\son\sseparate\sdatabase\sfiles.
+D 2018-07-26T21:48:05.458
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -482,7 +482,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c c230a7a24766320d8414afd087edcd43e499fb45e86361f6f4f464f343d965a9
+F src/os_unix.c d9cf5ae0c79f31019d8325e8736c83914aeed64d8327a8d91a62b6439b748948
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 76d29b8a960dcb8b67210f095899d91e4a90673a6674ea58cfd1115b705a7fb9
@@ -1752,7 +1752,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ee2950b272ede475e485bfaa7d413eaa81482fe9dd6452aeeaf95ff7938f7da
-R b452b7474ada2f7df230e94f47eaea02
-U dan
-Z 3eecc6d8fc02fe02d8a834ac76aa6a16
+P 0e3de8abbb0c7ae64e637776cb055ce79736f99a103e00e44d17a6b091b98c81 1c94834879be0601ac40ef3c4fb1b140f7737e89af7808f2f1db4ceb3daae19f
+R da25b06b381bb54c2132bc2143418cfd
+T +closed 1c94834879be0601ac40ef3c4fb1b140f7737e89af7808f2f1db4ceb3daae19f
+U drh
+Z 66336f4799fa18d98782ce7463d9d357
