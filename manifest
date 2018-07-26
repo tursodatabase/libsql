@@ -1,5 +1,5 @@
-C Generalize\sthe\sconstant\spropagation\soptimization\sso\sthat\sit\sapplies\son\severy\nWHERE\sclose,\snot\sjust\sthose\sthat\scontain\sa\ssubquery.\s\sThis\sthen\sdemonstrates\nthat\sthe\scurrent\simplementation\sis\sinadequate\ssince\sit\sdoes\snot\stake\sinto\naccount\scollating\ssequences.
-D 2018-07-26T23:47:11.108
+C Add\sa\stest\scase\sdemonstrating\sthe\scollation\sproblem\swith\sconstant\spropagation.
+D 2018-07-26T23:54:19.662
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -1617,7 +1617,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test b7769ee8dbefd987fb266715fee887f05f9ff180016b06fca7fa402df739193b
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/whereL.test eca38f3f9e056bec962c3cf9abb8825a1701311a3fdc281471460cc127618714
+F test/whereL.test 786ae3e0b6d8f7c9b83a98bffcd9d458b0de47c6a9f9dcf872043f54a4752c68
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1753,7 +1753,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fb82ad8ebb6434438c0d235b1239444fb08c8711cea2c5a9ed955fedd0acdec
-R aac189787e29efcfb7af237e9604f0a0
+P 57eb2abd5b270d65be5e0f138f0d46899fa6091df3ba20b0ea7ef04244a15d48
+R 4901cf7d6c93780d74bf2f77c4b5611e
 U drh
-Z b571d91896795a40b7aa465c4c8e4005
+Z e93689647fb1d0f73e5b2a94dfb414a1

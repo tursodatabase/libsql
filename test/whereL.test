@@ -51,4 +51,20 @@ do_eqp_test 120 {
   `--SCAN TABLE t3
 }
 
+# Constant propagation in the face of collating sequences:
+#
+do_execsql_test 200 {
+  CREATE TABLE c3(x COLLATE binary, y COLLATE nocase, z COLLATE binary);
+  CREATE INDEX c3x ON c3(x);
+  INSERT INTO c3 VALUES('ABC', 'ABC', 'abc');
+  SELECT * FROM c3 WHERE x=y AND y=z AND z='abc';
+} {ABC ABC abc}
+
+# If the constants are blindly propagated, as shown in the following
+# query, the wrong answer results:
+#
+do_execsql_test 201 {
+  SELECT * FROM c3 WHERE x='abc' AND y='abc' AND z='abc';
+} {}
+
 finish_test
