@@ -1584,6 +1584,7 @@ struct sqlite3 {
 #define SQLITE_PushDown       0x1000   /* The push-down optimization */
 #define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
 #define SQLITE_SkipScan       0x4000   /* Skip-scans */
+#define SQLITE_PropagateConst 0x8000   /* The constant propagation opt */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -3436,6 +3437,7 @@ struct Walker {
     ExprList *pGroupBy;                       /* GROUP BY clause */
     Select *pSelect;                          /* HAVING to WHERE clause ctx */
     struct WindowRewrite *pRewrite;           /* Window rewrite context */
+    struct WhereConst *pConst;                /* WHERE clause constants */
   } u;
 };
 

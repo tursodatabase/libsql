@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\sfts5.
-D 2018-07-25T15:25:55.074
+C Initial\simplementation\sof\sthe\sWHERE-clause\sconstant\spropagation\soptimization.
+D 2018-07-26T21:16:53.742
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -498,12 +498,12 @@ F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 2e9661d4424f43ccf595c4a7b4acdf32db523c0f6b31cbd62e6e5a2f43118981
+F src/select.c cd3993844ab1186e80069f9de2304e730732cfea1f718e603293792d4401d037
 F src/shell.c.in f6ebd05c461805a7c708333cd645e74e0a93560d2118f5adb73a75d8c9cf6b01
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h 427471586351daefbc81155384a702b2173801051fe345bc25a09558b919db77
+F src/sqliteInt.h 0da0d929642cacf99963e406d34e2e3be891a30168f99aefc1cb81c2c545a09b
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1617,6 +1617,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test b7769ee8dbefd987fb266715fee887f05f9ff180016b06fca7fa402df739193b
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
+F test/whereL.test 46492cf4b3b2bfa5bb8adb8d6565f31c010bf8f23baf66bcba4e38cec89117a2
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1752,7 +1753,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ee2950b272ede475e485bfaa7d413eaa81482fe9dd6452aeeaf95ff7938f7da
-R b452b7474ada2f7df230e94f47eaea02
-U dan
-Z 3eecc6d8fc02fe02d8a834ac76aa6a16
+P 0e3de8abbb0c7ae64e637776cb055ce79736f99a103e00e44d17a6b091b98c81
+R 83557e363f35588e2f481ff35d0d8054
+T *branch * propagate-const-opt
+T *sym-propagate-const-opt *
+T -sym-trunk *
+U drh
+Z 8488ca3ac81dbe859bc19508bb265e68
