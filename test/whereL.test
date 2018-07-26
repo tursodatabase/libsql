@@ -36,4 +36,19 @@ do_eqp_test 110 {
   `--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
 }
 
+# The scan of the t1 table goes first since that enables the ORDER BY
+# sort to be omitted.  This would not be possible without constant
+# propagation because without it the t1 table would depend on t3.
+#
+do_eqp_test 120 {
+  SELECT * FROM t1, t2, t3
+   WHERE t1.a=t2.a AND t2.a=t3.j AND t3.j=5
+  ORDER BY t1.a;
+} {
+  QUERY PLAN
+  |--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+  |--SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
+  `--SCAN TABLE t3
+}
+
 finish_test

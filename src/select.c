@@ -4100,6 +4100,7 @@ static void constInsert(
   if( pConst->apExpr==0 ){
     pConst->nConst = 0;
   }else{
+    while( pValue->op==TK_UPLUS ) pValue = pValue->pLeft;
     pConst->apExpr[pConst->nConst*2-2] = pColumn;
     pConst->apExpr[pConst->nConst*2-1] = pValue;
   }
@@ -5726,6 +5727,20 @@ int sqlite3Select(
   }
 #endif
 
+  /* Do the constant propagation optimization */
+  if( OptimizationEnabled(db, SQLITE_PropagateConst)
+   && propagateConstants(pParse, p)
+  ){
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x100 ){
+      SELECTTRACE(0x100,pParse,p,("After constant propagation:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+    }
+#endif
+  }else{
+    SELECTTRACE(0x100,pParse,p,("Constant propagation not possible\n"));
+  }
+
   /* For each term in the FROM clause, do two things:
   ** (1) Authorized unreferenced tables
   ** (2) Generate code for all sub-queries
@@ -5789,20 +5804,6 @@ int sqlite3Select(
     ** an exact limit.
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
-
-    /* Do the constant propagation optimization */
-    if( OptimizationEnabled(db, SQLITE_PropagateConst)
-     && propagateConstants(pParse, p)
-    ){
-#if SELECTTRACE_ENABLED
-      if( sqlite3SelectTrace & 0x100 ){
-        SELECTTRACE(0x100,pParse,p,("After constant propagation:\n"));
-        sqlite3TreeViewSelect(0, p, 0);
-      }
-#endif
-    }else{
-      SELECTTRACE(0x100,pParse,p,("Constant propagation not possible\n"));
-    }
 
     /* Make copies of constant WHERE-clause terms in the outer query down
     ** inside the subquery.  This can help the subquery to run more efficiently.
