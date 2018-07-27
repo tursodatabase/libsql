@@ -911,6 +911,15 @@ static int binCollFunc(
 }
 
 /*
+** Return true if CollSeq is the default built-in BINARY.
+*/
+int sqlite3IsBinary(const CollSeq *p){
+  assert( p==0 || p->xCmp!=binCollFunc || p->pUser!=0
+            || strcmp(p->zName,"BINARY")==0 );
+  return p==0 || (p->xCmp==binCollFunc && p->pUser==0);
+}
+
+/*
 ** Another built-in collating sequence: NOCASE. 
 **
 ** This collating sequence is intended to be used for "case independent

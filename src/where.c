@@ -3205,7 +3205,7 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
     if( pX->pLeft ){
       pC = sqlite3BinaryCompareCollSeq(pHidden->pParse, pX->pLeft, pX->pRight);
     }
-    zRet = (pC ? pC->zName : "BINARY");
+    zRet = (pC ? pC->zName : sqlite3StrBINARY);
   }
   return zRet;
 }

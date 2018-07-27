@@ -4074,7 +4074,168 @@ static int flattenSubquery(
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
+/*
+** A structure to keep track of all of the column values that fixed to
+** a known value due to WHERE clause constraints of the form COLUMN=VALUE.
+*/
+typedef struct WhereConst WhereConst;
+struct WhereConst {
+  Parse *pParse;   /* Parsing context */
+  int nConst;      /* Number for COLUMN=CONSTANT terms */
+  int nChng;       /* Number of times a constant is propagated */
+  Expr **apExpr;   /* [i*2] is COLUMN and [i*2+1] is VALUE */
+};
 
+/*
+** Add a new entry to the pConst object
+*/
+static void constInsert(
+  WhereConst *pConst,
+  Expr *pColumn,
+  Expr *pValue
+){
+
+  pConst->nConst++;
+  pConst->apExpr = sqlite3DbReallocOrFree(pConst->pParse->db, pConst->apExpr,
+                         pConst->nConst*2*sizeof(Expr*));
+  if( pConst->apExpr==0 ){
+    pConst->nConst = 0;
+  }else{
+    if( ExprHasProperty(pValue, EP_FixedCol) ) pValue = pValue->pLeft;
+    pConst->apExpr[pConst->nConst*2-2] = pColumn;
+    pConst->apExpr[pConst->nConst*2-1] = pValue;
+  }
+}
+
+/*
+** Find all terms of COLUMN=VALUE or VALUE=COLUMN in pExpr where VALUE
+** is a constant expression and where the term must be true because it
+** is part of the AND-connected terms of the expression.  For each term
+** found, add it to the pConst structure.
+*/
+static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
+  Expr *pRight, *pLeft;
+  if( pExpr==0 ) return;
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
+  if( pExpr->op==TK_AND ){
+    findConstInWhere(pConst, pExpr->pRight);
+    findConstInWhere(pConst, pExpr->pLeft);
+    return;
+  }
+  if( pExpr->op!=TK_EQ ) return;
+  pRight = pExpr->pRight;
+  pLeft = pExpr->pLeft;
+  assert( pRight!=0 );
+  assert( pLeft!=0 );
+  if( pRight->op==TK_COLUMN
+   && !ExprHasProperty(pRight, EP_FixedCol)
+   && sqlite3ExprIsConstant(pLeft)
+   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+  ){
+    constInsert(pConst, pRight, pLeft);
+  }else
+  if( pLeft->op==TK_COLUMN
+   && !ExprHasProperty(pLeft, EP_FixedCol)
+   && sqlite3ExprIsConstant(pRight)
+   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+  ){
+    constInsert(pConst, pLeft, pRight);
+  }
+}
+
+/*
+** This is a Walker expression callback.  pExpr is a candidate expression
+** to be replaced by a value.  If pExpr is equivalent to one of the
+** columns named in pWalker->u.pConst, then overwrite it with its
+** corresponding value.
+*/
+static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
+  int i;
+  WhereConst *pConst;
+  if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
+  if( ExprHasProperty(pExpr, EP_FixedCol) ) return WRC_Continue;
+  pConst = pWalker->u.pConst;
+  for(i=0; i<pConst->nConst; i++){
+    Expr *pColumn = pConst->apExpr[i*2];
+    if( pColumn==pExpr ) continue;
+    if( pColumn->iTable!=pExpr->iTable ) continue;
+    if( pColumn->iColumn!=pExpr->iColumn ) continue;
+    /* A match is found.  Add the EP_FixedCol property */
+    pConst->nChng++;
+    ExprClearProperty(pExpr, EP_Leaf);
+    ExprSetProperty(pExpr, EP_FixedCol);
+    assert( pExpr->pLeft==0 );
+    pExpr->pLeft = sqlite3ExprDup(pConst->pParse->db, pConst->apExpr[i*2+1], 0);
+    break;
+  }
+  return WRC_Prune;
+}
+
+/*
+** The WHERE-clause constant propagation optimization.
+**
+** If the WHERE clause contains terms of the form COLUMN=CONSTANT or
+** CONSTANT=COLUMN that must be tree (in other words, if the terms top-level
+** AND-connected terms that are not part of a ON clause from a LEFT JOIN)
+** then throughout the query replace all other occurrences of COLUMN
+** with CONSTANT within the WHERE clause.
+**
+** For example, the query:
+**
+**      SELECT * FROM t1, t2, t3 WHERE t1.a=39 AND t2.b=t1.a AND t3.c=t2.b
+**
+** Is transformed into
+**
+**      SELECT * FROM t1, t2, t3 WHERE t1.a=39 AND t2.b=39 AND t3.c=39
+**
+** Return true if any transformations where made and false if not.
+**
+** Implementation note:  Constant propagation is tricky due to affinity
+** and collating sequence interactions.  Consider this example:
+**
+**    CREATE TABLE t1(a INT,b TEXT);
+**    INSERT INTO t1 VALUES(123,'0123');
+**    SELECT * FROM t1 WHERE a=123 AND b=a;
+**    SELECT * FROM t1 WHERE a=123 AND b=123;
+**
+** The two SELECT statements above should return different answers.  b=a
+** is alway true because the comparison uses numeric affinity, but b=123
+** is false because it uses text affinity and '0123' is not the same as '123'.
+** To work around this, the expression tree is not actually changed from
+** "b=a" to "b=123" but rather the "a" in "b=a" is tagged with EP_FixedCol
+** and the "123" value is hung off of the pLeft pointer.  Code generator
+** routines know to generate the constant "123" instead of looking up the
+** column value.  Also, to avoid collation problems, this optimization is
+** only attempted if the "a=123" term uses the default BINARY collation.
+*/
+static int propagateConstants(
+  Parse *pParse,   /* The parsing context */
+  Select *p        /* The query in which to propagate constants */
+){
+  WhereConst x;
+  Walker w;
+  int nChng = 0;
+  x.pParse = pParse;
+  do{
+    x.nConst = 0;
+    x.nChng = 0;
+    x.apExpr = 0;
+    findConstInWhere(&x, p->pWhere);
+    if( x.nConst ){
+      memset(&w, 0, sizeof(w));
+      w.pParse = pParse;
+      w.xExprCallback = propagateConstantExprRewrite;
+      w.xSelectCallback = sqlite3SelectWalkNoop;
+      w.xSelectCallback2 = 0;
+      w.walkerDepth = 0;
+      w.u.pConst = &x;
+      sqlite3WalkExpr(&w, p->pWhere);
+      sqlite3DbFree(x.pParse->db, x.apExpr);
+      nChng += x.nChng;
+    }
+  }while( x.nChng );  
+  return nChng;
+}
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
@@ -5598,6 +5759,25 @@ int sqlite3Select(
     return rc;
   }
 #endif
+
+  /* Do the WHERE-clause constant propagation optimization if this is
+  ** a join.  No need to speed time on this operation for non-join queries
+  ** as the equivalent optimization will be handled by query planner in
+  ** sqlite3WhereBegin().
+  */
+  if( pTabList->nSrc>1
+   && OptimizationEnabled(db, SQLITE_PropagateConst)
+   && propagateConstants(pParse, p)
+  ){
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x100 ){
+      SELECTTRACE(0x100,pParse,p,("After constant propagation:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+    }
+#endif
+  }else{
+    SELECTTRACE(0x100,pParse,p,("Constant propagation not helpful\n"));
+  }
 
   /* For each term in the FROM clause, do two things:
   ** (1) Authorized unreferenced tables

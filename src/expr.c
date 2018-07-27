@@ -141,14 +141,6 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   while( p ){
     int op = p->op;
     if( p->flags & EP_Generic ) break;
-    if( op==TK_CAST || op==TK_UPLUS ){
-      p = p->pLeft;
-      continue;
-    }
-    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
-      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
-      break;
-    }
     if( (op==TK_AGG_COLUMN || op==TK_COLUMN
           || op==TK_REGISTER || op==TK_TRIGGER)
      && p->pTab!=0
@@ -160,6 +152,14 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
         const char *zColl = p->pTab->aCol[j].zColl;
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
+      break;
+    }
+    if( op==TK_CAST || op==TK_UPLUS ){
+      p = p->pLeft;
+      continue;
+    }
+    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
+      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
     if( p->flags & EP_Collate ){
@@ -1839,6 +1839,9 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_COLUMN );
       testcase( pExpr->op==TK_AGG_FUNCTION );
       testcase( pExpr->op==TK_AGG_COLUMN );
+      if( ExprHasProperty(pExpr, EP_FixedCol) ){
+        return WRC_Continue;
+      }
       if( pWalker->eCode==3 && pExpr->iTable==pWalker->u.iCur ){
         return WRC_Continue;
       }
@@ -1927,7 +1930,7 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
     Expr *p = pGroupBy->a[i].pExpr;
     if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
       CollSeq *pColl = sqlite3ExprNNCollSeq(pWalker->pParse, p);
-      if( sqlite3_stricmp("BINARY", pColl->zName)==0 ){
+      if( sqlite3IsBinary(pColl) ){
         return WRC_Prune;
       }
     }
@@ -3581,6 +3584,9 @@ expr_code_doover:
     }
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
+      if( ExprHasProperty(pExpr, EP_FixedCol) ){
+        return sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
+      }
       if( iTab<0 ){
         if( pParse->iSelfTab<0 ){
           /* Generating CHECK constraints or inserting into partial index */
@@ -4942,7 +4948,8 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
   if( ALWAYS((combinedFlags & EP_TokenOnly)==0) ){
     if( combinedFlags & EP_xIsSelect ) return 2;
-    if( sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
+    if( (combinedFlags & EP_FixedCol)==0
+     && sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
     if( sqlite3ExprCompare(pParse, pA->pRight, pB->pRight, iTab) ) return 2;
     if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
     assert( (combinedFlags & EP_Reduced)==0 );

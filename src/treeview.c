@@ -374,6 +374,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         sqlite3TreeViewLine(pView, "{%d:%d}%s",
                              pExpr->iTable, pExpr->iColumn, zFlgs);
       }
+      if( ExprHasProperty(pExpr, EP_FixedCol) ){
+        sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      }
       break;
     }
     case TK_INTEGER: {
