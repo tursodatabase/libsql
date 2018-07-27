@@ -4075,15 +4075,15 @@ static int flattenSubquery(
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 /*
-** A structure to keep track of all of the column values that must be
-** constant in a WHERE clause.
+** A structure to keep track of all of the column values that fixed to
+** a known value due to WHERE clause constraints of the form COLUMN=VALUE.
 */
 typedef struct WhereConst WhereConst;
 struct WhereConst {
-  sqlite3 *db;     /* Database pointer, used by sqlite3DbRealloc() */
+  Parse *pParse;   /* Parsing context */
   int nConst;      /* Number for COLUMN=CONSTANT terms */
   int nChng;       /* Number of times a constant is propagated */
-  Expr **apExpr;   /* [i*2] is COLUMN and [i*2+1] is CONSTANT */
+  Expr **apExpr;   /* [i*2] is COLUMN and [i*2+1] is VALUE */
 };
 
 /*
@@ -4095,23 +4095,26 @@ static void constInsert(
   Expr *pValue
 ){
   pConst->nConst++;
-  pConst->apExpr = sqlite3DbReallocOrFree(pConst->db, pConst->apExpr,
+  pConst->apExpr = sqlite3DbReallocOrFree(pConst->pParse->db, pConst->apExpr,
                          pConst->nConst*2*sizeof(Expr*));
   if( pConst->apExpr==0 ){
     pConst->nConst = 0;
   }else{
-    while( pValue->op==TK_UPLUS ) pValue = pValue->pLeft;
+    if( ExprHasProperty(pValue, EP_FixedCol) ) pValue = pValue->pLeft;
     pConst->apExpr[pConst->nConst*2-2] = pColumn;
     pConst->apExpr[pConst->nConst*2-1] = pValue;
   }
 }
 
 /*
-** Find all instances of COLUMN=CONSTANT or CONSTANT=COLUMN in pExpr that
-** must be true (that are part of the AND-connected terms) and add each
-** to pConst.
+** Find all terms of COLUMN=VALUE or VALUE=COLUMN in pExpr where VALUE
+** is a constant expression and where the term must be true because it
+** is part of the AND-connected terms of the expression.  For each term
+** found, add it to the pConst structure.
 */
 static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
+  Expr *pRight, *pLeft;
+  CollSeq *pColl;
   if( pExpr==0 ) return;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
   if( pExpr->op==TK_AND ){
@@ -4120,13 +4123,22 @@ static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
     return;
   }
   if( pExpr->op!=TK_EQ ) return;
-  assert( pExpr->pRight!=0 );
-  assert( pExpr->pLeft!=0 );
-  if( pExpr->pRight->op==TK_COLUMN && sqlite3ExprIsConstant(pExpr->pLeft) ){
-    constInsert(pConst, pExpr->pRight, pExpr->pLeft);
+  pRight = pExpr->pRight;
+  pLeft = pExpr->pLeft;
+  assert( pRight!=0 );
+  assert( pLeft!=0 );
+  pColl = sqlite3BinaryCompareCollSeq(pConst->pParse, pLeft, pRight);
+  if( !sqlite3IsBinary(pColl) ) return;
+  if( pRight->op==TK_COLUMN
+   && !ExprHasProperty(pRight, EP_FixedCol)
+   && sqlite3ExprIsConstant(pLeft)
+  ){
+    constInsert(pConst, pRight, pLeft);
   }else
-  if( pExpr->pLeft->op==TK_COLUMN && sqlite3ExprIsConstant(pExpr->pRight) ){
-    constInsert(pConst, pExpr->pLeft, pExpr->pRight);
+  if( pLeft->op==TK_COLUMN
+   && !ExprHasProperty(pLeft, EP_FixedCol)
+   && sqlite3ExprIsConstant(pRight) ){
+    constInsert(pConst, pLeft, pRight);
   }
 }
 
@@ -4140,17 +4152,19 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
   int i;
   WhereConst *pConst;
   if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
+  if( ExprHasProperty(pExpr, EP_FixedCol) ) return WRC_Continue;
   pConst = pWalker->u.pConst;
   for(i=0; i<pConst->nConst; i++){
     Expr *pColumn = pConst->apExpr[i*2];
     if( pColumn==pExpr ) continue;
     if( pColumn->iTable!=pExpr->iTable ) continue;
     if( pColumn->iColumn!=pExpr->iColumn ) continue;
-    /* A match is found.  Transform the COLUMN into a CONSTANT */
+    /* A match is found.  Add the EP_FixedCol property */
     pConst->nChng++;
     ExprClearProperty(pExpr, EP_Leaf);
-    pExpr->op = TK_UPLUS;
-    pExpr->pLeft = sqlite3ExprDup(pConst->db, pConst->apExpr[i*2+1], 0);
+    ExprSetProperty(pExpr, EP_FixedCol);
+    assert( pExpr->pLeft==0 );
+    pExpr->pLeft = sqlite3ExprDup(pConst->pParse->db, pConst->apExpr[i*2+1], 0);
     break;
   }
   return WRC_Prune;
@@ -4163,7 +4177,7 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
 ** CONSTANT=COLUMN that must be tree (in other words, if the terms top-level
 ** AND-connected terms that are not part of a ON clause from a LEFT JOIN)
 ** then throughout the query replace all other occurrences of COLUMN
-** with CONSTANT.
+** with CONSTANT within the WHERE clause.
 **
 ** For example, the query:
 **
@@ -4174,6 +4188,24 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
 **      SELECT * FROM t1, t2, t3 WHERE t1.a=39 AND t2.b=39 AND t3.c=39
 **
 ** Return true if any transformations where made and false if not.
+**
+** Implementation note:  Constant propagation is tricky due to affinity
+** and collating sequence interactions.  Consider this example:
+**
+**    CREATE TABLE t1(a INT,b TEXT);
+**    INSERT INTO t1 VALUES(123,'0123');
+**    SELECT * FROM t1 WHERE a=123 AND b=a;
+**    SELECT * FROM t1 WHERE a=123 AND b=123;
+**
+** The two SELECT statements above should return different answers.  b=a
+** is alway true because the comparison uses numeric affinity, but b=123
+** is false because it uses text affinity and '0123' is not the same as '123'.
+** To work around this, the expression tree is not actually changed from
+** "b=a" to "b=123" but rather the "a" in "b=a" is tagged with EP_FixedCol
+** and the "123" value is hung off of the pLeft pointer.  Code generator
+** routines know to generate the constant "123" instead of looking up the
+** column value.  Also, to avoid collation problems, this optimization is
+** only attempted if the "a=123" term uses the default BINARY collation.
 */
 static int propagateConstants(
   Parse *pParse,   /* The parsing context */
@@ -4182,7 +4214,7 @@ static int propagateConstants(
   WhereConst x;
   Walker w;
   int nChng = 0;
-  x.db = pParse->db;
+  x.pParse = pParse;
   do{
     x.nConst = 0;
     x.nChng = 0;
@@ -4196,8 +4228,8 @@ static int propagateConstants(
       w.xSelectCallback2 = 0;
       w.walkerDepth = 0;
       w.u.pConst = &x;
-      sqlite3WalkSelect(&w, p);
-      sqlite3DbFree(x.db, x.apExpr);
+      sqlite3WalkExpr(&w, p->pWhere);
+      sqlite3DbFree(x.pParse->db, x.apExpr);
       nChng += x.nChng;
     }
   }while( x.nChng );  

@@ -859,7 +859,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
     return 0;
   }
   pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
-  if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
+  if( sqlite3IsBinary(pColl) ) return 1;
   return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
 }
 
@@ -1450,7 +1450,7 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
 */
 Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   Bitmask mask;
-  if( p->op==TK_COLUMN ){
+  if( p->op==TK_COLUMN && !ExprHasProperty(p, EP_FixedCol) ){
     return sqlite3WhereGetMask(pMaskSet, p->iTable);
   }else if( ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
     assert( p->op!=TK_IF_NULL_ROW );

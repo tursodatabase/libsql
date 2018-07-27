@@ -2479,7 +2479,7 @@ struct Expr {
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
 #define EP_Agg       0x000002 /* Contains one or more aggregate functions */
 #define EP_HasFunc   0x000004 /* Contains one or more functions of any kind */
-                  /* 0x000008 // available for use */
+#define EP_FixedCol  0x000008 /* TK_Column with a known fixed value */
 #define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
@@ -4171,6 +4171,7 @@ int sqlite3MemdbInit(void);
 const char *sqlite3ErrStr(int);
 int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
+int sqlite3IsBinary(const CollSeq*);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
 CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr);
