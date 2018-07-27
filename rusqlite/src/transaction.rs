@@ -197,7 +197,7 @@ impl<'conn> Transaction<'conn> {
             return Ok(());
         }
         match self.drop_behavior() {
-            DropBehavior::Commit => self.commit_(),
+            DropBehavior::Commit => self.commit_().or_else(|_| self.rollback_()),
             DropBehavior::Rollback => self.rollback_(),
             DropBehavior::Ignore => Ok(()),
             DropBehavior::Panic => panic!("Transaction dropped unexpectedly."),
@@ -310,7 +310,7 @@ impl<'conn> Savepoint<'conn> {
             return Ok(());
         }
         match self.drop_behavior() {
-            DropBehavior::Commit => self.commit_(),
+            DropBehavior::Commit => self.commit_().or_else(|_| self.rollback()),
             DropBehavior::Rollback => self.rollback(),
             DropBehavior::Ignore => Ok(()),
             DropBehavior::Panic => panic!("Savepoint dropped unexpectedly."),
