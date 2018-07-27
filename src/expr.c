@@ -141,14 +141,6 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   while( p ){
     int op = p->op;
     if( p->flags & EP_Generic ) break;
-    if( op==TK_CAST || op==TK_UPLUS ){
-      p = p->pLeft;
-      continue;
-    }
-    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
-      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
-      break;
-    }
     if( (op==TK_AGG_COLUMN || op==TK_COLUMN
           || op==TK_REGISTER || op==TK_TRIGGER)
      && p->pTab!=0
@@ -160,6 +152,14 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
         const char *zColl = p->pTab->aCol[j].zColl;
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
+      break;
+    }
+    if( op==TK_CAST || op==TK_UPLUS ){
+      p = p->pLeft;
+      continue;
+    }
+    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
+      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
     if( p->flags & EP_Collate ){
