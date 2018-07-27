@@ -959,7 +959,10 @@ windowAllocErr:
 */
 void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
-    if( pWin ){
+    /* This routine is only called for the parser.  If pWin was not
+    ** allocated due to an OOM, then the parser would fail before ever
+    ** invoking this routine */
+    if( ALWAYS(pWin) ){
       p->pWin = pWin;
       pWin->pOwner = p;
       if( p->flags & EP_Distinct ){

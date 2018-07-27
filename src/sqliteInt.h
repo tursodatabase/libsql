@@ -3792,7 +3792,7 @@ void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*);
 void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
 Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
-Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*);
+Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);

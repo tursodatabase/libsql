@@ -558,7 +558,7 @@ oneselect(A) ::= values(A).
 values(A) ::= VALUES LP nexprlist(X) RP. {
   A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
 }
-values(A) ::= values(A) COMMA LP exprlist(Y) RP. {
+values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
   Select *pRight, *pLeft = A;
   pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0);
   if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
@@ -1001,37 +1001,25 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
 
 
 expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP. {
-  if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
-    sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
-  }
-  A = sqlite3ExprFunction(pParse, Y, &X);
-  if( D==SF_Distinct && A ){
-    A->flags |= EP_Distinct;
-  }
+  A = sqlite3ExprFunction(pParse, Y, &X, D);
 }
 expr(A) ::= id(X) LP STAR RP. {
-  A = sqlite3ExprFunction(pParse, 0, &X);
+  A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
 %ifndef SQLITE_OMIT_WINDOWFUNC
 expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP over_clause(Z). {
-  if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
-    sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
-  }
-  A = sqlite3ExprFunction(pParse, Y, &X);
-  if( D==SF_Distinct && A ){
-    A->flags |= EP_Distinct;
-  }
+  A = sqlite3ExprFunction(pParse, Y, &X, D);
   sqlite3WindowAttach(pParse, A, Z);
 }
 expr(A) ::= id(X) LP STAR RP over_clause(Z). {
-  A = sqlite3ExprFunction(pParse, 0, &X);
+  A = sqlite3ExprFunction(pParse, 0, &X, 0);
   sqlite3WindowAttach(pParse, A, Z);
 }
 %endif
 
 term(A) ::= CTIME_KW(OP). {
-  A = sqlite3ExprFunction(pParse, 0, &OP);
+  A = sqlite3ExprFunction(pParse, 0, &OP, 0);
 }
 
 expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
@@ -1065,7 +1053,7 @@ expr(A) ::= expr(A) likeop(OP) expr(Y).  [LIKE_KW]  {
   OP.n &= 0x7fffffff;
   pList = sqlite3ExprListAppend(pParse,0, Y);
   pList = sqlite3ExprListAppend(pParse,pList, A);
-  A = sqlite3ExprFunction(pParse, pList, &OP);
+  A = sqlite3ExprFunction(pParse, pList, &OP, 0);
   if( bNot ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
   if( A ) A->flags |= EP_InfixFunc;
 }
@@ -1076,7 +1064,7 @@ expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
   pList = sqlite3ExprListAppend(pParse,0, Y);
   pList = sqlite3ExprListAppend(pParse,pList, A);
   pList = sqlite3ExprListAppend(pParse,pList, E);
-  A = sqlite3ExprFunction(pParse, pList, &OP);
+  A = sqlite3ExprFunction(pParse, pList, &OP, 0);
   if( bNot ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
   if( A ) A->flags |= EP_InfixFunc;
 }
@@ -1640,8 +1628,8 @@ window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
   }
 }
 
-part_opt(A) ::= PARTITION BY exprlist(X). { A = X; }
-part_opt(A) ::= .                         { A = 0; }
+part_opt(A) ::= PARTITION BY nexprlist(X). { A = X; }
+part_opt(A) ::= .                          { A = 0; }
 
 frame_opt(A) ::= .                             { 
   A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
