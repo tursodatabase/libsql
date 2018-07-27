@@ -329,13 +329,6 @@ CollSeq *sqlite3BinaryCompareCollSeq(
 }
 
 /*
-** Return true if CollSeq is the default built-in BINARY.
-*/
-int sqlite3IsBinary(const CollSeq *p){
-  return p==0 || sqlite3StrICmp(p->zName,sqlite3StrBINARY)==0;
-}
-
-/*
 ** Generate code for a comparison operator.
 */
 static int codeCompare(
@@ -3592,8 +3585,7 @@ expr_code_doover:
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
       if( ExprHasProperty(pExpr, EP_FixedCol) ){
-        pExpr = pExpr->pLeft;
-        goto expr_code_doover;
+        return sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
       }
       if( iTab<0 ){
         if( pParse->iSelfTab<0 ){
