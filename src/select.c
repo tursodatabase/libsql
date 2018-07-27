@@ -4094,6 +4094,7 @@ static void constInsert(
   Expr *pColumn,
   Expr *pValue
 ){
+
   pConst->nConst++;
   pConst->apExpr = sqlite3DbReallocOrFree(pConst->pParse->db, pConst->apExpr,
                          pConst->nConst*2*sizeof(Expr*));
@@ -4114,7 +4115,6 @@ static void constInsert(
 */
 static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   Expr *pRight, *pLeft;
-  CollSeq *pColl;
   if( pExpr==0 ) return;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
   if( pExpr->op==TK_AND ){
@@ -4127,17 +4127,18 @@ static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   pLeft = pExpr->pLeft;
   assert( pRight!=0 );
   assert( pLeft!=0 );
-  pColl = sqlite3BinaryCompareCollSeq(pConst->pParse, pLeft, pRight);
-  if( !sqlite3IsBinary(pColl) ) return;
   if( pRight->op==TK_COLUMN
    && !ExprHasProperty(pRight, EP_FixedCol)
    && sqlite3ExprIsConstant(pLeft)
+   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
   ){
     constInsert(pConst, pRight, pLeft);
   }else
   if( pLeft->op==TK_COLUMN
    && !ExprHasProperty(pLeft, EP_FixedCol)
-   && sqlite3ExprIsConstant(pRight) ){
+   && sqlite3ExprIsConstant(pRight)
+   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+  ){
     constInsert(pConst, pLeft, pRight);
   }
 }

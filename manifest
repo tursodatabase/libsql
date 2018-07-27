@@ -1,5 +1,5 @@
-C Performance\simprovement\sto\ssqlite3ExprCollSeq().\s\sWith\sthis\schange,\sthe\nperformance\sof\sspeed-check.sh\sis\swithin\s400,000\scycles\sof\strunk.
-D 2018-07-27T18:19:12.560
+C Reduce\sthe\sperformance\scost\sof\sthe\sconstant\spropagation\soptimization\sto\nless\sthan\s200,000\scycles.
+D 2018-07-27T20:01:00.824
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -498,7 +498,7 @@ F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c a86a20bd89ea4298267b1d2f44a8b14a53cb6ad1e75a555af5d57de5cf7abd3b
+F src/select.c 2534927341d0a2e8d9a3222a87b69e353b22042a02c3d531291590af7f3acf19
 F src/shell.c.in f6ebd05c461805a7c708333cd645e74e0a93560d2118f5adb73a75d8c9cf6b01
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1753,7 +1753,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be05d0db09f43cc3362c28273463d1d236af737a4f8a494cf1050da07ed0df47
-R 1753b15b3d22c91de99ab8b77a1df21b
+P a5f86f49b7d9e52546f234f7c3bcbac6b0f78aa55a71c44ca69e21bc31139f3e
+R 4b45ff0184fcc33e2981efc28067c07f
 U drh
-Z 1c821d2ad72826ccbc3322222c2b360d
+Z 6933d6a2066e2d71a489bc51f2ac806c
