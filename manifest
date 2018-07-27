@@ -1,5 +1,5 @@
-C Minor\sgrammar\schanges\sthat\shelp\sthe\sparser\srun\sfaster\sby\sreducing\sthe\nnumber\sof\sNUL\srule\sreductions.
-D 2018-07-27T22:14:50.240
+C When\sdoing\sa\sDROP\sVIEW\sdo\snot\stry\sto\sdelete\sentries\sfrom\sthe\ssqlite_stat1\ntable\sas\sthere\sare\snone.
+D 2018-07-27T22:55:58.128
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -442,7 +442,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c ae6edcd6e14a3dcaf9e1f63910cd4d99555338508d7a60e4660147f8a77c023b
+F src/build.c 7e82726057d67de1d77961f3a3f371353171099bb6b006adb172b6d3aebb1d4a
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
@@ -452,7 +452,7 @@ F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
 F src/expr.c 5b5e7b571f377ca76fc76eec0a684384483e0bf6525f6b561a09db09d81600eb
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c b1da9ef8dc834603bb0d28972378a7ce65897847f9a1e89ab800bbdf24c788ee
+F src/fkey.c f59253c0be4b1e9dfcb073b6d6d6ab83090ae50c08b5c113b76013c4b157cd6a
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
 F src/global.c 9bf034fd560bdd514715170ed8460bb7f823cec113f0569ef3f18a20c7ccd128
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
@@ -1542,7 +1542,7 @@ F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 765802c7a66d37fabd5ac8e2f2dbe572b43eb9ab
+F test/view.test 42b97dcd3d7c2f5f9439e41b0983e0c6a5718d8b874e9d5e82d3cd25a50ffcf7
 F test/vtab1.test 8f91b9538d1404c3932293a588c4344218a0c94792d4289bb55e41020e7b3fff
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1753,7 +1753,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d815d83a6805938b87e03ffabe6d71ca2ecfd05052e8e02c6cc5d3c9ea4ddf3
-R fafb9bb1288976042bff1f58b5ef3552
+P cfd1b00592bd550e444dfc7b6a6a93c77c07b835729c6cc69a4b6361038964ba 523ff77925f1da361cf31e3fc82bcb1708ed356a2391430ab14ef620c9bf2327
+R a2c24e054b9c8d4fae68977faa296b2b
+T +closed 523ff77925f1da361cf31e3fc82bcb1708ed356a2391430ab14ef620c9bf2327
 U drh
-Z cc0d4bd09cbef3882dca6f536e3b608a
+Z 442a0ea187fa6114275630f524fa214c
