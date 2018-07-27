@@ -167,8 +167,9 @@ impl<'conn> Transaction<'conn> {
     }
 
     fn commit_(&mut self) -> Result<()> {
+        self.conn.execute_batch("COMMIT")?;
         self.committed = true;
-        self.conn.execute_batch("COMMIT")
+        Ok(())
     }
 
     /// A convenience method which consumes and rolls back a transaction.
@@ -177,8 +178,9 @@ impl<'conn> Transaction<'conn> {
     }
 
     fn rollback_(&mut self) -> Result<()> {
+        self.conn.execute_batch("ROLLBACK")?;
         self.committed = true;
-        self.conn.execute_batch("ROLLBACK")
+        Ok(())
     }
 
     /// Consumes the transaction, committing or rolling back according to the current setting
@@ -277,9 +279,10 @@ impl<'conn> Savepoint<'conn> {
     }
 
     fn commit_(&mut self) -> Result<()> {
-        self.committed = true;
         self.conn
-            .execute_batch(&format!("RELEASE {}", self.name))
+            .execute_batch(&format!("RELEASE {}", self.name))?;
+        self.committed = true;
+        Ok(())
     }
 
     /// A convenience method which rolls back a savepoint.
