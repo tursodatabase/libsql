@@ -1200,7 +1200,7 @@ static void exprAnalyze(
       }
       *pC = c + 1;
     }
-    zCollSeqName = noCase ? "NOCASE" : "BINARY";
+    zCollSeqName = noCase ? "NOCASE" : sqlite3StrBINARY;
     pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE,
            sqlite3ExprAddCollateString(pParse,pNewExpr1,zCollSeqName),

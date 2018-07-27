@@ -332,9 +332,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(
 ** Return true if CollSeq is the default built-in BINARY.
 */
 int sqlite3IsBinary(const CollSeq *p){
-  if( p==0 ) return 1;
-  if( sqlite3_stricmp(p->zName,"BINARY")==0 ) return 1;
-  return 0;
+  return p==0 || sqlite3StrICmp(p->zName,sqlite3StrBINARY)==0;
 }
 
 /*

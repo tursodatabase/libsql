@@ -5759,8 +5759,13 @@ int sqlite3Select(
   }
 #endif
 
-  /* Do the constant propagation optimization */
-  if( OptimizationEnabled(db, SQLITE_PropagateConst)
+  /* Do the WHERE-clause constant propagation optimization if this is
+  ** a join.  No need to speed time on this operation for non-join queries
+  ** as the equivalent optimization will be handled by query planner in
+  ** sqlite3WhereBegin().
+  */
+  if( pTabList->nSrc>1
+   && OptimizationEnabled(db, SQLITE_PropagateConst)
    && propagateConstants(pParse, p)
   ){
 #if SELECTTRACE_ENABLED
@@ -5770,7 +5775,7 @@ int sqlite3Select(
     }
 #endif
   }else{
-    SELECTTRACE(0x100,pParse,p,("Constant propagation not possible\n"));
+    SELECTTRACE(0x100,pParse,p,("Constant propagation not helpful\n"));
   }
 
   /* For each term in the FROM clause, do two things:
