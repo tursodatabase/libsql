@@ -3450,7 +3450,7 @@ static Expr *substExpr(
       Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
       Expr ifNullRow;
       assert( pSubst->pEList!=0 && pExpr->iColumn<pSubst->pEList->nExpr );
-      assert( pExpr->pLeft==0 && pExpr->pRight==0 );
+      assert( pExpr->pRight==0 );
       if( sqlite3ExprIsVector(pCopy) ){
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
