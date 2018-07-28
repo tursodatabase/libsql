@@ -44,3 +44,4 @@ rusqlite contributors
 * [Tom](https://github.com/bedax)
 * [Hampus Bengtsson](https://github.com/miniyou)
 * [casret](https://github.com/casret)
+* [Kornel](https://github.com/kornelski)
