@@ -1146,21 +1146,16 @@ static int dupedExprStructSize(Expr *p, int flags){
   assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   assert( EXPR_FULLSIZE<=0xfff );
   assert( (0xfff & (EP_Reduced|EP_TokenOnly))==0 );
-  if( 0==flags || p->op==TK_SELECT_COLUMN 
-#ifndef SQLITE_OMIT_WINDOWFUNC
-   || p->pWin 
-#endif
-  ){
+  if( 0==flags || p->op==TK_SELECT_COLUMN ){
     nSize = EXPR_FULLSIZE;
   }else{
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     assert( !ExprHasProperty(p, EP_FromJoin) ); 
     assert( !ExprHasProperty(p, EP_MemToken) );
     assert( !ExprHasProperty(p, EP_NoReduce) );
-    if( p->pLeft || p->x.pList ){
+    if( p->eV || p->eX ){
       nSize = EXPR_REDUCEDSIZE | EP_Reduced;
     }else{
-      assert( p->pRight==0 );
       nSize = EXPR_TOKENONLYSIZE | EP_TokenOnly;
     }
   }
@@ -1189,7 +1184,7 @@ static int dupedExprNodeSize(Expr *p, int flags){
 ** itself and the buffer referred to by Expr.u.zToken, if any.
 **
 ** If the EXPRDUP_REDUCE flag is set, then the return value includes 
-** space to duplicate all Expr nodes in the tree formed by Expr.pLeft 
+** space to duplicate all Expr nodes in the tree formed by Expr.v.pLeft 
 ** and Expr.pRight variables (but not for any structures pointed to or 
 ** descended from the Expr.x.pList or Expr.x.pSelect variables).
 */
@@ -1198,7 +1193,8 @@ static int dupedExprSize(Expr *p, int flags){
   if( p ){
     nByte = dupedExprNodeSize(p, flags);
     if( flags&EXPRDUP_REDUCE ){
-      nByte += dupedExprSize(p->pLeft, flags) + dupedExprSize(p->pRight, flags);
+      if( p->eV==EV_Left ) nByte += dupedExprSize(p->v.pLeft, flags);
+      if( p->eV==EX_Right ) nByte += dupedExprSize(p->x.pRight, flags);
     }
   }
   return nByte;
@@ -1208,7 +1204,7 @@ static int dupedExprSize(Expr *p, int flags){
 ** This function is similar to sqlite3ExprDup(), except that if pzBuffer 
 ** is not NULL then *pzBuffer is assumed to point to a buffer large enough 
 ** to store the copy of expression p, the copies of p->u.zToken
-** (if applicable), and the copies of the p->pLeft and p->pRight expressions,
+** (if applicable), and the copies of the p->v.pLeft and p->pRight expressions,
 ** if any. Before returning, *pzBuffer is set to the first byte past the
 ** portion of the buffer copied into by this function.
 */
@@ -1268,6 +1264,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       memcpy(zToken, p->u.zToken, nToken);
     }
 
+#if 0
     if( 0==((p->flags|pNew->flags) & (EP_TokenOnly|EP_Leaf)) ){
       /* Fill in the pNew->x.pSelect or pNew->x.pList member. */
       if( ExprHasProperty(p, EP_xIsSelect) ){
@@ -1276,8 +1273,14 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         pNew->x.pList = sqlite3ExprListDup(db, p->x.pList, dupFlags);
       }
     }
+#endif
+    if( p->eX==EX_Select ){
+      pNew->x.pSelect = sqlite3SelectDup(db, p->x.pSelect, dupFlags);
+    }else if( p->eX==EX_List ){
+      pNew->x.pList = sqlite3ExprListDup(db, p->x.pList, dupFlags);
+    }
 
-    /* Fill in pNew->pLeft and pNew->pRight. */
+    /* Fill in pNew->v.pLeft and pNew->x.pRight. */
     if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly) ){
       zAlloc += dupedExprNodeSize(p, dupFlags);
       if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){

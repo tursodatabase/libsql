@@ -2426,6 +2426,8 @@ typedef int ynVar;
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
+  u8 eV;                 /* Which element of v-union is used */
+  u8 eX;                 /* Which element of x-union is used */
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
@@ -2437,11 +2439,17 @@ struct Expr {
   ** access them will result in a segfault or malfunction.
   *********************************************************************/
 
-  Expr *pLeft;           /* Left subnode */
-  Expr *pRight;          /* Right subnode */
-  union {
-    ExprList *pList;     /* op = IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
-    Select *pSelect;     /* EP_xIsSelect and op = IN, EXISTS, SELECT */
+  union {                /* Usage determined by Expr.eV */
+    Expr *pLeft;           /* Left subnode */
+    Expr *pVector;         /* TK_SELECT_COLUMN: The SELECT */
+    Window *pWin;          /* TK_FUNCTION: Window definition */
+  } v;
+  union {                /* Usage determined by Expr.eX */
+    Expr *pRight;          /* Right subnode */
+    ExprList *pList;       /* IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
+    Select *pSelect;       /* IN, EXISTS, SELECT */
+    Table *pTab;           /* Table for TK_COLUMN expressions. Can be NULL
+                           ** for a column of an index on an expression */
   } x;
 
   /* If the EP_Reduced flag is set in the Expr.flags mask, then no
@@ -2466,12 +2474,21 @@ struct Expr {
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
-  Table *pTab;           /* Table for TK_COLUMN expressions.  Can be NULL
-                         ** for a column of an index on an expression */
-#ifndef SQLITE_OMIT_WINDOWFUNC
-  Window *pWin;          /* Window definition for window functions */
-#endif
 };
+
+/*
+** Allowed values for the Expr.eV and Expr.eX fields:
+*/
+#define EV_None     0    /* Expr.v is not used */
+#define EV_Left     1    /* Expr.v.pLeft */
+#define EV_Vector   2    /* Expr.v.pVector */
+#dfeine EV_Win      3    /* Expr.v.pWin */
+
+#define EX_None     0    /* Expr.x is not used */
+#define EX_Right    1    /* Expr.x.pRight */
+#define EX_List     2    /* Expr.x.pList */
+#define EX_Select   3    /* Expr.x.pSelect */
+#define EX_Tab      4    /* Expr.x.pTab */
 
 /*
 ** The following are the meanings of bits in the Expr.flags field.

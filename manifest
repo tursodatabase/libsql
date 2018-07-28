@@ -1,5 +1,5 @@
-C Add\sassert()\sstatements\sto\ssqlite3ExprDelete()\sthat\sprove\svarious\ssymmetry\nproperties\sof\sthe\sExpr\sobject\sthat\smight\sbe\sexploited\sto\smake\sthe\sExpr\sobject\nsmaller\sand\sfaster.
-D 2018-07-28T01:30:43.176
+C An\searly\sattempt\sat\srefactoring\sExpr
+D 2018-07-28T13:37:44.333
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -450,7 +450,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
-F src/expr.c eeb14df211a01166a107dee3af221bff2145391cead4189bfed7e21839decbfa
+F src/expr.c dff6636152ebc54e394a2133b2c4cc1c3f7de2130d7933362487be07cf19264b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c f59253c0be4b1e9dfcb073b6d6d6ab83090ae50c08b5c113b76013c4b157cd6a
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -503,7 +503,7 @@ F src/shell.c.in f6ebd05c461805a7c708333cd645e74e0a93560d2118f5adb73a75d8c9cf6b0
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h de37aae03c6a4e4f1e1eff15c04292153dbba015ad8e0dc0dffe82ea0fe76d5e
+F src/sqliteInt.h d9e843d00aee15d12c5d67556b3d61688103c945da5bedd071d2a5966df907dc
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1753,10 +1753,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02204f8b246c868846f39bd44f2e3bc0fab0275aa09ef3a0e5a8e3d58f484ca8
-R 310262b835cd592d636879692e903d61
-T *branch * expr-simplify
-T *sym-expr-simplify *
-T -sym-trunk *
+P 81f25d5c84e4d2d0cd3c6a7c105c7c93d310218feeea4e023dbc32e7e96b2a52
+R 2f4d5976ed1b9b3eff7341b424df6edf
 U drh
-Z 2ccd694ba875056547f326b1b678ff15
+Z 2ce8b95bf3ceede5076a1330ec36f69d
