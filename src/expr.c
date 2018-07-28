@@ -1060,6 +1060,17 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     assert( p->pRight==0 );
     assert( p->x.pSelect==0 );
   }
+  if( !ExprHasProperty(p, EP_TokenOnly) ){
+    assert( p->op!=TK_FUNCTION || p->pLeft==0 );
+    assert( p->pRight==0 || p->x.pSelect==0 );
+  }
+  if( !ExprHasProperty(p, (EP_TokenOnly|EP_Reduced)) ){
+    assert( p->pWin==0 || p->pLeft==0 );
+    assert( p->pWin==0 || p->pTab==0 );
+    assert( p->pWin==0 || p->op==TK_FUNCTION );
+    assert( p->pWin==0 || !ExprHasProperty(p, EP_xIsSelect) );
+    assert( p->pTab==0 || (p->pRight==0 && p->x.pSelect==0) );
+  }
 #endif
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Leaf)) ){
     /* The Expr.x union is never used at the same time as Expr.pRight */
