@@ -1848,7 +1848,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_COLUMN );
       testcase( pExpr->op==TK_AGG_FUNCTION );
       testcase( pExpr->op==TK_AGG_COLUMN );
-      if( ExprHasProperty(pExpr, EP_FixedCol) ){
+      if( ExprHasProperty(pExpr, EP_FixedCol) && pWalker->eCode!=2 ){
         return WRC_Continue;
       }
       if( pWalker->eCode==3 && pExpr->iTable==pWalker->u.iCur ){
@@ -1906,10 +1906,17 @@ int sqlite3ExprIsConstant(Expr *p){
 }
 
 /*
-** Walk an expression tree.  Return non-zero if the expression is constant
-** that does no originate from the ON or USING clauses of a join.
-** Return 0 if it involves variables or function calls or terms from
-** an ON or USING clause.
+** Walk an expression tree.  Return non-zero if
+**
+**   (1) the expression is constant, and
+**   (2) the expression does originate in the ON or USING clause
+**       of a LEFT JOIN, and
+**   (3) the expression does not contain any EP_FixedCol TK_COLUMN
+**       operands created by the constant propagation optimization.
+**
+** When this routine returns true, it indicates that the expression
+** can be added to the pParse->pConstExpr list and evaluated once when
+** the prepared statement starts up.  See sqlite3ExprCodeAtInit().
 */
 int sqlite3ExprIsConstantNotJoin(Expr *p){
   return exprIsConst(p, 2, 0);
