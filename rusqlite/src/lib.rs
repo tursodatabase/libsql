@@ -623,7 +623,7 @@ bitflags! {
 
 impl Default for OpenFlags {
     fn default() -> OpenFlags {
-        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE | 
+        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE |
         OpenFlags::SQLITE_OPEN_NO_MUTEX | OpenFlags::SQLITE_OPEN_URI
     }
 }
@@ -988,6 +988,41 @@ mod test {
 
     pub fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()
+    }
+
+    #[test]
+    fn test_concurrent_transactions_busy_commit() {
+        let tmp = TempDir::new("locked").unwrap();
+        let path = tmp.path().join("transactions.db3");
+
+        Connection::open(&path).expect("create temp db").execute_batch("
+            BEGIN; CREATE TABLE foo(x INTEGER);
+            INSERT INTO foo VALUES(42); END;")
+        .expect("create temp db");
+
+        let mut db1 = Connection::open(&path).unwrap();
+        let mut db2 = Connection::open(&path).unwrap();
+
+        db1.execute_batch("PRAGMA busy_timeout = 0;").unwrap();
+        db2.execute_batch("PRAGMA busy_timeout = 0;").unwrap();
+
+        {
+            let tx1 = db1.transaction().unwrap();
+            let tx2 = db2.transaction().unwrap();
+
+            // SELECT first makes sqlite lock with a shared lock
+            let _ = tx1.query_row("SELECT x FROM foo LIMIT 1", &[], |_| ()).unwrap();
+            let _ = tx2.query_row("SELECT x FROM foo LIMIT 1", &[], |_| ()).unwrap();
+
+            tx1.execute("INSERT INTO foo VALUES(?1)", &[&1]).unwrap();
+            let _ = tx2.execute("INSERT INTO foo VALUES(?1)", &[&2]);
+
+            let _ = tx1.commit();
+            let _ = tx2.commit();
+        }
+
+        let _ = db1.transaction().expect("commit should have closed transaction");
+        let _ = db2.transaction().expect("commit should have closed transaction");
     }
 
     #[test]
