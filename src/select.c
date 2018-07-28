@@ -5852,7 +5852,8 @@ int sqlite3Select(
     ){
 #if SELECTTRACE_ENABLED
       if( sqlite3SelectTrace & 0x100 ){
-        SELECTTRACE(0x100,pParse,p,("After WHERE-clause push-down:\n"));
+        SELECTTRACE(0x100,pParse,p,
+            ("After WHERE-clause push-down into subquery %d:\n", pSub->selId));
         sqlite3TreeViewSelect(0, p, 0);
       }
 #endif

@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sparser\sto\sincrease\scoverage.\s\sFix\sthe\sparser\sso\sthat\nat\sleast\sone\sexpresssion\sis\srequired\safter\sPARTITION\sBY\sand\swithin\sthe\nlist\sof\sexpressions\son\sVALUES().
-D 2018-07-27T23:33:16.472
+C Improved\sdebugging\soutput\swhen\sthe\s".selecttrace"\soption\sis\sused\sin\sthe\sshell.
+D 2018-07-28T14:34:22.343
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -498,7 +498,7 @@ F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 2534927341d0a2e8d9a3222a87b69e353b22042a02c3d531291590af7f3acf19
+F src/select.c a7c1a827d9bb23334b9bfe7e5c103b1398371f10796154a69023e0946fb3b0d9
 F src/shell.c.in f6ebd05c461805a7c708333cd645e74e0a93560d2118f5adb73a75d8c9cf6b01
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1753,7 +1753,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7efdba2bbc8547ee9292a1bbd1e61d38b40d7aabc0860ceba188bdec539f5114
-R 471a9deda4100ce593be82a25e7c7930
+P 02204f8b246c868846f39bd44f2e3bc0fab0275aa09ef3a0e5a8e3d58f484ca8
+R 7a41e2fa4afa4ef4cbf53d2695995d58
 U drh
-Z 49ba2c803564fb9ad5a228c53691471f
+Z 25d0f8749ae2cbe0cb0dae376846dc8c
