@@ -43,6 +43,8 @@ mod build {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
         cfg.compile("libsqlite3.a");
+
+        println!("cargo:lib_dir={}", out_dir);
     }
 }
 

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use super::{Null, Value, ValueRef};
 #[cfg(feature = "array")]
 use vtab::array::Array;
@@ -156,6 +157,12 @@ impl<T: ToSql> ToSql for Option<T> {
     }
 }
 
+impl<'a> ToSql for Cow<'a, str> {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.as_ref()))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ToSql;
@@ -171,5 +178,17 @@ mod test {
         is_to_sql::<u8>();
         is_to_sql::<u16>();
         is_to_sql::<u32>();
+    }
+
+    #[test]
+    fn test_cow_str() {
+        use std::borrow::Cow;
+        let s = "str";
+        let cow = Cow::Borrowed(s);
+        let r = cow.to_sql();
+        assert!(r.is_ok());
+        let cow = Cow::Owned::<str>(String::from(s));
+        let r = cow.to_sql();
+        assert!(r.is_ok());
     }
 }
