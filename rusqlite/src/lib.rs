@@ -56,7 +56,7 @@ extern crate libsqlite3_sys as ffi;
 extern crate lru_cache;
 #[macro_use]
 extern crate bitflags;
-#[cfg(all(test, feature = "trace"))]
+#[cfg(test)]
 #[macro_use]
 extern crate lazy_static;
 
@@ -126,6 +126,7 @@ mod hooks;
 #[cfg(feature = "hooks")]
 pub use hooks::*;
 mod unlock_notify;
+mod busy;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
