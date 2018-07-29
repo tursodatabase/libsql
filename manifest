@@ -1,5 +1,5 @@
-C Add\sa\ssmall\scost\spenalty\sto\ssorting\sto\sbias\sthe\squery\splanner\sin\sfavor\sof\nplans\sthat\sdo\snot\srequire\sa\sfinal\ssorting\spass.
-D 2018-07-28T21:01:55.748
+C In\sthe\scommand-line\sshell,\salways\sexit\sif\srealloc()\sfails.
+D 2018-07-29T18:56:35.591
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -499,7 +499,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 22ed163cf65258a1101685228bb67d85b60b2965fec344f5c56d185f46fc62f2
-F src/shell.c.in f6ebd05c461805a7c708333cd645e74e0a93560d2118f5adb73a75d8c9cf6b01
+F src/shell.c.in 5e4c139799f059a5231f0259111f51f6dffcb28154c535f6b4c2192619a40844
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1753,7 +1753,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d30b2a947313b146f29e2b53f0fd471409fda7938151241d3fb5863614f88999
-R f478416ffaa85b9b753e0ff20fb9a188
+P 85b9beb4605eb0cfe2ed063c2a1925186c9e37031f78c875e60a347cce891638
+R 3db01fbcd8470f08c5b23f0c077ff7c7
 U drh
-Z e3c69457c35c4a6b4c979e7c01232a05
+Z bc1053d0705cacf835165150c37a6072
