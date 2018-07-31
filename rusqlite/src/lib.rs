@@ -80,10 +80,8 @@ use raw_statement::RawStatement;
 use cache::StatementCache;
 
 pub use statement::Statement;
-use statement::StatementCrateImpl;
 
 pub use row::{Row, Rows, MappedRows, AndThenRows, RowIndex};
-use row::RowsCrateImpl;
 
 #[allow(deprecated)]
 pub use transaction::{SqliteTransaction, SqliteTransactionBehavior};
