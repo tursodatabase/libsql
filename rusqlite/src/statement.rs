@@ -7,7 +7,6 @@ use super::ffi;
 use super::{Connection, RawStatement, Result, Error, ValueRef, Row, Rows, AndThenRows, MappedRows};
 use super::str_to_cstring;
 use types::{ToSql, ToSqlOutput};
-use row::{RowsCrateImpl, MappedRowsCrateImpl, AndThenRowsCrateImpl};
 
 /// A prepared statement.
 pub struct Statement<'conn> {
@@ -494,24 +493,15 @@ impl<'conn> Drop for Statement<'conn> {
     }
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some Statement methods. Remove this
-// once pub(crate) is stable.
-pub trait StatementCrateImpl<'conn> {
-    fn new(conn: &'conn Connection, stmt: RawStatement) -> Self;
-    fn value_ref(&self, col: usize) -> ValueRef;
-    fn step(&self) -> Result<bool>;
-    fn reset(&self) -> c_int;
-}
-
-impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
-    fn new(conn: &Connection, stmt: RawStatement) -> Statement {
+impl<'conn> Statement<'conn> {
+    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement {
         Statement {
             conn,
             stmt,
         }
     }
 
-    fn value_ref(&self, col: usize) -> ValueRef {
+    pub(crate) fn value_ref(&self, col: usize) -> ValueRef {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {
@@ -554,7 +544,7 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn step(&self) -> Result<bool> {
+    pub(crate) fn step(&self) -> Result<bool> {
         match self.stmt.step() {
             ffi::SQLITE_ROW => Ok(true),
             ffi::SQLITE_DONE => Ok(false),
@@ -562,7 +552,7 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn reset(&self) -> c_int {
+    pub(crate) fn reset(&self) -> c_int {
         self.stmt.reset()
     }
 }

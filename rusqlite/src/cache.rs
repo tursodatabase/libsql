@@ -5,7 +5,6 @@ use std::ops::{Deref, DerefMut};
 use lru_cache::LruCache;
 use {Result, Connection, Statement};
 use raw_statement::RawStatement;
-use statement::StatementCrateImpl;
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared (but
