@@ -5529,7 +5529,13 @@ case OP_IdxGE:  {       /* jump */
   }
   r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG
-  { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
+  {
+    int i;
+    for(i=0; i<r.nField; i++){
+      assert( memIsValid(&r.aMem[i]) );
+      REGISTER_TRACE(pOp->p3+i, &aMem[pOp->p3+i]);
+    }
+  }
 #endif
   res = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);

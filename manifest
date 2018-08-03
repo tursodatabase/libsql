@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\salways\sexit\sif\srealloc()\sfails.
-D 2018-07-29T18:56:35.591
+C Improve\s"PRAGMA\svdbe_trace=ON"\sto\salways\sshow\sthe\skey\svalues\sfor\sthe\nOP_IdxGT\sand\srelated\sopcodes.
+D 2018-08-03T13:56:26.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -569,7 +569,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c f6358d397d3c53c8cb2d20a71db7a712097e6f50f8465838500e916b0ecf66a6
+F src/vdbe.c 259a0c1753d05ba687696747062f5ca23b07cc69f475f312209a20aaf2e82675
 F src/vdbe.h d93abdc8bc9295e0a256e582c19f548c545dc498319d108bbc9dd29de31c48a2
 F src/vdbeInt.h 2a45270d7f44870ca5452f48cdf3c56387019ae03331c008d670a7d0a3e1ba3f
 F src/vdbeapi.c af4a3de00d1851bcbc55b85dfbe52849aa2b1e17b4a5a1f3d9c257df7af361ff
@@ -1753,7 +1753,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85b9beb4605eb0cfe2ed063c2a1925186c9e37031f78c875e60a347cce891638
-R 3db01fbcd8470f08c5b23f0c077ff7c7
+P e390023c8e70961661fd9e29674dedacd1b941b6b8d9cd88f8cfa8f787f030f9
+R 42c2ba852bcdcd5b618ab0afe0f401df
 U drh
-Z bc1053d0705cacf835165150c37a6072
+Z aecb34e96579e406e10bba0b12f9710a
