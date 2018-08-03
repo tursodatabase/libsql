@@ -802,7 +802,6 @@ static void constructAutomaticIndex(
   VdbeComment((v, "for %s", pTable->zName));
 
   /* Fill the automatic index with content */
-  sqlite3ExprCachePush(pParse);
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
   if( pTabItem->fg.viaCoroutine ){
     int regYield = pTabItem->regReturn;
@@ -839,7 +838,6 @@ static void constructAutomaticIndex(
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
-  sqlite3ExprCachePop(pParse);
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
@@ -5077,7 +5075,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   /* Generate loop termination code.
   */
   VdbeModuleComment((v, "End WHERE-core"));
-  sqlite3ExprCacheClear(pParse);
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;
     pLevel = &pWInfo->a[i];

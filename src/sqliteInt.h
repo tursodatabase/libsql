@@ -3091,17 +3091,9 @@ struct Parse {
   ** Fields above must be initialized to zero.  The fields that follow,
   ** down to the beginning of the recursive section, do not need to be
   ** initialized as they will be set before being used.  The boundary is
-  ** determined by offsetof(Parse,aColCache).
+  ** determined by offsetof(Parse,aTempReg).
   **************************************************************************/
 
-  struct yColCache {
-    int iTable;           /* Table cursor number */
-    i16 iColumn;          /* Table column number */
-    u8 tempReg;           /* iReg is a temp register that needs to be freed */
-    int iLevel;           /* Nesting level */
-    int iReg;             /* Reg with value of this column. 0 means none. */
-    int lru;              /* Least recently used entry has the smallest value */
-  } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
   int aTempReg[8];        /* Holding area for temporary registers */
   Token sNameToken;       /* Token with unqualified schema object name */
 
@@ -3143,7 +3135,7 @@ struct Parse {
 /*
 ** Sizes and pointers of various parts of the Parse object.
 */
-#define PARSE_HDR_SZ offsetof(Parse,aColCache) /* Recursive part w/o aColCache*/
+#define PARSE_HDR_SZ offsetof(Parse,aTempReg) /* Recursive part w/o aColCache*/
 #define PARSE_RECURSE_SZ offsetof(Parse,sLastToken)    /* Recursive part */
 #define PARSE_TAIL_SZ (sizeof(Parse)-PARSE_RECURSE_SZ) /* Non-recursive part */
 #define PARSE_TAIL(X) (((char*)(X))+PARSE_RECURSE_SZ)  /* Pointer to tail */
@@ -3930,12 +3922,6 @@ int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnToReg(Parse*, Table*, int, int, int);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
-void sqlite3ExprCacheStore(Parse*, int, int, int);
-void sqlite3ExprCachePush(Parse*);
-void sqlite3ExprCachePop(Parse*);
-void sqlite3ExprCacheRemove(Parse*, int, int);
-void sqlite3ExprCacheClear(Parse*);
-void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);

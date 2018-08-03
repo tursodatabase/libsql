@@ -898,7 +898,6 @@ int sqlite3GenerateIndexKey(
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
       pParse->iSelfTab = iDataCur + 1;
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
       pParse->iSelfTab = 0;
@@ -945,6 +944,5 @@ int sqlite3GenerateIndexKey(
 void sqlite3ResolvePartIdxLabel(Parse *pParse, int iLabel){
   if( iLabel ){
     sqlite3VdbeResolveLabel(pParse->pVdbe, iLabel);
-    sqlite3ExprCachePop(pParse);
   }
 }

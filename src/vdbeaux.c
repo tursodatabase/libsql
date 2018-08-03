@@ -193,14 +193,6 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
-    int jj, kk;
-    Parse *pParse = p->pParse;
-    for(jj=kk=0; jj<pParse->nColCache; jj++){
-      struct yColCache *x = pParse->aColCache + jj;
-      printf(" r[%d]={%d:%d}", x->iReg, x->iTable, x->iColumn);
-      kk++;
-    }
-    if( kk ) printf("\n");
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
     test_addop_breakpoint();
   }

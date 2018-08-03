@@ -611,12 +611,6 @@ void sqlite3Update(
         testcase( i==31 );
         testcase( i==32 );
         sqlite3ExprCodeGetColumnToReg(pParse, pTab, i, iDataCur, regNew+i);
-        if( tmask & TRIGGER_BEFORE ){
-          /* This value will be recomputed in After-BEFORE-trigger-reload-loop
-          ** below, so make sure that it is not cached and reused.
-          ** Ticket d85fffd6ffe856092ed8daefa811b1e399706b28. */
-          sqlite3ExprCacheRemove(pParse, regNew+i, 1);
-        }
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
       }
