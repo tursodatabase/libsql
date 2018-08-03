@@ -4323,13 +4323,21 @@ case OP_SeekRowid: {        /* jump, in3 */
 
   pIn3 = &aMem[pOp->p3];
   if( (pIn3->flags & MEM_Int)==0 ){
+    /* Make sure pIn3->u.i contains a valid integer representation of
+    ** the key value, but do not change the datatype of the register, as
+    ** other parts of the perpared statement might be depending on the
+    ** current datatype. */
+    u16 origFlags = pIn3->flags;
+    int isNotInt;
     applyAffinity(pIn3, SQLITE_AFF_NUMERIC, encoding);
-    if( (pIn3->flags & MEM_Int)==0 ) goto jump_to_p2;
+    isNotInt = (pIn3->flags & MEM_Int)==0;
+    pIn3->flags = origFlags;
+    if( isNotInt ) goto jump_to_p2;
   }
   /* Fall through into OP_NotExists */
 case OP_NotExists:          /* jump, in3 */
   pIn3 = &aMem[pOp->p3];
-  assert( pIn3->flags & MEM_Int );
+  assert( (pIn3->flags & MEM_Int)!=0 || pOp->opcode==OP_SeekRowid );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );

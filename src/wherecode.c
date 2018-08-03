@@ -1353,9 +1353,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
-    sqlite3ExprCacheAffinityChange(pParse, iRowidReg, 1);
-    sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
-    VdbeComment((v, "pk"));
     pLevel->op = OP_Noop;
   }else if( (pLoop->wsFlags & WHERE_IPK)!=0
          && (pLoop->wsFlags & WHERE_COLUMN_RANGE)!=0
