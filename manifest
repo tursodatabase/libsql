@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_SeekRowid\sopcode\sso\sthat\sit\shas\sno\stype-change\sside-effects\son\sthe\nkey\sregister\sin\sP3.\s\sThis\sfixes\san\sobcure\sproblem\sthat\sarises\swhen\sdoing\nequi-joins\sbetween\sa\stable\swith\sa\sTEXT\scolumn\sagainst\sanother\stable\swith\nan\sINTEGER\sPRIMARY\sKEY.\s\sThe\soriginal\sproblem\swas\sdiscovered\swhen\sOSSFuzz\ncreated\ssuch\sa\squery\sand\shit\san\sassert()\sin\sOP_VerifyTabCol\sthat\swas\nspecifically\sdesigned\sto\scatch\sthese\skinds\sof\serrors\sat\srun-time.
-D 2018-08-03T15:58:07.068
+C Fix\sthe\shandling\sof\ssub-queries\swith\sLIMIT\sclauses\sby\sthe\soptimization\nactivated\sby\scompile-time\ssymbol\sSQLITE_COUNTOFVIEW_OPTIMIZATION.
+D 2018-08-03T20:19:52.614
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -498,7 +498,7 @@ F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 22ed163cf65258a1101685228bb67d85b60b2965fec344f5c56d185f46fc62f2
+F src/select.c 18636c49eeb9016bb429ac6892220aea51bc618d021cf16770146e1858cf6f1e
 F src/shell.c.in 5e4c139799f059a5231f0259111f51f6dffcb28154c535f6b4c2192619a40844
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -733,6 +733,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 91550557849244a9904f4e090052e3f2c1c3f1106840d58b00ffaa3a8c2d3fc0
 F test/cost.test b37db8a10d467a69e71a9f3d40bbb266c2f587742b37c6912f6e3f7185a0e216
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
+F test/countofview.test 2d0ce23daca1bada0522c3d62e0e0c0d69ec4e0fc41df2bcd662a5e11169b9c9
 F test/coveridxscan.test 5ec98719a2e2914e8908dc75f7247d9b54a26df04625f846ac7900d5483f7296
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -1753,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f881955ed173c7c35dfca2d4aeca855858e40bb951e6fb6fedd9a2fff6a5a86
-R fd20495db4931704facdb29762bad04e
-U drh
-Z 309f6ab0d792269409cda7bb806561c5
+P fa94b49e02eb6b8fc4acc220ecc2fabef546c65845696758b25965c26b251ea9
+R 776956319daae57e1b0c061e1c2d74c6
+U dan
+Z 9283c73cf2ac7987df796a062f7aa1c4

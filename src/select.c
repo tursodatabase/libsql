@@ -5495,6 +5495,7 @@ static struct SrcList_item *isSelfJoinView(
 ** The transformation only works if all of the following are true:
 **
 **   *  The subquery is a UNION ALL of two or more terms
+**   *  The subquery does not have a LIMIT clause
 **   *  There is no WHERE or GROUP BY or HAVING clauses on the subqueries
 **   *  The outer query is a simple count(*)
 **
@@ -5518,6 +5519,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   do{
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
+    if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
     if( pSub->selFlags & SF_Aggregate ) return 0;     /* Not an aggregate */
     pSub = pSub->pPrior;                              /* Repeat over compound */
   }while( pSub );
@@ -5779,6 +5781,16 @@ int sqlite3Select(
     SELECTTRACE(0x100,pParse,p,("Constant propagation not helpful\n"));
   }
 
+#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
+  if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
+   && countOfViewOptimization(pParse, p)
+  ){
+    if( db->mallocFailed ) goto select_end;
+    pEList = p->pEList;
+    pTabList = p->pSrc;
+  }
+#endif
+
   /* For each term in the FROM clause, do two things:
   ** (1) Authorized unreferenced tables
   ** (2) Generate code for all sub-queries
@@ -5954,16 +5966,6 @@ int sqlite3Select(
   if( sqlite3SelectTrace & 0x400 ){
     SELECTTRACE(0x400,pParse,p,("After all FROM-clause analysis:\n"));
     sqlite3TreeViewSelect(0, p, 0);
-  }
-#endif
-
-#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
-  if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
-   && countOfViewOptimization(pParse, p)
-  ){
-    if( db->mallocFailed ) goto select_end;
-    pEList = p->pEList;
-    pTabList = p->pSrc;
   }
 #endif
 
