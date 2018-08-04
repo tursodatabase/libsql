@@ -934,9 +934,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
     }
   }
   pMem->pScopyFrom = 0;
-#ifdef SQLITE_DEBUG_COLUMN_CACHE
-  pMem->iTabColHash = 0;
-#endif
 }
 #endif /* SQLITE_DEBUG */
 
@@ -957,9 +954,6 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( pTo->db==pFrom->db );
   if( VdbeMemDynamic(pTo) ){ vdbeClrCopy(pTo,pFrom,srcType); return; }
   memcpy(pTo, pFrom, MEMCELLSIZE);
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-  pTo->iTabColHash = pFrom->iTabColHash;
-#endif
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
@@ -977,9 +971,6 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   assert( (pFrom->flags & MEM_RowSet)==0 );
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-  pTo->iTabColHash = pFrom->iTabColHash;
-#endif
   pTo->flags &= ~MEM_Dyn;
   if( pTo->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pFrom->flags&MEM_Static) ){

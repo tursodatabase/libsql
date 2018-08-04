@@ -1639,9 +1639,6 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
 #ifdef SQLITE_DEBUG
     p->pScopyFrom = 0;
 #endif
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-    p->iTabColHash = 0;
-#endif
     p++;
   }
 }
