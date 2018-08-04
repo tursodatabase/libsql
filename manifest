@@ -1,5 +1,5 @@
-C Fix\sthe\shandling\sof\ssub-queries\swith\sLIMIT\sclauses\sby\sthe\soptimization\nactivated\sby\scompile-time\ssymbol\sSQLITE_COUNTOFVIEW_OPTIMIZATION.
-D 2018-08-03T20:19:52.614
+C Ensure\sthat\sall\sexpressions\sthat\sare\sto\sbe\sevaluated\sonce\sat\sthe\sstart\sof\na\sprepared\sstatement\s(the\sParse.pConstExpr\sexpressions)\spass\sthe\nsqlite3ExprIsConstantNotJoin()\stest.\sIt\sis\snot\ssufficient\sto\spass\sjust\sthe\nsqlite3ExprIsConstant()\stest\sas\sthat\swould\sallow\sthrough\scolumn\sreferences\nthat\sare\sbound\sto\sconstants\sby\sthe\sWHERE\sclause\sin\sthe\sconstant\spropagation\noptimization.\s\sThis\sfixes\sa\sproblem\sdiscovered\sby\sOSSFuzz.
+D 2018-08-04T15:16:20.397
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -450,7 +450,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 4c8c7604277a2041647f96b78f4b9a47858e9217e4fb333d35e7b5ab32c5b57f
-F src/expr.c 3a85e8e23611cee71bc2b021cb25c65e30d12ca2bcb8e2ad4608789d268770e1
+F src/expr.c 825198653fb655df3d758c556eb003f0a531a3661d0573cf445b4e9298daac07
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c f59253c0be4b1e9dfcb073b6d6d6ab83090ae50c08b5c113b76013c4b157cd6a
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa94b49e02eb6b8fc4acc220ecc2fabef546c65845696758b25965c26b251ea9
-R 776956319daae57e1b0c061e1c2d74c6
-U dan
-Z 9283c73cf2ac7987df796a062f7aa1c4
+P 21235d9a41567897418aa12f7bd6dd8d6ee363147527e1d8fbca14fc83e0f2c9
+R f7d88ec40c3b1bf4cdb36eeda3dd1524
+U drh
+Z 9c4475d99c73fa0f17003647ee6288ea

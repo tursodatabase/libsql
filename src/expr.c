@@ -4352,7 +4352,7 @@ void sqlite3ExprCodeCopy(Parse *pParse, Expr *pExpr, int target){
 ** might choose to code the expression at initialization time.
 */
 void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
-  if( pParse->okConstFactor && sqlite3ExprIsConstant(pExpr) ){
+  if( pParse->okConstFactor && sqlite3ExprIsConstantNotJoin(pExpr) ){
     sqlite3ExprCodeAtInit(pParse, pExpr, target);
   }else{
     sqlite3ExprCode(pParse, pExpr, target);
@@ -4434,7 +4434,9 @@ int sqlite3ExprCodeExprList(
       }else{
         sqlite3VdbeAddOp2(v, copyOp, j+srcReg-1, target+i);
       }
-    }else if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){
+    }else if( (flags & SQLITE_ECEL_FACTOR)!=0
+           && sqlite3ExprIsConstantNotJoin(pExpr)
+    ){
       sqlite3ExprCodeAtInit(pParse, pExpr, target+i);
     }else{
       int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
