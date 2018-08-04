@@ -1,5 +1,5 @@
-C Fix\scomments\sthat\swere\smade\sobsolete\sby\sthe\sremoval\sof\sthe\scolumn\scache.
-D 2018-08-04T17:15:56.612
+C Remove\sa\stestcase()\sthat\sis\sno\slonger\sreachable\swithout\sthe\scolumn\scache.\nProvide\san\sassert()\sto\shelp\sprove\sthat\sthe\stestcase\sis\sno\slonger\sreachable.
+D 2018-08-04T20:12:10.289
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -569,7 +569,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c 7ab5a3cbc893c9896bd9bb85aa634e8b1cd1f94af4df5cd6c4ce2468058008c6
+F src/vdbe.c 8744e9e830262867a9730ca487a114abc7265b572b48f80b18124d1d347f7b1b
 F src/vdbe.h d93abdc8bc9295e0a256e582c19f548c545dc498319d108bbc9dd29de31c48a2
 F src/vdbeInt.h 8ea493d994c6697cf7bccc60583a80a0222560490410f60f1113e90d36643ce0
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80236e81cefdf3d3cda3dbdb6de1575c38e4e248cc4b72ca9ee96d3aa0464bfd
-R 779befaaaf0f2d738f0e3a42abd2baa4
+P 2041231d56c7b02b785015ef4d1af260d61326eab1b2a304c17faa3e33f76441
+R 23d677c80730de8e8fb9c53343c12875
 U drh
-Z 8c6b42f29159dc7d52aa5e97e863562d
+Z 0342b37d7a7258c5c8b069d39abadbfe

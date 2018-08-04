@@ -1912,6 +1912,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   u16 flags1;         /* Copy of initial value of pIn1->flags */
   u16 flags3;         /* Copy of initial value of pIn3->flags */
 
+  /* The only way for P1 and P3 to be the same is when comparing constants.
+  ** But in that case, the affinities will always be SQLITE_AFF_BLOB or none */
+  assert( pOp->p1!=pOp->p3 || (pOp->p5 & SQLITE_AFF_MASK)<=SQLITE_AFF_BLOB );
+  testcase( pOp->p1==pOp->p3 );
+
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
   flags1 = pIn1->flags;
@@ -1959,7 +1964,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
-          testcase( flags3!=pIn3->flags ); /* Possible if pIn1==pIn3 */
+          /* testcase( flags3!=pIn3->flags );
+          ** this used to be possible with pIn1==pIn3, but not since
+          ** the column cache was removed.  The following assignment
+          ** is essentially a no-op.  But, it prevents defense-in-depth
+          ** in case our analysis is incorrect, so it is left in. */
           flags3 = pIn3->flags;
         }
         if( (flags3 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
