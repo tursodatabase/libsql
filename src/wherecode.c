@@ -1969,23 +1969,23 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           ** row will be skipped in subsequent sub-WHERE clauses.
           */
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
-            int r;
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             if( HasRowid(pTab) ){
-              r = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, regRowid, 0);
+              sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, regRowid);
               jmp1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0,
-                                           r,iSet);
+                                          regRowid, iSet);
               VdbeCoverage(v);
             }else{
               Index *pPk = sqlite3PrimaryKeyIndex(pTab);
               int nPk = pPk->nKeyCol;
               int iPk;
+              int r;
 
               /* Read the PK into an array of temp registers. */
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                sqlite3ExprCodeGetColumnToReg(pParse, pTab, iCol, iCur, r+iPk);
+                sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol, r+iPk);
               }
 
               /* Check if the temp table already contains this key. If so,

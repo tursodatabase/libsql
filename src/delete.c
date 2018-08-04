@@ -463,9 +463,8 @@ void sqlite3DeleteFrom(
       }
       iKey = iPk;
     }else{
-      iKey = pParse->nMem + 1;
-      iKey = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iTabCur, iKey, 0);
-      if( iKey>pParse->nMem ) pParse->nMem = iKey;
+      iKey = ++pParse->nMem;
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, -1, iKey);
     }
   
     if( eOnePass!=ONEPASS_OFF ){
