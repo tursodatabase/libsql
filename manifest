@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\sexpressions\sthat\sare\sto\sbe\sevaluated\sonce\sat\sthe\sstart\sof\na\sprepared\sstatement\s(the\sParse.pConstExpr\sexpressions)\spass\sthe\nsqlite3ExprIsConstantNotJoin()\stest.\sIt\sis\snot\ssufficient\sto\spass\sjust\sthe\nsqlite3ExprIsConstant()\stest\sas\sthat\swould\sallow\sthrough\scolumn\sreferences\nthat\sare\sbound\sto\sconstants\sby\sthe\sWHERE\sclause\sin\sthe\sconstant\spropagation\noptimization.\s\sThis\sfixes\sa\sproblem\sdiscovered\sby\sOSSFuzz.
-D 2018-08-04T15:16:20.397
+C Add\stest\scases\sfor\sthe\sconstant\sexpression\sfix\sof\sthe\sprevious\scheck-in.
+D 2018-08-04T15:28:12.613
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -955,7 +955,7 @@ F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db 1882f0055fb63214d8407ddc7aca9b0b1c59af21
-F test/fuzzdata5.db c3a8ad2260258a8b9522cf5e3ebfdc4421c3b9561cc39cd868ff1090d360f900
+F test/fuzzdata5.db 5e8394be0245224340c26fc592746dd560479b0dcb12d4b43edf2c612848e748
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 21235d9a41567897418aa12f7bd6dd8d6ee363147527e1d8fbca14fc83e0f2c9
-R f7d88ec40c3b1bf4cdb36eeda3dd1524
+P 8bc7f84c39f913b0b0f5e9f5fd9d7dd8bda8422248c069712b6992c32c759a83
+R 6932e89db01172dd37443d3c6c0ba024
 U drh
-Z 9c4475d99c73fa0f17003647ee6288ea
+Z 944fd02700c6746ca58d0f2d1bfa9fb6
