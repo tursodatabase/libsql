@@ -211,10 +211,6 @@ struct sqlite3_value {
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   u16 mScopyFlags;    /* flags value immediately after the shallow copy */
 #endif
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-  u32 iTabColHash;    /* Hash of table.column that is origin of this value */
-  u32 iPadding;       /* sqlite3_value objects must be 8-byte aligned */
-#endif
 };
 
 /*

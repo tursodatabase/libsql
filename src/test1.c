@@ -6982,7 +6982,6 @@ static int SQLITE_TCLAPI optimization_control(
     { "all",                 SQLITE_AllOpts        },
     { "none",                0                     },
     { "query-flattener",     SQLITE_QueryFlattener },
-    { "column-cache",        SQLITE_ColumnCache    },
     { "groupby-order",       SQLITE_GroupByOrder   },
     { "factor-constants",    SQLITE_FactorOutConst },
     { "distinct-opt",        SQLITE_DistinctOpt    },

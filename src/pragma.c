@@ -1550,7 +1550,6 @@ void sqlite3Pragma(
 
         if( pTab->tnum<1 ) continue;  /* Skip VIEWs or VIRTUAL TABLEs */
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
-        sqlite3ExprCacheClear(pParse);
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
         /* reg[7] counts the number of entries in the table.
@@ -1593,7 +1592,6 @@ void sqlite3Pragma(
             char *zErr;
             int k;
             pParse->iSelfTab = iDataCur + 1;
-            sqlite3ExprCachePush(pParse);
             for(k=pCheck->nExpr-1; k>0; k--){
               sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
             }
@@ -1606,7 +1604,6 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
             integrityCheckResultRow(v);
             sqlite3VdbeResolveLabel(v, addrCkOk);
-            sqlite3ExprCachePop(pParse);
           }
           sqlite3ExprListDelete(db, pCheck);
         }

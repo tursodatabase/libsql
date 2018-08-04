@@ -37,18 +37,6 @@
 #endif
 
 /*
-** Given a cursor number and a column for a table or index, compute a
-** hash value for use in the Mem.iTabColHash value.  The iTabColHash
-** column is only used for verification - it is omitted from production
-** builds.  Collisions are harmless in the sense that the correct answer
-** still results.  The only harm of collisions is that they can potential
-** reduce column-cache error detection during SQLITE_DEBUG builds.
-**
-** No valid hash should be 0.
-*/
-#define TableColumnHash(T,C)  (((u32)(T)<<16)^(u32)(C+2))
-
-/*
 ** The following global variable is incremented every time a cursor
 ** moves, either by the OP_SeekXX, OP_Next, or OP_Prev opcodes.  The test
 ** procedures use this information to make sure that indices are
@@ -1308,7 +1296,6 @@ case OP_Copy: {
     Deephemeralize(pOut);
 #ifdef SQLITE_DEBUG
     pOut->pScopyFrom = 0;
-    pOut->iTabColHash = 0;
 #endif
     REGISTER_TRACE(pOp->p2+pOp->p3-n, pOut);
     if( (n--)==0 ) break;
@@ -1925,6 +1912,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   u16 flags1;         /* Copy of initial value of pIn1->flags */
   u16 flags3;         /* Copy of initial value of pIn3->flags */
 
+  /* The only way for P1 and P3 to be the same is when comparing constants.
+  ** But in that case, the affinities will always be SQLITE_AFF_BLOB or none */
+  assert( pOp->p1!=pOp->p3 || (pOp->p5 & SQLITE_AFF_MASK)<=SQLITE_AFF_BLOB );
+  testcase( pOp->p1==pOp->p3 );
+
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
   flags1 = pIn1->flags;
@@ -1972,7 +1964,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
-          testcase( flags3!=pIn3->flags ); /* Possible if pIn1==pIn3 */
+          /* testcase( flags3!=pIn3->flags );
+          ** this used to be possible with pIn1==pIn3, but not since
+          ** the column cache was removed.  The following assignment
+          ** is essentially a no-op.  But, it prevents defense-in-depth
+          ** in case our analysis is incorrect, so it is left in. */
           flags3 = pIn3->flags;
         }
         if( (flags3 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
@@ -7442,34 +7438,6 @@ case OP_CursorHint: {
 */
 case OP_Abortable: {
   sqlite3VdbeAssertAbortable(p);
-  break;
-}
-#endif
-
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-/* Opcode:  SetTabCol   P1 P2 P3 * *
-**
-** Set a flag in register REG[P3] indicating that it holds the value
-** of column P2 from the table on cursor P1.  This flag is checked
-** by a subsequent VerifyTabCol opcode.
-**
-** This opcode only appears SQLITE_DEBUG builds.  It is used to verify
-** that the expression table column cache is working correctly.
-*/
-case OP_SetTabCol: {
-  aMem[pOp->p3].iTabColHash = TableColumnHash(pOp->p1,pOp->p2);
-  break;
-}
-/* Opcode:  VerifyTabCol   P1 P2 P3 * *
-**
-** Verify that register REG[P3] contains the value of column P2 from
-** cursor P1.  Assert() if this is not the case.
-**
-** This opcode only appears SQLITE_DEBUG builds.  It is used to verify
-** that the expression table column cache is working correctly.
-*/
-case OP_VerifyTabCol: {
-  assert( aMem[pOp->p3].iTabColHash == TableColumnHash(pOp->p1,pOp->p2) );
   break;
 }
 #endif

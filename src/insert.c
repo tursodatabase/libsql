@@ -1533,7 +1533,6 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeVerifyAbortable(v, onError);
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
     VdbeCoverage(v);
-    sqlite3ExprCachePush(pParse);
 
     switch( onError ){
       default: {
@@ -1610,7 +1609,6 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    sqlite3ExprCachePop(pParse);
     sqlite3VdbeResolveLabel(v, addrRowidOk);
     if( sAddr.ipkTop ){
       sAddr.ipkBtm = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -1744,7 +1742,6 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Check to see if the new index entry will be unique */
-    sqlite3ExprCachePush(pParse);
     sqlite3VdbeVerifyAbortable(v, onError);
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol); VdbeCoverage(v);
@@ -1850,7 +1847,6 @@ void sqlite3GenerateConstraintChecks(
     }else{
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
     }
-    sqlite3ExprCachePop(pParse);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
 
   }
@@ -1954,7 +1950,6 @@ void sqlite3CompleteInsertion(
   sqlite3SetMakeRecordP5(v, pTab);
   if( !bAffinityDone ){
     sqlite3TableAffinity(v, pTab, 0);
-    sqlite3ExprCacheAffinityChange(pParse, regData, pTab->nCol);
   }
   if( pParse->nested ){
     pik_flags = 0;

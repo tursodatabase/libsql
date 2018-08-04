@@ -581,7 +581,6 @@ static void codeVectorCompare(
     Expr *pL, *pR; 
     int r1, r2;
     assert( i>=0 && i<nLeft );
-    if( i>0 ) sqlite3ExprCachePush(pParse);
     r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
     r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
     codeCompare(pParse, pL, pR, opx, r1, r2, dest, p5);
@@ -593,7 +592,6 @@ static void codeVectorCompare(
     testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
     sqlite3ReleaseTempReg(pParse, regFree1);
     sqlite3ReleaseTempReg(pParse, regFree2);
-    if( i>0 ) sqlite3ExprCachePop(pParse);
     if( i==nLeft-1 ){
       break;
     }
@@ -2627,7 +2625,6 @@ int sqlite3CodeSubselect(
   int rReg = 0;                           /* Register storing resulting */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( NEVER(v==0) ) return 0;
-  sqlite3ExprCachePush(pParse);
 
   /* The evaluation of the IN/EXISTS/SELECT must be repeated every time it
   ** is encountered if any of the following is true:
@@ -2763,7 +2760,6 @@ int sqlite3CodeSubselect(
               sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
             }else{
               sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-              sqlite3ExprCacheAffinityChange(pParse, r3, 1);
               sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pExpr->iTable, r2, r3, 1);
             }
           }
@@ -2844,7 +2840,6 @@ int sqlite3CodeSubselect(
   if( jmpIfDynamic>=0 ){
     sqlite3VdbeJumpHere(v, jmpIfDynamic);
   }
-  sqlite3ExprCachePop(pParse);
 
   return rReg;
 }
@@ -2963,7 +2958,6 @@ static void sqlite3ExprCodeIN(
   ** aiMap[] array contains a mapping from the original LHS field order to
   ** the field order that matches the RHS index.
   */
-  sqlite3ExprCachePush(pParse);
   rLhsOrig = exprCodeVector(pParse, pLeft, &iDummy);
   for(i=0; i<nVector && aiMap[i]==i; i++){} /* Are LHS fields reordered? */
   if( i==nVector ){
@@ -3122,7 +3116,6 @@ static void sqlite3ExprCodeIN(
 
 sqlite3ExprCodeIN_finished:
   if( rLhs!=rLhsOrig ) sqlite3ReleaseTempReg(pParse, rLhs);
-  sqlite3ExprCachePop(pParse);
   VdbeComment((v, "end IN expr"));
 sqlite3ExprCodeIN_oom_error:
   sqlite3DbFree(pParse->db, aiMap);
@@ -3190,152 +3183,6 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
   }
 }
 
-/*
-** Erase column-cache entry number i
-*/
-static void cacheEntryClear(Parse *pParse, int i){
-  if( pParse->aColCache[i].tempReg ){
-    if( pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-      pParse->aTempReg[pParse->nTempReg++] = pParse->aColCache[i].iReg;
-    }
-  }
-  pParse->nColCache--;
-  if( i<pParse->nColCache ){
-    pParse->aColCache[i] = pParse->aColCache[pParse->nColCache];
-  }
-}
-
-
-/*
-** Record in the column cache that a particular column from a
-** particular table is stored in a particular register.
-*/
-void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
-  int i;
-  int minLru;
-  int idxLru;
-  struct yColCache *p;
-
-  /* Unless an error has occurred, register numbers are always positive. */
-  assert( iReg>0 || pParse->nErr || pParse->db->mallocFailed );
-  assert( iCol>=-1 && iCol<32768 );  /* Finite column numbers */
-
-  /* The SQLITE_ColumnCache flag disables the column cache.  This is used
-  ** for testing only - to verify that SQLite always gets the same answer
-  ** with and without the column cache.
-  */
-  if( OptimizationDisabled(pParse->db, SQLITE_ColumnCache) ) return;
-
-  /* First replace any existing entry.
-  **
-  ** Actually, the way the column cache is currently used, we are guaranteed
-  ** that the object will never already be in cache.  Verify this guarantee.
-  */
-#ifndef NDEBUG
-  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
-    assert( p->iTable!=iTab || p->iColumn!=iCol );
-  }
-#endif
-
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-  /* Add a SetTabCol opcode for run-time verification that the column
-  ** cache is working correctly.
-  */
-  sqlite3VdbeAddOp3(pParse->pVdbe, OP_SetTabCol, iTab, iCol, iReg);
-#endif
-
-  /* If the cache is already full, delete the least recently used entry */
-  if( pParse->nColCache>=SQLITE_N_COLCACHE ){
-    minLru = 0x7fffffff;
-    idxLru = -1;
-    for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-      if( p->lru<minLru ){
-        idxLru = i;
-        minLru = p->lru;
-      }
-    }
-    p = &pParse->aColCache[idxLru];
-  }else{
-    p = &pParse->aColCache[pParse->nColCache++];
-  }
-
-  /* Add the new entry to the end of the cache */
-  p->iLevel = pParse->iCacheLevel;
-  p->iTable = iTab;
-  p->iColumn = iCol;
-  p->iReg = iReg;
-  p->tempReg = 0;
-  p->lru = pParse->iCacheCnt++;
-}
-
-/*
-** Indicate that registers between iReg..iReg+nReg-1 are being overwritten.
-** Purge the range of registers from the column cache.
-*/
-void sqlite3ExprCacheRemove(Parse *pParse, int iReg, int nReg){
-  int i = 0;
-  while( i<pParse->nColCache ){
-    struct yColCache *p = &pParse->aColCache[i];
-    if( p->iReg >= iReg && p->iReg < iReg+nReg ){
-      cacheEntryClear(pParse, i);
-    }else{
-      i++;
-    }
-  }
-}
-
-/*
-** Remember the current column cache context.  Any new entries added
-** added to the column cache after this call are removed when the
-** corresponding pop occurs.
-*/
-void sqlite3ExprCachePush(Parse *pParse){
-  pParse->iCacheLevel++;
-#ifdef SQLITE_DEBUG
-  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
-    printf("PUSH to %d\n", pParse->iCacheLevel);
-  }
-#endif
-}
-
-/*
-** Remove from the column cache any entries that were added since the
-** the previous sqlite3ExprCachePush operation.  In other words, restore
-** the cache to the state it was in prior the most recent Push.
-*/
-void sqlite3ExprCachePop(Parse *pParse){
-  int i = 0;
-  assert( pParse->iCacheLevel>=1 );
-  pParse->iCacheLevel--;
-#ifdef SQLITE_DEBUG
-  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
-    printf("POP  to %d\n", pParse->iCacheLevel);
-  }
-#endif
-  while( i<pParse->nColCache ){
-    if( pParse->aColCache[i].iLevel>pParse->iCacheLevel ){
-      cacheEntryClear(pParse, i);
-    }else{
-      i++;
-    }
-  }
-}
-
-/*
-** When a cached column is reused, make sure that its register is
-** no longer available as a temp register.  ticket #3879:  that same
-** register might be in the cache in multiple places, so be sure to
-** get them all.
-*/
-static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
-  int i;
-  struct yColCache *p;
-  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
-    if( p->iReg==iReg ){
-      p->tempReg = 0;
-    }
-  }
-}
 
 /* Generate code that will load into register regOut a value that is
 ** appropriate for the iIdxCol-th column of index pIdx.
@@ -3391,12 +3238,7 @@ void sqlite3ExprCodeGetColumnOfTable(
 
 /*
 ** Generate code that will extract the iColumn-th column from
-** table pTab and store the column value in a register. 
-**
-** An effort is made to store the column value in register iReg.  This
-** is not garanteeed for GetColumn() - the result can be stored in
-** any register.  But the result is guaranteed to land in register iReg
-** for GetColumnToReg().
+** table pTab and store the column value in register iReg. 
 **
 ** There must be an open cursor to pTab in iTable when this routine
 ** is called.  If iColumn<0 then code is generated that extracts the rowid.
@@ -3410,98 +3252,22 @@ int sqlite3ExprCodeGetColumn(
   u8 p5            /* P5 value for OP_Column + FLAGS */
 ){
   Vdbe *v = pParse->pVdbe;
-  int i;
-  struct yColCache *p;
-
-  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
-    if( p->iTable==iTable && p->iColumn==iColumn ){
-      p->lru = pParse->iCacheCnt++;
-      sqlite3ExprCachePinRegister(pParse, p->iReg);
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-      sqlite3VdbeAddOp3(v, OP_VerifyTabCol, iTable, iColumn, p->iReg);
-#endif
-      return p->iReg;
-    }
-  }  
   assert( v!=0 );
   sqlite3ExprCodeGetColumnOfTable(v, pTab, iTable, iColumn, iReg);
   if( p5 ){
     sqlite3VdbeChangeP5(v, p5);
-  }else{   
-    sqlite3ExprCacheStore(pParse, iTable, iColumn, iReg);
   }
   return iReg;
-}
-void sqlite3ExprCodeGetColumnToReg(
-  Parse *pParse,   /* Parsing and code generating context */
-  Table *pTab,     /* Description of the table we are reading from */
-  int iColumn,     /* Index of the table column */
-  int iTable,      /* The cursor pointing to the table */
-  int iReg         /* Store results here */
-){
-  int r1 = sqlite3ExprCodeGetColumn(pParse, pTab, iColumn, iTable, iReg, 0);
-  if( r1!=iReg ) sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, r1, iReg);
-}
-
-
-/*
-** Clear all column cache entries.
-*/
-void sqlite3ExprCacheClear(Parse *pParse){
-  int i;
-
-#ifdef SQLITE_DEBUG
-  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
-    printf("CLEAR\n");
-  }
-#endif
-  for(i=0; i<pParse->nColCache; i++){
-    if( pParse->aColCache[i].tempReg
-     && pParse->nTempReg<ArraySize(pParse->aTempReg)
-    ){
-       pParse->aTempReg[pParse->nTempReg++] = pParse->aColCache[i].iReg;
-    }
-  }
-  pParse->nColCache = 0;
-}
-
-/*
-** Record the fact that an affinity change has occurred on iCount
-** registers starting with iStart.
-*/
-void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
-  sqlite3ExprCacheRemove(pParse, iStart, iCount);
 }
 
 /*
 ** Generate code to move content from registers iFrom...iFrom+nReg-1
-** over to iTo..iTo+nReg-1. Keep the column cache up-to-date.
+** over to iTo..iTo+nReg-1.
 */
 void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
   assert( iFrom>=iTo+nReg || iFrom+nReg<=iTo );
   sqlite3VdbeAddOp3(pParse->pVdbe, OP_Move, iFrom, iTo, nReg);
-  sqlite3ExprCacheRemove(pParse, iFrom, nReg);
 }
-
-#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
-/*
-** Return true if any register in the range iFrom..iTo (inclusive)
-** is used as part of the column cache.
-**
-** This routine is used within assert() and testcase() macros only
-** and does not appear in a normal build.
-*/
-static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
-  int i;
-  struct yColCache *p;
-  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
-    int r = p->iReg;
-    if( r>=iFrom && r<=iTo ) return 1;    /*NO_TEST*/
-  }
-  return 0;
-}
-#endif /* SQLITE_DEBUG || SQLITE_COVERAGE_TEST */
-
 
 /*
 ** Convert a scalar expression node to a TK_REGISTER referencing
@@ -3683,8 +3449,6 @@ expr_code_doover:
       }
       sqlite3VdbeAddOp2(v, OP_Cast, target,
                         sqlite3AffinityType(pExpr->u.zToken, 0));
-      testcase( usedAsColumnCache(pParse, inReg, inReg) );
-      sqlite3ExprCacheAffinityChange(pParse, inReg, 1);
       return inReg;
     }
 #endif /* SQLITE_OMIT_CAST */
@@ -3870,10 +3634,7 @@ expr_code_doover:
         for(i=1; i<nFarg; i++){
           sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
           VdbeCoverage(v);
-          sqlite3ExprCacheRemove(pParse, target, 1);
-          sqlite3ExprCachePush(pParse);
           sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
-          sqlite3ExprCachePop(pParse);
         }
         sqlite3VdbeResolveLabel(v, endCoalesce);
         break;
@@ -3939,10 +3700,8 @@ expr_code_doover:
           }
         }
 
-        sqlite3ExprCachePush(pParse);     /* Ticket 2ea2425d34be */
         sqlite3ExprCodeExprList(pParse, pFarg, r1, 0,
                                 SQLITE_ECEL_DUP|SQLITE_ECEL_FACTOR);
-        sqlite3ExprCachePop(pParse);      /* Ticket 2ea2425d34be */
       }else{
         r1 = 0;
       }
@@ -4115,9 +3874,7 @@ expr_code_doover:
     case TK_IF_NULL_ROW: {
       int addrINR;
       addrINR = sqlite3VdbeAddOp1(v, OP_IfNullRow, pExpr->iTable);
-      sqlite3ExprCachePush(pParse);
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-      sqlite3ExprCachePop(pParse);
       sqlite3VdbeJumpHere(v, addrINR);
       sqlite3VdbeChangeP3(v, addrINR, inReg);
       break;
@@ -4154,7 +3911,6 @@ expr_code_doover:
       Expr opCompare;                   /* The X==Ei expression */
       Expr *pX;                         /* The X expression */
       Expr *pTest = 0;                  /* X==Ei (form A) or just Ei (form B) */
-      VVA_ONLY( int iCacheLevel = pParse->iCacheLevel; )
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) && pExpr->x.pList );
       assert(pExpr->x.pList->nExpr > 0);
@@ -4178,7 +3934,6 @@ expr_code_doover:
         regFree1 = 0;
       }
       for(i=0; i<nExpr-1; i=i+2){
-        sqlite3ExprCachePush(pParse);
         if( pX ){
           assert( pTest!=0 );
           opCompare.pRight = aListelem[i].pExpr;
@@ -4191,18 +3946,13 @@ expr_code_doover:
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeGoto(v, endLabel);
-        sqlite3ExprCachePop(pParse);
         sqlite3VdbeResolveLabel(v, nextCase);
       }
       if( (nExpr&1)!=0 ){
-        sqlite3ExprCachePush(pParse);
         sqlite3ExprCode(pParse, pEList->a[nExpr-1].pExpr, target);
-        sqlite3ExprCachePop(pParse);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       }
-      assert( pParse->db->mallocFailed || pParse->nErr>0 
-           || pParse->iCacheLevel==iCacheLevel );
       sqlite3VdbeResolveLabel(v, endLabel);
       break;
     }
@@ -4562,18 +4312,14 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       int d2 = sqlite3VdbeMakeLabel(v);
       testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, d2,jumpIfNull^SQLITE_JUMPIFNULL);
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
-      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_OR: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
-      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_NOT: {
@@ -4732,19 +4478,15 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_AND: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
-      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_OR: {
       int d2 = sqlite3VdbeMakeLabel(v);
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, d2, jumpIfNull^SQLITE_JUMPIFNULL);
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
-      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_NOT: {
@@ -5512,21 +5254,9 @@ int sqlite3GetTempReg(Parse *pParse){
 /*
 ** Deallocate a register, making available for reuse for some other
 ** purpose.
-**
-** If a register is currently being used by the column cache, then
-** the deallocation is deferred until the column cache line that uses
-** the register becomes stale.
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-    int i;
-    struct yColCache *p;
-    for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
-      if( p->iReg==iReg ){
-        p->tempReg = 1;
-        return;
-      }
-    }
     pParse->aTempReg[pParse->nTempReg++] = iReg;
   }
 }
@@ -5540,7 +5270,6 @@ int sqlite3GetTempRange(Parse *pParse, int nReg){
   i = pParse->iRangeReg;
   n = pParse->nRangeReg;
   if( nReg<=n ){
-    assert( !usedAsColumnCache(pParse, i, i+n-1) );
     pParse->iRangeReg += nReg;
     pParse->nRangeReg -= nReg;
   }else{
@@ -5554,7 +5283,6 @@ void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
     sqlite3ReleaseTempReg(pParse, iReg);
     return;
   }
-  sqlite3ExprCacheRemove(pParse, iReg, nReg);
   if( nReg>pParse->nRangeReg ){
     pParse->nRangeReg = nReg;
     pParse->iRangeReg = iReg;
