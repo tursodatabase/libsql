@@ -1558,7 +1558,7 @@ struct sqlite3 {
 ** selectively disable various optimizations.
 */
 #define SQLITE_QueryFlattener 0x0001   /* Query flattening */
-#define SQLITE_ColumnCache    0x0002   /* Column cache */
+                          /*  0x0002   available for reuse */
 #define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
 #define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
 #define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */
@@ -2956,13 +2956,6 @@ struct AutoincInfo {
   int iDb;              /* Index in sqlite3.aDb[] of database holding pTab */
   int regCtr;           /* Memory register holding the rowid counter */
 };
-
-/*
-** Size of the column cache
-*/
-#ifndef SQLITE_N_COLCACHE
-# define SQLITE_N_COLCACHE 10
-#endif
 
 /*
 ** At least one instance of the following structure is created for each

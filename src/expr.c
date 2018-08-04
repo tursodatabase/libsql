@@ -3262,7 +3262,7 @@ int sqlite3ExprCodeGetColumn(
 
 /*
 ** Generate code to move content from registers iFrom...iFrom+nReg-1
-** over to iTo..iTo+nReg-1. Keep the column cache up-to-date.
+** over to iTo..iTo+nReg-1.
 */
 void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
   assert( iFrom>=iTo+nReg || iFrom+nReg<=iTo );
@@ -5252,10 +5252,6 @@ int sqlite3GetTempReg(Parse *pParse){
 /*
 ** Deallocate a register, making available for reuse for some other
 ** purpose.
-**
-** If a register is currently being used by the column cache, then
-** the deallocation is deferred until the column cache line that uses
-** the register becomes stale.
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){

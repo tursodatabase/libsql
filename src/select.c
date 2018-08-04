@@ -5334,17 +5334,6 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
       sqlite3VdbeResolveLabel(v, addrNext);
     }
   }
-
-  /* Before populating the accumulator registers, clear the column cache.
-  ** Otherwise, if any of the required column values are already present 
-  ** in registers, sqlite3ExprCode() may use OP_SCopy to copy the value
-  ** to pC->iMem. But by the time the value is used, the original register
-  ** may have been used, invalidating the underlying buffer holding the
-  ** text or blob value. See ticket [883034dcb5].
-  **
-  ** Another solution would be to change the OP_SCopy used to copy cached
-  ** values to an OP_Copy.
-  */
   if( regHit==0 && pAggInfo->nAccumulator ){
     regHit = regAcc;
   }
