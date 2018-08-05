@@ -93,6 +93,7 @@ mod test {
     }
 
     #[test]
+    #[ignore] // FIXME: unstable
     fn test_busy_timeout() {
         let temp_dir = TempDir::new("test_busy_timeout").unwrap();
         let path = temp_dir.path().join("test.db3");
@@ -121,6 +122,7 @@ mod test {
     }
 
     #[test]
+    #[ignore] // FIXME: unstable
     fn test_busy_handler() {
         lazy_static! {
             static ref CALLED: AtomicBool = AtomicBool::new(false);
