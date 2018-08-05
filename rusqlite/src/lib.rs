@@ -80,10 +80,8 @@ use raw_statement::RawStatement;
 use cache::StatementCache;
 
 pub use statement::Statement;
-use statement::StatementCrateImpl;
 
 pub use row::{Row, Rows, MappedRows, AndThenRows, RowIndex};
-use row::RowsCrateImpl;
 
 #[allow(deprecated)]
 pub use transaction::{SqliteTransaction, SqliteTransactionBehavior};
@@ -997,6 +995,7 @@ mod test {
 
     #[test]
     fn test_concurrent_transactions_busy_commit() {
+        use std::time::Duration;
         let tmp = TempDir::new("locked").unwrap();
         let path = tmp.path().join("transactions.db3");
 
@@ -1008,8 +1007,8 @@ mod test {
         let mut db1 = Connection::open(&path).unwrap();
         let mut db2 = Connection::open(&path).unwrap();
 
-        db1.execute_batch("PRAGMA busy_timeout = 0;").unwrap();
-        db2.execute_batch("PRAGMA busy_timeout = 0;").unwrap();
+        db1.busy_timeout(Duration::from_millis(0)).unwrap();
+        db2.busy_timeout(Duration::from_millis(0)).unwrap();
 
         {
             let tx1 = db1.transaction().unwrap();

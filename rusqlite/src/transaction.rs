@@ -61,7 +61,6 @@ pub type SqliteTransaction<'conn> = Transaction<'conn>;
 pub struct Transaction<'conn> {
     conn: &'conn Connection,
     drop_behavior: DropBehavior,
-    committed: bool,
 }
 
 /// Represents a savepoint on a database connection.
@@ -111,7 +110,6 @@ impl<'conn> Transaction<'conn> {
                      Transaction {
                          conn,
                          drop_behavior: DropBehavior::Rollback,
-                         committed: false,
                      }
                  })
     }
@@ -168,7 +166,6 @@ impl<'conn> Transaction<'conn> {
 
     fn commit_(&mut self) -> Result<()> {
         self.conn.execute_batch("COMMIT")?;
-        self.committed = true;
         Ok(())
     }
 
@@ -179,7 +176,6 @@ impl<'conn> Transaction<'conn> {
 
     fn rollback_(&mut self) -> Result<()> {
         self.conn.execute_batch("ROLLBACK")?;
-        self.committed = true;
         Ok(())
     }
 
@@ -193,7 +189,7 @@ impl<'conn> Transaction<'conn> {
     }
 
     fn finish_(&mut self) -> Result<()> {
-        if self.committed {
+        if self.conn.is_autocommit() {
             return Ok(());
         }
         match self.drop_behavior() {

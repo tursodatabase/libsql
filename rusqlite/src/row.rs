@@ -3,7 +3,6 @@ use std::marker::PhantomData;
 
 use super::{Statement, Error, Result};
 use types::{FromSql, FromSqlError};
-use statement::StatementCrateImpl;
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
@@ -49,19 +48,12 @@ impl<'stmt> Rows<'stmt> {
     }
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some methods. Remove this
-// once pub(crate) is stable.
-pub trait RowsCrateImpl<'stmt> {
-    fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt>;
-    fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>>;
-}
-
-impl<'stmt> RowsCrateImpl<'stmt> for Rows<'stmt> {
-    fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
+impl<'stmt> Rows<'stmt> {
+    pub(crate) fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows { stmt: Some(stmt) }
     }
 
-    fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
+    pub(crate) fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
         match self.next() {
             Some(row) => row,
             None => Err(Error::QueryReturnedNoRows),
@@ -81,16 +73,10 @@ pub struct MappedRows<'stmt, F> {
     map: F,
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some methods. Remove this
-// once pub(crate) is stable.
-pub trait MappedRowsCrateImpl<'stmt, T, F> {
-    fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F>;
-}
-
-impl<'stmt, T, F> MappedRowsCrateImpl<'stmt, T, F> for MappedRows<'stmt, F>
+impl<'stmt, T, F> MappedRows<'stmt, F>
     where F: FnMut(&Row) -> T
 {
-    fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
+    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
         MappedRows { rows, map: f }
     }
 }
@@ -115,16 +101,10 @@ pub struct AndThenRows<'stmt, F> {
     map: F,
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some methods. Remove this
-// once pub(crate) is stable.
-pub trait AndThenRowsCrateImpl<'stmt, T, E, F> {
-    fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F>;
-}
-
-impl<'stmt, T, E, F> AndThenRowsCrateImpl<'stmt, T, E, F> for AndThenRows<'stmt, F>
+impl<'stmt, T, E, F> AndThenRows<'stmt, F>
     where F: FnMut(&Row) -> result::Result<T, E>
 {
-    fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
+    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
         AndThenRows { rows, map: f }
     }
 }
