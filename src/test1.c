@@ -2393,6 +2393,8 @@ static int SQLITE_TCLAPI test_snapshot_open(
   if( rc!=SQLITE_OK ){
     Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
+  }else{
+    Tcl_ResetResult(interp);
   }
   return TCL_OK;
 }

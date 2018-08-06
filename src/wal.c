@@ -3769,6 +3769,43 @@ int sqlite3_snapshot_cmp(sqlite3_snapshot *p1, sqlite3_snapshot *p2){
   if( pHdr1->mxFrame>pHdr2->mxFrame ) return +1;
   return 0;
 }
+
+/*
+** The caller currently has a read transaction open on the database.
+** This function takes a SHARED lock on the CHECKPOINTER slot and then
+** checks if the snapshot passed as the second argument is still 
+** available. If so, SQLITE_OK is returned.
+**
+** If the snapshot is not available, SQLITE_ERROR is returned. Or, if
+** the CHECKPOINTER lock cannot be obtained, SQLITE_BUSY. If any error
+** occurs (any value other than SQLITE_OK is returned), the CHECKPOINTER
+** lock is released before returning.
+*/
+int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot){
+  int rc;
+  rc = walLockShared(pWal, WAL_CKPT_LOCK);
+  if( rc==SQLITE_OK ){
+    WalIndexHdr *pNew = (WalIndexHdr*)pSnapshot;
+    if( memcmp(pNew->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))
+     || pNew->mxFrame<walCkptInfo(pWal)->nBackfillAttempted
+    ){
+      rc = SQLITE_BUSY_SNAPSHOT;
+      walUnlockShared(pWal, WAL_CKPT_LOCK);
+    }
+  }
+  return rc;
+}
+
+/*
+** Release a lock obtained by an earlier successful call to
+** sqlite3WalSnapshotCheck().
+*/
+void sqlite3WalSnapshotUnlock(Wal *pWal){
+  assert( pWal );
+  walUnlockShared(pWal, WAL_CKPT_LOCK);
+}
+
+
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

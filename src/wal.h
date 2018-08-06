@@ -132,6 +132,8 @@ int sqlite3WalHeapMemory(Wal *pWal);
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
 void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);
 int sqlite3WalSnapshotRecover(Wal *pWal);
+int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot);
+void sqlite3WalSnapshotUnlock(Wal *pWal);
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
