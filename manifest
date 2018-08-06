@@ -1,5 +1,5 @@
-C Fix\san\soverzealous\sassert()\sstatement\sdiscovered\sby\sOSSFuzz.
-D 2018-08-06T01:21:53.563
+C Add\sthe\s--info\soption\sto\sthe\sfuzzcheck\stest\sutility.
+D 2018-08-06T01:39:31.617
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -950,9 +950,9 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c31
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 5b257a7652d8ee90b22e9cf80d9dbea31a4f3e6fed1d33de57b24b1bdb211d79
-F test/fuzzcheck.c 3885207dc217c4dcdb2de4a3cb169a263afeef51ab9bd0ba8567289f0a19a470
+F test/fuzzcheck.c 8074a35ed4ec3735a5e144b7e0e9123d9821a92281756c1a40d43e302dd79243
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
-F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
+F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
 F test/fuzzdata5.db 5e8394be0245224340c26fc592746dd560479b0dcb12d4b43edf2c612848e748
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cdff3af7bedc5ebea04bd9b5e2112d3db451a475c18c9a9ebd45f6f3a89a43cb
-R 6e44cb0e82bbab33cfe6ecf882309ef6
+P d9c9fe9f5ad3fc9123ad29ebafcb7f40dcecd448fb7a928bb31bea8181d81ec1
+R cf4929d6e11c98e78cbb0fcf83b76d5c
 U drh
-Z f0dc4a845ad041547ed953532f8f84f9
+Z 9a0757ff0ae714f2c7ead44f5087933f

@@ -806,7 +806,7 @@ static void showHelp(void){
 "  --export-db DIR      Write databases to files(s) in DIR. Works with --dbid\n"
 "  --export-sql DIR     Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help               Show this help text\n"
-"  -q|--quiet           Reduced output\n"
+"  --info               Show information about SOURCE-DB w/o running tests\n"
 "  --limit-mem N        Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe         Panic if any test runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...   Load SQL scripts fron files into SOURCE-DB\n"
@@ -816,6 +816,7 @@ static void showHelp(void){
 "  --native-malloc      Turn off MEMSYS3/5 and Lookaside\n"
 "  --oss-fuzz           Enable OSS-FUZZ testing\n"
 "  --prng-seed N        Seed value for the PRGN inside of SQLite\n"
+"  -q|--quiet           Reduced output\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
 "  --sqlid N            Use only SQL where sqlid=N\n"
@@ -841,6 +842,7 @@ int main(int argc, char **argv){
   int nativeFlag = 0;          /* --native-vfs */
   int rebuildFlag = 0;         /* --rebuild */
   int vdbeLimitFlag = 0;       /* --limit-vdbe */
+  int infoFlag = 0;            /* --info */
   int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
   char *zMsg = 0;              /* Add this message */
@@ -896,6 +898,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
+      }else
+      if( strcmp(z,"info")==0 ){
+        infoFlag = 1;
       }else
       if( strcmp(z,"limit-mem")==0 ){
 #if !defined(SQLITE_ENABLE_MEMSYS3) && !defined(SQLITE_ENABLE_MEMSYS5)
@@ -996,6 +1001,42 @@ int main(int argc, char **argv){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
     }
+
+    /* Print the description, if there is one */
+    if( infoFlag ){
+      int n;
+      zDbName = azSrcDb[iSrcDb];
+      i = (int)strlen(zDbName) - 1;
+      while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
+      zDbName += i;
+      sqlite3_prepare_v2(db, "SELECT msg FROM readme", -1, &pStmt, 0);
+      if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
+        printf("%s: %s", zDbName, sqlite3_column_text(pStmt,0));
+      }else{
+        printf("%s: (empty \"readme\")", zDbName);
+      }
+      sqlite3_finalize(pStmt);
+      sqlite3_prepare_v2(db, "SELECT count(*) FROM db", -1, &pStmt, 0);
+      if( pStmt
+       && sqlite3_step(pStmt)==SQLITE_ROW
+       && (n = sqlite3_column_int(pStmt,0))>0
+      ){
+        printf(" - %d DBs", n);
+      }
+      sqlite3_finalize(pStmt);
+      sqlite3_prepare_v2(db, "SELECT count(*) FROM xsql", -1, &pStmt, 0);
+      if( pStmt
+       && sqlite3_step(pStmt)==SQLITE_ROW
+       && (n = sqlite3_column_int(pStmt,0))>0
+      ){
+        printf(" - %d scripts", n);
+      }
+      sqlite3_finalize(pStmt);
+      printf("\n");
+      sqlite3_close(db);
+      continue;
+    }
+
     rc = sqlite3_exec(db,
        "CREATE TABLE IF NOT EXISTS db(\n"
        "  dbid INTEGER PRIMARY KEY, -- database id\n"
