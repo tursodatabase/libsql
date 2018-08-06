@@ -1,5 +1,5 @@
-C Add\sthe\s--info\soption\sto\sthe\sfuzzcheck\stest\sutility.
-D 2018-08-06T01:39:31.617
+C Enhance\sthe\sedit()\sfunction\sso\sthat\sit\sconverts\stext\sfrom\s\\r\\n\sback\sinto\s\\n\nonly\sif\sthe\soriginal\sunedited\scopy\scontained\sno\s\\r\\n\svalues.
+D 2018-08-06T02:08:53.886
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -499,7 +499,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 797088662ed61102485e3070ba3b3f7828bd5ef6a588223ba6865d77d52f6cea
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ae7396a314cc1bb1d767947cd57094e3a9ffcbb155ebc1b1c391e028c44a9a04
-F src/shell.c.in 5e4c139799f059a5231f0259111f51f6dffcb28154c535f6b4c2192619a40844
+F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
 F src/sqlite.h.in c6451bb876adced3aba5b1682c6317d215c5eceaba21a6ce979e71a0b8d0bf95
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9c9fe9f5ad3fc9123ad29ebafcb7f40dcecd448fb7a928bb31bea8181d81ec1
-R cf4929d6e11c98e78cbb0fcf83b76d5c
+P 1caaaaa70f21fe71fbe0af227eea8d1367870e2575eedf248cc2a0b515783390
+R 599391bf767ca60a524e57a614c06c9d
 U drh
-Z 9a0757ff0ae714f2c7ead44f5087933f
+Z e1c623c52da1d23ca607e4f314a88bce
