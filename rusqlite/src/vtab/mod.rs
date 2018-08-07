@@ -459,7 +459,7 @@ impl<'a> Values<'a> {
     // `sqlite3_value_type` returns `SQLITE_NULL` for pointer.
     // So it seems not possible to enhance `ValueRef::from_value`.
     #[cfg(feature = "array")]
-    pub fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
+    pub(crate) fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
         use types::Value;
         let arg = self.args[idx];
         let ptr = unsafe { ffi::sqlite3_value_pointer(arg, array::ARRAY_TYPE) };
@@ -467,7 +467,10 @@ impl<'a> Values<'a> {
             Ok(None)
         } else {
             Ok(Some(unsafe {
-                array::Array::from_raw(ptr as *const Vec<Value>)
+                let rc = array::Array::from_raw(ptr as *const Vec<Value>);
+                let array = rc.clone();
+                array::Array::into_raw(rc); // don't consume it
+                array
             }))
         }
     }

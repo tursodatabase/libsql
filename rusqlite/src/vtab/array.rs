@@ -170,7 +170,6 @@ mod test {
     use Connection;
 
     #[test]
-    #[ignore] // cargo test --lib --features "array" -- --ignored
     fn test_array_module() {
         let db = Connection::open_in_memory().unwrap();
         array::load_module(&db).unwrap();
