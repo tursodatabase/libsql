@@ -1835,7 +1835,6 @@ static int walCheckpoint(
     if( pIter
      && (rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(0),1))==SQLITE_OK
     ){
-      i64 nSize;                    /* Current size of database file */
       u32 nBackfill = pInfo->nBackfill;
 
       pInfo->nBackfillAttempted = mxSafeFrame;
@@ -1848,6 +1847,7 @@ static int walCheckpoint(
       */
       if( rc==SQLITE_OK ){
         i64 nReq = ((i64)mxPage * szPage);
+        i64 nSize;                    /* Current size of database file */
         rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
         if( rc==SQLITE_OK && nSize<nReq ){
           sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
