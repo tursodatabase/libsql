@@ -1,0 +1,97 @@
+# 2009 February 2
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing that SQLite can handle a subtle 
+# file format change that may be used in the future to implement
+# "ALTER TABLE ... RENAME COLUMN ... TO".
+#
+# $Id: alter4.test,v 1.1 2009/02/02 18:03:22 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix altercol
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+foreach {tn before after} {
+  1 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB)}
+    {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB)}
+
+  2 {CREATE TABLE t1(a INTEGER, x TEXT, "b" BLOB)}
+    {CREATE TABLE t1(a INTEGER, x TEXT, "d" BLOB)}
+
+  3 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB, CHECK(b!=''))}
+    {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB, CHECK(d!=''))}
+
+  4 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB, CHECK(t1.b!=''))}
+    {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB, CHECK(t1.d!=''))}
+
+  5 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB, CHECK( coalesce(b,c) ))}
+    {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB, CHECK( coalesce(d,c) ))}
+
+  6 {CREATE TABLE t1(a INTEGER, "b"TEXT, c BLOB, CHECK( coalesce(b,c) ))}
+    {CREATE TABLE t1(a INTEGER, "d"TEXT, c BLOB, CHECK( coalesce(d,c) ))}
+
+  7 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB, PRIMARY KEY(b, c))}
+    {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB, PRIMARY KEY(d, c))}
+
+  8 {CREATE TABLE t1(a INTEGER, b TEXT PRIMARY KEY, c BLOB)}
+    {CREATE TABLE t1(a INTEGER, d TEXT PRIMARY KEY, c BLOB)}
+
+  9 {CREATE TABLE t1(a, b TEXT, c, PRIMARY KEY(a, b), UNIQUE("B"))}
+    {CREATE TABLE t1(a, d TEXT, c, PRIMARY KEY(a, d), UNIQUE("d"))}
+
+ 10 {CREATE TABLE t1(a, b, c);   CREATE INDEX t1i ON t1(a, c)}
+    {{CREATE TABLE t1(a, d, c)} {CREATE INDEX t1i ON t1(a, c)}}
+
+ 11 {CREATE TABLE t1(a, b, c);   CREATE INDEX t1i ON t1(b, c)}
+    {{CREATE TABLE t1(a, d, c)} {CREATE INDEX t1i ON t1(d, c)}}
+
+ 12 {CREATE TABLE t1(a, b, c);   CREATE INDEX t1i ON t1(b+b+b+b, c) WHERE b>0}
+    {{CREATE TABLE t1(a, d, c)} {CREATE INDEX t1i ON t1(d+d+d+d, c) WHERE d>0}}
+
+ 13 {CREATE TABLE t1(a, b, c, FOREIGN KEY (b) REFERENCES t2)}
+    {CREATE TABLE t1(a, d, c, FOREIGN KEY (d) REFERENCES t2)}
+
+} {
+  reset_db
+  do_execsql_test 1.$tn.0 $before
+
+  do_execsql_test 1.$tn.1 {
+    INSERT INTO t1 VALUES(1, 2, 3);
+  }
+
+  do_execsql_test 1.$tn.2 {
+    ALTER TABLE t1 RENAME COLUMN b TO d;
+  }
+
+  do_execsql_test 1.$tn.3 {
+    SELECT * FROM t1;
+  } {1 2 3}
+
+  if {[string first INDEX $before]>0} {
+    set res $after
+  } else {
+    set res [list $after]
+  }
+  do_execsql_test 1.$tn.4 {
+    SELECT sql FROM sqlite_master WHERE tbl_name='t1' AND sql!=''
+  } $res
+}
+
+finish_test
+
+

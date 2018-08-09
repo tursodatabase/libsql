@@ -940,6 +940,7 @@ idlist(A) ::= nm(Y).
         if( p->u.zToken[0]=='"' ) p->flags |= EP_DblQuoted;
         sqlite3Dequote(p->u.zToken);
       }
+      if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)p, &t);
 #if SQLITE_MAX_EXPR_DEPTH>0
       p->nHeight = 1;
 #endif  
@@ -955,6 +956,7 @@ expr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
+  if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)temp2, &Y);
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
 }
 expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
@@ -962,6 +964,7 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
+  if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)temp3, &Z);
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
@@ -1308,6 +1311,9 @@ uniqueflag(A) ::= .        {A = OE_None;}
                          pIdToken->n, pIdToken->z);
     }
     sqlite3ExprListSetName(pParse, p, pIdToken, 1);
+    if( IN_RENAME_COLUMN ){
+      sqlite3RenameToken(pParse, (void*)&(p->a[p->nExpr-1]), pIdToken);
+    }
     return p;
   }
 } // end %include
@@ -1532,8 +1538,13 @@ add_column_fullname ::= fullname(X). {
   disableLookaside(pParse);
   sqlite3AlterBeginAddColumn(pParse, X);
 }
+cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
+  sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
+}
+
 kwcolumn_opt ::= .
 kwcolumn_opt ::= COLUMNKW.
+
 %endif  SQLITE_OMIT_ALTERTABLE
 
 //////////////////////// CREATE VIRTUAL TABLE ... /////////////////////////////

@@ -226,22 +226,6 @@ static void renameTriggerFunc(
 #endif   /* !SQLITE_OMIT_TRIGGER */
 
 /*
-** Register built-in functions used to help implement ALTER TABLE
-*/
-void sqlite3AlterFunctions(void){
-  static FuncDef aAlterTableFuncs[] = {
-    FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
-#ifndef SQLITE_OMIT_TRIGGER
-    FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
-#endif
-#ifndef SQLITE_OMIT_FOREIGN_KEY
-    FUNCTION(sqlite_rename_parent,  3, 0, 0, renameParentFunc),
-#endif
-  };
-  sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
-}
-
-/*
 ** This function is used to create the text of expressions of the form:
 **
 **   name=<constant1> OR name=<constant2> OR ...
@@ -804,5 +788,307 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
 exit_begin_add_column:
   sqlite3SrcListDelete(db, pSrc);
   return;
+}
+
+void sqlite3AlterRenameColumn(
+  Parse *pParse, 
+  SrcList *pSrc, 
+  Token *pOld, 
+  Token *pNew
+){
+  sqlite3 *db = pParse->db;
+  Table *pTab;                    /* Table being updated */
+  int iCol;                       /* Index of column being renamed */
+  char *zOld = 0;
+  char *zNew = 0;
+  const char *zDb;
+  int iSchema;
+
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  if( !pTab ) goto exit_rename_column;
+  iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iSchema>=0 );
+  zDb = db->aDb[iSchema].zDbSName;
+
+  zOld = sqlite3NameFromToken(db, pOld);
+  if( !zOld ) goto exit_rename_column;
+  for(iCol=0; iCol<pTab->nCol; iCol++){
+    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zName, zOld) ) break;
+  }
+  if( iCol==pTab->nCol ){
+    sqlite3ErrorMsg(pParse, "no such column: \"%s\"", zOld);
+    goto exit_rename_column;
+  }
+
+  zNew = sqlite3NameFromToken(db, pNew);
+  if( !zNew ) goto exit_rename_column;
+
+  sqlite3NestedParse(pParse, 
+      "UPDATE \"%w\".%s SET "
+      "sql = sqlite_rename_column(sql, %d, %Q) "
+      "WHERE type IN ('table', 'index') AND tbl_name = %Q AND sql!=''",
+      zDb, MASTER_NAME, iCol, zNew, pTab->zName
+  );
+
+  /* Drop and reload the internal table schema. */
+  reloadTableSchema(pParse, pTab, pTab->zName);
+
+ exit_rename_column:
+  sqlite3SrcListDelete(db, pSrc);
+  sqlite3DbFree(db, zOld);
+  sqlite3DbFree(db, zNew);
+  return;
+}
+
+struct RenameToken {
+  void *p;
+  Token t;
+  RenameToken *pNext;
+};
+
+struct RenameCtx {
+  RenameToken *pList;             /* List of tokens to overwrite */
+  int nList;                      /* Number of tokens in pList */
+  int iCol;                       /* Index of column being renamed */
+};
+
+void sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
+  RenameToken *pNew;
+  pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
+  if( pNew ){
+    pNew->p = pPtr;
+    pNew->t = *pToken;
+    pNew->pNext = pParse->pRename;
+    pParse->pRename = pNew;
+  }
+}
+
+void sqlite3MoveRenameToken(Parse *pParse, void *pTo, void *pFrom){
+  RenameToken *p;
+  for(p=pParse->pRename; p; p=p->pNext){
+    if( p->p==pFrom ){
+      p->p = pTo;
+      break;
+    }
+  }
+  assert( p );
+}
+
+static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
+  RenameToken *pNext;
+  RenameToken *p;
+  for(p=pToken; p; p=pNext){
+    pNext = p->pNext;
+    sqlite3DbFree(db, p);
+  }
+}
+
+static RenameToken *renameTokenFind(Parse *pParse, void *pPtr){
+  RenameToken **pp;
+  for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
+    if( (*pp)->p==pPtr ){
+      RenameToken *pToken = *pp;
+      *pp = pToken->pNext;
+      pToken->pNext = 0;
+      return pToken;
+    }
+  }
+  return 0;
+}
+
+static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
+  struct RenameCtx *p = pWalker->u.pRename;
+  if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol ){
+    RenameToken *pTok = renameTokenFind(pWalker->pParse, (void*)pExpr);
+    if( pTok ){
+      pTok->pNext = p->pList;
+      p->pList = pTok;
+      p->nList++;
+    }
+  }
+  return WRC_Continue;
+}
+
+static RenameToken *renameColumnTokenNext(struct RenameCtx *pCtx){
+  RenameToken *pBest = pCtx->pList;
+  RenameToken *pToken;
+  RenameToken **pp;
+
+  for(pToken=pBest->pNext; pToken; pToken=pToken->pNext){
+    if( pToken->t.z>pBest->t.z ) pBest = pToken;
+  }
+  for(pp=&pCtx->pList; *pp!=pBest; pp=&(*pp)->pNext);
+  *pp = pBest->pNext;
+
+  return pBest;
+}
+
+static void renameColumnFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  struct RenameCtx sCtx;
+  const char *zSql = sqlite3_value_text(argv[0]);
+  int nSql = sqlite3_value_bytes(argv[0]);
+  const char *zNew = sqlite3_value_text(argv[2]);
+  int nNew = sqlite3_value_bytes(argv[2]);
+  int rc;
+  char *zErr = 0;
+  Parse sParse;
+  Walker sWalker;
+  Table *pTab;
+  Index *pIdx;
+  char *zOut = 0;
+
+  char *zQuot = 0;                /* Quoted version of zNew */
+  int nQuot = 0;                  /* Length of zQuot in bytes */
+  int i;
+
+  memset(&sCtx, 0, sizeof(sCtx));
+  sCtx.iCol = sqlite3_value_int(argv[1]);
+
+  memset(&sParse, 0, sizeof(sParse));
+  sParse.eParseMode = PARSE_MODE_RENAME_COLUMN;
+  sParse.db = db;
+  sParse.nQueryLoop = 1;
+  rc = sqlite3RunParser(&sParse, zSql, &zErr);
+  assert( sParse.pNewTable==0 || sParse.pNewIndex==0 );
+  if( rc==SQLITE_OK && sParse.pNewTable==0 && sParse.pNewIndex==0 ){
+    rc = SQLITE_CORRUPT_BKPT;
+  }
+
+  if( rc==SQLITE_OK ){
+    zQuot = sqlite3_mprintf("\"%w\"", zNew);
+    if( zQuot==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      nQuot = sqlite3Strlen30(zQuot);
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    if( zErr ){
+      sqlite3_result_error(context, zErr, -1);
+    }else{
+      sqlite3_result_error_code(context, rc);
+    }
+    sqlite3DbFree(db, zErr);
+    sqlite3_free(zQuot);
+    return;
+  }
+
+  for(i=0; i<nNew; i++){
+    if( sqlite3IsIdChar(zNew[i])==0 ){
+      zNew = zQuot;
+      nNew = nQuot;
+      break;
+    }
+  }
+
+#ifdef SQLITE_DEBUG
+  assert( sqlite3Strlen30(zSql)==nSql );
+  {
+    RenameToken *pToken;
+    for(pToken=sParse.pRename; pToken; pToken=pToken->pNext){
+      assert( pToken->t.z>=zSql && &pToken->t.z[pToken->t.n]<=&zSql[nSql] );
+    }
+  }
+#endif
+
+  /* Find tokens that need to be replaced. */
+  memset(&sWalker, 0, sizeof(Walker));
+  sWalker.pParse = &sParse;
+  sWalker.xExprCallback = renameColumnExprCb;
+  sWalker.u.pRename = &sCtx;
+
+  if( sParse.pNewTable ){
+    FKey *pFKey;
+    sCtx.pList = renameTokenFind(
+        &sParse, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
+    );
+    sCtx.nList = 1;
+    sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
+    for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
+      sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+    }
+
+    for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      for(i=0; i<pFKey->nCol; i++){
+        if( pFKey->aCol[i].iFrom==sCtx.iCol ){
+          RenameToken *pTok = renameTokenFind(&sParse, (void*)&pFKey->aCol[i]);
+          if( pTok ){
+            pTok->pNext = sCtx.pList;
+            sCtx.pList = pTok;
+            sCtx.nList++;
+          }
+        }
+      }
+    }
+  }else{
+    sqlite3WalkExprList(&sWalker, sParse.pNewIndex->aColExpr);
+    sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
+  }
+
+  zOut = sqlite3DbMallocZero(db, nSql + sCtx.nList*nNew + 1);
+  if( zOut ){
+    int nOut = nSql;
+    memcpy(zOut, zSql, nSql);
+    while( sCtx.pList ){
+      int iOff;                   /* Offset of token to replace in zOut */
+      RenameToken *pBest = renameColumnTokenNext(&sCtx);
+
+      int nReplace;
+      const char *zReplace;
+      if( sqlite3IsIdChar(*pBest->t.z) ){
+        nReplace = nNew;
+        zReplace = zNew;
+      }else{
+        nReplace = nQuot;
+        zReplace = zQuot;
+      }
+
+      iOff = pBest->t.z - zSql;
+      if( pBest->t.n!=nReplace ){
+        memmove(&zOut[iOff + nReplace], &zOut[iOff + pBest->t.n], 
+            nOut - (iOff + pBest->t.n)
+        );
+        nOut += nReplace - pBest->t.n;
+        zOut[nOut] = '\0';
+      }
+      memcpy(&zOut[iOff], zReplace, nReplace);
+      sqlite3DbFree(db, pBest);
+    }
+
+    sqlite3_result_text(context, zOut, -1, SQLITE_TRANSIENT);
+    sqlite3DbFree(db, zOut);
+  }
+
+  if( sParse.pVdbe ){
+    sqlite3VdbeFinalize(sParse.pVdbe);
+  }
+  sqlite3DeleteTable(db, sParse.pNewTable);
+  if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
+  renameTokenFree(db, sParse.pRename);
+  sqlite3ParserReset(&sParse);
+  sqlite3_free(zQuot);
+}
+
+/*
+** Register built-in functions used to help implement ALTER TABLE
+*/
+void sqlite3AlterFunctions(void){
+  static FuncDef aAlterTableFuncs[] = {
+    FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
+    FUNCTION(sqlite_rename_column,   3, 0, 0, renameColumnFunc),
+#ifndef SQLITE_OMIT_TRIGGER
+    FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
+#endif
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+    FUNCTION(sqlite_rename_parent,  3, 0, 0, renameParentFunc),
+#endif
+  };
+  sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
 #endif  /* SQLITE_ALTER_TABLE */

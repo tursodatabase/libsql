@@ -439,7 +439,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 /*
 ** Reclaim the memory used by an index
 */
-static void freeIndex(sqlite3 *db, Index *p){
+void sqlite3FreeIndex(sqlite3 *db, Index *p){
 #ifndef SQLITE_OMIT_ANALYZE
   sqlite3DeleteIndexSamples(db, p);
 #endif
@@ -479,7 +479,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
         p->pNext = pIndex->pNext;
       }
     }
-    freeIndex(db, pIndex);
+    sqlite3FreeIndex(db, pIndex);
   }
   db->mDbFlags |= DBFLAG_SchemaChange;
 }
@@ -625,7 +625,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
       assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
       assert( pOld==pIndex || pOld==0 );
     }
-    freeIndex(db, pIndex);
+    sqlite3FreeIndex(db, pIndex);
   }
 
   /* Delete any foreign keys attached to this table. */
@@ -913,7 +913,7 @@ void sqlite3StartTable(
   ** and types will be used, so there is no need to test for namespace
   ** collisions.
   */
-  if( !IN_DECLARE_VTAB ){
+  if( !IN_SPECIAL_PARSE ){
     char *zDb = db->aDb[iDb].zDbSName;
     if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
       goto begin_table_error;
@@ -1072,6 +1072,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   }
   z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
+  if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)z, pName);
   memcpy(z, pName->z, pName->n);
   z[pName->n] = 0;
   sqlite3Dequote(z);
@@ -2761,6 +2762,9 @@ void sqlite3CreateForeignKey(
           pFromCol->a[i].zName);
         goto fk_end;
       }
+      if( IN_RENAME_COLUMN ){
+        sqlite3MoveRenameToken(pParse, &pFKey->aCol[i], &pFromCol->a[i]);
+      }
     }
   }
   if( pToCol ){
@@ -3099,20 +3103,22 @@ void sqlite3CreateIndex(
     if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
       goto exit_create_index;
     }
-    if( !db->init.busy ){
-      if( sqlite3FindTable(db, zName, 0)!=0 ){
-        sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
+    if( !IN_RENAME_COLUMN ){
+      if( !db->init.busy ){
+        if( sqlite3FindTable(db, zName, 0)!=0 ){
+          sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
+          goto exit_create_index;
+        }
+      }
+      if( sqlite3FindIndex(db, zName, pDb->zDbSName)!=0 ){
+        if( !ifNotExist ){
+          sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+        }else{
+          assert( !db->init.busy );
+          sqlite3CodeVerifySchema(pParse, iDb);
+        }
         goto exit_create_index;
       }
-    }
-    if( sqlite3FindIndex(db, zName, pDb->zDbSName)!=0 ){
-      if( !ifNotExist ){
-        sqlite3ErrorMsg(pParse, "index %s already exists", zName);
-      }else{
-        assert( !db->init.busy );
-        sqlite3CodeVerifySchema(pParse, iDb);
-      }
-      goto exit_create_index;
     }
   }else{
     int n;
@@ -3128,13 +3134,13 @@ void sqlite3CreateIndex(
     ** The following statement converts "sqlite3_autoindex..." into
     ** "sqlite3_butoindex..." in order to make the names distinct.
     ** The "vtab_err.test" test demonstrates the need of this statement. */
-    if( IN_DECLARE_VTAB ) zName[7]++;
+    if( IN_SPECIAL_PARSE ) zName[7]++;
   }
 
   /* Check for authorization to create an index.
   */
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  {
+  if( !IN_RENAME_COLUMN ){
     const char *zDb = pDb->zDbSName;
     if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(iDb), 0, zDb) ){
       goto exit_create_index;
@@ -3221,7 +3227,12 @@ void sqlite3CreateIndex(
   ** TODO: Issue a warning if the table primary key is used as part of the
   ** index key.
   */
-  for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
+  pListItem = pList->a;
+  if( IN_RENAME_COLUMN ){
+    pIndex->aColExpr = pList;
+    pList = 0;
+  }
+  for(i=0; i<pIndex->nKeyCol; i++, pListItem++){
     Expr *pCExpr;                  /* The i-th index expression */
     int requestedSortOrder;        /* ASC or DESC on the i-th expression */
     const char *zColl;             /* Collation sequence name */
@@ -3237,12 +3248,8 @@ void sqlite3CreateIndex(
         goto exit_create_index;
       }
       if( pIndex->aColExpr==0 ){
-        ExprList *pCopy = sqlite3ExprListDup(db, pList, 0);
-        pIndex->aColExpr = pCopy;
-        if( !db->mallocFailed ){
-          assert( pCopy!=0 );
-          pListItem = &pCopy->a[i];
-        }
+        pIndex->aColExpr = pList;
+        pList = 0;
       }
       j = XN_EXPR;
       pIndex->aiColumn[i] = XN_EXPR;
@@ -3381,98 +3388,101 @@ void sqlite3CreateIndex(
     }
   }
 
-  /* Link the new Index structure to its table and to the other
-  ** in-memory database structures. 
-  */
-  assert( pParse->nErr==0 );
-  if( db->init.busy ){
-    Index *p;
-    assert( !IN_DECLARE_VTAB );
-    assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
-    p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
-                          pIndex->zName, pIndex);
-    if( p ){
-      assert( p==pIndex );  /* Malloc must have failed */
-      sqlite3OomFault(db);
-      goto exit_create_index;
-    }
-    db->mDbFlags |= DBFLAG_SchemaChange;
-    if( pTblName!=0 ){
-      pIndex->tnum = db->init.newTnum;
-    }
-  }
+  if( !IN_RENAME_COLUMN ){
 
-  /* If this is the initial CREATE INDEX statement (or CREATE TABLE if the
-  ** index is an implied index for a UNIQUE or PRIMARY KEY constraint) then
-  ** emit code to allocate the index rootpage on disk and make an entry for
-  ** the index in the sqlite_master table and populate the index with
-  ** content.  But, do not do this if we are simply reading the sqlite_master
-  ** table to parse the schema, or if this index is the PRIMARY KEY index
-  ** of a WITHOUT ROWID table.
-  **
-  ** If pTblName==0 it means this index is generated as an implied PRIMARY KEY
-  ** or UNIQUE index in a CREATE TABLE statement.  Since the table
-  ** has just been created, it contains no data and the index initialization
-  ** step can be skipped.
-  */
-  else if( HasRowid(pTab) || pTblName!=0 ){
-    Vdbe *v;
-    char *zStmt;
-    int iMem = ++pParse->nMem;
-
-    v = sqlite3GetVdbe(pParse);
-    if( v==0 ) goto exit_create_index;
-
-    sqlite3BeginWriteOperation(pParse, 1, iDb);
-
-    /* Create the rootpage for the index using CreateIndex. But before
-    ** doing so, code a Noop instruction and store its address in 
-    ** Index.tnum. This is required in case this index is actually a 
-    ** PRIMARY KEY and the table is actually a WITHOUT ROWID table. In 
-    ** that case the convertToWithoutRowidTable() routine will replace
-    ** the Noop with a Goto to jump over the VDBE code generated below. */
-    pIndex->tnum = sqlite3VdbeAddOp0(v, OP_Noop);
-    sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, iMem, BTREE_BLOBKEY);
-
-    /* Gather the complete text of the CREATE INDEX statement into
-    ** the zStmt variable
+    /* Link the new Index structure to its table and to the other
+    ** in-memory database structures. 
     */
-    if( pStart ){
-      int n = (int)(pParse->sLastToken.z - pName->z) + pParse->sLastToken.n;
-      if( pName->z[n-1]==';' ) n--;
-      /* A named index with an explicit CREATE INDEX statement */
-      zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
-        onError==OE_None ? "" : " UNIQUE", n, pName->z);
-    }else{
-      /* An automatic index created by a PRIMARY KEY or UNIQUE constraint */
-      /* zStmt = sqlite3MPrintf(""); */
-      zStmt = 0;
+    assert( pParse->nErr==0 );
+    if( db->init.busy ){
+      Index *p;
+      assert( !IN_SPECIAL_PARSE );
+      assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
+      p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
+          pIndex->zName, pIndex);
+      if( p ){
+        assert( p==pIndex );  /* Malloc must have failed */
+        sqlite3OomFault(db);
+        goto exit_create_index;
+      }
+      db->mDbFlags |= DBFLAG_SchemaChange;
+      if( pTblName!=0 ){
+        pIndex->tnum = db->init.newTnum;
+      }
     }
 
-    /* Add an entry in sqlite_master for this index
+    /* If this is the initial CREATE INDEX statement (or CREATE TABLE if the
+    ** index is an implied index for a UNIQUE or PRIMARY KEY constraint) then
+    ** emit code to allocate the index rootpage on disk and make an entry for
+    ** the index in the sqlite_master table and populate the index with
+    ** content.  But, do not do this if we are simply reading the sqlite_master
+    ** table to parse the schema, or if this index is the PRIMARY KEY index
+    ** of a WITHOUT ROWID table.
+    **
+    ** If pTblName==0 it means this index is generated as an implied PRIMARY KEY
+    ** or UNIQUE index in a CREATE TABLE statement.  Since the table
+    ** has just been created, it contains no data and the index initialization
+    ** step can be skipped.
     */
-    sqlite3NestedParse(pParse, 
-        "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#%d,%Q);",
-        db->aDb[iDb].zDbSName, MASTER_NAME,
-        pIndex->zName,
-        pTab->zName,
-        iMem,
-        zStmt
-    );
-    sqlite3DbFree(db, zStmt);
+    else if( HasRowid(pTab) || pTblName!=0 ){
+      Vdbe *v;
+      char *zStmt;
+      int iMem = ++pParse->nMem;
 
-    /* Fill the index with data and reparse the schema. Code an OP_Expire
-    ** to invalidate all pre-compiled statements.
-    */
-    if( pTblName ){
-      sqlite3RefillIndex(pParse, pIndex, iMem);
-      sqlite3ChangeCookie(pParse, iDb);
-      sqlite3VdbeAddParseSchemaOp(v, iDb,
-         sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
-      sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
+      v = sqlite3GetVdbe(pParse);
+      if( v==0 ) goto exit_create_index;
+
+      sqlite3BeginWriteOperation(pParse, 1, iDb);
+
+      /* Create the rootpage for the index using CreateIndex. But before
+      ** doing so, code a Noop instruction and store its address in 
+      ** Index.tnum. This is required in case this index is actually a 
+      ** PRIMARY KEY and the table is actually a WITHOUT ROWID table. In 
+      ** that case the convertToWithoutRowidTable() routine will replace
+      ** the Noop with a Goto to jump over the VDBE code generated below. */
+      pIndex->tnum = sqlite3VdbeAddOp0(v, OP_Noop);
+      sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, iMem, BTREE_BLOBKEY);
+
+      /* Gather the complete text of the CREATE INDEX statement into
+      ** the zStmt variable
+      */
+      if( pStart ){
+        int n = (int)(pParse->sLastToken.z - pName->z) + pParse->sLastToken.n;
+        if( pName->z[n-1]==';' ) n--;
+        /* A named index with an explicit CREATE INDEX statement */
+        zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
+            onError==OE_None ? "" : " UNIQUE", n, pName->z);
+      }else{
+        /* An automatic index created by a PRIMARY KEY or UNIQUE constraint */
+        /* zStmt = sqlite3MPrintf(""); */
+        zStmt = 0;
+      }
+
+      /* Add an entry in sqlite_master for this index
+      */
+      sqlite3NestedParse(pParse, 
+          "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#%d,%Q);",
+          db->aDb[iDb].zDbSName, MASTER_NAME,
+          pIndex->zName,
+          pTab->zName,
+          iMem,
+          zStmt
+          );
+      sqlite3DbFree(db, zStmt);
+
+      /* Fill the index with data and reparse the schema. Code an OP_Expire
+      ** to invalidate all pre-compiled statements.
+      */
+      if( pTblName ){
+        sqlite3RefillIndex(pParse, pIndex, iMem);
+        sqlite3ChangeCookie(pParse, iDb);
+        sqlite3VdbeAddParseSchemaOp(v, iDb,
+            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
+        sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
+      }
+
+      sqlite3VdbeJumpHere(v, pIndex->tnum);
     }
-
-    sqlite3VdbeJumpHere(v, pIndex->tnum);
   }
 
   /* When adding an index to the list of indices for a table, make
@@ -3496,10 +3506,15 @@ void sqlite3CreateIndex(
     }
     pIndex = 0;
   }
+  else if( IN_RENAME_COLUMN ){
+    assert( pParse->pNewIndex==0 );
+    pParse->pNewIndex = pIndex;
+    pIndex = 0;
+  }
 
   /* Clean up before exiting */
 exit_create_index:
-  if( pIndex ) freeIndex(db, pIndex);
+  if( pIndex ) sqlite3FreeIndex(db, pIndex);
   sqlite3ExprDelete(db, pPIWhere);
   sqlite3ExprListDelete(db, pList);
   sqlite3SrcListDelete(db, pTblName);

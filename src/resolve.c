@@ -668,12 +668,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( pRight->op==TK_ID ){
           zDb = 0;
           zTable = pExpr->pLeft->u.zToken;
-          zColumn = pRight->u.zToken;
         }else{
           assert( pRight->op==TK_DOT );
           zDb = pExpr->pLeft->u.zToken;
           zTable = pRight->pLeft->u.zToken;
-          zColumn = pRight->pRight->u.zToken;
+          pRight = pRight->pRight;
+        }
+        zColumn = pRight->u.zToken;
+        if( IN_RENAME_COLUMN ){
+          sqlite3MoveRenameToken(pParse, (void*)pExpr, (void*)pRight);
         }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
