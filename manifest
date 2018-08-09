@@ -1,5 +1,5 @@
-C When\sa\scolumn\smust\sbe\sa\sconstant\sdue\sto\sWHERE\sclause\sand\sthe\svalue\sof\sthat\ncolumn\sis\sbeing\scoded\sas\sa\sconstant,\smake\ssure\sthe\saffinity\sis\scorrect.
-D 2018-08-09T18:36:54.837
+C Fix\sthe\sisLikeOrGlob()\sroutine\sin\sthe\sWHERE\sclause\sprocessing\slogic\sso\sthat\nit\savoids\ssigned/unsigned\scharacter\scomparisons,\sas\sthat\scan\slead\sto\san\nincorrect\sanswer\sif\sthe\sESCAPE\sclause\sis\san\sinvalid\sUTF8\sstring.\s\sProblem\nfound\sby\sOSSFuzz.
+D 2018-08-09T21:45:45.368
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -586,7 +586,7 @@ F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
 F src/where.c 155809967fbab889374dedf970ea6561b8fb519fcb165d6ba00776552ecc5cde
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 2b6cd1b27736cc803060289e04ecf9849976106f4077aa67d1a2c0e3ec420159
-F src/whereexpr.c dc34f0df69418dedb4619f7ad61b7d31f447971223540b957a1b836a62c0ce7b
+F src/whereexpr.c 5a57a974aeadef4443b39bd44594fdf0c884b62a4c72286de880999018df8317
 F src/window.c 4b503da928dace3e845b891381a4d98eeb8c5744313ae3643df8d8d21fdcca65
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -955,7 +955,7 @@ F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
-F test/fuzzdata5.db 5e8394be0245224340c26fc592746dd560479b0dcb12d4b43edf2c612848e748
+F test/fuzzdata5.db 3e7a403c9daea38f104410842b3b0761ad3706056df066e71c96399c17adf0a6
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60bbca2b9a591800cd8e7b374e62d75b1df0e8fd2d2f71f9b4d5fd044da78be0
-R ef663a1df8c5f6cbefbb7dcd86b83b66
+P 7404ea83168e6c739ebe8fc5d65bbf0265432ccb35b3418bb0381d74362f7527
+R ead5801a282cafcaccf5c2894c10f6f8
 U drh
-Z 68dbd529c4e95246b96ffd22fa0b508e
+Z 01aec118d9103a512fac51295e82f6a7
