@@ -3367,7 +3367,26 @@ expr_code_doover:
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
       if( ExprHasProperty(pExpr, EP_FixedCol) ){
-        return sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
+        /* This COLUMN expression is really a constant due to WHERE clause
+        ** constraints, and that constant is coded by the pExpr->pLeft
+        ** expresssion.  However, make sure the constant has the correct
+        ** datatype by applying the Affinity of the table column to the
+        ** constant.
+        */
+        int iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
+        int aff = sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
+        if( aff!=SQLITE_AFF_BLOB ){
+          static const char zAff[] = "B\000C\000D\000E";
+          assert( SQLITE_AFF_BLOB=='A' );
+          assert( SQLITE_AFF_TEXT=='B' );
+          if( iReg!=target ){
+            sqlite3VdbeAddOp2(v, OP_SCopy, iReg, target);
+            iReg = target;
+          }
+          sqlite3VdbeAddOp4(v, OP_Affinity, iReg, 1, 0,
+                            &zAff[(aff-'B')*2], P4_STATIC);
+        }
+        return iReg;
       }
       if( iTab<0 ){
         if( pParse->iSelfTab<0 ){
