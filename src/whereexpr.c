@@ -194,18 +194,18 @@ static int isLikeOrGlob(
   int *pisComplete, /* True if the only wildcard is % in the last character */
   int *pnoCase      /* True if uppercase is equivalent to lowercase */
 ){
-  const u8 *z = 0;         /* String on RHS of LIKE operator */
+  const u8 *z = 0;           /* String on RHS of LIKE operator */
   Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
   ExprList *pList;           /* List of operands to the LIKE operator */
-  int c;                     /* One character in z[] */
+  u8 c;                      /* One character in z[] */
   int cnt;                   /* Number of non-wildcard prefix characters */
-  char wc[4];                /* Wildcard characters */
+  u8 wc[4];                  /* Wildcard characters */
   sqlite3 *db = pParse->db;  /* Database connection */
   sqlite3_value *pVal = 0;
   int op;                    /* Opcode of pRight */
   int rc;                    /* Result code to return */
 
-  if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, wc) ){
+  if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, (char*)wc) ){
     return 0;
   }
 #ifdef SQLITE_EBCDIC
