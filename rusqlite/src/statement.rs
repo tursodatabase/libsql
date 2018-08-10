@@ -480,6 +480,14 @@ impl<'conn> Statement<'conn> {
         }
         Ok(())
     }
+
+    /// Returns a string containing the SQL text of prepared statement with bound parameters expanded.
+    #[cfg(feature = "bundled")]
+    pub fn expanded_sql(&self) -> Option<&str> {
+        unsafe {
+            self.stmt.expanded_sql().map(|s| str::from_utf8_unchecked(s.to_bytes()))
+        }
+    }
 }
 
 impl<'conn> Into<RawStatement> for Statement<'conn> {
@@ -815,5 +823,14 @@ mod test {
         let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
         let y: Result<i64> = stmt.query_row(&[], |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
+    }
+
+    #[test]
+    #[cfg(feature = "bundled")]
+    fn test_expanded_sql() {
+        let db = Connection::open_in_memory().unwrap();
+        let stmt = db.prepare("SELECT ?").unwrap();
+        stmt.bind_parameter(&1, 1).unwrap();
+        assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
     }
 }
