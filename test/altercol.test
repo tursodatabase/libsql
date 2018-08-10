@@ -98,11 +98,15 @@ do_execsql_test 2.0 {
   CREATE TABLE t3(a, b, c, d, e, f, g, h, i, j, k, l, m, FOREIGN KEY (b, c, d, e, f, g, h, i, j, k, l, m) REFERENCES t4);
 }
 
-do_execsql_test 2.1 {
+sqlite3 db2 test.db
+do_execsql_test -db db2 2.1 { SELECT b FROM t3 }
+
+do_execsql_test 2.2 {
   ALTER TABLE t3 RENAME b TO biglongname;
   SELECT sql FROM sqlite_master WHERE name='t3';
 } {{CREATE TABLE t3(a, biglongname, c, d, e, f, g, h, i, j, k, l, m, FOREIGN KEY (biglongname, c, d, e, f, g, h, i, j, k, l, m) REFERENCES t4)}}
 
+do_execsql_test -db db2 2.3 { SELECT biglongname FROM t3 }
 
 #-------------------------------------------------------------------------
 #
@@ -146,11 +150,13 @@ do_execsql_test 4.1 {
   {CREATE TABLE p1(c, "silly name", PRIMARY KEY(c, "silly name"))}
 }
 
-do_execsql_test 4.2 {
+# do_execsql_test 4.2 { INSERT INTO c1 VALUES(1, 2); }
+
+do_execsql_test 4.3 {
   CREATE TABLE c2(a, b, FOREIGN KEY (a, b) REFERENCES p1);
 }
 
-do_execsql_test 4.1 {
+do_execsql_test 4.4 {
   ALTER TABLE p1 RENAME "silly name" TO reasonable;
   SELECT sql FROM sqlite_master WHERE name IN ('c1', 'c2', 'p1');
 } {

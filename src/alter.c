@@ -823,6 +823,7 @@ void sqlite3AlterRenameColumn(
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
 
+
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
       "sql = sqlite_rename_column(sql, %d, %Q, %Q, %Q) "
@@ -831,6 +832,7 @@ void sqlite3AlterRenameColumn(
   );
 
   /* Drop and reload the internal table schema. */
+  sqlite3ChangeCookie(pParse, iSchema);
   reloadTableSchema(pParse, pTab, pTab->zName);
 
  exit_rename_column:
