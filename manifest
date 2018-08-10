@@ -1,5 +1,5 @@
-C When\sa\scolumn\sis\srenamed,\supdate\sany\sreferences\sto\sit\sin\sREFERENCES\sclauses\nthat\sbelong\sto\sother\stables.
-D 2018-08-10T19:19:33.246
+C Fix\sharmless\scompiler\swarnings.
+D 2018-08-10T19:33:09.840
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c f5c2b068f977b19608b66bf9a4ba02fd9b3e81b6995943b974ee62449f6e02fb
+F src/alter.c 2be0bc29efec9481166cc769bc7fa4c03d1f13f93e9e46cd99623e45cec1c242
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -1755,7 +1755,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c355a8370782aa70f155ee956fa0faec7f45d7c483c442b169b63c5f0a988fd3
-R 9b5309f7995cf06a3165d0a23c637e3a
-U dan
-Z e0fd0e786033013f88a3bbb95087baa7
+P 191079bd4f774528a1e39b71b4a4ce7859dee0edf0ce72e4b6968ae889dc35c8
+R 9775cac15880c7984c4c0b2262a5cceb
+U drh
+Z 81b39060f22da53622c92d8cae785c8a

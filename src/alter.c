@@ -933,20 +933,17 @@ static void renameColumnFunc(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   struct RenameCtx sCtx;
-  const char *zSql = sqlite3_value_text(argv[0]);
+  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
   int nSql = sqlite3_value_bytes(argv[0]);
-  const char *zNew = sqlite3_value_text(argv[2]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[2]);
   int nNew = sqlite3_value_bytes(argv[2]);
-  const char *zTable = sqlite3_value_text(argv[3]);
-  int nTable = sqlite3_value_bytes(argv[3]);
-  const char *zOld = sqlite3_value_text(argv[4]);
-  int nOld = sqlite3_value_bytes(argv[4]);
+  const char *zTable = (const char*)sqlite3_value_text(argv[3]);
+  const char *zOld = (const char*)sqlite3_value_text(argv[4]);
 
   int rc;
   char *zErr = 0;
   Parse sParse;
   Walker sWalker;
-  Table *pTab;
   Index *pIdx;
   char *zOut = 0;
 
