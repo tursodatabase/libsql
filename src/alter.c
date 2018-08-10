@@ -825,9 +825,9 @@ void sqlite3AlterRenameColumn(
 
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_column(sql, %d, %Q) "
-      "WHERE type IN ('table', 'index') AND tbl_name = %Q AND sql!=''",
-      zDb, MASTER_NAME, iCol, zNew, pTab->zName
+      "sql = sqlite_rename_column(sql, %d, %Q, %Q, %Q) "
+      "WHERE type = 'table' OR (type='index' AND tbl_name = %Q AND sql!='')",
+      zDb, MASTER_NAME, iCol, zNew, pTab->zName, zOld, pTab->zName
   );
 
   /* Drop and reload the internal table schema. */
@@ -923,6 +923,9 @@ static RenameToken *renameColumnTokenNext(struct RenameCtx *pCtx){
   return pBest;
 }
 
+/*
+** sqlite_rename_table(SQL, iCol, zNew, zTable, zOld)
+*/
 static void renameColumnFunc(
   sqlite3_context *context,
   int NotUsed,
@@ -934,6 +937,11 @@ static void renameColumnFunc(
   int nSql = sqlite3_value_bytes(argv[0]);
   const char *zNew = sqlite3_value_text(argv[2]);
   int nNew = sqlite3_value_bytes(argv[2]);
+  const char *zTable = sqlite3_value_text(argv[3]);
+  int nTable = sqlite3_value_bytes(argv[3]);
+  const char *zOld = sqlite3_value_text(argv[4]);
+  int nOld = sqlite3_value_bytes(argv[4]);
+
   int rc;
   char *zErr = 0;
   Parse sParse;
@@ -1004,25 +1012,37 @@ static void renameColumnFunc(
   sWalker.u.pRename = &sCtx;
 
   if( sParse.pNewTable ){
+    int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
     FKey *pFKey;
-    sCtx.pList = renameTokenFind(
-        &sParse, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
-    );
-    sCtx.nList = 1;
-    sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
-    for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+    if( bFKOnly==0 ){
+      sCtx.pList = renameTokenFind(
+          &sParse, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
+      );
+      sCtx.nList = 1;
+      sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
+      for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
+        sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+      }
     }
 
     for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       for(i=0; i<pFKey->nCol; i++){
-        if( pFKey->aCol[i].iFrom==sCtx.iCol ){
-          RenameToken *pTok = renameTokenFind(&sParse, (void*)&pFKey->aCol[i]);
+        RenameToken *pTok = 0;
+        if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
+          pTok = renameTokenFind(&sParse, (void*)&pFKey->aCol[i]);
           if( pTok ){
             pTok->pNext = sCtx.pList;
             sCtx.pList = pTok;
             sCtx.nList++;
           }
+        }
+        if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
+         && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
+        ){
+          pTok = renameTokenFind(&sParse, (void*)pFKey->aCol[i].zCol);
+          pTok->pNext = sCtx.pList;
+          sCtx.pList = pTok;
+          sCtx.nList++;
         }
       }
     }
@@ -1081,7 +1101,7 @@ static void renameColumnFunc(
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
-    FUNCTION(sqlite_rename_column,   3, 0, 0, renameColumnFunc),
+    FUNCTION(sqlite_rename_column,   5, 0, 0, renameColumnFunc),
 #ifndef SQLITE_OMIT_TRIGGER
     FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
 #endif

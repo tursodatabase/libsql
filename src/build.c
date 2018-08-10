@@ -2771,6 +2771,9 @@ void sqlite3CreateForeignKey(
     for(i=0; i<nCol; i++){
       int n = sqlite3Strlen30(pToCol->a[i].zName);
       pFKey->aCol[i].zCol = z;
+      if( IN_RENAME_COLUMN ){
+        sqlite3MoveRenameToken(pParse, z, pToCol->a[i].zName);
+      }
       memcpy(z, pToCol->a[i].zName, n);
       z[n] = 0;
       z += n+1;

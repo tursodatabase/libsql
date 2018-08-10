@@ -93,6 +93,7 @@ foreach {tn before after} {
 }
 
 #-------------------------------------------------------------------------
+#
 do_execsql_test 2.0 {
   CREATE TABLE t3(a, b, c, d, e, f, g, h, i, j, k, l, m, FOREIGN KEY (b, c, d, e, f, g, h, i, j, k, l, m) REFERENCES t4);
 }
@@ -102,6 +103,61 @@ do_execsql_test 2.1 {
   SELECT sql FROM sqlite_master WHERE name='t3';
 } {{CREATE TABLE t3(a, biglongname, c, d, e, f, g, h, i, j, k, l, m, FOREIGN KEY (biglongname, c, d, e, f, g, h, i, j, k, l, m) REFERENCES t4)}}
 
-finish_test
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 3.0 {
+  CREATE TABLE t4(x, y, z);
+  CREATE TRIGGER ttt AFTER INSERT ON t4 WHEN new.y<0 BEGIN
+    SELECT 1, 2, 3, 4;
+  END;
+  INSERT INTO t4 VALUES(3, 2, 1);
+}
+
+do_execsql_test 3.1 {
+  ALTER TABLE t4 RENAME y TO abc;
+  SELECT sql FROM sqlite_master WHERE name='t4';
+} {{CREATE TABLE t4(x, abc, z)}}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 3.2 {
+  SELECT * FROM t4;
+} {3 2 1}
+
+# do_execsql_test 3.3 { INSERT INTO t4 VALUES(6, 5, 4); } {}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 4.0 {
+  CREATE TABLE c1(a, b, FOREIGN KEY (a, b) REFERENCES p1(c, d));
+  CREATE TABLE p1(c, d, PRIMARY KEY(c, d));
+  PRAGMA foreign_keys = 1;
+  INSERT INTO p1 VALUES(1, 2);
+  INSERT INTO p1 VALUES(3, 4);
+}
+
+do_execsql_test 4.1 {
+  ALTER TABLE p1 RENAME d TO "silly name";
+  SELECT sql FROM sqlite_master WHERE name IN ('c1', 'p1');
+} {
+  {CREATE TABLE c1(a, b, FOREIGN KEY (a, b) REFERENCES p1(c, "silly name"))}
+  {CREATE TABLE p1(c, "silly name", PRIMARY KEY(c, "silly name"))}
+}
+
+do_execsql_test 4.2 {
+  CREATE TABLE c2(a, b, FOREIGN KEY (a, b) REFERENCES p1);
+}
+
+do_execsql_test 4.1 {
+  ALTER TABLE p1 RENAME "silly name" TO reasonable;
+  SELECT sql FROM sqlite_master WHERE name IN ('c1', 'c2', 'p1');
+} {
+  {CREATE TABLE c1(a, b, FOREIGN KEY (a, b) REFERENCES p1(c, "reasonable"))}
+  {CREATE TABLE p1(c, "reasonable", PRIMARY KEY(c, "reasonable"))}
+  {CREATE TABLE c2(a, b, FOREIGN KEY (a, b) REFERENCES p1)}
+}
+
+finish_test
 
