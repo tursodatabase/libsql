@@ -77,6 +77,9 @@ pub enum Error {
 
     /// Error available for the implementors of the `ToSql` trait.
     ToSqlConversionFailure(Box<error::Error + Send + Sync>),
+
+    /// Error when the SQL is not a `SELECT`, is not read-only.
+    InvalidQuery,
 }
 
 impl From<str::Utf8Error> for Error {
@@ -132,6 +135,7 @@ impl fmt::Display for Error {
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
             Error::ToSqlConversionFailure(ref err) => err.fmt(f),
+            Error::InvalidQuery => write!(f, "Query is not read-only"),
         }
     }
 }
@@ -160,6 +164,7 @@ impl error::Error for Error {
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
             Error::ToSqlConversionFailure(ref err) => err.description(),
+            Error::InvalidQuery => "query is not read-only",
         }
     }
 
@@ -178,7 +183,8 @@ impl error::Error for Error {
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType(_, _) |
             Error::InvalidPath(_) |
-            Error::StatementChangedRows(_) => None,
+            Error::StatementChangedRows(_) |
+            Error::InvalidQuery => None,
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => None,

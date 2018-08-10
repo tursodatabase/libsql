@@ -83,6 +83,11 @@ impl RawStatement {
         self.0 = ptr::null_mut();
         r
     }
+
+    #[cfg(feature = "bundled")]
+    pub fn readonly(&self) -> bool {
+        unsafe { ffi::sqlite3_stmt_readonly(self.0) != 0 }
+    }
 }
 
 impl Drop for RawStatement {

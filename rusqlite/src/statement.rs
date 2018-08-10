@@ -154,6 +154,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
+        try!(self.check_readonly());
         try!(self.bind_parameters(params));
         Ok(Rows::new(self))
     }
@@ -181,6 +182,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> Result<Rows<'a>> {
+        try!(self.check_readonly());
         try!(self.bind_parameters_named(params));
         Ok(Rows::new(self))
     }
@@ -464,6 +466,19 @@ impl<'conn> Statement<'conn> {
         let mut stmt = RawStatement::new(ptr::null_mut());
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
+    }
+
+    #[cfg(not(feature = "bundled"))]
+    fn check_readonly(&self) -> Result<()> {
+        Ok(())
+    }
+
+    #[cfg(feature = "bundled")]
+    fn check_readonly(&self) -> Result<()> {
+        if !self.stmt.readonly() {
+            return Err(Error::InvalidQuery);
+        }
+        Ok(())
     }
 }
 
