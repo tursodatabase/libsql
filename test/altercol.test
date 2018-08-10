@@ -92,6 +92,16 @@ foreach {tn before after} {
   } $res
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 2.0 {
+  CREATE TABLE t3(a, b, c, d, e, f, g, h, i, j, k, l, m, FOREIGN KEY (b, c, d, e, f, g, h, i, j, k, l, m) REFERENCES t4);
+}
+
+do_execsql_test 2.1 {
+  ALTER TABLE t3 RENAME b TO biglongname;
+  SELECT sql FROM sqlite_master WHERE name='t3';
+} {{CREATE TABLE t3(a, biglongname, c, d, e, f, g, h, i, j, k, l, m, FOREIGN KEY (biglongname, c, d, e, f, g, h, i, j, k, l, m) REFERENCES t4)}}
+
 finish_test
 
 

@@ -2763,7 +2763,7 @@ void sqlite3CreateForeignKey(
         goto fk_end;
       }
       if( IN_RENAME_COLUMN ){
-        sqlite3MoveRenameToken(pParse, &pFKey->aCol[i], &pFromCol->a[i]);
+        sqlite3MoveRenameToken(pParse, &pFKey->aCol[i], pFromCol->a[i].zName);
       }
     }
   }

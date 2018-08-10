@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\sALTER\sTABLE\s...\sRENAME\sCOLUMN.\sStill\sbuggy.
-D 2018-08-09T20:47:01.074
+C Fix\sa\sproblem\swith\srenaming\scolumns\son\stables\swith\sREFERENCES\sclauses\sthat\nspecify\sa\slarge\snumber\sof\scolumns.
+D 2018-08-10T14:23:41.928
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -442,7 +442,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 1cdcd12f5df74f4545d9677d7beebe0281a648d0302fca6109e82ac12e13cfa2
+F src/build.c e7c0350573891114749588a6679f5de69ca94af4648f3393f4f25ebfed983806
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
@@ -487,7 +487,7 @@ F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 76d29b8a960dcb8b67210f095899d91e4a90673a6674ea58cfd1115b705a7fb9
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y b981ac4656a9289bd61d78705f238dc8d156a7feee4bf064d054de4e8f10ff53
+F src/parse.y cec1d2306334920ad4d54fd0186d37905493313ebf4bed2d5322867caa62609c
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -599,7 +599,7 @@ F test/alter.test b820ab9dcf85f8e3a65bc8326accb2f0c7be64ef
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
-F test/altercol.test 44fedc517b92f321418c0918a359456a1657614c6bcd22570c0368c2417a3a29
+F test/altercol.test d5a228930e4600adfce9c91cc4e730fc6872f435856b20aad965143bfdf1bffa
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
@@ -1755,11 +1755,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7404ea83168e6c739ebe8fc5d65bbf0265432ccb35b3418bb0381d74362f7527
-R 0f3d0199e04ab490bfdcf0cb2303572a
-T *branch * alter-table-rename-column
-T *sym-alter-table-rename-column *
-T +closed 4889866915b8b8fc28ca20cfc3f2ed4890eb1f0712b0537298fbdd498ce41510
-T -sym-trunk *
+P fa0fc01eb48a864f0a3d43f9b805d5ed2e530846ee0c34fcbc2eabd9e5696277
+R 9b3e771ebd097f789a9ac4f7b1f4f681
 U dan
-Z 92426cbf3686886dee1eff1497f8d0cc
+Z 3a95af73177e80e0d2efb56f6f39b26f
