@@ -3799,6 +3799,7 @@ void sqlite3ExprListDelete(sqlite3*, ExprList*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
+int sqlite3InitOne(sqlite3*, int, char**);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 Module *sqlite3PragmaVtabRegister(sqlite3*,const char *zName);

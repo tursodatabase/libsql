@@ -150,7 +150,7 @@ do_execsql_test 4.1 {
   {CREATE TABLE p1(c, "silly name", PRIMARY KEY(c, "silly name"))}
 }
 
-# do_execsql_test 4.2 { INSERT INTO c1 VALUES(1, 2); }
+do_execsql_test 4.2 { INSERT INTO c1 VALUES(1, 2); }
 
 do_execsql_test 4.3 {
   CREATE TABLE c2(a, b, FOREIGN KEY (a, b) REFERENCES p1);

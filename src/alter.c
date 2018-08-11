@@ -831,9 +831,12 @@ void sqlite3AlterRenameColumn(
       zDb, MASTER_NAME, iCol, zNew, pTab->zName, zOld, pTab->zName
   );
 
-  /* Drop and reload the internal table schema. */
-  sqlite3ChangeCookie(pParse, iSchema);
-  reloadTableSchema(pParse, pTab, pTab->zName);
+  /* Drop and reload the database schema. */
+  if( db->mallocFailed==0 ){
+    assert( pParse->pVdbe );
+    sqlite3ChangeCookie(pParse, iSchema);
+    sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, iSchema, 0);
+  }
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);

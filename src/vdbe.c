@@ -5746,6 +5746,14 @@ case OP_ParseSchema: {
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
   assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
+
+#ifndef SQLITE_OMIT_ALTERTABLE
+  if( pOp->p4.z==0 ){
+    sqlite3SchemaClear(db->aDb[iDb].pSchema);
+    rc = sqlite3InitOne(db, iDb, &p->zErrMsg);
+    db->mDbFlags |= DBFLAG_SchemaChange;
+  }else
+#endif
   /* Used to be a conditional */ {
     zMaster = MASTER_NAME;
     initData.db = db;
