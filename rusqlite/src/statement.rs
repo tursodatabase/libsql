@@ -1,11 +1,13 @@
-use std::{convert, fmt, mem, ptr, result, str};
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
 use std::slice::from_raw_parts;
+use std::{convert, fmt, mem, ptr, result, str};
 
 use super::ffi;
-use super::{Connection, RawStatement, Result, Error, ValueRef, Row, Rows, AndThenRows, MappedRows};
 use super::str_to_cstring;
+use super::{
+    AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
+};
 use types::{ToSql, ToSqlOutput};
 
 /// A prepared statement.
@@ -211,7 +213,8 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F) -> Result<MappedRows<'a, F>>
-        where F: FnMut(&Row) -> T
+    where
+        F: FnMut(&Row) -> T,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -243,11 +246,13 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_map_named<'a, T, F>(&'a mut self,
-                                     params: &[(&str, &ToSql)],
-                                     f: F)
-                                     -> Result<MappedRows<'a, F>>
-        where F: FnMut(&Row) -> T
+    pub fn query_map_named<'a, T, F>(
+        &'a mut self,
+        params: &[(&str, &ToSql)],
+        f: F,
+    ) -> Result<MappedRows<'a, F>>
+    where
+        F: FnMut(&Row) -> T,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -260,12 +265,14 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then<'a, T, E, F>(&'a mut self,
-                                       params: &[&ToSql],
-                                       f: F)
-                                       -> Result<AndThenRows<'a, F>>
-        where E: convert::From<Error>,
-              F: FnMut(&Row) -> result::Result<T, E>
+    pub fn query_and_then<'a, T, E, F>(
+        &'a mut self,
+        params: &[&ToSql],
+        f: F,
+    ) -> Result<AndThenRows<'a, F>>
+    where
+        E: convert::From<Error>,
+        F: FnMut(&Row) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -306,12 +313,14 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then_named<'a, T, E, F>(&'a mut self,
-                                             params: &[(&str, &ToSql)],
-                                             f: F)
-                                             -> Result<AndThenRows<'a, F>>
-        where E: convert::From<Error>,
-              F: FnMut(&Row) -> result::Result<T, E>
+    pub fn query_and_then_named<'a, T, E, F>(
+        &'a mut self,
+        params: &[(&str, &ToSql)],
+        f: F,
+    ) -> Result<AndThenRows<'a, F>>
+    where
+        E: convert::From<Error>,
+        F: FnMut(&Row) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -338,7 +347,8 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn query_row<T, F>(&mut self, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(&Row) -> T
+    where
+        F: FnOnce(&Row) -> T,
     {
         let mut rows = try!(self.query(params));
 
@@ -369,10 +379,13 @@ impl<'conn> Statement<'conn> {
     }
 
     fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
-        assert_eq!(params.len(), self.stmt.bind_parameter_count(),
-                "incorrect number of parameters to query(): expected {}, got {}",
-                self.stmt.bind_parameter_count(),
-                params.len());
+        assert_eq!(
+            params.len(),
+            self.stmt.bind_parameter_count(),
+            "incorrect number of parameters to query(): expected {}, got {}",
+            self.stmt.bind_parameter_count(),
+            params.len()
+        );
 
         for (i, p) in params.iter().enumerate() {
             try!(self.bind_parameter(*p, i + 1));
@@ -402,20 +415,16 @@ impl<'conn> Statement<'conn> {
 
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
-                return self.conn
-                           .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col as c_int, len) });
+                return self
+                    .conn
+                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col as c_int, len) });
             }
         };
-        self.conn
-            .decode_result(match value {
-                               ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col as c_int) },
-                               ValueRef::Integer(i) => unsafe {
-                ffi::sqlite3_bind_int64(ptr, col as c_int, i)
-            },
-                               ValueRef::Real(r) => unsafe {
-                ffi::sqlite3_bind_double(ptr, col as c_int, r)
-            },
-                               ValueRef::Text(s) => unsafe {
+        self.conn.decode_result(match value {
+            ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col as c_int) },
+            ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col as c_int, i) },
+            ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
+            ValueRef::Text(s) => unsafe {
                 let length = s.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
@@ -426,24 +435,32 @@ impl<'conn> Statement<'conn> {
                     } else {
                         ffi::SQLITE_STATIC()
                     };
-                    ffi::sqlite3_bind_text(ptr, col as c_int, c_str.as_ptr(), length as c_int, destructor)
+                    ffi::sqlite3_bind_text(
+                        ptr,
+                        col as c_int,
+                        c_str.as_ptr(),
+                        length as c_int,
+                        destructor,
+                    )
                 }
             },
-                               ValueRef::Blob(b) => unsafe {
+            ValueRef::Blob(b) => unsafe {
                 let length = b.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
                 } else if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
-                    ffi::sqlite3_bind_blob(ptr,
-                                           col as c_int,
-                                           b.as_ptr() as *const c_void,
-                                           length as c_int,
-                                           ffi::SQLITE_TRANSIENT())
+                    ffi::sqlite3_bind_blob(
+                        ptr,
+                        col as c_int,
+                        b.as_ptr() as *const c_void,
+                        length as c_int,
+                        ffi::SQLITE_TRANSIENT(),
+                    )
                 }
             },
-                           })
+        })
     }
 
     fn execute_with_bound_parameters(&mut self) -> Result<usize> {
@@ -485,7 +502,9 @@ impl<'conn> Statement<'conn> {
     #[cfg(feature = "bundled")]
     pub fn expanded_sql(&self) -> Option<&str> {
         unsafe {
-            self.stmt.expanded_sql().map(|s| str::from_utf8_unchecked(s.to_bytes()))
+            self.stmt
+                .expanded_sql()
+                .map(|s| str::from_utf8_unchecked(s.to_bytes()))
         }
     }
 }
@@ -518,10 +537,7 @@ impl<'conn> Drop for Statement<'conn> {
 
 impl<'conn> Statement<'conn> {
     pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement {
-        Statement {
-            conn,
-            stmt,
-        }
+        Statement { conn, stmt }
     }
 
     pub(crate) fn value_ref(&self, col: usize) -> ValueRef {
@@ -532,30 +548,42 @@ impl<'conn> Statement<'conn> {
             ffi::SQLITE_INTEGER => {
                 ValueRef::Integer(unsafe { ffi::sqlite3_column_int64(raw, col as c_int) })
             }
-            ffi::SQLITE_FLOAT => ValueRef::Real(unsafe { ffi::sqlite3_column_double(raw, col as c_int) }),
+            ffi::SQLITE_FLOAT => {
+                ValueRef::Real(unsafe { ffi::sqlite3_column_double(raw, col as c_int) })
+            }
             ffi::SQLITE_TEXT => {
                 let s = unsafe {
                     let text = ffi::sqlite3_column_text(raw, col as c_int);
-                    assert!(!text.is_null(),
-                            "unexpected SQLITE_TEXT column type with NULL data");
+                    assert!(
+                        !text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data"
+                    );
                     CStr::from_ptr(text as *const c_char)
                 };
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str()
+                let s = s
+                    .to_str()
                     .expect("sqlite3_column_text returned invalid UTF-8");
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
                 let (blob, len) = unsafe {
-                    (ffi::sqlite3_column_blob(raw, col as c_int), ffi::sqlite3_column_bytes(raw, col as c_int))
+                    (
+                        ffi::sqlite3_column_blob(raw, col as c_int),
+                        ffi::sqlite3_column_bytes(raw, col as c_int),
+                    )
                 };
 
-                assert!(len >= 0,
-                        "unexpected negative return from sqlite3_column_bytes");
+                assert!(
+                    len >= 0,
+                    "unexpected negative return from sqlite3_column_bytes"
+                );
                 if len > 0 {
-                    assert!(!blob.is_null(),
-                            "unexpected SQLITE_BLOB column type with NULL data");
+                    assert!(
+                        !blob.is_null(),
+                        "unexpected SQLITE_BLOB column type with NULL data"
+                    );
                     ValueRef::Blob(unsafe { from_raw_parts(blob as *const u8, len as usize) })
                 } else {
                     // The return value from sqlite3_column_blob() for a zero-length BLOB
@@ -589,18 +617,25 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
 
-        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])
-                       .unwrap(),
-                   1);
-        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])
-                       .unwrap(),
-                   1);
+        assert_eq!(
+            db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])
+                .unwrap(),
+            1
+        );
 
-        assert_eq!(3i32,
-                   db.query_row_named::<i32, _>("SELECT SUM(x) FROM foo WHERE x > :x",
-                                                &[(":x", &0i32)],
-                                                |r| r.get(0))
-                       .unwrap());
+        assert_eq!(
+            3i32,
+            db.query_row_named::<i32, _>(
+                "SELECT SUM(x) FROM foo WHERE x > :x",
+                &[(":x", &0i32)],
+                |r| r.get(0)
+            ).unwrap()
+        );
     }
 
     #[test]
@@ -610,15 +645,19 @@ mod test {
                    INTEGER)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (name) VALUES (:name)")
+        let mut stmt = db
+            .prepare("INSERT INTO test (name) VALUES (:name)")
             .unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
-        assert_eq!(1i32,
-                   db.query_row_named::<i32, _>("SELECT COUNT(*) FROM test WHERE name = :name",
-                                                &[(":name", &"one")],
-                                                |r| r.get(0))
-                       .unwrap());
+        assert_eq!(
+            1i32,
+            db.query_row_named::<i32, _>(
+                "SELECT COUNT(*) FROM test WHERE name = :name",
+                &[(":name", &"one")],
+                |r| r.get(0)
+            ).unwrap()
+        );
     }
 
     #[test]
@@ -630,7 +669,8 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name")
+        let mut stmt = db
+            .prepare("SELECT id FROM test where name = :name")
             .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
@@ -647,13 +687,14 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name")
+        let mut stmt = db
+            .prepare("SELECT id FROM test where name = :name")
             .unwrap();
-        let mut rows = stmt.query_map_named(&[(":name", &"one")], |row| {
+        let mut rows = stmt
+            .query_map_named(&[(":name", &"one")], |row| {
                 let id: i32 = row.get(0);
                 2 * id
-            })
-            .unwrap();
+            }).unwrap();
 
         let doubled_id: i32 = rows.next().unwrap().unwrap();
         assert_eq!(2, doubled_id);
@@ -661,7 +702,6 @@ mod test {
 
     #[test]
     fn test_query_and_then_named() {
-
         let db = Connection::open_in_memory().unwrap();
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
@@ -670,17 +710,18 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
+        let mut stmt = db
+            .prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
             .unwrap();
-        let mut rows = stmt.query_and_then_named(&[(":name", &"one")], |row| {
+        let mut rows = stmt
+            .query_and_then_named(&[(":name", &"one")], |row| {
                 let id: i32 = row.get(0);
                 if id == 1 {
                     Ok(id)
                 } else {
                     Err(Error::SqliteSingleThreadedMode)
                 }
-            })
-            .unwrap();
+            }).unwrap();
 
         // first row should be Ok
         let doubled_id: i32 = rows.next().unwrap().unwrap();
@@ -700,13 +741,14 @@ mod test {
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
+        let mut stmt = db
+            .prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
             .unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
 
-        let result: Option<String> =
-            db.query_row("SELECT y FROM test WHERE x = 'one'", &[], |row| row.get(0))
-                .unwrap();
+        let result: Option<String> = db
+            .query_row("SELECT y FROM test WHERE x = 'one'", &[], |row| row.get(0))
+            .unwrap();
         assert!(result.is_none());
     }
 
@@ -716,14 +758,15 @@ mod test {
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
+        let mut stmt = db
+            .prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
             .unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
         stmt.execute_named(&[(":y", &"two")]).unwrap();
 
-        let result: String =
-            db.query_row("SELECT x FROM test WHERE y = 'two'", &[], |row| row.get(0))
-                .unwrap();
+        let result: String = db
+            .query_row("SELECT x FROM test WHERE y = 'two'", &[], |row| row.get(0))
+            .unwrap();
         assert_eq!(result, "one");
     }
 
@@ -732,7 +775,8 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)")
             .unwrap();
-        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")
+        let mut stmt = db
+            .prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")
             .unwrap();
         assert_eq!(stmt.insert(&[&1i32]).unwrap(), 1);
         assert_eq!(stmt.insert(&[&2i32]).unwrap(), 2);
@@ -740,7 +784,8 @@ mod test {
             Error::StatementChangedRows(0) => (),
             err => panic!("Unexpected error {}", err),
         }
-        let mut multi = db.prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
+        let mut multi = db
+            .prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
             .unwrap();
         match multi.insert(&[]).unwrap_err() {
             Error::StatementChangedRows(2) => (),
@@ -752,22 +797,27 @@ mod test {
     fn test_insert_different_tables() {
         // Test for https://github.com/jgallagher/rusqlite/issues/171
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch(r"
+        db.execute_batch(
+            r"
             CREATE TABLE foo(x INTEGER);
             CREATE TABLE bar(x INTEGER);
-        ")
-            .unwrap();
+        ",
+        ).unwrap();
 
-        assert_eq!(db.prepare("INSERT INTO foo VALUES (10)")
-                       .unwrap()
-                       .insert(&[])
-                       .unwrap(),
-                   1);
-        assert_eq!(db.prepare("INSERT INTO bar VALUES (10)")
-                       .unwrap()
-                       .insert(&[])
-                       .unwrap(),
-                   1);
+        assert_eq!(
+            db.prepare("INSERT INTO foo VALUES (10)")
+                .unwrap()
+                .insert(&[])
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            db.prepare("INSERT INTO bar VALUES (10)")
+                .unwrap()
+                .insert(&[])
+                .unwrap(),
+            1
+        );
     }
 
     #[test]

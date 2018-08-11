@@ -3,10 +3,10 @@ extern crate chrono;
 
 use std::borrow::Cow;
 
-use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, Utc, Local};
+use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-use Result;
 use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use Result;
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
 impl ToSql for NaiveDate {
@@ -22,9 +22,9 @@ impl FromSql for NaiveDate {
         value
             .as_str()
             .and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                          Ok(dt) => Ok(dt),
-                          Err(err) => Err(FromSqlError::Other(Box::new(err))),
-                      })
+                Ok(dt) => Ok(dt),
+                Err(err) => Err(FromSqlError::Other(Box::new(err))),
+            })
     }
 }
 
@@ -39,19 +39,17 @@ impl ToSql for NaiveTime {
 /// "HH:MM"/"HH:MM:SS"/"HH:MM:SS.SSS" => ISO 8601 time without timezone.
 impl FromSql for NaiveTime {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        value
-            .as_str()
-            .and_then(|s| {
-                let fmt = match s.len() {
-                    5 => "%H:%M",
-                    8 => "%H:%M:%S",
-                    _ => "%H:%M:%S%.f",
-                };
-                match NaiveTime::parse_from_str(s, fmt) {
-                    Ok(dt) => Ok(dt),
-                    Err(err) => Err(FromSqlError::Other(Box::new(err))),
-                }
-            })
+        value.as_str().and_then(|s| {
+            let fmt = match s.len() {
+                5 => "%H:%M",
+                8 => "%H:%M:%S",
+                _ => "%H:%M:%S%.f",
+            };
+            match NaiveTime::parse_from_str(s, fmt) {
+                Ok(dt) => Ok(dt),
+                Err(err) => Err(FromSqlError::Other(Box::new(err))),
+            }
+        })
     }
 }
 
@@ -67,20 +65,18 @@ impl ToSql for NaiveDateTime {
 /// without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
 impl FromSql for NaiveDateTime {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        value
-            .as_str()
-            .and_then(|s| {
-                let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
-                    "%Y-%m-%dT%H:%M:%S%.f"
-                } else {
-                    "%Y-%m-%d %H:%M:%S%.f"
-                };
+        value.as_str().and_then(|s| {
+            let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
+                "%Y-%m-%dT%H:%M:%S%.f"
+            } else {
+                "%Y-%m-%d %H:%M:%S%.f"
+            };
 
-                match NaiveDateTime::parse_from_str(s, fmt) {
-                    Ok(dt) => Ok(dt),
-                    Err(err) => Err(FromSqlError::Other(Box::new(err))),
-                }
-            })
+            match NaiveDateTime::parse_from_str(s, fmt) {
+                Ok(dt) => Ok(dt),
+                Err(err) => Err(FromSqlError::Other(Box::new(err))),
+            }
+        })
     }
 }
 
@@ -130,9 +126,10 @@ impl FromSql for DateTime<Local> {
 
 #[cfg(test)]
 mod test {
+    use super::chrono::{
+        DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
+    };
     use Connection;
-    use super::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
-                        Duration};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -148,10 +145,12 @@ mod test {
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&date])
             .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let s: String = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!("2016-02-23", s);
-        let t: NaiveDate = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let t: NaiveDate = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(date, t);
     }
@@ -163,10 +162,12 @@ mod test {
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&time])
             .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let s: String = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!("23:56:04", s);
-        let v: NaiveTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let v: NaiveTime = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(time, v);
     }
@@ -181,16 +182,18 @@ mod test {
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt])
             .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let s: String = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!("2016-02-23T23:56:04", s);
-        let v: NaiveDateTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let v: NaiveDateTime = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(dt, v);
 
-        db.execute("UPDATE foo set b = datetime(t)", &[])
-            .unwrap(); // "YYYY-MM-DD HH:MM:SS"
-        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0))
+        db.execute("UPDATE foo set b = datetime(t)", &[]).unwrap(); // "YYYY-MM-DD HH:MM:SS"
+        let hms: NaiveDateTime = db
+            .query_row("SELECT b FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(dt, hms);
     }
@@ -206,25 +209,29 @@ mod test {
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc])
             .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let s: String = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
 
-        let v1: DateTime<Utc> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let v1: DateTime<Utc> = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(utc, v1);
 
-        let v2: DateTime<Utc> = db.query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0))
+        let v2: DateTime<Utc> = db
+            .query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(utc, v2);
 
-        let v3: DateTime<Utc> = db.query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0))
+        let v3: DateTime<Utc> = db
+            .query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(utc - Duration::milliseconds(789), v3);
 
-        let v4: DateTime<Utc> =
-            db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0))
-                .unwrap();
+        let v4: DateTime<Utc> = db
+            .query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(utc, v4);
     }
 
@@ -240,11 +247,13 @@ mod test {
             .unwrap();
 
         // Stored string should be in UTC
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let s: String = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert!(s.ends_with("+00:00"));
 
-        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+        let v: DateTime<Local> = db
+            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
             .unwrap();
         assert_eq!(local, v);
     }

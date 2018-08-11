@@ -1,7 +1,7 @@
-use std::{convert, result};
 use std::marker::PhantomData;
+use std::{convert, result};
 
-use super::{Statement, Error, Result};
+use super::{Error, Result, Statement};
 use types::{FromSql, FromSqlError};
 
 /// An handle for the resulting rows of a query.
@@ -28,23 +28,20 @@ impl<'stmt> Rows<'stmt> {
     /// or `query_and_then` instead, which return types that implement `Iterator`.
     #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // cannot implement Iterator
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
-        self.stmt
-            .and_then(|stmt| match stmt.step() {
-                Ok(true) => {
-                    Some(Ok(Row {
-                        stmt,
-                        phantom: PhantomData,
-                    }))
-                }
-                Ok(false) => {
-                    self.reset();
-                    None
-                }
-                Err(err) => {
-                    self.reset();
-                    Some(Err(err))
-                }
-            })
+        self.stmt.and_then(|stmt| match stmt.step() {
+            Ok(true) => Some(Ok(Row {
+                stmt,
+                phantom: PhantomData,
+            })),
+            Ok(false) => {
+                self.reset();
+                None
+            }
+            Err(err) => {
+                self.reset();
+                Some(Err(err))
+            }
+        })
     }
 }
 
@@ -74,7 +71,8 @@ pub struct MappedRows<'stmt, F> {
 }
 
 impl<'stmt, T, F> MappedRows<'stmt, F>
-    where F: FnMut(&Row) -> T
+where
+    F: FnMut(&Row) -> T,
 {
     pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
         MappedRows { rows, map: f }
@@ -82,7 +80,8 @@ impl<'stmt, T, F> MappedRows<'stmt, F>
 }
 
 impl<'conn, T, F> Iterator for MappedRows<'conn, F>
-    where F: FnMut(&Row) -> T
+where
+    F: FnMut(&Row) -> T,
 {
     type Item = Result<T>;
 
@@ -102,7 +101,8 @@ pub struct AndThenRows<'stmt, F> {
 }
 
 impl<'stmt, T, E, F> AndThenRows<'stmt, F>
-    where F: FnMut(&Row) -> result::Result<T, E>
+where
+    F: FnMut(&Row) -> result::Result<T, E>,
 {
     pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
         AndThenRows { rows, map: f }
@@ -110,8 +110,9 @@ impl<'stmt, T, E, F> AndThenRows<'stmt, F>
 }
 
 impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
-    where E: convert::From<Error>,
-          F: FnMut(&Row) -> result::Result<T, E>
+where
+    E: convert::From<Error>,
+    F: FnMut(&Row) -> result::Result<T, E>,
 {
     type Item = result::Result<T, E>;
 
@@ -159,17 +160,12 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let idx = try!(idx.idx(self.stmt));
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
-                                                  FromSqlError::InvalidType => {
-                                                      Error::InvalidColumnType(idx,
-                                                                               value.data_type())
-                                                  }
-                                                  FromSqlError::OutOfRange(i) => {
-                                                      Error::IntegralValueOutOfRange(idx, i)
-                                                  }
-                                                  FromSqlError::Other(err) => {
+            FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
+            FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
-                                              })
+        })
     }
 
     /// Return the number of columns in the current row.

@@ -1,8 +1,8 @@
 //! Ensure we reject connections when SQLite is in single-threaded mode, as it
 //! would violate safety if multiple Rust threads tried to use connections.
 
-extern crate rusqlite;
 extern crate libsqlite3_sys as ffi;
+extern crate rusqlite;
 
 use rusqlite::Connection;
 

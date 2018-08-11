@@ -4,7 +4,7 @@ use super::{Null, Type};
 /// dictated by SQLite (not by the caller).
 ///
 /// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.
     Null,
@@ -31,7 +31,9 @@ impl From<bool> for Value {
 }
 
 impl From<isize> for Value {
-    fn from(i: isize) -> Value { Value::Integer(i as i64) }
+    fn from(i: isize) -> Value {
+        Value::Integer(i as i64)
+    }
 }
 
 macro_rules! from_i64(

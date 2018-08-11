@@ -1,4 +1,4 @@
-use {Result, Connection};
+use {Connection, Result};
 
 /// Old name for `LoadExtensionGuard`. `SqliteLoadExtensionGuard` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use LoadExtensionGuard instead")]

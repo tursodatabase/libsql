@@ -1,8 +1,8 @@
 //! Commit, Data Change and Rollback Notification Callbacks
 #![allow(non_camel_case_types)]
 
+use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
-use std::os::raw::{c_int, c_char, c_void};
 
 use ffi;
 

@@ -1,4 +1,4 @@
-use super::{ValueRef, Value};
+use super::{Value, ValueRef};
 use std::error::Error;
 use std::fmt;
 
@@ -35,12 +35,11 @@ impl Error for FromSqlError {
         }
     }
 
-    #[cfg_attr(feature="clippy", allow(match_same_arms))]
+    #[cfg_attr(feature = "clippy", allow(match_same_arms))]
     fn cause(&self) -> Option<&Error> {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
-            FromSqlError::InvalidType |
-            FromSqlError::OutOfRange(_) => None,
+            FromSqlError::InvalidType | FromSqlError::OutOfRange(_) => None,
         }
     }
 }
@@ -115,9 +114,9 @@ impl FromSql for f64 {
 impl FromSql for bool {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         i64::column_result(value).map(|i| match i {
-                                          0 => false,
-                                          _ => true,
-                                      })
+            0 => false,
+            _ => true,
+        })
     }
 }
 
@@ -150,8 +149,8 @@ impl FromSql for Value {
 
 #[cfg(test)]
 mod test {
-    use {Connection, Error};
     use super::FromSql;
+    use {Connection, Error};
 
     fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()
@@ -162,10 +161,12 @@ mod test {
         let db = checked_memory_handle();
 
         fn check_ranges<T>(db: &Connection, out_of_range: &[i64], in_range: &[i64])
-            where T: Into<i64> + FromSql + ::std::fmt::Debug
+        where
+            T: Into<i64> + FromSql + ::std::fmt::Debug,
         {
             for n in out_of_range {
-                let err = db.query_row("SELECT ?", &[n], |r| r.get_checked::<_, T>(0))
+                let err = db
+                    .query_row("SELECT ?", &[n], |r| r.get_checked::<_, T>(0))
                     .unwrap()
                     .unwrap_err();
                 match err {
@@ -174,18 +175,22 @@ mod test {
                 }
             }
             for n in in_range {
-                assert_eq!(*n,
-                           db.query_row("SELECT ?", &[n], |r| r.get::<_, T>(0))
-                               .unwrap()
-                               .into());
+                assert_eq!(
+                    *n,
+                    db.query_row("SELECT ?", &[n], |r| r.get::<_, T>(0))
+                        .unwrap()
+                        .into()
+                );
             }
         }
 
         check_ranges::<i8>(&db, &[-129, 128], &[-128, 0, 1, 127]);
         check_ranges::<i16>(&db, &[-32769, 32768], &[-32768, -1, 0, 1, 32767]);
-        check_ranges::<i32>(&db,
-                            &[-2147483649, 2147483648],
-                            &[-2147483648, -1, 0, 1, 2147483647]);
+        check_ranges::<i32>(
+            &db,
+            &[-2147483649, 2147483648],
+            &[-2147483648, -1, 0, 1, 2147483647],
+        );
         check_ranges::<u8>(&db, &[-2, -1, 256], &[0, 1, 255]);
         check_ranges::<u16>(&db, &[-2, -1, 65536], &[0, 1, 65535]);
         check_ranges::<u32>(&db, &[-2, -1, 4294967296], &[0, 1, 4294967295]);

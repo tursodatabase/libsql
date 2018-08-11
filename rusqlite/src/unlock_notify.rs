@@ -1,10 +1,10 @@
 //! [Unlock Notification](http://sqlite.org/unlock_notify.html)
 
-#[cfg(feature = "unlock_notify")]
-use std::sync::{Condvar, Mutex};
 use std::os::raw::c_int;
 #[cfg(feature = "unlock_notify")]
 use std::os::raw::c_void;
+#[cfg(feature = "unlock_notify")]
+use std::sync::{Condvar, Mutex};
 
 use ffi;
 
@@ -49,10 +49,9 @@ unsafe extern "C" fn unlock_notify_cb(ap_arg: *mut *mut c_void, n_arg: c_int) {
 
 #[cfg(feature = "unlock_notify")]
 pub fn is_locked(db: *mut ffi::sqlite3, rc: c_int) -> bool {
-    rc == ffi::SQLITE_LOCKED_SHAREDCACHE || (rc & 0xFF) == ffi::SQLITE_LOCKED && unsafe {
-        ffi::sqlite3_extended_errcode(db)
-    }
-        == ffi::SQLITE_LOCKED_SHAREDCACHE
+    rc == ffi::SQLITE_LOCKED_SHAREDCACHE
+        || (rc & 0xFF) == ffi::SQLITE_LOCKED
+            && unsafe { ffi::sqlite3_extended_errcode(db) } == ffi::SQLITE_LOCKED_SHAREDCACHE
 }
 
 /// This function assumes that an SQLite API call (either `sqlite3_prepare_v2()`
