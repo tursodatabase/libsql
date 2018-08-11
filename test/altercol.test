@@ -184,6 +184,7 @@ do_catchsql_test 6.1 {
 } {1 {table sqlite_stat1 may not be altered}}
 
 #-------------------------------------------------------------------------
+#
 do_execsql_test 6.0 {
   CREATE TABLE blob(
     rid INTEGER PRIMARY KEY,
@@ -195,7 +196,6 @@ do_execsql_test 6.0 {
   );
 }
 
-breakpoint
 do_execsql_test 6.1 {
   ALTER TABLE "blob" RENAME COLUMN "rid" TO "a1";
 }
