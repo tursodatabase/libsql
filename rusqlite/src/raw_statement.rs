@@ -83,6 +83,23 @@ impl RawStatement {
         self.0 = ptr::null_mut();
         r
     }
+
+    #[cfg(feature = "bundled")]
+    pub fn readonly(&self) -> bool {
+        unsafe { ffi::sqlite3_stmt_readonly(self.0) != 0 }
+    }
+
+    #[cfg(feature = "bundled")]
+    pub fn expanded_sql(&self) -> Option<&CStr> {
+        unsafe {
+            let ptr = ffi::sqlite3_expanded_sql(self.0);
+            if ptr.is_null() {
+                None
+            } else {
+                Some(CStr::from_ptr(ptr))
+            }
+        }
+    }
 }
 
 impl Drop for RawStatement {

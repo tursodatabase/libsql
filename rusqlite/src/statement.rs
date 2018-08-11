@@ -154,6 +154,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
+        try!(self.check_readonly());
         try!(self.bind_parameters(params));
         Ok(Rows::new(self))
     }
@@ -181,6 +182,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> Result<Rows<'a>> {
+        try!(self.check_readonly());
         try!(self.bind_parameters_named(params));
         Ok(Rows::new(self))
     }
@@ -464,6 +466,27 @@ impl<'conn> Statement<'conn> {
         let mut stmt = RawStatement::new(ptr::null_mut());
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
+    }
+
+    #[cfg(not(feature = "bundled"))]
+    fn check_readonly(&self) -> Result<()> {
+        Ok(())
+    }
+
+    #[cfg(feature = "bundled")]
+    fn check_readonly(&self) -> Result<()> {
+        if !self.stmt.readonly() {
+            return Err(Error::InvalidQuery);
+        }
+        Ok(())
+    }
+
+    /// Returns a string containing the SQL text of prepared statement with bound parameters expanded.
+    #[cfg(feature = "bundled")]
+    pub fn expanded_sql(&self) -> Option<&str> {
+        unsafe {
+            self.stmt.expanded_sql().map(|s| str::from_utf8_unchecked(s.to_bytes()))
+        }
     }
 }
 
@@ -800,5 +823,14 @@ mod test {
         let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
         let y: Result<i64> = stmt.query_row(&[], |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
+    }
+
+    #[test]
+    #[cfg(feature = "bundled")]
+    fn test_expanded_sql() {
+        let db = Connection::open_in_memory().unwrap();
+        let stmt = db.prepare("SELECT ?").unwrap();
+        stmt.bind_parameter(&1, 1).unwrap();
+        assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
     }
 }
