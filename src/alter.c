@@ -1023,6 +1023,10 @@ static void renameColumnFunc(
           &sParse, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
       );
       sCtx.nList = 1;
+      assert( sCtx.iCol>=0 );
+      if( sParse.pNewTable->iPKey==sCtx.iCol ){
+        sCtx.iCol = -1;
+      }
       sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
       for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3WalkExprList(&sWalker, pIdx->aColExpr);

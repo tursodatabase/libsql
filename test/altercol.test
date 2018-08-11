@@ -183,5 +183,22 @@ do_catchsql_test 6.1 {
   ALTER TABLE sqlite_stat1 RENAME tbl TO thetable;
 } {1 {table sqlite_stat1 may not be altered}}
 
+#-------------------------------------------------------------------------
+do_execsql_test 6.0 {
+  CREATE TABLE blob(
+    rid INTEGER PRIMARY KEY,
+    rcvid INTEGER,
+    size INTEGER,
+    uuid TEXT UNIQUE NOT NULL,
+    content BLOB,
+    CHECK( length(uuid)>=40 AND rid>0 )
+  );
+}
+
+breakpoint
+do_execsql_test 6.1 {
+  ALTER TABLE "blob" RENAME COLUMN "rid" TO "a1";
+}
+
 finish_test
 
