@@ -1,9 +1,9 @@
-use std::borrow::Cow;
 use super::{Null, Value, ValueRef};
+use std::borrow::Cow;
 use Result;
 
 /// `ToSqlOutput` represents the possible output types for implementors of the `ToSql` trait.
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ToSqlOutput<'a> {
     /// A borrowed SQLite-representable value.
     Borrowed(ValueRef<'a>),
@@ -19,7 +19,8 @@ pub enum ToSqlOutput<'a> {
 // Generically allow any type that can be converted into a ValueRef
 // to be converted into a ToSqlOutput as well.
 impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a>
-    where &'a T: Into<ValueRef<'a>>
+where
+    &'a T: Into<ValueRef<'a>>,
 {
     fn from(t: &'a T) -> Self {
         ToSqlOutput::Borrowed(t.into())
@@ -55,12 +56,12 @@ from_value!(Vec<u8>);
 impl<'a> ToSql for ToSqlOutput<'a> {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok(match *self {
-               ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
-               ToSqlOutput::Owned(ref v) => ToSqlOutput::Borrowed(ValueRef::from(v)),
+            ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
+            ToSqlOutput::Owned(ref v) => ToSqlOutput::Borrowed(ValueRef::from(v)),
 
-               #[cfg(feature = "blob")]
+            #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(i) => ToSqlOutput::ZeroBlob(i),
-           })
+        })
     }
 }
 
@@ -104,7 +105,8 @@ to_sql_self!(u32);
 to_sql_self!(f64);
 
 impl<'a, T: ?Sized> ToSql for &'a T
-    where &'a T: Into<ToSqlOutput<'a>>
+where
+    &'a T: Into<ToSqlOutput<'a>>,
 {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok((*self).into())

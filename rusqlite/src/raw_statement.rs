@@ -1,8 +1,8 @@
-use std::ffi::CStr;
-use std::ptr;
-use std::os::raw::c_int;
 use super::ffi;
 use super::unlock_notify;
+use std::ffi::CStr;
+use std::os::raw::c_int;
+use std::ptr;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]

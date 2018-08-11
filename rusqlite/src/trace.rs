@@ -1,14 +1,14 @@
 //! Tracing and profiling functions. Error and warning log.
 
-use std::os::raw::{c_char, c_int, c_void};
 use std::ffi::{CStr, CString};
 use std::mem;
+use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::time::Duration;
 
 use super::ffi;
-use {Result, Connection};
 use error::error_from_sqlite_code;
+use {Connection, Result};
 
 /// Set up the process-wide SQLite error logging callback.
 /// This function is marked unsafe for two reasons:
@@ -33,9 +33,11 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     let rc = match callback {
         Some(f) => {
             let p_arg: *mut c_void = mem::transmute(f);
-            ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG,
-                                log_callback as extern "C" fn(_, _, _),
-                                p_arg)
+            ffi::sqlite3_config(
+                ffi::SQLITE_CONFIG_LOG,
+                log_callback as extern "C" fn(_, _, _),
+                p_arg,
+            )
         }
         None => {
             let nullptr: *mut c_void = ptr::null_mut();
@@ -90,16 +92,20 @@ impl Connection {
     /// There can only be a single profiler defined for each database connection.
     /// Setting a new profiler clears the old one.
     pub fn profile(&mut self, profile_fn: Option<fn(&str, Duration)>) {
-        unsafe extern "C" fn profile_callback(p_arg: *mut c_void,
-                                              z_sql: *const c_char,
-                                              nanoseconds: u64) {
+        unsafe extern "C" fn profile_callback(
+            p_arg: *mut c_void,
+            z_sql: *const c_char,
+            nanoseconds: u64,
+        ) {
             let profile_fn: fn(&str, Duration) = mem::transmute(p_arg);
             let c_slice = CStr::from_ptr(z_sql).to_bytes();
             let s = String::from_utf8_lossy(c_slice);
             const NANOS_PER_SEC: u64 = 1_000_000_000;
 
-            let duration = Duration::new(nanoseconds / NANOS_PER_SEC,
-                                         (nanoseconds % NANOS_PER_SEC) as u32);
+            let duration = Duration::new(
+                nanoseconds / NANOS_PER_SEC,
+                (nanoseconds % NANOS_PER_SEC) as u32,
+            );
             profile_fn(&s, duration);
         }
 
