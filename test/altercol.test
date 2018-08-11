@@ -165,5 +165,23 @@ do_execsql_test 4.4 {
   {CREATE TABLE c2(a, b, FOREIGN KEY (a, b) REFERENCES p1)}
 }
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 5.0 {
+  CREATE TABLE t5(a, b, c);
+  CREATE INDEX t5a ON t5(a);
+  INSERT INTO t5 VALUES(1, 2, 3), (4, 5, 6);
+  ANALYZE;
+}
+
+do_execsql_test 5.1 {
+  ALTER TABLE t5 RENAME b TO big;
+  SELECT big FROM t5;
+} {2 5}
+
+do_catchsql_test 6.1 {
+  ALTER TABLE sqlite_stat1 RENAME tbl TO thetable;
+} {1 {table sqlite_stat1 may not be altered}}
+
 finish_test
 

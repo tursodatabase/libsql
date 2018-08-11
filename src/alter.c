@@ -806,6 +806,8 @@ void sqlite3AlterRenameColumn(
 
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_column;
+  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ) goto exit_rename_column;
+  
   iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iSchema>=0 );
   zDb = db->aDb[iSchema].zDbSName;
@@ -823,17 +825,17 @@ void sqlite3AlterRenameColumn(
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
 
-
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
       "sql = sqlite_rename_column(sql, %d, %Q, %Q, %Q) "
-      "WHERE type = 'table' OR (type='index' AND tbl_name = %Q AND sql!='')",
+      "WHERE name NOT LIKE 'sqlite_%%' AND ("
+      "   type = 'table' OR (type='index' AND tbl_name = %Q)"
+      ")",
       zDb, MASTER_NAME, iCol, zNew, pTab->zName, zOld, pTab->zName
   );
 
   /* Drop and reload the database schema. */
-  if( db->mallocFailed==0 ){
-    assert( pParse->pVdbe );
+  if( pParse->pVdbe ){
     sqlite3ChangeCookie(pParse, iSchema);
     sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, iSchema, 0);
   }
