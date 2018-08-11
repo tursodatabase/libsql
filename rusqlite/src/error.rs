@@ -68,6 +68,10 @@ pub enum Error {
     /// to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType(usize, Type),
+    /// Error returned by `vtab::Values::get` when the filter argument cannot be converted
+    /// to the requested type.
+    #[cfg(feature = "vtab")]
+    InvalidFilterParameterType(usize, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
     /// `create_scalar_function`).
@@ -80,6 +84,12 @@ pub enum Error {
 
     /// Error when the SQL is not a `SELECT`, is not read-only.
     InvalidQuery,
+
+    /// An error case available for implementors of custom modules (e.g.,
+    /// `create_module`).
+    #[cfg(feature = "vtab")]
+    #[allow(dead_code)]
+    ModuleError(String),
 }
 
 impl From<str::Utf8Error> for Error {
@@ -130,10 +140,16 @@ impl fmt::Display for Error {
             Error::InvalidFunctionParameterType(i, ref t) => {
                 write!(f, "Invalid function parameter type {} at index {}", t, i)
             }
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(i, ref t) => {
+                write!(f, "Invalid filter parameter type {} at index {}", t, i)
+            }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
             Error::ToSqlConversionFailure(ref err) => err.fmt(f),
             Error::InvalidQuery => write!(f, "Query is not read-only"),
+            #[cfg(feature = "vtab")]
+            Error::ModuleError(ref desc) => write!(f, "{}", desc),
         }
     }
 }
@@ -163,10 +179,14 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(_, _) => "invalid filter parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
             Error::ToSqlConversionFailure(ref err) => err.description(),
             Error::InvalidQuery => "query is not read-only",
+            #[cfg(feature = "vtab")]
+            Error::ModuleError(ref desc) => desc,
         }
     }
 
@@ -190,12 +210,17 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => None,
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(_, _) => None,
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
 
             Error::FromSqlConversionFailure(_, _, ref err)
             | Error::ToSqlConversionFailure(ref err) => Some(&**err),
+
+            #[cfg(feature = "vtab")]
+            Error::ModuleError(_) => None,
         }
     }
 }

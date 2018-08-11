@@ -56,7 +56,7 @@ extern crate libsqlite3_sys as ffi;
 extern crate lru_cache;
 #[macro_use]
 extern crate bitflags;
-#[cfg(test)]
+#[cfg(any(test, feature = "vtab"))]
 #[macro_use]
 extern crate lazy_static;
 
@@ -108,6 +108,8 @@ pub mod backup;
 pub mod blob;
 mod busy;
 mod cache;
+#[cfg(any(feature = "functions", feature = "vtab"))]
+mod context;
 mod error;
 #[cfg(feature = "functions")]
 pub mod functions;
@@ -126,6 +128,8 @@ mod transaction;
 pub mod types;
 mod unlock_notify;
 mod version;
+#[cfg(feature = "vtab")]
+pub mod vtab;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
