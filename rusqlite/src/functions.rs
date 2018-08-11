@@ -182,7 +182,7 @@ impl<'a> ValueRef<'a> {
 }
 
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
-    let _: Box<T> = Box::from_raw(p as *mut T);
+    drop(Box::from_raw(p as *mut T));
 }
 
 /// Context is a wrapper for the SQLite function evaluation context.

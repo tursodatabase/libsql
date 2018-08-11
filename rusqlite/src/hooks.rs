@@ -1,7 +1,6 @@
 //! Commit, Data Change and Rollback Notification Callbacks
 #![allow(non_camel_case_types)]
 
-use std::mem::size_of;
 use std::ptr;
 use std::os::raw::{c_int, c_char, c_void};
 
@@ -136,12 +135,10 @@ impl InnerConnection {
         self.rollback_hook(None::<fn()>);
     }
 
-    fn commit_hook<F>(&self, hook: Option<F>)
+    fn commit_hook<F>(&mut self, hook: Option<F>)
     where
         F: FnMut() -> bool,
     {
-        assert_eq!(size_of::<*mut F>(), size_of::<*mut c_void>());
-
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
         where
             F: FnMut() -> bool,
@@ -153,6 +150,14 @@ impl InnerConnection {
                 0
             }
         }
+
+        // unlike `sqlite3_create_function_v2`, we cannot specify a `xDestroy` with `sqlite3_commit_hook`.
+        // so we keep the `xDestroy` function in `InnerConnection.free_boxed_hook`.
+        let free_commit_hook = if hook.is_some() {
+            Some(free_boxed_hook::<F> as fn(*mut c_void))
+        } else {
+            None
+        };
 
         let previous_hook = match hook {
             Some(hook) => {
@@ -167,15 +172,18 @@ impl InnerConnection {
             }
             _ => unsafe { ffi::sqlite3_commit_hook(self.db(), None, ptr::null_mut()) },
         };
-        free_boxed_hook(previous_hook);
+        if !previous_hook.is_null() {
+            if let Some(free_boxed_hook) = self.free_commit_hook {
+                free_boxed_hook(previous_hook);
+            }
+        }
+        self.free_commit_hook = free_commit_hook;
     }
 
-    fn rollback_hook<F>(&self, hook: Option<F>)
+    fn rollback_hook<F>(&mut self, hook: Option<F>)
     where
         F: FnMut(),
     {
-        assert_eq!(size_of::<*mut F>(), size_of::<*mut c_void>());
-
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void)
         where
             F: FnMut(),
@@ -183,6 +191,12 @@ impl InnerConnection {
             let boxed_hook: *mut F = p_arg as *mut F;
             (*boxed_hook)();
         }
+
+        let free_rollback_hook = if hook.is_some() {
+            Some(free_boxed_hook::<F> as fn(*mut c_void))
+        } else {
+            None
+        };
 
         let previous_hook = match hook {
             Some(hook) => {
@@ -197,15 +211,18 @@ impl InnerConnection {
             }
             _ => unsafe { ffi::sqlite3_rollback_hook(self.db(), None, ptr::null_mut()) },
         };
-        free_boxed_hook(previous_hook);
+        if !previous_hook.is_null() {
+            if let Some(free_boxed_hook) = self.free_rollback_hook {
+                free_boxed_hook(previous_hook);
+            }
+        }
+        self.free_rollback_hook = free_rollback_hook;
     }
 
     fn update_hook<F>(&mut self, hook: Option<F>)
     where
         F: FnMut(Action, &str, &str, i64),
     {
-        assert_eq!(size_of::<*mut F>(), size_of::<*mut c_void>());
-
         unsafe extern "C" fn call_boxed_closure<F>(
             p_arg: *mut c_void,
             action_code: c_int,
@@ -233,6 +250,12 @@ impl InnerConnection {
             (*boxed_hook)(action, db_name, tbl_name, row_id);
         }
 
+        let free_update_hook = if hook.is_some() {
+            Some(free_boxed_hook::<F> as fn(*mut c_void))
+        } else {
+            None
+        };
+
         let previous_hook = match hook {
             Some(hook) => {
                 let boxed_hook: *mut F = Box::into_raw(Box::new(hook));
@@ -246,15 +269,17 @@ impl InnerConnection {
             }
             _ => unsafe { ffi::sqlite3_update_hook(self.db(), None, ptr::null_mut()) },
         };
-        free_boxed_hook(previous_hook);
+        if !previous_hook.is_null() {
+            if let Some(free_boxed_hook) = self.free_update_hook {
+                free_boxed_hook(previous_hook);
+            }
+        }
+        self.free_update_hook = free_update_hook;
     }
 }
 
-fn free_boxed_hook(hook: *mut c_void) {
-    if !hook.is_null() {
-        // make sure that size_of::<*mut F>() is always equal to size_of::<*mut c_void>()
-        let _: Box<*mut c_void> = unsafe { Box::from_raw(hook as *mut _) };
-    }
+fn free_boxed_hook<F>(p: *mut c_void) {
+    drop(unsafe { Box::from_raw(p as *mut F) });
 }
 
 #[cfg(test)]
@@ -274,6 +299,19 @@ mod test {
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
             .unwrap();
         assert!(called);
+    }
+
+    #[test]
+    fn test_fn_commit_hook() {
+        let db = Connection::open_in_memory().unwrap();
+
+        fn hook() -> bool {
+            true
+        }
+
+        db.commit_hook(Some(hook));
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
+            .unwrap_err();
     }
 
     #[test]
