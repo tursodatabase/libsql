@@ -1,8 +1,8 @@
 ///! Busy handler (when the database is locked)
-use std::time::Duration;
 use std::mem;
 use std::os::raw::{c_int, c_void};
 use std::ptr;
+use std::time::Duration;
 
 use ffi;
 use {Connection, InnerConnection, Result};
@@ -67,8 +67,8 @@ mod test {
     use self::tempdir::TempDir;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::mpsc::sync_channel;
-    use std::time::Duration;
     use std::thread;
+    use std::time::Duration;
 
     use {Connection, Error, ErrorCode, TransactionBehavior};
 
@@ -113,8 +113,8 @@ mod test {
         });
 
         assert_eq!(tx.recv().unwrap(), 1);
-        let _ =
-            db2.query_row("PRAGMA schema_version", &[], |row| {
+        let _ = db2
+            .query_row("PRAGMA schema_version", &[], |row| {
                 row.get_checked::<_, i32>(0)
             }).expect("unexpected error");
 
@@ -151,8 +151,8 @@ mod test {
         });
 
         assert_eq!(tx.recv().unwrap(), 1);
-        let _ =
-            db2.query_row("PRAGMA schema_version", &[], |row| {
+        let _ = db2
+            .query_row("PRAGMA schema_version", &[], |row| {
                 row.get_checked::<_, i32>(0)
             }).expect("unexpected error");
         assert_eq!(CALLED.load(Ordering::Relaxed), true);

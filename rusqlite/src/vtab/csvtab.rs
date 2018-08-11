@@ -371,8 +371,8 @@ mod test {
             .unwrap();
 
         {
-            let mut s =
-                db.prepare(
+            let mut s = db
+                .prepare(
                     "SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 WHERE \
                      v1.rowid < v2.rowid",
                 ).unwrap();
