@@ -72,7 +72,7 @@ use std::result;
 use std::str;
 use std::sync::{Once, ONCE_INIT};
 use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
-use std::os::raw::{c_int, c_char};
+use std::os::raw::{c_int, c_char, c_void};
 
 use types::{ToSql, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
@@ -597,6 +597,12 @@ impl fmt::Debug for Connection {
 
 struct InnerConnection {
     db: *mut ffi::sqlite3,
+    #[cfg(feature = "hooks")]
+    free_commit_hook: Option<fn(*mut c_void)>,
+    #[cfg(feature = "hooks")]
+    free_rollback_hook: Option<fn(*mut c_void)>,
+    #[cfg(feature = "hooks")]
+    free_update_hook: Option<fn(*mut c_void)>,
 }
 
 /// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
@@ -755,6 +761,15 @@ To fix this, either:
 }
 
 impl InnerConnection {
+    #[cfg(not(feature = "hooks"))]
+    fn new(db: *mut ffi::sqlite3) -> InnerConnection {
+        InnerConnection { db }
+    }
+    #[cfg(feature = "hooks")]
+    fn new(db: *mut ffi::sqlite3) -> InnerConnection {
+        InnerConnection { db, free_commit_hook: None, free_rollback_hook: None, free_update_hook: None }
+    }
+
     fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
         ensure_valid_sqlite_version();
         ensure_safe_sqlite_threading_mode()?;
@@ -792,7 +807,7 @@ impl InnerConnection {
             // attempt to turn on extended results code; don't fail if we can't.
             ffi::sqlite3_extended_result_codes(db, 1);
 
-            Ok(InnerConnection { db })
+            Ok(InnerConnection::new(db))
         }
     }
 
