@@ -1,5 +1,5 @@
-C If\sthe\snew\scolumn\sname\sin\san\sALTER\sTABLE\sRENAME\sCOLUMN\sstatement\sis\squoted,\nthen\salso\suse\squotes\sfor\sthe\scolumn\sname\sin\sthe\sedited\sSQL\sstatements.
-D 2018-08-11T20:38:33.809
+C Add\sthe\s"atrc"\stest\sprogram.\s\s\s"Atrc"\sis\sshort\sfor\s"ALTER\sTABLE\sRENAME\sCOLUMN".\nSee\sthe\sheader\scomment\son\sthe\sprogram\sitself\sfor\sfurther\sinformation.
+D 2018-08-11T20:46:54.161
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -625,6 +625,7 @@ F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
+F test/atrc.c 834739c220d2715dd513ce76d4773216a9c1bffe40d992876d14c34e103f11be
 F test/attach.test f4b8918ba2f3e88e6883b8452340545f10a1388af808343c37fc5c577be8281c
 F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
@@ -1755,7 +1756,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 520c1c75dae5e3f4695fcdf0aad5fb9f492f0e528b5fbb49d5d3b5fc02762f47
-R 42d189b99bda0a148c429a132edf76e5
-U dan
-Z 03ad3aa61b255b569ff4ff7e8834b149
+P ca5184a25f9150540a3e401ef67df0606efa7a294d70e3fa5edad9854003eb36
+R cecd54c9d63229291534e29203ac7afc
+U drh
+Z 77329205a7cab2453b99ca75b5ef0d21
