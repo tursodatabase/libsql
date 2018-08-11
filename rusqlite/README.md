@@ -93,6 +93,11 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
+* `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
+* `unlock_notify` for [Unlock](https://sqlite.org/unlock_notify.html) notification.
+* `vtab` for [virtual table](https://sqlite.org/vtab.html) support (allows you to write virtual table implemntations in Rust).
+* [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust.
+* [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
 
 ## Notes on building rusqlite and libsqlite3-sys
 
