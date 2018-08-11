@@ -4,10 +4,10 @@
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jgallagher/rusqlite?branch=master&svg=true)](https://ci.appveyor.com/project/jgallagher/rusqlite)
 [![dependency status](https://deps.rs/repo/github/jgallagher/rusqlite/status.svg)](https://deps.rs/repo/github/jgallagher/rusqlite)
 [![Latest Version](https://img.shields.io/crates/v/rusqlite.svg)](https://crates.io/crates/rusqlite)
+[![Docs](https://docs.rs/rusqlite/badge.svg)](https://docs.rs/rusqlite)
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
-an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres). View the full
-[API documentation](http://docs.rs/rusqlite/).
+an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 
 ```rust
 extern crate rusqlite;
@@ -70,32 +70,32 @@ newer SQLite version; see details below.
 Rusqlite provides several features that are behind [Cargo
 features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section). They are:
 
-* [`load_extension`](http://jgallagher.github.io/rusqlite/rusqlite/struct.LoadExtensionGuard.html)
+* [`load_extension`](https://docs.rs/rusqlite/0.13.0/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
-* [`backup`](http://jgallagher.github.io/rusqlite/rusqlite/backup/index.html)
+* [`backup`](https://docs.rs/rusqlite/0.13.0/rusqlite/backup/index.html)
   allows use of SQLite's online backup API. Note: This feature requires SQLite 3.6.11 or later.
-* [`functions`](http://jgallagher.github.io/rusqlite/rusqlite/functions/index.html)
+* [`functions`](https://docs.rs/rusqlite/0.13.0/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
   Note: This feature requires SQLite 3.7.3 or later.
-* [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
+* [`trace`](https://docs.rs/rusqlite/0.13.0/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs. Note: This feature
   requires SQLite 3.6.23 or later.
-* [`blob`](http://jgallagher.github.io/rusqlite/rusqlite/blob/index.html)
+* [`blob`](https://docs.rs/rusqlite/0.13.0/rusqlite/blob/index.html)
   gives `std::io::{Read, Write, Seek}` access to SQL BLOBs. Note: This feature
   requires SQLite 3.7.4 or later.
-* [`limits`](http://jgallagher.github.io/rusqlite/rusqlite/struct.Connection.html#method.limit)
+* [`limits`](https://docs.rs/rusqlite/0.13.0/rusqlite/struct.Connection.html#method.limit)
   allows you to set and retrieve SQLite's per connection limits.
-* `chrono` implements [`FromSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for various
+* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/0.13.0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/0.13.0/rusqlite/types/trait.ToSql.html) for various
   types from the [`chrono` crate](https://crates.io/crates/chrono).
-* `serde_json` implements [`FromSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for the
+* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/0.13.0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/0.13.0/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 * `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
 * `unlock_notify` for [Unlock](https://sqlite.org/unlock_notify.html) notification.
-* `vtab` for [virtual table](https://sqlite.org/vtab.html) support (allows you to write virtual table implemntations in Rust).
+* `vtab` for [virtual table](https://sqlite.org/vtab.html) support (allows you to write virtual table implemntations in Rust). Currently, only read-only virtual tables are supported.
 * [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust.
 * [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
 
