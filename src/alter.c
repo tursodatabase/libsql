@@ -803,6 +803,7 @@ void sqlite3AlterRenameColumn(
   char *zNew = 0;
   const char *zDb;
   int iSchema;
+  int bQuote;
 
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_column;
@@ -824,14 +825,15 @@ void sqlite3AlterRenameColumn(
 
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
-
+  assert( pNew->n>0 );
+  bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_column(sql, %d, %Q, %Q, %Q) "
+      "sql = sqlite_rename_column(sql, %d, %d, %Q, %Q, %Q) "
       "WHERE name NOT LIKE 'sqlite_%%' AND ("
       "   type = 'table' OR (type='index' AND tbl_name = %Q)"
       ")",
-      zDb, MASTER_NAME, iCol, zNew, pTab->zName, zOld, pTab->zName
+      zDb, MASTER_NAME, iCol, bQuote, zNew, pTab->zName, zOld, pTab->zName
   );
 
   /* Drop and reload the database schema. */
@@ -931,7 +933,7 @@ static RenameToken *renameColumnTokenNext(struct RenameCtx *pCtx){
 }
 
 /*
-** sqlite_rename_table(SQL, iCol, zNew, zTable, zOld)
+** sqlite_rename_column(SQL, iCol, bQuote, zNew, zTable, zOld)
 */
 static void renameColumnFunc(
   sqlite3_context *context,
@@ -942,10 +944,11 @@ static void renameColumnFunc(
   struct RenameCtx sCtx;
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
   int nSql = sqlite3_value_bytes(argv[0]);
-  const char *zNew = (const char*)sqlite3_value_text(argv[2]);
-  int nNew = sqlite3_value_bytes(argv[2]);
-  const char *zTable = (const char*)sqlite3_value_text(argv[3]);
-  const char *zOld = (const char*)sqlite3_value_text(argv[4]);
+  int bQuote = sqlite3_value_int(argv[2]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[3]);
+  int nNew = sqlite3_value_bytes(argv[3]);
+  const char *zTable = (const char*)sqlite3_value_text(argv[4]);
+  const char *zOld = (const char*)sqlite3_value_text(argv[5]);
 
   int rc;
   char *zErr = 0;
@@ -991,12 +994,9 @@ static void renameColumnFunc(
     return;
   }
 
-  for(i=0; i<nNew; i++){
-    if( sqlite3IsIdChar(zNew[i])==0 ){
-      zNew = zQuot;
-      nNew = nQuot;
-      break;
-    }
+  if( bQuote ){
+    zNew = zQuot;
+    nNew = nQuot;
   }
 
 #ifdef SQLITE_DEBUG
@@ -1059,7 +1059,8 @@ static void renameColumnFunc(
     sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
   }
 
-  zOut = sqlite3DbMallocZero(db, nSql + sCtx.nList*nNew + 1);
+  assert( nQuot>=nNew );
+  zOut = sqlite3DbMallocZero(db, nSql + sCtx.nList*nQuot + 1);
   if( zOut ){
     int nOut = nSql;
     memcpy(zOut, zSql, nSql);
@@ -1109,7 +1110,7 @@ static void renameColumnFunc(
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
-    FUNCTION(sqlite_rename_column,   5, 0, 0, renameColumnFunc),
+    FUNCTION(sqlite_rename_column,   6, 0, 0, renameColumnFunc),
 #ifndef SQLITE_OMIT_TRIGGER
     FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
 #endif

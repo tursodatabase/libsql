@@ -200,5 +200,13 @@ do_execsql_test 6.1 {
   ALTER TABLE "blob" RENAME COLUMN "rid" TO "a1";
 }
 
+do_catchsql_test 6.2 {
+  ALTER TABLE "blob" RENAME COLUMN "a1" TO [where];
+} {0 {}}
+
+do_execsql_test 6.3 {
+  SELECT "where" FROM blob;
+} {}
+
 finish_test
 
