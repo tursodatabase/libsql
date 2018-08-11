@@ -9,6 +9,7 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * BREAKING CHANGE: Replace parameter index/count type (i32) with usize.
 * BREAKING CHANGE: Replace row changes/count type (i32) with usize.
 * Bugfix: Commit failure unhandled, database left in unusable state (#366).
+* Bugfix: `free_boxed_hook` does not work for `fn`.
 * Update the bundled SQLite version to 3.24.0 (#326).
 * Add DropBehavior::Panic to enforce intentional commit or rollback.
 * Implement `sqlite3_update_hook` (#260, #328), `sqlite3_commit_hook` and `sqlite3_rollback_hook`.
@@ -19,7 +20,10 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * Fix handful of clippy warnings.
 * Fix `Connection::open` documentation (#332)
 * Add binding to `sqlite3_get_autocommit` and `sqlite3_stmt_busy`.
+* Add binding to `sqlite3_busy_timeout` and `sqlite3_busy_handler`.
+* Add binding to `sqlite3_expanded_sql`.
 * Use `rerun-if-env-changed` in libsqlite3-sys (#329).
+* Return an `InvalidQuery` error when SQL is not read only.
 
 # Version 0.13.0 (2017-11-13)
 
