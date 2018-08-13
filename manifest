@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\scomment\son\sthe\sunix-nolock\sVFS\sobject.\s\sNo\sfunctional\ncode\schanges.
-D 2018-08-13T11:32:07.332
+C Take\sextra\sprecautions\sto\sensure\saccess\sto\sunixInodeInfo.pUnused\sis\sprotected\nby\sall\snecessary\smutexes.
+D 2018-08-13T20:46:18.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -482,7 +482,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 4723f4d963c032b5162dd6de79c314c2f67bccfeea2e458aaefa0f3049877f2e
+F src/os_unix.c 443f6331828b9d0d05f9528a2ae30d927ab988a951ea783dc85538dc9109d489
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 76d29b8a960dcb8b67210f095899d91e4a90673a6674ea58cfd1115b705a7fb9
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4195a3f8b5d2c2ec63771890c5aa7b5e2de60b9fa2273652730239b8577ae418
-R dc8601ab971a0e9f35b0830adc99e5ec
+P 90f7c193b42f0d8120a8e429bdea5e1cec5d3f45b901db8fc5a5c2ca3e69cba8
+R de3b1179403c76c7e851316aaadc94be
 U drh
-Z 8549fb1e42f4bc7f9d102f40d2b9a827
+Z 4ac850f8e532f34d7b8e835a0f2cfeb4
