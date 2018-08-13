@@ -790,29 +790,40 @@ exit_begin_add_column:
   return;
 }
 
+/*
+** Handles the following parser reduction:
+**
+**  cmd ::= ALTER TABLE pSrc RENAME COLUMN pOld TO pNew
+*/
 void sqlite3AlterRenameColumn(
-  Parse *pParse, 
-  SrcList *pSrc, 
-  Token *pOld, 
-  Token *pNew
+  Parse *pParse,                  /* Parsing context */
+  SrcList *pSrc,                  /* Table being altered.  pSrc->nSrc==1 */
+  Token *pOld,                    /* Name of column being changed */
+  Token *pNew                     /* New column name */
 ){
-  sqlite3 *db = pParse->db;
+  sqlite3 *db = pParse->db;       /* Database connection */
   Table *pTab;                    /* Table being updated */
   int iCol;                       /* Index of column being renamed */
-  char *zOld = 0;
-  char *zNew = 0;
-  const char *zDb;
-  int iSchema;
-  int bQuote;
+  char *zOld = 0;                 /* Old column name */
+  char *zNew = 0;                 /* New column name */
+  const char *zDb;                /* Name of schema containing the table */
+  int iSchema;                    /* Index of the schema */
+  int bQuote;                     /* True to quote the new name */
 
+  /* Locate the table to be altered */
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_column;
+
+  /* Cannot alter a system table */
   if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ) goto exit_rename_column;
-  
+
+  /* Which schema holds the table to be altered */  
   iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iSchema>=0 );
   zDb = db->aDb[iSchema].zDbSName;
 
+  /* Make sure the old name really is a column name in the table to be
+  ** altered.  Set iCol to be the index of the column being renamed */
   zOld = sqlite3NameFromToken(db, pOld);
   if( !zOld ) goto exit_rename_column;
   for(iCol=0; iCol<pTab->nCol; iCol++){
@@ -823,6 +834,10 @@ void sqlite3AlterRenameColumn(
     goto exit_rename_column;
   }
 
+  /* Do the rename operation using a recursive UPDATE statement that
+  ** uses the sqlite_rename_column() SQL function to compute the new
+  ** CREATE statement text for the sqlite_master table.
+  */
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
   assert( pNew->n>0 );
@@ -849,18 +864,43 @@ void sqlite3AlterRenameColumn(
   return;
 }
 
+/*
+** Each RenameToken object maps an element of the parse tree into
+** the token that generated that element.  The parse tree element
+** might be one of:
+**
+**     *  A pointer to an Expr that represents an ID
+**     *  The name of a table column in Column.zName
+**
+** A list of RenameToken objects can be constructed during parsing.
+** Each new object is created by sqlite3RenameToken().
+** As the parse tree is transformed, the sqlite3MoveRenameToken()
+** routine is used to keep the mapping current.
+**
+** After the parse finishes, renameTokenFind() routine can be used
+** to look up the actual token value that created some element in
+** the parse tree.
+*/
 struct RenameToken {
-  void *p;
-  Token t;
-  RenameToken *pNext;
+  void *p;               /* Parse tree element created by token t */
+  Token t;               /* The token that created parse tree element p */
+  RenameToken *pNext;    /* Next is a list of all RenameToken objects */
 };
 
+/*
+** The context of an ALTER TABLE RENAME COLUMN operation that gets passed
+** down into the Walker.
+*/
 struct RenameCtx {
   RenameToken *pList;             /* List of tokens to overwrite */
   int nList;                      /* Number of tokens in pList */
   int iCol;                       /* Index of column being renamed */
 };
 
+/*
+** Add a new RenameToken object mapping parse tree element pPtr into
+** token *pToken to the Parse object currently under construction.
+*/
 void sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
@@ -872,6 +912,11 @@ void sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
   }
 }
 
+/*
+** If there is a RenameToken object associated with parse tree element
+** pFrom, then remap that object over to pTo due to a transformation
+** in the parse tree.
+*/
 void sqlite3MoveRenameToken(Parse *pParse, void *pTo, void *pFrom){
   RenameToken *p;
   for(p=pParse->pRename; p; p=p->pNext){
@@ -883,6 +928,9 @@ void sqlite3MoveRenameToken(Parse *pParse, void *pTo, void *pFrom){
   assert( p );
 }
 
+/*
+** Free the list of RenameToken objects given in the second argument
+*/
 static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
   RenameToken *pNext;
   RenameToken *p;
@@ -1101,6 +1149,7 @@ renameColumnFunc_done:
   sqlite3DeleteTable(db, sParse.pNewTable);
   if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
   renameTokenFree(db, sParse.pRename);
+  renameTokenFree(db, sCtx.pList);
   sqlite3ParserReset(&sParse);
   sqlite3_free(zQuot);
 }
