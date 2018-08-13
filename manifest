@@ -1,5 +1,5 @@
-C Fix\slegacy\scomments\son\sToken.\s\sBegin\scommenting\sthe\snew\sALTER\sTABLE\sRENAME\nCOLUMN\scode.\s\sFix\sa\smemory\sleak\sin\sthe\ssqlite_rename_column()\sSQL\sfunction.
-D 2018-08-13T15:09:48.567
+C Make\sthe\ssqlite_rename_column()\sSQL\sfunction\sresistant\sto\sproblems\scaused\nby\sOOMs\sand/or\smalformed\sparameters\ssubmitted\sby\shostile\sapplication\scode.\nAlso\sadd\sadditional\scomments\sto\sthe\sRENAME\sCOLUMN\slogic.
+D 2018-08-13T17:02:26.434
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 7a8e8f14b07063973b772b07921bcc54db36e26e8aae14d2584446ed5af9e513
+F src/alter.c 5367a5483812b08662f17e7eb5e1891cc0996f9b6e297955ce03454c508d3c79
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -1756,7 +1756,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b28dd5c2e4908d5e49eaedd359492e46de8af3bf84120f4683b3ea906882fbf
-R 8e4aad63439996e323e3c103c6b55b1d
+P 32edc8920376aabb84ebe1900eaa9512d23f1b44d6459e4916dc6b07db66e27c
+R dded0a1ea7b07b29f53ec6b813829626
 U drh
-Z 82791a60e4da34a95b2d48254121d988
+Z 21a9b725df605fe8e7c9a80550758727

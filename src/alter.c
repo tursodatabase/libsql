@@ -940,6 +940,14 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
   }
 }
 
+/*
+** Return the RenameToken object associated with parse tree element pPtr,
+** or a NULL pointer if not found.  The RenameToken object returned is
+** removed from the list of RenameToken objects attached to the Parse
+** object and the caller becomes the new owner of the RenameToken object
+** Hence, the caller assumes responsibility for freeing the returned
+** RenameToken object.
+*/
 static RenameToken *renameTokenFind(Parse *pParse, void *pPtr){
   RenameToken **pp;
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
@@ -953,6 +961,15 @@ static RenameToken *renameTokenFind(Parse *pParse, void *pPtr){
   return 0;
 }
 
+/*
+** This is a Walker expression callback.
+**
+** For every TK_COLUMN node in the expression tree, search to see
+** if the column being references is the column being renamed by an
+** ALTER TABLE statement.  If it is, then attach its associated
+** RenameToken object to the list of RenameToken objects being
+** constructed in RenameCtx object at pWalker->u.pRename.
+*/
 static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   struct RenameCtx *p = pWalker->u.pRename;
   if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol ){
@@ -966,6 +983,15 @@ static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 
+/*
+** The RenameCtx contains a list of tokens that reference a column that
+** is being renamed by an ALTER TABLE statement.  Return the "first"
+** RenameToken in the RenameCtx and remove that RenameToken from the
+** RenameContext.  "First" means the first RenameToken encountered when
+** the input SQL from left to right.  Repeated calls to this routine
+** return all column name tokens in the order that they are encountered
+** in the SQL statement.
+*/
 static RenameToken *renameColumnTokenNext(struct RenameCtx *pCtx){
   RenameToken *pBest = pCtx->pList;
   RenameToken *pToken;
@@ -981,7 +1007,24 @@ static RenameToken *renameColumnTokenNext(struct RenameCtx *pCtx){
 }
 
 /*
-** sqlite_rename_column(SQL, iCol, bQuote, zNew, zTable, zOld)
+** SQL function:
+**
+**     sqlite_rename_column(zSql, iCol, bQuote, zNew, zTable, zOld)
+**
+** Do a column rename operation on the CREATE statement given in zSql.
+** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
+** into zNew.  The name should be quoted if bQuote is true.
+**
+** This function is used internally by the ALTER TABLE RENAME COLUMN command.
+** Though accessible to application code, it is not intended for use by
+** applications.  The existance of this function, and the way it works,
+** is subject to change without notice.
+**
+** If any of the parameters are out-of-bounds, then simply return NULL.
+** An out-of-bounds parameter can only occur when the application calls
+** this function directly.  The parameters will always be well-formed when
+** this routine is invoked by the bytecode for a legitimate ALTER TABLE
+** statement.
 */
 static void renameColumnFunc(
   sqlite3_context *context,
@@ -1009,8 +1052,13 @@ static void renameColumnFunc(
   int nQuot = 0;                  /* Length of zQuot in bytes */
   int i;
 
+  if( zSql==0 ) return;
+  if( zNew==0 ) return;
+  if( zTable==0 ) return;
+  if( zOld==0 ) return;
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.iCol = sqlite3_value_int(argv[1]);
+  if( sCtx.iCol<0 ) return;
 
   memset(&sParse, 0, sizeof(sParse));
   sParse.eParseMode = PARSE_MODE_RENAME_COLUMN;
