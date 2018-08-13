@@ -714,6 +714,9 @@ static void unixLeaveMutex(void){
 static int unixMutexHeld(void) {
   return sqlite3_mutex_held(unixBigLock);
 }
+static int unixMutexNotheld(void) {
+  return sqlite3_mutex_notheld(unixBigLock);
+}
 #endif
 
 
@@ -1249,7 +1252,7 @@ static void storeLastErrno(unixFile *pFile, int error){
 /*
 ** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
 */ 
-static void closePendingFds(unixFile *pFile){
+static void closePendingFdsUnsafe(unixFile *pFile){
   unixInodeInfo *pInode = pFile->pInode;
   UnixUnusedFd *p;
   UnixUnusedFd *pNext;
@@ -1260,6 +1263,12 @@ static void closePendingFds(unixFile *pFile){
     nUnusedFd--;
   }
   pInode->pUnused = 0;
+}
+
+static void closePendingFds(unixFile *pFile){
+  unixEnterMutex();
+  closePendingFdsUnsafe(pFile);
+  unixLeaveMutex();
 }
 
 /*
@@ -1275,7 +1284,7 @@ static void releaseInodeInfo(unixFile *pFile){
     pInode->nRef--;
     if( pInode->nRef==0 ){
       assert( pInode->pShmNode==0 );
-      closePendingFds(pFile);
+      closePendingFdsUnsafe(pFile);
       if( pInode->pPrev ){
         assert( pInode->pPrev->pNext==pInode );
         pInode->pPrev->pNext = pInode->pNext;
@@ -1458,6 +1467,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 
   assert( pFile );
   assert( pFile->eFileLock<=SHARED_LOCK );
+  assert( unixMutexNotheld() );
   sqlite3_mutex_enter(pFile->pInode->pLockMutex);
 
   /* Check if a thread in this process holds such a lock */
@@ -1670,6 +1680,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   /* This mutex is needed because pFile->pInode is shared across threads
   */
   pInode = pFile->pInode;
+  assert( unixMutexNotheld() );
   sqlite3_mutex_enter(pInode->pLockMutex);
 
   /* If some thread using this PID has a lock via a different unixFile*
@@ -1862,6 +1873,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     return SQLITE_OK;
   }
   pInode = pFile->pInode;
+  assert( unixMutexNotheld() );
   sqlite3_mutex_enter(pInode->pLockMutex);
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
@@ -2793,6 +2805,7 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
     *pResOut = 1;
     return SQLITE_OK;
   }
+  assert( unixMutexNotheld() );
   sqlite3_mutex_enter(pFile->pInode->pLockMutex);
   /* Check if a thread in this process holds such a lock */
   if( pFile->pInode->eFileLock>SHARED_LOCK ){
@@ -2881,6 +2894,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   /* This mutex is needed because pFile->pInode is shared across threads
   */
   pInode = pFile->pInode;
+  assert( unixMutexNotheld() );
   sqlite3_mutex_enter(pInode->pLockMutex);
 
   /* If some thread using this PID has a lock via a different unixFile*
@@ -3050,6 +3064,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     return SQLITE_OK;
   }
   pInode = pFile->pInode;
+  assert( unixMutexNotheld() );
   sqlite3_mutex_enter(pInode->pLockMutex);
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
