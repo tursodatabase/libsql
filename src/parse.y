@@ -1311,7 +1311,7 @@ uniqueflag(A) ::= .        {A = OE_None;}
                          pIdToken->n, pIdToken->z);
     }
     sqlite3ExprListSetName(pParse, p, pIdToken, 1);
-    if( IN_RENAME_COLUMN ){
+    if( IN_RENAME_COLUMN && p ){
       sqlite3RenameToken(pParse, (void*)(p->a[p->nExpr-1].zName), pIdToken);
     }
     return p;

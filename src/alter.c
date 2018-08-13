@@ -970,6 +970,7 @@ static void renameColumnFunc(
   sParse.nQueryLoop = 1;
   rc = sqlite3RunParser(&sParse, zSql, &zErr);
   assert( sParse.pNewTable==0 || sParse.pNewIndex==0 );
+  if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK && sParse.pNewTable==0 && sParse.pNewIndex==0 ){
     rc = SQLITE_CORRUPT_BKPT;
   }
@@ -990,8 +991,7 @@ static void renameColumnFunc(
       sqlite3_result_error_code(context, rc);
     }
     sqlite3DbFree(db, zErr);
-    sqlite3_free(zQuot);
-    return;
+    goto renameColumnFunc_done;
   }
 
   if( bQuote ){
@@ -1094,6 +1094,7 @@ static void renameColumnFunc(
     sqlite3DbFree(db, zOut);
   }
 
+renameColumnFunc_done:
   if( sParse.pVdbe ){
     sqlite3VdbeFinalize(sParse.pVdbe);
   }

@@ -1,5 +1,5 @@
-C Add\sthe\s"atrc"\stest\sprogram.\s\s\s"Atrc"\sis\sshort\sfor\s"ALTER\sTABLE\sRENAME\sCOLUMN".\nSee\sthe\sheader\scomment\son\sthe\sprogram\sitself\sfor\sfurther\sinformation.
-D 2018-08-11T20:46:54.161
+C Fix\sissues\swith\sALTER\sTABLE\sRENAME\sCOLUMN\sassociated\swith\sOOM\serrors.
+D 2018-08-13T13:43:11.223
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 87911da129f661ce101e9636656787a4c78ca66bb26212ccae55509ccadd6e7c
+F src/alter.c cebb1e3377da1d43f4953958ccba9aa3b8bca1d13c9e65641e618b20fe70b75f
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -487,7 +487,7 @@ F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 76d29b8a960dcb8b67210f095899d91e4a90673a6674ea58cfd1115b705a7fb9
 F src/pager.h c571b064df842ec8f2e90855dead9acf4cbe0d1b2c05afe0ef0d0145f7fd0388
-F src/parse.y cec1d2306334920ad4d54fd0186d37905493313ebf4bed2d5322867caa62609c
+F src/parse.y 035b397bf1acbd3cb8293812b07c8aefce9f275d4de1442e113dbd0d2f733dce
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1756,7 +1756,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca5184a25f9150540a3e401ef67df0606efa7a294d70e3fa5edad9854003eb36
-R cecd54c9d63229291534e29203ac7afc
+P ed64a55a2242408ac0b889b330cf91d38a954399b75c6ebe71232613b864c70b
+R 255a4a896f37e0089555356e40c7a265
 U drh
-Z 77329205a7cab2453b99ca75b5ef0d21
+Z 930444da45c5fb126a7b0f868b303e81
