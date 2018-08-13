@@ -130,7 +130,7 @@ do_execsql_test 3.2 {
   SELECT * FROM t4;
 } {3 2 1}
 
-# do_execsql_test 3.3 { INSERT INTO t4 VALUES(6, 5, 4); } {}
+do_execsql_test 3.3 { INSERT INTO t4 VALUES(6, 5, 4); } {}
 
 #-------------------------------------------------------------------------
 #
@@ -207,6 +207,33 @@ do_catchsql_test 6.2 {
 do_execsql_test 6.3 {
   SELECT "where" FROM blob;
 } {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE c(x);
+  INSERT INTO c VALUES(0);
+  CREATE TABLE t6("col a", "col b", "col c");
+  CREATE TRIGGER zzz AFTER UPDATE OF "col a", "col c" ON t6 BEGIN
+    UPDATE c SET x=x+1;
+  END;
+}
+
+do_execsql_test 7.1 {
+  INSERT INTO t6 VALUES(0, 0, 0);
+  UPDATE t6 SET "col c" = 1;
+  SELECT * FROM c;
+} {1}
+
+do_execsql_test 7.2 {
+  ALTER TABLE t6 RENAME "col c" TO "col 3";
+}
+
+do_execsql_test 7.3 {
+  UPDATE t6 SET "col 3" = 0;
+  SELECT * FROM c;
+} {2}
 
 finish_test
 

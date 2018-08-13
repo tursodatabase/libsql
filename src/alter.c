@@ -846,7 +846,7 @@ void sqlite3AlterRenameColumn(
       "UPDATE \"%w\".%s SET "
       "sql = sqlite_rename_column(sql, %d, %d, %Q, %Q, %Q) "
       "WHERE name NOT LIKE 'sqlite_%%' AND ("
-      "   type = 'table' OR (type='index' AND tbl_name = %Q)"
+      "   type = 'table' OR (type IN ('index', 'trigger') AND tbl_name = %Q)"
       ")",
       zDb, MASTER_NAME, iCol, bQuote, zNew, pTab->zName, zOld, pTab->zName
   );
@@ -891,10 +891,12 @@ struct RenameToken {
 ** The context of an ALTER TABLE RENAME COLUMN operation that gets passed
 ** down into the Walker.
 */
+typedef struct RenameCtx RenameCtx;
 struct RenameCtx {
   RenameToken *pList;             /* List of tokens to overwrite */
   int nList;                      /* Number of tokens in pList */
   int iCol;                       /* Index of column being renamed */
+  const char *zOld;               /* Old column name */
 };
 
 /*
@@ -940,33 +942,40 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
   }
 }
 
-static RenameToken *renameTokenFind(Parse *pParse, void *pPtr){
+static void renameTokenFind(Parse *pParse, RenameCtx *pCtx, void *pPtr){
   RenameToken **pp;
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
       *pp = pToken->pNext;
-      pToken->pNext = 0;
-      return pToken;
+      pToken->pNext = pCtx->pList;
+      pCtx->pList = pToken;
+      pCtx->nList++;
+      break;
     }
   }
-  return 0;
 }
 
 static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
-  struct RenameCtx *p = pWalker->u.pRename;
-  if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol ){
-    RenameToken *pTok = renameTokenFind(pWalker->pParse, (void*)pExpr);
-    if( pTok ){
-      pTok->pNext = p->pList;
-      p->pList = pTok;
-      p->nList++;
+  RenameCtx *p = pWalker->u.pRename;
+  if( p->zOld && pExpr->op==TK_DOT ){
+    Expr *pLeft = pExpr->pLeft;
+    Expr *pRight = pExpr->pRight;
+    assert( pLeft->op==TK_ID && pRight->op==TK_ID );
+    if( 0==sqlite3_stricmp(pLeft->u.zToken, "old")
+     || 0==sqlite3_stricmp(pLeft->u.zToken, "new")
+    ){
+      if( 0==sqlite3_stricmp(pRight->u.zToken, p->zOld) ){
+        renameTokenFind(pWalker->pParse, p, (void*)pRight);
+      }
     }
+  }else if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol ){
+    renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }
   return WRC_Continue;
 }
 
-static RenameToken *renameColumnTokenNext(struct RenameCtx *pCtx){
+static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
   RenameToken *pBest = pCtx->pList;
   RenameToken *pToken;
   RenameToken **pp;
@@ -989,7 +998,7 @@ static void renameColumnFunc(
   sqlite3_value **argv
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
-  struct RenameCtx sCtx;
+  RenameCtx sCtx;
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
   int nSql = sqlite3_value_bytes(argv[0]);
   int bQuote = sqlite3_value_int(argv[2]);
@@ -1019,7 +1028,9 @@ static void renameColumnFunc(
   rc = sqlite3RunParser(&sParse, zSql, &zErr);
   assert( sParse.pNewTable==0 || sParse.pNewIndex==0 );
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
-  if( rc==SQLITE_OK && sParse.pNewTable==0 && sParse.pNewIndex==0 ){
+  if( rc==SQLITE_OK 
+   && sParse.pNewTable==0 && sParse.pNewIndex==0 && sParse.pNewTrigger==0 
+  ){
     rc = SQLITE_CORRUPT_BKPT;
   }
 
@@ -1067,10 +1078,9 @@ static void renameColumnFunc(
     int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
     FKey *pFKey;
     if( bFKOnly==0 ){
-      sCtx.pList = renameTokenFind(
-          &sParse, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
+      renameTokenFind(
+          &sParse, &sCtx, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
       );
-      sCtx.nList = 1;
       assert( sCtx.iCol>=0 );
       if( sParse.pNewTable->iPKey==sCtx.iCol ){
         sCtx.iCol = -1;
@@ -1083,28 +1093,30 @@ static void renameColumnFunc(
 
     for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       for(i=0; i<pFKey->nCol; i++){
-        RenameToken *pTok = 0;
         if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
-          pTok = renameTokenFind(&sParse, (void*)&pFKey->aCol[i]);
-          if( pTok ){
-            pTok->pNext = sCtx.pList;
-            sCtx.pList = pTok;
-            sCtx.nList++;
-          }
+          renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
         }
         if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
          && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
         ){
-          pTok = renameTokenFind(&sParse, (void*)pFKey->aCol[i].zCol);
-          pTok->pNext = sCtx.pList;
-          sCtx.pList = pTok;
-          sCtx.nList++;
+          renameTokenFind(&sParse, &sCtx, (void*)pFKey->aCol[i].zCol);
         }
       }
     }
-  }else{
+  }else if( sParse.pNewIndex ){
     sqlite3WalkExprList(&sWalker, sParse.pNewIndex->aColExpr);
     sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
+  }else{
+    sCtx.zOld = zOld;
+    sqlite3WalkExpr(&sWalker, sParse.pNewTrigger->pWhen);
+    if( sParse.pNewTrigger->pColumns ){
+      for(i=0; i<sParse.pNewTrigger->pColumns->nId; i++){
+        char *zName = sParse.pNewTrigger->pColumns->a[i].zName;
+        if( 0==sqlite3_stricmp(zName, zOld) ){
+          renameTokenFind(&sParse, &sCtx, (void*)zName);
+        }
+      }
+    }
   }
 
   assert( nQuot>=nNew );
@@ -1148,6 +1160,7 @@ renameColumnFunc_done:
   }
   sqlite3DeleteTable(db, sParse.pNewTable);
   if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
+  sqlite3DeleteTrigger(db, sParse.pNewTrigger);
   renameTokenFree(db, sParse.pRename);
   renameTokenFree(db, sCtx.pList);
   sqlite3ParserReset(&sParse);

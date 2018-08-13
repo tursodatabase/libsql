@@ -697,9 +697,11 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     */
     sqlite3DeleteTable(db, pParse->pNewTable);
   }
+  if( !IN_RENAME_COLUMN ){
+    sqlite3DeleteTrigger(db, pParse->pNewTrigger);
+  }
 
   if( pParse->pWithToFree ) sqlite3WithDelete(db, pParse->pWithToFree);
-  sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->pVList);
   while( pParse->pAinc ){
     AutoincInfo *p = pParse->pAinc;

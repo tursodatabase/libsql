@@ -181,14 +181,16 @@ void sqlite3BeginTrigger(
     goto trigger_cleanup;
   }
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash),zName) ){
-    if( !noErr ){
-      sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
-    }else{
-      assert( !db->init.busy );
-      sqlite3CodeVerifySchema(pParse, iDb);
+  if( !IN_RENAME_COLUMN ){
+    if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash),zName) ){
+      if( !noErr ){
+        sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
+      }else{
+        assert( !db->init.busy );
+        sqlite3CodeVerifySchema(pParse, iDb);
+      }
+      goto trigger_cleanup;
     }
-    goto trigger_cleanup;
   }
 
   /* Do not create a trigger on a system table */
@@ -212,7 +214,7 @@ void sqlite3BeginTrigger(
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  {
+  if( !IN_RENAME_COLUMN ){
     int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     int code = SQLITE_CREATE_TRIGGER;
     const char *zDb = db->aDb[iTabDb].zDbSName;
@@ -246,8 +248,14 @@ void sqlite3BeginTrigger(
   pTrigger->pTabSchema = pTab->pSchema;
   pTrigger->op = (u8)op;
   pTrigger->tr_tm = tr_tm==TK_BEFORE ? TRIGGER_BEFORE : TRIGGER_AFTER;
-  pTrigger->pWhen = sqlite3ExprDup(db, pWhen, EXPRDUP_REDUCE);
-  pTrigger->pColumns = sqlite3IdListDup(db, pColumns);
+  if( IN_RENAME_COLUMN ){
+    pTrigger->pWhen = pWhen;
+    pWhen = 0;
+  }else{
+    pTrigger->pWhen = sqlite3ExprDup(db, pWhen, EXPRDUP_REDUCE);
+  }
+  pTrigger->pColumns = pColumns;
+  pColumns = 0;
   assert( pParse->pNewTrigger==0 );
   pParse->pNewTrigger = pTrigger;
 
@@ -296,6 +304,14 @@ void sqlite3FinishTrigger(
     goto triggerfinish_cleanup;
   }
 
+#ifndef SQLITE_OMIT_ALTERTABLE
+  if( IN_RENAME_COLUMN ){
+    assert( !db->init.busy );
+    pParse->pNewTrigger = pTrig;
+    pTrig = 0;
+  }else
+#endif
+
   /* if we are not initializing,
   ** build the sqlite_master entry
   */
@@ -337,7 +353,7 @@ void sqlite3FinishTrigger(
 
 triggerfinish_cleanup:
   sqlite3DeleteTrigger(db, pTrig);
-  assert( !pParse->pNewTrigger );
+  assert( IN_RENAME_COLUMN || !pParse->pNewTrigger );
   sqlite3DeleteTriggerStep(db, pStepList);
 }
 
