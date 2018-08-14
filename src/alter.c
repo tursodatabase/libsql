@@ -1172,7 +1172,7 @@ static void renameColumnFunc(
 
       for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
         for(i=0; i<pFKey->nCol; i++){
-          if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
+          if( bFKOnly==0 && pFKey->aCol[i].iFrom==iCol ){
             renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
           }
           if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
