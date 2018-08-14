@@ -1,5 +1,5 @@
-C Stop\srequiring\sthe\sglobal\sVFS\smutex\sto\saccess\sthe\sunixInodeInfo.pUnused\sfield.\nThe\sunixInodeInfo\smutex\sis\ssufficient.
-D 2018-08-13T22:50:34.627
+C Fix\sUPSERT\sso\sthat\sit\schecks\sthe\starget-constraint\sfirst\sand\sfires\sthe\nDO\sUPDATE\sif\sthat\sconstraint\sis\sviolated\sregardless\sof\swhether\sor\snot\nother\sconstraints\sare\sin\sviolation.\s\sThis\saligns\sSQLite\sbehavior\swith\nwhat\sPostgreSQL\sdoes.\sFix\sfor\sticket\s[908f001483982c43cdb476dfb590a1a].
+D 2018-08-14T15:12:52.710
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -459,7 +459,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 894594952bcda1dc6e1549871e4022517563545ffc7a3f4e9e5f3faa788893fd
+F src/insert.c c723716f0de7aa0a679300f7d3541c89645f4a9882161cecdb3093fc07f8cc4b
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 6aae5739198d96c51ae6eb97c4a5b1744c22ed7a5a565a5399a717780d48a36b
 F src/main.c df233667bbb6f05a8492ea93e0995abbeb816eab53e51e638a0dece1de0e83a3
@@ -570,10 +570,10 @@ F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
 F src/vdbe.c b11baa48b293dc48fbd51c6a9029f88bdf4cd117c01225b2a2b5e90e5928a8a3
-F src/vdbe.h d93abdc8bc9295e0a256e582c19f548c545dc498319d108bbc9dd29de31c48a2
+F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h 8ea493d994c6697cf7bccc60583a80a0222560490410f60f1113e90d36643ce0
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
-F src/vdbeaux.c b610cef3d8d381c9287d02c2e61590acc0a1b4de1cc0188d560f5ef345527a24
+F src/vdbeaux.c f03d4a1961ec282abaec5dbf7e5576ddb1eb01e6157335a232d8d9e57fd5eca1
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 720df42ad8e5c7cb883573de40a185afef4a214903098a16f2bb14b62b2399b7
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
@@ -1526,7 +1526,7 @@ F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ffeea7747d5ba962a8009a20b7e53d68cbae05b063604c68702c5998eb50c981
 F test/update.test 1148de8d913e9817717990603aadeca07aab9ddbb10a30f167cbfd8d3a3ccb60
 F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2313e
-F test/upsert1.test ecd8f69e20183f298464992762fee24750508b3cbefc5badba8a259a3fc887ec
+F test/upsert1.test 994bde41800bb77dbe32fcd2e1f6c4b49cc9f2c6cd345731c774dff02b51c110
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
@@ -1754,7 +1754,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b1e0010b9e0b548a90087f4d25843d2b40f7e9551722ac587fa925d37b510c2
-R c0b44ea86365eec38ab4ca860c436c2d
+P e3ea43dabf099dc2954c23d348638e7b2a8b9122d2994154bc649a2c09260c46
+R 57b28032d1f7240227e60efc94d5cf5d
 U drh
-Z 61c21fbc1d363c0a3fe7befb1f84f230
+Z f4b7118e2c3ed77a16d581f95e6f4881
