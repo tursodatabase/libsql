@@ -1126,7 +1126,6 @@ static void renameColumnFunc(
 
     for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       for(i=0; i<pFKey->nCol; i++){
-        RenameToken *pTok = 0;
         if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
           renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
         }

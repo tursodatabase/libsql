@@ -113,6 +113,6 @@ do_test trigger7-99.1 {
   db close
   catch { sqlite3 db test.db }
   catchsql { DROP TRIGGER t2r5 }
-} {1 {malformed database schema (t2r12)}}
+} {/1 {malformed database schema .*}/}
 
 finish_test
