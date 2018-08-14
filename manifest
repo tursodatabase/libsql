@@ -1,5 +1,5 @@
-C Have\sALTER\sTABLE\sRENAME\sedit\scolumn\sreferences\sin\sCREATE\sVIEW\sstatements.
-D 2018-08-14T20:18:50.875
+C Merge\slatest\strunk\sand\sALTER\sTABLE\serror\smessage\simprovements\sinto\sthis\nbranch.
+D 2018-08-14T20:40:25.392
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -599,7 +599,7 @@ F test/alter.test b820ab9dcf85f8e3a65bc8326accb2f0c7be64ef
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
-F test/altercol.test 98f1c88a9012ce2dbb8765f55557cac12473731a3bce31a8016e133407d235f5
+F test/altercol.test 0af8f5733e3ed8ff36d38cd50303e81b6315f05efa96b102f366eb7dec2cc332
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
@@ -1756,8 +1756,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5fdb6b0aafba727139e1937ef5950e4434a77f95a10fc46f8010ca2de3922326
-R 9599d9a5f29aa1850ea700a8d90d37c9
-T +closed 4b575b8050cdb703df26d28228a60b88f60e5279453ba71c65e0739575609a0b
+P db829dc1a2d7afa49798a2fd32d1f070185b23e513416e65d8144fda24f23b50 37d11b8e8224a8b241ff57b9c4b9499db39dde4ddcb56ff8b03a3d08091a4c11
+R d085a71165e2639a22aa30d6c7bda869
 U dan
-Z 1ded9b508d80d9b5a23b7f7d1204945e
+Z 6e1649fe2ca020e20382ea7b5f164ec1
