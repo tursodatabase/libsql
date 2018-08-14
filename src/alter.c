@@ -1116,6 +1116,18 @@ static void renameColumnFunc(
   if( sParse.pNewTable ){
     int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
     FKey *pFKey;
+    for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      for(i=0; i<pFKey->nCol; i++){
+        if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
+          renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
+        }
+        if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
+         && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
+        ){
+          renameTokenFind(&sParse, &sCtx, (void*)pFKey->aCol[i].zCol);
+        }
+      }
+    }
     if( bFKOnly==0 ){
       renameTokenFind(
           &sParse, &sCtx, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
@@ -1128,19 +1140,6 @@ static void renameColumnFunc(
       sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
       for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
-      }
-    }
-
-    for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
-      for(i=0; i<pFKey->nCol; i++){
-        if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
-          renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
-        }
-        if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
-         && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
-        ){
-          renameTokenFind(&sParse, &sCtx, (void*)pFKey->aCol[i].zCol);
-        }
       }
     }
   }else{
