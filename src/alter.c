@@ -817,6 +817,13 @@ void sqlite3AlterRenameColumn(
   /* Cannot alter a system table */
   if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ) goto exit_rename_column;
 
+  /* Cannot rename columns of a virtual table */
+  if( IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "cannot rename columns in a virtual table (%s)",
+                    pTab->zName);
+    goto exit_rename_column;
+  }
+
   /* Which schema holds the table to be altered */  
   iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iSchema>=0 );
