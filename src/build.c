@@ -1370,6 +1370,9 @@ void sqlite3AddPrimaryKey(
    && sqlite3StrICmp(sqlite3ColumnType(pCol,""), "INTEGER")==0
    && sortOrder!=SQLITE_SO_DESC
   ){
+    if( IN_RENAME_COLUMN && pList ){
+      sqlite3MoveRenameToken(pParse, &pTab->iPKey, pList->a[0].pExpr);
+    }
     pTab->iPKey = iCol;
     pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );

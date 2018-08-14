@@ -941,25 +941,25 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
 }
 
 /*
-** Return the RenameToken object associated with parse tree element pPtr,
-** or a NULL pointer if not found.  The RenameToken object returned is
-** removed from the list of RenameToken objects attached to the Parse
-** object and the caller becomes the new owner of the RenameToken object
-** Hence, the caller assumes responsibility for freeing the returned
-** RenameToken object.
+** Search the Parse object passed as the first argument for a RenameToken
+** object associated with parse tree element pPtr. If found, remove it
+** from the Parse object and add it to the list maintained by the
+** RenameCtx object passed as the second argument.
 */
-static RenameToken *renameTokenFind(Parse *pParse, void *pPtr){
+static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
   RenameToken **pp;
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
       *pp = pToken->pNext;
-      pToken->pNext = 0;
-      return pToken;
+      pToken->pNext = pCtx->pList;
+      pCtx->pList = pToken;
+      pCtx->nList++;
+      break;
     }
   }
-  return 0;
 }
+
 
 /*
 ** This is a Walker expression callback.
@@ -973,12 +973,7 @@ static RenameToken *renameTokenFind(Parse *pParse, void *pPtr){
 static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   struct RenameCtx *p = pWalker->u.pRename;
   if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol ){
-    RenameToken *pTok = renameTokenFind(pWalker->pParse, (void*)pExpr);
-    if( pTok ){
-      pTok->pNext = p->pList;
-      p->pList = pTok;
-      p->nList++;
-    }
+    renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }
   return WRC_Continue;
 }
@@ -1115,12 +1110,12 @@ static void renameColumnFunc(
     int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
     FKey *pFKey;
     if( bFKOnly==0 ){
-      sCtx.pList = renameTokenFind(
-          &sParse, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
+      renameTokenFind(
+          &sParse, &sCtx, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
       );
-      sCtx.nList = 1;
       assert( sCtx.iCol>=0 );
       if( sParse.pNewTable->iPKey==sCtx.iCol ){
+        renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
         sCtx.iCol = -1;
       }
       sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
@@ -1133,20 +1128,12 @@ static void renameColumnFunc(
       for(i=0; i<pFKey->nCol; i++){
         RenameToken *pTok = 0;
         if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
-          pTok = renameTokenFind(&sParse, (void*)&pFKey->aCol[i]);
-          if( pTok ){
-            pTok->pNext = sCtx.pList;
-            sCtx.pList = pTok;
-            sCtx.nList++;
-          }
+          renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
         }
         if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
          && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
         ){
-          pTok = renameTokenFind(&sParse, (void*)pFKey->aCol[i].zCol);
-          pTok->pNext = sCtx.pList;
-          sCtx.pList = pTok;
-          sCtx.nList++;
+          renameTokenFind(&sParse, &sCtx, (void*)pFKey->aCol[i].zCol);
         }
       }
     }
