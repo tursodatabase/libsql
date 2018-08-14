@@ -844,11 +844,14 @@ void sqlite3AlterRenameColumn(
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_column(sql, %d, %d, %Q, %Q, %Q) "
+      "sql = sqlite_rename_column(sql, %Q, %Q, %d, %Q, %d) "
       "WHERE name NOT LIKE 'sqlite_%%' AND ("
-      "   type = 'table' OR (type IN ('index', 'trigger') AND tbl_name = %Q)"
+      "       type IN ('table', 'view') "
+      "   OR (type IN ('index', 'trigger') AND tbl_name = %Q)"
       ")",
-      zDb, MASTER_NAME, iCol, bQuote, zNew, pTab->zName, zOld, pTab->zName
+      zDb, MASTER_NAME, 
+      zDb, pTab->zName, iCol, zNew, bQuote,
+      pTab->zName
   );
 
   /* Drop and reload the database schema. */
@@ -896,6 +899,7 @@ struct RenameCtx {
   RenameToken *pList;             /* List of tokens to overwrite */
   int nList;                      /* Number of tokens in pList */
   int iCol;                       /* Index of column being renamed */
+  Table *pTab;                    /* Table being ALTERed */ 
   const char *zOld;               /* Old column name */
 };
 
@@ -942,7 +946,13 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
   }
 }
 
-static void renameTokenFind(Parse *pParse, RenameCtx *pCtx, void *pPtr){
+/*
+** Search the Parse object passed as the first argument for a RenameToken
+** object associated with parse tree element pPtr. If found, remove it
+** from the Parse object and add it to the list maintained by the
+** RenameCtx object passed as the second argument.
+*/
+static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
   RenameToken **pp;
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
@@ -956,6 +966,20 @@ static void renameTokenFind(Parse *pParse, RenameCtx *pCtx, void *pPtr){
   }
 }
 
+static int renameColumnSelectCb(Walker *pWalker, Select *p){
+  return WRC_Continue;
+}
+
+
+/*
+** This is a Walker expression callback.
+**
+** For every TK_COLUMN node in the expression tree, search to see
+** if the column being references is the column being renamed by an
+** ALTER TABLE statement.  If it is, then attach its associated
+** RenameToken object to the list of RenameToken objects being
+** constructed in RenameCtx object at pWalker->u.pRename.
+*/
 static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
   if( p->zOld && pExpr->op==TK_DOT ){
@@ -969,12 +993,23 @@ static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
         renameTokenFind(pWalker->pParse, p, (void*)pRight);
       }
     }
-  }else if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol ){
+  }else if( pExpr->op==TK_COLUMN && pExpr->iColumn==p->iCol 
+         && (p->pTab==0 || p->pTab==pExpr->pTab)
+  ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }
   return WRC_Continue;
 }
 
+/*
+** The RenameCtx contains a list of tokens that reference a column that
+** is being renamed by an ALTER TABLE statement.  Return the "first"
+** RenameToken in the RenameCtx and remove that RenameToken from the
+** RenameContext.  "First" means the first RenameToken encountered when
+** the input SQL from left to right.  Repeated calls to this routine
+** return all column name tokens in the order that they are encountered
+** in the SQL statement.
+*/
 static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
   RenameToken *pBest = pCtx->pList;
   RenameToken *pToken;
@@ -990,7 +1025,31 @@ static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
 }
 
 /*
-** sqlite_rename_column(SQL, iCol, bQuote, zNew, zTable, zOld)
+** SQL function:
+**
+**     sqlite_rename_column(zSql, iCol, bQuote, zNew, zTable, zOld)
+**
+**   0. zSql:     SQL statement to rewrite
+**   1. Database: Database name (e.g. "main")
+**   2. Table:    Table name
+**   3. iCol:     Index of column to rename
+**   4. zNew:     New column name
+**   5. bQuote: True if the new column name should be quoted
+**
+** Do a column rename operation on the CREATE statement given in zSql.
+** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
+** into zNew.  The name should be quoted if bQuote is true.
+**
+** This function is used internally by the ALTER TABLE RENAME COLUMN command.
+** Though accessible to application code, it is not intended for use by
+** applications.  The existance of this function, and the way it works,
+** is subject to change without notice.
+**
+** If any of the parameters are out-of-bounds, then simply return NULL.
+** An out-of-bounds parameter can only occur when the application calls
+** this function directly.  The parameters will always be well-formed when
+** this routine is invoked by the bytecode for a legitimate ALTER TABLE
+** statement.
 */
 static void renameColumnFunc(
   sqlite3_context *context,
@@ -1001,11 +1060,13 @@ static void renameColumnFunc(
   RenameCtx sCtx;
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
   int nSql = sqlite3_value_bytes(argv[0]);
-  int bQuote = sqlite3_value_int(argv[2]);
-  const char *zNew = (const char*)sqlite3_value_text(argv[3]);
-  int nNew = sqlite3_value_bytes(argv[3]);
-  const char *zTable = (const char*)sqlite3_value_text(argv[4]);
-  const char *zOld = (const char*)sqlite3_value_text(argv[5]);
+  const char *zDb = (const char*)sqlite3_value_text(argv[1]);
+  const char *zTable = (const char*)sqlite3_value_text(argv[2]);
+  int iCol = sqlite3_value_int(argv[3]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[4]);
+  int nNew = sqlite3_value_bytes(argv[4]);
+  int bQuote = sqlite3_value_int(argv[5]);
+  const char *zOld;
 
   int rc;
   char *zErr = 0;
@@ -1017,9 +1078,17 @@ static void renameColumnFunc(
   char *zQuot = 0;                /* Quoted version of zNew */
   int nQuot = 0;                  /* Length of zQuot in bytes */
   int i;
+  Table *pTab;
 
+  if( zSql==0 ) return;
+  if( zNew==0 ) return;
+  if( zTable==0 ) return;
+  if( iCol<0 ) return;
+  pTab = sqlite3FindTable(db, zTable, zDb);
+  if( pTab==0 || iCol>=pTab->nCol ) return;
+  zOld = pTab->aCol[iCol].zName;
   memset(&sCtx, 0, sizeof(sCtx));
-  sCtx.iCol = sqlite3_value_int(argv[1]);
+  sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
 
   memset(&sParse, 0, sizeof(sParse));
   sParse.eParseMode = PARSE_MODE_RENAME_COLUMN;
@@ -1043,16 +1112,6 @@ static void renameColumnFunc(
     }
   }
 
-  if( rc!=SQLITE_OK ){
-    if( zErr ){
-      sqlite3_result_error(context, zErr, -1);
-    }else{
-      sqlite3_result_error_code(context, rc);
-    }
-    sqlite3DbFree(db, zErr);
-    goto renameColumnFunc_done;
-  }
-
   if( bQuote ){
     zNew = zQuot;
     nNew = nQuot;
@@ -1060,7 +1119,7 @@ static void renameColumnFunc(
 
 #ifdef SQLITE_DEBUG
   assert( sqlite3Strlen30(zSql)==nSql );
-  {
+  if( rc==SQLITE_OK ){
     RenameToken *pToken;
     for(pToken=sParse.pRename; pToken; pToken=pToken->pNext){
       assert( pToken->t.z>=zSql && &pToken->t.z[pToken->t.n]<=&zSql[nSql] );
@@ -1072,34 +1131,55 @@ static void renameColumnFunc(
   memset(&sWalker, 0, sizeof(Walker));
   sWalker.pParse = &sParse;
   sWalker.xExprCallback = renameColumnExprCb;
+  sWalker.xSelectCallback = renameColumnSelectCb;
   sWalker.u.pRename = &sCtx;
 
+  if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
   if( sParse.pNewTable ){
-    int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
-    FKey *pFKey;
-    if( bFKOnly==0 ){
-      renameTokenFind(
-          &sParse, &sCtx, (void*)sParse.pNewTable->aCol[sCtx.iCol].zName
-      );
-      assert( sCtx.iCol>=0 );
-      if( sParse.pNewTable->iPKey==sCtx.iCol ){
-        sCtx.iCol = -1;
+    Select *pSelect = sParse.pNewTable->pSelect;
+    if( pSelect ){
+      sCtx.pTab = pTab;
+      sParse.rc = SQLITE_OK;
+      sqlite3SelectPrep(&sParse, sParse.pNewTable->pSelect, 0);
+      rc = (db->mallocFailed ? SQLITE_NOMEM : sParse.rc);
+      if( rc==SQLITE_OK ){
+        sqlite3WalkSelect(&sWalker, pSelect);
+      }else if( rc==SQLITE_ERROR ){
+        /* Failed to resolve all symboles in the view. This is not an 
+        ** error, but it will not be edited. */
+        sqlite3DbFree(db, sParse.zErrMsg);
+        sParse.zErrMsg = 0;
+        rc = SQLITE_OK;
       }
-      sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
-      for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
-      }
-    }
-
-    for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
-      for(i=0; i<pFKey->nCol; i++){
-        if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
-          renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
+      if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
+    }else{
+      /* A regular table */
+      int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
+      FKey *pFKey;
+      assert( sParse.pNewTable->pSelect==0 );
+      if( bFKOnly==0 ){
+        renameTokenFind(
+            &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
+        );
+        if( sCtx.iCol<0 ){
+          renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
         }
-        if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
-         && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
-        ){
-          renameTokenFind(&sParse, &sCtx, (void*)pFKey->aCol[i].zCol);
+        sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
+        for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
+          sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+        }
+      }
+
+      for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+        for(i=0; i<pFKey->nCol; i++){
+          if( bFKOnly==0 && pFKey->aCol[i].iFrom==sCtx.iCol ){
+            renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
+          }
+          if( 0==sqlite3_stricmp(pFKey->zTo, zTable)
+           && 0==sqlite3_stricmp(pFKey->aCol[i].zCol, zOld)
+          ){
+            renameTokenFind(&sParse, &sCtx, (void*)pFKey->aCol[i].zCol);
+          }
         }
       }
     }
@@ -1119,6 +1199,7 @@ static void renameColumnFunc(
     }
   }
 
+  assert( rc==SQLITE_OK );
   assert( nQuot>=nNew );
   zOut = sqlite3DbMallocZero(db, nSql + sCtx.nList*nQuot + 1);
   if( zOut ){
@@ -1152,9 +1233,19 @@ static void renameColumnFunc(
 
     sqlite3_result_text(context, zOut, -1, SQLITE_TRANSIENT);
     sqlite3DbFree(db, zOut);
+  }else{
+    rc = SQLITE_NOMEM;
   }
 
 renameColumnFunc_done:
+  if( rc!=SQLITE_OK ){
+    if( zErr ){
+      sqlite3_result_error(context, zErr, -1);
+    }else{
+      sqlite3_result_error_code(context, rc);
+    }
+  }
+
   if( sParse.pVdbe ){
     sqlite3VdbeFinalize(sParse.pVdbe);
   }

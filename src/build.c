@@ -1370,6 +1370,9 @@ void sqlite3AddPrimaryKey(
    && sqlite3StrICmp(sqlite3ColumnType(pCol,""), "INTEGER")==0
    && sortOrder!=SQLITE_SO_DESC
   ){
+    if( IN_RENAME_COLUMN && pList ){
+      sqlite3MoveRenameToken(pParse, &pTab->iPKey, pList->a[0].pExpr);
+    }
     pTab->iPKey = iCol;
     pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );
@@ -2172,7 +2175,12 @@ void sqlite3CreateView(
   ** allocated rather than point to the input string - which means that
   ** they will persist after the current sqlite3_exec() call returns.
   */
-  p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+  if( IN_RENAME_COLUMN ){
+    p->pSelect = pSelect;
+    pSelect = 0;
+  }else{
+    p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+  }
   p->pCheck = sqlite3ExprListDup(db, pCNames, EXPRDUP_REDUCE);
   if( db->mallocFailed ) goto create_view_fail;
 
