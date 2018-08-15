@@ -217,9 +217,19 @@ foreach {tn tcl} {
         SELECT * FROM t2;
     }
   } {a b c d e f}
-  do_test $tn.3.2.2 {
-    list [catch {snapshot_open db main $snapshot } msg] $msg
+
+  # Update - it is no longer an error to have a read-transaction open, 
+  # provided there are no active SELECT statements.
+  do_test $tn.3.2.2a {
+    db eval "SELECT * FROM t2" {
+      set res [list [catch {snapshot_open db main $snapshot } msg] $msg]
+      break
+    }
+    set res
   } {1 SQLITE_ERROR}
+  do_test $tn.3.2.2b {
+    snapshot_open db main $snapshot
+  } {}
 
   do_test $tn.3.2.3 {
     execsql {
@@ -231,9 +241,14 @@ foreach {tn tcl} {
   } {1 SQLITE_ERROR}
   do_execsql_test $tn.3.2.4 COMMIT
 
-  do_test $tn.3.3.1 {
+  do_test $tn.3.3.1a {
     execsql { PRAGMA journal_mode = DELETE }
     execsql { BEGIN }
+    list [catch {snapshot_open db main $snapshot } msg] $msg
+  } {1 SQLITE_ERROR}
+
+  do_test $tn.3.3.1b {
+    execsql { COMMIT ; BEGIN ; SELECT * FROM t2 }
     list [catch {snapshot_open db main $snapshot } msg] $msg
   } {1 SQLITE_ERROR}
 
