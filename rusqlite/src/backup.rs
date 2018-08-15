@@ -95,11 +95,11 @@ impl Connection {
     ///
     /// Will return `Err` if the destination path cannot be opened
     /// or if the restore fails.
-    pub fn restore<P: AsRef<Path>>(
+    pub fn restore<P: AsRef<Path>, F: Fn(Progress)>(
         &mut self,
         name: DatabaseName,
         src_path: P,
-        progress: Option<fn(Progress)>,
+        progress: Option<F>,
     ) -> Result<()> {
         use self::StepResult::{Busy, Done, Locked, More};
         let src = try!(Connection::open(src_path));
@@ -109,7 +109,7 @@ impl Connection {
         let mut busy_count = 0i32;
         'restore_loop: while r == More || r == Busy {
             r = try!(restore.step(100));
-            if let Some(f) = progress {
+            if let Some(ref f) = progress {
                 f(restore.progress());
             }
             if r == Busy {
