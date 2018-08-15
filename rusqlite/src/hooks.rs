@@ -96,7 +96,7 @@ impl Connection {
     /// The callback returns `true` to rollback.
     pub fn commit_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut() -> bool,
+        F: FnMut() -> bool + Send,
     {
         self.db.borrow_mut().commit_hook(hook);
     }
@@ -106,7 +106,7 @@ impl Connection {
     /// The callback returns `true` to rollback.
     pub fn rollback_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut(),
+        F: FnMut() + Send,
     {
         self.db.borrow_mut().rollback_hook(hook);
     }
@@ -122,7 +122,7 @@ impl Connection {
     ///   - the ROWID of the row that is updated.
     pub fn update_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut(Action, &str, &str, i64),
+        F: FnMut(Action, &str, &str, i64) + Send,
     {
         self.db.borrow_mut().update_hook(hook);
     }
@@ -137,7 +137,7 @@ impl InnerConnection {
 
     fn commit_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut() -> bool,
+        F: FnMut() -> bool + Send,
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
         where
@@ -182,7 +182,7 @@ impl InnerConnection {
 
     fn rollback_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut(),
+        F: FnMut() + Send,
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void)
         where
@@ -221,7 +221,7 @@ impl InnerConnection {
 
     fn update_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut(Action, &str, &str, i64),
+        F: FnMut(Action, &str, &str, i64) + Send,
     {
         unsafe extern "C" fn call_boxed_closure<F>(
             p_arg: *mut c_void,
