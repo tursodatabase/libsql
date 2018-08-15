@@ -96,7 +96,7 @@ impl Connection {
     /// The callback returns `true` to rollback.
     pub fn commit_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut() -> bool + Send,
+        F: FnMut() -> bool + Send + 'static,
     {
         self.db.borrow_mut().commit_hook(hook);
     }
@@ -106,7 +106,7 @@ impl Connection {
     /// The callback returns `true` to rollback.
     pub fn rollback_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut() + Send,
+        F: FnMut() + Send + 'static,
     {
         self.db.borrow_mut().rollback_hook(hook);
     }
@@ -122,7 +122,7 @@ impl Connection {
     ///   - the ROWID of the row that is updated.
     pub fn update_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut(Action, &str, &str, i64) + Send,
+        F: FnMut(Action, &str, &str, i64) + Send + 'static,
     {
         self.db.borrow_mut().update_hook(hook);
     }
@@ -137,7 +137,7 @@ impl InnerConnection {
 
     fn commit_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut() -> bool + Send,
+        F: FnMut() -> bool + Send + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
         where
@@ -182,7 +182,7 @@ impl InnerConnection {
 
     fn rollback_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut() + Send,
+        F: FnMut() + Send + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void)
         where
@@ -221,7 +221,7 @@ impl InnerConnection {
 
     fn update_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut(Action, &str, &str, i64) + Send,
+        F: FnMut(Action, &str, &str, i64) + Send + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(
             p_arg: *mut c_void,
@@ -285,20 +285,23 @@ fn free_boxed_hook<F>(p: *mut c_void) {
 #[cfg(test)]
 mod test {
     use super::Action;
+    use std::sync::atomic::{AtomicBool, Ordering};
     use Connection;
 
     #[test]
     fn test_commit_hook() {
         let db = Connection::open_in_memory().unwrap();
 
-        let mut called = false;
+        lazy_static! {
+            static ref called: AtomicBool = AtomicBool::new(false);
+        }
         db.commit_hook(Some(|| {
-            called = true;
+            called.store(true, Ordering::Relaxed);
             false
         }));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
             .unwrap();
-        assert!(called);
+        assert!(called.load(Ordering::Relaxed));
     }
 
     #[test]
@@ -318,29 +321,33 @@ mod test {
     fn test_rollback_hook() {
         let db = Connection::open_in_memory().unwrap();
 
-        let mut called = false;
+        lazy_static! {
+            static ref called: AtomicBool = AtomicBool::new(false);
+        }
         db.rollback_hook(Some(|| {
-            called = true;
+            called.store(true, Ordering::Relaxed);
         }));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;")
             .unwrap();
-        assert!(called);
+        assert!(called.load(Ordering::Relaxed));
     }
 
     #[test]
     fn test_update_hook() {
         let db = Connection::open_in_memory().unwrap();
 
-        let mut called = false;
+        lazy_static! {
+            static ref called: AtomicBool = AtomicBool::new(false);
+        }
         db.update_hook(Some(|action, db: &str, tbl: &str, row_id| {
             assert_eq!(Action::SQLITE_INSERT, action);
             assert_eq!("main", db);
             assert_eq!("foo", tbl);
             assert_eq!(1, row_id);
-            called = true;
+            called.store(true, Ordering::Relaxed);
         }));
         db.execute_batch("CREATE TABLE foo (t TEXT)").unwrap();
         db.execute_batch("INSERT INTO foo VALUES ('lisa')").unwrap();
-        assert!(called);
+        assert!(called.load(Ordering::Relaxed));
     }
 }

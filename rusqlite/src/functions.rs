@@ -230,7 +230,7 @@ impl Connection {
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context) -> Result<T> + Send,
+        F: FnMut(&Context) -> Result<T> + Send + 'static,
         T: ToSql,
     {
         self.db
@@ -281,7 +281,7 @@ impl InnerConnection {
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context) -> Result<T> + Send,
+        F: FnMut(&Context) -> Result<T> + Send + 'static,
         T: ToSql,
     {
         unsafe extern "C" fn call_boxed_closure<F, T>(
