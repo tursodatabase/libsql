@@ -4049,12 +4049,12 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerInsertStep(sqlite3*,Token*, IdList*,
+  TriggerStep *sqlite3TriggerInsertStep(Parse*,Token*, IdList*,
                                         Select*,u8,Upsert*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8,
+  TriggerStep *sqlite3TriggerUpdateStep(Parse*,Token*,ExprList*, Expr*, u8,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*,
+  TriggerStep *sqlite3TriggerDeleteStep(Parse*,Token*, Expr*,
                                         const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);

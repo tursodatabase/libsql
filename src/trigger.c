@@ -428,7 +428,7 @@ static TriggerStep *triggerStepAllocate(
 ** body of a trigger.
 */
 TriggerStep *sqlite3TriggerInsertStep(
-  sqlite3 *db,        /* The database connection */
+  Parse *pParse,      /* Parser */
   Token *pTableName,  /* Name of the table into which we insert */
   IdList *pColumn,    /* List of columns in pTableName to insert into */
   Select *pSelect,    /* A SELECT statement that supplies values */
@@ -437,13 +437,19 @@ TriggerStep *sqlite3TriggerInsertStep(
   const char *zStart, /* Start of SQL text */
   const char *zEnd    /* End of SQL text */
 ){
+  sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
   assert(pSelect != 0 || db->mallocFailed);
 
   pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName, zStart, zEnd);
   if( pTriggerStep ){
-    pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+    if( IN_RENAME_COLUMN ){
+      pTriggerStep->pSelect = pSelect;
+      pSelect = 0;
+    }else{
+      pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+    }
     pTriggerStep->pIdList = pColumn;
     pTriggerStep->pUpsert = pUpsert;
     pTriggerStep->orconf = orconf;
@@ -464,7 +470,7 @@ TriggerStep *sqlite3TriggerInsertStep(
 ** sees an UPDATE statement inside the body of a CREATE TRIGGER.
 */
 TriggerStep *sqlite3TriggerUpdateStep(
-  sqlite3 *db,         /* The database connection */
+  Parse *pParse,          /* Parser */
   Token *pTableName,   /* Name of the table to be updated */
   ExprList *pEList,    /* The SET clause: list of column and new values */
   Expr *pWhere,        /* The WHERE clause */
@@ -472,12 +478,20 @@ TriggerStep *sqlite3TriggerUpdateStep(
   const char *zStart,  /* Start of SQL text */
   const char *zEnd     /* End of SQL text */
 ){
+  sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
   pTriggerStep = triggerStepAllocate(db, TK_UPDATE, pTableName, zStart, zEnd);
   if( pTriggerStep ){
-    pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
-    pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+    if( IN_RENAME_COLUMN ){
+      pTriggerStep->pExprList = pEList;
+      pTriggerStep->pWhere = pWhere;
+      pEList = 0;
+      pWhere = 0;
+    }else{
+      pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
+      pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+    }
     pTriggerStep->orconf = orconf;
   }
   sqlite3ExprListDelete(db, pEList);
@@ -491,17 +505,23 @@ TriggerStep *sqlite3TriggerUpdateStep(
 ** sees a DELETE statement inside the body of a CREATE TRIGGER.
 */
 TriggerStep *sqlite3TriggerDeleteStep(
-  sqlite3 *db,            /* Database connection */
+  Parse *pParse,          /* Parser */
   Token *pTableName,      /* The table from which rows are deleted */
   Expr *pWhere,           /* The WHERE clause */
   const char *zStart,     /* Start of SQL text */
   const char *zEnd        /* End of SQL text */
 ){
+  sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
   pTriggerStep = triggerStepAllocate(db, TK_DELETE, pTableName, zStart, zEnd);
   if( pTriggerStep ){
-    pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+    if( IN_RENAME_COLUMN ){
+      pTriggerStep->pWhere = pWhere;
+      pWhere = 0;
+    }else{
+      pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+    }
     pTriggerStep->orconf = OE_Default;
   }
   sqlite3ExprDelete(db, pWhere);

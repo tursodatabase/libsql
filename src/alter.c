@@ -982,6 +982,10 @@ static int renameColumnSelectCb(Walker *pWalker, Select *p){
 */
 static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
+  if( pExpr->op==TK_TRIGGER && pExpr->iColumn==p->iCol ){
+    renameTokenFind(pWalker->pParse, p, (void*)pExpr);
+  }else
+
   if( p->zOld && pExpr->op==TK_DOT ){
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
@@ -1145,7 +1149,7 @@ static void renameColumnFunc(
       if( rc==SQLITE_OK ){
         sqlite3WalkSelect(&sWalker, pSelect);
       }else if( rc==SQLITE_ERROR ){
-        /* Failed to resolve all symboles in the view. This is not an 
+        /* Failed to resolve all symbols in the view. This is not an 
         ** error, but it will not be edited. */
         sqlite3DbFree(db, sParse.zErrMsg);
         sParse.zErrMsg = 0;
@@ -1187,15 +1191,85 @@ static void renameColumnFunc(
     sqlite3WalkExprList(&sWalker, sParse.pNewIndex->aColExpr);
     sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
   }else{
-    sCtx.zOld = zOld;
-    sqlite3WalkExpr(&sWalker, sParse.pNewTrigger->pWhen);
-    if( sParse.pNewTrigger->pColumns ){
+    /* A trigger */
+    TriggerStep *pStep;
+    NameContext sNC;
+    memset(&sNC, 0, sizeof(sNC));
+    sNC.pParse = &sParse;
+    sParse.pTriggerTab = pTab;
+    sParse.eTriggerOp = sParse.pNewTrigger->op;
+
+      /* Resolve symbols in WHEN clause */
+    if( sParse.pTriggerTab==pTab && sParse.pNewTrigger->pWhen ){
+      rc = sqlite3ResolveExprNames(&sNC, sParse.pNewTrigger->pWhen);
+    }
+
+    for(pStep=sParse.pNewTrigger->step_list; 
+        rc==SQLITE_OK && pStep; 
+        pStep=pStep->pNext
+    ){
+      if( pStep->pSelect ) sqlite3SelectPrep(&sParse, pStep->pSelect, &sNC);
+      if( pStep->zTarget ){ 
+        Table *pTarget = sqlite3FindTable(db, pStep->zTarget, zDb);
+        if( pTarget==0 ){
+          rc = SQLITE_ERROR;
+        }else{
+          SrcList sSrc;
+          memset(&sSrc, 0, sizeof(sSrc));
+          sSrc.nSrc = 1;
+          sSrc.a[0].zName = pStep->zTarget;
+          sSrc.a[0].pTab = pTarget;
+          sNC.pSrcList = &sSrc;
+          if( pStep->pWhere ){
+            rc = sqlite3ResolveExprNames(&sNC, pStep->pWhere);
+          }
+          if( rc==SQLITE_OK ){
+            rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
+          }
+
+          if( rc==SQLITE_OK && pTarget==pTab ){
+            if( pStep->pIdList ){
+              for(i=0; i<pStep->pIdList->nId; i++){
+                char *zName = pStep->pIdList->a[i].zName;
+                if( 0==sqlite3_stricmp(zName, zOld) ){
+                  renameTokenFind(&sParse, &sCtx, (void*)zName);
+                }
+              }
+            }
+            if( pStep->op==TK_UPDATE ){
+              assert( pStep->pExprList );
+              for(i=0; i<pStep->pExprList->nExpr; i++){
+                char *zName = pStep->pExprList->a[i].zName;
+                if( 0==sqlite3_stricmp(zName, zOld) ){
+                  renameTokenFind(&sParse, &sCtx, (void*)zName);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
+
+    /* Find tokens to edit in UPDATE OF clause */
+    if( sParse.pTriggerTab==pTab && sParse.pNewTrigger->pColumns ){
       for(i=0; i<sParse.pNewTrigger->pColumns->nId; i++){
         char *zName = sParse.pNewTrigger->pColumns->a[i].zName;
         if( 0==sqlite3_stricmp(zName, zOld) ){
           renameTokenFind(&sParse, &sCtx, (void*)zName);
         }
       }
+    }
+
+    /* Find tokens to edit in WHEN clause */
+    sqlite3WalkExpr(&sWalker, sParse.pNewTrigger->pWhen);
+
+    /* Find tokens to edit in trigger steps */
+    for(pStep=sParse.pNewTrigger->step_list; pStep; pStep=pStep->pNext){
+      sqlite3WalkSelect(&sWalker, pStep->pSelect);
+      sqlite3WalkExpr(&sWalker, pStep->pWhere);
+      sqlite3WalkExprList(&sWalker, pStep->pExprList);
     }
   }
 

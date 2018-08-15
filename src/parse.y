@@ -1451,16 +1451,16 @@ tridxby ::= NOT INDEXED. {
 // UPDATE 
 trigger_cmd(A) ::=
    UPDATE(B) orconf(R) trnm(X) tridxby SET setlist(Y) where_opt(Z) scanpt(E).  
-   {A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R, B.z, E);}
+   {A = sqlite3TriggerUpdateStep(pParse, &X, Y, Z, R, B.z, E);}
 
 // INSERT
 trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
                       trnm(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
-   A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
+   A = sqlite3TriggerInsertStep(pParse,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
 }
 // DELETE
 trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
-   {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y, B.z, E);}
+   {A = sqlite3TriggerDeleteStep(pParse, &X, Y, B.z, E);}
 
 // SELECT
 trigger_cmd(A) ::= scanpt(B) select(X) scanpt(E).
