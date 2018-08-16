@@ -61,12 +61,12 @@ pub fn log(err_code: c_int, msg: &str) {
 }
 
 impl Connection {
-    /// Register or clear a callback function that can be used for tracing the execution of SQL
-    /// statements.
+    /// Register or clear a callback function that can be used for tracing the
+    /// execution of SQL statements.
     ///
-    /// Prepared statement placeholders are replaced/logged with their assigned values.
-    /// There can only be a single tracer defined for each database connection.
-    /// Setting a new tracer clears the old one.
+    /// Prepared statement placeholders are replaced/logged with their assigned
+    /// values. There can only be a single tracer defined for each database
+    /// connection. Setting a new tracer clears the old one.
     pub fn trace(&mut self, trace_fn: Option<fn(&str)>) {
         unsafe extern "C" fn trace_callback(p_arg: *mut c_void, z_sql: *const c_char) {
             let trace_fn: fn(&str) = mem::transmute(p_arg);
@@ -86,11 +86,11 @@ impl Connection {
         }
     }
 
-    /// Register or clear a callback function that can be used for profiling the execution of SQL
-    /// statements.
+    /// Register or clear a callback function that can be used for profiling
+    /// the execution of SQL statements.
     ///
-    /// There can only be a single profiler defined for each database connection.
-    /// Setting a new profiler clears the old one.
+    /// There can only be a single profiler defined for each database
+    /// connection. Setting a new profiler clears the old one.
     pub fn profile(&mut self, profile_fn: Option<fn(&str, Duration)>) {
         unsafe extern "C" fn profile_callback(
             p_arg: *mut c_void,

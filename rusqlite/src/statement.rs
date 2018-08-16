@@ -33,19 +33,21 @@ impl<'conn> Statement<'conn> {
         cols
     }
 
-    /// Return the number of columns in the result set returned by the prepared statement.
+    /// Return the number of columns in the result set returned by the prepared
+    /// statement.
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
     /// Returns the column index in the result set for a given column name.
     ///
-    /// If there is no AS clause then the name of the column is unspecified and may change from one
-    /// release of SQLite to the next.
+    /// If there is no AS clause then the name of the column is unspecified and
+    /// may change from one release of SQLite to the next.
     ///
     /// # Failure
     ///
-    /// Will return an `Error::InvalidColumnName` when there is no column with the specified `name`.
+    /// Will return an `Error::InvalidColumnName` when there is no column with
+    /// the specified `name`.
     pub fn column_index(&self, name: &str) -> Result<usize> {
         let bytes = name.as_bytes();
         let n = self.column_count();
@@ -59,8 +61,8 @@ impl<'conn> Statement<'conn> {
 
     /// Execute the prepared statement.
     ///
-    /// On success, returns the number of rows that were changed or inserted or deleted (via
-    /// `sqlite3_changes`).
+    /// On success, returns the number of rows that were changed or inserted or
+    /// deleted (via `sqlite3_changes`).
     ///
     /// ## Example
     ///
@@ -78,20 +80,22 @@ impl<'conn> Statement<'conn> {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
-    /// which case `query` should be used instead), or the underling SQLite call fails.
+    /// Will return `Err` if binding parameters fails, the executed statement
+    /// returns rows (in which case `query` should be used instead), or the
+    /// underling SQLite call fails.
     pub fn execute(&mut self, params: &[&ToSql]) -> Result<usize> {
         try!(self.bind_parameters(params));
         self.execute_with_bound_parameters()
     }
 
-    /// Execute the prepared statement with named parameter(s). If any parameters
-    /// that were in the prepared statement are not included in `params`, they
-    /// will continue to use the most-recently bound value from a previous call
-    /// to `execute_named`, or `NULL` if they have never been bound.
+    /// Execute the prepared statement with named parameter(s). If any
+    /// parameters that were in the prepared statement are not included in
+    /// `params`, they will continue to use the most-recently bound value
+    /// from a previous call to `execute_named`, or `NULL` if they have
+    /// never been bound.
     ///
-    /// On success, returns the number of rows that were changed or inserted or deleted (via
-    /// `sqlite3_changes`).
+    /// On success, returns the number of rows that were changed or inserted or
+    /// deleted (via `sqlite3_changes`).
     ///
     /// ## Example
     ///
@@ -105,8 +109,9 @@ impl<'conn> Statement<'conn> {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
-    /// which case `query` should be used instead), or the underling SQLite call fails.
+    /// Will return `Err` if binding parameters fails, the executed statement
+    /// returns rows (in which case `query` should be used instead), or the
+    /// underling SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<usize> {
         try!(self.bind_parameters_named(params));
         self.execute_with_bound_parameters()
@@ -116,10 +121,11 @@ impl<'conn> Statement<'conn> {
     ///
     /// # Note
     ///
-    /// This function is a convenience wrapper around `execute()` intended for queries that
-    /// insert a single item. It is possible to misuse this function in a way that it cannot
-    /// detect, such as by calling it on a statement which _updates_ a single item rather than
-    /// inserting one. Please don't do that.
+    /// This function is a convenience wrapper around `execute()` intended for
+    /// queries that insert a single item. It is possible to misuse this
+    /// function in a way that it cannot detect, such as by calling it on a
+    /// statement which _updates_ a single
+    /// item rather than inserting one. Please don't do that.
     ///
     /// # Failure
     ///
@@ -132,11 +138,12 @@ impl<'conn> Statement<'conn> {
         }
     }
 
-    /// Execute the prepared statement, returning a handle to the resulting rows.
+    /// Execute the prepared statement, returning a handle to the resulting
+    /// rows.
     ///
     /// Due to lifetime restricts, the rows handle returned by `query` does not
-    /// implement the `Iterator` trait. Consider using `query_map` or `query_and_then`
-    /// instead, which do.
+    /// implement the `Iterator` trait. Consider using `query_map` or
+    /// `query_and_then` instead, which do.
     ///
     /// ## Example
     ///
@@ -165,10 +172,11 @@ impl<'conn> Statement<'conn> {
         Ok(Rows::new(self))
     }
 
-    /// Execute the prepared statement with named parameter(s), returning a handle for the
-    /// resulting rows. If any parameters that were in the prepared statement are not included in
-    /// `params`, they will continue to use the most-recently bound value from a previous call to
-    /// `query_named`, or `NULL` if they have never been bound.
+    /// Execute the prepared statement with named parameter(s), returning a
+    /// handle for the resulting rows. If any parameters that were in the
+    /// prepared statement are not included in `params`, they will continue
+    /// to use the most-recently bound value from a previous
+    /// call to `query_named`, or `NULL` if they have never been bound.
     ///
     /// ## Example
     ///
@@ -193,8 +201,8 @@ impl<'conn> Statement<'conn> {
         Ok(Rows::new(self))
     }
 
-    /// Executes the prepared statement and maps a function over the resulting rows, returning
-    /// an iterator over the mapped function results.
+    /// Executes the prepared statement and maps a function over the resulting
+    /// rows, returning an iterator over the mapped function results.
     ///
     /// ## Example
     ///
@@ -224,11 +232,12 @@ impl<'conn> Statement<'conn> {
         Ok(MappedRows::new(rows, f))
     }
 
-    /// Execute the prepared statement with named parameter(s), returning an iterator over the
-    /// result of calling the mapping function over the query's rows. If any parameters that were
-    /// in the prepared statement are not included in `params`, they will continue to use the
-    /// most-recently bound value from a previous call to `query_named`, or `NULL` if they have
-    /// never been bound.
+    /// Execute the prepared statement with named parameter(s), returning an
+    /// iterator over the result of calling the mapping function over the
+    /// query's rows. If any parameters that were in the prepared statement
+    /// are not included in `params`, they will continue to use the
+    /// most-recently bound value from a previous call to `query_named`,
+    /// or `NULL` if they have never been bound.
     ///
     /// ## Example
     ///
@@ -263,8 +272,8 @@ impl<'conn> Statement<'conn> {
     }
 
     /// Executes the prepared statement and maps a function over the resulting
-    /// rows, where the function returns a `Result` with `Error` type implementing
-    /// `std::convert::From<Error>` (so errors can be unified).
+    /// rows, where the function returns a `Result` with `Error` type
+    /// implementing `std::convert::From<Error>` (so errors can be unified).
     ///
     /// # Failure
     ///
@@ -282,28 +291,31 @@ impl<'conn> Statement<'conn> {
         Ok(AndThenRows::new(rows, f))
     }
 
-    /// Execute the prepared statement with named parameter(s), returning an iterator over the
-    /// result of calling the mapping function over the query's rows. If any parameters that were
-    /// in the prepared statement are not included in `params`, they will continue to use the
-    /// most-recently bound value from a previous call to `query_named`, or `NULL` if they have
-    /// never been bound.
+    /// Execute the prepared statement with named parameter(s), returning an
+    /// iterator over the result of calling the mapping function over the
+    /// query's rows. If any parameters that were in the prepared statement
+    /// are not included in
+    /// `params`, they will
+    /// continue to use the most-recently bound value from a previous call
+    /// to `query_named`, or `NULL` if they have never been bound.
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// struct Person { name: String };
+    /// struct Person {
+    ///     name: String,
+    /// };
     ///
     /// fn name_to_person(name: String) -> Result<Person> {
     ///     // ... check for valid name
-    ///     Ok(Person{ name: name })
+    ///     Ok(Person { name: name })
     /// }
     ///
     /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
     ///     let mut stmt = try!(conn.prepare("SELECT name FROM people WHERE id = :id"));
-    ///     let rows = try!(stmt.query_and_then_named(&[(":id", &"one")], |row| {
-    ///         name_to_person(row.get(0))
-    ///     }));
+    ///     let rows =
+    ///         try!(stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0))));
     ///
     ///     let mut persons = Vec::new();
     ///     for person_result in rows {
@@ -330,8 +342,8 @@ impl<'conn> Statement<'conn> {
         Ok(AndThenRows::new(rows, f))
     }
 
-    /// Return `true` if a query in the SQL statement it executes returns one or more rows
-    /// and `false` if the SQL returns an empty set.
+    /// Return `true` if a query in the SQL statement it executes returns one
+    /// or more rows and `false` if the SQL returns an empty set.
     pub fn exists(&mut self, params: &[&ToSql]) -> Result<bool> {
         let mut rows = try!(self.query(params));
         let exists = {
@@ -343,9 +355,11 @@ impl<'conn> Statement<'conn> {
         Ok(exists)
     }
 
-    /// Convenience method to execute a query that is expected to return a single row.
+    /// Convenience method to execute a query that is expected to return a
+    /// single row.
     ///
-    /// If the query returns more than one row, all rows except the first are ignored.
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
     ///
     /// # Failure
     ///
@@ -361,8 +375,8 @@ impl<'conn> Statement<'conn> {
 
     /// Consumes the statement.
     ///
-    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any errors
-    /// that occur.
+    /// Functionally equivalent to the `Drop` implementation, but allows
+    /// callers to see any errors that occur.
     ///
     /// # Failure
     ///
@@ -514,7 +528,8 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    /// Returns a string containing the SQL text of prepared statement with bound parameters expanded.
+    /// Returns a string containing the SQL text of prepared statement with
+    /// bound parameters expanded.
     #[cfg(feature = "bundled")]
     pub fn expanded_sql(&self) -> Option<&str> {
         unsafe {

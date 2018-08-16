@@ -91,7 +91,8 @@ impl From<i32> for Action {
 }
 
 impl Connection {
-    /// Register a callback function to be invoked whenever a transaction is committed.
+    /// Register a callback function to be invoked whenever a transaction is
+    /// committed.
     ///
     /// The callback returns `true` to rollback.
     pub fn commit_hook<F>(&self, hook: Option<F>)
@@ -101,7 +102,8 @@ impl Connection {
         self.db.borrow_mut().commit_hook(hook);
     }
 
-    /// Register a callback function to be invoked whenever a transaction is committed.
+    /// Register a callback function to be invoked whenever a transaction is
+    /// committed.
     ///
     /// The callback returns `true` to rollback.
     pub fn rollback_hook<F>(&self, hook: Option<F>)
@@ -116,10 +118,11 @@ impl Connection {
     ///
     /// The callback parameters are:
     ///
-    ///   - the type of database update (SQLITE_INSERT, SQLITE_UPDATE or SQLITE_DELETE),
-    ///   - the name of the database ("main", "temp", ...),
-    ///   - the name of the table that is updated,
-    ///   - the ROWID of the row that is updated.
+    /// - the type of database update (SQLITE_INSERT, SQLITE_UPDATE or
+    /// SQLITE_DELETE),
+    /// - the name of the database ("main", "temp", ...),
+    /// - the name of the table that is updated,
+    /// - the ROWID of the row that is updated.
     pub fn update_hook<F>(&self, hook: Option<F>)
     where
         F: FnMut(Action, &str, &str, i64) + Send + 'static,
@@ -151,8 +154,9 @@ impl InnerConnection {
             }
         }
 
-        // unlike `sqlite3_create_function_v2`, we cannot specify a `xDestroy` with `sqlite3_commit_hook`.
-        // so we keep the `xDestroy` function in `InnerConnection.free_boxed_hook`.
+        // unlike `sqlite3_create_function_v2`, we cannot specify a `xDestroy` with
+        // `sqlite3_commit_hook`. so we keep the `xDestroy` function in
+        // `InnerConnection.free_boxed_hook`.
         let free_commit_hook = if hook.is_some() {
             Some(free_boxed_hook::<F> as fn(*mut c_void))
         } else {

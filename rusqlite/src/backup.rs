@@ -18,8 +18,11 @@
 //! # use std::path::Path;
 //! # use std::time;
 //!
-//! fn backup_db<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
-//!     -> Result<()> {
+//! fn backup_db<P: AsRef<Path>>(
+//!     src: &Connection,
+//!     dst: P,
+//!     progress: fn(backup::Progress),
+//! ) -> Result<()> {
 //!     let mut dst = try!(Connection::open(dst));
 //!     let backup = try!(backup::Backup::new(src, &mut dst));
 //!     backup.run_to_completion(5, time::Duration::from_millis(250), Some(progress))
@@ -136,7 +139,8 @@ pub enum StepResult {
     /// The backup is complete.
     Done,
 
-    /// The step was successful but there are still more pages that need to be backed up.
+    /// The step was successful but there are still more pages that need to be
+    /// backed up.
     More,
 
     /// The step failed because appropriate locks could not be aquired. This is

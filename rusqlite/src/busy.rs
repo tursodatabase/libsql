@@ -8,13 +8,17 @@ use ffi;
 use {Connection, InnerConnection, Result};
 
 impl Connection {
-    /// Set a busy handler that sleeps for a specified amount of time when a table is locked.
-    /// The handler will sleep multiple times until at least "ms" milliseconds of sleeping have accumulated.
+    /// Set a busy handler that sleeps for a specified amount of time when a
+    /// table is locked. The handler will sleep multiple times until at
+    /// least "ms" milliseconds of sleeping have accumulated.
     ///
-    /// Calling this routine with an argument equal to zero turns off all busy handlers.
+    /// Calling this routine with an argument equal to zero turns off all busy
+    /// handlers.
     //
-    /// There can only be a single busy handler for a particular database connection at any given moment.
-    /// If another busy handler was defined (using `busy_handler`) prior to calling this routine, that other busy handler is cleared.
+    /// There can only be a single busy handler for a particular database
+    /// connection at any given moment. If another busy handler was defined
+    /// (using `busy_handler`) prior to calling this routine, that other
+    /// busy handler is cleared.
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
         let ms = timeout
             .as_secs()
@@ -26,14 +30,21 @@ impl Connection {
 
     /// Register a callback to handle `SQLITE_BUSY` errors.
     ///
-    /// If the busy callback is `None`, then `SQLITE_BUSY is returned immediately upon encountering the lock.`
-    /// The argument to the busy handler callback is the number of times that the busy handler has been invoked previously for the same locking event.
-    /// If the busy callback returns `false`, then no additional attempts are made to access the database and `SQLITE_BUSY` is returned to the application.
-    /// If the callback returns `true`, then another attempt is made to access the database and the cycle repeats.
+    /// If the busy callback is `None`, then `SQLITE_BUSY is returned
+    /// immediately upon encountering the lock.` The argument to the busy
+    /// handler callback is the number of times that the
+    /// busy handler has been invoked previously for the
+    /// same locking event. If the busy callback returns `false`, then no
+    /// additional attempts are made to access the
+    /// database and `SQLITE_BUSY` is returned to the
+    /// application. If the callback returns `true`, then another attempt
+    /// is made to access the database and the cycle repeats.
     ///
-    /// There can only be a single busy handler defined for each database connection.
-    /// Setting a new busy handler clears any previously set handler.
-    /// Note that calling `busy_timeout()` or evaluating `PRAGMA busy_timeout=N` will change the busy handler and thus clear any previously set busy handler.
+    /// There can only be a single busy handler defined for each database
+    /// connection. Setting a new busy handler clears any previously set
+    /// handler. Note that calling `busy_timeout()` or evaluating `PRAGMA
+    /// busy_timeout=N` will change the busy handler and thus
+    /// clear any previously set busy handler.
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);

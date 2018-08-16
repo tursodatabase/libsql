@@ -7,10 +7,10 @@ use std::ops::{Deref, DerefMut};
 use {Connection, Result, Statement};
 
 impl Connection {
-    /// Prepare a SQL statement for execution, returning a previously prepared (but
-    /// not currently in-use) statement if one is available. The returned statement
-    /// will be cached for reuse by future calls to `prepare_cached` once it is
-    /// dropped.
+    /// Prepare a SQL statement for execution, returning a previously prepared
+    /// (but not currently in-use) statement if one is available. The
+    /// returned statement will be cached for reuse by future calls to
+    /// `prepare_cached` once it is dropped.
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
@@ -31,16 +31,17 @@ impl Connection {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn prepare_cached<'a>(&'a self, sql: &str) -> Result<CachedStatement<'a>> {
         self.cache.get(self, sql)
     }
 
-    /// Set the maximum number of cached prepared statements this connection will hold.
-    /// By default, a connection will hold a relatively small number of cached statements.
-    /// If you need more, or know that you will not use cached statements, you can set
-    /// the capacity manually using this method.
+    /// Set the maximum number of cached prepared statements this connection
+    /// will hold. By default, a connection will hold a relatively small
+    /// number of cached statements. If you need more, or know that you
+    /// will not use cached statements, you
+    /// can set the capacity manually using this method.
     pub fn set_prepared_statement_cache_capacity(&self, capacity: usize) {
         self.cache.set_capacity(capacity)
     }
@@ -95,8 +96,8 @@ impl<'conn> CachedStatement<'conn> {
         }
     }
 
-    /// Discard the statement, preventing it from being returned to its `Connection`'s collection
-    /// of cached statements.
+    /// Discard the statement, preventing it from being returned to its
+    /// `Connection`'s collection of cached statements.
     pub fn discard(mut self) {
         self.stmt = None;
     }
@@ -117,8 +118,8 @@ impl StatementCache {
     //
     // # Failure
     //
-    // Will return `Err` if no cached statement can be found and the underlying SQLite prepare
-    // call fails.
+    // Will return `Err` if no cached statement can be found and the underlying
+    // SQLite prepare call fails.
     fn get<'conn>(
         &'conn self,
         conn: &'conn Connection,

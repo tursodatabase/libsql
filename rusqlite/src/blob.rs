@@ -1,14 +1,15 @@
 //! Incremental BLOB I/O.
 //!
-//! Note that SQLite does not provide API-level access to change the size of a BLOB; that must
-//! be performed through SQL statements.
+//! Note that SQLite does not provide API-level access to change the size of a
+//! BLOB; that must be performed through SQL statements.
 //!
-//! `Blob` conforms to `std::io::Read`, `std::io::Write`, and `std::io::Seek`, so it plays
-//! nicely with other types that build on these (such as `std::io::BufReader` and
-//! `std::io::BufWriter`). However, you must be careful with the size of the blob. For example,
-//! when using a `BufWriter`, the `BufWriter` will accept more data than the `Blob` will allow,
-//! so make sure to call `flush` and check for errors. (See the unit tests in this module for
-//! an example.)
+//! `Blob` conforms to `std::io::Read`, `std::io::Write`, and `std::io::Seek`,
+//! so it plays nicely with other types that build on these (such as
+//! `std::io::BufReader` and `std::io::BufWriter`). However, you must be
+//! careful with the size of the blob. For example, when using a `BufWriter`,
+//! the `BufWriter` will accept more data than the `Blob`
+//! will allow, so make sure to call `flush` and check for errors. (See the
+//! unit tests in this module for an example.)
 //!
 //! ## Example
 //!
@@ -16,17 +17,21 @@
 //! extern crate libsqlite3_sys;
 //! extern crate rusqlite;
 //!
-//! use rusqlite::{Connection, DatabaseName};
 //! use rusqlite::blob::ZeroBlob;
-//! use std::io::{Read, Write, Seek, SeekFrom};
+//! use rusqlite::{Connection, DatabaseName};
+//! use std::io::{Read, Seek, SeekFrom, Write};
 //!
 //! fn main() {
 //!     let db = Connection::open_in_memory().unwrap();
-//!     db.execute_batch("CREATE TABLE test (content BLOB);").unwrap();
-//!     db.execute("INSERT INTO test (content) VALUES (ZEROBLOB(10))", &[]).unwrap();
+//!     db.execute_batch("CREATE TABLE test (content BLOB);")
+//!         .unwrap();
+//!     db.execute("INSERT INTO test (content) VALUES (ZEROBLOB(10))", &[])
+//!         .unwrap();
 //!
 //!     let rowid = db.last_insert_rowid();
-//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+//!     let mut blob = db
+//!         .blob_open(DatabaseName::Main, "test", "content", rowid, false)
+//!         .unwrap();
 //!
 //!     // Make sure to test that the number of bytes written matches what you expect;
 //!     // if you try to write too much, the data will be truncated to the size of the BLOB.
@@ -39,7 +44,8 @@
 //!     let bytes_read = blob.read(&mut buf[..]).unwrap();
 //!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
 //!
-//!     db.execute("INSERT INTO test (content) VALUES (?)", &[&ZeroBlob(64)]).unwrap();
+//!     db.execute("INSERT INTO test (content) VALUES (?)", &[&ZeroBlob(64)])
+//!         .unwrap();
 //!
 //!     // given a new row ID, we can reopen the blob on that row
 //!     let rowid = db.last_insert_rowid();
@@ -64,12 +70,14 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// Open a handle to the BLOB located in `row_id`, `column`, `table` in database `db`.
+    /// Open a handle to the BLOB located in `row_id`, `column`, `table` in
+    /// database `db`.
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a C-compatible string
-    /// or if the underlying SQLite BLOB open call fails.
+    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a
+    /// C-compatible string or if the underlying SQLite BLOB open call
+    /// fails.
     pub fn blob_open<'a>(
         &'a self,
         db: DatabaseName,
@@ -124,8 +132,9 @@ impl<'conn> Blob<'conn> {
 
     /// Close a BLOB handle.
     ///
-    /// Calling `close` explicitly is not required (the BLOB will be closed when the
-    /// `Blob` is dropped), but it is available so you can get any errors that occur.
+    /// Calling `close` explicitly is not required (the BLOB will be closed
+    /// when the `Blob` is dropped), but it is available so you can get any
+    /// errors that occur.
     ///
     /// # Failure
     ///
@@ -142,8 +151,8 @@ impl<'conn> Blob<'conn> {
 }
 
 impl<'conn> io::Read for Blob<'conn> {
-    /// Read data from a BLOB incrementally. Will return Ok(0) if the end of the blob
-    /// has been reached.
+    /// Read data from a BLOB incrementally. Will return Ok(0) if the end of
+    /// the blob has been reached.
     ///
     /// # Failure
     ///
@@ -165,12 +174,13 @@ impl<'conn> io::Read for Blob<'conn> {
 }
 
 impl<'conn> io::Write for Blob<'conn> {
-    /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of the blob
-    /// has been reached; consider using `Write::write_all(buf)` if you want to get an
-    /// error if the entirety of the buffer cannot be written.
+    /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of
+    /// the blob has been reached; consider using `Write::write_all(buf)`
+    /// if you want to get an error if the entirety of the buffer cannot be
+    /// written.
     ///
-    /// This function may only modify the contents of the BLOB; it is not possible to increase
-    /// the size of a BLOB using this API.
+    /// This function may only modify the contents of the BLOB; it is not
+    /// possible to increase the size of a BLOB using this API.
     ///
     /// # Failure
     ///
@@ -230,8 +240,8 @@ impl<'conn> Drop for Blob<'conn> {
 
 /// BLOB of length N that is filled with zeroes.
 ///
-/// Zeroblobs are intended to serve as placeholders for BLOBs whose content is later written using
-/// incremental BLOB I/O routines.
+/// Zeroblobs are intended to serve as placeholders for BLOBs whose content is
+/// later written using incremental BLOB I/O routines.
 ///
 /// A negative value for the zeroblob results in a zero-length BLOB.
 #[derive(Copy, Clone)]

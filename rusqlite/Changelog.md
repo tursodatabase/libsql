@@ -1,3 +1,29 @@
+# Version 0.14.0 (2018-08-1?)
+
+* BREAKING CHANGE: `ToSql` implementation for `time::Timespec` uses RFC 3339 (%Y-%m-%dT%H:%M:%S.%fZ).
+  Previous format was %Y-%m-%d %H:%M:%S:%f %Z.
+* BREAKING CHANGE: Remove potentially conflicting impl of ToSqlOutput (#313).
+* BREAKING CHANGE: Replace column index/count type (i32) with usize.
+* BREAKING CHANGE: Replace parameter index/count type (i32) with usize.
+* BREAKING CHANGE: Replace row changes/count type (i32) with usize.
+* BREAKING CHANGE: Scalar functions must be `Send`able and `'static`.
+* Bugfix: Commit failure unhandled, database left in unusable state (#366).
+* Bugfix: `free_boxed_hook` does not work for `fn`.
+* Update the bundled SQLite version to 3.24.0 (#326).
+* Add DropBehavior::Panic to enforce intentional commit or rollback.
+* Implement `sqlite3_update_hook` (#260, #328), `sqlite3_commit_hook` and `sqlite3_rollback_hook`.
+* Add support to unlock notification behind `unlock_notify` feature (#294, #331).
+* Make `Statement::column_index` case insensitive (#330).
+* Add comment to justify `&mut Connection` in `Transaction`.
+* Fix `tyvar_behind_raw_pointer` warnings.
+* Fix handful of clippy warnings.
+* Fix `Connection::open` documentation (#332)
+* Add binding to `sqlite3_get_autocommit` and `sqlite3_stmt_busy`.
+* Add binding to `sqlite3_busy_timeout` and `sqlite3_busy_handler`.
+* Add binding to `sqlite3_expanded_sql`.
+* Use `rerun-if-env-changed` in libsqlite3-sys (#329).
+* Return an `InvalidQuery` error when SQL is not read only.
+
 # Version 0.13.0 (2017-11-13)
 
 * Added ToSqlConversionFailure case to Error enum.

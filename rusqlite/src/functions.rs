@@ -2,19 +2,20 @@
 //!
 //! # Example
 //!
-//! Adding a `regexp` function to a connection in which compiled regular expressions
-//! are cached in a `HashMap`. For an alternative implementation that uses SQLite's
-//! [Function Auxilliary Data](https://www.sqlite.org/c3ref/get_auxdata.html) interface
-//! to avoid recompiling regular expressions, see the unit tests for this module.
+//! Adding a `regexp` function to a connection in which compiled regular
+//! expressions are cached in a `HashMap`. For an alternative implementation
+//! that uses SQLite's [Function Auxilliary Data](https://www.sqlite.org/c3ref/get_auxdata.html) interface
+//! to avoid recompiling regular expressions, see the unit tests for this
+//! module.
 //!
 //! ```rust
 //! extern crate libsqlite3_sys;
 //! extern crate rusqlite;
 //! extern crate regex;
 //!
+//! use regex::Regex;
 //! use rusqlite::{Connection, Error, Result};
 //! use std::collections::HashMap;
-//! use regex::Regex;
 //!
 //! fn add_regexp_function(db: &Connection) -> Result<()> {
 //!     let mut cached_regexes = HashMap::new();
@@ -25,12 +26,10 @@
 //!             use std::collections::hash_map::Entry::{Occupied, Vacant};
 //!             match entry {
 //!                 Occupied(occ) => occ.into_mut(),
-//!                 Vacant(vac) => {
-//!                     match Regex::new(&regex_s) {
-//!                         Ok(r) => vac.insert(r),
-//!                         Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
-//!                     }
-//!                 }
+//!                 Vacant(vac) => match Regex::new(&regex_s) {
+//!                     Ok(r) => vac.insert(r),
+//!                     Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
+//!                 },
 //!             }
 //!         };
 //!
@@ -43,8 +42,10 @@
 //!     let db = Connection::open_in_memory().unwrap();
 //!     add_regexp_function(&db).unwrap();
 //!
-//!     let is_match: bool = db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[],
-//!                                 |row| row.get(0)).unwrap();
+//!     let is_match: bool = db
+//!         .query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[], |row| {
+//!             row.get(0)
+//!         }).unwrap();
 //!
 //!     assert!(is_match);
 //! }
@@ -64,10 +65,10 @@ use types::{FromSql, FromSqlError, ToSql, ValueRef};
 use {str_to_cstring, Connection, Error, InnerConnection, Result};
 
 unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
-    // Extended constraint error codes were added in SQLite 3.7.16. We don't have an explicit
-    // feature check for that, and this doesn't really warrant one. We'll use the extended code
-    // if we're on the bundled version (since it's at least 3.17.0) and the normal constraint
-    // error code if not.
+    // Extended constraint error codes were added in SQLite 3.7.16. We don't have
+    // an explicit feature check for that, and this doesn't really warrant one.
+    // We'll use the extended code if we're on the bundled version (since it's
+    // at least 3.17.0) and the normal constraint error code if not.
     #[cfg(feature = "bundled")]
     fn constraint_error_code() -> i32 {
         ffi::SQLITE_CONSTRAINT_FUNCTION
@@ -108,6 +109,7 @@ impl<'a> Context<'a> {
     pub fn len(&self) -> usize {
         self.args.len()
     }
+
     /// Returns `true` when there is no argument.
     pub fn is_empty(&self) -> bool {
         self.args.is_empty()
@@ -119,7 +121,8 @@ impl<'a> Context<'a> {
     ///
     /// Will panic if `idx` is greater than or equal to `self.len()`.
     ///
-    /// Will return Err if the underlying SQLite type cannot be converted to a `T`.
+    /// Will return Err if the underlying SQLite type cannot be converted to a
+    /// `T`.
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
@@ -169,26 +172,26 @@ impl<'a> Context<'a> {
 
 /// Aggregate is the callback interface for user-defined aggregate function.
 ///
-/// `A` is the type of the aggregation context and `T` is the type of the final result.
-/// Implementations should be stateless.
+/// `A` is the type of the aggregation context and `T` is the type of the final
+/// result. Implementations should be stateless.
 pub trait Aggregate<A, T>
 where
     T: ToSql,
 {
-    /// Initializes the aggregation context. Will be called prior to the first call
-    /// to `step()` to set up the context for an invocation of the function. (Note:
-    /// `init()` will not be called if there are no rows.)
+    /// Initializes the aggregation context. Will be called prior to the first
+    /// call to `step()` to set up the context for an invocation of the
+    /// function. (Note: `init()` will not be called if there are no rows.)
     fn init(&self) -> A;
 
-    /// "step" function called once for each row in an aggregate group. May be called
-    /// 0 times if there are no rows.
+    /// "step" function called once for each row in an aggregate group. May be
+    /// called 0 times if there are no rows.
     fn step(&self, &mut Context, &mut A) -> Result<()>;
 
-    /// Computes and returns the final result. Will be called exactly once for each
-    /// invocation of the function. If `step()` was called at least once, will be given
-    /// `Some(A)` (the same `A` as was created by `init` and given to `step`); if `step()`
-    /// was not called (because the function is running against 0 rows), will be given
-    /// `None`.
+    /// Computes and returns the final result. Will be called exactly once for
+    /// each invocation of the function. If `step()` was called at least
+    /// once, will be given `Some(A)` (the same `A` as was created by
+    /// `init` and given to `step`); if `step()` was not called (because
+    /// the function is running against 0 rows), will be given `None`.
     fn finalize(&self, Option<A>) -> Result<T>;
 }
 
@@ -196,9 +199,9 @@ impl Connection {
     /// Attach a user-defined scalar function to this database connection.
     ///
     /// `fn_name` is the name the function will be accessible from SQL.
-    /// `n_arg` is the number of arguments to the function. Use `-1` for a variable
-    /// number. If the function always returns the same value given the same
-    /// input, `deterministic` should be `true`.
+    /// `n_arg` is the number of arguments to the function. Use `-1` for a
+    /// variable number. If the function always returns the same value
+    /// given the same input, `deterministic` should be `true`.
     ///
     /// The function will remain available until the connection is closed or
     /// until it is explicitly removed via `remove_function`.

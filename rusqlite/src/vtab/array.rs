@@ -120,6 +120,7 @@ impl ArrayTabCursor {
             ptr: None,
         }
     }
+
     fn len(&self) -> i64 {
         match self.ptr {
             Some(ref a) => a.len() as i64,
@@ -137,13 +138,16 @@ impl VTabCursor for ArrayTabCursor {
         self.row_id = 1;
         Ok(())
     }
+
     fn next(&mut self) -> Result<()> {
         self.row_id += 1;
         Ok(())
     }
+
     fn eof(&self) -> bool {
         self.row_id > self.len()
     }
+
     fn column(&self, ctx: &mut Context, i: c_int) -> Result<()> {
         match i {
             CARRAY_COLUMN_POINTER => Ok(()),
@@ -157,6 +161,7 @@ impl VTabCursor for ArrayTabCursor {
             }
         }
     }
+
     fn rowid(&self) -> Result<i64> {
         Ok(self.row_id)
     }
