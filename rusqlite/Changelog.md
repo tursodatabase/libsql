@@ -1,6 +1,4 @@
-# Version 0.14.0 (TODO)
-
-It would be wise to run rustfmt just after merging all the relevant PRs...
+# Version 0.14.0 (2018-08-1?)
 
 * BREAKING CHANGE: `ToSql` implementation for `time::Timespec` uses RFC 3339 (%Y-%m-%dT%H:%M:%S.%fZ).
   Previous format was %Y-%m-%d %H:%M:%S:%f %Z.
@@ -8,6 +6,7 @@ It would be wise to run rustfmt just after merging all the relevant PRs...
 * BREAKING CHANGE: Replace column index/count type (i32) with usize.
 * BREAKING CHANGE: Replace parameter index/count type (i32) with usize.
 * BREAKING CHANGE: Replace row changes/count type (i32) with usize.
+* BREAKING CHANGE: Scalar functions must be `Send`able and `'static`.
 * Bugfix: Commit failure unhandled, database left in unusable state (#366).
 * Bugfix: `free_boxed_hook` does not work for `fn`.
 * Update the bundled SQLite version to 3.24.0 (#326).
