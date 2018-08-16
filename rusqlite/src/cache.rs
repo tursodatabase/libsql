@@ -1,11 +1,10 @@
 //! Prepared statements cache for faster execution.
 
+use lru_cache::LruCache;
+use raw_statement::RawStatement;
 use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
-use lru_cache::LruCache;
-use {Result, Connection, Statement};
-use raw_statement::RawStatement;
-use statement::StatementCrateImpl;
+use {Connection, Result, Statement};
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared (but
@@ -120,10 +119,11 @@ impl StatementCache {
     //
     // Will return `Err` if no cached statement can be found and the underlying SQLite prepare
     // call fails.
-    fn get<'conn>(&'conn self,
-                  conn: &'conn Connection,
-                  sql: &str)
-                  -> Result<CachedStatement<'conn>> {
+    fn get<'conn>(
+        &'conn self,
+        conn: &'conn Connection,
+        sql: &str,
+    ) -> Result<CachedStatement<'conn>> {
         let mut cache = self.0.borrow_mut();
         let stmt = match cache.remove(sql.trim()) {
             Some(raw_stmt) => Ok(Statement::new(conn, raw_stmt)),
@@ -136,7 +136,9 @@ impl StatementCache {
     fn cache_stmt(&self, stmt: RawStatement) {
         let mut cache = self.0.borrow_mut();
         stmt.clear_bindings();
-        let sql = String::from_utf8_lossy(stmt.sql().to_bytes()).trim().to_string();
+        let sql = String::from_utf8_lossy(stmt.sql().to_bytes())
+            .trim()
+            .to_string();
         cache.insert(sql, stmt);
     }
 
@@ -148,8 +150,8 @@ impl StatementCache {
 
 #[cfg(test)]
 mod test {
-    use Connection;
     use super::StatementCache;
+    use Connection;
 
     impl StatementCache {
         fn clear(&self) {
@@ -177,14 +179,14 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
@@ -202,7 +204,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
@@ -212,7 +214,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(0, cache.len());
 
@@ -220,7 +222,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
     }
@@ -234,7 +236,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
             stmt.discard();
         }
         assert_eq!(0, cache.len());
@@ -243,46 +245,51 @@ mod test {
     #[test]
     fn test_ddl() {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch(r#"
+        db.execute_batch(
+            r#"
             CREATE TABLE foo (x INT);
             INSERT INTO foo VALUES (1);
-        "#)
-            .unwrap();
+        "#,
+        ).unwrap();
 
         let sql = "SELECT * FROM foo";
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
-            assert_eq!(1i32,
-                       stmt.query_map::<i32, _>(&[], |r| r.get(0))
-                           .unwrap()
-                           .next()
-                           .unwrap()
-                           .unwrap());
+            assert_eq!(
+                1i32,
+                stmt.query_map::<i32, _>(&[], |r| r.get(0))
+                    .unwrap()
+                    .next()
+                    .unwrap()
+                    .unwrap()
+            );
         }
 
-        db.execute_batch(r#"
+        db.execute_batch(
+            r#"
             ALTER TABLE foo ADD COLUMN y INT;
             UPDATE foo SET y = 2;
-        "#)
-            .unwrap();
+        "#,
+        ).unwrap();
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
-            assert_eq!((1i32, 2i32),
-                       stmt.query_map(&[], |r| (r.get(0), r.get(1)))
-                           .unwrap()
-                           .next()
-                           .unwrap()
-                           .unwrap());
+            assert_eq!(
+                (1i32, 2i32),
+                stmt.query_map(&[], |r| (r.get(0), r.get(1)))
+                    .unwrap()
+                    .next()
+                    .unwrap()
+                    .unwrap()
+            );
         }
     }
 
     #[test]
     fn test_connection_close() {
         let conn = Connection::open_in_memory().unwrap();
-        conn.prepare_cached("SELECT * FROM sqlite_master;")
-            .unwrap();
+        conn.prepare_cached("SELECT * FROM sqlite_master;").unwrap();
 
         conn.close().expect("connection not closed");
     }
@@ -298,14 +305,14 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
     }

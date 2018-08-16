@@ -1,13 +1,18 @@
-use std::{convert, fmt, mem, ptr, result, str};
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
+#[cfg(feature = "array")]
+use std::rc::Rc;
 use std::slice::from_raw_parts;
+use std::{convert, fmt, mem, ptr, result, str};
 
 use super::ffi;
-use super::{Connection, RawStatement, Result, Error, ValueRef, Row, Rows, AndThenRows, MappedRows};
 use super::str_to_cstring;
+use super::{
+    AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
+};
 use types::{ToSql, ToSqlOutput};
-use row::{RowsCrateImpl, MappedRowsCrateImpl, AndThenRowsCrateImpl};
+#[cfg(feature = "array")]
+use vtab::array::{free_array, ARRAY_TYPE};
 
 /// A prepared statement.
 pub struct Statement<'conn> {
@@ -29,7 +34,7 @@ impl<'conn> Statement<'conn> {
     }
 
     /// Return the number of columns in the result set returned by the prepared statement.
-    pub fn column_count(&self) -> i32 {
+    pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
@@ -41,7 +46,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return an `Error::InvalidColumnName` when there is no column with the specified `name`.
-    pub fn column_index(&self, name: &str) -> Result<i32> {
+    pub fn column_index(&self, name: &str) -> Result<usize> {
         let bytes = name.as_bytes();
         let n = self.column_count();
         for i in 0..n {
@@ -75,7 +80,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute(&mut self, params: &[&ToSql]) -> Result<c_int> {
+    pub fn execute(&mut self, params: &[&ToSql]) -> Result<usize> {
         try!(self.bind_parameters(params));
         self.execute_with_bound_parameters()
     }
@@ -92,7 +97,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// fn insert(conn: &Connection) -> Result<i32> {
+    /// fn insert(conn: &Connection) -> Result<usize> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
     ///     stmt.execute_named(&[(":name", &"one")])
     /// }
@@ -102,7 +107,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<c_int> {
+    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<usize> {
         try!(self.bind_parameters_named(params));
         self.execute_with_bound_parameters()
     }
@@ -155,6 +160,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
+        try!(self.check_readonly());
         try!(self.bind_parameters(params));
         Ok(Rows::new(self))
     }
@@ -182,6 +188,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> Result<Rows<'a>> {
+        try!(self.check_readonly());
         try!(self.bind_parameters_named(params));
         Ok(Rows::new(self))
     }
@@ -210,7 +217,8 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F) -> Result<MappedRows<'a, F>>
-        where F: FnMut(&Row) -> T
+    where
+        F: FnMut(&Row) -> T,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -242,11 +250,13 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_map_named<'a, T, F>(&'a mut self,
-                                     params: &[(&str, &ToSql)],
-                                     f: F)
-                                     -> Result<MappedRows<'a, F>>
-        where F: FnMut(&Row) -> T
+    pub fn query_map_named<'a, T, F>(
+        &'a mut self,
+        params: &[(&str, &ToSql)],
+        f: F,
+    ) -> Result<MappedRows<'a, F>>
+    where
+        F: FnMut(&Row) -> T,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -259,12 +269,14 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then<'a, T, E, F>(&'a mut self,
-                                       params: &[&ToSql],
-                                       f: F)
-                                       -> Result<AndThenRows<'a, F>>
-        where E: convert::From<Error>,
-              F: FnMut(&Row) -> result::Result<T, E>
+    pub fn query_and_then<'a, T, E, F>(
+        &'a mut self,
+        params: &[&ToSql],
+        f: F,
+    ) -> Result<AndThenRows<'a, F>>
+    where
+        E: convert::From<Error>,
+        F: FnMut(&Row) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -305,12 +317,14 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then_named<'a, T, E, F>(&'a mut self,
-                                             params: &[(&str, &ToSql)],
-                                             f: F)
-                                             -> Result<AndThenRows<'a, F>>
-        where E: convert::From<Error>,
-              F: FnMut(&Row) -> result::Result<T, E>
+    pub fn query_and_then_named<'a, T, E, F>(
+        &'a mut self,
+        params: &[(&str, &ToSql)],
+        f: F,
+    ) -> Result<AndThenRows<'a, F>>
+    where
+        E: convert::From<Error>,
+        F: FnMut(&Row) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -337,7 +351,8 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn query_row<T, F>(&mut self, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(&Row) -> T
+    where
+        F: FnOnce(&Row) -> T,
     {
         let mut rows = try!(self.query(params));
 
@@ -362,19 +377,22 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
-    pub fn parameter_index(&self, name: &str) -> Result<Option<i32>> {
+    pub fn parameter_index(&self, name: &str) -> Result<Option<usize>> {
         let c_name = try!(str_to_cstring(name));
         Ok(self.stmt.bind_parameter_index(&c_name))
     }
 
     fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
-        assert_eq!(params.len() as c_int, self.stmt.bind_parameter_count(),
-                "incorrect number of parameters to query(): expected {}, got {}",
-                self.stmt.bind_parameter_count(),
-                params.len());
+        assert_eq!(
+            params.len(),
+            self.stmt.bind_parameter_count(),
+            "incorrect number of parameters to query(): expected {}, got {}",
+            self.stmt.bind_parameter_count(),
+            params.len()
+        );
 
         for (i, p) in params.iter().enumerate() {
-            try!(self.bind_parameter(*p, (i + 1) as c_int));
+            try!(self.bind_parameter(*p, i + 1));
         }
 
         Ok(())
@@ -391,7 +409,7 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()> {
+    fn bind_parameter(&self, param: &ToSql, col: usize) -> Result<()> {
         let value = try!(param.to_sql());
 
         let ptr = unsafe { self.stmt.ptr() };
@@ -401,20 +419,28 @@ impl<'conn> Statement<'conn> {
 
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
-                return self.conn
-                           .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
+                return self
+                    .conn
+                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col as c_int, len) });
+            }
+            #[cfg(feature = "array")]
+            ToSqlOutput::Array(a) => {
+                return self.conn.decode_result(unsafe {
+                    ffi::sqlite3_bind_pointer(
+                        ptr,
+                        col as c_int,
+                        Rc::into_raw(a) as *mut c_void,
+                        ARRAY_TYPE,
+                        Some(free_array),
+                    )
+                });
             }
         };
-        self.conn
-            .decode_result(match value {
-                               ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
-                               ValueRef::Integer(i) => unsafe {
-                ffi::sqlite3_bind_int64(ptr, col, i)
-            },
-                               ValueRef::Real(r) => unsafe {
-                ffi::sqlite3_bind_double(ptr, col, r)
-            },
-                               ValueRef::Text(s) => unsafe {
+        self.conn.decode_result(match value {
+            ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col as c_int) },
+            ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col as c_int, i) },
+            ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
+            ValueRef::Text(s) => unsafe {
                 let length = s.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
@@ -425,27 +451,35 @@ impl<'conn> Statement<'conn> {
                     } else {
                         ffi::SQLITE_STATIC()
                     };
-                    ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
+                    ffi::sqlite3_bind_text(
+                        ptr,
+                        col as c_int,
+                        c_str.as_ptr(),
+                        length as c_int,
+                        destructor,
+                    )
                 }
             },
-                               ValueRef::Blob(b) => unsafe {
+            ValueRef::Blob(b) => unsafe {
                 let length = b.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
                 } else if length == 0 {
-                    ffi::sqlite3_bind_zeroblob(ptr, col, 0)
+                    ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
-                    ffi::sqlite3_bind_blob(ptr,
-                                           col,
-                                           b.as_ptr() as *const c_void,
-                                           length as c_int,
-                                           ffi::SQLITE_TRANSIENT())
+                    ffi::sqlite3_bind_blob(
+                        ptr,
+                        col as c_int,
+                        b.as_ptr() as *const c_void,
+                        length as c_int,
+                        ffi::SQLITE_TRANSIENT(),
+                    )
                 }
             },
-                           })
+        })
     }
 
-    fn execute_with_bound_parameters(&mut self) -> Result<c_int> {
+    fn execute_with_bound_parameters(&mut self) -> Result<usize> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
@@ -465,6 +499,29 @@ impl<'conn> Statement<'conn> {
         let mut stmt = RawStatement::new(ptr::null_mut());
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
+    }
+
+    #[cfg(not(feature = "bundled"))]
+    fn check_readonly(&self) -> Result<()> {
+        Ok(())
+    }
+
+    #[cfg(feature = "bundled")]
+    fn check_readonly(&self) -> Result<()> {
+        if !self.stmt.readonly() {
+            return Err(Error::InvalidQuery);
+        }
+        Ok(())
+    }
+
+    /// Returns a string containing the SQL text of prepared statement with bound parameters expanded.
+    #[cfg(feature = "bundled")]
+    pub fn expanded_sql(&self) -> Option<&str> {
+        unsafe {
+            self.stmt
+                .expanded_sql()
+                .map(|s| str::from_utf8_unchecked(s.to_bytes()))
+        }
     }
 }
 
@@ -494,55 +551,55 @@ impl<'conn> Drop for Statement<'conn> {
     }
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some Statement methods. Remove this
-// once pub(crate) is stable.
-pub trait StatementCrateImpl<'conn> {
-    fn new(conn: &'conn Connection, stmt: RawStatement) -> Self;
-    fn value_ref(&self, col: c_int) -> ValueRef;
-    fn step(&self) -> Result<bool>;
-    fn reset(&self) -> c_int;
-}
-
-impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
-    fn new(conn: &Connection, stmt: RawStatement) -> Statement {
-        Statement {
-            conn,
-            stmt,
-        }
+impl<'conn> Statement<'conn> {
+    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement {
+        Statement { conn, stmt }
     }
 
-    fn value_ref(&self, col: c_int) -> ValueRef {
+    pub(crate) fn value_ref(&self, col: usize) -> ValueRef {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {
             ffi::SQLITE_NULL => ValueRef::Null,
             ffi::SQLITE_INTEGER => {
-                ValueRef::Integer(unsafe { ffi::sqlite3_column_int64(raw, col) })
+                ValueRef::Integer(unsafe { ffi::sqlite3_column_int64(raw, col as c_int) })
             }
-            ffi::SQLITE_FLOAT => ValueRef::Real(unsafe { ffi::sqlite3_column_double(raw, col) }),
+            ffi::SQLITE_FLOAT => {
+                ValueRef::Real(unsafe { ffi::sqlite3_column_double(raw, col as c_int) })
+            }
             ffi::SQLITE_TEXT => {
                 let s = unsafe {
-                    let text = ffi::sqlite3_column_text(raw, col);
-                    assert!(!text.is_null(),
-                            "unexpected SQLITE_TEXT column type with NULL data");
+                    let text = ffi::sqlite3_column_text(raw, col as c_int);
+                    assert!(
+                        !text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data"
+                    );
                     CStr::from_ptr(text as *const c_char)
                 };
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str()
+                let s = s
+                    .to_str()
                     .expect("sqlite3_column_text returned invalid UTF-8");
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
                 let (blob, len) = unsafe {
-                    (ffi::sqlite3_column_blob(raw, col), ffi::sqlite3_column_bytes(raw, col))
+                    (
+                        ffi::sqlite3_column_blob(raw, col as c_int),
+                        ffi::sqlite3_column_bytes(raw, col as c_int),
+                    )
                 };
 
-                assert!(len >= 0,
-                        "unexpected negative return from sqlite3_column_bytes");
+                assert!(
+                    len >= 0,
+                    "unexpected negative return from sqlite3_column_bytes"
+                );
                 if len > 0 {
-                    assert!(!blob.is_null(),
-                            "unexpected SQLITE_BLOB column type with NULL data");
+                    assert!(
+                        !blob.is_null(),
+                        "unexpected SQLITE_BLOB column type with NULL data"
+                    );
                     ValueRef::Blob(unsafe { from_raw_parts(blob as *const u8, len as usize) })
                 } else {
                     // The return value from sqlite3_column_blob() for a zero-length BLOB
@@ -554,7 +611,7 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn step(&self) -> Result<bool> {
+    pub(crate) fn step(&self) -> Result<bool> {
         match self.stmt.step() {
             ffi::SQLITE_ROW => Ok(true),
             ffi::SQLITE_DONE => Ok(false),
@@ -562,7 +619,7 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn reset(&self) -> c_int {
+    pub(crate) fn reset(&self) -> c_int {
         self.stmt.reset()
     }
 }
@@ -576,18 +633,25 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
 
-        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])
-                       .unwrap(),
-                   1);
-        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])
-                       .unwrap(),
-                   1);
+        assert_eq!(
+            db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])
+                .unwrap(),
+            1
+        );
 
-        assert_eq!(3i32,
-                   db.query_row_named::<i32, _>("SELECT SUM(x) FROM foo WHERE x > :x",
-                                                &[(":x", &0i32)],
-                                                |r| r.get(0))
-                       .unwrap());
+        assert_eq!(
+            3i32,
+            db.query_row_named::<i32, _>(
+                "SELECT SUM(x) FROM foo WHERE x > :x",
+                &[(":x", &0i32)],
+                |r| r.get(0)
+            ).unwrap()
+        );
     }
 
     #[test]
@@ -597,15 +661,19 @@ mod test {
                    INTEGER)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (name) VALUES (:name)")
+        let mut stmt = db
+            .prepare("INSERT INTO test (name) VALUES (:name)")
             .unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
-        assert_eq!(1i32,
-                   db.query_row_named::<i32, _>("SELECT COUNT(*) FROM test WHERE name = :name",
-                                                &[(":name", &"one")],
-                                                |r| r.get(0))
-                       .unwrap());
+        assert_eq!(
+            1i32,
+            db.query_row_named::<i32, _>(
+                "SELECT COUNT(*) FROM test WHERE name = :name",
+                &[(":name", &"one")],
+                |r| r.get(0)
+            ).unwrap()
+        );
     }
 
     #[test]
@@ -617,7 +685,8 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name")
+        let mut stmt = db
+            .prepare("SELECT id FROM test where name = :name")
             .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
@@ -634,13 +703,14 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name")
+        let mut stmt = db
+            .prepare("SELECT id FROM test where name = :name")
             .unwrap();
-        let mut rows = stmt.query_map_named(&[(":name", &"one")], |row| {
+        let mut rows = stmt
+            .query_map_named(&[(":name", &"one")], |row| {
                 let id: i32 = row.get(0);
                 2 * id
-            })
-            .unwrap();
+            }).unwrap();
 
         let doubled_id: i32 = rows.next().unwrap().unwrap();
         assert_eq!(2, doubled_id);
@@ -648,7 +718,6 @@ mod test {
 
     #[test]
     fn test_query_and_then_named() {
-
         let db = Connection::open_in_memory().unwrap();
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
@@ -657,17 +726,18 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
+        let mut stmt = db
+            .prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
             .unwrap();
-        let mut rows = stmt.query_and_then_named(&[(":name", &"one")], |row| {
+        let mut rows = stmt
+            .query_and_then_named(&[(":name", &"one")], |row| {
                 let id: i32 = row.get(0);
                 if id == 1 {
                     Ok(id)
                 } else {
                     Err(Error::SqliteSingleThreadedMode)
                 }
-            })
-            .unwrap();
+            }).unwrap();
 
         // first row should be Ok
         let doubled_id: i32 = rows.next().unwrap().unwrap();
@@ -687,13 +757,14 @@ mod test {
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
+        let mut stmt = db
+            .prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
             .unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
 
-        let result: Option<String> =
-            db.query_row("SELECT y FROM test WHERE x = 'one'", &[], |row| row.get(0))
-                .unwrap();
+        let result: Option<String> = db
+            .query_row("SELECT y FROM test WHERE x = 'one'", &[], |row| row.get(0))
+            .unwrap();
         assert!(result.is_none());
     }
 
@@ -703,14 +774,15 @@ mod test {
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
+        let mut stmt = db
+            .prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
             .unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
         stmt.execute_named(&[(":y", &"two")]).unwrap();
 
-        let result: String =
-            db.query_row("SELECT x FROM test WHERE y = 'two'", &[], |row| row.get(0))
-                .unwrap();
+        let result: String = db
+            .query_row("SELECT x FROM test WHERE y = 'two'", &[], |row| row.get(0))
+            .unwrap();
         assert_eq!(result, "one");
     }
 
@@ -719,7 +791,8 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)")
             .unwrap();
-        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")
+        let mut stmt = db
+            .prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")
             .unwrap();
         assert_eq!(stmt.insert(&[&1i32]).unwrap(), 1);
         assert_eq!(stmt.insert(&[&2i32]).unwrap(), 2);
@@ -727,7 +800,8 @@ mod test {
             Error::StatementChangedRows(0) => (),
             err => panic!("Unexpected error {}", err),
         }
-        let mut multi = db.prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
+        let mut multi = db
+            .prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
             .unwrap();
         match multi.insert(&[]).unwrap_err() {
             Error::StatementChangedRows(2) => (),
@@ -739,22 +813,27 @@ mod test {
     fn test_insert_different_tables() {
         // Test for https://github.com/jgallagher/rusqlite/issues/171
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch(r"
+        db.execute_batch(
+            r"
             CREATE TABLE foo(x INTEGER);
             CREATE TABLE bar(x INTEGER);
-        ")
-            .unwrap();
+        ",
+        ).unwrap();
 
-        assert_eq!(db.prepare("INSERT INTO foo VALUES (10)")
-                       .unwrap()
-                       .insert(&[])
-                       .unwrap(),
-                   1);
-        assert_eq!(db.prepare("INSERT INTO bar VALUES (10)")
-                       .unwrap()
-                       .insert(&[])
-                       .unwrap(),
-                   1);
+        assert_eq!(
+            db.prepare("INSERT INTO foo VALUES (10)")
+                .unwrap()
+                .insert(&[])
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            db.prepare("INSERT INTO bar VALUES (10)")
+                .unwrap()
+                .insert(&[])
+                .unwrap(),
+            1
+        );
     }
 
     #[test]
@@ -810,5 +889,14 @@ mod test {
         let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
         let y: Result<i64> = stmt.query_row(&[], |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
+    }
+
+    #[test]
+    #[cfg(feature = "bundled")]
+    fn test_expanded_sql() {
+        let db = Connection::open_in_memory().unwrap();
+        let stmt = db.prepare("SELECT ?").unwrap();
+        stmt.bind_parameter(&1, 1).unwrap();
+        assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
     }
 }

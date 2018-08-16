@@ -1,9 +1,8 @@
-use std::{convert, result};
 use std::marker::PhantomData;
+use std::{convert, result};
 
-use super::{Statement, Error, Result};
+use super::{Error, Result, Statement};
 use types::{FromSql, FromSqlError};
-use statement::StatementCrateImpl;
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
@@ -27,40 +26,31 @@ impl<'stmt> Rows<'stmt> {
     /// lifetime of the returned row is tied to the lifetime of `self`. This is a
     /// "streaming iterator". For a more natural interface, consider using `query_map`
     /// or `query_and_then` instead, which return types that implement `Iterator`.
+    #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // cannot implement Iterator
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
-        self.stmt
-            .and_then(|stmt| match stmt.step() {
-                Ok(true) => {
-                    Some(Ok(Row {
-                        stmt,
-                        phantom: PhantomData,
-                    }))
-                }
-                Ok(false) => {
-                    self.reset();
-                    None
-                }
-                Err(err) => {
-                    self.reset();
-                    Some(Err(err))
-                }
-            })
+        self.stmt.and_then(|stmt| match stmt.step() {
+            Ok(true) => Some(Ok(Row {
+                stmt,
+                phantom: PhantomData,
+            })),
+            Ok(false) => {
+                self.reset();
+                None
+            }
+            Err(err) => {
+                self.reset();
+                Some(Err(err))
+            }
+        })
     }
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some methods. Remove this
-// once pub(crate) is stable.
-pub trait RowsCrateImpl<'stmt> {
-    fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt>;
-    fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>>;
-}
-
-impl<'stmt> RowsCrateImpl<'stmt> for Rows<'stmt> {
-    fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
+impl<'stmt> Rows<'stmt> {
+    pub(crate) fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows { stmt: Some(stmt) }
     }
 
-    fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
+    pub(crate) fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
         match self.next() {
             Some(row) => row,
             None => Err(Error::QueryReturnedNoRows),
@@ -80,22 +70,18 @@ pub struct MappedRows<'stmt, F> {
     map: F,
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some methods. Remove this
-// once pub(crate) is stable.
-pub trait MappedRowsCrateImpl<'stmt, T, F> {
-    fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F>;
-}
-
-impl<'stmt, T, F> MappedRowsCrateImpl<'stmt, T, F> for MappedRows<'stmt, F>
-    where F: FnMut(&Row) -> T
+impl<'stmt, T, F> MappedRows<'stmt, F>
+where
+    F: FnMut(&Row) -> T,
 {
-    fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
+    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
         MappedRows { rows, map: f }
     }
 }
 
 impl<'conn, T, F> Iterator for MappedRows<'conn, F>
-    where F: FnMut(&Row) -> T
+where
+    F: FnMut(&Row) -> T,
 {
     type Item = Result<T>;
 
@@ -114,23 +100,19 @@ pub struct AndThenRows<'stmt, F> {
     map: F,
 }
 
-// TODO: This trait lets us have "pub(crate)" visibility on some methods. Remove this
-// once pub(crate) is stable.
-pub trait AndThenRowsCrateImpl<'stmt, T, E, F> {
-    fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F>;
-}
-
-impl<'stmt, T, E, F> AndThenRowsCrateImpl<'stmt, T, E, F> for AndThenRows<'stmt, F>
-    where F: FnMut(&Row) -> result::Result<T, E>
+impl<'stmt, T, E, F> AndThenRows<'stmt, F>
+where
+    F: FnMut(&Row) -> result::Result<T, E>,
 {
-    fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
+    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
         AndThenRows { rows, map: f }
     }
 }
 
 impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
-    where E: convert::From<Error>,
-          F: FnMut(&Row) -> result::Result<T, E>
+where
+    E: convert::From<Error>,
+    F: FnMut(&Row) -> result::Result<T, E>,
 {
     type Item = result::Result<T, E>;
 
@@ -178,21 +160,16 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let idx = try!(idx.idx(self.stmt));
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
-                                                  FromSqlError::InvalidType => {
-                                                      Error::InvalidColumnType(idx,
-                                                                               value.data_type())
-                                                  }
-                                                  FromSqlError::OutOfRange(i) => {
-                                                      Error::IntegralValueOutOfRange(idx, i)
-                                                  }
-                                                  FromSqlError::Other(err) => {
+            FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
+            FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
-                                              })
+        })
     }
 
     /// Return the number of columns in the current row.
-    pub fn column_count(&self) -> i32 {
+    pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 }
@@ -201,13 +178,13 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
 pub trait RowIndex {
     /// Returns the index of the appropriate column, or `None` if no such
     /// column exists.
-    fn idx(&self, stmt: &Statement) -> Result<i32>;
+    fn idx(&self, stmt: &Statement) -> Result<usize>;
 }
 
-impl RowIndex for i32 {
+impl RowIndex for usize {
     #[inline]
-    fn idx(&self, stmt: &Statement) -> Result<i32> {
-        if *self < 0 || *self >= stmt.column_count() {
+    fn idx(&self, stmt: &Statement) -> Result<usize> {
+        if *self >= stmt.column_count() {
             Err(Error::InvalidColumnIndex(*self))
         } else {
             Ok(*self)
@@ -217,7 +194,7 @@ impl RowIndex for i32 {
 
 impl<'a> RowIndex for &'a str {
     #[inline]
-    fn idx(&self, stmt: &Statement) -> Result<i32> {
+    fn idx(&self, stmt: &Statement) -> Result<usize> {
         stmt.column_index(*self)
     }
 }

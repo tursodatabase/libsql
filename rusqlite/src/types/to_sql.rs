@@ -1,8 +1,11 @@
 use super::{Null, Value, ValueRef};
+use std::borrow::Cow;
+#[cfg(feature = "array")]
+use vtab::array::Array;
 use Result;
 
 /// `ToSqlOutput` represents the possible output types for implementors of the `ToSql` trait.
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ToSqlOutput<'a> {
     /// A borrowed SQLite-representable value.
     Borrowed(ValueRef<'a>),
@@ -13,12 +16,16 @@ pub enum ToSqlOutput<'a> {
     /// A BLOB of the given length that is filled with zeroes.
     #[cfg(feature = "blob")]
     ZeroBlob(i32),
+
+    #[cfg(feature = "array")]
+    Array(Array),
 }
 
 // Generically allow any type that can be converted into a ValueRef
 // to be converted into a ToSqlOutput as well.
 impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a>
-    where &'a T: Into<ValueRef<'a>>
+where
+    &'a T: Into<ValueRef<'a>>,
 {
     fn from(t: &'a T) -> Self {
         ToSqlOutput::Borrowed(t.into())
@@ -54,12 +61,14 @@ from_value!(Vec<u8>);
 impl<'a> ToSql for ToSqlOutput<'a> {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok(match *self {
-               ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
-               ToSqlOutput::Owned(ref v) => ToSqlOutput::Borrowed(ValueRef::from(v)),
+            ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
+            ToSqlOutput::Owned(ref v) => ToSqlOutput::Borrowed(ValueRef::from(v)),
 
-               #[cfg(feature = "blob")]
+            #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(i) => ToSqlOutput::ZeroBlob(i),
-           })
+            #[cfg(feature = "array")]
+            ToSqlOutput::Array(ref a) => ToSqlOutput::Array(a.clone()),
+        })
     }
 }
 
@@ -103,7 +112,8 @@ to_sql_self!(u32);
 to_sql_self!(f64);
 
 impl<'a, T: ?Sized> ToSql for &'a T
-    where &'a T: Into<ToSqlOutput<'a>>
+where
+    &'a T: Into<ToSqlOutput<'a>>,
 {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok((*self).into())
@@ -149,6 +159,12 @@ impl<T: ToSql> ToSql for Option<T> {
     }
 }
 
+impl<'a> ToSql for Cow<'a, str> {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.as_ref()))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ToSql;
@@ -164,5 +180,17 @@ mod test {
         is_to_sql::<u8>();
         is_to_sql::<u16>();
         is_to_sql::<u32>();
+    }
+
+    #[test]
+    fn test_cow_str() {
+        use std::borrow::Cow;
+        let s = "str";
+        let cow = Cow::Borrowed(s);
+        let r = cow.to_sql();
+        assert!(r.is_ok());
+        let cow = Cow::Owned::<str>(String::from(s));
+        let r = cow.to_sql();
+        assert!(r.is_ok());
     }
 }

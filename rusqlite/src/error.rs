@@ -1,10 +1,10 @@
 use std::error;
 use std::fmt;
+use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::str;
-use std::os::raw::c_int;
-use {ffi, errmsg_to_string};
 use types::Type;
+use {errmsg_to_string, ffi};
 
 /// Old name for `Error`. `SqliteError` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use Error instead")]
@@ -26,9 +26,9 @@ pub enum Error {
     FromSqlConversionFailure(usize, Type, Box<error::Error + Send + Sync>),
 
     /// Error when SQLite gives us an integral value outside the range of the requested type (e.g.,
-    /// trying to get the value 1000 into a `u8`).  The associated `c_int` is the column index, and
+    /// trying to get the value 1000 into a `u8`).  The associated `usize` is the column index, and
     /// the associated `i64` is the value returned by SQLite.
-    IntegralValueOutOfRange(c_int, i64),
+    IntegralValueOutOfRange(usize, i64),
 
     /// Error converting a string to UTF-8.
     Utf8Error(str::Utf8Error),
@@ -51,7 +51,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the index is out of range
     /// for the statement.
-    InvalidColumnIndex(c_int),
+    InvalidColumnIndex(usize),
 
     /// Error when the value of a named column is requested, but no column matches the name
     /// for the statement.
@@ -59,15 +59,19 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
-    InvalidColumnType(c_int, Type),
+    InvalidColumnType(usize, Type),
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
-    StatementChangedRows(c_int),
+    StatementChangedRows(usize),
 
     /// Error returned by `functions::Context::get` when the function argument cannot be converted
     /// to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType(usize, Type),
+    /// Error returned by `vtab::Values::get` when the filter argument cannot be converted
+    /// to the requested type.
+    #[cfg(feature = "vtab")]
+    InvalidFilterParameterType(usize, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
     /// `create_scalar_function`).
@@ -77,6 +81,15 @@ pub enum Error {
 
     /// Error available for the implementors of the `ToSql` trait.
     ToSqlConversionFailure(Box<error::Error + Send + Sync>),
+
+    /// Error when the SQL is not a `SELECT`, is not read-only.
+    InvalidQuery,
+
+    /// An error case available for implementors of custom modules (e.g.,
+    /// `create_module`).
+    #[cfg(feature = "vtab")]
+    #[allow(dead_code)]
+    ModuleError(String),
 }
 
 impl From<str::Utf8Error> for Error {
@@ -96,17 +109,15 @@ impl fmt::Display for Error {
         match *self {
             Error::SqliteFailure(ref err, None) => err.fmt(f),
             Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
-            Error::SqliteSingleThreadedMode => {
-                write!(f,
-                       "SQLite was compiled or configured for single-threaded use only")
-            }
-            Error::FromSqlConversionFailure(i, ref t, ref err) => {
-                write!(f,
-                       "Conversion error from type {} at index: {}, {}",
-                       t,
-                       i,
-                       err)
-            }
+            Error::SqliteSingleThreadedMode => write!(
+                f,
+                "SQLite was compiled or configured for single-threaded use only"
+            ),
+            Error::FromSqlConversionFailure(i, ref t, ref err) => write!(
+                f,
+                "Conversion error from type {} at index: {}, {}",
+                t, i, err
+            ),
             Error::IntegralValueOutOfRange(col, val) => {
                 write!(f, "Integer {} out of range at index {}", val, col)
             }
@@ -129,9 +140,16 @@ impl fmt::Display for Error {
             Error::InvalidFunctionParameterType(i, ref t) => {
                 write!(f, "Invalid function parameter type {} at index {}", t, i)
             }
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(i, ref t) => {
+                write!(f, "Invalid filter parameter type {} at index {}", t, i)
+            }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
             Error::ToSqlConversionFailure(ref err) => err.fmt(f),
+            Error::InvalidQuery => write!(f, "Query is not read-only"),
+            #[cfg(feature = "vtab")]
+            Error::ModuleError(ref desc) => write!(f, "{}", desc),
         }
     }
 }
@@ -141,14 +159,18 @@ impl error::Error for Error {
         match *self {
             Error::SqliteFailure(ref err, None) => err.description(),
             Error::SqliteFailure(_, Some(ref s)) => s,
-            Error::SqliteSingleThreadedMode => "SQLite was compiled or configured for single-threaded use only",
+            Error::SqliteSingleThreadedMode => {
+                "SQLite was compiled or configured for single-threaded use only"
+            }
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
             Error::IntegralValueOutOfRange(_, _) => "integral value out of range of requested type",
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
             Error::InvalidPath(_) => "invalid path",
-            Error::ExecuteReturnedResults => "execute returned results - did you mean to call query?",
+            Error::ExecuteReturnedResults => {
+                "execute returned results - did you mean to call query?"
+            }
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
@@ -157,9 +179,14 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(_, _) => "invalid filter parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
             Error::ToSqlConversionFailure(ref err) => err.description(),
+            Error::InvalidQuery => "query is not read-only",
+            #[cfg(feature = "vtab")]
+            Error::ModuleError(ref desc) => desc,
         }
     }
 
@@ -169,25 +196,31 @@ impl error::Error for Error {
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
-            Error::IntegralValueOutOfRange(_, _) |
-            Error::SqliteSingleThreadedMode |
-            Error::InvalidParameterName(_) |
-            Error::ExecuteReturnedResults |
-            Error::QueryReturnedNoRows |
-            Error::InvalidColumnIndex(_) |
-            Error::InvalidColumnName(_) |
-            Error::InvalidColumnType(_, _) |
-            Error::InvalidPath(_) |
-            Error::StatementChangedRows(_) => None,
+            Error::IntegralValueOutOfRange(_, _)
+            | Error::SqliteSingleThreadedMode
+            | Error::InvalidParameterName(_)
+            | Error::ExecuteReturnedResults
+            | Error::QueryReturnedNoRows
+            | Error::InvalidColumnIndex(_)
+            | Error::InvalidColumnName(_)
+            | Error::InvalidColumnType(_, _)
+            | Error::InvalidPath(_)
+            | Error::StatementChangedRows(_)
+            | Error::InvalidQuery => None,
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => None,
+            #[cfg(feature = "vtab")]
+            Error::InvalidFilterParameterType(_, _) => None,
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
 
-            Error::FromSqlConversionFailure(_, _, ref err) |
-            Error::ToSqlConversionFailure(ref err) => Some(&**err),
+            Error::FromSqlConversionFailure(_, _, ref err)
+            | Error::ToSqlConversionFailure(ref err) => Some(&**err),
+
+            #[cfg(feature = "vtab")]
+            Error::ModuleError(_) => None,
         }
     }
 }

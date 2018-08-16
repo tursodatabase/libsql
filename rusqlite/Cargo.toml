@@ -29,6 +29,10 @@ limits = []
 hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
+vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7", "lazy_static"]
+csvtab = ["csv", "vtab"]
+# pointer passing interfaces: 3.20.0
+array = ["vtab", "bundled"]
 
 [dependencies]
 time = "0.1.0"
@@ -36,6 +40,8 @@ bitflags = "1.0"
 lru-cache = "0.1"
 chrono = { version = "0.4", optional = true }
 serde_json = { version = "1.0", optional = true }
+csv = { version = "1.0", optional = true }
+lazy_static = { version = "1.0", optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
@@ -53,8 +59,11 @@ harness = false
 [[test]]
 name = "deny_single_threaded_sqlite_config"
 
+[[test]]
+name = "vtab"
+
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace" ]
+features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace", "vtab" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"

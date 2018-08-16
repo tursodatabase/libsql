@@ -5,8 +5,8 @@ fn main() {
 #[cfg(feature = "bundled")]
 mod build {
     extern crate cc;
-    use std::{env, fs};
     use std::path::Path;
+    use std::{env, fs};
 
     pub fn main() {
         if cfg!(feature = "sqlcipher") {
@@ -43,6 +43,8 @@ mod build {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
         cfg.compile("libsqlite3.a");
+
+        println!("cargo:lib_dir={}", out_dir);
     }
 }
 
@@ -66,8 +68,10 @@ mod build {
             match header {
                 HeaderLocation::FromEnvironment => {
                     let prefix = env_prefix();
-                    let mut header = env::var(format!("{}_INCLUDE_DIR", prefix))
-                        .expect(&format!("{}_INCLUDE_DIR must be set if {}_LIB_DIR is set", prefix, prefix));
+                    let mut header = env::var(format!("{}_INCLUDE_DIR", prefix)).expect(&format!(
+                        "{}_INCLUDE_DIR must be set if {}_LIB_DIR is set",
+                        prefix, prefix
+                    ));
                     header.push_str("/sqlite3.h");
                     header
                 }
@@ -86,6 +90,11 @@ mod build {
     fn find_sqlite() -> HeaderLocation {
         let link_lib = link_lib();
 
+        println!("cargo:rerun-if-env-changed={}_INCLUDE_DIR", env_prefix());
+        println!("cargo:rerun-if-env-changed={}_LIB_DIR", env_prefix());
+        if cfg!(target_os = "windows") {
+            println!("cargo:rerun-if-env-changed=PATH");
+        }
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
             println!("cargo:rustc-link-lib={}", link_lib);
@@ -98,7 +107,10 @@ mod build {
         }
 
         // See if pkg-config can do everything for us.
-        match pkg_config::Config::new().print_system_libs(false).probe(link_lib) {
+        match pkg_config::Config::new()
+            .print_system_libs(false)
+            .probe(link_lib)
+        {
             Ok(mut lib) => {
                 if let Some(mut header) = lib.include_paths.pop() {
                     header.push("sqlite3.h");
@@ -155,25 +167,21 @@ mod build {
     mod bindings {
         use super::HeaderLocation;
 
-        use std::{env, fs};
         use std::path::Path;
+        use std::{env, fs};
 
-        #[cfg_attr(rustfmt, rustfmt_skip)]
         static PREBUILT_BINDGEN_PATHS: &'static [&'static str] = &[
             "bindgen-bindings/bindgen_3.6.8.rs",
-
             #[cfg(feature = "min_sqlite_version_3_6_11")]
             "bindgen-bindings/bindgen_3.6.11.rs",
-
             #[cfg(feature = "min_sqlite_version_3_6_23")]
             "bindgen-bindings/bindgen_3.6.23.rs",
-
             #[cfg(feature = "min_sqlite_version_3_7_3")]
             "bindgen-bindings/bindgen_3.7.3.rs",
-
             #[cfg(feature = "min_sqlite_version_3_7_4")]
             "bindgen-bindings/bindgen_3.7.4.rs",
-
+            #[cfg(feature = "min_sqlite_version_3_7_7")]
+            "bindgen-bindings/bindgen_3.7.7.rs",
             #[cfg(feature = "min_sqlite_version_3_7_16")]
             "bindgen-bindings/bindgen_3.7.16.rs",
         ];
@@ -190,12 +198,12 @@ mod build {
     mod bindings {
         extern crate bindgen;
 
-        use self::bindgen::callbacks::{ParseCallbacks, IntKind};
+        use self::bindgen::callbacks::{IntKind, ParseCallbacks};
         use super::HeaderLocation;
 
         use std::env;
-        use std::io::Write;
         use std::fs::OpenOptions;
+        use std::io::Write;
         use std::path::Path;
 
         #[derive(Debug)]
@@ -242,7 +250,8 @@ mod build {
                 .open(path.clone())
                 .expect(&format!("Could not write to {:?}", path));
 
-            file.write_all(output.as_bytes()).expect(&format!("Could not write to {:?}", path));
+            file.write_all(output.as_bytes())
+                .expect(&format!("Could not write to {:?}", path));
         }
     }
 }

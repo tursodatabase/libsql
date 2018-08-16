@@ -50,67 +50,18 @@
 //! }
 //! ```
 use std::error::Error as StdError;
-use std::ffi::CStr;
+use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::slice;
-use std::os::raw::{c_int, c_char, c_void};
 
 use ffi;
 use ffi::sqlite3_context;
 use ffi::sqlite3_value;
 
-use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
+use context::set_result;
+use types::{FromSql, FromSqlError, ToSql, ValueRef};
 
-use {Result, Error, Connection, str_to_cstring, InnerConnection};
-
-fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
-    let value = match *result {
-        ToSqlOutput::Borrowed(v) => v,
-        ToSqlOutput::Owned(ref v) => ValueRef::from(v),
-
-        #[cfg(feature = "blob")]
-        ToSqlOutput::ZeroBlob(len) => {
-            return unsafe { ffi::sqlite3_result_zeroblob(ctx, len) };
-        }
-    };
-
-    match value {
-        ValueRef::Null => unsafe { ffi::sqlite3_result_null(ctx) },
-        ValueRef::Integer(i) => unsafe { ffi::sqlite3_result_int64(ctx, i) },
-        ValueRef::Real(r) => unsafe { ffi::sqlite3_result_double(ctx, r) },
-        ValueRef::Text(s) => unsafe {
-            let length = s.len();
-            if length > ::std::i32::MAX as usize {
-                ffi::sqlite3_result_error_toobig(ctx);
-            } else {
-                let c_str = match str_to_cstring(s) {
-                    Ok(c_str) => c_str,
-                    // TODO sqlite3_result_error
-                    Err(_) => return ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE),
-                };
-                let destructor = if length > 0 {
-                    ffi::SQLITE_TRANSIENT()
-                } else {
-                    ffi::SQLITE_STATIC()
-                };
-                ffi::sqlite3_result_text(ctx, c_str.as_ptr(), length as c_int, destructor);
-            }
-        },
-        ValueRef::Blob(b) => unsafe {
-            let length = b.len();
-            if length > ::std::i32::MAX as usize {
-                ffi::sqlite3_result_error_toobig(ctx);
-            } else if length == 0 {
-                ffi::sqlite3_result_zeroblob(ctx, 0)
-            } else {
-                ffi::sqlite3_result_blob(ctx,
-                                         b.as_ptr() as *const c_void,
-                                         length as c_int,
-                                         ffi::SQLITE_TRANSIENT());
-            }
-        },
-    }
-}
+use {str_to_cstring, Connection, Error, InnerConnection, Result};
 
 unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
     // Extended constraint error codes were added in SQLite 3.7.16. We don't have an explicit
@@ -142,47 +93,8 @@ unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
     }
 }
 
-impl<'a> ValueRef<'a> {
-    unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
-        use std::slice::from_raw_parts;
-
-        match ffi::sqlite3_value_type(value) {
-            ffi::SQLITE_NULL => ValueRef::Null,
-            ffi::SQLITE_INTEGER => ValueRef::Integer(ffi::sqlite3_value_int64(value)),
-            ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_value_double(value)),
-            ffi::SQLITE_TEXT => {
-                let text = ffi::sqlite3_value_text(value);
-                assert!(!text.is_null(),
-                        "unexpected SQLITE_TEXT value type with NULL data");
-                let s = CStr::from_ptr(text as *const c_char);
-
-                // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str()
-                    .expect("sqlite3_value_text returned invalid UTF-8");
-                ValueRef::Text(s)
-            }
-            ffi::SQLITE_BLOB => {
-                let (blob, len) = (ffi::sqlite3_value_blob(value), ffi::sqlite3_value_bytes(value));
-
-                assert!(len >= 0,
-                        "unexpected negative return from sqlite3_value_bytes");
-                if len > 0 {
-                    assert!(!blob.is_null(),
-                            "unexpected SQLITE_BLOB value type with NULL data");
-                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
-                } else {
-                    // The return value from sqlite3_value_blob() for a zero-length BLOB
-                    // is a NULL pointer.
-                    ValueRef::Blob(&[])
-                }
-            }
-            _ => unreachable!("sqlite3_value_type returned invalid value"),
-        }
-    }
-}
-
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
-    let _: Box<T> = Box::from_raw(p as *mut T);
+    drop(Box::from_raw(p as *mut T));
 }
 
 /// Context is a wrapper for the SQLite function evaluation context.
@@ -212,17 +124,14 @@ impl<'a> Context<'a> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
-                                                  FromSqlError::InvalidType => {
+            FromSqlError::InvalidType => {
                 Error::InvalidFunctionParameterType(idx, value.data_type())
             }
-                                                  FromSqlError::OutOfRange(i) => {
-                                                      Error::IntegralValueOutOfRange(idx as c_int,
-                                                                                     i)
-                                                  }
-                                                  FromSqlError::Other(err) => {
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
+            FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
-                                              })
+        })
     }
 
     /// Sets the auxilliary data associated with a particular parameter. See
@@ -231,10 +140,12 @@ impl<'a> Context<'a> {
     pub fn set_aux<T>(&self, arg: c_int, value: T) {
         let boxed = Box::into_raw(Box::new(value));
         unsafe {
-            ffi::sqlite3_set_auxdata(self.ctx,
-                                     arg,
-                                     boxed as *mut c_void,
-                                     Some(free_boxed_value::<T>))
+            ffi::sqlite3_set_auxdata(
+                self.ctx,
+                arg,
+                boxed as *mut c_void,
+                Some(free_boxed_value::<T>),
+            )
         };
     }
 
@@ -248,7 +159,11 @@ impl<'a> Context<'a> {
     /// types must be identical.
     pub unsafe fn get_aux<T>(&self, arg: c_int) -> Option<&T> {
         let p = ffi::sqlite3_get_auxdata(self.ctx, arg) as *mut T;
-        if p.is_null() { None } else { Some(&*p) }
+        if p.is_null() {
+            None
+        } else {
+            Some(&*p)
+        }
     }
 }
 
@@ -257,11 +172,12 @@ impl<'a> Context<'a> {
 /// `A` is the type of the aggregation context and `T` is the type of the final result.
 /// Implementations should be stateless.
 pub trait Aggregate<A, T>
-    where T: ToSql
+where
+    T: ToSql,
 {
     /// Initializes the aggregation context. Will be called prior to the first call
     /// to `step()` to set up the context for an invocation of the function. (Note:
-    /// `init()` will not be called if the there are no rows.)
+    /// `init()` will not be called if there are no rows.)
     fn init(&self) -> A;
 
     /// "step" function called once for each row in an aggregate group. May be called
@@ -306,14 +222,16 @@ impl Connection {
     /// # Failure
     ///
     /// Will return Err if the function could not be attached to the connection.
-    pub fn create_scalar_function<F, T>(&self,
-                                        fn_name: &str,
-                                        n_arg: c_int,
-                                        deterministic: bool,
-                                        x_func: F)
-                                        -> Result<()>
-        where F: FnMut(&Context) -> Result<T>,
-              T: ToSql
+    pub fn create_scalar_function<F, T>(
+        &self,
+        fn_name: &str,
+        n_arg: c_int,
+        deterministic: bool,
+        x_func: F,
+    ) -> Result<()>
+    where
+        F: FnMut(&Context) -> Result<T> + Send + 'static,
+        T: ToSql,
     {
         self.db
             .borrow_mut()
@@ -325,14 +243,16 @@ impl Connection {
     /// # Failure
     ///
     /// Will return Err if the function could not be attached to the connection.
-    pub fn create_aggregate_function<A, D, T>(&self,
-                                              fn_name: &str,
-                                              n_arg: c_int,
-                                              deterministic: bool,
-                                              aggr: D)
-                                              -> Result<()>
-        where D: Aggregate<A, T>,
-              T: ToSql
+    pub fn create_aggregate_function<A, D, T>(
+        &self,
+        fn_name: &str,
+        n_arg: c_int,
+        deterministic: bool,
+        aggr: D,
+    ) -> Result<()>
+    where
+        D: Aggregate<A, T>,
+        T: ToSql,
     {
         self.db
             .borrow_mut()
@@ -353,20 +273,24 @@ impl Connection {
 }
 
 impl InnerConnection {
-    fn create_scalar_function<F, T>(&mut self,
-                                    fn_name: &str,
-                                    n_arg: c_int,
-                                    deterministic: bool,
-                                    x_func: F)
-                                    -> Result<()>
-        where F: FnMut(&Context) -> Result<T>,
-              T: ToSql
+    fn create_scalar_function<F, T>(
+        &mut self,
+        fn_name: &str,
+        n_arg: c_int,
+        deterministic: bool,
+        x_func: F,
+    ) -> Result<()>
+    where
+        F: FnMut(&Context) -> Result<T> + Send + 'static,
+        T: ToSql,
     {
-        unsafe extern "C" fn call_boxed_closure<F, T>(ctx: *mut sqlite3_context,
-                                                      argc: c_int,
-                                                      argv: *mut *mut sqlite3_value)
-            where F: FnMut(&Context) -> Result<T>,
-                  T: ToSql
+        unsafe extern "C" fn call_boxed_closure<F, T>(
+            ctx: *mut sqlite3_context,
+            argc: c_int,
+            argv: *mut *mut sqlite3_value,
+        ) where
+            F: FnMut(&Context) -> Result<T>,
+            T: ToSql,
         {
             let ctx = Context {
                 ctx,
@@ -392,31 +316,36 @@ impl InnerConnection {
             flags |= ffi::SQLITE_DETERMINISTIC;
         }
         let r = unsafe {
-            ffi::sqlite3_create_function_v2(self.db(),
-                                            c_name.as_ptr(),
-                                            n_arg,
-                                            flags,
-                                            boxed_f as *mut c_void,
-                                            Some(call_boxed_closure::<F, T>),
-                                            None,
-                                            None,
-                                            Some(free_boxed_value::<F>))
+            ffi::sqlite3_create_function_v2(
+                self.db(),
+                c_name.as_ptr(),
+                n_arg,
+                flags,
+                boxed_f as *mut c_void,
+                Some(call_boxed_closure::<F, T>),
+                None,
+                None,
+                Some(free_boxed_value::<F>),
+            )
         };
         self.decode_result(r)
     }
 
-    fn create_aggregate_function<A, D, T>(&mut self,
-                                          fn_name: &str,
-                                          n_arg: c_int,
-                                          deterministic: bool,
-                                          aggr: D)
-                                          -> Result<()>
-        where D: Aggregate<A, T>,
-              T: ToSql
+    fn create_aggregate_function<A, D, T>(
+        &mut self,
+        fn_name: &str,
+        n_arg: c_int,
+        deterministic: bool,
+        aggr: D,
+    ) -> Result<()>
+    where
+        D: Aggregate<A, T>,
+        T: ToSql,
     {
-        unsafe fn aggregate_context<A>(ctx: *mut sqlite3_context,
-                                       bytes: usize)
-                                       -> Option<*mut *mut A> {
+        unsafe fn aggregate_context<A>(
+            ctx: *mut sqlite3_context,
+            bytes: usize,
+        ) -> Option<*mut *mut A> {
             let pac = ffi::sqlite3_aggregate_context(ctx, bytes as c_int) as *mut *mut A;
             if pac.is_null() {
                 return None;
@@ -424,15 +353,19 @@ impl InnerConnection {
             Some(pac)
         }
 
-        unsafe extern "C" fn call_boxed_step<A, D, T>(ctx: *mut sqlite3_context,
-                                                      argc: c_int,
-                                                      argv: *mut *mut sqlite3_value)
-            where D: Aggregate<A, T>,
-                  T: ToSql
+        unsafe extern "C" fn call_boxed_step<A, D, T>(
+            ctx: *mut sqlite3_context,
+            argc: c_int,
+            argv: *mut *mut sqlite3_value,
+        ) where
+            D: Aggregate<A, T>,
+            T: ToSql,
         {
             let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
-            assert!(!boxed_aggr.is_null(),
-                    "Internal error - null aggregate pointer");
+            assert!(
+                !boxed_aggr.is_null(),
+                "Internal error - null aggregate pointer"
+            );
 
             let pac = match aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
                 Some(pac) => pac,
@@ -458,12 +391,15 @@ impl InnerConnection {
         }
 
         unsafe extern "C" fn call_boxed_final<A, D, T>(ctx: *mut sqlite3_context)
-            where D: Aggregate<A, T>,
-                  T: ToSql
+        where
+            D: Aggregate<A, T>,
+            T: ToSql,
         {
             let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
-            assert!(!boxed_aggr.is_null(),
-                    "Internal error - null aggregate pointer");
+            assert!(
+                !boxed_aggr.is_null(),
+                "Internal error - null aggregate pointer"
+            );
 
             // Within the xFinal callback, it is customary to set N=0 in calls to
             // sqlite3_aggregate_context(C,N) so that no pointless memory allocations occur.
@@ -495,15 +431,17 @@ impl InnerConnection {
             flags |= ffi::SQLITE_DETERMINISTIC;
         }
         let r = unsafe {
-            ffi::sqlite3_create_function_v2(self.db(),
-                                            c_name.as_ptr(),
-                                            n_arg,
-                                            flags,
-                                            boxed_aggr as *mut c_void,
-                                            None,
-                                            Some(call_boxed_step::<A, D, T>),
-                                            Some(call_boxed_final::<A, D, T>),
-                                            Some(free_boxed_value::<D>))
+            ffi::sqlite3_create_function_v2(
+                self.db(),
+                c_name.as_ptr(),
+                n_arg,
+                flags,
+                boxed_aggr as *mut c_void,
+                None,
+                Some(call_boxed_step::<A, D, T>),
+                Some(call_boxed_final::<A, D, T>),
+                Some(free_boxed_value::<D>),
+            )
         };
         self.decode_result(r)
     }
@@ -511,15 +449,17 @@ impl InnerConnection {
     fn remove_function(&mut self, fn_name: &str, n_arg: c_int) -> Result<()> {
         let c_name = try!(str_to_cstring(fn_name));
         let r = unsafe {
-            ffi::sqlite3_create_function_v2(self.db(),
-                                            c_name.as_ptr(),
-                                            n_arg,
-                                            ffi::SQLITE_UTF8,
-                                            ptr::null_mut(),
-                                            None,
-                                            None,
-                                            None,
-                                            None)
+            ffi::sqlite3_create_function_v2(
+                self.db(),
+                c_name.as_ptr(),
+                n_arg,
+                ffi::SQLITE_UTF8,
+                ptr::null_mut(),
+                None,
+                None,
+                None,
+                None,
+            )
         };
         self.decode_result(r)
     }
@@ -529,13 +469,13 @@ impl InnerConnection {
 mod test {
     extern crate regex;
 
-    use std::collections::HashMap;
-    use std::os::raw::c_double;
     use self::regex::Regex;
+    use std::collections::HashMap;
     use std::f64::EPSILON;
+    use std::os::raw::c_double;
 
-    use {Connection, Error, Result};
     use functions::{Aggregate, Context};
+    use {Connection, Error, Result};
 
     fn half(ctx: &Context) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
@@ -597,41 +537,44 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_function_regexp_with_auxilliary() {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("BEGIN;
-                         CREATE TABLE foo (x string);
-                         INSERT INTO foo VALUES ('lisa');
-                         INSERT INTO foo VALUES ('lXsi');
-                         INSERT INTO foo VALUES ('lisX');
-                         END;").unwrap();
-        db.create_scalar_function("regexp", 2, true, regexp_with_auxilliary).unwrap();
+        db.execute_batch(
+            "BEGIN;
+             CREATE TABLE foo (x string);
+             INSERT INTO foo VALUES ('lisa');
+             INSERT INTO foo VALUES ('lXsi');
+             INSERT INTO foo VALUES ('lisX');
+             END;",
+        ).unwrap();
+        db.create_scalar_function("regexp", 2, true, regexp_with_auxilliary)
+            .unwrap();
 
-        let result: Result<bool> = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
-                                  &[],
-                                  |r| r.get(0));
+        let result: Result<bool> =
+            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", &[], |r| r.get(0));
 
         assert_eq!(true, result.unwrap());
 
-        let result: Result<i64> =
-            db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-                         &[],
-                         |r| r.get(0));
+        let result: Result<i64> = db.query_row(
+            "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+            &[],
+            |r| r.get(0),
+        );
 
         assert_eq!(2, result.unwrap());
     }
 
     #[test]
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_function_regexp_with_hashmap_cache() {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("BEGIN;
-                         CREATE TABLE foo (x string);
-                         INSERT INTO foo VALUES ('lisa');
-                         INSERT INTO foo VALUES ('lXsi');
-                         INSERT INTO foo VALUES ('lisX');
-                         END;").unwrap();
+        db.execute_batch(
+            "BEGIN;
+             CREATE TABLE foo (x string);
+             INSERT INTO foo VALUES ('lisa');
+             INSERT INTO foo VALUES ('lXsi');
+             INSERT INTO foo VALUES ('lisX');
+             END;",
+        ).unwrap();
 
         // This implementation of a regexp scalar function uses a captured HashMap
         // to keep cached regular expressions around (even across multiple queries)
@@ -646,12 +589,10 @@ mod test {
                 use std::collections::hash_map::Entry::{Occupied, Vacant};
                 match entry {
                     Occupied(occ) => occ.into_mut(),
-                    Vacant(vac) => {
-                        match Regex::new(&regex_s) {
-                            Ok(r) => vac.insert(r),
-                            Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
-                        }
-                    }
+                    Vacant(vac) => match Regex::new(&regex_s) {
+                        Ok(r) => vac.insert(r),
+                        Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
+                    },
                 }
             };
 
@@ -659,16 +600,16 @@ mod test {
             Ok(regex.is_match(&text))
         }).unwrap();
 
-        let result: Result<bool> = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
-                                  &[],
-                                  |r| r.get(0));
+        let result: Result<bool> =
+            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", &[], |r| r.get(0));
 
         assert_eq!(true, result.unwrap());
 
-        let result: Result<i64> =
-            db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-                         &[],
-                         |r| r.get(0));
+        let result: Result<i64> = db.query_row(
+            "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+            &[],
+            |r| r.get(0),
+        );
 
         assert_eq!(2, result.unwrap());
     }
@@ -677,21 +618,21 @@ mod test {
     fn test_varargs_function() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("my_concat", -1, true, |ctx| {
-                let mut ret = String::new();
+            let mut ret = String::new();
 
-                for idx in 0..ctx.len() {
-                    let s = try!(ctx.get::<String>(idx));
-                    ret.push_str(&s);
-                }
+            for idx in 0..ctx.len() {
+                let s = try!(ctx.get::<String>(idx));
+                ret.push_str(&s);
+            }
 
-                Ok(ret)
-            })
-            .unwrap();
+            Ok(ret)
+        }).unwrap();
 
-        for &(expected, query) in
-            &[("", "SELECT my_concat()"),
-              ("onetwo", "SELECT my_concat('one', 'two')"),
-              ("abc", "SELECT my_concat('a', 'b', 'c')")] {
+        for &(expected, query) in &[
+            ("", "SELECT my_concat()"),
+            ("onetwo", "SELECT my_concat('one', 'two')"),
+            ("abc", "SELECT my_concat('a', 'b', 'c')"),
+        ] {
             let result: String = db.query_row(query, &[], |r| r.get(0)).unwrap();
             assert_eq!(expected, result);
         }
@@ -747,7 +688,8 @@ mod test {
 
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
                         2, 1)";
-        let result: (i64, i64) = db.query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
+        let result: (i64, i64) = db
+            .query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
             .unwrap();
         assert_eq!((4, 2), result);
     }

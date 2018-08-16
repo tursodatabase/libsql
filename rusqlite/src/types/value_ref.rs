@@ -1,11 +1,11 @@
+use super::{Type, Value};
 use types::{FromSqlError, FromSqlResult};
-use super::{Value, Type};
 
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
 /// memory backing this value is owned by SQLite.
 ///
 /// See [`Value`](enum.Value.html) for an owning dynamic type value.
-#[derive(Copy,Clone,Debug,PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ValueRef<'a> {
     /// The value is a `NULL` value.
     Null,
