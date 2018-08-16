@@ -133,7 +133,6 @@ do_execsql_test 3.0 {
   INSERT INTO t4 VALUES(3, 2, 1);
 }
 
-breakpoint
 do_execsql_test 3.1 {
   ALTER TABLE t4 RENAME y TO abc;
   SELECT sql FROM sqlite_master WHERE name='t4';
@@ -331,5 +330,61 @@ do_execsql_test 8.4.5 {
   SELECT sql FROM sqlite_master WHERE name = 'zzz'
 } {{CREATE VIEW zzz AS SELECT george, ringo FROM b1}}
 
+#-------------------------------------------------------------------------
+# More triggers.
+#
+foreach {tn old new lSchema} {
+  1 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+        SELECT _x_ FROM t1;
+      END }
+  }
+
+  2 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE TABLE t2(c, d, e) }
+    { CREATE TRIGGER ttt AFTER INSERT ON t2 BEGIN
+        SELECT _x_ FROM t1;
+      END }
+  }
+
+  3 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_ INTEGER, PRIMARY KEY(_x_), CHECK(_x_>0)) }
+    { CREATE TABLE t2(c, d, e) }
+    { CREATE TRIGGER ttt AFTER UPDATE  ON t1 BEGIN
+        INSERT INTO t2 VALUES(new.a, new.b, new._x_);
+      END }
+  }
+
+  4 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_ INTEGER, PRIMARY KEY(_x_), CHECK(_x_>0)) }
+    { CREATE TRIGGER ttt AFTER UPDATE  ON t1 BEGIN
+        INSERT INTO t1 VALUES(new.a, new.b, new._x_)
+          ON CONFLICT (_x_) WHERE _x_>10 DO UPDATE SET _x_ = _x_+1;
+      END }
+  }
+} {
+  reset_db
+  set lSorted [list]
+  foreach sql $lSchema { 
+    execsql $sql 
+    lappend lSorted [string trim $sql]
+  }
+  set lSorted [lsort $lSorted]
+
+  do_execsql_test 9.$tn.1 {
+    SELECT sql FROM sqlite_master WHERE sql!='' ORDER BY 1
+  } $lSorted
+
+if { $tn==3 } breakpoint
+  do_execsql_test 9.$tn.2 "ALTER TABLE t1 RENAME $old TO $new"
+
+  do_execsql_test 9.$tn.1 {
+    SELECT sql FROM sqlite_master ORDER BY 1
+  } [string map [list $old $new] $lSorted]
+}
+
+reset_db
 
 finish_test
