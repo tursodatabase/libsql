@@ -293,6 +293,7 @@ impl VTabCursor for CSVTabCursor {
         self.row_number = 0;
         self.next()
     }
+
     fn next(&mut self) -> Result<()> {
         {
             self.eof = self.reader.is_done();
@@ -306,9 +307,11 @@ impl VTabCursor for CSVTabCursor {
         self.row_number += 1;
         Ok(())
     }
+
     fn eof(&self) -> bool {
         self.eof
     }
+
     fn column(&self, ctx: &mut Context, col: c_int) -> Result<()> {
         if col < 0 || col as usize >= self.cols.len() {
             return Err(Error::ModuleError(format!(
@@ -322,6 +325,7 @@ impl VTabCursor for CSVTabCursor {
         // TODO Affinity
         ctx.set_result(&self.cols[col as usize].to_owned())
     }
+
     fn rowid(&self) -> Result<i64> {
         Ok(self.row_number as i64)
     }

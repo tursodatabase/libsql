@@ -5,11 +5,12 @@ use std::fmt;
 /// Enum listing possible errors from `FromSql` trait.
 #[derive(Debug)]
 pub enum FromSqlError {
-    /// Error when an SQLite value is requested, but the type of the result cannot be converted to
-    /// the requested Rust type.
+    /// Error when an SQLite value is requested, but the type of the result
+    /// cannot be converted to the requested Rust type.
     InvalidType,
 
-    /// Error when the i64 value returned by SQLite cannot be stored into the requested type.
+    /// Error when the i64 value returned by SQLite cannot be stored into the
+    /// requested type.
     OutOfRange(i64),
 
     /// An error case available for implementors of the `FromSql` trait.
@@ -49,13 +50,15 @@ pub type FromSqlResult<T> = Result<T, FromSqlError>;
 
 /// A trait for types that can be created from a SQLite value.
 ///
-/// Note that `FromSql` and `ToSql` are defined for most integral types, but not `u64` or `usize`.
-/// This is intentional; SQLite returns integers as signed 64-bit values, which cannot fully
-/// represent the range of these types. Rusqlite would have to decide how to handle negative
-/// values: return an error or reinterpret as a very large postive numbers, neither of which is
-/// guaranteed to be correct for everyone. Callers can work around this by fetching values as i64
-/// and then doing the interpretation themselves or by defining a newtype and implementing
-/// `FromSql`/`ToSql` for it.
+/// Note that `FromSql` and `ToSql` are defined for most integral types, but
+/// not `u64` or `usize`. This is intentional; SQLite returns integers as
+/// signed 64-bit values, which cannot fully represent the range of these
+/// types. Rusqlite would have to
+/// decide how to handle negative values: return an error or reinterpret as a
+/// very large postive numbers, neither of which
+/// is guaranteed to be correct for everyone. Callers can work around this by
+/// fetching values as i64 and then doing the interpretation themselves or by
+/// defining a newtype and implementing `FromSql`/`ToSql` for it.
 pub trait FromSql: Sized {
     fn column_result(value: ValueRef) -> FromSqlResult<Self>;
 }

@@ -1,5 +1,6 @@
-//! This file contains unit tests for `rusqlite::trace::config_log`. This function affects
-//! SQLite process-wide and so is not safe to run as a normal #[test] in the library.
+//! This file contains unit tests for `rusqlite::trace::config_log`. This
+//! function affects SQLite process-wide and so is not safe to run as a normal
+//! #[test] in the library.
 
 #[cfg(feature = "trace")]
 #[macro_use]

@@ -1,11 +1,11 @@
 //! Traits dealing with SQLite data types.
 //!
 //! SQLite uses a [dynamic type system](https://www.sqlite.org/datatype3.html). Implementations of
-//! the `ToSql` and `FromSql` traits are provided for the basic types that SQLite provides methods
-//! for:
+//! the `ToSql` and `FromSql` traits are provided for the basic types that
+//! SQLite provides methods for:
 //!
-//! * Integers (`i32` and `i64`; SQLite uses `i64` internally, so getting an `i32` will truncate
-//!   if the value is too large or too small).
+//! * Integers (`i32` and `i64`; SQLite uses `i64` internally, so getting an
+//! `i32` will truncate   if the value is too large or too small).
 //! * Reals (`f64`)
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
@@ -22,16 +22,18 @@
 //! extern crate rusqlite;
 //! extern crate time;
 //!
-//! use rusqlite::types::{FromSql, FromSqlResult, ValueRef, ToSql, ToSqlOutput};
-//! use rusqlite::{Result};
+//! use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+//! use rusqlite::Result;
 //!
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
 //!     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
 //!         f64::column_result(value).map(|as_f64| {
-//!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
-//!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
+//!             TimespecSql(time::Timespec {
+//!                 sec: as_f64.trunc() as i64,
+//!                 nsec: (as_f64.fract() * 1.0e9) as i32,
+//!             })
 //!         })
 //!     }
 //! }
@@ -48,9 +50,9 @@
 //! # fn main() {}
 //! ```
 //!
-//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
-//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
-//! `None`).
+//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T`
+//! implements `ToSql` or `FromSql` for the cases where you want to know if a
+//! value was NULL (which gets translated to `None`).
 
 pub use self::from_sql::{FromSql, FromSqlError, FromSqlResult};
 pub use self::to_sql::{ToSql, ToSqlOutput};
@@ -77,8 +79,7 @@ mod value_ref;
 /// # extern crate rusqlite;
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
-/// fn main() {
-/// }
+/// fn main() {}
 /// fn insert_null(conn: &Connection) -> Result<usize> {
 ///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
 /// }

@@ -16,16 +16,17 @@ impl<'stmt> Rows<'stmt> {
         }
     }
 
-    /// Attempt to get the next row from the query. Returns `Some(Ok(Row))` if there
-    /// is another row, `Some(Err(...))` if there was an error getting the next
-    /// row, and `None` if all rows have been retrieved.
+    /// Attempt to get the next row from the query. Returns `Some(Ok(Row))` if
+    /// there is another row, `Some(Err(...))` if there was an error
+    /// getting the next row, and `None` if all rows have been retrieved.
     ///
     /// ## Note
     ///
-    /// This interface is not compatible with Rust's `Iterator` trait, because the
-    /// lifetime of the returned row is tied to the lifetime of `self`. This is a
-    /// "streaming iterator". For a more natural interface, consider using `query_map`
-    /// or `query_and_then` instead, which return types that implement `Iterator`.
+    /// This interface is not compatible with Rust's `Iterator` trait, because
+    /// the lifetime of the returned row is tied to the lifetime of `self`.
+    /// This is a "streaming iterator". For a more natural interface,
+    /// consider using `query_map` or `query_and_then` instead, which
+    /// return types that implement `Iterator`.
     #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // cannot implement Iterator
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt.and_then(|stmt| match stmt.step() {
@@ -135,11 +136,15 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if calling `row.get_checked(idx)` would return an error, including:
+    /// Panics if calling `row.get_checked(idx)` would return an error,
+    /// including:
     ///
-    ///    * If the underlying SQLite column type is not a valid type as a source for `T`
-    ///    * If the underlying SQLite integral value is outside the range representable by `T`
-    ///    * If `idx` is outside the range of columns in the returned query
+    ///    * If the underlying SQLite column type is not a valid type as a
+    ///      source for `T`
+    ///    * If the underlying SQLite integral value is
+    ///      outside the range representable by `T`
+    ///    * If `idx` is outside the range of columns in the
+    ///      returned query
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
@@ -151,11 +156,11 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// Returns an `Error::InvalidColumnType` if the underlying SQLite column
     /// type is not a valid type as a source for `T`.
     ///
-    /// Returns an `Error::InvalidColumnIndex` if `idx` is outside the valid column range
-    /// for this row.
+    /// Returns an `Error::InvalidColumnIndex` if `idx` is outside the valid
+    /// column range for this row.
     ///
-    /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column name
-    /// for this row.
+    /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column
+    /// name for this row.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = try!(idx.idx(self.stmt));
         let value = self.stmt.value_ref(idx);

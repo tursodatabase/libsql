@@ -227,6 +227,7 @@ impl VTabCursor for SeriesTabCursor {
         self.row_id = 1;
         Ok(())
     }
+
     fn next(&mut self) -> Result<()> {
         if self.is_desc {
             self.value -= self.step;
@@ -236,6 +237,7 @@ impl VTabCursor for SeriesTabCursor {
         self.row_id += 1;
         Ok(())
     }
+
     fn eof(&self) -> bool {
         if self.is_desc {
             self.value < self.min_value
@@ -243,6 +245,7 @@ impl VTabCursor for SeriesTabCursor {
             self.value > self.max_value
         }
     }
+
     fn column(&self, ctx: &mut Context, i: c_int) -> Result<()> {
         let x = match i {
             SERIES_COLUMN_START => self.min_value,
@@ -252,6 +255,7 @@ impl VTabCursor for SeriesTabCursor {
         };
         ctx.set_result(&x)
     }
+
     fn rowid(&self) -> Result<i64> {
         Ok(self.row_id)
     }

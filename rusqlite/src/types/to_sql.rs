@@ -4,7 +4,8 @@ use std::borrow::Cow;
 use vtab::array::Array;
 use Result;
 
-/// `ToSqlOutput` represents the possible output types for implementors of the `ToSql` trait.
+/// `ToSqlOutput` represents the possible output types for implementors of the
+/// `ToSql` trait.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ToSqlOutput<'a> {
     /// A borrowed SQLite-representable value.

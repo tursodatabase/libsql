@@ -1,7 +1,8 @@
 use std::ops::Deref;
 use {Connection, Result};
 
-/// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is deprecated.
+/// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is
+/// deprecated.
 #[deprecated(since = "0.6.0", note = "Use TransactionBehavior instead")]
 pub type SqliteTransactionBehavior = TransactionBehavior;
 
@@ -23,8 +24,8 @@ pub enum DropBehavior {
     /// Commit the changes.
     Commit,
 
-    /// Do not commit or roll back changes - this will leave the transaction or savepoint
-    /// open, so should be used with care.
+    /// Do not commit or roll back changes - this will leave the transaction or
+    /// savepoint open, so should be used with care.
     Ignore,
 
     /// Panic. Used to enforce intentional behavior during development.
@@ -39,9 +40,9 @@ pub type SqliteTransaction<'conn> = Transaction<'conn>;
 ///
 /// ## Note
 ///
-/// Transactions will roll back by default. Use `commit` method to explicitly commit the
-/// transaction, or use `set_drop_behavior` to change what happens when the transaction
-/// is dropped.
+/// Transactions will roll back by default. Use `commit` method to explicitly
+/// commit the transaction, or use `set_drop_behavior` to change what happens
+/// when the transaction is dropped.
 ///
 /// ## Example
 ///
@@ -67,9 +68,9 @@ pub struct Transaction<'conn> {
 ///
 /// ## Note
 ///
-/// Savepoints will roll back by default. Use `commit` method to explicitly commit the
-/// savepoint, or use `set_drop_behavior` to change what happens when the savepoint
-/// is dropped.
+/// Savepoints will roll back by default. Use `commit` method to explicitly
+/// commit the savepoint, or use `set_drop_behavior` to change what happens
+/// when the savepoint is dropped.
 ///
 /// ## Example
 ///
@@ -95,7 +96,8 @@ pub struct Savepoint<'conn> {
 }
 
 impl<'conn> Transaction<'conn> {
-    /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
+    /// Begin a new transaction. Cannot be nested; see `savepoint` for nested
+    /// transactions.
     // Even though we don't mutate the connection, we take a `&mut Connection`
     // so as to prevent nested or concurrent transactions on the same
     // connection.
@@ -116,7 +118,8 @@ impl<'conn> Transaction<'conn> {
     ///
     /// ## Note
     ///
-    /// Just like outer level transactions, savepoint transactions rollback by default.
+    /// Just like outer level transactions, savepoint transactions rollback by
+    /// default.
     ///
     /// ## Example
     ///
@@ -146,12 +149,14 @@ impl<'conn> Transaction<'conn> {
         Savepoint::with_depth_and_name(self.conn, 1, name)
     }
 
-    /// Get the current setting for what happens to the transaction when it is dropped.
+    /// Get the current setting for what happens to the transaction when it is
+    /// dropped.
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
 
-    /// Configure the transaction to perform the specified action when it is dropped.
+    /// Configure the transaction to perform the specified action when it is
+    /// dropped.
     pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
         self.drop_behavior = drop_behavior
     }
@@ -176,11 +181,11 @@ impl<'conn> Transaction<'conn> {
         Ok(())
     }
 
-    /// Consumes the transaction, committing or rolling back according to the current setting
-    /// (see `drop_behavior`).
+    /// Consumes the transaction, committing or rolling back according to the
+    /// current setting (see `drop_behavior`).
     ///
-    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
-    /// errors that occur.
+    /// Functionally equivalent to the `Drop` implementation, but allows
+    /// callers to see any errors that occur.
     pub fn finish(mut self) -> Result<()> {
         self.finish_()
     }
@@ -255,12 +260,14 @@ impl<'conn> Savepoint<'conn> {
         Savepoint::with_depth_and_name(self.conn, self.depth + 1, name)
     }
 
-    /// Get the current setting for what happens to the savepoint when it is dropped.
+    /// Get the current setting for what happens to the savepoint when it is
+    /// dropped.
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
 
-    /// Configure the savepoint to perform the specified action when it is dropped.
+    /// Configure the savepoint to perform the specified action when it is
+    /// dropped.
     pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
         self.drop_behavior = drop_behavior
     }
@@ -280,18 +287,18 @@ impl<'conn> Savepoint<'conn> {
     ///
     /// ## Note
     ///
-    /// Unlike `Transaction`s, savepoints remain active after they have been rolled back,
-    /// and can be rolled back again or committed.
+    /// Unlike `Transaction`s, savepoints remain active after they have been
+    /// rolled back, and can be rolled back again or committed.
     pub fn rollback(&mut self) -> Result<()> {
         self.conn
             .execute_batch(&format!("ROLLBACK TO {}", self.name))
     }
 
-    /// Consumes the savepoint, committing or rolling back according to the current setting
-    /// (see `drop_behavior`).
+    /// Consumes the savepoint, committing or rolling back according to the
+    /// current setting (see `drop_behavior`).
     ///
-    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
-    /// errors that occur.
+    /// Functionally equivalent to the `Drop` implementation, but allows
+    /// callers to see any errors that occur.
     pub fn finish(mut self) -> Result<()> {
         self.finish_()
     }
@@ -327,8 +334,9 @@ impl<'conn> Drop for Savepoint<'conn> {
 impl Connection {
     /// Begin a new transaction with the default behavior (DEFERRED).
     ///
-    /// The transaction defaults to rolling back when it is dropped. If you want the transaction to
-    /// commit, you must call `commit` or `set_drop_behavior(DropBehavior::Commit)`.
+    /// The transaction defaults to rolling back when it is dropped. If you
+    /// want the transaction to commit, you must call `commit` or
+    /// `set_drop_behavior(DropBehavior::Commit)`.
     ///
     /// ## Example
     ///
@@ -369,8 +377,9 @@ impl Connection {
 
     /// Begin a new savepoint with the default behavior (DEFERRED).
     ///
-    /// The savepoint defaults to rolling back when it is dropped. If you want the savepoint to
-    /// commit, you must call `commit` or `set_drop_behavior(DropBehavior::Commit)`.
+    /// The savepoint defaults to rolling back when it is dropped. If you want
+    /// the savepoint to commit, you must call `commit` or
+    /// `set_drop_behavior(DropBehavior::Commit)`.
     ///
     /// ## Example
     ///

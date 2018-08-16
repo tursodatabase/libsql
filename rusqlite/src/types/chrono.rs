@@ -53,7 +53,8 @@ impl FromSql for NaiveTime {
     }
 }
 
-/// ISO 8601 combined date and time without timezone => "YYYY-MM-DD HH:MM:SS.SSS"
+/// ISO 8601 combined date and time without timezone =>
+/// "YYYY-MM-DD HH:MM:SS.SSS"
 impl ToSql for NaiveDateTime {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%Y-%m-%dT%H:%M:%S%.f").to_string();
@@ -61,8 +62,9 @@ impl ToSql for NaiveDateTime {
     }
 }
 
-/// "YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS" => ISO 8601 combined date and time
-/// without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
+/// "YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS" => ISO 8601 combined date
+/// and time without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS"
+/// also supported)
 impl FromSql for NaiveDateTime {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         value.as_str().and_then(|s| {
@@ -80,7 +82,8 @@ impl FromSql for NaiveDateTime {
     }
 }
 
-/// Date and time with time zone => UTC RFC3339 timestamp ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
+/// Date and time with time zone => UTC RFC3339 timestamp
+/// ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
 impl<Tz: TimeZone> ToSql for DateTime<Tz> {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok(ToSqlOutput::from(self.with_timezone(&Utc).to_rfc3339()))

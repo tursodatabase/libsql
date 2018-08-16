@@ -1,49 +1,55 @@
-//! Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
-//! an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
+//! Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to
+//! expose an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 //!
 //! ```rust
 //! extern crate rusqlite;
 //! extern crate time;
 //!
-//! use time::Timespec;
 //! use rusqlite::Connection;
+//! use time::Timespec;
 //!
 //! #[derive(Debug)]
 //! struct Person {
 //!     id: i32,
 //!     name: String,
 //!     time_created: Timespec,
-//!     data: Option<Vec<u8>>
+//!     data: Option<Vec<u8>>,
 //! }
 //!
 //! fn main() {
 //!     let conn = Connection::open_in_memory().unwrap();
 //!
-//!     conn.execute("CREATE TABLE person (
+//!     conn.execute(
+//!         "CREATE TABLE person (
 //!                   id              INTEGER PRIMARY KEY,
 //!                   name            TEXT NOT NULL,
 //!                   time_created    TEXT NOT NULL,
 //!                   data            BLOB
-//!                   )", &[]).unwrap();
+//!                   )",
+//!         &[],
+//!     ).unwrap();
 //!     let me = Person {
 //!         id: 0,
 //!         name: "Steven".to_string(),
 //!         time_created: time::get_time(),
-//!         data: None
+//!         data: None,
 //!     };
-//!     conn.execute("INSERT INTO person (name, time_created, data)
+//!     conn.execute(
+//!         "INSERT INTO person (name, time_created, data)
 //!                   VALUES (?1, ?2, ?3)",
-//!                  &[&me.name, &me.time_created, &me.data]).unwrap();
+//!         &[&me.name, &me.time_created, &me.data],
+//!     ).unwrap();
 //!
-//!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-//!     let person_iter = stmt.query_map(&[], |row| {
-//!         Person {
+//!     let mut stmt = conn
+//!         .prepare("SELECT id, name, time_created, data FROM person")
+//!         .unwrap();
+//!     let person_iter = stmt
+//!         .query_map(&[], |row| Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
 //!             time_created: row.get(2),
-//!             data: row.get(3)
-//!         }
-//!     }).unwrap();
+//!             data: row.get(3),
+//!         }).unwrap();
 //!
 //!     for person in person_iter {
 //!         println!("Found person {:?}", person.unwrap());
@@ -168,8 +174,8 @@ pub enum DatabaseName<'a> {
     Attached(&'a str),
 }
 
-// Currently DatabaseName is only used by the backup and blob mods, so hide this (private)
-// impl to avoid dead code warnings.
+// Currently DatabaseName is only used by the backup and blob mods, so hide
+// this (private) impl to avoid dead code warnings.
 #[cfg(any(feature = "backup", feature = "blob"))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(&self) -> Result<CString> {
@@ -204,13 +210,15 @@ impl Drop for Connection {
 impl Connection {
     /// Open a new connection to a SQLite database.
     ///
-    /// `Connection::open(path)` is equivalent to `Connection::open_with_flags(path,
-    /// OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE)`.
+    /// `Connection::open(path)` is equivalent to
+    /// `Connection::open_with_flags(path,
+    /// OpenFlags::SQLITE_OPEN_READ_WRITE |
+    /// OpenFlags::SQLITE_OPEN_CREATE)`.
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite open call fails.
+    /// Will return `Err` if `path` cannot be converted to a C-compatible
+    /// string or if the underlying SQLite open call fails.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Connection> {
         let flags = OpenFlags::default();
         Connection::open_with_flags(path, flags)
@@ -233,8 +241,8 @@ impl Connection {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite open call fails.
+    /// Will return `Err` if `path` cannot be converted to a C-compatible
+    /// string or if the underlying SQLite open call fails.
     pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: OpenFlags) -> Result<Connection> {
         let c_path = try!(path_to_cstring(path.as_ref()));
         InnerConnection::open_with_flags(&c_path, flags).map(|db| Connection {
@@ -261,7 +269,8 @@ impl Connection {
         })
     }
 
-    /// Convenience method to run multiple SQL statements (that cannot take any parameters).
+    /// Convenience method to run multiple SQL statements (that cannot take any
+    /// parameters).
     ///
     /// Uses [sqlite3_exec](http://www.sqlite.org/c3ref/exec.html) under the hood.
     ///
@@ -270,25 +279,27 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn create_tables(conn: &Connection) -> Result<()> {
-    ///     conn.execute_batch("BEGIN;
+    ///     conn.execute_batch(
+    ///         "BEGIN;
     ///                         CREATE TABLE foo(x INTEGER);
     ///                         CREATE TABLE bar(y TEXT);
-    ///                         COMMIT;")
+    ///                         COMMIT;",
+    ///     )
     /// }
     /// ```
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn execute_batch(&self, sql: &str) -> Result<()> {
         self.db.borrow_mut().execute_batch(sql)
     }
 
     /// Convenience method to prepare and execute a single SQL statement.
     ///
-    /// On success, returns the number of rows that were changed or inserted or deleted (via
-    /// `sqlite3_changes`).
+    /// On success, returns the number of rows that were changed or inserted or
+    /// deleted (via `sqlite3_changes`).
     ///
     /// ## Example
     ///
@@ -304,30 +315,34 @@ impl Connection {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn execute(&self, sql: &str, params: &[&ToSql]) -> Result<usize> {
         self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
     }
 
-    /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
+    /// Convenience method to prepare and execute a single SQL statement with
+    /// named parameter(s).
     ///
-    /// On success, returns the number of rows that were changed or inserted or deleted (via
-    /// `sqlite3_changes`).
+    /// On success, returns the number of rows that were changed or inserted or
+    /// deleted (via `sqlite3_changes`).
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn insert(conn: &Connection) -> Result<usize> {
-    ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
+    ///     conn.execute_named(
+    ///         "INSERT INTO test (name) VALUES (:name)",
+    ///         &[(":name", &"one")],
+    ///     )
     /// }
     /// ```
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<usize> {
         self.prepare(sql)
             .and_then(|mut stmt| stmt.execute_named(params))
@@ -341,25 +356,29 @@ impl Connection {
         self.db.borrow_mut().last_insert_rowid()
     }
 
-    /// Convenience method to execute a query that is expected to return a single row.
+    /// Convenience method to execute a query that is expected to return a
+    /// single row.
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Result,Connection};
     /// fn preferred_locale(conn: &Connection) -> Result<String> {
-    ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
-    ///         row.get(0)
-    ///     })
+    ///     conn.query_row(
+    ///         "SELECT value FROM preferences WHERE name='locale'",
+    ///         &[],
+    ///         |row| row.get(0),
+    ///     )
     /// }
     /// ```
     ///
-    /// If the query returns more than one row, all rows except the first are ignored.
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
     where
         F: FnOnce(&Row) -> T,
@@ -368,15 +387,16 @@ impl Connection {
         stmt.query_row(params, f)
     }
 
-    /// Convenience method to execute a query with named parameter(s) that is expected to return
-    /// a single row.
+    /// Convenience method to execute a query with named parameter(s) that is
+    /// expected to return a single row.
     ///
-    /// If the query returns more than one row, all rows except the first are ignored.
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &ToSql)], f: F) -> Result<T>
     where
         F: FnOnce(&Row) -> T,
@@ -387,29 +407,31 @@ impl Connection {
         rows.get_expected_row().map(|r| f(&r))
     }
 
-    /// Convenience method to execute a query that is expected to return a single row,
-    /// and execute a mapping via `f` on that returned row with the possibility of failure.
-    /// The `Result` type of `f` must implement `std::convert::From<Error>`.
+    /// Convenience method to execute a query that is expected to return a
+    /// single row, and execute a mapping via `f` on that returned row with
+    /// the possibility of failure. The `Result` type of `f` must implement
+    /// `std::convert::From<Error>`.
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Result,Connection};
     /// fn preferred_locale(conn: &Connection) -> Result<String> {
-    ///     conn.query_row_and_then("SELECT value FROM preferences WHERE name='locale'",
-    ///                             &[],
-    ///                             |row| {
-    ///         row.get_checked(0)
-    ///     })
+    ///     conn.query_row_and_then(
+    ///         "SELECT value FROM preferences WHERE name='locale'",
+    ///         &[],
+    ///         |row| row.get_checked(0),
+    ///     )
     /// }
     /// ```
     ///
-    /// If the query returns more than one row, all rows except the first are ignored.
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn query_row_and_then<T, E, F>(
         &self,
         sql: &str,
@@ -426,25 +448,29 @@ impl Connection {
         rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
     }
 
-    /// Convenience method to execute a query that is expected to return a single row.
+    /// Convenience method to execute a query that is expected to return a
+    /// single row.
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Result,Connection};
     /// fn preferred_locale(conn: &Connection) -> Result<String> {
-    ///     conn.query_row_safe("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
-    ///         row.get(0)
-    ///     })
+    ///     conn.query_row_safe(
+    ///         "SELECT value FROM preferences WHERE name='locale'",
+    ///         &[],
+    ///         |row| row.get(0),
+    ///     )
     /// }
     /// ```
     ///
-    /// If the query returns more than one row, all rows except the first are ignored.
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
     ///
     /// ## Deprecated
     ///
-    /// This method should be considered deprecated. Use `query_row` instead, which now
-    /// does exactly the same thing.
+    /// This method should be considered deprecated. Use `query_row` instead,
+    /// which now does exactly the same thing.
     #[deprecated(since = "0.1.0", note = "Use query_row instead")]
     pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
     where
@@ -469,17 +495,17 @@ impl Connection {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite call fails.
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
     pub fn prepare<'a>(&'a self, sql: &str) -> Result<Statement<'a>> {
         self.db.borrow_mut().prepare(self, sql)
     }
 
     /// Close the SQLite connection.
     ///
-    /// This is functionally equivalent to the `Drop` implementation for `Connection` except
-    /// that on failure, it returns an error and the connection itself (presumably so closing
-    /// can be attempted again).
+    /// This is functionally equivalent to the `Drop` implementation for
+    /// `Connection` except that on failure, it returns an error and the
+    /// connection itself (presumably so closing can be attempted again).
     ///
     /// # Failure
     ///
@@ -490,8 +516,8 @@ impl Connection {
         r.map_err(move |err| (self, err))
     }
 
-    /// Enable loading of SQLite extensions. Strongly consider using `LoadExtensionGuard`
-    /// instead of this function.
+    /// Enable loading of SQLite extensions. Strongly consider using
+    /// `LoadExtensionGuard` instead of this function.
     ///
     /// ## Example
     ///
@@ -525,12 +551,13 @@ impl Connection {
         self.db.borrow_mut().enable_load_extension(0)
     }
 
-    /// Load the SQLite extension at `dylib_path`. `dylib_path` is passed through to
-    /// `sqlite3_load_extension`, which may attempt OS-specific modifications if the file
-    /// cannot be loaded directly.
+    /// Load the SQLite extension at `dylib_path`. `dylib_path` is passed
+    /// through to `sqlite3_load_extension`, which may attempt OS-specific
+    /// modifications if the file cannot be loaded directly.
     ///
-    /// If `entry_point` is `None`, SQLite will attempt to find the entry point. If it is not
-    /// `None`, the entry point will be passed through to `sqlite3_load_extension`.
+    /// If `entry_point` is `None`, SQLite will attempt to find the entry
+    /// point. If it is not `None`, the entry point will be passed through
+    /// to `sqlite3_load_extension`.
     ///
     /// ## Example
     ///
@@ -562,10 +589,11 @@ impl Connection {
     ///
     /// # Warning
     ///
-    /// You should not need to use this function. If you do need to, please [open an issue
-    /// on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
-    /// your use case. This function is unsafe because it gives you raw access to the SQLite
-    /// connection, and what you do with it could impact the safety of this `Connection`.
+    /// You should not need to use this function. If you do need to, please
+    /// [open an issue on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
+    /// your use case. This function is unsafe because it gives you raw access
+    /// to the SQLite connection, and what you do with it could impact the
+    /// safety of this `Connection`.
     pub unsafe fn handle(&self) -> *mut ffi::sqlite3 {
         self.db.borrow().db()
     }
@@ -644,27 +672,34 @@ static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
 static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
 static BYPASS_VERSION_CHECK: AtomicBool = ATOMIC_BOOL_INIT;
 
-/// rusqlite's check for a safe SQLite threading mode requires SQLite 3.7.0 or later. If you are
-/// running against a SQLite older than that, rusqlite attempts to ensure safety by performing
-/// configuration and initialization of SQLite itself the first time you attempt to open a
-/// connection. By default, rusqlite panics if that initialization fails, since that could mean
-/// SQLite has been initialized in single-thread mode.
+/// rusqlite's check for a safe SQLite threading mode requires SQLite 3.7.0 or
+/// later. If you are running against a SQLite older than that, rusqlite
+/// attempts to ensure safety by performing configuration and initialization of
+/// SQLite itself the first time you
+/// attempt to open a connection. By default, rusqlite panics if that
+/// initialization fails, since that could mean SQLite has been initialized in
+/// single-thread mode.
 ///
-/// If you are encountering that panic _and_ can ensure that SQLite has been initialized in either
-/// multi-thread or serialized mode, call this function prior to attempting to open a connection
-/// and rusqlite's initialization process will by skipped. This function is unsafe because if you
-/// call it and SQLite has actually been configured to run in single-thread mode, you may enounter
-/// memory errors or data corruption or any number of terrible things that should not be possible
-/// when you're using Rust.
+/// If you are encountering that panic _and_ can ensure that SQLite has been
+/// initialized in either multi-thread or serialized mode, call this function
+/// prior to attempting to open a connection and rusqlite's initialization
+/// process will by skipped. This
+/// function is unsafe because if you call it and SQLite has actually been
+/// configured to run in single-thread mode,
+/// you may enounter memory errors or data corruption or any number of terrible
+/// things that should not be possible when you're using Rust.
 pub unsafe fn bypass_sqlite_initialization() {
     BYPASS_SQLITE_INIT.store(true, Ordering::Relaxed);
 }
 
-/// rusqlite performs a one-time check that the runtime SQLite version is at least as new as
-/// the version of SQLite found when rusqlite was built. Bypassing this check may be dangerous;
-/// e.g., if you use features of SQLite that are not present in the runtime version. If you are
-/// sure the runtime version is compatible with the build-time version for your usage, you can
-/// bypass the version check by calling this function before your first connection attempt.
+/// rusqlite performs a one-time check that the runtime SQLite version is at
+/// least as new as the version of SQLite found when rusqlite was built.
+/// Bypassing this check may be dangerous; e.g., if you use features of SQLite
+/// that are not present in the runtime
+/// version. If you are sure the runtime version is compatible with the
+/// build-time version for your usage, you can bypass the version check by
+/// calling this function before
+/// your first connection attempt.
 pub unsafe fn bypass_sqlite_version_check() {
     BYPASS_VERSION_CHECK.store(true, Ordering::Relaxed);
 }
@@ -693,8 +728,8 @@ fn ensure_valid_sqlite_version() {
             return;
         }
 
-        // Check that the runtime version number is compatible with the version number we found at
-        // build-time.
+        // Check that the runtime version number is compatible with the version number
+        // we found at build-time.
         if version_number < ffi::SQLITE_VERSION_NUMBER {
             panic!(
                 "\
@@ -716,21 +751,23 @@ fn ensure_safe_sqlite_threading_mode() -> Result<()> {
         return Err(Error::SqliteSingleThreadedMode);
     }
 
-    // Now we know SQLite is _capable_ of being in Multi-thread of Serialized mode, but it's
-    // possible someone configured it to be in Single-thread mode before calling into us. That
-    // would mean we're exposing an unsafe API via a safe one (in Rust terminology), which is
-    // no good. We have two options to protect against this, depending on the version of SQLite
-    // we're linked with:
+    // Now we know SQLite is _capable_ of being in Multi-thread of Serialized mode,
+    // but it's possible someone configured it to be in Single-thread mode
+    // before calling into us. That would mean we're exposing an unsafe API via
+    // a safe one (in Rust terminology), which is no good. We have two options
+    // to protect against this, depending on the version of SQLite we're linked
+    // with:
     //
-    // 1. If we're on 3.7.0 or later, we can ask SQLite for a mutex and check for the magic value
-    //    8. This isn't documented, but it's what SQLite returns for its mutex allocation function
-    //    in Single-thread mode.
-    // 2. If we're prior to SQLite 3.7.0, AFAIK there's no way to check the threading mode. The
-    //    check we perform for >= 3.7.0 will segfault. Instead, we insist on being able to call
-    //    sqlite3_config and sqlite3_initialize ourself, ensuring we know the threading mode. This
-    //    will fail if someone else has already initialized SQLite even if they initialized it
-    //    safely. That's not ideal either, which is why we expose bypass_sqlite_initialization
-    //    above.
+    // 1. If we're on 3.7.0 or later, we can ask SQLite for a mutex and check for
+    //    the magic value 8. This isn't documented, but it's what SQLite
+    //    returns for its mutex allocation function in Single-thread mode.
+    // 2. If we're prior to SQLite 3.7.0, AFAIK there's no way to check the
+    //    threading mode. The check we perform for >= 3.7.0 will segfault.
+    //    Instead, we insist on being able to call sqlite3_config and
+    //    sqlite3_initialize ourself, ensuring we know the threading
+    //    mode. This will fail if someone else has already initialized SQLite
+    //    even if they initialized it safely. That's not ideal either, which is
+    //    why we expose bypass_sqlite_initialization    above.
     if version_number() >= 3_007_000 {
         const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
         let is_singlethreaded = unsafe {
@@ -775,6 +812,7 @@ impl InnerConnection {
     fn new(db: *mut ffi::sqlite3) -> InnerConnection {
         InnerConnection { db }
     }
+
     #[cfg(feature = "hooks")]
     fn new(db: *mut ffi::sqlite3) -> InnerConnection {
         InnerConnection {
@@ -789,8 +827,8 @@ impl InnerConnection {
         ensure_valid_sqlite_version();
         ensure_safe_sqlite_threading_mode()?;
 
-        // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
-        // wasn't added until version 3.7.3.
+        // Replicate the check for sane open flags from SQLite, because the check in
+        // SQLite itself wasn't added until version 3.7.3.
         debug_assert_eq!(1 << OpenFlags::SQLITE_OPEN_READ_ONLY.bits, 0x02);
         debug_assert_eq!(1 << OpenFlags::SQLITE_OPEN_READ_WRITE.bits, 0x04);
         debug_assert_eq!(
@@ -1105,8 +1143,9 @@ mod test {
     fn test_close_retry() {
         let db = checked_memory_handle();
 
-        // force the DB to be busy by preparing a statement; this must be done at the FFI
-        // level to allow us to call .close() without dropping the prepared statement first.
+        // force the DB to be busy by preparing a statement; this must be done at the
+        // FFI level to allow us to call .close() without dropping the prepared
+        // statement first.
         let raw_stmt = {
             use super::str_to_cstring;
             use std::mem;
@@ -1129,7 +1168,8 @@ mod test {
             raw_stmt
         };
 
-        // now that we have an open statement, trying (and retrying) to close should fail.
+        // now that we have an open statement, trying (and retrying) to close should
+        // fail.
         let (db, _) = db.close().unwrap_err();
         let (db, _) = db.close().unwrap_err();
         let (db, _) = db.close().unwrap_err();
@@ -1439,6 +1479,7 @@ mod test {
             fn description(&self) -> &str {
                 "my custom error"
             }
+
             fn cause(&self) -> Option<&StdError> {
                 match *self {
                     CustomError::SomeError => None,

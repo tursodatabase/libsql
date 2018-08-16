@@ -278,12 +278,14 @@ impl IndexInfo {
             (*self.0).idxNum = idx_num;
         }
     }
+
     /// True if output is already ordered
     pub fn set_order_by_consumed(&mut self, order_by_consumed: bool) {
         unsafe {
             (*self.0).orderByConsumed = if order_by_consumed { 1 } else { 0 };
         }
     }
+
     /// Estimated cost of using this index
     pub fn set_estimated_cost(&mut self, estimated_ost: f64) {
         unsafe {
@@ -329,10 +331,12 @@ impl<'a> IndexConstraint<'a> {
     pub fn column(&self) -> c_int {
         self.0.iColumn
     }
+
     /// Constraint operator
     pub fn operator(&self) -> IndexConstraintOp {
         IndexConstraintOp::from_bits_truncate(self.0.op)
     }
+
     /// True if this constraint is usable
     pub fn is_usable(&self) -> bool {
         self.0.usable != 0
@@ -347,6 +351,7 @@ impl<'a> IndexConstraintUsage<'a> {
     pub fn set_argv_index(&mut self, argv_index: c_int) {
         self.0.argvIndex = argv_index;
     }
+
     /// if `omit`, do not code a test for this constraint
     pub fn set_omit(&mut self, omit: bool) {
         self.0.omit = if omit { 1 } else { 0 };
@@ -377,6 +382,7 @@ impl<'a> OrderBy<'a> {
     pub fn column(&self) -> c_int {
         self.0.iColumn
     }
+
     /// True for DESC.  False for ASC.
     pub fn is_order_by_desc(&self) -> bool {
         self.0.desc != 0
@@ -483,8 +489,8 @@ impl<'a> Values<'a> {
 }
 
 impl<'a> IntoIterator for &'a Values<'a> {
-    type Item = ValueRef<'a>;
     type IntoIter = ValueIter<'a>;
+    type Item = ValueRef<'a>;
 
     fn into_iter(self) -> ValueIter<'a> {
         self.iter()

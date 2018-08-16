@@ -65,16 +65,20 @@ fn test_dummy_module() {
             self.row_id = 1;
             Ok(())
         }
+
         fn next(&mut self) -> Result<()> {
             self.row_id += 1;
             Ok(())
         }
+
         fn eof(&self) -> bool {
             self.row_id > 1
         }
+
         fn column(&self, ctx: &mut Context, _: c_int) -> Result<()> {
             ctx.set_result(&self.row_id)
         }
+
         fn rowid(&self) -> Result<i64> {
             Ok(self.row_id)
         }

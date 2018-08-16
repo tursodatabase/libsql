@@ -17,26 +17,29 @@ pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),
 
-    /// Error reported when attempting to open a connection when SQLite was configured to
-    /// allow single-threaded use only.
+    /// Error reported when attempting to open a connection when SQLite was
+    /// configured to allow single-threaded use only.
     SqliteSingleThreadedMode,
 
-    /// Error when the value of a particular column is requested, but it cannot be converted to
-    /// the requested Rust type.
+    /// Error when the value of a particular column is requested, but it cannot
+    /// be converted to the requested Rust type.
     FromSqlConversionFailure(usize, Type, Box<error::Error + Send + Sync>),
 
-    /// Error when SQLite gives us an integral value outside the range of the requested type (e.g.,
-    /// trying to get the value 1000 into a `u8`).  The associated `usize` is the column index, and
-    /// the associated `i64` is the value returned by SQLite.
+    /// Error when SQLite gives us an integral value outside the range of the
+    /// requested type (e.g., trying to get the value 1000 into a `u8`).
+    /// The associated `usize` is the column index,
+    /// and the associated `i64` is the value returned by SQLite.
     IntegralValueOutOfRange(usize, i64),
 
     /// Error converting a string to UTF-8.
     Utf8Error(str::Utf8Error),
 
-    /// Error converting a string to a C-compatible string because it contained an embedded nul.
+    /// Error converting a string to a C-compatible string because it contained
+    /// an embedded nul.
     NulError(::std::ffi::NulError),
 
-    /// Error when using SQL named parameters and passing a parameter name not present in the SQL.
+    /// Error when using SQL named parameters and passing a parameter name not
+    /// present in the SQL.
     InvalidParameterName(String),
 
     /// Error converting a file path to a string.
@@ -45,31 +48,33 @@ pub enum Error {
     /// Error returned when an `execute` call returns rows.
     ExecuteReturnedResults,
 
-    /// Error when a query that was expected to return at least one row (e.g., for `query_row`)
-    /// did not return any.
+    /// Error when a query that was expected to return at least one row (e.g.,
+    /// for `query_row`) did not return any.
     QueryReturnedNoRows,
 
-    /// Error when the value of a particular column is requested, but the index is out of range
-    /// for the statement.
+    /// Error when the value of a particular column is requested, but the index
+    /// is out of range for the statement.
     InvalidColumnIndex(usize),
 
-    /// Error when the value of a named column is requested, but no column matches the name
-    /// for the statement.
+    /// Error when the value of a named column is requested, but no column
+    /// matches the name for the statement.
     InvalidColumnName(String),
 
-    /// Error when the value of a particular column is requested, but the type of the result in
-    /// that column cannot be converted to the requested Rust type.
+    /// Error when the value of a particular column is requested, but the type
+    /// of the result in that column cannot be converted to the requested
+    /// Rust type.
     InvalidColumnType(usize, Type),
 
-    /// Error when a query that was expected to insert one row did not insert any or insert many.
+    /// Error when a query that was expected to insert one row did not insert
+    /// any or insert many.
     StatementChangedRows(usize),
 
-    /// Error returned by `functions::Context::get` when the function argument cannot be converted
-    /// to the requested type.
+    /// Error returned by `functions::Context::get` when the function argument
+    /// cannot be converted to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType(usize, Type),
-    /// Error returned by `vtab::Values::get` when the filter argument cannot be converted
-    /// to the requested type.
+    /// Error returned by `vtab::Values::get` when the filter argument cannot
+    /// be converted to the requested type.
     #[cfg(feature = "vtab")]
     InvalidFilterParameterType(usize, Type),
 
