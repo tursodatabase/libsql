@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sunused-variable\scompiler\swarning\sthat\sonly\scame\sup\sin\scertain\ncompile-time\sconfigurations.
-D 2018-08-16T16:24:24.097
+C Fix\sharmless\scompiler\swarnings\sonly\sseen\swith\sSTAT4\senabled.
+D 2018-08-17T21:14:28.190
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -575,7 +575,7 @@ F src/vdbeInt.h 8ea493d994c6697cf7bccc60583a80a0222560490410f60f1113e90d36643ce0
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
 F src/vdbeaux.c f03d4a1961ec282abaec5dbf7e5576ddb1eb01e6157335a232d8d9e57fd5eca1
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 720df42ad8e5c7cb883573de40a185afef4a214903098a16f2bb14b62b2399b7
+F src/vdbemem.c 0dc99941388a867a4dc77a8bed5dfc6024ee9c3ef147a09de844a6629086ec0c
 F src/vdbesort.c 731a09e5cb9e96b70c394c1b7cf3860fbe84acca7682e178615eb941a3a0ef2f
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 678992ac8ec677a3f9b08126aaf891441083805e3b42574e3654d44538381c14
@@ -1755,7 +1755,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60045fbf52162f15f2e18a4e392e80fab19bdbce242728b5e62b0894eac49dfd
-R ef778d033e258ee0e19d16c1daface6f
-U drh
-Z 07ccd170856bb822f4d9a35507f714c4
+P 456842924bb33c0af8af29402f06e5f25b6791f698a0d12a080258b20b0cfb61
+R be5dc18fc300ed89457d8bc932b7b151
+U mistachkin
+Z be93350402c55bcc80fcf7d3af56f20b
