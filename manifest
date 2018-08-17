@@ -1,5 +1,5 @@
-C Further\sprogress\son\supdating\strigger\sprograms\sas\spart\sof\sALTER\sTABLE\sRENAME\nCOLUMN.
-D 2018-08-16T19:49:16.440
+C Ensure\sthat\sCREATE\sVIEW,\sTRIGGER\sor\sINDEX\sstatements\scan\sbe\sedited\sby\sALTER\nTABLE\sRENAME\sCOLUMN\seven\sif\sthey\suse\scollation-sequences\sor\nuser-defined-functions\sthat\sare\snot\savailable.
+D 2018-08-17T17:18:16.131
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -496,7 +496,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 117e27c6826a83f461986c0cfbb09c31fe004922ce23a61bf78d82a46b0958d9
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c b51a48f33da36e0c2dd1ea5f0d10197c3e938a54086a69efce064ae41e2254e1
+F src/resolve.c c58793195eaf2989b8d0688355cca15024cc792da155dffc44b85afae426c2d5
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ae7396a314cc1bb1d767947cd57094e3a9ffcbb155ebc1b1c391e028c44a9a04
 F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
@@ -599,7 +599,7 @@ F test/alter.test b820ab9dcf85f8e3a65bc8326accb2f0c7be64ef
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
-F test/altercol.test c60161856f21a447220643c9c7cb447cf766d0c6a115247a58628c2355b66716
+F test/altercol.test 4597bd06c5dc25ce7509ce2b8a18f3ddb76b0e42fd2505e0efd603d3178e4cfb
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
@@ -1756,7 +1756,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e272dc2b1c0edab59a40f32c77c81a3e636937280524161eff5669cb0046ad84
-R a4f7901353039cfd23087ece73e91338
+P 3f47222b6e20e1c1ef41c0f7391c8b5c7648e2a2d6013303d155ad59ce27143a
+R 074dd33a01022ba2b3a74f6795cf4991
 U dan
-Z edd8747b185ed4a97732b3af8e23ffdd
+Z 478b06e640e2a3d3de9b75cbb89dcb88

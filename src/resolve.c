@@ -760,56 +760,58 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
 
+      if( 0==IN_RENAME_COLUMN ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
+        assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
           || (pDef->xValue==0 && pDef->xInverse==0)
           || (pDef->xValue && pDef->xInverse && pDef->xSFunc && pDef->xFinalize)
-      );
-      if( pDef && pDef->xValue==0 && pExpr->pWin ){
-        sqlite3ErrorMsg(pParse, 
-            "%.*s() may not be used as a window function", nId, zId
         );
-        pNC->nErr++;
-      }else if( 
-            (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
-         || (is_agg && (pDef->funcFlags & SQLITE_FUNC_WINDOW) && !pExpr->pWin)
-         || (is_agg && pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
-      ){
-        const char *zType;
-        if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->pWin ){
-          zType = "window";
-        }else{
-          zType = "aggregate";
+        if( pDef && pDef->xValue==0 && pExpr->pWin ){
+          sqlite3ErrorMsg(pParse, 
+              "%.*s() may not be used as a window function", nId, zId
+          );
+          pNC->nErr++;
+        }else if( 
+              (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
+           || (is_agg && (pDef->funcFlags & SQLITE_FUNC_WINDOW) && !pExpr->pWin)
+           || (is_agg && pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
+        ){
+          const char *zType;
+          if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->pWin ){
+            zType = "window";
+          }else{
+            zType = "aggregate";
+          }
+          sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
+          pNC->nErr++;
+          is_agg = 0;
         }
-        sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()", zType, nId,zId);
-        pNC->nErr++;
-        is_agg = 0;
-      }
 #else
-      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
-        sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
-        pNC->nErr++;
-        is_agg = 0;
-      }
+        if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
+          sqlite3ErrorMsg(pParse,"misuse of aggregate function %.*s()",nId,zId);
+          pNC->nErr++;
+          is_agg = 0;
+        }
 #endif
-      else if( no_such_func && pParse->db->init.busy==0
+        else if( no_such_func && pParse->db->init.busy==0 && !IN_RENAME_COLUMN
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-                && pParse->explain==0
+                  && pParse->explain==0
 #endif
-      ){
-        sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
-        pNC->nErr++;
-      }else if( wrong_num_args ){
-        sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
-             nId, zId);
-        pNC->nErr++;
-      }
-      if( is_agg ){
+        ){
+          sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
+          pNC->nErr++;
+        }else if( wrong_num_args ){
+          sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
+               nId, zId);
+          pNC->nErr++;
+        }
+        if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        pNC->ncFlags &= ~(pExpr->pWin ? NC_AllowWin : NC_AllowAgg);
+          pNC->ncFlags &= ~(pExpr->pWin ? NC_AllowWin : NC_AllowAgg);
 #else
-        pNC->ncFlags &= ~NC_AllowAgg;
+          pNC->ncFlags &= ~NC_AllowAgg;
 #endif
+        }
       }
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){

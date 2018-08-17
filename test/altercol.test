@@ -333,6 +333,26 @@ do_execsql_test 8.4.5 {
 #-------------------------------------------------------------------------
 # More triggers.
 #
+proc do_rename_column_test {tn old new lSchema} {
+  reset_db
+  set lSorted [list]
+  foreach sql $lSchema { 
+    execsql $sql 
+    lappend lSorted [string trim $sql]
+  }
+  set lSorted [lsort $lSorted]
+
+  do_execsql_test $tn.1 {
+    SELECT sql FROM sqlite_master WHERE sql!='' ORDER BY 1
+  } $lSorted
+
+  do_execsql_test $tn.2 "ALTER TABLE t1 RENAME $old TO $new"
+
+  do_execsql_test $tn.3 {
+    SELECT sql FROM sqlite_master ORDER BY 1
+  } [string map [list $old $new] $lSorted]
+}
+
 foreach {tn old new lSchema} {
   1 _x_ _xxx_ {
     { CREATE TABLE t1(a, b, _x_) }
@@ -365,26 +385,33 @@ foreach {tn old new lSchema} {
       END }
   }
 } {
-  reset_db
-  set lSorted [list]
-  foreach sql $lSchema { 
-    execsql $sql 
-    lappend lSorted [string trim $sql]
-  }
-  set lSorted [lsort $lSorted]
-
-  do_execsql_test 9.$tn.1 {
-    SELECT sql FROM sqlite_master WHERE sql!='' ORDER BY 1
-  } $lSorted
-
-if { $tn==3 } breakpoint
-  do_execsql_test 9.$tn.2 "ALTER TABLE t1 RENAME $old TO $new"
-
-  do_execsql_test 9.$tn.1 {
-    SELECT sql FROM sqlite_master ORDER BY 1
-  } [string map [list $old $new] $lSorted]
+  do_rename_column_test 9.$tn $old $new $lSchema
 }
 
+#-------------------------------------------------------------------------
+# Test that views can be edited even if there are missing collation 
+# sequences or user defined functions.
+#
 reset_db
+
+foreach {tn old new lSchema} {
+  1 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE _x_='abc' COLLATE xyz }
+  }
+
+  2 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE scalar(_x_) }
+  }
+
+  3 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE _x_ = unicode(1, 2, 3) }
+  }
+} {
+  do_rename_column_test 10.$tn $old $new $lSchema
+}
+
 
 finish_test
