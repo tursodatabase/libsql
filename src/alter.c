@@ -845,7 +845,8 @@ void sqlite3AlterRenameColumn(
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
       "sql = sqlite_rename_column(sql, %Q, %Q, %d, %Q, %d) "
-      "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)",
+      "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)"
+      " AND sql NOT LIKE 'create virtual%%'",
       zDb, MASTER_NAME, 
       zDb, pTab->zName, iCol, zNew, bQuote,
       pTab->zName
