@@ -1,4 +1,4 @@
-# Version 0.14.0 (2018-08-16)
+# Version 0.14.0 (2018-08-17)
 
 * BREAKING CHANGE: `ToSql` implementation for `time::Timespec` uses RFC 3339 (%Y-%m-%dT%H:%M:%S.%fZ).
   Previous format was %Y-%m-%d %H:%M:%S:%f %Z.
