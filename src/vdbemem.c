@@ -1782,11 +1782,11 @@ int sqlite3Stat4Column(
   int iCol,                       /* Column to extract */
   sqlite3_value **ppVal           /* OUT: Extracted value */
 ){
-  u32 t;                          /* a column type code */
+  u32 t = 0;                      /* a column type code */
   int nHdr;                       /* Size of the header in the record */
   int iHdr;                       /* Next unread header byte */
   int iField;                     /* Next unread data byte */
-  int szField;                    /* Size of the current data field */
+  int szField = 0;                /* Size of the current data field */
   int i;                          /* Column index */
   u8 *a = (u8*)pRec;              /* Typecast byte array */
   Mem *pMem = *ppVal;             /* Write result into this Mem object */

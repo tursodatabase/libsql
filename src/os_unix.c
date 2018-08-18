@@ -2111,7 +2111,7 @@ static int unixClose(sqlite3_file *id){
   */
   assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
   sqlite3_mutex_enter(pInode->pLockMutex);
-  if( pFile->pInode->nLock ){
+  if( pInode->nLock ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
     ** descriptor to pInode->pUnused list.  It will be automatically closed 

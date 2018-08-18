@@ -2369,7 +2369,8 @@ int sqlite3FindInIndex(
 
       sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
       eType = IN_INDEX_ROWID;
-
+      ExplainQueryPlan((pParse, 0,
+            "USING ROWID SEARCH ON TABLE %s FOR IN-OPERATOR",pTab->zName));
       sqlite3VdbeJumpHere(v, iAddr);
     }else{
       Index *pIdx;                         /* Iterator variable */
