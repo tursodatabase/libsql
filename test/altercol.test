@@ -26,6 +26,20 @@ ifcapable !altertable {
   return
 }
 
+# Drop all the tables and views in the 'main' database of database connect
+# [db]. Sort the objects by name before dropping them.
+#
+proc drop_all_tables_and_views {db} {
+  set SQL {
+    SELECT name, type FROM sqlite_master 
+    WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'
+    ORDER BY 1
+  }
+  foreach {z t} [db eval $SQL] {
+    db eval "DROP $t $z"
+  }
+}
+
 foreach {tn before after} {
   1 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB)}
     {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB)}
@@ -324,23 +338,17 @@ do_execsql_test 8.4.4 {
   SELECT sql FROM sqlite_master WHERE name='xxx';
 } {{CREATE VIEW xxx AS SELECT a FROM b1 UNION SELECT hello FROM b2 ORDER BY 1 COLLATE nocase}}
 
-do_execsql_test 8.4.5 {
+do_catchsql_test 8.4.5 {
   CREATE VIEW zzz AS SELECT george, ringo FROM b1;
   ALTER TABLE b1 RENAME a TO aaa;
-  SELECT sql FROM sqlite_master WHERE name = 'zzz'
-} {{CREATE VIEW zzz AS SELECT george, ringo FROM b1}}
+} {1 {error processing view zzz: no such column: george}}
 
 #-------------------------------------------------------------------------
 # More triggers.
 #
 proc do_rename_column_test {tn old new lSchema} {
-
   for {set i 0} {$i < 2} {incr i} {
-    # DROP all tables and views in database.
-    set sql "SELECT name FROM sqlite_master WHERE type='table' ORDER BY 1"
-    foreach nm [db eval $sql] { db eval "DROP TABLE $nm" }
-    set sql "SELECT name FROM sqlite_master WHERE type='view' ORDER BY 1"
-    foreach nm [db eval $sql] { db eval "DROP VIEW $nm" }
+    drop_all_tables_and_views db
 
     set lSorted [list]
     foreach sql $lSchema { 
@@ -353,7 +361,7 @@ proc do_rename_column_test {tn old new lSchema} {
       SELECT sql FROM sqlite_master WHERE sql!='' ORDER BY 1
     } $lSorted
 
-    if {0 && $i==1} {
+    if {$i==1} {
       db close
       sqlite3 db test.db
     }
@@ -432,5 +440,30 @@ foreach {tn old new lSchema} {
   do_rename_column_test 10.$tn $old $new $lSchema
 }
 
+#--------------------------------------------------------------------------
+# Test that if a view or trigger refers to a virtual table for which the
+# module is not available, RENAME COLUMN cannot proceed.
+#
+reset_db
+register_echo_module db
+do_execsql_test 11.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE VIRTUAL TABLE e1 USING echo(x1);
+}
+db close
+sqlite3 db test.db
+
+do_execsql_test 11.1 {
+  ALTER TABLE x1 RENAME b TO bbb;
+  SELECT sql FROM sqlite_master;
+} { {CREATE TABLE x1(a, bbb, c)} {CREATE VIRTUAL TABLE e1 USING echo(x1)} }
+
+do_execsql_test 11.2 {
+  CREATE VIEW v1 AS SELECT e1.*, x1.c FROM e1, x1;
+}
+
+do_catchsql_test 11.3 {
+  ALTER TABLE x1 RENAME c TO ccc;
+} {1 {error processing view v1: no such module: echo}}
 
 finish_test
