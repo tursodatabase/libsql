@@ -970,6 +970,8 @@ static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
 ** descend into sub-select statements.
 */
 static int renameColumnSelectCb(Walker *pWalker, Select *p){
+  UNUSED_PARAMETER(pWalker);
+  UNUSED_PARAMETER(p);
   return WRC_Continue;
 }
 
@@ -1104,6 +1106,7 @@ static void renameColumnFunc(
   int i;
   Table *pTab;
 
+  UNUSED_PARAMETER(NotUsed);
   if( zSql==0 ) return;
   if( zNew==0 ) return;
   if( zTable==0 ) return;
@@ -1345,7 +1348,7 @@ static void renameColumnFunc(
       int iOff;                   /* Offset of token to replace in zOut */
       RenameToken *pBest = renameColumnTokenNext(&sCtx);
 
-      int nReplace;
+      u32 nReplace;
       const char *zReplace;
       if( sqlite3IsIdChar(*pBest->t.z) ){
         nReplace = nNew;

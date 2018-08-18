@@ -3640,9 +3640,7 @@ int sqlite3CantopenError(int);
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 # define sqlite3Isquote(x)   ((x)=='"'||(x)=='\''||(x)=='['||(x)=='`')
 #endif
-#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3IsIdChar(u8);
-#endif
 
 /*
 ** Internal function prototypes
