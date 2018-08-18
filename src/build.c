@@ -2175,7 +2175,12 @@ void sqlite3CreateView(
   ** allocated rather than point to the input string - which means that
   ** they will persist after the current sqlite3_exec() call returns.
   */
-  p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+  if( IN_RENAME_COLUMN ){
+    p->pSelect = pSelect;
+    pSelect = 0;
+  }else{
+    p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+  }
   p->pCheck = sqlite3ExprListDup(db, pCNames, EXPRDUP_REDUCE);
   if( db->mallocFailed ) goto create_view_fail;
 
@@ -3689,7 +3694,8 @@ void *sqlite3ArrayAllocate(
 **
 ** A new IdList is returned, or NULL if malloc() fails.
 */
-IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
+IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
+  sqlite3 *db = pParse->db;
   int i;
   if( pList==0 ){
     pList = sqlite3DbMallocZero(db, sizeof(IdList) );
@@ -3707,6 +3713,9 @@ IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
     return 0;
   }
   pList->a[i].zName = sqlite3NameFromToken(db, pToken);
+  if( IN_RENAME_COLUMN && pList->a[i].zName ){
+    sqlite3RenameToken(pParse, (void*)pList->a[i].zName, pToken);
+  }
   return pList;
 }
 

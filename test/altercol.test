@@ -26,6 +26,20 @@ ifcapable !altertable {
   return
 }
 
+# Drop all the tables and views in the 'main' database of database connect
+# [db]. Sort the objects by name before dropping them.
+#
+proc drop_all_tables_and_views {db} {
+  set SQL {
+    SELECT name, type FROM sqlite_master 
+    WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'
+    ORDER BY 1
+  }
+  foreach {z t} [db eval $SQL] {
+    db eval "DROP $t $z"
+  }
+}
+
 foreach {tn before after} {
   1 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB)}
     {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB)}
@@ -65,6 +79,9 @@ foreach {tn before after} {
 
  13 {CREATE TABLE t1(a, b, c, FOREIGN KEY (b) REFERENCES t2)}
     {CREATE TABLE t1(a, d, c, FOREIGN KEY (d) REFERENCES t2)}
+
+ 14 {CREATE TABLE t1(a INTEGER, b TEXT, c BLOB, PRIMARY KEY(b))}
+    {CREATE TABLE t1(a INTEGER, d TEXT, c BLOB, PRIMARY KEY(d))}
 
  15 {CREATE TABLE t1(a INTEGER, b INTEGER, c BLOB, PRIMARY KEY(b))}
     {CREATE TABLE t1(a INTEGER, d INTEGER, c BLOB, PRIMARY KEY(d))}
@@ -122,7 +139,10 @@ do_execsql_test -db db2 2.3 { SELECT biglongname FROM t3 }
 do_execsql_test 3.0 {
   CREATE TABLE t4(x, y, z);
   CREATE TRIGGER ttt AFTER INSERT ON t4 WHEN new.y<0 BEGIN
-    SELECT 1, 2, 3, 4;
+    SELECT x, y, z FROM t4;
+    DELETE FROM t4 WHERE y=32;
+    UPDATE t4 SET x=y+1, y=0 WHERE y=32;
+    INSERT INTO t4(x, y, z) SELECT 4, 5, 6 WHERE 0;
   END;
   INSERT INTO t4 VALUES(3, 2, 1);
 }
@@ -132,14 +152,20 @@ do_execsql_test 3.1 {
   SELECT sql FROM sqlite_master WHERE name='t4';
 } {{CREATE TABLE t4(x, abc, z)}}
 
-db close
-sqlite3 db test.db
-
 do_execsql_test 3.2 {
   SELECT * FROM t4;
 } {3 2 1}
 
-# do_execsql_test 3.3 { INSERT INTO t4 VALUES(6, 5, 4); } {}
+do_execsql_test 3.3 { INSERT INTO t4 VALUES(6, 5, 4); } {}
+
+do_execsql_test 3.4 { SELECT sql FROM sqlite_master WHERE type='trigger' } {
+{CREATE TRIGGER ttt AFTER INSERT ON t4 WHEN new.abc<0 BEGIN
+    SELECT x, abc, z FROM t4;
+    DELETE FROM t4 WHERE abc=32;
+    UPDATE t4 SET x=abc+1, abc=0 WHERE abc=32;
+    INSERT INTO t4(x, abc, z) SELECT 4, 5, 6 WHERE 0;
+  END}
+}
 
 #-------------------------------------------------------------------------
 #
@@ -217,5 +243,227 @@ do_execsql_test 6.3 {
   SELECT "where" FROM blob;
 } {}
 
-finish_test
+#-------------------------------------------------------------------------
+# Triggers.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE c(x);
+  INSERT INTO c VALUES(0);
+  CREATE TABLE t6("col a", "col b", "col c");
+  CREATE TRIGGER zzz AFTER UPDATE OF "col a", "col c" ON t6 BEGIN
+    UPDATE c SET x=x+1;
+  END;
+}
 
+do_execsql_test 7.1.1 {
+  INSERT INTO t6 VALUES(0, 0, 0);
+  UPDATE t6 SET "col c" = 1;
+  SELECT * FROM c;
+} {1}
+
+do_execsql_test 7.1.2 {
+  ALTER TABLE t6 RENAME "col c" TO "col 3";
+}
+
+do_execsql_test 7.1.3 {
+  UPDATE t6 SET "col 3" = 0;
+  SELECT * FROM c;
+} {2}
+
+#-------------------------------------------------------------------------
+# Views.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE a1(x INTEGER, y TEXT, z BLOB, PRIMARY KEY(x));
+  CREATE TABLE a2(a, b, c);
+  CREATE VIEW v1 AS SELECT x, y, z FROM a1;
+}
+
+do_execsql_test 8.1 {
+  ALTER TABLE a1 RENAME y TO yyy;
+  SELECT sql FROM sqlite_master WHERE type='view';
+} {{CREATE VIEW v1 AS SELECT x, yyy, z FROM a1}}
+
+do_execsql_test 8.2.1 {
+  DROP VIEW v1;
+  CREATE VIEW v2 AS SELECT x, x+x, a, a+a FROM a1, a2;
+} {}
+do_execsql_test 8.2.2 {
+  ALTER TABLE a1 RENAME x TO xxx;
+}
+do_execsql_test 8.2.3 {
+  SELECT sql FROM sqlite_master WHERE type='view';
+} {{CREATE VIEW v2 AS SELECT xxx, xxx+xxx, a, a+a FROM a1, a2}}
+
+do_execsql_test 8.3.1 {
+  DROP TABLE a2;
+  DROP VIEW v2;
+  CREATE TABLE a2(a INTEGER PRIMARY KEY, b, c);
+  CREATE VIEW v2 AS SELECT xxx, xxx+xxx, a, a+a FROM a1, a2;
+} {}
+do_execsql_test 8.3.2 {
+  ALTER TABLE a1 RENAME xxx TO x;
+}
+do_execsql_test 8.3.3 {
+  SELECT sql FROM sqlite_master WHERE type='view';
+} {{CREATE VIEW v2 AS SELECT x, x+x, a, a+a FROM a1, a2}}
+
+do_execsql_test 8.4.0 {
+  CREATE TABLE b1(a, b, c);
+  CREATE TABLE b2(x, y, z);
+}
+
+do_execsql_test 8.4.1 {
+  CREATE VIEW vvv AS SELECT c+c || coalesce(c, c) FROM b1, b2 WHERE x=c GROUP BY c HAVING c>0;
+  ALTER TABLE b1 RENAME c TO "a;b";
+  SELECT sql FROM sqlite_master WHERE name='vvv';
+} {{CREATE VIEW vvv AS SELECT "a;b"+"a;b" || coalesce("a;b", "a;b") FROM b1, b2 WHERE x="a;b" GROUP BY "a;b" HAVING "a;b">0}}
+
+do_execsql_test 8.4.2 {
+  CREATE VIEW www AS SELECT b FROM b1 UNION ALL SELECT y FROM b2;
+  ALTER TABLE b1 RENAME b TO bbb;
+  SELECT sql FROM sqlite_master WHERE name='www';
+} {{CREATE VIEW www AS SELECT bbb FROM b1 UNION ALL SELECT y FROM b2}}
+
+db collate nocase {string compare}
+
+do_execsql_test 8.4.3 {
+  CREATE VIEW xxx AS SELECT a FROM b1 UNION SELECT x FROM b2 ORDER BY 1 COLLATE nocase;
+}
+
+do_execsql_test 8.4.4 {
+  ALTER TABLE b2 RENAME x TO hello;
+  SELECT sql FROM sqlite_master WHERE name='xxx';
+} {{CREATE VIEW xxx AS SELECT a FROM b1 UNION SELECT hello FROM b2 ORDER BY 1 COLLATE nocase}}
+
+do_catchsql_test 8.4.5 {
+  CREATE VIEW zzz AS SELECT george, ringo FROM b1;
+  ALTER TABLE b1 RENAME a TO aaa;
+} {1 {error processing view zzz: no such column: george}}
+
+#-------------------------------------------------------------------------
+# More triggers.
+#
+proc do_rename_column_test {tn old new lSchema} {
+  for {set i 0} {$i < 2} {incr i} {
+    drop_all_tables_and_views db
+
+    set lSorted [list]
+    foreach sql $lSchema { 
+      execsql $sql 
+      lappend lSorted [string trim $sql]
+    }
+    set lSorted [lsort $lSorted]
+
+    do_execsql_test $tn.$i.1 {
+      SELECT sql FROM sqlite_master WHERE sql!='' ORDER BY 1
+    } $lSorted
+
+    if {$i==1} {
+      db close
+      sqlite3 db test.db
+    }
+
+    do_execsql_test $tn.$i.2 "ALTER TABLE t1 RENAME $old TO $new"
+
+    do_execsql_test $tn.$i.3 {
+      SELECT sql FROM sqlite_master ORDER BY 1
+    } [string map [list $old $new] $lSorted]
+  }
+}
+
+foreach {tn old new lSchema} {
+  1 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+        SELECT _x_ FROM t1;
+      END }
+  }
+
+  2 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE TABLE t2(c, d, e) }
+    { CREATE TRIGGER ttt AFTER INSERT ON t2 BEGIN
+        SELECT _x_ FROM t1;
+      END }
+  }
+
+  3 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_ INTEGER, PRIMARY KEY(_x_), CHECK(_x_>0)) }
+    { CREATE TABLE t2(c, d, e) }
+    { CREATE TRIGGER ttt AFTER UPDATE  ON t1 BEGIN
+        INSERT INTO t2 VALUES(new.a, new.b, new._x_);
+      END }
+  }
+
+  4 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_ INTEGER, PRIMARY KEY(_x_), CHECK(_x_>0)) }
+    { CREATE TRIGGER ttt AFTER UPDATE  ON t1 BEGIN
+        INSERT INTO t1 VALUES(new.a, new.b, new._x_)
+          ON CONFLICT (_x_) WHERE _x_>10 DO UPDATE SET _x_ = _x_+1;
+      END }
+  }
+} {
+  do_rename_column_test 9.$tn $old $new $lSchema
+}
+
+#-------------------------------------------------------------------------
+# Test that views can be edited even if there are missing collation 
+# sequences or user defined functions.
+#
+reset_db
+
+foreach {tn old new lSchema} {
+  1 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIEW s1 AS SELECT a, b, _x_ FROM t1 WHERE _x_='abc' COLLATE xyz }
+  }
+
+  2 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE scalar(_x_) }
+  }
+
+  3 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE _x_ = unicode(1, 2, 3) }
+  }
+
+  4 _x_ _xxx_ {
+    { CREATE TABLE t1(a, b, _x_) }
+    { CREATE VIRTUAL TABLE e1 USING echo(t1) }
+  }
+} {
+  register_echo_module db
+  do_rename_column_test 10.$tn $old $new $lSchema
+}
+
+#--------------------------------------------------------------------------
+# Test that if a view or trigger refers to a virtual table for which the
+# module is not available, RENAME COLUMN cannot proceed.
+#
+reset_db
+register_echo_module db
+do_execsql_test 11.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE VIRTUAL TABLE e1 USING echo(x1);
+}
+db close
+sqlite3 db test.db
+
+do_execsql_test 11.1 {
+  ALTER TABLE x1 RENAME b TO bbb;
+  SELECT sql FROM sqlite_master;
+} { {CREATE TABLE x1(a, bbb, c)} {CREATE VIRTUAL TABLE e1 USING echo(x1)} }
+
+do_execsql_test 11.2 {
+  CREATE VIEW v1 AS SELECT e1.*, x1.c FROM e1, x1;
+}
+
+do_catchsql_test 11.3 {
+  ALTER TABLE x1 RENAME c TO ccc;
+} {1 {error processing view v1: no such module: echo}}
+
+finish_test
