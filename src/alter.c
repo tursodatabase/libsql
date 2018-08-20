@@ -878,7 +878,7 @@ void sqlite3AlterRenameColumn(
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_column(sql, %Q, %Q, %d, %Q, %d) "
+      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d) "
       "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)"
       " AND sql NOT LIKE 'create virtual%%'",
       zDb, MASTER_NAME, 
@@ -957,7 +957,7 @@ void sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
 */
 void sqlite3MoveRenameToken(Parse *pParse, void *pTo, void *pFrom){
   RenameToken *p;
-  for(p=pParse->pRename; p; p=p->pNext){
+  for(p=pParse->pRename; ALWAYS(p); p=p->pNext){
     if( p->p==pFrom ){
       p->p = pTo;
       break;
@@ -1064,21 +1064,16 @@ static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
 ** sub-routine is currently stored in pParse->zErrMsg. This function
 ** adds context to the error message and then stores it in pCtx.
 */
-static void renameColumnParseError(sqlite3_context *pCtx, Parse *pParse){
-  const char *zT;
-  const char *zN;
+static void renameColumnParseError(
+  sqlite3_context *pCtx, 
+  sqlite3_value *pType,
+  sqlite3_value *pObject,
+  Parse *pParse
+){
+  const char *zT = sqlite3_value_text(pType);
+  const char *zN = sqlite3_value_text(pObject);
   char *zErr;
-  if( pParse->pNewTable ){
-    zT = pParse->pNewTable->pSelect ? "view" : "table";
-    zN = pParse->pNewTable->zName;
-  }else if( pParse->pNewIndex ){
-    zT = "index";
-    zN = pParse->pNewIndex->zName;
-  }else{
-    assert( pParse->pNewTrigger );
-    zT = "trigger";
-    zN = pParse->pNewTrigger->zName;
-  }
+
   zErr = sqlite3_mprintf("error processing %s %s: %s", zT, zN, pParse->zErrMsg);
   sqlite3_result_error(pCtx, zErr, -1);
   sqlite3_free(zErr);
@@ -1090,11 +1085,13 @@ static void renameColumnParseError(sqlite3_context *pCtx, Parse *pParse){
 **     sqlite_rename_column(zSql, iCol, bQuote, zNew, zTable, zOld)
 **
 **   0. zSql:     SQL statement to rewrite
-**   1. Database: Database name (e.g. "main")
-**   2. Table:    Table name
-**   3. iCol:     Index of column to rename
-**   4. zNew:     New column name
-**   5. bQuote: True if the new column name should be quoted
+**   1. type:     Type of object ("table", "view" etc.)
+**   2. object:   Name of object
+**   3. Database: Database name (e.g. "main")
+**   4. Table:    Table name
+**   5. iCol:     Index of column to rename
+**   6. zNew:     New column name
+**   7. bQuote:   True if the new column name should be quoted
 **
 ** Do a column rename operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
@@ -1120,12 +1117,12 @@ static void renameColumnFunc(
   RenameCtx sCtx;
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
   int nSql = sqlite3_value_bytes(argv[0]);
-  const char *zDb = (const char*)sqlite3_value_text(argv[1]);
-  const char *zTable = (const char*)sqlite3_value_text(argv[2]);
-  int iCol = sqlite3_value_int(argv[3]);
-  const char *zNew = (const char*)sqlite3_value_text(argv[4]);
-  int nNew = sqlite3_value_bytes(argv[4]);
-  int bQuote = sqlite3_value_int(argv[5]);
+  const char *zDb = (const char*)sqlite3_value_text(argv[3]);
+  const char *zTable = (const char*)sqlite3_value_text(argv[4]);
+  int iCol = sqlite3_value_int(argv[5]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[6]);
+  int nNew = sqlite3_value_bytes(argv[6]);
+  int bQuote = sqlite3_value_int(argv[7]);
   const char *zOld;
 
   int rc;
@@ -1142,8 +1139,8 @@ static void renameColumnFunc(
 
   UNUSED_PARAMETER(NotUsed);
   if( zSql==0 ) return;
-  if( zNew==0 ) return;
   if( zTable==0 ) return;
+  if( zNew==0 ) return;
   if( iCol<0 ) return;
   pTab = sqlite3FindTable(db, zTable, zDb);
   if( pTab==0 || iCol>=pTab->nCol ) return;
@@ -1272,8 +1269,11 @@ static void renameColumnFunc(
         rc==SQLITE_OK && pStep; 
         pStep=pStep->pNext
     ){
-      if( pStep->pSelect ) sqlite3SelectPrep(&sParse, pStep->pSelect, &sNC);
-      if( pStep->zTarget ){ 
+      if( pStep->pSelect ){
+        sqlite3SelectPrep(&sParse, pStep->pSelect, &sNC);
+        if( sParse.nErr ) rc = sParse.rc;
+      }
+      if( rc==SQLITE_OK && pStep->zTarget ){ 
         Table *pTarget = sqlite3FindTable(db, pStep->zTarget, zDb);
         if( pTarget==0 ){
           rc = SQLITE_ERROR;
@@ -1290,11 +1290,11 @@ static void renameColumnFunc(
           if( rc==SQLITE_OK ){
             rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
           }
+          assert( !pStep->pUpsert || (!pStep->pWhere && !pStep->pExprList) );
           if( pStep->pUpsert ){
             Upsert *pUpsert = pStep->pUpsert;
-            if( rc==SQLITE_OK ){
-              rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
-            }
+            assert( rc==SQLITE_OK );
+            rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
             if( rc==SQLITE_OK && pUpsert->pUpsertSet){
               ExprList *pUpsertSet = pUpsert->pUpsertSet;
               rc = sqlite3ResolveExprListNames(&sNC, pUpsertSet);
@@ -1413,7 +1413,7 @@ static void renameColumnFunc(
 renameColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( sParse.zErrMsg ){
-      renameColumnParseError(context, &sParse);
+      renameColumnParseError(context, argv[1], argv[2], &sParse);
     }else{
       sqlite3_result_error_code(context, rc);
     }
@@ -1438,7 +1438,7 @@ renameColumnFunc_done:
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
-    FUNCTION(sqlite_rename_column,   6, 0, 0, renameColumnFunc),
+    FUNCTION(sqlite_rename_column,   8, 0, 0, renameColumnFunc),
 #ifndef SQLITE_OMIT_TRIGGER
     FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
 #endif
