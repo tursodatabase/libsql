@@ -466,4 +466,46 @@ do_catchsql_test 11.3 {
   ALTER TABLE x1 RENAME c TO ccc;
 } {1 {error processing view v1: no such module: echo}}
 
+#-------------------------------------------------------------------------
+# Test some error conditions:
+#
+#   1. Renaming a column of a system table,
+#   2. Renaming a column of a VIEW,
+#   3. Renaming a column of a virtual table.
+#
+reset_db
+do_execsql_test 12.1.1 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX t1a ON t1(a);
+  INSERT INTO t1 VALUES(1, 1), (2, 2), (3, 4);
+  ANALYZE;
+}
+do_catchsql_test 12.1.2 {
+  ALTER TABLE sqlite_stat1 RENAME idx TO theindex;
+} {1 {table sqlite_stat1 may not be altered}}
+do_execsql_test 12.1.3 {
+  SELECT sql FROM sqlite_master WHERE tbl_name = 'sqlite_stat1'
+} {{CREATE TABLE sqlite_stat1(tbl,idx,stat)}}
+
+do_execsql_test 12.2.1 {
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE VIEW v2(c, d) AS SELECT * FROM t1;
+}
+do_catchsql_test 12.2.2 {
+  ALTER TABLE v1 RENAME a TO z;
+} {1 {columns of view v1 may not be renamed}}
+do_catchsql_test 12.2.3 {
+  ALTER TABLE v2 RENAME c TO y;
+} {1 {columns of view v2 may not be renamed}}
+
+ifcapable fts5 {
+  do_execsql_test 12.3.1 {
+    CREATE VIRTUAL TABLE ft USING fts5(a, b, c);
+  }
+  do_catchsql_test 12.2.2 {
+    ALTER TABLE ft RENAME a TO z;
+  } {1 {columns of virtual table ft may not be renamed}}
+}
+
 finish_test
+

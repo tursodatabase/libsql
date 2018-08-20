@@ -791,6 +791,39 @@ exit_begin_add_column:
 }
 
 /*
+** Parameter pTab is the subject of an ALTER TABLE ... RENAME COLUMN
+** command. This function checks if the table is a view or virtual
+** table (columns of views or virtual tables may not be renamed). If so,
+** it loads an error message into pParse and returns non-zero.
+**
+** Or, if pTab is not a view or virtual table, zero is returned.
+*/
+#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
+static int isRealTable(Parse *pParse, Table *pTab){
+  const char *zType = 0;
+#ifndef SQLITE_OMIT_VIEW
+  if( pTab->pSelect ){
+    zType = "view";
+  }else 
+#endif
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) ){
+    zType = "virtual table";
+  }
+#endif
+  if( zType ){
+    sqlite3ErrorMsg(
+        pParse, "columns of %s %s may not be renamed", zType, pTab->zName
+    );
+    return 1;
+  }
+  return 0;
+}
+#else /* !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE) */
+# define isRealTable(x,y) (0)
+#endif
+
+/*
 ** Handles the following parser reduction:
 **
 **  cmd ::= ALTER TABLE pSrc RENAME COLUMN pOld TO pNew
@@ -816,6 +849,7 @@ void sqlite3AlterRenameColumn(
 
   /* Cannot alter a system table */
   if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ) goto exit_rename_column;
+  if( SQLITE_OK!=isRealTable(pParse, pTab) ) goto exit_rename_column;
 
   /* Which schema holds the table to be altered */  
   iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
