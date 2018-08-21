@@ -929,10 +929,19 @@ idlist(A) ::= nm(Y).
   static Expr *tokenExpr(Parse *pParse, int op, Token t){
     Expr *p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr)+t.n+1);
     if( p ){
-      memset(p, 0, sizeof(Expr));
+      /* memset(p, 0, sizeof(Expr)); */
       p->op = (u8)op;
+      p->affinity = 0;
       p->flags = EP_Leaf;
       p->iAgg = -1;
+      p->pLeft = p->pRight = 0;
+      p->x.pList = 0;
+      p->pAggInfo = 0;
+      p->pTab = 0;
+      p->op2 = 0;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      p->pWin = 0;
+#endif
       p->u.zToken = (char*)&p[1];
       memcpy(p->u.zToken, t.z, t.n);
       p->u.zToken[t.n] = 0;
@@ -940,13 +949,16 @@ idlist(A) ::= nm(Y).
         if( p->u.zToken[0]=='"' ) p->flags |= EP_DblQuoted;
         sqlite3Dequote(p->u.zToken);
       }
-      if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)p, &t);
 #if SQLITE_MAX_EXPR_DEPTH>0
       p->nHeight = 1;
 #endif  
+      if( IN_RENAME_COLUMN ){
+        return (Expr*)sqlite3RenameToken(pParse, (void*)p, &t);
+      }
     }
     return p;
   }
+
 }
 
 expr(A) ::= term(A).

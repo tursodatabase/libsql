@@ -939,7 +939,7 @@ struct RenameCtx {
 ** Add a new RenameToken object mapping parse tree element pPtr into
 ** token *pToken to the Parse object currently under construction.
 */
-void sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
+void *sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
   if( pNew ){
@@ -948,6 +948,7 @@ void sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
     pNew->pNext = pParse->pRename;
     pParse->pRename = pNew;
   }
+  return pPtr;
 }
 
 /*

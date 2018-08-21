@@ -4236,7 +4236,7 @@ int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
-void sqlite3RenameToken(Parse*, void*, Token*);
+void *sqlite3RenameToken(Parse*, void*, Token*);
 void sqlite3MoveRenameToken(Parse*, void *pTo, void *pFrom);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
 char sqlite3AffinityType(const char*, Column*);
