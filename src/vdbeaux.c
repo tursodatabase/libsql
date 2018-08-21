@@ -316,7 +316,7 @@ int sqlite3VdbeExplainParent(Parse *pParse){
 void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
   if( pParse->explain==2 ){
     char *zMsg;
-    Vdbe *v = pParse->pVdbe;
+    Vdbe *v;
     va_list ap;
     int iThis;
     va_start(ap, zFmt);
