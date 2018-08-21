@@ -908,8 +908,8 @@ void sqlite3AlterRenameColumn(
 **     *  The name of a table column in Column.zName
 **
 ** A list of RenameToken objects can be constructed during parsing.
-** Each new object is created by sqlite3RenameToken().
-** As the parse tree is transformed, the sqlite3MoveRenameToken()
+** Each new object is created by sqlite3RenameTokenMap().
+** As the parse tree is transformed, the sqlite3RenameTokenRemap()
 ** routine is used to keep the mapping current.
 **
 ** After the parse finishes, renameTokenFind() routine can be used
@@ -938,8 +938,10 @@ struct RenameCtx {
 /*
 ** Add a new RenameToken object mapping parse tree element pPtr into
 ** token *pToken to the Parse object currently under construction.
+**
+** Return a copy of pPtr.
 */
-void *sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
+void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
   if( pNew ){
@@ -952,11 +954,11 @@ void *sqlite3RenameToken(Parse *pParse, void *pPtr, Token *pToken){
 }
 
 /*
-** If there is a RenameToken object associated with parse tree element
-** pFrom, then remap that object over to pTo due to a transformation
-** in the parse tree.
+** It is assumed that there is already a RenameToken object associated
+** with parse tree element pFrom. This function remaps the associated token
+** to parse tree element pTo.
 */
-void sqlite3MoveRenameToken(Parse *pParse, void *pTo, void *pFrom){
+void sqlite3RenameTokenRemap(Parse *pParse, void *pTo, void *pFrom){
   RenameToken *p;
   for(p=pParse->pRename; ALWAYS(p); p=p->pNext){
     if( p->p==pFrom ){

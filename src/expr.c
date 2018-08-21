@@ -1667,7 +1667,7 @@ void sqlite3ExprListSetName(
     pItem->zName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
     if( dequote ) sqlite3Dequote(pItem->zName);
     if( IN_RENAME_COLUMN ){
-      sqlite3RenameToken(pParse, (void*)pItem->zName, pName);
+      sqlite3RenameTokenMap(pParse, (void*)pItem->zName, pName);
     }
   }
 }

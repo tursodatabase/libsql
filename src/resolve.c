@@ -676,7 +676,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
         zColumn = pRight->u.zToken;
         if( IN_RENAME_COLUMN ){
-          sqlite3MoveRenameToken(pParse, (void*)pExpr, (void*)pRight);
+          sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
         }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);

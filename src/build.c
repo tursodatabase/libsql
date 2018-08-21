@@ -1072,7 +1072,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   }
   z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
-  if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)z, pName);
+  if( IN_RENAME_COLUMN ) sqlite3RenameTokenMap(pParse, (void*)z, pName);
   memcpy(z, pName->z, pName->n);
   z[pName->n] = 0;
   sqlite3Dequote(z);
@@ -1371,7 +1371,7 @@ void sqlite3AddPrimaryKey(
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_COLUMN && pList ){
-      sqlite3MoveRenameToken(pParse, &pTab->iPKey, pList->a[0].pExpr);
+      sqlite3RenameTokenRemap(pParse, &pTab->iPKey, pList->a[0].pExpr);
     }
     pTab->iPKey = iCol;
     pTab->keyConf = (u8)onError;
@@ -2771,7 +2771,7 @@ void sqlite3CreateForeignKey(
         goto fk_end;
       }
       if( IN_RENAME_COLUMN ){
-        sqlite3MoveRenameToken(pParse, &pFKey->aCol[i], pFromCol->a[i].zName);
+        sqlite3RenameTokenRemap(pParse, &pFKey->aCol[i], pFromCol->a[i].zName);
       }
     }
   }
@@ -2780,7 +2780,7 @@ void sqlite3CreateForeignKey(
       int n = sqlite3Strlen30(pToCol->a[i].zName);
       pFKey->aCol[i].zCol = z;
       if( IN_RENAME_COLUMN ){
-        sqlite3MoveRenameToken(pParse, z, pToCol->a[i].zName);
+        sqlite3RenameTokenRemap(pParse, z, pToCol->a[i].zName);
       }
       memcpy(z, pToCol->a[i].zName, n);
       z[n] = 0;
@@ -3714,7 +3714,7 @@ IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
   }
   pList->a[i].zName = sqlite3NameFromToken(db, pToken);
   if( IN_RENAME_COLUMN && pList->a[i].zName ){
-    sqlite3RenameToken(pParse, (void*)pList->a[i].zName, pToken);
+    sqlite3RenameTokenMap(pParse, (void*)pList->a[i].zName, pToken);
   }
   return pList;
 }

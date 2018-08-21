@@ -953,7 +953,7 @@ idlist(A) ::= nm(Y).
       p->nHeight = 1;
 #endif  
       if( IN_RENAME_COLUMN ){
-        return (Expr*)sqlite3RenameToken(pParse, (void*)p, &t);
+        return (Expr*)sqlite3RenameTokenMap(pParse, (void*)p, &t);
       }
     }
     return p;
@@ -968,7 +968,7 @@ expr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
-  if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)temp2, &Y);
+  if( IN_RENAME_COLUMN ) sqlite3RenameTokenMap(pParse, (void*)temp2, &Y);
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
 }
 expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
@@ -976,7 +976,7 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
-  if( IN_RENAME_COLUMN ) sqlite3RenameToken(pParse, (void*)temp3, &Z);
+  if( IN_RENAME_COLUMN ) sqlite3RenameTokenMap(pParse, (void*)temp3, &Z);
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
@@ -1324,7 +1324,7 @@ uniqueflag(A) ::= .        {A = OE_None;}
     }
     sqlite3ExprListSetName(pParse, p, pIdToken, 1);
     if( IN_RENAME_COLUMN && p ){
-      sqlite3RenameToken(pParse, (void*)(p->a[p->nExpr-1].zName), pIdToken);
+      sqlite3RenameTokenMap(pParse, (void*)(p->a[p->nExpr-1].zName), pIdToken);
     }
     return p;
   }
