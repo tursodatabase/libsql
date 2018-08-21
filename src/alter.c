@@ -1081,6 +1081,51 @@ static void renameColumnParseError(
 }
 
 /*
+** For each name in the the expression-list pEList (i.e. each
+** pEList->a[i].zName) that matches the string in zOld, extract the 
+** corresponding rename-token from Parse object pParse and add it
+** to the RenameCtx pCtx.
+*/
+static void renameColumnElistNames(
+  Parse *pParse, 
+  RenameCtx *pCtx, 
+  ExprList *pEList, 
+  const char *zOld
+){
+  if( pEList ){
+    int i;
+    for(i=0; i<pEList->nExpr; i++){
+      char *zName = pEList->a[i].zName;
+      if( 0==sqlite3_stricmp(zName, zOld) ){
+        renameTokenFind(pParse, pCtx, (void*)zName);
+      }
+    }
+  }
+}
+
+/*
+** For each name in the the id-list pIdList (i.e. each pIdList->a[i].zName) 
+** that matches the string in zOld, extract the corresponding rename-token 
+** from Parse object pParse and add it to the RenameCtx pCtx.
+*/
+static void renameColumnIdlistNames(
+  Parse *pParse, 
+  RenameCtx *pCtx, 
+  IdList *pIdList, 
+  const char *zOld
+){
+  if( pIdList ){
+    int i;
+    for(i=0; i<pIdList->nId; i++){
+      char *zName = pIdList->a[i].zName;
+      if( 0==sqlite3_stricmp(zName, zOld) ){
+        renameTokenFind(pParse, pCtx, (void*)zName);
+      }
+    }
+  }
+}
+
+/*
 ** SQL function:
 **
 **     sqlite_rename_column(zSql, iCol, bQuote, zNew, zTable, zOld)
@@ -1275,7 +1320,7 @@ static void renameColumnFunc(
         if( sParse.nErr ) rc = sParse.rc;
       }
       if( rc==SQLITE_OK && pStep->zTarget ){ 
-        Table *pTarget = sqlite3FindTable(db, pStep->zTarget, zDb);
+        Table *pTarget = sqlite3LocateTable(&sParse, 0, pStep->zTarget, zDb);
         if( pTarget==0 ){
           rc = SQLITE_ERROR;
         }else{
@@ -1296,17 +1341,12 @@ static void renameColumnFunc(
             Upsert *pUpsert = pStep->pUpsert;
             assert( rc==SQLITE_OK );
             rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
-            if( rc==SQLITE_OK && pUpsert->pUpsertSet){
+            if( rc==SQLITE_OK ){
               ExprList *pUpsertSet = pUpsert->pUpsertSet;
-              rc = sqlite3ResolveExprListNames(&sNC, pUpsertSet);
-              if( rc==SQLITE_OK && pTarget==pTab ){
-                for(i=0; i<pUpsertSet->nExpr; i++){
-                  char *zName = pUpsertSet->a[i].zName;
-                  if( 0==sqlite3_stricmp(zName, zOld) ){
-                    renameTokenFind(&sParse, &sCtx, (void*)zName);
-                  }
-                }
+              if( pTarget==pTab ){
+                renameColumnElistNames(&sParse, &sCtx, pUpsertSet, zOld);
               }
+              rc = sqlite3ResolveExprListNames(&sNC, pUpsertSet);
             }
             if( rc==SQLITE_OK ){
               rc = sqlite3ResolveExprNames(&sNC, pUpsert->pUpsertWhere);
@@ -1317,23 +1357,8 @@ static void renameColumnFunc(
           }
 
           if( rc==SQLITE_OK && pTarget==pTab ){
-            if( pStep->pIdList ){
-              for(i=0; i<pStep->pIdList->nId; i++){
-                char *zName = pStep->pIdList->a[i].zName;
-                if( 0==sqlite3_stricmp(zName, zOld) ){
-                  renameTokenFind(&sParse, &sCtx, (void*)zName);
-                }
-              }
-            }
-            if( pStep->op==TK_UPDATE ){
-              assert( pStep->pExprList );
-              for(i=0; i<pStep->pExprList->nExpr; i++){
-                char *zName = pStep->pExprList->a[i].zName;
-                if( 0==sqlite3_stricmp(zName, zOld) ){
-                  renameTokenFind(&sParse, &sCtx, (void*)zName);
-                }
-              }
-            }
+            renameColumnIdlistNames(&sParse, &sCtx, pStep->pIdList, zOld);
+            renameColumnElistNames(&sParse, &sCtx, pStep->pExprList, zOld);
           }
         }
       }
@@ -1342,13 +1367,8 @@ static void renameColumnFunc(
     if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
 
     /* Find tokens to edit in UPDATE OF clause */
-    if( sParse.pTriggerTab==pTab && sParse.pNewTrigger->pColumns ){
-      for(i=0; i<sParse.pNewTrigger->pColumns->nId; i++){
-        char *zName = sParse.pNewTrigger->pColumns->a[i].zName;
-        if( 0==sqlite3_stricmp(zName, zOld) ){
-          renameTokenFind(&sParse, &sCtx, (void*)zName);
-        }
-      }
+    if( sParse.pTriggerTab==pTab ){
+      renameColumnIdlistNames(&sParse, &sCtx,sParse.pNewTrigger->pColumns,zOld);
     }
 
     /* Find tokens to edit in WHEN clause */
@@ -1439,7 +1459,7 @@ renameColumnFunc_done:
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
-    FUNCTION(sqlite_rename_column,   8, 0, 0, renameColumnFunc),
+    FUNCTION(sqlite_rename_column,  8, 0, 0, renameColumnFunc),
 #ifndef SQLITE_OMIT_TRIGGER
     FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
 #endif

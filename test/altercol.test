@@ -594,7 +594,11 @@ foreach {tn trigger error} {
     END;
   } {no such column: tttttt}
 
-
+  4 {
+    CREATE TRIGGER tr1 AFTER INSERT ON x1 BEGIN
+      INSERT INTO nosuchtable VALUES(new.i, new.t);
+    END;
+  } {no such table: main.nosuchtable}
 } {
   do_execsql_test 13.2.$tn.1 "
     DROP TRIGGER IF EXISTS tr1;
