@@ -939,6 +939,7 @@ idlist(A) ::= nm(Y).
       p->pAggInfo = 0;
       p->pTab = 0;
       p->op2 = 0;
+      p->iTable = 0;
 #ifndef SQLITE_OMIT_WINDOWFUNC
       p->pWin = 0;
 #endif

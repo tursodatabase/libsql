@@ -1,5 +1,5 @@
-C Rename\sinternal\sfunction\ssqlite3RenameToken()\sto\ssqlite3RenameTokenMap()\sand\nsqlite3MoveRenameToken()\sto\ssqlite3RenameTokenRemap().
-D 2018-08-21T16:32:53.653
+C Make\ssure\sthe\sExpr.iTable\sfield\sis\sinitialized\sby\stokenExpr().
+D 2018-08-23T18:22:00.511
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -487,7 +487,7 @@ F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 705de01dff9c3df9739c37a6d3b58cd2b1734fdabcef829b16cdc7721a9eeaa4
 F src/pager.h ecc554a55bc55d1c4ba5e17137b72e238e00bd81e72ff2662d8b9c8c10ae3963
-F src/parse.y 0182e56ea4c1c94a7a561ea29cc6c8321b2dc710156c42dfd9a8e1651fddf1a7
+F src/parse.y 766b6f1cef1cab276e38aea52910bacf01c28aaf36c301603bf24a1d87461dd1
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d2163c734aea8c0e1611af1161734bf141e7bd02c08f0b5f2e7bac3c7dfd2a5
-R 42bc3958f1fefc0add2225e418b37855
-U dan
-Z 8643fbc3884226529a9296370b01a251
+P b9ae9a0a188b82d7066f6ef7d21592889df0a61559e9a0e01819e9d5a92c3f36
+R 909257a1b3ca3a3eebf8e6e4fd496220
+U drh
+Z 55d57a7b663077a1eb51980a980a8f8c
