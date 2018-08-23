@@ -78,7 +78,7 @@ int sqlite3_set_authorizer(
   sqlite3_mutex_enter(db->mutex);
   db->xAuth = (sqlite3_xauth)xAuth;
   db->pAuthArg = pArg;
-  sqlite3ExpirePreparedStatements(db);
+  sqlite3ExpirePreparedStatements(db, 0);
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -150,6 +150,7 @@ void sqlite3AuthRead(
   int iDb;              /* The index of the database the expression refers to */
   int iCol;             /* Index of column in table */
 
+  assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
   if( db->xAuth==0 ) return;
   iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
@@ -158,7 +159,6 @@ void sqlite3AuthRead(
     return;
   }
 
-  assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
   if( pExpr->op==TK_TRIGGER ){
     pTab = pParse->pTriggerTab;
   }else{

@@ -225,7 +225,6 @@ void sqlite3FinishCoding(Parse *pParse){
   /* Get the VDBE program ready for execution
   */
   if( v && pParse->nErr==0 && !db->mallocFailed ){
-    assert( pParse->iCacheLevel==0 );  /* Disables and re-enables match */
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
     if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
@@ -1695,6 +1694,31 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
   return 0;
 }
 
+/* Recompute the colNotIdxed field of the Index.
+**
+** colNotIdxed is a bitmask that has a 0 bit representing each indexed
+** columns that are within the first 63 columns of the table.  The
+** high-order bit of colNotIdxed is always 1.  All unindexed columns
+** of the table have a 1.
+**
+** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
+** to determine if the index is covering index.
+*/
+static void recomputeColumnsNotIndexed(Index *pIdx){
+  Bitmask m = 0;
+  int j;
+  for(j=pIdx->nColumn-1; j>=0; j--){
+    int x = pIdx->aiColumn[j];
+    if( x>=0 ){
+      testcase( x==BMS-1 );
+      testcase( x==BMS-2 );
+      if( x<BMS-1 ) m |= MASKBIT(x);
+    }
+  }
+  pIdx->colNotIdxed = ~m;
+  assert( (pIdx->colNotIdxed>>63)==1 );
+}
+
 /*
 ** This routine runs at the end of parsing a CREATE TABLE statement that
 ** has a WITHOUT ROWID clause.  The job of this routine is to convert both
@@ -1763,7 +1787,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
-    if( db->mallocFailed ) return;
+    if( db->mallocFailed || pParse->nErr ) return;
     pPk = sqlite3PrimaryKeyIndex(pTab);
     pTab->iPKey = -1;
   }else{
@@ -1843,6 +1867,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }else{
     pPk->nColumn = pTab->nCol;
   }
+  recomputeColumnsNotIndexed(pPk);
 }
 
 /*
@@ -2293,6 +2318,11 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     nErr++;
   }
   pTable->pSchema->schemaFlags |= DB_UnresetViews;
+  if( db->mallocFailed ){
+    sqlite3DeleteColumnNames(db, pTable);
+    pTable->aCol = 0;
+    pTable->nCol = 0;
+  }
 #endif /* SQLITE_OMIT_VIEW */
   return nErr;  
 }
@@ -2631,8 +2661,10 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
-    sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
-    sqlite3FkDropTable(pParse, pName, pTab);
+    if( !isView ){
+      sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
+      sqlite3FkDropTable(pParse, pName, pTab);
+    }
     sqlite3CodeDropTable(pParse, pTab, iDb, isView);
   }
 
@@ -2843,6 +2875,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0); VdbeCoverage(v);
   regRecord = sqlite3GetTempReg(pParse);
+  sqlite3MultiWrite(pParse);
 
   sqlite3GenerateIndexKey(pParse,pIndex,iTab,regRecord,0,&iPartIdxLabel,0,0);
   sqlite3VdbeAddOp2(v, OP_SorterInsert, iSorter, regRecord);
@@ -2856,12 +2889,13 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
   if( IsUniqueIndex(pIndex) ){
-    int j2 = sqlite3VdbeCurrentAddr(v) + 3;
-    sqlite3VdbeGoto(v, j2);
+    int j2 = sqlite3VdbeGoto(v, 1);
     addr2 = sqlite3VdbeCurrentAddr(v);
+    sqlite3VdbeVerifyAbortable(v, OE_Abort);
     sqlite3VdbeAddOp4Int(v, OP_SorterCompare, iSorter, j2, regRecord,
                          pIndex->nKeyCol); VdbeCoverage(v);
     sqlite3UniqueConstraint(pParse, OE_Abort, pIndex);
+    sqlite3VdbeJumpHere(v, j2);
   }else{
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
@@ -3274,6 +3308,7 @@ void sqlite3CreateIndex(
   ** it as a covering index */
   assert( HasRowid(pTab) 
       || pTab->iPKey<0 || sqlite3ColumnOfIndex(pIndex, pTab->iPKey)>=0 );
+  recomputeColumnsNotIndexed(pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){
@@ -3434,7 +3469,7 @@ void sqlite3CreateIndex(
       sqlite3ChangeCookie(pParse, iDb);
       sqlite3VdbeAddParseSchemaOp(v, iDb,
          sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
-      sqlite3VdbeAddOp0(v, OP_Expire);
+      sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
     }
 
     sqlite3VdbeJumpHere(v, pIndex->tnum);

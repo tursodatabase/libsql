@@ -75,7 +75,7 @@ LIBOBJ+= vdbe.o parse.o \
          update.o upsert.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o wherecode.o whereexpr.o \
-         utf.o vtab.o
+         utf.o vtab.o window.o
 
 LIBOBJ += sqlite3session.o
 
@@ -182,7 +182,8 @@ SRC = \
   $(TOP)/src/where.c \
   $(TOP)/src/wherecode.c \
   $(TOP)/src/whereexpr.c \
-  $(TOP)/src/whereInt.h
+  $(TOP)/src/whereInt.h \
+  $(TOP)/src/window.c
 
 # Source code for extensions
 #
@@ -349,6 +350,7 @@ TESTSRC = \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_windirent.c \
+  $(TOP)/src/test_window.c \
   $(TOP)/src/test_wsd.c
 
 # Extensions to be statically loaded.

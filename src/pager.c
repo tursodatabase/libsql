@@ -1764,7 +1764,6 @@ static void pager_reset(Pager *pPager){
 ** Return the pPager->iDataVersion value
 */
 u32 sqlite3PagerDataVersion(Pager *pPager){
-  assert( pPager->eState>PAGER_OPEN );
   return pPager->iDataVersion;
 }
 
@@ -6382,9 +6381,10 @@ int sqlite3PagerCommitPhaseOne(
     ** backup in progress needs to be restarted.  */
     sqlite3BackupRestart(pPager->pBackup);
   }else{
+    PgHdr *pList;
     if( pagerUseWal(pPager) ){
-      PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       PgHdr *pPageOne = 0;
+      pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList==0 ){
         /* Must have at least one page for the WAL commit flag.
         ** Ticket [2d1a5c67dfc2363e44f29d9bbd57f] 2011-05-18 */
@@ -6405,14 +6405,14 @@ int sqlite3PagerCommitPhaseOne(
       ** should be used.  No rollback journal is created if batch-atomic-write
       ** is enabled.
       */
-      sqlite3_file *fd = pPager->fd;
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
-      const int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
+      sqlite3_file *fd = pPager->fd;
+      int bBatch = zMaster==0    /* An SQLITE_IOCAP_BATCH_ATOMIC commit */
         && (sqlite3OsDeviceCharacteristics(fd) & SQLITE_IOCAP_BATCH_ATOMIC)
         && !pPager->noSync
         && sqlite3JournalIsInMemory(pPager->jfd);
 #else
-# define bBatch 0
+#     define bBatch 0
 #endif
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -6464,15 +6464,16 @@ int sqlite3PagerCommitPhaseOne(
           }
         }
       }
-#else 
+#else  /* SQLITE_ENABLE_ATOMIC_WRITE */
 #ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
       if( zMaster ){
         rc = sqlite3JournalCreate(pPager->jfd);
         if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
+        assert( bBatch==0 );
       }
 #endif
       rc = pager_incr_changecounter(pPager, 0);
-#endif
+#endif /* !SQLITE_ENABLE_ATOMIC_WRITE */
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
       /* Write the master journal name into the journal file. If a master 
@@ -6496,24 +6497,36 @@ int sqlite3PagerCommitPhaseOne(
       rc = syncJournal(pPager, 0);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
 
+      pList = sqlite3PcacheDirtyList(pPager->pPCache);
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
       if( bBatch ){
-        /* The pager is now in DBMOD state. But regardless of what happens
-        ** next, attempting to play the journal back into the database would
-        ** be unsafe. Close it now to make sure that does not happen.  */
-        sqlite3OsClose(pPager->jfd);
         rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, 0);
-        if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-      }
-      rc = pager_write_pagelist(pPager,sqlite3PcacheDirtyList(pPager->pPCache));
-      if( bBatch ){
         if( rc==SQLITE_OK ){
-          rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
+          rc = pager_write_pagelist(pPager, pList);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
+          }
+          if( rc!=SQLITE_OK ){
+            sqlite3OsFileControlHint(fd, SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE, 0);
+          }
         }
-        if( rc!=SQLITE_OK ){
-          sqlite3OsFileControlHint(fd, SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE, 0);
+
+        if( (rc&0xFF)==SQLITE_IOERR && rc!=SQLITE_IOERR_NOMEM ){
+          rc = sqlite3JournalCreate(pPager->jfd);
+          if( rc!=SQLITE_OK ){
+            sqlite3OsClose(pPager->jfd);
+            goto commit_phase_one_exit;
+          }
+          bBatch = 0;
+        }else{
+          sqlite3OsClose(pPager->jfd);
         }
       }
+#endif /* SQLITE_ENABLE_BATCH_ATOMIC_WRITE */
 
+      if( bBatch==0 ){
+        rc = pager_write_pagelist(pPager, pList);
+      }
       if( rc!=SQLITE_OK ){
         assert( rc!=SQLITE_IOERR_BLOCKED );
         goto commit_phase_one_exit;
@@ -7640,6 +7653,38 @@ int sqlite3PagerSnapshotRecover(Pager *pPager){
   }
   return rc;
 }
+
+/*
+** The caller currently has a read transaction open on the database.
+** If this is not a WAL database, SQLITE_ERROR is returned. Otherwise,
+** this function takes a SHARED lock on the CHECKPOINTER slot and then
+** checks if the snapshot passed as the second argument is still 
+** available. If so, SQLITE_OK is returned.
+**
+** If the snapshot is not available, SQLITE_ERROR is returned. Or, if
+** the CHECKPOINTER lock cannot be obtained, SQLITE_BUSY. If any error
+** occurs (any value other than SQLITE_OK is returned), the CHECKPOINTER
+** lock is released before returning.
+*/
+int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot){
+  int rc;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotCheck(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
+/*
+** Release a lock obtained by an earlier successful call to
+** sqlite3PagerSnapshotCheck().
+*/
+void sqlite3PagerSnapshotUnlock(Pager *pPager){
+  assert( pPager->pWal );
+  return sqlite3WalSnapshotUnlock(pPager->pWal);
+}
+
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 #endif /* !SQLITE_OMIT_WAL */
 

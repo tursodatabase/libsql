@@ -743,10 +743,84 @@ det 8.2.4 "SELECT count(*) FROM t1" {
   `--SCAN TABLE t1
 }
 
-
-
-
-
-
+# 2018-08-16:  While working on Fossil I discovered that EXPLAIN QUERY PLAN
+# did not describe IN operators implemented using a ROWID lookup.  These
+# test cases ensure that problem as been fixed.
+#
+do_execsql_test 9.0 {
+  -- Schema from Fossil 2018-08-16
+  CREATE TABLE forumpost(
+    fpid INTEGER PRIMARY KEY,
+    froot INT,
+    fprev INT,
+    firt INT,
+    fmtime REAL
+  );
+  CREATE INDEX forumthread ON forumpost(froot,fmtime);
+  CREATE TABLE blob(
+    rid INTEGER PRIMARY KEY,
+    rcvid INTEGER,
+    size INTEGER,
+    uuid TEXT UNIQUE NOT NULL,
+    content BLOB,
+    CHECK( length(uuid)>=40 AND rid>0 )
+  );
+  CREATE TABLE event(
+    type TEXT,
+    mtime DATETIME,
+    objid INTEGER PRIMARY KEY,
+    tagid INTEGER,
+    uid INTEGER REFERENCES user,
+    bgcolor TEXT,
+    euser TEXT,
+    user TEXT,
+    ecomment TEXT,
+    comment TEXT,
+    brief TEXT,
+    omtime DATETIME
+  );
+  CREATE INDEX event_i1 ON event(mtime);
+  CREATE TABLE private(rid INTEGER PRIMARY KEY);
+}
+do_eqp_test 9.1 {
+  WITH thread(age,duration,cnt,root,last) AS (
+    SELECT
+      julianday('now') - max(fmtime) AS age,
+      max(fmtime) - min(fmtime) AS duration,
+      sum(fprev IS NULL) AS msg_count,
+      froot,
+      (SELECT fpid FROM forumpost
+        WHERE froot=x.froot
+          AND fpid NOT IN private
+        ORDER BY fmtime DESC LIMIT 1)
+    FROM forumpost AS x
+    WHERE fpid NOT IN private  --- Ensure this table mentioned in EQP output!
+    GROUP BY froot
+    ORDER BY 1 LIMIT 26 OFFSET 5
+  )
+  SELECT
+    thread.age,
+    thread.duration,
+    thread.cnt,
+    blob.uuid,
+    substr(event.comment,instr(event.comment,':')+1)
+  FROM thread, blob, event
+  WHERE blob.rid=thread.last
+    AND event.objid=thread.last
+  ORDER BY 1;
+} {
+  QUERY PLAN
+  |--MATERIALIZE xxxxxx
+  |  |--SCAN TABLE forumpost AS x USING INDEX forumthread
+  |  |--USING ROWID SEARCH ON TABLE private FOR IN-OPERATOR
+  |  |--CORRELATED SCALAR SUBQUERY
+  |  |  |--SEARCH TABLE forumpost USING COVERING INDEX forumthread (froot=?)
+  |  |  `--USING ROWID SEARCH ON TABLE private FOR IN-OPERATOR
+  |  `--USE TEMP B-TREE FOR ORDER BY
+  |--SCAN SUBQUERY xxxxxx
+  |--SEARCH TABLE blob USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH TABLE event USING INTEGER PRIMARY KEY (rowid=?)
+  `--USE TEMP B-TREE FOR ORDER BY
+}
 
 finish_test

@@ -193,14 +193,6 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
-    int jj, kk;
-    Parse *pParse = p->pParse;
-    for(jj=kk=0; jj<pParse->nColCache; jj++){
-      struct yColCache *x = pParse->aColCache + jj;
-      printf(" r[%d]={%d:%d}", x->iReg, x->iTable, x->iColumn);
-      kk++;
-    }
-    if( kk ) printf("\n");
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
     test_addop_breakpoint();
   }
@@ -445,19 +437,6 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   }
 }
 
-#ifdef SQLITE_COVERAGE_TEST
-/*
-** Return TRUE if and only if the label x has already been resolved.
-** Return FALSE (zero) if label x is still unresolved.
-**
-** This routine is only used inside of testcase() macros, and so it
-** only exists when measuring test coverage.
-*/
-int sqlite3VdbeLabelHasBeenResolved(Vdbe *v, int x){
-  return v->pParse->aLabel && v->pParse->aLabel[ADDR(x)]>=0;
-}
-#endif /* SQLITE_COVERAGE_TEST */
-
 /*
 ** Mark the VDBE as one that can only be run one time.
 */
@@ -603,6 +582,32 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
+#ifdef SQLITE_DEBUG
+/*
+** Increment the nWrite counter in the VDBE if the cursor is not an
+** ephemeral cursor, or if the cursor argument is NULL.
+*/
+void sqlite3VdbeIncrWriteCounter(Vdbe *p, VdbeCursor *pC){
+  if( pC==0
+   || (pC->eCurType!=CURTYPE_SORTER
+       && pC->eCurType!=CURTYPE_PSEUDO
+       && !pC->isEphemeral)
+  ){
+    p->nWrite++;
+  }
+}
+#endif
+
+#ifdef SQLITE_DEBUG
+/*
+** Assert if an Abort at this point in time might result in a corrupt
+** database.
+*/
+void sqlite3VdbeAssertAbortable(Vdbe *p){
+  assert( p->nWrite==0 || p->usesStmtJournal );
+}
+#endif
+
 /*
 ** This routine is called after all opcodes have been inserted.  It loops
 ** through all the opcodes and fixes up some details.
@@ -663,7 +668,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           break;
         }
         case OP_Next:
-        case OP_NextIfOpen:
         case OP_SorterNext: {
           pOp->p4.xAdvance = sqlite3BtreeNext;
           pOp->p4type = P4_ADVANCE;
@@ -673,8 +677,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           assert( pOp->p2>=0 );
           break;
         }
-        case OP_Prev:
-        case OP_PrevIfOpen: {
+        case OP_Prev: {
           pOp->p4.xAdvance = sqlite3BtreePrevious;
           pOp->p4type = P4_ADVANCE;
           /* The code generator never codes any of these opcodes as a jump
@@ -759,6 +762,17 @@ void sqlite3VdbeVerifyNoResultRow(Vdbe *p){
   for(i=0; i<p->nOp; i++){
     assert( p->aOp[i].opcode!=OP_ResultRow );
   }
+}
+#endif
+
+/*
+** Generate code (a single OP_Abortable opcode) that will
+** verify that the VDBE program can safely call Abort in the current
+** context.
+*/
+#if defined(SQLITE_DEBUG)
+void sqlite3VdbeVerifyAbortable(Vdbe *p, int onError){
+  if( onError==OE_Abort ) sqlite3VdbeAddOp0(p, OP_Abortable);
 }
 #endif
 
@@ -1578,7 +1592,7 @@ void sqlite3VdbeLeave(Vdbe *p){
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */
-void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
+void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zP4;
   char zPtr[50];
   char zCom[100];
@@ -2995,6 +3009,9 @@ int sqlite3VdbeReset(Vdbe *p){
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = 0;
   p->pResultSet = 0;
+#ifdef SQLITE_DEBUG
+  p->nWrite = 0;
+#endif
 
   /* Save profiling information from this VDBE run.
   */
@@ -3874,7 +3891,7 @@ static int isAllZero(const char *z, int n){
 ** is less than, equal to, or greater than the second, respectively.
 ** If one blob is a prefix of the other, then the shorter is the lessor.
 */
-static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
+SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   int c;
   int n1 = pB1->n;
   int n2 = pB2->n;
@@ -4089,7 +4106,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   u32 idx1;                       /* Offset of first type in header */
   int rc = 0;                     /* Return value */
   Mem *pRhs = pPKey2->aMem;       /* Next field of pPKey2 to compare */
-  KeyInfo *pKeyInfo = pPKey2->pKeyInfo;
+  KeyInfo *pKeyInfo;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   Mem mem1;
 
@@ -4184,7 +4201,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         if( (d1+mem1.n) > (unsigned)nKey1 ){
           pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
-        }else if( pKeyInfo->aColl[i] ){
+        }else if( (pKeyInfo = pPKey2->pKeyInfo)->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
           mem1.flags = MEM_Str;
@@ -4235,7 +4252,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     if( rc!=0 ){
-      if( pKeyInfo->aSortOrder[i] ){
+      if( pPKey2->pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
       assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, rc) );
@@ -4244,10 +4261,11 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     i++;
+    if( i==pPKey2->nField ) break;
     pRhs++;
     d1 += sqlite3VdbeSerialTypeLen(serial_type);
     idx1 += sqlite3VarintLen(serial_type);
-  }while( idx1<(unsigned)szHdr1 && i<pPKey2->nField && d1<=(unsigned)nKey1 );
+  }while( idx1<(unsigned)szHdr1 && d1<=(unsigned)nKey1 );
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a
@@ -4259,7 +4277,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   ** value.  */
   assert( CORRUPT_DB 
        || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 
-       || pKeyInfo->db->mallocFailed
+       || pPKey2->pKeyInfo->db->mallocFailed
   );
   pPKey2->eqSeen = 1;
   return pPKey2->default_rc;
@@ -4585,7 +4603,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
+  *res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, pUnpacked, 0);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
@@ -4617,11 +4635,19 @@ void sqlite3VdbeCountChanges(Vdbe *v){
 ** programs obsolete.  Removing user-defined functions or collating
 ** sequences, or changing an authorization function are the types of
 ** things that make prepared statements obsolete.
+**
+** If iCode is 1, then expiration is advisory.  The statement should
+** be reprepared before being restarted, but if it is already running
+** it is allowed to run to completion.
+**
+** Internally, this function just sets the Vdbe.expired flag on all
+** prepared statements.  The flag is set to 1 for an immediate expiration
+** and set to 2 for an advisory expiration.
 */
-void sqlite3ExpirePreparedStatements(sqlite3 *db){
+void sqlite3ExpirePreparedStatements(sqlite3 *db, int iCode){
   Vdbe *p;
   for(p = db->pVdbe; p; p=p->pNext){
-    p->expired = 1;
+    p->expired = iCode+1;
   }
 }
 

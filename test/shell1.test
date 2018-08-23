@@ -637,6 +637,19 @@ do_test shell1-3.23b.4 {
   catchcmd "test.db" ".stats OFF BAD"
 } {1 {Usage: .stats ?on|off?}}
 
+# Ticket 7be932dfa60a8a6b3b26bcf7623ec46e0a403ddb 2018-06-07
+# Adverse interaction between .stats and .eqp
+#
+do_test shell1-3.23b.5 {
+  catchcmd "test.db" [string map {"\n    " "\n"} {
+    CREATE TEMP TABLE t1(x);
+    INSERT INTO t1 VALUES(1),(2);
+    .stats on
+    .eqp full
+    SELECT * FROM t1;
+  }]
+} {/1\n2\n/}
+
 # .tables ?TABLE?        List names of tables
 #                          If TABLE specified, only list tables matching
 #                          LIKE pattern TABLE.

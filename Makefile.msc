@@ -620,6 +620,10 @@ SHELL_COMPILE_OPTS = $(SHELL_CCONV_OPTS)
 !IFNDEF SHELL_CORE_SRC
 !IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 SHELL_CORE_SRC =
+# <<mark>>
+!ELSEIF $(USE_AMALGAMATION)==0
+SHELL_CORE_SRC =
+# <</mark>>
 !ELSE
 SHELL_CORE_SRC = $(SQLITE3C)
 !ENDIF
@@ -630,6 +634,10 @@ SHELL_CORE_SRC = $(SQLITE3C)
 !IFNDEF SHELL_CORE_DEP
 !IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 SHELL_CORE_DEP = $(SQLITE3DLL)
+# <<mark>>
+!ELSEIF $(USE_AMALGAMATION)==0
+SHELL_CORE_DEP = libsqlite3.lib
+# <</mark>>
 !ELSE
 SHELL_CORE_DEP =
 !ENDIF
@@ -649,6 +657,10 @@ TESTFIXTURE_DEP = zlib $(TESTFIXTURE_DEP)
 !IFNDEF SHELL_CORE_LIB
 !IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 SHELL_CORE_LIB = $(SQLITE3LIB)
+# <<mark>>
+!ELSEIF $(USE_AMALGAMATION)==0
+SHELL_CORE_LIB = libsqlite3.lib
+# <</mark>>
 !ELSE
 SHELL_CORE_LIB =
 !ENDIF
@@ -1196,7 +1208,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
-         utf.lo vtab.lo
+         window.lo utf.lo vtab.lo
 # <</mark>>
 
 # Object files for the amalgamation.
@@ -1307,7 +1319,8 @@ SRC01 = \
   $(TOP)\src\walker.c \
   $(TOP)\src\where.c \
   $(TOP)\src\wherecode.c \
-  $(TOP)\src\whereexpr.c
+  $(TOP)\src\whereexpr.c \
+  $(TOP)\src\window.c
 
 # Core miscellaneous files.
 #
@@ -1479,6 +1492,7 @@ TESTSRC = \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vfs.c \
   $(TOP)\src\test_windirent.c \
+  $(TOP)\src\test_window.c \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
@@ -1697,8 +1711,8 @@ scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
 srcck1.exe:	$(TOP)\tool\srcck1.c
 	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
 
-sourcetest:	srcck1.exe sqlite3.c
-	srcck1.exe sqlite3.c
+sourcetest:	srcck1.exe $(SQLITE3C)
+	srcck1.exe $(SQLITE3C)
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2047,6 +2061,9 @@ wherecode.lo:	$(TOP)\src\wherecode.c $(HDR)
 
 whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\whereexpr.c
+
+window.lo:	$(TOP)\src\window.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\window.c
 
 tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
@@ -2452,7 +2469,6 @@ clean:
 	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
-	del /Q sqlite3.c sqlite3.h 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
 	del /Q mksourceid.* mkkeywordhash.* keywordhash.h 2>NUL
@@ -2469,7 +2485,7 @@ clean:
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL
-	del /Q sqlite3.c sqlite3-*.c 2>NUL
+	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL

@@ -224,7 +224,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   */
   rc = execSql(db, pzErrMsg, "BEGIN");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = sqlite3BtreeBeginTrans(pMain, 2);
+  rc = sqlite3BtreeBeginTrans(pMain, 2, 0);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Do not attempt to change the page size for a WAL database */

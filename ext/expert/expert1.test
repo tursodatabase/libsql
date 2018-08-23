@@ -286,7 +286,6 @@ do_setup_rec_test $tn.14 {
   INSERT INTO t9 VALUES(?, ?, ?);
 } {
   CREATE INDEX t10_idx_00000062 ON t10(b); 
-  -- TRIGGER t9t
   SEARCH TABLE t10 USING INDEX t10_idx_00000062 (b=?)
 }
 
@@ -333,7 +332,7 @@ proc do_candidates_test {tn sql res} {
 
 
 reset_db
-do_execsql_test 3.0 {
+do_execsql_test 4.0 {
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(c, d);
 
@@ -343,7 +342,7 @@ do_execsql_test 3.0 {
   WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
   INSERT INTO t2 SELECT (i-1)/20, (i-1)/5 FROM s;
 }
-do_candidates_test 3.1 {
+do_candidates_test 4.1 {
   SELECT * FROM t1,t2 WHERE (b=? OR a=?) AND (c=? OR d=?)
 } {
   CREATE INDEX t1_idx_00000062 ON t1(b); -- stat1: 100 20 
@@ -352,14 +351,14 @@ do_candidates_test 3.1 {
   CREATE INDEX t2_idx_00000064 ON t2(d); -- stat1: 100 5
 }
 
-do_candidates_test 3.2 {
+do_candidates_test 4.2 {
   SELECT * FROM t1,t2 WHERE a=? AND b=? AND c=? AND d=?
 } {
   CREATE INDEX t1_idx_000123a7 ON t1(a, b); -- stat1: 100 50 17
   CREATE INDEX t2_idx_0001295b ON t2(c, d); -- stat1: 100 20 5
 }
 
-do_execsql_test 3.2 {
+do_execsql_test 4.3 {
   CREATE INDEX t1_idx_00000061 ON t1(a); -- stat1: 100 50 
   CREATE INDEX t1_idx_00000062 ON t1(b); -- stat1: 100 20 
   CREATE INDEX t1_idx_000123a7 ON t1(a, b); -- stat1: 100 50 16

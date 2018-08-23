@@ -85,6 +85,7 @@ struct VdbeCursor {
   Bool isEphemeral:1;     /* True for an ephemeral table */
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
+  Bool seekHit:1;         /* See the OP_SeekHit and OP_IfNoHope opcodes */
   Btree *pBtx;            /* Separate file holding temporary table */
   i64 seqCount;           /* Sequence counter */
   int *aAltMap;           /* Mapping from table to index column numbers */
@@ -208,7 +209,7 @@ struct sqlite3_value {
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
-  void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
+  u16 mScopyFlags;    /* flags value immediately after the shallow copy */
 #endif
 };
 
@@ -379,14 +380,15 @@ struct Vdbe {
   int nOp;                /* Number of instructions in the program */
 #ifdef SQLITE_DEBUG
   int rcApp;              /* errcode set by sqlite3_result_error_code() */
+  u32 nWrite;             /* Number of write operations that have occurred */
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
-  bft expired:1;          /* True if the VM needs to be recompiled */
-  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
+  bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
+  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
@@ -447,9 +449,6 @@ void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(VdbeCursor**, int*);
 int sqlite3VdbeCursorRestore(VdbeCursor*);
-#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
-void sqlite3VdbePrintOp(FILE*, int, Op*);
-#endif
 u32 sqlite3VdbeSerialTypeLen(u32);
 u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 u32 sqlite3VdbeSerialType(Mem*, int, u32*);
@@ -494,6 +493,9 @@ void sqlite3VdbeMemCast(Mem*,u8,u8);
 int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+int sqlite3VdbeMemAggValue(Mem*, Mem*, FuncDef*);
+#endif
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int n);
@@ -513,6 +515,14 @@ int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *);
 int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
+
+#ifdef SQLITE_DEBUG
+  void sqlite3VdbeIncrWriteCounter(Vdbe*, VdbeCursor*);
+  void sqlite3VdbeAssertAbortable(Vdbe*);
+#else
+# define sqlite3VdbeIncrWriteCounter(V,C)
+# define sqlite3VdbeAssertAbortable(V)
+#endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) 
   void sqlite3VdbeEnter(Vdbe*);

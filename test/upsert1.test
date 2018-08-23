@@ -112,4 +112,103 @@ do_execsql_test upsert1-500 {
   SELECT * FROM t1;
 } {1 2}
 
+# 2018-07-11
+# Ticket https://sqlite.org/src/tktview/79cad5e4b2e219dd197242e9e5f4
+# UPSERT leads to a corrupt index.
+#
+do_execsql_test upsert1-600 {
+  DROP TABLE t1;
+  CREATE TABLE t1(b UNIQUE, a INT PRIMARY KEY) WITHOUT ROWID;
+  INSERT OR IGNORE INTO t1(a) VALUES('1') ON CONFLICT(a) DO NOTHING;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test upsert1-610 {
+  DELETE FROM t1;
+  INSERT OR IGNORE INTO t1(a) VALUES('1'),(1) ON CONFLICT(a) DO NOTHING;
+  PRAGMA integrity_check;
+} {ok}
+
+# 2018-08-14
+# Ticket https://www.sqlite.org/src/info/908f001483982c43
+# If there are multiple uniqueness contraints, the UPSERT should fire
+# if the one constraint it targets fails, regardless of whether or not
+# the other constraints pass or fail.  In other words, the UPSERT constraint
+# should be tested first.
+#
+do_execsql_test upsert1-700 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c INT, d INT, e INT);
+  CREATE UNIQUE INDEX t1b ON t1(b);
+  CREATE UNIQUE INDEX t1e ON t1(e);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(e) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-710 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(a) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-720 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(b) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-730 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT, b INT, c INT, d INT, e INT);
+  CREATE UNIQUE INDEX t1a ON t1(a);
+  CREATE UNIQUE INDEX t1b ON t1(b);
+  CREATE UNIQUE INDEX t1e ON t1(e);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(e) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-740 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(a) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-750 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(b) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-760 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT PRIMARY KEY, b INT, c INT, d INT, e INT) WITHOUT ROWID;
+  CREATE UNIQUE INDEX t1a ON t1(a);
+  CREATE UNIQUE INDEX t1b ON t1(b);
+  CREATE UNIQUE INDEX t1e ON t1(e);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(e) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-770 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(a) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+do_execsql_test upsert1-780 {
+  DELETE FROM t1;
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+  INSERT INTO t1(a,b,c,d,e) VALUES(1,2,33,44,5)
+    ON CONFLICT(b) DO UPDATE SET c=excluded.c;
+  SELECT * FROM t1;
+} {1 2 33 4 5}
+
+
 finish_test

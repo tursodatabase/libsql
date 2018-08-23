@@ -90,6 +90,7 @@
 /************* Begin control #defines *****************************************/
 %%
 /************* End control #defines *******************************************/
+#define YY_NLOOKAHEAD ((int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])))
 
 /* Define the yytestcase() macro to be a no-op if is not already defined
 ** otherwise.
@@ -519,11 +520,11 @@ static YYACTIONTYPE yy_find_shift_action(
   do{
     i = yy_shift_ofst[stateno];
     assert( i>=0 );
-    assert( i+YYNTOKEN<=(int)sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
+    /* assert( i+YYNTOKEN<=(int)YY_NLOOKAHEAD ); */
     assert( iLookAhead!=YYNOCODE );
     assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
-    if( yy_lookahead[i]!=iLookAhead ){
+    if( i>=YY_NLOOKAHEAD || yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
@@ -549,6 +550,7 @@ static YYACTIONTYPE yy_find_shift_action(
 #if YY_SHIFT_MAX+YYWILDCARD>=YY_ACTTAB_COUNT
           j<YY_ACTTAB_COUNT &&
 #endif
+          j<(int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])) &&
           yy_lookahead[j]==YYWILDCARD && iLookAhead>0
         ){
 #ifndef NDEBUG
@@ -573,7 +575,7 @@ static YYACTIONTYPE yy_find_shift_action(
 ** Find the appropriate action for a parser given the non-terminal
 ** look-ahead token iLookAhead.
 */
-static int yy_find_reduce_action(
+static YYACTIONTYPE yy_find_reduce_action(
   YYACTIONTYPE stateno,     /* Current state number */
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
@@ -713,7 +715,7 @@ static YYACTIONTYPE yy_reduce(
   ParseCTX_PDECL                   /* %extra_context */
 ){
   int yygoto;                     /* The next state */
-  int yyact;                      /* The next action */
+  YYACTIONTYPE yyact;             /* The next action */
   yyStackEntry *yymsp;            /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
   ParseARG_FETCH
@@ -925,12 +927,12 @@ void Parse(
 
   do{
     assert( yyact==yypParser->yytos->stateno );
-    yyact = yy_find_shift_action(yymajor,yyact);
+    yyact = yy_find_shift_action((YYCODETYPE)yymajor,yyact);
     if( yyact >= YY_MIN_REDUCE ){
       yyact = yy_reduce(yypParser,yyact-YY_MIN_REDUCE,yymajor,
                         yyminor ParseCTX_PARAM);
     }else if( yyact <= YY_MAX_SHIFTREDUCE ){
-      yy_shift(yypParser,yyact,yymajor,yyminor);
+      yy_shift(yypParser,yyact,(YYCODETYPE)yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY
       yypParser->yyerrcnt--;
 #endif
@@ -1056,4 +1058,19 @@ void Parse(
   }
 #endif
   return;
+}
+
+/*
+** Return the fallback token corresponding to canonical token iToken, or
+** 0 if iToken has no fallback.
+*/
+int ParseFallback(int iToken){
+#ifdef YYFALLBACK
+  if( iToken<(int)(sizeof(yyFallback)/sizeof(yyFallback[0])) ){
+    return yyFallback[iToken];
+  }
+#else
+  (void)iToken;
+#endif
+  return 0;
 }

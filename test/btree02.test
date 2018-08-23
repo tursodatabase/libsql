@@ -33,6 +33,8 @@ do_test btree02-110 {
   db eval BEGIN
   set i 0
   db eval {SELECT a, ax, b, cnt FROM t1 CROSS JOIN t3 WHERE b IS NOT NULL} {
+    if {$a==""} {set a 0}
+    if {$b==""} {set b 0}    
     db eval {INSERT INTO t2(x,y) VALUES($b,$cnt)}
     # puts "a,b,cnt = ($a,$b,$cnt)"
     incr i
@@ -47,6 +49,6 @@ do_test btree02-110 {
     db eval {COMMIT; BEGIN}
   }  
   db one {COMMIT; SELECT count(*) FROM t1;}
-} {20}
+} {27}
 
 finish_test

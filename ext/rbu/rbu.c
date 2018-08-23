@@ -78,13 +78,13 @@ int main(int argc, char **argv){
   const char *zTarget;            /* Target database to apply RBU to */
   const char *zRbu;               /* Database containing RBU */
   char zBuf[200];                 /* Buffer for printf() */
-  char *zErrmsg;                  /* Error message, if any */
+  char *zErrmsg = 0;              /* Error message, if any */
   sqlite3rbu *pRbu;               /* RBU handle */
   int nStep = 0;                  /* Maximum number of step() calls */
   int nStatStep = 0;              /* Report stats after this many step calls */
   int bVacuum = 0;
   const char *zPreSql = 0;
-  int rc;
+  int rc = SQLITE_OK;
   sqlite3_int64 nProgress = 0;
   int nArgc = argc-2;
 
@@ -126,11 +126,11 @@ int main(int argc, char **argv){
   report_rbu_vfs(pRbu);
 
   if( zPreSql && pRbu ){
-    sqlite3 *db = sqlite3rbu_db(pRbu, 0);
-    rc = sqlite3_exec(db, zPreSql, 0, 0, 0);
+    sqlite3 *dbMain = sqlite3rbu_db(pRbu, 0);
+    rc = sqlite3_exec(dbMain, zPreSql, 0, 0, 0);
     if( rc==SQLITE_OK ){
-      sqlite3 *db = sqlite3rbu_db(pRbu, 1);
-      rc = sqlite3_exec(db, zPreSql, 0, 0, 0);
+      sqlite3 *dbRbu = sqlite3rbu_db(pRbu, 1);
+      rc = sqlite3_exec(dbRbu, zPreSql, 0, 0, 0);
     }
   }
 

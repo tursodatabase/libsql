@@ -593,7 +593,7 @@ char *sqlite3_normalize(const char *zSql){
     }
   }
   while( j>0 && z[j-1]==' ' ){ j--; }
-  if( i>0 && z[j-1]!=';' ){ z[j++] = ';'; }
+  if( j>0 && z[j-1]!=';' ){ z[j++] = ';'; }
   z[j] = 0;
 
   /* Make a second pass converting "in(...)" where the "..." is not a

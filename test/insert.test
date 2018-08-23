@@ -435,6 +435,19 @@ do_execsql_test insert-12.3 {
   SELECT * FROM t12c;
 } {one xyzzy two}
 
+# 2018-06-11.  From OSSFuzz.  A column cache malfunction in
+# the constraint checking on an index of expressions causes
+# an assertion fault in a REPLACE.  Ticket
+# https://www.sqlite.org/src/info/c2432ef9089ee73b
+#
+do_execsql_test insert-13.1 {
+  DROP TABLE IF EXISTS t13;
+  CREATE TABLE t13(a INTEGER PRIMARY KEY,b UNIQUE);
+  CREATE INDEX t13x1 ON t13(-b=b);
+  INSERT INTO t13 VALUES(1,5),(6,2);
+  REPLACE INTO t13 SELECT b,0 FROM t13;
+  SELECT * FROM t13 ORDER BY +b;
+} {2 0 6 2 1 5}
 
 integrity_check insert-99.0
 

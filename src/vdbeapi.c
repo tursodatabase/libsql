@@ -970,7 +970,7 @@ static const Mem *columnNullValue(void){
         /* .xDel       = */ (void(*)(void*))0,
 #ifdef SQLITE_DEBUG
         /* .pScopyFrom = */ (Mem*)0,
-        /* .pFiller    = */ (void*)0,
+        /* .mScopyFlags= */ 0,
 #endif
       };
   return &nullMem;
