@@ -832,7 +832,7 @@ typedef INT16_TYPE LogEst;
 # if defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
      defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
-     defined(__arm__)
+     defined(__arm__)  || defined(_M_ARM64)
 #   define SQLITE_BYTEORDER    1234
 # elif defined(sparc)    || defined(__ppc__)
 #   define SQLITE_BYTEORDER    4321
