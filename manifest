@@ -1,10 +1,10 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sALTER\sTABLE\slogic.\s\sRephrase\san\nerror\smessage\sto\suse\sactive\svoice.
-D 2018-08-23T19:32:04.605
+C Add\sthe\s"atrc"\stest\sprogram\sto\sthe\sMakefiles.\s\sFix\sa\stypo\sin\sthe\sinstructions\nin\sthe\sheader\scomment\sof\sthe\satrc\sprogram.
+D 2018-08-23T20:09:19.407
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
+F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 91d78669ce4a4267d6988d16b0bde831ea207e3a2e488efcba558a70dfa45a72
+F Makefile.msc 2e6eec0444dd80730b678b009cbe7fb9382dc3c5e8f45f554730203678cdd782
 F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
 F VERSION d3e3afdec1165a5e593dcdfffd8e0f33a2b0186067eb51a073ef6c4aec34923d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -420,7 +420,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d9872d31efa4a02e177f6d43b7fdae2a5f822e50d1eb72907f6575a567b85378
+F main.mk bbd82ed499413e8d56a00eaa124d4946650f327ea9ee312006ce4674b441dc3c
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -626,7 +626,7 @@ F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
-F test/atrc.c 834739c220d2715dd513ce76d4773216a9c1bffe40d992876d14c34e103f11be
+F test/atrc.c ec92d56d8fbed9eb3e11aaf1ab98cf7dd59e69dae31f128013f1d97e54e7dfed
 F test/attach.test f4b8918ba2f3e88e6883b8452340545f10a1388af808343c37fc5c577be8281c
 F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 772985f18b2ab8fa04a0c29593fc6d9b74c1361260cb59e566606dd56f326535
-R 96ec2f0e0b9910ffcc6de82d1db226f8
+P a7dae59a7e7b187fa2e9457bbb4b01cfe3d48bbdf59c3f8f7b4156bcde3bda98
+R ff9df00fbfc59e4a02fc696b623ca7c7
 U drh
-Z f5d6c7e266777450f1bb3fc6dca6f401
+Z 1d9332cf1e1a3c3c2f9074fb59887ccb

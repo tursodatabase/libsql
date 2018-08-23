@@ -5,7 +5,7 @@
 **      gcc -g -c sqlite3.c
 **      gcc -g -o atrc atrc.c sqlite3.o -ldl -lpthread
 **
-** Run the problem this way:
+** Run the program this way:
 **
 **      ./atrc DATABASE | ./sqlite3 DATABASE
 **
