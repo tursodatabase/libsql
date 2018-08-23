@@ -813,7 +813,7 @@ static int isRealTable(Parse *pParse, Table *pTab){
 #endif
   if( zType ){
     sqlite3ErrorMsg(
-        pParse, "columns of %s %s may not be renamed", zType, pTab->zName
+        pParse, "cannot rename columns of %s \"%s\"", zType, pTab->zName
     );
     return 1;
   }
@@ -1073,8 +1073,8 @@ static void renameColumnParseError(
   sqlite3_value *pObject,
   Parse *pParse
 ){
-  const char *zT = sqlite3_value_text(pType);
-  const char *zN = sqlite3_value_text(pObject);
+  const char *zT = (const char*)sqlite3_value_text(pType);
+  const char *zN = (const char*)sqlite3_value_text(pObject);
   char *zErr;
 
   zErr = sqlite3_mprintf("error processing %s %s: %s", zT, zN, pParse->zErrMsg);

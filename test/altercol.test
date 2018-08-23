@@ -503,10 +503,10 @@ do_execsql_test 12.2.1 {
 }
 do_catchsql_test 12.2.2 {
   ALTER TABLE v1 RENAME a TO z;
-} {1 {columns of view v1 may not be renamed}}
+} {1 {cannot rename columns of view "v1"}}
 do_catchsql_test 12.2.3 {
   ALTER TABLE v2 RENAME c TO y;
-} {1 {columns of view v2 may not be renamed}}
+} {1 {cannot rename columns of view "v2"}}
 
 ifcapable fts5 {
   do_execsql_test 12.3.1 {
@@ -635,4 +635,3 @@ do_execsql_test 14.2 {
 
 
 finish_test
-
