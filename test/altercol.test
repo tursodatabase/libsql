@@ -669,6 +669,23 @@ do_execsql_test 16.2 {
   SELECT * FROM v4;
 } {1 4}
 
-reset_db
+do_execsql_test 16.3 {
+  CREATE UNIQUE INDEX t2d ON t2(d);
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2 VALUES(new.a, new.b, new.c)
+      ON CONFLICT(d) DO UPDATE SET f = excluded.f;
+  END;
+}
+
+do_execsql_test 16.4 {
+  INSERT INTO t1 VALUES(4, 8, 456);
+  SELECT * FROM t2;
+} {4 5 456}
+
+do_execsql_test 16.5 {
+  ALTER TABLE t2 RENAME COLUMN f TO "big f";
+  INSERT INTO t1 VALUES(4, 0, 20456);
+  SELECT * FROM t2;
+} {4 5 20456}
 
 finish_test

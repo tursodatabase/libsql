@@ -349,9 +349,15 @@ static int lookupName(
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==2 ){
             testcase( iCol==(-1) );
-            pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
-            eNewExprOp = TK_REGISTER;
-            ExprSetProperty(pExpr, EP_Alias);
+            if( IN_RENAME_COLUMN ){
+              pExpr->iColumn = iCol;
+              pExpr->pTab = pTab;
+              eNewExprOp = TK_COLUMN;
+            }else{
+              pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
+              eNewExprOp = TK_REGISTER;
+              ExprSetProperty(pExpr, EP_Alias);
+            }
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {
