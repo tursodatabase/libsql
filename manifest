@@ -1,5 +1,5 @@
-C Add\sthe\s"atrc"\stest\sprogram\sto\sthe\sMakefiles.\s\sFix\sa\stypo\sin\sthe\sinstructions\nin\sthe\sheader\scomment\sof\sthe\satrc\sprogram.
-D 2018-08-23T20:09:19.407
+C Avoid\sincorrectly\sreplacing\stokens\sthat\srefer\sto\sa\scolumn\sbeing\srenamed\svia\san\nalias.\sFor\sexample,\sdo\snot\soverwrite\s"xyz"\swhen\s"a"\sis\srenamed\sin\s"CREATE\sVIEW\nv1\sAS\sSELECT\sa\sAS\sxyz\sFROM\stbl\sWHERE\sxyz=1"
+D 2018-08-24T16:04:26.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 070bf02d14f4867feaca7e0b6d7b02731cb30abade0afd8349f19f7536edab13
+F src/alter.c 6b381569b17aa08fc66a90bdc551bb9b81435340d7deaa6c4b0527daa83f512d
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -496,7 +496,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 117e27c6826a83f461986c0cfbb09c31fe004922ce23a61bf78d82a46b0958d9
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 246af8a493f787a23a1a80a280958260677941b504da4c25118db3fbc0c5cbae
+F src/resolve.c 042909753510d0bb98a036cb99211123c5dbdd758ba5b923cb9cc37c3762450b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ae7396a314cc1bb1d767947cd57094e3a9ffcbb155ebc1b1c391e028c44a9a04
 F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
@@ -599,7 +599,7 @@ F test/alter.test b820ab9dcf85f8e3a65bc8326accb2f0c7be64ef
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
-F test/altercol.test 5187221c633c9c586bf0d1304babec185f3f8a23430873626dc0c8d08e80784b
+F test/altercol.test 2630ee56984ec0bf1ffe9e9c0f19f08e0f4962b1a3dc2c97f56469df0fce5ffa
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7dae59a7e7b187fa2e9457bbb4b01cfe3d48bbdf59c3f8f7b4156bcde3bda98
-R ff9df00fbfc59e4a02fc696b623ca7c7
-U drh
-Z 1d9332cf1e1a3c3c2f9074fb59887ccb
+P 2130a407ddd8cdf3d29b109d773686c84906d9dc1663376e94e191086d524c9e
+R 3288412afc8417a36ede2c0a50dfeb71
+U dan
+Z e33854cf85c7ee776de972d8bfdb3701

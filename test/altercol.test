@@ -633,5 +633,21 @@ do_execsql_test 14.2 {
   FROM ddd;
 } {{} {} {}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 15.0 {
+  CREATE TABLE xxx(a, b, c);
+  SELECT a AS d FROM xxx WHERE d=0;
+}
+
+do_execsql_test 15.1 {
+  CREATE VIEW vvv AS SELECT a AS d FROM xxx WHERE d=0;
+  ALTER TABLE xxx RENAME a TO xyz;
+}
+
+do_execsql_test 15.2 {
+  SELECT sql FROM sqlite_master WHERE type='view';
+} {{CREATE VIEW vvv AS SELECT xyz AS d FROM xxx WHERE d=0}}
 
 finish_test

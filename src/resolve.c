@@ -436,6 +436,9 @@ static int lookupName(
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
+          if( IN_RENAME_COLUMN ){
+            sqlite3RenameTokenRemap(pParse, 0, (void*)pExpr);
+          }
           goto lookupname_end;
         }
       } 

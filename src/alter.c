@@ -966,7 +966,7 @@ void sqlite3RenameTokenRemap(Parse *pParse, void *pTo, void *pFrom){
       break;
     }
   }
-  assert( p );
+  assert( pTo==0 || p );
 }
 
 /*
@@ -989,6 +989,7 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
 */
 static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
   RenameToken **pp;
+  assert( pPtr!=0 );
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
