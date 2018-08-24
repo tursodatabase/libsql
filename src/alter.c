@@ -1361,11 +1361,9 @@ static void renameColumnFunc(
           if( pStep->pUpsert ){
             Upsert *pUpsert = pStep->pUpsert;
             assert( rc==SQLITE_OK );
-            if( pTarget==pTab ){
-              pUpsert->pUpsertSrc = &sSrc;
-              sNC.uNC.pUpsert = pUpsert;
-              sNC.ncFlags = NC_UUpsert;
-            }
+            pUpsert->pUpsertSrc = &sSrc;
+            sNC.uNC.pUpsert = pUpsert;
+            sNC.ncFlags = NC_UUpsert;
             rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
             if( rc==SQLITE_OK ){
               ExprList *pUpsertSet = pUpsert->pUpsertSet;

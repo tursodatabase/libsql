@@ -688,4 +688,10 @@ do_execsql_test 16.5 {
   SELECT * FROM t2;
 } {4 5 20456}
 
+do_execsql_test 16.6 {
+  ALTER TABLE t1 RENAME COLUMN c TO "big c";
+  INSERT INTO t1 VALUES(4, 0, 0);
+  SELECT * FROM t2;
+} {4 5 0}
+
 finish_test
