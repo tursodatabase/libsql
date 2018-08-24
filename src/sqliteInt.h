@@ -791,7 +791,8 @@ typedef INT16_TYPE LogEst;
 # if defined(__SIZEOF_POINTER__)
 #   define SQLITE_PTRSIZE __SIZEOF_POINTER__
 # elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
-       defined(_M_ARM)   || defined(__arm__)    || defined(__x86)
+       defined(_M_ARM)   || defined(__arm__)    || defined(__x86)   ||    \
+      (defined(__TOS_AIX__) && !defined(__64BIT__))
 #   define SQLITE_PTRSIZE 4
 # else
 #   define SQLITE_PTRSIZE 8
