@@ -892,6 +892,17 @@ void sqlite3AlterRenameColumn(
     sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, iSchema, 0);
   }
 
+  sqlite3NestedParse(pParse, 
+      "SELECT 1 "
+      "FROM \"%w\".%s "
+      "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)"
+      " AND sql NOT LIKE 'create virtual%%'"
+      " AND sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, -1)=0 ",
+      zDb, MASTER_NAME, 
+      pTab->zName,
+      zDb, pTab->zName, iCol, zNew
+  );
+
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
   sqlite3DbFree(db, zOld);
@@ -1070,6 +1081,7 @@ static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
 */
 static void renameColumnParseError(
   sqlite3_context *pCtx, 
+  int bPost,
   sqlite3_value *pType,
   sqlite3_value *pObject,
   Parse *pParse
@@ -1078,7 +1090,10 @@ static void renameColumnParseError(
   const char *zN = (const char*)sqlite3_value_text(pObject);
   char *zErr;
 
-  zErr = sqlite3_mprintf("error processing %s %s: %s", zT, zN, pParse->zErrMsg);
+  zErr = sqlite3_mprintf("error in %s %s%s: %s", 
+      zT, zN, (bPost ? " after rename" : ""),
+      pParse->zErrMsg
+  );
   sqlite3_result_error(pCtx, zErr, -1);
   sqlite3_free(zErr);
 }
@@ -1140,7 +1155,10 @@ static void renameColumnIdlistNames(
 **   4. Table:    Table name
 **   5. iCol:     Index of column to rename
 **   6. zNew:     New column name
-**   7. bQuote:   True if the new column name should be quoted
+**   7. bQuote:   Non-zero if the new column name should be quoted. Negative
+**                if this function is being called to check that the schema
+**                can still be parsed and symbols resolved after the column
+**                has been renamed.
 **
 ** Do a column rename operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
@@ -1437,7 +1455,7 @@ static void renameColumnFunc(
 renameColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( sParse.zErrMsg ){
-      renameColumnParseError(context, argv[1], argv[2], &sParse);
+      renameColumnParseError(context, (bQuote<0), argv[1], argv[2], &sParse);
     }else{
       sqlite3_result_error_code(context, rc);
     }

@@ -1,5 +1,5 @@
-C Avoid\sincorrectly\sreplacing\stokens\sthat\srefer\sto\sa\scolumn\sbeing\srenamed\svia\san\nalias.\sFor\sexample,\sdo\snot\soverwrite\s"xyz"\swhen\s"a"\sis\srenamed\sin\s"CREATE\sVIEW\nv1\sAS\sSELECT\sa\sAS\sxyz\sFROM\stbl\sWHERE\sxyz=1"
-D 2018-08-24T16:04:26.814
+C After\smodifying\sand\sreparsing\sthe\sschema\sas\spart\sof\san\sALTER\sTABLE\sRENAME\nCOLUMN,\scheck\sthat\sno\snew\sschema\serrors\shave\sbeen\sintroduced\s(e.g.\sambiguous\ncolumn\snames\sin\sviews)\sbefore\scommitting\sthe\soperation.
+D 2018-08-24T17:55:49.159
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 6b381569b17aa08fc66a90bdc551bb9b81435340d7deaa6c4b0527daa83f512d
+F src/alter.c 4433a45020f111b317e435e9a23c190ce42859856aa852f3601c25252ec71b36
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -569,7 +569,7 @@ F src/upsert.c 47edd408cc73f8d3c00a140550d1ad180b407c146285947969dd09874802bf88
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c 18482b9a1ac73c62487dd034da342d464ab9b59cae2abfb4cb234ba8fa7ba16f
+F src/vdbe.c 7a8fc343ce0d852fe1f37c1d7d763a9f22f6f26d2c594293d77313acbc527821
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h 8ea493d994c6697cf7bccc60583a80a0222560490410f60f1113e90d36643ce0
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
@@ -599,7 +599,7 @@ F test/alter.test b820ab9dcf85f8e3a65bc8326accb2f0c7be64ef
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
-F test/altercol.test 2630ee56984ec0bf1ffe9e9c0f19f08e0f4962b1a3dc2c97f56469df0fce5ffa
+F test/altercol.test f83599801f862cb9895f3668bf53938b63768200475264071dce17cd068d2504
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2130a407ddd8cdf3d29b109d773686c84906d9dc1663376e94e191086d524c9e
-R 3288412afc8417a36ede2c0a50dfeb71
+P ad072a835f97ff418f5919d94f547ce8afb4fc7c7b590deba41f1e62136a79ac
+R 50e702b70e1b28f7dff750a067872247
 U dan
-Z e33854cf85c7ee776de972d8bfdb3701
+Z 41b7da7875d5ec2dd7c0f2a1bfa5aab4

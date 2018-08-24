@@ -5754,6 +5754,7 @@ case OP_ParseSchema: {
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
     rc = sqlite3InitOne(db, iDb, &p->zErrMsg, INITFLAG_AlterTable);
     db->mDbFlags |= DBFLAG_SchemaChange;
+    p->expired = 0;
   }else
 #endif
   {
