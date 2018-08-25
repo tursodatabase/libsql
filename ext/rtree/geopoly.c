@@ -698,7 +698,7 @@ static void geopolyAddSegments(
 ){
   unsigned int i;
   GeoCoord *x;
-  for(i=0; i<pPoly->nVertex-1; i++){
+  for(i=0; i<(unsigned)pPoly->nVertex-1; i++){
     x = pPoly->a + (i*2);
     geopolyAddOneSegment(p, x[0], x[1], x[2], x[3], side, i);
   }
