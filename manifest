@@ -1,5 +1,5 @@
-C Invoke\sthe\sauthorizer\sfor\sALTER\sTABLE\sRENAME\sCOLUMN.
-D 2018-08-25T16:14:46.168
+C Fix\sa\sminor\sissue\sin\sthe\saltercol.test\sscript\sso\sthat\sit\sruns\son\sWindows.
+D 2018-08-25T16:22:33.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
@@ -599,7 +599,7 @@ F test/alter.test b820ab9dcf85f8e3a65bc8326accb2f0c7be64ef
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
-F test/altercol.test 919898b3eef41d5d582af22d3c67c8b5a211ba30ac06821933421c24e3449e7d
+F test/altercol.test 5636b8e579d6c8852a56c9fa56573205b420cab48f5f05a4d7b1cdb2bdbf6a91
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5858c0bde7c210f07cfa72cee95325847b26733abab4f56301b57cd816931e97
-R dd94651ea0773b5a11f95a943c96a170
+P fc293bcb3402f049fb9e22aacfb4fdcd13f8609edf29c97d6cb95ce351363873
+R 64ddfe692b05307d9b72b37e625688a1
 U drh
-Z 17da09075e978c2583f9ca2204e2cf85
+Z 7ccfe8689358cb4f8c05a477c50e8895
