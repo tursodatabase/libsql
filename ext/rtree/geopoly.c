@@ -579,34 +579,45 @@ static int pointBeneathLine(
   return 0;
 }
 
+/* Forward declaration */
+static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2);
+
 /*
-** SQL function:    geopoly_within(P,X,Y)
+** SQL function:    geopoly_within(P,X,Y)  -- 3-argument form
 **
 ** Return +2 if point X,Y is within polygon P.
 ** Return +1 if point X,Y is on the polygon boundary.
 ** Return 0 if point X,Y is outside the polygon
+**
+** SQL function:    geopoly_within(P1,P2)  -- 2-argument form
+**
+** Return +2 if P1 and P2 are the same polygon
+** Return +1 if P2 is contained within P1
+** Return 0 if any part of P2 is on the outside of P1
+**
 */
 static void geopolyWithinFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
-  double x0 = sqlite3_value_double(argv[1]);
-  double y0 = sqlite3_value_double(argv[2]);
-  if( p ){
+  GeoPoly *p1 = geopolyFuncParam(context, argv[0], 0);
+  if( p1==0 ) return;
+  if( argc==3 ){
+    double x0 = sqlite3_value_double(argv[1]);
+    double y0 = sqlite3_value_double(argv[2]);
     int v = 0;
     int cnt = 0;
     int ii;
-    for(ii=0; ii<p->nVertex-1; ii++){
-      v = pointBeneathLine(x0,y0,p->a[ii*2],p->a[ii*2+1],
-                                 p->a[ii*2+2],p->a[ii*2+3]);
+    for(ii=0; ii<p1->nVertex-1; ii++){
+      v = pointBeneathLine(x0,y0,p1->a[ii*2],p1->a[ii*2+1],
+                                 p1->a[ii*2+2],p1->a[ii*2+3]);
       if( v==2 ) break;
       cnt += v;
     }
     if( v!=2 ){
-      v = pointBeneathLine(x0,y0,p->a[ii*2],p->a[ii*2+1],
-                                 p->a[0],p->a[1]);
+      v = pointBeneathLine(x0,y0,p1->a[ii*2],p1->a[ii*2+1],
+                                 p1->a[0],p1->a[1]);
     }
     if( v==2 ){
       sqlite3_result_int(context, 1);
@@ -615,8 +626,20 @@ static void geopolyWithinFunc(
     }else{
       sqlite3_result_int(context, 2);
     }
-    sqlite3_free(p);
-  }            
+  }else{
+    assert( argc==2 );
+    GeoPoly *p2 = geopolyFuncParam(context, argv[1], 0);
+    if( p2 ){
+      int x = geopolyOverlap(p1, p2);
+      if( x<0 ){
+        sqlite3_result_error_nomem(context);
+      }else{
+        sqlite3_result_int(context, x==2 ? 1 : x==4 ? 2 : 0);
+      }
+      sqlite3_free(p2);
+    }
+  }
+  sqlite3_free(p1);
 }
 
 /* Objects used by the overlap algorihm. */
@@ -1219,6 +1242,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
   if( iRowidTerm>=0 ){
     pIdxInfo->idxNum = 1;
+    pIdxInfo->idxStr = "rowid";
     pIdxInfo->aConstraintUsage[iRowidTerm].argvIndex = 1;
     pIdxInfo->aConstraintUsage[iRowidTerm].omit = 1;
     pIdxInfo->estimatedCost = 30.0;
@@ -1228,6 +1252,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   }
   if( iFuncTerm>=0 ){
     pIdxInfo->idxNum = 2;
+    pIdxInfo->idxStr = "rtree";
     pIdxInfo->aConstraintUsage[iFuncTerm].argvIndex = 1;
     pIdxInfo->aConstraintUsage[iFuncTerm].omit = 0;
     pIdxInfo->estimatedCost = 300.0;
@@ -1235,6 +1260,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     return SQLITE_OK;
   }
   pIdxInfo->idxNum = 3;
+  pIdxInfo->idxStr = "fullscan";
   pIdxInfo->estimatedCost = 3000000.0;
   pIdxInfo->estimatedRows = 100000;
   return SQLITE_OK;
@@ -1432,6 +1458,11 @@ static int geopolyFindFunction(
     *ppArg = 0;
     return SQLITE_INDEX_CONSTRAINT_FUNCTION;
   }
+  if( nArg==2 && sqlite3_stricmp(zName, "geopoly_within")==0 ){
+    *pxFunc = geopolyWithinFunc;
+    *ppArg = 0;
+    return SQLITE_INDEX_CONSTRAINT_FUNCTION;
+  }
   return 0;
 }
 
@@ -1473,6 +1504,7 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyBlobFunc,          1,    "geopoly_blob"     },
      { geopolyJsonFunc,          1,    "geopoly_json"     },
      { geopolySvgFunc,          -1,    "geopoly_svg"      },
+     { geopolyWithinFunc,        2,    "geopoly_within"   },
      { geopolyWithinFunc,        3,    "geopoly_within"   },
      { geopolyOverlapFunc,       2,    "geopoly_overlap"  },
      { geopolyDebugFunc,         1,    "geopoly_debug"    },
