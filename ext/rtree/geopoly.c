@@ -1109,7 +1109,9 @@ static int geopolyConnect(
 **      1         rowid lookup
 **      2         search for objects overlapping the same bounding box
 **                that contains polygon argv[0]
-**      3         full table scan
+**      3         search for objects overlapping the same bounding box
+**                that contains polygon argv[0]
+**      4         full table scan
 */
 static int geopolyFilter(
   sqlite3_vtab_cursor *pVtabCursor,     /* The cursor to initialize */
@@ -1159,7 +1161,7 @@ static int geopolyFilter(
     ** with the configured constraints. 
     */
     rc = nodeAcquire(pRtree, 1, 0, &pRoot);
-    if( rc==SQLITE_OK && idxNum==2 ){
+    if( rc==SQLITE_OK && idxNum<=3 ){
       RtreeCoord bbox[4];
       RtreeConstraint *p;
       assert( argc==1 );
@@ -1174,21 +1176,41 @@ static int geopolyFilter(
       }else{
         memset(pCsr->aConstraint, 0, sizeof(RtreeConstraint)*4);
         memset(pCsr->anQueue, 0, sizeof(u32)*(pRtree->iDepth + 1));
-        p->op = 'B';
-        p->iCoord = 0;
-        p->u.rValue = bbox[1].f;
-        p++;
-        p->op = 'D';
-        p->iCoord = 1;
-        p->u.rValue = bbox[0].f;
-        p++;
-        p->op = 'B';
-        p->iCoord = 2;
-        p->u.rValue = bbox[3].f;
-        p++;
-        p->op = 'D';
-        p->iCoord = 3;
-        p->u.rValue = bbox[2].f;
+        if( idxNum==2 ){
+          /* Overlap query */
+          p->op = 'B';
+          p->iCoord = 0;
+          p->u.rValue = bbox[1].f;
+          p++;
+          p->op = 'D';
+          p->iCoord = 1;
+          p->u.rValue = bbox[0].f;
+          p++;
+          p->op = 'B';
+          p->iCoord = 2;
+          p->u.rValue = bbox[3].f;
+          p++;
+          p->op = 'D';
+          p->iCoord = 3;
+          p->u.rValue = bbox[2].f;
+        }else{
+          /* Within query */
+          p->op = 'D';
+          p->iCoord = 0;
+          p->u.rValue = bbox[0].f;
+          p++;
+          p->op = 'B';
+          p->iCoord = 1;
+          p->u.rValue = bbox[1].f;
+          p++;
+          p->op = 'D';
+          p->iCoord = 2;
+          p->u.rValue = bbox[2].f;
+          p++;
+          p->op = 'B';
+          p->iCoord = 3;
+          p->u.rValue = bbox[3].f;
+        }
       }
     }
     if( rc==SQLITE_OK ){
@@ -1218,15 +1240,17 @@ static int geopolyFilter(
 **
 **   idxNum     idxStr        Strategy
 **   ------------------------------------------------
-**     1        Unused        Direct lookup by rowid.
-**     2        Unused        R-tree query
-**     3        Unused        full-table scan.
+**     1        "rowid"       Direct lookup by rowid.
+**     2        "rtree"       R-tree overlap query using geopoly_overlap()
+**     3        "rtree"       R-tree within query using geopoly_within()
+**     4        "fullscan"    full-table scan.
 **   ------------------------------------------------
 */
 static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int ii;
   int iRowidTerm = -1;
   int iFuncTerm = -1;
+  int idxNum = 0;
 
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
@@ -1235,8 +1259,12 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       iRowidTerm = ii;
       break;
     }
-    if( p->iColumn==0 && p->op==SQLITE_INDEX_CONSTRAINT_FUNCTION ){
+    if( p->iColumn==0 && p->op>=SQLITE_INDEX_CONSTRAINT_FUNCTION ){
+      /* p->op==SQLITE_INDEX_CONSTRAINT_FUNCTION for geopoly_overlap()
+      ** p->op==(SQLITE_INDEX_CONTRAINT_FUNCTION+1) for geopoly_within().
+      ** See geopolyFindFunction() */
       iFuncTerm = ii;
+      idxNum = p->op - SQLITE_INDEX_CONSTRAINT_FUNCTION + 2;
     }
   }
 
@@ -1251,7 +1279,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     return SQLITE_OK;
   }
   if( iFuncTerm>=0 ){
-    pIdxInfo->idxNum = 2;
+    pIdxInfo->idxNum = idxNum;
     pIdxInfo->idxStr = "rtree";
     pIdxInfo->aConstraintUsage[iFuncTerm].argvIndex = 1;
     pIdxInfo->aConstraintUsage[iFuncTerm].omit = 0;
@@ -1259,7 +1287,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     pIdxInfo->estimatedRows = 10;
     return SQLITE_OK;
   }
-  pIdxInfo->idxNum = 3;
+  pIdxInfo->idxNum = 4;
   pIdxInfo->idxStr = "fullscan";
   pIdxInfo->estimatedCost = 3000000.0;
   pIdxInfo->estimatedRows = 100000;
@@ -1461,7 +1489,7 @@ static int geopolyFindFunction(
   if( nArg==2 && sqlite3_stricmp(zName, "geopoly_within")==0 ){
     *pxFunc = geopolyWithinFunc;
     *ppArg = 0;
-    return SQLITE_INDEX_CONSTRAINT_FUNCTION;
+    return SQLITE_INDEX_CONSTRAINT_FUNCTION+1;
   }
   return 0;
 }

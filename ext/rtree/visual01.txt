@@ -396,6 +396,34 @@ SELECT geopoly_svg(poly,
   FROM querypoly;
 .print '</svg>'
 
+.print '<h1>Bounding-Box Overlap Query</h1>'
+.print '<pre>'
+EXPLAIN QUERY PLAN
+SELECT geopoly_svg(_shape,
+         printf('style="fill:none;stroke:%s;stroke-width:1"',geo1.clr)
+       )
+  FROM geo1, querypoly
+ WHERE geopoly_overlap(geopoly_bbox(_shape), geopoly_bbox(poly));
+.print '</pre>'
+.print '<svg width="1000" height="800" style="border:1px solid black">'
+SELECT geopoly_svg(_shape,
+         printf('style="fill:none;stroke:%s;stroke-width:1"',geo1.clr)
+       ),
+       geopoly_svg(geopoly_bbox(_shape),
+         'style="fill:none;stroke:black;stroke-width:1"'
+       )
+  FROM geo1, querypoly
+ WHERE geopoly_overlap(geopoly_bbox(_shape), geopoly_bbox(poly));
+SELECT geopoly_svg(poly, 
+         printf('style="fill:%s;fill-opacity:0.5;"',clr)
+       )
+  FROM querypoly;
+SELECT geopoly_svg(geopoly_bbox(poly),
+         'style="fill:none;stroke:black;stroke-width:3"'
+       )
+  FROM querypoly;
+.print '</svg>'
+
 .print '<h1>Within Query</h1>'
 .print '<pre>'
 EXPLAIN QUERY PLAN
@@ -413,6 +441,34 @@ SELECT geopoly_svg(_shape,
  WHERE geopoly_within(_shape, poly);
 SELECT geopoly_svg(poly, 
          printf('style="fill:%s;fill-opacity:0.5;"',clr)
+       )
+  FROM querypoly;
+.print '</svg>'
+
+.print '<h1>Bounding-Box WITHIN Query</h1>'
+.print '<pre>'
+EXPLAIN QUERY PLAN
+SELECT geopoly_svg(_shape,
+         printf('style="fill:none;stroke:%s;stroke-width:1"',geo1.clr)
+       )
+  FROM geo1, querypoly
+ WHERE geopoly_within(geopoly_bbox(_shape), geopoly_bbox(poly));
+.print '</pre>'
+.print '<svg width="1000" height="800" style="border:1px solid black">'
+SELECT geopoly_svg(_shape,
+         printf('style="fill:none;stroke:%s;stroke-width:1"',geo1.clr)
+       ),
+       geopoly_svg(geopoly_bbox(_shape),
+         'style="fill:none;stroke:black;stroke-width:1"'
+       )
+  FROM geo1, querypoly
+ WHERE geopoly_within(geopoly_bbox(_shape), geopoly_bbox(poly));
+SELECT geopoly_svg(poly, 
+         printf('style="fill:%s;fill-opacity:0.5;"',clr)
+       )
+  FROM querypoly;
+SELECT geopoly_svg(geopoly_bbox(poly),
+         'style="fill:none;stroke:black;stroke-width:3"'
        )
   FROM querypoly;
 .print '</svg>'
