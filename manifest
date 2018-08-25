@@ -1,5 +1,5 @@
-C The\simplementation\sof\ssqlite_rename_column()\smust\sbe\sholding\sthe\nschema\smutexes.
-D 2018-08-25T02:04:05.318
+C Remove\san\sunnecessary\sIN_RENAME_COLUMN\smacro\sfrom\sresolve.c.
+D 2018-08-25T03:29:34.617
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
@@ -496,7 +496,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 117e27c6826a83f461986c0cfbb09c31fe004922ce23a61bf78d82a46b0958d9
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c c27c71e108cee18bda473c5b1a5444cf083b600178f748083a4eb121ac8b80e4
+F src/resolve.c 11c177efc9c038629cb39b7a4802931d0befe69fc478f7ce72110b21cdd43a4d
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ae7396a314cc1bb1d767947cd57094e3a9ffcbb155ebc1b1c391e028c44a9a04
 F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83d5f5abce6be2f6d342a6fc68839289400d7bcb80eaa38194789142c93a80c3
-R b6320ef978125ec7ab4d11685a82bae6
+P f0eed21d4e2e1f2c8e680a510a283ac21156c9766efec5b80a362a040424bce7
+R 765df4694289b6c53a17c97f9702ba6c
 U drh
-Z b370393e44295642b445427aef03ee82
+Z db8eccde43135de3a0e592fd50ea76f1
