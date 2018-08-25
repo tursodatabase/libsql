@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sby\srenaming\sa\scolumn\swhen\sthe\sschema\scontains\san\strigger\sprogram\nfeaturing\san\sUPSERT\sthat\suses\san\s"excluded.*"\sreference\sto\sa\sdifferent\stable.
-D 2018-08-24T20:20:33.163
+C The\simplementation\sof\ssqlite_rename_column()\smust\sbe\sholding\sthe\nschema\smutexes.
+D 2018-08-25T02:04:05.318
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 39c6b7f93ded86cc934b30aaeee826f6ef894f8f9553dced3616addec98a7a5e
+F src/alter.c 64dcb3cb53c93d49347ee2366f4583308be1e5022a83825c4554d7caeb9e5559
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb2f7234968157b605522dea8e115d8772ab4234147894089d6e48fedf5d6a5d
-R 823edc3e23e67119953a116669604a47
-U dan
-Z 80400a5bd3c3544ddd0fad2a3cc27b3c
+P 83d5f5abce6be2f6d342a6fc68839289400d7bcb80eaa38194789142c93a80c3
+R b6320ef978125ec7ab4d11685a82bae6
+U drh
+Z b370393e44295642b445427aef03ee82

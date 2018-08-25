@@ -1209,8 +1209,12 @@ static void renameColumnFunc(
   if( zTable==0 ) return;
   if( zNew==0 ) return;
   if( iCol<0 ) return;
+  sqlite3BtreeEnterAll(db);
   pTab = sqlite3FindTable(db, zTable, zDb);
-  if( pTab==0 || iCol>=pTab->nCol ) return;
+  if( pTab==0 || iCol>=pTab->nCol ){
+    sqlite3BtreeLeaveAll(db);
+    return;
+  }
   zOld = pTab->aCol[iCol].zName;
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
@@ -1476,6 +1480,7 @@ renameColumnFunc_done:
   sqlite3DbFree(db, sParse.zErrMsg);
   sqlite3ParserReset(&sParse);
   sqlite3_free(zQuot);
+  sqlite3BtreeLeaveAll(db);
 }
 
 /*
