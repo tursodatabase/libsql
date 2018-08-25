@@ -856,6 +856,13 @@ void sqlite3AlterRenameColumn(
   assert( iSchema>=0 );
   zDb = db->aDb[iSchema].zDbSName;
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  /* Invoke the authorization callback. */
+  if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
+    goto exit_rename_column;
+  }
+#endif
+
   /* Make sure the old name really is a column name in the table to be
   ** altered.  Set iCol to be the index of the column being renamed */
   zOld = sqlite3NameFromToken(db, pOld);
