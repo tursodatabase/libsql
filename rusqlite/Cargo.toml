@@ -13,6 +13,7 @@ categories = ["database"]
 [badges]
 travis-ci = { repository = "jgallagher/rusqlite" }
 appveyor = { repository = "jgallagher/rusqlite" }
+maintenance = { status = "actively-developed" }
 
 [lib]
 name = "rusqlite"
