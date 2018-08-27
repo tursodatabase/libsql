@@ -229,7 +229,8 @@ SRC += \
 SRC += \
   $(TOP)/ext/rtree/sqlite3rtree.h \
   $(TOP)/ext/rtree/rtree.h \
-  $(TOP)/ext/rtree/rtree.c
+  $(TOP)/ext/rtree/rtree.c \
+  $(TOP)/ext/rtree/geopoly.c
 SRC += \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/sqlite3session.h
@@ -475,7 +476,8 @@ EXTHDR += \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 EXTHDR += \
-  $(TOP)/ext/rtree/rtree.h
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/geopoly.c
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \

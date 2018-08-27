@@ -3738,7 +3738,7 @@ expr_code_doover:
       ** "glob(B,A).  We want to use the A in "A glob B" to test
       ** for function overloading.  But we use the B term in "glob(B,A)".
       */
-      if( nFarg>=2 && (pExpr->flags & EP_InfixFunc) ){
+      if( nFarg>=2 && ExprHasProperty(pExpr, EP_InfixFunc) ){
         pDef = sqlite3VtabOverloadFunction(db, pDef, nFarg, pFarg->a[1].pExpr);
       }else if( nFarg>0 ){
         pDef = sqlite3VtabOverloadFunction(db, pDef, nFarg, pFarg->a[0].pExpr);
