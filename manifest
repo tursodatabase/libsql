@@ -1,5 +1,5 @@
-C Split\sthe\sthree-argument\sversion\sof\sgeopoly_within()\soff\sinto\sa\sseparate\nfunction\snamed\sgeopoly_contains_point().
-D 2018-08-27T15:55:37.720
+C Minor\schanges\sto\sthe\svisual01.txt\stest\sscript.
+D 2018-08-27T17:05:59.920
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -386,7 +386,7 @@ F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae926833
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/rtree/visual01.txt 9852cd026953dd0e6fcfae49f72f51b3b9a42f11f2f38720e9f6d4993d862802
+F ext/rtree/visual01.txt a3bc394ac37a031d8eda690fa35a6532717df2ae54cd066e1b8f45566b0a8650
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 4532116484f525110eb4cfff7030c59354c0cde9def4d109466b0df2b35ad5cc
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
@@ -1757,7 +1757,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f717385340f295064a7649cfc36ad048573cbacb6faa20f5c6067328c40c745
-R c8bba0eba3c40fb02a7a476491c628b8
+P 5a0e1541037b5bbc1b4bf26a7da304c9b32ea72960aca8b9309cf2180757c8a4
+R 57d482752e51750ee238bfa9c4f73bf0
 U drh
-Z dc507345f435c2e520c7c866391dda2f
+Z 5dd365657ebaf30e9435a4a7515828ca
