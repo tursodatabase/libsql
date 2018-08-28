@@ -2798,6 +2798,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 
         /* Release the shared CKPT lock obtained above. */
         walUnlockShared(pWal, WAL_CKPT_LOCK);
+        pWal->minFrame = 1;
       }
 
 
