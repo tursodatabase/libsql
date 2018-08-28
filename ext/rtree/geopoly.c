@@ -187,9 +187,10 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
 }
 
 /*
-** If the input is a well-formed JSON array of coordinates, where each
-** coordinate is itself a two-value array, then convert the JSON into
-** a GeoPoly object and return a pointer to that object.
+** If the input is a well-formed JSON array of coordinates with at least
+** four coordinates and where each coordinate is itself a two-value array,
+** then convert the JSON into a GeoPoly object and return a pointer to
+** that object.
 **
 ** If any error occurs, return NULL.
 */
@@ -221,7 +222,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
         c = geopolySkipSpace(&s);
         s.z++;
         if( c==',' ) continue;
-        if( c==']' ) break;
+        if( c==']' && ii>=2 ) break;
         s.nErr++;
         rc = SQLITE_ERROR;
         goto parse_json_err;
@@ -232,7 +233,10 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
       }
       break;
     }
-    if( geopolySkipSpace(&s)==']' && s.nVertex>=4 ){
+    if( geopolySkipSpace(&s)==']'
+     && s.nVertex>=4
+     && (s.z++, geopolySkipSpace(&s)==0)
+    ){
       int nByte;
       GeoPoly *pOut;
       int x = (s.nVertex-1)*2;
@@ -305,7 +309,7 @@ static GeoPoly *geopolyFuncParam(
   }else if( sqlite3_value_type(pVal)==SQLITE_TEXT ){
     return geopolyParseJson(sqlite3_value_text(pVal), pRc);
   }else{
-    *pRc = SQLITE_ERROR;
+    if( pRc ) *pRc = SQLITE_ERROR;
     if( pCtx!=0 ) sqlite3_result_error(pCtx, "not a valid polygon", -1);
     return 0;
   }
@@ -1173,7 +1177,7 @@ static int geopolyFilter(
       assert( argc==1 );
       geopolyBBox(0, argv[0], bbox, &rc);
       if( rc ){
-        return rc;
+        goto geopoly_filter_end;
       }
       pCsr->aConstraint = p = sqlite3_malloc(sizeof(RtreeConstraint)*4);
       pCsr->nConstraint = 4;
@@ -1222,7 +1226,10 @@ static int geopolyFilter(
     if( rc==SQLITE_OK ){
       RtreeSearchPoint *pNew;
       pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, (u8)(pRtree->iDepth+1));
-      if( pNew==0 ) return SQLITE_NOMEM;
+      if( pNew==0 ){
+        rc = SQLITE_NOMEM;
+        goto geopoly_filter_end;
+      }
       pNew->id = 1;
       pNew->iCell = 0;
       pNew->eWithin = PARTLY_WITHIN;
@@ -1234,6 +1241,7 @@ static int geopolyFilter(
     }
   }
 
+geopoly_filter_end:
   nodeRelease(pRtree, pRoot);
   rtreeRelease(pRtree);
   return rc;
@@ -1402,7 +1410,7 @@ static int geopolyUpdate(
         pVtab->zErrMsg =
           sqlite3_mprintf("_shape does not contain a valid polygon");
       }
-      return rc;
+      goto geopoly_update_end;
     }
     coordChange = 1;
 
@@ -1472,6 +1480,7 @@ static int geopolyUpdate(
     }
   }
 
+geopoly_update_end:
   rtreeRelease(pRtree);
   return rc;
 }
