@@ -148,15 +148,14 @@ static char geopolySkipSpace(GeoParse *p){
 static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
   char c = geopolySkipSpace(p);
   const unsigned char *z = p->z;
-  int j;
+  int j = 0;
   int seenDP = 0;
   int seenE = 0;
-  assert( '-' < '0' );
-  if( c<='0' ){
-    j = c=='-';
-    if( z[j]=='0' && z[j+1]>='0' && z[j+1]<='9' ) return 0;
+  if( c=='-' ){
+    j = 1;
+    c = z[j];
   }
-  j = 1;
+  if( c=='0' && z[j+1]>='0' && z[j+1]<='9' ) return 0;
   for(;; j++){
     c = z[j];
     if( c>='0' && c<='9' ) continue;
@@ -235,13 +234,15 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
     }
     if( geopolySkipSpace(&s)==']'
      && s.nVertex>=4
+     && s.a[0]==s.a[s.nVertex*2-2]
+     && s.a[1]==s.a[s.nVertex*2-1]
      && (s.z++, geopolySkipSpace(&s)==0)
     ){
       int nByte;
       GeoPoly *pOut;
-      int x = (s.nVertex-1)*2;
-      if( s.a[x]==s.a[0] && s.a[x+1]==s.a[1] ) s.nVertex--;
-      nByte = sizeof(GeoPoly) * (s.nVertex-1)*2*sizeof(GeoCoord);
+      int x = 1;
+      s.nVertex--;  /* Remove the redundant vertex at the end */
+      nByte = sizeof(GeoPoly) * s.nVertex*2*sizeof(GeoCoord);
       pOut = sqlite3_malloc64( nByte );
       x = 1;
       if( pOut==0 ) goto parse_json_err;
@@ -307,10 +308,14 @@ static GeoPoly *geopolyFuncParam(
     if( pRc ) *pRc = SQLITE_OK;
     return p;
   }else if( sqlite3_value_type(pVal)==SQLITE_TEXT ){
-    return geopolyParseJson(sqlite3_value_text(pVal), pRc);
+    const unsigned char *zJson = sqlite3_value_text(pVal);
+    if( zJson==0 ){
+      if( pRc ) *pRc = SQLITE_NOMEM;
+      return 0;
+    }
+    return geopolyParseJson(zJson, pRc);
   }else{
     if( pRc ) *pRc = SQLITE_ERROR;
-    if( pCtx!=0 ) sqlite3_result_error(pCtx, "not a valid polygon", -1);
     return 0;
   }
 }
