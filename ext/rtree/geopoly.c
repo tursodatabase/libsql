@@ -477,9 +477,14 @@ static void geopolyAreaFunc(
 }
 
 /*
-** Compute a bound-box on a polygon.  Return a new GeoPoly object
-** that describes the bounding box.  Or, if aCoord is not a NULL pointer
-** fill it in with the bounding box instead.
+** If pPoly is a polygon, compute its bounding box. Then:
+**
+**    (1) if aCoord!=0 store the bounding box in aCoord, returning NULL
+**    (2) otherwise, compute a GeoPoly for the bounding box and return the
+**        new GeoPoly
+**
+** If pPoly is NULL but aCoord is not NULL, then compute a new GeoPoly from
+** the bounding box in aCoord and return a pointer to that GeoPoly.
 */
 static GeoPoly *geopolyBBox(
   sqlite3_context *context,   /* For recording the error */
@@ -487,11 +492,21 @@ static GeoPoly *geopolyBBox(
   RtreeCoord *aCoord,         /* Results here */
   int *pRc                    /* Error code here */
 ){
-  GeoPoly *p = geopolyFuncParam(context, pPoly, pRc);
   GeoPoly *pOut = 0;
+  GeoPoly *p;
+  float mnX, mxX, mnY, mxY;
+  if( pPoly==0 && aCoord!=0 ){
+    p = 0;
+    mnX = aCoord[0].f;
+    mxX = aCoord[1].f;
+    mnY = aCoord[2].f;
+    mxY = aCoord[3].f;
+    goto geopolyBboxFill;
+  }else{
+    p = geopolyFuncParam(context, pPoly, pRc);
+  }
   if( p ){
     int ii;
-    float mnX, mxX, mnY, mxY;
     mnX = mxX = p->a[0];
     mnY = mxY = p->a[1];
     for(ii=1; ii<p->nVertex; ii++){
@@ -504,6 +519,7 @@ static GeoPoly *geopolyBBox(
     }
     if( pRc ) *pRc = SQLITE_OK;
     if( aCoord==0 ){
+      geopolyBboxFill:
       pOut = sqlite3_realloc(p, sizeof(GeoPoly)+sizeof(GeoCoord)*6);
       if( pOut==0 ){
         sqlite3_free(p);
@@ -512,6 +528,8 @@ static GeoPoly *geopolyBBox(
         return 0;
       }
       pOut->nVertex = 4;
+      ii = 1;
+      pOut->hdr[0] = *(unsigned char*)&ii;
       pOut->hdr[1] = 0;
       pOut->hdr[2] = 0;
       pOut->hdr[3] = 4;
@@ -549,6 +567,58 @@ static void geopolyBBoxFunc(
     sqlite3_free(p);
   }
 }
+
+/*
+** State vector for the geopoly_group_bbox() aggregate function.
+*/
+typedef struct GeoBBox GeoBBox;
+struct GeoBBox {
+  int isInit;
+  RtreeCoord a[4];
+};
+
+
+/*
+** Implementation of the geopoly_group_bbox(X) aggregate SQL function.
+*/
+static void geopolyBBoxStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  RtreeCoord a[4];
+  int rc = SQLITE_OK;
+  (void)geopolyBBox(context, argv[0], a, &rc);
+  if( rc==SQLITE_OK ){
+    GeoBBox *pBBox;
+    pBBox = (GeoBBox*)sqlite3_aggregate_context(context, sizeof(*pBBox));
+    if( pBBox==0 ) return;
+    if( pBBox->isInit==0 ){
+      pBBox->isInit = 1;
+      memcpy(pBBox->a, a, sizeof(RtreeCoord)*4);
+    }else{
+      if( a[0].f < pBBox->a[0].f ) pBBox->a[0] = a[0];
+      if( a[1].f > pBBox->a[1].f ) pBBox->a[1] = a[1];
+      if( a[2].f < pBBox->a[2].f ) pBBox->a[2] = a[2];
+      if( a[3].f > pBBox->a[3].f ) pBBox->a[3] = a[3];
+    }
+  }
+}
+static void geopolyBBoxFinal(
+  sqlite3_context *context
+){
+  GeoPoly *p;
+  GeoBBox *pBBox;
+  pBBox = (GeoBBox*)sqlite3_aggregate_context(context, 0);
+  if( pBBox==0 ) return;
+  p = geopolyBBox(context, 0, pBBox->a, 0);
+  if( p ){
+    sqlite3_result_blob(context, p->hdr, 
+       4+8*p->nVertex, SQLITE_TRANSIENT);
+    sqlite3_free(p);
+  }
+}
+
 
 /*
 ** Determine if point (x0,y0) is beneath line segment (x1,y1)->(x2,y2).
@@ -1057,7 +1127,7 @@ static int geopolyInit(
     pRtree->nAux++;
     sqlite3_str_appendf(pSql, ",%s", argv[ii]);
   }
-  sqlite3_str_appendf(pSql, ",_bbox HIDDEN);");
+  sqlite3_str_appendf(pSql, ");");
   zSql = sqlite3_str_finish(pSql);
   if( !zSql ){
     rc = SQLITE_NOMEM;
@@ -1345,8 +1415,6 @@ static int geopolyColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
       }
     }
     sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pReadAux, i+2));
-  }else{
-    /* Must be the _bbox column */
   }
   return SQLITE_OK;
 }
@@ -1559,11 +1627,22 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyBBoxFunc,          1,    "geopoly_bbox"             },
      { geopolyXformFunc,         7,    "geopoly_xform"            },
   };
+  static const struct {
+    void (*xStep)(sqlite3_context*,int,sqlite3_value**);
+    void (*xFinal)(sqlite3_context*);
+    const char *zName;
+  } aAgg[] = {
+     { geopolyBBoxStep, geopolyBBoxFinal, "geopoly_group_bbox"    },
+  };
   int i;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
                                  SQLITE_UTF8, 0,
                                  aFunc[i].xFunc, 0, 0);
+  }
+  for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
+    rc = sqlite3_create_function(db, aAgg[i].zName, 1, SQLITE_UTF8, 0,
+                                 0, aAgg[i].xStep, aAgg[i].xFinal);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_module_v2(db, "geopoly", &geopolyModule, 0, 0);
