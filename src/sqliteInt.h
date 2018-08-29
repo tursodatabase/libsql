@@ -3825,8 +3825,9 @@ u32 sqlite3BitvecSize(Bitvec*);
 int sqlite3BitvecBuiltinTest(int,int*);
 #endif
 
-RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
-void sqlite3RowSetClear(RowSet*);
+RowSet *sqlite3RowSetInit(sqlite3*);
+void sqlite3RowSetDelete(void*);
+void sqlite3RowSetClear(void*);
 void sqlite3RowSetInsert(RowSet*, i64);
 int sqlite3RowSetTest(RowSet*, int iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);

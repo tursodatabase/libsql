@@ -1663,7 +1663,7 @@ static void releaseMemArray(Mem *p, int N){
       testcase( p->flags & MEM_Dyn );
       testcase( p->xDel==sqlite3VdbeFrameMemDel );
       testcase( p->flags & MEM_RowSet );
-      if( p->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet) ){
+      if( p->flags&(MEM_Agg|MEM_Dyn) ){
         sqlite3VdbeMemRelease(p);
       }else if( p->szMalloc ){
         sqlite3DbFreeNN(db, p->zMalloc);
@@ -3991,7 +3991,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   f1 = pMem1->flags;
   f2 = pMem2->flags;
   combined_flags = f1|f2;
-  assert( (combined_flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem1) && !sqlite3VdbeMemIsRowSet(pMem2) );
  
   /* If one value is NULL, it is less than the other. If both values
   ** are NULL, return 0.
