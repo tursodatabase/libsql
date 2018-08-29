@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\sUPDATE\slogic\sin\sGeopoly.
-D 2018-08-29T20:52:40.880
+C Additional\stest\scases\sfor\sgeopoly.
+D 2018-08-29T21:01:22.572
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -386,7 +386,7 @@ F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae926833
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/rtree/visual01.txt e47922ab37af9589cd03aca33876fcc8eefef7c9a624e1960d14bdd2572e8d9e
+F ext/rtree/visual01.txt 17c3afefc208c375607aa82242e97fa79c316e539bcd0b7b3e59344c69445d05
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 4532116484f525110eb4cfff7030c59354c0cde9def4d109466b0df2b35ad5cc
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f48e9feb3fca514e4e586932e6d19a5e34a384204effeba553006dcddf5f13d2
-R c11872ace9ae24cb28c40999f97e723f
+P 7c3cee0a2a5ccacff27400c38bd708f7b9b968eb013a8fa685d876dfe85e12a6
+R 771e2fad0c71e34b021e9df816201c53
 U drh
-Z 581e01d30ec7f16b604718e3d6a88b37
+Z fceaa831790380442f9478793a598598
