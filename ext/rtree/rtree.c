@@ -127,6 +127,7 @@ struct Rtree {
   u8 nBytesPerCell;           /* Bytes consumed per cell */
   u8 inWrTrans;               /* True if inside write transaction */
   u8 nAux;                    /* # of auxiliary columns in %_rowid */
+  u8 nAuxNotNull;             /* Number of initial not-null aux columns */
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
@@ -3453,7 +3454,11 @@ static int rtreeSqlInit(
       sqlite3_str_appendf(p, "UPDATE \"%w\".\"%w_rowid\"SET ", zDb, zPrefix);
       for(ii=0; ii<pRtree->nAux; ii++){
         if( ii ) sqlite3_str_append(p, ",", 1);
-        sqlite3_str_appendf(p,"a%d=?%d",ii,ii+2);
+        if( ii<pRtree->nAuxNotNull ){
+          sqlite3_str_appendf(p,"a%d=coalesce(?%d,a%d)",ii,ii+2,ii);
+        }else{
+          sqlite3_str_appendf(p,"a%d=?%d",ii,ii+2);
+        }
       }
       sqlite3_str_appendf(p, " WHERE rowid=?1");
       zSql = sqlite3_str_finish(p);

@@ -536,4 +536,40 @@ SELECT geopoly_svg(poly,
        )
   FROM querypoly;
 .print '</svg>'
+
+.print '<h1>Color-Change For Overlapping Elements</h1>'
+BEGIN;
+UPDATE geo1
+   SET clr=CASE WHEN rowid IN (SELECT geo1.rowid FROM geo1, querypoly
+                                WHERE geopoly_overlap(_shape,poly))
+           THEN 'red' ELSE 'blue' END;
+.print '<svg width="1000" height="800" style="border:1px solid black">'
+SELECT geopoly_svg(_shape,
+         printf('style="fill:none;stroke:%s;stroke-width:1"',geo1.clr)
+       )
+  FROM geo1;
+SELECT geopoly_svg(poly,'style="fill:none;stroke:black;stroke-width:2"')
+  FROM querypoly;
+ROLLBACK;
+.print '</svg>'
+
+.print '<h1>Color-Change And Move Overlapping Elements</h1>'
+BEGIN;
+UPDATE geo1
+   SET clr=CASE WHEN rowid IN (SELECT geo1.rowid FROM geo1, querypoly
+                                WHERE geopoly_overlap(_shape,poly))
+           THEN 'red' ELSE 'blue' END;
+UPDATE geo1
+   SET _shape=geopoly_xform(_shape,1,0,0,1,300,0)
+ WHERE geopoly_overlap(_shape,(SELECT poly FROM querypoly));
+.print '<svg width="1000" height="800" style="border:1px solid black">'
+SELECT geopoly_svg(_shape,
+         printf('style="fill:none;stroke:%s;stroke-width:1"',geo1.clr)
+       )
+  FROM geo1;
+SELECT geopoly_svg(poly,'style="fill:none;stroke:black;stroke-width:2"')
+  FROM querypoly;
+ROLLBACK;
+.print '</svg>'
+
 .print '</html>'

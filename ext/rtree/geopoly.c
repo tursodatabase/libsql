@@ -1122,7 +1122,8 @@ static int geopolyInit(
   */
   pSql = sqlite3_str_new(db);
   sqlite3_str_appendf(pSql, "CREATE TABLE x(_shape");
-  pRtree->nAux = 1;   /* Add one for _shape */
+  pRtree->nAux = 1;         /* Add one for _shape */
+  pRtree->nAuxNotNull = 1;  /* The _shape column is always not-null */
   for(ii=3; ii<argc; ii++){
     pRtree->nAux++;
     sqlite3_str_appendf(pSql, ",%s", argv[ii]);
@@ -1396,6 +1397,7 @@ static int geopolyColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
 
   if( rc ) return rc;
   if( p==0 ) return SQLITE_OK;
+  if( i==0 && sqlite3_vtab_nochange(ctx) ) return SQLITE_OK;
   if( i<=pRtree->nAux ){
     if( !pCsr->bAuxValid ){
       if( pCsr->pReadAux==0 ){
@@ -1465,7 +1467,6 @@ static int geopolyUpdate(
   rtreeReference(pRtree);
   assert(nData>=1);
 
-  rc = SQLITE_ERROR;
   oldRowidValid = sqlite3_value_type(aData[0])!=SQLITE_NULL;;
   oldRowid = oldRowidValid ? sqlite3_value_int64(aData[0]) : 0;
   newRowidValid = nData>1 && sqlite3_value_type(aData[1])!=SQLITE_NULL;
@@ -1489,7 +1490,7 @@ static int geopolyUpdate(
 
     /* If a rowid value was supplied, check if it is already present in 
     ** the table. If so, the constraint has failed. */
-    if( newRowidValid ){
+    if( newRowidValid && (!oldRowidValid || oldRowid!=newRowid) ){
       int steprc;
       sqlite3_bind_int64(pRtree->pReadRowid, 1, cell.iRowid);
       steprc = sqlite3_step(pRtree->pReadRowid);
@@ -1543,8 +1544,15 @@ static int geopolyUpdate(
     int jj;
     int nChange = 0;
     sqlite3_bind_int64(pUp, 1, cell.iRowid);
-    for(jj=0; jj<pRtree->nAux; jj++){
-      if( !sqlite3_value_nochange(aData[jj+2]) ) nChange++;
+    assert( pRtree->nAux>=1 );
+    if( sqlite3_value_nochange(aData[2]) ){
+      sqlite3_bind_null(pUp, 2);
+    }else{
+      sqlite3_bind_value(pUp, 2, aData[2]);
+      nChange = 1;
+    }
+    for(jj=1; jj<pRtree->nAux; jj++){
+      nChange++;
       sqlite3_bind_value(pUp, jj+2, aData[jj+2]);
     }
     if( nChange ){
