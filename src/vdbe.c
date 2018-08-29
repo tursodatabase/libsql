@@ -6050,7 +6050,7 @@ case OP_Program: {        /* jump */
   ** of the current program, and the memory required at runtime to execute
   ** the trigger program. If this trigger has been fired before, then pRt 
   ** is already allocated. Otherwise, it must be initialized.  */
-  if( (pRt->flags&MEM_Frame)==0 ){
+  if( (pRt->flags&MEM_Blob)==0 ){
     /* SubProgram.nMem is set to the number of memory cells used by the 
     ** program stored in SubProgram.aOp. As well as these, one memory
     ** cell is required for each cursor used by the program. Set local
@@ -6068,8 +6068,10 @@ case OP_Program: {        /* jump */
       goto no_mem;
     }
     sqlite3VdbeMemRelease(pRt);
-    pRt->flags = MEM_Frame;
-    pRt->u.pFrame = pFrame;
+    pRt->flags = MEM_Blob|MEM_Dyn;
+    pRt->z = (char*)pFrame;
+    pRt->n = nByte;
+    pRt->xDel = sqlite3VdbeFrameMemDel;
 
     pFrame->v = p;
     pFrame->nChildMem = nMem;
@@ -6085,6 +6087,9 @@ case OP_Program: {        /* jump */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
 #endif
+#ifdef SQLITE_DEBUG
+    pFrame->iFrameMagic = SQLITE_FRAME_MAGIC;
+#endif
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
@@ -6092,7 +6097,8 @@ case OP_Program: {        /* jump */
       pMem->db = db;
     }
   }else{
-    pFrame = pRt->u.pFrame;
+    pFrame = (VdbeFrame*)pRt->z;
+    assert( pRt->xDel==sqlite3VdbeFrameMemDel );
     assert( pProgram->nMem+pProgram->nCsr==pFrame->nChildMem 
         || (pProgram->nCsr==0 && pProgram->nMem+1==pFrame->nChildMem) );
     assert( pProgram->nCsr==pFrame->nChildCsr );

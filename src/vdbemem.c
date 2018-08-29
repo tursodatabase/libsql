@@ -43,7 +43,7 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   if( p->flags & MEM_Null ){
     /* Cannot be both MEM_Null and some other type */
     assert( (p->flags & (MEM_Int|MEM_Real|MEM_Str|MEM_Blob
-                         |MEM_RowSet|MEM_Frame|MEM_Agg))==0 );
+                         |MEM_RowSet|MEM_Agg))==0 );
 
     /* If MEM_Null is set, then either the value is a pure NULL (the usual
     ** case) or it is a pointer set using sqlite3_bind_pointer() or
@@ -467,10 +467,6 @@ static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
     p->xDel((void *)p->z);
   }else if( p->flags&MEM_RowSet ){
     sqlite3RowSetClear(p->u.pRowSet);
-  }else if( p->flags&MEM_Frame ){
-    VdbeFrame *pFrame = p->u.pFrame;
-    pFrame->pParent = pFrame->v->pDelFrame;
-    pFrame->v->pDelFrame = pFrame;
   }
   p->flags = MEM_Null;
 }
