@@ -783,7 +783,7 @@ int sqlite3TwoPartName(
       return -1;
     }
   }else{
-    assert( db->init.iDb==0 || db->init.busy
+    assert( db->init.iDb==0 || db->init.busy || IN_RENAME_OBJECT
              || (db->mDbFlags & DBFLAG_Vacuum)!=0);
     iDb = db->init.iDb;
     *pUnqual = pName1;
@@ -878,6 +878,9 @@ void sqlite3StartTable(
     }
     if( !OMIT_TEMPDB && isTemp ) iDb = 1;
     zName = sqlite3NameFromToken(db, pName);
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, (void*)zName, pName);
+    }
   }
   pParse->sNameToken = *pName;
   if( zName==0 ) return;
@@ -1072,7 +1075,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   }
   z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
-  if( IN_RENAME_COLUMN ) sqlite3RenameTokenMap(pParse, (void*)z, pName);
+  if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, pName);
   memcpy(z, pName->z, pName->n);
   z[pName->n] = 0;
   sqlite3Dequote(z);
@@ -1370,7 +1373,7 @@ void sqlite3AddPrimaryKey(
    && sqlite3StrICmp(sqlite3ColumnType(pCol,""), "INTEGER")==0
    && sortOrder!=SQLITE_SO_DESC
   ){
-    if( IN_RENAME_COLUMN && pList ){
+    if( IN_RENAME_OBJECT && pList ){
       sqlite3RenameTokenRemap(pParse, &pTab->iPKey, pList->a[0].pExpr);
     }
     pTab->iPKey = iCol;
@@ -2175,7 +2178,7 @@ void sqlite3CreateView(
   ** allocated rather than point to the input string - which means that
   ** they will persist after the current sqlite3_exec() call returns.
   */
-  if( IN_RENAME_COLUMN ){
+  if( IN_RENAME_OBJECT ){
     p->pSelect = pSelect;
     pSelect = 0;
   }else{
@@ -2748,6 +2751,9 @@ void sqlite3CreateForeignKey(
   pFKey->pNextFrom = p->pFKey;
   z = (char*)&pFKey->aCol[nCol];
   pFKey->zTo = z;
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenMap(pParse, (void*)z, pTo);
+  }
   memcpy(z, pTo->z, pTo->n);
   z[pTo->n] = 0;
   sqlite3Dequote(z);
@@ -2770,7 +2776,7 @@ void sqlite3CreateForeignKey(
           pFromCol->a[i].zName);
         goto fk_end;
       }
-      if( IN_RENAME_COLUMN ){
+      if( IN_RENAME_OBJECT ){
         sqlite3RenameTokenRemap(pParse, &pFKey->aCol[i], pFromCol->a[i].zName);
       }
     }
@@ -2779,7 +2785,7 @@ void sqlite3CreateForeignKey(
     for(i=0; i<nCol; i++){
       int n = sqlite3Strlen30(pToCol->a[i].zName);
       pFKey->aCol[i].zCol = z;
-      if( IN_RENAME_COLUMN ){
+      if( IN_RENAME_OBJECT ){
         sqlite3RenameTokenRemap(pParse, z, pToCol->a[i].zName);
       }
       memcpy(z, pToCol->a[i].zName, n);
@@ -3114,7 +3120,7 @@ void sqlite3CreateIndex(
     if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
       goto exit_create_index;
     }
-    if( !IN_RENAME_COLUMN ){
+    if( !IN_RENAME_OBJECT ){
       if( !db->init.busy ){
         if( sqlite3FindTable(db, zName, 0)!=0 ){
           sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
@@ -3151,7 +3157,7 @@ void sqlite3CreateIndex(
   /* Check for authorization to create an index.
   */
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( !IN_RENAME_COLUMN ){
+  if( !IN_RENAME_OBJECT ){
     const char *zDb = pDb->zDbSName;
     if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(iDb), 0, zDb) ){
       goto exit_create_index;
@@ -3239,7 +3245,7 @@ void sqlite3CreateIndex(
   ** index key.
   */
   pListItem = pList->a;
-  if( IN_RENAME_COLUMN ){
+  if( IN_RENAME_OBJECT ){
     pIndex->aColExpr = pList;
     pList = 0;
   }
@@ -3399,7 +3405,7 @@ void sqlite3CreateIndex(
     }
   }
 
-  if( !IN_RENAME_COLUMN ){
+  if( !IN_RENAME_OBJECT ){
 
     /* Link the new Index structure to its table and to the other
     ** in-memory database structures. 
@@ -3517,7 +3523,7 @@ void sqlite3CreateIndex(
     }
     pIndex = 0;
   }
-  else if( IN_RENAME_COLUMN ){
+  else if( IN_RENAME_OBJECT ){
     assert( pParse->pNewIndex==0 );
     pParse->pNewIndex = pIndex;
     pIndex = 0;
@@ -3713,7 +3719,7 @@ IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
     return 0;
   }
   pList->a[i].zName = sqlite3NameFromToken(db, pToken);
-  if( IN_RENAME_COLUMN && pList->a[i].zName ){
+  if( IN_RENAME_OBJECT && pList->a[i].zName ){
     sqlite3RenameTokenMap(pParse, (void*)pList->a[i].zName, pToken);
   }
   return pList;
@@ -3962,6 +3968,10 @@ SrcList *sqlite3SrcListAppendFromTerm(
   }
   assert( p->nSrc>0 );
   pItem = &p->a[p->nSrc-1];
+  if( IN_RENAME_OBJECT && pItem->zName ){
+    Token *pToken = (pDatabase && pDatabase->z) ? pDatabase : pTable;
+    sqlite3RenameTokenMap(pParse, pItem->zName, pToken);
+  }
   assert( pAlias!=0 );
   if( pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);

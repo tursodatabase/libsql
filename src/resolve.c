@@ -264,6 +264,9 @@ static int lookupName(
           if( sqlite3StrICmp(zTabName, zTab)!=0 ){
             continue;
           }
+          if( IN_RENAME_OBJECT && pItem->zAlias ){
+            sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->pTab);
+          }
         }
         if( 0==(cntTab++) ){
           pMatch = pItem;
@@ -349,7 +352,7 @@ static int lookupName(
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==2 ){
             testcase( iCol==(-1) );
-            if( IN_RENAME_COLUMN ){
+            if( IN_RENAME_OBJECT ){
               pExpr->iColumn = iCol;
               pExpr->pTab = pTab;
               eNewExprOp = TK_COLUMN;
@@ -442,7 +445,7 @@ static int lookupName(
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
-          if( IN_RENAME_COLUMN ){
+          if( IN_RENAME_OBJECT ){
             sqlite3RenameTokenRemap(pParse, 0, (void*)pExpr);
           }
           goto lookupname_end;
@@ -672,20 +675,24 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zTable = 0;
         zColumn = pExpr->u.zToken;
       }else{
+        Expr *pLeft = pExpr->pLeft;
         notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
         pRight = pExpr->pRight;
         if( pRight->op==TK_ID ){
           zDb = 0;
-          zTable = pExpr->pLeft->u.zToken;
         }else{
           assert( pRight->op==TK_DOT );
-          zDb = pExpr->pLeft->u.zToken;
-          zTable = pRight->pLeft->u.zToken;
+          zDb = pLeft->u.zToken;
+          pLeft = pRight->pLeft;
           pRight = pRight->pRight;
         }
+        zTable = pLeft->u.zToken;
         zColumn = pRight->u.zToken;
-        if( IN_RENAME_COLUMN ){
+        if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
+        }
+        if( IN_RENAME_OBJECT ){
+          sqlite3RenameTokenRemap(pParse, (void*)&pExpr->pTab, (void*)pLeft);
         }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
@@ -769,7 +776,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
 
-      if( 0==IN_RENAME_COLUMN ){
+      if( 0==IN_RENAME_OBJECT ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
           || (pDef->xValue==0 && pDef->xInverse==0)

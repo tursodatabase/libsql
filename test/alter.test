@@ -898,28 +898,28 @@ do_execsql_test alter-17.6 {
   SELECT sqlite_rename_trigger(NULL,'abc');
 } {{}}
 do_execsql_test alter-17.7 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
+  SELECT sqlite_rename_parent('main', 'CREATE TABLE t1(a REFERENCES "xyzzy")',
          'xyzzy','lmnop');
 } {{CREATE TABLE t1(a REFERENCES "lmnop")}}
 do_execsql_test alter-17.8 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
+  SELECT sqlite_rename_parent('main', 'CREATE TABLE t1(a REFERENCES "xyzzy")',
          'xyzzy',NULL);
-} {{CREATE TABLE t1(a REFERENCES "(NULL)")}}
+} {{}}
 do_execsql_test alter-17.9 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
+  SELECT sqlite_rename_parent('main', 'CREATE TABLE t1(a REFERENCES "xyzzy")',
          NULL, 'lmnop');
 } {{}}
 do_execsql_test alter-17.10 {
-  SELECT sqlite_rename_parent(NULL,'abc','xyz');
+  SELECT sqlite_rename_parent('main', NULL,'abc','xyz');
 } {{}}
-do_execsql_test alter-17.11 {
-  SELECT sqlite_rename_parent('create references ''','abc','xyz');
-} {{create references '}}
-do_execsql_test alter-17.12 {
-  SELECT sqlite_rename_parent('create references "abc"123" ','abc','xyz');
-} {{create references "xyz"123" }}
-do_execsql_test alter-17.13 {
-  SELECT sqlite_rename_parent("references '''",'abc','xyz');
-} {{references '''}}
+do_catchsql_test alter-17.11 {
+  SELECT sqlite_rename_parent('main', 'create references ''','abc','xyz');
+} {1 {SQL logic error}}
+do_catchsql_test alter-17.12 {
+  SELECT sqlite_rename_parent('main', 'create references "abc"123" ','abc','xyz');
+} {1 {SQL logic error}}
+do_catchsql_test alter-17.13 {
+  SELECT sqlite_rename_parent('main', "references '''",'abc','xyz');
+} {1 {SQL logic error}}
 
 finish_test

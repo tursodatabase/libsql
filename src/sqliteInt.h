@@ -3123,6 +3123,7 @@ struct Parse {
 #define PARSE_MODE_NORMAL        0
 #define PARSE_MODE_DECLARE_VTAB  1
 #define PARSE_MODE_RENAME_COLUMN 2
+#define PARSE_MODE_RENAME_TABLE  3
 
 /*
 ** Sizes and pointers of various parts of the Parse object.
@@ -3142,9 +3143,9 @@ struct Parse {
 #endif
 
 #if defined(SQLITE_OMIT_ALTERTABLE)
-  #define IN_RENAME_COLUMN 0
+  #define IN_RENAME_OBJECT 0
 #else
-  #define IN_RENAME_COLUMN (pParse->eParseMode==PARSE_MODE_RENAME_COLUMN)
+  #define IN_RENAME_OBJECT (pParse->eParseMode>=PARSE_MODE_RENAME_COLUMN)
 #endif
 
 #if defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_OMIT_ALTERTABLE)

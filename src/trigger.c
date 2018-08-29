@@ -181,7 +181,7 @@ void sqlite3BeginTrigger(
     goto trigger_cleanup;
   }
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  if( !IN_RENAME_COLUMN ){
+  if( !IN_RENAME_OBJECT ){
     if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash),zName) ){
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
@@ -214,7 +214,7 @@ void sqlite3BeginTrigger(
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( !IN_RENAME_COLUMN ){
+  if( !IN_RENAME_OBJECT ){
     int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     int code = SQLITE_CREATE_TRIGGER;
     const char *zDb = db->aDb[iTabDb].zDbSName;
@@ -248,7 +248,8 @@ void sqlite3BeginTrigger(
   pTrigger->pTabSchema = pTab->pSchema;
   pTrigger->op = (u8)op;
   pTrigger->tr_tm = tr_tm==TK_BEFORE ? TRIGGER_BEFORE : TRIGGER_AFTER;
-  if( IN_RENAME_COLUMN ){
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenRemap(pParse, pTrigger->table, pTableName->a[0].zName);
     pTrigger->pWhen = pWhen;
     pWhen = 0;
   }else{
@@ -305,7 +306,7 @@ void sqlite3FinishTrigger(
   }
 
 #ifndef SQLITE_OMIT_ALTERTABLE
-  if( IN_RENAME_COLUMN ){
+  if( IN_RENAME_OBJECT ){
     assert( !db->init.busy );
     pParse->pNewTrigger = pTrig;
     pTrig = 0;
@@ -353,7 +354,7 @@ void sqlite3FinishTrigger(
 
 triggerfinish_cleanup:
   sqlite3DeleteTrigger(db, pTrig);
-  assert( IN_RENAME_COLUMN || !pParse->pNewTrigger );
+  assert( IN_RENAME_OBJECT || !pParse->pNewTrigger );
   sqlite3DeleteTriggerStep(db, pStepList);
 }
 
@@ -400,12 +401,13 @@ TriggerStep *sqlite3TriggerSelectStep(
 ** If an OOM error occurs, NULL is returned and db->mallocFailed is set.
 */
 static TriggerStep *triggerStepAllocate(
-  sqlite3 *db,                /* Database connection */
+  Parse *pParse,              /* Parser context */
   u8 op,                      /* Trigger opcode */
   Token *pName,               /* The target name */
   const char *zStart,         /* Start of SQL text */
   const char *zEnd            /* End of SQL text */
 ){
+  sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
   pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep) + pName->n + 1);
@@ -416,6 +418,9 @@ static TriggerStep *triggerStepAllocate(
     pTriggerStep->zTarget = z;
     pTriggerStep->op = op;
     pTriggerStep->zSpan = triggerSpanDup(db, zStart, zEnd);
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, pTriggerStep->zTarget, pName);
+    }
   }
   return pTriggerStep;
 }
@@ -442,9 +447,9 @@ TriggerStep *sqlite3TriggerInsertStep(
 
   assert(pSelect != 0 || db->mallocFailed);
 
-  pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName, zStart, zEnd);
+  pTriggerStep = triggerStepAllocate(pParse, TK_INSERT, pTableName,zStart,zEnd);
   if( pTriggerStep ){
-    if( IN_RENAME_COLUMN ){
+    if( IN_RENAME_OBJECT ){
       pTriggerStep->pSelect = pSelect;
       pSelect = 0;
     }else{
@@ -481,9 +486,9 @@ TriggerStep *sqlite3TriggerUpdateStep(
   sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
-  pTriggerStep = triggerStepAllocate(db, TK_UPDATE, pTableName, zStart, zEnd);
+  pTriggerStep = triggerStepAllocate(pParse, TK_UPDATE, pTableName,zStart,zEnd);
   if( pTriggerStep ){
-    if( IN_RENAME_COLUMN ){
+    if( IN_RENAME_OBJECT ){
       pTriggerStep->pExprList = pEList;
       pTriggerStep->pWhere = pWhere;
       pEList = 0;
@@ -514,9 +519,9 @@ TriggerStep *sqlite3TriggerDeleteStep(
   sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
-  pTriggerStep = triggerStepAllocate(db, TK_DELETE, pTableName, zStart, zEnd);
+  pTriggerStep = triggerStepAllocate(pParse, TK_DELETE, pTableName,zStart,zEnd);
   if( pTriggerStep ){
-    if( IN_RENAME_COLUMN ){
+    if( IN_RENAME_OBJECT ){
       pTriggerStep->pWhere = pWhere;
       pWhere = 0;
     }else{
