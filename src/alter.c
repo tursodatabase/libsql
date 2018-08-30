@@ -275,10 +275,10 @@ void sqlite3AlterRenameTable(
   ** the schema to use the new table name.  */
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_table(%Q, sql, %Q, %Q, 0) "
+      "sql = sqlite_rename_table(%Q, sql, %Q, %Q, %d) "
       "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
       "AND   name NOT LIKE 'sqlite_%%'"
-      , zDb, MASTER_NAME, zDb, zTabName, zName, zTabName
+      , zDb, MASTER_NAME, zDb, zTabName, zName, (iDb==1), zTabName
   );
 
   /* Update the tbl_name and name columns of the sqlite_master table
@@ -1271,7 +1271,7 @@ static void renameColumnFunc(
   }else{
     /* A trigger */
     TriggerStep *pStep;
-    rc = renameResolveTrigger(&sParse, zDb);
+    rc = renameResolveTrigger(&sParse, (bTemp ? 0 : zDb));
     if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
 
     for(pStep=sParse.pNewTrigger->step_list; pStep; pStep=pStep->pNext){
@@ -1451,14 +1451,13 @@ static void renameTableFunc(
         renameTokenFind(&sParse, &sCtx, sParse.pNewTrigger->table);
       }
 
-      rc = renameResolveTrigger(&sParse, zDb);
+      rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
       if( rc==SQLITE_OK ){
         renameWalkTrigger(&sWalker, pTrigger);
-      }
-
-      for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
-        if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
-          renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+        for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
+          if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
+            renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+          }
         }
       }
     }
