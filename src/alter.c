@@ -161,6 +161,29 @@ static int isSystemTable(Parse *pParse, const char *zName){
   return 0;
 }
 
+void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
+  sqlite3NestedParse(pParse, 
+      "SELECT 1 "
+      "FROM \"%w\".%s "
+      "WHERE name NOT LIKE 'sqlite_%%'"
+      " AND sql NOT LIKE 'create virtual%%'"
+      " AND sqlite_rename_test(%Q, sql, type, name, %d)=0 ",
+      zDb, MASTER_NAME, 
+      zDb, bTemp
+  );
+
+  if( bTemp==0 ){
+    sqlite3NestedParse(pParse, 
+        "SELECT 1 "
+        "FROM temp.%s "
+        "WHERE name NOT LIKE 'sqlite_%%'"
+        " AND sql NOT LIKE 'create virtual%%'"
+        " AND sqlite_rename_test(%Q, sql, type, name, 1)=0 ",
+        MASTER_NAME, zDb 
+    );
+  }
+}
+
 /*
 ** Generate code to implement the "ALTER TABLE xxx RENAME TO yyy" 
 ** command. 
@@ -324,6 +347,8 @@ void sqlite3AlterRenameTable(
 
   sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, iDb, 0);
   if( iDb!=1 ) sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, 1, 0);
+
+  renameTestSchema(pParse, zDb, iDb==1);
 
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
@@ -651,22 +676,22 @@ void sqlite3AlterRenameColumn(
       pTab->zName
   );
 
+  sqlite3NestedParse(pParse, 
+      "UPDATE temp.%s SET "
+      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d) "
+      "WHERE type IN ('trigger', 'view')",
+      MASTER_NAME, 
+      zDb, pTab->zName, iCol, zNew, bQuote
+  );
+
   /* Drop and reload the database schema. */
   if( pParse->pVdbe ){
     sqlite3ChangeCookie(pParse, iSchema);
     sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, iSchema, 0);
+    if( iSchema!=1 ) sqlite3VdbeAddParseSchemaOp(pParse->pVdbe, 1, 0);
   }
 
-  sqlite3NestedParse(pParse, 
-      "SELECT 1 "
-      "FROM \"%w\".%s "
-      "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)"
-      " AND sql NOT LIKE 'create virtual%%'"
-      " AND sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, -1)=0 ",
-      zDb, MASTER_NAME, 
-      pTab->zName,
-      zDb, pTab->zName, iCol, zNew
-  );
+  renameTestSchema(pParse, zDb, iSchema==1);
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
@@ -1149,10 +1174,7 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
 **   4. Table:    Table name
 **   5. iCol:     Index of column to rename
 **   6. zNew:     New column name
-**   7. bQuote:   Non-zero if the new column name should be quoted. Negative
-**                if this function is being called to check that the schema
-**                can still be parsed and symbols resolved after the column
-**                has been renamed.
+**   7. bQuote:   Non-zero if the new column name should be quoted.
 **
 ** Do a column rename operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
@@ -1304,7 +1326,7 @@ static void renameColumnFunc(
 renameColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( sParse.zErrMsg ){
-      renameColumnParseError(context, (bQuote<0), argv[1], argv[2], &sParse);
+      renameColumnParseError(context, 0, argv[1], argv[2], &sParse);
     }else{
       sqlite3_result_error_code(context, rc);
     }
@@ -1486,6 +1508,48 @@ static void renameTableFunc(
   return;
 }
 
+static void renameTableTest(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  unsigned char const *zDb = sqlite3_value_text(argv[0]);
+  unsigned char const *zInput = sqlite3_value_text(argv[1]);
+  int bTemp = sqlite3_value_int(argv[4]);
+  int rc;
+  Parse sParse;
+
+  rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
+  if( rc==SQLITE_OK ){
+    if( sParse.pNewTable && sParse.pNewTable->pSelect ){
+      NameContext sNC;
+      memset(&sNC, 0, sizeof(sNC));
+      sNC.pParse = &sParse;
+      sqlite3SelectPrep(&sParse, sParse.pNewTable->pSelect, &sNC);
+      if( sParse.nErr ) rc = sParse.rc;
+    }
+
+    else if( sParse.pNewTrigger ){
+      rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    renameColumnParseError(context, 1, argv[2], argv[3], &sParse);
+  }
+
+  if( sParse.pVdbe ){
+    sqlite3VdbeFinalize(sParse.pVdbe);
+  }
+  sqlite3DeleteTable(db, sParse.pNewTable);
+  if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
+  sqlite3DeleteTrigger(db, sParse.pNewTrigger);
+  sqlite3DbFree(db, sParse.zErrMsg);
+  renameTokenFree(db, sParse.pRename);
+  sqlite3ParserReset(&sParse);
+}
+
 /*
 ** Register built-in functions used to help implement ALTER TABLE
 */
@@ -1493,6 +1557,7 @@ void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_column,  8, 0, 0, renameColumnFunc),
     FUNCTION(sqlite_rename_table,  5, 0, 0, renameTableFunc),
+    FUNCTION(sqlite_rename_test,  5, 0, 0, renameTableTest),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

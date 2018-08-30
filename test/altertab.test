@@ -178,6 +178,33 @@ do_execsql_test 5.1 {
   ALTER TABLE temp.t9 RENAME TO 't1234567890'
 }
 
+do_execsql_test 5.2 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t2 VALUES(3, 4);
+  CREATE VIEW v AS SELECT one.a, one.b, t2.a, t2.b FROM t1 AS one, t2;
+  SELECT * FROM v;
+} {1 2 3 4}
+
+do_catchsql_test 5.3 {
+  ALTER TABLE t2 RENAME TO one;
+} {1 {error in view v after rename: ambiguous column name: one.a}}
+
+do_execsql_test 5.4 {
+  SELECT  *  FROM v
+} {1 2 3 4}
+
+do_execsql_test 5.5 {
+  DROP VIEW v;
+  CREATE VIEW temp.vv AS SELECT one.a, one.b, t2.a, t2.b FROM t1 AS one, t2;
+  SELECT * FROM vv;
+} {1 2 3 4}
+
+do_catchsql_test 5.6 {
+  ALTER TABLE t2 RENAME TO one;
+} {1 {error in view vv after rename: ambiguous column name: one.a}}
+
 finish_test
 
 
