@@ -997,8 +997,12 @@ static int assert_pager_state(Pager *p){
 ** to "print *pPager" in gdb:
 **
 ** (gdb) printf "%s", print_pager_state(pPager)
+**
+** This routine has external linkage in order to suppress compiler warnings
+** about an unused function.  It is enclosed within SQLITE_DEBUG and so does
+** not appear in normal builds.
 */
-static char *print_pager_state(Pager *p){
+char *print_pager_state(Pager *p){
   static char zRet[1024];
 
   sqlite3_snprintf(1024, zRet,
@@ -7277,13 +7281,6 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 */
 int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
   u8 eOld = pPager->journalMode;    /* Prior journalmode */
-
-#ifdef SQLITE_DEBUG
-  /* The print_pager_state() routine is intended to be used by the debugger
-  ** only.  We invoke it once here to suppress a compiler warning. */
-  print_pager_state(pPager);
-#endif
-
 
   /* The eMode parameter is always valid */
   assert(      eMode==PAGER_JOURNALMODE_DELETE

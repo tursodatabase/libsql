@@ -1,5 +1,5 @@
-C Improved\sJSON\sparser\scaching.
-D 2018-08-30T01:52:10.764
+C Give\sthe\sdebugging\sroutine\sprint_pager_stats()\sexternal\slinkage\sin\sorder\sto\nsuppress\sharmless\scompiler\sand\sTSAN\swarnings.
+D 2018-08-30T18:53:09.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -487,7 +487,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c d6ee0c3b3f221dd5f3cec95f0400a581c516d04ea16a2916bba17c55127d8e06
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 705de01dff9c3df9739c37a6d3b58cd2b1734fdabcef829b16cdc7721a9eeaa4
+F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
 F src/pager.h ecc554a55bc55d1c4ba5e17137b72e238e00bd81e72ff2662d8b9c8c10ae3963
 F src/parse.y 704c94624d41d7d46a5467574130e55aa8029a563f4df538f0121475eae46e34
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19b5eb45e090c4b7169a52d881495ee2eafc59f80e3db2288fc1814ba76134ac
-R 6879c3448f3a21f21360b0e010f06ec5
+P 58078c0d2647a194279fa80e032670441b296ffc3acee692901faa5beca460b7
+R a4b705470a4ec2c924173c8c942f70f9
 U drh
-Z c5fe49b6610cf864d1fad4e0e99d3945
+Z 1e426c4805f3914010cc98a58db34e64
