@@ -259,6 +259,18 @@ int sqlite3WalTrace = 0;
 #endif
 
 /*
+** WAL mode depends on atomic aligned 32-bit loads and stores in a few
+** places.  The following macros try to make this explicit.
+*/
+#if GCC_VESRION>=5004000
+# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
+# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
+#else
+# define AtomicLoad(PTR)       (*(PTR))
+# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
+#endif
+
+/*
 ** The maximum (and only) versions of the wal and wal-index formats
 ** that may be interpreted by this version of SQLite.
 **
@@ -2555,7 +2567,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
 #endif
   for(i=1; i<WAL_NREADER; i++){
-    u32 thisMark = pInfo->aReadMark[i];
+    u32 thisMark = AtomicLoad(pInfo->aReadMark+i);
     if( mxReadMark<=thisMark && thisMark<=mxFrame ){
       assert( thisMark!=READMARK_NOT_USED );
       mxReadMark = thisMark;
@@ -2568,7 +2580,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     for(i=1; i<WAL_NREADER; i++){
       rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
       if( rc==SQLITE_OK ){
-        mxReadMark = pInfo->aReadMark[i] = mxFrame;
+        mxReadMark = AtomicStore(pInfo->aReadMark+i,mxFrame);
         mxI = i;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
         break;
@@ -2620,9 +2632,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   ** we can guarantee that the checkpointer that set nBackfill could not
   ** see any pages past pWal->hdr.mxFrame, this problem does not come up.
   */
-  pWal->minFrame = pInfo->nBackfill+1;
+  pWal->minFrame = AtomicLoad(&pInfo->nBackfill)+1;
   walShmBarrier(pWal);
-  if( pInfo->aReadMark[mxI]!=mxReadMark
+  if( AtomicLoad(pInfo->aReadMark+mxI)!=mxReadMark
    || memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr))
   ){
     walUnlockShared(pWal, WAL_READ_LOCK(mxI));

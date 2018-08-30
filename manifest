@@ -1,5 +1,5 @@
-C Give\sthe\sdebugging\sroutine\sprint_pager_stats()\sexternal\slinkage\sin\sorder\sto\nsuppress\sharmless\scompiler\sand\sTSAN\swarnings.
-D 2018-08-30T18:53:09.671
+C Try\sto\sidentify\sthe\splaces\sin\sWAL\scode\swhere\sthread-safety\sdepends\son\sthe\nunderlying\sarchitecture\ssupporting\satomic\sload\sand\sstore\sof\saligned\s32-bit\nvalues.
+D 2018-08-30T20:28:18.073
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -582,7 +582,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 678992ac8ec677a3f9b08126aaf891441083805e3b42574e3654d44538381c14
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 46bfc9427d527099c17ce00a343a1c3fb8b050b00ddaf90a94398cda44070bf8
+F src/wal.c f58ff398f7dba6d6129f27b9a52fc00b46a36d0fea5368706b6d088dde801313
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
 F src/where.c 155809967fbab889374dedf970ea6561b8fb519fcb165d6ba00776552ecc5cde
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58078c0d2647a194279fa80e032670441b296ffc3acee692901faa5beca460b7
-R a4b705470a4ec2c924173c8c942f70f9
+P ff4dc08298ab3988e69fe60802657791f65d2af15f4b1cbd1d02649bc597d0d6
+R 8b1c21076160b5400497f5a8fe9f34ce
 U drh
-Z 1e426c4805f3914010cc98a58db34e64
+Z 66336bd926abce6891acc1782fdb9867
