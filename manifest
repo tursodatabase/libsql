@@ -1,5 +1,5 @@
-C Additional\stest\scases\sfor\sgeopoly.
-D 2018-08-29T21:01:22.572
+C Improved\sJSON\sparser\scaching.
+D 2018-08-30T01:52:10.764
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -284,7 +284,7 @@ F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0
 F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 696c596de45d991e6c4617b5a3cb4cc60d231aa4be10edea7d27a4008df2f545
+F ext/misc/json1.c 34a31eac76aeec269657f6f84a72533600d511005efa5dd97034909a2a0fbc9a
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c3cee0a2a5ccacff27400c38bd708f7b9b968eb013a8fa685d876dfe85e12a6
-R 771e2fad0c71e34b021e9df816201c53
+P 19b5eb45e090c4b7169a52d881495ee2eafc59f80e3db2288fc1814ba76134ac
+R 6879c3448f3a21f21360b0e010f06ec5
 U drh
-Z fceaa831790380442f9478793a598598
+Z c5fe49b6610cf864d1fad4e0e99d3945
