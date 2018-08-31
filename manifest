@@ -1,5 +1,5 @@
-C Test\sthe\sschema\safter\srenaming\sa\stable.\sEnsure\sthat\stemp\sdatabase\striggers\sand\nviews\sare\supdated\swhen\srenaming\sa\scolumn.
-D 2018-08-30T20:03:44.965
+C Ensure\sb-tree\smutexes\sare\salways\sheld\swhen\ssqlite3FindTable()\sis\scalled.\sDo\nnot\sinvoke\sthe\sauthorizer\scallback\swhen\sparsing\sschema\sitems\sas\spart\sof\sALTER\nTABLE\scommands.\sFix\stest\sscript\sissues.
+D 2018-08-31T18:23:53.268
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2729786d5d188974913f07ea63cc84cd42cb9cac5f4aac823c40105e68e22f63
@@ -432,7 +432,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 5ff9eba02edd4fb3635fee57593de12d8f9a8c926e1ae6a42d86f2881dd61229
+F src/alter.c 6fa0efb035dd6c1633c9b54425bbf65f89a402d131beffb93979686b21b7ec4e
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -595,7 +595,7 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 18b00de006597e960a6b27ccec51474ac66cf1070a87c1933e5694dc02190ef1
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test ae17c4412639e16bd797c7617864a16c2badc0035c808ae8246f145e38f8e2f9
-F test/alter.test 8388947daa6caee09f624242d5907dbb0c0da6704cb40c44a6a1c1b4119142ed
+F test/alter.test 31b4e9128887457f1a7bdfea4764513204e88f09e33e89bc32b84fdd3d21229a
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test b6d7b86860111864f6cddb54af313f5862dda23b
@@ -819,7 +819,7 @@ F test/fallocate.test 07416bd593a116d5893cb244f45a94d5c6fe030561df3bd972e6135f81
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
 F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
-F test/fkey2.test 155809016fad6b2a1491facf2ac53a551bc57c2c
+F test/fkey2.test f2e5a7691c1df789267777d58eec78aa6efb803d709e5aa09d2b9a0a4a5cdfbd
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 24dd28eb3d9f1b5a174f47e9899ace5facb08373a4223593c8c631e6cf9f7d5a
@@ -1650,7 +1650,7 @@ F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f1982
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test 533add9100255e4cc430d371b3ecfb79f11f956b86c3a1b9d34413bf8e482d8f
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
-F test/without_rowid3.test 2724c787a51a5dce09d078453a758117b4b728f1
+F test/without_rowid3.test ca4b1e58b35c27313b06d2df87a7f24efb2fe394b4176acbf0d718ef5d6b10d7
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
@@ -1759,7 +1759,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72cfb1be29971d91a164f1d4f20cb054de68960a0bd547630bcd1160565971c5
-R 79fac94bb61d9aa70a424b0f3bdeede1
+P f3c27d916d4837f8fc3dd812bd004535f04c7a53bd2a0a2419613275f48bec76
+R 81cc7609c3c0787876d931405d4b6723
 U dan
-Z 2a5b5dbe0b0f3a53631f87af8692d7e9
+Z 6c4368e1a20fe0bd9edcc5b54d5e689a

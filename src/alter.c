@@ -1162,6 +1162,19 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
   }
 }
 
+static void renameParseCleanup(Parse *pParse){
+  sqlite3 *db = pParse->db;
+  if( pParse->pVdbe ){
+    sqlite3VdbeFinalize(pParse->pVdbe);
+  }
+  sqlite3DeleteTable(db, pParse->pNewTable);
+  if( pParse->pNewIndex ) sqlite3FreeIndex(db, pParse->pNewIndex);
+  sqlite3DeleteTrigger(db, pParse->pNewTrigger);
+  sqlite3DbFree(db, pParse->zErrMsg);
+  renameTokenFree(db, pParse->pRename);
+  sqlite3ParserReset(pParse);
+}
+
 /*
 ** SQL function:
 **
@@ -1208,16 +1221,17 @@ static void renameColumnFunc(
   int bQuote = sqlite3_value_int(argv[7]);
   const char *zOld;
   int bTemp = 0;
-
   int rc;
   char *zErr = 0;
   Parse sParse;
   Walker sWalker;
   Index *pIdx;
   char *zOut = 0;
-
   int i;
   Table *pTab;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+#endif
 
   UNUSED_PARAMETER(NotUsed);
   if( zSql==0 ) return;
@@ -1234,6 +1248,9 @@ static void renameColumnFunc(
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = 0;
+#endif
   rc = renameParseSql(&sParse, zDb, 0, db, zSql, bTemp);
 
   /* Find tokens that need to be replaced. */
@@ -1332,16 +1349,11 @@ renameColumnFunc_done:
     }
   }
 
-  if( sParse.pVdbe ){
-    sqlite3VdbeFinalize(sParse.pVdbe);
-  }
-  sqlite3DeleteTable(db, sParse.pNewTable);
-  if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
-  sqlite3DeleteTrigger(db, sParse.pNewTrigger);
-  renameTokenFree(db, sParse.pRename);
+  renameParseCleanup(&sParse);
   renameTokenFree(db, sCtx.pList);
-  sqlite3DbFree(db, sParse.zErrMsg);
-  sqlite3ParserReset(&sParse);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
   sqlite3BtreeLeaveAll(db);
 }
 
@@ -1377,13 +1389,15 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
 ** of any foreign key constraints that use the table being renamed as the 
 ** parent table. It is passed three arguments:
 **
-**   1) The complete text of the CREATE TABLE statement being modified,
-**   2) The old name of the table being renamed, and
-**   3) The new name of the table being renamed.
+**   0: The database containing the table being renamed.
+**   1: The complete text of the schema statement being modified,
+**   2: The old name of the table being renamed, and
+**   3: The new name of the table being renamed.
+**   4: True if the schema statement comes from the temp db.
 **
-** It returns the new CREATE TABLE statement. For example:
+** It returns the new schema statement. For example:
 **
-**   sqlite_rename_table('CREATE TABLE t1(a REFERENCES t2)', 't2', 't3')
+** sqlite_rename_table('main', 'CREATE TABLE t1(a REFERENCES t2)','t2','t3',0)
 **       -> 'CREATE TABLE t1(a REFERENCES t3)'
 */
 static void renameTableFunc(
@@ -1400,110 +1414,110 @@ static void renameTableFunc(
   unsigned char const *zNew = sqlite3_value_text(argv[3]);
   int bTemp = sqlite3_value_int(argv[4]);
 
-  unsigned const char *z;         /* Pointer to token */
-  int n;                          /* Length of token z */
-  int token;                      /* Type of token */
+  if( zInput && zOld && zNew ){
+    unsigned const char *z;         /* Pointer to token */
+    int n;                          /* Length of token z */
+    int token;                      /* Type of token */
 
-  Parse sParse;
-  int rc;
-  int bQuote = 1;
-  RenameCtx sCtx;
-  Walker sWalker;
+    Parse sParse;
+    int rc;
+    int bQuote = 1;
+    RenameCtx sCtx;
+    Walker sWalker;
 
-  if( zInput==0 || zOld==0 || zNew==0 ) return;
-
-  memset(&sCtx, 0, sizeof(RenameCtx));
-  sCtx.pTab = sqlite3FindTable(db, zOld, zDb);
-  memset(&sWalker, 0, sizeof(Walker));
-  sWalker.pParse = &sParse;
-  sWalker.xExprCallback = renameTableExprCb;
-  sWalker.xSelectCallback = renameTableSelectCb;
-  sWalker.u.pRename = &sCtx;
-
-  sqlite3BtreeEnterAll(db);
-
-  rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
-
-  if( rc==SQLITE_OK ){
-    if( sParse.pNewTable ){
-      Table *pTab = sParse.pNewTable;
-
-      if( pTab->pSelect ){
-        NameContext sNC;
-        memset(&sNC, 0, sizeof(sNC));
-        sNC.pParse = &sParse;
-
-        sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
-        if( sParse.nErr ) rc = sParse.rc;
-        sqlite3WalkSelect(&sWalker, pTab->pSelect);
-      }else{
-        /* Modify any FK definitions to point to the new table. */
-#ifndef SQLITE_OMIT_FOREIGN_KEY
-        FKey *pFKey;
-        for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
-          if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
-            renameTokenFind(&sParse, &sCtx, (void*)pFKey->zTo);
-          }
-        }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+    sqlite3_xauth xAuth = db->xAuth;
+    db->xAuth = 0;
 #endif
 
-        /* If this is the table being altered, fix any table refs in CHECK
-        ** expressions. Also update the name that appears right after the
-        ** "CREATE [VIRTUAL] TABLE" bit. */
-        if( sqlite3_stricmp(zOld, pTab->zName)==0 ){
-          sCtx.pTab = pTab;
-          sqlite3WalkExprList(&sWalker, pTab->pCheck);
-          renameTokenFind(&sParse, &sCtx, pTab->zName);
+    sqlite3BtreeEnterAll(db);
+
+    memset(&sCtx, 0, sizeof(RenameCtx));
+    sCtx.pTab = sqlite3FindTable(db, zOld, zDb);
+    memset(&sWalker, 0, sizeof(Walker));
+    sWalker.pParse = &sParse;
+    sWalker.xExprCallback = renameTableExprCb;
+    sWalker.xSelectCallback = renameTableSelectCb;
+    sWalker.u.pRename = &sCtx;
+
+    rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
+
+    if( rc==SQLITE_OK ){
+      if( sParse.pNewTable ){
+        Table *pTab = sParse.pNewTable;
+
+        if( pTab->pSelect ){
+          NameContext sNC;
+          memset(&sNC, 0, sizeof(sNC));
+          sNC.pParse = &sParse;
+
+          sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
+          if( sParse.nErr ) rc = sParse.rc;
+          sqlite3WalkSelect(&sWalker, pTab->pSelect);
+        }else{
+          /* Modify any FK definitions to point to the new table. */
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+          FKey *pFKey;
+          for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+            if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
+              renameTokenFind(&sParse, &sCtx, (void*)pFKey->zTo);
+            }
+          }
+#endif
+
+          /* If this is the table being altered, fix any table refs in CHECK
+          ** expressions. Also update the name that appears right after the
+          ** "CREATE [VIRTUAL] TABLE" bit. */
+          if( sqlite3_stricmp(zOld, pTab->zName)==0 ){
+            sCtx.pTab = pTab;
+            sqlite3WalkExprList(&sWalker, pTab->pCheck);
+            renameTokenFind(&sParse, &sCtx, pTab->zName);
+          }
         }
       }
-    }
 
-    else if( sParse.pNewIndex ){
-      renameTokenFind(&sParse, &sCtx, sParse.pNewIndex->zName);
-      sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
-    }
+      else if( sParse.pNewIndex ){
+        renameTokenFind(&sParse, &sCtx, sParse.pNewIndex->zName);
+        sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
+      }
 
 #ifndef SQLITE_OMIT_TRIGGER
-    else if( sParse.pNewTrigger ){
-      Trigger *pTrigger = sParse.pNewTrigger;
-      TriggerStep *pStep;
-      if( 0==sqlite3_stricmp(sParse.pNewTrigger->table, zOld) 
-       && sCtx.pTab->pSchema==pTrigger->pTabSchema
-      ){
-        renameTokenFind(&sParse, &sCtx, sParse.pNewTrigger->table);
-      }
+      else if( sParse.pNewTrigger ){
+        Trigger *pTrigger = sParse.pNewTrigger;
+        TriggerStep *pStep;
+        if( 0==sqlite3_stricmp(sParse.pNewTrigger->table, zOld) 
+            && sCtx.pTab->pSchema==pTrigger->pTabSchema
+          ){
+          renameTokenFind(&sParse, &sCtx, sParse.pNewTrigger->table);
+        }
 
-      rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
-      if( rc==SQLITE_OK ){
-        renameWalkTrigger(&sWalker, pTrigger);
-        for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
-          if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
-            renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+        rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+        if( rc==SQLITE_OK ){
+          renameWalkTrigger(&sWalker, pTrigger);
+          for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
+            if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
+              renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+            }
           }
         }
       }
+#endif
     }
+
+    if( rc==SQLITE_OK ){
+      rc = renameEditSql(context, &sCtx, zInput, zNew, bQuote);
+    }
+    if( rc!=SQLITE_OK ){
+      sqlite3_result_error_code(context, rc);
+    }
+
+    renameParseCleanup(&sParse);
+    renameTokenFree(db, sCtx.pList);
+    sqlite3BtreeLeaveAll(db);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+    db->xAuth = xAuth;
 #endif
   }
-
-  if( rc==SQLITE_OK ){
-    rc = renameEditSql(context, &sCtx, zInput, zNew, bQuote);
-  }
-
-  if( rc!=SQLITE_OK ){
-    sqlite3_result_error_code(context, rc);
-  }
-  if( sParse.pVdbe ){
-    sqlite3VdbeFinalize(sParse.pVdbe);
-  }
-  sqlite3DeleteTable(db, sParse.pNewTable);
-  if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
-  sqlite3DeleteTrigger(db, sParse.pNewTrigger);
-  renameTokenFree(db, sParse.pRename);
-  renameTokenFree(db, sCtx.pList);
-  sqlite3DbFree(db, sParse.zErrMsg);
-  sqlite3ParserReset(&sParse);
-  sqlite3BtreeLeaveAll(db);
 
   return;
 }
@@ -1519,6 +1533,11 @@ static void renameTableTest(
   int bTemp = sqlite3_value_int(argv[4]);
   int rc;
   Parse sParse;
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+  db->xAuth = 0;
+#endif
 
   rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
   if( rc==SQLITE_OK ){
@@ -1538,16 +1557,11 @@ static void renameTableTest(
   if( rc!=SQLITE_OK ){
     renameColumnParseError(context, 1, argv[2], argv[3], &sParse);
   }
+  renameParseCleanup(&sParse);
 
-  if( sParse.pVdbe ){
-    sqlite3VdbeFinalize(sParse.pVdbe);
-  }
-  sqlite3DeleteTable(db, sParse.pNewTable);
-  if( sParse.pNewIndex ) sqlite3FreeIndex(db, sParse.pNewIndex);
-  sqlite3DeleteTrigger(db, sParse.pNewTrigger);
-  sqlite3DbFree(db, sParse.zErrMsg);
-  renameTokenFree(db, sParse.pRename);
-  sqlite3ParserReset(&sParse);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
 }
 
 /*
