@@ -1,11 +1,11 @@
-C If\sa\scall\sto\ssqlite3_snapshot_open()\sfails\sbecause\sthe\srequested\ssnapshot\sno\nlonger\sexists,\sreturn\sSQLITE_ERROR_SNAPSHOT\sinstead\sof\sSQLITE_BUSY_SNAPSHOT.
-D 2018-08-31T19:00:16.739
+C New\shyperlink\son\sthe\sREADME.md\sfile.
+D 2018-08-31T23:22:40.497
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ab99b4a0aa33f1c0f39587be9df15c9db536acf7859828ff8c51e13eb5082874
-F README.md 7764d56778d567913ef11c82da9ab94aefa0826f7c243351e4e2d7adaef6f373
+F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION d3e3afdec1165a5e593dcdfffd8e0f33a2b0186067eb51a073ef6c4aec34923d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47d44be4a68d377d0049a12b2587dbbcc0870b469473e1098f7c0358fe8c7532
-R 8019365693265d8430d24b1290c280cd
-U dan
-Z bf99ed6d8dec4f787bbe304a5e0c353c
+P e07923128bb164efbafde29d49175b61f2ef44b2dfac5ae4ed61937945dfcf4c
+R 547460f5e80d9b93c6a19fd045e588a1
+U drh
+Z fb21b6ae32fc6545ce2e423fcfd763a1
