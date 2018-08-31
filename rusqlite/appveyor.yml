@@ -1,33 +1,32 @@
 environment:
   matrix:
-  - TARGET: 1.27.2-x86_64-pc-windows-gnu
+  - TARGET: x86_64-pc-windows-gnu
     MSYS2_BITS: 64
-  - TARGET: 1.27.2-x86_64-pc-windows-msvc
+  - TARGET: x86_64-pc-windows-msvc
     VCPKG_DEFAULT_TRIPLET: x64-windows
     VCPKGRS_DYNAMIC: 1
-  - TARGET: nightly-x86_64-pc-windows-msvc
+  - TARGET: x86_64-pc-windows-msvc
     VCPKG_DEFAULT_TRIPLET: x64-windows-static
     RUSTFLAGS: -Ctarget-feature=+crt-static
 install:
-  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-${env:TARGET}.exe"
-  - rust-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
-  - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
+  - appveyor-retry appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - rustup-init.exe -y --default-host %TARGET%
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
   - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
   - rustc -V
   - cargo -V
-  - ps: Start-FileDownload 'https://sqlite.org/2017/sqlite-dll-win64-x64-3170000.zip' # download SQLite dll (useful only when the `bundled` feature is not set)
-  - if not defined VCPKG_DEFAULT_TRIPLET 7z e sqlite-dll-win64-x64-3170000.zip -y > nul
-  - ps: Start-FileDownload 'https://sqlite.org/2017/sqlite-amalgamation-3170000.zip' # download SQLite headers (useful only when the `bundled` feature is not set)
-  - if not defined VCPKG_DEFAULT_TRIPLET 7z e sqlite-amalgamation-3170000.zip -y > nul
-  - if not defined VCPKG_DEFAULT_TRIPLET SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER% # specify where the SQLite dll has been downloaded (useful only when the `bundled` feature is not set)
-  - if not defined VCPKG_DEFAULT_TRIPLET SET SQLITE3_INCLUDE_DIR=%APPVEYOR_BUILD_FOLDER% # specify where the SQLite headers have been downloaded (useful only when the `bundled` feature is not set)
-  # install vcpkg and the sqlite3 package
-  - if defined VCPKG_DEFAULT_TRIPLET git clone https://github.com/Microsoft/vcpkg c:\projects\vcpkg
-  - if defined VCPKG_DEFAULT_TRIPLET c:\projects\vcpkg\bootstrap-vcpkg.bat
-  - if defined VCPKG_DEFAULT_TRIPLET set VCPKG_ROOT=c:\projects\vcpkg
-  - if defined VCPKG_DEFAULT_TRIPLET %VCPKG_ROOT%\vcpkg.exe install sqlite3
-  - if defined VCPKG_DEFAULT_TRIPLET appveyor DownloadFile http://releases.llvm.org/4.0.0/LLVM-4.0.0-win64.exe
-  - if defined VCPKG_DEFAULT_TRIPLET LLVM-4.0.0-win64.exe /S
+  # download SQLite dll (useful only when the `bundled` feature is not set)
+  - appveyor-retry appveyor DownloadFile https://sqlite.org/2018/sqlite-dll-win64-x64-3240000.zip -FileName sqlite-dll-win64-x64.zip
+  - if not defined VCPKG_DEFAULT_TRIPLET 7z e sqlite-dll-win64-x64.zip -y > nul
+  # download SQLite headers (useful only when the `bundled` feature is not set)
+  - appveyor-retry appveyor DownloadFile https://sqlite.org/2018/sqlite-amalgamation-3240000.zip -FileName sqlite-amalgamation.zip
+  - if not defined VCPKG_DEFAULT_TRIPLET 7z e sqlite-amalgamation.zip -y > nul
+  # specify where the SQLite dll has been downloaded (useful only when the `bundled` feature is not set)
+  - if not defined VCPKG_DEFAULT_TRIPLET SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
+  # specify where the SQLite headers have been downloaded (useful only when the `bundled` feature is not set)
+  - if not defined VCPKG_DEFAULT_TRIPLET SET SQLITE3_INCLUDE_DIR=%APPVEYOR_BUILD_FOLDER%
+  # install sqlite3 package
+  - if defined VCPKG_DEFAULT_TRIPLET vcpkg install sqlite3
 
 build: false
 
