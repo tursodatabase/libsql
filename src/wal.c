@@ -2795,7 +2795,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
         /* Check that the wal file has not been wrapped. Assuming that it has
         ** not, also check that no checkpointer has attempted to checkpoint any
         ** frames beyond pSnapshot->mxFrame. If either of these conditions are
-        ** true, return SQLITE_BUSY_SNAPSHOT. Otherwise, overwrite pWal->hdr
+        ** true, return SQLITE_ERROR_SNAPSHOT. Otherwise, overwrite pWal->hdr
         ** with *pSnapshot and set *pChanged as appropriate for opening the
         ** snapshot.  */
         if( !memcmp(pSnapshot->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))
@@ -2805,7 +2805,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
           memcpy(&pWal->hdr, pSnapshot, sizeof(WalIndexHdr));
           *pChanged = bChanged;
         }else{
-          rc = SQLITE_BUSY_SNAPSHOT;
+          rc = SQLITE_ERROR_SNAPSHOT;
         }
 
         /* Release the shared CKPT lock obtained above. */
@@ -3802,7 +3802,7 @@ int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot){
     if( memcmp(pNew->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))
      || pNew->mxFrame<walCkptInfo(pWal)->nBackfillAttempted
     ){
-      rc = SQLITE_BUSY_SNAPSHOT;
+      rc = SQLITE_ERROR_SNAPSHOT;
       walUnlockShared(pWal, WAL_CKPT_LOCK);
     }
   }
