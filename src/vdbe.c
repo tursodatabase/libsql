@@ -502,7 +502,7 @@ static void memTracePrint(Mem *p){
   }else if( p->flags & MEM_Real ){
     printf(" r:%g", p->u.r);
 #endif
-  }else if( p->flags & MEM_RowSet ){
+  }else if( sqlite3VdbeMemIsRowSet(p) ){
     printf(" (rowset)");
   }else{
     char zBuf[200];
@@ -5914,11 +5914,11 @@ case OP_RowSetAdd: {       /* in1, in2 */
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
   assert( (pIn2->flags & MEM_Int)!=0 );
-  if( (pIn1->flags & MEM_RowSet)==0 ){
-    sqlite3VdbeMemSetRowSet(pIn1);
-    if( (pIn1->flags & MEM_RowSet)==0 ) goto no_mem;
+  if( (pIn1->flags & MEM_Blob)==0 ){
+    if( sqlite3VdbeMemSetRowSet(pIn1) ) goto no_mem;
   }
-  sqlite3RowSetInsert(pIn1->u.pRowSet, pIn2->u.i);
+  assert( sqlite3VdbeMemIsRowSet(pIn1) );
+  sqlite3RowSetInsert((RowSet*)pIn1->z, pIn2->u.i);
   break;
 }
 
@@ -5934,8 +5934,9 @@ case OP_RowSetRead: {       /* jump, in1, out3 */
   i64 val;
 
   pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & MEM_RowSet)==0 
-   || sqlite3RowSetNext(pIn1->u.pRowSet, &val)==0
+  assert( (pIn1->flags & MEM_Blob)==0 || sqlite3VdbeMemIsRowSet(pIn1) );
+  if( (pIn1->flags & MEM_Blob)==0 
+   || sqlite3RowSetNext((RowSet*)pIn1->z, &val)==0
   ){
     /* The boolean index is empty */
     sqlite3VdbeMemSetNull(pIn1);
@@ -5984,20 +5985,19 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
   /* If there is anything other than a rowset object in memory cell P1,
   ** delete it now and initialize P1 with an empty rowset
   */
-  if( (pIn1->flags & MEM_RowSet)==0 ){
-    sqlite3VdbeMemSetRowSet(pIn1);
-    if( (pIn1->flags & MEM_RowSet)==0 ) goto no_mem;
+  if( (pIn1->flags & MEM_Blob)==0 ){
+    if( sqlite3VdbeMemSetRowSet(pIn1) ) goto no_mem;
   }
-
+  assert( sqlite3VdbeMemIsRowSet(pIn1) );
   assert( pOp->p4type==P4_INT32 );
   assert( iSet==-1 || iSet>=0 );
   if( iSet ){
-    exists = sqlite3RowSetTest(pIn1->u.pRowSet, iSet, pIn3->u.i);
+    exists = sqlite3RowSetTest((RowSet*)pIn1->z, iSet, pIn3->u.i);
     VdbeBranchTaken(exists!=0,2);
     if( exists ) goto jump_to_p2;
   }
   if( iSet>=0 ){
-    sqlite3RowSetInsert(pIn1->u.pRowSet, pIn3->u.i);
+    sqlite3RowSetInsert((RowSet*)pIn1->z, pIn3->u.i);
   }
   break;
 }
@@ -6061,7 +6061,7 @@ case OP_Program: {        /* jump */
   ** of the current program, and the memory required at runtime to execute
   ** the trigger program. If this trigger has been fired before, then pRt 
   ** is already allocated. Otherwise, it must be initialized.  */
-  if( (pRt->flags&MEM_Frame)==0 ){
+  if( (pRt->flags&MEM_Blob)==0 ){
     /* SubProgram.nMem is set to the number of memory cells used by the 
     ** program stored in SubProgram.aOp. As well as these, one memory
     ** cell is required for each cursor used by the program. Set local
@@ -6079,8 +6079,10 @@ case OP_Program: {        /* jump */
       goto no_mem;
     }
     sqlite3VdbeMemRelease(pRt);
-    pRt->flags = MEM_Frame;
-    pRt->u.pFrame = pFrame;
+    pRt->flags = MEM_Blob|MEM_Dyn;
+    pRt->z = (char*)pFrame;
+    pRt->n = nByte;
+    pRt->xDel = sqlite3VdbeFrameMemDel;
 
     pFrame->v = p;
     pFrame->nChildMem = nMem;
@@ -6096,6 +6098,9 @@ case OP_Program: {        /* jump */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
 #endif
+#ifdef SQLITE_DEBUG
+    pFrame->iFrameMagic = SQLITE_FRAME_MAGIC;
+#endif
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
@@ -6103,7 +6108,8 @@ case OP_Program: {        /* jump */
       pMem->db = db;
     }
   }else{
-    pFrame = pRt->u.pFrame;
+    pFrame = (VdbeFrame*)pRt->z;
+    assert( pRt->xDel==sqlite3VdbeFrameMemDel );
     assert( pProgram->nMem+pProgram->nCsr==pFrame->nChildMem 
         || (pProgram->nCsr==0 && pProgram->nMem+1==pFrame->nChildMem) );
     assert( pProgram->nCsr==pFrame->nChildCsr );

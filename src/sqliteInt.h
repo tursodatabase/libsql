@@ -791,7 +791,8 @@ typedef INT16_TYPE LogEst;
 # if defined(__SIZEOF_POINTER__)
 #   define SQLITE_PTRSIZE __SIZEOF_POINTER__
 # elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
-       defined(_M_ARM)   || defined(__arm__)    || defined(__x86)
+       defined(_M_ARM)   || defined(__arm__)    || defined(__x86)   ||    \
+      (defined(__TOS_AIX__) && !defined(__64BIT__))
 #   define SQLITE_PTRSIZE 4
 # else
 #   define SQLITE_PTRSIZE 8
@@ -832,7 +833,7 @@ typedef INT16_TYPE LogEst;
 # if defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
      defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
-     defined(__arm__)
+     defined(__arm__)  || defined(_M_ARM64)
 #   define SQLITE_BYTEORDER    1234
 # elif defined(sparc)    || defined(__ppc__)
 #   define SQLITE_BYTEORDER    4321
@@ -3856,8 +3857,9 @@ u32 sqlite3BitvecSize(Bitvec*);
 int sqlite3BitvecBuiltinTest(int,int*);
 #endif
 
-RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
-void sqlite3RowSetClear(RowSet*);
+RowSet *sqlite3RowSetInit(sqlite3*);
+void sqlite3RowSetDelete(void*);
+void sqlite3RowSetClear(void*);
 void sqlite3RowSetInsert(RowSet*, i64);
 int sqlite3RowSetTest(RowSet*, int iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);
