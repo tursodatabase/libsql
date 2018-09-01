@@ -246,6 +246,8 @@ do_execsql_test 6.3 {
 #-------------------------------------------------------------------------
 # Triggers.
 #
+db close
+db2 close
 reset_db
 do_execsql_test 7.0 {
   CREATE TABLE c(x);
