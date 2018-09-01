@@ -205,6 +205,44 @@ do_catchsql_test 5.6 {
   ALTER TABLE t2 RENAME TO one;
 } {1 {error in view vv after rename: ambiguous column name: one.a}}
 
+#-------------------------------------------------------------------------
+
+register_tcl_module db
+proc tcl_command {method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b, c)"
+    }
+  }
+  return {}
+}
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x1 USING tcl(tcl_command);
+}
+
+do_execsql_test 6.1 {
+  ALTER TABLE x1 RENAME TO x2;
+  SELECT sql FROM sqlite_master WHERE name = 'x2'
+} {{CREATE VIRTUAL TABLE "x2" USING tcl(tcl_command)}}
+
+do_execsql_test 7.1 {
+  CREATE TABLE ddd(db, sql, zOld, zNew, bTemp);
+  INSERT INTO ddd VALUES(
+      'main', 'CREATE TABLE x1(i INTEGER, t TEXT)', 'ddd', NULL, 0
+  ), (
+      'main', 'CREATE TABLE x1(i INTEGER, t TEXT)', NULL, 'eee', 0
+  ), (
+      'main', NULL, 'ddd', 'eee', 0
+  );
+} {}
+
+do_execsql_test 7.2 {
+  SELECT 
+  sqlite_rename_table(db, sql, zOld, zNew, bTemp)
+  FROM ddd;
+} {{} {} {}}
+
 finish_test
 
 

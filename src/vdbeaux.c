@@ -1662,7 +1662,6 @@ static void releaseMemArray(Mem *p, int N){
       testcase( p->flags & MEM_Agg );
       testcase( p->flags & MEM_Dyn );
       testcase( p->xDel==sqlite3VdbeFrameMemDel );
-      testcase( p->flags & MEM_RowSet );
       if( p->flags&(MEM_Agg|MEM_Dyn) ){
         sqlite3VdbeMemRelease(p);
       }else if( p->szMalloc ){

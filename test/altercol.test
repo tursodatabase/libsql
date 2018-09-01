@@ -516,7 +516,7 @@ ifcapable fts5 {
   }
   do_catchsql_test 12.3.2 {
     ALTER TABLE ft RENAME a TO z;
-  } {1 {columns of virtual table ft may not be renamed}}
+  } {1 {cannot rename columns of virtual table "ft"}}
 }
 
 do_execsql_test 12.4.1 {
@@ -626,14 +626,17 @@ do_execsql_test 14.1 {
   ), (
       'CREATE TABLE x1(i INTEGER, t TEXT)',
       'table', 'x1', 'main', 'notable', 0, 'zzz', 0
+  ), (
+      'CREATE TABLE x1(i INTEGER, t TEXT)',
+      'table', 'x1', 'main', 'ddd', -1, 'zzz', 0
   );
 } {}
 
 do_execsql_test 14.2 {
   SELECT 
-  sqlite_rename_column(sql, type, object, db, tbl, icol, znew, bquote)
+  sqlite_rename_column(sql, type, object, db, tbl, icol, znew, bquote, 0)
   FROM ddd;
-} {{} {} {}}
+} {{} {} {} {}}
 
 #-------------------------------------------------------------------------
 #
@@ -708,5 +711,45 @@ do_execsql_test 16.2.2 {
 do_execsql_test 16.2.3 {
   SELECT * FROM v5;
 } {3 456 20456 0}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 17.0 {
+  CREATE TABLE u7(x, y, z);
+  CREATE TRIGGER u7t AFTER INSERT ON u7 BEGIN
+    INSERT INTO u8 VALUES(new.x, new.y, new.z);
+  END;
+} {}
+do_catchsql_test 17.1 {
+  ALTER TABLE u7 RENAME x TO xxx;
+} {1 {error in trigger u7t: no such table: main.u8}}
+
+do_execsql_test 17.2 {
+  CREATE TEMP TABLE uu7(x, y, z);
+  CREATE TRIGGER uu7t AFTER INSERT ON uu7 BEGIN
+    INSERT INTO u8 VALUES(new.x, new.y, new.z);
+  END;
+} {}
+do_catchsql_test 17.3 {
+  ALTER TABLE uu7 RENAME x TO xxx;
+} {1 {error in trigger uu7t: no such table: u8}}
+
+reset_db
+forcedelete test.db2
+do_execsql_test 18.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE t1(a);
+  CREATE TABLE aux.log(v);
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO log VALUES(new.a);
+  END;
+  INSERT INTO t1 VALUES(111);
+  SELECT v FROM log;
+} {111}
+
+do_execsql_test 18.1 {
+  ALTER TABLE t1 RENAME a TO b;
+}
+
 
 finish_test

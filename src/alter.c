@@ -561,17 +561,17 @@ void sqlite3AlterRenameColumn(
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d) "
+      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)"
       " AND sql NOT LIKE 'create virtual%%'",
       zDb, MASTER_NAME, 
-      zDb, pTab->zName, iCol, zNew, bQuote,
+      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
       pTab->zName
   );
 
   sqlite3NestedParse(pParse, 
       "UPDATE temp.%s SET "
-      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d) "
+      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, 1) "
       "WHERE type IN ('trigger', 'view')",
       MASTER_NAME, 
       zDb, pTab->zName, iCol, zNew, bQuote
@@ -1076,6 +1076,7 @@ static void renameParseCleanup(Parse *pParse){
 **   5. iCol:     Index of column to rename
 **   6. zNew:     New column name
 **   7. bQuote:   Non-zero if the new column name should be quoted.
+**   8. bTemp:    True if zSql comes from temp schema
 **
 ** Do a column rename operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
@@ -1105,8 +1106,8 @@ static void renameColumnFunc(
   int iCol = sqlite3_value_int(argv[5]);
   const char *zNew = (const char*)sqlite3_value_text(argv[6]);
   int bQuote = sqlite3_value_int(argv[7]);
+  int bTemp = sqlite3_value_int(argv[8]);
   const char *zOld;
-  int bTemp = 0;
   int rc;
   Parse sParse;
   Walker sWalker;
@@ -1361,7 +1362,7 @@ static void renameTableFunc(
       }
 
 #ifndef SQLITE_OMIT_TRIGGER
-      else if( sParse.pNewTrigger ){
+      else{
         Trigger *pTrigger = sParse.pNewTrigger;
         TriggerStep *pStep;
         if( 0==sqlite3_stricmp(sParse.pNewTrigger->table, zOld) 
@@ -1451,7 +1452,7 @@ static void renameTableTest(
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
-    FUNCTION(sqlite_rename_column,  8, 0, 0, renameColumnFunc),
+    FUNCTION(sqlite_rename_column,  9, 0, 0, renameColumnFunc),
     FUNCTION(sqlite_rename_table,  5, 0, 0, renameTableFunc),
     FUNCTION(sqlite_rename_test,  5, 0, 0, renameTableTest),
   };
