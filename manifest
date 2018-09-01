@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srenaming\sa\scolumn\sin\sa\stable\sthat\shas\sa\stemp\strigger\sthat\nreferences\sanother\sattached\sdatabase.
-D 2018-09-01T20:23:28.072
+C Add\sanother\stest\scase\sto\saltertab.test.
+D 2018-09-01T20:38:42.637
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -604,7 +604,7 @@ F test/alter4.test 7e93a21fe131e1dfeb317e90056856f96b10381fc7fe3a05e765569a23400
 F test/altercol.test a5e24ad5e71afbf4a604336ee5f5287d3633ef26952b4ee8b5fe154a30ed2993
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
-F test/altertab.test c273f24c1b23774ce3ab52e0e3535185e294efa93deb7032f07ab9ea2f8bb3e3
+F test/altertab.test 0221db3e69471afa41183bf47b2a5658d73abcb96a19f0089a5f6ec0e2bd18db
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1762,7 +1762,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41b8f38b97bf0d1abcd6de8e940269fc4c51e2bbcf7b2e53e0c8440c58187c33
-R 6b89208f27f74179353ae212d55d532a
+P 336b8a0923bf65b7a2c35811cb6dec0e262a0b31e534d2a6ab093d2afdb05c1f
+R 145add99fb2b5f66c58aac85bb08034b
 U dan
-Z 6ba4d58b7303508fcf7931b53df7a7cd
+Z 0fb0cfe4b4e70bc2c434fcc422411670
