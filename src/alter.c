@@ -905,7 +905,7 @@ static int renameEditSql(
   ** ALTER TABLE statement was quoted (bQuote==1), then set zNew to
   ** point to zQuot so that all substitutions are made using the
   ** quoted version of the new column name.  */
-  zQuot = sqlite3_mprintf("\"%w\"", zNew);
+  zQuot = sqlite3MPrintf(db, "\"%w\"", zNew);
   if( zQuot==0 ){
     return SQLITE_NOMEM;
   }else{
@@ -1102,21 +1102,17 @@ static void renameColumnFunc(
   sqlite3 *db = sqlite3_context_db_handle(context);
   RenameCtx sCtx;
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
-  int nSql = sqlite3_value_bytes(argv[0]);
   const char *zDb = (const char*)sqlite3_value_text(argv[3]);
   const char *zTable = (const char*)sqlite3_value_text(argv[4]);
   int iCol = sqlite3_value_int(argv[5]);
   const char *zNew = (const char*)sqlite3_value_text(argv[6]);
-  int nNew = sqlite3_value_bytes(argv[6]);
   int bQuote = sqlite3_value_int(argv[7]);
   const char *zOld;
   int bTemp = 0;
   int rc;
-  char *zErr = 0;
   Parse sParse;
   Walker sWalker;
   Index *pIdx;
-  char *zOut = 0;
   int i;
   Table *pTab;
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -1421,6 +1417,8 @@ static void renameTableTest(
   unsigned char const *zDb = sqlite3_value_text(argv[0]);
   unsigned char const *zInput = sqlite3_value_text(argv[1]);
   int bTemp = sqlite3_value_int(argv[4]);
+
+  if( zInput==0 ) return;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;

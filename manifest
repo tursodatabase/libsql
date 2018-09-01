@@ -1,5 +1,5 @@
-C Merge\salter-table-rename-table\sback\sinto\sthis\sbranch.
-D 2018-09-01T16:13:41.035
+C Fix\ssome\sharmless\scompiler\swarnings\sand\simprove\sdefenses\sagainst\sOOM\serrors.
+D 2018-09-01T16:55:36.347
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -434,7 +434,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 86affdc4474e165389f890282caa6a98238a586861945db026d1c14714b6b5d6
+F src/alter.c f07588d9f04f6af8c41cca5bfc1f3766aea08608b18ecab02ed8651aecd54c23
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -1762,8 +1762,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62089c6daf9ea51be769c077c23d6fa881ba797255fa22d71baaac191a9c1ba7 8d89ddc1a628e983b0fbd929c9c9daac86ee23d18f8dd2709c971012389395c6
-R 42f4b64c172a70e76760a08e4b49df2d
-T +closed 8d89ddc1a628e983b0fbd929c9c9daac86ee23d18f8dd2709c971012389395c6
-U dan
-Z c4c5a271b15dcfdf4ff4a8b2fd0b81e3
+P ad704a7c86c9ee51c1eb696007660cb9044bba6a8c588a33a8bd66613c231421
+R 610a11d8685dac23f7e1df1eb64581e7
+U drh
+Z b520afbe62d4a7afa9cccc8885a49d91
