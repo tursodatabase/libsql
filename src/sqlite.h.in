@@ -472,6 +472,7 @@ int sqlite3_exec(
 */
 #define SQLITE_ERROR_MISSING_COLLSEQ   (SQLITE_ERROR | (1<<8))
 #define SQLITE_ERROR_RETRY             (SQLITE_ERROR | (2<<8))
+#define SQLITE_ERROR_SNAPSHOT          (SQLITE_ERROR | (3<<8))
 #define SQLITE_IOERR_READ              (SQLITE_IOERR | (1<<8))
 #define SQLITE_IOERR_SHORT_READ        (SQLITE_IOERR | (2<<8))
 #define SQLITE_IOERR_WRITE             (SQLITE_IOERR | (3<<8))
@@ -6440,6 +6441,7 @@ struct sqlite3_index_info {
 #define SQLITE_INDEX_CONSTRAINT_ISNOTNULL 70
 #define SQLITE_INDEX_CONSTRAINT_ISNULL    71
 #define SQLITE_INDEX_CONSTRAINT_IS        72
+#define SQLITE_INDEX_CONSTRAINT_FUNCTION 150
 
 /*
 ** CAPI3REF: Register A Virtual Table Implementation
@@ -9052,11 +9054,11 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
 **
 ** ^A call to sqlite3_snapshot_open() will fail to open if the specified
 ** snapshot has been overwritten by a [checkpoint]. In this case 
-** SQLITE_BUSY_SNAPSHOT is returned.
+** SQLITE_ERROR_SNAPSHOT is returned.
 **
 ** If there is already a read transaction open when this function is 
 ** invoked, then the same read transaction remains open (on the same
-** database snapshot) if SQLITE_ERROR, SQLITE_BUSY or SQLITE_BUSY_SNAPSHOT
+** database snapshot) if SQLITE_ERROR, SQLITE_BUSY or SQLITE_ERROR_SNAPSHOT
 ** is returned. If another error code - for example SQLITE_PROTOCOL or an
 ** SQLITE_IOERR error code - is returned, then the final state of the
 ** read transaction is undefined. If SQLITE_OK is returned, then the 

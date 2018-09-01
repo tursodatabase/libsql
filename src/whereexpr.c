@@ -340,6 +340,7 @@ static int isLikeOrGlob(
 ** If the expression matches none of the patterns above, return 0.
 */
 static int isAuxiliaryVtabOperator(
+  sqlite3 *db,                    /* Parsing context */
   Expr *pExpr,                    /* Test this expression */
   unsigned char *peOp2,           /* OUT: 0 for MATCH, or else an op2 value */
   Expr **ppLeft,                  /* Column expression to left of MATCH/op2 */
@@ -363,16 +364,54 @@ static int isAuxiliaryVtabOperator(
     if( pList==0 || pList->nExpr!=2 ){
       return 0;
     }
+
+    /* Built-in operators MATCH, GLOB, LIKE, and REGEXP attach to a
+    ** virtual table on their second argument, which is the same as
+    ** the left-hand side operand in their in-fix form.
+    **
+    **       vtab_column MATCH expression
+    **       MATCH(expression,vtab_column)
+    */
     pCol = pList->a[1].pExpr;
-    if( pCol->op!=TK_COLUMN || !IsVirtual(pCol->pTab) ){
-      return 0;
+    if( pCol->op==TK_COLUMN && IsVirtual(pCol->pTab) ){
+      for(i=0; i<ArraySize(aOp); i++){
+        if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+          *peOp2 = aOp[i].eOp2;
+          *ppRight = pList->a[0].pExpr;
+          *ppLeft = pCol;
+          return 1;
+        }
+      }
     }
-    for(i=0; i<ArraySize(aOp); i++){
-      if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
-        *peOp2 = aOp[i].eOp2;
-        *ppRight = pList->a[0].pExpr;
-        *ppLeft = pCol;
-        return 1;
+
+    /* We can also match against the first column of overloaded
+    ** functions where xFindFunction returns a value of at least
+    ** SQLITE_INDEX_CONSTRAINT_FUNCTION.
+    **
+    **      OVERLOADED(vtab_column,expression)
+    **
+    ** Historically, xFindFunction expected to see lower-case function
+    ** names.  But for this use case, xFindFunction is expected to deal
+    ** with function names in an arbitrary case.
+    */
+    pCol = pList->a[0].pExpr;
+    if( pCol->op==TK_COLUMN && IsVirtual(pCol->pTab) ){
+      sqlite3_vtab *pVtab;
+      sqlite3_module *pMod;
+      void (*xNotUsed)(sqlite3_context*,int,sqlite3_value**);
+      void *pNotUsed;
+      pVtab = sqlite3GetVTable(db, pCol->pTab)->pVtab;
+      assert( pVtab!=0 );
+      assert( pVtab->pModule!=0 );
+      pMod = (sqlite3_module *)pVtab->pModule;
+      if( pMod->xFindFunction!=0 ){
+        i = pMod->xFindFunction(pVtab,2, pExpr->u.zToken, &xNotUsed, &pNotUsed);
+        if( i>=SQLITE_INDEX_CONSTRAINT_FUNCTION ){
+          *peOp2 = i;
+          *ppRight = pList->a[1].pExpr;
+          *ppLeft = pCol;
+          return 1;
+        }
       }
     }
   }else if( pExpr->op==TK_NE || pExpr->op==TK_ISNOT || pExpr->op==TK_NOTNULL ){
@@ -820,7 +859,7 @@ static void exprAnalyzeOrTerm(
         idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
         exprAnalyze(pSrc, pWC, idxNew);
-        pTerm = &pWC->a[idxTerm];
+        /* pTerm = &pWC->a[idxTerm]; // would be needed if pTerm where used again */
         markTermAsChild(pWC, idxNew, idxTerm);
       }else{
         sqlite3ExprListDelete(db, pList);
@@ -1237,7 +1276,7 @@ static void exprAnalyze(
   */
   if( pWC->op==TK_AND ){
     Expr *pRight = 0, *pLeft = 0;
-    int res = isAuxiliaryVtabOperator(pExpr, &eOp2, &pLeft, &pRight);
+    int res = isAuxiliaryVtabOperator(db, pExpr, &eOp2, &pLeft, &pRight);
     while( res-- > 0 ){
       int idxNew;
       WhereTerm *pNewTerm;

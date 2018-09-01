@@ -42,8 +42,7 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
 
   if( p->flags & MEM_Null ){
     /* Cannot be both MEM_Null and some other type */
-    assert( (p->flags & (MEM_Int|MEM_Real|MEM_Str|MEM_Blob
-                         |MEM_RowSet|MEM_Frame|MEM_Agg))==0 );
+    assert( (p->flags & (MEM_Int|MEM_Real|MEM_Str|MEM_Blob|MEM_Agg))==0 );
 
     /* If MEM_Null is set, then either the value is a pure NULL (the usual
     ** case) or it is a pointer set using sqlite3_bind_pointer() or
@@ -156,7 +155,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 #ifndef SQLITE_OMIT_UTF16
   int rc;
 #endif
-  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
            || desiredEnc==SQLITE_UTF16BE );
   if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
@@ -189,7 +188,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 */
 SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   assert( sqlite3VdbeCheckMemInvariants(pMem) );
-  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   testcase( pMem->db==0 );
 
   /* If the bPreserve flag is set to true, then the memory cell must already
@@ -277,7 +276,7 @@ static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
 */
 int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   if( (pMem->flags & (MEM_Str|MEM_Blob))!=0 ){
     if( ExpandBlob(pMem) ) return SQLITE_NOMEM;
     if( pMem->szMalloc==0 || pMem->z!=pMem->zMalloc ){
@@ -302,7 +301,7 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   int nByte;
   assert( pMem->flags & MEM_Zero );
   assert( pMem->flags&MEM_Blob );
-  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
   /* Set nByte to the number of bytes required to store the expanded blob. */
@@ -357,7 +356,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
   assert( !(fg&MEM_Zero) );
   assert( !(fg&(MEM_Str|MEM_Blob)) );
   assert( fg&(MEM_Int|MEM_Real) );
-  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
 
@@ -462,15 +461,8 @@ static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
     testcase( p->flags & MEM_Dyn );
   }
   if( p->flags&MEM_Dyn ){
-    assert( (p->flags&MEM_RowSet)==0 );
     assert( p->xDel!=SQLITE_DYNAMIC && p->xDel!=0 );
     p->xDel((void *)p->z);
-  }else if( p->flags&MEM_RowSet ){
-    sqlite3RowSetClear(p->u.pRowSet);
-  }else if( p->flags&MEM_Frame ){
-    VdbeFrame *pFrame = p->u.pFrame;
-    pFrame->pParent = pFrame->v->pDelFrame;
-    pFrame->v->pDelFrame = pFrame;
   }
   p->flags = MEM_Null;
 }
@@ -618,7 +610,7 @@ int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
 void sqlite3VdbeIntegerAffinity(Mem *pMem){
   i64 ix;
   assert( pMem->flags & MEM_Real );
-  assert( (pMem->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
@@ -645,7 +637,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
 */
 int sqlite3VdbeMemIntegerify(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  assert( (pMem->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
   pMem->u.i = sqlite3VdbeIntValue(pMem);
@@ -863,26 +855,36 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
 }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Return true if the Mem holds a RowSet object.  This routine is intended
+** for use inside of assert() statements.
+*/
+int sqlite3VdbeMemIsRowSet(const Mem *pMem){
+  return (pMem->flags&(MEM_Blob|MEM_Dyn))==(MEM_Blob|MEM_Dyn)
+         && pMem->xDel==sqlite3RowSetDelete;
+}
+#endif
+
 /*
 ** Delete any previous value and set the value of pMem to be an
 ** empty boolean index.
+**
+** Return SQLITE_OK on success and SQLITE_NOMEM if a memory allocation
+** error occurs.
 */
-void sqlite3VdbeMemSetRowSet(Mem *pMem){
+int sqlite3VdbeMemSetRowSet(Mem *pMem){
   sqlite3 *db = pMem->db;
+  RowSet *p;
   assert( db!=0 );
-  assert( (pMem->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   sqlite3VdbeMemRelease(pMem);
-  pMem->zMalloc = sqlite3DbMallocRawNN(db, 64);
-  if( db->mallocFailed ){
-    pMem->flags = MEM_Null;
-    pMem->szMalloc = 0;
-  }else{
-    assert( pMem->zMalloc );
-    pMem->szMalloc = sqlite3DbMallocSize(db, pMem->zMalloc);
-    pMem->u.pRowSet = sqlite3RowSetInit(db, pMem->zMalloc, pMem->szMalloc);
-    assert( pMem->u.pRowSet!=0 );
-    pMem->flags = MEM_RowSet;
-  }
+  p = sqlite3RowSetInit(db);
+  if( p==0 ) return SQLITE_NOMEM;
+  pMem->z = (char*)p;
+  pMem->flags = MEM_Blob|MEM_Dyn;
+  pMem->xDel = sqlite3RowSetDelete;
+  return SQLITE_OK;
 }
 
 /*
@@ -950,7 +952,7 @@ static SQLITE_NOINLINE void vdbeClrCopy(Mem *pTo, const Mem *pFrom, int eType){
   sqlite3VdbeMemShallowCopy(pTo, pFrom, eType);
 }
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
-  assert( (pFrom->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pFrom) );
   assert( pTo->db==pFrom->db );
   if( VdbeMemDynamic(pTo) ){ vdbeClrCopy(pTo,pFrom,srcType); return; }
   memcpy(pTo, pFrom, MEMCELLSIZE);
@@ -968,7 +970,7 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
-  assert( (pFrom->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pFrom) );
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
@@ -1026,7 +1028,7 @@ int sqlite3VdbeMemSetStr(
   u16 flags = 0;      /* New value for pMem->flags */
 
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  assert( (pMem->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
 
   /* If z is a NULL pointer, set pMem to contain an SQL NULL. */
   if( !z ){
@@ -1148,7 +1150,7 @@ int sqlite3VdbeMemFromBtree(
 
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
-  assert( (pMem->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
   zData = (char *)sqlite3BtreePayloadFetch(pCur, &available);
   assert( zData!=0 );
 
@@ -1172,7 +1174,7 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert( pVal!=0 );
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
-  assert( (pVal->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pVal) );
   assert( (pVal->flags & (MEM_Null))==0 );
   if( pVal->flags & (MEM_Blob|MEM_Str) ){
     if( ExpandBlob(pVal) ) return 0;
@@ -1215,7 +1217,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   if( !pVal ) return 0;
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
-  assert( (pVal->flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pVal) );
   if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
     assert( sqlite3VdbeMemConsistentDualRep(pVal) );
     return pVal->z;

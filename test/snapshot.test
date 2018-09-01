@@ -258,7 +258,7 @@ foreach {tn tcl} {
   } {}
 
   #-------------------------------------------------------------------------
-  # Check that SQLITE_BUSY_SNAPSHOT is returned if the specified snapshot
+  # Check that SQLITE_ERROR_SNAPSHOT is returned if the specified snapshot
   # no longer exists because the wal file has been checkpointed.
   #
   #   1. Reading a snapshot from the middle of a wal file is not possible
@@ -296,7 +296,7 @@ foreach {tn tcl} {
       BEGIN;
     }
     list [catch {snapshot_open db main $snapshot} msg] $msg
-  } {1 SQLITE_BUSY_SNAPSHOT}
+  } {1 SQLITE_ERROR_SNAPSHOT}
   do_test $tn.4.1.4 {
     snapshot_free $snapshot
     execsql COMMIT
@@ -327,7 +327,7 @@ foreach {tn tcl} {
       BEGIN;
     }
     list [catch {snapshot_open db main $snapshot} msg] $msg
-  } {1 SQLITE_BUSY_SNAPSHOT}
+  } {1 SQLITE_ERROR_SNAPSHOT}
   do_test $tn.4.2.4 {
     snapshot_free $snapshot
   } {}

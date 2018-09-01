@@ -2222,7 +2222,6 @@ static int pragmaVtabConnect(
   }
   if( i==0 ){
     sqlite3_str_appendf(&acc, "(\"%s\"", pPragma->zName);
-    cSep = ',';
     i++;
   }
   j = 0;

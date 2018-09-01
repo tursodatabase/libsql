@@ -94,7 +94,7 @@ do_test 1.7 {
 do_test 1.8 {
   execsql BEGIN db3
   list [catch { sqlite3_snapshot_open_blob db3 main $snap } msg] $msg
-} {1 SQLITE_BUSY_SNAPSHOT}
+} {1 SQLITE_ERROR_SNAPSHOT}
 
 finish_test
 

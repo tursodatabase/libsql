@@ -695,7 +695,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     */
     sqlite3DeleteTable(db, pParse->pNewTable);
   }
-  if( !IN_RENAME_COLUMN ){
+  if( !IN_RENAME_OBJECT ){
     sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   }
 
