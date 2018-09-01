@@ -267,7 +267,6 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   sqlite3 *db;              /* The database connection; */
   Vdbe *v;                  /* The prepared statement under construction */
   int r1;                   /* Temporary registers */
-  char *zWhere;             /* WHERE clause for reloading schema */
 
   db = pParse->db;
   if( pParse->nErr || db->mallocFailed ) return;
@@ -399,7 +398,6 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   Table *pNew;
   Table *pTab;
-  Vdbe *v;
   int iDb;
   int i;
   int nAlloc;
@@ -1292,19 +1290,14 @@ static void renameTableFunc(
   sqlite3_value **argv
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
-  char *zOutput = 0;
-  char *zResult;
-  unsigned char const *zDb = sqlite3_value_text(argv[0]);
-  unsigned char const *zInput = sqlite3_value_text(argv[1]);
-  unsigned char const *zOld = sqlite3_value_text(argv[2]);
-  unsigned char const *zNew = sqlite3_value_text(argv[3]);
+  const char *zDb = (const char*)sqlite3_value_text(argv[0]);
+  const char *zInput = (const char*)sqlite3_value_text(argv[1]);
+  const char *zOld = (const char*)sqlite3_value_text(argv[2]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[3]);
   int bTemp = sqlite3_value_int(argv[4]);
+  UNUSED_PARAMETER(NotUsed);
 
   if( zInput && zOld && zNew ){
-    unsigned const char *z;         /* Pointer to token */
-    int n;                          /* Length of token z */
-    int token;                      /* Type of token */
-
     Parse sParse;
     int rc;
     int bQuote = 1;
@@ -1414,17 +1407,16 @@ static void renameTableTest(
   sqlite3_value **argv
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
-  unsigned char const *zDb = sqlite3_value_text(argv[0]);
-  unsigned char const *zInput = sqlite3_value_text(argv[1]);
+  char const *zDb = (const char*)sqlite3_value_text(argv[0]);
+  char const *zInput = (const char*)sqlite3_value_text(argv[1]);
   int bTemp = sqlite3_value_int(argv[4]);
-
-  if( zInput==0 ) return;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;
   db->xAuth = 0;
 #endif
 
+  UNUSED_PARAMETER(NotUsed);
   if( zDb && zInput ){
     int rc;
     Parse sParse;
