@@ -1,5 +1,5 @@
-C New\shyperlink\son\sthe\sREADME.md\sfile.
-D 2018-08-31T23:22:40.497
+C Update\stest\sscript\ssnapshot_fault.test\sto\saccount\sfor\sthe\snew\nsqlite3_snapshot_open()\serror\scode.
+D 2018-09-01T06:13:07.396
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -1275,7 +1275,7 @@ F test/snapshot.test a504f2e7009f512ef66c719f0ea1c55a556bdaf1e1312c80a04d46fc1a3
 F test/snapshot2.test 4fc84a0121e882d6980333bf14dfc1143dfb94f5afbb909c084977a945b45beb
 F test/snapshot3.test d6ec952e437e5c06a293d0f5ec1be1b45771d46d93bccfb3818ca2617dcb11e7
 F test/snapshot4.test 0f7e6bd6f1370d112ee820c541d0dd0e7b8ab4ea77429e65106d81c9ad2185a6
-F test/snapshot_fault.test 52c5e97ebd218846a8ae2da4d147d3e77d71f963
+F test/snapshot_fault.test 508ae6f211d4991e9ff3b5080aeb0a179bf6755138aabeac4bca8083044d895a
 F test/snapshot_up.test 93fec2d847ec12e3bae0f6486da2abc965a606e099e4e870454045f5f56f71ba
 F test/soak.test 18944cf21b94a7fe0df02016a6ee1e9632bc4e8d095a0cb49d95e15d5cca2d5c
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e07923128bb164efbafde29d49175b61f2ef44b2dfac5ae4ed61937945dfcf4c
-R 547460f5e80d9b93c6a19fd045e588a1
-U drh
-Z fb21b6ae32fc6545ce2e423fcfd763a1
+P c663961e34ec03ef76aabc9741f37d19544826e3e0b5931711313fc088e9e62c
+R cd8df7b46385f21282cbe8048608f95d
+U dan
+Z 6efe33567a6b3165892c7111d30b4286
