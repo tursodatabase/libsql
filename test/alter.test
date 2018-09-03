@@ -688,11 +688,13 @@ do_test alter-9.1 {
   execsql {SELECT SQLITE_RENAME_COLUMN(0,0,0,0,0,0,0,0,0)}
 } {{}}
 foreach {tn sql} {
-    1 { SELECT SQLITE_RENAME_TABLE(0,0,0,0,0) }
-    2 { SELECT SQLITE_RENAME_TABLE(10,20,30,40,50) }
-    3 { SELECT SQLITE_RENAME_TABLE('foo', 'foo', 'foo', 'foo', 'foo') }
+    1 { SELECT SQLITE_RENAME_TABLE(0,0,0,0,0,0,0) }
+    2 { SELECT SQLITE_RENAME_TABLE(10,20,30,40,50,60,70) }
+    3 { SELECT SQLITE_RENAME_TABLE('foo','foo','foo','foo','foo','foo','foo') }
 } {
-  do_catchsql_test alter-9.2.$tn $sql {1 {SQL logic error}}
+  do_test alter-9.2.$tn {
+    catch { execsql $sql }
+  } 1
 }
 
 #------------------------------------------------------------------------

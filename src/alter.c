@@ -191,7 +191,7 @@ void sqlite3AlterRenameTable(
   ** the schema to use the new table name.  */
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_table(%Q, sql, %Q, %Q, %d) "
+      "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) "
       "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
       "AND   name NOT LIKE 'sqlite_%%'"
       , zDb, MASTER_NAME, zDb, zTabName, zName, (iDb==1), zTabName
@@ -231,7 +231,7 @@ void sqlite3AlterRenameTable(
   if( iDb!=1 ){
     sqlite3NestedParse(pParse, 
         "UPDATE sqlite_temp_master SET "
-            "sql = sqlite_rename_table(%Q, sql, %Q, %Q, 1), "
+            "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase THEN %Q ELSE tbl_name END "
             "WHERE type IN ('view', 'trigger')"
@@ -1275,10 +1275,12 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
 ** parent table. It is passed three arguments:
 **
 **   0: The database containing the table being renamed.
-**   1: The complete text of the schema statement being modified,
-**   2: The old name of the table being renamed, and
-**   3: The new name of the table being renamed.
-**   4: True if the schema statement comes from the temp db.
+**   1. type:     Type of object ("table", "view" etc.)
+**   2. object:   Name of object
+**   3: The complete text of the schema statement being modified,
+**   4: The old name of the table being renamed, and
+**   5: The new name of the table being renamed.
+**   6: True if the schema statement comes from the temp db.
 **
 ** It returns the new schema statement. For example:
 **
@@ -1292,10 +1294,10 @@ static void renameTableFunc(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   const char *zDb = (const char*)sqlite3_value_text(argv[0]);
-  const char *zInput = (const char*)sqlite3_value_text(argv[1]);
-  const char *zOld = (const char*)sqlite3_value_text(argv[2]);
-  const char *zNew = (const char*)sqlite3_value_text(argv[3]);
-  int bTemp = sqlite3_value_int(argv[4]);
+  const char *zInput = (const char*)sqlite3_value_text(argv[3]);
+  const char *zOld = (const char*)sqlite3_value_text(argv[4]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[5]);
+  int bTemp = sqlite3_value_int(argv[6]);
   UNUSED_PARAMETER(NotUsed);
 
   if( zInput && zOld && zNew ){
@@ -1388,7 +1390,11 @@ static void renameTableFunc(
       rc = renameEditSql(context, &sCtx, zInput, zNew, bQuote);
     }
     if( rc!=SQLITE_OK ){
-      sqlite3_result_error_code(context, rc);
+      if( sParse.zErrMsg ){
+        renameColumnParseError(context, 0, argv[1], argv[2], &sParse);
+      }else{
+        sqlite3_result_error_code(context, rc);
+      }
     }
 
     renameParseCleanup(&sParse);
@@ -1453,7 +1459,7 @@ static void renameTableTest(
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_column,  9, 0, 0, renameColumnFunc),
-    FUNCTION(sqlite_rename_table,  5, 0, 0, renameTableFunc),
+    FUNCTION(sqlite_rename_table,  7, 0, 0, renameTableFunc),
     FUNCTION(sqlite_rename_test,  5, 0, 0, renameTableTest),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));

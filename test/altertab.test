@@ -239,7 +239,7 @@ do_execsql_test 7.1 {
 
 do_execsql_test 7.2 {
   SELECT 
-  sqlite_rename_table(db, sql, zOld, zNew, bTemp)
+  sqlite_rename_table(db, 0, 0, sql, zOld, zNew, bTemp)
   FROM ddd;
 } {{} {} {}}
 
@@ -266,6 +266,45 @@ do_execsql_test 8.2 {
   INSERT INTO aux.c1 VALUES(NULL, 1);
   SELECT sql FROM aux.sqlite_master WHERE name = 'c1';
 } {{CREATE TABLE c1(x INTEGER PRIMARY KEY, y REFERENCES "ppp"(a))}}
+
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t2;
+}
+do_catchsql_test 9.1 {
+  ALTER TABLE t1 RENAME TO t3;
+} {1 {error in view v1: no such table: main.t2}}
+do_execsql_test 9.2 {
+  DROP VIEW v1;
+  CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2 VALUES(new.a);
+  END;
+}
+do_catchsql_test 9.3 {
+  ALTER TABLE t1 RENAME TO t3;
+} {1 {error in trigger tr: no such table: main.t2}}
+
+forcedelete test.db2
+do_execsql_test 9.4 {
+  DROP TRIGGER tr;
+
+  ATTACH 'test.db2' AS aux;
+  CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN SELECT 1, 2, 3; END;
+
+  CREATE TABLE aux.t1(x);
+  CREATE TEMP TRIGGER tr AFTER INSERT ON aux.t1 BEGIN SELECT 1, 2, 3; END;
+}
+do_execsql_test 9.5 {
+  ALTER TABLE main.t1 RENAME TO t3;
+}
+do_execsql_test 9.6 {
+  SELECT sql FROM sqlite_temp_master;
+  SELECT sql FROM sqlite_master WHERE type='trigger';
+} {
+  {CREATE TRIGGER tr AFTER INSERT ON aux.t1 BEGIN SELECT 1, 2, 3; END}
+  {CREATE TRIGGER tr AFTER INSERT ON "t3" BEGIN SELECT 1, 2, 3; END}
+}
 
 finish_test
 
