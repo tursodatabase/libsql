@@ -146,10 +146,8 @@ minimum SQLite version that supports your chosen features. If you are using
 pregenerated bindings are chosen:
 
 * `min_sqlite_version_3_6_8` - SQLite 3.6.8 bindings (this is the default)
-* `min_sqlite_version_3_6_11` - SQLite 3.6.11 bindings
 * `min_sqlite_version_3_6_23` - SQLite 3.6.23 bindings
-* `min_sqlite_version_3_7_3` - SQLite 3.7.3 bindings
-* `min_sqlite_version_3_7_4` - SQLite 3.7.4 bindings
+* `min_sqlite_version_3_7_7` - SQLite 3.7.7 bindings
 
 If you use the `bundled` feature, you will get pregenerated bindings for the
 bundled version of SQLite. If you need other specific pregenerated binding
