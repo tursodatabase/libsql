@@ -20,9 +20,13 @@ name = "rusqlite"
 
 [features]
 load_extension = []
-backup = ["libsqlite3-sys/min_sqlite_version_3_6_11"]
-blob = ["libsqlite3-sys/min_sqlite_version_3_7_4"]
-functions = ["libsqlite3-sys/min_sqlite_version_3_7_3"]
+# hot-backup interface: 3.6.11 (2009-02-18)
+backup = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
+# sqlite3_blob_reopen: 3.7.4
+blob = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
+# sqlite3_create_function_v2: 3.7.3 (2010-10-08)
+functions = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
+# sqlite3_log: 3.6.23 (2010-03-09)
 trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
 bundled = ["libsqlite3-sys/bundled"]
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
@@ -30,6 +34,7 @@ limits = []
 hooks = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
+# xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
 vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7", "lazy_static"]
 csvtab = ["csv", "vtab"]
 # pointer passing interfaces: 3.20.0
