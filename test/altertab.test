@@ -306,6 +306,25 @@ do_execsql_test 9.6 {
   {CREATE TRIGGER tr AFTER INSERT ON "t3" BEGIN SELECT 1, 2, 3; END}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+ifcapable fts5 {
+  do_execsql_test 10.0 {
+    CREATE VIRTUAL TABLE fff USING fts5(x, y, z);
+  }
+
+  do_execsql_test 10.1 {
+    BEGIN;
+      INSERT INTO fff VALUES('a', 'b', 'c');
+      ALTER TABLE fff RENAME TO ggg;
+    COMMIT;
+  }
+
+  do_execsql_test 10.2 {
+    SELECT * FROM ggg;
+  } {a b c}
+}
+
 finish_test
 
 
