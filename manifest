@@ -1,5 +1,5 @@
-C Ensure\sthat\sFTS5\squeries\sof\sthe\sform\s"WHERE\srowid\sBETWEEN\s?\sAND\s?\sAND\stbl\nMATCH\s?\sORDER\sBY\srank"\sdo\srowid\sfiltering\sbefore\ssorting.
-D 2018-09-03T17:11:11.873
+C Remove\san\sold\stestcase()\smacro\sthat\sis\sno\slonger\svalid.
+D 2018-09-05T16:16:56.322
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -575,7 +575,7 @@ F src/vdbe.c 74671dff9ba856c5464557a8dbf2ba940fc4fa67efbceb32e262eedac31d86ca
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h f1f35f70460698d8f5a2bdef1001114babf318e2983a067804e2ae077d8e9827
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
-F src/vdbeaux.c 1ee77344fe9fd6ac11fae6f0150f81e0eadf349a9957340089cf82284e6b379a
+F src/vdbeaux.c 0a769638bf4d9a9eb7b6a29f66b707441711c5775265404bbe1fafa0daa0c891
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 81329ab760e4ec0162119d9cd10193e0303c45c5935bb20c7ae9139d44dd6641
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
@@ -1758,7 +1758,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1aca7673ab04740bc8ad76af0a72a229c79a0cd51cf84d1c689a77424ff17c6
-R c94df3a0d438cb673167739b2da5cf87
-U dan
-Z b61c96101775cc20ac78991005fa78af
+P f1138a38bd23f201a35621a71e82c5718abddb42ab82938e9516ab9d43e4df16
+R 8c1ec812a21bef0e00fe7356d77c5582
+U drh
+Z 9e5b746cf326cab70da9649d19c0539d
