@@ -1282,6 +1282,9 @@ void sqlite3AddDefaultValue(
       sqlite3DbFree(db, x.u.zToken);
     }
   }
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameExprUnmap(pParse, pExpr);
+  }
   sqlite3ExprDelete(db, pExpr);
 }
 

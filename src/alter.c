@@ -624,15 +624,45 @@ struct RenameCtx {
   const char *zOld;               /* Old column name */
 };
 
-void renameTokenClear(Parse *pParse, void *pPtr){
-  RenameToken *p;
-  assert( pPtr || pParse->db->mallocFailed );
-  for(p=pParse->pRename; p; p=p->pNext){
-    if( p->p==pPtr ){
-      p->p = 0;
+#ifdef SQLITE_DEBUG
+/*
+** This function is only for debugging. It performs two tasks:
+**
+**   1. Checks that pointer pPtr does not already appear in the 
+**      rename-token list.
+**
+**   2. Dereferences each pointer in the rename-token list.
+**
+** The second is most effective when debugging under valgrind or
+** address-sanitizer or similar. If any of these pointers no longer 
+** point to valid objects, an exception is raised by the memory-checking 
+** tool.
+**
+** The point of this is to prevent comparisons of invalid pointer values.
+** Even though this always seems to work, it is undefined according to the
+** C standard. Example of undefined comparison:
+**
+**     sqlite3_free(x);
+**     if( x==y ) ...
+**
+** Technically, as x no longer points into a valid object or to the byte
+** following a valid object, it may not be used in comparison operations.
+*/
+void renameTokenCheckAll(Parse *pParse, void *pPtr){
+  if( pParse->nErr==0 && pParse->db->mallocFailed==0 ){
+    RenameToken *p;
+    u8 i = 0;
+    for(p=pParse->pRename; p; p=p->pNext){
+      if( p->p ){
+        assert( p->p!=pPtr );
+        i += *(u8*)(p->p);
+      }
     }
   }
 }
+#else
+# define renameTokenCheckAll(x,y)
+#endif
 
 /*
 ** Add a new RenameToken object mapping parse tree element pPtr into
@@ -643,8 +673,7 @@ void renameTokenClear(Parse *pParse, void *pPtr){
 void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   assert( pPtr || pParse->db->mallocFailed );
-
-  renameTokenClear(pParse, pPtr);
+  renameTokenCheckAll(pParse, pPtr);
   pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
   if( pNew ){
     pNew->p = pPtr;
@@ -663,13 +692,33 @@ void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
 */
 void sqlite3RenameTokenRemap(Parse *pParse, void *pTo, void *pFrom){
   RenameToken *p;
-  if( pTo ) renameTokenClear(pParse, pTo);
+  renameTokenCheckAll(pParse, pTo);
   for(p=pParse->pRename; p; p=p->pNext){
     if( p->p==pFrom ){
       p->p = pTo;
       break;
     }
   }
+}
+
+/*
+** Walker callback used by sqlite3RenameExprUnmap().
+*/
+static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
+  Parse *pParse = pWalker->pParse;
+  sqlite3RenameTokenRemap(pParse, 0, (void*)pExpr);
+  return WRC_Continue;
+}
+
+/*
+** Remove all nodes that are part of expression pExpr from the rename list.
+*/
+void sqlite3RenameExprUnmap(Parse *pParse, Expr *pExpr){
+  Walker sWalker;
+  memset(&sWalker, 0, sizeof(Walker));
+  sWalker.pParse = pParse;
+  sWalker.xExprCallback = renameUnmapExprCb;
+  sqlite3WalkExpr(&sWalker, pExpr);
 }
 
 /*
