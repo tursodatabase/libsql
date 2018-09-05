@@ -835,13 +835,17 @@ static void renameColumnIdlistNames(
   }
 }
 
+/*
+** Parse the SQL statement zSql using Parse object (*p). The Parse object
+** is initialized by this function before it is used.
+*/
 static int renameParseSql(
-  Parse *p, 
-  const char *zDb, 
-  int bTable, 
-  sqlite3 *db, 
-  const char *zSql,
-  int bTemp
+  Parse *p,                       /* Memory to use for Parse object */
+  const char *zDb,                /* Name of schema SQL belongs to */
+  int bTable,                     /* 1 -> RENAME TABLE, 0 -> RENAME COLUMN */
+  sqlite3 *db,                    /* Database handle */
+  const char *zSql,               /* SQL to parse */
+  int bTemp                       /* True if SQL is from temp schema */
 ){
   int rc;
   char *zErr = 0;
@@ -883,6 +887,15 @@ static int renameParseSql(
   return rc;
 }
 
+/*
+** This function edits SQL statement zSql, replacing each token identified
+** by the linked list pRename with the text of zNew. If argument bQuote is
+** true, then zNew is always quoted first. If no error occurs, the result
+** is loaded into context object pCtx as the result.
+**
+** Or, if an error occurs (i.e. an OOM condition), an error is left in
+** pCtx and an SQLite error code returned.
+*/
 static int renameEditSql(
   sqlite3_context *pCtx,          /* Return result here */
   RenameCtx *pRename,             /* Rename context */
@@ -959,10 +972,13 @@ static int renameEditSql(
   return rc;
 }
 
-static int renameResolveTrigger(
-  Parse *pParse,
-  const char *zDb
-){
+/*
+** Resolve all symbols in the trigger at pParse->pNewTrigger, assuming
+** it was read from the schema of database zDb. Return SQLITE_OK if 
+** successful. Otherwise, return an SQLite error code and leave an error
+** message in the Parse object.
+*/
+static int renameResolveTrigger(Parse *pParse, const char *zDb){
   sqlite3 *db = pParse->db;
   TriggerStep *pStep;
   NameContext sNC;
@@ -1029,6 +1045,10 @@ static int renameResolveTrigger(
   return rc;
 }
 
+/*
+** Invoke sqlite3WalkExpr() or sqlite3WalkSelect() on all Select or Expr
+** objects that are part of the trigger passed as the second argument.
+*/
 static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
   TriggerStep *pStep;
 
@@ -1050,6 +1070,10 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
   }
 }
 
+/*
+** Free the contents of Parse object (*pParse). Do not free the memory
+** occupied by the Parse object itself.
+*/
 static void renameParseCleanup(Parse *pParse){
   sqlite3 *db = pParse->db;
   if( pParse->pVdbe ){
@@ -1242,6 +1266,9 @@ renameColumnFunc_done:
   sqlite3BtreeLeaveAll(db);
 }
 
+/*
+** Walker expression callback used by "RENAME TABLE". 
+*/
 static int renameTableExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
   if( pExpr->op==TK_COLUMN && p->pTab==pExpr->pTab ){
@@ -1251,7 +1278,7 @@ static int renameTableExprCb(Walker *pWalker, Expr *pExpr){
 }
 
 /*
-** This is a Walker select callback. 
+** Walker select callback used by "RENAME TABLE". 
 */
 static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   int i;
@@ -1408,6 +1435,19 @@ static void renameTableFunc(
   return;
 }
 
+/*
+** An SQL user function that checks that there are no parse or symbol
+** resolution problems in a CREATE TRIGGER|TABLE|VIEW|INDEX statement.
+** After an ALTER TABLE .. RENAME operation is performed and the schema
+** reloaded, this function is called on each SQL statement in the schema
+** to ensure that it are still usable.
+**
+**   0: Database name ("main", "temp" etc.).
+**   1: SQL statement.
+**   2: Object type ("view", "table", "trigger" or "index").
+**   3: Object name.
+**   4: True if object is from temp schema.
+*/
 static void renameTableTest(
   sqlite3_context *context,
   int NotUsed,
