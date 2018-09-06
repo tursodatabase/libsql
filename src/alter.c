@@ -482,7 +482,7 @@ static int isRealTable(Parse *pParse, Table *pTab){
 #ifndef SQLITE_OMIT_VIEW
   if( pTab->pSelect ){
     zType = "view";
-  }else 
+  }
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( IsVirtual(pTab) ){

@@ -1,5 +1,5 @@
-C Fix\stest\sscript\sproblems\scausing\sSQLITE_OMIT_VIRTUALTABLE\sbuilds\sto\sfail.
-D 2018-09-06T17:23:08.543
+C Fix\sa\sproblem\sin\sALTER\sTABLE\swith\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
+D 2018-09-06T17:47:09.299
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -435,7 +435,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 9088b817d4ca84504dc3b4237be6347cfeb3471aa8b29f57ffc4b102d9f62924
+F src/alter.c b4c7e8f75d5df06ae56008d686082e1271922c45a0cc013742a46e9f22d3c41e
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -606,7 +606,7 @@ F test/alterauth.test dc50064e3d57d60cf8708decefed15cfa154242f6d44069858d4c6c9b1
 F test/altercol.test 1defda7e6b713d8f995ff508d620cdf484dd1482e824d7bdfcc06c733fa7ef36
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
-F test/altertab.test 97aa6977e8eab8b3592903f0a77433a25a7a1a1f7123744d3ec208d86cff86a6
+F test/altertab.test 65f08c3bc8dd0f388c817f0e78d5dc1adaa04af229f11bb058d5aa05abd71dad
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -637,7 +637,7 @@ F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test 4dd570df24d175f6c3a8988358e9ce884d86434edf8af0b396af97c97147ac57
+F test/auth.test f0c1a8fc7f07d94e3e26ba7f77eb4a5cedda67b10d9a49275b154ab03749b6c0
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test db21405b95257c24d29273b6b31d0efc59e1d337e3d5804ba2d1fd4897b1ae49
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ebadb7dc25b9ab544a941ceb9a18926268c21bb60de98737f6ef19915ee8e61a
-R 2f2710d71cd34df85b42f27f8571e0b8
+P 37ad064e5f5704cf345d23b38b3f6d627fbcf20dbb78c8a91e96c9704760a1b8
+R 5e32f4c48fe79fc8076b7b838aa2d6d2
 U dan
-Z e33357edbb7d9c525ccb625284126f22
+Z 04684d094988f37864ce2e6b1115c8d1

@@ -2144,7 +2144,7 @@ ifcapable {cte} {
 #    MAIN: CREATE TABLE sqlite_stat1(tbl,idx,stat);
 #    MAIN: CREATE TABLE t1(a,b);
 #
-ifcapable altertable {
+ifcapable altertable&&vtab {
   do_test 1.350 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
