@@ -1000,6 +1000,10 @@ rollback-test$(EXE):	$(TOP)/tool/rollback-test.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o rollback-test$(EXE) \
 		$(TOP)/tool/rollback-test.c sqlite3.o $(THREADLIB)
 
+atrc$(EXE):	$(TOP)/test/atrc.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o atrc$(EXE) \
+		$(TOP)/test/atrc.c sqlite3.o $(THREADLIB)
+
 LogEst$(EXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(TCC) -o LogEst$(EXE) $(TOP)/tool/logest.c
 

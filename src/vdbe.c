@@ -5722,7 +5722,8 @@ case OP_SqlExec: {
 /* Opcode: ParseSchema P1 * * P4 *
 **
 ** Read and parse all entries from the SQLITE_MASTER table of database P1
-** that match the WHERE clause P4. 
+** that match the WHERE clause P4.  If P4 is a NULL pointer, then the
+** entire schema for P1 is reparsed.
 **
 ** This opcode invokes the parser to create a new virtual machine,
 ** then runs the new virtual machine.  It is thus a re-entrant opcode.
@@ -5746,7 +5747,17 @@ case OP_ParseSchema: {
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
   assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
-  /* Used to be a conditional */ {
+
+#ifndef SQLITE_OMIT_ALTERTABLE
+  if( pOp->p4.z==0 ){
+    sqlite3SchemaClear(db->aDb[iDb].pSchema);
+    db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
+    rc = sqlite3InitOne(db, iDb, &p->zErrMsg, INITFLAG_AlterTable);
+    db->mDbFlags |= DBFLAG_SchemaChange;
+    p->expired = 0;
+  }else
+#endif
+  {
     zMaster = MASTER_NAME;
     initData.db = db;
     initData.iDb = pOp->p1;

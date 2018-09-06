@@ -2438,6 +2438,10 @@ rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\rollback-test.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+atrc.exe:	$(TOP)\test\atrc.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		$(TOP)\test\atrc.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
 LogEst.exe:	$(TOP)\tool\logest.c $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\LogEst.c /link $(LDFLAGS) $(LTLINKOPTS)
 

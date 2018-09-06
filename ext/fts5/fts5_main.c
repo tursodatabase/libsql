@@ -280,7 +280,7 @@ static void fts5CheckTransactionState(Fts5Table *p, int op, int iSavepoint){
     case FTS5_SAVEPOINT:
       assert( p->ts.eState==1 );
       assert( iSavepoint>=0 );
-      assert( iSavepoint>p->ts.iSavepoint );
+      assert( iSavepoint>=p->ts.iSavepoint );
       p->ts.iSavepoint = iSavepoint;
       break;
       

@@ -264,6 +264,9 @@ static int lookupName(
           if( sqlite3StrICmp(zTabName, zTab)!=0 ){
             continue;
           }
+          if( IN_RENAME_OBJECT && pItem->zAlias ){
+            sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->pTab);
+          }
         }
         if( 0==(cntTab++) ){
           pMatch = pItem;
@@ -349,9 +352,15 @@ static int lookupName(
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==2 ){
             testcase( iCol==(-1) );
-            pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
-            eNewExprOp = TK_REGISTER;
-            ExprSetProperty(pExpr, EP_Alias);
+            if( IN_RENAME_OBJECT ){
+              pExpr->iColumn = iCol;
+              pExpr->pTab = pTab;
+              eNewExprOp = TK_COLUMN;
+            }else{
+              pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
+              eNewExprOp = TK_REGISTER;
+              ExprSetProperty(pExpr, EP_Alias);
+            }
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {
@@ -436,6 +445,9 @@ static int lookupName(
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
+          if( IN_RENAME_OBJECT ){
+            sqlite3RenameTokenRemap(pParse, 0, (void*)pExpr);
+          }
           goto lookupname_end;
         }
       } 
@@ -663,17 +675,24 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zTable = 0;
         zColumn = pExpr->u.zToken;
       }else{
+        Expr *pLeft = pExpr->pLeft;
         notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
         pRight = pExpr->pRight;
         if( pRight->op==TK_ID ){
           zDb = 0;
-          zTable = pExpr->pLeft->u.zToken;
-          zColumn = pRight->u.zToken;
         }else{
           assert( pRight->op==TK_DOT );
-          zDb = pExpr->pLeft->u.zToken;
-          zTable = pRight->pLeft->u.zToken;
-          zColumn = pRight->pRight->u.zToken;
+          zDb = pLeft->u.zToken;
+          pLeft = pRight->pLeft;
+          pRight = pRight->pRight;
+        }
+        zTable = pLeft->u.zToken;
+        zColumn = pRight->u.zToken;
+        if( IN_RENAME_OBJECT ){
+          sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
+        }
+        if( IN_RENAME_OBJECT ){
+          sqlite3RenameTokenRemap(pParse, (void*)&pExpr->pTab, (void*)pLeft);
         }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
@@ -757,56 +776,58 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
 
+      if( 0==IN_RENAME_OBJECT ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
+        assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
           || (pDef->xValue==0 && pDef->xInverse==0)
           || (pDef->xValue && pDef->xInverse && pDef->xSFunc && pDef->xFinalize)
-      );
-      if( pDef && pDef->xValue==0 && pExpr->pWin ){
-        sqlite3ErrorMsg(pParse, 
-            "%.*s() may not be used as a window function", nId, zId
         );
-        pNC->nErr++;
-      }else if( 
-            (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
-         || (is_agg && (pDef->funcFlags & SQLITE_FUNC_WINDOW) && !pExpr->pWin)
-         || (is_agg && pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
-      ){
-        const char *zType;
-        if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->pWin ){
-          zType = "window";
-        }else{
-          zType = "aggregate";
+        if( pDef && pDef->xValue==0 && pExpr->pWin ){
+          sqlite3ErrorMsg(pParse, 
+              "%.*s() may not be used as a window function", nId, zId
+          );
+          pNC->nErr++;
+        }else if( 
+              (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
+           || (is_agg && (pDef->funcFlags & SQLITE_FUNC_WINDOW) && !pExpr->pWin)
+           || (is_agg && pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
+        ){
+          const char *zType;
+          if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->pWin ){
+            zType = "window";
+          }else{
+            zType = "aggregate";
+          }
+          sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
+          pNC->nErr++;
+          is_agg = 0;
         }
-        sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()", zType, nId,zId);
-        pNC->nErr++;
-        is_agg = 0;
-      }
 #else
-      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
-        sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
-        pNC->nErr++;
-        is_agg = 0;
-      }
+        if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
+          sqlite3ErrorMsg(pParse,"misuse of aggregate function %.*s()",nId,zId);
+          pNC->nErr++;
+          is_agg = 0;
+        }
 #endif
-      else if( no_such_func && pParse->db->init.busy==0
+        else if( no_such_func && pParse->db->init.busy==0
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-                && pParse->explain==0
+                  && pParse->explain==0
 #endif
-      ){
-        sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
-        pNC->nErr++;
-      }else if( wrong_num_args ){
-        sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
-             nId, zId);
-        pNC->nErr++;
-      }
-      if( is_agg ){
+        ){
+          sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
+          pNC->nErr++;
+        }else if( wrong_num_args ){
+          sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
+               nId, zId);
+          pNC->nErr++;
+        }
+        if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        pNC->ncFlags &= ~(pExpr->pWin ? NC_AllowWin : NC_AllowAgg);
+          pNC->ncFlags &= ~(pExpr->pWin ? NC_AllowWin : NC_AllowAgg);
 #else
-        pNC->ncFlags &= ~NC_AllowAgg;
+          pNC->ncFlags &= ~NC_AllowAgg;
 #endif
+        }
       }
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){

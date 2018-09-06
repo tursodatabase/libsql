@@ -1088,6 +1088,7 @@ typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
+typedef struct RenameToken RenameToken;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
@@ -2281,9 +2282,11 @@ struct IndexSample {
 ** Each token coming out of the lexer is an instance of
 ** this structure.  Tokens are also used as part of an expression.
 **
-** Note if Token.z==0 then Token.dyn and Token.n are undefined and
-** may contain random values.  Do not make any assumptions about Token.dyn
-** and Token.n when Token.z==0.
+** The memory that "z" points to is owned by other objects.  Take care
+** that the owner of the "z" string does not deallocate the string before
+** the Token goes out of scope!  Very often, the "z" points to some place
+** in the middle of the Parse.zSql text.  But it might also point to a
+** static string.
 */
 struct Token {
   const char *z;     /* Text of the token.  Not NULL-terminated! */
@@ -3088,8 +3091,10 @@ struct Parse {
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_ALTERTABLE)
+  u8 eParseMode;            /* PARSE_MODE_XXX constant */
+#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
   int nVtabLock;            /* Number of virtual tables to lock */
 #endif
   int nHeight;              /* Expression tree height of current sub-select */
@@ -3100,6 +3105,7 @@ struct Parse {
   Vdbe *pReprepare;         /* VM being reprepared (sqlite3Reprepare()) */
   const char *zTail;        /* All SQL text past the last semicolon parsed */
   Table *pNewTable;         /* A table being constructed by CREATE TABLE */
+  Index *pNewIndex;         /* An index being constructed by CREATE INDEX */
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -3110,7 +3116,15 @@ struct Parse {
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
   With *pWithToFree;        /* Free this WITH object at the end of the parse */
+#ifndef SQLITE_OMIT_ALTERTABLE
+  RenameToken *pRename;     /* Tokens subject to renaming by ALTER TABLE */
+#endif
 };
+
+#define PARSE_MODE_NORMAL        0
+#define PARSE_MODE_DECLARE_VTAB  1
+#define PARSE_MODE_RENAME_COLUMN 2
+#define PARSE_MODE_RENAME_TABLE  3
 
 /*
 ** Sizes and pointers of various parts of the Parse object.
@@ -3126,7 +3140,19 @@ struct Parse {
 #ifdef SQLITE_OMIT_VIRTUALTABLE
   #define IN_DECLARE_VTAB 0
 #else
-  #define IN_DECLARE_VTAB (pParse->declareVtab)
+  #define IN_DECLARE_VTAB (pParse->eParseMode==PARSE_MODE_DECLARE_VTAB)
+#endif
+
+#if defined(SQLITE_OMIT_ALTERTABLE)
+  #define IN_RENAME_OBJECT 0
+#else
+  #define IN_RENAME_OBJECT (pParse->eParseMode>=PARSE_MODE_RENAME_COLUMN)
+#endif
+
+#if defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_OMIT_ALTERTABLE)
+  #define IN_SPECIAL_PARSE 0
+#else
+  #define IN_SPECIAL_PARSE (pParse->eParseMode!=PARSE_MODE_NORMAL)
 #endif
 
 /*
@@ -3305,7 +3331,13 @@ typedef struct {
   char **pzErrMsg;    /* Error message stored here */
   int iDb;            /* 0 for main database.  1 for TEMP, 2.. for ATTACHed */
   int rc;             /* Result code stored here */
+  u32 mInitFlags;     /* Flags controlling error messages */
 } InitData;
+
+/*
+** Allowed values for mInitFlags
+*/
+#define INITFLAG_AlterTable   0x0001  /* This is a reparse after ALTER TABLE */
 
 /*
 ** Structure containing global configuration data for the SQLite library.
@@ -3410,6 +3442,7 @@ struct Walker {
     Select *pSelect;                          /* HAVING to WHERE clause ctx */
     struct WindowRewrite *pRewrite;           /* Window rewrite context */
     struct WhereConst *pConst;                /* WHERE clause constants */
+    struct RenameCtx *pRename;                /* RENAME COLUMN context */
   } u;
 };
 
@@ -3609,9 +3642,7 @@ int sqlite3CantopenError(int);
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 # define sqlite3Isquote(x)   ((x)=='"'||(x)=='\''||(x)=='['||(x)=='`')
 #endif
-#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3IsIdChar(u8);
-#endif
 
 /*
 ** Internal function prototypes
@@ -3776,6 +3807,7 @@ void sqlite3ExprListDelete(sqlite3*, ExprList*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
+int sqlite3InitOne(sqlite3*, int, char**, u32);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 Module *sqlite3PragmaVtabRegister(sqlite3*,const char *zName);
@@ -3846,6 +3878,7 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,ExprList*,Select*,int,int);
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3CodeDropTable(Parse*, Table*, int, int);
 void sqlite3DeleteTable(sqlite3*, Table*);
+void sqlite3FreeIndex(sqlite3*, Index*);
 #ifndef SQLITE_OMIT_AUTOINCREMENT
   void sqlite3AutoincrementBegin(Parse *pParse);
   void sqlite3AutoincrementEnd(Parse *pParse);
@@ -3855,7 +3888,7 @@ void sqlite3DeleteTable(sqlite3*, Table*);
 #endif
 void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int, Upsert*);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
-IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);
+IdList *sqlite3IdListAppend(Parse*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(sqlite3*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppend(sqlite3*, SrcList*, Token*, Token*);
@@ -4017,12 +4050,12 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerInsertStep(sqlite3*,Token*, IdList*,
+  TriggerStep *sqlite3TriggerInsertStep(Parse*,Token*, IdList*,
                                         Select*,u8,Upsert*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8,
+  TriggerStep *sqlite3TriggerUpdateStep(Parse*,Token*,ExprList*, Expr*, u8,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*,
+  TriggerStep *sqlite3TriggerDeleteStep(Parse*,Token*, Expr*,
                                         const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
@@ -4190,6 +4223,7 @@ void sqlite3RootPageMoved(sqlite3*, int, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
+void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);
@@ -4205,6 +4239,9 @@ int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
+void *sqlite3RenameTokenMap(Parse*, void*, Token*);
+void sqlite3RenameTokenRemap(Parse*, void *pTo, void *pFrom);
+void sqlite3RenameExprUnmap(Parse*, Expr*);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
 char sqlite3AffinityType(const char*, Column*);
 void sqlite3Analyze(Parse*, Token*, Token*);
