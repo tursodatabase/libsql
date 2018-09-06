@@ -1,5 +1,5 @@
-C Fix\sexcess\smemory\susage\sin\sthe\sJSON\sparser\sof\sGEOPOLY.
-D 2018-09-06T11:14:17.559
+C Add\sthe\srandomshape.tcl\stest-case\sgenerator\sscript\sto\sthe\sutil\ssubdirectory\nof\sthe\srtree\sextension.
+D 2018-09-06T14:01:56.119
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d06f463c5b623a61ac27f5cb8214fca9e53a6704d34d6b8f2124e2b1b293c88f
@@ -385,6 +385,7 @@ F ext/rtree/rtreecheck.test 4d29103d1e16fcbf90135d1c637b833688492b063b2971dfb5dc
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
+F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/rtree/visual01.txt 17c3afefc208c375607aa82242e97fa79c316e539bcd0b7b3e59344c69445d05
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
@@ -1758,7 +1759,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14c955152d0580abc3df1b363789f2925e013b9c957e550b1e6ebe83a82bae6c
-R 913d94dd999b47369f6272c91a914e8c
+P 9057e27e12ded07a9ea0b2868036d3019f7bc5be3a67e3d341f56b762d3de9d9
+R 3130dca95e718b6cbbaac719dc665d6a
 U drh
-Z ffcf16cabc344c45daf16477ee7cef3a
+Z 0d8f7c300159980e6dfc3b9bdb17b906
