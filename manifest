@@ -1,5 +1,5 @@
-C Add\san\s"ALTER\sTABLE\sRENAME\sCOLUMN"\scommand.\sUpgrade\s"ALTER\sTABLE\sRENAME\sTABLE"\nso\sthat\sit\smodifies\sreferences\sto\sthe\srenamed\stable\sembedded\sin\sSQL\sview\sand\ntrigger\sdefinitions.
-D 2018-09-06T16:20:09.413
+C Add\snew\stest\sfile\s"alterauth.test".
+D 2018-09-06T16:24:23.764
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -602,6 +602,7 @@ F test/alter.test cf28c2f35253d3395cf16334fb9dde1d8c4b035cb7c89204353ee1f47feaec
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test 7e93a21fe131e1dfeb317e90056856f96b10381fc7fe3a05e765569a23400433
+F test/alterauth.test dc50064e3d57d60cf8708decefed15cfa154242f6d44069858d4c6c9b1aea961
 F test/altercol.test a5e24ad5e71afbf4a604336ee5f5287d3633ef26952b4ee8b5fe154a30ed2993
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
@@ -1763,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f48991dcbb01e21d065fbba7782a6d1aebaa8065841a70a76af1e5a21f18ea4 8a28a326d7f72ab94c7d089dbc047e719038b6cd410068dec0d173a7655c87ca
-R 2f5689c57a4e86b56b7049238d0df17b
+P 4da5998314ed2c694b0e242755930f5320af89ac5c148845392f0a2043d44d22
+R 0ebc8df4086e26debff8a835e079b175
 U dan
-Z 7b23a2a6c7e81f02ef801f3d49dd8665
+Z 227d23e65290fd84d0cf89ac5fdd032f
