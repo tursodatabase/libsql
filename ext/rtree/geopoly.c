@@ -204,7 +204,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
       int ii = 0;
       char c;
       s.z++;
-      if( s.nVertex<=s.nAlloc ){
+      if( s.nVertex>=s.nAlloc ){
         GeoCoord *aNew;
         s.nAlloc = s.nAlloc*2 + 16;
         aNew = sqlite3_realloc64(s.a, s.nAlloc*sizeof(GeoCoord)*2 );
