@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sALTER\sTABLE\swhen\sthere\sare\sviews\sor\striggers\sin\sthe\sschema\nthat\scontain\s"<expr>\sIS\sNULL"\sexpressions.
-D 2018-09-06T18:56:36.018
+C Fix\sa\sharmless\scompiler\swarning\sin\sos_unix.c.
+D 2018-09-06T19:36:29.935
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -485,7 +485,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c d6ee0c3b3f221dd5f3cec95f0400a581c516d04ea16a2916bba17c55127d8e06
+F src/os_unix.c 03a5cd0e254dfecd86e800e442a35636c755ececb9e33863a978d9ab23120938
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa835145e63749e06e04bd50ff992afaeae05dcdd1df597d13911f944e62076b
-R abe9fa869412c046a03bb42913e444d5
-U dan
-Z c28c73de8439f032e70d158eb4bd0eb7
+P 91aab32e71fcb924e24c02d5f0901f7a474760fc993a7e7436e667512cf5d3c3
+R 6df12380453dc32d36f3a28375176ff5
+U drh
+Z 8f430cd36d9c814fb6437446c2968cca
