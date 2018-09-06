@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\s"alterauth.test".
-D 2018-09-06T16:24:23.764
+C Fix\sharmless\scompiler\swarning.
+D 2018-09-06T16:47:10.703
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -359,7 +359,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c 6a5e68798129367733aa9a3dce4ea2c6d0d8a007339576f9192612e186ee08c0
+F ext/rtree/geopoly.c 447df73929d87c35fe41f2b80c3fcd3da7d15fe41f127a52c820653696f05857
 F ext/rtree/rtree.c ce94cbb319423fd739702582dde47371aec8ad85207d517c41bdbf75a7ffd737
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4da5998314ed2c694b0e242755930f5320af89ac5c148845392f0a2043d44d22
-R 0ebc8df4086e26debff8a835e079b175
-U dan
-Z 227d23e65290fd84d0cf89ac5fdd032f
+P 00940265b18a3cf848602e1e0b3edbd935cb4309ef91a34b0d5746a258a47ae6
+R aa119265c5c6b82a2266e905a59ef2a3
+U mistachkin
+Z 926cd23da25ae9109045ae0a7e6292ce

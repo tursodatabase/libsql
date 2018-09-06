@@ -286,7 +286,7 @@ static GeoPoly *geopolyFuncParam(
     int nVertex;
     nVertex = (a[1]<<16) + (a[2]<<8) + a[3];
     if( (a[0]==0 || a[0]==1)
-     && (nVertex*2*sizeof(GeoCoord) + 4)==nByte
+     && (nVertex*2*sizeof(GeoCoord) + 4)==(unsigned int)nByte
     ){
       p = sqlite3_malloc64( sizeof(*p) + (nVertex-1)*2*sizeof(GeoCoord) );
       if( p==0 ){
