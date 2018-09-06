@@ -425,56 +425,58 @@ foreach {tn old new lSchema} {
 #
 reset_db
 
-foreach {tn old new lSchema} {
-  1 _x_ _xxx_ {
-    { CREATE TABLE t1(a, b, _x_) }
-    { CREATE VIEW s1 AS SELECT a, b, _x_ FROM t1 WHERE _x_='abc' COLLATE xyz }
+ifcapable vtab {
+  foreach {tn old new lSchema} {
+    1 _x_ _xxx_ {
+      { CREATE TABLE t1(a, b, _x_) }
+      { CREATE VIEW s1 AS SELECT a, b, _x_ FROM t1 WHERE _x_='abc' COLLATE xyz }
+    }
+  
+    2 _x_ _xxx_ {
+      { CREATE TABLE t1(a, b, _x_) }
+      { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE scalar(_x_) }
+    }
+  
+    3 _x_ _xxx_ {
+      { CREATE TABLE t1(a, b, _x_) }
+      { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE _x_ = unicode(1, 2, 3) }
+    }
+  
+    4 _x_ _xxx_ {
+      { CREATE TABLE t1(a, b, _x_) }
+      { CREATE VIRTUAL TABLE e1 USING echo(t1) }
+    }
+  } {
+    register_echo_module db
+    do_rename_column_test 10.$tn $old $new $lSchema
   }
-
-  2 _x_ _xxx_ {
-    { CREATE TABLE t1(a, b, _x_) }
-    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE scalar(_x_) }
-  }
-
-  3 _x_ _xxx_ {
-    { CREATE TABLE t1(a, b, _x_) }
-    { CREATE VIEW v1 AS SELECT a, b, _x_ FROM t1 WHERE _x_ = unicode(1, 2, 3) }
-  }
-
-  4 _x_ _xxx_ {
-    { CREATE TABLE t1(a, b, _x_) }
-    { CREATE VIRTUAL TABLE e1 USING echo(t1) }
-  }
-} {
+  
+  #--------------------------------------------------------------------------
+  # Test that if a view or trigger refers to a virtual table for which the
+  # module is not available, RENAME COLUMN cannot proceed.
+  #
+  reset_db
   register_echo_module db
-  do_rename_column_test 10.$tn $old $new $lSchema
+  do_execsql_test 11.0 {
+    CREATE TABLE x1(a, b, c);
+    CREATE VIRTUAL TABLE e1 USING echo(x1);
+  }
+  db close
+  sqlite3 db test.db
+  
+  do_execsql_test 11.1 {
+    ALTER TABLE x1 RENAME b TO bbb;
+    SELECT sql FROM sqlite_master;
+  } { {CREATE TABLE x1(a, bbb, c)} {CREATE VIRTUAL TABLE e1 USING echo(x1)} }
+  
+  do_execsql_test 11.2 {
+    CREATE VIEW v1 AS SELECT e1.*, x1.c FROM e1, x1;
+  }
+  
+  do_catchsql_test 11.3 {
+    ALTER TABLE x1 RENAME c TO ccc;
+  } {1 {error in view v1: no such module: echo}}
 }
-
-#--------------------------------------------------------------------------
-# Test that if a view or trigger refers to a virtual table for which the
-# module is not available, RENAME COLUMN cannot proceed.
-#
-reset_db
-register_echo_module db
-do_execsql_test 11.0 {
-  CREATE TABLE x1(a, b, c);
-  CREATE VIRTUAL TABLE e1 USING echo(x1);
-}
-db close
-sqlite3 db test.db
-
-do_execsql_test 11.1 {
-  ALTER TABLE x1 RENAME b TO bbb;
-  SELECT sql FROM sqlite_master;
-} { {CREATE TABLE x1(a, bbb, c)} {CREATE VIRTUAL TABLE e1 USING echo(x1)} }
-
-do_execsql_test 11.2 {
-  CREATE VIEW v1 AS SELECT e1.*, x1.c FROM e1, x1;
-}
-
-do_catchsql_test 11.3 {
-  ALTER TABLE x1 RENAME c TO ccc;
-} {1 {error in view v1: no such module: echo}}
 
 #-------------------------------------------------------------------------
 # Test some error conditions:

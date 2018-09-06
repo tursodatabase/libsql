@@ -68,26 +68,28 @@ do_execsql_test 1.4 {
 
 #-------------------------------------------------------------------------
 reset_db
-register_echo_module db
+ifcapable vtab {
+  register_echo_module db
 
-do_execsql_test 2.0 {
-  CREATE TABLE abc(a, b, c);
-  INSERT INTO abc VALUES(1, 2, 3);
-  CREATE VIRTUAL TABLE eee USING echo('abc');
-  SELECT * FROM eee;
-} {1 2 3}
+  do_execsql_test 2.0 {
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(1, 2, 3);
+    CREATE VIRTUAL TABLE eee USING echo('abc');
+    SELECT * FROM eee;
+  } {1 2 3}
 
-do_execsql_test 2.1 {
-  ALTER TABLE eee RENAME TO fff;
-  SELECT * FROM fff;
-} {1 2 3}
+  do_execsql_test 2.1 {
+    ALTER TABLE eee RENAME TO fff;
+    SELECT * FROM fff;
+  } {1 2 3}
 
-db close
-sqlite3 db test.db
+  db close
+  sqlite3 db test.db
 
-do_catchsql_test 2.2 {
-  ALTER TABLE fff RENAME TO ggg;
-} {1 {no such module: echo}}
+  do_catchsql_test 2.2 {
+    ALTER TABLE fff RENAME TO ggg;
+  } {1 {no such module: echo}}
+}
 
 #-------------------------------------------------------------------------
 reset_db
