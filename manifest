@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\stbl_name\scolumn\sin\sthe\ssqlite_temp_master\stable\sis\supdated\ncorrectly\sas\spart\sof\sa\sRENAME\sTABLE\soperation.
-D 2018-09-06T16:01:37.037
+C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
+D 2018-09-06T16:17:22.185
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -359,7 +359,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c 8ed95c3233ea38b6688cda8c07685cb6bf6e6e0b14208bad343c12c9f8252d3f
+F ext/rtree/geopoly.c 6a5e68798129367733aa9a3dce4ea2c6d0d8a007339576f9192612e186ee08c0
 F ext/rtree/rtree.c ce94cbb319423fd739702582dde47371aec8ad85207d517c41bdbf75a7ffd737
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
@@ -385,6 +385,7 @@ F ext/rtree/rtreecheck.test 4d29103d1e16fcbf90135d1c637b833688492b063b2971dfb5dc
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
+F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/rtree/visual01.txt 17c3afefc208c375607aa82242e97fa79c316e539bcd0b7b3e59344c69445d05
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
@@ -1762,7 +1763,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f4f707f9c3c29f2437962fd5d7761876cf8e7ed7fdcb9d0ca4fd001fa226597
-R 736eb84ee6a36063403800095e80dcb4
+P ffecfca511718e39e0003b380d5113755b8a11405a5bd80cc04503d9557f0842 8f48991dcbb01e21d065fbba7782a6d1aebaa8065841a70a76af1e5a21f18ea4
+R 2f5689c57a4e86b56b7049238d0df17b
 U dan
-Z 8b3bb9ab09ae82a5dd16cca46750c9c8
+Z 23222d1f9d48d6fc98b8f4b6620787f5
