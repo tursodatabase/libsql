@@ -294,7 +294,7 @@ do_execsql_test 9.4 {
   DROP TRIGGER tr;
 
   ATTACH 'test.db2' AS aux;
-  CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN SELECT 1, 2, 3; END;
+  CREATE TRIGGER tr AFTER INSERT ON t1 WHEN new.a IS NULL BEGIN SELECT 1, 2, 3; END;
 
   CREATE TABLE aux.t1(x);
   CREATE TEMP TRIGGER tr AFTER INSERT ON aux.t1 BEGIN SELECT 1, 2, 3; END;
@@ -307,7 +307,7 @@ do_execsql_test 9.6 {
   SELECT sql FROM sqlite_master WHERE type='trigger';
 } {
   {CREATE TRIGGER tr AFTER INSERT ON aux.t1 BEGIN SELECT 1, 2, 3; END}
-  {CREATE TRIGGER tr AFTER INSERT ON "t3" BEGIN SELECT 1, 2, 3; END}
+  {CREATE TRIGGER tr AFTER INSERT ON "t3" WHEN new.a IS NULL BEGIN SELECT 1, 2, 3; END}
 }
 
 #-------------------------------------------------------------------------
