@@ -325,6 +325,47 @@ ifcapable fts5 {
   } {a b c}
 }
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+db func trigger trigger
+set ::trigger [list]
+proc trigger {args} {
+  lappend ::trigger $args
+}
+do_execsql_test 11.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(a, b, c);
+  CREATE TABLE main.t1(a, b, c);
+  CREATE TEMP TRIGGER tr AFTER INSERT ON aux.t1 BEGIN
+    SELECT trigger(new.a, new.b, new.c);
+  END;
+}
 
+do_execsql_test 11.1 {
+  INSERT INTO main.t1 VALUES(1, 2, 3);
+  INSERT INTO aux.t1 VALUES(4, 5, 6);
+}
+do_test 11.2 { set ::trigger } {{4 5 6}}
+
+do_execsql_test 11.3 {
+  SELECT name, tbl_name FROM sqlite_temp_master;
+} {tr t1}
+
+do_execsql_test 11.4 {
+  ALTER TABLE main.t1 RENAME TO t2;
+  SELECT name, tbl_name FROM sqlite_temp_master;
+} {tr t1}
+
+do_execsql_test 11.5 {
+  ALTER TABLE aux.t1 RENAME TO t2;
+  SELECT name, tbl_name FROM sqlite_temp_master;
+} {tr t2}
+
+do_execsql_test 11.6 {
+  INSERT INTO aux.t2 VALUES(7, 8, 9);
+}
+do_test 11.7 { set ::trigger } {{4 5 6} {7 8 9}}
+
+finish_test
 

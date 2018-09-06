@@ -49,7 +49,7 @@ void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
       "FROM \"%w\".%s "
       "WHERE name NOT LIKE 'sqlite_%%'"
       " AND sql NOT LIKE 'create virtual%%'"
-      " AND sqlite_rename_test(%Q, sql, type, name, %d)=0 ",
+      " AND sqlite_rename_test(%Q, sql, type, name, %d)=NULL ",
       zDb, MASTER_NAME, 
       zDb, bTemp
   );
@@ -60,7 +60,7 @@ void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
         "FROM temp.%s "
         "WHERE name NOT LIKE 'sqlite_%%'"
         " AND sql NOT LIKE 'create virtual%%'"
-        " AND sqlite_rename_test(%Q, sql, type, name, 1)=0 ",
+        " AND sqlite_rename_test(%Q, sql, type, name, 1)=NULL ",
         MASTER_NAME, zDb 
     );
   }
@@ -233,9 +233,11 @@ void sqlite3AlterRenameTable(
         "UPDATE sqlite_temp_master SET "
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
-              "CASE WHEN tbl_name=%Q COLLATE nocase THEN %Q ELSE tbl_name END "
+              "CASE WHEN tbl_name=%Q COLLATE nocase AND "
+              "          sqlite_rename_test(%Q, sql, type, name, 1) "
+              "THEN %Q ELSE tbl_name END "
             "WHERE type IN ('view', 'trigger')"
-        , zDb, zTabName, zName, zTabName, zTabName, zName);
+        , zDb, zTabName, zName, zTabName, zDb, zName);
   }
 
   renameReloadSchema(pParse, iDb);
@@ -1489,13 +1491,19 @@ static void renameTableFunc(
 ** resolution problems in a CREATE TRIGGER|TABLE|VIEW|INDEX statement.
 ** After an ALTER TABLE .. RENAME operation is performed and the schema
 ** reloaded, this function is called on each SQL statement in the schema
-** to ensure that it are still usable.
+** to ensure that it is still usable.
 **
 **   0: Database name ("main", "temp" etc.).
 **   1: SQL statement.
 **   2: Object type ("view", "table", "trigger" or "index").
 **   3: Object name.
 **   4: True if object is from temp schema.
+**
+** Unless it finds an error, this function normally returns NULL. However, it
+** returns integer value 1 if:
+**
+**   * the SQL argument creates a trigger, and
+**   * the table that the trigger is attached to is in database zDb.
 */
 static void renameTableTest(
   sqlite3_context *context,
@@ -1528,6 +1536,11 @@ static void renameTableTest(
 
       else if( sParse.pNewTrigger ){
         rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+        if( rc==SQLITE_OK ){
+          int i1 = sqlite3SchemaToIndex(db, sParse.pNewTrigger->pTabSchema);
+          int i2 = sqlite3FindDbName(db, zDb);
+          if( i1==i2 ) sqlite3_result_int(context, 1);
+        }
       }
     }
 
