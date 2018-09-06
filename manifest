@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\s"alterauth.test".
-D 2018-09-06T16:24:23.764
+C Fix\sa\sproblem\scausing\sSQLITE_OMIT_VIRTUALTABLE\sbuilds\sto\sfail.
+D 2018-09-06T16:47:08.186
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -506,7 +506,7 @@ F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1
 F src/sqlite.h.in cdf2a539cd0570322a94bcb97c01c56feb1be0657ec7cfb8273c89d19fff87a9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9887b27e69c01e79c2cbe74ef73bf01af5b5703d6a7f0a4371e386d7249cb1c7
-F src/sqliteInt.h 8a75462ee70e76754e88daaa32bf7926ee412a3fea95551dcb1687194ff4da3d
+F src/sqliteInt.h c72e50d876b1fd909db70399a228d022a44b6a7326a6031f76594acdfd25b69e
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4da5998314ed2c694b0e242755930f5320af89ac5c148845392f0a2043d44d22
-R 0ebc8df4086e26debff8a835e079b175
+P 00940265b18a3cf848602e1e0b3edbd935cb4309ef91a34b0d5746a258a47ae6
+R 04d4ebdc1406b73de53a4c2dd64c57bf
 U dan
-Z 227d23e65290fd84d0cf89ac5fdd032f
+Z 70bd38bf8fb6c38808c5c6270275eca7
