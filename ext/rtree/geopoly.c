@@ -1539,7 +1539,7 @@ static int geopolyUpdate(
   }
 
   /* Change the data */
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && nData>1 ){
     sqlite3_stmt *pUp = pRtree->pWriteAux;
     int jj;
     int nChange = 0;
