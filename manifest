@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sos_unix.c.
-D 2018-09-06T19:36:29.935
+C In\sall.test,\sdo\snot\sattempt\sto\srun\sthe\sRBU\stests\sin\snon-RBU\sbuilds.
+D 2018-09-06T20:33:11.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -597,7 +597,7 @@ F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 18b00de006597e960a6b27ccec51474ac66cf1070a87c1933e5694dc02190ef1
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
-F test/all.test ae17c4412639e16bd797c7617864a16c2badc0035c808ae8246f145e38f8e2f9
+F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
 F test/alter.test cf28c2f35253d3395cf16334fb9dde1d8c4b035cb7c89204353ee1f47feaec1b
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 91aab32e71fcb924e24c02d5f0901f7a474760fc993a7e7436e667512cf5d3c3
-R 6df12380453dc32d36f3a28375176ff5
-U drh
-Z 8f430cd36d9c814fb6437446c2968cca
+P b9d1fb5d44e0a6ffc00ee987f178e448d7516e579beecdeeb387e69aef588921
+R 5dd76942dc7386bdae9ee832634d49f0
+U dan
+Z 019a53a53db8f2d9d1ee2a2a70f74ae5
