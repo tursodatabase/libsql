@@ -391,5 +391,25 @@ do_execsql_test 12.2 {
   SELECT * FROM t1;
 } {WWW}
 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE log(c);
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO log SELECT y FROM t1, t2;
+  END;
+}
+
+do_execsql_test 13.1 {
+  INSERT INTO t1 VALUES(1, 2);
+}
+
+do_catchsql_test 13.2 {
+  ALTER TABLE t2 RENAME b TO y;
+} {1 {error in trigger tr1 after rename: ambiguous column name: y}}
+
 finish_test
 
