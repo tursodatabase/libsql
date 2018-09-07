@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sin\sthe\sOP_ParseSchema\sopcode\sthat\scomes\sup\nonly\sif\sthe\sschema\sis\scorrupt.
-D 2018-09-07T11:08:31.439
+C Minor\sfixes\sfor\sproblems\srevealed\sby\sreleasetest.tcl.
+D 2018-09-07T11:51:21.104
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -435,7 +435,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c b4c7e8f75d5df06ae56008d686082e1271922c45a0cc013742a46e9f22d3c41e
+F src/alter.c 525d74d3225c7cb26a3050d41cf36941f3ad67ad77e5ad4a83249063e687efd7
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -1110,7 +1110,7 @@ F test/misc7.test 349855706310f0de6b91645d199f6874f518627fd057743fa4e3689b60d06e
 F test/misc8.test 8fb0f31d7a8aed484d759773ab8ad12ec746a477f4a67394a4af0e677494c3ca
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 9d86e697dcbc5da2c4e8caba9b176b5765fe65e80c88c278b8c09a917e436795
-F test/mmap1.test 9f812fe1461b229020be9b8e4d0898b083a516b33db70892929129b9a35f45e8
+F test/mmap1.test fb04e0c10492455007624ade884ca0c8852ff3e4e11d95408f9709ca2ef7f626
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
 F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
@@ -1191,7 +1191,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.tcl 769892f81050b3f59c66f274d478d855159b474ea27019dec82f1215c0b91ef7 x
-F test/resetdb.test d8750cc9d241fc01810d9d333e7b84a2716e8e97170fa796818c86f0ddf83ad9
+F test/resetdb.test 2f928983dc7e9aca4042141712a1b9ab3ab9c290a824e13d612127154b3d056c
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10c3e5a0314470ee1ffc37b68445a2cb2054530346d5f5ed3ffbd6df8003cad0
-R cfbb0c3a832d06f637b117d7c5f68153
-U drh
-Z b962790177d2f548e2af4a2f36d3562b
+P 725808d4c59176f71787452c7e500b563fd99cfc8ece47b1efe01d5e207efe0d
+R 01cbc91eea110734375fac0b9ea67e6d
+U dan
+Z 08304598f5532d3c5ba75aacde8aeaf2

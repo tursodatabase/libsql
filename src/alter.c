@@ -1417,10 +1417,12 @@ static void renameTableFunc(
         }else{
           /* Modify any FK definitions to point to the new table. */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-          FKey *pFKey;
-          for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
-            if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
-              renameTokenFind(&sParse, &sCtx, (void*)pFKey->zTo);
+          if( db->flags & SQLITE_ForeignKeys ){
+            FKey *pFKey;
+            for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+              if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
+                renameTokenFind(&sParse, &sCtx, (void*)pFKey->zTo);
+              }
             }
           }
 #endif

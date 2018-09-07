@@ -213,6 +213,7 @@ reset_db
 
 do_execsql_test 700 {
   PRAGMA page_size=512;
+  PRAGMA auto_vacuum = 0;
   CREATE TABLE t1(a,b,c);
   CREATE INDEX t1a ON t1(a);
   CREATE INDEX t1bc ON t1(b,c);
