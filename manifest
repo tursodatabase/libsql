@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srenaming\sa\snon-temp\stable\sthat\shas\sat\sleast\sone\stemp\ntrigger\sand\sshares\sits\sname\swith\sa\stemp\stable.
-D 2018-09-07T15:50:31.361
+C Add\sassert()\sand\sALWAYS()\sto\sidentify\stwo\sunreachable\sbranches.
+D 2018-09-07T18:52:25.401
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -435,7 +435,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 54146be02c90ca8c29ecf2e072d48c799060c15acfae77aff562c0b42dfbd506
+F src/alter.c eed847377bff46bc11af8b648a0c7197ca0975369a29938342e4feb5982d1db3
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -445,7 +445,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 3565efa51996dc501c3008aa73cad5ffeb983d91a73d7499d8e2bf1a886ff381
+F src/build.c 08edbe377267bc363aafca52a54149069c066b7e14f32421f8044cb84c7dcc9e
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a8aedc3376b7ae32fa7b2c367eedd483e2629908836efd10ee5bd1fe0784675
-R 86b8f57514273d8da84a4878b215b628
-U dan
-Z b798027844da69f8674f2ba987e04efa
+P ceb60bd7e5f2a0a4247bff476fc6468227305467339ae0c24591be9d2b14bdde
+R a8bbf8022291e2a5a21efb3046f797de
+U drh
+Z 3b4af44a1ed58d4e3410bcf046d98467

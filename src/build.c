@@ -3971,8 +3971,10 @@ SrcList *sqlite3SrcListAppendFromTerm(
   }
   assert( p->nSrc>0 );
   pItem = &p->a[p->nSrc-1];
+  assert( (pTable==0)==(pDatabase==0) );
+  assert( pItem->zName==0 || pDatabase!=0 );
   if( IN_RENAME_OBJECT && pItem->zName ){
-    Token *pToken = (pDatabase && pDatabase->z) ? pDatabase : pTable;
+    Token *pToken = (ALWAYS(pDatabase) && pDatabase->z) ? pDatabase : pTable;
     sqlite3RenameTokenMap(pParse, pItem->zName, pToken);
   }
   assert( pAlias!=0 );

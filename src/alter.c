@@ -1539,7 +1539,7 @@ static void renameTableTest(
 
       else if( sParse.pNewTrigger ){
         rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
-        if( rc==SQLITE_OK ){
+        if( ALWAYS(rc==SQLITE_OK) ){
           int i1 = sqlite3SchemaToIndex(db, sParse.pNewTrigger->pTabSchema);
           int i2 = sqlite3FindDbName(db, zDb);
           if( i1==i2 ) sqlite3_result_int(context, 1);
