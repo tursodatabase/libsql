@@ -371,5 +371,25 @@ do_execsql_test 11.6 {
 }
 do_test 11.7 { set ::trigger } {{4 5 6} {7 8 9}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 12.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(w);
+  CREATE TRIGGER temp.r1 AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO t1(a) VALUES(new.w);
+  END;
+  CREATE TEMP TABLE t2(x);
+}
+
+do_execsql_test 12.1 {
+  ALTER TABLE main.t2 RENAME TO t3;
+}
+
+do_execsql_test 12.2 {
+  INSERT INTO t3 VALUES('WWW');
+  SELECT * FROM t1;
+} {WWW}
+
 finish_test
 

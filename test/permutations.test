@@ -289,6 +289,12 @@ test_suite "window" -prefix "" -description {
   test_set [glob -nocomplain $::testdir/window*.test]
 ]
 
+test_suite "alter" -prefix "" -description {
+  All ALTER function related tests .
+} -files [
+  test_set [glob -nocomplain $::testdir/alter*.test]
+]
+
 test_suite "lsm1" -prefix "" -description {
   All LSM1 tests.
 } -files [glob -nocomplain $::testdir/../ext/lsm1/test/*.test]

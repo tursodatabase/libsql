@@ -1,5 +1,5 @@
-C Minor\sfixes\sfor\sproblems\srevealed\sby\sreleasetest.tcl.
-D 2018-09-07T11:51:21.104
+C Fix\sa\sproblem\swith\srenaming\sa\snon-temp\stable\sthat\shas\sat\sleast\sone\stemp\ntrigger\sand\sshares\sits\sname\swith\sa\stemp\stable.
+D 2018-09-07T15:50:31.361
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -435,7 +435,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 525d74d3225c7cb26a3050d41cf36941f3ad67ad77e5ad4a83249063e687efd7
+F src/alter.c 54146be02c90ca8c29ecf2e072d48c799060c15acfae77aff562c0b42dfbd506
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -606,7 +606,7 @@ F test/alterauth.test dc50064e3d57d60cf8708decefed15cfa154242f6d44069858d4c6c9b1
 F test/altercol.test 1defda7e6b713d8f995ff508d620cdf484dd1482e824d7bdfcc06c733fa7ef36
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
-F test/altertab.test 16a0673660e689ac3f53f2abdcb95bf21926261233d19a4fe306b2ef8369b8ef
+F test/altertab.test d986bf9e29ba8d24955855d0a827e452ec0b15e54075f7ef1a11e5e96ac2b4ef
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1164,7 +1164,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 5e67065f0d8395d4c43cb41fbce22fd3c9793cb855629e9090abfd41e8d6d858
+F test/permutations.test fdcb2d733fc21396e0300206023795463ba0d0ee5eda2042863b044933391da3
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test 7c8cfc328a1717a95663cf8edb06c52ddfeaf97bb0aee69ae7457132e8d39e7d
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 725808d4c59176f71787452c7e500b563fd99cfc8ece47b1efe01d5e207efe0d
-R 01cbc91eea110734375fac0b9ea67e6d
+P 1a8aedc3376b7ae32fa7b2c367eedd483e2629908836efd10ee5bd1fe0784675
+R 86b8f57514273d8da84a4878b215b628
 U dan
-Z 08304598f5532d3c5ba75aacde8aeaf2
+Z b798027844da69f8674f2ba987e04efa

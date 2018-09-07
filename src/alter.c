@@ -1031,29 +1031,30 @@ static int renameEditSql(
 */
 static int renameResolveTrigger(Parse *pParse, const char *zDb){
   sqlite3 *db = pParse->db;
+  Trigger *pNew = pParse->pNewTrigger;
   TriggerStep *pStep;
   NameContext sNC;
   int rc = SQLITE_OK;
 
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pParse;
-  pParse->pTriggerTab = sqlite3FindTable(db, pParse->pNewTrigger->table, zDb);
-  pParse->eTriggerOp = pParse->pNewTrigger->op;
+  assert( pNew->pTabSchema );
+  pParse->pTriggerTab = sqlite3FindTable(db, pNew->table, 
+      db->aDb[sqlite3SchemaToIndex(db, pNew->pTabSchema)].zDbSName
+  );
+  pParse->eTriggerOp = pNew->op;
 
   /* Resolve symbols in WHEN clause */
-  if( pParse->pNewTrigger->pWhen ){
-    rc = sqlite3ResolveExprNames(&sNC, pParse->pNewTrigger->pWhen);
+  if( pNew->pWhen ){
+    rc = sqlite3ResolveExprNames(&sNC, pNew->pWhen);
   }
 
-  for(pStep=pParse->pNewTrigger->step_list; 
-      rc==SQLITE_OK && pStep; 
-      pStep=pStep->pNext
-  ){
+  for(pStep=pNew->step_list; rc==SQLITE_OK && pStep; pStep=pStep->pNext){
     if( pStep->pSelect ){
       sqlite3SelectPrep(pParse, pStep->pSelect, &sNC);
       if( pParse->nErr ) rc = pParse->rc;
     }
-    if( rc==SQLITE_OK && pStep->zTarget ){ 
+    if( rc==SQLITE_OK && pStep->zTarget ){
       Table *pTarget = sqlite3LocateTable(pParse, 0, pStep->zTarget, zDb);
       if( pTarget==0 ){
         rc = SQLITE_ERROR;
