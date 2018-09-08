@@ -423,7 +423,7 @@ pub trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-/// Context is used by `VTabCursor.column`` to specify the cell value.
+/// Context is used by `VTabCursor.column` to specify the cell value.
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
