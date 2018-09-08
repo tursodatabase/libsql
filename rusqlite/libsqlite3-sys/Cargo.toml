@@ -16,7 +16,6 @@ bundled = ["cc"]
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
 sqlcipher = []
 min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
-min_sqlite_version_3_6_11 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_6_23 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_7_7 = ["pkg-config", "vcpkg"]
 # sqlite3_unlock_notify >= 3.6.12
