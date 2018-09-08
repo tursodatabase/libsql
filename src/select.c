@@ -68,8 +68,8 @@ struct SortCtx {
   int labelBkOut;       /* Start label for the block-output subroutine */
   int addrSortIndex;    /* Address of the OP_SorterOpen or OP_OpenEphemeral */
   int labelDone;        /* Jump here when done, ex: LIMIT reached */
+  int labelOBLopt;      /* Jump here when sorter is full */
   u8 sortFlags;         /* Zero or more SORTFLAG_* bits */
-  u8 bOrderedInnerLoop; /* ORDER BY correctly sorts the inner loop */
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
   u8 nDefer;            /* Number of valid entries in aDefer[] */
   struct DeferredCsr {
@@ -693,10 +693,10 @@ static void pushOntoSorter(
     ** than LIMIT+OFFSET items in the sorter.
     **
     ** If the new record does not need to be inserted into the sorter,
-    ** jump to the next iteration of the loop. Or, if the
-    ** pSort->bOrderedInnerLoop flag is set to indicate that the inner
-    ** loop delivers items in sorted order, jump to the next iteration
-    ** of the outer loop.
+    ** jump to the next iteration of the loop. If the pSort->labelOBLopt
+    ** value is not zero, then it is a label of where to jump.  Otherwise,
+    ** just bypass the row insert logic.  See the header comment on the
+    ** sqlite3WhereOrderByLimitOptLabel() function for additional info.
     */
     int iCsr = pSort->iECursor;
     sqlite3VdbeAddOp2(v, OP_IfNotZero, iLimit, sqlite3VdbeCurrentAddr(v)+4);
@@ -718,9 +718,8 @@ static void pushOntoSorter(
   sqlite3VdbeAddOp4Int(v, op, pSort->iECursor, regRecord,
                        regBase+nOBSat, nBase-nOBSat);
   if( iSkip ){
-    assert( pSort->bOrderedInnerLoop==0 || pSort->bOrderedInnerLoop==1 );
     sqlite3VdbeChangeP2(v, iSkip,
-         sqlite3VdbeCurrentAddr(v) + pSort->bOrderedInnerLoop);
+         pSort->labelOBLopt ? pSort->labelOBLopt : sqlite3VdbeCurrentAddr(v));
   }
 }
 
@@ -6060,7 +6059,7 @@ int sqlite3Select(
     }
     if( sSort.pOrderBy ){
       sSort.nOBSat = sqlite3WhereIsOrdered(pWInfo);
-      sSort.bOrderedInnerLoop = sqlite3WhereOrderedInnerLoop(pWInfo);
+      sSort.labelOBLopt = sqlite3WhereOrderByLimitOptLabel(pWInfo);
       if( sSort.nOBSat==sSort.pOrderBy->nExpr ){
         sSort.pOrderBy = 0;
       }

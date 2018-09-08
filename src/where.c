@@ -67,15 +67,38 @@ int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if the innermost loop of the WHERE clause implementation
-** returns rows in ORDER BY order for complete run of the inner loop.
+** In the ORDER BY LIMIT optimization, if the inner-most loop is known
+** to emit rows in increasing order, and if the last row emitted by the
+** inner-most loop did not fit within the sorter, then we can skip all
+** subsequent rows for the current iteration of the inner loop (because they
+** will not fit in the sorter either) and continue with the second inner
+** loop - the loop immediately outside the inner-most.
 **
-** Across multiple iterations of outer loops, the output rows need not be
-** sorted.  As long as rows are sorted for just the innermost loop, this
-** routine can return TRUE.
+** When a row does not fit in the sorter (because the sorter already
+** holds LIMIT+OFFSET rows that are smaller), then a jump is made to the
+** label returned by this function.
+**
+** If the ORDER BY LIMIT optimization applies, the jump destination should
+** be the continuation for the second-inner-most loop.  If the ORDER BY
+** LIMIT optimization does not apply, then the jump destination should
+** be the continuation for the inner-most loop.
+**
+** It is always safe for this routine to return the continuation of the
+** inner-most loop, in the sense that a correct answer will result.  
+** Returning the continuation the second inner loop is an optimization
+** that might make the code run a little faster, but should not change
+** the final answer.
 */
-int sqlite3WhereOrderedInnerLoop(WhereInfo *pWInfo){
-  return pWInfo->bOrderedInnerLoop;
+int sqlite3WhereOrderByLimitOptLabel(WhereInfo *pWInfo){
+  WhereLevel *pInner;
+  if( !pWInfo->bOrderedInnerLoop ){
+    /* The ORDER BY LIMIT optimization does not apply.  Jump to the 
+    ** continuation of the inner-most loop. */
+    return pWInfo->iContinue;
+  }
+  pInner = &pWInfo->a[pWInfo->nLevel-1];
+  if( pInner->addrNxt ) return pInner->addrNxt;
+  return pInner->addrBrk;
 }
 
 /*
@@ -4248,6 +4271,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
   }
+  pWInfo->bOrderedInnerLoop = 0;
   if( pWInfo->pOrderBy ){
     if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
       if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
