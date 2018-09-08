@@ -1,5 +1,5 @@
-C Remove\sa\sfaulty\sALWAYS()\smacro\sadded\sby\scheck-in\s[8fa254aa6329bdd0].
-D 2018-09-07T19:12:08.941
+C Fix\stypo\sin\sthe\sWin32-specific\scode\sfor\sthe\sfileio\sextension.
+D 2018-09-08T16:53:47.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -281,7 +281,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 65297bcce8d5acd5aadef42acbe739aef5a2ef5e74c7b73361ca19f3e21de657
 F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1000a
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
-F ext/misc/fileio.c 48c7751c78fc4cdd29d8c862fd2f3f98bbfefa2a3cf1ca1496df4bf02eb8cded
+F ext/misc/fileio.c 7317d825fab6a3c48f6e3822a00a6a22e08e55af31700ac96f16a523f83069fd
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 34a31eac76aeec269657f6f84a72533600d511005efa5dd97034909a2a0fbc9a
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64c3ee3c255e4630ccd5002116d66fd2af6b12dbdd4a3bee5ed413c3ef87d33a
-R 4e83b2bf06d92072eb37ddae910f0098
-U drh
-Z 1acddbf8bf46cc91a48e91ab1fd74796
+P fc47316e9b6b9f4c37cb7d3fe2af3f4dfb900fb5f07945dbf1239152a2d8f836
+R d2bc1273370503997f66a173b3f3099d
+U mistachkin
+Z d9803ae62bbcb6a689c35c9a62325ddc
