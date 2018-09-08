@@ -1,5 +1,5 @@
-C Fix\smultiple\sissues\swith\sthe\sORDER\sBY\sLIMIT\soptimization.\s\sThis\sis\sthe\nproposed\sresolution\sto\sticket\s[9936b2fa443fec03ff25].
-D 2018-09-08T20:09:46.990
+C Fix\san\sunreachable\sbranch\sin\sthe\snew\ssqlite3WhereOrderByLimitOptLabel()\nfunction\sof\sthe\squery\splanner.
+D 2018-09-08T20:29:04.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -586,7 +586,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c df50883d93689d009be5ad9bdc4e53a4ee45fcc291087ec9272569d00b360791
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
-F src/where.c 5192013a21843523f4772087a56e59db73bd4c7401349968120dc0693b7c4eb4
+F src/where.c ff7f4024cba3d7619dd92239d006364d8c836037afb5c4f8ebf861c9a360b8f3
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 2b6cd1b27736cc803060289e04ecf9849976106f4077aa67d1a2c0e3ec420159
 F src/whereexpr.c d87df2c00ecc0c2ef4409562608d19cec259a6a03ca72b86fc999db9c07ce119
@@ -1764,7 +1764,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b4cf33aafe09d9009119dcbd464b54be9605af5701002ee458819efa6e2e1f9
-R 314bbe63eed86b2216509901a995337d
+P 206720129ed2fa8875a286266d05b99fb2caf8671e4b74b26a6286a2073fcd8b
+R c6d02a1d720ce0f314484950383248d6
 U drh
-Z 40fd1d6c79004b4386462b0fab14be9d
+Z 283f6327b802e617589c73f6c602d59b

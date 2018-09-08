@@ -97,8 +97,8 @@ int sqlite3WhereOrderByLimitOptLabel(WhereInfo *pWInfo){
     return pWInfo->iContinue;
   }
   pInner = &pWInfo->a[pWInfo->nLevel-1];
-  if( pInner->addrNxt ) return pInner->addrNxt;
-  return pInner->addrBrk;
+  assert( pInner->addrNxt!=0 );
+  return pInner->addrNxt;
 }
 
 /*
