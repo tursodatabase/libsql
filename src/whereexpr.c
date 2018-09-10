@@ -230,23 +230,6 @@ static int isLikeOrGlob(
   }
   if( z ){
 
-    /* If the RHS begins with a digit or a minus sign, then the LHS must
-    ** be an ordinary column (not a virtual table column) with TEXT affinity.
-    ** Otherwise the LHS might be numeric and "lhs >= rhs" would be false
-    ** even though "lhs LIKE rhs" is true.  But if the RHS does not start
-    ** with a digit or '-', then "lhs LIKE rhs" will always be false if
-    ** the LHS is numeric and so the optimization still works.
-    */
-    if( sqlite3Isdigit(z[0]) || z[0]=='-' ){
-      if( pLeft->op!=TK_COLUMN 
-       || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-       || IsVirtual(pLeft->pTab)  /* Value might be numeric */
-      ){
-        sqlite3ValueFree(pVal);
-        return 0;
-      }
-    }
-
     /* Count the number of prefix characters prior to the first wildcard */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
@@ -279,6 +262,32 @@ static int isLikeOrGlob(
           zNew[iTo++] = zNew[iFrom];
         }
         zNew[iTo] = 0;
+
+        /* If the RHS begins with a digit or a minus sign, then the LHS must be
+        ** an ordinary column (not a virtual table column) with TEXT affinity.
+        ** Otherwise the LHS might be numeric and "lhs >= rhs" would be false
+        ** even though "lhs LIKE rhs" is true.  But if the RHS does not start
+        ** with a digit or '-', then "lhs LIKE rhs" will always be false if
+        ** the LHS is numeric and so the optimization still works.
+        **
+        ** 2018-09-10 ticket c94369cae9b561b1f996d0054bfab11389f9d033
+        ** The RHS pattern must not be '/%' because the termination condition
+        ** will then become "x<'0'" and if the affinity is numeric, will then
+        ** be converted into "x<0", which is incorrect.
+        */
+        if( sqlite3Isdigit(zNew[0])
+         || zNew[0]=='-'
+         || (zNew[0]+1=='0' && iTo==1)
+        ){
+          if( pLeft->op!=TK_COLUMN 
+           || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
+           || IsVirtual(pLeft->pTab)  /* Value might be numeric */
+          ){
+            sqlite3ExprDelete(db, pPrefix);
+            sqlite3ValueFree(pVal);
+            return 0;
+          }
+        }
       }
       *ppPrefix = pPrefix;
 

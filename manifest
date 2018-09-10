@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sprocessing\sa\s"vtab.col\sIS\sNULL"\sexpression\swithin\nthe\sWHERE\sclause\sof\sa\squery\swhen\s"vtab"\sis\sa\svirtual\stable\son\sthe\srhs\sof\sa\nLEFT\sJOIN.
-D 2018-09-10T12:17:16.759
+C Fix\sthe\sLIKE\soptimization\sso\sthat\sit\sis\sdisabled\swhen\sthe\sLHS\sof\sthe\nexpression\sdoes\snot\shave\sTEXT\saffinity\sand\sthe\sRHS\sis\sthe\spattern\s'/%'\nor\sthe\sRHS\sbegins\swith\sthe\sescape\scharacter.\sFix\sfor\sticket\n[c94369cae9b561b1f996d0054b].
+D 2018-09-10T12:40:57.241
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -589,7 +589,7 @@ F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
 F src/where.c 071572677469d54899ef0d9fc3ad380a849b860375df5af5ebdc4f49f1dc20cc
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
 F src/wherecode.c 2b6cd1b27736cc803060289e04ecf9849976106f4077aa67d1a2c0e3ec420159
-F src/whereexpr.c d87df2c00ecc0c2ef4409562608d19cec259a6a03ca72b86fc999db9c07ce119
+F src/whereexpr.c eb462ebe085f6cbb6bdda797a041fbd7e3724586203344043d1088a2117d8e44
 F src/window.c 4b503da928dace3e845b891381a4d98eeb8c5744313ae3643df8d8d21fdcca65
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1051,7 +1051,7 @@ F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 11cfd7d4ef8625389df9efc46735ff0b0b41d5e62047ef0f3bc24c380d28a7a6
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
+F test/like3.test cf0ff2d06c9d8456283aeff405b911642298441206306aeaeaa93973233b1195
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/loadext.test d077450695ddb5c1ea3ad7d48e5f5850fe732ad9
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a954533edbde58aa7158572ece7ceeb1c6e610b71f3ae45d0b8371d74f9fea5
-R 756e7ce3d56663b883e7e3032dfd4880
-U dan
-Z f6d9c644621f4f427fb7da91247b3ddb
+P 83da4d4104ee1870a2a95bb5fa15ee6584c655d8b314b6b8ab97592dad4ee811
+R 535b9d3fa97af3ca58d7939267f6f9d0
+U drh
+Z 4f900079726ee27aee5deedbf4c96ffb
