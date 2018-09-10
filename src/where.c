@@ -966,6 +966,18 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    if( (pSrc->fg.jointype & JT_LEFT)!=0
+     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+     && (pTerm->eOperator & (WO_IS|WO_ISNULL))
+    ){
+      /* An "IS" term in the WHERE clause where the virtual table is the rhs
+      ** of a LEFT JOIN. Do not pass this term to the virtual table
+      ** implementation, as this can lead to incorrect results from SQL such
+      ** as:
+      **
+      **   "LEFT JOIN vtab WHERE vtab.col IS NULL"  */
+      continue;
+    }
     assert( pTerm->u.leftColumn>=(-1) );
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
