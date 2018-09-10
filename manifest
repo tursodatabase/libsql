@@ -1,5 +1,5 @@
-C Fix\sa\sminor\sproblem\scausing\san\sincorrect\scursor-hint\sto\sbe\sgenerated\sin\ssome\ncases.
-D 2018-09-10T19:27:12.947
+C Fix\sa\stest\sscript\sissue\sin\sfts3ao.test.
+D 2018-09-10T19:34:06.696
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -885,7 +885,7 @@ F test/fts3ak.test bd14deafe9d1586e8e9bf032411026ac4f8c925d
 F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
-F test/fts3ao.test c416d50c4fdb6f32a15205b3d0a49eb74fcea92feb66b531a83c904770de5ff1
+F test/fts3ao.test 266989148fec6d9f1bb6c5382f7aa3dcea0e9cd444576e28dd2b9287ac7dd220
 F test/fts3atoken.test 4b4c16fdcfc972f2cdbba212375a060a86ccf5f1
 F test/fts3auto.test b981fea19b132b4e6878f50d7c1f369b28f68eb9
 F test/fts3aux1.test 7a170e172afdbceb67f5baa05941fd4fbf56af42f61daa3d140f4b4bf4cb68f6
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3def6d8ef11702eb03ad56aeb01763ec8e4ca8ed3b570ffb680164c5c3679e4f
-R 17d3aa2f0ff36b5d953bee62d9f5a9cb
+P d879c47d7d145cbe99602b2cf70294ddc946709e8d61040942085d29e2c5b6cd
+R 47c7da524183faeb0808e1c93be57d51
 U dan
-Z 415de3c8b986f591f4f84d497a0d28d9
+Z 9a08a3e10b89350b5a2434b4e5824bda
