@@ -1,5 +1,5 @@
-C New\stestcase()\smacros\son\svirtual\stable\sxBestIndex\slogic.
-D 2018-09-10T14:43:15.694
+C Fix\sa\sbroken\sassert()\sin\sfts3.c.
+D 2018-09-10T16:38:25.948
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -80,7 +80,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b577921c7e56ea27893da06691f15721801375ebd411a0e24ec5f6fec3c572c3
+F ext/fts3/fts3.c 53020b61dac31c167668f098ec83c0387ecd65b9e89ba3659f2f8d3e76efdf1e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3378157f383540857a466420b8279626204434c3eb0dc948ad9bcd3991fc41f5
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f191431d63aba187000b5cbaf3e072ff5f1b1eef6a2a407fb4d1629bda4e4e8f
-R 66b88becb6ebd76c87c00586dc09fef7
-U drh
-Z 59afcf7d6ee429bab5b2db8d3de75edb
+P 3bbd9c5f2f1990f7d187951474a86996650dcede12c2608484d43250ae0b30d6
+R a2a148ac71e153c336e89b6b79c2d3aa
+U dan
+Z 16db3fe293f5ad0ede4e06c32564c525
