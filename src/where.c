@@ -976,6 +976,8 @@ static sqlite3_index_info *allocateIndexInfo(
       ** as:
       **
       **   "LEFT JOIN vtab WHERE vtab.col IS NULL"  */
+      testcase( pTerm->eOperator & WO_ISNULL );
+      testcase( pTerm->eOperator & WO_IS );
       continue;
     }
     assert( pTerm->u.leftColumn>=(-1) );
