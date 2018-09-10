@@ -882,7 +882,7 @@ static int codeCursorHintIsOrFunction(Walker *pWalker, Expr *pExpr){
 static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
   int rc = WRC_Continue;
   struct CCurHint *pHint = pWalker->u.pCCurHint;
-  if( pExpr->op==TK_COLUMN && !ExprHasProperty(pExpr, EP_FixedCol) ){
+  if( pExpr->op==TK_COLUMN ){
     if( pExpr->iTable!=pHint->iTabCur ){
       Vdbe *v = pWalker->pParse->pVdbe;
       int reg = ++pWalker->pParse->nMem;   /* Register for column value */
