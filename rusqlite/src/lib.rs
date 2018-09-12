@@ -1361,6 +1361,22 @@ mod test {
     }
 
     #[test]
+    fn test_pragma_query_row() {
+        let db = checked_memory_handle();
+
+        assert_eq!(
+            "memory",
+            db.query_row::<String, _>("PRAGMA journal_mode", &[], |r| r.get(0))
+                .unwrap()
+        );
+        assert_eq!(
+            "off",
+            db.query_row::<String, _>("PRAGMA journal_mode=off", &[], |r| r.get(0))
+                .unwrap()
+        );
+    }
+
+    #[test]
     fn test_prepare_failures() {
         let db = checked_memory_handle();
         db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
