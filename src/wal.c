@@ -2733,7 +2733,7 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 **
 ** If the database contents have changes since the previous read
 ** transaction, then *pChanged is set to 1 before returning.  The
-** Pager layer will use this to know that is cache is stale and
+** Pager layer will use this to know that its cache is stale and
 ** needs to be flushed.
 */
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){

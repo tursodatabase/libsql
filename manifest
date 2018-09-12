@@ -1,5 +1,5 @@
-C Do\snot\sdo\sthe\sbyte-by-byte\smodifications\sin\sthe\sresetdb.test\sscript\sif\sthe\nreserved-byte\sflag\sin\sthe\sDB\sheader\sis\snon-zero,\sbecause\sin\sthat\scase\sthe\nbytes\swill\sbe\sin\sthe\swrong\splace\sand\sthe\stest\swon't\swork.
-D 2018-09-11T19:05:32.116
+C Fix\sa\sharmless\scompiler\swarning\sthat\sarose\sfrom\sthe\sENABLE_CURSOR_HINTS\nfix\sof\scheck-in\s[0af18674ca5b34e67e]
+D 2018-09-12T00:21:11.461
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -576,19 +576,19 @@ F src/vdbe.c 80603eb66708c2f27879912a4e9456900e66491c3409ca5e392109114e8f6337
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h f1f35f70460698d8f5a2bdef1001114babf318e2983a067804e2ae077d8e9827
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
-F src/vdbeaux.c 0a769638bf4d9a9eb7b6a29f66b707441711c5775265404bbe1fafa0daa0c891
+F src/vdbeaux.c c3c397274380f13db702baa3506ba87379446a4d71135a1177b624f73dd3c830
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 81329ab760e4ec0162119d9cd10193e0303c45c5935bb20c7ae9139d44dd6641
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 8665561f244c137a2d17b5c3e5910d7303054fe841c5d510e53f23beb0089594
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c df50883d93689d009be5ad9bdc4e53a4ee45fcc291087ec9272569d00b360791
+F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
 F src/where.c 2019126801437944c38cc62a99491e98591460b7cc07ab57eb66165f710a289b
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
-F src/wherecode.c e04303b85eb19ee711747ff6917a8cce6eba46a39aa59138c57c6111974fdcd4
+F src/wherecode.c 4f88f5b39ad4aeb5bdd47a546d74149bb902ef49ca9f02a45b2a5bd2dd70b6bd
 F src/whereexpr.c eb462ebe085f6cbb6bdda797a041fbd7e3724586203344043d1088a2117d8e44
 F src/window.c 4b503da928dace3e845b891381a4d98eeb8c5744313ae3643df8d8d21fdcca65
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7033104fa8bd974a9a3d173200aa07a3aa3daade86e7eb65cad5d00b086969e
-R 553e186251c37536e2e9d2df452440ce
+P 0af18674ca5b34e67e1685be3adcdd99a7b8650589c6a7cde7ad9ef1852a8777
+R 97f82e77569fd99da0f5e80056531b13
 U drh
-Z 6be3f7f5ac979d895a8dce103831fd74
+Z 30d8c576520dd52f84fa75c27aa3f736
