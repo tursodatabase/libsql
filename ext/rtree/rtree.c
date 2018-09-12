@@ -3273,7 +3273,7 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
 */
 static int rtreeSavepoint(sqlite3_vtab *pVtab, int iSavepoint){
   Rtree *pRtree = (Rtree *)pVtab;
-  int iwt = pRtree->inWrTrans;
+  u8 iwt = pRtree->inWrTrans;
   UNUSED_PARAMETER(iSavepoint);
   pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);

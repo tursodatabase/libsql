@@ -180,7 +180,7 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
     break;
   }
   if( z[j-1]<'0' ) return 0;
-  if( pVal ) *pVal = atof((const char*)p->z);
+  if( pVal ) *pVal = (GeoCoord)atof((const char*)p->z);
   p->z += j;
   return 1;
 }
@@ -435,8 +435,8 @@ static void geopolyXformFunc(
     for(ii=0; ii<p->nVertex; ii++){
       x0 = p->a[ii*2];
       y0 = p->a[ii*2+1];
-      x1 = A*x0 + B*y0 + E;
-      y1 = C*x0 + D*y0 + F;
+      x1 = (GeoCoord)(A*x0 + B*y0 + E);
+      y1 = (GeoCoord)(C*x0 + D*y0 + F);
       p->a[ii*2] = x1;
       p->a[ii*2+1] = y1;
     }
@@ -511,11 +511,11 @@ static GeoPoly *geopolyBBox(
     mnY = mxY = p->a[1];
     for(ii=1; ii<p->nVertex; ii++){
       double r = p->a[ii*2];
-      if( r<mnX ) mnX = r;
-      else if( r>mxX ) mxX = r;
+      if( r<mnX ) mnX = (float)r;
+      else if( r>mxX ) mxX = (float)r;
       r = p->a[ii*2+1];
-      if( r<mnY ) mnY = r;
-      else if( r>mxY ) mxY = r;
+      if( r<mnY ) mnY = (float)r;
+      else if( r>mxY ) mxY = (float)r;
     }
     if( pRc ) *pRc = SQLITE_OK;
     if( aCoord==0 ){

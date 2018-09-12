@@ -1836,11 +1836,11 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else if( isFinal ){
-      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
       pStr->bStatic = 1;
     }else{
-      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed, SQLITE_TRANSIENT);
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
       pStr->nUsed--;
     }
   }else{
@@ -1889,7 +1889,7 @@ static void jsonGroupInverse(
     }
   }
   pStr->nUsed -= i;      
-  memmove(&z[1], &z[i+1], pStr->nUsed-1);
+  memmove(&z[1], &z[i+1], (size_t)pStr->nUsed-1);
 }
 #else
 # define jsonGroupInverse 0
@@ -1935,11 +1935,11 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else if( isFinal ){
-      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
       pStr->bStatic = 1;
     }else{
-      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed, SQLITE_TRANSIENT);
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
       pStr->nUsed--;
     }
   }else{
