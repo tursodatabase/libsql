@@ -1,5 +1,5 @@
-C Fix\san\sinvalid\spointer\scomparison\striggered\sby\srenaming\sa\stable\scolumn\swhen\nthere\sare\sviews\swith\sexplicit\scolumn\snames\sin\sthe\sschema.
-D 2018-09-12T08:51:48.004
+C Improvements\sto\sthe\sdocumentation\sfor\sSQLITE_FCNTL_DATA_VERSION.\nNo\schanges\sto\scode.
+D 2018-09-12T14:28:45.796
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -503,7 +503,7 @@ F src/resolve.c 352c6af1a99441206ff62a6f7429dbf537827f42c428639695220b9c8639e33b
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c ed6192ddd09a97169cb1c6d732b26c0f647b72d5fa8ca401c7ee1180fbbe521a
 F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
-F src/sqlite.h.in cdf2a539cd0570322a94bcb97c01c56feb1be0657ec7cfb8273c89d19fff87a9
+F src/sqlite.h.in 5a61ffbc0ade918025951a7abc9640fd870e5afd8e730b48751298d2404de888
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
 F src/sqliteInt.h ce34da1aacca2cd4b63803db697f682af95c02d1e1750f240438b0d96a59bdb8
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 78862252da7f59d4737ed16f4ccf100cea27d8b421db31051afbaa8d96f24de3
-R 25df2d2b1771f08cbe0ffa58dd81d578
-U dan
-Z a5feebf1a17640679359a9fe57f126ff
+P 572de7e4e33562c72cd90790b267ba389370f21ddcaebc4db609fd76ae9b7ada
+R e455f3eaa906d427b1a5b3d685d9a895
+U drh
+Z 05885c65ec17fd37d679fda087c37874

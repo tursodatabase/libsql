@@ -1082,18 +1082,19 @@ struct sqlite3_io_methods {
 ** The "data version" for the pager is written into the pointer.  The
 ** "data version" changes whenever any change occurs to the corresponding
 ** database file, either through SQL statements on the same database
-** connection, or through transactions committed by separate database
+** connection or through transactions committed by separate database
 ** connections possibly in other processes. The [sqlite3_total_changes()]
 ** interface can be used to find if any database on the connection has changed,
-** but that interface response to changes on TEMP as well as MAIN and does
+** but that interface responds to changes on TEMP as well as MAIN and does
 ** not provide a mechanism to detect changes to MAIN only.  Also, the
-** [sqlite3_total_changes()] interface response to internal changes only and
+** [sqlite3_total_changes()] interface responds to internal changes only and
 ** omits changes made by other database connections.  The
 ** [PRAGMA data_version] command provide a mechanism to detect changes to
 ** a single attached database that occur due to other database connections,
-** but omits changes implemented by the database connection for which it is
+** but omits changes implemented by the database connection on which it is
 ** called.  This file control is the only mechanism to detect changes that
-** happen either internally or externally on a single database.
+** happen either internally or externally and that are associated with
+** a particular attached database.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
