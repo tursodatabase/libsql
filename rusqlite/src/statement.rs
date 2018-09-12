@@ -516,15 +516,17 @@ impl<'conn> Statement<'conn> {
     }
 
     #[cfg(not(feature = "bundled"))]
+    #[inline]
     fn check_readonly(&self) -> Result<()> {
         Ok(())
     }
 
     #[cfg(feature = "bundled")]
+    #[inline]
     fn check_readonly(&self) -> Result<()> {
-        if !self.stmt.readonly() {
+        /*if !self.stmt.readonly() { does not work for PRAGMA
             return Err(Error::InvalidQuery);
-        }
+        }*/
         Ok(())
     }
 
