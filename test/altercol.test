@@ -753,5 +753,20 @@ do_execsql_test 18.1 {
   ALTER TABLE t1 RENAME a TO b;
 }
 
+reset_db
+do_execsql_test 19.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  CREATE VIEW v2(e) AS SELECT coalesce(t2.c,t1.a) FROM t1, t2 WHERE t1.b=t2.d;
+}
+
+do_execsql_test 19.1 {
+  ALTER TABLE t1 RENAME a TO f;
+  SELECT sql FROM sqlite_master WHERE name = 'v2';
+} {
+  {CREATE VIEW v2(e) AS SELECT coalesce(t2.c,t1.f) FROM t1, t2 WHERE t1.b=t2.d}
+}
+
+
 
 finish_test

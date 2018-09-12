@@ -2211,6 +2211,9 @@ void sqlite3CreateView(
 
 create_view_fail:
   sqlite3SelectDelete(db, pSelect);
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameExprlistUnmap(pParse, pCNames);
+  }
   sqlite3ExprListDelete(db, pCNames);
   return;
 }

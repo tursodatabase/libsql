@@ -724,6 +724,24 @@ void sqlite3RenameExprUnmap(Parse *pParse, Expr *pExpr){
 }
 
 /*
+** Remove all nodes that are part of expression-list pEList from the 
+** rename list.
+*/
+void sqlite3RenameExprlistUnmap(Parse *pParse, ExprList *pEList){
+  if( pEList ){
+    int i;
+    Walker sWalker;
+    memset(&sWalker, 0, sizeof(Walker));
+    sWalker.pParse = pParse;
+    sWalker.xExprCallback = renameUnmapExprCb;
+    sqlite3WalkExprList(&sWalker, pEList);
+    for(i=0; i<pEList->nExpr; i++){
+      sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zName);
+    }
+  }
+}
+
+/*
 ** Free the list of RenameToken objects given in the second argument
 */
 static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
