@@ -43,7 +43,7 @@ static int isSystemTable(Parse *pParse, const char *zName){
 ** statement to ensure that the operation has not rendered any schema
 ** objects unusable.
 */
-void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
+static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
       "FROM \"%w\".%s "
@@ -70,7 +70,7 @@ void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
 ** Generate code to reload the schema for database iDb. And, if iDb!=1, for
 ** the temp database as well.
 */
-void renameReloadSchema(Parse *pParse, int iDb){
+static void renameReloadSchema(Parse *pParse, int iDb){
   Vdbe *v = pParse->pVdbe;
   if( v ){
     sqlite3ChangeCookie(pParse, iDb);
@@ -650,7 +650,7 @@ struct RenameCtx {
 ** Technically, as x no longer points into a valid object or to the byte
 ** following a valid object, it may not be used in comparison operations.
 */
-void renameTokenCheckAll(Parse *pParse, void *pPtr){
+static void renameTokenCheckAll(Parse *pParse, void *pPtr){
   if( pParse->nErr==0 && pParse->db->mallocFailed==0 ){
     RenameToken *p;
     u8 i = 0;
