@@ -1,5 +1,5 @@
-C Fix\sa\srequirement\smark\son\sa\stest\sscript.\s\sNo\schanges\sto\scode.
-D 2018-09-13T13:17:14.135
+C Make\ssure\sthe\s%z\soptimization\sfor\sprintf()\sis\snot\sinvoked\sif\sthere\shas\sbeen\na\sprior\serror\s(SQLITE_NOMEM\sor\sSQLITE_TOOBIG)\sassociated\swith\sthe\ssame\nprintf()\scall.
+D 2018-09-13T17:07:12.853
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -497,7 +497,7 @@ F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c 79abc65c08d2754048efee3ba99fe91863dfeab0ba699a4439fa5053ec87cf36
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
-F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
+F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 352c6af1a99441206ff62a6f7429dbf537827f42c428639695220b9c8639e33b
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 028ed8618af012b51104a06cc155b45d98bc4ff833d4431b9c38fd6851a74e82
-R 0f1bd7f3d2cd804864fd41a3f49e7a96
+P 628d5c0aa057c05c7cf84c330a51b8a44720c97250eadf0e5e8c750b7a2969c3
+R 9ca2cce3607aac6321c4dd78c66175b1
 U drh
-Z 46ea13a8e199c56a06cef89eced0ea11
+Z 594b11f9bfe9f2af28e3c404580a1217
