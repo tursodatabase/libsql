@@ -883,8 +883,8 @@ do_execsql_test e_createtable-3.3.1 {
   );
 } {}
 
-# EVIDENCE-OF: R-18415-27776 For the purposes of the DEFAULT clause, an
-# expression is considered constant if it does contains no sub-queries,
+# EVIDENCE-OF: R-33440-07331 For the purposes of the DEFAULT clause, an
+# expression is considered constant if it contains no sub-queries,
 # column or table references, bound parameters, or string literals
 # enclosed in double-quotes instead of single-quotes.
 #

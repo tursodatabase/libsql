@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sos_unix.c\sthat\sis\snot\strue\swhen\susing\sRBU.
-D 2018-09-12T20:32:19.959
+C Fix\sa\srequirement\smark\son\sa\stest\sscript.\s\sNo\schanges\sto\scode.
+D 2018-09-13T13:17:14.135
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -785,7 +785,7 @@ F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
 F test/e_blobopen.test e95e1d40f995056f6f322cd5e1a1b83a27e1a145
 F test/e_blobwrite.test f87ff598b67af5b3ec002a8d83e804dc8d23808e88cf0080c176612fc9ffce14
 F test/e_changes.test fd66105385153dbf21fdb35eb8ef6c3e1eade579
-F test/e_createtable.test e1c4512b9e15fe7bedbbfc0c6daac8a4af65f32dc3c48310b0135b5735857b26
+F test/e_createtable.test 1c602347e73ab80b11b9fa083f47155861aaafcff8054aac9e0b76d0df33b0a7
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 21ce09c361227ddbc9819a5608ee2700c276bdd5
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4396914f8e1a847d86c22fb0b91e7431cf19aa260cbec520af3564248d6897ad
-R 04270aabbf5aa7a25158dc0e14607b5c
-U dan
-Z 006b0a748ebdda21ed6dd1a66ca8163c
+P 028ed8618af012b51104a06cc155b45d98bc4ff833d4431b9c38fd6851a74e82
+R 0f1bd7f3d2cd804864fd41a3f49e7a96
+U drh
+Z 46ea13a8e199c56a06cef89eced0ea11
