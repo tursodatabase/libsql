@@ -444,7 +444,7 @@ struct Fts5ExtensionApi {
 **            This way, even if the tokenizer does not provide synonyms
 **            when tokenizing query text (it should not - to do would be
 **            inefficient), it doesn't matter if the user queries for 
-**            'first + place' or '1st + place', as there are entires in the
+**            'first + place' or '1st + place', as there are entries in the
 **            FTS index corresponding to both forms of the first token.
 **   </ol>
 **
@@ -472,7 +472,7 @@ struct Fts5ExtensionApi {
 **   extra data to the FTS index or require FTS5 to query for multiple terms,
 **   so it is efficient in terms of disk space and query speed. However, it
 **   does not support prefix queries very well. If, as suggested above, the
-**   token "first" is subsituted for "1st" by the tokenizer, then the query:
+**   token "first" is substituted for "1st" by the tokenizer, then the query:
 **
 **   <codeblock>
 **     ... MATCH '1s*'</codeblock>
