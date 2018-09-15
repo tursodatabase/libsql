@@ -4002,6 +4002,7 @@ void sqlite3GenerateRowDelete(
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*, int);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
+int sqlite3ExprReferencesUpdatedColumn(Expr*,int*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
                                      u8,u8,int,int*,int*,Upsert*);
 #ifdef SQLITE_ENABLE_NULL_TRIM

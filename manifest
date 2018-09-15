@@ -1,5 +1,5 @@
-C Version\s3.25.0
-D 2018-09-15T04:01:47.208
+C Optimization:\swhen\sdoing\san\sUPDATE\son\sa\stable\swith\sindexes\son\san\sexpression,\ndo\snot\supdate\sthe\sexpression\sindexes\sif\sthey\sdo\snot\srefer\sto\sany\sof\sthe\ncolumns\sof\sthe\stable\sbeing\supdated.
+D 2018-09-15T21:38:48.076
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -462,7 +462,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c c723716f0de7aa0a679300f7d3541c89645f4a9882161cecdb3093fc07f8cc4b
+F src/insert.c 0a214201afec77880a31a59c33d86b473a160fc5cc31981eab2041ae03d8bf2f
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c 30b140d0e5031924c56f802760506c0a235ced0dff9f3d95119aa86df12856e2
 F src/main.c 1f54ee71990bfbf4cdc2dc79bdc33e7c4f54eef6922447b4c910f9b5885a4478
@@ -506,7 +506,7 @@ F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
-F src/sqliteInt.h ce34da1aacca2cd4b63803db697f682af95c02d1e1750f240438b0d96a59bdb8
+F src/sqliteInt.h 83ee9b55db521b70294b2858872e69b96d0a4810d8221796def3e99cca5ee663
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -567,7 +567,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 9f55961518f77793edd56eee860ecf035d4370ebbb0726ad2f6cada6637fd16b
 F src/treeview.c e7a7f90552bb418533cdd0309b5eb71d4effa50165b880fc8c2001e613577e5f
 F src/trigger.c d3d78568f37fb2e6cdcc2d1e7b60156f15b0b600adec55b83c5d42f6cad250bd
-F src/update.c 345ce35eb1332eb4829857aa8b1f65a614b07dae91d0346c0dc2baacafbcc51b
+F src/update.c deb215e3532be46e1e2b6aa38ed9e3eb96e42ebc4cbe7a498cd365788220a432
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1007,7 +1007,7 @@ F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
 F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
-F test/indexexpr2.test 08551aa8956a91582979e17b6d369f321a5cb6ed6d3e952925a3e54e9e7de216
+F test/indexexpr2.test 05f490de32b07bce041947cb63475eb04cbd5af2ea2979ca6b9a694cde176efd
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 5604b1ff5675cc84c34a5b315792b958f48c32edccc0dafcc81d3b776270b70a
@@ -1765,10 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7921dd91a1745aa79ea157b91b22c380e9331800050861ee6ca1f0efa0a97628
-R cd1dec78fa9aef334fc060d76165a055
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.25.0 *
+P b63af6c3bd33152742648d5d2e8dc5d5fcbcdd27df409272b6aea00a6f761760
+R 3dbbbb152576c732493eb0793eda163f
 U drh
-Z 7af864335c95fcb0688b7f5b8af875de
+Z 14fba317833d2195e2283bec86cb6487
