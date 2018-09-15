@@ -1,5 +1,5 @@
-C Fix\sminor\stypos\sin\scomments\sthat\sget\scarried\sover\sinto\sdocumentation.\nNo\schanges\sto\scode.
-D 2018-09-14T17:42:47.736
+C Version\s3.25.0
+D 2018-09-15T04:01:47.208
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -1765,7 +1765,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d5ebfe1c75d336dac374d9cfa257e45e77ab51f9c2f24d1af615cbbe9dd83d9b
+P 7921dd91a1745aa79ea157b91b22c380e9331800050861ee6ca1f0efa0a97628
 R cd1dec78fa9aef334fc060d76165a055
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.25.0 *
 U drh
-Z ac91d22849e2e00aa7d80ffd22f4486b
+Z 7af864335c95fcb0688b7f5b8af875de
