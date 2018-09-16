@@ -157,11 +157,10 @@ impl<'conn> Statement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// # use rusqlite::types::ToSql;
+    /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
     ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let mut rows = try!(stmt.query(&[] as &[&ToSql]));
+    ///     let mut rows = try!(stmt.query(NO_PARAMS));
     ///
     ///     let mut names = Vec::new();
     ///     while let Some(result_row) = rows.next() {
@@ -221,11 +220,10 @@ impl<'conn> Statement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// # use rusqlite::types::ToSql;
+    /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
     ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let rows = try!(stmt.query_map(&[] as &[&ToSql], |row| row.get(0)));
+    ///     let rows = try!(stmt.query_map(NO_PARAMS, |row| row.get(0)));
     ///
     ///     let mut names = Vec::new();
     ///     for name_result in rows {
@@ -675,8 +673,7 @@ impl<'conn> Statement<'conn> {
 
 #[cfg(test)]
 mod test {
-    use types::ToSql;
-    use {Connection, Error, Result};
+    use {Connection, Error, Result, NO_PARAMS};
 
     #[test]
     fn test_execute_named() {
@@ -813,11 +810,9 @@ mod test {
         stmt.execute_named(&[(":x", &"one")]).unwrap();
 
         let result: Option<String> = db
-            .query_row(
-                "SELECT y FROM test WHERE x = 'one'",
-                &[] as &[&ToSql],
-                |row| row.get(0),
-            ).unwrap();
+            .query_row("SELECT y FROM test WHERE x = 'one'", NO_PARAMS, |row| {
+                row.get(0)
+            }).unwrap();
         assert!(result.is_none());
     }
 
@@ -834,11 +829,9 @@ mod test {
         stmt.execute_named(&[(":y", &"two")]).unwrap();
 
         let result: String = db
-            .query_row(
-                "SELECT x FROM test WHERE y = 'two'",
-                &[] as &[&ToSql],
-                |row| row.get(0),
-            ).unwrap();
+            .query_row("SELECT x FROM test WHERE y = 'two'", NO_PARAMS, |row| {
+                row.get(0)
+            }).unwrap();
         assert_eq!(result, "one");
     }
 
@@ -859,7 +852,7 @@ mod test {
         let mut multi = db
             .prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
             .unwrap();
-        match multi.insert(&[] as &[&ToSql]).unwrap_err() {
+        match multi.insert(NO_PARAMS).unwrap_err() {
             Error::StatementChangedRows(2) => (),
             err => panic!("Unexpected error {}", err),
         }
@@ -879,14 +872,14 @@ mod test {
         assert_eq!(
             db.prepare("INSERT INTO foo VALUES (10)")
                 .unwrap()
-                .insert(&[] as &[&ToSql])
+                .insert(NO_PARAMS)
                 .unwrap(),
             1
         );
         assert_eq!(
             db.prepare("INSERT INTO bar VALUES (10)")
                 .unwrap()
-                .insert(&[] as &[&ToSql])
+                .insert(NO_PARAMS)
                 .unwrap(),
             1
         );
@@ -930,7 +923,7 @@ mod test {
                    END;";
         db.execute_batch(sql).unwrap();
         let mut stmt = db.prepare("SELECT y FROM foo").unwrap();
-        let y: Result<i64> = stmt.query_row(&[] as &[&ToSql], |r| r.get("y"));
+        let y: Result<i64> = stmt.query_row(NO_PARAMS, |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
     }
 
@@ -943,7 +936,7 @@ mod test {
                    END;";
         db.execute_batch(sql).unwrap();
         let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
-        let y: Result<i64> = stmt.query_row(&[] as &[&ToSql], |r| r.get("y"));
+        let y: Result<i64> = stmt.query_row(NO_PARAMS, |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
     }
 

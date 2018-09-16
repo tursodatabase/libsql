@@ -115,9 +115,7 @@ mod test {
     use super::Value;
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
-    use types::ToSql;
-    use Connection;
-    use Error;
+    use {Connection, Error, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -135,7 +133,7 @@ mod test {
             .unwrap();
 
         let v: Vec<u8> = db
-            .query_row("SELECT b FROM foo", &[] as &[&ToSql], |r| r.get(0))
+            .query_row("SELECT b FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(v, v1234);
     }
@@ -149,7 +147,7 @@ mod test {
             .unwrap();
 
         let v: Vec<u8> = db
-            .query_row("SELECT b FROM foo", &[] as &[&ToSql], |r| r.get(0))
+            .query_row("SELECT b FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(v, empty);
     }
@@ -162,7 +160,7 @@ mod test {
         db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
 
         let from: String = db
-            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
+            .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(from, s);
     }
@@ -176,7 +174,7 @@ mod test {
             .unwrap();
 
         let from: String = db
-            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
+            .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(from, s);
     }
@@ -190,7 +188,7 @@ mod test {
 
         assert_eq!(
             10i64,
-            db.query_row::<i64, _, _>("SELECT i FROM foo", &[] as &[&ToSql], |r| r.get(0))
+            db.query_row::<i64, _, _>("SELECT i FROM foo", NO_PARAMS, |r| r.get(0))
                 .unwrap()
         );
     }
@@ -208,7 +206,7 @@ mod test {
         let mut stmt = db
             .prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")
             .unwrap();
-        let mut rows = stmt.query(&[] as &[&ToSql]).unwrap();
+        let mut rows = stmt.query(NO_PARAMS).unwrap();
 
         {
             let row1 = rows.next().unwrap().unwrap();
@@ -240,11 +238,11 @@ mod test {
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
-            &[] as &[&ToSql],
+            NO_PARAMS,
         ).unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query(&[] as &[&ToSql]).unwrap();
+        let mut rows = stmt.query(NO_PARAMS).unwrap();
 
         let row = rows.next().unwrap().unwrap();
 
@@ -355,11 +353,11 @@ mod test {
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
-            &[] as &[&ToSql],
+            NO_PARAMS,
         ).unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query(&[] as &[&ToSql]).unwrap();
+        let mut rows = stmt.query(NO_PARAMS).unwrap();
 
         let row = rows.next().unwrap().unwrap();
         assert_eq!(

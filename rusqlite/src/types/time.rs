@@ -32,8 +32,7 @@ impl FromSql for time::Timespec {
 #[cfg(test)]
 mod test {
     use super::time;
-    use types::ToSql;
-    use Connection;
+    use {Connection, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -59,10 +58,10 @@ mod test {
             db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts]).unwrap();
 
             let from: time::Timespec = db
-                .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
+                .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
                 .unwrap();
 
-            db.execute("DELETE FROM foo", &[] as &[&ToSql]).unwrap();
+            db.execute("DELETE FROM foo", NO_PARAMS).unwrap();
 
             assert_eq!(from, ts);
         }

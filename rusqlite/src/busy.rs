@@ -81,8 +81,7 @@ mod test {
     use std::thread;
     use std::time::Duration;
 
-    use types::ToSql;
-    use {Connection, Error, ErrorCode, TransactionBehavior};
+    use {Connection, Error, ErrorCode, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_default_busy() {
@@ -94,11 +93,7 @@ mod test {
             .transaction_with_behavior(TransactionBehavior::Exclusive)
             .unwrap();
         let db2 = Connection::open(&path).unwrap();
-        let r = db2.query_row(
-            "PRAGMA schema_version",
-            &[] as &[&ToSql],
-            |_| unreachable!(),
-        );
+        let r = db2.query_row("PRAGMA schema_version", NO_PARAMS, |_| unreachable!());
         match r.unwrap_err() {
             Error::SqliteFailure(err, _) => {
                 assert_eq!(err.code, ErrorCode::DatabaseBusy);
@@ -130,7 +125,7 @@ mod test {
 
         assert_eq!(tx.recv().unwrap(), 1);
         let _ = db2
-            .query_row("PRAGMA schema_version", &[] as &[&ToSql], |row| {
+            .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
                 row.get_checked::<_, i32>(0)
             }).expect("unexpected error");
 
@@ -168,7 +163,7 @@ mod test {
 
         assert_eq!(tx.recv().unwrap(), 1);
         let _ = db2
-            .query_row("PRAGMA schema_version", &[] as &[&ToSql], |row| {
+            .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
                 row.get_checked::<_, i32>(0)
             }).expect("unexpected error");
         assert_eq!(CALLED.load(Ordering::Relaxed), true);

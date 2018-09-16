@@ -18,8 +18,7 @@
 //! extern crate rusqlite;
 //!
 //! use rusqlite::blob::ZeroBlob;
-//! use rusqlite::types::ToSql;
-//! use rusqlite::{Connection, DatabaseName};
+//! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
 //! use std::io::{Read, Seek, SeekFrom, Write};
 //!
 //! fn main() {
@@ -28,7 +27,7 @@
 //!         .unwrap();
 //!     db.execute(
 //!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
-//!         &[] as &[&ToSql],
+//!         NO_PARAMS,
 //!     ).unwrap();
 //!
 //!     let rowid = db.last_insert_rowid();
