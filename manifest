@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.26.0\sas\swe\sstart\sthe\snext\sdevelopment\scycle.
-D 2018-09-15T21:43:14.220
+C Improved\spresentation\son\sthe\snew\scode\sthat\sprevents\sunnecessary\swrites\sto\nexpressions\son\sindexes\sduring\san\sUPDATE\swhen\sthe\sexpression\sdoes\snot\sreference\nany\sof\sthe\scolumns\sthat\sare\schanging.
+D 2018-09-16T15:01:25.994
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -567,7 +567,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 9f55961518f77793edd56eee860ecf035d4370ebbb0726ad2f6cada6637fd16b
 F src/treeview.c e7a7f90552bb418533cdd0309b5eb71d4effa50165b880fc8c2001e613577e5f
 F src/trigger.c d3d78568f37fb2e6cdcc2d1e7b60156f15b0b600adec55b83c5d42f6cad250bd
-F src/update.c deb215e3532be46e1e2b6aa38ed9e3eb96e42ebc4cbe7a498cd365788220a432
+F src/update.c 74feccd67570dcb731b6b6ee9960710a5e8a59c8403f2fa88f5eb82dbb8e36fa
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1765,7 +1765,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a71b101635ed28a4c99734dabb20bd65ef1018c1d63ac143b7321cdb0fafa5d7
-R f789e4a5b00a14bd183ffb1db488fa1d
+P 885f0f8252aae776a86c64bcc7da582f0ed58f2caae8ebff810a83ca339da820
+R 1d15143421504697e5d8ab90a5ba9295
 U drh
-Z 95fb510f742b1570e7d262774a3b689f
+Z 8e73db792f1c5d12613e11c54c1867c6

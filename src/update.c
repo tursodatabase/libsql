@@ -84,18 +84,22 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
 ** columns defined by aXRef and chngRowid.  Return true if it does
 ** and false if not.
 **
-** The iCol-th column of pIdx will be an expression.
-**
 ** aXRef[j] will be non-negative if column j of the original table is
 ** being updated.  chngRowid will be true if the rowid of the table is
 ** being updated.
 */
-static int indexExprRefsUpdatedColumn(
-  Index *pIdx,      /* The index containing the expression to analyze */
-  int iCol,         /* Which column of the index is the expression */
+static int indexColumnIsBeingUpdated(
+  Index *pIdx,      /* The index to check */
+  int iCol,         /* Which column of the index to check */
   int *aXRef,       /* aXRef[j]>=0 if column j is being updated */
   int chngRowid     /* true if the rowid is being updated */
 ){
+  i16 iIdxCol = pIdx->aiColumn[iCol];
+  if( iIdxCol>=0 ){
+    return aXRef[iIdxCol]>=0;
+  }
+  if( iIdxCol==XN_ROWID ) return 1;
+  assert( iIdxCol==XN_EXPR );
   assert( pIdx->aColExpr!=0 );
   assert( pIdx->aColExpr->a[iCol].pExpr!=0 );
   return sqlite3ExprReferencesUpdatedColumn(pIdx->aColExpr->a[iCol].pExpr,
@@ -334,12 +338,7 @@ void sqlite3Update(
     }else{
       reg = 0;
       for(i=0; i<pIdx->nKeyCol; i++){
-        i16 iIdxCol = pIdx->aiColumn[i];
-        if( (iIdxCol>=0 && aXRef[iIdxCol]>=0)
-         || iIdxCol==XN_ROWID
-         || (iIdxCol==XN_EXPR
-             && indexExprRefsUpdatedColumn(pIdx,i,aXRef,chngRowid))
-        ){
+        if( indexColumnIsBeingUpdated(pIdx, i, aXRef, chngRowid) ){
           reg = ++pParse->nMem;
           pParse->nMem += pIdx->nColumn;
           if( (onError==OE_Replace)
