@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sexplain\sextension.
-D 2018-09-16T16:34:31.947
+C Remove\san\sunreachable\sbranch\sfrom\sthe\sindex-on-expression\soptimization.
+D 2018-09-16T18:23:48.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -568,7 +568,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 9f55961518f77793edd56eee860ecf035d4370ebbb0726ad2f6cada6637fd16b
 F src/treeview.c e7a7f90552bb418533cdd0309b5eb71d4effa50165b880fc8c2001e613577e5f
 F src/trigger.c d3d78568f37fb2e6cdcc2d1e7b60156f15b0b600adec55b83c5d42f6cad250bd
-F src/update.c 74feccd67570dcb731b6b6ee9960710a5e8a59c8403f2fa88f5eb82dbb8e36fa
+F src/update.c 52d926be53e011050b0ed1d6d1a09d268ffb864ce875bf3a8ce4cd1b1b8b616e
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1766,7 +1766,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2404304cc15eaeee2744cf3c8f9cac0a544631c4f1060c5a17a78b43ca86edf0
-R adb45010554cac59e3a349d9c44c8ea1
+P d0c92b047a5355726aea87f38038e5bda3adf6137492919be94bd29bb847eddb
+R 15742f49a8284f0d50788336ea1ceec8
 U drh
-Z d3428e60bf87865d7969feaa7735e32f
+Z 742041dc2da982886153478b782feb91

@@ -95,10 +95,10 @@ static int indexColumnIsBeingUpdated(
   int chngRowid     /* true if the rowid is being updated */
 ){
   i16 iIdxCol = pIdx->aiColumn[iCol];
+  assert( iIdxCol!=XN_ROWID ); /* Cannot index rowid */
   if( iIdxCol>=0 ){
     return aXRef[iIdxCol]>=0;
   }
-  if( iIdxCol==XN_ROWID ) return 1;
   assert( iIdxCol==XN_EXPR );
   assert( pIdx->aColExpr!=0 );
   assert( pIdx->aColExpr->a[iCol].pExpr!=0 );
