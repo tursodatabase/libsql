@@ -208,6 +208,7 @@ static int explainFilter(
     rc = SQLITE_NOMEM;
   }else{
     rc = sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pExplain, 0);
+    sqlite3_free(zSql);
   }
   if( rc ){
     sqlite3_finalize(pCur->pExplain);
