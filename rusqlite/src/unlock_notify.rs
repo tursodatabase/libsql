@@ -102,6 +102,7 @@ mod test {
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time;
+    use types::ToSql;
     use {Connection, OpenFlags, Result, Transaction, TransactionBehavior};
 
     #[test]
@@ -121,7 +122,8 @@ mod test {
             tx2.commit().unwrap();
         });
         assert_eq!(tx.recv().unwrap(), 1);
-        let the_answer: Result<i64> = db1.query_row("SELECT x FROM foo", &[], |r| r.get(0));
+        let the_answer: Result<i64> =
+            db1.query_row("SELECT x FROM foo", &[] as &[&ToSql], |r| r.get(0));
         assert_eq!(42i64, the_answer.unwrap());
         child.join().unwrap();
     }

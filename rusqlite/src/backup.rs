@@ -309,6 +309,7 @@ impl<'a, 'b> Drop for Backup<'a, 'b> {
 mod test {
     use super::Backup;
     use std::time::Duration;
+    use types::ToSql;
     use {Connection, DatabaseName};
 
     #[test]
@@ -328,7 +329,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT x FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(42, the_answer);
 
@@ -342,7 +343,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT SUM(x) FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(42 + 43, the_answer);
     }
@@ -366,7 +367,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT x FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(42, the_answer);
 
@@ -382,7 +383,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT SUM(x) FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(42 + 43, the_answer);
     }
@@ -410,7 +411,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT x FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(42, the_answer);
 
@@ -429,7 +430,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT SUM(x) FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(42 + 43, the_answer);
     }

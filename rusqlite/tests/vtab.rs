@@ -6,6 +6,7 @@ extern crate rusqlite;
 #[cfg(feature = "vtab")]
 #[test]
 fn test_dummy_module() {
+    use rusqlite::types::ToSql;
     use rusqlite::vtab::{
         eponymous_only_module, sqlite3_vtab, sqlite3_vtab_cursor, Context, IndexInfo, VTab,
         VTabConnection, VTabCursor, Values,
@@ -96,6 +97,8 @@ fn test_dummy_module() {
 
     let mut s = db.prepare("SELECT * FROM dummy()").unwrap();
 
-    let dummy = s.query_row(&[], |row| row.get::<_, i32>(0)).unwrap();
+    let dummy = s
+        .query_row(&[] as &[&ToSql], |row| row.get::<_, i32>(0))
+        .unwrap();
     assert_eq!(1, dummy);
 }

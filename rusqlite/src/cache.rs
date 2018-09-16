@@ -17,13 +17,13 @@ impl Connection {
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
     ///     {
     ///         let mut stmt = try!(conn.prepare_cached("INSERT INTO People (name) VALUES (?)"));
-    ///         try!(stmt.execute(&[&"Joe Smith"]));
+    ///         try!(stmt.execute(&["Joe Smith"]));
     ///     }
     ///     {
     ///         // This will return the same underlying SQLite statement handle without
     ///         // having to prepare it again.
     ///         let mut stmt = try!(conn.prepare_cached("INSERT INTO People (name) VALUES (?)"));
-    ///         try!(stmt.execute(&[&"Bob Jones"]));
+    ///         try!(stmt.execute(&["Bob Jones"]));
     ///     }
     ///     Ok(())
     /// }
@@ -152,6 +152,7 @@ impl StatementCache {
 #[cfg(test)]
 mod test {
     use super::StatementCache;
+    use types::ToSql;
     use Connection;
 
     impl StatementCache {
@@ -180,14 +181,22 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(1, cache.len());
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(1, cache.len());
 
@@ -205,7 +214,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(1, cache.len());
 
@@ -215,7 +228,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(0, cache.len());
 
@@ -223,7 +240,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(1, cache.len());
     }
@@ -237,7 +258,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
             stmt.discard();
         }
         assert_eq!(0, cache.len());
@@ -259,7 +284,7 @@ mod test {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
                 1i32,
-                stmt.query_map::<i32, _>(&[], |r| r.get(0))
+                stmt.query_map::<i32, _, _>(&[] as &[&ToSql], |r| r.get(0))
                     .unwrap()
                     .next()
                     .unwrap()
@@ -278,7 +303,7 @@ mod test {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
                 (1i32, 2i32),
-                stmt.query_map(&[], |r| (r.get(0), r.get(1)))
+                stmt.query_map(&[] as &[&ToSql], |r| (r.get(0), r.get(1)))
                     .unwrap()
                     .next()
                     .unwrap()
@@ -306,14 +331,22 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(1, cache.len());
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0, stmt.query_row(&[], |r| r.get::<_, i64>(0)).unwrap());
+            assert_eq!(
+                0,
+                stmt.query_row(&[] as &[&ToSql], |r| r.get::<_, i64>(0))
+                    .unwrap()
+            );
         }
         assert_eq!(1, cache.len());
     }

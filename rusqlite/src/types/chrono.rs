@@ -132,6 +132,7 @@ mod test {
     use super::chrono::{
         DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
     };
+    use types::ToSql;
     use Connection;
 
     fn checked_memory_handle() -> Connection {
@@ -149,11 +150,11 @@ mod test {
             .unwrap();
 
         let s: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!("2016-02-23", s);
         let t: NaiveDate = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(date, t);
     }
@@ -166,11 +167,11 @@ mod test {
             .unwrap();
 
         let s: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!("23:56:04", s);
         let v: NaiveTime = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(time, v);
     }
@@ -186,17 +187,18 @@ mod test {
             .unwrap();
 
         let s: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!("2016-02-23T23:56:04", s);
         let v: NaiveDateTime = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(dt, v);
 
-        db.execute("UPDATE foo set b = datetime(t)", &[]).unwrap(); // "YYYY-MM-DD HH:MM:SS"
+        db.execute("UPDATE foo set b = datetime(t)", &[] as &[&ToSql])
+            .unwrap(); // "YYYY-MM-DD HH:MM:SS"
         let hms: NaiveDateTime = db
-            .query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT b FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(dt, hms);
     }
@@ -213,28 +215,33 @@ mod test {
             .unwrap();
 
         let s: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
 
         let v1: DateTime<Utc> = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(utc, v1);
 
         let v2: DateTime<Utc> = db
-            .query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0))
-            .unwrap();
+            .query_row("SELECT '2016-02-23 23:56:04.789'", &[] as &[&ToSql], |r| {
+                r.get(0)
+            }).unwrap();
         assert_eq!(utc, v2);
 
         let v3: DateTime<Utc> = db
-            .query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0))
-            .unwrap();
+            .query_row("SELECT '2016-02-23 23:56:04'", &[] as &[&ToSql], |r| {
+                r.get(0)
+            }).unwrap();
         assert_eq!(utc - Duration::milliseconds(789), v3);
 
         let v4: DateTime<Utc> = db
-            .query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0))
-            .unwrap();
+            .query_row(
+                "SELECT '2016-02-23 23:56:04.789+00:00'",
+                &[] as &[&ToSql],
+                |r| r.get(0),
+            ).unwrap();
         assert_eq!(utc, v4);
     }
 
@@ -251,12 +258,12 @@ mod test {
 
         // Stored string should be in UTC
         let s: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert!(s.ends_with("+00:00"));
 
         let v: DateTime<Local> = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(local, v);
     }

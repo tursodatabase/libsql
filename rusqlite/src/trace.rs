@@ -139,13 +139,13 @@ mod test {
         let mut db = Connection::open_in_memory().unwrap();
         db.trace(Some(tracer));
         {
-            let _ = db.query_row("SELECT ?", &[&1i32], |_| {});
-            let _ = db.query_row("SELECT ?", &[&"hello"], |_| {});
+            let _ = db.query_row("SELECT ?", &[1i32], |_| {});
+            let _ = db.query_row("SELECT ?", &["hello"], |_| {});
         }
         db.trace(None);
         {
-            let _ = db.query_row("SELECT ?", &[&2i32], |_| {});
-            let _ = db.query_row("SELECT ?", &[&"goodbye"], |_| {});
+            let _ = db.query_row("SELECT ?", &[2i32], |_| {});
+            let _ = db.query_row("SELECT ?", &["goodbye"], |_| {});
         }
 
         let traced_stmts = TRACED_STMTS.lock().unwrap();

@@ -18,6 +18,7 @@
 //! extern crate rusqlite;
 //!
 //! use rusqlite::blob::ZeroBlob;
+//! use rusqlite::types::ToSql;
 //! use rusqlite::{Connection, DatabaseName};
 //! use std::io::{Read, Seek, SeekFrom, Write};
 //!
@@ -25,8 +26,10 @@
 //!     let db = Connection::open_in_memory().unwrap();
 //!     db.execute_batch("CREATE TABLE test (content BLOB);")
 //!         .unwrap();
-//!     db.execute("INSERT INTO test (content) VALUES (ZEROBLOB(10))", &[])
-//!         .unwrap();
+//!     db.execute(
+//!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
+//!         &[] as &[&ToSql],
+//!     ).unwrap();
 //!
 //!     let rowid = db.last_insert_rowid();
 //!     let mut blob = db
@@ -44,7 +47,7 @@
 //!     let bytes_read = blob.read(&mut buf[..]).unwrap();
 //!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
 //!
-//!     db.execute("INSERT INTO test (content) VALUES (?)", &[&ZeroBlob(64)])
+//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])
 //!         .unwrap();
 //!
 //!     // given a new row ID, we can reopen the blob on that row

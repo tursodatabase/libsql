@@ -81,7 +81,7 @@ mod value_ref;
 /// # use rusqlite::types::{Null};
 /// fn main() {}
 /// fn insert_null(conn: &Connection) -> Result<usize> {
-///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
+///     conn.execute("INSERT INTO people (name) VALUES (?)", &[Null])
 /// }
 /// ```
 #[derive(Copy, Clone)]
@@ -115,6 +115,7 @@ mod test {
     use super::Value;
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
+    use types::ToSql;
     use Connection;
     use Error;
 
@@ -134,7 +135,7 @@ mod test {
             .unwrap();
 
         let v: Vec<u8> = db
-            .query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT b FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(v, v1234);
     }
@@ -148,7 +149,7 @@ mod test {
             .unwrap();
 
         let v: Vec<u8> = db
-            .query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT b FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(v, empty);
     }
@@ -161,7 +162,7 @@ mod test {
         db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
 
         let from: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(from, s);
     }
@@ -171,11 +172,11 @@ mod test {
         let db = checked_memory_handle();
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_owned()])
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[s.to_owned()])
             .unwrap();
 
         let from: String = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", &[] as &[&ToSql], |r| r.get(0))
             .unwrap();
         assert_eq!(from, s);
     }
@@ -184,12 +185,12 @@ mod test {
     fn test_value() {
         let db = checked_memory_handle();
 
-        db.execute("INSERT INTO foo(i) VALUES (?)", &[&Value::Integer(10)])
+        db.execute("INSERT INTO foo(i) VALUES (?)", &[Value::Integer(10)])
             .unwrap();
 
         assert_eq!(
             10i64,
-            db.query_row::<i64, _>("SELECT i FROM foo", &[], |r| r.get(0))
+            db.query_row::<i64, _, _>("SELECT i FROM foo", &[] as &[&ToSql], |r| r.get(0))
                 .unwrap()
         );
     }
@@ -207,7 +208,7 @@ mod test {
         let mut stmt = db
             .prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")
             .unwrap();
-        let mut rows = stmt.query(&[]).unwrap();
+        let mut rows = stmt.query(&[] as &[&ToSql]).unwrap();
 
         {
             let row1 = rows.next().unwrap().unwrap();
@@ -239,11 +240,11 @@ mod test {
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
-            &[],
+            &[] as &[&ToSql],
         ).unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query(&[]).unwrap();
+        let mut rows = stmt.query(&[] as &[&ToSql]).unwrap();
 
         let row = rows.next().unwrap().unwrap();
 
@@ -354,11 +355,11 @@ mod test {
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
-            &[],
+            &[] as &[&ToSql],
         ).unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query(&[]).unwrap();
+        let mut rows = stmt.query(&[] as &[&ToSql]).unwrap();
 
         let row = rows.next().unwrap().unwrap();
         assert_eq!(

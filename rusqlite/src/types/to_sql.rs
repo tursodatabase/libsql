@@ -114,10 +114,10 @@ to_sql_self!(f64);
 
 impl<'a, T: ?Sized> ToSql for &'a T
 where
-    &'a T: Into<ToSqlOutput<'a>>,
+    T: ToSql,
 {
     fn to_sql(&self) -> Result<ToSqlOutput> {
-        Ok((*self).into())
+        (*self).to_sql()
     }
 }
 

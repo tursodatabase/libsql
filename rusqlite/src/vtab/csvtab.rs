@@ -342,6 +342,7 @@ impl From<csv::Error> for Error {
 mod test {
     use vtab::csvtab;
     use {Connection, Result};
+    use types::ToSql;
 
     #[test]
     fn test_csv_module() {
@@ -358,7 +359,7 @@ mod test {
             }
 
             let ids: Result<Vec<i32>> = s
-                .query_map(&[], |row| row.get::<_, i32>(0))
+                .query_map(&[] as &[&ToSql], |row| row.get::<_, i32>(0))
                 .unwrap()
                 .collect();
             let sum = ids.unwrap().iter().fold(0, |acc, &id| acc + id);
@@ -381,7 +382,7 @@ mod test {
                      v1.rowid < v2.rowid",
                 ).unwrap();
 
-            let mut rows = s.query(&[]).unwrap();
+            let mut rows = s.query(&[] as &[&ToSql]).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<_, i32>(0), 2);
         }
