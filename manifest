@@ -1,10 +1,10 @@
-C Improved\spresentation\son\sthe\snew\scode\sthat\sprevents\sunnecessary\swrites\sto\nexpressions\son\sindexes\sduring\san\sUPDATE\swhen\sthe\sexpression\sdoes\snot\sreference\nany\sof\sthe\scolumns\sthat\sare\schanging.
-D 2018-09-16T15:01:25.994
+C Add\sthe\snew\s"explain"\svirtual\stable\sin\sext/misc.\s\sUse\sthis\svirtual\stable\nfor\sadditional\stest\scases\sfor\sthe\soptimization\sthat\savoids\supdating\sindexes\non\sexpressions\swhen\snone\sof\sthe\scolumns\schanged\sby\sthe\sUPDATE\sare\sin\sthe\nexpression.
+D 2018-09-16T16:18:01.470
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
+F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc a889c6981a222d639f8a548adcfb3183ac07871e27452ace4d810735750f216a
+F Makefile.msc b946f8806a5d401a299453f61de80dfd1a9df14fa4902b299e6465e3c3134872
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION 654da1d4053fb09ffc33a3910e6d427182a7dcdc67e934fa83de2849ac83fccb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -281,6 +281,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 65297bcce8d5acd5aadef42acbe739aef5a2ef5e74c7b73361ca19f3e21de657
 F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1000a
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
+F ext/misc/explain.c 657b95855157379b406af602ed0e1cf5d136c0947cdd207fa5470797c8a1ce18
 F ext/misc/fileio.c 7317d825fab6a3c48f6e3822a00a6a22e08e55af31700ac96f16a523f83069fd
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
@@ -423,7 +424,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 1db6df4bff24ed6684917e3fe311ce28f5924d6417c698fe4326f7cadf02df31
+F main.mk ff82d38126f8f0668b7990e0f1f3dcd74fa2d477c19b2e3feaaba586051e9b48
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -511,7 +512,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c e0bf71a6d24b8c23393c000abffab05979bbca2a72d0b0f79260e2cf1527fda5
-F src/test1.c 31c491ccb536bd9916a084e732ffe783b3c8973f2586d5a56aed0e3a9701dfff
+F src/test1.c 9bb042e4afedc570f78638993fc9cc1760d897d3b27dd72c20618044b2a8fa5e
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1007,7 +1008,7 @@ F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
 F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
-F test/indexexpr2.test 05f490de32b07bce041947cb63475eb04cbd5af2ea2979ca6b9a694cde176efd
+F test/indexexpr2.test d8f56b6cf4e5663486129bc18c6bde4cef9f8876942b001bfdd692a2b1a42668
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 5604b1ff5675cc84c34a5b315792b958f48c32edccc0dafcc81d3b776270b70a
@@ -1765,7 +1766,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 885f0f8252aae776a86c64bcc7da582f0ed58f2caae8ebff810a83ca339da820
-R 1d15143421504697e5d8ab90a5ba9295
+P c9f045295c4577752b0847ff2027b44661e6cb15bb08b942ccb3a0ef396f3dec
+R 58a4dfba8e02bbbb06c952d22469b1fa
 U drh
-Z 8e73db792f1c5d12613e11c54c1867c6
+Z ae02262bf6d409f9ac69a0871114af64
