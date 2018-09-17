@@ -1,5 +1,5 @@
-C Minor\smodification\sto\sthe\sfix\son\sthis\sbranch\sto\savoid\sadding\sextra\sconditional\ncompilation\smacros.
-D 2018-09-17T13:38:45.679
+C Restore\san\sassert()\sthat\swas\spresent\son\strunk.
+D 2018-09-17T13:55:18.143
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -500,7 +500,7 @@ F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 4928a63b6abf6baa94efc5375004196fc8b704d4f036a4cce6e4f2e07f53c4b5
+F src/resolve.c 352c6af1a99441206ff62a6f7429dbf537827f42c428639695220b9c8639e33b
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c ed6192ddd09a97169cb1c6d732b26c0f647b72d5fa8ca401c7ee1180fbbe521a
 F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
@@ -1766,7 +1766,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1856ea63b3186c2c8fa716ffe01c731397bdbbc3fbb56dc72ad0686cb7f152ca
-R 6e72766cd421e67b35e1efbd11675502
-U dan
-Z 8ad44f59cac49311751e10cb991dd243
+P 4d8be404dab265b51e5a6a95e83be85c22512e19a437191690c7d845c87ff259
+R b0210376dae3a6dbba696619be40dcd0
+U drh
+Z 4dfef6ec80ce5527a940e761bd4de33e
