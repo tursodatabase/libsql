@@ -240,12 +240,6 @@ static int lookupName(
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
-        if( pTab->nCol==0 ){
-          assert( pParse->eParseMode==PARSE_MODE_RENAME_COLUMN
-               || pParse->eParseMode==PARSE_MODE_RENAME_TABLE );
-          assert( pNC->pParse==pParse );
-          if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
-        }
         if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
           int hit = 0;
           pEList = pItem->pSelect->pEList;
