@@ -241,7 +241,10 @@ static int lookupName(
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
         if( pTab->nCol==0 ){
-          if( sqlite3ViewGetColumnNames(pNC->pParse, pTab) ) return WRC_Abort;
+          assert( pParse->eParseMode==PARSE_MODE_RENAME_COLUMN
+               || pParse->eParseMode==PARSE_MODE_RENAME_TABLE );
+          assert( pNC->pParse==pParse );
+          if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         }
         if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
           int hit = 0;
