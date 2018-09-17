@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.25.1.
-D 2018-09-17T11:36:20.327
+C Fix\sa\sfalse-positive\sin\sthe\spost-ALTER-TABLE\sschema\sverification\slogic\sthat\nprevents\sALTER\sTABLE\sfrom\sworking\sif\sthe\stable\sbeing\saltered\shas\sa\strigger\nthat\sreferences\sany\scolumn\sof\sa\svirtual\stable.\sTicket\s[b41031ea2b537237].
+D 2018-09-17T14:18:41.768
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -435,7 +435,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 3800f24c922dfcab2e7a05b49123e2f9c903c26fccea71a5f9ac765e91949355
+F src/alter.c 2269dd2f37ba963fde4c51e9e83542f126c86a8e10357c17f48137c6bee5299b
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -445,7 +445,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 90571aa2a9eb44e04291ffe9984c814883b9eb371f89898accec384520369597
+F src/build.c 3bdd61d7ecba6f40e7efead3ffb61b2e3bad87de73f407c288035937c9b33687
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
@@ -598,7 +598,7 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 18b00de006597e960a6b27ccec51474ac66cf1070a87c1933e5694dc02190ef1
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
-F test/alter.test cf28c2f35253d3395cf16334fb9dde1d8c4b035cb7c89204353ee1f47feaec1b
+F test/alter.test 99e72759d48d6531ac2a9f346b4a9b5fe8f89c67a0fa5e916a3990d3b1fe9d09
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test 7e93a21fe131e1dfeb317e90056856f96b10381fc7fe3a05e765569a23400433
@@ -606,7 +606,7 @@ F test/alterauth.test dc50064e3d57d60cf8708decefed15cfa154242f6d44069858d4c6c9b1
 F test/altercol.test 53fb5e218c9296afc160f2c4fcbeaf42bd0604815d9b3896a7d2eec583ad8704
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
-F test/altertab.test fe08624ef1554b85c943ac6289f591e2e9984704a6b35b94613af42cc92ba474
+F test/altertab.test 3b830144c18ae00abd2a27e3d2851c8bb1ee8fe655fa16d8a5971066dc71b58a
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1765,10 +1765,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b63af6c3bd33152742648d5d2e8dc5d5fcbcdd27df409272b6aea00a6f761760
-R 5fd87c7d692c5a21ae09cb1d921e2f5e
-T *branch * branch-3.25
-T *sym-branch-3.25 *
-T -sym-trunk *
+P f3c8cfdb35c6f0786bb21cafcc8c7e751e48a465f3e5a01292399f40e068e1d6
+Q +84105ea4af98bd8bddbdf9dc6674bdf73c110c0685afe868ce9681da110144d7
+R d91bee8d4f211839b44957b9ad7c46e1
 U drh
-Z 8f3a7b8d9a771c95737d126f47e19931
+Z 79514d553738bf733187afbe0a5ece1d

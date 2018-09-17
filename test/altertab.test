@@ -411,5 +411,55 @@ do_catchsql_test 13.2 {
   ALTER TABLE t2 RENAME b TO y;
 } {1 {error in trigger tr1 after rename: ambiguous column name: y}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+ifcapable rtree {
+  do_execsql_test 14.0 {
+    CREATE VIRTUAL TABLE rt USING rtree(id, minx, maxx, miny, maxy);
+
+    CREATE TABLE "mytable" ( "fid" INTEGER PRIMARY KEY, "geom" BLOB);
+
+    CREATE TRIGGER tr1 AFTER UPDATE OF "geom" ON "mytable" 
+          WHEN OLD."fid" = NEW."fid" AND NEW."geom" IS NULL BEGIN 
+      DELETE FROM rt WHERE id = OLD."fid"; 
+    END;
+
+    INSERT INTO mytable VALUES(1, X'abcd');
+  }
+
+  do_execsql_test 14.1 {
+    UPDATE mytable SET geom = X'1234'
+  }
+
+  do_execsql_test 14.2 {
+    ALTER TABLE mytable RENAME TO mytable_renamed;
+  }
+
+  do_execsql_test 14.3 {
+    CREATE TRIGGER tr2 AFTER INSERT ON mytable_renamed BEGIN
+      DELETE FROM rt WHERE id=(SELECT min(id) FROM rt);
+    END;
+  }
+
+  do_execsql_test 14.4 {
+    ALTER TABLE mytable_renamed RENAME TO mytable2;
+  }
+}
+
+reset_db
+do_execsql_test 14.5 {
+  CREATE TABLE t1(a, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE TRIGGER xyz AFTER INSERT ON t1 BEGIN
+    SELECT a, b FROM v1;
+  END;
+}
+do_execsql_test 14.6 {
+  ALTER TABLE t1 RENAME TO tt1;
+}
+
+
+
 finish_test
 

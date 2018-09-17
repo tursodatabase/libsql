@@ -1076,7 +1076,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       Table *pTarget = sqlite3LocateTable(pParse, 0, pStep->zTarget, zDb);
       if( pTarget==0 ){
         rc = SQLITE_ERROR;
-      }else{
+      }else if( SQLITE_OK==(rc = sqlite3ViewGetColumnNames(pParse, pTarget)) ){
         SrcList sSrc;
         memset(&sSrc, 0, sizeof(sSrc));
         sSrc.nSrc = 1;
