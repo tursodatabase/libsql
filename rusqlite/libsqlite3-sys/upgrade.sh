@@ -1,10 +1,10 @@
 SCRIPT_DIR=$(cd "$(dirname "$_")" && pwd)
 echo $SCRIPT_DIR
 cd $SCRIPT_DIR
-SQLITE3_LIB_DIR=$SCRIPT_DIR/sqlite3
+export SQLITE3_LIB_DIR=$SCRIPT_DIR/sqlite3
 
 # Download and extract amalgamation
-SQLITE=sqlite-amalgamation-3240000
+SQLITE=sqlite-amalgamation-3250000
 curl -O http://sqlite.org/2018/$SQLITE.zip
 unzip -p $SQLITE.zip $SQLITE/sqlite3.c > $SQLITE3_LIB_DIR/sqlite3.c
 unzip -p $SQLITE.zip $SQLITE/sqlite3.h > $SQLITE3_LIB_DIR/sqlite3.h
@@ -13,7 +13,7 @@ rm -f $SQLITE.zip
 
 # Regenerate bindgen file
 rm -f $SQLITE3_LIB_DIR/bindgen_bundled_version.rs
-SQLITE3_INCLUDE_DIR=$SQLITE3_LIB_DIR
+export SQLITE3_INCLUDE_DIR=$SQLITE3_LIB_DIR
 cargo update
 # Just to make sure there is only one bindgen.rs file in target dir
 find $SCRIPT_DIR/target -type f -name bindgen.rs -exec rm {} \;
