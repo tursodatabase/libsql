@@ -1,5 +1,5 @@
-C Disable\sthe\sORDER\sBY\sLIMIT\soptimization\sin\squeries\susing\swindow\sfunctions.\nThis\sfixes\sa\sproblem\sthat\swas\sintroduced\sby\scheck-in\s[206720129ed2fa8875a286]\nwhich\sattempted\sto\sfix\sticket\s[9936b2fa443fec03ff25f9].\s\sThis\schanges\sis\na\sfix\sfor\sthe\sfollow-in\stocket\s[510cde277783b5fb5de628].
-D 2018-09-17T15:19:13.491
+C Further\soptimizations\sto\sthe\sUPDATE\slogic\sto\savoid\smaking\schanges\sto\spartial\nindexes\sif\snone\sof\sthe\scolumns\smentioned\sin\sthe\sWHERE\sclause\sare\smodified\sby\nthe\sUPDATE.
+D 2018-09-17T20:47:38.243
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -568,7 +568,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 9f55961518f77793edd56eee860ecf035d4370ebbb0726ad2f6cada6637fd16b
 F src/treeview.c e7a7f90552bb418533cdd0309b5eb71d4effa50165b880fc8c2001e613577e5f
 F src/trigger.c d3d78568f37fb2e6cdcc2d1e7b60156f15b0b600adec55b83c5d42f6cad250bd
-F src/update.c 52d926be53e011050b0ed1d6d1a09d268ffb864ce875bf3a8ce4cd1b1b8b616e
+F src/update.c 682f112c49247d2fe5950c9fe2226046c6bc497cf114f74d58766926914216ff
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
@@ -1766,7 +1766,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84105ea4af98bd8bddbdf9dc6674bdf73c110c0685afe868ce9681da110144d7
-R d2a6dffbc9b7eb5b0ff50ff6a5285151
+P c6c9585f294710829ca24b64d70a36fd9f409261dd0661367c6c4198cdbc4c81
+R 17f1502e8c93c85f4f8e209b4182086e
 U drh
-Z 632a6055521a5e1b8d0c8917d051318b
+Z a90b83813b6e6eb9b8886f53647a06d4

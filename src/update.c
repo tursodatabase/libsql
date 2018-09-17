@@ -82,7 +82,9 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
 /*
 ** Check to see if column iCol of index pIdx references any of the
 ** columns defined by aXRef and chngRowid.  Return true if it does
-** and false if not.
+** and false if not.  This is an optimization.  False-positives are a
+** performance degradation, but false-negatives can result in a corrupt
+** index and incorrect answers.
 **
 ** aXRef[j] will be non-negative if column j of the original table is
 ** being updated.  chngRowid will be true if the rowid of the table is
@@ -104,6 +106,28 @@ static int indexColumnIsBeingUpdated(
   assert( pIdx->aColExpr->a[iCol].pExpr!=0 );
   return sqlite3ExprReferencesUpdatedColumn(pIdx->aColExpr->a[iCol].pExpr,
                                             aXRef,chngRowid);
+}
+
+/*
+** Check to see if index pIdx is a partial index whose conditional
+** expression might change values due to an UPDATE.  Return true if
+** the index is subject to change and false if the index is guaranteed
+** to be unchanged.  This is an optimization.  False-positives are a
+** performance degradation, but false-negatives can result in a corrupt
+** index and incorrect answers.
+**
+** aXRef[j] will be non-negative if column j of the original table is
+** being updated.  chngRowid will be true if the rowid of the table is
+** being updated.
+*/
+static int indexWhereClauseMightChange(
+  Index *pIdx,      /* The index to check */
+  int *aXRef,       /* aXRef[j]>=0 if column j is being updated */
+  int chngRowid     /* true if the rowid is being updated */
+){
+  if( pIdx->pPartIdxWhere==0 ) return 0;
+  return sqlite3ExprReferencesUpdatedColumn(pIdx->pPartIdxWhere,
+                                            aXRef, chngRowid);
 }
 
 /*
@@ -332,7 +356,9 @@ void sqlite3Update(
   */
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
-    if( chngKey || hasFK>1 || pIdx->pPartIdxWhere || pIdx==pPk ){
+    if( chngKey || hasFK>1 || pIdx==pPk
+     || indexWhereClauseMightChange(pIdx,aXRef,chngRowid)
+    ){
       reg = ++pParse->nMem;
       pParse->nMem += pIdx->nColumn;
     }else{
