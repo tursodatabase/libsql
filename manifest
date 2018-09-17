@@ -1,5 +1,5 @@
-C Add\sassert()s\sto\sthe\snew\scode\sin\sthe\sprevious\scheck-in.
-D 2018-09-17T00:15:21.614
+C Add\sextra\stest\sfor\sthe\sfix\son\sthis\sbranch.\sAlso\sfix\sa\npointer-compare-after-free\sproblem\sthat\soccurs\sin\ssimilar\scases.
+D 2018-09-17T08:27:23.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -446,7 +446,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 90571aa2a9eb44e04291ffe9984c814883b9eb371f89898accec384520369597
+F src/build.c 3bdd61d7ecba6f40e7efead3ffb61b2e3bad87de73f407c288035937c9b33687
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
@@ -607,7 +607,7 @@ F test/alterauth.test dc50064e3d57d60cf8708decefed15cfa154242f6d44069858d4c6c9b1
 F test/altercol.test 53fb5e218c9296afc160f2c4fcbeaf42bd0604815d9b3896a7d2eec583ad8704
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
-F test/altertab.test fe08624ef1554b85c943ac6289f591e2e9984704a6b35b94613af42cc92ba474
+F test/altertab.test 3b830144c18ae00abd2a27e3d2851c8bb1ee8fe655fa16d8a5971066dc71b58a
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1766,7 +1766,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05a9d129254e01a5f6b5e4033c105190eae386575a94b020ef3e0cbd30bbf056
-R 06efc1c5b094a00f26fafeb2dea6c95e
-U drh
-Z 392095af0ce931065bb28167458f689d
+P b12f23a5c484cab3654721299ea0f05230eef6b14012b557f3bf2592fac0f00e
+R fdc93ad4d417c5a17eda517310446c18
+U dan
+Z 0a0cf7b3375e76f2b517ca3739e2db01

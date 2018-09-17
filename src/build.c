@@ -2287,6 +2287,10 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable->pSelect );
   pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
   if( pSel ){
+#ifndef SQLITE_OMIT_ALTERTABLE
+    u8 eParseMode = pParse->eParseMode;
+    pParse->eParseMode = PARSE_MODE_NORMAL;
+#endif
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
@@ -2332,6 +2336,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     sqlite3DeleteTable(db, pSelTab);
     sqlite3SelectDelete(db, pSel);
     db->lookaside.bDisable--;
+#ifndef SQLITE_OMIT_ALTERTABLE
+    pParse->eParseMode = eParseMode;
+#endif
   } else {
     nErr++;
   }
