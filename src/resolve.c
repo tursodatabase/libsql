@@ -430,8 +430,7 @@ static int lookupName(
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
           Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
-          assert( pExpr->x.pList==0 );
-          assert( pExpr->x.pSelect==0 );
+          assert( pExpr->eX==EX_None );
           pOrig = pEList->a[j].pExpr;
           if( (pNC->ncFlags&NC_AllowAgg)==0 && ExprHasProperty(pOrig, EP_Agg) ){
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
@@ -701,8 +700,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     /* Resolve function names
     */
     case TK_FUNCTION: {
-      ExprList *pList = pExpr->x.pList;    /* The argument list */
-      int n = pList ? pList->nExpr : 0;    /* Number of arguments */
+      ExprList *pList;            /* The argument list */
+      int n;                      /* Number of arguments */
       int no_such_func = 0;       /* True if no such function exists */
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
@@ -711,7 +710,14 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( pExpr->eX==EX_List || pExpr->eX==EX_None );
+      if( pExpr->eX==EX_List ){
+        pList = pExpr->x.pList;
+        n = pList->nExpr;
+      }else{
+        pList = 0;
+        n = 0;
+      }
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
@@ -876,7 +882,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
     case TK_IN: {
       testcase( pExpr->op==TK_IN );
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( pExpr->eX==EX_Select ){
         int nRef = pNC->nRef;
         notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);

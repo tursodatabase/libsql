@@ -1736,7 +1736,7 @@ static const char *columnTypeImpl(
       NameContext sNC;
       Select *pS = pExpr->x.pSelect;
       Expr *p = pS->pEList->a[0].pExpr;
-      assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( pExpr->eX==EX_Select );
       sNC.pSrcList = pS->pSrc;
       sNC.pNext = pNC;
       sNC.pParse = pNC->pParse;
@@ -3472,10 +3472,15 @@ static Expr *substExpr(
     }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
     pExpr->pRight = substExpr(pSubst, pExpr->pRight);
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      substSelect(pSubst, pExpr->x.pSelect, 1);
-    }else{
-      substExprList(pSubst, pExpr->x.pList);
+    switch( pExpr->eX ){
+      case EX_Select: {
+        substSelect(pSubst, pExpr->x.pSelect, 1);
+        break;
+      }
+      case EX_List: {
+        substExprList(pSubst, pExpr->x.pList);
+        break;
+      }
     }
   }
   return pExpr;
@@ -5242,8 +5247,8 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
-      assert( !ExprHasProperty(pE, EP_xIsSelect) );
-      if( pE->x.pList==0 || pE->x.pList->nExpr!=1 ){
+      assert( pE->eX==EX_List || pE->eX==EX_None );
+      if( pE->eX==EX_None || pE->x.pList->nExpr!=1 ){
         sqlite3ErrorMsg(pParse, "DISTINCT aggregates must have exactly one "
            "argument");
         pFunc->iDistinct = -1;
@@ -5266,7 +5271,8 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   struct AggInfo_func *pF;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     ExprList *pList = pF->pExpr->x.pList;
-    assert( !ExprHasProperty(pF->pExpr, EP_xIsSelect) );
+    assert( pF->pExpr->eX==EX_List || pF->pExpr->eX==EX_None );
+    assert( pF->pExpr->eX==EX_List || pList==0 );
     sqlite3VdbeAddOp2(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
@@ -5296,7 +5302,7 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
     int addrNext = 0;
     int regAgg;
     ExprList *pList = pF->pExpr->x.pList;
-    assert( !ExprHasProperty(pF->pExpr, EP_xIsSelect) );
+    assert( pF->pExpr->eX==EX_List || pF->pExpr->eX==EX_None );
     if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
@@ -6186,10 +6192,11 @@ int sqlite3Select(
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
     for(i=0; i<sAggInfo.nFunc; i++){
-      assert( !ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_xIsSelect) );
-      sNC.ncFlags |= NC_InAggFunc;
-      sqlite3ExprAnalyzeAggList(&sNC, sAggInfo.aFunc[i].pExpr->x.pList);
-      sNC.ncFlags &= ~NC_InAggFunc;
+      if( sAggInfo.aFunc[i].pExpr->eX==EX_List ){
+        sNC.ncFlags |= NC_InAggFunc;
+        sqlite3ExprAnalyzeAggList(&sNC, sAggInfo.aFunc[i].pExpr->x.pList);
+        sNC.ncFlags &= ~NC_InAggFunc;
+      }
     }
     sAggInfo.mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;

@@ -185,9 +185,7 @@ Expr *sqlite3LimitWhere(
         pEList = sqlite3ExprListAppend(pParse, pEList, p);
       }
       pLhs = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
-      if( pLhs ){
-        pLhs->x.pList = sqlite3ExprListDup(db, pEList, 0);
-      }
+      sqlite3PExprAddExprList(pParse, pLhs, pEList);
     }
   }
 

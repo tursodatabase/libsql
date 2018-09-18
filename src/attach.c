@@ -564,10 +564,15 @@ int sqlite3FixExpr(
       }
     }
     if( ExprHasProperty(pExpr, EP_TokenOnly|EP_Leaf) ) break;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
-    }else{
-      if( sqlite3FixExprList(pFix, pExpr->x.pList) ) return 1;
+    switch( pExpr->eX ){
+      case EX_Select: {
+        if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
+        break;
+      }
+      case EX_List: {
+        if( sqlite3FixExprList(pFix, pExpr->x.pList) ) return 1;
+        break;
+      }
     }
     if( sqlite3FixExpr(pFix, pExpr->pRight) ){
       return 1;

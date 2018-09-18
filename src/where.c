@@ -2330,7 +2330,8 @@ static int whereRangeVectorLen(
     CollSeq *pColl;               /* Comparison collation sequence */
     Expr *pLhs = pTerm->pExpr->pLeft->x.pList->a[i].pExpr;
     Expr *pRhs = pTerm->pExpr->pRight;
-    if( pRhs->flags & EP_xIsSelect ){
+    assert( pRhs->eX==EX_Select || pRhs->eX==EX_List );
+    if( pRhs->eX==EX_Select ){
       pRhs = pRhs->x.pSelect->pEList->a[i].pExpr;
     }else{
       pRhs = pRhs->x.pList->a[i].pExpr;
@@ -2488,24 +2489,29 @@ static int whereLoopAddBtreeIndex(
 
     if( eOp & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-        /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
-        int i;
-        nIn = 46;  assert( 46==sqlite3LogEst(25) );
-
-        /* The expression may actually be of the form (x, y) IN (SELECT...).
-        ** In this case there is a separate term for each of (x) and (y).
-        ** However, the nIn multiplier should only be applied once, not once
-        ** for each such term. The following loop checks that pTerm is the
-        ** first such term in use, and sets nIn back to 0 if it is not. */
-        for(i=0; i<pNew->nLTerm-1; i++){
-          if( pNew->aLTerm[i] && pNew->aLTerm[i]->pExpr==pExpr ) nIn = 0;
+      switch( pExpr->eX ){
+        case EX_Select: {
+          /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
+          int i;
+          nIn = 46;  assert( 46==sqlite3LogEst(25) );
+  
+          /* The expression may actually be of the form (x, y) IN (SELECT...).
+          ** In this case there is a separate term for each of (x) and (y).
+          ** However, the nIn multiplier should only be applied once, not once
+          ** for each such term. The following loop checks that pTerm is the
+          ** first such term in use, and sets nIn back to 0 if it is not. */
+          for(i=0; i<pNew->nLTerm-1; i++){
+            if( pNew->aLTerm[i] && pNew->aLTerm[i]->pExpr==pExpr ) nIn = 0;
+          }
+          break;
         }
-      }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
-        /* "x IN (value, value, ...)" */
-        nIn = sqlite3LogEst(pExpr->x.pList->nExpr);
-        assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
-                          ** changes "x IN (?)" into "x=?". */
+        case EX_List: {
+          /* "x IN (value, value, ...)" */
+          nIn = sqlite3LogEst(pExpr->x.pList->nExpr);
+          assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
+                            ** changes "x IN (?)" into "x=?". */
+          break;
+        }
       }
       if( pProbe->hasStat1 ){
         LogEst M, logK, safetyMargin;
@@ -2620,7 +2626,7 @@ static int whereLoopAddBtreeIndex(
         if( nInMul==0 
          && pProbe->nSample 
          && pNew->u.btree.nEq<=pProbe->nSampleCol
-         && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
+         && ((eOp & WO_IN)==0 || pTerm->pExpr->eX==EX_List)
          && OptimizationEnabled(db, SQLITE_Stat34)
         ){
           Expr *pExpr = pTerm->pExpr;

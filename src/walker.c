@@ -49,10 +49,17 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
       if( pExpr->pRight ){
         pExpr = pExpr->pRight;
         continue;
-      }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-        if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
-      }else if( pExpr->x.pList ){
-        if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+      }else{
+        switch( pExpr->eX ){
+          case EX_Select: {
+            if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
+            break;
+          }
+          case EX_List: {
+            if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+            break;
+          }
+        }
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( !ExprHasProperty(pExpr, EP_Reduced) && pExpr->pWin ){

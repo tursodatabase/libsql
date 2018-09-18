@@ -435,7 +435,9 @@ static Expr *removeUnindexableInClauseTerms(
     }
     sqlite3ExprListDelete(db, pOrigRhs);
     sqlite3ExprListDelete(db, pOrigLhs);
+    assert( pNew->pLeft->eX==EX_List );
     pNew->pLeft->x.pList = pLhs;
+    if( pLhs==0 ) pNew->pLeft->eX = EX_None;
     pNew->x.pSelect->pEList = pRhs;
     if( pLhs && pLhs->nExpr==1 ){
       /* Take care here not to generate a TK_VECTOR containing only a
@@ -538,7 +540,7 @@ static int codeEqualityTerm(
       if( pLoop->aLTerm[i]->pExpr==pX ) nEq++;
     }
 
-    if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
+    if( pX->eX!=EX_Select || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
     }else{
       sqlite3 *db = pParse->db;
@@ -734,7 +736,7 @@ static int codeAllEqualityTerms(
       }
     }
     if( pTerm->eOperator & WO_IN ){
-      if( pTerm->pExpr->flags & EP_xIsSelect ){
+      if( pTerm->pExpr->eX==EX_Select ){
         /* No affinity ever needs to be (or should be) applied to a value
         ** from the RHS of an "? IN (SELECT ...)" expression. The 
         ** sqlite3FindInIndex() routine has already ensured that the 
@@ -1074,7 +1076,7 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
   if( p && sqlite3ExprIsVector(p) ){
 #ifndef SQLITE_OMIT_SUBQUERY
-    if( (p->flags & EP_xIsSelect) ){
+    if( p->eX==EX_Select ){
       Vdbe *v = pParse->pVdbe;
       int iSelect = sqlite3CodeSubselect(pParse, p, 0, 0);
       sqlite3VdbeAddOp3(v, OP_Copy, iSelect, iReg, nReg-1);
@@ -2194,7 +2196,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     if( (pAlt->eOperator & WO_IN) 
-     && (pAlt->pExpr->flags & EP_xIsSelect)
+     && (pAlt->pExpr->eX==EX_Select)
      && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
     ){
       continue;

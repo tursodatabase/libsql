@@ -860,18 +860,20 @@ static void exprAnalyzeOrTerm(
       assert( pLeft!=0 );
       pDup = sqlite3ExprDup(db, pLeft, 0);
       pNew = sqlite3PExpr(pParse, TK_IN, pDup, 0);
-      if( pNew ){
+      if( pNew && pList ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
-        assert( !ExprHasProperty(pNew, EP_xIsSelect) );
+        assert( pNew->eX==EX_None );
+        pNew->eX = EX_List;
         pNew->x.pList = pList;
         idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
         exprAnalyze(pSrc, pWC, idxNew);
-        /* pTerm = &pWC->a[idxTerm]; // would be needed if pTerm where used again */
+        /* pTerm = &pWC->a[idxTerm]; // would be needed if pTerm used again */
         markTermAsChild(pWC, idxNew, idxTerm);
       }else{
         sqlite3ExprListDelete(db, pList);
+        sqlite3ExprDelete(db, pNew);
       }
     }
   }
@@ -1055,10 +1057,15 @@ static void exprAnalyze(
   if( op==TK_IN ){
     assert( pExpr->pRight==0 );
     if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      pTerm->prereqRight = exprSelectUsage(pMaskSet, pExpr->x.pSelect);
-    }else{
-      pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet, pExpr->x.pList);
+    switch( pExpr->eX ){
+      case EX_Select: {
+        pTerm->prereqRight = exprSelectUsage(pMaskSet, pExpr->x.pSelect);
+        break;
+      }
+      case EX_List: {
+        pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet,pExpr->x.pList);
+        break;
+      }
     }
   }else if( op==TK_ISNULL ){
     pTerm->prereqRight = 0;
@@ -1329,8 +1336,7 @@ static void exprAnalyze(
   && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
   && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
   && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
-  && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
-    || (pExpr->pRight->flags & EP_xIsSelect)==0)
+  && ( pExpr->pLeft->eX!=EX_Select || pExpr->pRight->eX!=EX_Select )
   ){
     int i;
     for(i=0; i<nLeft; i++){
@@ -1509,11 +1515,18 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   if( p->pRight ){
     mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pRight);
     assert( p->x.pList==0 );
-  }else if( ExprHasProperty(p, EP_xIsSelect) ){
-    if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
-    mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
-  }else if( p->x.pList ){
-    mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
+  }else{
+    switch( p->eX ){
+      case EX_Select: {
+        if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
+        mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
+        break;
+      }
+      case EX_List: {
+        mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
+        break;
+      }
+    }
   }
   return mask;
 }

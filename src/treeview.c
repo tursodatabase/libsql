@@ -532,10 +532,15 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_IN: {
       sqlite3TreeViewLine(pView, "IN flags=0x%x", pExpr->flags);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-        sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
-      }else{
-        sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
+      switch( pExpr->eX ){
+        case EX_Select: {
+          sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
+          break;
+        }
+        case EX_List: {
+          sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
+          break;
+        }
       }
       break;
     }

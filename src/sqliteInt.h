@@ -2419,6 +2419,8 @@ typedef int ynVar;
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
+  u8 eV;                 /* Which element of v-union is used */
+  u8 eX;                 /* Which element of x-union is used */
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
@@ -2467,6 +2469,20 @@ struct Expr {
 };
 
 /*
+** Allowed values for the Expr.eV and Expr.eX fields:
+*/
+#define EV_None     0    /* Expr.v is not used */
+#define EV_Left     1    /* Expr.v.pLeft */
+#define EV_Vector   2    /* Expr.v.pVector */
+#define EV_Win      3    /* Expr.v.pWin */
+
+#define EX_None     0    /* Expr.x is not used */
+#define EX_Right    1    /* Expr.x.pRight */
+#define EX_List     2    /* Expr.x.pList */
+#define EX_Select   3    /* Expr.x.pSelect */
+#define EX_Tab      4    /* Expr.x.pTab */
+
+/*
 ** The following are the meanings of bits in the Expr.flags field.
 */
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
@@ -2480,7 +2496,7 @@ struct Expr {
 #define EP_Collate   0x000100 /* Tree contains a TK_COLLATE operator */
 #define EP_Generic   0x000200 /* Ignore COLLATE or affinity on this tree */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
-#define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
+/*                   0x000800 -- Available for reuse */
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
 #define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
@@ -3794,6 +3810,7 @@ Expr *sqlite3Expr(sqlite3*,int,const char*);
 void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*);
 void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
+void sqlite3PExprAddExprList(Parse*, Expr*, ExprList*);
 Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);

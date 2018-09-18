@@ -936,10 +936,10 @@ idlist(A) ::= nm(Y).
       /* memset(p, 0, sizeof(Expr)); */
       p->op = (u8)op;
       p->affinity = 0;
+      p->eX = EX_None;
       p->flags = EP_Leaf;
       p->iAgg = -1;
       p->pLeft = p->pRight = 0;
-      p->x.pList = 0;
       p->pAggInfo = 0;
       p->pTab = 0;
       p->op2 = 0;
@@ -1052,11 +1052,7 @@ term(A) ::= CTIME_KW(OP). {
 expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   ExprList *pList = sqlite3ExprListAppend(pParse, X, Y);
   A = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
-  if( A ){
-    A->x.pList = pList;
-  }else{
-    sqlite3ExprListDelete(pParse->db, pList);
-  }
+  sqlite3PExprAddExprList(pParse, A, pList);
 }
 
 expr(A) ::= expr(A) AND(OP) expr(Y).    {A=sqlite3PExpr(pParse,@OP,A,Y);}
@@ -1143,11 +1139,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   ExprList *pList = sqlite3ExprListAppend(pParse,0, X);
   pList = sqlite3ExprListAppend(pParse,pList, Y);
   A = sqlite3PExpr(pParse, TK_BETWEEN, A, 0);
-  if( A ){
-    A->x.pList = pList;
-  }else{
-    sqlite3ExprListDelete(pParse->db, pList);
-  } 
+  sqlite3PExprAddExprList(pParse, A, pList);
   if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
@@ -1195,12 +1187,8 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A = sqlite3PExpr(pParse, N ? TK_NE : TK_EQ, A, pRHS);
     }else{
       A = sqlite3PExpr(pParse, TK_IN, A, 0);
-      if( A ){
-        A->x.pList = Y;
-        sqlite3ExprSetHeightAndFlags(pParse, A);
-      }else{
-        sqlite3ExprListDelete(pParse->db, Y);
-      }
+      sqlite3PExprAddExprList(pParse, A, Y);
+      sqlite3ExprSetHeightAndFlags(pParse, A);
       if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
     }
   }
@@ -1231,13 +1219,8 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
 /* CASE expressions */
 expr(A) ::= CASE case_operand(X) case_exprlist(Y) case_else(Z) END. {
   A = sqlite3PExpr(pParse, TK_CASE, X, 0);
-  if( A ){
-    A->x.pList = Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y;
-    sqlite3ExprSetHeightAndFlags(pParse, A);
-  }else{
-    sqlite3ExprListDelete(pParse->db, Y);
-    sqlite3ExprDelete(pParse->db, Z);
-  }
+  sqlite3PExprAddExprList(pParse,A,Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y);
+  sqlite3ExprSetHeightAndFlags(pParse, A);
 }
 %type case_exprlist {ExprList*}
 %destructor case_exprlist {sqlite3ExprListDelete(pParse->db, $$);}
