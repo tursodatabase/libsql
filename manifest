@@ -1,5 +1,5 @@
-C Disable\sthe\sORDER\sBY\sLIMIT\soptimization\sin\squeries\susing\swindow\sfunctions.\nThis\sfixes\sa\sproblem\sthat\swas\sintroduced\sby\scheck-in\s[206720129ed2fa8875a286]\nwhich\sattempted\sto\sfix\sticket\s[9936b2fa443fec03ff25f9].\s\sThis\schanges\sis\na\sfix\sfor\sthe\sfollow-in\stocket\s[510cde277783b5fb5de628].
-D 2018-09-17T15:25:21.074
+C Version\s3.25.1
+D 2018-09-18T20:20:44.430
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -1765,8 +1765,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ce568c0e73c8cd258c8fe21e6c5088cfbe3ac017460a014a4b832daecc0cdf7
-Q +c6c9585f294710829ca24b64d70a36fd9f409261dd0661367c6c4198cdbc4c81
+P 36c75fd5b7cddb48be74f4f86fafe588b3e597a80d226eeb43b77cbd3817572e
 R 2da4c97a76733b95f6b50be3bc80d148
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.25.1 *
 U drh
-Z 32fb56066c187948c632d3c16771e34b
+Z 021b437e4298407ebbfd74f9f32f7614
