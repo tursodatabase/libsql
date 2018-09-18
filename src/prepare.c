@@ -25,15 +25,23 @@ static void corruptSchema(
   const char *zExtra   /* Error information */
 ){
   sqlite3 *db = pData->db;
-  if( !db->mallocFailed && (db->flags & SQLITE_WriteSchema)==0 ){
+  if( db->mallocFailed ){
+    pData->rc = SQLITE_NOMEM_BKPT;
+  }else if( pData->pzErrMsg[0]!=0 ){
+    /* A error message has already been generated.  Do not overwrite it */
+  }else if( pData->mInitFlags & INITFLAG_AlterTable ){
+    *pData->pzErrMsg = sqlite3DbStrDup(db, zExtra);
+    pData->rc = SQLITE_ERROR;
+  }else if( db->flags & SQLITE_WriteSchema ){
+    pData->rc = SQLITE_CORRUPT_BKPT;
+  }else{
     char *z;
     if( zObj==0 ) zObj = "?";
     z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
     if( zExtra && zExtra[0] ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
-    sqlite3DbFree(db, *pData->pzErrMsg);
     *pData->pzErrMsg = z;
+    pData->rc = SQLITE_CORRUPT_BKPT;
   }
-  pData->rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_CORRUPT_BKPT;
 }
 
 /*
@@ -85,7 +93,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = saved_iDb;
-    assert( saved_iDb==0 || (db->mDbFlags & DBFLAG_Vacuum)!=0 );
+    /* assert( saved_iDb==0 || (db->mDbFlags & DBFLAG_Vacuum)!=0 ); */
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -132,7 +140,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 ** auxiliary databases.  Return one of the SQLITE_ error codes to
 ** indicate success or failure.
 */
-static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
+int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   int rc;
   int i;
 #ifndef SQLITE_OMIT_DEPRECATED
@@ -167,6 +175,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   initData.iDb = iDb;
   initData.rc = SQLITE_OK;
   initData.pzErrMsg = pzErrMsg;
+  initData.mInitFlags = mFlags;
   sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   if( initData.rc ){
     rc = initData.rc;
@@ -373,14 +382,14 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   assert( db->nDb>0 );
   /* Do the main schema first */
   if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
-    rc = sqlite3InitOne(db, 0, pzErrMsg);
+    rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
     if( rc ) return rc;
   }
   /* All other schemas after the main schema. The "temp" schema must be last */
   for(i=db->nDb-1; i>0; i--){
     assert( i==1 || sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
     if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
-      rc = sqlite3InitOne(db, i, pzErrMsg);
+      rc = sqlite3InitOne(db, i, pzErrMsg, 0);
       if( rc ) return rc;
     }
   }

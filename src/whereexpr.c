@@ -194,18 +194,18 @@ static int isLikeOrGlob(
   int *pisComplete, /* True if the only wildcard is % in the last character */
   int *pnoCase      /* True if uppercase is equivalent to lowercase */
 ){
-  const u8 *z = 0;         /* String on RHS of LIKE operator */
+  const u8 *z = 0;           /* String on RHS of LIKE operator */
   Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
   ExprList *pList;           /* List of operands to the LIKE operator */
-  int c;                     /* One character in z[] */
+  u8 c;                      /* One character in z[] */
   int cnt;                   /* Number of non-wildcard prefix characters */
-  char wc[4];                /* Wildcard characters */
+  u8 wc[4];                  /* Wildcard characters */
   sqlite3 *db = pParse->db;  /* Database connection */
   sqlite3_value *pVal = 0;
   int op;                    /* Opcode of pRight */
   int rc;                    /* Result code to return */
 
-  if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, wc) ){
+  if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, (char*)wc) ){
     return 0;
   }
 #ifdef SQLITE_EBCDIC
@@ -229,23 +229,6 @@ static int isLikeOrGlob(
     z = (u8*)pRight->u.zToken;
   }
   if( z ){
-
-    /* If the RHS begins with a digit or a minus sign, then the LHS must
-    ** be an ordinary column (not a virtual table column) with TEXT affinity.
-    ** Otherwise the LHS might be numeric and "lhs >= rhs" would be false
-    ** even though "lhs LIKE rhs" is true.  But if the RHS does not start
-    ** with a digit or '-', then "lhs LIKE rhs" will always be false if
-    ** the LHS is numeric and so the optimization still works.
-    */
-    if( sqlite3Isdigit(z[0]) || z[0]=='-' ){
-      if( pLeft->op!=TK_COLUMN 
-       || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-       || IsVirtual(pLeft->pTab)  /* Value might be numeric */
-      ){
-        sqlite3ValueFree(pVal);
-        return 0;
-      }
-    }
 
     /* Count the number of prefix characters prior to the first wildcard */
     cnt = 0;
@@ -279,6 +262,32 @@ static int isLikeOrGlob(
           zNew[iTo++] = zNew[iFrom];
         }
         zNew[iTo] = 0;
+
+        /* If the RHS begins with a digit or a minus sign, then the LHS must be
+        ** an ordinary column (not a virtual table column) with TEXT affinity.
+        ** Otherwise the LHS might be numeric and "lhs >= rhs" would be false
+        ** even though "lhs LIKE rhs" is true.  But if the RHS does not start
+        ** with a digit or '-', then "lhs LIKE rhs" will always be false if
+        ** the LHS is numeric and so the optimization still works.
+        **
+        ** 2018-09-10 ticket c94369cae9b561b1f996d0054bfab11389f9d033
+        ** The RHS pattern must not be '/%' because the termination condition
+        ** will then become "x<'0'" and if the affinity is numeric, will then
+        ** be converted into "x<0", which is incorrect.
+        */
+        if( sqlite3Isdigit(zNew[0])
+         || zNew[0]=='-'
+         || (zNew[0]+1=='0' && iTo==1)
+        ){
+          if( pLeft->op!=TK_COLUMN 
+           || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
+           || IsVirtual(pLeft->pTab)  /* Value might be numeric */
+          ){
+            sqlite3ExprDelete(db, pPrefix);
+            sqlite3ValueFree(pVal);
+            return 0;
+          }
+        }
       }
       *ppPrefix = pPrefix;
 
@@ -340,6 +349,7 @@ static int isLikeOrGlob(
 ** If the expression matches none of the patterns above, return 0.
 */
 static int isAuxiliaryVtabOperator(
+  sqlite3 *db,                    /* Parsing context */
   Expr *pExpr,                    /* Test this expression */
   unsigned char *peOp2,           /* OUT: 0 for MATCH, or else an op2 value */
   Expr **ppLeft,                  /* Column expression to left of MATCH/op2 */
@@ -363,16 +373,54 @@ static int isAuxiliaryVtabOperator(
     if( pList==0 || pList->nExpr!=2 ){
       return 0;
     }
+
+    /* Built-in operators MATCH, GLOB, LIKE, and REGEXP attach to a
+    ** virtual table on their second argument, which is the same as
+    ** the left-hand side operand in their in-fix form.
+    **
+    **       vtab_column MATCH expression
+    **       MATCH(expression,vtab_column)
+    */
     pCol = pList->a[1].pExpr;
-    if( pCol->op!=TK_COLUMN || !IsVirtual(pCol->pTab) ){
-      return 0;
+    if( pCol->op==TK_COLUMN && IsVirtual(pCol->pTab) ){
+      for(i=0; i<ArraySize(aOp); i++){
+        if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+          *peOp2 = aOp[i].eOp2;
+          *ppRight = pList->a[0].pExpr;
+          *ppLeft = pCol;
+          return 1;
+        }
+      }
     }
-    for(i=0; i<ArraySize(aOp); i++){
-      if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
-        *peOp2 = aOp[i].eOp2;
-        *ppRight = pList->a[0].pExpr;
-        *ppLeft = pCol;
-        return 1;
+
+    /* We can also match against the first column of overloaded
+    ** functions where xFindFunction returns a value of at least
+    ** SQLITE_INDEX_CONSTRAINT_FUNCTION.
+    **
+    **      OVERLOADED(vtab_column,expression)
+    **
+    ** Historically, xFindFunction expected to see lower-case function
+    ** names.  But for this use case, xFindFunction is expected to deal
+    ** with function names in an arbitrary case.
+    */
+    pCol = pList->a[0].pExpr;
+    if( pCol->op==TK_COLUMN && IsVirtual(pCol->pTab) ){
+      sqlite3_vtab *pVtab;
+      sqlite3_module *pMod;
+      void (*xNotUsed)(sqlite3_context*,int,sqlite3_value**);
+      void *pNotUsed;
+      pVtab = sqlite3GetVTable(db, pCol->pTab)->pVtab;
+      assert( pVtab!=0 );
+      assert( pVtab->pModule!=0 );
+      pMod = (sqlite3_module *)pVtab->pModule;
+      if( pMod->xFindFunction!=0 ){
+        i = pMod->xFindFunction(pVtab,2, pExpr->u.zToken, &xNotUsed, &pNotUsed);
+        if( i>=SQLITE_INDEX_CONSTRAINT_FUNCTION ){
+          *peOp2 = i;
+          *ppRight = pList->a[1].pExpr;
+          *ppLeft = pCol;
+          return 1;
+        }
       }
     }
   }else if( pExpr->op==TK_NE || pExpr->op==TK_ISNOT || pExpr->op==TK_NOTNULL ){
@@ -820,7 +868,7 @@ static void exprAnalyzeOrTerm(
         idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
         exprAnalyze(pSrc, pWC, idxNew);
-        pTerm = &pWC->a[idxTerm];
+        /* pTerm = &pWC->a[idxTerm]; // would be needed if pTerm where used again */
         markTermAsChild(pWC, idxNew, idxTerm);
       }else{
         sqlite3ExprListDelete(db, pList);
@@ -1237,7 +1285,7 @@ static void exprAnalyze(
   */
   if( pWC->op==TK_AND ){
     Expr *pRight = 0, *pLeft = 0;
-    int res = isAuxiliaryVtabOperator(pExpr, &eOp2, &pLeft, &pRight);
+    int res = isAuxiliaryVtabOperator(db, pExpr, &eOp2, &pLeft, &pRight);
     while( res-- > 0 ){
       int idxNew;
       WhereTerm *pNewTerm;

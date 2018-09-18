@@ -650,6 +650,16 @@ if test "${enable_udlimit}" = "yes" ; then
 fi
 
 #########
+# See whether we should enable GEOPOLY
+AC_ARG_ENABLE(geopoly, AC_HELP_STRING([--enable-geopoly],
+      [Enable the GEOPOLY extension]),
+      [enable_geopoly=yes],[enable_geopoly=no])
+if test "${enable_geopoly}" = "yes" ; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_GEOPOLY"
+  enable_rtree=yes
+fi
+
+#########
 # See whether we should enable RTREE
 AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
       [Enable the RTREE extension]))

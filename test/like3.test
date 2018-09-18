@@ -112,4 +112,68 @@ do_execsql_test like3-4.2ck {
   SELECT quote(x) FROM t4 WHERE x LIKE 'ab%' ORDER BY +x ASC;
 } {'abc' 'abd' 'abe' X'616263' X'616264' X'616265'}
 
+# 2018-09-10 ticket https://www.sqlite.org/src/tktview/c94369cae9b561b1f996
+# The like optimization fails for a column with numeric affinity if
+# the pattern '/%' or begins with the escape character.
+#
+do_execsql_test like3-5.100 {
+  CREATE TABLE t5a(x INT UNIQUE COLLATE nocase);
+  INSERT INTO t5a(x) VALUES('/abc'),(123),(-234);
+  SELECT x FROM t5a WHERE x LIKE '/%';
+} {/abc}
+do_eqp_test like3-5.101 {
+  SELECT x FROM t5a WHERE x LIKE '/%';
+} {
+  QUERY PLAN
+  `--SCAN TABLE t5a
+}
+do_execsql_test like3-5.110 {
+  SELECT x FROM t5a WHERE x LIKE '/a%';
+} {/abc}
+do_eqp_test like3-5.111 {
+  SELECT x FROM t5a WHERE x LIKE '/a%';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t5a USING COVERING INDEX sqlite_autoindex_t5a_1 (x>? AND x<?)
+}
+do_execsql_test like3-5.120 {
+  SELECT x FROM t5a WHERE x LIKE '^12%' ESCAPE '^';
+} {123}
+do_eqp_test like3-5.121 {
+  SELECT x FROM t5a WHERE x LIKE '^12%' ESCAPE '^';
+} {
+  QUERY PLAN
+  `--SCAN TABLE t5a
+}
+do_execsql_test like3-5.122 {
+  SELECT x FROM t5a WHERE x LIKE '^-2%' ESCAPE '^';
+} {-234}
+do_eqp_test like3-5.123 {
+  SELECT x FROM t5a WHERE x LIKE '^12%' ESCAPE '^';
+} {
+  QUERY PLAN
+  `--SCAN TABLE t5a
+}
+
+do_execsql_test like3-5.200 {
+  CREATE TABLE t5b(x INT UNIQUE COLLATE binary);
+  INSERT INTO t5b(x) VALUES('/abc'),(123),(-234);
+  SELECT x FROM t5b WHERE x GLOB '/*';
+} {/abc}
+do_eqp_test like3-5.201 {
+  SELECT x FROM t5b WHERE x GLOB '/*';
+} {
+  QUERY PLAN
+  `--SCAN TABLE t5b
+}
+do_execsql_test like3-5.210 {
+  SELECT x FROM t5b WHERE x GLOB '/a*';
+} {/abc}
+do_eqp_test like3-5.211 {
+  SELECT x FROM t5b WHERE x GLOB '/a*';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t5b USING COVERING INDEX sqlite_autoindex_t5b_1 (x>? AND x<?)
+}
+
 finish_test

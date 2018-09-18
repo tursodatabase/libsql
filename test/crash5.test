@@ -20,7 +20,7 @@ source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug||!crashtest||!memorymanage {
+ifcapable !crashtest||!memorymanage {
    puts "Skipping crash5 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return

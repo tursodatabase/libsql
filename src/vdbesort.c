@@ -2107,7 +2107,11 @@ static int vdbeMergeEngineInit(
 ){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* For looping over PmaReader objects */
-  int nTree = pMerger->nTree;
+  int nTree;                      /* Number of subtrees to merge */
+
+  /* Failure to allocate the merge would have been detected prior to
+  ** invoking this routine */
+  assert( pMerger!=0 );
 
   /* eMode is always INCRINIT_NORMAL in single-threaded mode */
   assert( SQLITE_MAX_WORKER_THREADS>0 || eMode==INCRINIT_NORMAL );
@@ -2116,6 +2120,7 @@ static int vdbeMergeEngineInit(
   assert( pMerger->pTask==0 );
   pMerger->pTask = pTask;
 
+  nTree = pMerger->nTree;
   for(i=0; i<nTree; i++){
     if( SQLITE_MAX_WORKER_THREADS>0 && eMode==INCRINIT_ROOT ){
       /* PmaReaders should be normally initialized in order, as if they are

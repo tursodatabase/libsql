@@ -284,6 +284,7 @@ forcedelete test2.db
 sqlite3 db2 test2.db
 do_test 6.0 {
   db2 eval {
+    PRAGMA auto_vacuum = 0;
     PRAGMA page_size = 4096;
   }
 } {}

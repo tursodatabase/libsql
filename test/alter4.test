@@ -394,4 +394,32 @@ do_test alter4-10.1 {
   }
 } {ok}
 
+reset_db
+do_execsql_test alter4-11.0 {
+  CREATE TABLE t1(c INTEGER PRIMARY KEY, d);
+  PRAGMA foreign_keys = on;
+  ALTER TABLE t1 ADD COLUMN e;
+}
+
+do_execsql_test alter4-11.1 {
+  ALTER TABLE t1 ADD COLUMN f REFERENCES t1;
+}
+
+do_catchsql_test alter4-11.2 {
+  ALTER TABLE t1 ADD COLUMN g REFERENCES t1 DEFAULT 4;
+} {1 {Cannot add a REFERENCES column with non-NULL default value}}
+
+do_catchsql_test alter4-11.3 {
+  ALTER TABLE t2 ADD COLUMN g;
+} {1 {no such table: t2}}
+
+ifcapable fts5 {
+  do_execsql_test alter4-11.4 {
+    CREATE VIRTUAL TABLE fff USING fts5(f);
+  }
+  do_catchsql_test alter4-11.2 {
+    ALTER TABLE fff ADD COLUMN g;
+  } {1 {virtual tables may not be altered}}
+}
+
 finish_test

@@ -2133,6 +2133,75 @@ ifcapable {cte} {
   } {1 {not authorized}}
 } ;# ifcapable cte
 
+#
+# db eval {SELECT sql FROM temp.sqlite_master} {puts "TEMP: $sql;"}
+# db eval {SELECT sql FROM main.sqlite_master} {puts "MAIN: $sql;"}
+#
+#    MAIN: CREATE TABLE "t2"(a,b,c);
+#    MAIN: CREATE TABLE t4(a,b,c);
+#    MAIN: CREATE INDEX t4i1 ON t4(a);
+#    MAIN: CREATE INDEX t4i2 ON t4(b,a,c);
+#    MAIN: CREATE TABLE sqlite_stat1(tbl,idx,stat);
+#    MAIN: CREATE TABLE t1(a,b);
+#
+ifcapable altertable&&vtab {
+  do_test 1.350 {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
+      if {$code=="SQLITE_ALTER_TABLE"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_OK
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ALTER TABLE t1 RENAME COLUMN b TO bcdefg;
+    }
+  } {0 {}}
+  do_execsql_test auth-1.351 {
+    SELECT name FROM pragma_table_info('t1') ORDER BY cid;
+  } {a bcdefg}
+  do_test auth-1.352 {
+    set authargs
+  } {main t1 {} {}}
+  do_test 1.353 {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
+      if {$code=="SQLITE_ALTER_TABLE"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_IGNORE
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ALTER TABLE t1 RENAME COLUMN bcdefg TO b;
+    }
+  } {0 {}}
+  do_execsql_test auth-1.354 {
+    SELECT name FROM pragma_table_info('t1') ORDER BY cid;
+  } {a bcdefg}
+  do_test auth-1.355 {
+    set authargs
+  } {main t1 {} {}}
+  do_test 1.356 {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
+      if {$code=="SQLITE_ALTER_TABLE"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_DENY
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ALTER TABLE t1 RENAME COLUMN bcdefg TO b;
+    }
+  } {1 {not authorized}}
+  do_execsql_test auth-1.356 {
+    SELECT name FROM pragma_table_info('t1') ORDER BY cid;
+  } {a bcdefg}
+  do_test auth-1.357 {
+    set authargs
+  } {main t1 {} {}}
+}
+
+
 do_test auth-2.1 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="x"} {

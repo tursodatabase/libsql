@@ -268,7 +268,7 @@ array set ::Configs [strip_comments {
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
-    "Fast-One"                fuzztest
+    "Fast-One"                "fuzztest test"
     "Debug-One"               "mptest test"
     "Have-Not"                test
     "Secure-Delete"           test

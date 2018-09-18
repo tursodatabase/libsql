@@ -758,7 +758,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   assert( IsVirtual(pTab) );
 
   memset(&sParse, 0, sizeof(sParse));
-  sParse.declareVtab = 1;
+  sParse.eParseMode = PARSE_MODE_DECLARE_VTAB;
   sParse.db = db;
   sParse.nQueryLoop = 1;
   if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable, &zErr) 
@@ -799,7 +799,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     sqlite3DbFree(db, zErr);
     rc = SQLITE_ERROR;
   }
-  sParse.declareVtab = 0;
+  sParse.eParseMode = PARSE_MODE_NORMAL;
 
   if( sParse.pVdbe ){
     sqlite3VdbeFinalize(sParse.pVdbe);

@@ -339,6 +339,12 @@ SQLITE_TCL_DEP =
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_GEOPOLY=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_INTROSPECTION_PRAGMAS=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 !ENDIF
@@ -1196,14 +1202,14 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          fts3_tokenize_vtab.lo fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
          fts5.lo \
          func.lo global.lo hash.lo \
-         icu.lo insert.lo legacy.lo loadext.lo \
+         icu.lo insert.lo json1.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
-         sqlite3session.lo select.lo sqlite3rbu.lo status.lo \
+         sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
@@ -1413,6 +1419,7 @@ SRC09 = \
   $(TOP)\ext\fts3\fts3_tokenizer.h \
   $(TOP)\ext\icu\sqliteicu.h \
   $(TOP)\ext\rtree\rtree.h \
+  $(TOP)\ext\rtree\geopoly.c \
   $(TOP)\ext\rbu\sqlite3rbu.h \
   $(TOP)\ext\session\sqlite3session.h
 
@@ -1508,6 +1515,7 @@ TESTEXT = \
   $(TOP)\ext\misc\closure.c \
   $(TOP)\ext\misc\csv.c \
   $(TOP)\ext\misc\eval.c \
+  $(TOP)\ext\misc\explain.c \
   $(TOP)\ext\misc\fileio.c \
   $(TOP)\ext\misc\fuzzer.c \
   $(TOP)\ext\fts5\fts5_tcl.c \
@@ -1587,7 +1595,8 @@ EXTHDR = $(EXTHDR) \
   $(TOP)\ext\fts3\fts3_hash.h \
   $(TOP)\ext\fts3\fts3_tokenizer.h
 EXTHDR = $(EXTHDR) \
-  $(TOP)\ext\rtree\rtree.h
+  $(TOP)\ext\rtree\rtree.h \
+  $(TOP)\ext\rtree\geopoly.c
 EXTHDR = $(EXTHDR) \
   $(TOP)\ext\icu\sqliteicu.h
 EXTHDR = $(EXTHDR) \
@@ -1621,10 +1630,9 @@ FUZZDATA = \
 # when the shell is not being dynamically linked.
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_STMTVTAB
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_DBPAGE_VTAB -DSQLITE_ENABLE_DBSTAT_VTAB
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC -DSQLITE_INTROSPECTION_PRAGMAS
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_RTREE
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
 !ENDIF
 
 # <<mark>>
@@ -2196,6 +2204,12 @@ fts3_unicode2.lo:	$(TOP)\ext\fts3\fts3_unicode2.c $(HDR) $(EXTHDR)
 fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_write.c
 
+json1.lo:	$(TOP)\ext\misc\json1.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\misc\json1.c
+
+stmt.lo:	$(TOP)\ext\misc\stmt.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\misc\stmt.c
+
 rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\rtree\rtree.c
 
@@ -2278,9 +2292,9 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_JSON1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
@@ -2435,6 +2449,10 @@ fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) $(SQLITE3H)
 rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\rollback-test.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+atrc.exe:	$(TOP)\test\atrc.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		$(TOP)\test\atrc.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 LogEst.exe:	$(TOP)\tool\logest.c $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\LogEst.c /link $(LDFLAGS) $(LTLINKOPTS)

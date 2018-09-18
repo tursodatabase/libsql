@@ -2393,6 +2393,8 @@ static int SQLITE_TCLAPI test_snapshot_open(
   if( rc!=SQLITE_OK ){
     Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
+  }else{
+    Tcl_ResetResult(interp);
   }
   return TCL_OK;
 }
@@ -6982,7 +6984,6 @@ static int SQLITE_TCLAPI optimization_control(
     { "all",                 SQLITE_AllOpts        },
     { "none",                0                     },
     { "query-flattener",     SQLITE_QueryFlattener },
-    { "column-cache",        SQLITE_ColumnCache    },
     { "groupby-order",       SQLITE_GroupByOrder   },
     { "factor-constants",    SQLITE_FactorOutConst },
     { "distinct-opt",        SQLITE_DistinctOpt    },
@@ -7037,6 +7038,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_explain_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7061,6 +7063,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "eval",                  sqlite3_eval_init                 },
+    { "explain",               sqlite3_explain_init              },
     { "fileio",                sqlite3_fileio_init               },
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },

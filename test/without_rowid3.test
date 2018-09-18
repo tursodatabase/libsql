@@ -949,7 +949,9 @@ ifcapable altertable {
   # Test the sqlite_rename_parent() function directly.
   #
   proc test_rename_parent {zCreate zOld zNew} {
-    db eval {SELECT sqlite_rename_parent($zCreate, $zOld, $zNew)}
+    db eval {SELECT sqlite_rename_table(
+        'main', 'table', 't1', $zCreate, $zOld, $zNew, 0
+    )}
   }
   do_test without_rowid3-14.2.1.1 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t2 t3
