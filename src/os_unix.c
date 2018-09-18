@@ -521,7 +521,11 @@ static struct unix_syscall {
 #define osLstat      ((int(*)(const char*,struct stat*))aSyscall[27].pCurrent)
 
 #if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+# ifdef __ANDROID__
+  { "ioctl", (sqlite3_syscall_ptr)(int(*)(int, int, ...))ioctl, 0 },
+# else
   { "ioctl",         (sqlite3_syscall_ptr)ioctl,          0 },
+# endif
 #else
   { "ioctl",         (sqlite3_syscall_ptr)0,              0 },
 #endif
