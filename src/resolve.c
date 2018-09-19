@@ -690,8 +690,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zColumn = pRight->u.zToken;
         if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
-        }
-        if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)&pExpr->pTab, (void*)pLeft);
         }
       }
