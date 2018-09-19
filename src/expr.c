@@ -3600,6 +3600,7 @@ expr_code_doover:
         return target;
 #endif
       }else{
+        memset(&tempX, 0, sizeof(tempX));
         tempX.op = TK_INTEGER;
         tempX.flags = EP_IntValue|EP_TokenOnly;
         tempX.u.iValue = 0;

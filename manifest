@@ -1,5 +1,5 @@
-C In\sthe\sExpr\sobject,\sthe\sExpr.eX\sfield\sdetermines\swhat\svalue\sis\sstored\sin\sthe\nExpr.x\sunion.\s\sThis\smostly\sworks,\sbut\sthere\sare\sissues\sidentified\sby\svalgrind.
-D 2018-09-18T21:35:31.300
+C Make\ssure\stemporary\sExpr\sobjects\sare\sfully\sinitialized\sprior\sto\ssending\sthem\ninto\ssqlite3ExprCodeTemp().
+D 2018-09-19T11:59:15.245
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -454,7 +454,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 07a7ecf18a64478be7241cbb332bc26321586384c750e47fb566f678c5aee512
-F src/expr.c c7d6ce81a4363fc3be403ac05a86a6ea3ed63c5c6668d9c774fd4bb714f07911
+F src/expr.c d48bca738efa75f4a8731c55db8425d275e6367163ca0149bed9b6117eab5e32
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c f59253c0be4b1e9dfcb073b6d6d6ab83090ae50c08b5c113b76013c4b157cd6a
 F src/func.c 82aeef69505b67197a476836d44cc16c1a434ee53481f23cffb70a75a1bcbc7a
@@ -1767,7 +1767,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 655f065404e08083ad5eb9b22a036f410b46eb5eb2bcfb0fbc953b4e152c95e7
-R cc9722e20d1a4071193f4dca3fb58785
+P 8849a463d67d79ec60c74a08835c176c08da651a82731558a1dceac2781cd75d
+R db879ad69540fd8a785f584d64935c70
 U drh
-Z bb5fe9a1a876c7e1afc567f393930991
+Z 1294c1f2dad466247d6550207298ec20
