@@ -166,7 +166,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       if( p->pLeft && (p->pLeft->flags & EP_Collate)!=0 ){
         p = p->pLeft;
       }else{
-        Expr *pNext  = p->pRight;
+        Expr *pNext = 0;
         /* p->flags holds EP_Collate and p->pLeft->flags does not.  And
         ** p->x.pSelect cannot.  So if p->x.pLeft exists, it must hold at
         ** least one EP_Collate. Thus the following two ALWAYS. */
@@ -178,6 +178,8 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
               break;
             }
           }
+        }else if( p->eX==EX_Right ){
+          pNext = p->x.pRight;
         }
         p = pNext;
       }
@@ -256,8 +258,8 @@ static char comparisonAffinity(Expr *pExpr){
           pExpr->op==TK_NE || pExpr->op==TK_IS || pExpr->op==TK_ISNOT );
   assert( pExpr->pLeft );
   aff = sqlite3ExprAffinity(pExpr->pLeft);
-  if( pExpr->pRight ){
-    aff = sqlite3CompareAffinity(pExpr->pRight, aff);
+  if( pExpr->eX==EX_Right ){
+    aff = sqlite3CompareAffinity(pExpr->x.pRight, aff);
   }else if( pExpr->eX==EX_Select ){
     aff = sqlite3CompareAffinity(pExpr->x.pSelect->pEList->a[0].pExpr, aff);
   }else if( aff==0 ){
@@ -305,8 +307,12 @@ static u8 binaryCompareP5(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
 **
 ** Argument pRight (but not pLeft) may be a null pointer. In this case,
 ** it is not considered.
+**
+** The second form (sqlite3BinaryExprCollSeq()) uses the Expr.pLeft
+** and Expr.x.pRight pointer from the second argument instead of separate
+** pointers.
 */
-CollSeq *sqlite3BinaryCompareCollSeq(
+CollSeq *sqlite3ComparisonCollSeq(
   Parse *pParse, 
   Expr *pLeft, 
   Expr *pRight
@@ -325,6 +331,13 @@ CollSeq *sqlite3BinaryCompareCollSeq(
   }
   return pColl;
 }
+CollSeq *sqlite3ComparisonExprCollSeq(Parse *pParse, Expr *pExpr){
+  if( pExpr->eX==EX_Right ){
+    return sqlite3ComparisonCollSeq(pParse, pExpr->pLeft, pExpr->x.pRight);
+  }else{
+    return sqlite3ComparisonCollSeq(pParse, pExpr->pLeft, 0);
+  }
+}
 
 /*
 ** Generate code for a comparison operator.
@@ -342,7 +355,7 @@ static int codeCompare(
   int addr;
   CollSeq *p4;
 
-  p4 = sqlite3BinaryCompareCollSeq(pParse, pLeft, pRight);
+  p4 = sqlite3ComparisonCollSeq(pParse, pLeft, pRight);
   p5 = binaryCompareP5(pLeft, pRight, jumpIfNull);
   addr = sqlite3VdbeAddOp4(pParse->pVdbe, opcode, in2, dest, in1,
                            (void*)p4, P4_COLLSEQ);
@@ -545,7 +558,7 @@ static void codeVectorCompare(
 ){
   Vdbe *v = pParse->pVdbe;
   Expr *pLeft = pExpr->pLeft;
-  Expr *pRight = pExpr->pRight;
+  Expr *pRight = pExpr->x.pRight;
   int nLeft = sqlite3ExprVectorSize(pLeft);
   int i;
   int regLeft = 0;
@@ -679,12 +692,20 @@ static void heightOfSelect(Select *pSelect, int *pnHeight){
 static void exprSetHeight(Expr *p){
   int nHeight = 0;
   heightOfExpr(p->pLeft, &nHeight);
-  heightOfExpr(p->pRight, &nHeight);
-  if( p->eX==EX_Select ){
-    heightOfSelect(p->x.pSelect, &nHeight);
-  }else if( p->eX==EX_List ){
-    heightOfExprList(p->x.pList, &nHeight);
-    p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
+  switch( p->eX ){
+    case EX_Select: {
+      heightOfSelect(p->x.pSelect, &nHeight);
+      break;
+    }
+    case EX_List: {
+      heightOfExprList(p->x.pList, &nHeight);
+      p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
+      break;
+    }
+    case EX_Right: {
+      heightOfExpr(p->x.pRight, &nHeight);
+      break;
+    }
   }
   p->nHeight = nHeight + 1;
 }
@@ -823,7 +844,9 @@ void sqlite3ExprAttachSubtrees(
     sqlite3ExprDelete(db, pRight);
   }else{
     if( pRight ){
-      pRoot->pRight = pRight;
+      assert( pRoot->eX==EX_None );
+      pRoot->x.pRight = pRight;
+      pRoot->eX = EX_Right;
       pRoot->flags |= EP_Propagate & pRight->flags;
     }
     if( pLeft ){
@@ -1076,36 +1099,32 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 #ifdef SQLITE_DEBUG
   if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->pLeft==0 );
-    assert( p->pRight==0 );
     assert( p->eX==EX_None );
   }
   if( !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->op!=TK_FUNCTION || p->pLeft==0 );
-    assert( p->pRight==0 || p->x.pSelect==0 );
   }
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Reduced)) ){
     assert( p->pWin==0 || p->pLeft==0 );
     assert( p->pWin==0 || p->pTab==0 );
     assert( p->pWin==0 || p->op==TK_FUNCTION );
-    assert( p->pTab==0 || (p->pRight==0 && p->eX==EX_None) );
+    assert( p->pTab==0 || p->eX==EX_None );
   }
 #endif
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Leaf)) ){
-    /* The Expr.x union is never used at the same time as Expr.pRight */
-    assert( p->x.pList==0 || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
-    if( p->pRight ){
-      sqlite3ExprDeleteNN(db, p->pRight);
-    }else{
-      switch( p->eX ){
-        case EX_Select: {
-          sqlite3SelectDelete(db, p->x.pSelect);
-          break;
-        }
-        case EX_List: {
-          sqlite3ExprListDelete(db, p->x.pList);
-          break;
-        }
+    switch( p->eX ){
+      case EX_Select: {
+        sqlite3SelectDelete(db, p->x.pSelect);
+        break;
+      }
+      case EX_List: {
+        sqlite3ExprListDelete(db, p->x.pList);
+        break;
+      }
+      case EX_Right: {
+        sqlite3ExprDelete(db, p->x.pRight);
+        break;
       }
     }
     if( !ExprHasProperty(p, EP_Reduced) ){
@@ -1182,10 +1201,9 @@ static int dupedExprStructSize(Expr *p, int flags){
     assert( !ExprHasProperty(p, EP_FromJoin) ); 
     assert( !ExprHasProperty(p, EP_MemToken) );
     assert( !ExprHasProperty(p, EP_NoReduce) );
-    if( p->pLeft || p->x.pList ){
+    if( p->pLeft || p->eX!=EX_None ){
       nSize = EXPR_REDUCEDSIZE | EP_Reduced;
     }else{
-      assert( p->pRight==0 );
       nSize = EXPR_TOKENONLYSIZE | EP_TokenOnly;
     }
   }
@@ -1223,7 +1241,8 @@ static int dupedExprSize(Expr *p, int flags){
   if( p ){
     nByte = dupedExprNodeSize(p, flags);
     if( flags&EXPRDUP_REDUCE ){
-      nByte += dupedExprSize(p->pLeft, flags) + dupedExprSize(p->pRight, flags);
+      nByte += dupedExprSize(p->pLeft, flags);
+      if( p->eX==EX_Right ) nByte += dupedExprSize(p->x.pRight, flags);
     }
   }
   return nByte;
@@ -1233,7 +1252,7 @@ static int dupedExprSize(Expr *p, int flags){
 ** This function is similar to sqlite3ExprDup(), except that if pzBuffer 
 ** is not NULL then *pzBuffer is assumed to point to a buffer large enough 
 ** to store the copy of expression p, the copies of p->u.zToken
-** (if applicable), and the copies of the p->pLeft and p->pRight expressions,
+** (if applicable), and the copies of the p->pLeft and p->x.pRight expressions,
 ** if any. Before returning, *pzBuffer is set to the first byte past the
 ** portion of the buffer copied into by this function.
 */
@@ -1313,14 +1332,15 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       }
     }
 
-    /* Fill in pNew->pLeft and pNew->pRight. */
+    /* Fill in pNew->pLeft and pNew->x.pRight. */
     if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly) ){
       zAlloc += dupedExprNodeSize(p, dupFlags);
       if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
         pNew->pLeft = p->pLeft ?
                       exprDup(db, p->pLeft, EXPRDUP_REDUCE, &zAlloc) : 0;
-        pNew->pRight = p->pRight ?
-                       exprDup(db, p->pRight, EXPRDUP_REDUCE, &zAlloc) : 0;
+        if( p->eX==EX_Right ){
+          pNew->x.pRight = exprDup(db, p->x.pRight, EXPRDUP_REDUCE, &zAlloc);
+        }
       }
       if( pzBuffer ){
         *pzBuffer = zAlloc;
@@ -1336,12 +1356,14 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
-          assert( p->iColumn==0 || p->pRight==0 );
-          assert( p->pRight==0  || p->pRight==p->pLeft );
+          assert( p->iColumn==0 || p->eX!=EX_Right );
+          /* OLD: assert( p->pRight==0  || p->x.pRight==p->pLeft ); */
         }else{
           pNew->pLeft = sqlite3ExprDup(db, p->pLeft, 0);
         }
-        pNew->pRight = sqlite3ExprDup(db, p->pRight, 0);
+        if( p->eX==EX_Right ){
+          pNew->x.pRight = sqlite3ExprDup(db, p->x.pRight, 0);
+        }
       }
     }
   }
@@ -1418,8 +1440,8 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     ){
       assert( pNewExpr->iColumn==0 || i>0 );
       if( pNewExpr->iColumn==0 ){
-        assert( pOldExpr->pLeft==pOldExpr->pRight );
-        pPriorSelectCol = pNewExpr->pLeft = pNewExpr->pRight;
+        assert( pOldExpr->pLeft==pOldExpr->x.pRight );
+        pPriorSelectCol = pNewExpr->pLeft = pNewExpr->x.pRight;
       }else{
         assert( i>0 );
         assert( pItem[-1].pExpr!=0 );
@@ -1665,7 +1687,9 @@ ExprList *sqlite3ExprListAppendVector(
      
     /* Store the SELECT statement in pRight so it will be deleted when
     ** sqlite3ExprListDelete() is called */
-    pFirst->pRight = pExpr;
+    assert( pFirst->eX==EX_None );
+    pFirst->x.pRight = pExpr;
+    pFirst->eX = EX_Right;
     pExpr = 0;
 
     /* Remember the size of the LHS in iTable so that we can check that
@@ -2477,7 +2501,7 @@ int sqlite3FindInIndex(
           for(i=0; i<nExpr; i++){
             Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
             Expr *pRhs = pEList->a[i].pExpr;
-            CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
+            CollSeq *pReq = sqlite3ComparisonCollSeq(pParse, pLhs, pRhs);
             int j;
   
             assert( pReq!=0 || pRhs->iColumn==XN_ROWID || pParse->nErr );
@@ -2759,7 +2783,7 @@ int sqlite3CodeSubselect(
           assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
           for(i=0; i<nVal; i++){
             Expr *p = sqlite3VectorFieldSubexpr(pLeft, i);
-            pKeyInfo->aColl[i] = sqlite3BinaryCompareCollSeq(
+            pKeyInfo->aColl[i] = sqlite3ComparisonCollSeq(
                 pParse, p, pEList->a[i].pExpr
             );
           }
@@ -3543,8 +3567,9 @@ expr_code_doover:
         codeVectorCompare(pParse, pExpr, target, op, p5);
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
-        r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-        codeCompare(pParse, pLeft, pExpr->pRight, op,
+        assert( pExpr->eX==EX_Right );
+        r2 = sqlite3ExprCodeTemp(pParse, pExpr->x.pRight, &regFree2);
+        codeCompare(pParse, pLeft, pExpr->x.pRight, op,
             r1, r2, inReg, SQLITE_STOREP2 | p5);
         assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
         assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
@@ -3581,7 +3606,8 @@ expr_code_doover:
       assert( TK_RSHIFT==OP_ShiftRight );  testcase( op==TK_RSHIFT );
       assert( TK_CONCAT==OP_Concat );      testcase( op==TK_CONCAT );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
+      assert( pExpr->eX==EX_Right );
+      r2 = sqlite3ExprCodeTemp(pParse, pExpr->x.pRight, &regFree2);
       sqlite3VdbeAddOp3(v, op, r2, r1, target);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
@@ -3625,7 +3651,8 @@ expr_code_doover:
       int bNormal;   /* IS TRUE or IS FALSE */
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
-      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      assert( pExpr->eX==EX_Right );
+      isTrue = sqlite3ExprTruthValue(pExpr->x.pRight);
       bNormal = pExpr->op2==TK_IS;
       testcase( isTrue && bNormal);
       testcase( !isTrue && bNormal);
@@ -4012,7 +4039,8 @@ expr_code_doover:
       for(i=0; i<nExpr-1; i=i+2){
         if( pX ){
           assert( pTest!=0 );
-          opCompare.pRight = aListelem[i].pExpr;
+          opCompare.x.pRight = aListelem[i].pExpr;
+          opCompare.eX = EX_Right;
         }else{
           pTest = aListelem[i].pExpr;
         }
@@ -4325,13 +4353,16 @@ static void exprCodeBetween(
   exprX = *pExpr->pLeft;
   exprAnd.op = TK_AND;
   exprAnd.pLeft = &compLeft;
-  exprAnd.pRight = &compRight;
+  exprAnd.x.pRight = &compRight;
+  exprAnd.eX = EX_Right;
   compLeft.op = TK_GE;
   compLeft.pLeft = &exprX;
-  compLeft.pRight = pExpr->x.pList->a[0].pExpr;
+  compLeft.x.pRight = pExpr->x.pList->a[0].pExpr;
+  compLeft.eX = EX_Right;
   compRight.op = TK_LE;
   compRight.pLeft = &exprX;
-  compRight.pRight = pExpr->x.pList->a[1].pExpr;
+  compRight.x.pRight = pExpr->x.pList->a[1].pExpr;
+  compRight.eX = EX_Right;
   exprToRegister(&exprX, exprCodeVector(pParse, &exprX, &regFree1));
   if( xJump ){
     xJump(pParse, &exprAnd, dest, jumpIfNull);
@@ -4388,14 +4419,16 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       int d2 = sqlite3VdbeMakeLabel(v);
       testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, d2,jumpIfNull^SQLITE_JUMPIFNULL);
-      sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pExpr->eX==EX_Right );
+      sqlite3ExprIfTrue(pParse, pExpr->x.pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
       break;
     }
     case TK_OR: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
-      sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pExpr->eX==EX_Right );
+      sqlite3ExprIfTrue(pParse, pExpr->x.pRight, dest, jumpIfNull);
       break;
     }
     case TK_NOT: {
@@ -4408,7 +4441,8 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       int isTrue;     /* IS TRUE or IS NOT TRUE */
       testcase( jumpIfNull==0 );
       isNot = pExpr->op2==TK_ISNOT;
-      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      assert( pExpr->eX==EX_Right );
+      isTrue = sqlite3ExprTruthValue(pExpr->x.pRight);
       testcase( isTrue && isNot );
       testcase( !isTrue && isNot );
       if( isTrue ^ isNot ){
@@ -4436,8 +4470,9 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       if( sqlite3ExprIsVector(pExpr->pLeft) ) goto default_expr;
       testcase( jumpIfNull==0 );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-      codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
+      assert( pExpr->eX==EX_Right );
+      r2 = sqlite3ExprCodeTemp(pParse, pExpr->x.pRight, &regFree2);
+      codeCompare(pParse, pExpr->pLeft, pExpr->x.pRight, op,
                   r1, r2, dest, jumpIfNull);
       assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
       assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
@@ -4554,14 +4589,16 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_AND: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
-      sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pExpr->eX==EX_Right );
+      sqlite3ExprIfFalse(pParse, pExpr->x.pRight, dest, jumpIfNull);
       break;
     }
     case TK_OR: {
       int d2 = sqlite3VdbeMakeLabel(v);
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, d2, jumpIfNull^SQLITE_JUMPIFNULL);
-      sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pExpr->eX==EX_Right );
+      sqlite3ExprIfFalse(pParse, pExpr->x.pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
       break;
     }
@@ -4575,7 +4612,8 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       int isTrue;  /* IS TRUE or IS NOT TRUE */
       testcase( jumpIfNull==0 );
       isNot = pExpr->op2==TK_ISNOT;
-      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      assert( pExpr->eX==EX_Right );
+      isTrue = sqlite3ExprTruthValue(pExpr->x.pRight);
       testcase( isTrue && isNot );
       testcase( !isTrue && isNot );
       if( isTrue ^ isNot ){
@@ -4606,8 +4644,9 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       if( sqlite3ExprIsVector(pExpr->pLeft) ) goto default_expr;
       testcase( jumpIfNull==0 );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-      codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
+      assert( pExpr->eX==EX_Right );
+      r2 = sqlite3ExprCodeTemp(pParse, pExpr->x.pRight, &regFree2);
+      codeCompare(pParse, pExpr->pLeft, pExpr->x.pRight, op,
                   r1, r2, dest, jumpIfNull);
       assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
       assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
@@ -4786,7 +4825,9 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     if( pA->eX==EX_Select || pA->eX!=pB->eX ) return 2;
     if( (combinedFlags & EP_FixedCol)==0
      && sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
-    if( sqlite3ExprCompare(pParse, pA->pRight, pB->pRight, iTab) ) return 2;
+    if( pA->eX==EX_Right ){
+      if( sqlite3ExprCompare(pParse,pA->x.pRight,pB->x.pRight,iTab) ) return 2;
+    }
     if( pA->eX==EX_List ){
       if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
     }
@@ -4884,9 +4925,10 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
   if( sqlite3ExprCompare(pParse, pE1, pE2, iTab)==0 ){
     return 1;
   }
+  assert( pE2->op!=TK_OR || pE2->eX==EX_Right );
   if( pE2->op==TK_OR
    && (sqlite3ExprImpliesExpr(pParse, pE1, pE2->pLeft, iTab)
-             || sqlite3ExprImpliesExpr(pParse, pE1, pE2->pRight, iTab) )
+             || sqlite3ExprImpliesExpr(pParse, pE1, pE2->x.pRight, iTab) )
   ){
     return 1;
   }
@@ -4954,8 +4996,9 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_LE );
       testcase( pExpr->op==TK_GT );
       testcase( pExpr->op==TK_GE );
+      assert( pExpr->eX==EX_Right );
       if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->pTab))
-       || (pExpr->pRight->op==TK_COLUMN && IsVirtual(pExpr->pRight->pTab))
+       || (pExpr->x.pRight->op==TK_COLUMN && IsVirtual(pExpr->x.pRight->pTab))
       ){
        return WRC_Prune;
       }

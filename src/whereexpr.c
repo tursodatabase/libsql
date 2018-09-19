@@ -119,15 +119,17 @@ static int allowedOp(int op){
 ** is not commuted.
 */
 static void exprCommute(Parse *pParse, Expr *pExpr){
-  u16 expRight = (pExpr->pRight->flags & EP_Collate);
-  u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
+  u16 expRight, expLeft;
+  assert( pExpr->eX==EX_Right );
+  expRight = (pExpr->x.pRight->flags & EP_Collate);
+  expLeft = (pExpr->pLeft->flags & EP_Collate);
   assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
   if( expRight==expLeft ){
     /* Either X and Y both have COLLATE operator or neither do */
     if( expRight ){
       /* Both X and Y have COLLATE operators.  Make sure X is always
       ** used by clearing the EP_Collate flag from Y. */
-      pExpr->pRight->flags &= ~EP_Collate;
+      pExpr->x.pRight->flags &= ~EP_Collate;
     }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
       /* Neither X nor Y have COLLATE operators, but X has a non-default
       ** collating sequence.  So add the EP_Collate marker on X to cause
@@ -135,7 +137,7 @@ static void exprCommute(Parse *pParse, Expr *pExpr){
       pExpr->pLeft->flags |= EP_Collate;
     }
   }
-  SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
+  SWAP(Expr*,pExpr->x.pRight,pExpr->pLeft);
   if( pExpr->op>=TK_GT ){
     assert( TK_LT==TK_GT+2 );
     assert( TK_GE==TK_LE+2 );
@@ -426,7 +428,7 @@ static int isAuxiliaryVtabOperator(
   }else if( pExpr->op==TK_NE || pExpr->op==TK_ISNOT || pExpr->op==TK_NOTNULL ){
     int res = 0;
     Expr *pLeft = pExpr->pLeft;
-    Expr *pRight = pExpr->pRight;
+    Expr *pRight = pExpr->x.pRight;
     if( pLeft->op==TK_COLUMN && IsVirtual(pLeft->pTab) ){
       res++;
     }
@@ -516,10 +518,14 @@ static void whereCombineDisjuncts(
   if( (pTwo->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (eOp & (WO_EQ|WO_LT|WO_LE))!=eOp
    && (eOp & (WO_EQ|WO_GT|WO_GE))!=eOp ) return;
-  assert( pOne->pExpr->pLeft!=0 && pOne->pExpr->pRight!=0 );
-  assert( pTwo->pExpr->pLeft!=0 && pTwo->pExpr->pRight!=0 );
-  if( sqlite3ExprCompare(0,pOne->pExpr->pLeft, pTwo->pExpr->pLeft, -1) ) return;
-  if( sqlite3ExprCompare(0,pOne->pExpr->pRight, pTwo->pExpr->pRight,-1) )return;
+  assert( pOne->pExpr->pLeft!=0 && pOne->pExpr->eX==EX_Right );
+  assert( pTwo->pExpr->pLeft!=0 && pTwo->pExpr->eX==EX_Right );
+  if( sqlite3ExprCompare(0,pOne->pExpr->pLeft, pTwo->pExpr->pLeft, -1) ){
+    return;
+  }
+  if( sqlite3ExprCompare(0,pOne->pExpr->x.pRight, pTwo->pExpr->x.pRight,-1) ){
+    return;
+  }
   /* If we reach this point, it means the two subterms can be combined */
   if( (eOp & (eOp-1))!=0 ){
     if( eOp & (WO_LT|WO_LE) ){
@@ -827,7 +833,8 @@ static void exprAnalyzeOrTerm(
           ** of both right and left sides must be such that no type
           ** conversions are required on the right.  (Ticket #2249)
           */
-          affRight = sqlite3ExprAffinity(pOrTerm->pExpr->pRight);
+          assert( pOrTerm->pExpr->eX==EX_Right );
+          affRight = sqlite3ExprAffinity(pOrTerm->pExpr->x.pRight);
           affLeft = sqlite3ExprAffinity(pOrTerm->pExpr->pLeft);
           if( affRight!=0 && affRight!=affLeft ){
             okToChngToIN = 0;
@@ -853,7 +860,8 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         assert( pOrTerm->leftCursor==iCursor );
         assert( pOrTerm->u.leftColumn==iColumn );
-        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
+        assert( pOrTerm->pExpr->eX==EX_Right );
+        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->x.pRight, 0);
         pList = sqlite3ExprListAppend(pWInfo->pParse, pList, pDup);
         pLeft = pOrTerm->pExpr->pLeft;
       }
@@ -902,15 +910,16 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
   aff1 = sqlite3ExprAffinity(pExpr->pLeft);
-  aff2 = sqlite3ExprAffinity(pExpr->pRight);
+  assert( pExpr->eX==EX_Right );
+  aff2 = sqlite3ExprAffinity(pExpr->x.pRight);
   if( aff1!=aff2
    && (!sqlite3IsNumericAffinity(aff1) || !sqlite3IsNumericAffinity(aff2))
   ){
     return 0;
   }
-  pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
+  pColl = sqlite3ComparisonExprCollSeq(pParse, pExpr);
   if( sqlite3IsBinary(pColl) ) return 1;
-  return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
+  return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->x.pRight);
 }
 
 /*
@@ -1055,7 +1064,7 @@ static void exprAnalyze(
   prereqLeft = sqlite3WhereExprUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
-    assert( pExpr->pRight==0 );
+    assert( pExpr->eX!=EX_Right );
     if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
     switch( pExpr->eX ){
       case EX_Select: {
@@ -1067,10 +1076,13 @@ static void exprAnalyze(
         break;
       }
     }
-  }else if( op==TK_ISNULL ){
-    pTerm->prereqRight = 0;
   }else{
-    pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
+    assert( op!=TK_ISNULL || pExpr->eX!=EX_Right );
+    if( pExpr->eX==EX_Right ){
+      pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->x.pRight);
+    }else{
+      pTerm->prereqRight = 0;
+    }
   }
   pMaskSet->bVarSelect = 0;
   prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
@@ -1091,10 +1103,16 @@ static void exprAnalyze(
   pTerm->eOperator = 0;
   if( allowedOp(op) ){
     int aiCurCol[2];
-    Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
-    Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
-    u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
+    Expr *pLeft, *pRight;
+    u16 opMask;
 
+    pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
+    if( pExpr->eX==EX_Right ){
+      pRight = sqlite3ExprSkipCollate(pExpr->x.pRight);
+    }else{
+      pRight = 0;
+    }
+    opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
     if( pTerm->iField>0 ){
       assert( op==TK_IN );
       assert( pLeft->op==TK_VECTOR );
@@ -1335,16 +1353,18 @@ static void exprAnalyze(
   if( pWC->op==TK_AND 
   && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
   && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
-  && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
-  && ( pExpr->pLeft->eX!=EX_Select || pExpr->pRight->eX!=EX_Select )
+  && ALWAYS(pExpr->eX==EX_Right)
+  && sqlite3ExprVectorSize(pExpr->x.pRight)==nLeft
+  && ( pExpr->pLeft->eX!=EX_Select || pExpr->x.pRight->eX!=EX_Select )
   ){
     int i;
     for(i=0; i<nLeft; i++){
       int idxNew;
-      Expr *pNew;
-      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
-      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
+      Expr *pNew, *pLeft, *pRight;
 
+      pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
+      assert( pExpr->eX==EX_Right );
+      pRight = sqlite3ExprForVectorField(pParse, pExpr->x.pRight, i);
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
       transferJoinMarkings(pNew, pExpr);
       idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
@@ -1452,8 +1472,9 @@ void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
   if( pE2->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
   }else{
+    assert( pE2->eX==EX_Right );
     sqlite3WhereSplit(pWC, pE2->pLeft, op);
-    sqlite3WhereSplit(pWC, pE2->pRight, op);
+    sqlite3WhereSplit(pWC, pE2->x.pRight, op);
   }
 }
 
@@ -1512,20 +1533,19 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   }
   mask = (p->op==TK_IF_NULL_ROW) ? sqlite3WhereGetMask(pMaskSet, p->iTable) : 0;
   if( p->pLeft ) mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pLeft);
-  if( p->pRight ){
-    mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pRight);
-    assert( p->x.pList==0 );
-  }else{
-    switch( p->eX ){
-      case EX_Select: {
-        if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
-        mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
-        break;
-      }
-      case EX_List: {
-        mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
-        break;
-      }
+  switch( p->eX ){
+    case EX_Right: {
+      mask |= sqlite3WhereExprUsageNN(pMaskSet, p->x.pRight);
+      break;
+    }
+    case EX_Select: {
+      if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
+      mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
+      break;
+    }
+    case EX_List: {
+      mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
+      break;
     }
   }
   return mask;

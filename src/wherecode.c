@@ -504,7 +504,8 @@ static int codeEqualityTerm(
   assert( pLevel->pWLoop->aLTerm[iEq]==pTerm );
   assert( iTarget>0 );
   if( pX->op==TK_EQ || pX->op==TK_IS ){
-    iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
+    assert( pX->eX==EX_Right );
+    iReg = sqlite3ExprCodeTarget(pParse, pX->x.pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
     iReg = iTarget;
     sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
@@ -744,7 +745,9 @@ static int codeAllEqualityTerms(
         if( zAff ) zAff[j] = SQLITE_AFF_BLOB;
       }
     }else if( (pTerm->eOperator & WO_ISNULL)==0 ){
-      Expr *pRight = pTerm->pExpr->pRight;
+      Expr *pRight;
+      assert( pTerm->pExpr->eX==EX_Right );
+      pRight = pTerm->pExpr->x.pRight;
       if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
@@ -1263,8 +1266,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pTerm->eOperator & WO_IN ){
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
-      }else{
-        Expr *pRight = pTerm->pExpr->pRight;
+      }else if( pTerm->pExpr->eX==EX_Right ){
+        Expr *pRight;
+        pRight = pTerm->pExpr->x.pRight;
         codeExprOrVector(pParse, pRight, iTarget, 1);
       }
     }
@@ -1309,8 +1313,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         assert( pCompare!=0 || db->mallocFailed );
         if( pCompare ){
           pCompare->pLeft = pTerm->pExpr->pLeft;
-          pCompare->pRight = pRight = sqlite3Expr(db, TK_REGISTER, 0);
+          assert( pCompare->eX==EX_None );
+          pRight = sqlite3Expr(db, TK_REGISTER, 0);
           if( pRight ){
+            pCompare->x.pRight = pRight;
+            pCompare->eX = EX_Right;
             pRight->iTable = iReg+j+2;
             sqlite3ExprIfFalse(pParse, pCompare, pLevel->addrCont, 0);
           }
@@ -1395,9 +1402,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pX = pStart->pExpr;
       assert( pX!=0 );
       testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
-      if( sqlite3ExprIsVector(pX->pRight) ){
+      assert( pX->eX==EX_Right );
+      if( sqlite3ExprIsVector(pX->x.pRight) ){
         r1 = rTemp = sqlite3GetTempReg(pParse);
-        codeExprOrVector(pParse, pX->pRight, r1, 1);
+        codeExprOrVector(pParse, pX->x.pRight, r1, 1);
         testcase( pX->op==TK_GT );
         testcase( pX->op==TK_GE );
         testcase( pX->op==TK_LT );
@@ -1408,7 +1416,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         assert( pX->op!=TK_LT || op==OP_SeekLE );
         assert( pX->op!=TK_LE || op==OP_SeekLE );
       }else{
-        r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
+        r1 = sqlite3ExprCodeTemp(pParse, pX->x.pRight, &rTemp);
         disableTerm(pLevel, pStart);
         op = aMoveOp[(pX->op - TK_GT)];
       }
@@ -1428,19 +1436,20 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Expr *pX;
       pX = pEnd->pExpr;
       assert( pX!=0 );
+      assert( pX->eX==EX_Right );
       assert( (pEnd->wtFlags & TERM_VNULL)==0 );
       testcase( pEnd->leftCursor!=iCur ); /* Transitive constraints */
       testcase( pEnd->wtFlags & TERM_VIRTUAL );
       memEndValue = ++pParse->nMem;
-      codeExprOrVector(pParse, pX->pRight, memEndValue, 1);
-      if( 0==sqlite3ExprIsVector(pX->pRight) 
+      codeExprOrVector(pParse, pX->x.pRight, memEndValue, 1);
+      if( 0==sqlite3ExprIsVector(pX->x.pRight) 
        && (pX->op==TK_LT || pX->op==TK_GT) 
       ){
         testOp = bRev ? OP_Le : OP_Ge;
       }else{
         testOp = bRev ? OP_Lt : OP_Gt;
       }
-      if( 0==sqlite3ExprIsVector(pX->pRight) ){
+      if( 0==sqlite3ExprIsVector(pX->x.pRight) ){
         disableTerm(pLevel, pEnd);
       }
     }
@@ -1624,7 +1633,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     /* Seek the index cursor to the start of the range. */
     nConstraint = nEq;
     if( pRangeStart ){
-      Expr *pRight = pRangeStart->pExpr->pRight;
+      Expr *pRight;
+      assert( pRangeStart->pExpr->eX==EX_Right );
+      pRight = pRangeStart->pExpr->x.pRight;
       codeExprOrVector(pParse, pRight, regBase+nEq, nBtm);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
@@ -1676,7 +1687,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     */
     nConstraint = nEq;
     if( pRangeEnd ){
-      Expr *pRight = pRangeEnd->pExpr->pRight;
+      Expr *pRight;
+      assert( pRangeEnd->pExpr->eX==EX_Right );
+      pRight = pRangeEnd->pExpr->x.pRight;
       codeExprOrVector(pParse, pRight, regBase+nEq, nTop);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0

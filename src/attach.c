@@ -573,9 +573,10 @@ int sqlite3FixExpr(
         if( sqlite3FixExprList(pFix, pExpr->x.pList) ) return 1;
         break;
       }
-    }
-    if( sqlite3FixExpr(pFix, pExpr->pRight) ){
-      return 1;
+      case EX_Right: {
+        if( sqlite3FixExpr(pFix, pExpr->x.pRight) ) return 1;
+        break;
+      }
     }
     pExpr = pExpr->pLeft;
   }

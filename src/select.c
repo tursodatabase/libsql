@@ -390,14 +390,14 @@ static void setJoinExpr(Expr *p, int iTable){
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
     p->iRightJoinTable = (i16)iTable;
-    if( p->op==TK_FUNCTION && p->x.pList ){
+    if( p->op==TK_FUNCTION && p->eX==EX_List ){
       int i;
       for(i=0; i<p->x.pList->nExpr; i++){
         setJoinExpr(p->x.pList->a[i].pExpr, iTable);
       }
     }
     setJoinExpr(p->pLeft, iTable);
-    p = p->pRight;
+    p = p->eX==EX_Right ? p->x.pRight : 0;
   } 
 }
 
@@ -413,14 +413,14 @@ static void unsetJoinExpr(Expr *p, int iTable){
      && (iTable<0 || p->iRightJoinTable==iTable) ){
       ExprClearProperty(p, EP_FromJoin);
     }
-    if( p->op==TK_FUNCTION && p->x.pList ){
+    if( p->op==TK_FUNCTION && p->eX==EX_List ){
       int i;
       for(i=0; i<p->x.pList->nExpr; i++){
         unsetJoinExpr(p->x.pList->a[i].pExpr, iTable);
       }
     }
     unsetJoinExpr(p->pLeft, iTable);
-    p = p->pRight;
+    p = p->eX==EX_Right ? p->x.pRight : 0;
   } 
 }
 
@@ -1957,7 +1957,8 @@ int sqlite3ColumnsFromExprList(
     }else{
       Expr *pColExpr = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
       while( pColExpr->op==TK_DOT ){
-        pColExpr = pColExpr->pRight;
+        assert( pColExpr->eX==EX_Right );
+        pColExpr = pColExpr->x.pRight;
         assert( pColExpr!=0 );
       }
       assert( pColExpr->op!=TK_AGG_COLUMN );
@@ -2125,7 +2126,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
-** pLimit expressions.  pLimit->pLeft and pLimit->pRight hold the expressions
+** pLimit expressions.  pLimit->pLeft and pLimit->x,pRight hold the expressions
 ** that appear in the original SQL statement after the LIMIT and OFFSET
 ** keywords.  Or NULL if those keywords are omitted. iLimit and iOffset 
 ** are the integer memory register numbers for counters used to compute 
@@ -2133,7 +2134,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 ** iLimit and iOffset are negative.
 **
 ** This routine changes the values of iLimit and iOffset only if
-** a limit or offset is defined by pLimit->pLeft and pLimit->pRight.  iLimit
+** a limit or offset is defined by pLimit->pLeft and pLimit->x.pRight.  iLimit
 ** and iOffset should have been preset to appropriate default values (zero)
 ** prior to calling this routine.
 **
@@ -2182,10 +2183,10 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       VdbeComment((v, "LIMIT counter"));
       sqlite3VdbeAddOp2(v, OP_IfNot, iLimit, iBreak); VdbeCoverage(v);
     }
-    if( pLimit->pRight ){
+    if( pLimit->eX==EX_Right ){
       p->iOffset = iOffset = ++pParse->nMem;
       pParse->nMem++;   /* Allocate an extra register for limit+offset */
-      sqlite3ExprCode(pParse, pLimit->pRight, iOffset);
+      sqlite3ExprCode(pParse, pLimit->x.pRight, iOffset);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset); VdbeCoverage(v);
       VdbeComment((v, "OFFSET counter"));
       sqlite3VdbeAddOp3(v, OP_OffsetLimit, iLimit, iOffset+1, iOffset);
@@ -3442,7 +3443,7 @@ static Expr *substExpr(
       Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
       Expr ifNullRow;
       assert( pSubst->pEList!=0 && pExpr->iColumn<pSubst->pEList->nExpr );
-      assert( pExpr->pRight==0 );
+      assert( pExpr->eX!=EX_Right );
       if( sqlite3ExprIsVector(pCopy) ){
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
@@ -3471,7 +3472,6 @@ static Expr *substExpr(
       pExpr->iTable = pSubst->iNewTable;
     }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
-    pExpr->pRight = substExpr(pSubst, pExpr->pRight);
     switch( pExpr->eX ){
       case EX_Select: {
         substSelect(pSubst, pExpr->x.pSelect, 1);
@@ -3479,6 +3479,10 @@ static Expr *substExpr(
       }
       case EX_List: {
         substExprList(pSubst, pExpr->x.pList);
+        break;
+      }
+      case EX_Right: {
+        pExpr->x.pRight = substExpr(pSubst, pExpr->x.pRight);
         break;
       }
     }
@@ -3720,7 +3724,9 @@ static int flattenSubquery(
   ** became arbitrary expressions, we were forced to add restrictions (13)
   ** and (14). */
   if( pSub->pLimit && p->pLimit ) return 0;              /* Restriction (13) */
-  if( pSub->pLimit && pSub->pLimit->pRight ) return 0;   /* Restriction (14) */
+  if( pSub->pLimit && pSub->pLimit->eX==EX_Right ){
+    return 0;                                            /* Restriction (14) */
+  }
   if( (p->selFlags & SF_Compound)!=0 && pSub->pLimit ){
     return 0;                                            /* Restriction (15) */
   }
@@ -4115,26 +4121,28 @@ static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   if( pExpr==0 ) return;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
   if( pExpr->op==TK_AND ){
-    findConstInWhere(pConst, pExpr->pRight);
+    assert( pExpr->eX==EX_Right );
+    findConstInWhere(pConst, pExpr->x.pRight);
     findConstInWhere(pConst, pExpr->pLeft);
     return;
   }
   if( pExpr->op!=TK_EQ ) return;
-  pRight = pExpr->pRight;
+  assert( pExpr->eX==EX_Right );
+  pRight = pExpr->x.pRight;
   pLeft = pExpr->pLeft;
   assert( pRight!=0 );
   assert( pLeft!=0 );
   if( pRight->op==TK_COLUMN
    && !ExprHasProperty(pRight, EP_FixedCol)
    && sqlite3ExprIsConstant(pLeft)
-   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+   && sqlite3IsBinary(sqlite3ComparisonCollSeq(pConst->pParse,pLeft,pRight))
   ){
     constInsert(pConst, pRight, pLeft);
   }else
   if( pLeft->op==TK_COLUMN
    && !ExprHasProperty(pLeft, EP_FixedCol)
    && sqlite3ExprIsConstant(pRight)
-   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+   && sqlite3IsBinary(sqlite3ComparisonCollSeq(pConst->pParse,pLeft,pRight))
   ){
     constInsert(pConst, pLeft, pRight);
   }
@@ -4321,7 +4329,8 @@ static int pushDownWhereTerms(
     return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
-    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight,
+    assert( pWhere->eX==EX_Right );
+    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->x.pRight,
                                 iCursor, isLeftJoin);
     pWhere = pWhere->pLeft;
   }
@@ -4907,9 +4916,9 @@ static int selectExpander(Walker *pWalker, Select *p){
   for(k=0; k<pEList->nExpr; k++){
     pE = pEList->a[k].pExpr;
     if( pE->op==TK_ASTERISK ) break;
-    assert( pE->op!=TK_DOT || pE->pRight!=0 );
+    assert( pE->op!=TK_DOT || pE->eX==EX_Right );
     assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
-    if( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK ) break;
+    if( pE->op==TK_DOT && pE->x.pRight->op==TK_ASTERISK ) break;
     elistFlags |= pE->flags;
   }
   if( k<pEList->nExpr ){
@@ -4927,7 +4936,7 @@ static int selectExpander(Walker *pWalker, Select *p){
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
       elistFlags |= pE->flags;
-      pRight = pE->pRight;
+      pRight = pE->eX==EX_Right ? pE->x.pRight : 0;
       assert( pE->op!=TK_DOT || pRight!=0 );
       if( pE->op!=TK_ASTERISK
        && (pE->op!=TK_DOT || pRight->op!=TK_ASTERISK)

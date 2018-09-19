@@ -2433,8 +2433,8 @@ struct Expr {
   *********************************************************************/
 
   Expr *pLeft;           /* Left subnode */
-  Expr *pRight;          /* Right subnode */
   union {
+    Expr *pRight;        /* Right subnode */
     ExprList *pList;     /* op = IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
     Select *pSelect;     /* EP_xIsSelect and op = IN, EXISTS, SELECT */
   } x;
@@ -4402,7 +4402,8 @@ int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 void sqlite3ParserReset(Parse*);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
-CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
+CollSeq *sqlite3ComparisonCollSeq(Parse*,Expr*,Expr*);
+CollSeq *sqlite3ComparisonExprCollSeq(Parse*,Expr*);
 int sqlite3TempInMemory(const sqlite3*);
 const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_WAL

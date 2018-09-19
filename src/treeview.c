@@ -238,10 +238,10 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
     }
     if( p->pLimit ){
       sqlite3TreeViewItem(pView, "LIMIT", (n--)>0);
-      sqlite3TreeViewExpr(pView, p->pLimit->pLeft, p->pLimit->pRight!=0);
-      if( p->pLimit->pRight ){
+      sqlite3TreeViewExpr(pView, p->pLimit->pLeft, p->pLimit->eX==EX_Right);
+      if( p->pLimit->eX==EX_Right ){
         sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
-        sqlite3TreeViewExpr(pView, p->pLimit->pRight, 0);
+        sqlite3TreeViewExpr(pView, p->pLimit->x.pRight, 0);
         sqlite3TreeViewPop(pView);
       }
       sqlite3TreeViewPop(pView);
@@ -468,9 +468,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
          "IS-FALSE", "IS-TRUE", "IS-NOT-FALSE", "IS-NOT-TRUE"
       };
       assert( pExpr->op2==TK_IS || pExpr->op2==TK_ISNOT );
-      assert( pExpr->pRight );
-      assert( pExpr->pRight->op==TK_TRUEFALSE );
-      x = (pExpr->op2==TK_ISNOT)*2 + sqlite3ExprTruthValue(pExpr->pRight);
+      assert( pExpr->eX==EX_Right );
+      assert( pExpr->x.pRight->op==TK_TRUEFALSE );
+      x = (pExpr->op2==TK_ISNOT)*2 + sqlite3ExprTruthValue(pExpr->x.pRight);
       zUniOp = azOp[x];
       break;
     }
@@ -601,7 +601,8 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_MATCH: {
       sqlite3TreeViewLine(pView, "MATCH {%d:%d}%s",
                           pExpr->iTable, pExpr->iColumn, zFlgs);
-      sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
+      assert( pExpr->eX==EX_Right );
+      sqlite3TreeViewExpr(pView, pExpr->x.pRight, 0);
       break;
     }
     case TK_VECTOR: {
@@ -626,7 +627,8 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   if( zBinOp ){
     sqlite3TreeViewLine(pView, "%s%s", zBinOp, zFlgs);
     sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
-    sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
+    assert( pExpr->eX==EX_Right );
+    sqlite3TreeViewExpr(pView, pExpr->x.pRight, 0);
   }else if( zUniOp ){
     sqlite3TreeViewLine(pView, "%s%s", zUniOp, zFlgs);
     sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);

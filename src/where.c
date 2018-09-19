@@ -253,7 +253,9 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
-           && (pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight))->op==TK_COLUMN
+           && ALWAYS(pTerm->pExpr->eX==EX_Right)
+           && (pX = sqlite3ExprSkipCollate(pTerm->pExpr->x.pRight))->op
+                       ==TK_COLUMN
           ){
             int j;
             for(j=0; j<pScan->nEquiv; j++){
@@ -278,15 +280,15 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
                 continue;
               }
               assert(pX->pLeft);
-              pColl = sqlite3BinaryCompareCollSeq(pParse,
-                                                  pX->pLeft, pX->pRight);
+              pColl = sqlite3ComparisonExprCollSeq(pParse, pX);
               if( pColl==0 ) pColl = pParse->db->pDfltColl;
               if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
                 continue;
               }
             }
             if( (pTerm->eOperator & (WO_EQ|WO_IS))!=0
-             && (pX = pTerm->pExpr->pRight)->op==TK_COLUMN
+             && ALWAYS(pTerm->pExpr->eX==EX_Right)
+             && (pX = pTerm->pExpr->x.pRight)->op==TK_COLUMN
              && pX->iTable==pScan->aiCur[0]
              && pX->iColumn==pScan->aiColumn[0]
             ){
@@ -789,7 +791,7 @@ static void constructAutomaticIndex(
         Expr *pX = pTerm->pExpr;
         idxCols |= cMask;
         pIdx->aiColumn[n] = pTerm->u.leftColumn;
-        pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+        pColl = sqlite3ComparisonExprCollSeq(pParse, pX);
         pIdx->azColl[n] = pColl ? pColl->zName : sqlite3StrBINARY;
         n++;
       }
@@ -1006,7 +1008,8 @@ static sqlite3_index_info *allocateIndexInfo(
       assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_AUX) );
 
       if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
-       && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
+       && ALWAYS(pTerm->pExpr->eX==EX_Right)
+       && sqlite3ExprIsVector(pTerm->pExpr->x.pRight) 
       ){
         if( i<16 ) mNoOmit |= (1 << i);
         if( op==WO_LT ) pIdxCons[j].op = WO_LE;
@@ -1366,11 +1369,13 @@ static int whereRangeSkipScanEst(
 
   pColl = sqlite3LocateCollSeq(pParse, p->azColl[nEq]);
   if( pLower ){
-    rc = sqlite3Stat4ValueFromExpr(pParse, pLower->pExpr->pRight, aff, &p1);
+    assert( pLower->pExpr->eX==EX_Right );
+    rc = sqlite3Stat4ValueFromExpr(pParse, pLower->pExpr->x.pRight, aff, &p1);
     nLower = 0;
   }
   if( pUpper && rc==SQLITE_OK ){
-    rc = sqlite3Stat4ValueFromExpr(pParse, pUpper->pExpr->pRight, aff, &p2);
+    assert( pUpper->pExpr->eX==EX_Right );
+    rc = sqlite3Stat4ValueFromExpr(pParse, pUpper->pExpr->x.pRight, aff, &p2);
     nUpper = p2 ? 0 : p->nSample;
   }
 
@@ -1532,7 +1537,9 @@ static int whereRangeScanEst(
       /* If possible, improve on the iLower estimate using ($P:$L). */
       if( pLower ){
         int n;                    /* Values extracted from pExpr */
-        Expr *pExpr = pLower->pExpr->pRight;
+        Expr *pExpr;
+        assert( pLower->pExpr->eX==EX_Right );
+        pExpr = pLower->pExpr->x.pRight;
         rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, nBtm, nEq, &n);
         if( rc==SQLITE_OK && n ){
           tRowcnt iNew;
@@ -1549,7 +1556,9 @@ static int whereRangeScanEst(
       /* If possible, improve on the iUpper estimate using ($P:$U). */
       if( pUpper ){
         int n;                    /* Values extracted from pExpr */
-        Expr *pExpr = pUpper->pExpr->pRight;
+        Expr *pExpr;
+        assert( pUpper->pExpr->eX==EX_Right );
+        pExpr = pUpper->pExpr->x.pRight;
         rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, nTop, nEq, &n);
         if( rc==SQLITE_OK && n ){
           tRowcnt iNew;
@@ -2279,7 +2288,9 @@ static void whereLoopOutputAdjust(
         ** guess a reasonable truth probability. */
         pLoop->nOut--;
         if( pTerm->eOperator&(WO_EQ|WO_IS) ){
-          Expr *pRight = pTerm->pExpr->pRight;
+          Expr *pRight;
+          assert( pTerm->pExpr->eX==EX_Right );
+          pRight = pTerm->pExpr->x.pRight;
           testcase( pTerm->pExpr->op==TK_IS );
           if( sqlite3ExprIsInteger(pRight, &k) && k>=(-1) && k<=1 ){
             k = 10;
@@ -2328,8 +2339,11 @@ static int whereRangeVectorLen(
     char aff;                     /* Comparison affinity */
     char idxaff = 0;              /* Indexed columns affinity */
     CollSeq *pColl;               /* Comparison collation sequence */
-    Expr *pLhs = pTerm->pExpr->pLeft->x.pList->a[i].pExpr;
-    Expr *pRhs = pTerm->pExpr->pRight;
+    Expr *pLhs;
+    Expr *pRhs;
+    pLhs = pTerm->pExpr->pLeft->x.pList->a[i].pExpr;
+    assert( pTerm->pExpr->eX==EX_Right );
+    pRhs = pTerm->pExpr->x.pRight;
     assert( pRhs->eX==EX_Select || pRhs->eX==EX_List );
     if( pRhs->eX==EX_Select ){
       pRhs = pRhs->x.pSelect->pEList->a[i].pExpr;
@@ -2354,7 +2368,7 @@ static int whereRangeVectorLen(
     idxaff = sqlite3TableColumnAffinity(pIdx->pTable, pLhs->iColumn);
     if( aff!=idxaff ) break;
 
-    pColl = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
+    pColl = sqlite3ComparisonCollSeq(pParse, pLhs, pRhs);
     if( pColl==0 ) break;
     if( sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
   }
@@ -2630,12 +2644,13 @@ static int whereLoopAddBtreeIndex(
          && OptimizationEnabled(db, SQLITE_Stat34)
         ){
           Expr *pExpr = pTerm->pExpr;
-          if( (eOp & (WO_EQ|WO_ISNULL|WO_IS))!=0 ){
+          if( (eOp & (WO_EQ|WO_IS))!=0 ){
             testcase( eOp & WO_EQ );
             testcase( eOp & WO_IS );
             testcase( eOp & WO_ISNULL );
-            rc = whereEqualScanEst(pParse, pBuilder, pExpr->pRight, &nOut);
-          }else{
+            assert( pExpr->eX==EX_Right );
+            rc = whereEqualScanEst(pParse, pBuilder, pExpr->x.pRight, &nOut);
+          }else if( pExpr->eX==EX_List ){
             rc = whereInScanEst(pParse, pBuilder, pExpr->x.pList, &nOut);
           }
           if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
@@ -2789,7 +2804,8 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   Parse *pParse = pWC->pWInfo->pParse;
   while( pWhere->op==TK_AND ){
     if( !whereUsablePartialIndex(iTab,pWC,pWhere->pLeft) ) return 0;
-    pWhere = pWhere->pRight;
+    assert( pWhere->eX==EX_Right );
+    pWhere = pWhere->x.pRight;
   }
   if( pParse->db->flags & SQLITE_EnableQPSG ) pParse = 0;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
@@ -3244,7 +3260,7 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
     int iTerm = pIdxInfo->aConstraint[iCons].iTermOffset;
     Expr *pX = pHidden->pWC->a[iTerm].pExpr;
     if( pX->pLeft ){
-      pC = sqlite3BinaryCompareCollSeq(pHidden->pParse, pX->pLeft, pX->pRight);
+      pC = sqlite3ComparisonExprCollSeq(pHidden->pParse,pX);
     }
     zRet = (pC ? pC->zName : sqlite3StrBINARY);
   }

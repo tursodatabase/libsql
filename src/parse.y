@@ -939,7 +939,7 @@ idlist(A) ::= nm(Y).
       p->eX = EX_None;
       p->flags = EP_Leaf;
       p->iAgg = -1;
-      p->pLeft = p->pRight = 0;
+      p->pLeft = 0;
       p->pAggInfo = 0;
       p->pTab = 0;
       p->op2 = 0;
@@ -1100,10 +1100,11 @@ expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExpr(pParse,TK_NOTNULL,A,0);}
   ** unary TK_ISNULL or TK_NOTNULL expression. */
   static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
     sqlite3 *db = pParse->db;
-    if( pA && pY && pY->op==TK_NULL && !IN_RENAME_OBJECT ){
+    if( pA && pY && pY->op==TK_NULL && pA->eX==EX_Right && !IN_RENAME_OBJECT ){
       pA->op = (u8)op;
-      sqlite3ExprDelete(db, pA->pRight);
-      pA->pRight = 0;
+      sqlite3ExprDelete(db, pA->x.pRight);
+      pA->x.pRight = 0;
+      pA->eX = EX_None;
     }
   }
 }

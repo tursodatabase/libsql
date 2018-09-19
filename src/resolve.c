@@ -164,7 +164,7 @@ int sqlite3MatchSpanName(
 **    pExpr->iColumn       Set to the column number within the table.
 **    pExpr->op            Set to TK_COLUMN.
 **    pExpr->pLeft         Any expression this points to is deleted
-**    pExpr->pRight        Any expression this points to is deleted.
+**    pExpr->x.pRight      Any expression this points to is deleted.
 **
 ** The zDb variable is the name of the database (the "X").  This value may be
 ** NULL meaning that name is of the form Y.Z or Z.  Any available database
@@ -429,7 +429,7 @@ static int lookupName(
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
           Expr *pOrig;
-          assert( pExpr->pLeft==0 && pExpr->pRight==0 );
+          assert( pExpr->pLeft==0 );
           assert( pExpr->eX==EX_None );
           pOrig = pEList->a[j].pExpr;
           if( (pNC->ncFlags&NC_AllowAgg)==0 && ExprHasProperty(pOrig, EP_Agg) ){
@@ -521,8 +521,11 @@ static int lookupName(
   */
   sqlite3ExprDelete(db, pExpr->pLeft);
   pExpr->pLeft = 0;
-  sqlite3ExprDelete(db, pExpr->pRight);
-  pExpr->pRight = 0;
+  if( pExpr->eX==EX_Right ){
+    sqlite3ExprDelete(db, pExpr->x.pRight);
+    pExpr->x.pRight = 0;
+    pExpr->eX = EX_None;
+  }
   pExpr->op = eNewExprOp;
   ExprSetProperty(pExpr, EP_Leaf);
 lookupname_end:
@@ -676,14 +679,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }else{
         Expr *pLeft = pExpr->pLeft;
         notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
-        pRight = pExpr->pRight;
+        assert( pExpr->eX==EX_Right );
+        pRight = pExpr->x.pRight;
         if( pRight->op==TK_ID ){
           zDb = 0;
         }else{
           assert( pRight->op==TK_DOT );
+          assert( pRight->eX==EX_Right );
           zDb = pLeft->u.zToken;
           pLeft = pRight->pLeft;
-          pRight = pRight->pRight;
+          pRight = pRight->x.pRight;
         }
         zTable = pLeft->u.zToken;
         zColumn = pRight->u.zToken;
@@ -904,7 +909,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       assert( !ExprHasProperty(pExpr, EP_Reduced) );
       /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
       ** and "x IS NOT FALSE". */
-      if( (pRight = pExpr->pRight)->op==TK_ID ){
+      assert( pExpr->eX==EX_Right );
+      if( (pRight = pExpr->x.pRight)->op==TK_ID ){
         int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
         if( pRight->op==TK_TRUEFALSE ){
@@ -932,8 +938,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           nRight = sqlite3ExprVectorSize(pExpr->x.pList->a[1].pExpr);
         }
       }else{
-        assert( pExpr->pRight!=0 );
-        nRight = sqlite3ExprVectorSize(pExpr->pRight);
+        assert( pExpr->eX==EX_Right );
+        nRight = sqlite3ExprVectorSize(pExpr->x.pRight);
       }
       if( nLeft!=nRight ){
         testcase( pExpr->op==TK_EQ );

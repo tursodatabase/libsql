@@ -1375,9 +1375,9 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
   if( zOp ){
     sqlite3_str_appendf(p, "%s(", zOp);
     displayP4Expr(p, pExpr->pLeft);
-    if( pExpr->pRight ){
+    if( pExpr->eX==EX_Right ){
       sqlite3_str_append(p, ",", 1);
-      displayP4Expr(p, pExpr->pRight);
+      displayP4Expr(p, pExpr->x.pRight);
     }
     sqlite3_str_append(p, ")", 1);
   }
