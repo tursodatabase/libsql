@@ -3483,6 +3483,7 @@ static Expr *substExpr(
       }
       case EX_Right: {
         pExpr->x.pRight = substExpr(pSubst, pExpr->x.pRight);
+        if( pExpr->x.pRight==0 ) pExpr->eX = EX_None;
         break;
       }
     }

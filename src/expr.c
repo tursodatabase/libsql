@@ -1363,6 +1363,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         }
         if( p->eX==EX_Right ){
           pNew->x.pRight = sqlite3ExprDup(db, p->x.pRight, 0);
+          if( pNew->x.pRight==0 ) pNew->eX = EX_None;
         }
       }
     }
