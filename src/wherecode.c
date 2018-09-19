@@ -1266,9 +1266,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pTerm->eOperator & WO_IN ){
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
-      }else if( pTerm->pExpr->eX==EX_Right ){
-        Expr *pRight;
-        pRight = pTerm->pExpr->x.pRight;
+      }else{
+        Expr *pExpr = pTerm->pExpr;
+        Expr *pRight = pExpr->eX==EX_Right ? pExpr->x.pRight : 0;
         codeExprOrVector(pParse, pRight, iTarget, 1);
       }
     }
