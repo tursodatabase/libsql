@@ -2437,6 +2437,8 @@ struct Expr {
     Expr *pRight;        /* Right subnode */
     ExprList *pList;     /* op = IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
     Select *pSelect;     /* EP_xIsSelect and op = IN, EXISTS, SELECT */
+    Table *pTab;         /* Table for TK_COLUMN expressions. Can be NULL
+                         ** for a column of an index on an expression */
   } x;
 
   /* If the EP_Reduced flag is set in the Expr.flags mask, then no
@@ -2461,8 +2463,6 @@ struct Expr {
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
-  Table *pTab;           /* Table for TK_COLUMN expressions.  Can be NULL
-                         ** for a column of an index on an expression */
 #ifndef SQLITE_OMIT_WINDOWFUNC
   Window *pWin;          /* Window definition for window functions */
 #endif
@@ -3811,10 +3811,12 @@ void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*);
 void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
 void sqlite3PExprAddExprList(Parse*, Expr*, ExprList*);
+void sqlite3ExprAddTab(sqlite3*, Expr*, Table*);
 Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
+void sqlite3ExprClearXUnion(sqlite3*,Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
 void sqlite3ExprListSetSortOrder(ExprList*,int);

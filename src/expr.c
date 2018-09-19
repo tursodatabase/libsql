@@ -58,8 +58,9 @@ char sqlite3ExprAffinity(Expr *pExpr){
     return sqlite3AffinityType(pExpr->u.zToken, 0);
   }
 #endif
-  if( (op==TK_AGG_COLUMN || op==TK_COLUMN) && pExpr->pTab ){
-    return sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
+  if( (op==TK_AGG_COLUMN || op==TK_COLUMN)
+   && ALWAYS(pExpr->eX==EX_Tab) && pExpr->x.pTab ){
+    return sqlite3TableColumnAffinity(pExpr->x.pTab, pExpr->iColumn);
   }
   if( op==TK_SELECT_COLUMN ){
     assert( pExpr->pLeft->eX==EX_Select );
@@ -143,13 +144,14 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     if( p->flags & EP_Generic ) break;
     if( (op==TK_AGG_COLUMN || op==TK_COLUMN
           || op==TK_REGISTER || op==TK_TRIGGER)
-     && p->pTab!=0
+     && p->eX==EX_Tab
+     && p->x.pTab!=0
     ){
       /* op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       int j = p->iColumn;
       if( j>=0 ){
-        const char *zColl = p->pTab->aCol[j].zColl;
+        const char *zColl = p->x.pTab->aCol[j].zColl;
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
       break;
@@ -1099,16 +1101,14 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 #ifdef SQLITE_DEBUG
   if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->pLeft==0 );
-    assert( p->eX==EX_None );
+    assert( p->eX==EX_None || p->eX==EX_Tab );
   }
   if( !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->op!=TK_FUNCTION || p->pLeft==0 );
   }
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Reduced)) ){
     assert( p->pWin==0 || p->pLeft==0 );
-    assert( p->pWin==0 || p->pTab==0 );
     assert( p->pWin==0 || p->op==TK_FUNCTION );
-    assert( p->pTab==0 || p->eX==EX_None );
   }
 #endif
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Leaf)) ){
@@ -1138,6 +1138,29 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 }
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
+}
+
+void sqlite3ExprClearXUnion(sqlite3 *db, Expr *p){
+  switch( p->eX ){
+    case EX_Select: {
+      sqlite3SelectDelete(db, p->x.pSelect);
+      break;
+    }
+    case EX_List: {
+      sqlite3ExprListDelete(db, p->x.pList);
+      break;
+    }
+    case EX_Right: {
+      sqlite3ExprDelete(db, p->x.pRight);
+      break;
+    }
+  }
+  p->eX = EX_None;
+}
+void sqlite3ExprAddTab(sqlite3 *db, Expr *pExpr, Table *pTab){
+  sqlite3ExprClearXUnion(db, pExpr);
+  pExpr->eX = EX_Tab;
+  pExpr->x.pTab = pTab;
 }
 
 /*
@@ -2162,9 +2185,10 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_BLOB:
       return 0;
     case TK_COLUMN:
+      assert( p->eX==EX_Tab );
       return ExprHasProperty(p, EP_CanBeNull) ||
-             p->pTab==0 ||  /* Reference to column of index on expression */
-             (p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0);
+             p->x.pTab==0 ||  /* Reference to column of index on expression */
+             (p->iColumn>=0 && p->x.pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
   }
@@ -3454,8 +3478,10 @@ expr_code_doover:
         ** datatype by applying the Affinity of the table column to the
         ** constant.
         */
+        int aff;
         int iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
-        int aff = sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
+        assert( pExpr->eX==EX_Tab );
+        aff = sqlite3TableColumnAffinity(pExpr->x.pTab, pExpr->iColumn);
         if( aff!=SQLITE_AFF_BLOB ){
           static const char zAff[] = "B\000C\000D\000E";
           assert( SQLITE_AFF_BLOB=='A' );
@@ -3479,7 +3505,8 @@ expr_code_doover:
           iTab = pParse->iSelfTab - 1;
         }
       }
-      return sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
+      assert( pExpr->eX==EX_Tab );
+      return sqlite3ExprCodeGetColumn(pParse, pExpr->x.pTab,
                                pExpr->iColumn, iTab, target,
                                pExpr->op2);
     }
@@ -3941,7 +3968,9 @@ expr_code_doover:
       **   p1==1   ->    old.a         p1==4   ->    new.a
       **   p1==2   ->    old.b         p1==5   ->    new.b       
       */
-      Table *pTab = pExpr->pTab;
+      Table *pTab;
+      assert( pExpr->eX==EX_Tab );
+      pTab = pExpr->x.pTab;
       int p1 = pExpr->iTable * (pTab->nCol+1) + 1 + pExpr->iColumn;
 
       assert( pExpr->iTable==0 || pExpr->iTable==1 );
@@ -3950,9 +3979,10 @@ expr_code_doover:
       assert( p1>=0 && p1<(pTab->nCol*2+2) );
 
       sqlite3VdbeAddOp2(v, OP_Param, p1, target);
+      assert( pExpr->eX==EX_Tab );
       VdbeComment((v, "r[%d]=%s.%s", target,
         (pExpr->iTable ? "new" : "old"),
-        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName)
+        (pExpr->iColumn<0 ? "rowid" : pExpr->x.pTab->aCol[pExpr->iColumn].zName)
       ));
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -4998,8 +5028,8 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_GT );
       testcase( pExpr->op==TK_GE );
       assert( pExpr->eX==EX_Right );
-      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->pTab))
-       || (pExpr->x.pRight->op==TK_COLUMN && IsVirtual(pExpr->x.pRight->pTab))
+      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->x.pTab))
+       || (pExpr->x.pRight->op==TK_COLUMN && IsVirtual(pExpr->x.pRight->x.pTab))
       ){
        return WRC_Prune;
       }
@@ -5230,7 +5260,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
              && (k = addAggInfoColumn(pParse->db, pAggInfo))>=0 
             ){
               pCol = &pAggInfo->aCol[k];
-              pCol->pTab = pExpr->pTab;
+              assert( pExpr->eX==EX_Tab );
+              pCol->pTab = pExpr->x.pTab;
               pCol->iTable = pExpr->iTable;
               pCol->iColumn = pExpr->iColumn;
               pCol->iMem = ++pParse->nMem;

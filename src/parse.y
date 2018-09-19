@@ -941,7 +941,6 @@ idlist(A) ::= nm(Y).
       p->iAgg = -1;
       p->pLeft = 0;
       p->pAggInfo = 0;
-      p->pTab = 0;
       p->op2 = 0;
       p->iTable = 0;
       p->iColumn = 0;

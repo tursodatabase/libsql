@@ -803,7 +803,8 @@ static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }else if( pExpr->op==TK_COLUMN 
    && pExpr->iColumn==p->iCol 
-   && p->pTab==pExpr->pTab
+   && ALWAYS(pExpr->eX==EX_Tab)
+   && p->pTab==pExpr->x.pTab
   ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }
@@ -1341,8 +1342,11 @@ renameColumnFunc_done:
 */
 static int renameTableExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
-  if( pExpr->op==TK_COLUMN && p->pTab==pExpr->pTab ){
-    renameTokenFind(pWalker->pParse, p, (void*)&pExpr->pTab);
+  if( pExpr->op==TK_COLUMN 
+   && ALWAYS(pExpr->eX==EX_Tab)
+   && p->pTab==pExpr->x.pTab
+  ){
+    renameTokenFind(pWalker->pParse, p, (void*)&pExpr->x.pTab);
   }
   return WRC_Continue;
 }

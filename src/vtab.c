@@ -1053,8 +1053,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   /* Check to see the left operand is a column in a virtual table */
   if( NEVER(pExpr==0) ) return pDef;
   if( pExpr->op!=TK_COLUMN ) return pDef;
-  pTab = pExpr->pTab;
-  if( pTab==0 ) return pDef;
+  if( pExpr->eX!=EX_Tab || (pTab = pExpr->x.pTab)==0 ) return pDef;
   if( !IsVirtual(pTab) ) return pDef;
   pVtab = sqlite3GetVTable(db, pTab)->pVtab;
   assert( pVtab!=0 );

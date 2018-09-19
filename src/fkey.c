@@ -502,7 +502,11 @@ static Expr *exprTableColumn(
 ){
   Expr *pExpr = sqlite3Expr(db, TK_COLUMN, 0);
   if( pExpr ){
-    pExpr->pTab = pTab;
+    assert( pExpr->eX==EX_None );
+    if( pTab ){
+      pExpr->x.pTab = pTab;
+      pExpr->eX = EX_Tab;
+    }
     pExpr->iTable = iCursor;
     pExpr->iColumn = iCol;
   }

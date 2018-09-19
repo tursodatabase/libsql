@@ -203,7 +203,6 @@ static int lookupName(
 
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
-  pExpr->pTab = 0;
   ExprSetVVAProperty(pExpr, EP_NoReduce);
 
   /* Translate the schema name in zDb into a pointer to the corresponding
@@ -265,7 +264,7 @@ static int lookupName(
             continue;
           }
           if( IN_RENAME_OBJECT && pItem->zAlias ){
-            sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->pTab);
+            sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->x.pTab);
           }
         }
         if( 0==(cntTab++) ){
@@ -291,13 +290,13 @@ static int lookupName(
       }
       if( pMatch ){
         pExpr->iTable = pMatch->iCursor;
-        pExpr->pTab = pMatch->pTab;
+        sqlite3ExprAddTab(db, pExpr, pMatch->pTab);
         /* RIGHT JOIN not (yet) supported */
         assert( (pMatch->fg.jointype & JT_RIGHT)==0 );
         if( (pMatch->fg.jointype & JT_LEFT)!=0 ){
           ExprSetProperty(pExpr, EP_CanBeNull);
         }
-        pSchema = pExpr->pTab->pSchema;
+        pSchema = pExpr->x.pTab->pSchema;
       }
     } /* if( pSrcList ) */
 
@@ -354,7 +353,7 @@ static int lookupName(
             testcase( iCol==(-1) );
             if( IN_RENAME_OBJECT ){
               pExpr->iColumn = iCol;
-              pExpr->pTab = pTab;
+              sqlite3ExprAddTab(db, pExpr, pTab);
               eNewExprOp = TK_COLUMN;
             }else{
               pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
@@ -376,7 +375,7 @@ static int lookupName(
               testcase( iCol==32 );
               pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
             }
-            pExpr->pTab = pTab;
+            sqlite3ExprAddTab(db, pExpr, pTab);
             pExpr->iColumn = (i16)iCol;
             eNewExprOp = TK_TRIGGER;
 #endif /* SQLITE_OMIT_TRIGGER */
@@ -430,7 +429,6 @@ static int lookupName(
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
           Expr *pOrig;
           assert( pExpr->pLeft==0 );
-          assert( pExpr->eX==EX_None );
           pOrig = pEList->a[j].pExpr;
           if( (pNC->ncFlags&NC_AllowAgg)==0 && ExprHasProperty(pOrig, EP_Agg) ){
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
@@ -475,7 +473,6 @@ static int lookupName(
     assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted) ){
       pExpr->op = TK_STRING;
-      pExpr->pTab = 0;
       return WRC_Prune;
     }
     if( sqlite3ExprIdToTrueFalse(pExpr) ){
@@ -556,9 +553,9 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
   if( p ){
     struct SrcList_item *pItem = &pSrc->a[iSrc];
-    p->pTab = pItem->pTab;
+    sqlite3ExprAddTab(db, p, pItem->pTab);
     p->iTable = pItem->iCursor;
-    if( p->pTab->iPKey==iCol ){
+    if( p->x.pTab->iPKey==iCol ){
       p->iColumn = -1;
     }else{
       p->iColumn = (ynVar)iCol;
@@ -694,9 +691,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zColumn = pRight->u.zToken;
         if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
-        }
-        if( IN_RENAME_OBJECT ){
-          sqlite3RenameTokenRemap(pParse, (void*)&pExpr->pTab, (void*)pLeft);
+          if( pExpr->eX==EX_Tab ){
+            sqlite3RenameTokenRemap(pParse, (void*)&pExpr->x.pTab,(void*)pLeft);
+          }
         }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
