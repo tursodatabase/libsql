@@ -169,20 +169,6 @@ void sqlite3AlterRenameTable(
     goto exit_rename_table;
   }
 
-  /* If this is a virtual table, invoke the xRename() function if
-  ** one is defined. The xRename() callback will modify the names
-  ** of any resources used by the v-table implementation (including other
-  ** SQLite tables) that are identified by the name of the virtual table.
-  */
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pVTab ){
-    int i = ++pParse->nMem;
-    sqlite3VdbeLoadString(v, i, zName);
-    sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pVTab, P4_VTAB);
-    sqlite3MayAbort(pParse);
-  }
-#endif
-
   /* figure out how many UTF-8 characters are in zName */
   zTabName = pTab->zName;
   nTabName = sqlite3Utf8CharLen(zTabName, -1);
@@ -239,6 +225,20 @@ void sqlite3AlterRenameTable(
             "WHERE type IN ('view', 'trigger')"
         , zDb, zTabName, zName, zTabName, zDb, zName);
   }
+
+  /* If this is a virtual table, invoke the xRename() function if
+  ** one is defined. The xRename() callback will modify the names
+  ** of any resources used by the v-table implementation (including other
+  ** SQLite tables) that are identified by the name of the virtual table.
+  */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( pVTab ){
+    int i = ++pParse->nMem;
+    sqlite3VdbeLoadString(v, i, zName);
+    sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pVTab, P4_VTAB);
+    sqlite3MayAbort(pParse);
+  }
+#endif
 
   renameReloadSchema(pParse, iDb);
   renameTestSchema(pParse, zDb, iDb==1);
