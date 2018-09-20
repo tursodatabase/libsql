@@ -1,5 +1,5 @@
-C Add\sthe\s"PRAGMA\slegacy_alter_table=ON"\scommand\sto\senable\sthe\spre-3.25.0\nbehavior\sof\sALTER\sTABLE\sthat\sdoes\snot\smodify\sthe\sbodies\sof\striggers\sor\nviews\sor\sthe\sWHERE\sclause\sof\sa\spartial\sindex.\s\sEnable\sthe\slegacy\sbehavior\nby\sdefault\swhen\srunning\sthe\sxRename\smethod\sof\svirtual\stables.
-D 2018-09-20T20:15:02.023
+C Minor\scode\ssimplification.
+D 2018-09-20T20:43:28.118
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -500,7 +500,7 @@ F src/pragma.h fb46b1e663128f6827979ad8ebddb55be2a0276ea923c47adeac02144207a682
 F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 3f99bbea840d917acd530c75a180d00415fc6e06d1b693c32fd9a4fe91023a91
+F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1b7ade8fabb85ccd3369683a7951fda37b2843aa1e4ef1fa866b09596a8bfec3
 F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
@@ -1769,8 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad130bb86e74e6ce165fdbdce3a19699510f0e62071c1c7923b5a4538d888c7c 71947337e98b90debb13b390119bc2a6b39dd41535151b836071ee327a31e45d
-R d151f23eed29d48f972514b3d27e7763
-T +closed 71947337e98b90debb13b390119bc2a6b39dd41535151b836071ee327a31e45d
+P 7edd26ed27ed1e7eab603058f7d55f2eac45e7bd1908bfa5f32293611883b157 5e458f4a92743effb9a3d3249767424fed8b444a05ca136c4a55d60c4d70c2cc
+R 6e3668e1a9453a68a64669c9f81648e7
 U drh
-Z c1fdb2a9cf6e244c4d4175173422b81a
+Z 479e3a8163395f3eaf4fbec67bf9b33f
