@@ -1,5 +1,5 @@
-C Fix\sa\scompilation\sissue\sin\sthe\s"userauth"\sextension.\sAlso\sfix\sa\sfew\stest\nscript\serrors\sthat\soccur\swith\sSQLITE_USER_AUTHENTICATION=1\sbuilds.
-D 2018-09-19T17:09:09.208
+C Add\sa\sPRAGMA\sthat\srestores\sthe\slegacy\sALTER\sTABLE\sRENAME\sTO\sbehaviour.
+D 2018-09-20T08:28:01.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -436,7 +436,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 2269dd2f37ba963fde4c51e9e83542f126c86a8e10357c17f48137c6bee5299b
+F src/alter.c 5bca9ae02fb3eb52bb39da57fcbf0af249910f05d268df4797cf32c75173c9ff
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -496,7 +496,7 @@ F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c 79abc65c08d2754048efee3ba99fe91863dfeab0ba699a4439fa5053ec87cf36
-F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
+F src/pragma.h fb46b1e663128f6827979ad8ebddb55be2a0276ea923c47adeac02144207a682
 F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -507,7 +507,7 @@ F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
-F src/sqliteInt.h 83ee9b55db521b70294b2858872e69b96d0a4810d8221796def3e99cca5ee663
+F src/sqliteInt.h d8a3b17c1292f9491d6437e2125b14823f281a6b58f614f47bc790c57196ee68
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -605,6 +605,7 @@ F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test 7e93a21fe131e1dfeb317e90056856f96b10381fc7fe3a05e765569a23400433
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/altercol.test 53fb5e218c9296afc160f2c4fcbeaf42bd0604815d9b3896a7d2eec583ad8704
+F test/alterlegacy.test e7c07d605c2a85e7d1696c89e6bf64dfc932fc6d9320fe8708c8f5fc0b524d41
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test 0231398534c494401a70a1d06a63d7849cb5b317fcc14228cbdb53039eba7eae
 F test/altertab.test 3b830144c18ae00abd2a27e3d2851c8bb1ee8fe655fa16d8a5971066dc71b58a
@@ -1700,7 +1701,7 @@ F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
+F tool/mkpragmatab.tcl 8b9b448b5eb7222d4e3f7afb3c678596784180d319eb4e01c842887ed8213b85
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1767,7 +1768,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2034fa8089676132b5e2f71bdebf1af9ca141da2e173920c6e84fb974ab0f022
-R b045d000830b7f892b6bae2ce9b528b3
+P 221f3f572ed49d7af69a2e7c88741fa5206ea33ca59ee791eac7698bdd11ca4d
+R 02fc275d8f952db75795f9c11e6b826b
+T *branch * legacy-alter-table
+T *sym-legacy-alter-table *
+T -sym-trunk *
 U dan
-Z e635b6ecc9802f0bfb5422b4720e432b
+Z 90941688fa5331b463302b9846d758b7

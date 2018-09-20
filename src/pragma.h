@@ -393,6 +393,11 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+ {/* zName:     */ "legacy_alter_table",
+  /* ePragTyp:  */ PragTyp_FLAG,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
+  /* ColNames:  */ 0, 0,
+  /* iArg:      */ SQLITE_LegacyAlter },
  {/* zName:     */ "legacy_file_format",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
@@ -646,4 +651,4 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ SQLITE_WriteSchema },
 #endif
 };
-/* Number of pragmas: 60 on by default, 77 total. */
+/* Number of pragmas: 61 on by default, 78 total. */
