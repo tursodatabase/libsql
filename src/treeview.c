@@ -497,7 +497,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       }else{
         pFarg = pExpr->x.pList;
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        pWin = pExpr->pWin;
+        pWin = pExpr->y.pWin;
 #else
         pWin = 0;
 #endif 

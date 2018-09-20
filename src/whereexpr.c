@@ -281,7 +281,7 @@ static int isLikeOrGlob(
         ){
           if( pLeft->op!=TK_COLUMN 
            || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-           || IsVirtual(pLeft->pTab)  /* Value might be numeric */
+           || IsVirtual(pLeft->y.pTab)  /* Value might be numeric */
           ){
             sqlite3ExprDelete(db, pPrefix);
             sqlite3ValueFree(pVal);
@@ -382,7 +382,7 @@ static int isAuxiliaryVtabOperator(
     **       MATCH(expression,vtab_column)
     */
     pCol = pList->a[1].pExpr;
-    if( pCol->op==TK_COLUMN && IsVirtual(pCol->pTab) ){
+    if( pCol->op==TK_COLUMN && IsVirtual(pCol->y.pTab) ){
       for(i=0; i<ArraySize(aOp); i++){
         if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
           *peOp2 = aOp[i].eOp2;
@@ -404,12 +404,12 @@ static int isAuxiliaryVtabOperator(
     ** with function names in an arbitrary case.
     */
     pCol = pList->a[0].pExpr;
-    if( pCol->op==TK_COLUMN && IsVirtual(pCol->pTab) ){
+    if( pCol->op==TK_COLUMN && IsVirtual(pCol->y.pTab) ){
       sqlite3_vtab *pVtab;
       sqlite3_module *pMod;
       void (*xNotUsed)(sqlite3_context*,int,sqlite3_value**);
       void *pNotUsed;
-      pVtab = sqlite3GetVTable(db, pCol->pTab)->pVtab;
+      pVtab = sqlite3GetVTable(db, pCol->y.pTab)->pVtab;
       assert( pVtab!=0 );
       assert( pVtab->pModule!=0 );
       pMod = (sqlite3_module *)pVtab->pModule;
@@ -427,10 +427,10 @@ static int isAuxiliaryVtabOperator(
     int res = 0;
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
-    if( pLeft->op==TK_COLUMN && IsVirtual(pLeft->pTab) ){
+    if( pLeft->op==TK_COLUMN && IsVirtual(pLeft->y.pTab) ){
       res++;
     }
-    if( pRight && pRight->op==TK_COLUMN && IsVirtual(pRight->pTab) ){
+    if( pRight && pRight->op==TK_COLUMN && IsVirtual(pRight->y.pTab) ){
       res++;
       SWAP(Expr*, pLeft, pRight);
     }
@@ -1583,7 +1583,7 @@ void sqlite3WhereTabFuncArgs(
     if( pColRef==0 ) return;
     pColRef->iTable = pItem->iCursor;
     pColRef->iColumn = k++;
-    pColRef->pTab = pTab;
+    pColRef->y.pTab = pTab;
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef,
                          sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0));
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);

@@ -941,13 +941,10 @@ idlist(A) ::= nm(Y).
       p->pLeft = p->pRight = 0;
       p->x.pList = 0;
       p->pAggInfo = 0;
-      p->pTab = 0;
+      p->y.pTab = 0;
       p->op2 = 0;
       p->iTable = 0;
       p->iColumn = 0;
-#ifndef SQLITE_OMIT_WINDOWFUNC
-      p->pWin = 0;
-#endif
       p->u.zToken = (char*)&p[1];
       memcpy(p->u.zToken, t.z, t.n);
       p->u.zToken[t.n] = 0;

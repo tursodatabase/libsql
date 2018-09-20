@@ -803,7 +803,7 @@ static void selectExprDefer(
     struct ExprList_item *pItem = &pEList->a[i];
     if( pItem->u.x.iOrderByCol==0 ){
       Expr *pExpr = pItem->pExpr;
-      Table *pTab = pExpr->pTab;
+      Table *pTab = pExpr->y.pTab;
       if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 && pTab && !IsVirtual(pTab)
        && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
       ){
@@ -826,12 +826,12 @@ static void selectExprDefer(
               Expr *pNew = sqlite3PExpr(pParse, TK_COLUMN, 0, 0);
               if( pNew ){
                 pNew->iTable = pExpr->iTable;
-                pNew->pTab = pExpr->pTab;
+                pNew->y.pTab = pExpr->y.pTab;
                 pNew->iColumn = pPk ? pPk->aiColumn[k] : -1;
                 pExtra = sqlite3ExprListAppend(pParse, pExtra, pNew);
               }
             }
-            pSort->aDefer[nDefer].pTab = pExpr->pTab;
+            pSort->aDefer[nDefer].pTab = pExpr->y.pTab;
             pSort->aDefer[nDefer].iCsr = pExpr->iTable;
             pSort->aDefer[nDefer].nKey = nKey;
             nDefer++;
@@ -1680,7 +1680,7 @@ static const char *columnTypeImpl(
         break;
       }
 
-      assert( pTab && pExpr->pTab==pTab );
+      assert( pTab && pExpr->y.pTab==pTab );
       if( pS ){
         /* The "table" is actually a sub-select or a view in the FROM clause
         ** of the SELECT statement. Return the declaration type and origin
@@ -1865,7 +1865,7 @@ static void generateColumnNames(
 
     assert( p!=0 );
     assert( p->op!=TK_AGG_COLUMN );  /* Agg processing has not run yet */
-    assert( p->op!=TK_COLUMN || p->pTab!=0 ); /* Covering idx not yet coded */
+    assert( p->op!=TK_COLUMN || p->y.pTab!=0 ); /* Covering idx not yet coded */
     if( pEList->a[i].zName ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zName;
@@ -1873,7 +1873,7 @@ static void generateColumnNames(
     }else if( srcName && p->op==TK_COLUMN ){
       char *zCol;
       int iCol = p->iColumn;
-      pTab = p->pTab;
+      pTab = p->y.pTab;
       assert( pTab!=0 );
       if( iCol<0 ) iCol = pTab->iPKey;
       assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
@@ -1964,7 +1964,7 @@ int sqlite3ColumnsFromExprList(
       if( pColExpr->op==TK_COLUMN ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
-        Table *pTab = pColExpr->pTab;
+        Table *pTab = pColExpr->y.pTab;
         assert( pTab!=0 );
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";

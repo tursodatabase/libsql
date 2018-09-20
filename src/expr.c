@@ -58,8 +58,8 @@ char sqlite3ExprAffinity(Expr *pExpr){
     return sqlite3AffinityType(pExpr->u.zToken, 0);
   }
 #endif
-  if( (op==TK_AGG_COLUMN || op==TK_COLUMN) && pExpr->pTab ){
-    return sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
+  if( (op==TK_AGG_COLUMN || op==TK_COLUMN) && pExpr->y.pTab ){
+    return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
   }
   if( op==TK_SELECT_COLUMN ){
     assert( pExpr->pLeft->flags&EP_xIsSelect );
@@ -143,13 +143,13 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     if( p->flags & EP_Generic ) break;
     if( (op==TK_AGG_COLUMN || op==TK_COLUMN
           || op==TK_REGISTER || op==TK_TRIGGER)
-     && p->pTab!=0
+     && p->y.pTab!=0
     ){
-      /* op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally
+      /* op==TK_REGISTER && p->y.pTab!=0 happens when pExpr was originally
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       int j = p->iColumn;
       if( j>=0 ){
-        const char *zColl = p->pTab->aCol[j].zColl;
+        const char *zColl = p->y.pTab->aCol[j].zColl;
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
       break;
@@ -1052,6 +1052,10 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
   assert( p!=0 );
   /* Sanity check: Assert that the IntValue is non-negative if it exists */
   assert( !ExprHasProperty(p, EP_IntValue) || p->u.iValue>=0 );
+
+  assert( !ExprHasProperty(p, EP_WinFunc) || p->y.pWin!=0 || db->mallocFailed );
+  assert( p->op!=TK_FUNCTION || ExprHasProperty(p, EP_TokenOnly|EP_Reduced)
+          || p->y.pWin==0 || ExprHasProperty(p, EP_WinFunc) );
 #ifdef SQLITE_DEBUG
   if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->pLeft==0 );
@@ -1070,8 +1074,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
     }
-    if( !ExprHasProperty(p, EP_Reduced) ){
-      sqlite3WindowDelete(db, p->pWin);
+    if( ExprHasProperty(p, EP_WinFunc) ){
+      assert( p->op==TK_FUNCTION );
+      sqlite3WindowDelete(db, p->y.pWin);
     }
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
@@ -1135,7 +1140,7 @@ static int dupedExprStructSize(Expr *p, int flags){
   assert( (0xfff & (EP_Reduced|EP_TokenOnly))==0 );
   if( 0==flags || p->op==TK_SELECT_COLUMN 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-   || p->pWin 
+   || ExprHasProperty(p, EP_WinFunc)
 #endif
   ){
     nSize = EXPR_FULLSIZE;
@@ -1278,10 +1283,9 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       }
     }else{
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      if( ExprHasProperty(p, EP_Reduced|EP_TokenOnly) ){
-        pNew->pWin = 0;
-      }else{
-        pNew->pWin = sqlite3WindowDup(db, pNew, p->pWin);
+      if( ExprHasProperty(p, EP_WinFunc) ){
+        pNew->y.pWin = sqlite3WindowDup(db, pNew, p->y.pWin);
+        assert( ExprHasProperty(pNew, EP_WinFunc) );
       }
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
@@ -2089,8 +2093,8 @@ int sqlite3ExprCanBeNull(const Expr *p){
       return 0;
     case TK_COLUMN:
       return ExprHasProperty(p, EP_CanBeNull) ||
-             p->pTab==0 ||  /* Reference to column of index on expression */
-             (p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0);
+             p->y.pTab==0 ||  /* Reference to column of index on expression */
+             (p->iColumn>=0 && p->y.pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
   }
@@ -3378,7 +3382,7 @@ expr_code_doover:
         ** constant.
         */
         int iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
-        int aff = sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
+        int aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         if( aff!=SQLITE_AFF_BLOB ){
           static const char zAff[] = "B\000C\000D\000E";
           assert( SQLITE_AFF_BLOB=='A' );
@@ -3402,7 +3406,7 @@ expr_code_doover:
           iTab = pParse->iSelfTab - 1;
         }
       }
-      return sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
+      return sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
                                pExpr->iColumn, iTab, target,
                                pExpr->op2);
     }
@@ -3616,8 +3620,8 @@ expr_code_doover:
       CollSeq *pColl = 0;    /* A collating sequence */
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      if( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) && pExpr->pWin ){
-        return pExpr->pWin->regResult;
+      if( ExprHasProperty(pExpr, EP_WinFunc) ){
+        return pExpr->y.pWin->regResult;
       }
 #endif
 
@@ -3860,7 +3864,7 @@ expr_code_doover:
       **   p1==1   ->    old.a         p1==4   ->    new.a
       **   p1==2   ->    old.b         p1==5   ->    new.b       
       */
-      Table *pTab = pExpr->pTab;
+      Table *pTab = pExpr->y.pTab;
       int p1 = pExpr->iTable * (pTab->nCol+1) + 1 + pExpr->iColumn;
 
       assert( pExpr->iTable==0 || pExpr->iTable==1 );
@@ -3871,7 +3875,7 @@ expr_code_doover:
       sqlite3VdbeAddOp2(v, OP_Param, p1, target);
       VdbeComment((v, "r[%d]=%s.%s", target,
         (pExpr->iTable ? "new" : "old"),
-        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName)
+        (pExpr->iColumn<0 ? "rowid" : pExpr->y.pTab->aCol[pExpr->iColumn].zName)
       ));
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -4722,6 +4726,20 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
   if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( pA->op==TK_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      /* Justification for the assert():
+      ** window functions have p->op==TK_FUNCTION but aggregate functions
+      ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
+      ** function and a window function should have failed before reaching
+      ** this point.  And, it is not possible to have a window function and
+      ** a scalar function with the same name and number of arguments.  So
+      ** if we reach this point, either A and B both window functions or
+      ** neither are a window functions. */
+      assert( ExprHasProperty(pA,EP_WinFunc)==ExprHasProperty(pB,EP_WinFunc) );
+      if( ExprHasProperty(pA,EP_WinFunc) ){
+        if( sqlite3WindowCompare(pParse,pA->y.pWin,pB->y.pWin)!=0 ) return 2;
+      }
+#endif
     }else if( pA->op==TK_COLLATE ){
       if( sqlite3_stricmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
     }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
@@ -4741,21 +4759,6 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
       if( pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
-#ifndef SQLITE_OMIT_WINDOWFUNC
-    /* Justification for the assert():
-    ** window functions have p->op==TK_FUNCTION but aggregate functions
-    ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
-    ** function and a window function should have failed before reaching
-    ** this point.  And, it is not possible to have a window function and
-    ** a scalar function with the same name and number of arguments.  So
-    ** if we reach this point, either A and B both window functions or
-    ** neither are a window functions. */
-    assert( (pA->pWin==0)==(pB->pWin==0) );
-
-    if( pA->pWin!=0 ){
-      if( sqlite3WindowCompare(pParse,pA->pWin,pB->pWin)!=0 ) return 2;
-    }
-#endif
   }
   return 0;
 }
@@ -4899,8 +4902,8 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_LE );
       testcase( pExpr->op==TK_GT );
       testcase( pExpr->op==TK_GE );
-      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->pTab))
-       || (pExpr->pRight->op==TK_COLUMN && IsVirtual(pExpr->pRight->pTab))
+      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->y.pTab))
+       || (pExpr->pRight->op==TK_COLUMN && IsVirtual(pExpr->pRight->y.pTab))
       ){
        return WRC_Prune;
       }
@@ -5131,7 +5134,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
              && (k = addAggInfoColumn(pParse->db, pAggInfo))>=0 
             ){
               pCol = &pAggInfo->aCol[k];
-              pCol->pTab = pExpr->pTab;
+              pCol->pTab = pExpr->y.pTab;
               pCol->iTable = pExpr->iTable;
               pCol->iColumn = pExpr->iColumn;
               pCol->iMem = ++pParse->nMem;

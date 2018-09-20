@@ -1117,7 +1117,7 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
     pExpr->op = TK_COLUMN;
     pExpr->iTable = pX->iIdxCur;
     pExpr->iColumn = pX->iIdxCol;
-    pExpr->pTab = 0;
+    pExpr->y.pTab = 0;
     return WRC_Prune;
   }else{
     return WRC_Continue;
