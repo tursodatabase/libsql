@@ -1,5 +1,5 @@
-C Optimization\sto\sthe\sOP_MakeRecord\sopcode\smakes\sspeed-check.sh\srun\sabout\n1.1\smillion\scycles\sfaster,\sand\sresults\sin\sa\sslightly\ssmaller\slibrary.
-D 2018-09-21T13:07:14.225
+C Put\sa\slimit\scounter\son\sthe\squery\splanner\sthat\srestricts\sthe\snumber\sof\nindex+constraint\soptions\sthat\scan\sbe\sconsidered\sfor\seach\stable\sin\sa\sjoin.\nThis\sprevents\scertain\spathological\squeries\sfrom\staking\sup\stoo\smuch\stime\nin\sthe\squery\splanner.
+D 2018-09-21T18:43:51.308
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -587,8 +587,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c 2019126801437944c38cc62a99491e98591460b7cc07ab57eb66165f710a289b
-F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
+F src/where.c e5c4f5ab05e5112d971510bfd4cc673657e02673ac8a76db4296d703237a2461
+F src/whereInt.h 2c4d99faf71c35339a33b20d11c5cb8921416a21d6816d830b85df320303e5bd
 F src/wherecode.c 3df0a541373d5f999684d761e4bd700d57adb46c7d39da4e77b767b5adcd5893
 F src/whereexpr.c 1b5a5a7876997f65232bbf19c5c1eeb47eb328b8fa5b28c865543052904cde00
 F src/window.c a28d8d42c51c7e31136a42f3e245282049d4a9466b36d7bd765772991472df41
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22ae8a52dd2fb744f467c7dccf1d7fe7c7cef0e1dcc897dd492f897e84c9facb
-R 33a3ccc9bec749141fe1417d8f2213ed
+P d10e63629183f6daf0c263cd4dae052a3786c8c1480b3b6a73124b3315e41951
+R 56d8cd6e634d174344ffe41fce1a9ac6
 U drh
-Z 4fef5bba9e51ca59b92e81f3a1e63e07
+Z a5b6a9aaf70c834d7cee7cb5aaf91158

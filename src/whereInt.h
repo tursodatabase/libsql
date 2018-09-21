@@ -402,6 +402,7 @@ struct WhereLoopBuilder {
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
   unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
+  unsigned int iPlanLimit;  /* Search limiter */
 };
 
 /* Allowed values for WhereLoopBuider.bldFlags */

@@ -2126,6 +2126,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   sqlite3 *db = pWInfo->pParse->db;
   int rc;
 
+  /* Stop the search once we hit the query planner search limit */
+  if( pBuilder->iPlanLimit==0 ) return SQLITE_DONE;
+  pBuilder->iPlanLimit--;
+
   /* If pBuilder->pOrSet is defined, then only keep track of the costs
   ** and prereqs.
   */
@@ -3532,9 +3536,17 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
+  /* Some pathological queries provide an unreasonable number of indexing
+  ** options. The iPlanLimit value prevents these queries from taking up
+  ** too much time in the planner. When iPlanLimit reaches zero, no further
+  ** index+constraint options are considered. Seed iPlanLimit to 10K but
+  ** also add an extra 1K to each table of the join, to ensure that each
+  ** table at least gets 1K opportunities. */
+  pBuilder->iPlanLimit = 10000;
   for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
+    pBuilder->iPlanLimit += 1000;  /* 1000 bonus for each table in the join */
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
     if( ((pItem->fg.jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
@@ -3560,7 +3572,14 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       rc = whereLoopAddOr(pBuilder, mPrereq, mUnusable);
     }
     mPrior |= pNew->maskSelf;
-    if( rc || db->mallocFailed ) break;
+    if( rc || db->mallocFailed ){
+      if( rc==SQLITE_DONE ){
+        /* We hit the query planner search limit set by iPlanLimit */
+        rc = SQLITE_OK;
+      }else{
+        break;
+      }
+    }
   }
 
   whereLoopClear(db, pNew);
