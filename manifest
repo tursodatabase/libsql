@@ -1,5 +1,5 @@
-C Put\sa\slimit\scounter\son\sthe\squery\splanner\sthat\srestricts\sthe\snumber\sof\nindex+constraint\soptions\sthat\scan\sbe\sconsidered\sfor\seach\stable\sin\sa\sjoin.\nThis\sprevents\scertain\spathological\squeries\sfrom\staking\sup\stoo\smuch\stime\nin\sthe\squery\splanner.
-D 2018-09-21T18:43:51.308
+C Comment\stypo\sfixed.\s\sNo\scode\schanges.
+D 2018-09-21T19:06:09.667
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -492,7 +492,7 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
 F src/pager.h ecc554a55bc55d1c4ba5e17137b72e238e00bd81e72ff2662d8b9c8c10ae3963
 F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
-F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
+F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c 79abc65c08d2754048efee3ba99fe91863dfeab0ba699a4439fa5053ec87cf36
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d10e63629183f6daf0c263cd4dae052a3786c8c1480b3b6a73124b3315e41951
-R 56d8cd6e634d174344ffe41fce1a9ac6
+P 8690b5a0cc08eeb175230de45d4ca9b9f7b9b22aeebea70b8b7151f10b130969
+R 97ab244d3dc6ac850dabfd9f2e0eadc3
 U drh
-Z a5b6a9aaf70c834d7cee7cb5aaf91158
+Z 7f8590ad5b26658db9da1b3476a27528
