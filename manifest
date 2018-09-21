@@ -1,5 +1,5 @@
-C Minor\scode\ssimplification.
-D 2018-09-20T20:43:28.118
+C Optimization\sto\sthe\sOP_MakeRecord\sopcode\smakes\sspeed-check.sh\srun\sabout\n1.1\smillion\scycles\sfaster,\sand\sresults\sin\sa\sslightly\ssmaller\slibrary.
+D 2018-09-21T13:07:14.225
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -573,7 +573,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
-F src/vdbe.c 7433ac76608b80b745f57b8544416dc0178db52ce2cc806a10353309e5f781fb
+F src/vdbe.c c7416f6b5e47efbdf09c73a3984ecc68666151ae894c27fb1e51d51bbba62082
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h f1f35f70460698d8f5a2bdef1001114babf318e2983a067804e2ae077d8e9827
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7edd26ed27ed1e7eab603058f7d55f2eac45e7bd1908bfa5f32293611883b157 5e458f4a92743effb9a3d3249767424fed8b444a05ca136c4a55d60c4d70c2cc
-R 6e3668e1a9453a68a64669c9f81648e7
+P 22ae8a52dd2fb744f467c7dccf1d7fe7c7cef0e1dcc897dd492f897e84c9facb
+R 33a3ccc9bec749141fe1417d8f2213ed
 U drh
-Z 479e3a8163395f3eaf4fbec67bf9b33f
+Z 4fef5bba9e51ca59b92e81f3a1e63e07

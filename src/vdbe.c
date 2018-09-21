@@ -2894,17 +2894,25 @@ case OP_MakeRecord: {
     if( nVarint<sqlite3VarintLen(nHdr) ) nHdr++;
   }
   nByte = nHdr+nData;
-  if( nByte+nZero>db->aLimit[SQLITE_LIMIT_LENGTH] ){
-    goto too_big;
-  }
 
   /* Make sure the output register has a buffer large enough to store 
   ** the new record. The output register (pOp->p3) is not allowed to
   ** be one of the input registers (because the following call to
   ** sqlite3VdbeMemClearAndResize() could clobber the value before it is used).
   */
-  if( sqlite3VdbeMemClearAndResize(pOut, (int)nByte) ){
-    goto no_mem;
+  if( nByte+nZero<=pOut->szMalloc ){
+    /* The output register is already large enough to hold the record.
+    ** No error checks or buffer enlargement is required */
+    pOut->z = pOut->zMalloc;
+  }else{
+    /* Need to make sure that the output is not too big and then enlarge
+    ** the output register to hold the full result */
+    if( nByte+nZero>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+      goto too_big;
+    }
+    if( sqlite3VdbeMemClearAndResize(pOut, (int)nByte) ){
+      goto no_mem;
+    }
   }
   zNewRecord = (u8 *)pOut->z;
 
