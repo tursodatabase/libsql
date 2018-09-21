@@ -1,5 +1,5 @@
-C Comment\stypo\sfixed.\s\sNo\scode\schanges.
-D 2018-09-21T19:06:09.667
+C Fix\sharmless\scompiler\swarning\swhen\scompiled\swith\sSQLITE_OMIT_AUTHORIZATION.
+D 2018-09-21T23:41:18.790
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -582,7 +582,7 @@ F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c9419
 F src/vdbemem.c 81329ab760e4ec0162119d9cd10193e0303c45c5935bb20c7ae9139d44dd6641
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
-F src/vtab.c 9ada8a26ffc17c27ab27a06b23599faeb2e0c487ad9ef53903917ac973b42170
+F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8690b5a0cc08eeb175230de45d4ca9b9f7b9b22aeebea70b8b7151f10b130969
-R 97ab244d3dc6ac850dabfd9f2e0eadc3
-U drh
-Z 7f8590ad5b26658db9da1b3476a27528
+P 7e68cdab20f50cf776b92b2138bb4aba7cb070f2bd855dd4cbbf46d447f2dc88
+R f3a0451266f2033e81023f13808aa5f9
+U mistachkin
+Z 5d853d359db40385908df44f900ea5af
