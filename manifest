@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\swhen\scompiled\swith\sSQLITE_OMIT_AUTHORIZATION.
-D 2018-09-21T23:41:18.790
+C Enhance\sWhereLoopBuilder.iPlanLimit\sto\shandle\sa\scase\sinvolving\sthe\sOR\noptimization\sdiscovered\sovernight\sby\sOSSFuzz.
+D 2018-09-22T15:05:32.605
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -587,7 +587,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c e5c4f5ab05e5112d971510bfd4cc673657e02673ac8a76db4296d703237a2461
+F src/where.c 9e2cccc1d0cd89d0e2aa403146646f247bb89c459151d0893493daa7793bc9ad
 F src/whereInt.h 2c4d99faf71c35339a33b20d11c5cb8921416a21d6816d830b85df320303e5bd
 F src/wherecode.c 3df0a541373d5f999684d761e4bd700d57adb46c7d39da4e77b767b5adcd5893
 F src/whereexpr.c 1b5a5a7876997f65232bbf19c5c1eeb47eb328b8fa5b28c865543052904cde00
@@ -967,7 +967,7 @@ F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
-F test/fuzzdata5.db 7a3467a24e7112c1f1041ae9ad1e7060c2074da82d420ce786953cc3d3dd20b5
+F test/fuzzdata5.db 181aa05f8ca1e4f43a3618ddd4193dfca4499e81bbb9b3e03bce46961a670891
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e68cdab20f50cf776b92b2138bb4aba7cb070f2bd855dd4cbbf46d447f2dc88
-R f3a0451266f2033e81023f13808aa5f9
-U mistachkin
-Z 5d853d359db40385908df44f900ea5af
+P 50f2fa19532e0f849d61d9e2a97427cfbf64cfb787ca481ef8c860d0f24f6cfe
+R a522b9d1d3efe4bffcf66fba31076dce
+U drh
+Z cead1160ed2d9cc4ef006a761294eca9
