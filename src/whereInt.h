@@ -409,6 +409,26 @@ struct WhereLoopBuilder {
 #define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
 #define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
 
+/* The WhereLoopBuilder.iPlanLimit is used to limit the number of
+** index+constraint combinations the query planner will consider for a
+** particular query.  If this parameter is unlimited, then certain
+** pathological queries can spend excess time in the sqlite3WhereBegin()
+** routine.  The limit is high enough that is should not impact real-world
+** queries.
+**
+** SQLITE_QUERY_PLANNER_LIMIT is the baseline limit.  The limit is
+** increased by SQLITE_QUERY_PLANNER_LIMIT_INCR before each term of the FROM
+** clause is processed, so that every table in a join is guaranteed to be
+** able to propose a some index+constraint combinations even if the initial
+** baseline limit was exhausted by prior tables of the join.
+*/
+#ifndef SQLITE_QUERY_PLANNER_LIMIT
+# define SQLITE_QUERY_PLANNER_LIMIT 20000
+#endif
+#ifndef SQLITE_QUERY_PLANNER_LIMIT_INCR
+# define SQLITE_QUERY_PLANNER_LIMIT_INCR 1000
+#endif
+
 /*
 ** The WHERE clause processing routine has two halves.  The
 ** first part does the start of the WHERE loop and the second

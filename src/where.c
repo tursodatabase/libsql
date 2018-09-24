@@ -3540,17 +3540,11 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
-  /* Some pathological queries provide an unreasonable number of indexing
-  ** options. The iPlanLimit value prevents these queries from taking up
-  ** too much time in the planner. When iPlanLimit reaches zero, no further
-  ** index+constraint options are considered. Seed iPlanLimit to 20K but
-  ** also add an extra 1K to each table of the join, to ensure that each
-  ** table at least gets 1K opportunities. */
-  pBuilder->iPlanLimit = 20000;
+  pBuilder->iPlanLimit = SQLITE_QUERY_PLANNER_LIMIT;
   for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
-    pBuilder->iPlanLimit += 1000;  /* 1000 bonus for each table in the join */
+    pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
     if( ((pItem->fg.jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the

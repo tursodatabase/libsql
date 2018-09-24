@@ -1,5 +1,5 @@
-C Increase\sthe\sinitial\svalue\sof\sWhereLoopBuilder.iPlanLimit\sto\s20K.\s\sIssue\na\swarning\sif\sthe\siPlanLimit\sreaches\szero.
-D 2018-09-24T10:47:33.898
+C Use\scompile-time\soptions\sSQLITE_QUERY_PLANNER_LIMIT\sand\nSQLITE_QUERY_PLANNER_LIMIT_INCR\sto\scontrol\sthe\svalue\sfor\nWhereLoopBuilder.iPlanLimit,\srather\sthan\sembedding\smagic\snumbers\sin\sthe\ncode.
+D 2018-09-24T12:37:01.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -587,8 +587,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c 49022d3c155a3af14298459d6990c0c9f096f42afa1edb6d86e8f4ac45a6301e
-F src/whereInt.h 2c4d99faf71c35339a33b20d11c5cb8921416a21d6816d830b85df320303e5bd
+F src/where.c a54a3d639bcd751d1474deff58e239b2e475a96e1b8f9178aa7864df8782a4e3
+F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c 3df0a541373d5f999684d761e4bd700d57adb46c7d39da4e77b767b5adcd5893
 F src/whereexpr.c 1b5a5a7876997f65232bbf19c5c1eeb47eb328b8fa5b28c865543052904cde00
 F src/window.c a28d8d42c51c7e31136a42f3e245282049d4a9466b36d7bd765772991472df41
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fd62fccd13e326dbd7dd730112542c6faa56e466bf4f7b8e22ced543031280c
-R 1d4c0a2fb381695de9f503d180db0edc
+P 3dd35f51187574f47f860405309877cdbf9dc5710703dfd98cf98073b771140c
+R 0a5c287a2221a9c37c274db4cfcb24c3
 U drh
-Z 063489dbcea38420d3799029994c4f5a
+Z d1e830ee2a4fd61d34b42065fcc1584a
