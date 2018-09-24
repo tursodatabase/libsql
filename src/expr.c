@@ -4846,18 +4846,15 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
 /*
 ** This is the Expr node callback for sqlite3ExprImpliesNotNullRow().
 ** If the expression node requires that the table at pWalker->iCur
-** have a non-NULL column, then set pWalker->eCode to 1 and abort.
+** have one or more non-NULL column, then set pWalker->eCode to 1 and abort.
+**
+** This routine controls an optimization.  False positives (setting
+** pWalker->eCode to 1 when it should not be) are deadly, but false-negatives
+** (never setting pWalker->eCode) is a harmless missed optimization.
 */
 static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
-  /* This routine is only called for WHERE clause expressions and so it
-  ** cannot have any TK_AGG_COLUMN entries because those are only found
-  ** in HAVING clauses.  We can get a TK_AGG_FUNCTION in a WHERE clause,
-  ** but that is an illegal construct and the query will be rejected at
-  ** a later stage of processing, so the TK_AGG_FUNCTION case does not
-  ** need to be considered here. */
-  assert( pExpr->op!=TK_AGG_COLUMN );
+  testcase( pExpr->op==TK_AGG_COLUMN );
   testcase( pExpr->op==TK_AGG_FUNCTION );
-
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
   switch( pExpr->op ){
     case TK_ISNOT:
