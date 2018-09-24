@@ -1,5 +1,5 @@
-C Allow\sa\swritable\svirtual\stable\sto\shave\sa\sschema\swith\san\sINTEGER\sPRIMARY\sKEY\nand\sWITHOUT\sROWID.\s\sThis\sfixes\sticket\n[f25d5ceebe1d710ff61a571e395356869d8272ef].
-D 2018-09-24T14:10:55.272
+C Fix\sa\sproblem\swith\sviews\sthat\suse\swindow\sfunctions\sas\spart\sof\scomplex\sexpressions.
+D 2018-09-24T14:51:59.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -454,7 +454,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
 F src/delete.c 107e28d3ef8bd72fd11953374ca9107cd74e8b09c3ded076a6048742d26ce7d2
-F src/expr.c cd7a294bff49641032e2a5511a8e77bfa7e71fd0a2f714de8f3c560d31d273d9
+F src/expr.c 781afe52002d84b6b8ae2873bbd2fd7825a8bc80e4e21333ab354c9c492bdb4a
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -1648,8 +1648,8 @@ F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
 F test/window3.test e274b7f8952ca4ed25996e0e45c047192b066e0aaff2a822d4293c8c4f1d8d98
-F test/window4.tcl 871364059b7d320d556ec6ef804d604a4e8cc1547a3102c5d56067371bb200af
-F test/window4.test 323b118eb592932036388643ca6dcaead87f699bbea2984bbca49ba4ad6c2509
+F test/window4.tcl 511425f6b0abf9b953df54cc9c7295cc7c25d78f4ed6f7a74b094eec0120eccb
+F test/window4.test c5d6bf3403e4ade2f19df2afe4c16f29fb817c392c6c1c8017edb7165c191a62
 F test/window5.test 8187f46597c90b73e8f96659e893353cbda337479cc582f7a488eab351ba08d3
 F test/window6.test 7574778c79cae89f1781df237bf9ff5063886deca91a36efc53934315f0e7612
 F test/windowfault.test 23abad97b72c6f609002255ddd41ef5c8922408f918f9b98ad6005ab316e482f
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 903e501894b2a5dd7055b5154d74d4a47a619f76e66485a4d62b6259f10723d6
-R dab440745222c8e8c505d734c9dc73d5
-U drh
-Z 7595a8f9101a9bccfc4e2f08e98b0a7c
+P 5a38d9281b4ad63b853efa5cdd5ad4a64b19dfaf8250ef8e0e186684df1211ea
+R 0305fb00a242bdc9e08655efd2c57d30
+U dan
+Z e20c6e2011d089069671f2c306dc6b24

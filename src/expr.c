@@ -1270,16 +1270,13 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
     }
 
     /* Fill in pNew->pLeft and pNew->pRight. */
+    zAlloc += dupedExprNodeSize(p, dupFlags);
     if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly) ){
-      zAlloc += dupedExprNodeSize(p, dupFlags);
       if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
         pNew->pLeft = p->pLeft ?
                       exprDup(db, p->pLeft, EXPRDUP_REDUCE, &zAlloc) : 0;
         pNew->pRight = p->pRight ?
                        exprDup(db, p->pRight, EXPRDUP_REDUCE, &zAlloc) : 0;
-      }
-      if( pzBuffer ){
-        *pzBuffer = zAlloc;
       }
     }else{
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1298,6 +1295,9 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         }
         pNew->pRight = sqlite3ExprDup(db, p->pRight, 0);
       }
+    }
+    if( pzBuffer ){
+      *pzBuffer = zAlloc;
     }
   }
   return pNew;
