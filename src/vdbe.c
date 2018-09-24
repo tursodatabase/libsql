@@ -7059,7 +7059,10 @@ case OP_VNext: {   /* jump */
 case OP_VRename: {
   sqlite3_vtab *pVtab;
   Mem *pName;
-
+  int isLegacy;
+  
+  isLegacy = (db->flags & SQLITE_LegacyAlter);
+  db->flags |= SQLITE_LegacyAlter;
   pVtab = pOp->p4.pVtab->pVtab;
   pName = &aMem[pOp->p1];
   assert( pVtab->pModule->xRename );
@@ -7073,6 +7076,7 @@ case OP_VRename: {
   rc = sqlite3VdbeChangeEncoding(pName, SQLITE_UTF8);
   if( rc ) goto abort_due_to_error;
   rc = pVtab->pModule->xRename(pVtab, pName->z);
+  if( isLegacy==0 ) db->flags &= ~SQLITE_LegacyAlter;
   sqlite3VtabImportErrmsg(p, pVtab);
   p->expired = 0;
   if( rc ) goto abort_due_to_error;
