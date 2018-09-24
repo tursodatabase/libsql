@@ -1,5 +1,5 @@
-C Add\sthe\s"PRAGMA\slegacy_alter_table=ON"\scommand\sto\senable\sthe\spre-3.25.0\nbehavior\sof\sALTER\sTABLE\sthat\sdoes\snot\smodify\sthe\sbodies\sof\striggers\sor\nviews\sor\sthe\sWHERE\sclause\sof\sa\spartial\sindex.\s\sEnable\sthe\slegacy\sbehavior\nby\sdefault\swhen\srunning\sthe\sxRename\smethod\sof\svirtual\stables.
-D 2018-09-24T20:48:20.320
+C Fix\smissing\sspace\sin\s'configure.ac'\sreported\son\sthe\smailing\slist.
+D 2018-09-24T20:50:14.847
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -17,7 +17,7 @@ F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a
 F autoconf/Makefile.msc 9e73d9abaadb7a4951ddd0e947c5c791770f23bb1e04bfa50b43c01bee0575f2
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 573b98629d6963e6d9bf2897c3f4708fb94ce49897822526ad268181875e1736
+F autoconf/configure.ac 308de24343e76ecfbe9a67f8fcd4c5216b790d230c5d9ce10210b7d5965d6192
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1767,8 +1767,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3139af9910e484682d37eeac9dca188a73859b3241017bde31bc6cb597b40d3c
-Q +7edd26ed27ed1e7eab603058f7d55f2eac45e7bd1908bfa5f32293611883b157
-R babd6a7c85debca3b8fe29750a063d2a
+P 31dc8b191c3b7921f1e9ac1a07854d2bd9e39bc4a20cf2a70a28c41cdb0d0e95
+Q +96b00a3cd2273dd3baa8e5b7a441458b142d4d2daabc679e4fcb5ab706674e76
+R 83a55fbb7056c2fc85a40770b58e3a4a
 U drh
-Z 3378cdc13ab2b15117f1f3887be68031
+Z a74dbe7e8c9ab7b6bf7dc5a308c6aa53
