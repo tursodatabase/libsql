@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\svalidation\slogic\sfor\sthe\sLEFT\sJOIN\sstrength\nreduction\soptimization.\s\sProblem\sfound\sby\sOSSFuzz.
-D 2018-09-23T02:01:42.716
+C Increase\sthe\sinitial\svalue\sof\sWhereLoopBuilder.iPlanLimit\sto\s20K.\s\sIssue\na\swarning\sif\sthe\siPlanLimit\sreaches\szero.
+D 2018-09-24T10:47:33.898
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -587,7 +587,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c 9e2cccc1d0cd89d0e2aa403146646f247bb89c459151d0893493daa7793bc9ad
+F src/where.c 49022d3c155a3af14298459d6990c0c9f096f42afa1edb6d86e8f4ac45a6301e
 F src/whereInt.h 2c4d99faf71c35339a33b20d11c5cb8921416a21d6816d830b85df320303e5bd
 F src/wherecode.c 3df0a541373d5f999684d761e4bd700d57adb46c7d39da4e77b767b5adcd5893
 F src/whereexpr.c 1b5a5a7876997f65232bbf19c5c1eeb47eb328b8fa5b28c865543052904cde00
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b59930a1d7b664b54d5a2bc9fa385925b5f4c8f34bf401c798307e3e2dae2c6
-R f03877dafbf8630475fd3e62d89e76e5
+P 2fd62fccd13e326dbd7dd730112542c6faa56e466bf4f7b8e22ced543031280c
+R 1d4c0a2fb381695de9f503d180db0edc
 U drh
-Z b1773f19e1d7fe0cd47b4aa3fa8da701
+Z 063489dbcea38420d3799029994c4f5a

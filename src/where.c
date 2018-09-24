@@ -3543,10 +3543,10 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Some pathological queries provide an unreasonable number of indexing
   ** options. The iPlanLimit value prevents these queries from taking up
   ** too much time in the planner. When iPlanLimit reaches zero, no further
-  ** index+constraint options are considered. Seed iPlanLimit to 10K but
+  ** index+constraint options are considered. Seed iPlanLimit to 20K but
   ** also add an extra 1K to each table of the join, to ensure that each
   ** table at least gets 1K opportunities. */
-  pBuilder->iPlanLimit = 10000;
+  pBuilder->iPlanLimit = 20000;
   for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
@@ -3579,6 +3579,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     if( rc || db->mallocFailed ){
       if( rc==SQLITE_DONE ){
         /* We hit the query planner search limit set by iPlanLimit */
+        sqlite3_log(SQLITE_WARNING, "abbreviated query algorithm search");
         rc = SQLITE_OK;
       }else{
         break;
