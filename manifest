@@ -1,5 +1,5 @@
-C Use\scompile-time\soptions\sSQLITE_QUERY_PLANNER_LIMIT\sand\nSQLITE_QUERY_PLANNER_LIMIT_INCR\sto\scontrol\sthe\svalue\sfor\nWhereLoopBuilder.iPlanLimit,\srather\sthan\sembedding\smagic\snumbers\sin\sthe\ncode.
-D 2018-09-24T12:37:01.477
+C Allow\sa\swritable\svirtual\stable\sto\shave\sa\sschema\swith\san\sINTEGER\sPRIMARY\sKEY\nand\sWITHOUT\sROWID.\s\sThis\sfixes\sticket\n[f25d5ceebe1d710ff61a571e395356869d8272ef].
+D 2018-09-24T14:10:55.272
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -446,7 +446,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 3bdd61d7ecba6f40e7efead3ffb61b2e3bad87de73f407c288035937c9b33687
+F src/build.c 0b3d422770877d74ee6d54f4c122d82c48f7d04ee3bfb91702e402de7f5c45ac
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3dd35f51187574f47f860405309877cdbf9dc5710703dfd98cf98073b771140c
-R 0a5c287a2221a9c37c274db4cfcb24c3
+P 903e501894b2a5dd7055b5154d74d4a47a619f76e66485a4d62b6259f10723d6
+R dab440745222c8e8c505d734c9dc73d5
 U drh
-Z d1e830ee2a4fd61d34b42065fcc1584a
+Z 7595a8f9101a9bccfc4e2f08e98b0a7c
