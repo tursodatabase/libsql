@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sreleasetest.tcl\scausing\sconfiguration\s"Fast-One"\sto\sfail.
-D 2018-09-25T13:52:54.531
+C Version\s3.25.2
+D 2018-09-25T19:08:10.988
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -1767,8 +1767,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 996d74f501a45ae12ddc16fe66f849993142e47ccb8b068c412d2ea9bd301ec2
-Q +42e04fefbc241dd33f12abd66344a87720ae4cda6d82f2882217b3cb71be8733
+P 32ac0014266706baa4e98de808eb5a6d0ffdb39dc37b4e37668f339e9e238183
 R ddde28c6e30330f60d15473895b4b263
-U dan
-Z 45c30efbbfe69c12a5272404fcc1ed52
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.25.2 *
+U drh
+Z 46b344691181d24f6c0596b245d11075
