@@ -136,6 +136,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_RBU
     -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_USER_AUTHENTICATION=1
     -DLONGDOUBLE_TYPE=double
     --enable-session
   }

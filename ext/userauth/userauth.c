@@ -210,7 +210,7 @@ int sqlite3_user_authenticate(
   db->auth.nAuthPW = nPW;
   rc = sqlite3UserAuthCheckLogin(db, "main", &authLevel);
   db->auth.authLevel = authLevel;
-  sqlite3ExpirePreparedStatements(db);
+  sqlite3ExpirePreparedStatements(db, 0);
   if( rc ){
     return rc;           /* OOM error, I/O error, etc. */
   }

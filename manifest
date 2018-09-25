@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sbuilding\son\sAndroid\swith\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE\sset.
-D 2018-09-25T01:17:50.894
+C Fix\sa\scompilation\sissue\sin\sthe\s"userauth"\sextension.\sAlso\sfix\sa\sfew\stest\nscript\serrors\sthat\soccur\swith\sSQLITE_USER_AUTHENTICATION=1\sbuilds.
+D 2018-09-25T01:35:17.265
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -419,7 +419,7 @@ F ext/session/sqlite3session.h c01820d5b6e73e86d88008f4d1c1c7dfb83422963018292b8
 F ext/session/test_session.c dba36c6c0153b22501112d3e8882b5c946cf617c955153b6712bd2f8ba1428c0
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
-F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
+F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e629edbe2648
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -602,7 +602,7 @@ F test/alter.test 99e72759d48d6531ac2a9f346b4a9b5fe8f89c67a0fa5e916a3990d3b1fe9d
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test 7e93a21fe131e1dfeb317e90056856f96b10381fc7fe3a05e765569a23400433
-F test/alterauth.test dc50064e3d57d60cf8708decefed15cfa154242f6d44069858d4c6c9b1aea961
+F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/altercol.test 53fb5e218c9296afc160f2c4fcbeaf42bd0604815d9b3896a7d2eec583ad8704
 F test/alterlegacy.test e7c07d605c2a85e7d1696c89e6bf64dfc932fc6d9320fe8708c8f5fc0b524d41
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
@@ -639,7 +639,7 @@ F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test f0c1a8fc7f07d94e3e26ba7f77eb4a5cedda67b10d9a49275b154ab03749b6c0
+F test/auth.test 3310d9c08e928beca42d3eadaaf53cef619d9d275f598565a3758a21ce63138e
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test db21405b95257c24d29273b6b31d0efc59e1d337e3d5804ba2d1fd4897b1ae49
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
@@ -1193,7 +1193,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 7e90ec5d2854d80e2574f70df834ef9cae705d21fe43a19dc217a3ce33a3798c x
+F test/releasetest.tcl d82c35d4fa8364451b424c95c0d4f222efcd40497fabe51d85d206ef6a680263 x
 F test/resetdb.test 684a6ffde5a5141bba79f3101981cc38dcfc3403f61e643b7b3aa68bef0b8408
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
@@ -1556,7 +1556,7 @@ F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 226fb71e37be61854f3a01929ae0a7e14584d6aef5c459bb0a22318f0b6dd210
+F test/view.test 71e1bf4c0e2e0d37c84d7db5b33cd47eb4a7662c19d93ede4112b350b186f61f
 F test/vtab1.test 8f91b9538d1404c3932293a588c4344218a0c94792d4289bb55e41020e7b3fff
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1767,8 +1767,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bd94e431783085a22733102218c0fe24a26376033cf9fe4380f6890aba8c79a
-Q +e41e50fe7430cb79f67369fe81ac9938665bfc5db59c4faaf429ceb8ca03f584
-R 08d8b421cdef646b0405148bc093182f
+P b9ffa77c92cbc47618da16f412df7745cbf92a7098d3f015724f9b66dca8a2e1
+Q +221f3f572ed49d7af69a2e7c88741fa5206ea33ca59ee791eac7698bdd11ca4d
+R 31a15c2a57722a5c2712b323673ad105
 U drh
-Z a7e1e444e074e864c70aeff1ca995250
+Z 5fba0c681e2a54f63c711a0c9c81307a
