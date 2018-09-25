@@ -1,5 +1,5 @@
-C Avoid\sincrementing\sthe\sSQLITE_LOOKASIDE_MISS_SIZE\sstat\sbefore\ssqlite3_open()\nreturns.\sFix\stest\sscript\sproblem\sin\slookaside.test.
-D 2018-09-24T21:07:35.559
+C Fix\sa\sproblem\sbuilding\son\sAndroid\swith\sSQLITE_ENABLE_BATCH_ATOMIC_WRITE\sset.
+D 2018-09-25T01:17:50.894
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -485,7 +485,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c d8e37bc3af9b15a52c3fecd366c95416251aa8d89481dd56170bad538b421721
+F src/os_unix.c 7cfd67db0e2f926243f646db7ec1caa33ca9bee45799b0160ddfcd6ccfc175d2
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
@@ -1767,8 +1767,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4407e15ac953cca0e33d76bd1e6500d70ae9cb239ea2d776a19a13f59532b3f6
-Q +e461cb281959d8517296e3e4e934eba8206770b1a592cd7655b6567268da1634
-R 0463709fcc60beccfd8228188e62e9d8
+P 3bd94e431783085a22733102218c0fe24a26376033cf9fe4380f6890aba8c79a
+Q +e41e50fe7430cb79f67369fe81ac9938665bfc5db59c4faaf429ceb8ca03f584
+R 08d8b421cdef646b0405148bc093182f
 U drh
-Z 428f25a4838f6111112efb2b2b418b35
+Z a7e1e444e074e864c70aeff1ca995250
