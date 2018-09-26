@@ -3378,12 +3378,15 @@ static const char *(azHelp[]) = {
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
   ".dbinfo ?DB?             Show status information about the database",
-  ".dump ?TABLE? ...        Dump the database in an SQL text format",
-  "     TABLE is LIKE pattern for the tables to dump",
+  ".dump ?TABLE? ...        Render all database content as SQL",
+  "   Options:",
+  "     --preserve-rowids      Include ROWID values in the output",
+  "     --newlines             Allow unescaped newline characters in output",
+  "   TABLE is LIKE pattern for the tables to dump",
   ".echo on|off             Turn command echo on or off",
   ".eqp on|off|full         Enable or disable automatic EXPLAIN QUERY PLAN",
   ".excel                   Display the output of next command in a spreadsheet",
-  ".exit                    Exit this program",
+  ".exit ?CODE?             Exit this program with return-code CODE",
   ".expert                  EXPERIMENTAL. Suggest indexes for specified queries",
 /* Because explain mode comes on automatically now, the ".explain" mode
 ** is removed from the help screen.  It is still supported for legacy, however */
@@ -3445,12 +3448,34 @@ static const char *(azHelp[]) = {
   ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
   "     Options:",
   "         --indent            Try to pretty-print the schema",
-  ".selftest ?--init?       Run tests defined in the SELFTEST table",
+  ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
+  "    Options:",
+  "       --init               Create a new SELFTEST table",
+  "       -v                   Verbose output",
   ".separator COL ?ROW?     Change the column and row separators",
 #if defined(SQLITE_ENABLE_SESSION)
-  ".session CMD ...         Create or control sessions",
+  ".session ?NAME? CMD ...  Create or control sessions",
+  "   Subcommands:",
+  "     attach TABLE             Attach TABLE",
+  "     changeset FILE           Write a changeset into FILE",
+  "     close                    Close one session",
+  "     enable ?BOOLEAN?         Set or query the enable bit",
+  "     filter GLOB...           Reject tables matching GLOBs",
+  "     indirect ?BOOLEAN?       Mark or query the indirect status",
+  "     isempty                  Query whether the session is empty",
+  "     list                     List currently open session names",
+  "     open DB NAME             Open a new session on DB",
+  "     patchset FILE            Write a patchset into FILE",
+  "   If ?NAME? is omitted, the first defined session is used.",
 #endif
-  ".sha3sum ?OPTIONS...?    Compute a SHA3 hash of database content",
+  ".sha3sum ...             Compute a SHA3 hash of database content",
+  "    Options:",
+  "      --schema              Also hash the sqlite_master table",
+  "      --sha3-224            Use the sha3-224 algorithm",
+  "      --sha3-256            Use the sha3-256 algorithm.  This is the default.",
+  "      --sha3-384            Use the sha3-384 algorithm",
+  "      --sha3-512            Use the sha3-512 algorithm",
+  "    Any other argument is a LIKE pattern for tables to hash",
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
@@ -3498,17 +3523,24 @@ static int showHelp(FILE *out, const char *zPattern){
     for(i=0; i<ArraySize(azHelp); i++){
       if( sqlite3_strglob(zPat, azHelp[i])==0 ){
         utf8_printf(out, "%s\n", azHelp[i]);
-        while( i<ArraySize(azHelp)-1 && azHelp[i+1][0]!='.' ){
-          i++;
-          utf8_printf(out, "%s\n", azHelp[i]);
-        }
+        j = i+1;
         n++;
       }
     }
     sqlite3_free(zPat);
-    if( n ) return n;
-
-    /* Look for commands that contain zPattern anywhere */
+    if( n ){
+      if( n==1 ){
+        /* when zPattern is a prefix of exactly one command, then include the
+        ** details of that command, which should begin at offset j */
+        while( j<ArraySize(azHelp)-1 && azHelp[j][0]!='.' ){
+          utf8_printf(out, "%s\n", azHelp[j]);
+          j++;
+        }
+      }
+      return n;
+    }
+    /* Look for commands that contain zPattern anywhere.  Show the complete
+    ** text of all commands that match. */
     zPat = sqlite3_mprintf("%%%s%%", zPattern);
     for(i=0; i<ArraySize(azHelp); i++){
       if( azHelp[i][0]=='.' ) j = i;
@@ -3526,30 +3558,6 @@ static int showHelp(FILE *out, const char *zPattern){
   }
   return n;
 }
-
-#if defined(SQLITE_ENABLE_SESSION)
-/*
-** Print help information for the ".sessions" command
-*/
-void session_help(ShellState *p){
-  raw_printf(p->out,
-    ".session ?NAME? SUBCOMMAND ?ARGS...?\n"
-    "If ?NAME? is omitted, the first defined session is used.\n"
-    "Subcommands:\n"
-    "   attach TABLE             Attach TABLE\n"
-    "   changeset FILE           Write a changeset into FILE\n"
-    "   close                    Close one session\n"
-    "   enable ?BOOLEAN?         Set or query the enable bit\n"
-    "   filter GLOB...           Reject tables matching GLOBs\n"
-    "   indirect ?BOOLEAN?       Mark or query the indirect status\n"
-    "   isempty                  Query whether the session is empty\n"
-    "   list                     List currently open session names\n"
-    "   open DB NAME             Open a new session on DB\n"
-    "   patchset FILE            Write a patchset into FILE\n"
-  );
-}
-#endif
-
 
 /* Forward reference */
 static int process_input(ShellState *p, FILE *in);
@@ -5904,7 +5912,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && n>=3 && strncmp(azArg[0], "dbconfig", n)==0 ){
-    static const struct DbConfigChoices {const char *zName; int op;} aDbConfig[] = {
+    static const struct DbConfigChoices {
+      const char *zName;
+      int op;
+    } aDbConfig[] = {
         { "enable_fkey",      SQLITE_DBCONFIG_ENABLE_FKEY            },
         { "enable_trigger",   SQLITE_DBCONFIG_ENABLE_TRIGGER         },
         { "fts3_tokenizer",   SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER  },
@@ -7162,7 +7173,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else
     /* If no command name matches, show a syntax error */
     session_syntax_error:
-    session_help(p);
+    showHelp(p->out, "session");
   }else
 #endif
 

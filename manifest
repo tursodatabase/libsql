@@ -1,5 +1,5 @@
-C Begin\srevamping\sthe\s".help"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\ncan\saccept\san\sargument\sand\swill\sdo\sa\ssearch\sfor\scommands\sthat\smatch\sthat\nargument.
-D 2018-09-26T16:53:51.572
+C Further\simprovements\sto\sthe\s".help"\scommand\sin\sthe\sCLI.
+D 2018-09-26T18:02:32.772
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -503,7 +503,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1b7ade8fabb85ccd3369683a7951fda37b2843aa1e4ef1fa866b09596a8bfec3
-F src/shell.c.in 03d87b063174919f97d18d7272b41e387667de7876dee24f97245cb50a6b54db
+F src/shell.c.in 2162b1dc99b806298207c9c202aa7b49ac8553b8b1e73bb28cd80d5a1861df39
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbaf5b6c1b07b29b2c83fa01618de856d81cc1174769cb9770cb5c894cc87ace
-R f78ccf48cad379f9ff8d08a24576cd4d
+P 209afb8d06466536863b89a8acb9a1a18477a06331d8cce95fc6380e1666b6f5
+R 2bbe28ad2c8e39198abb575c136c791e
 U drh
-Z ffa405c420bd31d67403441934b061ad
+Z 46449abd20dff7d89e070088562c2521
