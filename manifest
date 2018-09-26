@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sreleasetest.tcl\scausing\sconfiguration\s"Fast-One"\sto\sfail.
-D 2018-09-25T13:51:31.431
+C Fix\stypos\sin\sthe\sheader\scomment\sfor\sthe\ssha1\sand\ssha3\shash\sextensions\nin\sthe\sext/misc\sfolder.
+D 2018-09-26T03:43:42.287
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -296,8 +296,8 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
 F ext/misc/series.c c7197db304f7009b08d6459a9de02e7f51ad0e1a3fdacbc1ebf5252a9a346959
-F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
-F ext/misc/shathree.c 9e960ba50483214c6a7a4b1517f8d8cef799e9db381195178c3fd3ad207e10c0
+F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
+F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 54d650f44f3a69a851814791bd4d304575cdbbf78d96d4f0801b44a8f31a58c5
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7c816ae15f05f21b9b213161e1044aaefc56f17e7bc4b7b551a9e04efc05855
-R b83a686c725ad70fbb0586b025a156f8
-U dan
-Z 8305c165fab0e9e40fbcffd125669fd0
+P 42e04fefbc241dd33f12abd66344a87720ae4cda6d82f2882217b3cb71be8733
+R 92eda9b59b5f7b8017d32d8a53b3da1f
+U drh
+Z 2b310859c5d1311e53f97d9b0e4a7ea0
