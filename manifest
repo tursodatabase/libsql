@@ -1,5 +1,5 @@
-C Tweak\sspellfix.c\sso\sthat\sif\sSQLITE_SPELLFIX_5BYTE_MAPPINGS\sis\sdefined\sat\ncompile\stime\sthe\sTransliteration\sstructure\shas\sspace\sfor\s5\sbyte\s(instead\sof\s4\nbyte)\smappings.
-D 2018-09-26T16:05:07.074
+C Begin\srevamping\sthe\s".help"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\ncan\saccept\san\sargument\sand\swill\sdo\sa\ssearch\sfor\scommands\sthat\smatch\sthat\nargument.
+D 2018-09-26T16:53:51.572
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -503,7 +503,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1b7ade8fabb85ccd3369683a7951fda37b2843aa1e4ef1fa866b09596a8bfec3
-F src/shell.c.in 6e0aad854be738a5d0368940459399be211e9ac43aebe92bb9ed46cfe38d0e1f
+F src/shell.c.in 03d87b063174919f97d18d7272b41e387667de7876dee24f97245cb50a6b54db
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
@@ -1265,7 +1265,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 707c03fbd07ac506cfb6fa09da4ee22e2b50453c3db2f404694116eb990168f3
+F test/shell1.test d2bf5daeb6f449f0169c9ef3094db17a16a02199c5dcf1a635a3e79b07eb0edd
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ed9d83a0b14a22b3ecf25785b03b5a824d260e01a608aea85231df9b816421d
-R 2a230066ddda64ec07bfbaa2b5132b83
-U dan
-Z c0be36e2bfd8d1131ae6f2d60c444b01
+P cbaf5b6c1b07b29b2c83fa01618de856d81cc1174769cb9770cb5c894cc87ace
+R f78ccf48cad379f9ff8d08a24576cd4d
+U drh
+Z ffa405c420bd31d67403441934b061ad
