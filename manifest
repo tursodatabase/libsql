@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sheader\scomment\sfor\sthe\ssha1\sand\ssha3\shash\sextensions\nin\sthe\sext/misc\sfolder.
-D 2018-09-26T03:43:42.287
+C Tweak\sspellfix.c\sso\sthat\sif\sSQLITE_SPELLFIX_5BYTE_MAPPINGS\sis\sdefined\sat\ncompile\stime\sthe\sTransliteration\sstructure\shas\sspace\sfor\s5\sbyte\s(instead\sof\s4\nbyte)\smappings.
+D 2018-09-26T16:05:07.074
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -299,7 +299,7 @@ F ext/misc/series.c c7197db304f7009b08d6459a9de02e7f51ad0e1a3fdacbc1ebf5252a9a34
 F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
 F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 54d650f44f3a69a851814791bd4d304575cdbbf78d96d4f0801b44a8f31a58c5
+F ext/misc/spellfix.c f88ecb2c0294453ce8b7704b211f5350c41b085b38c8e056852e3a08b0f5e484
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
 F ext/misc/stmt.c 6f16443abb3551e3f5813bb13ba19a30e7032830015b0f92fe0c0453045c0a11
 F ext/misc/templatevtab.c 8251b31011dd00fc38e739c78c234c930be42b3b274bbe0493b79cd40db02a9e
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42e04fefbc241dd33f12abd66344a87720ae4cda6d82f2882217b3cb71be8733
-R 92eda9b59b5f7b8017d32d8a53b3da1f
-U drh
-Z 2b310859c5d1311e53f97d9b0e4a7ea0
+P 4ed9d83a0b14a22b3ecf25785b03b5a824d260e01a608aea85231df9b816421d
+R 2a230066ddda64ec07bfbaa2b5132b83
+U dan
+Z c0be36e2bfd8d1131ae6f2d60c444b01
