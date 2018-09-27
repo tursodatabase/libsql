@@ -199,6 +199,10 @@ int sqlite3PagerSharedLock(Pager *pPager);
 
 /* Functions used to query pager state and configuration. */
 u8 sqlite3PagerIsreadonly(Pager*);
+/* Return values from sqlite3PagerIsreadonly() */
+#define PAGER_READWRITE  0   /* Read/write database */
+#define PAGER_READONLY   1   /* Read only but might change by outside forces */
+#define PAGER_IMMUTABLE  2   /* Guaranteed to never change */
 u32 sqlite3PagerDataVersion(Pager*);
 #ifdef SQLITE_DEBUG
   int sqlite3PagerRefcount(Pager*);

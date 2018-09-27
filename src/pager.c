@@ -4729,7 +4729,7 @@ int sqlite3PagerOpen(
 #else
 # define memJM 0
 #endif
-  int readOnly = 0;        /* True if this is a read-only file */
+  int readOnly = PAGER_READWRITE;   /* True if this is a read-only file */
   int journalFileSize;     /* Bytes to allocate for each journal fd */
   char *zPathname = 0;     /* Full path to database file */
   int nPathname = 0;       /* Number of bytes in zPathname */
@@ -4860,6 +4860,7 @@ int sqlite3PagerOpen(
     memJM = (fout&SQLITE_OPEN_MEMORY)!=0;
 #endif
     readOnly = (fout&SQLITE_OPEN_READONLY)!=0;
+    assert( readOnly==PAGER_READWRITE || readOnly==PAGER_READONLY );
 
     /* If the file was successfully opened for read/write access,
     ** choose a default page size in case we have to create the
@@ -4899,6 +4900,7 @@ int sqlite3PagerOpen(
       if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0
        || sqlite3_uri_boolean(zFilename, "immutable", 0) ){
           vfsFlags |= SQLITE_OPEN_READONLY;
+          readOnly = PAGER_IMMUTABLE;
           goto act_like_temp_file;
       }
     }
@@ -4918,7 +4920,9 @@ act_like_temp_file:
     pPager->eState = PAGER_READER;     /* Pretend we already have a lock */
     pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE mode */
     pPager->noLock = 1;                /* Do no locking */
-    readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
+    if( (vfsFlags & SQLITE_OPEN_READONLY)!=0 && readOnly==PAGER_READWRITE ){
+      readOnly = PAGER_READONLY;
+    }
   }
 
   /* The following call to PagerSetPagesize() serves to set the value of 
@@ -6696,6 +6700,12 @@ int sqlite3PagerRollback(Pager *pPager){
 /*
 ** Return TRUE if the database file is opened read-only.  Return FALSE
 ** if the database is (in theory) writable.
+**
+** Actually, the return value is one of:
+**
+**     PAGER_READWRITE  (value 0 - false)
+**     PAGER_READONLY   (value 1 - true)
+**     PAGER_IMMUTABLE  (value 2 - also true)
 */
 u8 sqlite3PagerIsreadonly(Pager *pPager){
   return pPager->readOnly;

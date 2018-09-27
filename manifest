@@ -1,5 +1,5 @@
-C Disallow\sthe\suse\sof\swindow\sfunctions\sin\sthe\srecursive\spart\sof\sa\srecursive\sCTE.
-D 2018-09-27T12:14:15.056
+C Minor\senhancement\sto\sthe\spager\sso\sthat\sit\sremembers\sif\sthe\sunderlying\sdatabase\nfiles\sis\simmutable.
+D 2018-09-27T14:24:22.733
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -489,8 +489,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 7cfd67db0e2f926243f646db7ec1caa33ca9bee45799b0160ddfcd6ccfc175d2
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
-F src/pager.h ecc554a55bc55d1c4ba5e17137b72e238e00bd81e72ff2662d8b9c8c10ae3963
+F src/pager.c 09621e99f96e34529b5ed61b4c1ba87743917cf3f06b00ff4bedb67124e51228
+F src/pager.h d141d2f2f7024d3988b6e03068d25cb8100846c9ab8a0338a3f3c07c43a00da8
 F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
 F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
@@ -1769,7 +1769,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd250533a06e4a11c1f548c3de66b8562fc627383848570d7d030cf132fd336f
-R f859da5dfe791e15b8e90067f7a4610e
-U dan
-Z 08a7f25691627dd6eb8a24e372187fa8
+P 7fc2994434c7d9ed29c96a69c07e8eb4e97be776473c170c63f9a1bbaa09fa68
+R e6d82739c190925225a822d1b7e6dedb
+T *branch * immutable-pager
+T *sym-immutable-pager *
+T -sym-trunk *
+U drh
+Z f57501b34f168481651a726b32cc4ecd
