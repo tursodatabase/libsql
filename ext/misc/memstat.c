@@ -20,7 +20,7 @@
 **     .header on
 **     SELECT * FROM memstat;
 */
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB)
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_MEMSTATVTAB)
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
 #endif
@@ -47,9 +47,11 @@ typedef struct memstat_cursor memstat_cursor;
 struct memstat_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   sqlite3 *db;               /* Database connection for this cursor */
-  sqlite3_int64 iRowid;      /* The rowid */
-  sqlite3_int64 iCur;        /* Current value */
-  sqlite3_int64 iHiwtr;      /* High-water mark */
+  int iRowid;                /* Current row in aMemstatColumn[] */
+  int iDb;                   /* Which schema we are looking at */
+  int nDb;                   /* Number of schemas */
+  char **azDb;               /* Names of all schemas */
+  sqlite3_int64 aVal[2];     /* Result values */
 };
 
 /*
@@ -77,10 +79,11 @@ static int memstatConnect(
 
 /* Column numbers */
 #define MSV_COLUMN_NAME    0   /* Name of quantity being measured */
-#define MSV_COLUMN_CURRENT 1   /* Current value */
-#define MSV_COLUMN_HIWTR   2   /* Highwater mark */
+#define MSV_COLUMN_SCHEMA  1   /* schema name */
+#define MSV_COLUMN_VALUE   2   /* Current value */
+#define MSV_COLUMN_HIWTR   3   /* Highwater mark */
 
-  rc = sqlite3_declare_vtab(db,"CREATE TABLE x(name,current,hiwtr)");
+  rc = sqlite3_declare_vtab(db,"CREATE TABLE x(name,schema,value,hiwtr)");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -113,9 +116,58 @@ static int memstatOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 }
 
 /*
+** Clear all the schema names from a cursor
+*/
+static void memstatClearSchema(memstat_cursor *pCur){
+  int i;
+  if( pCur->azDb==0 ) return;
+  for(i=0; i<pCur->nDb; i++){
+    sqlite3_free(pCur->azDb[i]);
+  }
+  sqlite3_free(pCur->azDb);
+  pCur->azDb = 0;
+  pCur->nDb = 0;
+}
+
+/*
+** Fill in the azDb[] array for the cursor.
+*/
+static int memstatFindSchemas(memstat_cursor *pCur){
+  sqlite3_stmt *pStmt = 0;
+  int rc;
+  if( pCur->nDb ) return SQLITE_OK;
+  rc = sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pStmt, 0);
+  if( rc ){
+    sqlite3_finalize(pStmt);
+    return rc;
+  }
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    char **az, *z;
+    az = sqlite3_realloc(pCur->azDb, sizeof(char*)*(pCur->nDb+1));
+    if( az==0 ){
+      memstatClearSchema(pCur);
+      return SQLITE_NOMEM;
+    }
+    pCur->azDb = az;
+    z = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    if( z==0 ){
+      memstatClearSchema(pCur);
+      return SQLITE_NOMEM;
+    }
+    pCur->azDb[pCur->nDb] = z;
+    pCur->nDb++;
+  }
+  sqlite3_finalize(pStmt);
+  return SQLITE_OK;
+}
+
+
+/*
 ** Destructor for a memstat_cursor.
 */
 static int memstatClose(sqlite3_vtab_cursor *cur){
+  memstat_cursor *pCur = (memstat_cursor*)cur;
+  memstatClearSchema(pCur);
   sqlite3_free(cur);
   return SQLITE_OK;
 }
@@ -125,7 +177,7 @@ static int memstatClose(sqlite3_vtab_cursor *cur){
 ** Allowed values for aMemstatColumn[].eType
 */
 #define MSV_GSTAT   0          /* sqlite3_status64() information */
-#define MSV_DBSTAT  1          /* sqlite3_db_status() information */
+#define MSV_DB      1          /* sqlite3_db_status() information */
 #define MSV_ZIPVFS  2          /* ZIPVFS file-control with 64-bit return */
 
 /*
@@ -134,36 +186,38 @@ static int memstatClose(sqlite3_vtab_cursor *cur){
 */
 static const struct MemstatColumns {
   const char *zName;    /* Symbolic name */
-  int eType;            /* Type of interface */
+  unsigned char eType;  /* Type of interface */
+  unsigned char mNull;  /* Bitmask of which columns are NULL */
+                        /* 2: dbname,  4: current,  8: hiwtr */
   int eOp;              /* Opcode */
 } aMemstatColumn[] = {
-  { "MEMORY_USED",            MSV_GSTAT,   SQLITE_STATUS_MEMORY_USED          },
-  { "MALLOC_SIZE",            MSV_GSTAT,   SQLITE_STATUS_MALLOC_SIZE          },
-  { "MALLOC_COUNT",           MSV_GSTAT,   SQLITE_STATUS_MALLOC_COUNT         },
-  { "PAGECACHE_USED",         MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_USED       },
-  { "PAGECACHE_OVERFLOW",     MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_OVERFLOW   },
-  { "PAGECACHE_SIZE",         MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_SIZE       },
-  { "PARSER_STACK",           MSV_GSTAT,   SQLITE_STATUS_PARSER_STACK         },
-  { "DB_LOOKASIDE_USED",      MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_USED      },
-  { "DB_CACHE_USED",          MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_USED          },
-  { "DB_SCHEMA_USED",         MSV_DBSTAT, SQLITE_DBSTATUS_SCHEMA_USED         },
-  { "DB_STMT_USED",           MSV_DBSTAT, SQLITE_DBSTATUS_STMT_USED           },
-  { "DB_LOOKASIDE_HIT",       MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_HIT       },
-  { "DB_LOOKASIDE_MISS_SIZE", MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE },
-  { "DB_LOOKASIDE_MISS_FULL", MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL },
-  { "DB_CACHE_HIT",           MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_HIT           },
-  { "DB_CACHE_MISS",          MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_MISS          },
-  { "DB_CACHE_WRITE",         MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_WRITE         },
-  { "DB_DEFERRED_FKS",        MSV_DBSTAT, SQLITE_DBSTATUS_DEFERRED_FKS        },
-  { "DB_CACHE_USED_SHARED",   MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_USED_SHARED   },
-  { "DB_CACHE_SPILL",         MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_SPILL         },
+ {"MEMORY_USED",            MSV_GSTAT,  2, SQLITE_STATUS_MEMORY_USED          },
+ {"MALLOC_SIZE",            MSV_GSTAT,  6, SQLITE_STATUS_MALLOC_SIZE          },
+ {"MALLOC_COUNT",           MSV_GSTAT,  2, SQLITE_STATUS_MALLOC_COUNT         },
+ {"PAGECACHE_USED",         MSV_GSTAT,  2, SQLITE_STATUS_PAGECACHE_USED       },
+ {"PAGECACHE_OVERFLOW",     MSV_GSTAT,  2, SQLITE_STATUS_PAGECACHE_OVERFLOW   },
+ {"PAGECACHE_SIZE",         MSV_GSTAT,  6, SQLITE_STATUS_PAGECACHE_SIZE       },
+ {"PARSER_STACK",           MSV_GSTAT,  6, SQLITE_STATUS_PARSER_STACK         },
+ {"DB_LOOKASIDE_USED",      MSV_DB,     2, SQLITE_DBSTATUS_LOOKASIDE_USED     },
+ {"DB_LOOKASIDE_HIT",       MSV_DB,     6, SQLITE_DBSTATUS_LOOKASIDE_HIT      },
+ {"DB_LOOKASIDE_MISS_SIZE", MSV_DB,     6, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE},
+ {"DB_LOOKASIDE_MISS_FULL", MSV_DB,     6, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL},
+ {"DB_CACHE_USED",          MSV_DB,    10, SQLITE_DBSTATUS_CACHE_USED         },
+ {"DB_CACHE_USED_SHARED",   MSV_DB,    10, SQLITE_DBSTATUS_CACHE_USED_SHARED  },
+ {"DB_SCHEMA_USED",         MSV_DB,    10, SQLITE_DBSTATUS_SCHEMA_USED        },
+ {"DB_STMT_USED",           MSV_DB,    10, SQLITE_DBSTATUS_STMT_USED          },
+ {"DB_CACHE_HIT",           MSV_DB,    10, SQLITE_DBSTATUS_CACHE_HIT          },
+ {"DB_CACHE_MISS",          MSV_DB,    10, SQLITE_DBSTATUS_CACHE_MISS         },
+ {"DB_CACHE_WRITE",         MSV_DB,    10, SQLITE_DBSTATUS_CACHE_WRITE        },
+ {"DB_CACHE_SPILL",         MSV_DB,    10, SQLITE_DBSTATUS_CACHE_SPILL        },
+ {"DB_DEFERRED_FKS",        MSV_DB,    10, SQLITE_DBSTATUS_DEFERRED_FKS       },
 #ifdef SQLITE_ENABLE_ZIPVFS
-  { "ZIPVFS_CACHE_USED",      MSV_ZIPVFS, 231454 },
-  { "ZIPVFS_CACHE_HIT",       MSV_ZIPVFS, 231455 },
-  { "ZIPVFS_CACHE_MISS",      MSV_ZIPVFS, 231456 },
-  { "ZIPVFS_CACHE_WRITE",     MSV_ZIPVFS, 231457 },
-  { "ZIPVFS_DIRECT_READ",     MSV_ZIPVFS, 231458 },
-  { "ZIPVFS_DIRECT_BYTES",    MSV_ZIPVFS, 231459 },
+ {"ZIPVFS_CACHE_USED",      MSV_ZIPVFS, 8, 231454 },
+ {"ZIPVFS_CACHE_HIT",       MSV_ZIPVFS, 8, 231455 },
+ {"ZIPVFS_CACHE_MISS",      MSV_ZIPVFS, 8, 231456 },
+ {"ZIPVFS_CACHE_WRITE",     MSV_ZIPVFS, 8, 231457 },
+ {"ZIPVFS_DIRECT_READ",     MSV_ZIPVFS, 8, 231458 },
+ {"ZIPVFS_DIRECT_BYTES",    MSV_ZIPVFS, 8, 231459 },
 #endif /* SQLITE_ENABLE_ZIPVFS */
 };
 #define MSV_NROW (sizeof(aMemstatColumn)/sizeof(aMemstatColumn[0]))
@@ -173,7 +227,41 @@ static const struct MemstatColumns {
 */
 static int memstatNext(sqlite3_vtab_cursor *cur){
   memstat_cursor *pCur = (memstat_cursor*)cur;
-  pCur->iRowid++;
+  int i;
+  assert( pCur->iRowid<=MSV_NROW );
+  while(1){
+    i = (int)pCur->iRowid - 1;
+    if( (aMemstatColumn[i].mNull & 2)!=0 || (++pCur->iDb)>=pCur->nDb ){
+      pCur->iRowid++;
+      if( pCur->iRowid>MSV_NROW ) return SQLITE_OK;  /* End of the table */
+      pCur->iDb = 0;
+      i++;
+    }
+    pCur->aVal[0] = 0;
+    pCur->aVal[1] = 0;    
+    switch( aMemstatColumn[i].eType ){
+      case MSV_GSTAT: {
+        sqlite3_status64(aMemstatColumn[i].eOp,
+                         &pCur->aVal[0], &pCur->aVal[1],0);
+        break;
+      }
+      case MSV_DB: {
+        int xCur, xHiwtr;
+        sqlite3_db_status(pCur->db, aMemstatColumn[i].eOp, &xCur, &xHiwtr, 0);
+        pCur->aVal[0] = xCur;
+        pCur->aVal[1] = xHiwtr;
+        break;
+      }
+      case MSV_ZIPVFS: {
+        int rc;
+        rc = sqlite3_file_control(pCur->db, pCur->azDb[pCur->iDb],
+                                  aMemstatColumn[i].eOp, (void*)&pCur->aVal[0]);
+        if( rc!=SQLITE_OK ) continue;
+        break;
+      }
+    }
+    break;
+  }
   return SQLITE_OK;
 }
   
@@ -189,33 +277,29 @@ static int memstatColumn(
 ){
   memstat_cursor *pCur = (memstat_cursor*)cur;
   int i;
-  sqlite3_int64 iCur = 0, iHiwtr = 0;
-
   assert( pCur->iRowid>0 && pCur->iRowid<=MSV_NROW );
   i = (int)pCur->iRowid - 1;
-  if( iCol==MSV_COLUMN_NAME ){
-    sqlite3_result_text(ctx, aMemstatColumn[i].zName, -1, SQLITE_STATIC);
+  if( (aMemstatColumn[i].mNull & (1<<iCol))!=0 ){
     return SQLITE_OK;
   }
-  switch( aMemstatColumn[i].eType ){
-    case MSV_GSTAT: {
-      sqlite3_status64(aMemstatColumn[i].eOp, &iCur, &iHiwtr, 0);
+  switch( iCol ){
+    case MSV_COLUMN_NAME: {
+      sqlite3_result_text(ctx, aMemstatColumn[i].zName, -1, SQLITE_STATIC);
       break;
     }
-    case MSV_DBSTAT: {
-      int xCur, xHiwtr;
-      sqlite3_db_status(pCur->db, aMemstatColumn[i].eOp, &xCur, &xHiwtr, 0);
-      iCur = xCur;
-      iHiwtr = xHiwtr;
+    case MSV_COLUMN_SCHEMA: {
+      sqlite3_result_text(ctx, pCur->azDb[pCur->iDb], -1, 0);
       break;
     }
-    case MSV_ZIPVFS: {
-      sqlite3_file_control(pCur->db, 0, aMemstatColumn[i].eOp, (void*)&iCur);
+    case MSV_COLUMN_VALUE: {
+      sqlite3_result_int64(ctx, pCur->aVal[0]);
+      break;
+    }
+    case MSV_COLUMN_HIWTR: {
+      sqlite3_result_int64(ctx, pCur->aVal[1]);
       break;
     }
   }
-  if( iCol==MSV_COLUMN_HIWTR ) iCur = iHiwtr;
-  sqlite3_result_int64(ctx, iCur);
   return SQLITE_OK;
 }
 
@@ -225,7 +309,7 @@ static int memstatColumn(
 */
 static int memstatRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   memstat_cursor *pCur = (memstat_cursor*)cur;
-  *pRowid = pCur->iRowid;
+  *pRowid = pCur->iRowid*1000 + pCur->iDb;
   return SQLITE_OK;
 }
 
@@ -250,8 +334,9 @@ static int memstatFilter(
   int argc, sqlite3_value **argv
 ){
   memstat_cursor *pCur = (memstat_cursor *)pVtabCursor;
-  pCur->iRowid = 0;
-  return memstatNext(pVtabCursor);
+  pCur->iRowid = 1;
+  pCur->iDb = 0;
+  return memstatFindSchemas(pCur);
 }
 
 /*
@@ -326,4 +411,4 @@ int sqlite3_memstat_init(
   return rc;
 }
 #endif /* SQLITE_CORE */
-#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB) */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_MEMSTATVTAB) */
