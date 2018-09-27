@@ -126,6 +126,7 @@ static int memstatClose(sqlite3_vtab_cursor *cur){
 */
 #define MSV_GSTAT   0          /* sqlite3_status64() information */
 #define MSV_DBSTAT  1          /* sqlite3_db_status() information */
+#define MSV_ZIPVFS  2          /* ZIPVFS file-control with 64-bit return */
 
 /*
 ** An array of quantities that can be measured and reported by
@@ -136,26 +137,34 @@ static const struct MemstatColumns {
   int eType;            /* Type of interface */
   int eOp;              /* Opcode */
 } aMemstatColumn[] = {
-  { "MEMORY_USED",         MSV_GSTAT,   SQLITE_STATUS_MEMORY_USED          },
-  { "MALLOC_SIZE",         MSV_GSTAT,   SQLITE_STATUS_MALLOC_SIZE          },
-  { "MALLOC_COUNT",        MSV_GSTAT,   SQLITE_STATUS_MALLOC_COUNT         },
-  { "PAGECACHE_USED",      MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_USED       },
-  { "PAGECACHE_OVERFLOW",  MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_OVERFLOW   },
-  { "PAGECACHE_SIZE",      MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_SIZE       },
-  { "PARSER_STACK",        MSV_GSTAT,   SQLITE_STATUS_PARSER_STACK         },
-  { "LOOKASIDE_USED",      MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_USED      },
-  { "CACHE_USED",          MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_USED          },
-  { "SCHEMA_USED",         MSV_DBSTAT, SQLITE_DBSTATUS_SCHEMA_USED         },
-  { "STMT_USED",           MSV_DBSTAT, SQLITE_DBSTATUS_STMT_USED           },
-  { "LOOKASIDE_HIT",       MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_HIT       },
-  { "LOOKASIDE_MISS_SIZE", MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE },
-  { "LOOKASIDE_MISS_FULL", MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL },
-  { "CACHE_HIT",           MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_HIT           },
-  { "CACHE_MISS",          MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_MISS          },
-  { "CACHE_WRITE",         MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_WRITE         },
-  { "DEFERRED_FKS",        MSV_DBSTAT, SQLITE_DBSTATUS_DEFERRED_FKS        },
-  { "CACHE_USED_SHARED",   MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_USED_SHARED   },
-  { "CACHE_SPILL",         MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_SPILL         },
+  { "MEMORY_USED",            MSV_GSTAT,   SQLITE_STATUS_MEMORY_USED          },
+  { "MALLOC_SIZE",            MSV_GSTAT,   SQLITE_STATUS_MALLOC_SIZE          },
+  { "MALLOC_COUNT",           MSV_GSTAT,   SQLITE_STATUS_MALLOC_COUNT         },
+  { "PAGECACHE_USED",         MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_USED       },
+  { "PAGECACHE_OVERFLOW",     MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_OVERFLOW   },
+  { "PAGECACHE_SIZE",         MSV_GSTAT,   SQLITE_STATUS_PAGECACHE_SIZE       },
+  { "PARSER_STACK",           MSV_GSTAT,   SQLITE_STATUS_PARSER_STACK         },
+  { "DB_LOOKASIDE_USED",      MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_USED      },
+  { "DB_CACHE_USED",          MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_USED          },
+  { "DB_SCHEMA_USED",         MSV_DBSTAT, SQLITE_DBSTATUS_SCHEMA_USED         },
+  { "DB_STMT_USED",           MSV_DBSTAT, SQLITE_DBSTATUS_STMT_USED           },
+  { "DB_LOOKASIDE_HIT",       MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_HIT       },
+  { "DB_LOOKASIDE_MISS_SIZE", MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE },
+  { "DB_LOOKASIDE_MISS_FULL", MSV_DBSTAT, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL },
+  { "DB_CACHE_HIT",           MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_HIT           },
+  { "DB_CACHE_MISS",          MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_MISS          },
+  { "DB_CACHE_WRITE",         MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_WRITE         },
+  { "DB_DEFERRED_FKS",        MSV_DBSTAT, SQLITE_DBSTATUS_DEFERRED_FKS        },
+  { "DB_CACHE_USED_SHARED",   MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_USED_SHARED   },
+  { "DB_CACHE_SPILL",         MSV_DBSTAT, SQLITE_DBSTATUS_CACHE_SPILL         },
+#ifdef SQLITE_ENABLE_ZIPVFS
+  { "ZIPVFS_CACHE_USED",      MSV_ZIPVFS, 231454 },
+  { "ZIPVFS_CACHE_HIT",       MSV_ZIPVFS, 231455 },
+  { "ZIPVFS_CACHE_MISS",      MSV_ZIPVFS, 231456 },
+  { "ZIPVFS_CACHE_WRITE",     MSV_ZIPVFS, 231457 },
+  { "ZIPVFS_DIRECT_READ",     MSV_ZIPVFS, 231458 },
+  { "ZIPVFS_DIRECT_BYTES",    MSV_ZIPVFS, 231459 },
+#endif /* SQLITE_ENABLE_ZIPVFS */
 };
 #define MSV_NROW (sizeof(aMemstatColumn)/sizeof(aMemstatColumn[0]))
 
@@ -200,6 +209,10 @@ static int memstatColumn(
       iHiwtr = xHiwtr;
       break;
     }
+    case MSV_ZIPVFS: {
+      sqlite3_file_control(pCur->db, 0, aMemstatColumn[i].eOp, (void*)&iCur);
+      break;
+    }
   }
   if( iCol==MSV_COLUMN_HIWTR ) iCur = iHiwtr;
   sqlite3_result_int64(ctx, iCur);
@@ -222,7 +235,7 @@ static int memstatRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int memstatEof(sqlite3_vtab_cursor *cur){
   memstat_cursor *pCur = (memstat_cursor*)cur;
-  return pCur->iRowid>=MSV_NROW;
+  return pCur->iRowid>MSV_NROW;
 }
 
 /*

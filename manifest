@@ -1,5 +1,5 @@
-C Initial\sprototype\sof\sa\seponymous\svirtual\stable\sthat\saccesses\ssqlite3_status64()\nand\ssqlite3_db_status().
-D 2018-09-27T15:21:13.771
+C Add\sinitial\sZIPVFS\ssupport\sfor\sthe\s"main"\sdatabase\sto\sthe\ssqlite_memstat\nvirtual\stable.
+D 2018-09-27T15:45:03.985
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -286,7 +286,7 @@ F ext/misc/fileio.c 7317d825fab6a3c48f6e3822a00a6a22e08e55af31700ac96f16a523f830
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 276f87dc8365b34b0fffb7ef32481dd07fac6fdb3224e2822396a48377ac8363
-F ext/misc/memstat.c 1e36cfd77f528066df164f8f9bec3481f6b570cf92e27a9e43229c75a4baffa1
+F ext/misc/memstat.c 09bfa9a16be3d44932233fd1aa95cdd09d7b3f72d3f36805483bfe23b48fe8ec
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -1770,10 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fc2994434c7d9ed29c96a69c07e8eb4e97be776473c170c63f9a1bbaa09fa68
-R dc5bab36f0540d8a30e5739e455f50c5
-T *branch * memstat-vtab
-T *sym-memstat-vtab *
-T -sym-trunk *
+P 0b44e1f68e0c8349367e3f929d4734c3df96338ec8d6fb652565bf894e8b8343
+R eeaa8104d4a2a8c673af2ed0c882ed24
 U drh
-Z f687dcf36195771d0f69625cb386777d
+Z 5dadcc7b0adb63e8fb1777ba189f8dd3
