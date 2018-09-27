@@ -1,5 +1,5 @@
-C Enhance\sthe\sGeoPOLY\sextension\sso\sthat\sit\salways\sstores\sits\spolygons\sin\sthe\nbinary\sformat,\swhich\sis\sfaster\sand\smore\scompact.
-D 2018-09-27T20:37:52.082
+C Small\sperformance\soptimization\sin\sthe\sJSON\sparser\sof\sGeopoly.
+D 2018-09-27T23:57:45.810
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -361,7 +361,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c 470c928b8d28321f46620eef1cf986a769b46f39e2175c74b8affa8df2a293ad
+F ext/rtree/geopoly.c 596a1eb54134d608e70be16ec6b0d5c6b61ff3316840acee854774cb54feb1c9
 F ext/rtree/rtree.c 6cc2e673cf1e9ea1619f13ab990f12389dfb951b131acbc2fbe164cee8992a20
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
@@ -1770,7 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 322ab1fc613f616e9f07dc94ef74a29572a21cc476d88e97b4ce865500a47b62
-R 8f3d6e164234f97a7fd2cd2e24f8d737
+P dc35f7b1754a78fa0d70c92754de07bb3c28d0d31cb929ee8a3a47ac4f3d446e
+R 2619909ebdff858be51d935d42b98921
 U drh
-Z ff6e72fa7555d5408cc034538f340086
+Z 5cad22a26f09f6e60075ff9733cf6357

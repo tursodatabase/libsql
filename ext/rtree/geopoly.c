@@ -138,7 +138,7 @@ static void geopolySwab32(unsigned char *a){
 
 /* Skip whitespace.  Return the next non-whitespace character. */
 static char geopolySkipSpace(GeoParse *p){
-  while( p->z[0] && safe_isspace(p->z[0]) ) p->z++;
+  while( safe_isspace(p->z[0]) ) p->z++;
   return p->z[0];
 }
 
