@@ -5768,7 +5768,7 @@ case OP_ParseSchema: {
   {
     zMaster = MASTER_NAME;
     initData.db = db;
-    initData.iDb = pOp->p1;
+    initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;
     initData.mInitFlags = 0;
     zSql = sqlite3MPrintf(db,
