@@ -1548,7 +1548,16 @@ static int geopolyUpdate(
     if( sqlite3_value_nochange(aData[2]) ){
       sqlite3_bind_null(pUp, 2);
     }else{
-      sqlite3_bind_value(pUp, 2, aData[2]);
+      GeoPoly *p = 0;
+      if( sqlite3_value_type(aData[2])==SQLITE_TEXT
+       && (p = geopolyFuncParam(0, aData[2], &rc))!=0
+       && rc==SQLITE_OK
+      ){
+        sqlite3_bind_blob(pUp, 2, p->hdr, 4+8*p->nVertex, SQLITE_TRANSIENT);
+      }else{
+        sqlite3_bind_value(pUp, 2, aData[2]);
+      }
+      sqlite3_free(p);
       nChange = 1;
     }
     for(jj=1; jj<pRtree->nAux; jj++){
