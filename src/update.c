@@ -913,7 +913,7 @@ static void updateVirtualTable(
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
-      sqlite3VdbeChangeP5(v, 1); /* Enable sqlite3_vtab_nochange() */
+      sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG);/* Enable sqlite3_vtab_nochange() */
     }
   }
   if( HasRowid(pTab) ){
