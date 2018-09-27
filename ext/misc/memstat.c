@@ -241,8 +241,15 @@ static int memstatNext(sqlite3_vtab_cursor *cur){
     pCur->aVal[1] = 0;    
     switch( aMemstatColumn[i].eType ){
       case MSV_GSTAT: {
-        sqlite3_status64(aMemstatColumn[i].eOp,
-                         &pCur->aVal[0], &pCur->aVal[1],0);
+        if( sqlite3_libversion_number()>=3010000 ){
+          sqlite3_status64(aMemstatColumn[i].eOp,
+                           &pCur->aVal[0], &pCur->aVal[1],0);
+        }else{
+          int xCur, xHiwtr;
+          sqlite3_status(aMemstatColumn[i].eOp, &xCur, &xHiwtr, 0);
+          pCur->aVal[0] = xCur;
+          pCur->aVal[1] = xHiwtr;
+        }
         break;
       }
       case MSV_DB: {
