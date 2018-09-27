@@ -1,5 +1,5 @@
-C Minor\ssimplification:\sIn\sOP_ParseSchema,\sread\sthe\sp1\sregister\sonce.
-D 2018-09-27T00:04:31.454
+C Disallow\sthe\suse\sof\swindow\sfunctions\sin\sthe\srecursive\spart\sof\sa\srecursive\sCTE.
+D 2018-09-27T12:14:15.056
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -502,7 +502,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 1b7ade8fabb85ccd3369683a7951fda37b2843aa1e4ef1fa866b09596a8bfec3
+F src/select.c 33aacf1c17c64a00788c779b23d0875dd0d90eb4c08f867ebc31139ef3a67c95
 F src/shell.c.in 2162b1dc99b806298207c9c202aa7b49ac8553b8b1e73bb28cd80d5a1861df39
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1653,7 +1653,7 @@ F test/window4.test c5d6bf3403e4ade2f19df2afe4c16f29fb817c392c6c1c8017edb7165c19
 F test/window5.test 8187f46597c90b73e8f96659e893353cbda337479cc582f7a488eab351ba08d3
 F test/window6.test 7574778c79cae89f1781df237bf9ff5063886deca91a36efc53934315f0e7612
 F test/windowfault.test 23abad97b72c6f609002255ddd41ef5c8922408f918f9b98ad6005ab316e482f
-F test/with1.test 58475190cd8caaeebea8cfeb2a264ec97a0c492b8ffe9ad20cefbb23df462f96
+F test/with1.test 2465d98ffce80d00553ac7135697c18b0369275b6ecc750daa2af320b8c812ca
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 5e8ce2c585170bbbc0544e2a01a4941fa0be173ba5265e5c92eb588cd99a232d
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
@@ -1769,7 +1769,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edc3d18ecbda32d6a55de76ee7335342425c57d917e9b48814a7301a012263b2
-R 2f9baca90efb27d47414a12e20eb21a3
-U mistachkin
-Z 543a7f79652a90c3248b7edf31061012
+P bd250533a06e4a11c1f548c3de66b8562fc627383848570d7d030cf132fd336f
+R f859da5dfe791e15b8e90067f7a4610e
+U dan
+Z 08a7f25691627dd6eb8a24e372187fa8

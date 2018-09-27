@@ -865,6 +865,27 @@ do_catchsql_test 16.1 {
   SELECT * FROM i;
 } {1 {recursive aggregate queries not supported}}
 
+# Or window-function recursive queries. Ticket e8275b41.
+#
+ifcapable windowfunc {
+  do_catchsql_test 16.2 {
+    WITH RECURSIVE
+      i(x) AS (VALUES(1) UNION SELECT count(*) OVER () FROM i)
+      SELECT * FROM i;
+  } {1 {cannot use window functions in recursive queries}}
+  do_catchsql_test 16.3 {
+    WITH RECURSIVE
+      t(id, parent) AS (VALUES(1,2)),
+      q(id, parent, rn) AS (
+          VALUES(1,2,3)
+          UNION ALL
+          SELECT t.*, ROW_NUMBER() OVER (ORDER BY t.id) AS rn
+          FROM q JOIN t ON t.parent = q.id
+          )
+        SELECT * FROM q;
+  } {1 {cannot use window functions in recursive queries}}
+}
+
 #-------------------------------------------------------------------------
 do_execsql_test 17.1 {
   WITH x(a) AS (
