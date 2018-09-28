@@ -486,6 +486,64 @@ static void geopolyAreaFunc(
   }            
 }
 
+#define GEOPOLY_PI 3.1415926535897932385
+
+/* Fast approximation for cosine(X) for X between -0.5*pi and 2*pi
+*/
+static double geopolyCosine(double r){
+  assert( r>=-0.5*GEOPOLY_PI && r<=2.0*GEOPOLY_PI );
+  if( r>=1.5*GEOPOLY_PI ){
+    r -= 2.0*GEOPOLY_PI;
+  }
+  if( r>=0.5*GEOPOLY_PI ){
+    return -geopolyCosine(r-GEOPOLY_PI);
+  }else{
+    double r2 = r*r;
+    double r3 = r2*r;
+    double r5 = r3*r2;
+    return 0.9996949*r - 0.1656700*r3 + 0.0075134*r5;
+  }
+}
+
+/*
+** Function:   geopoly_regular(X,Y,R,N)
+**
+** Construct a simple, convex, regular polygon centered at X, Y
+** with circumradius R and with N sides.
+*/
+static void geopolyRegularFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  double x = sqlite3_value_double(argv[0]);
+  double y = sqlite3_value_double(argv[1]);
+  double r = sqlite3_value_double(argv[2]);
+  int n = sqlite3_value_int(argv[3]);
+  int i;
+  GeoPoly *p;
+
+  if( n<3 || r<=0.0 ) return;
+  if( n>1000 ) n = 1000;
+  p = sqlite3_malloc64( sizeof(*p) + (n-1)*2*sizeof(GeoCoord) );
+  if( p==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  i = 1;
+  p->hdr[0] = *(unsigned char*)&i;
+  p->hdr[1] = 0;
+  p->hdr[2] = (n>>8)&0xff;
+  p->hdr[3] = n&0xff;
+  for(i=0; i<n; i++){
+    double rAngle = 2.0*GEOPOLY_PI*i/n;
+    p->a[i*2] = x - r*geopolyCosine(rAngle-0.5*GEOPOLY_PI);
+    p->a[i*2+1] = y + r*geopolyCosine(rAngle);
+  }
+  sqlite3_result_blob(context, p->hdr, 4+8*n, SQLITE_TRANSIENT);
+  sqlite3_free(p);
+}
+
 /*
 ** If pPoly is a polygon, compute its bounding box. Then:
 **
@@ -1654,6 +1712,7 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyDebugFunc,         1, 0,    "geopoly_debug"            },
      { geopolyBBoxFunc,          1, 1,    "geopoly_bbox"             },
      { geopolyXformFunc,         7, 1,    "geopoly_xform"            },
+     { geopolyRegularFunc,       4, 1,    "geopoly_regular"          },
   };
   static const struct {
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
