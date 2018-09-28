@@ -159,7 +159,7 @@ int sqlite3MatchSpanName(
 **                         (even if X is implied).
 **    pExpr->iTable        Set to the cursor number for the table obtained
 **                         from pSrcList.
-**    pExpr->pTab          Points to the Table structure of X.Y (even if
+**    pExpr->y.pTab        Points to the Table structure of X.Y (even if
 **                         X and/or Y are implied.)
 **    pExpr->iColumn       Set to the column number within the table.
 **    pExpr->op            Set to TK_COLUMN.
@@ -203,7 +203,6 @@ static int lookupName(
 
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
-  pExpr->pTab = 0;
   ExprSetVVAProperty(pExpr, EP_NoReduce);
 
   /* Translate the schema name in zDb into a pointer to the corresponding
@@ -264,6 +263,9 @@ static int lookupName(
           if( sqlite3StrICmp(zTabName, zTab)!=0 ){
             continue;
           }
+          if( IN_RENAME_OBJECT && pItem->zAlias ){
+            sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->y.pTab);
+          }
         }
         if( 0==(cntTab++) ){
           pMatch = pItem;
@@ -288,13 +290,13 @@ static int lookupName(
       }
       if( pMatch ){
         pExpr->iTable = pMatch->iCursor;
-        pExpr->pTab = pMatch->pTab;
+        pExpr->y.pTab = pMatch->pTab;
         /* RIGHT JOIN not (yet) supported */
         assert( (pMatch->fg.jointype & JT_RIGHT)==0 );
         if( (pMatch->fg.jointype & JT_LEFT)!=0 ){
           ExprSetProperty(pExpr, EP_CanBeNull);
         }
-        pSchema = pExpr->pTab->pSchema;
+        pSchema = pExpr->y.pTab->pSchema;
       }
     } /* if( pSrcList ) */
 
@@ -349,9 +351,15 @@ static int lookupName(
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==2 ){
             testcase( iCol==(-1) );
-            pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
-            eNewExprOp = TK_REGISTER;
-            ExprSetProperty(pExpr, EP_Alias);
+            if( IN_RENAME_OBJECT ){
+              pExpr->iColumn = iCol;
+              pExpr->y.pTab = pTab;
+              eNewExprOp = TK_COLUMN;
+            }else{
+              pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
+              eNewExprOp = TK_REGISTER;
+              ExprSetProperty(pExpr, EP_Alias);
+            }
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {
@@ -367,7 +375,7 @@ static int lookupName(
               testcase( iCol==32 );
               pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
             }
-            pExpr->pTab = pTab;
+            pExpr->y.pTab = pTab;
             pExpr->iColumn = (i16)iCol;
             eNewExprOp = TK_TRIGGER;
 #endif /* SQLITE_OMIT_TRIGGER */
@@ -436,6 +444,9 @@ static int lookupName(
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
+          if( IN_RENAME_OBJECT ){
+            sqlite3RenameTokenRemap(pParse, 0, (void*)pExpr);
+          }
           goto lookupname_end;
         }
       } 
@@ -464,7 +475,7 @@ static int lookupName(
     assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted) ){
       pExpr->op = TK_STRING;
-      pExpr->pTab = 0;
+      pExpr->y.pTab = 0;
       return WRC_Prune;
     }
     if( sqlite3ExprIdToTrueFalse(pExpr) ){
@@ -542,9 +553,9 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
   if( p ){
     struct SrcList_item *pItem = &pSrc->a[iSrc];
-    p->pTab = pItem->pTab;
+    p->y.pTab = pItem->pTab;
     p->iTable = pItem->iCursor;
-    if( p->pTab->iPKey==iCol ){
+    if( p->y.pTab->iPKey==iCol ){
       p->iColumn = -1;
     }else{
       p->iColumn = (ynVar)iCol;
@@ -634,7 +645,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       pItem = pSrcList->a;
       assert( HasRowid(pItem->pTab) && pItem->pTab->pSelect==0 );
       pExpr->op = TK_COLUMN;
-      pExpr->pTab = pItem->pTab;
+      pExpr->y.pTab = pItem->pTab;
       pExpr->iTable = pItem->iCursor;
       pExpr->iColumn = -1;
       pExpr->affinity = SQLITE_AFF_INTEGER;
@@ -663,17 +674,22 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zTable = 0;
         zColumn = pExpr->u.zToken;
       }else{
+        Expr *pLeft = pExpr->pLeft;
         notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
         pRight = pExpr->pRight;
         if( pRight->op==TK_ID ){
           zDb = 0;
-          zTable = pExpr->pLeft->u.zToken;
-          zColumn = pRight->u.zToken;
         }else{
           assert( pRight->op==TK_DOT );
-          zDb = pExpr->pLeft->u.zToken;
-          zTable = pRight->pLeft->u.zToken;
-          zColumn = pRight->pRight->u.zToken;
+          zDb = pLeft->u.zToken;
+          pLeft = pRight->pLeft;
+          pRight = pRight->pRight;
+        }
+        zTable = pLeft->u.zToken;
+        zColumn = pRight->u.zToken;
+        if( IN_RENAME_OBJECT ){
+          sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
+          sqlite3RenameTokenRemap(pParse, (void*)&pExpr->y.pTab, (void*)pLeft);
         }
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
@@ -757,71 +773,73 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
 
+      if( 0==IN_RENAME_OBJECT ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
+        assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
           || (pDef->xValue==0 && pDef->xInverse==0)
           || (pDef->xValue && pDef->xInverse && pDef->xSFunc && pDef->xFinalize)
-      );
-      if( pDef && pDef->xValue==0 && pExpr->pWin ){
-        sqlite3ErrorMsg(pParse, 
-            "%.*s() may not be used as a window function", nId, zId
         );
-        pNC->nErr++;
-      }else if( 
-            (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
-         || (is_agg && (pDef->funcFlags & SQLITE_FUNC_WINDOW) && !pExpr->pWin)
-         || (is_agg && pExpr->pWin && (pNC->ncFlags & NC_AllowWin)==0)
-      ){
-        const char *zType;
-        if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->pWin ){
-          zType = "window";
-        }else{
-          zType = "aggregate";
+        if( pDef && pDef->xValue==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
+          sqlite3ErrorMsg(pParse, 
+              "%.*s() may not be used as a window function", nId, zId
+          );
+          pNC->nErr++;
+        }else if( 
+              (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
+           || (is_agg && (pDef->funcFlags&SQLITE_FUNC_WINDOW) && !pExpr->y.pWin)
+           || (is_agg && pExpr->y.pWin && (pNC->ncFlags & NC_AllowWin)==0)
+        ){
+          const char *zType;
+          if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->y.pWin ){
+            zType = "window";
+          }else{
+            zType = "aggregate";
+          }
+          sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
+          pNC->nErr++;
+          is_agg = 0;
         }
-        sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()", zType, nId,zId);
-        pNC->nErr++;
-        is_agg = 0;
-      }
 #else
-      if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
-        sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
-        pNC->nErr++;
-        is_agg = 0;
-      }
+        if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
+          sqlite3ErrorMsg(pParse,"misuse of aggregate function %.*s()",nId,zId);
+          pNC->nErr++;
+          is_agg = 0;
+        }
 #endif
-      else if( no_such_func && pParse->db->init.busy==0
+        else if( no_such_func && pParse->db->init.busy==0
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-                && pParse->explain==0
+                  && pParse->explain==0
 #endif
-      ){
-        sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
-        pNC->nErr++;
-      }else if( wrong_num_args ){
-        sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
-             nId, zId);
-        pNC->nErr++;
-      }
-      if( is_agg ){
+        ){
+          sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
+          pNC->nErr++;
+        }else if( wrong_num_args ){
+          sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
+               nId, zId);
+          pNC->nErr++;
+        }
+        if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        pNC->ncFlags &= ~(pExpr->pWin ? NC_AllowWin : NC_AllowAgg);
+          pNC->ncFlags &= ~(pExpr->y.pWin ? NC_AllowWin : NC_AllowAgg);
 #else
-        pNC->ncFlags &= ~NC_AllowAgg;
+          pNC->ncFlags &= ~NC_AllowAgg;
 #endif
+        }
       }
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        if( pExpr->pWin ){
+        if( pExpr->y.pWin ){
           Select *pSel = pNC->pWinSelect;
-          sqlite3WalkExprList(pWalker, pExpr->pWin->pPartition);
-          sqlite3WalkExprList(pWalker, pExpr->pWin->pOrderBy);
-          sqlite3WalkExpr(pWalker, pExpr->pWin->pFilter);
-          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->pWin, pDef);
+          sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
+          sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
+          sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
+          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           if( 0==pSel->pWin 
-           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->pWin) 
+           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
           ){
-            pExpr->pWin->pNextWin = pSel->pWin;
-            pSel->pWin = pExpr->pWin;
+            pExpr->y.pWin->pNextWin = pSel->pWin;
+            pSel->pWin = pExpr->y.pWin;
           }
           pNC->ncFlags |= NC_AllowWin;
         }else
@@ -1244,13 +1262,13 @@ static int resolveOrderGroupBy(
     for(j=0; j<pSelect->pEList->nExpr; j++){
       if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        if( pE->pWin ){
+        if( ExprHasProperty(pE, EP_WinFunc) ){
           /* Since this window function is being changed into a reference
           ** to the same window function the result set, remove the instance
           ** of this window function from the Select.pWin list. */
           Window **pp;
           for(pp=&pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
-            if( *pp==pE->pWin ){
+            if( *pp==pE->y.pWin ){
               *pp = (*pp)->pNextWin;
             }    
           }

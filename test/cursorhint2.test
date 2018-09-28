@@ -186,4 +186,19 @@ do_extract_hints_test 2.12 {
   x2 {EQ(c0,r[2])}
 }
 
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1 (i1 TEXT);    
+  CREATE TABLE t2 (i2 TEXT UNIQUE);    
+  INSERT INTO t1 VALUES('0');
+  INSERT INTO t2 VALUES('0');
+}
+
+do_extract_hints_test 3.1 {
+  SELECT * FROM t1 CROSS JOIN t2 WHERE (t1.i1 = t2.i2) AND t2.i2 = 1;
+} {
+  t1 {EQ(c0,r[1])} t2 EQ(c0,1)
+}
+
+
 finish_test

@@ -193,14 +193,6 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
-    int jj, kk;
-    Parse *pParse = p->pParse;
-    for(jj=kk=0; jj<pParse->nColCache; jj++){
-      struct yColCache *x = pParse->aColCache + jj;
-      printf(" r[%d]={%d:%d}", x->iReg, x->iTable, x->iColumn);
-      kk++;
-    }
-    if( kk ) printf("\n");
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
     test_addop_breakpoint();
   }
@@ -324,7 +316,7 @@ int sqlite3VdbeExplainParent(Parse *pParse){
 void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
   if( pParse->explain==2 ){
     char *zMsg;
-    Vdbe *v = pParse->pVdbe;
+    Vdbe *v;
     va_list ap;
     int iThis;
     va_start(ap, zFmt);
@@ -444,19 +436,6 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
     p->aLabel[j] = v->nOp;
   }
 }
-
-#ifdef SQLITE_COVERAGE_TEST
-/*
-** Return TRUE if and only if the label x has already been resolved.
-** Return FALSE (zero) if label x is still unresolved.
-**
-** This routine is only used inside of testcase() macros, and so it
-** only exists when measuring test coverage.
-*/
-int sqlite3VdbeLabelHasBeenResolved(Vdbe *v, int x){
-  return v->pParse->aLabel && v->pParse->aLabel[ADDR(x)]>=0;
-}
-#endif /* SQLITE_COVERAGE_TEST */
 
 /*
 ** Mark the VDBE as one that can only be run one time.
@@ -1647,9 +1626,6 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
 #ifdef SQLITE_DEBUG
     p->pScopyFrom = 0;
 #endif
-#ifdef SQLITE_DEBUG_COLUMNCACHE
-    p->iTabColHash = 0;
-#endif
     p++;
   }
 }
@@ -1685,9 +1661,8 @@ static void releaseMemArray(Mem *p, int N){
       */
       testcase( p->flags & MEM_Agg );
       testcase( p->flags & MEM_Dyn );
-      testcase( p->flags & MEM_Frame );
-      testcase( p->flags & MEM_RowSet );
-      if( p->flags&(MEM_Agg|MEM_Dyn|MEM_Frame|MEM_RowSet) ){
+      testcase( p->xDel==sqlite3VdbeFrameMemDel );
+      if( p->flags&(MEM_Agg|MEM_Dyn) ){
         sqlite3VdbeMemRelease(p);
       }else if( p->szMalloc ){
         sqlite3DbFreeNN(db, p->zMalloc);
@@ -1699,6 +1674,35 @@ static void releaseMemArray(Mem *p, int N){
   }
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Verify that pFrame is a valid VdbeFrame pointer.  Return true if it is
+** and false if something is wrong.
+**
+** This routine is intended for use inside of assert() statements only.
+*/
+int sqlite3VdbeFrameIsValid(VdbeFrame *pFrame){
+  if( pFrame->iFrameMagic!=SQLITE_FRAME_MAGIC ) return 0;
+  return 1;
+}
+#endif
+
+
+/*
+** This is a destructor on a Mem object (which is really an sqlite3_value)
+** that deletes the Frame object that is attached to it as a blob.
+**
+** This routine does not delete the Frame right away.  It merely adds the
+** frame to a list of frames to be deleted when the Vdbe halts.
+*/
+void sqlite3VdbeFrameMemDel(void *pArg){
+  VdbeFrame *pFrame = (VdbeFrame*)pArg;
+  assert( sqlite3VdbeFrameIsValid(pFrame) );
+  pFrame->pParent = pFrame->v->pDelFrame;
+  pFrame->v->pDelFrame = pFrame;
+}
+
+
 /*
 ** Delete a VdbeFrame object and its contents. VdbeFrame objects are
 ** allocated by the OP_Program opcode in sqlite3VdbeExec().
@@ -1707,6 +1711,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
   int i;
   Mem *aMem = VdbeFrameMem(p);
   VdbeCursor **apCsr = (VdbeCursor **)&aMem[p->nChildMem];
+  assert( sqlite3VdbeFrameIsValid(p) );
   for(i=0; i<p->nChildCsr; i++){
     sqlite3VdbeFreeCursor(p->v, apCsr[i]);
   }
@@ -3023,7 +3028,7 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   sqlite3VdbeHalt(p);
 
-  /* If the VDBE has be run even partially, then transfer the error code
+  /* If the VDBE has been run even partially, then transfer the error code
   ** and error message from the VDBE into the main database structure.  But
   ** if the VDBE has just been set to run but has not actually executed any
   ** instructions yet, leave the main database error information unchanged.
@@ -4005,7 +4010,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   f1 = pMem1->flags;
   f2 = pMem2->flags;
   combined_flags = f1|f2;
-  assert( (combined_flags & MEM_RowSet)==0 );
+  assert( !sqlite3VdbeMemIsRowSet(pMem1) && !sqlite3VdbeMemIsRowSet(pMem2) );
  
   /* If one value is NULL, it is less than the other. If both values
   ** are NULL, return 0.
@@ -4679,11 +4684,19 @@ void sqlite3VdbeCountChanges(Vdbe *v){
 ** programs obsolete.  Removing user-defined functions or collating
 ** sequences, or changing an authorization function are the types of
 ** things that make prepared statements obsolete.
+**
+** If iCode is 1, then expiration is advisory.  The statement should
+** be reprepared before being restarted, but if it is already running
+** it is allowed to run to completion.
+**
+** Internally, this function just sets the Vdbe.expired flag on all
+** prepared statements.  The flag is set to 1 for an immediate expiration
+** and set to 2 for an advisory expiration.
 */
-void sqlite3ExpirePreparedStatements(sqlite3 *db){
+void sqlite3ExpirePreparedStatements(sqlite3 *db, int iCode){
   Vdbe *p;
   for(p = db->pVdbe; p; p=p->pNext){
-    p->expired = 1;
+    p->expired = iCode+1;
   }
 }
 

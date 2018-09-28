@@ -47,7 +47,7 @@ do_faultsim_test 1.0 -prep {
 } -test {
   db2 eval BEGIN
   if {[catch { sqlite3_snapshot_open db2 main $::snapshot } msg]} {
-    if {$msg != "SQLITE_BUSY_SNAPSHOT" && $msg != "SQLITE_BUSY"} {
+    if {$msg != "SQLITE_ERROR_SNAPSHOT" && $msg != "SQLITE_BUSY"} {
       error "error is $msg" 
     }
   } else {
@@ -98,7 +98,7 @@ do_faultsim_test 2.0 -prep {
   
   db eval BEGIN
   if {[catch { sqlite3_snapshot_open db main $::snapshot } msg]} {
-    if {$msg != "SQLITE_BUSY_SNAPSHOT" && $msg != "SQLITE_BUSY"} {
+    if {$msg != "SQLITE_ERROR_SNAPSHOT" && $msg != "SQLITE_BUSY"} {
       error "error is $msg" 
     }
   } else {

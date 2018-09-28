@@ -10,7 +10,7 @@
 **
 ******************************************************************************
 **
-** This SQLite extension implements a functions that compute SHA1 hashes.
+** This SQLite extension implements functions that compute SHA1 hashes.
 ** Two SQL functions are implemented:
 **
 **     sha1(X)

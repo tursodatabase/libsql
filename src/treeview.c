@@ -374,6 +374,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         sqlite3TreeViewLine(pView, "{%d:%d}%s",
                              pExpr->iTable, pExpr->iColumn, zFlgs);
       }
+      if( ExprHasProperty(pExpr, EP_FixedCol) ){
+        sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      }
       break;
     }
     case TK_INTEGER: {
@@ -494,7 +497,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       }else{
         pFarg = pExpr->x.pList;
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        pWin = pExpr->pWin;
+        pWin = pExpr->y.pWin;
 #else
         pWin = 0;
 #endif 
@@ -508,7 +511,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       if( pFarg ){
         sqlite3TreeViewExprList(pView, pFarg, pWin!=0, 0);
       }
-#ifndef SQLITe_OMIT_WINDOWFUNC
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( pWin ){
         sqlite3TreeViewWindow(pView, pWin, 0);
       }

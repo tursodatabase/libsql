@@ -19,7 +19,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
-ifcapable !altertable||!memdebug {
+ifcapable !altertable {
   finish_test
   return
 }

@@ -151,7 +151,7 @@ static int SQLITE_TCLAPI test_create_window(
 
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zName = Tcl_GetString(objv[2]);
-  pNew = ckalloc(sizeof(TestWindow));
+  pNew = (TestWindow*)ckalloc(sizeof(TestWindow));
   memset(pNew, 0, sizeof(TestWindow));
   pNew->xStep = Tcl_DuplicateObj(objv[3]);
   pNew->xFinal = Tcl_DuplicateObj(objv[4]);

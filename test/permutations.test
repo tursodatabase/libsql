@@ -48,6 +48,13 @@ proc test_suite {name args} {
     set options([lindex $o 0]) $v
   }
 
+  # Transform "-presql" into a "dbconfig" script
+  #
+  if {[info exists options(-presql)]} {
+    append options(-dbconfig) "\n\$::dbhandle eval { $options(-presql) }"
+    unset options(-presql)
+  }
+
   set     ::testspec($name) [array get options]
   lappend ::testsuitelist $name
 }
@@ -104,7 +111,7 @@ set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
   mallocAll.test  rtree.test         full.test   extraquick.test
-  session.test
+  session.test    rbu.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -121,7 +128,7 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test rbu.test walprotocol.test mmap4.test fuzzer2.test
+  bigsort.test walprotocol.test mmap4.test fuzzer2.test
   walcrash2.test e_fkey.test backup.test
 
   fts4merge.test fts4merge2.test fts4merge4.test fts4check.test
@@ -553,21 +560,12 @@ test_suite "singlethread" -description {
 test_suite "nomutex" -description {
   Tests run with the SQLITE_OPEN_MULTITHREADED flag passed to sqlite3_open().
 } -initialize {
-  rename sqlite3 sqlite3_nomutex
-  proc sqlite3 {args} {
-    if {[string range [lindex $args 0] 0 0] ne "-"} {
-      lappend args -fullmutex 0 -nomutex 1
-    }
-    uplevel [concat sqlite3_nomutex $args]
-  }
+  set ::G(perm:sqlite3_args) [list -fullmutex 0 -nomutex 1]
 } -files {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
   types2.test   types3.test
-} -shutdown {
-  rename sqlite3 {}
-  rename sqlite3_nomutex sqlite3
-}
+} 
 
 # Run some tests in SQLITE_CONFIG_MULTITHREAD mode.
 #
@@ -596,20 +594,11 @@ test_suite "multithread" -description {
 test_suite "fullmutex" -description {
   Tests run in SQLITE_OPEN_FULLMUTEX mode
 } -initialize {
-  rename sqlite3 sqlite3_fullmutex
-  proc sqlite3 {args} {
-    if {[string range [lindex $args 0] 0 0] ne "-"} {
-      lappend args -nomutex 0 -fullmutex 1
-    }
-    uplevel [concat sqlite3_fullmutex $args]
-  }
+  set ::G(perm:sqlite3_args) [list -nomutex 0 -fullmutex 1]
 } -files {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
   types2.test   types3.test
-} -shutdown {
-  rename sqlite3 {}
-  rename sqlite3_fullmutex sqlite3
 }
 
 # Run some tests using the "onefile" demo.
@@ -617,19 +606,10 @@ test_suite "fullmutex" -description {
 test_suite "onefile" -description {
   Run some tests using the "test_onefile.c" demo
 } -initialize {
-  rename sqlite3 sqlite3_onefile
-  proc sqlite3 {args} {
-    if {[string range [lindex $args 0] 0 0] ne "-"} {
-      lappend args -vfs fs
-    }
-    uplevel [concat sqlite3_onefile $args]
-  }
+  set ::G(perm:sqlite3_args) [list -vfs fs]
 } -files {
   conflict.test  insert.test   insert2.test  insert3.test
   rollback.test  select1.test  select2.test  select3.test
-} -shutdown {
-  rename sqlite3 {}
-  rename sqlite3_onefile sqlite3
 }
 
 # Run some tests using UTF-16 databases.
@@ -931,17 +911,8 @@ ifcapable threadsafe {
 test_suite "safe_append" -description {
   Run some tests on a SAFE_APPEND file-system.
 } -initialize {
-  rename sqlite3 sqlite3_safeappend
-  proc sqlite3 {args} {
-    if {[string range [lindex $args 0] 0 0] ne "-"} {
-      lappend args -vfs devsym
-    }
-    uplevel [concat sqlite3_safeappend $args]
-  }
+  set ::G(perm:sqlite3_args) [list -vfs devsym]
   sqlite3_simulate_device -char safe_append
-} -shutdown {
-  rename sqlite3 {}
-  rename sqlite3_shutdown sqlite3
 } -files [
   test_set $::allquicktests shared_err.test -exclude async3.test
 ]
@@ -1108,16 +1079,20 @@ test_suite "sorterref" -prefix "" -description {
 #       -description TITLE
 #       -initialize  SCRIPT
 #       -shutdown    SCRIPT
-#       -presql      SQL
 #       -files       LIST-OF-FILES
 #       -prefix      NAME
+#       -dbconfig    SCRIPT
 #
 proc run_tests {name args} {
+  set options(-initialize) ""
+  set options(-shutdown) ""
+  set options(-prefix) ""
+  set options(-dbconfig) ""
+
   array set options $args
 
   set ::G(perm:name)         $name
   set ::G(perm:prefix)       $options(-prefix)
-  set ::G(perm:presql)       $options(-presql)
   set ::G(isquick)           1
   set ::G(perm:dbconfig)     $options(-dbconfig)
 
@@ -1126,11 +1101,12 @@ proc run_tests {name args} {
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
     slave_test_file $file
     uplevel $options(-shutdown)
+
+    unset -nocomplain ::G(perm:sqlite3_args)
   }
 
   unset ::G(perm:name)
   unset ::G(perm:prefix)
-  unset ::G(perm:presql)
   unset ::G(perm:dbconfig)
 }
 
@@ -1145,19 +1121,29 @@ proc help {} {
   puts "Usage: $::argv0 TESTSUITE ?TESTFILE?"
   puts ""
   puts "Available test-suites are:"
+
+  set iPos 0
   foreach k $::testsuitelist {
-    if {[info exists ::testspec($k)]==0} {
-      puts "         ----------------------------------------"
-      puts ""
-    } else {
-      array set o $::testspec($k)
-      puts "Test suite: \"$k\""
-      set d [string trim $o(-description)]
-      set d [regsub {\n *} $d "\n  "]
-      puts "  $d"
-      puts ""
+    if {[info exists ::testspec($k)]} {
+      switch $iPos {
+        0 {
+          puts ""
+          puts -nonewline "  [format %-30s $k]"
+        }
+
+        1 {
+          puts -nonewline [format %-30s $k]
+        }
+
+        2 {
+          puts -nonewline $k
+        }
+      }
+
+      set iPos [expr (($iPos+1) % 3)]
     }
   }
+  puts ""
   exit -1
 }
 
@@ -1166,11 +1152,35 @@ if {[file tail $argv0] == "permutations.test"} {
     if {[llength $argv]==0} {
       help
     } else {
+
+      # See if the first argument is a named test-suite.
+      #
       set suite [file tail [lindex $argv 0]]
-      if {[info exists ::testspec($suite)]==0} help
+      if {[info exists ::testspec($suite)]} {
+        set S $::testspec($suite)
+        set i 1
+      } else {
+        set S [list]
+        set i 0
+      }
+
       set extra ""
-      if {[llength $argv]>1} { set extra [list -files [lrange $argv 1 end]] }
-      eval run_tests $suite $::testspec($suite) $extra
+      if {$i < [llength $argv] && [string range [lindex $argv $i] 0 0]!="-" } {
+        set files [list]
+        for {} {$i < [llength $argv]} {incr i} {
+          set pattern [string map {% *} [lindex $argv $i]]
+          if {[string range $pattern 0 0]=="-"} break
+          foreach f $::alltests {
+            set tail [file tail $f]
+            if {[lsearch $files $f]<0 && [string match $pattern $tail]} {
+              lappend files $f
+            }
+          }
+        }
+        set extra [list -files $files]
+      }
+
+      eval run_tests $suite $S $extra
     }
   }
   main $argv

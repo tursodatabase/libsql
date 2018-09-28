@@ -276,5 +276,48 @@ do_test 5.5 {
   sqlite3_finalize $::STMT
 } SQLITE_OK
 
+#
+# The "6.*" tests are designed to test the interaction of mmap with file
+# truncation (e.g. on Win32) via the VACUUM command.
+#
+forcedelete test2.db
+sqlite3 db2 test2.db
+do_test 6.0 {
+  db2 eval {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA page_size = 4096;
+  }
+} {}
+do_test 6.1 {
+  db2 eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1(x) VALUES(randomblob(1000000));
+  }
+} {}
+do_test 6.2 {
+  db2 eval {
+    PRAGMA mmap_size = 1048576;
+  }
+} {1048576}
+do_test 6.3 {
+  expr {[file size test2.db] > 1000000}
+} {1}
+do_test 6.4 {
+  db2 eval {
+    DELETE FROM t1;
+  }
+} {}
+do_test 6.5 {
+  expr {[file size test2.db] > 1000000}
+} {1}
+do_test 6.6 {
+  db2 eval {
+    VACUUM;
+  }
+} {}
+do_test 6.7 {
+  expr {[file size test2.db] < 1000000}
+} {1}
+db2 close
 
 finish_test

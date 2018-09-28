@@ -78,7 +78,7 @@ int sqlite3_set_authorizer(
   sqlite3_mutex_enter(db->mutex);
   db->xAuth = (sqlite3_xauth)xAuth;
   db->pAuthArg = pArg;
-  sqlite3ExpirePreparedStatements(db);
+  sqlite3ExpirePreparedStatements(db, 0);
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -207,7 +207,7 @@ int sqlite3AuthCheck(
   /* Don't do any authorization checks if the database is initialising
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
-  if( db->init.busy || IN_DECLARE_VTAB ){
+  if( db->init.busy || IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }
 

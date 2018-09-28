@@ -67,15 +67,38 @@ int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if the innermost loop of the WHERE clause implementation
-** returns rows in ORDER BY order for complete run of the inner loop.
+** In the ORDER BY LIMIT optimization, if the inner-most loop is known
+** to emit rows in increasing order, and if the last row emitted by the
+** inner-most loop did not fit within the sorter, then we can skip all
+** subsequent rows for the current iteration of the inner loop (because they
+** will not fit in the sorter either) and continue with the second inner
+** loop - the loop immediately outside the inner-most.
 **
-** Across multiple iterations of outer loops, the output rows need not be
-** sorted.  As long as rows are sorted for just the innermost loop, this
-** routine can return TRUE.
+** When a row does not fit in the sorter (because the sorter already
+** holds LIMIT+OFFSET rows that are smaller), then a jump is made to the
+** label returned by this function.
+**
+** If the ORDER BY LIMIT optimization applies, the jump destination should
+** be the continuation for the second-inner-most loop.  If the ORDER BY
+** LIMIT optimization does not apply, then the jump destination should
+** be the continuation for the inner-most loop.
+**
+** It is always safe for this routine to return the continuation of the
+** inner-most loop, in the sense that a correct answer will result.  
+** Returning the continuation the second inner loop is an optimization
+** that might make the code run a little faster, but should not change
+** the final answer.
 */
-int sqlite3WhereOrderedInnerLoop(WhereInfo *pWInfo){
-  return pWInfo->bOrderedInnerLoop;
+int sqlite3WhereOrderByLimitOptLabel(WhereInfo *pWInfo){
+  WhereLevel *pInner;
+  if( !pWInfo->bOrderedInnerLoop ){
+    /* The ORDER BY LIMIT optimization does not apply.  Jump to the 
+    ** continuation of the inner-most loop. */
+    return pWInfo->iContinue;
+  }
+  pInner = &pWInfo->a[pWInfo->nLevel-1];
+  assert( pInner->addrNxt!=0 );
+  return pInner->addrNxt;
 }
 
 /*
@@ -802,7 +825,6 @@ static void constructAutomaticIndex(
   VdbeComment((v, "for %s", pTable->zName));
 
   /* Fill the automatic index with content */
-  sqlite3ExprCachePush(pParse);
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
   if( pTabItem->fg.viaCoroutine ){
     int regYield = pTabItem->regReturn;
@@ -839,7 +861,6 @@ static void constructAutomaticIndex(
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
-  sqlite3ExprCachePop(pParse);
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
@@ -945,6 +966,20 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    if( (pSrc->fg.jointype & JT_LEFT)!=0
+     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+     && (pTerm->eOperator & (WO_IS|WO_ISNULL))
+    ){
+      /* An "IS" term in the WHERE clause where the virtual table is the rhs
+      ** of a LEFT JOIN. Do not pass this term to the virtual table
+      ** implementation, as this can lead to incorrect results from SQL such
+      ** as:
+      **
+      **   "LEFT JOIN vtab WHERE vtab.col IS NULL"  */
+      testcase( pTerm->eOperator & WO_ISNULL );
+      testcase( pTerm->eOperator & WO_IS );
+      continue;
+    }
     assert( pTerm->u.leftColumn>=(-1) );
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
@@ -1436,7 +1471,9 @@ static int whereRangeScanEst(
   Index *p = pLoop->u.btree.pIndex;
   int nEq = pLoop->u.btree.nEq;
 
-  if( p->nSample>0 && nEq<p->nSampleCol ){
+  if( p->nSample>0 && nEq<p->nSampleCol
+   && OptimizationEnabled(pParse->db, SQLITE_Stat34)
+  ){
     if( nEq==pBuilder->nRecValid ){
       UnpackedRecord *pRec = pBuilder->pRec;
       tRowcnt a[2];
@@ -2089,6 +2126,14 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   sqlite3 *db = pWInfo->pParse->db;
   int rc;
 
+  /* Stop the search once we hit the query planner search limit */
+  if( pBuilder->iPlanLimit==0 ){
+    WHERETRACE(0xffffffff,("=== query planner search limit reached ===\n"));
+    if( pBuilder->pOrSet ) pBuilder->pOrSet->n = 0;
+    return SQLITE_DONE;
+  }
+  pBuilder->iPlanLimit--;
+
   /* If pBuilder->pOrSet is defined, then only keep track of the costs
   ** and prereqs.
   */
@@ -2584,6 +2629,7 @@ static int whereLoopAddBtreeIndex(
          && pProbe->nSample 
          && pNew->u.btree.nEq<=pProbe->nSampleCol
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
+         && OptimizationEnabled(db, SQLITE_Stat34)
         ){
           Expr *pExpr = pTerm->pExpr;
           if( (eOp & (WO_EQ|WO_ISNULL|WO_IS))!=0 ){
@@ -3202,7 +3248,7 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
     if( pX->pLeft ){
       pC = sqlite3BinaryCompareCollSeq(pHidden->pParse, pX->pLeft, pX->pRight);
     }
-    zRet = (pC ? pC->zName : "BINARY");
+    zRet = (pC ? pC->zName : sqlite3StrBINARY);
   }
   return zRet;
 }
@@ -3494,9 +3540,11 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
+  pBuilder->iPlanLimit = SQLITE_QUERY_PLANNER_LIMIT;
   for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
+    pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
     if( ((pItem->fg.jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
@@ -3522,7 +3570,15 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       rc = whereLoopAddOr(pBuilder, mPrereq, mUnusable);
     }
     mPrior |= pNew->maskSelf;
-    if( rc || db->mallocFailed ) break;
+    if( rc || db->mallocFailed ){
+      if( rc==SQLITE_DONE ){
+        /* We hit the query planner search limit set by iPlanLimit */
+        sqlite3_log(SQLITE_WARNING, "abbreviated query algorithm search");
+        rc = SQLITE_OK;
+      }else{
+        break;
+      }
+    }
   }
 
   whereLoopClear(db, pNew);
@@ -4053,7 +4109,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                 pWInfo, nRowEst, nOrderBy, isOrdered
             );
           }
-          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]);
+          /* TUNING:  Add a small extra penalty (5) to sorting as an
+          ** extra encouragment to the query planner to select a plan
+          ** where the rows emerge in the correct order without any sorting
+          ** required. */
+          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 5;
 
           WHERETRACE(0x002,
               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
@@ -4243,6 +4303,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
   }
+  pWInfo->bOrderedInnerLoop = 0;
   if( pWInfo->pOrderBy ){
     if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
       if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
@@ -5070,7 +5131,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   /* Generate loop termination code.
   */
   VdbeModuleComment((v, "End WHERE-core"));
-  sqlite3ExprCacheClear(pParse);
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;
     pLevel = &pWInfo->a[i];
