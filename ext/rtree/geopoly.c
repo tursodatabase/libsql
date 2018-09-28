@@ -158,7 +158,7 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
   if( c=='0' && z[j+1]>='0' && z[j+1]<='9' ) return 0;
   for(;; j++){
     c = z[j];
-    if( c>='0' && c<='9' ) continue;
+    if( safe_isdigit(c) ) continue;
     if( c=='.' ){
       if( z[j-1]=='-' ) return 0;
       if( seenDP ) return 0;
@@ -180,7 +180,17 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
     break;
   }
   if( z[j-1]<'0' ) return 0;
-  if( pVal ) *pVal = (GeoCoord)atof((const char*)p->z);
+  if( pVal ){
+#ifdef SQLITE_AMALGAMATION
+     /* The sqlite3AtoF() routine is much much faster than atof(), if it
+     ** is available */
+     double r;
+     (void)sqlite3AtoF((const char*)p->z, &r, j, SQLITE_UTF8);
+     *pVal = r;
+#else
+     *pVal = (GeoCoord)atof((const char*)p->z);
+#endif
+  }
   p->z += j;
   return 1;
 }
