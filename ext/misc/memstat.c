@@ -345,9 +345,11 @@ static int memstatFilter(
   int argc, sqlite3_value **argv
 ){
   memstat_cursor *pCur = (memstat_cursor *)pVtabCursor;
-  pCur->iRowid = 1;
+  int rc = memstatFindSchemas(pCur);
+  if( rc ) return rc;
+  pCur->iRowid = 0;
   pCur->iDb = 0;
-  return memstatFindSchemas(pCur);
+  return memstatNext(pVtabCursor);
 }
 
 /*
