@@ -18,7 +18,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !memdebug||!attach {
+ifcapable !attach {
   finish_test
   return
 }

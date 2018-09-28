@@ -143,4 +143,40 @@ proc tl_load_casefolding_txt {zName} {
   }
 }
 
+proc cc_load_unicodedata_text {zName} {
+  set fd [open $zName]
+  set lField {
+    code
+    character_name
+    general_category
+    canonical_combining_classes
+    bidirectional_category
+    character_decomposition_mapping
+    decimal_digit_value
+    digit_value
+    numeric_value
+    mirrored
+    unicode_1_name
+    iso10646_comment_field
+    uppercase_mapping
+    lowercase_mapping
+    titlecase_mapping
+  }
+  set lRet [list]
+
+  while { ![eof $fd] } {
+    set line [gets $fd]
+    if {$line == ""} continue
+
+    set fields [split $line ";"]
+    if {[llength $fields] != [llength $lField]} { error "parse error: $line" }
+    foreach $lField $fields {}
+
+    lappend lRet [list $code $general_category]
+  }
+
+  close $fd
+  set lRet
+}
+
 

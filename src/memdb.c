@@ -16,8 +16,8 @@
 ** This file also implements interface sqlite3_serialize() and
 ** sqlite3_deserialize().
 */
-#ifdef SQLITE_ENABLE_DESERIALIZE
 #include "sqliteInt.h"
+#ifdef SQLITE_ENABLE_DESERIALIZE
 
 /*
 ** Forward declaration of objects used by this utility

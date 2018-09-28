@@ -456,6 +456,11 @@ if {[info exists cmdlinearg]==0} {
       {^-+malloctrace=.+$} {
         foreach {dummy cmdlinearg(malloctrace)} [split $a =] break
         if {$cmdlinearg(malloctrace)} {
+          if {0==$::sqlite_options(memdebug)} {
+            set err "Error: --malloctrace=1 requires an SQLITE_MEMDEBUG build"
+            puts stderr $err
+            exit 1
+          }
           sqlite3_memdebug_log start
         }
       }
@@ -1258,13 +1263,13 @@ proc finalize_testing {} {
     output2 "Unfreed memory: [sqlite3_memory_used] bytes in\
          [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1] allocations"
     incr nErr
-    ifcapable memdebug||mem5||(mem3&&debug) {
+    ifcapable mem5||(mem3&&debug) {
       output2 "Writing unfreed memory log to \"./memleak.txt\""
       sqlite3_memdebug_dump ./memleak.txt
     }
   } else {
     output2 "All memory allocations freed - no leaks"
-    ifcapable memdebug||mem5 {
+    ifcapable mem5 {
       sqlite3_memdebug_dump ./memusage.txt
     }
   }
@@ -1275,15 +1280,14 @@ proc finalize_testing {} {
     output2 "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
   }
   if {$::cmdlinearg(malloctrace)} {
-    output2 "Writing mallocs.sql..."
-    memdebug_log_sql
+    output2 "Writing mallocs.tcl..."
+    memdebug_log_sql mallocs.tcl
     sqlite3_memdebug_log stop
     sqlite3_memdebug_log clear
-
     if {[sqlite3_memory_used]>0} {
-      output2 "Writing leaks.sql..."
+      output2 "Writing leaks.tcl..."
       sqlite3_memdebug_log sync
-      memdebug_log_sql leaks.sql
+      memdebug_log_sql leaks.tcl
     }
   }
   foreach f [glob -nocomplain test.db-*-journal] {
@@ -2019,7 +2023,7 @@ proc dbcksum {db dbname} {
   return [md5 $txt]
 }
 
-proc memdebug_log_sql {{filename mallocs.sql}} {
+proc memdebug_log_sql {filename} {
 
   set data [sqlite3_memdebug_log dump]
   set nFrame [expr [llength [lindex $data 0]]-2]
@@ -2065,8 +2069,18 @@ proc memdebug_log_sql {{filename mallocs.sql}} {
     append sql "INSERT INTO ${database}.file VALUES('$f', '$contents');\n"
   }
 
+  set escaped "BEGIN; ${tbl}${tbl2}${tbl3}${sql} ; COMMIT;"
+  set escaped [string map [list "{" "\\{" "}" "\\}"] $escaped] 
+
   set fd [open $filename w]
-  puts $fd "BEGIN; ${tbl}${tbl2}${tbl3}${sql} ; COMMIT;"
+  puts $fd "set BUILTIN {"
+  puts $fd $escaped
+  puts $fd "}"
+  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}"] $BUILTIN]}
+  set mtv [open $::testdir/malloctraceviewer.tcl]
+  set txt [read $mtv]
+  close $mtv
+  puts $fd $txt
   close $fd
 }
 

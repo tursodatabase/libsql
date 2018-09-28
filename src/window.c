@@ -624,12 +624,12 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   switch( pExpr->op ){
 
     case TK_FUNCTION:
-      if( pExpr->pWin==0 ){
+      if( !ExprHasProperty(pExpr, EP_WinFunc) ){
         break;
       }else{
         Window *pWin;
         for(pWin=p->pWin; pWin; pWin=pWin->pNextWin){
-          if( pExpr->pWin==pWin ){
+          if( pExpr->y.pWin==pWin ){
             assert( pWin->pOwner==pExpr );
             return WRC_Prune;
           }
@@ -959,8 +959,13 @@ windowAllocErr:
 */
 void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
-    if( pWin ){
-      p->pWin = pWin;
+    assert( p->op==TK_FUNCTION );
+    /* This routine is only called for the parser.  If pWin was not
+    ** allocated due to an OOM, then the parser would fail before ever
+    ** invoking this routine */
+    if( ALWAYS(pWin) ){
+      p->y.pWin = pWin;
+      ExprSetProperty(p, EP_WinFunc);
       pWin->pOwner = p;
       if( p->flags & EP_Distinct ){
         sqlite3ErrorMsg(pParse,
@@ -2123,7 +2128,7 @@ static void windowCodeDefaultStep(
 */
 Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
   Window *pNew = 0;
-  if( p ){
+  if( ALWAYS(p) ){
     pNew = sqlite3DbMallocZero(db, sizeof(Window));
     if( pNew ){
       pNew->zName = sqlite3DbStrDup(db, p->zName);

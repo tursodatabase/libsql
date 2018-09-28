@@ -17,11 +17,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !memdebug {
-  finish_test
-  return
-}
-
 source $testdir/malloc_common.tcl
 source $testdir/fuzz_common.tcl
 

@@ -2393,6 +2393,8 @@ static int SQLITE_TCLAPI test_snapshot_open(
   if( rc!=SQLITE_OK ){
     Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
+  }else{
+    Tcl_ResetResult(interp);
   }
   return TCL_OK;
 }
@@ -5685,6 +5687,44 @@ static int SQLITE_TCLAPI file_control_lasterrno_test(
 }
 
 /*
+** tclcmd:   file_control_data_version DB DBNAME
+**
+** This TCL command runs the sqlite3_file_control with the
+** SQLITE_FCNTL_DATA_VERSION opcode, returning the result.
+*/
+static int SQLITE_TCLAPI file_control_data_version(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  unsigned int iVers;             /* data version */
+  char *zDb;                      /* Db name ("main", "temp" etc.) */
+  sqlite3 *db;                    /* Database handle */
+  int rc;                         /* file_control() return code */
+  char zBuf[100];
+
+  if( objc!=3 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB [DBNAME]");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+   return TCL_ERROR;
+  }
+  zDb = objc==3 ? Tcl_GetString(objv[2]) : NULL;
+
+  rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_DATA_VERSION, (void *)&iVers);
+  if( rc ){
+    Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }else{
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%u",iVers);
+    Tcl_SetResult(interp, (char *)zBuf, TCL_VOLATILE);
+    return TCL_OK;
+  }
+}
+
+/*
 ** tclcmd:   file_control_chunksize_test DB DBNAME SIZE
 **
 ** This TCL command runs the sqlite3_file_control interface and
@@ -6944,7 +6984,6 @@ static int SQLITE_TCLAPI optimization_control(
     { "all",                 SQLITE_AllOpts        },
     { "none",                0                     },
     { "query-flattener",     SQLITE_QueryFlattener },
-    { "column-cache",        SQLITE_ColumnCache    },
     { "groupby-order",       SQLITE_GroupByOrder   },
     { "factor-constants",    SQLITE_FactorOutConst },
     { "distinct-opt",        SQLITE_DistinctOpt    },
@@ -6999,6 +7038,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_explain_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7023,6 +7063,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "eval",                  sqlite3_eval_init                 },
+    { "explain",               sqlite3_explain_init              },
     { "fileio",                sqlite3_fileio_init               },
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
@@ -7735,6 +7776,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
      { "file_control_sizehint_test",  file_control_sizehint_test,   0   },
+     { "file_control_data_version",   file_control_data_version,    0   },
 #if SQLITE_OS_WIN
      { "file_control_win32_av_retry", file_control_win32_av_retry,  0   },
      { "file_control_win32_get_handle", file_control_win32_get_handle, 0  },

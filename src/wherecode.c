@@ -347,7 +347,6 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   /* Code the OP_Affinity opcode if there is anything left to do. */
   if( n>0 ){
     sqlite3VdbeAddOp4(v, OP_Affinity, base, n, 0, zAff, n);
-    sqlite3ExprCacheAffinityChange(pParse, base, n);
   }
 }
 
@@ -885,11 +884,8 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
   struct CCurHint *pHint = pWalker->u.pCCurHint;
   if( pExpr->op==TK_COLUMN ){
     if( pExpr->iTable!=pHint->iTabCur ){
-      Vdbe *v = pWalker->pParse->pVdbe;
       int reg = ++pWalker->pParse->nMem;   /* Register for column value */
-      sqlite3ExprCodeGetColumnOfTable(
-          v, pExpr->pTab, pExpr->iTable, pExpr->iColumn, reg
-      );
+      sqlite3ExprCode(pWalker->pParse, pExpr, reg);
       pExpr->op = TK_REGISTER;
       pExpr->iTable = reg;
     }else if( pHint->pIdx!=0 ){
@@ -1121,7 +1117,7 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
     pExpr->op = TK_COLUMN;
     pExpr->iTable = pX->iIdxCur;
     pExpr->iColumn = pX->iIdxCol;
-    pExpr->pTab = 0;
+    pExpr->y.pTab = 0;
     return WRC_Prune;
   }else{
     return WRC_Continue;
@@ -1256,7 +1252,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int nConstraint = pLoop->nLTerm;
     int iIn;    /* Counter for IN constraints */
 
-    sqlite3ExprCachePush(pParse);
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
     addrNotFound = pLevel->addrBrk;
     for(j=0; j<nConstraint; j++){
@@ -1329,7 +1324,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     **
     **    sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
     */
-    sqlite3ExprCachePop(pParse);
   }else
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -1353,9 +1347,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
-    sqlite3ExprCacheAffinityChange(pParse, iRowidReg, 1);
-    sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
-    VdbeComment((v, "pk"));
     pLevel->op = OP_Noop;
   }else if( (pLoop->wsFlags & WHERE_IPK)!=0
          && (pLoop->wsFlags & WHERE_COLUMN_RANGE)!=0
@@ -1425,7 +1416,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, pX->op==TK_LE);
       VdbeCoverageIf(v, pX->op==TK_LT);
       VdbeCoverageIf(v, pX->op==TK_GE);
-      sqlite3ExprCacheAffinityChange(pParse, r1, 1);
       sqlite3ReleaseTempReg(pParse, rTemp);
     }else{
       sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrHalt);
@@ -1460,7 +1450,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( testOp!=OP_Noop ){
       iRowidReg = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
-      sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
       VdbeCoverageIf(v, testOp==OP_Le);
       VdbeCoverageIf(v, testOp==OP_Lt);
@@ -1686,7 +1675,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     nConstraint = nEq;
     if( pRangeEnd ){
       Expr *pRight = pRangeEnd->pExpr->pRight;
-      sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       codeExprOrVector(pParse, pRight, regBase+nEq, nTop);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
@@ -1711,7 +1699,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
     }else if( bStopAtNull ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
-      sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       endEq = 0;
       nConstraint++;
     }
@@ -1745,7 +1732,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       )){
         iRowidReg = ++pParse->nMem;
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
-        sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
         sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowidReg);
         VdbeCoverage(v);
       }else{
@@ -1980,23 +1966,23 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           ** row will be skipped in subsequent sub-WHERE clauses.
           */
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
-            int r;
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             if( HasRowid(pTab) ){
-              r = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, regRowid, 0);
+              sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, regRowid);
               jmp1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0,
-                                           r,iSet);
+                                          regRowid, iSet);
               VdbeCoverage(v);
             }else{
               Index *pPk = sqlite3PrimaryKeyIndex(pTab);
               int nPk = pPk->nKeyCol;
               int iPk;
+              int r;
 
               /* Read the PK into an array of temp registers. */
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                sqlite3ExprCodeGetColumnToReg(pParse, pTab, iCol, iCur, r+iPk);
+                sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol, r+iPk);
               }
 
               /* Check if the temp table already contains this key. If so,
@@ -2229,7 +2215,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
     VdbeComment((v, "record LEFT JOIN hit"));
-    sqlite3ExprCacheClear(pParse);
     for(pTerm=pWC->a, j=0; j<pWC->nTerm; j++, pTerm++){
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );

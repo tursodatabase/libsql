@@ -184,10 +184,8 @@ const char sqlite3IsEbcdicIdChar[] = {
 #define IdChar(C)  (((c=C)>=0x42 && sqlite3IsEbcdicIdChar[c-0x40]))
 #endif
 
-/* Make the IdChar function accessible from ctime.c */
-#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+/* Make the IdChar function accessible from ctime.c and alter.c */
 int sqlite3IsIdChar(u8 c){ return IdChar(c); }
-#endif
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 /*
@@ -690,16 +688,18 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   sqlite3_free(pParse->apVtabLock);
 #endif
 
-  if( !IN_DECLARE_VTAB ){
+  if( !IN_SPECIAL_PARSE ){
     /* If the pParse->declareVtab flag is set, do not delete any table 
     ** structure built up in pParse->pNewTable. The calling code (see vtab.c)
     ** will take responsibility for freeing the Table structure.
     */
     sqlite3DeleteTable(db, pParse->pNewTable);
   }
+  if( !IN_RENAME_OBJECT ){
+    sqlite3DeleteTrigger(db, pParse->pNewTrigger);
+  }
 
   if( pParse->pWithToFree ) sqlite3WithDelete(db, pParse->pWithToFree);
-  sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->pVList);
   while( pParse->pAinc ){
     AutoincInfo *p = pParse->pAinc;

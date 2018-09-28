@@ -4888,12 +4888,11 @@ static int sessionChangegroupOutput(
         sessionAppendByte(&buf, p->op, &rc);
         sessionAppendByte(&buf, p->bIndirect, &rc);
         sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
+        if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STRM_CHUNK_SIZE ){
+          rc = xOutput(pOut, buf.aBuf, buf.nBuf);
+          buf.nBuf = 0;
+        }
       }
-    }
-
-    if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STRM_CHUNK_SIZE ){
-      rc = xOutput(pOut, buf.aBuf, buf.nBuf);
-      buf.nBuf = 0;
     }
   }
 

@@ -40,11 +40,6 @@ do_ioerr_test vtab_err-1 -tclprep {
   COMMIT;
 }
 
-ifcapable !memdebug {
-   puts "Skipping vtab_err-2 tests: not compiled with -DSQLITE_MEMDEBUG..."
-   finish_test
-   return
-}
 source $testdir/malloc_common.tcl
 
 

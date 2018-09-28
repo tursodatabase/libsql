@@ -2541,14 +2541,19 @@ static void fts5ExprIsAlnum(
   sqlite3_value **apVal           /* Function arguments */
 ){
   int iCode;
+  u8 aArr[32];
   if( nArg!=1 ){
     sqlite3_result_error(pCtx, 
         "wrong number of arguments to function fts5_isalnum", -1
     );
     return;
   }
+  memset(aArr, 0, sizeof(aArr));
+  sqlite3Fts5UnicodeCatParse("L*", aArr);
+  sqlite3Fts5UnicodeCatParse("N*", aArr);
+  sqlite3Fts5UnicodeCatParse("Co", aArr);
   iCode = sqlite3_value_int(apVal[0]);
-  sqlite3_result_int(pCtx, sqlite3Fts5UnicodeIsalnum(iCode));
+  sqlite3_result_int(pCtx, aArr[sqlite3Fts5UnicodeCategory(iCode)]);
 }
 
 static void fts5ExprFold(

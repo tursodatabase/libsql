@@ -204,10 +204,12 @@ void sqlite3UpsertDoUpdate(
   Vdbe *v = pParse->pVdbe;
   sqlite3 *db = pParse->db;
   SrcList *pSrc;            /* FROM clause for the UPDATE */
-  int iDataCur = pUpsert->iDataCur;
+  int iDataCur;
 
   assert( v!=0 );
+  assert( pUpsert!=0 );
   VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
+  iDataCur = pUpsert->iDataCur;
   if( pIdx && iCur!=iDataCur ){
     if( HasRowid(pTab) ){
       int regRowid = sqlite3GetTempReg(pParse);

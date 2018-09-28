@@ -382,6 +382,11 @@ set pragma_def {
 
   NAME: optimize
   FLAG: Result1 NeedSchema
+
+  NAME: legacy_alter_table
+  TYPE: FLAG
+  ARG:  SQLITE_LegacyAlter
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 }
 
 # Open the output file
