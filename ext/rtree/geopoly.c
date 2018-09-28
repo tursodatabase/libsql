@@ -1640,19 +1640,20 @@ static int sqlite3_geopoly_init(sqlite3 *db){
   int rc = SQLITE_OK;
   static const struct {
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
-    int nArg;
+    signed char nArg;
+    unsigned char bPure;
     const char *zName;
   } aFunc[] = {
-     { geopolyAreaFunc,          1,    "geopoly_area"             },
-     { geopolyBlobFunc,          1,    "geopoly_blob"             },
-     { geopolyJsonFunc,          1,    "geopoly_json"             },
-     { geopolySvgFunc,          -1,    "geopoly_svg"              },
-     { geopolyWithinFunc,        2,    "geopoly_within"           },
-     { geopolyContainsPointFunc, 3,    "geopoly_contains_point"   },
-     { geopolyOverlapFunc,       2,    "geopoly_overlap"          },
-     { geopolyDebugFunc,         1,    "geopoly_debug"            },
-     { geopolyBBoxFunc,          1,    "geopoly_bbox"             },
-     { geopolyXformFunc,         7,    "geopoly_xform"            },
+     { geopolyAreaFunc,          1, 1,    "geopoly_area"             },
+     { geopolyBlobFunc,          1, 1,    "geopoly_blob"             },
+     { geopolyJsonFunc,          1, 1,    "geopoly_json"             },
+     { geopolySvgFunc,          -1, 1,    "geopoly_svg"              },
+     { geopolyWithinFunc,        2, 1,    "geopoly_within"           },
+     { geopolyContainsPointFunc, 3, 1,    "geopoly_contains_point"   },
+     { geopolyOverlapFunc,       2, 1,    "geopoly_overlap"          },
+     { geopolyDebugFunc,         1, 0,    "geopoly_debug"            },
+     { geopolyBBoxFunc,          1, 1,    "geopoly_bbox"             },
+     { geopolyXformFunc,         7, 1,    "geopoly_xform"            },
   };
   static const struct {
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
@@ -1663,8 +1664,9 @@ static int sqlite3_geopoly_init(sqlite3 *db){
   };
   int i;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
+    int enc = aFunc[i].bPure ? SQLITE_UTF8|SQLITE_DETERMINISTIC : SQLITE_UTF8;
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
-                                 SQLITE_UTF8, 0,
+                                 enc, 0,
                                  aFunc[i].xFunc, 0, 0);
   }
   for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
