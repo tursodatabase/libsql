@@ -1094,7 +1094,7 @@ void sqlite3Pragma(
       sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
-        if( IsHiddenColumn(pCol) ){
+        if( IsHiddenColumn(pCol) && pPragma->iArg==0 ){
           nHidden++;
           continue;
         }

@@ -1,5 +1,5 @@
-C Improve\s"PRAGMA\svdbe_trace=ON"\sto\salways\sshow\sthe\skey\svalues\sfor\sthe\nOP_IdxGT\sand\srelated\sopcodes.
-D 2018-08-03T13:56:26.671
+C Add\sthe\sPRAGMA\stable_vinfo\scommand\s(with\san\sextra\s"v"\sbefore\s"info")\sthat\nworks\slike\sPRAGMA\stable_info\s(without\sthe\s"v")\sexcept\sthat\sit\salso\sshows\nhidden\scolumns\son\svirtual\stables.
+D 2018-09-29T19:38:42.265
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0a3a6c81e6fcb969ff9106e882f0a08547014ba463cb6beca4c4efaecc924ee6
@@ -491,8 +491,8 @@ F src/parse.y 704c94624d41d7d46a5467574130e55aa8029a563f4df538f0121475eae46e34
 F src/pcache.c 135ef0bc6fb2e3b7178d49ab5c9176254c8a691832c1bceb1156b2fbdd0869bd
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c 71c585f1d26e14b931fa4573f587933d6dfddecd9d9001b0f126f74f7306bf87
-F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
+F src/pragma.c afd09f81b987f1d6db91b1414a48dea750bd0bf02b7ce48f92b6c3fbbdc29829
+F src/pragma.h 32f09ef76532b0bf2c82970dab0dd68dc204b414ebf9c3e9e8641daa6cc506ea
 F src/prepare.c e966ecc97c3671ff0e96227c8c877b83f2d33ea371ee190bbf1698b36b5605c0
 F src/printf.c 7f6f3cba8e0c49c19e30a1ff4e9aeda6e06814dcbad4b664a69e1b6cb6e7e365
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -1686,7 +1686,7 @@ F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
+F tool/mkpragmatab.tcl 228172329b4d7dbb8898b0147bf717f938667ee6906339af872c3305165b2d73
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1753,7 +1753,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e390023c8e70961661fd9e29674dedacd1b941b6b8d9cd88f8cfa8f787f030f9
-R 42c2ba852bcdcd5b618ab0afe0f401df
+P 0f881955ed173c7c35dfca2d4aeca855858e40bb951e6fb6fedd9a2fff6a5a86
+R 35c75da33444f38727c331e96f4190a5
+T *branch * pragma-table-vinfo
+T *sym-pragma-table-vinfo *
+T -sym-trunk *
 U drh
-Z aecb34e96579e406e10bba0b12f9710a
+Z be1def3d568c6c74fb53c9827e6ce9d7

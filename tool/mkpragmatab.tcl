@@ -220,6 +220,14 @@ set pragma_def {
 
   NAME: table_info
   FLAG: NeedSchema Result1 SchemaOpt
+  ARG:  0
+  COLS: cid name type notnull dflt_value pk
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
+  NAME: table_vinfo
+  TYPE: TABLE_INFO
+  FLAG: NeedSchema Result1 SchemaOpt
+  ARG:  1
   COLS: cid name type notnull dflt_value pk
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 

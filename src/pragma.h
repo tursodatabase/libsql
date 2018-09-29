@@ -69,7 +69,7 @@
 */
 static const char *const pragCName[] = {
   /*   0 */ "cache_size",  /* Used by: default_cache_size */
-  /*   1 */ "cid",         /* Used by: table_info */
+  /*   1 */ "cid",         /* Used by: table_info table_vinfo */
   /*   2 */ "name",       
   /*   3 */ "type",       
   /*   4 */ "notnull",    
@@ -572,6 +572,11 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
   /* ColNames:  */ 1, 6,
   /* iArg:      */ 0 },
+ {/* zName:     */ "table_vinfo",
+  /* ePragTyp:  */ PragTyp_TABLE_INFO,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
+  /* ColNames:  */ 1, 6,
+  /* iArg:      */ 1 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
  {/* zName:     */ "temp_store",
@@ -646,4 +651,4 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ SQLITE_WriteSchema },
 #endif
 };
-/* Number of pragmas: 60 on by default, 77 total. */
+/* Number of pragmas: 61 on by default, 78 total. */
