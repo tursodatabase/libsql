@@ -1,5 +1,5 @@
-C Fix\sa\spotential\scrash\sthat\scan\soccur\swhile\sreading\san\sindex\sfrom\sa\scorrupt\ndatabase\sfile.\s\sThe\scorruption\sis\sa\srecord-header-size\sthat\sis\slarger\sthan\n0x7fffffff.\s\sProblem\sdetected\sby\sOSSFuzz\sagainst\sGDAL\sand\sreported\sto\sus\s\n(with\sa\ssuggested\sfix)\sby\sEven\sRouault.\s\sThe\stest\scase\sis\sin\sTH3.
-D 2018-10-01T13:54:30.911
+C Speed\sup\sxAccess()\scalls\smade\son\san\sRBU\sVFS\swhen\sthere\sare\slots\sof\sopen\nconnections.
+D 2018-10-01T17:33:35.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -348,7 +348,7 @@ F ext/rbu/rbusplit.test 69271c790732b28bd465551d80b0a9a3f074e189896ee8490ce56d22
 F ext/rbu/rbutemplimit.test cd553a9288d515d0b5f87d277e76fd18c4aa740b761e7880fab11ce986ea18d1
 F ext/rbu/rbuvacuum.test ff357e9b556ca7ad4673da0ff7f244def919ff858e0f9f350d3e30fdd83a62a8
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c f438fea899d15d13ff3e3133242b9e378c37b5a3d76add8c342c68bdd65c6819
+F ext/rbu/sqlite3rbu.c 71f8c09948d09ec9c5a8dbe7127e8ef61ef0853e698b2650be2485ac7b9c75c8
 F ext/rbu/sqlite3rbu.h b42bcd4d8357268c6c39ab2a60b29c091e89328fa8cc49c8fac5ab8d007e79b2
 F ext/rbu/test_rbu.c baa23eb28457580673d2175e5f0c29ced0cd320ee819b13ad362398c53b96e90
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1770,7 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c52f457e56eb9d573eb67093731eb231aaf6fd6dbdc397e6f948b82736fbe3ab
-R c75c41f8def35162ce620ba59792b15c
-U drh
-Z 2db3890d5903ac5d614f7b18f951a8a9
+P 8ac2cdda68f92b0352bc7f0b4be5fca4bb58565ca65055fb34153cc284ed6922
+R a63f057a754c642de8f2617ecd7043d5
+U dan
+Z c6e86f7777ba1872e2992f69103701bb
