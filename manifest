@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sOP_VColumn\sopcode\sdoes\sset\ssqlite3_vtab_nochange()\sunless\nthe\sOPFLAG_NOCHNG\sbit\sis\sset\sin\sP5.\s\sFix\sfor\sticket\n[69d642332d25aa3b7315a6d385]
-D 2018-10-01T11:00:00.272
+C Fix\sa\spotential\scrash\sthat\scan\soccur\swhile\sreading\san\sindex\sfrom\sa\scorrupt\ndatabase\sfile.\s\sThe\scorruption\sis\sa\srecord-header-size\sthat\sis\slarger\sthan\n0x7fffffff.\s\sProblem\sdetected\sby\sOSSFuzz\sagainst\sGDAL\sand\sreported\sto\sus\s\n(with\sa\ssuggested\sfix)\sby\sEven\sRouault.\s\sThe\stest\scase\sis\sin\sTH3.
+D 2018-10-01T14:05:03.008
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -576,7 +576,7 @@ F src/vdbe.c b1b2142469a4eb177e712827f7c1ee376e41381eed870938d1494c13f55bf2e7
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h f1f35f70460698d8f5a2bdef1001114babf318e2983a067804e2ae077d8e9827
 F src/vdbeapi.c 2ba821c5929a2769e4b217dd85843479c718b8989d414723ec8af0616a83d611
-F src/vdbeaux.c c3c397274380f13db702baa3506ba87379446a4d71135a1177b624f73dd3c830
+F src/vdbeaux.c 9fe7760a6b9739f21f3e19ad5364330b0f681998fc52c32358243b0060423474
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 81329ab760e4ec0162119d9cd10193e0303c45c5935bb20c7ae9139d44dd6641
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
@@ -1767,8 +1767,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2849570967555d486e797cb1807e45706cb55036a4b9074be267b5e4940ec91
-Q +322ab1fc613f616e9f07dc94ef74a29572a21cc476d88e97b4ce865500a47b62
-R e6a9187788a81d5fe99552ba350f30c5
+P 31ac8dbae4d5d3d5aee28959e9b1bfcb72a2f878541c0cbd74be46b0193df89c
+Q +8ac2cdda68f92b0352bc7f0b4be5fca4bb58565ca65055fb34153cc284ed6922
+R ddc2059c5b5350801be17552d74219d6
 U drh
-Z e9b2b09c83ebef4fa0ace2e9e306b03d
+Z 8c12b3e34e3633bc6bee9a2b48f148f6
