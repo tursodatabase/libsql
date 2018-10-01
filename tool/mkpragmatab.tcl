@@ -228,7 +228,7 @@ set pragma_def {
   TYPE: TABLE_INFO
   FLAG: NeedSchema Result1 SchemaOpt
   ARG:  1
-  COLS: cid name type notnull dflt_value pk
+  COLS: cid name type notnull dflt_value pk hidden
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: stats
