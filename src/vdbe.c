@@ -6957,10 +6957,11 @@ case OP_VFilter: {   /* jump */
 **
 ** If the VColumn opcode is being used to fetch the value of
 ** an unchanging column during an UPDATE operation, then the P5
-** value is 1.  Otherwise, P5 is 0.  The P5 value is returned
-** by sqlite3_vtab_nochange() routine and can be used
-** by virtual table implementations to return special "no-change"
-** marks which can be more efficient, depending on the virtual table.
+** value is OPFLAG_NOCHNG.  This will cause the sqlite3_vtab_nochange()
+** function to return true inside the xColumn method of the virtual
+** table implementation.  The P5 column might also contain other
+** bits (OPFLAG_LENGTHARG or OPFLAG_TYPEOFARG) but those bits are
+** unused by OP_VColumn.
 */
 case OP_VColumn: {
   sqlite3_vtab *pVtab;
@@ -6982,7 +6983,8 @@ case OP_VColumn: {
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
-  if( pOp->p5 ){
+  testcase( (pOp->p5 & OPFLAG_NOCHNG)==0 && pOp->p5!=0 );
+  if( pOp->p5 & OPFLAG_NOCHNG ){
     sqlite3VdbeMemSetNull(pDest);
     pDest->flags = MEM_Null|MEM_Zero;
     pDest->u.nZero = 0;

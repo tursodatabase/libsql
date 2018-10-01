@@ -3179,6 +3179,7 @@ struct AuthContext {
 */
 #define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
                                      /* Also used in P2 (not P5) of OP_Delete */
+#define OPFLAG_NOCHNG        0x01    /* OP_VColumn nochange for UPDATE */
 #define OPFLAG_EPHEM         0x01    /* OP_Column: Ephemeral output is ok */
 #define OPFLAG_LASTROWID     0x20    /* Set to update db->lastRowid */
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
