@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\spragma\sto\sPRAGMA\stable_xinfo.\s\sImprove\sthe\nmkpragmatab.tcl\sscript\sto\sreuse\scolumn\snames\swhere\sappropriate.
-D 2018-10-01T21:26:30.705
+C Test\scase\sfor\sPRAGMA\stable_xinfo.
+D 2018-10-01T21:36:38.715
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -1334,7 +1334,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test c47171c36b3d411df2bd49719dcaa5d034f8d277477fd41d253940723b969a51
+F test/tabfunc01.test 5ddfdcda81f362d54cf301a65678edea2a02a570760a4c88051fc2730aafcd81
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1770,7 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf1b76135f511530dcc7b82f78c952bf97ebcddb40be06f713f9f2326915fabe
-R ba010eae61cf933e84f1d1c261299063
+P 2fdd068987e59b979045d71ae64e700600ef07e54ae340f30c2064e5dcccb8ea
+R f25affb049e7e387101b1afc916c6b2e
 U drh
-Z 03cca8b8402459da514c7ddddb7143b7
+Z 9b806ae5358896ee00b1faf1a3216949
