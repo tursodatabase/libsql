@@ -1061,9 +1061,12 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       db->aDb[sqlite3SchemaToIndex(db, pNew->pTabSchema)].zDbSName
   );
   pParse->eTriggerOp = pNew->op;
+  if( pParse->pTriggerTab ){
+    rc = sqlite3ViewGetColumnNames(pParse, pParse->pTriggerTab);
+  }
 
   /* Resolve symbols in WHEN clause */
-  if( pNew->pWhen ){
+  if( rc==SQLITE_OK && pNew->pWhen ){
     rc = sqlite3ResolveExprNames(&sNC, pNew->pWhen);
   }
 

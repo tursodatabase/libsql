@@ -1,5 +1,5 @@
-C Fix\stest\scases\sso\sthat\sthey\swork\swith\sICU.
-D 2018-09-28T23:53:24.160
+C Fix\sa\sproblem\swith\sALTER\sTABLE\scommands\swhen\sthe\sschema\sfeatures\san\sINSTEAD\sof\ntrigger\sthat\suses\sNEW.*\sor\sOLD.*.
+D 2018-10-01T07:04:12.490
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -437,7 +437,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 65fc93f6de5e9706e70d5ff823d831223b784f6c5766ef902a3235b8525de507
+F src/alter.c b929e4daabe215300aa9b4e353977714c1751d91aaa63e52f0a475b840ce245e
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -609,7 +609,7 @@ F test/altercol.test 53fb5e218c9296afc160f2c4fcbeaf42bd0604815d9b3896a7d2eec583a
 F test/alterlegacy.test e7c07d605c2a85e7d1696c89e6bf64dfc932fc6d9320fe8708c8f5fc0b524d41
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
-F test/altertab.test 3b830144c18ae00abd2a27e3d2851c8bb1ee8fe655fa16d8a5971066dc71b58a
+F test/altertab.test fb8a9a2ab6deb5f860d27675f6213d14ab79b705e0d6350eead4ef3a3f73bf3e
 F test/altertab2.test 159fd5f7b23ddc841fe678f579f9b1b8e69f44296f3ff75d1b4c155d37a59832
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test b3a9c67d00e1df7588a5b7be9a0292899f94fe8cac1f94a017277474ca2e59df
@@ -1770,7 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8467c31aa0bf24e597f680748460a99f425c49f5ab741c3574c339aa56857146
-R 08311a219ed5b2f0f2f27b2fa84a2c37
-U drh
-Z 7aa1cea9abc47bd4971180b786cf5455
+P d04b2013b5436430ebbf7053d637fd89c1b15affcb42787dcf1cf5ffc3ae54e2
+R 479306dd49205e8d1f89a577af9e0033
+U dan
+Z 3eb383fba7fc036a1656cc373d9dc1ea
