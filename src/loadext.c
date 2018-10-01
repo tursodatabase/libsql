@@ -449,7 +449,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_str_reset,
   sqlite3_str_errcode,
   sqlite3_str_length,
-  sqlite3_str_value
+  sqlite3_str_value,
+  /* Version 3.25.0 and later */
+  sqlite3_create_window_function
 };
 
 /*

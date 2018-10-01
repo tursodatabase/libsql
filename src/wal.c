@@ -259,6 +259,18 @@ int sqlite3WalTrace = 0;
 #endif
 
 /*
+** WAL mode depends on atomic aligned 32-bit loads and stores in a few
+** places.  The following macros try to make this explicit.
+*/
+#if GCC_VESRION>=5004000
+# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
+# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
+#else
+# define AtomicLoad(PTR)       (*(PTR))
+# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
+#endif
+
+/*
 ** The maximum (and only) versions of the wal and wal-index formats
 ** that may be interpreted by this version of SQLite.
 **
@@ -1835,7 +1847,6 @@ static int walCheckpoint(
     if( pIter
      && (rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(0),1))==SQLITE_OK
     ){
-      i64 nSize;                    /* Current size of database file */
       u32 nBackfill = pInfo->nBackfill;
 
       pInfo->nBackfillAttempted = mxSafeFrame;
@@ -1848,6 +1859,7 @@ static int walCheckpoint(
       */
       if( rc==SQLITE_OK ){
         i64 nReq = ((i64)mxPage * szPage);
+        i64 nSize;                    /* Current size of database file */
         rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
         if( rc==SQLITE_OK && nSize<nReq ){
           sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
@@ -2555,7 +2567,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
 #endif
   for(i=1; i<WAL_NREADER; i++){
-    u32 thisMark = pInfo->aReadMark[i];
+    u32 thisMark = AtomicLoad(pInfo->aReadMark+i);
     if( mxReadMark<=thisMark && thisMark<=mxFrame ){
       assert( thisMark!=READMARK_NOT_USED );
       mxReadMark = thisMark;
@@ -2568,7 +2580,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     for(i=1; i<WAL_NREADER; i++){
       rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
       if( rc==SQLITE_OK ){
-        mxReadMark = pInfo->aReadMark[i] = mxFrame;
+        mxReadMark = AtomicStore(pInfo->aReadMark+i,mxFrame);
         mxI = i;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
         break;
@@ -2620,9 +2632,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   ** we can guarantee that the checkpointer that set nBackfill could not
   ** see any pages past pWal->hdr.mxFrame, this problem does not come up.
   */
-  pWal->minFrame = pInfo->nBackfill+1;
+  pWal->minFrame = AtomicLoad(&pInfo->nBackfill)+1;
   walShmBarrier(pWal);
-  if( pInfo->aReadMark[mxI]!=mxReadMark
+  if( AtomicLoad(pInfo->aReadMark+mxI)!=mxReadMark
    || memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr))
   ){
     walUnlockShared(pWal, WAL_READ_LOCK(mxI));
@@ -2721,7 +2733,7 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 **
 ** If the database contents have changes since the previous read
 ** transaction, then *pChanged is set to 1 before returning.  The
-** Pager layer will use this to know that is cache is stale and
+** Pager layer will use this to know that its cache is stale and
 ** needs to be flushed.
 */
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
@@ -2783,7 +2795,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
         /* Check that the wal file has not been wrapped. Assuming that it has
         ** not, also check that no checkpointer has attempted to checkpoint any
         ** frames beyond pSnapshot->mxFrame. If either of these conditions are
-        ** true, return SQLITE_BUSY_SNAPSHOT. Otherwise, overwrite pWal->hdr
+        ** true, return SQLITE_ERROR_SNAPSHOT. Otherwise, overwrite pWal->hdr
         ** with *pSnapshot and set *pChanged as appropriate for opening the
         ** snapshot.  */
         if( !memcmp(pSnapshot->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))
@@ -2793,11 +2805,12 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
           memcpy(&pWal->hdr, pSnapshot, sizeof(WalIndexHdr));
           *pChanged = bChanged;
         }else{
-          rc = SQLITE_BUSY_SNAPSHOT;
+          rc = SQLITE_ERROR_SNAPSHOT;
         }
 
         /* Release the shared CKPT lock obtained above. */
         walUnlockShared(pWal, WAL_CKPT_LOCK);
+        pWal->minFrame = 1;
       }
 
 
@@ -3769,6 +3782,43 @@ int sqlite3_snapshot_cmp(sqlite3_snapshot *p1, sqlite3_snapshot *p2){
   if( pHdr1->mxFrame>pHdr2->mxFrame ) return +1;
   return 0;
 }
+
+/*
+** The caller currently has a read transaction open on the database.
+** This function takes a SHARED lock on the CHECKPOINTER slot and then
+** checks if the snapshot passed as the second argument is still 
+** available. If so, SQLITE_OK is returned.
+**
+** If the snapshot is not available, SQLITE_ERROR is returned. Or, if
+** the CHECKPOINTER lock cannot be obtained, SQLITE_BUSY. If any error
+** occurs (any value other than SQLITE_OK is returned), the CHECKPOINTER
+** lock is released before returning.
+*/
+int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot){
+  int rc;
+  rc = walLockShared(pWal, WAL_CKPT_LOCK);
+  if( rc==SQLITE_OK ){
+    WalIndexHdr *pNew = (WalIndexHdr*)pSnapshot;
+    if( memcmp(pNew->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))
+     || pNew->mxFrame<walCkptInfo(pWal)->nBackfillAttempted
+    ){
+      rc = SQLITE_ERROR_SNAPSHOT;
+      walUnlockShared(pWal, WAL_CKPT_LOCK);
+    }
+  }
+  return rc;
+}
+
+/*
+** Release a lock obtained by an earlier successful call to
+** sqlite3WalSnapshotCheck().
+*/
+void sqlite3WalSnapshotUnlock(Wal *pWal){
+  assert( pWal );
+  walUnlockShared(pWal, WAL_CKPT_LOCK);
+}
+
+
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

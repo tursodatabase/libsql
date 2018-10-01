@@ -378,7 +378,7 @@ do_test shell1-3.10.1 {
 } {1 1 1}
 do_test shell1-3.10.2 {
   # we allow .help to take extra args (it is help after all)
-  set res [catchcmd "test.db" ".help BAD"]
+  set res [catchcmd "test.db" ".help *"]
   # look for a few of the possible help commands
   list [regexp {.help} $res] \
        [regexp {.quit} $res] \

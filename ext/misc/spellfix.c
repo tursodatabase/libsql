@@ -1295,6 +1295,9 @@ typedef struct Transliteration Transliteration;
 struct Transliteration {
  unsigned short int cFrom;
  unsigned char cTo0, cTo1, cTo2, cTo3;
+#ifdef SQLITE_SPELLFIX_5BYTE_MAPPINGS
+ unsigned char cTo4;
+#endif
 };
 
 /*
@@ -1708,7 +1711,11 @@ static const Transliteration *spellfixFindTranslit(int c, int *pxTop){
 ** should be freed by the caller.
 */
 static unsigned char *transliterate(const unsigned char *zIn, int nIn){
+#ifdef SQLITE_SPELLFIX_5BYTE_MAPPINGS
+  unsigned char *zOut = sqlite3_malloc64( nIn*5 + 1 );
+#else
   unsigned char *zOut = sqlite3_malloc64( nIn*4 + 1 );
+#endif
   int c, sz, nOut;
   if( zOut==0 ) return 0;
   nOut = 0;
@@ -1732,6 +1739,11 @@ static unsigned char *transliterate(const unsigned char *zIn, int nIn){
               zOut[nOut++] = tbl[x].cTo2;
               if( tbl[x].cTo3 ){
                 zOut[nOut++] = tbl[x].cTo3;
+#ifdef SQLITE_SPELLFIX_5BYTE_MAPPINGS
+                if( tbl[x].cTo4 ){
+                  zOut[nOut++] = tbl[x].cTo4;
+                }
+#endif /* SQLITE_SPELLFIX_5BYTE_MAPPINGS */
               }
             }
           }

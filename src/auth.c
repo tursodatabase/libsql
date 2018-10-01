@@ -207,7 +207,7 @@ int sqlite3AuthCheck(
   /* Don't do any authorization checks if the database is initialising
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
-  if( db->init.busy || IN_DECLARE_VTAB ){
+  if( db->init.busy || IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }
 

@@ -26,6 +26,15 @@ if {[llength [info command client_step]]==0 || [sqlite3 -has-codec]} {
   return
 }
 
+# This test does not work on older PPC Macs due to problems in the
+# pthreads library.  So skip it.
+#
+if {$tcl_platform(machine)=="Power Macintosh" && 
+    $tcl_platform(byteOrder)=="bigEndian"} {
+  finish_test
+  return
+}
+
 # The sample server implementation does not work right when memory
 # management is enabled.
 #

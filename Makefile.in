@@ -350,7 +350,8 @@ SRC += \
   $(TOP)/ext/icu/icu.c
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
-  $(TOP)/ext/rtree/rtree.c
+  $(TOP)/ext/rtree/rtree.c \
+  $(TOP)/ext/rtree/geopoly.c
 SRC += \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/sqlite3session.h
@@ -436,6 +437,7 @@ TESTSRC += \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/eval.c \
+  $(TOP)/ext/misc/explain.c \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
@@ -552,7 +554,8 @@ EXTHDR += \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 EXTHDR += \
-  $(TOP)/ext/rtree/rtree.h
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/geopoly.c
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
@@ -1275,6 +1278,9 @@ changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
 
 rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(TLIBS)
+
+atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/test/atrc.c sqlite3.lo $(TLIBS)
 
 LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(LTLINK) -I. -o $@ $(TOP)/tool/logest.c

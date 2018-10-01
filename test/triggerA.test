@@ -200,13 +200,6 @@ do_test triggerA-2.11 {
   }
 } {3 305 3 9900305 4 404 4 9900404 5 504 5 9900504}
 
-# Only run the reamining tests if memory debugging is turned on.
-#
-ifcapable !memdebug {
-   puts "Skipping triggerA malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
-   finish_test
-   return
-}
 source $testdir/malloc_common.tcl
 
 # Save a copy of the current database configuration.

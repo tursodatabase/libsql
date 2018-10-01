@@ -68,8 +68,8 @@ struct SortCtx {
   int labelBkOut;       /* Start label for the block-output subroutine */
   int addrSortIndex;    /* Address of the OP_SorterOpen or OP_OpenEphemeral */
   int labelDone;        /* Jump here when done, ex: LIMIT reached */
+  int labelOBLopt;      /* Jump here when sorter is full */
   u8 sortFlags;         /* Zero or more SORTFLAG_* bits */
-  u8 bOrderedInnerLoop; /* ORDER BY correctly sorts the inner loop */
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
   u8 nDefer;            /* Number of valid entries in aDefer[] */
   struct DeferredCsr {
@@ -693,10 +693,10 @@ static void pushOntoSorter(
     ** than LIMIT+OFFSET items in the sorter.
     **
     ** If the new record does not need to be inserted into the sorter,
-    ** jump to the next iteration of the loop. Or, if the
-    ** pSort->bOrderedInnerLoop flag is set to indicate that the inner
-    ** loop delivers items in sorted order, jump to the next iteration
-    ** of the outer loop.
+    ** jump to the next iteration of the loop. If the pSort->labelOBLopt
+    ** value is not zero, then it is a label of where to jump.  Otherwise,
+    ** just bypass the row insert logic.  See the header comment on the
+    ** sqlite3WhereOrderByLimitOptLabel() function for additional info.
     */
     int iCsr = pSort->iECursor;
     sqlite3VdbeAddOp2(v, OP_IfNotZero, iLimit, sqlite3VdbeCurrentAddr(v)+4);
@@ -718,9 +718,8 @@ static void pushOntoSorter(
   sqlite3VdbeAddOp4Int(v, op, pSort->iECursor, regRecord,
                        regBase+nOBSat, nBase-nOBSat);
   if( iSkip ){
-    assert( pSort->bOrderedInnerLoop==0 || pSort->bOrderedInnerLoop==1 );
     sqlite3VdbeChangeP2(v, iSkip,
-         sqlite3VdbeCurrentAddr(v) + pSort->bOrderedInnerLoop);
+         pSort->labelOBLopt ? pSort->labelOBLopt : sqlite3VdbeCurrentAddr(v));
   }
 }
 
@@ -804,7 +803,7 @@ static void selectExprDefer(
     struct ExprList_item *pItem = &pEList->a[i];
     if( pItem->u.x.iOrderByCol==0 ){
       Expr *pExpr = pItem->pExpr;
-      Table *pTab = pExpr->pTab;
+      Table *pTab = pExpr->y.pTab;
       if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 && pTab && !IsVirtual(pTab)
        && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
       ){
@@ -827,12 +826,12 @@ static void selectExprDefer(
               Expr *pNew = sqlite3PExpr(pParse, TK_COLUMN, 0, 0);
               if( pNew ){
                 pNew->iTable = pExpr->iTable;
-                pNew->pTab = pExpr->pTab;
+                pNew->y.pTab = pExpr->y.pTab;
                 pNew->iColumn = pPk ? pPk->aiColumn[k] : -1;
                 pExtra = sqlite3ExprListAppend(pParse, pExtra, pNew);
               }
             }
-            pSort->aDefer[nDefer].pTab = pExpr->pTab;
+            pSort->aDefer[nDefer].pTab = pExpr->y.pTab;
             pSort->aDefer[nDefer].iCsr = pExpr->iTable;
             pSort->aDefer[nDefer].nKey = nKey;
             nDefer++;
@@ -1149,7 +1148,6 @@ static void selectInnerLoop(
         assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, nResultCol, 
             r1, pDest->zAffSdst, nResultCol);
-        sqlite3ExprCacheAffinityChange(pParse, regResult, nResultCol);
         sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, nResultCol);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -1193,7 +1191,6 @@ static void selectInnerLoop(
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nResultCol);
-        sqlite3ExprCacheAffinityChange(pParse, regResult, nResultCol);
       }
       break;
     }
@@ -1550,7 +1547,6 @@ static void generateSortTail(
       assert( nColumn==sqlite3Strlen30(pDest->zAffSdst) );
       sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, nColumn, regRowid,
                         pDest->zAffSdst, nColumn);
-      sqlite3ExprCacheAffinityChange(pParse, regRow, nColumn);
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, regRowid, regRow, nColumn);
       break;
     }
@@ -1565,7 +1561,6 @@ static void generateSortTail(
       testcase( eDest==SRT_Coroutine );
       if( eDest==SRT_Output ){
         sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iSdst, nColumn);
-        sqlite3ExprCacheAffinityChange(pParse, pDest->iSdst, nColumn);
       }else{
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }
@@ -1685,7 +1680,7 @@ static const char *columnTypeImpl(
         break;
       }
 
-      assert( pTab && pExpr->pTab==pTab );
+      assert( pTab && pExpr->y.pTab==pTab );
       if( pS ){
         /* The "table" is actually a sub-select or a view in the FROM clause
         ** of the SELECT statement. Return the declaration type and origin
@@ -1870,7 +1865,7 @@ static void generateColumnNames(
 
     assert( p!=0 );
     assert( p->op!=TK_AGG_COLUMN );  /* Agg processing has not run yet */
-    assert( p->op!=TK_COLUMN || p->pTab!=0 ); /* Covering idx not yet coded */
+    assert( p->op!=TK_COLUMN || p->y.pTab!=0 ); /* Covering idx not yet coded */
     if( pEList->a[i].zName ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zName;
@@ -1878,7 +1873,7 @@ static void generateColumnNames(
     }else if( srcName && p->op==TK_COLUMN ){
       char *zCol;
       int iCol = p->iColumn;
-      pTab = p->pTab;
+      pTab = p->y.pTab;
       assert( pTab!=0 );
       if( iCol<0 ) iCol = pTab->iPKey;
       assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
@@ -1969,7 +1964,7 @@ int sqlite3ColumnsFromExprList(
       if( pColExpr->op==TK_COLUMN ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
-        Table *pTab = pColExpr->pTab;
+        Table *pTab = pColExpr->y.pTab;
         assert( pTab!=0 );
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
@@ -2166,7 +2161,6 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** The current implementation interprets "LIMIT 0" to mean
   ** no rows.
   */
-  sqlite3ExprCacheClear(pParse);
   if( pLimit ){
     assert( pLimit->op==TK_LIMIT );
     assert( pLimit->pLeft!=0 );
@@ -2323,6 +2317,13 @@ static void generateWithRecursiveQuery(
   ExprList *pOrderBy;           /* The ORDER BY clause */
   Expr *pLimit;                 /* Saved LIMIT and OFFSET */
   int regLimit, regOffset;      /* Registers used by LIMIT and OFFSET */
+
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( p->pWin ){
+    sqlite3ErrorMsg(pParse, "cannot use window functions in recursive queries");
+    return;
+  }
+#endif
 
   /* Obtain authorization to do a recursive query */
   if( sqlite3AuthCheck(pParse, SQLITE_RECURSIVE, 0, 0, 0) ) return;
@@ -2952,7 +2953,6 @@ static int generateOutputSubroutine(
       r1 = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp4(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, 
           r1, pDest->zAffSdst, pIn->nSdst);
-      sqlite3ExprCacheAffinityChange(pParse, pIn->iSdst, pIn->nSdst);
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pDest->iSDParm, r1,
                            pIn->iSdst, pIn->nSdst);
       sqlite3ReleaseTempReg(pParse, r1);
@@ -2995,7 +2995,6 @@ static int generateOutputSubroutine(
     default: {
       assert( pDest->eDest==SRT_Output );
       sqlite3VdbeAddOp2(v, OP_ResultRow, pIn->iSdst, pIn->nSdst);
-      sqlite3ExprCacheAffinityChange(pParse, pIn->iSdst, pIn->nSdst);
       break;
     }
   }
@@ -5336,36 +5335,21 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
     sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, pF->iMem);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, (u8)nArg);
-    sqlite3ExprCacheAffinityChange(pParse, regAgg, nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
-      sqlite3ExprCacheClear(pParse);
     }
   }
-
-  /* Before populating the accumulator registers, clear the column cache.
-  ** Otherwise, if any of the required column values are already present 
-  ** in registers, sqlite3ExprCode() may use OP_SCopy to copy the value
-  ** to pC->iMem. But by the time the value is used, the original register
-  ** may have been used, invalidating the underlying buffer holding the
-  ** text or blob value. See ticket [883034dcb5].
-  **
-  ** Another solution would be to change the OP_SCopy used to copy cached
-  ** values to an OP_Copy.
-  */
   if( regHit==0 && pAggInfo->nAccumulator ){
     regHit = regAcc;
   }
   if( regHit ){
     addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit); VdbeCoverage(v);
   }
-  sqlite3ExprCacheClear(pParse);
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
   }
   pAggInfo->directMode = 0;
-  sqlite3ExprCacheClear(pParse);
   if( addrHitTest ){
     sqlite3VdbeJumpHere(v, addrHitTest);
   }
@@ -5495,6 +5479,7 @@ static struct SrcList_item *isSelfJoinView(
 ** The transformation only works if all of the following are true:
 **
 **   *  The subquery is a UNION ALL of two or more terms
+**   *  The subquery does not have a LIMIT clause
 **   *  There is no WHERE or GROUP BY or HAVING clauses on the subqueries
 **   *  The outer query is a simple count(*)
 **
@@ -5518,6 +5503,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   do{
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
+    if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
     if( pSub->selFlags & SF_Aggregate ) return 0;     /* Not an aggregate */
     pSub = pSub->pPrior;                              /* Repeat over compound */
   }while( pSub );
@@ -5779,6 +5765,16 @@ int sqlite3Select(
     SELECTTRACE(0x100,pParse,p,("Constant propagation not helpful\n"));
   }
 
+#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
+  if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
+   && countOfViewOptimization(pParse, p)
+  ){
+    if( db->mallocFailed ) goto select_end;
+    pEList = p->pEList;
+    pTabList = p->pSrc;
+  }
+#endif
+
   /* For each term in the FROM clause, do two things:
   ** (1) Authorized unreferenced tables
   ** (2) Generate code for all sub-queries
@@ -5957,16 +5953,6 @@ int sqlite3Select(
   }
 #endif
 
-#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
-  if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
-   && countOfViewOptimization(pParse, p)
-  ){
-    if( db->mallocFailed ) goto select_end;
-    pEList = p->pEList;
-    pTabList = p->pSrc;
-  }
-#endif
-
   /* If the query is DISTINCT with an ORDER BY but is not an aggregate, and 
   ** if the select-list is the same as the ORDER BY list, then this query
   ** can be rewritten as a GROUP BY. In other words, this:
@@ -6080,7 +6066,7 @@ int sqlite3Select(
     }
     if( sSort.pOrderBy ){
       sSort.nOBSat = sqlite3WhereIsOrdered(pWInfo);
-      sSort.bOrderedInnerLoop = sqlite3WhereOrderedInnerLoop(pWInfo);
+      sSort.labelOBLopt = sqlite3WhereOrderByLimitOptLabel(pWInfo);
       if( sSort.nOBSat==sSort.pOrderBy->nExpr ){
         sSort.pOrderBy = 0;
       }
@@ -6107,6 +6093,7 @@ int sqlite3Select(
       sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
       sqlite3VdbeResolveLabel(v, addrGosub);
       VdbeNoopComment((v, "inner-loop subroutine"));
+      sSort.labelOBLopt = 0;
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp1(v, OP_Return, regGosub);
@@ -6316,15 +6303,14 @@ int sqlite3Select(
           }
         }
         regBase = sqlite3GetTempRange(pParse, nCol);
-        sqlite3ExprCacheClear(pParse);
         sqlite3ExprCodeExprList(pParse, pGroupBy, regBase, 0, 0);
         j = nGroupBy;
         for(i=0; i<sAggInfo.nColumn; i++){
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn>=j ){
             int r1 = j + regBase;
-            sqlite3ExprCodeGetColumnToReg(pParse, 
-                               pCol->pTab, pCol->iColumn, pCol->iTable, r1);
+            sqlite3ExprCodeGetColumnOfTable(v,
+                               pCol->pTab, pCol->iTable, pCol->iColumn, r1);
             j++;
           }
         }
@@ -6340,8 +6326,6 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterSort, sAggInfo.sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
         sAggInfo.useSortingIdx = 1;
-        sqlite3ExprCacheClear(pParse);
-
       }
 
       /* If the index or temporary table used by the GROUP BY sort
@@ -6364,7 +6348,6 @@ int sqlite3Select(
       ** from the previous row currently stored in a0, a1, a2...
       */
       addrTopOfLoop = sqlite3VdbeCurrentAddr(v);
-      sqlite3ExprCacheClear(pParse);
       if( groupBySort ){
         sqlite3VdbeAddOp3(v, OP_SorterData, sAggInfo.sortingIdx,
                           sortOut, sortPTab);

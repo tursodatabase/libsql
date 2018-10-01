@@ -1184,6 +1184,7 @@ static void editFunc(
   char *zCmd = 0;
   int bBin;
   int rc;
+  int hasCRNL = 0;
   FILE *f = 0;
   sqlite3_int64 sz;
   sqlite3_int64 x;
@@ -1215,6 +1216,8 @@ static void editFunc(
     }
   }
   bBin = sqlite3_value_type(argv[0])==SQLITE_BLOB;
+  /* When writing the file to be edited, do \n to \r\n conversions on systems
+  ** that want \r\n line endings */
   f = fopen(zTempFile, bBin ? "wb" : "w");
   if( f==0 ){
     sqlite3_result_error(context, "edit() cannot open temp file", -1);
@@ -1224,6 +1227,9 @@ static void editFunc(
   if( bBin ){
     x = fwrite(sqlite3_value_blob(argv[0]), 1, sz, f);
   }else{
+    const char *z = (const char*)sqlite3_value_text(argv[0]);
+    /* Remember whether or not the value originally contained \r\n */
+    if( z && strstr(z,"\r\n")!=0 ) hasCRNL = 1;
     x = fwrite(sqlite3_value_text(argv[0]), 1, sz, f);
   }
   fclose(f);
@@ -1243,7 +1249,7 @@ static void editFunc(
     sqlite3_result_error(context, "EDITOR returned non-zero", -1);
     goto edit_func_end;
   }
-  f = fopen(zTempFile, bBin ? "rb" : "r");
+  f = fopen(zTempFile, "rb");
   if( f==0 ){
     sqlite3_result_error(context,
       "edit() cannot reopen temp file after edit", -1);
@@ -1257,12 +1263,7 @@ static void editFunc(
     sqlite3_result_error_nomem(context);
     goto edit_func_end;
   }
-  if( bBin ){
-    x = fread(p, 1, sz, f);
-  }else{
-    x = fread(p, 1, sz, f);
-    p[sz] = 0;
-  }
+  x = fread(p, 1, sz, f);
   fclose(f);
   f = 0;
   if( x!=sz ){
@@ -1272,6 +1273,20 @@ static void editFunc(
   if( bBin ){
     sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
+    int i, j;
+    if( hasCRNL ){
+      /* If the original contains \r\n then do no conversions back to \n */
+      j = sz;
+    }else{
+      /* If the file did not originally contain \r\n then convert any new
+      ** \r\n back into \n */
+      for(i=j=0; i<sz; i++){
+        if( p[i]=='\r' && p[i+1]=='\n' ) i++;
+        p[j++] = p[i];
+      }
+      sz = j;
+      p[sz] = 0;
+    } 
     sqlite3_result_text64(context, (const char*)p, sz,
                           sqlite3_free, SQLITE_UTF8);
   }
@@ -3320,137 +3335,229 @@ static int run_schema_dump_query(
 }
 
 /*
-** Text of a help message
+** Text of help messages.
+**
+** The help text for each individual command begins with a line that starts
+** with ".".  Subsequent lines are supplimental information.
+**
+** There must be two or more spaces between the end of the command and the
+** start of the description of what that command does.
 */
-static char zHelp[] =
+static const char *(azHelp[]) = {
 #if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  ".archive ...           Manage SQL archives: \".archive --help\" for details\n"
+  ".archive ...             Manage SQL archives",
+  "   Each command must have exactly one of the following options:",
+  "     -c, --create               Create a new archive",
+  "     -u, --update               Update or add files to an existing archive",
+  "     -t, --list                 List contents of archive",
+  "     -x, --extract              Extract files from archive",
+  "   Optional arguments:",
+  "     -v, --verbose              Print each filename as it is processed",
+  "     -f FILE, --file FILE       Operate on archive FILE (default is current db)",
+  "     -a FILE, --append FILE     Operate on FILE opened using the apndvfs VFS",
+  "     -C DIR, --directory DIR    Change to directory DIR to read/extract files",
+  "     -n, --dryrun               Show the SQL that would have occurred",
+  "   Examples:",
+  "     .ar -cf archive.sar foo bar  # Create archive.sar from files foo and bar",
+  "     .ar -tf archive.sar          # List members of archive.sar",
+  "     .ar -xvf archive.sar         # Verbosely extract files from archive.sar",
+  "   See also:",
+  "      http://sqlite.org/cli.html#sqlar_archive_support",
 #endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  ".auth ON|OFF           Show authorizer callbacks\n"
+  ".auth ON|OFF             Show authorizer callbacks",
 #endif
-  ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
-  "                         Add \"--append\" to open using appendvfs.\n"
-  ".bail on|off           Stop after hitting an error.  Default OFF\n"
-  ".binary on|off         Turn binary output on or off.  Default OFF\n"
-  ".cd DIRECTORY          Change the working directory to DIRECTORY\n"
-  ".changes on|off        Show number of rows changed by SQL\n"
-  ".check GLOB            Fail if output since .testcase does not match\n"
-  ".clone NEWDB           Clone data into NEWDB from the existing database\n"
-  ".databases             List names and files of attached databases\n"
-  ".dbconfig ?op? ?val?   List or change sqlite3_db_config() options\n"
-  ".dbinfo ?DB?           Show status information about the database\n"
-  ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
-  "                         If TABLE specified, only dump tables matching\n"
-  "                         LIKE pattern TABLE.\n"
-  ".echo on|off           Turn command echo on or off\n"
-  ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
-  ".excel                 Display the output of next command in a spreadsheet\n"
-  ".exit                  Exit this program\n"
-  ".expert                EXPERIMENTAL. Suggest indexes for specified queries\n"
+  ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
+  "       --append            Use the appendvfs",
+  ".bail on|off             Stop after hitting an error.  Default OFF",
+  ".binary on|off           Turn binary output on or off.  Default OFF",
+  ".cd DIRECTORY            Change the working directory to DIRECTORY",
+  ".changes on|off          Show number of rows changed by SQL",
+  ".check GLOB              Fail if output since .testcase does not match",
+  ".clone NEWDB             Clone data into NEWDB from the existing database",
+  ".databases               List names and files of attached databases",
+  ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
+  ".dbinfo ?DB?             Show status information about the database",
+  ".dump ?TABLE? ...        Render all database content as SQL",
+  "   Options:",
+  "     --preserve-rowids      Include ROWID values in the output",
+  "     --newlines             Allow unescaped newline characters in output",
+  "   TABLE is LIKE pattern for the tables to dump",
+  ".echo on|off             Turn command echo on or off",
+  ".eqp on|off|full         Enable or disable automatic EXPLAIN QUERY PLAN",
+  ".excel                   Display the output of next command in a spreadsheet",
+  ".exit ?CODE?             Exit this program with return-code CODE",
+  ".expert                  EXPERIMENTAL. Suggest indexes for specified queries",
 /* Because explain mode comes on automatically now, the ".explain" mode
 ** is removed from the help screen.  It is still supported for legacy, however */
-/*".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"*/
-  ".fullschema ?--indent? Show schema and the content of sqlite_stat tables\n"
-  ".headers on|off        Turn display of headers on or off\n"
-  ".help                  Show this message\n"
-  ".import FILE TABLE     Import data from FILE into TABLE\n"
+/*".explain ?on|off|auto?   Turn EXPLAIN output mode on or off or to automatic",*/
+  ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
+  ".headers on|off          Turn display of headers on or off",
+  ".help ?-all? ?PATTERN?   Show help text for PATTERN",
+  ".import FILE TABLE       Import data from FILE into TABLE",
 #ifndef SQLITE_OMIT_TEST_CONTROL
-  ".imposter INDEX TABLE  Create imposter table TABLE on index INDEX\n"
+  ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
-  ".indexes ?TABLE?       Show names of all indexes\n"
-  "                         If TABLE specified, only show indexes for tables\n"
-  "                         matching LIKE pattern TABLE.\n"
+  ".indexes ?TABLE?         Show names of indexes",
+  "                           If TABLE is specified, only show indexes for",
+  "                           tables matching TABLE using the LIKE operator.",
 #ifdef SQLITE_ENABLE_IOTRACE
-  ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
+  ".iotrace FILE            Enable I/O diagnostic logging to FILE",
 #endif
-  ".limit ?LIMIT? ?VAL?   Display or change the value of an SQLITE_LIMIT\n"
-  ".lint OPTIONS          Report potential schema issues. Options:\n"
-  "                         fkey-indexes     Find missing foreign key indexes\n"
+  ".limit ?LIMIT? ?VAL?     Display or change the value of an SQLITE_LIMIT",
+  ".lint OPTIONS            Report potential schema issues.",
+  "     Options:",
+  "        fkey-indexes     Find missing foreign key indexes",
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
-  ".load FILE ?ENTRY?     Load an extension library\n"
+  ".load FILE ?ENTRY?       Load an extension library",
 #endif
-  ".log FILE|off          Turn logging on or off.  FILE can be stderr/stdout\n"
-  ".mode MODE ?TABLE?     Set output mode where MODE is one of:\n"
-  "                         ascii    Columns/rows delimited by 0x1F and 0x1E\n"
-  "                         csv      Comma-separated values\n"
-  "                         column   Left-aligned columns.  (See .width)\n"
-  "                         html     HTML <table> code\n"
-  "                         insert   SQL insert statements for TABLE\n"
-  "                         line     One value per line\n"
-  "                         list     Values delimited by \"|\"\n"
-  "                         quote    Escape answers as for SQL\n"
-  "                         tabs     Tab-separated values\n"
-  "                         tcl      TCL list elements\n"
-  ".nullvalue STRING      Use STRING in place of NULL values\n"
-  ".once (-e|-x|FILE)     Output for the next SQL command only to FILE\n"
-  "                         or invoke system text editor (-e) or spreadsheet (-x)\n"
-  "                         on the output.\n"
-  ".open ?OPTIONS? ?FILE? Close existing database and reopen FILE\n"
-  "                         The --new option starts with an empty file\n"
-  "                         Other options: --readonly --append --zip\n"
-  ".output ?FILE?         Send output to FILE or stdout\n"
-  ".print STRING...       Print literal STRING\n"
-  ".prompt MAIN CONTINUE  Replace the standard prompts\n"
-  ".quit                  Exit this program\n"
-  ".read FILENAME         Execute SQL in FILENAME\n"
-  ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
-  ".save FILE             Write in-memory database into FILE\n"
-  ".scanstats on|off      Turn sqlite3_stmt_scanstatus() metrics on or off\n"
-  ".schema ?PATTERN?      Show the CREATE statements matching PATTERN\n"
-  "                          Add --indent for pretty-printing\n"
-  ".selftest ?--init?     Run tests defined in the SELFTEST table\n"
-  ".separator COL ?ROW?   Change the column separator and optionally the row\n"
-  "                         separator for both the output mode and .import\n"
+  ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
+  ".mode MODE ?TABLE?       Set output mode",
+  "   MODE is one of:",
+  "     ascii    Columns/rows delimited by 0x1F and 0x1E",
+  "     csv      Comma-separated values",
+  "     column   Left-aligned columns.  (See .width)",
+  "     html     HTML <table> code",
+  "     insert   SQL insert statements for TABLE",
+  "     line     One value per line",
+  "     list     Values delimited by \"|\"",
+  "     quote    Escape answers as for SQL",
+  "     tabs     Tab-separated values",
+  "     tcl      TCL list elements",
+  ".nullvalue STRING        Use STRING in place of NULL values",
+  ".once (-e|-x|FILE)       Output for the next SQL command only to FILE",
+  "     If FILE begins with '|' then open as a pipe",
+  "     Other options:",
+  "       -e    Invoke system text editor",
+  "       -x    Open in a spreadsheet",
+  ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
+  "     Options:",
+  "        --append      Use appendvfs to append database to the end of FILE",
+  "        --new         Initialize FILE to an empty database",
+  "        --readonly    Open FILE readonly",
+  "        --zip         FILE is a ZIP archive",
+  ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
+  "     If FILE begins with '|' then open it as a pipe.",
+  ".print STRING...         Print literal STRING",
+  ".prompt MAIN CONTINUE    Replace the standard prompts",
+  ".quit                    Exit this program",
+  ".read FILE               Read input from FILE",
+  ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
+  ".save FILE               Write in-memory database into FILE",
+  ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
+  ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
+  "     Options:",
+  "         --indent            Try to pretty-print the schema",
+  ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
+  "    Options:",
+  "       --init               Create a new SELFTEST table",
+  "       -v                   Verbose output",
+  ".separator COL ?ROW?     Change the column and row separators",
 #if defined(SQLITE_ENABLE_SESSION)
-  ".session CMD ...       Create or control sessions\n"
+  ".session ?NAME? CMD ...  Create or control sessions",
+  "   Subcommands:",
+  "     attach TABLE             Attach TABLE",
+  "     changeset FILE           Write a changeset into FILE",
+  "     close                    Close one session",
+  "     enable ?BOOLEAN?         Set or query the enable bit",
+  "     filter GLOB...           Reject tables matching GLOBs",
+  "     indirect ?BOOLEAN?       Mark or query the indirect status",
+  "     isempty                  Query whether the session is empty",
+  "     list                     List currently open session names",
+  "     open DB NAME             Open a new session on DB",
+  "     patchset FILE            Write a patchset into FILE",
+  "   If ?NAME? is omitted, the first defined session is used.",
 #endif
-  ".sha3sum ?OPTIONS...?  Compute a SHA3 hash of database content\n"
+  ".sha3sum ...             Compute a SHA3 hash of database content",
+  "    Options:",
+  "      --schema              Also hash the sqlite_master table",
+  "      --sha3-224            Use the sha3-224 algorithm",
+  "      --sha3-256            Use the sha3-256 algorithm.  This is the default.",
+  "      --sha3-384            Use the sha3-384 algorithm",
+  "      --sha3-512            Use the sha3-512 algorithm",
+  "    Any other argument is a LIKE pattern for tables to hash",
 #ifndef SQLITE_NOHAVE_SYSTEM
-  ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
+  ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
-  ".show                  Show the current values for various settings\n"
-  ".stats ?on|off?        Show stats or turn stats on or off\n"
+  ".show                    Show the current values for various settings",
+  ".stats ?on|off?          Show stats or turn stats on or off",
 #ifndef SQLITE_NOHAVE_SYSTEM
-  ".system CMD ARGS...    Run CMD ARGS... in a system shell\n"
+  ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 #endif
-  ".tables ?TABLE?        List names of tables\n"
-  "                         If TABLE specified, only list tables matching\n"
-  "                         LIKE pattern TABLE.\n"
-  ".testcase NAME         Begin redirecting output to 'testcase-out.txt'\n"
-  ".timeout MS            Try opening locked tables for MS milliseconds\n"
-  ".timer on|off          Turn SQL timer on or off\n"
-  ".trace FILE|off        Output each SQL statement as it is run\n"
-  ".vfsinfo ?AUX?         Information about the top-level VFS\n"
-  ".vfslist               List all available VFSes\n"
-  ".vfsname ?AUX?         Print the name of the VFS stack\n"
-  ".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
-  "                         Negative values right-justify\n"
-;
+  ".tables ?TABLE?          List names of tables matching LIKE pattern TABLE",
+  ".testcase NAME           Begin redirecting output to 'testcase-out.txt'",
+  ".timeout MS              Try opening locked tables for MS milliseconds",
+  ".timer on|off            Turn SQL timer on or off",
+  ".trace FILE|off          Output each SQL statement as it is run",
+  ".vfsinfo ?AUX?           Information about the top-level VFS",
+  ".vfslist                 List all available VFSes",
+  ".vfsname ?AUX?           Print the name of the VFS stack",
+  ".width NUM1 NUM2 ...     Set column widths for \"column\" mode",
+  "     Negative values right-justify",
+};
 
-#if defined(SQLITE_ENABLE_SESSION)
 /*
-** Print help information for the ".sessions" command
+** Output help text.
+**
+** zPattern describes the set of commands for which help text is provided.
+** If zPattern is NULL, then show all commands, but only give a one-line
+** description of each.
+**
+** Return the number of matches.
 */
-void session_help(ShellState *p){
-  raw_printf(p->out,
-    ".session ?NAME? SUBCOMMAND ?ARGS...?\n"
-    "If ?NAME? is omitted, the first defined session is used.\n"
-    "Subcommands:\n"
-    "   attach TABLE             Attach TABLE\n"
-    "   changeset FILE           Write a changeset into FILE\n"
-    "   close                    Close one session\n"
-    "   enable ?BOOLEAN?         Set or query the enable bit\n"
-    "   filter GLOB...           Reject tables matching GLOBs\n"
-    "   indirect ?BOOLEAN?       Mark or query the indirect status\n"
-    "   isempty                  Query whether the session is empty\n"
-    "   list                     List currently open session names\n"
-    "   open DB NAME             Open a new session on DB\n"
-    "   patchset FILE            Write a patchset into FILE\n"
-  );
+static int showHelp(FILE *out, const char *zPattern){
+  int i, j;
+  int n = 0;
+  char *zPat;
+  if( zPattern==0 || zPattern[0]=='0' ){
+    /* Show all commands, but only one line per command */
+    for(i=0; i<ArraySize(azHelp); i++){
+      if( azHelp[i][0]=='.' ){
+        utf8_printf(out, "%s\n", azHelp[i]);
+        n++;
+      }
+    }
+  }else{
+    /* Look for commands that for which zPattern is an exact prefix */
+    zPat = sqlite3_mprintf(".%s*", zPattern);
+    for(i=0; i<ArraySize(azHelp); i++){
+      if( sqlite3_strglob(zPat, azHelp[i])==0 ){
+        utf8_printf(out, "%s\n", azHelp[i]);
+        j = i+1;
+        n++;
+      }
+    }
+    sqlite3_free(zPat);
+    if( n ){
+      if( n==1 ){
+        /* when zPattern is a prefix of exactly one command, then include the
+        ** details of that command, which should begin at offset j */
+        while( j<ArraySize(azHelp)-1 && azHelp[j][0]!='.' ){
+          utf8_printf(out, "%s\n", azHelp[j]);
+          j++;
+        }
+      }
+      return n;
+    }
+    /* Look for commands that contain zPattern anywhere.  Show the complete
+    ** text of all commands that match. */
+    zPat = sqlite3_mprintf("%%%s%%", zPattern);
+    for(i=0; i<ArraySize(azHelp); i++){
+      if( azHelp[i][0]=='.' ) j = i;
+      if( sqlite3_strlike(zPat, azHelp[i], 0)==0 ){
+        utf8_printf(out, "%s\n", azHelp[j]);
+        while( j<ArraySize(azHelp)-1 && azHelp[j+1][0]!='.' ){
+          j++;
+          utf8_printf(out, "%s\n", azHelp[j]);
+        }
+        i = j;
+        n++;
+      }
+    }
+    sqlite3_free(zPat);
+  }
+  return n;
 }
-#endif
-
 
 /* Forward reference */
 static int process_input(ShellState *p, FILE *in);
@@ -4926,32 +5033,7 @@ struct ArCommand {
 ** Print a usage message for the .ar command to stderr and return SQLITE_ERROR.
 */
 static int arUsage(FILE *f){
-  raw_printf(f,
-"\n"
-"Usage: .ar [OPTION...] [FILE...]\n"
-"The .ar command manages sqlar archives.\n"
-"\n"
-"Examples:\n"
-"  .ar -cf archive.sar foo bar    # Create archive.sar from files foo and bar\n"
-"  .ar -tf archive.sar            # List members of archive.sar\n"
-"  .ar -xvf archive.sar           # Verbosely extract files from archive.sar\n"
-"\n"
-"Each command line must feature exactly one command option:\n"
-"  -c, --create               Create a new archive\n"
-"  -u, --update               Update or add files to an existing archive\n"
-"  -t, --list                 List contents of archive\n"
-"  -x, --extract              Extract files from archive\n"
-"\n"
-"And zero or more optional options:\n"
-"  -v, --verbose              Print each filename as it is processed\n"
-"  -f FILE, --file FILE       Operate on archive FILE (default is current db)\n"
-"  -a FILE, --append FILE     Operate on FILE opened using the apndvfs VFS\n"
-"  -C DIR, --directory DIR    Change to directory DIR to read/extract files\n"
-"  -n, --dryrun               Show the SQL that would have occurred\n"
-"\n"
-"See also: http://sqlite.org/cli.html#sqlar_archive_support\n"
-"\n"
-);
+  showHelp(f,"archive");
   return SQLITE_ERROR;
 }
 
@@ -5058,6 +5140,7 @@ static int arParseCommand(
   struct ArSwitch *pEnd = &aSwitch[nSwitch];
 
   if( nArg<=1 ){
+    utf8_printf(stderr, "Wrong number of arguments.  Usage:\n");
     return arUsage(stderr);
   }else{
     char *z = azArg[1];
@@ -5829,7 +5912,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && n>=3 && strncmp(azArg[0], "dbconfig", n)==0 ){
-    static const struct DbConfigChoices {const char *zName; int op;} aDbConfig[] = {
+    static const struct DbConfigChoices {
+      const char *zName;
+      int op;
+    } aDbConfig[] = {
         { "enable_fkey",      SQLITE_DBCONFIG_ENABLE_FKEY            },
         { "enable_trigger",   SQLITE_DBCONFIG_ENABLE_TRIGGER         },
         { "fts3_tokenizer",   SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER  },
@@ -6076,7 +6162,14 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
-    utf8_printf(p->out, "%s", zHelp);
+    if( nArg>=2 ){
+      int n = showHelp(p->out, azArg[1]);
+      if( n==0 ){
+        utf8_printf(p->out, "Nothing matches '%s'\n", azArg[1]);
+      }
+    }else{
+      showHelp(p->out, 0);
+    }
   }else
 
   if( c=='i' && strncmp(azArg[0], "import", n)==0 ){
@@ -7080,7 +7173,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else
     /* If no command name matches, show a syntax error */
     session_syntax_error:
-    session_help(p);
+    showHelp(p->out, "session");
   }else
 #endif
 

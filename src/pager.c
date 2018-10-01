@@ -997,8 +997,12 @@ static int assert_pager_state(Pager *p){
 ** to "print *pPager" in gdb:
 **
 ** (gdb) printf "%s", print_pager_state(pPager)
+**
+** This routine has external linkage in order to suppress compiler warnings
+** about an unused function.  It is enclosed within SQLITE_DEBUG and so does
+** not appear in normal builds.
 */
-static char *print_pager_state(Pager *p){
+char *print_pager_state(Pager *p){
   static char zRet[1024];
 
   sqlite3_snprintf(1024, zRet,
@@ -7278,13 +7282,6 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
   u8 eOld = pPager->journalMode;    /* Prior journalmode */
 
-#ifdef SQLITE_DEBUG
-  /* The print_pager_state() routine is intended to be used by the debugger
-  ** only.  We invoke it once here to suppress a compiler warning. */
-  print_pager_state(pPager);
-#endif
-
-
   /* The eMode parameter is always valid */
   assert(      eMode==PAGER_JOURNALMODE_DELETE
             || eMode==PAGER_JOURNALMODE_TRUNCATE
@@ -7653,6 +7650,38 @@ int sqlite3PagerSnapshotRecover(Pager *pPager){
   }
   return rc;
 }
+
+/*
+** The caller currently has a read transaction open on the database.
+** If this is not a WAL database, SQLITE_ERROR is returned. Otherwise,
+** this function takes a SHARED lock on the CHECKPOINTER slot and then
+** checks if the snapshot passed as the second argument is still 
+** available. If so, SQLITE_OK is returned.
+**
+** If the snapshot is not available, SQLITE_ERROR is returned. Or, if
+** the CHECKPOINTER lock cannot be obtained, SQLITE_BUSY. If any error
+** occurs (any value other than SQLITE_OK is returned), the CHECKPOINTER
+** lock is released before returning.
+*/
+int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot){
+  int rc;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotCheck(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
+/*
+** Release a lock obtained by an earlier successful call to
+** sqlite3PagerSnapshotCheck().
+*/
+void sqlite3PagerSnapshotUnlock(Pager *pPager){
+  assert( pPager->pWal );
+  return sqlite3WalSnapshotUnlock(pPager->pWal);
+}
+
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 #endif /* !SQLITE_OMIT_WAL */
 

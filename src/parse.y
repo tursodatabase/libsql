@@ -325,7 +325,7 @@ ccons ::= DEFAULT scanpt id(X).       {
     sqlite3ExprIdToTrueFalse(p);
     testcase( p->op==TK_TRUEFALSE && sqlite3ExprTruthValue(p) );
   }
-  sqlite3AddDefaultValue(pParse,p,X.z,X.z+X.n);
+    sqlite3AddDefaultValue(pParse,p,X.z,X.z+X.n);
 }
 
 // In addition to the type name, we also care about the primary key and
@@ -683,10 +683,14 @@ dbnm(A) ::= DOT nm(X). {A = X;}
 
 %type fullname {SrcList*}
 %destructor fullname {sqlite3SrcListDelete(pParse->db, $$);}
-fullname(A) ::= nm(X).  
-   {A = sqlite3SrcListAppend(pParse->db,0,&X,0); /*A-overwrites-X*/}
-fullname(A) ::= nm(X) DOT nm(Y).  
-   {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
+fullname(A) ::= nm(X).  {
+  A = sqlite3SrcListAppend(pParse->db,0,&X,0);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+}
+fullname(A) ::= nm(X) DOT nm(Y). {
+  A = sqlite3SrcListAppend(pParse->db,0,&X,&Y);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
+}
 
 %type xfullname {SrcList*}
 %destructor xfullname {sqlite3SrcListDelete(pParse->db, $$);}
@@ -908,9 +912,9 @@ insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 idlist_opt(A) ::= .                       {A = 0;}
 idlist_opt(A) ::= LP idlist(X) RP.    {A = X;}
 idlist(A) ::= idlist(A) COMMA nm(Y).
-    {A = sqlite3IdListAppend(pParse->db,A,&Y);}
+    {A = sqlite3IdListAppend(pParse,A,&Y);}
 idlist(A) ::= nm(Y).
-    {A = sqlite3IdListAppend(pParse->db,0,&Y); /*A-overwrites-Y*/}
+    {A = sqlite3IdListAppend(pParse,0,&Y); /*A-overwrites-Y*/}
 
 /////////////////////////// Expression Processing /////////////////////////////
 //
@@ -929,10 +933,18 @@ idlist(A) ::= nm(Y).
   static Expr *tokenExpr(Parse *pParse, int op, Token t){
     Expr *p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr)+t.n+1);
     if( p ){
-      memset(p, 0, sizeof(Expr));
+      /* memset(p, 0, sizeof(Expr)); */
       p->op = (u8)op;
+      p->affinity = 0;
       p->flags = EP_Leaf;
       p->iAgg = -1;
+      p->pLeft = p->pRight = 0;
+      p->x.pList = 0;
+      p->pAggInfo = 0;
+      p->y.pTab = 0;
+      p->op2 = 0;
+      p->iTable = 0;
+      p->iColumn = 0;
       p->u.zToken = (char*)&p[1];
       memcpy(p->u.zToken, t.z, t.n);
       p->u.zToken[t.n] = 0;
@@ -943,9 +955,13 @@ idlist(A) ::= nm(Y).
 #if SQLITE_MAX_EXPR_DEPTH>0
       p->nHeight = 1;
 #endif  
+      if( IN_RENAME_OBJECT ){
+        return (Expr*)sqlite3RenameTokenMap(pParse, (void*)p, &t);
+      }
     }
     return p;
   }
+
 }
 
 expr(A) ::= term(A).
@@ -955,6 +971,10 @@ expr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenMap(pParse, (void*)temp2, &Y);
+    sqlite3RenameTokenMap(pParse, (void*)temp1, &X);
+  }
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
 }
 expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
@@ -962,6 +982,10 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenMap(pParse, (void*)temp3, &Z);
+    sqlite3RenameTokenMap(pParse, (void*)temp2, &Y);
+  }
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
@@ -1077,7 +1101,7 @@ expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExpr(pParse,TK_NOTNULL,A,0);}
   ** unary TK_ISNULL or TK_NOTNULL expression. */
   static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
     sqlite3 *db = pParse->db;
-    if( pA && pY && pY->op==TK_NULL ){
+    if( pA && pY && pY->op==TK_NULL && !IN_RENAME_OBJECT ){
       pA->op = (u8)op;
       sqlite3ExprDelete(db, pA->pRight);
       pA->pRight = 0;
@@ -1260,6 +1284,9 @@ cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
   sqlite3CreateIndex(pParse, &X, &D, 
                      sqlite3SrcListAppend(pParse->db,0,&Y,0), Z, U,
                       &S, W, SQLITE_SO_ASC, NE, SQLITE_IDXTYPE_APPDEF);
+  if( IN_RENAME_OBJECT && pParse->pNewIndex ){
+    sqlite3RenameTokenMap(pParse, pParse->pNewIndex->zName, &Y);
+  }
 }
 
 %type uniqueflag {int}
@@ -1445,16 +1472,16 @@ tridxby ::= NOT INDEXED. {
 // UPDATE 
 trigger_cmd(A) ::=
    UPDATE(B) orconf(R) trnm(X) tridxby SET setlist(Y) where_opt(Z) scanpt(E).  
-   {A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R, B.z, E);}
+   {A = sqlite3TriggerUpdateStep(pParse, &X, Y, Z, R, B.z, E);}
 
 // INSERT
 trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
                       trnm(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
-   A = sqlite3TriggerInsertStep(pParse->db,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
+   A = sqlite3TriggerInsertStep(pParse,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
 }
 // DELETE
 trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
-   {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y, B.z, E);}
+   {A = sqlite3TriggerDeleteStep(pParse, &X, Y, B.z, E);}
 
 // SELECT
 trigger_cmd(A) ::= scanpt(B) select(X) scanpt(E).
@@ -1532,8 +1559,13 @@ add_column_fullname ::= fullname(X). {
   disableLookaside(pParse);
   sqlite3AlterBeginAddColumn(pParse, X);
 }
+cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
+  sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
+}
+
 kwcolumn_opt ::= .
 kwcolumn_opt ::= COLUMNKW.
+
 %endif  SQLITE_OMIT_ALTERTABLE
 
 //////////////////////// CREATE VIRTUAL TABLE ... /////////////////////////////

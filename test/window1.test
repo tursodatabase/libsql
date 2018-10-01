@@ -526,5 +526,27 @@ do_catchsql_test 11.4 {
   CREATE INDEX t6i ON t6(lead(b) OVER ());
 } {1 {misuse of window function lead()}}
 
-finish_test
+# 2018-09-17 ticket 510cde277783b5fb5de628393959849dff377eb3
+# Endless loop on a query with window functions and a limit
+#
+do_execsql_test 12.100 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(id INT, b VARCHAR, c VARCHAR);
+  INSERT INTO t1 VALUES(1, 'A', 'one');
+  INSERT INTO t1 VALUES(2, 'B', 'two');
+  INSERT INTO t1 VALUES(3, 'C', 'three');
+  INSERT INTO t1 VALUES(4, 'D', 'one');
+  INSERT INTO t1 VALUES(5, 'E', 'two');
+  SELECT id, b, lead(c,1) OVER(ORDER BY c) AS x 
+    FROM t1 WHERE id>1
+   ORDER BY b LIMIT 1;
+} {2 B two}
+do_execsql_test 12.110 {
+  INSERT INTO t1 VALUES(6, 'F', 'three');
+  INSERT INTO t1 VALUES(7, 'G', 'one');
+  SELECT id, b, lead(c,1) OVER(ORDER BY c) AS x
+    FROM t1 WHERE id>1
+   ORDER BY b LIMIT 2;
+} {2 B two 3 C three}
 
+finish_test

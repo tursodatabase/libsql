@@ -358,6 +358,32 @@ execsql_test 10.3 {
   SELECT id, lag(b, -1) OVER (PARTITION BY a ORDER BY id) FROM t7;
 }
 
+execsql_test 11.0 {
+  DROP VIEW IF EXISTS v8;
+  DROP TABLE IF EXISTS t8;
+  CREATE TABLE t8(t INT, total INT);
+  INSERT INTO t8 VALUES(0,2);
+  INSERT INTO t8 VALUES(5,1);
+  INSERT INTO t8 VALUES(10,1);
+}
+
+execsql_test 11.1 {
+  SELECT NTILE(256) OVER (ORDER BY total) - 1 AS nt FROM t8;
+}
+
+execsql_test 11.2 {
+  CREATE VIEW v8 AS SELECT NTILE(256) OVER (ORDER BY total) - 1 AS nt FROM t8;
+}
+
+execsql_test 11.3 {
+  SELECT * FROM v8;
+}
+
+execsql_test 11.4 {
+  SELECT * FROM (
+    SELECT NTILE(256) OVER (ORDER BY total) - 1 AS nt FROM t8
+  ) sub;
+}
 
 
 finish_test
