@@ -1,5 +1,5 @@
-C Speed\sup\sxAccess()\scalls\smade\son\san\sRBU\sVFS\swhen\sthere\sare\slots\sof\sopen\nconnections.
-D 2018-10-01T17:33:35.846
+C Add\sthe\s"PRAGMA\stable_xinfo"\scommand\sthat\sworks\slike\stable_info\sbut\salso\nshows\shidden\scolumns\sin\svirtual\stables\sand\sadds\sthe\s"hidden"\sboolean\scolumn.
+D 2018-10-01T21:41:15.265
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -496,8 +496,8 @@ F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
 F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c 79abc65c08d2754048efee3ba99fe91863dfeab0ba699a4439fa5053ec87cf36
-F src/pragma.h fb46b1e663128f6827979ad8ebddb55be2a0276ea923c47adeac02144207a682
+F src/pragma.c a656ff043a03bd94153e6d731a3fbf1bb420207edc969d8fc04b4d2448387901
+F src/pragma.h 0ea639401ed7b8275c145e3a814119831e296118b545421e76ae2e1516f10ad8
 F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -1334,7 +1334,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test c47171c36b3d411df2bd49719dcaa5d034f8d277477fd41d253940723b969a51
+F test/tabfunc01.test 5ddfdcda81f362d54cf301a65678edea2a02a570760a4c88051fc2730aafcd81
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1703,7 +1703,7 @@ F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 8b9b448b5eb7222d4e3f7afb3c678596784180d319eb4e01c842887ed8213b85
+F tool/mkpragmatab.tcl fc895d5a40e725b19b866b058b3994bfc45db3e7fef40db9e6c6fd921bf8a337
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1770,7 +1770,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ac2cdda68f92b0352bc7f0b4be5fca4bb58565ca65055fb34153cc284ed6922
-R a63f057a754c642de8f2617ecd7043d5
-U dan
-Z c6e86f7777ba1872e2992f69103701bb
+P 310b4b65b8c8ee080760c7efb4c7e20244c6063a5dba37a4f40490105aafd29f 7694b9bc3003db6ba0b41c5029c8f7b84c07724e7a518e835e98b3c46e4ea227
+R 4421b937cd53dd313f71ab5caa0a0109
+T +closed 7694b9bc3003db6ba0b41c5029c8f7b84c07724e7a518e835e98b3c46e4ea227
+U drh
+Z e0b06ff9de331820a7420ba45b53f562
