@@ -68,65 +68,57 @@
 ** result column is different from the name of the pragma
 */
 static const char *const pragCName[] = {
-  /*   0 */ "cache_size",  /* Used by: default_cache_size */
-  /*   1 */ "cid",         /* Used by: table_info */
-  /*   2 */ "name",       
-  /*   3 */ "type",       
-  /*   4 */ "notnull",    
-  /*   5 */ "dflt_value", 
-  /*   6 */ "pk",         
-  /*   7 */ "cid",         /* Used by: table_vinfo */
-  /*   8 */ "name",       
-  /*   9 */ "type",       
-  /*  10 */ "notnull",    
-  /*  11 */ "dflt_value", 
-  /*  12 */ "pk",         
-  /*  13 */ "hidden",     
-  /*  14 */ "tbl",         /* Used by: stats */
-  /*  15 */ "idx",        
-  /*  16 */ "wdth",       
-  /*  17 */ "hght",       
-  /*  18 */ "flgs",       
-  /*  19 */ "seqno",       /* Used by: index_info */
-  /*  20 */ "cid",        
-  /*  21 */ "name",       
-  /*  22 */ "seqno",       /* Used by: index_xinfo */
-  /*  23 */ "cid",        
-  /*  24 */ "name",       
-  /*  25 */ "desc",       
-  /*  26 */ "coll",       
-  /*  27 */ "key",        
-  /*  28 */ "seq",         /* Used by: index_list */
-  /*  29 */ "name",       
-  /*  30 */ "unique",     
-  /*  31 */ "origin",     
-  /*  32 */ "partial",    
-  /*  33 */ "seq",         /* Used by: database_list */
-  /*  34 */ "name",       
-  /*  35 */ "file",       
-  /*  36 */ "name",        /* Used by: function_list */
-  /*  37 */ "builtin",    
-  /*  38 */ "name",        /* Used by: module_list pragma_list */
-  /*  39 */ "seq",         /* Used by: collation_list */
-  /*  40 */ "name",       
-  /*  41 */ "id",          /* Used by: foreign_key_list */
-  /*  42 */ "seq",        
-  /*  43 */ "table",      
-  /*  44 */ "from",       
-  /*  45 */ "to",         
-  /*  46 */ "on_update",  
-  /*  47 */ "on_delete",  
-  /*  48 */ "match",      
-  /*  49 */ "table",       /* Used by: foreign_key_check */
-  /*  50 */ "rowid",      
-  /*  51 */ "parent",     
-  /*  52 */ "fkid",       
-  /*  53 */ "busy",        /* Used by: wal_checkpoint */
-  /*  54 */ "log",        
-  /*  55 */ "checkpointed",
-  /*  56 */ "timeout",     /* Used by: busy_timeout */
-  /*  57 */ "database",    /* Used by: lock_status */
-  /*  58 */ "status",     
+  /*   0 */ "id",          /* Used by: foreign_key_list */
+  /*   1 */ "seq",        
+  /*   2 */ "table",      
+  /*   3 */ "from",       
+  /*   4 */ "to",         
+  /*   5 */ "on_update",  
+  /*   6 */ "on_delete",  
+  /*   7 */ "match",      
+  /*   8 */ "cid",         /* Used by: table_xinfo */
+  /*   9 */ "name",       
+  /*  10 */ "type",       
+  /*  11 */ "notnull",    
+  /*  12 */ "dflt_value", 
+  /*  13 */ "pk",         
+  /*  14 */ "hidden",     
+                           /* table_info reuses 8 */
+  /*  15 */ "seqno",       /* Used by: index_xinfo */
+  /*  16 */ "cid",        
+  /*  17 */ "name",       
+  /*  18 */ "desc",       
+  /*  19 */ "coll",       
+  /*  20 */ "key",        
+  /*  21 */ "tbl",         /* Used by: stats */
+  /*  22 */ "idx",        
+  /*  23 */ "wdth",       
+  /*  24 */ "hght",       
+  /*  25 */ "flgs",       
+  /*  26 */ "seq",         /* Used by: index_list */
+  /*  27 */ "name",       
+  /*  28 */ "unique",     
+  /*  29 */ "origin",     
+  /*  30 */ "partial",    
+  /*  31 */ "table",       /* Used by: foreign_key_check */
+  /*  32 */ "rowid",      
+  /*  33 */ "parent",     
+  /*  34 */ "fkid",       
+                           /* index_info reuses 15 */
+  /*  35 */ "seq",         /* Used by: database_list */
+  /*  36 */ "name",       
+  /*  37 */ "file",       
+  /*  38 */ "busy",        /* Used by: wal_checkpoint */
+  /*  39 */ "log",        
+  /*  40 */ "checkpointed",
+  /*  41 */ "name",        /* Used by: function_list */
+  /*  42 */ "builtin",    
+                           /* collation_list reuses 26 */
+  /*  43 */ "database",    /* Used by: lock_status */
+  /*  44 */ "status",     
+  /*  45 */ "cache_size",  /* Used by: default_cache_size */
+                           /* module_list pragma_list reuses 9 */
+  /*  46 */ "timeout",     /* Used by: busy_timeout */
 };
 
 /* Definitions of all built-in pragmas */
@@ -172,7 +164,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "busy_timeout",
   /* ePragTyp:  */ PragTyp_BUSY_TIMEOUT,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 56, 1,
+  /* ColNames:  */ 46, 1,
   /* iArg:      */ 0 },
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
  {/* zName:     */ "cache_size",
@@ -209,7 +201,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "collation_list",
   /* ePragTyp:  */ PragTyp_COLLATION_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 39, 2,
+  /* ColNames:  */ 26, 2,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_COMPILEOPTION_DIAGS)
@@ -244,14 +236,14 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "database_list",
   /* ePragTyp:  */ PragTyp_DATABASE_LIST,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0,
-  /* ColNames:  */ 33, 3,
+  /* ColNames:  */ 35, 3,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "default_cache_size",
   /* ePragTyp:  */ PragTyp_DEFAULT_CACHE_SIZE,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
-  /* ColNames:  */ 0, 1,
+  /* ColNames:  */ 45, 1,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
@@ -281,14 +273,14 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "foreign_key_check",
   /* ePragTyp:  */ PragTyp_FOREIGN_KEY_CHECK,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0,
-  /* ColNames:  */ 49, 4,
+  /* ColNames:  */ 31, 4,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FOREIGN_KEY)
  {/* zName:     */ "foreign_key_list",
   /* ePragTyp:  */ PragTyp_FOREIGN_KEY_LIST,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 41, 8,
+  /* ColNames:  */ 0, 8,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
@@ -324,7 +316,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "function_list",
   /* ePragTyp:  */ PragTyp_FUNCTION_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 36, 2,
+  /* ColNames:  */ 41, 2,
   /* iArg:      */ 0 },
 #endif
 #endif
@@ -360,17 +352,17 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "index_info",
   /* ePragTyp:  */ PragTyp_INDEX_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 19, 3,
+  /* ColNames:  */ 15, 3,
   /* iArg:      */ 0 },
  {/* zName:     */ "index_list",
   /* ePragTyp:  */ PragTyp_INDEX_LIST,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 28, 5,
+  /* ColNames:  */ 26, 5,
   /* iArg:      */ 0 },
  {/* zName:     */ "index_xinfo",
   /* ePragTyp:  */ PragTyp_INDEX_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 22, 6,
+  /* ColNames:  */ 15, 6,
   /* iArg:      */ 1 },
 #endif
 #if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
@@ -422,7 +414,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "lock_status",
   /* ePragTyp:  */ PragTyp_LOCK_STATUS,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 57, 2,
+  /* ColNames:  */ 43, 2,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
@@ -448,7 +440,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "module_list",
   /* ePragTyp:  */ PragTyp_MODULE_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 38, 1,
+  /* ColNames:  */ 9, 1,
   /* iArg:      */ 0 },
 #endif
 #endif
@@ -481,7 +473,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "pragma_list",
   /* ePragTyp:  */ PragTyp_PRAGMA_LIST,
   /* ePragFlg:  */ PragFlg_Result0,
-  /* ColNames:  */ 38, 1,
+  /* ColNames:  */ 9, 1,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
@@ -568,7 +560,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "stats",
   /* ePragTyp:  */ PragTyp_STATS,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,
-  /* ColNames:  */ 14, 5,
+  /* ColNames:  */ 21, 5,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
@@ -582,12 +574,12 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "table_info",
   /* ePragTyp:  */ PragTyp_TABLE_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 1, 6,
+  /* ColNames:  */ 8, 6,
   /* iArg:      */ 0 },
- {/* zName:     */ "table_vinfo",
+ {/* zName:     */ "table_xinfo",
   /* ePragTyp:  */ PragTyp_TABLE_INFO,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result1|PragFlg_SchemaOpt,
-  /* ColNames:  */ 7, 7,
+  /* ColNames:  */ 8, 7,
   /* iArg:      */ 1 },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
@@ -652,7 +644,7 @@ static const PragmaName aPragmaName[] = {
  {/* zName:     */ "wal_checkpoint",
   /* ePragTyp:  */ PragTyp_WAL_CHECKPOINT,
   /* ePragFlg:  */ PragFlg_NeedSchema,
-  /* ColNames:  */ 53, 3,
+  /* ColNames:  */ 38, 3,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)

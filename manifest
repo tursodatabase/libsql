@@ -1,5 +1,5 @@
-C Add\sthe\sextra\s"hidden"\scolumn\sto\sthe\send\sof\sthe\sPRAGMA\stable_vinfo\soutput.
-D 2018-10-01T18:28:42.916
+C Change\sthe\sname\sof\sthe\spragma\sto\sPRAGMA\stable_xinfo.\s\sImprove\sthe\nmkpragmatab.tcl\sscript\sto\sreuse\scolumn\snames\swhere\sappropriate.
+D 2018-10-01T21:26:30.705
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -497,7 +497,7 @@ F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c a656ff043a03bd94153e6d731a3fbf1bb420207edc969d8fc04b4d2448387901
-F src/pragma.h 32e7736d98684ecb190765eb51bc60aff6b30e081c03a0325ec768344e3fc495
+F src/pragma.h 0ea639401ed7b8275c145e3a814119831e296118b545421e76ae2e1516f10ad8
 F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -1703,7 +1703,7 @@ F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 03d3373f6f98a6a195a5bc78ee4b2b276eb4b692e991304c49c8f03f35c75755
+F tool/mkpragmatab.tcl fc895d5a40e725b19b866b058b3994bfc45db3e7fef40db9e6c6fd921bf8a337
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1770,7 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f606f99231f88ae5ff719d0ce21afc4b844490102c27ac20aa606baaf78d8d6
-R 8168cb89d6e5deec90702b5288566db2
+P cf1b76135f511530dcc7b82f78c952bf97ebcddb40be06f713f9f2326915fabe
+R ba010eae61cf933e84f1d1c261299063
 U drh
-Z a68eabb459073457887cbb002b95bf23
+Z 03cca8b8402459da514c7ddddb7143b7
