@@ -136,12 +136,10 @@
 #define SQLITE_FSFLAGS_IS_MSDOS     0x1
 
 /*
-** If we are to be thread-safe, include the pthreads header and define
-** the SQLITE_UNIX_THREADS macro.
+** If we are to be thread-safe, include the pthreads header.
 */
 #if SQLITE_THREADSAFE
 # include <pthread.h>
-# define SQLITE_UNIX_THREADS 1
 #endif
 
 /*
@@ -1119,8 +1117,7 @@ struct unixFileId {
 
 /*
 ** An instance of the following structure is allocated for each open
-** inode.  Or, on LinuxThreads, there is one of these structures for
-** each inode opened by each thread.
+** inode.
 **
 ** A single inode can have multiple file descriptors, so each unixFile
 ** structure contains a pointer to an instance of this object and this
@@ -1166,13 +1163,16 @@ struct unixInodeInfo {
 
 /*
 ** A lists of all unixInodeInfo objects.
+**
+** Must hold unixBigLock in order to read or write this variable.
 */
 static unixInodeInfo *inodeList = 0;  /* All unixInodeInfo objects */
 
 #ifdef SQLITE_DEBUG
 /*
-** True if the inode mutex is held, or not.  Used only within assert()
-** to help verify correct mutex usage.
+** True if the inode mutex (on the unixFile.pFileMutex field) is held, or not.
+** This routine is used only within assert() to help verify correct mutex
+** usage.
 */
 int unixFileMutexHeld(unixFile *pFile){
   assert( pFile->pInode );
@@ -1300,8 +1300,8 @@ static void closePendingFds(unixFile *pFile){
 /*
 ** Release a unixInodeInfo structure previously allocated by findInodeInfo().
 **
-** The mutex entered using the unixEnterMutex() function must be held
-** when this function is called.
+** The global mutex must be held when this routine is called, but the mutex
+** on the inode being deleted must NOT be held.
 */
 static void releaseInodeInfo(unixFile *pFile){
   unixInodeInfo *pInode = pFile->pInode;
@@ -1336,8 +1336,7 @@ static void releaseInodeInfo(unixFile *pFile){
 ** describes that file descriptor.  Create a new one if necessary.  The
 ** return value might be uninitialized if an error occurs.
 **
-** The mutex entered using the unixEnterMutex() function must be held
-** when this function is called.
+** The global mutex must held when calling this routine.
 **
 ** Return an appropriate error code.
 */
@@ -1398,6 +1397,7 @@ static int findInodeInfo(
 #else
   fileId.ino = (u64)statbuf.st_ino;
 #endif
+  assert( unixMutexHeld() );
   pInode = inodeList;
   while( pInode && memcmp(&fileId, &pInode->fileId, sizeof(fileId)) ){
     pInode = pInode->pNext;
@@ -1417,6 +1417,7 @@ static int findInodeInfo(
       }
     }
     pInode->nRef = 1;
+    assert( unixMutexHeld() );
     pInode->pNext = inodeList;
     pInode->pPrev = 0;
     if( inodeList ) inodeList->pPrev = pInode;
@@ -4223,7 +4224,7 @@ static int unixGetpagesize(void){
 */
 struct unixShmNode {
   unixInodeInfo *pInode;     /* unixInodeInfo that owns this SHM node */
-  sqlite3_mutex *mutex;      /* Mutex to access this object */
+  sqlite3_mutex *pShmMutex;  /* Mutex to access this object */
   char *zFilename;           /* Name of the mmapped file */
   int h;                     /* Open file descriptor */
   int szRegion;              /* Size of shared-memory regions */
@@ -4247,16 +4248,16 @@ struct unixShmNode {
 ** The following fields are initialized when this object is created and
 ** are read-only thereafter:
 **
-**    unixShm.pFile
+**    unixShm.pShmNode
 **    unixShm.id
 **
-** All other fields are read/write.  The unixShm.pFile->mutex must be held
-** while accessing any read/write fields.
+** All other fields are read/write.  The unixShm.pShmNode->pShmMutex must
+** be held while accessing any read/write fields.
 */
 struct unixShm {
   unixShmNode *pShmNode;     /* The underlying unixShmNode object */
   unixShm *pNext;            /* Next unixShm with the same unixShmNode */
-  u8 hasMutex;               /* True if holding the unixShmNode mutex */
+  u8 hasMutex;               /* True if holding the unixShmNode->pShmMutex */
   u8 id;                     /* Id of this connection within its unixShmNode */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
@@ -4286,7 +4287,7 @@ static int unixShmSystemLock(
 
   /* Access to the unixShmNode object is serialized by the caller */
   pShmNode = pFile->pInode->pShmNode;
-  assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->mutex) );
+  assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->pShmMutex) );
 
   /* Shared locks never span more than one byte */
   assert( n==1 || lockType!=F_RDLCK );
@@ -4372,7 +4373,7 @@ static void unixShmPurge(unixFile *pFd){
     int nShmPerMap = unixShmRegionPerMap();
     int i;
     assert( p->pInode==pFd->pInode );
-    sqlite3_mutex_free(p->mutex);
+    sqlite3_mutex_free(p->pShmMutex);
     for(i=0; i<p->nRegion; i+=nShmPerMap){
       if( p->h>=0 ){
         osMunmap(p->apRegion[i], p->szRegion);
@@ -4543,8 +4544,8 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     pDbFd->pInode->pShmNode = pShmNode;
     pShmNode->pInode = pDbFd->pInode;
     if( sqlite3GlobalConfig.bCoreMutex ){
-      pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-      if( pShmNode->mutex==0 ){
+      pShmNode->pShmMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      if( pShmNode->pShmMutex==0 ){
         rc = SQLITE_NOMEM_BKPT;
         goto shm_open_err;
       }
@@ -4587,13 +4588,13 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   ** the cover of the unixEnterMutex() mutex and the pointer from the
   ** new (struct unixShm) object to the pShmNode has been set. All that is
   ** left to do is to link the new object into the linked list starting
-  ** at pShmNode->pFirst. This must be done while holding the pShmNode->mutex 
-  ** mutex.
+  ** at pShmNode->pFirst. This must be done while holding the
+  ** pShmNode->pShmMutex.
   */
-  sqlite3_mutex_enter(pShmNode->mutex);
+  sqlite3_mutex_enter(pShmNode->pShmMutex);
   p->pNext = pShmNode->pFirst;
   pShmNode->pFirst = p;
-  sqlite3_mutex_leave(pShmNode->mutex);
+  sqlite3_mutex_leave(pShmNode->pShmMutex);
   return rc;
 
   /* Jump here on any error */
@@ -4645,7 +4646,7 @@ static int unixShmMap(
 
   p = pDbFd->pShm;
   pShmNode = p->pShmNode;
-  sqlite3_mutex_enter(pShmNode->mutex);
+  sqlite3_mutex_enter(pShmNode->pShmMutex);
   if( pShmNode->isUnlocked ){
     rc = unixLockSharedMemory(pDbFd, pShmNode);
     if( rc!=SQLITE_OK ) goto shmpage_out;
@@ -4754,7 +4755,7 @@ shmpage_out:
     *pp = 0;
   }
   if( pShmNode->isReadonly && rc==SQLITE_OK ) rc = SQLITE_READONLY;
-  sqlite3_mutex_leave(pShmNode->mutex);
+  sqlite3_mutex_leave(pShmNode->pShmMutex);
   return rc;
 }
 
@@ -4793,7 +4794,7 @@ static int unixShmLock(
 
   mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );
-  sqlite3_mutex_enter(pShmNode->mutex);
+  sqlite3_mutex_enter(pShmNode->pShmMutex);
   if( flags & SQLITE_SHM_UNLOCK ){
     u16 allMask = 0; /* Mask of locks held by siblings */
 
@@ -4866,7 +4867,7 @@ static int unixShmLock(
       }
     }
   }
-  sqlite3_mutex_leave(pShmNode->mutex);
+  sqlite3_mutex_leave(pShmNode->pShmMutex);
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x\n",
            p->id, osGetpid(0), p->sharedMask, p->exclMask));
   return rc;
@@ -4916,14 +4917,14 @@ static int unixShmUnmap(
 
   /* Remove connection p from the set of connections associated
   ** with pShmNode */
-  sqlite3_mutex_enter(pShmNode->mutex);
+  sqlite3_mutex_enter(pShmNode->pShmMutex);
   for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
   *pp = p->pNext;
 
   /* Free the connection p */
   sqlite3_free(p);
   pDbFd->pShm = 0;
-  sqlite3_mutex_leave(pShmNode->mutex);
+  sqlite3_mutex_leave(pShmNode->pShmMutex);
 
   /* If pShmNode->nRef has reached 0, then close the underlying
   ** shared-memory file, too */
