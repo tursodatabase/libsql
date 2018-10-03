@@ -1273,7 +1273,7 @@ static void editFunc(
   if( bBin ){
     sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
-    int i, j;
+    sqlite3_int64 i, j;
     if( hasCRNL ){
       /* If the original contains \r\n then do no conversions back to \n */
       j = sz;
