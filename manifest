@@ -1,5 +1,5 @@
-C Change\sa\stype\sin\sshell.c.in\sfrom\s"int"\sto\s"sqlite3_int64"\sin\sorder\sto\navoid\sa\scompiler\swarning\sand\spossible\sinteger\soverflow.
-D 2018-10-03T11:13:30.633
+C Add\san\sALWAYS\son\san\sunreachable\sbranch\sin\sthe\sALTER\sTABLE\slogic.
+D 2018-10-03T18:05:36.483
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -437,7 +437,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c b929e4daabe215300aa9b4e353977714c1751d91aaa63e52f0a475b840ce245e
+F src/alter.c bcb67339d8551408bfc99aa78b597abdc9b880114bc4e42027f9a02615df4f43
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 32a5bbe3b755169ab6c66311c5225a3cd4f75a46c041f7fb117e0cbb68055114
@@ -1770,7 +1770,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb1511065d5348c5b3015dc9d690fc5d519a14ffdfa7164bb552a4fa686ad142
-R 4113007e1d90a93b8509333dc142f43c
-U dan
-Z 95fcad407c511808d2b753b90ec6a6c6
+P bf0a6634cd8f9457992b8da522a6775a304156815bf6f4f64f96016356baa870
+R 3bd57e9abfbbe1b0866f4f1caa5677e9
+U drh
+Z 12be36416a19f9505215ac2168bb7434
