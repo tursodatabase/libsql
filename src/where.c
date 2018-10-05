@@ -2476,6 +2476,19 @@ static int whereLoopAddBtreeIndex(
 
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
       pBuilder->bldFlags |= SQLITE_BLDF_UNIQUE;
+      if( pProbe->nKeyCol==1
+       && pTerm->truthProb>=0
+       && (pTerm->eOperator & (WO_EQ|WO_IS|WO_IN))!=0
+      ){
+        /* If the LHS of an == or IS or IN operator is unique, then
+        ** make the guess that the truth probability of the expression is 50%.
+        ** This is probably an overestimate, but we want to be safe.  Without
+        ** this guess, the truth probability would be 93.75%, which is usually
+        ** a little too high for such a constraint, resulting in an output row
+        ** count that is too large, and throwing off the calcualations on the
+        ** cost of an external sort. */
+        pTerm->truthProb = -10;
+      }
     }else{
       pBuilder->bldFlags |= SQLITE_BLDF_INDEXED;
     }

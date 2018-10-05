@@ -126,8 +126,8 @@ do_eqp_test 3.2.2 {
   |     |--SCAN TABLE w1
   |     `--SCAN TABLE c
   |--SCAN SUBQUERY xxxxxx
-  |--SEARCH TABLE w2 USING INTEGER PRIMARY KEY (rowid=?)
-  `--SEARCH TABLE w1 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH TABLE w1 USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH TABLE w2 USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 finish_test

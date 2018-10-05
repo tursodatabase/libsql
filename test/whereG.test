@@ -151,8 +151,8 @@ do_test whereG-2.3 {
 # Commuting a term of the WHERE clause should not change the query plan
 #
 do_execsql_test whereG-3.0 {
-  CREATE TABLE a(a1 PRIMARY KEY, a2);
-  CREATE TABLE b(b1 PRIMARY KEY, b2);
+  CREATE TABLE a(a1, a2);  CREATE INDEX a_1 ON a(a1);
+  CREATE TABLE b(b1, b2);  CREATE INDEX b_1 ON b(b1);
 } {}
 do_eqp_test whereG-3.1 {
   SELECT * FROM a, b WHERE b1=a1 AND a2=5;

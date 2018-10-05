@@ -47,8 +47,8 @@ do_eqp_test 120 {
 } {
   QUERY PLAN
   |--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
-  |--SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
-  `--SCAN TABLE t3
+  |--SEARCH TABLE t2 USING AUTOMATIC PARTIAL COVERING INDEX (a=?)
+  `--SEARCH TABLE t3 USING AUTOMATIC PARTIAL COVERING INDEX (j=?)
 }
 
 # Constant propagation in the face of collating sequences:

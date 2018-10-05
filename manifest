@@ -1,5 +1,5 @@
-C Changes\sto\sgeopoly\sto\ssilience\sfalse-positive\swarnings\scoming\sout\sof\sclang.
-D 2018-10-05T15:10:00.337
+C When\sthe\sleft-hand\sside\sof\sa\sWHERE\sclause\scontraint\sis\sa\sUNIQUE\scolumn,\nand\sthat\sterm\sof\sthe\sWHERE\sclause\sis\snot\sused\sfor\sindexing,\sassume\sthat\sthe\nterm\sreduces\sthe\snumber\sof\soutput\srows\sby\shalf.\s\sThis\sis\sone\sproposed\sfix\nfor\sticket\s[e8b674241947eb3ba4]
+D 2018-10-05T20:09:07.161
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -375,7 +375,7 @@ F ext/rtree/rtree8.test 924926d7c64ac59fcca0809de472d9dd73c612f54daae1cf992bdd7d
 F ext/rtree/rtree9.test c646f12c8c1c68ef015c6c043d86a0c42488e2e68ed1bb1b0771a7ca246cbabf
 F ext/rtree/rtreeA.test 20623ca337ca3bd7e008cc9fb49e44dbe97f1a80b238e10a12bb4afcd0da3776
 F ext/rtree/rtreeB.test 4cec297f8e5c588654bbf3c6ed0903f10612be8a2878055dd25faf8c71758bc9
-F ext/rtree/rtreeC.test 128928549d22b65c381ab1366760d08703cd75e34f6a7a506ece38f9330b7282
+F ext/rtree/rtreeC.test c5339c91d51b3342556cf39c999e778658a0de6245fea23edf71269fb3277fd9
 F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c4a1100dc
 F ext/rtree/rtreeE.test e65d3fc625da1800b412fc8785817327d43ccfec5f5973912d8c9e471928caa9
 F ext/rtree/rtreeF.test 81ffa7ef51c4e4618d497a57328c265bf576990c7070633b623b23cd450ed331
@@ -588,7 +588,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c a54a3d639bcd751d1474deff58e239b2e475a96e1b8f9178aa7864df8782a4e3
+F src/where.c e34d423bec2e2a0c911ee2ecc89ba7cb4dc98869ee6bae1e0e1bd4aace9022e7
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c 3df0a541373d5f999684d761e4bd700d57adb46c7d39da4e77b767b5adcd5893
 F src/whereexpr.c 1b5a5a7876997f65232bbf19c5c1eeb47eb328b8fa5b28c865543052904cde00
@@ -1628,13 +1628,13 @@ F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test 711d4df58d6d4fb9b3f5ce040b818564198be002
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
-F test/whereF.test 3d9412b1199d3e2bed34fcb76b4c48d0bf4df95d27e3f8dd27b6f8b4716d0d89
-F test/whereG.test 0158783235a6dd82fc0e37652b8522b186b9510594ac0a4bff0c4101b4396a52
+F test/whereF.test a7fd9edad2913d1903fcb12b3036cc696ef4302ac5f5e94ec3079674e30c8b2c
+F test/whereG.test 0b2ef829f7c2cbb781577f425c633751ad8376801b91d54d23ec8b3acd239644
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test b7769ee8dbefd987fb266715fee887f05f9ff180016b06fca7fa402df739193b
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/whereL.test 84de61afe4b8e5a3ff7d741c990d85cb44b3ce798cd8412d5603930f3f75014f
+F test/whereL.test df02ffde4ee09439ad14090976d7e263cb7dc917cc8b6d89a58465ebd96806f6
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1656,7 +1656,7 @@ F test/window6.test 5eae4ae7a590ccf1e605880969ca0bad3955616ac91cad3031baea38748b
 F test/windowfault.test 23abad97b72c6f609002255ddd41ef5c8922408f918f9b98ad6005ab316e482f
 F test/with1.test 2465d98ffce80d00553ac7135697c18b0369275b6ecc750daa2af320b8c812ca
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
-F test/with3.test 5e8ce2c585170bbbc0544e2a01a4941fa0be173ba5265e5c92eb588cd99a232d
+F test/with3.test 7bc36fd9783ef46030933c38abf37c93fa1703226e3b23c8615629bb000c1372
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test 533add9100255e4cc430d371b3ecfb79f11f956b86c3a1b9d34413bf8e482d8f
@@ -1770,7 +1770,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ebcd4523171f0988ff08e2bf36fb8a0caa40efe7ac7556b4eb206784969b03e4
-R 0343e4736757244e342124d3ae0b6945
+P 11d9015f31d1ea2fd27174d4ceea08a145fdbb92a175bec0aae4b90f991694bc
+R 2190696b5de56900d1f70e701b38ef99
+T *branch * unique-constraint-weights
+T *sym-unique-constraint-weights *
+T -sym-trunk *
 U drh
-Z 37c34aea8b9ce101934311a6217c0cb6
+Z 7dfc4105f96c96baaf210fbcaabafa29
