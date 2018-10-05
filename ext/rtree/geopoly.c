@@ -106,13 +106,23 @@ typedef float GeoCoord;
 **
 **      encoding    (1 byte)   0=big-endian, 1=little-endian
 **      nvertex     (3 bytes)  Number of vertexes as a big-endian integer
+**
+** Enough space is allocated for 4 coordinates, to work around over-zealous
+** warnings coming from some compiler (notably, clang). In reality, the size
+** of each GeoPoly memory allocate is adjusted as necessary so that the
+** GeoPoly.a[] array at the end is the appropriate size.
 */
 typedef struct GeoPoly GeoPoly;
 struct GeoPoly {
   int nVertex;          /* Number of vertexes */
   unsigned char hdr[4]; /* Header for on-disk representation */
-  GeoCoord a[2];    /* 2*nVertex values. X (longitude) first, then Y */
+  GeoCoord a[8];        /* 2*nVertex values. X (longitude) first, then Y */
 };
+
+/* The size of a memory allocation needed for a GeoPoly object sufficient
+** to hold N coordinate pairs.
+*/
+#define GEOPOLY_SZ(N)  (sizeof(GeoPoly) + sizeof(GeoCoord)*2*((N)-4))
 
 /*
 ** State of a parse of a GeoJSON input.
@@ -248,12 +258,10 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
      && s.a[1]==s.a[s.nVertex*2-1]
      && (s.z++, geopolySkipSpace(&s)==0)
     ){
-      int nByte;
       GeoPoly *pOut;
       int x = 1;
       s.nVertex--;  /* Remove the redundant vertex at the end */
-      nByte = sizeof(GeoPoly) * s.nVertex*2*sizeof(GeoCoord);
-      pOut = sqlite3_malloc64( nByte );
+      pOut = sqlite3_malloc64( GEOPOLY_SZ(s.nVertex) );
       x = 1;
       if( pOut==0 ) goto parse_json_err;
       pOut->nVertex = s.nVertex;
@@ -588,7 +596,7 @@ static GeoPoly *geopolyBBox(
     if( pRc ) *pRc = SQLITE_OK;
     if( aCoord==0 ){
       geopolyBboxFill:
-      pOut = sqlite3_realloc(p, sizeof(GeoPoly)+sizeof(GeoCoord)*6);
+      pOut = sqlite3_realloc(p, GEOPOLY_SZ(4));
       if( pOut==0 ){
         sqlite3_free(p);
         if( context ) sqlite3_result_error_nomem(context);
