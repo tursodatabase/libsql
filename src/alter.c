@@ -98,6 +98,9 @@ void sqlite3AlterRenameTable(
   Vdbe *v;
   VTable *pVTab = 0;        /* Non-zero if this is a v-tab with an xRename() */
   u32 savedDbFlags;         /* Saved value of db->mDbFlags */
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+#endif
 
   savedDbFlags = db->mDbFlags;  
   if( NEVER(db->mallocFailed) ) goto exit_rename_table;
@@ -145,6 +148,7 @@ void sqlite3AlterRenameTable(
   if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
     goto exit_rename_table;
   }
+  db->xAuth = 0;
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -244,6 +248,9 @@ void sqlite3AlterRenameTable(
   renameTestSchema(pParse, zDb, iDb==1);
 
 exit_rename_table:
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
   sqlite3SrcListDelete(db, pSrc);
   sqlite3DbFree(db, zName);
   db->mDbFlags = savedDbFlags;
@@ -347,6 +354,10 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   if( zCol ){
     char *zEnd = &zCol[pColDef->n-1];
     u32 savedDbFlags = db->mDbFlags;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+    sqlite3_xauth xAuth = db->xAuth;
+    db->xAuth = 0;
+#endif
     while( zEnd>zCol && (*zEnd==';' || sqlite3Isspace(*zEnd)) ){
       *zEnd-- = '\0';
     }
@@ -360,6 +371,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     );
     sqlite3DbFree(db, zCol);
     db->mDbFlags = savedDbFlags;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+    db->xAuth = xAuth;
+#endif
   }
 
   /* Make sure the schema version is at least 3.  But do not upgrade
@@ -520,6 +534,9 @@ void sqlite3AlterRenameColumn(
   const char *zDb;                /* Name of schema containing the table */
   int iSchema;                    /* Index of the schema */
   int bQuote;                     /* True to quote the new name */
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+#endif
 
   /* Locate the table to be altered */
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
@@ -539,6 +556,7 @@ void sqlite3AlterRenameColumn(
   if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
     goto exit_rename_column;
   }
+  db->xAuth = 0;
 #endif
 
   /* Make sure the old name really is a column name in the table to be
@@ -584,6 +602,9 @@ void sqlite3AlterRenameColumn(
   renameTestSchema(pParse, zDb, iSchema==1);
 
  exit_rename_column:
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
   sqlite3SrcListDelete(db, pSrc);
   sqlite3DbFree(db, zOld);
   sqlite3DbFree(db, zNew);

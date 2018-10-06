@@ -1,5 +1,5 @@
-C Add\stest\scases\sand\sassert()\sstatements\sto\sensure\sthat\sthe\sauthorizer\sis\sbeing\ncalled\sas\sexpected\sfrom\swithin\sALTER\sTABLE.
-D 2018-10-06T13:46:22.771
+C Ensure\seach\sALTER\sTABLE\sstatement\smakes\sjust\sa\ssingle\sSQLITE_ALTER_TABLE\scall\nto\sthe\sauthorizer\sfunction.
+D 2018-10-06T14:33:41.324
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -437,7 +437,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c bcb67339d8551408bfc99aa78b597abdc9b880114bc4e42027f9a02615df4f43
+F src/alter.c 27281c6ed70154c3184d8d775270a61cf3b9cdf169097348abbdbb1f855b2a4f
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
@@ -605,7 +605,7 @@ F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
 F test/alter4.test 7e93a21fe131e1dfeb317e90056856f96b10381fc7fe3a05e765569a23400433
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
-F test/alterauth2.test c0a1ddf5b93d93cb0d15ba7acaf0c5c6fb515bbe861ede75b2d3fabad33b6499
+F test/alterauth2.test 9480bdf43499b589ca3f80e38ccb6ac6a00b41c702e89fabc366e4b755a432de
 F test/altercol.test 53fb5e218c9296afc160f2c4fcbeaf42bd0604815d9b3896a7d2eec583ad8704
 F test/alterlegacy.test e7c07d605c2a85e7d1696c89e6bf64dfc932fc6d9320fe8708c8f5fc0b524d41
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
@@ -1771,7 +1771,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11d9015f31d1ea2fd27174d4ceea08a145fdbb92a175bec0aae4b90f991694bc
-R c3f9b3556958d5e7141476120f8d2533
+P ff10d2c7de430c88167b1e6e4f5307eee5d69e22c8d24b2ef4fcb3aea25a92e1
+R 39888c280f11777f99cfb547c69d2aa6
+T *branch * alter-auth-callbacks
+T *sym-alter-auth-callbacks *
+T -sym-trunk *
 U dan
-Z 76c0dfa6b1cfccd65370e7083a5b3873
+Z 0aa866dd88e8ea8e5fcdd3c207d5f8ef
