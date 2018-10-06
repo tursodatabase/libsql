@@ -3509,10 +3509,15 @@ static int showHelp(FILE *out, const char *zPattern){
   int i, j;
   int n = 0;
   char *zPat;
-  if( zPattern==0 || zPattern[0]=='0' ){
+  if( zPattern==0
+   || zPattern[0]=='0'
+   || strcmp(zPattern,"-a")==0
+   || strcmp(zPattern,"-all")==0
+  ){
     /* Show all commands, but only one line per command */
+    if( zPattern==0 ) zPattern = "";
     for(i=0; i<ArraySize(azHelp); i++){
-      if( azHelp[i][0]=='.' ){
+      if( azHelp[i][0]=='.' || zPattern[0] ){
         utf8_printf(out, "%s\n", azHelp[i]);
         n++;
       }
