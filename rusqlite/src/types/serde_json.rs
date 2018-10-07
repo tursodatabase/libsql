@@ -27,7 +27,8 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use super::serde_json;
-    use Connection;
+    use types::ToSql;
+    use {Connection, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -44,15 +45,15 @@ mod test {
         let data: serde_json::Value = serde_json::from_str(json).unwrap();
         db.execute(
             "INSERT INTO foo (t, b) VALUES (?, ?)",
-            &[&data, &json.as_bytes()],
+            &[&data as &ToSql, &json.as_bytes()],
         ).unwrap();
 
         let t: serde_json::Value = db
-            .query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(data, t);
         let b: serde_json::Value = db
-            .query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .query_row("SELECT b FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(data, b);
     }

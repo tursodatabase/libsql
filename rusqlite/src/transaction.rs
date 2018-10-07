@@ -419,7 +419,7 @@ impl Connection {
 #[cfg(test)]
 mod test {
     use super::DropBehavior;
-    use Connection;
+    use {Connection, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -444,7 +444,7 @@ mod test {
             let tx = db.transaction().unwrap();
             assert_eq!(
                 2i32,
-                tx.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
                     .unwrap()
             );
         }
@@ -473,7 +473,7 @@ mod test {
             let tx = db.transaction().unwrap();
             assert_eq!(
                 6i32,
-                tx.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
                     .unwrap()
             );
         }
@@ -565,12 +565,12 @@ mod test {
     }
 
     fn insert(x: i32, conn: &Connection) {
-        conn.execute("INSERT INTO foo VALUES(?)", &[&x]).unwrap();
+        conn.execute("INSERT INTO foo VALUES(?)", &[x]).unwrap();
     }
 
     fn assert_current_sum(x: i32, conn: &Connection) {
         let i = conn
-            .query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            .query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(x, i);
     }

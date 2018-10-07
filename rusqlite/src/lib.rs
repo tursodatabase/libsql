@@ -5,7 +5,8 @@
 //! extern crate rusqlite;
 //! extern crate time;
 //!
-//! use rusqlite::Connection;
+//! use rusqlite::types::ToSql;
+//! use rusqlite::{Connection, NO_PARAMS};
 //! use time::Timespec;
 //!
 //! #[derive(Debug)]
@@ -26,7 +27,7 @@
 //!                   time_created    TEXT NOT NULL,
 //!                   data            BLOB
 //!                   )",
-//!         &[],
+//!         NO_PARAMS,
 //!     ).unwrap();
 //!     let me = Person {
 //!         id: 0,
@@ -37,14 +38,14 @@
 //!     conn.execute(
 //!         "INSERT INTO person (name, time_created, data)
 //!                   VALUES (?1, ?2, ?3)",
-//!         &[&me.name, &me.time_created, &me.data],
+//!         &[&me.name as &ToSql, &me.time_created, &me.data],
 //!     ).unwrap();
 //!
 //!     let mut stmt = conn
 //!         .prepare("SELECT id, name, time_created, data FROM person")
 //!         .unwrap();
 //!     let person_iter = stmt
-//!         .query_map(&[], |row| Person {
+//!         .query_map(NO_PARAMS, |row| Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
 //!             time_created: row.get(2),
@@ -139,6 +140,8 @@ pub mod vtab;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
+/// To be used when your statement has no [parameter](https://sqlite.org/lang_expr.html#varparam).
+pub const NO_PARAMS: &'static [&'static ToSql] = &[];
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use Result instead")]
@@ -306,7 +309,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection};
     /// fn update_rows(conn: &Connection) {
-    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?", &[&1i32]) {
+    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?", &[1i32]) {
     ///         Ok(updated) => println!("{} rows were updated", updated),
     ///         Err(err) => println!("update failed: {}", err),
     ///     }
@@ -317,7 +320,11 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn execute(&self, sql: &str, params: &[&ToSql]) -> Result<usize> {
+    pub fn execute<P>(&self, sql: &str, params: P) -> Result<usize>
+    where
+        P: IntoIterator,
+        P::Item: ToSql,
+    {
         self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
     }
 
@@ -362,11 +369,11 @@ impl Connection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Result,Connection};
+    /// # use rusqlite::{Result,Connection, NO_PARAMS};
     /// fn preferred_locale(conn: &Connection) -> Result<String> {
     ///     conn.query_row(
     ///         "SELECT value FROM preferences WHERE name='locale'",
-    ///         &[],
+    ///         NO_PARAMS,
     ///         |row| row.get(0),
     ///     )
     /// }
@@ -379,8 +386,10 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
+    pub fn query_row<T, P, F>(&self, sql: &str, params: P, f: F) -> Result<T>
     where
+        P: IntoIterator,
+        P::Item: ToSql,
         F: FnOnce(&Row) -> T,
     {
         let mut stmt = try!(self.prepare(sql));
@@ -415,11 +424,11 @@ impl Connection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Result,Connection};
+    /// # use rusqlite::{Result,Connection, NO_PARAMS};
     /// fn preferred_locale(conn: &Connection) -> Result<String> {
     ///     conn.query_row_and_then(
     ///         "SELECT value FROM preferences WHERE name='locale'",
-    ///         &[],
+    ///         NO_PARAMS,
     ///         |row| row.get_checked(0),
     ///     )
     /// }
@@ -432,13 +441,10 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn query_row_and_then<T, E, F>(
-        &self,
-        sql: &str,
-        params: &[&ToSql],
-        f: F,
-    ) -> result::Result<T, E>
+    pub fn query_row_and_then<T, E, P, F>(&self, sql: &str, params: P, f: F) -> result::Result<T, E>
     where
+        P: IntoIterator,
+        P::Item: ToSql,
         F: FnOnce(&Row) -> result::Result<T, E>,
         E: convert::From<Error>,
     {
@@ -446,37 +452,6 @@ impl Connection {
         let mut rows = try!(stmt.query(params));
 
         rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
-    }
-
-    /// Convenience method to execute a query that is expected to return a
-    /// single row.
-    ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// # use rusqlite::{Result,Connection};
-    /// fn preferred_locale(conn: &Connection) -> Result<String> {
-    ///     conn.query_row_safe(
-    ///         "SELECT value FROM preferences WHERE name='locale'",
-    ///         &[],
-    ///         |row| row.get(0),
-    ///     )
-    /// }
-    /// ```
-    ///
-    /// If the query returns more than one row, all rows except the first are
-    /// ignored.
-    ///
-    /// ## Deprecated
-    ///
-    /// This method should be considered deprecated. Use `query_row` instead,
-    /// which now does exactly the same thing.
-    #[deprecated(since = "0.1.0", note = "Use query_row instead")]
-    pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-    where
-        F: FnOnce(&Row) -> T,
-    {
-        self.query_row(sql, params, f)
     }
 
     /// Prepare a SQL statement for execution.
@@ -487,8 +462,8 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO People (name) VALUES (?)"));
-    ///     try!(stmt.execute(&[&"Joe Smith"]));
-    ///     try!(stmt.execute(&[&"Bob Jones"]));
+    ///     try!(stmt.execute(&["Joe Smith"]));
+    ///     try!(stmt.execute(&["Bob Jones"]));
     ///     Ok(())
     /// }
     /// ```
@@ -1089,14 +1064,14 @@ mod test {
 
             // SELECT first makes sqlite lock with a shared lock
             let _ = tx1
-                .query_row("SELECT x FROM foo LIMIT 1", &[], |_| ())
+                .query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
                 .unwrap();
             let _ = tx2
-                .query_row("SELECT x FROM foo LIMIT 1", &[], |_| ())
+                .query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
                 .unwrap();
 
-            tx1.execute("INSERT INTO foo VALUES(?1)", &[&1]).unwrap();
-            let _ = tx2.execute("INSERT INTO foo VALUES(?1)", &[&2]);
+            tx1.execute("INSERT INTO foo VALUES(?1)", &[1]).unwrap();
+            let _ = tx2.execute("INSERT INTO foo VALUES(?1)", &[2]);
 
             let _ = tx1.commit();
             let _ = tx2.commit();
@@ -1126,7 +1101,7 @@ mod test {
 
         let path_string = path.to_str().unwrap();
         let db = Connection::open(&path_string).unwrap();
-        let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", &[], |r| r.get(0));
+        let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0));
 
         assert_eq!(42i64, the_answer.unwrap());
     }
@@ -1216,18 +1191,18 @@ mod test {
 
         assert_eq!(
             1,
-            db.execute("INSERT INTO foo(x) VALUES (?)", &[&1i32])
+            db.execute("INSERT INTO foo(x) VALUES (?)", &[1i32])
                 .unwrap()
         );
         assert_eq!(
             1,
-            db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32])
+            db.execute("INSERT INTO foo(x) VALUES (?)", &[2i32])
                 .unwrap()
         );
 
         assert_eq!(
             3i32,
-            db.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
                 .unwrap()
         );
     }
@@ -1235,7 +1210,7 @@ mod test {
     #[test]
     fn test_execute_select() {
         let db = checked_memory_handle();
-        let err = db.execute("SELECT 1 WHERE 1 < ?", &[&1i32]).unwrap_err();
+        let err = db.execute("SELECT 1 WHERE 1 < ?", &[1i32]).unwrap_err();
         match err {
             Error::ExecuteReturnedResults => (),
             _ => panic!("Unexpected error: {}", err),
@@ -1262,18 +1237,18 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
 
         let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)").unwrap();
-        assert_eq!(insert_stmt.execute(&[&1i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(&[&2i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(&[&3i32]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[1i32]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[2i32]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[3i32]).unwrap(), 1);
 
-        assert_eq!(insert_stmt.execute(&[&"hello".to_string()]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(&[&"goodbye".to_string()]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(&[&types::Null]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&["hello".to_string()]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&["goodbye".to_string()]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[types::Null]).unwrap(), 1);
 
         let mut update_stmt = db.prepare("UPDATE foo SET x=? WHERE x<?").unwrap();
-        assert_eq!(update_stmt.execute(&[&3i32, &3i32]).unwrap(), 2);
-        assert_eq!(update_stmt.execute(&[&3i32, &3i32]).unwrap(), 0);
-        assert_eq!(update_stmt.execute(&[&8i32, &8i32]).unwrap(), 3);
+        assert_eq!(update_stmt.execute(&[3i32, 3i32]).unwrap(), 2);
+        assert_eq!(update_stmt.execute(&[3i32, 3i32]).unwrap(), 0);
+        assert_eq!(update_stmt.execute(&[8i32, 8i32]).unwrap(), 3);
     }
 
     #[test]
@@ -1282,15 +1257,15 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
 
         let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)").unwrap();
-        assert_eq!(insert_stmt.execute(&[&1i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(&[&2i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(&[&3i32]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[1i32]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[2i32]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(&[3i32]).unwrap(), 1);
 
         let mut query = db
             .prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC")
             .unwrap();
         {
-            let mut rows = query.query(&[&4i32]).unwrap();
+            let mut rows = query.query(&[4i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
             while let Some(row) = rows.next() {
@@ -1301,7 +1276,7 @@ mod test {
         }
 
         {
-            let mut rows = query.query(&[&3i32]).unwrap();
+            let mut rows = query.query(&[3i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
             while let Some(row) = rows.next() {
@@ -1325,8 +1300,10 @@ mod test {
         db.execute_batch(sql).unwrap();
 
         let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let results: Result<Vec<String>> =
-            query.query_map(&[], |row| row.get(1)).unwrap().collect();
+        let results: Result<Vec<String>> = query
+            .query_map(NO_PARAMS, |row| row.get(1))
+            .unwrap()
+            .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");
     }
@@ -1345,17 +1322,18 @@ mod test {
 
         assert_eq!(
             10i64,
-            db.query_row::<i64, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            db.query_row::<i64, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
                 .unwrap()
         );
 
-        let result: Result<i64> = db.query_row("SELECT x FROM foo WHERE x > 5", &[], |r| r.get(0));
+        let result: Result<i64> =
+            db.query_row("SELECT x FROM foo WHERE x > 5", NO_PARAMS, |r| r.get(0));
         match result.unwrap_err() {
             Error::QueryReturnedNoRows => (),
             err => panic!("Unexpected error {}", err),
         }
 
-        let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", &[], |_| ());
+        let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", NO_PARAMS, |_| ());
 
         assert!(bad_query_result.is_err());
     }
@@ -1366,12 +1344,12 @@ mod test {
 
         assert_eq!(
             "memory",
-            db.query_row::<String, _>("PRAGMA journal_mode", &[], |r| r.get(0))
+            db.query_row::<String, _, _>("PRAGMA journal_mode", NO_PARAMS, |r| r.get(0))
                 .unwrap()
         );
         assert_eq!(
             "off",
-            db.query_row::<String, _>("PRAGMA journal_mode=off", &[], |r| r.get(0))
+            db.query_row::<String, _, _>("PRAGMA journal_mode=off", NO_PARAMS, |r| r.get(0))
                 .unwrap()
         );
     }
@@ -1396,7 +1374,7 @@ mod test {
 
         let mut stmt = db.prepare("INSERT INTO foo DEFAULT VALUES").unwrap();
         for _ in 0i32..9 {
-            stmt.execute(&[]).unwrap();
+            stmt.execute(NO_PARAMS).unwrap();
         }
         assert_eq!(db.last_insert_rowid(), 10);
     }
@@ -1418,7 +1396,7 @@ mod test {
         let mut stmt = db.prepare("PRAGMA schema_version").unwrap();
         assert!(!db.is_busy());
         {
-            let mut rows = stmt.query(&[]).unwrap();
+            let mut rows = stmt.query(NO_PARAMS).unwrap();
             assert!(!db.is_busy());
             let row = rows.next();
             assert!(db.is_busy());
@@ -1450,7 +1428,7 @@ mod test {
         let db = checked_memory_handle();
         db.execute_batch("CREATE TABLE foo(x NOT NULL)").unwrap();
 
-        let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", &[]);
+        let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", NO_PARAMS);
         assert!(result.is_err());
 
         match result.unwrap_err() {
@@ -1526,7 +1504,7 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let results: Result<Vec<String>> = query
-                .query_and_then(&[], |row| row.get_checked(1))
+                .query_and_then(NO_PARAMS, |row| row.get_checked(1))
                 .unwrap()
                 .collect();
 
@@ -1547,7 +1525,7 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let bad_type: Result<Vec<f64>> = query
-                .query_and_then(&[], |row| row.get_checked(1))
+                .query_and_then(NO_PARAMS, |row| row.get_checked(1))
                 .unwrap()
                 .collect();
 
@@ -1557,7 +1535,7 @@ mod test {
             }
 
             let bad_idx: Result<Vec<String>> = query
-                .query_and_then(&[], |row| row.get_checked(3))
+                .query_and_then(NO_PARAMS, |row| row.get_checked(3))
                 .unwrap()
                 .collect();
 
@@ -1581,8 +1559,9 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let results: CustomResult<Vec<String>> = query
-                .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
-                .unwrap()
+                .query_and_then(NO_PARAMS, |row| {
+                    row.get_checked(1).map_err(CustomError::Sqlite)
+                }).unwrap()
                 .collect();
 
             assert_eq!(results.unwrap().concat(), "hello, world!");
@@ -1602,8 +1581,9 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let bad_type: CustomResult<Vec<f64>> = query
-                .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
-                .unwrap()
+                .query_and_then(NO_PARAMS, |row| {
+                    row.get_checked(1).map_err(CustomError::Sqlite)
+                }).unwrap()
                 .collect();
 
             match bad_type.unwrap_err() {
@@ -1612,8 +1592,9 @@ mod test {
             }
 
             let bad_idx: CustomResult<Vec<String>> = query
-                .query_and_then(&[], |row| row.get_checked(3).map_err(CustomError::Sqlite))
-                .unwrap()
+                .query_and_then(NO_PARAMS, |row| {
+                    row.get_checked(3).map_err(CustomError::Sqlite)
+                }).unwrap()
                 .collect();
 
             match bad_idx.unwrap_err() {
@@ -1622,7 +1603,7 @@ mod test {
             }
 
             let non_sqlite_err: CustomResult<Vec<String>> = query
-                .query_and_then(&[], |_| Err(CustomError::SomeError))
+                .query_and_then(NO_PARAMS, |_| Err(CustomError::SomeError))
                 .unwrap()
                 .collect();
 
@@ -1642,7 +1623,7 @@ mod test {
             db.execute_batch(sql).unwrap();
 
             let query = "SELECT x, y FROM foo ORDER BY x DESC";
-            let results: CustomResult<String> = db.query_row_and_then(query, &[], |row| {
+            let results: CustomResult<String> = db.query_row_and_then(query, NO_PARAMS, |row| {
                 row.get_checked(1).map_err(CustomError::Sqlite)
             });
 
@@ -1659,7 +1640,7 @@ mod test {
             db.execute_batch(sql).unwrap();
 
             let query = "SELECT x, y FROM foo ORDER BY x DESC";
-            let bad_type: CustomResult<f64> = db.query_row_and_then(query, &[], |row| {
+            let bad_type: CustomResult<f64> = db.query_row_and_then(query, NO_PARAMS, |row| {
                 row.get_checked(1).map_err(CustomError::Sqlite)
             });
 
@@ -1668,7 +1649,7 @@ mod test {
                 err => panic!("Unexpected error {}", err),
             }
 
-            let bad_idx: CustomResult<String> = db.query_row_and_then(query, &[], |row| {
+            let bad_idx: CustomResult<String> = db.query_row_and_then(query, NO_PARAMS, |row| {
                 row.get_checked(3).map_err(CustomError::Sqlite)
             });
 
@@ -1678,7 +1659,7 @@ mod test {
             }
 
             let non_sqlite_err: CustomResult<String> =
-                db.query_row_and_then(query, &[], |_| Err(CustomError::SomeError));
+                db.query_row_and_then(query, NO_PARAMS, |_| Err(CustomError::SomeError));
 
             match non_sqlite_err.unwrap_err() {
                 CustomError::SomeError => (),
@@ -1695,7 +1676,7 @@ mod test {
                        END;";
             db.execute_batch(sql).unwrap();
 
-            db.query_row("SELECT * FROM foo", &[], |r| {
+            db.query_row("SELECT * FROM foo", NO_PARAMS, |r| {
                 assert_eq!(2, r.column_count())
             }).unwrap();
         }

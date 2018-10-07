@@ -14,7 +14,7 @@
 //! extern crate regex;
 //!
 //! use regex::Regex;
-//! use rusqlite::{Connection, Error, Result};
+//! use rusqlite::{Connection, Error, Result, NO_PARAMS};
 //! use std::collections::HashMap;
 //!
 //! fn add_regexp_function(db: &Connection) -> Result<()> {
@@ -43,9 +43,11 @@
 //!     add_regexp_function(&db).unwrap();
 //!
 //!     let is_match: bool = db
-//!         .query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[], |row| {
-//!             row.get(0)
-//!         }).unwrap();
+//!         .query_row(
+//!             "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
+//!             NO_PARAMS,
+//!             |row| row.get(0),
+//!         ).unwrap();
 //!
 //!     assert!(is_match);
 //! }
@@ -209,14 +211,14 @@ impl Connection {
     /// # Example
     ///
     /// ```rust
-    /// # use rusqlite::{Connection, Result};
+    /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn scalar_function_example(db: Connection) -> Result<()> {
     ///     try!(db.create_scalar_function("halve", 1, true, |ctx| {
     ///         let value = try!(ctx.get::<f64>(0));
     ///         Ok(value / 2f64)
     ///     }));
     ///
-    ///     let six_halved: f64 = try!(db.query_row("SELECT halve(6)", &[], |r| r.get(0)));
+    ///     let six_halved: f64 = try!(db.query_row("SELECT halve(6)", NO_PARAMS, |r| r.get(0)));
     ///     assert_eq!(six_halved, 3f64);
     ///     Ok(())
     /// }
@@ -478,7 +480,7 @@ mod test {
     use std::os::raw::c_double;
 
     use functions::{Aggregate, Context};
-    use {Connection, Error, Result};
+    use {Connection, Error, Result, NO_PARAMS};
 
     fn half(ctx: &Context) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
@@ -490,7 +492,7 @@ mod test {
     fn test_function_half() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
-        let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
+        let result: Result<f64> = db.query_row("SELECT half(6)", NO_PARAMS, |r| r.get(0));
 
         assert!((3f64 - result.unwrap()).abs() < EPSILON);
     }
@@ -499,11 +501,11 @@ mod test {
     fn test_remove_function() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
-        let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
+        let result: Result<f64> = db.query_row("SELECT half(6)", NO_PARAMS, |r| r.get(0));
         assert!((3f64 - result.unwrap()).abs() < EPSILON);
 
         db.remove_function("half", 1).unwrap();
-        let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
+        let result: Result<f64> = db.query_row("SELECT half(6)", NO_PARAMS, |r| r.get(0));
         assert!(result.is_err());
     }
 
@@ -554,13 +556,15 @@ mod test {
             .unwrap();
 
         let result: Result<bool> =
-            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", &[], |r| r.get(0));
+            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", NO_PARAMS, |r| {
+                r.get(0)
+            });
 
         assert_eq!(true, result.unwrap());
 
         let result: Result<i64> = db.query_row(
             "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-            &[],
+            NO_PARAMS,
             |r| r.get(0),
         );
 
@@ -604,13 +608,15 @@ mod test {
         }).unwrap();
 
         let result: Result<bool> =
-            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", &[], |r| r.get(0));
+            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", NO_PARAMS, |r| {
+                r.get(0)
+            });
 
         assert_eq!(true, result.unwrap());
 
         let result: Result<i64> = db.query_row(
             "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-            &[],
+            NO_PARAMS,
             |r| r.get(0),
         );
 
@@ -636,7 +642,7 @@ mod test {
             ("onetwo", "SELECT my_concat('one', 'two')"),
             ("abc", "SELECT my_concat('a', 'b', 'c')"),
         ] {
-            let result: String = db.query_row(query, &[], |r| r.get(0)).unwrap();
+            let result: String = db.query_row(query, NO_PARAMS, |r| r.get(0)).unwrap();
             assert_eq!(expected, result);
         }
     }
@@ -682,17 +688,17 @@ mod test {
 
         // sum should return NULL when given no columns (contrast with count below)
         let no_result = "SELECT my_sum(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
-        let result: Option<i64> = db.query_row(no_result, &[], |r| r.get(0)).unwrap();
+        let result: Option<i64> = db.query_row(no_result, NO_PARAMS, |r| r.get(0)).unwrap();
         assert!(result.is_none());
 
         let single_sum = "SELECT my_sum(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
-        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0)).unwrap();
+        let result: i64 = db.query_row(single_sum, NO_PARAMS, |r| r.get(0)).unwrap();
         assert_eq!(4, result);
 
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
                         2, 1)";
         let result: (i64, i64) = db
-            .query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
+            .query_row(dual_sum, NO_PARAMS, |r| (r.get(0), r.get(1)))
             .unwrap();
         assert_eq!((4, 2), result);
     }
@@ -705,11 +711,11 @@ mod test {
 
         // count should return 0 when given no columns (contrast with sum above)
         let no_result = "SELECT my_count(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
-        let result: i64 = db.query_row(no_result, &[], |r| r.get(0)).unwrap();
+        let result: i64 = db.query_row(no_result, NO_PARAMS, |r| r.get(0)).unwrap();
         assert_eq!(result, 0);
 
         let single_sum = "SELECT my_count(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
-        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0)).unwrap();
+        let result: i64 = db.query_row(single_sum, NO_PARAMS, |r| r.get(0)).unwrap();
         assert_eq!(2, result);
     }
 }

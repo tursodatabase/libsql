@@ -14,7 +14,7 @@ impl Connection {
     ///
     /// Calling this routine with an argument equal to zero turns off all busy
     /// handlers.
-    //
+    ///
     /// There can only be a single busy handler for a particular database
     /// connection at any given moment. If another busy handler was defined
     /// (using `busy_handler`) prior to calling this routine, that other
@@ -81,7 +81,7 @@ mod test {
     use std::thread;
     use std::time::Duration;
 
-    use {Connection, Error, ErrorCode, TransactionBehavior};
+    use {Connection, Error, ErrorCode, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_default_busy() {
@@ -93,7 +93,7 @@ mod test {
             .transaction_with_behavior(TransactionBehavior::Exclusive)
             .unwrap();
         let db2 = Connection::open(&path).unwrap();
-        let r = db2.query_row("PRAGMA schema_version", &[], |_| unreachable!());
+        let r = db2.query_row("PRAGMA schema_version", NO_PARAMS, |_| unreachable!());
         match r.unwrap_err() {
             Error::SqliteFailure(err, _) => {
                 assert_eq!(err.code, ErrorCode::DatabaseBusy);
@@ -125,7 +125,7 @@ mod test {
 
         assert_eq!(tx.recv().unwrap(), 1);
         let _ = db2
-            .query_row("PRAGMA schema_version", &[], |row| {
+            .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
                 row.get_checked::<_, i32>(0)
             }).expect("unexpected error");
 
@@ -163,7 +163,7 @@ mod test {
 
         assert_eq!(tx.recv().unwrap(), 1);
         let _ = db2
-            .query_row("PRAGMA schema_version", &[], |row| {
+            .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
                 row.get_checked::<_, i32>(0)
             }).expect("unexpected error");
         assert_eq!(CALLED.load(Ordering::Relaxed), true);

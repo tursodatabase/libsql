@@ -265,7 +265,7 @@ impl VTabCursor for SeriesTabCursor {
 mod test {
     use ffi;
     use vtab::series;
-    use Connection;
+    use {Connection, NO_PARAMS};
 
     #[test]
     fn test_series_module() {
@@ -279,7 +279,7 @@ mod test {
 
         let mut s = db.prepare("SELECT * FROM generate_series(0,20,5)").unwrap();
 
-        let series = s.query_map(&[], |row| row.get::<_, i32>(0)).unwrap();
+        let series = s.query_map(NO_PARAMS, |row| row.get::<_, i32>(0)).unwrap();
 
         let mut expected = 0;
         for value in series {
