@@ -13,6 +13,11 @@ pub enum FromSqlError {
     /// requested type.
     OutOfRange(i64),
 
+    /// Error returned when reading an `i128` from a blob with a size
+    /// other than 16. Only available when the `i128_blob` feature is enabled.
+    #[cfg(feature = "i128_blob")]
+    InvalidI128Size(usize),
+
     /// An error case available for implementors of the `FromSql` trait.
     Other(Box<Error + Send + Sync>),
 }
@@ -22,6 +27,9 @@ impl fmt::Display for FromSqlError {
         match *self {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
             FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(s) =>
+                write!(f, "Cannot read 128bit value out of {} byte blob", s),
             FromSqlError::Other(ref err) => err.fmt(f),
         }
     }
@@ -32,6 +40,9 @@ impl Error for FromSqlError {
         match *self {
             FromSqlError::InvalidType => "invalid type",
             FromSqlError::OutOfRange(_) => "value out of range",
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) =>
+                "unexpected blob size for 128bit value",
             FromSqlError::Other(ref err) => err.description(),
         }
     }
@@ -41,6 +52,8 @@ impl Error for FromSqlError {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
             FromSqlError::InvalidType | FromSqlError::OutOfRange(_) => None,
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) => None,
         }
     }
 }
@@ -132,6 +145,21 @@ impl FromSql for String {
 impl FromSql for Vec<u8> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         value.as_blob().map(|b| b.to_vec())
+    }
+}
+
+#[cfg(feature = "i128_blob")]
+impl FromSql for i128 {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        use byteorder::{BigEndian, ByteOrder};
+
+        value.as_blob().and_then(|bytes| {
+            if bytes.len() == 16 {
+                Ok(BigEndian::read_i128(bytes) ^ (1i128 << 127))
+            } else {
+                Err(FromSqlError::InvalidI128Size(bytes.len()))
+            }
+        })
     }
 }
 

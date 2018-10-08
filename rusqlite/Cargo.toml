@@ -32,6 +32,7 @@ bundled = ["libsqlite3-sys/bundled"]
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
+i128_blob = ["byteorder"]
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
 # xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
@@ -48,6 +49,7 @@ chrono = { version = "0.4", optional = true }
 serde_json = { version = "1.0", optional = true }
 csv = { version = "1.0", optional = true }
 lazy_static = { version = "1.0", optional = true }
+byteorder = { version = "1.2", features = ["i128"], optional = true }
 
 [dev-dependencies]
 tempdir = "0.3"
