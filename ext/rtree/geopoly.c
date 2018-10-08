@@ -465,6 +465,27 @@ static void geopolyXformFunc(
 }
 
 /*
+** Compute the area enclosed by the polygon.
+**
+** This routine can also be used to detect polygons that rotate in
+** the wrong direction.  Polygons are suppose to be counter-clockwise (CCW).
+** This routine returns a negative value for clockwise (CW) polygons.
+*/
+static double geopolyArea(GeoPoly *p){
+  double rArea = 0.0;
+  int ii;
+  for(ii=0; ii<p->nVertex-1; ii++){
+    rArea += (p->a[ii*2] - p->a[ii*2+2])           /* (x0 - x1) */
+              * (p->a[ii*2+1] + p->a[ii*2+3])      /* (y0 + y1) */
+              * 0.5;
+  }
+  rArea += (p->a[ii*2] - p->a[0])                  /* (xN - x0) */
+           * (p->a[ii*2+1] + p->a[1])              /* (yN + y0) */
+           * 0.5;
+  return rArea;
+}
+
+/*
 ** Implementation of the geopoly_area(X) function.
 **
 ** If the input is a well-formed Geopoly BLOB then return the area
@@ -479,44 +500,41 @@ static void geopolyAreaFunc(
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
-    double rArea = 0.0;
-    int ii;
-    for(ii=0; ii<p->nVertex-1; ii++){
-      rArea += (p->a[ii*2] - p->a[ii*2+2])           /* (x0 - x1) */
-                * (p->a[ii*2+1] + p->a[ii*2+3])      /* (y0 + y1) */
-                * 0.5;
-    }
-    rArea += (p->a[ii*2] - p->a[0])                  /* (xN - x0) */
-             * (p->a[ii*2+1] + p->a[1])              /* (yN + y0) */
-             * 0.5;
-    sqlite3_result_double(context, rArea);
+    sqlite3_result_double(context, geopolyArea(p));
     sqlite3_free(p);
   }            
 }
 
 /*
-** Implementation of the geopoly_reverse(X) function.
+** Implementation of the geopoly_ccw(X) function.
 **
-** Reverse the order of the vertexes in polygon X.  This can be used
-** to convert an historical polygon that uses a clockwise rotation into
-** a well-formed GeoJSON polygon that uses counter-clockwise rotation.
+** If the rotation of polygon X is clockwise (incorrect) instead of
+** counter-clockwise (the correct winding order according to RFC7946)
+** then reverse the order of the vertexes in polygon X.  
+**
+** In other words, this routine returns a CCW polygon regardless of the
+** winding order of its input.
+**
+** Use this routine to sanitize historical inputs that that sometimes
+** contain polygons that wind in the wrong direction.
 */
-static void geopolyReverseFunc(
+static void geopolyCcwFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
-    int ii, jj;
-    for(ii=2, jj=p->nVertex*2 - 4; ii<jj; ii+=2, jj-=2){
-      GeoCoord t = p->a[ii];
-      p->a[ii] = p->a[jj];
-      p->a[jj] = t;
-      t = p->a[ii+1];
-      p->a[ii+1] = p->a[jj+1];
-      p->a[jj+1] = t;
-
+    if( geopolyArea(p)<0.0 ){
+      int ii, jj;
+      for(ii=2, jj=p->nVertex*2 - 4; ii<jj; ii+=2, jj-=2){
+        GeoCoord t = p->a[ii];
+        p->a[ii] = p->a[jj];
+        p->a[jj] = t;
+        t = p->a[ii+1];
+        p->a[ii+1] = p->a[jj+1];
+        p->a[jj+1] = t;
+      }
     }
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
@@ -1751,7 +1769,7 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyBBoxFunc,          1, 1,    "geopoly_bbox"             },
      { geopolyXformFunc,         7, 1,    "geopoly_xform"            },
      { geopolyRegularFunc,       4, 1,    "geopoly_regular"          },
-     { geopolyReverseFunc,       1, 1,    "geopoly_reverse"          },
+     { geopolyCcwFunc,           1, 1,    "geopoly_ccw"              },
   };
   static const struct {
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
