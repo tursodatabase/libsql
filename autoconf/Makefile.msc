@@ -277,6 +277,12 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_GEOPOLY=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_INTROSPECTION_PRAGMAS=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 !ENDIF
@@ -561,6 +567,7 @@ SHELL_CORE_DEP =
 !ENDIF
 !ENDIF
 
+
 # This is the core library that the shell executable should link with.
 #
 !IFNDEF SHELL_CORE_LIB
@@ -808,7 +815,7 @@ LTLINK = $(TCC) -Fe$@
 # If requested, link to the RPCRT4 library.
 #
 !IF $(USE_RPCRT4_LIB)!=0
-LTLINK = $(LTLINK) rpcrt4.lib
+LTLIBS = $(LTLIBS) rpcrt4.lib
 !ENDIF
 
 # If a platform was set, force the linker to target that.
@@ -927,14 +934,24 @@ LIBRESOBJS =
 # when the shell is not being dynamically linked.
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_STMTVTAB
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
 !ENDIF
 
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll shell
+core:	dll shell
+
+# Targets that require the Tcl library.
+#
+tcl:	$(ALL_TCL_TARGETS)
+
+# This Makefile target builds all of the standard binaries.
+#
+all:	core tcl
 
 # Dynamic link library section.
 #
@@ -954,11 +971,11 @@ Replace.exe:
 sqlite3.def:	Replace.exe $(LIBOBJ)
 	echo EXPORTS > sqlite3.def
 	dumpbin /all $(LIBOBJ) \
-		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup|rebaser)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
 		| sort >> sqlite3.def
 
-$(SQLITE3EXE):	$(TOP)\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\shell.c $(SHELL_CORE_SRC) \
+$(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) shell.c $(SHELL_CORE_SRC) \
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 
@@ -973,7 +990,7 @@ sqlite3.lo:	$(SQLITE3C)
 !IF $(USE_RC)!=0
 _HASHCHAR=^#
 !IF ![echo !IFNDEF VERSION > rcver.vc] && \
-    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| find "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \
+    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| "%SystemRoot%\System32\find.exe" "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \
     ![echo !ENDIF >> rcver.vc]
 !INCLUDE rcver.vc
 !ENDIF

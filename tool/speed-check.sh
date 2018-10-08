@@ -29,17 +29,24 @@ SIZE=5
 LEAN_OPTS="-DSQLITE_THREADSAFE=0"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_DEFAULT_MEMSTATUS=0"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1"
-LEAN_OPTS="$LEAN_OPTS -DSQLITE_LIKE_DOESNT_MATCH_BLOB"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_LIKE_DOESNT_MATCH_BLOBS"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_MAX_EXPR_DEPTH=0"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DECLTYPE"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DEPRECATED"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_PROGRESS_CALLBACK"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_SHARED_CACHE"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_USE_ALLOCA"
+BASELINE="trunk"
 doExplain=0
 doCachegrind=1
+doVdbeProfile=0
+doWal=1
+doDiff=1
 while test "$1" != ""; do
   case $1 in
+    --nodiff)
+	doDiff=0
+        ;;
     --reprepare)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS $1"
         ;;
@@ -61,8 +68,11 @@ while test "$1" != ""; do
     --temp)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --temp 6"
         ;;
+    --legacy)
+	doWal=0
+        ;;
     --wal)
-        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --journal wal"
+        doWal=1
         ;;
     --size)
         shift; SIZE=$1
@@ -77,6 +87,7 @@ while test "$1" != ""; do
         rm -f vdbe_profile.out
         CC_OPTS="$CC_OPTS -DVDBE_PROFILE"
         doCachegrind=0
+        doVdbeProfile=1
         ;;
     --lean)
         CC_OPTS="$CC_OPTS $LEAN_OPTS"
@@ -116,17 +127,32 @@ while test "$1" != ""; do
     --orm)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset orm"
         ;;
-    *)
+    --cte)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset cte"
+        ;;
+    --fp)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset fp"
+        ;;
+    -*)
         CC_OPTS="$CC_OPTS $1"
+        ;;
+    *)
+	BASELINE=$1
         ;;
   esac
   shift
 done
+if test $doWal -eq 1; then
+  SPEEDTEST_OPTS="$SPEEDTEST_OPTS --journal wal"
+fi
 SPEEDTEST_OPTS="$SPEEDTEST_OPTS --size $SIZE"
 echo "NAME           = $NAME" | tee summary-$NAME.txt
 echo "SPEEDTEST_OPTS = $SPEEDTEST_OPTS" | tee -a summary-$NAME.txt
 echo "CC_OPTS        = $CC_OPTS" | tee -a summary-$NAME.txt
 rm -f cachegrind.out.* speedtest1 speedtest1.db sqlite3.o
+if test $doVdbeProfile -eq 1; then
+  rm -f vdbe_profile.out
+fi
 $CC -g -Os -Wall -I. $CC_OPTS -c sqlite3.c
 size sqlite3.o | tee -a summary-$NAME.txt
 if test $doExplain -eq 1; then
@@ -147,10 +173,16 @@ size sqlite3.o | tee -a summary-$NAME.txt
 wc sqlite3.c
 if test $doCachegrind -eq 1; then
   cg_anno.tcl cachegrind.out.* >cout-$NAME.txt
+  echo '*****************************************************' >>cout-$NAME.txt
+  sed 's/^[0-9=-]\{9\}/==00000==/' summary-$NAME.txt >>cout-$NAME.txt
 fi
 if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt
 fi
-if test "$NAME" != "trunk"; then
-  fossil test-diff --tk -c 20 cout-trunk.txt cout-$NAME.txt
+if test $doVdbeProfile -eq 1; then
+  tclsh ../sqlite/tool/vdbe_profile.tcl >vdbeprofile-$NAME.txt
+  open vdbeprofile-$NAME.txt
+fi
+if test "$NAME" != "$BASELINE" -a $doVdbeProfile -ne 1 -a $doDiff -ne 0; then
+  fossil test-diff --tk -c 20 cout-$BASELINE.txt cout-$NAME.txt
 fi

@@ -1000,11 +1000,9 @@ int sqlite3VdbeSorterInit(
       mxCache = MIN(mxCache, SQLITE_MAX_PMASZ);
       pSorter->mxPmaSize = MAX(pSorter->mnPmaSize, (int)mxCache);
 
-      /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
-      ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
-      ** large heap allocations.
-      */
-      if( sqlite3GlobalConfig.pScratch==0 ){
+      /* Avoid large memory allocations if the application has requested
+      ** SQLITE_CONFIG_SMALL_MALLOC. */
+      if( sqlite3GlobalConfig.bSmallMalloc==0 ){
         assert( pSorter->iMemory==0 );
         pSorter->nMemory = pgsz;
         pSorter->list.aMemory = (u8*)sqlite3Malloc(pgsz);
@@ -2109,7 +2107,11 @@ static int vdbeMergeEngineInit(
 ){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* For looping over PmaReader objects */
-  int nTree = pMerger->nTree;
+  int nTree;                      /* Number of subtrees to merge */
+
+  /* Failure to allocate the merge would have been detected prior to
+  ** invoking this routine */
+  assert( pMerger!=0 );
 
   /* eMode is always INCRINIT_NORMAL in single-threaded mode */
   assert( SQLITE_MAX_WORKER_THREADS>0 || eMode==INCRINIT_NORMAL );
@@ -2118,6 +2120,7 @@ static int vdbeMergeEngineInit(
   assert( pMerger->pTask==0 );
   pMerger->pTask = pTask;
 
+  nTree = pMerger->nTree;
   for(i=0; i<nTree; i++){
     if( SQLITE_MAX_WORKER_THREADS>0 && eMode==INCRINIT_ROOT ){
       /* PmaReaders should be normally initialized in order, as if they are

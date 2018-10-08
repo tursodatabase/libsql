@@ -24,7 +24,7 @@
 #
 # This script also scans for lines of the form:
 #
-#       case OP_aaaa:       /* jump, in1, in2, in3, out2-prerelease, out3 */
+#       case OP_aaaa:       /* jump, in1, in2, in3, out2, out3 */
 #
 # When such comments are found on an opcode, it means that certain
 # properties apply to that opcode.  Set corresponding flags using the
@@ -33,7 +33,9 @@
 
 set in stdin
 set currentOp {}
+set prevName {}
 set nOp 0
+set nGroup 0
 while {![eof $in]} {
   set line [gets $in]
 
@@ -75,7 +77,9 @@ while {![eof $in]} {
   if {[regexp {^case OP_} $line]} {
     set line [split $line]
     set name [string trim [lindex $line 1] :]
+    if {$name=="OP_Abortable"} continue;  # put OP_Abortable last 
     set op($name) -1
+    set group($name) 0
     set jump($name) 0
     set in1($name) 0
     set in2($name) 0
@@ -96,15 +100,31 @@ while {![eof $in]} {
              set def($val) $name
            }
          }
-         jump {set jump($name) 1}
-         in1  {set in1($name) 1}
-         in2  {set in2($name) 1}
-         in3  {set in3($name) 1}
-         out2 {set out2($name) 1}
-         out3 {set out3($name) 1}
+         group {set group($name) 1}
+         jump  {set jump($name) 1}
+         in1   {set in1($name) 1}
+         in2   {set in2($name) 1}
+         in3   {set in3($name) 1}
+         out2  {set out2($name) 1}
+         out3  {set out3($name) 1}
        }
     }
+    if {$group($name)} {
+      set newGroup 0
+      if {[info exists groups($nGroup)]} {
+        if {$prevName=="" || !$group($prevName)} {
+          set newGroup 1
+        }
+      }
+      lappend groups($nGroup) $name
+      if {$newGroup} {incr nGroup}
+    } else {
+      if {$prevName!="" && $group($prevName)} {
+        incr nGroup
+      }
+    }
     set order($nOp) $name
+    set prevName $name
     incr nOp
   }
 }
@@ -113,7 +133,7 @@ while {![eof $in]} {
 #
 puts "/* Automatically generated.  Do not edit */"
 puts "/* See the tool/mkopcodeh.tcl script for details */"
-foreach name {OP_Noop OP_Explain} {
+foreach name {OP_Noop OP_Explain OP_Abortable} {
   set jump($name) 0
   set in1($name) 0
   set in2($name) 0
@@ -180,8 +200,39 @@ for {set i 0} {$i<$nOp} {incr i} {
 }
 
 
-# Generate the numeric values for all remaining opcodes
+# Generate the numeric values for all remaining opcodes, while
+# preserving any groupings of opcodes (i.e. those that must be
+# together).
 #
+for {set g 0} {$g<$nGroup} {incr g} {
+  set gLen [llength $groups($g)]
+  set ok 0; set start -1
+  while {!$ok} {
+    set seek $cnt; incr seek
+    while {[info exists used($seek)]} {incr seek}
+    set ok 1; set start $seek
+    for {set j 0} {$j<$gLen} {incr j} {
+      incr seek
+      if {[info exists used($seek)]} {
+        set ok 0; break
+      }
+    }
+  }
+  if {$ok} {
+    set next $start
+    for {set j 0} {$j<$gLen} {incr j} {
+      set name [lindex $groups($g) $j]
+      if {$op($name)>=0} continue
+      set op($name) $next
+      set used($next) 1
+      set def($next) $name
+      incr next
+    }
+  } else {
+    error "cannot find opcodes for group: $groups($g)"
+  }
+}
+
 for {set i 0} {$i<$nOp} {incr i} {
   set name $order($i)
   if {$op($name)<0} {
@@ -202,7 +253,7 @@ for {set i 0} {$i<=$max} {incr i} {
   set name $def($i)
   puts -nonewline [format {#define %-16s %3d} $name $i]
   set com {}
-  if {$jump($name)} {
+  if {[info exists jump($name)] && $jump($name)} {
     lappend com "jump"
   }
   if {[info exists sameas($i)]} {

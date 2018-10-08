@@ -132,7 +132,9 @@ static const char zHelp[] =
 # define access _access
 #endif
 
-#include <stdint.h>
+#if !defined(_MSC_VER)
+# include <stdint.h>
+#endif
 
 /*
 ** The following macros are used to cast pointers to integers and
@@ -557,10 +559,10 @@ static int exportMain(int argc, char **argv){
                        iKey/10000, (iKey/100)%100, iKey%100);
     }
     out = fopen(zFN, "wb");      
-    nWrote = fwrite(pData, 1, nData, out);
+    nWrote = fwrite(pData, 1, (size_t)nData, out);
     fclose(out);
     printf("\r%s   ", zTail); fflush(stdout);
-    if( nWrote!=nData ){
+    if( nWrote!=(size_t)nData ){
       fatalError("Wrote only %d of %d bytes to %s\n",
                   (int)nWrote, nData, zFN);
     }
@@ -741,26 +743,12 @@ static int display_stats(
           "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n",
           iCur, iHiwtr);
   iHiwtr = iCur = -1;
-  sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
-  fprintf(out,
-      "Number of Scratch Allocations Used:  %d (max %d)\n",
-      iCur, iHiwtr);
-  iHiwtr = iCur = -1;
-  sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
-  fprintf(out,
-          "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n",
-          iCur, iHiwtr);
-  iHiwtr = iCur = -1;
   sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
   fprintf(out, "Largest Allocation:                  %d bytes\n",
           iHiwtr);
   iHiwtr = iCur = -1;
   sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
   fprintf(out, "Largest Pcache Allocation:           %d bytes\n",
-          iHiwtr);
-  iHiwtr = iCur = -1;
-  sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
-  fprintf(out, "Largest Scratch Allocation:          %d bytes\n",
           iHiwtr);
 
   iHiwtr = iCur = -1;

@@ -24,8 +24,9 @@ do_execsql_test 1.1 {
 do_eqp_test 1.2 {
   SELECT e FROM t3, t4 WHERE b=c ORDER BY b, d;
 } {
-  0 0 0 {SCAN TABLE t3 USING COVERING INDEX i3} 
-  0 1 1 {SEARCH TABLE t4 USING INDEX i4 (c=?)}
+  QUERY PLAN
+  |--SCAN TABLE t3 USING COVERING INDEX i3
+  `--SEARCH TABLE t4 USING INDEX i4 (c=?)
 }
 
 
@@ -38,9 +39,7 @@ do_execsql_test 2.1 {
 # if the index is a non-covering index.
 do_eqp_test 2.2 {
   SELECT * FROM t1 ORDER BY a;
-} {
-  0 0 0 {SCAN TABLE t1 USING INDEX i1}
-}
+} {SCAN TABLE t1 USING INDEX i1}
 
 do_execsql_test 3.1 {
   CREATE TABLE t5(a INTEGER PRIMARY KEY,b,c,d,e,f,g);
@@ -57,10 +56,12 @@ do_eqp_test 3.2 {
   WHERE b IS NULL OR c IS NULL OR d IS NULL 
   ORDER BY a;
 } {
-  0 0 0 {SEARCH TABLE t5 USING INDEX t5b (b=?)} 
-  0 0 0 {SEARCH TABLE t5 USING INDEX t5c (c=?)} 
-  0 0 0 {SEARCH TABLE t5 USING INDEX t5d (d=?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--MULTI-INDEX OR
+  |  |--SEARCH TABLE t5 USING INDEX t5b (b=?)
+  |  |--SEARCH TABLE t5 USING INDEX t5c (c=?)
+  |  `--SEARCH TABLE t5 USING INDEX t5d (d=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
 
 #-------------------------------------------------------------------------
@@ -79,14 +80,11 @@ do_execsql_test 4.1 {
 }
 do_eqp_test 4.2 {
   SELECT * FROM t1 WHERE likelihood(a=?, 0.014) AND b BETWEEN ? AND ?;
-} {
-  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}
-}
+} {SEARCH TABLE t1 USING INDEX i1 (a=?)}
+
 do_eqp_test 4.3 {
   SELECT * FROM t1 WHERE likelihood(a=?, 0.016) AND b BETWEEN ? AND ?;
-} {
-  0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b>? AND b<?)}
-}
+} {SEARCH TABLE t1 USING INDEX i2 (b>? AND b<?)}
 
 
 #-------------------------------------------------------------------------
@@ -100,15 +98,17 @@ do_execsql_test 5.1 {
 do_eqp_test 5.2 {
   SELECT * FROM t2 ORDER BY x, y;
 } {
-  0 0 0 {SCAN TABLE t2 USING INDEX t2i1} 
-  0 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  QUERY PLAN
+  |--SCAN TABLE t2 USING INDEX t2i1
+  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
 }
 
 do_eqp_test 5.3 {
   SELECT * FROM t2 WHERE x BETWEEN ? AND ? ORDER BY rowid;
 } {
-  0 0 0 {SEARCH TABLE t2 USING INDEX t2i1 (x>? AND x<?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--SEARCH TABLE t2 USING INDEX t2i1 (x>? AND x<?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
 
 # where7.test, where8.test:
@@ -122,9 +122,11 @@ do_execsql_test 6.1 {
 do_eqp_test 6.2 {
   SELECT a FROM t3 WHERE (b BETWEEN 2 AND 4) OR c=100 ORDER BY a
 } {
-  0 0 0 {SEARCH TABLE t3 USING INDEX t3i1 (b>? AND b<?)} 
-  0 0 0 {SEARCH TABLE t3 USING INDEX t3i2 (c=?)}
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--MULTI-INDEX OR
+  |  |--SEARCH TABLE t3 USING INDEX t3i1 (b>? AND b<?)
+  |  `--SEARCH TABLE t3 USING INDEX t3i2 (c=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
 
 #-------------------------------------------------------------------------
@@ -145,9 +147,11 @@ do_eqp_test 7.2 {
      WHERE (b>=950 AND b<=1010) OR (b IS NULL AND c NOT NULL)
   ORDER BY a
 } {
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)} 
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  QUERY PLAN
+  |--MULTI-INDEX OR
+  |  |--SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)
+  |  `--SEARCH TABLE t1 USING INDEX t1b (b=?)
+  `--USE TEMP B-TREE FOR ORDER BY
 }
 
 do_eqp_test 7.3 {
@@ -155,15 +159,11 @@ do_eqp_test 7.3 {
   WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
-} {
-  0 0 0 {SCAN TABLE t1}
-}
+} {SCAN TABLE t1}
 
 do_eqp_test 7.4 {
   SELECT rowid FROM t1 WHERE (+b IS NULL AND c NOT NULL) OR c IS NULL
-} {
-  0 0 0 {SCAN TABLE t1}
-}
+} {SCAN TABLE t1}
 
 #-------------------------------------------------------------------------
 #
@@ -194,10 +194,11 @@ do_eqp_test 8.2 {
      AND unlikely(composer.cid=track.cid)
      AND unlikely(album.aid=track.aid);
 } {
-  0 0 2 {SCAN TABLE track} 
-  0 1 0 {SEARCH TABLE album USING INTEGER PRIMARY KEY (rowid=?)}
-  0 2 1 {SEARCH TABLE composer USING INTEGER PRIMARY KEY (rowid=?)}
-  0 0 0 {USE TEMP B-TREE FOR DISTINCT}
+  QUERY PLAN
+  |--SCAN TABLE track
+  |--SEARCH TABLE album USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH TABLE composer USING INTEGER PRIMARY KEY (rowid=?)
+  `--USE TEMP B-TREE FOR DISTINCT
 }
 
 #-------------------------------------------------------------------------
@@ -263,27 +264,19 @@ ifcapable stat4 {
 
   do_eqp_test 10.3 {
     SELECT rowid FROM t6 WHERE a=0 AND c=0
-  } {
-    0 0 0 {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
-  }
+  } {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
 
   do_eqp_test 10.4 {
     SELECT rowid FROM t6 WHERE a=0 AND b='xyz' AND c=0
-  } {
-    0 0 0 {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
-  }
+  } {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
 
   do_eqp_test 10.5 {
     SELECT rowid FROM t6 WHERE likelihood(a=0, 0.1) AND c=0
-  } {
-    0 0 0 {SEARCH TABLE t6 USING INDEX t6i1 (a=?)}
-  }
+  } {SEARCH TABLE t6 USING INDEX t6i1 (a=?)}
 
   do_eqp_test 10.6 {
     SELECT rowid FROM t6 WHERE likelihood(a=0, 0.1) AND b='xyz' AND c=0
-  } {
-    0 0 0 {SEARCH TABLE t6 USING INDEX t6i1 (a=? AND b=?)}
-  }
+  } {SEARCH TABLE t6 USING INDEX t6i1 (a=? AND b=?)}
 }
 
 finish_test

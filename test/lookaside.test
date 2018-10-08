@@ -24,7 +24,7 @@ ifcapable !lookaside {
 # The tests in this file configure the lookaside allocator after a 
 # connection is opened. This will not work if there is any "presql"
 # configured (SQL run within the [sqlite3] wrapper in tester.tcl).
-if {[info exists ::G(perm:presql)]} {
+if {[info exists ::G(perm:dbconfig)] && $::G(perm:dbconfig)!=""} {
   finish_test
   return
 }
@@ -33,10 +33,11 @@ test_set_config_pagecache 0 0
 
 catch {db close}
 sqlite3_shutdown
-sqlite3_config_scratch 0 0
 sqlite3_initialize
 autoinstall_test_functions
+
 sqlite3 db test.db
+db cache size 4
 
 # Make sure sqlite3_db_config() and sqlite3_db_status are working.
 #
@@ -100,6 +101,7 @@ do_test lookaside-2.2 {
   expr {$x==0 && $y<$z && $z>10 && $z<100}
 } {1}
 do_test lookaside-2.3 {
+  db eval {SELECT 1}
   sqlite3_db_config_lookaside db 0 50 50
 } {5}  ;# SQLITE_BUSY
 do_test lookaside-2.4 {

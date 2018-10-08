@@ -748,7 +748,7 @@ do_execsql_test e_select-3.2.1a {
   SELECT k FROM x1 LEFT JOIN x2 USING(k)
 } {1 2 3 4 5 6}
 do_execsql_test e_select-3.2.1b {
-  SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k
+  SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k ORDER BY +k
 } {1 3 5}
 do_execsql_test e_select-3.2.2 {
   SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k IS NULL
@@ -801,7 +801,7 @@ do_select_tests e_select-4.1 {
   4  "SELECT z2.* FROM z1,z2 LIMIT 1"       {{} 21}
   5  "SELECT z2.*, z1.* FROM z1,z2 LIMIT 1" {{} 21 51.65 -59.58 belfries}
 
-  6  "SELECT count(*), * FROM z1"           {6 63 born -26}
+  6  "SELECT count(*), * FROM z1"           {6 51.65 -59.58 belfries}
   7  "SELECT max(a), * FROM z1"             {63 63 born -26}
   8  "SELECT *, min(a) FROM z1"             {-5 {} 75 -5}
 
@@ -939,13 +939,13 @@ do_execsql_test e_select-4.6.0 {
   INSERT INTO a2 VALUES(10, 4);
 } {}
 do_select_tests e_select-4.6 {
-  1 "SELECT one, two, count(*) FROM a1"                        {4 10 4} 
-  2 "SELECT one, two, count(*) FROM a1 WHERE one<3"            {2 3 2} 
+  1 "SELECT one, two, count(*) FROM a1"                        {1 1 4}
+  2 "SELECT one, two, count(*) FROM a1 WHERE one<3"            {1 1 2}
   3 "SELECT one, two, count(*) FROM a1 WHERE one>3"            {4 10 1} 
-  4 "SELECT *, count(*) FROM a1 JOIN a2"                       {4 10 10 4 16} 
-  5 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
-  6 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
-  7 "SELECT group_concat(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 3 6}
+  4 "SELECT *, count(*) FROM a1 JOIN a2"                       {1 1 1 1 16}
+  5 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {1 1 1 3}
+  6 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {1 1 1 3}
+  7 "SELECT group_concat(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 1 1}
 }
 
 # EVIDENCE-OF: R-04486-07266 Or, if the dataset contains zero rows, then
@@ -1128,7 +1128,7 @@ do_select_tests e_select-4.13 {
   2.1  "SELECT up FROM c1 GROUP BY up HAVING down>10" {y}
   2.2  "SELECT up FROM c1 GROUP BY up HAVING up='y'"  {y}
 
-  2.3  "SELECT i, j FROM c2 GROUP BY i>4 HAVING i>6"  {9 36}
+  2.3  "SELECT i, j FROM c2 GROUP BY i>4 HAVING j>6"  {5 10}
 }
 
 # EVIDENCE-OF: R-23927-54081 Each expression in the result-set is then
@@ -1154,12 +1154,12 @@ do_select_tests e_select-4.15 {
 # for the same row.
 #
 do_select_tests e_select-4.15 {
-  1  "SELECT i, j FROM c2 GROUP BY i%2"             {8 28   9 36}
-  2  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j<30" {8 28}
-  3  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
-  4  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
+  1  "SELECT i, j FROM c2 GROUP BY i%2"             {2 1 1 0}
+  2  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j<30" {2 1 1 0}
+  3  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {}
+  4  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {}
   5  "SELECT count(*), i, k FROM c2 NATURAL JOIN c3 GROUP BY substr(k, 1, 1)"
-        {2 5 boron   2 2 helium   1 3 lithium}
+        {2 4 beryllium 2 1 hydrogen 1 3 lithium}
 } 
 
 # EVIDENCE-OF: R-19334-12811 Each group of input dataset rows

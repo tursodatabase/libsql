@@ -14,10 +14,19 @@ as follows:
      It is a good example of how to go about implementing a custom
      [table-valued function](https://www.sqlite.org/vtab.html#tabfunc2).
 
+  *  **csv.c** &mdash;  A [virtual table](https://sqlite.org/vtab.html)
+     for reading 
+     [Comma-Separated-Value (CSV) files](https://en.wikipedia.org/wiki/Comma-separated_values).
+
   *  **dbdump.c** &mdash;  This is not actually a loadable extension, but
      rather a library that implements an approximate equivalent to the
      ".dump" command of the
      [command-line shell](https://www.sqlite.org/cli.html).
+
+  *  **json1.c** &mdash;  Various SQL functions and table-valued functions
+     for processing JSON.  This extension is already built into the
+     [SQLite amalgamation](https://sqlite.org/amalgamation.html).  See
+     <https://sqlite.org/json1.html> for additional information.
 
   *  **memvfs.c** &mdash;  This file implements a custom
      [VFS](https://www.sqlite.org/vfs.html) that stores an entire database
@@ -38,3 +47,14 @@ as follows:
      on the source filename with digits removed, so if we used the name
      "sha3.c" then the entry point would conflict with the prior "sha1.c"
      extension.
+
+  *  **unionvtab.c** &mdash; Implementation of the unionvtab and
+     [swarmvtab](https://sqlite.org/swarmvtab.html) virtual tables.
+     These virtual tables allow a single
+     large table to be spread out across multiple database files.  In the
+     case of swarmvtab, the individual database files can be attached on
+     demand.
+
+  *  **zipfile.c** &mdash;  A [virtual table](https://sqlite.org/vtab.html)
+     that can read and write a 
+     [ZIP archive](https://en.wikipedia.org/wiki/Zip_%28file_format%29).

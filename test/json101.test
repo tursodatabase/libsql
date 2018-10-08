@@ -722,4 +722,97 @@ do_execsql_test json-11.3 {
   /* } */
 } {0}
 
+# 2017-10-27.  Demonstrate the ability to access an element from
+# a json structure even though the element name constains a "."
+# character, by quoting the element name in the path.
+#
+do_execsql_test json-12.100 {
+  CREATE TABLE t12(x);
+  INSERT INTO t12(x) VALUES(
+    '{"settings":
+        {"layer2":
+           {"hapax.legomenon":
+              {"forceDisplay":true,
+               "transliterate":true,
+               "add.footnote":true,
+               "summary.report":true},
+            "dis.legomenon":
+              {"forceDisplay":true,
+               "transliterate":false,
+               "add.footnote":false,
+               "summary.report":true},
+            "tris.legomenon":
+              {"forceDisplay":true,
+               "transliterate":false,
+               "add.footnote":false,
+               "summary.report":false}
+           }
+        }
+     }');
+} {}
+do_execsql_test json-12.110 {
+  SELECT json_remove(x, '$.settings.layer2."dis.legomenon".forceDisplay')
+    FROM t12;
+} {{{"settings":{"layer2":{"hapax.legomenon":{"forceDisplay":true,"transliterate":true,"add.footnote":true,"summary.report":true},"dis.legomenon":{"transliterate":false,"add.footnote":false,"summary.report":true},"tris.legomenon":{"forceDisplay":true,"transliterate":false,"add.footnote":false,"summary.report":false}}}}}}
+do_execsql_test json-12.120 {
+  SELECT json_extract(x, '$.settings.layer2."tris.legomenon"."summary.report"')
+    FROM t12;
+} {0}
+
+# 2018-01-26
+# ticket https://www.sqlite.org/src/tktview/80177f0c226ff54f6ddd41
+# Make sure the query planner knows about the arguments to table-valued functions.
+#
+do_execsql_test json-13.100 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(id, json);
+  INSERT INTO t1(id,json) VALUES(1,'{"items":[3,5]}');
+  CREATE TABLE t2(id, json);
+  INSERT INTO t2(id,json) VALUES(2,'{"value":2}');
+  INSERT INTO t2(id,json) VALUES(3,'{"value":3}');
+  INSERT INTO t2(id,json) VALUES(4,'{"value":4}');
+  INSERT INTO t2(id,json) VALUES(5,'{"value":5}');
+  INSERT INTO t2(id,json) VALUES(6,'{"value":6}');
+  SELECT * FROM t1 CROSS JOIN t2
+   WHERE EXISTS(SELECT 1 FROM json_each(t1.json,'$.items') AS Z
+                 WHERE Z.value==t2.id);
+} {1 {{"items":[3,5]}} 3 {{"value":3}} 1 {{"items":[3,5]}} 5 {{"value":5}}}
+do_execsql_test json-13.110 {
+  SELECT * FROM t2 CROSS JOIN t1
+   WHERE EXISTS(SELECT 1 FROM json_each(t1.json,'$.items') AS Z
+                 WHERE Z.value==t2.id);
+} {3 {{"value":3}} 1 {{"items":[3,5]}} 5 {{"value":5}} 1 {{"items":[3,5]}}}
+
+# 2018-05-16
+# Incorrect fullkey output from json_each()
+# when the input JSON is not an array or object.
+#
+do_execsql_test json-14.100 {
+  SELECT fullkey FROM json_each('123');
+} {$}
+do_execsql_test json-14.110 {
+  SELECT fullkey FROM json_each('123.56');
+} {$}
+do_execsql_test json-14.120 {
+  SELECT fullkey FROM json_each('"hello"');
+} {$}
+do_execsql_test json-14.130 {
+  SELECT fullkey FROM json_each('null');
+} {$}
+do_execsql_test json-14.140 {
+  SELECT fullkey FROM json_tree('123');
+} {$}
+do_execsql_test json-14.150 {
+  SELECT fullkey FROM json_tree('123.56');
+} {$}
+do_execsql_test json-14.160 {
+  SELECT fullkey FROM json_tree('"hello"');
+} {$}
+do_execsql_test json-14.170 {
+  SELECT fullkey FROM json_tree('null');
+} {$}
+
+
+
 finish_test

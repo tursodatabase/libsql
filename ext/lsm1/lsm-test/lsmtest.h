@@ -121,6 +121,7 @@ int test_mdb_scan(TestDb *, void *, int, void *, int, void *, int,
 */
 int test_lsm_open(const char*, const char *zFile, int bClear, TestDb **ppDb);
 int test_lsm_lomem_open(const char*, const char*, int bClear, TestDb **ppDb);
+int test_lsm_lomem2_open(const char*, const char*, int bClear, TestDb **ppDb);
 int test_lsm_zip_open(const char*, const char*, int bClear, TestDb **ppDb);
 int test_lsm_small_open(const char*, const char*, int bClear, TestDb **ppDb);
 int test_lsm_mt2(const char*, const char *zFile, int bClear, TestDb **ppDb);

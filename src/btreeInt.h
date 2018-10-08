@@ -499,30 +499,31 @@ struct CellInfo {
 **    eState==FAULT:                   Cursor fault with skipNext as error code.
 */
 struct BtCursor {
-  Btree *pBtree;            /* The Btree to which this cursor belongs */
-  BtShared *pBt;            /* The BtShared this cursor points to */
-  BtCursor *pNext;          /* Forms a linked list of all cursors */
-  Pgno *aOverflow;          /* Cache of overflow page locations */
-  CellInfo info;            /* A parse of the cell we are pointing at */
-  i64 nKey;                 /* Size of pKey, or last integer key */
-  void *pKey;               /* Saved key that was cursor last known position */
-  Pgno pgnoRoot;            /* The root page of this tree */
-  int nOvflAlloc;           /* Allocated size of aOverflow[] array */
-  int skipNext;    /* Prev() is noop if negative. Next() is noop if positive.
-                   ** Error code if eState==CURSOR_FAULT */
+  u8 eState;                /* One of the CURSOR_XXX constants (see below) */
   u8 curFlags;              /* zero or more BTCF_* flags defined below */
   u8 curPagerFlags;         /* Flags to send to sqlite3PagerGet() */
-  u8 eState;                /* One of the CURSOR_XXX constants (see below) */
   u8 hints;                 /* As configured by CursorSetHints() */
+  int skipNext;    /* Prev() is noop if negative. Next() is noop if positive.
+                   ** Error code if eState==CURSOR_FAULT */
+  Btree *pBtree;            /* The Btree to which this cursor belongs */
+  Pgno *aOverflow;          /* Cache of overflow page locations */
+  void *pKey;               /* Saved key that was cursor last known position */
   /* All fields above are zeroed when the cursor is allocated.  See
   ** sqlite3BtreeCursorZero().  Fields that follow must be manually
   ** initialized. */
+#define BTCURSOR_FIRST_UNINIT pBt   /* Name of first uninitialized field */
+  BtShared *pBt;            /* The BtShared this cursor points to */
+  BtCursor *pNext;          /* Forms a linked list of all cursors */
+  CellInfo info;            /* A parse of the cell we are pointing at */
+  i64 nKey;                 /* Size of pKey, or last integer key */
+  Pgno pgnoRoot;            /* The root page of this tree */
   i8 iPage;                 /* Index of current page in apPage */
   u8 curIntKey;             /* Value of apPage[0]->intKey */
   u16 ix;                   /* Current index for apPage[iPage] */
   u16 aiIdx[BTCURSOR_MAX_DEPTH-1];     /* Current index in apPage[i] */
   struct KeyInfo *pKeyInfo;            /* Arg passed to comparison function */
-  MemPage *apPage[BTCURSOR_MAX_DEPTH]; /* Pages from root to current page */
+  MemPage *pPage;                        /* Current page */
+  MemPage *apPage[BTCURSOR_MAX_DEPTH-1]; /* Stack of parents of current page */
 };
 
 /*
@@ -565,8 +566,8 @@ struct BtCursor {
 **   Do nothing else with this cursor.  Any attempt to use the cursor
 **   should return the error code stored in BtCursor.skipNext
 */
-#define CURSOR_INVALID           0
-#define CURSOR_VALID             1
+#define CURSOR_VALID             0
+#define CURSOR_INVALID           1
 #define CURSOR_SKIPNEXT          2
 #define CURSOR_REQUIRESEEK       3
 #define CURSOR_FAULT             4

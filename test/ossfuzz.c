@@ -3,10 +3,16 @@
 ** (https://github.com/google/oss-fuzz)
 */
 #include <stddef.h>
-#include <stdint.h>
+#if !defined(_MSC_VER)
+# include <stdint.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include "sqlite3.h"
+
+#if defined(_MSC_VER)
+typedef unsigned char uint8_t;
+#endif
 
 /* Global debugging settings.  OSS-Fuzz will have all debugging turned
 ** off.  But if LLVMFuzzerTestOneInput() is called interactively from
@@ -160,6 +166,9 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Run the SQL.  The sqlite_exec() interface expects a zero-terminated
   ** string, so make a copy. */
   zSql = sqlite3_mprintf("%.*s", (int)size, data);
+#ifndef SQLITE_OMIT_COMPLETE
+  sqlite3_complete(zSql);
+#endif
   sqlite3_exec(cx.db, zSql, exec_handler, (void*)&execCnt, &zErrMsg);
 
   /* Show any errors */

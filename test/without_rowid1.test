@@ -238,7 +238,7 @@ do_execsql_test 5.0 {
 
 do_eqp_test 5.1 {
   SELECT * FROM t45 WHERE b=? AND a>?
-} {/*USING INDEX i45 (b=? AND a>?)*/}
+} {USING INDEX i45 (b=? AND a>?)}
 
 do_execsql_test 5.2 {
   SELECT * FROM t45 WHERE b='two' AND a>4
@@ -257,11 +257,11 @@ do_execsql_test 5.4 {
 }
 
 set queries {
-  1    2    "c = 5 AND a = 1"          {/*i46 (c=? AND a=?)*/}
-  2    6    "c = 4 AND a < 3"          {/*i46 (c=? AND a<?)*/}
-  3    4    "c = 2 AND a >= 3"         {/*i46 (c=? AND a>?)*/}
-  4    1    "c = 2 AND a = 1 AND b<10" {/*i46 (c=? AND a=? AND b<?)*/}
-  5    1    "c = 0 AND a = 0 AND b>5"  {/*i46 (c=? AND a=? AND b>?)*/}
+  1    2    "c = 5 AND a = 1"          {i46 (c=? AND a=?)}
+  2    6    "c = 4 AND a < 3"          {i46 (c=? AND a<?)}
+  3    4    "c = 2 AND a >= 3"         {i46 (c=? AND a>?)}
+  4    1    "c = 2 AND a = 1 AND b<10" {i46 (c=? AND a=? AND b<?)}
+  5    1    "c = 0 AND a = 0 AND b>5"  {i46 (c=? AND a=? AND b>?)}
 }
 
 foreach {tn cnt where eqp} $queries {
@@ -341,6 +341,19 @@ do_execsql_test 8.1 {
   SELECT type, name, '|' FROM sqlite_master;
 } {table t1 | index t1x |}
 
+# 2018-04-05: OSSFuzz found that the following was accessing an 
+# unintialized memory cell. Which was not actually causing a 
+# malfunction, but does cause an assert() to fail.
+#
+do_execsql_test 9.0 {
+  CREATE TABLE t2(b, c, PRIMARY KEY(b,c)) WITHOUT ROWID;
+  CREATE UNIQUE INDEX t2b ON t2(b);
+  UPDATE t2 SET b=1 WHERE b='';
+}
+
+do_execsql_test 10.1 {
+  DELETE FROM t2 WHERE b=1
+}
 
   
 finish_test

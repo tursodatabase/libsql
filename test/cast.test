@@ -343,4 +343,49 @@ do_test cast-4.4 {
   }
 } {0 abc 0.0 abc}
 
+# Added 2018-01-26
+#
+# EVIDENCE-OF: R-48741-32454 If the prefix integer is greater than
+# +9223372036854775807 then the result of the cast is exactly
+# +9223372036854775807.
+do_execsql_test cast-5.1 {
+  SELECT CAST('9223372036854775808' AS integer);
+  SELECT CAST('  +000009223372036854775808' AS integer);
+  SELECT CAST('12345678901234567890123' AS INTEGER);
+} {9223372036854775807 9223372036854775807 9223372036854775807}
+
+# EVIDENCE-OF: R-06028-16857 Similarly, if the prefix integer is less
+# than -9223372036854775808 then the result of the cast is exactly
+# -9223372036854775808.
+do_execsql_test cast-5.2 {
+  SELECT CAST('-9223372036854775808' AS integer);
+  SELECT CAST('-9223372036854775809' AS integer);
+  SELECT CAST('-12345678901234567890123' AS INTEGER);
+} {-9223372036854775808 -9223372036854775808 -9223372036854775808}
+
+# EVIDENCE-OF: R-33990-33527 When casting to INTEGER, if the text looks
+# like a floating point value with an exponent, the exponent will be
+# ignored because it is no part of the integer prefix.
+# EVIDENCE-OF: R-24225-46995 For example, "(CAST '123e+5' AS INTEGER)"
+# results in 123, not in 12300000.
+do_execsql_test case-5.3 {
+  SELECT CAST('123e+5' AS INTEGER);
+  SELECT CAST('123e+5' AS NUMERIC);
+} {123 12300000.0}
+
+
+# The following does not have anything to do with the CAST operator,
+# but it does deal with affinity transformations.
+#
+do_execsql_test case-6.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a NUMERIC);
+  INSERT INTO t1 VALUES
+     ('9000000000000000001'),
+     ('9000000000000000001 '),
+     (' 9000000000000000001'),
+     (' 9000000000000000001 ');
+  SELECT * FROM t1;
+} {9000000000000000001 9000000000000000001 9000000000000000001 9000000000000000001}
+
 finish_test

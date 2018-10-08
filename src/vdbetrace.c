@@ -82,7 +82,7 @@ char *sqlite3VdbeExpandSql(
   Mem *pVar;               /* Value of a host parameter */
   StrAccum out;            /* Accumulate the output here */
 #ifndef SQLITE_OMIT_UTF16
-  Mem utf8;                /* Used to convert UTF16 parameters into UTF8 for display */
+  Mem utf8;                /* Used to convert UTF16 into UTF8 for display */
 #endif
   char zBase[100];         /* Initial working space */
 
@@ -93,17 +93,17 @@ char *sqlite3VdbeExpandSql(
     while( *zRawSql ){
       const char *zStart = zRawSql;
       while( *(zRawSql++)!='\n' && *zRawSql );
-      sqlite3StrAccumAppend(&out, "-- ", 3);
+      sqlite3_str_append(&out, "-- ", 3);
       assert( (zRawSql - zStart) > 0 );
-      sqlite3StrAccumAppend(&out, zStart, (int)(zRawSql-zStart));
+      sqlite3_str_append(&out, zStart, (int)(zRawSql-zStart));
     }
   }else if( p->nVar==0 ){
-    sqlite3StrAccumAppend(&out, zRawSql, sqlite3Strlen30(zRawSql));
+    sqlite3_str_append(&out, zRawSql, sqlite3Strlen30(zRawSql));
   }else{
     while( zRawSql[0] ){
       n = findNextHostParameter(zRawSql, &nToken);
       assert( n>0 );
-      sqlite3StrAccumAppend(&out, zRawSql, n);
+      sqlite3_str_append(&out, zRawSql, n);
       zRawSql += n;
       assert( zRawSql[0] || nToken==0 );
       if( nToken==0 ) break;
@@ -129,11 +129,11 @@ char *sqlite3VdbeExpandSql(
       assert( idx>0 && idx<=p->nVar );
       pVar = &p->aVar[idx-1];
       if( pVar->flags & MEM_Null ){
-        sqlite3StrAccumAppend(&out, "NULL", 4);
+        sqlite3_str_append(&out, "NULL", 4);
       }else if( pVar->flags & MEM_Int ){
-        sqlite3XPrintf(&out, "%lld", pVar->u.i);
+        sqlite3_str_appendf(&out, "%lld", pVar->u.i);
       }else if( pVar->flags & MEM_Real ){
-        sqlite3XPrintf(&out, "%!.15g", pVar->u.r);
+        sqlite3_str_appendf(&out, "%!.15g", pVar->u.r);
       }else if( pVar->flags & MEM_Str ){
         int nOut;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16
@@ -143,7 +143,7 @@ char *sqlite3VdbeExpandSql(
           utf8.db = db;
           sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, enc, SQLITE_STATIC);
           if( SQLITE_NOMEM==sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8) ){
-            out.accError = STRACCUM_NOMEM;
+            out.accError = SQLITE_NOMEM;
             out.nAlloc = 0;
           }
           pVar = &utf8;
@@ -156,38 +156,38 @@ char *sqlite3VdbeExpandSql(
           while( nOut<pVar->n && (pVar->z[nOut]&0xc0)==0x80 ){ nOut++; }
         }
 #endif    
-        sqlite3XPrintf(&out, "'%.*q'", nOut, pVar->z);
+        sqlite3_str_appendf(&out, "'%.*q'", nOut, pVar->z);
 #ifdef SQLITE_TRACE_SIZE_LIMIT
         if( nOut<pVar->n ){
-          sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-nOut);
+          sqlite3_str_appendf(&out, "/*+%d bytes*/", pVar->n-nOut);
         }
 #endif
 #ifndef SQLITE_OMIT_UTF16
         if( enc!=SQLITE_UTF8 ) sqlite3VdbeMemRelease(&utf8);
 #endif
       }else if( pVar->flags & MEM_Zero ){
-        sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
+        sqlite3_str_appendf(&out, "zeroblob(%d)", pVar->u.nZero);
       }else{
         int nOut;  /* Number of bytes of the blob to include in output */
         assert( pVar->flags & MEM_Blob );
-        sqlite3StrAccumAppend(&out, "x'", 2);
+        sqlite3_str_append(&out, "x'", 2);
         nOut = pVar->n;
 #ifdef SQLITE_TRACE_SIZE_LIMIT
         if( nOut>SQLITE_TRACE_SIZE_LIMIT ) nOut = SQLITE_TRACE_SIZE_LIMIT;
 #endif
         for(i=0; i<nOut; i++){
-          sqlite3XPrintf(&out, "%02x", pVar->z[i]&0xff);
+          sqlite3_str_appendf(&out, "%02x", pVar->z[i]&0xff);
         }
-        sqlite3StrAccumAppend(&out, "'", 1);
+        sqlite3_str_append(&out, "'", 1);
 #ifdef SQLITE_TRACE_SIZE_LIMIT
         if( nOut<pVar->n ){
-          sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-nOut);
+          sqlite3_str_appendf(&out, "/*+%d bytes*/", pVar->n-nOut);
         }
 #endif
       }
     }
   }
-  if( out.accError ) sqlite3StrAccumReset(&out);
+  if( out.accError ) sqlite3_str_reset(&out);
   return sqlite3StrAccumFinish(&out);
 }
 

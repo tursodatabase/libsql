@@ -175,19 +175,19 @@ do_execsql_test 7.0 {
 
 foreach {tn sql res eqp} {
   1 "SELECT * FROM xy WHERE (i, j) IS (2, 2)" {2 2 2} 
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid=?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid=?)"
 
   2 "SELECT * FROM xy WHERE (k, j) < (2, 3)" {1 1 1 2 2 2}
-    "0 0 0 {SCAN TABLE xy}"
+    "SCAN TABLE xy"
 
   3 "SELECT * FROM xy WHERE (i, j) < (2, 3)" {1 1 1 2 2 2}
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid<?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid<?)"
 
   4 "SELECT * FROM xy WHERE (i, j) > (2, 1)" {2 2 2 3 3 3 4 4 4}
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)"
 
   5 "SELECT * FROM xy WHERE (i, j) > ('2', 1)" {2 2 2 3 3 3 4 4 4}
-    "0 0 0 {SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)}"
+    "SEARCH TABLE xy USING INTEGER PRIMARY KEY (rowid>?)"
 
 } {
   do_eqp_test 7.$tn.1 $sql $eqp
@@ -393,5 +393,157 @@ do_execsql_test 16.5 {
   2 z y x w
   3 i ii iii iv
 }
+
+do_execsql_test 17.0 {
+  CREATE TABLE b1(a, b);
+  CREATE TABLE b2(x);
+}
+
+do_execsql_test 17.1 {
+  SELECT * FROM b2 CROSS JOIN b1 
+  WHERE b2.x=b1.a AND (b1.a, 2) 
+  IN (VALUES(1, 2));
+} {}
+
+do_execsql_test 18.0 {
+  CREATE TABLE b3 ( a, b, PRIMARY KEY (a, b) );
+  CREATE TABLE b4 ( a );
+  CREATE TABLE b5 ( a, b );
+  INSERT INTO b3 VALUES (1, 1), (1, 2);
+  INSERT INTO b4 VALUES (1);
+  INSERT INTO b5 VALUES (1, 1), (1, 2);
+}
+
+do_execsql_test 18.1 {
+  SELECT * FROM b3 WHERE (SELECT b3.a, b3.b) IN ( SELECT a, b FROM b5 )
+} {1 1 1 2}
+do_execsql_test 18.2 {
+  SELECT * FROM b3 WHERE (VALUES(b3.a, b3.b)) IN ( SELECT a, b FROM b5 );
+} {1 1 1 2}
+do_execsql_test 18.3 {
+  SELECT * FROM b3 WHERE (b3.a, b3.b) IN ( SELECT a, b FROM b5 ); 
+} {1 1 1 2}
+do_execsql_test 18.4 {
+  SELECT * FROM b3 JOIN b4 ON b4.a = b3.a
+  WHERE (SELECT b3.a, b3.b) IN ( SELECT a, b FROM b5 ); 
+} {1 1 1 1 2 1}
+do_execsql_test 18.5 {
+  SELECT * FROM b3 JOIN b4 ON b4.a = b3.a
+  WHERE (VALUES(b3.a, b3.b)) IN ( SELECT a, b FROM b5 ); 
+} {1 1 1 1 2 1}
+do_execsql_test 18.6 {
+  SELECT * FROM b3 JOIN b4 ON b4.a = b3.a
+  WHERE (b3.a, b3.b) IN ( SELECT a, b FROM b5 ); 
+} {1 1 1 1 2 1}
+
+ 
+# 2018-02-13 Ticket https://www.sqlite.org/src/tktview/f484b65f3d6230593c3
+# Incorrect result from a row-value comparison in the WHERE clause.
+#
+do_execsql_test 19.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t1(a,b) VALUES(1,11),(2,22),(3,33),(4,44);
+  SELECT * FROM t1 WHERE (a,b)>(0,0) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.2 {
+  SELECT * FROM t1 WHERE (a,b)>=(0,0) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.3 {
+  SELECT * FROM t1 WHERE (a,b)<(5,0) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.4 {
+  SELECT * FROM t1 WHERE (a,b)<=(5,0) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.5 {
+  SELECT * FROM t1 WHERE (a,b)>(3,0) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.6 {
+  SELECT * FROM t1 WHERE (a,b)>=(3,0) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.7 {
+  SELECT * FROM t1 WHERE (a,b)<(3,0) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.8 {
+  SELECT * FROM t1 WHERE (a,b)<=(3,0) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.9 {
+  SELECT * FROM t1 WHERE (a,b)>(3,32) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.10 {
+  SELECT * FROM t1 WHERE (a,b)>(3,33) ORDER BY a;
+} {4 44}
+do_execsql_test 19.11 {
+  SELECT * FROM t1 WHERE (a,b)>=(3,33) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.12 {
+  SELECT * FROM t1 WHERE (a,b)>=(3,34) ORDER BY a;
+} {4 44}
+do_execsql_test 19.13 {
+  SELECT * FROM t1 WHERE (a,b)<(3,34) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.14 {
+  SELECT * FROM t1 WHERE (a,b)<(3,33) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.15 {
+  SELECT * FROM t1 WHERE (a,b)<=(3,33) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.16 {
+  SELECT * FROM t1 WHERE (a,b)<=(3,32) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.21 {
+  SELECT * FROM t1 WHERE (0,0)<(a,b) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.22 {
+  SELECT * FROM t1 WHERE (0,0)<=(a,b) ORDER BY a;
+} {1 11 2 22 3 33 4 44}
+do_execsql_test 19.23 {
+  SELECT * FROM t1 WHERE (5,0)>(a,b) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.24 {
+  SELECT * FROM t1 WHERE (5,0)>=(a,b) ORDER BY a DESC;
+} {4 44 3 33 2 22 1 11}
+do_execsql_test 19.25 {
+  SELECT * FROM t1 WHERE (3,0)<(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.26 {
+  SELECT * FROM t1 WHERE (3,0)<=(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.27 {
+  SELECT * FROM t1 WHERE (3,0)>(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.28 {
+  SELECT * FROM t1 WHERE (3,0)>=(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.29 {
+  SELECT * FROM t1 WHERE (3,32)<(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.30 {
+  SELECT * FROM t1 WHERE (3,33)<(a,b) ORDER BY a;
+} {4 44}
+do_execsql_test 19.31 {
+  SELECT * FROM t1 WHERE (3,33)<=(a,b) ORDER BY a;
+} {3 33 4 44}
+do_execsql_test 19.32 {
+  SELECT * FROM t1 WHERE (3,34)<=(a,b) ORDER BY a;
+} {4 44}
+do_execsql_test 19.33 {
+  SELECT * FROM t1 WHERE (3,34)>(a,b) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.34 {
+  SELECT * FROM t1 WHERE (3,33)>(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+do_execsql_test 19.35 {
+  SELECT * FROM t1 WHERE (3,33)>=(a,b) ORDER BY a DESC;
+} {3 33 2 22 1 11}
+do_execsql_test 19.36 {
+  SELECT * FROM t1 WHERE (3,32)>=(a,b) ORDER BY a DESC;
+} {2 22 1 11}
+
+# 2018-02-18: Memory leak nexted row-value.  Detected by OSSFuzz.
+#
+do_catchsql_test 20.1 {
+  SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
+} {0 1}
 
 finish_test

@@ -19,6 +19,10 @@ if {$tcl_platform(platform) != "unix"} {
   finish_test
   return
 }
+if {[atomic_batch_write test.db]} {
+  finish_test
+  return
+}
 
 #-----------------------------------------------------------------------
 # To roll back a hot-journal file, the application needs read and write 

@@ -110,7 +110,7 @@ do_test 2.2 {
   execsql {SELECT * FROM sqlite_master}
   execsql BEGIN
   list [catch { sqlite3_snapshot_open_blob db main $snap } msg] $msg
-} {1 SQLITE_BUSY_SNAPSHOT}
+} {1 SQLITE_ERROR_SNAPSHOT}
 
 do_test 2.3 {
   execsql COMMIT
@@ -134,7 +134,7 @@ do_test 2.5 {
   sqlite3_snapshot_recover db main
   execsql BEGIN
   list [catch { sqlite3_snapshot_open_blob db main $snap } msg] $msg
-} {1 SQLITE_BUSY_SNAPSHOT}
+} {1 SQLITE_ERROR_SNAPSHOT}
 
 #-------------------------------------------------------------------------
 # Check that calling sqlite3_snapshot_recover() does not confuse the
@@ -197,4 +197,45 @@ do_test 4.7 {
   list [catch { sqlite3_snapshot_recover db aux } msg] $msg
 } {1 SQLITE_ERROR}
 
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db 
+do_execsql_test 5.0 {
+  CREATE TABLE t2(x);
+  PRAGMA journal_mode = wal;
+  INSERT INTO t2 VALUES('abc');
+  INSERT INTO t2 VALUES('def');
+  INSERT INTO t2 VALUES('ghi');
+} {wal}
+
+do_test 5.1 {
+  execsql { 
+    SELECT * FROM t2;
+    BEGIN;
+  } db2
+  set snap [sqlite3_snapshot_get_blob db2 main]
+  db2 eval END
+} {}
+
+do_test 5.2 {
+  execsql BEGIN db2
+  sqlite3_snapshot_open_blob db2 main $snap
+  db2 eval { SELECT * FROM t2 ; END }
+} {abc def ghi}
+
+do_test 5.3 {
+  execsql { PRAGMA wal_checkpoint = RESTART }
+  execsql BEGIN db2
+  sqlite3_snapshot_open_blob db2 main $snap
+  db2 eval { SELECT * FROM t2 ; END }
+} {abc def ghi}
+
+do_test 5.4 {
+  execsql { INSERT INTO t2 VALUES('jkl') } 
+  execsql BEGIN db2
+  list [catch { sqlite3_snapshot_open_blob db2 main $snap } msg] $msg
+} {1 SQLITE_ERROR_SNAPSHOT}
+
+
 finish_test
+

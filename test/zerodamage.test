@@ -74,7 +74,7 @@ do_test zerodamage-2.0 {
     UPDATE t1 SET y=randomblob(50) WHERE x=123;
   }
   concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
-} {0 1 2576}
+} [list 0 1 [expr ([atomic_batch_write test.db]==0)*2576]]
 
 # Repeat the previous step with zero-damage turned off.  This time the
 # maximum rollback journal size should be much larger.
@@ -87,7 +87,7 @@ do_test zerodamage-2.1 {
     UPDATE t1 SET y=randomblob(50) WHERE x=124;
   }
   concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
-} {0 0 24704}
+} [list 0 0 [expr ([atomic_batch_write test.db]==0)*24704]]
 
 if {[wal_is_capable]} {
   # Run a WAL-mode transaction with POWERSAFE_OVERWRITE on to verify that the

@@ -25,6 +25,11 @@ ifcapable {!autoinc} {
   return
 }
 
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 sqlite3_db_config_lookaside db 0 0 0
 
 # The database is initially empty.
@@ -675,6 +680,173 @@ do_execsql_test autoinc-10.1 {
   SELECT * FROM sqlite_sequence;
 } {t10a 888 t10b 888}
 
+# 2018-04-21 autoincrement does not cause problems for upsert
+#
+do_execsql_test autoinc-11.1 {
+  CREATE TABLE t11(a INTEGER PRIMARY KEY AUTOINCREMENT,b UNIQUE);
+  INSERT INTO t11(a,b) VALUES(2,3),(5,6),(4,3),(1,2)
+    ON CONFLICT(b) DO UPDATE SET a=a+1000;
+  SELECT seq FROM sqlite_sequence WHERE name='t11';
+} {5}
 
+# 2018-05-23 ticket d8dc2b3a58cd5dc2918a1d4acbba4676a23ada4c
+# Does not crash if the sqlite_sequence table schema is missing
+# or corrupt.
+#
+do_test autoinc-12.1 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE fake_sequence(name TEXT PRIMARY KEY,seq) WITHOUT ROWID;
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET
+     sql=replace(sql,'fake_','sqlite_'),
+     name='sqlite_sequence',
+     tbl_name='sqlite_sequence'
+     WHERE name='fake_sequence';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+    INSERT INTO t1(b) VALUES('one');
+  }} msg]
+  lappend res $msg
+} {1 {database disk image is malformed}}
+do_test autoinc-12.2 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+   CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+   INSERT INTO t1(b) VALUES('one');
+   PRAGMA writable_schema=on;
+   UPDATE sqlite_master SET
+     sql=replace(sql,'sqlite_','x_'),
+     name='x_sequence',
+     tbl_name='x_sequence'
+    WHERE name='sqlite_sequence';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    INSERT INTO t1(b) VALUES('two');
+  }} msg]
+  lappend res $msg
+} {1 {database disk image is malformed}}
+ifcapable vtab {
+  set err "database disk image is malformed"
+} else {
+  set err {malformed database schema (sqlite_sequence) - near "VIRTUAL": syntax error}
+}
+do_test autoinc-12.3 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+   CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+   INSERT INTO t1(b) VALUES('one');
+   PRAGMA writable_schema=on;
+   UPDATE sqlite_master SET
+     sql='CREATE VIRTUAL TABLE sqlite_sequence USING sqlite_dbpage'
+    WHERE name='sqlite_sequence';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    INSERT INTO t1(b) VALUES('two');
+  }} msg]
+  lappend res $msg
+} [list 1 $err]
+do_test autoinc-12.4 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+    INSERT INTO t1(b) VALUES('one');
+    CREATE TABLE fake(name TEXT PRIMARY KEY,seq) WITHOUT ROWID;
+  }
+  set root1 [db one {SELECT rootpage FROM sqlite_master
+                     WHERE name='sqlite_sequence'}]
+  set root2 [db one {SELECT rootpage FROM sqlite_master
+                     WHERE name='fake'}]
+  db eval {
+   PRAGMA writable_schema=on;
+   UPDATE sqlite_master SET rootpage=$root2
+    WHERE name='sqlite_sequence';
+   UPDATE sqlite_master SET rootpage=$root1
+    WHERE name='fake';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    INSERT INTO t1(b) VALUES('two');
+  }} msg]
+  lappend res $msg
+} {1 {database disk image is malformed}}
+breakpoint
+do_test autoinc-12.5 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+    INSERT INTO t1(b) VALUES('one');
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET
+       sql='CREATE TABLE sqlite_sequence(x)'
+      WHERE name='sqlite_sequence';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    INSERT INTO t1(b) VALUES('two');
+  }} msg]
+  lappend res $msg
+} {1 {database disk image is malformed}}
+do_test autoinc-12.6 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+    INSERT INTO t1(b) VALUES('one');
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET
+       sql='CREATE TABLE sqlite_sequence(x,y INTEGER PRIMARY KEY)'
+      WHERE name='sqlite_sequence';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    INSERT INTO t1(b) VALUES('two'),('three'),('four');
+    INSERT INTO t1(b) VALUES('five');
+    PRAGMA integrity_check;
+  }} msg]
+  lappend res $msg
+} {0 ok}
+do_test autoinc-12.7 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
+    INSERT INTO t1(b) VALUES('one');
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET
+       sql='CREATE TABLE sqlite_sequence(y INTEGER PRIMARY KEY,x)'
+      WHERE name='sqlite_sequence';
+  }
+  db close
+  sqlite3 db test.db
+  set res [catch {db eval {
+    INSERT INTO t1(b) VALUES('two'),('three'),('four');
+    INSERT INTO t1(b) VALUES('five');
+    PRAGMA integrity_check;
+  }} msg]
+  lappend res $msg
+} {0 ok}
 
 finish_test

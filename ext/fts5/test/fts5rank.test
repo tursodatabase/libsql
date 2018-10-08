@@ -148,7 +148,19 @@ do_execsql_test 4.1 {
   VTest MATCH 'wrinkle in time OR a wrinkle in time' ORDER BY rank;
 } {{wrinkle in time} {Bill Smith}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ttt USING fts5(a);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO ttt SELECT 'word ' || i FROM s;
+}
 
-
+do_execsql_test 5.1 {
+  SELECT rowid FROM ttt('word') WHERE rowid BETWEEN 30 AND 40 ORDER BY rank;
+} {30 31 32 33 34 35 36 37 38 39 40}
 
 finish_test
+

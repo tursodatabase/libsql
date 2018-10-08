@@ -34,6 +34,7 @@ struct EvalResult {
 static int callback(void *pCtx, int argc, char **argv, char **colnames){
   struct EvalResult *p = (struct EvalResult*)pCtx;
   int i; 
+  if( argv==0 ) return 0;
   for(i=0; i<argc; i++){
     const char *z = argv[i] ? argv[i] : "";
     size_t sz = strlen(z);

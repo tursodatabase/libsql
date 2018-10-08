@@ -83,7 +83,7 @@ do_execsql_test 2.1a {
 
 do_execsql_test 2.1b {
   EXPLAIN QUERY PLAN
-  SELECT * FROM t1 WHERE likelihood(a=0, 0.05) ORDER BY a, b, c;
+  SELECT * FROM t1 WHERE likelihood(a=0, 0.03) ORDER BY a, b, c;
 } {/B-TREE/}
 
 do_execsql_test 2.2 {

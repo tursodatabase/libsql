@@ -82,3 +82,5 @@ do_test tkt3334-1.10 {
     SELECT count(*) FROM (SELECT a FROM t1) WHERE a=1;
   }
 } {3}
+
+finish_test

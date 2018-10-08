@@ -124,30 +124,23 @@ struct RowSet {
 #define ROWSET_NEXT    0x02   /* True if sqlite3RowSetNext() has been called */
 
 /*
-** Turn bulk memory into a RowSet object.  N bytes of memory
-** are available at pSpace.  The db pointer is used as a memory context
-** for any subsequent allocations that need to occur.
-** Return a pointer to the new RowSet object.
-**
-** It must be the case that N is sufficient to make a Rowset.  If not
-** an assertion fault occurs.
-** 
-** If N is larger than the minimum, use the surplus as an initial
-** allocation of entries available to be filled.
+** Allocate a RowSet object.  Return NULL if a memory allocation
+** error occurs.
 */
-RowSet *sqlite3RowSetInit(sqlite3 *db, void *pSpace, unsigned int N){
-  RowSet *p;
-  assert( N >= ROUND8(sizeof(*p)) );
-  p = pSpace;
-  p->pChunk = 0;
-  p->db = db;
-  p->pEntry = 0;
-  p->pLast = 0;
-  p->pForest = 0;
-  p->pFresh = (struct RowSetEntry*)(ROUND8(sizeof(*p)) + (char*)p);
-  p->nFresh = (u16)((N - ROUND8(sizeof(*p)))/sizeof(struct RowSetEntry));
-  p->rsFlags = ROWSET_SORTED;
-  p->iBatch = 0;
+RowSet *sqlite3RowSetInit(sqlite3 *db){
+  RowSet *p = sqlite3DbMallocRawNN(db, sizeof(*p));
+  if( p ){
+    int N = sqlite3DbMallocSize(db, p);
+    p->pChunk = 0;
+    p->db = db;
+    p->pEntry = 0;
+    p->pLast = 0;
+    p->pForest = 0;
+    p->pFresh = (struct RowSetEntry*)(ROUND8(sizeof(*p)) + (char*)p);
+    p->nFresh = (u16)((N - ROUND8(sizeof(*p)))/sizeof(struct RowSetEntry));
+    p->rsFlags = ROWSET_SORTED;
+    p->iBatch = 0;
+  }
   return p;
 }
 
@@ -156,7 +149,8 @@ RowSet *sqlite3RowSetInit(sqlite3 *db, void *pSpace, unsigned int N){
 ** the RowSet has allocated over its lifetime.  This routine is
 ** the destructor for the RowSet.
 */
-void sqlite3RowSetClear(RowSet *p){
+void sqlite3RowSetClear(void *pArg){
+  RowSet *p = (RowSet*)pArg;
   struct RowSetChunk *pChunk, *pNextChunk;
   for(pChunk=p->pChunk; pChunk; pChunk = pNextChunk){
     pNextChunk = pChunk->pNextChunk;
@@ -168,6 +162,16 @@ void sqlite3RowSetClear(RowSet *p){
   p->pLast = 0;
   p->pForest = 0;
   p->rsFlags = ROWSET_SORTED;
+}
+
+/*
+** Deallocate all chunks from a RowSet.  This frees all memory that
+** the RowSet has allocated over its lifetime.  This routine is
+** the destructor for the RowSet.
+*/
+void sqlite3RowSetDelete(void *pArg){
+  sqlite3RowSetClear(pArg);
+  sqlite3DbFree(((RowSet*)pArg)->db, pArg);
 }
 
 /*

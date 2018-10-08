@@ -19,7 +19,7 @@
 ** Trace output macros
 */
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-/***/ int sqlite3WhereTrace;
+/***/ extern int sqlite3WhereTrace;
 #endif
 #if defined(SQLITE_DEBUG) \
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
@@ -82,6 +82,8 @@ struct WhereLevel {
       struct InLoop {
         int iCur;              /* The VDBE cursor used by this IN operator */
         int addrInTop;         /* Top of the IN loop */
+        int iBase;             /* Base register of multi-key index record */
+        int nPrefix;           /* Number of prior entires in the key */
         u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when pWLoop->wsFlags&WHERE_IN_ABLE */
@@ -320,6 +322,7 @@ struct WhereClause {
   WhereInfo *pWInfo;       /* WHERE clause processing context */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
+  u8 hasOr;                /* True if any a[].eOperator is WO_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -399,11 +402,32 @@ struct WhereLoopBuilder {
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
   unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
+  unsigned int iPlanLimit;  /* Search limiter */
 };
 
 /* Allowed values for WhereLoopBuider.bldFlags */
 #define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
 #define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
+
+/* The WhereLoopBuilder.iPlanLimit is used to limit the number of
+** index+constraint combinations the query planner will consider for a
+** particular query.  If this parameter is unlimited, then certain
+** pathological queries can spend excess time in the sqlite3WhereBegin()
+** routine.  The limit is high enough that is should not impact real-world
+** queries.
+**
+** SQLITE_QUERY_PLANNER_LIMIT is the baseline limit.  The limit is
+** increased by SQLITE_QUERY_PLANNER_LIMIT_INCR before each term of the FROM
+** clause is processed, so that every table in a join is guaranteed to be
+** able to propose a some index+constraint combinations even if the initial
+** baseline limit was exhausted by prior tables of the join.
+*/
+#ifndef SQLITE_QUERY_PLANNER_LIMIT
+# define SQLITE_QUERY_PLANNER_LIMIT 20000
+#endif
+#ifndef SQLITE_QUERY_PLANNER_LIMIT_INCR
+# define SQLITE_QUERY_PLANNER_LIMIT_INCR 1000
+#endif
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -467,12 +491,10 @@ int sqlite3WhereExplainOneScan(
   Parse *pParse,                  /* Parse context */
   SrcList *pTabList,              /* Table list this loop refers to */
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
-  int iLevel,                     /* Value for "level" column of output */
-  int iFrom,                      /* Value for "from" column of output */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 );
 #else
-# define sqlite3WhereExplainOneScan(u,v,w,x,y,z) 0
+# define sqlite3WhereExplainOneScan(u,v,w,x) 0
 #endif /* SQLITE_OMIT_EXPLAIN */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3WhereAddScanStatus(
@@ -495,6 +517,7 @@ void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);
 void sqlite3WhereClauseClear(WhereClause*);
 void sqlite3WhereSplit(WhereClause*,Expr*,u8);
 Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
+Bitmask sqlite3WhereExprUsageNN(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
 void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
 void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
@@ -515,7 +538,6 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 **     WO_LE    == SQLITE_INDEX_CONSTRAINT_LE
 **     WO_GT    == SQLITE_INDEX_CONSTRAINT_GT
 **     WO_GE    == SQLITE_INDEX_CONSTRAINT_GE
-**     WO_MATCH == SQLITE_INDEX_CONSTRAINT_MATCH
 */
 #define WO_IN     0x0001
 #define WO_EQ     0x0002
@@ -523,7 +545,7 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))
 #define WO_GE     (WO_EQ<<(TK_GE-TK_EQ))
-#define WO_MATCH  0x0040
+#define WO_AUX    0x0040       /* Op useful to virtual tables only */
 #define WO_IS     0x0080
 #define WO_ISNULL 0x0100
 #define WO_OR     0x0200       /* Two or more OR-connected terms */
@@ -558,3 +580,4 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
 #define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */
+#define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */

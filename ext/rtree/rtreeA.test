@@ -108,6 +108,12 @@ do_corruption_tests rtreeA-1.1 {
   4   "SELECT * FROM t1 WHERE x1<10 AND x2>12"
 }
 
+do_execsql_test rtreeA-1.1.1 {
+  SELECT rtreecheck('main', 't1')
+} {{Node 1 missing from database
+Wrong number of entries in %_rowid table - expected 0, actual 500
+Wrong number of entries in %_parent table - expected 0, actual 23}}
+
 do_execsql_test  rtreeA-1.2.0 { DROP TABLE t1_node } {}
 do_corruption_tests rtreeA-1.2 -error "database disk image is malformed" {
   1   "SELECT * FROM t1"
@@ -157,6 +163,10 @@ do_corruption_tests rtreeA-3.1 {
   3   "INSERT INTO t1 VALUES(1000, 1, 2, 3, 4)"
 }
 
+do_execsql_test rtreeA-3.1.0.3 {
+  SELECT rtreecheck('main', 't1')!="ok"
+} {1}
+
 do_test rtreeA-3.2.0 { set_tree_depth t1 1000 } {1000}
 do_corruption_tests rtreeA-3.2 {
   1   "SELECT * FROM t1"
@@ -175,6 +185,12 @@ do_corruption_tests rtreeA-3.3 {
   2   "SELECT * FROM t1 WHERE rowid=5"
   3   "INSERT INTO t1 VALUES(1000, 1, 2, 3, 4)"
 }
+
+do_execsql_test rtreeA-3.3.3.4 {
+  SELECT rtreecheck('main', 't1')
+} {{Rtree depth out of range (65535)
+Wrong number of entries in %_rowid table - expected 0, actual 499
+Wrong number of entries in %_parent table - expected 0, actual 23}}
 
 #-------------------------------------------------------------------------
 # Set the "number of entries" field on some nodes incorrectly.
@@ -203,6 +219,10 @@ do_corruption_tests rtreeA-5.1 {
   2   "DELETE FROM t1"
 }
 
+do_execsql_test rtreeA-5.2 {
+  SELECT rtreecheck('main', 't1')!="ok"
+} {1}
+
 #-------------------------------------------------------------------------
 # Add some bad entries to the %_parent table.
 #
@@ -216,6 +236,10 @@ do_corruption_tests rtreeA-6.1 {
   2   "UPDATE t1 SET x1=x1+1, x2=x2+1"
 }
 
+do_execsql_test rtreeA-6.2 {
+  SELECT rtreecheck('main', 't1')!="ok"
+} {1}
+
 #-------------------------------------------------------------------------
 # Truncated blobs in the _node table.
 #
@@ -228,6 +252,10 @@ do_execsql_test rtreeA-7.100 {
 do_catchsql_test rtreeA-7.110 {
   SELECT * FROM t1 WHERE x1>0 AND x1<100 AND x2>0 AND x2<100;
 } {1 {undersize RTree blobs in "t1_node"}}
+do_test rtreeA-7.120 {
+  sqlite3_extended_errcode db
+} {SQLITE_CORRUPT_VTAB}
 
 
 finish_test
+

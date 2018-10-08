@@ -32,6 +32,8 @@ static struct MemFault {
   int nRepeat;            /* Number of times to repeat the failure */
   int nBenign;            /* Number of benign failures seen since last config */
   int nFail;              /* Number of failures seen since last config */
+  int nOkBefore;          /* Successful allocations prior to the first fault */
+  int nOkAfter;           /* Successful allocations after a fault */
   u8 enable;              /* True if enabled */
   int isInstalled;        /* True if the fault simulation layer is installed */
   int isBenignMode;       /* True if malloc failures are considered benign */
@@ -48,17 +50,31 @@ static void sqlite3Fault(void){
 }
 
 /*
+** This routine exists as a place to set a breakpoint that will
+** fire the first time any malloc() fails on a single test case.
+** The sqlite3Fault() routine above runs on every malloc() failure.
+** This routine only runs on the first such failure.
+*/
+static void sqlite3FirstFault(void){
+  static int cnt2 = 0;
+  cnt2++;
+}
+
+/*
 ** Check to see if a fault should be simulated.  Return true to simulate
 ** the fault.  Return false if the fault should not be simulated.
 */
 static int faultsimStep(void){
   if( likely(!memfault.enable) ){
+    memfault.nOkAfter++;
     return 0;
   }
   if( memfault.iCountdown>0 ){
     memfault.iCountdown--;
+    memfault.nOkBefore++;
     return 0;
   }
+  if( memfault.nFail==0 ) sqlite3FirstFault();
   sqlite3Fault();
   memfault.nFail++;
   if( memfault.isBenignMode>0 ){
@@ -133,6 +149,8 @@ static void faultsimConfig(int nDelay, int nRepeat){
   memfault.nRepeat = nRepeat;
   memfault.nBenign = 0;
   memfault.nFail = 0;
+  memfault.nOkBefore = 0;
+  memfault.nOkAfter = 0;
   memfault.enable = nDelay>=0;
 
   /* Sometimes, when running multi-threaded tests, the isBenignMode 
@@ -888,46 +906,6 @@ static int SQLITE_TCLAPI test_memdebug_log(
 }
 
 /*
-** Usage:    sqlite3_config_scratch SIZE N
-**
-** Set the scratch memory buffer using SQLITE_CONFIG_SCRATCH.
-** The buffer is static and is of limited size.  N might be
-** adjusted downward as needed to accommodate the requested size.
-** The revised value of N is returned.
-**
-** A negative SIZE causes the buffer pointer to be NULL.
-*/
-static int SQLITE_TCLAPI test_config_scratch(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int sz, N, rc;
-  Tcl_Obj *pResult;
-  static char *buf = 0;
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
-    return TCL_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
-  free(buf);
-  if( sz<0 ){
-    buf = 0;
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, (void*)0, 0, 0);
-  }else{
-    buf = malloc( sz*N + 1 );
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
-  }
-  pResult = Tcl_NewObj();
-  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
-  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(N));
-  Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
-}
-
-/*
 ** Usage:    sqlite3_config_pagecache SIZE N
 **
 ** Set the page-cache memory buffer using SQLITE_CONFIG_PAGECACHE.
@@ -1423,6 +1401,7 @@ static int SQLITE_TCLAPI test_db_status(
     { "CACHE_WRITE",         SQLITE_DBSTATUS_CACHE_WRITE         },
     { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        },
     { "CACHE_USED_SHARED",   SQLITE_DBSTATUS_CACHE_USED_SHARED   },
+    { "CACHE_SPILL",         SQLITE_DBSTATUS_CACHE_SPILL         },
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
@@ -1538,7 +1517,6 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_settitle",  test_memdebug_settitle        ,0 },
      { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count ,0 },
      { "sqlite3_memdebug_log",       test_memdebug_log             ,0 },
-     { "sqlite3_config_scratch",     test_config_scratch           ,0 },
      { "sqlite3_config_pagecache",   test_config_pagecache         ,0 },
      { "sqlite3_config_alt_pcache",  test_alt_pcache               ,0 },
      { "sqlite3_status",             test_status                   ,0 },

@@ -454,9 +454,12 @@ do_test 4.0 {
 
 # No sorting of queries that omit the FROM clause.
 #
-do_execsql_test 5.0 {
-  EXPLAIN QUERY PLAN SELECT 5 ORDER BY 1
-} {}
+do_eqp_test 5.0 {
+  SELECT 5 ORDER BY 1
+} {
+  QUERY PLAN
+  `--SCAN CONSTANT ROW
+}
 do_execsql_test 5.1 {
   EXPLAIN QUERY PLAN SELECT 5 UNION ALL SELECT 3 ORDER BY 1
 } {~/B-TREE/}
@@ -512,8 +515,9 @@ do_execsql_test 8.0 {
 do_eqp_test 8.1 {
   SELECT * FROM t1 ORDER BY a, b;
 } {
-  0 0 0 {SCAN TABLE t1 USING INDEX i1} 
-  0 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING INDEX i1
+  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
 }
 
 do_execsql_test 8.2 {
@@ -543,6 +547,16 @@ do_execsql_test 9.0 {
   INSERT INTO t2 VALUES(9),(8),(3),(4);
   SELECT (SELECT x||y FROM t2, t1 ORDER BY x, y);
 } {13}
+
+# Problem found by OSSFuzz on 2018-05-05.  This was caused by a new
+# optimization that had not been previously released.
+#
+do_execsql_test 10.0 {
+  CREATE TABLE t10(a,b);
+  INSERT INTO t10 VALUES(1,2),(8,9),(3,4),(5,4),(0,7);
+  CREATE INDEX t10b ON t10(b);
+  SELECT b, rowid, '^' FROM t10 ORDER BY b, a LIMIT 4;
+} {2 1 ^ 4 3 ^ 4 4 ^ 7 5 ^}
 
 
 finish_test

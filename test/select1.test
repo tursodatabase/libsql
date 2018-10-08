@@ -545,9 +545,9 @@ do_test select1-6.9.7 {
   set x [execsql2 {
      SELECT * FROM test1 a, (select 5, 6) LIMIT 1
   }]
-  regsub -all {sq_[0-9a-fA-F_]+} $x {subquery} x
+  regsub -all {subquery_[0-9a-fA-F_]+} $x {subquery} x
   set x
-} {a.f1 11 a.f2 22 sqlite_subquery.5 5 sqlite_subquery.6 6}
+} {a.f1 11 a.f2 22 subquery.5 5 subquery.6 6}
 do_test select1-6.9.8 {
   set x [execsql2 {
      SELECT * FROM test1 a, (select 5 AS x, 6 AS y) AS b LIMIT 1
@@ -688,7 +688,7 @@ do_test select1-7.2 {
 do_test select1-7.3 {
   set v [catch {execsql {SELECT f1 FROM test1 as 'hi', test2 as}} msg]
   lappend v $msg
-} {1 {near "as": syntax error}}
+} {1 {incomplete input}}
 do_test select1-7.4 {
   set v [catch {execsql {
      SELECT f1 FROM test1 ORDER BY;

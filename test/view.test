@@ -674,5 +674,31 @@ do_test view-22.2 {
   lsort [array names x]
 } {{} * :1 :2}
 
+do_test view-25.1 {
+  db eval {
+    CREATE TABLE t25 (x);
+    INSERT INTO t25 (x) VALUES (1);
+    ANALYZE;
+  }
+  proc authLogDelete {code arg1 arg2 arg3 arg4 args} {
+    if {$code=="SQLITE_DELETE" && [string match sqlite_stat* $arg1]} {
+      # lappend ::log [list $code $arg1 $arg2 $arg3 $arg4 $args]
+      lappend ::log [list $code $arg1 $arg2 $arg3 $arg4]
+    }
+    return SQLITE_OK
+  }
+  set log ""
+  db authorizer ::authLogDelete
+  db eval {DROP VIEW x1;}
+  set log
+} {}
+
+set res [list {SQLITE_DELETE sqlite_stat1 {} main {}}]
+ifcapable stat4 { lappend res {SQLITE_DELETE sqlite_stat4 {} main {}} }
+do_test view-25.2 {
+  set log ""
+  db eval {DROP TABLE t25;}
+  set log
+} $res
 
 finish_test

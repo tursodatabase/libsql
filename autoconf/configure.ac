@@ -12,6 +12,7 @@
 AC_PREREQ(2.61)
 AC_INIT(sqlite, --SQLITE-VERSION--, http://www.sqlite.org)
 AC_CONFIG_SRCDIR([sqlite3.c])
+AC_CONFIG_AUX_DIR([.])
 
 # Use automake.
 AM_INIT_AUTOMAKE([foreign])
@@ -28,6 +29,7 @@ AC_CHECK_FUNCS([fdatasync usleep fullfsync localtime_r gmtime_r])
 AC_FUNC_STRERROR_R
 
 AC_CONFIG_FILES([Makefile sqlite3.pc])
+BUILD_CFLAGS=
 AC_SUBST(BUILD_CFLAGS)
 
 #-------------------------------------------------------------------------
@@ -85,13 +87,11 @@ AC_SUBST(READLINE_LIBS)
 AC_ARG_ENABLE(threadsafe, [AS_HELP_STRING(
   [--enable-threadsafe], [build a thread-safe library [default=yes]])], 
   [], [enable_threadsafe=yes])
-THREADSAFE_FLAGS=-DSQLITE_THREADSAFE=0
 if test x"$enable_threadsafe" != "xno"; then
-  THREADSAFE_FLAGS="-D_REENTRANT=1 -DSQLITE_THREADSAFE=1"
+  BUILD_CFLAGS="$BUILD_CFLAGS -D_REENTRANT=1 -DSQLITE_THREADSAFE=1"
   AC_SEARCH_LIBS(pthread_create, pthread)
   AC_SEARCH_LIBS(pthread_mutexattr_init, pthread)
 fi
-AC_SUBST(THREADSAFE_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -103,36 +103,66 @@ AC_ARG_ENABLE(dynamic-extensions, [AS_HELP_STRING(
 if test x"$enable_dynamic_extensions" != "xno"; then
   AC_SEARCH_LIBS(dlopen, dl)
 else
-  DYNAMIC_EXTENSION_FLAGS=-DSQLITE_OMIT_LOAD_EXTENSION=1
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 AC_MSG_CHECKING([for whether to support dynamic extensions])
 AC_MSG_RESULT($enable_dynamic_extensions)
-AC_SUBST(DYNAMIC_EXTENSION_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-fts4
+#
+AC_ARG_ENABLE(fts4, [AS_HELP_STRING(
+  [--enable-fts4], [include fts4 support [default=yes]])], 
+  [], [enable_fts4=yes])
+if test x"$enable_fts4" = "xyes"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_FTS4"
+fi
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-fts3
+#
+AC_ARG_ENABLE(fts3, [AS_HELP_STRING(
+  [--enable-fts3], [include fts3 support [default=no]])], 
+  [], [])
+if test x"$enable_fts3" = "xyes" -a x"$enable_fts4" = "xno"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_FTS3"
+fi
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
 #   --enable-fts5
 #
 AC_ARG_ENABLE(fts5, [AS_HELP_STRING(
-  [--enable-fts5], [include fts5 support [default=no]])], 
-  [], [enable_fts5=no])
+  [--enable-fts5], [include fts5 support [default=yes]])], 
+  [], [enable_fts5=yes])
 if test x"$enable_fts5" = "xyes"; then
   AC_SEARCH_LIBS(log, m)
-  FTS5_FLAGS=-DSQLITE_ENABLE_FTS5
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_FTS5"
 fi
-AC_SUBST(FTS5_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
 #   --enable-json1
 #
 AC_ARG_ENABLE(json1, [AS_HELP_STRING(
-  [--enable-json1], [include json1 support [default=no]])], 
-  [], [enable_json1=no])
+  [--enable-json1], [include json1 support [default=yes]])], 
+  [],[enable_json1=yes])
 if test x"$enable_json1" = "xyes"; then
-  JSON1_FLAGS=-DSQLITE_ENABLE_JSON1
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_JSON1"
 fi
-AC_SUBST(JSON1_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-rtree
+#
+AC_ARG_ENABLE(rtree, [AS_HELP_STRING(
+  [--enable-rtree], [include rtree support [default=yes]])], 
+  [], [enable_rtree=yes])
+if test x"$enable_rtree" = "xyes"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_RTREE"
+fi
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -140,11 +170,22 @@ AC_SUBST(JSON1_FLAGS)
 #
 AC_ARG_ENABLE(session, [AS_HELP_STRING(
   [--enable-session], [enable the session extension [default=no]])], 
-  [], [enable_session=no])
+  [], [])
 if test x"$enable_session" = "xyes"; then
-  SESSION_FLAGS="-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK"
 fi
-AC_SUBST(SESSION_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-debug
+#
+AC_ARG_ENABLE(debug, [AS_HELP_STRING(
+  [--enable-debug], [build with debugging features enabled [default=no]])], 
+  [], [])
+if test x"$enable_debug" = "xyes"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_DEBUG -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE"
+  CFLAGS="-g -O0"
+fi
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -163,6 +204,12 @@ AC_SUBST(EXTRA_SHELL_OBJ)
 #-----------------------------------------------------------------------
 
 AC_CHECK_FUNCS(posix_fallocate)
+AC_CHECK_HEADERS(zlib.h,[
+  AC_SEARCH_LIBS(deflate,z,[BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_HAVE_ZLIB"])
+])
+
+AC_SEARCH_LIBS(system,,,[SHELL_CFLAGS="-DSQLITE_NOHAVE_SYSTEM"])
+AC_SUBST(SHELL_CFLAGS)
 
 #-----------------------------------------------------------------------
 # UPDATE: Maybe it's better if users just set CFLAGS before invoking

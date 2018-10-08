@@ -134,7 +134,7 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 ** Set the StrAccum object to an error mode.
 */
 static void setStrAccumError(StrAccum *p, u8 eError){
-  assert( eError==STRACCUM_NOMEM || eError==STRACCUM_TOOBIG );
+  assert( eError==SQLITE_NOMEM || eError==SQLITE_TOOBIG );
   p->accError = eError;
   p->nAlloc = 0;
 }
@@ -168,8 +168,8 @@ static char *getTextArg(PrintfArguments *p){
 /*
 ** Render a string given by "fmt" into the StrAccum object.
 */
-void sqlite3VXPrintf(
-  StrAccum *pAccum,          /* Accumulate results here */
+void sqlite3_str_vappendf(
+  sqlite3_str *pAccum,       /* Accumulate results here */
   const char *fmt,           /* Format string */
   va_list ap                 /* arguments */
 ){
@@ -206,6 +206,11 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
+  /* pAccum never starts out with an empty buffer that was obtained from 
+  ** malloc().  This precondition is required by the mprintf("%z...")
+  ** optimization. */
+  assert( pAccum->nChar>0 || (pAccum->printfFlags&SQLITE_PRINTF_MALLOCED)==0 );
+
   bufpt = 0;
   if( (pAccum->printfFlags & SQLITE_PRINTF_SQLFUNC)!=0 ){
     pArgList = va_arg(ap, PrintfArguments*);
@@ -221,11 +226,11 @@ void sqlite3VXPrintf(
 #else
       do{ fmt++; }while( *fmt && *fmt != '%' );
 #endif
-      sqlite3StrAccumAppend(pAccum, bufpt, (int)(fmt - bufpt));
+      sqlite3_str_append(pAccum, bufpt, (int)(fmt - bufpt));
       if( *fmt==0 ) break;
     }
     if( (c=(*++fmt))==0 ){
-      sqlite3StrAccumAppend(pAccum, "%", 1);
+      sqlite3_str_append(pAccum, "%", 1);
       break;
     }
     /* Find out what flags are present */
@@ -403,7 +408,7 @@ void sqlite3VXPrintf(
           u64 n = (u64)precision + 10 + precision/3;
           zOut = zExtra = sqlite3Malloc( n );
           if( zOut==0 ){
-            setStrAccumError(pAccum, STRACCUM_NOMEM);
+            setStrAccumError(pAccum, SQLITE_NOMEM);
             return;
           }
           nOut = (int)n;
@@ -528,7 +533,7 @@ void sqlite3VXPrintf(
           bufpt = zExtra 
               = sqlite3Malloc( MAX(e2,0)+(i64)precision+(i64)width+15 );
           if( bufpt==0 ){
-            setStrAccumError(pAccum, STRACCUM_NOMEM);
+            setStrAccumError(pAccum, SQLITE_NOMEM);
             return;
           }
         }
@@ -624,22 +629,52 @@ void sqlite3VXPrintf(
       case etCHARX:
         if( bArgList ){
           bufpt = getTextArg(pArgList);
-          c = bufpt ? bufpt[0] : 0;
+          length = 1;
+          if( bufpt ){
+            buf[0] = c = *(bufpt++);
+            if( (c&0xc0)==0xc0 ){
+              while( length<4 && (bufpt[0]&0xc0)==0x80 ){
+                buf[length++] = *(bufpt++);
+              }
+            }
+          }else{
+            buf[0] = 0;
+          }
         }else{
-          c = va_arg(ap,int);
+          unsigned int ch = va_arg(ap,unsigned int);
+          if( ch<0x00080 ){
+            buf[0] = ch & 0xff;
+            length = 1;
+          }else if( ch<0x00800 ){
+            buf[0] = 0xc0 + (u8)((ch>>6)&0x1f);
+            buf[1] = 0x80 + (u8)(ch & 0x3f);
+            length = 2;
+          }else if( ch<0x10000 ){
+            buf[0] = 0xe0 + (u8)((ch>>12)&0x0f);
+            buf[1] = 0x80 + (u8)((ch>>6) & 0x3f);
+            buf[2] = 0x80 + (u8)(ch & 0x3f);
+            length = 3;
+          }else{
+            buf[0] = 0xf0 + (u8)((ch>>18) & 0x07);
+            buf[1] = 0x80 + (u8)((ch>>12) & 0x3f);
+            buf[2] = 0x80 + (u8)((ch>>6) & 0x3f);
+            buf[3] = 0x80 + (u8)(ch & 0x3f);
+            length = 4;
+          }
         }
         if( precision>1 ){
           width -= precision-1;
           if( width>1 && !flag_leftjustify ){
-            sqlite3AppendChar(pAccum, width-1, ' ');
+            sqlite3_str_appendchar(pAccum, width-1, ' ');
             width = 0;
           }
-          sqlite3AppendChar(pAccum, precision-1, c);
+          while( precision-- > 1 ){
+            sqlite3_str_append(pAccum, buf, length);
+          }
         }
-        length = 1;
-        buf[0] = c;
         bufpt = buf;
-        break;
+        flag_altform2 = 1;
+        goto adjust_width_for_utf8;
       case etSTRING:
       case etDYNSTRING:
         if( bArgList ){
@@ -651,17 +686,50 @@ void sqlite3VXPrintf(
         if( bufpt==0 ){
           bufpt = "";
         }else if( xtype==etDYNSTRING ){
+          if( pAccum->nChar==0
+           && pAccum->mxAlloc
+           && width==0
+           && precision<0
+           && pAccum->accError==0
+          ){
+            /* Special optimization for sqlite3_mprintf("%z..."):
+            ** Extend an existing memory allocation rather than creating
+            ** a new one. */
+            assert( (pAccum->printfFlags&SQLITE_PRINTF_MALLOCED)==0 );
+            pAccum->zText = bufpt;
+            pAccum->nAlloc = sqlite3DbMallocSize(pAccum->db, bufpt);
+            pAccum->nChar = 0x7fffffff & (int)strlen(bufpt);
+            pAccum->printfFlags |= SQLITE_PRINTF_MALLOCED;
+            length = 0;
+            break;
+          }
           zExtra = bufpt;
         }
         if( precision>=0 ){
-          for(length=0; length<precision && bufpt[length]; length++){}
+          if( flag_altform2 ){
+            /* Set length to the number of bytes needed in order to display
+            ** precision characters */
+            unsigned char *z = (unsigned char*)bufpt;
+            while( precision-- > 0 && z[0] ){
+              SQLITE_SKIP_UTF8(z);
+            }
+            length = (int)(z - (unsigned char*)bufpt);
+          }else{
+            for(length=0; length<precision && bufpt[length]; length++){}
+          }
         }else{
-          length = sqlite3Strlen30(bufpt);
+          length = 0x7fffffff & (int)strlen(bufpt);
+        }
+      adjust_width_for_utf8:
+        if( flag_altform2 && width>0 ){
+          /* Adjust width to account for extra bytes in UTF-8 characters */
+          int ii = length - 1;
+          while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
-      case etSQLESCAPE:           /* Escape ' characters */
-      case etSQLESCAPE2:          /* Escape ' and enclose in '...' */
-      case etSQLESCAPE3: {        /* Escape " characters */
+      case etSQLESCAPE:           /* %q: Escape ' characters */
+      case etSQLESCAPE2:          /* %Q: Escape ' and enclose in '...' */
+      case etSQLESCAPE3: {        /* %w: Escape " characters */
         int i, j, k, n, isnull;
         int needQuote;
         char ch;
@@ -675,16 +743,24 @@ void sqlite3VXPrintf(
         }
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        /* For %q, %Q, and %w, the precision is the number of byte (or
+        ** characters if the ! flags is present) to use from the input.
+        ** Because of the extra quoting characters inserted, the number
+        ** of output characters may be larger than the precision.
+        */
         k = precision;
         for(i=n=0; k!=0 && (ch=escarg[i])!=0; i++, k--){
           if( ch==q )  n++;
+          if( flag_altform2 && (ch&0xc0)==0xc0 ){
+            while( (escarg[i+1]&0xc0)==0x80 ){ i++; }
+          }
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 3;
         if( n>etBUFSIZE ){
           bufpt = zExtra = sqlite3Malloc( n );
           if( bufpt==0 ){
-            setStrAccumError(pAccum, STRACCUM_NOMEM);
+            setStrAccumError(pAccum, SQLITE_NOMEM);
             return;
           }
         }else{
@@ -700,10 +776,7 @@ void sqlite3VXPrintf(
         if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;
         length = j;
-        /* The precision in %q and %Q means how many input characters to
-        ** consume, not the length of the output...
-        ** if( precision>=0 && precision<length ) length = precision; */
-        break;
+        goto adjust_width_for_utf8;
       }
       case etTOKEN: {
         Token *pToken;
@@ -711,7 +784,7 @@ void sqlite3VXPrintf(
         pToken = va_arg(ap, Token*);
         assert( bArgList==0 );
         if( pToken && pToken->n ){
-          sqlite3StrAccumAppend(pAccum, (const char*)pToken->z, pToken->n);
+          sqlite3_str_append(pAccum, (const char*)pToken->z, pToken->n);
         }
         length = width = 0;
         break;
@@ -727,10 +800,10 @@ void sqlite3VXPrintf(
         assert( bArgList==0 );
         assert( k>=0 && k<pSrc->nSrc );
         if( pItem->zDatabase ){
-          sqlite3StrAccumAppendAll(pAccum, pItem->zDatabase);
-          sqlite3StrAccumAppend(pAccum, ".", 1);
+          sqlite3_str_appendall(pAccum, pItem->zDatabase);
+          sqlite3_str_append(pAccum, ".", 1);
         }
-        sqlite3StrAccumAppendAll(pAccum, pItem->zName);
+        sqlite3_str_appendall(pAccum, pItem->zName);
         length = width = 0;
         break;
       }
@@ -742,15 +815,18 @@ void sqlite3VXPrintf(
     /*
     ** The text of the conversion is pointed to by "bufpt" and is
     ** "length" characters long.  The field width is "width".  Do
-    ** the output.
+    ** the output.  Both length and width are in bytes, not characters,
+    ** at this point.  If the "!" flag was present on string conversions
+    ** indicating that width and precision should be expressed in characters,
+    ** then the values have been translated prior to reaching this point.
     */
     width -= length;
     if( width>0 ){
-      if( !flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
-      sqlite3StrAccumAppend(pAccum, bufpt, length);
-      if( flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
+      if( !flag_leftjustify ) sqlite3_str_appendchar(pAccum, width, ' ');
+      sqlite3_str_append(pAccum, bufpt, length);
+      if( flag_leftjustify ) sqlite3_str_appendchar(pAccum, width, ' ');
     }else{
-      sqlite3StrAccumAppend(pAccum, bufpt, length);
+      sqlite3_str_append(pAccum, bufpt, length);
     }
 
     if( zExtra ){
@@ -771,18 +847,17 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
   char *zNew;
   assert( p->nChar+(i64)N >= p->nAlloc ); /* Only called if really needed */
   if( p->accError ){
-    testcase(p->accError==STRACCUM_TOOBIG);
-    testcase(p->accError==STRACCUM_NOMEM);
+    testcase(p->accError==SQLITE_TOOBIG);
+    testcase(p->accError==SQLITE_NOMEM);
     return 0;
   }
   if( p->mxAlloc==0 ){
     N = p->nAlloc - p->nChar - 1;
-    setStrAccumError(p, STRACCUM_TOOBIG);
+    setStrAccumError(p, SQLITE_TOOBIG);
     return N;
   }else{
     char *zOld = isMalloced(p) ? p->zText : 0;
     i64 szNew = p->nChar;
-    assert( (p->zText==0 || p->zText==p->zBase)==!isMalloced(p) );
     szNew += N + 1;
     if( szNew+p->nChar<=p->mxAlloc ){
       /* Force exponential buffer size growth as long as it does not overflow,
@@ -790,8 +865,8 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
       szNew += p->nChar;
     }
     if( szNew > p->mxAlloc ){
-      sqlite3StrAccumReset(p);
-      setStrAccumError(p, STRACCUM_TOOBIG);
+      sqlite3_str_reset(p);
+      setStrAccumError(p, SQLITE_TOOBIG);
       return 0;
     }else{
       p->nAlloc = (int)szNew;
@@ -808,8 +883,8 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
       p->nAlloc = sqlite3DbMallocSize(p->db, zNew);
       p->printfFlags |= SQLITE_PRINTF_MALLOCED;
     }else{
-      sqlite3StrAccumReset(p);
-      setStrAccumError(p, STRACCUM_NOMEM);
+      sqlite3_str_reset(p);
+      setStrAccumError(p, SQLITE_NOMEM);
       return 0;
     }
   }
@@ -819,12 +894,11 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
 /*
 ** Append N copies of character c to the given string buffer.
 */
-void sqlite3AppendChar(StrAccum *p, int N, char c){
+void sqlite3_str_appendchar(sqlite3_str *p, int N, char c){
   testcase( p->nChar + (i64)N > 0x7fffffff );
   if( p->nChar+(i64)N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ){
     return;
   }
-  assert( (p->zText==p->zBase)==!isMalloced(p) );
   while( (N--)>0 ) p->zText[p->nChar++] = c;
 }
 
@@ -832,9 +906,9 @@ void sqlite3AppendChar(StrAccum *p, int N, char c){
 ** The StrAccum "p" is not large enough to accept N new bytes of z[].
 ** So enlarge if first, then do the append.
 **
-** This is a helper routine to sqlite3StrAccumAppend() that does special-case
+** This is a helper routine to sqlite3_str_append() that does special-case
 ** work (enlarging the buffer) using tail recursion, so that the
-** sqlite3StrAccumAppend() routine can use fast calling semantics.
+** sqlite3_str_append() routine can use fast calling semantics.
 */
 static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
   N = sqlite3StrAccumEnlarge(p, N);
@@ -842,14 +916,13 @@ static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
     memcpy(&p->zText[p->nChar], z, N);
     p->nChar += N;
   }
-  assert( (p->zText==0 || p->zText==p->zBase)==!isMalloced(p) );
 }
 
 /*
 ** Append N bytes of text from z to the StrAccum object.  Increase the
 ** size of the memory allocation for StrAccum if necessary.
 */
-void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
+void sqlite3_str_append(sqlite3_str *p, const char *z, int N){
   assert( z!=0 || N==0 );
   assert( p->zText!=0 || p->nChar==0 || p->accError );
   assert( N>=0 );
@@ -866,8 +939,8 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
 /*
 ** Append the complete text of zero-terminated string z[] to the p string.
 */
-void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
-  sqlite3StrAccumAppend(p, z, sqlite3Strlen30(z));
+void sqlite3_str_appendall(sqlite3_str *p, const char *z){
+  sqlite3_str_append(p, z, sqlite3Strlen30(z));
 }
 
 
@@ -877,19 +950,20 @@ void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
 ** pointer if any kind of error was encountered.
 */
 static SQLITE_NOINLINE char *strAccumFinishRealloc(StrAccum *p){
+  char *zText;
   assert( p->mxAlloc>0 && !isMalloced(p) );
-  p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
-  if( p->zText ){
-    memcpy(p->zText, p->zBase, p->nChar+1);
+  zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+  if( zText ){
+    memcpy(zText, p->zText, p->nChar+1);
     p->printfFlags |= SQLITE_PRINTF_MALLOCED;
   }else{
-    setStrAccumError(p, STRACCUM_NOMEM);
+    setStrAccumError(p, SQLITE_NOMEM);
   }
-  return p->zText;
+  p->zText = zText;
+  return zText;
 }
 char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
-    assert( (p->zText==p->zBase)==!isMalloced(p) );
     p->zText[p->nChar] = 0;
     if( p->mxAlloc>0 && !isMalloced(p) ){
       return strAccumFinishRealloc(p);
@@ -899,14 +973,55 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 }
 
 /*
+** This singleton is an sqlite3_str object that is returned if
+** sqlite3_malloc() fails to provide space for a real one.  This
+** sqlite3_str object accepts no new text and always returns
+** an SQLITE_NOMEM error.
+*/
+static sqlite3_str sqlite3OomStr = {
+   0, 0, 0, 0, 0, SQLITE_NOMEM, 0
+};
+
+/* Finalize a string created using sqlite3_str_new().
+*/
+char *sqlite3_str_finish(sqlite3_str *p){
+  char *z;
+  if( p!=0 && p!=&sqlite3OomStr ){
+    z = sqlite3StrAccumFinish(p);
+    sqlite3_free(p);
+  }else{
+    z = 0;
+  }
+  return z;
+}
+
+/* Return any error code associated with p */
+int sqlite3_str_errcode(sqlite3_str *p){
+  return p ? p->accError : SQLITE_NOMEM;
+}
+
+/* Return the current length of p in bytes */
+int sqlite3_str_length(sqlite3_str *p){
+  return p ? p->nChar : 0;
+}
+
+/* Return the current value for p */
+char *sqlite3_str_value(sqlite3_str *p){
+  if( p==0 || p->nChar==0 ) return 0;
+  p->zText[p->nChar] = 0;
+  return p->zText;
+}
+
+/*
 ** Reset an StrAccum string.  Reclaim all malloced memory.
 */
-void sqlite3StrAccumReset(StrAccum *p){
-  assert( (p->zText==0 || p->zText==p->zBase)==!isMalloced(p) );
+void sqlite3_str_reset(StrAccum *p){
   if( isMalloced(p) ){
     sqlite3DbFree(p->db, p->zText);
     p->printfFlags &= ~SQLITE_PRINTF_MALLOCED;
   }
+  p->nAlloc = 0;
+  p->nChar = 0;
   p->zText = 0;
 }
 
@@ -925,13 +1040,25 @@ void sqlite3StrAccumReset(StrAccum *p){
 **        allocations will ever occur.
 */
 void sqlite3StrAccumInit(StrAccum *p, sqlite3 *db, char *zBase, int n, int mx){
-  p->zText = p->zBase = zBase;
+  p->zText = zBase;
   p->db = db;
-  p->nChar = 0;
   p->nAlloc = n;
   p->mxAlloc = mx;
+  p->nChar = 0;
   p->accError = 0;
   p->printfFlags = 0;
+}
+
+/* Allocate and initialize a new dynamic string object */
+sqlite3_str *sqlite3_str_new(sqlite3 *db){
+  sqlite3_str *p = sqlite3_malloc64(sizeof(*p));
+  if( p ){
+    sqlite3StrAccumInit(p, 0, 0, 0,
+            db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
+  }else{
+    p = &sqlite3OomStr;
+  }
+  return p;
 }
 
 /*
@@ -946,9 +1073,9 @@ char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
   sqlite3StrAccumInit(&acc, db, zBase, sizeof(zBase),
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
   acc.printfFlags = SQLITE_PRINTF_INTERNAL;
-  sqlite3VXPrintf(&acc, zFormat, ap);
+  sqlite3_str_vappendf(&acc, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
-  if( acc.accError==STRACCUM_NOMEM ){
+  if( acc.accError==SQLITE_NOMEM ){
     sqlite3OomFault(db);
   }
   return z;
@@ -986,7 +1113,7 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   if( sqlite3_initialize() ) return 0;
 #endif
   sqlite3StrAccumInit(&acc, 0, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
-  sqlite3VXPrintf(&acc, zFormat, ap);
+  sqlite3_str_vappendf(&acc, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;
 }
@@ -1031,7 +1158,7 @@ char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
   }
 #endif
   sqlite3StrAccumInit(&acc, 0, zBuf, n, 0);
-  sqlite3VXPrintf(&acc, zFormat, ap);
+  sqlite3_str_vappendf(&acc, zFormat, ap);
   zBuf[acc.nChar] = 0;
   return zBuf;
 }
@@ -1053,7 +1180,7 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 ** allocate memory because it might be called while the memory allocator
 ** mutex is held.
 **
-** sqlite3VXPrintf() might ask for *temporary* memory allocations for
+** sqlite3_str_vappendf() might ask for *temporary* memory allocations for
 ** certain format characters (%q) or for very large precisions or widths.
 ** Care must be taken that any sqlite3_log() calls that occur while the
 ** memory mutex is held do not use these mechanisms.
@@ -1063,7 +1190,7 @@ static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
   char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
 
   sqlite3StrAccumInit(&acc, 0, zMsg, sizeof(zMsg), 0);
-  sqlite3VXPrintf(&acc, zFormat, ap);
+  sqlite3_str_vappendf(&acc, zFormat, ap);
   sqlite3GlobalConfig.xLog(sqlite3GlobalConfig.pLogArg, iErrCode,
                            sqlite3StrAccumFinish(&acc));
 }
@@ -1092,22 +1219,29 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   char zBuf[500];
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   va_start(ap,zFormat);
-  sqlite3VXPrintf(&acc, zFormat, ap);
+  sqlite3_str_vappendf(&acc, zFormat, ap);
   va_end(ap);
   sqlite3StrAccumFinish(&acc);
+#ifdef SQLITE_OS_TRACE_PROC
+  {
+    extern void SQLITE_OS_TRACE_PROC(const char *zBuf, int nBuf);
+    SQLITE_OS_TRACE_PROC(zBuf, sizeof(zBuf));
+  }
+#else
   fprintf(stdout,"%s", zBuf);
   fflush(stdout);
+#endif
 }
 #endif
 
 
 /*
-** variable-argument wrapper around sqlite3VXPrintf().  The bFlags argument
+** variable-argument wrapper around sqlite3_str_vappendf(). The bFlags argument
 ** can contain the bit SQLITE_PRINTF_INTERNAL enable internal formats.
 */
-void sqlite3XPrintf(StrAccum *p, const char *zFormat, ...){
+void sqlite3_str_appendf(StrAccum *p, const char *zFormat, ...){
   va_list ap;
   va_start(ap,zFormat);
-  sqlite3VXPrintf(p, zFormat, ap);
+  sqlite3_str_vappendf(p, zFormat, ap);
   va_end(ap);
 }

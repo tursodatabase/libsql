@@ -165,7 +165,7 @@ do_test tpch01-1.1 {
        order by
                o_year;}]
   set ::eqpres
-} {/0 0 0 {SEARCH TABLE part USING INDEX bootleg_pti .P_TYPE=..} 0 1 2 {SEARCH TABLE lineitem USING INDEX lpki2 .L_PARTKEY=..}.*/}
+} {/*SEARCH TABLE part USING INDEX bootleg_pti *SEARCH TABLE lineitem USING INDEX lpki2*/}
 do_test tpch01-1.1b {
   set ::eqpres
 } {/.* customer .* nation AS n1 .*/}
@@ -187,6 +187,14 @@ group by
     c_custkey,    c_name,    c_acctbal,    c_phone,    n_name, c_address,    c_comment
 order by
     revenue desc;
-} {0 0 1 {SEARCH TABLE orders USING INDEX odi (O_ORDERDATE>? AND O_ORDERDATE<?)} 0 1 0 {SEARCH TABLE customer USING INDEX cpki (C_CUSTKEY=?)} 0 2 3 {SEARCH TABLE nation USING INDEX npki (N_NATIONKEY=?)} 0 3 2 {SEARCH TABLE lineitem USING INDEX lpki (L_ORDERKEY=?)} 0 0 0 {USE TEMP B-TREE FOR GROUP BY} 0 0 0 {USE TEMP B-TREE FOR ORDER BY}}
+} {
+  QUERY PLAN
+  |--SEARCH TABLE orders USING INDEX odi (O_ORDERDATE>? AND O_ORDERDATE<?)
+  |--SEARCH TABLE customer USING INDEX cpki (C_CUSTKEY=?)
+  |--SEARCH TABLE nation USING INDEX npki (N_NATIONKEY=?)
+  |--SEARCH TABLE lineitem USING INDEX lpki (L_ORDERKEY=?)
+  |--USE TEMP B-TREE FOR GROUP BY
+  `--USE TEMP B-TREE FOR ORDER BY
+}
 
 finish_test

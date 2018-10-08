@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix misc7
 
 if {[clang_sanitize_address]==0} {
   do_test misc7-1-misuse {
@@ -42,15 +43,17 @@ do_test misc7-4 {
 
 # Try to open a file with a directory where its journal file should be.
 #
-do_test misc7-5 {
-  delete_file mydir
-  file mkdir mydir-journal
-  sqlite3 db2 ./mydir
-  catchsql {
-    CREATE TABLE abc(a, b, c);
-  } db2
-} {1 {unable to open database file}}
-db2 close
+if {[atomic_batch_write test.db]==0} {
+  do_test misc7-5 {
+    delete_file mydir
+    file mkdir mydir-journal
+    sqlite3 db2 ./mydir
+    catchsql {
+      CREATE TABLE abc(a, b, c);
+    } db2
+  } {1 {unable to open database file}}
+  db2 close
+}
 
 #--------------------------------------------------------------------
 # The following tests, misc7-6.* test the libraries behaviour when
@@ -267,22 +270,27 @@ forcedelete test.db-journal
 sqlite3 db test.db
 
 ifcapable explain {
-  do_execsql_test misc7-14.1 {
+  do_execsql_test misc7-14.0 {
     CREATE TABLE abc(a PRIMARY KEY, b, c);
-    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
+  }
+  do_eqp_test misc7-14.1 {
+    SELECT * FROM abc AS t2 WHERE rowid = 1;
   } {
-    0 0 0 {SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?)}
-  }
-  do_execsql_test misc7-14.2 {
-    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
-  } {0 0 0 
-     {SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?)}
-  }
-  do_execsql_test misc7-14.3 {
-    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 ORDER BY a;
-  } {0 0 0 
-     {SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1}
-  }
+  QUERY PLAN
+  `--SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?)
+}
+  do_eqp_test misc7-14.2 {
+    SELECT * FROM abc AS t2 WHERE a = 1;
+} {
+  QUERY PLAN
+  `--SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?)
+}
+  do_eqp_test misc7-14.3 {
+    SELECT * FROM abc AS t2 ORDER BY a;
+  } {
+  QUERY PLAN
+  `--SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1
+}
 }
 
 db close
@@ -518,8 +526,43 @@ do_test misc7-22.3 {
 do_test misc7-22.4 { 
   sqlite3_extended_errcode db
 } SQLITE_READONLY_ROLLBACK
-
-db close
+catch { db close }
 forcedelete test.db
+
+if {$::tcl_platform(platform)=="unix"
+ && [atomic_batch_write test.db]==0
+} {
+  reset_db
+  do_execsql_test 23.0 {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  
+  do_test 23.1 {
+    db close
+    forcedelete tst
+    file mkdir tst
+    forcecopy test.db tst/test.db
+    file attributes tst -permissions r-xr-xr-x
+  } {}
+  
+  sqlite3 db tst/test.db
+  do_execsql_test 23.2 {
+    SELECT * FROM t1;
+  } {1 2}
+  
+  do_catchsql_test 23.3 {
+    INSERT INTO t1 VALUES(3, 4);
+  } {1 {attempt to write a readonly database}}
+  
+  do_test 23.4 {
+    sqlite3_extended_errcode db
+  } {SQLITE_READONLY_DIRECTORY}
+  
+  do_test 23.5 {
+    db close
+    forcedelete tst
+  } {}
+}
 
 finish_test

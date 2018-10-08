@@ -54,7 +54,7 @@ proc substVars { data } {
 set blocks(1) [string trimleft [string map [list \\\\ \\] {
 _HASHCHAR=^#
 !IF ![echo !IFNDEF VERSION > rcver.vc] && \\
-    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| find "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \\
+    ![for /F "delims=" %V in ('type "$(SQLITE3H)" ^| "%SystemRoot%\System32\find.exe" "$(_HASHCHAR)define SQLITE_VERSION "') do (echo VERSION = ^^%V >> rcver.vc)] && \\
     ![echo !ENDIF >> rcver.vc]
 !INCLUDE rcver.vc
 !ENDIF
@@ -83,7 +83,7 @@ Replace.exe:
 sqlite3.def:	Replace.exe $(LIBOBJ)
 	echo EXPORTS > sqlite3.def
 	dumpbin /all $(LIBOBJ) \\
-		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \\
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup|rebaser)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \\
 		| sort >> sqlite3.def
 }]]
 

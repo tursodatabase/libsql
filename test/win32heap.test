@@ -9,8 +9,7 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this script is recovery from transient manditory locks
-# that sometimes appear on database files due to anti-virus software.
+# focus of this script is the Win32 heap implementation.
 #
 
 if {$tcl_platform(platform)!="windows"} return

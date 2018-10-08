@@ -490,12 +490,12 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,10) ORDER BY 1;
     }
-  } {2 1 9 5}
+  } {2 1 9 4}
   do_test where-5.15 {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,16) ORDER BY 1;
     }
-  } {2 1 9 3 1 16 9}
+  } {2 1 9 3 1 16 8}
   do_test where-5.100 {
     db eval {
       SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
@@ -582,7 +582,7 @@ do_test where-6.7.2 {
   cksort {
     SELECT * FROM t3 WHERE b>0 ORDER BY a LIMIT 1
   }
-} {1 100 4 sort}
+} {1 100 4 nosort}
 ifcapable subquery {
   do_test where-6.8a {
     cksort {
@@ -1367,5 +1367,50 @@ do_execsql_test where-18.6 {
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +a, +c IS NULL;
 } {1 2}
 
+# Make sure the OR optimization works on a JOIN
+#
+do_execsql_test where-19.0 {
+  CREATE TABLE t191(a INT UNIQUE NOT NULL, b INT UNIQUE NOT NULL,c,d);
+  CREATE INDEX t191a ON t1(a);
+  CREATE INDEX t191b ON t1(b);
+  CREATE TABLE t192(x INTEGER PRIMARY KEY,y INT, z INT);
+
+  EXPLAIN QUERY PLAN
+  SELECT t191.rowid FROM t192, t191 WHERE (a=y OR b=y) AND x=?1;
+} {/.* sqlite_autoindex_t191_1 .* sqlite_autoindex_t191_2 .*/}
+
+# 2018-04-24 ticket [https://www.sqlite.org/src/info/4ba5abf65c5b0f9a]
+# Index on expressions leads to an incorrect answer for a LEFT JOIN
+#
+do_execsql_test where-20.0 {
+  CREATE TABLE t201(x);
+  CREATE TABLE t202(y, z);
+  INSERT INTO t201 VALUES('key');
+  INSERT INTO t202 VALUES('key', -1);
+  CREATE INDEX t202i ON t202(y, ifnull(z, 0));
+  SELECT count(*) FROM t201 LEFT JOIN t202 ON (x=y) WHERE ifnull(z, 0) >=0;
+} {0}
+
+do_execsql_test where-21.0 {
+  CREATE TABLE t12(a, b, c);
+  CREATE TABLE t13(x);
+  CREATE INDEX t12ab ON t12(b, a);
+  CREATE INDEX t12ac ON t12(c, a);
+
+  INSERT INTO t12 VALUES(4, 0, 1);
+  INSERT INTO t12 VALUES(4, 1, 0);
+  INSERT INTO t12 VALUES(5, 0, 1);
+  INSERT INTO t12 VALUES(5, 1, 0);
+
+  INSERT INTO t13 VALUES(1), (2), (3), (4);
+}
+do_execsql_test where-21.1 {
+  SELECT * FROM t12 WHERE 
+  a = (SELECT * FROM (SELECT count(*) FROM t13 LIMIT 5) ORDER BY 1 LIMIT 10) 
+  AND (b=1 OR c=1);
+} {
+  4 1 0
+  4 0 1
+}
 
 finish_test

@@ -25,7 +25,6 @@ static const char zHelp[] =
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
-  "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --serialized        Set serialized threading mode\n"
   "  --singlethread      Set single-threaded mode - disables all mutexing\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
@@ -33,7 +32,7 @@ static const char zHelp[] =
   "  --size N            Relative test size.  Default=100\n"
   "  --stats             Show statistics at the end\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -1121,7 +1120,77 @@ void testset_cte(void){
   );
   speedtest1_run();
   speedtest1_end_test();
+}
 
+/*
+** Compute a pseudo-random floating point ascii number.
+*/
+void speedtest1_random_ascii_fp(char *zFP){
+  int x = speedtest1_random();
+  int y = speedtest1_random();
+  int z;
+  z = y%10;
+  if( z<0 ) z = -z;
+  y /= 10;
+  sqlite3_snprintf(100,zFP,"%d.%de%d",y,z,x%200);
+}
+
+/*
+** A testset for floating-point numbers.
+*/
+void testset_fp(void){
+  int n;
+  int i;
+  char zFP1[100];
+  char zFP2[100];
+  
+  n = g.szTest*5000;
+  speedtest1_begin_test(100, "Fill a table with %d FP values", n*2);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t1(a REAL %s, b REAL %s);",
+                  isTemp(1), g.zNN, g.zNN);
+  speedtest1_prepare("INSERT INTO t1 VALUES(?1,?2); -- %d times", n);
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  n = g.szTest/25 + 2;
+  speedtest1_begin_test(110, "%d range queries", n);
+  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "CREATE INDEX three times");
+  speedtest1_exec("BEGIN;");
+  speedtest1_exec("CREATE INDEX t1a ON t1(a);");
+  speedtest1_exec("CREATE INDEX t1b ON t1(b);");
+  speedtest1_exec("CREATE INDEX t1ab ON t1(a,b);");
+  speedtest1_exec("COMMIT;");
+  speedtest1_end_test();
+
+  n = g.szTest/3 + 2;
+  speedtest1_begin_test(130, "%d indexed range queries", n);
+  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  for(i=1; i<=n; i++){
+    speedtest1_random_ascii_fp(zFP1);
+    speedtest1_random_ascii_fp(zFP2);
+    sqlite3_bind_text(g.pStmt, 1, zFP1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 2, zFP2, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
 }
 
 #ifdef SQLITE_ENABLE_RTREE
@@ -1178,10 +1247,11 @@ void testset_rtree(int p1, int p2){
   unsigned mxCoord;
   unsigned x0, x1, y0, y1, z0, z1;
   unsigned iStep;
+  unsigned mxRowid;
   int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*500 );
 
   mxCoord = 15000;
-  n = g.szTest*500;
+  mxRowid = n = g.szTest*500;
   speedtest1_begin_test(100, "%d INSERTs into an r-tree", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec("CREATE VIRTUAL TABLE rt1 USING rtree(id,x0,x1,y0,y1,z0,z1)");
@@ -1208,7 +1278,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
   speedtest1_end_test();
 
-  n = g.szTest*100;
+  n = g.szTest*200;
   speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
   iStep = mxCoord/n;
@@ -1221,7 +1291,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   if( g.bVerify ){
-    n = g.szTest*100;
+    n = g.szTest*200;
     speedtest1_begin_test(111, "Verify result from 1-D intersect slice queries");
     speedtest1_prepare("SELECT count(*) FROM t1 WHERE x0>=?1 AND x1<=?2");
     iStep = mxCoord/n;
@@ -1237,7 +1307,7 @@ void testset_rtree(int p1, int p2){
     speedtest1_end_test();
   }
   
-  n = g.szTest*100;
+  n = g.szTest*200;
   speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
   iStep = mxCoord/n;
@@ -1250,7 +1320,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   if( g.bVerify ){
-    n = g.szTest*100;
+    n = g.szTest*200;
     speedtest1_begin_test(121, "Verify result from 1-D overlap slice queries");
     speedtest1_prepare("SELECT count(*) FROM t1 WHERE y1>=?1 AND y0<=?2");
     iStep = mxCoord/n;
@@ -1267,7 +1337,7 @@ void testset_rtree(int p1, int p2){
   }
   
 
-  n = g.szTest*100;
+  n = g.szTest*200;
   speedtest1_begin_test(125, "%d custom geometry callback queries", n);
   sqlite3_rtree_geometry_callback(g.db, "xslice", xsliceGeometryCallback, 0);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE id MATCH xslice(?1,?2)");
@@ -1303,6 +1373,52 @@ void testset_rtree(int p1, int p2){
     sqlite3_bind_int(g.pStmt, 1, i);
     speedtest1_run();
   }
+  speedtest1_end_test();
+
+  n = g.szTest*50;
+  speedtest1_begin_test(150, "%d UPDATEs using rowid", n);
+  speedtest1_prepare("UPDATE rt1 SET x0=x0+100, x1=x1+100 WHERE id=?1");
+  for(i=1; i<=n; i++){
+    sqlite3_bind_int(g.pStmt, 1, (i*251)%mxRowid + 1);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*5;
+  speedtest1_begin_test(155, "%d UPDATEs using one-dimensional overlap", n);
+  speedtest1_prepare("UPDATE rt1 SET x0=x0-100, x1=x1-100"
+                     " WHERE y1>=?1 AND y0<=?1+5");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*50;
+  speedtest1_begin_test(160, "%d DELETEs using rowid", n);
+  speedtest1_prepare("DELETE FROM rt1 WHERE id=?1");
+  for(i=1; i<=n; i++){
+    sqlite3_bind_int(g.pStmt, 1, (i*257)%mxRowid + 1);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+
+  n = g.szTest*5;
+  speedtest1_begin_test(165, "%d DELETEs using one-dimensional overlap", n);
+  speedtest1_prepare("DELETE FROM rt1 WHERE y1>=?1 AND y0<=?1+5");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(170, "Restore deleted entries using INSERT OR IGNORE");
+  speedtest1_exec("INSERT OR IGNORE INTO rt1 SELECT * FROM t1");
   speedtest1_end_test();
 }
 #endif /* SQLITE_ENABLE_RTREE */
@@ -1577,6 +1693,207 @@ void testset_orm(void){
 }
 
 /*
+*/
+void testset_trigger(void){
+  int jj, ii;
+  char zNum[2000];              /* A number name */
+
+  const int NROW  = 500*g.szTest;
+  const int NROW2 = 100*g.szTest;
+
+  speedtest1_exec(
+      "BEGIN;"
+      "CREATE TABLE t1(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "CREATE TABLE t2(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "CREATE TABLE t3(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "CREATE VIEW v1 AS SELECT rowid, i, t FROM t1;"
+      "CREATE VIEW v2 AS SELECT rowid, i, t FROM t2;"
+      "CREATE VIEW v3 AS SELECT rowid, i, t FROM t3;"
+  );
+  for(jj=1; jj<=3; jj++){
+    speedtest1_prepare("INSERT INTO t%d VALUES(NULL,?1,?2)", jj);
+    for(ii=0; ii<NROW; ii++){
+      int x1 = speedtest1_random() % NROW;
+      speedtest1_numbername(x1, zNum, sizeof(zNum));
+      sqlite3_bind_int(g.pStmt, 1, x1);
+      sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+      speedtest1_run();
+    }
+  }
+  speedtest1_exec(
+      "CREATE INDEX i1 ON t1(t);"
+      "CREATE INDEX i2 ON t2(t);"
+      "CREATE INDEX i3 ON t3(t);"
+      "COMMIT;"
+  );
+
+  speedtest1_begin_test(100, "speed4p-join1");
+  speedtest1_prepare(
+      "SELECT * FROM t1, t2, t3 WHERE t1.oid = t2.oid AND t2.oid = t3.oid"
+  );
+  speedtest1_run();
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "speed4p-join2");
+  speedtest1_prepare(
+      "SELECT * FROM t1, t2, t3 WHERE t1.t = t2.t AND t2.t = t3.t"
+  );
+  speedtest1_run();
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "speed4p-view1");
+  for(jj=1; jj<=3; jj++){
+    speedtest1_prepare("SELECT * FROM v%d WHERE rowid = ?", jj);
+    for(ii=0; ii<NROW2; ii+=3){
+      sqlite3_bind_int(g.pStmt, 1, ii*3);
+      speedtest1_run();
+    }
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "speed4p-table1");
+  for(jj=1; jj<=3; jj++){
+    speedtest1_prepare("SELECT * FROM t%d WHERE rowid = ?", jj);
+    for(ii=0; ii<NROW2; ii+=3){
+      sqlite3_bind_int(g.pStmt, 1, ii*3);
+      speedtest1_run();
+    }
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(140, "speed4p-table1");
+  for(jj=1; jj<=3; jj++){
+    speedtest1_prepare("SELECT * FROM t%d WHERE rowid = ?", jj);
+    for(ii=0; ii<NROW2; ii+=3){
+      sqlite3_bind_int(g.pStmt, 1, ii*3);
+      speedtest1_run();
+    }
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(150, "speed4p-subselect1");
+  speedtest1_prepare("SELECT "
+      "(SELECT t FROM t1 WHERE rowid = ?1),"
+      "(SELECT t FROM t2 WHERE rowid = ?1),"
+      "(SELECT t FROM t3 WHERE rowid = ?1)"
+  );
+  for(jj=0; jj<NROW2; jj++){
+    sqlite3_bind_int(g.pStmt, 1, jj*3);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(160, "speed4p-rowid-update");
+  speedtest1_exec("BEGIN");
+  speedtest1_prepare("UPDATE t1 SET i=i+1 WHERE rowid=?1");
+  for(jj=0; jj<NROW2; jj++){
+    sqlite3_bind_int(g.pStmt, 1, jj);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  speedtest1_exec("CREATE TABLE t5(t TEXT PRIMARY KEY, i INTEGER);");
+  speedtest1_begin_test(170, "speed4p-insert-ignore");
+  speedtest1_exec("INSERT OR IGNORE INTO t5 SELECT t, i FROM t1");
+  speedtest1_end_test();
+
+  speedtest1_exec(
+      "CREATE TABLE log(op TEXT, r INTEGER, i INTEGER, t TEXT);"
+      "CREATE TABLE t4(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "CREATE TRIGGER t4_trigger1 AFTER INSERT ON t4 BEGIN"
+      "  INSERT INTO log VALUES('INSERT INTO t4', new.rowid, new.i, new.t);"
+      "END;"
+      "CREATE TRIGGER t4_trigger2 AFTER UPDATE ON t4 BEGIN"
+      "  INSERT INTO log VALUES('UPDATE OF t4', new.rowid, new.i, new.t);"
+      "END;"
+      "CREATE TRIGGER t4_trigger3 AFTER DELETE ON t4 BEGIN"
+      "  INSERT INTO log VALUES('DELETE OF t4', old.rowid, old.i, old.t);"
+      "END;"
+      "BEGIN;"
+  );
+
+  speedtest1_begin_test(180, "speed4p-trigger1");
+  speedtest1_prepare("INSERT INTO t4 VALUES(NULL, ?1, ?2)");
+  for(jj=0; jj<NROW2; jj++){
+    speedtest1_numbername(jj, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 1, jj);
+    sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  /*
+  ** Note: Of the queries, only half actually update a row. This property
+  ** was copied over from speed4p.test, where it was probably introduced
+  ** inadvertantly.
+  */
+  speedtest1_begin_test(190, "speed4p-trigger2");
+  speedtest1_prepare("UPDATE t4 SET i = ?1, t = ?2 WHERE rowid = ?3");
+  for(jj=1; jj<=NROW2*2; jj+=2){
+    speedtest1_numbername(jj*2, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 1, jj*2);
+    sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+    sqlite3_bind_int(g.pStmt, 3, jj);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  /*
+  ** Note: Same again.
+  */
+  speedtest1_begin_test(200, "speed4p-trigger3");
+  speedtest1_prepare("DELETE FROM t4 WHERE rowid = ?1");
+  for(jj=1; jj<=NROW2*2; jj+=2){
+    sqlite3_bind_int(g.pStmt, 1, jj*2);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+  speedtest1_exec("COMMIT");
+
+  /*
+  ** The following block contains the same tests as the above block that
+  ** tests triggers, with one crucial difference: no triggers are defined.
+  ** So the difference in speed between these tests and the preceding ones
+  ** is the amount of time taken to compile and execute the trigger programs.
+  */
+  speedtest1_exec(
+      "DROP TABLE t4;"
+      "DROP TABLE log;"
+      "VACUUM;"
+      "CREATE TABLE t4(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "BEGIN;"
+  );
+  speedtest1_begin_test(210, "speed4p-notrigger1");
+  speedtest1_prepare("INSERT INTO t4 VALUES(NULL, ?1, ?2)");
+  for(jj=0; jj<NROW2; jj++){
+    speedtest1_numbername(jj, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 1, jj);
+    sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+  speedtest1_begin_test(210, "speed4p-notrigger2");
+  speedtest1_prepare("UPDATE t4 SET i = ?1, t = ?2 WHERE rowid = ?3");
+  for(jj=1; jj<=NROW2*2; jj+=2){
+    speedtest1_numbername(jj*2, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 1, jj*2);
+    sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+    sqlite3_bind_int(g.pStmt, 3, jj);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+  speedtest1_begin_test(220, "speed4p-notrigger3");
+  speedtest1_prepare("DELETE FROM t4 WHERE rowid = ?1");
+  for(jj=1; jj<=NROW2*2; jj+=2){
+    sqlite3_bind_int(g.pStmt, 1, jj*2);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+  speedtest1_exec("COMMIT");
+}
+
+/*
 ** A testset used for debugging speedtest1 itself.
 */
 void testset_debug1(void){
@@ -1636,6 +1953,11 @@ static void displayLinuxIoStats(FILE *out){
 #  define sqlite3_sourceid(X) "(before 3.6.18)"
 #endif
 
+static int xCompileOptions(void *pCtx, int nVal, char **azVal, char **azCol){
+  printf("-- Compile option: %s\n", azVal[0]);
+  return SQLITE_OK;
+}
+
 int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
@@ -1649,7 +1971,6 @@ int main(int argc, char **argv){
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
   int doPCache = 0;             /* True if --pcache is seen */
-  int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
   int mmapSize = 0;             /* How big of a memory map to use */
@@ -1661,7 +1982,6 @@ int main(int argc, char **argv){
   void *pHeap = 0;              /* Allocated heap space */
   void *pLook = 0;              /* Allocated lookaside space */
   void *pPCache = 0;            /* Allocated storage for pcache */
-  void *pScratch = 0;           /* Allocated storage for scratch */
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
@@ -1741,11 +2061,6 @@ int main(int argc, char **argv){
         i += 1;
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
-      }else if( strcmp(z,"scratch")==0 ){
-        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
-        nScratch = integerValue(argv[i+1]);
-        szScratch = integerValue(argv[i+2]);
-        i += 2;
 #if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"serialized")==0 ){
         sqlite3_config(SQLITE_CONFIG_SERIALIZED);
@@ -1816,13 +2131,6 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
     if( rc ) fatal_error("pcache configuration failed: %d\n", rc);
   }
-  if( nScratch>0 && szScratch>0 ){
-    pScratch = malloc( nScratch*(sqlite3_int64)szScratch );
-    if( pScratch==0 ) fatal_error("cannot allocate %lld-byte scratch\n",
-                                 nScratch*(sqlite3_int64)szScratch);
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
-    if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
-  }
   if( nLook>=0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
@@ -1883,6 +2191,10 @@ int main(int argc, char **argv){
     testset_orm();
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
+  }else if( strcmp(zTSet,"fp")==0 ){
+    testset_fp();
+  }else if( strcmp(zTSet,"trigger")==0 ){
+    testset_trigger();
   }else if( strcmp(zTSet,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
     testset_rtree(6, 147);
@@ -1891,10 +2203,15 @@ int main(int argc, char **argv){
                 "the R-Tree tests\n");
 #endif
   }else{
-    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
+    fatal_error("unknown testset: \"%s\"\n"
+                "Choices: cte debug1 fp main orm rtree trigger\n",
                  zTSet);
   }
   speedtest1_final();
+
+  if( showStats ){
+    sqlite3_exec(g.db, "PRAGMA compile_options", xCompileOptions, 0, 0);
+  }
 
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */
@@ -1939,14 +2256,10 @@ int main(int argc, char **argv){
 #endif
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHi, 0);
     printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHi);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHi, 0);
-    printf("-- Scratch Overflow Bytes:      %d (max %d)\n", iCur,iHi);
     sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Allocation:          %d bytes\n",iHi);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Pcache Allocation:   %d bytes\n",iHi);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHi, 0);
-    printf("-- Largest Scratch Allocation:  %d bytes\n", iHi);
   }
 #endif
 
@@ -1959,7 +2272,6 @@ int main(int argc, char **argv){
   /* Release memory */
   free( pLook );
   free( pPCache );
-  free( pScratch );
   free( pHeap );
   return 0;
 }

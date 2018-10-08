@@ -164,7 +164,7 @@ do_execsql_test join5-3.3 {
 # Ticket https://www.sqlite.org/src/tktview/c2a19d81652f40568c770c43 on
 # 2015-08-20.  LEFT JOIN and the push-down optimization.
 #
-do_execsql_test join6-4.1 {
+do_execsql_test join5-4.1 {
   SELECT *
   FROM (
       SELECT 'apple' fruit
@@ -178,7 +178,7 @@ do_execsql_test join6-4.1 {
       SELECT 1 isyellow
   ) c ON b.fruit='banana';
 } {apple apple {} banana banana 1}
-do_execsql_test join6-4.2 {
+do_execsql_test join5-4.2 {
   SELECT *
     FROM (SELECT 'apple' fruit UNION ALL SELECT 'banana')
          LEFT JOIN (SELECT 1) ON fruit='banana';
@@ -211,5 +211,85 @@ do_execsql_test 5.4 {
 do_execsql_test 5.5 {
   SELECT * FROM ( SELECT * FROM y1 ) LEFT JOIN y2 ON x
 } {0 0 1 {}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.1 {
+  CREATE TABLE t1(x); 
+  INSERT INTO t1 VALUES(1);
+
+  CREATE TABLE t2(y INTEGER PRIMARY KEY,a,b);
+  INSERT INTO t2 VALUES(1,2,3);
+  CREATE INDEX t2a ON t2(a); 
+  CREATE INDEX t2b ON t2(b); 
+}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON a=2 OR b=3 WHERE y IS NULL;
+} {}
+
+do_execsql_test 6.3.1 {
+  CREATE TABLE t3(x);
+  INSERT INTO t3 VALUES(1);
+  CREATE TABLE t4(y, z);
+  SELECT ifnull(z, '!!!') FROM t3 LEFT JOIN t4 ON (x=y);
+} {!!!}
+
+do_execsql_test 6.3.2 {
+  CREATE INDEX t4i ON t4(y, ifnull(z, '!!!'));
+  SELECT ifnull(z, '!!!') FROM t3 LEFT JOIN t4 ON (x=y);
+} {!!!}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1);
+}
+
+do_execsql_test 7.1 {
+  CREATE TABLE t2(x, y, z);
+  CREATE INDEX t2xy ON t2(x, y);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50000
+  )
+  INSERT INTO t2 SELECT i/10, i, NULL FROM s;
+  ANALYZE;
+}
+
+do_eqp_test 7.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (
+    t2.x = t1.x AND (t2.y=? OR (t2.y=? AND t2.z IS NOT NULL))
+  );
+} {
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--MULTI-INDEX OR
+     |--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+     `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+}
+
+do_execsql_test 7.3 {
+  CREATE TABLE t3(x);
+
+  CREATE TABLE t4(x, y, z);
+  CREATE INDEX t4xy ON t4(x, y);
+  CREATE INDEX t4xz ON t4(x, z);
+
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50000)
+  INSERT INTO t4 SELECT i/10, i, i FROM s;
+
+  ANALYZE;
+}
+
+do_eqp_test 7.4 {
+  SELECT * FROM t3 LEFT JOIN t4 ON (t4.x = t3.x) WHERE (t4.y = ? OR t4.z = ?);
+} {
+  QUERY PLAN
+  |--SCAN TABLE t3
+  `--SEARCH TABLE t4 USING INDEX t4xz (x=?)
+} 
 
 finish_test

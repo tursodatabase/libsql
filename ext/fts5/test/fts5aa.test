@@ -591,7 +591,19 @@ do_execsql_test 22.1 {
   SELECT rowid FROM t9('a*')
 } {1}
 
+#-------------------------------------------------------------------------
+do_execsql_test 23.0 {
+  CREATE VIRTUAL TABLE t10 USING fts5(x, detail=%DETAIL%);
+  CREATE TABLE t11(x);
+}
+do_execsql_test 23.1 {
+  SELECT * FROM t11, t10 WHERE t11.x = t10.x AND t10.rowid IS NULL;
+}
+do_execsql_test 23.2 {
+  SELECT * FROM t11, t10 WHERE t10.rowid IS NULL;
 }
 
+}
 
+expand_all_sql db
 finish_test

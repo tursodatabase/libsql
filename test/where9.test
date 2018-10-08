@@ -357,25 +357,27 @@ do_test where9-2.8 {
 
 
 ifcapable explain {
-  do_execsql_test where9-3.1 {
-    EXPLAIN QUERY PLAN
+  do_eqp_test where9-3.1 {
     SELECT t2.a FROM t1, t2
     WHERE t1.a=80 AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
-  } {
-    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)} 
-    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)}
-  }
-  do_execsql_test where9-3.2 {
-    EXPLAIN QUERY PLAN
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
+    `--MULTI-INDEX OR
+       |--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+  }]
+  do_eqp_test where9-3.2 {
     SELECT coalesce(t2.a,9999)
     FROM t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
     WHERE t1.a=80
-  } {
-    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)} 
-    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)}
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
+    `--MULTI-INDEX OR
+       |--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+  }]
 } 
 
 # Make sure that INDEXED BY and multi-index OR clauses play well with
@@ -446,34 +448,30 @@ do_test where9-4.8 {
   }
 } {1 {no query solution}}
 
-ifcapable explain {
-  # The (c=31031 OR d IS NULL) clause is preferred over b>1000 because
-  # the former is an equality test which is expected to return fewer rows.
-  #
-  do_execsql_test where9-5.1 {
-    EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
-  } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?)} 
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?)}
-  }
-
-  # In contrast, b=1000 is preferred over any OR-clause.
-  #
-  do_execsql_test where9-5.2 {
-    EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
-  } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}
-  }
-
-  # Likewise, inequalities in an AND are preferred over inequalities in
-  # an OR.
-  #
-  do_execsql_test where9-5.3 {
-    EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
-  } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?)}
-  }
+# The (c=31031 OR d IS NULL) clause is preferred over b>1000 because
+# the former is an equality test which is expected to return fewer rows.
+#
+do_eqp_test where9-5.1 {
+  SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
+} {
+  QUERY PLAN
+  `--MULTI-INDEX OR
+     |--SEARCH TABLE t1 USING INDEX t1c (c=?)
+     `--SEARCH TABLE t1 USING INDEX t1d (d=?)
 }
+
+# In contrast, b=1000 is preferred over any OR-clause.
+#
+do_eqp_test where9-5.2 {
+  SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
+} {SEARCH TABLE t1 USING INDEX t1b (b=?)}
+
+# Likewise, inequalities in an AND are preferred over inequalities in
+# an OR.
+#
+do_eqp_test where9-5.3 {
+  SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
+} {SEARCH TABLE t1 USING INDEX t1b (b>?)}
 
 ############################################################################
 # Make sure OR-clauses work correctly on UPDATE and DELETE statements.

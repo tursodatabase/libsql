@@ -1,6 +1,8 @@
-# Run this TCL script using "testfixture" in order get a report that shows
-# how much disk space is used by a particular data to actually store data
+# Run this TCL script using an SQLite-enabled TCL interpreter to get a report
+# on how much disk space is used by a particular data to actually store data
 # versus how much space is unused.
+#
+# The dbstat virtual table is required.
 #
 
 if {[catch {
@@ -145,6 +147,17 @@ if {[catch {sqlite3 db $file_to_analyze -uri 1} msg]} {
 if {$flags(-debug)} {
   proc dbtrace {txt} {puts $txt; flush stdout;}
   db trace ::dbtrace
+}
+
+# Make sure all required compile-time options are available
+#
+if {![db exists {SELECT 1 FROM pragma_compile_options
+                WHERE compile_options='ENABLE_DBSTAT_VTAB'}]} {
+  puts "The SQLite database engine linked with this application\
+        lacks required capabilities. Recompile using the\
+        -DSQLITE_ENABLE_DBSTAT_VTAB compile-time option to fix\
+        this problem."
+  exit 1
 }
 
 db eval {SELECT count(*) FROM sqlite_master}

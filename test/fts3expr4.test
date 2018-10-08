@@ -29,7 +29,8 @@ proc test_fts3expr {tokenizer expr} {
 }
 
 proc do_icu_expr_test {tn expr res} {
-  uplevel [list do_test $tn [list test_fts3expr icu $expr] [list {*}$res]]
+  set res2 [list {*}$res]
+  uplevel [list do_test $tn [list test_fts3expr "icu en_US" $expr] $res2]
 }
 
 proc do_simple_expr_test {tn expr res} {

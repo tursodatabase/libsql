@@ -16,7 +16,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 sqlite3_reset_auto_extension
 
-# This test assumes that no page-cache or scratch buffers are installed
+# This test assumes that no page-cache buffers are installed
 # by default when a new database connection is opened. As a result, it
 # will not work with the "memsubsys1" permutation.
 #
@@ -156,12 +156,11 @@ do_test memsubsys1-3.2.5 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
 } 0
 
-# Test 4:  Activate both PAGECACHE and SCRATCH.
+# Test 4:  Activate PAGECACHE
 #
 db close
 sqlite3_shutdown
 sqlite3_config_pagecache [expr 1024+$xtra_size] 50
-sqlite3_config_scratch 6000 2
 sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-4 {PRAGMA page_size=1024}
@@ -177,144 +176,10 @@ do_test memsubsys1-4.5 {
   set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
   expr {$maxreq<7000}
 } 1
-do_test memsubsys1-4.6 {
-  set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
-} 1
-
-# Test 5:  Activate both PAGECACHE and SCRATCH.  But make the page size is
-# such that the SCRATCH allocations are too small.
-#
-db close
-sqlite3_shutdown
-sqlite3_config_pagecache [expr 4096+$xtra_size] 24
-sqlite3_config_scratch 4000 2
-sqlite3_initialize
-reset_highwater_marks
-build_test_db memsubsys1-5 {PRAGMA page_size=4096}
-#show_memstats
-do_test memsubsys1-5.3 {
-  set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} {/^2[34]$/}
-do_test memsubsys1-5.4 {
-  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq>4096}
-} 1
-do_test memsubsys1-5.5 {
-  set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
-} 0
-do_test memsubsys1-5.6 {
-  set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
-  expr {$s_ovfl>6000}
-} 1
-
-# Test 6:  Activate both PAGECACHE and SCRATCH with a 4k page size.
-# Make it so that SCRATCH is large enough
-#
-db close
-sqlite3_shutdown
-sqlite3_config_pagecache [expr 4096+$xtra_size] 24
-sqlite3_config_scratch 25300 1
-sqlite3_initialize
-reset_highwater_marks
-build_test_db memsubsys1-6 {PRAGMA page_size=4096}
-#show_memstats
-do_test memsubsys1-6.3 {
-  set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} {/^2[34]$/}
-#do_test memsubsys1-6.4 {
-#  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-#  expr {$maxreq>4096 && $maxreq<=(4096+$xtra_size)}
-#} 1
-do_test memsubsys1-6.5 {
-  set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
-} 1
-do_test memsubsys1-6.6 {
-  set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
-} 0
-
-# Test 7:  Activate both PAGECACHE and SCRATCH with a 4k page size.
-# Set cache_size small so that no PAGECACHE overflow occurs.  Verify
-# that maximum allocation size is small.
-#
-db close
-sqlite3_shutdown
-sqlite3_config_pagecache [expr 4096+$xtra_size] 24
-sqlite3_config_scratch 25300 1
-sqlite3_initialize
-reset_highwater_marks
-build_test_db memsubsys1-7 {
-  PRAGMA page_size=4096;
-  PRAGMA cache_size=10;
-  PRAGMA temp_store=memory;
-}
-#show_memstats
-do_test memsubsys1-7.3 {
-  set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-  expr {$pg_used<24}
-} 1
-do_test memsubsys1-7.4 {
-  set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-} 0
-do_test memsubsys1-7.5 {
-  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq<(4100 + 8200*[nonzero_reserved_bytes])}
-} 1
-do_test memsubsys1-7.6 {
-  set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
-} 1
-do_test memsubsys1-7.7 {
-  set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
-} 0
-
-# Test 8:  Disable PAGECACHE.  Make available SCRATCH zero.  Verify that
-# the SCRATCH overflow logic works.
-#
-db close
-sqlite3_shutdown
-sqlite3_config_pagecache 0 0
-sqlite3_config_scratch 25000 0
-sqlite3_initialize
-reset_highwater_marks
-do_test memsubsys1-8.1 {
-  set pg_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
-} 0
-do_test memsubsys1-8.2 {
-  set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
-} 0
-do_test memsubsys1-8.3 {
-  sqlite3 db :memory:
-  db eval {
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(zeroblob(400));
-    INSERT INTO t1 VALUES(zeroblob(400));
-    INSERT INTO t1 SELECT * FROM t1;
-    INSERT INTO t1 SELECT * FROM t1;
-    INSERT INTO t1 SELECT * FROM t1;
-  }
-  expr {[lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]>0}
-} 1
-db close
-sqlite3_shutdown
-sqlite3_config_memstatus 0
-sqlite3_initialize
-do_test memsubsys1-8.4 {
-  sqlite3 db :memory:
-  db eval {
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(zeroblob(400));
-    INSERT INTO t1 VALUES(zeroblob(400));
-    INSERT INTO t1 SELECT * FROM t1;
-    INSERT INTO t1 SELECT * FROM t1;
-    INSERT INTO t1 SELECT * FROM t1;
-    SELECT rowid FROM t1;
-  }
-} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
-
 
 db close
 sqlite3_shutdown
 sqlite3_config_memstatus 1
-sqlite3_config_scratch 0 0
 sqlite3_config_lookaside 100 500
 sqlite3_config serialized
 sqlite3_initialize

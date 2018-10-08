@@ -612,6 +612,49 @@ do_iterator_test $tn.12.2 * {
   {UPDATE t1 0 X.. {i 3 {} {} i 3} {{} {} {} {} t one}}
 }
 
+#-------------------------------------------------------------------------
+# Test that no savepoint is used if -nosavepoint is specified.
+#
+do_execsql_test $tn.13.1 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b)%WR%;
+}
+do_test $tn.13.2 {
+  execsql BEGIN
+  set C [changeset_from_sql {
+    INSERT INTO x1 VALUES(1, 'one');
+    INSERT INTO x1 VALUES(2, 'two');
+    INSERT INTO x1 VALUES(3, 'three');
+  }]
+  execsql ROLLBACK
+  execsql {
+    INSERT INTO x1 VALUES(1, 'i');
+    INSERT INTO x1 VALUES(2, 'ii');
+    INSERT INTO x1 VALUES(3, 'iii');
+  }
+} {}
+
+proc xConflict {args} {
+  set ret [lindex $::CONFLICT_HANDLERS 0]
+  set ::CONFLICT_HANDLERS [lrange $::CONFLICT_HANDLERS 1 end]
+  set ret
+}
+do_test $tn.13.3 {
+  set CONFLICT_HANDLERS [list REPLACE REPLACE ABORT]
+  execsql BEGIN
+  catch { sqlite3changeset_apply_v2 db $C xConflict } msg
+  execsql {
+    SELECT * FROM x1
+  }
+} {1 i 2 ii 3 iii}
+do_test $tn.13.3 {
+  set CONFLICT_HANDLERS [list REPLACE REPLACE ABORT]
+  execsql ROLLBACK
+  execsql BEGIN
+  catch { sqlite3changeset_apply_v2 -nosavepoint db $C xConflict } msg
+  execsql { SELECT * FROM x1 }
+} {1 one 2 two 3 iii}
+execsql ROLLBACK
+
 }]
 }
 

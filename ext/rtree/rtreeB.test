@@ -15,6 +15,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 
@@ -43,5 +44,7 @@ ifcapable rtree_int_only {
     }
   } {{{1073741824 0 0 100 100} {2147483646 0 0 200 200} {4294967296 0 0 300 300} {8589934592 20 20 150 150} {9223372036854775807 150 150 400 400}}}
 }
+
+do_rtree_integrity_test rtreeB-1.2 t1
 
 finish_test

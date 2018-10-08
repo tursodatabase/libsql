@@ -28,6 +28,10 @@
 **    (1) REPLACE INTO wordcount
 **        VALUES($new,ifnull((SELECT cnt FROM wordcount WHERE word=$new),0)+1);
 **
+** Upsert mode means:
+**    (1) INSERT INTO wordcount VALUES($new,1)
+**            ON CONFLICT(word) DO UPDATE SET cnt=cnt+1
+**
 ** Select mode means:
 **    (1) SELECT 1 FROM wordcount WHERE word=$new
 **    (2) INSERT INTO wordcount VALUES($new,1) -- if (1) returns nothing
@@ -90,6 +94,7 @@ const char zHelp[] =
 " --timer              Time the operation of this program\n"
 " --trace              Enable sqlite3_trace() output.\n"
 " --update             Use UPDATE mode\n"
+" --upsert             Use UPSERT mode\n"
 " --without-rowid      Use a WITHOUT ROWID table to store the words.\n"
 ;
 
@@ -208,17 +213,19 @@ static void checksumFinalize(sqlite3_context *context){
 /* Define operating modes */
 #define MODE_INSERT     0
 #define MODE_REPLACE    1
-#define MODE_SELECT     2
-#define MODE_UPDATE     3
-#define MODE_DELETE     4
-#define MODE_QUERY      5
-#define MODE_COUNT      6
+#define MODE_UPSERT     2
+#define MODE_SELECT     3
+#define MODE_UPDATE     4
+#define MODE_DELETE     5
+#define MODE_QUERY      6
+#define MODE_COUNT      7
 #define MODE_ALL      (-1)
 
 /* Mode names */
 static const char *azMode[] = {
   "--insert",
   "--replace",
+  "--upsert",
   "--select",
   "--update",
   "--delete",
@@ -292,6 +299,8 @@ int main(int argc, char **argv){
         useWithoutRowid = 1;
       }else if( strcmp(z,"replace")==0 ){
         iMode = MODE_REPLACE;
+      }else if( strcmp(z,"upsert")==0 ){
+        iMode = MODE_UPSERT;
       }else if( strcmp(z,"select")==0 ){
         iMode = MODE_SELECT;
       }else if( strcmp(z,"insert")==0 ){
@@ -467,6 +476,14 @@ int main(int argc, char **argv){
       if( rc ) fatal_error("Could not prepare the REPLACE statement: %s\n",
                             sqlite3_errmsg(db));
     }
+    if( iMode2==MODE_UPSERT ){
+      rc = sqlite3_prepare_v2(db,
+          "INSERT INTO wordcount(word,cnt) VALUES(?1,1) "
+          "ON CONFLICT(word) DO UPDATE SET cnt=cnt+1",
+          -1, &pInsert, 0);
+      if( rc ) fatal_error("Could not prepare the UPSERT statement: %s\n",
+                            sqlite3_errmsg(db));
+    }
     if( iMode2==MODE_DELETE ){
       rc = sqlite3_prepare_v2(db,
             "DELETE FROM wordcount WHERE word=?1",
@@ -633,14 +650,10 @@ int main(int argc, char **argv){
     printf("%s Outstanding Allocations:     %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, 0);
     printf("%s Pcache Overflow Bytes:       %d (max %d)\n",zTag,iCur,iHiwtr);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, 0);
-    printf("%s Scratch Overflow Bytes:      %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, 0);
     printf("%s Largest Allocation:          %d bytes\n",zTag,iHiwtr);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, 0);
     printf("%s Largest Pcache Allocation:   %d bytes\n",zTag,iHiwtr);
-    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, 0);
-    printf("%s Largest Scratch Allocation:  %d bytes\n",zTag,iHiwtr);
   }
   return 0;
 }

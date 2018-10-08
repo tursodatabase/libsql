@@ -78,7 +78,7 @@ int sqlite3BtreeGetOptimalReserve(Btree*);
 int sqlite3BtreeGetReserveNoMutex(Btree *p);
 int sqlite3BtreeSetAutoVacuum(Btree *, int);
 int sqlite3BtreeGetAutoVacuum(Btree *);
-int sqlite3BtreeBeginTrans(Btree*,int);
+int sqlite3BtreeBeginTrans(Btree*,int,int*);
 int sqlite3BtreeCommitPhaseOne(Btree*, const char *zMaster);
 int sqlite3BtreeCommitPhaseTwo(Btree*, int);
 int sqlite3BtreeCommit(Btree*);
@@ -230,6 +230,7 @@ int sqlite3BtreeCursor(
   struct KeyInfo*,                     /* First argument to compare function */
   BtCursor *pCursor                    /* Space to write cursor structure */
 );
+BtCursor *sqlite3BtreeFakeValidCursor(void);
 int sqlite3BtreeCursorSize(void);
 void sqlite3BtreeCursorZero(BtCursor*);
 void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
@@ -258,13 +259,28 @@ int sqlite3BtreeDelete(BtCursor*, u8 flags);
 ** entry in either an index or table btree.
 **
 ** Index btrees (used for indexes and also WITHOUT ROWID tables) contain
-** an arbitrary key and no data.  These btrees have pKey,nKey set to their
-** key and pData,nData,nZero set to zero.
+** an arbitrary key and no data.  These btrees have pKey,nKey set to the
+** key and the pData,nData,nZero fields are uninitialized.  The aMem,nMem
+** fields give an array of Mem objects that are a decomposition of the key.
+** The nMem field might be zero, indicating that no decomposition is available.
 **
 ** Table btrees (used for rowid tables) contain an integer rowid used as
 ** the key and passed in the nKey field.  The pKey field is zero.  
 ** pData,nData hold the content of the new entry.  nZero extra zero bytes
 ** are appended to the end of the content when constructing the entry.
+** The aMem,nMem fields are uninitialized for table btrees.
+**
+** Field usage summary:
+**
+**               Table BTrees                   Index Btrees
+**
+**   pKey        always NULL                    encoded key
+**   nKey        the ROWID                      length of pKey
+**   pData       data                           not used
+**   aMem        not used                       decomposed key value
+**   nMem        not used                       entries in aMem
+**   nData       length of pData                not used
+**   nZero       extra zeros after pData        not used
 **
 ** This object is used to pass information into sqlite3BtreeInsert().  The
 ** same information used to be passed as five separate parameters.  But placing
@@ -275,7 +291,7 @@ int sqlite3BtreeDelete(BtCursor*, u8 flags);
 struct BtreePayload {
   const void *pKey;       /* Key content for indexes.  NULL for tables */
   sqlite3_int64 nKey;     /* Size of pKey for indexes.  PRIMARY KEY for tabs */
-  const void *pData;      /* Data for tables.  NULL for indexes */
+  const void *pData;      /* Data for tables. */
   sqlite3_value *aMem;    /* First of nMem value in the unpacked pKey */
   u16 nMem;               /* Number of aMem[] value.  Might be zero */
   int nData;              /* Size of pData.  0 if none. */
@@ -285,11 +301,17 @@ struct BtreePayload {
 int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
                        int flags, int seekResult);
 int sqlite3BtreeFirst(BtCursor*, int *pRes);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+void sqlite3BtreeSkipNext(BtCursor*);
+#endif
 int sqlite3BtreeLast(BtCursor*, int *pRes);
 int sqlite3BtreeNext(BtCursor*, int flags);
 int sqlite3BtreeEof(BtCursor*);
 int sqlite3BtreePrevious(BtCursor*, int flags);
 i64 sqlite3BtreeIntegerKey(BtCursor*);
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+i64 sqlite3BtreeOffset(BtCursor*);
+#endif
 int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
 u32 sqlite3BtreePayloadSize(BtCursor*);

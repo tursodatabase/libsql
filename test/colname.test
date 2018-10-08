@@ -378,5 +378,64 @@ do_test colname-9.210 {
   execsql2 {SELECT t1.a, v3.a AS n FROM t1 JOIN v3}
 } {a 1 n 3}
 
+# 2017-12-23:  Ticket https://www.sqlite.org/src/info/3b4450072511e621
+# Inconsistent column names in CREATE TABLE AS
+#
+# Verify that the names of columns in the created table of a CREATE TABLE AS
+# are the same as the names of result columns in the SELECT statement.
+#
+do_execsql_test colname-9.300 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(aaa INT);
+  INSERT INTO t1(aaa) VALUES(123);
+}
+do_test colname-9.310 {
+  execsql2 {SELECT BBb FROM (SELECT aaa AS Bbb FROM t1)}
+} {Bbb 123}
+ifcapable vtab {
+  do_execsql_test colname-9.320 {
+    CREATE TABLE t2 AS SELECT BBb FROM (SELECT aaa AS Bbb FROM t1);
+    SELECT name FROM pragma_table_info('t2');
+  } {Bbb}
+}
+
+# Issue detected by OSSFuzz on 2017-12-24 (Christmas Eve)
+# caused by check-in https://sqlite.org/src/info/6b2ff26c25
+#
+# Prior to being fixed, the following CREATE TABLE was dereferencing
+# a NULL pointer and segfaulting.
+#
+do_catchsql_test colname-9.400 {
+  CREATE TABLE t4 AS SELECT #0;
+} {1 {near "#0": syntax error}}
+
+# Issue detected by OSSFuzz on 2017-12-25 (Christmas Day)
+# also caused by check-in https://sqlite.org/src/info/6b2ff26c25
+#
+# Prior to being fixed, the following CREATE TABLE caused an
+# assertion fault.
+#
+do_catchsql_test colname-9.410 {
+  CREATE TABLE t5 AS SELECT RAISE(abort,a);
+} {1 {RAISE() may only be used within a trigger-program}}
+
+# Make sure the quotation marks get removed from the column names
+# when constructing a new table from an aggregate SELECT.
+# Email from Juergen Palm on 2017-07-11.
+#
+do_execsql_test colname-10.100 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1("with space" TEXT);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2 AS SELECT "with space" FROM t1;
+  PRAGMA table_info(t2);
+} {0 {with space} TEXT 0 {} 0}
+do_execsql_test colname-10.110 {
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t3 AS SELECT "with space" FROM t1 GROUP BY 1;
+  PRAGMA table_info(t3);
+} {0 {with space} TEXT 0 {} 0}
+
 
 finish_test

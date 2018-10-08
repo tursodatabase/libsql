@@ -865,6 +865,27 @@ do_catchsql_test 16.1 {
   SELECT * FROM i;
 } {1 {recursive aggregate queries not supported}}
 
+# Or window-function recursive queries. Ticket e8275b41.
+#
+ifcapable windowfunc {
+  do_catchsql_test 16.2 {
+    WITH RECURSIVE
+      i(x) AS (VALUES(1) UNION SELECT count(*) OVER () FROM i)
+      SELECT * FROM i;
+  } {1 {cannot use window functions in recursive queries}}
+  do_catchsql_test 16.3 {
+    WITH RECURSIVE
+      t(id, parent) AS (VALUES(1,2)),
+      q(id, parent, rn) AS (
+          VALUES(1,2,3)
+          UNION ALL
+          SELECT t.*, ROW_NUMBER() OVER (ORDER BY t.id) AS rn
+          FROM q JOIN t ON t.parent = q.id
+          )
+        SELECT * FROM q;
+  } {1 {cannot use window functions in recursive queries}}
+}
+
 #-------------------------------------------------------------------------
 do_execsql_test 17.1 {
   WITH x(a) AS (
@@ -992,17 +1013,35 @@ do_execsql_test 18.2 {
 
 # EXPLAIN QUERY PLAN on a self-join of a CTE
 #
-do_execsql_test 19.1 {
+do_execsql_test 19.1a {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(x);
-  EXPLAIN QUERY PLAN
+}
+do_eqp_test 19.1b {
   WITH
     x1(a) AS (values(100))
   INSERT INTO t1(x)
     SELECT * FROM (WITH x2(y) AS (SELECT * FROM x1) SELECT y+a FROM x1, x2);
   SELECT * FROM t1;
-} {0 0 0 {SCAN SUBQUERY 1} 0 1 1 {SCAN SUBQUERY 1}}
+} {
+  QUERY PLAN
+  |--MATERIALIZE xxxxxx
+  |  `--SCAN CONSTANT ROW
+  |--SCAN SUBQUERY xxxxxx
+  `--SCAN SUBQUERY xxxxxx
+}
 
-
+# 2017-10-28.
+# See check-in https://sqlite.org/src/info/0926df095faf72c2
+# Tried to optimize co-routine processing by changing a Copy opcode
+# into SCopy.  But OSSFuzz found two (similar) cases where that optimization
+# does not work.
+#
+do_execsql_test 20.1 {
+  WITH c(i)AS(VALUES(9)UNION SELECT~i FROM c)SELECT max(5)>i fROM c;
+} {0}
+do_execsql_test 20.2 {
+  WITH c(i)AS(VALUES(5)UNIoN SELECT 0)SELECT min(1)-i fROM c;
+} {1}
 
 finish_test

@@ -78,7 +78,7 @@ int sqlite3_set_authorizer(
   sqlite3_mutex_enter(db->mutex);
   db->xAuth = (sqlite3_xauth)xAuth;
   db->pAuthArg = pArg;
-  sqlite3ExpirePreparedStatements(db);
+  sqlite3ExpirePreparedStatements(db, 0);
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -118,11 +118,9 @@ int sqlite3AuthReadCol(
 #endif
                 );
   if( rc==SQLITE_DENY ){
-    if( db->nDb>2 || iDb!=0 ){
-      sqlite3ErrorMsg(pParse, "access to %s.%s.%s is prohibited",zDb,zTab,zCol);
-    }else{
-      sqlite3ErrorMsg(pParse, "access to %s.%s is prohibited", zTab, zCol);
-    }
+    char *z = sqlite3_mprintf("%s.%s", zTab, zCol);
+    if( db->nDb>2 || iDb!=0 ) z = sqlite3_mprintf("%s.%z", zDb, z);
+    sqlite3ErrorMsg(pParse, "access to %z is prohibited", z);
     pParse->rc = SQLITE_AUTH;
   }else if( rc!=SQLITE_IGNORE && rc!=SQLITE_OK ){
     sqliteAuthBadReturnCode(pParse);
@@ -152,6 +150,8 @@ void sqlite3AuthRead(
   int iDb;              /* The index of the database the expression refers to */
   int iCol;             /* Index of column in table */
 
+  assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
+  assert( !IN_RENAME_OBJECT || db->xAuth==0 );
   if( db->xAuth==0 ) return;
   iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
@@ -160,7 +160,6 @@ void sqlite3AuthRead(
     return;
   }
 
-  assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
   if( pExpr->op==TK_TRIGGER ){
     pTab = pParse->pTriggerTab;
   }else{
@@ -209,7 +208,8 @@ int sqlite3AuthCheck(
   /* Don't do any authorization checks if the database is initialising
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
-  if( db->init.busy || IN_DECLARE_VTAB ){
+  assert( !IN_RENAME_OBJECT || db->xAuth==0 );
+  if( db->init.busy || IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }
 
