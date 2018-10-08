@@ -477,7 +477,9 @@ static Schema *SQLITE_WSD sharedSchemaList = 0;
 ** error in the Parse object.
 */
 void sqlite3SchemaWritable(Parse *pParse, int iDb){
-  if( iDb!=1 && (pParse->db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+  if( iDb!=1 && (pParse->db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) 
+   && IN_DECLARE_VTAB==0
+  ){
     sqlite3ErrorMsg(pParse, "attempt to modify read-only schema");
   }
 }

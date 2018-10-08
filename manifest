@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\strunk.
-D 2018-10-08T20:37:21.400
+C Fix\sa\sproblem\swith\susing\svirtual\stables\svia\sreuse-schema\sconnections.
+D 2018-10-08T20:57:35.321
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -448,7 +448,7 @@ F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 9cc3ee9b5736ad53a2f1667e7e7bc69bcdacb6ed6419006b26421e969bc0b696
-F src/callback.c 83fb13418d563554316b0eea16cc53145ae8668884900eaa730fda398a7cc787
+F src/callback.c b4628694dbc04ab80d75f50ad4b64e20eae6180d06cf3cb766965fd802e281be
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
@@ -1772,7 +1772,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ac72114a1f5344b42472b941c60f460c28c981a22ea40909b30f7bf4eb4b11b ce6e80b1303ed161bec2c63735cd2e2bea7b4e9b4ff780d214d408b1a30d50da
-R 846d7eacf6e28e6dd5fb8a67e6823a09
-U drh
-Z 1449cec431dc347fd65f177d81002172
+P 9c8255a199d6544b02302bfe3ecd253098821170646a509d2e3dc6cf4e43289b
+R 9c81bebcce6b241de62647348738dba9
+U dan
+Z 89c634c544406d82b31241f2cf8998e7
