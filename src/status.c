@@ -282,6 +282,7 @@ int sqlite3_db_status(
         Schema *pSchema = db->aDb[i].pSchema;
         if( ALWAYS(pSchema!=0) ){
           HashElem *p;
+          int nStart = nByte;
 
           nByte += sqlite3GlobalConfig.m.xRoundup(sizeof(HashElem)) * (
               pSchema->tblHash.count 
@@ -299,6 +300,9 @@ int sqlite3_db_status(
           }
           for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
             sqlite3DeleteTable(db, (Table *)sqliteHashData(p));
+          }
+          if( pSchema->nRef>1 ){
+            nByte -= (nByte - nStart)*(pSchema->nRef-1)/pSchema->nRef;
           }
         }
       }

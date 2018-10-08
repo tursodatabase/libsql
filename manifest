@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\svirtual\stables\svia\sreuse-schema\sconnections.
-D 2018-10-08T20:57:35.321
+C Add\sthe\sability\sto\sopen\sa\sdatabase\sconnection\sin\s-reuseschema\smode\sin\sthe\sCLI.\nAdjust\smemory\sallocation\saccounting\sso\sthat\sa\sshared\sschema\sis\sallocated\nacross\seach\sdatabase\ssharing\sit.
+D 2018-10-08T23:29:05.205
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -504,13 +504,13 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 33aacf1c17c64a00788c779b23d0875dd0d90eb4c08f867ebc31139ef3a67c95
-F src/shell.c.in 09342e09c9518e2d927566069272a7a47799e3ad4125562bbfc1240478c4a5a2
+F src/shell.c.in f6c19d2397b410982ef228cbf79f55d489642a445ebe84cef2635f90941f4a4c
 F src/sqlite.h.in ced5a50faab700b4a60dd029a240496fa42e0225c9d5d381908c601d15fb27ee
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
 F src/sqliteInt.h cc1062f66d3827bf2ff53db306d1ddabc1f00be4e73adc9cc042678387d2def5
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
-F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
+F src/status.c b651e68af3cb859e4083c79e0e7177e2aeb35ed23e3892d7bbe5b732d38bf2b9
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c b15e46bdc1b14e994a358d51ce0bf8b7d7d4615cda96634ca0498ee39bc83b9c
 F src/test1.c 9bb042e4afedc570f78638993fc9cc1760d897d3b27dd72c20618044b2a8fa5e
@@ -1772,7 +1772,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c8255a199d6544b02302bfe3ecd253098821170646a509d2e3dc6cf4e43289b
-R 9c81bebcce6b241de62647348738dba9
-U dan
-Z 89c634c544406d82b31241f2cf8998e7
+P e5897dafda2b003c34eeecb44e091e2ac0d8589c9db728a0b02fb56966cfc9b7
+R a7b4369420c6d08b8356342354094b4d
+U drh
+Z c12d59eb1ed3b5e7cdb51c36ed6b8c1b
