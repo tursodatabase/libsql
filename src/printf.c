@@ -686,7 +686,12 @@ void sqlite3_str_vappendf(
         if( bufpt==0 ){
           bufpt = "";
         }else if( xtype==etDYNSTRING ){
-          if( pAccum->nChar==0 && pAccum->mxAlloc && width==0 && precision<0 ){
+          if( pAccum->nChar==0
+           && pAccum->mxAlloc
+           && width==0
+           && precision<0
+           && pAccum->accError==0
+          ){
             /* Special optimization for sqlite3_mprintf("%z..."):
             ** Extend an existing memory allocation rather than creating
             ** a new one. */

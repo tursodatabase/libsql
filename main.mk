@@ -75,7 +75,7 @@ LIBOBJ+= vdbe.o parse.o \
          update.o upsert.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o wherecode.o whereexpr.o \
-         utf.o vtab.o
+         utf.o vtab.o window.o
 
 LIBOBJ += sqlite3session.o
 
@@ -182,7 +182,8 @@ SRC = \
   $(TOP)/src/where.c \
   $(TOP)/src/wherecode.c \
   $(TOP)/src/whereexpr.c \
-  $(TOP)/src/whereInt.h
+  $(TOP)/src/whereInt.h \
+  $(TOP)/src/window.c
 
 # Source code for extensions
 #
@@ -228,7 +229,8 @@ SRC += \
 SRC += \
   $(TOP)/ext/rtree/sqlite3rtree.h \
   $(TOP)/ext/rtree/rtree.h \
-  $(TOP)/ext/rtree/rtree.c
+  $(TOP)/ext/rtree/rtree.c \
+  $(TOP)/ext/rtree/geopoly.c
 SRC += \
   $(TOP)/ext/sqlrr/sqlrr.h \
   $(TOP)/ext/sqlrr/sqlrr.c
@@ -351,6 +353,7 @@ TESTSRC = \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_windirent.c \
+  $(TOP)/src/test_window.c \
   $(TOP)/src/test_wsd.c
 
 # Extensions to be statically loaded.
@@ -462,8 +465,25 @@ HDR = \
 
 # Header files used by extensions
 #
+  $(TOP)/ext/fts1/fts1.h \
+  $(TOP)/ext/fts1/fts1_hash.h \
+  $(TOP)/ext/fts1/fts1_tokenizer.h
+EXTHDR += \
+  $(TOP)/ext/fts2/fts2.h \
+  $(TOP)/ext/fts2/fts2_hash.h \
+  $(TOP)/ext/fts2/fts2_tokenizer.h
+EXTHDR += \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3Int.h \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.h
 EXTHDR += \
   $(TOP)/ext/sqlrr/sqlrr.h
+EXTHDR += \
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/geopoly.c
+EXTHDR += \
+  $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
   $(TOP)/ext/fts5/fts5Int.h  \
   fts5parse.h                \
@@ -983,6 +1003,10 @@ fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
 rollback-test$(EXE):	$(TOP)/tool/rollback-test.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o rollback-test$(EXE) \
 		$(TOP)/tool/rollback-test.c sqlite3.o $(THREADLIB)
+
+atrc$(EXE):	$(TOP)/test/atrc.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o atrc$(EXE) \
+		$(TOP)/test/atrc.c sqlite3.o $(THREADLIB)
 
 LogEst$(EXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(TCC) -o LogEst$(EXE) $(TOP)/tool/logest.c

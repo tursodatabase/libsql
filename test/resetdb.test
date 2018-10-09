@@ -154,5 +154,98 @@ do_test 400 {
 } {0 {1 8192 wal ok}}
 db2 close
 
+# Reset the database yet again. This time immediately after it is closed
+# and reopened. So that the VACUUM is the first statement run.
+#
+db close
+sqlite3 db test.db
+do_test 500 {
+  sqlite3_finalize [
+    sqlite3_prepare db "SELECT 1 FROM sqlite_master LIMIT 1" -1 tail
+  ]
+  sqlite3_db_config db RESET_DB 1
+  db eval VACUUM
+  sqlite3_db_config db RESET_DB 0
+  sqlite3 db2 test.db
+  catchsql {
+     PRAGMA page_count;
+     PRAGMA page_size;
+     PRAGMA journal_mode;
+     PRAGMA quick_check;
+  } db2
+} {0 {1 8192 wal ok}}
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
+do_execsql_test 600 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1), (2), (3), (4);
+} {wal}
+
+do_execsql_test -db db2 610 {
+  SELECT * FROM t1
+} {1 2 3 4}
+
+do_test 620 {
+  set res [list]
+  db2 eval {SELECT a FROM t1} {
+    lappend res $a
+    if {$a==3} {
+      sqlite3_db_config db RESET_DB 1
+      db eval VACUUM
+      sqlite3_db_config db RESET_DB 0
+    }
+  }
+
+  set res
+} {1 2 3 4}
+
+do_execsql_test -db db2 630 {
+  SELECT * FROM sqlite_master
+} {}
+
+#-------------------------------------------------------------------------
+db2 close
+reset_db
+
+do_execsql_test 700 {
+  PRAGMA page_size=512;
+  PRAGMA auto_vacuum = 0;
+  CREATE TABLE t1(a,b,c);
+  CREATE INDEX t1a ON t1(a);
+  CREATE INDEX t1bc ON t1(b,c);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
+    INSERT INTO t1(a,b,c) SELECT x, randomblob(100),randomblob(100) FROM c;
+  PRAGMA page_count;
+  PRAGMA integrity_check;
+} {19 ok}
+
+if {[nonzero_reserved_bytes]} {
+  finish_test
+  return
+}
+
+do_execsql_test 710 {
+  UPDATE sqlite_dbpage SET data=
+    X'53514C69746520666F726D61742033000200030100402020000000000000001300000000000000000000000300000004000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000D00000003017C0001D801AC017C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002E03061715110145696E6465787431626374310443524541544520494E4445582074316263204F4E20743128622C63292A0206171311013F696E64657874316174310343524541544520494E44455820743161204F4E20743128612926010617111101397461626C657431743102435245415445205441424C4520743128612C622C6329' WHERE pgno=1;
+}
+
+do_execsql_test 720 {
+  PRAGMA integrity_check;
+} {ok}
+
+do_test 730 {
+  sqlite3_db_config db RESET_DB 1
+  db eval VACUUM
+  sqlite3_db_config db RESET_DB 0
+} {0}
+
+do_execsql_test 740 {
+  PRAGMA page_count;
+  PRAGMA integrity_check;
+} {1 ok}
 
 finish_test

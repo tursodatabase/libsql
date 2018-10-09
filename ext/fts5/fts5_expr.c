@@ -36,6 +36,7 @@ void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 #include <stdio.h>
 void sqlite3Fts5ParserTrace(FILE*, char*);
 #endif
+int sqlite3Fts5ParserFallback(int);
 
 
 struct Fts5Expr {
@@ -2540,14 +2541,19 @@ static void fts5ExprIsAlnum(
   sqlite3_value **apVal           /* Function arguments */
 ){
   int iCode;
+  u8 aArr[32];
   if( nArg!=1 ){
     sqlite3_result_error(pCtx, 
         "wrong number of arguments to function fts5_isalnum", -1
     );
     return;
   }
+  memset(aArr, 0, sizeof(aArr));
+  sqlite3Fts5UnicodeCatParse("L*", aArr);
+  sqlite3Fts5UnicodeCatParse("N*", aArr);
+  sqlite3Fts5UnicodeCatParse("Co", aArr);
   iCode = sqlite3_value_int(apVal[0]);
-  sqlite3_result_int(pCtx, sqlite3Fts5UnicodeIsalnum(iCode));
+  sqlite3_result_int(pCtx, aArr[sqlite3Fts5UnicodeCategory(iCode)]);
 }
 
 static void fts5ExprFold(
@@ -2591,10 +2597,12 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
 
-  /* Avoid a warning indicating that sqlite3Fts5ParserTrace() is unused */
+  /* Avoid warnings indicating that sqlite3Fts5ParserTrace() and
+  ** sqlite3Fts5ParserFallback() are unused */
 #ifndef NDEBUG
   (void)sqlite3Fts5ParserTrace;
 #endif
+  (void)sqlite3Fts5ParserFallback;
 
   return rc;
 }

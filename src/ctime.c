@@ -30,6 +30,12 @@
 #define CTIMEOPT_VAL_(opt) #opt
 #define CTIMEOPT_VAL(opt) CTIMEOPT_VAL_(opt)
 
+/* Like CTIMEOPT_VAL, but especially for SQLITE_DEFAULT_LOOKASIDE. This
+** option requires a separate macro because legal values contain a single
+** comma. e.g. (-DSQLITE_DEFAULT_LOOKASIDE="100,100") */
+#define CTIMEOPT_VAL2_(opt1,opt2) #opt1 "," #opt2
+#define CTIMEOPT_VAL2(opt) CTIMEOPT_VAL2_(opt)
+
 /*
 ** An array of names of all compile-time options.  This array should 
 ** be sorted A-Z.
@@ -113,7 +119,7 @@ static const char * const sqlite3azCompileOpt[] = {
   "DEFAULT_LOCKING_MODE=" CTIMEOPT_VAL(SQLITE_DEFAULT_LOCKING_MODE),
 #endif
 #ifdef SQLITE_DEFAULT_LOOKASIDE
-  "DEFAULT_LOOKASIDE=" CTIMEOPT_VAL(SQLITE_DEFAULT_LOOKASIDE),
+  "DEFAULT_LOOKASIDE=" CTIMEOPT_VAL2(SQLITE_DEFAULT_LOOKASIDE),
 #endif
 #if SQLITE_DEFAULT_MEMSTATUS
   "DEFAULT_MEMSTATUS",

@@ -148,6 +148,11 @@ struct Keyword {
 #else
 #  define UPSERT     0x00080000
 #endif
+#ifdef SQLITE_OMIT_WINDOWFUNC
+#  define WINDOWFUNC 0
+#else
+#  define WINDOWFUNC 0x00100000
+#endif
 
 /*
 ** These are the keywords
@@ -180,6 +185,7 @@ static Keyword aKeywordTable[] = {
   { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
   { "CREATE",           "TK_CREATE",       ALWAYS                 },
   { "CROSS",            "TK_JOIN_KW",      ALWAYS                 },
+  { "CURRENT",          "TK_CURRENT",      WINDOWFUNC             },
   { "CURRENT_DATE",     "TK_CTIME_KW",     ALWAYS                 },
   { "CURRENT_TIME",     "TK_CTIME_KW",     ALWAYS                 },
   { "CURRENT_TIMESTAMP","TK_CTIME_KW",     ALWAYS                 },
@@ -202,6 +208,8 @@ static Keyword aKeywordTable[] = {
   { "EXISTS",           "TK_EXISTS",       ALWAYS                 },
   { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
   { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
+  { "FILTER",           "TK_FILTER",       WINDOWFUNC             },
+  { "FOLLOWING",        "TK_FOLLOWING",    WINDOWFUNC             },
   { "FOR",              "TK_FOR",          TRIGGER                },
   { "FOREIGN",          "TK_FOREIGN",      FKEY                   },
   { "FROM",             "TK_FROM",         ALWAYS                 },
@@ -241,11 +249,15 @@ static Keyword aKeywordTable[] = {
   { "OR",               "TK_OR",           ALWAYS                 },
   { "ORDER",            "TK_ORDER",        ALWAYS                 },
   { "OUTER",            "TK_JOIN_KW",      ALWAYS                 },
+  { "OVER",             "TK_OVER",         WINDOWFUNC             },
+  { "PARTITION",        "TK_PARTITION",    WINDOWFUNC             },
   { "PLAN",             "TK_PLAN",         EXPLAIN                },
   { "PRAGMA",           "TK_PRAGMA",       PRAGMA                 },
+  { "PRECEDING",        "TK_PRECEDING",    WINDOWFUNC             },
   { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
   { "QUERY",            "TK_QUERY",        EXPLAIN                },
   { "RAISE",            "TK_RAISE",        TRIGGER                },
+  { "RANGE",            "TK_RANGE",        WINDOWFUNC             },
   { "RECURSIVE",        "TK_RECURSIVE",    CTE                    },
   { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
   { "REGEXP",           "TK_LIKE_KW",      ALWAYS                 },
@@ -257,6 +269,7 @@ static Keyword aKeywordTable[] = {
   { "RIGHT",            "TK_JOIN_KW",      ALWAYS                 },
   { "ROLLBACK",         "TK_ROLLBACK",     ALWAYS                 },
   { "ROW",              "TK_ROW",          TRIGGER                },
+  { "ROWS",             "TK_ROWS",         ALWAYS                 },
   { "SAVEPOINT",        "TK_SAVEPOINT",    ALWAYS                 },
   { "SELECT",           "TK_SELECT",       ALWAYS                 },
   { "SET",              "TK_SET",          ALWAYS                 },
@@ -267,6 +280,7 @@ static Keyword aKeywordTable[] = {
   { "TO",               "TK_TO",           ALWAYS                 },
   { "TRANSACTION",      "TK_TRANSACTION",  ALWAYS                 },
   { "TRIGGER",          "TK_TRIGGER",      TRIGGER                },
+  { "UNBOUNDED",        "TK_UNBOUNDED",    WINDOWFUNC             },
   { "UNION",            "TK_UNION",        COMPOUND               },
   { "UNIQUE",           "TK_UNIQUE",       ALWAYS                 },
   { "UPDATE",           "TK_UPDATE",       ALWAYS                 },
@@ -275,6 +289,7 @@ static Keyword aKeywordTable[] = {
   { "VALUES",           "TK_VALUES",       ALWAYS                 },
   { "VIEW",             "TK_VIEW",         VIEW                   },
   { "VIRTUAL",          "TK_VIRTUAL",      VTAB                   },
+  { "WINDOW",           "TK_WINDOW",       WINDOWFUNC             },
   { "WITH",             "TK_WITH",         CTE                    },
   { "WITHOUT",          "TK_WITHOUT",      ALWAYS                 },
   { "WHEN",             "TK_WHEN",         ALWAYS                 },

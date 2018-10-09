@@ -280,7 +280,7 @@ static void fts5CheckTransactionState(Fts5Table *p, int op, int iSavepoint){
     case FTS5_SAVEPOINT:
       assert( p->ts.eState==1 );
       assert( iSavepoint>=0 );
-      assert( iSavepoint>p->ts.iSavepoint );
+      assert( iSavepoint>=p->ts.iSavepoint );
       p->ts.iSavepoint = iSavepoint;
       break;
       
@@ -1205,6 +1205,13 @@ static int fts5FilterMethod(
     assert( nVal==0 && pMatch==0 && bOrderByRank==0 && bDesc==0 );
     assert( pCsr->iLastRowid==LARGEST_INT64 );
     assert( pCsr->iFirstRowid==SMALLEST_INT64 );
+    if( pTab->pSortCsr->bDesc ){
+      pCsr->iLastRowid = pTab->pSortCsr->iFirstRowid;
+      pCsr->iFirstRowid = pTab->pSortCsr->iLastRowid;
+    }else{
+      pCsr->iLastRowid = pTab->pSortCsr->iLastRowid;
+      pCsr->iFirstRowid = pTab->pSortCsr->iFirstRowid;
+    }
     pCsr->ePlan = FTS5_PLAN_SOURCE;
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
