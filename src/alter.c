@@ -169,20 +169,6 @@ void sqlite3AlterRenameTable(
     goto exit_rename_table;
   }
 
-  /* If this is a virtual table, invoke the xRename() function if
-  ** one is defined. The xRename() callback will modify the names
-  ** of any resources used by the v-table implementation (including other
-  ** SQLite tables) that are identified by the name of the virtual table.
-  */
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pVTab ){
-    int i = ++pParse->nMem;
-    sqlite3VdbeLoadString(v, i, zName);
-    sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pVTab, P4_VTAB);
-    sqlite3MayAbort(pParse);
-  }
-#endif
-
   /* figure out how many UTF-8 characters are in zName */
   zTabName = pTab->zName;
   nTabName = sqlite3Utf8CharLen(zTabName, -1);
@@ -239,6 +225,20 @@ void sqlite3AlterRenameTable(
             "WHERE type IN ('view', 'trigger')"
         , zDb, zTabName, zName, zTabName, zDb, zName);
   }
+
+  /* If this is a virtual table, invoke the xRename() function if
+  ** one is defined. The xRename() callback will modify the names
+  ** of any resources used by the v-table implementation (including other
+  ** SQLite tables) that are identified by the name of the virtual table.
+  */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( pVTab ){
+    int i = ++pParse->nMem;
+    sqlite3VdbeLoadString(v, i, zName);
+    sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pVTab, P4_VTAB);
+    sqlite3MayAbort(pParse);
+  }
+#endif
 
   renameReloadSchema(pParse, iDb);
   renameTestSchema(pParse, zDb, iDb==1);
@@ -803,7 +803,7 @@ static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }else if( pExpr->op==TK_COLUMN 
    && pExpr->iColumn==p->iCol 
-   && p->pTab==pExpr->pTab
+   && p->pTab==pExpr->y.pTab
   ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }
@@ -1061,9 +1061,14 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       db->aDb[sqlite3SchemaToIndex(db, pNew->pTabSchema)].zDbSName
   );
   pParse->eTriggerOp = pNew->op;
+  /* ALWAYS() because if the table of the trigger does not exist, the
+  ** error would have been hit before this point */
+  if( ALWAYS(pParse->pTriggerTab) ){
+    rc = sqlite3ViewGetColumnNames(pParse, pParse->pTriggerTab);
+  }
 
   /* Resolve symbols in WHEN clause */
-  if( pNew->pWhen ){
+  if( rc==SQLITE_OK && pNew->pWhen ){
     rc = sqlite3ResolveExprNames(&sNC, pNew->pWhen);
   }
 
@@ -1076,7 +1081,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       Table *pTarget = sqlite3LocateTable(pParse, 0, pStep->zTarget, zDb);
       if( pTarget==0 ){
         rc = SQLITE_ERROR;
-      }else{
+      }else if( SQLITE_OK==(rc = sqlite3ViewGetColumnNames(pParse, pTarget)) ){
         SrcList sSrc;
         memset(&sSrc, 0, sizeof(sSrc));
         sSrc.nSrc = 1;
@@ -1341,8 +1346,8 @@ renameColumnFunc_done:
 */
 static int renameTableExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
-  if( pExpr->op==TK_COLUMN && p->pTab==pExpr->pTab ){
-    renameTokenFind(pWalker->pParse, p, (void*)&pExpr->pTab);
+  if( pExpr->op==TK_COLUMN && p->pTab==pExpr->y.pTab ){
+    renameTokenFind(pWalker->pParse, p, (void*)&pExpr->y.pTab);
   }
   return WRC_Continue;
 }
@@ -1422,17 +1427,20 @@ static void renameTableFunc(
     rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
 
     if( rc==SQLITE_OK ){
+      int isLegacy = (db->flags & SQLITE_LegacyAlter);
       if( sParse.pNewTable ){
         Table *pTab = sParse.pNewTable;
 
         if( pTab->pSelect ){
-          NameContext sNC;
-          memset(&sNC, 0, sizeof(sNC));
-          sNC.pParse = &sParse;
+          if( isLegacy==0 ){
+            NameContext sNC;
+            memset(&sNC, 0, sizeof(sNC));
+            sNC.pParse = &sParse;
 
-          sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
-          if( sParse.nErr ) rc = sParse.rc;
-          sqlite3WalkSelect(&sWalker, pTab->pSelect);
+            sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
+            if( sParse.nErr ) rc = sParse.rc;
+            sqlite3WalkSelect(&sWalker, pTab->pSelect);
+          }
         }else{
           /* Modify any FK definitions to point to the new table. */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -1451,7 +1459,9 @@ static void renameTableFunc(
           ** "CREATE [VIRTUAL] TABLE" bit. */
           if( sqlite3_stricmp(zOld, pTab->zName)==0 ){
             sCtx.pTab = pTab;
-            sqlite3WalkExprList(&sWalker, pTab->pCheck);
+            if( isLegacy==0 ){
+              sqlite3WalkExprList(&sWalker, pTab->pCheck);
+            }
             renameTokenFind(&sParse, &sCtx, pTab->zName);
           }
         }
@@ -1459,7 +1469,9 @@ static void renameTableFunc(
 
       else if( sParse.pNewIndex ){
         renameTokenFind(&sParse, &sCtx, sParse.pNewIndex->zName);
-        sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
+        if( isLegacy==0 ){
+          sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
+        }
       }
 
 #ifndef SQLITE_OMIT_TRIGGER
@@ -1472,12 +1484,14 @@ static void renameTableFunc(
           renameTokenFind(&sParse, &sCtx, sParse.pNewTrigger->table);
         }
 
-        rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
-        if( rc==SQLITE_OK ){
-          renameWalkTrigger(&sWalker, pTrigger);
-          for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
-            if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
-              renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+        if( isLegacy==0 ){
+          rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+          if( rc==SQLITE_OK ){
+            renameWalkTrigger(&sWalker, pTrigger);
+            for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
+              if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
+                renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+              }
             }
           }
         }
@@ -1535,6 +1549,7 @@ static void renameTableTest(
   char const *zDb = (const char*)sqlite3_value_text(argv[0]);
   char const *zInput = (const char*)sqlite3_value_text(argv[1]);
   int bTemp = sqlite3_value_int(argv[4]);
+  int isLegacy = (db->flags & SQLITE_LegacyAlter);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;
@@ -1547,7 +1562,7 @@ static void renameTableTest(
     Parse sParse;
     rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
     if( rc==SQLITE_OK ){
-      if( sParse.pNewTable && sParse.pNewTable->pSelect ){
+      if( isLegacy==0 && sParse.pNewTable && sParse.pNewTable->pSelect ){
         NameContext sNC;
         memset(&sNC, 0, sizeof(sNC));
         sNC.pParse = &sParse;
@@ -1556,7 +1571,9 @@ static void renameTableTest(
       }
 
       else if( sParse.pNewTrigger ){
-        rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+        if( isLegacy==0 ){
+          rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+        }
         if( rc==SQLITE_OK ){
           int i1 = sqlite3SchemaToIndex(db, sParse.pNewTrigger->pTabSchema);
           int i2 = sqlite3FindDbName(db, zDb);

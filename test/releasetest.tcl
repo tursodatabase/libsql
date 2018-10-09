@@ -79,6 +79,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_UNLOCK_NOTIFY
     -DSQLITE_THREADSAFE
     -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+    -DSQLITE_USER_AUTHENTICATION=1
   }
   "Secure-Delete" {
     -O2

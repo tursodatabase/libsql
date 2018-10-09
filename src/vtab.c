@@ -328,7 +328,6 @@ void sqlite3VtabBeginParse(
   Token *pModuleName,   /* Name of the module for the virtual table */
   int ifNotExists       /* No error if the table already exists */
 ){
-  int iDb;              /* The database the table is being created in */
   Table *pTable;        /* The new virtual table */
   sqlite3 *db;          /* Database connection */
 
@@ -338,8 +337,6 @@ void sqlite3VtabBeginParse(
   assert( 0==pTable->pIndex );
 
   db = pParse->db;
-  iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
-  assert( iDb>=0 );
 
   assert( pTable->nModuleArg==0 );
   addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
@@ -359,6 +356,8 @@ void sqlite3VtabBeginParse(
   ** The second call, to obtain permission to create the table, is made now.
   */
   if( pTable->azModuleArg ){
+    int iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
+    assert( iDb>=0 ); /* The database the table is being created in */
     sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
             pTable->azModuleArg[0], pParse->db->aDb[iDb].zDbSName);
   }
@@ -1053,7 +1052,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   /* Check to see the left operand is a column in a virtual table */
   if( NEVER(pExpr==0) ) return pDef;
   if( pExpr->op!=TK_COLUMN ) return pDef;
-  pTab = pExpr->pTab;
+  pTab = pExpr->y.pTab;
   if( pTab==0 ) return pDef;
   if( !IsVirtual(pTab) ) return pDef;
   pVtab = sqlite3GetVTable(db, pTab)->pVtab;

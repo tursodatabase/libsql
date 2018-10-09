@@ -586,4 +586,17 @@ SELECT geopoly_svg(poly,'style="fill:none;stroke:black;stroke-width:2"')
 ROLLBACK;
 .print '</svg>'
 
+.print '<h1>Regular Polygons</h1>'
+.print '<svg width="1000" height="200" style="border:1px solid black">'
+SELECT geopoly_svg(geopoly_regular(100,100,40,3),'style="fill:none;stroke:red;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(200,100,40,4),'style="fill:none;stroke:orange;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(300,100,40,5),'style="fill:none;stroke:green;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(400,100,40,6),'style="fill:none;stroke:blue;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(500,100,40,7),'style="fill:none;stroke:purple;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(600,100,40,8),'style="fill:none;stroke:red;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(700,100,40,10),'style="fill:none;stroke:orange;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(800,100,40,20),'style="fill:none;stroke:green;stroke-width:1"');
+SELECT geopoly_svg(geopoly_regular(900,100,40,30),'style="fill:none;stroke:blue;stroke-width:1"');
+.print '</svg>'
+
 .print '</html>'

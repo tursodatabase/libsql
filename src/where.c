@@ -2126,6 +2126,14 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   sqlite3 *db = pWInfo->pParse->db;
   int rc;
 
+  /* Stop the search once we hit the query planner search limit */
+  if( pBuilder->iPlanLimit==0 ){
+    WHERETRACE(0xffffffff,("=== query planner search limit reached ===\n"));
+    if( pBuilder->pOrSet ) pBuilder->pOrSet->n = 0;
+    return SQLITE_DONE;
+  }
+  pBuilder->iPlanLimit--;
+
   /* If pBuilder->pOrSet is defined, then only keep track of the costs
   ** and prereqs.
   */
@@ -3532,9 +3540,11 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
+  pBuilder->iPlanLimit = SQLITE_QUERY_PLANNER_LIMIT;
   for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
+    pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
     if( ((pItem->fg.jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
@@ -3560,7 +3570,15 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       rc = whereLoopAddOr(pBuilder, mPrereq, mUnusable);
     }
     mPrior |= pNew->maskSelf;
-    if( rc || db->mallocFailed ) break;
+    if( rc || db->mallocFailed ){
+      if( rc==SQLITE_DONE ){
+        /* We hit the query planner search limit set by iPlanLimit */
+        sqlite3_log(SQLITE_WARNING, "abbreviated query algorithm search");
+        rc = SQLITE_OK;
+      }else{
+        break;
+      }
+    }
   }
 
   whereLoopClear(db, pNew);

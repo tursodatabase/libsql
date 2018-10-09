@@ -72,4 +72,30 @@ do_faultsim_test 3 -prep {
 } -test {
   faultsim_test_result {0 {}}
 }
+
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE rr(a, b);
+  CREATE VIEW vv AS SELECT * FROM rr;
+
+  CREATE TRIGGER vv1 INSTEAD OF INSERT ON vv BEGIN
+    SELECT 1, 2, 3;
+  END;
+  CREATE TRIGGER tr1 AFTER INSERT ON rr BEGIN
+    INSERT INTO vv VALUES(new.a, new.b);
+  END;
+} {}
+
+faultsim_save_and_close
+do_faultsim_test 4 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM sqlite_master }
+} -body {
+  execsql {
+    ALTER TABLE rr RENAME a TO c;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
 finish_test

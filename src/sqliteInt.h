@@ -1536,6 +1536,7 @@ struct sqlite3 {
 #define SQLITE_EnableQPSG     0x00800000  /* Query Planner Stability Guarantee*/
 #define SQLITE_TriggerEQP     0x01000000  /* Show trigger EXPLAIN QUERY PLAN */
 #define SQLITE_ResetDatabase  0x02000000  /* Reset the database */
+#define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -2459,11 +2460,11 @@ struct Expr {
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
-  Table *pTab;           /* Table for TK_COLUMN expressions.  Can be NULL
-                         ** for a column of an index on an expression */
-#ifndef SQLITE_OMIT_WINDOWFUNC
-  Window *pWin;          /* Window definition for window functions */
-#endif
+  union {
+    Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
+                           ** for a column of an index on an expression */
+    Window *pWin;          /* TK_FUNCTION: Window definition for the func */
+  } y;
 };
 
 /*
@@ -2493,6 +2494,7 @@ struct Expr {
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
 #define EP_Alias     0x400000 /* Is an alias for a result set column */
 #define EP_Leaf      0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
+#define EP_WinFunc  0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -3178,6 +3180,7 @@ struct AuthContext {
 */
 #define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
                                      /* Also used in P2 (not P5) of OP_Delete */
+#define OPFLAG_NOCHNG        0x01    /* OP_VColumn nochange for UPDATE */
 #define OPFLAG_EPHEM         0x01    /* OP_Column: Ephemeral output is ok */
 #define OPFLAG_LASTROWID     0x20    /* Set to update db->lastRowid */
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
@@ -4002,6 +4005,7 @@ void sqlite3GenerateRowDelete(
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*, int);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
+int sqlite3ExprReferencesUpdatedColumn(Expr*,int*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
                                      u8,u8,int,int*,int*,Upsert*);
 #ifdef SQLITE_ENABLE_NULL_TRIM

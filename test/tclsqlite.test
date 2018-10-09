@@ -17,6 +17,8 @@
 #
 # $Id: tclsqlite.test,v 1.73 2009/03/16 13:19:36 danielk1977 Exp $
 
+catch {sqlite3}
+
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -28,6 +30,11 @@ if {[sqlite3 -has-codec]} {
 }
 do_test tcl-1.1 {
   set v [catch {sqlite3 -bogus} msg]
+  regsub {really_sqlite3} $msg {sqlite3} msg
+  lappend v $msg
+} [list 1 "wrong # args: should be \"$r\""]
+do_test tcl-1.1.1 {
+  set v [catch {sqlite3} msg]
   regsub {really_sqlite3} $msg {sqlite3} msg
   lappend v $msg
 } [list 1 "wrong # args: should be \"$r\""]

@@ -151,6 +151,7 @@ void sqlite3AuthRead(
   int iCol;             /* Index of column in table */
 
   assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
+  assert( !IN_RENAME_OBJECT || db->xAuth==0 );
   if( db->xAuth==0 ) return;
   iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
@@ -207,6 +208,7 @@ int sqlite3AuthCheck(
   /* Don't do any authorization checks if the database is initialising
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
+  assert( !IN_RENAME_OBJECT || db->xAuth==0 );
   if( db->init.busy || IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }

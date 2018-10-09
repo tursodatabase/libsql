@@ -80,6 +80,57 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
 }
 
 /*
+** Check to see if column iCol of index pIdx references any of the
+** columns defined by aXRef and chngRowid.  Return true if it does
+** and false if not.  This is an optimization.  False-positives are a
+** performance degradation, but false-negatives can result in a corrupt
+** index and incorrect answers.
+**
+** aXRef[j] will be non-negative if column j of the original table is
+** being updated.  chngRowid will be true if the rowid of the table is
+** being updated.
+*/
+static int indexColumnIsBeingUpdated(
+  Index *pIdx,      /* The index to check */
+  int iCol,         /* Which column of the index to check */
+  int *aXRef,       /* aXRef[j]>=0 if column j is being updated */
+  int chngRowid     /* true if the rowid is being updated */
+){
+  i16 iIdxCol = pIdx->aiColumn[iCol];
+  assert( iIdxCol!=XN_ROWID ); /* Cannot index rowid */
+  if( iIdxCol>=0 ){
+    return aXRef[iIdxCol]>=0;
+  }
+  assert( iIdxCol==XN_EXPR );
+  assert( pIdx->aColExpr!=0 );
+  assert( pIdx->aColExpr->a[iCol].pExpr!=0 );
+  return sqlite3ExprReferencesUpdatedColumn(pIdx->aColExpr->a[iCol].pExpr,
+                                            aXRef,chngRowid);
+}
+
+/*
+** Check to see if index pIdx is a partial index whose conditional
+** expression might change values due to an UPDATE.  Return true if
+** the index is subject to change and false if the index is guaranteed
+** to be unchanged.  This is an optimization.  False-positives are a
+** performance degradation, but false-negatives can result in a corrupt
+** index and incorrect answers.
+**
+** aXRef[j] will be non-negative if column j of the original table is
+** being updated.  chngRowid will be true if the rowid of the table is
+** being updated.
+*/
+static int indexWhereClauseMightChange(
+  Index *pIdx,      /* The index to check */
+  int *aXRef,       /* aXRef[j]>=0 if column j is being updated */
+  int chngRowid     /* true if the rowid is being updated */
+){
+  if( pIdx->pPartIdxWhere==0 ) return 0;
+  return sqlite3ExprReferencesUpdatedColumn(pIdx->pPartIdxWhere,
+                                            aXRef, chngRowid);
+}
+
+/*
 ** Process an UPDATE statement.
 **
 **   UPDATE OR IGNORE table_wxyz SET a=b, c=d WHERE e<5 AND f NOT NULL;
@@ -302,19 +353,18 @@ void sqlite3Update(
   /* There is one entry in the aRegIdx[] array for each index on the table
   ** being updated.  Fill in aRegIdx[] with a register number that will hold
   ** the key for accessing each index.
-  **
-  ** FIXME:  Be smarter about omitting indexes that use expressions.
   */
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
-    if( chngKey || hasFK>1 || pIdx->pPartIdxWhere || pIdx==pPk ){
+    if( chngKey || hasFK>1 || pIdx==pPk
+     || indexWhereClauseMightChange(pIdx,aXRef,chngRowid)
+    ){
       reg = ++pParse->nMem;
       pParse->nMem += pIdx->nColumn;
     }else{
       reg = 0;
       for(i=0; i<pIdx->nKeyCol; i++){
-        i16 iIdxCol = pIdx->aiColumn[i];
-        if( iIdxCol<0 || aXRef[iIdxCol]>=0 ){
+        if( indexColumnIsBeingUpdated(pIdx, i, aXRef, chngRowid) ){
           reg = ++pParse->nMem;
           pParse->nMem += pIdx->nColumn;
           if( (onError==OE_Replace)
@@ -863,7 +913,7 @@ static void updateVirtualTable(
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
-      sqlite3VdbeChangeP5(v, 1); /* Enable sqlite3_vtab_nochange() */
+      sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG);/* Enable sqlite3_vtab_nochange() */
     }
   }
   if( HasRowid(pTab) ){

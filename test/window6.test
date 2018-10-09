@@ -147,17 +147,17 @@ do_execsql_test 5.5 {
 #-------------------------------------------------------------------------
 #
 
-do_execsql_test 6.0 {
-  SELECT LIKE('!', '', '!') x WHERE x;
-} {}
-
-do_execsql_test 6.1 {
-  SELECT LIKE("!","","!")""WHeRE"";
-} {}
-
-do_catchsql_test 6.2 {
-  SELECT LIKE("!","","!")""window"";
-} {1 {near "window": syntax error}}
+ifcapable !icu {
+  do_execsql_test 6.0 {
+    SELECT LIKE('!', '', '!') x WHERE x;
+  } {}
+  do_execsql_test 6.1 {
+    SELECT LIKE("!","","!")""WHeRE"";
+  } {}
+  do_catchsql_test 6.2 {
+    SELECT LIKE("!","","!")""window"";
+  } {1 {near "window": syntax error}}
+}
 
 reset_db 
 do_execsql_test 7.0 {
@@ -166,9 +166,11 @@ do_execsql_test 7.0 {
   INSERT INTO t1 VALUES('');
 }
 
-do_execsql_test 7.1 {
-  SELECT count(*) FROM t1 WHERE x LIKE '!' ESCAPE '!';
-} {0}
+ifcapable !icu {
+  do_execsql_test 7.1 {
+    SELECT count(*) FROM t1 WHERE x LIKE '!' ESCAPE '!';
+  } {0}
+}
 
 #-------------------------------------------------------------------------
 #
@@ -336,4 +338,3 @@ do_execsql_test 11.2 {
 }
 
 finish_test
-

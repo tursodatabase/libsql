@@ -7229,6 +7229,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_explain_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7253,6 +7254,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "eval",                  sqlite3_eval_init                 },
+    { "explain",               sqlite3_explain_init              },
     { "fileio",                sqlite3_fileio_init               },
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },

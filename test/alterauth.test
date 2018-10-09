@@ -24,7 +24,7 @@ set testprefix alterauth
 set ::auth [list]
 proc xAuth {type args} {
   if {$type == "SQLITE_ALTER_TABLE"} {
-    lappend ::auth [concat $type $args]
+    lappend ::auth [concat $type [lrange $args 0 3]]
   }
   return SQLITE_OK
 }

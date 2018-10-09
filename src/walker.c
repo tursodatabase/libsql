@@ -55,8 +55,8 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
         if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      if( !ExprHasProperty(pExpr, EP_Reduced) && pExpr->pWin ){
-        Window *pWin = pExpr->pWin;
+      if( ExprHasProperty(pExpr, EP_WinFunc) ){
+        Window *pWin = pExpr->y.pWin;
         if( sqlite3WalkExprList(pWalker, pWin->pPartition) ) return WRC_Abort;
         if( sqlite3WalkExprList(pWalker, pWin->pOrderBy) ) return WRC_Abort;
         if( sqlite3WalkExpr(pWalker, pWin->pFilter) ) return WRC_Abort;
