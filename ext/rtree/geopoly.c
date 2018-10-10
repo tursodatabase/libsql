@@ -542,6 +542,36 @@ static void geopolyCcwFunc(
   }            
 }
 
+/*
+** Implementation of the geopoly_reverse(X) function.
+**
+** Reverse the order of the vertexes in polygon X.  This can be used
+** to convert an historical polygon that uses a clockwise rotation into
+** a well-formed GeoJSON polygon that uses counter-clockwise rotation.
+*/
+static void geopolyReverseFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  if( p ){
+    int ii, jj;
+    for(ii=2, jj=p->nVertex*2 - 4; ii<jj; ii+=2, jj-=2){
+      GeoCoord t = p->a[ii];
+      p->a[ii] = p->a[jj];
+      p->a[jj] = t;
+      t = p->a[ii+1];
+      p->a[ii+1] = p->a[jj+1];
+      p->a[jj+1] = t;
+
+    }
+    sqlite3_result_blob(context, p->hdr, 
+       4+8*p->nVertex, SQLITE_TRANSIENT);
+    sqlite3_free(p);
+  }            
+}
+
 #define GEOPOLY_PI 3.1415926535897932385
 
 /* Fast approximation for cosine(X) for X between -0.5*pi and 2*pi

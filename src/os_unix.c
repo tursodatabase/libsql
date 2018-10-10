@@ -5299,7 +5299,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       /* On MacOS and iOS, avoid even trying to open a read-only SHM file
       ** for writing, because doing so generates scary log messages */
       if( osAccess(zShm, R_OK|W_OK)!=0 && (errno==EPERM || errno==EACCES) ){
-        pShmNode->h = -1;
+        pShmNode->hShm = -1;
       }else
 #endif
       if( 0==sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
