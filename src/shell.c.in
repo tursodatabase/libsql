@@ -3506,7 +3506,8 @@ static const char *(azHelp[]) = {
 ** Return the number of matches.
 */
 static int showHelp(FILE *out, const char *zPattern){
-  int i, j;
+  int i = 0;
+  int j = 0;
   int n = 0;
   char *zPat;
   if( zPattern==0
@@ -6169,7 +6170,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
     if( nArg>=2 ){
-      int n = showHelp(p->out, azArg[1]);
+      n = showHelp(p->out, azArg[1]);
       if( n==0 ){
         utf8_printf(p->out, "Nothing matches '%s'\n", azArg[1]);
       }
