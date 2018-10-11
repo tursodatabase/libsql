@@ -2118,12 +2118,24 @@ void sqlite3Pragma(
 #endif
 
 #ifdef SQLITE_HAS_CODEC
+  /* Pragma        iArg
+  ** ----------   ------
+  **  key           0
+  **  rekey         1
+  **  hexkey        2
+  **  hexrekey      3
+  **  textkey       4
+  **  textrekey     5
+  */
   case PragTyp_KEY: {
-    if( zRight ) sqlite3_key_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
-    break;
-  }
-  case PragTyp_REKEY: {
-    if( zRight ) sqlite3_rekey_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
+    if( zRight ){
+      int n = pPragma->iArg<4 ? sqlite3Strlen30(zRight) : -1;
+      if( (pPragma->iArg & 1)==0 ){
+        sqlite3_key_v2(db, zDb, zRight, n);
+      }else{
+        sqlite3_rekey_v2(db, zDb, zRight, n);
+      }
+    }
     break;
   }
   case PragTyp_HEXKEY: {
@@ -2135,7 +2147,7 @@ void sqlite3Pragma(
         iByte = (iByte<<4) + sqlite3HexToInt(zRight[i]);
         if( (i&1)!=0 ) zKey[i/2] = iByte;
       }
-      if( (zLeft[3] & 0xf)==0xb ){
+      if( (pPragma->iArg & 1)==0 ){
         sqlite3_key_v2(db, zDb, zKey, i/2);
       }else{
         sqlite3_rekey_v2(db, zDb, zKey, i/2);
