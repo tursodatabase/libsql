@@ -3592,7 +3592,7 @@ static char *readFile(const char *zName, int *pnByte){
   nIn = ftell(in);
   rewind(in);
   pBuf = sqlite3_malloc64( nIn+1 );
-  if( pBuf==0 ) return 0;
+  if( pBuf==0 ){ fclose(in); return 0; }
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
@@ -4976,6 +4976,7 @@ static void shellPreparePrintf(
     char *z;
     va_start(ap, zFmt);
     z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
     if( z==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
