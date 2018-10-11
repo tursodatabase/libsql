@@ -466,6 +466,7 @@ HDR = \
 
 # Header files used by extensions
 #
+EXTHDR += \
   $(TOP)/ext/fts1/fts1.h \
   $(TOP)/ext/fts1/fts1_hash.h \
   $(TOP)/ext/fts1/fts1_tokenizer.h
