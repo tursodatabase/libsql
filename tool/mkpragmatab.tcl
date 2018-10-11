@@ -377,12 +377,12 @@ set pragma_def {
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexkey
-  TYPE: KEY
+  TYPE: HEXKEY
   ARG:  2
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexrekey
-  TYPE: KEY
+  TYPE: HEXKEY
   ARG:  3
   IF:   defined(SQLITE_HAS_CODEC)
 

@@ -2135,6 +2135,7 @@ void sqlite3Pragma(
       }else{
         sqlite3_rekey_v2(db, zDb, zRight, n);
       }
+    }
     break;
   }
   case PragTyp_HEXKEY: {
