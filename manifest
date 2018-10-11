@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sallow\sthe\sSQLITE_HISTORY\senvironment\svariable,\sif\sit\sexists,\nto\sspecify\san\salternative\sfile\sin\swhich\sto\sstore\sthe\sshell\sedit\shistory.
-D 2018-10-10T18:56:40.387
+C In\sthe\sunix\sVFS,\sfix\sthe\sheap\sshm\sallocator\s(used\sfor\sunix-excl)\s\nso\sthat\sit\sworks\seven\son\ssystems\swhere\sthe\spage\ssize\sis\slarger\sthan\s32KB.
+D 2018-10-11T02:39:11.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -487,7 +487,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c d483d738183c822cc96ec5539424eee5b9847c882dee57f93b880aaf46a7af19
+F src/os_unix.c d4483c1a5462c9f03a4d62655cb208bc6434e549d614b132f652a747bcac9d32
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
@@ -1588,7 +1588,7 @@ F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
 F test/wal6.test b602704e4b066199bc89d91ca9000f335dcf4572
-F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
+F test/wal64k.test 2a525c0f45d709bae3765c71045ccec5df7d100ccbd3a7860fdba46c9addb965
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test d9df3fba4caad5854ed69ed673c68482514203c8
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
@@ -1771,7 +1771,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce6e80b1303ed161bec2c63735cd2e2bea7b4e9b4ff780d214d408b1a30d50da
-R 46756433429fb414f7e8a79829036149
+P 696e82f7c82d1720756078e73f3b15b4cafc202ec290e66f9095a3246c65a3cb
+R 3dab1e5dfa96bd90e2f41942ffa87100
 U drh
-Z 26f7c5a190e4171df3337800973b1cb0
+Z eeb432e953b5483573f56669790dd03f
