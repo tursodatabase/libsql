@@ -367,16 +367,33 @@ set pragma_def {
   IF:   defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 
   NAME: key
+  TYPE: KEY
+  ARG:  0
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: rekey
+  TYPE: KEY
+  ARG:  1
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexkey
+  TYPE: KEY
+  ARG:  2
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexrekey
-  TYPE: HEXKEY
+  TYPE: KEY
+  ARG:  3
+  IF:   defined(SQLITE_HAS_CODEC)
+
+  NAME: textkey
+  TYPE: KEY
+  ARG:  4
+  IF:   defined(SQLITE_HAS_CODEC)
+
+  NAME: textrekey
+  TYPE: KEY
+  ARG:  5
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: activate_extensions
