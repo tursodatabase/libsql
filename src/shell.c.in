@@ -3592,7 +3592,7 @@ static char *readFile(const char *zName, int *pnByte){
   nIn = ftell(in);
   rewind(in);
   pBuf = sqlite3_malloc64( nIn+1 );
-  if( pBuf==0 ) return 0;
+  if( pBuf==0 ){ fclose(in); return 0; }
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
@@ -4976,6 +4976,7 @@ static void shellPreparePrintf(
     char *z;
     va_start(ap, zFmt);
     z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
     if( z==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
@@ -8858,7 +8859,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     */
     if( stdin_is_interactive ){
       char *zHome;
-      char *zHistory = 0;
+      char *zHistory;
       int nHistory;
       printf(
         "SQLite version %s %.19s\n" /*extra-version-info*/
@@ -8871,8 +8872,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
-      zHome = find_home_dir(0);
-      if( zHome ){
+      zHistory = getenv("SQLITE_HISTORY");
+      if( zHistory ){
+        zHistory = strdup(zHistory);
+      }else if( (zHome = find_home_dir(0))!=0 ){
         nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);

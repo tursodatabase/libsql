@@ -5158,7 +5158,12 @@ static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
       rc = SQLITE_READONLY_CANTINIT;
     }else{
       rc = unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1);
-      if( rc==SQLITE_OK && robust_ftruncate(pShmNode->hShm, 0) ){
+      /* The first connection to attach must truncate the -shm file.  We
+      ** truncate to 3 bytes (an arbitrary small number, less than the
+      ** -shm header size) rather than 0 as a system debugging aid, to
+      ** help detect if a -shm file truncation is legitimate or is the work
+      ** or a rogue process. */
+      if( rc==SQLITE_OK && robust_ftruncate(pShmNode->hShm, 3) ){
         rc = unixLogError(SQLITE_IOERR_SHMOPEN,"ftruncate",pShmNode->zFilename);
       }
     }
@@ -5483,12 +5488,12 @@ static int unixShmMap(
           goto shmpage_out;
         }
       }else{
-        pMem = sqlite3_malloc64(szRegion);
+        pMem = sqlite3_malloc64(nMap);
         if( pMem==0 ){
           rc = SQLITE_NOMEM_BKPT;
           goto shmpage_out;
         }
-        memset(pMem, 0, szRegion);
+        memset(pMem, 0, nMap);
       }
 
       for(i=0; i<nShmPerMap; i++){
