@@ -1,5 +1,5 @@
-C On\sthe\sfirst\sconnection\sto\sa\sWAL-mode\sdatabase\sthat\swas\snot\scleanly\sshut\sdown\nand\scontains\sa\sleft-over\s-shm\sfile,\struncate\sthe\s-shm\sfile\sto\s3\sbytes\sinstead\nof\sto\s0\sbytes.\sAvoiding\sa\struncation\sto\s0\smeans\sthat\ssystem\smonitoring\stools\ncan\sbetter\sdetect\sif\sa\sprocess\sillegitimately\stries\sto\struncate\sa\s-shm\sfile.\nSuch\sa\srogue\sprocess\smight\sthink\sit\sis\sbeing\shelpful\sby\scleaning\sup\sold\sfiles,\nbut\sthere\sis\sa\srace\scondition\sthat\scan\scause\sdamage\sto\sthe\sdatabase.
-D 2018-10-11T13:51:48.266
+C Always\sreset\sthe\spager\sbefore\schanging\sthe\scodec.
+D 2018-10-11T16:38:56.549
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -490,7 +490,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f6e91b8fd82af7afbfd073c4974ad6cdb8e62d9f65ceddb45167835a0567fdc0
 F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
+F src/pager.c f803ffcd8440b5249549ea103158a1c659bf060961b2389f9fede66a3a352d0b
 F src/pager.h ecc554a55bc55d1c4ba5e17137b72e238e00bd81e72ff2662d8b9c8c10ae3963
 F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
 F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
@@ -1771,7 +1771,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec36d15a9e349f4295a9e2215dea0a18e9276e0e4ce2d05021e6b467ab7763bb
-R dd28e1032e7501a10c527d67fc7e62ed
+P 90cf32cde072a305f30c75a71665d1f9e23e805c0a49f5306f015c056dd70f0c
+R a9a8bd986a1a8ae15295689f4551498f
 U drh
-Z de92fbcb4550e9f483f9e1ba42f7c62c
+Z 153df3ec174a478a1e4c4ee9d2527b35

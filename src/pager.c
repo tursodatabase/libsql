@@ -7021,6 +7021,7 @@ void sqlite3PagerSetCodec(
   void (*xCodecFree)(void*),
   void *pCodec
 ){
+  pager_reset(pPager);
   if( pPager->xCodecFree ) pPager->xCodecFree(pPager->pCodec);
   pPager->xCodec = pPager->memDb ? 0 : xCodec;
   pPager->xCodecSizeChng = xCodecSizeChng;
