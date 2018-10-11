@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk.
-D 2018-10-11T13:57:56.962
+C Remove\ssurplus\scode\sin\sgeopoly.c\sthat\sseems\sto\shave\scome\sfrom\sa\sbad\smerge.
+D 2018-10-11T14:07:38.803
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 001aa40c74053940551df31971fc3ae9873cf1df2015d118815d0ea7cc39baf0
@@ -361,7 +361,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test 6945d0ffc0c1dc993b2ce88036b26e0f5d6fcc65da70fc9df27c2647bb358b0f
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c 08910e5ce83fbaeb9cc74746ad65ec7479797768fc63984ac26f74b28daf5ddc
+F ext/rtree/geopoly.c 2464b3325fcc2878ed08458efeb995f830f4eef28bbf3da9757c4bd95e6f9549
 F ext/rtree/rtree.c b697b3824d5aa2c90da01c8166c8b38cd84cfc3d5960956ca3f5fb880fb0806c
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a1d937d66851ae5f781371def6bedccf90a726e588ab811913a9dca170bc409 90cf32cde072a305f30c75a71665d1f9e23e805c0a49f5306f015c056dd70f0c
-R aa3aadabe529e660b0736d1cfeb49db8
+P 9e10d88bcb06d561fac085e9a881a55f7c3c56c0b483f3b4027667c9264d85e9
+R 0ec2bad5f8d8c69bd71577140f4c83f4
 U drh
-Z 268a155d8dfedd71442da46c208db520
+Z a5eed26787a8ae064e47e769b57c5152
