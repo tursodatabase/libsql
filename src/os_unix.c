@@ -5728,18 +5728,18 @@ static int unixInvalidateSupportFiles(unixFile *pFile, int skipWAL) {
         unixShmNode *pShmNode = pFile->pInode->pShmNode;
         if( pShmNode && !pShmNode->isReadonly ){
           struct stat sStat;
-          sqlite3_mutex_enter(pShmNode->mutex);
+          sqlite3_mutex_enter(pShmNode->pShmMutex);
           
-          if( pShmNode->h>=0 && !osFstat(pShmNode->h, &sStat) ){
+          if( pShmNode->hShm>=0 && !osFstat(pShmNode->hShm, &sStat) ){
             unsigned long size = (sStat.st_size<4) ? sStat.st_size : 4;
             if( size>0 ){
               bzero(pShmNode->apRegion[0], size);
-              sqlite3_mutex_leave(pShmNode->mutex);
+              sqlite3_mutex_leave(pShmNode->pShmMutex);
               unixLeaveMutex();
               continue;
             }
           }
-          sqlite3_mutex_leave(pShmNode->mutex);
+          sqlite3_mutex_leave(pShmNode->pShmMutex);
         }
         unixLeaveMutex();
       }
@@ -6073,9 +6073,9 @@ static int unixLockstatePid(unixFile *pFile, pid_t pid, int *pLockstate){
     unixEnterMutex(); /* Because pFile->pInode is shared across threads */
     unixShmNode *pShmNode = pFile->pInode->pShmNode;
     if( pShmNode ){
-      sqlite3_mutex_enter(pShmNode->mutex);
+      sqlite3_mutex_enter(pShmNode->pShmMutex);
       
-      hShm = pShmNode->h;
+      hShm = pShmNode->hShm;
       if( hShm >= 0){
         if( unixIsLocked(pid, hShm, F_RDLCK, SHM_RECOVER, 1, "WAL-RECOVERY") ||
            unixIsLocked(pid, hShm, F_RDLCK, SHM_WRITE, 1, "WAL-WRITE") ){
@@ -6083,7 +6083,7 @@ static int unixLockstatePid(unixFile *pFile, pid_t pid, int *pLockstate){
         }
       }
       
-      sqlite3_mutex_leave(pShmNode->mutex);
+      sqlite3_mutex_leave(pShmNode->pShmMutex);
     } 
     
     if( hShm<0 ){
