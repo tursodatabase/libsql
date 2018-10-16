@@ -656,8 +656,10 @@ impl Default for OpenFlags {
 }
 
 static SQLITE_INIT: Once = ONCE_INIT;
+#[cfg(not(feature = "bundled"))]
 static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
 static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
+#[cfg(not(feature = "bundled"))]
 static BYPASS_VERSION_CHECK: AtomicBool = ATOMIC_BOOL_INIT;
 
 /// rusqlite's check for a safe SQLite threading mode requires SQLite 3.7.0 or
@@ -689,9 +691,11 @@ pub unsafe fn bypass_sqlite_initialization() {
 /// calling this function before
 /// your first connection attempt.
 pub unsafe fn bypass_sqlite_version_check() {
+    #[cfg(not(feature = "bundled"))]
     BYPASS_VERSION_CHECK.store(true, Ordering::Relaxed);
 }
 
+#[cfg(not(feature = "bundled"))]
 fn ensure_valid_sqlite_version() {
     SQLITE_VERSION_CHECK.call_once(|| {
         let version_number = version_number();
@@ -816,6 +820,7 @@ impl InnerConnection {
     }
 
     fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
+        #[cfg(not(feature = "bundled"))]
         ensure_valid_sqlite_version();
         ensure_safe_sqlite_threading_mode()?;
 
