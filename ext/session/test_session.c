@@ -737,20 +737,32 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
 
   /* Check for the -nosavepoint flag */
-  if( bV2 && objc>1 ){
-    const char *z1 = Tcl_GetString(objv[1]);
-    int n = strlen(z1);
-    if( n>1 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
-      flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
-      objc--;
-      objv++;
+  if( bV2 ){
+    if( objc>1 ){
+      const char *z1 = Tcl_GetString(objv[1]);
+      int n = strlen(z1);
+      if( n>1 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+        objc--;
+        objv++;
+      }
+    }
+    if( objc>1 ){
+      const char *z1 = Tcl_GetString(objv[1]);
+      int n = strlen(z1);
+      if( n>1 && n<=7 && 0==sqlite3_strnicmp("-invert", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+        objc--;
+        objv++;
+      }
     }
   }
 
   if( objc!=4 && objc!=5 ){
     const char *zMsg;
     if( bV2 ){
-      zMsg = "?-nosavepoint? DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
+      zMsg = "?-nosavepoint? ?-inverse? "
+        "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
     }else{
       zMsg = "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
     }

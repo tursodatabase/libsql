@@ -1151,8 +1151,14 @@ int sqlite3changeset_apply_v2(
 **   causes the sessions module to omit this savepoint. In this case, if the
 **   caller has an open transaction or savepoint when apply_v2() is called, 
 **   it may revert the partially applied changeset by rolling it back.
+**
+** <dt>SQLITE_CHANGESETAPPLY_INVERT <dd>
+**   Invert the changeset before applying it. This is equivalent to inverting
+**   a changeset using sqlite3changeset_invert() before applying it. It is
+**   an error to specify this flag with a patchset.
 */
 #define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
+#define SQLITE_CHANGESETAPPLY_INVERT        0x0002
 
 /* 
 ** CAPI3REF: Constants Passed To The Conflict Handler

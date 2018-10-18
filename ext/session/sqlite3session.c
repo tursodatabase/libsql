@@ -87,6 +87,7 @@ struct sqlite3_changeset_iter {
   SessionInput in;                /* Input buffer or stream */
   SessionBuffer tblhdr;           /* Buffer to hold apValue/zTab/abPK/ */
   int bPatchset;                  /* True if this is a patchset */
+  int bInvert;                    /* True to invert changeset */
   int rc;                         /* Iterator error code */
   sqlite3_stmt *pConflict;        /* Points to conflicting row, if any */
   char *zTab;                     /* Current table */
@@ -2540,7 +2541,8 @@ static int sessionChangesetStart(
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
   int nChangeset,                 /* Size of buffer pChangeset in bytes */
-  void *pChangeset                /* Pointer to buffer containing changeset */
+  void *pChangeset,               /* Pointer to buffer containing changeset */
+  int bInvert                     /* True to invert changeset */
 ){
   sqlite3_changeset_iter *pRet;   /* Iterator to return */
   int nByte;                      /* Number of bytes to allocate for iterator */
@@ -2560,6 +2562,7 @@ static int sessionChangesetStart(
   pRet->in.xInput = xInput;
   pRet->in.pIn = pIn;
   pRet->in.bEof = (xInput ? 0 : 1);
+  pRet->bInvert = bInvert;
 
   /* Populate the output variable and return success. */
   *pp = pRet;
@@ -2574,7 +2577,7 @@ int sqlite3changeset_start(
   int nChangeset,                 /* Size of buffer pChangeset in bytes */
   void *pChangeset                /* Pointer to buffer containing changeset */
 ){
-  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset);
+  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, 0);
 }
 
 /*
@@ -2585,7 +2588,7 @@ int sqlite3changeset_start_strm(
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn
 ){
-  return sessionChangesetStart(pp, xInput, pIn, 0, 0);
+  return sessionChangesetStart(pp, xInput, pIn, 0, 0, 0);
 }
 
 /*
@@ -2964,10 +2967,10 @@ static int sessionChangesetNext(
     op = p->in.aData[p->in.iNext++];
   }
 
-  if( p->zTab==0 ){
+  if( p->zTab==0 || (p->bPatchset && p->bInvert) ){
     /* The first record in the changeset is not a table header. Must be a
     ** corrupt changeset. */
-    assert( p->in.iNext==1 );
+    assert( p->in.iNext==1 || p->zTab );
     return (p->rc = SQLITE_CORRUPT_BKPT);
   }
 
@@ -2992,33 +2995,39 @@ static int sessionChangesetNext(
     *paRec = &p->in.aData[p->in.iNext];
     p->in.iNext += *pnRec;
   }else{
+    sqlite3_value **apOld = (p->bInvert ? &p->apValue[p->nCol] : p->apValue);
+    sqlite3_value **apNew = (p->bInvert ? p->apValue : &p->apValue[p->nCol]);
 
     /* If this is an UPDATE or DELETE, read the old.* record. */
     if( p->op!=SQLITE_INSERT && (p->bPatchset==0 || p->op==SQLITE_DELETE) ){
       u8 *abPK = p->bPatchset ? p->abPK : 0;
-      p->rc = sessionReadRecord(&p->in, p->nCol, abPK, p->apValue);
+      p->rc = sessionReadRecord(&p->in, p->nCol, abPK, apOld);
       if( p->rc!=SQLITE_OK ) return p->rc;
     }
 
     /* If this is an INSERT or UPDATE, read the new.* record. */
     if( p->op!=SQLITE_DELETE ){
-      p->rc = sessionReadRecord(&p->in, p->nCol, 0, &p->apValue[p->nCol]);
+      p->rc = sessionReadRecord(&p->in, p->nCol, 0, apNew);
       if( p->rc!=SQLITE_OK ) return p->rc;
     }
 
-    if( p->bPatchset && p->op==SQLITE_UPDATE ){
+    if( (p->bPatchset || p->bInvert) && p->op==SQLITE_UPDATE ){
       /* If this is an UPDATE that is part of a patchset, then all PK and
       ** modified fields are present in the new.* record. The old.* record
       ** is currently completely empty. This block shifts the PK fields from
       ** new.* to old.*, to accommodate the code that reads these arrays.  */
       for(i=0; i<p->nCol; i++){
-        assert( p->apValue[i]==0 );
+        assert( p->bPatchset==0 || p->apValue[i]==0 );
         if( p->abPK[i] ){
+          assert( p->apValue[i]==0 );
           p->apValue[i] = p->apValue[i+p->nCol];
           if( p->apValue[i]==0 ) return (p->rc = SQLITE_CORRUPT_BKPT);
           p->apValue[i+p->nCol] = 0;
         }
       }
+    }else if( p->bInvert ){
+      if( p->op==SQLITE_INSERT ) p->op = SQLITE_DELETE;
+      else if( p->op==SQLITE_DELETE ) p->op = SQLITE_INSERT;
     }
   }
 
@@ -4182,7 +4191,7 @@ static int sessionRetryConstraints(
     SessionBuffer cons = pApply->constraints;
     memset(&pApply->constraints, 0, sizeof(SessionBuffer));
 
-    rc = sessionChangesetStart(&pIter2, 0, 0, cons.nBuf, cons.aBuf);
+    rc = sessionChangesetStart(&pIter2, 0, 0, cons.nBuf, cons.aBuf, 0);
     if( rc==SQLITE_OK ){
       int nByte = 2*pApply->nCol*sizeof(sqlite3_value*);
       int rc2;
@@ -4436,7 +4445,8 @@ int sqlite3changeset_apply_v2(
   int flags
 ){
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
-  int rc = sqlite3changeset_start(&pIter, nChangeset, pChangeset);
+  int bInverse = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
+  int rc = sessionChangesetStart(&pIter, 0, 0, nChangeset, pChangeset,bInverse);
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(
         db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
@@ -4493,7 +4503,8 @@ int sqlite3changeset_apply_v2_strm(
   int flags
 ){
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
-  int rc = sqlite3changeset_start_strm(&pIter, xInput, pIn);
+  int bInverse = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
+  int rc = sessionChangesetStart(&pIter, xInput, pIn, 0, 0, bInverse);
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(
         db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
