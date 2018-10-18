@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::{convert, result};
 
 use super::{Error, Result, Statement};
-use types::{FromSql, FromSqlError};
+use types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
@@ -126,7 +126,7 @@ where
 }
 
 /// A single result row of a query.
-pub struct Row<'a, 'stmt> {
+pub struct Row<'a, 'stmt: 'a> {
     stmt: &'stmt Statement<'stmt>,
     phantom: PhantomData<&'a ()>,
 }
@@ -171,6 +171,49 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
         })
+    }
+
+    /// Get the value of a particular column of the result row as a `ValueRef`,
+    /// allowing data to be read out of a row without copying.
+    ///
+    /// This `ValueRef` is valid only as long as this Row, which is enforced by
+    /// it's lifetime. This means that while this method is completely safe,
+    /// it can be somewhat difficult to use, and most callers will be better
+    /// served by `get` or `get_checked`.
+    ///
+    /// ## Failure
+    ///
+    /// Returns an `Error::InvalidColumnIndex` if `idx` is outside the valid
+    /// column range for this row.
+    ///
+    /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column
+    /// name for this row.
+    pub fn get_raw_checked<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'a>> {
+        let idx = idx.idx(self.stmt)?;
+        // Narrowing from `ValueRef<'stmt>` (which `self.stmt.value_ref(idx)`
+        // returns) to `ValueRef<'a>` is needed because it's only valid until
+        // the next call to sqlite3_step.
+        let val_ref = self.stmt.value_ref(idx);
+        Ok(val_ref)
+    }
+
+    /// Get the value of a particular column of the result row as a `ValueRef`,
+    /// allowing data to be read out of a row without copying.
+    ///
+    /// This `ValueRef` is valid only as long as this Row, which is enforced by
+    /// it's lifetime. This means that while this method is completely safe,
+    /// it can be difficult to use, and most callers will be better served by
+    /// `get` or `get_checked`.
+    ///
+    /// ## Failure
+    ///
+    /// Panics if calling `row.get_raw_checked(idx)` would return an error,
+    /// including:
+    ///
+    ///    * If `idx` is outside the range of columns in the returned query.
+    ///    * If `idx` is not a valid column name for this row.
+    pub fn get_raw<I: RowIndex>(&self, idx: I) -> ValueRef<'a> {
+        self.get_raw_checked(idx).unwrap()
     }
 
     /// Return the number of columns in the current row.
