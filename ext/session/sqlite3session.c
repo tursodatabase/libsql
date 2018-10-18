@@ -1794,12 +1794,12 @@ int sqlite3session_attach(
 static int sessionBufferGrow(SessionBuffer *p, int nByte, int *pRc){
   if( *pRc==SQLITE_OK && p->nAlloc-p->nBuf<nByte ){
     u8 *aNew;
-    int nNew = p->nAlloc ? p->nAlloc : 128;
+    i64 nNew = p->nAlloc ? p->nAlloc : 128;
     do {
       nNew = nNew*2;
-    }while( nNew<(p->nBuf+nByte) );
+    }while( (nNew-p->nBuf)<nByte );
 
-    aNew = (u8 *)sqlite3_realloc(p->aBuf, nNew);
+    aNew = (u8 *)sqlite3_realloc64(p->aBuf, nNew);
     if( 0==aNew ){
       *pRc = SQLITE_NOMEM;
     }else{

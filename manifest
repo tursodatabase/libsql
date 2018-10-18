@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CHANGESETAPPLY_INVERT\sflag\sto\ssessions.\sFor\sinverting\sand\sapplying\sa\schangeset\sin\sa\ssingle\sstep.
-D 2018-10-18T14:59:21.849
+C Take\ssteps\sto\savoid\sa\spotential\sinteger\soverflow\sin\ssessionBufferGrow().
+D 2018-10-18T15:17:18.844
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -417,7 +417,7 @@ F ext/session/sessioninvert.test d4d8a89990de35e8e56d4d14d14bc7f191aa6f4c2b3731c
 F ext/session/sessionrebase.test 4e1bcfd26fd8ed8ac571746f56cceeb45184f4d65490ea0d405227cfc8a9cba8
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c db0eb1bdadedf9905076fbff66ab7979d92a5d8649f09f39d9268c0d035aeeba
+F ext/session/sqlite3session.c 7c1875f0c124a1bd18beb95ef0fd7ce288e553c883d2f258b921d4612995a258
 F ext/session/sqlite3session.h 1b0b2bd69ae4cba5fd5fee050ef79707d45a1a3eed41077a92d14556fdcc1f6e
 F ext/session/test_session.c 9447482597c7569e49b3db152a300920a4b634d5de86508a94e4338df99b3fda
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1772,7 +1772,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02b6f8f2778c371130c512e980c3db07c7e76dcf7dd92a878b86e4b6a47ca307
-R af6e82cd2e535125553a7eab8caf31bb
+P d4b6406e7f5ba06ac73ab9fdef57232b2459e0af12420ed946ebed6aef46f0b1
+R e7a7201238f957af096a10fc5c94b75d
 U dan
-Z 5cdef990913d6faf4879f9cb06bcd872
+Z 58cb59871e256ea172e37001653f6319
