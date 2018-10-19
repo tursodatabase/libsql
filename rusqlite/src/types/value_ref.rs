@@ -52,7 +52,7 @@ impl<'a> ValueRef<'a> {
 
     /// If `self` is case `Text`, returns the string value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_str(&self) -> FromSqlResult<&str> {
+    pub fn as_str(&self) -> FromSqlResult<&'a str> {
         match *self {
             ValueRef::Text(t) => Ok(t),
             _ => Err(FromSqlError::InvalidType),
@@ -61,7 +61,7 @@ impl<'a> ValueRef<'a> {
 
     /// If `self` is case `Blob`, returns the byte slice. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_blob(&self) -> FromSqlResult<&[u8]> {
+    pub fn as_blob(&self) -> FromSqlResult<&'a [u8]> {
         match *self {
             ValueRef::Blob(b) => Ok(b),
             _ => Err(FromSqlError::InvalidType),

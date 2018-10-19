@@ -1592,6 +1592,29 @@ mod test {
         // degree of reliability.
     }
 
+    #[test]
+    fn test_get_raw() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE foo(i, x);").unwrap();
+        let vals = ["foobar", "1234", "qwerty"];
+        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)").unwrap();
+        for (i, v) in vals.iter().enumerate() {
+            let i_to_insert = i as i64;
+            assert_eq!(insert_stmt.execute(&[&i_to_insert as &dyn ToSql, &v]).unwrap(), 1);
+        }
+
+        let mut query = db.prepare("SELECT i, x FROM foo").unwrap();
+        let mut rows = query.query(NO_PARAMS).unwrap();
+
+        while let Some(res) = rows.next() {
+            let row = res.unwrap();
+            let i = row.get_raw(0).as_i64().unwrap();
+            let expect = vals[i as usize];
+            let x = row.get_raw("x").as_str().unwrap();
+            assert_eq!(x, expect);
+        }
+    }
+
     mod query_and_then_tests {
         extern crate libsqlite3_sys as ffi;
         use super::*;

@@ -139,6 +139,16 @@ impl<'a> Context<'a> {
         })
     }
 
+    /// Returns the `idx`th argument as a `ValueRef`.
+    ///
+    /// # Failure
+    ///
+    /// Will panic if `idx` is greater than or equal to `self.len()`.
+    pub fn get_raw(&self, idx: usize) -> ValueRef<'a> {
+        let arg = self.args[idx];
+        unsafe { ValueRef::from_value(arg) }
+    }
+
     /// Sets the auxilliary data associated with a particular parameter. See
     /// https://www.sqlite.org/c3ref/get_auxdata.html for a discussion of
     /// this feature, or the unit tests of this module for an example.
@@ -530,8 +540,10 @@ mod test {
         let is_match = {
             let re = saved_re.unwrap_or_else(|| new_re.as_ref().unwrap());
 
-            let text = try!(ctx.get::<String>(1));
-            re.is_match(&text)
+            let text = ctx.get_raw(1).as_str().map_err(|e|
+                Error::UserFunctionError(e.into()))?;
+
+            re.is_match(text)
         };
 
         if let Some(re) = new_re {
