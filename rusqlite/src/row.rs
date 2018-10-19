@@ -161,6 +161,10 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column
     /// name for this row.
+    ///
+    /// If the result type is i128 (which requires the `i128_blob` feature to be
+    /// enabled), and the underlying SQLite column is a blob whose size is not
+    /// 16 bytes, `Error::InvalidColumnType` will also be returned.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = try!(idx.idx(self.stmt));
         let value = self.stmt.value_ref(idx);
@@ -169,6 +173,10 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
+            }
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) => {
+                Error::InvalidColumnType(idx, value.data_type())
             }
         })
     }

@@ -67,6 +67,9 @@ extern crate bitflags;
 #[macro_use]
 extern crate lazy_static;
 
+#[cfg(feature = "i128_blob")]
+extern crate byteorder;
+
 use std::cell::RefCell;
 use std::convert;
 use std::default::Default;
