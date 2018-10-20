@@ -2579,6 +2579,15 @@ int sqlite3changeset_start(
 ){
   return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, 0);
 }
+int sqlite3changeset_start_v2(
+  sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
+  int nChangeset,                 /* Size of buffer pChangeset in bytes */
+  void *pChangeset,               /* Pointer to buffer containing changeset */
+  int flags
+){
+  int bInvert = !!(flags & SQLITE_CHANGESETSTART_INVERT);
+  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, bInvert);
+}
 
 /*
 ** Streaming version of sqlite3changeset_start().
@@ -2589,6 +2598,15 @@ int sqlite3changeset_start_strm(
   void *pIn
 ){
   return sessionChangesetStart(pp, xInput, pIn, 0, 0, 0);
+}
+int sqlite3changeset_start_v2_strm(
+  sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
+  int (*xInput)(void *pIn, void *pData, int *pnData),
+  void *pIn,
+  int flags
+){
+  int bInvert = !!(flags & SQLITE_CHANGESETSTART_INVERT);
+  return sessionChangesetStart(pp, xInput, pIn, 0, 0, bInvert);
 }
 
 /*
