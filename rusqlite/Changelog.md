@@ -1,3 +1,5 @@
+For version 0.15.0 and above, see [Releases](https://github.com/jgallagher/rusqlite/releases) page.
+
 # Version 0.14.0 (2018-08-17)
 
 * BREAKING CHANGE: `ToSql` implementation for `time::Timespec` uses RFC 3339 (%Y-%m-%dT%H:%M:%S.%fZ).
