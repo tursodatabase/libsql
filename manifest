@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\swindow\sfunctions\sin\scompound\s(UNION,\sINTERSECT\setc.)\nqueries.
-D 2018-10-23T13:48:19.879
+C Add\sthe\sENABLE_GEOPOLY\scase\sto\sthe\scompile_options\spragma.
+D 2018-10-24T23:55:41.740
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -451,7 +451,7 @@ F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd9
 F src/build.c 0b3d422770877d74ee6d54f4c122d82c48f7d04ee3bfb91702e402de7f5c45ac
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c b157b01081f92442f8b0218ddb93ddce8ebddad36dbddeecfdd771561dd4f387
+F src/ctime.c 56e2f32d2e5491c152352bd53cffc9979ee1e1b70df39ec97a90920ae420a950
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
 F src/dbstat.c edabb82611143727511a45ca0859b8cd037851ebe756ae3db289859dd18b6f91
@@ -1772,7 +1772,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbedcb9aaefdfe00453efbdf0eac6c15e1f53bbe8fff2e7d534a5adf23be04f5
-R d52bd090bd9fd502659683e6d6b4324b
-U dan
-Z 24c25ee2516ea8b59659cd5b9047d478
+P 059ff53a46c7f1e4bf3e7dc558312beef67826c2753e2ab7e4e7df498b37b617
+R 88b06779070fae47149f041be44e3466
+U drh
+Z d7bdc9586bb70ec6171514ee74a2ea6d
