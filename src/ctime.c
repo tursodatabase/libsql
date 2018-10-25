@@ -235,6 +235,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_FTS5
   "ENABLE_FTS5",
 #endif
+#if SQLITE_ENABLE_GEOPOLY
+  "ENABLE_GEOPOLY",
+#endif
 #if SQLITE_ENABLE_HIDDEN_COLUMNS
   "ENABLE_HIDDEN_COLUMNS",
 #endif

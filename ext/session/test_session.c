@@ -737,20 +737,32 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
 
   /* Check for the -nosavepoint flag */
-  if( bV2 && objc>1 ){
-    const char *z1 = Tcl_GetString(objv[1]);
-    int n = strlen(z1);
-    if( n>1 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
-      flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
-      objc--;
-      objv++;
+  if( bV2 ){
+    if( objc>1 ){
+      const char *z1 = Tcl_GetString(objv[1]);
+      int n = strlen(z1);
+      if( n>1 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+        objc--;
+        objv++;
+      }
+    }
+    if( objc>1 ){
+      const char *z1 = Tcl_GetString(objv[1]);
+      int n = strlen(z1);
+      if( n>1 && n<=7 && 0==sqlite3_strnicmp("-invert", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+        objc--;
+        objv++;
+      }
     }
   }
 
   if( objc!=4 && objc!=5 ){
     const char *zMsg;
     if( bV2 ){
-      zMsg = "?-nosavepoint? DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
+      zMsg = "?-nosavepoint? ?-inverse? "
+        "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
     }else{
       zMsg = "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
     }
@@ -969,31 +981,56 @@ static int SQLITE_TCLAPI test_sqlite3session_foreach(
   Tcl_Obj *pCS;
   Tcl_Obj *pScript;
   int isCheckNext = 0;
+  int isInvert = 0;
 
   TestStreamInput sStr;
   memset(&sStr, 0, sizeof(sStr));
 
-  if( objc>1 ){
+  while( objc>1 ){
     char *zOpt = Tcl_GetString(objv[1]);
-    isCheckNext = (strcmp(zOpt, "-next")==0);
+    int nOpt = strlen(zOpt);
+    if( zOpt[0]!='-' ) break;
+    if( nOpt<=7 && 0==sqlite3_strnicmp(zOpt, "-invert", nOpt) ){
+      isInvert = 1;
+    }else
+    if( nOpt<=5 && 0==sqlite3_strnicmp(zOpt, "-next", nOpt) ){
+      isCheckNext = 1;
+    }else{
+      break;
+    }
+    objv++;
+    objc--;
   }
-  if( objc!=4+isCheckNext ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?-next? VARNAME CHANGESET SCRIPT");
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(
+        interp, 1, objv, "?-next? ?-invert? VARNAME CHANGESET SCRIPT");
     return TCL_ERROR;
   }
 
-  pVarname = objv[1+isCheckNext];
-  pCS = objv[2+isCheckNext];
-  pScript = objv[3+isCheckNext];
+  pVarname = objv[1];
+  pCS = objv[2];
+  pScript = objv[3];
 
   pChangeset = (void *)Tcl_GetByteArrayFromObj(pCS, &nChangeset);
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
-  if( sStr.nStream==0 ){
-    rc = sqlite3changeset_start(&pIter, nChangeset, pChangeset);
+  if( isInvert ){
+    int f = SQLITE_CHANGESETSTART_INVERT;
+    if( sStr.nStream==0 ){
+      rc = sqlite3changeset_start_v2(&pIter, nChangeset, pChangeset, f);
+    }else{
+      void *pCtx = (void*)&sStr;
+      sStr.aData = (unsigned char*)pChangeset;
+      sStr.nData = nChangeset;
+      rc = sqlite3changeset_start_v2_strm(&pIter, testStreamInput, pCtx, f);
+    }
   }else{
-    sStr.aData = (unsigned char*)pChangeset;
-    sStr.nData = nChangeset;
-    rc = sqlite3changeset_start_strm(&pIter, testStreamInput, (void*)&sStr);
+    if( sStr.nStream==0 ){
+      rc = sqlite3changeset_start(&pIter, nChangeset, pChangeset);
+    }else{
+      sStr.aData = (unsigned char*)pChangeset;
+      sStr.nData = nChangeset;
+      rc = sqlite3changeset_start_strm(&pIter, testStreamInput, (void*)&sStr);
+    }
   }
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc, 0);

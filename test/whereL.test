@@ -111,4 +111,15 @@ do_execsql_test 302 {
      AND B.id=subq.zz;
 } {1}  
 
+# 2018-10-25: Ticket [cf5ed20f]
+# Incorrect join result with duplicate WHERE clause constraint.
+#
+do_execsql_test 400 {
+  CREATE TABLE x(a, b, c);
+  CREATE TABLE y(a, b);
+  INSERT INTO x VALUES (1, 0, 1);
+  INSERT INTO y VALUES (1, 2);
+  SELECT x.a FROM x JOIN y ON x.c = y.a WHERE x.b = 1 AND x.b = 1;
+} {}
+
 finish_test
