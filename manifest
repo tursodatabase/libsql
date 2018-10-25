@@ -1,5 +1,5 @@
-C Add\sthe\sENABLE_GEOPOLY\scase\sto\sthe\scompile_options\spragma.
-D 2018-10-24T23:55:41.740
+C In\sthe\sWHERE-constraint\spropagation\soptimization,\sif\sthere\sare\sduplicate\nconstraint,\smake\ssure\sonly\sone\sof\sthem\spropagates.\s\sProposed\sfix\sfor\nticket\s[cf5ed20fc8621b165].
+D 2018-10-25T14:15:37.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -504,7 +504,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 33aacf1c17c64a00788c779b23d0875dd0d90eb4c08f867ebc31139ef3a67c95
+F src/select.c 61e867a906f140b73baf4ce7a201ad6dcba30820969f5618ee40e9a0d32c6f5f
 F src/shell.c.in 248af8c0d785c98268353e58c96715313f3b091bf220d35366affc9a9c0d4e1d
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1636,7 +1636,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test b7769ee8dbefd987fb266715fee887f05f9ff180016b06fca7fa402df739193b
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/whereL.test 84de61afe4b8e5a3ff7d741c990d85cb44b3ce798cd8412d5603930f3f75014f
+F test/whereL.test 0a19fc44cd1122040f56c934f1b14d0ca85bde28f270268a428dd9796ea0634c
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1772,7 +1772,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 059ff53a46c7f1e4bf3e7dc558312beef67826c2753e2ab7e4e7df498b37b617
-R 88b06779070fae47149f041be44e3466
+P de940296d227c96db4d0cf913fc5c0e5138729eda7cda0a0ac6b704cce1e1e1e
+R d5acc9d026bd9c265f6de052be0f92d3
 U drh
-Z d7bdc9586bb70ec6171514ee74a2ea6d
+Z 4bc6cbb9e4f3ab72bb6d01ca2996d24a
