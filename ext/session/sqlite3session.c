@@ -25,6 +25,8 @@ typedef struct SessionInput SessionInput;
 # endif
 #endif
 
+static int sessions_strm_chunk_size = SESSIONS_STRM_CHUNK_SIZE;
+
 typedef struct SessionHook SessionHook;
 struct SessionHook {
   void *pCtx;
@@ -2397,12 +2399,12 @@ static int sessionGenerateChangeset(
             rc = sqlite3_reset(pSel);
           }
 
-          /* If the buffer is now larger than SESSIONS_STRM_CHUNK_SIZE, pass
+          /* If the buffer is now larger than sessions_strm_chunk_size, pass
           ** its contents to the xOutput() callback. */
           if( xOutput 
            && rc==SQLITE_OK 
            && buf.nBuf>nNoop 
-           && buf.nBuf>SESSIONS_STRM_CHUNK_SIZE 
+           && buf.nBuf>sessions_strm_chunk_size 
           ){
             rc = xOutput(pOut, (void*)buf.aBuf, buf.nBuf);
             nNoop = -1;
@@ -2614,7 +2616,7 @@ int sqlite3changeset_start_v2_strm(
 ** object and the buffer is full, discard some data to free up space.
 */
 static void sessionDiscardData(SessionInput *pIn){
-  if( pIn->xInput && pIn->iNext>=SESSIONS_STRM_CHUNK_SIZE ){
+  if( pIn->xInput && pIn->iNext>=sessions_strm_chunk_size ){
     int nMove = pIn->buf.nBuf - pIn->iNext;
     assert( nMove>=0 );
     if( nMove>0 ){
@@ -2637,7 +2639,7 @@ static int sessionInputBuffer(SessionInput *pIn, int nByte){
   int rc = SQLITE_OK;
   if( pIn->xInput ){
     while( !pIn->bEof && (pIn->iNext+nByte)>=pIn->nData && rc==SQLITE_OK ){
-      int nNew = SESSIONS_STRM_CHUNK_SIZE;
+      int nNew = sessions_strm_chunk_size;
 
       if( pIn->bNoDiscard==0 ) sessionDiscardData(pIn);
       if( SQLITE_OK==sessionBufferGrow(&pIn->buf, nNew, &rc) ){
@@ -3362,7 +3364,7 @@ static int sessionChangesetInvert(
     }
 
     assert( rc==SQLITE_OK );
-    if( xOutput && sOut.nBuf>=SESSIONS_STRM_CHUNK_SIZE ){
+    if( xOutput && sOut.nBuf>=sessions_strm_chunk_size ){
       rc = xOutput(pOut, sOut.aBuf, sOut.nBuf);
       sOut.nBuf = 0;
       if( rc!=SQLITE_OK ) goto finished_invert;
@@ -4895,7 +4897,7 @@ static int sessionChangegroupOutput(
         sessionAppendByte(&buf, p->op, &rc);
         sessionAppendByte(&buf, p->bIndirect, &rc);
         sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
-        if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STRM_CHUNK_SIZE ){
+        if( rc==SQLITE_OK && xOutput && buf.nBuf>=sessions_strm_chunk_size ){
           rc = xOutput(pOut, buf.aBuf, buf.nBuf);
           buf.nBuf = 0;
         }
@@ -5291,7 +5293,7 @@ static int sessionRebase(
       sessionAppendByte(&sOut, pIter->bIndirect, &rc);
       sessionAppendBlob(&sOut, aRec, nRec, &rc);
     }
-    if( rc==SQLITE_OK && xOutput && sOut.nBuf>SESSIONS_STRM_CHUNK_SIZE ){
+    if( rc==SQLITE_OK && xOutput && sOut.nBuf>sessions_strm_chunk_size ){
       rc = xOutput(pOut, sOut.aBuf, sOut.nBuf);
       sOut.nBuf = 0;
     }
@@ -5400,6 +5402,27 @@ void sqlite3rebaser_delete(sqlite3_rebaser *p){
     sessionDeleteTable(p->grp.pList);
     sqlite3_free(p);
   }
+}
+
+/* 
+** Global configuration
+*/
+int sqlite3session_config(int op, void *pArg){
+  int rc = SQLITE_OK;
+  switch( op ){
+    case SQLITE_SESSION_CONFIG_STRMSIZE: {
+      int *pInt = (int*)pArg;
+      if( *pInt>0 ){
+        sessions_strm_chunk_size = *pInt;
+      }
+      *pInt = sessions_strm_chunk_size;
+      break;
+    }
+    default:
+      rc = SQLITE_MISUSE;
+      break;
+  }
+  return rc;
 }
 
 #endif /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */
