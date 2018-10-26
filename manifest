@@ -1,5 +1,5 @@
-C In\sthe\sWHERE-constraint\spropagation\soptimization,\sif\sthere\sare\sduplicate\nconstraint,\smake\ssure\sonly\sone\sof\sthem\spropagates.\s\sProposed\sfix\sfor\nticket\s[cf5ed20fc8621b165].
-D 2018-10-25T14:15:37.103
+C Prevent\san\s==\sconstraint\sspecified\susing\sthe\stable-valued-function\sargument\nsyntax\sfrom\sbeing\sused\sto\soptimize\sany\sscan\snot\srelated\sto\sthe\svirtual\stable\nfor\swhich\sit\swas\sspecified\sas\san\sargument.
+D 2018-10-26T15:36:53.982
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -592,7 +592,7 @@ F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c a54a3d639bcd751d1474deff58e239b2e475a96e1b8f9178aa7864df8782a4e3
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c 3df0a541373d5f999684d761e4bd700d57adb46c7d39da4e77b767b5adcd5893
-F src/whereexpr.c 1b5a5a7876997f65232bbf19c5c1eeb47eb328b8fa5b28c865543052904cde00
+F src/whereexpr.c 7660a5845113f05f60fa615aed40047a058587a36b70a7b0c28b74253a19ffa1
 F src/window.c 6550e2850ebced51100ef83d49b00a1cf03f81a482dafedafb0320df647ed8fc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -669,7 +669,7 @@ F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
 F test/bestindex1.test 852170bddbb21daa121fabcc274640ff83d7d8705912e8b5fe7ed2c5a9a9224a
 F test/bestindex2.test 9a0ccd320b6525eec3a706aae6cdab7e1b7b5abca75027e39f39f755e76e5928
 F test/bestindex3.test 001788a114ad96d81d5154fe77c7f1e26e84b3a2b5635ca29e4f96f6decc534e
-F test/bestindex4.test 4cb5ff7dbaebadb87d366f51969271778423b455
+F test/bestindex4.test 210eac9323ef88881212d6ae90c84dad86ec14d82c6f4fc9a9ee24c76a8f2014
 F test/bestindex5.test 412b42f8036b28d8b2f3534d89389ad946a4b1a65a12263f51936f7424296f1b
 F test/bestindex6.test d856a9bb63d927493575823eed44053bc36251e241aa364e54d0f2a2d302e1d4
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
@@ -1772,7 +1772,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de940296d227c96db4d0cf913fc5c0e5138729eda7cda0a0ac6b704cce1e1e1e
-R d5acc9d026bd9c265f6de052be0f92d3
-U drh
-Z 4bc6cbb9e4f3ab72bb6d01ca2996d24a
+P 5d5b596f152bb2781011a05f75f9e200774d4f69d648ef68de577b4ace973e07
+R 8af441be159a5306c3bcc729f277a8dc
+U dan
+Z 7280881af13a5758968cff92a52a3f86
