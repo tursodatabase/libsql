@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3session_config()\sinterface.\sFor\sconfiguring\sglobal\sparameters\nbelonging\sto\sthe\ssessions\smodule.
-D 2018-10-26T17:05:00.030
+C Initial\scode\sfor\sa\sfuzzing\stool\son\sdatabase\sfile\sthat\sworks\swith\sthe\n-fsanitize=fuzzer\soption\sof\sclang.
+D 2018-10-27T00:47:33.850
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
@@ -770,6 +770,8 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
+F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
+F test/dbfuzz2.c 726596ade432252e5a71d63ac1d14ebe499187091f3f32ad6302f7f1283229ff
 F test/dbpage.test dbf50a4d361f9e45a979432c727506065113124478a7d2db12074fa655e65d6c
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1772,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d46685f282409f7154be288719cbea4b743d7ea5315a55a91462003497469f7
-R c10d7255298165478f73aa6752c71429
-U dan
-Z 0397ec87e4a63dd314f7afa18223a9dc
+P 1e69f3ff057b0be27a9e79842de2485f8299799f309e89bfa7597dd688e0975b
+R de82b9ab66221c495821cf10212a8a14
+U drh
+Z f0456761bef72ec9a03e18592dbe2afd
