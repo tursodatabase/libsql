@@ -53,20 +53,31 @@ static const char *azSql[] = {
   "SELECT * FROM sqlite_master;",
   "SELECT sum(length(name)) FROM dbstat;",
   "UPDATE t1 SET b=a, a=b WHERE a<b;",
-  "ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s;"
+  "ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s;",
   "INSERT INTO t3 SELECT * FROM t2;",
   "DELETE FROM t3 WHERE x IN (SELECT x FROM t4);",
-  "REINDEX;"
+  "REINDEX;",
   "DROP TABLE t3;",
   "VACUUM;",
 };
 
+/* Output verbosity level.  0 means complete silence */
+int eVerbosity = 0;
+
+/* libFuzzer invokes this routine with fuzzed database files (in aData).
+** This routine run SQLite against the malformed database to see if it
+** can provoke a failure or malfunction.
+*/
 int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   unsigned char *a;
   sqlite3 *db;
   int rc;
   int i;
 
+  if( eVerbosity>=1 ){
+    printf("************** nByte=%d ***************\n", (int)nByte);
+    fflush(stdout);
+  }
   rc = sqlite3_open(":memory:", &db);
   if( rc ) return 1;
   a = sqlite3_malloc64(nByte);
@@ -76,8 +87,45 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
+    if( eVerbosity>=1 ){
+      printf("%s\n", azSql[i]);
+      fflush(stdout);
+    }
     sqlite3_exec(db, azSql[i], 0, 0, 0);
   }
   sqlite3_close(db);
+  if( sqlite3_memory_used()!=0 ){
+    fprintf(stderr,"Memory leak: %lld bytes\n", sqlite3_memory_used());
+    exit(1);
+  }
+  return 0;
+}
+
+/* libFuzzer invokes this routine once when the executable starts, to
+** process the command-line arguments.
+*/
+int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
+  int i, j;
+  int argc = *pArgc;
+  char **newArgv;
+  char **argv = *pArgv;
+  newArgv = malloc( sizeof(char*)*(argc+1) );
+  if( newArgv==0 ) return 0;
+  newArgv[0] = argv[0];
+  for(i=j=1; i<argc; i++){
+    char *z = argv[i];
+    if( z[0]=='-' ){
+      z++;
+      if( z[0]=='-' ) z++;
+      if( strcmp(z,"v")==0 ){
+        eVerbosity++;
+        continue;
+      }
+    }
+    newArgv[j++] = argv[i];
+  }
+  newArgv[j] = 0;
+  *pArgv = newArgv;
+  *pArgc = j;
   return 0;
 }

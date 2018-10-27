@@ -1,8 +1,8 @@
-C Add\san\sentry\sin\sMakefile.in\sto\sbuild\sdbfuzz2\susing\sclang-6.0\swith\n-fsanitize=fuzzer,undefined.
-D 2018-10-27T16:02:16.717
+C Improvements\sto\sthe\sdbfuzz2.c\stest\smodule.
+D 2018-10-27T21:06:44.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in dfd61c71a68d90ad1d0db96e94999610c44ddad6b131f8032bcac6cb9e0a45a7
+F Makefile.in 15344f4e44dfd9ffb04e9867bdd352a8a5a86211b8919a6ca724e7063694320b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b946f8806a5d401a299453f61de80dfd1a9df14fa4902b299e6465e3c3134872
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -771,7 +771,7 @@ F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 726596ade432252e5a71d63ac1d14ebe499187091f3f32ad6302f7f1283229ff
+F test/dbfuzz2.c fae8599108dbf6460f8862677a22ee517c9030cdd931df0ed3c66c09ab14e46a
 F test/dbpage.test dbf50a4d361f9e45a979432c727506065113124478a7d2db12074fa655e65d6c
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90d12094d36957fbded71545add8a5dc206798fdacc17d4d161d715569a7f991
-R 6ad21b1e34719504a3a3472b9a8be5cf
+P a4a083ed8cdb106af661d2ee0203e21c576f5c2304419ce603826e4f2851c2e0
+R e5a9cd9771ffc88fd093fdbd062e0c2a
 U drh
-Z 0cf82952939867f49c62e617cf35a655
+Z 7b11fae1033935d453c9b6c66817005d
