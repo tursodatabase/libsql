@@ -1,8 +1,8 @@
-C Initial\scode\sfor\sa\sfuzzing\stool\son\sdatabase\sfile\sthat\sworks\swith\sthe\n-fsanitize=fuzzer\soption\sof\sclang.
-D 2018-10-27T00:47:33.850
+C Add\san\sentry\sin\sMakefile.in\sto\sbuild\sdbfuzz2\susing\sclang-6.0\swith\n-fsanitize=fuzzer,undefined.
+D 2018-10-27T16:02:16.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 01e95208a78b57d056131382c493c963518f36da4c42b12a97eb324401b3a334
+F Makefile.in dfd61c71a68d90ad1d0db96e94999610c44ddad6b131f8032bcac6cb9e0a45a7
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b946f8806a5d401a299453f61de80dfd1a9df14fa4902b299e6465e3c3134872
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e69f3ff057b0be27a9e79842de2485f8299799f309e89bfa7597dd688e0975b
-R de82b9ab66221c495821cf10212a8a14
+P 90d12094d36957fbded71545add8a5dc206798fdacc17d4d161d715569a7f991
+R 6ad21b1e34719504a3a3472b9a8be5cf
 U drh
-Z f0456761bef72ec9a03e18592dbe2afd
+Z 0cf82952939867f49c62e617cf35a655

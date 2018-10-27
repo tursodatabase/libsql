@@ -664,6 +664,22 @@ sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
 
+DBFUZZ2_OPTS = \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_ENABLE_DESERIALIZE \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_EANBLE_FTS5
+
+dbfuzz2:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
+	clang-6.0 -I. -g -Os -fsanitize=fuzzer,undefined -o dbfuzz2 \
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c
+	mkdir -p dbfuzz2-dir
+	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
+
 mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 		$(TLIBS) -rpath "$(libdir)"
