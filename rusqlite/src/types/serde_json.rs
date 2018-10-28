@@ -20,7 +20,8 @@ impl FromSql for Value {
             ValueRef::Text(s) => serde_json::from_str(s),
             ValueRef::Blob(b) => serde_json::from_slice(b),
             _ => return Err(FromSqlError::InvalidType),
-        }.map_err(|err| FromSqlError::Other(Box::new(err)))
+        }
+        .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 
@@ -46,7 +47,8 @@ mod test {
         db.execute(
             "INSERT INTO foo (t, b) VALUES (?, ?)",
             &[&data as &ToSql, &json.as_bytes()],
-        ).unwrap();
+        )
+        .unwrap();
 
         let t: serde_json::Value = db
             .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))

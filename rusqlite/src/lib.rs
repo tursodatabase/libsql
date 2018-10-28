@@ -28,7 +28,8 @@
 //!                   data            BLOB
 //!                   )",
 //!         NO_PARAMS,
-//!     ).unwrap();
+//!     )
+//!     .unwrap();
 //!     let me = Person {
 //!         id: 0,
 //!         name: "Steven".to_string(),
@@ -39,7 +40,8 @@
 //!         "INSERT INTO person (name, time_created, data)
 //!                   VALUES (?1, ?2, ?3)",
 //!         &[&me.name as &ToSql, &me.time_created, &me.data],
-//!     ).unwrap();
+//!     )
+//!     .unwrap();
 //!
 //!     let mut stmt = conn
 //!         .prepare("SELECT id, name, time_created, data FROM person")
@@ -50,7 +52,8 @@
 //!             name: row.get(1),
 //!             time_created: row.get(2),
 //!             data: row.get(3),
-//!         }).unwrap();
+//!         })
+//!         .unwrap();
 //!
 //!     for person in person_iter {
 //!         println!("Found person {:?}", person.unwrap());
@@ -83,7 +86,7 @@ use std::ptr;
 use std::result;
 use std::str;
 use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
-use std::sync::{Once, ONCE_INIT, Arc, Mutex};
+use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 
 use cache::StatementCache;
 use error::{error_from_handle, error_from_sqlite_code};
@@ -576,8 +579,8 @@ impl Connection {
         self.db.borrow().db()
     }
 
-    /// Get access to a handle that can be used to interrupt long running queries
-    /// from another thread.
+    /// Get access to a handle that can be used to interrupt long running
+    /// queries from another thread.
     pub fn get_interrupt_handle(&self) -> InterruptHandle {
         self.db.borrow().get_interrupt_handle()
     }
@@ -892,8 +895,10 @@ impl InnerConnection {
         }
         self.remove_hooks();
         let mut shared_handle = self.interrupt_lock.lock().unwrap();
-        assert!(!shared_handle.is_null(),
-            "Bug: Somehow interrupt_lock was cleared before the DB was closed");
+        assert!(
+            !shared_handle.is_null(),
+            "Bug: Somehow interrupt_lock was cleared before the DB was closed"
+        );
         unsafe {
             let r = ffi::sqlite3_close(self.db);
             // Need to use _raw because _guard has a reference out, and
@@ -1116,7 +1121,8 @@ mod test {
                 "
             BEGIN; CREATE TABLE foo(x INTEGER);
             INSERT INTO foo VALUES(42); END;",
-            ).expect("create temp db");
+            )
+            .expect("create temp db");
 
         let mut db1 = Connection::open(&path).unwrap();
         let mut db2 = Connection::open(&path).unwrap();
@@ -1530,29 +1536,30 @@ mod test {
             db.execute_batch("CREATE TABLE dummy(id)").unwrap();
             let interrupt_handle = db.get_interrupt_handle();
             // generate an arbitrary query which will be very slow to execute.
-            let sql = format!("{};",
-                (0..100_000).into_iter()
+            let sql = format!(
+                "{};",
+                (0..100_000)
+                    .into_iter()
                     .map(|i| format!("INSERT INTO dummy(id) VALUES({})", i))
                     .collect::<Vec<_>>()
-                    .join(";\n"));
+                    .join(";\n")
+            );
 
             // Do this on the main thread to minimize the amount of time spent
             // when interrupt won't do anything (because we haven't started
             // executing the query).
             let c_sql = str_to_cstring(&sql).unwrap();
 
-            let joiner = thread::spawn(move || {
-                unsafe {
-                    let raw_db = db.db.borrow().db;
-                    let r = ffi::sqlite3_exec(
-                        raw_db,
-                        c_sql.as_ptr(),
-                        None,
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                    );
-                    db.decode_result(r)
-                }
+            let joiner = thread::spawn(move || unsafe {
+                let raw_db = db.db.borrow().db;
+                let r = ffi::sqlite3_exec(
+                    raw_db,
+                    c_sql.as_ptr(),
+                    None,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                );
+                db.decode_result(r)
             });
 
             // Try a few times to make sure we don't catch it too early.
@@ -1603,7 +1610,12 @@ mod test {
         let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)").unwrap();
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
-            assert_eq!(insert_stmt.execute(&[&i_to_insert as &dyn ToSql, &v]).unwrap(), 1);
+            assert_eq!(
+                insert_stmt
+                    .execute(&[&i_to_insert as &dyn ToSql, &v])
+                    .unwrap(),
+                1
+            );
         }
 
         let mut query = db.prepare("SELECT i, x FROM foo").unwrap();
@@ -1729,7 +1741,8 @@ mod test {
             let results: CustomResult<Vec<String>> = query
                 .query_and_then(NO_PARAMS, |row| {
                     row.get_checked(1).map_err(CustomError::Sqlite)
-                }).unwrap()
+                })
+                .unwrap()
                 .collect();
 
             assert_eq!(results.unwrap().concat(), "hello, world!");
@@ -1751,7 +1764,8 @@ mod test {
             let bad_type: CustomResult<Vec<f64>> = query
                 .query_and_then(NO_PARAMS, |row| {
                     row.get_checked(1).map_err(CustomError::Sqlite)
-                }).unwrap()
+                })
+                .unwrap()
                 .collect();
 
             match bad_type.unwrap_err() {
@@ -1762,7 +1776,8 @@ mod test {
             let bad_idx: CustomResult<Vec<String>> = query
                 .query_and_then(NO_PARAMS, |row| {
                     row.get_checked(3).map_err(CustomError::Sqlite)
-                }).unwrap()
+                })
+                .unwrap()
                 .collect();
 
             match bad_idx.unwrap_err() {
@@ -1846,7 +1861,8 @@ mod test {
 
             db.query_row("SELECT * FROM foo", NO_PARAMS, |r| {
                 assert_eq!(2, r.column_count())
-            }).unwrap();
+            })
+            .unwrap();
         }
     }
 }

@@ -379,7 +379,8 @@ mod test {
                 .prepare(
                     "SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 WHERE \
                      v1.rowid < v2.rowid",
-                ).unwrap();
+                )
+                .unwrap();
 
             let mut rows = s.query(NO_PARAMS).unwrap();
             let row = rows.next().unwrap().unwrap();

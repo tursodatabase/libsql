@@ -697,7 +697,8 @@ mod test {
                 "SELECT SUM(x) FROM foo WHERE x > :x",
                 &[(":x", &0i32)],
                 |r| r.get(0)
-            ).unwrap()
+            )
+            .unwrap()
         );
     }
 
@@ -719,7 +720,8 @@ mod test {
                 "SELECT COUNT(*) FROM test WHERE name = :name",
                 &[(":name", &"one")],
                 |r| r.get(0)
-            ).unwrap()
+            )
+            .unwrap()
         );
     }
 
@@ -757,7 +759,8 @@ mod test {
             .query_map_named(&[(":name", &"one")], |row| {
                 let id: i32 = row.get(0);
                 2 * id
-            }).unwrap();
+            })
+            .unwrap();
 
         let doubled_id: i32 = rows.next().unwrap().unwrap();
         assert_eq!(2, doubled_id);
@@ -784,7 +787,8 @@ mod test {
                 } else {
                     Err(Error::SqliteSingleThreadedMode)
                 }
-            }).unwrap();
+            })
+            .unwrap();
 
         // first row should be Ok
         let doubled_id: i32 = rows.next().unwrap().unwrap();
@@ -812,7 +816,8 @@ mod test {
         let result: Option<String> = db
             .query_row("SELECT y FROM test WHERE x = 'one'", NO_PARAMS, |row| {
                 row.get(0)
-            }).unwrap();
+            })
+            .unwrap();
         assert!(result.is_none());
     }
 
@@ -831,7 +836,8 @@ mod test {
         let result: String = db
             .query_row("SELECT x FROM test WHERE y = 'two'", NO_PARAMS, |row| {
                 row.get(0)
-            }).unwrap();
+            })
+            .unwrap();
         assert_eq!(result, "one");
     }
 
@@ -867,7 +873,8 @@ mod test {
             CREATE TABLE foo(x INTEGER);
             CREATE TABLE bar(x INTEGER);
         ",
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(
             db.prepare("INSERT INTO foo VALUES (10)")

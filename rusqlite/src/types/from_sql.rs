@@ -28,8 +28,9 @@ impl fmt::Display for FromSqlError {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
             FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
             #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(s) =>
-                write!(f, "Cannot read 128bit value out of {} byte blob", s),
+            FromSqlError::InvalidI128Size(s) => {
+                write!(f, "Cannot read 128bit value out of {} byte blob", s)
+            }
             FromSqlError::Other(ref err) => err.fmt(f),
         }
     }
@@ -41,8 +42,7 @@ impl Error for FromSqlError {
             FromSqlError::InvalidType => "invalid type",
             FromSqlError::OutOfRange(_) => "value out of range",
             #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) =>
-                "unexpected blob size for 128bit value",
+            FromSqlError::InvalidI128Size(_) => "unexpected blob size for 128bit value",
             FromSqlError::Other(ref err) => err.description(),
         }
     }
