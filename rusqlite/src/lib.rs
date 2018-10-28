@@ -1523,65 +1523,31 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "functions")]
     fn test_interrupt() {
-        use std::thread;
-        use std::time::Duration;
-        let tries = 15;
-        // Sadly, this is inherently finnicky. Even if sqlite gets the
-        // interrupt, it isn't guaranteed to stop. In practice, 15 tends to be
-        // more than enough so long as we move everything we can outside of
-        // the thread body, but it still is unfortunate.
-        for i in 0..tries {
-            let db = checked_memory_handle();
-            db.execute_batch("CREATE TABLE dummy(id)").unwrap();
-            let interrupt_handle = db.get_interrupt_handle();
-            // generate an arbitrary query which will be very slow to execute.
-            let sql = format!(
-                "{};",
-                (0..100_000)
-                    .into_iter()
-                    .map(|i| format!("INSERT INTO dummy(id) VALUES({})", i))
-                    .collect::<Vec<_>>()
-                    .join(";\n")
-            );
+        let db = checked_memory_handle();
 
-            // Do this on the main thread to minimize the amount of time spent
-            // when interrupt won't do anything (because we haven't started
-            // executing the query).
-            let c_sql = str_to_cstring(&sql).unwrap();
+        let interrupt_handle = db.get_interrupt_handle();
 
-            let joiner = thread::spawn(move || unsafe {
-                let raw_db = db.db.borrow().db;
-                let r = ffi::sqlite3_exec(
-                    raw_db,
-                    c_sql.as_ptr(),
-                    None,
-                    ptr::null_mut(),
-                    ptr::null_mut(),
-                );
-                db.decode_result(r)
-            });
-
-            // Try a few times to make sure we don't catch it too early.
+        db.create_scalar_function("interrupt", 0, false, move |_| {
             interrupt_handle.interrupt();
-            for &delay in &[10, 100, 1000] {
-                thread::sleep(Duration::from_millis(delay));
-                interrupt_handle.interrupt();
-            }
-            let result = joiner.join().unwrap();
+            Ok(0)
+        })
+        .unwrap();
 
-            if i != tries - 1 && !result.is_err() {
-                continue;
-            }
+        let mut stmt = db
+            .prepare("SELECT interrupt() FROM (SELECT 1 UNION SELECT 2 UNION SELECT 3)")
+            .unwrap();
 
-            match result.unwrap_err() {
-                Error::SqliteFailure(err, _) => {
-                    assert_eq!(err.code, ErrorCode::OperationInterrupted);
-                    return;
-                }
-                err => {
-                    panic!("Unexpected error {}", err);
-                }
+        let result: Result<Vec<i32>> = stmt.query_map(NO_PARAMS, |r| r.get(0)).unwrap().collect();
+
+        match result.unwrap_err() {
+            Error::SqliteFailure(err, _) => {
+                assert_eq!(err.code, ErrorCode::OperationInterrupted);
+                return;
+            }
+            err => {
+                panic!("Unexpected error {}", err);
             }
         }
     }
