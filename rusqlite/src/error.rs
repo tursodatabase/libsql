@@ -95,6 +95,9 @@ pub enum Error {
     #[cfg(feature = "vtab")]
     #[allow(dead_code)]
     ModuleError(String),
+
+    /// Error when the SQL contains multiple statements.
+    MultipleStatement,
 }
 
 impl From<str::Utf8Error> for Error {
@@ -155,6 +158,7 @@ impl fmt::Display for Error {
             Error::InvalidQuery => write!(f, "Query is not read-only"),
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => write!(f, "{}", desc),
+            Error::MultipleStatement => write!(f, "Multiple statements provided"),
         }
     }
 }
@@ -192,6 +196,7 @@ impl error::Error for Error {
             Error::InvalidQuery => "query is not read-only",
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => desc,
+            Error::MultipleStatement => "multiple statements provided",
         }
     }
 
@@ -211,7 +216,8 @@ impl error::Error for Error {
             | Error::InvalidColumnType(_, _)
             | Error::InvalidPath(_)
             | Error::StatementChangedRows(_)
-            | Error::InvalidQuery => None,
+            | Error::InvalidQuery
+            | Error::MultipleStatement => None,
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => None,

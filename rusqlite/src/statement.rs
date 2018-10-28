@@ -540,7 +540,7 @@ impl<'conn> Statement<'conn> {
     }
 
     fn finalize_(&mut self) -> Result<()> {
-        let mut stmt = RawStatement::new(ptr::null_mut());
+        let mut stmt = RawStatement::new(ptr::null_mut(), ptr::null());
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
     }
@@ -570,11 +570,19 @@ impl<'conn> Statement<'conn> {
                 .map(|s| str::from_utf8_unchecked(s.to_bytes()))
         }
     }
+
+    pub(crate) fn check_no_tail(&self) -> Result<()> {
+        if self.stmt.has_tail() {
+            Err(Error::MultipleStatement)
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl<'conn> Into<RawStatement> for Statement<'conn> {
     fn into(mut self) -> RawStatement {
-        let mut stmt = RawStatement::new(ptr::null_mut());
+        let mut stmt = RawStatement::new(ptr::null_mut(), ptr::null());
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }

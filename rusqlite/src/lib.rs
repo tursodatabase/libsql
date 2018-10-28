@@ -331,7 +331,8 @@ impl Connection {
         P: IntoIterator,
         P::Item: ToSql,
     {
-        self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
+        self.prepare(sql)
+            .and_then(|mut stmt| stmt.check_no_tail().and_then(|_| stmt.execute(params)))
     }
 
     /// Convenience method to prepare and execute a single SQL statement with
@@ -357,8 +358,10 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
     pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<usize> {
-        self.prepare(sql)
-            .and_then(|mut stmt| stmt.execute_named(params))
+        self.prepare(sql).and_then(|mut stmt| {
+            stmt.check_no_tail()
+                .and_then(|_| stmt.execute_named(params))
+        })
     }
 
     /// Get the SQLite rowid of the most recent successful INSERT.
@@ -399,6 +402,7 @@ impl Connection {
         F: FnOnce(&Row) -> T,
     {
         let mut stmt = try!(self.prepare(sql));
+        try!(stmt.check_no_tail());
         stmt.query_row(params, f)
     }
 
@@ -417,6 +421,7 @@ impl Connection {
         F: FnOnce(&Row) -> T,
     {
         let mut stmt = try!(self.prepare(sql));
+        try!(stmt.check_no_tail());
         let mut rows = try!(stmt.query_named(params));
 
         rows.get_expected_row().map(|r| f(&r))
@@ -455,6 +460,7 @@ impl Connection {
         E: convert::From<Error>,
     {
         let mut stmt = try!(self.prepare(sql));
+        try!(stmt.check_no_tail());
         let mut rows = try!(stmt.query(params));
 
         rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
@@ -975,6 +981,7 @@ impl InnerConnection {
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
         let c_sql = try!(str_to_cstring(sql));
         let len_with_nul = (sql.len() + 1) as c_int;
+        let mut c_tail = ptr::null();
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {
                 let mut rc;
@@ -984,7 +991,7 @@ impl InnerConnection {
                         c_sql.as_ptr(),
                         len_with_nul,
                         &mut c_stmt,
-                        ptr::null_mut(),
+                        &mut c_tail,
                     );
                     if !unlock_notify::is_locked(self.db, rc) {
                         break;
@@ -1001,12 +1008,16 @@ impl InnerConnection {
                     c_sql.as_ptr(),
                     len_with_nul,
                     &mut c_stmt,
-                    ptr::null_mut(),
+                    &mut c_tail,
                 )
             }
         };
+        if !c_tail.is_null() && unsafe { *c_tail == 0 } {
+            // '\0' when there is no ';' at the end
+            c_tail = ptr::null(); // TODO ignore spaces, comments, ... at the end
+        }
         self.decode_result(r)
-            .map(|_| Statement::new(conn, RawStatement::new(c_stmt)))
+            .map(|_| Statement::new(conn, RawStatement::new(c_stmt, c_tail)))
     }
 
     fn changes(&mut self) -> usize {
@@ -1285,6 +1296,20 @@ mod test {
         let err = db.execute("SELECT 1 WHERE 1 < ?", &[1i32]).unwrap_err();
         match err {
             Error::ExecuteReturnedResults => (),
+            _ => panic!("Unexpected error: {}", err),
+        }
+    }
+
+    #[test]
+    fn test_execute_multiple() {
+        let db = checked_memory_handle();
+        let err = db
+            .execute(
+                "CREATE TABLE foo(x INTEGER); CREATE TABLE foo(x INTEGER)",
+                NO_PARAMS,
+            ).unwrap_err();
+        match err {
+            Error::MultipleStatement => (),
             _ => panic!("Unexpected error: {}", err),
         }
     }
