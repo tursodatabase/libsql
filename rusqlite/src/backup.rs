@@ -405,7 +405,8 @@ mod test {
                 DatabaseName::Attached("my_attached"),
                 &mut dst,
                 DatabaseName::Main,
-            ).unwrap();
+            )
+            .unwrap();
             backup.step(-1).unwrap();
         }
 
@@ -422,7 +423,8 @@ mod test {
                 DatabaseName::Attached("my_attached"),
                 &mut dst,
                 DatabaseName::Main,
-            ).unwrap();
+            )
+            .unwrap();
             backup
                 .run_to_completion(5, Duration::from_millis(250), None)
                 .unwrap();

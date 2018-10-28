@@ -127,7 +127,8 @@ mod test {
         let _ = db2
             .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
                 row.get_checked::<_, i32>(0)
-            }).expect("unexpected error");
+            })
+            .expect("unexpected error");
 
         child.join().unwrap();
     }
@@ -165,7 +166,8 @@ mod test {
         let _ = db2
             .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
                 row.get_checked::<_, i32>(0)
-            }).expect("unexpected error");
+            })
+            .expect("unexpected error");
         assert_eq!(CALLED.load(Ordering::Relaxed), true);
 
         child.join().unwrap();

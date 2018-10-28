@@ -46,7 +46,8 @@
 //!     }
 //! }
 //!
-//! # // Prevent this doc test from being wrapped in a `fn main()` so that it will compile.
+//! # // Prevent this doc test from being wrapped in a `fn main()` so that it
+//! # // will compile.
 //! # fn main() {}
 //! ```
 //!
@@ -239,7 +240,8 @@ mod test {
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
             NO_PARAMS,
-        ).unwrap();
+        )
+        .unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
         let mut rows = stmt.query(NO_PARAMS).unwrap();
@@ -354,7 +356,8 @@ mod test {
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
             NO_PARAMS,
-        ).unwrap();
+        )
+        .unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
         let mut rows = stmt.query(NO_PARAMS).unwrap();

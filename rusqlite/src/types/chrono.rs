@@ -236,7 +236,8 @@ mod test {
         let v4: DateTime<Utc> = db
             .query_row("SELECT '2016-02-23 23:56:04.789+00:00'", NO_PARAMS, |r| {
                 r.get(0)
-            }).unwrap();
+            })
+            .unwrap();
         assert_eq!(utc, v4);
     }
 

@@ -141,10 +141,9 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     ///    * If the underlying SQLite column type is not a valid type as a
     ///      source for `T`
-    ///    * If the underlying SQLite integral value is
-    ///      outside the range representable by `T`
-    ///    * If `idx` is outside the range of columns in the
-    ///      returned query
+    ///    * If the underlying SQLite integral value is outside the range
+    ///      representable by `T`
+    ///    * If `idx` is outside the range of columns in the returned query
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
@@ -175,9 +174,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
             #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => {
-                Error::InvalidColumnType(idx, value.data_type())
-            }
+            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
         })
     }
 

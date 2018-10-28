@@ -47,7 +47,8 @@
 //!             "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
 //!             NO_PARAMS,
 //!             |row| row.get(0),
-//!         ).unwrap();
+//!         )
+//!         .unwrap();
 //!
 //!     assert!(is_match);
 //! }
@@ -540,8 +541,10 @@ mod test {
         let is_match = {
             let re = saved_re.unwrap_or_else(|| new_re.as_ref().unwrap());
 
-            let text = ctx.get_raw(1).as_str().map_err(|e|
-                Error::UserFunctionError(e.into()))?;
+            let text = ctx
+                .get_raw(1)
+                .as_str()
+                .map_err(|e| Error::UserFunctionError(e.into()))?;
 
             re.is_match(text)
         };
@@ -563,7 +566,8 @@ mod test {
              INSERT INTO foo VALUES ('lXsi');
              INSERT INTO foo VALUES ('lisX');
              END;",
-        ).unwrap();
+        )
+        .unwrap();
         db.create_scalar_function("regexp", 2, true, regexp_with_auxilliary)
             .unwrap();
 
@@ -593,7 +597,8 @@ mod test {
              INSERT INTO foo VALUES ('lXsi');
              INSERT INTO foo VALUES ('lisX');
              END;",
-        ).unwrap();
+        )
+        .unwrap();
 
         // This implementation of a regexp scalar function uses a captured HashMap
         // to keep cached regular expressions around (even across multiple queries)
@@ -617,7 +622,8 @@ mod test {
 
             let text = try!(ctx.get::<String>(1));
             Ok(regex.is_match(&text))
-        }).unwrap();
+        })
+        .unwrap();
 
         let result: Result<bool> =
             db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", NO_PARAMS, |r| {
@@ -647,7 +653,8 @@ mod test {
             }
 
             Ok(ret)
-        }).unwrap();
+        })
+        .unwrap();
 
         for &(expected, query) in &[
             ("", "SELECT my_concat()"),

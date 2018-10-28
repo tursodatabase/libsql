@@ -28,7 +28,8 @@
 //!     db.execute(
 //!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
 //!         NO_PARAMS,
-//!     ).unwrap();
+//!     )
+//!     .unwrap();
 //!
 //!     let rowid = db.last_insert_rowid();
 //!     let mut blob = db
@@ -36,7 +37,8 @@
 //!         .unwrap();
 //!
 //!     // Make sure to test that the number of bytes written matches what you expect;
-//!     // if you try to write too much, the data will be truncated to the size of the BLOB.
+//!     // if you try to write too much, the data will be truncated to the size of the
+//!     // BLOB.
 //!     let bytes_written = blob.write(b"01234567").unwrap();
 //!     assert_eq!(bytes_written, 8);
 //!
@@ -171,7 +173,8 @@ impl<'conn> io::Read for Blob<'conn> {
             .map(|_| {
                 self.pos += n;
                 n as usize
-            }).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+            })
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 }
 
@@ -199,7 +202,8 @@ impl<'conn> io::Write for Blob<'conn> {
             .map(|_| {
                 self.pos += n;
                 n as usize
-            }).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+            })
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
     fn flush(&mut self) -> io::Result<()> {

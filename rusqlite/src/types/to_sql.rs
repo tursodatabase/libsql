@@ -207,34 +207,45 @@ mod test {
     #[cfg(feature = "i128_blob")]
     #[test]
     fn test_i128() {
-        use {Connection, NO_PARAMS};
         use std::i128;
+        use {Connection, NO_PARAMS};
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)").unwrap();
-        db.execute("
+        db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)")
+            .unwrap();
+        db.execute(
+            "
             INSERT INTO foo(i128, desc) VALUES
                 (?, 'zero'),
                 (?, 'neg one'), (?, 'neg two'),
                 (?, 'pos one'), (?, 'pos two'),
                 (?, 'min'), (?, 'max')",
-            &[0i128, -1i128, -2i128, 1i128, 2i128, i128::MIN, i128::MAX]
-        ).unwrap();
+            &[0i128, -1i128, -2i128, 1i128, 2i128, i128::MIN, i128::MAX],
+        )
+        .unwrap();
 
-        let mut stmt = db.prepare("SELECT i128, desc FROM foo ORDER BY i128 ASC").unwrap();
+        let mut stmt = db
+            .prepare("SELECT i128, desc FROM foo ORDER BY i128 ASC")
+            .unwrap();
 
-        let res = stmt.query_map(
-            NO_PARAMS,
-            |row| (row.get::<_, i128>(0), row.get::<_, String>(1))
-        ).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+        let res = stmt
+            .query_map(NO_PARAMS, |row| {
+                (row.get::<_, i128>(0), row.get::<_, String>(1))
+            })
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
 
-        assert_eq!(res, &[
-            (i128::MIN, "min".to_owned()),
-            (-2, "neg two".to_owned()),
-            (-1, "neg one".to_owned()),
-            (0, "zero".to_owned()),
-            (1, "pos one".to_owned()),
-            (2, "pos two".to_owned()),
-            (i128::MAX, "max".to_owned()),
-        ]);
+        assert_eq!(
+            res,
+            &[
+                (i128::MIN, "min".to_owned()),
+                (-2, "neg two".to_owned()),
+                (-1, "neg one".to_owned()),
+                (0, "zero".to_owned()),
+                (1, "pos one".to_owned()),
+                (2, "pos two".to_owned()),
+                (i128::MAX, "max".to_owned()),
+            ]
+        );
     }
 }

@@ -2,9 +2,11 @@
 //!
 //! Follow these steps to create your own virtual table:
 //! 1. Write implemenation of `VTab` and `VTabCursor` traits.
-//! 2. Create an instance of the `Module` structure specialized for `VTab` impl. from step 1.
+//! 2. Create an instance of the `Module` structure specialized for `VTab` impl.
+//! from step 1.
 //! 3. Register your `Module` structure using `Connection.create_module`.
-//! 4. Run a `CREATE VIRTUAL TABLE` command that specifies the new module in the `USING` clause.
+//! 4. Run a `CREATE VIRTUAL TABLE` command that specifies the new module in the
+//! `USING` clause.
 //!
 //! (See [SQLite doc](http://sqlite.org/vtab.html))
 use std::borrow::Cow::{self, Borrowed, Owned};
@@ -108,8 +110,9 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
 pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
-    // A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method
-    // For eponymous-only virtual tables, the xCreate method is NULL
+    // A virtual table is eponymous if its xCreate method is the exact same function
+    // as the xConnect method For eponymous-only virtual tables, the xCreate
+    // method is NULL
     let ffi_module = ffi::sqlite3_module {
         iVersion: version,
         xCreate: None,
@@ -152,10 +155,11 @@ impl VTabConnection {
     ///
     /// # Warning
     ///
-    /// You should not need to use this function. If you do need to, please [open an issue
-    /// on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
-    /// your use case. This function is unsafe because it gives you raw access to the SQLite
-    /// connection, and what you do with it could impact the safety of this `Connection`.
+    /// You should not need to use this function. If you do need to, please
+    /// [open an issue on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
+    /// your use case. This function is unsafe because it gives you raw access
+    /// to the SQLite connection, and what you do with it could impact the
+    /// safety of this `Connection`.
     pub unsafe fn handle(&mut self) -> *mut ffi::sqlite3 {
         self.0
     }
@@ -200,9 +204,10 @@ pub trait VTab: Sized {
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
 pub trait CreateVTab: VTab {
-    /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
-    /// The `db` parameter is a pointer to the SQLite database connection that is executing
-    /// the CREATE VIRTUAL TABLE statement.
+    /// Create a new instance of a virtual table in response to a CREATE VIRTUAL
+    /// TABLE statement. The `db` parameter is a pointer to the SQLite
+    /// database connection that is executing the CREATE VIRTUAL TABLE
+    /// statement.
     ///
     /// Call `connect` by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xcreate_method))
@@ -214,7 +219,8 @@ pub trait CreateVTab: VTab {
         Self::connect(db, aux, args)
     }
 
-    /// Destroy the underlying table implementation. This method undoes the work of `create`.
+    /// Destroy the underlying table implementation. This method undoes the work
+    /// of `create`.
     ///
     /// Do nothing by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xdestroy_method))
@@ -236,7 +242,8 @@ bitflags! {
     }
 }
 
-/// Pass information into and receive the reply from the `VTab.best_index` method.
+/// Pass information into and receive the reply from the `VTab.best_index`
+/// method.
 ///
 /// (See [SQLite doc](http://sqlite.org/c3ref/index_info.html))
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
@@ -409,8 +416,8 @@ pub trait VTabCursor: Sized {
     /// Advance cursor to the next row of a result set initiated by `filter`.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xnext_method))
     fn next(&mut self) -> Result<()>;
-    /// Must return `false` if the cursor currently points to a valid row of data,
-    /// or `true` otherwise.
+    /// Must return `false` if the cursor currently points to a valid row of
+    /// data, or `true` otherwise.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xeof_method))
     fn eof(&self) -> bool;
     /// Find the value for the `i`-th column of the current row.
@@ -436,7 +443,8 @@ impl Context {
     // TODO sqlite3_vtab_nochange (http://sqlite.org/c3ref/vtab_nochange.html)
 }
 
-/// Wrapper to `VTabCursor.filter` arguments, the values requested by `VTab.best_index`.
+/// Wrapper to `VTabCursor.filter` arguments, the values requested by
+/// `VTab.best_index`.
 pub struct Values<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
@@ -894,7 +902,8 @@ where
     }
 }
 
-/// Virtual table cursors can set an error message by assigning a string to `zErrMsg`.
+/// Virtual table cursors can set an error message by assigning a string to
+/// `zErrMsg`.
 unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<T>) -> c_int {
     use std::error::Error as StdError;
     match result {
@@ -912,7 +921,8 @@ unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<
     }
 }
 
-/// Virtual tables methods can set an error message by assigning a string to `zErrMsg`.
+/// Virtual tables methods can set an error message by assigning a string to
+/// `zErrMsg`.
 unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     if !(*vtab).zErrMsg.is_null() {
         ffi::sqlite3_free((*vtab).zErrMsg as *mut c_void);
@@ -920,8 +930,8 @@ unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     (*vtab).zErrMsg = mprintf(err_msg);
 }
 
-/// To raise an error, the `column` method should use this method to set the error message
-/// and return the error code.
+/// To raise an error, the `column` method should use this method to set the
+/// error message and return the error code.
 unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> c_int {
     use std::error::Error as StdError;
     match result {

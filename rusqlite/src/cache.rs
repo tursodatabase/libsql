@@ -269,7 +269,8 @@ mod test {
             CREATE TABLE foo (x INT);
             INSERT INTO foo VALUES (1);
         "#,
-        ).unwrap();
+        )
+        .unwrap();
 
         let sql = "SELECT * FROM foo";
 
@@ -290,7 +291,8 @@ mod test {
             ALTER TABLE foo ADD COLUMN y INT;
             UPDATE foo SET y = 2;
         "#,
-        ).unwrap();
+        )
+        .unwrap();
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
