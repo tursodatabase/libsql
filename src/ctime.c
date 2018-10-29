@@ -268,6 +268,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_MULTIPLEX
   "ENABLE_MULTIPLEX",
 #endif
+#if SQLITE_ENABLE_NORMALIZE
+  "ENABLE_NORMALIZE",
+#endif
 #if SQLITE_ENABLE_NULL_TRIM
   "ENABLE_NULL_TRIM",
 #endif

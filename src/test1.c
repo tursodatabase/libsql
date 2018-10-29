@@ -4218,6 +4218,7 @@ static int SQLITE_TCLAPI test_prepare_v2(
   char *zCopy = 0;                /* malloc() copy of zSql */
   int bytes;
   const char *zTail = 0;
+  const char **pzTail;
   sqlite3_stmt *pStmt = 0;
   char zBuf[50];
   int rc;
@@ -4242,7 +4243,8 @@ static int SQLITE_TCLAPI test_prepare_v2(
     zCopy = malloc(n);
     memcpy(zCopy, zSql, n);
   }
-  rc = sqlite3_prepare_v2(db, zCopy, bytes, &pStmt, objc>=5 ? &zTail : 0);
+  pzTail = objc>=5 ? &zTail : 0;
+  rc = sqlite3_prepare_v2(db, zCopy, bytes, &pStmt, pzTail);
   free(zCopy);
   zTail = &zSql[(zTail - zCopy)];
 
@@ -4254,6 +4256,79 @@ static int SQLITE_TCLAPI test_prepare_v2(
       bytes = bytes - (int)(zTail-zSql);
     }
     Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
+  }
+  if( rc!=SQLITE_OK ){
+    assert( pStmt==0 );
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
+    return TCL_ERROR;
+  }
+
+  if( pStmt ){
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    Tcl_AppendResult(interp, zBuf, 0);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_prepare_v3 DB sql bytes flags ?tailvar?
+**
+** Compile up to <bytes> bytes of the supplied SQL string <sql> using
+** database handle <DB> and flags <flags>. The parameter <tailval> is
+** the name of a global variable that is set to the unused portion of
+** <sql> (if any). A STMT handle is returned.
+*/
+static int SQLITE_TCLAPI test_prepare_v3(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  const char *zSql;
+  char *zCopy = 0;                /* malloc() copy of zSql */
+  int bytes, flags;
+  const char *zTail = 0;
+  const char **pzTail;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[50];
+  int rc;
+
+  if( objc!=6 && objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB sql bytes flags tailvar", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSql = Tcl_GetString(objv[2]);
+  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[4], &flags) ) return TCL_ERROR;
+
+  /* Instead of using zSql directly, make a copy into a buffer obtained
+  ** directly from malloc(). The idea is to make it easier for valgrind
+  ** to spot buffer overreads.  */
+  if( bytes>=0 ){
+    zCopy = malloc(bytes);
+    memcpy(zCopy, zSql, bytes);
+  }else{
+    int n = (int)strlen(zSql) + 1;
+    zCopy = malloc(n);
+    memcpy(zCopy, zSql, n);
+  }
+  pzTail = objc>=6 ? &zTail : 0;
+  rc = sqlite3_prepare_v3(db, zCopy, bytes, (unsigned int)flags,&pStmt,pzTail);
+  free(zCopy);
+  zTail = &zSql[(zTail - zCopy)];
+
+  assert(rc==SQLITE_OK || pStmt==0);
+  Tcl_ResetResult(interp);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  if( rc==SQLITE_OK && zTail && objc>=6 ){
+    if( bytes>=0 ){
+      bytes = bytes - (int)(zTail-zSql);
+    }
+    Tcl_ObjSetVar2(interp, objv[5], 0, Tcl_NewStringObj(zTail, bytes), 0);
   }
   if( rc!=SQLITE_OK ){
     assert( pStmt==0 );
@@ -4676,6 +4751,25 @@ static int SQLITE_TCLAPI test_ex_sql(
   sqlite3_free(z);
   return TCL_OK;
 }
+#ifdef SQLITE_ENABLE_NORMALIZE
+static int SQLITE_TCLAPI test_norm_sql(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)sqlite3_normalized_sql(pStmt), TCL_VOLATILE);
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */
 
 /*
 ** Usage: sqlite3_column_count STMT 
@@ -7646,6 +7740,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_prepare",               test_prepare       ,0 },
      { "sqlite3_prepare16",             test_prepare16     ,0 },
      { "sqlite3_prepare_v2",            test_prepare_v2    ,0 },
+     { "sqlite3_prepare_v3",            test_prepare_v3    ,0 },
      { "sqlite3_prepare_tkt3134",       test_prepare_tkt3134, 0},
      { "sqlite3_prepare16_v2",          test_prepare16_v2  ,0 },
      { "sqlite3_finalize",              test_finalize      ,0 },
@@ -7657,6 +7752,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_step",                  test_step          ,0 },
      { "sqlite3_sql",                   test_sql           ,0 },
      { "sqlite3_expanded_sql",          test_ex_sql        ,0 },
+#ifdef SQLITE_ENABLE_NORMALIZE
+     { "sqlite3_normalized_sql",        test_norm_sql      ,0 },
+#endif
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
      { "sqlite3_stmt_readonly",         test_stmt_readonly ,0 },
      { "sqlite3_stmt_busy",             test_stmt_busy     ,0 },

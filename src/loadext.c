@@ -451,7 +451,13 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_str_length,
   sqlite3_str_value,
   /* Version 3.25.0 and later */
-  sqlite3_create_window_function
+  sqlite3_create_window_function,
+  /* Version 3.26.0 and later */
+#ifdef SQLITE_ENABLE_NORMALIZE
+  sqlite3_normalized_sql
+#else
+  0
+#endif
 };
 
 /*
