@@ -1,5 +1,5 @@
-C In\sthe\ssessions\smodule,\savoid\scollecting\srebase\sdata\sif\sthe\suser\shas\snot\nrequested\sit.
-D 2018-10-29T17:08:27.831
+C Fix\sminor\smemory\sleak\sin\sthe\sdbstat\sextension\sthat\scan\soccur\sfollowing\san\nattempt\sto\sanalyze\sa\scorrupt\sdatabase\sfile.
+D 2018-10-29T18:33:42.996
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15344f4e44dfd9ffb04e9867bdd352a8a5a86211b8919a6ca724e7063694320b
@@ -454,7 +454,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 56e2f32d2e5491c152352bd53cffc9979ee1e1b70df39ec97a90920ae420a950
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 4aa7f26198934dbd002e69418220eae3dbc71b010bbac32bd78faf86b52ce6c3
-F src/dbstat.c 5f96184b8a751b7c92b959b55679f56e409c3b3bbe98eaf5e43189c16d4df082
+F src/dbstat.c e042b0e7833fdacf2d5ea92c6b536962fea6aeed8b7287ca87ddfa3412bd9564
 F src/delete.c 107e28d3ef8bd72fd11953374ca9107cd74e8b09c3ded076a6048742d26ce7d2
 F src/expr.c 5cee8fb79b1952689af80ed71ed16ad295f29d85de30c7592993b05cf1ec1e06
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0d47f25ae7bdf98f5b853f23776b3bf86bea7c0dda386664c1e3b1c363c518f
-R e9d59384eb4e31957429edb55e9fdfcd
-U dan
-Z e1a47567ef9afc1d6422d6b424bf5b3a
+P de72a773dd3ad58a7f2233e1fc06bf60deb8892a2719ea8e9b42e7d592c1279f
+R eb815e43406071d92b5d2a2f430dc9b0
+U drh
+Z 086aafd24f9b8312d4c30fa6c97d493c

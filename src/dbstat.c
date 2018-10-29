@@ -254,7 +254,7 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
-static void statClearPage(StatPage *p){
+static void statClearCells(StatPage *p){
   int i;
   if( p->aCell ){
     for(i=0; i<p->nCell; i++){
@@ -262,6 +262,12 @@ static void statClearPage(StatPage *p){
     }
     sqlite3_free(p->aCell);
   }
+  p->nCell = 0;
+  p->aCell = 0;
+}
+
+static void statClearPage(StatPage *p){
+  statClearCells(p);
   sqlite3PagerUnref(p->pPg);
   sqlite3_free(p->zPath);
   memset(p, 0, sizeof(StatPage));
@@ -417,7 +423,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
 
 statPageIsCorrupt:
   p->flags = 0;
-  p->nCell = 0;
+  statClearCells(p);
   return SQLITE_OK;
 }
 
