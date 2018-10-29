@@ -3443,7 +3443,8 @@ struct SessionApplyCtx {
   int bDeferConstraints;          /* True to defer constraints */
   SessionBuffer constraints;      /* Deferred constraints are stored here */
   SessionBuffer rebase;           /* Rebase information (if any) here */
-  int bRebaseStarted;             /* If table header is already in rebase */
+  u8 bRebaseStarted;              /* If table header is already in rebase */
+  u8 bRebase;                     /* True to collect rebase information */
 };
 
 /*
@@ -3840,35 +3841,36 @@ static int sessionRebaseAdd(
   sqlite3_changeset_iter *pIter   /* Iterator pointing at current change */
 ){
   int rc = SQLITE_OK;
-  int i;
-  int eOp = pIter->op;
-  if( p->bRebaseStarted==0 ){
-    /* Append a table-header to the rebase buffer */
-    const char *zTab = pIter->zTab;
-    sessionAppendByte(&p->rebase, 'T', &rc);
-    sessionAppendVarint(&p->rebase, p->nCol, &rc);
-    sessionAppendBlob(&p->rebase, p->abPK, p->nCol, &rc);
-    sessionAppendBlob(&p->rebase, (u8*)zTab, (int)strlen(zTab)+1, &rc);
-    p->bRebaseStarted = 1;
-  }
-
-  assert( eType==SQLITE_CHANGESET_REPLACE||eType==SQLITE_CHANGESET_OMIT );
-  assert( eOp==SQLITE_DELETE || eOp==SQLITE_INSERT || eOp==SQLITE_UPDATE );
-
-  sessionAppendByte(&p->rebase, 
-      (eOp==SQLITE_DELETE ? SQLITE_DELETE : SQLITE_INSERT), &rc
-  );
-  sessionAppendByte(&p->rebase, (eType==SQLITE_CHANGESET_REPLACE), &rc);
-  for(i=0; i<p->nCol; i++){
-    sqlite3_value *pVal = 0;
-    if( eOp==SQLITE_DELETE || (eOp==SQLITE_UPDATE && p->abPK[i]) ){
-      sqlite3changeset_old(pIter, i, &pVal);
-    }else{
-      sqlite3changeset_new(pIter, i, &pVal);
+  if( p->bRebase ){
+    int i;
+    int eOp = pIter->op;
+    if( p->bRebaseStarted==0 ){
+      /* Append a table-header to the rebase buffer */
+      const char *zTab = pIter->zTab;
+      sessionAppendByte(&p->rebase, 'T', &rc);
+      sessionAppendVarint(&p->rebase, p->nCol, &rc);
+      sessionAppendBlob(&p->rebase, p->abPK, p->nCol, &rc);
+      sessionAppendBlob(&p->rebase, (u8*)zTab, (int)strlen(zTab)+1, &rc);
+      p->bRebaseStarted = 1;
     }
-    sessionAppendValue(&p->rebase, pVal, &rc);
-  }
 
+    assert( eType==SQLITE_CHANGESET_REPLACE||eType==SQLITE_CHANGESET_OMIT );
+    assert( eOp==SQLITE_DELETE || eOp==SQLITE_INSERT || eOp==SQLITE_UPDATE );
+
+    sessionAppendByte(&p->rebase, 
+        (eOp==SQLITE_DELETE ? SQLITE_DELETE : SQLITE_INSERT), &rc
+        );
+    sessionAppendByte(&p->rebase, (eType==SQLITE_CHANGESET_REPLACE), &rc);
+    for(i=0; i<p->nCol; i++){
+      sqlite3_value *pVal = 0;
+      if( eOp==SQLITE_DELETE || (eOp==SQLITE_UPDATE && p->abPK[i]) ){
+        sqlite3changeset_old(pIter, i, &pVal);
+      }else{
+        sqlite3changeset_new(pIter, i, &pVal);
+      }
+      sessionAppendValue(&p->rebase, pVal, &rc);
+    }
+  }
   return rc;
 }
 
@@ -4277,6 +4279,7 @@ static int sessionChangesetApply(
 
   pIter->in.bNoDiscard = 1;
   memset(&sApply, 0, sizeof(sApply));
+  sApply.bRebase = (ppRebase && pnRebase);
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
   if( (flags & SQLITE_CHANGESETAPPLY_NOSAVEPOINT)==0 ){
     rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
@@ -4427,7 +4430,8 @@ static int sessionChangesetApply(
     }
   }
 
-  if( rc==SQLITE_OK && bPatchset==0 && ppRebase && pnRebase ){
+  assert( sApply.bRebase || sApply.rebase.nBuf==0 );
+  if( rc==SQLITE_OK && bPatchset==0 && sApply.bRebase ){
     *ppRebase = (void*)sApply.rebase.aBuf;
     *pnRebase = sApply.rebase.nBuf;
     sApply.rebase.aBuf = 0;
