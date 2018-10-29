@@ -1,5 +1,5 @@
-C Fix\sminor\smemory\sleak\sin\sthe\sdbstat\sextension\sthat\scan\soccur\sfollowing\san\nattempt\sto\sanalyze\sa\scorrupt\sdatabase\sfile.
-D 2018-10-29T18:33:42.996
+C Fix\sa\spotential\sassertion\sfault\sthat\scan\soccur\swhile\strying\sto\sDROP\sa\stable\nfrom\sa\scorrupted\sdatabase\sfile.
+D 2018-10-29T21:01:28.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15344f4e44dfd9ffb04e9867bdd352a8a5a86211b8919a6ca724e7063694320b
@@ -448,7 +448,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3f5e1a03db871e627bf5da21092bf7434ecfc5c5980bbd7d45eba13341340173
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 0b3d422770877d74ee6d54f4c122d82c48f7d04ee3bfb91702e402de7f5c45ac
+F src/build.c bd47530436bcdd6c6111a44c88d6c629ebc5a6666602d1cdb9b6b26a531ee741
 F src/callback.c 36caff1e7eb7deb58572d59c41cee8f064a11d00297616995c5050ea0cfc1288
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 56e2f32d2e5491c152352bd53cffc9979ee1e1b70df39ec97a90920ae420a950
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de72a773dd3ad58a7f2233e1fc06bf60deb8892a2719ea8e9b42e7d592c1279f
-R eb815e43406071d92b5d2a2f430dc9b0
+P cb874fd87384be397008e953242d5773ef5d64e07c3e1ae352a42a25d70597b4
+R b9321fff6a079c972c21f4df38b7700f
 U drh
-Z 086aafd24f9b8312d4c30fa6c97d493c
+Z 665cf9956f9ce1e131787aec1eb32143
