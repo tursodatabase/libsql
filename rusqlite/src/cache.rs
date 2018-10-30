@@ -1,10 +1,10 @@
 //! Prepared statements cache for faster execution.
 
 use lru_cache::LruCache;
-use raw_statement::RawStatement;
+use crate::raw_statement::RawStatement;
 use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
-use {Connection, Result, Statement};
+use crate::{Connection, Result, Statement};
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared
@@ -16,14 +16,14 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
     ///     {
-    ///         let mut stmt = try!(conn.prepare_cached("INSERT INTO People (name) VALUES (?)"));
-    ///         try!(stmt.execute(&["Joe Smith"]));
+    ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?)")?;
+    ///         stmt.execute(&["Joe Smith"])?;
     ///     }
     ///     {
     ///         // This will return the same underlying SQLite statement handle without
     ///         // having to prepare it again.
-    ///         let mut stmt = try!(conn.prepare_cached("INSERT INTO People (name) VALUES (?)"));
-    ///         try!(stmt.execute(&["Bob Jones"]));
+    ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?)")?;
+    ///         stmt.execute(&["Bob Jones"])?;
     ///     }
     ///     Ok(())
     /// }
@@ -152,7 +152,7 @@ impl StatementCache {
 #[cfg(test)]
 mod test {
     use super::StatementCache;
-    use {Connection, NO_PARAMS};
+    use crate::{Connection, NO_PARAMS};
 
     impl StatementCache {
         fn clear(&self) {

@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::{convert, result};
 
 use super::{Error, Result, Statement};
-use types::{FromSql, FromSqlError, ValueRef};
+use crate::types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
@@ -165,7 +165,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// enabled), and the underlying SQLite column is a blob whose size is not
     /// 16 bytes, `Error::InvalidColumnType` will also be returned.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
-        let idx = try!(idx.idx(self.stmt));
+        let idx = idx.idx(self.stmt)?;
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),

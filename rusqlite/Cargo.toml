@@ -2,6 +2,7 @@
 name = "rusqlite"
 version = "0.15.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
+edition = "2018"
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
 documentation = "http://docs.rs/rusqlite/"

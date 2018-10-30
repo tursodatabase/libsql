@@ -1,4 +1,4 @@
-use {Connection, Result};
+use crate::{Connection, Result};
 
 /// Old name for `LoadExtensionGuard`. `SqliteLoadExtensionGuard` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use LoadExtensionGuard instead")]
@@ -12,7 +12,7 @@ pub type SqliteLoadExtensionGuard<'conn> = LoadExtensionGuard<'conn>;
 /// # use rusqlite::{Connection, Result, LoadExtensionGuard};
 /// # use std::path::{Path};
 /// fn load_my_extension(conn: &Connection) -> Result<()> {
-///     let _guard = try!(LoadExtensionGuard::new(conn));
+///     let _guard = LoadExtensionGuard::new(conn)?;
 ///
 ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
 /// }

@@ -181,7 +181,7 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use super::FromSql;
-    use {Connection, Error};
+    use crate::{Connection, Error};
 
     fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()

@@ -1,5 +1,5 @@
 use std::ops::Deref;
-use {Connection, Result};
+use crate::{Connection, Result};
 
 /// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is
 /// deprecated.
@@ -51,10 +51,10 @@ pub type SqliteTransaction<'conn> = Transaction<'conn>;
 /// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
 /// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
 /// fn perform_queries(conn: &mut Connection) -> Result<()> {
-///     let tx = try!(conn.transaction());
+///     let tx = conn.transaction()?;
 ///
-///     try!(do_queries_part_1(&tx)); // tx causes rollback if this fails
-///     try!(do_queries_part_2(&tx)); // tx causes rollback if this fails
+///     do_queries_part_1(&tx)?; // tx causes rollback if this fails
+///     do_queries_part_2(&tx)?; // tx causes rollback if this fails
 ///
 ///     tx.commit()
 /// }
@@ -79,10 +79,10 @@ pub struct Transaction<'conn> {
 /// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
 /// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
 /// fn perform_queries(conn: &mut Connection) -> Result<()> {
-///     let sp = try!(conn.savepoint());
+///     let sp = conn.savepoint()?;
 ///
-///     try!(do_queries_part_1(&sp)); // sp causes rollback if this fails
-///     try!(do_queries_part_2(&sp)); // sp causes rollback if this fails
+///     do_queries_part_1(&sp)?; // sp causes rollback if this fails
+///     do_queries_part_2(&sp)?; // sp causes rollback if this fails
 ///
 ///     sp.commit()
 /// }
@@ -127,12 +127,12 @@ impl<'conn> Transaction<'conn> {
     /// # use rusqlite::{Connection, Result};
     /// # fn perform_queries_part_1_succeeds(_conn: &Connection) -> bool { true }
     /// fn perform_queries(conn: &mut Connection) -> Result<()> {
-    ///     let mut tx = try!(conn.transaction());
+    ///     let mut tx = conn.transaction()?;
     ///
     ///     {
-    ///         let sp = try!(tx.savepoint());
+    ///         let sp = tx.savepoint()?;
     ///         if perform_queries_part_1_succeeds(&sp) {
-    ///             try!(sp.commit());
+    ///             sp.commit()?;
     ///         }
     ///         // otherwise, sp will rollback
     ///     }
@@ -345,10 +345,10 @@ impl Connection {
     /// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
     /// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
     /// fn perform_queries(conn: &mut Connection) -> Result<()> {
-    ///     let tx = try!(conn.transaction());
+    ///     let tx = conn.transaction()?;
     ///
-    ///     try!(do_queries_part_1(&tx)); // tx causes rollback if this fails
-    ///     try!(do_queries_part_2(&tx)); // tx causes rollback if this fails
+    ///     do_queries_part_1(&tx)?; // tx causes rollback if this fails
+    ///     do_queries_part_2(&tx)?; // tx causes rollback if this fails
     ///
     ///     tx.commit()
     /// }
@@ -388,10 +388,10 @@ impl Connection {
     /// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
     /// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
     /// fn perform_queries(conn: &mut Connection) -> Result<()> {
-    ///     let sp = try!(conn.savepoint());
+    ///     let sp = conn.savepoint()?;
     ///
-    ///     try!(do_queries_part_1(&sp)); // sp causes rollback if this fails
-    ///     try!(do_queries_part_2(&sp)); // sp causes rollback if this fails
+    ///     do_queries_part_1(&sp)?; // sp causes rollback if this fails
+    ///     do_queries_part_2(&sp)?; // sp causes rollback if this fails
     ///
     ///     sp.commit()
     /// }
@@ -419,7 +419,7 @@ impl Connection {
 #[cfg(test)]
 mod test {
     use super::DropBehavior;
-    use {Connection, NO_PARAMS};
+    use crate::{Connection, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();

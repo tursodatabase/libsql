@@ -116,7 +116,7 @@ mod test {
     use super::Value;
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
-    use {Connection, Error, NO_PARAMS};
+    use crate::{Connection, Error, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();

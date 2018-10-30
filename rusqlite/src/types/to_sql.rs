@@ -1,8 +1,8 @@
 use super::{Null, Value, ValueRef};
 use std::borrow::Cow;
 #[cfg(feature = "array")]
-use vtab::array::Array;
-use Result;
+use crate::vtab::array::Array;
+use crate::Result;
 
 /// `ToSqlOutput` represents the possible output types for implementors of the
 /// `ToSql` trait.
@@ -208,7 +208,7 @@ mod test {
     #[test]
     fn test_i128() {
         use std::i128;
-        use {Connection, NO_PARAMS};
+        use crate::{Connection, NO_PARAMS};
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)")
             .unwrap();

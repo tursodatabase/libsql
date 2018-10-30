@@ -1,4 +1,4 @@
-use ffi;
+use crate::ffi;
 use std::ffi::CStr;
 
 /// Returns the SQLite version as an integer; e.g., `3016002` for version

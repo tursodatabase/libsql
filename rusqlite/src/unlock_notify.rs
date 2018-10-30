@@ -6,7 +6,7 @@ use std::os::raw::c_void;
 #[cfg(feature = "unlock_notify")]
 use std::sync::{Condvar, Mutex};
 
-use ffi;
+use crate::ffi;
 
 #[cfg(feature = "unlock_notify")]
 struct UnlockNotification {
@@ -102,7 +102,7 @@ mod test {
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time;
-    use {Connection, OpenFlags, Result, Transaction, TransactionBehavior, NO_PARAMS};
+    use crate::{Connection, OpenFlags, Result, Transaction, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_unlock_notify() {

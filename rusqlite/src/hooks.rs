@@ -4,9 +4,9 @@
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 
-use ffi;
+use crate::ffi;
 
-use {Connection, InnerConnection};
+use crate::{Connection, InnerConnection};
 
 /// Authorizer Action Codes
 #[derive(Debug, PartialEq)]
@@ -290,7 +290,7 @@ fn free_boxed_hook<F>(p: *mut c_void) {
 mod test {
     use super::Action;
     use std::sync::atomic::{AtomicBool, Ordering};
-    use Connection;
+    use crate::Connection;
 
     #[test]
     fn test_commit_hook() {
