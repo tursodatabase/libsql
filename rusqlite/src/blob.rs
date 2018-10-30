@@ -262,8 +262,8 @@ impl ToSql for ZeroBlob {
 
 #[cfg(test)]
 mod test {
-    use std::io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
     use crate::{Connection, DatabaseName, Result};
+    use std::io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 
     fn db_with_test_blob() -> Result<(Connection, i64)> {
         let db = Connection::open_in_memory()?;

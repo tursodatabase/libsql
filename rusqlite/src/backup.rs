@@ -63,12 +63,7 @@ impl Connection {
     ) -> Result<()> {
         use self::StepResult::{Busy, Done, Locked, More};
         let mut dst = Connection::open(dst_path)?;
-        let backup = Backup::new_with_names(
-            self,
-            name,
-            &mut dst,
-            DatabaseName::Main
-        )?;
+        let backup = Backup::new_with_names(self, name, &mut dst, DatabaseName::Main)?;
 
         let mut r = More;
         while r == More {
@@ -308,8 +303,8 @@ impl<'a, 'b> Drop for Backup<'a, 'b> {
 #[cfg(test)]
 mod test {
     use super::Backup;
-    use std::time::Duration;
     use crate::{Connection, DatabaseName, NO_PARAMS};
+    use std::time::Duration;
 
     #[test]
     fn test_backup() {

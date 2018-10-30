@@ -99,10 +99,10 @@ pub fn wait_for_unlock_notify(_db: *mut ffi::sqlite3) -> c_int {
 #[cfg(feature = "unlock_notify")]
 #[cfg(test)]
 mod test {
+    use crate::{Connection, OpenFlags, Result, Transaction, TransactionBehavior, NO_PARAMS};
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time;
-    use crate::{Connection, OpenFlags, Result, Transaction, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_unlock_notify() {

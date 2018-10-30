@@ -289,8 +289,8 @@ fn free_boxed_hook<F>(p: *mut c_void) {
 #[cfg(test)]
 mod test {
     use super::Action;
-    use std::sync::atomic::{AtomicBool, Ordering};
     use crate::Connection;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
     fn test_commit_hook() {

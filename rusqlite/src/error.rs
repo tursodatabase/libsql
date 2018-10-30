@@ -1,10 +1,10 @@
+use crate::types::Type;
+use crate::{errmsg_to_string, ffi};
 use std::error;
 use std::fmt;
 use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::str;
-use crate::types::Type;
-use crate::{errmsg_to_string, ffi};
 
 /// Old name for `Error`. `SqliteError` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use Error instead")]

@@ -1,5 +1,5 @@
-use std::ops::Deref;
 use crate::{Connection, Result};
+use std::ops::Deref;
 
 /// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is
 /// deprecated.

@@ -1577,9 +1577,7 @@ mod test {
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
             assert_eq!(
-                insert_stmt
-                    .execute(&[&i_to_insert as &ToSql, &v])
-                    .unwrap(),
+                insert_stmt.execute(&[&i_to_insert as &ToSql, &v]).unwrap(),
                 1
             );
         }

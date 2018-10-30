@@ -1,10 +1,10 @@
 //! Prepared statements cache for faster execution.
 
-use lru_cache::LruCache;
 use crate::raw_statement::RawStatement;
+use crate::{Connection, Result, Statement};
+use lru_cache::LruCache;
 use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
-use crate::{Connection, Result, Statement};
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared

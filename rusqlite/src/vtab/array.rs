@@ -169,10 +169,10 @@ impl VTabCursor for ArrayTabCursor {
 
 #[cfg(test)]
 mod test {
-    use std::rc::Rc;
     use crate::types::Value;
     use crate::vtab::array;
     use crate::Connection;
+    use std::rc::Rc;
 
     #[test]
     fn test_array_module() {
