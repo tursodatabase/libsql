@@ -120,7 +120,7 @@ set pragma_def {
 
   NAME: writable_schema
   TYPE: FLAG
-  ARG:  SQLITE_WriteSchema
+  ARG:  SQLITE_WriteSchema|SQLITE_NoSchemaError
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
@@ -579,7 +579,7 @@ puts $fd "  u8 mPragFlg;             /* Zero or more PragFlg_XXX values */"
 puts $fd {  u8 iPragCName;           /* Start of column names in pragCName[] */}
 puts $fd "  u8 nPragCName;          \
 /* Num of col names. 0 means use pragma name */"
-puts $fd "  u32 iArg;                /* Extra argument */"
+puts $fd "  u64 iArg;                /* Extra argument */"
 puts $fd "\175 PragmaName;"
 puts $fd "static const PragmaName aPragmaName\[\] = \173"
 

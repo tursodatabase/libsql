@@ -127,7 +127,7 @@ typedef struct PragmaName {
   u8 mPragFlg;             /* Zero or more PragFlg_XXX values */
   u8 iPragCName;           /* Start of column names in pragCName[] */
   u8 nPragCName;           /* Num of col names. 0 means use pragma name */
-  u32 iArg;                /* Extra argument */
+  u64 iArg;                /* Extra argument */
 } PragmaName;
 static const PragmaName aPragmaName[] = {
 #if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
@@ -663,7 +663,7 @@ static const PragmaName aPragmaName[] = {
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ SQLITE_WriteSchema },
+  /* iArg:      */ SQLITE_WriteSchema|SQLITE_NoSchemaError },
 #endif
 };
 /* Number of pragmas: 62 on by default, 81 total. */

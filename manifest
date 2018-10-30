@@ -1,5 +1,5 @@
-C Modify\sthe\sCLI\sso\sthat\sthe\s--deserialize\soption\sis\sonly\savailable\sif\sit\sis\ncompiled\swith\sSQLITE_ENABLE_DESERIALIZE.\s\sDESERIALIZE\sis\snow\soff\sby\sdefault\nfor\sthe\smain.mk\smakefile,\sbut\son\sfor\sMakefile.in\sand\sMakefile.msc.
-D 2018-10-30T15:31:22.400
+C Split\sthe\sSQLITE_WriteSchema\sflag\sin\stwo\sflags,\sWriteSchema\sand\nSQLITE_NoSchemaError.\s\sSet\sonly\sWriteSchema\son\sa\sVACUUM\sto\savoid\sproblems\nwhen\strying\sto\svacuum\sa\scorrupt\sdatabase.\s\sWith\sthis\schange,\sthe\ssize\nof\sthe\sflags\sfield\son\ssqlite3\smust\sgrow\sfrom\s32\sto\s64\sbytes.
+D 2018-10-30T16:25:35.241
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 64113b9c489de88bf5ea29d7426fa3f63938ee5f5e4a4fea1f6e62a25efba177
@@ -497,9 +497,9 @@ F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
 F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c 35efa85894f1ae533c03c64591dfc82f916ad78250591082bbae72a2811bceab
-F src/pragma.h e50df79399da8c2efc6bd4b7034e242d0dc6ab2016564f08e94103367098b1e4
-F src/prepare.c f8e260d940a0e08494c0f30744521b2f832d7263eca9d02b050cea0ba144b097
+F src/pragma.c 0bb05b1788d7af5fdc7f40f5655a79a140dece8fd2523402eb2103925e4739c2
+F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
+F src/prepare.c 498b3bf76a508dc201f90c3e619f597630b1870bdce77eef2dbd380542a4a232
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
@@ -509,7 +509,7 @@ F src/shell.c.in f5a89e43e1b3255fcc274f5185595f547199757e0c59e3ea938af9676e9557d
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
-F src/sqliteInt.h 75d8266b27c287aeada717a541cf7b7543383fccdb1d7d45a5620f666e864c55
+F src/sqliteInt.h 93692315c628c2e7e96a0e82a7edf421b0da8b03f036e0045824d9fe048eae3a
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1707,7 +1707,7 @@ F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 656e64fc4e8b5d91525bac1e81834de3217507657e846b1a08375ca195fa8479
+F tool/mkpragmatab.tcl a1334e70a08fdf5de32cd0093613212bb11ac8f880487540987175c536ac335f
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3cc01a0eaf54e3d5adf206825cfcab15edf73bd5aea10dfc497efd78071a17d0
-R 16663463465bb3df141de41e8b146893
+P 90b2a684f775e1468d63bf950119cf0aaa62b5a449f518e7cc513c314191dd14
+R debb9c0d1e782e1821ad97f71be70e84
 U drh
-Z cc57e679441568ddef0c9613510d7c7c
+Z 85000e55a119438a8ba57afecbd7a3a5
