@@ -3675,6 +3675,11 @@ int deduceDatabaseType(const char *zName, int dfltZip){
        return SHELL_OPEN_NORMAL;
     }
   }
+  n = fread(zBuf, 16, 1, f);
+  if( n==1 && memcmp(zBuf, "SQLite format 3", 16)==0 ){
+    fclose(f);
+    return SHELL_OPEN_NORMAL;
+  }
   fseek(f, -25, SEEK_END);
   n = fread(zBuf, 25, 1, f);
   if( n==1 && memcmp(zBuf, "Start-Of-SQLite3-", 17)==0 ){

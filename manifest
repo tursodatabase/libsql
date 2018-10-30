@@ -1,5 +1,5 @@
-C Enable\ssqlite3_deserialize()\sin\sthe\sCLI.\s\sThe\s--deserialize\soption\sassociated\nwith\sopening\sa\snew\sdatabase\scause\sthe\sdatabase\sfile\sto\sbe\sread\sinto\smemory\nand\saccessed\susing\sthe\ssqlite3_deserialize()\sAPI.\s\sThis\ssimplifies\srunning\s\ntests\son\sa\sdatabase\swithout\srisk\sof\smodifying\sthe\sfile\son\sdisk.
-D 2018-10-30T13:19:49.896
+C In\sthe\sCLI,\swhen\sopening\sa\sfile\sthat\sbegins\swith\sthe\snormal\sSQLite\sprefix,\nopen\sthe\sfile\sas\sa\snormal\sdatabase\seven\sif\sit\shas\sa\sZIP\sfor\sAppendVFS\srecord\nat\sthe\send.
+D 2018-10-30T14:36:21.740
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 64113b9c489de88bf5ea29d7426fa3f63938ee5f5e4a4fea1f6e62a25efba177
@@ -505,7 +505,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 61e867a906f140b73baf4ce7a201ad6dcba30820969f5618ee40e9a0d32c6f5f
-F src/shell.c.in ac4a731dac549746242281d0dac44d53b9f2373f4079cb870cb2681f3e719f6b
+F src/shell.c.in a1fa74761b1bdeca5d40dcfdf55fd88f5139155e2bdd2c6b3e9e8e359d062a7d
 F src/sqlite.h.in 4b4c2f2daeeed4412ba9d81bc78092c69831fe6eda4f0ae5bf951da51a8dccec
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 305adca1b5da4a33ce2db5bd236935768e951d5651bfe5560ed55cfcdbce6a63
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 147a9429a558cf34c316ab8f87832e97caff55d92df696ab6fd045466c8c663d
-R 60676dfd9c16e59bb8febcd06a129176
+P 5e0129ee9afa7c2d707f8ac9e29ef3583c49bb1d0965085c067d58f828ac8cdf
+R 483e69e1ee704e97514f1a28385e28f9
 U drh
-Z 8d1616bb6665374bfbdd3e19d20e8131
+Z a4c51b591abc7bf95f3ada3df5e196d6
