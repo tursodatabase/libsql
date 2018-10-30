@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\swhen\sopening\sa\sfile\sthat\sbegins\swith\sthe\snormal\sSQLite\sprefix,\nopen\sthe\sfile\sas\sa\snormal\sdatabase\seven\sif\sit\shas\sa\sZIP\sfor\sAppendVFS\srecord\nat\sthe\send.
-D 2018-10-30T14:36:21.740
+C Improvements\sto\sthe\s-fsanitize=fuzzer\sbased\sdatabase\sfile\sfuzzer.\n(Cherrypick\sfrom\sthe\srubust-against-damaged-db\sbranch.)
+D 2018-10-30T15:20:35.806
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 64113b9c489de88bf5ea29d7426fa3f63938ee5f5e4a4fea1f6e62a25efba177
@@ -771,7 +771,7 @@ F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c fae8599108dbf6460f8862677a22ee517c9030cdd931df0ed3c66c09ab14e46a
+F test/dbfuzz2.c 652f85bac1770e927da139db513234a3eba308f72ac2f8b32f0093d7d19def70
 F test/dbpage.test dbf50a4d361f9e45a979432c727506065113124478a7d2db12074fa655e65d6c
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1774,7 +1774,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e0129ee9afa7c2d707f8ac9e29ef3583c49bb1d0965085c067d58f828ac8cdf
-R 483e69e1ee704e97514f1a28385e28f9
+P 7989bbda70a24611c3b8af96a53114bb53d87a2e1145ec7ad4f1b4cbf8d6040c
+Q +585c94db09d21ce5c5275537014ba5cfe75d4df9274d6fd8d07f754e4aa2c640
+R 3505f0f95a3c0f6a209b5970a7392158
 U drh
-Z a4c51b591abc7bf95f3ada3df5e196d6
+Z 0539ca60fda1fb5b50f26b7720439a51
