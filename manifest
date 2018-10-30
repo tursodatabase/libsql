@@ -1,5 +1,5 @@
-C Split\sthe\sSQLITE_WriteSchema\sflag\sin\stwo\sflags,\sWriteSchema\sand\nSQLITE_NoSchemaError.\s\sSet\sonly\sWriteSchema\son\sa\sVACUUM\sto\savoid\sproblems\nwhen\strying\sto\svacuum\sa\scorrupt\sdatabase.\s\sWith\sthis\schange,\sthe\ssize\nof\sthe\sflags\sfield\son\ssqlite3\smust\sgrow\sfrom\s32\sto\s64\sbytes.
-D 2018-10-30T16:25:35.241
+C Update\scomments\sin\ssqlite3session.c\sto\sdescribe\sthe\sformat\sof\s"rebase\sblobs",\nas\swell\sas\schangesets\sand\spatchsets.
+D 2018-10-30T19:14:16.577
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 64113b9c489de88bf5ea29d7426fa3f63938ee5f5e4a4fea1f6e62a25efba177
@@ -417,7 +417,7 @@ F ext/session/sessioninvert.test ae1a003a9ab1f8d64227dbb5c3a4c97e65b561b01e7b295
 F ext/session/sessionrebase.test 4e1bcfd26fd8ed8ac571746f56cceeb45184f4d65490ea0d405227cfc8a9cba8
 F ext/session/sessionstat1.test 41cd97c2e48619a41cdf8ae749e1b25f34719de638689221aa43971be693bf4e
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 8772d3cb9124a14f85c7c9ca2bc4931f1180ee99acf5386bdfdd6892455b2443
+F ext/session/sqlite3session.c dbd6f7a89c1236d8e7b58f4e217391670ce91b9e6f85c16ba02832674ef0cf3c
 F ext/session/sqlite3session.h 05351d2f50a1203fdffbeb590fdbbc796c9a6bfcd0c9b26cf6db3854e3eb4294
 F ext/session/test_session.c 98797aba475a799376c9a42214f2d1debf2d0c3cb657d9c8bbf4f70bf3fb4aec
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90b2a684f775e1468d63bf950119cf0aaa62b5a449f518e7cc513c314191dd14
-R debb9c0d1e782e1821ad97f71be70e84
-U drh
-Z 85000e55a119438a8ba57afecbd7a3a5
+P 4f9878107a54356b7105fa1db7655ee239685d570436f6ad4d4221c9bd829b3d
+R 622ca62823c1f2dbd276de64ff12f603
+U dan
+Z 735b392b2384d31c91535992371336a6

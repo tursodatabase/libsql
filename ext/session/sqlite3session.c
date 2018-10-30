@@ -246,6 +246,42 @@ struct SessionTable {
 ** The records associated with INSERT changes are in the same format as for
 ** changesets. It is not possible for a record associated with an INSERT
 ** change to contain a field set to "undefined".
+**
+** REBASE BLOB FORMAT:
+**
+** A rebase blob may be output by sqlite3changeset_apply_v2() and its 
+** streaming equivalent for use with the sqlite3_rebaser APIs to rebase
+** existing changesets. A rebase blob contains one entry for each conflict
+** resolved using either the OMIT or REPLACE strategies within the apply_v2()
+** call.
+**
+** The format used for a rebase blob is very similar to that used for
+** changesets. All entries related to a single table are grouped together.
+**
+** Each group of entries begins with a table header in changeset format:
+**
+**   1 byte: Constant 0x54 (capital 'T')
+**   Varint: Number of columns in the table.
+**   nCol bytes: 0x01 for PK columns, 0x00 otherwise.
+**   N bytes: Unqualified table name (encoded using UTF-8). Nul-terminated.
+**
+** Followed by one or more entries associated with the table.
+**
+**   1 byte: Either SQLITE_INSERT (0x12), DELETE (0x09).
+**   1 byte: Flag. 0x01 for REPLACE, 0x00 for OMIT.
+**   record: (in the record format defined above).
+**
+** In a rebase blob, the first field is set to SQLITE_INSERT if the change
+** that caused the conflict was an INSERT or UPDATE, or to SQLITE_DELETE if
+** it was a DELETE. The second field is set to 0x01 if the conflict 
+** resolution strategy was REPLACE, or 0x00 if it was OMIT.
+**
+** If the change that caused the conflict was a DELETE, then the single
+** record is a copy of the old.* record from the original changeset. If it
+** was an INSERT, then the single record is a copy of the new.* record. If
+** the conflicting change was an UPDATE, then the single record is a copy
+** of the new.* record with the PK fields filled in based on the original
+** old.* record.
 */
 
 /*
