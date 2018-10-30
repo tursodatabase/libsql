@@ -78,9 +78,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
     printf("************** nByte=%d ***************\n", (int)nByte);
     fflush(stdout);
   }
-  rc = sqlite3_open(":memory:", &db);
+  rc = sqlite3_open(0, &db);
   if( rc ) return 1;
-  a = sqlite3_malloc64(nByte);
+  a = sqlite3_malloc64(nByte+1);
   if( a==0 ) return 1;
   memcpy(a, aData, nByte);
   sqlite3_deserialize(db, "main", a, nByte, nByte,
@@ -93,9 +93,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
     }
     sqlite3_exec(db, azSql[i], 0, 0, 0);
   }
-  sqlite3_close(db);
+  rc = sqlite3_close(db);
+  if( rc!=SQLITE_OK ){
+    fprintf(stdout, "sqlite3_close() returns %d\n", rc);
+  }
   if( sqlite3_memory_used()!=0 ){
-    fprintf(stderr,"Memory leak: %lld bytes\n", sqlite3_memory_used());
+    int nAlloc = 0;
+    int nNotUsed = 0;
+    sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &nAlloc, &nNotUsed, 0);
+    fprintf(stderr,"Memory leak: %lld bytes in %d allocations\n",
+            sqlite3_memory_used(), nAlloc);
     exit(1);
   }
   return 0;
