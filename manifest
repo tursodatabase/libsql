@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sassertion\sfault\sthat\scan\soccur\swhile\strying\sto\sDROP\sa\stable\nfrom\sa\scorrupted\sdatabase\sfile.
-D 2018-10-29T21:01:28.956
+C In\sthe\sVACUUM\scommand,\sdefer\ssetting\swritable_schema\suntil\safter\sit\shas\sbeen\ndetermined\sthat\sthe\sschema\sis\snot\scorrupt.
+D 2018-10-30T00:06:27.301
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15344f4e44dfd9ffb04e9867bdd352a8a5a86211b8919a6ca724e7063694320b
@@ -574,7 +574,7 @@ F src/update.c 1816d56c1bca1ba4e0ef98cac2f49be62858e9df1dc08844c7067eb41cc44274
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
-F src/vacuum.c 36e7d21a20c0bf6ef4ef7c399d192b5239410b7c4d3c1070fba4e30810d0b855
+F src/vacuum.c 3ff33a67360241596f34fd25f166698993e0adc5d539128caa2f271a8e96c30f
 F src/vdbe.c 005e691ea4c7d51e6c1a69d9389aeb34700884c85f51681817ddea3fdc2fc39b
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h f1f35f70460698d8f5a2bdef1001114babf318e2983a067804e2ae077d8e9827
@@ -1774,7 +1774,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb874fd87384be397008e953242d5773ef5d64e07c3e1ae352a42a25d70597b4
-R b9321fff6a079c972c21f4df38b7700f
+P 147a9429a558cf34c316ab8f87832e97caff55d92df696ab6fd045466c8c663d
+R 05638985d5e92b5065b724415f46bf03
 U drh
-Z 665cf9956f9ce1e131787aec1eb32143
+Z 318832ddae3183db4e1be16cf44af64c

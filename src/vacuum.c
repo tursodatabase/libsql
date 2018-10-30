@@ -164,7 +164,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   saved_mTrace = db->mTrace;
-  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
+  db->flags |= SQLITE_IgnoreChecks;
   db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder | SQLITE_CountRows);
   db->mTrace = 0;
@@ -285,6 +285,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   ** associated storage, so all we have to do is copy their entries
   ** from the SQLITE_MASTER table.
   */
+  db->flags |= SQLITE_WriteSchema;
   rc = execSqlF(db, pzErrMsg,
       "INSERT INTO vacuum_db.sqlite_master"
       " SELECT*FROM \"%w\".sqlite_master"
