@@ -1,5 +1,5 @@
-C Merge\sfuzz\stest\scases\scomputed\sby\sdbfuzz2.
-D 2018-10-31T01:12:06.779
+C Tweaks\sto\sthe\stest_intarray\sdocumentation\sand\stests.
+D 2018-10-31T18:24:29.283
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 48a5f9a819748dafdea471fbab8b0562c7c622038919bd9e1269a4ab3eddcd4b
@@ -537,8 +537,8 @@ F src/test_fs.c 35a2f7dd8a915900873386331386d9ba1ae1b5026d74fd20c2807bc76221f291
 F src/test_func.c d12d805953bcb3bb19f71d29cdc93383b7b7a3369504d2b7e398a1bd77376294
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
-F src/test_intarray.c 988fc61cb0ff539f4172c0d95f15287c92516f64
-F src/test_intarray.h f3b7672f5d1056eac563c0d6ea8480a660b1475c
+F src/test_intarray.c 39b4181662a0f33a427748d87218e7578d913e683dc27eab7098bb41617cac71
+F src/test_intarray.h d57ae92f420cda25e22790dac474d60961bd0c500cbaa3338a05152d4a669ef7
 F src/test_journal.c 619f2aa10e0d7a5f87c0f06825bc61dfce1c6b9c7f3ad990fb13de6c3b8874a3
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c dec0aa821b230773aeb3dd11d652c1193f7cedb18a20b25659bc672288115242
@@ -1026,7 +1026,7 @@ F test/insert4.test 46bead5f39e181850ee56adcf49d3a3157c460c52249211714612ac89fe3
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 9a8802f28437d8ade53fedfc47b2ca599b4e48ba
 F test/instrfault.test 0f870b218ea17cd477bb19ed330eecdb460dd53a
-F test/intarray.test 46d95b457916638c5d8b1af21fb174804b3acf8b
+F test/intarray.test 8319986182af37c8eb4879c6bfe9cf0074e9d43b193a4c728a0efa3417c53fb7
 F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
 F test/interrupt2.test e4408ca770a6feafbadb0801e54a0dcd1a8d108d
 F test/intpkey.test ac71107a49a06492b69b82aafaf225400598d3c8
@@ -1775,8 +1775,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d57873337a2a7a0d717dc7726cd2682b5bea594d2d1ff8f16c2485161fcd6b16 79fdad8b42869100845eed36224602452486d0166c18cec7d343040fdac7379e
-R abf9d4b23d5fb0d90a85d9fb91cd27e8
-T +closed 79fdad8b42869100845eed36224602452486d0166c18cec7d343040fdac7379e
+P e0d30c1862884049098e1fa9b7c228ff8318a40c09e2516ef2dc8db22e2048e2
+R a8dbdaf3d8135da95f287d348e87b82c
 U drh
-Z 06a9d8f4c6b4bd16784c1c2a44be1c40
+Z 2e686887a5f05faf47cbc1f7a9bfa062
