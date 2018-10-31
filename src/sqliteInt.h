@@ -1387,7 +1387,7 @@ struct sqlite3 {
   Db *aDb;                      /* All backends */
   int nDb;                      /* Number of backends currently in use */
   u32 mDbFlags;                 /* flags recording internal state */
-  u32 flags;                    /* flags settable by pragmas. See below */
+  u64 flags;                    /* flags settable by pragmas. See below */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 szMmap;                   /* Default mmap_size setting */
   u32 nSchemaLock;              /* Do not reset the schema when non-zero */
@@ -1553,14 +1553,16 @@ struct sqlite3 {
 #define SQLITE_TriggerEQP     0x01000000  /* Show trigger EXPLAIN QUERY PLAN */
 #define SQLITE_ResetDatabase  0x02000000  /* Reset the database */
 #define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
+#define SQLITE_NoSchemaError  0x08000000  /* Do not report schema parse errors*/
 
 /* Flags used only if debugging */
+#define HI(X)  ((u64)(X)<<32)
 #ifdef SQLITE_DEBUG
-#define SQLITE_SqlTrace       0x08000000  /* Debug print SQL as it executes */
-#define SQLITE_VdbeListing    0x10000000  /* Debug listings of VDBE programs */
-#define SQLITE_VdbeTrace      0x20000000  /* True to trace VDBE execution */
-#define SQLITE_VdbeAddopTrace 0x40000000  /* Trace sqlite3VdbeAddOp() calls */
-#define SQLITE_VdbeEQP        0x80000000  /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_SqlTrace       HI(0x0001)  /* Debug print SQL as it executes */
+#define SQLITE_VdbeListing    HI(0x0002)  /* Debug listings of VDBE progs */
+#define SQLITE_VdbeTrace      HI(0x0004)  /* True to trace VDBE execution */
+#define SQLITE_VdbeAddopTrace HI(0x0008)  /* Trace sqlite3VdbeAddOp() calls */
+#define SQLITE_VdbeEQP        HI(0x0010)  /* Debug EXPLAIN QUERY PLAN */
 #endif
 
 /*

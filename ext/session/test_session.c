@@ -1239,6 +1239,45 @@ static int SQLITE_TCLAPI test_sqlite3rebaser_create(
   return TCL_OK;
 }
 
+/*
+** tclcmd: sqlite3rebaser_configure OP VALUE
+*/
+static int SQLITE_TCLAPI test_sqlite3session_config(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  struct ConfigOpt {
+    const char *zSub;
+    int op;
+  } aSub[] = {
+    { "strm_size",    SQLITE_SESSION_CONFIG_STRMSIZE },
+    { "invalid",      0 },
+    { 0 }
+  };
+  int rc;
+  int iSub;
+  int iVal;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "OP VALUE");
+    return SQLITE_ERROR;
+  }
+  rc = Tcl_GetIndexFromObjStruct(interp, 
+      objv[1], aSub, sizeof(aSub[0]), "sub-command", 0, &iSub
+  );
+  if( rc!=TCL_OK ) return rc;
+  if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
+
+  rc = sqlite3session_config(aSub[iSub].op, (void*)&iVal);
+  if( rc!=SQLITE_OK ){
+    return test_session_error(interp, rc, 0);
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
+  return TCL_OK;
+}
+
 int TestSession_Init(Tcl_Interp *interp){
   struct Cmd {
     const char *zCmd;
@@ -1254,6 +1293,7 @@ int TestSession_Init(Tcl_Interp *interp){
       test_sqlite3changeset_apply_replace_all },
     { "sql_exec_changeset", test_sql_exec_changeset },
     { "sqlite3rebaser_create", test_sqlite3rebaser_create },
+    { "sqlite3session_config", test_sqlite3session_config },
   };
   int i;
 

@@ -330,8 +330,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
   }
-  if( rc==SQLITE_OK || (db->flags&SQLITE_WriteSchema)){
-    /* Black magic: If the SQLITE_WriteSchema flag is set, then consider
+  if( rc==SQLITE_OK || (db->flags&SQLITE_NoSchemaError)){
+    /* Black magic: If the SQLITE_NoSchemaError flag is set, then consider
     ** the schema loaded, even if errors occurred. In this situation the 
     ** current sqlite3_prepare() operation will fail, but the following one
     ** will attempt to compile the supplied statement against whatever subset
