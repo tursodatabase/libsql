@@ -3586,6 +3586,7 @@ static int relocatePage(
       eType==PTRMAP_BTREE || eType==PTRMAP_ROOTPAGE );
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pDbPage->pBt==pBt );
+  if( iDbPage<3 ) return SQLITE_CORRUPT_BKPT;
 
   /* Move page iDbPage from its current location to page number iFreePage */
   TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
