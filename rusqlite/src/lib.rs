@@ -147,7 +147,7 @@ pub mod vtab;
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 /// To be used when your statement has no [parameter](https://sqlite.org/lang_expr.html#varparam).
-pub const NO_PARAMS: &'static [&'static ToSql] = &[];
+pub const NO_PARAMS: &[&ToSql] = &[];
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use Result instead")]
