@@ -6,10 +6,6 @@ use std::str;
 use types::Type;
 use {errmsg_to_string, ffi};
 
-/// Old name for `Error`. `SqliteError` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Error instead")]
-pub type SqliteError = Error;
-
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
 #[allow(enum_variant_names)]

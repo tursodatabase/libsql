@@ -98,12 +98,8 @@ pub use statement::Statement;
 pub use row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
 
 pub use transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior};
-#[allow(deprecated)]
-pub use transaction::{SqliteTransaction, SqliteTransactionBehavior};
 
 pub use error::Error;
-#[allow(deprecated)]
-pub use error::SqliteError;
 pub use ffi::ErrorCode;
 
 pub use cache::CachedStatement;
@@ -112,8 +108,7 @@ pub use version::*;
 #[cfg(feature = "hooks")]
 pub use hooks::*;
 #[cfg(feature = "load_extension")]
-#[allow(deprecated)]
-pub use load_extension_guard::{LoadExtensionGuard, SqliteLoadExtensionGuard};
+pub use load_extension_guard::LoadExtensionGuard;
 
 #[cfg(feature = "backup")]
 pub mod backup;
@@ -148,10 +143,6 @@ pub mod vtab;
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 /// To be used when your statement has no [parameter](https://sqlite.org/lang_expr.html#varparam).
 pub const NO_PARAMS: &'static [&'static ToSql] = &[];
-
-/// Old name for `Result`. `SqliteResult` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Result instead")]
-pub type SqliteResult<T> = Result<T>;
 
 /// A typedef of the result returned by many methods.
 pub type Result<T> = result::Result<T, Error>;
@@ -196,10 +187,6 @@ impl<'a> DatabaseName<'a> {
         }
     }
 }
-
-/// Old name for `Connection`. `SqliteConnection` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Connection instead")]
-pub type SqliteConnection = Connection;
 
 /// A connection to a SQLite database.
 pub struct Connection {
@@ -630,10 +617,6 @@ struct InnerConnection {
     #[cfg(feature = "hooks")]
     free_update_hook: Option<fn(*mut ::std::os::raw::c_void)>,
 }
-
-/// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use OpenFlags instead")]
-pub type SqliteOpenFlags = OpenFlags;
 
 bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
@@ -1069,18 +1052,6 @@ impl Drop for InnerConnection {
         }
     }
 }
-
-/// Old name for `Statement`. `SqliteStatement` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Statement instead")]
-pub type SqliteStatement<'conn> = Statement<'conn>;
-
-/// Old name for `Rows`. `SqliteRows` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Rows instead")]
-pub type SqliteRows<'stmt> = Rows<'stmt>;
-
-/// Old name for `Row`. `SqliteRow` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Row instead")]
-pub type SqliteRow<'a, 'stmt> = Row<'a, 'stmt>;
 
 #[cfg(test)]
 mod test {
