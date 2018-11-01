@@ -12,7 +12,7 @@ pub type SqliteError = Error;
 
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
-#[allow(enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),

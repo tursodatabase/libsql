@@ -367,12 +367,7 @@ impl<'conn> Statement<'conn> {
         P::Item: ToSql,
     {
         let mut rows = try!(self.query(params));
-        let exists = {
-            match rows.next() {
-                Some(_) => true,
-                None => false,
-            }
-        };
+        let exists = rows.next().is_some();
         Ok(exists)
     }
 
