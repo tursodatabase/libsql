@@ -499,7 +499,9 @@ int sqlite3FixSrcList(
       }
       sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
       pItem->zDatabase = 0;
-      pItem->pSchema = pFix->pSchema;
+      if( !pItem->fg.isTabFunc ){
+        pItem->pSchema = pFix->pSchema;
+      }
     }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
     if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
