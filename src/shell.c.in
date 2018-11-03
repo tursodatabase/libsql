@@ -5956,6 +5956,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "enable_qpsg",      SQLITE_DBCONFIG_ENABLE_QPSG            },
         { "trigger_eqp",      SQLITE_DBCONFIG_TRIGGER_EQP            },
         { "reset_database",   SQLITE_DBCONFIG_RESET_DATABASE         },
+        { "defensive",        SQLITE_DBCONFIG_DEFENSIVE              },
     };
     int ii, v;
     open_db(p, 0);

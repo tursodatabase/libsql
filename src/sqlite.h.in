@@ -2158,6 +2158,29 @@ struct sqlite3_mem_methods {
 ** Because resetting a database is destructive and irreversible, the
 ** process requires the use of this obscure API and multiple steps to help
 ** ensure that it does not happen by accident.
+**
+** <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
+** <dd>The SQLITE_DBCONFIG_DEFENSIVE option actives or deactivates the
+** "defensive" flag for a database connection.  When the defensive
+** flag is enabled, some obscure features of SQLite are disabled in order
+** to reduce the attack surface. Applications that run untrusted SQL
+** can activate this flag to reduce the risk of zero-day exploits.
+** <p>
+** Features disabled by the defensive flag include:
+** <ul>
+** <li>The [PRAGMA writable_schema=ON] statement.
+** <li>Writes to the [sqlite_dbpage] virtual table.
+** </ul>
+** New restrictions may be added in future releases.
+** <p>
+** To be clear: It should never be possible for hostile SQL to cause
+** arbitrary memory reads, memory leaks, buffer overflows, assertion
+** faults, arbitrary code execution, crashes, or other mischief, regardless
+** of the value of the defensive flag.  Any occurrance of these problems
+** is considered a serious bug and will be fixed promptly.  It is not
+** necessary to enable the defensive flag in order to make SQLite secure
+** against attack. The defensive flag merely provides an additional layer
+** of defense against unknown vulnerabilities.
 ** </dd>
 ** </dl>
 */
@@ -2171,7 +2194,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_QPSG           1007 /* int int* */
 #define SQLITE_DBCONFIG_TRIGGER_EQP           1008 /* int int* */
 #define SQLITE_DBCONFIG_RESET_DATABASE        1009 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1009 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_DEFENSIVE             1010 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1010 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

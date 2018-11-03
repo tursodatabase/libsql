@@ -1540,6 +1540,7 @@ struct sqlite3 {
 #define SQLITE_ResetDatabase  0x02000000  /* Reset the database */
 #define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
 #define SQLITE_NoSchemaError  0x08000000  /* Do not report schema parse errors*/
+#define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)
