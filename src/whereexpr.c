@@ -1382,6 +1382,7 @@ static void exprAnalyze(
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
    && pExpr->pLeft->iColumn>=0
+   && !ExprHasProperty(pExpr, EP_FromJoin)
    && OptimizationEnabled(db, SQLITE_Stat34)
   ){
     Expr *pNewExpr;
