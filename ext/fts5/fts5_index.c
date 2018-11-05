@@ -729,7 +729,8 @@ static int fts5IndexPrepareStmt(
   if( p->rc==SQLITE_OK ){
     if( zSql ){
       p->rc = sqlite3_prepare_v3(p->pConfig->db, zSql, -1,
-                                 SQLITE_PREPARE_PERSISTENT, ppStmt, 0);
+                                SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_SHADOW,
+                                ppStmt, 0);
     }else{
       p->rc = SQLITE_NOMEM;
     }
@@ -780,7 +781,8 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
       rc = SQLITE_NOMEM;
     }else{
       rc = sqlite3_prepare_v3(pConfig->db, zSql, -1,
-                              SQLITE_PREPARE_PERSISTENT, &p->pDeleter, 0);
+                              SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_SHADOW,
+                              &p->pDeleter, 0);
       sqlite3_free(zSql);
     }
     if( rc!=SQLITE_OK ){

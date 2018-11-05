@@ -3642,10 +3642,19 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** normalize a SQL statement are unspecified and subject to change.
 ** At a minimum, literal values will be replaced with suitable
 ** placeholders.
+**
+** [[SQLITE_PREPARE_SHADOW]] ^(<dt>SQLITE_PREPARE_SHADOW</dt>
+** <dd>When the SQLITE_PREPARE_SHADOW flag is set, writes to shadow
+** tables are allowed.  Shadow tables are ordinary tables associated
+** with some virtual tables that serve as the storage for the virtual
+** table.  Shadow tables are normally read-only.  Virtual table
+** implementations use this flag so that they can write to their own
+** shadow tables.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
+#define SQLITE_PREPARE_SHADOW                  0x04
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -6322,6 +6331,9 @@ struct sqlite3_module {
   int (*xSavepoint)(sqlite3_vtab *pVTab, int);
   int (*xRelease)(sqlite3_vtab *pVTab, int);
   int (*xRollbackTo)(sqlite3_vtab *pVTab, int);
+  /* The methods above are in versions 1 and 2 of the sqlite_module object.
+  ** Those below are for version 3 and greater. */
+  int (*xShadowName)(const char*);
 };
 
 /*

@@ -1895,6 +1895,35 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 }
 
 /*
+** Return true if zName is a shadow table name in the current database
+** connection.
+**
+** zName is temporarily modified while this routine is running, but is
+** restored to its original value prior to this routine returning.
+*/
+static int isShadowTableName(sqlite3 *db, char *zName){
+  char *zTail;                  /* Pointer to the last "_" in zName */
+  Table *pTab;                  /* Table that zName is a shadow of */
+  VTable *pVTab;                /* Virtual table corresponding to pTab */
+  const sqlite3_module *pMod;   /* module methods for pVTab */
+  zTail = strrchr(zName, '_');
+  if( zTail==0 ) return 0;
+  *zTail = 0;
+  pTab = sqlite3FindTable(db, zName, 0);
+  *zTail = '_';
+  if( pTab==0 ) return 0;
+  if( !IsVirtual(pTab) ) return 0;
+  pVTab = sqlite3GetVTable(db, pTab);
+  if( pVTab==0 ) return 0;
+  if( pVTab->pMod==0 ) return 0;
+  pMod = pVTab->pMod->pModule;
+  assert( pMod!=0 );
+  if( pMod->iVersion<3 ) return 0;
+  if( pMod->xShadowName==0 ) return 0;
+  return pMod->xShadowName(zTail+1);
+}
+
+/*
 ** This routine is called to report the final ")" that terminates
 ** a CREATE TABLE statement.
 **
@@ -1932,6 +1961,10 @@ void sqlite3EndTable(
   assert( !db->mallocFailed );
   p = pParse->pNewTable;
   if( p==0 ) return;
+
+  if( pSelect==0 && isShadowTableName(db, p->zName) ){
+    p->tabFlags |= TF_Shadow;
+  }
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" or "sqlite_temp_master" table on the disk.

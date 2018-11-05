@@ -248,7 +248,8 @@ static sqlite3_module templatevtabModule = {
   /* xRename     */ 0,
   /* xSavepoint  */ 0,
   /* xRelease    */ 0,
-  /* xRollbackTo */ 0
+  /* xRollbackTo */ 0,
+  /* xShadowName */ 0
 };
 
 
