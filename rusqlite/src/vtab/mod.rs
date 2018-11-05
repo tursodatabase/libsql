@@ -467,6 +467,8 @@ impl<'a> Values<'a> {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
         })
     }
 

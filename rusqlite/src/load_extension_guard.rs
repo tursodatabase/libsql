@@ -1,9 +1,5 @@
 use crate::{Connection, Result};
 
-/// Old name for `LoadExtensionGuard`. `SqliteLoadExtensionGuard` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use LoadExtensionGuard instead")]
-pub type SqliteLoadExtensionGuard<'conn> = LoadExtensionGuard<'conn>;
-
 /// RAII guard temporarily enabling SQLite extensions to be loaded.
 ///
 /// ## Example

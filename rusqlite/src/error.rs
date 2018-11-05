@@ -6,10 +6,6 @@ use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::str;
 
-/// Old name for `Error`. `SqliteError` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Error instead")]
-pub type SqliteError = Error;
-
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
 #[allow(enum_variant_names)]

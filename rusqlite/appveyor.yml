@@ -5,9 +5,9 @@ environment:
   - TARGET: x86_64-pc-windows-msvc
     VCPKG_DEFAULT_TRIPLET: x64-windows
     VCPKGRS_DYNAMIC: 1
-  - TARGET: x86_64-pc-windows-msvc
-    VCPKG_DEFAULT_TRIPLET: x64-windows-static
-    RUSTFLAGS: -Ctarget-feature=+crt-static
+#  - TARGET: x86_64-pc-windows-msvc
+#    VCPKG_DEFAULT_TRIPLET: x64-windows-static
+#    RUSTFLAGS: -Ctarget-feature=+crt-static
 install:
   - appveyor-retry appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init.exe -y --default-host %TARGET%
