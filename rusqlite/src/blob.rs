@@ -92,9 +92,9 @@ impl Connection {
     ) -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
-        let db = try!(db.to_cstring());
-        let table = try!(super::str_to_cstring(table));
-        let column = try!(super::str_to_cstring(column));
+        let db = db.to_cstring()?;
+        let table = super::str_to_cstring(table)?;
+        let column = super::str_to_cstring(column)?;
         let rc = unsafe {
             ffi::sqlite3_blob_open(
                 c.db(),
@@ -266,12 +266,12 @@ mod test {
     use {Connection, DatabaseName, Result};
 
     fn db_with_test_blob() -> Result<(Connection, i64)> {
-        let db = try!(Connection::open_in_memory());
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE test (content BLOB);
                    INSERT INTO test VALUES (ZEROBLOB(10));
                    END;";
-        try!(db.execute_batch(sql));
+        db.execute_batch(sql)?;
         let rowid = db.last_insert_rowid();
         Ok((db, rowid))
     }

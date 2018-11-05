@@ -188,19 +188,19 @@ impl VTabCursor for SeriesTabCursor {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;
         if idx_num.contains(QueryPlanFlags::START) {
-            self.min_value = try!(args.get(i));
+            self.min_value = args.get(i)?;
             i += 1;
         } else {
             self.min_value = 0;
         }
         if idx_num.contains(QueryPlanFlags::STOP) {
-            self.max_value = try!(args.get(i));
+            self.max_value = args.get(i)?;
             i += 1;
         } else {
             self.max_value = 0xffff_ffff;
         }
         if idx_num.contains(QueryPlanFlags::STEP) {
-            self.step = try!(args.get(i));
+            self.step = args.get(i)?;
             if self.step < 1 {
                 self.step = 1;
             }

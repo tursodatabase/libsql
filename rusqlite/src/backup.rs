@@ -23,8 +23,8 @@
 //!     dst: P,
 //!     progress: fn(backup::Progress),
 //! ) -> Result<()> {
-//!     let mut dst = try!(Connection::open(dst));
-//!     let backup = try!(backup::Backup::new(src, &mut dst));
+//!     let mut dst = Connection::open(dst)?;
+//!     let backup = backup::Backup::new(src, &mut dst)?;
 //!     backup.run_to_completion(5, time::Duration::from_millis(250), Some(progress))
 //! }
 //! ```
@@ -62,17 +62,12 @@ impl Connection {
         progress: Option<fn(Progress)>,
     ) -> Result<()> {
         use self::StepResult::{Busy, Done, Locked, More};
-        let mut dst = try!(Connection::open(dst_path));
-        let backup = try!(Backup::new_with_names(
-            self,
-            name,
-            &mut dst,
-            DatabaseName::Main
-        ));
+        let mut dst = Connection::open(dst_path)?;
+        let backup = Backup::new_with_names(self, name, &mut dst, DatabaseName::Main)?;
 
         let mut r = More;
         while r == More {
-            r = try!(backup.step(100));
+            r = backup.step(100)?;
             if let Some(f) = progress {
                 f(backup.progress());
             }
@@ -105,13 +100,13 @@ impl Connection {
         progress: Option<F>,
     ) -> Result<()> {
         use self::StepResult::{Busy, Done, Locked, More};
-        let src = try!(Connection::open(src_path));
-        let restore = try!(Backup::new_with_names(&src, DatabaseName::Main, self, name));
+        let src = Connection::open(src_path)?;
+        let restore = Backup::new_with_names(&src, DatabaseName::Main, self, name)?;
 
         let mut r = More;
         let mut busy_count = 0i32;
         'restore_loop: while r == More || r == Busy {
-            r = try!(restore.step(100));
+            r = restore.step(100)?;
             if let Some(ref f) = progress {
                 f(restore.progress());
             }
@@ -201,8 +196,8 @@ impl<'a, 'b> Backup<'a, 'b> {
         to: &'b mut Connection,
         to_name: DatabaseName,
     ) -> Result<Backup<'a, 'b>> {
-        let to_name = try!(to_name.to_cstring());
-        let from_name = try!(from_name.to_cstring());
+        let to_name = to_name.to_cstring()?;
+        let from_name = from_name.to_cstring()?;
 
         let to_db = to.db.borrow_mut().db;
 
@@ -287,7 +282,7 @@ impl<'a, 'b> Backup<'a, 'b> {
         assert!(pages_per_step > 0, "pages_per_step must be positive");
 
         loop {
-            let r = try!(self.step(pages_per_step));
+            let r = self.step(pages_per_step)?;
             if let Some(progress) = progress {
                 progress(self.progress())
             }

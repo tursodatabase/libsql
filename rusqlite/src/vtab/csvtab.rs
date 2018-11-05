@@ -60,7 +60,7 @@ impl CSVTab {
     }
 
     fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
-        let arg = try!(str::from_utf8(c_slice)).trim();
+        let arg = str::from_utf8(c_slice)?.trim();
         let mut split = arg.split('=');
         if let Some(key) = split.next() {
             if let Some(value) = split.next() {
@@ -107,7 +107,7 @@ impl VTab for CSVTab {
 
         let args = &args[3..];
         for c_slice in args {
-            let (param, value) = try!(CSVTab::parameter(c_slice));
+            let (param, value) = CSVTab::parameter(c_slice)?;
             match param {
                 "filename" => {
                     if !Path::new(value).exists() {
@@ -189,10 +189,10 @@ impl VTab for CSVTab {
 
         let mut cols: Vec<String> = Vec::new();
         if vtab.has_headers || (n_col.is_none() && schema.is_none()) {
-            let mut reader = try!(vtab.reader());
+            let mut reader = vtab.reader()?;
             if vtab.has_headers {
                 {
-                    let headers = try!(reader.headers());
+                    let headers = reader.headers()?;
                     // headers ignored if cols is not empty
                     if n_col.is_none() && schema.is_none() {
                         cols = headers
@@ -204,7 +204,7 @@ impl VTab for CSVTab {
                 vtab.offset_first_row = reader.position().clone();
             } else {
                 let mut record = csv::ByteRecord::new();
-                if try!(reader.read_byte_record(&mut record)) {
+                if reader.read_byte_record(&mut record)? {
                     for (i, _) in record.iter().enumerate() {
                         cols.push(format!("c{}", i));
                     }
@@ -245,7 +245,7 @@ impl VTab for CSVTab {
     }
 
     fn open(&self) -> Result<CSVTabCursor> {
-        Ok(CSVTabCursor::new(try!(self.reader())))
+        Ok(CSVTabCursor::new(self.reader()?))
     }
 }
 
@@ -288,7 +288,7 @@ impl VTabCursor for CSVTabCursor {
     fn filter(&mut self, _idx_num: c_int, _idx_str: Option<&str>, _args: &Values) -> Result<()> {
         {
             let offset_first_row = self.vtab().offset_first_row.clone();
-            try!(self.reader.seek(offset_first_row));
+            self.reader.seek(offset_first_row)?;
         }
         self.row_number = 0;
         self.next()
@@ -301,7 +301,7 @@ impl VTabCursor for CSVTabCursor {
                 return Ok(());
             }
 
-            self.eof = !try!(self.reader.read_record(&mut self.cols));
+            self.eof = !self.reader.read_record(&mut self.cols)?;
         }
 
         self.row_number += 1;
