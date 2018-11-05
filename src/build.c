@@ -796,6 +796,20 @@ int sqlite3TwoPartName(
 }
 
 /*
+** True if PRAGMA writable_schema is ON
+*/
+int sqlite3WritableSchema(sqlite3 *db){
+  testcase( (db->flags&(SQLITE_WriteSchema|SQLITE_Defensive))==0 );
+  testcase( (db->flags&(SQLITE_WriteSchema|SQLITE_Defensive))==
+               SQLITE_WriteSchema );
+  testcase( (db->flags&(SQLITE_WriteSchema|SQLITE_Defensive))==
+               SQLITE_Defensive );
+  testcase( (db->flags&(SQLITE_WriteSchema|SQLITE_Defensive))==
+               (SQLITE_WriteSchema|SQLITE_Defensive) );
+  return (db->flags&(SQLITE_WriteSchema|SQLITE_Defensive))==SQLITE_WriteSchema;
+}
+
+/*
 ** This routine is used to check if the UTF-8 string zName is a legal
 ** unqualified name for a new schema object (table, index, view or
 ** trigger). All names are legal except those that begin with the string
@@ -804,7 +818,7 @@ int sqlite3TwoPartName(
 */
 int sqlite3CheckObjectName(Parse *pParse, const char *zName){
   if( !pParse->db->init.busy && pParse->nested==0 
-          && (pParse->db->flags & SQLITE_WriteSchema)==0
+          && sqlite3WritableSchema(pParse->db)==0
           && 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
     sqlite3ErrorMsg(pParse, "object name reserved for internal use: %s", zName);
     return SQLITE_ERROR;

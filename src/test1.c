@@ -7556,6 +7556,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "QPSG",            SQLITE_DBCONFIG_ENABLE_QPSG },
     { "TRIGGER_EQP",     SQLITE_DBCONFIG_TRIGGER_EQP },
     { "RESET_DB",        SQLITE_DBCONFIG_RESET_DATABASE },
+    { "DEFENSIVE",       SQLITE_DBCONFIG_DEFENSIVE },
   };
   int i;
   int v;
