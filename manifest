@@ -1,5 +1,5 @@
-C Disable\sthe\sIS\sNOT\sNULL\soptimization\swhen\sthe\sIS\sNOT\sNULL\soperator\sis\spart\nof\sthe\sON\sclause\sof\sa\sLEFT\sJOIN.\sFix\sfor\sticket\s[65eb38f6e46de8c75e188a17ec].
-D 2018-11-05T07:53:17.150
+C Eponymous\svirtual\stables\sappear\sto\sexist\sin\sall\sschemas.\sThis\sis\san\salternative\nand\simproved\sfix\sto\sthe\seponymous\svirtual\stable\sin\strigger\sproblem\sthat\nwas\spreviously\saddressed\sby\scheckin\s[1fa74930ab56171e].
+D 2018-11-05T16:38:10.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -440,7 +440,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c bcb67339d8551408bfc99aa78b597abdc9b880114bc4e42027f9a02615df4f43
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
-F src/attach.c 2d61c00d5348331d4312e4b58003cef2e438e058cbbc6c1ad7f309fb4e50996e
+F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -448,7 +448,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 75ec3352656834ed096af95410610e7e7f16e1cdb65b0876bad49387b01d21b3
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 792a3246e8d080f631cb697e28f2da2ef21fa9f83a5476548f1ee4175d11cfaf
+F src/build.c dad9c5ef0208c265cfa337627e1dc157e7f0f9d8ff2446ce71c8ee26bfc3c253
 F src/callback.c 789bd33d188146f66c0dd8306472a72d1c05f71924b24a91caf6bd45cf9aba73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1340,7 +1340,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 5ddfdcda81f362d54cf301a65678edea2a02a570760a4c88051fc2730aafcd81
+F test/tabfunc01.test 54300134f76db817685194d2f0e63e3fbf7380b45e0d426e00a9aee752497cfb
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d44318f59044162e229a444582692e9788f17b5c404b4eb702f4c2114b22fefe
-R 455c4aa2e025a9ba6644dcf5bd1f98bf
+P af39661e60f562b9eb10343fd83e8fe21be4d7276111e7853c1179a24cab09ce
+R 339c64ce09fca73ceee8c1042422903e
 U drh
-Z 407cad8cdada7d39c1fa333f10131199
+Z 33ab2eb0a685e3d60c9c79597471e0c2
