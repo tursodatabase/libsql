@@ -1,12 +1,12 @@
-C Fix\sa\sassert()\sin\sthe\squery\splanner\sthat\scan\sarise\swhen\sdoing\srow-value\noperations\son\sa\sPRIMARY\sKEY\sthat\scontains\sduplicate\scolumns.\nTicket\s[1a84668dcfdebaf12415d].
-D 2018-11-05T13:35:11.946
+C Increase\sthe\sversion\snumber\sto\s3.25.3.
+D 2018-11-05T13:37:19.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a889c6981a222d639f8a548adcfb3183ac07871e27452ace4d810735750f216a
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
-F VERSION 8d89a0e3dbf2fe06a028ad03f03d38e30295290cf2ef425a877547b193acaa58
+F VERSION a0e6c0b0a597b690112e0efc8079eac843d09051529e7fd7451f893d03ba4a2c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -33,7 +33,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 6876c95d54c96d8675f0e39838b6b557eb5fc7ce619ba014e31e0e261dff1f25 x
+F configure d48f51d52de9fda6eacabaa3c1ac43b0ac7137fa0fe5a3879f122a2de6ac8990 x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1767,8 +1767,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P caebf8792576752d1cd8af29f00ba3909b2448018c830287007328f6c31072c1
-Q +dcb8c73594ea6b12bad98dc883a585d3e6b925c2ead267dc40332b3d266db5e8
-R 600960f8dec1c796a7004ed3a061fa41
+P 1309c84ad36b6ac6dedd103892445bf60dbf27167ef71e7722e934f2175a4199
+R 54144e7177a1888e8a14352f5e1fe3ec
 U drh
-Z 19014da2fbbb508637cc9618fe406d6e
+Z 53cac6f189fa4db428a2f019716ded43
