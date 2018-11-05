@@ -1,10 +1,10 @@
-C Add\sthe\sSQLITE_DBCONFIG_DEFENSIVE\sflag.
-D 2018-11-05T19:37:30.613
+C Add\spreliminary\sversion\sof\s"changesetfuzz"\sprogram.\sFor\sfuzzing\schangeset\sdata\nwithout\screating\scorrupt\schangesets.
+D 2018-11-05T20:37:33.019
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
+F Makefile.in d298b31769d4c737887102462cd45684786b09f2a626a80b3e413790fb436219
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 5402eae167757dae275cd99c21d21d77db2ec1877c58b4f790ef747a60b95c9f
+F Makefile.msc 071853dfc2148aadaeb7a153b9986cc9d71b7f256874f79b119f97a4c89453f5
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION 654da1d4053fb09ffc33a3910e6d427182a7dcdc67e934fa83de2849ac83fccb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -391,6 +391,7 @@ F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1d2f94ac66
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
+F ext/session/changesetfuzz.c 1e56326c4b76a6f1802ca73629409ce1eb10d60a388a43d8e7c74b33b1f4725c
 F ext/session/session1.test 0b2f88995832ea040ae8e83a1ad4afa99c00b85c779d213da73a95ea4113233e
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test ce9ce3dfa489473987f899e9f6a0f2db9bde3479
@@ -426,7 +427,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 71a3471e99c18bf5ddb9593e5ec3ecef858e97551b949401f8cff2aaba79c67c
+F main.mk ddb6616776c53dfc06bb3f8396df8721c8b699294271fd0c3d110dd278d9c723
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1776,8 +1777,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8d35c4a7c99ce3753761e5b81269d52c3c910c603fa70b72549883ba68bc485 76094345821246c887a31a234b339d03a78eddbb9fab33b06c3c20797c038349
-R 926c099479c1d3f76ac3c956522bfabe
-T +closed 76094345821246c887a31a234b339d03a78eddbb9fab33b06c3c20797c038349
-U drh
-Z 58f19e654e2db3cbbf8bd66e3b3e9711
+P 11d98414eac467affb0b3cf0c7e5cc3d43184fc2b6e7e898bb5277b51ea9e1fa
+R 147d5d75296309ad726c7c64dc2b1650
+T *branch * changesetfuzz
+T *sym-changesetfuzz *
+T -sym-trunk *
+U dan
+Z e5d17ad373a9d021c09070dfd9d8422e
