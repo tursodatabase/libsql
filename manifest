@@ -1,5 +1,5 @@
-C In\sthe\sWHERE-constraint\spropagation\soptimization,\sif\sthere\sare\sduplicate\nconstraint,\smake\ssure\sonly\sone\sof\sthem\spropagates.\s\sProposed\sfix\sfor\nticket\s[cf5ed20fc8621b165].
-D 2018-10-25T15:25:10.254
+C Fix\sa\sassert()\sin\sthe\squery\splanner\sthat\scan\sarise\swhen\sdoing\srow-value\noperations\son\sa\sPRIMARY\sKEY\sthat\scontains\sduplicate\scolumns.\nTicket\s[1a84668dcfdebaf12415d].
+D 2018-11-05T13:35:11.946
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -588,7 +588,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c ba7225773931760cf60bf22f34d0cce2588df7ce5ce0f215a52eb88234b55ac4
 F src/where.c 2019126801437944c38cc62a99491e98591460b7cc07ab57eb66165f710a289b
 F src/whereInt.h b90ef9b9707ef750eab2a7a080c48fb4900315033274689def32d0cf5a81ebe4
-F src/wherecode.c 4f88f5b39ad4aeb5bdd47a546d74149bb902ef49ca9f02a45b2a5bd2dd70b6bd
+F src/wherecode.c cf6d3ac7b428102c1ebbff8758cf932ce38a31ed7704960010b6a90a9849b1f5
 F src/whereexpr.c eb462ebe085f6cbb6bdda797a041fbd7e3724586203344043d1088a2117d8e44
 F src/window.c 4b503da928dace3e845b891381a4d98eeb8c5744313ae3643df8d8d21fdcca65
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1202,7 +1202,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test ef851a80f7e6de93b51caca9e4b6b7d2dcd540bbcca7d51860e80435b8b4c0de
+F test/rowvalue.test b8680f07d19c8c5223b808bba998faffcec6d505f5689ff6070280119173bb51
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 2b20468da3775aba971caf3158e9696a4d99c69a7623fb495f332a596daebbee
@@ -1767,8 +1767,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d2916589649421b53c599417577c8707352583378b0f47c899ee779cbd523c7
-Q +5d5b596f152bb2781011a05f75f9e200774d4f69d648ef68de577b4ace973e07
-R d18d3ffdeccd1af2b9b6e6109060fe80
+P caebf8792576752d1cd8af29f00ba3909b2448018c830287007328f6c31072c1
+Q +dcb8c73594ea6b12bad98dc883a585d3e6b925c2ead267dc40332b3d266db5e8
+R 600960f8dec1c796a7004ed3a061fa41
 U drh
-Z 18440bce5872df2e7bc423fbc2279523
+Z 19014da2fbbb508637cc9618fe406d6e

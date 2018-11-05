@@ -425,7 +425,7 @@ static Expr *removeUnindexableInClauseTerms(
     for(i=iEq; i<pLoop->nLTerm; i++){
       if( pLoop->aLTerm[i]->pExpr==pX ){
         int iField = pLoop->aLTerm[i]->iField - 1;
-        assert( pOrigRhs->a[iField].pExpr!=0 );
+        if( pOrigRhs->a[iField].pExpr==0 ) continue; /* Duplicate PK column */
         pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
         pOrigRhs->a[iField].pExpr = 0;
         assert( pOrigLhs->a[iField].pExpr!=0 );
