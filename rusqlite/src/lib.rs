@@ -153,11 +153,11 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
 }
 
 fn str_to_cstring(s: &str) -> Result<CString> {
-    Ok(try!(CString::new(s)))
+    Ok(CString::new(s)?)
 }
 
 fn path_to_cstring(p: &Path) -> Result<CString> {
-    let s = try!(p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned())));
+    let s = p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned()))?;
     str_to_cstring(s)
 }
 
@@ -240,7 +240,7 @@ impl Connection {
     /// Will return `Err` if `path` cannot be converted to a C-compatible
     /// string or if the underlying SQLite open call fails.
     pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: OpenFlags) -> Result<Connection> {
-        let c_path = try!(path_to_cstring(path.as_ref()));
+        let c_path = path_to_cstring(path.as_ref())?;
         InnerConnection::open_with_flags(&c_path, flags).map(|db| Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
@@ -257,7 +257,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite open call fails.
     pub fn open_in_memory_with_flags(flags: OpenFlags) -> Result<Connection> {
-        let c_memory = try!(str_to_cstring(":memory:"));
+        let c_memory = str_to_cstring(":memory:")?;
         InnerConnection::open_with_flags(&c_memory, flags).map(|db| Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
@@ -385,7 +385,7 @@ impl Connection {
         P::Item: ToSql,
         F: FnOnce(&Row) -> T,
     {
-        let mut stmt = try!(self.prepare(sql));
+        let mut stmt = self.prepare(sql)?;
         stmt.query_row(params, f)
     }
 
@@ -403,8 +403,8 @@ impl Connection {
     where
         F: FnOnce(&Row) -> T,
     {
-        let mut stmt = try!(self.prepare(sql));
-        let mut rows = try!(stmt.query_named(params));
+        let mut stmt = self.prepare(sql)?;
+        let mut rows = stmt.query_named(params)?;
 
         rows.get_expected_row().map(|r| f(&r))
     }
@@ -441,8 +441,8 @@ impl Connection {
         F: FnOnce(&Row) -> result::Result<T, E>,
         E: convert::From<Error>,
     {
-        let mut stmt = try!(self.prepare(sql));
-        let mut rows = try!(stmt.query(params));
+        let mut stmt = self.prepare(sql)?;
+        let mut rows = stmt.query(params)?;
 
         rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
     }
@@ -454,9 +454,9 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = try!(conn.prepare("INSERT INTO People (name) VALUES (?)"));
-    ///     try!(stmt.execute(&["Joe Smith"]));
-    ///     try!(stmt.execute(&["Bob Jones"]));
+    ///     let mut stmt = conn.prepare("INSERT INTO People (name) VALUES (?)")?;
+    ///     stmt.execute(&["Joe Smith"])?;
+    ///     stmt.execute(&["Bob Jones"])?;
     ///     Ok(())
     /// }
     /// ```
@@ -493,8 +493,8 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// # use std::path::{Path};
     /// fn load_my_extension(conn: &Connection) -> Result<()> {
-    ///     try!(conn.load_extension_enable());
-    ///     try!(conn.load_extension(Path::new("my_sqlite_extension"), None));
+    ///     conn.load_extension_enable()?;
+    ///     conn.load_extension(Path::new("my_sqlite_extension"), None)?;
     ///     conn.load_extension_disable()
     /// }
     /// ```
@@ -533,7 +533,7 @@ impl Connection {
     /// # use rusqlite::{Connection, Result, LoadExtensionGuard};
     /// # use std::path::{Path};
     /// fn load_my_extension(conn: &Connection) -> Result<()> {
-    ///     let _guard = try!(LoadExtensionGuard::new(conn));
+    ///     let _guard = LoadExtensionGuard::new(conn)?;
     ///
     ///     conn.load_extension("my_sqlite_extension", None)
     /// }
@@ -902,7 +902,7 @@ impl InnerConnection {
     }
 
     fn execute_batch(&mut self, sql: &str) -> Result<()> {
-        let c_sql = try!(str_to_cstring(sql));
+        let c_sql = str_to_cstring(sql)?;
         unsafe {
             let r = ffi::sqlite3_exec(
                 self.db(),
@@ -923,11 +923,11 @@ impl InnerConnection {
 
     #[cfg(feature = "load_extension")]
     fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
-        let dylib_str = try!(path_to_cstring(dylib_path));
+        let dylib_str = path_to_cstring(dylib_path)?;
         unsafe {
             let mut errmsg: *mut c_char = mem::uninitialized();
             let r = if let Some(entry_point) = entry_point {
-                let c_entry = try!(str_to_cstring(entry_point));
+                let c_entry = str_to_cstring(entry_point)?;
                 ffi::sqlite3_load_extension(
                     self.db,
                     dylib_str.as_ptr(),
@@ -956,7 +956,7 @@ impl InnerConnection {
             return Err(error_from_sqlite_code(ffi::SQLITE_TOOBIG, None));
         }
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
-        let c_sql = try!(str_to_cstring(sql));
+        let c_sql = str_to_cstring(sql)?;
         let len_with_nul = (sql.len() + 1) as c_int;
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {

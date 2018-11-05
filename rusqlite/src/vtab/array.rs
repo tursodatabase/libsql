@@ -131,7 +131,7 @@ impl ArrayTabCursor {
 impl VTabCursor for ArrayTabCursor {
     fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
         if idx_num > 0 {
-            self.ptr = try!(args.get_array(0));
+            self.ptr = args.get_array(0)?;
         } else {
             self.ptr = None;
         }

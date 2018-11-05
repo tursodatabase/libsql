@@ -469,7 +469,7 @@ impl<'a> Values<'a> {
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             #[cfg(feature = "i128_blob")]
             FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
-    })
+        })
     }
 
     // `sqlite3_value_type` returns `SQLITE_NULL` for pointer.
@@ -546,7 +546,7 @@ impl InnerConnection {
         module: &Module<T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
-        let c_name = try!(str_to_cstring(module_name));
+        let c_name = str_to_cstring(module_name)?;
         let r = match aux {
             Some(aux) => {
                 let boxed_aux: *mut T::Aux = Box::into_raw(Box::new(aux));

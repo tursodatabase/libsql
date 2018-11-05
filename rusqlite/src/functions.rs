@@ -20,7 +20,7 @@
 //! fn add_regexp_function(db: &Connection) -> Result<()> {
 //!     let mut cached_regexes = HashMap::new();
 //!     db.create_scalar_function("regexp", 2, true, move |ctx| {
-//!         let regex_s = try!(ctx.get::<String>(0));
+//!         let regex_s = ctx.get::<String>(0)?;
 //!         let entry = cached_regexes.entry(regex_s.clone());
 //!         let regex = {
 //!             use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -33,7 +33,7 @@
 //!             }
 //!         };
 //!
-//!         let text = try!(ctx.get::<String>(1));
+//!         let text = ctx.get::<String>(1)?;
 //!         Ok(regex.is_match(&text))
 //!     })
 //! }
@@ -224,12 +224,12 @@ impl Connection {
     /// ```rust
     /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn scalar_function_example(db: Connection) -> Result<()> {
-    ///     try!(db.create_scalar_function("halve", 1, true, |ctx| {
-    ///         let value = try!(ctx.get::<f64>(0));
+    ///     db.create_scalar_function("halve", 1, true, |ctx| {
+    ///         let value = ctx.get::<f64>(0)?;
     ///         Ok(value / 2f64)
-    ///     }));
+    ///     })?;
     ///
-    ///     let six_halved: f64 = try!(db.query_row("SELECT halve(6)", NO_PARAMS, |r| r.get(0)));
+    ///     let six_halved: f64 = db.query_row("SELECT halve(6)", NO_PARAMS, |r| r.get(0))?;
     ///     assert_eq!(six_halved, 3f64);
     ///     Ok(())
     /// }
@@ -326,7 +326,7 @@ impl InnerConnection {
         }
 
         let boxed_f: *mut F = Box::into_raw(Box::new(x_func));
-        let c_name = try!(str_to_cstring(fn_name));
+        let c_name = str_to_cstring(fn_name)?;
         let mut flags = ffi::SQLITE_UTF8;
         if deterministic {
             flags |= ffi::SQLITE_DETERMINISTIC;
@@ -441,7 +441,7 @@ impl InnerConnection {
         }
 
         let boxed_aggr: *mut D = Box::into_raw(Box::new(aggr));
-        let c_name = try!(str_to_cstring(fn_name));
+        let c_name = str_to_cstring(fn_name)?;
         let mut flags = ffi::SQLITE_UTF8;
         if deterministic {
             flags |= ffi::SQLITE_DETERMINISTIC;
@@ -463,7 +463,7 @@ impl InnerConnection {
     }
 
     fn remove_function(&mut self, fn_name: &str, n_arg: c_int) -> Result<()> {
-        let c_name = try!(str_to_cstring(fn_name));
+        let c_name = str_to_cstring(fn_name)?;
         let r = unsafe {
             ffi::sqlite3_create_function_v2(
                 self.db(),
@@ -495,7 +495,7 @@ mod test {
 
     fn half(ctx: &Context) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
-        let value = try!(ctx.get::<c_double>(0));
+        let value = ctx.get::<c_double>(0)?;
         Ok(value / 2f64)
     }
 
@@ -529,7 +529,7 @@ mod test {
         let saved_re: Option<&Regex> = unsafe { ctx.get_aux(0) };
         let new_re = match saved_re {
             None => {
-                let s = try!(ctx.get::<String>(0));
+                let s = ctx.get::<String>(0)?;
                 match Regex::new(&s) {
                     Ok(r) => Some(r),
                     Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
@@ -607,7 +607,7 @@ mod test {
         db.create_scalar_function("regexp", 2, true, move |ctx| {
             assert!(ctx.len() == 2, "called with unexpected number of arguments");
 
-            let regex_s = try!(ctx.get::<String>(0));
+            let regex_s = ctx.get::<String>(0)?;
             let entry = cached_regexes.entry(regex_s.clone());
             let regex = {
                 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -620,7 +620,7 @@ mod test {
                 }
             };
 
-            let text = try!(ctx.get::<String>(1));
+            let text = ctx.get::<String>(1)?;
             Ok(regex.is_match(&text))
         })
         .unwrap();
@@ -648,7 +648,7 @@ mod test {
             let mut ret = String::new();
 
             for idx in 0..ctx.len() {
-                let s = try!(ctx.get::<String>(idx));
+                let s = ctx.get::<String>(idx)?;
                 ret.push_str(&s);
             }
 
@@ -675,7 +675,7 @@ mod test {
         }
 
         fn step(&self, ctx: &mut Context, sum: &mut i64) -> Result<()> {
-            *sum += try!(ctx.get::<i64>(0));
+            *sum += ctx.get::<i64>(0)?;
             Ok(())
         }
 

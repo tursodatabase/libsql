@@ -95,7 +95,7 @@ impl FromSql for DateTime<Utc> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         {
             // Try to parse value as rfc3339 first.
-            let s = try!(value.as_str());
+            let s = value.as_str()?;
 
             // If timestamp looks space-separated, make a copy and replace it with 'T'.
             let s = if s.len() >= 11 && s.as_bytes()[10] == b' ' {
@@ -122,7 +122,7 @@ impl FromSql for DateTime<Utc> {
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Local>`.
 impl FromSql for DateTime<Local> {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        let utc_dt = try!(DateTime::<Utc>::column_result(value));
+        let utc_dt = DateTime::<Utc>::column_result(value)?;
         Ok(utc_dt.with_timezone(&Local))
     }
 }
