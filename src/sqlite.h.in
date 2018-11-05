@@ -3610,9 +3610,19 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** on this hint by avoiding the use of [lookaside memory] so as not to
 ** deplete the limited store of lookaside memory. Future versions of
 ** SQLite may act on this hint differently.
+**
+** [[SQLITE_PREPARE_NORMALIZE]] ^(<dt>SQLITE_PREPARE_NORMALIZE</dt>
+** <dd>The SQLITE_PREPARE_NORMALIZE flag indicates that a normalized
+** representation of the SQL statement should be calculated and then
+** associated with the prepared statement, which can be obtained via
+** the [sqlite3_normalized_sql()] interface.  The semantics used to
+** normalize a SQL statement are unspecified and subject to change.
+** At a minimum, literal values will be replaced with suitable
+** placeholders.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
+#define SQLITE_PREPARE_NORMALIZE               0x02
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -3770,6 +3780,11 @@ int sqlite3_prepare16_v3(
 ** ^The sqlite3_expanded_sql(P) interface returns a pointer to a UTF-8
 ** string containing the SQL text of prepared statement P with
 ** [bound parameters] expanded.
+** ^The sqlite3_normalized_sql(P) interface returns a pointer to a UTF-8
+** string containing the normalized SQL text of prepared statement P.  The
+** semantics used to normalize a SQL statement are unspecified and subject
+** to change.  At a minimum, literal values will be replaced with suitable
+** placeholders.
 **
 ** ^(For example, if a prepared statement is created using the SQL
 ** text "SELECT $abc,:xyz" and if parameter $abc is bound to integer 2345
@@ -3785,14 +3800,16 @@ int sqlite3_prepare16_v3(
 ** bound parameter expansions.  ^The [SQLITE_OMIT_TRACE] compile-time
 ** option causes sqlite3_expanded_sql() to always return NULL.
 **
-** ^The string returned by sqlite3_sql(P) is managed by SQLite and is
-** automatically freed when the prepared statement is finalized.
+** ^The strings returned by sqlite3_sql(P) and sqlite3_normalized_sql(P)
+** are managed by SQLite and are automatically freed when the prepared
+** statement is finalized.
 ** ^The string returned by sqlite3_expanded_sql(P), on the other hand,
 ** is obtained from [sqlite3_malloc()] and must be free by the application
 ** by passing it to [sqlite3_free()].
 */
 const char *sqlite3_sql(sqlite3_stmt *pStmt);
 char *sqlite3_expanded_sql(sqlite3_stmt *pStmt);
+const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Determine If An SQL Statement Writes The Database

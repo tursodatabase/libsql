@@ -2337,6 +2337,10 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
+coretestprogs:	$(TESTPROGS)
+
+testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
+
 fulltest:	$(TESTPROGS) fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)

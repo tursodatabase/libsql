@@ -406,6 +406,9 @@ struct Vdbe {
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[7];        /* Counters used by sqlite3_stmt_status() */
   char *zSql;             /* Text of the SQL statement that generated this */
+#ifdef SQLITE_ENABLE_NORMALIZE
+  char *zNormSql;         /* Normalization of the associated SQL statement */
+#endif
   void *pFree;            /* Free this when deleting the vdbe */
   VdbeFrame *pFrame;      /* Parent frame */
   VdbeFrame *pDelFrame;   /* List of frame objects to free on VM reset */

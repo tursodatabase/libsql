@@ -22,7 +22,7 @@ TOP = @abs_srcdir@
 #
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
 
-# TCC is the C Compile and options for use in building executables that 
+# TCC is the C Compile and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)  Separate CC and CFLAGS macros
 # are provide so that these aspects of the build process can be changed
@@ -35,7 +35,7 @@ TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
-# 
+#
 TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
@@ -66,7 +66,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 #TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 # Any target libraries which libsqlite must be linked against
-# 
+#
 TLIBS = @LIBS@ $(LIBS)
 
 # Flags controlling use of the in memory btree implementation
@@ -78,8 +78,8 @@ TLIBS = @LIBS@ $(LIBS)
 TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 # Enable/disable loadable extensions, and other optional features
-# based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).  
-# The same set of OMIT and ENABLE flags should be passed to the 
+# based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
+# The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
 
@@ -126,8 +126,8 @@ SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
 # If gcov support was enabled by the configure script, add the appropriate
 # flags here.  It's not always as easy as just having the user add the right
 # CFLAGS / LDFLAGS, because libtool wants to use CFLAGS when linking, which
-# causes build errors with -fprofile-arcs -ftest-coverage with some GCCs.  
-# Supposedly GCC does the right thing if you use --coverage, but in 
+# causes build errors with -fprofile-arcs -ftest-coverage with some GCCs.
+# Supposedly GCC does the right thing if you use --coverage, but in
 # practice it still fails.  See:
 #
 # http://www.mail-archive.com/debian-gcc@lists.debian.org/msg26197.html
@@ -428,7 +428,7 @@ TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c  \
   $(TOP)/ext/session/test_session.c \
-  $(TOP)/ext/rbu/test_rbu.c 
+  $(TOP)/ext/rbu/test_rbu.c
 
 # Statically linked extensions
 #
@@ -510,7 +510,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/session/sqlite3session.c \
-  $(TOP)/ext/misc/stmt.c 
+  $(TOP)/ext/misc/stmt.c
 
 # Header files used by all library source files.
 #
@@ -618,7 +618,7 @@ FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c
-DBFUZZ_OPT = 
+DBFUZZ_OPT =
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1158,7 +1158,7 @@ FTS5_SRC = \
    $(TOP)/ext/fts5/fts5_varint.c \
    $(TOP)/ext/fts5/fts5_vocab.c  \
 
-fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
 	./lemon$(BEXE) $(OPTS) fts5parse.y
@@ -1185,7 +1185,7 @@ sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 #
 TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
-TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
+TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 TESTFIXTURE_FLAGS += -DBUILD_sqlite
 TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
@@ -1200,6 +1200,10 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
+
+coretestprogs:	$(TESTPROGS)
+
+testprogs:	coretestprogs srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
 
 # A very detailed test running most or all test cases
 fulltest:	$(TESTPROGS) fuzztest
@@ -1260,7 +1264,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 
-sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in	
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(TEXE): sqltclsh.c
@@ -1327,7 +1331,7 @@ KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
 	$(LTLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
 
-rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo 
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo
 	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
 
 loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
@@ -1355,7 +1359,7 @@ snapshot-tarball: sqlite3.c
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
-# 
+#
 THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_checkpoint.c \
                   $(TOP)/test/tt3_index.c      \
@@ -1369,7 +1373,7 @@ threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
 threadtest: threadtest3$(TEXE)
 	./threadtest3$(TEXE)
 
-releasetest:	
+releasetest:
 	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
 # Standard install and cleanup targets
@@ -1377,7 +1381,7 @@ releasetest:
 lib_install:	libsqlite3.la
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
-	
+
 install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
@@ -1395,7 +1399,7 @@ tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 	rm -f $(DESTDIR)$(TCLLIBDIR)/sqlite3/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/sqlite3/libtclsqlite3.a
 	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)/sqlite3
 
-clean:	
+clean:
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps
