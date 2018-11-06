@@ -134,11 +134,13 @@ proc fts3_make_deferrable {tbl token {nRow 0}} {
 #    fts3_zero_long_segments TABLE ?LIMIT?
 #
 proc fts3_zero_long_segments {tbl limit} {
+  sqlite3_db_config db DEFENSIVE 0
   execsql " 
     UPDATE ${tbl}_segments 
     SET block = zeroblob(length(block)) 
     WHERE length(block)>$limit
   "
+  sqlite3_db_config db DEFENSIVE 1
   return [db changes]
 }
 

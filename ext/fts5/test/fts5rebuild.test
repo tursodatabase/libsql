@@ -39,9 +39,11 @@ do_execsql_test 1.4 {
   INSERT INTO f1(f1) VALUES('integrity-check');
 } {}
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.5 {
   DELETE FROM f1_data;
 } {}
+sqlite3_db_config db DEFENSIVE 1
 
 do_catchsql_test 1.6 {
   INSERT INTO f1(f1) VALUES('integrity-check');

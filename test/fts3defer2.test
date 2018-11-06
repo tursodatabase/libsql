@@ -46,10 +46,12 @@ do_execsql_test 1.1.4 {
   INSERT INTO t1 VALUES('');
   INSERT INTO t1(t1) VALUES('optimize');
 }
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.1.4 {
   SELECT count(*) FROM t1_segments WHERE length(block)>10000;
   UPDATE t1_segments SET block = zeroblob(length(block)) WHERE length(block)>10000;
 } {2}
+sqlite3_db_config db DEFENSIVE 1
 
 do_execsql_test 1.2.0 {
   SELECT content FROM t1 WHERE t1 MATCH 'f (e a)';
@@ -98,7 +100,9 @@ foreach {tn sql} {
       WHERE length(block)>10000;
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   execsql $sql
+  sqlite3_db_config db DEFENSIVE 1
 
   do_execsql_test 2.2.$tn.1 {
     SELECT mit(matchinfo(t2, 'pcxnal')) FROM t2 WHERE t2 MATCH 'a b';
@@ -152,7 +156,9 @@ foreach {tn sql} {
       WHERE length(block)>10000;
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   execsql $sql
+  sqlite3_db_config db DEFENSIVE 1
   do_execsql_test 2.4.$tn {
     SELECT docid, mit(matchinfo(t3, 'pcxnal')) FROM t3 WHERE t3 MATCH '"a b c"';
   } {1 {1 1 1 4 4 11 912 6} 3 {1 1 1 4 4 11 912 6}}

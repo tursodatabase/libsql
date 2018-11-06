@@ -129,6 +129,7 @@ if {[info command sqlite_orig]==""} {
         set ::dbhandle [lindex $args 0]
         uplevel #0 $::G(perm:dbconfig)
       }
+      sqlite3_db_config [lindex $args 0] DEFENSIVE 1
       set res
     } else {
       # This command is not opening a new database connection. Pass the
@@ -136,7 +137,6 @@ if {[info command sqlite_orig]==""} {
       #
       uplevel 1 sqlite_orig $args
     }
-    sqlite3_db_config [lindex $args 0] DEFENSIVE 1
   }
 }
 

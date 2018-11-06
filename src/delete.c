@@ -71,7 +71,8 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
      && pParse->nested==0)
    || ( (pTab->tabFlags & TF_Shadow)!=0
      && (db->flags & SQLITE_Defensive)!=0
-     && db->nVdbeExec==0)
+     && db->nVdbeExec==0
+     && db->pVtabCtx==0)
   ){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;
