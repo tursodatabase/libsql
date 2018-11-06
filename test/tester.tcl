@@ -136,6 +136,7 @@ if {[info command sqlite_orig]==""} {
       #
       uplevel 1 sqlite_orig $args
     }
+    sqlite3_db_config [lindex $args 0] DEFENSIVE 1
   }
 }
 

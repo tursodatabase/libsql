@@ -50,6 +50,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
 ** writable return 0;
 */
 int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
+  sqlite3 *db = pParse->db;
   /* A table is not writable under the following circumstances:
   **
   **   1) It is a virtual table and no implementation of the xUpdate method
@@ -57,19 +58,20 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
   **   2) It is a system table (i.e. sqlite_master), this call is not
   **      part of a nested parse and writable_schema pragma has not 
   **      been specified.
-  **   3) The table is a shadow table and the current sqlite3_prepare()
-  **      is for a top-level SQL statement, not a nested SQL statement
-  **      issued by a virtual table implementation.
+  **   3) The table is a shadow table, the database connection is in
+  **      defensive mode, and the current sqlite3_prepare()
+  **      is for a top-level SQL statement.
   **
   ** In either case leave an error message in pParse and return non-zero.
   */
   if( ( IsVirtual(pTab) 
-     && sqlite3GetVTable(pParse->db, pTab)->pMod->pModule->xUpdate==0 )
+     && sqlite3GetVTable(db, pTab)->pMod->pModule->xUpdate==0 )
    || ( (pTab->tabFlags & TF_Readonly)!=0
-     && sqlite3WritableSchema(pParse->db)==0
+     && sqlite3WritableSchema(db)==0
      && pParse->nested==0)
    || ( (pTab->tabFlags & TF_Shadow)!=0
-     && pParse->db->nVdbeExec==0)
+     && (db->flags & SQLITE_Defensive)!=0
+     && db->nVdbeExec==0)
   ){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;

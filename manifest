@@ -1,5 +1,5 @@
-C Only\sallow\sshadow\stable\sto\sbe\swritten\sfrom\swithin\sa\srecursive\sSQL\scall.\nOmit\sthe\sSQLITE_PREPARE_SHADOW\sflag.\s\sSome\stests\sare\sfailing\sbecause\sthe\ntests\sdepend\son\sbeing\sable\sto\swrite\sto\sshadow\stables.
-D 2018-11-06T14:03:07.413
+C Turn\son\sdefensive\smode\sfor\srunning\stest\sscripts.\s\sDoes\snot\syet\swork.
+D 2018-11-06T15:57:59.184
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -128,7 +128,7 @@ F ext/fts5/fts5_vocab.c dfe3bfc7ccd39ef7d149c1828b6663995e580e9b315de029801be62d
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
-F ext/fts5/test/fts5aa.test 87f4b50e755b52c6192c76ceccf4247d462bb44b52fa17358f273d8ce5d975f0
+F ext/fts5/test/fts5aa.test 840081efaee97f5ec570146bbdd79cfdfaea0ab303de3d5037b6d6c78b42ccdd
 F ext/fts5/test/fts5ab.test 9205c839332c908aaad2b01ab8670ece8b161e8f2ec8a9fabf18ca9385880bb7
 F ext/fts5/test/fts5ac.test a7aa7e1fefc6e1918aa4d3111d5c44a09177168e962c5fd2cca9620de8a7ed6d
 F ext/fts5/test/fts5ad.test e8cf959dfcd57c8e46d6f5f25665686f3b6627130a9a981371dafdf6482790de
@@ -455,7 +455,7 @@ F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c cfa87c8a9e3b5267a72faa3a592a497cd3810146c056c53a3472caf763c8556b
 F src/dbstat.c 9ad3f2d9d19a915d414870b9405b19493eed41975f3ad0d13f70fdd0831853b4
-F src/delete.c 5217ceccd488da04d66f86fdb3e833b50b68b7822b26a100d196f5070b4e6028
+F src/delete.c d058ed72fc9b975dbf42fd8bdacbb530106440595847dc8aba6bb1d138ca2c5f
 F src/expr.c 9aacc0b72348ba90010b672dcbbbe2fa56e1182043bc917a3a147b2bc57a5497
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
@@ -1352,7 +1352,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl fa5656391e3b477508abe12b3b81f019b2e71397399ab38a2f32d8d7f3bf8e56
+F test/tester.tcl 9a4c02c89fec21b7fb2082143595ea64289289a23b30483733348bb17c1ae4a1
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f79b47c9859de597d5924870752dd7cab89c8f0608e5cceb2281f6ffb2e91930
-R 9c83260cf7477274baab6670a30d627e
+P d890c6582524677666e6f5b5817331dec332ade16b2f744cbb8a3c7dd9b63e21
+R e9f4d27ca7b2f873c7fcee04be6300fd
 U drh
-Z 63edb3c381d916b8ce9e25126a1c39db
+Z 9fe44fcd11ea00f63b017a2647f9f482
