@@ -1904,8 +1904,8 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 static int isShadowTableName(sqlite3 *db, char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
-  VTable *pVTab;                /* Virtual table corresponding to pTab */
-  const sqlite3_module *pMod;   /* module methods for pVTab */
+  Module *pMod;                 /* Module for the virtual table */
+
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
@@ -1913,14 +1913,11 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   *zTail = '_';
   if( pTab==0 ) return 0;
   if( !IsVirtual(pTab) ) return 0;
-  pVTab = sqlite3GetVTable(db, pTab);
-  if( pVTab==0 ) return 0;
-  if( pVTab->pMod==0 ) return 0;
-  pMod = pVTab->pMod->pModule;
-  assert( pMod!=0 );
-  if( pMod->iVersion<3 ) return 0;
-  if( pMod->xShadowName==0 ) return 0;
-  return pMod->xShadowName(zTail+1);
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
+  if( pMod==0 ) return 0;
+  if( pMod->pModule->iVersion<3 ) return 0;
+  if( pMod->pModule->xShadowName==0 ) return 0;
+  return pMod->pModule->xShadowName(zTail+1);
 }
 
 /*

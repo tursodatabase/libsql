@@ -1,5 +1,5 @@
-C Initial\scode\sto\smake\sshadow\stables\sread-only\sto\sordinary\sSQL.\sThe\snow\nxShadowName\smethod\sis\sadded\sto\sthe\ssqlite3_module\sobject\sand\sis\sused\nto\sidentify\spotential\sshadow\stables.\s\sThe\sSQLITE_PREPARE_SHADOW\sargument\nto\ssqlite3_prepare_v3()\sis\sdefined.\s\sIt\sis\sdesigned\sto\spermit\swriting\sto\nshadow\stables,\sbut\sis\scurrently\san\sunused\splaceholder.
-D 2018-11-05T23:01:45.801
+C Add\senforcement\sof\sread-only\son\sshadow\stables.\s\sThis\sdoes\snot\scurrently\swork\nsince\ssome\svirtual\stables\sare\sattempting\sto\supdate\sshadow\stables\susing\nsqlite3_exec().
+D 2018-11-06T13:37:20.946
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -448,14 +448,14 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3ef104ecae8b1b5f0458be1f5fa7c1ecf25fdc322a9d63bb8151f89eb32d381e
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c 3b611e7da095f2c4ff470c7368355be9c9c8e15fc234cb00eeea7c233108b2f2
+F src/build.c 5bc91901b05ac7a33a324854bd2aa892311e71b82a887f99f390bead39e29175
 F src/callback.c 789bd33d188146f66c0dd8306472a72d1c05f71924b24a91caf6bd45cf9aba73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c cfa87c8a9e3b5267a72faa3a592a497cd3810146c056c53a3472caf763c8556b
 F src/dbstat.c 9ad3f2d9d19a915d414870b9405b19493eed41975f3ad0d13f70fdd0831853b4
-F src/delete.c e1ac11c062a4a2ed29a9e9a63f4cbc7f0330291ae276d768b26fb2c5152cc3b4
+F src/delete.c 51c469c1a47740dc2c16277271776101db687b7fa7aa3d6304cb087d4035a9ee
 F src/expr.c 9aacc0b72348ba90010b672dcbbbe2fa56e1182043bc917a3a147b2bc57a5497
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
@@ -499,7 +499,7 @@ F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
 F src/pragma.c 3a5f39517cbe90af3271fb5dd2866a50fbcf4ced6cb464dcc80a6f763b415206
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
-F src/prepare.c f81f8d707e583192c28fea0b2e19385415b7d188123b23f49b038076408d7a69
+F src/prepare.c 108bbf7010d142ea00de1b5eb809e1c2823b1159978e18a7a4c7b2c22ff98b43
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bc8c79e56439b111e7d9415e44940951f7087e9466c3a9d664558ef0faf31073
@@ -509,7 +509,7 @@ F src/shell.c.in 060ccc327959bdc85c895015eb382017fd0cd000ebd47b7e8dda42f8aab0b66
 F src/sqlite.h.in 612b5d40927cce9047413eaedd2f5a662b6360d08b00091c4213b30411c0fcbe
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h 7a6bbb9a8864af66d864eb4e4619e263b44a35b8604f6775e1e226133d14d5ef
+F src/sqliteInt.h 91c7a27a6fe563db6e7b8323fc03392edf9371572c1db556e8aed48b07aea7b5
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1776,10 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11d98414eac467affb0b3cf0c7e5cc3d43184fc2b6e7e898bb5277b51ea9e1fa
-R b572c18296089d812924dea7e0530e89
-T *branch * read-only-shadow
-T *sym-read-only-shadow *
-T -sym-trunk *
+P 31942b3dd3f66eb0d9977bf1cadc2f2d7be7967cce2b55784be0b939dfef1985
+R a5e7ef5eefde106d658de7abaada1682
 U drh
-Z dcee1f2a6fee8069f27c592b55f8069d
+Z 105cca41781319666607c23424ff661f

@@ -57,6 +57,8 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
   **   2) It is a system table (i.e. sqlite_master), this call is not
   **      part of a nested parse and writable_schema pragma has not 
   **      been specified.
+  **   3) The table is a shadow table and the SQLITE_PREPARE_SHADOW flag
+  **      is omitted.
   **
   ** In either case leave an error message in pParse and return non-zero.
   */
@@ -65,6 +67,8 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
    || ( (pTab->tabFlags & TF_Readonly)!=0
      && sqlite3WritableSchema(pParse->db)==0
      && pParse->nested==0)
+   || ( (pTab->tabFlags & TF_Shadow)!=0
+     && pParse->writeShadow==0)
   ){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;

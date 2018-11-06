@@ -545,6 +545,9 @@ static int sqlite3Prepare(
     sParse.disableLookaside++;
     db->lookaside.bDisable++;
   }
+  if( prepFlags & SQLITE_PREPARE_SHADOW ){
+    sParse.writeShadow = 1;
+  }
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that

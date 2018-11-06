@@ -3086,6 +3086,7 @@ struct Parse {
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
   u8 disableTriggers;  /* True to disable triggers */
+  u8 writeShadow;      /* True if shadow tables are writable */
 
   /**************************************************************************
   ** Fields above must be initialized to zero.  The fields that follow,
