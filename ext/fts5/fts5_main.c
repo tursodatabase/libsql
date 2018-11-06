@@ -890,8 +890,7 @@ static int fts5PrepareStatement(
     rc = SQLITE_NOMEM; 
   }else{
     rc = sqlite3_prepare_v3(pConfig->db, zSql, -1, 
-                            SQLITE_PREPARE_PERSISTENT |SQLITE_PREPARE_SHADOW,
-                            &pRet, 0);
+                            SQLITE_PREPARE_PERSISTENT, &pRet, 0);
     if( rc!=SQLITE_OK ){
       *pConfig->pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(pConfig->db));
     }

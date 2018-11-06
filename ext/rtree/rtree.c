@@ -3451,8 +3451,7 @@ static int rtreeSqlInit(
     }
     zSql = sqlite3_mprintf(zFormat, zDb, zPrefix);
     if( zSql ){
-      rc = sqlite3_prepare_v3(db, zSql, -1,
-                              SQLITE_PREPARE_PERSISTENT | SQLITE_PREPARE_SHADOW,
+      rc = sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
                               appStmt[i], 0); 
     }else{
       rc = SQLITE_NOMEM;
