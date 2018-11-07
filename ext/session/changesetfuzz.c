@@ -26,6 +26,10 @@
 ** In the first form above, this program outputs a human-readable version
 ** of the same changeset. This is chiefly for debugging.
 **
+** As well as changesets, this program can also dump and fuzz patchsets.
+** The term "changeset" is used for both patchsets and changesets from this
+** point on.
+**
 ** In the second form, arguments SEED and N must both be integers. In this
 ** case, this program writes N binary changesets to disk. Each output
 ** changeset is a slightly modified - "fuzzed" - version of the input. 
@@ -90,10 +94,6 @@
 **      only PRIMARY KEY column in the table. In this case the corresponding
 **      field is removed from all records. In cases where this leaves an UPDATE
 **      with no non-PK, non-undefined fields, the entire change is removed.
-**
-** PATCHSETS
-**
-** As well as changesets, this program can also dump and fuzz patchsets.
 */
 
 #include "sqlite3.h"
@@ -430,11 +430,16 @@ static void fuzzPutU64(u8 *aRec, u64 iVal){
   aRec[7] = (iVal)     & 0xFF;
 }
 
+/*
+** Parse a single table-header from the input. Allocate a new change-group
+** object with the results. Return SQLITE_OK if successful, or an error code
+** otherwise.
+*/
 static int fuzzParseHeader(
-  FuzzChangeset *pParse,
-  u8 **ppHdr, 
-  u8 *pEnd, 
-  FuzzChangesetGroup **ppGrp
+  FuzzChangeset *pParse,          /* Changeset parse object */
+  u8 **ppHdr,                     /* IN/OUT: Iterator */
+  u8 *pEnd,                       /* 1 byte past EOF */
+  FuzzChangesetGroup **ppGrp      /* OUT: New change-group object */
 ){
   int rc = SQLITE_OK;
   FuzzChangesetGroup *pGrp;
@@ -472,6 +477,13 @@ static int fuzzParseHeader(
   return rc;
 }
 
+/*
+** Argument p points to a buffer containing a single changeset-record value. 
+** This function attempts to determine the size of the value in bytes. If
+** successful, it sets (*pSz) to the size and returns SQLITE_OK. Or, if the
+** buffer does not contain a valid value, SQLITE_CORRUPT is returned and
+** the final value of (*pSz) is undefined.
+*/
 static int fuzzChangeSize(u8 *p, int *pSz){
   u8 eType = p[0];
   switch( eType ){
@@ -500,11 +512,24 @@ static int fuzzChangeSize(u8 *p, int *pSz){
   return SQLITE_OK;
 }
 
+/*
+** When this function is called, (*ppRec) points to the start of a 
+** record in a changeset being parsed. This function adds entries
+** to the pParse->apVal[] array for all values and advances (*ppRec) 
+** to one byte past the end of the record. Argument pEnd points to
+** one byte past the end of the input changeset.
+**
+** Argument bPkOnly is true if the record being parsed is part of
+** a DELETE record in a patchset. In this case, all non-primary-key
+** fields have been omitted from the record.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
 static int fuzzParseRecord(
   u8 **ppRec,                     /* IN/OUT: Iterator */
   u8 *pEnd,                       /* One byte after end of input data */
-  FuzzChangeset *pParse,
-  int bPkOnly
+  FuzzChangeset *pParse,          /* Changeset parse context */
+  int bPkOnly                     /* True if non-PK fields omitted */
 ){
   int rc = SQLITE_OK;
   FuzzChangesetGroup *pGrp = pParse->apGroup[pParse->nGroup-1];
@@ -534,6 +559,14 @@ static int fuzzParseRecord(
   return rc;
 }
 
+/*
+** Parse the array of changes starting at (*ppData) and add entries for
+** all values to the pParse->apVal[] array. Argument pEnd points to one byte
+** past the end of the input changeset. If successful, set (*ppData) to point
+** to one byte past the end of the change array and return SQLITE_OK.
+** Otherwise, return an SQLite error code. The final value of (*ppData) is
+** undefined in this case.
+*/
 static int fuzzParseChanges(u8 **ppData, u8 *pEnd, FuzzChangeset *pParse){
   u8 cHdr = (pParse->bPatchset ? 'P' : 'T');
   FuzzChangesetGroup *pGrp = pParse->apGroup[pParse->nGroup-1];
@@ -567,6 +600,12 @@ static int fuzzParseChanges(u8 **ppData, u8 *pEnd, FuzzChangeset *pParse){
   return rc;
 }
 
+/*
+** Parse the changeset stored in buffer pChangeset (nChangeset bytes in
+** size). If successful, write the results into (*pParse) and return
+** SQLITE_OK. Or, if an error occurs, return an SQLite error code. The
+** final state of (*pParse) is undefined in this case.
+*/
 static int fuzzParseChangeset(
   u8 *pChangeset,                 /* Buffer containing changeset */
   int nChangeset,                 /* Size of buffer in bytes */
@@ -608,6 +647,18 @@ static int fuzzParseChangeset(
   return rc;
 }
 
+/*
+** When this function is called, (*ppRec) points to the first byte of
+** a record that is part of change-group pGrp. This function attempts
+** to output a human-readable version of the record to stdout and advance
+** (*ppRec) to point to the first byte past the end of the record before
+** returning. If successful, SQLITE_OK is returned. Otherwise, an SQLite
+** error code.
+**
+** If parameter bPkOnly is non-zero, then all non-primary-key fields have
+** been omitted from the record. This occurs for records that are part
+** of DELETE changes in patchsets.
+*/
 static int fuzzPrintRecord(FuzzChangesetGroup *pGrp, u8 **ppRec, int bPKOnly){
   int rc = SQLITE_OK;
   u8 *p = *ppRec;
@@ -676,7 +727,11 @@ static int fuzzPrintRecord(FuzzChangesetGroup *pGrp, u8 **ppRec, int bPKOnly){
   return rc;
 }
 
-static int fuzzPrintGroup(FuzzChangeset *pParse, FuzzChangesetGroup *pGrp){
+/*
+** Print a human-readable version of the table-header and all changes in the
+** change-group passed as the second argument.
+*/
+static void fuzzPrintGroup(FuzzChangeset *pParse, FuzzChangesetGroup *pGrp){
   int i;
   u8 *p;
 
@@ -707,6 +762,16 @@ static int fuzzPrintGroup(FuzzChangeset *pParse, FuzzChangesetGroup *pGrp){
   }
 }
 
+/*
+** Initialize the object passed as the second parameter with details
+** of the change that will be attempted (type of change, to which part of the
+** changeset it applies etc.). If successful, return SQLITE_OK. Or, if an
+** error occurs, return an SQLite error code. 
+**
+** If a negative value is returned, then the selected change would have
+** produced a non-well-formed changeset. In this case the caller should
+** call this function again.
+*/
 static int fuzzSelectChange(FuzzChangeset *pParse, FuzzChange *pChange){
   int iSub;
 
@@ -837,6 +902,10 @@ static int fuzzSelectChange(FuzzChangeset *pParse, FuzzChange *pChange){
   return SQLITE_OK;
 }
 
+/*
+** Copy a single change from the input to the output changeset, making
+** any modifications specified by (*pFuzz).
+*/
 static int fuzzCopyChange(
   FuzzChangeset *pParse,
   int iGrp,
@@ -1022,6 +1091,13 @@ static int fuzzCopyChange(
   return SQLITE_OK;
 }
 
+/*
+** Fuzz the changeset parsed into object pParse and write the results 
+** to file zOut on disk. Argument pBuf points to a buffer that is guaranteed
+** to be large enough to hold the fuzzed changeset.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error occurs.
+*/
 static int fuzzDoOneFuzz(
   const char *zOut,               /* Filename to write modified changeset to */
   u8 *pBuf,                       /* Buffer to use for modified changeset */
