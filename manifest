@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DEFAULT_DEFENSIVE\scompile-time\soption.\s\sFix\sup\stest\scases\nso\sthat\sthey\swork\swith\sDEFENSIVE\senabled.
-D 2018-11-07T02:17:01.958
+C Merge\sthe\spermutations\sfix\sfrom\strunk.
+D 2018-11-07T13:41:27.488
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -1176,7 +1176,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 6316c8edc7ac2c5e1263102aa3022ad3b12ac599e4e3f5931a9c1be407c41ece
+F test/permutations.test cf0b4e498db1d0143c19641d4420df7cc27fab2c95ed0abd2c7c5753beab25b8
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1d6c6712c3304fd736077432c8c180692cf7d79be7f3a073510b6dab0eb951f
-R cb36d8dda9734209d36a0bde1f638cf3
+P 3212733cb6d1a59516d67a86df7c7b1d2456a1b2e5d7080c26b0e87b2609c65d cbf85284beb60d068b446c52f000d694a810d4de9096ad2951523a4c88e7334c
+R 7cc9720e15d66af90da1ecfd0b58d00d
 U drh
-Z 1e5f08b2aab8b0879ab6cd66d89a54de
+Z 735c5b4bea5537def65958ee2d1f0352
