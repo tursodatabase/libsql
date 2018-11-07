@@ -560,6 +560,7 @@ static int fsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 ** File control method. For custom operations on an fs-file.
 */
 static int fsFileControl(sqlite3_file *pFile, int op, void *pArg){
+  if( op==SQLITE_FCNTL_PRAGMA ) return SQLITE_NOTFOUND;
   return SQLITE_OK;
 }
 
