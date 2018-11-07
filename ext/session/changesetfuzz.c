@@ -86,11 +86,14 @@
 **      value is appended to all INSERT, DELETE and UPDATE old.* records.
 **      An "undefined" is appended to new.* UPDATE records.
 **
-**  14. A column may be removed from a table.  In this case the corresponding
+**  14. A column may be removed from a table, provided that it is not the
+**      only PRIMARY KEY column in the table. In this case the corresponding
 **      field is removed from all records. In cases where this leaves an UPDATE
-**      with no non-PK, non-undefined fields, the entire change is removed. If
-**      the table has more than on PK column, the column removed may be part of
-**      the PK. 
+**      with no non-PK, non-undefined fields, the entire change is removed.
+**
+** PATCHSETS
+**
+** As well as changesets, this program can also dump and fuzz patchsets.
 */
 
 #include "sqlite3.h"
@@ -117,13 +120,6 @@
 #define FUZZ_COLUMN_ADD     12     /* Add column to table definition */
 #define FUZZ_COLUMN_ADDPK   13     /* Add PK column to table definition */
 #define FUZZ_COLUMN_DEL     14     /* Remove column from table definition */
-
-#if 0
-#define FUZZ_COLUMN_ADD    1      /* Add column to table definition */
-#define FUZZ_PK_ADD        3      /* Add a PK column */
-#define FUZZ_PK_DEL        4      /* Delete a PK column */
-#define FUZZ_NAME_CHANGE   5      /* Change a table name */
-#endif
 
 
 
@@ -172,6 +168,10 @@ static void fuzzReadFile(const char *zFilename, int *pSz, void **ppBuf){
   *ppBuf = pBuf;
 }
 
+/* 
+** Write the contents of buffer pBuf, size nBuf bytes, into file zFilename
+** on disk. zFilename, if it already exists, is clobbered.
+*/
 static void fuzzWriteFile(const char *zFilename, void *pBuf, int nBuf){
   FILE *f;
   f = fopen(zFilename, "wb");
@@ -289,7 +289,6 @@ static void fuzzRandomSeed(unsigned int iSeed){
     sqlite3Prng.s[i+3] ^= ((iSeed >>  0) & 0xFF);
   }
 }
-
 /*
 ** End of code for generating pseudo-random values.
 *************************************************************************/
@@ -298,12 +297,11 @@ typedef struct FuzzChangeset FuzzChangeset;
 typedef struct FuzzChangesetGroup FuzzChangesetGroup;
 typedef struct FuzzChange FuzzChange;
 
-#define FUZZER_AVAL_SZ 512
-
 /* 
 ** Object containing partially parsed changeset.
 */
 struct FuzzChangeset {
+  int bPatchset;                  /* True for a patchset */
   FuzzChangesetGroup **apGroup;   /* Array of groups in changeset */
   int nGroup;                     /* Number of items in list pGroup */
   u8 **apVal;                     /* Array of all values in changeset */
@@ -312,6 +310,10 @@ struct FuzzChangeset {
   int nUpdate;                    /* Number of UPDATE changes in changeset */
 };
 
+/* 
+** There is one object of this type for each change-group (table header)
+** in the input changeset.
+*/
 struct FuzzChangesetGroup {
   const char *zTab;               /* Name of table */
   int nCol;                       /* Number of columns in table */
@@ -329,12 +331,15 @@ struct FuzzChange {
   int iChange;                    /* Change or UPDATE to modify */
   int iGroup;                     /* Group to modify */
   int iDelete;                    /* Field to remove (FUZZ_COLUMN_DEL) */
-  u8 *pSub1;
-  u8 *pSub2;
-  u8 aSub[128];                   /* Substitute value */
+  u8 *pSub1;                      /* Replace this value with pSub2 */
+  u8 *pSub2;                      /* And this one with pSub1 */
+  u8 aSub[128];                   /* Buffer for substitute value */
   int iCurrent;                   /* Current change number */
 };
 
+/*
+** Allocate and return nByte bytes of zeroed memory.
+*/
 static void *fuzzMalloc(int nByte){
   void *pRet = sqlite3_malloc(nByte);
   if( pRet ){
@@ -343,10 +348,20 @@ static void *fuzzMalloc(int nByte){
   return pRet;
 }
 
+/*
+** Free the buffer indicated by the first argument. This function is used
+** to free buffers allocated by fuzzMalloc().
+*/
 static void fuzzFree(void *p){
   sqlite3_free(p);
 }
 
+/*
+** Argument p points to a buffer containing an SQLite varint that, assuming the
+** input is not corrupt, may be between 0 and 0x7FFFFFFF, inclusive. Before
+** returning, this function sets (*pnVal) to the value of that varint, and
+** returns the number of bytes of space that it takes up.
+*/
 static int fuzzGetVarint(u8 *p, int *pnVal){
   int i;
   sqlite3_uint64 nVal = 0;
@@ -361,6 +376,11 @@ static int fuzzGetVarint(u8 *p, int *pnVal){
   return i;
 }
 
+/*
+** Write value nVal into the buffer indicated by argument p as an SQLite
+** varint. nVal is guaranteed to be between 0 and (2^21-1), inclusive.
+** Return the number of bytes written to buffer p.
+*/
 static int fuzzPutVarint(u8 *p, int nVal){
   assert( nVal>0 && nVal<2097152 );
   if( nVal<128 ){
@@ -379,20 +399,26 @@ static int fuzzPutVarint(u8 *p, int nVal){
   return 3;
 }
 
-/* Load an unaligned and unsigned 32-bit integer */
-#define FUZZ_UINT32(x) (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
-
 /*
 ** Read a 64-bit big-endian integer value from buffer aRec[]. Return
 ** the value read.
 */
-static sqlite3_int64 fuzzGetI64(u8 *aRec){
-  u64 x = FUZZ_UINT32(aRec);
-  u32 y = FUZZ_UINT32(aRec+4);
-  x = (x<<32) + y;
-  return (sqlite3_int64)x;
+static i64 fuzzGetI64(u8 *aRec){
+  return (i64)(
+      (((u64)aRec[0]) << 56)
+    + (((u64)aRec[1]) << 48)
+    + (((u64)aRec[2]) << 40)
+    + (((u64)aRec[3]) << 32)
+    + (((u64)aRec[4]) << 24)
+    + (((u64)aRec[5]) << 16)
+    + (((u64)aRec[6]) <<  8)
+    + (((u64)aRec[7]) <<  0)
+  );
 }
 
+/*
+** Write value iVal to buffer aRec[] as an unsigned 64-bit big-endian integer.
+*/
 static void fuzzPutU64(u8 *aRec, u64 iVal){
   aRec[0] = (iVal>>56) & 0xFF;
   aRec[1] = (iVal>>48) & 0xFF;
@@ -404,9 +430,15 @@ static void fuzzPutU64(u8 *aRec, u64 iVal){
   aRec[7] = (iVal)     & 0xFF;
 }
 
-static int fuzzParseHeader(u8 **ppHdr, u8 *pEnd, FuzzChangesetGroup **ppGrp){
+static int fuzzParseHeader(
+  FuzzChangeset *pParse,
+  u8 **ppHdr, 
+  u8 *pEnd, 
+  FuzzChangesetGroup **ppGrp
+){
   int rc = SQLITE_OK;
   FuzzChangesetGroup *pGrp;
+  u8 cHdr = (pParse->bPatchset ? 'P' : 'T');
 
   assert( pEnd>(*ppHdr) );
   pGrp = (FuzzChangesetGroup*)fuzzMalloc(sizeof(FuzzChangesetGroup));
@@ -414,7 +446,7 @@ static int fuzzParseHeader(u8 **ppHdr, u8 *pEnd, FuzzChangesetGroup **ppGrp){
     rc = SQLITE_NOMEM;
   }else{
     u8 *p = *ppHdr;
-    if( p[0]!='T' ){
+    if( p[0]!=cHdr ){
       rc = fuzzCorrupt();
     }else{
       p++;
@@ -468,26 +500,33 @@ static int fuzzChangeSize(u8 *p, int *pSz){
   return SQLITE_OK;
 }
 
-static int fuzzParseRecord(u8 **ppRec, u8 *pEnd, FuzzChangeset *pParse){
+static int fuzzParseRecord(
+  u8 **ppRec,                     /* IN/OUT: Iterator */
+  u8 *pEnd,                       /* One byte after end of input data */
+  FuzzChangeset *pParse,
+  int bPkOnly
+){
   int rc = SQLITE_OK;
-  int nCol = pParse->apGroup[pParse->nGroup-1]->nCol;
+  FuzzChangesetGroup *pGrp = pParse->apGroup[pParse->nGroup-1];
   int i;
   u8 *p = *ppRec;
 
-  for(i=0; rc==SQLITE_OK && i<nCol && p<pEnd; i++){
-    int sz;
-    if( (pParse->nVal & (pParse->nVal-1))==0 ){
-      int nNew = pParse->nVal ? pParse->nVal*2 : 4;
-      u8 **apNew = (u8**)sqlite3_realloc(pParse->apVal, nNew*sizeof(u8*));
-      if( apNew==0 ) return SQLITE_NOMEM;
-      pParse->apVal = apNew;
+  for(i=0; rc==SQLITE_OK && i<pGrp->nCol && p<pEnd; i++){
+    if( bPkOnly==0 || pGrp->aPK[i] ){
+      int sz;
+      if( (pParse->nVal & (pParse->nVal-1))==0 ){
+        int nNew = pParse->nVal ? pParse->nVal*2 : 4;
+        u8 **apNew = (u8**)sqlite3_realloc(pParse->apVal, nNew*sizeof(u8*));
+        if( apNew==0 ) return SQLITE_NOMEM;
+        pParse->apVal = apNew;
+      }
+      pParse->apVal[pParse->nVal++] = p;
+      rc = fuzzChangeSize(p, &sz);
+      p += sz;
     }
-    pParse->apVal[pParse->nVal++] = p;
-    rc = fuzzChangeSize(p, &sz);
-    p += sz;
   }
 
-  if( rc==SQLITE_OK && i<nCol ){
+  if( rc==SQLITE_OK && i<pGrp->nCol ){
     rc = fuzzCorrupt();
   }
 
@@ -496,24 +535,28 @@ static int fuzzParseRecord(u8 **ppRec, u8 *pEnd, FuzzChangeset *pParse){
 }
 
 static int fuzzParseChanges(u8 **ppData, u8 *pEnd, FuzzChangeset *pParse){
+  u8 cHdr = (pParse->bPatchset ? 'P' : 'T');
   FuzzChangesetGroup *pGrp = pParse->apGroup[pParse->nGroup-1];
   int rc = SQLITE_OK;
   u8 *p = *ppData;
 
   pGrp->aChange = p;
-  while( rc==SQLITE_OK && p<pEnd && p[0]!='T' ){
+  while( rc==SQLITE_OK && p<pEnd && p[0]!=cHdr ){
     u8 eOp = p[0];
     u8 bIndirect = p[1];
 
     p += 2;
     if( eOp==SQLITE_UPDATE ){
       pParse->nUpdate++;
-      rc = fuzzParseRecord(&p, pEnd, pParse);
+      if( pParse->bPatchset==0 ){
+        rc = fuzzParseRecord(&p, pEnd, pParse, 0);
+      }
     }else if( eOp!=SQLITE_INSERT && eOp!=SQLITE_DELETE ){
       rc = fuzzCorrupt();
     }
     if( rc==SQLITE_OK ){
-      rc = fuzzParseRecord(&p, pEnd, pParse);
+      int bPkOnly = (eOp==SQLITE_DELETE && pParse->bPatchset);
+      rc = fuzzParseRecord(&p, pEnd, pParse, bPkOnly);
     }
     pGrp->nChange++;
     pParse->nChange++;
@@ -534,16 +577,19 @@ static int fuzzParseChangeset(
   int rc = SQLITE_OK;
 
   memset(pParse, 0, sizeof(FuzzChangeset));
+  if( nChangeset>0 ){
+    pParse->bPatchset = (pChangeset[0]=='P');
+  }
 
   while( rc==SQLITE_OK && p<pEnd ){
     FuzzChangesetGroup *pGrp = 0;
 
     /* Read a table-header from the changeset */
-    rc = fuzzParseHeader(&p, pEnd, &pGrp);
+    rc = fuzzParseHeader(pParse, &p, pEnd, &pGrp);
     assert( (rc==SQLITE_OK)==(pGrp!=0) );
 
-    /* If the table-header was successfully parsed, link the new change-group
-    ** into the linked list and parse the associated array of changes. */
+    /* If the table-header was successfully parsed, add the new change-group
+    ** to the array and parse the associated changes. */
     if( rc==SQLITE_OK ){
       FuzzChangesetGroup **apNew = (FuzzChangesetGroup**)sqlite3_realloc(
           pParse->apGroup, sizeof(FuzzChangesetGroup*)*(pParse->nGroup+1)
@@ -562,65 +608,67 @@ static int fuzzParseChangeset(
   return rc;
 }
 
-static int fuzzPrintRecord(FuzzChangesetGroup *pGrp, u8 **ppRec){
+static int fuzzPrintRecord(FuzzChangesetGroup *pGrp, u8 **ppRec, int bPKOnly){
   int rc = SQLITE_OK;
   u8 *p = *ppRec;
   int i;
   const char *zPre = " (";
 
   for(i=0; i<pGrp->nCol; i++){
-    u8 eType = p++[0];
-    switch( eType ){
-      case 0x00:                    /* undefined */
-        printf("%sn/a", zPre);
-        break;
+    if( bPKOnly==0 || pGrp->aPK[i] ){
+      u8 eType = p++[0];
+      switch( eType ){
+        case 0x00:                    /* undefined */
+          printf("%sn/a", zPre);
+          break;
 
-      case 0x01: {                  /* integer */
-        sqlite3_int64 iVal = 0;
-        iVal = fuzzGetI64(p);
-        printf("%s%lld", zPre, iVal);
-        p += 8;
-        break;
-      }
-
-      case 0x02: {                  /* real */
-        sqlite3_int64 iVal = 0;
-        double fVal = 0.0;
-        iVal = fuzzGetI64(p);
-        memcpy(&fVal, &iVal, 8);
-        printf("%s%f", zPre, fVal);
-        p += 8;
-        break;
-      }
-
-      case 0x03:                    /* text */
-      case 0x04: {                  /* blob */
-        int nTxt;
-        int sz;
-        int i;
-        p += fuzzGetVarint(p, &nTxt);
-        printf("%s%s", zPre, eType==0x03 ? "'" : "X'");
-        for(i=0; i<nTxt; i++){
-          if( eType==0x03 ){
-            printf("%c", p[i]);
-          }else{
-            char aHex[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-            };
-            printf("%c", aHex[ p[i]>>4 ]);
-            printf("%c", aHex[ p[i] & 0x0F ]);
-          }
+        case 0x01: {                  /* integer */
+          sqlite3_int64 iVal = 0;
+          iVal = fuzzGetI64(p);
+          printf("%s%lld", zPre, iVal);
+          p += 8;
+          break;
         }
-        printf("'");
-        p += nTxt;
-        break;
-      }
 
-      case 0x05:                    /* null */
-        printf("%sNULL", zPre);
-        break;
+        case 0x02: {                  /* real */
+          sqlite3_int64 iVal = 0;
+          double fVal = 0.0;
+          iVal = fuzzGetI64(p);
+          memcpy(&fVal, &iVal, 8);
+          printf("%s%f", zPre, fVal);
+          p += 8;
+          break;
+        }
+
+        case 0x03:                    /* text */
+        case 0x04: {                  /* blob */
+          int nTxt;
+          int sz;
+          int i;
+          p += fuzzGetVarint(p, &nTxt);
+          printf("%s%s", zPre, eType==0x03 ? "'" : "X'");
+          for(i=0; i<nTxt; i++){
+            if( eType==0x03 ){
+              printf("%c", p[i]);
+            }else{
+              char aHex[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                               '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+              };
+              printf("%c", aHex[ p[i]>>4 ]);
+              printf("%c", aHex[ p[i] & 0x0F ]);
+            }
+          }
+          printf("'");
+          p += nTxt;
+          break;
+        }
+
+        case 0x05:                    /* null */
+          printf("%sNULL", zPre);
+          break;
+      }
+      zPre = ", ";
     }
-    zPre = ", ";
   }
   printf(")");
 
@@ -628,7 +676,7 @@ static int fuzzPrintRecord(FuzzChangesetGroup *pGrp, u8 **ppRec){
   return rc;
 }
 
-static int fuzzPrintGroup(FuzzChangesetGroup *pGrp){
+static int fuzzPrintGroup(FuzzChangeset *pParse, FuzzChangesetGroup *pGrp){
   int i;
   u8 *p;
 
@@ -651,10 +699,10 @@ static int fuzzPrintGroup(FuzzChangesetGroup *pGrp){
     );
     p += 2;
 
-    if( eType==SQLITE_UPDATE ){
-      fuzzPrintRecord(pGrp, &p);
+    if( pParse->bPatchset==0 && eType==SQLITE_UPDATE ){
+      fuzzPrintRecord(pGrp, &p, 0);
     }
-    fuzzPrintRecord(pGrp, &p);
+    fuzzPrintRecord(pGrp, &p, eType==SQLITE_DELETE && pParse->bPatchset);
     printf("\n");
   }
 }
@@ -663,7 +711,7 @@ static int fuzzSelectChange(FuzzChangeset *pParse, FuzzChange *pChange){
   int iSub;
 
   memset(pChange, 0, sizeof(FuzzChange));
-  pChange->eType = fuzzRandomInt(14) + FUZZ_VALUE_SUB;
+  pChange->eType = fuzzRandomInt(FUZZ_COLUMN_DEL) + 1;
 
   assert( pChange->eType==FUZZ_VALUE_SUB
        || pChange->eType==FUZZ_VALUE_MOD
@@ -795,12 +843,13 @@ static int fuzzCopyChange(
   FuzzChange *pFuzz,
   u8 **pp, u8 **ppOut             /* IN/OUT: Input and output pointers */
 ){
+  int bPS = pParse->bPatchset;
   FuzzChangesetGroup *pGrp = pParse->apGroup[iGrp];
   u8 *p = *pp;
   u8 *pOut = *ppOut;
   u8 eType = p++[0];
   int iRec;
-  int nRec = (eType==SQLITE_UPDATE ? 2 : 1);
+  int nRec = ((eType==SQLITE_UPDATE && !bPS) ? 2 : 1);
   int iUndef = -1;
   int nUpdate = 0;
 
@@ -833,6 +882,7 @@ static int fuzzCopyChange(
     }
     if( nDef<=1 ) return -1;
     nDef = fuzzRandomInt(nDef);
+    pCsr = p+1;
     for(i=0; i<pGrp->nCol; i++){
       if( pCsr[0] && pGrp->aPK[i]==0 ){
         if( nDef==0 ) iUndef = i;
@@ -855,9 +905,29 @@ static int fuzzCopyChange(
 
   for(iRec=0; iRec<nRec; iRec++){
     int i;
+
+    /* Copy the next record from the output to the input.
+    */
     for(i=0; i<pGrp->nCol; i++){
       int sz;
       u8 *pCopy = p;
+
+      /* If this is a patchset, and the input is a DELETE, then the only
+      ** fields present are the PK fields. So, if this is not a PK, skip to 
+      ** the next column. If the current fuzz is FUZZ_CHANGE_TYPE, then
+      ** write a randomly selected value to the output.  */
+      if( bPS && eType==SQLITE_DELETE && pGrp->aPK[i]==0 ){
+        if( eType!=eNew ){
+          assert( eNew==SQLITE_UPDATE );
+          do {
+            pCopy = pParse->apVal[fuzzRandomInt(pParse->nVal)];
+          }while( pCopy[0]==0x00 );
+          fuzzChangeSize(pCopy, &sz);
+          memcpy(pOut, pCopy, sz);
+          pOut += sz;
+        }
+        continue;
+      }
 
       if( p==pFuzz->pSub1 ){
         pCopy = pFuzz->pSub2;
@@ -877,13 +947,14 @@ static int fuzzCopyChange(
         if( pGrp->aPK[i]>0 && pCopy[0]==0x05 ) return -1;
       }
 
-      if( pFuzz->iGroup!=iGrp || i!=pFuzz->iDelete ){
-        if( eNew==eType || eType!=SQLITE_UPDATE || iRec==0 ){
-          fuzzChangeSize(pCopy, &sz);
-          memcpy(pOut, pCopy, sz);
-          pOut += sz;
-          nUpdate += (pGrp->aPK[i]==0 && pCopy[0]!=0x00);
-        }
+      if( (pFuzz->iGroup!=iGrp || i!=pFuzz->iDelete)
+       && (eNew==eType || eType!=SQLITE_UPDATE || iRec==0)
+       && (eNew==eType || eNew!=SQLITE_DELETE || !bPS || pGrp->aPK[i])
+      ){
+        fuzzChangeSize(pCopy, &sz);
+        memcpy(pOut, pCopy, sz);
+        pOut += sz;
+        nUpdate += (pGrp->aPK[i]==0 && pCopy[0]!=0x00);
       }
 
       fuzzChangeSize(p, &sz);
@@ -892,7 +963,7 @@ static int fuzzCopyChange(
 
     if( iGrp==pFuzz->iGroup ){
       if( pFuzz->eType==FUZZ_COLUMN_ADD ){
-        *(pOut++) = 0x05;
+        if( !bPS || eType!=SQLITE_DELETE ) *(pOut++) = 0x05;
       }else if( pFuzz->eType==FUZZ_COLUMN_ADDPK ){
         if( iRec==1 ){
           *(pOut++) = 0x00;
@@ -920,7 +991,7 @@ static int fuzzCopyChange(
     if( pFuzz->eType==FUZZ_CHANGE_DEL ){
       pOut = *ppOut;
     }
-    if( eNew!=eType && eNew==SQLITE_UPDATE ){
+    if( eNew!=eType && eNew==SQLITE_UPDATE && !bPS ){
       int i;
       u8 *pCsr = (*ppOut) + 2;
       for(i=0; i<pGrp->nCol; i++){
@@ -1003,7 +1074,7 @@ static int fuzzDoOneFuzz(
         }
 
         /* Output a table header */
-        pOut++[0] = 'T';
+        pOut++[0] = pParse->bPatchset ? 'P' : 'T';
         pOut += fuzzPutVarint(pOut, nCol);
 
         for(i=0; i<pGrp->nCol; i++){
@@ -1063,7 +1134,7 @@ int main(int argc, char **argv){
   if( rc==SQLITE_OK ){
     if( argc==2 ){
       for(i=0; i<changeset.nGroup; i++){
-        fuzzPrintGroup(changeset.apGroup[i]);
+        fuzzPrintGroup(&changeset, changeset.apGroup[i]);
       }
     }else{
       pBuf = (u8*)fuzzMalloc(nChangeset*2 + 1024);
