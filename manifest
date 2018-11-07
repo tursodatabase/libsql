@@ -1,5 +1,5 @@
-C Fix\sminor\sissues\sin\sthe\schangesetfuzz\sprogram.
-D 2018-11-07T20:07:28.570
+C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
+D 2018-11-07T20:13:45.056
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d298b31769d4c737887102462cd45684786b09f2a626a80b3e413790fb436219
@@ -547,7 +547,7 @@ F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8
 F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c 7f4337ba23ee6b1d2ec81c189653608cb069926a
-F src/test_onefile.c 416f87a28d6d673352d33fc4b1c7d39db878e50f
+F src/test_onefile.c f31e52e891c5fef6709b9fcef54ce660648a34172423a9cbdf4cbce3ba0049f4
 F src/test_osinst.c 98ef31ff03d55497829ca0f6c74a9f4e1aa48690
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
@@ -1177,7 +1177,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 6316c8edc7ac2c5e1263102aa3022ad3b12ac599e4e3f5931a9c1be407c41ece
+F test/permutations.test cf0b4e498db1d0143c19641d4420df7cc27fab2c95ed0abd2c7c5753beab25b8
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test 7c8cfc328a1717a95663cf8edb06c52ddfeaf97bb0aee69ae7457132e8d39e7d
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1777,7 +1777,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75b00fbe884d4bd8ba099d7c0a2e8af2f40fedfdef2d9b624dd51cb66952611c
-R 5fca9efd6de44ebb8f6fbca5a5730eba
+P 5c7f024073bc93089f038b5cf122a7a9d5b933f7c1b357f6d20ae925739ffc38 13e21b7da8fe754e230b09ca0b9f1f69cd9aa20d4407ddd8b95ca3fb18c9abeb
+R a7042ef684a713ebe1e2a0ddb4a19a3c
 U dan
-Z e2001bdcf73f96176b62c1ef68bcd666
+Z 4f6b0c1caea94a39bd49cddc13a496f1
