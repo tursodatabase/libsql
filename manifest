@@ -1,5 +1,5 @@
-C Merge\sthe\sonefile\spermutation\sfix\sfrom\strunk.
-D 2018-11-07T16:12:34.740
+C Performance\simprovement\sin\ssubroutine\sthat\sdecides\swhether\sor\snot\sa\stable\nis\sread-only.
+D 2018-11-07T16:46:43.458
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -455,7 +455,7 @@ F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c cfa87c8a9e3b5267a72faa3a592a497cd3810146c056c53a3472caf763c8556b
 F src/dbstat.c 9ad3f2d9d19a915d414870b9405b19493eed41975f3ad0d13f70fdd0831853b4
-F src/delete.c 36825ff2d6d4026f4cde42dd0642bfc8aeacc7596330d0159683d66cca715a1e
+F src/delete.c cec65c0e74be7492cafba1b77580732b0b1a41a4dbc4ac70909ac44b65b2a20b
 F src/expr.c 9aacc0b72348ba90010b672dcbbbe2fa56e1182043bc917a3a147b2bc57a5497
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 911e8a17a3810cd7042e91a32aba80dc3d6be88320c208e48f7bcee8b22a0ff2 13e21b7da8fe754e230b09ca0b9f1f69cd9aa20d4407ddd8b95ca3fb18c9abeb
-R 56bf1824a48b5de2380d01acb7d29fb0
+P e543bff87d1efc31a5b863085c056ce06c365cc7d9d3fef0ced7521bde536783
+R 72f25975d392eaabe6c843161e0c6c08
 U drh
-Z b5475e4e894f27e1fb706ff1a175ea2a
+Z 7e624fcbff194b9dd60db6c89a893b83
