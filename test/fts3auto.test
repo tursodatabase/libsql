@@ -140,7 +140,6 @@ proc fts3_zero_long_segments {tbl limit} {
     SET block = zeroblob(length(block)) 
     WHERE length(block)>$limit
   "
-  sqlite3_db_config db DEFENSIVE 1
   return [db changes]
 }
 

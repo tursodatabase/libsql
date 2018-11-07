@@ -163,4 +163,3 @@ do_faultsim_test 8 -faults oom-t* -prep {
 }
 
 finish_test
-

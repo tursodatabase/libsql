@@ -186,7 +186,6 @@ foreach {DO_MALLOC_TEST enc} {
   # Test a corruption case:
   sqlite3_db_config db DEFENSIVE 0
   execsql { UPDATE ft_content SET c1b = 'hello world' WHERE c1b = $numbers }
-  sqlite3_db_config db DEFENSIVE 1
   do_error_test $T.2.3 {
     SELECT offsets(ft) FROM ft WHERE ft MATCH 'onehundred'
   } {database disk image is malformed}

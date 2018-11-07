@@ -350,6 +350,7 @@ ifcapable stat4||stat3 {
 # in the series.
 #
 do_test analyze-5.99 {
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     PRAGMA writable_schema=on;
     UPDATE sqlite_master SET sql='nonsense' WHERE name='sqlite_stat1';

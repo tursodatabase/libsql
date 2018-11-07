@@ -304,7 +304,6 @@ do_test fts3d-5.1 {
     SELECT level, idx FROM t1_segdir ORDER BY level, idx;
   }
 } {{Index already optimal} 2 0}
-sqlite3_db_config db DEFENSIVE 1
 
 
 # ALTER TABLE RENAME should work regardless of the database encoding.

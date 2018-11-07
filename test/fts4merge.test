@@ -162,7 +162,6 @@ foreach mod {fts3 fts4} {
     INSERT INTO t4(t4) VALUES('merge=1,12');
     SELECT level, group_concat(idx, ' ') FROM t4_segdir GROUP BY level;
   } "0 {0 1 2 3 4 5}                     1 0"
-  sqlite3_db_config db DEFENSIVE 1
   
   
   #-------------------------------------------------------------------------

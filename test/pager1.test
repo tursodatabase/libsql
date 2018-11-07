@@ -1879,6 +1879,7 @@ do_test pager1-18.1 {
 do_test pager1-18.2 {
   set root [db one "SELECT rootpage FROM sqlite_master"]
   set lockingpage [expr (0x10000/1024) + 1]
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     PRAGMA writable_schema = 1;
     UPDATE sqlite_master SET rootpage = $lockingpage;
@@ -1931,6 +1932,7 @@ do_test pager1-18.4 {
 db2 close
 do_test pager1-18.5 {
   sqlite3 db ""
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     CREATE TABLE t1(a, b);
     CREATE TABLE t2(a, b);

@@ -66,7 +66,6 @@ do_execsql_test 1.3 {
     SET block = zeroblob(length(block)) 
     WHERE length(block)>10000;
 } {1}
-sqlite3_db_config db DEFENSIVE 1
 
 do_select_tests 1.4 $tests
 
@@ -229,7 +228,6 @@ foreach {tn setup} {
     add_empty_records 1000
     sqlite3_db_config db DEFENSIVE 0
     execsql $zero_long_doclists
-    sqlite3_db_config db DEFENSIVE 1
   }
   4 {
     set dmt_modes 0
@@ -239,7 +237,6 @@ foreach {tn setup} {
     execsql "INSERT INTO t1(t1) VALUES('optimize')"
     sqlite3_db_config db DEFENSIVE 0
     execsql $zero_long_doclists
-    sqlite3_db_config db DEFENSIVE 1
   }
   5 {
     set dmt_modes 0
@@ -248,7 +245,6 @@ foreach {tn setup} {
     add_empty_records 1000
     sqlite3_db_config db DEFENSIVE 0
     execsql $zero_long_doclists
-    sqlite3_db_config db DEFENSIVE 1
   }
 } {
 

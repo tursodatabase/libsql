@@ -169,7 +169,6 @@ do_select_tests 5.3 -errorformat {
 }
 sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 5.4.0 { UPDATE t2_content SET c0content = X'1234' }
-sqlite3_db_config db DEFENSIVE 1
 do_select_tests 5.4 -errorformat {
   illegal first argument to %s
 } {

@@ -300,7 +300,3 @@ foreach {tn idx} {
 
 
 finish_test
-
-
-
-

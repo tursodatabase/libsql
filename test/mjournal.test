@@ -160,4 +160,3 @@ do_hasmj_test 2.3 {
 } {0}
 
 finish_test
-

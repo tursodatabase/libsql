@@ -308,4 +308,3 @@ do_test 4.2.3 {
 } {t3 null 3}
 
 finish_test
-

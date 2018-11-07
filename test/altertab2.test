@@ -43,4 +43,3 @@ ifcapable fts5 {
 
 
 finish_test
-

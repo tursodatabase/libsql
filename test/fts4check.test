@@ -68,7 +68,6 @@ foreach {tn disruption} {
 } {
   sqlite3_db_config db DEFENSIVE 0
   do_execsql_test  1.2.1.$tn "BEGIN; $disruption"
-  sqlite3_db_config db DEFENSIVE 1
   do_catchsql_test 1.2.2.$tn {
     INSERT INTO t1 (t1) VALUES('integrity-check')
   } {1 {database disk image is malformed}}
@@ -104,7 +103,6 @@ foreach {tn disruption} {
 } {
   sqlite3_db_config db DEFENSIVE 0
   do_execsql_test  2.2.1.$tn "BEGIN; $disruption"
-  sqlite3_db_config db DEFENSIVE 1
   do_catchsql_test 2.2.2.$tn {
     INSERT INTO t2 (t2) VALUES('integrity-check')
   } {1 {database disk image is malformed}}
@@ -151,7 +149,6 @@ foreach {tn disruption} {
 } {
   sqlite3_db_config db DEFENSIVE 0
   do_execsql_test  3.2.1.$tn "BEGIN; $disruption"
-  sqlite3_db_config db DEFENSIVE 1
   do_catchsql_test 3.2.2.$tn {
     INSERT INTO t3 (t3) VALUES('integrity-check')
   } {1 {database disk image is malformed}}

@@ -59,7 +59,6 @@ proc prepare_for_optimize {db tbl} {
   
     COMMIT;
   }]
-  sqlite3_db_config $db DEFENSIVE 1
 }
 
 do_test 1.1 {

@@ -284,7 +284,6 @@ ifcapable fts4_deferred {
     SET block = zeroblob(length(block)) 
     WHERE length(block)>10000;
   }
-  sqlite3_db_config db DEFENSIVE 1
 }
 
 do_matchinfo_test 4.4.2 t5 {t5 MATCH 'a b'}         { s {2} }
@@ -346,7 +345,6 @@ do_catchsql_test 6.2 {
   UPDATE t9_content SET c0content = 'this record is used to'; 
   SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to';
 } {1 {database disk image is malformed}}
-sqlite3_db_config db DEFENSIVE 1
 
 #-------------------------------------------------------------------------
 # Test the outcome of matchinfo() when used within a query that does not
@@ -411,7 +409,6 @@ do_execsql_test  8.4.3.1 { UPDATE t11_stat SET value = NULL; }
 do_catchsql_test 8.5.3.2 {
   SELECT mit(matchinfo(t11, 'nxa')) FROM t11 WHERE t11 MATCH 'a*'
 } {1 {database disk image is malformed}}
-sqlite3_db_config db DEFENSIVE 1
 
 #-------------------------------------------------------------------------
 do_execsql_test 8.1 {

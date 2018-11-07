@@ -1253,6 +1253,7 @@ ifcapable altertable {
 # characters that can be mistaken for printf() formatting directives.
 #
 do_test vtab1-17.1 {
+  sqlite3_db_config db DEFENSIVE 0
   execsql { 
     PRAGMA writable_schema = 1;
     INSERT INTO sqlite_master VALUES(

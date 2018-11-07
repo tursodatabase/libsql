@@ -75,7 +75,6 @@ do_execsql_test 2.4 {
   UPDATE x1_data SET block = X'';
   SELECT count(fts5_decode(rowid, block)) FROM x1_data;
 } $res
-sqlite3_db_config db DEFENSIVE 1
 
 do_execsql_test 2.5 {
   INSERT INTO x1(x1, rank) VALUES('pgsz', 1024);

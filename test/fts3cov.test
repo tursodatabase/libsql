@@ -103,7 +103,6 @@ do_error_test fts3cov-2.3 {
 do_test fts3cov-2.4 {
   execsql { INSERT INTO t1_segments VALUES($left_child, NULL) }
 } {}
-sqlite3_db_config db DEFENSIVE 1
 do_error_test fts3cov-2.5 {
   SELECT * FROM t1 WHERE t1 MATCH 'cloud'
 } {SQL logic error}

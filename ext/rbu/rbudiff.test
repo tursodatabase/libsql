@@ -300,4 +300,3 @@ tablE t1 USING FTs5(c);
 
 
 finish_test
-
