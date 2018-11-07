@@ -1,5 +1,5 @@
-C Partially\srevert\s[3e1a2f661],\sas\ssome\stest\sscripts\srequire\sseparate\s$presql\nand\s$dbconfig\svariables.
-D 2018-11-07T11:56:23.475
+C Fix\sa\sproblem\swith\sthe\shandling\sof\sSQLITE_FCNTL_PRAGMA\sin\sthe\stest_onefile.c\ndemo.
+D 2018-11-07T14:39:22.900
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -546,7 +546,7 @@ F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8
 F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c 7f4337ba23ee6b1d2ec81c189653608cb069926a
-F src/test_onefile.c 416f87a28d6d673352d33fc4b1c7d39db878e50f
+F src/test_onefile.c f31e52e891c5fef6709b9fcef54ce660648a34172423a9cbdf4cbce3ba0049f4
 F src/test_osinst.c 98ef31ff03d55497829ca0f6c74a9f4e1aa48690
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11d98414eac467affb0b3cf0c7e5cc3d43184fc2b6e7e898bb5277b51ea9e1fa
-R 477a1bd7242b0ef60508bfccd5762030
+P cbf85284beb60d068b446c52f000d694a810d4de9096ad2951523a4c88e7334c
+R 088caf8858ff5594a1a4116e158cb2b6
 U dan
-Z 0a3aa2510c151cc0dd679511f42476ca
+Z 62eba71f05524b2e0125783d546c8de7
