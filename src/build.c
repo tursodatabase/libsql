@@ -1914,7 +1914,7 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   if( pTab==0 ) return 0;
   if( !IsVirtual(pTab) ) return 0;
   pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
-  if( pMod==0 ) return 0;
+  if( NEVER(pMod==0) ) return 0;
   if( pMod->pModule->iVersion<3 ) return 0;
   if( pMod->pModule->xShadowName==0 ) return 0;
   return pMod->pModule->xShadowName(zTail+1);
