@@ -536,9 +536,10 @@ static int fuzzParseRecord(
   int i;
   u8 *p = *ppRec;
 
-  for(i=0; rc==SQLITE_OK && i<pGrp->nCol && p<pEnd; i++){
+  for(i=0; rc==SQLITE_OK && i<pGrp->nCol; i++){
     if( bPkOnly==0 || pGrp->aPK[i] ){
       int sz;
+      if( p>=pEnd ) break;
       if( (pParse->nVal & (pParse->nVal-1))==0 ){
         int nNew = pParse->nVal ? pParse->nVal*2 : 4;
         u8 **apNew = (u8**)sqlite3_realloc(pParse->apVal, nNew*sizeof(u8*));

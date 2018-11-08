@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2018-11-07T20:13:45.056
+C Add\stests\sand\sa\sfix\sfor\sprogram\s"changesetfuzz".
+D 2018-11-08T14:59:51.259
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d298b31769d4c737887102462cd45684786b09f2a626a80b3e413790fb436219
@@ -391,7 +391,8 @@ F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1d2f94ac66
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/changesetfuzz.c df3528c3492f57896d5004f633a1a4a2d5be17f540ffa840b66f844b34e90dfa
+F ext/session/changesetfuzz.c 255826ee367781ec4c29a36c7c63e9ee6387dc03a8346cf240feb8d597958b0e
+F ext/session/changesetfuzz1.test 2e1b90d888fbf0eea5e1bd2f1e527a48cc85f8e0ff75df1ec4e320b21f580b3a
 F ext/session/session1.test 0b2f88995832ea040ae8e83a1ad4afa99c00b85c779d213da73a95ea4113233e
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test ce9ce3dfa489473987f899e9f6a0f2db9bde3479
@@ -1777,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c7f024073bc93089f038b5cf122a7a9d5b933f7c1b357f6d20ae925739ffc38 13e21b7da8fe754e230b09ca0b9f1f69cd9aa20d4407ddd8b95ca3fb18c9abeb
-R a7042ef684a713ebe1e2a0ddb4a19a3c
+P 53cd91d00594f1bd7c0a565a35ec9cac3095a583022d6211158a369e942257b0
+R 4f9b6e51162a868f3be4697b5f845cac
 U dan
-Z 4f6b0c1caea94a39bd49cddc13a496f1
+Z 704726ba42c792e4e62ff5213c85060a
