@@ -111,19 +111,19 @@ do_execsql_test tabfunc01-3.1 {
   SELECT DISTINCT value FROM generate_series(1,x), t1 ORDER BY 1;
 } {1 2 3}
 
-# Eponymous virtual table exists in the "main" schema only
+# Eponymous virtual table exists in all schemas.
 #
 do_execsql_test tabfunc01-4.1 {
   SELECT * FROM main.generate_series(1,4)
 } {1 2 3 4}
-do_catchsql_test tabfunc01-4.2 {
+do_execsql_test tabfunc01-4.2 {
   SELECT * FROM temp.generate_series(1,4)
-} {1 {no such table: temp.generate_series}}
-do_catchsql_test tabfunc01-4.3 {
+} {1 2 3 4}
+do_execsql_test tabfunc01-4.3 {
   ATTACH ':memory:' AS aux1;
   CREATE TABLE aux1.t1(a,b,c);
   SELECT * FROM aux1.generate_series(1,4)
-} {1 {no such table: aux1.generate_series}}
+} {1 2 3 4}
 
 # The next series of tests is verifying that virtual table are able
 # to optimize the IN operator, even on terms that are not marked "omit".

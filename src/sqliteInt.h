@@ -1556,6 +1556,7 @@ struct sqlite3 {
 #define SQLITE_ResetDatabase  0x02000000  /* Reset the database */
 #define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
 #define SQLITE_NoSchemaError  0x08000000  /* Do not report schema parse errors*/
+#define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)
@@ -3798,6 +3799,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewBareExprList(TreeView*, const ExprList*, const char*);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
+  void sqlite3TreeViewSrcList(TreeView*, const SrcList*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -4219,6 +4221,7 @@ Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*, int);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
+int sqlite3WritableSchema(sqlite3*);
 int sqlite3CheckObjectName(Parse *, const char *);
 void sqlite3VdbeSetChanges(sqlite3 *, int);
 int sqlite3AddInt64(i64*,i64);

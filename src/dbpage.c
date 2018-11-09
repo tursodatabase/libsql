@@ -313,6 +313,10 @@ static int dbpageUpdate(
   Pager *pPager;
   int szPage;
 
+  if( pTab->db->flags & SQLITE_Defensive ){
+    zErr = "read-only";
+    goto update_fail;
+  }
   if( argc==1 ){
     zErr = "cannot delete";
     goto update_fail;

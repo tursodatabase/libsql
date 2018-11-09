@@ -48,13 +48,6 @@ proc test_suite {name args} {
     set options([lindex $o 0]) $v
   }
 
-  # Transform "-presql" into a "dbconfig" script
-  #
-  if {[info exists options(-presql)]} {
-    append options(-dbconfig) "\n\$::dbhandle eval { $options(-presql) }"
-    unset options(-presql)
-  }
-
   set     ::testspec($name) [array get options]
   lappend ::testsuitelist $name
 }
@@ -1090,6 +1083,7 @@ proc run_tests {name args} {
   set options(-shutdown) ""
   set options(-prefix) ""
   set options(-dbconfig) ""
+  set options(-presql) ""
 
   array set options $args
 
@@ -1097,6 +1091,7 @@ proc run_tests {name args} {
   set ::G(perm:prefix)       $options(-prefix)
   set ::G(isquick)           1
   set ::G(perm:dbconfig)     $options(-dbconfig)
+  set ::G(perm:presql)       $options(-presql)
 
   foreach file [lsort $options(-files)] {
     uplevel $options(-initialize)
@@ -1110,6 +1105,7 @@ proc run_tests {name args} {
   unset ::G(perm:name)
   unset ::G(perm:prefix)
   unset ::G(perm:dbconfig)
+  unset ::G(perm:presql)
 }
 
 proc run_test_suite {name} {
