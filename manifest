@@ -1,5 +1,5 @@
-C When\sa\stable\sis\srenamed\susing\s"ALTER\sTABLE\sRENAME\sTO",\supdate\sany\sREFERENCES\nclauses\sthat\srefer\sto\sthe\stable,\sunless\s"PRAGMA\slegacy_alter_table"\sis\strue\nand\s"PRAGMA\sforeign_keys"\sis\sset\sto\sfalse\s(i.e.\sso\sthat\swhen\s"PRAGMA\nlegacy_alter_table"\sis\sset\sbehaviour\sis\sstill\scompatible\swith\sversions\s3.24\nand\searlier).
-D 2018-11-09T20:04:05.243
+C Fix\sinvalid\suse\sof\sunprotected\ssqlite3_value\sobjects\sin\sthe\ssqldiff\sutility,\nwhen\susing\sthe\s--changeset\soption.
+D 2018-11-09T23:41:57.373
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -1741,7 +1741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
-F tool/sqldiff.c 579d7e4e42c30a963781654c87d2868823120b55d59e16ca77b0edbab0218713
+F tool/sqldiff.c 7b9b7238284f02131dbb8f21a4e862409bff728045c5473139d28c67ac87580e
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 531eca6104e41e4301fa2cf58bb8fec811da31e151a0f766c93aece5521d235b
-R 3008a464d47aa62c3381b1fbed0d8cef
-U dan
-Z fb8f8ebbdb0cc9c0ada9657c20228c06
+P ae9638e9c0ad0c366f93c88a850f6b4cc86881e9f3f9f1e39574d9d83ddd8a6a
+R 17ad9438f43deccbfad222dc84835b58
+U drh
+Z 652d33c6a72178cf44c31358633e89a7
