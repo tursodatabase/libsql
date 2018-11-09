@@ -19,7 +19,7 @@
 # EXE              The suffix to add to executable files.  ".exe" for windows
 #                  and "" for Unix.
 #
-# TCC              C Compiler and options for use in building executables that 
+# TCC              C Compiler and options for use in building executables that
 #                  will run on the target platform.  This is usually the same
 #                  as BCC, unless you are cross-compiling.
 #
@@ -43,7 +43,7 @@
 
 # This is how we compile
 #
-TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
+TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP)
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 TCCX += -I$(TOP)/ext/session
@@ -236,7 +236,7 @@ SRC += \
   $(TOP)/ext/session/sqlite3session.h
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
-  $(TOP)/ext/userauth/sqlite3userauth.h 
+  $(TOP)/ext/userauth/sqlite3userauth.h
 SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c \
   $(TOP)/ext/rbu/sqlite3rbu.h
@@ -251,7 +251,7 @@ FTS5_HDR = \
    $(TOP)/ext/fts5/fts5.h \
    $(TOP)/ext/fts5/fts5Int.h \
    fts5parse.h
-	   
+
 FTS5_SRC = \
    $(TOP)/ext/fts5/fts5_aux.c \
    $(TOP)/ext/fts5/fts5_buffer.c \
@@ -431,7 +431,7 @@ TESTSRC2 = \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/misc/stmt.c \
   $(TOP)/ext/session/sqlite3session.c \
-  $(TOP)/ext/session/test_session.c 
+  $(TOP)/ext/session/test_session.c
 
 # Header files used by all library source files.
 #
@@ -484,7 +484,7 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/fts5/fts5Int.h  \
   fts5parse.h                \
-  $(TOP)/ext/fts5/fts5.h 
+  $(TOP)/ext/fts5/fts5.h
 EXTHDR += \
   $(TOP)/ext/userauth/sqlite3userauth.h
 
@@ -507,7 +507,8 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata3.db \
   $(TOP)/test/fuzzdata4.db \
   $(TOP)/test/fuzzdata5.db \
-  $(TOP)/test/fuzzdata6.db
+  $(TOP)/test/fuzzdata6.db \
+  $(TOP)/test/fuzzdata7.db
 
 # Standard options to testfixture
 #
@@ -800,7 +801,7 @@ rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 
 
 
-fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
 	./lemon $(OPTS) fts5parse.y
@@ -834,13 +835,13 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $
 	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
-	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
+	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB)
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl
 	tclsh $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(EXE): sqltclsh.c
-	$(TCCX) $(TCL_FLAGS) sqltclsh.c -o $@ $(LIBTCL) $(THREADLIB) 
+	$(TCCX) $(TCL_FLAGS) sqltclsh.c -o $@ $(LIBTCL) $(THREADLIB)
 
 sqlite3_expert$(EXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
 	$(TCCX) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert$(EXE) $(THREADLIB)
@@ -892,6 +893,10 @@ fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 	-DSQLITE_ENABLE_FTS3=1                                               \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
+
+coretestprogs:	$(TESTPROGS)
+
+testprogs:	coretestprogs srcck1$(EXE) fuzzcheck$(EXE) sessionfuzz$(EXE)
 
 fulltest:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/all.test $(TESTOPTS)
@@ -949,7 +954,7 @@ smoketest:	$(TESTPROGS) fuzzcheck$(EXE)
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
-# 
+#
 THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_checkpoint.c \
                   $(TOP)/test/tt3_index.c      \
@@ -1013,12 +1018,12 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 		$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.c
-	$(TCCX) -I. $(ST_OPT) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.c $(THREADLIB) 
+	$(TCCX) -I. $(ST_OPT) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.c $(THREADLIB)
 
 kvtest$(EXE):	$(TOP)/test/kvtest.c sqlite3.c
-	$(TCCX) -I. $(KV_OPT) -o kvtest$(EXE) $(TOP)/test/kvtest.c sqlite3.c $(THREADLIB) 
+	$(TCCX) -I. $(KV_OPT) -o kvtest$(EXE) $(TOP)/test/kvtest.c sqlite3.c $(THREADLIB)
 
-rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o 
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
 	$(TCC) -I. -o rbu$(EXE) $(TOP)/ext/rbu/rbu.c sqlite3.o \
 	  $(THREADLIB)
 
@@ -1050,7 +1055,7 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 	mv libsqlite3.a /usr/lib
 	mv sqlite3.h /usr/include
 
-clean:	
+clean:
 	rm -f *.o sqlite3 sqlite3.exe libsqlite3.a sqlite3.h opcodes.*
 	rm -f lemon lemon.exe lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
@@ -1078,7 +1083,7 @@ clean:
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
-	rm -f sqlite3_expert sqlite3_expert.exe 
+	rm -f sqlite3_expert sqlite3_expert.exe
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f fuzzershell fuzzershell.exe

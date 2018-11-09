@@ -48,13 +48,6 @@ proc test_suite {name args} {
     set options([lindex $o 0]) $v
   }
 
-  # Transform "-presql" into a "dbconfig" script
-  #
-  if {[info exists options(-presql)]} {
-    append options(-dbconfig) "\n\$::dbhandle eval { $options(-presql) }"
-    unset options(-presql)
-  }
-
   set     ::testspec($name) [array get options]
   lappend ::testsuitelist $name
 }
@@ -262,6 +255,7 @@ test_suite "fts3" -prefix "" -description {
   fts3am.test fts3an.test fts3ao.test fts3atoken.test
   fts3auto.test fts3aux1.test fts3aux2.test fts3b.test
   fts3comp1.test fts3conf.test fts3corrupt2.test fts3corrupt.test
+  fts3corrupt4.test
   fts3cov.test fts3c.test fts3defer2.test fts3defer3.test
   fts3defer.test fts3drop.test fts3d.test fts3e.test
   fts3expr2.test fts3expr3.test fts3expr4.test fts3expr5.test
@@ -1089,6 +1083,7 @@ proc run_tests {name args} {
   set options(-shutdown) ""
   set options(-prefix) ""
   set options(-dbconfig) ""
+  set options(-presql) ""
 
   array set options $args
 
@@ -1096,6 +1091,7 @@ proc run_tests {name args} {
   set ::G(perm:prefix)       $options(-prefix)
   set ::G(isquick)           1
   set ::G(perm:dbconfig)     $options(-dbconfig)
+  set ::G(perm:presql)       $options(-presql)
 
   foreach file [lsort $options(-files)] {
     uplevel $options(-initialize)
@@ -1109,6 +1105,7 @@ proc run_tests {name args} {
   unset ::G(perm:name)
   unset ::G(perm:prefix)
   unset ::G(perm:dbconfig)
+  unset ::G(perm:presql)
 }
 
 proc run_test_suite {name} {

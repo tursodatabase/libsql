@@ -48,10 +48,9 @@
 #define PragTyp_ACTIVATE_EXTENSIONS           40
 #define PragTyp_HEXKEY                        41
 #define PragTyp_KEY                           42
-#define PragTyp_REKEY                         43
-#define PragTyp_LOCK_STATUS                   44
-#define PragTyp_PARSER_TRACE                  45
-#define PragTyp_STATS                         46
+#define PragTyp_LOCK_STATUS                   43
+#define PragTyp_PARSER_TRACE                  44
+#define PragTyp_STATS                         45
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -128,7 +127,7 @@ typedef struct PragmaName {
   u8 mPragFlg;             /* Zero or more PragFlg_XXX values */
   u8 iPragCName;           /* Start of column names in pragCName[] */
   u8 nPragCName;           /* Num of col names. 0 means use pragma name */
-  u32 iArg;                /* Extra argument */
+  u64 iArg;                /* Extra argument */
 } PragmaName;
 static const PragmaName aPragmaName[] = {
 #if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
@@ -325,12 +324,12 @@ static const PragmaName aPragmaName[] = {
   /* ePragTyp:  */ PragTyp_HEXKEY,
   /* ePragFlg:  */ 0,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ 0 },
+  /* iArg:      */ 2 },
  {/* zName:     */ "hexrekey",
   /* ePragTyp:  */ PragTyp_HEXKEY,
   /* ePragFlg:  */ 0,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ 0 },
+  /* iArg:      */ 3 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if !defined(SQLITE_OMIT_CHECK)
@@ -504,10 +503,10 @@ static const PragmaName aPragmaName[] = {
 #endif
 #if defined(SQLITE_HAS_CODEC)
  {/* zName:     */ "rekey",
-  /* ePragTyp:  */ PragTyp_REKEY,
+  /* ePragTyp:  */ PragTyp_KEY,
   /* ePragFlg:  */ 0,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ 0 },
+  /* iArg:      */ 1 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "reverse_unordered_selects",
@@ -594,6 +593,18 @@ static const PragmaName aPragmaName[] = {
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
+#if defined(SQLITE_HAS_CODEC)
+ {/* zName:     */ "textkey",
+  /* ePragTyp:  */ PragTyp_KEY,
+  /* ePragFlg:  */ 0,
+  /* ColNames:  */ 0, 0,
+  /* iArg:      */ 4 },
+ {/* zName:     */ "textrekey",
+  /* ePragTyp:  */ PragTyp_KEY,
+  /* ePragFlg:  */ 0,
+  /* ColNames:  */ 0, 0,
+  /* iArg:      */ 5 },
+#endif
  {/* zName:     */ "threads",
   /* ePragTyp:  */ PragTyp_THREADS,
   /* ePragFlg:  */ PragFlg_Result0,
@@ -652,7 +663,7 @@ static const PragmaName aPragmaName[] = {
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ SQLITE_WriteSchema },
+  /* iArg:      */ SQLITE_WriteSchema|SQLITE_NoSchemaError },
 #endif
 };
-/* Number of pragmas: 62 on by default, 79 total. */
+/* Number of pragmas: 62 on by default, 81 total. */

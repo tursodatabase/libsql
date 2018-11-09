@@ -1382,6 +1382,7 @@ static void exprAnalyze(
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
    && pExpr->pLeft->iColumn>=0
+   && !ExprHasProperty(pExpr, EP_FromJoin)
    && OptimizationEnabled(db, SQLITE_Stat34)
   ){
     Expr *pNewExpr;
@@ -1573,6 +1574,7 @@ void sqlite3WhereTabFuncArgs(
   pArgs = pItem->u1.pFuncArg;
   if( pArgs==0 ) return;
   for(j=k=0; j<pArgs->nExpr; j++){
+    Expr *pRhs;
     while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){k++;}
     if( k>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "too many arguments on %s() - max %d",
@@ -1584,8 +1586,9 @@ void sqlite3WhereTabFuncArgs(
     pColRef->iTable = pItem->iCursor;
     pColRef->iColumn = k++;
     pColRef->y.pTab = pTab;
-    pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef,
-                         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0));
+    pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
+        sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
+    pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
   }
 }

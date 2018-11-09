@@ -1702,6 +1702,16 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 #endif
 }
 
+#ifdef SQLITE_ENABLE_NORMALIZE
+/*
+** Return the normalized SQL associated with a prepared statement.
+*/
+const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe *)pStmt;
+  return p ? p->zNormSql : 0;
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */
+
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** Allocate and populate an UnpackedRecord structure based on the serialized

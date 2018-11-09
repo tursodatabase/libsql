@@ -235,6 +235,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_FTS5
   "ENABLE_FTS5",
 #endif
+#if SQLITE_ENABLE_GEOPOLY
+  "ENABLE_GEOPOLY",
+#endif
 #if SQLITE_ENABLE_HIDDEN_COLUMNS
   "ENABLE_HIDDEN_COLUMNS",
 #endif
@@ -264,6 +267,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #if SQLITE_ENABLE_MULTIPLEX
   "ENABLE_MULTIPLEX",
+#endif
+#if SQLITE_ENABLE_NORMALIZE
+  "ENABLE_NORMALIZE",
 #endif
 #if SQLITE_ENABLE_NULL_TRIM
   "ENABLE_NULL_TRIM",

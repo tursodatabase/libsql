@@ -120,7 +120,7 @@ set pragma_def {
 
   NAME: writable_schema
   TYPE: FLAG
-  ARG:  SQLITE_WriteSchema
+  ARG:  SQLITE_WriteSchema|SQLITE_NoSchemaError
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
@@ -367,16 +367,33 @@ set pragma_def {
   IF:   defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 
   NAME: key
+  TYPE: KEY
+  ARG:  0
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: rekey
+  TYPE: KEY
+  ARG:  1
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexkey
+  TYPE: HEXKEY
+  ARG:  2
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexrekey
   TYPE: HEXKEY
+  ARG:  3
+  IF:   defined(SQLITE_HAS_CODEC)
+
+  NAME: textkey
+  TYPE: KEY
+  ARG:  4
+  IF:   defined(SQLITE_HAS_CODEC)
+
+  NAME: textrekey
+  TYPE: KEY
+  ARG:  5
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: activate_extensions
@@ -562,7 +579,7 @@ puts $fd "  u8 mPragFlg;             /* Zero or more PragFlg_XXX values */"
 puts $fd {  u8 iPragCName;           /* Start of column names in pragCName[] */}
 puts $fd "  u8 nPragCName;          \
 /* Num of col names. 0 means use pragma name */"
-puts $fd "  u32 iArg;                /* Extra argument */"
+puts $fd "  u64 iArg;                /* Extra argument */"
 puts $fd "\175 PragmaName;"
 puts $fd "static const PragmaName aPragmaName\[\] = \173"
 

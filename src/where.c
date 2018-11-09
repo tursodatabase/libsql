@@ -854,7 +854,6 @@ static void constructAutomaticIndex(
     translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
                           pTabItem->regResult, 1);
     sqlite3VdbeGoto(v, addrTop);
-    pTabItem->fg.viaCoroutine = 0;
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
   }

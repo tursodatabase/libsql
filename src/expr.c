@@ -1167,7 +1167,7 @@ static int dupedExprStructSize(Expr *p, int flags){
 static int dupedExprNodeSize(Expr *p, int flags){
   int nByte = dupedExprStructSize(p, flags) & 0xfff;
   if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
-    nByte += sqlite3Strlen30(p->u.zToken)+1;
+    nByte += sqlite3Strlen30NN(p->u.zToken)+1;
   }
   return ROUND8(nByte);
 }
@@ -2149,6 +2149,14 @@ int sqlite3IsRowid(const char *z){
   if( sqlite3StrICmp(z, "OID")==0 ) return 1;
   return 0;
 }
+#ifdef SQLITE_ENABLE_NORMALIZE
+int sqlite3IsRowidN(const char *z, int n){
+  if( sqlite3StrNICmp(z, "_ROWID_", n)==0 ) return 1;
+  if( sqlite3StrNICmp(z, "ROWID", n)==0 ) return 1;
+  if( sqlite3StrNICmp(z, "OID", n)==0 ) return 1;
+  return 0;
+}
+#endif
 
 /*
 ** pX is the RHS of an IN operator.  If pX is a SELECT statement 

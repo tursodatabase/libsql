@@ -13,6 +13,10 @@
 ** This file implements a read-only VIRTUAL TABLE that contains the
 ** content of a C-language array of integer values.  See the corresponding
 ** header file for full details.
+**
+** This virtual table is used for internal testing of SQLite only.  It is
+** not recommended for use in production.  For a similar virtual table that
+** is production-ready, see the "carray" virtual table over in ext/misc.
 */
 #include "test_intarray.h"
 #include <string.h>
@@ -315,7 +319,6 @@ static int SQLITE_TCLAPI test_intarray_create(
   rc = sqlite3_intarray_create(db, zName, &pArray);
 #endif
   if( rc!=SQLITE_OK ){
-    assert( pArray==0 );
     Tcl_AppendResult(interp, sqlite3ErrName(rc), (char*)0);
     return TCL_ERROR;
   }

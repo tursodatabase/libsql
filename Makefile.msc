@@ -1623,7 +1623,8 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata3.db \
   $(TOP)\test\fuzzdata4.db \
   $(TOP)\test\fuzzdata5.db \
-  $(TOP)\test\fuzzdata6.db
+  $(TOP)\test\fuzzdata6.db \
+  $(TOP)\test\fuzzdata7.db
 # <</mark>>
 
 # Additional compiler options for the shell.  These are only effective
@@ -1633,6 +1634,7 @@ FUZZDATA = \
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_DESERIALIZE=1
 !ENDIF
 
 # <<mark>>
@@ -2334,6 +2336,10 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS)
 extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
+
+coretestprogs:	$(TESTPROGS)
+
+testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
 
 fulltest:	$(TESTPROGS) fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)

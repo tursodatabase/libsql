@@ -655,6 +655,13 @@ do_test $tn.13.3 {
 } {1 one 2 two 3 iii}
 execsql ROLLBACK
 
+do_test $tn.14.1 { sqlite3session_config strm_size -1 } 64
+do_test $tn.14.2 { sqlite3session_config strm_size 65536 } 65536
+do_test $tn.14.3 { sqlite3session_config strm_size 64 } 64
+do_test $tn.14.4 { 
+  list [catch {sqlite3session_config invalid 123} msg] $msg
+} {1 SQLITE_MISUSE}
+
 }]
 }
 

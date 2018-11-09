@@ -254,7 +254,7 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
-static void statClearPage(StatPage *p){
+static void statClearCells(StatPage *p){
   int i;
   if( p->aCell ){
     for(i=0; i<p->nCell; i++){
@@ -262,6 +262,12 @@ static void statClearPage(StatPage *p){
     }
     sqlite3_free(p->aCell);
   }
+  p->nCell = 0;
+  p->aCell = 0;
+}
+
+static void statClearPage(StatPage *p){
+  statClearCells(p);
   sqlite3PagerUnref(p->pPg);
   sqlite3_free(p->zPath);
   memset(p, 0, sizeof(StatPage));
@@ -324,22 +330,33 @@ static int statDecodePage(Btree *pBt, StatPage *p){
   u8 *aHdr = &aData[p->iPgno==1 ? 100 : 0];
 
   p->flags = aHdr[0];
+  if( p->flags==0x0A || p->flags==0x0D ){
+    isLeaf = 1;
+    nHdr = 8;
+  }else if( p->flags==0x05 || p->flags==0x02 ){
+    isLeaf = 0;
+    nHdr = 12;
+  }else{
+    goto statPageIsCorrupt;
+  }
+  if( p->iPgno==1 ) nHdr += 100;
   p->nCell = get2byte(&aHdr[3]);
   p->nMxPayload = 0;
-
-  isLeaf = (p->flags==0x0A || p->flags==0x0D);
-  nHdr = 12 - isLeaf*4 + (p->iPgno==1)*100;
+  szPage = sqlite3BtreeGetPageSize(pBt);
 
   nUnused = get2byte(&aHdr[5]) - nHdr - 2*p->nCell;
   nUnused += (int)aHdr[7];
   iOff = get2byte(&aHdr[1]);
   while( iOff ){
+    int iNext;
+    if( iOff>=szPage ) goto statPageIsCorrupt;
     nUnused += get2byte(&aData[iOff+2]);
-    iOff = get2byte(&aData[iOff]);
+    iNext = get2byte(&aData[iOff]);
+    if( iNext<iOff+4 && iNext>0 ) goto statPageIsCorrupt;
+    iOff = iNext;
   }
   p->nUnused = nUnused;
   p->iRightChildPg = isLeaf ? 0 : sqlite3Get4byte(&aHdr[8]);
-  szPage = sqlite3BtreeGetPageSize(pBt);
 
   if( p->nCell ){
     int i;                        /* Used to iterate through cells */
@@ -356,6 +373,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
       StatCell *pCell = &p->aCell[i];
 
       iOff = get2byte(&aData[nHdr+i*2]);
+      if( iOff<nHdr || iOff>=szPage ) goto statPageIsCorrupt;
       if( !isLeaf ){
         pCell->iChildPg = sqlite3Get4byte(&aData[iOff]);
         iOff += 4;
@@ -372,8 +390,8 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         }
         if( nPayload>(u32)p->nMxPayload ) p->nMxPayload = nPayload;
         getLocalPayload(nUsable, p->flags, nPayload, &nLocal);
+        if( nLocal<0 ) goto statPageIsCorrupt;
         pCell->nLocal = nLocal;
-        assert( nLocal>=0 );
         assert( nPayload>=(u32)nLocal );
         assert( nLocal<=(nUsable-35) );
         if( nPayload>(u32)nLocal ){
@@ -401,6 +419,11 @@ static int statDecodePage(Btree *pBt, StatPage *p){
     }
   }
 
+  return SQLITE_OK;
+
+statPageIsCorrupt:
+  p->flags = 0;
+  statClearCells(p);
   return SQLITE_OK;
 }
 

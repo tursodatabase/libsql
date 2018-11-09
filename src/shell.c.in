@@ -1059,11 +1059,12 @@ struct ShellState {
 
 /* Allowed values for ShellState.openMode
 */
-#define SHELL_OPEN_UNSPEC     0      /* No open-mode specified */
-#define SHELL_OPEN_NORMAL     1      /* Normal database file */
-#define SHELL_OPEN_APPENDVFS  2      /* Use appendvfs */
-#define SHELL_OPEN_ZIPFILE    3      /* Use the zipfile virtual table */
-#define SHELL_OPEN_READONLY   4      /* Open a normal database read-only */
+#define SHELL_OPEN_UNSPEC      0      /* No open-mode specified */
+#define SHELL_OPEN_NORMAL      1      /* Normal database file */
+#define SHELL_OPEN_APPENDVFS   2      /* Use appendvfs */
+#define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
+#define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
+#define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
 #define SHELL_OPEN_REUSESCHEMA 5    /* Open for schema reuse */
 
 /*
@@ -3433,10 +3434,13 @@ static const char *(azHelp[]) = {
   "       -x    Open in a spreadsheet",
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
   "     Options:",
-  "        --append      Use appendvfs to append database to the end of FILE",
-  "        --new         Initialize FILE to an empty database",
-  "        --readonly    Open FILE readonly",
-  "        --zip         FILE is a ZIP archive",
+  "        --append        Use appendvfs to append database to the end of FILE",
+#ifdef SQLITE_ENABLE_DESERIALIZE
+  "        --deserialize   Load into memory useing sqlite3_deserialize()",
+#endif
+  "        --new           Initialize FILE to an empty database",
+  "        --readonly      Open FILE readonly",
+  "        --zip           FILE is a ZIP archive",
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
   "     If FILE begins with '|' then open it as a pipe.",
   ".print STRING...         Print literal STRING",
@@ -3507,7 +3511,8 @@ static const char *(azHelp[]) = {
 ** Return the number of matches.
 */
 static int showHelp(FILE *out, const char *zPattern){
-  int i, j;
+  int i = 0;
+  int j = 0;
   int n = 0;
   char *zPat;
   if( zPattern==0
@@ -3593,7 +3598,7 @@ static char *readFile(const char *zName, int *pnByte){
   nIn = ftell(in);
   rewind(in);
   pBuf = sqlite3_malloc64( nIn+1 );
-  if( pBuf==0 ) return 0;
+  if( pBuf==0 ){ fclose(in); return 0; }
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
@@ -3673,6 +3678,11 @@ int deduceDatabaseType(const char *zName, int dfltZip){
        return SHELL_OPEN_NORMAL;
     }
   }
+  n = fread(zBuf, 16, 1, f);
+  if( n==1 && memcmp(zBuf, "SQLite format 3", 16)==0 ){
+    fclose(f);
+    return SHELL_OPEN_NORMAL;
+  }
   fseek(f, -25, SEEK_END);
   n = fread(zBuf, 25, 1, f);
   if( n==1 && memcmp(zBuf, "Start-Of-SQLite3-", 17)==0 ){
@@ -3722,6 +3732,10 @@ static void open_db(ShellState *p, int openFlags){
       case SHELL_OPEN_APPENDVFS: {
         sqlite3_open_v2(p->zDbFilename, &p->db, 
            SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, "apndvfs");
+        break;
+      }
+      case SHELL_OPEN_DESERIALIZE: {
+        sqlite3_open(0, &p->db);
         break;
       }
       case SHELL_OPEN_ZIPFILE: {
@@ -3778,6 +3792,18 @@ static void open_db(ShellState *p, int openFlags){
       sqlite3_exec(p->db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
     }
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    else if( p->openMode==SHELL_OPEN_DESERIALIZE ){
+      int nData = 0;
+      unsigned char *aData = (unsigned char*)readFile(p->zDbFilename, &nData);
+      int rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
+                   SQLITE_DESERIALIZE_RESIZEABLE |
+                   SQLITE_DESERIALIZE_FREEONCLOSE);
+      if( rc ){
+        utf8_printf(stderr, "Error: sqlite3_deserialize() returns %d\n", rc);
+      }
+    }
+#endif
   }
 }
 
@@ -4982,6 +5008,7 @@ static void shellPreparePrintf(
     char *z;
     va_start(ap, zFmt);
     z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
     if( z==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
@@ -5935,6 +5962,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "enable_qpsg",      SQLITE_DBCONFIG_ENABLE_QPSG            },
         { "trigger_eqp",      SQLITE_DBCONFIG_TRIGGER_EQP            },
         { "reset_database",   SQLITE_DBCONFIG_RESET_DATABASE         },
+        { "defensive",        SQLITE_DBCONFIG_DEFENSIVE              },
     };
     int ii, v;
     open_db(p, 0);
@@ -6174,7 +6202,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
     if( nArg>=2 ){
-      int n = showHelp(p->out, azArg[1]);
+      n = showHelp(p->out, azArg[1]);
       if( n==0 ){
         utf8_printf(p->out, "Nothing matches '%s'\n", azArg[1]);
       }
@@ -6659,6 +6687,11 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_READONLY;
       }else if( optionMatch(z, "reuseschema") ){
         p->openMode = SHELL_OPEN_REUSESCHEMA;
+      }else if( z[0]=='-' ){
+#ifdef SQLITE_ENABLE_DESERIALIZE
+      }else if( optionMatch(z, "deserialize") ){
+        p->openMode = SHELL_OPEN_DESERIALIZE;
+#endif
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
@@ -8627,6 +8660,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    }else if( strcmp(z,"-deserialize")==0 ){
+      data.openMode = SHELL_OPEN_DESERIALIZE;
+#endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
     }else if( strcmp(z,"-reuseschema")==0 ){
@@ -8724,6 +8761,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-append")==0 ){
       data.openMode = SHELL_OPEN_APPENDVFS;
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    }else if( strcmp(z,"-deserialize")==0 ){
+      data.openMode = SHELL_OPEN_DESERIALIZE;
+#endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
     }else if( strcmp(z,"-reuseschema")==0 ){
@@ -8870,7 +8911,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     */
     if( stdin_is_interactive ){
       char *zHome;
-      char *zHistory = 0;
+      char *zHistory;
       int nHistory;
       printf(
         "SQLite version %s %.19s\n" /*extra-version-info*/
@@ -8883,8 +8924,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
-      zHome = find_home_dir(0);
-      if( zHome ){
+      zHistory = getenv("SQLITE_HISTORY");
+      if( zHistory ){
+        zHistory = strdup(zHistory);
+      }else if( (zHome = find_home_dir(0))!=0 ){
         nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
