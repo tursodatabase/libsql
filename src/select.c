@@ -5879,14 +5879,15 @@ int sqlite3Select(
     **
     ** The subquery is implemented as a co-routine if the subquery is
     ** guaranteed to be the outer loop (so that it does not need to be
-    ** computed more than once)
+    ** computed more than once). (1)
     **
-    ** TODO: Are there other reasons beside (1) to use a co-routine
-    ** implementation?
+    ** Avoid using a co-routines to compute any SELECT that occurs in
+    ** the RHS of an IN operator, as they can be used multiple times. (2)
     */
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
+     && (p->selFlags & SF_RhsOfIN)==0                               /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.

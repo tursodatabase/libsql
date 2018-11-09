@@ -2517,6 +2517,9 @@ int sqlite3FindInIndex(
     }else if( prRhsHasNull ){
       *prRhsHasNull = rMayHaveNull = ++pParse->nMem;
     }
+    if( ExprHasProperty(pX, EP_xIsSelect) ){
+      pX->x.pSelect->selFlags |= SF_RhsOfIN;
+    }
     sqlite3CodeSubselect(pParse, pX, rMayHaveNull, eType==IN_INDEX_ROWID);
     pParse->nQueryLoop = savedNQueryLoop;
   }else{
