@@ -1,5 +1,5 @@
-C In\sthe\streeview.c\smodule,\sbreak\sout\sthe\sdisplay\sof\sSrcList\sinto\sa\sseparate\nsubroutine,\sso\sthat\sit\scan\sbe\sinvoked\swhile\sdebugging.
-D 2018-11-08T22:53:06.181
+C Fix\sfor\sticket\s[787fa716be3a7f650cac]
+D 2018-11-09T14:17:51.539
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -589,7 +589,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c a54a3d639bcd751d1474deff58e239b2e475a96e1b8f9178aa7864df8782a4e3
+F src/where.c f5da1079f084c569aa70fd4ada6b7e45b356e19708f1e5307493cc65857ec9e4
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
@@ -652,7 +652,7 @@ F test/autoindex1.test a09958fa756129af10b6582bcbf3cbdf11e305e027b393f393caef801
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test 2dd997d6590438b53e4f715f9278aa91c9299cf3f81246a0915269c35beb790e
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
-F test/autoindex5.test 5f0135dc3b266277b8c1904624439097d8e8020dd7197eda13fda23c35c21a05
+F test/autoindex5.test 4a0eb6c7c7ae456d97a2061d4c8d6380946272c5c91d91507c1feb1af3dc7cce
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13e21b7da8fe754e230b09ca0b9f1f69cd9aa20d4407ddd8b95ca3fb18c9abeb
-R 915a30395d1ecdd8d23bc571af6386b9
+P 8c74065f0031274d9bc711d5d53c39aefcfb2b2679811105974a2c7c7a9e1dcb
+R 2aed8ed9bf698610f2ccf16db30ac97b
 U drh
-Z 043032fb93e658994b3c5096b42d8a7a
+Z 05df484bedb945ae17a7cf3ccd63a280
