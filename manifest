@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\strunk.
-D 2018-11-10T03:47:40.884
+C Remove\sa\sNEVER()\sthat\sis\sreachable\safter\sall.\sReverts\scheckin\s[9292d3351c40339].
+D 2018-11-10T04:14:51.670
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in edbb6e20bb1decf65f6c64c9e61004a69bdf8afb39cdce5337c916b03dfcd1e3
@@ -448,7 +448,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 3ef104ecae8b1b5f0458be1f5fa7c1ecf25fdc322a9d63bb8151f89eb32d381e
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c d70d8badf0aa07138da4a48116d5ba8b1f2e7ffe05d20d28e51fad949947defb
+F src/build.c 5bc91901b05ac7a33a324854bd2aa892311e71b82a887f99f390bead39e29175
 F src/callback.c 789bd33d188146f66c0dd8306472a72d1c05f71924b24a91caf6bd45cf9aba73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1776,7 +1776,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9292d3351c40339de7ad6bc26c02e7592e6cdee2592e0c790fae63ccf21ea88c a8d65214a567eb1afd703ee4d09d398247e060a610b46097a726364db2861001
-R c7b9e5ca4379ef7e497b820596e30e08
+P bf88efcec40036e0805940ff6371643dbc518442457d2bc18c711753607ae36c
+R 19746ae363c493cc4aa5c073aad34c6e
 U drh
-Z 71d5dbe0f37bcddde1bfdf928180ff85
+Z 3b35de947b23f688f81123c6213c6034
