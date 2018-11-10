@@ -2645,9 +2645,24 @@ static void fts5SourceIdFunc(
   sqlite3_result_text(pCtx, "--FTS5-SOURCE-ID--", -1, SQLITE_TRANSIENT);
 }
 
+/*
+** Return true if zName is the extension on one of the shadow tables used
+** by this module.
+*/
+static int fts5ShadowName(const char *zName){
+  static const char *azName[] = {
+    "config", "content", "data", "docsize", "idx"
+  };
+  unsigned int i;
+  for(i=0; i<sizeof(azName)/sizeof(azName[0]); i++){
+    if( sqlite3_stricmp(zName, azName[i])==0 ) return 1;
+  }
+  return 0;
+}
+
 static int fts5Init(sqlite3 *db){
   static const sqlite3_module fts5Mod = {
-    /* iVersion      */ 2,
+    /* iVersion      */ 3,
     /* xCreate       */ fts5CreateMethod,
     /* xConnect      */ fts5ConnectMethod,
     /* xBestIndex    */ fts5BestIndexMethod,
@@ -2670,6 +2685,7 @@ static int fts5Init(sqlite3 *db){
     /* xSavepoint    */ fts5SavepointMethod,
     /* xRelease      */ fts5ReleaseMethod,
     /* xRollbackTo   */ fts5RollbackToMethod,
+    /* xShadowName   */ fts5ShadowName
   };
 
   int rc;

@@ -231,4 +231,3 @@ forcedelete {*}[glob test.db*]
 forcedelete {*}[glob test_remote.db*]
 
 finish_test
-

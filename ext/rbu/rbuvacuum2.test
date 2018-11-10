@@ -232,4 +232,3 @@ do_test 6.3 {
 } {ok}
 
 finish_test
-

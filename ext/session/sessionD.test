@@ -255,4 +255,3 @@ do_catchsql_test 4.5.2 {
 } {1 {no such table: ixua.i8}}
 
 finish_test
-

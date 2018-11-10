@@ -41,6 +41,7 @@ db_save
 do_execsql_test 1.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
 set segid [lindex [fts5_level_segids t1] 0]
 
+sqlite3_db_config db DEFENSIVE 0
 do_test 1.3 {
   execsql {
     DELETE FROM t1_data WHERE rowid = fts5_rowid('segment', $segid, 4);
@@ -50,6 +51,7 @@ do_test 1.3 {
 
 do_test 1.4 {
   db_restore_and_reopen
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     UPDATE t1_data set block = X'00000000' || substr(block, 5) WHERE
     rowid = fts5_rowid('segment', $segid, 4);
@@ -89,7 +91,7 @@ do_execsql_test 3.0 {
 do_execsql_test 3.1 {
   SELECT * FROM t3 WHERE t3 MATCH 'o'
 } {{one o} {three o} {five o}}
-
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test 3.1 {
   DELETE FROM t3_content WHERE rowid = 3;
   SELECT * FROM t3 WHERE t3 MATCH 'o';

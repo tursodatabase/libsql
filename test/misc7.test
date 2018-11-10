@@ -434,6 +434,7 @@ if {$tcl_platform(platform)!="windows"} {
     set ::pending_byte_page [expr ($::sqlite_pending_byte / 1024) + 1]
     sqlite3_test_control_pending_byte $::sqlite_pending_byte 
     do_test misc7-17.3 {
+      sqlite3_db_config db DEFENSIVE 0
       db eval {
         pragma writable_schema = true;
         UPDATE sqlite_master 

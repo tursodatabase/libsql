@@ -184,6 +184,7 @@ foreach {DO_MALLOC_TEST enc} {
     [list 0 0 $off 10 1 0 $off 10] [list 0 0 $off 10]
 
   # Test a corruption case:
+  sqlite3_db_config db DEFENSIVE 0
   execsql { UPDATE ft_content SET c1b = 'hello world' WHERE c1b = $numbers }
   do_error_test $T.2.3 {
     SELECT offsets(ft) FROM ft WHERE ft MATCH 'onehundred'

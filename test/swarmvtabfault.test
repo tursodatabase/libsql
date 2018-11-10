@@ -63,4 +63,3 @@ do_faultsim_test 1.1 -faults oom* -prep {
 }
 
 finish_test
-

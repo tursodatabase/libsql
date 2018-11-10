@@ -455,4 +455,3 @@ do_execsql_test 5.4 {
 } {six 6}
 
 finish_test
-

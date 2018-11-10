@@ -23,6 +23,7 @@ set ::testprefix fts3corrupt
 # extends past the end of the node on which it resides is correctly identified
 # as database corruption.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts3;
   INSERT INTO t1 VALUES('hello');

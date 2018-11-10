@@ -471,7 +471,8 @@ int sqlite3Fts5TestRegisterTok(sqlite3 *db, fts5_api *pApi){
      0,                           /* xRename       */
      0,                           /* xSavepoint    */
      0,                           /* xRelease      */
-     0                            /* xRollbackTo   */
+     0,                           /* xRollbackTo   */
+     0                            /* xShadowName   */
   };
   int rc;                         /* Return code */
 

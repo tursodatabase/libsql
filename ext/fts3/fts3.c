@@ -3846,8 +3846,23 @@ static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   return SQLITE_OK;
 }
 
+/*
+** Return true if zName is the extension on one of the shadow tables used
+** by this module.
+*/
+static int fts3ShadowName(const char *zName){
+  static const char *azName[] = {
+    "content", "docsize", "segdir", "segments", "stat", 
+  };
+  unsigned int i;
+  for(i=0; i<sizeof(azName)/sizeof(azName[0]); i++){
+    if( sqlite3_stricmp(zName, azName[i])==0 ) return 1;
+  }
+  return 0;
+}
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 2,
+  /* iVersion      */ 3,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -3870,6 +3885,7 @@ static const sqlite3_module fts3Module = {
   /* xSavepoint    */ fts3SavepointMethod,
   /* xRelease      */ fts3ReleaseMethod,
   /* xRollbackTo   */ fts3RollbackToMethod,
+  /* xShadowName   */ fts3ShadowName,
 };
 
 /*

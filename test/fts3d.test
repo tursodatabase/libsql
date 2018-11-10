@@ -296,6 +296,7 @@ do_test fts3d-5.0 {
 } {{Index already optimal} 1 0}
 
 # Even if we move things around, still does nothing.
+sqlite3_db_config db DEFENSIVE 0
 do_test fts3d-5.1 {
   execsql {
     UPDATE t1_segdir SET level = 2 WHERE level = 1 AND idx = 0;

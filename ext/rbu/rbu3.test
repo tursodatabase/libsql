@@ -203,5 +203,3 @@ do_test 5.3 {
 do_test 6.1 { sqlite3rbu_internal_test } {}
 
 finish_test
-
-

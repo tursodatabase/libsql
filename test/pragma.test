@@ -497,6 +497,7 @@ Page 6 is never used} {row 1 missing from index i2}}
 # Verify that PRAGMA integrity_check catches UNIQUE and NOT NULL
 # constraint violations.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test pragma-3.20 {
   CREATE TABLE t1(a,b);
   CREATE INDEX t1a ON t1(a);

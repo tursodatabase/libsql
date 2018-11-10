@@ -25,6 +25,7 @@ ifcapable !fts3 {
 
 source $testdir/genesis.tcl
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.1 { CREATE VIRTUAL TABLE x1 USING fts3; }
 
 do_test 1.2 {
