@@ -44,6 +44,7 @@ do_reindex_tests e_reindex-0.1 {
 #    Test this by corrupting some database indexes, running REINDEX, and
 #    observing that the corruption is gone.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test e_reindex-1.1 {
   INSERT INTO t1 VALUES(1, 2);
   INSERT INTO t1 VALUES(3, 4);
@@ -57,6 +58,7 @@ do_execsql_test e_reindex-1.1 {
 
 db close
 sqlite3 db test.db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test e_reindex-1.2 {
   DELETE FROM t1 WHERE a = 3;
   INSERT INTO t1 VALUES(7, 8);

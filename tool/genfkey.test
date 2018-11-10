@@ -351,4 +351,3 @@ do_test genfkey-6.7 {
     SELECT * FROM child;
   }
 } {1 1}
-

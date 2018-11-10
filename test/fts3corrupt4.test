@@ -40,6 +40,7 @@ do_execsql_test 1.1 {
   SELECT quote(root) FROM ft_segdir;
 } {X'0005616261636B03010200030266740302020003046E646F6E03030200'}
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.2 {
   UPDATE ft_segdir SET root = blob(
     '0005616261636B03010200 FFFFFFFF0702 66740302020003046E646F6E03030200'
@@ -83,6 +84,7 @@ do_execsql_test 2.2 {
 } {X'00056162633130031F0200'}
 
 db func blob blob
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 2.3.1 {
   UPDATE ft_segments SET block = 
     blob('00056162633130031F0200 FFFFFFFF07FF55 66740302020003046E646F6E03030200')
@@ -133,6 +135,7 @@ do_execsql_test 3.1 {
 } {X'0101056162633132040136030132030136'}
 
 db func blob blob
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 3.2 {
   UPDATE ft_segdir 
   SET root = blob('0101056162633132FFFFFFFF070236030132030136');
@@ -143,5 +146,3 @@ do_catchsql_test 3.1 {
 } {1 {database disk image is malformed}}
 
 finish_test
-
-

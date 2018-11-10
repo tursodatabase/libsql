@@ -68,6 +68,7 @@ foreach {tn defn} {
 # Test that variable references within trigger definitions loaded from 
 # the sqlite_master table are automatically converted to NULL.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 2.1 {
   PRAGMA writable_schema = 1;
   INSERT INTO sqlite_master VALUES('trigger', 'tr1', 't1', 0,

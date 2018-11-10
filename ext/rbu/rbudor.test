@@ -56,4 +56,3 @@ do_execsql_test 1.4 {
 } [list 1 $bigA 2 $bigB]
 
 finish_test
-

@@ -626,7 +626,6 @@ do_test index-18.1 {
   }
 } {1 {object name reserved for internal use: sqlite_t1}}
 do_test index-18.1.2 {
-  sqlite3_db_config db DEFENSIVE 1
   catchsql {
     CREATE TABLE sqlite_t1(a, b, c);
   }

@@ -590,6 +590,7 @@ do_test misc5-7.1 {
 #
 do_test misc5-7.2 {
   sqlite3 db2 :memory:
+  sqlite3_db_config db2 DEFENSIVE 0
   catchsql {
     CREATE TABLE t1(x UNIQUE);
     PRAGMA writable_schema=ON;

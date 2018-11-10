@@ -234,4 +234,3 @@ foreach {tn2 setup sql expect} {
 }
 
 finish_test
-

@@ -2160,27 +2160,16 @@ struct sqlite3_mem_methods {
 ** ensure that it does not happen by accident.
 **
 ** <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
-** <dd>The SQLITE_DBCONFIG_DEFENSIVE option actives or deactivates the
+** <dd>The SQLITE_DBCONFIG_DEFENSIVE option activates or deactivates the
 ** "defensive" flag for a database connection.  When the defensive
-** flag is enabled, some obscure features of SQLite are disabled in order
-** to reduce the attack surface. Applications that run untrusted SQL
-** can activate this flag to reduce the risk of zero-day exploits.
-** <p>
-** Features disabled by the defensive flag include:
+** flag is enabled, language features that allow ordinary SQL to 
+** deliberately corrupt the database file are disabled.  The disabled
+** features include but are not limited to the following:
 ** <ul>
-** <li>The [PRAGMA writable_schema=ON] statement.
-** <li>Writes to the [sqlite_dbpage] virtual table.
+** <li> The [PRAGMA writable_schema=ON] statement.
+** <li> Writes to the [sqlite_dbpage] virtual table.
+** <li> Direct writes to shadow tables.
 ** </ul>
-** New restrictions may be added in future releases.
-** <p>
-** To be clear: It should never be possible for hostile SQL to cause
-** arbitrary memory reads, memory leaks, buffer overflows, assertion
-** faults, arbitrary code execution, crashes, or other mischief, regardless
-** of the value of the defensive flag.  Any occurrance of these problems
-** is considered a serious bug and will be fixed promptly.  It is not
-** necessary to enable the defensive flag in order to make SQLite secure
-** against attack. The defensive flag merely provides an additional layer
-** of defense against unknown vulnerabilities.
 ** </dd>
 ** </dl>
 */
@@ -6322,6 +6311,9 @@ struct sqlite3_module {
   int (*xSavepoint)(sqlite3_vtab *pVTab, int);
   int (*xRelease)(sqlite3_vtab *pVTab, int);
   int (*xRollbackTo)(sqlite3_vtab *pVTab, int);
+  /* The methods above are in versions 1 and 2 of the sqlite_module object.
+  ** Those below are for version 3 and greater. */
+  int (*xShadowName)(const char*);
 };
 
 /*

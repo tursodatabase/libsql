@@ -46,6 +46,7 @@ do_execsql_test 1.1.4 {
   INSERT INTO t1 VALUES('');
   INSERT INTO t1(t1) VALUES('optimize');
 }
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.1.4 {
   SELECT count(*) FROM t1_segments WHERE length(block)>10000;
   UPDATE t1_segments SET block = zeroblob(length(block)) WHERE length(block)>10000;
@@ -98,6 +99,7 @@ foreach {tn sql} {
       WHERE length(block)>10000;
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   execsql $sql
 
   do_execsql_test 2.2.$tn.1 {
@@ -152,6 +154,7 @@ foreach {tn sql} {
       WHERE length(block)>10000;
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   execsql $sql
   do_execsql_test 2.4.$tn {
     SELECT docid, mit(matchinfo(t3, 'pcxnal')) FROM t3 WHERE t3 MATCH '"a b c"';

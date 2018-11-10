@@ -99,6 +99,7 @@ foreach {tno stmt} {
 set lrowid [db one {SELECT max(rowid) FROM t1_data WHERE (rowid & $mask)=0}] 
 set nbyte [db one {SELECT length(block) FROM t1_data WHERE rowid=$lrowid}]
 set all [db eval {SELECT rowid FROM t1}]
+sqlite3_db_config db DEFENSIVE 0
 for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
   do_execsql_test 2.$i.1 {
     BEGIN;
@@ -248,6 +249,7 @@ foreach {tn hdr} {
 
 #--------------------------------------------------------------------
 reset_db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 6.1 {
   CREATE VIRTUAL TABLE x5 USING fts5(tt);
   INSERT INTO x5 VALUES('a');

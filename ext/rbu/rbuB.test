@@ -59,4 +59,3 @@ sqlite3_shutdown
 test_sqlite3_log 
 sqlite3_initialize
 finish_test
-

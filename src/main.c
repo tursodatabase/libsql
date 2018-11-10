@@ -3063,6 +3063,9 @@ static int openDatabase(
 #if defined(SQLITE_ENABLE_QPSG)
                  | SQLITE_EnableQPSG
 #endif
+#if defined(SQLITE_DEFAULT_DEFENSIVE)
+                 | SQLITE_Defensive
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE

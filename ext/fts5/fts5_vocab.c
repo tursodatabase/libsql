@@ -755,10 +755,9 @@ int sqlite3Fts5VocabInit(Fts5Global *pGlobal, sqlite3 *db){
     /* xSavepoint    */ 0,
     /* xRelease      */ 0,
     /* xRollbackTo   */ 0,
+    /* xShadowName   */ 0
   };
   void *p = (void*)pGlobal;
 
   return sqlite3_create_module_v2(db, "fts5vocab", &fts5Vocab, p, 0);
 }
-
-

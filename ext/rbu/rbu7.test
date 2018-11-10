@@ -106,5 +106,3 @@ foreach {tn tbl} {
 }
 
 finish_test
-
-

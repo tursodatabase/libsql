@@ -49,6 +49,7 @@ lappend data {*}{
    "acvmldguld asdvz aqb aeomsyzyu aggylhprbdz asrfkwz auipybpsn agsnszzfb"
 }
 
+sqlite3_db_config db DEFENSIVE 0
 do_test fts3corrupt2-1.0 {
   execsql BEGIN
   execsql { CREATE VIRTUAL TABLE t2 USING FTS3(a, b); }

@@ -659,6 +659,7 @@ do_execsql_test misc1-22.1 {
 #
 db close
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test misc1-23.1 {
   CREATE TABLE t1(x);
   PRAGMA writable_schema=ON;
@@ -674,6 +675,7 @@ do_execsql_test misc1-23.1 {
 db close
 database_may_be_corrupt
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test misc1-23.2 {
   CREATE TABLE t1(x UNIQUE);
   PRAGMA writable_schema=ON;
@@ -685,6 +687,7 @@ do_catchsql_test misc1-23.2 {
 } {1 {no such table: F}}
 db close
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test misc1-23.3 {
   CREATE TABLE t1(x UNIQUE);
   PRAGMA writable_schema=ON;

@@ -102,4 +102,3 @@ do_execsql_test 1.5 {
 } {1 one 1 3 3 3 4 4 4 1 one 1 3 3 3 4 4 4}
 
 finish_test
-
