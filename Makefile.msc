@@ -2448,6 +2448,11 @@ changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C) $(SQLITE3H)
 		-DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 \
 		$(TOP)\ext\session\changeset.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+changesetfuzz.exe:	$(TOP)\ext\session\changesetfuzz.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 \
+		$(TOP)\ext\session\changesetfuzz.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
 fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
