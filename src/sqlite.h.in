@@ -2017,6 +2017,7 @@ struct sqlite3_mem_methods {
 ** is invoked.
 **
 ** <dl>
+** [[SQLITE_DBCONFIG_LOOKASIDE]]
 ** <dt>SQLITE_DBCONFIG_LOOKASIDE</dt>
 ** <dd> ^This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
@@ -2039,6 +2040,7 @@ struct sqlite3_mem_methods {
 ** memory is in use leaves the configuration unchanged and returns 
 ** [SQLITE_BUSY].)^</dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_FKEY]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FKEY</dt>
 ** <dd> ^This option is used to enable or disable the enforcement of
 ** [foreign key constraints].  There should be two additional arguments.
@@ -2049,6 +2051,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the FK enforcement setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_TRIGGER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_TRIGGER</dt>
 ** <dd> ^This option is used to enable or disable [CREATE TRIGGER | triggers].
 ** There should be two additional arguments.
@@ -2059,6 +2062,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the trigger setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
 ** <dd> ^This option is used to enable or disable the two-argument
 ** version of the [fts3_tokenizer()] function which is part of the
@@ -2072,6 +2076,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the new setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>
 ** <dd> ^This option is used to enable or disable the [sqlite3_load_extension()]
 ** interface independently of the [load_extension()] SQL function.
@@ -2089,7 +2094,7 @@ struct sqlite3_mem_methods {
 ** be a NULL pointer, in which case the new setting is not reported back.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
+** [[SQLITE_DBCONFIG_MAINDBNAME]] <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
 ** <dd> ^This option is used to change the name of the "main" database
 ** schema.  ^The sole argument is a pointer to a constant UTF8 string
 ** which will become the new schema name in place of "main".  ^SQLite
@@ -2098,6 +2103,7 @@ struct sqlite3_mem_methods {
 ** until after the database connection closes.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE]] 
 ** <dt>SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE</dt>
 ** <dd> Usually, when a database in wal mode is closed or detached from a 
 ** database handle, SQLite checks if this will mean that there are now no 
@@ -2111,7 +2117,7 @@ struct sqlite3_mem_methods {
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
+** [[SQLITE_DBCONFIG_ENABLE_QPSG]] <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
 ** <dd>^(The SQLITE_DBCONFIG_ENABLE_QPSG option activates or deactivates
 ** the [query planner stability guarantee] (QPSG).  When the QPSG is active,
 ** a single SQL query statement will always use the same algorithm regardless
@@ -2127,7 +2133,7 @@ struct sqlite3_mem_methods {
 ** following this call.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
+** [[SQLITE_DBCONFIG_TRIGGER_EQP]] <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
 ** <dd> By default, the output of EXPLAIN QUERY PLAN commands does not 
 ** include output for any operations performed by trigger programs. This
 ** option is used to set or clear (the default) a flag that governs this
@@ -2139,7 +2145,7 @@ struct sqlite3_mem_methods {
 ** it is not disabled, 1 if it is.  
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_RESET_DATABASE</dt>
+** [[SQLITE_DBCONFIG_RESET_DATABASE]] <dt>SQLITE_DBCONFIG_RESET_DATABASE</dt>
 ** <dd> Set the SQLITE_DBCONFIG_RESET_DATABASE flag and then run
 ** [VACUUM] in order to reset a database back to an empty database
 ** with no schema and no content. The following process works even for
@@ -2159,7 +2165,7 @@ struct sqlite3_mem_methods {
 ** process requires the use of this obscure API and multiple steps to help
 ** ensure that it does not happen by accident.
 **
-** <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
+** [[SQLITE_DBCONFIG_DEFENSIVE]] <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
 ** <dd>The SQLITE_DBCONFIG_DEFENSIVE option activates or deactivates the
 ** "defensive" flag for a database connection.  When the defensive
 ** flag is enabled, language features that allow ordinary SQL to 
@@ -2168,7 +2174,7 @@ struct sqlite3_mem_methods {
 ** <ul>
 ** <li> The [PRAGMA writable_schema=ON] statement.
 ** <li> Writes to the [sqlite_dbpage] virtual table.
-** <li> Direct writes to shadow tables.
+** <li> Direct writes to [shadow tables].
 ** </ul>
 ** </dd>
 ** </dl>
@@ -8648,6 +8654,7 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** can use to customize and optimize their behavior.
 **
 ** <dl>
+** [[SQLITE_VTAB_CONSTRAINT_SUPPORT]]
 ** <dt>SQLITE_VTAB_CONSTRAINT_SUPPORT
 ** <dd>Calls of the form
 ** [sqlite3_vtab_config](db,SQLITE_VTAB_CONSTRAINT_SUPPORT,X) are supported,
