@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sread-only\sshadow\stables\son\svirtual\stables.\s\sAdded\sthe\nSQLITE_DEFAULT_DEFENSIVE\scompile-time\soption\sthat\scan\sput\sSQLite\sin\s\ndefensive\smode\sby\sdefault.
-D 2018-11-10T18:23:32.590
+C Fix\sa\suse-after-free\sproblem\sin\sthe\sfts5vocab\svirtual\stable.
+D 2018-11-12T13:20:00.533
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d298b31769d4c737887102462cd45684786b09f2a626a80b3e413790fb436219
@@ -115,7 +115,7 @@ F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bf
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 5aef080ba3c8947e22f38ce1ff9fe548e4a740e72b77241f35ed941ae128d2c7
 F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301546dd55
-F ext/fts5/fts5_index.c d1b2d7d92cb2b72b9465da35b7d7c30e4b426c7f208bf6f94ce86b50eed8a1cb
+F ext/fts5/fts5_index.c baf3ad4451d32d35c2bd692ee4a81235ca7f26bd6f7613f7f73505474c33bbf2
 F ext/fts5/fts5_main.c 287a1a56580df304d7fa2fc1890f85b9cb6ac6b9e7c8af7dfa2151528db4b059
 F ext/fts5/fts5_storage.c 4bec8a1b3905978b22a67bca5f4a3cfdb94af234cf51efb36f4f2d733d278634
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
@@ -124,7 +124,7 @@ F ext/fts5/fts5_test_tok.c 80de1a4b1a3caa216c3be8862440f0117a8357dd9b7cfc5a2a2ce
 F ext/fts5/fts5_tokenize.c ebd13d034f3dc7c841e1c32c364a4fca5cc2e05a0b91682a93fa1e6defcd4292
 F ext/fts5/fts5_unicode2.c 543cf0987c27ad59e5a7a6222480b917b5431009b7b139027c9581a63e39e37e
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
-F ext/fts5/fts5_vocab.c dfe3bfc7ccd39ef7d149c1828b6663995e580e9b315de029801be62d2b72bedd
+F ext/fts5/fts5_vocab.c fbe38044889b2d2d99babeeef239c620fb0332bb928a84506ac748d81500b354
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
@@ -215,7 +215,7 @@ F ext/fts5/test/fts5unindexed.test 9021af86a0fb9fc616f7a69a996db0116e7936d0db638
 F ext/fts5/test/fts5update.test 0737876e20e97a6a6abf45de19fc99315727bcee6a83fadcada1cc080b9aa8f0
 F ext/fts5/test/fts5version.test c8f2cc105f0abf0224965f93e584633dee3e06c91478bc67e468f7cfdf97fd6a
 F ext/fts5/test/fts5vocab.test 2de834ee6405130d3373817ced8fefbfee392b63d932e471740e09829f1e4510
-F ext/fts5/test/fts5vocab2.test c361635893cc9454e7dcd73c2ead0e86e7dca781b89a45f04c3ac62d57e1b08e
+F ext/fts5/test/fts5vocab2.test d6039b20118e886113fc63614d9ad39a466fc2af34184f3e915b9f92b7ebfa10
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
@@ -1778,8 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2bae0e7c1c1393aeb0bb7234865e410c9ca0e3c31cdc8566e9503f70ca7ac64c c5dc7fb873b15bd4e4f31b944c9feee78ab7ec2cb74f5fc55b615fd0e2784a88
-R 2f07d98f23b322254bb650c4a8ed900f
-T +closed c5dc7fb873b15bd4e4f31b944c9feee78ab7ec2cb74f5fc55b615fd0e2784a88
-U drh
-Z b28ad0e8933d08dc5443b19047381cba
+P 9c685171c4d7ae8615d1489c9621aba79fe4ef1f0e56b75823b88c3e70d127df
+R 91f8961408e20ff4d857efd69f263d1d
+U dan
+Z ad7ad09960978a9392dccb89c7c2f9dd

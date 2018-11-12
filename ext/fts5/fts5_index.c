@@ -5402,7 +5402,7 @@ int sqlite3Fts5IndexQuery(
       fts5CloseReader(p);
     }
 
-    *ppIter = &pRet->base;
+    *ppIter = (Fts5IndexIter*)pRet;
     sqlite3Fts5BufferFree(&buf);
   }
   return fts5IndexReturn(p);
