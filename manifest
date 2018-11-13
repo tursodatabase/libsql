@@ -1,8 +1,8 @@
-C New\shyperlinks\sin\scomments\sused\sto\sgenerate\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2018-11-12T15:20:44.272
+C Turn\son\sASAN\sfor\sthe\sdbfuzz2\sutility.\s\sFix\sa\sbuffer\soverread\sassociated\nwith\ssqlite3_deserialize().
+D 2018-11-13T19:51:41.357
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in d298b31769d4c737887102462cd45684786b09f2a626a80b3e413790fb436219
+F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 071853dfc2148aadaeb7a153b9986cc9d71b7f256874f79b119f97a4c89453f5
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -442,7 +442,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 61c1ace40a9e39c45a975cb6c57a1a283a262ea21bbe3fb5b473708b790a8d43
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
-F src/attach.c 4bd5b92633671d3e8ce431153ebb1893b50335818423b5373f3f27969f79769a
+F src/attach.c 92b51739a885da8bd84bc9a05485f1e48148bce5c15432f059b45af98fff75cd
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac69d169c61c973448b1d3eef5b8ff0de2d932d7bb74068344cb1b79bd330578
-R 3b9715a5378459c4b71c8f4e6028e088
+P f9755f81b1c0fd29f242dce78a2fba570fa2714d76e93b8563f426a040352513
+R 98a6d1adc30b12dd5c82022baece83c9
 U drh
-Z 7afea2e890bf0787105cd544c7cf7668
+Z 74a6937661c8cfdeda0ca01cd02a14d0
