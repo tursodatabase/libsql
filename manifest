@@ -1,5 +1,5 @@
-C New\sfuzztest\scases.
-D 2018-11-15T13:51:48.590
+C Include\sgeopoly\sin\sthe\scompiler-warning\sscript.
+D 2018-11-15T16:56:33.627
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -1755,7 +1755,7 @@ F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
-F tool/warnings.sh 8a4acea31e0f9c562949a2d767329533c0930d699ea19c6704c0ca0aa9154068
+F tool/warnings.sh 54c21a842ad01f93f8e82d5a35e68eb880d7318f1015a03f5098b08192e42d2f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F vsixtest/App.xaml b76d3b48860e7454775c47ea38ffea9c4abe3e85
 F vsixtest/App.xaml.cpp c465147f50871165c60ca16955219f6c5812d6d8
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a62e6b593b59eae44d299842a4d02b9346a0c72a3e1206882f304ab40f2cd5c5
-R 96051e63d694ae78afeac8e47e627353
+P e8316ba47f566c8d2cb48d9d54308e8869743ef39d35b662a8764b0479aed9e0
+R baafede97d241b31aa18fbdcdd37d5f7
 U drh
-Z 4203402e0dfbadcdef7f9bd128dc277b
+Z 571586e1283e785a99a8c11adb3e046d
