@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sbuffer\soverread\sin\sthe\sdbstat\svirtual\stable\swhen\sprocessing\na\scorrupt\sdatabase\sfile.
-D 2018-11-13T20:21:52.241
+C New\sfuzztest\scases.
+D 2018-11-15T13:51:48.590
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -977,7 +977,7 @@ F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
-F test/fuzzdata7.db 829cbab68b8fa5223405f4bf0d4775b05391a8ff670790d09154a56dd22a8d1e
+F test/fuzzdata7.db a1bf54eb455e9772942abae1b2d1cf1e3d3659f0e5dd14f00792fd01411ae8ef
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e38f27b55030e908bd36f32101e26b30f10dbde67e12c8197d0363ee12aa06d
-R a67b2811aa07e1e1e0992fd02687f209
+P a62e6b593b59eae44d299842a4d02b9346a0c72a3e1206882f304ab40f2cd5c5
+R 96051e63d694ae78afeac8e47e627353
 U drh
-Z 582daefcbaa8d9f654e4fc231aaea0cb
+Z 4203402e0dfbadcdef7f9bd128dc277b
