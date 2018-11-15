@@ -395,8 +395,13 @@ Table *sqlite3LocateTableItem(
   struct SrcList_item *p
 ){
   const char *zDb;
-  assert( p->pSchema==0 || p->zDatabase==0 );
-  if( p->pSchema ){
+  if( pParse->iFixDb && pParse->iFixDb!=2 ){
+    zDb = pParse->db->aDb[pParse->iFixDb-1].zDbSName;
+    assert( p->zDatabase==0 || sqlite3StrICmp(p->zDatabase, zDb)==0 );
+    if( p->zDatabase==0 ){
+      p->zDatabase = sqlite3DbStrDup(pParse->db, zDb);
+    }
+  }else if( p->pSchema ){
     int iDb = sqlite3SchemaToIndex(pParse->db, p->pSchema);
     zDb = pParse->db->aDb[iDb].zDbSName;
   }else{
@@ -3027,7 +3032,6 @@ void sqlite3CreateIndex(
   char *zName = 0;     /* Name of the index */
   int nName;           /* Number of characters in zName */
   int i, j;
-  DbFixer sFix;        /* For assigning database names to pTable */
   int sortOrderMask;   /* 1 to honor DESC in index.  0 to ignore. */
   sqlite3 *db = pParse->db;
   Db *pDb;             /* The specific table containing the indexed database */
@@ -3076,13 +3080,9 @@ void sqlite3CreateIndex(
     }
 #endif
 
-    sqlite3FixInit(&sFix, pParse, iDb, "index", pName);
-    if( sqlite3FixSrcList(&sFix, pTblName) ){
-      /* Because the parser constructs pTblName from a single identifier,
-      ** sqlite3FixSrcList can never fail. */
-      assert(0);
-    }
+    if( iDb!=1 ) pTblName->a[0].zDatabase = db->aDb[iDb].zDbSName;
     pTab = sqlite3LocateTableItem(pParse, 0, &pTblName->a[0]);
+    pTblName->a[0].zDatabase = 0;
     assert( db->mallocFailed==0 || pTab==0 );
     if( pTab==0 ) goto exit_create_index;
     if( iDb==1 && db->aDb[iDb].pSchema!=pTab->pSchema ){

@@ -4886,13 +4886,21 @@ static int selectExpander(Walker *pWalker, Select *p){
       }
 #if !defined(SQLITE_OMIT_VIEW) || !defined (SQLITE_OMIT_VIRTUALTABLE)
       if( IsVirtual(pTab) || pTab->pSelect ){
+        int iSave = pParse->iFixDb;
         i16 nCol;
-        if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
+        pParse->iFixDb = 1 + sqlite3SchemaToIndex2(
+            db, pTab->pSchema, pFrom->zDatabase
+        );
+        if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+          pParse->iFixDb = iSave;
+          return WRC_Abort;
+        }
         assert( pFrom->pSelect==0 );
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         nCol = pTab->nCol;
         pTab->nCol = -1;
         sqlite3WalkSelect(pWalker, pFrom->pSelect);
+        pParse->iFixDb = iSave;
         pTab->nCol = nCol;
       }
 #endif

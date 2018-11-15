@@ -568,7 +568,7 @@ void sqlite3Insert(
   if( pTab==0 ){
     goto insert_cleanup;
   }
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
   assert( iDb<db->nDb );
   if( sqlite3AuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0,
                        db->aDb[iDb].zDbSName) ){
@@ -811,7 +811,7 @@ void sqlite3Insert(
   /* If this is not a view, open the table and and all indices */
   if( !isView ){
     int nIdx;
-    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, -1, 0,
+    nIdx = sqlite3OpenTableAndIndices(pParse, iDb, pTab, OP_OpenWrite, 0, -1, 0,
                                       &iDataCur, &iIdxCur);
     aRegIdx = sqlite3DbMallocRawNN(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
@@ -927,7 +927,7 @@ void sqlite3Insert(
     }
 
     /* Fire BEFORE or INSTEAD OF triggers */
-    sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
+    sqlite3CodeRowTrigger(pParse, iDb, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
         pTab, regCols-pTab->nCol-1, onError, endOfLoop);
 
     sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol+1);
@@ -1067,7 +1067,7 @@ void sqlite3Insert(
 
   if( pTrigger ){
     /* Code AFTER triggers */
-    sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
+    sqlite3CodeRowTrigger(pParse, iDb, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
         pTab, regData-2-pTab->nCol, onError, endOfLoop);
   }
 
@@ -1557,7 +1557,7 @@ void sqlite3GenerateConstraintChecks(
         }
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
-          sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
+          sqlite3GenerateRowDelete(pParse, 0, pTab, pTrigger, iDataCur, iIdxCur,
                                    regNewData, 1, 0, OE_Replace, 1, -1);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
@@ -1806,7 +1806,7 @@ void sqlite3GenerateConstraintChecks(
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
         }
-        sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
+        sqlite3GenerateRowDelete(pParse, 0, pTab, pTrigger, iDataCur, iIdxCur,
             regR, nPkField, 0, OE_Replace,
             (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), iThisCur);
         seenReplace = 1;
@@ -1967,6 +1967,7 @@ void sqlite3CompleteInsertion(
 */
 int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
+  int iDb,         /* Database to open pTab in */
   Table *pTab,     /* Table to be opened */
   int op,          /* OP_OpenRead or OP_OpenWrite */
   u8 p5,           /* P5 value for OP_Open* opcodes (except on WITHOUT ROWID) */
@@ -1976,7 +1977,6 @@ int sqlite3OpenTableAndIndices(
   int *piIdxCur    /* Write the first index cursor number here */
 ){
   int i;
-  int iDb;
   int iDataCur;
   Index *pIdx;
   Vdbe *v;
@@ -1989,7 +1989,6 @@ int sqlite3OpenTableAndIndices(
     ** can detect if they are used by mistake in the caller. */
     return 0;
   }
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   if( iBase<0 ) iBase = pParse->nTab;

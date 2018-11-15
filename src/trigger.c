@@ -729,20 +729,12 @@ static SrcList *targetSrcList(
   TriggerStep *pStep   /* The trigger containing the target token */
 ){
   sqlite3 *db = pParse->db;
-  int iDb;             /* Index of the database to use */
   SrcList *pSrc;       /* SrcList to be returned */
 
   pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
   if( pSrc ){
     assert( pSrc->nSrc>0 );
     pSrc->a[pSrc->nSrc-1].zName = sqlite3DbStrDup(db, pStep->zTarget);
-    iDb = sqlite3SchemaToIndex(db, pStep->pTrig->pSchema);
-    if( iDb==0 || iDb>=2 ){
-      const char *zDb;
-      assert( iDb<db->nDb );
-      zDb = db->aDb[iDb].zDbSName;
-      pSrc->a[pSrc->nSrc-1].zDatabase =  sqlite3DbStrDup(db, zDb);
-    }
   }
   return pSrc;
 }
@@ -904,6 +896,7 @@ static TriggerPrg *codeRowTrigger(
   pPrg->orconf = orconf;
   pPrg->aColmask[0] = 0xffffffff;
   pPrg->aColmask[1] = 0xffffffff;
+  pPrg->iFixDb = pParse->iFixDb;
 
   /* Allocate and populate a new Parse context to use for coding the 
   ** trigger sub-program.  */
@@ -917,11 +910,12 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
+  pSubParse->iFixDb = pParse->iFixDb;
 
   v = sqlite3GetVdbe(pSubParse);
   if( v ){
-    VdbeComment((v, "Start: %s.%s (%s %s%s%s ON %s)", 
-      pTrigger->zName, onErrorText(orconf),
+    VdbeComment((v, "Start: %s.%s (%d) (%s %s%s%s ON %s)", 
+      pTrigger->zName, onErrorText(orconf), pParse->iFixDb-1,
       (pTrigger->tr_tm==TRIGGER_BEFORE ? "BEFORE" : "AFTER"),
         (pTrigger->op==TK_UPDATE ? "UPDATE" : ""),
         (pTrigger->op==TK_INSERT ? "INSERT" : ""),
@@ -967,6 +961,7 @@ static TriggerPrg *codeRowTrigger(
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
     pProgram->token = (void *)pTrigger;
+    pProgram->itoken = pParse->iFixDb;
     pPrg->aColmask[0] = pSubParse->oldmask;
     pPrg->aColmask[1] = pSubParse->newmask;
     sqlite3VdbeDelete(v);
@@ -988,12 +983,15 @@ static TriggerPrg *codeRowTrigger(
 */
 static TriggerPrg *getRowTrigger(
   Parse *pParse,       /* Current parse context */
+  int iDb,             /* Database containing pTab */
   Trigger *pTrigger,   /* Trigger to code */
   Table *pTab,         /* The table trigger pTrigger is attached to */
   int orconf           /* ON CONFLICT algorithm. */
 ){
   Parse *pRoot = sqlite3ParseToplevel(pParse);
   TriggerPrg *pPrg;
+  int iFixDb = pParse->iFixDb;
+  pParse->iFixDb = (pTrigger->pSchema==pRoot->db->aDb[1].pSchema)?0:(iDb+1);
 
   assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) );
 
@@ -1001,16 +999,19 @@ static TriggerPrg *getRowTrigger(
   ** process of being coded). If this is the case, then an entry with
   ** a matching TriggerPrg.pTrigger field will be present somewhere
   ** in the Parse.pTriggerPrg list. Search for such an entry.  */
-  for(pPrg=pRoot->pTriggerPrg; 
-      pPrg && (pPrg->pTrigger!=pTrigger || pPrg->orconf!=orconf); 
-      pPrg=pPrg->pNext
-  );
+  for(pPrg=pRoot->pTriggerPrg; pPrg; pPrg=pPrg->pNext){
+    if( pPrg->pTrigger==pTrigger 
+     && pPrg->orconf==orconf 
+     && pParse->iFixDb==pPrg->iFixDb
+    ) break;
+  }
 
   /* If an existing TriggerPrg could not be located, create a new one. */
   if( !pPrg ){
     pPrg = codeRowTrigger(pParse, pTrigger, pTab, orconf);
   }
 
+  pParse->iFixDb = iFixDb;
   return pPrg;
 }
 
@@ -1022,6 +1023,7 @@ static TriggerPrg *getRowTrigger(
 */
 void sqlite3CodeRowTriggerDirect(
   Parse *pParse,       /* Parse context */
+  int iDb,             /* Database containing pTrigger */
   Trigger *p,          /* Trigger to code */
   Table *pTab,         /* The table to code triggers from */
   int reg,             /* Reg array containing OLD.* and NEW.* values */
@@ -1030,7 +1032,8 @@ void sqlite3CodeRowTriggerDirect(
 ){
   Vdbe *v = sqlite3GetVdbe(pParse); /* Main VM */
   TriggerPrg *pPrg;
-  pPrg = getRowTrigger(pParse, p, pTab, orconf);
+
+  pPrg = getRowTrigger(pParse, iDb, p, pTab, orconf);
   assert( pPrg || pParse->nErr || pParse->db->mallocFailed );
 
   /* Code the OP_Program opcode in the parent VDBE. P4 of the OP_Program 
@@ -1040,8 +1043,9 @@ void sqlite3CodeRowTriggerDirect(
 
     sqlite3VdbeAddOp4(v, OP_Program, reg, ignoreJump, ++pParse->nMem,
                       (const char *)pPrg->pProgram, P4_SUBPROGRAM);
-    VdbeComment(
-        (v, "Call: %s.%s", (p->zName?p->zName:"fkey"), onErrorText(orconf)));
+    VdbeComment((v, "Call: %s.%s (%d)", 
+          (p->zName?p->zName:"fkey"), onErrorText(orconf), iDb
+    ));
 
     /* Set the P5 operand of the OP_Program instruction to non-zero if
     ** recursive invocation of this trigger program is disallowed. Recursive
@@ -1094,6 +1098,7 @@ void sqlite3CodeRowTriggerDirect(
 */
 void sqlite3CodeRowTrigger(
   Parse *pParse,       /* Parse context */
+  int iDb,
   Trigger *pTrigger,   /* List of triggers on table pTab */
   int op,              /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
   ExprList *pChanges,  /* Changes list for any UPDATE OF triggers */
@@ -1124,7 +1129,7 @@ void sqlite3CodeRowTrigger(
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
     ){
-      sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
+      sqlite3CodeRowTriggerDirect(pParse, iDb, p, pTab, reg, orconf,ignoreJump);
     }
   }
 }
@@ -1156,6 +1161,7 @@ void sqlite3CodeRowTrigger(
 */
 u32 sqlite3TriggerColmask(
   Parse *pParse,       /* Parse context */
+  int iDb,
   Trigger *pTrigger,   /* List of triggers on table pTab */
   ExprList *pChanges,  /* Changes list for any UPDATE OF triggers */
   int isNew,           /* 1 for new.* ref mask, 0 for old.* ref mask */
@@ -1173,7 +1179,7 @@ u32 sqlite3TriggerColmask(
      && checkColumnOverlap(p->pColumns,pChanges)
     ){
       TriggerPrg *pPrg;
-      pPrg = getRowTrigger(pParse, p, pTab, orconf);
+      pPrg = getRowTrigger(pParse, iDb, p, pTab, orconf);
       if( pPrg ){
         mask |= pPrg->aColmask[isNew];
       }

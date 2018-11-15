@@ -4942,7 +4942,7 @@ WhereInfo *sqlite3WhereBegin(
 
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
-    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabItem->zDatabase);
     pLoop = pLevel->pWLoop;
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
       /* Do nothing */

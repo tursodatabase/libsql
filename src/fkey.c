@@ -1359,6 +1359,7 @@ static Trigger *fkActionTrigger(
 */
 void sqlite3FkActions(
   Parse *pParse,                  /* Parse context */
+  int iDb,                        /* Database in which pTab resides */
   Table *pTab,                    /* Table being updated or deleted from */
   ExprList *pChanges,             /* Change-list for UPDATE, NULL for DELETE */
   int regOld,                     /* Address of array containing old row */
@@ -1375,7 +1376,7 @@ void sqlite3FkActions(
       if( aChange==0 || fkParentIsModified(pTab, pFKey, aChange, bChngRowid) ){
         Trigger *pAct = fkActionTrigger(pParse, pTab, pFKey, pChanges);
         if( pAct ){
-          sqlite3CodeRowTriggerDirect(pParse, pAct, pTab, regOld, OE_Abort, 0);
+          sqlite3CodeRowTriggerDirect(pParse, iDb, pAct,pTab,regOld,OE_Abort,0);
         }
       }
     }

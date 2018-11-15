@@ -90,6 +90,7 @@ struct SubProgram {
   int nCsr;                     /* Number of cursors required */
   u8 *aOnce;                    /* Array of OP_Once flags */
   void *token;                  /* id that may be used to recursive triggers */
+  int itoken;                   /* Second part of id to identify rec. trig. */
   SubProgram *pNext;            /* Next sub-program already visited */
 };
 

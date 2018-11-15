@@ -1060,6 +1060,11 @@ struct BusyHandler {
 #define UNUSED_PARAMETER2(x,y) UNUSED_PARAMETER(x),UNUSED_PARAMETER(y)
 
 /*
+** The static mutex with which to protect reusable schemas.
+*/
+#define SQLITE_MUTEX_SCHEMA_REUSE SQLITE_MUTEX_STATIC_APP1
+
+/*
 ** Forward references to structures
 */
 typedef struct AggInfo AggInfo;
@@ -3002,6 +3007,7 @@ struct AutoincInfo {
 struct TriggerPrg {
   Trigger *pTrigger;      /* Trigger this program was coded from */
   TriggerPrg *pNext;      /* Next entry in Parse.pTriggerPrg list */
+  int iFixDb;             /* Value of Parse.iFixDb when this was coded */
   SubProgram *pProgram;   /* Program implementing pTrigger/orconf */
   int orconf;             /* Default ON CONFLICT policy */
   u32 aColmask[2];        /* Masks of old.*, new.* columns accessed */
@@ -3139,6 +3145,7 @@ struct Parse {
 #ifndef SQLITE_OMIT_ALTERTABLE
   RenameToken *pRename;     /* Tokens subject to renaming by ALTER TABLE */
 #endif
+  int iFixDb;
 };
 
 #define PARSE_MODE_NORMAL        0
@@ -4024,7 +4031,7 @@ int sqlite3IsRowid(const char*);
 int sqlite3IsRowidN(const char*, int);
 #endif
 void sqlite3GenerateRowDelete(
-    Parse*,Table*,Trigger*,int,int,int,i16,u8,u8,u8,int);
+    Parse*,int,Table*,Trigger*,int,int,int,i16,u8,u8,u8,int);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*, int);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
@@ -4037,7 +4044,7 @@ void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
 # define sqlite3SetMakeRecordP5(A,B)
 #endif
 void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
-int sqlite3OpenTableAndIndices(Parse*, Table*, int, u8, int, u8*, int*, int*);
+int sqlite3OpenTableAndIndices(Parse*, int, Table*, int, u8, int,u8*,int*,int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 void sqlite3MultiWrite(Parse*);
 void sqlite3MayAbort(Parse*);
@@ -4062,7 +4069,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3*);
 void sqlite3ChangeCookie(Parse*, int);
 
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
-void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
+void sqlite3MaterializeView(Parse*, int, Table*, Expr*, ExprList*,Expr*,int);
 #endif
 
 #ifndef SQLITE_OMIT_TRIGGER
@@ -4073,9 +4080,9 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   void sqlite3DropTriggerPtr(Parse*, Trigger*);
   Trigger *sqlite3TriggersExist(Parse *, Table*, int, ExprList*, int *pMask);
   Trigger *sqlite3TriggerList(Parse *, Table *);
-  void sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
-                            int, int, int);
-  void sqlite3CodeRowTriggerDirect(Parse *, Trigger *, Table *, int, int, int);
+  void sqlite3CodeRowTrigger(Parse*, int, Trigger *, int, ExprList*, int, 
+                             Table *, int, int, int);
+  void sqlite3CodeRowTriggerDirect(Parse*, int, Trigger*, Table*, int, int,int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
@@ -4089,7 +4096,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
                                         const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
-  u32 sqlite3TriggerColmask(Parse*,Trigger*,ExprList*,int,int,Table*,int);
+  u32 sqlite3TriggerColmask(Parse*,int,Trigger*,ExprList*,int,int,Table*,int);
 # define sqlite3ParseToplevel(p) ((p)->pToplevel ? (p)->pToplevel : (p))
 # define sqlite3IsToplevel(p) ((p)->pToplevel==0)
 #else
@@ -4097,12 +4104,12 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 # define sqlite3DeleteTrigger(A,B)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
-# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I)
-# define sqlite3CodeRowTriggerDirect(A,B,C,D,E,F)
+# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
+# define sqlite3CodeRowTriggerDirect(A,B,C,D,E,F,G)
 # define sqlite3TriggerList(X, Y) 0
 # define sqlite3ParseToplevel(p) p
 # define sqlite3IsToplevel(p) 1
-# define sqlite3TriggerColmask(A,B,C,D,E,F,G) 0
+# define sqlite3TriggerColmask(A,B,C,D,E,F,G,H) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
@@ -4294,6 +4301,7 @@ void sqlite3SchemaReuse(sqlite3*, int);
 void sqlite3SchemaWritable(Parse*, int);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
+int sqlite3SchemaToIndex2(sqlite3 *db, Schema *, const char*);
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3*,int,int);
 void sqlite3KeyInfoUnref(KeyInfo*);
 KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
@@ -4462,12 +4470,12 @@ const char *sqlite3JournalModename(int);
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   void sqlite3FkCheck(Parse*, Table*, int, int, int*, int);
   void sqlite3FkDropTable(Parse*, SrcList *, Table*);
-  void sqlite3FkActions(Parse*, Table*, ExprList*, int, int*, int);
+  void sqlite3FkActions(Parse*, int, Table*, ExprList*, int, int*, int);
   int sqlite3FkRequired(Parse*, Table*, int*, int);
   u32 sqlite3FkOldmask(Parse*, Table*);
   FKey *sqlite3FkReferences(Table *);
 #else
-  #define sqlite3FkActions(a,b,c,d,e,f)
+  #define sqlite3FkActions(a,b,c,d,e,f,g)
   #define sqlite3FkCheck(a,b,c,d,e,f)
   #define sqlite3FkDropTable(a,b,c)
   #define sqlite3FkOldmask(a,b)         0

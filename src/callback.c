@@ -555,11 +555,11 @@ void sqlite3SchemaReuse(sqlite3 *db, int iDb){
   Schema *p;
   assert( pSchema && iDb!=1 );
 
-  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_SCHEMA_REUSE) );
   for(p=sharedSchemaList; p; p=p->pNext){
     if( p->cksum==pSchema->cksum 
-        && p->schema_cookie==pSchema->schema_cookie 
-      ){
+     && p->schema_cookie==pSchema->schema_cookie 
+    ){
       break;
     }
   }
@@ -571,7 +571,7 @@ void sqlite3SchemaReuse(sqlite3 *db, int iDb){
     /* Found a matching schema. Increase its ref count. */
     p->nRef++;
   }
-  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_SCHEMA_REUSE) );
 
   /* If a matching schema was found in the shared schema list, free the
   ** schema object just parsed, and add a pointer to the matching schema

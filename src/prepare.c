@@ -534,6 +534,17 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
   return i;
 }
 
+int sqlite3SchemaToIndex2(sqlite3 *db, Schema *pSchema, const char *zDb){
+  if( zDb ){
+    int i;
+    for(i=0; i<db->nDb; i++){
+      if( i==1 ) continue;
+      if( sqlite3StrICmp(zDb, db->aDb[i].zDbSName)==0 ) return i;
+    }
+  }
+  return sqlite3SchemaToIndex(db, pSchema);
+}
+
 /*
 ** Free all memory allocations in the pParse object
 */

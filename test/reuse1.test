@@ -91,4 +91,112 @@ foreach {tn sql} {
   do_catchsql_test 1.5.$tn $sql {1 {attempt to modify read-only schema}}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+ifcapable fts5 {
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    INSERT INTO ft VALUES('one'), ('two'), ('three');
+    ATTACH 'test.db2' AS aux;
+    CREATE VIRTUAL TABLE aux.ft USING fts5(a);
+    INSERT INTO aux.ft VALUES('aux1'), ('aux2'), ('aux3');
+  }
+
+  db close
+  sqlite3 db  test.db -reuse-schema 1
+
+  do_execsql_test 2.1 {
+    ATTACH 'test.db2' AS aux;
+    SELECT * FROM main.ft;
+  } {one two three}
+
+  do_execsql_test 2.2 {
+    SELECT * FROM aux.ft;
+  } {aux1 aux2 aux3}
+
+  do_execsql_test 2.2 {
+    SELECT * FROM aux.ft_content;
+  } {1 aux1 2 aux2 3 aux3}
+}
+
+reset_db
+forcedelete test.db2
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE TRIGGER v1_ins INSTEAD OF INSERT ON v1 BEGIN
+    INSERT INTO t1 VALUES(new.a, new.b, new.c);
+  END;
+  CREATE TRIGGER v1_del INSTEAD OF DELETE ON v1 BEGIN
+    DELETE FROM t1 WHERE a=old.a;
+  END;
+  CREATE TRIGGER v1_up INSTEAD OF UPDATE ON v1 BEGIN
+    UPDATE t1 SET a=new.a, b=new.b, c=new.c WHERE a=old.a;
+  END;
+}
+forcecopy test.db test.db2
+
+do_test 3.1 {
+  sqlite3 db2 test.db2
+  execsql { INSERT INTO t1 VALUES(1, 2, 3) } db
+  execsql { INSERT INTO t1 VALUES(4, 5, 6) } db2
+  db2 close
+  execsql { ATTACH 'test.db2' AS aux; }
+} {}
+
+do_execsql_test 3.2 {
+  SELECT * FROM main.v1;
+} {1 2 3}
+
+do_execsql_test 3.3 {
+  SELECT * FROM aux.v1;
+} {4 5 6}
+
+db close
+sqlite3 db test.db -reuse-schema 1
+
+do_execsql_test 3.4 { ATTACH 'test.db2' AS aux } {}
+do_execsql_test 3.5 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.6 { SELECT * FROM aux.v1  } {4 5 6}
+
+do_execsql_test 3.7.1 { INSERT INTO aux.t1 VALUES(8, 9, 10); }
+do_execsql_test 3.7.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.7.3 { SELECT * FROM aux.v1  } {4 5 6 8 9 10}
+
+do_execsql_test 3.8.1 { DELETE FROM aux.t1 WHERE b=5 }
+do_execsql_test 3.8.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.8.3 { SELECT * FROM aux.v1  } {8 9 10}
+
+do_execsql_test 3.9.1 { UPDATE aux.t1 SET b='abc' }
+do_execsql_test 3.9.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.9.3 { SELECT * FROM aux.v1  } {8 abc 10}
+
+do_execsql_test 3.10.1 { INSERT INTO aux.v1 VALUES(11, 12, 13) }
+do_execsql_test 3.10.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.10.3 { SELECT * FROM aux.v1  } {8 abc 10 11 12 13}
+
+do_execsql_test 3.11.1 { DELETE FROM aux.v1 WHERE b='abc' }
+do_execsql_test 3.11.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.11.3 { SELECT * FROM aux.v1  } {11 12 13}
+
+do_execsql_test 3.12.1 { UPDATE aux.v1 SET b='def' }
+do_execsql_test 3.12.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.12.3 { SELECT * FROM aux.v1  } {11 def 13}
+
+do_execsql_test 3.13.1 {
+  CREATE TEMP TRIGGER xyz AFTER INSERT ON aux.t1 BEGIN
+    INSERT INTO v1 VALUES(new.a, new.b, new.c);
+  END;
+}
+do_execsql_test 3.13.2 {
+  INSERT INTO aux.v1 VALUES('x', 'y', 'z');
+}
+do_execsql_test 3.13.3 {
+  SELECT * FROM v1;
+} {1 2 3 x y z}
+
+
 finish_test
+

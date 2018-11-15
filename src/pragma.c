@@ -1552,7 +1552,7 @@ void sqlite3Pragma(
 
         if( pTab->tnum<1 ) continue;  /* Skip VIEWs or VIRTUAL TABLEs */
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
-        sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
+        sqlite3OpenTableAndIndices(pParse, i, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
         /* reg[7] counts the number of entries in the table.
         ** reg[8+i] counts the number of entries in the i-th index 

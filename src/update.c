@@ -211,7 +211,7 @@ void sqlite3Update(
   */
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ) goto update_cleanup;
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
 
   /* Figure out if we have any triggers and if the table being
   ** updated is a view.
@@ -416,7 +416,7 @@ void sqlite3Update(
   */
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
-    sqlite3MaterializeView(pParse, pTab, 
+    sqlite3MaterializeView(pParse, iDb, pTab, 
         pWhere, pOrderBy, pLimit, iDataCur
     );
     pOrderBy = 0;
@@ -563,7 +563,7 @@ void sqlite3Update(
       if( eOnePass==ONEPASS_MULTI && (nIdx-(aiCurOnePass[1]>=0))>0 ){
         addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       }
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur,
+      sqlite3OpenTableAndIndices(pParse, iDb, pTab, OP_OpenWrite, 0, iBaseCur,
                                  aToOpen, 0, 0);
       if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     }
@@ -610,7 +610,7 @@ void sqlite3Update(
   ** information is needed */
   if( chngPk || hasFK || pTrigger ){
     u32 oldmask = (hasFK ? sqlite3FkOldmask(pParse, pTab) : 0);
-    oldmask |= sqlite3TriggerColmask(pParse, 
+    oldmask |= sqlite3TriggerColmask(pParse, iDb,
         pTrigger, pChanges, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onError
     );
     for(i=0; i<pTab->nCol; i++){
@@ -643,7 +643,7 @@ void sqlite3Update(
   ** be used eliminates some redundant opcodes.
   */
   newmask = sqlite3TriggerColmask(
-      pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
+      pParse, iDb, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
@@ -672,7 +672,7 @@ void sqlite3Update(
   */
   if( tmask&TRIGGER_BEFORE ){
     sqlite3TableAffinity(v, pTab, regNew);
-    sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
+    sqlite3CodeRowTrigger(pParse, iDb, pTrigger, TK_UPDATE, pChanges, 
         TRIGGER_BEFORE, pTab, regOldRowid, onError, labelContinue);
 
     /* The row-trigger may have deleted the row being updated. In this
@@ -776,7 +776,7 @@ void sqlite3Update(
     ** handle rows (possibly in other tables) that refer via a foreign key
     ** to the row just updated. */ 
     if( hasFK ){
-      sqlite3FkActions(pParse, pTab, pChanges, regOldRowid, aXRef, chngKey);
+      sqlite3FkActions(pParse, iDb, pTab, pChanges, regOldRowid, aXRef,chngKey);
     }
   }
 
@@ -786,7 +786,7 @@ void sqlite3Update(
     sqlite3VdbeAddOp2(v, OP_AddImm, regRowCount, 1);
   }
 
-  sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
+  sqlite3CodeRowTrigger(pParse, iDb, pTrigger, TK_UPDATE, pChanges, 
       TRIGGER_AFTER, pTab, regOldRowid, onError, labelContinue);
 
   /* Repeat the above with the next record to be updated, until

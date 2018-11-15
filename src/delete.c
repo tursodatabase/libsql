@@ -88,6 +88,7 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
 */
 void sqlite3MaterializeView(
   Parse *pParse,       /* Parsing context */
+  int iDb,             /* Database in which view resides */
   Table *pView,        /* View definition */
   Expr *pWhere,        /* Optional WHERE clause to be added */
   ExprList *pOrderBy,  /* Optional ORDER BY clause */
@@ -98,7 +99,6 @@ void sqlite3MaterializeView(
   Select *pSel;
   SrcList *pFrom;
   sqlite3 *db = pParse->db;
-  int iDb = sqlite3SchemaToIndex(db, pView->pSchema);
   pWhere = sqlite3ExprDup(db, pWhere, 0);
   pFrom = sqlite3SrcListAppend(db, 0, 0, 0);
   if( pFrom ){
@@ -312,7 +312,7 @@ void sqlite3DeleteFrom(
   if( sqlite3IsReadOnly(pParse, pTab, (pTrigger?1:0)) ){
     goto delete_from_cleanup;
   }
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
   assert( iDb<db->nDb );
   rcauth = sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, 
                             db->aDb[iDb].zDbSName);
@@ -350,9 +350,7 @@ void sqlite3DeleteFrom(
   */
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
-    sqlite3MaterializeView(pParse, pTab, 
-        pWhere, pOrderBy, pLimit, iTabCur
-    );
+    sqlite3MaterializeView(pParse, iDb, pTab, pWhere, pOrderBy, pLimit,iTabCur);
     iDataCur = iIdxCur = iTabCur;
     pOrderBy = 0;
     pLimit = 0;
@@ -516,8 +514,8 @@ void sqlite3DeleteFrom(
         iAddrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, OPFLAG_FORDELETE,
-                                 iTabCur, aToOpen, &iDataCur, &iIdxCur);
+      sqlite3OpenTableAndIndices(pParse, iDb, pTab, OP_OpenWrite, 
+          OPFLAG_FORDELETE, iTabCur, aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
       if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
@@ -566,7 +564,7 @@ void sqlite3DeleteFrom(
 #endif
     {
       int count = (pParse->nested==0);    /* True to count changes */
-      sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
+      sqlite3GenerateRowDelete(pParse, iDb, pTab, pTrigger, iDataCur, iIdxCur,
           iKey, nKey, count, OE_Default, eOnePass, aiCurOnePass[1]);
     }
   
@@ -665,6 +663,7 @@ delete_from_cleanup:
 */
 void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
+  int iDb,
   Table *pTab,       /* Table containing the row to be deleted */
   Trigger *pTrigger, /* List of triggers to (potentially) fire */
   int iDataCur,      /* Cursor from which column data is extracted */
@@ -707,7 +706,7 @@ void sqlite3GenerateRowDelete(
     /* TODO: Could use temporary registers here. Also could attempt to
     ** avoid copying the contents of the rowid register.  */
     mask = sqlite3TriggerColmask(
-        pParse, pTrigger, 0, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onconf
+        pParse, iDb, pTrigger, 0, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onconf
     );
     mask |= sqlite3FkOldmask(pParse, pTab);
     iOld = pParse->nMem+1;
@@ -726,7 +725,7 @@ void sqlite3GenerateRowDelete(
 
     /* Invoke BEFORE DELETE trigger programs. */
     addrStart = sqlite3VdbeCurrentAddr(v);
-    sqlite3CodeRowTrigger(pParse, pTrigger, 
+    sqlite3CodeRowTrigger(pParse, iDb, pTrigger, 
         TK_DELETE, 0, TRIGGER_BEFORE, pTab, iOld, onconf, iLabel
     );
 
@@ -782,10 +781,10 @@ void sqlite3GenerateRowDelete(
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
   ** handle rows (possibly in other tables) that refer via a foreign key
   ** to the row just deleted. */ 
-  sqlite3FkActions(pParse, pTab, 0, iOld, 0, 0);
+  sqlite3FkActions(pParse, iDb, pTab, 0, iOld, 0, 0);
 
   /* Invoke AFTER DELETE trigger programs. */
-  sqlite3CodeRowTrigger(pParse, pTrigger, 
+  sqlite3CodeRowTrigger(pParse, iDb, pTrigger, 
       TK_DELETE, 0, TRIGGER_AFTER, pTab, iOld, onconf, iLabel
   );
 

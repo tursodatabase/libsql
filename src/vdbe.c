@@ -6038,6 +6038,7 @@ case OP_Program: {        /* jump */
   VdbeFrame *pFrame;      /* New vdbe frame to execute in */
   SubProgram *pProgram;   /* Sub-program to execute */
   void *t;                /* Token identifying trigger */
+  int i;                  /* Second part of token identifying trigger */
 
   pProgram = pOp->p4.pProgram;
   pRt = &aMem[pOp->p3];
@@ -6056,7 +6057,10 @@ case OP_Program: {        /* jump */
   ** variable.  */
   if( pOp->p5 ){
     t = pProgram->token;
-    for(pFrame=p->pFrame; pFrame && pFrame->token!=t; pFrame=pFrame->pParent);
+    i = pProgram->itoken;
+    for(pFrame=p->pFrame; 
+        pFrame && (pFrame->token!=t || pFrame->itoken!=i); 
+        pFrame=pFrame->pParent);
     if( pFrame ) break;
   }
 
@@ -6104,6 +6108,7 @@ case OP_Program: {        /* jump */
     pFrame->aOp = p->aOp;
     pFrame->nOp = p->nOp;
     pFrame->token = pProgram->token;
+    pFrame->itoken = pProgram->itoken;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
 #endif
