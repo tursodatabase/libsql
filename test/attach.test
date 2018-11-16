@@ -729,6 +729,7 @@ ifcapable subquery {
 ifcapable json1 {
   do_test attach-5.10 {
     db close
+    catch {db2 close}
     forcedelete test.db
     sqlite3 db test.db
     db eval {

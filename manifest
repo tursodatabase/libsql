@@ -1,5 +1,5 @@
-C Add\sSQLITE_CONSTRAINT\ssupport\sto\sthe\sxBestIndex\smethods\son\sdbstat,\nsqlite_dbpage,\sand\szipfile.
-D 2018-11-16T20:18:07.728
+C Fix\sa\stest\scase\sso\sthat\sit\sworks\son\swindows.
+D 2018-11-16T20:50:53.181
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -640,7 +640,7 @@ F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c ec92d56d8fbed9eb3e11aaf1ab98cf7dd59e69dae31f128013f1d97e54e7dfed
-F test/attach.test dff436fd94d4c7ffd7f0a8831d50193595f3b94a9428b3ddd41d24b897bae729
+F test/attach.test fb03859ee33e23588b8c73102374de7231987760a986fe3a912e75563931c9f8
 F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2d41ff7027b44ccb5dffc303c47d42f1f6fd66ce22e90450d3a666c73fe8b8e
-R 89e023a4c43db2de4dccc99f272c82a3
+P 5cd24e552b4fed71cfb2e37929371175682f23f1430df2900a87e6a5823d138e
+R 5737a07363a241b6b3630430f7150f0e
 U drh
-Z 840051de1c80831f334c3f2a45d8f7da
+Z 53dcbf79e28ef21a8df27e749addc478
