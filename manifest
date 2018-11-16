@@ -1,5 +1,5 @@
-C Fix\scomments\sand\smake\smagic\snumbers\sinto\s#defines\sin\sthe\sfsdir\nimplementation.
-D 2018-11-16T13:06:30.577
+C Enhance\sthe\sxBestIndex\sinterface\sof\svirtual\stable\sso\sthat\sif\sthe\sxBestIndex\nmethod\sreturns\sSQLITE_CONSTRAINT\sthen\sthat\sparticular\scombination\sof\nconstraints\sis\sconsidered\sunusable\sand\sdoes\snot\sparticipate\sfurther\sin\nquery\splanning.
+D 2018-11-16T13:56:15.713
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -282,7 +282,7 @@ F ext/misc/csv.c 88333dc9f7dcf6a8148406f10ae04261e24e3b4c721550ae33e9e71f1265c1f
 F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1000a
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/explain.c c82dd86f1156d32b284e0523a4bf6a93a85ab2a812caed48963e0774f3327185
-F ext/misc/fileio.c 45acde5c065cc13bc9e65d4c3d623fa47441daf6d4a996d0ac9e6c9907b1d550
+F ext/misc/fileio.c e3153b04433897a18a3d17185845f286892e96fdf87f4301290d09c36ae1759f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c b0fba11c4f4e7c80534b08e120a296a8b301ee7e4d1a33f6647f1c047c8ce8e2
@@ -591,7 +591,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c f5da1079f084c569aa70fd4ada6b7e45b356e19708f1e5307493cc65857ec9e4
+F src/where.c 23f955de6db320fa5afcbe569687e649e5c9be1380c742fe7c5e9939e18cbcbe
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
@@ -671,7 +671,7 @@ F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
 F test/bestindex1.test 852170bddbb21daa121fabcc274640ff83d7d8705912e8b5fe7ed2c5a9a9224a
 F test/bestindex2.test 9a0ccd320b6525eec3a706aae6cdab7e1b7b5abca75027e39f39f755e76e5928
 F test/bestindex3.test 001788a114ad96d81d5154fe77c7f1e26e84b3a2b5635ca29e4f96f6decc534e
-F test/bestindex4.test 210eac9323ef88881212d6ae90c84dad86ec14d82c6f4fc9a9ee24c76a8f2014
+F test/bestindex4.test 038e3d0789332f3f1d61474f9bbc9c6d08c6bd1783a978f31f38ad82688de601
 F test/bestindex5.test 67c1166131bb59f9e47c00118f7d432ca5491e6cae6ca3f87ca9db20103a78f9
 F test/bestindex6.test d856a9bb63d927493575823eed44053bc36251e241aa364e54d0f2a2d302e1d4
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fffcee0fc3fe8d036f0d93ec17673992c3edcf2bb454dc90d80142435b37946
-R 2a2c80e2a75c50071a742aace6ac9b0f
+P c537c9c3630ca979bdccab977275bfc11cce33ea54adb71a4bd4f46c85f65c6f
+R bb405b8b26464e39757216d3bb32f7e9
 U drh
-Z 0d4f2c0f6de8a62406810148e0ad4826
+Z ba10548cd8043453179e425b1b595795
