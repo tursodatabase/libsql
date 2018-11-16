@@ -1,5 +1,5 @@
-C In\sorder\sto\savoid\sexporting\sa\ssymbol,\suse\sa\smacro\sinstead\sof\sa\sfunction\sto\nreplace\ssqlite3_complete()\sin\sthe\sshell\scode\swhen\sSQLITE_OMIT_COMPLETE\sis\ndefined.
-D 2018-11-16T14:36:42.078
+C Update\sthe\sgenerate_series()\stable-valued\sfunction\sto\smake\suse\sof\sthe\snew\nSQLITE_CONSTRAINT\sreturn\sfrom\sxBestIndex.
+D 2018-11-16T15:08:31.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -296,7 +296,7 @@ F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
-F ext/misc/series.c c7197db304f7009b08d6459a9de02e7f51ad0e1a3fdacbc1ebf5252a9a346959
+F ext/misc/series.c 2141a38d14b9b3256f372cdfe3bec8e611115815f3c7f7afb131cf1d68d78d91
 F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
 F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -591,7 +591,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c 23f955de6db320fa5afcbe569687e649e5c9be1380c742fe7c5e9939e18cbcbe
+F src/where.c 053e5004a608195cf0345441a46274d318966b34b9c7c0033e6e1d8bc0833307
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 684013cef6bfcfd920a4aec645df9f5d41ace8b34e75fca61759c1b4f82cc89e
-R 8193ecf2adbc9160819a0d27025d0547
-U dan
-Z 06b4c40afe20fcd6ade0db726d80955d
+P d584a0cb512815945ef06ee3b5ebadbf2a543b008487f6d098e1e8ab79f61d2d
+R a216ab0261496ebce0502a9a5ca8d671
+U drh
+Z 184170d79003d8b9b10ccf4765c179a2
