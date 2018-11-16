@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sthe\sgenerate_series\svirtual\stable\sto\sverify\nassumptions\sabout\sthe\sdesign.
-D 2018-11-16T15:41:27.190
+C Fix\sthe\sJSON\stable-valued\sfunctions\sto\smake\suse\sof\sSQLITE_CONSTRAINT.
+D 2018-11-16T16:04:50.796
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -285,7 +285,7 @@ F ext/misc/explain.c c82dd86f1156d32b284e0523a4bf6a93a85ab2a812caed48963e0774f33
 F ext/misc/fileio.c e3153b04433897a18a3d17185845f286892e96fdf87f4301290d09c36ae1759f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c b0fba11c4f4e7c80534b08e120a296a8b301ee7e4d1a33f6647f1c047c8ce8e2
+F ext/misc/json1.c 3f017d2659e531d021d015ec5d69ea0b1c71f2e15bf9768b1e149fcdf6c3e0b1
 F ext/misc/memstat.c 941928c6104d8ed569a6c47caa756dc78b8091f7a15f87d3004f3b1e576b10da
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 70b618f2d0bde43fae288ad0b7498a629f2b6f61b50a27e06fae3cd23c83af29
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4372ad644dda5a1fa46b6b6070092320c835439b41f598cbc041e9deef786988
-R 3511ed573065ac7755128435a696b325
+P cd13b499a20a7d476edb8500537edef4c5151410ba0300469ebf0f7ba16964b8
+R 11042163bdaf90fd68f04b94be6dfff4
 U drh
-Z 8e76b5f8b4a1cae10b3e520de6c2af9a
+Z 7ed31881cc0f31c278a8f140145ccdcf
