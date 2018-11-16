@@ -1,5 +1,5 @@
-C Update\sthe\sgenerate_series()\stable-valued\sfunction\sto\smake\suse\sof\sthe\snew\nSQLITE_CONSTRAINT\sreturn\sfrom\sxBestIndex.
-D 2018-11-16T15:08:31.923
+C Add\san\sassert()\sto\sthe\sgenerate_series\svirtual\stable\sto\sverify\nassumptions\sabout\sthe\sdesign.
+D 2018-11-16T15:41:27.190
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -296,7 +296,7 @@ F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
-F ext/misc/series.c 2141a38d14b9b3256f372cdfe3bec8e611115815f3c7f7afb131cf1d68d78d91
+F ext/misc/series.c 0c97f63378fddc9f425e82ba139b9aaf902211f24ced115c2b6ae12b425f7334
 F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
 F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d584a0cb512815945ef06ee3b5ebadbf2a543b008487f6d098e1e8ab79f61d2d
-R a216ab0261496ebce0502a9a5ca8d671
+P 4372ad644dda5a1fa46b6b6070092320c835439b41f598cbc041e9deef786988
+R 3511ed573065ac7755128435a696b325
 U drh
-Z 184170d79003d8b9b10ccf4765c179a2
+Z 8e76b5f8b4a1cae10b3e520de6c2af9a

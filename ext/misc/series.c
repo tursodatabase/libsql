@@ -331,6 +331,7 @@ static int seriesBestIndex(
     int iMask;   /* bitmask for those column */
     if( pConstraint->iColumn<SERIES_COLUMN_START ) continue;
     iCol = pConstraint->iColumn - SERIES_COLUMN_START;
+    assert( iCol>=0 && iCol<=2 );
     iMask = 1 << iCol;
     if( pConstraint->usable==0 ){
       unusableMask |=  iMask;
