@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sCSV\svirtual\stable.
-D 2018-11-16T01:42:26.183
+C Fix\sa\sproblem\swith\svirtual\stable\s"fsdir"\sand\ssome\sjoin\squeries.
+D 2018-11-16T08:36:15.097
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -282,7 +282,7 @@ F ext/misc/csv.c 88333dc9f7dcf6a8148406f10ae04261e24e3b4c721550ae33e9e71f1265c1f
 F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1000a
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/explain.c c82dd86f1156d32b284e0523a4bf6a93a85ab2a812caed48963e0774f3327185
-F ext/misc/fileio.c 70f933c2e530bdceb35fbf4fe529fc1bdcdd26454c77cf8c4bc456c4123e612b
+F ext/misc/fileio.c df4ac09b20344c3124418e4933a66b2ab719619de23a9c9b28cd834023e6a354
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c b0fba11c4f4e7c80534b08e120a296a8b301ee7e4d1a33f6647f1c047c8ce8e2
@@ -1677,7 +1677,7 @@ F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912ade
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test a61f6ba6dbaaf4983849df84a31df140c7ddd1362e2fa9ecd3cdf5cd123b7f18
+F test/zipfile.test b3b558639f7a103e095713ad0f57fec1fce1b7d60c8054df5789b98f7547a395
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b37bbf5f338dea962331e4fd73dfa0baae98ba63344a2fa737b845b90ecb0c5
-R 357cf9494dad6c6e818e36c733fa5cbf
-U drh
-Z cada0122630474b8bae10d99d99df1dd
+P 0406ecbbe75513e342040b71fdd342462222dbb3820486b5f745d7865805c00b
+R 82d5a7448671b4f8277fc5a4db39923a
+U dan
+Z f02ccb27fc5c195f57ddc85e56947a53

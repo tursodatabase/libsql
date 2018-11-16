@@ -761,4 +761,38 @@ do_execsql_test 11.11 {
   SELECT name, data FROM z ORDER BY name;
 } {b0suffix two b2suffix one}
 
+
+if {$tcl_platform(platform)!="windows"} {
+  do_test 12.0 {
+    catch { file delete -force subdir }
+    foreach {path sz} {
+      subdir/x1.txt     143
+      subdir/x2.txt     153
+    } {
+      set dir [file dirname $path]
+      catch { file mkdir $dir }
+      set fd [open $path w]
+      puts -nonewline $fd [string repeat 1 $sz]
+      close $fd
+    }
+  } {}
+  
+  do_execsql_test 12.1 {
+    SELECT name FROM fsdir('subdir') ORDER BY 1;
+  } {subdir subdir/x1.txt subdir/x2.txt}
+  
+  do_execsql_test 12.2 {
+    CREATE TABLE d AS SELECT 'subdir' d;
+    CREATE TABLE x AS SELECT 1 x;
+  }
+  
+  do_execsql_test 12.4 {
+    SELECT name FROM d JOIN x JOIN fsdir(d) ORDER BY 1;
+  } {subdir subdir/x1.txt subdir/x2.txt}
+
+  do_execsql_test 12.5 {
+    SELECT name FROM d JOIN x JOIN fsdir('.', d) ORDER BY 1;
+  } {. ./x1.txt ./x2.txt}
+}
+
 finish_test

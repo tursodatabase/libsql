@@ -835,15 +835,14 @@ static int fsdirBestIndex(
   (void)tab;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    if( pConstraint->iColumn==4 ) idx4 = i;
+    if( pConstraint->iColumn==4 && pConstraint->usable ) idx4 = i;
     if( pConstraint->iColumn==5 ) idx5 = i;
   }
 
-  if( idx4<0 ){
+  if( idx4<0 || (idx5>=0 && pIdxInfo->aConstraint[idx5].usable==0) ){
     pIdxInfo->idxNum = 0;
-    pIdxInfo->estimatedCost = (double)(((sqlite3_int64)1) << 50);
+    pIdxInfo->estimatedCost = (double)(((sqlite3_int64)1) << 60);
   }else{
     pIdxInfo->aConstraintUsage[idx4].omit = 1;
     pIdxInfo->aConstraintUsage[idx4].argvIndex = 1;
