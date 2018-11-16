@@ -1,5 +1,5 @@
-C Fix\sthe\sJSON\stable-valued\sfunctions\sto\smake\suse\sof\sSQLITE_CONSTRAINT.
-D 2018-11-16T16:04:50.796
+C Update\sthe\sexplain\svirtual\stable\sto\smake\suse\sof\sSQLITE_CONSTRAINT.
+D 2018-11-16T19:19:58.887
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -281,7 +281,7 @@ F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f0
 F ext/misc/csv.c 88333dc9f7dcf6a8148406f10ae04261e24e3b4c721550ae33e9e71f1265c1f1
 F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1000a
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
-F ext/misc/explain.c c82dd86f1156d32b284e0523a4bf6a93a85ab2a812caed48963e0774f3327185
+F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
 F ext/misc/fileio.c e3153b04433897a18a3d17185845f286892e96fdf87f4301290d09c36ae1759f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd13b499a20a7d476edb8500537edef4c5151410ba0300469ebf0f7ba16964b8
-R 11042163bdaf90fd68f04b94be6dfff4
+P 3f34f4f561c77f8ec88906818f2984dcf8f17d1645bac175e9027595517560bc
+R bb2adeaa580d1c642edf2f21d75f48f2
 U drh
-Z 7ed31881cc0f31c278a8f140145ccdcf
+Z f6b6b46a521f0bb21911f77fd6557c2e
