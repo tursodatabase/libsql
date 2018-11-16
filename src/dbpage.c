@@ -119,9 +119,8 @@ static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( p->iColumn!=DBPAGE_COLUMN_SCHEMA ) continue;
     if( p->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     if( !p->usable ){
-      /* No solution.  Use the default SQLITE_BIG_DBL cost */
-      pIdxInfo->estimatedRows = 0x7fffffff;
-      return SQLITE_OK;
+      /* No solution. */
+      return SQLITE_CONSTRAINT;
     }
     iPlan = 2;
     pIdxInfo->aConstraintUsage[i].argvIndex = 1;
