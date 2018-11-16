@@ -121,6 +121,8 @@ ifcapable fts5 {
   } {1 aux1 2 aux2 3 aux3}
 }
 
+#-------------------------------------------------------------------------
+#
 reset_db
 forcedelete test.db2
 do_execsql_test 3.0 {
@@ -197,6 +199,117 @@ do_execsql_test 3.13.3 {
   SELECT * FROM v1;
 } {1 2 3 x y z}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE);
+  CREATE TABLE del(a, b, c);
+  CREATE TRIGGER tr1 AFTER DELETE ON t1 BEGIN
+    INSERT INTO del VALUES(old.a, old.b, old.c);
+  END;
+}
+forcecopy test.db test.db2
+
+db close
+sqlite3 db test.db -reuse-schema 1
+execsql { 
+  ATTACH 'test.db2' AS aux;
+  PRAGMA recursive_triggers = 1;
+}
+
+do_execsql_test 4.1 {
+  INSERT INTO main.t1 VALUES(1, 2, 3);
+  INSERT INTO aux.t1 VALUES(4, 5, 6);
+}
+
+do_execsql_test 4.2.1 {
+  INSERT OR REPLACE INTO aux.t1 VALUES('a', 'b', 6);
+  SELECT * FROM aux.t1;
+} {a b 6}
+do_execsql_test 4.2.2 { SELECT * FROM aux.del  } {4 5 6}
+do_execsql_test 4.2.3 { SELECT * FROM main.del } {}
+
+do_execsql_test 4.3.1 {
+  INSERT INTO aux.t1 VALUES('x', 'y', 'z');
+  UPDATE OR REPLACE aux.t1 SET c='z' WHERE a='a';
+} {}
+do_execsql_test 4.3.2 { SELECT * FROM aux.del  } {4 5 6 x y z}
+do_execsql_test 4.3.3 { SELECT * FROM main.del } {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  INSERT INTO t1 VALUES(1, 2, 3), (4, 5, 6);
+  ANALYZE;
+  PRAGMA writable_schema = 1;
+  DELETE FROM sqlite_stat1;
+}
+db close
+forcecopy test.db test.db2
+sqlite3 db test.db -reuse-schema 1
+execsql { ATTACH 'test.db2' AS aux }
+
+foreach {tn sql} {
+  1 { CREATE TABLE t3(x) }
+  2 { DROP TABLE t2 }
+  3 { CREATE INDEX i2 ON t2(b) }
+  4 { DROP INDEX i1 }
+  5 { ALTER TABLE t1 ADD COLUMN d }
+  6 { ALTER TABLE t1 RENAME TO t3 }
+  7 { ALTER TABLE t1 RENAME c TO d }
+} {
+  do_catchsql_test 5.1.$tn $sql {1 {attempt to modify read-only schema}}
+}
+
+do_execsql_test 5.2.1 { ANALYZE aux.t1 } {}
+do_execsql_test 5.2.2 { SELECT * FROM aux.sqlite_stat1  } {t1 i1 {2 1}}
+do_execsql_test 5.2.3 { SELECT * FROM main.sqlite_stat1 } {}
+
+do_test 5.3.0 {
+  sqlite3 db2 test.db2
+  db2 eval { 
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_stat1;
+  }
+} {}
+
+do_execsql_test 5.3.1 { SELECT * FROM aux.sqlite_stat1  } {}
+do_execsql_test 5.3.2 { ANALYZE aux } {}
+do_execsql_test 5.3.3 { SELECT * FROM aux.sqlite_stat1  } {t1 i1 {2 1}}
+do_execsql_test 5.3.4 { SELECT * FROM main.sqlite_stat1 } {}
+
+#-------------------------------------------------------------------------
+# Attempting to run ANALYZE when the required sqlite_statXX functions
+# are missing is an error (because it would modify the database schema).
+#
+reset_db
+do_execsql_test 5.4 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  INSERT INTO t1 VALUES(1, 2, 3), (4, 5, 6);
+}
+db close
+sqlite3 db test.db -reuse-schema 1
+foreach {tn sql} {
+  1 { ANALYZE }
+  2 { ANALYZE t1 }
+  3 { ANALYZE i1 }
+  4 { ANALYZE main }
+  5 { ANALYZE main.t1 }
+  6 { ANALYZE main.i1 }
+} {
+  do_catchsql_test 5.4.$tn $sql {1 {attempt to modify read-only schema}}
+}
+
+
 
 finish_test
+
 

@@ -979,6 +979,7 @@ static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
 */
 static void analyzeOneTable(
   Parse *pParse,   /* Parser context */
+  int iDb,         /* Database that contains table pTab */
   Table *pTab,     /* Table whose indices are to be analyzed */
   Index *pOnlyIdx, /* If not NULL, only analyze this one index */
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
@@ -992,7 +993,6 @@ static void analyzeOneTable(
   Vdbe *v;                     /* The virtual machine being built up */
   int i;                       /* Loop counter */
   int jZeroRows = -1;          /* Jump from here if number of rows is zero */
-  int iDb;                     /* Index of database containing pTab */
   u8 needTableCnt = 1;         /* True to count the table */
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
   int regStat4 = iMem++;       /* Register to hold Stat4Accum object */
@@ -1023,7 +1023,6 @@ static void analyzeOneTable(
     return;
   }
   assert( sqlite3BtreeHoldsAllMutexes(db) );
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 );
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -1118,7 +1117,7 @@ static void analyzeOneTable(
     pParse->nMem = MAX(pParse->nMem, regPrev+nColTest);
 
     /* Open a read-only cursor on the index being analyzed. */
-    assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
+    assert( db->aDb[iDb].pSchema==pIdx->pSchema );
     sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb);
     sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
     VdbeComment((v, "%s", pIdx->zName));
@@ -1339,7 +1338,6 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   int iMem;
   int iTab;
 
-  sqlite3SchemaWritable(pParse, iDb);
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 3;
@@ -1349,7 +1347,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
-    analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
+    analyzeOneTable(pParse, iDb, pTab, 0, iStatCur, iMem, iTab);
   }
   loadAnalysis(pParse, iDb);
 }
@@ -1359,13 +1357,11 @@ static void analyzeDatabase(Parse *pParse, int iDb){
 ** a database.  If pOnlyIdx is not NULL then it is a single index
 ** in pTab that should be analyzed.
 */
-static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
-  int iDb;
+static void analyzeTable(Parse *pParse, int iDb, Table *pTab, Index *pOnlyIdx){
   int iStatCur;
 
   assert( pTab!=0 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 3;
@@ -1374,7 +1370,9 @@ static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
   }else{
     openStatTable(pParse, iDb, iStatCur, pTab->zName, "tbl");
   }
-  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur,pParse->nMem+1,pParse->nTab);
+  analyzeOneTable(pParse, iDb, pTab, 
+      pOnlyIdx, iStatCur, pParse->nMem+1, pParse->nTab
+  );
   loadAnalysis(pParse, iDb);
 }
 
@@ -1425,9 +1423,9 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       z = sqlite3NameFromToken(db, pTableName);
       if( z ){
         if( (pIdx = sqlite3FindIndex(db, z, zDb))!=0 ){
-          analyzeTable(pParse, pIdx->pTable, pIdx);
+          analyzeTable(pParse, iDb, pIdx->pTable, pIdx);
         }else if( (pTab = sqlite3LocateTable(pParse, 0, z, zDb))!=0 ){
-          analyzeTable(pParse, pTab, 0);
+          analyzeTable(pParse, iDb, pTab, 0);
         }
         sqlite3DbFree(db, z);
       }

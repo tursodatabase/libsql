@@ -663,7 +663,7 @@ delete_from_cleanup:
 */
 void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
-  int iDb,
+  int iDb,           /* Database containing pTab */
   Table *pTab,       /* Table containing the row to be deleted */
   Trigger *pTrigger, /* List of triggers to (potentially) fire */
   int iDataCur,      /* Cursor from which column data is extracted */

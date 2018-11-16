@@ -1037,8 +1037,9 @@ void sqlite3Insert(
     {
       int isReplace;    /* Set to true if constraints may cause a replace */
       int bUseSeek;     /* True to use OPFLAG_SEEKRESULT */
-      sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0, pUpsert
+      sqlite3GenerateConstraintChecks(pParse, iDb, pTab, aRegIdx, iDataCur, 
+          iIdxCur, regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 
+          0, pUpsert
       );
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
 
@@ -1274,6 +1275,7 @@ int sqlite3ExprReferencesUpdatedColumn(
 */
 void sqlite3GenerateConstraintChecks(
   Parse *pParse,       /* The parser context */
+  int iDb,             /* Databse that contains pTab */
   Table *pTab,         /* The table being inserted or updated */
   int *aRegIdx,        /* Use register aRegIdx[i] for index i.  0 for unused */
   int iDataCur,        /* Canonical data cursor (main table or PK index) */
@@ -1557,8 +1559,8 @@ void sqlite3GenerateConstraintChecks(
         }
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
-          sqlite3GenerateRowDelete(pParse, 0, pTab, pTrigger, iDataCur, iIdxCur,
-                                   regNewData, 1, 0, OE_Replace, 1, -1);
+          sqlite3GenerateRowDelete(pParse, iDb, pTab, pTrigger, iDataCur, 
+                                  iIdxCur, regNewData, 1, 0, OE_Replace, 1, -1);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
           assert( HasRowid(pTab) );
@@ -1806,7 +1808,7 @@ void sqlite3GenerateConstraintChecks(
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
         }
-        sqlite3GenerateRowDelete(pParse, 0, pTab, pTrigger, iDataCur, iIdxCur,
+        sqlite3GenerateRowDelete(pParse, iDb, pTab, pTrigger, iDataCur, iIdxCur,
             regR, nPkField, 0, OE_Replace,
             (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), iThisCur);
         seenReplace = 1;

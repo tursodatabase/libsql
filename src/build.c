@@ -266,7 +266,9 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   memcpy(saveBuf, PARSE_TAIL(pParse), PARSE_TAIL_SZ);
   memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
   sqlite3RunParser(pParse, zSql, &zErrMsg);
-  sqlite3DbFree(db, zErrMsg);
+  if( zErrMsg ){
+    sqlite3ErrorMsg(pParse, "%z", zErrMsg);
+  }
   sqlite3DbFree(db, zSql);
   memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
   pParse->nested--;
@@ -3535,7 +3537,7 @@ void sqlite3CreateIndex(
   ** sure all indices labeled OE_Replace come after all those labeled
   ** OE_Ignore.  This is necessary for the correct constraint check
   ** processing (in sqlite3GenerateConstraintChecks()) as part of
-  ** UPDATE and INSERT statements.  
+  ** UPDATE and INSERT statements.
   */
   if( db->init.busy || pTblName==0 ){
     if( onError!=OE_Replace || pTab->pIndex==0

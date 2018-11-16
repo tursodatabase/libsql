@@ -106,7 +106,7 @@ void sqlite3AlterRenameTable(
 
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_table;
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  iDb = sqlite3SchemaToIndex2(pParse->db, pTab->pSchema, 0);
   zDb = db->aDb[iDb].zDbSName;
   db->mDbFlags |= DBFLAG_PreferBuiltin;
 
@@ -276,7 +276,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   assert( pNew );
 
   assert( sqlite3BtreeHoldsAllMutexes(db) );
-  iDb = sqlite3SchemaToIndex(db, pNew->pSchema);
+  iDb = sqlite3SchemaToIndex2(db, pNew->pSchema, 0);
   zDb = db->aDb[iDb].zDbSName;
   zTab = &pNew->zName[16];  /* Skip the "sqlite_altertab_" prefix on the name */
   pCol = &pNew->aCol[pNew->nCol-1];
@@ -429,7 +429,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   }
 
   assert( pTab->addColOffset>0 );
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, 0);
 
   /* Put a copy of the Table struct in Parse.pNewTable for the
   ** sqlite3AddColumn() function and friends to modify.  But modify
@@ -530,7 +530,7 @@ void sqlite3AlterRenameColumn(
   if( SQLITE_OK!=isRealTable(pParse, pTab) ) goto exit_rename_column;
 
   /* Which schema holds the table to be altered */  
-  iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
+  iSchema = sqlite3SchemaToIndex2(db, pTab->pSchema, 0);
   assert( iSchema>=0 );
   zDb = db->aDb[iSchema].zDbSName;
 
@@ -1058,7 +1058,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
   sNC.pParse = pParse;
   assert( pNew->pTabSchema );
   pParse->pTriggerTab = sqlite3FindTable(db, pNew->table, 
-      db->aDb[sqlite3SchemaToIndex(db, pNew->pTabSchema)].zDbSName
+      db->aDb[sqlite3SchemaToIndex2(db, pNew->pTabSchema, 0)].zDbSName
   );
   pParse->eTriggerOp = pNew->op;
   /* ALWAYS() because if the table of the trigger does not exist, the
@@ -1575,7 +1575,7 @@ static void renameTableTest(
           rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
         }
         if( rc==SQLITE_OK ){
-          int i1 = sqlite3SchemaToIndex(db, sParse.pNewTrigger->pTabSchema);
+          int i1 = sqlite3SchemaToIndex2(db, sParse.pNewTrigger->pTabSchema, 0);
           int i2 = sqlite3FindDbName(db, zDb);
           if( i1==i2 ) sqlite3_result_int(context, 1);
         }

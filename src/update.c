@@ -710,9 +710,9 @@ void sqlite3Update(
 
     /* Do constraint checks. */
     assert( regOldRowid>0 );
-    sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-        regNewRowid, regOldRowid, chngKey, onError, labelContinue, &bReplace,
-        aXRef, 0);
+    sqlite3GenerateConstraintChecks(pParse, iDb, pTab, aRegIdx, iDataCur, 
+        iIdxCur, regNewRowid, regOldRowid, chngKey, onError, labelContinue, 
+        &bReplace, aXRef, 0);
 
     /* Do FK constraint checks. */
     if( hasFK ){
