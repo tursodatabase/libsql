@@ -256,10 +256,9 @@ static int lookupName(
           }
           if( hit || zTab==0 ) continue;
         }
-        if( zDb 
-         && iDb!=sqlite3SchemaToIndex2(db, pTab->pSchema, pItem->zDatabase) 
-        ){
-          continue;
+        if( zDb && (pTab->pSchema || pSchema) ){
+          int ii = sqlite3SchemaToIndex2(db, pTab->pSchema, pItem->zDatabase);
+          if( ii!=iDb ) continue;
         }
         if( zTab ){
           const char *zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;

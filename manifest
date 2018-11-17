@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2018-11-17T18:45:43.831
+C Fix\sanother\sname\sresolution\sproblem\soccurring\swhen\stwo\sor\smore\sattached\ndatabases\suse\sthe\ssame\sSchema\sobject.
+D 2018-11-17T19:15:25.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -504,7 +504,7 @@ F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c b64a19ee9b0ba1f3a67c4f5d1be308e9f67f8fb07fe90725982dfa9b616d211f
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 9364bbe6945d9e03588563464c5df38204111ba57b9127bc0c2ebe09de94708d
+F src/resolve.c d6580c08986e4b42bfc88b37a792ba116b55cc3b8c2e9d42233e453c7a579bed
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c eabefcb57edafcac6baeaec83289816e9409a23957b5a2d3efe1265f597ce6bd
 F src/shell.c.in 91ccfc85bcd28015c5db01449275e7fba3e9f97aa2533b53b73e81906eebaac0
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d7a7e5faf1c0ff19e4b0681bc25abb909ed60998e635aea03ece5ba51a5ac52 1740025307531a52e4f0641e2e74dc14715130858f2e9236be13b66924f00220
-R 8b43d1b2c4f4f0874d0f0be1bd12c061
+P 9fdd186897abea8ebfe575b9b3ce705033a06b2b00b50beb54ebaf892543c227
+R 0695924c22f471777454311c14501bdb
 U dan
-Z 8e64ea30a4b28f711ff27f87a5439acf
+Z 30566e13df9b2aa78f25523eaa391d30
