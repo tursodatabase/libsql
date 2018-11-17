@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sthat\sappear\swith\sSQLITE_OMIT_EXPLAIN.
-D 2018-11-17T14:26:45.996
+C Fix\sthe\sregexp\sused\sto\srecognize\slibdl\serrors\son\sOS-X.
+D 2018-11-17T14:59:35.957
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -1066,7 +1066,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 430691e6057e11a59e934be74c06b85605b80061d45af5714d52886a811efeb7
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
-F test/loadext.test d077450695ddb5c1ea3ad7d48e5f5850fe732ad9
+F test/loadext.test faa4f6eed07a5aac35d57fdd7bc07f8fc82464cfd327567c10cf0ba3c86cde04
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 645232f2b9ce3ee345b1d22c0db1265e39bb674bef9ab6fb10d5bee8ab696787
-R 87582819beddef4f834350949cb9721e
+P 5fff00b0d5eb634d40e767671d5a0e8bd263d15d88abe531f6072f01bc789568
+R 76c317bc545b1ccc5ede987ad2f5f352
 U drh
-Z 0521ae8f2e49a5fca6df6229f983c5f9
+Z 5574305e87d3c067cc9d9e5ce2644399
