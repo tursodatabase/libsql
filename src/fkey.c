@@ -862,6 +862,7 @@ static int isSetNullAction(Parse *pParse, FKey *pFKey){
 */
 void sqlite3FkCheck(
   Parse *pParse,                  /* Parse context */
+  int iDb,                        /* Database containing pTab */
   Table *pTab,                    /* Row is being deleted from this table */ 
   int regOld,                     /* Previous row data is stored here */
   int regNew,                     /* New row data is stored here */
@@ -870,7 +871,6 @@ void sqlite3FkCheck(
 ){
   sqlite3 *db = pParse->db;       /* Database handle */
   FKey *pFKey;                    /* Used to iterate through FKs */
-  int iDb;                        /* Index of database containing pTab */
   const char *zDb;                /* Name of database containing pTab */
   int isIgnoreErrors = pParse->disableTriggers;
 
@@ -879,8 +879,6 @@ void sqlite3FkCheck(
 
   /* If foreign-keys are disabled, this function is a no-op. */
   if( (db->flags&SQLITE_ForeignKeys)==0 ) return;
-
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   zDb = db->aDb[iDb].zDbSName;
 
   /* Loop through all the foreign key constraints for which pTab is the

@@ -308,6 +308,79 @@ foreach {tn sql} {
   do_catchsql_test 5.4.$tn $sql {1 {attempt to modify read-only schema}}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t1;
+}
+db close
+forcecopy test.db test.db2
+sqlite3 db test.db -reuse-schema 1
+execsql { ATTACH 'test.db2' AS aux }
+
+do_execsql_test 6.1 {
+  INSERT INTO main.t1(a) VALUES(1), (2), (3);
+  INSERT INTO aux.t1(a) VALUES(4), (5), (6);
+  CREATE TEMP TABLE t2(i,t);
+  INSERT INTO t2 VALUES(2, 'two'), (5, 'five');
+}
+
+do_execsql_test 6.2 {
+  SELECT t FROM t2 WHERE i IN (SELECT a FROM aux.t1)
+} {five}
+do_execsql_test 6.3 {
+  SELECT t FROM t2 WHERE i IN (SELECT a FROM aux.v1)
+} {five}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE p1(a PRIMARY KEY, b);
+  CREATE TABLE p2(a PRIMARY KEY, b);
+  CREATE TABLE c1(x REFERENCES p1 ON UPDATE CASCADE ON DELETE CASCADE);
+}
+
+db close
+forcecopy test.db test.db2
+sqlite3 db test.db -reuse-schema 1
+execsql { ATTACH 'test.db2' AS aux }
+
+do_execsql_test 7.1 {
+  INSERT INTO aux.p1 VALUES(1, 'one');
+  INSERT INTO aux.p1 VALUES(2, 'two');
+  PRAGMA foreign_keys = on;
+}
+
+do_execsql_test 7.2 {
+  INSERT INTO aux.c1 VALUES(2);
+}
+
+do_execsql_test 7.3.1 {
+  PRAGMA foreign_keys = off;
+  INSERT INTO main.p2 SELECT * FROM aux.p1;
+}
+do_execsql_test 7.3.2 {
+  SELECT * FROM main.p2;
+} {1 one 2 two}
+
+do_execsql_test 7.3.3 {
+  INSERT INTO aux.p2 VALUES(1, 2);
+}
+
+do_execsql_test 7.3.4 {
+  SELECT main.p2.a FROM main.p2, aux.p2;
+} {1 2}
+
+do_execsql_test 7.3.5 {
+  SELECT * FROM main.p2, aux.p2;
+} {1 one 1 2   2 two 1 2}
+
+do_execsql_test 7.4 {
+  SELECT count(*) FROM aux.p2;
+} {1}
 
 
 finish_test

@@ -196,6 +196,7 @@ static int lookupName(
   int eNewExprOp = TK_COLUMN;       /* New value for pExpr->op on success */
   Table *pTab = 0;                  /* Table hold the row */
   Column *pCol;                     /* A column of pTab */
+  int iDb = -1;
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
@@ -223,6 +224,7 @@ static int lookupName(
         assert( db->aDb[i].zDbSName );
         if( sqlite3StrICmp(db->aDb[i].zDbSName,zDb)==0 ){
           pSchema = db->aDb[i].pSchema;
+          iDb = i;
           break;
         }
       }
@@ -254,7 +256,9 @@ static int lookupName(
           }
           if( hit || zTab==0 ) continue;
         }
-        if( zDb && pTab->pSchema!=pSchema ){
+        if( zDb 
+         && iDb!=sqlite3SchemaToIndex2(db, pTab->pSchema, pItem->zDatabase) 
+        ){
           continue;
         }
         if( zTab ){

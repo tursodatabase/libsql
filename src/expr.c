@@ -2369,7 +2369,7 @@ int sqlite3FindInIndex(
     pTab = p->pSrc->a[0].pTab;
 
     /* Code an OP_Transaction and OP_TableLock for <table>. */
-    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, p->pSrc->a[0].zDatabase);
     sqlite3CodeVerifySchema(pParse, iDb);
     sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 

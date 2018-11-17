@@ -1041,7 +1041,7 @@ void sqlite3Insert(
           iIdxCur, regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 
           0, pUpsert
       );
-      sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
+      sqlite3FkCheck(pParse, iDb, pTab, 0, regIns, 0, 0);
 
       /* Set the OPFLAG_USESEEKRESULT flag if either (a) there are no REPLACE
       ** constraints or (b) there are no triggers and this table is not a
@@ -2285,7 +2285,7 @@ static int xferOptimization(
 #ifdef SQLITE_TEST
   sqlite3_xferopt_count++;
 #endif
-  iDbSrc = sqlite3SchemaToIndex(db, pSrc->pSchema);
+  iDbSrc = sqlite3SchemaToIndex2(db, pSrc->pSchema, pItem->zDatabase);
   v = sqlite3GetVdbe(pParse);
   sqlite3CodeVerifySchema(pParse, iDbSrc);
   iSrc = pParse->nTab++;

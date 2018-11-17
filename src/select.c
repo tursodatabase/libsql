@@ -4992,7 +4992,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
             }
-            iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+            iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pFrom->zDatabase);
             zSchemaName = iDb>=0 ? db->aDb[iDb].zDbSName : "*";
           }
           for(j=0; j<pTab->nCol; j++){
@@ -6483,7 +6483,9 @@ int sqlite3Select(
         ** is better to execute the op on an index, as indexes are almost
         ** always spread across less pages than their corresponding tables.
         */
-        const int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+        const int iDb = sqlite3SchemaToIndex2(
+            pParse->db, pTab->pSchema, pTabList->a[0].zDatabase 
+        );
         const int iCsr = pParse->nTab++;     /* Cursor to scan b-tree */
         Index *pIdx;                         /* Iterator variable */
         KeyInfo *pKeyInfo = 0;               /* Keyinfo for scanned index */

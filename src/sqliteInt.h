@@ -4468,7 +4468,7 @@ const char *sqlite3JournalModename(int);
 ** provided (enforcement of FK constraints requires the triggers sub-system).
 */
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
-  void sqlite3FkCheck(Parse*, Table*, int, int, int*, int);
+  void sqlite3FkCheck(Parse*, int, Table*, int, int, int*, int);
   void sqlite3FkDropTable(Parse*, SrcList *, Table*);
   void sqlite3FkActions(Parse*, int, Table*, ExprList*, int, int*, int);
   int sqlite3FkRequired(Parse*, Table*, int*, int);
@@ -4476,7 +4476,7 @@ const char *sqlite3JournalModename(int);
   FKey *sqlite3FkReferences(Table *);
 #else
   #define sqlite3FkActions(a,b,c,d,e,f,g)
-  #define sqlite3FkCheck(a,b,c,d,e,f)
+  #define sqlite3FkCheck(a,b,c,d,e,f,g)
   #define sqlite3FkDropTable(a,b,c)
   #define sqlite3FkOldmask(a,b)         0
   #define sqlite3FkRequired(a,b,c,d)    0

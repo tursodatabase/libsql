@@ -716,7 +716,7 @@ void sqlite3Update(
 
     /* Do FK constraint checks. */
     if( hasFK ){
-      sqlite3FkCheck(pParse, pTab, regOldRowid, 0, aXRef, chngKey);
+      sqlite3FkCheck(pParse, iDb, pTab, regOldRowid, 0, aXRef, chngKey);
     }
 
     /* Delete the index entries associated with the current record.  */
@@ -762,7 +762,7 @@ void sqlite3Update(
     }
 
     if( hasFK ){
-      sqlite3FkCheck(pParse, pTab, 0, regNewRowid, aXRef, chngKey);
+      sqlite3FkCheck(pParse, iDb, pTab, 0, regNewRowid, aXRef, chngKey);
     }
   
     /* Insert the new index entries and the new record. */
