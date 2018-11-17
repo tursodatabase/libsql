@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sso\sthat\sit\sworks\son\swindows.
-D 2018-11-16T20:50:53.181
+C Fix\sa\sproblem\sin\stest\sscript\se_fkey.test.
+D 2018-11-17T13:08:07.274
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -800,7 +800,7 @@ F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 21ce09c361227ddbc9819a5608ee2700c276bdd5
 F test/e_expr.test ca8896601ade1e27c6559614c7f32c63d44636fdfa720436a160f09b8bf66c89
-F test/e_fkey.test 9778696ef9fceacebed8d482d02b47287981faaedf6f73db563ea8a7afb546da
+F test/e_fkey.test 2febb2084aef9b0186782421c07bc9d377abf067c9cb4efd49d9647ae31f5afe
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2b0e29344497d9a8a999453a003cb476b6b1d2eef2d6c120f83c2d3a429f3164
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5cd24e552b4fed71cfb2e37929371175682f23f1430df2900a87e6a5823d138e
-R 5737a07363a241b6b3630430f7150f0e
-U drh
-Z 53dcbf79e28ef21a8df27e749addc478
+P 2d92d25fae5d9757866a0d0b30427b50d635e9b05e12df9464f095419fd7ef3e
+R 7c60a21ee07297eb5e4700e761fd76dd
+U dan
+Z 00acddbc4653c1fd2549c393bd54e2fa
