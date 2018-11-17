@@ -1060,7 +1060,6 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   }
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = 0;
-  // assert( pParse->nErr==0 || (rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT) );
   return rc;
 }
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */

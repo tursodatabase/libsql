@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sscript\se_fkey.test.
-D 2018-11-17T13:08:07.274
+C Remove\sa\sC++-style\scomment.
+D 2018-11-17T14:19:34.752
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -591,7 +591,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c 053e5004a608195cf0345441a46274d318966b34b9c7c0033e6e1d8bc0833307
+F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d92d25fae5d9757866a0d0b30427b50d635e9b05e12df9464f095419fd7ef3e
-R 7c60a21ee07297eb5e4700e761fd76dd
-U dan
-Z 00acddbc4653c1fd2549c393bd54e2fa
+P acfd0a05a8957728c1f0eb936f4121ce26f291f20dd583bd57ce2bb271617d3f
+R caaaaddc0dbd175ac1ef1ee62293c489
+U drh
+Z b501d7a1ce3a1b675f4d435451e01e61
