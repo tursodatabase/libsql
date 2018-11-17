@@ -106,7 +106,18 @@ SQLITE_EXTENSION_INIT1
 #include <errno.h>
 
 
+/*
+** Structure of the fsdir() table-valued function
+*/
+                 /*    0    1    2     3    4           5             */
 #define FSDIR_SCHEMA "(name,mode,mtime,data,path HIDDEN,dir HIDDEN)"
+#define FSDIR_COLUMN_NAME     0     /* Name of the file */
+#define FSDIR_COLUMN_MODE     1     /* Access mode */
+#define FSDIR_COLUMN_MTIME    2     /* Last modification time */
+#define FSDIR_COLUMN_DATA     3     /* File content */
+#define FSDIR_COLUMN_PATH     4     /* Path to top of search */
+#define FSDIR_COLUMN_DIR      5     /* Path is relative to this directory */
+
 
 /*
 ** Set the result stored by context ctx to a blob containing the 
@@ -695,20 +706,20 @@ static int fsdirColumn(
 ){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
   switch( i ){
-    case 0: { /* name */
+    case FSDIR_COLUMN_NAME: {
       sqlite3_result_text(ctx, &pCur->zPath[pCur->nBase], -1, SQLITE_TRANSIENT);
       break;
     }
 
-    case 1: /* mode */
+    case FSDIR_COLUMN_MODE:
       sqlite3_result_int64(ctx, pCur->sStat.st_mode);
       break;
 
-    case 2: /* mtime */
+    case FSDIR_COLUMN_MTIME:
       sqlite3_result_int64(ctx, pCur->sStat.st_mtime);
       break;
 
-    case 3: { /* data */
+    case FSDIR_COLUMN_DATA: {
       mode_t m = pCur->sStat.st_mode;
       if( S_ISDIR(m) ){
         sqlite3_result_null(ctx);
@@ -738,6 +749,12 @@ static int fsdirColumn(
         readFileContents(ctx, pCur->zPath);
       }
     }
+    case FSDIR_COLUMN_PATH:
+    default: {
+      /* The FSDIR_COLUMN_PATH and FSDIR_COLUMN_DIR are input parameters.
+      ** always return their values as NULL */
+      break;
+    }
   }
   return SQLITE_OK;
 }
@@ -764,6 +781,9 @@ static int fsdirEof(sqlite3_vtab_cursor *cur){
 
 /*
 ** xFilter callback.
+**
+** idxNum==1   PATH parameter only
+** idxNum==2   Both PATH and DIR supplied
 */
 static int fsdirFilter(
   sqlite3_vtab_cursor *cur, 
@@ -816,40 +836,63 @@ static int fsdirFilter(
 ** In this implementation idxNum is used to represent the
 ** query plan.  idxStr is unused.
 **
-** The query plan is represented by bits in idxNum:
+** The query plan is represented by values of idxNum:
 **
-**  (1)  start = $value  -- constraint exists
-**  (2)  stop = $value   -- constraint exists
-**  (4)  step = $value   -- constraint exists
-**  (8)  output in descending order
+**  (1)  The path value is supplied by argv[0]
+**  (2)  Path is in argv[0] and dir is in argv[1]
 */
 static int fsdirBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
   int i;                 /* Loop over constraints */
-  int idx4 = -1;
-  int idx5 = -1;
+  int idxPath = -1;      /* Index in pIdxInfo->aConstraint of PATH= */
+  int idxDir = -1;       /* Index in pIdxInfo->aConstraint of DIR= */
+  int seenPath = 0;      /* True if an unusable PATH= constraint is seen */
+  int seenDir = 0;       /* True if an unusable DIR= constraint is seen */
   const struct sqlite3_index_constraint *pConstraint;
 
   (void)tab;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    if( pConstraint->iColumn==4 ) idx4 = i;
-    if( pConstraint->iColumn==5 ) idx5 = i;
+    switch( pConstraint->iColumn ){
+      case FSDIR_COLUMN_PATH: {
+        if( pConstraint->usable ){
+          idxPath = i;
+          seenPath = 0;
+        }else if( idxPath<0 ){
+          seenPath = 1;
+        }
+        break;
+      }
+      case FSDIR_COLUMN_DIR: {
+        if( pConstraint->usable ){
+          idxDir = i;
+          seenDir = 0;
+        }else if( idxDir<0 ){
+          seenDir = 1;
+        }
+        break;
+      }
+    } 
+  }
+  if( seenPath || seenDir ){
+    /* If input parameters are unusable, disallow this plan */
+    return SQLITE_CONSTRAINT;
   }
 
-  if( idx4<0 ){
+  if( idxPath<0 ){
     pIdxInfo->idxNum = 0;
-    pIdxInfo->estimatedCost = (double)(((sqlite3_int64)1) << 50);
+    /* The pIdxInfo->estimatedCost should have been initialized to a huge
+    ** number.  Leave it unchanged. */
+    pIdxInfo->estimatedRows = 0x7fffffff;
   }else{
-    pIdxInfo->aConstraintUsage[idx4].omit = 1;
-    pIdxInfo->aConstraintUsage[idx4].argvIndex = 1;
-    if( idx5>=0 ){
-      pIdxInfo->aConstraintUsage[idx5].omit = 1;
-      pIdxInfo->aConstraintUsage[idx5].argvIndex = 2;
+    pIdxInfo->aConstraintUsage[idxPath].omit = 1;
+    pIdxInfo->aConstraintUsage[idxPath].argvIndex = 1;
+    if( idxDir>=0 ){
+      pIdxInfo->aConstraintUsage[idxDir].omit = 1;
+      pIdxInfo->aConstraintUsage[idxDir].argvIndex = 2;
       pIdxInfo->idxNum = 2;
       pIdxInfo->estimatedCost = 10.0;
     }else{
@@ -888,7 +931,8 @@ static int fsdirRegister(sqlite3 *db){
     0,                         /* xRename */
     0,                         /* xSavepoint */
     0,                         /* xRelease */
-    0                          /* xRollbackTo */
+    0,                         /* xRollbackTo */
+    0,                         /* xShadowName */
   };
 
   int rc = sqlite3_create_module(db, "fsdir", &fsdirModule, 0);

@@ -8074,7 +8074,7 @@ static int line_is_command_terminator(const char *zLine){
 ** user-friendly, but it does seem to work.
 */
 #ifdef SQLITE_OMIT_COMPLETE
-int sqlite3_complete(const char *zSql){ return 1; }
+#define sqlite3_complete(x) 1
 #endif
 
 /*

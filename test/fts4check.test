@@ -66,6 +66,7 @@ foreach {tn disruption} {
     );
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   do_execsql_test  1.2.1.$tn "BEGIN; $disruption"
   do_catchsql_test 1.2.2.$tn {
     INSERT INTO t1 (t1) VALUES('integrity-check')
@@ -100,6 +101,7 @@ foreach {tn disruption} {
     );
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   do_execsql_test  2.2.1.$tn "BEGIN; $disruption"
   do_catchsql_test 2.2.2.$tn {
     INSERT INTO t2 (t2) VALUES('integrity-check')
@@ -145,6 +147,7 @@ foreach {tn disruption} {
     )
   }
 } {
+  sqlite3_db_config db DEFENSIVE 0
   do_execsql_test  3.2.1.$tn "BEGIN; $disruption"
   do_catchsql_test 3.2.2.$tn {
     INSERT INTO t3 (t3) VALUES('integrity-check')
@@ -163,6 +166,7 @@ do_execsql_test 4.0 {
   INSERT INTO t4(t4) VALUES('integrity-check');
 }
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 4.1 {
   PRAGMA writable_schema = 1;
   UPDATE sqlite_master 
@@ -197,6 +201,7 @@ do_execsql_test 5.1 {
   INSERT INTO t5(t5) VALUES('integrity-check');
 } {}
 
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test 5.2 {
   INSERT INTO t5_content VALUES(5, 'his hardy mountain pony');
   INSERT INTO t5(t5) VALUES('integrity-check');

@@ -133,6 +133,7 @@ do_test corrupt2-2.1 {
   forcecopy test.db corrupt.db
 
   sqlite3 db2 corrupt.db 
+  sqlite3_db_config db2 DEFENSIVE 0
   execsql "
     $::presql
     CREATE INDEX a1 ON abc(a);
@@ -265,6 +266,7 @@ proc corruption_test {args} {
   forcedelete corrupt.db-journal
 
   sqlite3 db corrupt.db 
+  sqlite3_db_config db DEFENSIVE 0
   db eval $::presql
   eval $A(-tclprep)
   db eval $A(-sqlprep)

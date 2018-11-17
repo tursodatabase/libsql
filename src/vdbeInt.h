@@ -472,7 +472,9 @@ int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);
 int sqlite3VdbeIdxRowid(sqlite3*, BtCursor*, i64*);
 int sqlite3VdbeExec(Vdbe*);
+#ifndef SQLITE_OMIT_EXPLAIN
 int sqlite3VdbeList(Vdbe*);
+#endif
 int sqlite3VdbeHalt(Vdbe*);
 int sqlite3VdbeChangeEncoding(Mem *, int);
 int sqlite3VdbeMemTooBig(Mem*);
@@ -511,7 +513,9 @@ int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 #ifndef SQLITE_OMIT_WINDOWFUNC
 int sqlite3VdbeMemAggValue(Mem*, Mem*, FuncDef*);
 #endif
+#ifndef SQLITE_OMIT_EXPLAIN
 const char *sqlite3OpcodeName(int);
+#endif
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int n);
 int sqlite3VdbeCloseStatement(Vdbe *, int);

@@ -347,5 +347,3 @@ do_index_check_test 7.3 t7i3 {
 do_index_check_test 7.4 t7i4 {
   {} 1,1 {} 3,3
 }
-
-

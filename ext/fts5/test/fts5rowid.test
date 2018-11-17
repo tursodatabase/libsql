@@ -70,6 +70,7 @@ set res [db one {SELECT count(*) FROM x1_data}]
 do_execsql_test 2.3 {
   SELECT count(fts5_decode(rowid, block)) FROM x1_data;
 } $res
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 2.4 {
   UPDATE x1_data SET block = X'';
   SELECT count(fts5_decode(rowid, block)) FROM x1_data;

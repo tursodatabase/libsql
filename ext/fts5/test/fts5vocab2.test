@@ -13,7 +13,7 @@
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
-set testprefix fts5vocab
+set testprefix fts5vocab2
 
 # If SQLITE_ENABLE_FTS5 is defined, omit this file.
 ifcapable !fts5 {
@@ -206,4 +206,3 @@ do_execsql_test 3.5 {
 }
 
 finish_test
-

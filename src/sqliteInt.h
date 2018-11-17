@@ -2010,6 +2010,7 @@ struct Table {
 #define TF_StatsUsed       0x0100    /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
 #define TF_HasNotNull      0x0200    /* Contains NOT NULL constraints */
+#define TF_Shadow          0x0400    /* True for a shadow table */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is

@@ -194,17 +194,15 @@ static int statDisconnect(sqlite3_vtab *pVtab){
 static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
 
-  pIdxInfo->estimatedCost = 1.0e6;  /* Initial cost estimate */
-
   /* Look for a valid schema=? constraint.  If found, change the idxNum to
   ** 1 and request the value of that constraint be sent to xFilter.  And
   ** lower the cost estimate to encourage the constrained version to be
   ** used.
   */
   for(i=0; i<pIdxInfo->nConstraint; i++){
-    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
-    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     if( pIdxInfo->aConstraint[i].iColumn!=10 ) continue;
+    if( pIdxInfo->aConstraint[i].usable==0 ) return SQLITE_CONSTRAINT;
+    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     pIdxInfo->idxNum = 1;
     pIdxInfo->estimatedCost = 1.0;
     pIdxInfo->aConstraintUsage[i].argvIndex = 1;
@@ -397,6 +395,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         if( nPayload>(u32)nLocal ){
           int j;
           int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
+          if( iOff+nLocal>nUsable ) goto statPageIsCorrupt;
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
           pCell->nOvfl = nOvfl;
           pCell->aOvfl = sqlite3_malloc64(sizeof(u32)*nOvfl);
@@ -720,6 +719,7 @@ int sqlite3DbstatRegister(sqlite3 *db){
     0,                            /* xSavepoint */
     0,                            /* xRelease */
     0,                            /* xRollbackTo */
+    0                             /* xShadowName */
   };
   return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }

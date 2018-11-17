@@ -28,6 +28,7 @@ do_catchsql_test parser1-1.1 {
 # COLLATE, ASC, and DESC keywords on the id list of a FK constraint, and that
 # those keywords are silently ignored.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test parser1-1.2 {
   CREATE TABLE t1(
     a TEXT PRIMARY KEY,

@@ -244,4 +244,3 @@ foreach {tn sql res} {
 }
 
 finish_test
-

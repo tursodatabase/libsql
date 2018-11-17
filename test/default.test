@@ -106,6 +106,7 @@ do_execsql_test default-3.3 {
 db close
 forcedelete test.db
 sqlite3 db test.db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test default-4.0 {
   CREATE TABLE t1(a TEXT, b TEXT DEFAULT(99));
   PRAGMA writable_schema=ON;

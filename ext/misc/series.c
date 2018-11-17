@@ -313,44 +313,45 @@ static int seriesBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
-  int i;                 /* Loop over constraints */
+  int i, j;              /* Loop over constraints */
   int idxNum = 0;        /* The query plan bitmask */
-  int startIdx = -1;     /* Index of the start= constraint, or -1 if none */
-  int stopIdx = -1;      /* Index of the stop= constraint, or -1 if none */
-  int stepIdx = -1;      /* Index of the step= constraint, or -1 if none */
+  int unusableMask = 0;  /* Mask of unusable constraints */
   int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-
+  int aIdx[3];           /* Constraints on start, stop, and step */
   const struct sqlite3_index_constraint *pConstraint;
+
+  /* This implementation assumes that the start, stop, and step columns
+  ** are the last three columns in the virtual table. */
+  assert( SERIES_COLUMN_STOP == SERIES_COLUMN_START+1 );
+  assert( SERIES_COLUMN_STEP == SERIES_COLUMN_START+2 );
+  aIdx[0] = aIdx[1] = aIdx[2] = -1;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
-    if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    switch( pConstraint->iColumn ){
-      case SERIES_COLUMN_START:
-        startIdx = i;
-        idxNum |= 1;
-        break;
-      case SERIES_COLUMN_STOP:
-        stopIdx = i;
-        idxNum |= 2;
-        break;
-      case SERIES_COLUMN_STEP:
-        stepIdx = i;
-        idxNum |= 4;
-        break;
+    int iCol;    /* 0 for start, 1 for stop, 2 for step */
+    int iMask;   /* bitmask for those column */
+    if( pConstraint->iColumn<SERIES_COLUMN_START ) continue;
+    iCol = pConstraint->iColumn - SERIES_COLUMN_START;
+    assert( iCol>=0 && iCol<=2 );
+    iMask = 1 << iCol;
+    if( pConstraint->usable==0 ){
+      unusableMask |=  iMask;
+      continue;
+    }else if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      idxNum |= iMask;
+      aIdx[iCol] = i;
     }
   }
-  if( startIdx>=0 ){
-    pIdxInfo->aConstraintUsage[startIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[startIdx].omit= !SQLITE_SERIES_CONSTRAINT_VERIFY;
+  for(i=0; i<3; i++){
+    if( (j = aIdx[i])>=0 ){
+      pIdxInfo->aConstraintUsage[j].argvIndex = ++nArg;
+      pIdxInfo->aConstraintUsage[j].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
+    }
   }
-  if( stopIdx>=0 ){
-    pIdxInfo->aConstraintUsage[stopIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[stopIdx].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
-  }
-  if( stepIdx>=0 ){
-    pIdxInfo->aConstraintUsage[stepIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[stepIdx].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
+  if( (unusableMask & ~idxNum)!=0 ){
+    /* The start, stop, and step columns are inputs.  Therefore if there
+    ** are unusable constraints on any of start, stop, or step then
+    ** this plan is unusable */
+    return SQLITE_CONSTRAINT;
   }
   if( (idxNum & 3)==3 ){
     /* Both start= and stop= boundaries are available.  This is the 
@@ -365,7 +366,6 @@ static int seriesBestIndex(
     /* If either boundary is missing, we have to generate a huge span
     ** of numbers.  Make this case very expensive so that the query
     ** planner will work hard to avoid it. */
-    pIdxInfo->estimatedCost = (double)2147483647;
     pIdxInfo->estimatedRows = 2147483647;
   }
   pIdxInfo->idxNum = idxNum;

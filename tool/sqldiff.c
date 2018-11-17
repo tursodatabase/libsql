@@ -1493,8 +1493,8 @@ static void putsVarint(FILE *out, sqlite3_uint64 v){
 /*
 ** Write an SQLite value onto out.
 */
-static void putValue(FILE *out, sqlite3_value *pVal){
-  int iDType = sqlite3_value_type(pVal);
+static void putValue(FILE *out, sqlite3_stmt *pStmt, int k){
+  int iDType = sqlite3_column_type(pStmt, k);
   sqlite3_int64 iX;
   double rX;
   sqlite3_uint64 uX;
@@ -1503,24 +1503,24 @@ static void putValue(FILE *out, sqlite3_value *pVal){
   putc(iDType, out);
   switch( iDType ){
     case SQLITE_INTEGER:
-      iX = sqlite3_value_int64(pVal);
+      iX = sqlite3_column_int64(pStmt, k);
       memcpy(&uX, &iX, 8);
       for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
       break;
     case SQLITE_FLOAT:
-      rX = sqlite3_value_double(pVal);
+      rX = sqlite3_column_double(pStmt, k);
       memcpy(&uX, &rX, 8);
       for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
       break;
     case SQLITE_TEXT:
-      iX = sqlite3_value_bytes(pVal);
+      iX = sqlite3_column_bytes(pStmt, k);
       putsVarint(out, (sqlite3_uint64)iX);
-      fwrite(sqlite3_value_text(pVal),1,(size_t)iX,out);
+      fwrite(sqlite3_column_text(pStmt, k),1,(size_t)iX,out);
       break;
     case SQLITE_BLOB:
-      iX = sqlite3_value_bytes(pVal);
+      iX = sqlite3_column_bytes(pStmt, k);
       putsVarint(out, (sqlite3_uint64)iX);
-      fwrite(sqlite3_value_blob(pVal),1,(size_t)iX,out);
+      fwrite(sqlite3_column_blob(pStmt, k),1,(size_t)iX,out);
       break;
     case SQLITE_NULL:
       break;
@@ -1650,10 +1650,10 @@ static void changeset_one_table(const char *zTab, FILE *out){
       case SQLITE_UPDATE: {
         for(k=1, i=0; i<nCol; i++){
           if( aiFlg[i] ){
-            putValue(out, sqlite3_column_value(pStmt,k));
+            putValue(out, pStmt, k);
             k++;
           }else if( sqlite3_column_int(pStmt,k) ){
-            putValue(out, sqlite3_column_value(pStmt,k+1));
+            putValue(out, pStmt, k+1);
             k += 3;
           }else{
             putc(0, out);
@@ -1665,7 +1665,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
             putc(0, out);
             k++;
           }else if( sqlite3_column_int(pStmt,k) ){
-            putValue(out, sqlite3_column_value(pStmt,k+2));
+            putValue(out, pStmt, k+2);
             k += 3;
           }else{
             putc(0, out);
@@ -1677,10 +1677,10 @@ static void changeset_one_table(const char *zTab, FILE *out){
       case SQLITE_INSERT: {
         for(k=1, i=0; i<nCol; i++){
           if( aiFlg[i] ){
-            putValue(out, sqlite3_column_value(pStmt,k));
+            putValue(out, pStmt, k);
             k++;
           }else{
-            putValue(out, sqlite3_column_value(pStmt,k+2));
+            putValue(out, pStmt, k+2);
             k += 3;
           }
         }
@@ -1689,10 +1689,10 @@ static void changeset_one_table(const char *zTab, FILE *out){
       case SQLITE_DELETE: {
         for(k=1, i=0; i<nCol; i++){
           if( aiFlg[i] ){
-            putValue(out, sqlite3_column_value(pStmt,k));
+            putValue(out, pStmt, k);
             k++;
           }else{
-            putValue(out, sqlite3_column_value(pStmt,k+1));
+            putValue(out, pStmt, k+1);
             k += 3;
           }
         }

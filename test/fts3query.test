@@ -167,6 +167,7 @@ do_select_tests 5.3 -errorformat {
   3 "SELECT snippet(content) FROM t2 WHERE t2 MATCH 'history'"   snippet
   4 "SELECT optimize(content) FROM t2 WHERE t2 MATCH 'history'"  optimize
 }
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 5.4.0 { UPDATE t2_content SET c0content = X'1234' }
 do_select_tests 5.4 -errorformat {
   illegal first argument to %s

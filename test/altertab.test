@@ -505,4 +505,3 @@ do_execsql_test 15.5 {
 
 
 finish_test
-
