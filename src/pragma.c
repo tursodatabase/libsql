@@ -1088,11 +1088,12 @@ void sqlite3Pragma(
     if( pTab ){
       int i, k;
       int nHidden = 0;
+      int iTabDb = sqlite3SchemaToIndex2(db, pTab->pSchema, zDb);
       Column *pCol;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       pParse->nMem = 7;
-      sqlite3CodeVerifySchema(pParse, iDb);
-      sqlite3ViewGetColumnNames(pParse, pTab);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
+      sqlite3ViewGetColumnNames(pParse, iTabDb, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         int isHidden = IsHiddenColumn(pCol);
         if( isHidden && pPragma->iArg==0 ){

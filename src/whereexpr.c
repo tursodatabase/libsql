@@ -409,7 +409,7 @@ static int isAuxiliaryVtabOperator(
       sqlite3_module *pMod;
       void (*xNotUsed)(sqlite3_context*,int,sqlite3_value**);
       void *pNotUsed;
-      pVtab = sqlite3GetVTable(db, pCol->y.pTab)->pVtab;
+      pVtab = sqlite3GetVTable(db, -1, pCol->y.pTab)->pVtab;
       assert( pVtab!=0 );
       assert( pVtab->pModule!=0 );
       pMod = (sqlite3_module *)pVtab->pModule;

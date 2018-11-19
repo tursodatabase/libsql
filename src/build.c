@@ -191,7 +191,7 @@ void sqlite3FinishCoding(Parse *pParse){
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
-        char *vtab = (char *)sqlite3GetVTable(db, pParse->apVtabLock[i]);
+        char *vtab = (char *)pParse->apVtabLock[i];
         sqlite3VdbeAddOp4(v, OP_VBegin, 0, 0, 0, vtab, P4_VTAB);
       }
       pParse->nVtabLock = 0;
@@ -2277,7 +2277,7 @@ create_view_fail:
 ** the columns of the view in the pTable structure.  Return the number
 ** of errors.  If an error is seen leave an error message in pParse->zErrMsg.
 */
-int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
+int sqlite3ViewGetColumnNames(Parse *pParse, int iDb, Table *pTable){
   Table *pSelTab;   /* A fake table from which we get the result set */
   Select *pSel;     /* Copy of the SELECT that implements the view */
   int nErr = 0;     /* Number of errors encountered */
@@ -2294,7 +2294,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   db->nSchemaLock++;
-  rc = sqlite3VtabCallConnect(pParse, pTable);
+  rc = sqlite3VtabCallConnect(pParse, iDb, pTable);
   db->nSchemaLock--;
   if( rc ){
     return 1;
@@ -2675,7 +2675,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   /* If pTab is a virtual table, call ViewGetColumnNames() to ensure
   ** it is initialized.
   */
-  if( IsVirtual(pTab) && sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( IsVirtual(pTab) && sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
     goto exit_drop_table;
   }
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -2696,7 +2696,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( IsVirtual(pTab) ){
       code = SQLITE_DROP_VTABLE;
-      zArg2 = sqlite3GetVTable(db, pTab)->pMod->zName;
+      zArg2 = sqlite3GetVTable(db, -1, pTab)->pMod->zName;
 #endif
     }else{
       if( !OMIT_TEMPDB && iDb==1 ){

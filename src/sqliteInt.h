@@ -1941,7 +1941,8 @@ struct CollSeq {
 ** the first argument.
 */
 struct VTable {
-  sqlite3 *db;              /* Database connection associated with this table */
+  sqlite3 *db;              /* Database that owns this virtual table */
+  Btree *pBt;               /* Btree backend associated with this table */
   Module *pMod;             /* Pointer to module implementation */
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
@@ -3137,7 +3138,7 @@ struct Parse {
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Token sArg;               /* Complete text of a module argument */
-  Table **apVtabLock;       /* Pointer to virtual tables needing locking */
+  VTable **apVtabLock;      /* Pointer to virtual tables needing locking */
 #endif
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
@@ -3898,9 +3899,9 @@ int sqlite3RowSetNext(RowSet*, i64*);
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,ExprList*,Select*,int,int);
 
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
-  int sqlite3ViewGetColumnNames(Parse*,Table*);
+  int sqlite3ViewGetColumnNames(Parse*,int,Table*);
 #else
-# define sqlite3ViewGetColumnNames(A,B) 0
+# define sqlite3ViewGetColumnNames(A,B,C) 0
 #endif
 
 #if SQLITE_MAX_ATTACHED>30
@@ -4390,7 +4391,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabUnlock(X)
 #  define sqlite3VtabUnlockList(X)
 #  define sqlite3VtabSavepoint(X, Y, Z) SQLITE_OK
-#  define sqlite3GetVTable(X,Y)  ((VTable*)0)
+#  define sqlite3GetVTable(X,Y,Z)  ((VTable*)0)
 #else
    void sqlite3VtabClear(sqlite3 *db, Table*);
    void sqlite3VtabDisconnect(sqlite3 *db, Table *p);
@@ -4402,7 +4403,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    void sqlite3VtabUnlockList(sqlite3*);
    int sqlite3VtabSavepoint(sqlite3 *, int, int);
    void sqlite3VtabImportErrmsg(Vdbe*, sqlite3_vtab*);
-   VTable *sqlite3GetVTable(sqlite3*, Table*);
+   VTable *sqlite3GetVTable(sqlite3*, int, Table*);
    Module *sqlite3VtabCreateModule(
      sqlite3*,
      const char*,
@@ -4414,13 +4415,13 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #endif
 int sqlite3VtabEponymousTableInit(Parse*,Module*);
 void sqlite3VtabEponymousTableClear(sqlite3*,Module*);
-void sqlite3VtabMakeWritable(Parse*,Table*);
+void sqlite3VtabMakeWritable(Parse*,int,Table*);
 void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*, int);
 void sqlite3VtabFinishParse(Parse*, Token*);
 void sqlite3VtabArgInit(Parse*);
 void sqlite3VtabArgExtend(Parse*, Token*);
 int sqlite3VtabCallCreate(sqlite3*, int, const char *, char **);
-int sqlite3VtabCallConnect(Parse*, Table*);
+int sqlite3VtabCallConnect(Parse*, int, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, VTable *);
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);

@@ -1041,8 +1041,14 @@ static sqlite3_index_info *allocateIndexInfo(
 ** caller to eventually free p->idxStr if p->needToFreeIdxStr indicates
 ** that this is required.
 */
-static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
-  sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
+static int vtabBestIndex(
+  Parse *pParse, 
+  struct SrcList_item *pSrc, 
+  sqlite3_index_info *p
+){
+  Table *pTab = pSrc->pTab;
+  int iDb = sqlite3SchemaToIndex2(pParse->db, pTab->pSchema, pSrc->zDatabase);
+  sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, iDb, pTab)->pVtab;
   int rc;
 
   TRACE_IDX_INPUTS(p);
@@ -3132,7 +3138,7 @@ static int whereLoopAddVirtualOne(
   pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
 
   /* Invoke the virtual table xBestIndex() method */
-  rc = vtabBestIndex(pParse, pSrc->pTab, pIdxInfo);
+  rc = vtabBestIndex(pParse, pSrc, pIdxInfo);
   if( rc ){
     if( rc==SQLITE_CONSTRAINT ){
       /* If the xBestIndex method returns SQLITE_CONSTRAINT, that means
@@ -4949,7 +4955,7 @@ WhereInfo *sqlite3WhereBegin(
     }else
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)!=0 ){
-      const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
+      const char *pVTab = (const char *)sqlite3GetVTable(db, iDb, pTab);
       int iCur = pTabItem->iCursor;
       sqlite3VdbeAddOp4(v, OP_VOpen, iCur, 0, 0, pVTab, P4_VTAB);
     }else if( IsVirtual(pTab) ){

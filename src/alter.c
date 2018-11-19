@@ -148,11 +148,11 @@ void sqlite3AlterRenameTable(
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
     goto exit_rename_table;
   }
   if( IsVirtual(pTab) ){
-    pVTab = sqlite3GetVTable(db, pTab);
+    pVTab = sqlite3GetVTable(db, -1, pTab);
     if( pVTab->pVtab->pModule->xRename==0 ){
       pVTab = 0;
     }
@@ -1064,7 +1064,8 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
   /* ALWAYS() because if the table of the trigger does not exist, the
   ** error would have been hit before this point */
   if( ALWAYS(pParse->pTriggerTab) ){
-    rc = sqlite3ViewGetColumnNames(pParse, pParse->pTriggerTab);
+    int iDb = sqlite3SchemaToIndex2(db, pParse->pTriggerTab->pSchema, 0);
+    rc = sqlite3ViewGetColumnNames(pParse, iDb, pParse->pTriggerTab);
   }
 
   /* Resolve symbols in WHEN clause */
@@ -1081,38 +1082,41 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       Table *pTarget = sqlite3LocateTable(pParse, 0, pStep->zTarget, zDb);
       if( pTarget==0 ){
         rc = SQLITE_ERROR;
-      }else if( SQLITE_OK==(rc = sqlite3ViewGetColumnNames(pParse, pTarget)) ){
-        SrcList sSrc;
-        memset(&sSrc, 0, sizeof(sSrc));
-        sSrc.nSrc = 1;
-        sSrc.a[0].zName = pStep->zTarget;
-        sSrc.a[0].pTab = pTarget;
-        sNC.pSrcList = &sSrc;
-        if( pStep->pWhere ){
-          rc = sqlite3ResolveExprNames(&sNC, pStep->pWhere);
-        }
-        if( rc==SQLITE_OK ){
-          rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
-        }
-        assert( !pStep->pUpsert || (!pStep->pWhere && !pStep->pExprList) );
-        if( pStep->pUpsert ){
-          Upsert *pUpsert = pStep->pUpsert;
-          assert( rc==SQLITE_OK );
-          pUpsert->pUpsertSrc = &sSrc;
-          sNC.uNC.pUpsert = pUpsert;
-          sNC.ncFlags = NC_UUpsert;
-          rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
-          if( rc==SQLITE_OK ){
-            ExprList *pUpsertSet = pUpsert->pUpsertSet;
-            rc = sqlite3ResolveExprListNames(&sNC, pUpsertSet);
+      }else{
+        int iDb = sqlite3SchemaToIndex2(db, pTarget->pSchema, 0);
+        if( SQLITE_OK==(rc = sqlite3ViewGetColumnNames(pParse, iDb, pTarget)) ){
+          SrcList sSrc;
+          memset(&sSrc, 0, sizeof(sSrc));
+          sSrc.nSrc = 1;
+          sSrc.a[0].zName = pStep->zTarget;
+          sSrc.a[0].pTab = pTarget;
+          sNC.pSrcList = &sSrc;
+          if( pStep->pWhere ){
+            rc = sqlite3ResolveExprNames(&sNC, pStep->pWhere);
           }
           if( rc==SQLITE_OK ){
-            rc = sqlite3ResolveExprNames(&sNC, pUpsert->pUpsertWhere);
+            rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
           }
-          if( rc==SQLITE_OK ){
-            rc = sqlite3ResolveExprNames(&sNC, pUpsert->pUpsertTargetWhere);
+          assert( !pStep->pUpsert || (!pStep->pWhere && !pStep->pExprList) );
+          if( pStep->pUpsert ){
+            Upsert *pUpsert = pStep->pUpsert;
+            assert( rc==SQLITE_OK );
+            pUpsert->pUpsertSrc = &sSrc;
+            sNC.uNC.pUpsert = pUpsert;
+            sNC.ncFlags = NC_UUpsert;
+            rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
+            if( rc==SQLITE_OK ){
+              ExprList *pUpsertSet = pUpsert->pUpsertSet;
+              rc = sqlite3ResolveExprListNames(&sNC, pUpsertSet);
+            }
+            if( rc==SQLITE_OK ){
+              rc = sqlite3ResolveExprNames(&sNC, pUpsert->pUpsertWhere);
+            }
+            if( rc==SQLITE_OK ){
+              rc = sqlite3ResolveExprNames(&sNC, pUpsert->pUpsertTargetWhere);
+            }
+            sNC.ncFlags = 0;
           }
-          sNC.ncFlags = 0;
         }
       }
     }

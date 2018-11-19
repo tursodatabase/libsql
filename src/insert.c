@@ -168,7 +168,7 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
   int i;
   int iEnd = sqlite3VdbeCurrentAddr(v);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  VTable *pVTab = IsVirtual(pTab) ? sqlite3GetVTable(p->db, pTab) : 0;
+  VTable *pVTab = IsVirtual(pTab) ? sqlite3GetVTable(p->db, iDb, pTab) : 0;
 #endif
 
   for(i=1; i<iEnd; i++){
@@ -596,7 +596,7 @@ void sqlite3Insert(
   /* If pTab is really a view, make sure it has been initialized.
   ** ViewGetColumnNames() is a no-op if pTab is not a view.
   */
-  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
     goto insert_cleanup;
   }
 
@@ -1027,8 +1027,8 @@ void sqlite3Insert(
     */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
-      const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
-      sqlite3VtabMakeWritable(pParse, pTab);
+      const char *pVTab = (const char *)sqlite3GetVTable(db, iDb, pTab);
+      sqlite3VtabMakeWritable(pParse, iDb, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns, pVTab, P4_VTAB);
       sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
       sqlite3MayAbort(pParse);

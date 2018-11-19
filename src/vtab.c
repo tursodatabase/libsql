@@ -141,10 +141,15 @@ void sqlite3VtabLock(VTable *pVTab){
 ** Return a pointer to the VTable object used by connection db to access 
 ** this virtual-table, if one has been created, or NULL otherwise.
 */
-VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
+VTable *sqlite3GetVTable(sqlite3 *db, int iDb, Table *pTab){
   VTable *pVtab;
   assert( IsVirtual(pTab) );
-  for(pVtab=pTab->pVTable; pVtab && pVtab->db!=db; pVtab=pVtab->pNext);
+  if( iDb>=0 ){
+    Btree *pBt = db->aDb[iDb].pBt;
+    for(pVtab=pTab->pVTable; pVtab && pVtab->pBt!=pBt; pVtab=pVtab->pNext);
+  }else{
+    for(pVtab=pTab->pVTable; pVtab && pVtab->db!=db; pVtab=pVtab->pNext);
+  }
   return pVtab;
 }
 
@@ -218,17 +223,19 @@ static VTable *vtabDisconnectAll(sqlite3 *db, Table *p){
 */
 void sqlite3VtabDisconnect(sqlite3 *db, Table *p){
   VTable **ppVTab;
+  VTable **ppNext;
 
   assert( IsVirtual(p) );
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   assert( sqlite3_mutex_held(db->mutex) );
 
-  for(ppVTab=&p->pVTable; *ppVTab; ppVTab=&(*ppVTab)->pNext){
+  for(ppVTab=&p->pVTable; *ppVTab; ){
     if( (*ppVTab)->db==db  ){
       VTable *pVTab = *ppVTab;
       *ppVTab = pVTab->pNext;
       sqlite3VtabUnlock(pVTab);
-      break;
+    }else{
+      ppVTab = &(*ppVTab)->pNext;
     }
   }
 }
@@ -494,6 +501,7 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
 */
 static int vtabCallConstructor(
   sqlite3 *db, 
+  int iDb,                        /* Database containing pTab */
   Table *pTab,
   Module *pMod,
   int (*xConstruct)(sqlite3*,void*,int,const char*const*,sqlite3_vtab**,char**),
@@ -506,7 +514,6 @@ static int vtabCallConstructor(
   int nArg = pTab->nModuleArg;
   char *zErr = 0;
   char *zModuleName;
-  int iDb;
   VtabCtx *pCtx;
 
   /* Check that the virtual-table is not already being initialized */
@@ -531,9 +538,9 @@ static int vtabCallConstructor(
     return SQLITE_NOMEM_BKPT;
   }
   pVTable->db = db;
+  pVTable->pBt = db->aDb[iDb].pBt;
   pVTable->pMod = pMod;
 
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   pTab->azModuleArg[1] = db->aDb[iDb].zDbSName;
 
   /* Invoke the virtual table constructor */
@@ -622,14 +629,14 @@ static int vtabCallConstructor(
 **
 ** This call is a no-op if table pTab is not a virtual table.
 */
-int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
+int sqlite3VtabCallConnect(Parse *pParse, int iDb, Table *pTab){
   sqlite3 *db = pParse->db;
   const char *zMod;
   Module *pMod;
   int rc;
 
   assert( pTab );
-  if( !IsVirtual(pTab) || sqlite3GetVTable(db, pTab) ){
+  if( !IsVirtual(pTab) || sqlite3GetVTable(db, iDb, pTab) ){
     return SQLITE_OK;
   }
 
@@ -643,7 +650,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
     rc = SQLITE_ERROR;
   }else{
     char *zErr = 0;
-    rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xConnect, &zErr);
+    rc = vtabCallConstructor(db, iDb, pTab, pMod,pMod->pModule->xConnect,&zErr);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "%s", zErr);
       pParse->rc = rc;
@@ -714,15 +721,15 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
     *pzErr = sqlite3MPrintf(db, "no such module: %s", zMod);
     rc = SQLITE_ERROR;
   }else{
-    rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xCreate, pzErr);
+    rc = vtabCallConstructor(db, iDb, pTab, pMod, pMod->pModule->xCreate,pzErr);
   }
 
   /* Justification of ALWAYS():  The xConstructor method is required to
   ** create a valid sqlite3_vtab if it returns SQLITE_OK. */
-  if( rc==SQLITE_OK && ALWAYS(sqlite3GetVTable(db, pTab)) ){
+  if( rc==SQLITE_OK && ALWAYS(sqlite3GetVTable(db, iDb, pTab)) ){
     rc = growVTrans(db);
     if( rc==SQLITE_OK ){
-      addToVTrans(db, sqlite3GetVTable(db, pTab));
+      addToVTrans(db, sqlite3GetVTable(db, iDb, pTab));
     }
   }
 
@@ -1055,7 +1062,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   pTab = pExpr->y.pTab;
   if( pTab==0 ) return pDef;
   if( !IsVirtual(pTab) ) return pDef;
-  pVtab = sqlite3GetVTable(db, pTab)->pVtab;
+  pVtab = sqlite3GetVTable(db, -1, pTab)->pVtab;
   assert( pVtab!=0 );
   assert( pVtab->pModule!=0 );
   pMod = (sqlite3_module *)pVtab->pModule;
@@ -1104,20 +1111,21 @@ FuncDef *sqlite3VtabOverloadFunction(
 ** array if it is missing.  If pTab is already in the array, this routine
 ** is a no-op.
 */
-void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
+void sqlite3VtabMakeWritable(Parse *pParse, int iDb, Table *pTab){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
+  VTable *pVTab = sqlite3GetVTable(pParse->db, iDb, pTab);
   int i, n;
-  Table **apVtabLock;
+  VTable **apVtabLock;
 
   assert( IsVirtual(pTab) );
   for(i=0; i<pToplevel->nVtabLock; i++){
-    if( pTab==pToplevel->apVtabLock[i] ) return;
+    if( pVTab==pToplevel->apVtabLock[i] ) return;
   }
   n = (pToplevel->nVtabLock+1)*sizeof(pToplevel->apVtabLock[0]);
   apVtabLock = sqlite3_realloc64(pToplevel->apVtabLock, n);
   if( apVtabLock ){
     pToplevel->apVtabLock = apVtabLock;
-    pToplevel->apVtabLock[pToplevel->nVtabLock++] = pTab;
+    pToplevel->apVtabLock[pToplevel->nVtabLock++] = pVTab;
   }else{
     sqlite3OomFault(pToplevel->db);
   }
@@ -1160,7 +1168,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
   addModuleArgument(db, pTab, 0);
   addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
-  rc = vtabCallConstructor(db, pTab, pMod, pModule->xConnect, &zErr);
+  rc = vtabCallConstructor(db, 0, pTab, pMod, pModule->xConnect, &zErr);
   if( rc ){
     sqlite3ErrorMsg(pParse, "%s", zErr);
     sqlite3DbFree(db, zErr);

@@ -18,6 +18,7 @@
 /* Forward declaration */
 static void updateVirtualTable(
   Parse *pParse,       /* The parsing context */
+  int iDb,
   SrcList *pSrc,       /* The virtual table to be modified */
   Table *pTab,         /* The virtual table */
   ExprList *pChanges,  /* The columns to change in the UPDATE statement */
@@ -240,7 +241,7 @@ void sqlite3Update(
   }
 #endif
 
-  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
     goto update_cleanup;
   }
   if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
@@ -434,7 +435,7 @@ void sqlite3Update(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   /* Virtual tables must be handled separately */
   if( IsVirtual(pTab) ){
-    updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
+    updateVirtualTable(pParse, iDb, pTabList, pTab, pChanges, pRowidExpr, aXRef,
                        pWhere, onError);
     goto update_cleanup;
   }
@@ -869,6 +870,7 @@ update_cleanup:
 */
 static void updateVirtualTable(
   Parse *pParse,       /* The parsing context */
+  int iDb,
   SrcList *pSrc,       /* The virtual table to be modified */
   Table *pTab,         /* The virtual table */
   ExprList *pChanges,  /* The columns to change in the UPDATE statement */
@@ -881,7 +883,7 @@ static void updateVirtualTable(
   int ephemTab;             /* Table holding the result of the SELECT */
   int i;                    /* Loop counter */
   sqlite3 *db = pParse->db; /* Database connection */
-  const char *pVTab = (const char*)sqlite3GetVTable(db, pTab);
+  const char *pVTab = (const char*)sqlite3GetVTable(db, iDb, pTab);
   WhereInfo *pWInfo;
   int nArg = 2 + pTab->nCol;      /* Number of arguments to VUpdate */
   int regArg;                     /* First register in VUpdate arg array */
@@ -972,7 +974,7 @@ static void updateVirtualTable(
       sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i, regArg+i);
     }
   }
-  sqlite3VtabMakeWritable(pParse, pTab);
+  sqlite3VtabMakeWritable(pParse, iDb, pTab);
   sqlite3VdbeAddOp4(v, OP_VUpdate, 0, nArg, regArg, pVTab, P4_VTAB);
   sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
   sqlite3MayAbort(pParse);

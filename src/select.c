@@ -4888,10 +4888,9 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( IsVirtual(pTab) || pTab->pSelect ){
         int iSave = pParse->iFixDb;
         i16 nCol;
-        pParse->iFixDb = 1 + sqlite3SchemaToIndex2(
-            db, pTab->pSchema, pFrom->zDatabase
-        );
-        if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+        int iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pFrom->zDatabase);
+        pParse->iFixDb = 1 + iDb;
+        if( sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
           pParse->iFixDb = iSave;
           return WRC_Abort;
         }

@@ -62,7 +62,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
 static int tabIsReadOnly(Parse *pParse, Table *pTab){
   sqlite3 *db;
   if( IsVirtual(pTab) ){
-    return sqlite3GetVTable(pParse->db, pTab)->pMod->pModule->xUpdate==0;
+    return sqlite3GetVTable(pParse->db, -1, pTab)->pMod->pModule->xUpdate==0;
   }
   if( (pTab->tabFlags & (TF_Readonly|TF_Shadow))==0 ) return 0;
   db = pParse->db;
@@ -318,17 +318,17 @@ void sqlite3DeleteFrom(
   }
 #endif
 
+  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
+  assert( iDb<db->nDb );
+
   /* If pTab is really a view, make sure it has been initialized.
   */
-  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
     goto delete_from_cleanup;
   }
-
   if( sqlite3IsReadOnly(pParse, pTab, (pTrigger?1:0)) ){
     goto delete_from_cleanup;
   }
-  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
-  assert( iDb<db->nDb );
   rcauth = sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, 
                             db->aDb[iDb].zDbSName);
   assert( rcauth==SQLITE_OK || rcauth==SQLITE_DENY || rcauth==SQLITE_IGNORE );
@@ -563,8 +563,8 @@ void sqlite3DeleteFrom(
     /* Delete the row */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
-      const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
-      sqlite3VtabMakeWritable(pParse, pTab);
+      const char *pVTab = (const char *)sqlite3GetVTable(db, iDb, pTab);
+      sqlite3VtabMakeWritable(pParse, iDb, pTab);
       assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
       sqlite3MayAbort(pParse);
       if( eOnePass==ONEPASS_SINGLE ){
