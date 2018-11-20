@@ -363,7 +363,7 @@ void sqlite3VtabBeginParse(
   ** The second call, to obtain permission to create the table, is made now.
   */
   if( pTable->azModuleArg ){
-    int iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
+    int iDb = sqlite3SchemaToIndex(db, pTable->pSchema, 0);   /* TODO */
     assert( iDb>=0 ); /* The database the table is being created in */
     sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
             pTable->azModuleArg[0], pParse->db->aDb[iDb].zDbSName);
@@ -425,7 +425,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     ** entry in the sqlite_master table tht was created for this vtab
     ** by sqlite3StartTable().
     */
-    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    iDb = sqlite3SchemaToIndex(db, pTab->pSchema, 0);
     sqlite3NestedParse(pParse,
       "UPDATE %Q.%s "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "

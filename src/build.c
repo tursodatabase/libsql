@@ -404,7 +404,7 @@ Table *sqlite3LocateTableItem(
       p->zDatabase = sqlite3DbStrDup(pParse->db, zDb);
     }
   }else if( p->pSchema ){
-    int iDb = sqlite3SchemaToIndex2(pParse->db, p->pSchema, 0);
+    int iDb = sqlite3SchemaToIndex(pParse->db, p->pSchema, 0);
     zDb = pParse->db->aDb[iDb].zDbSName;
   }else{
     zDb = p->zDatabase;
@@ -2004,7 +2004,7 @@ void sqlite3EndTable(
     }
   }
 
-  iDb = sqlite3SchemaToIndex2(db, p->pSchema, 0);
+  iDb = sqlite3SchemaToIndex(db, p->pSchema, 0);
 
 #ifndef SQLITE_OMIT_CHECK
   /* Resolve names in all CHECK constraint expressions.
@@ -2224,7 +2224,7 @@ void sqlite3CreateView(
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ) goto create_view_fail;
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
-  iDb = sqlite3SchemaToIndex2(db, p->pSchema, 0);
+  iDb = sqlite3SchemaToIndex(db, p->pSchema, 0);
   sqlite3FixInit(&sFix, pParse, iDb, "view", pName);
   if( sqlite3FixSelect(&sFix, pSelect) ) goto create_view_fail;
 
@@ -2541,7 +2541,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
     if( iLargest==0 ){
       return;
     }else{
-      int iDb = sqlite3SchemaToIndex2(pParse->db, pTab->pSchema, 0);
+      int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema, 0);
       assert( iDb>=0 && iDb<pParse->db->nDb );
       destroyRootPage(pParse, iLargest, iDb);
       iDestroyed = iLargest;
@@ -2668,7 +2668,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     if( noErr ) sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
     goto exit_drop_table;
   }
-  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, 0);
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema, 0);
   assert( iDb>=0 && iDb<db->nDb );
   sqlite3SchemaWritable(pParse, iDb);
 
@@ -3133,7 +3133,7 @@ void sqlite3CreateIndex(
     assert( pStart==0 );
     pTab = pParse->pNewTable;
     if( !pTab ) goto exit_create_index;
-    iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, 0);
+    iDb = sqlite3SchemaToIndex(db, pTab->pSchema, 0);
   }
   pDb = &db->aDb[iDb];
 
@@ -3682,7 +3682,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
       "or PRIMARY KEY constraint cannot be dropped", 0);
     goto exit_drop_index;
   }
-  iDb = sqlite3SchemaToIndex2(db, pIndex->pSchema, 0);
+  iDb = sqlite3SchemaToIndex(db, pIndex->pSchema, 0);
   sqlite3SchemaWritable(pParse, iDb);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {

@@ -153,7 +153,7 @@ void sqlite3AuthRead(
   assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
   assert( !IN_RENAME_OBJECT || db->xAuth==0 );
   if( db->xAuth==0 ) return;
-  iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
+  iDb = sqlite3SchemaToIndex(pParse->db, pSchema, 0);      /* TODO! */
   if( iDb<0 ){
     /* An attempt to read a column out of a subquery or other
     ** temporary table. */

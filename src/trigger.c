@@ -215,7 +215,7 @@ void sqlite3BeginTrigger(
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( !IN_RENAME_OBJECT ){
-    int iTabDb = sqlite3SchemaToIndex2(db, pTab->pSchema, 0);
+    int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema, 0);
     int code = SQLITE_CREATE_TRIGGER;
     const char *zDb = db->aDb[iTabDb].zDbSName;
     const char *zDbTrig = isTemp ? db->aDb[1].zDbSName : zDb;
@@ -291,7 +291,7 @@ void sqlite3FinishTrigger(
   pParse->pNewTrigger = 0;
   if( NEVER(pParse->nErr) || !pTrig ) goto triggerfinish_cleanup;
   zName = pTrig->zName;
-  iDb = sqlite3SchemaToIndex2(pParse->db, pTrig->pSchema, 0);
+  iDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema, 0);
   pTrig->step_list = pStepList;
   while( pStepList ){
     pStepList->pTrig = pTrig;
@@ -610,7 +610,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  iDb = sqlite3SchemaToIndex2(pParse->db, pTrigger->pSchema, 0);
+  iDb = sqlite3SchemaToIndex(pParse->db, pTrigger->pSchema, 0);
   assert( iDb>=0 && iDb<db->nDb );
   sqlite3SchemaWritable(pParse, iDb);
   pTable = tableOfTrigger(pTrigger);

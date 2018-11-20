@@ -508,8 +508,18 @@ static void schemaIsValid(Parse *pParse){
 ** If the same database is attached more than once, the first
 ** attached database is returned.
 */
-int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
-  int i = -1000000;
+int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema, const char *zDb){
+  int i;
+
+  assert( sqlite3_mutex_held(db->mutex) );
+  if( zDb ){
+    int i;
+    for(i=0; i<db->nDb; i++){
+      if( i==1 ) continue;
+      if( sqlite3StrICmp(zDb, db->aDb[i].zDbSName)==0 ) return i;
+    }
+    assert( sqlite3StrICmp(zDb, "temp")==0 );
+  }
 
   /* If pSchema is NULL, then return -1000000. This happens when code in 
   ** expr.c is trying to resolve a reference to a transient table (i.e. one
@@ -521,7 +531,6 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
   ** more likely to cause a segfault than -1 (of course there are assert()
   ** statements too, but it never hurts to play the odds).
   */
-  assert( sqlite3_mutex_held(db->mutex) );
   if( pSchema ){
     for(i=0; 1; i++){
       assert( i<db->nDb );
@@ -530,19 +539,10 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
       }
     }
     assert( i>=0 && i<db->nDb );
+  }else{
+    i = -1000000;
   }
   return i;
-}
-
-int sqlite3SchemaToIndex2(sqlite3 *db, Schema *pSchema, const char *zDb){
-  if( zDb ){
-    int i;
-    for(i=0; i<db->nDb; i++){
-      if( i==1 ) continue;
-      if( sqlite3StrICmp(zDb, db->aDb[i].zDbSName)==0 ) return i;
-    }
-  }
-  return sqlite3SchemaToIndex(db, pSchema);
 }
 
 /*

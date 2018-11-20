@@ -1088,7 +1088,7 @@ void sqlite3Pragma(
     if( pTab ){
       int i, k;
       int nHidden = 0;
-      int iTabDb = sqlite3SchemaToIndex2(db, pTab->pSchema, zDb);
+      int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema, zDb);
       Column *pCol;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       pParse->nMem = 7;

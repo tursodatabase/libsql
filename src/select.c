@@ -1445,7 +1445,7 @@ static void generateSortTail(
   /* Open any cursors needed for sorter-reference expressions */
   for(i=0; i<pSort->nDefer; i++){
     Table *pTab = pSort->aDefer[i].pTab;
-    int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+    int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema, 0); /* TODO */
     sqlite3OpenTable(pParse, pSort->aDefer[i].iCsr, iDb, pTab, OP_OpenRead);
     nRefKey = MAX(nRefKey, pSort->aDefer[i].nKey);
   }
@@ -1713,7 +1713,8 @@ static const char *columnTypeImpl(
         }
         zOrigTab = pTab->zName;
         if( pNC->pParse && pTab->pSchema ){
-          int iDb = sqlite3SchemaToIndex(pNC->pParse->db, pTab->pSchema);
+          /* TODO: Fix the following for REUSE schemas */
+          int iDb = sqlite3SchemaToIndex(pNC->pParse->db, pTab->pSchema, 0);
           zOrigDb = pNC->pParse->db->aDb[iDb].zDbSName;
         }
 #else
@@ -4888,7 +4889,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( IsVirtual(pTab) || pTab->pSelect ){
         int iSave = pParse->iFixDb;
         i16 nCol;
-        int iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pFrom->zDatabase);
+        int iDb = sqlite3SchemaToIndex(db, pTab->pSchema, pFrom->zDatabase);
         pParse->iFixDb = 1 + iDb;
         if( sqlite3ViewGetColumnNames(pParse, iDb, pTab) ){
           pParse->iFixDb = iSave;
@@ -4991,7 +4992,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
             }
-            iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pFrom->zDatabase);
+            iDb = sqlite3SchemaToIndex(db, pTab->pSchema, pFrom->zDatabase);
             zSchemaName = iDb>=0 ? db->aDb[iDb].zDbSName : "*";
           }
           for(j=0; j<pTab->nCol; j++){
@@ -6482,7 +6483,7 @@ int sqlite3Select(
         ** is better to execute the op on an index, as indexes are almost
         ** always spread across less pages than their corresponding tables.
         */
-        const int iDb = sqlite3SchemaToIndex2(
+        const int iDb = sqlite3SchemaToIndex(
             pParse->db, pTab->pSchema, pTabList->a[0].zDatabase 
         );
         const int iCsr = pParse->nTab++;     /* Cursor to scan b-tree */

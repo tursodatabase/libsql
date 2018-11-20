@@ -183,7 +183,7 @@ int sqlite3_blob_open(
       goto blob_open_out;
     }
     pBlob->pTab = pTab;
-    pBlob->zDb = db->aDb[sqlite3SchemaToIndex2(db,pTab->pSchema,zDb)].zDbSName;
+    pBlob->zDb = db->aDb[sqlite3SchemaToIndex(db,pTab->pSchema,zDb)].zDbSName;
 
     /* Now search pTab for the exact column. */
     for(iCol=0; iCol<pTab->nCol; iCol++) {
@@ -270,7 +270,7 @@ int sqlite3_blob_open(
         {OP_Halt,           0, 0, 0},  /* 5  */
       };
       Vdbe *v = (Vdbe *)pBlob->pStmt;
-      int iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, zDb);
+      int iDb = sqlite3SchemaToIndex(db, pTab->pSchema, zDb);
       VdbeOp *aOp;
 
       sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, wrFlag, 

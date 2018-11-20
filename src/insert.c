@@ -568,7 +568,7 @@ void sqlite3Insert(
   if( pTab==0 ){
     goto insert_cleanup;
   }
-  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema, pTabList->a[0].zDatabase);
   assert( iDb<db->nDb );
   if( sqlite3AuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0,
                        db->aDb[iDb].zDbSName) ){
@@ -2285,7 +2285,7 @@ static int xferOptimization(
 #ifdef SQLITE_TEST
   sqlite3_xferopt_count++;
 #endif
-  iDbSrc = sqlite3SchemaToIndex2(db, pSrc->pSchema, pItem->zDatabase);
+  iDbSrc = sqlite3SchemaToIndex(db, pSrc->pSchema, pItem->zDatabase);
   v = sqlite3GetVdbe(pParse);
   sqlite3CodeVerifySchema(pParse, iDbSrc);
   iSrc = pParse->nTab++;

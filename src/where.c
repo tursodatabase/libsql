@@ -1047,7 +1047,7 @@ static int vtabBestIndex(
   sqlite3_index_info *p
 ){
   Table *pTab = pSrc->pTab;
-  int iDb = sqlite3SchemaToIndex2(pParse->db, pTab->pSchema, pSrc->zDatabase);
+  int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema, pSrc->zDatabase);
   sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, iDb, pTab)->pVtab;
   int rc;
 
@@ -4948,7 +4948,7 @@ WhereInfo *sqlite3WhereBegin(
 
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
-    iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabItem->zDatabase);
+    iDb = sqlite3SchemaToIndex(db, pTab->pSchema, pTabItem->zDatabase);
     pLoop = pLevel->pWLoop;
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
       /* Do nothing */

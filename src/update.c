@@ -212,7 +212,7 @@ void sqlite3Update(
   */
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ) goto update_cleanup;
-  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema, pTabList->a[0].zDatabase);
 
   /* Figure out if we have any triggers and if the table being
   ** updated is a view.

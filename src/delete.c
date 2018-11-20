@@ -318,7 +318,7 @@ void sqlite3DeleteFrom(
   }
 #endif
 
-  iDb = sqlite3SchemaToIndex2(db, pTab->pSchema, pTabList->a[0].zDatabase);
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema, pTabList->a[0].zDatabase);
   assert( iDb<db->nDb );
 
   /* If pTab is really a view, make sure it has been initialized.
