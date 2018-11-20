@@ -1,5 +1,5 @@
-C Fix\sthe\sregexp\sused\sto\srecognize\slibdl\serrors\son\sOS-X.
-D 2018-11-17T14:59:35.957
+C Fix\sproblems\sin\spragma.c\scausing\ssome\sPRAGMA\sstatements\sto\stest\sthe\swrong\nschema-cookie\sbefore\sproceeding,\sor\sto\stry\sto\sopen\scursors\son\sthe\swrong\ndatabase\s("PRAGMA\sforeign_key_check"\sonly).
+D 2018-11-20T18:09:59.541
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -499,7 +499,7 @@ F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
 F src/pcache.c 4196eb6ed3bbf00b80596c8e0b4f50e57eb7d890c19fb27a7354306abb7f983d
 F src/pcache.h 072f94d29281cffd99e46c1539849f248c4b56ae7684c1f36626797fee375170
 F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
-F src/pragma.c 3a5f39517cbe90af3271fb5dd2866a50fbcf4ced6cb464dcc80a6f763b415206
+F src/pragma.c a2eab23fbf7c70c28f3a22629de2662d052c22853649430be302b910719574de
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c f81f8d707e583192c28fea0b2e19385415b7d188123b23f49b038076408d7a69
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
@@ -1183,7 +1183,7 @@ F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb0696
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
-F test/pragma4.test 3046501bee2f652dc2a4f9c87781e2741361d6864439c8381aba6c3b774b335c
+F test/pragma4.test 12d0088e52d4e193f57eb0271d194ec1d7bc2031d874f915541f1b0ff80bb407
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/printf.test a3e559bc9d922e7fe44e9d05c6965fee34fe3bc28300a4248c6a063425246ffd
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5fff00b0d5eb634d40e767671d5a0e8bd263d15d88abe531f6072f01bc789568
-R 76c317bc545b1ccc5ede987ad2f5f352
-U drh
-Z 5574305e87d3c067cc9d9e5ce2644399
+P 1740025307531a52e4f0641e2e74dc14715130858f2e9236be13b66924f00220
+R 35a6cb673896deb85e5c526c77cba232
+U dan
+Z a1b91470ee9a425f325e6bef367d324c
