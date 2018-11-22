@@ -856,6 +856,15 @@ int sqlite3PCachePercentDirty(PCache *pCache){
   return nCache ? (int)(((i64)nDirty * 100) / nCache) : 0;
 }
 
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+/* 
+** Return true if there are one or more dirty pages in the cache. Else false.
+*/
+int sqlite3PCacheIsDirty(PCache *pCache){
+  return (pCache->pDirty!=0);
+}
+#endif
+
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
 /*
 ** For all dirty pages currently in the cache, invoke the specified
