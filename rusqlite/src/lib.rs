@@ -800,7 +800,7 @@ impl InnerConnection {
     #[cfg(feature = "hooks")]
     fn new(db: *mut ffi::sqlite3) -> InnerConnection {
         InnerConnection {
-            db: db,
+            db,
             interrupt_lock: Arc::new(Mutex::new(db)),
             free_commit_hook: None,
             free_rollback_hook: None,
