@@ -1,5 +1,5 @@
-C Version\s3.25.3
-D 2018-11-05T20:37:38.221
+C Make\sthe\swinTruncate()\smethod\sof\sthe\swindows\sVFS\sbe\sa\sno-op\sif\sthere\sare\noutstanding\sreferences\sto\sthe\smemory-mapped\spages.\s\sOtherwise,\smemory\smight\nbe\sdeleted\sout\sfrom\sunder\sthose\sreferences\swhen\sthe\sfile\sis\sremapped\sduring\nthe\struncate\soperation.
+D 2018-11-23T13:21:05.077
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 6b650013511fd9d8b094203ac268af9220d292cc7d4e1bc9fbca15aacd8c7995
@@ -486,7 +486,7 @@ F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 7cfd67db0e2f926243f646db7ec1caa33ca9bee45799b0160ddfcd6ccfc175d2
-F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
+F src/os_win.c 30ab9c9143d5875aab216b4390e1ed3b5274ee9bfa02d7ad7adab1d9ed8baf53
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a0d8f686ef64549ad5b356fd30429bd9ee7a06dd42b4d6faa096352ff26b1c5b
 F src/pager.h ecc554a55bc55d1c4ba5e17137b72e238e00bd81e72ff2662d8b9c8c10ae3963
@@ -995,7 +995,7 @@ F test/incrblob4.test 21a52a6843a56cdcce968c6a86b72a7066d0e6ba
 F test/incrblob_err.test 69f9247fed50278d48ea710d1a8f9cdb09e4c0b8
 F test/incrblobfault.test 74dd8ac108304cea0b4a0df6df63a1567e558758
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
-F test/incrvacuum.test b729aab1d4983037da57e66c20dfd7458561a85626dcf824f60175e35f4ce152
+F test/incrvacuum.test d67f6c8330587c6e96e34c19156b67b9f762cd302bdd1d89119fa6edea1ab49b
 F test/incrvacuum2.test 7d26cfda66c7e55898d196de54ac4ec7d86a4e3d
 F test/incrvacuum3.test 75256fb1377e7c39ef2de62bfc42bbff67be295a
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
@@ -1768,10 +1768,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d09ce5d738bb00c4524c663ec69555fe917ac733d58b06a302675ce7fe33fca
-R 00cfcd9deda5635c7483df5f9218a978
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.25.3 *
+P 89e099fbe5e13c33e683bef07361231ca525b88f7907be7092058007b75036f2
+R d98fa6340450daf98574743fccbef553
 U drh
-Z d2b8ccce3c6c80bcf2a7dfd041b6e7a9
+Z 07bc5a9bf489221e47f142316c711ce1

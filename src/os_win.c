@@ -2906,6 +2906,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   DWORD lastErrno;
 #if SQLITE_MAX_MMAP_SIZE>0
   sqlite3_int64 oldMmapSize;
+  if( pFile->nFetchOut>0 ) return SQLITE_OK;
 #endif
 
   assert( pFile );
