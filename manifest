@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sreading\sfrom\stemp\sdatabases\sin\sSQLITE_DIRECT_OVERFLOW_READ\nbuilds.
-D 2018-11-22T19:10:14.702
+C Remove\sthe\sunused\smmapSizeActual\sfield\sfrom\sthe\sWindows\ssqlite3_file\nimplementation.
+D 2018-11-24T16:07:21.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -491,7 +491,7 @@ F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f6e91b8fd82af7afbfd073c4974ad6cdb8e62d9f65ceddb45167835a0567fdc0
-F src/os_win.c 070cdbb400097c6cda54aa005356095afdc2f3ee691d17192c54724ef146a971
+F src/os_win.c fd94dd9c5738a65f629827df2df458fef8e827031ec99f7e2410bf5811ef979f
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c ff1757f5bb5adb756f22e44c02b235e1d228c6d2c14ae4ea405f2eac7bb0f046
 F src/pager.h 1bffa1ba8a742f8b6485ace9fdbceb0924a15c589a0fb86338ce7ed75130b232
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d343f7d6b05865c282eb73a0e39dc396f2927982af45b3d045de03ef73715693
-R e9643d97327d908ba9efaa761eaca8f1
-U dan
-Z a87a4268f4dff99394f9c0686b78940e
+P 81629ba91475938b6ad528e7b1dbef4ad22239782bb2e9c1bb59413aba11da87
+R 4fb4a37d69ae99b1210a8898ab60ca45
+U drh
+Z 28dc13c8bc7d6c615da3b9b59cc3c652
