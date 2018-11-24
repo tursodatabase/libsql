@@ -2905,6 +2905,26 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   DWORD lastErrno;
 #if SQLITE_MAX_MMAP_SIZE>0
   sqlite3_int64 oldMmapSize;
+  if( pFile->nFetchOut>0 ){
+    /* File truncation is a no-op if there are outstanding memory mapped
+    ** pages.  This is because truncating the file means temporarily unmapping
+    ** the file, and that might delete memory out from under existing cursors.
+    **
+    ** This can result in incremental vacuum not truncating the file,
+    ** if there is an active read cursor when the incremental vacuum occurs.
+    ** No real harm comes of this - the database file is not corrupted,
+    ** though some folks might complain that the file is bigger than it
+    ** needs to be.
+    **
+    ** The only feasible work-around is to defer the truncation until after
+    ** all references to memory-mapped content are closed.  That is doable,
+    ** but involves adding a few branches in the common write code path which
+    ** could slow down normal operations slightly.  Hence, we have decided for
+    ** now to simply make trancations a no-op if there are pending reads.  We
+    ** can maybe revisit this decision in the future.
+    */
+    return SQLITE_OK;
+  }
 #endif
 
   assert( pFile );
