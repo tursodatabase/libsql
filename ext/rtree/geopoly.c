@@ -527,7 +527,7 @@ static void geopolyCcwFunc(
   if( p ){
     if( geopolyArea(p)<0.0 ){
       int ii, jj;
-      for(ii=2, jj=p->nVertex*2 - 4; ii<jj; ii+=2, jj-=2){
+      for(ii=2, jj=p->nVertex*2 - 2; ii<jj; ii+=2, jj-=2){
         GeoCoord t = p->a[ii];
         p->a[ii] = p->a[jj];
         p->a[jj] = t;
