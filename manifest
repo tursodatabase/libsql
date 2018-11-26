@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sgeopoly_ccw()\sfunction.\s\sTest\scases\sin\sTH3.
-D 2018-11-24T20:44:46.869
+C Minor\scomment\senhancement\sin\salter.c.\s\sNo\schanges\sto\scode.
+D 2018-11-26T15:00:25.043
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in b730006b54c990461d864c5387f2e6f13aadb0236804555fb010ed6865a5f058
@@ -440,7 +440,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 61c1ace40a9e39c45a975cb6c57a1a283a262ea21bbe3fb5b473708b790a8d43
+F src/alter.c a61ed147e755a6decdffc3e7be2ec64602194ddfc0107227e52a26527928f4a6
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 92b51739a885da8bd84bc9a05485f1e48148bce5c15432f059b45af98fff75cd
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ffce4aac18dacbf2a3112ae2ab56c7db20cb164f179683d90a66ef38f4a98f2b
-R a924f6d3b66125bcf9c84e4f3ea163e0
+P 773c5c1d9c0ec40c51949c38c9dc17e778086f3f92791cca9b85288de0076dab
+R bd1cce260bf92d4e4c6a5defd366f276
 U drh
-Z ffb9456e441db51d971149bd81ac9a8b
+Z b5887b5598774ae88d83c7acee12bcb5

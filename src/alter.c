@@ -667,10 +667,16 @@ static void renameTokenCheckAll(Parse *pParse, void *pPtr){
 #endif
 
 /*
-** Add a new RenameToken object mapping parse tree element pPtr into
-** token *pToken to the Parse object currently under construction.
+** Remember that the parser tree element pPtr was created using
+** the token pToken.
 **
-** Return a copy of pPtr.
+** In other words, construct a new RenameToken object and add it
+** to the list of RenameToken objects currently being built up
+** in pParse->pRename.
+**
+** The pPtr argument is returned so that this routine can be used
+** with tail recursion in tokenExpr() routine, for a small performance
+** improvement.
 */
 void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
