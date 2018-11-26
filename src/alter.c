@@ -1188,15 +1188,8 @@ static void renameParseCleanup(Parse *pParse){
 ** into zNew.  The name should be quoted if bQuote is true.
 **
 ** This function is used internally by the ALTER TABLE RENAME COLUMN command.
-** Though accessible to application code, it is not intended for use by
-** applications.  The existance of this function, and the way it works,
-** is subject to change without notice.
-**
-** If any of the parameters are out-of-bounds, then simply return NULL.
-** An out-of-bounds parameter can only occur when the application calls
-** this function directly.  The parameters will always be well-formed when
-** this routine is invoked by the bytecode for a legitimate ALTER TABLE
-** statement.
+** It is only accessible to SQL created using sqlite3NestedParse().  It is
+** not reachable from ordinary SQL passed into sqlite3_prepare().
 */
 static void renameColumnFunc(
   sqlite3_context *context,
@@ -1604,9 +1597,9 @@ static void renameTableTest(
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
-    FUNCTION(sqlite_rename_column,  9, 0, 0, renameColumnFunc),
-    FUNCTION(sqlite_rename_table,  7, 0, 0, renameTableFunc),
-    FUNCTION(sqlite_rename_test,  5, 0, 0, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_rename_column, 9, renameColumnFunc),
+    INTERNAL_FUNCTION(sqlite_rename_table,  7, renameTableFunc),
+    INTERNAL_FUNCTION(sqlite_rename_test,   5, renameTableTest),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

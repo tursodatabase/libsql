@@ -6329,7 +6329,7 @@ static int SQLITE_TCLAPI reset_prng_state(
 /*
 ** tclcmd:  database_may_be_corrupt
 **
-** Indicate that database files might be corrupt.  In other words, set the normal
+** Indicate that database files might be corrupt. In other words, set the normal
 ** state of operation.
 */
 static int SQLITE_TCLAPI database_may_be_corrupt(
@@ -6344,8 +6344,9 @@ static int SQLITE_TCLAPI database_may_be_corrupt(
 /*
 ** tclcmd:  database_never_corrupt
 **
-** Indicate that database files are always well-formed.  This enables extra assert()
-** statements that test conditions that are always true for well-formed databases.
+** Indicate that database files are always well-formed. This enables
+** extra assert() statements that test conditions that are always true
+** for well-formed databases.
 */
 static int SQLITE_TCLAPI database_never_corrupt(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -6711,9 +6712,10 @@ static int SQLITE_TCLAPI test_test_control(
     const char *zName;
     int i;
   } aVerb[] = {
-    { "SQLITE_TESTCTRL_LOCALTIME_FAULT", SQLITE_TESTCTRL_LOCALTIME_FAULT }, 
-    { "SQLITE_TESTCTRL_SORTER_MMAP",     SQLITE_TESTCTRL_SORTER_MMAP     }, 
-    { "SQLITE_TESTCTRL_IMPOSTER",        SQLITE_TESTCTRL_IMPOSTER        },
+    { "SQLITE_TESTCTRL_LOCALTIME_FAULT",    SQLITE_TESTCTRL_LOCALTIME_FAULT }, 
+    { "SQLITE_TESTCTRL_SORTER_MMAP",        SQLITE_TESTCTRL_SORTER_MMAP     }, 
+    { "SQLITE_TESTCTRL_IMPOSTER",           SQLITE_TESTCTRL_IMPOSTER        },
+    { "SQLITE_TESTCTRL_INTERNAL_FUNCTIONS", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS},
   };
   int iVerb;
   int iFlag;
@@ -6731,6 +6733,7 @@ static int SQLITE_TCLAPI test_test_control(
 
   iFlag = aVerb[iVerb].i;
   switch( iFlag ){
+    case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
     case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
       int val;
       if( objc!=3 ){
@@ -6738,7 +6741,7 @@ static int SQLITE_TCLAPI test_test_control(
         return TCL_ERROR;
       }
       if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
-      sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, val);
+      sqlite3_test_control(iFlag, val);
       break;
     }
 
