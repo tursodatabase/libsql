@@ -553,6 +553,7 @@ do_execsql_test 13.1.3 {
   SELECT sql FROM sqlite_master WHERE name='x1i';
 } {{CREATE INDEX x1i ON x1(i)}}
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 13.1.4 {
   PRAGMA writable_schema = 1;
   UPDATE sqlite_master SET sql = 'CREATE INDEX x1i ON x1(j)' WHERE name='x1i';

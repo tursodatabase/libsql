@@ -97,4 +97,3 @@ do_test 1.8 {
 } {1 SQLITE_ERROR_SNAPSHOT}
 
 finish_test
-

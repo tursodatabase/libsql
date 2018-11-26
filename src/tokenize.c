@@ -545,6 +545,73 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
   return i;
 }
 
+#ifdef SQLITE_ENABLE_NORMALIZE
+/*
+** Return the length (in bytes) of the token that begins at z[0].
+** Store the token type in *tokenType before returning.  If flags has
+** SQLITE_TOKEN_NORMALIZE flag enabled, use the identifier token type
+** for keywords.  Add SQLITE_TOKEN_QUOTED to flags if the token was
+** actually a quoted identifier.  Add SQLITE_TOKEN_KEYWORD to flags
+** if the token was recognized as a keyword; this is useful when the
+** SQLITE_TOKEN_NORMALIZE flag is used, because it enables the caller
+** to differentiate between a keyword being treated as an identifier
+** (for normalization purposes) and an actual identifier.
+*/
+int sqlite3GetTokenNormalized(
+  const unsigned char *z,
+  int *tokenType,
+  int *flags
+){
+  int n;
+  unsigned char iClass = aiClass[*z];
+  if( iClass==CC_KYWD ){
+    int i;
+    for(i=1; aiClass[z[i]]<=CC_KYWD; i++){}
+    if( IdChar(z[i]) ){
+      /* This token started out using characters that can appear in keywords,
+      ** but z[i] is a character not allowed within keywords, so this must
+      ** be an identifier instead */
+      i++;
+      while( IdChar(z[i]) ){ i++; }
+      *tokenType = TK_ID;
+      return i;
+    }
+    *tokenType = TK_ID;
+    n = keywordCode((char*)z, i, tokenType);
+    /* If the token is no longer considered to be an identifier, then it is a
+    ** keyword of some kind.  Make the token back into an identifier and then
+    ** set the SQLITE_TOKEN_KEYWORD flag.  Several non-identifier tokens are
+    ** used verbatim, including IN, IS, NOT, and NULL. */
+    switch( *tokenType ){
+      case TK_ID: {
+        /* do nothing, handled by caller */
+        break;
+      }
+      case TK_IN:
+      case TK_IS:
+      case TK_NOT:
+      case TK_NULL: {
+        *flags |= SQLITE_TOKEN_KEYWORD;
+        break;
+      }
+      default: {
+        *tokenType = TK_ID;
+        *flags |= SQLITE_TOKEN_KEYWORD;
+        break;
+      }
+    }
+  }else{
+    n = sqlite3GetToken(z, tokenType);
+    /* If the token is considered to be an identifier and the character class
+    ** of the first character is a quote, set the SQLITE_TOKEN_QUOTED flag. */
+    if( *tokenType==TK_ID && (iClass==CC_QUOTE || iClass==CC_QUOTE2) ){
+      *flags |= SQLITE_TOKEN_QUOTED;
+    }
+  }
+  return n;
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */
+
 /*
 ** Run the parser on the given SQL string.  The parser structure is
 ** passed in.  An SQLITE_ status code is returned.  If an error occurs

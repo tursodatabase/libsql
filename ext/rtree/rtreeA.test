@@ -36,6 +36,7 @@ proc populate_t1 {} {
     execsql { INSERT INTO t1 VALUES($i, $i, $x2, $i, $y2) }
   }
   execsql COMMIT
+  sqlite3_db_config db DEFENSIVE 0
 }
 
 proc truncate_node {nodeno nTrunc} {
@@ -246,6 +247,7 @@ do_execsql_test rtreeA-6.2 {
 create_t1
 populate_t1
 sqlite3 db test.db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test rtreeA-7.100 { 
   UPDATE t1_node SET data=x'' WHERE rowid=1;
 } {}
@@ -258,4 +260,3 @@ do_test rtreeA-7.120 {
 
 
 finish_test
-

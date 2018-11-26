@@ -1296,25 +1296,26 @@ static int zipfileBestIndex(
   sqlite3_index_info *pIdxInfo
 ){
   int i;
+  int idx = -1;
+  int unusable = 0;
 
   for(i=0; i<pIdxInfo->nConstraint; i++){
     const struct sqlite3_index_constraint *pCons = &pIdxInfo->aConstraint[i];
-    if( pCons->usable==0 ) continue;
-    if( pCons->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     if( pCons->iColumn!=ZIPFILE_F_COLUMN_IDX ) continue;
-    break;
+    if( pCons->usable==0 ){
+      unusable = 1;
+    }else if( pCons->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      idx = i;
+    }
   }
-
-  if( i<pIdxInfo->nConstraint ){
-    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
-    pIdxInfo->aConstraintUsage[i].omit = 1;
+  if( idx>=0 ){
+    pIdxInfo->aConstraintUsage[idx].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[idx].omit = 1;
     pIdxInfo->estimatedCost = 1000.0;
     pIdxInfo->idxNum = 1;
-  }else{
-    pIdxInfo->estimatedCost = (double)(((sqlite3_int64)1) << 50);
-    pIdxInfo->idxNum = 0;
+  }else if( unusable ){
+    return SQLITE_CONSTRAINT;
   }
-
   return SQLITE_OK;
 }
 

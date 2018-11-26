@@ -160,6 +160,7 @@ ifcapable fts4_deferred {
   do_execsql_test 4.2 {
     SELECT quote(value) from t4_stat where id=0
   } {X'C03EC0B204C0A608'}
+  sqlite3_db_config db DEFENSIVE 0
   do_execsql_test 4.3 {
     UPDATE t4_stat SET value = X'C03EC0B204C0A60800' WHERE id=0;
   }

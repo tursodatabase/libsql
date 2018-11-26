@@ -420,6 +420,7 @@ if {[detail_is_none]} { set resc [row_to_col $resr] }
 do_execsql_test 8.1.1 { SELECT * FROM x1_r; } $resr
 do_execsql_test 8.1.2 { SELECT * FROM x1_c } $resc
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 8.2 {
   PRAGMA writable_schema = 1;
   UPDATE sqlite_master 
@@ -481,4 +482,3 @@ do_test 9.6 {
 
 
 finish_test
-

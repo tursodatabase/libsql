@@ -1473,7 +1473,8 @@ static sqlite3_module amatchModule = {
   0,                      /* xRename */
   0,                      /* xSavepoint */
   0,                      /* xRelease */
-  0                       /* xRollbackTo */
+  0,                      /* xRollbackTo */
+  0                       /* xShadowName */
 };
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

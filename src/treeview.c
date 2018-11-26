@@ -121,6 +121,42 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
   }
 }
 
+/*
+** Generate a human-readable description of a SrcList object.
+*/
+void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
+  int i;
+  for(i=0; i<pSrc->nSrc; i++){
+    const struct SrcList_item *pItem = &pSrc->a[i];
+    StrAccum x;
+    char zLine[100];
+    sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
+    sqlite3_str_appendf(&x, "{%d,*}", pItem->iCursor);
+    if( pItem->zDatabase ){
+      sqlite3_str_appendf(&x, " %s.%s", pItem->zDatabase, pItem->zName);
+    }else if( pItem->zName ){
+      sqlite3_str_appendf(&x, " %s", pItem->zName);
+    }
+    if( pItem->pTab ){
+      sqlite3_str_appendf(&x, " tabname=%Q", pItem->pTab->zName);
+    }
+    if( pItem->zAlias ){
+      sqlite3_str_appendf(&x, " (AS %s)", pItem->zAlias);
+    }
+    if( pItem->fg.jointype & JT_LEFT ){
+      sqlite3_str_appendf(&x, " LEFT-JOIN");
+    }
+    sqlite3StrAccumFinish(&x);
+    sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1); 
+    if( pItem->pSelect ){
+      sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
+    }
+    if( pItem->fg.isTabFunc ){
+      sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
+    }
+    sqlite3TreeViewPop(pView);
+  }
+}
 
 /*
 ** Generate a human-readable description of a Select object.
@@ -175,39 +211,9 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
     }
 #endif
     if( p->pSrc && p->pSrc->nSrc ){
-      int i;
       pView = sqlite3TreeViewPush(pView, (n--)>0);
       sqlite3TreeViewLine(pView, "FROM");
-      for(i=0; i<p->pSrc->nSrc; i++){
-        struct SrcList_item *pItem = &p->pSrc->a[i];
-        StrAccum x;
-        char zLine[100];
-        sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-        sqlite3_str_appendf(&x, "{%d,*}", pItem->iCursor);
-        if( pItem->zDatabase ){
-          sqlite3_str_appendf(&x, " %s.%s", pItem->zDatabase, pItem->zName);
-        }else if( pItem->zName ){
-          sqlite3_str_appendf(&x, " %s", pItem->zName);
-        }
-        if( pItem->pTab ){
-          sqlite3_str_appendf(&x, " tabname=%Q", pItem->pTab->zName);
-        }
-        if( pItem->zAlias ){
-          sqlite3_str_appendf(&x, " (AS %s)", pItem->zAlias);
-        }
-        if( pItem->fg.jointype & JT_LEFT ){
-          sqlite3_str_appendf(&x, " LEFT-JOIN");
-        }
-        sqlite3StrAccumFinish(&x);
-        sqlite3TreeViewItem(pView, zLine, i<p->pSrc->nSrc-1); 
-        if( pItem->pSelect ){
-          sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
-        }
-        if( pItem->fg.isTabFunc ){
-          sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
-        }
-        sqlite3TreeViewPop(pView);
-      }
+      sqlite3TreeViewSrcList(pView, p->pSrc);
       sqlite3TreeViewPop(pView);
     }
     if( p->pWhere ){

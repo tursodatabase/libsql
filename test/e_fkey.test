@@ -2797,12 +2797,14 @@ do_test e_fkey-61.2.1 {
 do_test e_fkey-61.2.2 {
   execsql {
     PRAGMA foreign_keys = OFF;
+    PRAGMA legacy_alter_table = ON;
     ALTER TABLE p RENAME TO parent;
     SELECT sql FROM sqlite_master WHERE name = 'c';
   }
 } {{CREATE TABLE c(b REFERENCES p(a))}}
 do_test e_fkey-61.2.3 {
   execsql { PRAGMA foreign_keys = ON }
+  execsql { PRAGMA legacy_alter_table = OFF }
 } {}
 
 do_test e_fkey-61.3.1 {

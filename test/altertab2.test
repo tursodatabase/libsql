@@ -41,6 +41,49 @@ ifcapable fts5 {
   } {hello world in tcl}
 }
 
+#-------------------------------------------------------------------------
+# Check that table names that appear in REFERENCES clauses are updated
+# when a table is renamed unless:
+#
+#   a) "PRAGMA legacy_alter_table" is true, and
+#   b) "PRAGMA foreign_keys" is false.
+#
+do_execsql_test 2.0 {
+  CREATE TABLE p1(a PRIMARY KEY, b);
+  CREATE TABLE c1(x REFERENCES p1);
+  CREATE TABLE c2(x, FOREIGN KEY (x) REFERENCES p1);
+  CREATE TABLE c3(x, FOREIGN KEY (x) REFERENCES p1(a));
+}
+
+do_execsql_test 2.1 {
+  ALTER TABLE p1 RENAME TO p2;
+  SELECT sql FROM sqlite_master WHERE name LIKE 'c%';
+} {
+  {CREATE TABLE c1(x REFERENCES "p2")}
+  {CREATE TABLE c2(x, FOREIGN KEY (x) REFERENCES "p2")}
+  {CREATE TABLE c3(x, FOREIGN KEY (x) REFERENCES "p2"(a))}
+}
+
+do_execsql_test 2.2 {
+  PRAGMA legacy_alter_table = 1;
+  ALTER TABLE p2 RENAME TO p3;
+  SELECT sql FROM sqlite_master WHERE name LIKE 'c%';
+} {
+  {CREATE TABLE c1(x REFERENCES "p2")}
+  {CREATE TABLE c2(x, FOREIGN KEY (x) REFERENCES "p2")}
+  {CREATE TABLE c3(x, FOREIGN KEY (x) REFERENCES "p2"(a))}
+}
+
+do_execsql_test 2.3 {
+  ALTER TABLE p3 RENAME TO p2;
+  PRAGMA foreign_keys = 1;
+  ALTER TABLE p2 RENAME TO p3;
+  SELECT sql FROM sqlite_master WHERE name LIKE 'c%';
+} {
+  {CREATE TABLE c1(x REFERENCES "p3")}
+  {CREATE TABLE c2(x, FOREIGN KEY (x) REFERENCES "p3")}
+  {CREATE TABLE c3(x, FOREIGN KEY (x) REFERENCES "p3"(a))}
+}
+
 
 finish_test
-

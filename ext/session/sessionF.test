@@ -292,4 +292,3 @@ foreach {tn setup1 sql1 setup2 sql2 result} {
 
 
 finish_test
-

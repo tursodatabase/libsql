@@ -278,6 +278,7 @@ do_matchinfo_test 4.3.6 t5 {t5 MATCH 'a OR b'}      { s {1 2 1 1} }
 do_execsql_test 4.4.0.1 { INSERT INTO t5(t5) VALUES('optimize') }
 
 ifcapable fts4_deferred {
+  sqlite3_db_config db DEFENSIVE 0
   do_execsql_test 4.4.0.2 {
     UPDATE t5_segments 
     SET block = zeroblob(length(block)) 
@@ -339,6 +340,7 @@ do_execsql_test 6.1 {
   SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to';
 } {{0 0 20 2 0 0 27 2}}
 
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test 6.2 {
   UPDATE t9_content SET c0content = 'this record is used to'; 
   SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to';
@@ -392,6 +394,7 @@ do_execsql_test 8.3 {
 } {{204 1 3 3 0} {204 1 3 3 0} {204 1 3 3 0}}
 
 # Corruption related tests.
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test  8.4.1.1 { UPDATE t11_stat SET value = X'0000'; }
 do_catchsql_test 8.5.1.2 {
   SELECT mit(matchinfo(t11, 'nxa')) FROM t11 WHERE t11 MATCH 'a*'

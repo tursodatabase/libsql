@@ -546,4 +546,15 @@ do_catchsql_test 20.1 {
   SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
 } {0 1}
 
+# 2018-11-03: Ticket https://www.sqlite.org/src/info/1a84668dcfdebaf1
+# Assertion fault when doing row-value operations on a primary key
+# containing duplicate columns.
+#
+do_execsql_test 21.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,PRIMARY KEY(b,b));
+  INSERT INTO t1 VALUES(1,2),(3,4),(5,6);
+  SELECT * FROM t1 WHERE (a,b) IN (VALUES(1,2));  
+} {1 2}
+
 finish_test

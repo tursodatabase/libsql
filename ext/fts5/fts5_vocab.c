@@ -431,6 +431,8 @@ static int fts5VocabInstanceNext(Fts5VocabCursor *pCsr){
   i64 *pp = &pCsr->iInstPos;
   int *po = &pCsr->iInstOff;
   
+  assert( sqlite3Fts5IterEof(pIter)==0 );
+  assert( pCsr->bEof==0 );
   while( eDetail==FTS5_DETAIL_NONE
       || sqlite3Fts5PoslistNext64(pIter->pData, pIter->nData, po, pp) 
   ){
@@ -440,7 +442,7 @@ static int fts5VocabInstanceNext(Fts5VocabCursor *pCsr){
     rc = sqlite3Fts5IterNextScan(pCsr->pIter);
     if( rc==SQLITE_OK ){
       rc = fts5VocabInstanceNewTerm(pCsr);
-      if( eDetail==FTS5_DETAIL_NONE ) break;
+      if( pCsr->bEof || eDetail==FTS5_DETAIL_NONE ) break;
     }
     if( rc ){
       pCsr->bEof = 1;
@@ -755,10 +757,9 @@ int sqlite3Fts5VocabInit(Fts5Global *pGlobal, sqlite3 *db){
     /* xSavepoint    */ 0,
     /* xRelease      */ 0,
     /* xRollbackTo   */ 0,
+    /* xShadowName   */ 0
   };
   void *p = (void*)pGlobal;
 
   return sqlite3_create_module_v2(db, "fts5vocab", &fts5Vocab, p, 0);
 }
-
-

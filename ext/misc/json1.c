@@ -1994,6 +1994,9 @@ static int jsonEachConnect(
 #define JEACH_PARENT  5
 #define JEACH_FULLKEY 6
 #define JEACH_PATH    7
+/* The xBestIndex method assumes that the JSON and ROOT columns are
+** the last two columns in the table.  Should this ever changes, be
+** sure to update the xBestIndex method. */
 #define JEACH_JSON    8
 #define JEACH_ROOT    9
 
@@ -2251,35 +2254,54 @@ static int jsonEachBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
-  int i;
-  int jsonIdx = -1;
-  int rootIdx = -1;
+  int i;                     /* Loop counter or computed array index */
+  int aIdx[2];               /* Index of constraints for JSON and ROOT */
+  int unusableMask = 0;      /* Mask of unusable JSON and ROOT constraints */
+  int idxMask = 0;           /* Mask of usable == constraints JSON and ROOT */
   const struct sqlite3_index_constraint *pConstraint;
 
+  /* This implementation assumes that JSON and ROOT are the last two
+  ** columns in the table */
+  assert( JEACH_ROOT == JEACH_JSON+1 );
   UNUSED_PARAM(tab);
+  aIdx[0] = aIdx[1] = -1;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
-    if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    switch( pConstraint->iColumn ){
-      case JEACH_JSON:   jsonIdx = i;    break;
-      case JEACH_ROOT:   rootIdx = i;    break;
-      default:           /* no-op */     break;
+    int iCol;
+    int iMask;
+    if( pConstraint->iColumn < JEACH_JSON ) continue;
+    iCol = pConstraint->iColumn - JEACH_JSON;
+    assert( iCol==0 || iCol==1 );
+    iMask = 1 << iCol;
+    if( pConstraint->usable==0 ){
+      unusableMask |= iMask;
+    }else if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      aIdx[iCol] = i;
+      idxMask |= iMask;
     }
   }
-  if( jsonIdx<0 ){
+  if( (unusableMask & ~idxMask)!=0 ){
+    /* If there are any unusable constraints on JSON or ROOT, then reject
+    ** this entire plan */
+    return SQLITE_CONSTRAINT;
+  }
+  if( aIdx[0]<0 ){
+    /* No JSON input.  Leave estimatedCost at the huge value that it was
+    ** initialized to to discourage the query planner from selecting this
+    ** plan. */
     pIdxInfo->idxNum = 0;
-    pIdxInfo->estimatedCost = 1e99;
   }else{
     pIdxInfo->estimatedCost = 1.0;
-    pIdxInfo->aConstraintUsage[jsonIdx].argvIndex = 1;
-    pIdxInfo->aConstraintUsage[jsonIdx].omit = 1;
-    if( rootIdx<0 ){
-      pIdxInfo->idxNum = 1;
+    i = aIdx[0];
+    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[i].omit = 1;
+    if( aIdx[1]<0 ){
+      pIdxInfo->idxNum = 1;  /* Only JSON supplied.  Plan 1 */
     }else{
-      pIdxInfo->aConstraintUsage[rootIdx].argvIndex = 2;
-      pIdxInfo->aConstraintUsage[rootIdx].omit = 1;
-      pIdxInfo->idxNum = 3;
+      i = aIdx[1];
+      pIdxInfo->aConstraintUsage[i].argvIndex = 2;
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+      pIdxInfo->idxNum = 3;  /* Both JSON and ROOT are supplied.  Plan 3 */
     }
   }
   return SQLITE_OK;
@@ -2388,7 +2410,8 @@ static sqlite3_module jsonEachModule = {
   0,                         /* xRename */
   0,                         /* xSavepoint */
   0,                         /* xRelease */
-  0                          /* xRollbackTo */
+  0,                         /* xRollbackTo */
+  0                          /* xShadowName */
 };
 
 /* The methods of the json_tree virtual table. */
@@ -2415,7 +2438,8 @@ static sqlite3_module jsonTreeModule = {
   0,                         /* xRename */
   0,                         /* xSavepoint */
   0,                         /* xRelease */
-  0                          /* xRollbackTo */
+  0,                         /* xRollbackTo */
+  0                          /* xShadowName */
 };
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 

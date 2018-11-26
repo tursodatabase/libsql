@@ -677,6 +677,7 @@ write_test 10.1.2 ta_content {
   INSERT INTO ta VALUES('During a summer vacation in 1790') }
 write_test 10.1.3 ta_content {
   INSERT INTO ta VALUES('Wordsworth went on a walking tour') }
+sqlite3_db_config db DEFENSIVE 0
 write_test 10.1.4 ta_content { DELETE FROM ta_content WHERE rowid = 2 }
 read_test  10.1.5 {
   SELECT * FROM ta WHERE ta MATCH 'summer'

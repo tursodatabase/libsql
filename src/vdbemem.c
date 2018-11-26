@@ -377,7 +377,8 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
     assert( fg & MEM_Real );
     sqlite3_snprintf(nByte, pMem->z, "%!.15g", pMem->u.r);
   }
-  pMem->n = sqlite3Strlen30(pMem->z);
+  assert( pMem->z!=0 );
+  pMem->n = sqlite3Strlen30NN(pMem->z);
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
   if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real);

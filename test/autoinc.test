@@ -697,6 +697,7 @@ do_test autoinc-12.1 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
     CREATE TABLE fake_sequence(name TEXT PRIMARY KEY,seq) WITHOUT ROWID;
     PRAGMA writable_schema=on;
@@ -718,6 +719,7 @@ do_test autoinc-12.2 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
    INSERT INTO t1(b) VALUES('one');
@@ -744,6 +746,7 @@ do_test autoinc-12.3 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
    INSERT INTO t1(b) VALUES('one');
@@ -772,6 +775,7 @@ do_test autoinc-12.4 {
                      WHERE name='sqlite_sequence'}]
   set root2 [db one {SELECT rootpage FROM sqlite_master
                      WHERE name='fake'}]
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
    PRAGMA writable_schema=on;
    UPDATE sqlite_master SET rootpage=$root2
@@ -791,6 +795,7 @@ do_test autoinc-12.5 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
     CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
     INSERT INTO t1(b) VALUES('one');
@@ -810,6 +815,7 @@ do_test autoinc-12.6 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
     CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
     INSERT INTO t1(b) VALUES('one');
@@ -831,6 +837,7 @@ do_test autoinc-12.7 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
     CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b TEXT);
     INSERT INTO t1(b) VALUES('one');

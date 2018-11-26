@@ -625,6 +625,12 @@ do_test index-18.1 {
     CREATE TABLE sqlite_t1(a, b, c);
   }
 } {1 {object name reserved for internal use: sqlite_t1}}
+do_test index-18.1.2 {
+  catchsql {
+    CREATE TABLE sqlite_t1(a, b, c);
+  }
+} {1 {object name reserved for internal use: sqlite_t1}}
+sqlite3_db_config db DEFENSIVE 0
 do_test index-18.2 {
   catchsql {
     CREATE INDEX sqlite_i1 ON t7(c);
