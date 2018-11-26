@@ -825,6 +825,30 @@ static const unsigned char aJournalMagic[] = {
 */
 #define isOpen(pFd) ((pFd)->pMethods!=0)
 
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+/*
+** Return true if page pgno can be read directly from the database file
+** by the b-tree layer. This is the case if:
+**
+**   * the database file is open,
+**   * there are no dirty pages in the cache, and
+**   * the desired page is not currently in the wal file.
+*/
+int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
+  if( pPager->fd->pMethods==0 ) return 0;
+  if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
+#ifndef SQLITE_OMIT_WAL
+  if( pPager->pWal ){
+    u32 iRead = 0;
+    int rc;
+    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
+    return (rc==SQLITE_OK && iRead==0);
+  }
+#endif
+  return 1;
+}
+#endif
+
 /*
 ** Return true if this pager uses a write-ahead log to read page pgno.
 ** Return false if the pager reads pgno directly from the database.

@@ -7677,6 +7677,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "byteorder",          SQLITE_TESTCTRL_BYTEORDER,     ""                   },
     /*{ "fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, ""                }, */
       { "imposter",           SQLITE_TESTCTRL_IMPOSTER,   "SCHEMA ON/OFF ROOTPAGE"},
+      { "internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, "BOOLEAN"       },
       { "localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,"BOOLEAN"           },
       { "never_corrupt",      SQLITE_TESTCTRL_NEVER_CORRUPT, "BOOLEAN"            },
       { "optimizations",      SQLITE_TESTCTRL_OPTIMIZATIONS, "DISABLE-MASK"       },
@@ -7771,6 +7772,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_ASSERT:
         case SQLITE_TESTCTRL_ALWAYS:
+        case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
           if( nArg==3 ){
             int opt = booleanValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);
@@ -8065,7 +8067,7 @@ static int line_is_command_terminator(const char *zLine){
 ** user-friendly, but it does seem to work.
 */
 #ifdef SQLITE_OMIT_COMPLETE
-int sqlite3_complete(const char *zSql){ return 1; }
+#define sqlite3_complete(x) 1
 #endif
 
 /*

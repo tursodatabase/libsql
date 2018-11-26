@@ -1031,9 +1031,11 @@ static sqlite3_index_info *allocateIndexInfo(
 ** method of the virtual table with the sqlite3_index_info object that
 ** comes in as the 3rd argument to this function.
 **
-** If an error occurs, pParse is populated with an error message and a
-** non-zero value is returned. Otherwise, 0 is returned and the output
-** part of the sqlite3_index_info structure is left populated.
+** If an error occurs, pParse is populated with an error message and an
+** appropriate error code is returned.  A return of SQLITE_CONSTRAINT from
+** xBestIndex is not considered an error.  SQLITE_CONSTRAINT indicates that
+** the current configuration of "unusable" flags in sqlite3_index_info can
+** not result in a valid plan.
 **
 ** Whether or not an error is returned, it is the responsibility of the
 ** caller to eventually free p->idxStr if p->needToFreeIdxStr indicates
@@ -1047,7 +1049,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   rc = pVtab->pModule->xBestIndex(pVtab, p);
   TRACE_IDX_OUTPUTS(p);
 
-  if( rc!=SQLITE_OK ){
+  if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT ){
     if( rc==SQLITE_NOMEM ){
       sqlite3OomFault(pParse->db);
     }else if( !pVtab->zErrMsg ){
@@ -1058,19 +1060,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   }
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = 0;
-
-#if 0
-  /* This error is now caught by the caller.
-  ** Search for "xBestIndex malfunction" below */
-  for(i=0; i<p->nConstraint; i++){
-    if( !p->aConstraint[i].usable && p->aConstraintUsage[i].argvIndex>0 ){
-      sqlite3ErrorMsg(pParse, 
-          "table %s: xBestIndex returned an invalid plan", pTab->zName);
-    }
-  }
-#endif
-
-  return pParse->nErr;
+  return rc;
 }
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
@@ -3143,7 +3133,17 @@ static int whereLoopAddVirtualOne(
 
   /* Invoke the virtual table xBestIndex() method */
   rc = vtabBestIndex(pParse, pSrc->pTab, pIdxInfo);
-  if( rc ) return rc;
+  if( rc ){
+    if( rc==SQLITE_CONSTRAINT ){
+      /* If the xBestIndex method returns SQLITE_CONSTRAINT, that means
+      ** that the particular combination of parameters provided is unusable.
+      ** Make no entries in the loop table.
+      */
+      WHERETRACE(0xffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      return SQLITE_OK;
+    }
+    return rc;
+  }
 
   mxTerm = -1;
   assert( pNew->nLSlot>=nConstraint );

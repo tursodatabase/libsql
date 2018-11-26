@@ -474,6 +474,7 @@ TESTSRC2 = \
   $(TOP)/src/dbstat.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
+  $(TOP)/src/global.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/wal.c \
   $(TOP)/src/main.c \
@@ -690,7 +691,7 @@ DBFUZZ2_OPTS = \
   -DSQLITE_EANBLE_FTS5
 
 dbfuzz2:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	clang-6.0 -I. -g -O0 -fsanitize=fuzzer,undefined -o dbfuzz2 \
+	clang-6.0 -I. -g -O0 -fsanitize=fuzzer,undefined,address -o dbfuzz2 \
 		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir

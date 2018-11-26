@@ -19,9 +19,9 @@
 **    CREATE VIRTUAL TABLE temp.csv USING csv(filename=FILENAME);
 **    SELECT * FROM csv;
 **
-** The columns are named "c1", "c2", "c3", ... by default.  But the
-** application can define its own CREATE TABLE statement as an additional
-** parameter.  For example:
+** The columns are named "c1", "c2", "c3", ... by default.  Or the
+** application can define its own CREATE TABLE statement using the
+** schema= parameter, like this:
 **
 **    CREATE VIRTUAL TABLE temp.csv2 USING csv(
 **       filename = "../http.log",
@@ -32,9 +32,9 @@
 ** the data= parameter.
 **
 ** If the columns=N parameter is supplied, then the CSV file is assumed to have
-** N columns.  If the columns parameter is omitted, the CSV file is opened
-** as soon as the virtual table is constructed and the first row of the CSV
-** is read in order to count the tables.
+** N columns.  If both the columns= and schema= parameters are omitted, then
+** the number and names of the columns is determined by the first line of
+** the CSV input.
 **
 ** Some extra debugging features (used for testing virtual tables) are available
 ** if this module is compiled with -DSQLITE_TEST.
@@ -436,6 +436,34 @@ static int csv_boolean(const char *z){
   return -1;
 }
 
+/* Check to see if the string is of the form:  "TAG = BOOLEAN" or just "TAG".
+** If it is, set *pValue to be the value of the boolean ("true" if there is
+** not "= BOOLEAN" component) and return non-zero.  If the input string
+** does not begin with TAG, return zero.
+*/
+static int csv_boolean_parameter(
+  const char *zTag,       /* Tag we are looking for */
+  int nTag,               /* Size of the tag in bytes */
+  const char *z,          /* Input parameter */
+  int *pValue             /* Write boolean value here */
+){
+  int b;
+  z = csv_skip_whitespace(z);
+  if( strncmp(zTag, z, nTag)!=0 ) return 0;
+  z = csv_skip_whitespace(z + nTag);
+  if( z[0]==0 ){
+    *pValue = 1;
+    return 1;
+  }
+  if( z[0]!='=' ) return 0;
+  z = csv_skip_whitespace(z+1);
+  b = csv_boolean(z);
+  if( b>=0 ){
+    *pValue = b;
+    return 1;
+  }
+  return 0;
+}
 
 /*
 ** Parameters:
@@ -469,6 +497,7 @@ static int csvtabConnect(
 #ifdef SQLITE_TEST
   int tstFlags = 0;          /* Value for testflags=N parameter */
 #endif
+  int b;                     /* Value of a boolean parameter */
   int nCol = -99;            /* Value of the columns= parameter */
   CsvReader sRdr;            /* A CSV file reader used to store an error
                              ** message and/or to count the number of columns */
@@ -493,21 +522,12 @@ static int csvtabConnect(
     if( j<sizeof(azParam)/sizeof(azParam[0]) ){
       if( sRdr.zErr[0] ) goto csvtab_connect_error;
     }else
-    if( (zValue = csv_parameter("header",6,z))!=0 ){
-      int x;
+    if( csv_boolean_parameter("header",6,z,&b) ){
       if( bHeader>=0 ){
         csv_errmsg(&sRdr, "more than one 'header' parameter");
         goto csvtab_connect_error;
       }
-      x = csv_boolean(zValue);
-      if( x==1 ){
-        bHeader = 1;
-      }else if( x==0 ){
-        bHeader = 0;
-      }else{
-        csv_errmsg(&sRdr, "unrecognized argument to 'header': %s", zValue);
-        goto csvtab_connect_error;
-      }
+      bHeader = b;
     }else
 #ifdef SQLITE_TEST
     if( (zValue = csv_parameter("testflags",9,z))!=0 ){
@@ -521,53 +541,94 @@ static int csvtabConnect(
       }
       nCol = atoi(zValue);
       if( nCol<=0 ){
-        csv_errmsg(&sRdr, "must have at least one column");
+        csv_errmsg(&sRdr, "column= value must be positive");
         goto csvtab_connect_error;
       }
     }else
     {
-      csv_errmsg(&sRdr, "unrecognized parameter '%s'", z);
+      csv_errmsg(&sRdr, "bad parameter: '%s'", z);
       goto csvtab_connect_error;
     }
   }
   if( (CSV_FILENAME==0)==(CSV_DATA==0) ){
-    csv_errmsg(&sRdr, "must either filename= or data= but not both");
+    csv_errmsg(&sRdr, "must specify either filename= or data= but not both");
     goto csvtab_connect_error;
   }
-  if( nCol<=0 && csv_reader_open(&sRdr, CSV_FILENAME, CSV_DATA) ){
+
+  if( (nCol<=0 || bHeader==1)
+   && csv_reader_open(&sRdr, CSV_FILENAME, CSV_DATA)
+  ){
     goto csvtab_connect_error;
   }
   pNew = sqlite3_malloc( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) goto csvtab_connect_oom;
   memset(pNew, 0, sizeof(*pNew));
-  if( nCol>0 ){
+  if( CSV_SCHEMA==0 ){
+    sqlite3_str *pStr = sqlite3_str_new(0);
+    char *zSep = "";
+    int iCol = 0;
+    sqlite3_str_appendf(pStr, "CREATE TABLE x(");
+    if( nCol<0 && bHeader<1 ){
+      nCol = 0;
+      do{
+        csv_read_one_field(&sRdr);
+        nCol++;
+      }while( sRdr.cTerm==',' );
+    }
+    if( nCol>0 && bHeader<1 ){
+      for(iCol=0; iCol<nCol; iCol++){
+        sqlite3_str_appendf(pStr, "%sc%d TEXT", zSep, iCol);
+        zSep = ",";
+      }
+    }else{
+      do{
+        char *z = csv_read_one_field(&sRdr);
+        if( (nCol>0 && iCol<nCol) || (nCol<0 && bHeader) ){
+          sqlite3_str_appendf(pStr,"%s\"%w\" TEXT", zSep, z);
+          zSep = ",";
+          iCol++;
+        }
+      }while( sRdr.cTerm==',' );
+      if( nCol<0 ){
+        nCol = iCol;
+      }else{
+        while( iCol<nCol ){
+          sqlite3_str_appendf(pStr,"%sc%d TEXT", zSep, ++iCol);
+          zSep = ",";
+        }
+      }
+    }
     pNew->nCol = nCol;
-  }else{
+    sqlite3_str_appendf(pStr, ")");
+    CSV_SCHEMA = sqlite3_str_finish(pStr);
+    if( CSV_SCHEMA==0 ) goto csvtab_connect_oom;
+  }else if( nCol<0 ){
     do{
       csv_read_one_field(&sRdr);
       pNew->nCol++;
     }while( sRdr.cTerm==',' );
+  }else{
+    pNew->nCol = nCol;
   }
   pNew->zFilename = CSV_FILENAME;  CSV_FILENAME = 0;
   pNew->zData = CSV_DATA;          CSV_DATA = 0;
 #ifdef SQLITE_TEST
   pNew->tstFlags = tstFlags;
 #endif
-  pNew->iStart = bHeader==1 ? ftell(sRdr.in) : 0;
-  csv_reader_reset(&sRdr);
-  if( CSV_SCHEMA==0 ){
-    char *zSep = "";
-    CSV_SCHEMA = sqlite3_mprintf("CREATE TABLE x(");
-    if( CSV_SCHEMA==0 ) goto csvtab_connect_oom;
-    for(i=0; i<pNew->nCol; i++){
-      CSV_SCHEMA = sqlite3_mprintf("%z%sc%d TEXT",CSV_SCHEMA, zSep, i);
-      zSep = ",";
-    }
-    CSV_SCHEMA = sqlite3_mprintf("%z);", CSV_SCHEMA);
+  if( bHeader!=1 ){
+    pNew->iStart = 0;
+  }else if( pNew->zData ){
+    pNew->iStart = (int)sRdr.iIn;
+  }else{
+    pNew->iStart = ftell(sRdr.in);
   }
+  csv_reader_reset(&sRdr);
   rc = sqlite3_declare_vtab(db, CSV_SCHEMA);
-  if( rc ) goto csvtab_connect_error;
+  if( rc ){
+    csv_errmsg(&sRdr, "bad schema: '%s' - %s", CSV_SCHEMA, sqlite3_errmsg(db));
+    goto csvtab_connect_error;
+  }
   for(i=0; i<sizeof(azPValue)/sizeof(azPValue[0]); i++){
     sqlite3_free(azPValue[i]);
   }

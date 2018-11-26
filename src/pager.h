@@ -193,6 +193,10 @@ int sqlite3PagerSharedLock(Pager *pPager);
 # define sqlite3PagerUseWal(x,y) 0
 #endif
 
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+  int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno);
+#endif
+
 #ifdef SQLITE_ENABLE_ZIPVFS
   int sqlite3PagerWalFramesize(Pager *pPager);
 #endif

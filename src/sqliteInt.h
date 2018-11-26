@@ -1699,8 +1699,9 @@ struct FuncDestructor {
                                     ** single query - might change over time */
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
-#define SQLITE_FUNC_WINDOW  0x10000 /* Built-in window-only function */
-#define SQLITE_FUNC_WINDOW_SIZE  0x20000  /* Requires partition size as arg. */
+#define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
+#define SQLITE_FUNC_WINDOW_SIZE 0x20000 /* Requires partition size as arg. */
+#define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1776,10 +1777,13 @@ struct FuncDestructor {
 #define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xFinal,0,#zName, {0}}
-
 #define WAGGREGATE(zName, nArg, arg, nc, xStep, xFinal, xValue, xInverse, f) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|f, \
    SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xValue,xInverse,#zName, {0}}
+#define INTERNAL_FUNCTION(zName, nArg, xFunc) \
+  {nArg, SQLITE_FUNC_INTERNAL|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
+   0, 0, xFunc, 0, 0, 0, #zName, {0} }
+
 
 /*
 ** All current savepoints are stored in a linked list starting at
@@ -3430,6 +3434,7 @@ struct Sqlite3Config {
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
 #endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
+  int bInternalFunctions;           /* Internal SQL functions are visible */
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
 };

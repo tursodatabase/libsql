@@ -1086,12 +1086,13 @@ void sqlite3Pragma(
     Table *pTab;
     pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
     if( pTab ){
+      int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       int i, k;
       int nHidden = 0;
       Column *pCol;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       pParse->nMem = 7;
-      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         int isHidden = IsHiddenColumn(pCol);
@@ -1152,6 +1153,7 @@ void sqlite3Pragma(
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
+      int iIdxDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
       int i;
       int mx;
       if( pPragma->iArg ){
@@ -1164,7 +1166,7 @@ void sqlite3Pragma(
         pParse->nMem = 3;
       }
       pTab = pIdx->pTable;
-      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3CodeVerifySchema(pParse, iIdxDb);
       assert( pParse->nMem<=pPragma->nPragCName );
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
@@ -1188,8 +1190,9 @@ void sqlite3Pragma(
     int i;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
+      int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       pParse->nMem = 5;
-      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
       for(pIdx=pTab->pIndex, i=0; pIdx; pIdx=pIdx->pNext, i++){
         const char *azOrigin[] = { "c", "u", "pk" };
         sqlite3VdbeMultiLoad(v, 1, "isisi",
@@ -1236,6 +1239,7 @@ void sqlite3Pragma(
     pParse->nMem = 2;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
+        if( p->funcFlags & SQLITE_FUNC_INTERNAL ) continue;
         sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
       }
     }
@@ -1277,9 +1281,10 @@ void sqlite3Pragma(
     if( pTab ){
       pFK = pTab->pFKey;
       if( pFK ){
+        int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
         int i = 0; 
         pParse->nMem = 8;
-        sqlite3CodeVerifySchema(pParse, iDb);
+        sqlite3CodeVerifySchema(pParse, iTabDb);
         while(pFK){
           int j;
           for(j=0; j<pFK->nCol; j++){
@@ -1324,9 +1329,9 @@ void sqlite3Pragma(
     pParse->nMem += 4;
     regKey = ++pParse->nMem;
     regRow = ++pParse->nMem;
-    sqlite3CodeVerifySchema(pParse, iDb);
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
+      int iTabDb;
       if( zRight ){
         pTab = sqlite3LocateTable(pParse, 0, zRight, zDb);
         k = 0;
@@ -1335,21 +1340,23 @@ void sqlite3Pragma(
         k = sqliteHashNext(k);
       }
       if( pTab==0 || pTab->pFKey==0 ) continue;
-      sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+      iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
+      sqlite3TableLock(pParse, iTabDb, pTab->tnum, 0, pTab->zName);
       if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
-      sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
+      sqlite3OpenTable(pParse, 0, iTabDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         if( pParent==0 ) continue;
         pIdx = 0;
-        sqlite3TableLock(pParse, iDb, pParent->tnum, 0, pParent->zName);
+        sqlite3TableLock(pParse, iTabDb, pParent->tnum, 0, pParent->zName);
         x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, 0);
         if( x==0 ){
           if( pIdx==0 ){
-            sqlite3OpenTable(pParse, i, iDb, pParent, OP_OpenRead);
+            sqlite3OpenTable(pParse, i, iTabDb, pParent, OP_OpenRead);
           }else{
-            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iDb);
+            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iTabDb);
             sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           }
         }else{
