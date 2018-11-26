@@ -120,7 +120,7 @@ set pragma_def {
 
   NAME: writable_schema
   TYPE: FLAG
-  ARG:  SQLITE_WriteSchema
+  ARG:  SQLITE_WriteSchema|SQLITE_NoSchemaError
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
@@ -220,7 +220,15 @@ set pragma_def {
 
   NAME: table_info
   FLAG: NeedSchema Result1 SchemaOpt
+  ARG:  0
   COLS: cid name type notnull dflt_value pk
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
+  NAME: table_xinfo
+  TYPE: TABLE_INFO
+  FLAG: NeedSchema Result1 SchemaOpt
+  ARG:  1
+  COLS: cid name type notnull dflt_value pk hidden
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: stats
@@ -359,16 +367,33 @@ set pragma_def {
   IF:   defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 
   NAME: key
+  TYPE: KEY
+  ARG:  0
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: rekey
+  TYPE: KEY
+  ARG:  1
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexkey
+  TYPE: HEXKEY
+  ARG:  2
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexrekey
   TYPE: HEXKEY
+  ARG:  3
+  IF:   defined(SQLITE_HAS_CODEC)
+
+  NAME: textkey
+  TYPE: KEY
+  ARG:  4
+  IF:   defined(SQLITE_HAS_CODEC)
+
+  NAME: textrekey
+  TYPE: KEY
+  ARG:  5
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: activate_extensions
@@ -410,20 +435,20 @@ set cols {}
 set cols_list {}
 set arg 0
 proc record_one {} {
-  global name type if arg allbyname typebyif flags cols allcols
+  global name type if arg allbyname typebyif flags cols all_cols
   global cols_list colUsedBy
   if {$name==""} return
   if {$cols!=""} {
-    if {![info exists allcols($cols)]} {
+    if {![info exists all_cols($cols)]} {
+      set all_cols($cols) 1
       lappend cols_list $cols
-      set allcols($cols) [llength $cols_list]
     }
-    set cx $allcols($cols)
+    set cx $cols
     lappend colUsedBy($cols) $name
   } else {
     set cx 0
   }
-  set allbyname($name) [list $type $arg $if $flags $cx]
+  set allbyname($name) [list $type $arg $if $flags $cols]
   set name {}
   set type {}
   set if {}
@@ -505,6 +530,13 @@ foreach f [lsort [array names allflags]] {
   set fv [expr {$fv*2}]
 }
 
+# Sort the column lists so that longer column lists occur first
+#
+proc colscmp {a b} {
+  return [expr {[llength $b] - [llength $a]}]
+}
+set cols_list [lsort -command colscmp $cols_list]
+
 # Generate the array of column names used by pragmas that act like
 # queries.
 #
@@ -513,10 +545,23 @@ puts $fd "** or that return single-column results where the name of the"
 puts $fd "** result column is different from the name of the pragma\n*/"
 puts $fd "static const char *const pragCName\[\] = {"
 set offset 0
+set allcollist {}
 foreach cols $cols_list {
-  set cols_offset($allcols($cols)) $offset
+  set n [llength $cols]
+  set limit [expr {[llength $allcollist] - $n}]
+  for {set i 0} {$i<$limit} {incr i} {
+    set sublist [lrange $allcollist $i [expr {$i+$n-1}]]
+    if {$sublist==$cols} {
+      puts $fd [format "%27s/* $colUsedBy($cols) reuses $i */" ""]
+      set cols_offset($cols) $i
+      break
+    }
+  }
+  if {$i<$limit} continue
+  set cols_offset($cols) $offset
   set ub " /* Used by: $colUsedBy($cols) */"
   foreach c $cols {
+    lappend allcollist $c
     puts $fd [format "  /* %3d */ %-14s%s" $offset \"$c\", $ub]
     set ub ""
     incr offset
@@ -534,7 +579,7 @@ puts $fd "  u8 mPragFlg;             /* Zero or more PragFlg_XXX values */"
 puts $fd {  u8 iPragCName;           /* Start of column names in pragCName[] */}
 puts $fd "  u8 nPragCName;          \
 /* Num of col names. 0 means use pragma name */"
-puts $fd "  u32 iArg;                /* Extra argument */"
+puts $fd "  u64 iArg;                /* Extra argument */"
 puts $fd "\175 PragmaName;"
 puts $fd "static const PragmaName aPragmaName\[\] = \173"
 
@@ -542,12 +587,12 @@ set current_if {}
 set spacer [format {    %26s } {}]
 foreach name $allnames {
   foreach {type arg if flag cx} $allbyname($name) break
-  if {$cx==0} {
+  if {$cx==0 || $cx==""} {
     set cy 0
     set nx 0
   } else {
     set cy $cols_offset($cx)
-    set nx [llength [lindex $cols_list [expr {$cx-1}]]]
+    set nx [llength $cx]
   }
   if {$if!=$current_if} {
     if {$current_if!=""} {

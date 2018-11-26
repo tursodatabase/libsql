@@ -835,6 +835,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
         { SQLITE_DBCONFIG_TRIGGER_EQP,           SQLITE_TriggerEQP     },
         { SQLITE_DBCONFIG_RESET_DATABASE,        SQLITE_ResetDatabase  },
+        { SQLITE_DBCONFIG_DEFENSIVE,             SQLITE_Defensive      },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -3061,6 +3062,9 @@ static int openDatabase(
 #endif
 #if defined(SQLITE_ENABLE_QPSG)
                  | SQLITE_EnableQPSG
+#endif
+#if defined(SQLITE_DEFAULT_DEFENSIVE)
+                 | SQLITE_Defensive
 #endif
       ;
   sqlite3HashInit(&db->aCollSeq);

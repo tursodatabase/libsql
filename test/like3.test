@@ -130,11 +130,13 @@ do_eqp_test like3-5.101 {
 do_execsql_test like3-5.110 {
   SELECT x FROM t5a WHERE x LIKE '/a%';
 } {/abc}
+ifcapable !icu {
 do_eqp_test like3-5.111 {
   SELECT x FROM t5a WHERE x LIKE '/a%';
 } {
   QUERY PLAN
   `--SEARCH TABLE t5a USING COVERING INDEX sqlite_autoindex_t5a_1 (x>? AND x<?)
+}
 }
 do_execsql_test like3-5.120 {
   SELECT x FROM t5a WHERE x LIKE '^12%' ESCAPE '^';

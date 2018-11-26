@@ -181,4 +181,3 @@ sqlite3_snapshot_free $::snap1
 sqlite3_snapshot_free $::snap2
 
 finish_test
-

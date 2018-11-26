@@ -474,4 +474,3 @@ foreach {tn cmd rebasable} {
   catch { R delete }
 }
 finish_test
-

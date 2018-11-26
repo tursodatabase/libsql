@@ -89,6 +89,7 @@ do_test fts3cov-2.1 {
 } {03}
 
 # Test the "missing entry" case:
+sqlite3_db_config db DEFENSIVE 0
 do_test fts3cov-2.2 {
   set root [db one {SELECT root FROM t1_segdir}]
   read_fts3varint [string range $root 1 end] left_child
@@ -405,6 +406,7 @@ do_execsql_test 15.1 {
 
 # Test a corruption case.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 16.1 {
   CREATE VIRTUAL TABLE t16 USING fts4;
   INSERT INTO t16 VALUES('theoretical work to examine the relationship');

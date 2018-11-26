@@ -21,6 +21,7 @@ ifcapable !vtab||!compound {
   return
 }
 
+sqlite3_db_config db DEFENSIVE 0
 do_test 100 {
   execsql {
     PRAGMA auto_vacuum=0;

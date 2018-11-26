@@ -247,4 +247,3 @@ do_execsql_test 3.5 { SELECT rowid, * FROM t4 WHERE rowid!=1 OR x!='245'; } {}
 
 
 finish_test
-

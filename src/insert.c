@@ -146,7 +146,8 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     }while( i>=0 && zColAff[i]==SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
-  i = sqlite3Strlen30(zColAff);
+  assert( zColAff!=0 );
+  i = sqlite3Strlen30NN(zColAff);
   if( i ){
     if( iReg ){
       sqlite3VdbeAddOp4(v, OP_Affinity, iReg, i, 0, zColAff, i);

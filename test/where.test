@@ -1413,4 +1413,17 @@ do_execsql_test where-21.1 {
   4 0 1
 }
 
+# 2018-11-05: ticket [https://www.sqlite.org/src/tktview/65eb38f6e46de8c75e188a]
+# Incorrect result in LEFT JOIN when STAT4 is enabled.
+#
+sqlite3 db :memory:
+do_execsql_test where-22.1 {
+  CREATE TABLE t1(a INT);
+  CREATE INDEX t1a ON t1(a);
+  INSERT INTO t1(a) VALUES(NULL),(NULL),(42),(NULL),(NULL);
+  CREATE TABLE t2(dummy INT);
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON a IS NOT NULL;
+} {5}
+
+
 finish_test

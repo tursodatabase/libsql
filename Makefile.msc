@@ -1623,7 +1623,8 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata3.db \
   $(TOP)\test\fuzzdata4.db \
   $(TOP)\test\fuzzdata5.db \
-  $(TOP)\test\fuzzdata6.db
+  $(TOP)\test\fuzzdata6.db \
+  $(TOP)\test\fuzzdata7.db
 # <</mark>>
 
 # Additional compiler options for the shell.  These are only effective
@@ -1633,6 +1634,7 @@ FUZZDATA = \
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_DESERIALIZE=1
 !ENDIF
 
 # <<mark>>
@@ -2335,6 +2337,10 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
+coretestprogs:	$(TESTPROGS)
+
+testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
+
 fulltest:	$(TESTPROGS) fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
@@ -2441,6 +2447,11 @@ changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		-DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 \
 		$(TOP)\ext\session\changeset.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+changesetfuzz.exe:	$(TOP)\ext\session\changesetfuzz.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 \
+		$(TOP)\ext\session\changesetfuzz.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \

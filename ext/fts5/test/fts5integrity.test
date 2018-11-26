@@ -71,6 +71,7 @@ do_execsql_test 4.1 {
   INSERT INTO aa(aa) VALUES('integrity-check'); 
 }
 
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test 4.2 { 
   BEGIN;
     UPDATE aa_docsize SET sz = X'44' WHERE rowid = 3;

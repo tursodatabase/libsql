@@ -295,6 +295,21 @@ static FuncDef *functionSearch(
   }
   return 0;
 }
+#ifdef SQLITE_ENABLE_NORMALIZE
+FuncDef *sqlite3FunctionSearchN(
+  int h,               /* Hash of the name */
+  const char *zFunc,   /* Name of function */
+  int nFunc            /* Length of the name */
+){
+  FuncDef *p;
+  for(p=sqlite3BuiltinFunctions.a[h]; p; p=p->u.pHash){
+    if( sqlite3StrNICmp(p->zName, zFunc, nFunc)==0 ){
+      return p;
+    }
+  }
+  return 0;
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */
 
 /*
 ** Insert a new FuncDef into a FuncDefHash hash table.
@@ -308,7 +323,7 @@ void sqlite3InsertBuiltinFuncs(
     FuncDef *pOther;
     const char *zName = aDef[i].zName;
     int nName = sqlite3Strlen30(zName);
-    int h = (zName[0] + nName) % SQLITE_FUNC_HASH_SZ;
+    int h = SQLITE_FUNC_HASH(zName[0], nName);
     assert( zName[0]>='a' && zName[0]<='z' );
     pOther = functionSearch(h, zName);
     if( pOther ){
@@ -387,7 +402,7 @@ FuncDef *sqlite3FindFunction(
   */ 
   if( !createFlag && (pBest==0 || (db->mDbFlags & DBFLAG_PreferBuiltin)!=0) ){
     bestScore = 0;
-    h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % SQLITE_FUNC_HASH_SZ;
+    h = SQLITE_FUNC_HASH(sqlite3UpperToLower[(u8)zName[0]], nName);
     p = functionSearch(h, zName);
     while( p ){
       int score = matchQuality(p, nArg, enc);

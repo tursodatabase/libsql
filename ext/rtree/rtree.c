@@ -3325,8 +3325,24 @@ static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
   return rc;
 }
 
+
+/*
+** Return true if zName is the extension on one of the shadow tables used
+** by this module.
+*/
+static int rtreeShadowName(const char *zName){
+  static const char *azName[] = {
+    "node", "parent", "rowid"
+  };
+  unsigned int i;
+  for(i=0; i<sizeof(azName)/sizeof(azName[0]); i++){
+    if( sqlite3_stricmp(zName, azName[i])==0 ) return 1;
+  }
+  return 0;
+}
+
 static sqlite3_module rtreeModule = {
-  2,                          /* iVersion */
+  3,                          /* iVersion */
   rtreeCreate,                /* xCreate - create a table */
   rtreeConnect,               /* xConnect - connect to an existing table */
   rtreeBestIndex,             /* xBestIndex - Determine search strategy */
@@ -3349,6 +3365,7 @@ static sqlite3_module rtreeModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
+  rtreeShadowName             /* xShadowName */
 };
 
 static int rtreeSqlInit(

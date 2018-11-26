@@ -106,13 +106,23 @@ typedef float GeoCoord;
 **
 **      encoding    (1 byte)   0=big-endian, 1=little-endian
 **      nvertex     (3 bytes)  Number of vertexes as a big-endian integer
+**
+** Enough space is allocated for 4 coordinates, to work around over-zealous
+** warnings coming from some compiler (notably, clang). In reality, the size
+** of each GeoPoly memory allocate is adjusted as necessary so that the
+** GeoPoly.a[] array at the end is the appropriate size.
 */
 typedef struct GeoPoly GeoPoly;
 struct GeoPoly {
   int nVertex;          /* Number of vertexes */
   unsigned char hdr[4]; /* Header for on-disk representation */
-  GeoCoord a[2];    /* 2*nVertex values. X (longitude) first, then Y */
+  GeoCoord a[8];        /* 2*nVertex values. X (longitude) first, then Y */
 };
+
+/* The size of a memory allocation needed for a GeoPoly object sufficient
+** to hold N coordinate pairs.
+*/
+#define GEOPOLY_SZ(N)  (sizeof(GeoPoly) + sizeof(GeoCoord)*2*((N)-4))
 
 /*
 ** State of a parse of a GeoJSON input.
@@ -248,12 +258,10 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
      && s.a[1]==s.a[s.nVertex*2-1]
      && (s.z++, geopolySkipSpace(&s)==0)
     ){
-      int nByte;
       GeoPoly *pOut;
       int x = 1;
       s.nVertex--;  /* Remove the redundant vertex at the end */
-      nByte = sizeof(GeoPoly) * s.nVertex*2*sizeof(GeoCoord);
-      pOut = sqlite3_malloc64( nByte );
+      pOut = sqlite3_malloc64( GEOPOLY_SZ(s.nVertex) );
       x = 1;
       if( pOut==0 ) goto parse_json_err;
       pOut->nVertex = s.nVertex;
@@ -457,6 +465,27 @@ static void geopolyXformFunc(
 }
 
 /*
+** Compute the area enclosed by the polygon.
+**
+** This routine can also be used to detect polygons that rotate in
+** the wrong direction.  Polygons are suppose to be counter-clockwise (CCW).
+** This routine returns a negative value for clockwise (CW) polygons.
+*/
+static double geopolyArea(GeoPoly *p){
+  double rArea = 0.0;
+  int ii;
+  for(ii=0; ii<p->nVertex-1; ii++){
+    rArea += (p->a[ii*2] - p->a[ii*2+2])           /* (x0 - x1) */
+              * (p->a[ii*2+1] + p->a[ii*2+3])      /* (y0 + y1) */
+              * 0.5;
+  }
+  rArea += (p->a[ii*2] - p->a[0])                  /* (xN - x0) */
+           * (p->a[ii*2+1] + p->a[1])              /* (yN + y0) */
+           * 0.5;
+  return rArea;
+}
+
+/*
 ** Implementation of the geopoly_area(X) function.
 **
 ** If the input is a well-formed Geopoly BLOB then return the area
@@ -471,17 +500,44 @@ static void geopolyAreaFunc(
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
-    double rArea = 0.0;
-    int ii;
-    for(ii=0; ii<p->nVertex-1; ii++){
-      rArea += (p->a[ii*2] - p->a[ii*2+2])           /* (x0 - x1) */
-                * (p->a[ii*2+1] + p->a[ii*2+3])      /* (y0 + y1) */
-                * 0.5;
+    sqlite3_result_double(context, geopolyArea(p));
+    sqlite3_free(p);
+  }            
+}
+
+/*
+** Implementation of the geopoly_ccw(X) function.
+**
+** If the rotation of polygon X is clockwise (incorrect) instead of
+** counter-clockwise (the correct winding order according to RFC7946)
+** then reverse the order of the vertexes in polygon X.  
+**
+** In other words, this routine returns a CCW polygon regardless of the
+** winding order of its input.
+**
+** Use this routine to sanitize historical inputs that that sometimes
+** contain polygons that wind in the wrong direction.
+*/
+static void geopolyCcwFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  if( p ){
+    if( geopolyArea(p)<0.0 ){
+      int ii, jj;
+      for(ii=2, jj=p->nVertex*2 - 2; ii<jj; ii+=2, jj-=2){
+        GeoCoord t = p->a[ii];
+        p->a[ii] = p->a[jj];
+        p->a[jj] = t;
+        t = p->a[ii+1];
+        p->a[ii+1] = p->a[jj+1];
+        p->a[jj+1] = t;
+      }
     }
-    rArea += (p->a[ii*2] - p->a[0])                  /* (xN - x0) */
-             * (p->a[ii*2+1] + p->a[1])              /* (yN + y0) */
-             * 0.5;
-    sqlite3_result_double(context, rArea);
+    sqlite3_result_blob(context, p->hdr, 
+       4+8*p->nVertex, SQLITE_TRANSIENT);
     sqlite3_free(p);
   }            
 }
@@ -588,7 +644,7 @@ static GeoPoly *geopolyBBox(
     if( pRc ) *pRc = SQLITE_OK;
     if( aCoord==0 ){
       geopolyBboxFill:
-      pOut = sqlite3_realloc(p, sizeof(GeoPoly)+sizeof(GeoCoord)*6);
+      pOut = sqlite3_realloc(p, GEOPOLY_SZ(4));
       if( pOut==0 ){
         sqlite3_free(p);
         if( context ) sqlite3_result_error_nomem(context);
@@ -1669,7 +1725,7 @@ static int geopolyFindFunction(
 
 
 static sqlite3_module geopolyModule = {
-  2,                          /* iVersion */
+  3,                          /* iVersion */
   geopolyCreate,              /* xCreate - create a table */
   geopolyConnect,             /* xConnect - connect to an existing table */
   geopolyBestIndex,           /* xBestIndex - Determine search strategy */
@@ -1692,6 +1748,7 @@ static sqlite3_module geopolyModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
+  rtreeShadowName             /* xShadowName */
 };
 
 static int sqlite3_geopoly_init(sqlite3 *db){
@@ -1713,6 +1770,7 @@ static int sqlite3_geopoly_init(sqlite3 *db){
      { geopolyBBoxFunc,          1, 1,    "geopoly_bbox"             },
      { geopolyXformFunc,         7, 1,    "geopoly_xform"            },
      { geopolyRegularFunc,       4, 1,    "geopoly_regular"          },
+     { geopolyCcwFunc,           1, 1,    "geopoly_ccw"              },
   };
   static const struct {
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);

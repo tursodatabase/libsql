@@ -54,4 +54,3 @@ do_iterator_test 1.3 t1 {
 }
 
 finish_test
-

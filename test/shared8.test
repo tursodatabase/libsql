@@ -62,6 +62,7 @@ do_test 1.0 {
 } {1 i 2 ii 3 iii 4 iv}
 
 do_test 1.1 {
+  sqlite3_db_config db1 DEFENSIVE 0
   execsql { 
     PRAGMA writable_schema = 1;
     DELETE FROM sqlite_master WHERE 1;
