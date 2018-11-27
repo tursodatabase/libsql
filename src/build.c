@@ -544,17 +544,22 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
 void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   int i;
   sqlite3BtreeEnterAll(db);
-  assert( db->nSchemaLock==0 );
   for(i=0; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
-      sqlite3SchemaClear(pDb->pSchema);
+      if( db->nSchemaLock==0 ){
+        sqlite3SchemaClear(pDb->pSchema);
+      }else{
+        DbSetProperty(db, i, DB_ResetWanted);
+      }
     }
   }
   db->mDbFlags &= ~(DBFLAG_SchemaChange|DBFLAG_SchemaKnownOk);
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
-  sqlite3CollapseDatabaseArray(db);
+  if( db->nSchemaLock==0 ){
+    sqlite3CollapseDatabaseArray(db);
+  }
 }
 
 /*
