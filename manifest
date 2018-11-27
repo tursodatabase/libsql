@@ -1,5 +1,5 @@
-C Remove\sthe\ssqlite3PagerUseWal()\sroutine\swhich\swas\smade\sobsolete\sby\nthe\s[81629ba91475938b6ad]\schange.
-D 2018-11-27T14:41:07.113
+C Improvements\sto\stwo\scases\sin\spragma4.test.
+D 2018-11-27T17:02:38.487
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15f0851eb3754e37de848d5f8ab24146cf677b44ac38353a2c23e39c999aa422
@@ -1184,7 +1184,7 @@ F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb0696
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
-F test/pragma4.test 12d0088e52d4e193f57eb0271d194ec1d7bc2031d874f915541f1b0ff80bb407
+F test/pragma4.test fe28e87570bf9701259abfa6af8e47f7a6370c52046075394a6967887c79cbb4
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/printf.test a3e559bc9d922e7fe44e9d05c6965fee34fe3bc28300a4248c6a063425246ffd
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c9c46dcbe92aeabe3d5675bb69681b6dfd53798bc67e6a2ceba67ed3c4fb0af
-R a7ef9f84b50ea057396ea8848fef5c6d
+P 4331b4990cbc1221d94fadd376dfc6efe83f67836aef00912126da4c924bf659
+R 96f1ae7785171ce0f6a9641c9db3da6f
 U drh
-Z aee2ea0c5680faa8e1dea218ef6a8fe1
+Z d6f797930986fc55f33710f187286aa3

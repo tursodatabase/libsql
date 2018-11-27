@@ -122,8 +122,8 @@ do_test 4.1.4 {
   execsql { DROP TABLE t1 } db3
   execsql { DROP TABLE t2 } db2
 } {}
-do_execsql_test 4.1.5 { PRAGMA table_info = t1 }
-do_execsql_test 4.1.6 { PRAGMA table_info = t2 }
+do_execsql_test 4.1.5 { PRAGMA table_info(t1) }
+do_execsql_test 4.1.6 { PRAGMA table_info(t2) }
 
 db2 close
 db3 close
@@ -224,4 +224,3 @@ do_catchsql_test 4.6.5 {
 } {1 {no such table: c2}}
 
 finish_test
-
