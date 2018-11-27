@@ -1,5 +1,5 @@
-C Do\snot\sallow\sdirect\saccess\sto\sinternal-use\sSQL\sfunctions\ssuch\sas\nsqlite_rename_column()\sand\ssqlite3_rename_table()\sexcept\swhen\sthe\nnew\sSQLITE_TESTCTRL_INTERNAL_FUNCTIONS\sflag\sis\sset.
-D 2018-11-26T18:09:15.177
+C Add\san\s"#ifndef\sSQLITE_DISABLE_FTS4_DEFERRED"\sblock\saround\sfunction\nfts3EvalDeferredPhrase()\sin\sfts3\sin\sorder\sto\ssilence\sa\scompiler\swarning.
+D 2018-11-27T09:57:10.404
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15f0851eb3754e37de848d5f8ab24146cf677b44ac38353a2c23e39c999aa422
@@ -80,7 +80,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c eddaba472f7ceee0240252e21875547bd137d4383fcd9e6c99b9e59078356171
+F ext/fts3/fts3.c 65b8489e35da23b127992c6dd6cfd382a486f8c87bf26dfa72876efe46e551bb
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3378157f383540857a466420b8279626204434c3eb0dc948ad9bcd3991fc41f5
 F ext/fts3/fts3_aux.c e9b465f8469acc2cd700a90c0242912a3202e4e4e15df72d7db7f1e3a2222c85
@@ -1778,7 +1778,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12920bcb99b25e147e1877ee001bc551a743e3530c954fe2b45a18a4eef9eeff
-R 734cdae4ed46e5a1c91537ccdb311830
-U drh
-Z f1fd1e821045e43bc79e2f50ef188d8d
+P 6e1330545e7b74fe5f1f20751a3425e2788441485fc07fcb7626e448c72027ce
+R 959d5966da7a7259a58c205629600a77
+U dan
+Z f1a869b59099a5dff51ceb79f0ae01ba
