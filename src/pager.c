@@ -849,19 +849,6 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
 }
 #endif
 
-/*
-** Return true if this pager uses a write-ahead log to read page pgno.
-** Return false if the pager reads pgno directly from the database.
-*/
-#if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_DIRECT_OVERFLOW_READ)
-int sqlite3PagerUseWal(Pager *pPager, Pgno pgno){
-  u32 iRead = 0;
-  int rc;
-  if( pPager->pWal==0 ) return 0;
-  rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-  return rc || iRead;
-}
-#endif
 #ifndef SQLITE_OMIT_WAL
 # define pagerUseWal(x) ((x)->pWal!=0)
 #else
