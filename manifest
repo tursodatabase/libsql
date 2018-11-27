@@ -1,5 +1,5 @@
-C Fix\sto\sthe\serror\shandling\slogic\sin\sthe\sLemon\sparser\stemplate.\s\sThis\sdoes\nnot\saffect\sSQLite\ssince\sSQLite\sdoes\snot\suse\sthat\spart\sof\sthe\sLemon\sparser\ntemplate.
-D 2018-11-27T14:03:11.052
+C Add\sa\ssimple\stest\scase\sfor\sLemon.\s\sAlways\sinclude\sassert.h\sin\sthe\nLemon-generated\sparser.
+D 2018-11-27T14:34:33.784
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15f0851eb3754e37de848d5f8ab24146cf677b44ac38353a2c23e39c999aa422
@@ -37,7 +37,7 @@ F configure 5811ffcd4866902d1706dcf8e0527f89165ec52859659942c9649bb1d3e4cc7b x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/lemon.html ac63db056bce24b7368e29319cd1a7eb5f1798cc85922d96a80b6c3a4ff9f51b
+F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
@@ -1061,6 +1061,7 @@ F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 94da54bb66aae7a54e47cf7e4ea4acecc0f217560f79ad3abfcc0361d6d557ba
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
+F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d6767e11d7
 F test/like.test 11cfd7d4ef8625389df9efc46735ff0b0b41d5e62047ef0f3bc24c380d28a7a6
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 430691e6057e11a59e934be74c06b85605b80061d45af5714d52886a811efeb7
@@ -1698,7 +1699,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 60d1e1eb0f7ebae709f68f1472d77fbf291c5345cd98ff417219da7e74fd09e9
-F tool/lempar.c 7af7e9fffbbbb7a30e60d0f1692ba2730ac23847705c3b09eefd68c010b5755b
+F tool/lempar.c 452f12d40229847634a160e5666b6c4ec4392fd81941c3443861b48d497054cc
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1778,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f4b0d0494446d46ac22b17650a25b025995cc545cac8fbc4776cf9dd388bcd8
-R 342594cf6238112e53e9e7ed351aeaf5
+P c6dfc59eb12a02d35b708b5d94239377c79f688fa572f72bad51a157b1bf599c
+R 2339dd4ac4a954f22713351e7a3601c7
 U drh
-Z 367fb09364f4bfdf7228e4b27799d518
+Z 4edb575ad89b443e91df3129c4c760e1
