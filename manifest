@@ -1,5 +1,5 @@
-C Follow-up\sto\s[0bf0fd242b93c3bd30]:\sonly\sreset\sthe\spager\swhen\sadding\sa\nnew\scodec,\snot\swhen\soverwriting\san\sexisting\scodec.\s\sAlso,\simprove\sa\ncomment\sin\sthe\spcache1\ssubsystem.
-D 2018-11-28T11:09:09.647
+C Update\ssome\stest\scases\sto\saccount\sfor\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.
+D 2018-11-28T11:49:46.811
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -640,7 +640,7 @@ F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c ec92d56d8fbed9eb3e11aaf1ab98cf7dd59e69dae31f128013f1d97e54e7dfed
-F test/attach.test fb03859ee33e23588b8c73102374de7231987760a986fe3a912e75563931c9f8
+F test/attach.test 21bce8681f780a8d631a5ec7ecd0d849bfe84611257b038ae4ffeccc609d8a4e
 F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
@@ -1019,7 +1019,7 @@ F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
 F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
-F test/indexexpr2.test d8f56b6cf4e5663486129bc18c6bde4cef9f8876942b001bfdd692a2b1a42668
+F test/indexexpr2.test fc994dcd4b3da932d4add8e65ed7ca08166d541e00a46874cfacd98dfb93a31b
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 5604b1ff5675cc84c34a5b315792b958f48c32edccc0dafcc81d3b776270b70a
@@ -1184,7 +1184,7 @@ F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb0696
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
-F test/pragma4.test fe28e87570bf9701259abfa6af8e47f7a6370c52046075394a6967887c79cbb4
+F test/pragma4.test 52d8186f9e8d09b87189432cdd401dfa66d0b32445e837fa19046c8ae7621b0e
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/printf.test a3e559bc9d922e7fe44e9d05c6965fee34fe3bc28300a4248c6a063425246ffd
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b510f59fd2cf68331c35ef6b4c2bcf092adf1120ea22be74d1bab1f42a171f5
-R 6d03d4e5d959ce35fcc2ea27795fbb38
-U drh
-Z b45e0f74835bf41b8141eeb62df04d5c
+P 5c040fdb013d178e5dffa300621eab91b92beb085ffb9ef2ba08f6bf1dd4013e
+R 77a18aa84e255d1dbf20b21e122e52a2
+U dan
+Z 7bfa8efb6ac7954a4c3f8089c7216621
