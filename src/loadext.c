@@ -84,6 +84,7 @@
 # define sqlite3_declare_vtab 0
 # define sqlite3_vtab_config 0
 # define sqlite3_vtab_on_conflict 0
+# define sqlite3_vtab_collation 0
 #endif
 
 #ifdef SQLITE_OMIT_SHARED_CACHE

@@ -1899,6 +1899,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   recomputeColumnsNotIndexed(pPk);
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Return true if zName is a shadow table name in the current database
 ** connection.
@@ -1924,6 +1925,9 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   if( pMod->pModule->xShadowName==0 ) return 0;
   return pMod->pModule->xShadowName(zTail+1);
 }
+#else
+# define isShadowTableName(x,y) 0
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** This routine is called to report the final ")" that terminates
