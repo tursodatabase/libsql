@@ -1,8 +1,8 @@
-C Remove\s-DSQLITE_USER_AUTHENTICATION\sfrom\sthe\s"Unlock-Notify"\sconfiguration.\nCreate\sa\sdedicated\s"User-Auth"\sconfiguration\sfor\stesting\sthis\sfeature.
-D 2018-11-28T08:09:08.147
+C Changes\sto\sMakefile.in\sto\sallow\stestfixture\sto\sbe\sbuilt\swith\nSQLITE_USER_AUTHENTICATION.
+D 2018-11-28T08:24:41.651
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 15f0851eb3754e37de848d5f8ab24146cf677b44ac38353a2c23e39c999aa422
+F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0d6831ff7951b302e888d86d4c469e2ec3c22f59eba4118b8c38d5a51d9e2d4f
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9bcdec85e21a5228c700f7373b92ae7ea14b585bcda34235b605be4f7ec15a15
-R f0b7e80a5ab891ce6a4c4bf3191e9f8e
+P 8c41024fbba8c70b671c63a5719c6757f0e6dc731ce52caa755edbb8e21d6944
+R fee63f0c7cb397ed3641ccc01d70c69a
 U dan
-Z be108deed9e6953da5ea298ef66f2f22
+Z ca6c4cd6778208e91f050203c0ceb572
