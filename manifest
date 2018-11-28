@@ -1,5 +1,5 @@
-C Changes\sto\sMakefile.in\sto\sallow\stestfixture\sto\sbe\sbuilt\swith\nSQLITE_USER_AUTHENTICATION.
-D 2018-11-28T08:24:41.651
+C Follow-up\sto\s[0bf0fd242b93c3bd30]:\sonly\sreset\sthe\spager\swhen\sadding\sa\nnew\scodec,\snot\swhen\soverwriting\san\sexisting\scodec.\s\sAlso,\simprove\sa\ncomment\sin\sthe\spcache1\ssubsystem.
+D 2018-11-28T11:09:09.647
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -493,12 +493,12 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f6e91b8fd82af7afbfd073c4974ad6cdb8e62d9f65ceddb45167835a0567fdc0
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c d26741248d2f171d19161c83ea315d265c3eda227a54f7e35d5fe5fdf07ef1d9
+F src/pager.c 75e0f3cfa3962c714f519f8a3d1e67ecca1c91de0e010a036b988e40ce9e4c73
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y 6840fe7c0b5eb4dd25ee5d075213bc8255ed4c0678d71bfb6744d0520d91c179
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c 716975564c15eb6679e97f734cec1bfd6c16ac3d4010f05f1f8e509fc7d19880
+F src/pcache1.c bf9fcea656dce1cd2cca6b77a1d1d3552050d55a31c98bf0d9f405930a83bc95
 F src/pragma.c 4e056f042683b99c4ea0db395f68d051b1a95833ab40951c40d3ef7e1fee1354
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c f81f8d707e583192c28fea0b2e19385415b7d188123b23f49b038076408d7a69
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c41024fbba8c70b671c63a5719c6757f0e6dc731ce52caa755edbb8e21d6944
-R fee63f0c7cb397ed3641ccc01d70c69a
-U dan
-Z ca6c4cd6778208e91f050203c0ceb572
+P 7b510f59fd2cf68331c35ef6b4c2bcf092adf1120ea22be74d1bab1f42a171f5
+R 6d03d4e5d959ce35fcc2ea27795fbb38
+U drh
+Z b45e0f74835bf41b8141eeb62df04d5c
