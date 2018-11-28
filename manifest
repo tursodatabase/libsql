@@ -1,5 +1,5 @@
-C Update\sincrvacuum.test\sso\sthat\sit\sworks\swith\sbuilds\sthat\sdo\snot\ssupport\smmap().
-D 2018-11-29T01:20:51.618
+C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.\s\sNo\schanges\sto\scode.
+D 2018-11-28T19:23:28.493
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -508,7 +508,7 @@ F src/resolve.c 4cfc44def0f0690ceaab8f6481f5d76284d7f9509aab6e218a679b4836a54614
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 61e867a906f140b73baf4ce7a201ad6dcba30820969f5618ee40e9a0d32c6f5f
 F src/shell.c.in 482e23a370cbe5b0d4c73a0f0f5fce34f7caa08a14a8d75e12f0225c4e14915c
-F src/sqlite.h.in cb63bf37ccde7ed391669feb3fa5131ea6ce0d0bd0f5561c295a2faee208bbc5
+F src/sqlite.h.in cce9feede1c1c03923c091b4bbbd081dd77aaf92024cc2cdbf65f712c2f668c3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
 F src/sqliteInt.h 1161f7579cdd6217737a66517ef27f4016426603eff492e9b31f45a7d7d4c61f
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b53a9a3dc6b0422a102b245451769b0cd8c0d67090fefabf7cb3a65137a73771
-R 852ffdb075fb394e7db811a2017ef73b
-U dan
-Z 3c0f7e4e0c67c70a333fda52c2778c56
+P 8eb62fd5fa9adb88de51aa812270dbdb32ee5cacd636d200e658c507a14a035b
+R c8321b0424a8674cc113e6230d43138f
+U drh
+Z 38ca87a492d23c8bfd3002681030faf1
