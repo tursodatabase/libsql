@@ -1,5 +1,5 @@
-C Fixes\sfor\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.
-D 2018-11-28T08:02:28.491
+C Remove\s-DSQLITE_USER_AUTHENTICATION\sfrom\sthe\s"Unlock-Notify"\sconfiguration.\nCreate\sa\sdedicated\s"User-Auth"\sconfiguration\sfor\stesting\sthis\sfeature.
+D 2018-11-28T08:09:08.147
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 15f0851eb3754e37de848d5f8ab24146cf677b44ac38353a2c23e39c999aa422
@@ -1205,7 +1205,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl c5b474f9880073fc3b69729ee05d5284653a9ee101af572204917d9dcb1d9015 x
+F test/releasetest.tcl b290d538ffcb2ff711f09eadc7396c1a42580f3fb078605471dc8875ca0b4d1e x
 F test/resetdb.test 373a9eb8fcbd58bf87affec6a88c6353038f98a5d25be5ab75a0b9636c462a36
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d362dedba3637013d654f2a890fc7b61476f2adeb6bf3bffb4e715c1d1d0b7c2
-R 872bd9c6d2a78862ca6b3fc30df0308d
+P 9bcdec85e21a5228c700f7373b92ae7ea14b585bcda34235b605be4f7ec15a15
+R f0b7e80a5ab891ce6a4c4bf3191e9f8e
 U dan
-Z aede78a0ea603f7d034d95c2462ff354
+Z be108deed9e6953da5ea298ef66f2f22
