@@ -1,5 +1,5 @@
-C Update\ssome\stest\scases\sto\saccount\sfor\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.
-D 2018-11-28T11:49:46.811
+C Update\sincrvacuum.test\sso\sthat\sit\sworks\swith\sbuilds\sthat\sdo\snot\ssupport\smmap().
+D 2018-11-29T01:20:51.618
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -1004,7 +1004,7 @@ F test/incrblob4.test 21a52a6843a56cdcce968c6a86b72a7066d0e6ba
 F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb4726944a2de5e9
 F test/incrblobfault.test 74dd8ac108304cea0b4a0df6df63a1567e558758
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
-F test/incrvacuum.test d67f6c8330587c6e96e34c19156b67b9f762cd302bdd1d89119fa6edea1ab49b
+F test/incrvacuum.test 2aaee202b1f230e55779f70d155f6ba67bbdff8481d650214d256ab0f97d4a2b
 F test/incrvacuum2.test 7d26cfda66c7e55898d196de54ac4ec7d86a4e3d
 F test/incrvacuum3.test 75256fb1377e7c39ef2de62bfc42bbff67be295a
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
@@ -1779,7 +1779,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c040fdb013d178e5dffa300621eab91b92beb085ffb9ef2ba08f6bf1dd4013e
-R 77a18aa84e255d1dbf20b21e122e52a2
+P b53a9a3dc6b0422a102b245451769b0cd8c0d67090fefabf7cb3a65137a73771
+R 852ffdb075fb394e7db811a2017ef73b
 U dan
-Z 7bfa8efb6ac7954a4c3f8089c7216621
+Z 3c0f7e4e0c67c70a333fda52c2778c56
