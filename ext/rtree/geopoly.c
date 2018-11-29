@@ -544,15 +544,15 @@ static void geopolyCcwFunc(
 
 #define GEOPOLY_PI 3.1415926535897932385
 
-/* Fast approximation for cosine(X) for X between -0.5*pi and 2*pi
+/* Fast approximation for sine(X) for X between -0.5*pi and 2*pi
 */
-static double geopolyCosine(double r){
+static double geopolySine(double r){
   assert( r>=-0.5*GEOPOLY_PI && r<=2.0*GEOPOLY_PI );
   if( r>=1.5*GEOPOLY_PI ){
     r -= 2.0*GEOPOLY_PI;
   }
   if( r>=0.5*GEOPOLY_PI ){
-    return -geopolyCosine(r-GEOPOLY_PI);
+    return -geopolySine(r-GEOPOLY_PI);
   }else{
     double r2 = r*r;
     double r3 = r2*r;
@@ -593,8 +593,8 @@ static void geopolyRegularFunc(
   p->hdr[3] = n&0xff;
   for(i=0; i<n; i++){
     double rAngle = 2.0*GEOPOLY_PI*i/n;
-    p->a[i*2] = x - r*geopolyCosine(rAngle-0.5*GEOPOLY_PI);
-    p->a[i*2+1] = y + r*geopolyCosine(rAngle);
+    p->a[i*2] = x - r*geopolySine(rAngle-0.5*GEOPOLY_PI);
+    p->a[i*2+1] = y + r*geopolySine(rAngle);
   }
   sqlite3_result_blob(context, p->hdr, 4+8*n, SQLITE_TRANSIENT);
   sqlite3_free(p);
