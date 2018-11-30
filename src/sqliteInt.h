@@ -1089,6 +1089,7 @@ typedef struct Parse Parse;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
 typedef struct RenameToken RenameToken;
+typedef struct FastPrng FastPrng;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
@@ -1188,6 +1189,14 @@ typedef int VList;
 #ifndef SQLITE_DEFAULT_WAL_SYNCHRONOUS
 # define SQLITE_DEFAULT_WAL_SYNCHRONOUS SQLITE_DEFAULT_SYNCHRONOUS
 #endif
+
+/*
+** State of a simple PRNG used for the per-connection and per-pager
+** pseudo-random number generators.
+*/
+struct FastPrng {
+  unsigned int x, y;
+};
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -1398,6 +1407,7 @@ struct sqlite3 {
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
+  FastPrng sPrng;               /* State of the per-connection PRNG */
   int nChange;                  /* Value returned by sqlite3_changes() */
   int nTotalChange;             /* Value returned by sqlite3_total_changes() */
   int aLimit[SQLITE_N_LIMIT];   /* Limits */
@@ -3997,6 +4007,8 @@ Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3PrngSaveState(void);
 void sqlite3PrngRestoreState(void);
 #endif
+void sqlite3FastPrngInit(FastPrng*);
+void sqlite3FastRandomness(FastPrng*, int N, void *P);
 void sqlite3RollbackAll(sqlite3*,int);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3CodeVerifyNamedSchema(Parse*, const char *zDb);
