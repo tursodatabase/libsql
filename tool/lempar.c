@@ -23,6 +23,7 @@
 ** input grammar file:
 */
 #include <stdio.h>
+#include <assert.h>
 /************ Begin %include sections from the grammar ************************/
 %%
 /**************** End of %include directives **********************************/
@@ -987,10 +988,9 @@ void Parse(
         yymajor = YYNOCODE;
       }else{
         while( yypParser->yytos >= yypParser->yystack
-            && yymx != YYERRORSYMBOL
             && (yyact = yy_find_reduce_action(
                         yypParser->yytos->stateno,
-                        YYERRORSYMBOL)) >= YY_MIN_REDUCE
+                        YYERRORSYMBOL)) > YY_MAX_SHIFTREDUCE
         ){
           yy_pop_parser_stack(yypParser);
         }

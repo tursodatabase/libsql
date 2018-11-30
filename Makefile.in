@@ -32,6 +32,7 @@ CC = @CC@
 CFLAGS = @CPPFLAGS@ @CFLAGS@
 TCC = ${CC} ${CFLAGS} -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
 TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
+TCC += -I${TOP}/ext/userauth
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
@@ -187,7 +188,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
-         update.lo upsert.lo util.lo vacuum.lo \
+         update.lo userauth.lo upsert.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
          window.lo utf.lo vtab.lo
@@ -359,6 +360,9 @@ SRC += \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/sqlite3session.h
 SRC += \
+  $(TOP)/ext/userauth/userauth.c \
+  $(TOP)/ext/userauth/sqlite3userauth.h
+SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
@@ -458,7 +462,8 @@ TESTSRC += \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
-  $(TOP)/ext/misc/zipfile.c
+  $(TOP)/ext/misc/zipfile.c \
+  $(TOP)/ext/userauth/userauth.c
 
 # Source code to the library files needed by the test fixture
 #
@@ -564,6 +569,8 @@ EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
+EXTHDR += \
+  $(TOP)/ext/userauth/sqlite3userauth.h
 EXTHDR += \
   $(TOP)/ext/sqlrr/sqlrr.h
 
@@ -1131,7 +1138,10 @@ fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
-sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+sqlite3session.lo:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
+
+userauth.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
 
 json1.lo:	$(TOP)/ext/misc/json1.c

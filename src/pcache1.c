@@ -105,7 +105,8 @@ struct PgHdr1 {
 };
 
 /*
-** A page is pinned if it is no on the LRU list
+** A page is pinned if it is not on the LRU list.  To be "pinned" means
+** that the page is in active use and must not be deallocated.
 */
 #define PAGE_IS_PINNED(p)    ((p)->pLruNext==0)
 #define PAGE_IS_UNPINNED(p)  ((p)->pLruNext!=0)
