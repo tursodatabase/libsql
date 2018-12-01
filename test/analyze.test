@@ -349,7 +349,8 @@ ifcapable stat4||stat3 {
 # This test corrupts the database file so it must be the last test
 # in the series.
 #
-do_test analyze-99.1 {
+do_test analyze-5.99 {
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     PRAGMA writable_schema=on;
     UPDATE sqlite_master SET sql='nonsense' WHERE name='sqlite_stat1';
@@ -360,5 +361,21 @@ do_test analyze-99.1 {
     ANALYZE
   }
 } {1 {malformed database schema (sqlite_stat1)}}
+
+# Verify that tables whose names begin with "sqlite" but not
+# "sqlite_" are analyzed.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test analyze-6.1 {
+  CREATE TABLE sqliteDemo(a);
+  INSERT INTO sqliteDemo(a) VALUES(1),(2),(3),(4),(5);
+  CREATE TABLE SQLiteDemo2(a INTEGER PRIMARY KEY AUTOINCREMENT);
+  INSERT INTO SQLiteDemo2 SELECT * FROM sqliteDemo;
+  CREATE TABLE t1(b);
+  INSERT INTO t1(b) SELECT a FROM sqliteDemo;
+  ANALYZE;
+  SELECT tbl FROM sqlite_stat1 WHERE idx IS NULL ORDER BY tbl;
+} {SQLiteDemo2 sqliteDemo t1}
 
 finish_test

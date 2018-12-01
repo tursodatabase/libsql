@@ -1109,34 +1109,6 @@ void sqlite3Fts3ExprFree(Fts3Expr *pDel){
 #include <stdio.h>
 
 /*
-** Function to query the hash-table of tokenizers (see README.tokenizers).
-*/
-static int queryTestTokenizer(
-  sqlite3 *db, 
-  const char *zName,  
-  const sqlite3_tokenizer_module **pp
-){
-  int rc;
-  sqlite3_stmt *pStmt;
-  const char zSql[] = "SELECT fts3_tokenizer(?)";
-
-  *pp = 0;
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-
-  sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
-      memcpy((void *)pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
-    }
-  }
-
-  return sqlite3_finalize(pStmt);
-}
-
-/*
 ** Return a pointer to a buffer containing a text representation of the
 ** expression passed as the first argument. The buffer is obtained from
 ** sqlite3_malloc(). It is the responsibility of the caller to use 
@@ -1203,12 +1175,12 @@ static char *exprToString(Fts3Expr *pExpr, char *zBuf){
 **
 **   SELECT fts3_exprtest('simple', 'Bill col2:Bloggs', 'col1', 'col2');
 */
-static void fts3ExprTest(
+static void fts3ExprTestCommon(
+  int bRebalance,
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3_tokenizer_module const *pModule = 0;
   sqlite3_tokenizer *pTokenizer = 0;
   int rc;
   char **azCol = 0;
@@ -1218,7 +1190,9 @@ static void fts3ExprTest(
   int ii;
   Fts3Expr *pExpr;
   char *zBuf = 0;
-  sqlite3 *db = sqlite3_context_db_handle(context);
+  Fts3Hash *pHash = (Fts3Hash*)sqlite3_user_data(context);
+  const char *zTokenizer = 0;
+  char *zErr = 0;
 
   if( argc<3 ){
     sqlite3_result_error(context, 
@@ -1227,23 +1201,17 @@ static void fts3ExprTest(
     return;
   }
 
-  rc = queryTestTokenizer(db,
-                          (const char *)sqlite3_value_text(argv[0]), &pModule);
-  if( rc==SQLITE_NOMEM ){
-    sqlite3_result_error_nomem(context);
-    goto exprtest_out;
-  }else if( !pModule ){
-    sqlite3_result_error(context, "No such tokenizer module", -1);
-    goto exprtest_out;
+  zTokenizer = (const char*)sqlite3_value_text(argv[0]);
+  rc = sqlite3Fts3InitTokenizer(pHash, zTokenizer, &pTokenizer, &zErr);
+  if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_NOMEM ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      sqlite3_result_error(context, zErr, -1);
+    }
+    sqlite3_free(zErr);
+    return;
   }
-
-  rc = pModule->xCreate(0, 0, &pTokenizer);
-  assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
-  if( rc==SQLITE_NOMEM ){
-    sqlite3_result_error_nomem(context);
-    goto exprtest_out;
-  }
-  pTokenizer->pModule = pModule;
 
   zExpr = (const char *)sqlite3_value_text(argv[1]);
   nExpr = sqlite3_value_bytes(argv[1]);
@@ -1257,7 +1225,7 @@ static void fts3ExprTest(
     azCol[ii] = (char *)sqlite3_value_text(argv[ii+2]);
   }
 
-  if( sqlite3_user_data(context) ){
+  if( bRebalance ){
     char *zDummy = 0;
     rc = sqlite3Fts3ExprParse(
         pTokenizer, 0, azCol, 0, nCol, nCol, zExpr, nExpr, &pExpr, &zDummy
@@ -1283,23 +1251,38 @@ static void fts3ExprTest(
   sqlite3Fts3ExprFree(pExpr);
 
 exprtest_out:
-  if( pModule && pTokenizer ){
-    rc = pModule->xDestroy(pTokenizer);
+  if( pTokenizer ){
+    rc = pTokenizer->pModule->xDestroy(pTokenizer);
   }
   sqlite3_free(azCol);
+}
+
+static void fts3ExprTest(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  fts3ExprTestCommon(0, context, argc, argv);
+}
+static void fts3ExprTestRebalance(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  fts3ExprTestCommon(1, context, argc, argv);
 }
 
 /*
 ** Register the query expression parser test function fts3_exprtest() 
 ** with database connection db. 
 */
-int sqlite3Fts3ExprInitTestInterface(sqlite3* db){
+int sqlite3Fts3ExprInitTestInterface(sqlite3 *db, Fts3Hash *pHash){
   int rc = sqlite3_create_function(
-      db, "fts3_exprtest", -1, SQLITE_UTF8, 0, fts3ExprTest, 0, 0
+      db, "fts3_exprtest", -1, SQLITE_UTF8, (void*)pHash, fts3ExprTest, 0, 0
   );
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "fts3_exprtest_rebalance", 
-        -1, SQLITE_UTF8, (void *)1, fts3ExprTest, 0, 0
+        -1, SQLITE_UTF8, (void*)pHash, fts3ExprTestRebalance, 0, 0
     );
   }
   return rc;

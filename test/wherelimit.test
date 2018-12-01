@@ -38,6 +38,8 @@ proc create_test_data {size} {
 
 ifcapable {update_delete_limit} {
 
+  execsql { CREATE TABLE t1(x, y) }
+
   # check syntax error support
   do_test wherelimit-0.1 {
     catchsql {DELETE FROM t1 ORDER BY x}
@@ -50,12 +52,18 @@ ifcapable {update_delete_limit} {
   } {1 {ORDER BY without LIMIT on UPDATE}}
 
   # no AS on table sources
+  #
+  # UPDATE: As of version 3.24, AS clauses are allowed as part of
+  # UPDATE or DELETE statements.
   do_test wherelimit-0.4 {
-    catchsql {DELETE FROM t1 AS a WHERE x=1}
-  } {1 {near "AS": syntax error}}
-  do_test wherelimit-0.5 {
+    catchsql {DELETE FROM t1 AS a WHERE a.x=1}
+  } {0 {}}
+  do_test wherelimit-0.5.1 {
     catchsql {UPDATE t1 AS a SET y=1 WHERE x=1}
-  } {1 {near "AS": syntax error}}
+  } {0 {}}
+  do_test wherelimit-0.5.2 {
+    catchsql {UPDATE t1 AS a SET y=1 WHERE t1.x=1}
+  } {1 {no such column: t1.x}}
 
   # OFFSET w/o LIMIT
   do_test wherelimit-0.6 {
@@ -65,6 +73,7 @@ ifcapable {update_delete_limit} {
     catchsql {UPDATE t1 SET y=1 WHERE x=1 OFFSET 2}
   } {1 {near "OFFSET": syntax error}}
 
+  execsql { DROP TABLE t1 }
 
   # check deletes w/o where clauses but with limit/offsets
   create_test_data 5
@@ -278,6 +287,43 @@ ifcapable {update_delete_limit} {
     execsql {UPDATE t1 SET y=1 WHERE x=3 ORDER BY x LIMIT 50 OFFSET 50}
     execsql {SELECT count(*) FROM t1 WHERE y=1}
   } {6}
+
+  # Cannot use a LIMIT for UPDATE or DELETE against a WITHOUT ROWID table
+  # or a VIEW.  (We should fix this someday).
+  #
+  db close
+  sqlite3 db :memory:
+  do_execsql_test wherelimit-4.1 {
+    CREATE TABLE t1(a int);
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(2);
+    INSERT INTO t1 VALUES(3);
+    CREATE TABLE t2(a int);
+    INSERT INTO t2 SELECT a+100 FROM t1;
+    CREATE VIEW tv(r,a) AS
+       SELECT rowid, a FROM t2 UNION ALL SELECT rowid, a FROM t1;
+    CREATE TRIGGER tv_del INSTEAD OF DELETE ON tv
+    BEGIN
+      DELETE FROM t1 WHERE rowid=old.r;
+      DELETE FROM t2 WHERE rowid=old.r;
+    END;
+  } {}
+  do_catchsql_test wherelimit-4.2 {
+    DELETE FROM tv WHERE 1 LIMIT 2;
+  } {0 {}}
+  do_catchsql_test wherelimit-4.3 {
+    DELETE FROM tv WHERE 1 ORDER BY a LIMIT 2;
+  } {0 {}}
+  do_execsql_test wherelimit-4.10 {
+    CREATE TABLE t3(a,b,c,d TEXT, PRIMARY KEY(a,b)) WITHOUT ROWID;
+    INSERT INTO t3(a,b,c,d) VALUES(1,2,3,4),(5,6,7,8),(9,10,11,12);
+  } {}
+  do_catchsql_test wherelimit-4.11 {
+    DELETE FROM t3 WHERE a=5 LIMIT 2;
+  } {0 {}}
+  do_execsql_test wherelimit-4.12 {
+    SELECT a,b,c,d FROM t3 ORDER BY 1;
+  } {1 2 3 4 9 10 11 12}
 
 }
 

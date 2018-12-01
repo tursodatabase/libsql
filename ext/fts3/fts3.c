@@ -1821,7 +1821,7 @@ static int fts3ScanInteriorNode(
   const char *zCsr = zNode;       /* Cursor to iterate through node */
   const char *zEnd = &zCsr[nNode];/* End of interior node buffer */
   char *zBuffer = 0;              /* Buffer to load terms into */
-  int nAlloc = 0;                 /* Size of allocated buffer */
+  i64 nAlloc = 0;                 /* Size of allocated buffer */
   int isFirstTerm = 1;            /* True when processing first term on page */
   sqlite3_int64 iChild;           /* Block id of child node to descend to */
 
@@ -1859,14 +1859,14 @@ static int fts3ScanInteriorNode(
     zCsr += fts3GetVarint32(zCsr, &nSuffix);
     
     assert( nPrefix>=0 && nSuffix>=0 );
-    if( &zCsr[nSuffix]>zEnd ){
+    if( nPrefix>zCsr-zNode || nSuffix>zEnd-zCsr ){
       rc = FTS_CORRUPT_VTAB;
       goto finish_scan;
     }
-    if( nPrefix+nSuffix>nAlloc ){
+    if( (i64)nPrefix+nSuffix>nAlloc ){
       char *zNew;
-      nAlloc = (nPrefix+nSuffix) * 2;
-      zNew = (char *)sqlite3_realloc(zBuffer, nAlloc);
+      nAlloc = ((i64)nPrefix+nSuffix) * 2;
+      zNew = (char *)sqlite3_realloc64(zBuffer, nAlloc);
       if( !zNew ){
         rc = SQLITE_NOMEM;
         goto finish_scan;
@@ -3808,7 +3808,7 @@ static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   int rc = SQLITE_OK;
   UNUSED_PARAMETER(iSavepoint);
   assert( ((Fts3Table *)pVtab)->inTransaction );
-  assert( ((Fts3Table *)pVtab)->mxSavepoint < iSavepoint );
+  assert( ((Fts3Table *)pVtab)->mxSavepoint <= iSavepoint );
   TESTONLY( ((Fts3Table *)pVtab)->mxSavepoint = iSavepoint );
   if( ((Fts3Table *)pVtab)->bIgnoreSavepoint==0 ){
     rc = fts3SyncMethod(pVtab);
@@ -3846,8 +3846,23 @@ static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   return SQLITE_OK;
 }
 
+/*
+** Return true if zName is the extension on one of the shadow tables used
+** by this module.
+*/
+static int fts3ShadowName(const char *zName){
+  static const char *azName[] = {
+    "content", "docsize", "segdir", "segments", "stat", 
+  };
+  unsigned int i;
+  for(i=0; i<sizeof(azName)/sizeof(azName[0]); i++){
+    if( sqlite3_stricmp(zName, azName[i])==0 ) return 1;
+  }
+  return 0;
+}
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 2,
+  /* iVersion      */ 3,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -3870,6 +3885,7 @@ static const sqlite3_module fts3Module = {
   /* xSavepoint    */ fts3SavepointMethod,
   /* xRelease      */ fts3ReleaseMethod,
   /* xRollbackTo   */ fts3RollbackToMethod,
+  /* xShadowName   */ fts3ShadowName,
 };
 
 /*
@@ -3963,7 +3979,7 @@ int sqlite3Fts3Init(sqlite3 *db){
 
 #ifdef SQLITE_TEST
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts3ExprInitTestInterface(db);
+    rc = sqlite3Fts3ExprInitTestInterface(db, pHash);
   }
 #endif
 
@@ -4150,6 +4166,7 @@ static int fts3EvalPhraseLoad(
   return rc;
 }
 
+#ifndef SQLITE_DISABLE_FTS4_DEFERRED
 /*
 ** This function is called on each phrase after the position lists for
 ** any deferred tokens have been loaded into memory. It updates the phrases
@@ -4253,6 +4270,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 
   return SQLITE_OK;
 }
+#endif /* SQLITE_DISABLE_FTS4_DEFERRED */
 
 /*
 ** Maximum number of tokens a phrase may have to be considered for the

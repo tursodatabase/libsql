@@ -111,5 +111,3 @@ do_changeset_test 3.4 S {
 S delete
 
 finish_test
-
-

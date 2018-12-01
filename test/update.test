@@ -508,6 +508,18 @@ ifcapable subquery {
       SELECT a,e FROM t1;
     }
   } {1 15 2 8}
+  do_test update-11.3 {
+    execsql {
+      UPDATE t1 AS xyz SET e=e+1 WHERE xyz.a IN (SELECT a FROM t1);
+      SELECT a,e FROM t1;
+    }
+  } {1 16 2 9}
+  do_test update-11.4 {
+    execsql {
+      UPDATE t1 AS xyz SET e=e+1 WHERE EXISTS(SELECT 1 FROM t1 WHERE t1.a<xyz.a);
+      SELECT a,e FROM t1;
+    }
+  } {1 16 2 10}
 }
 
 integrity_check update-12.1
@@ -618,5 +630,15 @@ do_execsql_test update-15.1 {
   SELECT a,b,c,'|' FROM t15 ORDER BY a;
 } {5 zyx y5 | 10 abc y10 | 15 wvu y15 | 20 def y20 | 25 tsr y25 | 30 ghi y30 | 35 qpo y35 |}
 
+# Unreleased bug in UPDATE caused by the UPSERT changes.
+# Found by OSSFuzz as soon as the UPSERT changes landed on trunk.
+# Never released into the wild.  2018-04-19.
+#
+do_execsql_test update-16.1 {
+  CREATE TABLE t16(a INTEGER PRIMARY KEY ON CONFLICT REPLACE, b UNIQUE);
+  INSERT INTO t16(a,b) VALUES(1,2),(3,4),(5,6);
+  UPDATE t16 SET a=a;
+  SELECT * FROM t16 ORDER BY +a;
+} {1 2 3 4 5 6}
 
 finish_test

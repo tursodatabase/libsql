@@ -14,17 +14,19 @@
 **
 ** Compile-time options:
 **
-**  -DTCLSH=1             Add a "main()" routine that works as a tclsh.
+**  -DTCLSH         Add a "main()" routine that works as a tclsh.
 **
-**  -DSQLITE_TCLMD5       When used in conjuction with -DTCLSH=1, add
-**                        four new commands to the TCL interpreter for
-**                        generating MD5 checksums:  md5, md5file,
-**                        md5-10x8, and md5file-10x8.
+**  -DTCLSH_INIT_PROC=name
 **
-**  -DSQLITE_TEST         When used in conjuction with -DTCLSH=1, add
-**                        hundreds of new commands used for testing
-**                        SQLite.  This option implies -DSQLITE_TCLMD5.
+**                  Invoke name(interp) to initialize the Tcl interpreter.
+**                  If name(interp) returns a non-NULL string, then run
+**                  that string as a Tcl script to launch the application.
+**                  If name(interp) returns NULL, then run the regular
+**                  tclsh-emulator code.
 */
+#ifdef TCLSH_INIT_PROC
+# define TCLSH 1
+#endif
 
 /*
 ** If requested, include the SQLite compiler options file for MSVC.
@@ -58,13 +60,18 @@
 
 /* Used to get the current process ID */
 #if !defined(_WIN32)
+# include <signal.h>
 # include <unistd.h>
 # define GETPID getpid
 #elif !defined(_WIN32_WCE)
 # ifndef SQLITE_AMALGAMATION
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 # endif
+# include <io.h>
+# define isatty(h) _isatty(h)
 # define GETPID (int)GetCurrentProcessId
 #endif
 
@@ -644,7 +651,7 @@ static int DbTraceV2Handler(
     }
     case SQLITE_TRACE_PROFILE: {
       sqlite3_stmt *pStmt = (sqlite3_stmt *)pd;
-      sqlite3_int64 ns = (sqlite3_int64)xd;
+      sqlite3_int64 ns = *(sqlite3_int64*)xd;
 
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);
@@ -1844,35 +1851,35 @@ static int SQLITE_TCLAPI DbObjCmd(
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",         "backup",            "busy",
-    "cache",              "changes",           "close",
-    "collate",            "collation_needed",  "commit_hook",
-    "complete",           "copy",              "enable_load_extension",
-    "errorcode",          "eval",              "exists",
-    "function",           "incrblob",          "interrupt",
-    "last_insert_rowid",  "nullvalue",         "onecolumn",
-    "preupdate",          "profile",           "progress",
-    "rekey",              "restore",           "rollback_hook",
-    "status",             "timeout",           "total_changes",
-    "trace",              "trace_v2",          "transaction",
-    "unlock_notify",      "update_hook",       "version",
-    "wal_hook",
-    0
+    "authorizer",             "backup",                "busy",
+    "cache",                  "changes",               "close",
+    "collate",                "collation_needed",      "commit_hook",
+    "complete",               "copy",                  "deserialize",
+    "enable_load_extension",  "errorcode",             "eval",
+    "exists",                 "function",              "incrblob",
+    "interrupt",              "last_insert_rowid",     "nullvalue",
+    "onecolumn",              "preupdate",             "profile",
+    "progress",               "rekey",                 "restore",
+    "rollback_hook",          "serialize",             "status",
+    "timeout",                "total_changes",         "trace",
+    "trace_v2",               "transaction",           "unlock_notify",
+    "update_hook",            "version",               "wal_hook",
+    0                        
   };
   enum DB_enum {
-    DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
-    DB_CACHE,             DB_CHANGES,          DB_CLOSE,
-    DB_COLLATE,           DB_COLLATION_NEEDED, DB_COMMIT_HOOK,
-    DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
-    DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
-    DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
-    DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
-    DB_PREUPDATE,         DB_PROFILE,          DB_PROGRESS,
-    DB_REKEY,             DB_RESTORE,          DB_ROLLBACK_HOOK,
-    DB_STATUS,            DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_TRACE_V2,         DB_TRANSACTION,
-    DB_UNLOCK_NOTIFY,     DB_UPDATE_HOOK,      DB_VERSION,
-    DB_WAL_HOOK,
+    DB_AUTHORIZER,            DB_BACKUP,               DB_BUSY,
+    DB_CACHE,                 DB_CHANGES,              DB_CLOSE,
+    DB_COLLATE,               DB_COLLATION_NEEDED,     DB_COMMIT_HOOK,
+    DB_COMPLETE,              DB_COPY,                 DB_DESERIALIZE,
+    DB_ENABLE_LOAD_EXTENSION, DB_ERRORCODE,            DB_EVAL,
+    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
+    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
+    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
+    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
+    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
+    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
+    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
+    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2411,6 +2418,53 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
+  **     $db deserialize ?DATABASE? VALUE
+  **
+  ** Reopen DATABASE (default "main") using the content in $VALUE
+  */
+  case DB_DESERIALIZE: {
+#ifndef SQLITE_ENABLE_DESERIALIZE
+    Tcl_AppendResult(interp, "MEMDB not available in this build",
+                     (char*)0);
+    rc = TCL_ERROR;
+#else
+    const char *zSchema;
+    Tcl_Obj *pValue;
+    unsigned char *pBA;
+    unsigned char *pData;
+    int len, xrc;
+    
+    if( objc==3 ){
+      zSchema = 0;
+      pValue = objv[2];
+    }else if( objc==4 ){
+      zSchema = Tcl_GetString(objv[2]);
+      pValue = objv[3];
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? VALUE");
+      rc = TCL_ERROR;
+      break;
+    }
+    pBA = Tcl_GetByteArrayFromObj(pValue, &len);
+    pData = sqlite3_malloc64( len );
+    if( pData==0 && len>0 ){
+      Tcl_AppendResult(interp, "out of memory", (char*)0);
+      rc = TCL_ERROR;
+    }else{
+      if( len>0 ) memcpy(pData, pBA, len);
+      xrc = sqlite3_deserialize(pDb->db, zSchema, pData, len, len,
+                SQLITE_DESERIALIZE_FREEONCLOSE |
+                SQLITE_DESERIALIZE_RESIZEABLE);
+      if( xrc ){
+        Tcl_AppendResult(interp, "unable to set MEMDB content", (char*)0);
+        rc = TCL_ERROR;
+      }
+    }
+#endif
+    break; 
+  }
+
+  /*
   **    $db enable_load_extension BOOLEAN
   **
   ** Turn the extension loading feature on or off.  It if off by
@@ -2886,6 +2940,39 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
+  **     $db serialize ?DATABASE?
+  **
+  ** Return a serialization of a database.  
+  */
+  case DB_SERIALIZE: {
+#ifndef SQLITE_ENABLE_DESERIALIZE
+    Tcl_AppendResult(interp, "MEMDB not available in this build",
+                     (char*)0);
+    rc = TCL_ERROR;
+#else
+    const char *zSchema = objc>=3 ? Tcl_GetString(objv[2]) : "main";
+    sqlite3_int64 sz = 0;
+    unsigned char *pData;
+    if( objc!=2 && objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE?");
+      rc = TCL_ERROR;
+    }else{
+      int needFree;
+      pData = sqlite3_serialize(pDb->db, zSchema, &sz, SQLITE_SERIALIZE_NOCOPY);
+      if( pData ){
+        needFree = 0;
+      }else{
+        pData = sqlite3_serialize(pDb->db, zSchema, &sz, 0);
+        needFree = 1;
+      }
+      Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pData,sz));
+      if( needFree ) sqlite3_free(pData);
+    }
+#endif
+    break;
+  }
+
+  /*
   **     $db status (step|sort|autoindex|vmstep)
   **
   ** Display SQLITE_STMTSTATUS_FULLSCAN_STEP or
@@ -3286,7 +3373,42 @@ static int SQLITE_TCLAPI DbObjCmd(
   ** Return the version string for this database.
   */
   case DB_VERSION: {
-    Tcl_SetResult(interp, (char *)sqlite3_libversion(), TCL_STATIC);
+    int i;
+    for(i=2; i<objc; i++){
+      const char *zArg = Tcl_GetString(objv[i]);
+      /* Optional arguments to $db version are used for testing purpose */
+#ifdef SQLITE_TEST
+      /* $db version -use-legacy-prepare BOOLEAN
+      **
+      ** Turn the use of legacy sqlite3_prepare() on or off.
+      */
+      if( strcmp(zArg, "-use-legacy-prepare")==0 && i+1<objc ){
+        i++;
+        if( Tcl_GetBooleanFromObj(interp, objv[i], &pDb->bLegacyPrepare) ){
+          return TCL_ERROR;
+        }
+      }else
+
+      /* $db version -last-stmt-ptr
+      **
+      ** Return a string which is a hex encoding of the pointer to the
+      ** most recent sqlite3_stmt in the statement cache.
+      */
+      if( strcmp(zArg, "-last-stmt-ptr")==0 ){
+        char zBuf[100];
+        sqlite3_snprintf(sizeof(zBuf), zBuf, "%p",
+                         pDb->stmtList ? pDb->stmtList->pStmt: 0);
+        Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+      }else
+#endif /* SQLITE_TEST */
+      {
+        Tcl_AppendResult(interp, "unknown argument: ", zArg, (char*)0);
+        return TCL_ERROR;
+      }
+    }
+    if( i==2 ){   
+      Tcl_SetResult(interp, (char *)sqlite3_libversion(), TCL_STATIC);
+    }
     break;
   }
 
@@ -3309,6 +3431,24 @@ static int SQLITE_TCLAPI DbObjCmdAdaptor(
   return Tcl_NRCallObjProc(interp, DbObjCmd, cd, objc, objv);
 }
 #endif /* SQLITE_TCL_NRE */
+
+/*
+** Issue the usage message when the "sqlite3" command arguments are
+** incorrect.
+*/
+static int sqliteCmdUsage(
+  Tcl_Interp *interp,
+  Tcl_Obj *const*objv
+){
+  Tcl_WrongNumArgs(interp, 1, objv,
+    "HANDLE ?FILENAME? ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+    " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
+    " ?-key CODECKEY?"
+#endif
+  );
+  return TCL_ERROR;
+}
 
 /*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
@@ -3335,7 +3475,7 @@ static int SQLITE_TCLAPI DbMain(
   const char *zArg;
   char *zErrMsg;
   int i;
-  const char *zFile;
+  const char *zFile = 0;
   const char *zVfs = 0;
   int flags;
   Tcl_DString translatedFilename;
@@ -3346,7 +3486,7 @@ static int SQLITE_TCLAPI DbMain(
   int rc;
 
   /* In normal use, each TCL interpreter runs in a single thread.  So
-  ** by default, we can turn of mutexing on SQLite database connections.
+  ** by default, we can turn off mutexing on SQLite database connections.
   ** However, for testing purposes it is useful to have mutexes turned
   ** on.  So, by default, mutexes default off.  But if compiled with
   ** SQLITE_TCL_DEFAULT_FULLMUTEX then mutexes default on.
@@ -3357,6 +3497,7 @@ static int SQLITE_TCLAPI DbMain(
   flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX;
 #endif
 
+  if( objc==1 ) return sqliteCmdUsage(interp, objv);
   if( objc==2 ){
     zArg = Tcl_GetStringFromObj(objv[1], 0);
     if( strcmp(zArg,"-version")==0 ){
@@ -3375,18 +3516,26 @@ static int SQLITE_TCLAPI DbMain(
 #endif
       return TCL_OK;
     }
+    if( zArg[0]=='-' ) return sqliteCmdUsage(interp, objv);
   }
-  for(i=3; i+1<objc; i+=2){
+  for(i=2; i<objc; i++){
     zArg = Tcl_GetString(objv[i]);
+    if( zArg[0]!='-' ){
+      if( zFile!=0 ) return sqliteCmdUsage(interp, objv);
+      zFile = zArg;
+      continue;
+    }
+    if( i==objc-1 ) return sqliteCmdUsage(interp, objv);
+    i++;
     if( strcmp(zArg,"-key")==0 ){
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-      pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
+      pKey = Tcl_GetByteArrayFromObj(objv[i], &nKey);
 #endif
     }else if( strcmp(zArg, "-vfs")==0 ){
-      zVfs = Tcl_GetString(objv[i+1]);
+      zVfs = Tcl_GetString(objv[i]);
     }else if( strcmp(zArg, "-readonly")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
         flags |= SQLITE_OPEN_READONLY;
@@ -3396,7 +3545,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-create")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b && (flags & SQLITE_OPEN_READONLY)==0 ){
         flags |= SQLITE_OPEN_CREATE;
       }else{
@@ -3404,7 +3553,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-nomutex")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_NOMUTEX;
         flags &= ~SQLITE_OPEN_FULLMUTEX;
@@ -3413,7 +3562,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-fullmutex")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_FULLMUTEX;
         flags &= ~SQLITE_OPEN_NOMUTEX;
@@ -3422,7 +3571,7 @@ static int SQLITE_TCLAPI DbMain(
       }
     }else if( strcmp(zArg, "-uri")==0 ){
       int b;
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_URI;
       }else{
@@ -3433,20 +3582,10 @@ static int SQLITE_TCLAPI DbMain(
       return TCL_ERROR;
     }
   }
-  if( objc<3 || (objc&1)!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv,
-      "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
-      " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
-#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-      " ?-key CODECKEY?"
-#endif
-    );
-    return TCL_ERROR;
-  }
   zErrMsg = 0;
   p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
   memset(p, 0, sizeof(*p));
-  zFile = Tcl_GetStringFromObj(objv[2], 0);
+  if( zFile==0 ) zFile = "";
   zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
   rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
   Tcl_DStringFree(&translatedFilename);
@@ -3546,743 +3685,73 @@ int Sqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 #endif
 
-#ifdef TCLSH
-/*****************************************************************************
-** All of the code that follows is used to build standalone TCL interpreters
-** that are statically linked with SQLite.  Enable these by compiling
-** with -DTCLSH=n where n can be 1 or 2.  An n of 1 generates a standard
-** tclsh but with SQLite built in.  An n of 2 generates the SQLite space
-** analysis program.
+/*
+** If the TCLSH macro is defined, add code to make a stand-alone program.
 */
+#if defined(TCLSH)
 
-#if defined(SQLITE_TEST) || defined(SQLITE_TCLMD5)
-/*
- * This code implements the MD5 message-digest algorithm.
- * The algorithm is due to Ron Rivest.  This code was
- * written by Colin Plumb in 1993, no copyright is claimed.
- * This code is in the public domain; do with it what you wish.
- *
- * Equivalent code is available from RSA Data Security, Inc.
- * This code has been tested against that, and is equivalent,
- * except that you don't need to include two pages of legalese
- * with every copy.
- *
- * To compute the message digest of a chunk of bytes, declare an
- * MD5Context structure, pass it to MD5Init, call MD5Update as
- * needed on buffers full of bytes, and then call MD5Final, which
- * will fill a supplied 16-byte array with the digest.
- */
-
-/*
- * If compiled on a machine that doesn't have a 32-bit integer,
- * you just set "uint32" to the appropriate datatype for an
- * unsigned 32-bit integer.  For example:
- *
- *       cc -Duint32='unsigned long' md5.c
- *
- */
-#ifndef uint32
-#  define uint32 unsigned int
-#endif
-
-struct MD5Context {
-  int isInit;
-  uint32 buf[4];
-  uint32 bits[2];
-  unsigned char in[64];
-};
-typedef struct MD5Context MD5Context;
-
-/*
- * Note: this code is harmless on little-endian machines.
- */
-static void byteReverse (unsigned char *buf, unsigned longs){
-        uint32 t;
-        do {
-                t = (uint32)((unsigned)buf[3]<<8 | buf[2]) << 16 |
-                            ((unsigned)buf[1]<<8 | buf[0]);
-                *(uint32 *)buf = t;
-                buf += 4;
-        } while (--longs);
-}
-/* The four core functions - F1 is optimized somewhat */
-
-/* #define F1(x, y, z) (x & y | ~x & z) */
-#define F1(x, y, z) (z ^ (x & (y ^ z)))
-#define F2(x, y, z) F1(z, x, y)
-#define F3(x, y, z) (x ^ y ^ z)
-#define F4(x, y, z) (y ^ (x | ~z))
-
-/* This is the central step in the MD5 algorithm. */
-#define MD5STEP(f, w, x, y, z, data, s) \
-        ( w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x )
-
-/*
- * The core of the MD5 algorithm, this alters an existing MD5 hash to
- * reflect the addition of 16 longwords of new data.  MD5Update blocks
- * the data and converts bytes into longwords for this routine.
- */
-static void MD5Transform(uint32 buf[4], const uint32 in[16]){
-        register uint32 a, b, c, d;
-
-        a = buf[0];
-        b = buf[1];
-        c = buf[2];
-        d = buf[3];
-
-        MD5STEP(F1, a, b, c, d, in[ 0]+0xd76aa478,  7);
-        MD5STEP(F1, d, a, b, c, in[ 1]+0xe8c7b756, 12);
-        MD5STEP(F1, c, d, a, b, in[ 2]+0x242070db, 17);
-        MD5STEP(F1, b, c, d, a, in[ 3]+0xc1bdceee, 22);
-        MD5STEP(F1, a, b, c, d, in[ 4]+0xf57c0faf,  7);
-        MD5STEP(F1, d, a, b, c, in[ 5]+0x4787c62a, 12);
-        MD5STEP(F1, c, d, a, b, in[ 6]+0xa8304613, 17);
-        MD5STEP(F1, b, c, d, a, in[ 7]+0xfd469501, 22);
-        MD5STEP(F1, a, b, c, d, in[ 8]+0x698098d8,  7);
-        MD5STEP(F1, d, a, b, c, in[ 9]+0x8b44f7af, 12);
-        MD5STEP(F1, c, d, a, b, in[10]+0xffff5bb1, 17);
-        MD5STEP(F1, b, c, d, a, in[11]+0x895cd7be, 22);
-        MD5STEP(F1, a, b, c, d, in[12]+0x6b901122,  7);
-        MD5STEP(F1, d, a, b, c, in[13]+0xfd987193, 12);
-        MD5STEP(F1, c, d, a, b, in[14]+0xa679438e, 17);
-        MD5STEP(F1, b, c, d, a, in[15]+0x49b40821, 22);
-
-        MD5STEP(F2, a, b, c, d, in[ 1]+0xf61e2562,  5);
-        MD5STEP(F2, d, a, b, c, in[ 6]+0xc040b340,  9);
-        MD5STEP(F2, c, d, a, b, in[11]+0x265e5a51, 14);
-        MD5STEP(F2, b, c, d, a, in[ 0]+0xe9b6c7aa, 20);
-        MD5STEP(F2, a, b, c, d, in[ 5]+0xd62f105d,  5);
-        MD5STEP(F2, d, a, b, c, in[10]+0x02441453,  9);
-        MD5STEP(F2, c, d, a, b, in[15]+0xd8a1e681, 14);
-        MD5STEP(F2, b, c, d, a, in[ 4]+0xe7d3fbc8, 20);
-        MD5STEP(F2, a, b, c, d, in[ 9]+0x21e1cde6,  5);
-        MD5STEP(F2, d, a, b, c, in[14]+0xc33707d6,  9);
-        MD5STEP(F2, c, d, a, b, in[ 3]+0xf4d50d87, 14);
-        MD5STEP(F2, b, c, d, a, in[ 8]+0x455a14ed, 20);
-        MD5STEP(F2, a, b, c, d, in[13]+0xa9e3e905,  5);
-        MD5STEP(F2, d, a, b, c, in[ 2]+0xfcefa3f8,  9);
-        MD5STEP(F2, c, d, a, b, in[ 7]+0x676f02d9, 14);
-        MD5STEP(F2, b, c, d, a, in[12]+0x8d2a4c8a, 20);
-
-        MD5STEP(F3, a, b, c, d, in[ 5]+0xfffa3942,  4);
-        MD5STEP(F3, d, a, b, c, in[ 8]+0x8771f681, 11);
-        MD5STEP(F3, c, d, a, b, in[11]+0x6d9d6122, 16);
-        MD5STEP(F3, b, c, d, a, in[14]+0xfde5380c, 23);
-        MD5STEP(F3, a, b, c, d, in[ 1]+0xa4beea44,  4);
-        MD5STEP(F3, d, a, b, c, in[ 4]+0x4bdecfa9, 11);
-        MD5STEP(F3, c, d, a, b, in[ 7]+0xf6bb4b60, 16);
-        MD5STEP(F3, b, c, d, a, in[10]+0xbebfbc70, 23);
-        MD5STEP(F3, a, b, c, d, in[13]+0x289b7ec6,  4);
-        MD5STEP(F3, d, a, b, c, in[ 0]+0xeaa127fa, 11);
-        MD5STEP(F3, c, d, a, b, in[ 3]+0xd4ef3085, 16);
-        MD5STEP(F3, b, c, d, a, in[ 6]+0x04881d05, 23);
-        MD5STEP(F3, a, b, c, d, in[ 9]+0xd9d4d039,  4);
-        MD5STEP(F3, d, a, b, c, in[12]+0xe6db99e5, 11);
-        MD5STEP(F3, c, d, a, b, in[15]+0x1fa27cf8, 16);
-        MD5STEP(F3, b, c, d, a, in[ 2]+0xc4ac5665, 23);
-
-        MD5STEP(F4, a, b, c, d, in[ 0]+0xf4292244,  6);
-        MD5STEP(F4, d, a, b, c, in[ 7]+0x432aff97, 10);
-        MD5STEP(F4, c, d, a, b, in[14]+0xab9423a7, 15);
-        MD5STEP(F4, b, c, d, a, in[ 5]+0xfc93a039, 21);
-        MD5STEP(F4, a, b, c, d, in[12]+0x655b59c3,  6);
-        MD5STEP(F4, d, a, b, c, in[ 3]+0x8f0ccc92, 10);
-        MD5STEP(F4, c, d, a, b, in[10]+0xffeff47d, 15);
-        MD5STEP(F4, b, c, d, a, in[ 1]+0x85845dd1, 21);
-        MD5STEP(F4, a, b, c, d, in[ 8]+0x6fa87e4f,  6);
-        MD5STEP(F4, d, a, b, c, in[15]+0xfe2ce6e0, 10);
-        MD5STEP(F4, c, d, a, b, in[ 6]+0xa3014314, 15);
-        MD5STEP(F4, b, c, d, a, in[13]+0x4e0811a1, 21);
-        MD5STEP(F4, a, b, c, d, in[ 4]+0xf7537e82,  6);
-        MD5STEP(F4, d, a, b, c, in[11]+0xbd3af235, 10);
-        MD5STEP(F4, c, d, a, b, in[ 2]+0x2ad7d2bb, 15);
-        MD5STEP(F4, b, c, d, a, in[ 9]+0xeb86d391, 21);
-
-        buf[0] += a;
-        buf[1] += b;
-        buf[2] += c;
-        buf[3] += d;
-}
-
-/*
- * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
- * initialization constants.
- */
-static void MD5Init(MD5Context *ctx){
-        ctx->isInit = 1;
-        ctx->buf[0] = 0x67452301;
-        ctx->buf[1] = 0xefcdab89;
-        ctx->buf[2] = 0x98badcfe;
-        ctx->buf[3] = 0x10325476;
-        ctx->bits[0] = 0;
-        ctx->bits[1] = 0;
-}
-
-/*
- * Update context to reflect the concatenation of another buffer full
- * of bytes.
- */
-static
-void MD5Update(MD5Context *ctx, const unsigned char *buf, unsigned int len){
-        uint32 t;
-
-        /* Update bitcount */
-
-        t = ctx->bits[0];
-        if ((ctx->bits[0] = t + ((uint32)len << 3)) < t)
-                ctx->bits[1]++; /* Carry from low to high */
-        ctx->bits[1] += len >> 29;
-
-        t = (t >> 3) & 0x3f;    /* Bytes already in shsInfo->data */
-
-        /* Handle any leading odd-sized chunks */
-
-        if ( t ) {
-                unsigned char *p = (unsigned char *)ctx->in + t;
-
-                t = 64-t;
-                if (len < t) {
-                        memcpy(p, buf, len);
-                        return;
-                }
-                memcpy(p, buf, t);
-                byteReverse(ctx->in, 16);
-                MD5Transform(ctx->buf, (uint32 *)ctx->in);
-                buf += t;
-                len -= t;
-        }
-
-        /* Process data in 64-byte chunks */
-
-        while (len >= 64) {
-                memcpy(ctx->in, buf, 64);
-                byteReverse(ctx->in, 16);
-                MD5Transform(ctx->buf, (uint32 *)ctx->in);
-                buf += 64;
-                len -= 64;
-        }
-
-        /* Handle any remaining bytes of data. */
-
-        memcpy(ctx->in, buf, len);
-}
-
-/*
- * Final wrapup - pad to 64-byte boundary with the bit pattern
- * 1 0* (64-bit count of bits processed, MSB-first)
- */
-static void MD5Final(unsigned char digest[16], MD5Context *ctx){
-        unsigned count;
-        unsigned char *p;
-
-        /* Compute number of bytes mod 64 */
-        count = (ctx->bits[0] >> 3) & 0x3F;
-
-        /* Set the first char of padding to 0x80.  This is safe since there is
-           always at least one byte free */
-        p = ctx->in + count;
-        *p++ = 0x80;
-
-        /* Bytes of padding needed to make 64 bytes */
-        count = 64 - 1 - count;
-
-        /* Pad out to 56 mod 64 */
-        if (count < 8) {
-                /* Two lots of padding:  Pad the first block to 64 bytes */
-                memset(p, 0, count);
-                byteReverse(ctx->in, 16);
-                MD5Transform(ctx->buf, (uint32 *)ctx->in);
-
-                /* Now fill the next block with 56 bytes */
-                memset(ctx->in, 0, 56);
-        } else {
-                /* Pad block to 56 bytes */
-                memset(p, 0, count-8);
-        }
-        byteReverse(ctx->in, 14);
-
-        /* Append length in bits and transform */
-        memcpy(ctx->in + 14*4, ctx->bits, 8);
-
-        MD5Transform(ctx->buf, (uint32 *)ctx->in);
-        byteReverse((unsigned char *)ctx->buf, 4);
-        memcpy(digest, ctx->buf, 16);
-}
-
-/*
-** Convert a 128-bit MD5 digest into a 32-digit base-16 number.
+/* This is the main routine for an ordinary TCL shell.  If there are
+** are arguments, run the first argument as a script.  Otherwise,
+** read TCL commands from standard input
 */
-static void MD5DigestToBase16(unsigned char *digest, char *zBuf){
-  static char const zEncode[] = "0123456789abcdef";
-  int i, j;
-
-  for(j=i=0; i<16; i++){
-    int a = digest[i];
-    zBuf[j++] = zEncode[(a>>4)&0xf];
-    zBuf[j++] = zEncode[a & 0xf];
-  }
-  zBuf[j] = 0;
-}
-
-
-/*
-** Convert a 128-bit MD5 digest into sequency of eight 5-digit integers
-** each representing 16 bits of the digest and separated from each
-** other by a "-" character.
-*/
-static void MD5DigestToBase10x8(unsigned char digest[16], char zDigest[50]){
-  int i, j;
-  unsigned int x;
-  for(i=j=0; i<16; i+=2){
-    x = digest[i]*256 + digest[i+1];
-    if( i>0 ) zDigest[j++] = '-';
-    sqlite3_snprintf(50-j, &zDigest[j], "%05u", x);
-    j += 5;
-  }
-  zDigest[j] = 0;
-}
-
-/*
-** A TCL command for md5.  The argument is the text to be hashed.  The
-** Result is the hash in base64.
-*/
-static int SQLITE_TCLAPI md5_cmd(
-  void*cd,
-  Tcl_Interp *interp,
-  int argc,
-  const char **argv
-){
-  MD5Context ctx;
-  unsigned char digest[16];
-  char zBuf[50];
-  void (*converter)(unsigned char*, char*);
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-        " TEXT\"", (char*)0);
-    return TCL_ERROR;
-  }
-  MD5Init(&ctx);
-  MD5Update(&ctx, (unsigned char*)argv[1], (unsigned)strlen(argv[1]));
-  MD5Final(digest, &ctx);
-  converter = (void(*)(unsigned char*,char*))cd;
-  converter(digest, zBuf);
-  Tcl_AppendResult(interp, zBuf, (char*)0);
-  return TCL_OK;
-}
-
-/*
-** A TCL command to take the md5 hash of a file.  The argument is the
-** name of the file.
-*/
-static int SQLITE_TCLAPI md5file_cmd(
-  void*cd,
-  Tcl_Interp *interp,
-  int argc,
-  const char **argv
-){
-  FILE *in;
-  int ofst;
-  int amt;
-  MD5Context ctx;
-  void (*converter)(unsigned char*, char*);
-  unsigned char digest[16];
-  char zBuf[10240];
-
-  if( argc!=2 && argc!=4 ){
-    Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-        " FILENAME [OFFSET AMT]\"", (char*)0);
-    return TCL_ERROR;
-  }
-  if( argc==4 ){
-    ofst = atoi(argv[2]);
-    amt = atoi(argv[3]);
-  }else{
-    ofst = 0;
-    amt = 2147483647;
-  }
-  in = fopen(argv[1],"rb");
-  if( in==0 ){
-    Tcl_AppendResult(interp,"unable to open file \"", argv[1],
-         "\" for reading", (char*)0);
-    return TCL_ERROR;
-  }
-  fseek(in, ofst, SEEK_SET);
-  MD5Init(&ctx);
-  while( amt>0 ){
-    int n;
-    n = (int)fread(zBuf, 1, sizeof(zBuf)<=amt ? sizeof(zBuf) : amt, in);
-    if( n<=0 ) break;
-    MD5Update(&ctx, (unsigned char*)zBuf, (unsigned)n);
-    amt -= n;
-  }
-  fclose(in);
-  MD5Final(digest, &ctx);
-  converter = (void(*)(unsigned char*,char*))cd;
-  converter(digest, zBuf);
-  Tcl_AppendResult(interp, zBuf, (char*)0);
-  return TCL_OK;
-}
-
-/*
-** Register the four new TCL commands for generating MD5 checksums
-** with the TCL interpreter.
-*/
-int Md5_Init(Tcl_Interp *interp){
-  Tcl_CreateCommand(interp, "md5", (Tcl_CmdProc*)md5_cmd,
-                    MD5DigestToBase16, 0);
-  Tcl_CreateCommand(interp, "md5-10x8", (Tcl_CmdProc*)md5_cmd,
-                    MD5DigestToBase10x8, 0);
-  Tcl_CreateCommand(interp, "md5file", (Tcl_CmdProc*)md5file_cmd,
-                    MD5DigestToBase16, 0);
-  Tcl_CreateCommand(interp, "md5file-10x8", (Tcl_CmdProc*)md5file_cmd,
-                    MD5DigestToBase10x8, 0);
-  return TCL_OK;
-}
-#endif /* defined(SQLITE_TEST) || defined(SQLITE_TCLMD5) */
-
-#if defined(SQLITE_TEST)
-/*
-** During testing, the special md5sum() aggregate function is available.
-** inside SQLite.  The following routines implement that function.
-*/
-static void md5step(sqlite3_context *context, int argc, sqlite3_value **argv){
-  MD5Context *p;
-  int i;
-  if( argc<1 ) return;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p==0 ) return;
-  if( !p->isInit ){
-    MD5Init(p);
-  }
-  for(i=0; i<argc; i++){
-    const char *zData = (char*)sqlite3_value_text(argv[i]);
-    if( zData ){
-      MD5Update(p, (unsigned char*)zData, (int)strlen(zData));
-    }
-  }
-}
-static void md5finalize(sqlite3_context *context){
-  MD5Context *p;
-  unsigned char digest[16];
-  char zBuf[33];
-  p = sqlite3_aggregate_context(context, sizeof(*p));
-  MD5Final(digest,p);
-  MD5DigestToBase16(digest, zBuf);
-  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
-}
-int Md5_Register(
-  sqlite3 *db,
-  char **pzErrMsg,
-  const sqlite3_api_routines *pThunk
-){
-  int rc = sqlite3_create_function(db, "md5sum", -1, SQLITE_UTF8, 0, 0,
-                                 md5step, md5finalize);
-  sqlite3_overload_function(db, "md5sum", -1);  /* To exercise this API */
-  return rc;
-}
-#endif /* defined(SQLITE_TEST) */
-
-
-/*
-** If the macro TCLSH is one, then put in code this for the
-** "main" routine that will initialize Tcl and take input from
-** standard input, or if a file is named on the command line
-** the TCL interpreter reads and evaluates that file.
-*/
-#if TCLSH==1
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =
-    "set line {}\n"
-    "while {![eof stdin]} {\n"
-      "if {$line!=\"\"} {\n"
-        "puts -nonewline \"> \"\n"
-      "} else {\n"
-        "puts -nonewline \"% \"\n"
-      "}\n"
-      "flush stdout\n"
-      "append line [gets stdin]\n"
-      "if {[info complete $line]} {\n"
-        "if {[catch {uplevel #0 $line} result]} {\n"
-          "puts stderr \"Error: $result\"\n"
-        "} elseif {$result!=\"\"} {\n"
-          "puts $result\n"
+    "if {[llength $argv]>=1} {\n"
+      "set argv0 [lindex $argv 0]\n"
+      "set argv [lrange $argv 1 end]\n"
+      "source $argv0\n"
+    "} else {\n"
+      "set line {}\n"
+      "while {![eof stdin]} {\n"
+        "if {$line!=\"\"} {\n"
+          "puts -nonewline \"> \"\n"
+        "} else {\n"
+          "puts -nonewline \"% \"\n"
         "}\n"
-        "set line {}\n"
-      "} else {\n"
-        "append line \\n\n"
+        "flush stdout\n"
+        "append line [gets stdin]\n"
+        "if {[info complete $line]} {\n"
+          "if {[catch {uplevel #0 $line} result]} {\n"
+            "puts stderr \"Error: $result\"\n"
+          "} elseif {$result!=\"\"} {\n"
+            "puts $result\n"
+          "}\n"
+          "set line {}\n"
+        "} else {\n"
+          "append line \\n\n"
+        "}\n"
       "}\n"
     "}\n"
   ;
   return zMainloop;
 }
-#endif
-#if TCLSH==2
-static const char *tclsh_main_loop(void);
-#endif
-
-#ifdef SQLITE_TEST
-static void init_all(Tcl_Interp *);
-static int SQLITE_TCLAPI init_all_cmd(
-  ClientData cd,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-
-  Tcl_Interp *slave;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "SLAVE");
-    return TCL_ERROR;
-  }
-
-  slave = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
-  if( !slave ){
-    return TCL_ERROR;
-  }
-
-  init_all(slave);
-  return TCL_OK;
-}
-
-/*
-** Tclcmd: db_use_legacy_prepare DB BOOLEAN
-**
-**   The first argument to this command must be a database command created by
-**   [sqlite3]. If the second argument is true, then the handle is configured
-**   to use the sqlite3_prepare_v2() function to prepare statements. If it
-**   is false, sqlite3_prepare().
-*/
-static int SQLITE_TCLAPI db_use_legacy_prepare_cmd(
-  ClientData cd,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  Tcl_CmdInfo cmdInfo;
-  SqliteDb *pDb;
-  int bPrepare;
-
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB BOOLEAN");
-    return TCL_ERROR;
-  }
-
-  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
-    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
-  }
-  pDb = (SqliteDb*)cmdInfo.objClientData;
-  if( Tcl_GetBooleanFromObj(interp, objv[2], &bPrepare) ){
-    return TCL_ERROR;
-  }
-
-  pDb->bLegacyPrepare = bPrepare;
-
-  Tcl_ResetResult(interp);
-  return TCL_OK;
-}
-
-/*
-** Tclcmd: db_last_stmt_ptr DB
-**
-**   If the statement cache associated with database DB is not empty,
-**   return the text representation of the most recently used statement
-**   handle.
-*/
-static int SQLITE_TCLAPI db_last_stmt_ptr(
-  ClientData cd,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
-  Tcl_CmdInfo cmdInfo;
-  SqliteDb *pDb;
-  sqlite3_stmt *pStmt = 0;
-  char zBuf[100];
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-
-  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
-    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
-  }
-  pDb = (SqliteDb*)cmdInfo.objClientData;
-
-  if( pDb->stmtList ) pStmt = pDb->stmtList->pStmt;
-  if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ){
-    return TCL_ERROR;
-  }
-  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
-
-  return TCL_OK;
-}
-#endif /* SQLITE_TEST */
-
-/*
-** Configure the interpreter passed as the first argument to have access
-** to the commands and linked variables that make up:
-**
-**   * the [sqlite3] extension itself,
-**
-**   * If SQLITE_TCLMD5 or SQLITE_TEST is defined, the Md5 commands, and
-**
-**   * If SQLITE_TEST is set, the various test interfaces used by the Tcl
-**     test suite.
-*/
-static void init_all(Tcl_Interp *interp){
-  Sqlite3_Init(interp);
-
-#if defined(SQLITE_TEST) || defined(SQLITE_TCLMD5)
-  Md5_Init(interp);
-#endif
-
-#ifdef SQLITE_TEST
-  {
-    extern int Sqliteconfig_Init(Tcl_Interp*);
-    extern int Sqlitetest1_Init(Tcl_Interp*);
-    extern int Sqlitetest2_Init(Tcl_Interp*);
-    extern int Sqlitetest3_Init(Tcl_Interp*);
-    extern int Sqlitetest4_Init(Tcl_Interp*);
-    extern int Sqlitetest5_Init(Tcl_Interp*);
-    extern int Sqlitetest6_Init(Tcl_Interp*);
-    extern int Sqlitetest7_Init(Tcl_Interp*);
-    extern int Sqlitetest8_Init(Tcl_Interp*);
-    extern int Sqlitetest9_Init(Tcl_Interp*);
-    extern int Sqlitetestasync_Init(Tcl_Interp*);
-    extern int Sqlitetest_autoext_Init(Tcl_Interp*);
-    extern int Sqlitetest_blob_Init(Tcl_Interp*);
-    extern int Sqlitetest_demovfs_Init(Tcl_Interp *);
-    extern int Sqlitetest_func_Init(Tcl_Interp*);
-    extern int Sqlitetest_hexio_Init(Tcl_Interp*);
-    extern int Sqlitetest_init_Init(Tcl_Interp*);
-    extern int Sqlitetest_malloc_Init(Tcl_Interp*);
-    extern int Sqlitetest_mutex_Init(Tcl_Interp*);
-    extern int Sqlitetestschema_Init(Tcl_Interp*);
-    extern int Sqlitetestsse_Init(Tcl_Interp*);
-    extern int Sqlitetesttclvar_Init(Tcl_Interp*);
-    extern int Sqlitetestfs_Init(Tcl_Interp*);
-    extern int SqlitetestThread_Init(Tcl_Interp*);
-    extern int SqlitetestOnefile_Init();
-    extern int SqlitetestOsinst_Init(Tcl_Interp*);
-    extern int Sqlitetestbackup_Init(Tcl_Interp*);
-    extern int Sqlitetestintarray_Init(Tcl_Interp*);
-    extern int Sqlitetestvfs_Init(Tcl_Interp *);
-    extern int Sqlitetestrtree_Init(Tcl_Interp*);
-    extern int Sqlitequota_Init(Tcl_Interp*);
-    extern int Sqlitemultiplex_Init(Tcl_Interp*);
-    extern int SqliteSuperlock_Init(Tcl_Interp*);
-    extern int SqlitetestSyscall_Init(Tcl_Interp*);
-#if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
-    extern int TestSession_Init(Tcl_Interp*);
-#endif
-    extern int Fts5tcl_Init(Tcl_Interp *);
-    extern int SqliteRbu_Init(Tcl_Interp*);
-    extern int Sqlitetesttcl_Init(Tcl_Interp*);
-    extern int Bgckpt_Init(Tcl_Interp*);
-#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
-    extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
-#endif
-
-#ifdef SQLITE_ENABLE_ZIPVFS
-    extern int Zipvfs_Init(Tcl_Interp*);
-    Zipvfs_Init(interp);
-#endif
-
-    Sqliteconfig_Init(interp);
-    Sqlitetest1_Init(interp);
-    Sqlitetest2_Init(interp);
-    Sqlitetest3_Init(interp);
-    Sqlitetest4_Init(interp);
-    Sqlitetest5_Init(interp);
-    Sqlitetest6_Init(interp);
-    Sqlitetest7_Init(interp);
-    Sqlitetest8_Init(interp);
-    Sqlitetest9_Init(interp);
-    Sqlitetestasync_Init(interp);
-    Sqlitetest_autoext_Init(interp);
-    Sqlitetest_blob_Init(interp);
-    Sqlitetest_demovfs_Init(interp);
-    Sqlitetest_func_Init(interp);
-    Sqlitetest_hexio_Init(interp);
-    Sqlitetest_init_Init(interp);
-    Sqlitetest_malloc_Init(interp);
-    Sqlitetest_mutex_Init(interp);
-    Sqlitetestschema_Init(interp);
-    Sqlitetesttclvar_Init(interp);
-    Sqlitetestfs_Init(interp);
-    SqlitetestThread_Init(interp);
-    SqlitetestOnefile_Init();
-    SqlitetestOsinst_Init(interp);
-    Sqlitetestbackup_Init(interp);
-    Sqlitetestintarray_Init(interp);
-    Sqlitetestvfs_Init(interp);
-    Sqlitetestrtree_Init(interp);
-    Sqlitequota_Init(interp);
-    Sqlitemultiplex_Init(interp);
-    SqliteSuperlock_Init(interp);
-    SqlitetestSyscall_Init(interp);
-#if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
-    TestSession_Init(interp);
-#endif
-    Fts5tcl_Init(interp);
-    SqliteRbu_Init(interp);
-    Sqlitetesttcl_Init(interp);
-    Bgckpt_Init(interp);
-
-#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
-    Sqlitetestfts3_Init(interp);
-#endif
-
-    Tcl_CreateObjCommand(
-        interp, "load_testfixture_extensions", init_all_cmd, 0, 0
-    );
-    Tcl_CreateObjCommand(
-        interp, "db_use_legacy_prepare", db_use_legacy_prepare_cmd, 0, 0
-    );
-    Tcl_CreateObjCommand(
-        interp, "db_last_stmt_ptr", db_last_stmt_ptr, 0, 0
-    );
-
-#ifdef SQLITE_SSE
-    Sqlitetestsse_Init(interp);
-#endif
-  }
-#endif
-}
-
-/* Needed for the setrlimit() system call on unix */
-#if defined(unix)
-#include <sys/resource.h>
-#endif
 
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
-
-#if !defined(_WIN32_WCE)
-  if( getenv("BREAK") ){
-    fprintf(stderr,
-        "attach debugger to process %d and press any key to continue.\n",
-        GETPID());
-    fgetc(stdin);
-  }
+  int i;
+  const char *zScript = 0;
+  char zArgc[32];
+#if defined(TCLSH_INIT_PROC)
+  extern const char *TCLSH_INIT_PROC(Tcl_Interp*);
 #endif
 
-  /* Since the primary use case for this binary is testing of SQLite,
-  ** be sure to generate core files if we crash */
-#if defined(SQLITE_TEST) && defined(unix)
-  { struct rlimit x;
-    getrlimit(RLIMIT_CORE, &x);
-    x.rlim_cur = x.rlim_max;
-    setrlimit(RLIMIT_CORE, &x);
+#if !defined(_WIN32_WCE)
+  if( getenv("SQLITE_DEBUG_BREAK") ){
+    if( isatty(0) && isatty(2) ){
+      fprintf(stderr,
+          "attach debugger to process %d and press any key to continue.\n",
+          GETPID());
+      fgetc(stdin);
+    }else{
+#if defined(_WIN32) || defined(WIN32)
+      DebugBreak();
+#elif defined(SIGTRAP)
+      raise(SIGTRAP);
+#endif
+    }
   }
-#endif /* SQLITE_TEST && unix */
-
+#endif
 
   /* Call sqlite3_shutdown() once before doing anything else. This is to
   ** test that sqlite3_shutdown() can be safely called by a process before
@@ -4292,32 +3761,27 @@ int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_FindExecutable(argv[0]);
   Tcl_SetSystemEncoding(NULL, "utf-8");
   interp = Tcl_CreateInterp();
+  Sqlite3_Init(interp);
 
-#if TCLSH==2
-  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
-#endif
-
-  init_all(interp);
-  if( argc>=2 ){
-    int i;
-    char zArgc[32];
-    sqlite3_snprintf(sizeof(zArgc), zArgc, "%d", argc-(3-TCLSH));
-    Tcl_SetVar(interp,"argc", zArgc, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp,"argv0",argv[1],TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
-    for(i=3-TCLSH; i<argc; i++){
-      Tcl_SetVar(interp, "argv", argv[i],
-          TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
-    }
-    if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
-      const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
-      if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
-      fprintf(stderr,"%s: %s\n", *argv, zInfo);
-      return 1;
-    }
+  sqlite3_snprintf(sizeof(zArgc), zArgc, "%d", argc-1);
+  Tcl_SetVar(interp,"argc", zArgc, TCL_GLOBAL_ONLY);
+  Tcl_SetVar(interp,"argv0",argv[0],TCL_GLOBAL_ONLY);
+  Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
+  for(i=1; i<argc; i++){
+    Tcl_SetVar(interp, "argv", argv[i],
+        TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
   }
-  if( TCLSH==2 || argc<=1 ){
-    Tcl_GlobalEval(interp, tclsh_main_loop());
+#if defined(TCLSH_INIT_PROC)
+  zScript = TCLSH_INIT_PROC(interp);
+#endif
+  if( zScript==0 ){
+    zScript = tclsh_main_loop();
+  }
+  if( Tcl_GlobalEval(interp, zScript)!=TCL_OK ){
+    const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+    if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
+    fprintf(stderr,"%s: %s\n", *argv, zInfo);
+    return 1;
   }
   return 0;
 }

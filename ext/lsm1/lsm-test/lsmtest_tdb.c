@@ -721,6 +721,7 @@ static struct Lib {
   { "sqlite3",      "testdb.sqlite",    sql_open },
   { "lsm_small",    "testdb.lsm_small", test_lsm_small_open },
   { "lsm_lomem",    "testdb.lsm_lomem", test_lsm_lomem_open },
+  { "lsm_lomem2",   "testdb.lsm_lomem2", test_lsm_lomem2_open },
 #ifdef HAVE_ZLIB
   { "lsm_zip",      "testdb.lsm_zip",   test_lsm_zip_open },
 #endif

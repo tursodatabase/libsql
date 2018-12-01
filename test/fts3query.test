@@ -118,26 +118,30 @@ do_test fts3query-4.1 {
 do_eqp_test fts3query-4.2 {
   SELECT t1.number FROM t1, ft WHERE t1.number=ft.rowid ORDER BY t1.date
 } {
-  0 0 0 {SCAN TABLE t1 USING COVERING INDEX i1} 
-  0 1 1 {SCAN TABLE ft VIRTUAL TABLE INDEX 1:}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING COVERING INDEX i1
+  `--SCAN TABLE ft VIRTUAL TABLE INDEX 1:
 }
 do_eqp_test fts3query-4.3 {
   SELECT t1.number FROM ft, t1 WHERE t1.number=ft.rowid ORDER BY t1.date
 } {
-  0 0 1 {SCAN TABLE t1 USING COVERING INDEX i1} 
-  0 1 0 {SCAN TABLE ft VIRTUAL TABLE INDEX 1:}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING COVERING INDEX i1
+  `--SCAN TABLE ft VIRTUAL TABLE INDEX 1:
 }
 do_eqp_test fts3query-4.4 {
   SELECT t1.number FROM t1, bt WHERE t1.number=bt.rowid ORDER BY t1.date
 } {
-  0 0 0 {SCAN TABLE t1 USING COVERING INDEX i1} 
-  0 1 1 {SEARCH TABLE bt USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING COVERING INDEX i1
+  `--SEARCH TABLE bt USING INTEGER PRIMARY KEY (rowid=?)
 }
 do_eqp_test fts3query-4.5 {
   SELECT t1.number FROM bt, t1 WHERE t1.number=bt.rowid ORDER BY t1.date
 } {
-  0 0 1 {SCAN TABLE t1 USING COVERING INDEX i1} 
-  0 1 0 {SEARCH TABLE bt USING INTEGER PRIMARY KEY (rowid=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING COVERING INDEX i1
+  `--SEARCH TABLE bt USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 
@@ -163,6 +167,7 @@ do_select_tests 5.3 -errorformat {
   3 "SELECT snippet(content) FROM t2 WHERE t2 MATCH 'history'"   snippet
   4 "SELECT optimize(content) FROM t2 WHERE t2 MATCH 'history'"  optimize
 }
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 5.4.0 { UPDATE t2_content SET c0content = X'1234' }
 do_select_tests 5.4 -errorformat {
   illegal first argument to %s

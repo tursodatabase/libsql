@@ -156,6 +156,7 @@ foreach mod {fts3 fts4} {
     SELECT quote(value) FROM t4_stat WHERE rowid=1
   } {X'0006'}
   
+  sqlite3_db_config db DEFENSIVE 0
   do_execsql_test 4.4.2 {
     DELETE FROM t4_stat WHERE rowid=1;
     INSERT INTO t4(t4) VALUES('merge=1,12');

@@ -268,6 +268,11 @@ int sqlite3_value_type(sqlite3_value* pVal){
   return aType[pVal->flags&MEM_AffMask];
 }
 
+/* Return true if a parameter to xUpdate represents an unchanged column */
+int sqlite3_value_nochange(sqlite3_value *pVal){
+  return (pVal->flags&(MEM_Null|MEM_Zero))==(MEM_Null|MEM_Zero);
+}
+
 /* Make a copy of an sqlite3_value object
 */
 sqlite3_value *sqlite3_value_dup(const sqlite3_value *pOrig){
@@ -367,14 +372,12 @@ void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
@@ -480,8 +483,7 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   return SQLITE_OK;
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
-  pCtx->isError = errCode;
-  pCtx->fErrorOrAux = 1;
+  pCtx->isError = errCode ? errCode : -1;
 #ifdef SQLITE_DEBUG
   if( pCtx->pVdbe ) pCtx->pVdbe->rcApp = errCode;
 #endif
@@ -495,7 +497,6 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_TOOBIG;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, "string or blob too big", -1, 
                        SQLITE_UTF8, SQLITE_STATIC);
 }
@@ -505,7 +506,6 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
   pCtx->isError = SQLITE_NOMEM_BKPT;
-  pCtx->fErrorOrAux = 1;
   sqlite3OomFault(pCtx->pOut->db);
 }
 
@@ -746,6 +746,25 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 }
 
 /*
+** If this routine is invoked from within an xColumn method of a virtual
+** table, then it returns true if and only if the the call is during an
+** UPDATE operation and the value of the column will not be modified
+** by the UPDATE.
+**
+** If this routine is called from any context other than within the
+** xColumn method of a virtual table, then the return value is meaningless
+** and arbitrary.
+**
+** Virtual table implements might use this routine to optimize their
+** performance by substituting a NULL result, or some other light-weight
+** value, as a signal to the xUpdate routine that the column is unchanged.
+*/
+int sqlite3_vtab_nochange(sqlite3_context *p){
+  assert( p );
+  return sqlite3_value_nochange(p->pOut);
+}
+
+/*
 ** Return the current time for a statement.  If the current time
 ** is requested more than once within the same run of a single prepared
 ** statement, the exact same time is returned for each invocation regardless
@@ -766,28 +785,6 @@ sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
     if( rc ) *piTime = 0;
   }
   return *piTime;
-}
-
-/*
-** The following is the implementation of an SQL function that always
-** fails with an error message stating that the function is used in the
-** wrong context.  The sqlite3_overload_function() API might construct
-** SQL function that use this routine so that the functions will exist
-** for name resolution but are actually overloaded by the xFindFunction
-** method of virtual tables.
-*/
-void sqlite3InvalidFunction(
-  sqlite3_context *context,  /* The function calling context */
-  int NotUsed,               /* Number of arguments to the function */
-  sqlite3_value **NotUsed2   /* Value of each argument */
-){
-  const char *zName = context->pFunc->zName;
-  char *zErr;
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  zErr = sqlite3_mprintf(
-      "unable to use function %s in the requested context", zName);
-  sqlite3_result_error(context, zErr, -1);
-  sqlite3_free(zErr);
 }
 
 /*
@@ -893,10 +890,7 @@ void sqlite3_set_auxdata(
     pAuxData->iAuxArg = iArg;
     pAuxData->pNextAux = pVdbe->pAuxData;
     pVdbe->pAuxData = pAuxData;
-    if( pCtx->fErrorOrAux==0 ){
-      pCtx->isError = 0;
-      pCtx->fErrorOrAux = 1;
-    }
+    if( pCtx->isError==0 ) pCtx->isError = -1;
   }else if( pAuxData->xDeleteAux ){
     pAuxData->xDeleteAux(pAuxData->pAux);
   }
@@ -976,7 +970,7 @@ static const Mem *columnNullValue(void){
         /* .xDel       = */ (void(*)(void*))0,
 #ifdef SQLITE_DEBUG
         /* .pScopyFrom = */ (Mem*)0,
-        /* .pFiller    = */ (void*)0,
+        /* .mScopyFlags= */ 0,
 #endif
       };
   return &nullMem;
@@ -1652,7 +1646,9 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
   u32 v;
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !pStmt ){
+  if( !pStmt 
+   || (op!=SQLITE_STMTSTATUS_MEMUSED && (op<0||op>=ArraySize(pVdbe->aCounter)))
+  ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
@@ -1705,6 +1701,16 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
   return z;
 #endif
 }
+
+#ifdef SQLITE_ENABLE_NORMALIZE
+/*
+** Return the normalized SQL associated with a prepared statement.
+*/
+const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe *)pStmt;
+  return p ? p->zNormSql : 0;
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*

@@ -276,6 +276,7 @@ do_test table-5.2.2 {
   db close
   forcedelete test.db
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
   db eval {
     CREATE TABLE t0(a,b);
     CREATE INDEX t ON t0(a);

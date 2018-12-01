@@ -656,11 +656,11 @@ do_createtable_tests 2.1 -tclquery {
   5    "CREATE TABLE x1 AS SELECT count(a) AS a, max(b) FROM t1" {a max(b)}
 }
 
-# EVIDENCE-OF: R-37111-22855 The declared type of each column is
+# EVIDENCE-OF: R-55407-45319 The declared type of each column is
 # determined by the expression affinity of the corresponding expression
 # in the result set of the SELECT statement, as follows: Expression
 # Affinity Column Declared Type TEXT "TEXT" NUMERIC "NUM" INTEGER "INT"
-# REAL "REAL" NONE "" (empty string)
+# REAL "REAL" BLOB (a.k.a "NONE") "" (empty string)
 #
 do_createtable_tests 2.2 -tclquery {
   table_column_decltypes x1
@@ -883,8 +883,8 @@ do_execsql_test e_createtable-3.3.1 {
   );
 } {}
 
-# EVIDENCE-OF: R-18415-27776 For the purposes of the DEFAULT clause, an
-# expression is considered constant if it does contains no sub-queries,
+# EVIDENCE-OF: R-33440-07331 For the purposes of the DEFAULT clause, an
+# expression is considered constant if it contains no sub-queries,
 # column or table references, bound parameters, or string literals
 # enclosed in double-quotes instead of single-quotes.
 #
@@ -1385,13 +1385,13 @@ do_execsql_test 4.10.0 {
 }
 do_createtable_tests 4.10 {
   1    "EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b = 5" 
-       {0 0 0 {SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (b=?)}}
+       {/*SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (b=?)*/}
 
   2    "EXPLAIN QUERY PLAN SELECT * FROM t2 ORDER BY b, c"
-       {0 0 0 {SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1}}
+       {/*SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1*/}
 
   3    "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE b=10 AND c>10"
-       {0 0 0 {SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)}}
+       {/*SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)*/}
 }
 
 # EVIDENCE-OF: R-45493-35653 A CHECK constraint may be attached to a

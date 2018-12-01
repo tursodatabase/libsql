@@ -106,6 +106,7 @@ do_test trigger7-3.1 {
 # in the series.
 #
 do_test trigger7-99.1 {
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     PRAGMA writable_schema=on;
     UPDATE sqlite_master SET sql='nonsense';
@@ -113,6 +114,6 @@ do_test trigger7-99.1 {
   db close
   catch { sqlite3 db test.db }
   catchsql { DROP TRIGGER t2r5 }
-} {1 {malformed database schema (t2r12)}}
+} {/1 {malformed database schema .*}/}
 
 finish_test

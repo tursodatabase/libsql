@@ -234,6 +234,10 @@ static void openStatTable(
            "DELETE FROM %Q.%s WHERE %s=%Q",
            pDb->zDbSName, zTab, zWhereType, zWhere
         );
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+      }else if( db->xPreUpdateCallback ){
+        sqlite3NestedParse(pParse, "DELETE FROM %Q.%s", pDb->zDbSName, zTab);
+#endif
       }else{
         /* The sqlite_stat[134] table already exists.  Delete all rows. */
         sqlite3VdbeAddOp2(v, OP_Clear, aRoot[i], iDb);
@@ -481,6 +485,7 @@ static const FuncDef statInitFuncdef = {
   0,               /* pNext */
   statInit,        /* xSFunc */
   0,               /* xFinalize */
+  0, 0,            /* xValue, xInverse */
   "stat_init",     /* zName */
   {0}
 };
@@ -797,6 +802,7 @@ static const FuncDef statPushFuncdef = {
   0,               /* pNext */
   statPush,        /* xSFunc */
   0,               /* xFinalize */
+  0, 0,            /* xValue, xInverse */
   "stat_push",     /* zName */
   {0}
 };
@@ -948,6 +954,7 @@ static const FuncDef statGetFuncdef = {
   0,               /* pNext */
   statGet,         /* xSFunc */
   0,               /* xFinalize */
+  0, 0,            /* xValue, xInverse */
   "stat_get",      /* zName */
   {0}
 };
@@ -998,6 +1005,9 @@ static void analyzeOneTable(
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
   int regPrev = iMem;          /* MUST BE LAST (see below) */
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  Table *pStat1 = 0; 
+#endif
 
   pParse->nMem = MAX(pParse->nMem, iMem);
   v = sqlite3GetVdbe(pParse);
@@ -1008,7 +1018,7 @@ static void analyzeOneTable(
     /* Do not gather statistics on views or virtual tables */
     return;
   }
-  if( sqlite3_strlike("sqlite_%", pTab->zName, 0)==0 ){
+  if( sqlite3_strlike("sqlite\\_%", pTab->zName, '\\')==0 ){
     /* Do not gather statistics on system tables */
     return;
   }
@@ -1020,6 +1030,18 @@ static void analyzeOneTable(
   if( sqlite3AuthCheck(pParse, SQLITE_ANALYZE, pTab->zName, 0,
       db->aDb[iDb].zDbSName ) ){
     return;
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  if( db->xPreUpdateCallback ){
+    pStat1 = (Table*)sqlite3DbMallocZero(db, sizeof(Table) + 13);
+    if( pStat1==0 ) return;
+    pStat1->zName = (char*)&pStat1[1];
+    memcpy(pStat1->zName, "sqlite_stat1", 13);
+    pStat1->nCol = 3;
+    pStat1->iPKey = -1;
+    sqlite3VdbeAddOp4(pParse->pVdbe, OP_Noop, 0, 0, 0,(char*)pStat1,P4_DYNBLOB);
   }
 #endif
 
@@ -1224,6 +1246,9 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    sqlite3VdbeChangeP4(v, -1, (char*)pStat1, P4_TABLE);
+#endif
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
 
     /* Add the entries to the stat3 or stat4 table. */
@@ -1249,10 +1274,7 @@ static void analyzeOneTable(
       callStatGet(v, regStat4, STAT_GET_NLT, regLt);
       callStatGet(v, regStat4, STAT_GET_NDLT, regDLt);
       sqlite3VdbeAddOp4Int(v, seekOp, iTabCur, addrNext, regSampleRowid, 0);
-      /* We know that the regSampleRowid row exists because it was read by
-      ** the previous loop.  Thus the not-found jump of seekOp will never
-      ** be taken */
-      VdbeCoverageNeverTaken(v);
+      VdbeCoverage(v);
 #ifdef SQLITE_ENABLE_STAT3
       sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, 0, regSample);
 #else
@@ -1287,6 +1309,9 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    sqlite3VdbeChangeP4(v, -1, (char*)pStat1, P4_TABLE);
+#endif
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
 }
@@ -1889,7 +1914,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  if( rc==SQLITE_OK && OptimizationEnabled(db, SQLITE_Stat34) ){
+  if( rc==SQLITE_OK ){
     db->lookaside.bDisable++;
     rc = loadStat4(db, sInfo.zDatabase);
     db->lookaside.bDisable--;

@@ -539,7 +539,8 @@ int sqlite3Fts3InitAux(sqlite3 *db){
      0,                           /* xRename       */
      0,                           /* xSavepoint    */
      0,                           /* xRelease      */
-     0                            /* xRollbackTo   */
+     0,                           /* xRollbackTo   */
+     0                            /* xShadowName   */
   };
   int rc;                         /* Return code */
 

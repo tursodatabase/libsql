@@ -139,6 +139,7 @@ foreach {tn3 create_vfs destroy_vfs} {
   foreach {tn2 cmd} {
       1 run_rbu 
       2 step_rbu 3 step_rbu_uri 4 step_rbu_state
+      5 step_rbu_legacy
   } {
     foreach {tn schema} {
       1 {
@@ -669,4 +670,3 @@ foreach {tn3 create_vfs destroy_vfs} {
 
 
 finish_test
-

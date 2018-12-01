@@ -231,8 +231,14 @@ int Bgckpt_Init(Tcl_Interp *interp){
 #endif   /* SQLITE_TEST */
 
 #else
-int Bgckpt_Init(Tcl_Interp *interp){
-  return TCL_OK;
-}
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
+#endif
+int Bgckpt_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif
 

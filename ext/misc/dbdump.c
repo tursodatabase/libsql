@@ -141,45 +141,12 @@ static void appendText(DText *p, char const *zAppend, char quote){
 ** Return '"' if quoting is required.  Return 0 if no quoting is required.
 */
 static char quoteChar(const char *zName){
-  /* All SQLite keywords, in alphabetical order */
-  static const char *azKeywords[] = {
-    "ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ANALYZE", "AND", "AS",
-    "ASC", "ATTACH", "AUTOINCREMENT", "BEFORE", "BEGIN", "BETWEEN", "BY",
-    "CASCADE", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "COMMIT",
-    "CONFLICT", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_DATE",
-    "CURRENT_TIME", "CURRENT_TIMESTAMP", "DATABASE", "DEFAULT", "DEFERRABLE",
-    "DEFERRED", "DELETE", "DESC", "DETACH", "DISTINCT", "DROP", "EACH",
-    "ELSE", "END", "ESCAPE", "EXCEPT", "EXCLUSIVE", "EXISTS", "EXPLAIN",
-    "FAIL", "FOR", "FOREIGN", "FROM", "FULL", "GLOB", "GROUP", "HAVING", "IF",
-    "IGNORE", "IMMEDIATE", "IN", "INDEX", "INDEXED", "INITIALLY", "INNER",
-    "INSERT", "INSTEAD", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "KEY",
-    "LEFT", "LIKE", "LIMIT", "MATCH", "NATURAL", "NO", "NOT", "NOTNULL",
-    "NULL", "OF", "OFFSET", "ON", "OR", "ORDER", "OUTER", "PLAN", "PRAGMA",
-    "PRIMARY", "QUERY", "RAISE", "RECURSIVE", "REFERENCES", "REGEXP",
-    "REINDEX", "RELEASE", "RENAME", "REPLACE", "RESTRICT", "RIGHT",
-    "ROLLBACK", "ROW", "SAVEPOINT", "SELECT", "SET", "TABLE", "TEMP",
-    "TEMPORARY", "THEN", "TO", "TRANSACTION", "TRIGGER", "UNION", "UNIQUE",
-    "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL", "WHEN", "WHERE",
-    "WITH", "WITHOUT",
-  };
-  int i, lwr, upr, mid, c;
+  int i;
   if( !isalpha((unsigned char)zName[0]) && zName[0]!='_' ) return '"';
   for(i=0; zName[i]; i++){
     if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ) return '"';
   }
-  lwr = 0;
-  upr = sizeof(azKeywords)/sizeof(azKeywords[0]) - 1;
-  while( lwr<=upr ){
-    mid = (lwr+upr)/2;
-    c = sqlite3_stricmp(azKeywords[mid], zName);
-    if( c==0 ) return '"';
-    if( c<0 ){
-      lwr = mid+1;
-    }else{
-      upr = mid-1;
-    }
-  }
-  return 0;
+  return sqlite3_keyword_check(zName, i) ? '"' : 0;
 }
 
 
@@ -293,7 +260,6 @@ static char **tableColumnList(DState *p, const char *zTab){
         ** ordinary column in the table.  Verify that azRowid[j] is a valid
         ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
         ** tables will fail this last check */
-        int rc;
         rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
         if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
         break;
@@ -455,12 +421,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   if( strcmp(zType, "table")==0 ){
     DText sSelect;
     DText sTable;
-    char **azCol;
+    char **azTCol;
     int i;
     int nCol;
 
-    azCol = tableColumnList(p, zTable);
-    if( azCol==0 ) return 0;
+    azTCol = tableColumnList(p, zTable);
+    if( azTCol==0 ) return 0;
 
     initText(&sTable);
     appendText(&sTable, "INSERT INTO ", 0);
@@ -473,12 +439,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     ** In other words:  "INSERT INTO tab(rowid,a,b,c,...) VALUES(...)"
     ** instead of the usual "INSERT INTO tab VALUES(...)".
     */
-    if( azCol[0] ){
+    if( azTCol[0] ){
       appendText(&sTable, "(", 0);
-      appendText(&sTable, azCol[0], 0);
-      for(i=1; azCol[i]; i++){
+      appendText(&sTable, azTCol[0], 0);
+      for(i=1; azTCol[i]; i++){
         appendText(&sTable, ",", 0);
-        appendText(&sTable, azCol[i], quoteChar(azCol[i]));
+        appendText(&sTable, azTCol[i], quoteChar(azTCol[i]));
       }
       appendText(&sTable, ")", 0);
     }
@@ -487,19 +453,19 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     /* Build an appropriate SELECT statement */
     initText(&sSelect);
     appendText(&sSelect, "SELECT ", 0);
-    if( azCol[0] ){
-      appendText(&sSelect, azCol[0], 0);
+    if( azTCol[0] ){
+      appendText(&sSelect, azTCol[0], 0);
       appendText(&sSelect, ",", 0);
     }
-    for(i=1; azCol[i]; i++){
-      appendText(&sSelect, azCol[i], quoteChar(azCol[i]));
-      if( azCol[i+1] ){
+    for(i=1; azTCol[i]; i++){
+      appendText(&sSelect, azTCol[i], quoteChar(azTCol[i]));
+      if( azTCol[i+1] ){
         appendText(&sSelect, ",", 0);
       }
     }
     nCol = i;
-    if( azCol[0]==0 ) nCol--;
-    freeColumnList(azCol);
+    if( azTCol[0]==0 ) nCol--;
+    freeColumnList(azTCol);
     appendText(&sSelect, " FROM ", 0);
     appendText(&sSelect, zTable, quoteChar(zTable));
 
@@ -519,7 +485,15 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
             }
             case SQLITE_FLOAT: {
               double r = sqlite3_column_double(pStmt,i);
-              output_formatted(p, "%!.20g", r);
+              sqlite3_uint64 ur;
+              memcpy(&ur,&r,sizeof(r));
+              if( ur==0x7ff0000000000000LL ){
+                p->xCallback("1e999", p->pArg);
+              }else if( ur==0xfff0000000000000LL ){
+                p->xCallback("-1e999", p->pArg);
+              }else{
+                output_formatted(p, "%!.20g", r);
+              }
               break;
             }
             case SQLITE_NULL: {

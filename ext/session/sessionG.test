@@ -173,5 +173,78 @@ do_test 4.3 {
   compare_db db db2
 } {}
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db 
+catch { db2 close }
+forcedelete test.db2
+sqlite3 db2 test.db2
 
+do_execsql_test 5.0.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  CREATE TABLE t2(a, b, c PRIMARY KEY);
+  CREATE TABLE t3(a, b PRIMARY KEY, c);
+}
+do_execsql_test -db db2 5.0.2 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  CREATE TABLE t2(a, b, c);
+  CREATE TABLE t3(a, b PRIMARY KEY, c);
+}
+
+do_test 5.1 {
+  do_then_apply_sql {
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t2 VALUES(4, 5, 6);
+    INSERT INTO t3 VALUES(7, 8, 9);
+  }
+
+  db2 eval {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+    SELECT * FROM t3;
+  }
+} {1 2 3 7 8 9}
+
+#-------------------------------------------------------------------------
+
+reset_db 
+db func number_name number_name
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE UNIQUE INDEX t1b ON t1(b);
+  WITH s(i) AS (
+    SELECT 1
+    UNION ALL
+    SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO t1 SELECT i, number_name(i) FROM s;
+}
+
+do_test 6.1 {
+  db eval BEGIN
+  set ::C [changeset_from_sql {
+    DELETE FROM t1;
+    WITH s(i) AS (
+        SELECT 1
+        UNION ALL
+        SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO t1 SELECT i, number_name(i+1) FROM s;
+  }]
+  db eval ROLLBACK
+  execsql { SELECT count(*) FROM t1 WHERE number_name(a) IS NOT b }
+} {0}
+
+proc xConflict {args} { exit ; return "OMIT" }
+do_test 6.2 {
+  sqlite3changeset_apply db $C xConflict
+} {}
+
+do_execsql_test 6.3 { SELECT count(*) FROM t1; } {1000}
+do_execsql_test 6.4 { 
+  SELECT count(*) FROM t1 WHERE number_name(a+1) IS NOT b; 
+} {0}
+
+# db eval { SELECT * FROM t1 } { puts "$a || $b" }
+
+
+finish_test

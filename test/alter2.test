@@ -64,6 +64,7 @@ proc alter_table {tbl sql {file_format 2}} {
   sqlite3 dbat test.db
   set s [string map {' ''} $sql]
   set t [string map {' ''} $tbl]
+  sqlite3_db_config dbat DEFENSIVE 0
   dbat eval [subst {
     PRAGMA writable_schema = 1;
     UPDATE sqlite_master SET sql = '$s' WHERE name = '$t' AND type = 'table';
@@ -91,6 +92,7 @@ do_test alter2-1.0 {
 #-----------------------------------------------------------------------
 # Some basic tests to make sure short rows are handled.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_test alter2-1.1 {
   execsql {
     CREATE TABLE abc(a, b);

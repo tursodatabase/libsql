@@ -25,15 +25,23 @@ static void corruptSchema(
   const char *zExtra   /* Error information */
 ){
   sqlite3 *db = pData->db;
-  if( !db->mallocFailed && (db->flags & SQLITE_WriteSchema)==0 ){
+  if( db->mallocFailed ){
+    pData->rc = SQLITE_NOMEM_BKPT;
+  }else if( pData->pzErrMsg[0]!=0 ){
+    /* A error message has already been generated.  Do not overwrite it */
+  }else if( pData->mInitFlags & INITFLAG_AlterTable ){
+    *pData->pzErrMsg = sqlite3DbStrDup(db, zExtra);
+    pData->rc = SQLITE_ERROR;
+  }else if( db->flags & SQLITE_WriteSchema ){
+    pData->rc = SQLITE_CORRUPT_BKPT;
+  }else{
     char *z;
     if( zObj==0 ) zObj = "?";
     z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
-    if( zExtra ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
-    sqlite3DbFree(db, *pData->pzErrMsg);
+    if( zExtra && zExtra[0] ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
     *pData->pzErrMsg = z;
+    pData->rc = SQLITE_CORRUPT_BKPT;
   }
-  pData->rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_CORRUPT_BKPT;
 }
 
 /*
@@ -85,7 +93,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = saved_iDb;
-    assert( saved_iDb==0 || (db->mDbFlags & DBFLAG_Vacuum)!=0 );
+    /* assert( saved_iDb==0 || (db->mDbFlags & DBFLAG_Vacuum)!=0 ); */
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -132,7 +140,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 ** auxiliary databases.  Return one of the SQLITE_ error codes to
 ** indicate success or failure.
 */
-static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
+int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   int rc;
   int i;
 #ifndef SQLITE_OMIT_DEPRECATED
@@ -145,6 +153,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   const char *zMasterName;
   int openedTransaction = 0;
 
+  assert( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 );
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pSchema );
   assert( sqlite3_mutex_held(db->mutex) );
@@ -166,6 +175,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   initData.iDb = iDb;
   initData.rc = SQLITE_OK;
   initData.pzErrMsg = pzErrMsg;
+  initData.mInitFlags = mFlags;
   sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   if( initData.rc ){
     rc = initData.rc;
@@ -187,7 +197,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** will be closed before this function returns.  */
   sqlite3BtreeEnter(pDb->pBt);
   if( !sqlite3BtreeIsInReadTrans(pDb->pBt) ){
-    rc = sqlite3BtreeBeginTrans(pDb->pBt, 0);
+    rc = sqlite3BtreeBeginTrans(pDb->pBt, 0, 0);
     if( rc!=SQLITE_OK ){
       sqlite3SetString(pzErrMsg, db, sqlite3ErrStr(rc));
       goto initone_error_out;
@@ -214,6 +224,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   for(i=0; i<ArraySize(meta); i++){
     sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
+  }
+  if( (db->flags & SQLITE_ResetDatabase)!=0 ){
+    memset(meta, 0, sizeof(meta));
   }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
@@ -314,8 +327,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
   }
-  if( rc==SQLITE_OK || (db->flags&SQLITE_WriteSchema)){
-    /* Black magic: If the SQLITE_WriteSchema flag is set, then consider
+  if( rc==SQLITE_OK || (db->flags&SQLITE_NoSchemaError)){
+    /* Black magic: If the SQLITE_NoSchemaError flag is set, then consider
     ** the schema loaded, even if errors occurred. In this situation the 
     ** current sqlite3_prepare() operation will fail, but the following one
     ** will attempt to compile the supplied statement against whatever subset
@@ -369,13 +382,14 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   assert( db->nDb>0 );
   /* Do the main schema first */
   if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
-    rc = sqlite3InitOne(db, 0, pzErrMsg);
+    rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
     if( rc ) return rc;
   }
   /* All other schemas after the main schema. The "temp" schema must be last */
   for(i=db->nDb-1; i>0; i--){
+    assert( i==1 || sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
     if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
-      rc = sqlite3InitOne(db, i, pzErrMsg);
+      rc = sqlite3InitOne(db, i, pzErrMsg, 0);
       if( rc ) return rc;
     }
   }
@@ -395,10 +409,12 @@ int sqlite3ReadSchema(Parse *pParse){
   assert( sqlite3_mutex_held(db->mutex) );
   if( !db->init.busy ){
     rc = sqlite3Init(db, &pParse->zErrMsg);
-  }
-  if( rc!=SQLITE_OK ){
-    pParse->rc = rc;
-    pParse->nErr++;
+    if( rc!=SQLITE_OK ){
+      pParse->rc = rc;
+      pParse->nErr++;
+    }else if( db->noSharedCache ){
+      db->mDbFlags |= DBFLAG_SchemaKnownOk;
+    }
   }
   return rc;
 }
@@ -426,7 +442,7 @@ static void schemaIsValid(Parse *pParse){
     ** on the b-tree database, open one now. If a transaction is opened, it 
     ** will be closed immediately after reading the meta-value. */
     if( !sqlite3BtreeIsInReadTrans(pBt) ){
-      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
       if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
         sqlite3OomFault(db);
       }
@@ -473,7 +489,8 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
   */
   assert( sqlite3_mutex_held(db->mutex) );
   if( pSchema ){
-    for(i=0; ALWAYS(i<db->nDb); i++){
+    for(i=0; 1; i++){
+      assert( i<db->nDb );
       if( db->aDb[i].pSchema==pSchema ){
         break;
       }
@@ -608,7 +625,7 @@ static int sqlite3Prepare(
   if( rc==SQLITE_OK && sParse.pVdbe && sParse.explain ){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "selectid", "order", "from", "detail"
+       "id", "parent", "notused", "detail"
     };
     int iFirst, mx;
     if( sParse.explain==2 ){
@@ -654,8 +671,6 @@ static int sqlite3Prepare(
 end_prepare:
 
   sqlite3ParserReset(&sParse);
-  rc = sqlite3ApiExit(db, rc);
-  assert( (rc&db->errMask)==rc );
   return rc;
 }
 static int sqlite3LockAndPrepare(
@@ -668,6 +683,7 @@ static int sqlite3LockAndPrepare(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
+  int cnt = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
@@ -678,17 +694,308 @@ static int sqlite3LockAndPrepare(
   }
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
-  rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
-  if( rc==SQLITE_SCHEMA ){
-    sqlite3ResetOneSchema(db, -1);
-    sqlite3_finalize(*ppStmt);
+  do{
+    /* Make multiple attempts to compile the SQL, until it either succeeds
+    ** or encounters a permanent error.  A schema problem after one schema
+    ** reset is considered a permanent error. */
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
-  }
+    assert( rc==SQLITE_OK || *ppStmt==0 );
+  }while( rc==SQLITE_ERROR_RETRY
+       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
   sqlite3BtreeLeaveAll(db);
+  rc = sqlite3ApiExit(db, rc);
+  assert( (rc&db->errMask)==rc );
   sqlite3_mutex_leave(db->mutex);
-  assert( rc==SQLITE_OK || *ppStmt==0 );
   return rc;
 }
+
+#ifdef SQLITE_ENABLE_NORMALIZE
+/*
+** Checks if the specified token is a table, column, or function name,
+** based on the databases associated with the statement being prepared.
+** If the function fails, zero is returned and pRc is filled with the
+** error code.
+*/
+static int shouldTreatAsIdentifier(
+  sqlite3 *db,        /* Database handle. */
+  const char *zToken, /* Pointer to start of token to be checked */
+  int nToken,         /* Length of token to be checked */
+  int *pRc            /* Pointer to error code upon failure */
+){
+  int bFound = 0;     /* Non-zero if token is an identifier name. */
+  int i, j;           /* Database and column loop indexes. */
+  Schema *pSchema;    /* Schema for current database. */
+  Hash *pHash;        /* Hash table of tables for current database. */
+  HashElem *e;        /* Hash element for hash table iteration. */
+  Table *pTab;        /* Database table for columns being checked. */
+
+  if( sqlite3IsRowidN(zToken, nToken) ){
+    return 1;
+  }
+  if( nToken>0 ){
+    int hash = SQLITE_FUNC_HASH(sqlite3UpperToLower[(u8)zToken[0]], nToken);
+    if( sqlite3FunctionSearchN(hash, zToken, nToken) ) return 1;
+  }
+  assert( db!=0 );
+  sqlite3_mutex_enter(db->mutex);
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
+    pHash = &db->aFunc;
+    if( sqlite3HashFindN(pHash, zToken, nToken) ){
+      bFound = 1;
+      break;
+    }
+    pSchema = db->aDb[i].pSchema;
+    if( pSchema==0 ) continue;
+    pHash = &pSchema->tblHash;
+    if( sqlite3HashFindN(pHash, zToken, nToken) ){
+      bFound = 1;
+      break;
+    }
+    for(e=sqliteHashFirst(pHash); e; e=sqliteHashNext(e)){
+      pTab = sqliteHashData(e);
+      if( pTab==0 ) continue;
+      pHash = pTab->pColHash;
+      if( pHash==0 ){
+        pTab->pColHash = pHash = sqlite3_malloc(sizeof(Hash));
+        if( pHash ){
+          sqlite3HashInit(pHash);
+          for(j=0; j<pTab->nCol; j++){
+            Column *pCol = &pTab->aCol[j];
+            sqlite3HashInsert(pHash, pCol->zName, pCol);
+          }
+        }else{
+          *pRc = SQLITE_NOMEM_BKPT;
+          bFound = 0;
+          goto done;
+        }
+      }
+      if( pHash && sqlite3HashFindN(pHash, zToken, nToken) ){
+        bFound = 1;
+        goto done;
+      }
+    }
+  }
+done:
+  sqlite3BtreeLeaveAll(db);
+  sqlite3_mutex_leave(db->mutex);
+  return bFound;
+}
+
+/*
+** Attempt to estimate the final output buffer size needed for the fully
+** normalized version of the specified SQL string.  This should take into
+** account any potential expansion that could occur (e.g. via IN clauses
+** being expanded, etc).  This size returned is the total number of bytes
+** including the NUL terminator.
+*/
+static int estimateNormalizedSize(
+  const char *zSql, /* The original SQL string */
+  int nSql,         /* Length of original SQL string */
+  u8 prepFlags      /* The flags passed to sqlite3_prepare_v3() */
+){
+  int nOut = nSql + 4;
+  const char *z = zSql;
+  while( nOut<nSql*5 ){
+    while( z[0]!=0 && z[0]!='I' && z[0]!='i' ){ z++; }
+    if( z[0]==0 ) break;
+    z++;
+    if( z[0]!='N' && z[0]!='n' ) break;
+    z++;
+    while( sqlite3Isspace(z[0]) ){ z++; }
+    if( z[0]!='(' ) break;
+    z++;
+    nOut += 5; /* ?,?,? */
+  }
+  return nOut;
+}
+
+/*
+** Copy the current token into the output buffer while dealing with quoted
+** identifiers.  By default, all letters will be converted into lowercase.
+** If the bUpper flag is set, uppercase will be used.  The piOut argument
+** will be used to update the target index into the output string.
+*/
+static void copyNormalizedToken(
+  const char *zSql, /* The original SQL string */
+  int iIn,          /* Current index into the original SQL string */
+  int nToken,       /* Number of bytes in the current token */
+  int tokenFlags,   /* Flags returned by the tokenizer */
+  char *zOut,       /* The output string */
+  int *piOut        /* Pointer to target index into the output string */
+){
+  int bQuoted = tokenFlags & SQLITE_TOKEN_QUOTED;
+  int bKeyword = tokenFlags & SQLITE_TOKEN_KEYWORD;
+  int j = *piOut, k = 0;
+  for(; k<nToken; k++){
+    if( bQuoted ){
+      if( k==0 && iIn>0 ){
+        zOut[j++] = '"';
+        continue;
+      }else if( k==nToken-1 ){
+        zOut[j++] = '"';
+        continue;
+      }
+    }
+    if( bKeyword ){
+      zOut[j++] = sqlite3Toupper(zSql[iIn+k]);
+    }else{
+      zOut[j++] = sqlite3Tolower(zSql[iIn+k]);
+    }
+  }
+  *piOut = j;
+}
+
+/*
+** Perform normalization of the SQL contained in the prepared statement and
+** store the result in the zNormSql field.  The schema for the associated
+** databases are consulted while performing the normalization in order to
+** determine if a token appears to be an identifier.  All identifiers are
+** left intact in the normalized SQL and all literals are replaced with a
+** single '?'.
+*/
+void sqlite3Normalize(
+  Vdbe *pVdbe,      /* VM being reprepared */
+  const char *zSql, /* The original SQL string */
+  int nSql,         /* Size of the input string in bytes */
+  u8 prepFlags      /* The flags passed to sqlite3_prepare_v3() */
+){
+  sqlite3 *db;           /* Database handle. */
+  char *z;               /* The output string */
+  int nZ;                /* Size of the output string in bytes */
+  int i;                 /* Next character to read from zSql[] */
+  int j;                 /* Next character to fill in on z[] */
+  int tokenType = 0;     /* Type of the next token */
+  int prevTokenType = 0; /* Type of the previous token, except spaces */
+  int n;                 /* Size of the next token */
+  int nParen = 0;        /* Nesting level of parenthesis */
+  Hash inHash;           /* Table of parenthesis levels to output index. */
+
+  db = sqlite3VdbeDb(pVdbe);
+  assert( db!=0 );
+  assert( pVdbe->zNormSql==0 );
+  if( zSql==0 ) return;
+  nZ = estimateNormalizedSize(zSql, nSql, prepFlags);
+  z = sqlite3DbMallocRawNN(db, nZ);
+  if( z==0 ) return;
+  sqlite3HashInit(&inHash);
+  for(i=j=0; i<nSql && zSql[i]; i+=n){
+    int flags = 0;
+    if( tokenType!=TK_SPACE ) prevTokenType = tokenType;
+    n = sqlite3GetTokenNormalized((unsigned char*)zSql+i, &tokenType, &flags);
+    switch( tokenType ){
+      case TK_SPACE: {
+        break;
+      }
+      case TK_ILLEGAL: {
+        sqlite3DbFree(db, z);
+        sqlite3HashClear(&inHash);
+        return;
+      }
+      case TK_STRING:
+      case TK_INTEGER:
+      case TK_FLOAT:
+      case TK_VARIABLE:
+      case TK_BLOB: {
+        z[j++] = '?';
+        break;
+      }
+      case TK_LP:
+      case TK_RP: {
+        if( tokenType==TK_LP ){
+          nParen++;
+          if( prevTokenType==TK_IN ){
+            assert( nParen<nSql );
+            sqlite3HashInsert(&inHash, zSql+nParen, SQLITE_INT_TO_PTR(j));
+          }
+        }else{
+          int jj;
+          assert( nParen<nSql );
+          jj = SQLITE_PTR_TO_INT(sqlite3HashFind(&inHash, zSql+nParen));
+          if( jj>0 ){
+            sqlite3HashInsert(&inHash, zSql+nParen, 0);
+            assert( jj+6<nZ );
+            memcpy(z+jj+1, "?,?,?", 5);
+            j = jj+6;
+            assert( nZ-1-j>=0 );
+            assert( nZ-1-j<nZ );
+            memset(z+j, 0, nZ-1-j);
+          }
+          nParen--;
+        }
+        assert( nParen>=0 );
+        /* Fall through */
+      }
+      case TK_MINUS:
+      case TK_SEMI:
+      case TK_PLUS:
+      case TK_STAR:
+      case TK_SLASH:
+      case TK_REM:
+      case TK_EQ:
+      case TK_LE:
+      case TK_NE:
+      case TK_LSHIFT:
+      case TK_LT:
+      case TK_RSHIFT:
+      case TK_GT:
+      case TK_GE:
+      case TK_BITOR:
+      case TK_CONCAT:
+      case TK_COMMA:
+      case TK_BITAND:
+      case TK_BITNOT:
+      case TK_DOT:
+      case TK_IN:
+      case TK_IS:
+      case TK_NOT:
+      case TK_NULL:
+      case TK_ID: {
+        if( tokenType==TK_NULL ){
+          if( prevTokenType==TK_IS || prevTokenType==TK_NOT ){
+            /* NULL is a keyword in this case, not a literal value */
+          }else{
+            /* Here the NULL is a literal value */
+            z[j++] = '?';
+            break;
+          }
+        }
+        if( j>0 && sqlite3IsIdChar(z[j-1]) && sqlite3IsIdChar(zSql[i]) ){
+          z[j++] = ' ';
+        }
+        if( tokenType==TK_ID ){
+          int i2 = i, n2 = n, rc = SQLITE_OK;
+          if( nParen>0 ){
+            assert( nParen<nSql );
+            sqlite3HashInsert(&inHash, zSql+nParen, 0);
+          }
+          if( flags&SQLITE_TOKEN_QUOTED ){ i2++; n2-=2; }
+          if( shouldTreatAsIdentifier(db, zSql+i2, n2, &rc)==0 ){
+            if( rc!=SQLITE_OK ){
+              sqlite3DbFree(db, z);
+              sqlite3HashClear(&inHash);
+              return;
+            }
+            if( sqlite3_keyword_check(zSql+i2, n2)==0 ){
+              z[j++] = '?';
+              break;
+            }
+          }
+        }
+        copyNormalizedToken(zSql, i, n, flags, z, &j);
+        break;
+      }
+    }
+  }
+  assert( j<nZ && "one" );
+  while( j>0 && z[j-1]==' ' ){ j--; }
+  if( j>0 && z[j-1]!=';' ){ z[j++] = ';'; }
+  z[j] = 0;
+  assert( j<nZ && "two" );
+  pVdbe->zNormSql = z;
+  sqlite3HashClear(&inHash);
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */
 
 /*
 ** Rerun the compilation of a statement after a schema change.

@@ -37,6 +37,7 @@ fts_kjv_genesis
 # incremental optimize routine.
 #
 proc prepare_for_optimize {db tbl} {
+  sqlite3_db_config $db DEFENSIVE 0
   $db eval [string map [list % $tbl] {
     BEGIN;
       CREATE TEMP TABLE tmp_segdir(

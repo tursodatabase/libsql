@@ -36,4 +36,24 @@ do_test 100 {
   }
 } {100000 5000050000 50000.5 1}
   
+# 2018-01-14.  A 100K-entry VALUES clause within a scalar expression does
+# not cause processor stack overflow.
+#
+do_test 110 {
+  set sql "SELECT (VALUES"
+  for {set i 1} {$i<100000} {incr i} {
+    append sql "($i),"
+  }
+  append sql "($i));"
+  db eval $sql
+} {1}
+
+# Only the left-most term of a multi-valued VALUES within a scalar
+# expression is evaluated.
+#
+do_test 120 {
+  set n [llength [split [db eval "explain $sql"] \n]]
+  expr {$n<10}
+} {1}
+
 finish_test

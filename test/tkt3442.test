@@ -34,35 +34,24 @@ do_test tkt3442-1.1 {
   }
 } {}
 
-
-# Explain Query Plan
-#
-proc EQP {sql} {
-  uplevel "execsql {EXPLAIN QUERY PLAN $sql}"
-}
-
-
 # These tests perform an EXPLAIN QUERY PLAN on both versions of the 
 # SELECT referenced in ticket #3442 (both '5000' and "5000") 
 # and verify that the query plan is the same.
 #
-ifcapable explain {
-  do_test tkt3442-1.2 {
-    EQP { SELECT node FROM listhash WHERE id='5000' LIMIT 1; }
-  } {0 0 0 {SEARCH TABLE listhash USING INDEX ididx (id=?)}}
-  do_test tkt3442-1.3 {
-    EQP { SELECT node FROM listhash WHERE id="5000" LIMIT 1; }
-  } {0 0 0 {SEARCH TABLE listhash USING INDEX ididx (id=?)}}
-}
+do_eqp_test tkt3442-1.2 {
+  SELECT node FROM listhash WHERE id='5000' LIMIT 1;
+} {SEARCH TABLE listhash USING INDEX ididx (id=?)}
+do_eqp_test tkt3442-1.3 {
+  SELECT node FROM listhash WHERE id="5000" LIMIT 1;
+} {SEARCH TABLE listhash USING INDEX ididx (id=?)}
 
 
 # Some extra tests testing other permutations of 5000.
 #
-ifcapable explain {
-  do_test tkt3442-1.4 {
-    EQP { SELECT node FROM listhash WHERE id=5000 LIMIT 1; }
-  } {0 0 0 {SEARCH TABLE listhash USING INDEX ididx (id=?)}}
-}
+do_eqp_test tkt3442-1.4 {
+  SELECT node FROM listhash WHERE id=5000 LIMIT 1;
+} {SEARCH TABLE listhash USING INDEX ididx (id=?)}
+
 do_test tkt3442-1.5 {
   catchsql {
     SELECT node FROM listhash WHERE id=[5000] LIMIT 1;

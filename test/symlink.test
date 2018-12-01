@@ -102,7 +102,7 @@ foreach {tn f} {1 test.db2 2 test.db3} {
         INSERT INTO t1 VALUES(1);
     } db2
     file exists test.db-journal
-  } 1
+  } [expr [atomic_batch_write test.db]==0]
   do_test 2.$tn.3 {
     list [file exists test2.db-journal] [file exists test3.db-journal]
   } {0 0}

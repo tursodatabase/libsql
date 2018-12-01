@@ -686,6 +686,7 @@ if {![sqlite3 -has-codec]} {
   } {}
   do_test capi3c-8.2 {
     sqlite3 db test.db
+    sqlite3_db_config db DEFENSIVE 0
     execsql {
       PRAGMA writable_schema=ON;
       INSERT INTO sqlite_master VALUES(NULL,NULL,NULL,NULL,NULL);
@@ -704,6 +705,7 @@ if {![sqlite3 -has-codec]} {
     db close
     forcedelete test.db test.db-journal
     sqlite3 db test.db
+    sqlite3_db_config db DEFENSIVE 0
     execsql {
       CREATE TABLE t1(a);
       PRAGMA writable_schema=ON;
@@ -757,7 +759,6 @@ foreach {code english} $code2english {
 
 # Test the error message when a "real" out of memory occurs.
 if { [permutation] != "nofaultsim" } {
-ifcapable memdebug {
   do_test capi3c-10-1 {
     sqlite3 db test.db
     set DB [sqlite3_connection_pointer db]
@@ -776,7 +777,6 @@ ifcapable memdebug {
   }
   db close
   sqlite3_memdebug_fail -1
-}
 }
 
 # The following tests - capi3c-11.* - test that a COMMIT or ROLLBACK

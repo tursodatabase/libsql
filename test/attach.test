@@ -726,6 +726,32 @@ ifcapable subquery {
     } db2
   } {1 {trigger r5 cannot reference objects in database temp}}
 } ;# endif subquery
+ifcapable json1&&vtab {
+  do_test attach-5.10 {
+    db close
+    catch {db2 close}
+    forcedelete test.db
+    sqlite3 db test.db
+    db eval {
+      CREATE TABLE t1(x);
+      CREATE TABLE t2(a,b);
+      CREATE TRIGGER x1 AFTER INSERT ON t1 BEGIN
+        INSERT INTO t2(a,b) SELECT key, value FROM json_each(NEW.x);
+      END;
+      INSERT INTO t1(x) VALUES('{"a":1}');
+      SELECT * FROM t2;
+    }
+  } {a 1}
+  do_test attach-5.11 {
+    sqlite3 db2 :memory:
+    db2 eval {
+      CREATE TABLE t3(y);
+      ATTACH 'test.db' AS aux;
+      INSERT INTO aux.t1(x) VALUES('{"b":2}');
+      SELECT * FROM aux.t2;
+    }
+  } {a 1 b 2}
+} ;# endif json1
 } ;# endif trigger
 
 # Check to make sure we get a sensible error if unable to open

@@ -241,5 +241,9 @@ eval [string map [list %WR% $trailing] {
 }]
 }
 
+catch { db close }
+catch { db2 close }
+sqlite3_shutdown
+test_sqlite3_log
 
 finish_test

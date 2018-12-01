@@ -977,6 +977,63 @@ do_execsql_test expr-13.9 {
   SELECT '' <= "";
 } {1}
 
+# 2018-02-26. Ticket https://www.sqlite.org/src/tktview/36fae083b450e3af85
+# 
+do_execsql_test expr-14.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(0),(1),(NULL),(0.5),('1x'),('0x');
+  SELECT count(*) FROM t1
+   WHERE (x OR (8==9)) != (CASE WHEN x THEN 1 ELSE 0 END);
+} {0}
+do_execsql_test expr-14.2 {
+  SELECT count(*) FROM t1
+   WHERE (x OR (8==9)) != (NOT NOT x);
+} {0}
+do_execsql_test expr-14.3 {
+  SELECT sum(NOT x) FROM t1
+   WHERE x
+} {0}
+do_execsql_test expr-14.4 {
+  SELECT sum(CASE WHEN x THEN 0 ELSE 1 END) FROM t1
+   WHERE x
+} {0}
 
+
+foreach {tn val} [list 1 NaN 2 -NaN 3 NaN0 4 -NaN0 5 Inf 6 -Inf] {
+  do_execsql_test expr-15.$tn.1 {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(0),(1),(NULL),(0.5),('1x'),('0x');
+  }
+
+  do_test expr-15.$tn.2 {
+    set ::STMT [sqlite3_prepare db "INSERT INTO t1 VALUES(?)" -1 TAIL]
+    sqlite3_bind_double $::STMT 1 $val
+    sqlite3_step $::STMT
+    sqlite3_reset $::STMT
+    sqlite3_finalize $::STMT
+  } {SQLITE_OK}
+
+  do_execsql_test expr-15.$tn.3 {
+    SELECT count(*) FROM t1
+     WHERE (x OR (8==9)) != (CASE WHEN x THEN 1 ELSE 0 END);
+  } {0}
+
+  do_execsql_test expr-15.$tn.4 {
+    SELECT count(*) FROM t1
+     WHERE (x OR (8==9)) != (NOT NOT x);
+  } {0}
+
+  do_execsql_test expr-15.$tn.5 {
+    SELECT sum(NOT x) FROM t1
+     WHERE x
+  } {0}
+
+  do_execsql_test expr-15.$tn.6 {
+    SELECT sum(CASE WHEN x THEN 0 ELSE 1 END) FROM t1
+     WHERE x
+  } {0}
+}
 
 finish_test

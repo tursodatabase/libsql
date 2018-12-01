@@ -114,6 +114,7 @@ do_execsql_test 3.0 {
   PRAGMA journal_mode = wal2;
 } {wal2}
 
+breakpoint
 do_test 3.1 {
   execsql BEGIN
   for {set i 1} {$i < 1000} {incr i} {

@@ -15,6 +15,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 
 ifcapable !rtree {
@@ -246,6 +247,8 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
   }
 
+  do_rtree_integrity_test rtree4-$nDim.3 rx
 }
 
+expand_all_sql db
 finish_test

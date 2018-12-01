@@ -688,7 +688,7 @@ do_test select1-7.2 {
 do_test select1-7.3 {
   set v [catch {execsql {SELECT f1 FROM test1 as 'hi', test2 as}} msg]
   lappend v $msg
-} {1 {near "as": syntax error}}
+} {1 {incomplete input}}
 do_test select1-7.4 {
   set v [catch {execsql {
      SELECT f1 FROM test1 ORDER BY;

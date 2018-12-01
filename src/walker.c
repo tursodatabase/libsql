@@ -54,6 +54,14 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
       }else if( pExpr->x.pList ){
         if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
       }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      if( ExprHasProperty(pExpr, EP_WinFunc) ){
+        Window *pWin = pExpr->y.pWin;
+        if( sqlite3WalkExprList(pWalker, pWin->pPartition) ) return WRC_Abort;
+        if( sqlite3WalkExprList(pWalker, pWin->pOrderBy) ) return WRC_Abort;
+        if( sqlite3WalkExpr(pWalker, pWin->pFilter) ) return WRC_Abort;
+      }
+#endif
     }
     break;
   }
@@ -91,7 +99,6 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
   if( sqlite3WalkExpr(pWalker, p->pHaving) ) return WRC_Abort;
   if( sqlite3WalkExprList(pWalker, p->pOrderBy) ) return WRC_Abort;
   if( sqlite3WalkExpr(pWalker, p->pLimit) ) return WRC_Abort;
-  if( sqlite3WalkExpr(pWalker, p->pOffset) ) return WRC_Abort;
   return WRC_Continue;
 }
 
@@ -108,16 +115,15 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   struct SrcList_item *pItem;
 
   pSrc = p->pSrc;
-  if( ALWAYS(pSrc) ){
-    for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-      if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
-        return WRC_Abort;
-      }
-      if( pItem->fg.isTabFunc
-       && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
-      ){
-        return WRC_Abort;
-      }
+  assert( pSrc!=0 );
+  for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
+    if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
+      return WRC_Abort;
+    }
+    if( pItem->fg.isTabFunc
+     && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
+    ){
+      return WRC_Abort;
     }
   }
   return WRC_Continue;

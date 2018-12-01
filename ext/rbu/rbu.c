@@ -29,7 +29,9 @@ void usage(const char *zArgv0){
 "Where options are:\n"
 "\n"
 "    -step NSTEP\n"
+"    -statstep NSTATSTEP\n"
 "    -vacuum\n"
+"    -presql SQL\n"
 "\n"
 "  If the -vacuum switch is not present, argument RBU-DB must be an RBU\n"
 "  database containing an update suitable for target database TARGET-DB.\n"
@@ -76,11 +78,13 @@ int main(int argc, char **argv){
   const char *zTarget;            /* Target database to apply RBU to */
   const char *zRbu;               /* Database containing RBU */
   char zBuf[200];                 /* Buffer for printf() */
-  char *zErrmsg;                  /* Error message, if any */
+  char *zErrmsg = 0;              /* Error message, if any */
   sqlite3rbu *pRbu;               /* RBU handle */
   int nStep = 0;                  /* Maximum number of step() calls */
+  int nStatStep = 0;              /* Report stats after this many step calls */
   int bVacuum = 0;
-  int rc;
+  const char *zPreSql = 0;
+  int rc = SQLITE_OK;
   sqlite3_int64 nProgress = 0;
   int nArgc = argc-2;
 
@@ -90,9 +94,18 @@ int main(int argc, char **argv){
     int nArg = strlen(zArg);
     if( nArg>1 && nArg<=8 && 0==memcmp(zArg, "-vacuum", nArg) ){
       bVacuum = 1;
+    }else if( nArg>1 && nArg<=7 
+           && 0==memcmp(zArg, "-presql", nArg) && i<nArg-1 ){
+      i++;
+      zPreSql = argv[i];
     }else if( nArg>1 && nArg<=5 && 0==memcmp(zArg, "-step", nArg) && i<nArg-1 ){
       i++;
       nStep = atoi(argv[i]);
+    }else if( nArg>1 && nArg<=9 
+           && 0==memcmp(zArg, "-statstep", nArg) && i<nArg-1 
+    ){
+      i++;
+      nStatStep = atoi(argv[i]);
     }else{
       usage(argv[0]);
     }
@@ -112,13 +125,40 @@ int main(int argc, char **argv){
   }
   report_rbu_vfs(pRbu);
 
+  if( zPreSql && pRbu ){
+    sqlite3 *dbMain = sqlite3rbu_db(pRbu, 0);
+    rc = sqlite3_exec(dbMain, zPreSql, 0, 0, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3 *dbRbu = sqlite3rbu_db(pRbu, 1);
+      rc = sqlite3_exec(dbRbu, zPreSql, 0, 0, 0);
+    }
+  }
+
   /* If nStep is less than or equal to zero, call
   ** sqlite3rbu_step() until either the RBU has been completely applied
   ** or an error occurs. Or, if nStep is greater than zero, call
   ** sqlite3rbu_step() a maximum of nStep times.  */
-  for(i=0; (nStep<=0 || i<nStep) && sqlite3rbu_step(pRbu)==SQLITE_OK; i++);
-  nProgress = sqlite3rbu_progress(pRbu);
-  rc = sqlite3rbu_close(pRbu, &zErrmsg);
+  if( rc==SQLITE_OK ){
+    for(i=0; (nStep<=0 || i<nStep) && sqlite3rbu_step(pRbu)==SQLITE_OK; i++){
+      if( nStatStep>0 && (i % nStatStep)==0 ){
+        sqlite3_int64 nUsed;
+        sqlite3_int64 nHighwater;
+        sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &nUsed, &nHighwater, 0);
+        fprintf(stdout, "memory used=%lld highwater=%lld", nUsed, nHighwater);
+        if( bVacuum==0 ){
+          int one;
+          int two;
+          sqlite3rbu_bp_progress(pRbu, &one, &two);
+          fprintf(stdout, "  progress=%d/%d\n", one, two);
+        }else{
+          fprintf(stdout, "\n");
+        }
+        fflush(stdout);
+      }
+    }
+    nProgress = sqlite3rbu_progress(pRbu);
+    rc = sqlite3rbu_close(pRbu, &zErrmsg);
+  }
 
   /* Let the user know what happened. */
   switch( rc ){

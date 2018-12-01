@@ -195,10 +195,10 @@ static void SQLITE_NOINLINE btreeEnterAll(sqlite3 *db){
       skipOk = 0;
     }
   }
-  db->skipBtreeMutex = skipOk;
+  db->noSharedCache = skipOk;
 }
 void sqlite3BtreeEnterAll(sqlite3 *db){
-  if( db->skipBtreeMutex==0 ) btreeEnterAll(db);
+  if( db->noSharedCache==0 ) btreeEnterAll(db);
 }
 static void SQLITE_NOINLINE btreeLeaveAll(sqlite3 *db){
   int i;
@@ -210,7 +210,7 @@ static void SQLITE_NOINLINE btreeLeaveAll(sqlite3 *db){
   }
 }
 void sqlite3BtreeLeaveAll(sqlite3 *db){
-  if( db->skipBtreeMutex==0 ) btreeLeaveAll(db);
+  if( db->noSharedCache==0 ) btreeLeaveAll(db);
 }
 
 #ifndef NDEBUG

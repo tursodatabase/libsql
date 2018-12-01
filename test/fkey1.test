@@ -171,6 +171,22 @@ do_catchsql_test fkey1-5.2 {
   INSERT OR REPLACE INTO t11 VALUES (2, 3);
 } {1 {FOREIGN KEY constraint failed}}
 
+# Make sure sqlite3_trace() output works with triggers used to implement
+# FK constraints
+#
+ifcapable trace {
+  proc sqltrace {txt} {
+    global traceoutput
+    lappend traceoutput $txt
+  }
+  do_test fkey1-5.2.1 {
+    unset -nocomplain traceoutput
+    db trace sqltrace
+    catch {db eval {INSERT OR REPLACE INTO t11 VALUES(2,3);}}
+    set traceoutput
+  } {{INSERT OR REPLACE INTO t11 VALUES(2,3);} {INSERT OR REPLACE INTO t11 VALUES(2,3);} {INSERT OR REPLACE INTO t11 VALUES(2,3);}}
+}
+
 # A similar test to the above.
 do_execsql_test fkey1-5.3 {
   CREATE TABLE Foo (

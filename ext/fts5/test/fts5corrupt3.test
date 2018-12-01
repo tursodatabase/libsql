@@ -51,6 +51,7 @@ do_test 1.1 {
   set {} {}
 } {} 
 
+sqlite3_db_config db DEFENSIVE 0
 for {set i 0} {$i < $L} {incr i} {
   do_test 1.2.$i {
     catchsql {
@@ -86,6 +87,7 @@ do_execsql_test 2.2 {
 #
 reset_db
 do_test 3.0 { create_t1 } {}
+sqlite3_db_config db DEFENSIVE 0
 
 do_execsql_test 3.1 {
   SELECT count(*) FROM t1_data;
@@ -158,6 +160,7 @@ do_3_test 3.10
 # Test that segments that end unexpectedly are identified as corruption.
 #
 reset_db
+sqlite3_db_config db DEFENSIVE 0
 do_test 4.0 {
   execsql { 
     CREATE VIRTUAL TABLE t1 USING fts5(x);
@@ -182,6 +185,7 @@ for {set i 1} {1} {incr i} {
 
   db close
   sqlite3 db test.db
+  sqlite3_db_config db DEFENSIVE 0
 
   db eval {
     BEGIN;
@@ -257,6 +261,7 @@ foreach rowid [db eval {SELECT rowid FROM x1_data WHERE rowid>100}] {
 #------------------------------------------------------------------------
 #
 reset_db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 6.1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a);
   INSERT INTO t1 VALUES('bbbbb ccccc');
@@ -273,6 +278,7 @@ do_catchsql_test 6.1.2 {
 
 #-------
 reset_db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 6.2.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
@@ -288,6 +294,7 @@ do_catchsql_test 6.2.2 {
 
 #-------
 reset_db
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 6.3.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a);
   INSERT INTO t1 VALUES('abc abcdef abcdefghi');
@@ -362,6 +369,7 @@ do_test 7.0 {
   }
 } {}
 
+sqlite3_db_config db DEFENSIVE 0
 do_test 7.1 {
   foreach i [db eval { SELECT rowid FROM t5_data WHERE rowid>100 }] {
     db eval BEGIN  
@@ -383,6 +391,7 @@ do_execsql_test 8.1 {
   INSERT INTO t1 VALUES('one', 'two');
 }
 
+sqlite3_db_config db DEFENSIVE 0
 do_test 9.1.1 {
   set    blob "12345678"    ;# cookie
   append blob "0105"        ;# 1 level, total of 5 segments

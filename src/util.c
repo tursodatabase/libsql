@@ -321,6 +321,45 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 }
 
 /*
+** Compute 10 to the E-th power.  Examples:  E==1 results in 10.
+** E==2 results in 100.  E==50 results in 1.0e50.
+**
+** This routine only works for values of E between 1 and 341.
+*/
+static LONGDOUBLE_TYPE sqlite3Pow10(int E){
+#if defined(_MSC_VER)
+  static const LONGDOUBLE_TYPE x[] = {
+    1.0e+001,
+    1.0e+002,
+    1.0e+004,
+    1.0e+008,
+    1.0e+016,
+    1.0e+032,
+    1.0e+064,
+    1.0e+128,
+    1.0e+256
+  };
+  LONGDOUBLE_TYPE r = 1.0;
+  int i;
+  assert( E>=0 && E<=307 );
+  for(i=0; E!=0; i++, E >>=1){
+    if( E & 1 ) r *= x[i];
+  }
+  return r;
+#else
+  LONGDOUBLE_TYPE x = 10.0;
+  LONGDOUBLE_TYPE r = 1.0;
+  while(1){
+    if( E & 1 ) r *= x;
+    E >>= 1;
+    if( E==0 ) break;
+    x *= x;
+  }
+  return r; 
+#endif
+}
+
+/*
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
 **
@@ -387,12 +426,12 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   /* copy max significant digits to significand */
   while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
     s = s*10 + (*z - '0');
-    z+=incr, nDigits++;
+    z+=incr; nDigits++;
   }
 
   /* skip non-significant significand digits
   ** (increase exponent by d to shift decimal left) */
-  while( z<zEnd && sqlite3Isdigit(*z) ) z+=incr, nDigits++, d++;
+  while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; nDigits++; d++; }
   if( z>=zEnd ) goto do_atof_calc;
 
   /* if decimal point is present */
@@ -405,7 +444,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
         s = s*10 + (*z - '0');
         d--;
       }
-      z+=incr, nDigits++;
+      z+=incr; nDigits++;
     }
   }
   if( z>=zEnd ) goto do_atof_calc;
@@ -475,11 +514,10 @@ do_atof_calc:
     if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
       result = (double)s;
     }else{
-      LONGDOUBLE_TYPE scale = 1.0;
       /* attempt to handle extremely small/large numbers better */
       if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
         if( e<342 ){                                    /*OPTIMIZATION-IF-TRUE*/
-          while( e%308 ) { scale *= 1.0e+1; e -= 1; }
+          LONGDOUBLE_TYPE scale = sqlite3Pow10(e-308);
           if( esign<0 ){
             result = s / scale;
             result /= 1.0e+308;
@@ -499,10 +537,7 @@ do_atof_calc:
           }
         }
       }else{
-        /* 1.0e+22 is the largest power of 10 than can be 
-        ** represented exactly. */
-        while( e%22 ) { scale *= 1.0e+1; e -= 1; }
-        while( e>0 ) { scale *= 1.0e+22; e -= 22; }
+        LONGDOUBLE_TYPE scale = sqlite3Pow10(e);
         if( esign<0 ){
           result = s / scale;
         }else{
@@ -560,7 +595,7 @@ static int compare2pow63(const char *zNum, int incr){
 ** Returns:
 **
 **     0    Successful transformation.  Fits in a 64-bit signed integer.
-**     1    Excess text after the integer value
+**     1    Excess non-space text after the integer value
 **     2    Integer too large for a 64-bit signed integer or is malformed
 **     3    Special case of 9223372036854775808
 **
@@ -603,47 +638,57 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
     u = u*10 + c - '0';
   }
+  testcase( i==18*incr );
+  testcase( i==19*incr );
+  testcase( i==20*incr );
   if( u>LARGEST_INT64 ){
+    /* This test and assignment is needed only to suppress UB warnings
+    ** from clang and -fsanitize=undefined.  This test and assignment make
+    ** the code a little larger and slower, and no harm comes from omitting
+    ** them, but we must appaise the undefined-behavior pharisees. */
     *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
   }else if( neg ){
     *pNum = -(i64)u;
   }else{
     *pNum = (i64)u;
   }
-  testcase( i==18 );
-  testcase( i==19 );
-  testcase( i==20 );
-  if( &zNum[i]<zEnd              /* Extra bytes at the end */
-   || (i==0 && zStart==zNum)     /* No digits */
+  rc = 0;
+  if( (i==0 && zStart==zNum)     /* No digits */
    || nonNum                     /* UTF16 with high-order bytes non-zero */
   ){
     rc = 1;
-  }else{
-    rc = 0;
+  }else if( &zNum[i]<zEnd ){     /* Extra bytes at the end */
+    int jj = i;
+    do{
+      if( !sqlite3Isspace(zNum[jj]) ){
+        rc = 1;          /* Extra non-space text after the integer */
+        break;
+      }
+      jj += incr;
+    }while( &zNum[jj]<zEnd );
   }
-  if( i>19*incr ){                /* Too many digits */
-    /* zNum is empty or contains non-numeric text or is longer
-    ** than 19 digits (thus guaranteeing that it is too large) */
-    return 2;
-  }else if( i<19*incr ){
+  if( i<19*incr ){
     /* Less than 19 digits, so we know that it fits in 64 bits */
     assert( u<=LARGEST_INT64 );
     return rc;
   }else{
     /* zNum is a 19-digit numbers.  Compare it against 9223372036854775808. */
-    c = compare2pow63(zNum, incr);
+    c = i>19*incr ? 1 : compare2pow63(zNum, incr);
     if( c<0 ){
       /* zNum is less than 9223372036854775808 so it fits */
       assert( u<=LARGEST_INT64 );
       return rc;
-    }else if( c>0 ){
-      /* zNum is greater than 9223372036854775808 so it overflows */
-      return 2;
     }else{
-      /* zNum is exactly 9223372036854775808.  Fits if negative.  The
-      ** special case 2 overflow if positive */
-      assert( u-1==LARGEST_INT64 );
-      return neg ? rc : 3;
+      *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
+      if( c>0 ){
+        /* zNum is greater than 9223372036854775808 so it overflows */
+        return 2;
+      }else{
+        /* zNum is exactly 9223372036854775808.  Fits if negative.  The
+        ** special case 2 overflow if positive */
+        assert( u-1==LARGEST_INT64 );
+        return neg ? rc : 3;
+      }
     }
   }
 }

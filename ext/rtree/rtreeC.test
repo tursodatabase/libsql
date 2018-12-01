@@ -15,6 +15,7 @@
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 } 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 set testprefix rtreeC
@@ -28,31 +29,35 @@ do_eqp_test 1.1 {
   SELECT * FROM r_tree, t 
   WHERE t.x>=min_x AND t.x<=max_x AND t.y>=min_y AND t.x<=max_y
 } {
-  0 0 1 {SCAN TABLE t}
-  0 1 0 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0}
+  QUERY PLAN
+  |--SCAN TABLE t
+  `--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0
 }
 
 do_eqp_test 1.2 {
   SELECT * FROM t, r_tree
   WHERE t.x>=min_x AND t.x<=max_x AND t.y>=min_y AND t.x<=max_y
 } {
-  0 0 0 {SCAN TABLE t}
-  0 1 1 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0}
+  QUERY PLAN
+  |--SCAN TABLE t
+  `--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0
 }
 
 do_eqp_test 1.3 {
   SELECT * FROM t, r_tree
   WHERE t.x>=min_x AND t.x<=max_x AND t.y>=min_y AND ?<=max_y
 } {
-  0 0 0 {SCAN TABLE t}
-  0 1 1 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0}
+  QUERY PLAN
+  |--SCAN TABLE t
+  `--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0
 }
 
 do_eqp_test 1.5 {
   SELECT * FROM t, r_tree
 } {
-  0 0 1 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:}
-  0 1 0 {SCAN TABLE t} 
+  QUERY PLAN
+  |--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:
+  `--SCAN TABLE t
 }
 
 do_execsql_test 2.0 {
@@ -81,31 +86,35 @@ do_eqp_test 2.1 {
   SELECT * FROM r_tree, t 
   WHERE t.x>=min_x AND t.x<=max_x AND t.y>=min_y AND t.x<=max_y
 } {
-  0 0 1 {SCAN TABLE t}
-  0 1 0 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0}
+  QUERY PLAN
+  |--SCAN TABLE t
+  `--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0
 }
 
 do_eqp_test 2.2 {
   SELECT * FROM t, r_tree
   WHERE t.x>=min_x AND t.x<=max_x AND t.y>=min_y AND t.x<=max_y
 } {
-  0 0 0 {SCAN TABLE t}
-  0 1 1 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0}
+  QUERY PLAN
+  |--SCAN TABLE t
+  `--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0
 }
 
 do_eqp_test 2.3 {
   SELECT * FROM t, r_tree
   WHERE t.x>=min_x AND t.x<=max_x AND t.y>=min_y AND ?<=max_y
 } {
-  0 0 0 {SCAN TABLE t}
-  0 1 1 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0}
+  QUERY PLAN
+  |--SCAN TABLE t
+  `--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:D3B2D1B0
 }
 
 do_eqp_test 2.5 {
   SELECT * FROM t, r_tree
 } {
-  0 0 1 {SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:}
-  0 1 0 {SCAN TABLE t} 
+  QUERY PLAN
+  |--SCAN TABLE r_tree VIRTUAL TABLE INDEX 2:
+  `--SCAN TABLE t
 }
 
 #-------------------------------------------------------------------------
@@ -118,20 +127,25 @@ do_execsql_test 3.1 {
 }
 
 do_eqp_test 3.2.1 { SELECT * FROM t1 CROSS JOIN t2 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SCAN TABLE t2}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SCAN TABLE t2
 }
 do_eqp_test 3.2.2 { SELECT * FROM t2 CROSS JOIN t1 } {
-  0 0 0 {SCAN TABLE t2} 0 1 1 {SCAN TABLE t1}
+  QUERY PLAN
+  |--SCAN TABLE t2
+  `--SCAN TABLE t1
 }
 
 do_eqp_test 3.3.1 { SELECT * FROM t1 CROSS JOIN t3 } {
-  0 0 0 {SCAN TABLE t1}
-  0 1 1 {SCAN TABLE t3 VIRTUAL TABLE INDEX 2:} 
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 2:
 }
 do_eqp_test 3.3.2 { SELECT * FROM t3 CROSS JOIN t1 } {
-  0 0 0 {SCAN TABLE t3 VIRTUAL TABLE INDEX 2:} 
-  0 1 1 {SCAN TABLE t1}
+  QUERY PLAN
+  |--SCAN TABLE t3 VIRTUAL TABLE INDEX 2:
+  `--SCAN TABLE t1
 }
 
 #--------------------------------------------------------------------
@@ -164,7 +178,7 @@ do_execsql_test 4.3 {
 reset_db
 do_execsql_test 5.1 {
   CREATE TABLE t1(x PRIMARY KEY, y);
-  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2, +d1);
 
   INSERT INTO t1(x) VALUES(1);
   INSERT INTO t1(x) SELECT x+1 FROM t1;   --   2
@@ -178,8 +192,9 @@ do_execsql_test 5.1 {
   INSERT INTO t1(x) SELECT x+256 FROM t1; -- 512
   INSERT INTO t1(x) SELECT x+512 FROM t1; --1024
 
-  INSERT INTO rt SELECT x, x, x+1 FROM t1 WHERE x<=5;
+  INSERT INTO rt SELECT x, x, x+1, printf('x%04xy',x) FROM t1 WHERE x<=5;
 }
+do_rtree_integrity_test 5.1.1 rt
 
 # First test a query with no ANALYZE data at all. The outer loop is
 # real table "t1".
@@ -187,8 +202,9 @@ do_execsql_test 5.1 {
 do_eqp_test 5.2 {
   SELECT * FROM t1, rt WHERE x==id;
 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 1:}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SCAN TABLE rt VIRTUAL TABLE INDEX 1:
 }
 
 # Now create enough ANALYZE data to tell SQLite that virtual table "rt"
@@ -203,8 +219,9 @@ sqlite3 db test.db
 do_eqp_test 5.4 {
   SELECT * FROM t1, rt WHERE x==id;
 } {
-  0 0 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:} 
-  0 1 0 {SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (x=?)}
+  QUERY PLAN
+  |--SCAN TABLE rt VIRTUAL TABLE INDEX 2:
+  `--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (x=?)
 }
 
 # Delete the ANALYZE data. "t1" should be the outer loop again.
@@ -215,8 +232,9 @@ sqlite3 db test.db
 do_eqp_test 5.6 {
   SELECT * FROM t1, rt WHERE x==id;
 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 1:}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SCAN TABLE rt VIRTUAL TABLE INDEX 1:
 }
 
 # This time create and attach a database that contains ANALYZE data for
@@ -239,8 +257,9 @@ do_test 5.7 {
 do_eqp_test 5.8 {
   SELECT * FROM t1, rt WHERE x==id;
 } {
-  0 0 0 {SCAN TABLE t1} 
-  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 1:}
+  QUERY PLAN
+  |--SCAN TABLE t1
+  `--SCAN TABLE rt VIRTUAL TABLE INDEX 1:
 }
 
 #--------------------------------------------------------------------
@@ -297,9 +316,9 @@ do_execsql_test 7.0 {
 
 }
 
-proc do_eqp_execsql_test {tn sql res} {
-  set query "EXPLAIN QUERY PLAN $sql ; $sql "
-  uplevel [list do_execsql_test $tn $query $res]
+proc do_eqp_execsql_test {tn sql res1 res2} {
+  do_eqp_test $tn.1 $sql $res1
+  do_execsql_test $tn.2 $sql $res2
 }
 
 do_eqp_execsql_test 7.1 {
@@ -307,9 +326,11 @@ do_eqp_execsql_test 7.1 {
   ON (y1 BETWEEN ymin AND ymax)
   WHERE (x1 BETWEEN xmin AND xmax);
 } {
-  0 0 0 {SCAN TABLE xdir} 
-  0 1 2 {SCAN TABLE ydir} 
-  0 2 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B2D3B0D1}
+  QUERY PLAN
+  |--SCAN TABLE xdir
+  |--SCAN TABLE ydir
+  `--SCAN TABLE rt VIRTUAL TABLE INDEX 2:B2D3B0D1
+} {
   2 4
 }
 
@@ -318,10 +339,11 @@ do_eqp_execsql_test 7.2 {
   ON (y1 BETWEEN ymin AND ymax)
   WHERE (x1 BETWEEN xmin AND xmax);
 } {
-  0 0 0 {SCAN TABLE xdir} 
-  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1}
-  0 2 2 {SCAN TABLE ydir} 
-
+  QUERY PLAN
+  |--SCAN TABLE xdir
+  |--SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1
+  `--SCAN TABLE ydir
+} {
   5 1 2 7 12 14 {}
   5 2 2 7  8 12 10
   5 4 5 5 10 10 10
@@ -332,9 +354,11 @@ do_eqp_execsql_test 7.3 {
   ON (y1 BETWEEN ymin AND ymax)
   WHERE (x1 BETWEEN xmin AND xmax);
 } {
-  0 0 0 {SCAN TABLE xdir} 
-  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1}
-  0 2 2 {SCAN TABLE ydir} 
+  QUERY PLAN
+  |--SCAN TABLE xdir
+  |--SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1
+  `--SCAN TABLE ydir
+} {
   2 4
 }
 
@@ -343,9 +367,11 @@ do_eqp_execsql_test 7.4 {
   ON (y1 BETWEEN ymin AND ymax)
   WHERE (x1 BETWEEN xmin AND xmax);
 } {
-  0 0 1 {SCAN TABLE xdir} 
-  0 1 0 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1}
-  0 2 2 {SCAN TABLE ydir} 
+  QUERY PLAN
+  |--SCAN TABLE xdir
+  |--SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1
+  `--SCAN TABLE ydir
+} {
   2 4
 }
 

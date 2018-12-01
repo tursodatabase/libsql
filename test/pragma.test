@@ -497,6 +497,7 @@ Page 6 is never used} {row 1 missing from index i2}}
 # Verify that PRAGMA integrity_check catches UNIQUE and NOT NULL
 # constraint violations.
 #
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test pragma-3.20 {
   CREATE TABLE t1(a,b);
   CREATE INDEX t1a ON t1(a);
@@ -1934,26 +1935,27 @@ do_test 23.5 {
 } {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
 db2 close
 
-reset_db
-do_execsql_test 24.0 {
-  PRAGMA page_size = 1024;
-  CREATE TABLE t1(a, b, c);
-  CREATE INDEX i1 ON t1(b);
-  INSERT INTO t1 VALUES('a', 'b', 'c');
-  PRAGMA integrity_check;
-} {ok}
-
-set r [db one {SELECT rootpage FROM sqlite_master WHERE name = 't1'}]
-db close
-hexio_write test.db [expr $r*1024 - 16] 000000000000000701040f0f1f616263
-
-sqlite3 db test.db
-do_catchsql_test 24.1 {
-  SELECT * FROM t1;
-} {1 {database disk image is malformed}}
-do_catchsql_test 24.2 {
-  PRAGMA integrity_check;
-} {0 {{database disk image is malformed}}}
-
+ifcapable !has_codec {
+  reset_db
+  do_execsql_test 24.0 {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a, b, c);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES('a', 'b', 'c');
+    PRAGMA integrity_check;
+  } {ok}
+  
+  set r [db one {SELECT rootpage FROM sqlite_master WHERE name = 't1'}]
+  db close
+  hexio_write test.db [expr $r*1024 - 16] 000000000000000701040f0f1f616263
+  
+  sqlite3 db test.db
+  do_catchsql_test 24.1 {
+    SELECT * FROM t1;
+  } {1 {database disk image is malformed}}
+  do_catchsql_test 24.2 {
+    PRAGMA integrity_check;
+  } {0 {{database disk image is malformed}}}
+}  
 database_never_corrupt
 finish_test

@@ -17,8 +17,12 @@ source $testdir/tester.tcl
 
 unset -nocomplain DEFAULT_SECDEL
 set DEFAULT_SECDEL 0
-ifcapable secure_delete {
-  set DEFAULT_SECDEL 1
+ifcapable fast_secure_delete {
+  set DEFAULT_SECDEL 2
+} else {
+  ifcapable secure_delete {
+    set DEFAULT_SECDEL 1
+  }
 }
 
 

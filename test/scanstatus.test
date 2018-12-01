@@ -30,7 +30,7 @@ do_execsql_test 1.0 {
 }
 
 proc do_scanstatus_test {tn res} {
-  set stmt [db_last_stmt_ptr db]
+  set stmt [db version -last-stmt-ptr]
   set idx 0
   set ret [list]
   while {1} {
@@ -79,7 +79,7 @@ do_scanstatus_test 1.9 {
 }
 
 do_test 1.9 {
-  sqlite3_stmt_scanstatus_reset [db_last_stmt_ptr db]
+  sqlite3_stmt_scanstatus_reset [db version -last-stmt-ptr]
 } {}
 
 do_scanstatus_test 1.10 {
@@ -328,7 +328,7 @@ do_scanstatus_test 5.2.2 {
 
 do_eqp_test 5.3.1 {
   SELECT count(*) FROM t2 WHERE y = 'j';
-} {0 0 0 {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}}
+} {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 do_execsql_test 5.3.2 {
   SELECT count(*) FROM t2 WHERE y = 'j';
 } {19}
@@ -340,8 +340,9 @@ do_scanstatus_test 5.3.3 {
 do_eqp_test 5.4.1 {
   SELECT count(*) FROM t1, t2 WHERE y = c;
 } {
-  0 0 0 {SCAN TABLE t1 USING COVERING INDEX t1bc}
-  0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1 USING COVERING INDEX t1bc
+  `--SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)
 }
 do_execsql_test 5.4.2 {
   SELECT count(*) FROM t1, t2 WHERE y = c;
@@ -356,8 +357,9 @@ do_scanstatus_test 5.4.3 {
 do_eqp_test 5.5.1 {
   SELECT count(*) FROM t1, t3 WHERE y = c;
 } {
-  0 0 1 {SCAN TABLE t3} 
-  0 1 0 {SEARCH TABLE t1 USING AUTOMATIC COVERING INDEX (c=?)}
+  QUERY PLAN
+  |--SCAN TABLE t3
+  `--SEARCH TABLE t1 USING AUTOMATIC COVERING INDEX (c=?)
 }
 do_execsql_test 5.5.2 {
   SELECT count(*) FROM t1, t3 WHERE y = c;

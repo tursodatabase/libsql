@@ -250,4 +250,5 @@ do_execsql_test 9.2 {
   CREATE VIRTUAL TABLE t10 USING fts3(<, b, c);
 }
 
+expand_all_sql db
 finish_test

@@ -51,16 +51,11 @@ do_execsql_test 1.0 {
 
 do_eqp_test 1.1 {
   SELECT * FROM x1 WHERE a = 'abc'
-} {
-  0 0 0 {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
-}
+} {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
 
 do_eqp_test 1.2 {
   SELECT * FROM x1 WHERE a IN ('abc', 'def');
-} {
-  0 0 0 {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
-  0 0 0 {EXECUTE LIST SUBQUERY 1}
-}
+} {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
 
 #-------------------------------------------------------------------------
 #
@@ -145,24 +140,24 @@ foreach {tn mode} {
   } {1 4} 
 
   set plan(use) {
-    0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'}
-    0 0 0 {EXECUTE LIST SUBQUERY 1}
-    0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+    QUERY PLAN
+    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
+    `--USE TEMP B-TREE FOR ORDER BY
   }
   set plan(omit) {
-    0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'}
-    0 0 0 {EXECUTE LIST SUBQUERY 1}
-    0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+    QUERY PLAN
+    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
+    `--USE TEMP B-TREE FOR ORDER BY
   }
   set plan(use2) {
-    0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x}
-    0 0 0 {EXECUTE LIST SUBQUERY 1}
-    0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+    QUERY PLAN
+    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x
+    `--USE TEMP B-TREE FOR ORDER BY
   }
 
   do_eqp_test 2.2.$mode.6 { 
     SELECT rowid FROM t1 WHERE a IN ('one', 'four') ORDER BY +rowid
-  } $plan($mode)
+  } [string map {"\n  " "\n"} $plan($mode)]
 }
 
 # 2016-04-09.

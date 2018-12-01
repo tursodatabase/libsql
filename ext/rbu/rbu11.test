@@ -195,4 +195,3 @@ do_test 4.7.2 {
 } {1 {SQLITE_ERROR - rbu_state mismatch error}}
 
 finish_test
-

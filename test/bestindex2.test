@@ -89,40 +89,40 @@ do_execsql_test 1.0 {
 
 do_eqp_test 1.1 {
   SELECT * FROM t1 WHERE a='abc'
-} {
-  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
-}
+} {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
+
 do_eqp_test 1.2 {
   SELECT * FROM t1 WHERE a='abc' AND b='def'
-} {
-  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=? AND b=?)}
-}
+} {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=? AND b=?)}
+
 do_eqp_test 1.3 {
   SELECT * FROM t1 WHERE a='abc' AND a='def'
-} {
-  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
-}
+} {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
+
 do_eqp_test 1.4 {
   SELECT * FROM t1,t2 WHERE c=a
 } {
-  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:} 
-  0 1 1 {SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
+  `--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
 }
 
 do_eqp_test 1.5 {
   SELECT * FROM t1, t2 CROSS JOIN t3 WHERE t2.c = +t1.b AND t3.e=t2.d
 } {
-  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:} 
-  0 1 1 {SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)} 
-  0 2 2 {SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
+  |--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
 }
 
 do_eqp_test 1.6 {
   SELECT * FROM t1, t2, t3 WHERE t2.c = +t1.b AND t3.e = t2.d
 } {
-  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:} 
-  0 1 1 {SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)} 
-  0 2 2 {SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)}
+  QUERY PLAN
+  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
+  |--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
 }
 
 do_execsql_test 1.7.1 {
@@ -132,10 +132,11 @@ do_eqp_test 1.7.2 {
   SELECT * FROM x1 CROSS JOIN t1, t2, t3 
     WHERE t1.a = t2.c AND t1.b = t3.e
 } {
-  0 0 0 {SCAN TABLE x1} 
-  0 1 1 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:}
-  0 2 2 {SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)} 
-  0 3 3 {SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)}
+  QUERY PLAN
+  |--SCAN TABLE x1
+  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
+  |--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
 }
 
 finish_test

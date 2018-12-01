@@ -681,21 +681,30 @@ do_test alter-8.2 {
 } {1 18 2 9}
 
 #--------------------------------------------------------------------------
-# alter-9.X - Special test: Make sure the sqlite_rename_trigger() and
+# alter-9.X - Special test: Make sure the sqlite_rename_column() and
 # rename_table() functions do not crash when handed bad input.
 #
-ifcapable trigger {
-  do_test alter-9.1 {
-    execsql {SELECT SQLITE_RENAME_TRIGGER(0,0)}
-  } {{}}
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
+do_test alter-9.1 {
+  execsql {SELECT SQLITE_RENAME_COLUMN(0,0,0,0,0,0,0,0,0)}
+} {{}}
+foreach {tn sql} {
+    1 { SELECT SQLITE_RENAME_TABLE(0,0,0,0,0,0,0) }
+    2 { SELECT SQLITE_RENAME_TABLE(10,20,30,40,50,60,70) }
+    3 { SELECT SQLITE_RENAME_TABLE('foo','foo','foo','foo','foo','foo','foo') }
+} {
+  do_test alter-9.2.$tn {
+    catch { execsql $sql }
+  } 1
 }
-do_test alter-9.2 {
-  execsql {
-    SELECT SQLITE_RENAME_TABLE(0,0);
-    SELECT SQLITE_RENAME_TABLE(10,20);
-    SELECT SQLITE_RENAME_TABLE('foo', 'foo');
-  }
-} {{} {} {}}
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
+
+# If the INTERNAL_FUNCTIONS test-control is disabled (which is the default),
+# then the sqlite_rename_table() SQL function is not accessible to ordinary SQL.
+#
+do_catchsql_test alter-9.3 {
+  SELECT sqlite_rename_table(0,0,0,0,0,0,0);
+} {1 {no such function: sqlite_rename_table}}
 
 #------------------------------------------------------------------------
 # alter-10.X - Make sure ALTER TABLE works with multi-byte UTF-8 characters 
@@ -875,51 +884,23 @@ do_execsql_test alter-16.2 {
   SELECT * FROM t16a_rn ORDER BY a;
 } {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
 
-#-------------------------------------------------------------------------
-# Verify that NULL values into the internal-use-only sqlite_rename_*()
-# functions do not cause problems.
+# 2018-09-16 ticket b41031ea2b5372378cb3d2d43cf9fe2a4a5c2510
 #
-do_execsql_test alter-17.1 {
-  SELECT sqlite_rename_table('CREATE TABLE xyz(a,b,c)','abc');
-} {{CREATE TABLE "abc"(a,b,c)}}
-do_execsql_test alter-17.2 {
-  SELECT sqlite_rename_table('CREATE TABLE xyz(a,b,c)',NULL);
-} {{CREATE TABLE "(NULL)"(a,b,c)}}
-do_execsql_test alter-17.3 {
-  SELECT sqlite_rename_table(NULL,'abc');
-} {{}}
-do_execsql_test alter-17.4 {
-  SELECT sqlite_rename_trigger('CREATE TRIGGER r1 ON xyz WHEN','abc');
-} {{CREATE TRIGGER r1 ON "abc" WHEN}}
-do_execsql_test alter-17.5 {
-  SELECT sqlite_rename_trigger('CREATE TRIGGER r1 ON xyz WHEN',NULL);
-} {{CREATE TRIGGER r1 ON "(NULL)" WHEN}}
-do_execsql_test alter-17.6 {
-  SELECT sqlite_rename_trigger(NULL,'abc');
-} {{}}
-do_execsql_test alter-17.7 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
-         'xyzzy','lmnop');
-} {{CREATE TABLE t1(a REFERENCES "lmnop")}}
-do_execsql_test alter-17.8 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
-         'xyzzy',NULL);
-} {{CREATE TABLE t1(a REFERENCES "(NULL)")}}
-do_execsql_test alter-17.9 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
-         NULL, 'lmnop');
-} {{}}
-do_execsql_test alter-17.10 {
-  SELECT sqlite_rename_parent(NULL,'abc','xyz');
-} {{}}
-do_execsql_test alter-17.11 {
-  SELECT sqlite_rename_parent('create references ''','abc','xyz');
-} {{create references '}}
-do_execsql_test alter-17.12 {
-  SELECT sqlite_rename_parent('create references "abc"123" ','abc','xyz');
-} {{create references "xyz"123" }}
-do_execsql_test alter-17.13 {
-  SELECT sqlite_rename_parent("references '''",'abc','xyz');
-} {{references '''}}
+ifcapable rtree {
+  db close
+  sqlite3 db :memory:
+  do_execsql_test alter-17.100 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE VIRTUAL TABLE t2 USING rtree(id,x0,x1);
+    INSERT INTO t1 VALUES(1,'apple'),(2,'fig'),(3,'pear');
+    INSERT INTO t2 VALUES(1,1.0,2.0),(2,2.0,3.0),(3,1.5,3.5);
+    CREATE TRIGGER r1 AFTER UPDATE ON t1 BEGIN
+      DELETE FROM t2 WHERE id = OLD.a;
+    END;
+    ALTER TABLE t1 RENAME TO t3;
+    UPDATE t3 SET b='peach' WHERE a=2;
+    SELECT * FROM t2 ORDER BY 1;
+  } {1 1.0 2.0 3 1.5 3.5}
+}
 
 finish_test

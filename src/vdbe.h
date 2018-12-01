@@ -73,7 +73,8 @@ struct VdbeOp {
   u64 cycles;              /* Total time spent executing this instruction */
 #endif
 #ifdef SQLITE_VDBE_COVERAGE
-  int iSrcLine;            /* Source-code line that generated this opcode */
+  u32 iSrcLine;            /* Source-code line that generated this opcode
+                           ** with flags in the upper 8 bits */
 #endif
 };
 typedef struct VdbeOp VdbeOp;
@@ -127,6 +128,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INT64      (-14) /* P4 is a 64-bit signed integer */
 #define P4_INTARRAY   (-15) /* P4 is a vector of 32-bit integers */
 #define P4_FUNCCTX    (-16) /* P4 is a pointer to an sqlite3_context object */
+#define P4_DYNBLOB    (-17) /* Pointer to memory from sqliteMalloc() */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
@@ -196,7 +198,24 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 # define sqlite3VdbeVerifyNoMallocRequired(A,B)
 # define sqlite3VdbeVerifyNoResultRow(A)
 #endif
-VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
+#if defined(SQLITE_DEBUG)
+  void sqlite3VdbeVerifyAbortable(Vdbe *p, int);
+#else
+# define sqlite3VdbeVerifyAbortable(A,B)
+#endif
+VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
+#ifndef SQLITE_OMIT_EXPLAIN
+  void sqlite3VdbeExplain(Parse*,u8,const char*,...);
+  void sqlite3VdbeExplainPop(Parse*);
+  int sqlite3VdbeExplainParent(Parse*);
+# define ExplainQueryPlan(P)        sqlite3VdbeExplain P
+# define ExplainQueryPlanPop(P)     sqlite3VdbeExplainPop(P)
+# define ExplainQueryPlanParent(P)  sqlite3VdbeExplainParent(P)
+#else
+# define ExplainQueryPlan(P)
+# define ExplainQueryPlanPop(P)
+# define ExplainQueryPlanParent(P) 0
+#endif
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
@@ -240,6 +259,7 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
   char *sqlite3VdbeExpandSql(Vdbe*, const char*);
 #endif
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
+int sqlite3BlobCompare(const Mem*, const Mem*);
 
 void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
@@ -295,23 +315,52 @@ int sqlite3NotPureFunc(sqlite3_context*);
 **
 **    VdbeCoverageNeverTaken(v)        // Previous branch is never taken
 **
+**    VdbeCoverageNeverNull(v)         // Previous three-way branch is only
+**                                     // taken on the first two ways.  The
+**                                     // NULL option is not possible
+**
+**    VdbeCoverageEqNe(v)              // Previous OP_Jump is only interested
+**                                     // in distingishing equal and not-equal.
+**
 ** Every VDBE branch operation must be tagged with one of the macros above.
 ** If not, then when "make test" is run with -DSQLITE_VDBE_COVERAGE and
 ** -DSQLITE_DEBUG then an ALWAYS() will fail in the vdbeTakeBranch()
 ** routine in vdbe.c, alerting the developer to the missed tag.
+**
+** During testing, the test application will invoke
+** sqlite3_test_control(SQLITE_TESTCTRL_VDBE_COVERAGE,...) to set a callback
+** routine that is invoked as each bytecode branch is taken.  The callback
+** contains the sqlite3.c source line number ov the VdbeCoverage macro and
+** flags to indicate whether or not the branch was taken.  The test application
+** is responsible for keeping track of this and reporting byte-code branches
+** that are never taken.
+**
+** See the VdbeBranchTaken() macro and vdbeTakeBranch() function in the
+** vdbe.c source file for additional information.
 */
 #ifdef SQLITE_VDBE_COVERAGE
   void sqlite3VdbeSetLineNumber(Vdbe*,int);
 # define VdbeCoverage(v) sqlite3VdbeSetLineNumber(v,__LINE__)
 # define VdbeCoverageIf(v,x) if(x)sqlite3VdbeSetLineNumber(v,__LINE__)
-# define VdbeCoverageAlwaysTaken(v) sqlite3VdbeSetLineNumber(v,2);
-# define VdbeCoverageNeverTaken(v) sqlite3VdbeSetLineNumber(v,1);
+# define VdbeCoverageAlwaysTaken(v) \
+         sqlite3VdbeSetLineNumber(v,__LINE__|0x5000000);
+# define VdbeCoverageNeverTaken(v) \
+         sqlite3VdbeSetLineNumber(v,__LINE__|0x6000000);
+# define VdbeCoverageNeverNull(v) \
+         sqlite3VdbeSetLineNumber(v,__LINE__|0x4000000);
+# define VdbeCoverageNeverNullIf(v,x) \
+         if(x)sqlite3VdbeSetLineNumber(v,__LINE__|0x4000000);
+# define VdbeCoverageEqNe(v) \
+         sqlite3VdbeSetLineNumber(v,__LINE__|0x8000000);
 # define VDBE_OFFSET_LINENO(x) (__LINE__+x)
 #else
 # define VdbeCoverage(v)
 # define VdbeCoverageIf(v,x)
 # define VdbeCoverageAlwaysTaken(v)
 # define VdbeCoverageNeverTaken(v)
+# define VdbeCoverageNeverNull(v)
+# define VdbeCoverageNeverNullIf(v,x)
+# define VdbeCoverageEqNe(v)
 # define VDBE_OFFSET_LINENO(x) 0
 #endif
 
@@ -319,6 +368,10 @@ int sqlite3NotPureFunc(sqlite3_context*);
 void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
 #else
 # define sqlite3VdbeScanStatus(a,b,c,d,e)
+#endif
+
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
 #endif
 
 #endif /* SQLITE_VDBE_H */

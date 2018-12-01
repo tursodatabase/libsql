@@ -221,5 +221,37 @@ do_test 4.2.2 {
 } {1 {SQLITE_SCHEMA - table schemas do not match}}
 S delete
 
-finish_test
+do_test 4.3.1 {
+  sqlite3session S db main
+  S attach t4
+  execsql { CREATE TABLE t4(i PRIMARY KEY, b) }
+  list [catch { S diff ixua t4 } msg] $msg
+} {1 {SQLITE_SCHEMA - table schemas do not match}}
+S delete
+do_catchsql_test 4.3.2 {
+  SELECT * FROM ixua.t4;
+} {1 {no such table: ixua.t4}}
 
+do_test 4.4.1 {
+  sqlite3session S db main
+  S attach sqlite_stat1
+  execsql { ANALYZE }
+  execsql { DROP TABLE ixua.sqlite_stat1 }
+  list [catch { S diff ixua sqlite_stat1 } msg] $msg
+} {1 {SQLITE_SCHEMA - table schemas do not match}}
+S delete
+do_catchsql_test 4.4.2 {
+  SELECT * FROM ixua.sqlite_stat1;
+} {1 {no such table: ixua.sqlite_stat1}}
+
+do_test 4.5.1 {
+  sqlite3session S db main
+  S attach t8
+  list [catch { S diff ixua t8 } msg] $msg
+} {0 {}}
+S delete
+do_catchsql_test 4.5.2 {
+  SELECT * FROM ixua.i8;
+} {1 {no such table: ixua.i8}}
+
+finish_test

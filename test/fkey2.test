@@ -983,8 +983,11 @@ ifcapable altertable {
   # Test the sqlite_rename_parent() function directly.
   #
   proc test_rename_parent {zCreate zOld zNew} {
-    db eval {SELECT sqlite_rename_parent($zCreate, $zOld, $zNew)}
+    db eval {SELECT sqlite_rename_table(
+        'main', 'table', 't1', $zCreate, $zOld, $zNew, 0
+    )}
   }
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
   do_test fkey2-14.2.1.1 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t2 t3
   } {{CREATE TABLE t1(a REFERENCES "t3")}}
@@ -994,6 +997,7 @@ ifcapable altertable {
   do_test fkey2-14.2.1.3 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES "t2")} t2 t3
   } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
   
   # Test ALTER TABLE RENAME TABLE a bit.
   #
@@ -1066,6 +1070,7 @@ ifcapable altertable {
     }
   } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
 
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
   do_test fkey2-14.2tmp.1.1 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t2 t3
   } {{CREATE TABLE t1(a REFERENCES "t3")}}
@@ -1075,6 +1080,7 @@ ifcapable altertable {
   do_test fkey2-14.2tmp.1.3 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES "t2")} t2 t3
   } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
   
   # Test ALTER TABLE RENAME TABLE a bit.
   #
@@ -1148,6 +1154,7 @@ ifcapable altertable {
     }
   } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
 
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
   do_test fkey2-14.2aux.1.1 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t2 t3
   } {{CREATE TABLE t1(a REFERENCES "t3")}}
@@ -1157,6 +1164,7 @@ ifcapable altertable {
   do_test fkey2-14.2aux.1.3 {
     test_rename_parent {CREATE TABLE t1(a REFERENCES "t2")} t2 t3
   } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
   
   # Test ALTER TABLE RENAME TABLE a bit.
   #

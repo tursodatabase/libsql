@@ -222,6 +222,7 @@ do_execsql_test 7.0 {
   INSERT INTO t1 VALUES('c', 'A');
   SELECT name FROM sqlite_master;
 } {t1 sqlite_autoindex_t1_1}
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 7.1 {
   PRAGMA writable_schema = 1;
   DELETE FROM sqlite_master WHERE name = 'sqlite_autoindex_t1_1';

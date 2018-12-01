@@ -237,6 +237,8 @@ struct Unicode61Tokenizer {
   int bRemoveDiacritic;           /* True if remove_diacritics=1 is set */
   int nException;
   int *aiException;
+
+  unsigned char aCategory[32];    /* True for token char categories */
 };
 
 static int fts5UnicodeAddExceptions(
@@ -261,7 +263,7 @@ static int fts5UnicodeAddExceptions(
         if( iCode<128 ){
           p->aTokenChar[iCode] = (unsigned char)bTokenChars;
         }else{
-          bToken = sqlite3Fts5UnicodeIsalnum(iCode);
+          bToken = p->aCategory[sqlite3Fts5UnicodeCategory(iCode)];
           assert( (bToken==0 || bToken==1) ); 
           assert( (bTokenChars==0 || bTokenChars==1) );
           if( bToken!=bTokenChars && sqlite3Fts5UnicodeIsdiacritic(iCode)==0 ){
@@ -322,6 +324,21 @@ static void fts5UnicodeDelete(Fts5Tokenizer *pTok){
   return;
 }
 
+static int unicodeSetCategories(Unicode61Tokenizer *p, const char *zCat){
+  const char *z = zCat;
+
+  while( *z ){
+    while( *z==' ' || *z=='\t' ) z++;
+    if( *z && sqlite3Fts5UnicodeCatParse(z, p->aCategory) ){
+      return SQLITE_ERROR;
+    }
+    while( *z!=' ' && *z!='\t' && *z!='\0' ) z++;
+  }
+
+  sqlite3Fts5UnicodeAscii(p->aCategory, p->aTokenChar);
+  return SQLITE_OK;
+}
+
 /*
 ** Create a "unicode61" tokenizer.
 */
@@ -340,15 +357,28 @@ static int fts5UnicodeCreate(
   }else{
     p = (Unicode61Tokenizer*)sqlite3_malloc(sizeof(Unicode61Tokenizer));
     if( p ){
+      const char *zCat = "L* N* Co";
       int i;
       memset(p, 0, sizeof(Unicode61Tokenizer));
-      memcpy(p->aTokenChar, aAsciiTokenChar, sizeof(aAsciiTokenChar));
+
       p->bRemoveDiacritic = 1;
       p->nFold = 64;
       p->aFold = sqlite3_malloc(p->nFold * sizeof(char));
       if( p->aFold==0 ){
         rc = SQLITE_NOMEM;
       }
+
+      /* Search for a "categories" argument */
+      for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
+        if( 0==sqlite3_stricmp(azArg[i], "categories") ){
+          zCat = azArg[i+1];
+        }
+      }
+
+      if( rc==SQLITE_OK ){
+        rc = unicodeSetCategories(p, zCat);
+      }
+
       for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
         const char *zArg = azArg[i+1];
         if( 0==sqlite3_stricmp(azArg[i], "remove_diacritics") ){
@@ -362,10 +392,14 @@ static int fts5UnicodeCreate(
         }else
         if( 0==sqlite3_stricmp(azArg[i], "separators") ){
           rc = fts5UnicodeAddExceptions(p, zArg, 0);
+        }else
+        if( 0==sqlite3_stricmp(azArg[i], "categories") ){
+          /* no-op */
         }else{
           rc = SQLITE_ERROR;
         }
       }
+
     }else{
       rc = SQLITE_NOMEM;
     }
@@ -384,8 +418,10 @@ static int fts5UnicodeCreate(
 ** character (not a separator).
 */
 static int fts5UnicodeIsAlnum(Unicode61Tokenizer *p, int iCode){
-  assert( (sqlite3Fts5UnicodeIsalnum(iCode) & 0xFFFFFFFE)==0 );
-  return sqlite3Fts5UnicodeIsalnum(iCode) ^ fts5UnicodeIsException(p, iCode);
+  return (
+    p->aCategory[sqlite3Fts5UnicodeCategory(iCode)]
+    ^ fts5UnicodeIsException(p, iCode)
+  );
 }
 
 static int fts5UnicodeTokenize(

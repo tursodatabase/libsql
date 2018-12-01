@@ -15,7 +15,11 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-do_not_use_codec
+
+if {[sqlite3 -has-codec]} {
+  finish_test
+  return
+}
 
 do_execsql_test pragma3-100 {
   PRAGMA data_version;

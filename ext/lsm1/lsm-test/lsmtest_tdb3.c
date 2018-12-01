@@ -617,8 +617,12 @@ static int test_lsm_fetch(
 
   if( pKey==0 ) return LSM_OK;
 
-  rc = lsm_csr_open(pDb->db, &csr);
-  if( rc!=LSM_OK ) return rc;
+  if( pDb->pCsr==0 ){
+    rc = lsm_csr_open(pDb->db, &csr);
+    if( rc!=LSM_OK ) return rc;
+  }else{
+    csr = pDb->pCsr;
+  }
 
   rc = lsm_csr_seek(csr, pKey, nKey, LSM_SEEK_EQ);
   if( rc==LSM_OK ){
@@ -638,7 +642,9 @@ static int test_lsm_fetch(
       *pnVal = -1;
     }
   }
-  lsm_csr_close(csr);
+  if( pDb->pCsr==0 ){
+    lsm_csr_close(csr);
+  }
   return rc;
 }
 
@@ -652,10 +658,28 @@ static int test_lsm_scan(
 ){
   LsmDb *pDb = (LsmDb *)pTestDb;
   lsm_cursor *csr;
+  lsm_cursor *csr2 = 0;
   int rc;
 
-  rc = lsm_csr_open(pDb->db, &csr);
-  if( rc!=LSM_OK ) return rc;
+  if( pDb->pCsr==0 ){
+    rc = lsm_csr_open(pDb->db, &csr);
+    if( rc!=LSM_OK ) return rc;
+  }else{
+    rc = LSM_OK;
+    csr = pDb->pCsr;
+  }
+
+  /* To enhance testing, if both pLast and pFirst are defined, seek the
+  ** cursor to the "end" boundary here. Then the next block seeks it to
+  ** the "start" ready for the scan. The point is to test that cursors
+  ** can be reused.  */
+  if( pLast && pFirst ){
+    if( bReverse ){
+      rc = lsm_csr_seek(csr, pFirst, nFirst, LSM_SEEK_LE);
+    }else{
+      rc = lsm_csr_seek(csr, pLast, nLast, LSM_SEEK_GE);
+    }
+  }
 
   if( bReverse ){
     if( pLast ){
@@ -696,7 +720,9 @@ static int test_lsm_scan(
     }
   }
 
-  lsm_csr_close(csr);
+  if( pDb->pCsr==0 ){
+    lsm_csr_close(csr);
+  }
   return rc;
 }
 
@@ -761,6 +787,7 @@ static void xWorkHook(lsm_db *db, void *pArg){
 #define TEST_MT_MODE     -2
 #define TEST_MT_MIN_CKPT -4
 #define TEST_MT_MAX_CKPT -5
+
 
 int test_lsm_config_str(
   LsmDb *pLsm,
@@ -1029,6 +1056,19 @@ int test_lsm_lomem_open(
     "page_size=256 block_size=64 autoflush=16 "
     "autocheckpoint=32"
     "mmap=0 "
+  ;
+  return testLsmOpen(zCfg, zFilename, bClear, ppDb);
+}
+
+int test_lsm_lomem2_open(
+  const char *zSpec, 
+  const char *zFilename, 
+  int bClear, 
+  TestDb **ppDb
+){
+    /* "max_freelist=4 autocheckpoint=32" */
+  const char *zCfg = 
+    "page_size=512 block_size=64 autoflush=0 mmap=0 "
   ;
   return testLsmOpen(zCfg, zFilename, bClear, ppDb);
 }

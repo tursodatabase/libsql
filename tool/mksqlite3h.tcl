@@ -72,6 +72,9 @@ set declpattern3 \
 set declpattern4 \
     {^ *([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3changegroup_[_a-zA-Z0-9]+)(\(.*)$}
 
+set declpattern5 \
+    {^ *([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3rebaser_[_a-zA-Z0-9]+)(\(.*)$}
+
 # Force the output to use unix line endings, even on Windows.
 fconfigure stdout -translation lf
 
@@ -121,7 +124,8 @@ foreach file $filelist {
       if {[regexp $declpattern1 $line all rettype funcname rest] || \
           [regexp $declpattern2 $line all rettype funcname rest] || \
           [regexp $declpattern3 $line all rettype funcname rest] || \
-          [regexp $declpattern4 $line all rettype funcname rest]} {
+          [regexp $declpattern4 $line all rettype funcname rest] || \
+          [regexp $declpattern5 $line all rettype funcname rest]} {
         set line SQLITE_API
         append line " " [string trim $rettype]
         if {[string index $rettype end] ne "*"} {

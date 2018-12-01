@@ -1145,38 +1145,40 @@ do_test shared-$av-16.8 {
 
 # Shared cache on named memory databases attached to readonly connections.
 #
-do_test shared-$av-16.8.1 {
+if {![sqlite3 -has-codec]} {
+  do_test shared-$av-16.8.1 {
+    db1 close
+    db2 close
+  
+    sqlite3 db test1.db
+    db eval { 
+      CREATE TABLE yy(a, b);
+      INSERT INTO yy VALUES(77, 88);
+    }
+    db close
+  
+    sqlite3 db1 test1.db -uri 1 -readonly 1
+    sqlite3 db2 test2.db -uri 1 
+  
+    db1 eval { 
+      ATTACH 'file:mem?mode=memory&cache=shared' AS shared; 
+      CREATE TABLE shared.xx(a, b);
+      INSERT INTO xx VALUES(55, 66);
+    }
+    db2 eval { 
+      ATTACH 'file:mem?mode=memory&cache=shared' AS shared;
+      SELECT * FROM xx;
+    }
+  } {55 66}
+  
+  do_test shared-$av-16.8.2 { db1 eval { SELECT * FROM yy } } {77 88}
+  do_test shared-$av-16.8.3 { 
+    list [catch {db1 eval { INSERT INTO yy VALUES(1, 2) }} msg] $msg
+  } {1 {attempt to write a readonly database}}
+  
   db1 close
   db2 close
-
-  sqlite3 db test1.db
-  db eval { 
-    CREATE TABLE yy(a, b);
-    INSERT INTO yy VALUES(77, 88);
-  }
-  db close
-
-  sqlite3 db1 test1.db -uri 1 -readonly 1
-  sqlite3 db2 test2.db -uri 1 
-
-  db1 eval { 
-    ATTACH 'file:mem?mode=memory&cache=shared' AS shared; 
-    CREATE TABLE shared.xx(a, b);
-    INSERT INTO xx VALUES(55, 66);
-  }
-  db2 eval { 
-    ATTACH 'file:mem?mode=memory&cache=shared' AS shared;
-    SELECT * FROM xx;
-  }
-} {55 66}
-
-do_test shared-$av-16.8.2 { db1 eval { SELECT * FROM yy } } {77 88}
-do_test shared-$av-16.8.3 { 
-  list [catch {db1 eval { INSERT INTO yy VALUES(1, 2) }} msg] $msg
-} {1 {attempt to write a readonly database}}
-
-db1 close
-db2 close
+}
 
 }  ;# end of autovacuum on/off loop
 

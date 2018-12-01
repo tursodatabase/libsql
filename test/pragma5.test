@@ -34,7 +34,7 @@ do_execsql_test 1.0 {
   1 builtin {} 0 {} 0
 }
 do_execsql_test 1.1 {
-  SELECT * FROM pragma_function_list WHERE name='upper'
+  SELECT * FROM pragma_function_list WHERE name='upper' AND builtin
 } {upper 1}
 do_execsql_test 1.2 {
   SELECT * FROM pragma_function_list WHERE name LIKE 'exter%';

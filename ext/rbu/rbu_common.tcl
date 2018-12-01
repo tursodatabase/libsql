@@ -70,7 +70,24 @@ proc step_rbu {target rbu} {
   set rc
 }
 
+proc step_rbu_legacy {target rbu} {
+  while 1 {
+    sqlite3rbu rbu $target $rbu
+    set state [rbu state]
+    check_prestep_state $target $state
+    set rc [rbu step]
+    check_poststep_state $rc $target $state
+    rbu close
+    if {$rc != "SQLITE_OK"} break
+    sqlite3 tmpdb $rbu
+    tmpdb eval { DELETE FROM rbu_state WHERE k==10 }
+    tmpdb close
+  }
+  set rc
+}
+
 proc do_rbu_vacuum_test {tn step} {
+  forcedelete state.db
   uplevel [list do_test $tn.1 {
     if {$step==0} { sqlite3rbu_vacuum rbu test.db state.db }
     while 1 {

@@ -61,9 +61,9 @@ set dlerror_notadll    {%s: file too short}
 set dlerror_nosymbol   {%s: undefined symbol: %s}
 
 if {$::tcl_platform(os) eq "Darwin"} {
-  set dlerror_nosuchfile {dlopen(%s, 10): image not found}
-  set dlerror_notadll    {dlopen(%1$s, 10): no suitable image found.*}
-  set dlerror_nosymbol   {dlsym(XXX, %2$s): symbol not found}
+  set dlerror_nosuchfile {dlopen.%s, 10.: .*image.*found.*}
+  set dlerror_notadll    {dlopen.%1$s, 10.: .*image.*found.*}
+  set dlerror_nosymbol   {dlsym.XXX, %2$s.: symbol not found}
 }
 
 if {$::tcl_platform(platform) eq "windows"} {

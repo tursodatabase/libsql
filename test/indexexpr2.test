@@ -91,10 +91,11 @@ ifcapable json1 {
     WHERE json_extract(x, '$.b') IS NOT NULL AND json_extract(x, '$.a') IS NULL 
     GROUP BY json_extract(x, '$.b') COLLATE nocase
     ORDER BY json_extract(x, '$.b') COLLATE nocase;
-  } {
-    0 0 0 {SCAN TABLE t2} 
-    0 0 0 {USE TEMP B-TREE FOR GROUP BY}
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SCAN TABLE t2
+    `--USE TEMP B-TREE FOR GROUP BY
+  }]
   
   do_execsql_test 3.3.2 {
     CREATE INDEX i3 ON t3(json_extract(x, '$.a'), json_extract(x, '$.b'));
@@ -105,10 +106,11 @@ ifcapable json1 {
     WHERE json_extract(x, '$.b') IS NOT NULL AND json_extract(x, '$.a') IS NULL 
     GROUP BY json_extract(x, '$.b') COLLATE nocase
     ORDER BY json_extract(x, '$.b') COLLATE nocase;
-  } {
-    0 0 0 {SEARCH TABLE t3 USING INDEX i3 (<expr>=?)} 
-    0 0 0 {USE TEMP B-TREE FOR GROUP BY}
-  }
+  } [string map {"\n  " \n} {
+    QUERY PLAN
+    |--SEARCH TABLE t3 USING INDEX i3 (<expr>=?)
+    `--USE TEMP B-TREE FOR GROUP BY
+  }]
 }
 
 do_execsql_test 3.4.0 {
@@ -156,6 +158,78 @@ do_execsql_test 3.4.5eqp {
 do_execsql_test 3.4.6 {
   SELECT * FROM t4 ORDER BY Substr(a,-2) COLLATE binary;
 } {.ABC1 1 .ABC3 3 .abc2 2 .abc4 4}
+
+# 2014-09-15:  Verify that UPDATEs of columns not referenced by a
+# index on expression do not modify the index.
+#
+unset -nocomplain cnt
+set cnt 0
+proc refcnt {x} {
+  global cnt
+  incr cnt
+  return $x
+}
+db close
+sqlite3 db :memory:
+db function refcnt -deterministic refcnt
+do_test 4.100 {
+  db eval {
+    CREATE TABLE t1(a,b,c,d,e,f);
+    CREATE INDEX t1abc ON t1(refcnt(a+b+c));
+  }
+  set ::cnt
+} {0}
+do_test 4.110 {
+  db eval {INSERT INTO t1 VALUES(1,2,3,4,5,6);}
+  set ::cnt
+  # The refcnt() function is invoked once to compute the index value 
+} {1}
+do_test 4.120 {
+  set ::cnt 0
+  db eval {UPDATE t1 SET b=b+1;}
+  set ::cnt
+  # The refcnt() function is invoked twice, once to remove the old index
+  # entry and a second time to insert the new one.
+} {2}
+do_test 4.130 {
+  set ::cnt 0
+  db eval {UPDATE t1 SET d=d+1;}
+  set ::cnt
+  # Refcnt() should not be invoked because that index does not change.
+} {0}
+
+# Additional test cases to show that UPDATE does not modify indexes that
+# do not involve unchanged columns.
+#
+ifcapable vtab {
+  load_static_extension db explain
+  do_execsql_test 4.200 {
+    CREATE TABLE t2(a,b,c,d,e,f);
+    INSERT INTO t2 VALUES(2,3,4,5,6,7);
+    CREATE INDEX t2abc ON t2(a+b+c);
+    CREATE INDEX t2cd ON t2(c*d);
+    CREATE INDEX t2def ON t2(d,e+25*f);
+    SELECT sqlite_master.name 
+      FROM sqlite_master, explain('UPDATE t2 SET b=b+1')
+     WHERE explain.opcode LIKE 'Open%'
+       AND sqlite_master.rootpage=explain.p2
+     ORDER BY 1;
+  } {t2 t2abc}
+  do_execsql_test 4.210 {
+    SELECT sqlite_master.name 
+      FROM sqlite_master, explain('UPDATE t2 SET c=c+1')
+     WHERE explain.opcode LIKE 'Open%'
+       AND sqlite_master.rootpage=explain.p2
+     ORDER BY 1;
+  } {t2 t2abc t2cd}
+  do_execsql_test 4.220 {
+    SELECT sqlite_master.name 
+      FROM sqlite_master, explain('UPDATE t2 SET c=c+1, f=NULL')
+     WHERE explain.opcode LIKE 'Open%'
+       AND sqlite_master.rootpage=explain.p2
+     ORDER BY 1;
+  } {t2 t2abc t2cd t2def}
+}
 
 
 finish_test
