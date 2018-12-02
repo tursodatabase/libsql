@@ -80,7 +80,7 @@ static void resolveAlias(
     if( pExpr->op==TK_COLLATE ){
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
-    ExprSetProperty(pDup, EP_Alias);
+//    ExprSetProperty(pDup, EP_Alias);
 
     /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
     ** prevents ExprDelete() from deleting the Expr structure itself,
