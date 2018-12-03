@@ -3285,10 +3285,10 @@ static int lockBtree(BtShared *pBt){
       goto page1_init_failed;
     }
 #else
-    if( page1[18]>2 ){
+    if( page1[18]>3 ){
       pBt->btsFlags |= BTS_READ_ONLY;
     }
-    if( page1[19]>2 ){
+    if( page1[19]>3 ){
       goto page1_init_failed;
     }
 
@@ -3300,9 +3300,9 @@ static int lockBtree(BtShared *pBt){
     ** may not be the latest version - there may be a newer one in the log
     ** file.
     */
-    if( page1[19]==2 && (pBt->btsFlags & BTS_NO_WAL)==0 ){
+    if( page1[19]>=2 && (pBt->btsFlags & BTS_NO_WAL)==0 ){
       int isOpen = 0;
-      rc = sqlite3PagerOpenWal(pBt->pPager, &isOpen);
+      rc = sqlite3PagerOpenWal(pBt->pPager, (page1[19]==3), &isOpen);
       if( rc!=SQLITE_OK ){
         goto page1_init_failed;
       }else{
@@ -10603,7 +10603,7 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   BtShared *pBt = pBtree->pBt;
   int rc;                         /* Return code */
  
-  assert( iVersion==1 || iVersion==2 );
+  assert( iVersion==1 || iVersion==2 || iVersion==3 );
 
   /* If setting the version fields to 1, do not automatically open the
   ** WAL connection, even if the version fields are currently set to 2.

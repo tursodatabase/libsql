@@ -1,0 +1,92 @@
+# 2017 September 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix wal2rewrite
+ifcapable !wal {finish_test ; return }
+
+proc filesize {filename} {
+  if {[file exists $filename]} {
+    return [file size $filename]
+  }
+  return 0
+}
+
+foreach {tn jrnlmode} {
+  1 wal
+  2 wal2
+} {
+  reset_db
+  execsql "PRAGMA journal_mode = $jrnlmode"
+  do_execsql_test $tn.1 {
+    PRAGMA journal_size_limit = 10000;
+    PRAGMA cache_size = 5;
+    PRAGMA wal_autocheckpoint = 10;
+  
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b INTEGER, c BLOB);
+    CREATE INDEX t1b ON t1(b);
+    CREATE INDEX t1c ON t1(c);
+  
+    WITH s(i) AS (
+      SELECT 1 UNION SELECT i+1 FROM s WHERE i<10
+    )
+    INSERT INTO t1 SELECT i, i, randomblob(800) FROM s;
+  } {10000 10}
+  
+  for {set i 0} {$i < 4} {incr i} {
+    do_execsql_test $tn.$i.1 {
+      UPDATE t1 SET c=randomblob(800) WHERE (b%10)==5 AND ($i%2)
+    }
+    do_execsql_test $tn.$i.2 {
+      BEGIN;
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+      UPDATE t1 SET b=b+10, c=randomblob(800);
+    }
+    execsql COMMIT
+
+    do_test $tn.$i.3 { expr [filesize test.db-wal]  < 100000 } 1
+    do_test $tn.$i.4 { expr [filesize test.db-wal2] < 100000 } 1
+
+    set sum [db eval {SELECT sum(b), md5sum(c) FROM t1}]
+
+    do_test $tn.$i.5 {
+      foreach f [glob -nocomplain test.db2*] {forcedelete $f}
+      foreach f [glob -nocomplain test.db*] {
+        forcecopy $f [string map {test.db test.db2} $f]
+      }
+
+      sqlite3 db2 test.db2
+      db2 eval {SELECT sum(b), md5sum(c) FROM t1}
+    } $sum
+    db2 close
+  }
+}
+    
+
+
+finish_test

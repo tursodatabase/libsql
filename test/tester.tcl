@@ -591,6 +591,7 @@ proc reset_db {} {
   forcedelete test.db
   forcedelete test.db-journal
   forcedelete test.db-wal
+  forcedelete test.db-wal2
   sqlite3 db ./test.db
   set ::DB [sqlite3_connection_pointer db]
   if {[info exists ::SETUP_SQL]} {
@@ -2140,17 +2141,32 @@ proc drop_all_indexes {{db db}} {
 #     Returns true if this test should be run in WAL mode. False otherwise.
 #
 proc wal_is_wal_mode {} {
-  expr {[permutation] eq "wal"}
+  if {[permutation] eq "wal"} { return 1 }
+  if {[permutation] eq "wal2"} { return 2 }
+  return 0
 }
 proc wal_set_journal_mode {{db db}} {
-  if { [wal_is_wal_mode] } {
-    $db eval "PRAGMA journal_mode = WAL"
+  switch -- [wal_is_wal_mode] {
+    0 {
+    }
+
+    1 {
+      $db eval "PRAGMA journal_mode = WAL"
+    }
+
+    2 {
+      $db eval "PRAGMA journal_mode = WAL2"
+    }
   }
 }
 proc wal_check_journal_mode {testname {db db}} {
   if { [wal_is_wal_mode] } {
     $db eval { SELECT * FROM sqlite_master }
-    do_test $testname [list $db eval "PRAGMA main.journal_mode"] {wal}
+    set expected "wal"
+    if {[wal_is_wal_mode]==2} {
+      set expected "wal2"
+    }
+    do_test $testname [list $db eval "PRAGMA main.journal_mode"] $expected
   }
 }
 
