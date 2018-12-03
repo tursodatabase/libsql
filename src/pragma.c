@@ -1239,6 +1239,7 @@ void sqlite3Pragma(
     pParse->nMem = 2;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
+        if( p->funcFlags & SQLITE_FUNC_INTERNAL ) continue;
         sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
       }
     }

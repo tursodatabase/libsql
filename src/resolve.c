@@ -771,6 +771,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           notValid(pParse, pNC, "non-deterministic functions",
                    NC_IdxExpr|NC_PartIdx);
         }
+        if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
+         && pParse->nested==0
+         && sqlite3Config.bInternalFunctions==0
+        ){
+          /* Internal-use-only functions are disallowed unless the
+          ** SQL is being compiled using sqlite3NestedParse() */
+          no_such_func = 1;
+          pDef = 0;
+        }
       }
 
       if( 0==IN_RENAME_OBJECT ){

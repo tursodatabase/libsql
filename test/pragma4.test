@@ -122,8 +122,8 @@ do_test 4.1.4 {
   execsql { DROP TABLE t1 } db3
   execsql { DROP TABLE t2 } db2
 } {}
-do_execsql_test 4.1.5 { PRAGMA table_info = t1 }
-do_execsql_test 4.1.6 { PRAGMA table_info = t2 }
+do_execsql_test 4.1.5 { PRAGMA table_info(t1) }
+do_execsql_test 4.1.6 { PRAGMA table_info(t2) }
 
 db2 close
 db3 close
@@ -134,11 +134,13 @@ do_execsql_test 4.2.1 {
   ATTACH 'test.db2' AS aux;
   CREATE TABLE aux.t2(d, e, f);
 }
-do_execsql_test 4.2.2 { SELECT * FROM pragma_table_info('t1') } {
-  0 a {} 0 {} 0 1 b {} 0 {} 0 2 c {} 0 {} 0
-}
-do_execsql_test 4.2.3 { SELECT * FROM pragma_table_info('t2') } {
-  0 d {} 0 {} 0 1 e {} 0 {} 0 2 f {} 0 {} 0
+ifcapable vtab {
+  do_execsql_test 4.2.2 { SELECT * FROM pragma_table_info('t1') } {
+    0 a {} 0 {} 0 1 b {} 0 {} 0 2 c {} 0 {} 0
+  }
+  do_execsql_test 4.2.3 { SELECT * FROM pragma_table_info('t2') } {
+    0 d {} 0 {} 0 1 e {} 0 {} 0 2 f {} 0 {} 0
+  }
 }
 do_test 4.2.4 { 
   sqlite3 db3 test.db
@@ -146,8 +148,10 @@ do_test 4.2.4 {
   execsql { DROP TABLE t1 } db3
   execsql { DROP TABLE t2 } db2
 } {}
-do_execsql_test 4.2.5 { SELECT * FROM pragma_table_info('t1') } 
-do_execsql_test 4.2.6 { SELECT * FROM pragma_table_info('t2') } 
+ifcapable vtab {
+  do_execsql_test 4.2.5 { SELECT * FROM pragma_table_info('t1') } 
+  do_execsql_test 4.2.6 { SELECT * FROM pragma_table_info('t2') } 
+}
 
 db2 close
 db3 close
@@ -160,29 +164,39 @@ do_execsql_test 4.3.1 {
   CREATE TABLE aux.t2(d, e, f);
   CREATE INDEX aux.i2 ON t2(e);
 }
-do_execsql_test 4.3.2 { SELECT * FROM pragma_index_info('i1') } {0 1 b}
-do_execsql_test 4.3.3 { SELECT * FROM pragma_index_info('i2') } {0 1 e}
+ifcapable vtab {
+  do_execsql_test 4.3.2 { SELECT * FROM pragma_index_info('i1') } {0 1 b}
+  do_execsql_test 4.3.3 { SELECT * FROM pragma_index_info('i2') } {0 1 e}
+}
 do_test 4.3.4 { 
   sqlite3 db3 test.db
   sqlite3 db2 test.db2
   execsql { DROP INDEX i1 } db3
   execsql { DROP INDEX i2 } db2
 } {}
-do_execsql_test 4.3.5 { SELECT * FROM pragma_index_info('i1') } 
-do_execsql_test 4.3.6 { SELECT * FROM pragma_index_info('i2') } 
+ifcapable vtab {
+  do_execsql_test 4.3.5 { SELECT * FROM pragma_index_info('i1') } 
+  do_execsql_test 4.3.6 { SELECT * FROM pragma_index_info('i2') } 
+}
 
+execsql {SELECT * FROM main.sqlite_master, aux.sqlite_master}
 do_execsql_test 4.4.0 {
   CREATE INDEX main.i1 ON t1(b, c);
   CREATE INDEX aux.i2 ON t2(e, f);
 }
-do_execsql_test 4.4.1 { SELECT * FROM pragma_index_list('t1') } {0 i1 0 c 0}
-do_execsql_test 4.4.2 { SELECT * FROM pragma_index_list('t2') } {0 i2 0 c 0}
+ifcapable vtab {
+  do_execsql_test 4.4.1 { SELECT * FROM pragma_index_list('t1') } {0 i1 0 c 0}
+  do_execsql_test 4.4.2 { SELECT * FROM pragma_index_list('t2') } {0 i2 0 c 0}
+}
 do_test 4.4.3 { 
   execsql { DROP INDEX i1 } db3
   execsql { DROP INDEX i2 } db2
 } {}
-do_execsql_test 4.4.5 { SELECT * FROM pragma_index_list('t1') } {}
-do_execsql_test 4.4.6 { SELECT * FROM pragma_index_list('t2') } {}
+ifcapable vtab {
+  do_execsql_test 4.4.5 { SELECT * FROM pragma_index_list('t1') } {}
+  do_execsql_test 4.4.6 { SELECT * FROM pragma_index_list('t2') } {}
+}
+execsql {SELECT * FROM main.sqlite_master, aux.sqlite_master}
 
 do_execsql_test 4.5.0 {
   CREATE UNIQUE INDEX main.i1 ON t1(a);
@@ -190,18 +204,23 @@ do_execsql_test 4.5.0 {
   CREATE TABLE main.c1 (a, b, c REFERENCES t1(a));
   CREATE TABLE aux.c2 (d, e, r REFERENCES t2(d));
 }
-do_execsql_test 4.5.1 { SELECT * FROM pragma_foreign_key_list('c1') } {
-  0 0 t1 c a {NO ACTION} {NO ACTION} NONE
-}
-do_execsql_test 4.5.2 { SELECT * FROM pragma_foreign_key_list('c2') } {
-  0 0 t2 r d {NO ACTION} {NO ACTION} NONE
+ifcapable vtab {
+  do_execsql_test 4.5.1 { SELECT * FROM pragma_foreign_key_list('c1') } {
+    0 0 t1 c a {NO ACTION} {NO ACTION} NONE
+  }
+  do_execsql_test 4.5.2 { SELECT * FROM pragma_foreign_key_list('c2') } {
+    0 0 t2 r d {NO ACTION} {NO ACTION} NONE
+  }
 }
 do_test 4.5.3 { 
   execsql { DROP TABLE c1 } db3
   execsql { DROP TABLE c2 } db2
 } {}
-do_execsql_test 4.5.1 { SELECT * FROM pragma_foreign_key_list('c1') }
-do_execsql_test 4.5.2 { SELECT * FROM pragma_foreign_key_list('c2') } 
+ifcapable vtab {
+  do_execsql_test 4.5.4 { SELECT * FROM pragma_foreign_key_list('c1') }
+  do_execsql_test 4.5.5 { SELECT * FROM pragma_foreign_key_list('c2') } 
+}
+execsql {SELECT * FROM main.sqlite_master, aux.sqlite_master}
 
 do_execsql_test 4.6.0 {
   CREATE TABLE main.c1 (a, b, c REFERENCES t1(a));
@@ -224,4 +243,3 @@ do_catchsql_test 4.6.5 {
 } {1 {no such table: c2}}
 
 finish_test
-
