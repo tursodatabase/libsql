@@ -656,11 +656,48 @@ static void btreePtrmapDelete(BtShared *pBt){
     pBt->pMap = 0;
   }
 }
+
+/*
+** Check that the pointer-map does not contain any entries with a parent
+** page of 0. Call sqlite3_log() multiple times to output the entire
+** data structure if it does.
+*/
+static void btreePtrmapCheck(BtShared *pBt, Pgno nPage){
+  Pgno i;
+  int bProblem = 0;
+  BtreePtrmap *p = pBt->pMap;
+
+  for(i=p->iFirst; i<=nPage; i++){
+    PtrmapEntry *pEntry = &p->aPtr[i-p->iFirst];
+    if( pEntry->eType==PTRMAP_OVERFLOW1
+     || pEntry->eType==PTRMAP_OVERFLOW2
+     || pEntry->eType==PTRMAP_BTREE
+    ){
+      if( pEntry->parent==0 ){
+        bProblem = 1;
+        break;
+      }
+    }
+  }
+
+  if( bProblem ){
+    for(i=p->iFirst; i<=nPage; i++){
+      PtrmapEntry *pEntry = &p->aPtr[i-p->iFirst];
+      sqlite3_log(SQLITE_CORRUPT, 
+          "btreePtrmapCheck: pgno=%d eType=%d parent=%d", 
+          (int)i, (int)pEntry->eType, (int)pEntry->parent
+      );
+    }
+    abort();
+  }
+}
+
 #else  /* SQLITE_OMIT_CONCURRENT */
 # define btreePtrmapAllocate(x) SQLITE_OK
 # define btreePtrmapDelete(x) 
 # define btreePtrmapBegin(x,y)  SQLITE_OK
 # define btreePtrmapEnd(x,y,z) 
+# define btreePtrmapCheck(y,z) 
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
@@ -4152,7 +4189,10 @@ static int btreeRelocateRange(
     if( pEntry->eType==PTRMAP_FREEPAGE ){
       Pgno dummy;
       rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
-      releasePage(pFree);
+      if( pFree ){
+        assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );
+        sqlite3PcacheDrop(pFree->pDbPage);
+      }
       assert( rc!=SQLITE_OK || dummy==iPg );
     }else if( pnCurrent ){
       btreeGetPage(pBt, iPg, &pPg, 0);
@@ -4210,6 +4250,8 @@ static int btreeFixUnlocked(Btree *p){
       Pgno iHTrunk = get4byte(&p1[32]);
       u32 nHFree = get4byte(&p1[36]);
 
+      btreePtrmapCheck(pBt, nPage);
+
       /* Attach the head database free list to the end of the current
       ** transactions free-list (if any).  */
       if( iTrunk!=0 ){
@@ -4236,10 +4278,12 @@ static int btreeFixUnlocked(Btree *p){
         /* The current transaction allocated pages pMap->iFirst through
         ** nPage (inclusive) at the end of the database file. Meanwhile,
         ** other transactions have allocated (iFirst..nHPage). So move
-        ** pages (iFirst..MIN(nPage,nHPage)) to (MAX(nPage,nHPage)+1).  */
+        ** pages (iFirst..MIN(nPage,nHPage)) to (MAX(nPage,nHPage)+1). */
         Pgno iLast = MIN(nPage, nHPage);    /* Last page to move */
         Pgno nCurrent;                      /* Current size of db */
+
         nCurrent = MAX(nPage, nHPage);
+        pBt->nPage = nCurrent;
         rc = btreeRelocateRange(pBt, pMap->iFirst, iLast, &nCurrent);
 
         /* There are now no collisions with the snapshot at the head of the
@@ -6229,7 +6273,7 @@ static int allocateBtreePage(
   ** stores stores the total number of pages on the freelist. */
   n = get4byte(&pPage1->aData[36]);
   testcase( n==mxPage-1 );
-  if( ISCONCURRENT==0 && n>=mxPage ){
+  if( n>=mxPage ){
     return SQLITE_CORRUPT_BKPT;
   }
 

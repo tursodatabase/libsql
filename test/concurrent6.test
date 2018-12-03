@@ -1,0 +1,60 @@
+# 2017 May 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
+set ::testprefix concurrent6
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+sqlite3 db2 test.db
+
+do_execsql_test 1.0 {
+  PRAGMA page_size = 1024;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(x);
+  CREATE TABLE t3(x);
+  CREATE TABLE t4(x);
+
+  INSERT INTO t1 VALUES(zeroblob(1500));
+} {wal}
+
+do_execsql_test -db db2 1.1 {
+  BEGIN CONCURRENT;
+    INSERT INTO t3 VALUES(zeroblob(4000));
+    DELETE FROM t1;
+}
+
+do_execsql_test 1.2 {
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100) 
+  INSERT INTO t2 SELECT zeroblob(1000) FROM s;
+
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100) 
+  INSERT INTO t4  SELECT zeroblob(1000) FROM s;
+
+  DELETE FROM t4;
+}
+
+do_execsql_test -db db2 1.3 {
+  COMMIT;
+}
+
+
+finish_test
+
