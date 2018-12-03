@@ -546,17 +546,22 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
 void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   int i;
   sqlite3BtreeEnterAll(db);
-  assert( db->nSchemaLock==0 );
   for(i=0; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
-      sqlite3SchemaClear(pDb->pSchema);
+      if( db->nSchemaLock==0 ){
+        sqlite3SchemaClear(pDb->pSchema);
+      }else{
+        DbSetProperty(db, i, DB_ResetWanted);
+      }
     }
   }
   db->mDbFlags &= ~(DBFLAG_SchemaChange|DBFLAG_SchemaKnownOk);
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
-  sqlite3CollapseDatabaseArray(db);
+  if( db->nSchemaLock==0 ){
+    sqlite3CollapseDatabaseArray(db);
+  }
 }
 
 /*
@@ -1896,6 +1901,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   recomputeColumnsNotIndexed(pPk);
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Return true if zName is a shadow table name in the current database
 ** connection.
@@ -1921,6 +1927,9 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   if( pMod->pModule->xShadowName==0 ) return 0;
   return pMod->pModule->xShadowName(zTail+1);
 }
+#else
+# define isShadowTableName(x,y) 0
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** This routine is called to report the final ")" that terminates

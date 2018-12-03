@@ -4166,6 +4166,7 @@ static int fts3EvalPhraseLoad(
   return rc;
 }
 
+#ifndef SQLITE_DISABLE_FTS4_DEFERRED
 /*
 ** This function is called on each phrase after the position lists for
 ** any deferred tokens have been loaded into memory. It updates the phrases
@@ -4269,6 +4270,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 
   return SQLITE_OK;
 }
+#endif /* SQLITE_DISABLE_FTS4_DEFERRED */
 
 /*
 ** Maximum number of tokens a phrase may have to be considered for the
