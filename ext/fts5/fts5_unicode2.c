@@ -248,11 +248,6 @@ int sqlite3Fts5UnicodeFold(int c, int eRemoveDiacritic){
   return ret;
 }
 
-
-int sqlite3Fts5UnicodeNCat(void) { 
-  return 32;
-}
-
 int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
   aArray[0] = 1;
   switch( zCat[0] ){
@@ -777,4 +772,3 @@ void sqlite3Fts5UnicodeAscii(u8 *aArray, u8 *aAscii){
     iTbl++;
   }
 }
-

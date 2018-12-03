@@ -617,10 +617,6 @@ proc print_categories {lMap} {
 
   set nCat [expr [llength [array names C]] + 1]
   puts [code {
-    int sqlite3Fts5UnicodeNCat(void) { 
-      return $nCat;
-    }
-
     int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
       aArray[0] = 1;
       switch( zCat[0] ){
