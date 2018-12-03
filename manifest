@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\ssqlite3Fts5UnicodeNCat()\sfunction.
-D 2018-12-03T17:40:46.225
+C Reduce\sthe\ssize\sof\sthe\sparser\stables\sgenerated\sby\sLemon\sby\ssplitting\sthe\nyyRuleInfo\sstructure\sinto\sseparate\syyRuleInfoLhs\sand\syyRuleInfoNRhs\sarrays.
+D 2018-12-03T23:57:27.083
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -1700,8 +1700,8 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 60d1e1eb0f7ebae709f68f1472d77fbf291c5345cd98ff417219da7e74fd09e9
-F tool/lempar.c 452f12d40229847634a160e5666b6c4ec4392fd81941c3443861b48d497054cc
+F tool/lemon.c c9ba01f6729c892ae3e0f55c8a2d694a7e6ec3dd3aa280b411a008ef69b410cd
+F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1781,7 +1781,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06177f3f114b5d804b84c27ac843740282e2176fdf0f7a999feda0e1b624adec
-R 0096a940ee50b37b4b72306aa1bf1dc3
+P 7149dacf1d440a19f62808b4591c3fa8da202b2ec742d5490a63f2ec005ff9e7
+R 457633af26ab8489c6f274ab3a7ad9fc
 U drh
-Z 71af346a1a6924b681515df9ade7b33a
+Z 7836770a12b5a3ad0791dca5d89f1095
