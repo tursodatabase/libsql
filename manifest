@@ -1,5 +1,5 @@
-C Cherrypick\sa\scouple\sof\sfixes\sfrom\sbegin-concurrent-pnu\sinto\sthis\sbranch.\sThe\ndifferences\sbetween\sthe\stwo\sbranches\sare\snow\sthat\sthis\sone\sdoes\snot\shave\n"PRAGMA\snoop_update"\sor\sthe\smutex-free\sPRNG.
-D 2018-12-03T19:29:37.766
+C Minor\schange\sto\swal.c\son\sthis\sbranch\sto\smake\sit\smore\ssimilar\sto\strunk.
+D 2018-12-03T20:38:15.728
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -592,7 +592,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 41de67424237a3dd097a093057ba454ccfef26c452f6263fecd5591a15dd5a9a
+F src/wal.c 8a12219e699ed737fa4dd8f0449f1bb5dee765502b48710dbd5be747ea58e65b
 F src/wal.h f325a5856b669f5ba449157485915816103857c8574efc746ac55eba3335c5e0
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
@@ -1792,10 +1792,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0ddb358cc68e5ec6d9e758893ab3da058a3b2e705124a7449279c992e672a4a
-Q +50c8952c92b9f0c61935fb0df04ed1426d9e266a812071b7bf5b0215c5552757
-Q +570233716032f258b878d52c4d5a47e07292d66fa84e3a85c0388ec15efee625
-Q +dc0fc2aa7cbefeb5f0ba8c992fd3e9adcfb5a4d61e2321c1bd93f4d36ba9aafc
-R 0b6ca72792de50021b48db0500a10b60
+P a56506b9387a067ef259504d127694ad20223f4b08781d1676ff7f5fdd9443d8
+R d66e284ab90799b5d6b7d2957b4e83a3
+T +closed 0d12f49feb78a94a1b188e80379b51dfe9bf6c8e60225134e15216192cabed21
 U dan
-Z e7051457303763dcda2174967ac468b5
+Z 035c0f4c166e3fab14296a764b5a28cd

@@ -2854,18 +2854,36 @@ void sqlite3WalEndReadTransaction(Wal *pWal){
 }
 
 /*
-** Search the hash tables for an entry matching page number pgno. Ignore
-** any entries that lie after frame iLast within the wal file.
+** Search the wal file for page pgno. If found, set *piRead to the frame that
+** contains the page. Otherwise, if pgno is not in the wal file, set *piRead
+** to zero.
+**
+** Return SQLITE_OK if successful, or an error code if an error occurs. If an
+** error does occur, the final value of *piRead is undefined.
 */
-static int walFindFrame(
-  Wal *pWal, 
-  Pgno pgno, 
-  u32 iLast, 
-  u32 *piRead
+int sqlite3WalFindFrame(
+  Wal *pWal,                      /* WAL handle */
+  Pgno pgno,                      /* Database page number to read data for */
+  u32 *piRead                     /* OUT: Frame number (or zero) */
 ){
+  u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
+  u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
-  u32 iRead = 0;
   int iMinHash;
+
+  /* This routine is only be called from within a read transaction. */
+  assert( pWal->readLock>=0 || pWal->lockError );
+
+  /* If the "last page" field of the wal-index header snapshot is 0, then
+  ** no data will be read from the wal under any circumstances. Return early
+  ** in this case as an optimization.  Likewise, if pWal->readLock==0, 
+  ** then the WAL is ignored by the reader so return early, as if the 
+  ** WAL were empty.
+  */
+  if( iLast==0 || (pWal->readLock==0 && pWal->bShmUnreliable==0) ){
+    *piRead = 0;
+    return SQLITE_OK;
+  }
 
   /* Each iteration of the following for() loop searches one
   ** hash table (each hash table indexes up to HASHTABLE_NPAGE frames).
@@ -2917,43 +2935,6 @@ static int walFindFrame(
     if( iRead ) break;
   }
 
-  *piRead = iRead;
-  return SQLITE_OK;
-}
-
-/*
-** Search the wal file for page pgno. If found, set *piRead to the frame that
-** contains the page. Otherwise, if pgno is not in the wal file, set *piRead
-** to zero.
-**
-** Return SQLITE_OK if successful, or an error code if an error occurs. If an
-** error does occur, the final value of *piRead is undefined.
-*/
-int sqlite3WalFindFrame(
-  Wal *pWal,                      /* WAL handle */
-  Pgno pgno,                      /* Database page number to read data for */
-  u32 *piRead                     /* OUT: Frame number (or zero) */
-){
-  u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
-  u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
-  int rc;
-
-  /* This routine is only be called from within a read transaction. */
-  assert( pWal->readLock>=0 || pWal->lockError );
-
-  /* If the "last page" field of the wal-index header snapshot is 0, then
-  ** no data will be read from the wal under any circumstances. Return early
-  ** in this case as an optimization.  Likewise, if pWal->readLock==0, 
-  ** then the WAL is ignored by the reader so return early, as if the 
-  ** WAL were empty.
-  */
-  if( iLast==0 || (pWal->readLock==0 && pWal->bShmUnreliable==0) ){
-    *piRead = 0;
-    return SQLITE_OK;
-  }
-
-  rc = walFindFrame(pWal, pgno, iLast, &iRead);
-
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
   /* If expensive assert() statements are available, do a linear search
   ** of the wal-index file content. Make sure the results agree with the
@@ -2973,7 +2954,7 @@ int sqlite3WalFindFrame(
 #endif
 
   *piRead = iRead;
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
