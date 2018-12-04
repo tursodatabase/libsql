@@ -629,16 +629,18 @@ static int sqlite3Step(Vdbe *p){
     db->nVdbeExec--;
   }
 
+  if( rc!=SQLITE_ROW ){
 #ifndef SQLITE_OMIT_TRACE
-  /* If the statement completed successfully, invoke the profile callback */
-  if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
+    /* If the statement completed successfully, invoke the profile callback */
+    checkProfileCallback(db, p);
 #endif
 
-  if( rc==SQLITE_DONE && db->autoCommit ){
-    assert( p->rc==SQLITE_OK );
-    p->rc = doWalCallbacks(db);
-    if( p->rc!=SQLITE_OK ){
-      rc = SQLITE_ERROR;
+    if( rc==SQLITE_DONE && db->autoCommit ){
+      assert( p->rc==SQLITE_OK );
+      p->rc = doWalCallbacks(db);
+      if( p->rc!=SQLITE_OK ){
+        rc = SQLITE_ERROR;
+      }
     }
   }
 

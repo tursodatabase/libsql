@@ -1,5 +1,5 @@
-C Reduce\sthe\ssize\sof\sthe\sparser\stables\sgenerated\sby\sLemon\sby\ssplitting\sthe\nyyRuleInfo\sstructure\sinto\sseparate\syyRuleInfoLhs\sand\syyRuleInfoNRhs\sarrays.
-D 2018-12-03T23:57:27.083
+C Small\sperformance\sincrease\sin\ssqlite3_step()\sfor\sthe\scommon\scase\swhere\nit\sreturns\sSQLITE_ROW.
+D 2018-12-04T13:51:26.090
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -581,7 +581,7 @@ F src/vacuum.c 836cadc922de866c849e23a75f93d344cdc143d388339305d09a3fed27e8798d
 F src/vdbe.c 005e691ea4c7d51e6c1a69d9389aeb34700884c85f51681817ddea3fdc2fc39b
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h 437e6c6af679fdf157867eb83a8adc6cf5145d6774453c2214cfd0bd01d92980
-F src/vdbeapi.c ecccfce6f614c33a95952efeec969d163e8349eac314ee2b7b163eda921b5eb0
+F src/vdbeapi.c 666993b7939530b3e16b21d07425809d4aaa5d75917ba34c513e91ee36c83467
 F src/vdbeaux.c f547901b1aa9e2d81c63f06893f633648e434180666a827aacb547d7d6c8a601
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 7b3305bc4a5139f4536ac9b5f61da0f915e49d2e3fdfa87dfdfa9d7aba8bc1e9
@@ -1781,7 +1781,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7149dacf1d440a19f62808b4591c3fa8da202b2ec742d5490a63f2ec005ff9e7
-R 457633af26ab8489c6f274ab3a7ad9fc
+P 70fe8ec2ae3099b8773834c7ac2e56768addbecd57956ac523e71a7dc264049c
+R 86cab02da9395ff714960a3873202ed5
 U drh
-Z 7836770a12b5a3ad0791dca5d89f1095
+Z a2cf828add1aa9e207a374e8188d7cf1
