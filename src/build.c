@@ -4017,14 +4017,14 @@ SrcList *sqlite3SrcListAppendFromTerm(
   Token *pDatabase,       /* Name of the database containing pTable */
   Token *pAlias,          /* The right-hand side of the AS subexpression */
   Select *pSubquery,      /* A subquery used in place of a table name */
-  Expr *pOn,              /* The ON clause of a join */
-  IdList *pUsing          /* The USING clause of a join */
+  const OnUsing *pOnUsing /* The ON or USING clause */
 ){
   struct SrcList_item *pItem;
   sqlite3 *db = pParse->db;
-  if( !p && (pOn || pUsing) ){
+  assert( pOnUsing!=0 );
+  if( !p && (pOnUsing->pOn || pOnUsing->pUsing) ){
     sqlite3ErrorMsg(pParse, "a JOIN clause is required before %s", 
-      (pOn ? "ON" : "USING")
+      (pOnUsing->pOn ? "ON" : "USING")
     );
     goto append_from_error;
   }
@@ -4045,14 +4045,14 @@ SrcList *sqlite3SrcListAppendFromTerm(
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
   pItem->pSelect = pSubquery;
-  pItem->pOn = pOn;
-  pItem->pUsing = pUsing;
+  pItem->pOn = pOnUsing->pOn;
+  pItem->pUsing = pOnUsing->pUsing;
   return p;
 
  append_from_error:
   assert( p==0 );
-  sqlite3ExprDelete(db, pOn);
-  sqlite3IdListDelete(db, pUsing);
+  sqlite3ExprDelete(db, pOnUsing->pOn);
+  sqlite3IdListDelete(db, pOnUsing->pUsing);
   sqlite3SelectDelete(db, pSubquery);
   return 0;
 }

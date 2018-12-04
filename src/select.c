@@ -476,13 +476,10 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
       }
     }
 
-    /* Disallow both ON and USING clauses in the same join
+    /* Cannot both ON and USING clauses in the same join.  The parser
+    ** does not allow this.
     */
-    if( pRight->pOn && pRight->pUsing ){
-      sqlite3ErrorMsg(pParse, "cannot have both ON and USING "
-        "clauses in the same join");
-      return 1;
-    }
+    assert( pRight->pOn==0 || pRight->pUsing==0 );
 
     /* Add the ON clause to the end of the WHERE clause, connected by
     ** an AND operator.
@@ -4507,6 +4504,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   SrcList *pNewSrc;
   Parse *pParse;
   Token dummy;
+  static const OnUsing nullOnUsing = { 0, 0 };
 
   if( p->pPrior==0 ) return WRC_Continue;
   if( p->pOrderBy==0 ) return WRC_Continue;
@@ -4525,7 +4523,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
   if( pNew==0 ) return WRC_Abort;
   memset(&dummy, 0, sizeof(dummy));
-  pNewSrc = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&dummy,pNew,0,0);
+  pNewSrc = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&dummy,pNew,&nullOnUsing);
   if( pNewSrc==0 ) return WRC_Abort;
   *pNew = *p;
   p->pSrc = pNewSrc;

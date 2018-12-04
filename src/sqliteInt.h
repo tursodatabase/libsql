@@ -1085,6 +1085,7 @@ typedef struct Lookaside Lookaside;
 typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
+typedef struct OnUsing OnUsing;
 typedef struct Parse Parse;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
@@ -2616,6 +2617,21 @@ struct IdList {
 };
 
 /*
+** An instance of the following structure records the ON and USING clauses
+** as part of a join.
+**
+**          ON expr USING exprlist
+**
+** The parser uses a single instance of this object to hold both elements
+** as a performance optimization - to reduce the number of "reduce" actions
+** required in the parser automaton.
+*/
+struct OnUsing {
+  Expr *pOn;
+  IdList *pUsing;
+};
+
+/*
 ** The following structure describes the FROM clause of a SELECT statement.
 ** Each table or subquery in the FROM clause is a separate element of
 ** the SrcList.a[] array.
@@ -3918,7 +3934,7 @@ int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(sqlite3*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppend(sqlite3*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
-                                      Token*, Select*, Expr*, IdList*);
+                                      Token*, Select*, const OnUsing*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);
 void sqlite3SrcListFuncArgs(Parse*, SrcList*, ExprList*);
 int sqlite3IndexedByLookup(Parse *, struct SrcList_item *);
