@@ -1,5 +1,5 @@
-C Merge\sthe\swal2\sand\sbegin-concurrent\scode.\sBoth\sfeatures\swork,\sbut\snot\sat\sthe\nsame\stime.
-D 2018-12-03T20:49:34.015
+C First\sattempt\sat\smaking\sfeatures\swork\stogether.\sOnly\sthe\smost\sminimal\stesting\nso\sfar.
+D 2018-12-04T19:41:07.389
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -593,7 +593,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 88e424b4de9cb836166a967b5b8a6de7f90cdd493dd1d04a1b855fa58dbe7212
+F src/wal.c 4b7ad0e623e01ede1ecb2cae24548c29e51ce5a21b2fd91af26b4bb447b72cc4
 F src/wal.h b42fc8081cd1765d4d4dd99b33f2db2f71128f4e25ff8c08d1a346f5af62e27a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
@@ -1606,6 +1606,7 @@ F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bd
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
 F test/wal2.test a225bafac35a47765b890bacdeb57e5e81039f21cc18a1e8ce88eb76e56b843c
+F test/wal2concurrent.test d0af64c3b113993553acfeeb64d207fb6d924e498fd953dbf31040a566ec10df
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
 F test/wal2simple.test 8c9dfb8f1bca01a0deb57f7074cdb83865c2292e89b13f7a51a1c160dca3f5f4
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
@@ -1795,10 +1796,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a7af3ead5949c461430c1fa92798dc2bbbc58c8cd504005c5afa38993f0be82 480be916c840e9e28010c22cf29a8396502c9e6387f31f750260c6290f58e9a1
-R 41c3c1de1e62db08c33d5cf08c11006b
-T *branch * begin-concurrent-wal2
-T *sym-begin-concurrent-wal2 *
-T -sym-begin-concurrent *
+P b7281a1caa574870a071bea3e96b1d8210c28c17f9094449b3ce1a42b311e6a1
+R db024f31bd5bbdadf08ded59e2f54e6f
 U dan
-Z f5d7b930a621f73c3ef64e6a734bda83
+Z abc3921392e51c645845b41c65979599
