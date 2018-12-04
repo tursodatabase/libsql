@@ -50,7 +50,13 @@ int sqlite3_exec(
     char **azVals = 0;
 
     pStmt = 0;
+#ifdef SQLITE_ENABLE_NORMALIZE
+    rc = sqlite3_prepare_v3(
+        db, zSql, -1, SQLITE_PREPARE_NORMALIZE, &pStmt, &zLeftover
+    );
+#else
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+#endif
     assert( rc==SQLITE_OK || pStmt==0 );
     if( rc!=SQLITE_OK ){
       continue;

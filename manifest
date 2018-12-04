@@ -1,5 +1,5 @@
-C Add\sthe\s"index_usage"\sutility\sprogram.
-D 2018-12-04T16:51:42.708
+C When\scompiled\swith\sSQLITE_ENABLE_NORMALIZE,\salways\shave\ssqlite3_exec()\senable\sthe\sSQLITE_PREPARE_NORMALIZE\sflag.
+D 2018-12-04T21:16:34.044
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -469,7 +469,7 @@ F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c f12f27eb606d601825be9a229a7390a8d64d40226697883f96de8e088d620055
-F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
+F src/legacy.c f2965b726364fee8ed57fb1a363b85cfe9f418b261cf41b0790339b33e905477
 F src/loadext.c 9050dd153b5583804184be9c9dee9ebb554178d6db1f8ac280899e8aad9060e6
 F src/main.c 5a94791735ddd51804b75b7ef4645c25cbe6fe1d0e8f25851b2ed1211ad3d076
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
@@ -1782,7 +1782,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e28584e8bc7b7405380064b60523fa6191f827f74075f6d117eb7732d752ba5e
-R 14a419221d3a581ec01dad82979f03fc
-U drh
-Z 0158a53fd6ddbd828c2808dfe15d0a38
+P df95455213c9d1db7229e94217e78edc05cbf9e40f39528105494ea6ac52be94
+R 73d39f6c8ad10375d91c1bf80b5506d5
+T *branch * execWithNormalize
+T *sym-execWithNormalize *
+T -sym-trunk *
+U mistachkin
+Z 74e4003db4dff8d15e39466a0b866842
