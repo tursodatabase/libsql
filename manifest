@@ -1,10 +1,10 @@
-C Performance\simprovement\sin\ssqlite3_step()\sby\screating\sa\snew\smTrace\sflag\nfor\sthe\slegacy\sxProfile\spointer\sthat\sis\sset\sby\ssqlite3_profile().
-D 2018-12-04T14:33:02.434
+C Add\sthe\s"index_usage"\sutility\sprogram.
+D 2018-12-04T16:51:42.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
+F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 0d6831ff7951b302e888d86d4c469e2ec3c22f59eba4118b8c38d5a51d9e2d4f
+F Makefile.msc b7d4a710fa3f0b8cfc532ff195b85dc1ba2a8ad34343cb3d67639f28f0a24306
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION 654da1d4053fb09ffc33a3910e6d427182a7dcdc67e934fa83de2849ac83fccb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -429,7 +429,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk eeaa279fa6acdcfa6555058548075569a06f891fd67f5901b1e7700d18052fda
+F main.mk 55f94164ecc194b067d9c55e106f37fd3c9b39f9668e8b568c98f008b6f9ec90
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1699,6 +1699,7 @@ F tool/fuzzershell.c e1d90a03ca790d7c331c2aae08ca46ff435f1ae1faa6cb9cc48f4687c18
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
+F tool/index_usage.c 8fd515b97522ae4b1aa6ca9847439f005d4cbaf6eb0eb416b694dba77c0263f0
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c c9ba01f6729c892ae3e0f55c8a2d694a7e6ec3dd3aa280b411a008ef69b410cd
 F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
@@ -1781,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 893448265299f4c70c32c8e92ea66f8d33c1c213b21701f73fa3815514cd5ef6
-R 8ed134deac4c27b14c838ed0e6319d34
+P e28584e8bc7b7405380064b60523fa6191f827f74075f6d117eb7732d752ba5e
+R 14a419221d3a581ec01dad82979f03fc
 U drh
-Z 84b5f74d4a6ae62e21d6700a38fd119f
+Z 0158a53fd6ddbd828c2808dfe15d0a38
