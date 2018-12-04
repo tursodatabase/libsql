@@ -2939,7 +2939,7 @@ int sqlite3WalFindFrame(
   /* If expensive assert() statements are available, do a linear search
   ** of the wal-index file content. Make sure the results agree with the
   ** result obtained using the hash indexes above.  */
-  if( rc==SQLITE_OK ){
+  {
     u32 iRead2 = 0;
     u32 iTest;
     assert( pWal->bShmUnreliable || pWal->minFrame>0 );

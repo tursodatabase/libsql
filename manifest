@@ -1,5 +1,5 @@
-C Minor\schange\sto\swal.c\son\sthis\sbranch\sto\smake\sit\smore\ssimilar\sto\strunk.
-D 2018-12-03T20:38:15.728
+C Fix\sa\sproblem\swith\sSQLITE_ENABLE_EXPENSIVE_ASSERT\sbuilds\son\sthis\sbranch.
+D 2018-12-04T13:51:43.293
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -592,7 +592,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 8a12219e699ed737fa4dd8f0449f1bb5dee765502b48710dbd5be747ea58e65b
+F src/wal.c 6675d84d7bc5d04879e487d79248fb79d9bdad46811cc5ed5ef6233bdf1b70a1
 F src/wal.h f325a5856b669f5ba449157485915816103857c8574efc746ac55eba3335c5e0
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
@@ -1792,8 +1792,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a56506b9387a067ef259504d127694ad20223f4b08781d1676ff7f5fdd9443d8
-R d66e284ab90799b5d6b7d2957b4e83a3
-T +closed 0d12f49feb78a94a1b188e80379b51dfe9bf6c8e60225134e15216192cabed21
+P 6a7af3ead5949c461430c1fa92798dc2bbbc58c8cd504005c5afa38993f0be82
+R d464b4876361195a5c5bd9cc28bc9bdf
 U dan
-Z 035c0f4c166e3fab14296a764b5a28cd
+Z 0763a5ad9b6082127adcd5e3f801575e
