@@ -3234,6 +3234,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 int sqlite3WalSnapshotRecover(Wal *pWal){
   int rc;
 
+  /* Snapshots may not be used with wal2 mode databases. */
+  if( isWalMode2(pWal) ) return SQLITE_ERROR;
+
   assert( pWal->readLock>=0 );
   rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
   if( rc==SQLITE_OK ){
@@ -3308,6 +3311,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 #ifdef SQLITE_ENABLE_SNAPSHOT
   int bChanged = 0;
   WalIndexHdr *pSnapshot = pWal->pSnapshot;
+  if( pSnapshot && isWalMode2(pWal) ) return SQLITE_ERROR;
   if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
     bChanged = 1;
   }
@@ -4534,9 +4538,12 @@ int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
   WalIndexHdr *pRet;
   static const u32 aZero[4] = { 0, 0, 0, 0 };
 
+  /* Snapshots may not be used with wal2 mode databases. */
+  if( isWalMode2(pWal) ) return SQLITE_ERROR;
+
   assert( pWal->readLock>=0 && pWal->writeLock==0 );
 
-  if( memcmp(&pWal->hdr.aFrameCksum[0],aZero,16)==0 ){
+  if( memcmp(&pWal->hdr.aFrameCksum[0],aZero,8)==0 ){
     *ppSnapshot = 0;
     return SQLITE_ERROR;
   }
@@ -4587,6 +4594,10 @@ int sqlite3_snapshot_cmp(sqlite3_snapshot *p1, sqlite3_snapshot *p2){
 */
 int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot){
   int rc;
+
+  /* Snapshots may not be used with wal2 mode databases. */
+  if( isWalMode2(pWal) ) return SQLITE_ERROR;
+
   rc = walLockShared(pWal, WAL_CKPT_LOCK);
   if( rc==SQLITE_OK ){
     WalIndexHdr *pNew = (WalIndexHdr*)pSnapshot;
