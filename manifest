@@ -1,12 +1,12 @@
-C Simplifications\sto\sthe\ssqlite3_normalized_sql()\simplementation.
-D 2018-12-05T17:48:57.422
+C Increase\sthe\sversion\snumber\sto\s3.27.0\sfor\sthe\snext\sdevelopment\scycle.
+D 2018-12-05T19:42:59.951
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b7d4a710fa3f0b8cfc532ff195b85dc1ba2a8ad34343cb3d67639f28f0a24306
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
-F VERSION 654da1d4053fb09ffc33a3910e6d427182a7dcdc67e934fa83de2849ac83fccb
+F VERSION 453e2f4529ca208196d5567db28d549d7151f79efd33f6e6cfe6e613e583a0be
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -33,7 +33,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 5811ffcd4866902d1706dcf8e0527f89165ec52859659942c9649bb1d3e4cc7b x
+F configure e2b4021dcb8ee6f9a91e7f4011316957868e8065019ac994f68e27363120c272 x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f44bc7a8b3fac82aa5598e9bdaf65ea4dd3c331cf90c1d5ba26ff1698e92c230
-R 14f7302635d9f1332de56d5fb4d8f1a4
+P 94ea6379178e3ff6a0d1d5819ca4ac558bdadb1ca8a3637c797079db7dc0cd61
+R 07b88da37b5c39140160539d8ff1a5aa
 U drh
-Z b51bb6387d49f37b8a1232489a1c6ba3
+Z 2d432cc7c63d4590326f1d8d2ea75b30
