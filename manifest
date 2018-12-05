@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\s"PRAGMA\sjournal_mode"\sto\sreport\sthe\swrong\sjournal\smode\n(wal\sinstead\sof\swal2)\sunder\ssome\scircumstances.
-D 2018-12-05T17:20:47.797
+C Fix\sa\stest\sscript\sproblem\son\sthis\sbranch.
+D 2018-12-05T17:36:20.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -1239,7 +1239,7 @@ F test/rowvalue9.test d8dd2c6ecac432dadaa79e41dc2434f007be1b6b
 F test/rowvaluefault.test 7cd9ccc6c2fbdd881672984087aad0491bb75504
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
-F test/savepoint.test 69c56b891ce0ff28f1376b5516bf2b6a8b39d0430433216bfc496e72103baaa5
+F test/savepoint.test ea1a6c08454e1a4edd973589bcf1fca83928ed09c48858fde1e8653b6daab278
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
@@ -1796,7 +1796,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8c2d55fa4ec95c6506201edcd1cb2ef108a233bd87a6154f3593909977f7d3f 1d8d4f689653ce80157740e339f7f1b42479bf90d82b176d8202d0a49f428398
-R e95ab795b28184fae76566055fff1a44
+P bf309107dfc4d2abd68b9339c68aeaaffd278096bb2a5912e4a0b0c124fd6345 285d1c5904dd607457c6b5ff7be3d3191a90ca8b1fb0837327663c9910f978ac
+R 95b9e871a13052b64e694448fd65a502
 U dan
-Z 12c4c01a1addcde48575985e7f8b3cbb
+Z 1ca88420796234af6cf0aabbf996ef48
