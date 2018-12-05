@@ -741,13 +741,13 @@ static int shouldTreatAsIdentifier(
   }
   if( sqlite3IsRowid(zId) ){
     bFound = 1;
-    goto done;
+    goto done1;
   }
   if( nToken>0 ){
     int hash = SQLITE_FUNC_HASH(sqlite3UpperToLower[(u8)zToken[0]], nToken);
     if( sqlite3FunctionSearch(hash, zId) ){
       bFound = 1;
-      goto done;
+      goto done1;
     }
   }
   assert( db!=0 );
@@ -781,18 +781,19 @@ static int shouldTreatAsIdentifier(
         }else{
           *pRc = SQLITE_NOMEM_BKPT;
           bFound = 0;
-          goto done;
+          goto done2;
         }
       }
       if( pHash && sqlite3HashFind(pHash, zId) ){
         bFound = 1;
-        goto done;
+        goto done2;
       }
     }
   }
-done:
+done2:
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
+done1:
   if( zId!=zSpace ) sqlite3DbFree(db, zId);
   return bFound;
 }
