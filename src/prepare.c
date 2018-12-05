@@ -791,8 +791,7 @@ done:
 */
 static int estimateNormalizedSize(
   const char *zSql, /* The original SQL string */
-  int nSql,         /* Length of original SQL string */
-  u8 prepFlags      /* The flags passed to sqlite3_prepare_v3() */
+  int nSql          /* Length of original SQL string */
 ){
   int nOut = nSql + 4;
   const char *z = zSql;
@@ -847,18 +846,14 @@ static void copyNormalizedToken(
 }
 
 /*
-** Perform normalization of the SQL contained in the prepared statement and
-** store the result in the zNormSql field.  The schema for the associated
-** databases are consulted while performing the normalization in order to
-** determine if a token appears to be an identifier.  All identifiers are
-** left intact in the normalized SQL and all literals are replaced with a
-** single '?'.
+** Compute a normalization of the SQL given by zSql[0..nSql-1].  Return
+** the normalization in space obtained from sqlite3DbMalloc().  Or return
+** NULL if anything goes wrong or if zSql is NULL.
 */
-void sqlite3Normalize(
+char *sqlite3Normalize(
   Vdbe *pVdbe,      /* VM being reprepared */
   const char *zSql, /* The original SQL string */
-  int nSql,         /* Size of the input string in bytes */
-  u8 prepFlags      /* The flags passed to sqlite3_prepare_v3() */
+  int nSql          /* Size of the input string in bytes */
 ){
   sqlite3 *db;           /* Database handle. */
   char *z;               /* The output string */
@@ -873,11 +868,10 @@ void sqlite3Normalize(
 
   db = sqlite3VdbeDb(pVdbe);
   assert( db!=0 );
-  assert( pVdbe->zNormSql==0 );
-  if( zSql==0 ) return;
-  nZ = estimateNormalizedSize(zSql, nSql, prepFlags);
+  if( zSql==0 ) return 0;
+  nZ = estimateNormalizedSize(zSql, nSql);
   z = sqlite3DbMallocRawNN(db, nZ);
-  if( z==0 ) return;
+  if( z==0 ) goto normalizeError;
   sqlite3HashInit(&inHash);
   for(i=j=0; i<nSql && zSql[i]; i+=n){
     int flags = 0;
@@ -888,9 +882,7 @@ void sqlite3Normalize(
         break;
       }
       case TK_ILLEGAL: {
-        sqlite3DbFree(db, z);
-        sqlite3HashClear(&inHash);
-        return;
+        goto normalizeError;
       }
       case TK_STRING:
       case TK_INTEGER:
@@ -971,11 +963,7 @@ void sqlite3Normalize(
           }
           if( flags&SQLITE_TOKEN_QUOTED ){ i2++; n2-=2; }
           if( shouldTreatAsIdentifier(db, zSql+i2, n2, &rc)==0 ){
-            if( rc!=SQLITE_OK ){
-              sqlite3DbFree(db, z);
-              sqlite3HashClear(&inHash);
-              return;
-            }
+            if( rc!=SQLITE_OK ) goto normalizeError;
             if( sqlite3_keyword_check(zSql+i2, n2)==0 ){
               z[j++] = '?';
               break;
@@ -992,8 +980,13 @@ void sqlite3Normalize(
   if( j>0 && z[j-1]!=';' ){ z[j++] = ';'; }
   z[j] = 0;
   assert( j<nZ && "two" );
-  pVdbe->zNormSql = z;
   sqlite3HashClear(&inHash);
+  return z;
+
+normalizeError:
+  sqlite3DbFree(db, z);
+  sqlite3HashClear(&inHash);
+  return 0;
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */
 

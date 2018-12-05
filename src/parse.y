@@ -679,6 +679,12 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
         pNew->zName = pOld->zName;
         pNew->zDatabase = pOld->zDatabase;
         pNew->pSelect = pOld->pSelect;
+        if( pOld->fg.isTabFunc ){
+          pNew->u1.pFuncArg = pOld->u1.pFuncArg;
+          pOld->u1.pFuncArg = 0;
+          pOld->fg.isTabFunc = 0;
+          pNew->fg.isTabFunc = 1;
+        }
         pOld->zName = pOld->zDatabase = 0;
         pOld->pSelect = 0;
       }

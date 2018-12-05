@@ -72,7 +72,7 @@ static unsigned int strHashN(const char *z, int n){
     /* Knuth multiplicative hashing.  (Sorting & Searching, p. 510).
     ** 0x9e3779b1 is 2654435761 which is the closest prime number to
     ** (2**32)*golden_ratio, where golden_ratio = (sqrt(5) - 1)/2. */
-    h += sqlite3UpperToLower[z[i]];
+    h += sqlite3UpperToLower[(unsigned char)z[i]];
     h *= 0x9e3779b1;
   }
   return h;

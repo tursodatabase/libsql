@@ -319,6 +319,7 @@ void sqlite3AutoincrementBegin(Parse *pParse){
     aOp[7].p2 = memId+2;
     aOp[7].p1 = memId;
     aOp[10].p2 = memId;
+    if( pParse->nTab==0 ) pParse->nTab = 1;
   }
 }
 

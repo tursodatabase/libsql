@@ -82,7 +82,7 @@ typedef struct unicode_cursor unicode_cursor;
 
 struct unicode_tokenizer {
   sqlite3_tokenizer base;
-  int bRemoveDiacritic;
+  int eRemoveDiacritic;
   int nException;
   int *aiException;
 };
@@ -227,17 +227,20 @@ static int unicodeCreate(
   pNew = (unicode_tokenizer *) sqlite3_malloc(sizeof(unicode_tokenizer));
   if( pNew==NULL ) return SQLITE_NOMEM;
   memset(pNew, 0, sizeof(unicode_tokenizer));
-  pNew->bRemoveDiacritic = 1;
+  pNew->eRemoveDiacritic = 1;
 
   for(i=0; rc==SQLITE_OK && i<nArg; i++){
     const char *z = azArg[i];
     int n = (int)strlen(z);
 
     if( n==19 && memcmp("remove_diacritics=1", z, 19)==0 ){
-      pNew->bRemoveDiacritic = 1;
+      pNew->eRemoveDiacritic = 1;
     }
     else if( n==19 && memcmp("remove_diacritics=0", z, 19)==0 ){
-      pNew->bRemoveDiacritic = 0;
+      pNew->eRemoveDiacritic = 0;
+    }
+    else if( n==19 && memcmp("remove_diacritics=2", z, 19)==0 ){
+      pNew->eRemoveDiacritic = 2;
     }
     else if( n>=11 && memcmp("tokenchars=", z, 11)==0 ){
       rc = unicodeAddExceptions(pNew, 1, &z[11], n-11);
@@ -350,7 +353,7 @@ static int unicodeNext(
 
     /* Write the folded case of the last character read to the output */
     zEnd = z;
-    iOut = sqlite3FtsUnicodeFold((int)iCode, p->bRemoveDiacritic);
+    iOut = sqlite3FtsUnicodeFold((int)iCode, p->eRemoveDiacritic);
     if( iOut ){
       WRITE_UTF8(zOut, iOut);
     }
