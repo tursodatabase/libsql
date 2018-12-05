@@ -1712,7 +1712,11 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 */
 const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return p ? p->zNormSql : 0;
+  if( p==0 ) return 0;
+  if( p->zNormSql==0 && p->zSql!=0 ){
+    p->zNormSql = sqlite3Normalize(p, p->zSql, sqlite3Strlen30(p->zSql));
+  }
+  return p->zNormSql;
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */
 
