@@ -4056,9 +4056,7 @@ ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
-#ifdef SQLITE_ENABLE_NORMALIZE
-FuncDef *sqlite3FunctionSearchN(int,const char*,int);
-#endif
+FuncDef *sqlite3FunctionSearch(int,const char*);
 void sqlite3InsertBuiltinFuncs(FuncDef*,int);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(void);

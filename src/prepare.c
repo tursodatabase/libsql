@@ -728,27 +728,41 @@ static int shouldTreatAsIdentifier(
   Hash *pHash;        /* Hash table of tables for current database. */
   HashElem *e;        /* Hash element for hash table iteration. */
   Table *pTab;        /* Database table for columns being checked. */
+  char *zId;          /* Zero terminated name of the identifier */
+  char zSpace[50];    /* Static space for the zero-terminated name */
 
-  if( sqlite3IsRowidN(zToken, nToken) ){
-    return 1;
+  if( nToken<sizeof(zSpace) ){
+    memcpy(zSpace, zToken, nToken);
+    zSpace[nToken] = 0;
+    zId = zSpace;
+  }else{
+    zId = sqlite3DbStrNDup(db, zToken, nToken);
+    if( zId==0 ) return 0;
+  }
+  if( sqlite3IsRowid(zId) ){
+    bFound = 1;
+    goto done;
   }
   if( nToken>0 ){
     int hash = SQLITE_FUNC_HASH(sqlite3UpperToLower[(u8)zToken[0]], nToken);
-    if( sqlite3FunctionSearchN(hash, zToken, nToken) ) return 1;
+    if( sqlite3FunctionSearch(hash, zId) ){
+      bFound = 1;
+      goto done;
+    }
   }
   assert( db!=0 );
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
   for(i=0; i<db->nDb; i++){
     pHash = &db->aFunc;
-    if( sqlite3HashFindN(pHash, zToken, nToken) ){
+    if( sqlite3HashFind(pHash, zId) ){
       bFound = 1;
       break;
     }
     pSchema = db->aDb[i].pSchema;
     if( pSchema==0 ) continue;
     pHash = &pSchema->tblHash;
-    if( sqlite3HashFindN(pHash, zToken, nToken) ){
+    if( sqlite3HashFind(pHash, zId) ){
       bFound = 1;
       break;
     }
@@ -770,7 +784,7 @@ static int shouldTreatAsIdentifier(
           goto done;
         }
       }
-      if( pHash && sqlite3HashFindN(pHash, zToken, nToken) ){
+      if( pHash && sqlite3HashFind(pHash, zId) ){
         bFound = 1;
         goto done;
       }
@@ -779,6 +793,7 @@ static int shouldTreatAsIdentifier(
 done:
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
+  if( zId!=zSpace ) sqlite3DbFree(db, zId);
   return bFound;
 }
 
