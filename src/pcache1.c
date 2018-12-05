@@ -102,6 +102,7 @@ struct PgHdr1 {
   PCache1 *pCache;               /* Cache that currently owns this page */
   PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
   PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
+                                 /* NB: pLruPrev is only valid if pLruNext!=0 */
 };
 
 /*
@@ -569,7 +570,8 @@ static PgHdr1 *pcache1PinPage(PgHdr1 *pPage){
   pPage->pLruPrev->pLruNext = pPage->pLruNext;
   pPage->pLruNext->pLruPrev = pPage->pLruPrev;
   pPage->pLruNext = 0;
-  pPage->pLruPrev = 0;
+  /* pPage->pLruPrev = 0;
+  ** No need to clear pLruPrev as it is never accessed if pLruNext is 0 */
   assert( pPage->isAnchor==0 );
   assert( pPage->pCache->pGroup->lru.isAnchor==1 );
   pPage->pCache->nRecyclable--;
@@ -907,8 +909,9 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
     pPage->iKey = iKey;
     pPage->pNext = pCache->apHash[h];
     pPage->pCache = pCache;
-    pPage->pLruPrev = 0;
     pPage->pLruNext = 0;
+    /* pPage->pLruPrev = 0;
+    ** No need to clear pLruPrev since it is not accessed when pLruNext==0 */
     *(void **)pPage->page.pExtra = 0;
     pCache->apHash[h] = pPage;
     if( iKey>pCache->iMaxKey ){
@@ -1068,7 +1071,7 @@ static void pcache1Unpin(
   /* It is an error to call this function if the page is already 
   ** part of the PGroup LRU list.
   */
-  assert( pPage->pLruPrev==0 && pPage->pLruNext==0 );
+  assert( pPage->pLruNext==0 );
   assert( PAGE_IS_PINNED(pPage) );
 
   if( reuseUnlikely || pGroup->nPurgeable>pGroup->nMaxPage ){

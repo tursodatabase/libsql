@@ -2004,6 +2004,7 @@ void *sqlite3_trace(sqlite3 *db, void(*xTrace)(void*,const char*), void *pArg){
   sqlite3_mutex_enter(db->mutex);
   pOld = db->pTraceArg;
   db->mTrace = xTrace ? SQLITE_TRACE_LEGACY : 0;
+  if( db->xProfile ) db->mTrace |= SQLITE_TRACE_XPROFILE;
   db->xTrace = (int(*)(u32,void*,void*,void*))xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
@@ -2028,6 +2029,9 @@ int sqlite3_trace_v2(
   if( mTrace==0 ) xTrace = 0;
   if( xTrace==0 ) mTrace = 0;
   db->mTrace = mTrace;
+#ifndef SQLITE_OMIT_DEPRECATED
+  if( db->xProfile ) db->mTrace |= SQLITE_TRACE_XPROFILE;
+#endif
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
@@ -2060,6 +2064,8 @@ void *sqlite3_profile(
   pOld = db->pProfileArg;
   db->xProfile = xProfile;
   db->pProfileArg = pArg;
+  db->mTrace &= SQLITE_TRACE_NONLEGACY_MASK;
+  if( db->xProfile ) db->mTrace |= SQLITE_TRACE_XPROFILE;
   sqlite3_mutex_leave(db->mutex);
   return pOld;
 }
