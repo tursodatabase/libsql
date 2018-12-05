@@ -1,5 +1,5 @@
-C Fixes\sfor\ssnapshots\sAPI\son\sthis\sbranch.\sAlso\sensure\sthat\sthe\ssnapshots\sAPI\ncannot\sbe\sused\swith\swal2\smode\sdatabases\s(for\snow\sanyhow).
-D 2018-12-05T16:45:38.015
+C Fix\sa\sproblem\scausing\s"PRAGMA\sjournal_mode"\sto\sreport\sthe\swrong\sjournal\smode\n(wal\sinstead\sof\swal2)\sunder\ssome\scircumstances.
+D 2018-12-05T17:20:47.797
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -498,7 +498,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 1aa113b261a0ad44fd410a001f6e39bfc1ebd4279b2fb8c2d636a7620d76a45a
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 224f8ad64b8243cd92f79e4c28d94507c114a745a755545bc1d153f577d7e433
+F src/pager.c bd11bf6971789994b4c1972019f16caf6e5ed5a59165d65f0147535aab191703
 F src/pager.h d8cf37b3415c742d1f267ae2e0e6495826a72d403cbdbefdab2e2f5ff2a1dde7
 F src/parse.y 9e69c380ac16423a1f373cde66d1be0d14a789f93464705a48dcc812d04d9210
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
@@ -593,8 +593,8 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 171d066ccb727aeb439d14fbe1b91a488f2efd9fcdb5d3d245f6120d575d6c5f
-F src/wal.h b42fc8081cd1765d4d4dd99b33f2db2f71128f4e25ff8c08d1a346f5af62e27a
+F src/wal.c 43a7e48cea522cbb8eaf198b5f47ec4aea3bf89ae41c65a5fa56d77c6b2125e0
+F src/wal.h c398e0269e8f37495cedb63b5e288c2aac6f6d103d05fb55f4affec21311615d
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
@@ -1796,7 +1796,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd707001f0afb1cf32cfeeda3ec7b5622eb49ddedf8fec1a7aa4c8841c77c37a 19c61ab79458936ff4dfca46cf4d1fb1ab16d7bdb5024f502eb4339ec4eef32c
-R 09f6147c8a217ef98a62e556b947a346
+P d8c2d55fa4ec95c6506201edcd1cb2ef108a233bd87a6154f3593909977f7d3f 1d8d4f689653ce80157740e339f7f1b42479bf90d82b176d8202d0a49f428398
+R e95ab795b28184fae76566055fff1a44
 U dan
-Z 846b44a376c01a8515808ab90c59f028
+Z 12c4c01a1addcde48575985e7f8b3cbb

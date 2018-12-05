@@ -45,6 +45,7 @@
 # define sqlite3WalFramesize(z)                  0
 # define sqlite3WalFindFrame(x,y,z)              0
 # define sqlite3WalFile(x)                       0
+# define sqlite3WalJournalMode(x)                0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -154,6 +155,9 @@ int sqlite3WalFramesize(Wal *pWal);
 
 /* Return the sqlite3_file object for the WAL file */
 sqlite3_file *sqlite3WalFile(Wal *pWal);
+
+/* Return the journal mode (WAL or WAL2) used by this Wal object. */
+int sqlite3WalJournalMode(Wal *pWal);
 
 /* sqlite3_wal_info() data */
 int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);

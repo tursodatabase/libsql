@@ -4913,4 +4913,12 @@ int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
   return rc;
 }
 
+/* 
+** Return the journal mode used by this Wal object.
+*/
+int sqlite3WalJournalMode(Wal *pWal){
+  assert( pWal );
+  return (isWalMode2(pWal) ? PAGER_JOURNALMODE_WAL2 : PAGER_JOURNALMODE_WAL);
+}
+
 #endif /* #ifndef SQLITE_OMIT_WAL */
