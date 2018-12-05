@@ -125,6 +125,11 @@ do_execsql_test tabfunc01-4.3 {
   SELECT * FROM aux1.generate_series(1,4)
 } {1 2 3 4}
 
+# 2018-12-03: Fix bug reported by by private email.
+do_execsql_test tabfunc01-4.4 {
+  SELECT * FROM (generate_series(1,5,2)) AS x LIMIT 10;
+} {1 3 5}
+
 # The next series of tests is verifying that virtual table are able
 # to optimize the IN operator, even on terms that are not marked "omit".
 # When the generate_series virtual table is compiled for the testfixture,

@@ -62,14 +62,16 @@ static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   sqlite3_int64 iNow;
   sqlite3_int64 iElapse;
   assert( p->startTime>0 );
-  assert( db->xProfile!=0 || (db->mTrace & SQLITE_TRACE_PROFILE)!=0 );
+  assert( (db->mTrace & (SQLITE_TRACE_PROFILE|SQLITE_TRACE_XPROFILE))!=0 );
   assert( db->init.busy==0 );
   assert( p->zSql!=0 );
   sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
   iElapse = (iNow - p->startTime)*1000000;
+#ifndef SQLITE_OMIT_DEPRECATED  	
   if( db->xProfile ){
     db->xProfile(db->pProfileArg, p->zSql, iElapse);
   }
+#endif
   if( db->mTrace & SQLITE_TRACE_PROFILE ){
     db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
   }
@@ -602,7 +604,7 @@ static int sqlite3Step(Vdbe *p){
     );
 
 #ifndef SQLITE_OMIT_TRACE
-    if( (db->xProfile || (db->mTrace & SQLITE_TRACE_PROFILE)!=0)
+    if( (db->mTrace & (SQLITE_TRACE_PROFILE|SQLITE_TRACE_XPROFILE))!=0
         && !db->init.busy && p->zSql ){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
     }else{
@@ -629,16 +631,18 @@ static int sqlite3Step(Vdbe *p){
     db->nVdbeExec--;
   }
 
+  if( rc!=SQLITE_ROW ){
 #ifndef SQLITE_OMIT_TRACE
-  /* If the statement completed successfully, invoke the profile callback */
-  if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
+    /* If the statement completed successfully, invoke the profile callback */
+    checkProfileCallback(db, p);
 #endif
 
-  if( rc==SQLITE_DONE && db->autoCommit ){
-    assert( p->rc==SQLITE_OK );
-    p->rc = doWalCallbacks(db);
-    if( p->rc!=SQLITE_OK ){
-      rc = SQLITE_ERROR;
+    if( rc==SQLITE_DONE && db->autoCommit ){
+      assert( p->rc==SQLITE_OK );
+      p->rc = doWalCallbacks(db);
+      if( p->rc!=SQLITE_OK ){
+        rc = SQLITE_ERROR;
+      }
     }
   }
 
@@ -1708,7 +1712,11 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 */
 const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return p ? p->zNormSql : 0;
+  if( p==0 ) return 0;
+  if( p->zNormSql==0 && p->zSql!=0 ){
+    p->zNormSql = sqlite3Normalize(p, p->zSql, sqlite3Strlen30(p->zSql));
+  }
+  return p->zNormSql;
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */
 

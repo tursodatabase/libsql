@@ -189,7 +189,7 @@ do_catchsql_test 6.2 {
 } {1 {error in tokenizer constructor}}
 do_catchsql_test 6.3 {
   CREATE VIRTUAL TABLE a3 USING fts5(
-    x, y, tokenize = 'unicode61 remove_diacritics 2'
+    x, y, tokenize = 'unicode61 remove_diacritics 3'
   );
 } {1 {error in tokenizer constructor}}
 do_catchsql_test 6.4 {
