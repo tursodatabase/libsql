@@ -4027,9 +4027,6 @@ int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);
-#ifdef SQLITE_ENABLE_NORMALIZE
-int sqlite3IsRowidN(const char*, int);
-#endif
 void sqlite3GenerateRowDelete(
     Parse*,Table*,Trigger*,int,int,int,i16,u8,u8,u8,int);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*, int);

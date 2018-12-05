@@ -1,5 +1,5 @@
-C Fix\san\simbalanced\slock\sproblem\sin\ssqlite3Normalize()\sintroduced\sby\sthe\nsimplification\sin\s[94ea6379178e3ff6a].
-D 2018-12-05T21:55:39.342
+C The\ssqlite3_normalized_sql()\sinterface\sshould\snot\sbe\stransforming\squoted\nidentifier\snames\sinto\swildcards.\s\sFix\sthis,\sand\sat\sthe\ssame\stime\ssimplify\nthe\scode\ssubstantially.
+D 2018-12-05T23:45:46.950
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -459,7 +459,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c f7938125847e8ef485448db5fbad29acb2991381a02887dd854c1617315ab9fb
-F src/expr.c 9aacc0b72348ba90010b672dcbbbe2fa56e1182043bc917a3a147b2bc57a5497
+F src/expr.c a3e90131d7f92b77a6a6ae2e71f0d2882237041ed11dbe3c914e5e278ddc2d24
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -502,7 +502,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c ad0ffc5b35b0280d045ac569d34d4b842e3e6a4a118f6396b320987a0957afcc
 F src/pragma.c 4e056f042683b99c4ea0db395f68d051b1a95833ab40951c40d3ef7e1fee1354
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
-F src/prepare.c 733d34a557cf2fb81af31fcf7c8df6a8070fcbef1a535ae120d2ff4fda99452d
+F src/prepare.c 90099721296d9646addc5dda092464da21546e7410406818dde1600467b120c4
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 976e7879286a1eecdc71ceff64f6d1b3f58c8f8096537ba668b3dc0887f410c1
@@ -512,7 +512,7 @@ F src/shell.c.in 1f0819e69fb1ebd2eb44695530dc43936608bf9b752981a0ffd4e2e4a9e3883
 F src/sqlite.h.in cce9feede1c1c03923c091b4bbbd081dd77aaf92024cc2cdbf65f712c2f668c3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h e96520f27310016d0dabb496e13346244bbea83a6adc3134810e026f1d4a02b6
+F src/sqliteInt.h 8a9a4c1cce0cfd95d0fa8527ee12dbba0e7e1ec9983109626d4932cd48c5d571
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1142,7 +1142,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
-F test/normalize.test 17ff5c732bc16b100f4e479da3a59735ed24f4ed574fccf8e46279fad182f81e
+F test/normalize.test 7fe7674d83e37c635ea2e88a27b54a0fe1afddb192d636d5672b1639859800f1
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f8d682825d065bcaebda4cba63f8b67789b923d8b62eb7c576a5bc01536f577
-R 54e3066009cd3484077d0fae620be2a9
+P f69624373e33c4d370a9264a317ffdb0adbce967a950f243de2b41161a8c7ded
+R f3aa45194b952de0676e91bd1b04c704
 U drh
-Z dbd77411550a9172a53b37194b8bf655
+Z 5f1f0ed88784c364d2e88ebae6a00a1f
