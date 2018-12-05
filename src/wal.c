@@ -4641,4 +4641,12 @@ sqlite3_file *sqlite3WalFile(Wal *pWal){
   return pWal->apWalFd[0];
 }
 
+/* 
+** Return the journal mode used by this Wal object.
+*/
+int sqlite3WalJournalMode(Wal *pWal){
+  assert( pWal );
+  return (isWalMode2(pWal) ? PAGER_JOURNALMODE_WAL2 : PAGER_JOURNALMODE_WAL);
+}
+
 #endif /* #ifndef SQLITE_OMIT_WAL */

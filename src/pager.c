@@ -3258,6 +3258,10 @@ static int pagerBeginReadTransaction(Pager *pPager){
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
     if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
+    assert( pPager->journalMode==PAGER_JOURNALMODE_WAL
+         || pPager->journalMode==PAGER_JOURNALMODE_WAL2
+    );
+    pPager->journalMode = sqlite3WalJournalMode(pPager->pWal);
   }
 
   return rc;
