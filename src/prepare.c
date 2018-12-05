@@ -793,7 +793,8 @@ char *sqlite3Normalize(
   int prevTokenType = 0; /* Type of the previous token, except spaces */
   int n;                 /* Size of the next token */
   int nParen = 0;        /* Nesting level of parenthesis */
-  Hash inHash;           /* Table of parenthesis levels to output index. */
+  int iStartIN = 0;      /* Start of RHS of IN operator in z[] */
+  int nParenAtIN = 0;    /* Value of nParent at start of RHS of IN operator */
 
   db = sqlite3VdbeDb(pVdbe);
   assert( db!=0 );
@@ -801,7 +802,6 @@ char *sqlite3Normalize(
   nZ = estimateNormalizedSize(zSql, nSql);
   z = sqlite3DbMallocRawNN(db, nZ);
   if( z==0 ) goto normalizeError;
-  sqlite3HashInit(&inHash);
   for(i=j=0; i<nSql && zSql[i]; i+=n){
     int flags = 0;
     if( tokenType!=TK_SPACE ) prevTokenType = tokenType;
@@ -826,21 +826,18 @@ char *sqlite3Normalize(
         if( tokenType==TK_LP ){
           nParen++;
           if( prevTokenType==TK_IN ){
-            assert( nParen<nSql );
-            sqlite3HashInsert(&inHash, zSql+nParen, SQLITE_INT_TO_PTR(j));
+            iStartIN = j;
+            nParenAtIN = nParen;
           }
         }else{
-          int jj;
-          assert( nParen<nSql );
-          jj = SQLITE_PTR_TO_INT(sqlite3HashFind(&inHash, zSql+nParen));
-          if( jj>0 ){
-            sqlite3HashInsert(&inHash, zSql+nParen, 0);
-            assert( jj+6<nZ );
-            memcpy(z+jj+1, "?,?,?", 5);
-            j = jj+6;
+          if( iStartIN>0 && nParen==nParenAtIN ){
+            assert( iStartIN+6<nZ );
+            memcpy(z+iStartIN+1, "?,?,?", 5);
+            j = iStartIN+6;
             assert( nZ-1-j>=0 );
             assert( nZ-1-j<nZ );
             memset(z+j, 0, nZ-1-j);
+            iStartIN = 0;
           }
           nParen--;
         }
@@ -886,10 +883,7 @@ char *sqlite3Normalize(
         }
         if( tokenType==TK_ID ){
           int i2 = i, n2 = n;
-          if( nParen>0 ){
-            assert( nParen<nSql );
-            sqlite3HashInsert(&inHash, zSql+nParen, 0);
-          }
+          if( nParen==nParenAtIN ) iStartIN = 0;
           if( flags&SQLITE_TOKEN_QUOTED ){ i2++; n2-=2; }
         }
         copyNormalizedToken(zSql, i, n, flags, z, &j);
@@ -902,12 +896,10 @@ char *sqlite3Normalize(
   if( j>0 && z[j-1]!=';' ){ z[j++] = ';'; }
   z[j] = 0;
   assert( j<nZ && "two" );
-  sqlite3HashClear(&inHash);
   return z;
 
 normalizeError:
   sqlite3DbFree(db, z);
-  sqlite3HashClear(&inHash);
   return 0;
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */
