@@ -47,7 +47,7 @@ impl Error for FromSqlError {
         }
     }
 
-    #[cfg_attr(feature = "clippy", allow(match_same_arms))]
+    #[allow(clippy::match_same_arms)]
     fn cause(&self) -> Option<&Error> {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
