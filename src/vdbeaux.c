@@ -67,7 +67,7 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, u8 prepFlags){
 #ifdef SQLITE_ENABLE_NORMALIZE
   assert( p->zNormSql==0 );
   if( p->zSql && (prepFlags & SQLITE_PREPARE_NORMALIZE)!=0 ){
-    p->zNormSql = sqlite3Normalize(p, p->zSql, n);
+    p->zNormSql = sqlite3Normalize(p, p->zSql, n, prepFlags);
     assert( p->zNormSql!=0 || p->db->mallocFailed );
   }
 #endif

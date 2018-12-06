@@ -209,6 +209,11 @@ foreach {tnum sql flags norm} {
   0x2
   {0 {SELECT"a"FROM t1 WHERE"x"IN("1","2",?);}}
 
+  431
+  {SELECT "a" FROM t1 WHERE "x" IN ("1","2",'3');}
+  0x6
+  {0 {SELECT"a"FROM t1 WHERE"x"IN(?,?,?);}}
+
   440
   {SELECT 'a' FROM t1 WHERE 'x';}
   0x2
