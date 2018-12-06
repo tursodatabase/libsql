@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\son\sthis\sbranch.
-D 2018-12-05T17:31:24.866
+C Add\stest\sfile\swal2snapshot.test\sthat\sshould\shave\sbeen\sadded\sas\spart\sof\san\nearlier\scommit.
+D 2018-12-06T16:54:44.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -1595,6 +1595,7 @@ F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
 F test/wal2.test 155b9efa999bdb38ce1cd729b9a4fcdbffd6b88be27f039bad1d2929d287d918
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
 F test/wal2simple.test 8c9dfb8f1bca01a0deb57f7074cdb83865c2292e89b13f7a51a1c160dca3f5f4
+F test/wal2snapshot.test 95a919e1c73dee0e0212d10931d03cc1116f68a0ff603163e551aaa5ac7025c1
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -1782,7 +1783,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d8d4f689653ce80157740e339f7f1b42479bf90d82b176d8202d0a49f428398
-R ea40d6e9e89bd0f6f2c98f8376b01df3
+P 285d1c5904dd607457c6b5ff7be3d3191a90ca8b1fb0837327663c9910f978ac
+R c6176f33f0706e46f32e37a55f5b7c74
 U dan
-Z 1339c3788ed308ea20667b613925c238
+Z dba2fba0086f2ef35808e528fd424f75
