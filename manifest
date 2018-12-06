@@ -1,5 +1,5 @@
-C Invoking\sthe\ssqlite3_trace()\sor\ssqlite3_trace_v2()\sinterfaces\scancels\nany\ssqlite3_profile()\sthat\sis\srunning.
-D 2018-12-06T03:59:25.918
+C Experiment\swith\susing\san\satomic\sCPU\sprimitive\sinstead\sof\sa\smutex\sfor\nintra-process\slocking\swith\sthe\sunix-excl\sVFS.
+D 2018-12-06T18:58:58.578
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -491,7 +491,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c f6e91b8fd82af7afbfd073c4974ad6cdb8e62d9f65ceddb45167835a0567fdc0
+F src/os_unix.c dcf08ca4f7092507015391b078f9ab866e8fcc6fba22560086fe1eec031edd18
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 75e0f3cfa3962c714f519f8a3d1e67ecca1c91de0e010a036b988e40ce9e4c73
@@ -563,7 +563,7 @@ F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
 F src/test_tclsh.c 06317648b0d85a85fd823f7973b55535c59a3156c1ef59394fe511f932cfa78d
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
-F src/test_vfs.c 112f1f9271c33c211812e0e681830a84262dac065da58579ff49f9cefec97d4f
+F src/test_vfs.c 194b8e78e9b4279bc69693cb5cfc343e0a08482c430a571ec96d80440e337a44
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
@@ -1078,7 +1078,7 @@ F test/lock4.test 27143363eda1622f03c133efc8db808fc331afd973486cb571ea71cd717d37
 F test/lock5.test c6c5e0ebcb21c61a572870cc86c0cb9f14cede38
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
-F test/lock_common.tcl 7ffb45accf6ee91c736df9bafe0806a44358f035
+F test/lock_common.tcl 2f3f7f2e9637f93ccf609df48ef5b27a50278b6b1cd752b445d52262e5841413
 F test/lookaside.test 5a828e7256f1ee4da8e1bdaa03373a3ccdb0f1ff98dfa82e9b76cb41a45b1083
 F test/main.test 6bbb3999fd461eb8fb335cbab97409a3d7f91bbb8da60635e8be3e4a04a77772
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -1181,7 +1181,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test cf0b4e498db1d0143c19641d4420df7cc27fab2c95ed0abd2c7c5753beab25b8
+F test/permutations.test c2e5f618a71d1a7e50216325dd056f6ec16439b3c98d87bcd2df381297e5dc97
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1285,6 +1285,7 @@ F test/shell5.test 23939a4c51f0421330ea61dbd3c74f9c215f5f8d3d1a94846da6ffc777a35
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shell8.test 96be02ea0c21f05b24c1883d7b711a1fa8525a68ab7b636aacf6057876941013
+F test/shmlock.test 2d8d2401fb001414a817d61b2c4983215d546c71d48da517a0a5015422997628
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
@@ -1592,7 +1593,7 @@ F test/vtabJ.test d7b73675708cf63cfcb9d443bb451fc01a028347275b7311e51f9fdf3ca675
 F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c3784c6783
 F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bda2b65
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
-F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
+F test/wal.test cdf0ca6cc0447520d19ef1c83287824ebeb3e82d75af856511ba96841a79fc9b
 F test/wal2.test 155b9efa999bdb38ce1cd729b9a4fcdbffd6b88be27f039bad1d2929d287d918
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1782,7 +1783,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a2c047989facc3461c63a2f9eed412014c951035a80da47c52a70139fb552de
-R e33573679d2b83476b49b39d100df865
-U drh
-Z 9b63335dca170db3a75ac781c84ad8b2
+P ec63d3506bd429560077f82a4c5ed9d189780789fe1c134fff4f3b8733be1a3f
+R 421ea33fec1ec5096b7fb80f863def19
+T *branch * mutexfree-shmlock
+T *sym-mutexfree-shmlock *
+T -sym-trunk *
+U dan
+Z 737072d87778273578811397782f507c
