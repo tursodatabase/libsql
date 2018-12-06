@@ -1,5 +1,5 @@
-C Fix\sa\smissing\smutex\sin\sthe\ssqlite3_normalized_sql()\sinterface\swhen\sit\sis\ncalled\son\sa\sprepared\sstatement\sthat\sdid\snot\spreviously\shave\sa\scomputed\nnormalization\sof\sthe\sinput\sSQL.
-D 2018-12-06T01:08:58.519
+C Fix\sa\spotential\sNULL\spointer\sdereference\sthat\scan\soccur\sin\sALTER\sTABLE\nfollowing\san\sOOM.\s\sTest\scase\sin\sTH3.
+D 2018-12-06T01:53:12.207
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -441,7 +441,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 80747854ca90dadc7c51cc1da302e29081ca5f78a2a87b3d44f65d39db834ff5
+F src/alter.c 87c9057f5eaa012da23b8e50848eee5e99088c3c478555f9ed255485b61ab5aa
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 92b51739a885da8bd84bc9a05485f1e48148bce5c15432f059b45af98fff75cd
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 272dc74fd0304d6a28aaa8798d13e2f950c1a24d92d17519e3c32aef86714586
-R b7800b30e5f18a6dd0b8f343735cdee2
+P 1a1a59c6c570879c8f318bbc132103c0285088ba233dd8c32e049b86419347b0
+R da4c56411a9ea719449f0bfabf9dd28c
 U drh
-Z 5df8bf04779626cf856fa0c34564f045
+Z f66e0b178b75d5d7e91c658f98db7d44
