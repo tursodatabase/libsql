@@ -7086,7 +7086,7 @@ case OP_VRename: {
   rc = sqlite3VdbeChangeEncoding(pName, SQLITE_UTF8);
   if( rc ) goto abort_due_to_error;
   rc = pVtab->pModule->xRename(pVtab, pName->z);
-  if( isLegacy==0 ) db->flags &= ~SQLITE_LegacyAlter;
+  if( isLegacy==0 ) db->flags &= ~(u64)SQLITE_LegacyAlter;
   sqlite3VtabImportErrmsg(p, pVtab);
   p->expired = 0;
   if( rc ) goto abort_due_to_error;

@@ -2855,7 +2855,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         }else{
           db->nDeferredCons = 0;
           db->nDeferredImmCons = 0;
-          db->flags &= ~SQLITE_DeferFKs;
+          db->flags &= ~(u64)SQLITE_DeferFKs;
           sqlite3CommitInternalChanges(db);
         }
       }else{

@@ -847,7 +847,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
           if( onoff>0 ){
             db->flags |= aFlagOp[i].mask;
           }else if( onoff==0 ){
-            db->flags &= ~aFlagOp[i].mask;
+            db->flags &= ~(u64)aFlagOp[i].mask;
           }
           if( oldFlags!=db->flags ){
             sqlite3ExpirePreparedStatements(db, 0);
@@ -1310,7 +1310,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   /* Any deferred constraint violations have now been resolved. */
   db->nDeferredCons = 0;
   db->nDeferredImmCons = 0;
-  db->flags &= ~SQLITE_DeferFKs;
+  db->flags &= ~(u64)SQLITE_DeferFKs;
 
   /* If one has been configured, invoke the rollback-hook callback */
   if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){

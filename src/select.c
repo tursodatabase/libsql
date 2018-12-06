@@ -2080,7 +2080,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   u64 savedFlags;
 
   savedFlags = db->flags;
-  db->flags &= ~SQLITE_FullColNames;
+  db->flags &= ~(u64)SQLITE_FullColNames;
   db->flags |= SQLITE_ShortColNames;
   sqlite3SelectPrep(pParse, pSelect, 0);
   if( pParse->nErr ) return 0;

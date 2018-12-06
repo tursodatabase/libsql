@@ -293,7 +293,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   ** indices that the user might have created.
   */
   if( iDb==0 && meta[BTREE_FILE_FORMAT-1]>=4 ){
-    db->flags &= ~SQLITE_LegacyFileFmt;
+    db->flags &= ~(u64)SQLITE_LegacyFileFmt;
   }
 
   /* Read the schema information out of the schema tables
