@@ -132,7 +132,7 @@ mod test {
     use super::chrono::{
         DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
     };
-    use crate::{Connection, NO_PARAMS};
+    use crate::{Connection, Result, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -262,5 +262,22 @@ mod test {
             .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(local, v);
+    }
+
+    #[test]
+    fn test_sqlite_functions() {
+        let db = checked_memory_handle();
+        let result: Result<NaiveTime> =
+            db.query_row("SELECT CURRENT_TIME", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
+        let result: Result<NaiveDate> =
+            db.query_row("SELECT CURRENT_DATE", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
+        let result: Result<NaiveDateTime> =
+            db.query_row("SELECT CURRENT_TIMESTAMP", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
+        let result: Result<DateTime<Utc>> =
+            db.query_row("SELECT CURRENT_TIMESTAMP", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
     }
 }
