@@ -1,5 +1,5 @@
-C Get\srid\sof\sthe\shash\stable\sused\sto\strack\sIN\soperators\sin\sthe\nsqlite3_normalized_sql()\simplementation.\s\sUse\ssimple\sinteger\svariables\ninstead.
-D 2018-12-05T23:56:02.639
+C Fix\sa\smissing\smutex\sin\sthe\ssqlite3_normalized_sql()\sinterface\swhen\sit\sis\ncalled\son\sa\sprepared\sstatement\sthat\sdid\snot\spreviously\shave\sa\scomputed\nnormalization\sof\sthe\sinput\sSQL.
+D 2018-12-06T01:08:58.519
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -581,7 +581,7 @@ F src/vacuum.c 836cadc922de866c849e23a75f93d344cdc143d388339305d09a3fed27e8798d
 F src/vdbe.c 005e691ea4c7d51e6c1a69d9389aeb34700884c85f51681817ddea3fdc2fc39b
 F src/vdbe.h 5081dcc497777efe5e9ebe7330d283a044a005e4bdda2e2e984f03bf89a0d907
 F src/vdbeInt.h 437e6c6af679fdf157867eb83a8adc6cf5145d6774453c2214cfd0bd01d92980
-F src/vdbeapi.c 9ac7e3946a2762b79c314922c84c7de30731e0ed1d7c94ac82266b795221d9d7
+F src/vdbeapi.c 9709452bee82963e1f7f1f5d0c71db823d553f8dbb2c47a911c4983d537a1947
 F src/vdbeaux.c 8e2fe020824b743090025ff6f9ffeec3ca4624523ddb2d1af1b1f61abaab3db4
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 7b3305bc4a5139f4536ac9b5f61da0f915e49d2e3fdfa87dfdfa9d7aba8bc1e9
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8540377ec66fa5f9ae3c93bedb5c094057698199c37fc211f7ea95429e815e4
-R d3461cbb797157ae329a2dd1a53cba4d
+P 272dc74fd0304d6a28aaa8798d13e2f950c1a24d92d17519e3c32aef86714586
+R b7800b30e5f18a6dd0b8f343735cdee2
 U drh
-Z ad7226daa41778e03500de0c126598a5
+Z 5df8bf04779626cf856fa0c34564f045
