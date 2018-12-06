@@ -136,8 +136,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
-  u16 saved_mDbFlags;     /* Saved value of db->mDbFlags */
-  u32 saved_flags;        /* Saved value of db->flags */
+  u32 saved_mDbFlags;     /* Saved value of db->mDbFlags */
+  u64 saved_flags;        /* Saved value of db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
   u8 saved_mTrace;        /* Saved trace settings */

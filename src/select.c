@@ -2077,7 +2077,7 @@ void sqlite3SelectAddColumnTypeAndCollation(
 Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   Table *pTab;
   sqlite3 *db = pParse->db;
-  int savedFlags;
+  u64 savedFlags;
 
   savedFlags = db->flags;
   db->flags &= ~SQLITE_FullColNames;
