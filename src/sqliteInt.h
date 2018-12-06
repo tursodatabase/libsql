@@ -1958,9 +1958,6 @@ struct VTable {
 struct Table {
   char *zName;         /* Name of the table or view */
   Column *aCol;        /* Information about each column */
-#ifdef SQLITE_ENABLE_NORMALIZE
-  Hash *pColHash;      /* All columns indexed by name */
-#endif
   Index *pIndex;       /* List of SQL indexes on this table. */
   Select *pSelect;     /* NULL for tables.  Points to definition if a view. */
   FKey *pFKey;         /* Linked list of all foreign keys in this table */
