@@ -1,5 +1,5 @@
-C Ensure\sthat\sALTER\sTABLE\smodifies\stable\sand\scolumn\snames\sembedded\sin\sWITH\nclauses\sthat\sare\spart\sof\sviews\sand\striggers.
-D 2018-12-06T13:57:26.393
+C Fix\sa\spotential\sNULL\spointer\sdereference\sthat\scan\soccur\sin\sALTER\sTABLE\nfollowing\san\sOOM.\s\sTest\scase\sin\sTH3.
+D 2018-12-06T14:11:13.272
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -440,7 +440,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 80747854ca90dadc7c51cc1da302e29081ca5f78a2a87b3d44f65d39db834ff5
+F src/alter.c 87c9057f5eaa012da23b8e50848eee5e99088c3c478555f9ed255485b61ab5aa
 F src/analyze.c 3dc6b98cf007b005af89df165c966baaa48e8124f38c87b4d2b276fe7f0b9eb9
 F src/attach.c 92b51739a885da8bd84bc9a05485f1e48148bce5c15432f059b45af98fff75cd
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
@@ -1779,11 +1779,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf8c1b2b7a5960c282e543b9c293686dccff272512d08865f4600fb58238b4f9
-Q +f44bc7a8b3fac82aa5598e9bdaf65ea4dd3c331cf90c1d5ba26ff1698e92c230
-R 85a6dfeb29afed9169428cf15885813e
-T *branch * branch-3.26
-T *sym-branch-3.26 *
-T -sym-trunk *
+P e066b4e171b02867b5b3cc0d3a578687f6a5e210248ddc45b5704342d7bb7a0d
+Q +ea50815bf80ab0d36891518f209acbcd3d6d8d84529741bffd4e841874c78aff
+R 855aa47408bf27bcb0cf91fbe408f366
 U drh
-Z bdbc42124e5db9021aca4caf0ddbe2c5
+Z c06544652153a7cbec9a41fb27af059e
