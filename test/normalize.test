@@ -86,7 +86,7 @@ do_test 201 {
 } {}
 do_test 202 {
   sqlite3_normalized_sql $STMT
-} {}
+} {SELECT a,b FROM t1 WHERE b=?ORDER BY a;}
 do_test 203 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
@@ -207,7 +207,7 @@ foreach {tnum sql flags norm} {
   430
   {SELECT "a" FROM t1 WHERE "x" IN ("1","2",'3');}
   0x2
-  {0 {SELECT"a"FROM t1 WHERE"x"IN(?,?,?);}}
+  {0 {SELECT"a"FROM t1 WHERE"x"IN("1","2",?);}}
 
   440
   {SELECT 'a' FROM t1 WHERE 'x';}
