@@ -636,12 +636,6 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
 
   /* Delete the Table structure itself.
   */
-#ifdef SQLITE_ENABLE_NORMALIZE
-  if( pTable->pColHash ){
-    sqlite3HashClear(pTable->pColHash);
-    sqlite3_free(pTable->pColHash);
-  }
-#endif
   sqlite3DeleteColumnNames(db, pTable);
   sqlite3DbFree(db, pTable->zName);
   sqlite3DbFree(db, pTable->zColAff);
