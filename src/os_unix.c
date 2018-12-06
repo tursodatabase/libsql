@@ -46,6 +46,9 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
+/* Turn this feature on in all builds for now */
+#define SQLITE_MUTEXFREE_SHMLOCK 1
+
 /*
 ** There are various methods for file locking used for concurrency
 ** control:
@@ -4261,7 +4264,37 @@ struct unixShmNode {
   u8 sharedMask;             /* Mask of shared locks held */
   u8 nextShmId;              /* Next available unixShm.id value */
 #endif
+
+#ifdef SQLITE_MUTEXFREE_SHMLOCK
+  /* In unix-excl mode, if SQLITE_MUTEXFREE_SHMLOCK is defined, all locks
+  ** are stored in the following 64-bit value. There are in total 8 
+  ** shm-locking slots, each of which are assigned 8-bits from the 64-bit
+  ** value. The least-significant 8 bits correspond to shm-locking slot
+  ** 0, and so on.
+  **
+  ** If the 8-bits corresponding to a shm-locking locking slot are set to
+  ** 0xFF, then a write-lock is held on the slot. Or, if they are set to
+  ** a non-zero value smaller than 0xFF, then they represent the total 
+  ** number of read-locks held on the slot. There is no way to distinguish
+  ** between a write-lock and 255 read-locks.  */
+  u64 lockmask;
+#endif
 };
+
+/*
+** Atomic CAS primitive used in multi-process mode. Equivalent to:
+** 
+**   int unixCompareAndSwap(u32 *ptr, u32 oldval, u32 newval){
+**     if( *ptr==oldval ){
+**       *ptr = newval;
+**       return 1;
+**     }
+**     return 0;
+**   }
+*/
+#define unixCompareAndSwap(ptr,oldval,newval) \
+    __sync_bool_compare_and_swap(ptr,oldval,newval)
+
 
 /*
 ** Structure used internally by this VFS to record the state of an
@@ -4822,6 +4855,58 @@ static int unixShmLock(
 
   mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );
+
+#ifdef SQLITE_MUTEXFREE_SHMLOCK
+  if( pDbFd->pInode->bProcessLock ){
+
+    while( 1 ){
+      u64 lockmask = pShmNode->lockmask;
+      u64 newmask = lockmask;
+      int i;
+      for(i=ofst; i<n+ofst; i++){
+        int ix8 = i*8;
+        u8 v = (lockmask >> (ix8)) & 0xFF;
+        if( flags & SQLITE_SHM_UNLOCK ){
+          if( flags & SQLITE_SHM_EXCLUSIVE ){
+            if( p->exclMask & (1 << i) ){
+              newmask = newmask & ~((u64)0xFF<<ix8);
+            }
+          }else{
+            if( p->sharedMask & (1 << i) ){
+              newmask = newmask & ~((u64)0xFF<<ix8) | ((u64)(v-1)<<ix8);
+            }
+          }
+        }else{
+          if( flags & SQLITE_SHM_EXCLUSIVE ){
+            if( v ) return SQLITE_BUSY;
+            if( (p->exclMask & (1 << i))==0 ){
+              newmask = newmask | ((u64)0xFF<<ix8);
+            }
+          }else{
+            if( v==0xFF ) return SQLITE_BUSY;
+            if( (p->sharedMask & (1 << i))==0 ){
+              newmask = newmask & ~((u64)0xFF<<ix8) | ((u64)(v+1)<<ix8);
+            }
+          }
+        }
+      }
+
+      if( unixCompareAndSwap(&pShmNode->lockmask, lockmask, newmask) ) break;
+    }
+
+    if( flags & SQLITE_SHM_UNLOCK ){
+      p->sharedMask &= ~mask;
+      p->exclMask &= ~mask;
+    }else if( flags & SQLITE_SHM_EXCLUSIVE ){
+      p->exclMask |= mask;
+    }else{
+      p->sharedMask |= mask;
+    }
+
+    return SQLITE_OK;
+  }
+#endif
+
   sqlite3_mutex_enter(pShmNode->pShmMutex);
   if( flags & SQLITE_SHM_UNLOCK ){
     u16 allMask = 0; /* Mask of locks held by siblings */

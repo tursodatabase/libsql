@@ -1563,8 +1563,62 @@ static int SQLITE_TCLAPI testvfs_cmd(
   return TCL_ERROR;
 }
 
+extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+extern const char *sqlite3ErrName(int);
+
+/*
+** tclcmd: vfs_shmlock DB DBNAME (shared|exclusive) (lock|unlock) OFFSET N
+*/
+static int SQLITE_TCLAPI test_vfs_shmlock(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *azArg1[] = {"shared", "exclusive", 0};
+  const char *azArg2[] = {"lock", "unlock", 0};
+  sqlite3 *db = 0;
+  int rc = SQLITE_OK;
+  const char *zDbname = 0;
+  int iArg1 = 0;
+  int iArg2 = 0;
+  int iOffset = 0;
+  int n = 0;
+  sqlite3_file *pFd;
+
+  if( objc!=7 ){
+    Tcl_WrongNumArgs(interp, 1, objv, 
+        "DB DBNAME (shared|exclusive) (lock|unlock) OFFSET N"
+    );
+    return TCL_ERROR;
+  }
+
+  zDbname = Tcl_GetString(objv[2]);
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) 
+   || Tcl_GetIndexFromObj(interp, objv[3], azArg1, "ARG", 0, &iArg1) 
+   || Tcl_GetIndexFromObj(interp, objv[4], azArg2, "ARG", 0, &iArg2) 
+   || Tcl_GetIntFromObj(interp, objv[5], &iOffset)
+   || Tcl_GetIntFromObj(interp, objv[6], &n)
+  ){
+    return TCL_ERROR;
+  }
+
+  sqlite3_file_control(db, zDbname, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  if( pFd==0 ){
+    return TCL_ERROR;
+  }
+  rc = pFd->pMethods->xShmLock(pFd, iOffset, n, 
+      (iArg1==0 ? SQLITE_SHM_SHARED : SQLITE_SHM_EXCLUSIVE)
+    | (iArg2==0 ? SQLITE_SHM_LOCK : SQLITE_SHM_UNLOCK)
+  );
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_OK;
+}
+
+
 int Sqlitetestvfs_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "testvfs", testvfs_cmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "vfs_shmlock", test_vfs_shmlock, 0, 0);
   return TCL_OK;
 }
 
