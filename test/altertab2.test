@@ -12,7 +12,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix altertab
+set testprefix altertab2
 
 # If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
 ifcapable !altertable {
@@ -85,5 +85,61 @@ do_execsql_test 2.3 {
   {CREATE TABLE c3(x, FOREIGN KEY (x) REFERENCES "p3"(a))}
 }
 
+#-------------------------------------------------------------------------
+# Table name in WITH clauses that are part of views or triggers.
+#
+foreach {tn schema} {
+  1 {
+    CREATE TABLE log_entry(col1, y);
+    CREATE INDEX i1 ON log_entry(col1);
+  }
+
+  2 {
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t2(x);
+    CREATE TABLE log_entry(col1);
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+      INSERT INTO t2 SELECT col1 FROM log_entry;
+    END;
+  }
+
+  3 {
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t2(x);
+    CREATE TABLE log_entry(col1);
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+      INSERT INTO t2
+        WITH xyz(x) AS (SELECT col1 FROM log_entry)
+        SELECT x FROM xyz;
+    END;
+  }
+
+  4 {
+    CREATE TABLE log_entry(col1);
+    CREATE VIEW ttt AS
+        WITH xyz(x) AS (SELECT col1 FROM log_entry)
+        SELECT x FROM xyz;
+  }
+} {
+  reset_db
+  do_execsql_test 3.$tn.1 $schema
+  set expect [db eval "SELECT sql FROM sqlite_master"]
+  set expect [string map {log_entry {"newname"}} $expect]
+
+  do_execsql_test 3.$tn.2 {
+    ALTER TABLE log_entry RENAME TO newname;
+    SELECT sql FROM sqlite_master;
+  } $expect
+
+  reset_db
+  do_execsql_test 3.$tn.3 $schema
+  set expect [db eval "SELECT sql FROM sqlite_master"]
+  set expect [string map {col1 newname} $expect]
+
+  do_execsql_test 3.$tn.4 {
+    ALTER TABLE log_entry RENAME col1 TO newname;
+    SELECT sql FROM sqlite_master;
+  } $expect
+}
 
 finish_test
