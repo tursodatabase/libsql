@@ -1,5 +1,5 @@
-C Invoking\sthe\ssqlite3_trace()\sor\ssqlite3_trace_v2()\sinterfaces\scancels\nany\ssqlite3_profile()\sthat\sis\srunning.
-D 2018-12-06T03:59:25.918
+C Issue\sa\swarning\swhenever\sa\sdouble-quoted\sstring\sliteral\sis\sused.
+D 2018-12-06T16:11:14.066
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -505,7 +505,7 @@ F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c 66b5f9791a3ef57131cbba58c33104ebea814a70a5cfcafabf5aed5a3e3858fe
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 976e7879286a1eecdc71ceff64f6d1b3f58c8f8096537ba668b3dc0887f410c1
+F src/resolve.c e0408228bad5d13937a626521cba42c6f768643a6353712218d7e01fb201b202
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 61e867a906f140b73baf4ce7a201ad6dcba30820969f5618ee40e9a0d32c6f5f
 F src/shell.c.in 1f0819e69fb1ebd2eb44695530dc43936608bf9b752981a0ffd4e2e4a9e3883d
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a2c047989facc3461c63a2f9eed412014c951035a80da47c52a70139fb552de
-R e33573679d2b83476b49b39d100df865
+P ec63d3506bd429560077f82a4c5ed9d189780789fe1c134fff4f3b8733be1a3f
+R 3200e72b511607c15352eb3a60112ed6
 U drh
-Z 9b63335dca170db3a75ac781c84ad8b2
+Z 06f8f012c6fe6f33f55c7a711e9e6cc5

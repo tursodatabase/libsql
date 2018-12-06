@@ -474,6 +474,22 @@ static int lookupName(
   if( cnt==0 && zTab==0 ){
     assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+      /* If a double-quoted identifier does not match any known column name,
+      ** then treat it as a string.
+      **
+      ** This hack was added in the early days of SQLite in a misguided attempt
+      ** to be compatible with MySQL 3.x, which used double-quotes for strings.
+      ** I now sorely regret putting in this hack. The effect of this hack is
+      ** that misspelled identifier names are silently converted into strings
+      ** rather than causing an error, to the frustration of countless
+      ** programmers. To all those frustrated programmers, my apologies.
+      **
+      ** Someday, I hope to get rid of this hack. Unfortunately there is
+      ** a huge amount of legacy SQL that uses it. So for now, we just
+      ** issue a warning.
+      */
+      sqlite3_log(SQLITE_WARNING,
+        "double-quoted string literal: \"%w\"", zCol);
       pExpr->op = TK_STRING;
       pExpr->y.pTab = 0;
       return WRC_Prune;
