@@ -1345,13 +1345,16 @@ static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
   }
   return WRC_Continue;
 }
+static int gatherSelectWindowsSelectCallback(Walker *pWalker, Select *p){
+  return p==pWalker->u.pSelect ? WRC_Continue : WRC_Prune;
+}
 static void gatherSelectWindows(Select *p){
   Walker w;
   w.xExprCallback = gatherSelectWindowsCallback;
-  w.xSelectCallback = 0;
+  w.xSelectCallback = gatherSelectWindowsSelectCallback;
+  w.xSelectCallback2 = 0;
   w.u.pSelect = p;
-  sqlite3WalkSelectExpr(&w, p);
-  sqlite3WalkSelectFrom(&w, p);
+  sqlite3WalkSelect(&w, p);
 }
 #endif
 
