@@ -1,5 +1,5 @@
-C New\stest\scase\sthat\sstill\shits\san\sassertion\sfault,\sjust\sto\sprove\sthat\sthe\nprevious\scheckin\smerely\smade\sthe\sproblem\smore\sobscure\sand\sdid\snot\scompletely\nfix\sit.
-D 2018-12-06T19:56:20.155
+C Fix\sthe\ssqlite3ExprDup()\sroutine\sso\sthat\sit\smakes\scomplete\sduplications\sof\nsubqueries\scontaining\swindow\sfunctions.
+D 2018-12-06T22:04:19.327
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -459,7 +459,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c f7938125847e8ef485448db5fbad29acb2991381a02887dd854c1617315ab9fb
-F src/expr.c a3e90131d7f92b77a6a6ae2e71f0d2882237041ed11dbe3c914e5e278ddc2d24
+F src/expr.c 348e3877784d3e3a8b053a6b2e32d00b986fc4420ab484a41bf38e6d31e3b84b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -596,7 +596,7 @@ F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
-F src/window.c 6550e2850ebced51100ef83d49b00a1cf03f81a482dafedafb0320df647ed8fc
+F src/window.c ea81ecd031ed2cbc14b7db6fd7f4bee2471b894feae5fea0547b15b1e2dd8fb2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f1b18d44ff855573542c1947a42d4025dff54cacc13dac14d044521762ea9736
-R 999c00703256c76e5513029bb0036a91
+P a9a3b532643b5f106509bb29c3e6bc9d41ec5b2da5a0cd4067898f376eb626a2
+R 24973ceb08f0bf40a95db4b2c4fd154c
 U drh
-Z 08d2025b0cdb73a3ed0863948c64547c
+Z f52863a824efeb9518162f1a9aff57dd

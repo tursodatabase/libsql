@@ -1330,6 +1330,32 @@ static With *withDup(sqlite3 *db, With *p){
 # define withDup(x,y) 0
 #endif
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
+/*
+** The gatherSelectWindows() procedure and its helper routine
+** gatherSelectWindowsCallback() are used to scan all the expressions
+** an a newly duplicated SELECT statement and gather all of the Window
+** objects found there, assembling them onto the linked list at Select->pWin.
+*/
+static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_FUNCTION && pExpr->y.pWin!=0 ){
+    assert( ExprHasProperty(pExpr, EP_WinFunc) );
+    pExpr->y.pWin->pNextWin = pWalker->u.pSelect->pWin;
+    pWalker->u.pSelect->pWin = pExpr->y.pWin;
+  }
+  return WRC_Continue;
+}
+static void gatherSelectWindows(Select *p){
+  Walker w;
+  w.xExprCallback = gatherSelectWindowsCallback;
+  w.xSelectCallback = 0;
+  w.u.pSelect = p;
+  sqlite3WalkSelectExpr(&w, p);
+  sqlite3WalkSelectFrom(&w, p);
+}
+#endif
+
+
 /*
 ** The following group of routines make deep copies of expressions,
 ** expression lists, ID lists, and select statements.  The copies can
@@ -1497,6 +1523,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
 #ifndef SQLITE_OMIT_WINDOWFUNC
     pNew->pWin = 0;
     pNew->pWinDefn = sqlite3WindowListDup(db, p->pWinDefn);
+    if( p->pWin ) gatherSelectWindows(pNew);
 #endif
     pNew->selId = p->selId;
     *pp = pNew;
