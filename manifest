@@ -1,5 +1,5 @@
-C Simplify\sthe\squery\sflattener\sso\sthat\sit\sdoes\snot\sduplicate\sthe\sWHERE\sclause\nof\ssubquery\sthat\sis\sbeing\sincorporated\sinto\sthe\souter\squery\s-\scopies\sit\ndirectly.\s\sThis\sis\smore\sefficient.\s\sAnd\sit\salso\sfixes\sthe\sspecific\stest\scase\nshow\sfor\sticket\s[f09fcd17810f65f71789525]\sbut\sit\sdoes\snot\sresolve\sthe\smore\ngeneral\sproblem\sthat\ssqlite3ExprDup()\sdoes\snot\scorrectly\sduplicate\sexpressions\nthat\scontain\ssubqueries\swith\swindow\sfunctions.
-D 2018-12-06T19:15:36.453
+C New\stest\scase\sthat\sstill\shits\san\sassertion\sfault,\sjust\sto\sprove\sthat\sthe\nprevious\scheckin\smerely\smade\sthe\sproblem\smore\sobscure\sand\sdid\snot\scompletely\nfix\sit.
+D 2018-12-06T19:56:20.155
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -1655,7 +1655,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test d55c41a0b7a3246ed3882e87c540ac2e4bf7a8f7774e0c2e81690b4f4bedc088
+F test/window1.test 1003e19bebe06be286a38139ea5fc010b30c055cc1527824b09d609f89bbd93b
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
@@ -1782,10 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53d3b169d8e1892163526caff2c843302c92e280fdeff6831e23a9bb15b82be3
-R a2d2ec8d34c71e6abf08e50ec579efcc
-T *branch * ticket-f09fcd17810f
-T *sym-ticket-f09fcd17810f *
-T -sym-trunk *
+P f1b18d44ff855573542c1947a42d4025dff54cacc13dac14d044521762ea9736
+R 999c00703256c76e5513029bb0036a91
 U drh
-Z 5018814e4a4daf9bdeea4c03d1c78115
+Z 08d2025b0cdb73a3ed0863948c64547c
