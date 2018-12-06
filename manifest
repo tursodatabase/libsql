@@ -1,5 +1,5 @@
-C When\smasking\sbits\soff\sof\ssqlite3.flags,\smake\ssure\sthe\smask\sis\s64\sbits\nin\ssize\sso\sas\snot\sto\saccidentally\smask\sof\shigh-order\sbits.
-D 2018-12-06T17:06:02.839
+C Simplify\sthe\squery\sflattener\sso\sthat\sit\sdoes\snot\sduplicate\sthe\sWHERE\sclause\nof\ssubquery\sthat\sis\sbeing\sincorporated\sinto\sthe\souter\squery\s-\scopies\sit\ndirectly.\s\sThis\sis\smore\sefficient.\s\sAnd\sit\salso\sfixes\sthe\sspecific\stest\scase\nshow\sfor\sticket\s[f09fcd17810f65f71789525]\sbut\sit\sdoes\snot\sresolve\sthe\smore\ngeneral\sproblem\sthat\ssqlite3ExprDup()\sdoes\snot\scorrectly\sduplicate\sexpressions\nthat\scontain\ssubqueries\swith\swindow\sfunctions.
+D 2018-12-06T19:15:36.453
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -507,7 +507,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e0408228bad5d13937a626521cba42c6f768643a6353712218d7e01fb201b202
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 06a122decd9268c747e9110448b0c84249a4623ca9d78a73618ce648f7af8869
+F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
 F src/shell.c.in 1f0819e69fb1ebd2eb44695530dc43936608bf9b752981a0ffd4e2e4a9e3883d
 F src/sqlite.h.in 908ec406feefc4c7e1486a2e3dc30a8bfb51c5a345a8e8130ac201962db171c4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1655,7 +1655,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 02e481ac48c445b43bab7b3cf1e4115165b5127a1aa29e14f5372922c836f1a4
+F test/window1.test d55c41a0b7a3246ed3882e87c540ac2e4bf7a8f7774e0c2e81690b4f4bedc088
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
@@ -1782,7 +1782,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c6dbcfab5952cf4e54de30cf9cee48f988b91a35dc3f04d64d6d994dd84a076
-R b1b5c125b5cc5dd847ef51923c461312
+P 53d3b169d8e1892163526caff2c843302c92e280fdeff6831e23a9bb15b82be3
+R a2d2ec8d34c71e6abf08e50ec579efcc
+T *branch * ticket-f09fcd17810f
+T *sym-ticket-f09fcd17810f *
+T -sym-trunk *
 U drh
-Z 9423d60b113ec33e61947be8b42c640e
+Z 5018814e4a4daf9bdeea4c03d1c78115

@@ -594,4 +594,17 @@ do_execsql_test 13.5 {
 } {
 }
 
+# 2018-12-06
+# https://www.sqlite.org/src/info/f09fcd17810f65f7
+# Assertion fault when window functions are used
+#
+sqlite3 db :memory:
+do_execsql_test 14.0 {
+  SELECT * FROM(
+    SELECT * FROM (SELECT 1 AS c) WHERE c IN (
+        SELECT (row_number() OVER()) FROM (VALUES (0))
+    )
+  );
+} {1}
+
 finish_test
