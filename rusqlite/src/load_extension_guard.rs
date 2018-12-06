@@ -1,4 +1,4 @@
-use {Connection, Result};
+use crate::{Connection, Result};
 
 /// RAII guard temporarily enabling SQLite extensions to be loaded.
 ///

@@ -37,10 +37,10 @@ use std::os::raw::c_int;
 use std::thread;
 use std::time::Duration;
 
-use ffi;
+use crate::ffi;
 
-use error::{error_from_handle, error_from_sqlite_code};
-use {Connection, DatabaseName, Result};
+use crate::error::{error_from_handle, error_from_sqlite_code};
+use crate::{Connection, DatabaseName, Result};
 
 impl Connection {
     /// Back up the `name` database to the given destination path.
@@ -303,8 +303,8 @@ impl<'a, 'b> Drop for Backup<'a, 'b> {
 #[cfg(test)]
 mod test {
     use super::Backup;
+    use crate::{Connection, DatabaseName, NO_PARAMS};
     use std::time::Duration;
-    use {Connection, DatabaseName, NO_PARAMS};
 
     #[test]
     fn test_backup() {

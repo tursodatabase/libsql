@@ -1,5 +1,5 @@
+use crate::{Connection, Result};
 use std::ops::Deref;
-use {Connection, Result};
 
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
@@ -410,7 +410,7 @@ impl Connection {
 #[cfg(test)]
 mod test {
     use super::DropBehavior;
-    use {Connection, NO_PARAMS};
+    use crate::{Connection, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();

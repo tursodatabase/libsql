@@ -1,14 +1,14 @@
+use crate::types::Type;
+use crate::{errmsg_to_string, ffi};
 use std::error;
 use std::fmt;
 use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::str;
-use types::Type;
-use {errmsg_to_string, ffi};
 
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
-#[allow(enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),

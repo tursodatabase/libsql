@@ -4,13 +4,13 @@
 use std::default::Default;
 use std::os::raw::c_int;
 
-use ffi;
-use types::Type;
-use vtab::{
+use crate::ffi;
+use crate::types::Type;
+use crate::vtab::{
     eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
     VTabCursor, Values,
 };
-use {Connection, Result};
+use crate::{Connection, Result};
 
 /// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
@@ -263,9 +263,9 @@ impl VTabCursor for SeriesTabCursor {
 
 #[cfg(test)]
 mod test {
-    use ffi;
-    use vtab::series;
-    use {Connection, NO_PARAMS};
+    use crate::ffi;
+    use crate::vtab::series;
+    use crate::{Connection, NO_PARAMS};
 
     #[test]
     fn test_series_module() {

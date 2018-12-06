@@ -7,8 +7,8 @@ use std::ptr;
 use std::time::Duration;
 
 use super::ffi;
-use error::error_from_sqlite_code;
-use {Connection, Result};
+use crate::error::error_from_sqlite_code;
+use crate::{Connection, Result};
 
 /// Set up the process-wide SQLite error logging callback.
 /// This function is marked unsafe for two reasons:
@@ -124,7 +124,7 @@ mod test {
     use std::sync::Mutex;
     use std::time::Duration;
 
-    use Connection;
+    use crate::Connection;
 
     #[test]
     fn test_trace() {

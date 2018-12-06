@@ -5,13 +5,13 @@ use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 
-use ffi;
-use types::{ToSql, ToSqlOutput, Value};
-use vtab::{
+use crate::ffi;
+use crate::types::{ToSql, ToSqlOutput, Value};
+use crate::vtab::{
     eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
     VTabCursor, Values,
 };
-use {Connection, Result};
+use crate::{Connection, Result};
 
 // http://sqlite.org/bindptr.html
 
@@ -169,10 +169,10 @@ impl VTabCursor for ArrayTabCursor {
 
 #[cfg(test)]
 mod test {
+    use crate::types::Value;
+    use crate::vtab::array;
+    use crate::Connection;
     use std::rc::Rc;
-    use types::Value;
-    use vtab::array;
-    use Connection;
 
     #[test]
     fn test_array_module() {

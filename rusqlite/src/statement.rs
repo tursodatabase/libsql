@@ -11,9 +11,9 @@ use super::str_to_cstring;
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
-use types::{ToSql, ToSqlOutput};
+use crate::types::{ToSql, ToSqlOutput};
 #[cfg(feature = "array")]
-use vtab::array::{free_array, ARRAY_TYPE};
+use crate::vtab::array::{free_array, ARRAY_TYPE};
 
 /// A prepared statement.
 pub struct Statement<'conn> {
@@ -668,7 +668,7 @@ impl<'conn> Statement<'conn> {
 
 #[cfg(test)]
 mod test {
-    use {Connection, Error, Result, NO_PARAMS};
+    use crate::{Connection, Error, Result, NO_PARAMS};
 
     #[test]
     fn test_execute_named() {

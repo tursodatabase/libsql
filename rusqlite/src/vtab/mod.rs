@@ -17,12 +17,12 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
 
-use context::set_result;
-use error::error_from_sqlite_code;
-use ffi;
-pub use ffi::{sqlite3_vtab, sqlite3_vtab_cursor};
-use types::{FromSql, FromSqlError, ToSql, ValueRef};
-use {str_to_cstring, Connection, Error, InnerConnection, Result};
+use crate::context::set_result;
+use crate::error::error_from_sqlite_code;
+use crate::ffi;
+pub use crate::ffi::{sqlite3_vtab, sqlite3_vtab_cursor};
+use crate::types::{FromSql, FromSqlError, ToSql, ValueRef};
+use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -476,7 +476,7 @@ impl<'a> Values<'a> {
     // So it seems not possible to enhance `ValueRef::from_value`.
     #[cfg(feature = "array")]
     pub(crate) fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
-        use types::Value;
+        use crate::types::Value;
         let arg = self.args[idx];
         let ptr = unsafe { ffi::sqlite3_value_pointer(arg, array::ARRAY_TYPE) };
         if ptr.is_null() {

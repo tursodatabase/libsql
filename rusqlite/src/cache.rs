@@ -1,10 +1,10 @@
 //! Prepared statements cache for faster execution.
 
+use crate::raw_statement::RawStatement;
+use crate::{Connection, Result, Statement};
 use lru_cache::LruCache;
-use raw_statement::RawStatement;
 use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
-use {Connection, Result, Statement};
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared
@@ -152,7 +152,7 @@ impl StatementCache {
 #[cfg(test)]
 mod test {
     use super::StatementCache;
-    use {Connection, NO_PARAMS};
+    use crate::{Connection, NO_PARAMS};
 
     impl StatementCache {
         fn clear(&self) {

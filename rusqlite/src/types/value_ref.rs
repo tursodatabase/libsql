@@ -1,5 +1,5 @@
 use super::{Type, Value};
-use types::{FromSqlError, FromSqlResult};
+use crate::types::{FromSqlError, FromSqlResult};
 
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
 /// memory backing this value is owned by SQLite.

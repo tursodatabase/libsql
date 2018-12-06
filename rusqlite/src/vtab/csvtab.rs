@@ -8,13 +8,13 @@ use std::path::Path;
 use std::result;
 use std::str;
 
-use ffi;
-use types::Null;
-use vtab::{
+use crate::ffi;
+use crate::types::Null;
+use crate::vtab::{
     dequote, escape_double_quote, parse_boolean, read_only_module, Context, CreateVTab, IndexInfo,
     Module, VTab, VTabConnection, VTabCursor, Values,
 };
-use {Connection, Error, Result};
+use crate::{Connection, Error, Result};
 
 /// Register the "csv" module.
 /// ```sql
@@ -340,8 +340,8 @@ impl From<csv::Error> for Error {
 
 #[cfg(test)]
 mod test {
-    use vtab::csvtab;
-    use {Connection, Result, NO_PARAMS};
+    use crate::vtab::csvtab;
+    use crate::{Connection, Result, NO_PARAMS};
 
     #[test]
     fn test_csv_module() {

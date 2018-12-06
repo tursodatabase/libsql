@@ -5,14 +5,14 @@ use std::os::raw::{c_char, c_int, c_void};
 #[cfg(feature = "array")]
 use std::rc::Rc;
 
-use ffi;
-use ffi::sqlite3_context;
-use ffi::sqlite3_value;
+use crate::ffi;
+use crate::ffi::sqlite3_context;
+use crate::ffi::sqlite3_value;
 
-use str_to_cstring;
-use types::{ToSqlOutput, ValueRef};
+use crate::str_to_cstring;
+use crate::types::{ToSqlOutput, ValueRef};
 #[cfg(feature = "array")]
-use vtab::array::{free_array, ARRAY_TYPE};
+use crate::vtab::array::{free_array, ARRAY_TYPE};
 
 impl<'a> ValueRef<'a> {
     pub(crate) unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {

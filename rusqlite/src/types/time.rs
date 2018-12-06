@@ -1,7 +1,7 @@
 extern crate time;
 
-use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
-use Result;
+use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use crate::Result;
 
 const CURRENT_TIMESTAMP_FMT: &str = "%Y-%m-%d %H:%M:%S";
 const SQLITE_DATETIME_FMT: &str = "%Y-%m-%dT%H:%M:%S.%fZ";
@@ -37,7 +37,7 @@ impl FromSql for time::Timespec {
 #[cfg(test)]
 mod test {
     use super::time;
-    use {Connection, Result, NO_PARAMS};
+    use crate::{Connection, Result, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();

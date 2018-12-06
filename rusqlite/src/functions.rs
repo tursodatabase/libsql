@@ -58,14 +58,14 @@ use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::slice;
 
-use ffi;
-use ffi::sqlite3_context;
-use ffi::sqlite3_value;
+use crate::ffi;
+use crate::ffi::sqlite3_context;
+use crate::ffi::sqlite3_value;
 
-use context::set_result;
-use types::{FromSql, FromSqlError, ToSql, ValueRef};
+use crate::context::set_result;
+use crate::types::{FromSql, FromSqlError, ToSql, ValueRef};
 
-use {str_to_cstring, Connection, Error, InnerConnection, Result};
+use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 
 unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
     // Extended constraint error codes were added in SQLite 3.7.16. We don't have
@@ -198,14 +198,14 @@ where
 
     /// "step" function called once for each row in an aggregate group. May be
     /// called 0 times if there are no rows.
-    fn step(&self, &mut Context, &mut A) -> Result<()>;
+    fn step(&self, _: &mut Context, _: &mut A) -> Result<()>;
 
     /// Computes and returns the final result. Will be called exactly once for
     /// each invocation of the function. If `step()` was called at least
     /// once, will be given `Some(A)` (the same `A` as was created by
     /// `init` and given to `step`); if `step()` was not called (because
     /// the function is running against 0 rows), will be given `None`.
-    fn finalize(&self, Option<A>) -> Result<T>;
+    fn finalize(&self, _: Option<A>) -> Result<T>;
 }
 
 impl Connection {
@@ -490,8 +490,8 @@ mod test {
     use std::f64::EPSILON;
     use std::os::raw::c_double;
 
-    use functions::{Aggregate, Context};
-    use {Connection, Error, Result, NO_PARAMS};
+    use crate::functions::{Aggregate, Context};
+    use crate::{Connection, Error, Result, NO_PARAMS};
 
     fn half(ctx: &Context) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");

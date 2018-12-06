@@ -47,7 +47,7 @@ impl Error for FromSqlError {
         }
     }
 
-    #[cfg_attr(feature = "clippy", allow(match_same_arms))]
+    #[allow(clippy::match_same_arms)]
     fn cause(&self) -> Option<&Error> {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
@@ -181,7 +181,7 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use super::FromSql;
-    use {Connection, Error};
+    use crate::{Connection, Error};
 
     fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()

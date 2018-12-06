@@ -4,8 +4,8 @@ use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::time::Duration;
 
-use ffi;
-use {Connection, InnerConnection, Result};
+use crate::ffi;
+use crate::{Connection, InnerConnection, Result};
 
 impl Connection {
     /// Set a busy handler that sleeps for a specified amount of time when a
@@ -81,7 +81,7 @@ mod test {
     use std::thread;
     use std::time::Duration;
 
-    use {Connection, Error, ErrorCode, TransactionBehavior, NO_PARAMS};
+    use crate::{Connection, Error, ErrorCode, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_default_busy() {

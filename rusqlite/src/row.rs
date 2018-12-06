@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::{convert, result};
 
 use super::{Error, Result, Statement};
-use types::{FromSql, FromSqlError, ValueRef};
+use crate::types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
@@ -27,7 +27,7 @@ impl<'stmt> Rows<'stmt> {
     /// This is a "streaming iterator". For a more natural interface,
     /// consider using `query_map` or `query_and_then` instead, which
     /// return types that implement `Iterator`.
-    #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // cannot implement Iterator
+    #[allow(clippy::should_implement_trait)] // cannot implement Iterator
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt.and_then(|stmt| match stmt.step() {
             Ok(true) => Some(Ok(Row {

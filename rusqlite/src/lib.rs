@@ -88,27 +88,27 @@ use std::str;
 use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
 use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 
-use cache::StatementCache;
-use error::{error_from_handle, error_from_sqlite_code};
-use raw_statement::RawStatement;
-use types::{ToSql, ValueRef};
+use crate::cache::StatementCache;
+use crate::error::{error_from_handle, error_from_sqlite_code};
+use crate::raw_statement::RawStatement;
+use crate::types::{ToSql, ValueRef};
 
-pub use statement::Statement;
+pub use crate::statement::Statement;
 
-pub use row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
+pub use crate::row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
 
-pub use transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior};
+pub use crate::transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior};
 
-pub use error::Error;
-pub use ffi::ErrorCode;
+pub use crate::error::Error;
+pub use crate::ffi::ErrorCode;
 
-pub use cache::CachedStatement;
-pub use version::*;
+pub use crate::cache::CachedStatement;
+pub use crate::version::*;
 
 #[cfg(feature = "hooks")]
-pub use hooks::*;
+pub use crate::hooks::*;
 #[cfg(feature = "load_extension")]
-pub use load_extension_guard::LoadExtensionGuard;
+pub use crate::load_extension_guard::LoadExtensionGuard;
 
 #[cfg(feature = "backup")]
 pub mod backup;
@@ -1058,7 +1058,7 @@ mod test {
     extern crate tempdir;
     use self::tempdir::TempDir;
     pub use super::*;
-    use ffi;
+    use crate::ffi;
     pub use std::error::Error as StdError;
     pub use std::fmt;
 
@@ -1548,9 +1548,7 @@ mod test {
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
             assert_eq!(
-                insert_stmt
-                    .execute(&[&i_to_insert as &dyn ToSql, &v])
-                    .unwrap(),
+                insert_stmt.execute(&[&i_to_insert as &ToSql, &v]).unwrap(),
                 1
             );
         }
