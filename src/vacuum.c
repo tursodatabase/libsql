@@ -102,9 +102,10 @@ static int execSqlF(sqlite3 *db, char **pzErrMsg, const char *zSql, ...){
 ** transient would cause the database file to appear to be deleted
 ** following reboot.
 */
-void sqlite3Vacuum(Parse *pParse, Token *pNm){
+void sqlite3Vacuum(Parse *pParse, Token *pNm, Token *pInto){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int iDb = 0;
+  assert( pInto!=0 );
   if( v==0 ) return;
   if( pNm ){
 #ifndef SQLITE_BUG_COMPATIBLE_20160819
@@ -125,6 +126,10 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm){
   if( iDb!=1 ){
     sqlite3VdbeAddOp1(v, OP_Vacuum, iDb);
     sqlite3VdbeUsesBtree(v, iDb);
+    if( pInto->z ){
+      char *zName = sqlite3NameFromToken(pParse->db, pInto);
+      sqlite3VdbeChangeP4(v, -1, zName, P4_DYNAMIC);
+    }
   }
   return;
 }
@@ -132,7 +137,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm){
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
+int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb, const char *zOut){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
@@ -189,7 +194,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   ** to write the journal header file.
   */
   nDb = db->nDb;
-  rc = execSql(db, pzErrMsg, "ATTACH''AS vacuum_db");
+  rc = execSqlF(db, pzErrMsg, "ATTACH %Q AS vacuum_db", zOut ? zOut : "");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   assert( (db->nDb-1)==nDb );
   pDb = &db->aDb[nDb];
@@ -225,7 +230,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   */
   rc = execSql(db, pzErrMsg, "BEGIN");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = sqlite3BtreeBeginTrans(pMain, 2, 0);
+  rc = sqlite3BtreeBeginTrans(pMain, zOut==0 ? 2 : 0, 0);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Do not attempt to change the page size for a WAL database */
@@ -320,7 +325,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
     };
 
     assert( 1==sqlite3BtreeIsInTrans(pTemp) );
-    assert( 1==sqlite3BtreeIsInTrans(pMain) );
+    assert( zOut!=0 || 1==sqlite3BtreeIsInTrans(pMain) );
 
     /* Copy Btree meta values */
     for(i=0; i<ArraySize(aCopy); i+=2){
@@ -331,17 +336,25 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
       if( NEVER(rc!=SQLITE_OK) ) goto end_of_vacuum;
     }
 
-    rc = sqlite3BtreeCopyFile(pMain, pTemp);
+    if( zOut==0 ){
+      rc = sqlite3BtreeCopyFile(pMain, pTemp);
+    }else{
+      rc = sqlite3BtreeCommit(pMain);
+    }
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
     rc = sqlite3BtreeCommit(pTemp);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    sqlite3BtreeSetAutoVacuum(pMain, sqlite3BtreeGetAutoVacuum(pTemp));
+    if( zOut==0 ){
+      sqlite3BtreeSetAutoVacuum(pMain, sqlite3BtreeGetAutoVacuum(pTemp));
+    }
 #endif
   }
 
   assert( rc==SQLITE_OK );
-  rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes,1);
+  if( zOut==0 ){
+    rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes,1);
+  }
 
 end_of_vacuum:
   /* Restore the original value of db->flags */
@@ -368,9 +381,11 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
-  /* This both clears the schemas and reduces the size of the db->aDb[]
-  ** array. */ 
-  sqlite3ResetAllSchemasOfConnection(db);
+  if( zOut==0 ){
+    /* This both clears the schemas and reduces the size of the db->aDb[]
+    ** array. */ 
+    sqlite3ResetAllSchemasOfConnection(db);
+  }
 
   return rc;
 }

@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_normalized_sql()\sinterface\sso\sthat\sit\srenders\ndouble-quoted\sstring\sliterals\sas\s"?".
-D 2018-12-07T16:32:11.362
+C Prototype\simplementation\sfor\sthe\sVACUUM\sINTO\scommand.
+D 2018-12-07T17:28:28.770
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -496,7 +496,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 75e0f3cfa3962c714f519f8a3d1e67ecca1c91de0e010a036b988e40ce9e4c73
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 5cf85c2b9dfac38ac4e2bf2776484705186ce2eda8631e65cc0b04bf566c1173
+F src/parse.y 3bf1b720e70a3cfb08f491913f61b181d71576879146d68ee845f6d77c6bdc70
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c ad0ffc5b35b0280d045ac569d34d4b842e3e6a4a118f6396b320987a0957afcc
@@ -512,7 +512,7 @@ F src/shell.c.in 1f0819e69fb1ebd2eb44695530dc43936608bf9b752981a0ffd4e2e4a9e3883
 F src/sqlite.h.in 908ec406feefc4c7e1486a2e3dc30a8bfb51c5a345a8e8130ac201962db171c4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h 97adda953e7f118d47b8135f76f88c6420ff6707285782616f393a9ea255d577
+F src/sqliteInt.h fa86b5689fae6d3b446fcae0430e4d1f3757bf5e72d0ca2e34d1287a2c3643f2
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -577,8 +577,8 @@ F src/update.c 1816d56c1bca1ba4e0ef98cac2f49be62858e9df1dc08844c7067eb41cc44274
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
-F src/vacuum.c c67085526fb51e141a85be3f7c9b91a2d38705bbb0ef911d8dec1e2d36cbdce1
-F src/vdbe.c c7312c909df5032b4ed27996c2ed8f5bf948f6a982458f85398520aaba0ccf81
+F src/vacuum.c 76b92b5d6afc83a8f396b59bcc042955bf563f07b6aa60eea3d57f7be5336180
+F src/vdbe.c 872bdd34338548242b36df18c49c90b34689e41c0b4e5c197e83bb82a38ce8dd
 F src/vdbe.h d82f323d581b36b8e147d650257ef34e0e93790039b6cbda45c321c275f7595e
 F src/vdbeInt.h 73f5051923f3f29779bfc374c0c68e23b8e5e3792def2e33e51b427edb890abd
 F src/vdbeapi.c 9709452bee82963e1f7f1f5d0c71db823d553f8dbb2c47a911c4983d537a1947
@@ -1782,7 +1782,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ad796a8822f1b7e1e99b73c2cc5be59dbfd85e9c27f3e795c29a2c002c611d1
-R 75d9d47dfde008764fbf9239d7b4fada
+P 0d8e150434bbd179696f1ffe71d1e06cb3d43e6468496c7e481fca8486387bad
+R 319ff574feecdbd7034aa017b5a3dd35
+T *branch * vacuum-into
+T *sym-vacuum-into *
+T -sym-trunk *
 U drh
-Z 20abf3696cef97c5bdf0b2ae41ceaaa6
+Z 59d199189f2c579663aad138ddb0acd8
