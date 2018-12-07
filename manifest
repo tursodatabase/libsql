@@ -1,5 +1,5 @@
-C Merge\sthe\sVACUUM\ssimplification\sfrom\strunk.
-D 2018-12-07T20:40:12.098
+C Do\snot\sallow\sVACUUM\sINTO\sinto\sa\sfile\sthat\salready\sexists.
+D 2018-12-07T23:48:41.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -577,7 +577,7 @@ F src/update.c 1816d56c1bca1ba4e0ef98cac2f49be62858e9df1dc08844c7067eb41cc44274
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
-F src/vacuum.c 7b74a106ecac182900124e7708b3657377a5b2b18812efc31f100caca1c0eae3
+F src/vacuum.c 5d49497308883e608bb420c112e87c10417b576af2a6d1dd0dba62d4a494ffd7
 F src/vdbe.c 872bdd34338548242b36df18c49c90b34689e41c0b4e5c197e83bb82a38ce8dd
 F src/vdbe.h d82f323d581b36b8e147d650257ef34e0e93790039b6cbda45c321c275f7595e
 F src/vdbeInt.h 73f5051923f3f29779bfc374c0c68e23b8e5e3792def2e33e51b427edb890abd
@@ -1562,6 +1562,7 @@ F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
+F test/vacuum-into.test dab9e498ea303f27370e71eb7e9a3369eb71ae90f4ea1afa741a1347ece39f5d
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
@@ -1782,7 +1783,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 036e3320a4af36c1311b25b2e504b0079c8b33df8ad7b7e5fddad07150e6f87d a92c398fc5df142ff1459c1be4a6832f2219bc7fabe5789535be3bbd41a4269b
-R 5e2deff1e10a62e804983a88b3d403b2
+P 93d92a0a5d21a1856316c0205ecaa253691b6e5349b552d43027005676d14820
+R 4b91cbcd00a28fb8ade4cd8b52c5b6e4
 U drh
-Z a260dfd202744b5f58f4cbc1728d27d6
+Z b3677de0205f375bf2be187f033f6ce8

@@ -200,6 +200,15 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb, const char *zOut){
   pDb = &db->aDb[nDb];
   assert( strcmp(pDb->zDbSName,"vacuum_db")==0 );
   pTemp = pDb->pBt;
+  if( zOut!=0 ){
+    sqlite3_file *id = sqlite3PagerFile(sqlite3BtreePager(pTemp));
+    i64 sz = 0;
+    if( id->pMethods!=0 && (sqlite3OsFileSize(id, &sz)!=SQLITE_OK || sz>0) ){
+      rc = SQLITE_ERROR;
+      sqlite3SetString(pzErrMsg, db, "output file already exists");
+      goto end_of_vacuum;
+    }
+  }
   nRes = sqlite3BtreeGetOptimalReserve(pMain);
 
   /* A VACUUM cannot change the pagesize of an encrypted database. */
@@ -374,11 +383,9 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
-  if( zOut==0 ){
-    /* This both clears the schemas and reduces the size of the db->aDb[]
-    ** array. */ 
-    sqlite3ResetAllSchemasOfConnection(db);
-  }
+  /* This both clears the schemas and reduces the size of the db->aDb[]
+  ** array. */ 
+  sqlite3ResetAllSchemasOfConnection(db);
 
   return rc;
 }
