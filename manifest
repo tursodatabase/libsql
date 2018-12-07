@@ -1,5 +1,5 @@
-C When\smasking\sbits\soff\sof\ssqlite3.flags,\smake\ssure\sthe\smask\sis\s64\sbits\nin\ssize\sso\sas\snot\sto\saccidentally\smask\sof\shigh-order\sbits.
-D 2018-12-06T17:06:02.839
+C Fix\sthe\ssqlite3ExprDup()\sfunction\sso\sthat\sit\scorrectly\sduplicates\sthe\nWindow\sobject\slist\son\sa\sSelect\sthat\scontains\swindow\sfunctions.\s\sFix\nfor\sticket\s[f09fcd17810f65f717].
+D 2018-12-07T01:56:26.338
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -459,7 +459,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c f7938125847e8ef485448db5fbad29acb2991381a02887dd854c1617315ab9fb
-F src/expr.c a3e90131d7f92b77a6a6ae2e71f0d2882237041ed11dbe3c914e5e278ddc2d24
+F src/expr.c b83e2056086e364293ce741509d885d1646a32d62727fe3169b23231c7e4f62f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -507,7 +507,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e0408228bad5d13937a626521cba42c6f768643a6353712218d7e01fb201b202
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 06a122decd9268c747e9110448b0c84249a4623ca9d78a73618ce648f7af8869
+F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
 F src/shell.c.in 1f0819e69fb1ebd2eb44695530dc43936608bf9b752981a0ffd4e2e4a9e3883d
 F src/sqlite.h.in 908ec406feefc4c7e1486a2e3dc30a8bfb51c5a345a8e8130ac201962db171c4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -596,7 +596,7 @@ F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
-F src/window.c 6550e2850ebced51100ef83d49b00a1cf03f81a482dafedafb0320df647ed8fc
+F src/window.c ea81ecd031ed2cbc14b7db6fd7f4bee2471b894feae5fea0547b15b1e2dd8fb2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1655,7 +1655,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 02e481ac48c445b43bab7b3cf1e4115165b5127a1aa29e14f5372922c836f1a4
+F test/window1.test 1003e19bebe06be286a38139ea5fc010b30c055cc1527824b09d609f89bbd93b
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
@@ -1782,7 +1782,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c6dbcfab5952cf4e54de30cf9cee48f988b91a35dc3f04d64d6d994dd84a076
-R b1b5c125b5cc5dd847ef51923c461312
+P 53d3b169d8e1892163526caff2c843302c92e280fdeff6831e23a9bb15b82be3 2b9258b8b0342330ebe8c22b59ec276fd042a05547d15b24fdf29e16280868de
+R 49ae07edd1762ce880f34b83601e0b9e
+T +closed 2b9258b8b0342330ebe8c22b59ec276fd042a05547d15b24fdf29e16280868de
 U drh
-Z 9423d60b113ec33e61947be8b42c640e
+Z 8b11b2c511f2560f5e30a67bc4544388
