@@ -3461,6 +3461,7 @@ static Expr *substExpr(
           ifNullRow.iTable = pSubst->iNewTable;
           pCopy = &ifNullRow;
         }
+        testcase( ExprHasProperty(pCopy, EP_Subquery) );
         pNew = sqlite3ExprDup(db, pCopy, 0);
         if( pNew && pSubst->isLeftJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
@@ -4025,7 +4026,8 @@ static int flattenSubquery(
       pParent->pOrderBy = pOrderBy;
       pSub->pOrderBy = 0;
     }
-    pWhere = sqlite3ExprDup(db, pSub->pWhere, 0);
+    pWhere = pSub->pWhere;
+    pSub->pWhere = 0;
     if( isLeftJoin>0 ){
       setJoinExpr(pWhere, iNewParent);
     }
