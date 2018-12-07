@@ -882,9 +882,13 @@ char *sqlite3Normalize(
           z[j++] = ' ';
         }
         if( tokenType==TK_ID ){
-          int i2 = i, n2 = n;
+          if( zSql[i]=='"'
+           && sqlite3VdbeUsesDoubleQuotedString(db,pVdbe,zSql+i,n)
+          ){
+            z[j++] = '?';
+            break;
+          }
           if( nParen==nParenAtIN ) iStartIN = 0;
-          if( flags&SQLITE_TOKEN_QUOTED ){ i2++; n2-=2; }
         }
         copyNormalizedToken(zSql, i, n, flags, z, &j);
         break;
