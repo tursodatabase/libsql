@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\swal2concurrent.test.
-D 2018-12-05T18:25:23.042
+C Add\smulti-threaded\sperformance\stest\sprogram\s"tserver"\sto\sthis\sbranch.\sFix\sbugs\nin\sthe\sbegin-concurrent/wal2\sintegration\srevealed\sby\sthe\ssame.
+D 2018-12-07T20:25:14.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -593,7 +593,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 43a7e48cea522cbb8eaf198b5f47ec4aea3bf89ae41c65a5fa56d77c6b2125e0
+F src/wal.c 1a564ef45c6443c52d1c576d0b7b9fb969a91457ed2cf286d98d900e88a5f73f
 F src/wal.h c398e0269e8f37495cedb63b5e288c2aac6f6d103d05fb55f4affec21311615d
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
@@ -1769,6 +1769,8 @@ F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
+F tool/tserver.c 46ef565f79b326a86b696ae255548cf841fafae10dda7b6a2027b323f4ee6dac
+F tool/tserver_test.tcl 777e1e4f26c1bf47fecdb61ce46e1db36c209a81956ccfd9e2d957377b54974f
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1796,7 +1798,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 692ddc280850ea2ff5d2fa3743f85fb123b4e4ebc452aae9c58b8d80d22b75b1
-R 70d5ec81123343dc4b5125cf054cd873
+P ef9e7a87a4ce4fe9596aed2f880f2b9fc3526c00c48f2868c625a4c24be65abe
+R d4106d386120e66ef9e2fbd9ae6bf9bf
 U dan
-Z e68147c0d113bb85826459be77b6127e
+Z 4d7f96aaf6dd169d1c2711123641179c

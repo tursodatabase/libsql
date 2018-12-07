@@ -2435,7 +2435,10 @@ static int walCheckpoint(
       }
 
       /* Release the reader lock held while backfilling */
-      walUnlockExclusive(pWal, WAL_READ_LOCK(bWal2 ? 1 + iCkpt*2 : 0), 1);
+      if( bWal2 ){
+        walUnlockExclusive(pWal, WAL_READ_LOCK(1 + iCkpt*2), 1);
+      }
+      walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
     }
 
     if( rc==SQLITE_BUSY ){
@@ -3861,11 +3864,16 @@ int sqlite3WalLockForCommit(
                 u8 aNew[4];
                 u8 *aOld = &((u8*)pPage1->pData)[40];
                 int sz;
-                i64 iOffset;
+                i64 iOff;
+                int iFrame = sLoc.iZero + i;
+                int iWal = 0;
+                if( bWal2 ){
+                  iWal = walExternalDecode(iFrame, &iFrame);
+                }
                 sz = pWal->hdr.szPage;
                 sz = (sz&0xfe00) + ((sz&0x0001)<<16);
-                iOffset = walFrameOffset(i+sLoc.iZero, sz)+WAL_FRAME_HDRSIZE+40;
-                rc = sqlite3OsRead(pWal->apWalFd[0], aNew,sizeof(aNew),iOffset);
+                iOff = walFrameOffset(iFrame, sz) + WAL_FRAME_HDRSIZE + 40;
+                rc = sqlite3OsRead(pWal->apWalFd[iWal],aNew,sizeof(aNew),iOff);
                 if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
                   rc = SQLITE_BUSY_SNAPSHOT;
                 }
