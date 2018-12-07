@@ -78,6 +78,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
     printf("************** nByte=%d ***************\n", (int)nByte);
     fflush(stdout);
   }
+  if( sqlite3_initialize() ) return 0;
   rc = sqlite3_open(0, &db);
   if( rc ) return 1;
   a = sqlite3_malloc64(nByte+1);

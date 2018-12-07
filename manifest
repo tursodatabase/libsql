@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3ExprDup()\sfunction\sso\sthat\sit\scorrectly\sduplicates\sthe\nWindow\sobject\slist\son\sa\sSelect\sthat\scontains\swindow\sfunctions.\s\sFix\nfor\sticket\s[f09fcd17810f65f717].
-D 2018-12-07T01:56:26.338
+C Fix\sdbfuzz2.c\sso\sthat\sit\sworks\swith\s-DSQLITE_OMIT_INIT
+D 2018-12-07T03:01:07.990
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -774,7 +774,7 @@ F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 652f85bac1770e927da139db513234a3eba308f72ac2f8b32f0093d7d19def70
+F test/dbfuzz2.c b8ed9b32a1f287505e55970e55203bedcb9170f137ecefa2254033c9faccdfba
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1782,8 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53d3b169d8e1892163526caff2c843302c92e280fdeff6831e23a9bb15b82be3 2b9258b8b0342330ebe8c22b59ec276fd042a05547d15b24fdf29e16280868de
-R 49ae07edd1762ce880f34b83601e0b9e
-T +closed 2b9258b8b0342330ebe8c22b59ec276fd042a05547d15b24fdf29e16280868de
+P db5ed2268eda2e6c1df15cd8df4176463d89103b8fda33ba9a0604f0d92bd4da
+R 2969a28b361c45f45888cf9a9ac52a9e
 U drh
-Z 8b11b2c511f2560f5e30a67bc4544388
+Z 1170e81cf6857f6b3144fe1a49be0ee2
