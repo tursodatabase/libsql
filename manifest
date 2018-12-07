@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_normalized_sql()\sinterface\sso\sthat\sit\srenders\ndouble-quoted\sstring\sliterals\sas\s"?".
-D 2018-12-07T16:32:11.362
+C Remove\sa\sline\sof\scode\sfrom\sVACUUM\sthat\sis\sno\slonger\sneeded,\sdue\sto\sthe\nchange\sthat\sallows\sATTACH\sto\srun\swithin\sa\stransaction.
+D 2018-12-07T20:26:29.949
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -577,7 +577,7 @@ F src/update.c 1816d56c1bca1ba4e0ef98cac2f49be62858e9df1dc08844c7067eb41cc44274
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
-F src/vacuum.c c67085526fb51e141a85be3f7c9b91a2d38705bbb0ef911d8dec1e2d36cbdce1
+F src/vacuum.c b25dbace5b6727cd906441e87857b828eb2377f7b1b2ba3eec36155ce727730c
 F src/vdbe.c c7312c909df5032b4ed27996c2ed8f5bf948f6a982458f85398520aaba0ccf81
 F src/vdbe.h d82f323d581b36b8e147d650257ef34e0e93790039b6cbda45c321c275f7595e
 F src/vdbeInt.h 73f5051923f3f29779bfc374c0c68e23b8e5e3792def2e33e51b427edb890abd
@@ -1782,7 +1782,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ad796a8822f1b7e1e99b73c2cc5be59dbfd85e9c27f3e795c29a2c002c611d1
-R 75d9d47dfde008764fbf9239d7b4fada
+P 0d8e150434bbd179696f1ffe71d1e06cb3d43e6468496c7e481fca8486387bad
+R 4426cbb4a0e989d65734a42a486b3458
 U drh
-Z 20abf3696cef97c5bdf0b2ae41ceaaa6
+Z 888d594bf1edeab12c4e75c4f15da299
