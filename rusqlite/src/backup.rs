@@ -57,7 +57,7 @@ impl Connection {
     /// or if the backup fails.
     pub fn backup<P: AsRef<Path>>(
         &self,
-        name: DatabaseName,
+        name: DatabaseName<'_>,
         dst_path: P,
         progress: Option<fn(Progress)>,
     ) -> Result<()> {
@@ -95,7 +95,7 @@ impl Connection {
     /// or if the restore fails.
     pub fn restore<P: AsRef<Path>, F: Fn(Progress)>(
         &mut self,
-        name: DatabaseName,
+        name: DatabaseName<'_>,
         src_path: P,
         progress: Option<F>,
     ) -> Result<()> {
@@ -192,9 +192,9 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// `NULL`.
     pub fn new_with_names(
         from: &'a Connection,
-        from_name: DatabaseName,
+        from_name: DatabaseName<'_>,
         to: &'b mut Connection,
-        to_name: DatabaseName,
+        to_name: DatabaseName<'_>,
     ) -> Result<Backup<'a, 'b>> {
         let to_name = to_name.to_cstring()?;
         let from_name = from_name.to_cstring()?;

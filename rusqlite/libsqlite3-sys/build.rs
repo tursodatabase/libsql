@@ -9,7 +9,7 @@ fn main() {
 
 #[cfg(feature = "bundled")]
 mod build {
-    extern crate cc;
+    use cc;
     use std::path::Path;
 
     pub fn main(out_dir: &str, out_path: &Path) {
@@ -94,7 +94,7 @@ impl From<HeaderLocation> for String {
 
 #[cfg(not(feature = "bundled"))]
 mod build {
-    extern crate pkg_config;
+    use pkg_config;
 
     #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
     extern crate vcpkg;
@@ -201,7 +201,7 @@ mod bindings {
 
 #[cfg(feature = "buildtime_bindgen")]
 mod bindings {
-    extern crate bindgen;
+    use bindgen;
 
     use self::bindgen::callbacks::{IntKind, ParseCallbacks};
     use super::HeaderLocation;

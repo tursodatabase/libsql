@@ -24,7 +24,7 @@ pub(crate) unsafe extern "C" fn free_array(p: *mut c_void) {
 pub type Array = Rc<Vec<Value>>;
 
 impl ToSql for Array {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::Array(self.clone()))
     }
 }
@@ -129,7 +129,7 @@ impl ArrayTabCursor {
     }
 }
 impl VTabCursor for ArrayTabCursor {
-    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
+    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         if idx_num > 0 {
             self.ptr = args.get_array(0)?;
         } else {

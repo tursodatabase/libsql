@@ -70,7 +70,7 @@ impl<'a> ValueRef<'a> {
 }
 
 impl<'a> From<ValueRef<'a>> for Value {
-    fn from(borrowed: ValueRef) -> Value {
+    fn from(borrowed: ValueRef<'_>) -> Value {
         match borrowed {
             ValueRef::Null => Value::Null,
             ValueRef::Integer(i) => Value::Integer(i),
@@ -82,13 +82,13 @@ impl<'a> From<ValueRef<'a>> for Value {
 }
 
 impl<'a> From<&'a str> for ValueRef<'a> {
-    fn from(s: &str) -> ValueRef {
+    fn from(s: &str) -> ValueRef<'_> {
         ValueRef::Text(s)
     }
 }
 
 impl<'a> From<&'a [u8]> for ValueRef<'a> {
-    fn from(s: &[u8]) -> ValueRef {
+    fn from(s: &[u8]) -> ValueRef<'_> {
         ValueRef::Blob(s)
     }
 }

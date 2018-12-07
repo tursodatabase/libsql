@@ -92,7 +92,7 @@ impl<'conn> Transaction<'conn> {
     /// Even though we don't mutate the connection, we take a `&mut Connection`
     /// so as to prevent nested or concurrent transactions on the same
     /// connection.
-    pub fn new(conn: &mut Connection, behavior: TransactionBehavior) -> Result<Transaction> {
+    pub fn new(conn: &mut Connection, behavior: TransactionBehavior) -> Result<Transaction<'_>> {
         let query = match behavior {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
@@ -131,12 +131,12 @@ impl<'conn> Transaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint(&mut self) -> Result<Savepoint> {
+    pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::with_depth(self.conn, 1)
     }
 
     /// Create a new savepoint with a custom savepoint name. See `savepoint()`.
-    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint> {
+    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_depth_and_name(self.conn, 1, name)
     }
 
@@ -214,7 +214,7 @@ impl<'conn> Savepoint<'conn> {
         conn: &Connection,
         depth: u32,
         name: T,
-    ) -> Result<Savepoint> {
+    ) -> Result<Savepoint<'_>> {
         let name = name.into();
         conn.execute_batch(&format!("SAVEPOINT {}", name))
             .map(|_| Savepoint {
@@ -226,28 +226,28 @@ impl<'conn> Savepoint<'conn> {
             })
     }
 
-    fn with_depth(conn: &Connection, depth: u32) -> Result<Savepoint> {
+    fn with_depth(conn: &Connection, depth: u32) -> Result<Savepoint<'_>> {
         let name = format!("_rusqlite_sp_{}", depth);
         Savepoint::with_depth_and_name(conn, depth, name)
     }
 
     /// Begin a new savepoint. Can be nested.
-    pub fn new(conn: &mut Connection) -> Result<Savepoint> {
+    pub fn new(conn: &mut Connection) -> Result<Savepoint<'_>> {
         Savepoint::with_depth(conn, 0)
     }
 
     /// Begin a new savepoint with a user-provided savepoint name.
-    pub fn with_name<T: Into<String>>(conn: &mut Connection, name: T) -> Result<Savepoint> {
+    pub fn with_name<T: Into<String>>(conn: &mut Connection, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_depth_and_name(conn, 0, name)
     }
 
     /// Begin a nested savepoint.
-    pub fn savepoint(&mut self) -> Result<Savepoint> {
+    pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::with_depth(self.conn, self.depth + 1)
     }
 
     /// Begin a nested savepoint with a user-provided savepoint name.
-    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint> {
+    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_depth_and_name(self.conn, self.depth + 1, name)
     }
 
@@ -348,7 +348,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction(&mut self) -> Result<Transaction> {
+    pub fn transaction(&mut self) -> Result<Transaction<'_>> {
         Transaction::new(self, TransactionBehavior::Deferred)
     }
 
@@ -362,7 +362,7 @@ impl Connection {
     pub fn transaction_with_behavior(
         &mut self,
         behavior: TransactionBehavior,
-    ) -> Result<Transaction> {
+    ) -> Result<Transaction<'_>> {
         Transaction::new(self, behavior)
     }
 
@@ -391,7 +391,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn savepoint(&mut self) -> Result<Savepoint> {
+    pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::new(self)
     }
 
@@ -402,7 +402,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint> {
+    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_name(self, name)
     }
 }

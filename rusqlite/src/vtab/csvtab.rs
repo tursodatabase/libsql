@@ -1,7 +1,7 @@
 //! CSV Virtual Table.
 //!
 //! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C extension.
-extern crate csv;
+use csv;
 use std::fs::File;
 use std::os::raw::c_int;
 use std::path::Path;
@@ -285,7 +285,12 @@ impl CSVTabCursor {
 impl VTabCursor for CSVTabCursor {
     // Only a full table scan is supported.  So `filter` simply rewinds to
     // the beginning.
-    fn filter(&mut self, _idx_num: c_int, _idx_str: Option<&str>, _args: &Values) -> Result<()> {
+    fn filter(
+        &mut self,
+        _idx_num: c_int,
+        _idx_str: Option<&str>,
+        _args: &Values<'_>,
+    ) -> Result<()> {
         {
             let offset_first_row = self.vtab().offset_first_row.clone();
             self.reader.seek(offset_first_row)?;

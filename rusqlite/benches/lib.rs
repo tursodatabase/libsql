@@ -1,8 +1,5 @@
-#![feature(extern_crate_item_prelude)]
 #![feature(test)]
 extern crate test;
-
-extern crate rusqlite;
 
 use rusqlite::Connection;
 use test::Bencher;

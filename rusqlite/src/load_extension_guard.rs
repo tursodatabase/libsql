@@ -21,7 +21,7 @@ impl<'conn> LoadExtensionGuard<'conn> {
     /// Attempt to enable loading extensions. Loading extensions will be
     /// disabled when this guard goes out of scope. Cannot be meaningfully
     /// nested.
-    pub fn new(conn: &Connection) -> Result<LoadExtensionGuard> {
+    pub fn new(conn: &Connection) -> Result<LoadExtensionGuard<'_>> {
         conn.load_extension_enable()
             .map(|_| LoadExtensionGuard { conn })
     }

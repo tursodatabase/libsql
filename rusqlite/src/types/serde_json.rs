@@ -1,5 +1,5 @@
 //! `ToSql` and `FromSql` implementation for JSON `Value`.
-extern crate serde_json;
+use serde_json;
 
 use self::serde_json::Value;
 
@@ -8,14 +8,14 @@ use crate::Result;
 
 /// Serialize JSON `Value` to text.
 impl ToSql for Value {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(serde_json::to_string(self).unwrap()))
     }
 }
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Text(s) => serde_json::from_str(s),
             ValueRef::Blob(b) => serde_json::from_slice(b),
@@ -46,7 +46,7 @@ mod test {
         let data: serde_json::Value = serde_json::from_str(json).unwrap();
         db.execute(
             "INSERT INTO foo (t, b) VALUES (?, ?)",
-            &[&data as &ToSql, &json.as_bytes()],
+            &[&data as &dyn ToSql, &json.as_bytes()],
         )
         .unwrap();
 
