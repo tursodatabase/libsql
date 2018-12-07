@@ -198,7 +198,7 @@ where
 
     /// "step" function called once for each row in an aggregate group. May be
     /// called 0 times if there are no rows.
-    fn step(&self, _: &mut Context, _: &mut A) -> Result<()>;
+    fn step(&self, _: &mut Context<'_>, _: &mut A) -> Result<()>;
 
     /// Computes and returns the final result. Will be called exactly once for
     /// each invocation of the function. If `step()` was called at least
@@ -246,7 +246,7 @@ impl Connection {
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context) -> Result<T> + Send + 'static,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + 'static,
         T: ToSql,
     {
         self.db
@@ -297,7 +297,7 @@ impl InnerConnection {
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context) -> Result<T> + Send + 'static,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + 'static,
         T: ToSql,
     {
         unsafe extern "C" fn call_boxed_closure<F, T>(
@@ -305,7 +305,7 @@ impl InnerConnection {
             argc: c_int,
             argv: *mut *mut sqlite3_value,
         ) where
-            F: FnMut(&Context) -> Result<T>,
+            F: FnMut(&Context<'_>) -> Result<T>,
             T: ToSql,
         {
             let ctx = Context {
@@ -483,7 +483,7 @@ impl InnerConnection {
 
 #[cfg(test)]
 mod test {
-    extern crate regex;
+    use regex;
 
     use self::regex::Regex;
     use std::collections::HashMap;
@@ -493,7 +493,7 @@ mod test {
     use crate::functions::{Aggregate, Context};
     use crate::{Connection, Error, Result, NO_PARAMS};
 
-    fn half(ctx: &Context) -> Result<c_double> {
+    fn half(ctx: &Context<'_>) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
         let value = ctx.get::<c_double>(0)?;
         Ok(value / 2f64)
@@ -523,7 +523,7 @@ mod test {
     // This implementation of a regexp scalar function uses SQLite's auxilliary data
     // (https://www.sqlite.org/c3ref/get_auxdata.html) to avoid recompiling the regular
     // expression multiple times within one query.
-    fn regexp_with_auxilliary(ctx: &Context) -> Result<bool> {
+    fn regexp_with_auxilliary(ctx: &Context<'_>) -> Result<bool> {
         assert!(ctx.len() == 2, "called with unexpected number of arguments");
 
         let saved_re: Option<&Regex> = unsafe { ctx.get_aux(0) };
@@ -674,7 +674,7 @@ mod test {
             0
         }
 
-        fn step(&self, ctx: &mut Context, sum: &mut i64) -> Result<()> {
+        fn step(&self, ctx: &mut Context<'_>, sum: &mut i64) -> Result<()> {
             *sum += ctx.get::<i64>(0)?;
             Ok(())
         }
@@ -689,7 +689,7 @@ mod test {
             0
         }
 
-        fn step(&self, _ctx: &mut Context, sum: &mut i64) -> Result<()> {
+        fn step(&self, _ctx: &mut Context<'_>, sum: &mut i64) -> Result<()> {
             *sum += 1;
             Ok(())
         }

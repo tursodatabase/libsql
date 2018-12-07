@@ -250,7 +250,7 @@ pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
     /// Record WHERE clause constraints.
-    pub fn constraints(&self) -> IndexConstraintIter {
+    pub fn constraints(&self) -> IndexConstraintIter<'_> {
         let constraints =
             unsafe { slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize) };
         IndexConstraintIter {
@@ -259,7 +259,7 @@ impl IndexInfo {
     }
 
     /// Information about the ORDER BY clause.
-    pub fn order_bys(&self) -> OrderByIter {
+    pub fn order_bys(&self) -> OrderByIter<'_> {
         let order_bys =
             unsafe { slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize) };
         OrderByIter {
@@ -272,7 +272,7 @@ impl IndexInfo {
         unsafe { (*self.0).nOrderBy as usize }
     }
 
-    pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage {
+    pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage<'_> {
         let constraint_usages = unsafe {
             slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
         };
@@ -412,7 +412,7 @@ impl<'a> OrderBy<'a> {
 pub trait VTabCursor: Sized {
     /// Begin a search of a virtual table.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xfilter_method))
-    fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
+    fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values<'_>) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xnext_method))
     fn next(&mut self) -> Result<()>;
@@ -491,7 +491,7 @@ impl<'a> Values<'a> {
         }
     }
 
-    pub fn iter(&self) -> ValueIter {
+    pub fn iter(&self) -> ValueIter<'_> {
         ValueIter {
             iter: self.args.iter(),
         }
@@ -575,7 +575,7 @@ impl InnerConnection {
 }
 
 /// Escape double-quote (`"`) character occurences by doubling them (`""`).
-pub fn escape_double_quote(identifier: &str) -> Cow<str> {
+pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {
         // escape quote by doubling them
         Owned(identifier.replace("\"", "\"\""))

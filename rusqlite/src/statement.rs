@@ -117,7 +117,7 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
     /// underling SQLite call fails.
-    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<usize> {
+    pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
         self.bind_parameters_named(params)?;
         self.execute_with_bound_parameters()
     }
@@ -208,7 +208,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> Result<Rows<'a>> {
+    pub fn query_named<'a>(&'a mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'a>> {
         self.check_readonly()?;
         self.bind_parameters_named(params)?;
         Ok(Rows::new(self))
@@ -241,7 +241,7 @@ impl<'conn> Statement<'conn> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row) -> T,
+        F: FnMut(&Row<'_, '_>) -> T,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -276,11 +276,11 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_map_named<'a, T, F>(
         &'a mut self,
-        params: &[(&str, &ToSql)],
+        params: &[(&str, &dyn ToSql)],
         f: F,
     ) -> Result<MappedRows<'a, F>>
     where
-        F: FnMut(&Row) -> T,
+        F: FnMut(&Row<'_, '_>) -> T,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -302,7 +302,7 @@ impl<'conn> Statement<'conn> {
         P: IntoIterator,
         P::Item: ToSql,
         E: convert::From<Error>,
-        F: FnMut(&Row) -> result::Result<T, E>,
+        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -348,12 +348,12 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_and_then_named<'a, T, E, F>(
         &'a mut self,
-        params: &[(&str, &ToSql)],
+        params: &[(&str, &dyn ToSql)],
         f: F,
     ) -> Result<AndThenRows<'a, F>>
     where
         E: convert::From<Error>,
-        F: FnMut(&Row) -> result::Result<T, E>,
+        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -384,7 +384,7 @@ impl<'conn> Statement<'conn> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row) -> T,
+        F: FnOnce(&Row<'_, '_>) -> T,
     {
         let mut rows = self.query(params)?;
 
@@ -437,7 +437,7 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
+    fn bind_parameters_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = self.parameter_index(name)? {
                 self.bind_parameter(value, i)?;
@@ -448,7 +448,7 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn bind_parameter(&self, param: &ToSql, col: usize) -> Result<()> {
+    fn bind_parameter(&self, param: &dyn ToSql, col: usize) -> Result<()> {
         let value = param.to_sql()?;
 
         let ptr = unsafe { self.stmt.ptr() };
@@ -576,7 +576,7 @@ impl<'conn> Into<RawStatement> for Statement<'conn> {
 }
 
 impl<'conn> fmt::Debug for Statement<'conn> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sql = str::from_utf8(self.stmt.sql().to_bytes());
         f.debug_struct("Statement")
             .field("conn", self.conn)
@@ -594,11 +594,11 @@ impl<'conn> Drop for Statement<'conn> {
 }
 
 impl<'conn> Statement<'conn> {
-    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement {
+    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }
 
-    pub(crate) fn value_ref(&self, col: usize) -> ValueRef {
+    pub(crate) fn value_ref(&self, col: usize) -> ValueRef<'_> {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {

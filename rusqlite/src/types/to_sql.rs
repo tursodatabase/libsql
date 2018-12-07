@@ -66,7 +66,7 @@ from_value!(Vec<u8>);
 from_value!(i128);
 
 impl<'a> ToSql for ToSqlOutput<'a> {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(match *self {
             ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
             ToSqlOutput::Owned(ref v) => ToSqlOutput::Borrowed(ValueRef::from(v)),
@@ -81,7 +81,7 @@ impl<'a> ToSql for ToSqlOutput<'a> {
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
-    fn to_sql(&self) -> Result<ToSqlOutput>;
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>>;
 }
 
 // We should be able to use a generic impl like this:
@@ -99,7 +99,7 @@ pub trait ToSql {
 macro_rules! to_sql_self(
     ($t:ty) => (
         impl ToSql for $t {
-            fn to_sql(&self) -> Result<ToSqlOutput> {
+            fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
                 Ok(ToSqlOutput::from(*self))
             }
         }
@@ -125,43 +125,43 @@ impl<'a, T: ?Sized> ToSql for &'a T
 where
     T: ToSql,
 {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         (*self).to_sql()
     }
 }
 
 impl ToSql for String {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.as_str()))
     }
 }
 
 impl ToSql for str {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self))
     }
 }
 
 impl ToSql for Vec<u8> {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.as_slice()))
     }
 }
 
 impl ToSql for [u8] {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self))
     }
 }
 
 impl ToSql for Value {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self))
     }
 }
 
 impl<T: ToSql> ToSql for Option<T> {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         match *self {
             None => Ok(ToSqlOutput::from(Null)),
             Some(ref t) => t.to_sql(),
@@ -170,7 +170,7 @@ impl<T: ToSql> ToSql for Option<T> {
 }
 
 impl<'a> ToSql for Cow<'a, str> {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.as_ref()))
     }
 }

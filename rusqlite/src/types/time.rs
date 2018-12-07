@@ -1,4 +1,4 @@
-extern crate time;
+use time;
 
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
@@ -8,7 +8,7 @@ const SQLITE_DATETIME_FMT: &str = "%Y-%m-%dT%H:%M:%S.%fZ";
 const SQLITE_DATETIME_FMT_LEGACY: &str = "%Y-%m-%d %H:%M:%S:%f %Z";
 
 impl ToSql for time::Timespec {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let time_string = time::at_utc(*self)
             .strftime(SQLITE_DATETIME_FMT)
             .unwrap()
@@ -18,7 +18,7 @@ impl ToSql for time::Timespec {
 }
 
 impl FromSql for time::Timespec {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value
             .as_str()
             .and_then(|s| {

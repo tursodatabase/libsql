@@ -10,9 +10,6 @@ Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expo
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 
 ```rust
-extern crate rusqlite;
-extern crate time;
-
 use rusqlite::types::ToSql;
 use rusqlite::{Connection, NO_PARAMS};
 use time::Timespec;
