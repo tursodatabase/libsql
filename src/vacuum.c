@@ -200,13 +200,6 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb, const char *zOut){
   pDb = &db->aDb[nDb];
   assert( strcmp(pDb->zDbSName,"vacuum_db")==0 );
   pTemp = pDb->pBt;
-
-  /* The call to execSql() to attach the temp database has left the file
-  ** locked (as there was more than one active statement when the transaction
-  ** to read the schema was concluded. Unlock it here so that this doesn't
-  ** cause problems for the call to BtreeSetPageSize() below.  */
-  sqlite3BtreeCommit(pTemp);
-
   nRes = sqlite3BtreeGetOptimalReserve(pMain);
 
   /* A VACUUM cannot change the pagesize of an encrypted database. */
