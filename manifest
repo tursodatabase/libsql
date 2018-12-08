@@ -1,5 +1,5 @@
-C Allow\sthe\sINTO\sclause\sof\sVACUUM\sto\sbe\sa\stext-valued\sexpression.
-D 2018-12-08T00:43:08.028
+C Add\sthe\s--async\soption\sto\sthe\s".backup"\scommand\sin\sthe\sCLI.
+D 2018-12-08T01:09:14.691
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -508,7 +508,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 095d1d41d7a981ee9db8bfeae25ed0d6a8a5e5e3d66b0f4efd71877ed7b56132
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
-F src/shell.c.in 1f0819e69fb1ebd2eb44695530dc43936608bf9b752981a0ffd4e2e4a9e3883d
+F src/shell.c.in 5f38bd0e127c2cc4e506b5c3565c10879ddfae6c2d867bb5972563e40717c19c
 F src/sqlite.h.in 908ec406feefc4c7e1486a2e3dc30a8bfb51c5a345a8e8130ac201962db171c4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1783,7 +1783,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92f70e0fa3c9de7fde046f11cc0a7c2800511bb5ace8e68c845133931607616e
-R f797d08299c49f27762cbb498a2316b3
+P af172b53b46759f491f522356e14c5e2374d3f25ec70fbc1e100cadded8f9b22
+R df568823aa698ca1a561c86a7815b31b
 U drh
-Z 0107ff29eb1054c07981156ef518bc62
+Z 361de2f1352642d2a8077d8c1209b182
