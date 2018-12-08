@@ -55,4 +55,15 @@ do_catchsql_test vacuum-into-200 {
   VACUUM main INTO ':memory:';
 } {0 {}}
 
+# The INTO argument can be an arbitrary expression.
+#
+do_execsql_test vacuum-into-300 {
+  CREATE TABLE t2(name TEXT);
+  INSERT INTO t2 VALUES(':memory:');
+  VACUUM main INTO (SELECT name FROM t2);
+} {}
+do_catchsql_test vacuum-into-310 {
+  VACUUM INTO null;
+} {1 {non-text filename}}
+
 finish_test
