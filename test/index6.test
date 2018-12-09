@@ -407,5 +407,7 @@ do_execsql_test index6-12.1 {
   CREATE INDEX t1a ON t1(a) WHERE b=1;
   SELECT 'two', * FROM t2 WHERE x NOT IN (SELECT a FROM t1);
 } {}
-
+do_execsql_test index6-12.2 {
+  SELECT x FROM t2 WHERE x IN (SELECT a FROM t1) ORDER BY +x;
+} {1 2}
 finish_test
