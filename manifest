@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\strunk.
-D 2018-12-10T00:40:43.719
+C Fix\sthe\sshell1.test\stest\sfor\sthe\snew\sformat\sof\sthe\s.backup\scommand.
+D 2018-12-10T00:41:28.076
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -1277,7 +1277,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test d2bf5daeb6f449f0169c9ef3094db17a16a02199c5dcf1a635a3e79b07eb0edd
+F test/shell1.test 0378c4e9e800da6fbb3c86c0c8f2cf5efc9e4155b4b6447d27dc71de648fc0a1
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test a6881d0ae226ded0df8ebdfa574c5aa6dc28d6884ccba1089dc56ed08b9e5ef4
@@ -1783,7 +1783,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b6a605b1883dfcbe237b0a58f6f0c233a109e88b521c3b3d97198526c8a0317 b7bf3c9832bde26b359f4d58ebcf7788c500586d311387d022192ed65a126252
-R 9c5048fab1535ae69a9ca5a527426080
+P ab1e58fac9e3f9d7d90cefb39f8f145d211d38ec0cb393208c4531cc646056c1
+R f78f1915a996819be59599569cf251be
 U drh
-Z 4be57a3eceec619de5e7431288dd440b
+Z 8250db6890dbee78d842dff888889f8d
