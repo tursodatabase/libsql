@@ -48,8 +48,13 @@
 
 /* Turn this feature on in all builds for now */
 #define SQLITE_MUTEXFREE_SHMLOCK 1
-#define SQLITE_MFS_NSHARD        5
 #define SQLITE_MFS_EXCLUSIVE     255
+#ifndef SQLITE_MFS_NSHARD
+# define SQLITE_MFS_NSHARD       8
+#endif
+#if SQLITE_MFS_NSHARD<1
+# error "SQLITE_MFS_NSHARD must be greater than 0"
+#endif
 
 /*
 ** There are various methods for file locking used for concurrency
