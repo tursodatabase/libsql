@@ -389,6 +389,25 @@ do_execsql_test index6-11.1 {
 do_execsql_test index6-11.2 {
   EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99 AND c<>98;
 } {/USING INDEX t11x/}
-  
 
+# 2018-12-08
+# Ticket https://www.sqlite.org/src/info/1d958d90596593a7
+# NOT IN operator fails when using a partial index.
+#
+do_execsql_test index6-12.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1 VALUES(1,1);
+  INSERT INTO t1 VALUES(2,2);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(1);
+  INSERT INTO t2 VALUES(2);
+  SELECT 'one', * FROM t2 WHERE x NOT IN (SELECT a FROM t1);
+  CREATE INDEX t1a ON t1(a) WHERE b=1;
+  SELECT 'two', * FROM t2 WHERE x NOT IN (SELECT a FROM t1);
+} {}
+do_execsql_test index6-12.2 {
+  SELECT x FROM t2 WHERE x IN (SELECT a FROM t1) ORDER BY +x;
+} {1 2}
 finish_test
