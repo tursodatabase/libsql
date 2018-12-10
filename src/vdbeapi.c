@@ -1713,9 +1713,9 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
   if( p==0 ) return 0;
-  if( p->zNormSql==0 && p->zSql!=0 ){
+  if( p->zNormSql==0 && ALWAYS(p->zSql!=0) ){
     sqlite3_mutex_enter(p->db->mutex);
-    p->zNormSql = sqlite3Normalize(p, p->zSql, sqlite3Strlen30(p->zSql));
+    p->zNormSql = sqlite3Normalize(p, p->zSql);
     sqlite3_mutex_leave(p->db->mutex);
   }
   return p->zNormSql;

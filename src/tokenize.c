@@ -734,8 +734,7 @@ static void addSpaceSeparator(sqlite3_str *pStr){
 */
 char *sqlite3Normalize(
   Vdbe *pVdbe,       /* VM being reprepared */
-  const char *zSql,  /* The original SQL string */
-  int nSql           /* Size of the input string in bytes */
+  const char *zSql   /* The original SQL string */
 ){
   sqlite3 *db;       /* The database connection */
   int i;             /* Next unread byte of zSql[] */
@@ -748,12 +747,12 @@ char *sqlite3Normalize(
   int j;             /* Bytes of normalized SQL generated so far */
   sqlite3_str *pStr; /* The normalized SQL string under construction */
 
-  if( zSql==0 || nSql==0 ) return 0;
   db = sqlite3VdbeDb(pVdbe);
   tokenType = -1;
   nParen = iStartIN = nParenAtIN = 0;
   pStr = sqlite3_str_new(db);
-  for(i=0; i<nSql && pStr->accError==0; i+=n){
+  assert( pStr!=0 );  /* sqlite3_str_new() never returns NULL */
+  for(i=0; zSql[i] && pStr->accError==0; i+=n){
     if( tokenType!=TK_SPACE ){
       prevType = tokenType;
     }

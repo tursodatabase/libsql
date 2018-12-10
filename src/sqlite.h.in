@@ -3629,14 +3629,13 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** deplete the limited store of lookaside memory. Future versions of
 ** SQLite may act on this hint differently.
 **
-** [[SQLITE_PREPARE_NORMALIZE]] ^(<dt>SQLITE_PREPARE_NORMALIZE</dt>
-** <dd>The SQLITE_PREPARE_NORMALIZE flag indicates that a normalized
-** representation of the SQL statement should be calculated and then
-** associated with the prepared statement, which can be obtained via
-** the [sqlite3_normalized_sql()] interface.)^  The semantics used to
-** normalize a SQL statement are unspecified and subject to change.
-** At a minimum, literal values will be replaced with suitable
-** placeholders.
+** [[SQLITE_PREPARE_NORMALIZE]] <dt>SQLITE_PREPARE_NORMALIZE</dt>
+** <dd>The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used
+** to be required for any prepared statement that wanted to use the
+** [sqlite3_normalized_sql()] interface.  However, the
+** [sqlite3_normalized_sql()] interface is now available to all
+** prepared statements, regardless of whether or not they use this
+** flag.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01

@@ -491,7 +491,7 @@ static int lookupName(
       sqlite3_log(SQLITE_WARNING,
         "double-quoted string literal: \"%w\"", zCol);
 #ifdef SQLITE_ENABLE_NORMALIZE
-      sqlite3VdbeAddDblquoteStr(db,pParse->pVdbe, zCol);
+      sqlite3VdbeAddDblquoteStr(db, pParse->pVdbe, zCol);
 #endif
       pExpr->op = TK_STRING;
       pExpr->y.pTab = 0;
