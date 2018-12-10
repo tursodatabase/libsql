@@ -86,12 +86,13 @@ proc step_rbu_legacy {target rbu} {
   set rc
 }
 
-proc do_rbu_vacuum_test {tn step} {
-  forcedelete state.db
-  uplevel [list do_test $tn.1 {
-    if {$step==0} { sqlite3rbu_vacuum rbu test.db state.db }
+proc do_rbu_vacuum_test {tn step {statedb state.db}} {
+  forcedelete $statedb
+  if {$statedb=="" && $step==1} breakpoint
+  uplevel [list do_test $tn.1 [string map [list %state% $statedb] {
+    if {$step==0} { sqlite3rbu_vacuum rbu test.db {%state%}}
     while 1 {
-      if {$step==1} { sqlite3rbu_vacuum rbu test.db state.db }
+      if {$step==1} { sqlite3rbu_vacuum rbu test.db {%state%}}
       set state [rbu state]
       check_prestep_state test.db $state
       set rc [rbu step]
@@ -100,7 +101,7 @@ proc do_rbu_vacuum_test {tn step} {
       if {$step==1} { rbu close }
     }
     rbu close
-  } {SQLITE_DONE}]
+  }] {SQLITE_DONE}]
 
   uplevel [list do_execsql_test $tn.2 {
     PRAGMA integrity_check
