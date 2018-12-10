@@ -799,6 +799,7 @@ char *sqlite3Normalize(
         break;
       }
       case TK_ID: {
+        iStartIN = 0;
         j = pStr->nChar;
         if( sqlite3Isquote(zSql[i]) ){
           char *zId = sqlite3DbStrNDup(db, zSql+i, n);
@@ -829,6 +830,10 @@ char *sqlite3Normalize(
         }
         break;
       }
+      case TK_SELECT: {
+        iStartIN = 0;
+        /* fall through */
+      }
       default: {
         if( sqlite3IsIdChar(zSql[i]) ) addSpaceSeparator(pStr);
         j = pStr->nChar;
@@ -841,6 +846,7 @@ char *sqlite3Normalize(
       }
     }
   }
+  if( tokenType!=TK_SEMI ) sqlite3_str_append(pStr, ";", 1);
   return sqlite3_str_finish(pStr);
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */

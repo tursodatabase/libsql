@@ -1,5 +1,5 @@
-C Refactor\sthe\ssqlite3_normalized_sql()\simplementation.\sThis\sis\sa\nwork-in-progress.\sThere\sare\sstill\sissues.
-D 2018-12-10T16:00:57.538
+C Fix\sissues\swith\sthe\snew\snormalizer.
+D 2018-12-10T16:49:33.233
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -570,7 +570,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c a43ecbafefceb475522f17d6f92d64193a755fe3f35615dfca13340c81ca3872
+F src/tokenize.c 8ae201c2e6955325e3d16e7bba4a74fb857d09c1e89274857e7d4b1cdb1f9af4
 F src/treeview.c 7b12ac059de54c939b6eb0dbffc9410c29c80d2470cee5cbe07d5ff9ea2d9253
 F src/trigger.c d3d78568f37fb2e6cdcc2d1e7b60156f15b0b600adec55b83c5d42f6cad250bd
 F src/update.c 1816d56c1bca1ba4e0ef98cac2f49be62858e9df1dc08844c7067eb41cc44274
@@ -1142,7 +1142,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
-F test/normalize.test 17ff5c732bc16b100f4e479da3a59735ed24f4ed574fccf8e46279fad182f81e
+F test/normalize.test 422027884ffb67ebba32bb78487c67cf67643496d19c077b07044bdba071a3f6
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1783,10 +1783,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77f150b8b46761f4f62f9d8926c10a95a70589a4525393fc16b321bd98c083a7
-R d755f31eec9cdb1a3415665c2aacb5ab
-T *branch * normalize-refactor
-T *sym-normalize-refactor *
-T -sym-trunk *
+P a4c890b0af9786295e6df05022009d8946550adb873535c610be805c2b7a4083
+R c326114a802cb731930ed1e3cc6ed39d
 U drh
-Z f90c6b85a4f2311f0e8b3d6a605ae025
+Z 6f97af92ba72d549a5865cb69df69952
