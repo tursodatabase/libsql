@@ -296,7 +296,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   ** indices that the user might have created.
   */
   if( iDb==0 && meta[BTREE_FILE_FORMAT-1]>=4 ){
-    db->flags &= ~SQLITE_LegacyFileFmt;
+    db->flags &= ~(u64)SQLITE_LegacyFileFmt;
   }
 
   /* Read the schema information out of the schema tables
@@ -713,92 +713,6 @@ static int sqlite3LockAndPrepare(
 }
 
 #ifdef SQLITE_ENABLE_NORMALIZE
-/*
-** Checks if the specified token is a table, column, or function name,
-** based on the databases associated with the statement being prepared.
-** If the function fails, zero is returned and pRc is filled with the
-** error code.
-*/
-static int shouldTreatAsIdentifier(
-  sqlite3 *db,        /* Database handle. */
-  const char *zToken, /* Pointer to start of token to be checked */
-  int nToken,         /* Length of token to be checked */
-  int *pRc            /* Pointer to error code upon failure */
-){
-  int bFound = 0;     /* Non-zero if token is an identifier name. */
-  int i, j;           /* Database and column loop indexes. */
-  Schema *pSchema;    /* Schema for current database. */
-  Hash *pHash;        /* Hash table of tables for current database. */
-  HashElem *e;        /* Hash element for hash table iteration. */
-  Table *pTab;        /* Database table for columns being checked. */
-  char *zId;          /* Zero terminated name of the identifier */
-  char zSpace[50];    /* Static space for the zero-terminated name */
-
-  if( nToken<sizeof(zSpace) ){
-    memcpy(zSpace, zToken, nToken);
-    zSpace[nToken] = 0;
-    zId = zSpace;
-  }else{
-    zId = sqlite3DbStrNDup(db, zToken, nToken);
-    if( zId==0 ) return 0;
-  }
-  if( sqlite3IsRowid(zId) ){
-    bFound = 1;
-    goto done;
-  }
-  if( nToken>0 ){
-    int hash = SQLITE_FUNC_HASH(sqlite3UpperToLower[(u8)zToken[0]], nToken);
-    if( sqlite3FunctionSearch(hash, zId) ){
-      bFound = 1;
-      goto done;
-    }
-  }
-  assert( db!=0 );
-  sqlite3_mutex_enter(db->mutex);
-  sqlite3BtreeEnterAll(db);
-  for(i=0; i<db->nDb; i++){
-    pHash = &db->aFunc;
-    if( sqlite3HashFind(pHash, zId) ){
-      bFound = 1;
-      break;
-    }
-    pSchema = db->aDb[i].pSchema;
-    if( pSchema==0 ) continue;
-    pHash = &pSchema->tblHash;
-    if( sqlite3HashFind(pHash, zId) ){
-      bFound = 1;
-      break;
-    }
-    for(e=sqliteHashFirst(pHash); e; e=sqliteHashNext(e)){
-      pTab = sqliteHashData(e);
-      if( pTab==0 ) continue;
-      pHash = pTab->pColHash;
-      if( pHash==0 ){
-        pTab->pColHash = pHash = sqlite3_malloc(sizeof(Hash));
-        if( pHash ){
-          sqlite3HashInit(pHash);
-          for(j=0; j<pTab->nCol; j++){
-            Column *pCol = &pTab->aCol[j];
-            sqlite3HashInsert(pHash, pCol->zName, pCol);
-          }
-        }else{
-          *pRc = SQLITE_NOMEM_BKPT;
-          bFound = 0;
-          goto done;
-        }
-      }
-      if( pHash && sqlite3HashFind(pHash, zId) ){
-        bFound = 1;
-        goto done;
-      }
-    }
-  }
-done:
-  sqlite3BtreeLeaveAll(db);
-  sqlite3_mutex_leave(db->mutex);
-  if( zId!=zSpace ) sqlite3DbFree(db, zId);
-  return bFound;
-}
 
 /*
 ** Attempt to estimate the final output buffer size needed for the fully
@@ -882,7 +796,8 @@ char *sqlite3Normalize(
   int prevTokenType = 0; /* Type of the previous token, except spaces */
   int n;                 /* Size of the next token */
   int nParen = 0;        /* Nesting level of parenthesis */
-  Hash inHash;           /* Table of parenthesis levels to output index. */
+  int iStartIN = 0;      /* Start of RHS of IN operator in z[] */
+  int nParenAtIN = 0;    /* Value of nParent at start of RHS of IN operator */
 
   db = sqlite3VdbeDb(pVdbe);
   assert( db!=0 );
@@ -890,7 +805,6 @@ char *sqlite3Normalize(
   nZ = estimateNormalizedSize(zSql, nSql);
   z = sqlite3DbMallocRawNN(db, nZ);
   if( z==0 ) goto normalizeError;
-  sqlite3HashInit(&inHash);
   for(i=j=0; i<nSql && zSql[i]; i+=n){
     int flags = 0;
     if( tokenType!=TK_SPACE ) prevTokenType = tokenType;
@@ -915,21 +829,18 @@ char *sqlite3Normalize(
         if( tokenType==TK_LP ){
           nParen++;
           if( prevTokenType==TK_IN ){
-            assert( nParen<nSql );
-            sqlite3HashInsert(&inHash, zSql+nParen, SQLITE_INT_TO_PTR(j));
+            iStartIN = j;
+            nParenAtIN = nParen;
           }
         }else{
-          int jj;
-          assert( nParen<nSql );
-          jj = SQLITE_PTR_TO_INT(sqlite3HashFind(&inHash, zSql+nParen));
-          if( jj>0 ){
-            sqlite3HashInsert(&inHash, zSql+nParen, 0);
-            assert( jj+6<nZ );
-            memcpy(z+jj+1, "?,?,?", 5);
-            j = jj+6;
+          if( iStartIN>0 && nParen==nParenAtIN ){
+            assert( iStartIN+6<nZ );
+            memcpy(z+iStartIN+1, "?,?,?", 5);
+            j = iStartIN+6;
             assert( nZ-1-j>=0 );
             assert( nZ-1-j<nZ );
             memset(z+j, 0, nZ-1-j);
+            iStartIN = 0;
           }
           nParen--;
         }
@@ -974,19 +885,13 @@ char *sqlite3Normalize(
           z[j++] = ' ';
         }
         if( tokenType==TK_ID ){
-          int i2 = i, n2 = n, rc = SQLITE_OK;
-          if( nParen>0 ){
-            assert( nParen<nSql );
-            sqlite3HashInsert(&inHash, zSql+nParen, 0);
+          if( zSql[i]=='"'
+           && sqlite3VdbeUsesDoubleQuotedString(db,pVdbe,zSql+i,n)
+          ){
+            z[j++] = '?';
+            break;
           }
-          if( flags&SQLITE_TOKEN_QUOTED ){ i2++; n2-=2; }
-          if( shouldTreatAsIdentifier(db, zSql+i2, n2, &rc)==0 ){
-            if( rc!=SQLITE_OK ) goto normalizeError;
-            if( sqlite3_keyword_check(zSql+i2, n2)==0 ){
-              z[j++] = '?';
-              break;
-            }
-          }
+          if( nParen==nParenAtIN ) iStartIN = 0;
         }
         copyNormalizedToken(zSql, i, n, flags, z, &j);
         break;
@@ -998,12 +903,10 @@ char *sqlite3Normalize(
   if( j>0 && z[j-1]!=';' ){ z[j++] = ';'; }
   z[j] = 0;
   assert( j<nZ && "two" );
-  sqlite3HashClear(&inHash);
   return z;
 
 normalizeError:
   sqlite3DbFree(db, z);
-  sqlite3HashClear(&inHash);
   return 0;
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */

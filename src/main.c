@@ -846,11 +846,11 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         if( aFlagOp[i].op==op ){
           int onoff = va_arg(ap, int);
           int *pRes = va_arg(ap, int*);
-          u32 oldFlags = db->flags;
+          u64 oldFlags = db->flags;
           if( onoff>0 ){
             db->flags |= aFlagOp[i].mask;
           }else if( onoff==0 ){
-            db->flags &= ~aFlagOp[i].mask;
+            db->flags &= ~(u64)aFlagOp[i].mask;
           }
           if( oldFlags!=db->flags ){
             sqlite3ExpirePreparedStatements(db, 0);
@@ -1317,7 +1317,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   /* Any deferred constraint violations have now been resolved. */
   db->nDeferredCons = 0;
   db->nDeferredImmCons = 0;
-  db->flags &= ~SQLITE_DeferFKs;
+  db->flags &= ~(u64)SQLITE_DeferFKs;
 
   /* If one has been configured, invoke the rollback-hook callback */
   if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){
@@ -2004,7 +2004,6 @@ void *sqlite3_trace(sqlite3 *db, void(*xTrace)(void*,const char*), void *pArg){
   sqlite3_mutex_enter(db->mutex);
   pOld = db->pTraceArg;
   db->mTrace = xTrace ? SQLITE_TRACE_LEGACY : 0;
-  if( db->xProfile ) db->mTrace |= SQLITE_TRACE_XPROFILE;
   db->xTrace = (int(*)(u32,void*,void*,void*))xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
@@ -2029,9 +2028,6 @@ int sqlite3_trace_v2(
   if( mTrace==0 ) xTrace = 0;
   if( xTrace==0 ) mTrace = 0;
   db->mTrace = mTrace;
-#ifndef SQLITE_OMIT_DEPRECATED
-  if( db->xProfile ) db->mTrace |= SQLITE_TRACE_XPROFILE;
-#endif
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
