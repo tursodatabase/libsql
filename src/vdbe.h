@@ -253,7 +253,7 @@ u8 sqlite3VdbePrepareFlags(Vdbe*);
 void sqlite3VdbeSetSql(Vdbe*, const char *z, int n, u8);
 #ifdef SQLITE_ENABLE_NORMALIZE
 void sqlite3VdbeAddDblquoteStr(sqlite3*,Vdbe*,const char*);
-int sqlite3VdbeUsesDoubleQuotedString(sqlite3*,Vdbe*,const char*,int);
+int sqlite3VdbeUsesDoubleQuotedString(Vdbe*,const char*);
 #endif
 void sqlite3VdbeSwap(Vdbe*,Vdbe*);
 VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);

@@ -4255,9 +4255,6 @@ void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
-#ifdef SQLITE_ENABLE_NORMALIZE
-int sqlite3GetTokenNormalized(const unsigned char *, int *, int *);
-#endif
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);
 int sqlite3CodeSubselect(Parse*, Expr *, int, int);

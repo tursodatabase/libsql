@@ -97,26 +97,16 @@ void sqlite3VdbeAddDblquoteStr(sqlite3 *db, Vdbe *p, const char *z){
 ** that identifier is really used as a string literal.
 */
 int sqlite3VdbeUsesDoubleQuotedString(
-  sqlite3 *db,            /* Used for transient malloc */
   Vdbe *pVdbe,            /* The prepared statement */
-  const char *zId,        /* The double-quoted identifier */
-  int nId                 /* Bytes in zId, which is not zero-terminated */
+  const char *zId         /* The double-quoted identifier, already dequoted */
 ){
-  char *z;
   DblquoteStr *pStr;
   assert( zId!=0 );
-  assert( zId[0]=='"' );
-  assert( nId>=2 );
-  assert( zId[nId-1]=='"' );
   if( pVdbe->pDblStr==0 ) return 0;
-  z = sqlite3DbStrNDup(db, zId, nId);
-  if( z==0 ) return 0;
-  sqlite3Dequote(z);
   for(pStr=pVdbe->pDblStr; pStr; pStr=pStr->pNextStr){
-    if( strcmp(z, pStr->z)==0 ) break;
+    if( strcmp(zId, pStr->z)==0 ) return 1;
   }
-  sqlite3DbFree(db, z);
-  return pStr!=0;
+  return 0;
 }
 #endif
 
