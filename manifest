@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\sversion\sof\smutexfree-shmlock\swith\sthis\sbranch.
-D 2018-12-10T15:58:59.639
+C Merge\slatest\smutexfree-shmlock\schanges\sinto\sthis\sbranch.
+D 2018-12-10T16:53:32.838
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -495,7 +495,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 9bcd767c7d946ff46cdea7c108f5ae6b5cb5acc44e5bb723887b48ec7cac2f50
+F src/os_unix.c 177e5490d3a3c702fac87ff6dd183b56a24fb5fabe76841c3bf8a03ad85ff43b
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 79b8ced46a3c32be19ab4b00d8836292e460411d283a333cb008923c69fbca6a
@@ -1796,7 +1796,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 280d1a72dc269b4402853159949d7a905d414786074f5d80e951c9341ebbd1b5 d2c785f94cc6b704ce29147399e2c473fd0f4ff377f1379bd29178bf6d127c1a
-R f5b63cbe630ed07dd28689601501e2bf
+P 6007abfe0935a47edc90ef34a4f0a8c4263365b4e2e790e015a195be87c9f6b4 b9a741519055a8560ec1d0ab7d0c15ff8db53e740011825506cd2ede11c956f0
+R 0d4f69b7321e017a524ef7e6c799dc7e
 U dan
-Z e88a5887eab7167d6e9a36274f0b233f
+Z 7b310a2bc179bf5031c1fdfa8fe699cc
