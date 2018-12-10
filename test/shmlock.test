@@ -104,7 +104,69 @@ if {[permutation]=="unix-excl"} {
   } {SQLITE_OK}
 
   vfs_shmlock db255 main exclusive unlock 4 1
+
+  for {set i 0} {$i < 256} {incr i} {
+    db$i close
+  }
 }
+
+sqlite3 db0 test.db
+sqlite3 db1 test.db
+do_test 3.1 { execsql { SELECT * FROM t1 } db0 } {1 2}
+do_test 3.2 { execsql { SELECT * FROM t1 } db1 } {1 2}
+
+set L(0) {n n n n n n n n}
+set L(1) {n n n n n n n n}
+proc random_lock_test {idx} {
+  global L
+  set iSlot [expr int(rand()*8)]
+  if {[expr int(rand()*2)]} {
+    # Unlock operation
+    if {[lindex $L($idx) $iSlot]!="n"} {
+      vfs_shmlock db$idx main [lindex $L($idx) $iSlot] unlock $iSlot 1
+      lset L($idx) $iSlot n
+    }
+  } else {
+    # Lock operation
+    if {[lindex $L($idx) $iSlot]=="n"} {
+      set locktype [lindex {e s} [expr int(rand()*2)]]
+      set n 1
+      if {$locktype=="e"} {
+        for {set l $iSlot} {$l<8 && [lindex $L($idx) $l]=="n"} {incr l} {}
+        set n [expr int(rand()*($l-$iSlot))+1]
+        # puts "iSlot=$iSlot l=$l L=$L($idx)"
+        # puts "$iSlot $n"
+      }
+      set res [vfs_shmlock db$idx main $locktype lock $iSlot $n]
+
+      set bBusy 0
+      for {set i $iSlot} {$i<($iSlot+$n)} {incr i} {
+        set other [lindex $L([expr ($idx+1)%2]) $i]
+        if {($other!="n" && $locktype=="e")||($other=="e" && $locktype=="s")} {
+          if {$res != "SQLITE_BUSY"} { error "BUSY not detected" }
+          set bBusy 1
+          break
+        } 
+      }
+
+      if {$bBusy==0} {
+        if {$res != "SQLITE_OK"} { error "BUSY false-positive" }
+        for {set i $iSlot} {$i<($iSlot+$n)} {incr i} {
+          lset L($idx) $i $locktype
+        }
+      }
+    }
+  }
+}
+
+set nStep 100000
+for {set i 0} {$i < $nStep} {incr i} {
+  random_lock_test 0
+  random_lock_test 1
+}
+
+db0 close
+db1 close
 
 finish_test
 
