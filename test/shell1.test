@@ -256,7 +256,7 @@ do_test shell1-3.1.3 {
 do_test shell1-3.1.4 {
   # too many arguments
   catchcmd "test.db" ".backup FOO BAR BAD"
-} {1 {Usage: .backup ?DB? ?--append? FILENAME}}
+} {1 {Usage: .backup ?DB? ?OPTIONS? FILENAME}}
 
 # .bail ON|OFF           Stop after hitting an error.  Default OFF
 do_test shell1-3.2.1 {
