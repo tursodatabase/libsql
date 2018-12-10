@@ -2797,19 +2797,14 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       assert( pWal->readLock>0 || pWal->hdr.mxFrame==0 );
       assert( pInfo->aReadMark[pWal->readLock]<=pSnapshot->mxFrame );
 
-      /* It is possible that there is a checkpointer thread running 
-      ** concurrent with this code. If this is the case, it may be that the
-      ** checkpointer has already determined that it will checkpoint 
+      /* If it were possible for a checkpointer thread to run concurrent 
+      ** with this code, it would be a problem. In this case, it could be
+      ** that the checkpointer has already determined that it will checkpoint 
       ** snapshot X, where X is later in the wal file than pSnapshot, but 
       ** has not yet set the pInfo->nBackfillAttempted variable to indicate 
-      ** its intent. To avoid the race condition this leads to, ensure that
-      ** there is no checkpointer process by taking a shared CKPT lock 
-      ** before checking pInfo->nBackfillAttempted.  
-      **
-      ** TODO: Does the aReadMark[] lock prevent a checkpointer from doing
-      **       this already?
-      */
-      rc = walLockShared(pWal, WAL_CKPT_LOCK);
+      ** its intent. Fortunately this is not possible, as the call to
+      ** sqlite3WalSnapshotOpen() that sets pWal->pSnapshot also takes a
+      ** SHARED lock on the checkpointer slot.  */
 
       if( rc==SQLITE_OK ){
         /* Check that the wal file has not been wrapped. Assuming that it has
@@ -2828,8 +2823,6 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
           rc = SQLITE_ERROR_SNAPSHOT;
         }
 
-        /* Release the shared CKPT lock obtained above. */
-        walUnlockShared(pWal, WAL_CKPT_LOCK);
         pWal->minFrame = 1;
       }
 
