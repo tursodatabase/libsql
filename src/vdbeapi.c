@@ -62,14 +62,16 @@ static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   sqlite3_int64 iNow;
   sqlite3_int64 iElapse;
   assert( p->startTime>0 );
-  assert( db->xProfile!=0 || (db->mTrace & SQLITE_TRACE_PROFILE)!=0 );
+  assert( (db->mTrace & (SQLITE_TRACE_PROFILE|SQLITE_TRACE_XPROFILE))!=0 );
   assert( db->init.busy==0 );
   assert( p->zSql!=0 );
   sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
   iElapse = (iNow - p->startTime)*1000000;
+#ifndef SQLITE_OMIT_DEPRECATED  	
   if( db->xProfile ){
     db->xProfile(db->pProfileArg, p->zSql, iElapse);
   }
+#endif
   if( db->mTrace & SQLITE_TRACE_PROFILE ){
     db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
   }
@@ -583,7 +585,7 @@ static int sqlite3Step(Vdbe *p){
     return SQLITE_NOMEM_BKPT;
   }
 
-  if( p->pc<=0 && p->expired ){
+  if( p->pc<0 && p->expired ){
     p->rc = SQLITE_SCHEMA;
     rc = SQLITE_ERROR;
     goto end_of_step;
@@ -602,7 +604,7 @@ static int sqlite3Step(Vdbe *p){
     );
 
 #ifndef SQLITE_OMIT_TRACE
-    if( (db->xProfile || (db->mTrace & SQLITE_TRACE_PROFILE)!=0)
+    if( (db->mTrace & (SQLITE_TRACE_PROFILE|SQLITE_TRACE_XPROFILE))!=0
         && !db->init.busy && p->zSql ){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
     }else{
@@ -629,16 +631,18 @@ static int sqlite3Step(Vdbe *p){
     db->nVdbeExec--;
   }
 
+  if( rc!=SQLITE_ROW ){
 #ifndef SQLITE_OMIT_TRACE
-  /* If the statement completed successfully, invoke the profile callback */
-  if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
+    /* If the statement completed successfully, invoke the profile callback */
+    checkProfileCallback(db, p);
 #endif
 
-  if( rc==SQLITE_DONE && db->autoCommit ){
-    assert( p->rc==SQLITE_OK );
-    p->rc = doWalCallbacks(db);
-    if( p->rc!=SQLITE_OK ){
-      rc = SQLITE_ERROR;
+    if( rc==SQLITE_DONE && db->autoCommit ){
+      assert( p->rc==SQLITE_OK );
+      p->rc = doWalCallbacks(db);
+      if( p->rc!=SQLITE_OK ){
+        rc = SQLITE_ERROR;
+      }
     }
   }
 
@@ -658,9 +662,9 @@ end_of_step:
        || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
   assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
-  if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 
-   && rc!=SQLITE_ROW 
-   && rc!=SQLITE_DONE 
+  if( rc!=SQLITE_ROW 
+   && rc!=SQLITE_DONE
+   && (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0
   ){
     /* If this statement was prepared using saved SQL and an 
     ** error has occurred, then return the error code in p->rc to the
@@ -1282,7 +1286,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   pVar = &p->aVar[i];
   sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
-  sqlite3Error(p->db, SQLITE_OK);
+  p->db->errCode = SQLITE_OK;
 
   /* If the bit corresponding to this variable in Vdbe.expmask is set, then 
   ** binding a new value to this variable invalidates the current query plan.
@@ -1708,7 +1712,13 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 */
 const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return p ? p->zNormSql : 0;
+  if( p==0 ) return 0;
+  if( p->zNormSql==0 && ALWAYS(p->zSql!=0) ){
+    sqlite3_mutex_enter(p->db->mutex);
+    p->zNormSql = sqlite3Normalize(p, p->zSql);
+    sqlite3_mutex_leave(p->db->mutex);
+  }
+  return p->zNormSql;
 }
 #endif /* SQLITE_ENABLE_NORMALIZE */
 

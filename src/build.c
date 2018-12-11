@@ -227,7 +227,7 @@ void sqlite3FinishCoding(Parse *pParse){
   if( v && pParse->nErr==0 && !db->mallocFailed ){
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
-    if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
+    assert( pParse->pAinc==0 || pParse->nTab>0 );
     sqlite3VdbeMakeReady(v, pParse);
     pParse->rc = SQLITE_DONE;
   }else{
@@ -636,12 +636,6 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
 
   /* Delete the Table structure itself.
   */
-#ifdef SQLITE_ENABLE_NORMALIZE
-  if( pTable->pColHash ){
-    sqlite3HashClear(pTable->pColHash);
-    sqlite3_free(pTable->pColHash);
-  }
-#endif
   sqlite3DeleteColumnNames(db, pTable);
   sqlite3DbFree(db, pTable->zName);
   sqlite3DbFree(db, pTable->zColAff);
