@@ -2405,7 +2405,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
     z = sqlite3ErrStr(SQLITE_NOMEM_BKPT);
   }else{
     testcase( db->pErr==0 );
-    z = (char*)sqlite3_value_text(db->pErr);
+    z = db->errCode ? (char*)sqlite3_value_text(db->pErr) : 0;
     assert( !db->mallocFailed );
     if( z==0 ){
       z = sqlite3ErrStr(db->errCode);

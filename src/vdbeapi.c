@@ -1286,7 +1286,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   pVar = &p->aVar[i];
   sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
-  sqlite3Error(p->db, SQLITE_OK);
+  p->db->errCode = SQLITE_OK;
 
   /* If the bit corresponding to this variable in Vdbe.expmask is set, then 
   ** binding a new value to this variable invalidates the current query plan.
