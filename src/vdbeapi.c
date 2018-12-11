@@ -585,7 +585,7 @@ static int sqlite3Step(Vdbe *p){
     return SQLITE_NOMEM_BKPT;
   }
 
-  if( p->pc<=0 && p->expired ){
+  if( p->pc<0 && p->expired ){
     p->rc = SQLITE_SCHEMA;
     rc = SQLITE_ERROR;
     goto end_of_step;
@@ -662,9 +662,9 @@ end_of_step:
        || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
   assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
-  if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 
-   && rc!=SQLITE_ROW 
-   && rc!=SQLITE_DONE 
+  if( rc!=SQLITE_ROW 
+   && rc!=SQLITE_DONE
+   && (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0
   ){
     /* If this statement was prepared using saved SQL and an 
     ** error has occurred, then return the error code in p->rc to the
