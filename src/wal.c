@@ -362,7 +362,6 @@
 ** recovery procedure still takes the same exclusive lock on the entire
 ** range of SQLITE_SHM_NLOCK shm-locks. This works because the read-locks
 ** above use four of the six read-locking slots used by legacy wal mode.
-** See the header comment for function walLockReader() for details.
 **
 ** STARTUP/RECOVERY
 **
@@ -473,16 +472,20 @@ int sqlite3WalTrace = 0;
 ** is held, or else is the index of the read-mark on which a lock is
 ** held.
 **
-** In wal2 mode, Wal.readLock must be set to one of the following values.
-** A value of -1 still indicates that no read-lock is held, but the other
-** values are symbolic. See the implementation of walLockReader() for
-** details of how the symbols map to OS level locks.
+** In wal2 mode, a value of -1 still indicates that no read-lock is held.
+** And a non-zero value still represents the index of the read-mark on
+** which a lock is held. There are two differences:
+**
+**   1. wal2 mode never uses read-mark 0.
+**
+**   2. locks on each read-mark have a different interpretation, as 
+**      indicated by the symbolic names below.
 */
 #define WAL_LOCK_NONE        -1
 #define WAL_LOCK_PART1        1
 #define WAL_LOCK_PART1_FULL2  2
-#define WAL_LOCK_PART2        3
-#define WAL_LOCK_PART2_FULL1  4
+#define WAL_LOCK_PART2_FULL1  3
+#define WAL_LOCK_PART2        4
 
 /* 
 ** This constant is used in wal2 mode only.
@@ -1109,36 +1112,6 @@ static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
                          SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE);
   WALTRACE(("WAL%p: release EXCLUSIVE-%s cnt=%d\n", pWal,
              walLockName(lockIdx), n));
-}
-
-/*
-** This function is used to take and release read-locks in wal2 mode.
-**
-** Use of WAL_READ_LOCK(x) slots for (1<=x<=4).
-**
-** 1) Partial read of *-wal-1   (blocks checkpointer from checkpointing)
-** 2) Full read of *-wal-2      (blocks writer from writing)
-** 3) Partial read of *-wal-2   (blocks checkpointer from checkpointing)
-** 4) Full read of *-wal-1      (blocks writer from writing)
-*/
-static int walLockReader(Wal *pWal, int eLock, int bLock){
-  int i;                          /* Index of first readmark to lock */
-  int n;                          /* Number of readmarks to lock */
-
-  assert( pWal->hdr.iVersion==WAL_VERSION2 );
-  if( pWal->exclusiveMode ) return SQLITE_OK;
-
-  switch( eLock ){
-    case WAL_LOCK_PART1      : i = 1; n = 1; break; 
-    case WAL_LOCK_PART1_FULL2: i = 1; n = 2; break; 
-    case WAL_LOCK_PART2      : i = 3; n = 1; break; 
-    case WAL_LOCK_PART2_FULL1: i = 3; n = 2; break; 
-    default: assert( !"cannot happen" );
-  }
-
-  return sqlite3OsShmLock(pWal->pDbFd, WAL_READ_LOCK(i), n,
-      SQLITE_SHM_SHARED | (bLock ? SQLITE_SHM_LOCK : SQLITE_SHM_UNLOCK) 
-  );
 }
 
 /*
@@ -2252,6 +2225,68 @@ static void walRestartHdr(Wal *pWal, u32 salt1){
 }
 
 /*
+** This function is used in wal2 mode.
+**
+** This function is called when writer pWal is just about to start 
+** writing out frames. Parameter iApp is the current wal file. The "other" wal
+** file (wal file !iApp) has been fully checkpointed. This function returns
+** SQLITE_OK if there are no readers preventing the writer from switching to
+** the other wal file. Or SQLITE_BUSY if there are.
+*/
+static int wal2RestartOk(Wal *pWal, int iApp){
+  /* The other wal file (wal file !iApp) can be overwritten if there
+  ** are no readers reading from it - no "full" or "partial" locks.
+  ** Technically speaking it is not possible for any reader to hold
+  ** a "part" lock, as this would have prevented the file from being
+  ** checkpointed. But checking anyway doesn't hurt. The following
+  ** is equivalent to:
+  **
+  **   if( iApp==0 ) eLock = WAL_LOCK_PART1_FULL2;
+  **   if( iApp==1 ) eLock = WAL_LOCK_PART1;
+  */
+  int eLock = 1 + (iApp==0);
+
+  assert( WAL_LOCK_PART1==1 );
+  assert( WAL_LOCK_PART1_FULL2==2 );
+  assert( WAL_LOCK_PART2_FULL1==3 );
+  assert( WAL_LOCK_PART2==4 );
+
+  assert( iApp!=0 || eLock==WAL_LOCK_PART1_FULL2 );
+  assert( iApp!=1 || eLock==WAL_LOCK_PART1 );
+
+  return walLockExclusive(pWal, WAL_READ_LOCK(eLock), 3);
+}
+static void wal2RestartFinished(Wal *pWal, int iApp){
+  walUnlockExclusive(pWal, WAL_READ_LOCK(1 + (iApp==0)), 3);
+}
+
+/*
+** This function is used in wal2 mode.
+**
+** This function is called when a checkpointer wishes to checkpoint wal
+** file iCkpt. It takes the required lock and, if successful, returns
+** SQLITE_OK. Otherwise, an SQLite error code (e.g. SQLITE_BUSY). If this
+** function returns SQLITE_OK, it is the responsibility of the caller
+** to invoke wal2CheckpointFinished() to release the lock.
+*/
+static int wal2CheckpointOk(Wal *pWal, int iCkpt){
+  int eLock = 1 + (iCkpt*2);
+
+  assert( WAL_LOCK_PART1==1 );
+  assert( WAL_LOCK_PART1_FULL2==2 );
+  assert( WAL_LOCK_PART2_FULL1==3 );
+  assert( WAL_LOCK_PART2==4 );
+
+  assert( iCkpt!=0 || eLock==WAL_LOCK_PART1 );
+  assert( iCkpt!=1 || eLock==WAL_LOCK_PART2_FULL1 );
+
+  return walLockExclusive(pWal, WAL_READ_LOCK(eLock), 2);
+}
+static void wal2CheckpointFinished(Wal *pWal, int iCkpt){
+  walUnlockExclusive(pWal, WAL_READ_LOCK(1 + (iCkpt*2)), 2);
+}
+
+/*
 ** Copy as much content as we can from the WAL back into the database file
 ** in response to an sqlite3_wal_checkpoint() request or the equivalent.
 **
@@ -2318,7 +2353,7 @@ static int walCheckpoint(
     ** preventing this checkpoint operation. If one is found, return
     ** early.  */
     if( bWal2 ){
-      rc = walLockExclusive(pWal, WAL_READ_LOCK(1 + iCkpt*2), 1);
+      rc = wal2CheckpointOk(pWal, iCkpt);
       if( rc!=SQLITE_OK ) return rc;
     }
 
@@ -2367,9 +2402,9 @@ static int walCheckpoint(
       assert( rc==SQLITE_OK || pIter==0 );
     }
 
-    if( pIter
-     && (rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(0),1))==SQLITE_OK
-    ){
+    if( pIter && (bWal2 
+     || (rc = walBusyLock(pWal, xBusy, pBusyArg,WAL_READ_LOCK(0),1))==SQLITE_OK
+    )){
       u32 nBackfill = pInfo->nBackfill;
 
       assert( bWal2==0 || nBackfill==0 );
@@ -2434,7 +2469,9 @@ static int walCheckpoint(
       }
 
       /* Release the reader lock held while backfilling */
-      walUnlockExclusive(pWal, WAL_READ_LOCK(bWal2 ? 1 + iCkpt*2 : 0), 1);
+      if( bWal2==0 ){
+        walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
+      }
     }
 
     if( rc==SQLITE_BUSY ){
@@ -2442,6 +2479,7 @@ static int walCheckpoint(
       ** just because there are active readers.  */
       rc = SQLITE_OK;
     }
+    if( bWal2 ) wal2CheckpointFinished(pWal, iCkpt);
   }
 
   /* If this is an SQLITE_CHECKPOINT_RESTART or TRUNCATE operation, and the
@@ -3060,18 +3098,27 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   assert( pWal->apWiData[0]!=0 );
   pInfo = walCkptInfo(pWal);
   if( isWalMode2(pWal) ){
-    int eLock = 1 + (walidxGetFile(&pWal->hdr)*2);
-    if( pInfo->nBackfill==0 ){
-      eLock += walidxGetMxFrame(&pWal->hdr, !walidxGetFile(&pWal->hdr))>0;
-    }
-    rc = walLockReader(pWal, eLock, 1);
+    /* This connection needs a "part" lock on the current wal file and, 
+    ** unless pInfo->nBackfill is set to indicate that it has already been
+    ** checkpointed, a "full" lock on the other wal file.  */
+    int iWal = walidxGetFile(&pWal->hdr);
+    int nBackfill = pInfo->nBackfill || walidxGetMxFrame(&pWal->hdr, !iWal)==0;
+    int eLock = 1 + (iWal*2) + (nBackfill==iWal);
+
+    assert( nBackfill==0 || nBackfill==1 );
+    assert( iWal==0 || iWal==1 );
+    assert( iWal!=0 || nBackfill!=1 || eLock==WAL_LOCK_PART1 );
+    assert( iWal!=0 || nBackfill!=0 || eLock==WAL_LOCK_PART1_FULL2 );
+    assert( iWal!=1 || nBackfill!=1 || eLock==WAL_LOCK_PART2 );
+    assert( iWal!=1 || nBackfill!=0 || eLock==WAL_LOCK_PART2_FULL1 );
+
+    rc = walLockShared(pWal, WAL_READ_LOCK(eLock));
     if( rc!=SQLITE_OK ){
       return rc;
     }
-
     walShmBarrier(pWal);
     if( memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) ){
-      walLockReader(pWal, eLock, 0);
+      walUnlockShared(pWal, WAL_READ_LOCK(eLock));
       return WAL_RETRY;
     }else{
       pWal->readLock = eLock;
@@ -3403,11 +3450,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 void sqlite3WalEndReadTransaction(Wal *pWal){
   sqlite3WalEndWriteTransaction(pWal);
   if( pWal->readLock!=WAL_LOCK_NONE ){
-    if( isWalMode2(pWal) ){
-      (void)walLockReader(pWal, pWal->readLock, 0);
-    }else{
-      walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-    }
+    walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->readLock = WAL_LOCK_NONE;
   }
 }
@@ -3795,33 +3838,6 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 }
 
 /*
-** This function is used in wal2 mode.
-**
-** This function is called when writer pWal is just about to start 
-** writing out frames. The "other" wal file (wal file !pWal->hdr.iAppend)
-** has been fully checkpointed. This function returns SQLITE_OK if there
-** are no readers preventing the writer from switching to the other wal
-** file. Or SQLITE_BUSY if there are.
-*/
-static int walRestartOk(Wal *pWal){
-  int rc;                                        /* Return code */
-  int iApp = walidxGetFile(&pWal->hdr);          /* Current WAL file */
-
-  /* No reader can be doing a "partial" read of wal file !iApp - in that
-  ** case it would not have been possible to checkpoint the file. So
-  ** it is only necessary to test for "full" readers. See the comment
-  ** above walLockReader() function for exactly what this means in terms
-  ** of locks.  */
-  int i = (iApp==0) ? 2 : 4;
-
-  rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
-  if( rc==SQLITE_OK ){
-    walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
-  }
-  return rc;
-}
-
-/*
 ** This function is called just before writing a set of frames to the log
 ** file (see sqlite3WalFrames()). It checks to see if, instead of appending
 ** to the current log file, it is possible and desirable to switch to the
@@ -3848,19 +3864,20 @@ static int walRestartLog(Wal *pWal){
     if( walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize ){
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
       if( walidxGetMxFrame(&pWal->hdr, !iApp)==0 || pInfo->nBackfill ){
-        rc = walRestartOk(pWal);
+        rc = wal2RestartOk(pWal, iApp);
         if( rc==SQLITE_OK ){
-          iApp = !iApp;
+          int iNew = !iApp;
           pWal->nCkpt++;
-          walidxSetFile(&pWal->hdr, iApp);
-          walidxSetMxFrame(&pWal->hdr, iApp, 0);
+          walidxSetFile(&pWal->hdr, iNew);
+          walidxSetMxFrame(&pWal->hdr, iNew, 0);
           sqlite3Put4byte((u8*)&pWal->hdr.aSalt[0], pWal->hdr.aFrameCksum[0]);
           sqlite3Put4byte((u8*)&pWal->hdr.aSalt[1], pWal->hdr.aFrameCksum[1]);
           walIndexWriteHdr(pWal);
           pInfo->nBackfill = 0;
-          walLockReader(pWal, pWal->readLock, 0);
-          pWal->readLock = iApp ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
-          rc = walLockReader(pWal, pWal->readLock, 1);
+          wal2RestartFinished(pWal, iApp);
+          walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+          pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
+          rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
         }else if( rc==SQLITE_BUSY ){
           rc = SQLITE_OK;
         }
@@ -4490,11 +4507,7 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
   if( op==0 ){
     if( pWal->exclusiveMode ){
       pWal->exclusiveMode = WAL_NORMAL_MODE;
-      if( isWalMode2(pWal) ){
-        rc = walLockReader(pWal, pWal->readLock, 1);
-      }else{
-        rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-      }
+      rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
       if( rc!=SQLITE_OK ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
@@ -4506,11 +4519,7 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
   }else if( op>0 ){
     assert( pWal->exclusiveMode==WAL_NORMAL_MODE );
     assert( pWal->readLock>=0 );
-    if( isWalMode2(pWal) ){
-      walLockReader(pWal, pWal->readLock, 0);
-    }else{
-      walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-    }
+    walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
     rc = 1;
   }else{

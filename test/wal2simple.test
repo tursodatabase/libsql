@@ -243,8 +243,6 @@ do_test 6.1 {
   }
 } {}
 
-puts "[file size test.db-wal] [file size test.db-wal2]"
-
 do_test 6.2.1 {
   foreach f [glob -nocomplain test.db2*] { forcedelete $f }
   forcecopy test.db-wal2 test.db2-wal2
