@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3ExprDup()\sfunction\sso\sthat\sit\scorrectly\sduplicates\sthe\nWindow\sobject\slist\son\sa\sSelect\sthat\scontains\swindow\sfunctions.\s\sFix\nfor\sticket\s[f09fcd17810f65f717].
-D 2018-12-07T02:01:53.097
+C Do\snot\suse\sa\spartial\sindex\sas\sa\stable\sscan\sin\san\sIN\soperator.\nFix\sfor\sticket\s[1d958d90596593a77420e59].
+D 2018-12-12T11:50:28.132
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -458,7 +458,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c f7938125847e8ef485448db5fbad29acb2991381a02887dd854c1617315ab9fb
-F src/expr.c a0cf3628dd46cebd877b4d22e6c6a828ae9b79b7bf3432501c1ddd0a351d150b
+F src/expr.c 1c2157f34cd8ad26d757df245def39438c2b8d2a629910d38e1fb9b3f9995be7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -1013,7 +1013,7 @@ F test/index2.test f835d5e13ca163bd78c4459ca15fd2e4ed487407
 F test/index3.test 51685f39345462b84fcf77eb8537af847fdf438cc96b05c45d6aaca4e473ade0
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
-F test/index6.test d07ea75b8c21f125c6f325522e8df8c05c91e9251ec923a31d0582b2ba4a617d
+F test/index6.test 7cb66c4e54da73f51e874dcf4a761411c0f8f3f5a4fdf7022d8a505b0194296b
 F test/index7.test 72b59b8ddc5c13f4962886b4011eb9975014317d17ef36c6297921362fb7dd98
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
@@ -1779,8 +1779,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e97e053b788e51b662ca11c65ee335e44c78dbaab1223be26df7dce749018075
-Q +db5ed2268eda2e6c1df15cd8df4176463d89103b8fda33ba9a0604f0d92bd4da
-R b58e9d801d6e1e07e9e316e3001b17e4
+P 65aafb5531e8f00dc836b0851e9d51c742f9700737783391b853c7f701ca4880
+Q +15bc915dd7ae25bfdfbe357c3792db3639799e4d121c6b5b24297af2d6d7129e
+R 646cc4a52a443215dd2b55487ddab839
 U drh
-Z e992948286dfe5dd102a987839fef56e
+Z 13f8afcb3037ec039a814f8af874dc7d
