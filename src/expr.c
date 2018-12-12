@@ -4778,7 +4778,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     }
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( ALWAYS((combinedFlags & EP_TokenOnly)==0) ){
+  if( (combinedFlags & EP_TokenOnly)==0 ){
     if( combinedFlags & EP_xIsSelect ) return 2;
     if( (combinedFlags & EP_FixedCol)==0
      && sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
