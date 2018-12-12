@@ -1204,14 +1204,9 @@ static int walExternalDecode(u32 iExternal, u32 *piRead){
       iExternal - (iHash/2) * HASHTABLE_NPAGE;
     return 0;
   }
-  if( iHash==0 ){
-    *piRead = iExternal;
-    return 0;
-  }else{
-    *piRead = iExternal - HASHTABLE_NPAGE_ONE - ((iHash-1)/2) * HASHTABLE_NPAGE;
-  }
 
-  return (iHash % 2);
+  *piRead = iExternal - HASHTABLE_NPAGE_ONE - ((iHash-1)/2) * HASHTABLE_NPAGE;
+  return 1;
 }
 
 /*
