@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sin\ssqlite3_step().
-D 2018-12-11T12:51:46.910
+C OSSFuzz\sfound\sa\scase\swhere\san\sassert()\sinside\ssqlite3ExprCompare()\scan\sbe\ntrue.\s\sTest\scase\sadded\sto\sTH3.
+D 2018-12-12T11:23:40.421
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -459,7 +459,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c f7938125847e8ef485448db5fbad29acb2991381a02887dd854c1617315ab9fb
-F src/expr.c 494a778ee193d99127c72adefcec3e8e133f482acf5f1c267652a8f51029e9ae
+F src/expr.c d18469f0b1caf8f6835c29397c0e1723d1693d8665f462121834b39f3eb02ff6
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 972a4ba14296bef2303a0abbad1e3d82bc3c61f9e6ce4e8e9528bdee68748812
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -1783,7 +1783,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1dc0c3df32572f09265fc73eeaa0748159e0e9523b9b2d6768b834a29c909968
-R 3a0f12a0379dcf87f0d4dac5a67e82c1
+P d1db8d5894450b24bb0335983503d9bbf6cc48a0ae4b83291283fb2d32b6b25b
+R 472ee8babd9d2c33001af468ad5dd860
 U drh
-Z a9bab00c03f66c3893504302653c1fce
+Z 65f270511367c67928ff0b19217a0fac
