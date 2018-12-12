@@ -1,5 +1,5 @@
-C Change\sthe\sway\swal2\slocks\swork\sto\sensure\sa\sreader\sonly\sever\shas\sto\slock\sa\nsingle\sslot.
-D 2018-12-11T17:56:23.255
+C Add\stests\sto\sensure\sthat\seach\sof\sthe\s4\swal\sread-locks\sdoes\swhat\sit\sis\ssupposed\sto.
+D 2018-12-12T19:04:19.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -1597,7 +1597,7 @@ F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
 F test/wal2.test 155b9efa999bdb38ce1cd729b9a4fcdbffd6b88be27f039bad1d2929d287d918
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
-F test/wal2simple.test ce30899ab9c396d0d91905f401bb9a591f12bdf0b6b6bd5d1a62b6f560eac6e3
+F test/wal2simple.test 96206c98bf64ab20ec00a1c0f6c709e258b98b39f2149889361f31966ce5a703
 F test/wal2snapshot.test 95a919e1c73dee0e0212d10931d03cc1116f68a0ff603163e551aaa5ac7025c1
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1787,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8dd98a39ea061dea264a7d81153f7b1be2f81b554b30d0ce289897c802209bd
-R 7649521e36559a5f6fcaed801161c713
+P 18b2c23ac53d985ccc5798ea2d92fb75644b857c373fb490e0d04d5d0194a3d5
+R 234c1705f2bf2a9abb44249d0ee7aea0
 U dan
-Z 45541997f2aea4861e4215e9e1638ee2
+Z d3854fa2ddea650fc625b1a32d28af78
