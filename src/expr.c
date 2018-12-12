@@ -141,8 +141,8 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   while( p ){
     int op = p->op;
     if( p->flags & EP_Generic ) break;
-    if( (op==TK_AGG_COLUMN || op==TK_COLUMN
-          || op==TK_REGISTER || op==TK_TRIGGER)
+    if( op==TK_REGISTER ) op = p->op2;
+    if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_TRIGGER)
      && p->y.pTab!=0
     ){
       /* op==TK_REGISTER && p->y.pTab!=0 happens when pExpr was originally
@@ -158,7 +158,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       p = p->pLeft;
       continue;
     }
-    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
+    if( op==TK_COLLATE ){
       pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
