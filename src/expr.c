@@ -4792,8 +4792,10 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
      && sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
     if( sqlite3ExprCompare(pParse, pA->pRight, pB->pRight, iTab) ) return 2;
     if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
-    assert( (combinedFlags & EP_Reduced)==0 );
-    if( pA->op!=TK_STRING && pA->op!=TK_TRUEFALSE ){
+    if( pA->op!=TK_STRING
+     && pA->op!=TK_TRUEFALSE
+     && (combinedFlags & EP_Reduced)==0
+    ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
