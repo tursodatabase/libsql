@@ -1011,6 +1011,7 @@ struct ShellState {
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
+  int lineno;            /* Line number of last line read from in */
   FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
@@ -3734,7 +3735,7 @@ int deduceDatabaseType(const char *zName, int dfltZip){
 */
 static unsigned char *readHexDb(ShellState *p, int *pnData){
   unsigned char *a = 0;
-  int nLine = 1;
+  int nLine;
   int n = 0;
   int pgsz = 0;
   int iOffset = 0;
@@ -3742,17 +3743,20 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   int rc;
   FILE *in;
   unsigned char x[16];
-  char zLine[100];
+  char zLine[1000];
   if( p->zDbFilename ){
     in = fopen(p->zDbFilename, "r");
     if( in==0 ){
       utf8_printf(stderr, "cannot open \"%s\" for reading\n", p->zDbFilename);
       return 0;
     }
+    nLine = 0;
   }else{
     in = p->in;
+    nLine = p->lineno;
   }
   *pnData = 0;
+  nLine++;
   if( fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
@@ -3767,7 +3771,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     utf8_printf(stderr, "invalid pagesize\n");
     goto readHexDb_error;
   }
-  for(nLine=2; fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+  for(nLine++; fgets(zLine, sizeof(zLine), in)!=0; nLine++){
     rc = sscanf(zLine, "| page %d offset %d", &j, &k);
     if( rc==2 ){
       iOffset = k;
@@ -3790,7 +3794,11 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     }
   }
   *pnData = n;
-  if( in!=p->in ) fclose(in);
+  if( in!=p->in ){
+    fclose(in);
+  }else{
+    p->lineno = nLine;
+  }
   return a;
 
 readHexDb_error:
@@ -3798,8 +3806,10 @@ readHexDb_error:
     fclose(in);
   }else{
     while( fgets(zLine, sizeof(zLine), p->in)!=0 ){
+      nLine++;
       if(strncmp(zLine, "| end ", 6)==0 ) break;
     }
+    p->lineno = nLine;
   }
   sqlite3_free(a);
   utf8_printf(stderr,"Error on line %d of --hexdb input\n", nLine);
@@ -6972,6 +6982,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 ){
     FILE *inSaved = p->in;
+    int savedLineno = p->lineno;
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .read FILE\n");
       rc = 1;
@@ -6986,6 +6997,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       fclose(p->in);
     }
     p->in = inSaved;
+    p->lineno = savedLineno;
   }else
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "restore", n)==0 ){
@@ -8335,9 +8347,9 @@ static int process_input(ShellState *p){
   int nSqlPrior = 0;        /* Bytes of zSql[] used by prior line */
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
-  int lineno = 0;           /* Current line number */
   int startline = 0;        /* Line number for start of current input */
 
+  p->lineno = 0;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
     fflush(p->out);
     zLine = one_input_line(p->in, zLine, nSql>0);
@@ -8350,7 +8362,7 @@ static int process_input(ShellState *p){
       if( p->in!=0 ) break;
       seenInterrupt = 0;
     }
-    lineno++;
+    p->lineno++;
     if( nSql==0 && _all_whitespace(zLine) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
       continue;
@@ -8382,7 +8394,7 @@ static int process_input(ShellState *p){
       for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
       assert( nAlloc>0 && zSql!=0 );
       memcpy(zSql, zLine+i, nLine+1-i);
-      startline = lineno;
+      startline = p->lineno;
       nSql = nLine-i;
     }else{
       zSql[nSql++] = '\n';
@@ -8495,6 +8507,7 @@ static void process_sqliterc(
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
   FILE *inSaved = p->in;
+  int savedLineno = p->lineno;
 
   if (sqliterc == NULL) {
     home_dir = find_home_dir(0);
@@ -8515,6 +8528,7 @@ static void process_sqliterc(
     fclose(p->in);
   }
   p->in = inSaved;
+  p->lineno = savedLineno;
   sqlite3_free(zBuf);
 }
 

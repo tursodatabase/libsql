@@ -1,5 +1,5 @@
-C Fix\sthe\sCLI\sso\sthat\sthe\s".open\s--hexdb"\scommand\sworks\seven\sif\sit\sis\scontained\nin\sa\ssubscript\sthat\sis\sread\susing\s".read".
-D 2018-12-13T18:30:01.890
+C Fix\sthe\sCLI\sto\skeep\sproper\strack\sof\sinput\sline\snumbers\sfor\suse\sin\serror\nmessages,\seven\safter\sprocessing\sin-line\shex\sdatabase\sinputs\susing\n".open\s--hexdb".
+D 2018-12-13T18:59:30.657
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2f1b61ac62689ca4e9cbff9fdb359578ea37ddd9252355ec0b7b9700ad56fe90
@@ -508,7 +508,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c abd65c518c198400193c6319a70c0d722fa30a35be89dc898917ff6489edf017
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
-F src/shell.c.in b998c6d78bc886e900780abf8ef89fc33c0884058ee6583ff466e52a273872e6
+F src/shell.c.in a9b26ab3925e179f4f1a3a910ffe634195bc6becab8aa3e02bbb0dc652d30543
 F src/sqlite.h.in 92fd656c26cc76de9fa8c5bf1a473066e3b5c6da345a447679f0f44de1aa4edd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1786,7 +1786,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3bf1d3ea5f748c5142c2403813fdace5aedc1fc68f0dcd5eae40a2fe763fedb
-R a7af747c108542ed7a9f41235cf0fca7
+P 67a87399b8ad8f1ce3052ee3159906f5c6df3d7b5691b3acac856bd2f1c82088
+R f859719ab1a18f7f99e4d481a8b5bfc0
 U drh
-Z c11351b3fcf7b9c9d8ba68269cb05836
+Z 99cc51545a333a02cea3f7ae2232a64b
