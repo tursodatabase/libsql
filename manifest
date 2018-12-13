@@ -1,5 +1,5 @@
-C Fix\sthe\sCLI\sto\skeep\sproper\strack\sof\sinput\sline\snumbers\sfor\suse\sin\serror\nmessages,\seven\safter\sprocessing\sin-line\shex\sdatabase\sinputs\susing\n".open\s--hexdb".
-D 2018-12-13T18:59:30.657
+C Add\sthe\s"decode_hexdb"\sTCL\scommand\sto\stestfixture.\s\sAdd\sthe\sdbfuzz001.test\nmodule\sto\sdemonstration\show\sto\suse\sdecode_hexdb\sto\sdeserialize\sa\sdbtotxt\ndatabase\sdescription\sfor\suse\sin\sa\scorruption\stest.
+D 2018-12-13T20:49:43.663
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2f1b61ac62689ca4e9cbff9fdb359578ea37ddd9252355ec0b7b9700ad56fe90
@@ -517,7 +517,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c e72862a271348d779672b45a730c33fd0c535e630ff927e8ce4a0c908d1d28c6
-F src/test1.c 5390e5afb31fed61f72d0be0cb1b322d198a6e03fc13ff245ae76d17b4dcf2e9
+F src/test1.c f78dcd39d5cad63d33306bb963354f976007968bc95c45bc9fdfaeb2e1ec0eae
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -773,6 +773,7 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
+F test/dbfuzz001.test 4c3952c8ecef5fa9e099f0fa461cea6b810e75da7647a41a5ad12cd5ac68accf
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c b8ed9b32a1f287505e55970e55203bedcb9170f137ecefa2254033c9faccdfba
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
@@ -1786,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67a87399b8ad8f1ce3052ee3159906f5c6df3d7b5691b3acac856bd2f1c82088
-R f859719ab1a18f7f99e4d481a8b5bfc0
+P 7ffa9858162774cba03a565a7b65135d9e8bfea726af1a29de6898f66c4b1261
+R 4be37804fa8bc77480b40b0d2da6c083
 U drh
-Z 99cc51545a333a02cea3f7ae2232a64b
+Z a0d1cca2acec8898665f02aaf70dc018
