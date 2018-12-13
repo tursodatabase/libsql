@@ -669,7 +669,7 @@ ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.
              $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
 
 sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
-	$(CC) $(CFLAGS) -I. -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
 
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)

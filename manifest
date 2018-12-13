@@ -1,8 +1,8 @@
-C Fix\sanother\sproblem\sfound\sby\sMatthew\sDenton's\snew\sfuzzer.
-D 2018-12-12T21:34:17.884
+C Fix\sthe\sMakefile\sso\sthat\sit\shonors\sCFLAGS\swhen\sbuilding\ssessionfuzz.
+D 2018-12-13T12:28:01.144
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
+F Makefile.in 557b9d415b2483d77686a0cb5bbafff7f221eece30c40980fa6d592358cd602b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b7d4a710fa3f0b8cfc532ff195b85dc1ba2a8ad34343cb3d67639f28f0a24306
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -1784,7 +1784,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c7dab85535ac42c021977dbd4a39cef5a72e3d9dccff1c5ca5570a1780516cd
-R 0ae00823933e8977db9828c75b6fa876
+P 2b690dbdffe144bd69ca0aa291c230faf3d9d73f7a2985d50f016fe54003f9a9
+R 4eda9e5901582241b2593433b44e7b16
 U drh
-Z 040e7dcdd570ef4d870244a63c0ef36b
+Z f92ead738805283eb0f1e386e20d941b
