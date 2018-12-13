@@ -1011,6 +1011,7 @@ struct ShellState {
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
+  FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
   int nErr;              /* Number of errors seen */
@@ -3595,7 +3596,7 @@ static int showHelp(FILE *out, const char *zPattern){
 }
 
 /* Forward reference */
-static int process_input(ShellState *p, FILE *in);
+static int process_input(ShellState *p);
 
 /*
 ** Read the content of file zName into memory obtained from sqlite3_malloc64()
@@ -3749,7 +3750,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
       return 0;
     }
   }else{
-    in = stdin;
+    in = p->in;
   }
   *pnData = 0;
   if( fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
@@ -3789,14 +3790,14 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     }
   }
   *pnData = n;
-  if( in!=stdin ) fclose(in);
+  if( in!=p->in ) fclose(in);
   return a;
 
 readHexDb_error:
   if( in!=stdin ){
     fclose(in);
   }else{
-    while( fgets(zLine, sizeof(zLine), in)!=0 ){
+    while( fgets(zLine, sizeof(zLine), p->in)!=0 ){
       if(strncmp(zLine, "| end ", 6)==0 ) break;
     }
   }
@@ -6970,20 +6971,21 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 ){
-    FILE *alt;
+    FILE *inSaved = p->in;
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .read FILE\n");
       rc = 1;
       goto meta_command_exit;
     }
-    alt = fopen(azArg[1], "rb");
-    if( alt==0 ){
+    p->in = fopen(azArg[1], "rb");
+    if( p->in==0 ){
       utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
-      rc = process_input(p, alt);
-      fclose(alt);
+      rc = process_input(p);
+      fclose(p->in);
     }
+    p->in = inSaved;
   }else
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "restore", n)==0 ){
@@ -8324,7 +8326,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 **
 ** Return the number of errors.
 */
-static int process_input(ShellState *p, FILE *in){
+static int process_input(ShellState *p){
   char *zLine = 0;          /* A single input line */
   char *zSql = 0;           /* Accumulated SQL text */
   int nLine;                /* Length of current line */
@@ -8336,16 +8338,16 @@ static int process_input(ShellState *p, FILE *in){
   int lineno = 0;           /* Current line number */
   int startline = 0;        /* Line number for start of current input */
 
-  while( errCnt==0 || !bail_on_error || (in==0 && stdin_is_interactive) ){
+  while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
     fflush(p->out);
-    zLine = one_input_line(in, zLine, nSql>0);
+    zLine = one_input_line(p->in, zLine, nSql>0);
     if( zLine==0 ){
       /* End of input */
-      if( in==0 && stdin_is_interactive ) printf("\n");
+      if( p->in==0 && stdin_is_interactive ) printf("\n");
       break;
     }
     if( seenInterrupt ){
-      if( in!=0 ) break;
+      if( p->in!=0 ) break;
       seenInterrupt = 0;
     }
     lineno++;
@@ -8389,7 +8391,7 @@ static int process_input(ShellState *p, FILE *in){
     }
     if( nSql && line_contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
                 && sqlite3_complete(zSql) ){
-      errCnt += runOneSqlLine(p, zSql, in, startline);
+      errCnt += runOneSqlLine(p, zSql, p->in, startline);
       nSql = 0;
       if( p->outCount ){
         output_reset(p);
@@ -8403,7 +8405,7 @@ static int process_input(ShellState *p, FILE *in){
     }
   }
   if( nSql && !_all_whitespace(zSql) ){
-    errCnt += runOneSqlLine(p, zSql, in, startline);
+    errCnt += runOneSqlLine(p, zSql, p->in, startline);
   }
   free(zSql);
   free(zLine);
@@ -8492,7 +8494,7 @@ static void process_sqliterc(
   char *home_dir = NULL;
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
-  FILE *in = NULL;
+  FILE *inSaved = p->in;
 
   if (sqliterc == NULL) {
     home_dir = find_home_dir(0);
@@ -8504,14 +8506,15 @@ static void process_sqliterc(
     zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
     sqliterc = zBuf;
   }
-  in = fopen(sqliterc,"rb");
-  if( in ){
+  p->in = fopen(sqliterc,"rb");
+  if( p->in ){
     if( stdin_is_interactive ){
       utf8_printf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
-    process_input(p,in);
-    fclose(in);
+    process_input(p);
+    fclose(p->in);
   }
+  p->in = inSaved;
   sqlite3_free(zBuf);
 }
 
@@ -9123,14 +9126,16 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #elif HAVE_LINENOISE
       linenoiseSetCompletionCallback(linenoise_completion);
 #endif
-      rc = process_input(&data, 0);
+      data.in = 0;
+      rc = process_input(&data);
       if( zHistory ){
         shell_stifle_history(2000);
         shell_write_history(zHistory);
         free(zHistory);
       }
     }else{
-      rc = process_input(&data, stdin);
+      data.in = stdin;
+      rc = process_input(&data);
     }
   }
   set_table_name(&data, 0);
