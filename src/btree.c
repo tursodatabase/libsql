@@ -1412,19 +1412,14 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   ** reconstruct the entire page.  */
   if( (int)data[hdr+7]<=nMaxFrag ){
     int iFree = get2byte(&data[hdr+1]);
+
+    /* If the initial freeblock offset were out of bounds, that would
+    ** have been detected by btreeInitPage() when it was computing the
+    ** number of free bytes on the page. */
+    assert( iFree<=usableSize-4 );
     if( iFree ){
       int iFree2 = get2byte(&data[iFree]);
-
-      /* pageFindSlot() has already verified that free blocks are sorted
-      ** in order of offset within the page, and that no block extends
-      ** past the end of the page. Provided the two free slots do not 
-      ** overlap, this guarantees that the memmove() calls below will not
-      ** overwrite the usableSize byte buffer, even if the database page
-      ** is corrupt.  */
-      assert( iFree2==0 || iFree2>iFree );
-      assert( iFree+get2byte(&data[iFree+2]) <= usableSize );
-      assert( iFree2==0 || iFree2+get2byte(&data[iFree2+2]) <= usableSize );
-
+      if( iFree2>usableSize-4 ) return SQLITE_CORRUPT_PAGE(pPage);
       if( 0==iFree2 || (data[iFree2]==0 && data[iFree2+1]==0) ){
         u8 *pEnd = &data[cellOffset + nCell*2];
         u8 *pAddr;
@@ -1435,9 +1430,9 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
           return SQLITE_CORRUPT_PAGE(pPage);
         }
         if( iFree2 ){
-          assert( iFree+sz<=iFree2 ); /* Verified by pageFindSlot() */
+          if( iFree+sz>iFree2 ) return SQLITE_CORRUPT_PAGE(pPage);
           sz2 = get2byte(&data[iFree2+2]);
-          assert( iFree+sz+sz2+iFree2-(iFree+sz) <= usableSize );
+          if( iFree2+sz2 > usableSize ) return SQLITE_CORRUPT_PAGE(pPage);
           memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
           sz += sz2;
         }
