@@ -2425,6 +2425,9 @@ testloadext.lo:	$(TOP)\src\test_loadext.c $(SQLITE3H)
 testloadext.dll:	testloadext.lo
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ testloadext.lo
 
+dbtotxt.exe:	$(TOP)\tool\dbtotxt.c
+	$(LTLINK) $(NO_WARN)	$(TOP)\tool\dbtotxt.c /link $(LDFLAGS) $(LTLINKOPTS)
+
 showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\showdb.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)

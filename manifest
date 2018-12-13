@@ -1,10 +1,10 @@
-C Include\sOPTS\sin\sthe\sbuild\sof\sdbfuzz2.
-D 2018-12-13T12:37:13.440
+C Add\sthe\s"dbtotxt"\sutility\sprogram\sand\sthe\sability\sto\sread\s"dbtotxt"\soutput\nas\sa\sdeserialized\sinput\sdatabase\sin\sthe\sCLI,\susing\sthe\s--hexdb\soption\sto\nthe\s".open"\scommand.
+D 2018-12-13T15:06:26.121
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 6fbf65894d820ac4a5b624552febce4283cd6d9db052a85310868be78ceddddb
+F Makefile.in 2f1b61ac62689ca4e9cbff9fdb359578ea37ddd9252355ec0b7b9700ad56fe90
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b7d4a710fa3f0b8cfc532ff195b85dc1ba2a8ad34343cb3d67639f28f0a24306
+F Makefile.msc 2ef13d6845b899eaaa6122c69b74175656a97e26666567af795f4cfe41b7a673
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION 453e2f4529ca208196d5567db28d549d7151f79efd33f6e6cfe6e613e583a0be
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -429,7 +429,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 55f94164ecc194b067d9c55e106f37fd3c9b39f9668e8b568c98f008b6f9ec90
+F main.mk cca1ecdd5dfe4579ded84e5abdd38e1866bbb8b8cf58d1a24496e9b1b65580d7
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -508,7 +508,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c abd65c518c198400193c6319a70c0d722fa30a35be89dc898917ff6489edf017
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
-F src/shell.c.in 5f38bd0e127c2cc4e506b5c3565c10879ddfae6c2d867bb5972563e40717c19c
+F src/shell.c.in 6c06ff4077ab38b30a307c058ecc650e958bfdb6da1c255ebbd8779447e0cae9
 F src/sqlite.h.in 92fd656c26cc76de9fa8c5bf1a473066e3b5c6da345a447679f0f44de1aa4edd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1694,6 +1694,8 @@ F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
+F tool/dbtotxt.c 1655f60fd7b24a3e7a25d01cdb3a6a4785f30112213b08ff83a27ae7ef2dd13e
+F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -1784,7 +1786,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54231ac4ca506e6c34c31bc02bb8d3db22f14e1b01679bc70529b165d7dabb83
-R 3965f390ed5089653fa0ae080a56637b
+P eac9c0c49650b008951318a2225b932709a0a8dffbb01ed57684c40357b2e25c
+R 4375ea249bc2f1867ed511e156cfaedb
 U drh
-Z 3b3f257dcedf459d870badc7f1cd6ad5
+Z 5d7eea8bc66404385fe54bd1e1b7369f

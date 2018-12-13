@@ -1066,6 +1066,7 @@ struct ShellState {
 #define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
 #define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
 #define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
+#define SHELL_OPEN_HEXDB       6      /* Use "dbtotxt" output as data source */
 
 /* Allowed values for ShellState.eTraceType
 */
@@ -3444,6 +3445,7 @@ static const char *(azHelp[]) = {
   "        --append        Use appendvfs to append database to the end of FILE",
 #ifdef SQLITE_ENABLE_DESERIALIZE
   "        --deserialize   Load into memory useing sqlite3_deserialize()",
+  "        --hexdb         Load the output of \"dbtotxt\" as an in-memory database",
 #endif
   "        --new           Initialize FILE to an empty database",
   "        --readonly      Open FILE readonly",
@@ -3723,6 +3725,87 @@ int deduceDatabaseType(const char *zName, int dfltZip){
   return rc;  
 }
 
+#ifdef SQLITE_ENABLE_DESERIALIZE
+/*
+** Reconstruct an in-memory database using the output from the "dbtotxt"
+** program.  Read content from the file in p->zDbFilename.  If p->zDbFilename
+** is 0, then read from standard input.
+*/
+static unsigned char *readHexDb(ShellState *p, int *pnData){
+  unsigned char *a = 0;
+  int nLine = 1;
+  int n = 0;
+  int pgsz = 0;
+  int iOffset = 0;
+  int j, k;
+  int rc;
+  FILE *in;
+  unsigned char x[16];
+  char zLine[100];
+  if( p->zDbFilename ){
+    in = fopen(p->zDbFilename, "r");
+    if( in==0 ){
+      utf8_printf(stderr, "cannot open \"%s\" for reading\n", p->zDbFilename);
+      return 0;
+    }
+  }else{
+    in = stdin;
+  }
+  *pnData = 0;
+  if( fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
+  rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
+  if( rc!=2 ) goto readHexDb_error;
+  if( n<=0 ) goto readHexDb_error;
+  a = sqlite3_malloc( n );
+  if( a==0 ){
+    utf8_printf(stderr, "Out of memory!\n");
+    goto readHexDb_error;
+  }
+  memset(a, 0, n);
+  if( pgsz<512 || pgsz>65536 || (pgsz & (pgsz-1))!=0 ){
+    utf8_printf(stderr, "invalid pagesize\n");
+    goto readHexDb_error;
+  }
+  for(nLine=2; fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+    rc = sscanf(zLine, "| page %d offset %d", &j, &k);
+    if( rc==2 ){
+      iOffset = k;
+      continue;
+    }
+    if( strncmp(zLine, "| end ", 6)==0 ){
+      break;
+    }
+    rc = sscanf(zLine,"| %d: %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx"
+                      "  %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx",
+                &j, &x[0], &x[1], &x[2], &x[3], &x[4], &x[5], &x[6], &x[7],
+                &x[8], &x[9], &x[10], &x[11], &x[12], &x[13], &x[14], &x[15]);
+    if( rc==17 ){
+      k = iOffset+j;
+      if( k+16>n ){
+        utf8_printf(stderr, "continue exceeds file size\n");
+        goto readHexDb_error;
+      }
+      memcpy(a+k, x, 16);
+    }
+  }
+  *pnData = n;
+  if( in!=stdin ) fclose(in);
+  return a;
+
+readHexDb_error:
+  if( in!=stdin ){
+    fclose(in);
+  }else{
+    while( fgets(zLine, sizeof(zLine), in)!=0 ){
+      if(strncmp(zLine, "| end ", 6)==0 ) break;
+    }
+  }
+  sqlite3_free(a);
+  utf8_printf(stderr,"Error on line %d of --hexdb input\n", nLine);
+  return 0;
+}
+#endif /* SQLITE_ENABLE_DESERIALIZE */
+
 /* Flags for open_db().
 **
 ** The default behavior of open_db() is to exit(1) if the database fails to
@@ -3756,6 +3839,7 @@ static void open_db(ShellState *p, int openFlags){
            SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, "apndvfs");
         break;
       }
+      case SHELL_OPEN_HEXDB:
       case SHELL_OPEN_DESERIALIZE: {
         sqlite3_open(0, &p->db);
         break;
@@ -3810,9 +3894,19 @@ static void open_db(ShellState *p, int openFlags){
       sqlite3_free(zSql);
     }
 #ifdef SQLITE_ENABLE_DESERIALIZE
-    else if( p->openMode==SHELL_OPEN_DESERIALIZE ){
+    else
+    if( p->openMode==SHELL_OPEN_DESERIALIZE || p->openMode==SHELL_OPEN_HEXDB ){
       int nData = 0;
-      unsigned char *aData = (unsigned char*)readFile(p->zDbFilename, &nData);
+      unsigned char *aData;
+      if( p->openMode==SHELL_OPEN_DESERIALIZE ){
+        aData = (unsigned char*)readFile(p->zDbFilename, &nData);
+      }else{
+        aData = readHexDb(p, &nData);
+        if( aData==0 ){
+          utf8_printf(stderr, "Error in hexdb input\n");
+          return;
+        }
+      }
       int rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
                    SQLITE_DESERIALIZE_RESIZEABLE |
                    SQLITE_DESERIALIZE_FREEONCLOSE);
@@ -6749,7 +6843,9 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef SQLITE_ENABLE_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
         p->openMode = SHELL_OPEN_DESERIALIZE;
-#endif
+      }else if( optionMatch(z, "hexdb") ){
+        p->openMode = SHELL_OPEN_HEXDB;
+#endif /* SQLITE_ENABLE_DESERIALIZE */
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
@@ -6758,7 +6854,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     /* If a filename is specified, try to open it first */
     zNewFilename = nArg>iName ? sqlite3_mprintf("%s", azArg[iName]) : 0;
-    if( zNewFilename ){
+    if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag ) shellDeleteFile(zNewFilename);
       p->zDbFilename = zNewFilename;
       open_db(p, OPEN_DB_KEEPALIVE);

@@ -1292,6 +1292,9 @@ dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
 	$(LTLINK) -DDBDUMP_STANDALONE -o $@ \
            $(TOP)/ext/misc/dbdump.c sqlite3.lo $(TLIBS)
 
+dbtotxt$(TEXE): $(TOP)/tool/dbtotxt.c
+	$(LTLINK)-o $@ $(TOP)/tool/dbtotxt.c
+
 showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
 
