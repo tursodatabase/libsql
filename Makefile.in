@@ -685,7 +685,8 @@ DBFUZZ2_OPTS = \
   -DSQLITE_EANBLE_FTS5
 
 dbfuzz2:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	clang-6.0 -I. -g -O0 -fsanitize=fuzzer,undefined,address -o dbfuzz2 \
+	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
+		-fsanitize=fuzzer,undefined,address -o dbfuzz2 \
 		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
