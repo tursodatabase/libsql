@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\sfound\sby\sMatthew\sDenton's\snew\sfuzzer.
-D 2018-12-12T21:34:17.884
+C New\sdatabase\scorruption\stest\scases\sdiscovered\sby\sdbfuzz2.\s\sThe\snew\scases\nhave\sbeen\sadded\sto\stest/fuzzdata7.db,\sbut\shave\snot\syet\sall\sbeen\sfixed,\nso\stests\swill\snot\scurrently\spass.
+D 2018-12-13T03:36:13.086
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -448,7 +448,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 4377d0d9a0b969c30b2bc343a12140a53ba6ab0dbf34c1686f232e67d87a557b
+F src/btree.c 3d898feaeff97c934cb6ae557265e43ba1f473de6a9e64e947a364bdb6c4f563
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c ef9d7dc73e40dd9d10c28848343e21e8bc1baaab92cfb75eda893fff4fbf6b55
@@ -980,7 +980,7 @@ F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
-F test/fuzzdata7.db a1bf54eb455e9772942abae1b2d1cf1e3d3659f0e5dd14f00792fd01411ae8ef
+F test/fuzzdata7.db c8c5ef745ce43eb24d6903bff63ddc336464b6b4f9dfae817e7ec2ea0e541dbd
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1784,7 +1784,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c7dab85535ac42c021977dbd4a39cef5a72e3d9dccff1c5ca5570a1780516cd
-R 0ae00823933e8977db9828c75b6fa876
+P 2b690dbdffe144bd69ca0aa291c230faf3d9d73f7a2985d50f016fe54003f9a9
+R 44eae090dbc00ffed1ffd6b71877bb22
+T *branch * dbfuzz2-cases
+T *sym-dbfuzz2-cases *
+T -sym-trunk *
 U drh
-Z 040e7dcdd570ef4d870244a63c0ef36b
+Z 83e3bf755a107d9d471054676d38303f
