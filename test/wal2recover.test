@@ -1,0 +1,167 @@
+# 2018 December 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix wal2recover
+ifcapable !wal {finish_test ; return }
+
+proc db_copy {from to} {
+  forcecopy $from $to
+  forcecopy ${from}-wal ${to}-wal
+  forcecopy ${from}-wal2 ${to}-wal2
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX t1a ON t1(a);
+  CREATE INDEX t1b ON t1(b);
+  CREATE INDEX t1c ON t1(c);
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 15000;
+  PRAGMA wal_autocheckpoint = 0;
+} {wal2 15000 0}
+
+do_test 1.1 {
+  for {set i 1} {$i <= 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES(random(), random(), random()) }
+    db_copy test.db test.db2
+    sqlite3 db2 test.db
+    set res [execsql {
+      SELECT count(*) FROM t1;
+      PRAGMA integrity_check;
+    } db2]
+    db2 close
+    if {$res != [list $i ok]} {
+      error "failure on iteration $i"
+    }
+  }
+  set {} {}
+} {}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x UNIQUE);
+  CREATE TABLE t2(x UNIQUE);
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 10000;
+  PRAGMA wal_autocheckpoint = 0;
+  BEGIN;
+    INSERT INTO t1 VALUES(randomblob(4000));
+    INSERT INTO t1 VALUES(randomblob(4000));
+    INSERT INTO t1 VALUES(randomblob(4000));
+  COMMIT;
+  BEGIN;
+    INSERT INTO t2 VALUES(randomblob(4000));
+    INSERT INTO t2 VALUES(randomblob(4000));
+    INSERT INTO t2 VALUES(randomblob(4000));
+  COMMIT;
+} {wal2 10000 0}
+do_test 2.0.1 {
+  list [file size test.db] [file size test.db-wal] [file size test.db-wal2]
+} {5120 28328 28328}
+
+# Test recovery with both wal files intact.
+#
+do_test 2.1 {
+  db_copy test.db test.db2
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+    PRAGMA integrity_check;
+  } db2
+} {3 3 ok}
+
+do_test 2.2 {
+  db2 close
+  db_copy test.db test.db2
+  hexio_write test.db2-wal 16 12345678
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+  } db2
+} {0 3}
+
+do_test 2.3 {
+  db2 close
+  db_copy test.db test.db2
+  hexio_write test.db2-wal2 16 12345678
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+    PRAGMA integrity_check;
+  } db2
+} {3 0 ok}
+
+do_test 2.4 {
+  db2 close
+  db_copy test.db test.db2
+  forcecopy test.db-wal test.db2-wal2
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+    PRAGMA integrity_check;
+  } db2
+} {3 0 ok}
+
+do_test 2.5 {
+  db2 close
+  db_copy test.db test.db2
+  forcecopy test.db-wal  test.db2-wal2
+  forcecopy test.db-wal2  test.db2-wal
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+    PRAGMA integrity_check;
+  } db2
+} {3 3 ok}
+
+do_test 2.6 {
+  db2 close
+  db_copy test.db test.db2
+  forcecopy test.db-wal test.db2-wal2
+  close [open test.db-wal w]
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+    PRAGMA integrity_check;
+  } db2
+} {3 0 ok}
+
+do_test 2.7 {
+  db2 close
+  db_copy test.db test.db2
+  forcedelete test.db2-wal
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM t2;
+    PRAGMA integrity_check;
+  } db2
+} {0 0 ok}
+
+finish_test
+

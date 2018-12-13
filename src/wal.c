@@ -1656,8 +1656,8 @@ static int walIndexRecover(Wal *pWal){
       /* The case where *-wal2 may follow *-wal */
       if( nCkpt2<=0x0F && nCkpt2==nCkpt1+1 ){
         if( sqlite3Get4byte((u8*)(&pWal->hdr.aSalt[0]))==hdr.aFrameCksum[0]
-            && sqlite3Get4byte((u8*)(&pWal->hdr.aSalt[1]))==hdr.aFrameCksum[1]
-          ){
+         && sqlite3Get4byte((u8*)(&pWal->hdr.aSalt[1]))==hdr.aFrameCksum[1]
+        ){
           walidxSetFile(&pWal->hdr, 1);
           walidxSetMxFrame(&pWal->hdr, 1, pWal->hdr.mxFrame);
           walidxSetMxFrame(&pWal->hdr, 0, hdr.mxFrame);
@@ -1715,9 +1715,9 @@ static int walIndexRecover(Wal *pWal){
     if( pWal->hdr.nPage ){
       if( isWalMode2(pWal) ){
         sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
-            "recovered (%d,%d) frames from WAL files %s[2] (%s mode)",
+            "recovered (%d,%d) frames from WAL files %s[2] (wal2 mode)",
             walidxGetMxFrame(&pWal->hdr, 0), walidxGetMxFrame(&pWal->hdr, 1), 
-            pWal->zWalName, isWalMode2(pWal) ? "wal2" : "wal"
+            pWal->zWalName
         );
       }else{
         sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
