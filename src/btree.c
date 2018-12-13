@@ -8623,6 +8623,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   if( bPreserve ){
     if( !pPage->leaf 
      || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
+     || pPage->nCell==1  /* See dbfuzz001.test for a test case */
     ){
       /* A b-tree rebalance will be required after deleting this entry.
       ** Save the cursor key.  */

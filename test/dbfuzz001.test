@@ -19,6 +19,9 @@ ifcapable !deserialize {
   return
 }
 
+# In the following database file, there is 384 bytes of free space
+# on page 8 that does not appear on the freeblock list.
+#
 do_test dbfuzz001-100 {
   sqlite3 db {}
   db deserialize [decode_hexdb {
@@ -166,5 +169,15 @@ do_test dbfuzz001-100 {
   }]
   db eval {PRAGMA integrity_check}
 } {/Fragmentation of 384 bytes reported as 0 on page 8/}
+
+# The DELETE query below deletes the very last cell from page 8.
+# Prior to a certain fix to sqlite3BtreeDelete() and because of the
+# corruption to the freeblock list on page 8, this would fail to
+# cause a rebalance operation, which would leave the btree in a weird
+# state that would lead to segfaults and or assertion faults.
+#
+do_execsql_test dbfuzz001-110 {
+  DELETE FROM t3 WHERE x IS NOT NULL AND +rowid=6;
+} {}
 
 finish_test
