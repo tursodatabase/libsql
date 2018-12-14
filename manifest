@@ -1,5 +1,5 @@
-C Avoid\sa\sbuffer\soverread\sin\sptrmapPutOvflPtr()\sthat\scan\soccurs\sin\sa\ncorrupt\sdatabase\sfile\sthat\shas\slarge\sentries\sand\suses\sautovacuum.
-D 2018-12-14T16:00:38.064
+C Back\sout\sthe\sexpansion\sof\sthe\stemporary\sbuffer\ssize\sfrom\n[32754ca6f86da816]\sand\sreplace\sit\swith\san\sexplicit\stest\sfor\sbuffer\noverreads.
+D 2018-12-14T16:20:54.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -448,7 +448,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c af1055a0a69a4a299d0095a0e0b3386c942ddf9b158098c6d64fe1c93adbeb82
+F src/btree.c 38e21cf0899e3c8591d8fdc7d5de5f1e9d0be03f9d91869d4eb469662eeba504
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c ef9d7dc73e40dd9d10c28848343e21e8bc1baaab92cfb75eda893fff4fbf6b55
@@ -499,7 +499,7 @@ F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y a3c0db595bc642c6ee1d72869842f7f5b0b6ebeb91c21d0a7cba631d27e7afbd
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c 4ac06e82e81d03d7f67333b186b1832b4f0cd13178e1904294b49cc522d2dbb6
+F src/pcache1.c ddc9fc7d9861cf3a1f30660264b76b1ae9e1dce5dbba085cf001d5cb6b41cf8c
 F src/pragma.c 96ce7dce4dc9cb2b7aa0e1b2ce7536870bdc00b10becc278245e775489447ea0
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c 0e8fc0deaf36da104e08d07ce7d97bc09ab57d078b399381532fec3fa1d3f2bb
@@ -1787,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc9791ea987352e3e1322fbb7f833c23b402432af8249f9d397c6f7456788637
-R f5743306f54d784293952b3602df596c
+P f8b781cf41800e9f61a1c5376404a97e76a2bbbcaa17396d42be62f731363947
+R 3024a00493e9f082b2f41aac6f6fd5ec
 U drh
-Z 6e0967960c2e7605bd0b191a56849a10
+Z 685b8a97ad7f27534ed13c09a239258a

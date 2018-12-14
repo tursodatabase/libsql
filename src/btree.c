@@ -6762,6 +6762,7 @@ static int rebuildPage(
   for(i=0; i<nCell; i++){
     u8 *pCell = apCell[i];
     if( SQLITE_WITHIN(pCell,aData,pEnd) ){
+      if( ((uptr)(pCell+szCell[i]))>(uptr)pEnd ) return SQLITE_CORRUPT_BKPT;
       pCell = &pTmp[pCell - aData];
     }
     pData -= szCell[i];

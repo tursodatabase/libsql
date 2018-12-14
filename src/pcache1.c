@@ -480,7 +480,7 @@ void *sqlite3PageMalloc(int sz){
   /* During rebalance operations on a corrupt database file, it is sometimes
   ** (rarely) possible to overread the temporary page buffer by a few bytes.
   ** Enlarge the allocation slightly so that this does not cause problems. */
-  return pcache1Alloc(sz + 32);
+  return pcache1Alloc(sz);
 }
 
 /*
