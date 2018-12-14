@@ -1532,7 +1532,7 @@ static int walIndexRecoverOne(Wal *pWal, int iWal, u32 *pnCkpt, int *pbZero){
       }
   
       sqlite3_free(aFrame);
-    }else if( pbZero && nSize==0 ){
+    }else if( pbZero ){
       *pbZero = 1;
     }
   }
