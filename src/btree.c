@@ -1369,7 +1369,12 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
   assert( pCell!=0 );
   pPage->xParseCell(pPage, pCell, &info);
   if( info.nLocal<info.nPayload ){
-    Pgno ovfl = get4byte(&pCell[info.nSize-4]);
+    Pgno ovfl;
+    if( SQLITE_WITHIN(pPage->aDataEnd, pCell, pCell+info.nLocal) ){
+      *pRC = SQLITE_CORRUPT_BKPT;
+      return;
+    }
+    ovfl = get4byte(&pCell[info.nSize-4]);
     ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, pRC);
   }
 }
