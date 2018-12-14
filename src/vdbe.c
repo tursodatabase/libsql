@@ -6092,6 +6092,7 @@ case OP_Program: {        /* jump */
     pRt->z = (char*)pFrame;
     pRt->n = nByte;
     pRt->xDel = sqlite3VdbeFrameMemDel;
+    pRt->pDelPtr = 0;
 
     pFrame->v = p;
     pFrame->nChildMem = nMem;

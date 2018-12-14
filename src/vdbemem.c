@@ -178,6 +178,18 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 }
 
 /*
+** Invoke the destructor
+*/
+void sqlite3VdbeDestructor(Mem *pMem){
+  assert( pMem->xDel!=0 );
+  if( pMem->pDelPtr==0 ){
+    pMem->xDel((void*)(pMem->z));
+  }else{
+    ((void(*)(void*,void*))(pMem->xDel))(pMem->pDelPtr, (void*)pMem->z);
+  }
+}
+
+/*
 ** Make sure pMem->z points to a writable allocation of at least 
 ** min(n,32) bytes.
 **
@@ -221,7 +233,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   }
   if( (pMem->flags&MEM_Dyn)!=0 ){
     assert( pMem->xDel!=0 && pMem->xDel!=SQLITE_DYNAMIC );
-    pMem->xDel((void *)(pMem->z));
+    sqlite3VdbeDestructor(pMem);
   }
 
   pMem->z = pMem->zMalloc;
@@ -463,7 +475,7 @@ static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
   }
   if( p->flags&MEM_Dyn ){
     assert( p->xDel!=SQLITE_DYNAMIC && p->xDel!=0 );
-    p->xDel((void *)p->z);
+    sqlite3VdbeDestructor(p);
   }
   p->flags = MEM_Null;
 }
@@ -840,6 +852,7 @@ void sqlite3VdbeMemSetPointer(
   pMem->flags = MEM_Null|MEM_Dyn|MEM_Subtype|MEM_Term;
   pMem->eSubtype = 'p';
   pMem->xDel = xDestructor ? xDestructor : sqlite3NoopDestructor;
+  pMem->pDelPtr = 0;
 }
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -885,6 +898,7 @@ int sqlite3VdbeMemSetRowSet(Mem *pMem){
   pMem->z = (char*)p;
   pMem->flags = MEM_Blob|MEM_Dyn;
   pMem->xDel = sqlite3RowSetDelete;
+  pMem->pDelPtr = 0;
   return SQLITE_OK;
 }
 
@@ -1081,6 +1095,7 @@ int sqlite3VdbeMemSetStr(
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
     pMem->xDel = xDel;
+    pMem->pDelPtr = 0;
     flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
   }
 

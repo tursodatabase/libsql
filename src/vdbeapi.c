@@ -321,15 +321,19 @@ static void setResultStrOrError(
   const char *z,          /* String pointer */
   int n,                  /* Bytes in string, or negative */
   u8 enc,                 /* Encoding of z.  0 for BLOBs */
-  void (*xDel)(void*)     /* Destructor function */
+  void (*xDel)(void*),    /* Destructor function */
+  void *pDelPtr           /* Context for the destructor */
 ){
   if( sqlite3VdbeMemSetStr(pCtx->pOut, z, n, enc, xDel)==SQLITE_TOOBIG ){
     sqlite3_result_error_toobig(pCtx);
+  }else{
+    pCtx->pOut->pDelPtr = pDelPtr;
   }
 }
 static int invokeValueDestructor(
   const void *p,             /* Value to destroy */
   void (*xDel)(void*),       /* The destructor */
+  void *pDelPtr,             /* Destructor context */
   sqlite3_context *pCtx      /* Set a SQLITE_TOOBIG error if no NULL */
 ){
   assert( xDel!=SQLITE_DYNAMIC );
@@ -337,6 +341,8 @@ static int invokeValueDestructor(
     /* noop */
   }else if( xDel==SQLITE_TRANSIENT ){
     /* noop */
+  }else if( pDelPtr ){
+    (*(void(*)(void*,void*))xDel)(pDelPtr,(void*)p);
   }else{
     xDel((void*)p);
   }
@@ -351,7 +357,7 @@ void sqlite3_result_blob(
 ){
   assert( n>=0 );
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, 0, xDel);
+  setResultStrOrError(pCtx, z, n, 0, xDel, 0);
 }
 void sqlite3_result_blob64(
   sqlite3_context *pCtx, 
@@ -362,9 +368,25 @@ void sqlite3_result_blob64(
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
   if( n>0x7fffffff ){
-    (void)invokeValueDestructor(z, xDel, pCtx);
+    (void)invokeValueDestructor(z, xDel, 0, pCtx);
   }else{
-    setResultStrOrError(pCtx, z, (int)n, 0, xDel);
+    setResultStrOrError(pCtx, z, (int)n, 0, xDel, 0);
+  }
+}
+void sqlite3_result_blob64dx(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  sqlite3_uint64 n,
+  void (*xDel)(void*,void*),
+  void *pDelPtr
+){
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  assert( ((void(*)(void*))xDel)!=SQLITE_DYNAMIC );
+  if( n>0x7fffffff ){
+    (void)invokeValueDestructor(z, (void(*)(void*))xDel, pDelPtr, pCtx);
+  }else{
+    setResultStrOrError(pCtx, z, (int)n, 0,
+                        (void(*)(void*))xDel, pDelPtr);
   }
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
@@ -420,7 +442,7 @@ void sqlite3_result_text(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF8, xDel);
+  setResultStrOrError(pCtx, z, n, SQLITE_UTF8, xDel, 0);
 }
 void sqlite3_result_text64(
   sqlite3_context *pCtx, 
@@ -433,9 +455,9 @@ void sqlite3_result_text64(
   assert( xDel!=SQLITE_DYNAMIC );
   if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
   if( n>0x7fffffff ){
-    (void)invokeValueDestructor(z, xDel, pCtx);
+    (void)invokeValueDestructor(z, xDel, 0, pCtx);
   }else{
-    setResultStrOrError(pCtx, z, (int)n, enc, xDel);
+    setResultStrOrError(pCtx, z, (int)n, enc, xDel, 0);
   }
 }
 #ifndef SQLITE_OMIT_UTF16
@@ -446,7 +468,7 @@ void sqlite3_result_text16(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF16NATIVE, xDel);
+  setResultStrOrError(pCtx, z, n, SQLITE_UTF16NATIVE, xDel, 0);
 }
 void sqlite3_result_text16be(
   sqlite3_context *pCtx, 
@@ -455,7 +477,7 @@ void sqlite3_result_text16be(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF16BE, xDel);
+  setResultStrOrError(pCtx, z, n, SQLITE_UTF16BE, xDel, 0);
 }
 void sqlite3_result_text16le(
   sqlite3_context *pCtx, 
@@ -464,7 +486,7 @@ void sqlite3_result_text16le(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF16LE, xDel);
+  setResultStrOrError(pCtx, z, n, SQLITE_UTF16LE, xDel, 0);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
@@ -972,6 +994,7 @@ static const Mem *columnNullValue(void){
         /* .uTemp      = */ (u32)0,
         /* .db         = */ (sqlite3*)0,
         /* .xDel       = */ (void(*)(void*))0,
+        /* .pDelPtr    = */ (void*)0,
 #ifdef SQLITE_DEBUG
         /* .pScopyFrom = */ (Mem*)0,
         /* .mScopyFlags= */ 0,
@@ -1313,6 +1336,7 @@ static int bindText(
   const void *zData,     /* Pointer to the data to be bound */
   int nData,             /* Number of bytes of data to be bound */
   void (*xDel)(void*),   /* Destructor for the data */
+  void *pDelPtr,         /* Destructor context */
   u8 encoding            /* Encoding for the data */
 ){
   Vdbe *p = (Vdbe *)pStmt;
@@ -1324,8 +1348,11 @@ static int bindText(
     if( zData!=0 ){
       pVar = &p->aVar[i-1];
       rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
-      if( rc==SQLITE_OK && encoding!=0 ){
-        rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
+      if( rc==SQLITE_OK ){
+        pVar->pDelPtr = pDelPtr;
+        if( encoding!=0 ){
+          rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
+        }
       }
       if( rc ){
         sqlite3Error(p->db, rc);
@@ -1353,7 +1380,7 @@ int sqlite3_bind_blob(
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( nData<0 ) return SQLITE_MISUSE_BKPT;
 #endif
-  return bindText(pStmt, i, zData, nData, xDel, 0);
+  return bindText(pStmt, i, zData, nData, xDel, 0, 0);
 }
 int sqlite3_bind_blob64(
   sqlite3_stmt *pStmt, 
@@ -1364,9 +1391,25 @@ int sqlite3_bind_blob64(
 ){
   assert( xDel!=SQLITE_DYNAMIC );
   if( nData>0x7fffffff ){
-    return invokeValueDestructor(zData, xDel, 0);
+    return invokeValueDestructor(zData, xDel, 0, 0);
   }else{
-    return bindText(pStmt, i, zData, (int)nData, xDel, 0);
+    return bindText(pStmt, i, zData, (int)nData, xDel, 0, 0);
+  }
+}
+int sqlite3_bind_blob64dx(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const void *zData, 
+  sqlite3_uint64 nData, 
+  void (*xDel)(void*,void*),
+  void *pDelPtr
+){
+  assert( (void(*)(void*))xDel!=SQLITE_DYNAMIC );
+  if( nData>0x7fffffff ){
+    return invokeValueDestructor(zData, (void(*)(void*))xDel, pDelPtr, 0);
+  }else{
+    return bindText(pStmt, i, zData, (int)nData,
+                    (void(*)(void*))xDel, pDelPtr, 0);
   }
 }
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
@@ -1426,7 +1469,7 @@ int sqlite3_bind_text(
   int nData, 
   void (*xDel)(void*)
 ){
-  return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF8);
+  return bindText(pStmt, i, zData, nData, xDel, 0, SQLITE_UTF8);
 }
 int sqlite3_bind_text64( 
   sqlite3_stmt *pStmt, 
@@ -1438,10 +1481,28 @@ int sqlite3_bind_text64(
 ){
   assert( xDel!=SQLITE_DYNAMIC );
   if( nData>0x7fffffff ){
-    return invokeValueDestructor(zData, xDel, 0);
+    return invokeValueDestructor(zData, xDel, 0, 0);
   }else{
     if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
-    return bindText(pStmt, i, zData, (int)nData, xDel, enc);
+    return bindText(pStmt, i, zData, (int)nData, xDel, 0, enc);
+  }
+}
+int sqlite3_bind_text64dx( 
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const char *zData, 
+  sqlite3_uint64 nData, 
+  void (*xDel)(void*,void*),
+  void *pDelPtr,
+  unsigned char enc
+){
+  assert( (void(*)(void*))xDel!=SQLITE_DYNAMIC );
+  if( nData>0x7fffffff ){
+    return invokeValueDestructor(zData, (void(*)(void*))xDel, pDelPtr, 0);
+  }else{
+    if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+    return bindText(pStmt, i, zData, (int)nData, 
+                    (void(*)(void*))xDel, pDelPtr, enc);
   }
 }
 #ifndef SQLITE_OMIT_UTF16
@@ -1452,7 +1513,7 @@ int sqlite3_bind_text16(
   int nData, 
   void (*xDel)(void*)
 ){
-  return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF16NATIVE);
+  return bindText(pStmt, i, zData, nData, xDel, 0, SQLITE_UTF16NATIVE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
@@ -1475,7 +1536,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_TEXT: {
-      rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT,
+      rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT, 0,
                               pValue->enc);
       break;
     }

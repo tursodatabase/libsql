@@ -215,6 +215,7 @@ struct sqlite3_value {
   u32 uTemp;          /* Transient storage for serial_type in OP_MakeRecord */
   sqlite3 *db;        /* The associated database connection */
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
+  void *pDelPtr;      /* Context information for the delete */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   u16 mScopyFlags;    /* flags value immediately after the shallow copy */
