@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sfuzzcheck\sthat\scause\sit\sto\soverlook\sa\spointer-map\sbug\sthat\swas\ntrigger\sby\sthe\sfuzzcheck\stest\sdata,\sand\salso\sfix\sthe\spointer-map\sbug.
-D 2018-12-14T03:16:17.943
+C Fix\sa\sproblem\swith\sbytecode\sgeneration\swhen\sa\squery\sinvolves\stwo\sor\smore\nindexes\son\sexpressions\sconnected\sby\sOR.\nTicket\s[d96eba87698a428c1ddd0790ea04]
+D 2018-12-14T11:16:52.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -595,7 +595,7 @@ F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
-F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
+F src/whereexpr.c b87a823bfd3c6998ba8ae0797f3f0dc8d8feb779ed914d31b324a0181e13deb5
 F src/window.c ea81ecd031ed2cbc14b7db6fd7f4bee2471b894feae5fea0547b15b1e2dd8fb2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1023,7 +1023,7 @@ F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
 F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
-F test/indexexpr2.test fc994dcd4b3da932d4add8e65ed7ca08166d541e00a46874cfacd98dfb93a31b
+F test/indexexpr2.test 8dd1f8f936cc4d246af605366886bbd251848b411378eb60887361d5302d9f54
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 5604b1ff5675cc84c34a5b315792b958f48c32edccc0dafcc81d3b776270b70a
@@ -1787,8 +1787,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18740bd448887d618fafee0b5a7c004aa2f2632244f7d29e2428772baa36b828 3036fd71ac7063359b04a0ed54a6c63a380eb7ff75cd29ed27486d4259066aee
-R 7367b1481f35f13ad669721d0de5a468
-T +closed 3036fd71ac7063359b04a0ed54a6c63a380eb7ff75cd29ed27486d4259066aee
+P cc42dd15100db28a9796254f69a4e367ea5eae29f546be055017cf3e12aa66ba 89a25abfcd069aebdf817890e5c27f46de3000fb858ae01029e4528f9d677567
+R 6e4a89239ac2714d2f3e8e3c0f340ed6
+T +closed 89a25abfcd069aebdf817890e5c27f46de3000fb858ae01029e4528f9d677567
 U drh
-Z 3dec21dea4844642e6338ca29ec5fe6a
+Z 4c06ed13d4147ae87910536f3d08fc7f
