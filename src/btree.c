@@ -660,10 +660,15 @@ static int saveCursorKey(BtCursor *pCur){
     /* Only the rowid is required for a table btree */
     pCur->nKey = sqlite3BtreeIntegerKey(pCur);
   }else{
-    /* For an index btree, save the complete key content */
+    /* For an index btree, save the complete key content. It is possible
+    ** that the current key is corrupt. In that case, it is possible that
+    ** the sqlite3VdbeRecordUnpack() function may overread the buffer by
+    ** up to the size of 1 varint plus 1 8-byte value when the cursor 
+    ** position is restored. Hence the 17 bytes of padding allocated 
+    ** below. */
     void *pKey;
     pCur->nKey = sqlite3BtreePayloadSize(pCur);
-    pKey = sqlite3Malloc( pCur->nKey );
+    pKey = sqlite3Malloc( pCur->nKey + 9 + 8 );
     if( pKey ){
       rc = sqlite3BtreePayload(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
