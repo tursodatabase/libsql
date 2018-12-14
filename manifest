@@ -1,5 +1,5 @@
-C Expand\sthe\ssize\sof\sthe\stemporary\spage\sused\sduring\sbtree\srebalancing\sby\sa\nfew\sbytes,\sto\savoid\sproblems\swith\ssmall\sbuffer\soverreads\sthat\scan\soccur\non\scorrupted\sdatabase\sfiles.
-D 2018-12-14T13:35:48.724
+C Fix\sa\sharmless\scompiler\swarning\sin\sSessions.
+D 2018-12-14T13:47:17.713
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -420,7 +420,7 @@ F ext/session/sessioninvert.test ae1a003a9ab1f8d64227dbb5c3a4c97e65b561b01e7b295
 F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2f05e82363b9142810
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 07f0b304dc4df5454906069140bf6ec67edcaa3c548f3683354003cf2c22b64a
-F ext/session/sqlite3session.c dbd6f7a89c1236d8e7b58f4e217391670ce91b9e6f85c16ba02832674ef0cf3c
+F ext/session/sqlite3session.c f88c4bd0404da56246b08f5d584462f8979ba6aedf8c30762b553f7ae91f51cf
 F ext/session/sqlite3session.h 05351d2f50a1203fdffbeb590fdbbc796c9a6bfcd0c9b26cf6db3854e3eb4294
 F ext/session/test_session.c 98797aba475a799376c9a42214f2d1debf2d0c3cb657d9c8bbf4f70bf3fb4aec
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1787,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 160b1e31c0f27257c06c2987af9ec3a64abfacb2150325b72e8ccd3d217b5baa
-R 7ac48acc5951b8894655b5be32fde43b
+P 32754ca6f86da8165e274f98f35fc3df3aebd273e9da08387e2d0c3c89abda0f
+R 3d9fe236acd328f6aafabdc7e0f6bbfc
 U drh
-Z 36b756266655a0b1051626d87510d333
+Z ea9bbe01e8202c5233345adba0cefb74
