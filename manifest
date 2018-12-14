@@ -1,5 +1,5 @@
-C Fix\sthe\sdbtotxt\sdecoder\sin\sthe\sCLI\sso\sthat\sit\signores\sexcess\sbytes.
-D 2018-12-13T22:58:52.532
+C Fix\sa\sbug\sin\sfuzzcheck\sthat\scause\sit\sto\soverlook\sa\spointer-map\sbug\sthat\swas\ntrigger\sby\sthe\sfuzzcheck\stest\sdata,\sand\salso\sfix\sthe\spointer-map\sbug.
+D 2018-12-14T03:16:17.943
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -448,7 +448,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 20fdad94111d772de675c6ab426ef45f6a54f2489032c54d9ff536be7434f16d
+F src/btree.c 14b4b17b75af36e0431df2676205296bc234a634cf18798ad81f768b455b9e93
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c ef9d7dc73e40dd9d10c28848343e21e8bc1baaab92cfb75eda893fff4fbf6b55
@@ -974,7 +974,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c fda41c0e4e667fae96b002410bb19cece7a33314264ed6bbc6d012909ee9fd58
+F test/fuzzcheck.c 6edb2a0b6c8113cdac10f8e35b891be1a1b08ebacb1c2e2f93876d4d056e8e15
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1787,7 +1787,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1201615cbbd3070158ea5fab3d2c8c95f41b25d6da096a44cb9257a7b7405efc
-R d3f6d72bb77728c78f155f9adb19ef12
+P 18740bd448887d618fafee0b5a7c004aa2f2632244f7d29e2428772baa36b828 3036fd71ac7063359b04a0ed54a6c63a380eb7ff75cd29ed27486d4259066aee
+R 7367b1481f35f13ad669721d0de5a468
+T +closed 3036fd71ac7063359b04a0ed54a6c63a380eb7ff75cd29ed27486d4259066aee
 U drh
-Z 66d296af7cf5703e86d937cc4fe79584
+Z 3dec21dea4844642e6338ca29ec5fe6a
