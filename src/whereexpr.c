@@ -778,6 +778,7 @@ static void exprAnalyzeOrTerm(
     */
     for(j=0; j<2 && !okToChngToIN; j++){
       pOrTerm = pOrWc->a;
+      Expr *pLeft = 0;
       for(i=pOrWc->nTerm-1; i>=0; i--, pOrTerm++){
         assert( pOrTerm->eOperator & WO_EQ );
         pOrTerm->wtFlags &= ~TERM_OR_OK;
@@ -800,6 +801,7 @@ static void exprAnalyzeOrTerm(
         }
         iColumn = pOrTerm->u.leftColumn;
         iCursor = pOrTerm->leftCursor;
+        pLeft = pOrTerm->pExpr->pLeft;
         break;
       }
       if( i<0 ){
@@ -819,7 +821,9 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         if( pOrTerm->leftCursor!=iCursor ){
           pOrTerm->wtFlags &= ~TERM_OR_OK;
-        }else if( pOrTerm->u.leftColumn!=iColumn ){
+        }else if( pOrTerm->u.leftColumn!=iColumn || (iColumn==XN_EXPR 
+               && sqlite3ExprCompare(pParse, pOrTerm->pExpr->pLeft, pLeft, -1)
+        )){
           okToChngToIN = 0;
         }else{
           int affLeft, affRight;
