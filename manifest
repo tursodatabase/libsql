@@ -1,5 +1,5 @@
-C Back\sout\sthe\sexpansion\sof\sthe\stemporary\sbuffer\ssize\sfrom\n[32754ca6f86da816]\sand\sreplace\sit\swith\san\sexplicit\stest\sfor\sbuffer\noverreads.
-D 2018-12-14T16:20:54.136
+C Fix\spossible\sinteger\soverflow\swhile\srunning\sPRAGMA\sintegrity_check\son\sa\ndatabase\sfile\swith\sa\sbadly\scorrupted\sfreelist.
+D 2018-12-14T17:57:01.278
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -448,7 +448,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 38e21cf0899e3c8591d8fdc7d5de5f1e9d0be03f9d91869d4eb469662eeba504
+F src/btree.c 4429a1615440f0253d470b59f955fe84787fd6f709ae114c0a12d132ae725599
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c ef9d7dc73e40dd9d10c28848343e21e8bc1baaab92cfb75eda893fff4fbf6b55
@@ -1787,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8b781cf41800e9f61a1c5376404a97e76a2bbbcaa17396d42be62f731363947
-R 3024a00493e9f082b2f41aac6f6fd5ec
+P 8ba3d9f38090c4bbbcffba1930e5c26f69ff61f49b72a4a5a59253d37341380f
+R 9a4f6c6480011bd142e9912e8f1cca4c
 U drh
-Z 685b8a97ad7f27534ed13c09a239258a
+Z 3c28c0a7282a8455d6c7557d8580e4db
