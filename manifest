@@ -1,5 +1,5 @@
-C Add\sthe\sOP_ColumnsUsed\sopcode\s(when\scompiled\swith\nSQLITE_ENABLE_COLUMN_USED_MASK)\sas\sa\shint\sto\sthe\sb-tree\slayer\sas\sto\swhich\ncolumns\sof\sa\sbtree\scursor\swill\sbe\sused.\n(Backport\sfrom\s3.8.11)
-D 2018-12-14T20:20:37.993
+C Add\sa\smissing\sOP_ColumnsUsed\sopcode\sto\scode\sfor\sexpressions\slike\s"?\sIN\s(SELECT\s...)"\sin\scases\swhere\sexpression\scan\suse\san\sindex\sthat\smay\scontain\sNULL\svalues.\n(Backported\sfix\sfrom\sversion\s3.14.0).
+D 2018-12-14T20:28:12.680
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 7a9df72134437c7f556c2002e3df6d9cba6488aa2a264d05e3ef2b5e49c308d4
-F src/expr.c b74a30503b581982e198d3c8173e2895fc4b7af3ad4641f4b84b4cf9d12f752f
+F src/expr.c 0f996b684f975f35b09f53f0d1b375aaec4cf1af7594a1d5b279b81c8ad491cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c f19ee86f39aac8069761b3c2acd65ace057d33f793b048734e5d203ef038be9e
 F src/func.c 8028a8f79becc879268a114729263a24733ecdb610e7b7ec6ddb228bc2c13cf1
@@ -1252,8 +1252,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b2679d3b7ad090cbcb536317989f3ad1a9470e9f39daef561934d9d18dc69240
-Q +711a176cbfad5dde6defa9648fba6d0d663af134
-R 8838f6e2ca1bc8379cdfc7dc2e1821b8
+P b29e02f877d7b85f783a9255794883a85590ff8eafac130a3234eb65d0f717f1
+Q +0b1579caf06a2c42433b8bc9dc28c9ad381aa07c
+R 58b03fadc224b39bfc051e3df4cb7c15
 U drh
-Z de0aa8652dbca2b433cca1f20e9d3056
+Z f38d66f5b67fbce437220858b84fec1b
