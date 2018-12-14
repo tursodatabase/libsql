@@ -1,5 +1,5 @@
-C Fix\sthe\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT\sfunctionality\sso\sthat\sit\sworks\swith\nviews\sand\sWITHOUT\sROWID\stables.\sThis\sis\sa\smodified\scherrypick\sof\s[dae4a97a].
-D 2017-11-14T18:26:22.534
+C Add\sthe\sOP_ColumnsUsed\sopcode\s(when\scompiled\swith\nSQLITE_ENABLE_COLUMN_USED_MASK)\sas\sa\shint\sto\sthe\sb-tree\slayer\sas\sto\swhich\ncolumns\sof\sa\sbtree\scursor\swill\sbe\sused.\n(Backport\sfrom\s3.8.11)
+D 2018-12-14T20:20:37.993
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 7a9df72134437c7f556c2002e3df6d9cba6488aa2a264d05e3ef2b5e49c308d4
-F src/expr.c d09dac67d53c78880ba31d56e8ba2be3a6490553
+F src/expr.c b74a30503b581982e198d3c8173e2895fc4b7af3ad4641f4b84b4cf9d12f752f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c f19ee86f39aac8069761b3c2acd65ace057d33f793b048734e5d203ef038be9e
 F src/func.c 8028a8f79becc879268a114729263a24733ecdb610e7b7ec6ddb228bc2c13cf1
@@ -293,11 +293,11 @@ F src/update.c 262a470e3aa82bf57648cc34eb8930d602fc3eeaf5c6039ac362a63b7c1f8072
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c 1e2abdaedcbd3697994c4f244ae388b2afbe1e1023537a78abdf0bbf70ef23a7
-F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
-F src/vdbeInt.h d96370101d9109cc476b42951272bd660336a638a6b8ef0d72c0911d6cdffbfd
+F src/vdbe.c 6ea32aa0789fca11f02b067805b72c84794d4757af08bfa497d7ef19406a785a
+F src/vdbe.h 87fd8b2c5b3af40f9e1a210d928e23e593c22b383ddc7215c76d76e4bc612331
+F src/vdbeInt.h 538f6a69152c0a6cfab17161854b793918eae73981b6c82d39d8b46c8878cc77
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c c562ac4e1d5803287f5ad2718460eb7e1f22b8356b22603f67f6b849056465e1
+F src/vdbeaux.c eda1c639cec26e648de92ae61e703a4f6f857504e799c355e6e48b8ad2166f71
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 919717d7599fa31d343ec28bffd0f9e91a4ff5f6
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 878c8e1a51cb2ec45c395d26b7d5cd9e1a098e4a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 3508f80b35073fbf384f6465337cd6820f333b1e8ec2ddb1478af43c4eec1eeb
+F src/where.c 8a445862f98a0318d4dc4db78d4834dc8188a439dcb2fc02cb86bd58686bcddf
 F src/whereInt.h 1d1fd0b3b9b56e08f5d3583c70a2c785a3c43941
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1252,7 +1252,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 30aa941fc16c1affe3821ff2d9a4955e14ab18cd4ece27037bd6bb532fcaa052
-R c0304b6b74e580ff6d98e75086a36094
-U dan
-Z 127d4fcc427982bc4413b5e864902384
+P b2679d3b7ad090cbcb536317989f3ad1a9470e9f39daef561934d9d18dc69240
+Q +711a176cbfad5dde6defa9648fba6d0d663af134
+R 8838f6e2ca1bc8379cdfc7dc2e1821b8
+U drh
+Z de0aa8652dbca2b433cca1f20e9d3056
