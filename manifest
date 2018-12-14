@@ -1,5 +1,5 @@
-C When\ssaving\sthe\sposition\sof\sa\scursor\sat\sthe\sb-tree\slayer,\sallocate\sa\sfew\sextra\nbytes\sat\sthe\send\sof\sthe\sbuffer\sused\sto\ssave\sthe\skey.\sOtherwise,\sif\sthe\skey\sis\ncorrupt,\sthe\scode\sthat\srestores\sthe\scursor\sposition\smay\soverread\sthe\sbuffer\sby\sa\nlittle.
-D 2018-12-14T13:18:35.216
+C Expand\sthe\ssize\sof\sthe\stemporary\spage\sused\sduring\sbtree\srebalancing\sby\sa\nfew\sbytes,\sto\savoid\sproblems\swith\ssmall\sbuffer\soverreads\sthat\scan\soccur\non\scorrupted\sdatabase\sfiles.
+D 2018-12-14T13:35:48.724
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -499,7 +499,7 @@ F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y a3c0db595bc642c6ee1d72869842f7f5b0b6ebeb91c21d0a7cba631d27e7afbd
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c ad0ffc5b35b0280d045ac569d34d4b842e3e6a4a118f6396b320987a0957afcc
+F src/pcache1.c 4ac06e82e81d03d7f67333b186b1832b4f0cd13178e1904294b49cc522d2dbb6
 F src/pragma.c 96ce7dce4dc9cb2b7aa0e1b2ce7536870bdc00b10becc278245e775489447ea0
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c 0e8fc0deaf36da104e08d07ce7d97bc09ab57d078b399381532fec3fa1d3f2bb
@@ -1787,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e4ed8b5c2047b69bbb037497111e56e465a4d9f8afca3b337f9ac744471dc4a
-R ba1eb44fdcbd375391cb2e9633b3bcc5
-U dan
-Z 7755266d0736215443f101017f7858b1
+P 160b1e31c0f27257c06c2987af9ec3a64abfacb2150325b72e8ccd3d217b5baa
+R 7ac48acc5951b8894655b5be32fde43b
+U drh
+Z 36b756266655a0b1051626d87510d333
