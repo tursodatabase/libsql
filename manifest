@@ -1,5 +1,5 @@
-C Fix\spossible\sinteger\soverflow\swhile\srunning\sPRAGMA\sintegrity_check\son\sa\ndatabase\sfile\swith\sa\sbadly\scorrupted\sfreelist.
-D 2018-12-14T17:57:01.278
+C Fix\sharmless\scompiler\swarnings.
+D 2018-12-14T18:11:02.867
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -97,7 +97,7 @@ F ext/fts3/fts3_tokenizer.c a22bf311a71f3efa9d7012d8cc48fc9b0f3dace7
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c b1902e9ad47a6569fbb8ecb5ce52f20fe59b590d5c5e3bbdd56b10b03bdf632b
-F ext/fts3/fts3_unicode2.c 90e65f4291c8ecceee284ecc8d5d48734e95ecd4b008e06f36f14e77f93d655f
+F ext/fts3/fts3_unicode2.c e49f9e015f239bf5faf2f4fa483bbf1b08a9978f0ad1f31159d952f8b8a10d08
 F ext/fts3/fts3_write.c a85bc4885fde7f1b44c9de013b62f7cd3332dc59e208053d878729b1d04745bc
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
@@ -122,7 +122,7 @@ F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c 80de1a4b1a3caa216c3be8862440f0117a8357dd9b7cfc5a2a2ce11fe6eb64ae
 F ext/fts5/fts5_tokenize.c ca2b6a033794945ac505241a86b0aa978709c23aa2e6121984d3e3ede96003c8
-F ext/fts5/fts5_unicode2.c 26519f47d567c5a9b08c376edd38f1b8a773b45ff29f1ffd81d9edfe20f96e18
+F ext/fts5/fts5_unicode2.c 03bc8ebf44d825d0b7ac519f7b16139cf8e879ae7a27e62fb6326f0d68e8bdd3
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c fbe38044889b2d2d99babeeef239c620fb0332bb928a84506ac748d81500b354
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
@@ -505,7 +505,7 @@ F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c 0e8fc0deaf36da104e08d07ce7d97bc09ab57d078b399381532fec3fa1d3f2bb
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c abd65c518c198400193c6319a70c0d722fa30a35be89dc898917ff6489edf017
+F src/resolve.c 72fe8cae7326b979e7258ab4c531956951e1a5f3fe8644c646abaec1b2eb6d95
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
 F src/shell.c.in e1790e0d3607fca70ce61e5a0c83885d82f33ebe362edfb1cb66342d12c182d0
@@ -595,7 +595,7 @@ F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
-F src/whereexpr.c b87a823bfd3c6998ba8ae0797f3f0dc8d8feb779ed914d31b324a0181e13deb5
+F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
 F src/window.c ea81ecd031ed2cbc14b7db6fd7f4bee2471b894feae5fea0547b15b1e2dd8fb2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1787,7 +1787,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ba3d9f38090c4bbbcffba1930e5c26f69ff61f49b72a4a5a59253d37341380f
-R 9a4f6c6480011bd142e9912e8f1cca4c
+P 395599116d801324f0763e59bc5e2fc8622aa5b7572e0c1c9a982efbb3cc8280
+R df4c1da54dfb761eed985ced81211d04
 U drh
-Z 3c28c0a7282a8455d6c7557d8580e4db
+Z 41e7a1dc9bc588455770787287d46c8d

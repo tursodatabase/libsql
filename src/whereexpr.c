@@ -777,8 +777,8 @@ static void exprAnalyzeOrTerm(
     ** and column is found but leave okToChngToIN false if not found.
     */
     for(j=0; j<2 && !okToChngToIN; j++){
-      pOrTerm = pOrWc->a;
       Expr *pLeft = 0;
+      pOrTerm = pOrWc->a;
       for(i=pOrWc->nTerm-1; i>=0; i--, pOrTerm++){
         assert( pOrTerm->eOperator & WO_EQ );
         pOrTerm->wtFlags &= ~TERM_OR_OK;
