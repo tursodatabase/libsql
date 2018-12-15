@@ -22,5 +22,5 @@ find $SCRIPT_DIR/target -type f -name bindgen.rs -exec cp {} $SQLITE3_LIB_DIR/bi
 # Sanity check
 cd $SCRIPT_DIR/..
 cargo update
-cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled"
+cargo test --features "backup blob chrono functions limits load_extension serde_json trace vtab bundled"
 echo 'You should increment the version in libsqlite3-sys/Cargo.toml'
