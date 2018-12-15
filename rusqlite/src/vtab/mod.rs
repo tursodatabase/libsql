@@ -99,6 +99,7 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
+        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
         xShadowName: None,
     };
     Module {
@@ -138,6 +139,7 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
+        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
         xShadowName: None,
     };
     Module {
