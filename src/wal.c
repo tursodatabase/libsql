@@ -3109,7 +3109,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 
     rc = walLockShared(pWal, WAL_READ_LOCK(eLock));
     if( rc!=SQLITE_OK ){
-      return rc;
+      return (rc==SQLITE_BUSY ? WAL_RETRY : rc);
     }
     walShmBarrier(pWal);
     if( memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) ){

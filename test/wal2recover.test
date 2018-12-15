@@ -227,40 +227,6 @@ do_test 3.5 {
   list [file size test.db] [file size test.db-wal] [file size test.db-wal2]
 } {5120 15752 18896}
 
-#-------------------------------------------------------------------------
-#
-reset_db
-do_execsql_test 4.0 {
-  PRAGMA journal_mode = wal2;
-  CREATE TABLE xyz(x, y, z);
-  INSERT INTO xyz VALUES('x', 'y', 'z');
-} {wal2}
-db close
-do_test 4.1 {
-  close [open test.db-wal w]
-  file mkdir test.db-wal2
-  sqlite3 db test.db
-  catchsql { SELECT * FROM xyz }
-} {1 {unable to open database file}}
-db close
-file delete test.db-wal2
-
-do_test 4.2 {
-  sqlite3 db test.db
-  execsql { 
-    INSERT INTO xyz VALUES('a', 'b', 'c');
-  }
-  forcecopy test.db test.db2
-  forcecopy test.db-wal test.db2-wal
-  forcedelete test.db2-wal2
-  file mkdir test.db2-wal2
-  sqlite3 db2 test.db2
-  catchsql { SELECT * FROM xyz } db2
-} {1 {unable to open database file}}
-db2 close
-file delete test.db2-wal2
-
-
 
 finish_test
 

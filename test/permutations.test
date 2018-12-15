@@ -439,7 +439,7 @@ walfault.test walhook.test walmode.test walnoshm.test
 waloverwrite.test walpersist.test walprotocol2.test
 walprotocol.test walro2.test walrofault.test walro.test
 walshared.test walslow.test wal.test
-wal2savepoint.test
+wal2savepoint.test wal2lock.test wal2recover2.test
 } 
 
 test_suite "coverage-pager" -description {
