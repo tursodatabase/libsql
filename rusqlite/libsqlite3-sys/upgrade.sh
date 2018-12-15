@@ -4,7 +4,7 @@ cd $SCRIPT_DIR
 export SQLITE3_LIB_DIR=$SCRIPT_DIR/sqlite3
 
 # Download and extract amalgamation
-SQLITE=sqlite-amalgamation-3250200
+SQLITE=sqlite-amalgamation-3260000
 curl -O http://sqlite.org/2018/$SQLITE.zip
 unzip -p $SQLITE.zip $SQLITE/sqlite3.c > $SQLITE3_LIB_DIR/sqlite3.c
 unzip -p $SQLITE.zip $SQLITE/sqlite3.h > $SQLITE3_LIB_DIR/sqlite3.h
@@ -22,5 +22,5 @@ find $SCRIPT_DIR/target -type f -name bindgen.rs -exec cp {} $SQLITE3_LIB_DIR/bi
 # Sanity check
 cd $SCRIPT_DIR/..
 cargo update
-cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled"
+cargo test --features "backup blob chrono functions limits load_extension serde_json trace vtab bundled"
 echo 'You should increment the version in libsqlite3-sys/Cargo.toml'
