@@ -679,6 +679,12 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
         pNew->zName = pOld->zName;
         pNew->zDatabase = pOld->zDatabase;
         pNew->pSelect = pOld->pSelect;
+        if( pOld->fg.isTabFunc ){
+          pNew->u1.pFuncArg = pOld->u1.pFuncArg;
+          pOld->u1.pFuncArg = 0;
+          pOld->fg.isTabFunc = 0;
+          pNew->fg.isTabFunc = 1;
+        }
         pOld->zName = pOld->zDatabase = 0;
         pOld->pSelect = 0;
       }
@@ -1376,8 +1382,12 @@ cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 //
 %ifndef SQLITE_OMIT_VACUUM
 %ifndef SQLITE_OMIT_ATTACH
-cmd ::= VACUUM.                {sqlite3Vacuum(pParse,0);}
-cmd ::= VACUUM nm(X).          {sqlite3Vacuum(pParse,&X);}
+%type vinto {Expr*}
+%destructor vinto {sqlite3ExprDelete(pParse->db, $$);}
+cmd ::= VACUUM vinto(Y).                {sqlite3Vacuum(pParse,0,Y);}
+cmd ::= VACUUM nm(X) vinto(Y).          {sqlite3Vacuum(pParse,&X,Y);}
+vinto(A) ::= INTO expr(X).              {A = X;}
+vinto(A) ::= .                          {A = 0;}
 %endif  SQLITE_OMIT_ATTACH
 %endif  SQLITE_OMIT_VACUUM
 

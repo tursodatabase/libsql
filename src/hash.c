@@ -64,20 +64,6 @@ static unsigned int strHash(const char *z){
   }
   return h;
 }
-#ifdef SQLITE_ENABLE_NORMALIZE
-static unsigned int strHashN(const char *z, int n){
-  unsigned int h = 0;
-  int i;
-  for(i=0; i<n; i++){
-    /* Knuth multiplicative hashing.  (Sorting & Searching, p. 510).
-    ** 0x9e3779b1 is 2654435761 which is the closest prime number to
-    ** (2**32)*golden_ratio, where golden_ratio = (sqrt(5) - 1)/2. */
-    h += sqlite3UpperToLower[z[i]];
-    h *= 0x9e3779b1;
-  }
-  return h;
-}
-#endif /* SQLITE_ENABLE_NORMALIZE */
 
 
 /* Link pNew element into the hash table pH.  If pEntry!=0 then also
@@ -189,40 +175,6 @@ static HashElem *findElementWithHash(
   }
   return &nullElement;
 }
-#ifdef SQLITE_ENABLE_NORMALIZE
-static HashElem *findElementWithHashN(
-  const Hash *pH,     /* The pH to be searched */
-  const char *pKey,   /* The key we are searching for */
-  int nKey,           /* Number of key bytes to use */
-  unsigned int *pHash /* Write the hash value here */
-){
-  HashElem *elem;                /* Used to loop thru the element list */
-  int count;                     /* Number of elements left to test */
-  unsigned int h;                /* The computed hash */
-  static HashElem nullElement = { 0, 0, 0, 0 };
-
-  if( pH->ht ){   /*OPTIMIZATION-IF-TRUE*/
-    struct _ht *pEntry;
-    h = strHashN(pKey, nKey) % pH->htsize;
-    pEntry = &pH->ht[h];
-    elem = pEntry->chain;
-    count = pEntry->count;
-  }else{
-    h = 0;
-    elem = pH->first;
-    count = pH->count;
-  }
-  if( pHash ) *pHash = h;
-  while( count-- ){
-    assert( elem!=0 );
-    if( sqlite3StrNICmp(elem->pKey,pKey,nKey)==0 ){ 
-      return elem;
-    }
-    elem = elem->next;
-  }
-  return &nullElement;
-}
-#endif /* SQLITE_ENABLE_NORMALIZE */
 
 /* Remove a single entry from the hash table given a pointer to that
 ** element and a hash on the element's key.
@@ -267,14 +219,6 @@ void *sqlite3HashFind(const Hash *pH, const char *pKey){
   assert( pKey!=0 );
   return findElementWithHash(pH, pKey, 0)->data;
 }
-#ifdef SQLITE_ENABLE_NORMALIZE
-void *sqlite3HashFindN(const Hash *pH, const char *pKey, int nKey){
-  assert( pH!=0 );
-  assert( pKey!=0 );
-  assert( nKey>=0 );
-  return findElementWithHashN(pH, pKey, nKey, 0)->data;
-}
-#endif /* SQLITE_ENABLE_NORMALIZE */
 
 /* Insert an element into the hash table pH.  The key is pKey
 ** and the data is "data".

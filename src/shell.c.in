@@ -1007,6 +1007,7 @@ struct ShellState {
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
+  u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
@@ -1065,6 +1066,12 @@ struct ShellState {
 #define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
 #define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
 #define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
+
+/* Allowed values for ShellState.eTraceType
+*/
+#define SHELL_TRACE_PLAIN      0      /* Show input SQL text */
+#define SHELL_TRACE_EXPANDED   1      /* Show expanded SQL text */
+#define SHELL_TRACE_NORMALIZED 2      /* Show normalized SQL text */
 
 /*
 ** These are the allowed shellFlgs values
@@ -3370,6 +3377,7 @@ static const char *(azHelp[]) = {
 #endif
   ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
   "       --append            Use the appendvfs",
+  "       --async             Write to FILE without a journal and without fsync()",
   ".bail on|off             Stop after hitting an error.  Default OFF",
   ".binary on|off           Turn binary output on or off.  Default OFF",
   ".cd DIRECTORY            Change the working directory to DIRECTORY",
@@ -3492,7 +3500,22 @@ static const char *(azHelp[]) = {
   ".testcase NAME           Begin redirecting output to 'testcase-out.txt'",
   ".timeout MS              Try opening locked tables for MS milliseconds",
   ".timer on|off            Turn SQL timer on or off",
-  ".trace FILE|off          Output each SQL statement as it is run",
+#ifndef SQLITE_OMIT_TRACE
+  ".trace ?OPTIONS?         Output each SQL statement as it is run",
+  "    FILE                    Send output to FILE",
+  "    stdout                  Send output to stdout",
+  "    stderr                  Send output to stderr",
+  "    off                     Disable tracing",
+  "    --expanded              Expand query parameters",
+#ifdef SQLITE_ENABLE_NORMALIZE
+  "    --normalized            Normal the SQL statements",
+#endif
+  "    --plain                 Show SQL as it is input",
+  "    --stmt                  Trace statement execution (SQLITE_TRACE_STMT)",
+  "    --profile               Profile statements (SQLITE_TRACE_PROFILE)",
+  "    --row                   Trace each row (SQLITE_TRACE_ROW)",
+  "    --close                 Trace connection close (SQLITE_TRACE_CLOSE)",
+#endif /* SQLITE_OMIT_TRACE */
   ".vfsinfo ?AUX?           Information about the top-level VFS",
   ".vfslist                 List all available VFSes",
   ".vfsname ?AUX?           Print the name of the VFS stack",
@@ -3999,24 +4022,60 @@ static FILE *output_file_open(const char *zFile, int bTextMode){
   return f;
 }
 
-#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
+#ifndef SQLITE_OMIT_TRACE
 /*
 ** A routine for handling output from sqlite3_trace().
 */
 static int sql_trace_callback(
-  unsigned mType,
-  void *pArg,
-  void *pP,
-  void *pX
+  unsigned mType,         /* The trace type */
+  void *pArg,             /* The ShellState pointer */
+  void *pP,               /* Usually a pointer to sqlite_stmt */
+  void *pX                /* Auxiliary output */
 ){
-  FILE *f = (FILE*)pArg;
-  UNUSED_PARAMETER(mType);
-  UNUSED_PARAMETER(pP);
-  if( f ){
-    const char *z = (const char*)pX;
-    int i = strlen30(z);
-    while( i>0 && z[i-1]==';' ){ i--; }
-    utf8_printf(f, "%.*s;\n", i, z);
+  ShellState *p = (ShellState*)pArg;
+  sqlite3_stmt *pStmt;
+  const char *zSql;
+  int nSql;
+  if( p->traceOut==0 ) return 0;
+  if( mType==SQLITE_TRACE_CLOSE ){
+    utf8_printf(p->traceOut, "-- closing database connection\n");
+    return 0;
+  }
+  if( mType!=SQLITE_TRACE_ROW && ((const char*)pX)[0]=='-' ){
+    zSql = (const char*)pX;
+  }else{
+    pStmt = (sqlite3_stmt*)pP;
+    switch( p->eTraceType ){
+      case SHELL_TRACE_EXPANDED: {
+        zSql = sqlite3_expanded_sql(pStmt);
+        break;
+      }
+#ifdef SQLITE_ENABLE_NORMALIZE
+      case SHELL_TRACE_NORMALIZED: {
+        zSql = sqlite3_normalized_sql(pStmt);
+        break;
+      }
+#endif
+      default: {
+        zSql = sqlite3_sql(pStmt);
+        break;
+      }
+    }
+  }
+  if( zSql==0 ) return 0;
+  nSql = strlen30(zSql);
+  while( nSql>0 && zSql[nSql-1]==';' ){ nSql--; }
+  switch( mType ){
+    case SQLITE_TRACE_ROW:
+    case SQLITE_TRACE_STMT: {
+      utf8_printf(p->traceOut, "%.*s;\n", nSql, zSql);
+      break;
+    }
+    case SQLITE_TRACE_PROFILE: {
+      sqlite3_int64 nNanosec = *(sqlite3_int64*)pX;
+      utf8_printf(p->traceOut, "%.*s; -- %lld ns\n", nSql, zSql, nNanosec);
+      break;
+    }
   }
   return 0;
 }
@@ -5782,6 +5841,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3 *pDest;
     sqlite3_backup *pBackup;
     int j;
+    int bAsync = 0;
     const char *zVfs = 0;
     for(j=1; j<nArg; j++){
       const char *z = azArg[j];
@@ -5789,6 +5849,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( z[1]=='-' ) z++;
         if( strcmp(z, "-append")==0 ){
           zVfs = "apndvfs";
+        }else
+        if( strcmp(z, "-async")==0 ){
+          bAsync = 1;
         }else
         {
           utf8_printf(stderr, "unknown option: %s\n", azArg[j]);
@@ -5800,7 +5863,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         zDb = zDestFile;
         zDestFile = azArg[j];
       }else{
-        raw_printf(stderr, "Usage: .backup ?DB? ?--append? FILENAME\n");
+        raw_printf(stderr, "Usage: .backup ?DB? ?OPTIONS? FILENAME\n");
         return 1;
       }
     }
@@ -5815,6 +5878,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zDestFile);
       close_db(pDest);
       return 1;
+    }
+    if( bAsync ){
+      sqlite3_exec(pDest, "PRAGMA synchronous=OFF; PRAGMA journal_mode=OFF;",
+                   0, 0, 0);
     }
     open_db(p, 0);
     pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
@@ -7838,23 +7905,55 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_OMIT_TRACE
   if( c=='t' && strncmp(azArg[0], "trace", n)==0 ){
+    int mType = 0;
+    int jj;
     open_db(p, 0);
-    if( nArg!=2 ){
-      raw_printf(stderr, "Usage: .trace FILE|off\n");
-      rc = 1;
-      goto meta_command_exit;
+    for(jj=1; jj<nArg; jj++){
+      const char *z = azArg[jj];
+      if( z[0]=='-' ){
+        if( optionMatch(z, "expanded") ){
+          p->eTraceType = SHELL_TRACE_EXPANDED;
+        }
+#ifdef SQLITE_ENABLE_NORMALIZE
+        else if( optionMatch(z, "normalized") ){
+          p->eTraceType = SHELL_TRACE_NORMALIZED;
+        }
+#endif
+        else if( optionMatch(z, "plain") ){
+          p->eTraceType = SHELL_TRACE_PLAIN;
+        }
+        else if( optionMatch(z, "profile") ){
+          mType |= SQLITE_TRACE_PROFILE;
+        }
+        else if( optionMatch(z, "row") ){
+          mType |= SQLITE_TRACE_ROW;
+        }
+        else if( optionMatch(z, "stmt") ){
+          mType |= SQLITE_TRACE_STMT;
+        }
+        else if( optionMatch(z, "close") ){
+          mType |= SQLITE_TRACE_CLOSE;
+        }
+        else {
+          raw_printf(stderr, "Unknown option \"%s\" on \".trace\"\n", z);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else{
+        output_file_close(p->traceOut);
+        p->traceOut = output_file_open(azArg[1], 0);
+      }
     }
-    output_file_close(p->traceOut);
-    p->traceOut = output_file_open(azArg[1], 0);
-#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
     if( p->traceOut==0 ){
       sqlite3_trace_v2(p->db, 0, 0, 0);
     }else{
-      sqlite3_trace_v2(p->db, SQLITE_TRACE_STMT, sql_trace_callback,p->traceOut);
+      if( mType==0 ) mType = SQLITE_TRACE_STMT;
+      sqlite3_trace_v2(p->db, mType, sql_trace_callback, p);
     }
-#endif
   }else
+#endif /* !defined(SQLITE_OMIT_TRACE) */
 
 #if SQLITE_USER_AUTHENTICATION
   if( c=='u' && strncmp(azArg[0], "user", n)==0 ){

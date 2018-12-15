@@ -114,7 +114,6 @@ do_execsql_test 3.0 {
   PRAGMA journal_mode = wal2;
 } {wal2}
 
-breakpoint
 do_test 3.1 {
   execsql BEGIN
   for {set i 1} {$i < 1000} {incr i} {
@@ -243,8 +242,6 @@ do_test 6.1 {
   }
 } {}
 
-puts "[file size test.db-wal] [file size test.db-wal2]"
-
 do_test 6.2.1 {
   foreach f [glob -nocomplain test.db2*] { forcedelete $f }
   forcecopy test.db-wal2 test.db2-wal2
@@ -289,4 +286,189 @@ do_test 6.4.2 {
 } {wal2}
 db2 close
 
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
+do_execsql_test 7.0 {
+  PRAGMA journal_size_limit = 10000;
+  PRAGMA journal_mode = wal2;
+  PRAGMA wal_autocheckpoint = 0;
+  BEGIN;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES( randomblob(8000) );
+  COMMIT;
+} {10000 wal2 0}
+
+do_test 7.1 {
+  list [file size test.db-wal] [file size test.db-wal2]
+} {9464 0}
+
+# Connection db2 is holding a PART1 lock. 
+#
+#   7.2.2: Test that the PART1 does not prevent db from switching to the
+#          other wal file.
+#
+#   7.2.3: Test that the PART1 does prevent a checkpoint of test.db-wal.
+#
+#   7.2.4: Test that after the PART1 is released the checkpoint is possible.
+#
+do_test 7.2.1 {
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+} {1}
+do_test 7.2.2 {
+  execsql {
+    INSERT INTO t1 VALUES( randomblob(800) );
+    INSERT INTO t1 VALUES( randomblob(800) );
+  }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {13656 3176 1024}
+do_test 7.2.3 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {13656 3176 1024}
+do_test 7.2.4 {
+  execsql { END } db2
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {13656 3176 11264}
+
+# Connection db2 is holding a PART2_FULL1 lock. 
+#
+#   7.3.2: Test that the lock does not prevent checkpointing.
+#
+#   7.3.3: Test that the lock does prevent the writer from overwriting 
+#          test.db-wal.
+#
+#   7.3.4: Test that after the PART2_FULL1 is released the writer can
+#          switch wal files and overwrite test.db-wal
+#
+db close
+db2 close
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 7.3.1 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(500));
+  }
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 3176 11264}
+do_test 7.3.2 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 3176 21504}
+do_test 7.3.3 {
+  execsql { 
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(500));
+  }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 18896 21504}
+do_test 7.3.4 {
+  execsql END db2
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)); }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 18896 21504}
+
+# Connection db2 is holding a PART2 lock. 
+#
+#   7.4.2: Test that the lock does not prevent writer switching to test.db-wal.
+#
+#   7.3.3: Test that the lock does prevent checkpointing of test.db-wal2.
+#
+#   7.3.4: Test that after the PART2 is released test.db-wal2 can be
+#          checkpointed.
+#
+db close
+db2 close
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 7.4.1 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(10000));
+    PRAGMA wal_checkpoint;
+  }
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 44032}
+do_test 7.4.2 {
+  execsql { 
+    INSERT INTO t1 VALUES(randomblob(5000));
+  }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 44032}
+do_test 7.4.3 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 44032}
+do_test 7.4.4 {
+  execsql END db2
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 54272}
+
+# Connection db2 is holding a PART1_FULL2 lock. 
+#
+#   7.5.2: Test that the lock does not prevent a checkpoint of test.db-wal2.
+#
+#   7.5.3: Test that the lock does prevent the writer from overwriting
+#          test.db-wal2.
+#
+#   7.5.4: Test that after the PART1_FULL2 lock is released, the writer
+#          can switch to test.db-wal2.
+#
+db close
+db2 close
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 7.5.1 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(10000));
+    PRAGMA wal_checkpoint;
+    INSERT INTO t1 VALUES(randomblob(5000));
+  }
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 64512}
+do_test 7.5.2 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 75776}
+do_test 7.5.3.1 {
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {14704 12608 75776}
+do_test 7.5.3.2 {
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {22040 12608 75776}
+do_test 7.5.4 {
+  execsql END db2
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {22040 12608 75776}
+
+
 finish_test
+

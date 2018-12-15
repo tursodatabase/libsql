@@ -1,0 +1,84 @@
+# 2018 December 5
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set testprefix wal2snapshot
+ifcapable !wal {finish_test ; return }
+ifcapable !snapshot {finish_test; return}
+
+foreach {tn mode} {1 wal 2 wal2} {
+  reset_db
+  do_execsql_test $tn.1 "PRAGMA journal_mode = $mode" $mode
+
+  do_execsql_test $tn.2 {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+    BEGIN;
+  }
+
+  # Check that sqlite3_snapshot_get() is an error for a wal2 db.
+  #
+  if {$tn==1} {
+    do_test 1.3 {
+      set S [sqlite3_snapshot_get db main]
+      sqlite3_snapshot_free $S
+    } {}
+  } else {
+    do_test 2.3 {
+      list [catch { sqlite3_snapshot_get db main } msg] $msg
+    } {1 SQLITE_ERROR}
+  }
+  
+  # Check that sqlite3_snapshot_recover() is an error for a wal2 db.
+  #
+  do_execsql_test $tn.4 COMMIT
+  if {$tn==1} {
+    do_test 1.5 {
+      sqlite3_snapshot_recover db main
+    } {}
+  } else {
+    do_test 2.5 {
+      list [catch { sqlite3_snapshot_recover db main } msg] $msg
+    } {1 SQLITE_ERROR}
+  }
+ 
+  # Check that sqlite3_snapshot_open() is an error for a wal2 db.
+  #
+  if {$tn==1} {
+    do_test 1.6 {
+      execsql BEGIN
+      set SNAPSHOT [sqlite3_snapshot_get_blob db main]
+      sqlite3_snapshot_open_blob db main $SNAPSHOT
+      execsql COMMIT
+    } {}
+  } else {
+    do_test 2.6 {
+      execsql BEGIN
+      set res [
+        list [catch { sqlite3_snapshot_open_blob db main $SNAPSHOT } msg] $msg
+      ]
+      execsql COMMIT
+      set res
+    } {1 SQLITE_ERROR}
+  }
+}
+
+
+finish_test
+
+

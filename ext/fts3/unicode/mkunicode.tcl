@@ -9,11 +9,12 @@ proc print_rd {map} {
   set nRange 1
   set iFirst  [lindex $map 0 0]
   set cPrev   [lindex $map 0 1]
+  set fPrev   [lindex $map 0 2]
 
   foreach m [lrange $map 1 end] {
-    foreach {i c} $m {}
+    foreach {i c f} $m {}
 
-    if {$cPrev == $c} {
+    if {$cPrev == $c && $fPrev==$f} {
       for {set j [expr $iFirst+$nRange]} {$j<$i} {incr j} {
         if {[info exists tl_lookup_table($j)]==0} break
       }
@@ -29,13 +30,16 @@ proc print_rd {map} {
 
     lappend lRange [list $iFirst $nRange]
     lappend aChar  $cPrev
+    lappend aFlag  $fPrev
 
     set iFirst $i
     set cPrev  $c
+    set fPrev  $f
     set nRange 1
   }
   lappend lRange [list $iFirst $nRange]
   lappend aChar $cPrev
+  lappend aFlag $fPrev
 
   puts "/*"
   puts "** If the argument is a codepoint corresponding to a lowercase letter"
@@ -45,7 +49,7 @@ proc print_rd {map} {
   puts "** E\"). The resuls of passing a codepoint that corresponds to an"
   puts "** uppercase letter are undefined."
   puts "*/"
-  puts "static int ${::remove_diacritic}(int c)\{"
+  puts "static int ${::remove_diacritic}(int c, int bComplex)\{"
   puts "  unsigned short aDia\[\] = \{"
   puts -nonewline "        0, "
   set i 1
@@ -60,13 +64,17 @@ proc print_rd {map} {
   puts ""
   puts "  \};"
   puts "  char aChar\[\] = \{"
-  puts -nonewline "    '\\0', "
+  puts -nonewline "    '\\0',      "
   set i 1
-  foreach c $aChar {
-    set str "'$c',  "
-    if {$c == ""} { set str "'\\0', " }
+  foreach c $aChar f $aFlag {
+    if { $f } {
+      set str "'$c'|0x80,  "
+    } else {
+      set str "'$c'|0x00,  "
+    }
+    if {$c == ""} { set str "'\\0',      " }
 
-    if {($i % 12)==0} {puts "" ; puts -nonewline "    " }
+    if {($i % 6)==0} {puts "" ; puts -nonewline "    " }
     incr i
     puts -nonewline "$str"
   }
@@ -87,7 +95,8 @@ proc print_rd {map} {
     }
   }
   assert( key>=aDia[iRes] );
-  return ((c > (aDia[iRes]>>3) + (aDia[iRes]&0x07)) ? c : (int)aChar[iRes]);}
+  if( bComplex==0 && (aChar[iRes] & 0x80) ) return c;
+  return (c > (aDia[iRes]>>3) + (aDia[iRes]&0x07)) ? c : ((int)aChar[iRes] & 0x7F);}
   puts "\}"
 }
 
@@ -95,7 +104,8 @@ proc print_isdiacritic {zFunc map} {
 
   set lCode [list]
   foreach m $map {
-    foreach {code char} $m {}
+    foreach {code char flag} $m {}
+    if {$flag} continue
     if {$code && $char == ""} { lappend lCode $code }
   }
   set lCode [lsort -integer $lCode]
@@ -472,7 +482,7 @@ proc print_fold {zFunc} {
   puts "** The results are undefined if the value passed to this function"
   puts "** is less than zero."
   puts "*/"
-  puts "int ${zFunc}\(int c, int bRemoveDiacritic)\{"
+  puts "int ${zFunc}\(int c, int eRemoveDiacritic)\{"
 
   set liOff [tl_generate_ioff_table $lRecord]
   tl_print_table_header
@@ -516,7 +526,9 @@ proc print_fold {zFunc} {
       assert( ret>0 );
     }
 
-    if( bRemoveDiacritic ) ret = ${::remove_diacritic}(ret);
+    if( eRemoveDiacritic ){
+      ret = ${::remove_diacritic}(ret, eRemoveDiacritic==2);
+    }
   }
   }]
 
@@ -605,10 +617,6 @@ proc print_categories {lMap} {
 
   set nCat [expr [llength [array names C]] + 1]
   puts [code {
-    int sqlite3Fts5UnicodeNCat(void) { 
-      return $nCat;
-    }
-
     int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
       aArray[0] = 1;
       switch( zCat[0] ){

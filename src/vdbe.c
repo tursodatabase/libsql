@@ -6727,14 +6727,19 @@ case OP_JournalMode: {    /* out2 */
 #endif /* SQLITE_OMIT_PRAGMA */
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
-/* Opcode: Vacuum P1 * * * *
+/* Opcode: Vacuum P1 P2 * * *
 **
 ** Vacuum the entire database P1.  P1 is 0 for "main", and 2 or more
 ** for an attached database.  The "temp" database may not be vacuumed.
+**
+** If P2 is not zero, then it is a register holding a string which is
+** the file into which the result of vacuum should be written.  When
+** P2 is zero, the vacuum overwrites the original database.
 */
 case OP_Vacuum: {
   assert( p->readOnly==0 );
-  rc = sqlite3RunVacuum(&p->zErrMsg, db, pOp->p1);
+  rc = sqlite3RunVacuum(&p->zErrMsg, db, pOp->p1,
+                        pOp->p2 ? &aMem[pOp->p2] : 0);
   if( rc ) goto abort_due_to_error;
   break;
 }
@@ -7137,7 +7142,7 @@ case OP_VRename: {
   rc = sqlite3VdbeChangeEncoding(pName, SQLITE_UTF8);
   if( rc ) goto abort_due_to_error;
   rc = pVtab->pModule->xRename(pVtab, pName->z);
-  if( isLegacy==0 ) db->flags &= ~SQLITE_LegacyAlter;
+  if( isLegacy==0 ) db->flags &= ~(u64)SQLITE_LegacyAlter;
   sqlite3VtabImportErrmsg(p, pVtab);
   p->expired = 0;
   if( rc ) goto abort_due_to_error;

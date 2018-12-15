@@ -430,10 +430,16 @@ lappend ::testsuitelist xxx
 test_suite "coverage-wal" -description {
   Coverage tests for file wal.c.
 } -files {
-  wal.test       wal2.test     wal3.test       walmode.test    
-  walbak.test    walhook.test  walcrash2.test  walcksum.test
-  walfault.test  walbig.test   walnoshm.test
-  wal5.test
+wal2big.test wal2recover.test wal2rewrite.test
+wal2simple.test wal2snapshot.test wal2.test
+wal3.test wal4.test wal5.test
+wal64k.test wal6.test wal7.test wal8.test wal9.test
+walbak.test walbig.test walblock.test walcksum.test 
+walfault.test walhook.test walmode.test walnoshm.test
+waloverwrite.test walpersist.test walprotocol2.test
+walprotocol.test walro2.test walrofault.test walro.test
+walshared.test walslow.test wal.test
+wal2savepoint.test wal2lock.test wal2recover2.test
 } 
 
 test_suite "coverage-pager" -description {

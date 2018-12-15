@@ -273,6 +273,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_vacuum(
   zCmd = Tcl_GetString(objv[1]);
   zTarget = Tcl_GetString(objv[2]);
   if( objc==4 ) zStateDb = Tcl_GetString(objv[3]);
+  if( zStateDb && zStateDb[0]=='\0' ) zStateDb = 0;
 
   pRbu = sqlite3rbu_vacuum(zTarget, zStateDb);
   Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);

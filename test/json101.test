@@ -813,6 +813,23 @@ do_execsql_test json-14.170 {
   SELECT fullkey FROM json_tree('null');
 } {$}
 
-
+# 2018-12-03
+# Make sure the table-valued functions contained within parentheses
+# work correctly.
+#
+# Bug reported via private email. See TH3 for more information.
+#
+do_execsql_test json-15.100 {
+  SELECT * FROM JSON_EACH('{"a":1, "b":2}');
+} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+do_execsql_test json-15.110 {
+  SELECT xyz.* FROM JSON_EACH('{"a":1, "b":2}') AS xyz;
+} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+do_execsql_test json-15.120 {
+  SELECT * FROM (JSON_EACH('{"a":1, "b":2}'));
+} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+do_execsql_test json-15.130 {
+  SELECT xyz.* FROM (JSON_EACH('{"a":1, "b":2}')) AS xyz;
+} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
 
 finish_test

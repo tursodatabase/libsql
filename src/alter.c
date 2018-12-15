@@ -781,13 +781,30 @@ static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
 }
 
 /*
+** Iterate through the Select objects that are part of WITH clauses attached
+** to select statement pSelect.
+*/
+static void renameWalkWith(Walker *pWalker, Select *pSelect){
+  if( pSelect->pWith ){
+    int i;
+    for(i=0; i<pSelect->pWith->nCte; i++){
+      Select *p = pSelect->pWith->a[i].pSelect;
+      NameContext sNC;
+      memset(&sNC, 0, sizeof(sNC));
+      sNC.pParse = pWalker->pParse;
+      sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      sqlite3WalkSelect(pWalker, p);
+    }
+  }
+}
+
+/*
 ** This is a Walker select callback. It does nothing. It is only required
 ** because without a dummy callback, sqlite3WalkExpr() and similar do not
 ** descend into sub-select statements.
 */
 static int renameColumnSelectCb(Walker *pWalker, Select *p){
-  UNUSED_PARAMETER(pWalker);
-  UNUSED_PARAMETER(p);
+  renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
 
@@ -1358,12 +1375,17 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   int i;
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
+  if( pSrc==0 ){
+    assert( pWalker->pParse->db->mallocFailed );
+    return WRC_Abort;
+  }
   for(i=0; i<pSrc->nSrc; i++){
     struct SrcList_item *pItem = &pSrc->a[i];
     if( pItem->pTab==p->pTab ){
       renameTokenFind(pWalker->pParse, p, pItem->zName);
     }
   }
+  renameWalkWith(pWalker, pSelect);
 
   return WRC_Continue;
 }

@@ -1,0 +1,227 @@
+# 2018 December 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix wal2recover2
+ifcapable !wal {finish_test ; return }
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(x);
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t1 SELECT i FROM s;
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t2 SELECT i FROM s;
+
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 10000;
+} {wal2 10000}
+
+set ::L 1125750
+set ::M 1126500
+set ::H 1127250
+
+do_execsql_test 1.1 {
+  UPDATE t1 SET x=x+1;
+  UPDATE t2 SET x=x+1 WHERE rowid<=750;
+
+  SELECT sum(x) FROM t1;
+  SELECT sum(x) FROM t2;
+} [list $H $M]
+
+do_test 1.2 {
+  list [file size test.db] [file size test.db-wal] [file size test.db-wal2]
+} {31744 14704 7368}
+
+proc cksum {zIn data} {
+  if {[string length $zIn]==0} {
+    set s0 0
+    set s1 0
+  } else {
+    set s0 [hexio_get_int [string range $zIn 0 7]]
+    set s1 [hexio_get_int [string range $zIn 8 15]]
+  }
+  set n [expr [string length $data] / 8]
+
+  for {set i 0} {$i < $n} {incr i 2} {
+    set x0 [hexio_get_int -l [string range $data [expr $i*8]   [expr $i*8+7]]]
+    set x1 [hexio_get_int -l [string range $data [expr $i*8+8] [expr $i*8+8+7]]]
+
+    set s0 [expr ($s0 + $x0 + $s1) & 0xFFFFFFFF]
+    set s1 [expr ($s1 + $x1 + $s0) & 0xFFFFFFFF]
+  }
+
+  return "[hexio_render_int32 $s0][hexio_render_int32 $s1]"
+}
+
+proc fix_wal_cksums {file} {
+  # Fix the checksum on the wal header.
+  set data [hexio_read $file 0 32]
+  set cksum [cksum {} [string range $data 0 47]]
+  set salt [hexio_read $file 16 8]
+  hexio_write $file 24 $cksum
+
+  # Fix the checksums for all pages in the wal file.
+  set pgsz [hexio_get_int [hexio_read $file 8 4]]
+  set sz [file size $file]
+  for {set off 32} {$off < $sz} {incr off [expr $pgsz+24]} {
+    set e [hexio_read $file $off 8]
+    set cksum [cksum $cksum $e]
+
+    set p [hexio_read $file [expr $off+24] $pgsz]
+    set cksum [cksum $cksum $p]
+
+    hexio_write $file [expr $off+8] $salt
+    hexio_write $file [expr $off+16] $cksum
+  }
+}
+
+proc wal_incr_hdrfield {file field} {
+  switch -- $field {
+    nCkpt { set offset 12 }
+    salt0 { set offset 16 }
+    salt1 { set offset 20 }
+    default {
+      error "unknown field $field - should be \"nCkpt\", \"salt0\" or \"salt1\""
+    }
+  }
+
+  # Increment the value in the wal header.
+  set v [hexio_get_int [hexio_read $file $offset 4]]
+  incr v
+  hexio_write $file $offset [hexio_render_int32 $v]
+  
+  # Fix various checksums
+  fix_wal_cksums $file
+}
+
+proc wal_set_nckpt {file val} {
+  # Increment the value in the wal header.
+  hexio_write $file 12 [hexio_render_int32 $val]
+  
+  # Fix various checksums
+  fix_wal_cksums $file
+}
+
+proc wal_set_follow {file prevfile} {
+  set pgsz [hexio_get_int [hexio_read $prevfile 8 4]]
+  set sz [file size $prevfile]
+  set cksum [hexio_read $prevfile [expr $sz-$pgsz-8] 8]
+
+  hexio_write $file 16 $cksum
+  fix_wal_cksums $file
+}
+
+foreach {tn file field} {
+  1 test.db2-wal    salt0
+  2 test.db2-wal    salt1
+  3 test.db2-wal    nCkpt
+  4 test.db2-wal2   salt0
+  5 test.db2-wal2   salt1
+  6 test.db2-wal2   nCkpt
+} {
+  do_test 1.3.$tn {
+    forcecopy test.db test.db2
+    forcecopy test.db-wal test.db2-wal
+    forcecopy test.db-wal2 test.db2-wal2
+    wal_incr_hdrfield $file $field
+    sqlite3 db2 test.db2
+    execsql {
+      SELECT sum(x) FROM t1;
+      SELECT sum(x) FROM t2;
+    } db2
+  } [list $H $L]
+  db2 close
+}
+
+do_test 1.4 {
+  forcecopy test.db test.db2
+  forcecopy test.db-wal2 test.db2-wal
+  forcedelete test.db2-wal2
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT sum(x) FROM t1;
+    SELECT sum(x) FROM t2;
+  } db2
+} [list $L $M]
+
+do_test 1.5 {
+  forcecopy test.db test.db2
+  forcecopy test.db-wal2 test.db2-wal
+  forcecopy test.db-wal test.db2-wal2
+  sqlite3 db2 test.db2
+  execsql {
+    SELECT sum(x) FROM t1;
+    SELECT sum(x) FROM t2;
+  } db2
+} [list $H $M]
+
+foreach {tn file field} {
+  1 test.db2-wal    salt0
+  2 test.db2-wal    salt1
+  3 test.db2-wal2   salt0
+  4 test.db2-wal2   salt1
+} {
+  do_test 1.6.$tn {
+    forcecopy test.db test.db2
+    forcecopy test.db-wal2 test.db2-wal
+    forcecopy test.db-wal test.db2-wal2
+    wal_incr_hdrfield $file $field
+    breakpoint
+    sqlite3 db2 test.db2
+    execsql {
+      SELECT sum(x) FROM t1;
+      SELECT sum(x) FROM t2;
+    } db2
+  } [list $H $L]
+  db2 close
+}
+
+foreach {tn nCkpt1 nCkpt2 res} [list \
+  1   2 1   "$H $M"                  \
+  2   2 2   "$L $M"                  \
+  3   3 1   "$H $L"                  \
+  4   15 14 "$H $M"                  \
+  5   0 15  "$H $M"                  \
+  6   1 15  "$L $M"                  \
+] {
+  do_test 1.7.$tn {
+    forcecopy test.db test.db2
+    forcecopy test.db-wal2 test.db2-wal
+    forcecopy test.db-wal test.db2-wal2
+
+    wal_set_nckpt test.db2-wal2 $nCkpt2
+    wal_set_nckpt test.db2-wal  $nCkpt1
+    wal_set_follow test.db2-wal test.db2-wal2
+
+    if {$tn==1} breakpoint
+
+    sqlite3 db2 test.db2
+    execsql {
+      SELECT sum(x) FROM t1;
+      SELECT sum(x) FROM t2;
+    } db2
+  } $res
+  db2 close
+}
+
+
+finish_test
+
