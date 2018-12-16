@@ -144,6 +144,26 @@ pub const NO_PARAMS: &[&dyn ToSql] = &[];
 /// A typedef of the result returned by many methods.
 pub type Result<T> = result::Result<T, Error>;
 
+/// See the [method documentation](#tymethod.optional).
+pub trait OptionalExtension<T> {
+    /// Converts a `Result<T>` into a `Result<Option<T>>`.
+    ///
+    /// By default, Rusqlite treats 0 rows being returned from a query that is expected to return 1
+    /// row as an error. This method will
+    /// handle that error, and give you back an `Option<T>` instead.
+    fn optional(self) -> Result<Option<T>>;
+}
+
+impl<T> OptionalExtension<T> for Result<T> {
+    fn optional(self) -> Result<Option<T>> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}
+
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     let c_slice = CStr::from_ptr(errmsg).to_bytes();
     String::from_utf8_lossy(c_slice).into_owned()
@@ -1375,6 +1395,32 @@ mod test {
 
         let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", NO_PARAMS, |_| ());
 
+        assert!(bad_query_result.is_err());
+    }
+
+    #[test]
+    fn test_optional() {
+        let db = checked_memory_handle();
+
+        let result: Result<i64> =
+            db.query_row("SELECT 1 WHERE 0 <> 0", NO_PARAMS, |r| r.get(0));
+        let result = result.optional();
+        match result.unwrap() {
+            None => (),
+            _ => panic!("Unexpected result"),
+        }
+
+        let result: Result<i64> =
+            db.query_row("SELECT 1 WHERE 0 == 0", NO_PARAMS, |r| r.get(0));
+        let result = result.optional();
+        match result.unwrap() {
+            Some(1) => (),
+            _ => panic!("Unexpected result"),
+        }
+
+        let bad_query_result: Result<i64> =
+            db.query_row("NOT A PROPER QUERY", NO_PARAMS, |r| r.get(0));
+        let bad_query_result = bad_query_result.optional();
         assert!(bad_query_result.is_err());
     }
 
