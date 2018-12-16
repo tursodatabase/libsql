@@ -1,6 +1,7 @@
 ///! Busy handler (when the database is locked)
 use std::mem;
 use std::os::raw::{c_int, c_void};
+use std::panic::catch_unwind;
 use std::ptr;
 use std::time::Duration;
 
@@ -48,7 +49,7 @@ impl Connection {
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);
-            if handler_fn(count) {
+            if let Ok(true) = catch_unwind(|| handler_fn(count)) {
                 1
             } else {
                 0

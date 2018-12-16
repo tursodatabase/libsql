@@ -91,6 +91,9 @@ pub enum Error {
     #[cfg(feature = "vtab")]
     #[allow(dead_code)]
     ModuleError(String),
+
+    #[cfg(feature = "functions")]
+    UnwindingPanic,
 }
 
 impl From<str::Utf8Error> for Error {
@@ -151,6 +154,8 @@ impl fmt::Display for Error {
             Error::InvalidQuery => write!(f, "Query is not read-only"),
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => write!(f, "{}", desc),
+            #[cfg(feature = "functions")]
+            Error::UnwindingPanic => write!(f, "unwinding panic"),
         }
     }
 }
@@ -188,6 +193,8 @@ impl error::Error for Error {
             Error::InvalidQuery => "query is not read-only",
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => desc,
+            #[cfg(feature = "functions")]
+            Error::UnwindingPanic => "unwinding panic",
         }
     }
 
@@ -222,6 +229,9 @@ impl error::Error for Error {
 
             #[cfg(feature = "vtab")]
             Error::ModuleError(_) => None,
+
+            #[cfg(feature = "functions")]
+            Error::UnwindingPanic => None,
         }
     }
 }

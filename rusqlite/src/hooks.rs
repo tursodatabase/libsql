@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 
 use std::os::raw::{c_char, c_int, c_void};
+use std::panic::catch_unwind;
 use std::ptr;
 
 use crate::ffi;
@@ -146,8 +147,11 @@ impl InnerConnection {
         where
             F: FnMut() -> bool,
         {
-            let boxed_hook: *mut F = p_arg as *mut F;
-            if (*boxed_hook)() {
+            let r = catch_unwind(|| {
+                let boxed_hook: *mut F = p_arg as *mut F;
+                (*boxed_hook)()
+            });
+            if let Ok(true) = r {
                 1
             } else {
                 0
@@ -192,8 +196,10 @@ impl InnerConnection {
         where
             F: FnMut(),
         {
-            let boxed_hook: *mut F = p_arg as *mut F;
-            (*boxed_hook)();
+            let _ = catch_unwind(|| {
+                let boxed_hook: *mut F = p_arg as *mut F;
+                (*boxed_hook)();
+            });
         }
 
         let free_rollback_hook = if hook.is_some() {
@@ -239,8 +245,6 @@ impl InnerConnection {
             use std::ffi::CStr;
             use std::str;
 
-            let boxed_hook: *mut F = p_arg as *mut F;
-
             let action = Action::from(action_code);
             let db_name = {
                 let c_slice = CStr::from_ptr(db_str).to_bytes();
@@ -251,7 +255,10 @@ impl InnerConnection {
                 str::from_utf8_unchecked(c_slice)
             };
 
-            (*boxed_hook)(action, db_name, tbl_name, row_id);
+            let _ = catch_unwind(|| {
+                let boxed_hook: *mut F = p_arg as *mut F;
+                (*boxed_hook)(action, db_name, tbl_name, row_id);
+            });
         }
 
         let free_update_hook = if hook.is_some() {

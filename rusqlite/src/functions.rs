@@ -55,6 +55,7 @@
 //! ```
 use std::error::Error as StdError;
 use std::os::raw::{c_int, c_void};
+use std::panic::{catch_unwind, RefUnwindSafe, UnwindSafe};
 use std::ptr;
 use std::slice;
 
@@ -189,6 +190,7 @@ impl<'a> Context<'a> {
 /// result. Implementations should be stateless.
 pub trait Aggregate<A, T>
 where
+    A: RefUnwindSafe + UnwindSafe,
     T: ToSql,
 {
     /// Initializes the aggregation context. Will be called prior to the first
@@ -246,7 +248,7 @@ impl Connection {
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context<'_>) -> Result<T> + Send + 'static,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'static,
         T: ToSql,
     {
         self.db
@@ -267,6 +269,7 @@ impl Connection {
         aggr: D,
     ) -> Result<()>
     where
+        A: RefUnwindSafe + UnwindSafe,
         D: Aggregate<A, T>,
         T: ToSql,
     {
@@ -297,7 +300,7 @@ impl InnerConnection {
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context<'_>) -> Result<T> + Send + 'static,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'static,
         T: ToSql,
     {
         unsafe extern "C" fn call_boxed_closure<F, T>(
@@ -308,20 +311,28 @@ impl InnerConnection {
             F: FnMut(&Context<'_>) -> Result<T>,
             T: ToSql,
         {
-            let ctx = Context {
-                ctx,
-                args: slice::from_raw_parts(argv, argc as usize),
+            let r = catch_unwind(|| {
+                let boxed_f: *mut F = ffi::sqlite3_user_data(ctx) as *mut F;
+                assert!(!boxed_f.is_null(), "Internal error - null function pointer");
+                let ctx = Context {
+                    ctx,
+                    args: slice::from_raw_parts(argv, argc as usize),
+                };
+                (*boxed_f)(&ctx)
+            });
+            let t = match r {
+                Err(_) => {
+                    report_error(ctx, &Error::UnwindingPanic);
+                    return;
+                }
+                Ok(r) => r,
             };
-            let boxed_f: *mut F = ffi::sqlite3_user_data(ctx.ctx) as *mut F;
-            assert!(!boxed_f.is_null(), "Internal error - null function pointer");
-
-            let t = (*boxed_f)(&ctx);
             let t = t.as_ref().map(|t| ToSql::to_sql(t));
 
             match t {
-                Ok(Ok(ref value)) => set_result(ctx.ctx, value),
-                Ok(Err(err)) => report_error(ctx.ctx, &err),
-                Err(err) => report_error(ctx.ctx, err),
+                Ok(Ok(ref value)) => set_result(ctx, value),
+                Ok(Err(err)) => report_error(ctx, &err),
+                Err(err) => report_error(ctx, err),
             }
         }
 
@@ -355,6 +366,7 @@ impl InnerConnection {
         aggr: D,
     ) -> Result<()>
     where
+        A: RefUnwindSafe + UnwindSafe,
         D: Aggregate<A, T>,
         T: ToSql,
     {
@@ -374,15 +386,10 @@ impl InnerConnection {
             argc: c_int,
             argv: *mut *mut sqlite3_value,
         ) where
+            A: RefUnwindSafe + UnwindSafe,
             D: Aggregate<A, T>,
             T: ToSql,
         {
-            let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
-            assert!(
-                !boxed_aggr.is_null(),
-                "Internal error - null aggregate pointer"
-            );
-
             let pac = match aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
                 Some(pac) => pac,
                 None => {
@@ -391,32 +398,40 @@ impl InnerConnection {
                 }
             };
 
-            if (*pac as *mut A).is_null() {
-                *pac = Box::into_raw(Box::new((*boxed_aggr).init()));
-            }
-
-            let mut ctx = Context {
-                ctx,
-                args: slice::from_raw_parts(argv, argc as usize),
+            let r = catch_unwind(|| {
+                let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
+                assert!(
+                    !boxed_aggr.is_null(),
+                    "Internal error - null aggregate pointer"
+                );
+                if (*pac as *mut A).is_null() {
+                    *pac = Box::into_raw(Box::new((*boxed_aggr).init()));
+                }
+                let mut ctx = Context {
+                    ctx,
+                    args: slice::from_raw_parts(argv, argc as usize),
+                };
+                (*boxed_aggr).step(&mut ctx, &mut **pac)
+            });
+            let r = match r {
+                Err(_) => {
+                    report_error(ctx, &Error::UnwindingPanic);
+                    return;
+                }
+                Ok(r) => r,
             };
-
-            match (*boxed_aggr).step(&mut ctx, &mut **pac) {
+            match r {
                 Ok(_) => {}
-                Err(err) => report_error(ctx.ctx, &err),
+                Err(err) => report_error(ctx, &err),
             };
         }
 
         unsafe extern "C" fn call_boxed_final<A, D, T>(ctx: *mut sqlite3_context)
         where
+            A: RefUnwindSafe + UnwindSafe,
             D: Aggregate<A, T>,
             T: ToSql,
         {
-            let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
-            assert!(
-                !boxed_aggr.is_null(),
-                "Internal error - null aggregate pointer"
-            );
-
             // Within the xFinal callback, it is customary to set N=0 in calls to
             // sqlite3_aggregate_context(C,N) so that no pointless memory allocations occur.
             let a: Option<A> = match aggregate_context(ctx, 0) {
@@ -431,7 +446,21 @@ impl InnerConnection {
                 None => None,
             };
 
-            let t = (*boxed_aggr).finalize(a);
+            let r = catch_unwind(|| {
+                let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
+                assert!(
+                    !boxed_aggr.is_null(),
+                    "Internal error - null aggregate pointer"
+                );
+                (*boxed_aggr).finalize(a)
+            });
+            let t = match r {
+                Err(_) => {
+                    report_error(ctx, &Error::UnwindingPanic);
+                    return;
+                }
+                Ok(r) => r,
+            };
             let t = t.as_ref().map(|t| ToSql::to_sql(t));
             match t {
                 Ok(Ok(ref value)) => set_result(ctx, value),
