@@ -137,6 +137,10 @@ impl<'a> Context<'a> {
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
+            }
         })
     }
 
