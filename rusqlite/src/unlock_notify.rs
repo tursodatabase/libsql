@@ -4,6 +4,8 @@ use std::os::raw::c_int;
 #[cfg(feature = "unlock_notify")]
 use std::os::raw::c_void;
 #[cfg(feature = "unlock_notify")]
+use std::panic::catch_unwind;
+#[cfg(feature = "unlock_notify")]
 use std::sync::{Condvar, Mutex};
 
 use crate::ffi;
@@ -42,8 +44,10 @@ unsafe extern "C" fn unlock_notify_cb(ap_arg: *mut *mut c_void, n_arg: c_int) {
     use std::slice::from_raw_parts;
     let args = from_raw_parts(ap_arg, n_arg as usize);
     for arg in args {
-        let un: &mut UnlockNotification = &mut *(*arg as *mut UnlockNotification);
-        un.fired();
+        let _ = catch_unwind(|| {
+            let un: &mut UnlockNotification = &mut *(*arg as *mut UnlockNotification);
+            un.fired()
+        });
     }
 }
 

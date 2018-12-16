@@ -3,6 +3,7 @@
 use std::ffi::{CStr, CString};
 use std::mem;
 use std::os::raw::{c_char, c_int, c_void};
+use std::panic::catch_unwind;
 use std::ptr;
 use std::time::Duration;
 
@@ -27,7 +28,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
         let callback: fn(c_int, &str) = unsafe { mem::transmute(p_arg) };
 
         let s = String::from_utf8_lossy(c_slice);
-        callback(err, &s);
+        let _ = catch_unwind(|| callback(err, &s));
     }
 
     let rc = match callback {
@@ -72,7 +73,7 @@ impl Connection {
             let trace_fn: fn(&str) = mem::transmute(p_arg);
             let c_slice = CStr::from_ptr(z_sql).to_bytes();
             let s = String::from_utf8_lossy(c_slice);
-            trace_fn(&s);
+            let _ = catch_unwind(|| trace_fn(&s));
         }
 
         let c = self.db.borrow_mut();
@@ -106,7 +107,7 @@ impl Connection {
                 nanoseconds / NANOS_PER_SEC,
                 (nanoseconds % NANOS_PER_SEC) as u32,
             );
-            profile_fn(&s, duration);
+            let _ = catch_unwind(|| profile_fn(&s, duration));
         }
 
         let c = self.db.borrow_mut();
