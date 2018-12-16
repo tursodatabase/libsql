@@ -392,6 +392,9 @@ impl Connection {
     /// If the query returns more than one row, all rows except the first are
     /// ignored.
     ///
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the query truly is optional,
+    /// you can call `.optional()` on the result of this to get a `Result<Option<T>>`.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
@@ -411,6 +414,9 @@ impl Connection {
     ///
     /// If the query returns more than one row, all rows except the first are
     /// ignored.
+    ///
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the query truly is optional,
+    /// you can call `.optional()` on the result of this to get a `Result<Option<T>>`.
     ///
     /// # Failure
     ///
