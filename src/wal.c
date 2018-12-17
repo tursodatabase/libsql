@@ -551,7 +551,7 @@ struct WalIndexHdr {
 **   void walidxSetFile(WalIndexHdr*, int val);              // set file
 */
 #define walidxGetMxFrame(pHdr, iWal) \
-  ((iWal) ? ((pHdr)->mxFrame2 & 0x7FFFFFF) : (pHdr)->mxFrame)
+  ((iWal) ? ((pHdr)->mxFrame2 & 0x7FFFFFFF) : (pHdr)->mxFrame)
 
 static void walidxSetMxFrame(WalIndexHdr *pHdr, int iWal, u32 mxFrame){
   if( iWal ){
@@ -3766,6 +3766,7 @@ static int walUpgradeReadlock(Wal *pWal){
   int cnt;
   int rc;
   assert( pWal->writeLock && pWal->readLock==0 );
+  assert( isWalMode2(pWal)==0 );
   walUnlockShared(pWal, WAL_READ_LOCK(0));
   pWal->readLock = -1;
   cnt = 0;

@@ -101,5 +101,64 @@ foreach tn {1 2} {
   }
 }
 
+do_multiclient_test tn {
+  do_test 2.$tn.1 {
+    sql1 {
+      PRAGMA auto_vacuum = OFF;
+      CREATE TABLE t1(x UNIQUE);
+      CREATE TABLE t2(x UNIQUE);
+      PRAGMA journal_mode = wal2;
+      PRAGMA journal_size_limit = 15000;
+    }
+  } {wal2 15000}
+
+  do_test 2.$tn.2 {
+    sql1 {
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<=10
+      )
+      INSERT INTO t1 SELECT randomblob(800) FROM s;
+    }
+  } {}
+
+  do_test 2.$tn.3 {
+    sql1 { DELETE FROM t1 WHERE (rowid%4)==0 }
+    list [expr [file size test.db-wal]>15000] \
+         [expr [file size test.db-wal2]>15000]
+  } {1 0}
+
+  do_test 2.$tn.4 {
+    sql1 { PRAGMA wal_checkpoint; }
+    sql1 { 
+      BEGIN CONCURRENT;
+        INSERT INTO t1 VALUES(randomblob(800));
+    }
+  } {}
+
+  do_test 2.$tn.5 {
+    sql2 { 
+      PRAGMA journal_size_limit = 15000;
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      DELETE FROM t2;
+    }
+    list [expr [file size test.db-wal]>15000] \
+         [expr [file size test.db-wal2]>15000]
+  } {1 1}
+
+  do_test 2.$tn.6 {
+    sql1 { 
+        INSERT INTO t1 VALUES(randomblob(800));
+      COMMIT;
+      PRAGMA integrity_check;
+    }
+  } {ok}
+}
+
+
+
 finish_test
 
