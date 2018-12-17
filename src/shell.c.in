@@ -3905,6 +3905,7 @@ static void open_db(ShellState *p, int openFlags){
 #ifdef SQLITE_ENABLE_DESERIALIZE
     else
     if( p->openMode==SHELL_OPEN_DESERIALIZE || p->openMode==SHELL_OPEN_HEXDB ){
+      int rc;
       int nData = 0;
       unsigned char *aData;
       if( p->openMode==SHELL_OPEN_DESERIALIZE ){
@@ -3916,7 +3917,7 @@ static void open_db(ShellState *p, int openFlags){
           return;
         }
       }
-      int rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
+      rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
                    SQLITE_DESERIALIZE_RESIZEABLE |
                    SQLITE_DESERIALIZE_FREEONCLOSE);
       if( rc ){
