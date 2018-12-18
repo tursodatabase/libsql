@@ -8,14 +8,15 @@
 package require sqlite3
 
 # Default values for command line switches:
-set O(-database) ""
-set O(-rows)     [expr 5000000]
-set O(-mode)     wal2
-set O(-tserver)  "./tserver"
-set O(-seconds)  20
-set O(-writers)  1
-set O(-readers)  0
-set O(-verbose)  0
+set O(-database)  ""
+set O(-rows)      [expr 5000000]
+set O(-mode)      wal2
+set O(-tserver)   "./tserver"
+set O(-seconds)   20
+set O(-writers)   1
+set O(-readers)   0
+set O(-integrity) 0
+set O(-verbose)   0
 
 
 proc error_out {err} {
@@ -34,6 +35,7 @@ proc usage {} {
   puts stderr "  -seconds <time to run for in seconds> (default: 20)"
   puts stderr "  -writers <number of writer clients>   (default: 1)"
   puts stderr "  -readers <number of reader clients>   (default: 0)"
+  puts stderr "  -integrity <number of IC clients>     (default: 0)"
   puts stderr "  -verbose 0|1                          (default: 0)"
   exit -1
 }
@@ -248,6 +250,14 @@ proc script_reader {} {
   }]
 }
 
+proc script_integrity {} {
+  global O
+
+  return {
+    .integrity_check
+  }
+}
+
 
 create_test_database
 tserver_start
@@ -258,10 +268,14 @@ for {set i 0} {$i < $O(-writers)} {incr i} {
 for {set i 0} {$i < $O(-readers)} {incr i} {
   client_launch r.$i [script_reader]
 }
+for {set i 0} {$i < $O(-integrity)} {incr i} {
+  client_launch i.$i [script_integrity]
+}
 client_wait
 
 set name(w) "Writers"
 set name(r) "Readers"
+set name(i) "Integrity"
 foreach r $::client_output {
   array set a $r
   set type [string range $a(name) 0 0]

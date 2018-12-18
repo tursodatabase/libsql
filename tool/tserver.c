@@ -35,6 +35,8 @@
 **   .mutex_commit            Add a "COMMIT" protected by a g.commit_mutex
 **                            to the current SQL.
 **   .stop                    Stop the tserver process - exit(0).
+**   .checkpoint N
+**   .integrity_check
 **
 ** Example input:
 **
@@ -87,8 +89,11 @@ static struct TserverGlobal g = {0};
 typedef struct ClientSql ClientSql;
 struct ClientSql {
   sqlite3_stmt *pStmt;
-  int bMutex;
+  int flags;
 };
+
+#define TSERVER_CLIENTSQL_MUTEX     0x0001
+#define TSERVER_CLIENTSQL_INTEGRITY 0x0002
 
 typedef struct ClientCtx ClientCtx;
 struct ClientCtx {
@@ -248,18 +253,27 @@ static int handle_run_command(ClientCtx *p){
     for(i=0; i<p->nPrepare && rc==SQLITE_OK; i++){
       sqlite3_stmt *pStmt = p->aPrepare[i].pStmt;
 
-      /* If the bMutex flag is set, grab g.commit_mutex before executing
+      /* If the MUTEX flag is set, grab g.commit_mutex before executing
       ** the SQL statement (which is always "COMMIT" in this case). */
-      if( p->aPrepare[i].bMutex ){
+      if( p->aPrepare[i].flags & TSERVER_CLIENTSQL_MUTEX ){
         sqlite3_mutex_enter(g.commit_mutex);
       }
 
       /* Execute the statement */
+      if( p->aPrepare[i].flags & TSERVER_CLIENTSQL_INTEGRITY ){
+        sqlite3_step(pStmt);
+        if( sqlite3_stricmp("ok", sqlite3_column_text(pStmt, 0)) ){
+          send_message(p, "error - integrity_check failed: %s\n", 
+              sqlite3_column_text(pStmt, 0)
+          );
+        }
+        sqlite3_reset(pStmt);
+      }
       while( sqlite3_step(pStmt)==SQLITE_ROW );
       rc = sqlite3_reset(pStmt);
 
       /* Relinquish the g.commit_mutex mutex if required. */
-      if( p->aPrepare[i].bMutex ){
+      if( p->aPrepare[i].flags & TSERVER_CLIENTSQL_MUTEX ){
         sqlite3_mutex_leave(g.commit_mutex);
       }
 
@@ -315,6 +329,7 @@ static int handle_run_command(ClientCtx *p){
 
     if( rc==SQLITE_OK && p->bClientCkptRequired ){
       rc = sqlite3_wal_checkpoint(p->db, "main");
+      if( rc==SQLITE_BUSY ) rc = SQLITE_OK;
       assert( rc==SQLITE_OK );
       p->bClientCkptRequired = 0;
     }
@@ -363,7 +378,7 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
   }
 
   else if( n>=1 && n<=4 && 0==strncmp(z, "quit", n) ){
-    rc = 1;
+    rc = -1;
   }
 
   else if( n>=2 && n<=7 && 0==strncmp(z, "repeats", n) ){
@@ -389,7 +404,7 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
   else if( n>=1 && n<=12 && 0==strncmp(z, "mutex_commit", n) ){
     rc = handle_some_sql(p, "COMMIT;", 7);
     if( rc==SQLITE_OK ){
-      p->aPrepare[p->nPrepare-1].bMutex = 1;
+      p->aPrepare[p->nPrepare-1].flags |= TSERVER_CLIENTSQL_MUTEX;
     }
   }
 
@@ -405,11 +420,18 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
     exit(0);
   }
 
+  else if( n>=2 && n<=15 && 0==strncmp(z, "integrity_check", n) ){
+    rc = handle_some_sql(p, "PRAGMA integrity_check;", 23);
+    if( rc==SQLITE_OK ){
+      p->aPrepare[p->nPrepare-1].flags |= TSERVER_CLIENTSQL_INTEGRITY;
+    }
+  }
+
   else{
     send_message(p, 
         "unrecognized dot command: %.*s\n"
         "should be \"list\", \"run\", \"repeats\", \"mutex_commit\", "
-        "\"checkpoint\" or \"seconds\"\n", n, z
+        "\"checkpoint\", \"integrity_check\" or \"seconds\"\n", n, z
     );
     rc = 1;
   }
@@ -506,7 +528,7 @@ static void *handle_client(void *pArg){
     }while( rc==SQLITE_OK && nConsume>0 );
   }
 
-  fprintf(stdout, "Client %d disconnects\n", ctx.fd);
+  fprintf(stdout, "Client %d disconnects (rc=%d)\n", ctx.fd, rc);
   fflush(stdout);
   close(ctx.fd);
   clear_sql(&ctx);

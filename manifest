@@ -1,5 +1,5 @@
-C Add\swal2\srelated\stests\sto\sthis\sbranch.
-D 2018-12-17T18:26:48.041
+C Add\sthe\s".integrity_check"\scommand\sto\stserver.
+D 2018-12-18T16:24:21.581
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -1779,8 +1779,8 @@ F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
-F tool/tserver.c 46ef565f79b326a86b696ae255548cf841fafae10dda7b6a2027b323f4ee6dac
-F tool/tserver_test.tcl 777e1e4f26c1bf47fecdb61ce46e1db36c209a81956ccfd9e2d957377b54974f
+F tool/tserver.c 434336a4566415b6917d1b9cf1834cbb3a5b03756c6ad83bbe68f135f64c68e5
+F tool/tserver_test.tcl 54f4e543cbef41bf4b061e1774fa2af6c7ed89e5982316a3c10080fac6203b56
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1808,7 +1808,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85f49f0d7344611ac4157421273660c648f73ca62afa4faa8707475f21c67f7a
-R 65f394733f0ba62dea4c1755dadbd201
+P 5645822039b9f36aeb986645106cac2d95b09964689deb767cadaa6ea1d1867f
+R c457a89f51ce15a2bf7d5fa21f5a871c
 U dan
-Z 04eed859c773bffbf8a57cb8193cc4eb
+Z 2113a4a090e26cc6c885bd681bc557d4
