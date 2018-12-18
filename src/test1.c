@@ -7677,6 +7677,79 @@ static int SQLITE_TCLAPI test_mmap_warm(
 }
 
 /*
+** Usage:  decode_hexdb TEXT
+**
+** Example:   db deserialize [decode_hexdb $output_of_dbtotxt]
+**
+** This routine returns a byte-array for an SQLite database file that
+** is constructed from a text input which is the output of the "dbtotxt"
+** utility.
+*/
+static int SQLITE_TCLAPI test_decode_hexdb(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zIn = 0;
+  unsigned char *a = 0;
+  int n = 0;
+  int lineno = 0;
+  int i, iNext;
+  int iOffset = 0;
+  int j, k;
+  int rc;
+  unsigned char x[16];
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HEXDB");
+    return TCL_ERROR;
+  }
+  zIn = Tcl_GetString(objv[1]);
+  for(i=0; zIn[i]; i=iNext){
+    lineno++;
+    for(iNext=i; zIn[iNext] && zIn[iNext]!='\n'; iNext++){}
+    if( zIn[iNext]=='\n' ) iNext++;
+    while( zIn[i]==' ' || zIn[i]=='\t' ){ i++; }
+    if( a==0 ){
+      int pgsz;
+      rc = sscanf(zIn+i, "| size %d pagesize %d", &n, &pgsz);
+      if( rc!=2 ) continue;
+      if( n<512 ){
+        Tcl_AppendResult(interp, "bad 'size' field", (void*)0);
+        return TCL_ERROR;
+      }
+      a = malloc( n );
+      if( a==0 ){
+        Tcl_AppendResult(interp, "out of memory", (void*)0);
+        return TCL_ERROR;
+      }
+      memset(a, 0, n);
+      continue;
+    }
+    rc = sscanf(zIn+i, "| page %d offset %d", &j, &k);
+    if( rc==2 ){
+      iOffset = k;
+      continue;
+    }
+    rc = sscanf(zIn+i,"| %d: %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx"
+                      "  %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx",
+                &j, &x[0], &x[1], &x[2], &x[3], &x[4], &x[5], &x[6], &x[7],
+                &x[8], &x[9], &x[10], &x[11], &x[12], &x[13], &x[14], &x[15]);
+    if( rc==17 ){
+      k = iOffset+j;
+      if( k+16<=n ){
+        memcpy(a+k, x, 16);
+      }
+      continue;
+    }
+  }
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(a, n));
+  free(a);
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -7956,6 +8029,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "atomic_batch_write",      test_atomic_batch_write,     0   },
      { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
+     { "decode_hexdb",             test_decode_hexdb,       0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

@@ -585,7 +585,7 @@ static int sqlite3Step(Vdbe *p){
     return SQLITE_NOMEM_BKPT;
   }
 
-  if( p->pc<=0 && p->expired ){
+  if( p->pc<0 && p->expired ){
     p->rc = SQLITE_SCHEMA;
     rc = SQLITE_ERROR;
     goto end_of_step;
@@ -662,9 +662,9 @@ end_of_step:
        || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
   assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
-  if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 
-   && rc!=SQLITE_ROW 
-   && rc!=SQLITE_DONE 
+  if( rc!=SQLITE_ROW 
+   && rc!=SQLITE_DONE
+   && (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0
   ){
     /* If this statement was prepared using saved SQL and an 
     ** error has occurred, then return the error code in p->rc to the
@@ -1286,7 +1286,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   pVar = &p->aVar[i];
   sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
-  sqlite3Error(p->db, SQLITE_OK);
+  p->db->errCode = SQLITE_OK;
 
   /* If the bit corresponding to this variable in Vdbe.expmask is set, then 
   ** binding a new value to this variable invalidates the current query plan.
@@ -1713,9 +1713,9 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
   if( p==0 ) return 0;
-  if( p->zNormSql==0 && p->zSql!=0 ){
+  if( p->zNormSql==0 && ALWAYS(p->zSql!=0) ){
     sqlite3_mutex_enter(p->db->mutex);
-    p->zNormSql = sqlite3Normalize(p, p->zSql, sqlite3Strlen30(p->zSql));
+    p->zNormSql = sqlite3Normalize(p, p->zSql);
     sqlite3_mutex_leave(p->db->mutex);
   }
   return p->zNormSql;

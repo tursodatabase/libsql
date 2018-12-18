@@ -335,6 +335,9 @@ struct sqlite3_context {
 */
 typedef unsigned bft;  /* Bit Field Type */
 
+/* The ScanStatus object holds a single value for the
+** sqlite3_stmt_scanstatus() interface.
+*/
 typedef struct ScanStatus ScanStatus;
 struct ScanStatus {
   int addrExplain;                /* OP_Explain for loop */
@@ -343,6 +346,19 @@ struct ScanStatus {
   int iSelectID;                  /* The "Select-ID" for this loop */
   LogEst nEst;                    /* Estimated output rows per loop */
   char *zName;                    /* Name of table or index */
+};
+
+/* The DblquoteStr object holds the text of a double-quoted
+** string for a prepared statement.  A linked list of these objects
+** is constructed during statement parsing and is held on Vdbe.pDblStr.
+** When computing a normalized SQL statement for an SQL statement, that
+** list is consulted for each double-quoted identifier to see if the
+** identifier should really be a string literal.
+*/
+typedef struct DblquoteStr DblquoteStr;
+struct DblquoteStr {
+  DblquoteStr *pNextStr;   /* Next string literal in the list */
+  char z[8];               /* Dequoted value for the string */
 };
 
 /*
@@ -364,7 +380,7 @@ struct Vdbe {
   int pc;                 /* The program counter */
   int rc;                 /* Value to return */
   int nChange;            /* Number of db changes made since last reset */
-  int iStatement;         /* Statement number (or 0 if has not opened stmt) */
+  int iStatement;         /* Statement number (or 0 if has no opened stmt) */
   i64 iCurrentTime;       /* Value of julianday('now') for this statement */
   i64 nFkConstraint;      /* Number of imm. FK constraints this VM */
   i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
@@ -408,6 +424,7 @@ struct Vdbe {
   char *zSql;             /* Text of the SQL statement that generated this */
 #ifdef SQLITE_ENABLE_NORMALIZE
   char *zNormSql;         /* Normalization of the associated SQL statement */
+  DblquoteStr *pDblStr;   /* List of double-quoted string literals */
 #endif
   void *pFree;            /* Free this when deleting the vdbe */
   VdbeFrame *pFrame;      /* Parent frame */

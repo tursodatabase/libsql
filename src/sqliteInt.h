@@ -3997,8 +3997,8 @@ Table *sqlite3LocateTableItem(Parse*,u32 flags,struct SrcList_item *);
 Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
 void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
-void sqlite3Vacuum(Parse*,Token*);
-int sqlite3RunVacuum(char**, sqlite3*, int);
+void sqlite3Vacuum(Parse*,Token*,Expr*);
+int sqlite3RunVacuum(char**, sqlite3*, int, sqlite3_value*);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Parse*,Expr*, Expr*, int);
 int sqlite3ExprCompareSkip(Expr*, Expr*, int);
@@ -4269,9 +4269,6 @@ void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
-#ifdef SQLITE_ENABLE_NORMALIZE
-int sqlite3GetTokenNormalized(const unsigned char *, int *, int *);
-#endif
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);
 int sqlite3CodeSubselect(Parse*, Expr *, int, int);
@@ -4430,7 +4427,7 @@ int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 void sqlite3ParserReset(Parse*);
 #ifdef SQLITE_ENABLE_NORMALIZE
-char *sqlite3Normalize(Vdbe*, const char*, int);
+char *sqlite3Normalize(Vdbe*, const char*);
 #endif
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
