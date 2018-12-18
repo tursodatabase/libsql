@@ -1,5 +1,5 @@
-C Merge\sthe\swal2\sfeature\sinto\sthis\sbranch.
-D 2018-12-18T18:01:17.673
+C Fix\sa\stest\sscript\sproblem\sin\swal2savepoint.test.
+D 2018-12-18T18:16:00.494
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -1617,7 +1617,7 @@ F test/wal2lock.test 0ef98d72dc6bcf7711dedd684760488400d9a9a6eec0dc5d38220604377
 F test/wal2recover.test ba8f4bc9397c838734619f9e759bd98b00e355347b3cf80a2e677610d231d5d8
 F test/wal2recover2.test 3176a03eccebb203e5c5635d94624bf573392fccb3f9d39d9d9a27aab96e4c88
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
-F test/wal2savepoint.test 29725383e7eb8b78fed46333d69dc45b4ed321db43ecc81766aadea991874bef
+F test/wal2savepoint.test b5b3137f5f11c40294ef5be6c9576143fab63296f44856d15beee0359bbdeb57
 F test/wal2simple.test 96206c98bf64ab20ec00a1c0f6c709e258b98b39f2149889361f31966ce5a703
 F test/wal2snapshot.test 95a919e1c73dee0e0212d10931d03cc1116f68a0ff603163e551aaa5ac7025c1
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
@@ -1812,10 +1812,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a93ca38b432e0c9fb2e00499cfc88d09f59f27f908f377d8ae99b6717e548a60 b3a163b46cad19a2e6a90cdd5b4c2e94d66e80b7ad2a0c9857580fe74748a604
-R 8df706f43d7960b329e6ae5fae0ee12e
-T *branch * begin-concurrent-pnu-wal2
-T *sym-begin-concurrent-pnu-wal2 *
-T -sym-begin-concurrent-pnu *
+P a2c618c0a45e1b1d271a4a981ee1e3b368dfcce94eda5c2d7d08f794784046d9
+R 401d56567e7ccded06481190d60905d2
 U dan
-Z ca2e4b85418d60538bab17e132700aa3
+Z fd40ed8c5ba115c1458cb1532edc718e

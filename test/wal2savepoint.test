@@ -39,8 +39,9 @@ do_execsql_test 1.1 {
 } {}
 
 do_test 1.2 {
-  list [file size test.db] [file size test.db-wal] [file size test.db-wal2]
-} {5120 23088 0}
+  list [file size test.db] [file size test.db-wal2] \
+       [expr [file size test.db-wal]>20000]
+} {5120 0 1}
 
 do_execsql_test 1.3 {
   BEGIN;
