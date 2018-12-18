@@ -15,18 +15,20 @@
 
 proc do_multiclient_test {varname script} {
 
-  foreach code [list {
+  foreach {tn code} [list 1 {
     if {[info exists ::G(valgrind)]} { db close ; continue }
     set ::code2_chan [launch_testfixture]
     set ::code3_chan [launch_testfixture]
     proc code2 {tcl} { testfixture $::code2_chan $tcl }
     proc code3 {tcl} { testfixture $::code3_chan $tcl }
-    set tn 1
-  } {
+  } 2 {
     proc code2 {tcl} { uplevel #0 $tcl }
     proc code3 {tcl} { uplevel #0 $tcl }
-    set tn 2
   }] {
+    # Do not run multi-process tests with the unix-excl VFS.
+    #
+    if {$tn==1 && [permutation]=="unix-excl"} continue
+
     faultsim_delete_and_reopen
 
     proc code1 {tcl} { uplevel #0 $tcl }

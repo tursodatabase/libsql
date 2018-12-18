@@ -617,6 +617,16 @@ test_suite "onefile" -description {
   rollback.test  select1.test  select2.test  select3.test
 }
 
+# Run some tests using the "unix-excl" VFS.
+#
+test_suite "unix-excl" -description {
+  Run some tests using the "unix-excl" VFS
+} -initialize {
+  set ::G(perm:sqlite3_args) [list -vfs unix-excl]
+} -files {
+  shmlock.test
+}
+
 # Run some tests using UTF-16 databases.
 #
 test_suite "utf16" -description {

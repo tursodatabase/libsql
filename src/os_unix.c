@@ -46,6 +46,16 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
+/* Turn this feature on in all builds for now */
+#define SQLITE_MUTEXFREE_SHMLOCK 1
+#define SQLITE_MFS_EXCLUSIVE     255
+#ifndef SQLITE_MFS_NSHARD
+# define SQLITE_MFS_NSHARD       8
+#endif
+#if SQLITE_MFS_NSHARD<1
+# error "SQLITE_MFS_NSHARD must be greater than 0"
+#endif
+
 /*
 ** There are various methods for file locking used for concurrency
 ** control:
@@ -4261,7 +4271,40 @@ struct unixShmNode {
   u8 sharedMask;             /* Mask of shared locks held */
   u8 nextShmId;              /* Next available unixShm.id value */
 #endif
+
+#ifdef SQLITE_MUTEXFREE_SHMLOCK
+  /* In unix-excl mode, if SQLITE_MUTEXFREE_SHMLOCK is defined, all locks
+  ** are stored in the following 64-bit value. There are in total 8 
+  ** shm-locking slots, each of which are assigned 8-bits from the 64-bit
+  ** value. The least-significant 8 bits correspond to shm-locking slot
+  ** 0, and so on.
+  **
+  ** If the 8-bits corresponding to a shm-locking locking slot are set to
+  ** 0xFF, then a write-lock is held on the slot. Or, if they are set to
+  ** a non-zero value smaller than 0xFF, then they represent the total 
+  ** number of read-locks held on the slot. There is no way to distinguish
+  ** between a write-lock and 255 read-locks.  */
+  struct LockingSlot {
+    u32 nLock;
+    u64 aPadding[7];
+  } aMFSlot[3 + SQLITE_MFS_NSHARD*5];
+#endif
 };
+
+/*
+** Atomic CAS primitive used in multi-process mode. Equivalent to:
+** 
+**   int unixCompareAndSwap(u32 *ptr, u32 oldval, u32 newval){
+**     if( *ptr==oldval ){
+**       *ptr = newval;
+**       return 1;
+**     }
+**     return 0;
+**   }
+*/
+#define unixCompareAndSwap(ptr,oldval,newval) \
+    __sync_bool_compare_and_swap(ptr,oldval,newval)
+
 
 /*
 ** Structure used internally by this VFS to record the state of an
@@ -4283,6 +4326,9 @@ struct unixShm {
   u8 id;                     /* Id of this connection within its unixShmNode */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
+#ifdef SQLITE_MUTEXFREE_SHMLOCK
+  u8 aMFCurrent[8];          /* Current slot used for each shared lock */
+#endif
 };
 
 /*
@@ -4787,6 +4833,83 @@ shmpage_out:
   return rc;
 }
 
+#ifdef SQLITE_MUTEXFREE_SHMLOCK
+static int unixMutexFreeShmlock(
+  unixFile *pFd,             /* Database file holding the shared memory */
+  int ofst,                  /* First lock to acquire or release */
+  int n,                     /* Number of locks to acquire or release */
+  int flags                  /* What to do with the lock */
+){
+  struct LockMapEntry {
+    int iFirst;
+    int nSlot;
+  } aMap[9] = {
+    { 0, 1 },
+    { 1, 1 },
+    { 2, 1 },
+    { 3+0*SQLITE_MFS_NSHARD, SQLITE_MFS_NSHARD },
+    { 3+1*SQLITE_MFS_NSHARD, SQLITE_MFS_NSHARD },
+    { 3+2*SQLITE_MFS_NSHARD, SQLITE_MFS_NSHARD },
+    { 3+3*SQLITE_MFS_NSHARD, SQLITE_MFS_NSHARD },
+    { 3+4*SQLITE_MFS_NSHARD, SQLITE_MFS_NSHARD },
+    { 3+5*SQLITE_MFS_NSHARD, 0 },
+  };
+
+  unixShm *p = pFd->pShm;               /* The shared memory being locked */
+  unixShm *pX;                          /* For looping over all siblings */
+  unixShmNode *pShmNode = p->pShmNode;  /* The underlying file iNode */
+  int rc = SQLITE_OK;
+  int iIncr;
+  u16 mask;                             /* Mask of locks to take or release */
+
+  if( flags & SQLITE_SHM_SHARED ){
+    /* SHARED locks */
+    u32 iOld, iNew, *ptr;
+    int iIncr = -1;
+    if( (flags & SQLITE_SHM_UNLOCK)==0 ){
+      p->aMFCurrent[ofst] = (p->aMFCurrent[ofst] + 1) % aMap[ofst].nSlot;
+      iIncr = 1;
+    }
+    ptr = &pShmNode->aMFSlot[aMap[ofst].iFirst + p->aMFCurrent[ofst]].nLock;
+    do {
+      iOld = *ptr;
+      iNew = iOld + iIncr;
+      if( iNew>SQLITE_MFS_EXCLUSIVE ){
+        return SQLITE_BUSY;
+      }
+    }while( 0==unixCompareAndSwap(ptr, iOld, iNew) );
+  }else{
+    /* EXCLUSIVE locks */
+    int iFirst = aMap[ofst].iFirst;
+    int iLast = aMap[ofst+n].iFirst;
+    int i;
+    for(i=iFirst; i<iLast; i++){
+      u32 *ptr = &pShmNode->aMFSlot[i].nLock;
+      if( flags & SQLITE_SHM_UNLOCK ){
+        assert( (*ptr)==SQLITE_MFS_EXCLUSIVE );
+        *ptr = 0;
+      }else{
+        u32 iOld;
+        do {
+          iOld = *ptr;
+          if( iOld>0 ){
+            while( i>iFirst ){
+              i--;
+              pShmNode->aMFSlot[i].nLock = 0;
+            }
+            return SQLITE_BUSY;
+          }
+        }while( 0==unixCompareAndSwap(ptr, iOld, SQLITE_MFS_EXCLUSIVE) );
+      }
+    }
+  }
+
+  return SQLITE_OK;
+}
+#else
+# define unixMutexFreeShmlock(a,b,c,d) SQLITE_OK
+#endif
+
 /*
 ** Change the lock state for a shared-memory segment.
 **
@@ -4820,8 +4943,20 @@ static int unixShmLock(
   assert( pShmNode->hShm>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->hShm<0 || pDbFd->pInode->bProcessLock==0 );
 
+  if( pDbFd->pInode->bProcessLock ){
+    return unixMutexFreeShmlock(pDbFd, ofst, n, flags);
+  }
+
   mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );
+  if( flags & SQLITE_SHM_LOCK ){
+    assert( !(flags&SQLITE_SHM_SHARED) || (p->sharedMask&mask)==0 );
+    assert( !(flags&SQLITE_SHM_EXCLUSIVE) || !(p->exclMask&mask) );
+  }else{
+    assert( !(flags&SQLITE_SHM_SHARED) || (p->sharedMask&mask)==mask );
+    assert( !(flags&SQLITE_SHM_EXCLUSIVE) || (p->exclMask&mask)==mask );
+  }
+
   sqlite3_mutex_enter(pShmNode->pShmMutex);
   if( flags & SQLITE_SHM_UNLOCK ){
     u16 allMask = 0; /* Mask of locks held by siblings */
@@ -4911,12 +5046,16 @@ static void unixShmBarrier(
   sqlite3_file *fd                /* Database file holding the shared memory */
 ){
   UNUSED_PARAMETER(fd);
+#ifdef SQLITE_MUTEXFREE_SHMLOCK
+  __sync_synchronize();
+#else
   sqlite3MemoryBarrier();         /* compiler-defined memory barrier */
   assert( fd->pMethods->xLock==nolockLock 
        || unixFileMutexNotheld((unixFile*)fd) 
   );
   unixEnterMutex();               /* Also mutex, for redundancy */
   unixLeaveMutex();
+#endif
 }
 
 /*

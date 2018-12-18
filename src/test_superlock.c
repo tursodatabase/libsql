@@ -41,6 +41,8 @@ typedef struct SuperlockBusy SuperlockBusy;
 struct Superlock {
   sqlite3 *db;                    /* Database handle used to lock db */
   int bWal;                       /* True if db is a WAL database */
+  int bRecoveryLocked;            /* True if WAL RECOVERY lock is held */
+  int bReaderLocked;              /* True if WAL READER locks are held */
 };
 typedef struct Superlock Superlock;
 
@@ -107,12 +109,13 @@ static int superlockShmLock(
 ** Invoke the supplied busy-handler as required.
 */
 static int superlockWalLock(
-  sqlite3 *db,                    /* Database handle open on WAL database */
+  Superlock *pLock,               /* Superlock handle */
   SuperlockBusy *pBusy            /* Busy handler wrapper object */
 ){
   int rc;                         /* Return code */
   sqlite3_file *fd = 0;           /* Main database file handle */
   void volatile *p = 0;           /* Pointer to first page of shared memory */
+  sqlite3 *db = pLock->db;
 
   /* Obtain a pointer to the sqlite3_file object open on the main db file. */
   rc = sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, (void *)&fd);
@@ -121,8 +124,10 @@ static int superlockWalLock(
   /* Obtain the "recovery" lock. Normally, this lock is only obtained by
   ** clients running database recovery.  
   */
+  assert( pLock->bRecoveryLocked==0 );
   rc = superlockShmLock(fd, 2, 1, pBusy);
   if( rc!=SQLITE_OK ) return rc;
+  pLock->bRecoveryLocked = 1;
 
   /* Zero the start of the first shared-memory page. This means that any
   ** clients that open read or write transactions from this point on will
@@ -139,7 +144,9 @@ static int superlockWalLock(
   ** are held, it is guaranteed that there are no active reader, writer or 
   ** checkpointer clients.
   */
+  assert( pLock->bReaderLocked==0 );
   rc = superlockShmLock(fd, 3, SQLITE_SHM_NLOCK-3, pBusy);
+  if( rc==SQLITE_OK ) pLock->bReaderLocked = 1;
   return rc;
 }
 
@@ -156,8 +163,14 @@ void sqlite3demo_superunlock(void *pLock){
     sqlite3_file *fd = 0;
     rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_FILE_POINTER, (void *)&fd);
     if( rc==SQLITE_OK ){
-      fd->pMethods->xShmLock(fd, 2, 1, flags);
-      fd->pMethods->xShmLock(fd, 3, SQLITE_SHM_NLOCK-3, flags);
+      if( p->bRecoveryLocked ){
+        fd->pMethods->xShmLock(fd, 2, 1, flags);
+        p->bRecoveryLocked = 0;
+      }
+      if( p->bReaderLocked ){
+        fd->pMethods->xShmLock(fd, 3, SQLITE_SHM_NLOCK-3, flags);
+        p->bReaderLocked = 0;
+      }
     }
   }
   sqlite3_close(p->db);
@@ -232,7 +245,7 @@ int sqlite3demo_superlock(
     if( SQLITE_OK==(rc = superlockIsWal(pLock)) && pLock->bWal ){
       rc = sqlite3_exec(pLock->db, "COMMIT", 0, 0, 0);
       if( rc==SQLITE_OK ){
-        rc = superlockWalLock(pLock->db, &busy);
+        rc = superlockWalLock(pLock, &busy);
       }
     }
   }
