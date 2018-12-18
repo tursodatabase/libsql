@@ -650,7 +650,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
   if( onoff ){
     db->flags |= SQLITE_LoadExtension|SQLITE_LoadExtFunc;
   }else{
-    db->flags &= ~(SQLITE_LoadExtension|SQLITE_LoadExtFunc);
+    db->flags &= ~(u64)(SQLITE_LoadExtension|SQLITE_LoadExtFunc);
   }
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;

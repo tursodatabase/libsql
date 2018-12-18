@@ -16,8 +16,11 @@
 
 source [file join [file dirname [info script]] rbu_common.tcl]
 
-foreach step {0 1} {
-  set ::testprefix rbuvacuum2-$step
+foreach {step} {0 1} {
+foreach {ttt state} {
+  s state.db t test.db-vacuum n {}
+} {
+  set ::testprefix rbuvacuum2-$step$ttt
   
   #-------------------------------------------------------------------------
   # Test that a database that contains fts3 tables can be vacuumed.
@@ -29,7 +32,7 @@ foreach step {0 1} {
       INSERT INTO t1 VALUES('fix this issue', 'at some point');
     }
   
-    do_rbu_vacuum_test 1.2 $step
+    do_rbu_vacuum_test 1.2 $step $state
   
     do_execsql_test 1.3 {
       SELECT * FROM t1;
@@ -46,7 +49,7 @@ foreach step {0 1} {
       INSERT INTO t1 VALUES('a b c', 'x y z');
     }
 
-    do_rbu_vacuum_test 1.6 $step
+    do_rbu_vacuum_test 1.6 $step $state
     do_execsql_test 1.7 {
       INSERT INTO t1(t1) VALUES('integrity-check');
       SELECT * FROM t1;
@@ -67,7 +70,7 @@ foreach step {0 1} {
       INSERT INTO t1 VALUES('fix this issue', 'at some point');
     }
   
-    do_rbu_vacuum_test 2.2 $step
+    do_rbu_vacuum_test 2.2 $step $state
   
     do_execsql_test 2.3 {
       SELECT * FROM t1;
@@ -84,7 +87,7 @@ foreach step {0 1} {
       INSERT INTO t1 VALUES('a b c', 'x y z');
     }
 
-    do_rbu_vacuum_test 2.6 $step
+    do_rbu_vacuum_test 2.6 $step $state
     do_execsql_test 2.7 {
       INSERT INTO t1(t1) VALUES('integrity-check');
       SELECT * FROM t1;
@@ -107,7 +110,7 @@ foreach step {0 1} {
       INSERT INTO rt VALUES(3, 55, 65);
     }
   
-    do_rbu_vacuum_test 3.2 $step
+    do_rbu_vacuum_test 3.2 $step $state
   
     do_execsql_test 3.3 {
       SELECT * FROM rt;
@@ -120,7 +123,7 @@ foreach step {0 1} {
       SELECT rowid FROM rt WHERE x2>59 AND x1 < 59
     } {2 3}
 
-    do_rbu_vacuum_test 3.5 $step
+    do_rbu_vacuum_test 3.5 $step $state
 
     do_execsql_test 3.6.1 {
       SELECT rowid FROM rt WHERE x2>51 AND x1 < 51
@@ -147,7 +150,7 @@ foreach step {0 1} {
     trigger tr1 t1 0 {CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN SELECT 1; END}
     }
 
-    do_rbu_vacuum_test 4.3 $step
+    do_rbu_vacuum_test 4.3 $step $state
     do_execsql_test 4.4 {
       SELECT * FROM sqlite_master;
     } {
@@ -156,6 +159,7 @@ foreach step {0 1} {
     trigger tr1 t1 0 {CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN SELECT 1; END}
     }
   }
+}
 }
   
 #-------------------------------------------------------------------------
@@ -230,5 +234,10 @@ do_test 6.3 {
   rbu close
   execsql { PRAGMA integrity_check }
 } {ok}
+
+do_test 6.4 {
+  sqlite3rbu_vacuum rbu test.db test.db-vactmp
+  list [catch { rbu close } msg] $msg
+} {1 SQLITE_MISUSE}
 
 finish_test

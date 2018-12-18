@@ -893,10 +893,15 @@ static int saveCursorKey(BtCursor *pCur){
     /* Only the rowid is required for a table btree */
     pCur->nKey = sqlite3BtreeIntegerKey(pCur);
   }else{
-    /* For an index btree, save the complete key content */
+    /* For an index btree, save the complete key content. It is possible
+    ** that the current key is corrupt. In that case, it is possible that
+    ** the sqlite3VdbeRecordUnpack() function may overread the buffer by
+    ** up to the size of 1 varint plus 1 8-byte value when the cursor 
+    ** position is restored. Hence the 17 bytes of padding allocated 
+    ** below. */
     void *pKey;
     pCur->nKey = sqlite3BtreePayloadSize(pCur);
-    pKey = sqlite3Malloc( pCur->nKey );
+    pKey = sqlite3Malloc( pCur->nKey + 9 + 8 );
     if( pKey ){
       rc = sqlite3BtreePayload(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -1231,6 +1236,13 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
   if( rc!=SQLITE_OK ){
     *pRC = rc;
     return;
+  }
+  if( ((char*)sqlite3PagerGetExtra(pDbPage))[0]!=0 ){
+    /* The first byte of the extra data is the MemPage.isInit byte.
+    ** If that byte is set, it means this page is also being used
+    ** as a btree page. */
+    *pRC = SQLITE_CORRUPT_BKPT;
+    goto ptrmap_exit;
   }
   offset = PTRMAP_PTROFFSET(iPtrmap, key);
   if( offset<0 ){
@@ -1597,7 +1609,12 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
   assert( pCell!=0 );
   pPage->xParseCell(pPage, pCell, &info);
   if( info.nLocal<info.nPayload ){
-    Pgno ovfl = get4byte(&pCell[info.nSize-4]);
+    Pgno ovfl;
+    if( SQLITE_WITHIN(pPage->aDataEnd, pCell, pCell+info.nLocal) ){
+      *pRC = SQLITE_CORRUPT_BKPT;
+      return;
+    }
+    ovfl = get4byte(&pCell[info.nSize-4]);
     ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, pRC);
   }
 }
@@ -1652,19 +1669,14 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   ** reconstruct the entire page.  */
   if( (int)data[hdr+7]<=nMaxFrag ){
     int iFree = get2byte(&data[hdr+1]);
+
+    /* If the initial freeblock offset were out of bounds, that would
+    ** have been detected by btreeInitPage() when it was computing the
+    ** number of free bytes on the page. */
+    assert( iFree<=usableSize-4 );
     if( iFree ){
       int iFree2 = get2byte(&data[iFree]);
-
-      /* pageFindSlot() has already verified that free blocks are sorted
-      ** in order of offset within the page, and that no block extends
-      ** past the end of the page. Provided the two free slots do not 
-      ** overlap, this guarantees that the memmove() calls below will not
-      ** overwrite the usableSize byte buffer, even if the database page
-      ** is corrupt.  */
-      assert( iFree2==0 || iFree2>iFree );
-      assert( iFree+get2byte(&data[iFree+2]) <= usableSize );
-      assert( iFree2==0 || iFree2+get2byte(&data[iFree2+2]) <= usableSize );
-
+      if( iFree2>usableSize-4 ) return SQLITE_CORRUPT_PAGE(pPage);
       if( 0==iFree2 || (data[iFree2]==0 && data[iFree2+1]==0) ){
         u8 *pEnd = &data[cellOffset + nCell*2];
         u8 *pAddr;
@@ -1675,9 +1687,9 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
           return SQLITE_CORRUPT_PAGE(pPage);
         }
         if( iFree2 ){
-          assert( iFree+sz<=iFree2 ); /* Verified by pageFindSlot() */
+          if( iFree+sz>iFree2 ) return SQLITE_CORRUPT_PAGE(pPage);
           sz2 = get2byte(&data[iFree2+2]);
-          assert( iFree+sz+sz2+iFree2-(iFree+sz) <= usableSize );
+          if( iFree2+sz2 > usableSize ) return SQLITE_CORRUPT_PAGE(pPage);
           memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
           sz += sz2;
         }
@@ -7216,6 +7228,7 @@ static int rebuildPage(
   for(i=0; i<nCell; i++){
     u8 *pCell = apCell[i];
     if( SQLITE_WITHIN(pCell,aData,pEnd) ){
+      if( ((uptr)(pCell+szCell[i]))>(uptr)pEnd ) return SQLITE_CORRUPT_BKPT;
       pCell = &pTmp[pCell - aData];
     }
     pData -= szCell[i];
@@ -7510,8 +7523,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   assert( pPage->nOverflow==1 );
 
-  /* This error condition is now caught prior to reaching this function */
-  if( NEVER(pPage->nCell==0) ) return SQLITE_CORRUPT_BKPT;
+  if( pPage->nCell==0 ) return SQLITE_CORRUPT_BKPT;  /* dbfuzz001.test */
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell
@@ -9092,6 +9104,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   if( bPreserve ){
     if( !pPage->leaf 
      || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
+     || pPage->nCell==1  /* See dbfuzz001.test for a test case */
     ){
       /* A b-tree rebalance will be required after deleting this entry.
       ** Save the cursor key.  */
@@ -9874,18 +9887,18 @@ static void checkList(
     }
     pOvflData = (unsigned char *)sqlite3PagerGetData(pOvflPage);
     if( isFreeList ){
-      int n = get4byte(&pOvflData[4]);
+      u32 n = (u32)get4byte(&pOvflData[4]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pCheck->pBt->autoVacuum ){
         checkPtrmap(pCheck, iPage, PTRMAP_FREEPAGE, 0);
       }
 #endif
-      if( n>(int)pCheck->pBt->usableSize/4-2 ){
+      if( n>pCheck->pBt->usableSize/4-2 ){
         checkAppendMsg(pCheck,
            "freelist leaf count too big on page %d", iPage);
         N--;
       }else{
-        for(i=0; i<n; i++){
+        for(i=0; i<(int)n; i++){
           Pgno iFreePage = get4byte(&pOvflData[8+i*4]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
           if( pCheck->pBt->autoVacuum ){
@@ -10329,7 +10342,7 @@ char *sqlite3BtreeIntegrityCheck(
   }
 #endif
   testcase( pBt->db->flags & SQLITE_CellSizeCk );
-  pBt->db->flags &= ~SQLITE_CellSizeCk;
+  pBt->db->flags &= ~(u64)SQLITE_CellSizeCk;
   for(i=0; (int)i<nRoot && sCheck.mxErr; i++){
     i64 notUsed;
     if( aRoot[i]==0 ) continue;
