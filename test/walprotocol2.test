@@ -85,7 +85,7 @@ proc lock_callback {method filename handle lock} {
     db2 eval { INSERT INTO x VALUES('x') }
   }
 }
-db timeout 10
+db timeout 1100
 do_catchsql_test 2.4 {
   BEGIN EXCLUSIVE;
 } {0 {}}

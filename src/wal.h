@@ -26,7 +26,7 @@
 #define CKPT_SYNC_FLAGS(X)  (((X)>>2)&0x03)
 
 #ifdef SQLITE_OMIT_WAL
-# define sqlite3WalOpen(x,y,z)                   0
+# define sqlite3WalOpen(w,x,y,z)                 0
 # define sqlite3WalLimit(x,y)
 # define sqlite3WalClose(v,w,x,y,z)              0
 # define sqlite3WalBeginReadTransaction(y,z)     0
@@ -45,6 +45,7 @@
 # define sqlite3WalFramesize(z)                  0
 # define sqlite3WalFindFrame(x,y,z)              0
 # define sqlite3WalFile(x)                       0
+# define sqlite3WalJournalMode(x)                0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -55,7 +56,7 @@
 typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *, int, i64, Wal**);
+int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *,int,i64,int,Wal**);
 int sqlite3WalClose(Wal *pWal, sqlite3*, int sync_flags, int, u8 *);
 
 /* Set the limiting size of a WAL file. */
@@ -154,6 +155,12 @@ int sqlite3WalFramesize(Wal *pWal);
 
 /* Return the sqlite3_file object for the WAL file */
 sqlite3_file *sqlite3WalFile(Wal *pWal);
+
+/* Return the journal mode (WAL or WAL2) used by this Wal object. */
+int sqlite3WalJournalMode(Wal *pWal);
+
+/* sqlite3_wal_info() data */
+int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);
 
 /* sqlite3_wal_info() data */
 int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);

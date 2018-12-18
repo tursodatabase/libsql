@@ -429,10 +429,21 @@ lappend ::testsuitelist xxx
 test_suite "coverage-wal" -description {
   Coverage tests for file wal.c.
 } -files {
-  wal.test       wal2.test     wal3.test       walmode.test    
-  walbak.test    walhook.test  walcrash2.test  walcksum.test
-  walfault.test  walbig.test   walnoshm.test
-  wal5.test
+wal2big.test wal2recover.test wal2rewrite.test
+wal2simple.test wal2snapshot.test wal2.test
+wal3.test wal4.test wal5.test
+wal64k.test wal6.test wal7.test wal8.test wal9.test
+walbak.test walbig.test walblock.test walcksum.test 
+walfault.test walhook.test walmode.test walnoshm.test
+waloverwrite.test walpersist.test walprotocol2.test
+walprotocol.test walro2.test walrofault.test walro.test
+walshared.test walslow.test wal.test
+wal2savepoint.test wal2lock.test wal2recover2.test
+
+wal2concurrent.test
+concurrent.test concurrent2.test concurrent3.test
+concurrent4.test concurrent5.test concurrent6.test
+concurrent7.test
 } 
 
 test_suite "coverage-pager" -description {
@@ -975,6 +986,23 @@ if {[info commands register_demovfs] != ""} {
 
 test_suite "wal" -description {
   Run tests with journal_mode=WAL
+} -initialize {
+  set ::G(savepoint6_iterations) 100
+} -shutdown {
+  unset -nocomplain ::G(savepoint6_iterations)
+} -files {
+  savepoint.test     savepoint2.test     savepoint6.test
+  trans.test         avtrans.test
+
+  fts3aa.test  fts3ab.test  fts3ac.test  fts3ad.test
+  fts3ae.test  fts3af.test  fts3ag.test  fts3ah.test
+  fts3ai.test  fts3aj.test  fts3ak.test  fts3al.test
+  fts3am.test  fts3an.test  fts3ao.test  fts3b.test
+  fts3c.test   fts3d.test   fts3e.test   fts3query.test 
+}
+
+test_suite "wal2" -description {
+  Run tests with journal_mode=WAL2
 } -initialize {
   set ::G(savepoint6_iterations) 100
 } -shutdown {

@@ -47,7 +47,7 @@ db close
 forcecopy test.db test.db-template
 
 set unreadable_version 02
-ifcapable wal { set unreadable_version 03 }
+ifcapable wal { set unreadable_version 04 }
 do_test corruptA-2.1 {
   forcecopy test.db-template test.db
   hexio_write test.db 19 $unreadable_version   ;# the read format number

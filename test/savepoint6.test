@@ -15,6 +15,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 proc sql {zSql} {
+  if {0 && $::debug_op} {
+    puts stderr "$zSql ;"
+    flush stderr
+  }
   uplevel db eval [list $zSql]
   #puts stderr "$zSql ;"
 }
@@ -67,11 +71,13 @@ proc x_to_y {x} {
 #   delete_rows XVALUES
 #
 proc savepoint {zName} {
+  if {$::debug_op} { puts stderr "savepoint $zName" ; flush stderr }
   catch { sql "SAVEPOINT $zName" }
   lappend ::lSavepoint [list $zName [array get ::aEntry]]
 }
 
 proc rollback {zName} {
+  if {$::debug_op} { puts stderr "rollback $zName" ; flush stderr }
   catch { sql "ROLLBACK TO $zName" }
   for {set i [expr {[llength $::lSavepoint]-1}]} {$i>=0} {incr i -1} {
     set zSavepoint [lindex $::lSavepoint $i 0]
@@ -89,6 +95,7 @@ proc rollback {zName} {
 }
 
 proc release {zName} {
+  if {$::debug_op} { puts stderr "release $zName" ; flush stderr }
   catch { sql "RELEASE $zName" }
   for {set i [expr {[llength $::lSavepoint]-1}]} {$i>=0} {incr i -1} {
     set zSavepoint [lindex $::lSavepoint $i 0]
@@ -104,6 +111,7 @@ proc release {zName} {
 }
 
 proc insert_rows {lX} {
+  if {$::debug_op} { puts stderr "insert_rows $lX" ; flush stderr }
   foreach x $lX {
     set y [x_to_y $x]
 
@@ -116,6 +124,7 @@ proc insert_rows {lX} {
 }
 
 proc delete_rows {lX} {
+  if {$::debug_op} { puts stderr "delete_rows $lX" ; flush stderr }
   foreach x $lX {
     # Update database [db]
     sql "DELETE FROM t1 WHERE x = $x"
@@ -164,6 +173,11 @@ proc random_integers {nRes nRange} {
 } 
 #-------------------------------------------------------------------------
 
+set ::debug_op 0
+proc debug_ops {} {
+  set ::debug_op 1
+}
+
 proc database_op {} {
   set i [expr int(rand()*2)] 
   if {$i==0} {
@@ -184,9 +198,6 @@ proc savepoint_op {} {
 
   set C [lindex $cmds [expr int(rand()*6)]]
   set N [lindex $names [expr int(rand()*5)]]
-
-  #puts stderr "   $C $N ;  "
-  #flush stderr
 
   $C $N
   return ok

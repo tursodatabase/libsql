@@ -280,11 +280,11 @@ ifcapable wal {
       INSERT INTO t2 VALUES('x', 'y');
     }
     lsort [array names ::T1]
-  } {test.db1 test.db1-journal test.db1-wal}
+  } {test.db1 test.db1-journal test.db1-wal test.db1-wal2}
   
   do_test 5.1.2 {
     lsort [array names ::T2]
-  } {test.db2 test.db2-journal test.db2-wal}
+  } {test.db2 test.db2-journal test.db2-wal test.db2-wal2}
   db close
   
   tvfs1 delete

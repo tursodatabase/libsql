@@ -1,0 +1,164 @@
+# 2018 December 6
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set ::testprefix wal2concurrent
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+
+#-------------------------------------------------------------------------
+# Warm-body test.
+#
+foreach tn {1 2} {
+  reset_db
+  sqlite3 db2 test.db
+  do_execsql_test 1.0 {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x);
+    CREATE TABLE t2(y);
+    PRAGMA journal_size_limit = 5000;
+    PRAGMA journal_mode = wal2;
+  } {5000 wal2}
+  
+  do_execsql_test 1.1 {
+    INSERT INTO t1 VALUES(1);
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(2);
+  } {}
+  
+  do_test 1.2 {
+    execsql { 
+      PRAGMA journal_size_limit = 5000;
+      INSERT INTO t1 VALUES(3) 
+    } db2
+    catchsql { COMMIT }
+  } {1 {database is locked}}
+  
+  do_catchsql_test 1.3 { COMMIT   } {1 {database is locked}}
+  do_catchsql_test 1.4 { ROLLBACK } {0 {}}
+  
+  do_test 1.5 {
+    list [file size test.db-wal] [file size test.db-wal2]
+  } {2128 0}
+  
+  do_execsql_test 1.6 {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(2);
+  } {}
+  
+  do_test 1.7 {
+    execsql { INSERT INTO t2 VALUES(randomblob(4000)) } db2
+    list [file size test.db-wal] [file size test.db-wal2]
+  } {7368 0}
+  
+  if {$tn==1} {
+    do_test 1.8 {
+      execsql { 
+        INSERT INTO t2 VALUES(1);
+        INSERT INTO t1 VALUES(5);
+      } db2
+      list [file size test.db-wal] [file size test.db-wal2]
+    } {7368 2128}
+
+    do_catchsql_test 1.9  { COMMIT   } {1 {database is locked}}
+    do_catchsql_test 1.10 { ROLLBACK } {0 {}}
+    db close
+    sqlite3 db test.db
+    do_execsql_test 1.11 { SELECT * FROM t1 } {1 3 5}
+    do_execsql_test 1.12 { SELECT count(*) FROM t2 } {2}
+  } else {
+    do_test 1.8 {
+      execsql { 
+        INSERT INTO t2 VALUES(1);
+      } db2
+      list [file size test.db-wal] [file size test.db-wal2]
+    } {7368 1080}
+
+    do_catchsql_test 1.9  { COMMIT   } {0 {}}
+    db close
+    sqlite3 db test.db
+    do_execsql_test 1.11 { SELECT * FROM t1 } {1 3 2}
+    do_execsql_test 1.12 { SELECT count(*) FROM t2 } {2}
+
+    do_test 1.13 {
+      list [file size test.db-wal] [file size test.db-wal2]
+    } {7368 2128}
+  }
+}
+
+do_multiclient_test tn {
+  do_test 2.$tn.1 {
+    sql1 {
+      PRAGMA auto_vacuum = OFF;
+      CREATE TABLE t1(x UNIQUE);
+      CREATE TABLE t2(x UNIQUE);
+      PRAGMA journal_mode = wal2;
+      PRAGMA journal_size_limit = 15000;
+    }
+  } {wal2 15000}
+
+  do_test 2.$tn.2 {
+    sql1 {
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<=10
+      )
+      INSERT INTO t1 SELECT randomblob(800) FROM s;
+    }
+  } {}
+
+  do_test 2.$tn.3 {
+    sql1 { DELETE FROM t1 WHERE (rowid%4)==0 }
+    list [expr [file size test.db-wal]>15000] \
+         [expr [file size test.db-wal2]>15000]
+  } {1 0}
+
+  do_test 2.$tn.4 {
+    sql1 { PRAGMA wal_checkpoint; }
+    sql1 { 
+      BEGIN CONCURRENT;
+        INSERT INTO t1 VALUES(randomblob(800));
+    }
+  } {}
+
+  do_test 2.$tn.5 {
+    sql2 { 
+      PRAGMA journal_size_limit = 15000;
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      INSERT INTO t2 VALUES(randomblob(800));
+      DELETE FROM t2;
+    }
+    list [expr [file size test.db-wal]>15000] \
+         [expr [file size test.db-wal2]>15000]
+  } {1 1}
+
+  do_test 2.$tn.6 {
+    sql1 { 
+        INSERT INTO t1 VALUES(randomblob(800));
+      COMMIT;
+      PRAGMA integrity_check;
+    }
+  } {ok}
+}
+
+
+
+finish_test
+

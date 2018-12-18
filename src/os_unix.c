@@ -4313,7 +4313,7 @@ static int unixShmSystemLock(
   assert( pShmNode->nRef>0 || unixMutexHeld() );
 
   /* Shared locks never span more than one byte */
-  assert( n==1 || lockType!=F_RDLCK );
+  /* assert( n==1 || lockType!=F_RDLCK ); */
 
   /* Locks are within range */
   assert( n>=1 && n<=SQLITE_SHM_NLOCK );
@@ -4816,7 +4816,7 @@ static int unixShmLock(
        || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
        || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED)
        || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
-  assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
+  /* assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 ); */
   assert( pShmNode->hShm>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->hShm<0 || pDbFd->pInode->bProcessLock==0 );
 

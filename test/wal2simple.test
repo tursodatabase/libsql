@@ -1,0 +1,474 @@
+# 2017 September 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix wal2simple
+ifcapable !wal {finish_test ; return }
+
+#-------------------------------------------------------------------------
+# The following tests verify that a client can switch in and out of wal
+# and wal2 mode. But that it is not possible to change directly from wal
+# to wal2, or from wal2 to wal mode.
+#
+do_execsql_test 1.1.0 {
+  PRAGMA journal_mode = wal2
+} {wal2}
+execsql { SELECT * FROM sqlite_master} 
+do_execsql_test 1.x {
+  PRAGMA journal_mode;
+  PRAGMA main.journal_mode;
+} {wal2 wal2}
+db close
+do_test 1.1.1 { file size test.db } {1024}
+do_test 1.1.2 { hexio_read test.db 18 2 } 0303
+
+sqlite3 db test.db
+do_execsql_test 1.2.0 {
+  SELECT * FROM sqlite_master;
+  PRAGMA journal_mode = delete;
+} {delete}
+db close
+do_test 1.2.1 { file size test.db } {1024}
+do_test 1.2.2 { hexio_read test.db 18 2 } 0101
+
+sqlite3 db test.db
+do_execsql_test 1.3.0 {
+  SELECT * FROM sqlite_master;
+  PRAGMA journal_mode = wal;
+} {wal}
+db close
+do_test 1.3.1 { file size test.db } {1024}
+do_test 1.3.2 { hexio_read test.db 18 2 } 0202
+
+sqlite3 db test.db
+do_catchsql_test 1.4.0 {
+  PRAGMA journal_mode = wal2;
+} {1 {cannot change from wal to wal2 mode}}
+do_execsql_test 1.4.1 {
+  PRAGMA journal_mode = wal;
+  PRAGMA journal_mode = delete;
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_mode = wal2;
+} {wal delete wal2 wal2}
+do_catchsql_test 1.4.2 {
+  PRAGMA journal_mode = wal;
+} {1 {cannot change from wal2 to wal mode}}
+db close
+do_test 1.4.3 { hexio_read test.db 18 2 } 0303
+
+#-------------------------------------------------------------------------
+# Test that recovery in wal2 mode works.
+#
+forcedelete test.db test.db-wal test.db-wal2
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 5000;
+} {wal2 5000}
+
+proc wal_hook {DB nm nFrame} { $DB eval { PRAGMA wal_checkpoint } }
+db wal_hook {wal_hook db}
+
+for {set i 1} {$i <= 200} {incr i} {
+  execsql { INSERT INTO t1 VALUES(NULL, randomblob(100)) }
+  set res [db eval { SELECT sum(a), md5sum(b) FROM t1 }]
+
+  do_test 2.1.$i {
+    foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+    forcecopy test.db      test.db2
+    forcecopy test.db-wal  test.db2-wal
+    forcecopy test.db-wal2 test.db2-wal2
+
+    sqlite3 db2 test.db2
+    db2 eval { SELECT sum(a), md5sum(b) FROM t1 }
+  } $res
+
+  db2 close
+}
+
+#-------------------------------------------------------------------------
+
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(x BLOB, y INTEGER PRIMARY KEY);
+  CREATE INDEX i1 ON t1(x);
+  PRAGMA cache_size = 5;
+  PRAGMA journal_mode = wal2;
+} {wal2}
+
+do_test 3.1 {
+  execsql BEGIN
+  for {set i 1} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES(randomblob(800), $i) }
+  }
+  execsql COMMIT
+} {}
+
+do_execsql_test 3.2 {
+  PRAGMA integrity_check;
+} {ok}
+
+#-------------------------------------------------------------------------
+catch { db close }
+foreach f [glob -nocomplain test.db*] { forcedelete $f }
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(x, y);
+  PRAGMA journal_mode = wal2;
+} {wal2}
+
+do_execsql_test 4.1 {
+  SELECT * FROM t1;
+} {}
+
+do_execsql_test 4.2 {
+  INSERT INTO t1 VALUES(1, 2);
+} {}
+
+do_execsql_test 4.3 {
+  SELECT * FROM t1;
+} {1 2}
+
+do_test 4.4 {
+  sqlite3 db2 test.db
+  execsql { SELECT * FROM t1 } db2
+} {1 2}
+
+do_test 4.5 {
+  lsort [glob test.db*]
+} {test.db test.db-shm test.db-wal test.db-wal2}
+
+do_test 4.6 {
+  db close
+  db2 close
+  sqlite3 db test.db
+  execsql { SELECT * FROM t1 }
+} {1 2}
+
+do_execsql_test 4.7 {
+  PRAGMA journal_size_limit = 4000;
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t1 VALUES(5, 6);
+  INSERT INTO t1 VALUES(7, 8);
+  INSERT INTO t1 VALUES(9, 10);
+  INSERT INTO t1 VALUES(11, 12);
+  INSERT INTO t1 VALUES(13, 14);
+  INSERT INTO t1 VALUES(15, 16);
+  INSERT INTO t1 VALUES(17, 18);
+  SELECT * FROM t1;
+} {4000 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18}
+
+do_test 4.8 {
+  sqlite3 db2 test.db
+  execsql { SELECT * FROM t1 } db2
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18}
+
+do_test 4.9 {
+  db close
+  db2 close
+  lsort [glob test.db*]
+} {test.db}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b, c);
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 4000;
+} {wal2 4000}
+
+proc wal_hook {DB nm nFrame} {
+  $DB eval { PRAGMA wal_checkpoint }
+}
+db wal_hook [list wal_hook db]
+
+
+foreach js {4000 8000 12000} {
+  foreach NROW [list 100 200 300 400 500 600 1000] {
+    do_test 5.$js.$NROW.1 {
+      db eval "DELETE FROM t1"
+      db eval "PRAGMA journal_size_limit = $js"
+      set nTotal 0
+      for {set i 0} {$i < $NROW} {incr i} {
+        db eval { INSERT INTO t1 VALUES($i, $i, randomblob(abs(random()%50))) }
+        incr nTotal $i
+      }
+      set {} {}
+    } {}
+
+    do_test 5.$js.$NROW.2 {
+      sqlite3 db2 test.db
+      db2 eval { 
+        PRAGMA integrity_check;
+        SELECT count(*), sum(b) FROM t1;
+      }
+    } [list ok $NROW $nTotal]
+
+    db2 close
+  }
+}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE tx(x);
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 3500;
+} {wal2 3500}
+
+do_test 6.1 {
+  for {set i 0} {$i < 10} {incr i} {
+    execsql "CREATE TABLE t$i (x);"
+  }
+} {}
+
+do_test 6.2.1 {
+  foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+  forcecopy test.db-wal2 test.db2-wal2
+  sqlite3 db2 test.db2
+  db2 eval { SELECT * FROM sqlite_master }
+} {}
+do_test 6.2.2 {
+  db2 eval {
+    PRAGMA journal_mode = wal2;
+    SELECT * FROM sqlite_master;
+  }
+} {wal2}
+
+do_test 6.3.1 {
+  db2 close
+  foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+  forcecopy test.db-wal2 test.db2-wal2
+  forcecopy test.db test.db2
+  sqlite3 db2 test.db2
+  db2 eval { SELECT * FROM sqlite_master }
+} {table tx tx 2 {CREATE TABLE tx(x)}}
+do_test 6.3.2 {
+  db2 eval {
+    PRAGMA journal_mode = wal2;
+    SELECT * FROM sqlite_master;
+  }
+} {wal2 table tx tx 2 {CREATE TABLE tx(x)}}
+
+do_test 6.4.1 {
+  db2 close
+  foreach f [glob -nocomplain test.db2*] { forcedelete $f }
+  forcecopy test.db-wal2 test.db2-wal2
+  forcecopy test.db-wal test.db2-wal
+  sqlite3 db2 test.db2
+  db2 eval { SELECT * FROM sqlite_master }
+} {}
+do_test 6.4.2 {
+  db2 eval {
+    PRAGMA journal_mode = wal2;
+    SELECT * FROM sqlite_master;
+  }
+} {wal2}
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
+do_execsql_test 7.0 {
+  PRAGMA journal_size_limit = 10000;
+  PRAGMA journal_mode = wal2;
+  PRAGMA wal_autocheckpoint = 0;
+  BEGIN;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES( randomblob(8000) );
+  COMMIT;
+} {10000 wal2 0}
+
+do_test 7.1 {
+  list [file size test.db-wal] [file size test.db-wal2]
+} {9464 0}
+
+# Connection db2 is holding a PART1 lock. 
+#
+#   7.2.2: Test that the PART1 does not prevent db from switching to the
+#          other wal file.
+#
+#   7.2.3: Test that the PART1 does prevent a checkpoint of test.db-wal.
+#
+#   7.2.4: Test that after the PART1 is released the checkpoint is possible.
+#
+do_test 7.2.1 {
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+} {1}
+do_test 7.2.2 {
+  execsql {
+    INSERT INTO t1 VALUES( randomblob(800) );
+    INSERT INTO t1 VALUES( randomblob(800) );
+  }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {13656 3176 1024}
+do_test 7.2.3 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {13656 3176 1024}
+do_test 7.2.4 {
+  execsql { END } db2
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {13656 3176 11264}
+
+# Connection db2 is holding a PART2_FULL1 lock. 
+#
+#   7.3.2: Test that the lock does not prevent checkpointing.
+#
+#   7.3.3: Test that the lock does prevent the writer from overwriting 
+#          test.db-wal.
+#
+#   7.3.4: Test that after the PART2_FULL1 is released the writer can
+#          switch wal files and overwrite test.db-wal
+#
+db close
+db2 close
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 7.3.1 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(500));
+  }
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 3176 11264}
+do_test 7.3.2 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 3176 21504}
+do_test 7.3.3 {
+  execsql { 
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(500));
+  }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 18896 21504}
+do_test 7.3.4 {
+  execsql END db2
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)); }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 18896 21504}
+
+# Connection db2 is holding a PART2 lock. 
+#
+#   7.4.2: Test that the lock does not prevent writer switching to test.db-wal.
+#
+#   7.3.3: Test that the lock does prevent checkpointing of test.db-wal2.
+#
+#   7.3.4: Test that after the PART2 is released test.db-wal2 can be
+#          checkpointed.
+#
+db close
+db2 close
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 7.4.1 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(10000));
+    PRAGMA wal_checkpoint;
+  }
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 44032}
+do_test 7.4.2 {
+  execsql { 
+    INSERT INTO t1 VALUES(randomblob(5000));
+  }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 44032}
+do_test 7.4.3 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 44032}
+do_test 7.4.4 {
+  execsql END db2
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 54272}
+
+# Connection db2 is holding a PART1_FULL2 lock. 
+#
+#   7.5.2: Test that the lock does not prevent a checkpoint of test.db-wal2.
+#
+#   7.5.3: Test that the lock does prevent the writer from overwriting
+#          test.db-wal2.
+#
+#   7.5.4: Test that after the PART1_FULL2 lock is released, the writer
+#          can switch to test.db-wal2.
+#
+db close
+db2 close
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 7.5.1 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(10000));
+    INSERT INTO t1 VALUES(randomblob(10000));
+    PRAGMA wal_checkpoint;
+    INSERT INTO t1 VALUES(randomblob(5000));
+  }
+  execsql {
+    BEGIN;
+      SELECT count(*) FROM t1;
+  } db2
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 64512}
+do_test 7.5.2 {
+  execsql { PRAGMA wal_checkpoint }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {12608 12608 75776}
+do_test 7.5.3.1 {
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {14704 12608 75776}
+do_test 7.5.3.2 {
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {22040 12608 75776}
+do_test 7.5.4 {
+  execsql END db2
+  execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
+  list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
+} {22040 12608 75776}
+
+
+finish_test
+
