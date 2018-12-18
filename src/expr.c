@@ -141,8 +141,8 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   while( p ){
     int op = p->op;
     if( p->flags & EP_Generic ) break;
-    if( (op==TK_AGG_COLUMN || op==TK_COLUMN
-          || op==TK_REGISTER || op==TK_TRIGGER)
+    if( op==TK_REGISTER ) op = p->op2;
+    if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_TRIGGER)
      && p->y.pTab!=0
     ){
       /* op==TK_REGISTER && p->y.pTab!=0 happens when pExpr was originally
@@ -158,7 +158,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       p = p->pLeft;
       continue;
     }
-    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
+    if( op==TK_COLLATE ){
       pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
@@ -4778,14 +4778,16 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     }
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( ALWAYS((combinedFlags & EP_TokenOnly)==0) ){
+  if( (combinedFlags & EP_TokenOnly)==0 ){
     if( combinedFlags & EP_xIsSelect ) return 2;
     if( (combinedFlags & EP_FixedCol)==0
      && sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
     if( sqlite3ExprCompare(pParse, pA->pRight, pB->pRight, iTab) ) return 2;
     if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
-    assert( (combinedFlags & EP_Reduced)==0 );
-    if( pA->op!=TK_STRING && pA->op!=TK_TRUEFALSE ){
+    if( pA->op!=TK_STRING
+     && pA->op!=TK_TRUEFALSE
+     && (combinedFlags & EP_Reduced)==0
+    ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
