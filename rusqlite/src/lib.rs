@@ -148,8 +148,8 @@ pub type Result<T> = result::Result<T, Error>;
 pub trait OptionalExtension<T> {
     /// Converts a `Result<T>` into a `Result<Option<T>>`.
     ///
-    /// By default, Rusqlite treats 0 rows being returned from a query that is expected to return 1
-    /// row as an error. This method will
+    /// By default, Rusqlite treats 0 rows being returned from a query that is
+    /// expected to return 1 row as an error. This method will
     /// handle that error, and give you back an `Option<T>` instead.
     fn optional(self) -> Result<Option<T>>;
 }
@@ -392,8 +392,9 @@ impl Connection {
     /// If the query returns more than one row, all rows except the first are
     /// ignored.
     ///
-    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the query truly is optional,
-    /// you can call `.optional()` on the result of this to get a `Result<Option<T>>`.
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
+    /// query truly is optional, you can call `.optional()` on the result of
+    /// this to get a `Result<Option<T>>`.
     ///
     /// # Failure
     ///
@@ -415,8 +416,9 @@ impl Connection {
     /// If the query returns more than one row, all rows except the first are
     /// ignored.
     ///
-    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the query truly is optional,
-    /// you can call `.optional()` on the result of this to get a `Result<Option<T>>`.
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
+    /// query truly is optional, you can call `.optional()` on the result of
+    /// this to get a `Result<Option<T>>`.
     ///
     /// # Failure
     ///
@@ -1277,9 +1279,8 @@ mod test {
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", &[1i32]).unwrap_err();
-        match err {
-            Error::ExecuteReturnedResults => (),
-            _ => panic!("Unexpected error: {}", err),
+        if err != Error::ExecuteReturnedResults {
+            panic!("Unexpected error: {}", err);
         }
     }
 
@@ -1408,16 +1409,14 @@ mod test {
     fn test_optional() {
         let db = checked_memory_handle();
 
-        let result: Result<i64> =
-            db.query_row("SELECT 1 WHERE 0 <> 0", NO_PARAMS, |r| r.get(0));
+        let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 <> 0", NO_PARAMS, |r| r.get(0));
         let result = result.optional();
         match result.unwrap() {
             None => (),
             _ => panic!("Unexpected result"),
         }
 
-        let result: Result<i64> =
-            db.query_row("SELECT 1 WHERE 0 == 0", NO_PARAMS, |r| r.get(0));
+        let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 == 0", NO_PARAMS, |r| r.get(0));
         let result = result.optional();
         match result.unwrap() {
             Some(1) => (),

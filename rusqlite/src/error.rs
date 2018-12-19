@@ -96,6 +96,46 @@ pub enum Error {
     UnwindingPanic,
 }
 
+impl PartialEq for Error {
+    fn eq(&self, other: &Error) -> bool {
+        match (self, other) {
+            (Error::SqliteFailure(e1, s1), Error::SqliteFailure(e2, s2)) => e1 == e2 && s1 == s2,
+            (Error::SqliteSingleThreadedMode, Error::SqliteSingleThreadedMode) => true,
+            (Error::IntegralValueOutOfRange(i1, n1), Error::IntegralValueOutOfRange(i2, n2)) => {
+                i1 == i2 && n1 == n2
+            }
+            (Error::Utf8Error(e1), Error::Utf8Error(e2)) => e1 == e2,
+            (Error::NulError(e1), Error::NulError(e2)) => e1 == e2,
+            (Error::InvalidParameterName(n1), Error::InvalidParameterName(n2)) => n1 == n2,
+            (Error::InvalidPath(p1), Error::InvalidPath(p2)) => p1 == p2,
+            (Error::ExecuteReturnedResults, Error::ExecuteReturnedResults) => true,
+            (Error::QueryReturnedNoRows, Error::QueryReturnedNoRows) => true,
+            (Error::InvalidColumnIndex(i1), Error::InvalidColumnIndex(i2)) => i1 == i2,
+            (Error::InvalidColumnName(n1), Error::InvalidColumnName(n2)) => n1 == n2,
+            (Error::InvalidColumnType(i1, t1), Error::InvalidColumnType(i2, t2)) => {
+                i1 == i2 && t1 == t2
+            }
+            (Error::StatementChangedRows(n1), Error::StatementChangedRows(n2)) => n1 == n2,
+            #[cfg(feature = "functions")]
+            (
+                Error::InvalidFunctionParameterType(i1, t1),
+                Error::InvalidFunctionParameterType(i2, t2),
+            ) => i1 == i2 && t1 == t2,
+            #[cfg(feature = "vtab")]
+            (
+                Error::InvalidFilterParameterType(i1, t1),
+                Error::InvalidFilterParameterType(i2, t2),
+            ) => i1 == i2 && t1 == t2,
+            (Error::InvalidQuery, Error::InvalidQuery) => true,
+            #[cfg(feature = "vtab")]
+            (Error::ModuleError(s1), Error::ModuleError(s2)) => s1 == s2,
+            #[cfg(feature = "functions")]
+            (Error::UnwindingPanic, Error::UnwindingPanic) => true,
+            (_, _) => false,
+        }
+    }
+}
+
 impl From<str::Utf8Error> for Error {
     fn from(err: str::Utf8Error) -> Error {
         Error::Utf8Error(err)
