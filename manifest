@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sscript\sthread001.test\scausing\sa\sspurious\s"-1\sfiles\swere\nleft\sopen"\serror\swhen\srun\sseparately.\sCherrypick\sof\s[1774f1c3b].
-D 2018-03-16T07:49:49.484
+C Add\sextra\sdefenses\sagainst\sstrategically\scorrupt\sdatabases\sto\sfts3/4.
+D 2018-12-19T01:44:50.669
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 88ea5c444fdf262b4eb7b5872b9a3192b8b8d0df8cc9735c5aed159ec5dae02a
+F ext/fts3/fts3.c db4466fa7fbd064e372b837e3ba3779b5172cd771865d5e848f43d003727093b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -88,7 +88,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 525a3bd9a7564603c5c061b7de55403a565307758a94600e8a2f6b00d1c40d9d
 F ext/fts3/fts3_unicode2.c cc04fc672bfd42b1e650398cb0bf71f64f9aae032cfe75bbcfe75b9cf966029c
-F ext/fts3/fts3_write.c a51d48d646974ee2fb4b17fcd5da0416a5759a32dcacc2cce2ba00d5a767848e
+F ext/fts3/fts3_write.c 0559fca37710bfeacc5c21f46f4ae66b31f6098560c39e686cd7d9f569c0798b
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -781,6 +781,7 @@ F test/fts3conf.test 60317efd562080e198b5bdc9fcd222ce32cf01d7
 F test/fts3corrupt.test 2710b77983cc7789295ddbffea52c1d3b7506dbb
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3corrupt3.test 56e0ee83e90b57f5f3644cb7d1b36a067b7b8b19cdf0dedce45e5e13cf752f65
+F test/fts3corrupt4.test 98022cbacbd6ddc4708f210768f5684f041f50ce330c461f2631752492611d96
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test d3e9c8fb75135ada06bf3bab4f9666224965d708
 F test/fts3defer.test 0be4440b73a2e651fc1e472066686d6ada4b9963
@@ -1036,7 +1037,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 0672e2db670217b156ae6d32c7de3abcda50a305743e7d45d1063ede31159bd0
+F test/permutations.test 6548d6ab9271556e9d595a8b31d9e25e91d2a68f31ffee49fcffbf8780c68f3d
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1582,8 +1583,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eeedfc74d28a21305abf855f49e4418c9252c6918208d6ce110c001a628c7e3c
-Q +1774f1c3baf0bc3d83a53c52702696ff21814fa1de07cc38fd098832e6757b09
-R b6d28c13608fc9cabd4dd894ea41fe6f
-U dan
-Z 7dd5edab4c19cd4954e93f0afef508c4
+P 6cf8172d9483ad321a38929a987f3bed637d87b1f58b17a894c64dc85d27204a
+Q +d44318f59044162e229a444582692e9788f17b5c404b4eb702f4c2114b22fefe
+R 50a4892ed01bf4250a5de1987f4a3aca
+U drh
+Z 53e658c3e5dc3629c4fe2418f0993a7b

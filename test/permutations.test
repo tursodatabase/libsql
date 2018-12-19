@@ -253,6 +253,7 @@ test_suite "fts3" -prefix "" -description {
   fts3am.test fts3an.test fts3ao.test fts3atoken.test
   fts3auto.test fts3aux1.test fts3aux2.test fts3b.test
   fts3comp1.test fts3conf.test fts3corrupt2.test fts3corrupt.test
+  fts3corrupt4.test
   fts3cov.test fts3c.test fts3defer2.test fts3defer3.test
   fts3defer.test fts3drop.test fts3d.test fts3e.test
   fts3expr2.test fts3expr3.test fts3expr4.test fts3expr5.test
