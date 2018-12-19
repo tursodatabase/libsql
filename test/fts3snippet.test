@@ -554,7 +554,9 @@ do_test 4.2 {
   }]
 } {64}
 
-
+do_execsql_test 4.3.1 {
+  SELECT quote(t4) FROM t4;
+} {NULL NULL}
 
 
 set sqlite_fts3_enable_parentheses 0

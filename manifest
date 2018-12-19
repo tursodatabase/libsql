@@ -1,5 +1,5 @@
-C Add\sextra\sdefenses\sagainst\sstrategically\scorrupt\sdatabases\sto\sfts3/4.
-D 2018-12-19T01:57:20.527
+C Add\sinterfaces\ssqlite3_bind_pointer(),\ssqlite3_result_pointer(),\sand\nsqlite3_value_pointer()\sused\sto\ssafely\smove\spointer\svalues\sthrough\sSQL\swithout\nexposing\sunderlying\smemory\saddress\sinformation.\sCherrypick\sfrom\scommit\n[8201f4e1]\son\sbranch-3.18.
+D 2018-12-19T16:03:56.772
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ba4d2e512a36c20e884d6107a38dc38410e0015950fc7c3fd1e811c3d88a67fa
+F ext/fts3/fts3.c 2e76a808d0dd7d34da20cd97bec7bd1f89e5c72c4f20046716a1d654d9678ee6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h c84125c666ee54cef6efce6ff64abb0d0e2f4535
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -345,9 +345,9 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 0bc9cd2e1cacfdc9cdc9a83884cc100f166e80a4
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
-F src/sqlite.h.in dc35357824c6bb84a04acd4e99dee3e07299a8c6
+F src/sqlite.h.in f16e13c65c4499c93a911273ce03dc87aa7fe4ddc1ae3c226797143790734b9c
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
-F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
+F src/sqlite3ext.h 0d46dc1375254b211aeb62734002a6a5596cb965c816f2233f8b206129213723
 F src/sqliteInt.h e21cc96bc24161df7373f6b24367cf580496889d
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
@@ -408,11 +408,11 @@ F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 1e0bf8d6a2308ce916d444ef399921407fd5d972
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
-F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
-F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
+F src/vdbeInt.h b4c31fcd3520797ae142ceea05342d41b1f34482055b541da29ae04309d236e5
+F src/vdbeapi.c a34cabb4a4285756180fa79637f9e61a55bada4408a164daf2f67b0e472eebb8
 F src/vdbeaux.c fd00b489ab3f44f2dca1e4344faf289b7bfcf649
 F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
-F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
+F src/vdbemem.c dcd74d9480b50597133206f41d112c51df3e1511ee61af3a3d0379ef1fa852b4
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
@@ -722,7 +722,7 @@ F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test f33eb71a1fe1084ea585eeb7ee76b390729f5170
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
-F test/fts3snippet.test 63dbd687d5bf5191f1b8e6a0977aa9c1e28a7004
+F test/fts3snippet.test 235098c9078a11b27fc8001b58c845c5da3c25b7a8274b2fcb9f25d6065d5acb
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test 178c050199af8c05299b1ad572514ce1c54b7827
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
@@ -1391,8 +1391,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dfbfd34b3ff4d6da6f2db56e4664d7058f10c098
-Q +4bb21d8205b3c72b94442018a0544ecc55e3320ef2593f0e3350142b7f2a7663
-R 22e0b536e8f483d58bcb1a29460375cf
-U drh
-Z 4c2d78cc158ff3dc7aa21579c2a29a43
+P 882ef4e39b5a2aae3786caef492c77af67693b5123ce9c40d99c10c55dc02f98
+Q +72de49f204277191f62601cce70d5013ec30b564a01063f1e841019c78ae6c77
+R cf13503fc49cb85466747faa5df4b552
+U dan
+Z a7be1e512c71fcc72c6af46ee43923b0
