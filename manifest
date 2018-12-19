@@ -1,5 +1,5 @@
-C Add\sextra\sdefenses\sagainst\sstrategically\scorrupt\sdatabases\sto\sfts3/4.
-D 2018-12-19T01:44:50.669
+C Fix\sa\scrash\sthat\scan\sfollow\san\sOOM\sin\sfts3\son\sthis\sbranch.
+D 2018-12-19T14:44:20.804
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c db4466fa7fbd064e372b837e3ba3779b5172cd771865d5e848f43d003727093b
+F ext/fts3/fts3.c d890fb31adb655d74321b667f011b991d279991c4ac220e8f7af81806f262a3e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1583,8 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6cf8172d9483ad321a38929a987f3bed637d87b1f58b17a894c64dc85d27204a
-Q +d44318f59044162e229a444582692e9788f17b5c404b4eb702f4c2114b22fefe
-R 50a4892ed01bf4250a5de1987f4a3aca
-U drh
-Z 53e658c3e5dc3629c4fe2418f0993a7b
+P 4f315e4a3d15b9196924db10dee9c1444964fc4590a153950bab9b1ec3ca4f0e
+R bca17bcac50eb96e0f867715ce42e472
+U dan
+Z fff77d206041cc32927165662ab63459

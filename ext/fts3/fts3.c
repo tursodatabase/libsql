@@ -3563,7 +3563,9 @@ static int fts3FunctionArg(
   Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
   int rc = SQLITE_OK;
-  if( sqlite3_value_subtype(pVal)==SQLITE_BLOB ){
+  if( sqlite3_value_subtype(pVal)==SQLITE_BLOB 
+   && sqlite3_value_bytes(pVal)==sizeof(Fts3Cursor*) 
+  ){
     *ppCsr = *(Fts3Cursor**)sqlite3_value_blob(pVal);
   }else{
     char *zErr = sqlite3_mprintf("illegal first argument to %s", zFunc);
