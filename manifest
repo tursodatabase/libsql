@@ -1,5 +1,5 @@
-C Version\s3.9.3
-D 2016-03-31T21:36:06.382
+C Add\sextra\sdefenses\sagainst\sstrategically\scorrupt\sdatabases\sto\sfts3/4.
+D 2018-12-19T01:57:20.527
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e028eb13432f108d2e22cded019fc980700e4e00
+F ext/fts3/fts3.c ba4d2e512a36c20e884d6107a38dc38410e0015950fc7c3fd1e811c3d88a67fa
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h c84125c666ee54cef6efce6ff64abb0d0e2f4535
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c f442223e4a1914dc1fc12b65af7e4f2c255fa47c
+F ext/fts3/fts3_write.c cdead226658c3e67c12b334407dfb952de0c3c811f2980c57211fea902e45aaa
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 8e53d0190a7b3443764bbd32ad47be2bd852026d
@@ -696,6 +696,7 @@ F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
 F test/fts3conf.test ff90127b2462c788348c0dd7f6f8c573ef9cb5d9
 F test/fts3corrupt.test 2710b77983cc7789295ddbffea52c1d3b7506dbb
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
+F test/fts3corrupt4.test 8ae933f5f63fad2a78fe268e8674aa260bb85b1f0ad1229ee5ed648922c51adb
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test d3e9c8fb75135ada06bf3bab4f9666224965d708
 F test/fts3defer.test 0be4440b73a2e651fc1e472066686d6ada4b9963
@@ -1390,10 +1391,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f1e6bb952e691d504713f3f923f8019585dbd4aa
-R 1376316444f9f381f01a42743b3aeb55
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.9.3 *
+P dfbfd34b3ff4d6da6f2db56e4664d7058f10c098
+Q +4bb21d8205b3c72b94442018a0544ecc55e3320ef2593f0e3350142b7f2a7663
+R 22e0b536e8f483d58bcb1a29460375cf
 U drh
-Z db5be79d5450e93b9b91fdd4984d69ee
+Z 4c2d78cc158ff3dc7aa21579c2a29a43
