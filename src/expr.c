@@ -4745,7 +4745,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     }
     return 2;
   }
-  if( pA->op!=pB->op ){
+  if( pA->op!=pB->op || pA->op==TK_RAISE ){
     if( pA->op==TK_COLLATE && sqlite3ExprCompare(pParse, pA->pLeft,pB,iTab)<2 ){
       return 1;
     }
