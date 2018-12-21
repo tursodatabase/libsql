@@ -145,4 +145,26 @@ do_catchsql_test 3.1 {
   SELECT * FROM ft WHERE ft MATCH 'abc20'
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts3();
+  INSERT INTO t1 VALUES('one two three');
+  UPDATE t1_segdir SET start_block = 1;
+}
+
+do_catchsql_test 4.1 { 
+  SELECT * FROM t1 WHERE t1 MATCH 'one'; 
+} {1 {database disk image is malformed}}
+do_catchsql_test 4.2 { 
+  SELECT * FROM t1 WHERE t1 MATCH 'two'; 
+} {1 {database disk image is malformed}}
+do_catchsql_test 4.3 { 
+  SELECT * FROM t1 WHERE t1 MATCH 'three'; 
+} {1 {database disk image is malformed}}
+do_execsql_test 4.4 {
+  INSERT INTO t1(t1) VALUES('optimize');
+}
+
+
 finish_test

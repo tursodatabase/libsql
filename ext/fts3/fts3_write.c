@@ -1608,7 +1608,6 @@ int sqlite3Fts3SegReaderNew(
   Fts3SegReader *pReader;         /* Newly allocated SegReader object */
   int nExtra = 0;                 /* Bytes to allocate segment root node */
 
-  assert( iStartLeaf<=iEndLeaf );
   if( iStartLeaf==0 ){
     nExtra = nRoot + FTS3_NODE_PADDING;
   }
