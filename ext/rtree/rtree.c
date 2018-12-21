@@ -565,8 +565,8 @@ static void nodeZero(Rtree *pRtree, RtreeNode *p){
 ** Given a node number iNode, return the corresponding key to use
 ** in the Rtree.aHash table.
 */
-static int nodeHash(i64 iNode){
-  return iNode % HASHSIZE;
+static unsigned int nodeHash(i64 iNode){
+  return ((unsigned)iNode) % HASHSIZE;
 }
 
 /*

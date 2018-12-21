@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sNULL-pointer\sdeference\sin\sRTREE\sdue\sto\scorrupt\sshadow\stables.
-D 2018-12-21T17:51:30.020
+C Fix\sthe\snode\shash\sfunction\sin\sRTREE\sto\sensure\sthat\sit\salways\sreturns\sa\nnon-negative\svalue.
+D 2018-12-21T18:17:35.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -363,7 +363,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c d56ff997f2646b03be742eb85e8206f779d777f3a282fe0da576780ca0e11f20
-F ext/rtree/rtree.c 382898f6e03a6ec1d07e1f952969a05e2b53c3be6f1e5256430174b77b326725
+F ext/rtree/rtree.c 0a47895395d55c22515b395150bcf69478c8ba03f39b0d4361f9a16e8497dc2d
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1788,7 +1788,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 085667180b230587abb82abfdd14da8859e23620994d5cf152236b64c756dd04
-R 8aa7e243e065e6cca91da9a1f85fa7f3
+P 1fdd3604eef880414682e9e6f74d714520fe1c63f267ec4da752d2dc1da6bf72
+R 70f65bcd2cddecf5d6680ae286778343
 U drh
-Z bfbfee3ddfe8227db2e091eee3e56dcd
+Z 58674d815d47242c5cb363b4ef3a677b
