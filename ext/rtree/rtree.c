@@ -636,6 +636,18 @@ static void nodeBlobReset(Rtree *pRtree){
 }
 
 /*
+** Check to see if pNode is the same as pParent or any of the parents
+** of pParent.
+*/
+static int nodeInParentChain(const RtreeNode *pNode, const RtreeNode *pParent){
+  do{
+    if( pNode==pParent ) return 1;
+    pParent = pParent->pParent;
+  }while( pParent );
+  return 0;
+}
+
+/*
 ** Obtain a reference to an r-tree node.
 */
 static int nodeAcquire(
@@ -653,6 +665,10 @@ static int nodeAcquire(
   if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
     assert( !pParent || !pNode->pParent || pNode->pParent==pParent );
     if( pParent && !pNode->pParent ){
+      if( nodeInParentChain(pNode, pParent) ){
+        RTREE_IS_CORRUPT(pRtree);
+        return SQLITE_CORRUPT_VTAB;
+      }
       pParent->nRef++;
       pNode->pParent = pParent;
     }
@@ -3225,7 +3241,7 @@ static int rtreeUpdate(
         rc = rc2;
       }
     }
-    if( pRtree->nAux ){
+    if( rc==SQLITE_OK && pRtree->nAux ){
       sqlite3_stmt *pUp = pRtree->pWriteAux;
       int jj;
       sqlite3_bind_int64(pUp, 1, *pRowid);

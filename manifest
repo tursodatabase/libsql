@@ -1,5 +1,5 @@
-C Add\snew\ssqlite3_prepare_v3()\sflag\sSQLITE_PREPARE_NO_VTAB,\sfor\npreparing\sstatements\sthat\sare\snot\sallowed\sto\suse\sany\svirtual\stables.\nUse\sthis\sto\sprevent\scircular\sreferences\sin\striggers\son\svirtual\stable\nshadow\stables\sfrom\scausing\sresource\sleaks.
-D 2018-12-21T20:18:06.321
+C Improved\sdetection\sof\sshadow\stable\scorruption\sin\sRTREE.
+D 2018-12-21T22:08:59.777
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -364,7 +364,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c d56ff997f2646b03be742eb85e8206f779d777f3a282fe0da576780ca0e11f20
-F ext/rtree/rtree.c 9b7bd1f7c275beb2d45dd008e9969104064feb4022929908d19cf0b351bf87b8
+F ext/rtree/rtree.c fae9943b6b6f2bf6a4ddeb192d54fa6d19311119c1388406ef27cf6de38f34aa
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -388,7 +388,7 @@ F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b5879
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
-F ext/rtree/rtreefuzz001.test be2d8157d016aadd6bd219fe1b31c86391e4ba135c05b4c29eac98331ecd46af
+F ext/rtree/rtreefuzz001.test 836d87653851ae8e7b506d8bd3d62329548adc48ff9bc0a9051efd576710be7b
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
@@ -1791,8 +1791,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1abb83d29a06308c96bea379311b390240347c5f81824749348d18ad75840c96 82a2ae7132964eab0dfad9a8314a399ffd3b72366b35e1767df6452125dd1d80
-R 40f65604dcf034b4d1a9d73599c5bb9d
-T +closed 82a2ae7132964eab0dfad9a8314a399ffd3b72366b35e1767df6452125dd1d80
-U dan
-Z 0c43876f379e972afaca9e9274e8b822
+P da587d18575ac06a6b65fec1d106f0cc65bc10f493ca6c6b99117a2162d15a52
+R 248bca4ac4fc95678d2d785205706e52
+U drh
+Z 13f01e556de62866a8c0edd7feaff34e
