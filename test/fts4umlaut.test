@@ -16,7 +16,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix fts4umlaut
 
-ifcapable !fts3 {
+ifcapable !fts3||!fts5 {
   finish_test
   return
 }
@@ -62,4 +62,3 @@ foreach {tn q res1 res2} {
 }
 
 finish_test
-
