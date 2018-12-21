@@ -1,5 +1,5 @@
-C In\sRTREE,\sturn\san\sassert()\sinto\san\sif()\sbecause\sthe\scondition\scan\nsometimes\sbe\sfalse\swhen\sdealing\swith\sa\scorrupt\sdatabase.
-D 2018-12-21T13:30:34.708
+C Fix\sthe\sRTree\sextension\sso\sthat\sit\scorrectly\signores\sconstraints\sthat\sit\ndoes\snot\sunderstand,\seven\sif\sthey\sare\sagainst\sa\sdimension\scolumn.
+D 2018-12-21T15:13:49.514
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -363,14 +363,14 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c d56ff997f2646b03be742eb85e8206f779d777f3a282fe0da576780ca0e11f20
-F ext/rtree/rtree.c e687520f5ad4be2e59177de680680963b7b34169e3f05ba15e6608992085a1ac
+F ext/rtree/rtree.c 07b93ef212b2417db8fb767b223bfd568060f6aead38f3cc1ef3b1cbf1204622
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
 F ext/rtree/rtree3.test 4ee5d7df86040efe3d8d84f141f2962a7745452200a7cba1db06f86d97050499
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
 F ext/rtree/rtree5.test 49c9041d713d54560b315c2c7ef7207ee287eba1b20f8266968a06f2e55d3142
-F ext/rtree/rtree6.test 593e0d36510d5ac1d1fb39b018274ff17604fe8fdca8cf1f8e16559cea1477f4
+F ext/rtree/rtree6.test c8623cf9facccd74987e63709c4573545bfe541d929722e1ca8a549d5b03ad11
 F ext/rtree/rtree7.test c8fb2e555b128dd0f0bdb520c61380014f497f8a23c40f2e820acc9f9e4fdce5
 F ext/rtree/rtree8.test 2d99006a1386663978c9e1df167554671e4f711c419175b39f332719deb1ce0e
 F ext/rtree/rtree9.test c646f12c8c1c68ef015c6c043d86a0c42488e2e68ed1bb1b0771a7ca246cbabf
@@ -1788,7 +1788,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4cdcda408a4edcd2845584ddef64f0efdd2b4cc030afbc05fc2b8b555c69d3f6
-R 775fafcac9c108b676beed29745f609b
+P 99bce4358beb5dbaba47048ee2eec5c376dcd86e5b1462238a37ea4c5f3d77db
+R e21ec77a21472450228d9821e99e3c82
 U drh
-Z 6da891ed97dc43928eaf8568efe2f88b
+Z 6e97dcba8054aa547039e2ac4b3a841c

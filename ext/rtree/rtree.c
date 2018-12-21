@@ -1915,20 +1915,20 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     ){
       u8 op;
       switch( p->op ){
-        case SQLITE_INDEX_CONSTRAINT_EQ: op = RTREE_EQ; break;
-        case SQLITE_INDEX_CONSTRAINT_GT: op = RTREE_GT; break;
-        case SQLITE_INDEX_CONSTRAINT_LE: op = RTREE_LE; break;
-        case SQLITE_INDEX_CONSTRAINT_LT: op = RTREE_LT; break;
-        case SQLITE_INDEX_CONSTRAINT_GE: op = RTREE_GE; break;
-        default:
-          assert( p->op==SQLITE_INDEX_CONSTRAINT_MATCH );
-          op = RTREE_MATCH; 
-          break;
+        case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    break;
+        case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    break;
+        case SQLITE_INDEX_CONSTRAINT_LE:    op = RTREE_LE;    break;
+        case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    break;
+        case SQLITE_INDEX_CONSTRAINT_GE:    op = RTREE_GE;    break;
+        case SQLITE_INDEX_CONSTRAINT_MATCH: op = RTREE_MATCH; break;
+        default:                            op = 0;           break;
       }
-      zIdxStr[iIdx++] = op;
-      zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
-      pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
-      pIdxInfo->aConstraintUsage[ii].omit = 1;
+      if( op ){
+        zIdxStr[iIdx++] = op;
+        zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
+        pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
+        pIdxInfo->aConstraintUsage[ii].omit = 1;
+      }
     }
   }
 
