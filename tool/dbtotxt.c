@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
  
 /* Return true if the line is all zeros */
 static int allZero(unsigned char *aLine){
@@ -47,6 +48,11 @@ int main(int argc, char **argv){
   int iPage;                  /* Current page number */
   unsigned char aLine[16];    /* A single line of the file */
   unsigned char aHdr[100];    /* File header */
+  unsigned char bShow[256];      /* Characters ok to display */
+  memset(bShow, '.', sizeof(bShow));
+  for(i=' '; i<='~'; i++){
+    if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = i;
+  }
   for(i=1; i<argc; i++){
     if( argv[i][0]=='-' ){
       const char *z = argv[i];
@@ -129,8 +135,8 @@ int main(int argc, char **argv){
     for(j=0; j<16; j++) printf(" %02x", aLine[j]);
     printf("   ");
     for(j=0; j<16; j++){
-      char c = aLine[j];
-      fputc(c>=0x20 && c<=0x7e ? c : '.', stdout);
+      unsigned char c = (unsigned char)aLine[j];
+      fputc( bShow[c], stdout);
     }
     fputc('\n', stdout);
   }
