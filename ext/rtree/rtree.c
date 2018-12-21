@@ -2948,8 +2948,12 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
     rc = findLeafNode(pRtree, iDelete, &pLeaf, 0);
   }
 
+#ifdef CORRUPT_DB
+  assert( pLeaf!=0 || rc!=SQLITE_OK || CORRUPT_DB );
+#endif
+
   /* Delete the cell in question from the leaf node. */
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && pLeaf ){
     int rc2;
     rc = nodeRowidIndex(pRtree, pLeaf, iDelete, &iCell);
     if( rc==SQLITE_OK ){
