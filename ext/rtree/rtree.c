@@ -3882,8 +3882,7 @@ static void rtreeCheckAppendMsg(RtreeCheck *pCheck, const char *zFmt, ...){
 static u8 *rtreeCheckGetNode(RtreeCheck *pCheck, i64 iNode, int *pnNode){
   u8 *pRet = 0;                   /* Return value */
 
-  assert( pCheck->rc==SQLITE_OK );
-  if( pCheck->pGetNode==0 ){
+  if( pCheck->rc==SQLITE_OK && pCheck->pGetNode==0 ){
     pCheck->pGetNode = rtreeCheckPrepare(pCheck,
         "SELECT data FROM %Q.'%q_node' WHERE nodeno=?", 
         pCheck->zDb, pCheck->zTab
