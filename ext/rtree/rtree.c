@@ -3423,6 +3423,7 @@ static int rtreeSqlInit(
   };
   sqlite3_stmt **appStmt[N_STATEMENT];
   int i;
+  const int f = SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB;
 
   pRtree->db = db;
 
@@ -3479,8 +3480,7 @@ static int rtreeSqlInit(
     }
     zSql = sqlite3_mprintf(zFormat, zDb, zPrefix);
     if( zSql ){
-      rc = sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
-                              appStmt[i], 0); 
+      rc = sqlite3_prepare_v3(db, zSql, -1, f, appStmt[i], 0); 
     }else{
       rc = SQLITE_NOMEM;
     }
@@ -3510,8 +3510,7 @@ static int rtreeSqlInit(
       if( zSql==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
-                                &pRtree->pWriteAux, 0); 
+        rc = sqlite3_prepare_v3(db, zSql, -1, f, &pRtree->pWriteAux, 0); 
         sqlite3_free(zSql);
       }
     }

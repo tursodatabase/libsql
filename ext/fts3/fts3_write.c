@@ -396,10 +396,12 @@ static int fts3SqlStmt(
   
   pStmt = p->aStmt[eStmt];
   if( !pStmt ){
+    int f = SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB;
     char *zSql;
     if( eStmt==SQL_CONTENT_INSERT ){
       zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName, p->zWriteExprlist);
     }else if( eStmt==SQL_SELECT_CONTENT_BY_ROWID ){
+      f &= ~SQLITE_PREPARE_NO_VTAB;
       zSql = sqlite3_mprintf(azSql[eStmt], p->zReadExprlist);
     }else{
       zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName);
@@ -407,8 +409,7 @@ static int fts3SqlStmt(
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v3(p->db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
-                              &pStmt, NULL);
+      rc = sqlite3_prepare_v3(p->db, zSql, -1, f, &pStmt, NULL);
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pStmt==0 );
       p->aStmt[eStmt] = pStmt;
