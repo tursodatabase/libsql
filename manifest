@@ -1,5 +1,5 @@
-C Fix\sthe\sRTree\sextension\sso\sthat\sit\scorrectly\signores\sconstraints\sthat\sit\ndoes\snot\sunderstand,\seven\sif\sthey\sare\sagainst\sa\sdimension\scolumn.
-D 2018-12-21T15:13:49.514
+C Prevent\san\sinfinite\sloop\sin\srtree\sthat\scan\sresult\sfrom\sa\scorrupt\sshadow\stable.
+D 2018-12-21T16:53:58.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -363,7 +363,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c d56ff997f2646b03be742eb85e8206f779d777f3a282fe0da576780ca0e11f20
-F ext/rtree/rtree.c 07b93ef212b2417db8fb767b223bfd568060f6aead38f3cc1ef3b1cbf1204622
+F ext/rtree/rtree.c 631b16a34589ce12dd917a73fb8d5323c113b146a0abd601de5aa2bf6d73224d
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -386,7 +386,7 @@ F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b587936f5f6bceed
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
-F ext/rtree/rtreefuzz001.test 73ab4cc47197c15c7eb08f41c68e95f44047f077407d5bfea6fdee8008bf0e4f
+F ext/rtree/rtreefuzz001.test a83162d03fdbc5c35ff3e80718d2fb35099094f5250c58c4219e5faa0fbca8f4
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
@@ -1788,7 +1788,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99bce4358beb5dbaba47048ee2eec5c376dcd86e5b1462238a37ea4c5f3d77db
-R e21ec77a21472450228d9821e99e3c82
+P ed8531e57596f0d5911a05a26d5ae61e1eccfaadee49219d7f6e212cac288238
+R 98cfb68f6cdaf1a074ca8f9382198a96
 U drh
-Z 6e97dcba8054aa547039e2ac4b3a841c
+Z c1c2d5a357948eaf32d5cca600098550

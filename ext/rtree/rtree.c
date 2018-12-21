@@ -128,6 +128,9 @@ struct Rtree {
   u8 inWrTrans;               /* True if inside write transaction */
   u8 nAux;                    /* # of auxiliary columns in %_rowid */
   u8 nAuxNotNull;             /* Number of initial not-null aux columns */
+#ifdef SQLITE_DEBUG
+  u8 bCorrupt;                /* Shadow table corruption detected */
+#endif
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
@@ -185,6 +188,15 @@ struct Rtree {
   typedef double RtreeDValue;              /* High accuracy coordinate */
   typedef float RtreeValue;                /* Low accuracy coordinate */
 # define RTREE_ZERO 0.0
+#endif
+
+/*
+** Set the Rtree.bCorrupt flag
+*/
+#ifdef SQLITE_DEBUG
+# define RTREE_IS_CORRUPT(X) ((X)->bCorrupt = 1)
+#else
+# define RTREE_IS_CORRUPT(X)
 #endif
 
 /*
@@ -671,7 +683,10 @@ static int nodeAcquire(
     *ppNode = 0;
     /* If unable to open an sqlite3_blob on the desired row, that can only
     ** be because the shadow tables hold erroneous data. */
-    if( rc==SQLITE_ERROR ) rc = SQLITE_CORRUPT_VTAB;
+    if( rc==SQLITE_ERROR ){
+      rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
+    }
   }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
     pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
     if( !pNode ){
@@ -700,6 +715,7 @@ static int nodeAcquire(
     pRtree->iDepth = readInt16(pNode->zData);
     if( pRtree->iDepth>RTREE_MAX_DEPTH ){
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
     }
   }
 
@@ -710,6 +726,7 @@ static int nodeAcquire(
   if( pNode && rc==SQLITE_OK ){
     if( NCELL(pNode)>((pRtree->iNodeSize-4)/pRtree->nBytesPerCell) ){
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
     }
   }
 
@@ -718,6 +735,7 @@ static int nodeAcquire(
       nodeHashInsert(pRtree, pNode);
     }else{
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
     }
     *ppNode = pNode;
   }else{
@@ -943,7 +961,7 @@ static void rtreeRelease(Rtree *pRtree){
     pRtree->inWrTrans = 0;
     assert( pRtree->nCursor==0 );
     nodeBlobReset(pRtree);
-    assert( pRtree->nNodeRef==0 );
+    assert( pRtree->nNodeRef==0 || pRtree->bCorrupt );
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
     sqlite3_finalize(pRtree->pReadRowid);
@@ -1275,6 +1293,7 @@ static int nodeRowidIndex(
       return SQLITE_OK;
     }
   }
+  RTREE_IS_CORRUPT(pRtree);
   return SQLITE_CORRUPT_VTAB;
 }
 
@@ -2137,12 +2156,14 @@ static int AdjustTree(
   RtreeCell *pCell                  /* This cell was just inserted */
 ){
   RtreeNode *p = pNode;
+  int cnt = 0;
   while( p->pParent ){
     RtreeNode *pParent = p->pParent;
     RtreeCell cell;
     int iCell;
 
-    if( nodeParentIndex(pRtree, p, &iCell) ){
+    if( (++cnt)>1000 || nodeParentIndex(pRtree, p, &iCell)  ){
+      RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
 
@@ -2610,7 +2631,10 @@ static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
     }
     rc = sqlite3_reset(pRtree->pReadParent);
     if( rc==SQLITE_OK ) rc = rc2;
-    if( rc==SQLITE_OK && !pChild->pParent ) rc = SQLITE_CORRUPT_VTAB;
+    if( rc==SQLITE_OK && !pChild->pParent ){
+      RTREE_IS_CORRUPT(pRtree);
+      rc = SQLITE_CORRUPT_VTAB;
+    }
     pChild = pChild->pParent;
   }
   return rc;
@@ -3559,6 +3583,7 @@ static int getNodeSize(
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }else if( pRtree->iNodeSize<(512-64) ){
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
       *pzErr = sqlite3_mprintf("undersize RTree blobs in \"%q_node\"",
                                pRtree->zName);
     }
