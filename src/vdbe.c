@@ -1925,7 +1925,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
-      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 );
+      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 || CORRUPT_DB );
+      testcase( (pOp->p5 & SQLITE_JUMPIFNULL)!=0 );
       if( (flags1&flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
