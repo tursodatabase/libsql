@@ -306,6 +306,31 @@
 ** The first wal file takes the same name as the wal file in legacy wal
 ** mode systems - "<db>-wal". The second is named "<db>-wal2".
 **
+** CHECKPOINTS
+**
+** The "pre-configured size" mentioned above is the value set by 
+** "PRAGMA journal_size_limit". Or, if journal_size_limit is not set, 
+** 1000 pages.
+**
+** There is only a single type of checkpoint in wal2 mode (no "truncate",
+** "restart" etc.), and it always checkpoints the entire contents of a single
+** wal file. A wal file cannot be checkpointed until after a writer has written
+** the first transaction into the other wal file and all readers are reading a
+** snapshot that includes at least one transaction from the other wal file.
+**
+** The wal-hook, if one is registered, is invoked after a write-transaction
+** is committed, just as it is in legacy wal mode. The integer parameter
+** passed to the wal-hook is the total number of uncheckpointed frames in both
+** wal files. Except, the parameter is set to zero if there is no frames 
+** that may be checkpointed. This happens in two scenarios:
+**
+**   1. The "other" wal file (the one that the writer did not just append to)
+**      is completely empty, or
+**
+**   2. The "other" wal file (the one that the writer did not just append to)
+**      has already been checkpointed.
+**
+**
 ** WAL FILE FORMAT
 **
 ** The file format used for each wal file in wal2 mode is the same as for

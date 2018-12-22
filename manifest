@@ -1,5 +1,5 @@
-C Add\sextra\stest\scase\sto\swal2recover.test.
-D 2018-12-17T15:22:24.652
+C Enhance\sthe\swal2\sheader\scomment\sin\swal.c\sto\sexplain\show\sthe\swal-hook\sis\ninvoked\sin\swal2\smode.
+D 2018-12-22T15:50:00.221
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 68d0ba0f0b533d5bc84c78c13a6ce84ee81183a67014caa47a969e67f028fa1c
@@ -590,7 +590,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c beca1487f7cecd1d6a965ba899a5a6b8868b3eb80580d33b2a73f8e37ab4901b
+F src/wal.c 93dc58d21bc6e1d08edfa42ba03e07f9652cd4c17c4205c20528e84e3b26c892
 F src/wal.h d2a69695c84137f76e19a247a342cb02ab0131001b6f58153d94b71195bbd84d
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
@@ -1792,7 +1792,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9cb5f8dab685f5ea36ad142cfa588dee82e87f3a89e8dcf84e0ee124bb29bc7f
-R 126e20a307613344c2c21be5333f4cc9
+P 1a5aa73435b11fff0567672dc921d34aad57adf0381ad430e1389f39a6f025b7
+R ae7a76a21801add0bf32d05f9dbcc082
 U dan
-Z 0b7e3c508818c5bb27b7cd0635e26287
+Z e66e7dac085eccd9e1ba0c66084130c4
