@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sfts5\sthat\scould\sfail\swith\sa\scorrupt\sdatabase.
-D 2018-12-22T15:21:31.757
+C Remove\sunnecessary\swhitespace\sfrom\stestcase\sresult\sstrings.
+D 2018-12-22T15:46:23.244
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -216,8 +216,8 @@ F ext/fts5/test/fts5unicode4.test 6463301d669f963c83988017aa354108be0b947d325aef
 F ext/fts5/test/fts5unindexed.test 9021af86a0fb9fc616f7a69a996db0116e7936d0db63892db6bafabbec21af4d
 F ext/fts5/test/fts5update.test 0737876e20e97a6a6abf45de19fc99315727bcee6a83fadcada1cc080b9aa8f0
 F ext/fts5/test/fts5version.test c8f2cc105f0abf0224965f93e584633dee3e06c91478bc67e468f7cfdf97fd6a
-F ext/fts5/test/fts5vocab.test 2de834ee6405130d3373817ced8fefbfee392b63d932e471740e09829f1e4510
-F ext/fts5/test/fts5vocab2.test d6039b20118e886113fc63614d9ad39a466fc2af34184f3e915b9f92b7ebfa10
+F ext/fts5/test/fts5vocab.test 26e069050d6fb389e67f7a9402421948233152ae433e6b8da47cf15d3b5a8d26
+F ext/fts5/test/fts5vocab2.test 5472d6cd852fe848876892c48a754c82af018bf08ca16f1f167db59dc64586f7
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
@@ -810,7 +810,7 @@ F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5e
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2b0e29344497d9a8a999453a003cb476b6b1d2eef2d6c120f83c2d3a429f3164
 F test/e_resolve.test a61751c368b109db73df0f20fc75fb47e166b1d8
-F test/e_select.test c5a669b4d63217aa10094ba737ba3ddd07bd439d4bc7a5b798f6ea32511cbe7c
+F test/e_select.test f9474205669a7736ef725b29cc7ae9e8601919a3d0ffc0ab30745a028f2a4b61
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
@@ -1541,7 +1541,7 @@ F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test c7fbc3eb241b5a7ba4b0815f76c3708483e91890f9573add12a610c45b2a6022
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test ede2e4bce4ba802337bd69d39447fa04a938e06d84a8bfc53c76850fc36ed86d
-F test/triggerF.test 6a8c22bd058cf467f0c7d112afe87f7a8c579c0c4681b914b8f19020f48528a4
+F test/triggerF.test 5d76f0a8c428ff87a4d5ed52da06f6096a2c787a1e21b846111dfac4123de3ad
 F test/triggerG.test d5caeef6144ede2426dd13211fd72248241ff2ebc68e12a4c0bf30f5faa21499
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
@@ -1551,7 +1551,7 @@ F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
-F test/unionvtab.test 5ae0f0b4f302a4c6bb310b64386f9ac6a4c1c271c08f31cc7c5d92722e2b2729
+F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
@@ -1662,7 +1662,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 1003e19bebe06be286a38139ea5fc010b30c055cc1527824b09d609f89bbd93b
+F test/window1.test a96a80bd6c5cc0e4bacbd3948223604e4b2745e37909a70d09c05f5ef6f84266
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
@@ -1791,7 +1791,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3518c09b944c92974939b1de244401afd34de5d9aa75050e5ad55581a94e1e71
-R 450d461d0283064e76524aee73abb692
-U dan
-Z 3de2833ca8264cf7ffff1587c0dc253a
+P 83935b950619855fb3bf05486091804ac2a61fb993c6ec826c89f943264fabc3
+R d3f16ebb728dd268c1dd4c7e3fc8d1a9
+U drh
+Z e75d18d013b88cdfa91bfb174a93c85c
