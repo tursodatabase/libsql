@@ -1,5 +1,5 @@
-C Remove\sunnecessary\swhitespace\sfrom\stestcase\sresult\sstrings.
-D 2018-12-22T15:46:23.244
+C Fix\sone\smore\sinstance\sof\sexcess\swhitespace\sin\stest\sresult\sstrings.
+D 2018-12-22T16:14:45.080
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -128,7 +128,7 @@ F ext/fts5/fts5_vocab.c fbe38044889b2d2d99babeeef239c620fb0332bb928a84506ac748d8
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
-F ext/fts5/test/fts5aa.test 840081efaee97f5ec570146bbdd79cfdfaea0ab303de3d5037b6d6c78b42ccdd
+F ext/fts5/test/fts5aa.test 1706f816308e5855fe493be85aa0fd28eea78fb163ab1d60a20bca4f0ebcf68d
 F ext/fts5/test/fts5ab.test 9205c839332c908aaad2b01ab8670ece8b161e8f2ec8a9fabf18ca9385880bb7
 F ext/fts5/test/fts5ac.test a7aa7e1fefc6e1918aa4d3111d5c44a09177168e962c5fd2cca9620de8a7ed6d
 F ext/fts5/test/fts5ad.test e8cf959dfcd57c8e46d6f5f25665686f3b6627130a9a981371dafdf6482790de
@@ -1791,7 +1791,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83935b950619855fb3bf05486091804ac2a61fb993c6ec826c89f943264fabc3
-R d3f16ebb728dd268c1dd4c7e3fc8d1a9
+P ad70f03ceda74163903d247a975666b35fae722a27c48dd3efd31c1164b5627e
+R 5bf6762f4a672814550ad2e56431be29
 U drh
-Z e75d18d013b88cdfa91bfb174a93c85c
+Z 27270e0c0897761ac6d10b65d33fe059
