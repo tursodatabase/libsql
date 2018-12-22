@@ -886,6 +886,7 @@ static int fts5StructureDecode(
         pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&rc, 
             nTotal * sizeof(Fts5StructureSegment)
         );
+        nSegment -= nTotal;
       }
 
       if( rc==SQLITE_OK ){
@@ -901,6 +902,8 @@ static int fts5StructureDecode(
         }
       }
     }
+    if( nSegment!=0 && rc==SQLITE_OK ) rc = FTS5_CORRUPT;
+
     if( rc!=SQLITE_OK ){
       fts5StructureRelease(pRet);
       pRet = 0;
