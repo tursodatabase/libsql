@@ -3578,10 +3578,10 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
 #ifdef SQLITE_DEBUG
       for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
-          assert( iSegid!=pStruct->aLevel[iLvl].aSeg[iSeg].iSegid );
+          assert_nc( iSegid!=pStruct->aLevel[iLvl].aSeg[iSeg].iSegid );
         }
       }
-      assert( iSegid>0 && iSegid<=FTS5_MAX_SEGMENT );
+      assert_nc( iSegid>0 && iSegid<=FTS5_MAX_SEGMENT );
 
       {
         sqlite3_stmt *pIdxSelect = fts5IdxSelectStmt(p);
@@ -3589,7 +3589,7 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
           u8 aBlob[2] = {0xff, 0xff};
           sqlite3_bind_int(pIdxSelect, 1, iSegid);
           sqlite3_bind_blob(pIdxSelect, 2, aBlob, 2, SQLITE_STATIC);
-          assert( sqlite3_step(pIdxSelect)!=SQLITE_ROW );
+          assert_nc( sqlite3_step(pIdxSelect)!=SQLITE_ROW );
           p->rc = sqlite3_reset(pIdxSelect);
           sqlite3_bind_null(pIdxSelect, 2);
         }
