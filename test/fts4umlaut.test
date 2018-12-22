@@ -16,13 +16,13 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix fts4umlaut
 
-ifcapable !fts3||!fts5 {
+ifcapable !fts3 {
   finish_test
   return
 }
 
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  CREATE VIRTUAL TABLE t1 USING fts4(x, tokenize=unicode61);
   CREATE VIRTUAL TABLE t2 USING fts4(
       x, 
       tokenize=unicode61 "remove_diacritics=2"
@@ -49,12 +49,12 @@ foreach {tn q res1 res2} {
     SELECT count(*) FROM t1 WHERE t1 MATCH 'Ha Noi'
   } $res1
 
-  do_execsql_test 1.$tn.2 {
+  do_execsql_test 1.$tn.3 {
     DELETE FROM t2;
     INSERT INTO t2(rowid, x) VALUES (1, 'Ha Noi');
     SELECT count(*) FROM t2 WHERE t2 MATCH $q
   } $res2
-  do_execsql_test 1.$tn.2 {
+  do_execsql_test 1.$tn.4 {
     DELETE FROM t2;
     INSERT INTO t2(rowid, x) VALUES (1, $q);
     SELECT count(*) FROM t2 WHERE t2 MATCH 'Ha Noi'

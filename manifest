@@ -1,5 +1,5 @@
-C Do\snot\sall\sREPLACE\sto\ssneak\sa\sNULL\svalue\sinto\sa\sNOT\sNULL\scolumn.\s\sDetect\sthat\nsituation\sand\sABORT\sinstead.\s\sFix\sfor\sticket\s[e6f1f2e34dceeb1ed61531c7e98].
-D 2018-12-22T01:13:25.766
+C Fix\scut-and-paste\serror\sin\stest\sfile\sfts4umlaut.test.
+D 2018-12-22T07:16:42.310
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -962,7 +962,7 @@ F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 5553d7bb2e20bf4a06b23e849352efc022ce6309
 F test/fts4onepass.test d69ddc4ee3415e40b0c5d1d0408488a87614d4f63ba9c44f3e52db541d6b7cc7
 F test/fts4opt.test 0fd0cc84000743ff2a883b9b84b4a5be07249f0ba790c8848a757164cdd46b2a
-F test/fts4umlaut.test 949e2d9394c89a00ca9493222101cb00c4d0b6d2267c76875605a357c7801eef
+F test/fts4umlaut.test fcaca4471de7e78c9d1f7e8976e3e8704d7d8ad979d57a739d00f3f757380429
 F test/fts4unicode.test ceca76422abc251818cb25dabe33d3c3970da5f7c90e1540f190824e6b3a7c95
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test 09dda479bcfc568f99f3070413e9672a8eeedc1be9c5d819bf55d4788c2583b7
@@ -1791,7 +1791,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3fdb2c78d23b94d68dc08126b22d03152ac6068496a42402cdfb336cd4a7e33
-R 536c60e567985914e454e8d89eab541a
-U drh
-Z 6ca1b40acd2f6e42eedbb7302333ee0e
+P db8d1d12f5c1673404b2afb5426d5ea3afe3b69d01f8f2bc47ffdf70684fdf24
+R 6083c8e473bc24e00f67abe203289608
+U dan
+Z 2da30c5381c54cb5a2481b9acb3505fa
