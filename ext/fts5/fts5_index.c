@@ -882,7 +882,7 @@ static int fts5StructureDecode(
       }else{
         i += fts5GetVarint32(&pData[i], pLvl->nMerge);
         i += fts5GetVarint32(&pData[i], nTotal);
-        assert( nTotal>=pLvl->nMerge );
+        if( nTotal<pLvl->nMerge ) rc = FTS5_CORRUPT;
         pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&rc, 
             nTotal * sizeof(Fts5StructureSegment)
         );
