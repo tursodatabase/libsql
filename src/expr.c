@@ -2691,10 +2691,15 @@ void sqlite3CodeRhsOfIN(
     ** might not have been invoked yet, so invoke it now as a subroutine. 
     */
     if( ExprHasProperty(pExpr, EP_Subrtn) ){
-      sqlite3VdbeAddOp2(v, OP_Once, 0, sqlite3VdbeCurrentAddr(v)+3);
+      int addr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+        ExplainQueryPlan((pParse, 0, "REUSE LIST SUBQUERY %d",
+              pExpr->x.pSelect->selId));
+      }
       sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                         pExpr->y.sub.iAddr);
       sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
+      sqlite3VdbeJumpHere(v, addr);
       return;
     }
 
@@ -2746,7 +2751,7 @@ void sqlite3CodeRhsOfIN(
     if( ALWAYS(pEList->nExpr==nVal) ){
       SelectDest dest;
       int i;
-      sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
+      sqlite3SelectDestInit(&dest, SRT_Set, iTab);
       dest.zAffSdst = exprINAffinity(pParse, pExpr);
       pSelect->iLimit = 0;
       testcase( pSelect->selFlags & SF_Distinct );
@@ -2810,17 +2815,17 @@ void sqlite3CodeRhsOfIN(
 
       /* Evaluate the expression and insert it into the temp table */
       if( isRowid && sqlite3ExprIsInteger(pE2, &iValToIns) ){
-        sqlite3VdbeAddOp3(v, OP_InsertInt, pExpr->iTable, r2, iValToIns);
+        sqlite3VdbeAddOp3(v, OP_InsertInt, iTab, r2, iValToIns);
       }else{
         r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
         if( isRowid ){
           sqlite3VdbeAddOp2(v, OP_MustBeInt, r3,
                             sqlite3VdbeCurrentAddr(v)+2);
           VdbeCoverage(v);
-          sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
+          sqlite3VdbeAddOp3(v, OP_Insert, iTab, r2, r3);
         }else{
           sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pExpr->iTable, r2, r3, 1);
+          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r2, r3, 1);
         }
       }
     }
@@ -2864,6 +2869,11 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 
   Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
+  testcase( pExpr->op==TK_EXISTS );
+  testcase( pExpr->op==TK_SELECT );
+  assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
+  assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+  pSel = pExpr->x.pSelect;
 
   /* The evaluation of the EXISTS/SELECT must be repeated every time it
   ** is encountered if any of the following is true:
@@ -2879,6 +2889,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     /* If this routine has already been coded, then invoke it as a
     ** subroutine. */
     if( ExprHasProperty(pExpr, EP_Subrtn) ){
+      ExplainQueryPlan((pParse, 0, "REUSE SUBQUERY %d", pSel->selId));
       sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                         pExpr->y.sub.iAddr);
       return pExpr->iTable;
@@ -2904,14 +2915,8 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** In both cases, the query is augmented with "LIMIT 1".  Any 
   ** preexisting limit is discarded in place of the new LIMIT 1.
   */
-  testcase( pExpr->op==TK_EXISTS );
-  testcase( pExpr->op==TK_SELECT );
-  assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
-  assert( ExprHasProperty(pExpr, EP_xIsSelect) );
-
-  pSel = pExpr->x.pSelect;
-  ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY",
-        addrOnce?"":"CORRELATED "));
+  ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY %d",
+        addrOnce?"":"CORRELATED ", pSel->selId));
   nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
   sqlite3SelectDestInit(&dest, 0, pParse->nMem+1);
   pParse->nMem += nReg;

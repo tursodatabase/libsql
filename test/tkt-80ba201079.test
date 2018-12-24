@@ -110,6 +110,8 @@ do_test tkt-80ba2-200 {
 } {300 object_change 2048}
 do_test tkt-80ba2-201 {
   db eval {
+PRAGMA vdbe_debug=on;
+PRAGMA vdbe_addoptrace=on;
     CREATE INDEX timeline_entry_id_idx on timeline(entry_id);
     SELECT entry_type,
            entry_types.name,

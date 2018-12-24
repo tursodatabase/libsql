@@ -350,13 +350,27 @@ int sqlite3VdbeExplainParent(Parse *pParse){
 }
 
 /*
-** Add a new OP_Explain opcode.
+** Set a debugger breakpoint on the following routine in order to
+** monitor the EXPLAIN QUERY PLAN code generation.
+*/
+#if defined(SQLITE_DEBUG)
+void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
+  (void)z1;
+  (void)z2;
+}
+#endif
+
+/*
+** Add a new OP_ opcode.
 **
 ** If the bPush flag is true, then make this opcode the parent for
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
 */
 void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
-  if( pParse->explain==2 ){
+#if !defined(SQLITE_DEBUG)
+  if( pParse->explain==2 )
+#endif
+  {
     char *zMsg;
     Vdbe *v;
     va_list ap;
@@ -368,7 +382,10 @@ void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
     iThis = v->nOp;
     sqlite3VdbeAddOp4(v, OP_Explain, iThis, pParse->addrExplain, 0,
                       zMsg, P4_DYNAMIC);
-    if( bPush) pParse->addrExplain = iThis;
+    sqlite3ExplainBreakpoint(bPush?"PUSH":"", sqlite3VdbeGetOp(v,-1)->p4.z);
+    if( bPush){
+      pParse->addrExplain = iThis;
+    }
   }
 }
 
@@ -376,6 +393,7 @@ void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
 ** Pop the EXPLAIN QUERY PLAN stack one level.
 */
 void sqlite3VdbeExplainPop(Parse *pParse){
+  sqlite3ExplainBreakpoint("POP", 0);
   pParse->addrExplain = sqlite3VdbeExplainParent(pParse);
 }
 #endif /* SQLITE_OMIT_EXPLAIN */

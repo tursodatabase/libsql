@@ -280,7 +280,7 @@ do_eqp_test autoindex1-600a {
   |--MATERIALIZE xxxxxx
   |  |--SCAN TABLE sheep AS s
   |  |--SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)
-  |  `--CORRELATED SCALAR SUBQUERY
+  |  `--CORRELATED SCALAR SUBQUERY xxxxxx
   |     `--SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)
   |--SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index
   `--SEARCH SUBQUERY xxxxxx AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)

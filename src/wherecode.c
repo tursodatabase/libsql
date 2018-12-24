@@ -213,6 +213,7 @@ int sqlite3WhereExplainOneScan(
     }
 #endif
     zMsg = sqlite3StrAccumFinish(&str);
+    sqlite3ExplainBreakpoint("",zMsg);
     ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
                             pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
   }
@@ -1951,6 +1952,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           pOrExpr = pAndExpr;
         }
         /* Loop through table entries that match term pOrTerm. */
+        ExplainQueryPlan((pParse, 1, "INDEX %d", ii+1));
         WHERETRACE(0xffff, ("Subplan for OR-clause:\n"));
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                                       wctrlFlags, iCovCur);
@@ -2054,6 +2056,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
           /* Finish the loop through table entries that match term pOrTerm. */
           sqlite3WhereEnd(pSubWInfo);
+          ExplainQueryPlanPop(pParse);
         }
       }
     }
