@@ -1,5 +1,5 @@
-C Add\sextra\sdefenses\sagainst\sstrategically\scorrupt\sdatabases\sto\sfts3/4.
-D 2018-12-19T01:30:22.109
+C Change\sthe\sway\sa\scomparison\sused\sto\sdetect\scorrupt\sdatabases\sin\sfts3\sis\sdone\nto\savoid\spotential\spointer\soverflow\sin\s32-bit\sbuilds.\sCherrypick\sof\n[95a9a39ff7].
+D 2018-12-24T13:39:13.977
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 525a3bd9a7564603c5c061b7de55403a565307758a94600e8a2f6b00d1c40d9d
 F ext/fts3/fts3_unicode2.c cc04fc672bfd42b1e650398cb0bf71f64f9aae032cfe75bbcfe75b9cf966029c
-F ext/fts3/fts3_write.c b1c2129cce86ac38eacc102fa9ad6b2d64a4206587ac4ccd35bf91c2b47ab947
+F ext/fts3/fts3_write.c 3618c009875dea35d5e9e605ed54863a71df355b4a62f74575cb405bc8e25e10
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1702,8 +1702,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fda8fdb0cbc3acf420613f5df4125898354184db52b8606dde55042688815ac7
-Q +d44318f59044162e229a444582692e9788f17b5c404b4eb702f4c2114b22fefe
-R 488d6e94726d244faeba1d64ed1fc085
-U drh
-Z 266bd2a7168efdc92d1d623f39a1920f
+P c255889bd95bd5430dc7ced3317011ae2abb483d6c9af883af3dc7d6c2c2f234
+Q +95a9a39ff784b960b62dd6298e722a620ba3f9c8b76839a49bbef35d7bc84a8e
+R 59b57eaf6788c45abc849f51361db5b0
+U dan
+Z 15cd32de688a5ebf9e83177e1ecf89e7
