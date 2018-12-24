@@ -1711,7 +1711,7 @@ static void fts5SegIterInit(
   if( p->rc==SQLITE_OK ){
     pIter->iLeafOffset = 4;
     assert_nc( pIter->pLeaf->nn>4 );
-    assert( fts5LeafFirstTermOff(pIter->pLeaf)==4 );
+    assert_nc( fts5LeafFirstTermOff(pIter->pLeaf)==4 );
     pIter->iPgidxOff = pIter->pLeaf->szLeaf+1;
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
