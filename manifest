@@ -1,5 +1,5 @@
-C Copy\ssome\sextra\stest\sinfrastructure\sfrom\sthe\smutexfree-shmlock\sbranch\sto\strunk.
-D 2018-12-24T15:22:47.398
+C Always\sinclude\sOP_Explain\sopcodes\sin\sthe\sbytecode\swhen\sSQLITE_DEBUG\sis\senabled.
+D 2018-12-24T18:10:39.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -585,7 +585,7 @@ F src/vdbe.c 1f8e6c71c68631b5c4aaa82b84b262577bd29ca3a14871ed308785ee97ef919d
 F src/vdbe.h 8990d668a89890a33326b0a29b992c4014b72f3b6cdcd9ee0e190593c247f9b0
 F src/vdbeInt.h 73f5051923f3f29779bfc374c0c68e23b8e5e3792def2e33e51b427edb890abd
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
-F src/vdbeaux.c f00d9b32a250b829a3c00140255a1c37a6463d726bb87ed6bbb80a1ce76a56bd
+F src/vdbeaux.c ed00c59d24e2ffef24bddca98640195b14b196f1610eaf580c6ad7cfb73712c0
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 7b3305bc4a5139f4536ac9b5f61da0f915e49d2e3fdfa87dfdfa9d7aba8bc1e9
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
@@ -1793,7 +1793,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95a9a39ff784b960b62dd6298e722a620ba3f9c8b76839a49bbef35d7bc84a8e
-R 28c998f6164dc0f7405ec208c028201d
-U dan
-Z 8b99907344be3f4f9e4d165ba038528b
+P 883337ffdb434b6856ceaada121c0be67e2fdec7b447675f45e85568ef28d7d9
+R 30c0748c57381b7fce019bae78e42ebf
+U drh
+Z f9647d8e5459acd909fc869c310491a1
