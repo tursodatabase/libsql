@@ -237,6 +237,7 @@ do_test 5.4 {
 
 #-------------------------------------------------------------------------
 # Cause an SQLITE_PROTOCOL while attempting to restart the wal file.
+#
 reset_db
 tvfs filter {}
 db close
@@ -273,6 +274,37 @@ puts "# WARNING: This next test takes around 12 seconds"
 do_catchsql_test 6.2 {
   INSERT INTO t1 VALUES(1);
 } {1 {locking protocol}}
+
+#-------------------------------------------------------------------------
+# Check that a checkpoint fails if it cannot get the CHECKPOINTER lock
+#
+reset_db
+tvfs filter {}
+db close
+sqlite3 db test.db -vfs tvfs
+do_execsql_test 7.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  PRAGMA journal_mode = wal;
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s LIMIT 20
+  )
+  INSERT INTO t1 SELECT randomblob(750) FROM s;
+} {wal}
+
+tvfs script xShmLock
+tvfs filter xShmLock
+proc xShmLock {method file handle spec} {
+  if {$spec=="1 1 lock exclusive"} {
+    return SQLITE_BUSY
+  }
+  return SQLITE_OK
+}
+
+do_execsql_test 7.1 {
+  PRAGMA wal_checkpoint
+} {1 -1 -1}
 
 db close
 tvfs delete

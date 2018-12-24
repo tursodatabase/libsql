@@ -1,5 +1,5 @@
-C Change\sanother\sfts5\sassert()\sthat\smay\sfail\swith\sa\scorrupt\sdatabase\sto\san\nassert_nc().
-D 2018-12-24T19:59:37.185
+C Add\sa\sfew\smore\stest\scases\sto\swalfault2.test\sand\swalvfs.test.
+D 2018-12-24T20:00:27.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -1187,7 +1187,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 1f244543fbf05f3ef9a4596d7e7fe5d832b6d973c53a87189515e3c15db562a5
+F test/permutations.test 49b90ca9cebc3faed41ef6c7265067a1ee672b5199ed8765225cd95deb06974f
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1620,6 +1620,7 @@ F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
 F test/walcrash3.test e426aa58122d20f2b9fbe9a507f9eb8cab85b8af
 F test/walcrash4.test e7b6e7639a950a0cca8e210e248c8dad4d63bf20
 F test/walfault.test 09b8ad7e52d2f54bce50e31aa7ea51412bb9f70ac13c74e669ddcd8b48b0d98d
+F test/walfault2.test 39337e9ca6906b3942734ab212e099edd7d331b2819a04dbf3b2bd4d58526251
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test cd6e7cff618eaaa5910ce57c3657aa50110397f86213886a2400afb9bfec7b7b
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
@@ -1633,7 +1634,7 @@ F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cf
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
-F test/walvfs.test 355811484f6da8f0cc32778ccfcbc2f1cc75bd885a485342b58fe87646407f96
+F test/walvfs.test 238920d258d5aa9327a08d61721c3f12273c821c2f537d7e91f21982f86f65e6
 F test/where.test 8215d220633f08da331781cf9ede7fb7aed50eb113473c10acd39a643fd258ba
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
@@ -1793,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d697f6f3ca47350dad30feb529914fc5254fa662ece783408eea963d912918c1
-R 3c7313fa057dadacd384e353fe22ea21
+P d9653380c455b4bf6c371540d677cbde6d17664c58662b5cc9a12929f46192dd
+R 8084d1f63750192ff38dba4baa2ddb3e
 U dan
-Z 611bd75ee9b98c63ce75ad63dacb80c1
+Z 41ec1577a2156dcf228a3208b45a039a

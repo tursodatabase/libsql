@@ -437,6 +437,7 @@ test_suite "coverage-wal" -description {
   walmode.test walnoshm.test waloverwrite.test walpersist.test 
   walprotocol2.test walprotocol.test walro2.test walrofault.test 
   walro.test walshared.test walslow.test walvfs.test
+  walfault2.test
 
   nockpt.test
 } 
