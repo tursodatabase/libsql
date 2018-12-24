@@ -286,7 +286,7 @@ det 3.3.1 {
 } {
   QUERY PLAN
   |--SCAN TABLE t1
-  `--LIST SUBQUERY
+  `--LIST SUBQUERY xxxxxx
      `--SCAN TABLE t2
 }
 det 3.3.2 {
@@ -294,7 +294,7 @@ det 3.3.2 {
 } {
   QUERY PLAN
   |--SCAN TABLE t1
-  `--CORRELATED LIST SUBQUERY
+  `--CORRELATED LIST SUBQUERY xxxxxx
      `--SCAN TABLE t2
 }
 det 3.3.3 {

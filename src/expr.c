@@ -2865,20 +2865,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
 
-  /* If this routine has already been coded, then invoke it as a subroutine. */
-  if( ExprHasProperty(pExpr, EP_Subrtn) ){
-    sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn, pExpr->y.sub.iAddr);
-    return pExpr->iTable;
-  }
-
-  /* Begin coding the subroutine */
-  ExprSetProperty(pExpr, EP_Subrtn);
-  pExpr->y.sub.regReturn = ++pParse->nMem;
-  pExpr->y.sub.iAddr =
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
-  VdbeComment((v, "return address"));
-
-  /* The evaluation of the IN/EXISTS/SELECT must be repeated every time it
+  /* The evaluation of the EXISTS/SELECT must be repeated every time it
   ** is encountered if any of the following is true:
   **
   **    *  The right-hand side is a correlated subquery
@@ -2889,6 +2876,21 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasProperty(pExpr, EP_VarSelect) ){
+    /* If this routine has already been coded, then invoke it as a
+    ** subroutine. */
+    if( ExprHasProperty(pExpr, EP_Subrtn) ){
+      sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
+                        pExpr->y.sub.iAddr);
+      return pExpr->iTable;
+    }
+
+    /* Begin coding the subroutine */
+    ExprSetProperty(pExpr, EP_Subrtn);
+    pExpr->y.sub.regReturn = ++pParse->nMem;
+    pExpr->y.sub.iAddr =
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
+    VdbeComment((v, "return address"));
+
     addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
   
@@ -2939,11 +2941,11 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ExprSetVVAProperty(pExpr, EP_NoReduce);
   if( addrOnce ){
     sqlite3VdbeJumpHere(v, addrOnce);
-  }
 
-  /* Subroutine return */
-  sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
-  sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+    /* Subroutine return */
+    sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
+    sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+  }
 
   return rReg;
 }
