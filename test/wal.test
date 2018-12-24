@@ -1297,51 +1297,53 @@ do_test wal-19.4 {
 # At one point, SQLite was failing to grow the mapping of the wal-index
 # file in step 3 and the checkpoint was corrupting the database file.
 #
-do_test wal-20.1 {
-  catch {db close}
-  forcedelete test.db test.db-wal test.db-journal
-  sqlite3 db test.db
-  execsql {
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(randomblob(900));
-    SELECT count(*) FROM t1;
-  }
-} {wal 1}
-do_test wal-20.2 {
-  set ::buddy [launch_testfixture]
-  testfixture $::buddy {
+if {[permutation]!="unix-excl"} {
+  do_test wal-20.1 {
+    catch {db close}
+    forcedelete test.db test.db-wal test.db-journal
     sqlite3 db test.db
-    db transaction { db eval {
-      PRAGMA wal_autocheckpoint = 0;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 2 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 4 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 8 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 32 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 64 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 128 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 256 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 512 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 1024 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 2048 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 4096 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 8192 */
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16384 */
-    } }
-  }
-} {0}
-do_test wal-20.3 {
-  close $::buddy
-  execsql { PRAGMA wal_checkpoint }
-  execsql { SELECT count(*) FROM t1 }
-} {16384}
-do_test wal-20.4 {
-  db close
-  sqlite3 db test.db
-  execsql { SELECT count(*) FROM t1 }
-} {16384}
-integrity_check wal-20.5
+    execsql {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(randomblob(900));
+      SELECT count(*) FROM t1;
+    }
+  } {wal 1}
+  do_test wal-20.2 {
+    set ::buddy [launch_testfixture]
+    testfixture $::buddy {
+      sqlite3 db test.db
+      db transaction { db eval {
+        PRAGMA wal_autocheckpoint = 0;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 2 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 4 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 8 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 32 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 64 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 128 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 256 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 512 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 1024 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 2048 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 4096 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 8192 */
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16384 */
+      } }
+    }
+  } {0}
+  do_test wal-20.3 {
+    close $::buddy
+    execsql { PRAGMA wal_checkpoint }
+    execsql { SELECT count(*) FROM t1 }
+  } {16384}
+  do_test wal-20.4 {
+    db close
+    sqlite3 db test.db
+    execsql { SELECT count(*) FROM t1 }
+  } {16384}
+  integrity_check wal-20.5
+}
 
 catch { db2 close }
 catch { db close }
