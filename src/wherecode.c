@@ -538,16 +538,17 @@ static int codeEqualityTerm(
       if( pLoop->aLTerm[i]->pExpr==pX ) nEq++;
     }
 
+    iTab = 0;
     if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
-      eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
+      eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0, &iTab);
     }else{
       sqlite3 *db = pParse->db;
       pX = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
 
       if( !db->mallocFailed ){
         aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
-        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
-        pTerm->pExpr->iTable = pX->iTable;
+        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap, &iTab);
+        pTerm->pExpr->iTable = iTab;
       }
       sqlite3ExprDelete(db, pX);
       pX = pTerm->pExpr;
@@ -557,7 +558,6 @@ static int codeEqualityTerm(
       testcase( bRev );
       bRev = !bRev;
     }
-    iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     VdbeCoverageIf(v, bRev);
     VdbeCoverageIf(v, !bRev);
@@ -2197,7 +2197,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     if( (pAlt->eOperator & WO_IN) 
      && (pAlt->pExpr->flags & EP_xIsSelect)
-     && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
+//     && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
     ){
       continue;
     }
