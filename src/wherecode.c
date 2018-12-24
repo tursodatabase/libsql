@@ -2197,7 +2197,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     if( (pAlt->eOperator & WO_IN) 
      && (pAlt->pExpr->flags & EP_xIsSelect)
-//     && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
+     && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
     ){
       continue;
     }

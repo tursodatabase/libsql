@@ -1,5 +1,5 @@
-C Do\snot\sgenerate\ssubroutines\sfor\snon-static\sSELECT\sand\sEXISTS\sexpressions.\nFix\sup\ssome\stest\scases\sto\saccount\sfor\sthe\sminor\schanges\sin\sEXPLAIN\sQUERY\sPLAN\noutput.
-D 2018-12-24T12:09:47.593
+C Restore\sa\sline\sof\scode\sthat\swas\spreviously\scommented\sout\sfor\sdebugging.
+D 2018-12-24T14:30:11.325
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -597,7 +597,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 05877beee56eeed88ea0bdb08a53236a63a2fee293ff3f57b1e679042d434bb4
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
-F src/wherecode.c e819fc8ecbb4b30d790e8f1bcb6db9963e44514c5552e24f72e17a5d0822e9f7
+F src/wherecode.c 538ca683d7465648f9ee19064a5c257c4cf135f508cd6405208a969611e69843
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
 F src/window.c ea81ecd031ed2cbc14b7db6fd7f4bee2471b894feae5fea0547b15b1e2dd8fb2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1792,7 +1792,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b24d3fb94e787d25e49501714780dfb0c0c99077102056aa68445f4808cdd57
-R 9d52b67b04a6d4eaf1458dab0e1e9545
+P 06de44ec9e173992ca9afb89dd2b4e40d2a7e35512c7959603cdceb606f5dfbd
+R 403fbb980b089e81502688b9dd5a105f
 U drh
-Z c7c257173b7231c9a9251f7733ad2173
+Z 334629ebc8107a81830a765325ac5d10
