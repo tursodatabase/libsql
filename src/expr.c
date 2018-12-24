@@ -2685,7 +2685,7 @@ void sqlite3CodeRhsOfIN(
   ** If all of the above are false, then we can compute the RHS just once
   ** and reuse it many names.
   */
-  if( !ExprHasProperty(pExpr, EP_VarSelect) ){
+  if( !ExprHasProperty(pExpr, EP_VarSelect) && pParse->iSelfTab==0 ){
     /* Reuse of the RHS is allowed */
     /* If this routine has already been coded, but the previous code
     ** might not have been invoked yet, so invoke it now as a subroutine. 
