@@ -1616,10 +1616,63 @@ static int SQLITE_TCLAPI test_vfs_shmlock(
   return TCL_OK;
 }
 
+static int SQLITE_TCLAPI test_vfs_set_readmark(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+  int rc = SQLITE_OK;
+  const char *zDbname = 0;
+  int iSlot = 0;
+  int iVal = -1;
+  sqlite3_file *pFd;
+  void volatile *pShm = 0;
+  u32 *aShm;
+  int iOff;
+
+  if( objc!=4 && objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SLOT ?VALUE?");
+    return TCL_ERROR;
+  }
+
+  zDbname = Tcl_GetString(objv[2]);
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) 
+   || Tcl_GetIntFromObj(interp, objv[3], &iSlot)
+   || (objc==5 && Tcl_GetIntFromObj(interp, objv[4], &iVal))
+  ){
+    return TCL_ERROR;
+  }
+
+  sqlite3_file_control(db, zDbname, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  if( pFd==0 ){
+    return TCL_ERROR;
+  }
+  rc = pFd->pMethods->xShmMap(pFd, 0, 32*1024, 0, &pShm);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  if( pShm==0 ){
+    Tcl_AppendResult(interp, "*-shm is not yet mapped", 0);
+    return TCL_ERROR;
+  }
+  aShm = (u32*)pShm;
+  iOff = 12*2+1+iSlot;
+
+  if( objc==5 ){
+    aShm[iOff] = iVal;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(aShm[iOff]));
+
+  return TCL_OK;
+}
 
 int Sqlitetestvfs_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "testvfs", testvfs_cmd, 0, 0);
   Tcl_CreateObjCommand(interp, "vfs_shmlock", test_vfs_shmlock, 0, 0);
+  Tcl_CreateObjCommand(interp, "vfs_set_readmark", test_vfs_set_readmark, 0, 0);
   return TCL_OK;
 }
 

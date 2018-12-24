@@ -182,6 +182,99 @@ do_catchsql_test 4.2 {
   SELECT count(*) FROM t1
 } {1 {attempt to write a readonly database}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+db close 
+sqlite3 db test.db -vfs tvfs
+tvfs filter {}
+do_execsql_test 5.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  PRAGMA journal_mode = wal;
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s LIMIT 20
+  )
+  INSERT INTO t1 SELECT randomblob(750) FROM s;
+} {wal}
+
+do_execsql_test 5.1 {
+  SELECT count(*) FROM t1
+} {20}
+
+do_test 5.2 {
+  vfs_set_readmark db main 1 100
+  vfs_set_readmark db main 2 100
+  vfs_set_readmark db main 3 100
+  vfs_set_readmark db main 4 100
+} {100}
+
+do_execsql_test 5.3 {
+  SELECT count(*) FROM t1
+} {20}
+
+do_test 5.3 {
+  list [vfs_set_readmark db main 1] \
+       [vfs_set_readmark db main 2] \
+       [vfs_set_readmark db main 3] \
+       [vfs_set_readmark db main 4] 
+} {24 100 100 100}
+
+tvfs script xShmLock
+tvfs filter xShmLock
+set ::cnt 20
+proc xShmLock {args} {
+  incr ::cnt -1
+  if {$::cnt>0} { return SQLITE_BUSY }
+  return SQLITE_OK
+}
+
+do_test 5.4 {
+  vfs_set_readmark db main 1 100
+  execsql { SELECT count(*) FROM t1 }
+} {20}
+
+#-------------------------------------------------------------------------
+# Cause an SQLITE_PROTOCOL while attempting to restart the wal file.
+reset_db
+tvfs filter {}
+db close
+sqlite3 db test.db -vfs tvfs
+do_execsql_test 6.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  PRAGMA journal_mode = wal;
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s LIMIT 20
+  )
+  INSERT INTO t1 SELECT randomblob(750) FROM s;
+} {wal}
+
+do_test 6.1 {
+  execsql { PRAGMA wal_checkpoint } 
+  set {} {}
+} {}
+
+tvfs filter xShmLock
+set ::flag 0
+proc xShmLock {method file handle spec} {
+  if {$::flag && [lrange $spec 2 end]=="lock shared"} {
+    return SQLITE_BUSY
+  }
+  if {$spec=="3 1 unlock shared"} {
+    set ::flag 1
+  }
+  return SQLITE_OK
+}
+
+puts "# WARNING: This next test takes around 12 seconds"
+do_catchsql_test 6.2 {
+  INSERT INTO t1 VALUES(1);
+} {1 {locking protocol}}
+
 db close
 tvfs delete
 finish_test
+
