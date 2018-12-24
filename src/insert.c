@@ -1352,7 +1352,20 @@ void sqlite3GenerateConstraintChecks(
     }
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
         || onError==OE_Ignore || onError==OE_Replace );
+    addr1 = 0;
     switch( onError ){
+      case OE_Replace: {
+        assert( onError==OE_Replace );
+        addr1 = sqlite3VdbeMakeLabel(v);
+        sqlite3VdbeAddOp2(v, OP_NotNull, regNewData+1+i, addr1);
+          VdbeCoverage(v);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
+        sqlite3VdbeAddOp2(v, OP_NotNull, regNewData+1+i, addr1);
+          VdbeCoverage(v);
+        onError = OE_Abort;
+        /* Fall through into the OE_Abort case to generate code that runs
+        ** if both the input and the default value are NULL */
+      }
       case OE_Abort:
         sqlite3MayAbort(pParse);
         /* Fall through */
@@ -1365,19 +1378,13 @@ void sqlite3GenerateConstraintChecks(
         sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);
         sqlite3VdbeChangeP5(v, P5_ConstraintNotNull);
         VdbeCoverage(v);
-        break;
-      }
-      case OE_Ignore: {
-        sqlite3VdbeAddOp2(v, OP_IsNull, regNewData+1+i, ignoreDest);
-        VdbeCoverage(v);
+        if( addr1 ) sqlite3VdbeResolveLabel(v, addr1);
         break;
       }
       default: {
-        assert( onError==OE_Replace );
-        addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, regNewData+1+i);
-           VdbeCoverage(v);
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
-        sqlite3VdbeJumpHere(v, addr1);
+        assert( onError==OE_Ignore );
+        sqlite3VdbeAddOp2(v, OP_IsNull, regNewData+1+i, ignoreDest);
+        VdbeCoverage(v);
         break;
       }
     }

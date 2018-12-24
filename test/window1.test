@@ -591,7 +591,33 @@ do_execsql_test 13.5 {
   SELECT a, rank() OVER(ORDER BY b) FROM t1
     INTERSECT 
   SELECT a, rank() OVER(ORDER BY b DESC) FROM t1;
-} {
-}
+} {}
+
+# 2018-12-06
+# https://www.sqlite.org/src/info/f09fcd17810f65f7
+# Assertion fault when window functions are used.
+#
+# Root cause is the query flattener invoking sqlite3ExprDup() on
+# expressions that contain subqueries with window functions.  The
+# sqlite3ExprDup() routine is not making correctly initializing
+# Select.pWin field of the subqueries.
+#
+sqlite3 db :memory:
+do_execsql_test 14.0 {
+  SELECT * FROM(
+    SELECT * FROM (SELECT 1 AS c) WHERE c IN (
+        SELECT (row_number() OVER()) FROM (VALUES (0))
+    )
+  );
+} {1}
+do_execsql_test 14.1 {
+  CREATE TABLE t1(x); INSERT INTO t1(x) VALUES(12345);
+  CREATE TABLE t2(c); INSERT INTO t2(c) VALUES(1);
+  SELECT y, y+1, y+2 FROM (
+    SELECT c IN (
+      SELECT (row_number() OVER()) FROM t1
+    ) AS y FROM t2
+  );
+} {1 2 3}
 
 finish_test

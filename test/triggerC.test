@@ -1042,4 +1042,20 @@ do_execsql_test 15.2.1 {
 do_execsql_test 15.2.2 { SELECT * FROM x2;       } {1 2 3 4}
 do_execsql_test 15.2.3 { SELECT * FROM """x2"""; } {3 11 x y}
 
+#-------------------------------------------------------------------------
+# At one point queries such as the following were causing segfaults.
+#
+do_catchsql_test 16.1 {
+  SELECT raise(ABORT, 'msg') FROM sqlite_master 
+  UNION SELECT 1 
+  ORDER BY raise(IGNORE);
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+do_catchsql_test 16.2 {
+  SELECT count(*) FROM sqlite_master 
+  GROUP BY raise(IGNORE) 
+  HAVING raise(ABORT, 'msg');
+} {1 {RAISE() may only be used within a trigger-program}}
+
 finish_test
+

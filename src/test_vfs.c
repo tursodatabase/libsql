@@ -228,11 +228,12 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
     int eCode;
     const char *zCode;
   } aCode[] = {
-    { SQLITE_OK,     "SQLITE_OK"     },
-    { SQLITE_ERROR,  "SQLITE_ERROR"  },
-    { SQLITE_IOERR,  "SQLITE_IOERR"  },
-    { SQLITE_LOCKED, "SQLITE_LOCKED" },
-    { SQLITE_BUSY,   "SQLITE_BUSY"   },
+    { SQLITE_OK,       "SQLITE_OK"     },
+    { SQLITE_ERROR,    "SQLITE_ERROR"  },
+    { SQLITE_IOERR,    "SQLITE_IOERR"  },
+    { SQLITE_LOCKED,   "SQLITE_LOCKED" },
+    { SQLITE_BUSY,     "SQLITE_BUSY"   },
+    { SQLITE_READONLY, "SQLITE_READONLY"   },
   };
 
   const char *z;
@@ -865,7 +866,7 @@ static int tvfsShmOpen(sqlite3_file *pFile){
   pFd->pNext = pBuffer->pFile;
   pBuffer->pFile = pFd;
   pFd->pShm = pBuffer;
-  return SQLITE_OK;
+  return rc;
 }
 
 static void tvfsAllocPage(TestvfsBuffer *p, int iPage, int pgsz){

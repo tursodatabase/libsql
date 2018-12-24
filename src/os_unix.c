@@ -4834,11 +4834,7 @@ static int unixMutexFreeShmlock(
   };
 
   unixShm *p = pFd->pShm;               /* The shared memory being locked */
-  unixShm *pX;                          /* For looping over all siblings */
   unixShmNode *pShmNode = p->pShmNode;  /* The underlying file iNode */
-  int rc = SQLITE_OK;
-  int iIncr;
-  u16 mask;                             /* Mask of locks to take or release */
 
   if( flags & SQLITE_SHM_SHARED ){
     /* SHARED locks */

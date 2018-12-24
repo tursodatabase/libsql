@@ -2133,6 +2133,7 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
     if( pNew ){
       pNew->zName = sqlite3DbStrDup(db, p->zName);
       pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
+      pNew->pFunc = p->pFunc;
       pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
       pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
       pNew->eType = p->eType;

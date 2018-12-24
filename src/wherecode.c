@@ -1076,7 +1076,9 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
 #ifndef SQLITE_OMIT_SUBQUERY
     if( (p->flags & EP_xIsSelect) ){
       Vdbe *v = pParse->pVdbe;
-      int iSelect = sqlite3CodeSubselect(pParse, p, 0, 0);
+      int iSelect;
+      assert( p->op==TK_SELECT );
+      iSelect = sqlite3CodeSubselect(pParse, p);
       sqlite3VdbeAddOp3(v, OP_Copy, iSelect, iReg, nReg-1);
     }else
 #endif

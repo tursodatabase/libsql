@@ -102,16 +102,16 @@ static int execSqlF(sqlite3 *db, char **pzErrMsg, const char *zSql, ...){
 ** transient would cause the database file to appear to be deleted
 ** following reboot.
 */
-void sqlite3Vacuum(Parse *pParse, Token *pNm){
+void sqlite3Vacuum(Parse *pParse, Token *pNm, Expr *pInto){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int iDb = 0;
-  if( v==0 ) return;
+  if( v==0 ) goto build_vacuum_end;
   if( pNm ){
 #ifndef SQLITE_BUG_COMPATIBLE_20160819
     /* Default behavior:  Report an error if the argument to VACUUM is
     ** not recognized */
     iDb = sqlite3TwoPartName(pParse, pNm, pNm, &pNm);
-    if( iDb<0 ) return;
+    if( iDb<0 ) goto build_vacuum_end;
 #else
     /* When SQLITE_BUG_COMPATIBLE_20160819 is defined, unrecognized arguments
     ** to VACUUM are silently ignored.  This is a back-out of a bug fix that
@@ -123,21 +123,33 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm){
 #endif
   }
   if( iDb!=1 ){
-    sqlite3VdbeAddOp1(v, OP_Vacuum, iDb);
+    int iIntoReg = 0;
+    if( pInto ){
+      iIntoReg = ++pParse->nMem;
+      sqlite3ExprCode(pParse, pInto, iIntoReg);
+    }
+    sqlite3VdbeAddOp2(v, OP_Vacuum, iDb, iIntoReg);
     sqlite3VdbeUsesBtree(v, iDb);
   }
+build_vacuum_end:
+  sqlite3ExprDelete(pParse->db, pInto);
   return;
 }
 
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
+int sqlite3RunVacuum(
+  char **pzErrMsg,        /* Write error message here */
+  sqlite3 *db,            /* Database connection */
+  int iDb,                /* Which attached DB to vacuum */
+  sqlite3_value *pOut     /* Write results here, if not NULL */
+){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
-  u16 saved_mDbFlags;     /* Saved value of db->mDbFlags */
-  u32 saved_flags;        /* Saved value of db->flags */
+  u32 saved_mDbFlags;     /* Saved value of db->mDbFlags */
+  u64 saved_flags;        /* Saved value of db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
   u8 saved_mTrace;        /* Saved trace settings */
@@ -146,6 +158,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   int nRes;               /* Bytes of reserved space at the end of each page */
   int nDb;                /* Number of attached databases */
   const char *zDbMain;    /* Schema name of database to vacuum */
+  const char *zOut;       /* Name of output file */
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
@@ -154,6 +167,15 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   if( db->nVdbeActive>1 ){
     sqlite3SetString(pzErrMsg, db,"cannot VACUUM - SQL statements in progress");
     return SQLITE_ERROR;
+  }
+  if( pOut ){
+    if( sqlite3_value_type(pOut)!=SQLITE_TEXT ){
+      sqlite3SetString(pzErrMsg, db, "non-text filename");
+      return SQLITE_ERROR;
+    }
+    zOut = (const char*)sqlite3_value_text(pOut);
+  }else{
+    zOut = "";
   }
 
   /* Save the current value of the database flags so that it can be 
@@ -166,7 +188,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   saved_mTrace = db->mTrace;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
   db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
-  db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder
+  db->flags &= ~(u64)(SQLITE_ForeignKeys | SQLITE_ReverseOrder
                    | SQLITE_Defensive | SQLITE_CountRows);
   db->mTrace = 0;
 
@@ -189,19 +211,21 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   ** to write the journal header file.
   */
   nDb = db->nDb;
-  rc = execSql(db, pzErrMsg, "ATTACH''AS vacuum_db");
+  rc = execSqlF(db, pzErrMsg, "ATTACH %Q AS vacuum_db", zOut);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   assert( (db->nDb-1)==nDb );
   pDb = &db->aDb[nDb];
   assert( strcmp(pDb->zDbSName,"vacuum_db")==0 );
   pTemp = pDb->pBt;
-
-  /* The call to execSql() to attach the temp database has left the file
-  ** locked (as there was more than one active statement when the transaction
-  ** to read the schema was concluded. Unlock it here so that this doesn't
-  ** cause problems for the call to BtreeSetPageSize() below.  */
-  sqlite3BtreeCommit(pTemp);
-
+  if( pOut ){
+    sqlite3_file *id = sqlite3PagerFile(sqlite3BtreePager(pTemp));
+    i64 sz = 0;
+    if( id->pMethods!=0 && (sqlite3OsFileSize(id, &sz)!=SQLITE_OK || sz>0) ){
+      rc = SQLITE_ERROR;
+      sqlite3SetString(pzErrMsg, db, "output file already exists");
+      goto end_of_vacuum;
+    }
+  }
   nRes = sqlite3BtreeGetOptimalReserve(pMain);
 
   /* A VACUUM cannot change the pagesize of an encrypted database. */
@@ -225,7 +249,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   */
   rc = execSql(db, pzErrMsg, "BEGIN");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = sqlite3BtreeBeginTrans(pMain, 2, 0);
+  rc = sqlite3BtreeBeginTrans(pMain, pOut==0 ? 2 : 0, 0);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Do not attempt to change the page size for a WAL database */
@@ -320,7 +344,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
     };
 
     assert( 1==sqlite3BtreeIsInTrans(pTemp) );
-    assert( 1==sqlite3BtreeIsInTrans(pMain) );
+    assert( pOut!=0 || 1==sqlite3BtreeIsInTrans(pMain) );
 
     /* Copy Btree meta values */
     for(i=0; i<ArraySize(aCopy); i+=2){
@@ -331,17 +355,23 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
       if( NEVER(rc!=SQLITE_OK) ) goto end_of_vacuum;
     }
 
-    rc = sqlite3BtreeCopyFile(pMain, pTemp);
+    if( pOut==0 ){
+      rc = sqlite3BtreeCopyFile(pMain, pTemp);
+    }
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
     rc = sqlite3BtreeCommit(pTemp);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    sqlite3BtreeSetAutoVacuum(pMain, sqlite3BtreeGetAutoVacuum(pTemp));
+    if( pOut==0 ){
+      sqlite3BtreeSetAutoVacuum(pMain, sqlite3BtreeGetAutoVacuum(pTemp));
+    }
 #endif
   }
 
   assert( rc==SQLITE_OK );
-  rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes,1);
+  if( pOut==0 ){
+    rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes,1);
+  }
 
 end_of_vacuum:
   /* Restore the original value of db->flags */
