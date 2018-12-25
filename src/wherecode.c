@@ -1165,22 +1165,21 @@ static void whereIndexExprTrans(
 ** implementation described by pWInfo.
 */
 Bitmask sqlite3WhereCodeOneLoopStart(
+  Parse *pParse,       /* Parsing context */
+  Vdbe *v,             /* Prepared statement under construction */
   WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
   int iLevel,          /* Which level of pWInfo->a[] should be coded */
+  WhereLevel *pLevel,  /* The current level pointer */
   Bitmask notReady     /* Which tables are currently available */
 ){
   int j, k;            /* Loop counters */
   int iCur;            /* The VDBE cursor for the table */
   int addrNxt;         /* Where to jump to continue with the next IN case */
-  int omitTable;       /* True if we use the index only */
   int bRev;            /* True if we need to scan in reverse order */
-  WhereLevel *pLevel;  /* The where level to be coded */
   WhereLoop *pLoop;    /* The WhereLoop object being coded */
   WhereClause *pWC;    /* Decomposition of the entire WHERE clause */
   WhereTerm *pTerm;               /* A WHERE clause term */
-  Parse *pParse;                  /* Parsing context */
   sqlite3 *db;                    /* Database connection */
-  Vdbe *v;                        /* The prepared stmt under constructions */
   struct SrcList_item *pTabItem;  /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
   int addrHalt;                   /* addrBrk for the outermost loop */
@@ -1190,18 +1189,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   Index *pIdx = 0;          /* Index used by loop (if any) */
   int iLoop;                /* Iteration of constraint generator loop */
 
-  pParse = pWInfo->pParse;
-  v = pParse->pVdbe;
   pWC = &pWInfo->sWC;
   db = pParse->db;
-  pLevel = &pWInfo->a[iLevel];
   pLoop = pLevel->pWLoop;
   pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
   iCur = pTabItem->iCursor;
   pLevel->notReady = notReady & ~sqlite3WhereGetMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
-  omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
-           && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0;
   VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
 
   /* Create labels for the "break" and "continue" instructions
@@ -1342,7 +1336,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
     assert( pTerm->pExpr!=0 );
-    assert( omitTable==0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     iReleaseReg = ++pParse->nMem;
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
@@ -1361,7 +1354,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int memEndValue = 0;
     WhereTerm *pStart, *pEnd;
 
-    assert( omitTable==0 );
     j = 0;
     pStart = pEnd = 0;
     if( pLoop->wsFlags & WHERE_BTM_LIMIT ) pStart = pLoop->aLTerm[j++];
@@ -1525,6 +1517,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     char *zEndAff = 0;           /* Affinity for end of range constraint */
     u8 bSeekPastNull = 0;        /* True to seek past initial nulls */
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
+    int omitTable;               /* True if we use the index only */
+
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
@@ -1726,6 +1720,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
 
     /* Seek the table cursor, if required */
+    omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
+           && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0;
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
