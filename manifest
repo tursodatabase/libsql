@@ -1,5 +1,5 @@
-C Avoid\sa\sleft-shift\sof\sa\snegative\svalue\s(undefined\sbehaviour)\swhen\sdealing\swith\na\scorrupt\sdatabase\sin\sfts3.\sCherrypick\sof\s[b851d12474].
-D 2018-12-26T11:39:39.560
+C Fix\sa\sproblem\swith\scorrupt\sfts3\sdatabase\sdetection\sintroduced\sby\s[27199380].
+D 2018-12-26T14:23:14.887
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 525a3bd9a7564603c5c061b7de55403a565307758a94600e8a2f6b00d1c40d9d
 F ext/fts3/fts3_unicode2.c cc04fc672bfd42b1e650398cb0bf71f64f9aae032cfe75bbcfe75b9cf966029c
-F ext/fts3/fts3_write.c 3618c009875dea35d5e9e605ed54863a71df355b4a62f74575cb405bc8e25e10
+F ext/fts3/fts3_write.c d8c64541a9c1f139336951e814c69ee7783bc2125383fd6de8ec461d4d6975a8
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1702,8 +1702,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 271993803cc99305642e9809cbe81cbefd944f4c42fc0de370e52eb69103dcdd
-Q +b851d12474035328df8354c7da8d81bc78833c8c704153f9f573c19b47a8487e
-R cfd81a11c14c38f2eacec621253b7d4a
+P 2fa63a8be62a06136a34d32351229b54bea58253a63275edf82efe0e83d412ca
+Q +c80bb15b44e9b6a3c0c5a49d5e93e66376c3520ecefc1db7425c8a7e09d3eade
+R d5e6157c1b586c596f6d26add380ef59
 U dan
-Z cb5a77d0772d98773d0f1307124b9c0e
+Z 9b031fa3e57598e3b8f2aaf62ddd8a7e
