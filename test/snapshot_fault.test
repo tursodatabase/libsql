@@ -221,6 +221,31 @@ do_faultsim_test 4.1 -faults shm* -prep {
   faultsim_test_result {0 {}} {1 SQLITE_IOERR}
 }
 
+#-------------------------------------------------------------------------
+# Test the handling of faults that occur within sqlite3_snapshot_get().
+#
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA page_size = 512;
+  PRAGMA journal_mode = wal;
+  PRAGMA wal_autocheckpoint = 0;
+  CREATE TABLE t1(zzz);
+  INSERT INTO t1 VALUES(randomblob( 5000 ));
+  PRAGMA user_version = 211;
+} {wal 0}
+faultsim_save_and_close
+
+do_faultsim_test 5 -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT count(*) FROM sqlite_master }
+  execsql BEGIN
+} -body {
+  sqlite3_snapshot_get_blob db main
+  set {} {}
+} -test {
+  execsql END
+  faultsim_test_result {0 {}} {1 SQLITE_IOERR} {1 SQLITE_NOMEM}
+}
 
 
 finish_test

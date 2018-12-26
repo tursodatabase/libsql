@@ -1,5 +1,5 @@
-C Add\sa\sfew\smore\stest\scases\sto\swalvfs.test.
-D 2018-12-26T17:49:57.369
+C Update\sthe\scoverage-wal\spermutation\sto\scover\sbranches\senabled\sby\nSQLITE_ENABLE_SNAPSHOT.
+D 2018-12-26T18:34:56.085
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -1187,7 +1187,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 49b90ca9cebc3faed41ef6c7265067a1ee672b5199ed8765225cd95deb06974f
+F test/permutations.test 61c0f61d9b26ebb4643b2ed848e9b3f55492f74e0addab66c7dcd70b081d7b03
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1305,7 +1305,7 @@ F test/snapshot.test a504f2e7009f512ef66c719f0ea1c55a556bdaf1e1312c80a04d46fc1a3
 F test/snapshot2.test 8d6ff5dd9cc503f6e12d408a30409c3f9c653507b24408d9cd7195931c89bc54
 F test/snapshot3.test 8744313270c55f6e18574283553d3c5c5fe4c5970585663613a0e75c151e599b
 F test/snapshot4.test d4e9347ef2fcabc491fc893506c7bbaf334da3be111d6eb4f3a97cc623b78322
-F test/snapshot_fault.test 508ae6f211d4991e9ff3b5080aeb0a179bf6755138aabeac4bca8083044d895a
+F test/snapshot_fault.test f6c5ef7cb93bf92fbb4e864ecc5c87df7d3a250064838822db5b4d3a5563ede4
 F test/snapshot_up.test a0a29c4cf33475fcef07c3f8e64af795e24ab91b4cc68295863402a393cdd41c
 F test/soak.test 18944cf21b94a7fe0df02016a6ee1e9632bc4e8d095a0cb49d95e15d5cca2d5c
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6cae81cd1ffb0180e0260d5ba921502c7dee2f54637bff3558a4d1cb5dfd3f32
-R c36b08f16a117e4abeb7fdc6926070c6
+P 14a64df36efe0dc36795311d58385f9c65dc465b214059e07c2ee6b95ea99c87
+R 7069e81188241b50db30e1f96632c72c
 U dan
-Z 91f513680519082fc3e014da1dc90f66
+Z 80824c8929195978c7b3913db23b16cc

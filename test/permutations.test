@@ -438,8 +438,10 @@ test_suite "coverage-wal" -description {
   walprotocol2.test walprotocol.test walro2.test walrofault.test 
   walro.test walshared.test walslow.test walvfs.test
   walfault2.test
-
   nockpt.test
+
+  snapshot2.test snapshot3.test snapshot4.test
+  snapshot_fault.test snapshot.test snapshot_up.test
 } 
 
 test_suite "coverage-pager" -description {
