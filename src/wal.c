@@ -576,7 +576,7 @@ struct WalIndexHdr {
 **   void walidxSetFile(WalIndexHdr*, int val);              // set file
 */
 #define walidxGetMxFrame(pHdr, iWal) \
-  ((iWal) ? ((pHdr)->mxFrame2 & 0x7FFFFFF) : (pHdr)->mxFrame)
+  ((iWal) ? ((pHdr)->mxFrame2 & 0x7FFFFFFF) : (pHdr)->mxFrame)
 
 static void walidxSetMxFrame(WalIndexHdr *pHdr, int iWal, u32 mxFrame){
   if( iWal ){
@@ -4427,10 +4427,9 @@ int sqlite3WalCheckpoint(
 
   /* Copy data from the log to the database file. */
   if( rc==SQLITE_OK ){
+    int iCkpt = walidxGetFile(&pWal->hdr);
 
-    if( (walPagesize(pWal)!=nBuf) 
-     && (walidxGetMxFrame(&pWal->hdr, 0) || walidxGetMxFrame(&pWal->hdr, 1))
-    ){
+    if( (walPagesize(pWal)!=nBuf) && walidxGetMxFrame(&pWal->hdr, iCkpt) ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
@@ -4444,7 +4443,7 @@ int sqlite3WalCheckpoint(
       if( pnCkpt ){
         if( isWalMode2(pWal) ){
           if( (int)(walCkptInfo(pWal)->nBackfill) ){
-            *pnCkpt = walidxGetMxFrame(&pWal->hdr, !walidxGetFile(&pWal->hdr));
+            *pnCkpt = walidxGetMxFrame(&pWal->hdr, iCkpt);
           }else{
             *pnCkpt = 0;
           }
