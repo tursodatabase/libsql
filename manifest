@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\shandling\scorrupt\sdatabases\sin\sthe\sfts5\sintegrity-check\nfunction.
-D 2018-12-26T16:04:54.352
+C Avoid\san\s"unitialized\svalue\sread"\sproblem\sin\sfts5\sthat\scan\soccur\swith\sa\ncorrupt\sdatabase.
+D 2018-12-26T16:57:47.391
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -115,7 +115,7 @@ F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bf
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 5aef080ba3c8947e22f38ce1ff9fe548e4a740e72b77241f35ed941ae128d2c7
 F ext/fts5/fts5_hash.c 32be400cf761868c9db33efe81a06eb19a17c5402ad477ee9efb51301546dd55
-F ext/fts5/fts5_index.c d6a771cf74151e699218f80b6c714dcf8e2de274cd20b4e057efffaf4153b247
+F ext/fts5/fts5_index.c d98210603b2e97be46514f656846a02b2a31577fafa9092303391582a12c3a2f
 F ext/fts5/fts5_main.c 287a1a56580df304d7fa2fc1890f85b9cb6ac6b9e7c8af7dfa2151528db4b059
 F ext/fts5/fts5_storage.c 5862f1b785a983acb8420281340f3f424896ab48f396f6fd8540787be7459139
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c80bb15b44e9b6a3c0c5a49d5e93e66376c3520ecefc1db7425c8a7e09d3eade
-R a701ea42cd78c779b098d9a102a6089c
+P 9bad745d373f4686a2726c3f77a2ccad60e7181645d7ed483a2e43075a4ef30c
+R af614ee0c541623b14b452f16a3d180b
 U dan
-Z 5c17aea312d8cf98d4ed20ed6e87635b
+Z eecd655d888913690f7b7084cee8af3a

@@ -690,8 +690,8 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
         pRet = 0;
       }else{
         /* TODO1: Fix this */
-        pRet->szLeaf = fts5GetU16(&pRet->p[2]);
         pRet->p[nByte] = 0x00;
+        pRet->szLeaf = fts5GetU16(&pRet->p[2]);
       }
     }
     p->rc = rc;
