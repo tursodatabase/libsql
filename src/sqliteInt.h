@@ -2587,8 +2587,9 @@ struct ExprList {
     u8 sortOrder;           /* 1 for DESC or 0 for ASC */
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
-    unsigned reusable :1;   /* Constant expression is reusable */
+    unsigned reusable   :1; /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
+    unsigned bAuxSubrtn :1; /* Member of pAuxExpr to be coded as a subroutine */
     union {
       struct {
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
@@ -3076,7 +3077,7 @@ struct Parse {
                        ** of the base register during check-constraint eval */
   int nLabel;          /* Number of labels used */
   int *aLabel;         /* Space to hold the labels */
-  ExprList *pConstExpr;/* Constant expressions */
+  ExprList *pAuxExpr;  /* Exprs coded at initialization or as subroutines */
   Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */

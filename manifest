@@ -1,5 +1,5 @@
-C Increase\sthe\snumber\sof\sparameters\sto\ssqlite3WhereCodeOneLoopStart()\sto\nencourage\sthe\scompiler\sto\sinline\sthat\sroutine\swithin\ssqlite3WhereBegin().\nThis\sgives\sa\sperformance\simprovement.
-D 2018-12-25T00:15:37.105
+C Here\sis\sthe\sbeginnings\sof\san\seffort\sto\sfactor\sout\sthe\simplementation\sof\nscalar\ssubqueries\sto\sbe\simplemented\sas\ssubroutines\sat\sthe\send\sof\sthe\smain\nbody\sof\sbytecode,\safter\sthe\sjump\sback\sto\sthe\sOP_Init\sopcode.\s\sThis\sis\san\nincremental\scheck-in\sthat\scontains\sonly\spreliminary\schanges.
+D 2018-12-26T15:04:43.407
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -454,7 +454,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 4429a1615440f0253d470b59f955fe84787fd6f709ae114c0a12d132ae725599
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c cb86906fcc9150514024d74befa6905bce2323f51518cc5973e4be6a5b00fd16
+F src/build.c b620091357744710ae9940f03947b4bd69c2d5bf7cd76746e5a7cd5a8787beec
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -462,7 +462,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c f7938125847e8ef485448db5fbad29acb2991381a02887dd854c1617315ab9fb
-F src/expr.c 7e6f3cd438b5023c82c52f45ef3c73d0db576092d26e5927c787a4610c3dd20a
+F src/expr.c 8f674a8295e7c0d65abf3983c2e8a671141d41274f7a3d843ae09e42c97d8a4c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 012dd7dba1a62fda6b76e633ab303b2232ee2874a685c915065227ab20ad6ae0
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -505,7 +505,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c ddc9fc7d9861cf3a1f30660264b76b1ae9e1dce5dbba085cf001d5cb6b41cf8c
 F src/pragma.c 96ce7dce4dc9cb2b7aa0e1b2ce7536870bdc00b10becc278245e775489447ea0
 F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
-F src/prepare.c d0918fb8d00b1ebf19655e7f3d28464b3fc3c43c16d36dd06092de02244a5180
+F src/prepare.c 4fd8502d4e89ba1219ae0467222e8df4608405cb9799b78cc46c4a4990f1cc37
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 72fe8cae7326b979e7258ab4c531956951e1a5f3fe8644c646abaec1b2eb6d95
@@ -515,7 +515,7 @@ F src/shell.c.in 207da30342db0b6fac8b2487abd60b059a5ea80cc9494bd1db76a1dd4aae7cc
 F src/sqlite.h.in b54cd42d2f3b739a00de540cafe2dcd0de3b8e1748a2db33a68def487e9e602f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h 1b343307094ad33e5d38342df86e252fa997ef62f8521ca0a20f9997e2ed1081
+F src/sqliteInt.h 0e8cc89b4a589d2bb7de085ddce04ba53a2ad926c7a71ac194114c02cc9810fc
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1792,7 +1792,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7153552bac51295c56a1c42ca79d57195851e232509f9e9610375692f48c7e86
-R 9bbf8e3195d370c6ccbb9531f0f683fa
+P 3c2ad0e915e835b1cb2962879beff50b2745d0cefe1cfc89ef90b7879c139ce6
+R 7253304d573583193fd660d5a38c4b33
+T *branch * factor-out-scalar-subselect
+T *sym-factor-out-scalar-subselect *
+T -sym-reuse-subqueries *
 U drh
-Z f0376617780b59260b8f0b420c8797c9
+Z 7394ebc147279ea7d69a4b85835f879c

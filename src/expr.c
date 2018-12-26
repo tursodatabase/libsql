@@ -1950,7 +1950,7 @@ int sqlite3ExprIsConstant(Expr *p){
 **       operands created by the constant propagation optimization.
 **
 ** When this routine returns true, it indicates that the expression
-** can be added to the pParse->pConstExpr list and evaluated once when
+** can be added to the pParse->pAuxExpr list and evaluated once when
 ** the prepared statement starts up.  See sqlite3ExprCodeAtInit().
 */
 int sqlite3ExprIsConstantNotJoin(Expr *p){
@@ -4138,7 +4138,7 @@ int sqlite3ExprCodeAtInit(
 ){
   ExprList *p;
   assert( ConstFactorOk(pParse) );
-  p = pParse->pConstExpr;
+  p = pParse->pAuxExpr;
   if( regDest<0 && p ){
     struct ExprList_item *pItem;
     int i;
@@ -4156,7 +4156,7 @@ int sqlite3ExprCodeAtInit(
      if( regDest<0 ) regDest = ++pParse->nMem;
      pItem->u.iConstExprReg = regDest;
   }
-  pParse->pConstExpr = p;
+  pParse->pAuxExpr = p;
   return regDest;
 }
 
@@ -4394,7 +4394,7 @@ static void exprCodeBetween(
   }else{
     /* Mark the expression is being from the ON or USING clause of a join
     ** so that the sqlite3ExprCodeTarget() routine will not attempt to move
-    ** it into the Parse.pConstExpr list.  We should use a new bit for this,
+    ** it into the Parse.pAuxExpr list.  We should use a new bit for this,
     ** for clarity, but we are out of bits in the Expr.flags field so we
     ** have to reuse the EP_FromJoin bit.  Bummer. */
     exprX.flags |= EP_FromJoin;

@@ -168,7 +168,7 @@ void sqlite3FinishCoding(Parse *pParse){
     ** on each used database.
     */
     if( db->mallocFailed==0 
-     && (DbMaskNonZero(pParse->cookieMask) || pParse->pConstExpr)
+     && (DbMaskNonZero(pParse->cookieMask) || pParse->pAuxExpr)
     ){
       int iDb, i;
       assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
@@ -207,17 +207,25 @@ void sqlite3FinishCoding(Parse *pParse){
       */
       sqlite3AutoincrementBegin(pParse);
 
-      /* Code constant expressions that where factored out of inner loops */
-      if( pParse->pConstExpr ){
-        ExprList *pEL = pParse->pConstExpr;
+      if( pParse->pAuxExpr ){
+        ExprList *pEL = pParse->pAuxExpr;
+        struct ExprList_item *pX;
         pParse->okConstFactor = 0;
-        for(i=0; i<pEL->nExpr; i++){
-          sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].u.iConstExprReg);
+        /* Code constant expressions that where factored out of inner loops */
+        for(pX=pEL->a, i=pEL->nExpr; i>0; i--, pX++){
+          if( pX->bAuxSubrtn ) continue;
+          sqlite3ExprCode(pParse, pX->pExpr, pX->u.iConstExprReg);
         }
+        sqlite3VdbeGoto(v, 1);  /* Jump back to the main code */
+        /* Code subroutines factored out from main */
+        for(pX=pEL->a, i=pEL->nExpr; i>0; i--, pX++){
+          if( !pX->bAuxSubrtn ) continue;
+          /* sqlite3ExprCode(pParse, pX->pExpr, pX->u.iConstExprReg); */
+        }
+      }else{
+        /* Jump back to the beginning of main */
+        sqlite3VdbeGoto(v, 1);
       }
-
-      /* Finally, jump back to the beginning of the executable code. */
-      sqlite3VdbeGoto(v, 1);
     }
   }
 

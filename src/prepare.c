@@ -506,7 +506,7 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 void sqlite3ParserReset(Parse *pParse){
   sqlite3 *db = pParse->db;
   sqlite3DbFree(db, pParse->aLabel);
-  sqlite3ExprListDelete(db, pParse->pConstExpr);
+  sqlite3ExprListDelete(db, pParse->pAuxExpr);
   if( db ){
     assert( db->lookaside.bDisable >= pParse->disableLookaside );
     db->lookaside.bDisable -= pParse->disableLookaside;
