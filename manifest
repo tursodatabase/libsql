@@ -1,5 +1,5 @@
-C Change\sthe\sway\sa\scomparison\sused\sto\sdetect\scorrupt\sdatabases\sin\sfts3\sis\sdone\nto\savoid\spotential\spointer\soverflow\sin\s32-bit\sbuilds.\sCherrypick\sof\n[95a9a39ff7].
-D 2018-12-24T13:39:13.977
+C Avoid\sa\sleft-shift\sof\sa\snegative\svalue\s(undefined\sbehaviour)\swhen\sdealing\swith\na\scorrupt\sdatabase\sin\sfts3.\sCherrypick\sof\s[b851d12474].
+D 2018-12-26T11:39:39.560
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 38f84f301cbef443b2d269f67a74b8cc536469831f70df7c3e912acc04932cc2
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 829e2943ac3449d074e465ee04815f472667e345afb682b42306d9c36eac4991
+F ext/fts3/fts3.c 5adba0be37f75eb71fe6f38a784f40ca4c2455900b948e1a80e05d5061a30979
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1702,8 +1702,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c255889bd95bd5430dc7ced3317011ae2abb483d6c9af883af3dc7d6c2c2f234
-Q +95a9a39ff784b960b62dd6298e722a620ba3f9c8b76839a49bbef35d7bc84a8e
-R 59b57eaf6788c45abc849f51361db5b0
+P 271993803cc99305642e9809cbe81cbefd944f4c42fc0de370e52eb69103dcdd
+Q +b851d12474035328df8354c7da8d81bc78833c8c704153f9f573c19b47a8487e
+R cfd81a11c14c38f2eacec621253b7d4a
 U dan
-Z 15cd32de688a5ebf9e83177e1ecf89e7
+Z cb5a77d0772d98773d0f1307124b9c0e
