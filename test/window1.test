@@ -591,8 +591,7 @@ do_execsql_test 13.5 {
   SELECT a, rank() OVER(ORDER BY b) FROM t1
     INTERSECT 
   SELECT a, rank() OVER(ORDER BY b DESC) FROM t1;
-} {
-}
+} {}
 
 # 2018-12-06
 # https://www.sqlite.org/src/info/f09fcd17810f65f7

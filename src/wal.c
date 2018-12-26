@@ -3577,8 +3577,10 @@ int sqlite3WalFindFrame(
   int rc = SQLITE_OK;
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
 
-  /* This routine is only be called from within a read transaction. */
-  assert( pWal->readLock!=WAL_LOCK_NONE );
+  /* This routine is only be called from within a read transaction. Or,
+  ** sometimes, as part of a rollback that occurs after an error reaquiring
+  ** a read-lock in walRestartLog().  */
+  assert( pWal->readLock!=WAL_LOCK_NONE || pWal->writeLock );
 
   /* If this is a wal2 system, the client must have a partial-wal lock 
   ** on wal file iApp. Or if it is a wal system, iApp==0 must be true.  */

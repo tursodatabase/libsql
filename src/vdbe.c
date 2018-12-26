@@ -1925,7 +1925,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
-      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 );
+      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 || CORRUPT_DB );
+      testcase( (pOp->p5 & SQLITE_JUMPIFNULL)!=0 );
       if( (flags1&flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
@@ -4342,7 +4343,7 @@ case OP_NotExists:          /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = OP_SeekRowid;
+  if( pOp->opcode==OP_SeekRowid ) pC->seekOp = OP_SeekRowid;
 #endif
   assert( pC->isTable );
   assert( pC->eCurType==CURTYPE_BTREE );
@@ -5250,7 +5251,7 @@ case OP_Next:          /* jump */
   assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
        || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found 
-       || pC->seekOp==OP_NullRow);
+       || pC->seekOp==OP_NullRow|| pC->seekOp==OP_SeekRowid);
   assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
        || pC->seekOp==OP_Last 

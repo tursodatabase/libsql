@@ -231,5 +231,24 @@ ifcapable vtab {
   } {t2 t2abc t2cd t2def}
 }
 
+#-------------------------------------------------------------------------
+# Test that ticket [d96eba87] has been fixed.
+#
+do_execsql_test 5.0 {
+  CREATE TABLE t5(a INTEGER, b INTEGER);
+  INSERT INTO t5 VALUES(2, 4), (3, 9);
+}
+do_execsql_test 5.1 {
+  SELECT * FROM t5 WHERE abs(a)=2 or abs(b)=9;
+} {2 4 3 9}
+do_execsql_test 5.2 {
+  CREATE INDEX t5a ON t5( abs(a) );
+  CREATE INDEX t5b ON t5( abs(b) );
+}
+do_execsql_test 5.4 {
+  SELECT * FROM t5 WHERE abs(a)=2 or abs(b)=9;
+} {2 4 3 9}
+
+
 
 finish_test

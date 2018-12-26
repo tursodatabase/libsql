@@ -548,7 +548,7 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** sqlite3changeset_next() is called on the iterator or until the 
 ** conflict-handler function returns. If pnCol is not NULL, then *pnCol is 
 ** set to the number of columns in the table affected by the change. If
-** pbIncorrect is not NULL, then *pbIndirect is set to true (1) if the change
+** pbIndirect is not NULL, then *pbIndirect is set to true (1) if the change
 ** is an indirect change, or false (0) otherwise. See the documentation for
 ** [sqlite3session_indirect()] for a description of direct and indirect
 ** changes. Finally, if pOp is not NULL, then *pOp is set to one of 

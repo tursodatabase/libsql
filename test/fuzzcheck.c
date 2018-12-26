@@ -447,7 +447,7 @@ static int inmemRead(
   if( iOfst+iAmt>pVFile->sz ){
     memset(pData, 0, iAmt);
     iAmt = (int)(pVFile->sz - iOfst);
-    memcpy(pData, pVFile->a, iAmt);
+    memcpy(pData, pVFile->a + iOfst, iAmt);
     return SQLITE_IOERR_SHORT_READ;
   }
   memcpy(pData, pVFile->a + iOfst, iAmt);

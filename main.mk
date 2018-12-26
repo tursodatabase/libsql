@@ -977,6 +977,9 @@ $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
 
+dbtotxt$(EXE):	$(TOP)/tool/dbtotxt.c
+	$(TCC) -o dbtotxt$(EXE) $(TOP)/tool/dbtotxt.c
+
 showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showdb$(EXE) \
 		$(TOP)/tool/showdb.c sqlite3.o $(THREADLIB)

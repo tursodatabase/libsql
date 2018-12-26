@@ -916,6 +916,7 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
+  pSubParse->disableVtab = pParse->disableVtab;
 
   v = sqlite3GetVdbe(pSubParse);
   if( v ){
