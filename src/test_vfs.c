@@ -234,6 +234,7 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
     { SQLITE_LOCKED,   "SQLITE_LOCKED" },
     { SQLITE_BUSY,     "SQLITE_BUSY"   },
     { SQLITE_READONLY, "SQLITE_READONLY"   },
+    { SQLITE_READONLY_CANTINIT, "SQLITE_READONLY_CANTINIT"   },
   };
 
   const char *z;
@@ -919,7 +920,9 @@ static int tvfsShmMap(
   if( rc==SQLITE_OK && isWrite && !pFd->pShm->aPage[iPage] ){
     tvfsAllocPage(pFd->pShm, iPage, pgsz);
   }
-  *pp = (void volatile *)pFd->pShm->aPage[iPage];
+  if( rc==SQLITE_OK || rc==SQLITE_READONLY ){
+    *pp = (void volatile *)pFd->pShm->aPage[iPage];
+  }
 
   return rc;
 }
