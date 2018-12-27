@@ -1,5 +1,5 @@
-C In\sthe\streeview\sdebugging\soutput,\s\nprovide\sadditional\sdetails\sfor\sthe\sTable\sobject\nassociated\swith\seach\sFROM\sclause\sterm.
-D 2018-12-27T00:30:42.080
+C Fix\sa\sproblem\sin\swhich\snested\sCTEs\swith\sthe\ssame\stable\sname\strick\sthe\ncode\sgenerator\sinto\sthinking\sthey\sare\sthe\ssame\sCTE,\swhich\sthen\stries\sto\nuse\sthe\smanifest\sthem\sboth\sinto\sthe\ssame\stransient\stable.
+D 2018-12-27T02:16:01.888
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -510,7 +510,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 72fe8cae7326b979e7258ab4c531956951e1a5f3fe8644c646abaec1b2eb6d95
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 8c7317d5ee920516a56b8b4ca79fbfca70a1f8b52d67e884c808ea3a016c04e3
+F src/select.c c6a71c619db529e1af6b30d9ff59ec75dac2511f155e45bb6e49c07d9d5e79c0
 F src/shell.c.in 207da30342db0b6fac8b2487abd60b059a5ea80cc9494bd1db76a1dd4aae7cca
 F src/sqlite.h.in b54cd42d2f3b739a00de540cafe2dcd0de3b8e1748a2db33a68def487e9e602f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1675,7 +1675,7 @@ F test/window4.test c5d6bf3403e4ade2f19df2afe4c16f29fb817c392c6c1c8017edb7165c19
 F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652821e
 F test/window6.test 5eae4ae7a590ccf1e605880969ca0bad3955616ac91cad3031baea38748badb3
 F test/windowfault.test 12ceb6bbb355d13e8fcd88c5731a57256dfdf77b9a7ae20842a76fcd4623df5b
-F test/with1.test 2465d98ffce80d00553ac7135697c18b0369275b6ecc750daa2af320b8c812ca
+F test/with1.test 64fcb1a81685b8a67da61af260a2d8f2afbf3530d39fa451831faf5a9ba6ea45
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 5e8ce2c585170bbbc0544e2a01a4941fa0be173ba5265e5c92eb588cd99a232d
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6821c61f1d71be2be7f867e59fd94582a1eaf45a4d1fb88be995807a77cc22ea
-R 4ea18b6b51fe2269e4e2378f67cdd93d
+P 11d4682d2eec133ccca99ca9cf2620cd249b4afe55918f3ebf93b454431f9c55
+R b977f91c4d7722c35c09931be1f3c206
 U drh
-Z 2cd0d162f6778292ed921cc2823ee931
+Z d4830dab28dbec43d7f7b026ad797e66
