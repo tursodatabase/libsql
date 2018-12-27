@@ -892,13 +892,18 @@ static int fts5StructureDecode(
       if( rc==SQLITE_OK ){
         pLvl->nSeg = nTotal;
         for(iSeg=0; iSeg<nTotal; iSeg++){
+          Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
           if( i>=nData ){
             rc = FTS5_CORRUPT;
             break;
           }
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].iSegid);
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
+          i += fts5GetVarint32(&pData[i], pSeg->iSegid);
+          i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
+          i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);
+          if( pSeg->pgnoLast<pSeg->pgnoFirst ){
+            rc = FTS5_CORRUPT;
+            break;
+          }
         }
       }
     }
