@@ -305,6 +305,32 @@
 **
 ** The first wal file takes the same name as the wal file in legacy wal
 ** mode systems - "<db>-wal". The second is named "<db>-wal2".
+
+**
+** CHECKPOINTS
+**
+** The "pre-configured size" mentioned above is the value set by 
+** "PRAGMA journal_size_limit". Or, if journal_size_limit is not set, 
+** 1000 pages.
+**
+** There is only a single type of checkpoint in wal2 mode (no "truncate",
+** "restart" etc.), and it always checkpoints the entire contents of a single
+** wal file. A wal file cannot be checkpointed until after a writer has written
+** the first transaction into the other wal file and all readers are reading a
+** snapshot that includes at least one transaction from the other wal file.
+**
+** The wal-hook, if one is registered, is invoked after a write-transaction
+** is committed, just as it is in legacy wal mode. The integer parameter
+** passed to the wal-hook is the total number of uncheckpointed frames in both
+** wal files. Except, the parameter is set to zero if there is no frames 
+** that may be checkpointed. This happens in two scenarios:
+**
+**   1. The "other" wal file (the one that the writer did not just append to)
+**      is completely empty, or
+**
+**   2. The "other" wal file (the one that the writer did not just append to)
+**      has already been checkpointed.
+**
 **
 ** WAL FILE FORMAT
 **
@@ -3570,8 +3596,10 @@ int sqlite3WalFindFrame(
   int rc = SQLITE_OK;
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
 
-  /* This routine is only be called from within a read transaction. */
-  assert( pWal->readLock!=WAL_LOCK_NONE );
+  /* This routine is only be called from within a read transaction. Or,
+  ** sometimes, as part of a rollback that occurs after an error reaquiring
+  ** a read-lock in walRestartLog().  */
+  assert( pWal->readLock!=WAL_LOCK_NONE || pWal->writeLock );
 
   /* If this is a regular wal system, then iApp must be set to 0 (there is
   ** only one wal file, after all). Or, if this is a wal2 system and the
@@ -4125,7 +4153,8 @@ static int walRestartLog(Wal *pWal){
 
     if( walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize ){
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
-      if( walidxGetMxFrame(&pWal->hdr, !iApp)==0 || pInfo->nBackfill ){
+      u32 mxFrame = walidxGetMxFrame(&pWal->hdr, !iApp);
+      if( mxFrame==0 || pInfo->nBackfill ){
         rc = wal2RestartOk(pWal, iApp);
         if( rc==SQLITE_OK ){
           int iNew = !iApp;
@@ -4668,7 +4697,7 @@ int sqlite3WalCheckpoint(
   /* Copy data from the log to the database file. */
   if( rc==SQLITE_OK ){
     if( (walPagesize(pWal)!=nBuf) 
-     && (walidxGetMxFrame(&pWal->hdr, 0) || walidxGetMxFrame(&pWal->hdr, 1))
+     && ((pWal->hdr.mxFrame2 & 0x7FFFFFFF) || pWal->hdr.mxFrame)
     ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{

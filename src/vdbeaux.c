@@ -356,7 +356,12 @@ int sqlite3VdbeExplainParent(Parse *pParse){
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
 */
 void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
-  if( pParse->explain==2 ){
+#ifndef SQLITE_DEBUG
+  /* Always include the OP_Explain opcodes if SQLITE_DEBUG is defined.
+  ** But omit them (for performance) during production builds */
+  if( pParse->explain==2 )
+#endif
+  {
     char *zMsg;
     Vdbe *v;
     va_list ap;

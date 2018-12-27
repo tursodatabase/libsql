@@ -167,7 +167,7 @@ do_select_tests e_select-0.2 {
   0102.1  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=1" {
     1 a 1 c 1 b
   }
-  0102.2  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=2" { }
+  0102.2  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=2" {}
 
   1101.1  "SELECT DISTINCT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
   1102.1  "SELECT DISTINCT count(*), max(a) FROM t1 
@@ -175,8 +175,7 @@ do_select_tests e_select-0.2 {
     1 a 1 c 1 b
   }
   1102.2  "SELECT DISTINCT count(*), max(a) FROM t1 
-           GROUP BY b HAVING count(*)=2" { 
-  }
+           GROUP BY b HAVING count(*)=2" {}
 
   2101.1  "SELECT ALL count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
   2102.1  "SELECT ALL count(*), max(a) FROM t1 
@@ -184,8 +183,7 @@ do_select_tests e_select-0.2 {
     1 a 1 c 1 b
   }
   2102.2  "SELECT ALL count(*), max(a) FROM t1 
-           GROUP BY b HAVING count(*)=2" { 
-  }
+           GROUP BY b HAVING count(*)=2" {}
 
   0011.1  "SELECT 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
   0012.1  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
@@ -204,7 +202,7 @@ do_select_tests e_select-0.2 {
   0112.1  "SELECT count(*), max(a) FROM t1 
            WHERE a='c' GROUP BY b HAVING count(*)=1" {1 c}
   0112.2  "SELECT count(*), max(a) FROM t1 
-           WHERE 0 GROUP BY b HAVING count(*)=2" { }
+           WHERE 0 GROUP BY b HAVING count(*)=2" {}
   1111.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a<'c' GROUP BY b" 
           {1 a 1 b}
   1112.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a>'a'
@@ -212,8 +210,7 @@ do_select_tests e_select-0.2 {
     1 c 1 b
   }
   1112.2  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE 0
-           GROUP BY b HAVING count(*)=2" { 
-  }
+           GROUP BY b HAVING count(*)=2" {}
 
   2111.1  "SELECT ALL count(*), max(a) FROM t1 WHERE b>'one' GROUP BY b" 
           {1 c 1 b}
@@ -222,7 +219,7 @@ do_select_tests e_select-0.2 {
     1 a 1 c
   }
   2112.2  "SELECT ALL count(*), max(a) FROM t1 
-           WHERE 0 GROUP BY b HAVING count(*)=2" { }
+           WHERE 0 GROUP BY b HAVING count(*)=2" {}
 }
 
 
