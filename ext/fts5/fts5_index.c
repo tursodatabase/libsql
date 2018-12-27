@@ -860,6 +860,9 @@ static int fts5StructureDecode(
   ** structure record.  */
   i += fts5GetVarint32(&pData[i], nLevel);
   i += fts5GetVarint32(&pData[i], nSegment);
+  if( nLevel>FTS5_MAX_SEGMENT || nSegment>FTS5_MAX_SEGMENT ){
+    return FTS5_CORRUPT;
+  }
   nByte = (
       sizeof(Fts5Structure) +                    /* Main structure */
       sizeof(Fts5StructureLevel) * (nLevel-1)    /* aLevel[] array */
