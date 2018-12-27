@@ -1,5 +1,5 @@
-C Fix\sa\snull-pointer\sdereference\sthat\scould\soccur\sin\sfts5\swith\sa\scorrupt\ndatabase.
-D 2018-12-27T07:46:37.854
+C Fix\sthe\sfilename\snormalization\sin\sthe\sdbtotxt\sutility\sprogram.
+D 2018-12-27T13:52:45.972
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -1702,7 +1702,7 @@ F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
-F tool/dbtotxt.c 249536df1f4b540b275d3e20fbe1421e28e5a92db3498c0fb065d88b60bf6eb8
+F tool/dbtotxt.c 126da0c130f446106d0e9894d0d86640214d5a7f159c99985088e51cde4f5a09
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 202dd033019dd27428e3cc5f6e164c95b37efe39e2753515112b201ddefca67b
-R cb7ad8439be69a36c6d89868539a5621
-U dan
-Z 42281b26e0ddec2713ac794323accdfa
+P b0a49d5e6df116bb5eacb60a0bb0f482760aec38bd417d4250d9e57d43bdbb13
+R 4eefe18c98c907ef5f835491646ae76d
+U drh
+Z 724814a4e58f4e8b2e36656317097186
