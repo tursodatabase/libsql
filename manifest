@@ -1,5 +1,5 @@
-C Update\sthe\scoverage-wal\spermutation\sto\scover\sbranches\senabled\sby\nSQLITE_ENABLE_SNAPSHOT.
-D 2018-12-26T18:34:56.085
+C In\sthe\streeview\sdebugging\soutput,\s\nprovide\sadditional\sdetails\sfor\sthe\sTable\sobject\nassociated\swith\seach\sFROM\sclause\sterm.
+D 2018-12-27T00:30:42.080
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -574,7 +574,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c8af4feebd8bf5a4d60a14018d91f61013f658ec864dfce7661bae73d86b3191
-F src/treeview.c 7b12ac059de54c939b6eb0dbffc9410c29c80d2470cee5cbe07d5ff9ea2d9253
+F src/treeview.c c6ff90da4cc1813ff2d9bb11f17d4d927db62c47e552faa1835edc47269d753d
 F src/trigger.c 252b650375dd1f47e787fddf5fc0ad14bc298c7af7e6e1b70748df604f2ccb37
 F src/update.c 1816d56c1bca1ba4e0ef98cac2f49be62858e9df1dc08844c7067eb41cc44274
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14a64df36efe0dc36795311d58385f9c65dc465b214059e07c2ee6b95ea99c87
-R 7069e81188241b50db30e1f96632c72c
-U dan
-Z 80824c8929195978c7b3913db23b16cc
+P 6821c61f1d71be2be7f867e59fd94582a1eaf45a4d1fb88be995807a77cc22ea
+R 4ea18b6b51fe2269e4e2378f67cdd93d
+U drh
+Z 2cd0d162f6778292ed921cc2823ee931
