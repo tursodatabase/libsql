@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\sin\sfts5\scaused\sby\sa\scorrupt\sschema\srecord.
-D 2018-12-27T15:36:16.138
+C Modify\sthe\sbtree02.test\smodule\sso\sthat\sit\sdoes\snot\sdepend\son\swhether\sTCL\ninterprets\sa\svalue\sas\sa\sstring\sor\sas\san\sinteger.
+D 2018-12-27T16:55:01.308
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -697,7 +697,7 @@ F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
-F test/btree02.test a0f33669ba76632247c14718af32db939fa6de5cd13890798ad3f2a362cf7fe4
+F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1d6cc
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29a00a05dd40ff59be340969e1aca4fee41e092f2faa1cea85a3448265a83c2c
-R 2acb0616b68592aa2c8ab68477645e58
-U dan
-Z e495604baef88875e6cdc5b1ab83e355
+P ff45f9dd69fe1e1c7875e5bb73ac3dde2a31746475d3765cda9233f8e06e26ca
+R f16b248a77ac7c785b93a4e116c87c87
+U drh
+Z 2ff7f7e995f18f7d24f52a022e34c4a6
