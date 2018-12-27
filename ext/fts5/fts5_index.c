@@ -1649,12 +1649,13 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   int nNew;                       /* Bytes of new data */
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
-  if( iOff+nNew>pIter->pLeaf->nn ){
+  if( iOff+nNew>pIter->pLeaf->nn || nKeep>pIter->term.n ){
     p->rc = FTS5_CORRUPT;
     return;
   }
   pIter->term.n = nKeep;
   fts5BufferAppendBlob(&p->rc, &pIter->term, nNew, &a[iOff]);
+  assert( pIter->term.n<=pIter->term.nSpace );
   iOff += nNew;
   pIter->iTermLeafOffset = iOff;
   pIter->iTermLeafPgno = pIter->iLeafPgno;
