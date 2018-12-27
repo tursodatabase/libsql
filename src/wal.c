@@ -3885,7 +3885,8 @@ static int walRestartLog(Wal *pWal){
 
     if( walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize ){
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
-      if( walidxGetMxFrame(&pWal->hdr, !iApp)==0 || pInfo->nBackfill ){
+      u32 mxFrame = walidxGetMxFrame(&pWal->hdr, !iApp);
+      if( mxFrame==0 || pInfo->nBackfill ){
         rc = wal2RestartOk(pWal, iApp);
         if( rc==SQLITE_OK ){
           int iNew = !iApp;
@@ -4429,7 +4430,9 @@ int sqlite3WalCheckpoint(
   if( rc==SQLITE_OK ){
     int iCkpt = walidxGetFile(&pWal->hdr);
 
-    if( (walPagesize(pWal)!=nBuf) && walidxGetMxFrame(&pWal->hdr, iCkpt) ){
+    if( (walPagesize(pWal)!=nBuf) 
+     && ((pWal->hdr.mxFrame2 & 0x7FFFFFFF) || pWal->hdr.mxFrame)
+    ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
