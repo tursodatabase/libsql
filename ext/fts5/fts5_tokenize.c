@@ -268,7 +268,7 @@ static int fts5UnicodeAddExceptions(
         if( iCode<128 ){
           p->aTokenChar[iCode] = (unsigned char)bTokenChars;
         }else{
-          bToken = p->aCategory[sqlite3Fts5UnicodeCategory(iCode)];
+          bToken = p->aCategory[sqlite3Fts5UnicodeCategory((u32)iCode)];
           assert( (bToken==0 || bToken==1) ); 
           assert( (bTokenChars==0 || bTokenChars==1) );
           if( bToken!=bTokenChars && sqlite3Fts5UnicodeIsdiacritic(iCode)==0 ){
@@ -429,7 +429,7 @@ static int fts5UnicodeCreate(
 */
 static int fts5UnicodeIsAlnum(Unicode61Tokenizer *p, int iCode){
   return (
-    p->aCategory[sqlite3Fts5UnicodeCategory(iCode)]
+    p->aCategory[sqlite3Fts5UnicodeCategory((u32)iCode)]
     ^ fts5UnicodeIsException(p, iCode)
   );
 }

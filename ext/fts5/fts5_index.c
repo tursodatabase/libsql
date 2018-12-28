@@ -3577,14 +3577,14 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
           int iId = pStruct->aLevel[iLvl].aSeg[iSeg].iSegid;
           if( iId<=FTS5_MAX_SEGMENT ){
-            aUsed[(iId-1) / 32] |= 1 << ((iId-1) % 32);
+            aUsed[(iId-1) / 32] |= (u32)1 << ((iId-1) % 32);
           }
         }
       }
 
       for(i=0; aUsed[i]==0xFFFFFFFF; i++);
       mask = aUsed[i];
-      for(iSegid=0; mask & (1 << iSegid); iSegid++);
+      for(iSegid=0; mask & ((u32)1 << iSegid); iSegid++);
       iSegid += 1 + i*32;
 
 #ifdef SQLITE_DEBUG
@@ -6282,8 +6282,7 @@ static void fts5DecodeFunction(
   nSpace = n + FTS5_DATA_ZERO_PADDING;
   a = (u8*)sqlite3Fts5MallocZero(&rc, nSpace);
   if( a==0 ) goto decode_out;
-  memcpy(a, aBlob, n);
-
+  if( n>0 ) memcpy(a, aBlob, n);
 
   fts5DecodeRowid(iRowid, &iSegid, &bDlidx, &iHeight, &iPgno);
 
