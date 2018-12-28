@@ -2187,19 +2187,27 @@ void sqlite3VdbeMakeReady(
   ** the leftover memory at the end of the opcode array.  This can significantly
   ** reduce the amount of memory held by a prepared statement.
   */
-  do {
-    x.nNeeded = 0;
-    p->aMem = allocSpace(&x, p->aMem, nMem*sizeof(Mem));
-    p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
-    p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
-    p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
+  x.nNeeded = 0;
+  p->aMem = allocSpace(&x, 0, nMem*sizeof(Mem));
+  p->aVar = allocSpace(&x, 0, nVar*sizeof(Mem));
+  p->apArg = allocSpace(&x, 0, nArg*sizeof(Mem*));
+  p->apCsr = allocSpace(&x, 0, nCursor*sizeof(VdbeCursor*));
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
+  p->anExec = allocSpace(&x, 0, p->nOp*sizeof(i64));
 #endif
-    if( x.nNeeded==0 ) break;
+  if( x.nNeeded ){
     x.pSpace = p->pFree = sqlite3DbMallocRawNN(db, x.nNeeded);
     x.nFree = x.nNeeded;
-  }while( !db->mallocFailed );
+    if( !db->mallocFailed ){
+      p->aMem = allocSpace(&x, p->aMem, nMem*sizeof(Mem));
+      p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
+      p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
+      p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+      p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
+#endif
+    }
+  }
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
