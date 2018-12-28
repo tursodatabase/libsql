@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverwrite\sin\sfts5\striggered\sby\sa\scorrupt\sdatabase.
-D 2018-12-28T13:57:30.355
+C Avoid\san\sundefined\sleft-shift\soperation\sin\sfts5\scaused\sby\smalformed\sutf-8\ntext.
+D 2018-12-28T14:33:55.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -121,7 +121,7 @@ F ext/fts5/fts5_storage.c 5862f1b785a983acb8420281340f3f424896ab48f396f6fd854078
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c 6a5574354ce61a98737e150fd4f7a002000db0cb4bcd655dc8694cb3e035381d
-F ext/fts5/fts5_tokenize.c 240f849c9136103f77a67818deb172d8a7564cbefaf00ec7b2fd04ab17d6d66c
+F ext/fts5/fts5_tokenize.c d49f479ca109dc7fb6a99dd482439cae175c5082920757b9286f6e057339bd50
 F ext/fts5/fts5_unicode2.c 3f1bad6f2924ad13e25408f00301edd12d4216388a11daa518cb28f79b337f5e
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c fbe38044889b2d2d99babeeef239c620fb0332bb928a84506ac748d81500b354
@@ -1794,7 +1794,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c564bf870106faef297594a51995619c80311d06bd5f8a0c7644f666f22ba576
-R c091347e7ddcaf781e6291abb3420a23
+P a385298df264dbfa6765f63ad8708f74bc8e8a1404239c1049890b39a1bda888
+R 43f56d77c2f0708ff05858147f994e17
 U dan
-Z f94c5cc144be341c25f9c0714b6b8d1d
+Z 557d451f10610db7db7f94619bf74d73
