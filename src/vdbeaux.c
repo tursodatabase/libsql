@@ -36,7 +36,7 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   pParse->pVdbe = p;
   assert( pParse->aLabel==0 );
   assert( pParse->nLabel==0 );
-  assert( pParse->nOpAlloc==0 );
+  assert( p->nOpAlloc==0 );
   assert( pParse->szOpAlloc==0 );
   sqlite3VdbeAddOp2(p, OP_Init, 0, 1);
   return p;
@@ -139,7 +139,7 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
 ** to 1024/sizeof(Op).
 **
 ** If an out-of-memory error occurs while resizing the array, return
-** SQLITE_NOMEM. In this case Vdbe.aOp and Parse.nOpAlloc remain 
+** SQLITE_NOMEM. In this case Vdbe.aOp and Vdbe.nOpAlloc remain 
 ** unchanged (this is so that any opcodes already allocated can be 
 ** correctly deallocated along with the rest of the Vdbe).
 */
@@ -155,9 +155,9 @@ static int growOpArray(Vdbe *v, int nOp){
   ** operation (without SQLITE_TEST_REALLOC_STRESS) is to double the current
   ** size of the op array or add 1KB of space, whichever is smaller. */
 #ifdef SQLITE_TEST_REALLOC_STRESS
-  int nNew = (p->nOpAlloc>=512 ? p->nOpAlloc*2 : p->nOpAlloc+nOp);
+  int nNew = (v->nOpAlloc>=512 ? v->nOpAlloc*2 : v->nOpAlloc+nOp);
 #else
-  int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
+  int nNew = (v->nOpAlloc ? v->nOpAlloc*2 : (int)(1024/sizeof(Op)));
   UNUSED_PARAMETER(nOp);
 #endif
 
@@ -168,11 +168,11 @@ static int growOpArray(Vdbe *v, int nOp){
   }
 
   assert( nOp<=(1024/sizeof(Op)) );
-  assert( nNew>=(p->nOpAlloc+nOp) );
+  assert( nNew>=(v->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
     p->szOpAlloc = sqlite3DbMallocSize(p->db, pNew);
-    p->nOpAlloc = p->szOpAlloc/sizeof(Op);
+    v->nOpAlloc = p->szOpAlloc/sizeof(Op);
     v->aOp = pNew;
   }
   return (pNew ? SQLITE_OK : SQLITE_NOMEM_BKPT);
@@ -206,9 +206,9 @@ static void test_addop_breakpoint(void){
 ** operand.
 */
 static SQLITE_NOINLINE int growOp3(Vdbe *p, int op, int p1, int p2, int p3){
-  assert( p->pParse->nOpAlloc<=p->nOp );
+  assert( p->nOpAlloc<=p->nOp );
   if( growOpArray(p, 1) ) return 1;
-  assert( p->pParse->nOpAlloc>p->nOp );
+  assert( p->nOpAlloc>p->nOp );
   return sqlite3VdbeAddOp3(p, op, p1, p2, p3);
 }
 int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
@@ -218,7 +218,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   i = p->nOp;
   assert( p->magic==VDBE_MAGIC_INIT );
   assert( op>=0 && op<0xff );
-  if( p->pParse->nOpAlloc<=i ){
+  if( p->nOpAlloc<=i ){
     return growOp3(p, op, p1, p2, p3);
   }
   p->nOp++;
@@ -808,7 +808,7 @@ int sqlite3VdbeCurrentAddr(Vdbe *p){
 */
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_TEST_REALLOC_STRESS)
 void sqlite3VdbeVerifyNoMallocRequired(Vdbe *p, int N){
-  assert( p->nOp + N <= p->pParse->nOpAlloc );
+  assert( p->nOp + N <= p->nOpAlloc );
 }
 #endif
 
@@ -880,7 +880,7 @@ VdbeOp *sqlite3VdbeAddOpList(
   VdbeOp *pOut, *pFirst;
   assert( nOp>0 );
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p, nOp) ){
+  if( p->nOp + nOp > p->nOpAlloc && growOpArray(p, nOp) ){
     return 0;
   }
   pFirst = pOut = &p->aOp[p->nOp];
@@ -2202,19 +2202,27 @@ void sqlite3VdbeMakeReady(
   ** the leftover memory at the end of the opcode array.  This can significantly
   ** reduce the amount of memory held by a prepared statement.
   */
-  do {
-    x.nNeeded = 0;
-    p->aMem = allocSpace(&x, p->aMem, nMem*sizeof(Mem));
-    p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
-    p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
-    p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
+  x.nNeeded = 0;
+  p->aMem = allocSpace(&x, 0, nMem*sizeof(Mem));
+  p->aVar = allocSpace(&x, 0, nVar*sizeof(Mem));
+  p->apArg = allocSpace(&x, 0, nArg*sizeof(Mem*));
+  p->apCsr = allocSpace(&x, 0, nCursor*sizeof(VdbeCursor*));
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
+  p->anExec = allocSpace(&x, 0, p->nOp*sizeof(i64));
 #endif
-    if( x.nNeeded==0 ) break;
+  if( x.nNeeded ){
     x.pSpace = p->pFree = sqlite3DbMallocRawNN(db, x.nNeeded);
     x.nFree = x.nNeeded;
-  }while( !db->mallocFailed );
+    if( !db->mallocFailed ){
+      p->aMem = allocSpace(&x, p->aMem, nMem*sizeof(Mem));
+      p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
+      p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
+      p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+      p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
+#endif
+    }
+  }
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
