@@ -2553,7 +2553,7 @@ static void fts5ExprIsAlnum(
   sqlite3Fts5UnicodeCatParse("N*", aArr);
   sqlite3Fts5UnicodeCatParse("Co", aArr);
   iCode = sqlite3_value_int(apVal[0]);
-  sqlite3_result_int(pCtx, aArr[sqlite3Fts5UnicodeCategory(iCode)]);
+  sqlite3_result_int(pCtx, aArr[sqlite3Fts5UnicodeCategory((u32)iCode)]);
 }
 
 static void fts5ExprFold(

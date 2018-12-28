@@ -262,7 +262,7 @@ static int fts5UnicodeAddExceptions(
       const unsigned char *zCsr = (const unsigned char*)z;
       const unsigned char *zTerm = (const unsigned char*)&z[n];
       while( zCsr<zTerm ){
-        int iCode;
+        u32 iCode;
         int bToken;
         READ_UTF8(zCsr, zTerm, iCode);
         if( iCode<128 ){
@@ -429,7 +429,7 @@ static int fts5UnicodeCreate(
 */
 static int fts5UnicodeIsAlnum(Unicode61Tokenizer *p, int iCode){
   return (
-    p->aCategory[sqlite3Fts5UnicodeCategory(iCode)]
+    p->aCategory[sqlite3Fts5UnicodeCategory((u32)iCode)]
     ^ fts5UnicodeIsException(p, iCode)
   );
 }
@@ -458,7 +458,7 @@ static int fts5UnicodeTokenize(
   /* Each iteration of this loop gobbles up a contiguous run of separators,
   ** then the next token.  */
   while( rc==SQLITE_OK ){
-    int iCode;                    /* non-ASCII codepoint read from input */
+    u32 iCode;                    /* non-ASCII codepoint read from input */
     char *zOut = aFold;
     int is;
     int ie;

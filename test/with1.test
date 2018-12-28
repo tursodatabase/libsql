@@ -1044,4 +1044,23 @@ do_execsql_test 20.2 {
   WITH c(i)AS(VALUES(5)UNIoN SELECT 0)SELECT min(1)-i fROM c;
 } {1}
 
+# 2018-12-26
+# Two different CTE tables with the same name appear in within a single FROM
+# clause due to the query-flattener optimization.  make sure this does not cause
+# problems.  This problem was discovered by Matt Denton.
+#
+do_execsql_test 21.1 {
+   WITH RECURSIVE t21(a,b) AS (
+    WITH t21(x) AS (VALUES(1))
+    SELECT x, x FROM t21 ORDER BY 1
+  )
+  SELECT * FROM t21 AS tA, t21 AS tB
+} {1 1 1 1}
+do_execsql_test 21.2 {
+  SELECT printf('',
+     EXISTS (WITH RECURSIVE Table0 AS (WITH Table0 AS (SELECT DISTINCT 1)
+                                       SELECT *, * FROM Table0 ORDER BY 1 DESC)
+             SELECT * FROM Table0  NATURAL JOIN  Table0));
+} {{}}
+
 finish_test

@@ -200,7 +200,7 @@ static int remove_diacritic(int c, int bComplex){
     'w',       'x',       'y',       'z',       'h',       't',       
     'w',       'y',       'a',       'a'|HIBIT, 'a'|HIBIT, 'a'|HIBIT, 
     'e',       'e'|HIBIT, 'e'|HIBIT, 'i',       'o',       'o'|HIBIT, 
-    'o'|HIBIT, 'o'|HIBIT, 'u',       'u'|HIBIT, 'u'|HIBIT, 'y',  
+    'o'|HIBIT, 'o'|HIBIT, 'u',       'u'|HIBIT, 'u'|HIBIT, 'y',       
   };
 
   unsigned int key = (((unsigned int)c)<<3) | 0x00000007;
@@ -231,8 +231,8 @@ int sqlite3FtsUnicodeIsdiacritic(int c){
   unsigned int mask1 = 0x000361F8;
   if( c<768 || c>817 ) return 0;
   return (c < 768+32) ?
-      (mask0 & (1 << (c-768))) :
-      (mask1 & (1 << (c-768-32)));
+      (mask0 & ((unsigned int)1 << (c-768))) :
+      (mask1 & ((unsigned int)1 << (c-768-32)));
 }
 
 
