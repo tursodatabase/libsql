@@ -788,7 +788,7 @@ int sqlite3Fts5UnicodeIsdiacritic(int c);
 int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 
 int sqlite3Fts5UnicodeCatParse(const char*, u8*);
-int sqlite3Fts5UnicodeCategory(int iCode);
+int sqlite3Fts5UnicodeCategory(u32 iCode);
 void sqlite3Fts5UnicodeAscii(u8*, u8*);
 /*
 ** End of interface to code in fts5_unicode2.c.

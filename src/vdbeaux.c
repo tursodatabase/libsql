@@ -367,7 +367,9 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
 */
 void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
-#if !defined(SQLITE_DEBUG)
+#ifndef SQLITE_DEBUG
+  /* Always include the OP_Explain opcodes if SQLITE_DEBUG is defined.
+  ** But omit them (for performance) during production builds */
   if( pParse->explain==2 )
 #endif
   {
@@ -616,6 +618,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   while( (pOp = opIterNext(&sIter))!=0 ){
     int opcode = pOp->opcode;
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
+     || opcode==OP_VDestroy
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && ((pOp->p1&0xff)==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))
     ){

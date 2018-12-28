@@ -5466,14 +5466,19 @@ static struct SrcList_item *isSelfJoinView(
 ){
   struct SrcList_item *pItem;
   for(pItem = pTabList->a; pItem<pThis; pItem++){
+    Select *pS1;
     if( pItem->pSelect==0 ) continue;
     if( pItem->fg.viaCoroutine ) continue;
     if( pItem->zName==0 ) continue;
     if( sqlite3_stricmp(pItem->zDatabase, pThis->zDatabase)!=0 ) continue;
     if( sqlite3_stricmp(pItem->zName, pThis->zName)!=0 ) continue;
-    if( sqlite3ExprCompare(0, 
-          pThis->pSelect->pWhere, pItem->pSelect->pWhere, -1) 
-    ){
+    pS1 = pItem->pSelect;
+    if( pThis->pSelect->selId!=pS1->selId ){
+      /* The query flattener left two different CTE tables with identical
+      ** names in the same FROM clause. */
+      continue;
+    }
+    if( sqlite3ExprCompare(0, pThis->pSelect->pWhere, pS1->pWhere, -1) ){
       /* The view was modified by some other optimization such as
       ** pushDownWhereTerms() */
       continue;

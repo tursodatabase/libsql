@@ -112,7 +112,7 @@ int main(int argc, char **argv){
   }
   zBaseName = zInputFile;
   for(i=0; zInputFile[i]; i++){
-    if( zInputFile[i]=='/' && zInputFile[i+1]!=0 ) zBaseName = zInputFile+1;
+    if( zInputFile[i]=='/' && zInputFile[i+1]!=0 ) zBaseName = zInputFile+i+1;
   }
   printf("| size %d pagesize %d filename %s\n",(int)szFile,pgsz,zBaseName);
   for(i=0; i<szFile; i+=16){

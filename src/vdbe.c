@@ -6852,6 +6852,7 @@ case OP_VDestroy: {
   db->nVDestroy++;
   rc = sqlite3VtabCallDestroy(db, pOp->p1, pOp->p4.z);
   db->nVDestroy--;
+  assert( p->errorAction==OE_Abort && p->usesStmtJournal );
   if( rc ) goto abort_due_to_error;
   break;
 }
