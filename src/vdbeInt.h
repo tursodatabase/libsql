@@ -390,6 +390,8 @@ struct Vdbe {
   ** initialized to zero or NULL */
 
   Op *aOp;                /* Space to hold the virtual machine's program */
+  int nOp;                /* Number of instructions in the program */
+  int nOpAlloc;           /* Slots allocated for aOp[] */
   Mem *aMem;              /* The memory locations */
   Mem **apArg;            /* Arguments to currently executing user function */
   Mem *aColName;          /* Column names to return */
@@ -401,7 +403,6 @@ struct Vdbe {
 #ifndef SQLITE_OMIT_TRACE
   i64 startTime;          /* Time when query started - used for profiling */
 #endif
-  int nOp;                /* Number of instructions in the program */
 #ifdef SQLITE_DEBUG
   int rcApp;              /* errcode set by sqlite3_result_error_code() */
   u32 nWrite;             /* Number of write operations that have occurred */
