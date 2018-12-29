@@ -3256,7 +3256,12 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 ** Otherwise, if the callback function does not return an error, this
 ** function returns SQLITE_OK.
 */
-int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
+int sqlite3WalUndo(
+  Wal *pWal, 
+  int (*xUndo)(void *, Pgno), 
+  void *pUndoCtx,
+  int bConcurrent                 /* True if this is a CONCURRENT transaction */
+){
   int rc = SQLITE_OK;
   if( pWal->writeLock ){
     Pgno iMax = pWal->hdr.mxFrame;
@@ -3266,6 +3271,13 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
     ** was in before the client began writing to the database. 
     */
     memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
+#ifndef SQLITE_OMIT_CONCURRENT
+    if( bConcurrent ){
+      pWal->hdr.aCksum[0]++;
+    }
+#else
+    UNUSED_PARAMETER(bConcurrent);
+#endif
 
     for(iFrame=pWal->hdr.mxFrame+1; 
         ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
