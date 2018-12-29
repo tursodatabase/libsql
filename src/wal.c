@@ -4032,7 +4032,12 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 ** Otherwise, if the callback function does not return an error, this
 ** function returns SQLITE_OK.
 */
-int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
+int sqlite3WalUndo(
+  Wal *pWal, 
+  int (*xUndo)(void *, Pgno), 
+  void *pUndoCtx,
+  int bConcurrent                 /* True if this is a CONCURRENT transaction */
+){
   int rc = SQLITE_OK;
   if( pWal->writeLock ){
     int iWal = walidxGetFile(&pWal->hdr);
@@ -4063,8 +4068,11 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
     ** occurred in WalLockForCommit(), before any pages were written
     ** to the database file. In this case return early.  */
 #ifndef SQLITE_OMIT_CONCURRENT
+    if( bConcurrent ){
+      pWal->hdr.aCksum[0]++;
+    }
     if( walidxGetFile(&pWal->hdr)!=iWal ){
-      assert( isWalMode2(pWal) );
+      assert( bConcurrent && isWalMode2(pWal) );
       return SQLITE_OK;
     }
 #endif

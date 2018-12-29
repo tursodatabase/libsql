@@ -3203,7 +3203,13 @@ static int pagerRollbackWal(Pager *pPager){
   **   + Reload page content from the database (if refcount>0).
   */
   pPager->dbSize = pPager->dbOrigSize;
-  rc = sqlite3WalUndo(pPager->pWal, pagerUndoCallback, (void *)pPager);
+  rc = sqlite3WalUndo(pPager->pWal, pagerUndoCallback, (void *)pPager, 
+#ifdef SQLITE_OMIT_CONCURRENT
+      0
+#else
+      pPager->pAllRead!=0
+#endif
+  );
   pList = sqlite3PcacheDirtyList(pPager->pPCache);
 
 #ifndef SQLITE_OMIT_CONCURRENT

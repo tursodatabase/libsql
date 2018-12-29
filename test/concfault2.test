@@ -45,6 +45,7 @@ faultsim_save_and_close
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
   execsql {
+    SELECT * FROM t1;
     BEGIN CONCURRENT;
       INSERT INTO t2 VALUES(1, 2);
   }
@@ -59,7 +60,10 @@ do_faultsim_test 1 -prep {
 } -test {
   faultsim_test_result {0 {}} 
   catchsql { ROLLBACK }
+  set res [catchsql { SELECT count(*) FROM t1 }]
+  if {$res!="0 9"} { error "expected {0 9} got {$res}" }
   faultsim_integrity_check
 }
+
 finish_test
 
