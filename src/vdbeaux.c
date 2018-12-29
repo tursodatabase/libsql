@@ -445,11 +445,22 @@ void sqlite3VdbeEndCoroutine(Vdbe *v, int regYield){
 ** The VDBE knows that a P2 value is a label because labels are
 ** always negative and P2 values are suppose to be non-negative.
 ** Hence, a negative P2 value is a label that has yet to be resolved.
+** (Later:) This is only true for opcodes that have the OPFLG_JUMP
+** property.
 **
-** Zero is returned if a malloc() fails.
+** Variable usage notes:
+**
+**     Parse.aLabel[x]     Stores the address that the x-th label resolves
+**                         into.  For testing (SQLITE_DEBUG), unresolved
+**                         labels stores -1, but that is not required.
+**     Parse.nLabelAlloc   Number of slots allocated to Parse.aLabel[]
+**     Parse.nLabel        The *negative* of the number of labels that have
+**                         been issued.  The negative is stored because
+**                         that gives a performance improvement over storing
+**                         the equivalent positive value.
 */
 int sqlite3VdbeMakeLabel(Parse *pParse){
-  return ADDR(pParse->nLabel++);
+  return --pParse->nLabel;
 }
 
 /*
@@ -458,7 +469,7 @@ int sqlite3VdbeMakeLabel(Parse *pParse){
 ** a prior call to sqlite3VdbeMakeLabel().
 */
 static SQLITE_NOINLINE void resizeResolveLabel(Parse *p, Vdbe *v, int j){
-  int nNewSize = p->nLabel+10;
+  int nNewSize = 10 - p->nLabel;
   p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel,
                      nNewSize*sizeof(p->aLabel[0]));
   if( p->aLabel==0 ){
@@ -476,14 +487,14 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   Parse *p = v->pParse;
   int j = ADDR(x);
   assert( v->magic==VDBE_MAGIC_INIT );
-  assert( j<p->nLabel );
+  assert( j<-p->nLabel );
   assert( j>=0 );
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
   }
 #endif
-  if( p->nLabelAlloc < p->nLabel ){
+  if( p->nLabelAlloc + p->nLabel < 0 ){
     resizeResolveLabel(p,v,j);
   }else{
     assert( p->aLabel[j]==(-1) ); /* Labels may only be resolved once */
@@ -761,7 +772,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
             ** non-jump opcodes less than SQLITE_MX_JUMP_CODE are guaranteed to
             ** have non-negative values for P2. */
             assert( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 );
-            assert( ADDR(pOp->p2)<pParse->nLabel );
+            assert( ADDR(pOp->p2)<-pParse->nLabel );
             pOp->p2 = aLabel[ADDR(pOp->p2)];
           }
           break;
