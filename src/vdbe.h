@@ -230,7 +230,7 @@ void sqlite3VdbeAppendP4(Vdbe*, void *pP4, int p4type);
 void sqlite3VdbeSetP4KeyInfo(Parse*, Index*);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
-int sqlite3VdbeMakeLabel(Vdbe*);
+int sqlite3VdbeMakeLabel(Parse*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeReusable(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);

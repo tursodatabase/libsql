@@ -448,18 +448,8 @@ void sqlite3VdbeEndCoroutine(Vdbe *v, int regYield){
 **
 ** Zero is returned if a malloc() fails.
 */
-int sqlite3VdbeMakeLabel(Vdbe *v){
-  Parse *p = v->pParse;
-  int i = p->nLabel++;
-  assert( v->magic==VDBE_MAGIC_INIT );
-  if( (i & (i-1))==0 ){
-    p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel, 
-                                       (i*2+1)*sizeof(p->aLabel[0]));
-  }
-  if( p->aLabel ){
-    p->aLabel[i] = -1;
-  }
-  return ADDR(i);
+int sqlite3VdbeMakeLabel(Parse *pParse){
+  return ADDR(pParse->nLabel++);
 }
 
 /*
@@ -467,18 +457,35 @@ int sqlite3VdbeMakeLabel(Vdbe *v){
 ** be inserted.  The parameter "x" must have been obtained from
 ** a prior call to sqlite3VdbeMakeLabel().
 */
+static SQLITE_NOINLINE void resizeResolveLabel(Parse *p, Vdbe *v, int j){
+  int nNewSize = p->nLabel+10;
+  p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel,
+                     nNewSize*sizeof(p->aLabel[0]));
+  if( p->aLabel==0 ){
+    p->nLabelAlloc = 0;
+  }else{
+#ifdef SQLITE_DEBUG
+    int i;
+    for(i=p->nLabelAlloc; i<nNewSize; i++) p->aLabel[i] = -1;
+#endif
+    p->nLabelAlloc = nNewSize;
+    p->aLabel[j] = v->nOp;
+  }
+}
 void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   Parse *p = v->pParse;
   int j = ADDR(x);
   assert( v->magic==VDBE_MAGIC_INIT );
   assert( j<p->nLabel );
   assert( j>=0 );
-  if( p->aLabel ){
 #ifdef SQLITE_DEBUG
-    if( p->db->flags & SQLITE_VdbeAddopTrace ){
-      printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
-    }
+  if( p->db->flags & SQLITE_VdbeAddopTrace ){
+    printf("RESOLVE LABEL %d to %d\n", x, v->nOp);
+  }
 #endif
+  if( p->nLabelAlloc < p->nLabel ){
+    resizeResolveLabel(p,v,j);
+  }else{
     assert( p->aLabel[j]==(-1) ); /* Labels may only be resolved once */
     p->aLabel[j] = v->nOp;
   }

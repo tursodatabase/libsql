@@ -553,7 +553,7 @@ static void codeVectorCompare(
   int regLeft = 0;
   int regRight = 0;
   u8 opx = op;
-  int addrDone = sqlite3VdbeMakeLabel(v);
+  int addrDone = sqlite3VdbeMakeLabel(pParse);
 
   if( nLeft!=sqlite3ExprVectorSize(pRight) ){
     sqlite3ErrorMsg(pParse, "row value misused");
@@ -3033,7 +3033,7 @@ static void sqlite3ExprCodeIN(
   if( eType==IN_INDEX_NOOP ){
     ExprList *pList = pExpr->x.pList;
     CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-    int labelOk = sqlite3VdbeMakeLabel(v);
+    int labelOk = sqlite3VdbeMakeLabel(pParse);
     int r2, regToFree;
     int regCkNull = 0;
     int ii;
@@ -3077,7 +3077,7 @@ static void sqlite3ExprCodeIN(
   if( destIfNull==destIfFalse ){
     destStep2 = destIfFalse;
   }else{
-    destStep2 = destStep6 = sqlite3VdbeMakeLabel(v);
+    destStep2 = destStep6 = sqlite3VdbeMakeLabel(pParse);
   }
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
@@ -3135,7 +3135,7 @@ static void sqlite3ExprCodeIN(
   addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
   VdbeCoverage(v);
   if( nVector>1 ){
-    destNotNull = sqlite3VdbeMakeLabel(v);
+    destNotNull = sqlite3VdbeMakeLabel(pParse);
   }else{
     /* For nVector==1, combine steps 6 and 7 by immediately returning
     ** FALSE if the first comparison is not NULL */
@@ -3700,7 +3700,7 @@ expr_code_doover:
       ** arguments past the first non-NULL argument.
       */
       if( pDef->funcFlags & SQLITE_FUNC_COALESCE ){
-        int endCoalesce = sqlite3VdbeMakeLabel(v);
+        int endCoalesce = sqlite3VdbeMakeLabel(pParse);
         assert( nFarg>=2 );
         sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
         for(i=1; i<nFarg; i++){
@@ -3848,8 +3848,8 @@ expr_code_doover:
       return pExpr->pLeft->iTable + pExpr->iColumn;
     }
     case TK_IN: {
-      int destIfFalse = sqlite3VdbeMakeLabel(v);
-      int destIfNull = sqlite3VdbeMakeLabel(v);
+      int destIfFalse = sqlite3VdbeMakeLabel(pParse);
+      int destIfNull = sqlite3VdbeMakeLabel(pParse);
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       sqlite3ExprCodeIN(pParse, pExpr, destIfFalse, destIfNull);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
@@ -3989,7 +3989,7 @@ expr_code_doover:
       pEList = pExpr->x.pList;
       aListelem = pEList->a;
       nExpr = pEList->nExpr;
-      endLabel = sqlite3VdbeMakeLabel(v);
+      endLabel = sqlite3VdbeMakeLabel(pParse);
       if( (pX = pExpr->pLeft)!=0 ){
         tempX = *pX;
         testcase( pX->op==TK_COLUMN );
@@ -4012,7 +4012,7 @@ expr_code_doover:
         }else{
           pTest = aListelem[i].pExpr;
         }
-        nextCase = sqlite3VdbeMakeLabel(v);
+        nextCase = sqlite3VdbeMakeLabel(pParse);
         testcase( pTest->op==TK_COLUMN );
         sqlite3ExprIfFalse(pParse, pTest, nextCase, SQLITE_JUMPIFNULL);
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
@@ -4381,7 +4381,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   op = pExpr->op;
   switch( op ){
     case TK_AND: {
-      int d2 = sqlite3VdbeMakeLabel(v);
+      int d2 = sqlite3VdbeMakeLabel(pParse);
       testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, d2,jumpIfNull^SQLITE_JUMPIFNULL);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
@@ -4467,7 +4467,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_IN: {
-      int destIfFalse = sqlite3VdbeMakeLabel(v);
+      int destIfFalse = sqlite3VdbeMakeLabel(pParse);
       int destIfNull = jumpIfNull ? dest : destIfFalse;
       sqlite3ExprCodeIN(pParse, pExpr, destIfFalse, destIfNull);
       sqlite3VdbeGoto(v, dest);
@@ -4554,7 +4554,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_OR: {
-      int d2 = sqlite3VdbeMakeLabel(v);
+      int d2 = sqlite3VdbeMakeLabel(pParse);
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, d2, jumpIfNull^SQLITE_JUMPIFNULL);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
@@ -4638,7 +4638,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       if( jumpIfNull ){
         sqlite3ExprCodeIN(pParse, pExpr, dest, dest);
       }else{
-        int destIfNull = sqlite3VdbeMakeLabel(v);
+        int destIfNull = sqlite3VdbeMakeLabel(pParse);
         sqlite3ExprCodeIN(pParse, pExpr, dest, destIfNull);
         sqlite3VdbeResolveLabel(v, destIfNull);
       }

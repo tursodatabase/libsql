@@ -517,7 +517,7 @@ void sqlite3DeleteFrom(
     /* If this DELETE cannot use the ONEPASS strategy, this is the 
     ** end of the WHERE loop */
     if( eOnePass!=ONEPASS_OFF ){
-      addrBypass = sqlite3VdbeMakeLabel(v);
+      addrBypass = sqlite3VdbeMakeLabel(pParse);
     }else{
       sqlite3WhereEnd(pWInfo);
     }
@@ -706,7 +706,7 @@ void sqlite3GenerateRowDelete(
   /* Seek cursor iCur to the row to delete. If this row no longer exists 
   ** (this can happen if a trigger program has already deleted it), do
   ** not attempt to delete it or fire any DELETE triggers.  */
-  iLabel = sqlite3VdbeMakeLabel(v);
+  iLabel = sqlite3VdbeMakeLabel(pParse);
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
   if( eMode==ONEPASS_OFF ){
     sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
@@ -912,7 +912,7 @@ int sqlite3GenerateIndexKey(
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
-      *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
+      *piPartIdxLabel = sqlite3VdbeMakeLabel(pParse);
       pParse->iSelfTab = iDataCur + 1;
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
