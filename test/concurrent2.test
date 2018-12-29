@@ -23,6 +23,10 @@ ifcapable !concurrent {
   return
 }
 
+do_test 0.1 {
+  llength [sqlite3_wal_info db main]
+} {2}
+
 do_multiclient_test tn {
 
   do_test 1.$tn.1 {

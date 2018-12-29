@@ -1320,9 +1320,7 @@ static void walCleanupHash(Wal *pWal){
   if( mxFrame==0 ) return;
 
   /* Obtain pointers to the hash-table and page-number array containing 
-  ** the entry that corresponds to frame pWal->hdr.mxFrame. It is guaranteed
-  ** that the page said hash-table and array reside on is already mapped.
-  */
+  ** the entry that corresponds to frame pWal->hdr.mxFrame.  */
   assert( pWal->nWiData>walFramePage(iExternal) );
   assert( pWal->apWiData[walFramePage(iExternal)] );
   walHashGet(pWal, walFramePage(iExternal), &sLoc);
@@ -3870,13 +3868,12 @@ int sqlite3WalLockForCommit(
     }else if( memcmp(&pWal->hdr, (void*)&head, sizeof(WalIndexHdr))!=0 ){
       int bWal2 = isWalMode2(pWal);
       int iHash;
-      int iLastHash = walFramePage(head.mxFrame);
       int nLoop = 1+(bWal2 && walidxGetFile(&head)!=walidxGetFile(&pWal->hdr));
       int iLoop;
       
 
       assert( nLoop==1 || nLoop==2 );
-      for(iLoop=0; iLoop<nLoop && rc==SQLITE_OK; iLoop++){
+      for(iLoop=0; rc==SQLITE_OK && iLoop<nLoop; iLoop++){
         u32 iFirst;               /* First (external) wal frame to check */
         u32 iLastHash;            /* Last hash to check this loop */
         u32 mxFrame;              /* Last (external) wal frame to check */
@@ -3929,7 +3926,7 @@ int sqlite3WalLockForCommit(
                 u8 *aOld = &((u8*)pPage1->pData)[40];
                 int sz;
                 i64 iOff;
-                int iFrame = sLoc.iZero + i;
+                u32 iFrame = sLoc.iZero + i;
                 int iWal = 0;
                 if( bWal2 ){
                   iWal = walExternalDecode(iFrame, &iFrame);
@@ -4049,8 +4046,29 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
     ** was in before the client began writing to the database. 
     */
     memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
-    assert( walidxGetFile(&pWal->hdr)==iWal );
     iNew = walidxGetMxFrame(&pWal->hdr, walidxGetFile(&pWal->hdr));
+
+    /* BEGIN CONCURRENT transactions are different, as the header just
+    ** memcpy()d into pWal->hdr may not be the same as the current header 
+    ** when the transaction was started. Instead, pWal->hdr now contains
+    ** the header written by the most recent successful COMMIT. Because
+    ** Wal.writeLock is set, if this is a BEGIN CONCURRENT transaction,
+    ** the rollback must be taking place because an error occurred during
+    ** a COMMIT.
+    **
+    ** The code below is still valid. All frames between (iNew+1) and iMax 
+    ** must have been written by this transaction before the error occurred.
+    ** The exception is in wal2 mode - if the current wal file at the time
+    ** of the last COMMIT is not wal file iWal, then the error must have
+    ** occurred in WalLockForCommit(), before any pages were written
+    ** to the database file. In this case return early.  */
+#ifndef SQLITE_OMIT_CONCURRENT
+    if( walidxGetFile(&pWal->hdr)!=iWal ){
+      assert( isWalMode2(pWal) );
+      return SQLITE_OK;
+    }
+#endif
+    assert( walidxGetFile(&pWal->hdr)==iWal );
 
     for(iFrame=iNew+1; ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; iFrame++){
       /* This call cannot fail. Unless the page for which the page number

@@ -445,6 +445,7 @@ wal2savepoint.test wal2lock.test wal2recover2.test
   concurrent.test concurrent2.test concurrent3.test
   concurrent4.test concurrent5.test concurrent6.test
   concurrent7.test
+  concfault.test concfault2.test
 
   walvfs.test walfault2.test nockpt.test
   snapshot2.test snapshot3.test snapshot4.test
