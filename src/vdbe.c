@@ -3629,6 +3629,9 @@ case OP_OpenDup: {
 ** the main database is read-only.  The ephemeral
 ** table is deleted automatically when the cursor is closed.
 **
+** If the cursor P1 is already opened on an ephermal table, the table
+** is cleared (all content is erased).
+**
 ** P2 is the number of columns in the ephemeral table.
 ** The cursor points to a BTree table if P4==0 and to a BTree index
 ** if P4 is not 0.  If P4 is not NULL, it points to a KeyInfo structure
@@ -3660,43 +3663,50 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
   assert( pOp->p1>=0 );
   assert( pOp->p2>=0 );
-  pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
-  if( pCx==0 ) goto no_mem;
-  pCx->nullRow = 1;
-  pCx->isEphemeral = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
-                        BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
-  }
-  if( rc==SQLITE_OK ){
-    /* If a transient index is required, create it by calling
-    ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
-    ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 1 (an BLOB_INTKEY table).
-    */
-    if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
-      int pgno;
-      assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBtx, &pgno, BTREE_BLOBKEY | pOp->p5); 
-      if( rc==SQLITE_OK ){
-        assert( pgno==MASTER_ROOT+1 );
-        assert( pKeyInfo->db==db );
-        assert( pKeyInfo->enc==ENC(db) );
-        pCx->pgnoRoot = pgno;
-        rc = sqlite3BtreeCursor(pCx->pBtx, pgno, BTREE_WRCSR,
-                                pKeyInfo, pCx->uc.pCursor);
-      }
-      pCx->isTable = 0;
-    }else{
-      rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
-                              0, pCx->uc.pCursor);
-      pCx->isTable = 1;
-      pCx->pgnoRoot = MASTER_ROOT;
+  pCx = p->apCsr[pOp->p1];
+  if( pCx ){
+    /* If the ephermeral table is already open, erase all existing content
+    ** so that the table is empty again, rather than creating a new table. */
+    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+  }else{
+    pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
+    if( pCx==0 ) goto no_mem;
+    pCx->nullRow = 1;
+    pCx->isEphemeral = 1;
+    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
+                          BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
+                          vfsFlags);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
     }
+    if( rc==SQLITE_OK ){
+      /* If a transient index is required, create it by calling
+      ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
+      ** opening it. If a transient table is required, just use the
+      ** automatically created table with root-page 1 (an BLOB_INTKEY table).
+      */
+      if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
+        assert( pOp->p4type==P4_KEYINFO );
+        rc = sqlite3BtreeCreateTable(pCx->pBtx, (int*)&pCx->pgnoRoot,
+                                     BTREE_BLOBKEY | pOp->p5); 
+        if( rc==SQLITE_OK ){
+          assert( pCx->pgnoRoot==MASTER_ROOT+1 );
+          assert( pKeyInfo->db==db );
+          assert( pKeyInfo->enc==ENC(db) );
+          rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
+                                  pKeyInfo, pCx->uc.pCursor);
+        }
+        pCx->isTable = 0;
+      }else{
+        pCx->pgnoRoot = MASTER_ROOT;
+        rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
+                                0, pCx->uc.pCursor);
+        pCx->isTable = 1;
+      }
+    }
+    pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   }
   if( rc ) goto abort_due_to_error;
-  pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   break;
 }
 
