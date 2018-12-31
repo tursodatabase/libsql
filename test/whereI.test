@@ -31,8 +31,10 @@ do_eqp_test 1.1 {
 } {
   QUERY PLAN
   `--MULTI-INDEX OR
-     |--SEARCH TABLE t1 USING INDEX i1 (b=?)
-     `--SEARCH TABLE t1 USING INDEX i2 (c=?)
+     |--INDEX 1
+     |  `--SEARCH TABLE t1 USING INDEX i1 (b=?)
+     `--INDEX 2
+        `--SEARCH TABLE t1 USING INDEX i2 (c=?)
 }
 
 do_execsql_test 1.2 {
@@ -61,8 +63,10 @@ do_eqp_test 2.1 {
 } {
   QUERY PLAN
   `--MULTI-INDEX OR
-     |--SEARCH TABLE t2 USING INDEX i3 (b=?)
-     `--SEARCH TABLE t2 USING INDEX i4 (c=?)
+     |--INDEX 1
+     |  `--SEARCH TABLE t2 USING INDEX i3 (b=?)
+     `--INDEX 2
+        `--SEARCH TABLE t2 USING INDEX i4 (c=?)
 }
 
 do_execsql_test 2.2 {

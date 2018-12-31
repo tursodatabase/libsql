@@ -207,6 +207,7 @@ VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
   void sqlite3VdbeExplain(Parse*,u8,const char*,...);
   void sqlite3VdbeExplainPop(Parse*);
   int sqlite3VdbeExplainParent(Parse*);
+  void sqlite3ExplainBreakpoint(const char*,const char*);
 # define ExplainQueryPlan(P)        sqlite3VdbeExplain P
 # define ExplainQueryPlanPop(P)     sqlite3VdbeExplainPop(P)
 # define ExplainQueryPlanParent(P)  sqlite3VdbeExplainParent(P)
@@ -214,6 +215,12 @@ VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 # define ExplainQueryPlan(P)
 # define ExplainQueryPlanPop(P)
 # define ExplainQueryPlanParent(P) 0
+# define sqlite3ExplainBreakpoint(A,B) /*no-op*/
+#endif
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_EXPLAIN)
+  void sqlite3ExplainBreakpoint(const char*,const char*);
+#else
+# define sqlite3ExplainBreakpoint(A,B) /*no-op*/
 #endif
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);

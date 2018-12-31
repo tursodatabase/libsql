@@ -2350,7 +2350,8 @@ int sqlite3FindInIndex(
   Expr *pX,                  /* The right-hand side (RHS) of the IN operator */
   u32 inFlags,               /* IN_INDEX_LOOP, _MEMBERSHIP, and/or _NOOP_OK */
   int *prRhsHasNull,         /* Register holding NULL status.  See notes */
-  int *aiMap                 /* Mapping from Index fields to RHS fields */
+  int *aiMap,                /* Mapping from Index fields to RHS fields */
+  int *piTab                 /* OUT: index to use */
 ){
   Select *p;                            /* SELECT to the right of IN operator */
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
@@ -2543,13 +2544,11 @@ int sqlite3FindInIndex(
       *prRhsHasNull = rMayHaveNull = ++pParse->nMem;
     }
     assert( pX->op==TK_IN );
-    sqlite3CodeRhsOfIN(pParse, pX, eType==IN_INDEX_ROWID);
+    sqlite3CodeRhsOfIN(pParse, pX, iTab, eType==IN_INDEX_ROWID);
     if( rMayHaveNull ){
-      sqlite3SetHasNullFlag(v, pX->iTable, rMayHaveNull);
+      sqlite3SetHasNullFlag(v, iTab, rMayHaveNull);
     }
     pParse->nQueryLoop = savedNQueryLoop;
-  }else{
-    pX->iTable = iTab;
   }
 
   if( aiMap && eType!=IN_INDEX_INDEX_ASC && eType!=IN_INDEX_INDEX_DESC ){
@@ -2557,6 +2556,7 @@ int sqlite3FindInIndex(
     n = sqlite3ExprVectorSize(pX->pLeft);
     for(i=0; i<n; i++) aiMap[i] = i;
   }
+  *piTab = iTab;
   return eType;
 }
 #endif
@@ -2639,7 +2639,11 @@ void sqlite3VectorErrorMsg(Parse *pParse, Expr *pExpr){
 **     x IN (4,5,11)              -- IN operator with list on right-hand side
 **     x IN (SELECT a FROM b)     -- IN operator with subquery on the right
 **
-** The pExpr parameter is the IN operator.
+** The pExpr parameter is the IN operator.  The cursor number for the
+** constructed ephermeral table is returned.  The first time the ephemeral
+** table is computed, the cursor number is also stored in pExpr->iTable,
+** however the cursor number returned might not be the same, as it might
+** have been duplicated using OP_OpenDup.
 **
 ** If parameter isRowid is non-zero, then LHS of the IN operator is guaranteed
 ** to be a non-null integer. In this case, the ephemeral table can be an
@@ -2658,30 +2662,55 @@ void sqlite3VectorErrorMsg(Parse *pParse, Expr *pExpr){
 void sqlite3CodeRhsOfIN(
   Parse *pParse,          /* Parsing context */
   Expr *pExpr,            /* The IN operator */
+  int iTab,               /* Use this cursor number */
   int isRowid             /* If true, LHS is a rowid */
 ){
-  int jmpIfDynamic = -1;      /* One-time test address */
+  int addrOnce = 0;           /* Address of the OP_Once instruction at top */
   int addr;                   /* Address of OP_OpenEphemeral instruction */
   Expr *pLeft;                /* the LHS of the IN operator */
   KeyInfo *pKeyInfo = 0;      /* Key information */
   int nVal;                   /* Size of vector pLeft */
   Vdbe *v;                    /* The prepared statement under construction */
 
-  v = sqlite3GetVdbe(pParse);
+  v = pParse->pVdbe;
   assert( v!=0 );
 
-  /* The evaluation of the RHS of IN operator must be repeated every time it
+  /* The evaluation of the IN must be repeated every time it
   ** is encountered if any of the following is true:
   **
   **    *  The right-hand side is a correlated subquery
   **    *  The right-hand side is an expression list containing variables
   **    *  We are inside a trigger
   **
-  ** If all of the above are false, then we can run this code just once
-  ** save the results, and reuse the same result on subsequent invocations.
+  ** If all of the above are false, then we can compute the RHS just once
+  ** and reuse it many names.
   */
-  if( !ExprHasProperty(pExpr, EP_VarSelect) ){
-    jmpIfDynamic = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+  if( !ExprHasProperty(pExpr, EP_VarSelect) && pParse->iSelfTab==0 ){
+    /* Reuse of the RHS is allowed */
+    /* If this routine has already been coded, but the previous code
+    ** might not have been invoked yet, so invoke it now as a subroutine. 
+    */
+    if( ExprHasProperty(pExpr, EP_Subrtn) ){
+      int addr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+        ExplainQueryPlan((pParse, 0, "REUSE LIST SUBQUERY %d",
+              pExpr->x.pSelect->selId));
+      }
+      sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
+                        pExpr->y.sub.iAddr);
+      sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
+      sqlite3VdbeJumpHere(v, addr);
+      return;
+    }
+
+    /* Begin coding the subroutine */
+    ExprSetProperty(pExpr, EP_Subrtn);
+    pExpr->y.sub.regReturn = ++pParse->nMem;
+    pExpr->y.sub.iAddr =
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
+    VdbeComment((v, "return address"));
+
+    addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
 
   /* Check to see if this is a vector IN operator */
@@ -2692,9 +2721,16 @@ void sqlite3CodeRhsOfIN(
   /* Construct the ephemeral table that will contain the content of
   ** RHS of the IN operator.
   */
-  pExpr->iTable = pParse->nTab++;
+  pExpr->iTable = iTab;
   addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, 
       pExpr->iTable, (isRowid?0:nVal));
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    VdbeComment((v, "Result of SELECT %u", pExpr->x.pSelect->selId));
+  }else{
+    VdbeComment((v, "RHS of IN operator"));
+  }
+#endif
   pKeyInfo = isRowid ? 0 : sqlite3KeyInfoAlloc(pParse->db, nVal, 1);
 
   if( ExprHasProperty(pExpr, EP_xIsSelect) ){
@@ -2706,8 +2742,8 @@ void sqlite3CodeRhsOfIN(
     Select *pSelect = pExpr->x.pSelect;
     ExprList *pEList = pSelect->pEList;
 
-    ExplainQueryPlan((pParse, 1, "%sLIST SUBQUERY",
-        jmpIfDynamic>=0?"":"CORRELATED "
+    ExplainQueryPlan((pParse, 1, "%sLIST SUBQUERY %d",
+        addrOnce?"":"CORRELATED ", pSelect->selId
     ));
     assert( !isRowid );
     /* If the LHS and RHS of the IN operator do not match, that
@@ -2715,7 +2751,7 @@ void sqlite3CodeRhsOfIN(
     if( ALWAYS(pEList->nExpr==nVal) ){
       SelectDest dest;
       int i;
-      sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
+      sqlite3SelectDestInit(&dest, SRT_Set, iTab);
       dest.zAffSdst = exprINAffinity(pParse, pExpr);
       pSelect->iLimit = 0;
       testcase( pSelect->selFlags & SF_Distinct );
@@ -2772,24 +2808,24 @@ void sqlite3CodeRhsOfIN(
       ** this code only executes once.  Because for a non-constant
       ** expression we need to rerun this code each time.
       */
-      if( jmpIfDynamic>=0 && !sqlite3ExprIsConstant(pE2) ){
-        sqlite3VdbeChangeToNoop(v, jmpIfDynamic);
-        jmpIfDynamic = -1;
+      if( addrOnce && !sqlite3ExprIsConstant(pE2) ){
+        sqlite3VdbeChangeToNoop(v, addrOnce);
+        addrOnce = 0;
       }
 
       /* Evaluate the expression and insert it into the temp table */
       if( isRowid && sqlite3ExprIsInteger(pE2, &iValToIns) ){
-        sqlite3VdbeAddOp3(v, OP_InsertInt, pExpr->iTable, r2, iValToIns);
+        sqlite3VdbeAddOp3(v, OP_InsertInt, iTab, r2, iValToIns);
       }else{
         r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
         if( isRowid ){
           sqlite3VdbeAddOp2(v, OP_MustBeInt, r3,
                             sqlite3VdbeCurrentAddr(v)+2);
           VdbeCoverage(v);
-          sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
+          sqlite3VdbeAddOp3(v, OP_Insert, iTab, r2, r3);
         }else{
           sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pExpr->iTable, r2, r3, 1);
+          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r2, r3, 1);
         }
       }
     }
@@ -2799,8 +2835,11 @@ void sqlite3CodeRhsOfIN(
   if( pKeyInfo ){
     sqlite3VdbeChangeP4(v, addr, (void *)pKeyInfo, P4_KEYINFO);
   }
-  if( jmpIfDynamic>=0 ){
-    sqlite3VdbeJumpHere(v, jmpIfDynamic);
+  if( addrOnce ){
+    sqlite3VdbeJumpHere(v, addrOnce);
+    /* Subroutine return */
+    sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
+    sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
   }
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
@@ -2821,14 +2860,20 @@ void sqlite3CodeRhsOfIN(
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
-  int jmpIfDynamic = -1;      /* One-time test address */
+  int addrOnce = 0;           /* Address of OP_Once at top of subroutine */
   int rReg = 0;               /* Register storing resulting */
   Select *pSel;               /* SELECT statement to encode */
   SelectDest dest;            /* How to deal with SELECT result */
   int nReg;                   /* Registers to allocate */
   Expr *pLimit;               /* New limit expression */
-  Vdbe *v = sqlite3GetVdbe(pParse);
+
+  Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
+  testcase( pExpr->op==TK_EXISTS );
+  testcase( pExpr->op==TK_SELECT );
+  assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
+  assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+  pSel = pExpr->x.pSelect;
 
   /* The evaluation of the EXISTS/SELECT must be repeated every time it
   ** is encountered if any of the following is true:
@@ -2841,7 +2886,23 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasProperty(pExpr, EP_VarSelect) ){
-    jmpIfDynamic = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+    /* If this routine has already been coded, then invoke it as a
+    ** subroutine. */
+    if( ExprHasProperty(pExpr, EP_Subrtn) ){
+      ExplainQueryPlan((pParse, 0, "REUSE SUBQUERY %d", pSel->selId));
+      sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
+                        pExpr->y.sub.iAddr);
+      return pExpr->iTable;
+    }
+
+    /* Begin coding the subroutine */
+    ExprSetProperty(pExpr, EP_Subrtn);
+    pExpr->y.sub.regReturn = ++pParse->nMem;
+    pExpr->y.sub.iAddr =
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
+    VdbeComment((v, "return address"));
+
+    addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
   
   /* For a SELECT, generate code to put the values for all columns of
@@ -2854,14 +2915,8 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** In both cases, the query is augmented with "LIMIT 1".  Any 
   ** preexisting limit is discarded in place of the new LIMIT 1.
   */
-  testcase( pExpr->op==TK_EXISTS );
-  testcase( pExpr->op==TK_SELECT );
-  assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
-  assert( ExprHasProperty(pExpr, EP_xIsSelect) );
-
-  pSel = pExpr->x.pSelect;
-  ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY",
-        jmpIfDynamic>=0?"":"CORRELATED "));
+  ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY %d",
+        addrOnce?"":"CORRELATED ", pSel->selId));
   nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
   sqlite3SelectDestInit(&dest, 0, pParse->nMem+1);
   pParse->nMem += nReg;
@@ -2887,11 +2942,14 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   if( sqlite3Select(pParse, pSel, &dest) ){
     return 0;
   }
-  rReg = dest.iSDParm;
+  pExpr->iTable = rReg = dest.iSDParm;
   ExprSetVVAProperty(pExpr, EP_NoReduce);
+  if( addrOnce ){
+    sqlite3VdbeJumpHere(v, addrOnce);
 
-  if( jmpIfDynamic>=0 ){
-    sqlite3VdbeJumpHere(v, jmpIfDynamic);
+    /* Subroutine return */
+    sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
+    sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
   }
 
   return rReg;
@@ -2968,6 +3026,7 @@ static void sqlite3ExprCodeIN(
   int addrTruthOp;      /* Address of opcode that determines the IN is true */
   int destNotNull;      /* Jump here if a comparison is not true in step 6 */
   int addrTop;          /* Top of the step-6 loop */ 
+  int iTab = 0;         /* Index to use */
 
   pLeft = pExpr->pLeft;
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
@@ -2979,7 +3038,7 @@ static void sqlite3ExprCodeIN(
   if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
 
   /* Attempt to compute the RHS. After this step, if anything other than
-  ** IN_INDEX_NOOP is returned, the table opened ith cursor pExpr->iTable 
+  ** IN_INDEX_NOOP is returned, the table opened with cursor iTab
   ** contains the values that make up the RHS. If IN_INDEX_NOOP is returned,
   ** the RHS has not yet been coded.  */
   v = pParse->pVdbe;
@@ -2987,7 +3046,8 @@ static void sqlite3ExprCodeIN(
   VdbeNoopComment((v, "begin IN expr"));
   eType = sqlite3FindInIndex(pParse, pExpr,
                              IN_INDEX_MEMBERSHIP | IN_INDEX_NOOP_OK,
-                             destIfFalse==destIfNull ? 0 : &rRhsHasNull, aiMap);
+                             destIfFalse==destIfNull ? 0 : &rRhsHasNull,
+                             aiMap, &iTab);
 
   assert( pParse->nErr || nVector==1 || eType==IN_INDEX_EPH
        || eType==IN_INDEX_INDEX_ASC || eType==IN_INDEX_INDEX_DESC 
@@ -3095,19 +3155,19 @@ static void sqlite3ExprCodeIN(
     /* In this case, the RHS is the ROWID of table b-tree and so we also
     ** know that the RHS is non-NULL.  Hence, we combine steps 3 and 4
     ** into a single opcode. */
-    sqlite3VdbeAddOp3(v, OP_SeekRowid, pExpr->iTable, destIfFalse, rLhs);
+    sqlite3VdbeAddOp3(v, OP_SeekRowid, iTab, destIfFalse, rLhs);
     VdbeCoverage(v);
     addrTruthOp = sqlite3VdbeAddOp0(v, OP_Goto);  /* Return True */
   }else{
     sqlite3VdbeAddOp4(v, OP_Affinity, rLhs, nVector, 0, zAff, nVector);
     if( destIfFalse==destIfNull ){
       /* Combine Step 3 and Step 5 into a single opcode */
-      sqlite3VdbeAddOp4Int(v, OP_NotFound, pExpr->iTable, destIfFalse,
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iTab, destIfFalse,
                            rLhs, nVector); VdbeCoverage(v);
       goto sqlite3ExprCodeIN_finished;
     }
     /* Ordinary Step 3, for the case where FALSE and NULL are distinct */
-    addrTruthOp = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0,
+    addrTruthOp = sqlite3VdbeAddOp4Int(v, OP_Found, iTab, 0,
                                       rLhs, nVector); VdbeCoverage(v);
   }
 
@@ -3132,7 +3192,7 @@ static void sqlite3ExprCodeIN(
   ** of the RHS.
   */
   if( destStep6 ) sqlite3VdbeResolveLabel(v, destStep6);
-  addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+  addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, destIfFalse);
   VdbeCoverage(v);
   if( nVector>1 ){
     destNotNull = sqlite3VdbeMakeLabel(pParse);
@@ -3147,7 +3207,7 @@ static void sqlite3ExprCodeIN(
     int r3 = sqlite3GetTempReg(pParse);
     p = sqlite3VectorFieldSubexpr(pLeft, i);
     pColl = sqlite3ExprCollSeq(pParse, p);
-    sqlite3VdbeAddOp3(v, OP_Column, pExpr->iTable, i, r3);
+    sqlite3VdbeAddOp3(v, OP_Column, iTab, i, r3);
     sqlite3VdbeAddOp4(v, OP_Ne, rLhs+i, destNotNull, r3,
                       (void*)pColl, P4_COLLSEQ);
     VdbeCoverage(v);
@@ -3156,7 +3216,7 @@ static void sqlite3ExprCodeIN(
   sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
   if( nVector>1 ){
     sqlite3VdbeResolveLabel(v, destNotNull);
-    sqlite3VdbeAddOp2(v, OP_Next, pExpr->iTable, addrTop+1);
+    sqlite3VdbeAddOp2(v, OP_Next, iTab, addrTop+1);
     VdbeCoverage(v);
 
     /* Step 7:  If we reach this point, we know that the result must
