@@ -5835,22 +5835,12 @@ int sqlite3Select(
     pSub = pItem->pSelect;
     if( pSub==0 ) continue;
 
-    /* Sometimes the code for a subquery will be generated more than
-    ** once, if the subquery is part of the WHERE clause in a LEFT JOIN,
-    ** for example.  In that case, do not regenerate the code to manifest
-    ** a view or the co-routine to implement a view.  The first instance
-    ** is sufficient, though the subroutine to manifest the view does need
-    ** to be invoked again. */
-    if( pItem->addrFillSub ){
-      if( pItem->fg.viaCoroutine==0 ){
-        /* The subroutine that manifests the view might be a one-time routine,
-        ** or it might need to be rerun on each iteration because it
-        ** encodes a correlated subquery. */
-        testcase( sqlite3VdbeGetOp(v, pItem->addrFillSub)->opcode==OP_Once );
-        sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
-      }
-      continue;
-    }
+    /* The code for a subquery should only be generated once, though it is
+    ** technically harmless for it to be generated multiple times. The
+    ** following assert() will detect if something changes to cause
+    ** the same subquery to be coded multiple times, as a signal to the
+    ** developers to try to optimize the situation. */
+    assert( pItem->addrFillSub==0 );
 
     /* Increment Parse.nHeight by the height of the largest expression
     ** tree referred to by this, the parent select. The child select
