@@ -1,5 +1,5 @@
-C Additional\ssteps\sto\shelp\sensure\sthat\sscalar\ssubqueries\sare\sonly\sevaluated\nonce\seven\sif\sthey\sare\sused\sin\smultiple\splaces\swithin\sthe\squery.\s\sThis\sfixes\na\sperformance\sregression\sreported\son\sthe\smailing\slist\sand\scaused\sby\ncheck-in\s[531eca6104e41e43]\swhich\swas\sa\sfix\sfor\sticket\n[787fa716be3a7f650c].\sThink\sof\sthis\scheck-in\sas\san\simproved\sfix\sfor\nthat\sticket.
-D 2018-12-31T20:39:37.863
+C Fix\sharmless\scompiler\swarnings.
+D 2018-12-31T21:43:55.908
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -121,7 +121,7 @@ F ext/fts5/fts5_storage.c 5862f1b785a983acb8420281340f3f424896ab48f396f6fd854078
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 65864ba1e5c34a61d409c4c587e0bbe0466eb4f8f478d85dc42a92caad1338e6
 F ext/fts5/fts5_test_tok.c 6a5574354ce61a98737e150fd4f7a002000db0cb4bcd655dc8694cb3e035381d
-F ext/fts5/fts5_tokenize.c d49f479ca109dc7fb6a99dd482439cae175c5082920757b9286f6e057339bd50
+F ext/fts5/fts5_tokenize.c 8b7ef00cf0483740977cc6cf0fd878e6e325d36fd02f2b31959810917347b73d
 F ext/fts5/fts5_unicode2.c 3f1bad6f2924ad13e25408f00301edd12d4216388a11daa518cb28f79b337f5e
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c fbe38044889b2d2d99babeeef239c620fb0332bb928a84506ac748d81500b354
@@ -462,7 +462,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c 209cd8345b15d1843abeff2d91a6d9c765cf32ff4abcb24411c38fe08e18baab
-F src/expr.c 2871554cc9be8d0da0d481dbf20ee814fc6990ce01f885a1bb6af0d1f552085e
+F src/expr.c 18ce84bab19ef59eff99a54d83ebefd28dc10d17e617f35c730ff7c8bc2b6ee7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c aaf28be73ab21e1e8bf4ac6b94269ebc8c93238d1e6997cb44b527b622e8ae6f
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -582,7 +582,7 @@ F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 3ffe64ecfc94b7528c5d7bdb1c3a19d72fec63f2aa846e3b90f8de5dbbddf5aa
 F src/vdbe.c 0be19a62da20276746ef51828d581a8e7a07dc327d1b26edeffa5f7f7d9d05b0
-F src/vdbe.h d64fe28f20a67feffb820c20bb1bc6f8d365c6b410d66e7eb9a7192e839316b3
+F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
 F src/vdbeaux.c b230f12642040c5ede19f092d9ad7510f75add84888e66a00108948dec574fd2
@@ -1795,8 +1795,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f856676c8438dbf52d299e78f6dd6148d929755dc05cdcabafd17d9a86439435 4fcdc7a2939457e51aab37cab168677cd7f464a9a0aff4f8981e864a30828b3b
-R ec7392f6deec1d23ad92b0971adf7e38
-T +closed 4fcdc7a2939457e51aab37cab168677cd7f464a9a0aff4f8981e864a30828b3b
+P e130319317e761193890ef75787a3c114b61166f518df019697be8e2c820ec54
+R b4a7cb2312688791fa3ec06281f2d65a
 U drh
-Z 5fcc6f0e6119eb4a72b2bef9abdccc87
+Z 760bbba48011a5910e9d3b64ded24a17

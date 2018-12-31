@@ -274,7 +274,7 @@ static int fts5UnicodeAddExceptions(
           if( bToken!=bTokenChars && sqlite3Fts5UnicodeIsdiacritic(iCode)==0 ){
             int i;
             for(i=0; i<nNew; i++){
-              if( aNew[i]>iCode ) break;
+              if( (u32)aNew[i]>iCode ) break;
             }
             memmove(&aNew[i+1], &aNew[i], (nNew-i)*sizeof(int));
             aNew[i] = iCode;
@@ -1284,5 +1284,3 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
 
   return rc;
 }
-
-

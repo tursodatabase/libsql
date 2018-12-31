@@ -2691,7 +2691,7 @@ void sqlite3CodeRhsOfIN(
     ** might not have been invoked yet, so invoke it now as a subroutine. 
     */
     if( ExprHasProperty(pExpr, EP_Subrtn) ){
-      int addr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+      addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         ExplainQueryPlan((pParse, 0, "REUSE LIST SUBQUERY %d",
               pExpr->x.pSelect->selId));
@@ -2699,7 +2699,7 @@ void sqlite3CodeRhsOfIN(
       sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                         pExpr->y.sub.iAddr);
       sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
-      sqlite3VdbeJumpHere(v, addr);
+      sqlite3VdbeJumpHere(v, addrOnce);
       return;
     }
 
