@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_OpenEphemeral\sopcode\sin\sthe\sbytecode\sengine\sso\sthat\sif\sit\sis\scalled\na\ssecond\sor\ssubsequent\stime,\sit\smerely\sclears\sthe\sexisting\stable\srather\sthan\ncreating\sa\snew\sone.\s\sProposed\sfix\sfor\sticket\s[d0866b26f83e9c55e30de0821f5d].
-D 2018-12-31T16:36:42.338
+C Small\schanges\sto\sthe\sOP_OpenEphemeral\sopcode\sto\simprove\stestability.
+D 2018-12-31T17:58:05.349
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -581,7 +581,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c 3ffe64ecfc94b7528c5d7bdb1c3a19d72fec63f2aa846e3b90f8de5dbbddf5aa
-F src/vdbe.c 0321eb484160353d48accd3e67e06191173c6caa5f9995314021159017a5678b
+F src/vdbe.c 5c3d05e74f3fd43725e2a1a186b2c1021c5d68c6ac3364ca7e120740b1eab168
 F src/vdbe.h b61a6f4f23ca4f5e789f4fc9d55acd4570d50d3288457651e501d839f5167c1f
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
@@ -1795,7 +1795,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1bdee199a71e0a6c247b85e72de9e3a3099b7179c33288735721facef3b96459
-R 2a9dff6dec1fd031ba98ddeee634566f
+P 4678cb1044f0b4dc813e48f3bd0f85240a66e2ecf8763280d66726cc031c93a7
+R 19d15b45d6c2a613a85a1505b62bf5ca
 U drh
-Z f80234c4b191a7b9e8e4e0c806044597
+Z fe2d10d5f399fae02e225088d4349735
