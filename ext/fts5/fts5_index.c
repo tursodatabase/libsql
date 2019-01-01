@@ -910,6 +910,8 @@ static int fts5StructureDecode(
             break;
           }
         }
+        if( iLvl>0 && pLvl[-1].nMerge && nTotal==0 ) rc = FTS5_CORRUPT;
+        if( iLvl==nLevel-1 && pLvl->nMerge ) rc = FTS5_CORRUPT;
       }
     }
     if( nSegment!=0 && rc==SQLITE_OK ) rc = FTS5_CORRUPT;
