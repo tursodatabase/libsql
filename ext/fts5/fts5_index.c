@@ -2311,6 +2311,7 @@ static void fts5LeafSeek(
         iPgidx += fts5GetVarint32(&pIter->pLeaf->p[iPgidx], iOff);
         if( iOff<4 || iOff>=pIter->pLeaf->szLeaf ){
           p->rc = FTS5_CORRUPT;
+          return;
         }else{
           nKeep = 0;
           iTermOff = iOff;
@@ -2323,8 +2324,11 @@ static void fts5LeafSeek(
   }
 
  search_success:
-
   pIter->iLeafOffset = iOff + nNew;
+  if( pIter->iLeafOffset>n ){
+    p->rc = FTS5_CORRUPT;
+    return;
+  }
   pIter->iTermLeafOffset = pIter->iLeafOffset;
   pIter->iTermLeafPgno = pIter->iLeafPgno;
 
