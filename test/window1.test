@@ -665,4 +665,12 @@ do_execsql_test 15.1 {
   ) FROM t1;
 } {a 3 b 3 c 3}
 
+do_execsql_test 15.2 {
+  SELECT(
+    WITH c AS(
+      VALUES(1)
+    ) SELECT '' FROM c,c
+  ) x WHERE x+x;
+} {}
+
 finish_test

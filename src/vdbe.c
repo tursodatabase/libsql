@@ -240,6 +240,11 @@ static VdbeCursor *allocateCursor(
 
   assert( iCur>=0 && iCur<p->nCursor );
   if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
+    /* Before calling sqlite3VdbeFreeCursor(), ensure the isEphemeral flag
+    ** is clear. Otherwise, if this is an ephemeral cursor created by 
+    ** OP_OpenDup, the cursor will not be closed and will still be part
+    ** of a BtShared.pCursor list.  */
+    p->apCsr[iCur]->isEphemeral = 0;
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
