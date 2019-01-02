@@ -65,5 +65,8 @@ do_execsql_test vacuum-into-300 {
 do_catchsql_test vacuum-into-310 {
   VACUUM INTO null;
 } {1 {non-text filename}}
+do_catchsql_test vacuum-into-320 {
+  VACUUM INTO x;
+} {1 {no such column: x}}
 
 finish_test
