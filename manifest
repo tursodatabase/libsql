@@ -1,5 +1,5 @@
-C Merge\slatest\swal2\schanges\sinto\sthis\sbranch.
-D 2019-01-02T16:30:10.490
+C Reinstate\sassert()\sstatements\sin\sos_unix.c\sthat\swere\sremoved\sto\sallow\nwal-mode\sSHARED\slocks\sto\sbe\staken\sover\smore\sthan\sone\slocking\sslot\n(this\sbranch\sno\slonger\sdoes\sthat,\sso\sthe\sassert()\sstatements\scan\sgo\nback\sin).
+D 2019-01-02T17:08:06.138
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -499,7 +499,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 1aa113b261a0ad44fd410a001f6e39bfc1ebd4279b2fb8c2d636a7620d76a45a
+F src/os_unix.c 86eca42c3d955bebea0082450f978e5633448235f03f86b27a02538bb26e7fff
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 24dbb25d447629bc8167dcf16dcb449a6eb2067393935d97ff42377798e44979
@@ -1823,7 +1823,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1625887c0240eb1cb37e41d79e789c4ff311352c5708e6a2d3ed1b223ff382e3 87ef68f9174b5e21fa2fb4f2fa23e0ecd6a0ea854422c8aa74cd7306a1ed8427
-R 4dfccbc013208e67a5138d4fe488e5bf
+P c31eeb3c87f260fa192638b3610a4d3b84b2c26cfaefc97ed63910495403f8c9 8445fb6d5dae98a0129514a10a15f08412bac5a1d8114b12e592c744ea2bc4c9
+R 0806996acba6e0b3331e631071ee176c
 U dan
-Z 8d740846efc79a7e725157c7768bb258
+Z 44e579b069341a68865674e64e97136d
