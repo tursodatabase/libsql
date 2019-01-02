@@ -1,5 +1,5 @@
-C Raise\san\serror\sif\sthe\sargument\sto\sVACUUM\sINTO\sis\san\sidentifier.
-D 2019-01-02T14:34:46.243
+C Add\stest\scases\sfor\scommit\s[6c6fb1c6].
+D 2019-01-02T15:27:27.458
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -1569,7 +1569,7 @@ F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
-F test/vacuum-into.test 20946d0ef6ec48d8af7ee83914c985b08e31923b98aa3cf4617c3d856dce1604
+F test/vacuum-into.test 1a110aa3ce1e8384ab69a8463d08fd735789b62fa7808d55d4ee45406f42e084
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
@@ -1795,7 +1795,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 911342f7512145a8a189bb0ec59e70e4c9ddc9f20f3e84816ab25139ead5dc45
-R ce9bdc823280c96705c1e7cfd013614b
-U drh
-Z a789d01426b0f77e609960b31f8b9061
+P 6c6fb1c6ea452c70b56fd4ac796affebee21512adba0455ae81c291b715f544f
+R 340b0ffd3768604b550b13a8196512d8
+U dan
+Z f1f46f20fd8865f66d487d32498d87a8
