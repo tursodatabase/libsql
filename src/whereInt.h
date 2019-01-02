@@ -507,8 +507,11 @@ void sqlite3WhereAddScanStatus(
 # define sqlite3WhereAddScanStatus(a, b, c, d) ((void)d)
 #endif
 Bitmask sqlite3WhereCodeOneLoopStart(
+  Parse *pParse,       /* Parsing context */
+  Vdbe *v,             /* Prepared statement under construction */
   WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
   int iLevel,          /* Which level of pWInfo->a[] should be coded */
+  WhereLevel *pLevel,  /* The current level pointer */
   Bitmask notReady     /* Which tables are currently available */
 );
 

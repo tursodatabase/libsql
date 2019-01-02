@@ -65,5 +65,26 @@ do_execsql_test vacuum-into-300 {
 do_catchsql_test vacuum-into-310 {
   VACUUM INTO null;
 } {1 {non-text filename}}
+do_catchsql_test vacuum-into-320 {
+  VACUUM INTO x;
+} {1 {no such column: x}}
+do_catchsql_test vacuum-into-330 {
+  VACUUM INTO t1.nosuchcol;
+} {1 {no such column: t1.nosuchcol}}
+do_catchsql_test vacuum-into-340 {
+  VACUUM INTO main.t1.nosuchcol;
+} {1 {no such column: main.t1.nosuchcol}}
+
+forcedelete test.db2
+db func target target
+proc target {} { return "test.db2" }
+do_test vacuum-into-410 {
+  execsql { VACUUM INTO target() }
+  file exists test.db2
+} 1
+do_catchsql_test vacuum-into-420 {
+  VACUUM INTO target2()
+} {1 {no such function: target2}}
+
 
 finish_test
