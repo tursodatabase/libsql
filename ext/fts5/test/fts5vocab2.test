@@ -80,8 +80,7 @@ do_execsql_test 1.4 {
 do_execsql_test 1.5 {
   DELETE FROM t1;
   SELECT * FROM v1;
-} {
-}
+} {}
 
 #-------------------------------------------------------------------------
 #
@@ -143,8 +142,7 @@ do_execsql_test 2.4 {
 do_execsql_test 2.5 {
   DELETE FROM t1;
   SELECT * FROM v1;
-} {
-}
+} {}
 
 #-------------------------------------------------------------------------
 #
@@ -202,7 +200,6 @@ do_execsql_test 3.4 {
 do_execsql_test 3.5 {
   DELETE FROM t1;
   SELECT * FROM v1;
-} {
-}
+} {}
 
 finish_test

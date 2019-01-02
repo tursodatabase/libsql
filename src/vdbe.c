@@ -240,6 +240,11 @@ static VdbeCursor *allocateCursor(
 
   assert( iCur>=0 && iCur<p->nCursor );
   if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
+    /* Before calling sqlite3VdbeFreeCursor(), ensure the isEphemeral flag
+    ** is clear. Otherwise, if this is an ephemeral cursor created by 
+    ** OP_OpenDup, the cursor will not be closed and will still be part
+    ** of a BtShared.pCursor list.  */
+    p->apCsr[iCur]->isEphemeral = 0;
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
@@ -1925,7 +1930,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
-      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 );
+      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 || CORRUPT_DB );
+      testcase( (pOp->p5 & SQLITE_JUMPIFNULL)!=0 );
       if( (flags1&flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
@@ -3640,7 +3646,8 @@ case OP_OpenDup: {
   pCx->isEphemeral = 1;
   pCx->pKeyInfo = pOrig->pKeyInfo;
   pCx->isTable = pOrig->isTable;
-  rc = sqlite3BtreeCursor(pOrig->pBtx, MASTER_ROOT, BTREE_WRCSR,
+  pCx->pgnoRoot = pOrig->pgnoRoot;
+  rc = sqlite3BtreeCursor(pOrig->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
                           pCx->pKeyInfo, pCx->uc.pCursor);
   /* The sqlite3BtreeCursor() routine can only fail for the first cursor
   ** opened for a database.  Since there is already an open cursor when this
@@ -3657,6 +3664,9 @@ case OP_OpenDup: {
 ** The cursor is always opened read/write even if 
 ** the main database is read-only.  The ephemeral
 ** table is deleted automatically when the cursor is closed.
+**
+** If the cursor P1 is already opened on an ephermal table, the table
+** is cleared (all content is erased).
 **
 ** P2 is the number of columns in the ephemeral table.
 ** The cursor points to a BTree table if P4==0 and to a BTree index
@@ -3689,41 +3699,50 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
   assert( pOp->p1>=0 );
   assert( pOp->p2>=0 );
-  pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
-  if( pCx==0 ) goto no_mem;
-  pCx->nullRow = 1;
-  pCx->isEphemeral = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
-                        BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
-  }
-  if( rc==SQLITE_OK ){
-    /* If a transient index is required, create it by calling
-    ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
-    ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 1 (an BLOB_INTKEY table).
-    */
-    if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
-      int pgno;
-      assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBtx, &pgno, BTREE_BLOBKEY | pOp->p5); 
-      if( rc==SQLITE_OK ){
-        assert( pgno==MASTER_ROOT+1 );
-        assert( pKeyInfo->db==db );
-        assert( pKeyInfo->enc==ENC(db) );
-        rc = sqlite3BtreeCursor(pCx->pBtx, pgno, BTREE_WRCSR,
-                                pKeyInfo, pCx->uc.pCursor);
-      }
-      pCx->isTable = 0;
-    }else{
-      rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
-                              0, pCx->uc.pCursor);
-      pCx->isTable = 1;
+  pCx = p->apCsr[pOp->p1];
+  if( pCx ){
+    /* If the ephermeral table is already open, erase all existing content
+    ** so that the table is empty again, rather than creating a new table. */
+    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+  }else{
+    pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
+    if( pCx==0 ) goto no_mem;
+    pCx->nullRow = 1;
+    pCx->isEphemeral = 1;
+    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
+                          BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
+                          vfsFlags);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
     }
+    if( rc==SQLITE_OK ){
+      /* If a transient index is required, create it by calling
+      ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
+      ** opening it. If a transient table is required, just use the
+      ** automatically created table with root-page 1 (an BLOB_INTKEY table).
+      */
+      if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
+        assert( pOp->p4type==P4_KEYINFO );
+        rc = sqlite3BtreeCreateTable(pCx->pBtx, (int*)&pCx->pgnoRoot,
+                                     BTREE_BLOBKEY | pOp->p5); 
+        if( rc==SQLITE_OK ){
+          assert( pCx->pgnoRoot==MASTER_ROOT+1 );
+          assert( pKeyInfo->db==db );
+          assert( pKeyInfo->enc==ENC(db) );
+          rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
+                                  pKeyInfo, pCx->uc.pCursor);
+        }
+        pCx->isTable = 0;
+      }else{
+        pCx->pgnoRoot = MASTER_ROOT;
+        rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
+                                0, pCx->uc.pCursor);
+        pCx->isTable = 1;
+      }
+    }
+    pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   }
   if( rc ) goto abort_due_to_error;
-  pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   break;
 }
 
@@ -4373,7 +4392,7 @@ case OP_NotExists:          /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = OP_SeekRowid;
+  if( pOp->opcode==OP_SeekRowid ) pC->seekOp = OP_SeekRowid;
 #endif
   assert( pC->isTable );
   assert( pC->eCurType==CURTYPE_BTREE );
@@ -5281,7 +5300,7 @@ case OP_Next:          /* jump */
   assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
        || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found 
-       || pC->seekOp==OP_NullRow);
+       || pC->seekOp==OP_NullRow|| pC->seekOp==OP_SeekRowid);
   assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
        || pC->seekOp==OP_Last 
@@ -6887,6 +6906,7 @@ case OP_VDestroy: {
   db->nVDestroy++;
   rc = sqlite3VtabCallDestroy(db, pOp->p1, pOp->p4.z);
   db->nVDestroy--;
+  assert( p->errorAction==OE_Abort && p->usesStmtJournal );
   if( rc ) goto abort_due_to_error;
   break;
 }

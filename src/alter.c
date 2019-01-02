@@ -28,9 +28,16 @@
 **
 ** Or, if zName is not a system table, zero is returned.
 */
-static int isSystemTable(Parse *pParse, const char *zName){
-  if( 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
-    sqlite3ErrorMsg(pParse, "table %s may not be altered", zName);
+static int isAlterableTable(Parse *pParse, Table *pTab){
+  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+   || ( (pTab->tabFlags & TF_Shadow) 
+     && (pParse->db->flags & SQLITE_Defensive)
+     && pParse->db->nVdbeExec==0
+   )
+#endif
+  ){
+    sqlite3ErrorMsg(pParse, "table %s may not be altered", pTab->zName);
     return 1;
   }
   return 0;
@@ -126,7 +133,7 @@ void sqlite3AlterRenameTable(
   /* Make sure it is not a system table being altered, or a reserved name
   ** that the table is being renamed to.
   */
-  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ){
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
     goto exit_rename_table;
   }
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){ goto
@@ -424,7 +431,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     sqlite3ErrorMsg(pParse, "Cannot add a column to a view");
     goto exit_begin_add_column;
   }
-  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ){
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
     goto exit_begin_add_column;
   }
 
@@ -526,7 +533,7 @@ void sqlite3AlterRenameColumn(
   if( !pTab ) goto exit_rename_column;
 
   /* Cannot alter a system table */
-  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ) goto exit_rename_column;
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_rename_column;
   if( SQLITE_OK!=isRealTable(pParse, pTab) ) goto exit_rename_column;
 
   /* Which schema holds the table to be altered */  

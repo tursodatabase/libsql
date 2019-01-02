@@ -128,6 +128,9 @@ struct Rtree {
   u8 inWrTrans;               /* True if inside write transaction */
   u8 nAux;                    /* # of auxiliary columns in %_rowid */
   u8 nAuxNotNull;             /* Number of initial not-null aux columns */
+#ifdef SQLITE_DEBUG
+  u8 bCorrupt;                /* Shadow table corruption detected */
+#endif
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
@@ -185,6 +188,15 @@ struct Rtree {
   typedef double RtreeDValue;              /* High accuracy coordinate */
   typedef float RtreeValue;                /* Low accuracy coordinate */
 # define RTREE_ZERO 0.0
+#endif
+
+/*
+** Set the Rtree.bCorrupt flag
+*/
+#ifdef SQLITE_DEBUG
+# define RTREE_IS_CORRUPT(X) ((X)->bCorrupt = 1)
+#else
+# define RTREE_IS_CORRUPT(X)
 #endif
 
 /*
@@ -553,8 +565,8 @@ static void nodeZero(Rtree *pRtree, RtreeNode *p){
 ** Given a node number iNode, return the corresponding key to use
 ** in the Rtree.aHash table.
 */
-static int nodeHash(i64 iNode){
-  return iNode % HASHSIZE;
+static unsigned int nodeHash(i64 iNode){
+  return ((unsigned)iNode) % HASHSIZE;
 }
 
 /*
@@ -624,6 +636,18 @@ static void nodeBlobReset(Rtree *pRtree){
 }
 
 /*
+** Check to see if pNode is the same as pParent or any of the parents
+** of pParent.
+*/
+static int nodeInParentChain(const RtreeNode *pNode, const RtreeNode *pParent){
+  do{
+    if( pNode==pParent ) return 1;
+    pParent = pParent->pParent;
+  }while( pParent );
+  return 0;
+}
+
+/*
 ** Obtain a reference to an r-tree node.
 */
 static int nodeAcquire(
@@ -641,6 +665,10 @@ static int nodeAcquire(
   if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
     assert( !pParent || !pNode->pParent || pNode->pParent==pParent );
     if( pParent && !pNode->pParent ){
+      if( nodeInParentChain(pNode, pParent) ){
+        RTREE_IS_CORRUPT(pRtree);
+        return SQLITE_CORRUPT_VTAB;
+      }
       pParent->nRef++;
       pNode->pParent = pParent;
     }
@@ -671,7 +699,10 @@ static int nodeAcquire(
     *ppNode = 0;
     /* If unable to open an sqlite3_blob on the desired row, that can only
     ** be because the shadow tables hold erroneous data. */
-    if( rc==SQLITE_ERROR ) rc = SQLITE_CORRUPT_VTAB;
+    if( rc==SQLITE_ERROR ){
+      rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
+    }
   }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
     pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
     if( !pNode ){
@@ -700,6 +731,7 @@ static int nodeAcquire(
     pRtree->iDepth = readInt16(pNode->zData);
     if( pRtree->iDepth>RTREE_MAX_DEPTH ){
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
     }
   }
 
@@ -710,6 +742,7 @@ static int nodeAcquire(
   if( pNode && rc==SQLITE_OK ){
     if( NCELL(pNode)>((pRtree->iNodeSize-4)/pRtree->nBytesPerCell) ){
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
     }
   }
 
@@ -718,6 +751,7 @@ static int nodeAcquire(
       nodeHashInsert(pRtree, pNode);
     }else{
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
     }
     *ppNode = pNode;
   }else{
@@ -943,7 +977,7 @@ static void rtreeRelease(Rtree *pRtree){
     pRtree->inWrTrans = 0;
     assert( pRtree->nCursor==0 );
     nodeBlobReset(pRtree);
-    assert( pRtree->nNodeRef==0 );
+    assert( pRtree->nNodeRef==0 || pRtree->bCorrupt );
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
     sqlite3_finalize(pRtree->pReadRowid);
@@ -1275,6 +1309,7 @@ static int nodeRowidIndex(
       return SQLITE_OK;
     }
   }
+  RTREE_IS_CORRUPT(pRtree);
   return SQLITE_CORRUPT_VTAB;
 }
 
@@ -1915,20 +1950,20 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     ){
       u8 op;
       switch( p->op ){
-        case SQLITE_INDEX_CONSTRAINT_EQ: op = RTREE_EQ; break;
-        case SQLITE_INDEX_CONSTRAINT_GT: op = RTREE_GT; break;
-        case SQLITE_INDEX_CONSTRAINT_LE: op = RTREE_LE; break;
-        case SQLITE_INDEX_CONSTRAINT_LT: op = RTREE_LT; break;
-        case SQLITE_INDEX_CONSTRAINT_GE: op = RTREE_GE; break;
-        default:
-          assert( p->op==SQLITE_INDEX_CONSTRAINT_MATCH );
-          op = RTREE_MATCH; 
-          break;
+        case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    break;
+        case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    break;
+        case SQLITE_INDEX_CONSTRAINT_LE:    op = RTREE_LE;    break;
+        case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    break;
+        case SQLITE_INDEX_CONSTRAINT_GE:    op = RTREE_GE;    break;
+        case SQLITE_INDEX_CONSTRAINT_MATCH: op = RTREE_MATCH; break;
+        default:                            op = 0;           break;
       }
-      zIdxStr[iIdx++] = op;
-      zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
-      pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
-      pIdxInfo->aConstraintUsage[ii].omit = 1;
+      if( op ){
+        zIdxStr[iIdx++] = op;
+        zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
+        pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
+        pIdxInfo->aConstraintUsage[ii].omit = 1;
+      }
     }
   }
 
@@ -2137,12 +2172,14 @@ static int AdjustTree(
   RtreeCell *pCell                  /* This cell was just inserted */
 ){
   RtreeNode *p = pNode;
+  int cnt = 0;
   while( p->pParent ){
     RtreeNode *pParent = p->pParent;
     RtreeCell cell;
     int iCell;
 
-    if( nodeParentIndex(pRtree, p, &iCell) ){
+    if( (++cnt)>1000 || nodeParentIndex(pRtree, p, &iCell)  ){
+      RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
 
@@ -2610,7 +2647,10 @@ static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
     }
     rc = sqlite3_reset(pRtree->pReadParent);
     if( rc==SQLITE_OK ) rc = rc2;
-    if( rc==SQLITE_OK && !pChild->pParent ) rc = SQLITE_CORRUPT_VTAB;
+    if( rc==SQLITE_OK && !pChild->pParent ){
+      RTREE_IS_CORRUPT(pRtree);
+      rc = SQLITE_CORRUPT_VTAB;
+    }
     pChild = pChild->pParent;
   }
   return rc;
@@ -2924,8 +2964,12 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
     rc = findLeafNode(pRtree, iDelete, &pLeaf, 0);
   }
 
+#ifdef CORRUPT_DB
+  assert( pLeaf!=0 || rc!=SQLITE_OK || CORRUPT_DB );
+#endif
+
   /* Delete the cell in question from the leaf node. */
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && pLeaf ){
     int rc2;
     rc = nodeRowidIndex(pRtree, pLeaf, iDelete, &iCell);
     if( rc==SQLITE_OK ){
@@ -3197,7 +3241,7 @@ static int rtreeUpdate(
         rc = rc2;
       }
     }
-    if( pRtree->nAux ){
+    if( rc==SQLITE_OK && pRtree->nAux ){
       sqlite3_stmt *pUp = pRtree->pWriteAux;
       int jj;
       sqlite3_bind_int64(pUp, 1, *pRowid);
@@ -3395,6 +3439,7 @@ static int rtreeSqlInit(
   };
   sqlite3_stmt **appStmt[N_STATEMENT];
   int i;
+  const int f = SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB;
 
   pRtree->db = db;
 
@@ -3451,8 +3496,7 @@ static int rtreeSqlInit(
     }
     zSql = sqlite3_mprintf(zFormat, zDb, zPrefix);
     if( zSql ){
-      rc = sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
-                              appStmt[i], 0); 
+      rc = sqlite3_prepare_v3(db, zSql, -1, f, appStmt[i], 0); 
     }else{
       rc = SQLITE_NOMEM;
     }
@@ -3482,8 +3526,7 @@ static int rtreeSqlInit(
       if( zSql==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
-                                &pRtree->pWriteAux, 0); 
+        rc = sqlite3_prepare_v3(db, zSql, -1, f, &pRtree->pWriteAux, 0); 
         sqlite3_free(zSql);
       }
     }
@@ -3559,6 +3602,7 @@ static int getNodeSize(
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }else if( pRtree->iNodeSize<(512-64) ){
       rc = SQLITE_CORRUPT_VTAB;
+      RTREE_IS_CORRUPT(pRtree);
       *pzErr = sqlite3_mprintf("undersize RTree blobs in \"%q_node\"",
                                pRtree->zName);
     }
@@ -3882,8 +3926,7 @@ static void rtreeCheckAppendMsg(RtreeCheck *pCheck, const char *zFmt, ...){
 static u8 *rtreeCheckGetNode(RtreeCheck *pCheck, i64 iNode, int *pnNode){
   u8 *pRet = 0;                   /* Return value */
 
-  assert( pCheck->rc==SQLITE_OK );
-  if( pCheck->pGetNode==0 ){
+  if( pCheck->rc==SQLITE_OK && pCheck->pGetNode==0 ){
     pCheck->pGetNode = rtreeCheckPrepare(pCheck,
         "SELECT data FROM %Q.'%q_node' WHERE nodeno=?", 
         pCheck->zDb, pCheck->zTab

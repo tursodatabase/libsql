@@ -235,9 +235,9 @@ do_eqp_test 5.1 {
 } {
   QUERY PLAN
   |--SEARCH TABLE d2 USING INDEX d2ab (a=? AND b=?)
-  |--LIST SUBQUERY
+  |--LIST SUBQUERY xxxxxx
   |  `--SCAN TABLE d1
-  `--LIST SUBQUERY
+  `--LIST SUBQUERY xxxxxx
      `--SCAN TABLE d1
 }
 

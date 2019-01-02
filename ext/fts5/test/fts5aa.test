@@ -38,8 +38,7 @@ do_execsql_test 1.0 {
 do_execsql_test 1.1 {
   DROP TABLE t1;
   SELECT name, sql FROM sqlite_master;
-} {
-}
+} {}
 
 #-------------------------------------------------------------------------
 #

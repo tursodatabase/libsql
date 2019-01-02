@@ -58,6 +58,9 @@ do_test rtree6-1.1 {
 do_test rtree6-1.2 {
   rtree_strategy {SELECT * FROM t1 WHERE x1>10}
 } {E0}
+do_test rtree6-1.2.1 {
+  rtree_strategy {SELECT * FROM t1 WHERE x1>10 AND x2 LIKE '%x%'}
+} {E0}
 
 do_test rtree6-1.3 {
   rtree_strategy {SELECT * FROM t1 WHERE x1<10}
