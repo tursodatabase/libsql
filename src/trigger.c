@@ -944,7 +944,7 @@ static TriggerPrg *codeRowTrigger(
       if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
        && db->mallocFailed==0 
       ){
-        iEndTrigger = sqlite3VdbeMakeLabel(v);
+        iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
       }
       sqlite3ExprDelete(db, pWhen);

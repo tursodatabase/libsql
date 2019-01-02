@@ -1377,7 +1377,7 @@ void sqlite3Pragma(
           x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
           assert( x==0 );
         }
-        addrOk = sqlite3VdbeMakeLabel(v);
+        addrOk = sqlite3VdbeMakeLabel(pParse);
 
         /* Generate code to read the child key values into registers
         ** regRow..regRow+n. If any of the child key values are NULL, this 
@@ -1597,8 +1597,8 @@ void sqlite3Pragma(
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
           ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
           if( db->mallocFailed==0 ){
-            int addrCkFault = sqlite3VdbeMakeLabel(v);
-            int addrCkOk = sqlite3VdbeMakeLabel(v);
+            int addrCkFault = sqlite3VdbeMakeLabel(pParse);
+            int addrCkOk = sqlite3VdbeMakeLabel(pParse);
             char *zErr;
             int k;
             pParse->iSelfTab = iDataCur + 1;
@@ -1621,7 +1621,7 @@ void sqlite3Pragma(
           /* Validate index entries for the current row */
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
             int jmp2, jmp3, jmp4, jmp5;
-            int ckUniq = sqlite3VdbeMakeLabel(v);
+            int ckUniq = sqlite3VdbeMakeLabel(pParse);
             if( pPk==pIdx ) continue;
             r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3,
                                          pPrior, r1);
@@ -1642,7 +1642,7 @@ void sqlite3Pragma(
             ** current key.  The entry is unique if (1) any column is NULL
             ** or (2) the next entry has a different key */
             if( IsUniqueIndex(pIdx) ){
-              int uniqOk = sqlite3VdbeMakeLabel(v);
+              int uniqOk = sqlite3VdbeMakeLabel(pParse);
               int jmp6;
               int kk;
               for(kk=0; kk<pIdx->nKeyCol; kk++){

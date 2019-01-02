@@ -156,12 +156,11 @@ typedef struct VdbeOpList VdbeOpList;
 #endif
 
 /*
-** The following macro converts a relative address in the p2 field
-** of a VdbeOp structure into a negative number so that 
-** sqlite3VdbeAddOpList() knows that the address is relative.  Calling
-** the macro again restores the address.
+** The following macro converts a label returned by sqlite3VdbeMakeLabel()
+** into an index into the Parse.aLabel[] array that contains the resolved
+** address of that label.
 */
-#define ADDR(X)  (-1-(X))
+#define ADDR(X)  (~(X))
 
 /*
 ** The makefile scans the vdbe.c source file and creates the "opcodes.h"
@@ -215,6 +214,12 @@ VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 # define ExplainQueryPlan(P)
 # define ExplainQueryPlanPop(P)
 # define ExplainQueryPlanParent(P) 0
+# define sqlite3ExplainBreakpoint(A,B) /*no-op*/
+#endif
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_EXPLAIN)
+  void sqlite3ExplainBreakpoint(const char*,const char*);
+#else
+# define sqlite3ExplainBreakpoint(A,B) /*no-op*/
 #endif
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
@@ -230,7 +235,7 @@ void sqlite3VdbeAppendP4(Vdbe*, void *pP4, int p4type);
 void sqlite3VdbeSetP4KeyInfo(Parse*, Index*);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
-int sqlite3VdbeMakeLabel(Vdbe*);
+int sqlite3VdbeMakeLabel(Parse*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeReusable(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);

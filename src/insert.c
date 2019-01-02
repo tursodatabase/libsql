@@ -866,7 +866,7 @@ void sqlite3Insert(
 
   /* Run the BEFORE and INSTEAD OF triggers, if there are any
   */
-  endOfLoop = sqlite3VdbeMakeLabel(v);
+  endOfLoop = sqlite3VdbeMakeLabel(pParse);
   if( tmask & TRIGGER_BEFORE ){
     int regCols = sqlite3GetTempRange(pParse, pTab->nCol+1);
 
@@ -1356,7 +1356,7 @@ void sqlite3GenerateConstraintChecks(
     switch( onError ){
       case OE_Replace: {
         assert( onError==OE_Replace );
-        addr1 = sqlite3VdbeMakeLabel(v);
+        addr1 = sqlite3VdbeMakeLabel(pParse);
         sqlite3VdbeAddOp2(v, OP_NotNull, regNewData+1+i, addr1);
           VdbeCoverage(v);
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
@@ -1407,7 +1407,7 @@ void sqlite3GenerateConstraintChecks(
         ** updated so there is no point it verifying the check constraint */
         continue;
       }
-      allOk = sqlite3VdbeMakeLabel(v);
+      allOk = sqlite3VdbeMakeLabel(pParse);
       sqlite3VdbeVerifyAbortable(v, onError);
       sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
@@ -1474,7 +1474,7 @@ void sqlite3GenerateConstraintChecks(
   ** exist in the table.
   */
   if( pkChng && pPk==0 ){
-    int addrRowidOk = sqlite3VdbeMakeLabel(v);
+    int addrRowidOk = sqlite3VdbeMakeLabel(pParse);
 
     /* Figure out what action to take in case of a rowid collision */
     onError = pTab->keyConf;
@@ -1624,7 +1624,7 @@ void sqlite3GenerateConstraintChecks(
       VdbeComment((v, "Skip upsert subroutine"));
       sqlite3VdbeJumpHere(v, upsertJump);
     }else{
-      addrUniqueOk = sqlite3VdbeMakeLabel(v);
+      addrUniqueOk = sqlite3VdbeMakeLabel(pParse);
     }
     if( bAffinityDone==0 && (pUpIdx==0 || pUpIdx==pIdx) ){
       sqlite3TableAffinity(v, pTab, regNewData+1);

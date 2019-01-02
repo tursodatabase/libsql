@@ -1330,7 +1330,7 @@ static void windowReturnOneRow(
      || pFunc->zName==first_valueName
     ){
       int csr = pWin->csrApp;
-      int lbl = sqlite3VdbeMakeLabel(v);
+      int lbl = sqlite3VdbeMakeLabel(pParse);
       int tmpReg = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
 
@@ -1353,7 +1353,7 @@ static void windowReturnOneRow(
       int nArg = pWin->pOwner->x.pList->nExpr;
       int iEph = pMWin->iEphCsr;
       int csr = pWin->csrApp;
-      int lbl = sqlite3VdbeMakeLabel(v);
+      int lbl = sqlite3VdbeMakeLabel(pParse);
       int tmpReg = sqlite3GetTempReg(pParse);
 
       if( nArg<3 ){
@@ -1614,8 +1614,8 @@ static void windowCodeRowExprStep(
 
   /* Allocate register and label for the "flush_partition" sub-routine. */
   regFlushPart = ++pParse->nMem;
-  lblFlushPart = sqlite3VdbeMakeLabel(v);
-  lblFlushDone = sqlite3VdbeMakeLabel(v);
+  lblFlushPart = sqlite3VdbeMakeLabel(pParse);
+  lblFlushDone = sqlite3VdbeMakeLabel(pParse);
 
   regStart = ++pParse->nMem;
   regEnd = ++pParse->nMem;
@@ -1725,7 +1725,7 @@ static void windowCodeRowExprStep(
    || pMWin->eStart==TK_PRECEDING 
    || pMWin->eStart==TK_FOLLOWING 
   ){
-    int lblSkipInverse = sqlite3VdbeMakeLabel(v);;
+    int lblSkipInverse = sqlite3VdbeMakeLabel(pParse);;
     if( pMWin->eStart==TK_PRECEDING ){
       sqlite3VdbeAddOp3(v, OP_IfPos, regStart, lblSkipInverse, 1);
       VdbeCoverage(v);
@@ -1890,13 +1890,13 @@ static void windowCodeCacheStep(
        || (pMWin->eStart==TK_CURRENT && pMWin->eEnd==TK_UNBOUNDED) 
   );
 
-  lblEmpty = sqlite3VdbeMakeLabel(v);
+  lblEmpty = sqlite3VdbeMakeLabel(pParse);
   regNewPeer = pParse->nMem+1;
   pParse->nMem += nPeer;
 
   /* Allocate register and label for the "flush_partition" sub-routine. */
   regFlushPart = ++pParse->nMem;
-  lblFlushPart = sqlite3VdbeMakeLabel(v);
+  lblFlushPart = sqlite3VdbeMakeLabel(pParse);
 
   csrLead = pParse->nTab++;
   regCtr = ++pParse->nMem;
