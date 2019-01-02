@@ -4867,6 +4867,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     sqlite3_free(pCur->aOverflow);
     sqlite3_free(pCur->pKey);
     sqlite3BtreeLeave(pBtree);
+    pCur->pBtree = 0;
   }
   return SQLITE_OK;
 }

@@ -124,7 +124,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm, Expr *pInto){
   }
   if( iDb!=1 ){
     int iIntoReg = 0;
-    if( pInto ){
+    if( pInto && sqlite3ResolveSelfReference(pParse,0,0,pInto,0)==0 ){
       iIntoReg = ++pParse->nMem;
       sqlite3ExprCode(pParse, pInto, iIntoReg);
     }

@@ -545,6 +545,7 @@ static int sqlite3Prepare(
     sParse.disableLookaside++;
     db->lookaside.bDisable++;
   }
+  sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that

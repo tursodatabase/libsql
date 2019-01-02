@@ -1,0 +1,69 @@
+# 2018 Dec 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains fault injection tests designed to test the concurrent
+# transactions feature.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+set testprefix concfault2
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE TABLE t2(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(randomblob(1000), randomblob(100));
+  INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+  INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+  INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+  INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+  DELETE FROM t1 WHERE rowid%2;
+} {wal2}
+
+do_test 1.1 {
+  list [expr [file size test.db-wal]>75000] [file size test.db-shm]
+} {1 32768}
+
+faultsim_save_and_close
+
+do_faultsim_test 1 -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    SELECT * FROM t1;
+    BEGIN CONCURRENT;
+      INSERT INTO t2 VALUES(1, 2);
+  }
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA journal_size_limit = 10000;
+    INSERT INTO t1 VALUES(randomblob(1000), randomblob(1000));
+  } db2
+  db2 close
+} -body {
+  execsql { COMMIT }
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql { ROLLBACK }
+  set res [catchsql { SELECT count(*) FROM t1 }]
+  if {$res!="0 9"} { error "expected {0 9} got {$res}" }
+  faultsim_integrity_check
+}
+
+finish_test
+

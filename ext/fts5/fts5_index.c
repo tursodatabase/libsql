@@ -690,6 +690,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
         pRet = 0;
       }else{
         /* TODO1: Fix this */
+        pRet->p[nByte] = 0x00;
         pRet->szLeaf = fts5GetU16(&pRet->p[2]);
       }
     }
@@ -729,7 +730,8 @@ static int fts5IndexPrepareStmt(
   if( p->rc==SQLITE_OK ){
     if( zSql ){
       p->rc = sqlite3_prepare_v3(p->pConfig->db, zSql, -1,
-                                 SQLITE_PREPARE_PERSISTENT, ppStmt, 0);
+          SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB,
+          ppStmt, 0);
     }else{
       p->rc = SQLITE_NOMEM;
     }
@@ -770,23 +772,12 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
   if( p->rc!=SQLITE_OK ) return;
 
   if( p->pDeleter==0 ){
-    int rc;
     Fts5Config *pConfig = p->pConfig;
     char *zSql = sqlite3_mprintf(
         "DELETE FROM '%q'.'%q_data' WHERE id>=? AND id<=?", 
           pConfig->zDb, pConfig->zName
     );
-    if( zSql==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      rc = sqlite3_prepare_v3(pConfig->db, zSql, -1,
-                              SQLITE_PREPARE_PERSISTENT, &p->pDeleter, 0);
-      sqlite3_free(zSql);
-    }
-    if( rc!=SQLITE_OK ){
-      p->rc = rc;
-      return;
-    }
+    if( fts5IndexPrepareStmt(p, &p->pDeleter, zSql) ) return;
   }
 
   sqlite3_bind_int64(p->pDeleter, 1, iFirst);
@@ -869,6 +860,11 @@ static int fts5StructureDecode(
   ** structure record.  */
   i += fts5GetVarint32(&pData[i], nLevel);
   i += fts5GetVarint32(&pData[i], nSegment);
+  if( nLevel>FTS5_MAX_SEGMENT   || nLevel<0
+   || nSegment>FTS5_MAX_SEGMENT || nSegment<0
+  ){
+    return FTS5_CORRUPT;
+  }
   nByte = (
       sizeof(Fts5Structure) +                    /* Main structure */
       sizeof(Fts5StructureLevel) * (nLevel-1)    /* aLevel[] array */
@@ -891,25 +887,35 @@ static int fts5StructureDecode(
       }else{
         i += fts5GetVarint32(&pData[i], pLvl->nMerge);
         i += fts5GetVarint32(&pData[i], nTotal);
-        assert( nTotal>=pLvl->nMerge );
+        if( nTotal<pLvl->nMerge ) rc = FTS5_CORRUPT;
         pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&rc, 
             nTotal * sizeof(Fts5StructureSegment)
         );
+        nSegment -= nTotal;
       }
 
       if( rc==SQLITE_OK ){
         pLvl->nSeg = nTotal;
         for(iSeg=0; iSeg<nTotal; iSeg++){
+          Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
           if( i>=nData ){
             rc = FTS5_CORRUPT;
             break;
           }
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].iSegid);
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
+          i += fts5GetVarint32(&pData[i], pSeg->iSegid);
+          i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
+          i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);
+          if( pSeg->pgnoLast<pSeg->pgnoFirst ){
+            rc = FTS5_CORRUPT;
+            break;
+          }
         }
+        if( iLvl>0 && pLvl[-1].nMerge && nTotal==0 ) rc = FTS5_CORRUPT;
+        if( iLvl==nLevel-1 && pLvl->nMerge ) rc = FTS5_CORRUPT;
       }
     }
+    if( nSegment!=0 && rc==SQLITE_OK ) rc = FTS5_CORRUPT;
+
     if( rc!=SQLITE_OK ){
       fts5StructureRelease(pRet);
       pRet = 0;
@@ -1647,12 +1653,13 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   int nNew;                       /* Bytes of new data */
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
-  if( iOff+nNew>pIter->pLeaf->nn ){
+  if( iOff+nNew>pIter->pLeaf->nn || nKeep>pIter->term.n ){
     p->rc = FTS5_CORRUPT;
     return;
   }
   pIter->term.n = nKeep;
   fts5BufferAppendBlob(&p->rc, &pIter->term, nNew, &a[iOff]);
+  assert( pIter->term.n<=pIter->term.nSpace );
   iOff += nNew;
   pIter->iTermLeafOffset = iOff;
   pIter->iTermLeafPgno = pIter->iLeafPgno;
@@ -1717,7 +1724,7 @@ static void fts5SegIterInit(
   if( p->rc==SQLITE_OK ){
     pIter->iLeafOffset = 4;
     assert_nc( pIter->pLeaf->nn>4 );
-    assert( fts5LeafFirstTermOff(pIter->pLeaf)==4 );
+    assert_nc( fts5LeafFirstTermOff(pIter->pLeaf)==4 );
     pIter->iPgidxOff = pIter->pLeaf->szLeaf+1;
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
@@ -2306,6 +2313,7 @@ static void fts5LeafSeek(
         iPgidx += fts5GetVarint32(&pIter->pLeaf->p[iPgidx], iOff);
         if( iOff<4 || iOff>=pIter->pLeaf->szLeaf ){
           p->rc = FTS5_CORRUPT;
+          return;
         }else{
           nKeep = 0;
           iTermOff = iOff;
@@ -2318,8 +2326,11 @@ static void fts5LeafSeek(
   }
 
  search_success:
-
   pIter->iLeafOffset = iOff + nNew;
+  if( pIter->iLeafOffset>n ){
+    p->rc = FTS5_CORRUPT;
+    return;
+  }
   pIter->iTermLeafOffset = pIter->iLeafOffset;
   pIter->iTermLeafPgno = pIter->iLeafPgno;
 
@@ -3574,23 +3585,23 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
           int iId = pStruct->aLevel[iLvl].aSeg[iSeg].iSegid;
           if( iId<=FTS5_MAX_SEGMENT ){
-            aUsed[(iId-1) / 32] |= 1 << ((iId-1) % 32);
+            aUsed[(iId-1) / 32] |= (u32)1 << ((iId-1) % 32);
           }
         }
       }
 
       for(i=0; aUsed[i]==0xFFFFFFFF; i++);
       mask = aUsed[i];
-      for(iSegid=0; mask & (1 << iSegid); iSegid++);
+      for(iSegid=0; mask & ((u32)1 << iSegid); iSegid++);
       iSegid += 1 + i*32;
 
 #ifdef SQLITE_DEBUG
       for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
-          assert( iSegid!=pStruct->aLevel[iLvl].aSeg[iSeg].iSegid );
+          assert_nc( iSegid!=pStruct->aLevel[iLvl].aSeg[iSeg].iSegid );
         }
       }
-      assert( iSegid>0 && iSegid<=FTS5_MAX_SEGMENT );
+      assert_nc( iSegid>0 && iSegid<=FTS5_MAX_SEGMENT );
 
       {
         sqlite3_stmt *pIdxSelect = fts5IdxSelectStmt(p);
@@ -3598,7 +3609,7 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
           u8 aBlob[2] = {0xff, 0xff};
           sqlite3_bind_int(pIdxSelect, 1, iSegid);
           sqlite3_bind_blob(pIdxSelect, 2, aBlob, 2, SQLITE_STATIC);
-          assert( sqlite3_step(pIdxSelect)!=SQLITE_ROW );
+          assert_nc( sqlite3_step(pIdxSelect)!=SQLITE_ROW );
           p->rc = sqlite3_reset(pIdxSelect);
           sqlite3_bind_null(pIdxSelect, 2);
         }
@@ -3899,6 +3910,7 @@ static void fts5WriteAppendTerm(
   int nPrefix;                    /* Bytes of prefix compression for term */
   Fts5PageWriter *pPage = &pWriter->writer;
   Fts5Buffer *pPgidx = &pWriter->writer.pgidx;
+  int nMin = MIN(pPage->term.n, nTerm);
 
   assert( p->rc==SQLITE_OK );
   assert( pPage->buf.n>=4 );
@@ -3940,13 +3952,13 @@ static void fts5WriteAppendTerm(
       ** inefficient, but still correct.  */
       int n = nTerm;
       if( pPage->term.n ){
-        n = 1 + fts5PrefixCompress(pPage->term.n, pPage->term.p, pTerm);
+        n = 1 + fts5PrefixCompress(nMin, pPage->term.p, pTerm);
       }
       fts5WriteBtreeTerm(p, pWriter, n, pTerm);
       pPage = &pWriter->writer;
     }
   }else{
-    nPrefix = fts5PrefixCompress(pPage->term.n, pPage->term.p, pTerm);
+    nPrefix = fts5PrefixCompress(nMin, pPage->term.p, pTerm);
     fts5BufferAppendVarint(&p->rc, &pPage->buf, nPrefix);
   }
 
@@ -5864,7 +5876,7 @@ static void fts5IndexIntegrityCheckSegment(
 
       iOff = fts5LeafFirstTermOff(pLeaf);
       iRowidOff = fts5LeafFirstRowidOff(pLeaf);
-      if( iRowidOff>=iOff ){
+      if( iRowidOff>=iOff || iOff>=pLeaf->szLeaf ){
         p->rc = FTS5_CORRUPT;
       }else{
         iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
@@ -6279,8 +6291,7 @@ static void fts5DecodeFunction(
   nSpace = n + FTS5_DATA_ZERO_PADDING;
   a = (u8*)sqlite3Fts5MallocZero(&rc, nSpace);
   if( a==0 ) goto decode_out;
-  memcpy(a, aBlob, n);
-
+  if( n>0 ) memcpy(a, aBlob, n);
 
   fts5DecodeRowid(iRowid, &iSegid, &bDlidx, &iHeight, &iPgno);
 

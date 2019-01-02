@@ -20,7 +20,7 @@ ifcapable {!trigger} {
 
 
 foreach {tn sql log} {
-  1 { } { }
+  1 {} {}
 
   2 { 
     CREATE TRIGGER trd AFTER DELETE ON t1 BEGIN

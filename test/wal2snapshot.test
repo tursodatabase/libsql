@@ -67,8 +67,18 @@ foreach {tn mode} {1 wal 2 wal2} {
       execsql COMMIT
     } {}
   } else {
-    do_test 2.6 {
+
+    do_test 2.6.1 {
       execsql BEGIN
+      set res [
+        list [catch { sqlite3_snapshot_open_blob db main $SNAPSHOT } msg] $msg
+      ]
+      execsql COMMIT
+      set res
+    } {1 SQLITE_ERROR}
+    do_test 2.6.2 {
+      execsql BEGIN
+      execsql {SELECT * FROM sqlite_master}
       set res [
         list [catch { sqlite3_snapshot_open_blob db main $SNAPSHOT } msg] $msg
       ]

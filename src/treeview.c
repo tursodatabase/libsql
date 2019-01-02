@@ -138,7 +138,8 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3_str_appendf(&x, " %s", pItem->zName);
     }
     if( pItem->pTab ){
-      sqlite3_str_appendf(&x, " tabname=%Q", pItem->pTab->zName);
+      sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p",
+           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab);
     }
     if( pItem->zAlias ){
       sqlite3_str_appendf(&x, " (AS %s)", pItem->zAlias);

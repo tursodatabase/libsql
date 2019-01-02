@@ -220,6 +220,49 @@ foreach {tn nCkpt1 nCkpt2 res} [list \
   db2 close
 }
 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 1.8.1 {
+  PRAGMA autovacuum = 0;
+  PRAGMA page_size = 4096;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(x);
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t1 SELECT i FROM s;
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t2 SELECT i FROM s;
+
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 10000;
+
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t2 SELECT i FROM s;
+} {wal2 10000}
+
+do_test 1.8.2 {
+  list [file size test.db-wal] [file size test.db-wal2]
+} {24752 0}
+
+do_execsql_test 1.8.3 { PRAGMA user_version = 123 }
+do_test 1.8.4 {
+  list [file size test.db-wal] [file size test.db-wal2]
+} {24752 4152}
+
+do_test 1.8.5 {
+  hexio_write test.db-wal2 [expr 56+16] 0400
+  fix_wal_cksums test.db-wal2
+} {}
+
+do_test 1.8.6 {
+  forcecopy test.db test.db2
+  forcecopy test.db-wal test.db2-wal
+  forcecopy test.db-wal2 test.db2-wal2
+  sqlite3 db2 test.db2
+  catchsql { SELECT * FROM sqlite_master } db2
+} {1 {database disk image is malformed}}
+db2 close
+
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 1.0 {

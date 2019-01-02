@@ -1174,7 +1174,7 @@ foreach {tn pgsz works} {
   9  32768    1
  10  65536    1
  11 131072    0
- 11   1016    0
+ 12   1016    0
 } {
 
   if {$::SQLITE_MAX_PAGE_SIZE < $pgsz} {
@@ -1184,14 +1184,14 @@ foreach {tn pgsz works} {
   for {set pg 1} {$pg <= 3} {incr pg} {
     forcecopy testX.db test.db
     forcedelete test.db-wal
-  
+
     # Check that the database now exists and consists of three pages. And
     # that there is no associated wal file.
     #
     do_test wal-18.2.$tn.$pg.1 { file exists test.db-wal } 0
     do_test wal-18.2.$tn.$pg.2 { file exists test.db } 1
     do_test wal-18.2.$tn.$pg.3 { file size test.db } [expr 1024*3]
-  
+
     do_test wal-18.2.$tn.$pg.4 {
 
       # Create a wal file that contains a single frame (database page
@@ -1223,16 +1223,16 @@ foreach {tn pgsz works} {
       puts -nonewline $fd $framehdr
       puts -nonewline $fd $framebody
       close $fd
-  
+
       file size test.db-wal
     } [wal_file_size 1 $pgsz]
-  
+
     do_test wal-18.2.$tn.$pg.5 {
       sqlite3 db test.db
       set rc [catch { db one {PRAGMA integrity_check} } msg]
       expr { $rc!=0 || $msg!="ok" }
     } $works
-  
+ 
     db close
   }
 }

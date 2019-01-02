@@ -120,7 +120,7 @@ do_eqp_test 3.2.2 {
   |--MATERIALIZE xxxxxx
   |  |--SETUP
   |  |  |--SCAN CONSTANT ROW
-  |  |  `--SCALAR SUBQUERY
+  |  |  `--SCALAR SUBQUERY xxxxxx
   |  |     `--SCAN TABLE w2
   |  `--RECURSIVE STEP
   |     |--SCAN TABLE w1

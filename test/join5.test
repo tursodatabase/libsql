@@ -267,8 +267,10 @@ do_eqp_test 7.2 {
   QUERY PLAN
   |--SCAN TABLE t1
   `--MULTI-INDEX OR
-     |--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
-     `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+     |--INDEX 1
+     |  `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+     `--INDEX 2
+        `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
 }
 
 do_execsql_test 7.3 {

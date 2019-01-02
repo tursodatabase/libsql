@@ -4359,7 +4359,7 @@ static int unixShmSystemLock(
   assert( pShmNode->nRef>0 || unixMutexHeld() );
 
   /* Shared locks never span more than one byte */
-  /* assert( n==1 || lockType!=F_RDLCK ); */
+  assert( n==1 || lockType!=F_RDLCK );
 
   /* Locks are within range */
   assert( n>=1 && n<=SQLITE_SHM_NLOCK );
@@ -4856,11 +4856,7 @@ static int unixMutexFreeShmlock(
   };
 
   unixShm *p = pFd->pShm;               /* The shared memory being locked */
-  unixShm *pX;                          /* For looping over all siblings */
   unixShmNode *pShmNode = p->pShmNode;  /* The underlying file iNode */
-  int rc = SQLITE_OK;
-  int iIncr;
-  u16 mask;                             /* Mask of locks to take or release */
 
   if( flags & SQLITE_SHM_SHARED ){
     /* SHARED locks */
@@ -4880,26 +4876,34 @@ static int unixMutexFreeShmlock(
     }while( 0==unixCompareAndSwap(ptr, iOld, iNew) );
   }else{
     /* EXCLUSIVE locks */
-    int iFirst = aMap[ofst].iFirst;
-    int iLast = aMap[ofst+n].iFirst;
-    int i;
-    for(i=iFirst; i<iLast; i++){
-      u32 *ptr = &pShmNode->aMFSlot[i].nLock;
-      if( flags & SQLITE_SHM_UNLOCK ){
-        assert( (*ptr)==SQLITE_MFS_EXCLUSIVE );
-        *ptr = 0;
-      }else{
-        u32 iOld;
-        do {
-          iOld = *ptr;
-          if( iOld>0 ){
-            while( i>iFirst ){
-              i--;
-              pShmNode->aMFSlot[i].nLock = 0;
+    u16 mask = (1<<(ofst+n)) - (1<<ofst);
+    if( (flags & SQLITE_SHM_LOCK) || (mask & p->exclMask) ){
+      int iFirst = aMap[ofst].iFirst;
+      int iLast = aMap[ofst+n].iFirst;
+      int i;
+      for(i=iFirst; i<iLast; i++){
+        u32 *ptr = &pShmNode->aMFSlot[i].nLock;
+        if( flags & SQLITE_SHM_UNLOCK ){
+          assert( (*ptr)==SQLITE_MFS_EXCLUSIVE );
+          *ptr = 0;
+        }else{
+          u32 iOld;
+          do {
+            iOld = *ptr;
+            if( iOld>0 ){
+              while( i>iFirst ){
+                i--;
+                pShmNode->aMFSlot[i].nLock = 0;
+              }
+              return SQLITE_BUSY;
             }
-            return SQLITE_BUSY;
-          }
-        }while( 0==unixCompareAndSwap(ptr, iOld, SQLITE_MFS_EXCLUSIVE) );
+          }while( 0==unixCompareAndSwap(ptr, iOld, SQLITE_MFS_EXCLUSIVE) );
+        }
+      }
+      if( flags & SQLITE_SHM_UNLOCK ){
+        p->exclMask &= ~mask;
+      }else{
+        p->exclMask |= mask;
       }
     }
   }
@@ -4939,7 +4943,7 @@ static int unixShmLock(
        || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
        || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED)
        || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
-  /* assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 ); */
+  assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
   assert( pShmNode->hShm>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->hShm<0 || pDbFd->pInode->bProcessLock==0 );
 
@@ -4954,7 +4958,7 @@ static int unixShmLock(
     assert( !(flags&SQLITE_SHM_EXCLUSIVE) || !(p->exclMask&mask) );
   }else{
     assert( !(flags&SQLITE_SHM_SHARED) || (p->sharedMask&mask)==mask );
-    assert( !(flags&SQLITE_SHM_EXCLUSIVE) || (p->exclMask&mask)==mask );
+    /* assert( !(flags&SQLITE_SHM_EXCLUSIVE) || (p->exclMask&mask)==mask ); */
   }
 
   sqlite3_mutex_enter(pShmNode->pShmMutex);

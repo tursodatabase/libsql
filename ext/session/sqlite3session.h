@@ -337,6 +337,19 @@ int sqlite3session_fullchangeset(
 );
 
 /*
+** CAPI3REF: Generate A Full Changeset From A Session Object
+**
+** This function is similar to sqlite3session_changeset(), except that for
+** each row affected by an UPDATE statement, all old.* values are recorded
+** as part of the changeset, not just those modified.
+*/
+int sqlite3session_fullchangeset(
+  sqlite3_session *pSession,      /* Session object */
+  int *pnChangeset,               /* OUT: Size of buffer at *ppChangeset */
+  void **ppChangeset              /* OUT: Buffer containing changeset */
+);
+
+/*
 ** CAPI3REF: Load The Difference Between Tables Into A Session
 ** METHOD: sqlite3_session
 **
@@ -561,7 +574,7 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** sqlite3changeset_next() is called on the iterator or until the 
 ** conflict-handler function returns. If pnCol is not NULL, then *pnCol is 
 ** set to the number of columns in the table affected by the change. If
-** pbIncorrect is not NULL, then *pbIndirect is set to true (1) if the change
+** pbIndirect is not NULL, then *pbIndirect is set to true (1) if the change
 ** is an indirect change, or false (0) otherwise. See the documentation for
 ** [sqlite3session_indirect()] for a description of direct and indirect
 ** changes. Finally, if pOp is not NULL, then *pOp is set to one of 

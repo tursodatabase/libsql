@@ -378,7 +378,7 @@ static int fts5tokFilterMethod(
     if( pCsr->zInput==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      memcpy(pCsr->zInput, zByte, nByte);
+      if( nByte>0 ) memcpy(pCsr->zInput, zByte, nByte);
       pCsr->zInput[nByte] = 0;
       rc = pTab->tok.xTokenize(
           pTab->pTok, (void*)pCsr, 0, zByte, nByte, fts5tokCb

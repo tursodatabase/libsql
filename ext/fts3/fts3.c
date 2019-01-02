@@ -338,7 +338,7 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 }
 
 #define GETVARINT_STEP(v, ptr, shift, mask1, mask2, var, ret) \
-  v = (v & mask1) | ( (*ptr++) << shift );                    \
+  v = (v & mask1) | ( (*(ptr++)) << shift );  \
   if( (v & mask2)==0 ){ var = v; return ret; }
 #define GETVARINT_INIT(v, ptr, shift, mask1, mask2, var, ret) \
   v = (*ptr++);                                               \
@@ -376,20 +376,21 @@ int sqlite3Fts3GetVarint(const char *pBuf, sqlite_int64 *v){
 ** a non-negative 32-bit integer before it is returned.
 */
 int sqlite3Fts3GetVarint32(const char *p, int *pi){
+  const unsigned char *ptr = (const unsigned char*)p;
   u32 a;
 
 #ifndef fts3GetVarint32
-  GETVARINT_INIT(a, p, 0,  0x00,     0x80, *pi, 1);
+  GETVARINT_INIT(a, ptr, 0,  0x00,     0x80, *pi, 1);
 #else
-  a = (*p++);
+  a = (*ptr++);
   assert( a & 0x80 );
 #endif
 
-  GETVARINT_STEP(a, p, 7,  0x7F,     0x4000, *pi, 2);
-  GETVARINT_STEP(a, p, 14, 0x3FFF,   0x200000, *pi, 3);
-  GETVARINT_STEP(a, p, 21, 0x1FFFFF, 0x10000000, *pi, 4);
+  GETVARINT_STEP(a, ptr, 7,  0x7F,     0x4000, *pi, 2);
+  GETVARINT_STEP(a, ptr, 14, 0x3FFF,   0x200000, *pi, 3);
+  GETVARINT_STEP(a, ptr, 21, 0x1FFFFF, 0x10000000, *pi, 4);
   a = (a & 0x0FFFFFFF );
-  *pi = (int)(a | ((u32)(*p & 0x07) << 28));
+  *pi = (int)(a | ((u32)(*ptr & 0x07) << 28));
   assert( 0==(a & 0x80000000) );
   assert( *pi>=0 );
   return 5;

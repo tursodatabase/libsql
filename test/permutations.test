@@ -440,10 +440,17 @@ walprotocol.test walro2.test walrofault.test walro.test
 walshared.test walslow.test wal.test
 wal2savepoint.test wal2lock.test wal2recover2.test
 
-wal2concurrent.test
-concurrent.test concurrent2.test concurrent3.test
-concurrent4.test concurrent5.test concurrent6.test
-concurrent7.test
+  wal2concurrent.test
+  concurrent.test concurrent2.test concurrent3.test
+  concurrent4.test concurrent5.test concurrent6.test
+  concurrent7.test
+  concfault.test concfault2.test
+
+  walvfs.test walfault2.test nockpt.test
+  snapshot2.test snapshot3.test snapshot4.test
+  snapshot_fault.test snapshot.test snapshot_up.test
+  walcrash2.test walcrash3.test walcrash4.test walcrash.test
+  wal2fault.test
 } 
 
 test_suite "coverage-pager" -description {

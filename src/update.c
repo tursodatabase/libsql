@@ -452,7 +452,7 @@ void sqlite3Update(
 #endif
 
   /* Jump to labelBreak to abandon further processing of this UPDATE */
-  labelContinue = labelBreak = sqlite3VdbeMakeLabel(v);
+  labelContinue = labelBreak = sqlite3VdbeMakeLabel(pParse);
 
   /* Not an UPSERT.  Normal processing.  Begin by
   ** initialize the count of updated rows */
@@ -587,13 +587,13 @@ void sqlite3Update(
         VdbeCoverage(v);
       }
       if( eOnePass!=ONEPASS_SINGLE ){
-        labelContinue = sqlite3VdbeMakeLabel(v);
+        labelContinue = sqlite3VdbeMakeLabel(pParse);
       }
       sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
       VdbeCoverageIf(v, pPk==0);
       VdbeCoverageIf(v, pPk!=0);
     }else if( pPk ){
-      labelContinue = sqlite3VdbeMakeLabel(v);
+      labelContinue = sqlite3VdbeMakeLabel(pParse);
       sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
       addrTop = sqlite3VdbeAddOp2(v, OP_RowData, iEph, regKey);
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
