@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\ssecond\sand\ssubsequent\ssqlite3rbu_savestate()\scalls\smade\non\san\sRBU\svacuum\shandle.
-D 2019-01-03T15:17:01.041
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sCSV\sextension.
+D 2019-01-03T15:22:33.996
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -280,7 +280,7 @@ F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c
 F ext/misc/closure.c 9f8fa11aa6c6e2f6d7296ffa88f103df4b46abd9602bcab3ea2f8fc24f334f63
 F ext/misc/completion.c cec672d40604075bb341a7f11ac48393efdcd90a979269b8fe7977ea62d0547f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
-F ext/misc/csv.c a8e779a3a0039abecddc6784095cc875d820ea65dcda158daa13e6b43d966e0f
+F ext/misc/csv.c 7f047aeb68f5802e7ce6639292095d622a488bb43526ed04810e0649faa71ceb
 F ext/misc/dbdump.c 12389a10c410fadf1e68eeb382def92d5a7fa9ce7cce4fb86a736fa2bac1000a
 F ext/misc/eval.c 6ea9b22a5fa0dd973b67ca4e53555be177bc0b7b263aadf1024429457c82c0e3
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
@@ -1796,7 +1796,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 120cb1768338eb86412fb69d4c7677247775bb37875ab3a98766cffd535f04cf
-R 5d2fee07520201670f7bcc9f026ba340
-U dan
-Z b549416e8d4beb3bab9f7e64a67b786d
+P bef216dfa1456a787e3d9c74936ee1c6600827d4e252bd13e7a93046ce07469f
+R 5fe87606abb429d879a36751ce5f3990
+U drh
+Z b39dc78fd6c51051a3524b4af5c0cf88
