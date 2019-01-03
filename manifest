@@ -1,5 +1,5 @@
-C Fix\sthe\sshmlock.test\sscript\sso\sthat\sit\sworks\swith\sthe\sWindows\srestriction\nthat\sUnlockFile\smust\sexactly\scorrespond\sto\sa\sprior\sLockFile.
-D 2019-01-03T16:00:23.389
+C Fix\sthe\scsv01.test\smodule\sso\sthat\sit\sworks\son\ssystems\swith\s\\r\\n\sline\sendings.
+D 2019-01-03T16:03:48.841
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -769,7 +769,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/csv01.test 5b54e03d74c0e1966b841b0415062457569aacbe0f41962a41454ac01e8d4496
+F test/csv01.test c9c3af0d58c34e9ac970c5875a77939edb958762c8aafb95409e19a3f088b6cd
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
@@ -1796,7 +1796,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbcd72565f4425016cebbbf5dfd6aa510234cfb31c785cf364f04fff444aacae
-R 9111955e58c3bd4c245af61d1e729f5d
+P df939c89fa90b7f9ccf961027ca4eca4f987c49eabf530b5719a83e5ab0d346d
+R 7684241e97a177b5ac495e86afddcce9
 U drh
-Z f3364b198a836e6f6f5103c54a1093fa
+Z 5ac85448b0e42b193903bc8ffd8a40ba
