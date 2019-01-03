@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sunicode2\slogic\sof\sFTS3\sand\sFTS5.
-D 2019-01-02T23:49:47.898
+C Fix\sthe\sgeopoly_svg()\sfunction\sso\sthat\sit\sreturns\sNULL\swhen\sgiven\szero\narguments.
+D 2019-01-03T00:44:03.987
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -363,7 +363,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c d56ff997f2646b03be742eb85e8206f779d777f3a282fe0da576780ca0e11f20
+F ext/rtree/geopoly.c 603ec9b72cd70cf18541339b6c7d47f304ac0d84c50294be6c6c6ae35acdb0a6
 F ext/rtree/rtree.c fae9943b6b6f2bf6a4ddeb192d54fa6d19311119c1388406ef27cf6de38f34aa
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
@@ -1795,7 +1795,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0465d2fc0d3f8beaa1b6b0bd7bd51d69a524f30d889c9402e7d02cc06164a310
-R 6175d1d1d62ec23c0754be1efbdc53c2
+P 703029ac6d24860230a8c30fcbf5e7e1da619e84f1cc9b9e65ebc74879a184d2
+R 27ad789d0b8700d6a91681e7bac70229
 U drh
-Z 6e1c12cf9bbb16fe828167aa04e4f417
+Z e14ce0e496dd84038f55cf2afe147fcb
