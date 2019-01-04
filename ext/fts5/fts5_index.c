@@ -4009,7 +4009,7 @@ static void fts5WriteAppendRowid(
     if( pWriter->bFirstRowidInDoclist || pWriter->bFirstRowidInPage ){
       fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid);
     }else{
-      assert( p->rc || iRowid>pWriter->iPrevRowid );
+      assert_nc( p->rc || iRowid>pWriter->iPrevRowid );
       fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid - pWriter->iPrevRowid);
     }
     pWriter->iPrevRowid = iRowid;
