@@ -151,7 +151,7 @@ proc create_test_database {} {
 set ::tserver {}
 proc tserver_start {} {
   global O
-  set cmd "|$O(-tserver) -vfs unix "
+  set cmd "|$O(-tserver) -vfs unix-excl "
   if {$O(-mode)=="wal2"} {
     append cmd " -walautocheckpoint 0 "
   }

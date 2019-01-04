@@ -202,10 +202,13 @@ static int handle_some_sql(ClientCtx *p, const char *zSql, int nSql){
   return rc;
 }
 
+/*
+** Return a micro-seconds resolution timer.
+*/
 static sqlite3_int64 get_timer(void){
   struct timeval t;
   gettimeofday(&t, 0);
-  return ((sqlite3_int64)t.tv_usec / 1000) + ((sqlite3_int64)t.tv_sec * 1000);
+  return (sqlite3_int64)t.tv_usec + ((sqlite3_int64)t.tv_sec * 1000000);
 }
 
 static void clear_sql(ClientCtx *p){
@@ -238,6 +241,7 @@ static int handle_run_command(ClientCtx *p){
   int nBusy = 0;
   sqlite3_int64 t0 = get_timer();
   sqlite3_int64 t1 = t0;
+  sqlite3_int64 tCommit = 0;
   int nT1 = 0;
   int nTBusy1 = 0;
   int rc = SQLITE_OK;
@@ -245,7 +249,6 @@ static int handle_run_command(ClientCtx *p){
   pthread_mutex_lock(&g.ckpt_mutex);
   g.nRun++;
   pthread_mutex_unlock(&g.ckpt_mutex);
-
 
   for(j=0; (p->nRepeat<=0 || j<p->nRepeat) && rc==SQLITE_OK; j++){
     sqlite3_int64 t2;
@@ -257,12 +260,13 @@ static int handle_run_command(ClientCtx *p){
       ** the SQL statement (which is always "COMMIT" in this case). */
       if( p->aPrepare[i].flags & TSERVER_CLIENTSQL_MUTEX ){
         sqlite3_mutex_enter(g.commit_mutex);
+        tCommit -= get_timer();
       }
 
       /* Execute the statement */
       if( p->aPrepare[i].flags & TSERVER_CLIENTSQL_INTEGRITY ){
         sqlite3_step(pStmt);
-        if( sqlite3_stricmp("ok", sqlite3_column_text(pStmt, 0)) ){
+        if( sqlite3_stricmp("ok", (const char*)sqlite3_column_text(pStmt, 0)) ){
           send_message(p, "error - integrity_check failed: %s\n", 
               sqlite3_column_text(pStmt, 0)
           );
@@ -274,6 +278,7 @@ static int handle_run_command(ClientCtx *p){
 
       /* Relinquish the g.commit_mutex mutex if required. */
       if( p->aPrepare[i].flags & TSERVER_CLIENTSQL_MUTEX ){
+        tCommit += get_timer();
         sqlite3_mutex_leave(g.commit_mutex);
       }
 
@@ -293,18 +298,18 @@ static int handle_run_command(ClientCtx *p){
     }
 
     t2 = get_timer();
-    if( t2>=(t1+1000) ){
-      int nMs = (t2 - t1);
-      int nDone = (j+1 - nBusy - nT1);
+    if( t2>=(t1+1000000) ){
+      sqlite3_int64 nUs = (t2 - t1);
+      sqlite3_int64 nDone = (j+1 - nBusy - nT1);
 
       rc = send_message(
-          p, "(%d done @ %d per second, %d busy)\n", 
-          nDone, (1000*nDone + nMs/2) / nMs, nBusy - nTBusy1
-          );
+          p, "(%d done @ %lld per second, %d busy)\n", 
+          (int)nDone, (1000000*nDone + nUs/2) / nUs, nBusy - nTBusy1
+      );
       t1 = t2;
       nT1 = j+1 - nBusy;
       nTBusy1 = nBusy;
-      if( p->nSecond>0 && (p->nSecond*1000)<=t1-t0 ) break;
+      if( p->nSecond>0 && ((sqlite3_int64)p->nSecond*1000000)<=t1-t0 ) break;
     }
 
     /* Global checkpoint handling. */
@@ -336,10 +341,12 @@ static int handle_run_command(ClientCtx *p){
   }
 
   if( rc==SQLITE_OK ){
-    int nMs = (int)(get_timer() - t0);
+    int nMs = (get_timer() - t0) / 1000;
     send_message(p, "ok (%d/%d SQLITE_BUSY)\n", nBusy, j);
     if( p->nRepeat<=0 ){
-      send_message(p, "### ok %d busy %d ms %d\n", j-nBusy, nBusy, nMs);
+      send_message(p, "### ok %d busy %d ms %d commit-ms %d\n", 
+          j-nBusy, nBusy, nMs, (int)(tCommit / 1000)
+      );
     }
   }
   clear_sql(p);
