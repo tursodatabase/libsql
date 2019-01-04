@@ -1,5 +1,5 @@
-C Update\sthe\s"tserver"\sprogram\sto\sreport\sthe\samount\sof\stime\sspent\sin\sCOMMIT\ncommands.
-D 2019-01-04T17:12:28.743
+C Add\sthe\s"-external"\soption\sto\sthe\stserver_test.tcl\sprogram..
+D 2019-01-04T19:25:22.235
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -1795,7 +1795,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tserver.c 17b7f0b06f4e776e26220889941a86936b3c56ad18608baadc8faa00b7bd46ee
-F tool/tserver_test.tcl 15a3933a683322d7188415997f96b10fe05e1c17edf9d6a07189cbf3cbb86862
+F tool/tserver_test.tcl 64415a134749ac3f38c9abd2bb95c7387a9b44e5116419487fd008cff8a459db
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1823,7 +1823,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86685679b4cff94704fe4b52364f25f579d98ee725407cfe3bd2bbf7ecd651a8
-R a4de690f8f0864c8cb85d828dc4c1801
+P cf494b412c941704ff73b0d100c55eb9bd268ee156db88b3e60512d501689e8e
+R c70b50cfb3ffe4fcdc9b9549c94bc156
 U dan
-Z 79094d27a977c73ac7234af9077413ec
+Z feb2e7acf42a8b444d33a04f963f9c07

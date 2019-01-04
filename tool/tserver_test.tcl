@@ -17,6 +17,7 @@ set O(-writers)   1
 set O(-readers)   0
 set O(-integrity) 0
 set O(-verbose)   0
+set O(-external)   0
 
 
 proc error_out {err} {
@@ -37,6 +38,7 @@ proc usage {} {
   puts stderr "  -readers <number of reader clients>   (default: 0)"
   puts stderr "  -integrity <number of IC clients>     (default: 0)"
   puts stderr "  -verbose 0|1                          (default: 0)"
+  puts stderr "  -external 0|1                         (default: 0)"
   exit -1
 }
 
@@ -81,6 +83,8 @@ set O(-rows) [expr $O(-rows)]
 #
 proc create_test_database {} {
   global O
+
+  if {$O(-external)} return
 
   if {[file exists $O(-database)]} {
     sqlite3 db $O(-database)
@@ -151,6 +155,7 @@ proc create_test_database {} {
 set ::tserver {}
 proc tserver_start {} {
   global O
+  if {$O(-external)} return
   set cmd "|$O(-tserver) -vfs unix-excl "
   if {$O(-mode)=="wal2"} {
     append cmd " -walautocheckpoint 0 "
@@ -173,6 +178,8 @@ proc tserver_data {} {
 }
 
 proc tserver_stop {} {
+  global O
+  if {$O(-external)} return
   close $::tserver
   set fd [socket localhost 9999]
   puts $fd ".stop"
