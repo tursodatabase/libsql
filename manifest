@@ -1,5 +1,5 @@
-C If\sthe\s".open"\scommand\sfails\sin\sthe\sCLI,\sreopen\sto\s:memory:\sso\sthat\sat\sleast\nsome\sdatabase\sis\savailable\sfor\ssubsequent\scommands.
-D 2019-01-04T14:29:21.306
+C Give\sa\smeaningful\serror\son\san\sattempt\sto\suse\sUPSERT\son\sa\svirtual\stable,\nrather\sthan\ssimply\snot\sworking.
+D 2019-01-04T23:39:37.788
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -473,7 +473,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 1e0001758cd174177886cdfe23d69c6d6775f1c4e7fe946a041f1ef56ae85bc5
+F src/insert.c 1660fca0a94e173cb63e509b241202bc2f41d3170bfd675b310e366747313d5c
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 008f45dd39cdc7fb9e7e1f61d75a5c97397f8e07427a8879be23e27747d5f948
@@ -1131,7 +1131,7 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
 F test/misc5.test c4aeaa0fa28faa08f2485309c38db4719e6cd1364215d5687a5b96d340a3fa58
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 10d639a5e0fdf1bd51ad42be705393a38780ad71b6957110035a4e6c1e5e7f40
+F test/misc7.test 4f21954012e4eb0a923c54a311f38c81bf6798ccdd7b51584db46d4007f63daa
 F test/misc8.test 8fb0f31d7a8aed484d759773ab8ad12ec746a477f4a67394a4af0e677494c3ca
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 28a08d5cb5fb5b5702a46e19176e45e964e0800d1f894677169e79f34030e152
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 26275fc7e89eb2542a65d01fd271cef016a4a1815bc3845c599cf2f4fbf7513d
-R 652a3765ebc1306263cb8b5a1e383f8c
+P d7f55c62c3fa053b9b930a044b60076a8278cbf679d8e5116b95f2ff19247f6b
+R 5beb1ec8350b0a1a91f296d11cc5fd2c
 U drh
-Z 3910319573f9d65db9fc0dd31e1035b5
+Z 3cbeefd3dc1028babbc8cae8e545baa5

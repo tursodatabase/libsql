@@ -826,6 +826,11 @@ void sqlite3Insert(
   }
 #ifndef SQLITE_OMIT_UPSERT
   if( pUpsert ){
+    if( IsVirtual(pTab) ){
+      sqlite3ErrorMsg(pParse, "UPSERT not implemented for virtual table \"%s\"",
+              pTab->zName);
+      goto insert_cleanup;
+    }
     pTabList->a[0].iCursor = iDataCur;
     pUpsert->pUpsertSrc = pTabList;
     pUpsert->regData = regData;
