@@ -1,5 +1,5 @@
-C Remove\sdebugging\spragmas\saccidently\sleft\sin\sby\sa\sprior\schange.
-D 2019-01-04T12:46:01.579
+C If\sthe\s".open"\scommand\sfails\sin\sthe\sCLI,\sreopen\sto\s:memory:\sso\sthat\sat\sleast\nsome\sdatabase\sis\savailable\sfor\ssubsequent\scommands.
+D 2019-01-04T14:29:21.306
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -513,7 +513,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 5f2f987aacba7548d10781f808e1b933f80abe0b6bc8e9922bc18b1d1faba339
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 4b0be1bfd2d8668e2711f877682361e06b412c53ce7a56303f1f6978ec33eca8
-F src/shell.c.in 207da30342db0b6fac8b2487abd60b059a5ea80cc9494bd1db76a1dd4aae7cca
+F src/shell.c.in 0722a9e3a1b23674f07c194b8f71c953c775bad280e7f179a32bf72cd009b569
 F src/sqlite.h.in b54cd42d2f3b739a00de540cafe2dcd0de3b8e1748a2db33a68def487e9e602f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ccc4f7424bc8f37c168333091dd9e3d6f80ccff9e2b06f182df65be59a7e3349
-R 4716726c16649db3e4492e06f4ea0e14
+P 26275fc7e89eb2542a65d01fd271cef016a4a1815bc3845c599cf2f4fbf7513d
+R 652a3765ebc1306263cb8b5a1e383f8c
 U drh
-Z 74ad89f8eaeb20c98be9284b2189ab7e
+Z 3910319573f9d65db9fc0dd31e1035b5

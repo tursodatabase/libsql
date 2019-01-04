@@ -3871,7 +3871,10 @@ static void open_db(ShellState *p, int openFlags){
     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
       utf8_printf(stderr,"Error: unable to open database \"%s\": %s\n",
           p->zDbFilename, sqlite3_errmsg(p->db));
-      if( openFlags & OPEN_DB_KEEPALIVE ) return;
+      if( openFlags & OPEN_DB_KEEPALIVE ){
+        sqlite3_open(":memory:", &p->db);
+        return;
+      }
       exit(1);
     }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
