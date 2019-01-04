@@ -3634,7 +3634,7 @@ case OP_OpenDup: {
 ** the main database is read-only.  The ephemeral
 ** table is deleted automatically when the cursor is closed.
 **
-** If the cursor P1 is already opened on an ephermal table, the table
+** If the cursor P1 is already opened on an ephemeral table, the table
 ** is cleared (all content is erased).
 **
 ** P2 is the number of columns in the ephemeral table.

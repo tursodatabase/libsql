@@ -1,5 +1,5 @@
-C Fix\sanother\sfts5\sassert()\sthat\smay\sfail\sif\sthe\sdatabase\sis\scorrupt.
-D 2019-01-04T11:20:14.309
+C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.\s\sNo\sfunctional\schanges.
+D 2019-01-04T12:35:50.095
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -583,7 +583,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c d9eb0a6c4aae1b00a7369eadd7ca0bbe946cb4c953b6751aa20d357c2f482157
 F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
-F src/vdbe.c 98c7a06d1911e683ee0649979911483ce97fabfd758782be53e537b1d4655664
+F src/vdbe.c 66d077541de6c0d9bf131d8f8a20d5dec583131d48b8b3aa7c1a0a2bed6998fa
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c0eb839a3c23612b93002d2e1fbc41bf5db140775267989f85db52146144750b
-R 7fbc4bba2231ea4f7ecdd6bc8ef26dcf
-U dan
-Z 3e6ed3cf8814a63a4d6dd8efbef7b1b0
+P 0888fc2e881d56ccd5222383d1a08cdf16fbd15c40da7ebfc14346be69ffb26a
+R df3871aef79e360e9cb9830ce57745fc
+U drh
+Z 67a6b467f84ee61a1685902a10add770
