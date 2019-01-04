@@ -4967,8 +4967,8 @@ sqlite3_file *sqlite3WalFile(Wal *pWal){
 int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
   int rc = SQLITE_OK;
   if( pWal ){
-    *pnFrame = pWal->hdr.mxFrame;
     *pnPrior = pWal->nPriorFrame;
+    *pnFrame = walidxGetMxFrame(&pWal->hdr, walidxGetFile(&pWal->hdr));
   }
   return rc;
 }

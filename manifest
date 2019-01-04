@@ -1,5 +1,5 @@
-C Add\sthe\s"-external"\soption\sto\sthe\stserver_test.tcl\sprogram..
-D 2019-01-04T19:25:22.235
+C Fix\sthe\sexperimental\ssqlite3_wal_info()\sAPI\sso\sthat\sit\sworks\swith\swal2\smode.
+D 2019-01-04T19:39:04.787
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -597,7 +597,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 85bb10e593d54bd012d1cce25506172ff3e09cdda119d61ec4f254c9456d1a12
+F src/wal.c c620be7513ae34dc3c8c3c066aafb192730b561073048f2cde738f556f6ea041
 F src/wal.h c1a0f32c170634cf42908f8e978fa6bd8921f7364301fa34606cd171fce883b1
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 981412c27abb9378d3024eae6f3040abd3c16db722f5ef8a7d613141ea2aea78
@@ -1823,7 +1823,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf494b412c941704ff73b0d100c55eb9bd268ee156db88b3e60512d501689e8e
-R c70b50cfb3ffe4fcdc9b9549c94bc156
+P ae7c5ed15d5d549326bf570c8f03b49e8e601e7389bf8d702d0d7db0c0570ee8
+R c8312e5786119c8d77220079d208d0ab
 U dan
-Z feb2e7acf42a8b444d33a04f963f9c07
+Z afd9ab1a881ab06e4bdacaeec62cb9b4
