@@ -1,5 +1,5 @@
-C If\sthe\sOP_ParseSchema\sopcode\swith\sa\snon-NULL\sP4\soperand\sdoes\snot\sparse\sany\nrows\sout\sof\sthe\ssqlite_master\stable,\sthat\sindicates\sthat\sthe\ssqlite_master\ntable\sis\scorrupt,\sso\sraise\san\sSQLITE_CORRUPT\serror.
-D 2019-01-05T21:09:37.530
+C Add\sthe\sexprNodeCopy()\sroutine\sthat\swill\ssafely\smemcpy()\san\sExpr\snode\sthat\nmight\sbe\sa\ssize-reduced\snode.
+D 2019-01-05T21:56:12.090
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -464,7 +464,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 3c8bd4e77f0244fd2bd7cc90acf116ad2f8e82d70e536637f35ac2bc99b726f9
 F src/delete.c 209cd8345b15d1843abeff2d91a6d9c765cf32ff4abcb24411c38fe08e18baab
-F src/expr.c 18ce84bab19ef59eff99a54d83ebefd28dc10d17e617f35c730ff7c8bc2b6ee7
+F src/expr.c 9ad9c40a83c4218d79de19153b7a8ba7810564a123af7e09281927990bea2964
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c aaf28be73ab21e1e8bf4ac6b94269ebc8c93238d1e6997cb44b527b622e8ae6f
 F src/func.c 7c288b4ce309b5a8b8473514b88e1f8e69a80134509a8c0db8e39c858e367e7f
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 444c7c99beb9f8b82963e9784aa2be54124c7011f4771122b4f608c02aa26408
-R 8de40bf74ae55cb339d0834a33043a83
+P 598d7358e7329f0de6e3defc217665909e46874258ac29592ee2fd53e6411cda
+R edf6239ea759255e3950d6367e524f61
 U drh
-Z 0ecb0f548cba4686a2646d7c9efbc968
+Z 24d644d970444f08b00aecabd19ab2a7
