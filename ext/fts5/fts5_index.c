@@ -2437,7 +2437,7 @@ static void fts5SegIterSeekInit(
   **   4) the FTS5INDEX_QUERY_SCAN flag was set and the iterator points
   **      to an entry with a term greater than or equal to (pTerm/nTerm).
   */
-  assert( p->rc!=SQLITE_OK                                          /* 1 */
+  assert_nc( p->rc!=SQLITE_OK                                       /* 1 */
    || pIter->pLeaf==0                                               /* 2 */
    || fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)==0          /* 3 */
    || (bGe && fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)>0)  /* 4 */

@@ -588,7 +588,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
   Fts5Config *pConfig = p->pConfig;
   sqlite3_stmt *pScan = 0;
   Fts5InsertCtx ctx;
-  int rc;
+  int rc, rc2;
 
   memset(&ctx, 0, sizeof(Fts5InsertCtx));
   ctx.pStorage = p;
@@ -627,6 +627,8 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
     }
   }
   sqlite3_free(buf.p);
+  rc2 = sqlite3_reset(pScan);
+  if( rc==SQLITE_OK ) rc = rc2;
 
   /* Write the averages record */
   if( rc==SQLITE_OK ){
