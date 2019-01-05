@@ -5799,9 +5799,16 @@ case OP_ParseSchema: {
       assert( db->init.busy==0 );
       db->init.busy = 1;
       initData.rc = SQLITE_OK;
+      initData.nInitRow = 0;
       assert( !db->mallocFailed );
       rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
       if( rc==SQLITE_OK ) rc = initData.rc;
+      if( rc==SQLITE_OK && initData.nInitRow==0 ){
+        /* The OP_ParseSchema opcode with a non-NULL P4 argument should parse
+        ** at least one SQL statement. Any less than that indicates that
+        ** the sqlite_master table is corrupt. */
+        rc = SQLITE_CORRUPT_BKPT;
+      }
       sqlite3DbFreeNN(db, zSql);
       db->init.busy = 0;
     }

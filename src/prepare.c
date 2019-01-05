@@ -65,6 +65,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   UNUSED_PARAMETER2(NotUsed, argc);
   assert( sqlite3_mutex_held(db->mutex) );
   DbClearProperty(db, iDb, DB_Empty);
+  pData->nInitRow++;
   if( db->mallocFailed ){
     corruptSchema(pData, argv[0], 0);
     return 1;
@@ -176,6 +177,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   initData.rc = SQLITE_OK;
   initData.pzErrMsg = pzErrMsg;
   initData.mInitFlags = mFlags;
+  initData.nInitRow = 0;
   sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   if( initData.rc ){
     rc = initData.rc;
