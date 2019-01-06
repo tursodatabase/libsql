@@ -273,6 +273,16 @@ int sqlite3_blob_open(
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       VdbeOp *aOp;
 
+#ifdef SQLITE_DEBUG
+      char *zName;
+      zName = sqlite3MPrintf(db, "-- sqlite3_blob_open(%s,%s,%s)",
+                              zDb, zTable, zColumn);
+      if( zName ){
+        sqlite3VdbeSetSql(v, zName, (int)strlen(zName), 0);
+        sqlite3DbFree(db, zName);
+      }
+#endif
+
       sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, wrFlag, 
                            pTab->pSchema->schema_cookie,
                            pTab->pSchema->iGeneration);

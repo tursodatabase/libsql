@@ -1,5 +1,5 @@
-C Add\sthe\sexprNodeCopy()\sroutine\sthat\swill\ssafely\smemcpy()\san\sExpr\snode\sthat\nmight\sbe\sa\ssize-reduced\snode.
-D 2019-01-05T21:56:12.090
+C Give\ssymbolic\snames\sto\sthe\sspecial\sprepared\sstatements\sused\sto\simplement\nincremental\sblob\sI/O.
+D 2019-01-06T01:46:00.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -588,7 +588,7 @@ F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
 F src/vdbeaux.c b230f12642040c5ede19f092d9ad7510f75add84888e66a00108948dec574fd2
-F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
+F src/vdbeblob.c dfde9a1446e0d46f60310dc35d206080a247bfda5ac69512aa782834d4dc51ca
 F src/vdbemem.c 7b3305bc4a5139f4536ac9b5f61da0f915e49d2e3fdfa87dfdfa9d7aba8bc1e9
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
@@ -1797,7 +1797,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 598d7358e7329f0de6e3defc217665909e46874258ac29592ee2fd53e6411cda
-R edf6239ea759255e3950d6367e524f61
+P a874c649960ba2e2b2fd380d08c02a45884a1060d3922be8847729008ca6766e
+R 90806873de914885f9eb58e3d7cc15df
+T *branch * named-blob-I/O
+T *sym-named-blob-I/O *
+T -sym-trunk *
 U drh
-Z 24d644d970444f08b00aecabd19ab2a7
+Z 5275686e7a9802055cfb639c46292fd0
