@@ -1,5 +1,5 @@
-C Add\sthe\sexprNodeCopy()\sroutine\sthat\swill\ssafely\smemcpy()\san\sExpr\snode\sthat\nmight\sbe\sa\ssize-reduced\snode.
-D 2019-01-05T21:56:12.090
+C The\spage\ssize\sbecomes\sfixed\sas\ssoon\sas\spage1\sfrom\sa\snon-empty\sdatabase\sfile\nis\sread.
+D 2019-01-06T02:06:31.916
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -453,7 +453,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 11c18d6d4b23570602d6d99db681d5c431917cab9f4321d87c7c31cd583f2964
+F src/btree.c 9632272d3c41c7dab61bd96ae419ee5786b7b49cb14dc75a5550b20758c08893
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c 5ca38181e826bcc35e0176c31a691d897ed0cc708fc935fd51e8023705cdcf1a
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 598d7358e7329f0de6e3defc217665909e46874258ac29592ee2fd53e6411cda
-R edf6239ea759255e3950d6367e524f61
+P a874c649960ba2e2b2fd380d08c02a45884a1060d3922be8847729008ca6766e
+R 80813d325e813398099f00570b3e6669
 U drh
-Z 24d644d970444f08b00aecabd19ab2a7
+Z 17d05c9142605382fe42e262b919a21f
