@@ -191,6 +191,9 @@ pub enum DatabaseName<'a> {
     Attached(&'a str),
 }
 
+// Currently DatabaseName is only used by the backup and blob mods, so hide
+// this (private) impl to avoid dead code warnings.
+#[cfg(any(feature = "backup", feature = "blob", feature = "bundled"))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};
@@ -593,13 +596,7 @@ impl Connection {
     /// The underlying SQLite database connection handle will not be closed when
     /// the returned connection is dropped/closed.
     pub unsafe fn from_handle(db: *mut ffi::sqlite3) -> Result<Connection> {
-        let db_name = DatabaseName::Main.to_cstring()?;
-        let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
-        let db_path = if db_filename.is_null() {
-            None
-        } else {
-            CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
-        };
+        let db_path = db_filename(db);
         let db = InnerConnection::new(db, false);
         Ok(Connection {
             db: RefCell::new(db),
@@ -1100,6 +1097,21 @@ impl Drop for InnerConnection {
             }
         }
     }
+}
+
+#[cfg(feature = "bundled")] // 3.7.10
+unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
+    let db_name = DatabaseName::Main.to_cstring().unwrap();
+    let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
+    if db_filename.is_null() {
+        None
+    } else {
+        CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
+    }
+}
+#[cfg(not(feature = "bundled"))]
+unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
+    None
 }
 
 #[cfg(test)]
