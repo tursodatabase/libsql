@@ -483,7 +483,8 @@ int sqlite3Fts5HashQuery(
 
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     zKey = fts5EntryKey(p);
-    if( memcmp(zKey, pTerm, nTerm)==0 && zKey[nTerm]==0 ) break;
+    assert( p->nKey+1==(int)strlen(zKey) );
+    if( nTerm==p->nKey+1 && memcmp(zKey, pTerm, nTerm)==0 ) break;
   }
 
   if( p ){
