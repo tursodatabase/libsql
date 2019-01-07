@@ -1712,7 +1712,11 @@ void sqlite3GenerateConstraintChecks(
     **   (3) There are no secondary indexes on the table
     **   (4) No delete triggers need to be fired if there is a conflict
     **   (5) No FK constraint counters need to be updated if a conflict occurs.
-    */ 
+    **
+    ** This is not possible for ENABLE_PREUPDATE_HOOK builds, as the row
+    ** must be explicitly deleted in order to ensure any pre-update hook
+    ** is invoked.  */ 
+#ifndef SQLITE_ENABLE_PREUPDATE_HOOK
     if( (ix==0 && pIdx->pNext==0)                   /* Condition 3 */
      && pPk==pIdx                                   /* Condition 2 */
      && onError==OE_Replace                         /* Condition 1 */
@@ -1724,6 +1728,7 @@ void sqlite3GenerateConstraintChecks(
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;
     }
+#endif /* ifndef SQLITE_ENABLE_PREUPDATE_HOOK */
 
     /* Check to see if the new index entry will be unique */
     sqlite3VdbeVerifyAbortable(v, onError);
