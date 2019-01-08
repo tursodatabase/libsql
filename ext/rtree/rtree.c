@@ -717,7 +717,6 @@ static int nodeAcquire(
       pNode->pNext = 0;
       rc = sqlite3_blob_read(pRtree->pNodeBlob, pNode->zData,
                              pRtree->iNodeSize, 0);
-      nodeReference(pParent);
     }
   }
 
@@ -748,6 +747,7 @@ static int nodeAcquire(
 
   if( rc==SQLITE_OK ){
     if( pNode!=0 ){
+      nodeReference(pParent);
       nodeHashInsert(pRtree, pNode);
     }else{
       rc = SQLITE_CORRUPT_VTAB;

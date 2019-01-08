@@ -1,5 +1,5 @@
-C Fix\sfurther\sproblems\swith\sfts5\sand\scorrupt\sdatabases\scausing\sinteger\soverflow.
-D 2019-01-08T08:02:12.750
+C Fix\sa\spossible\smemory\sleak\swhen\strying\sto\sUPDATE\sa\scorrupt\sRTREE\sindex.
+D 2019-01-08T14:28:02.662
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -366,7 +366,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 603ec9b72cd70cf18541339b6c7d47f304ac0d84c50294be6c6c6ae35acdb0a6
-F ext/rtree/rtree.c fae9943b6b6f2bf6a4ddeb192d54fa6d19311119c1388406ef27cf6de38f34aa
+F ext/rtree/rtree.c 1fb8a71a2fe3d385256c976faa92f0451eca9f6760dc7ef5962826e61fa3694f
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 309afc04d4287542b2cd74f933296832cc681c7b014d9405cb329b62053a5349
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0e943d9574c7cab1af4a0fe753a0b5f91ea0e884b91a85b13239144b71f067c
-R 7c19ce2fb585760f8fd1bf04363aabe3
-U dan
-Z c474e85f1a26d316780e3e94b6be3674
+P 673a7dd698eca05bb2909fa01f962a0667361732a6d0e61cf7780ead4a07c967
+R 8b60ad3cb0e573d17f66ab6027826fe9
+U drh
+Z 9698f42eb061c3571f9cb42a9d8aa284
