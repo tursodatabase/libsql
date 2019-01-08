@@ -1,5 +1,5 @@
-C Fix\sanother\spotential\sbuffer\soverread\sin\sfts5.
-D 2019-01-07T16:52:00.409
+C Fix\sfurther\sproblems\swith\sfts5\sand\scorrupt\sdatabases\scausing\sinteger\soverflow.
+D 2019-01-08T08:02:12.750
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -111,11 +111,11 @@ F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 4f5d19b7973dae23de368728f06d3eb1fe9f5cca2990366b40e9379996f35e61
 F ext/fts5/fts5Int.h 8590e08a485c98a7e3075ed72abe3452fe944a9e58e63dfa51b732cced344cab
 F ext/fts5/fts5_aux.c ca666a3bbe07c5a3bbe9fffaea19c935a1efaf337333e28bad7bdd1971ffd093
-F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bfd13e973ff
+F ext/fts5/fts5_buffer.c 9567442b5dcb15ec1504e071ff052f35d533129af5fa6e97a163e2e466a18a4d
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 0eff5bad90838be83c5cc16837ca215a961abe05cfbf741a285ba62a79ad586f
 F ext/fts5/fts5_hash.c ad22ab3d89828cf3d996f784b7a6452ee16a940aa46abe466a1f14aa3d42bbf2
-F ext/fts5/fts5_index.c 7d93b9503e02e57c94ce22e08758723f6d833969495a2c89ac7ca63957ab0053
+F ext/fts5/fts5_index.c 7788ae02cdb18c551dcd99c383c9f30dcc35a1a7264c2420d24254a177a19a1b
 F ext/fts5/fts5_main.c 287a1a56580df304d7fa2fc1890f85b9cb6ac6b9e7c8af7dfa2151528db4b059
 F ext/fts5/fts5_storage.c 0455c866b6c6a347229edee66333f5c08ea5f3b4940121d698c300353a73962f
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
@@ -156,7 +156,7 @@ F ext/fts5/test/fts5connect.test 08030168fc96fc278fa81f28654fb7e90566f33aff269c0
 F ext/fts5/test/fts5content.test 688d5ac7af194ebc67495daea76a69e3cd5480122c2320e72d41241b423b4116
 F ext/fts5/test/fts5corrupt.test 77ae6f41a7eba10620efb921cf7dbe218b0ef232b04519deb43581cb17a57ebe
 F ext/fts5/test/fts5corrupt2.test 7453752ba12ce91690c469a6449d412561cc604b1dec994e16ab132952e7805f
-F ext/fts5/test/fts5corrupt3.test 8e882b0f8335aa18c0a920577e308970473c77fbf66067ed3e78f4a14657cfb1
+F ext/fts5/test/fts5corrupt3.test 2cec78e6447c2be295bb9a123e3794e7fe19558e41241a8c861ec00b42ec4c77
 F ext/fts5/test/fts5delete.test cbf87e3b8867c4d5cfcaed975c7475fd3f99d072bce2075fcedf43d1f82af775
 F ext/fts5/test/fts5detail.test 31b240dbf6d44ac3507e2f8b65f29fdc12465ffd531212378c7ce1066766f54e
 F ext/fts5/test/fts5determin.test 1b77879b2ae818b5b71c859e534ee334dac088b7cf3ff3bf76a2c82b1c788d11
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6281ef974c0ac7a7133c9e1e04c09fdbd627c019c6ff3227293548caf8283864
-R 0cdd4532a9c589c72412270cee72fc08
+P d0e943d9574c7cab1af4a0fe753a0b5f91ea0e884b91a85b13239144b71f067c
+R 7c19ce2fb585760f8fd1bf04363aabe3
 U dan
-Z f423f2e257a932f6f962dad9261c0d88
+Z c474e85f1a26d316780e3e94b6be3674

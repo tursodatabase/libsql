@@ -2234,10 +2234,10 @@ static void fts5LeafSeek(
   int szLeaf = pIter->pLeaf->szLeaf;
   int n = pIter->pLeaf->nn;
 
-  int nMatch = 0;
-  int nKeep = 0;
-  int nNew = 0;
-  int iTermOff;
+  u32 nMatch = 0;
+  u32 nKeep = 0;
+  u32 nNew = 0;
+  u32 iTermOff;
   int iPgidx;                     /* Current offset in pgidx */
   int bEndOfPage = 0;
 

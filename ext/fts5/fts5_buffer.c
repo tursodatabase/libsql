@@ -17,12 +17,12 @@
 
 int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
   if( (u32)pBuf->nSpace<nByte ){
-    u32 nNew = pBuf->nSpace ? pBuf->nSpace : 64;
+    u64 nNew = pBuf->nSpace ? pBuf->nSpace : 64;
     u8 *pNew;
     while( nNew<nByte ){
       nNew = nNew * 2;
     }
-    pNew = sqlite3_realloc(pBuf->p, nNew);
+    pNew = sqlite3_realloc64(pBuf->p, nNew);
     if( pNew==0 ){
       *pRc = SQLITE_NOMEM;
       return 1;
