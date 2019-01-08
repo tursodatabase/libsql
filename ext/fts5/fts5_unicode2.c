@@ -774,4 +774,3 @@ void sqlite3Fts5UnicodeAscii(u8 *aArray, u8 *aAscii){
     iTbl++;
   }
 }
-

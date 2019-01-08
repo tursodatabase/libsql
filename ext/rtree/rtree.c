@@ -611,7 +611,7 @@ static void nodeHashDelete(Rtree *pRtree, RtreeNode *pNode){
 */
 static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
   RtreeNode *pNode;
-  pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode) + pRtree->iNodeSize);
+  pNode = (RtreeNode *)sqlite3_malloc64(sizeof(RtreeNode) + pRtree->iNodeSize);
   if( pNode ){
     memset(pNode, 0, sizeof(RtreeNode) + pRtree->iNodeSize);
     pNode->zData = (u8 *)&pNode[1];
@@ -704,7 +704,7 @@ static int nodeAcquire(
       RTREE_IS_CORRUPT(pRtree);
     }
   }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
-    pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
+    pNode = (RtreeNode *)sqlite3_malloc64(sizeof(RtreeNode)+pRtree->iNodeSize);
     if( !pNode ){
       rc = SQLITE_NOMEM;
     }else{
@@ -1036,7 +1036,7 @@ static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   Rtree *pRtree = (Rtree *)pVTab;
   RtreeCursor *pCsr;
 
-  pCsr = (RtreeCursor *)sqlite3_malloc(sizeof(RtreeCursor));
+  pCsr = (RtreeCursor *)sqlite3_malloc64(sizeof(RtreeCursor));
   if( pCsr ){
     memset(pCsr, 0, sizeof(RtreeCursor));
     pCsr->base.pVtab = pVTab;
@@ -1403,7 +1403,7 @@ static RtreeSearchPoint *rtreeEnqueue(
   RtreeSearchPoint *pNew;
   if( pCur->nPoint>=pCur->nPointAlloc ){
     int nNew = pCur->nPointAlloc*2 + 8;
-    pNew = sqlite3_realloc(pCur->aPoint, nNew*sizeof(pCur->aPoint[0]));
+    pNew = sqlite3_realloc64(pCur->aPoint, nNew*sizeof(pCur->aPoint[0]));
     if( pNew==0 ) return 0;
     pCur->aPoint = pNew;
     pCur->nPointAlloc = nNew;
@@ -1805,7 +1805,7 @@ static int rtreeFilter(
     */
     rc = nodeAcquire(pRtree, 1, 0, &pRoot);
     if( rc==SQLITE_OK && argc>0 ){
-      pCsr->aConstraint = sqlite3_malloc(sizeof(RtreeConstraint)*argc);
+      pCsr->aConstraint = sqlite3_malloc64(sizeof(RtreeConstraint)*argc);
       pCsr->nConstraint = argc;
       if( !pCsr->aConstraint ){
         rc = SQLITE_NOMEM;
@@ -2376,9 +2376,9 @@ static int splitNodeStartree(
   int iBestSplit = 0;
   RtreeDValue fBestMargin = RTREE_ZERO;
 
-  int nByte = (pRtree->nDim+1)*(sizeof(int*)+nCell*sizeof(int));
+  sqlite3_int64 nByte = (pRtree->nDim+1)*(sizeof(int*)+nCell*sizeof(int));
 
-  aaSorted = (int **)sqlite3_malloc(nByte);
+  aaSorted = (int **)sqlite3_malloc64(nByte);
   if( !aaSorted ){
     return SQLITE_NOMEM;
   }
@@ -2499,7 +2499,7 @@ static int SplitNode(
   /* Allocate an array and populate it with a copy of pCell and 
   ** all cells from node pLeft. Then zero the original node.
   */
-  aCell = sqlite3_malloc((sizeof(RtreeCell)+sizeof(int))*(nCell+1));
+  aCell = sqlite3_malloc64((sizeof(RtreeCell)+sizeof(int))*(nCell+1));
   if( !aCell ){
     rc = SQLITE_NOMEM;
     goto splitnode_out;
@@ -2790,7 +2790,7 @@ static int Reinsert(
   /* Allocate the buffers used by this operation. The allocation is
   ** relinquished before this function returns.
   */
-  aCell = (RtreeCell *)sqlite3_malloc(n * (
+  aCell = (RtreeCell *)sqlite3_malloc64(n * (
     sizeof(RtreeCell)     +         /* aCell array */
     sizeof(int)           +         /* aOrder array */
     sizeof(int)           +         /* aSpare array */
@@ -3658,7 +3658,7 @@ static int rtreeInit(
   /* Allocate the sqlite3_vtab structure */
   nDb = (int)strlen(argv[1]);
   nName = (int)strlen(argv[2]);
-  pRtree = (Rtree *)sqlite3_malloc(sizeof(Rtree)+nDb+nName+2);
+  pRtree = (Rtree *)sqlite3_malloc64(sizeof(Rtree)+nDb+nName+2);
   if( !pRtree ){
     return SQLITE_NOMEM;
   }
@@ -3938,7 +3938,7 @@ static u8 *rtreeCheckGetNode(RtreeCheck *pCheck, i64 iNode, int *pnNode){
     if( sqlite3_step(pCheck->pGetNode)==SQLITE_ROW ){
       int nNode = sqlite3_column_bytes(pCheck->pGetNode, 0);
       const u8 *pNode = (const u8*)sqlite3_column_blob(pCheck->pGetNode, 0);
-      pRet = sqlite3_malloc(nNode);
+      pRet = sqlite3_malloc64(nNode);
       if( pRet==0 ){
         pCheck->rc = SQLITE_NOMEM;
       }else{
@@ -4371,12 +4371,12 @@ static void rtreeMatchArgFree(void *pArg){
 static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
   RtreeGeomCallback *pGeomCtx = (RtreeGeomCallback *)sqlite3_user_data(ctx);
   RtreeMatchArg *pBlob;
-  int nBlob;
+  sqlite3_int64 nBlob;
   int memErr = 0;
 
   nBlob = sizeof(RtreeMatchArg) + (nArg-1)*sizeof(RtreeDValue)
            + nArg*sizeof(sqlite3_value*);
-  pBlob = (RtreeMatchArg *)sqlite3_malloc(nBlob);
+  pBlob = (RtreeMatchArg *)sqlite3_malloc64(nBlob);
   if( !pBlob ){
     sqlite3_result_error_nomem(ctx);
   }else{

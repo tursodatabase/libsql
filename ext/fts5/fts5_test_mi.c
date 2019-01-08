@@ -309,7 +309,7 @@ static Fts5MatchinfoCtx *fts5MatchinfoNew(
   int nPhrase;
   int i;
   int nInt;
-  int nByte;
+  sqlite3_int64 nByte;
   int rc;
 
   nCol = pApi->xColumnCount(pFts);
@@ -330,7 +330,7 @@ static Fts5MatchinfoCtx *fts5MatchinfoNew(
   nByte = sizeof(Fts5MatchinfoCtx)          /* The struct itself */
          + sizeof(u32) * nInt               /* The p->aRet[] array */
          + (i+1);                           /* The p->zArg string */
-  p = (Fts5MatchinfoCtx*)sqlite3_malloc(nByte);
+  p = (Fts5MatchinfoCtx*)sqlite3_malloc64(nByte);
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
     return 0;

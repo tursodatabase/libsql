@@ -115,7 +115,7 @@ static int fts5StorageGetStmt(
         char *zBind;
         int i;
 
-        zBind = sqlite3_malloc(1 + nCol*2);
+        zBind = sqlite3_malloc64(1 + nCol*2);
         if( zBind ){
           for(i=0; i<nCol; i++){
             zBind[i*2] = '?';
@@ -282,11 +282,11 @@ int sqlite3Fts5StorageOpen(
 ){
   int rc = SQLITE_OK;
   Fts5Storage *p;                 /* New object */
-  int nByte;                      /* Bytes of space to allocate */
+  sqlite3_int64 nByte;            /* Bytes of space to allocate */
 
   nByte = sizeof(Fts5Storage)               /* Fts5Storage object */
         + pConfig->nCol * sizeof(i64);      /* Fts5Storage.aTotalSize[] */
-  *pp = p = (Fts5Storage*)sqlite3_malloc(nByte);
+  *pp = p = (Fts5Storage*)sqlite3_malloc64(nByte);
   if( !p ) return SQLITE_NOMEM;
 
   memset(p, 0, nByte);
@@ -297,7 +297,7 @@ int sqlite3Fts5StorageOpen(
   if( bCreate ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
       int nDefn = 32 + pConfig->nCol*10;
-      char *zDefn = sqlite3_malloc(32 + pConfig->nCol * 10);
+      char *zDefn = sqlite3_malloc64(32 + (sqlite3_int64)pConfig->nCol * 10);
       if( zDefn==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -878,7 +878,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 
   memset(&ctx, 0, sizeof(Fts5IntegrityCtx));
   ctx.pConfig = p->pConfig;
-  aTotalSize = (i64*)sqlite3_malloc(pConfig->nCol * (sizeof(int)+sizeof(i64)));
+  aTotalSize = (i64*)sqlite3_malloc64(pConfig->nCol*(sizeof(int)+sizeof(i64)));
   if( !aTotalSize ) return SQLITE_NOMEM;
   aColSize = (int*)&aTotalSize[pConfig->nCol];
   memset(aTotalSize, 0, sizeof(i64) * pConfig->nCol);

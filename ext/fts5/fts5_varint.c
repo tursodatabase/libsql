@@ -342,4 +342,3 @@ int sqlite3Fts5GetVarintLen(u32 iVal){
   if( iVal<(1 << 28) ) return 4;
   return 5;
 }
-

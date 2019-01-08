@@ -85,7 +85,7 @@ static void nextCharAppend(nextCharContext *p, unsigned c){
   if( p->nUsed+1 > p->nAlloc ){
     unsigned int *aNew;
     int n = p->nAlloc*2 + 30;
-    aNew = sqlite3_realloc(p->aResult, n*sizeof(unsigned int));
+    aNew = sqlite3_realloc64(p->aResult, n*sizeof(unsigned int));
     if( aNew==0 ){
       p->mallocFailed = 1;
       return;
@@ -269,7 +269,7 @@ static void nextCharFunc(
     sqlite3_result_error_nomem(context);
   }else{
     unsigned char *pRes;
-    pRes = sqlite3_malloc( c.nUsed*4 + 1 );
+    pRes = sqlite3_malloc64( c.nUsed*4 + 1 );
     if( pRes==0 ){
       sqlite3_result_error_nomem(context);
     }else{

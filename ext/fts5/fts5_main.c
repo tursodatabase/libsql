@@ -629,13 +629,13 @@ static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   Fts5Table *pTab = (Fts5Table*)pVTab;
   Fts5Config *pConfig = pTab->pConfig;
   Fts5Cursor *pCsr = 0;           /* New cursor object */
-  int nByte;                      /* Bytes of space to allocate */
+  sqlite3_int64 nByte;            /* Bytes of space to allocate */
   int rc;                         /* Return code */
 
   rc = fts5NewTransaction(pTab);
   if( rc==SQLITE_OK ){
     nByte = sizeof(Fts5Cursor) + pConfig->nCol * sizeof(int);
-    pCsr = (Fts5Cursor*)sqlite3_malloc(nByte);
+    pCsr = (Fts5Cursor*)sqlite3_malloc64(nByte);
     if( pCsr ){
       Fts5Global *pGlobal = pTab->pGlobal;
       memset(pCsr, 0, nByte);
@@ -906,14 +906,14 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   Fts5Config *pConfig = pTab->pConfig;
   Fts5Sorter *pSorter;
   int nPhrase;
-  int nByte;
+  sqlite3_int64 nByte;
   int rc;
   const char *zRank = pCsr->zRank;
   const char *zRankArgs = pCsr->zRankArgs;
   
   nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
   nByte = sizeof(Fts5Sorter) + sizeof(int) * (nPhrase-1);
-  pSorter = (Fts5Sorter*)sqlite3_malloc(nByte);
+  pSorter = (Fts5Sorter*)sqlite3_malloc64(nByte);
   if( pSorter==0 ) return SQLITE_NOMEM;
   memset(pSorter, 0, nByte);
   pSorter->nIdx = nPhrase;
@@ -1032,7 +1032,7 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
       assert( rc==SQLITE_OK || pCsr->pRankArgStmt==0 );
       if( rc==SQLITE_OK ){
         if( SQLITE_ROW==sqlite3_step(pStmt) ){
-          int nByte;
+          sqlite3_int64 nByte;
           pCsr->nRankArg = sqlite3_column_count(pStmt);
           nByte = sizeof(sqlite3_value*)*pCsr->nRankArg;
           pCsr->apRankArg = (sqlite3_value**)sqlite3Fts5MallocZero(&rc, nByte);
@@ -1776,7 +1776,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
   
   nIter = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
   if( pCsr->aInstIter==0 ){
-    int nByte = sizeof(Fts5PoslistReader) * nIter;
+    sqlite3_int64 nByte = sizeof(Fts5PoslistReader) * nIter;
     pCsr->aInstIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
   }
   aIter = pCsr->aInstIter;
@@ -1811,7 +1811,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
         nInst++;
         if( nInst>=pCsr->nInstAlloc ){
           pCsr->nInstAlloc = pCsr->nInstAlloc ? pCsr->nInstAlloc*2 : 32;
-          aInst = (int*)sqlite3_realloc(
+          aInst = (int*)sqlite3_realloc64(
               pCsr->aInst, pCsr->nInstAlloc*sizeof(int)*3
               );
           if( aInst ){

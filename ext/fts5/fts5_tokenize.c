@@ -152,7 +152,7 @@ static int fts5AsciiTokenize(
     nByte = ie-is;
     if( nByte>nFold ){
       if( pFold!=aFold ) sqlite3_free(pFold);
-      pFold = sqlite3_malloc(nByte*2);
+      pFold = sqlite3_malloc64((sqlite3_int64)nByte*2);
       if( pFold==0 ){
         rc = SQLITE_NOMEM;
         break;
@@ -256,7 +256,8 @@ static int fts5UnicodeAddExceptions(
   int *aNew;
 
   if( n>0 ){
-    aNew = (int*)sqlite3_realloc(p->aiException, (n+p->nException)*sizeof(int));
+    aNew = (int*)sqlite3_realloc64(p->aiException,
+                                   (n+p->nException)*sizeof(int));
     if( aNew ){
       int nNew = p->nException;
       const unsigned char *zCsr = (const unsigned char*)z;
@@ -490,7 +491,7 @@ static int fts5UnicodeTokenize(
       /* Grow the output buffer so that there is sufficient space to fit the
       ** largest possible utf-8 character.  */
       if( zOut>pEnd ){
-        aFold = sqlite3_malloc(nFold*2);
+        aFold = sqlite3_malloc64((sqlite3_int64)nFold*2);
         if( aFold==0 ){
           rc = SQLITE_NOMEM;
           goto tokenize_done;
