@@ -201,6 +201,7 @@ static void instrFunc(
   int typeHaystack, typeNeedle;
   int N = 1;
   int isText;
+  unsigned char firstChar;
 
   UNUSED_PARAMETER(argc);
   typeHaystack = sqlite3_value_type(argv[0]);
@@ -219,7 +220,10 @@ static void instrFunc(
       isText = 1;
     }
     if( zNeedle==0 || (nHaystack && zHaystack==0) ) return;
-    while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
+    firstChar = zNeedle[0];
+    while( nNeedle<=nHaystack
+       && (zHaystack[0]!=firstChar || memcmp(zHaystack, zNeedle, nNeedle)!=0)
+    ){
       N++;
       do{
         nHaystack--;
