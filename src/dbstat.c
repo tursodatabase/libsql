@@ -531,6 +531,10 @@ statNextRestart:
       goto statNextRestart; /* Tail recursion */
     }
     pCsr->iPage++;
+    if( pCsr->iPage>=ArraySize(pCsr->aPage) ){
+      statResetCsr(pCsr);
+      return SQLITE_CORRUPT_BKPT;
+    }
     assert( p==&pCsr->aPage[pCsr->iPage-1] );
 
     if( p->iCell==p->nCell ){
