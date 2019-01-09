@@ -961,7 +961,6 @@ static int renameParseSql(
   rc = sqlite3RunParser(p, zSql, &zErr);
   assert( p->zErrMsg==0 );
   assert( rc!=SQLITE_OK || zErr==0 );
-  assert( (0!=p->pNewTable) + (0!=p->pNewIndex) + (0!=p->pNewTrigger)<2 );
   p->zErrMsg = zErr;
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK 
@@ -1181,11 +1180,15 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
 */
 static void renameParseCleanup(Parse *pParse){
   sqlite3 *db = pParse->db;
+  Index *pIdx;
   if( pParse->pVdbe ){
     sqlite3VdbeFinalize(pParse->pVdbe);
   }
   sqlite3DeleteTable(db, pParse->pNewTable);
-  if( pParse->pNewIndex ) sqlite3FreeIndex(db, pParse->pNewIndex);
+  while( (pIdx = pParse->pNewIndex)!=0 ){
+    pParse->pNewIndex = pIdx->pNext;
+    sqlite3FreeIndex(db, pIdx);
+  }
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->zErrMsg);
   renameTokenFree(db, pParse->pRename);
@@ -1294,6 +1297,9 @@ static void renameColumnFunc(
         }
         sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
         for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
+          sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+        }
+        for(pIdx=sParse.pNewIndex; pIdx; pIdx=pIdx->pNext){
           sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
         }
       }

@@ -3467,6 +3467,11 @@ void sqlite3CreateIndex(
           }
         }
         if( idxType==SQLITE_IDXTYPE_PRIMARYKEY ) pIdx->idxType = idxType;
+        if( IN_RENAME_OBJECT ){
+          pIndex->pNext = pParse->pNewIndex;
+          pParse->pNewIndex = pIndex;
+          pIndex = 0;
+        }
         goto exit_create_index;
       }
     }
