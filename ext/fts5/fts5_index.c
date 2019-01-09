@@ -6409,7 +6409,7 @@ static void fts5DecodeFunction(
     nDoclist = (iTermOff ? iTermOff : szLeaf) - iOff;
     fts5DecodeDoclist(&rc, &s, &a[iOff], nDoclist);
 
-    while( iPgidxOff<n ){
+    while( iPgidxOff<n && rc==SQLITE_OK ){
       int bFirst = (iPgidxOff==szLeaf);     /* True for first term on page */
       int nByte;                            /* Bytes of data */
       int iEnd;
@@ -6427,6 +6427,10 @@ static void fts5DecodeFunction(
 
       if( bFirst==0 ){
         iOff += fts5GetVarint32(&a[iOff], nByte);
+        if( nByte>term.n ){
+          rc = FTS5_CORRUPT;
+          goto decode_out;
+        }
         term.n = nByte;
       }
       iOff += fts5GetVarint32(&a[iOff], nByte);
