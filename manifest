@@ -1,5 +1,5 @@
-C Fix\san\sout-of-bounds\sread\sin\sSQL\sfunction\sfts5_decode()\sthat\scould\soccur\sif\sit\nwas\spassed\sa\scorrupt\srecord.
-D 2019-01-09T21:12:23.663
+C Fix\sthe\sfts3DecodeIntArray()\sfunction\sso\sthat\sit\swill\snot\sread\soff\sthe\send\nof\sthe\sbuffer\sit\sis\shanded.\s\sAny\sunread\sintegers\sare\sset\sto\szero.
+D 2019-01-10T01:12:43.917
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -98,7 +98,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c e36d2f7e8f180e8030e92a5c2d09ccf87021afedcc5148a9d823b496667bf2f2
+F ext/fts3/fts3_write.c 18726fbd2aab23ff069d9d61b532e8c38bb2f66cfa61d8550537850971526210
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 383437be276719ac1c72688ae81017c63907ac561f2ffb8e42c43b012248f294
-R 8ad4f3de39b0d698bd5f67551c47ae40
-U dan
-Z b5825c689cd4ca9fefd29a23584fe712
+P 931278b257b12ac14fc8fbc82c6dc88ce4ac4b8e0d668543e68f0289d825daa1
+R e543c7822807d0414916bad4b832fc3e
+U drh
+Z dca4f26f9f844ed901c4c2b939969898
