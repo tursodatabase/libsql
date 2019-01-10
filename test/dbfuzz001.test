@@ -168,7 +168,7 @@ do_test dbfuzz001-100 {
     |    496: 01 0d 3f 00 00 48 01 54 00 01 f7 01 ec 01 c5 01   ..?..H.T........
     | end c4.db
   }]
-  db eval {PRAGMA integrity_check}
+  db eval {PRAGMA writable_schema=on; PRAGMA integrity_check}
 } {/Fragmentation of 384 bytes reported as 0 on page 8/}
 
 # The DELETE query below deletes the very last cell from page 8.

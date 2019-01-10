@@ -247,6 +247,6 @@ do_test 5.0 {
 
 do_catchsql_test 5.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'abandon';
-} {1 {database disk image is malformed}}
+} {1 {malformed database schema (sqlite_autoindey_t1_segdir_1) - orphan index}}
 
 finish_test
