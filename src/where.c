@@ -2210,7 +2210,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   rc = whereLoopXfer(db, p, pTemplate);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     Index *pIndex = p->u.btree.pIndex;
-    if( pIndex && pIndex->tnum==0 ){
+    if( pIndex && pIndex->idxType==SQLITE_IDXTYPE_IPK ){
       p->u.btree.pIndex = 0;
     }
   }
@@ -2377,8 +2377,8 @@ static int whereRangeVectorLen(
 ** terms only. If it is modified, this value is restored before this 
 ** function returns.
 **
-** If pProbe->tnum==0, that means pIndex is a fake index used for the
-** INTEGER PRIMARY KEY.
+** If pProbe->idxType==SQLITE_IDXTYPE_IPK, that means pIndex is 
+** a fake index used for the INTEGER PRIMARY KEY.
 */
 static int whereLoopAddBtreeIndex(
   WhereLoopBuilder *pBuilder,     /* The WhereLoop factory */
@@ -2878,6 +2878,7 @@ static int whereLoopAddBtree(
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
     sPk.szIdxRow = pTab->szTabRow;
+    sPk.idxType = SQLITE_IDXTYPE_IPK;
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
     pFirst = pSrc->pTab->pIndex;
@@ -2968,7 +2969,7 @@ static int whereLoopAddBtree(
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
     /* The ONEPASS_DESIRED flags never occurs together with ORDER BY */
     assert( (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || b==0 );
-    if( pProbe->tnum<=0 ){
+    if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
       /* Integer primary key index */
       pNew->wsFlags = WHERE_IPK;
 
