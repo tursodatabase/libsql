@@ -3403,7 +3403,6 @@ static void fts5MultiIterNew(
   pNew->bRev = (0!=(flags & FTS5INDEX_QUERY_DESC));
   pNew->bSkipEmpty = (0!=(flags & FTS5INDEX_QUERY_SKIPEMPTY));
   pNew->pColset = pColset;
-  fts5StructureRef(pStruct);
   if( (flags & FTS5INDEX_QUERY_NOOUTPUT)==0 ){
     fts5IterSetOutputCb(&p->rc, pNew);
   }

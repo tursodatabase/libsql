@@ -134,5 +134,10 @@ do_test 3.1 {
   }
 } {}
 
+
 }
+
+reset_db
+do_catchsql_test 4.0 { CREATE VIRTUAL TABLE t1 USING fts5(a,b,c); } {0 {}}
+do_catchsql_test 4.1 { DELETE FROM t1 WHERE t1 MATCH 'f*'; } {0 {}}
 finish_test
