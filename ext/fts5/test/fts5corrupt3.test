@@ -3512,6 +3512,40 @@ do_catchsql_test 30.1 {
   SELECT fts5_decode(id, block) FROM t1_data;
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_test 31.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 8192 pagesize 4096 filename crash-7629f35f11d48e.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 00 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     96: 00 00 00 00 0d 00 00 00 01 0f c7 00 0f c7 00 00   ................
+|   4032: 00 00 00 00 00 00 00 37 01 06 17 15 15 01 53 74   .......7......St
+|   4048: 61 62 6c 65 64 75 61 6c 64 75 61 6c 02 43 52 45   abledualdual.CRE
+|   4064: 41 54 45 20 54 41 42 4c 45 20 64 75 61 6c 28 64   ATE TABLE dual(d
+|   4080: 75 6d 6d 79 20 76 61 72 28 31 29 29 0d 00 00 00   ummy var(1))....
+| page 2 offset 4096
+|      0: 01 0f fb 00 0f fb 00 00 00 00 00 00 00 00 00 00   ................
+|   4080: 00 00 00 00 00 00 00 00 00 00 00 03 01 02 0f 58   ...............X
+| end crash-7629f35f11d48e.db
+}]} {}
+
+do_execsql_test 31.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a,b,c);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<72)
+    INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
+    INSERT INTO t1(a) SELECT randomblob(3000) FROM c;
+}
+
+do_catchsql_test 31.2 {
+  DELETE FROM t1 WHERE a MATCH X'6620e574f32a';
+} {0 {}}
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
 

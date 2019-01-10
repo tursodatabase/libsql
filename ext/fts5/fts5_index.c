@@ -512,7 +512,6 @@ struct Fts5Iter {
   Fts5IndexIter base;             /* Base class containing output vars */
 
   Fts5Index *pIndex;              /* Index that owns this iterator */
-  Fts5Structure *pStruct;         /* Database structure for this iterator */
   Fts5Buffer poslist;             /* Buffer containing current poslist */
   Fts5Colset *pColset;            /* Restrict matches to these columns */
 
@@ -2758,7 +2757,6 @@ static void fts5MultiIterFree(Fts5Iter *pIter){
     for(i=0; i<pIter->nSeg; i++){
       fts5SegIterClear(&pIter->aSeg[i]);
     }
-    fts5StructureRelease(pIter->pStruct);
     fts5BufferFree(&pIter->poslist);
     sqlite3_free(pIter);
   }
@@ -3404,7 +3402,6 @@ static void fts5MultiIterNew(
   if( pNew==0 ) return;
   pNew->bRev = (0!=(flags & FTS5INDEX_QUERY_DESC));
   pNew->bSkipEmpty = (0!=(flags & FTS5INDEX_QUERY_SKIPEMPTY));
-  pNew->pStruct = pStruct;
   pNew->pColset = pColset;
   fts5StructureRef(pStruct);
   if( (flags & FTS5INDEX_QUERY_NOOUTPUT)==0 ){

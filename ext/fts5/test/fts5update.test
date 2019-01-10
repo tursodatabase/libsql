@@ -115,5 +115,24 @@ do_execsql_test 2.2.integrity {
   INSERT INTO x2(x2) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x3 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO x3 VALUES('one');
+  INSERT INTO x3 VALUES('two');
+  INSERT INTO x3 VALUES('one');
+  INSERT INTO x3 VALUES('two');
+  INSERT INTO x3 VALUES('one');
+}
+
+do_test 3.1 {
+  db eval { SELECT * FROM x3('one') } {
+    db eval {
+      INSERT INTO x3(x3) VALUES('optimize');
+    }
+  }
+} {}
+
 }
 finish_test
