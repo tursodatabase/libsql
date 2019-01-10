@@ -6424,6 +6424,10 @@ static void fts5DecodeFunction(
       }else{
         iEnd = szLeaf;
       }
+      if( iEnd>szLeaf ){
+        rc = FTS5_CORRUPT;
+        goto decode_out;
+      }
 
       if( bFirst==0 ){
         iOff += fts5GetVarint32(&a[iOff], nByte);

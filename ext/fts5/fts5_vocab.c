@@ -521,7 +521,6 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
               int iCol = -1;
               while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
                 int ii = FTS5_POS2COLUMN(iPos);
-                pCsr->aCnt[ii]++;
                 if( iCol!=ii ){
                   if( ii>=nCol ){
                     rc = FTS5_CORRUPT;
@@ -530,6 +529,7 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
                   pCsr->aDoc[ii]++;
                   iCol = ii;
                 }
+                pCsr->aCnt[ii]++;
               }
             }else if( eDetail==FTS5_DETAIL_COLUMNS ){
               while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff,&iPos) ){
