@@ -1,5 +1,5 @@
-C Reinstate\sassert()\sstatements\sin\sos_unix.c\sthat\swere\sremoved\sto\sallow\nwal-mode\sSHARED\slocks\sto\sbe\staken\sover\smore\sthan\sone\slocking\sslot\n(this\sbranch\sno\slonger\sdoes\sthat,\sso\sthe\sassert()\sstatements\scan\sgo\nback\sin).
-D 2019-01-02T17:08:06.138
+C Merge\slatest\swal2\schanges\s(documentation\sonly)\sinto\sthis\sbranch.
+D 2019-01-11T14:59:24.732
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -40,6 +40,7 @@ F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
+F doc/wal2.md a807405a05e19a4945c5905a9ffa0fe45b8560dd7572461192501f565c19cdb5
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
@@ -1823,7 +1824,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c31eeb3c87f260fa192638b3610a4d3b84b2c26cfaefc97ed63910495403f8c9 8445fb6d5dae98a0129514a10a15f08412bac5a1d8114b12e592c744ea2bc4c9
-R 0806996acba6e0b3331e631071ee176c
+P fcb7348ba190e48112a681f704313a733f7a377456e7c1d6845ba34c270d86b6 b495dce153f7f886f3dba09593f29ce2375718bf6508f2cfffd1af8071a995ae
+R 8fe5885e38031bc1cc352b2d1554601c
 U dan
-Z 44e579b069341a68865674e64e97136d
+Z bc841668ca707a383d27e01ba9dc3dbc
