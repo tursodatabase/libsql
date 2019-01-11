@@ -169,7 +169,6 @@ static unsigned char *readFile(const char *zName, int *pnByte){
 #ifdef STANDALONE
 int main(int argc, char **argv){
   int i;
-  int prevAmt = -1;
   LLVMFuzzerInitialize(&argc, &argv);
   for(i=1; i<argc; i++){
     unsigned char *pIn;

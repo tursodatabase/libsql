@@ -574,6 +574,20 @@ dbfuzz$(EXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	  $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
+DBFUZZ2_OPTS = \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_ENABLE_DESERIALIZE \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5
+
+dbfuzz2$(EXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
+	$(TCCX) -I. -g -O0 -DSTANDALONE -o dbfuzz2$(EXE) \
+	  $(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c  $(TLIBS) $(THREADLIB)
+
 fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(TOP)/test/ossfuzz.c
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \

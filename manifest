@@ -1,5 +1,5 @@
-C The\skeywords\sTRUE\sand\sFALSE\sshould\sonly\sact\sas\sboolean\sliteral\svalues\sif\nunquoted.
-D 2019-01-11T13:32:23.943
+C Add\sthe\s"dbfuzz2"\starget\sto\smain.mk.\s\sRemove\san\sunused\slocal\svariable\nfrom\sdbfuzz2.c.
+D 2019-01-11T14:22:33.979
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -434,7 +434,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk cca1ecdd5dfe4579ded84e5abdd38e1866bbb8b8cf58d1a24496e9b1b65580d7
+F main.mk 8456b6b4a5ecdb7b6b59283236b3be6393bc7eed6cbda3bcf1d552e1a63e03ff
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -780,7 +780,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 5659cbbc01e38678c119c8a58071cac59d0d6c71837a385f3d1838012f12e1e1
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c e89fbe07f8188ff0b9a2cb5c742af23a69f81a0d101d0c104151e3459508ebf3
+F test/dbfuzz2.c a1221da27dd1a08900f25471fea65dc43abba2c110c03a815760744ccde9d8d0
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea119641a7edcd0e1ec14371d93e35f860971888bd98cb0019253358a2ef123b
-R 4eecebacc4e6734941d82a3d523ec21e
+P 5547f39de993c708f72301ef25df190a2f007e0c4253799bdd9e86bb1ae41777
+R ab42d90b18d096a2e03d11a8df7c0b73
 U drh
-Z b60d127ddfa423bbb0ec667e5145ee61
+Z 7e967bef866c326fb525219eb419a5f5
