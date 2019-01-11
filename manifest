@@ -1,5 +1,5 @@
-C Merge\slatest\swal2\schanges\s(documentation\sonly)\sinto\sthis\sbranch.
-D 2019-01-11T14:59:24.732
+C Merge\sdocumentation\schanges\sfrom\sbranch\s"begin-concurrent"\sinto\sthis\sbranch.
+D 2019-01-11T15:22:27.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -37,6 +37,7 @@ F configure e2b4021dcb8ee6f9a91e7f4011316957868e8065019ac994f68e27363120c272 x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
+F doc/begin_concurrent.md 4bee2c3990d1eb800f1ce3726a911292a8e4b889300b2ffd4b08d357370db299
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -599,7 +600,7 @@ F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b483
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d1908ffa514275dc6f27c4b27abc6d5a2ce18c89e98dce10925972266b960f37
-F src/wal.h 86a71244ad934135743cb50dd00cd380763ec5dca5b68012ea394731a369b741
+F src/wal.h c1a0f32c170634cf42908f8e978fa6bd8921f7364301fa34606cd171fce883b1
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
 F src/where.c 981412c27abb9378d3024eae6f3040abd3c16db722f5ef8a7d613141ea2aea78
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
@@ -1824,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcb7348ba190e48112a681f704313a733f7a377456e7c1d6845ba34c270d86b6 b495dce153f7f886f3dba09593f29ce2375718bf6508f2cfffd1af8071a995ae
-R 8fe5885e38031bc1cc352b2d1554601c
+P 820ba1cc7e374409f27d0f1e62ed17c9670ce0e1f6e1d39a02fa8d48319745e8 fdbf97e611ed23f86dc0df9d53421fb04226af0d1c7171d55c11acd0dbe935f0
+R 610cbf661872da3534d28d987e52b3ad
 U dan
-Z bc841668ca707a383d27e01ba9dc3dbc
+Z 9e1b3f1f4c1450011db0f9cc2ebfe96b
