@@ -64,6 +64,9 @@ static const char *azSql[] = {
 /* Output verbosity level.  0 means complete silence */
 int eVerbosity = 0;
 
+/* True to activate PRAGMA vdbe_debug=on */
+static int bVdbeDebug = 0;
+
 /* libFuzzer invokes this routine with fuzzed database files (in aData).
 ** This routine run SQLite against the malformed database to see if it
 ** can provoke a failure or malfunction.
@@ -87,6 +90,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   sqlite3_deserialize(db, "main", a, nByte, nByte,
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
+  if( bVdbeDebug ){
+    sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
+  }
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
     if( eVerbosity>=1 ){
       printf("%s\n", azSql[i]);
@@ -109,11 +115,24 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   return 0;
 }
 
+/*
+** Return the number of "v" characters in a string.  Return 0 if there
+** are any characters in the string other than "v".
+*/
+static int numberOfVChar(const char *z){
+  int N = 0;
+  while( z[0] && z[0]=='v' ){
+    z++;
+    N++;
+  }
+  return z[0]==0 ? N : 0;
+}
+
 /* libFuzzer invokes this routine once when the executable starts, to
 ** process the command-line arguments.
 */
 int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
-  int i, j;
+  int i, j, n;
   int argc = *pArgc;
   char **newArgv;
   char **argv = *pArgv;
@@ -125,8 +144,12 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
-      if( strcmp(z,"v")==0 ){
-        eVerbosity++;
+      if( z[0]=='v' && (n = numberOfVChar(z))>0 ){
+        eVerbosity += n;
+        continue;
+      }
+      if( strcmp(z,"vdbe-debug")==0 ){
+        bVdbeDebug = 1;
         continue;
       }
     }

@@ -1,5 +1,5 @@
-C Add\sthe\s"dbfuzz2"\starget\sto\smain.mk.\s\sRemove\san\sunused\slocal\svariable\nfrom\sdbfuzz2.c.
-D 2019-01-11T14:22:33.979
+C Add\sthe\s--vdbe-debug\scommand-line\soption\sto\sdbfuzz2.
+D 2019-01-11T14:38:47.236
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -780,7 +780,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 5659cbbc01e38678c119c8a58071cac59d0d6c71837a385f3d1838012f12e1e1
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c a1221da27dd1a08900f25471fea65dc43abba2c110c03a815760744ccde9d8d0
+F test/dbfuzz2.c b31e0383472d88d25c0f2143e6f86ccef699703d3cee0d5865cef062e42ccf4b
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5547f39de993c708f72301ef25df190a2f007e0c4253799bdd9e86bb1ae41777
-R ab42d90b18d096a2e03d11a8df7c0b73
+P 05c7609cfd02f49114876267d7090f4e0ea2467f3aa7c65019c5986ec8f60a87
+R 59f8d809003217ffe40e8229e82747b7
 U drh
-Z 7e967bef866c326fb525219eb419a5f5
+Z 065fa37efdf7cf83e88a09444acc4d6c
