@@ -9804,7 +9804,7 @@ char *sqlite3BtreeIntegrityCheck(
   Pgno i;
   IntegrityCk sCheck;
   BtShared *pBt = p->pBt;
-  int savedDbFlags = pBt->db->flags;
+  u64 savedDbFlags = pBt->db->flags;
   char zErr[100];
   VVA_ONLY( int nRef );
 
