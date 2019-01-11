@@ -152,14 +152,14 @@ static void readFileContents(sqlite3_context *ctx, const char *zName){
     fclose(in);
     return;
   }
-  pBuf = sqlite3_malloc( nIn );
+  pBuf = sqlite3_malloc64( nIn );
   if( pBuf==0 ){
     sqlite3_result_error_nomem(ctx);
     fclose(in);
     return;
   }
   if( 1==fread(pBuf, nIn, 1, in) ){
-    sqlite3_result_blob(ctx, pBuf, nIn, sqlite3_free);
+    sqlite3_result_blob64(ctx, pBuf, nIn, sqlite3_free);
   }else{
     sqlite3_result_error_code(ctx, SQLITE_IOERR);
     sqlite3_free(pBuf);
