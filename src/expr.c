@@ -780,8 +780,7 @@ Expr *sqlite3ExprAlloc(
         if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
         pNew->u.zToken[pToken->n] = 0;
         if( dequote && sqlite3Isquote(pNew->u.zToken[0]) ){
-          if( pNew->u.zToken[0]=='"' ) pNew->flags |= EP_DblQuoted;
-          sqlite3Dequote(pNew->u.zToken);
+          sqlite3DequoteExpr(pNew);
         }
       }
     }
@@ -1812,8 +1811,9 @@ int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
 */
 int sqlite3ExprIdToTrueFalse(Expr *pExpr){
   assert( pExpr->op==TK_ID || pExpr->op==TK_STRING );
-  if( sqlite3StrICmp(pExpr->u.zToken, "true")==0
-   || sqlite3StrICmp(pExpr->u.zToken, "false")==0
+  if( !ExprHasProperty(pExpr, EP_Quoted)
+   && (sqlite3StrICmp(pExpr->u.zToken, "true")==0
+       || sqlite3StrICmp(pExpr->u.zToken, "false")==0)
   ){
     pExpr->op = TK_TRUEFALSE;
     return 1;

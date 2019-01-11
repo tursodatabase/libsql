@@ -955,8 +955,7 @@ idlist(A) ::= nm(Y).
       memcpy(p->u.zToken, t.z, t.n);
       p->u.zToken[t.n] = 0;
       if( sqlite3Isquote(p->u.zToken[0]) ){
-        if( p->u.zToken[0]=='"' ) p->flags |= EP_DblQuoted;
-        sqlite3Dequote(p->u.zToken);
+        sqlite3DequoteExpr(p);
       }
 #if SQLITE_MAX_EXPR_DEPTH>0
       p->nHeight = 1;

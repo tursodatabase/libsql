@@ -238,7 +238,7 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
 ** dequoted string, exclusive of the zero terminator, if dequoting does
 ** occur.
 **
-** 2002-Feb-14: This routine is extended to remove MS-Access style
+** 2002-02-14: This routine is extended to remove MS-Access style
 ** brackets from around identifiers.  For example:  "[a-b-c]" becomes
 ** "a-b-c".
 */
@@ -263,6 +263,11 @@ void sqlite3Dequote(char *z){
     }
   }
   z[j] = 0;
+}
+void sqlite3DequoteExpr(Expr *p){
+  assert( sqlite3Isquote(p->u.zToken[0]) );
+  p->flags |= p->u.zToken[0]=='"' ? EP_Quoted|EP_DblQuoted : EP_Quoted;
+  sqlite3Dequote(p->u.zToken);
 }
 
 /*
