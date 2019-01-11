@@ -4423,13 +4423,15 @@ static int collationMatch(const char *zColl, Index *pIndex){
 */
 #ifndef SQLITE_OMIT_REINDEX
 static void reindexTable(Parse *pParse, Table *pTab, char const *zColl){
-  Index *pIndex;              /* An index associated with pTab */
+  if( !IsVirtual(pTab) ){
+    Index *pIndex;              /* An index associated with pTab */
 
-  for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
-    if( zColl==0 || collationMatch(zColl, pIndex) ){
-      int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-      sqlite3BeginWriteOperation(pParse, 0, iDb);
-      sqlite3RefillIndex(pParse, pIndex, -1);
+    for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
+      if( zColl==0 || collationMatch(zColl, pIndex) ){
+        int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+        sqlite3BeginWriteOperation(pParse, 0, iDb);
+        sqlite3RefillIndex(pParse, pIndex, -1);
+      }
     }
   }
 }
