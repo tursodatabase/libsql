@@ -1,8 +1,8 @@
-C Fix\sa\smemory\sleak\sin\sfts5\sthat\scould\soccur\sif\sscalar\sfunction\sfts5_decode()\nwas\spassed\sa\scorrupt\srecord.
-D 2019-01-10T19:26:52.167
+C Separate\smakefile\stargets\sfor\s"dbfuzz2",\s"dbfuzz2-asan",\sand\s"dbfuzz2-msan".
+D 2019-01-11T13:03:06.705
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
+F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3c4c7e94419ff28cb68850188c9d153b343aed4c5ebed5965426232ed67ff9d9
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -780,7 +780,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 5659cbbc01e38678c119c8a58071cac59d0d6c71837a385f3d1838012f12e1e1
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c b8ed9b32a1f287505e55970e55203bedcb9170f137ecefa2254033c9faccdfba
+F test/dbfuzz2.c e89fbe07f8188ff0b9a2cb5c742af23a69f81a0d101d0c104151e3459508ebf3
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1797,7 +1797,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff3b011f17f4f02e486f3c8de607f62eddf3b86562e2df82dba57ea166994b65
-R b33ddb6eb6b1e8d7beda0d7f4cf1c6ff
-U dan
-Z 93525fbb63cb2b21b9f3ec0fe983cfac
+P 240f1c0c92cad8a1c19438b38489aedb831f62a4603c53f22367e876d8f644ff
+R 97cd1020543aae6c3b535334385150bf
+U drh
+Z dd51adc1b571f184664beeec5f4ba112

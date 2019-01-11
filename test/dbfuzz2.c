@@ -137,3 +137,49 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
   *pArgc = j;
   return 0;
 }
+
+#ifdef STANDALONE
+/*
+** Read an entire file into memory.  Space to hold the file comes
+** from malloc().
+*/
+static unsigned char *readFile(const char *zName, int *pnByte){
+  FILE *in = fopen(zName, "rb");
+  long nIn;
+  size_t nRead;
+  unsigned char *pBuf;
+  if( in==0 ) return 0;
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = malloc( nIn+1 );
+  if( pBuf==0 ){ fclose(in); return 0; }
+  nRead = fread(pBuf, nIn, 1, in);
+  fclose(in);
+  if( nRead!=1 ){
+    free(pBuf);
+    return 0;
+  }
+  pBuf[nIn] = 0;
+  if( pnByte ) *pnByte = nIn;
+  return pBuf;
+}
+#endif /* STANDALONE */
+
+#ifdef STANDALONE
+int main(int argc, char **argv){
+  int i;
+  int prevAmt = -1;
+  LLVMFuzzerInitialize(&argc, &argv);
+  for(i=1; i<argc; i++){
+    unsigned char *pIn;
+    int nIn;
+    pIn = readFile(argv[i], &nIn);
+    if( pIn ){
+      LLVMFuzzerTestOneInput((const uint8_t*)pIn, (size_t)nIn);
+      free(pIn);
+    }
+  }
+  return 0;
+}
+#endif /*STANDALONE*/
