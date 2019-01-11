@@ -249,4 +249,20 @@ do_catchsql_test 5.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'abandon';
 } {1 {malformed database schema (sqlite_autoindey_t1_segdir_1) - orphan index}}
 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE Table0 USING fts3();
+  INSERT INTO Table0_segdir VALUES(1,NULL,1,NULL,NULL,NULL);
+}
+
+do_catchsql_test 6.1 {
+  SELECT * FROM Table0 WHERE Table0 MATCH 'a';
+} {0 {}}
+
+do_catchsql_test 6.2 {
+  INSERT INTO Table0(Table0) VALUES('optimize');
+} {0 {}}
+
 finish_test

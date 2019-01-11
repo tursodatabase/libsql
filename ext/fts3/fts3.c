@@ -2899,7 +2899,7 @@ static int fts3SegReaderCursor(
 
       /* If zTerm is not NULL, and this segment is not stored entirely on its
       ** root node, the range of leaves scanned can be reduced. Do this. */
-      if( iStartBlock && zTerm ){
+      if( iStartBlock && zTerm && zRoot ){
         sqlite3_int64 *pi = (isPrefix ? &iLeavesEndBlock : 0);
         rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &iStartBlock, pi);
         if( rc!=SQLITE_OK ) goto finished;
