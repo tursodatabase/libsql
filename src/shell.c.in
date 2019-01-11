@@ -5749,7 +5749,7 @@ static int arCreateOrUpdateCommand(
   }
 end_ar_transaction:
   if( rc!=SQLITE_OK ){
-    arExecSql(pAr, "ROLLBACK TO ar; RELEASE ar;");
+    sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
   }else{
     rc = arExecSql(pAr, "RELEASE ar;");
     if( pAr->bZip && pAr->zFile ){
