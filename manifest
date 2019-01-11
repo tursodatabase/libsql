@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2019-01-02T16:08:14.536
+C Add\snew\sdocumentation\sfile\sbegin_concurrent.md.
+D 2019-01-11T15:06:39.819
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -37,6 +37,7 @@ F configure e2b4021dcb8ee6f9a91e7f4011316957868e8065019ac994f68e27363120c272 x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
+F doc/begin_concurrent.md 4bee2c3990d1eb800f1ce3726a911292a8e4b889300b2ffd4b08d357370db299
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1808,7 +1809,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 48ca30f9d7817d87a5e9a069fdc51b1a34e00585f8a35771895dd743c7bfe07c 0465d2fc0d3f8beaa1b6b0bd7bd51d69a524f30d889c9402e7d02cc06164a310
-R 71a7bae1fe784545f177910e02fe6935
+P 5bf212f1a754fde90af0af82dd76f636754829c7372e19df1fd4fa579f0926aa
+R 7b08b63629f0fa82321f4b409f15d3b0
 U dan
-Z c6a4d4a7e90e89246e3383ca332fbf2a
+Z ca9bd1f59646fbf4e9e98b47096634fe
