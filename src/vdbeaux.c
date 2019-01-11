@@ -4251,11 +4251,11 @@ int sqlite3VdbeRecordCompareWithSkip(
   }else{
     idx1 = getVarint32(aKey1, szHdr1);
     d1 = szHdr1;
-    if( d1>(unsigned)nKey1 ){ 
-      pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
-      return 0;  /* Corruption */
-    }
     i = 0;
+  }
+  if( d1>(unsigned)nKey1 ){ 
+    pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
+    return 0;  /* Corruption */
   }
 
   VVA_ONLY( mem1.szMalloc = 0; ) /* Only needed by assert() statements */
