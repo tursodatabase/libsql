@@ -1,5 +1,5 @@
-C Merge\slatest\sbegin-concurrent-wal2\schanges\s(documentation\sonly).
-D 2019-01-11T15:00:05.417
+C Merge\sdocumentation\schanges\sfrom\sbranch\sbegin-concurrent-wal2\sinto\sthis\sbranch.
+D 2019-01-11T15:26:13.449
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
@@ -37,9 +37,11 @@ F configure e2b4021dcb8ee6f9a91e7f4011316957868e8065019ac994f68e27363120c272 x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
+F doc/begin_concurrent.md 4bee2c3990d1eb800f1ce3726a911292a8e4b889300b2ffd4b08d357370db299
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
+F doc/wal2.md a807405a05e19a4945c5905a9ffa0fe45b8560dd7572461192501f565c19cdb5
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
@@ -1823,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 079daedbe440e712dc944aeef831ef6531d44096da406d52ce0d85a8a49618c5
-R c8312e5786119c8d77220079d208d0ab
+P d0ab56a3be29d112c792efef8ae7ceacc43fa5773fe06bdc0e45bf9147f84bb4 41e742bd0f94894b096b30474fb548f58951756d1ea47d0afb717a54802888f4
+R 754f7adc7369f36751be495406429949
 U dan
-Z e60b02c11231906e9d39e575f9fb3030
+Z ba8af5f4e4c8fadeeb442666542b860b
