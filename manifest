@@ -1,5 +1,5 @@
-C Use\s64-bit\sAPIs\sin\sthe\sfileio.c\sextension.
-D 2019-01-11T23:08:56.606
+C Indicate\sthat\sthe\sdatabase\smay\sbe\scorrupt\sin\sthe\sfts3corrupt4.test\stest\sscript.
+D 2019-01-12T00:07:48.245
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -915,7 +915,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test 46b9ddda7f6588fd5a5b1f4bb4fc0618dc45010e7dddb8a3a188baf3197177ae
 F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999fe3b0d25f3
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 74be7ccb774acaa8c9439d61fcc52293165b58f685a3da46ca0b47daf056bbc0
+F test/fts3corrupt4.test 7094ffbd5bbc3852969bd85dc5bed35319f3bbda210e8f2163c74a6b79beb712
 F test/fts3cov.test cb932743da52a1c79a1ab8983e26c8121cf02263d6ff16e1f642e6f9b8348338
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -1798,7 +1798,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d7b1d1d41ff69d5465fcb861420816ecb066c25a9015eefdab5fae15a2e1c9f
-R 369c79d3bd1762fbb2cb49f98fa30478
+P b49d56a0faf012978c50fb8662125ea21bdf5054fddf5975644cbc941c153e70
+R d7baf6ef9c921644c5ac1b95e49ce18a
 U drh
-Z 385f2a9fc9254c3d34f344d45598a89d
+Z dc7b71948f94b54a621938748cbb435f

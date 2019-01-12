@@ -252,6 +252,7 @@ do_catchsql_test 5.1 {
 
 #-------------------------------------------------------------------------
 reset_db
+database_may_be_corrupt
 do_execsql_test 6.0 {
   CREATE VIRTUAL TABLE Table0 USING fts3();
   INSERT INTO Table0_segdir VALUES(1,NULL,1,NULL,NULL,NULL);
