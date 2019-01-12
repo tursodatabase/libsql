@@ -852,7 +852,7 @@ static int fts3ColumnlistCount(char **ppCollist){
 /*
 ** This function gathers 'y' or 'b' data for a single phrase.
 */
-static void fts3ExprLHits(
+static int fts3ExprLHits(
   Fts3Expr *pExpr,                /* Phrase expression node */
   MatchInfo *p                    /* Matchinfo context */
 ){
@@ -882,25 +882,29 @@ static void fts3ExprLHits(
     if( *pIter!=0x01 ) break;
     pIter++;
     pIter += fts3GetVarint32(pIter, &iCol);
+    if( iCol>=p->nCol ) return FTS_CORRUPT_VTAB;
   }
+  return SQLITE_OK;
 }
 
 /*
 ** Gather the results for matchinfo directives 'y' and 'b'.
 */
-static void fts3ExprLHitGather(
+static int fts3ExprLHitGather(
   Fts3Expr *pExpr,
   MatchInfo *p
 ){
+  int rc = SQLITE_OK;
   assert( (pExpr->pLeft==0)==(pExpr->pRight==0) );
   if( pExpr->bEof==0 && pExpr->iDocid==p->pCursor->iPrevId ){
     if( pExpr->pLeft ){
-      fts3ExprLHitGather(pExpr->pLeft, p);
-      fts3ExprLHitGather(pExpr->pRight, p);
+      rc = fts3ExprLHitGather(pExpr->pLeft, p);
+      if( rc==SQLITE_OK ) rc = fts3ExprLHitGather(pExpr->pRight, p);
     }else{
-      fts3ExprLHits(pExpr, p);
+      rc = fts3ExprLHits(pExpr, p);
     }
   }
+  return rc;
 }
 
 /*
@@ -1272,7 +1276,7 @@ static int fts3MatchinfoValues(
       case FTS3_MATCHINFO_LHITS: {
         int nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
         memset(pInfo->aMatchinfo, 0, nZero);
-        fts3ExprLHitGather(pCsr->pExpr, pInfo);
+        rc = fts3ExprLHitGather(pCsr->pExpr, pInfo);
         break;
       }
 
