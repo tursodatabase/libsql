@@ -6387,6 +6387,9 @@ static void fts5DecodeFunction(
       iPgidxOff = szLeaf = fts5GetU16(&a[2]);
       if( iPgidxOff<n ){
         fts5GetVarint32(&a[iPgidxOff], iTermOff);
+      }else if( iPgidxOff>n ){
+        rc = FTS5_CORRUPT;
+        goto decode_out;
       }
     }
 
