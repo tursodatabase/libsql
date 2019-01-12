@@ -1,5 +1,5 @@
-C Indicate\sthat\sthe\sdatabase\smay\sbe\scorrupt\sin\sthe\sfts3corrupt4.test\stest\sscript.
-D 2019-01-12T00:07:48.245
+C Improved\sshadow\stable\scorruption\sdetection\sin\sthe\smatchinfo()\sfunction\sof\sFTS3.
+D 2019-01-12T00:12:33.531
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -80,7 +80,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6b5029db69b237410d9075501c6b78af4207ae5ae3fb7e00a1196748a09fc365
+F ext/fts3/fts3.c 51313386427f23d5aa3e09688272f4e6bcf2fb28700687ee2676af37f0a7afe0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3378157f383540857a466420b8279626204434c3eb0dc948ad9bcd3991fc41f5
 F ext/fts3/fts3_aux.c 32e3ecada9014ff577022f9b44c9c5654d59405b39dc57ba8977298157e8c89b
@@ -1798,7 +1798,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b49d56a0faf012978c50fb8662125ea21bdf5054fddf5975644cbc941c153e70
-R d7baf6ef9c921644c5ac1b95e49ce18a
+P 473626d5579dd19023abccaf7c1822ac0c883a0b98904837ea096fa16e4f41c4
+R 73d136a154272e99ebd73161aec00794
 U drh
-Z dc7b71948f94b54a621938748cbb435f
+Z 9657b145f08b5b72d177903d9527e803

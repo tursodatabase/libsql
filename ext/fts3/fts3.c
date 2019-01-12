@@ -5599,7 +5599,7 @@ static void fts3EvalRestart(
 ** found in Fts3Expr.pPhrase->doclist.pList for each of the phrase 
 ** expression nodes.
 */
-static void fts3EvalUpdateCounts(Fts3Expr *pExpr){
+static void fts3EvalUpdateCounts(Fts3Expr *pExpr, int nCol){
   if( pExpr ){
     Fts3Phrase *pPhrase = pExpr->pPhrase;
     if( pPhrase && pPhrase->doclist.pList ){
@@ -5607,7 +5607,7 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr){
       char *p = pPhrase->doclist.pList;
 
       assert( *p );
-      while( 1 ){
+      do{
         u8 c = 0;
         int iCnt = 0;
         while( 0xFE & (*p | c) ){
@@ -5623,11 +5623,11 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr){
         if( *p==0x00 ) break;
         p++;
         p += fts3GetVarint32(p, &iCol);
-      }
+      }while( iCol<nCol );
     }
 
-    fts3EvalUpdateCounts(pExpr->pLeft);
-    fts3EvalUpdateCounts(pExpr->pRight);
+    fts3EvalUpdateCounts(pExpr->pLeft, nCol);
+    fts3EvalUpdateCounts(pExpr->pRight, nCol);
   }
 }
 
@@ -5697,7 +5697,7 @@ static int fts3EvalGatherStats(
       );
 
       if( rc==SQLITE_OK && pCsr->isEof==0 ){
-        fts3EvalUpdateCounts(pRoot);
+        fts3EvalUpdateCounts(pRoot, pTab->nColumn);
       }
     }
 
