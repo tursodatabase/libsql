@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\scorrupt\sdatabase\shandling\sin\sthe\sfts3\smatchinfo()\sfunction.
-D 2019-01-12T14:58:35.735
+C Fix\san\soff-by-one\serror\son\sa\sGoto\sin\sthe\scode\sgenerator,\sthat\sonly\ncauses\sproblems\sfor\sa\sREPLACE\son\san\sINTEGER\sPRIMARY\sKEY\sin\snon-debug\nbuilds.\s\sTest\scase\sin\sTH3.
+D 2019-01-12T16:19:23.737
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -473,7 +473,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c ad8226b25dfe415ed4733a74c87b8d97515154b15efc8df54e13484851d34489
+F src/insert.c ce295c50a49b626d96d668a915220d02fe372e27ad7dd2bfef297b0335c40488
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 008f45dd39cdc7fb9e7e1f61d75a5c97397f8e07427a8879be23e27747d5f948
@@ -1798,7 +1798,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b74e5f3f3057ee7a98ebcb14ca0751048eacbec8fca3e11e241883029a57ecdf
-R 98e913aa4c07553cef3ed2e17fb44150
-U dan
-Z 266b463aec482d4a998de77b92e76d8b
+P 703646b1b5c84d550fe0d74e399c0eeb729da1d263e4693320f69e6509678985
+R 33928fdfc39020f42a0a3865c5b478a5
+U drh
+Z 736006b46cd8bfa783c1ce2a472d94bc

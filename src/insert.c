@@ -1842,7 +1842,7 @@ void sqlite3GenerateConstraintChecks(
 
   /* If the IPK constraint is a REPLACE, run it last */
   if( ipkTop ){
-    sqlite3VdbeGoto(v, ipkTop+1);
+    sqlite3VdbeGoto(v, ipkTop);
     VdbeComment((v, "Do IPK REPLACE"));
     sqlite3VdbeJumpHere(v, ipkBottom);
   }
