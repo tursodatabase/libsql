@@ -3883,8 +3883,8 @@ static int vdbeRecordCompareDebug(
     ** Use that approximation to avoid the more expensive call to
     ** sqlite3VdbeSerialTypeLen() in the common case.
     */
-    if( d1+serial_type1+2>(u32)nKey1
-     && d1+sqlite3VdbeSerialTypeLen(serial_type1)>(u32)nKey1 
+    if( d1+(u64)serial_type1+2>(u64)nKey1
+     && d1+(u64)sqlite3VdbeSerialTypeLen(serial_type1)>(u64)nKey1 
     ){
       break;
     }
