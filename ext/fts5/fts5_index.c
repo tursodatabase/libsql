@@ -6398,6 +6398,10 @@ static void fts5DecodeFunction(
     }else{
       iOff = szLeaf;
     }
+    if( iOff>n ){
+      rc = FTS5_CORRUPT;
+      goto decode_out;
+    }
     fts5DecodePoslist(&rc, &s, &a[4], iOff-4);
 
     /* Decode any more doclist data that appears on the page before the
@@ -6434,6 +6438,10 @@ static void fts5DecodeFunction(
         term.n = nByte;
       }
       iOff += fts5GetVarint32(&a[iOff], nByte);
+      if( iOff+nByte>n ){
+        rc = FTS5_CORRUPT;
+        break;
+      }
       fts5BufferAppendBlob(&rc, &term, nByte, &a[iOff]);
       iOff += nByte;
 
