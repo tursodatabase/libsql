@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\sdatabase\scorruption\swhile\sbalancing\spages\sfrom\san\nauto_vacuum\sdatabase\swith\soverflow\spages.\s\sTest\scases\sin\sTH3.
-D 2019-01-13T20:17:21.006
+C Relax\sthe\sminimum\ssize\sdatabase\sfile\sconstraint\son\sthe\sdbtotxt\sutility\sprogram.
+D 2019-01-13T20:17:52.605
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -1706,7 +1706,7 @@ F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
-F tool/dbtotxt.c 126da0c130f446106d0e9894d0d86640214d5a7f159c99985088e51cde4f5a09
+F tool/dbtotxt.c 04e25f26be7c7743cdfb4111a8483de0b111925d6afeeb7559ade0ceb73f7f52
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
@@ -1798,7 +1798,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac3b6021d9437ab1c027850d321f0a3e575b008763d8d515e2347f7d4e7c294b
-R b3c41bca6e263f72d137d37d5ad93455
+P 35f04235c477501390acea126d07a730d81d03cdf7abcd82d861e397b3f75b0f
+R a7199e598cf59242d3490ce34402fc8b
 U drh
-Z db68a7c462e1085d4719c3b28e40f5d1
+Z e0556037eed9424da9e46a11c6d6dc83
