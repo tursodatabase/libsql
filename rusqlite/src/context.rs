@@ -14,55 +14,6 @@ use crate::types::{ToSqlOutput, ValueRef};
 #[cfg(feature = "array")]
 use crate::vtab::array::{free_array, ARRAY_TYPE};
 
-impl<'a> ValueRef<'a> {
-    pub(crate) unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
-        use std::slice::from_raw_parts;
-
-        match ffi::sqlite3_value_type(value) {
-            ffi::SQLITE_NULL => ValueRef::Null,
-            ffi::SQLITE_INTEGER => ValueRef::Integer(ffi::sqlite3_value_int64(value)),
-            ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_value_double(value)),
-            ffi::SQLITE_TEXT => {
-                let text = ffi::sqlite3_value_text(value);
-                assert!(
-                    !text.is_null(),
-                    "unexpected SQLITE_TEXT value type with NULL data"
-                );
-                let s = CStr::from_ptr(text as *const c_char);
-
-                // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s
-                    .to_str()
-                    .expect("sqlite3_value_text returned invalid UTF-8");
-                ValueRef::Text(s)
-            }
-            ffi::SQLITE_BLOB => {
-                let (blob, len) = (
-                    ffi::sqlite3_value_blob(value),
-                    ffi::sqlite3_value_bytes(value),
-                );
-
-                assert!(
-                    len >= 0,
-                    "unexpected negative return from sqlite3_value_bytes"
-                );
-                if len > 0 {
-                    assert!(
-                        !blob.is_null(),
-                        "unexpected SQLITE_BLOB value type with NULL data"
-                    );
-                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
-                } else {
-                    // The return value from sqlite3_value_blob() for a zero-length BLOB
-                    // is a NULL pointer.
-                    ValueRef::Blob(&[])
-                }
-            }
-            _ => unreachable!("sqlite3_value_type returned invalid value"),
-        }
-    }
-}
-
 pub(crate) unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
     let value = match *result {
         ToSqlOutput::Borrowed(v) => v,

@@ -115,6 +115,7 @@ mod busy;
 mod cache;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;
+#[macro_use]
 mod error;
 #[cfg(feature = "functions")]
 pub mod functions;
@@ -126,6 +127,8 @@ pub mod limits;
 mod load_extension_guard;
 mod raw_statement;
 mod row;
+#[cfg(feature = "session")]
+pub mod session;
 mod statement;
 #[cfg(feature = "trace")]
 pub mod trace;
@@ -193,7 +196,7 @@ pub enum DatabaseName<'a> {
 
 // Currently DatabaseName is only used by the backup and blob mods, so hide
 // this (private) impl to avoid dead code warnings.
-#[cfg(any(feature = "backup", feature = "blob"))]
+#[cfg(any(feature = "backup", feature = "blob", feature = "session"))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};

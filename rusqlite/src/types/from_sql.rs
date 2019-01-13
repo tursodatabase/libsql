@@ -22,6 +22,18 @@ pub enum FromSqlError {
     Other(Box<dyn Error + Send + Sync>),
 }
 
+impl PartialEq for FromSqlError {
+    fn eq(&self, other: &FromSqlError) -> bool {
+        match (self, other) {
+            (FromSqlError::InvalidType, FromSqlError::InvalidType) => true,
+            (FromSqlError::OutOfRange(n1), FromSqlError::OutOfRange(n2)) => n1 == n2,
+            #[cfg(feature = "i128_blob")]
+            (FromSqlError::InvalidI128Size(s1), FromSqlError::InvalidI128Size(s2)) => s1 == s2,
+            (_, _) => false,
+        }
+    }
+}
+
 impl fmt::Display for FromSqlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
