@@ -134,11 +134,7 @@ static int numberOfVChar(const char *z){
 int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
   int i, j, n;
   int argc = *pArgc;
-  char **newArgv;
   char **argv = *pArgv;
-  newArgv = malloc( sizeof(char*)*(argc+1) );
-  if( newArgv==0 ) return 0;
-  newArgv[0] = argv[0];
   for(i=j=1; i<argc; i++){
     char *z = argv[i];
     if( z[0]=='-' ){
@@ -153,10 +149,9 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
         continue;
       }
     }
-    newArgv[j++] = argv[i];
+    argv[j++] = argv[i];
   }
-  newArgv[j] = 0;
-  *pArgv = newArgv;
+  argv[j] = 0;
   *pArgc = j;
   return 0;
 }
@@ -201,6 +196,9 @@ int main(int argc, char **argv){
       LLVMFuzzerTestOneInput((const uint8_t*)pIn, (size_t)nIn);
       free(pIn);
     }
+  }
+  if( eVerbosity>0 ){
+    printf("SQLite %s\n", sqlite3_sourceid());
   }
   return 0;
 }
