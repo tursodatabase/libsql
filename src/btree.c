@@ -1066,7 +1066,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 #else /* if defined SQLITE_OMIT_AUTOVACUUM */
   #define ptrmapPut(w,x,y,z,rc)
   #define ptrmapGet(w,x,y,z) SQLITE_OK
-  #define ptrmapPutOvflPtr(x, y, rc)
+  #define ptrmapPutOvflPtr(x, y, z, rc)
 #endif
 
 /*
@@ -1359,18 +1359,20 @@ static u16 cellSize(MemPage *pPage, int iCell){
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
-** If the cell pCell, part of page pPage contains a pointer
-** to an overflow page, insert an entry into the pointer-map
-** for the overflow page.
+** The cell pCell is currently part of page pSrc but will ultimately be part
+** of pPage.  (pSrc and pPager are often the same.)  If pCell contains a
+** pointer to an overflow page, insert an entry into the pointer-map for
+** the overflow page that will be valid after pCell has been moved to pPage.
 */
-static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
+static void ptrmapPutOvflPtr(MemPage *pPage, MemPage *pSrc, u8 *pCell,int *pRC){
   CellInfo info;
   if( *pRC ) return;
   assert( pCell!=0 );
   pPage->xParseCell(pPage, pCell, &info);
   if( info.nLocal<info.nPayload ){
     Pgno ovfl;
-    if( SQLITE_WITHIN(pPage->aDataEnd, pCell, pCell+info.nLocal) ){
+    if( SQLITE_WITHIN(pSrc->aDataEnd, pCell, pCell+info.nLocal) ){
+      testcase( pSrc!=pPage );
       *pRC = SQLITE_CORRUPT_BKPT;
       return;
     }
@@ -3491,7 +3493,7 @@ static int setChildPtrmaps(MemPage *pPage){
   for(i=0; i<nCell; i++){
     u8 *pCell = findCell(pPage, i);
 
-    ptrmapPutOvflPtr(pPage, pCell, &rc);
+    ptrmapPutOvflPtr(pPage, pPage, pCell, &rc);
 
     if( !pPage->leaf ){
       Pgno childPgno = get4byte(pCell);
@@ -6677,7 +6679,7 @@ static void insertCell(
       /* The cell may contain a pointer to an overflow page. If so, write
       ** the entry for the overflow page into the pointer map.
       */
-      ptrmapPutOvflPtr(pPage, pCell, pRC);
+      ptrmapPutOvflPtr(pPage, pPage, pCell, pRC);
     }
 #endif
   }
@@ -7093,7 +7095,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     if( ISAUTOVACUUM ){
       ptrmapPut(pBt, pgnoNew, PTRMAP_BTREE, pParent->pgno, &rc);
       if( szCell>pNew->minLocal ){
-        ptrmapPutOvflPtr(pNew, pCell, &rc);
+        ptrmapPutOvflPtr(pNew, pNew, pCell, &rc);
       }
     }
   
@@ -7315,10 +7317,6 @@ static int balance_nonroot(
   pBt = pParent->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
-
-#if 0
-  TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
-#endif
 
   /* At this point pParent may have at most one overflow cell. And if
   ** this overflow cell is present, it must be the cell with 
@@ -7785,7 +7783,8 @@ static int balance_nonroot(
   ** populated, not here.
   */
   if( ISAUTOVACUUM ){
-    MemPage *pNew = apNew[0];
+    MemPage *pOld;
+    MemPage *pNew = pOld = apNew[0];
     u8 *aOld = pNew->aData;
     int cntOldNext = pNew->nCell + pNew->nOverflow;
     int usableSize = pBt->usableSize;
@@ -7795,7 +7794,7 @@ static int balance_nonroot(
     for(i=0; i<b.nCell; i++){
       u8 *pCell = b.apCell[i];
       if( i==cntOldNext ){
-        MemPage *pOld = (++iOld)<nNew ? apNew[iOld] : apOld[iOld];
+        pOld = (++iOld)<nNew ? apNew[iOld] : apOld[iOld];
         cntOldNext += pOld->nCell + pOld->nOverflow + !leafData;
         aOld = pOld->aData;
       }
@@ -7818,7 +7817,7 @@ static int balance_nonroot(
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
         }
         if( cachedCellSize(&b,i)>pNew->minLocal ){
-          ptrmapPutOvflPtr(pNew, pCell, &rc);
+          ptrmapPutOvflPtr(pNew, pOld, pCell, &rc);
         }
         if( rc ) goto balance_cleanup;
       }
