@@ -22,6 +22,10 @@ ifcapable !fts3 {
   return
 }
 
+proc test_fts3expr {expr} {
+  db one {SELECT fts3_exprtest('simple', $expr, 'a', 'b', 'c')}
+}
+
 #-------------------------------------------------------------------------
 # Various forms of empty phrase expressions.
 #
@@ -45,4 +49,19 @@ do_execsql_test 1.5 {
   SELECT rowid FROM t0 WHERE x MATCH '""""';
 } {}
 
+#-------------------------------------------------------------------------
+# Various forms of empty phrase expressions.
+#
+set sqlite_fts3_enable_parentheses 1
+do_test 2.0 {
+  test_fts3expr {(a:123)(b:234)()(c:456)}
+} {AND {AND {PHRASE 0 0 123} {PHRASE 1 0 234}} {PHRASE 2 0 456}}
+do_test 2.1 {
+  test_fts3expr {(a:123)(b:234)(c:456)}
+} {AND {AND {PHRASE 0 0 123} {PHRASE 1 0 234}} {PHRASE 2 0 456}}
+do_test 2.2 {
+  list [catch { test_fts3expr {"123" AND ( )} } msg] $msg
+} {1 {Error parsing expression}}
+
 finish_test
+

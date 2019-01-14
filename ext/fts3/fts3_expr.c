@@ -497,7 +497,6 @@ static int getNextNode(
       int nConsumed = 0;
       pParse->nNest++;
       rc = fts3ExprParse(pParse, zInput+1, nInput-1, ppExpr, &nConsumed);
-      if( rc==SQLITE_OK && !*ppExpr ){ rc = SQLITE_DONE; }
       *pnConsumed = (int)(zInput - z) + 1 + nConsumed;
       return rc;
     }else if( *zInput==')' ){
