@@ -2961,7 +2961,9 @@ int sqlite3Fts3SegReaderStep(
           }else{
             iDelta = iDocid - iPrev;
           }
-          assert( iDelta>0 || (nDoclist==0 && iDelta==iDocid) );
+          if( iDelta<=0 && (nDoclist>0 || iDelta!=iDocid) ){
+            return FTS_CORRUPT_VTAB;
+          }
           assert( nDoclist>0 || iDelta==iDocid );
 
           nByte = sqlite3Fts3VarintLen(iDelta) + (isRequirePos?nList+1:0);
