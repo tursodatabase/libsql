@@ -1,5 +1,5 @@
-C In\sdbfuzz2,\savoid\susing\sa\smalloc\sin\sthe\sLLVMFuzzerInitialize()\sinitializer\nroutine,\sso\sthat\sno\smemory\sleaks\sare\sreported.\s\sAlso,\sshow\sthe\sversion\sof\nSQLite\sbeing\sused\swhen\sthe\s-v\soption\sis\son.
-D 2019-01-13T20:23:34.262
+C Avoid\sreading\soff\sthe\sfront\sof\sa\spage\sbuffer\swhen\sbalancing\sa\scorrupt\nbtree\spage.
+D 2019-01-14T05:48:10.140
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -453,7 +453,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c d2ee84255b7372e6a70447f3e260eadfca38d25b1039cf88341df4225cbb3e0e
+F src/btree.c a1030989a43bb21fde08fbe26e201009b70956560e5663317106f75c45937ac9
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c b1e24f1deedee07955cad9c56928cdafa7df1615746688e817bfe0b020a68576
@@ -1798,7 +1798,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97e723d746eeb2159f5bf1701532271ac6a4620879c82d496f4499c178b64479
-R 018cc9497956b71ce50ebe4039e4c70b
+P 824f93246988ffa213bbd41a7de08886999b1a8ae00fdf6b9767acb6e3ec6a1f
+R 2f2adf3a3a2ba32a22ec63d497830a09
 U drh
-Z e7be8d96bead9a75143219194f67e213
+Z 39dac29da4f114d88e1d1d0c8c22da61
