@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sa\scrash\sif\san\sfts5vocab\stable\swas\screated\sto\squery\san\nfts3/4\sFTS\sindex.
-D 2019-01-14T15:35:15.573
+C Add\sthe\s"prefixes"\stable-valued\sfunction\sin\sthe\sext/misc\sfolder.
+D 2019-01-14T16:16:30.437
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -295,6 +295,7 @@ F ext/misc/mmapwarm.c 8c5fe90d807a23e44a8b93e96e8b812b19b300d5fd8c1d40a4fd1d8224
 F ext/misc/nextchar.c 279f80fe8ef5ba413242e2704e246503ac601f005eefb180d19e6c920338a0ba
 F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c a6a1594c104da2d0ceab38fe609eb2f65529272377827f6f8a2b5c9fa6119e7e
+F ext/misc/prefixes.c ac95cf723927b9e4b6f2b45eec743986259e3c2618f92ffa9fd780e13c75f70e
 F ext/misc/regexp.c 79345bf03496155a640ee0300d3307296761cebb5e115b4e342cc2fb5861ec10
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
@@ -1798,7 +1799,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65e50706a017751d72d0f9c7f575955194977decd0acf13aaca90c3cb925f20e
-R 13fb83cbbd4ed093aa980d87f465f513
-U dan
-Z de4b903b843670f3eeae239fb952f2f8
+P 9cd64ce453e4435d80117b8610c22a0a4b53cd6e84b39815e70e684f6b0295c8
+R e9e76e5c2ca649c80198f4ce0b8026d6
+U drh
+Z 111aac904e6040781b0bacf239392c1f
