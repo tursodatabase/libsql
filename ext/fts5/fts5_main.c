@@ -2244,13 +2244,13 @@ Fts5Index *sqlite3Fts5IndexFromCsrid(
   Fts5Config **ppConfig           /* OUT: Configuration object */
 ){
   Fts5Cursor *pCsr;
-  Fts5Table *pTab;
-
   pCsr = fts5CursorFromCsrid(pGlobal, iCsrId);
-  pTab = (Fts5Table*)pCsr->base.pVtab;
-  *ppConfig = pTab->pConfig;
-
-  return pTab->pIndex;
+  if( pCsr ){
+    Fts5Table *pTab = (Fts5Table*)pCsr->base.pVtab;
+    *ppConfig = pTab->pConfig;
+    return pTab->pIndex;
+  }
+  return 0;
 }
 
 /*
