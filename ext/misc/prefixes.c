@@ -249,6 +249,53 @@ static sqlite3_module prefixesModule = {
   /* xShadowName */ 0
 };
 
+/*
+** This is a copy of the SQLITE_SKIP_UTF8(zIn) macro in sqliteInt.h.
+**
+** Assuming zIn points to the first byte of a UTF-8 character,
+** advance zIn to point to the first byte of the next UTF-8 character.
+*/
+#define PREFIX_SKIP_UTF8(zIn) {                        \
+  if( (*(zIn++))>=0xc0 ){                              \
+    while( (*zIn & 0xc0)==0x80 ){ zIn++; }             \
+  }                                                    \
+}
+
+/*
+** Implementation of function prefix_length(). This function accepts two
+** strings as arguments and returns the length in characters (not bytes), 
+** of the longest prefix shared by the two strings. For example:
+**
+**   prefix_length('abcdxxx', 'abcyy') == 3
+**   prefix_length('abcdxxx', 'bcyyy') == 0
+**   prefix_length('abcdxxx', 'ab')    == 2
+**   prefix_length('ab',      'abcd')  == 2
+**
+** This function assumes the input is well-formed utf-8. If it is not,
+** it is possible for this function to return -1.
+*/
+static void prefixLengthFunc(
+  sqlite3_context *ctx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  int nByte;                      /* Number of bytes to compare */
+  int nRet = 0;                   /* Return value */
+  const unsigned char *zL = sqlite3_value_text(apVal[0]);
+  const unsigned char *zR = sqlite3_value_text(apVal[1]);
+  int nL = sqlite3_value_bytes(apVal[0]);
+  int nR = sqlite3_value_bytes(apVal[1]);
+  int i;
+
+  nByte = (nL > nR ? nL : nR);
+  for(i=0; i<nByte; i++){
+    if( zL[i]!=zR[i] ) break;
+    if( (zL[i] & 0xC0)!=0x80 ) nRet++;
+  }
+
+  if( (zL[i] & 0xC0)==0x80 ) nRet--;
+  sqlite3_result_int(ctx, nRet);
+}
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -261,5 +308,10 @@ int sqlite3_prefixes_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   rc = sqlite3_create_module(db, "prefixes", &prefixesModule, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(
+        db, "prefix_length", 2, SQLITE_UTF8, 0, prefixLengthFunc, 0, 0
+    );
+  }
   return rc;
 }

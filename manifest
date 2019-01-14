@@ -1,10 +1,10 @@
-C Fix\sa\sproblem\scausing\ssome\sTcl\stest\scases\sto\sfail\swith\serrors\slike\s"expected:\s[<multiline-whitespace>],\sgot:\s[]".
-D 2019-01-14T19:13:30.596
+C Add\sscalar\sfunction\s"prefix_length()"\sto\sext/misc/prefixes.c.
+D 2019-01-14T20:44:00.309
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
+F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 3c4c7e94419ff28cb68850188c9d153b343aed4c5ebed5965426232ed67ff9d9
+F Makefile.msc 54c5921b0c65c49ea8fb5010e763c181526d6cdc1109c7ab7115c4f5bb71e13c
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION 453e2f4529ca208196d5567db28d549d7151f79efd33f6e6cfe6e613e583a0be
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -295,7 +295,7 @@ F ext/misc/mmapwarm.c 8c5fe90d807a23e44a8b93e96e8b812b19b300d5fd8c1d40a4fd1d8224
 F ext/misc/nextchar.c 279f80fe8ef5ba413242e2704e246503ac601f005eefb180d19e6c920338a0ba
 F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c a6a1594c104da2d0ceab38fe609eb2f65529272377827f6f8a2b5c9fa6119e7e
-F ext/misc/prefixes.c ac95cf723927b9e4b6f2b45eec743986259e3c2618f92ffa9fd780e13c75f70e
+F ext/misc/prefixes.c 1eb85b7b64b8adf5cbb18a72c51a8f2910a7bc0fd5fbc81a9213ba4af2d51811
 F ext/misc/regexp.c 79345bf03496155a640ee0300d3307296761cebb5e115b4e342cc2fb5861ec10
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
@@ -435,7 +435,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 8456b6b4a5ecdb7b6b59283236b3be6393bc7eed6cbda3bcf1d552e1a63e03ff
+F main.mk 20d344434cec07680fb7d7e66f6401b0f3bf915277018ac93d229b8f73678216
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -523,7 +523,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c e72862a271348d779672b45a730c33fd0c535e630ff927e8ce4a0c908d1d28c6
-F src/test1.c f78dcd39d5cad63d33306bb963354f976007968bc95c45bc9fdfaeb2e1ec0eae
+F src/test1.c 64cdc914a77102e008dfae7adaa4ded54c2d4953d1464ea8709805a2aab755eb
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1199,6 +1199,7 @@ F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c
 F test/pragma4.test 52d8186f9e8d09b87189432cdd401dfa66d0b32445e837fa19046c8ae7621b0e
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
+F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
 F test/printf.test a3e559bc9d922e7fe44e9d05c6965fee34fe3bc28300a4248c6a063425246ffd
 F test/printf2.test 30b5dd0b4b992dc5626496846ecce17ff592cacbcb11c3e589f3ac4d7e129dae
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
@@ -1799,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0fd2163fc23a555ef03af43294a14fcabae6921f52e64c979286c745b4f6218
-R 238e457d65f075aa5a49baa7e28c3f0b
+P 11b8a4cba747ca214fe3506caa3b711c87be4d55412754e673cc0603afefb086
+R 32ab1d3eba68373a1b0b1f4de28ca909
 U dan
-Z 9ed1f14f70bf3f4d25df868a0ff2534c
+Z fb1a50e31aa836559e45fed0b6204d9c
