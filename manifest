@@ -1,5 +1,5 @@
-C Add\sthe\s"prefixes"\stable-valued\sfunction\sin\sthe\sext/misc\sfolder.
-D 2019-01-14T16:16:30.437
+C Fix\sa\sproblem\scausing\ssome\sTcl\stest\scases\sto\sfail\swith\serrors\slike\s"expected:\s[<multiline-whitespace>],\sgot:\s[]".
+D 2019-01-14T19:13:30.596
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 45a3fef4d325ac0220c2172aeec4e4321da351f073f3b8e8ddea655f49ef6f2b
@@ -1368,7 +1368,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl fa5656391e3b477508abe12b3b81f019b2e71397399ab38a2f32d8d7f3bf8e56
+F test/tester.tcl aafcd5b0bc0f7f5c0fc95fb09964ac1055e371d00881c30b42280e9d5e956206
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1799,7 +1799,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9cd64ce453e4435d80117b8610c22a0a4b53cd6e84b39815e70e684f6b0295c8
-R e9e76e5c2ca649c80198f4ce0b8026d6
-U drh
-Z 111aac904e6040781b0bacf239392c1f
+P f0fd2163fc23a555ef03af43294a14fcabae6921f52e64c979286c745b4f6218
+R 238e457d65f075aa5a49baa7e28c3f0b
+U dan
+Z 9ed1f14f70bf3f4d25df868a0ff2534c
