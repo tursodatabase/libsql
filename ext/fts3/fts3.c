@@ -2264,10 +2264,9 @@ static int fts3PoslistPhraseMerge(
         p += sqlite3Fts3PutVarint(p, iCol1);
       }
 
-      assert( *p1!=POS_END && *p1!=POS_COLUMN );
-      assert( *p2!=POS_END && *p2!=POS_COLUMN );
       fts3GetDeltaVarint(&p1, &iPos1); iPos1 -= 2;
       fts3GetDeltaVarint(&p2, &iPos2); iPos2 -= 2;
+      if( iPos1<0 || iPos2<0 ) break;
 
       while( 1 ){
         if( iPos2==iPos1+nToken 
@@ -4616,9 +4615,10 @@ static int fts3EvalIncrPhraseNext(
       if( bEof==0 ){
         int nList = 0;
         int nByte = a[p->nToken-1].nList;
-        char *aDoclist = sqlite3_malloc(nByte+1);
+        char *aDoclist = sqlite3_malloc(nByte+FTS3_BUFFER_PADDING);
         if( !aDoclist ) return SQLITE_NOMEM;
         memcpy(aDoclist, a[p->nToken-1].pList, nByte+1);
+        memset(&aDoclist[nByte], 0, FTS3_BUFFER_PADDING);
 
         for(i=0; i<(p->nToken-1); i++){
           if( a[i].bIgnore==0 ){
