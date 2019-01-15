@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\smemory\sleak\sin\sthe\sLemon\sparser\sgenerator\sutility\sprogram.
-D 2019-01-15T14:44:23.568
+C Have\sfts5\sreject\sattempts\sto\sinsert\sa\snon-integer,\snon-null\svalue\sinto\sa\srowid\ncolumn\swith\sSQLITE_MISMATCH.
+D 2019-01-15T15:18:58.151
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -116,7 +116,7 @@ F ext/fts5/fts5_config.c eeec97cb0237991e7fa3bbae07b5cc354e3f238b661200c11228fe1
 F ext/fts5/fts5_expr.c 188d1dca5a262a0708efc5deb809f1aa6ecea4158986a439d2670cfe72d10b65
 F ext/fts5/fts5_hash.c d415f5ad332b051f0ade564bcf1762c4467cc49b2ba8ea5873d8744c705d8d42
 F ext/fts5/fts5_index.c ba68cfbd786ff50d84c23c841ac44063a5f939b37ae9e320bcbaf2baabc34608
-F ext/fts5/fts5_main.c ea863c28474f9a3903f37f27fc1894fa0a4eb786435f0b95575fa496d0886e22
+F ext/fts5/fts5_main.c 55236fb77546bec22bedad309033564ce32c96c001dee82d09d310bcc8c113b6
 F ext/fts5/fts5_storage.c 00db5029ee470172c1a79d7182808b678ee21b7ea1f63618bcb0591bf8cf7f8a
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
@@ -215,7 +215,7 @@ F ext/fts5/test/fts5unicode2.test 9b3df486de05fb4bde4aa7ee8de2e6dae1df6eb90e3f2e
 F ext/fts5/test/fts5unicode3.test 590c72e18195bda2446133f9d82d04a4e89d094bba58c75ae10f4afc6faa0744
 F ext/fts5/test/fts5unicode4.test 6463301d669f963c83988017aa354108be0b947d325aef58d3abddf27147b687
 F ext/fts5/test/fts5unindexed.test 9021af86a0fb9fc616f7a69a996db0116e7936d0db63892db6bafabbec21af4d
-F ext/fts5/test/fts5update.test 3f0e75ba7640adfdb89953ce9d5a807cb7525c60cf3ebaaa15257510773e66c8
+F ext/fts5/test/fts5update.test b8affd796e45c94a4d19ad5c26606ea06065a0f162a9562d9f005b5a80ccf0bc
 F ext/fts5/test/fts5version.test c8f2cc105f0abf0224965f93e584633dee3e06c91478bc67e468f7cfdf97fd6a
 F ext/fts5/test/fts5vocab.test 26e069050d6fb389e67f7a9402421948233152ae433e6b8da47cf15d3b5a8d26
 F ext/fts5/test/fts5vocab2.test e0fdc3a3095f6eda68ac9bf9a443ff929a124d46f00af19933604085712e9d47
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ecf5caa7e9825a8b03d15ee525ec68be78c55926ddfaca27a040a7614caf0e85
-R 24b5673f620d25b1c990e7636a167c13
-U drh
-Z 0a407a7b0060b0ce7132652c6f1c1d18
+P 1caff0fb0b2051e205e7a8cfd5dadf92680c52a88a441ded95b1ea6542db5f83
+R dde41c2e6d11e160883df838e31ee31e
+U dan
+Z c636d84f1aab6db98e73b3c69339d51d
