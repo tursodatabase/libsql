@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\striggered\sby\sDELETE\sstatements\swith\sWHERE\sclauses\sthat\suse\sthe\nOR-optimization\son\ssome\svirtual\stables.
-D 2019-01-15T14:31:01.754
+C Fix\sa\sharmless\smemory\sleak\sin\sthe\sLemon\sparser\sgenerator\sutility\sprogram.
+D 2019-01-15T14:44:23.568
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -1719,7 +1719,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 8fd515b97522ae4b1aa6ca9847439f005d4cbaf6eb0eb416b694dba77c0263f0
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c c9ba01f6729c892ae3e0f55c8a2d694a7e6ec3dd3aa280b411a008ef69b410cd
+F tool/lemon.c 900a15b9efba9890d10e7959914db94c4ad5162912127f061c4328add122d6fb
 F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0bf1550507d9d3c8a41f8a50db3a59bf808f0a4e24637dc0905d35579305eca7
-R 2c397297f134bc6152efa0485df52b10
-U dan
-Z 19d23f22b9b5c0ebccb0826a548951f8
+P ecf5caa7e9825a8b03d15ee525ec68be78c55926ddfaca27a040a7614caf0e85
+R 24b5673f620d25b1c990e7636a167c13
+U drh
+Z 0a407a7b0060b0ce7132652c6f1c1d18
