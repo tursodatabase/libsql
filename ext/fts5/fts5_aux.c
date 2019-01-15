@@ -136,7 +136,7 @@ static void fts5HighlightAppend(
   HighlightContext *p, 
   const char *z, int n
 ){
-  if( *pRc==SQLITE_OK ){
+  if( *pRc==SQLITE_OK && z ){
     if( n<0 ) n = (int)strlen(z);
     p->zOut = sqlite3_mprintf("%z%.*s", p->zOut, n, z);
     if( p->zOut==0 ) *pRc = SQLITE_NOMEM;
