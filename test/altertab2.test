@@ -142,4 +142,40 @@ foreach {tn schema} {
   } $expect
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a,b,c,d,e,f);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+    UPDATE t1 SET (c,d)=(a,b);
+  END;
+}
+
+do_execsql_test 4.1 {
+  ALTER TABLE t1 RENAME TO t1x;
+  SELECT sql FROM sqlite_master WHERE type = 'trigger';
+} {
+{CREATE TRIGGER r1 AFTER INSERT ON "t1x" WHEN new.a NOT NULL BEGIN
+    UPDATE "t1x" SET (c,d)=(a,b);
+  END}
+}
+
+do_execsql_test 4.2 {
+  ALTER TABLE t1x RENAME a TO aaa;
+  SELECT sql FROM sqlite_master WHERE type = 'trigger';
+} {
+{CREATE TRIGGER r1 AFTER INSERT ON "t1x" WHEN new.aaa NOT NULL BEGIN
+    UPDATE "t1x" SET (c,d)=(aaa,b);
+  END}
+}
+
+do_execsql_test 4.3 {
+  ALTER TABLE t1x RENAME d TO ddd;
+  SELECT sql FROM sqlite_master WHERE type = 'trigger';
+} {
+{CREATE TRIGGER r1 AFTER INSERT ON "t1x" WHEN new.aaa NOT NULL BEGIN
+    UPDATE "t1x" SET (c,ddd)=(aaa,b);
+  END}
+}
+
 finish_test

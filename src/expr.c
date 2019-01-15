@@ -465,6 +465,7 @@ Expr *sqlite3ExprForVectorField(
   }else{
     if( pVector->op==TK_VECTOR ) pVector = pVector->x.pList->a[iField].pExpr;
     pRet = sqlite3ExprDup(pParse->db, pVector, 0);
+    sqlite3RenameTokenRemap(pParse, pRet, pVector);
   }
   return pRet;
 }
@@ -1668,6 +1669,9 @@ ExprList *sqlite3ExprListAppendVector(
   }
 
 vector_append_error:
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameExprUnmap(pParse, pExpr);
+  }
   sqlite3ExprDelete(db, pExpr);
   sqlite3IdListDelete(db, pColumns);
   return pList;

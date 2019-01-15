@@ -1,5 +1,5 @@
-C Handle\sSQL\sNULL\svalues\swithout\scrashing\sin\sthe\sfts5\ssnippet()\sand\shighlight()\nfunctions.
-D 2019-01-15T18:14:27.654
+C Fix\sa\sproblem\swith\sALTER\sTABLE\sand\svector\sassignments\sin\sUPDATE\sstatements\nwithin\striggers.
+D 2019-01-15T20:51:35.919
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -465,7 +465,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c 209cd8345b15d1843abeff2d91a6d9c765cf32ff4abcb24411c38fe08e18baab
-F src/expr.c 01aa7e667b65fc18ccbe41d00c9a114cb2658831be13d9847a376a88ba2f3ae9
+F src/expr.c 716a241833ce105b02650f53495d0bd7aaa62a543e93611a6d25f4232ae51e24
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c aaf28be73ab21e1e8bf4ac6b94269ebc8c93238d1e6997cb44b527b622e8ae6f
 F src/func.c 6cf832abbc2815fdb46fee654df32a66ab77deb47bf4cff04a5774dafecd497a
@@ -621,7 +621,7 @@ F test/alterlegacy.test 82022721ce0de29cedc9a7af63bc9fcc078b0ee000f8283b4b6ea9c3
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test 6e13f13d8c30708f16187908c31dadb1bfff9e3cb2a07a7392a7a5e076f58f4a
-F test/altertab2.test 814369c72a7ed777ab2acf3f17fcff5ecb724816eb7c6659f40ef87b09521c99
+F test/altertab2.test 4e40836ce90c9533e03be8417f3b02c2655ea96c375769cda9caaed464f234ea
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 7168c8bffa5d5cbc53c05b7e9c7fcdd24b365a1bc5046ce80c45efa3c02e6b7c
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e54efd60c20bbfc5d70ddb9e1dd6ffb68cbbcfa57b4f07cb104767ef08c1a559
-R a124f0daa14c3fb69b1fe1525949e0b1
+P a5e9cc794f17566160c4b2b5791601a744a21ace987b19ff8a5816fd78dce56a
+R b78aa35497a642b92b0b693ff5436269
 U dan
-Z ecde6a04eb591dee1e34e260f38af44d
+Z a8ab20166831e403dfa2b39b553a8df3
