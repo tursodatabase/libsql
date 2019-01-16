@@ -233,4 +233,36 @@ do_catchsql_test 5.3 {
   INSERT INTO t2x VALUES(1);
 } {1 {no such column: b}}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 6.0 {
+  CREATE TABLE t3(a,b,c,d);
+  CREATE TRIGGER r3 AFTER INSERT ON t3 WHEN new.a NOT NULL BEGIN
+    SELECT a,b,c FROM t3 EXCEPT SELECT a,b,c FROM t3 ORDER BY a;
+    SELECT rowid, * FROM t3;
+  END;
+} {}
+
+do_execsql_test 6.1 {
+  ALTER TABLE t3 RENAME TO t3x;
+  SELECT sql FROM sqlite_master WHERE name = 'r3';
+} {
+  {CREATE TRIGGER r3 AFTER INSERT ON "t3x" WHEN new.a NOT NULL BEGIN
+    SELECT a,b,c FROM "t3x" EXCEPT SELECT a,b,c FROM "t3x" ORDER BY a;
+    SELECT rowid, * FROM "t3x";
+  END}
+}
+
+do_execsql_test 6.2 {
+  ALTER TABLE t3x RENAME a TO abcd;
+  SELECT sql FROM sqlite_master WHERE name = 'r3';
+} {
+  {CREATE TRIGGER r3 AFTER INSERT ON "t3x" WHEN new.abcd NOT NULL BEGIN
+    SELECT abcd,b,c FROM "t3x" EXCEPT SELECT abcd,b,c FROM "t3x" ORDER BY abcd;
+    SELECT rowid, * FROM "t3x";
+  END}
+}
+
 finish_test
+
+

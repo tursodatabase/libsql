@@ -1138,12 +1138,36 @@ static int resolveCompoundOrderBy(
       }else{
         iCol = resolveAsName(pParse, pEList, pE);
         if( iCol==0 ){
-          pDup = sqlite3ExprDup(db, pE, 0);
+          /* Now test if expression pE matches one of the values returned
+          ** by pSelect. In the usual case this is done by duplicating the 
+          ** expression, resolving any symbols in it, and then comparing
+          ** it against each expression returned by the SELECT statement.
+          ** Once the comparisons are finished, the duplicate expression
+          ** is deleted.
+          **
+          ** Or, if this is running as part of an ALTER TABLE operation,
+          ** resolve the symbols in the actual expression, not a duplicate.
+          ** And, if one of the comparisons is successful, leave the expression
+          ** as is instead of transforming it to an integer as in the usual
+          ** case. This allows the code in alter.c to modify column
+          ** refererences within the ORDER BY expression as required.  */
+          if( IN_RENAME_OBJECT ){
+            pDup = pE;
+          }else{
+            pDup = sqlite3ExprDup(db, pE, 0);
+          }
           if( !db->mallocFailed ){
             assert(pDup);
             iCol = resolveOrderByTermToExprList(pParse, pSelect, pDup);
           }
-          sqlite3ExprDelete(db, pDup);
+          if( IN_RENAME_OBJECT ){
+            if( iCol>0 ){
+              pItem->done = 1;
+              break;
+            }
+          }else{
+            sqlite3ExprDelete(db, pDup);
+          }
         }
       }
       if( iCol>0 ){
