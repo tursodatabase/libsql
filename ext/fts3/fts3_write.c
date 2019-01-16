@@ -1615,6 +1615,7 @@ int sqlite3Fts3SegReaderNew(
 #endif
 
   if( iStartLeaf==0 ){
+    if( iEndLeaf!=0 ) return FTS_CORRUPT_VTAB;
     nExtra = nRoot + FTS3_NODE_PADDING;
   }
 
@@ -3744,7 +3745,7 @@ static int nodeReaderNext(NodeReader *p){
     p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &nSuffix);
 
     if( nPrefix>p->iOff || nSuffix>p->nNode-p->iOff ){
-      return SQLITE_CORRUPT_VTAB;
+      return FTS_CORRUPT_VTAB;
     }
     blobGrowBuffer(&p->term, nPrefix+nSuffix, &rc);
     if( rc==SQLITE_OK ){
@@ -3754,7 +3755,7 @@ static int nodeReaderNext(NodeReader *p){
       if( p->iChild==0 ){
         p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &p->nDoclist);
         if( (p->nNode-p->iOff)<p->nDoclist ){
-          return SQLITE_CORRUPT_VTAB;
+          return FTS_CORRUPT_VTAB;
         }
         p->aDoclist = &p->aNode[p->iOff];
         p->iOff += p->nDoclist;
