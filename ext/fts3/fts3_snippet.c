@@ -1121,6 +1121,7 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   int i;
   int iCol;
   int nToken = 0;
+  int rc = SQLITE_OK;
 
   /* Allocate and populate the array of LcsIterator objects. The array
   ** contains one element for each matchable phrase in the query.
@@ -1141,13 +1142,16 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     int nLive = 0;                /* Number of iterators in aIter not at EOF */
 
     for(i=0; i<pInfo->nPhrase; i++){
-      int rc;
       LcsIterator *pIt = &aIter[i];
       rc = sqlite3Fts3EvalPhrasePoslist(pCsr, pIt->pExpr, iCol, &pIt->pRead);
-      if( rc!=SQLITE_OK ) return rc;
+      if( rc!=SQLITE_OK ) goto matchinfo_lcs_out;
       if( pIt->pRead ){
         pIt->iPos = pIt->iPosOffset;
-        fts3LcsIteratorAdvance(&aIter[i]);
+        fts3LcsIteratorAdvance(pIt);
+        if( pIt->pRead==0 ){
+          rc = FTS_CORRUPT_VTAB;
+          goto matchinfo_lcs_out;
+        }
         nLive++;
       }
     }
@@ -1179,8 +1183,9 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     pInfo->aMatchinfo[iCol] = nLcs;
   }
 
+ matchinfo_lcs_out:
   sqlite3_free(aIter);
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
