@@ -178,4 +178,59 @@ do_execsql_test 4.3 {
   END}
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 5.0 {
+  CREATE TABLE t2(a);
+  CREATE TRIGGER r2 AFTER INSERT ON t2 WHEN new.a NOT NULL BEGIN
+    SELECT a, rank() OVER w1 FROM t2
+      WINDOW w1 AS (
+        PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND a FOLLOWING
+      ),
+      w2 AS (
+        PARTITION BY b 
+        ORDER BY d ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+      );
+  END;
+} {}
+
+do_catchsql_test 5.0.1 {
+  INSERT INTO t2 VALUES(1);
+} {1 {no such column: b}}
+
+do_execsql_test 5.1 {
+  ALTER TABLE t2 RENAME TO t2x;
+  SELECT sql FROM sqlite_master WHERE name = 'r2';
+} {
+  {CREATE TRIGGER r2 AFTER INSERT ON "t2x" WHEN new.a NOT NULL BEGIN
+    SELECT a, rank() OVER w1 FROM "t2x"
+      WINDOW w1 AS (
+        PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND a FOLLOWING
+      ),
+      w2 AS (
+        PARTITION BY b 
+        ORDER BY d ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+      );
+  END}
+}
+
+do_execsql_test 5.2 {
+  ALTER TABLE t2x RENAME a TO aaaa;
+  SELECT sql FROM sqlite_master WHERE name = 'r2';
+} {
+  {CREATE TRIGGER r2 AFTER INSERT ON "t2x" WHEN new.aaaa NOT NULL BEGIN
+    SELECT aaaa, rank() OVER w1 FROM "t2x"
+      WINDOW w1 AS (
+        PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND a FOLLOWING
+      ),
+      w2 AS (
+        PARTITION BY b 
+        ORDER BY d ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+      );
+  END}
+}
+
+do_catchsql_test 5.3 {
+  INSERT INTO t2x VALUES(1);
+} {1 {no such column: b}}
+
 finish_test
