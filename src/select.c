@@ -1457,7 +1457,12 @@ static void generateSortTail(
     regRow = pDest->iSdst;
   }else{
     regRowid = sqlite3GetTempReg(pParse);
-    regRow = sqlite3GetTempRange(pParse, nColumn);
+    if( eDest==SRT_EphemTab || eDest==SRT_Table ){
+      regRow = sqlite3GetTempReg(pParse);
+      nColumn = 0;
+    }else{
+      regRow = sqlite3GetTempRange(pParse, nColumn);
+    }
   }
   nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
@@ -1537,6 +1542,7 @@ static void generateSortTail(
   switch( eDest ){
     case SRT_Table:
     case SRT_EphemTab: {
+      sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq, regRow);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
