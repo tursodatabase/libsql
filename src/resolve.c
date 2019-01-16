@@ -1163,7 +1163,7 @@ static int resolveCompoundOrderBy(
           if( IN_RENAME_OBJECT ){
             if( iCol>0 ){
               pItem->done = 1;
-              break;
+              continue;
             }
           }else{
             sqlite3ExprDelete(db, pDup);
