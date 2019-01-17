@@ -1,5 +1,5 @@
-C Fix\sanother\scorruption\srelated\scrash\sin\sfts5.
-D 2019-01-17T20:06:56.273
+C Disable\sthe\sxfer-optimization\sif\sthe\stwo\stables\shave\sthe\ssame\sroot\spage\ndue\sto\sschema\scorruption.
+D 2019-01-17T20:19:35.692
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -474,7 +474,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c b9c5f7a390e9ef4b19b9a85820c15ecf5d065a935bae507a6305be61c18f4814
+F src/insert.c 3ed9ceaa4b7d56a6f2613355e1cd1ae5cfe31712bce2bf5aa93c5f1f130704b2
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 008f45dd39cdc7fb9e7e1f61d75a5c97397f8e07427a8879be23e27747d5f948
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7def6c8edd85f19ee09038e01541f75b1f71ca39b9fb782b8f0fcac89207c353
-R 0203f075a93c65b2c620f82ced420a7f
-U dan
-Z 61d202964eb5c45df93f88308f4c5ddc
+P 4538d9afe4e6360e20c7b474e77314e5ad293453e1edbe356bf6ea84c05857ee
+R 1c1e27e2357c56f2bb977a6efb879c84
+U drh
+Z 0284d310ab1495a4ce2bbd9adcb7356d

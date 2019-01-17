@@ -2208,7 +2208,8 @@ static int xferOptimization(
   if( pSrc==0 ){
     return 0;   /* FROM clause does not contain a real table */
   }
-  if( pSrc==pDest ){
+  if( pSrc->tnum==pDest->tnum && pSrc->pSchema==pDest->pSchema ){
+    testcase( pSrc!=pDest ); /* Possible due to bad sqlite_master.rootpage */
     return 0;   /* tab1 and tab2 may not be the same table */
   }
   if( HasRowid(pDest)!=HasRowid(pSrc) ){
