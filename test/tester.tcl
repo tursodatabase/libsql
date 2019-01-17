@@ -966,6 +966,12 @@ proc do_execsql_test {args} {
     set result ""
   } elseif {[llength $args]==3} {
     foreach {testname sql result} $args {}
+
+    # With some versions of Tcl on windows, if $result is all whitespace but
+    # contains some CR/LF characters, the [list {*}$result] below returns a
+    # copy of $result instead of a zero length string. Not clear exactly why
+    # this is. The following is a workaround.
+    if {[llength $result]==0} { set result "" }
   } else {
     error [string trim {
       wrong # args: should be "do_execsql_test ?-db DB? testname sql ?result?"

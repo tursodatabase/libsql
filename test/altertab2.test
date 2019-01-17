@@ -142,4 +142,170 @@ foreach {tn schema} {
   } $expect
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a,b,c,d,e,f);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+    UPDATE t1 SET (c,d)=(a,b);
+  END;
+}
+
+do_execsql_test 4.1 {
+  ALTER TABLE t1 RENAME TO t1x;
+  SELECT sql FROM sqlite_master WHERE type = 'trigger';
+} {
+{CREATE TRIGGER r1 AFTER INSERT ON "t1x" WHEN new.a NOT NULL BEGIN
+    UPDATE "t1x" SET (c,d)=(a,b);
+  END}
+}
+
+do_execsql_test 4.2 {
+  ALTER TABLE t1x RENAME a TO aaa;
+  SELECT sql FROM sqlite_master WHERE type = 'trigger';
+} {
+{CREATE TRIGGER r1 AFTER INSERT ON "t1x" WHEN new.aaa NOT NULL BEGIN
+    UPDATE "t1x" SET (c,d)=(aaa,b);
+  END}
+}
+
+do_execsql_test 4.3 {
+  ALTER TABLE t1x RENAME d TO ddd;
+  SELECT sql FROM sqlite_master WHERE type = 'trigger';
+} {
+{CREATE TRIGGER r1 AFTER INSERT ON "t1x" WHEN new.aaa NOT NULL BEGIN
+    UPDATE "t1x" SET (c,ddd)=(aaa,b);
+  END}
+}
+
+#-------------------------------------------------------------------------
+do_execsql_test 5.0 {
+  CREATE TABLE t2(a);
+  CREATE TRIGGER r2 AFTER INSERT ON t2 WHEN new.a NOT NULL BEGIN
+    SELECT a, rank() OVER w1 FROM t2
+      WINDOW w1 AS (
+        PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND a FOLLOWING
+      ),
+      w2 AS (
+        PARTITION BY b 
+        ORDER BY d ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+      );
+  END;
+} {}
+
+do_catchsql_test 5.0.1 {
+  INSERT INTO t2 VALUES(1);
+} {1 {no such column: b}}
+
+do_execsql_test 5.1 {
+  ALTER TABLE t2 RENAME TO t2x;
+  SELECT sql FROM sqlite_master WHERE name = 'r2';
+} {
+  {CREATE TRIGGER r2 AFTER INSERT ON "t2x" WHEN new.a NOT NULL BEGIN
+    SELECT a, rank() OVER w1 FROM "t2x"
+      WINDOW w1 AS (
+        PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND a FOLLOWING
+      ),
+      w2 AS (
+        PARTITION BY b 
+        ORDER BY d ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+      );
+  END}
+}
+
+do_execsql_test 5.2 {
+  ALTER TABLE t2x RENAME a TO aaaa;
+  SELECT sql FROM sqlite_master WHERE name = 'r2';
+} {
+  {CREATE TRIGGER r2 AFTER INSERT ON "t2x" WHEN new.aaaa NOT NULL BEGIN
+    SELECT aaaa, rank() OVER w1 FROM "t2x"
+      WINDOW w1 AS (
+        PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND a FOLLOWING
+      ),
+      w2 AS (
+        PARTITION BY b 
+        ORDER BY d ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+      );
+  END}
+}
+
+do_catchsql_test 5.3 {
+  INSERT INTO t2x VALUES(1);
+} {1 {no such column: b}}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 6.0 {
+  CREATE TABLE t3(a,b,c,d);
+  CREATE TRIGGER r3 AFTER INSERT ON t3 WHEN new.a NOT NULL BEGIN
+    SELECT a,b,c FROM t3 EXCEPT SELECT a,b,c FROM t3 ORDER BY a;
+    SELECT rowid, * FROM t3;
+  END;
+} {}
+
+do_execsql_test 6.1 {
+  ALTER TABLE t3 RENAME TO t3x;
+  SELECT sql FROM sqlite_master WHERE name = 'r3';
+} {
+  {CREATE TRIGGER r3 AFTER INSERT ON "t3x" WHEN new.a NOT NULL BEGIN
+    SELECT a,b,c FROM "t3x" EXCEPT SELECT a,b,c FROM "t3x" ORDER BY a;
+    SELECT rowid, * FROM "t3x";
+  END}
+}
+
+do_execsql_test 6.2 {
+  ALTER TABLE t3x RENAME a TO abcd;
+  SELECT sql FROM sqlite_master WHERE name = 'r3';
+} {
+  {CREATE TRIGGER r3 AFTER INSERT ON "t3x" WHEN new.abcd NOT NULL BEGIN
+    SELECT abcd,b,c FROM "t3x" EXCEPT SELECT abcd,b,c FROM "t3x" ORDER BY abcd;
+    SELECT rowid, * FROM "t3x";
+  END}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a,b,c,d,e,f);
+  INSERT INTO t1 VALUES(1,2,3,4,5,6);
+  CREATE TABLE t2(x,y,z);
+}
+
+do_execsql_test 7.1 {
+  SELECT a,b,c FROM t1 UNION SELECT d,e,f FROM t1 ORDER BY b,c;
+} {1 2 3 4 5 6}
+
+do_execsql_test 7.2 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2
+    SELECT a,b,c FROM t1 UNION SELECT d,e,f FROM t1 ORDER BY b,c;
+  END;
+  INSERT INTO t1 VALUES(2,3,4,5,6,7);
+  SELECT * FROM t2;
+} {1 2 3  2 3 4  4 5 6  5 6 7}
+
+do_execsql_test 7.3 {
+  ALTER TABLE t1 RENAME TO xyzzy;
+  SELECT sql FROM sqlite_master WHERE name='r1'
+} {
+  {CREATE TRIGGER r1 AFTER INSERT ON "xyzzy" BEGIN
+    INSERT INTO t2
+    SELECT a,b,c FROM "xyzzy" UNION SELECT d,e,f FROM "xyzzy" ORDER BY b,c;
+  END}
+}
+
+do_execsql_test 7.3 {
+  ALTER TABLE xyzzy RENAME c TO ccc;
+  SELECT sql FROM sqlite_master WHERE name='r1'
+} {
+  {CREATE TRIGGER r1 AFTER INSERT ON "xyzzy" BEGIN
+    INSERT INTO t2
+    SELECT a,b,ccc FROM "xyzzy" UNION SELECT d,e,f FROM "xyzzy" ORDER BY b,ccc;
+  END}
+}
+
+
 finish_test
+
+

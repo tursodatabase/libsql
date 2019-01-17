@@ -531,6 +531,10 @@ statNextRestart:
       goto statNextRestart; /* Tail recursion */
     }
     pCsr->iPage++;
+    if( pCsr->iPage>=ArraySize(pCsr->aPage) ){
+      statResetCsr(pCsr);
+      return SQLITE_CORRUPT_BKPT;
+    }
     assert( p==&pCsr->aPage[pCsr->iPage-1] );
 
     if( p->iCell==p->nCell ){
@@ -602,7 +606,6 @@ static int statFilter(
   StatTable *pTab = (StatTable*)(pCursor->pVtab);
   char *zSql;
   int rc = SQLITE_OK;
-  char *zMaster;
 
   if( idxNum==1 ){
     const char *zDbase = (const char*)sqlite3_value_text(argv[0]);
@@ -618,13 +621,12 @@ static int statFilter(
   statResetCsr(pCsr);
   sqlite3_finalize(pCsr->pStmt);
   pCsr->pStmt = 0;
-  zMaster = pCsr->iDb==1 ? "sqlite_temp_master" : "sqlite_master";
   zSql = sqlite3_mprintf(
       "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
       "  UNION ALL  "
       "SELECT name, rootpage, type"
-      "  FROM \"%w\".%s WHERE rootpage!=0"
-      "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zDbSName, zMaster);
+      "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
+      "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zDbSName);
   if( zSql==0 ){
     return SQLITE_NOMEM_BKPT;
   }else{

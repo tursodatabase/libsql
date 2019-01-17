@@ -731,7 +731,7 @@ static SrcList *targetSrcList(
   int iDb;             /* Index of the database to use */
   SrcList *pSrc;       /* SrcList to be returned */
 
-  pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+  pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
   if( pSrc ){
     assert( pSrc->nSrc>0 );
     pSrc->a[pSrc->nSrc-1].zName = sqlite3DbStrDup(db, pStep->zTarget);
@@ -916,6 +916,7 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
+  pSubParse->disableVtab = pParse->disableVtab;
 
   v = sqlite3GetVdbe(pSubParse);
   if( v ){
@@ -943,7 +944,7 @@ static TriggerPrg *codeRowTrigger(
       if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
        && db->mallocFailed==0 
       ){
-        iEndTrigger = sqlite3VdbeMakeLabel(v);
+        iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
       }
       sqlite3ExprDelete(db, pWhen);

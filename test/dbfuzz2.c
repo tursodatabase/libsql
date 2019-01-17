@@ -64,6 +64,9 @@ static const char *azSql[] = {
 /* Output verbosity level.  0 means complete silence */
 int eVerbosity = 0;
 
+/* True to activate PRAGMA vdbe_debug=on */
+static int bVdbeDebug = 0;
+
 /* libFuzzer invokes this routine with fuzzed database files (in aData).
 ** This routine run SQLite against the malformed database to see if it
 ** can provoke a failure or malfunction.
@@ -87,6 +90,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   sqlite3_deserialize(db, "main", a, nByte, nByte,
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
+  if( bVdbeDebug ){
+    sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
+  }
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
     if( eVerbosity>=1 ){
       printf("%s\n", azSql[i]);
@@ -109,31 +115,91 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   return 0;
 }
 
+/*
+** Return the number of "v" characters in a string.  Return 0 if there
+** are any characters in the string other than "v".
+*/
+static int numberOfVChar(const char *z){
+  int N = 0;
+  while( z[0] && z[0]=='v' ){
+    z++;
+    N++;
+  }
+  return z[0]==0 ? N : 0;
+}
+
 /* libFuzzer invokes this routine once when the executable starts, to
 ** process the command-line arguments.
 */
 int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
-  int i, j;
+  int i, j, n;
   int argc = *pArgc;
-  char **newArgv;
   char **argv = *pArgv;
-  newArgv = malloc( sizeof(char*)*(argc+1) );
-  if( newArgv==0 ) return 0;
-  newArgv[0] = argv[0];
   for(i=j=1; i<argc; i++){
     char *z = argv[i];
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
-      if( strcmp(z,"v")==0 ){
-        eVerbosity++;
+      if( z[0]=='v' && (n = numberOfVChar(z))>0 ){
+        eVerbosity += n;
+        continue;
+      }
+      if( strcmp(z,"vdbe-debug")==0 ){
+        bVdbeDebug = 1;
         continue;
       }
     }
-    newArgv[j++] = argv[i];
+    argv[j++] = argv[i];
   }
-  newArgv[j] = 0;
-  *pArgv = newArgv;
+  argv[j] = 0;
   *pArgc = j;
   return 0;
 }
+
+#ifdef STANDALONE
+/*
+** Read an entire file into memory.  Space to hold the file comes
+** from malloc().
+*/
+static unsigned char *readFile(const char *zName, int *pnByte){
+  FILE *in = fopen(zName, "rb");
+  long nIn;
+  size_t nRead;
+  unsigned char *pBuf;
+  if( in==0 ) return 0;
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = malloc( nIn+1 );
+  if( pBuf==0 ){ fclose(in); return 0; }
+  nRead = fread(pBuf, nIn, 1, in);
+  fclose(in);
+  if( nRead!=1 ){
+    free(pBuf);
+    return 0;
+  }
+  pBuf[nIn] = 0;
+  if( pnByte ) *pnByte = nIn;
+  return pBuf;
+}
+#endif /* STANDALONE */
+
+#ifdef STANDALONE
+int main(int argc, char **argv){
+  int i;
+  LLVMFuzzerInitialize(&argc, &argv);
+  for(i=1; i<argc; i++){
+    unsigned char *pIn;
+    int nIn;
+    pIn = readFile(argv[i], &nIn);
+    if( pIn ){
+      LLVMFuzzerTestOneInput((const uint8_t*)pIn, (size_t)nIn);
+      free(pIn);
+    }
+  }
+  if( eVerbosity>0 ){
+    printf("SQLite %s\n", sqlite3_sourceid());
+  }
+  return 0;
+}
+#endif /*STANDALONE*/

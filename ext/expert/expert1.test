@@ -243,8 +243,10 @@ do_setup_rec_test $tn.12.1 {
   CREATE INDEX t7_idx_00000062 ON t7(b);
   CREATE INDEX t7_idx_00000061 ON t7(a);
   MULTI-INDEX OR
-    SEARCH TABLE t7 USING INDEX t7_idx_00000061 (a=?) 
-    SEARCH TABLE t7 USING INDEX t7_idx_00000062 (b=?)
+    INDEX 1
+      SEARCH TABLE t7 USING INDEX t7_idx_00000061 (a=?) 
+    INDEX 2
+      SEARCH TABLE t7 USING INDEX t7_idx_00000062 (b=?)
 }
 
 # rowid terms.

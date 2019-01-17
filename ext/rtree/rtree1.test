@@ -647,5 +647,19 @@ do_execsql_test 16.130 {
   SELECT * FROM rt1 WHERE id IN (1, 2, 3, 4);
 } {1 1.0 2.0 aux1 2 2.0 3.0 aux2 3 3.0 4.0 aux3 4 4.0 5.0 aux4}
 
+reset_db
+do_execsql_test 17.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x1 PRIMARY KEY, x2, y1, y2);
+  CREATE VIRTUAL TABLE t2 USING rtree(id, x1, x2, y1, y2 UNIQUE);
+}
+do_execsql_test 17.1 {
+  REINDEX t1;
+  REINDEX t2;
+} {}
+
+do_execsql_test 17.2 {
+  REINDEX;
+} {}
+
 expand_all_sql db
 finish_test

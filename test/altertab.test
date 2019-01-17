@@ -505,5 +505,58 @@ do_execsql_test 15.5 {
   SELECT sql FROM sqlite_master WHERE name = 'y';
 } {{CREATE VIEW y AS SELECT f2 AS f1 FROM x}}
 
+#-------------------------------------------------------------------------
+# Test that it is not possible to rename a shadow table in DEFENSIVE mode.
+#
+ifcapable fts3 {
+  proc vtab_command {method args} {
+    switch -- $method {
+      xConnect {
+        if {[info exists ::vtab_connect_sql]} {
+          execsql $::vtab_connect_sql
+        }
+        return "CREATE TABLE t1(a, b, c)"
+      }
+
+      xBestIndex {
+        set clist [lindex $args 0]
+        if {[llength $clist]!=1} { error "unexpected constraint list" }
+        catch { array unset C }
+        array set C [lindex $clist 0]
+        if {$C(usable)} {
+          return "omit 0 cost 0 rows 1 idxnum 555 idxstr eq!"
+        } else {
+          return "cost 1000000 rows 0 idxnum 0 idxstr scan..."
+        }
+      }
+    }
+
+    return {}
+  }
+
+  register_tcl_module db
+
+  sqlite3_db_config db DEFENSIVE 1
+
+  do_execsql_test 16.0 {
+    CREATE VIRTUAL TABLE y1 USING fts3;
+  }
+
+  do_catchsql_test 16.1 {
+    INSERT INTO y1_segments VALUES(1, X'1234567890');
+  } {1 {table y1_segments may not be modified}}
+
+  do_catchsql_test 16.2 {
+    ALTER TABLE y1_segments RENAME TO abc;
+  } {1 {table y1_segments may not be altered}}
+
+  do_execsql_test 16.3 {
+    ALTER TABLE y1 RENAME TO z1;
+  }
+
+  do_execsql_test 16.4 {
+    SELECT * FROM z1_segments;
+  }
+}
 
 finish_test

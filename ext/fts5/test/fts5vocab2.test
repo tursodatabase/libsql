@@ -80,8 +80,7 @@ do_execsql_test 1.4 {
 do_execsql_test 1.5 {
   DELETE FROM t1;
   SELECT * FROM v1;
-} {
-}
+} {}
 
 #-------------------------------------------------------------------------
 #
@@ -143,8 +142,7 @@ do_execsql_test 2.4 {
 do_execsql_test 2.5 {
   DELETE FROM t1;
   SELECT * FROM v1;
-} {
-}
+} {}
 
 #-------------------------------------------------------------------------
 #
@@ -202,7 +200,38 @@ do_execsql_test 3.4 {
 do_execsql_test 3.5 {
   DELETE FROM t1;
   SELECT * FROM v1;
-} {
+} {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(nosuchtable, col);
+}
+
+do_catchsql_test 4.1 {
+  SELECT * FROM v1 WHERE term=='nosuchterm';
+} {1 {no such fts5 table: main.nosuchtable}}
+
+do_execsql_test 4.2.1 {
+  CREATE TABLE nosuchtable(nosuchtable, y, z);
+}
+do_catchsql_test 4.2.2 {
+  SELECT * FROM v1 WHERE term=='nosuchterm';
+} {1 {no such fts5 table: main.nosuchtable}}
+
+ifcapable fts3 {
+  do_execsql_test 4.3.1 {
+    DROP TABLE nosuchtable;
+    CREATE VIRTUAL TABLE nosuchtable USING fts3(a, b);
+  } {}
+  do_catchsql_test 4.3.2 {
+    SELECT * FROM v1 WHERE term=='nosuchterm';
+  } {1 {no such fts5 table: main.nosuchtable}}
+  do_catchsql_test 4.3.3 {
+    INSERT INTO nosuchtable VALUES('id', '*id');
+    SELECT * FROM v1 WHERE term=='nosuchterm';
+  } {1 {no such fts5 table: main.nosuchtable}}
 }
 
 finish_test

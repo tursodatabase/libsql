@@ -309,7 +309,7 @@ int sqlite3Fts5PoslistNext64(
 );
 
 /* Malloc utility */
-void *sqlite3Fts5MallocZero(int *pRc, int nByte);
+void *sqlite3Fts5MallocZero(int *pRc, sqlite3_int64 nByte);
 char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn);
 
 /* Character set tests (like isspace(), isalpha() etc.) */
@@ -788,7 +788,7 @@ int sqlite3Fts5UnicodeIsdiacritic(int c);
 int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 
 int sqlite3Fts5UnicodeCatParse(const char*, u8*);
-int sqlite3Fts5UnicodeCategory(int iCode);
+int sqlite3Fts5UnicodeCategory(u32 iCode);
 void sqlite3Fts5UnicodeAscii(u8*, u8*);
 /*
 ** End of interface to code in fts5_unicode2.c.

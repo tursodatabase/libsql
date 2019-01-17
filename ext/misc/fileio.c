@@ -121,22 +121,47 @@ SQLITE_EXTENSION_INIT1
 
 /*
 ** Set the result stored by context ctx to a blob containing the 
-** contents of file zName.
+** contents of file zName.  Or, leave the result unchanged (NULL)
+** if the file does not exist or is unreadable.
+**
+** If the file exceeds the SQLite blob size limit, through an
+** SQLITE_TOOBIG error.
+**
+** Throw an SQLITE_IOERR if there are difficulties pulling the file
+** off of disk.
 */
 static void readFileContents(sqlite3_context *ctx, const char *zName){
   FILE *in;
-  long nIn;
+  sqlite3_int64 nIn;
   void *pBuf;
+  sqlite3 *db;
+  int mxBlob;
 
   in = fopen(zName, "rb");
-  if( in==0 ) return;
+  if( in==0 ){
+    /* File does not exist or is unreadable. Leave the result set to NULL. */
+    return;
+  }
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc( nIn );
-  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
-    sqlite3_result_blob(ctx, pBuf, nIn, sqlite3_free);
+  db = sqlite3_context_db_handle(ctx);
+  mxBlob = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
+  if( nIn>mxBlob ){
+    sqlite3_result_error_code(ctx, SQLITE_TOOBIG);
+    fclose(in);
+    return;
+  }
+  pBuf = sqlite3_malloc64( nIn );
+  if( pBuf==0 ){
+    sqlite3_result_error_nomem(ctx);
+    fclose(in);
+    return;
+  }
+  if( 1==fread(pBuf, nIn, 1, in) ){
+    sqlite3_result_blob64(ctx, pBuf, nIn, sqlite3_free);
   }else{
+    sqlite3_result_error_code(ctx, SQLITE_IOERR);
     sqlite3_free(pBuf);
   }
   fclose(in);
@@ -646,8 +671,8 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
     FsdirLevel *pLvl;
     if( iNew>=pCur->nLvl ){
       int nNew = iNew+1;
-      int nByte = nNew*sizeof(FsdirLevel);
-      FsdirLevel *aNew = (FsdirLevel*)sqlite3_realloc(pCur->aLvl, nByte);
+      sqlite3_int64 nByte = nNew*sizeof(FsdirLevel);
+      FsdirLevel *aNew = (FsdirLevel*)sqlite3_realloc64(pCur->aLvl, nByte);
       if( aNew==0 ) return SQLITE_NOMEM;
       memset(&aNew[pCur->nLvl], 0, sizeof(FsdirLevel)*(nNew-pCur->nLvl));
       pCur->aLvl = aNew;
@@ -727,7 +752,7 @@ static int fsdirColumn(
       }else if( S_ISLNK(m) ){
         char aStatic[64];
         char *aBuf = aStatic;
-        int nBuf = 64;
+        sqlite3_int64 nBuf = 64;
         int n;
 
         while( 1 ){
@@ -735,7 +760,7 @@ static int fsdirColumn(
           if( n<nBuf ) break;
           if( aBuf!=aStatic ) sqlite3_free(aBuf);
           nBuf = nBuf*2;
-          aBuf = sqlite3_malloc(nBuf);
+          aBuf = sqlite3_malloc64(nBuf);
           if( aBuf==0 ){
             sqlite3_result_error_nomem(ctx);
             return SQLITE_NOMEM;

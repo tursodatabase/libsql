@@ -395,7 +395,9 @@ static void geopolySvgFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  GeoPoly *p;
+  if( argc<1 ) return;
+  p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
     sqlite3 *db = sqlite3_context_db_handle(context);
     sqlite3_str *x = sqlite3_str_new(db);

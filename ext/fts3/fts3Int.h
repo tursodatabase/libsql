@@ -95,6 +95,8 @@ SQLITE_EXTENSION_INIT3
 */
 #define FTS3_VARINT_MAX 10
 
+#define FTS3_BUFFER_PADDING 8
+
 /*
 ** FTS4 virtual tables may maintain multiple indexes - one index of all terms
 ** in the document set and zero or more prefix indexes. All indexes are stored

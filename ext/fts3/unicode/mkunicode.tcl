@@ -63,14 +63,15 @@ proc print_rd {map} {
   }
   puts ""
   puts "  \};"
-  puts "  char aChar\[\] = \{"
+  puts "#define HIBIT ((unsigned char)0x80)"
+  puts "  unsigned char aChar\[\] = \{"
   puts -nonewline "    '\\0',      "
   set i 1
   foreach c $aChar f $aFlag {
     if { $f } {
-      set str "'$c'|0x80,  "
+      set str "'$c'|HIBIT, "
     } else {
-      set str "'$c'|0x00,  "
+      set str "'$c',       "
     }
     if {$c == ""} { set str "'\\0',      " }
 
@@ -134,8 +135,8 @@ proc print_isdiacritic {zFunc map} {
 
   puts "  if( c<$iFirst || c>$iLast ) return 0;"
   puts "  return (c < $iFirst+32) ?"
-  puts "      (mask0 & (1 << (c-$iFirst))) :"
-  puts "      (mask1 & (1 << (c-$iFirst-32)));"
+  puts "      (mask0 & ((unsigned int)1 << (c-$iFirst))) :"
+  puts "      (mask1 & ((unsigned int)1 << (c-$iFirst-32)));"
   puts "\}"
 }
 
@@ -699,7 +700,7 @@ proc print_categories {lMap} {
     static u16 aFts5UnicodeMap[] = {$aMapArray};
     static u16 aFts5UnicodeData[] = {$aDataArray};
 
-    int sqlite3Fts5UnicodeCategory(int iCode) { 
+    int sqlite3Fts5UnicodeCategory(u32 iCode) { 
       int iRes = -1;
       int iHi;
       int iLo;
@@ -782,7 +783,7 @@ proc print_test_categories {lMap} {
           aArray[0] = 1;
         }
 
-        c = sqlite3Fts5UnicodeCategory(i);
+        c = sqlite3Fts5UnicodeCategory((u32)i);
         if( aArray[c]==0 ){
           *piCode = i;
           return 1;
@@ -837,7 +838,7 @@ proc print_fold_test {zFunc mappings} {
 proc print_fileheader {} {
   puts [string trim {
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:

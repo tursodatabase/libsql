@@ -136,7 +136,7 @@ static void fts5HighlightAppend(
   HighlightContext *p, 
   const char *z, int n
 ){
-  if( *pRc==SQLITE_OK ){
+  if( *pRc==SQLITE_OK && z ){
     if( n<0 ) n = (int)strlen(z);
     p->zOut = sqlite3_mprintf("%z%.*s", p->zOut, n, z);
     if( p->zOut==0 ) *pRc = SQLITE_NOMEM;
@@ -268,7 +268,7 @@ static int fts5SentenceFinderAdd(Fts5SFinder *p, int iAdd){
     int nNew = p->nFirstAlloc ? p->nFirstAlloc*2 : 64;
     int *aNew;
 
-    aNew = (int*)sqlite3_realloc(p->aFirst, nNew*sizeof(int));
+    aNew = (int*)sqlite3_realloc64(p->aFirst, nNew*sizeof(int));
     if( aNew==0 ) return SQLITE_NOMEM;
     p->aFirst = aNew;
     p->nFirstAlloc = nNew;
@@ -568,13 +568,13 @@ static int fts5Bm25GetData(
     int nPhrase;                  /* Number of phrases in query */
     sqlite3_int64 nRow = 0;       /* Number of rows in table */
     sqlite3_int64 nToken = 0;     /* Number of tokens in table */
-    int nByte;                    /* Bytes of space to allocate */
+    sqlite3_int64 nByte;          /* Bytes of space to allocate */
     int i;
 
     /* Allocate the Fts5Bm25Data object */
     nPhrase = pApi->xPhraseCount(pFts);
     nByte = sizeof(Fts5Bm25Data) + nPhrase*2*sizeof(double);
-    p = (Fts5Bm25Data*)sqlite3_malloc(nByte);
+    p = (Fts5Bm25Data*)sqlite3_malloc64(nByte);
     if( p==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -710,5 +710,3 @@ int sqlite3Fts5AuxInit(fts5_api *pApi){
 
   return rc;
 }
-
-

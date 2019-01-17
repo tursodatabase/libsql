@@ -80,7 +80,6 @@ static void resolveAlias(
     if( pExpr->op==TK_COLLATE ){
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
-//    ExprSetProperty(pDup, EP_Alias);
 
     /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
     ** prevents ExprDelete() from deleting the Expr structure itself,
@@ -491,7 +490,7 @@ static int lookupName(
       sqlite3_log(SQLITE_WARNING,
         "double-quoted string literal: \"%w\"", zCol);
 #ifdef SQLITE_ENABLE_NORMALIZE
-      sqlite3VdbeAddDblquoteStr(db,pParse->pVdbe, zCol);
+      sqlite3VdbeAddDblquoteStr(db, pParse->pVdbe, zCol);
 #endif
       pExpr->op = TK_STRING;
       pExpr->y.pTab = 0;
@@ -1139,12 +1138,36 @@ static int resolveCompoundOrderBy(
       }else{
         iCol = resolveAsName(pParse, pEList, pE);
         if( iCol==0 ){
-          pDup = sqlite3ExprDup(db, pE, 0);
+          /* Now test if expression pE matches one of the values returned
+          ** by pSelect. In the usual case this is done by duplicating the 
+          ** expression, resolving any symbols in it, and then comparing
+          ** it against each expression returned by the SELECT statement.
+          ** Once the comparisons are finished, the duplicate expression
+          ** is deleted.
+          **
+          ** Or, if this is running as part of an ALTER TABLE operation,
+          ** resolve the symbols in the actual expression, not a duplicate.
+          ** And, if one of the comparisons is successful, leave the expression
+          ** as is instead of transforming it to an integer as in the usual
+          ** case. This allows the code in alter.c to modify column
+          ** refererences within the ORDER BY expression as required.  */
+          if( IN_RENAME_OBJECT ){
+            pDup = pE;
+          }else{
+            pDup = sqlite3ExprDup(db, pE, 0);
+          }
           if( !db->mallocFailed ){
             assert(pDup);
             iCol = resolveOrderByTermToExprList(pParse, pSelect, pDup);
           }
-          sqlite3ExprDelete(db, pDup);
+          if( IN_RENAME_OBJECT ){
+            if( iCol>0 ){
+              pItem->done = 1;
+              continue;
+            }
+          }else{
+            sqlite3ExprDelete(db, pDup);
+          }
         }
       }
       if( iCol>0 ){
@@ -1663,36 +1686,45 @@ void sqlite3ResolveSelectNames(
 }
 
 /*
-** Resolve names in expressions that can only reference a single table:
+** Resolve names in expressions that can only reference a single table
+** or which cannot reference any tables at all.  Examples:
 **
-**    *   CHECK constraints
-**    *   WHERE clauses on partial indices
+**    (1)   CHECK constraints
+**    (2)   WHERE clauses on partial indices
+**    (3)   Expressions in indexes on expressions
+**    (4)   Expression arguments to VACUUM INTO.
 **
-** The Expr.iTable value for Expr.op==TK_COLUMN nodes of the expression
-** is set to -1 and the Expr.iColumn value is set to the column number.
+** In all cases except (4), the Expr.iTable value for Expr.op==TK_COLUMN
+** nodes of the expression is set to -1 and the Expr.iColumn value is
+** set to the column number.  In case (4), TK_COLUMN nodes cause an error.
 **
 ** Any errors cause an error message to be set in pParse.
 */
-void sqlite3ResolveSelfReference(
+int sqlite3ResolveSelfReference(
   Parse *pParse,      /* Parsing context */
-  Table *pTab,        /* The table being referenced */
-  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
+  Table *pTab,        /* The table being referenced, or NULL */
+  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr, or 0 */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
   ExprList *pList     /* Expression list to resolve.  May be NULL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
+  int rc;
 
-  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr );
+  assert( type==0 || pTab!=0 );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
-  sSrc.nSrc = 1;
-  sSrc.a[0].zName = pTab->zName;
-  sSrc.a[0].pTab = pTab;
-  sSrc.a[0].iCursor = -1;
+  if( pTab ){
+    sSrc.nSrc = 1;
+    sSrc.a[0].zName = pTab->zName;
+    sSrc.a[0].pTab = pTab;
+    sSrc.a[0].iCursor = -1;
+  }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
-  if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
-  if( pList ) sqlite3ResolveExprListNames(&sNC, pList);
+  if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
+  if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);
+  return rc;
 }

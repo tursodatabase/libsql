@@ -1,5 +1,5 @@
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -47,28 +47,29 @@ static int fts5_remove_diacritic(int c, int bComplex){
     62830, 62890, 62924, 62974, 63032, 63050, 63082, 63118, 
     63182, 63242, 63274, 63310, 63368, 63390, 
   };
-  char aChar[] = {
-    '\0',      'a'|0x00,  'c'|0x00,  'e'|0x00,  'i'|0x00,  'n'|0x00,  
-    'o'|0x00,  'u'|0x00,  'y'|0x00,  'y'|0x00,  'a'|0x00,  'c'|0x00,  
-    'd'|0x00,  'e'|0x00,  'e'|0x00,  'g'|0x00,  'h'|0x00,  'i'|0x00,  
-    'j'|0x00,  'k'|0x00,  'l'|0x00,  'n'|0x00,  'o'|0x00,  'r'|0x00,  
-    's'|0x00,  't'|0x00,  'u'|0x00,  'u'|0x00,  'w'|0x00,  'y'|0x00,  
-    'z'|0x00,  'o'|0x00,  'u'|0x00,  'a'|0x00,  'i'|0x00,  'o'|0x00,  
-    'u'|0x00,  'u'|0x80,  'a'|0x80,  'g'|0x00,  'k'|0x00,  'o'|0x00,  
-    'o'|0x80,  'j'|0x00,  'g'|0x00,  'n'|0x00,  'a'|0x80,  'a'|0x00,  
-    'e'|0x00,  'i'|0x00,  'o'|0x00,  'r'|0x00,  'u'|0x00,  's'|0x00,  
-    't'|0x00,  'h'|0x00,  'a'|0x00,  'e'|0x00,  'o'|0x80,  'o'|0x00,  
-    'o'|0x80,  'y'|0x00,  '\0',      '\0',      '\0',      '\0',      
-    '\0',      '\0',      '\0',      '\0',      'a'|0x00,  'b'|0x00,  
-    'c'|0x80,  'd'|0x00,  'd'|0x00,  'e'|0x80,  'e'|0x00,  'e'|0x80,  
-    'f'|0x00,  'g'|0x00,  'h'|0x00,  'h'|0x00,  'i'|0x00,  'i'|0x80,  
-    'k'|0x00,  'l'|0x00,  'l'|0x80,  'l'|0x00,  'm'|0x00,  'n'|0x00,  
-    'o'|0x80,  'p'|0x00,  'r'|0x00,  'r'|0x80,  'r'|0x00,  's'|0x00,  
-    's'|0x80,  't'|0x00,  'u'|0x00,  'u'|0x80,  'v'|0x00,  'w'|0x00,  
-    'w'|0x00,  'x'|0x00,  'y'|0x00,  'z'|0x00,  'h'|0x00,  't'|0x00,  
-    'w'|0x00,  'y'|0x00,  'a'|0x00,  'a'|0x80,  'a'|0x80,  'a'|0x80,  
-    'e'|0x00,  'e'|0x80,  'e'|0x80,  'i'|0x00,  'o'|0x00,  'o'|0x80,  
-    'o'|0x80,  'o'|0x80,  'u'|0x00,  'u'|0x80,  'u'|0x80,  'y'|0x00,  
+#define HIBIT ((unsigned char)0x80)
+  unsigned char aChar[] = {
+    '\0',      'a',       'c',       'e',       'i',       'n',       
+    'o',       'u',       'y',       'y',       'a',       'c',       
+    'd',       'e',       'e',       'g',       'h',       'i',       
+    'j',       'k',       'l',       'n',       'o',       'r',       
+    's',       't',       'u',       'u',       'w',       'y',       
+    'z',       'o',       'u',       'a',       'i',       'o',       
+    'u',       'u'|HIBIT, 'a'|HIBIT, 'g',       'k',       'o',       
+    'o'|HIBIT, 'j',       'g',       'n',       'a'|HIBIT, 'a',       
+    'e',       'i',       'o',       'r',       'u',       's',       
+    't',       'h',       'a',       'e',       'o'|HIBIT, 'o',       
+    'o'|HIBIT, 'y',       '\0',      '\0',      '\0',      '\0',      
+    '\0',      '\0',      '\0',      '\0',      'a',       'b',       
+    'c'|HIBIT, 'd',       'd',       'e'|HIBIT, 'e',       'e'|HIBIT, 
+    'f',       'g',       'h',       'h',       'i',       'i'|HIBIT, 
+    'k',       'l',       'l'|HIBIT, 'l',       'm',       'n',       
+    'o'|HIBIT, 'p',       'r',       'r'|HIBIT, 'r',       's',       
+    's'|HIBIT, 't',       'u',       'u'|HIBIT, 'v',       'w',       
+    'w',       'x',       'y',       'z',       'h',       't',       
+    'w',       'y',       'a',       'a'|HIBIT, 'a'|HIBIT, 'a'|HIBIT, 
+    'e',       'e'|HIBIT, 'e'|HIBIT, 'i',       'o',       'o'|HIBIT, 
+    'o'|HIBIT, 'o'|HIBIT, 'u',       'u'|HIBIT, 'u'|HIBIT, 'y',       
   };
 
   unsigned int key = (((unsigned int)c)<<3) | 0x00000007;
@@ -99,8 +100,8 @@ int sqlite3Fts5UnicodeIsdiacritic(int c){
   unsigned int mask1 = 0x000361F8;
   if( c<768 || c>817 ) return 0;
   return (c < 768+32) ?
-      (mask0 & (1 << (c-768))) :
-      (mask1 & (1 << (c-768-32)));
+      (mask0 & ((unsigned int)1 << (c-768))) :
+      (mask1 & ((unsigned int)1 << (c-768-32)));
 }
 
 
@@ -247,6 +248,7 @@ int sqlite3Fts5UnicodeFold(int c, int eRemoveDiacritic){
 
   return ret;
 }
+
 
 int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
   aArray[0] = 1;
@@ -729,7 +731,7 @@ static u16 aFts5UnicodeData[] = {
     34,    3074,  7692,  63,    63,    
   };
 
-int sqlite3Fts5UnicodeCategory(int iCode) { 
+int sqlite3Fts5UnicodeCategory(u32 iCode) { 
   int iRes = -1;
   int iHi;
   int iLo;

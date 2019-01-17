@@ -168,6 +168,7 @@ struct PCache1 {
   unsigned int nMax;                  /* Configured "cache_size" value */
   unsigned int n90pct;                /* nMax*9/10 */
   unsigned int iMaxKey;               /* Largest key seen since xTruncate() */
+  unsigned int nPurgeableDummy;       /* pnPurgeable points here when not used*/
 
   /* Hash table of all pages. The following variables may only be accessed
   ** when the accessor is holding the PGroup mutex.
@@ -476,6 +477,9 @@ static void pcache1FreePage(PgHdr1 *p){
 ** exists, this function falls back to sqlite3Malloc().
 */
 void *sqlite3PageMalloc(int sz){
+  /* During rebalance operations on a corrupt database file, it is sometimes
+  ** (rarely) possible to overread the temporary page buffer by a few bytes.
+  ** Enlarge the allocation slightly so that this does not cause problems. */
   return pcache1Alloc(sz);
 }
 
@@ -781,8 +785,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
       pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
       pCache->pnPurgeable = &pGroup->nPurgeable;
     }else{
-      static unsigned int dummyCurrentPage;
-      pCache->pnPurgeable = &dummyCurrentPage;
+      pCache->pnPurgeable = &pCache->nPurgeableDummy;
     }
     pcache1LeaveMutex(pGroup);
     if( pCache->nHash==0 ){
