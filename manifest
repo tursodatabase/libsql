@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverwrite\sthat\scould\soccur\swhen\srunning\san\sfts5\sprefix\squery\nagainst\sa\scorrupt\sdatabase.
-D 2019-01-17T19:11:10.179
+C Add\sthe\sSQLITE_ENABLE_EARLY_CURSOR_CLOSE\scompile-time\soption\swhich\scauses\nread\scursors\sto\sbe\sclosed\safter\stheir\susefulness\sends\sduring\sa\stwo-pass\nUPDATE.
+D 2019-01-17T19:33:16.502
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -598,7 +598,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c dc293ea4230adf9a323fb2e5750eff565347567a3cd6538f7d0fa93b11c2baae
+F src/where.c c5d201699d03be61c35bc04b96e481b1c8dc68177617ca1db156ef7409da2fae
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 89d2ec668aec884dfa7ac500c6744e42ec0590fcd72fb740a8b48326a8412811
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49956395e14b61f6bf839e59ae7dd95eb32ebf32f3d16388844de6621b9c2d98
-R ccdd711ece291779868bf4b998109e13
-U dan
-Z 3e6c4473b6a0336dbaa6dadc398f3df8
+P 3910b5639d5c96d1840d4feeea64d3a55073531b7365a4e75d9cda6f119f3cfc
+R b6dbc6b0d1ca56280f7f7c766f04179b
+U drh
+Z bba3575bd34040149ab6eabc06009268
