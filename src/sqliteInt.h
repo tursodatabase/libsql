@@ -3929,8 +3929,8 @@ void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int, Upsert*);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(Parse*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
-SrcList *sqlite3SrcListEnlarge(sqlite3*, SrcList*, int, int);
-SrcList *sqlite3SrcListAppend(sqlite3*, SrcList*, Token*, Token*);
+SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
+SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
                                       Token*, Select*, Expr*, IdList*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);

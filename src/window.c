@@ -823,8 +823,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     pSub = sqlite3SelectNew(
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
     );
-    p->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
-    assert( p->pSrc || db->mallocFailed );
+    p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);

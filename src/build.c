@@ -3851,11 +3851,12 @@ int sqlite3IdListIndex(IdList *pList, const char *zName){
 ** the iStart value would be 0.  The result then would
 ** be: nil, nil, nil, A, B.
 **
-** If a memory allocation fails the SrcList is unchanged.  The
-** db->mallocFailed flag will be set to true.
+** If a memory allocation fails or the SrcList becomes too large, leave
+** the original SrcList unchanged, return NULL, and leave an error message
+** in pParse.
 */
 SrcList *sqlite3SrcListEnlarge(
-  sqlite3 *db,       /* Database connection to notify of OOM errors */
+  Parse *pParse,     /* Parsing context into which errors are reported */
   SrcList *pSrc,     /* The SrcList to be enlarged */
   int nExtra,        /* Number of new slots to add to pSrc->a[] */
   int iStart         /* Index in pSrc->a[] of first new slot */
@@ -3873,22 +3874,19 @@ SrcList *sqlite3SrcListEnlarge(
     SrcList *pNew;
     int nAlloc = pSrc->nSrc*2+nExtra;
     int nGot;
+    sqlite3 *db = pParse->db;
 
     if( pSrc->nSrc+nExtra>=SQLITE_MAX_SRCLIST ){
-      /* FIXME: Return a better error than SQLITE_NOMEM when the size
-      ** of a SrcList object gets to be too big.  To fix this will require
-      ** replumbing to pass Parse* instead of sqlite3* as the first parameter
-      ** to the SrcList allocators.  As this never comes up in real-world
-      ** usage, the fix is a low priority. */
-      sqlite3OomFault(db);
-      return pSrc;
+      sqlite3ErrorMsg(pParse, "too many FROM clause terms, max: %d",
+                      SQLITE_MAX_SRCLIST);
+      return 0;
     }
     if( nAlloc>SQLITE_MAX_SRCLIST ) nAlloc = SQLITE_MAX_SRCLIST;
     pNew = sqlite3DbRealloc(db, pSrc,
                sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
     if( pNew==0 ){
       assert( db->mallocFailed );
-      return pSrc;
+      return 0;
     }
     pSrc = pNew;
     nGot = (sqlite3DbMallocSize(db, pNew) - sizeof(*pSrc))/sizeof(pSrc->a[0])+1;
@@ -3917,7 +3915,8 @@ SrcList *sqlite3SrcListEnlarge(
 ** Append a new table name to the given SrcList.  Create a new SrcList if
 ** need be.  A new entry is created in the SrcList even if pTable is NULL.
 **
-** A SrcList is returned, or NULL if there is an OOM error.  The returned
+** A SrcList is returned, or NULL if there is an OOM error or if the
+** SrcList grows to large.  The returned
 ** SrcList might be the same as the SrcList that was input or it might be
 ** a new one.  If an OOM error does occurs, then the prior value of pList
 ** that is input to this routine is automatically freed.
@@ -3948,27 +3947,32 @@ SrcList *sqlite3SrcListEnlarge(
 ** before being added to the SrcList.
 */
 SrcList *sqlite3SrcListAppend(
-  sqlite3 *db,        /* Connection to notify of malloc failures */
+  Parse *pParse,      /* Parsing context, in which errors are reported */
   SrcList *pList,     /* Append to this SrcList. NULL creates a new SrcList */
   Token *pTable,      /* Table to append */
   Token *pDatabase    /* Database of the table */
 ){
   struct SrcList_item *pItem;
+  sqlite3 *db;
   assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
-  assert( db!=0 );
+  assert( pParse!=0 );
+  assert( pParse->db!=0 );
+  db = pParse->db;
   if( pList==0 ){
-    pList = sqlite3DbMallocRawNN(db, sizeof(SrcList) );
+    pList = sqlite3DbMallocRawNN(pParse->db, sizeof(SrcList) );
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
     pList->nSrc = 1;
     memset(&pList->a[0], 0, sizeof(pList->a[0]));
     pList->a[0].iCursor = -1;
   }else{
-    pList = sqlite3SrcListEnlarge(db, pList, 1, pList->nSrc);
-  }
-  if( db->mallocFailed ){
-    sqlite3SrcListDelete(db, pList);
-    return 0;
+    SrcList *pNew = sqlite3SrcListEnlarge(pParse, pList, 1, pList->nSrc);
+    if( pNew==0 ){
+      sqlite3SrcListDelete(db, pList);
+      return 0;
+    }else{
+      pList = pNew;
+    }
   }
   pItem = &pList->a[pList->nSrc-1];
   if( pDatabase && pDatabase->z==0 ){
@@ -4057,7 +4061,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
     );
     goto append_from_error;
   }
-  p = sqlite3SrcListAppend(db, p, pTable, pDatabase);
+  p = sqlite3SrcListAppend(pParse, p, pTable, pDatabase);
   if( p==0 ){
     goto append_from_error;
   }

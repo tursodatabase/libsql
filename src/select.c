@@ -3960,11 +3960,9 @@ static int flattenSubquery(
       jointype = pSubitem->fg.jointype;
     }else{
       assert( pParent!=p );  /* 2nd and subsequent times through the loop */
-      pSrc = pParent->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
-      if( pSrc==0 ){
-        assert( db->mallocFailed );
-        break;
-      }
+      pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+      if( pSrc==0 ) break;
+      pParent->pSrc = pSrc;
     }
 
     /* The subquery uses a single slot of the FROM clause of the outer
@@ -3983,10 +3981,9 @@ static int flattenSubquery(
     ** for the two elements in the FROM clause of the subquery.
     */
     if( nSubSrc>1 ){
-      pParent->pSrc = pSrc = sqlite3SrcListEnlarge(db, pSrc, nSubSrc-1,iFrom+1);
-      if( db->mallocFailed ){
-        break;
-      }
+      pSrc = sqlite3SrcListEnlarge(pParse, pSrc, nSubSrc-1,iFrom+1);
+      if( pSrc==0 ) break;
+      pParent->pSrc = pSrc;
     }
 
     /* Transfer the FROM clause terms from the subquery into the
