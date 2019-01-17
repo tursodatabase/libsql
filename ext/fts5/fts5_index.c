@@ -4959,6 +4959,8 @@ static void fts5MergePrefixLists(
         int iOff2 = 0;
         u8 *a1 = &i1.aPoslist[i1.nSize];
         u8 *a2 = &i2.aPoslist[i2.nSize];
+        int nCopy;
+        u8 *aCopy;
 
         i64 iPrev = 0;
         Fts5PoslistWriter writer;
@@ -5002,11 +5004,16 @@ static void fts5MergePrefixLists(
           if( iPos1!=iPrev ){
             sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
           }
-          fts5BufferSafeAppendBlob(&tmp, &a1[iOff1], i1.nPoslist-iOff1);
+          aCopy = &a1[iOff1];
+          nCopy = i1.nPoslist - iOff1;
         }else{
           assert( iPos2>=0 && iPos2!=iPrev );
           sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
-          fts5BufferSafeAppendBlob(&tmp, &a2[iOff2], i2.nPoslist-iOff2);
+          aCopy = &a2[iOff2];
+          nCopy = i2.nPoslist - iOff2;
+        }
+        if( nCopy>0 ){
+          fts5BufferSafeAppendBlob(&tmp, aCopy, nCopy);
         }
 
         /* WRITEPOSLISTSIZE */
