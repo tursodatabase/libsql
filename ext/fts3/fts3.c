@@ -338,7 +338,7 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 }
 
 #define GETVARINT_STEP(v, ptr, shift, mask1, mask2, var, ret) \
-  v = (v & mask1) | ( (*(ptr++)) << shift );  \
+  v = (v & mask1) | ( (*(const unsigned char*)(ptr++)) << shift );  \
   if( (v & mask2)==0 ){ var = v; return ret; }
 #define GETVARINT_INIT(v, ptr, shift, mask1, mask2, var, ret) \
   v = (*ptr++);                                               \

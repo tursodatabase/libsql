@@ -1,5 +1,5 @@
-C Fix\sa\sfailure\sin\ssqlite3ExprCompare()
-D 2019-01-17T01:06:00.385
+C Ensure\sthat\sthe\svariable-length\sinteger\sdecoder\sin\sFTS3\snever\stries\sto\nleft-shift\sa\snegative\snumber.
+D 2019-01-17T03:43:38.171
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -80,7 +80,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 9f441b5c3e3b09fa355007002dfa2648fa38b82e235c3e941cf17c9d8b0a870a
+F ext/fts3/fts3.c 230bfe6509b576c7a82e23e3775fe030586ef5f2135d1b556a99c4c224dee1f0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 6c666f314caaeb8fe8e4c1a2d84f8b34406647429a43e8f475b0b0074ad41861
 F ext/fts3/fts3_aux.c 32e3ecada9014ff577022f9b44c9c5654d59405b39dc57ba8977298157e8c89b
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca7b7aaed010ec67bec5355a9ac1d7f229d6d5f2ba2d796b76f5e908b1267688
-R 6444c875e3596c3cccf96b67bd262660
+P 835e2cc55feea2f2426c99816c27f9c35d2fd4cdd9bf1c7f46f889ecfd222778
+R 9f028c8159b02a591c16bf06dddc2550
 U drh
-Z f35694c9fb454eab54fdef5fbf3c7e42
+Z 19969df9ee55c88019bc6a9775b0786b
