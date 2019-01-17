@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\svariable-length\sinteger\sdecoder\sin\sFTS3\snever\stries\sto\nleft-shift\sa\snegative\snumber.
-D 2019-01-17T03:43:38.171
+C Fix\sa\scorner-case\sfor\sthe\slogic\sthat\scause\san\sinsert\sof\sa\sNULL\sinto\san\nINTEGER\sPRIMARY\sKEY\scolumn\sto\sbe\sconverted\sinto\sa\svalid\sinteger\skey,\nwhen\sthe\sNULL\sresults\sfrom\sa\sCASE\sexpression\sthat\slacks\san\sELSE\sclause.
+D 2019-01-17T04:40:04.666
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -474,7 +474,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c ce295c50a49b626d96d668a915220d02fe372e27ad7dd2bfef297b0335c40488
+F src/insert.c b9c5f7a390e9ef4b19b9a85820c15ecf5d065a935bae507a6305be61c18f4814
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 008f45dd39cdc7fb9e7e1f61d75a5c97397f8e07427a8879be23e27747d5f948
@@ -1034,7 +1034,7 @@ F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d2
 F test/indexexpr2.test 8dd1f8f936cc4d246af605366886bbd251848b411378eb60887361d5302d9f54
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
-F test/insert.test 5604b1ff5675cc84c34a5b315792b958f48c32edccc0dafcc81d3b776270b70a
+F test/insert.test 9773604f8e1a2595f51488a5643c359d8a11dc55a11cb185910d93387d378458
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 46bead5f39e181850ee56adcf49d3a3157c460c52249211714612ac89fe34835
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 835e2cc55feea2f2426c99816c27f9c35d2fd4cdd9bf1c7f46f889ecfd222778
-R 9f028c8159b02a591c16bf06dddc2550
+P 10ffc1fe006a1766ff2f1ffc6129786afb86b6b1f8d3a17334e8ecb838d37b9c
+R e2e1ef23c5b3651d2c8187cd4ce88146
 U drh
-Z 19969df9ee55c88019bc6a9775b0786b
+Z eedec3f5327fb3e6e94971123303b0d3

@@ -953,16 +953,12 @@ void sqlite3Insert(
       }else if( pSelect ){
         sqlite3VdbeAddOp2(v, OP_Copy, regFromSelect+ipkColumn, regRowid);
       }else{
-        VdbeOp *pOp;
-        sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regRowid);
-        pOp = sqlite3VdbeGetOp(v, -1);
-        assert( pOp!=0 );
-        if( pOp->opcode==OP_Null && !IsVirtual(pTab) ){
+        Expr *pIpk = pList->a[ipkColumn].pExpr;
+        if( pIpk->op==TK_NULL && !IsVirtual(pTab) ){
+          sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regAutoinc);
           appendFlag = 1;
-          pOp->opcode = OP_NewRowid;
-          pOp->p1 = iDataCur;
-          pOp->p2 = regRowid;
-          pOp->p3 = regAutoinc;
+        }else{
+          sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regRowid);
         }
       }
       /* If the PRIMARY KEY expression is NULL, then use OP_NewRowid
