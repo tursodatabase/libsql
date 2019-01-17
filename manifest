@@ -1,5 +1,5 @@
-C Fix\sa\scorner-case\sfor\sthe\slogic\sthat\scause\san\sinsert\sof\sa\sNULL\sinto\san\nINTEGER\sPRIMARY\sKEY\scolumn\sto\sbe\sconverted\sinto\sa\svalid\sinteger\skey,\nwhen\sthe\sNULL\sresults\sfrom\sa\sCASE\sexpression\sthat\slacks\san\sELSE\sclause.
-D 2019-01-17T04:40:04.666
+C Limit\sthe\ssize\sof\sSrcList\sobjects\sto\s200\sentries\s(compile-time\sconfigurable\nusing\s-DSQLITE_MAX_SRCLIST=n).\s\sThe\smaximum\snumber\sof\stables\sin\sa\sjoin\shas\nalways\sbeen\s64,\sso\sthis\sis\snot\sa\sreal\sconstraint\son\scapability.\s\sLimiting\sthe\nsize\sof\sa\sSrcList\sprevents\sDOS\sattacks\s(discovered\sby\sOSSFuzz)\susing\scrazy\nnexted\sCTE\sjoins.
+D 2019-01-17T14:34:46.282
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -457,7 +457,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c a1030989a43bb21fde08fbe26e201009b70956560e5663317106f75c45937ac9
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
-F src/build.c b1e24f1deedee07955cad9c56928cdafa7df1615746688e817bfe0b020a68576
+F src/build.c eb0ab28d8e7ab0e567d67a86208abd2409f8a378a1333e209a72fde95c407d37
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1053,7 +1053,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 62372ad3ddcc5d0eb8ff9097dcb0aad8961bf1b9cb45ba634f6e284695126f9a
-F test/join.test 2ad9d7fe10e0cc06bc7803c22e5533be11cdadbc592f5f95d789a873b57a5a66
+F test/join.test b6f771f4db4b8cee20ef79936f16efa351d2e90563a01aa1ab789e3052262350
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1681,7 +1681,7 @@ F test/window4.test c5d6bf3403e4ade2f19df2afe4c16f29fb817c392c6c1c8017edb7165c19
 F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652821e
 F test/window6.test 5eae4ae7a590ccf1e605880969ca0bad3955616ac91cad3031baea38748badb3
 F test/windowfault.test 12ceb6bbb355d13e8fcd88c5731a57256dfdf77b9a7ae20842a76fcd4623df5b
-F test/with1.test 4776e8a57739b1dd33c7cb2c9f17fede6b55634f53323fbf8bb538228b644dbf
+F test/with1.test ff15177e0ee6d3c8f89cf309410148f2f1bd4f0d67224223455b95460a577ebb
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 8d26920c88283e0a473ceebd3451554922108ce7b2a6a1157c47eb0a7011212c
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10ffc1fe006a1766ff2f1ffc6129786afb86b6b1f8d3a17334e8ecb838d37b9c
-R e2e1ef23c5b3651d2c8187cd4ce88146
+P 9a425051e7ba59e797636f5cf32b5f6efafdb21c8d5300e099b8008b829c1439
+R f3aab0ca635e2360149e2d627d6e008d
 U drh
-Z eedec3f5327fb3e6e94971123303b0d3
+Z a156b7037d7ea15cc025fd5eab01a1d7

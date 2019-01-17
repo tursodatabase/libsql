@@ -3824,6 +3824,18 @@ int sqlite3IdListIndex(IdList *pList, const char *zName){
 }
 
 /*
+** Maximum size of a SrcList object.
+** The SrcList object is used to represent the FROM clause of a
+** SELECT statement, and the query planner cannot deal with more
+** than 64 tables in a join.  So any value larger than 64 here
+** is sufficient for most uses.  Smaller values, like say 10, are
+** appropriate for small and memory-limited applications.
+*/
+#ifndef SQLITE_MAX_SRCLIST
+# define SQLITE_MAX_SRCLIST 200
+#endif
+
+/*
 ** Expand the space allocated for the given SrcList object by
 ** creating nExtra new slots beginning at iStart.  iStart is zero based.
 ** New slots are zeroed.
@@ -3861,6 +3873,17 @@ SrcList *sqlite3SrcListEnlarge(
     SrcList *pNew;
     int nAlloc = pSrc->nSrc*2+nExtra;
     int nGot;
+
+    if( pSrc->nSrc+nExtra>=SQLITE_MAX_SRCLIST ){
+      /* FIXME: Return a better error than SQLITE_NOMEM when the size
+      ** of a SrcList object gets to be too big.  To fix this will require
+      ** replumbing to pass Parse* instead of sqlite3* as the first parameter
+      ** to the SrcList allocators.  As this never comes up in real-world
+      ** usage, the fix is a low priority. */
+      sqlite3OomFault(db);
+      return pSrc;
+    }
+    if( nAlloc>SQLITE_MAX_SRCLIST ) nAlloc = SQLITE_MAX_SRCLIST;
     pNew = sqlite3DbRealloc(db, pSrc,
                sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
     if( pNew==0 ){

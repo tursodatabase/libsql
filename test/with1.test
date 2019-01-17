@@ -1071,4 +1071,24 @@ do_execsql_test 21.2 {
              SELECT * FROM Table0  NATURAL JOIN  Table0));
 } {{}}
 
+# 2019-01-17
+# Make sure crazy nexted CTE joins terminate with an error quickly.
+#
+do_catchsql_test 22.1 {
+  WITH RECURSIVE c AS (
+     WITH RECURSIVE c AS (
+        WITH RECURSIVE c AS (
+           WITH RECURSIVE c AS (
+               WITH  c AS (VALUES(0))
+               SELECT 1 FROM c LEFT JOIN c ON ltrim(1)
+           )
+           SELECT 1 FROM c,c,c,c,c,c,c,c,c
+        )
+        SELECT  2 FROM c,c,c,c,c,c,c,c,c
+     )
+     SELECT 3 FROM c,c,c,c,c,c,c,c,c
+  )
+  SELECT 4 FROM c,c,c,c,c,c,c,c,c;
+} {1 {out of memory}}
+
 finish_test
