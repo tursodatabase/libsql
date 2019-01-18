@@ -1081,7 +1081,6 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
   Trigger *pNew = pParse->pNewTrigger;
   TriggerStep *pStep;
   NameContext sNC;
-  SrcList sSrc;
   int rc = SQLITE_OK;
 
   memset(&sNC, 0, sizeof(sNC));
@@ -1112,6 +1111,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       if( pTarget==0 ){
         rc = SQLITE_ERROR;
       }else if( SQLITE_OK==(rc = sqlite3ViewGetColumnNames(pParse, pTarget)) ){
+        SrcList sSrc;
         memset(&sSrc, 0, sizeof(sSrc));
         sSrc.nSrc = 1;
         sSrc.a[0].zName = pStep->zTarget;
@@ -1143,6 +1143,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
           }
           sNC.ncFlags = 0;
         }
+        sNC.pSrcList = 0;
       }
     }
   }

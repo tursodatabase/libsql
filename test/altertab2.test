@@ -305,6 +305,33 @@ do_execsql_test 7.3 {
   END}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a, b, c); 
+  CREATE TABLE t2(a, b, c); 
+  CREATE TABLE t3(d, e, f);
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE TRIGGER tr AFTER INSERT ON t3 BEGIN
+    UPDATE t2 SET a = new.d;
+    SELECT a, b, c FROM v1;
+  END;
+}
+
+do_execsql_test 8.1 {
+  INSERT INTO t3 VALUES(1, 2, 3);
+}
+
+# The following ALTER TABLE fails as if column "t1.a" is renamed the "a"
+# in the "SELECT a, b, c FROM v1" within the trigger can no longer be
+# resolved. But at one point there was a bug allowing the ALTER TABLE
+# succeed. Which meant the subsequent INSERT statement would fail.
+do_catchsql_test 8.2 {
+  ALTER TABLE t1 RENAME a TO aaa;
+} {1 {error in trigger tr after rename: no such column: a}}
+do_execsql_test 8.3 {
+  INSERT INTO t3 VALUES(4, 5, 6);
+}
 
 finish_test
 
