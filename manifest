@@ -1,5 +1,5 @@
-C Fix\sproblems\scausing\sundefined\sleft-shift\soperations\sin\sthe\sfts3\ssnippet()\nfunction.
-D 2019-01-18T19:26:48.918
+C Typecasts\sadded\sto\sthe\sGeoPoly\sextension\sto\savoid\sharmless\sUBSAN\swarnings.
+D 2019-01-18T19:33:56.463
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -366,7 +366,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c 603ec9b72cd70cf18541339b6c7d47f304ac0d84c50294be6c6c6ae35acdb0a6
+F ext/rtree/geopoly.c 061432bddc38c4c10c7e4ce940d581c886d65bb5814b4b65b46ad046aa85eaa2
 F ext/rtree/rtree.c 57729cc19f3832e5f9051556af44ed264b5bd54b01543cd7e50d5143817b964c
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 7573134f1b4f59df36c1b0a6de51268fd3b9c714d91f3811482263e734e416ea
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b352f1590d20a574b0681e011ececcf4f41fa5b157503d330e03939404aca0e9
-R cf317d4e595abdb01b27661d8f9d1df1
-U dan
-Z 1d119c13c18ffa9046c8d95a13a2ae82
+P b90dbaed3092236e97f9796fa63989a3648060e16189e1267c430f4a7e799fac
+R 38e7ed21c3ba7e18d21fd38b5b228c8f
+U drh
+Z 71c939a2336f695a4bb7bcd852576d14
