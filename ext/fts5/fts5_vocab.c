@@ -560,7 +560,10 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 
         if( rc==SQLITE_OK ){
           zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
-          if( nTerm!=pCsr->term.n || memcmp(zTerm, pCsr->term.p, nTerm) ){
+          assert_nc( nTerm>0 );
+          if( nTerm!=pCsr->term.n 
+          || (nTerm>0 && memcmp(zTerm, pCsr->term.p, nTerm)) 
+          ){
             break;
           }
           if( sqlite3Fts5IterEof(pCsr->pIter) ) break;
