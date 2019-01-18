@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sin\sthe\sfts5vocab\smodule\scaused\sby\sincluding\sa\s"term\s<\sNULL"\sterm\nin\sa\sWHERE\sclause.
-D 2019-01-18T21:12:32.602
+C Fix\sa\smemory\sleak\sintroduced\sby\s[55c5d72a].
+D 2019-01-18T21:17:08.541
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -80,7 +80,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ec300b0af6989840c624976969bdfabdb252df517d743c8ca19cef3cd0cbc1ce
+F ext/fts3/fts3.c 90352639eb4465fdfa0a122c70ce17a9ea2dbbeab1576daf9be637aa199b3fd9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 6c666f314caaeb8fe8e4c1a2d84f8b34406647429a43e8f475b0b0074ad41861
 F ext/fts3/fts3_aux.c 32e3ecada9014ff577022f9b44c9c5654d59405b39dc57ba8977298157e8c89b
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55c5d72af9510e2f27c33544d804a58d4282b0efb384ead38484129ce91b574f
-R 85576c98e4a9bc4cebd1d1250bc88947
+P 9e717c4377c0116a5d36815fbc30f8b8803f14770d30be361feb27cc5b5b537b
+R b49a74f5cdb5574f8f9ffaf07b939964
 U dan
-Z d48b5a3416d6d2456cec986de9a7bacd
+Z 36f366ba2e0450a8c9dac1df7e806f68

@@ -2569,6 +2569,10 @@ static int fts3DoclistOrMerge(
     }
   }
 
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(aOut);
+    p = aOut = 0;
+  }
   *paOut = aOut;
   *pnOut = (int)(p-aOut);
   assert( *pnOut<=n1+n2+FTS3_VARINT_MAX-1 );
