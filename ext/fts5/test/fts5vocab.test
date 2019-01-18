@@ -523,5 +523,24 @@ do_test 10.6 {
   set res
 } {3 5 7}
 
+do_execsql_test 10.6.1 {
+  SELECT * FROM t2 WHERE term<NULL;
+}
+do_execsql_test 10.6.2 {
+  SELECT * FROM t2 WHERE term>NULL;
+}
+do_execsql_test 10.6.3 {
+  SELECT * FROM t2 WHERE term=NULL;
+}
+do_execsql_test 10.7.1 {
+  SELECT * FROM t2 WHERE term<?;
+}
+do_execsql_test 10.7.2 {
+  SELECT * FROM t2 WHERE term>?;
+}
+do_execsql_test 10.7.3 {
+  SELECT * FROM t2 WHERE term=?;
+}
+
 finish_test
 

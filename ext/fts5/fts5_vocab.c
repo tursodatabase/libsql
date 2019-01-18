@@ -560,7 +560,6 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 
         if( rc==SQLITE_OK ){
           zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
-          assert_nc( nTerm>0 );
           if( nTerm!=pCsr->term.n 
           || (nTerm>0 && memcmp(zTerm, pCsr->term.p, nTerm)) 
           ){
@@ -621,6 +620,7 @@ static int fts5VocabFilterMethod(
     }
     if( pLe ){
       const char *zCopy = (const char *)sqlite3_value_text(pLe);
+      if( zCopy==0 ) zCopy = "";
       pCsr->nLeTerm = sqlite3_value_bytes(pLe);
       pCsr->zLeTerm = sqlite3_malloc(pCsr->nLeTerm+1);
       if( pCsr->zLeTerm==0 ){
