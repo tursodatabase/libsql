@@ -1,5 +1,5 @@
-C Handle\soversize\sfloating\spoint\svalues\scarefully\swhen\sconverting\sto\sintegers\nfor\sthe\s'%'\sbinary\soperator.
-D 2019-01-18T17:53:50.691
+C Avoid\sinteger\soverflow\swhen\scomputing\sthe\sarray\sof\sa\sbounding\sbox\swith\nthe\srtree_i32\svirtual\stable.
+D 2019-01-18T18:52:17.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -367,7 +367,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 603ec9b72cd70cf18541339b6c7d47f304ac0d84c50294be6c6c6ae35acdb0a6
-F ext/rtree/rtree.c 1e0fd7e850cadcfdf83cf6b59077c8a9ecfb79ad6af930b74edf88b456154ab2
+F ext/rtree/rtree.c 57729cc19f3832e5f9051556af44ed264b5bd54b01543cd7e50d5143817b964c
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 7573134f1b4f59df36c1b0a6de51268fd3b9c714d91f3811482263e734e416ea
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64bec9e6214c6932fab5a3fb8c569ae14cd2d603bd0f8b26104815c3bb9d396a
-R 23c489a2ae8dd47d8c5f4c714346499a
+P 048add13fc10e69ae504a49c4663612381d928b2cf1f9cdab4ff34bd40f601a3
+R e49ae49db0664dd0c8b772aad1d691d5
 U drh
-Z de4950d4f9709c315a07de45d8efeea5
+Z 4d9234620ea890ef5add226a9e9b7814
