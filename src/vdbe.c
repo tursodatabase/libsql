@@ -1583,8 +1583,8 @@ fp_math:
         break;
       }
       default: {
-        iA = (i64)rA;
-        iB = (i64)rB;
+        iA = sqlite3VdbeIntValue(pIn1);
+        iB = sqlite3VdbeIntValue(pIn2);
         if( iA==0 ) goto arithmetic_result_is_null;
         if( iA==-1 ) iA = 1;
         rB = (double)(iB % iA);
