@@ -1,5 +1,5 @@
-C Avoid\spassing\sa\sNULL\spointer\sto\smemcpy\sin\sfts5,\seven\sif\sthe\sdatabase\sis\scorrupt.
-D 2019-01-18T20:15:02.171
+C Fix\san\sinfinite\sloop\scaused\sby\sa\scorrupt\sdatabase\sin\sfts3.\sAlso\san\sundefined\nleft-shift\sin\sfts5.
+D 2019-01-18T21:03:15.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -80,7 +80,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 230bfe6509b576c7a82e23e3775fe030586ef5f2135d1b556a99c4c224dee1f0
+F ext/fts3/fts3.c ec300b0af6989840c624976969bdfabdb252df517d743c8ca19cef3cd0cbc1ce
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 6c666f314caaeb8fe8e4c1a2d84f8b34406647429a43e8f475b0b0074ad41861
 F ext/fts3/fts3_aux.c 32e3ecada9014ff577022f9b44c9c5654d59405b39dc57ba8977298157e8c89b
@@ -111,7 +111,7 @@ F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 4f5d19b7973dae23de368728f06d3eb1fe9f5cca2990366b40e9379996f35e61
 F ext/fts5/fts5Int.h 28a99786582ef2a49db6be8eead420ad4d16fbb6635560ded2455628686a1ba9
 F ext/fts5/fts5_aux.c 4353df5d71a8f84ae94ed9c5c9199d1594b8efc9476c4d617fbd8db8b291e3a7
-F ext/fts5/fts5_buffer.c 9d7bd654123832879c9f7e2d37f37aebcc3271e65a5e56d9410d81ef59da7a59
+F ext/fts5/fts5_buffer.c 61f48c4921461dcd3b101eadf2c9e5641dbe7e6470bc60252bee2e42e70ef638
 F ext/fts5/fts5_config.c eeec97cb0237991e7fa3bbae07b5cc354e3f238b661200c11228fe167c18f882
 F ext/fts5/fts5_expr.c 188d1dca5a262a0708efc5deb809f1aa6ecea4158986a439d2670cfe72d10b65
 F ext/fts5/fts5_hash.c d415f5ad332b051f0ade564bcf1762c4467cc49b2ba8ea5873d8744c705d8d42
@@ -156,7 +156,7 @@ F ext/fts5/test/fts5connect.test 08030168fc96fc278fa81f28654fb7e90566f33aff269c0
 F ext/fts5/test/fts5content.test 688d5ac7af194ebc67495daea76a69e3cd5480122c2320e72d41241b423b4116
 F ext/fts5/test/fts5corrupt.test 77ae6f41a7eba10620efb921cf7dbe218b0ef232b04519deb43581cb17a57ebe
 F ext/fts5/test/fts5corrupt2.test 7453752ba12ce91690c469a6449d412561cc604b1dec994e16ab132952e7805f
-F ext/fts5/test/fts5corrupt3.test ee4d73da5fbbbc7f51c3a5c98234097631d5a388e0bffb81922a0c31cc59afe9
+F ext/fts5/test/fts5corrupt3.test 44c0cb3cd7f5c272f299bcd900f270885148181f9148cdfe302e96b6d94b69c3
 F ext/fts5/test/fts5delete.test cbf87e3b8867c4d5cfcaed975c7475fd3f99d072bce2075fcedf43d1f82af775
 F ext/fts5/test/fts5detail.test 31b240dbf6d44ac3507e2f8b65f29fdc12465ffd531212378c7ce1066766f54e
 F ext/fts5/test/fts5determin.test 1b77879b2ae818b5b71c859e534ee334dac088b7cf3ff3bf76a2c82b1c788d11
@@ -916,7 +916,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test 46b9ddda7f6588fd5a5b1f4bb4fc0618dc45010e7dddb8a3a188baf3197177ae
 F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999fe3b0d25f3
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 6be332f78efc460b33dd4a216595f33a9a47f7267b246814a56eff3124752024
+F test/fts3corrupt4.test cea5a082ed539a17f5898d490ed4fddec98974bb8efa69ad43feacc5461266a6
 F test/fts3cov.test cb932743da52a1c79a1ab8983e26c8121cf02263d6ff16e1f642e6f9b8348338
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1f6a093ac4a2de8c5b02c30fe57e09770460fd5bdddfe9c7a9a24fb83a6b491
-R 67ecb637d41eb7fd795e5d068af3d1c6
+P acccc9808f52009b2c7794770c8b7efe2ce861fa184d32e287e7114c74e2b522
+R b6df85dc9f6904cfafdd0878423404f3
 U dan
-Z 09faca79923bb204f29912e39af0f85d
+Z 02967187b0cc842cc3b4f78d29f768f7

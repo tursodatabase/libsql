@@ -52,7 +52,7 @@ void sqlite3Fts5Put32(u8 *aBuf, int iVal){
 }
 
 int sqlite3Fts5Get32(const u8 *aBuf){
-  return (aBuf[0] << 24) + (aBuf[1] << 16) + (aBuf[2] << 8) + aBuf[3];
+  return (int)((((u32)aBuf[0])<<24) + (aBuf[1]<<16) + (aBuf[2]<<8) + aBuf[3]);
 }
 
 /*

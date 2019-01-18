@@ -4639,6 +4639,18 @@ do_catchsql_test 37.1 {
   SELECT * FROM t3;
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 37.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(b, c);
+  INSERT INTO t1 VALUES('a', 'b');
+  SELECT quote(block) FROM t1_data WHERE rowid=10;
+} {X'000000000101010001010101'}
+
+do_execsql_test 37.1 {
+  UPDATE t1_data SET block = X'FFFFFFFF0101010001010101' WHERE rowid = 10;
+  SELECT rowid FROM t1('a');
+} {1}
 
 
 

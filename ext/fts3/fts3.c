@@ -2135,7 +2135,7 @@ static int fts3PutColNumber(char **pp, int iCol){
 ** updated appropriately.   The caller is responsible for insuring
 ** that there is enough space in *pp to hold the complete output.
 */
-static void fts3PoslistMerge(
+static int fts3PoslistMerge(
   char **pp,                      /* Output buffer */
   char **pp1,                     /* Left input list */
   char **pp2                      /* Right input list */
@@ -2148,11 +2148,17 @@ static void fts3PoslistMerge(
     int iCol1;         /* The current column index in pp1 */
     int iCol2;         /* The current column index in pp2 */
 
-    if( *p1==POS_COLUMN ) fts3GetVarint32(&p1[1], &iCol1);
+    if( *p1==POS_COLUMN ){ 
+      fts3GetVarint32(&p1[1], &iCol1);
+      if( iCol1==0 ) return FTS_CORRUPT_VTAB;
+    }
     else if( *p1==POS_END ) iCol1 = POSITION_LIST_END;
     else iCol1 = 0;
 
-    if( *p2==POS_COLUMN ) fts3GetVarint32(&p2[1], &iCol2);
+    if( *p2==POS_COLUMN ){
+      fts3GetVarint32(&p2[1], &iCol2);
+      if( iCol2==0 ) return FTS_CORRUPT_VTAB;
+    }
     else if( *p2==POS_END ) iCol2 = POSITION_LIST_END;
     else iCol2 = 0;
 
@@ -2200,6 +2206,7 @@ static void fts3PoslistMerge(
   *pp = p;
   *pp1 = p1 + 1;
   *pp2 = p2 + 1;
+  return SQLITE_OK;
 }
 
 /*
@@ -2492,6 +2499,7 @@ static int fts3DoclistOrMerge(
   char *a2, int n2,               /* Second doclist */
   char **paOut, int *pnOut        /* OUT: Malloc'd doclist */
 ){
+  int rc = SQLITE_OK;
   sqlite3_int64 i1 = 0;
   sqlite3_int64 i2 = 0;
   sqlite3_int64 iPrev = 0;
@@ -2546,7 +2554,8 @@ static int fts3DoclistOrMerge(
 
     if( p2 && p1 && iDiff==0 ){
       fts3PutDeltaVarint3(&p, bDescDoclist, &iPrev, &bFirstOut, i1);
-      fts3PoslistMerge(&p, &p1, &p2);
+      rc = fts3PoslistMerge(&p, &p1, &p2);
+      if( rc ) break;
       fts3GetDeltaVarint3(&p1, pEnd1, bDescDoclist, &i1);
       fts3GetDeltaVarint3(&p2, pEnd2, bDescDoclist, &i2);
     }else if( !p2 || (p1 && iDiff<0) ){
@@ -2563,7 +2572,7 @@ static int fts3DoclistOrMerge(
   *paOut = aOut;
   *pnOut = (int)(p-aOut);
   assert( *pnOut<=n1+n2+FTS3_VARINT_MAX-1 );
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
