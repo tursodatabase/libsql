@@ -433,7 +433,8 @@ static void fts3SnippetDetails(
         int j;
         u64 mPhrase = (u64)1 << i;
         u64 mPos = (u64)1 << (iCsr - iStart);
-        assert( iCsr>=iStart );
+        assert( iCsr>=iStart && (iCsr - iStart)<=64 );
+        assert( i>=0 && i<=64 );
         if( (mCover|mCovered)&mPhrase ){
           iScore++;
         }else{
@@ -660,6 +661,7 @@ static int fts3SnippetShift(
 
     for(nLeft=0; !(hlmask & ((u64)1 << nLeft)); nLeft++);
     for(nRight=0; !(hlmask & ((u64)1 << (nSnippet-1-nRight))); nRight++);
+    assert( (nSnippet-1-nRight)<=63 && (nSnippet-1-nRight)>=0 );
     nDesired = (nLeft-nRight)/2;
 
     /* Ideally, the start of the snippet should be pushed forward in the
@@ -1432,6 +1434,10 @@ void sqlite3Fts3Snippet(
     sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
     return;
   }
+
+  /* Limit the snippet length to 64 tokens. */
+  if( nToken<-64 ) nToken = -64;
+  if( nToken>+64 ) nToken = +64;
 
   for(nSnippet=1; 1; nSnippet++){
 
