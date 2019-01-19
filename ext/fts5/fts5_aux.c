@@ -586,6 +586,7 @@ static int fts5Bm25GetData(
 
     /* Calculate the average document length for this FTS5 table */
     if( rc==SQLITE_OK ) rc = pApi->xRowCount(pFts, &nRow);
+    assert( rc!=SQLITE_OK || nRow>0 );
     if( rc==SQLITE_OK ) rc = pApi->xColumnTotalSize(pFts, -1, &nToken);
     if( rc==SQLITE_OK ) p->avgdl = (double)nToken  / (double)nRow;
 

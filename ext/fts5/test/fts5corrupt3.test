@@ -4652,6 +4652,34 @@ do_execsql_test 37.1 {
   SELECT rowid FROM t1('a');
 } {1}
 
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 38.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(b, c);
+  INSERT INTO t1 VALUES('a', 'b');
+  INSERT INTO t1 VALUES('a', 'b');
+  SELECT quote(block) FROM t1_data WHERE rowid=1;
+} {X'020202'}
+
+do_execsql_test 38.1 {
+  SELECT * FROM t1('a b') ORDER BY rank;
+} {a b a b}
+
+do_execsql_test 38.2 {
+  UPDATE t1_data SET block = X'000202' WHERE rowid=1;
+}
+breakpoint
+do_catchsql_test 38.3 {
+  SELECT * FROM t1('a b') ORDER BY rank;
+} {1 {database disk image is malformed}}
+
+db close
+sqlite3 db test.db
+do_catchsql_test 38.4 {
+  SELECT * FROM t1('a b') ORDER BY rank;
+} {1 {database disk image is malformed}}
+
+
 
 
 sqlite3_fts5_may_be_corrupt 0
