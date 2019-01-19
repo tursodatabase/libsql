@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\sALTER\sTABLE\sto\srename\sa\stable\sor\scolumn\swhen\sthe\ndatabase\sschema\scontains\sa\strigger\sor\sview\sthat\sitself\scontains\san\sexpression\n\s"<column>\sAND\s0".
-D 2019-01-19T14:07:37.859
+C Remove\sa\sbroken\sassert()\striggered\sby\sa\s"PRAGMA\smax_page_count\s=\sN"\ninvocation,\swhere\sN\sis\slarger\sthan\sthe\snumber\sof\spages\sin\sthe\sdatabase\simage,\nbut\ssmaller\sthan\sthe\snumber\sof\spages\sin\sthe\sdatabase\sfile.
+D 2019-01-19T15:27:09.978
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -500,7 +500,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f6e91b8fd82af7afbfd073c4974ad6cdb8e62d9f65ceddb45167835a0567fdc0
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 75e0f3cfa3962c714f519f8a3d1e67ecca1c91de0e010a036b988e40ce9e4c73
+F src/pager.c 857dde3e525f665cfab23b6765bf04ca6638c0759ae7da6d63acfb463e230aa6
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y 489673ac424c1d3ec3c97f65df572652b32a47bbcee5be1492ad7d4874d47430
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
@@ -839,7 +839,7 @@ F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
 F test/expr.test 7cb55e80aeb41d65fec968c08212505123063fea60bdc355d764d747670e9eea
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
-F test/fallocate.test 07416bd593a116d5893cb244f45a94d5c6fe030561df3bd972e6135f8106e509
+F test/fallocate.test d552828d38cf08c528fadf341df8611378470db02b1a579fa5747b076bece5ea
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
 F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbd681dce2905d8b8ad7948ba684b0b62d6c04be0f7a2992ee7d6836a99010de
-R 4dc710322bda0f3a50b91a09e11f061c
+P 908ff7fffa302255a74e2334ca3a1779ed43acb0268fce5a83a56fd16794dc88
+R 971a974acc09c728c7f8cfea14ce9be5
 U dan
-Z 11f28a1d0915a0356096f9db53cd0521
+Z dcdc09de7eecf89af5550e10c8853994

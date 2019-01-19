@@ -3839,7 +3839,10 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
     pPager->mxPgno = mxPage;
   }
   assert( pPager->eState!=PAGER_OPEN );      /* Called only by OP_MaxPgcnt */
-  assert( pPager->mxPgno>=pPager->dbSize );  /* OP_MaxPgcnt enforces this */
+  /* assert( pPager->mxPgno>=pPager->dbSize ); */
+  /* OP_MaxPgcnt ensures that the parameter passed to this function is not
+  ** less than the total number of valid pages in the database. But this
+  ** may be less than Pager.dbSize, and so the assert() above is not valid */
   return pPager->mxPgno;
 }
 
