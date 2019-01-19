@@ -333,6 +333,15 @@ do_execsql_test 8.3 {
   INSERT INTO t3 VALUES(4, 5, 6);
 }
 
+do_execsql_test 8.1 {
+  CREATE TABLE t4(a, b);
+  CREATE VIEW v4 AS SELECT * FROM t4 WHERE (a=1 AND 0) OR b=2;
+}
+do_execsql_test 8.2 {
+  ALTER TABLE t4 RENAME a TO c;
+  SELECT sql FROM sqlite_master WHERE name = 'v4'
+} {{CREATE VIEW v4 AS SELECT * FROM t4 WHERE (c=1 AND 0) OR b=2}}
+
 finish_test
 
 

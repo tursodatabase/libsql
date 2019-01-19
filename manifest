@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sintroduced\sby\s[55c5d72a].
-D 2019-01-18T21:17:08.541
+C Fix\sa\sproblem\swith\susing\sALTER\sTABLE\sto\srename\sa\stable\sor\scolumn\swhen\sthe\ndatabase\sschema\scontains\sa\strigger\sor\sview\sthat\sitself\scontains\san\sexpression\n\s"<column>\sAND\s0".
+D 2019-01-19T14:07:37.859
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -465,7 +465,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c b660eb4d6d273946a8341efb9d38320ddceb9c2931d04478c74b85c35e053a5e
+F src/expr.c 9c30765910bdff9d68ac580a4f2dc790da82308cb7798e57dc9e4bf5717d557c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
 F src/func.c 0341881d22903aac5ba7f352b188806d6436e1d6ae4235ff01e44d56879dfe63
@@ -621,7 +621,7 @@ F test/alterlegacy.test 82022721ce0de29cedc9a7af63bc9fcc078b0ee000f8283b4b6ea9c3
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test 6e13f13d8c30708f16187908c31dadb1bfff9e3cb2a07a7392a7a5e076f58f4a
-F test/altertab2.test 67dd9806e7dafaea26f3b6fcaa4e909f690d6ac71373545577ece7f96a4ea817
+F test/altertab2.test 2465aac70cedb14335a45e39fef9f7118e4726b6cb1614db36cba014f63bdec2
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 7168c8bffa5d5cbc53c05b7e9c7fcdd24b365a1bc5046ce80c45efa3c02e6b7c
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e717c4377c0116a5d36815fbc30f8b8803f14770d30be361feb27cc5b5b537b
-R b49a74f5cdb5574f8f9ffaf07b939964
+P fbd681dce2905d8b8ad7948ba684b0b62d6c04be0f7a2992ee7d6836a99010de
+R 4dc710322bda0f3a50b91a09e11f061c
 U dan
-Z 36f366ba2e0450a8c9dac1df7e806f68
+Z 11f28a1d0915a0356096f9db53cd0521
