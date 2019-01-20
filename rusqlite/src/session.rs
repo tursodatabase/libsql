@@ -809,7 +809,7 @@ mod test {
 
         assert!(!called.load(Ordering::Relaxed));
         let check = db
-            .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| row.get(0))
+            .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| row.get::<_, i32>(0))
             .unwrap();
         assert_eq!(1, check);
 
@@ -845,7 +845,7 @@ mod test {
         .unwrap();
 
         let check = db
-            .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| row.get(0))
+            .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| row.get::<_, i32>(0))
             .unwrap();
         assert_eq!(1, check);
     }

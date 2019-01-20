@@ -1,13 +1,11 @@
 //! Code related to `sqlite3_context` common to `functions` and `vtab` modules.
 
-use std::ffi::CStr;
-use std::os::raw::{c_char, c_int, c_void};
+use std::os::raw::{c_int, c_void};
 #[cfg(feature = "array")]
 use std::rc::Rc;
 
 use crate::ffi;
 use crate::ffi::sqlite3_context;
-use crate::ffi::sqlite3_value;
 
 use crate::str_to_cstring;
 use crate::types::{ToSqlOutput, ValueRef};
