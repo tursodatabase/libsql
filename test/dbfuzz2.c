@@ -43,6 +43,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include "sqlite3.h"
 
 /*
@@ -146,6 +148,23 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
       }
       if( strcmp(z,"vdbe-debug")==0 ){
         bVdbeDebug = 1;
+        continue;
+      }
+      if( strcmp(z,"max-stack")==0 ){
+        struct rlimit x,y;
+        if( i+1==argc ){
+          fprintf(stderr, "missing argument to %s\n", argv[i]);
+          exit(1);
+        }
+        memset(&x,0,sizeof(x));
+        getrlimit(RLIMIT_STACK, &x);
+        y.rlim_cur = atoi(argv[++i]);
+        y.rlim_max = x.rlim_cur;
+        setrlimit(RLIMIT_STACK, &y);
+        memset(&y,0,sizeof(y));
+        getrlimit(RLIMIT_STACK, &y);
+        printf("Stack size limit changed from %d to %d\n", 
+               (int)x.rlim_cur, (int)y.rlim_cur);
         continue;
       }
     }
