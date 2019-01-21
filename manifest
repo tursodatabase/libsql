@@ -1,5 +1,5 @@
-C Add\sthe\s--memtrace\soption\sto\sthe\sCLI.
-D 2019-01-21T14:55:03.278
+C Make\ssure\sthe\sextra\sbytes\sallocated\sfor\sthe\ssaved\scursor\sposition\sby\ncheck-in\s[160b1e31c0f27257]\sare\sinitialized\sto\szero.
+D 2019-01-21T16:01:17.355
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c a1030989a43bb21fde08fbe26e201009b70956560e5663317106f75c45937ac9
+F src/btree.c 73f282db4563a61e5da794a4c39f287eaceca08697a25012440b431f9cf7d2b6
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c f07c0b154c23737d1699ee63bba31c8ca8b323e2446b957bc6bfec81a62295fc
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94fb7a47003c3c1a52e833e98d27399cfec5382afde2b3990e8223c8bff7cfa0
-R 796d1a1cec3656ad5a4e8f8f2ef69f6e
+P a1e12fa2a8eb5648a96cc2d8d39899d6f87c5e2269cec7de486964c8b915e724
+R cd18f6fcba214d13eca31f05c5601fa3
 U drh
-Z ff9c08eb91d733ddc4125da6599985b2
+Z 4ba833054d03b20d4e41cb91457b1977

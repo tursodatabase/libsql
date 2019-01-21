@@ -672,6 +672,7 @@ static int saveCursorKey(BtCursor *pCur){
     if( pKey ){
       rc = sqlite3BtreePayload(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
+        memset(((u8*)pKey)+pCur->nKey, 0, 9+8);
         pCur->pKey = pKey;
       }else{
         sqlite3_free(pKey);
