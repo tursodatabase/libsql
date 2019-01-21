@@ -5619,7 +5619,6 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr, int nCol){
       int iCol = 0;
       char *p = pPhrase->doclist.pList;
 
-      assert( *p );
       do{
         u8 c = 0;
         int iCnt = 0;
