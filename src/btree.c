@@ -5475,7 +5475,7 @@ int sqlite3BtreeMovetoUnpacked(
           testcase( nCell==0 );  /* Invalid key size:  0x80 0x80 0x00 */
           testcase( nCell==1 );  /* Invalid key size:  0x80 0x80 0x01 */
           testcase( nCell==2 );  /* Minimum legal index key size */
-          if( nCell<2 ){
+          if( nCell<2 || nCell/pCur->pBt->usableSize>pCur->pBt->nPage ){
             rc = SQLITE_CORRUPT_PAGE(pPage);
             goto moveto_finish;
           }
