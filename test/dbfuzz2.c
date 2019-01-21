@@ -150,21 +150,34 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
         bVdbeDebug = 1;
         continue;
       }
-      if( strcmp(z,"max-stack")==0 ){
+      if( strcmp(z,"max-stack")==0
+       || strcmp(z,"max-data")==0
+       || strcmp(z,"max-as")==0
+      ){
         struct rlimit x,y;
+        int resource = RLIMIT_STACK;
+        char *zType = "RLIMIT_STACK";
         if( i+1==argc ){
           fprintf(stderr, "missing argument to %s\n", argv[i]);
           exit(1);
         }
+        if( z[4]=='d' ){
+          resource = RLIMIT_DATA;
+          zType = "RLIMIT_DATA";
+        }
+        if( z[4]=='a' ){
+          resource = RLIMIT_AS;
+          zType = "RLIMIT_AS";
+        }
         memset(&x,0,sizeof(x));
-        getrlimit(RLIMIT_STACK, &x);
+        getrlimit(resource, &x);
         y.rlim_cur = atoi(argv[++i]);
         y.rlim_max = x.rlim_cur;
-        setrlimit(RLIMIT_STACK, &y);
+        setrlimit(resource, &y);
         memset(&y,0,sizeof(y));
-        getrlimit(RLIMIT_STACK, &y);
-        printf("Stack size limit changed from %d to %d\n", 
-               (int)x.rlim_cur, (int)y.rlim_cur);
+        getrlimit(resource, &y);
+        printf("%s changed from %d to %d\n", 
+               zType, (int)x.rlim_cur, (int)y.rlim_cur);
         continue;
       }
     }
@@ -217,7 +230,12 @@ int main(int argc, char **argv){
     }
   }
   if( eVerbosity>0 ){
+    struct rusage x;
     printf("SQLite %s\n", sqlite3_sourceid());
+    memset(&x, 0, sizeof(x));
+    if( getrusage(RUSAGE_SELF, &x)==0 ){
+      printf("Maximum RSS = %ld KB\n", x.ru_maxrss);
+    }
   }
   return 0;
 }

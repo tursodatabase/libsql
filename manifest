@@ -1,5 +1,5 @@
-C Add\sthe\s--max-stack\soption\sto\sdbfuzz2.
-D 2019-01-20T00:03:59.818
+C Add\sthe\s--max-data\sand\s--max-as\soptions\sto\sdbfuzz2.\s\sAlso\scause\sdbfuzz2\sto\nshow\sits\smaximum\sRSS\ssize\supon\sexit\sin\sstandalone\smode\swith\sthe\s-v\soption.
+D 2019-01-21T13:47:55.219
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -782,7 +782,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 5659cbbc01e38678c119c8a58071cac59d0d6c71837a385f3d1838012f12e1e1
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 047e69ddf0353c3cf6db67c46ec83bbe743b7cfca36af735d63b078f75cbcca7
+F test/dbfuzz2.c 849f0c48a3f0b637cc67e98792fe7a3f253e5b393b1b6e30e265353643d605df
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 928e622178bd004be52b2271ac554176aebe9d6e115ecac4e7072eccbb4262b5
-R 15aa3d19a54804c9c76653f8590163ad
+P c11ae4fed89484f0a0061002861b5d599bbda8e40a1f0c33fdbe8cb072134d5c
+R 2f9904d8b345cb626df3da030d41edf3
 U drh
-Z 7cb1a953620d3f856a072e0ae1692e4d
+Z cfbcc5b43fc2946dea53aa13418e36dd
