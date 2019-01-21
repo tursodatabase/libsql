@@ -561,13 +561,18 @@ static int fts3DestroyMethod(sqlite3_vtab *pVtab){
   sqlite3 *db = p->db;             /* Database handle */
 
   /* Drop the shadow tables */
-  if( p->zContentTbl==0 ){
-    fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", zDb, p->zName);
-  }
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", zDb,p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", zDb, p->zName);
+  fts3DbExec(&rc, db, 
+    "DROP TABLE IF EXISTS %Q.'%q_segments';"
+    "DROP TABLE IF EXISTS %Q.'%q_segdir';"
+    "DROP TABLE IF EXISTS %Q.'%q_docsize';"
+    "DROP TABLE IF EXISTS %Q.'%q_stat';"
+    "%s DROP TABLE IF EXISTS %Q.'%q_content';",
+    zDb, p->zName,
+    zDb, p->zName,
+    zDb, p->zName,
+    zDb, p->zName,
+    (p->zContentTbl ? "--" : ""), zDb,p->zName
+  );
 
   /* If everything has worked, invoke fts3DisconnectMethod() to free the
   ** memory associated with the Fts3Table structure and return SQLITE_OK.
