@@ -1,5 +1,5 @@
-C Add\sthe\s--max-data\sand\s--max-as\soptions\sto\sdbfuzz2.\s\sAlso\scause\sdbfuzz2\sto\nshow\sits\smaximum\sRSS\ssize\supon\sexit\sin\sstandalone\smode\swith\sthe\s-v\soption.
-D 2019-01-21T13:47:55.219
+C Minor\sfix\sthe\sfallocate.test\smodule\schange\sfrom\s[7cd56cad5efead5]
+D 2019-01-21T14:49:14.297
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 2a9d0331ab57c68173a4c2fe9046fe89c4d916a888e04dd7a2d36958c2bff777
@@ -839,7 +839,7 @@ F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
 F test/expr.test 7cb55e80aeb41d65fec968c08212505123063fea60bdc355d764d747670e9eea
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
-F test/fallocate.test d552828d38cf08c528fadf341df8611378470db02b1a579fa5747b076bece5ea
+F test/fallocate.test 37a62e396a68eeede8f8d2ecf23573a80faceb630788d314d0a073d862616717
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
 F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
@@ -1800,7 +1800,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c11ae4fed89484f0a0061002861b5d599bbda8e40a1f0c33fdbe8cb072134d5c
-R 2f9904d8b345cb626df3da030d41edf3
+P 7ce93e824a954d1e0cf8d7343e59a2660175f42bd4dac02aed8ad77644e7eb2f
+R 8d761b62dd0c9c09d0317b68e3be1aff
 U drh
-Z cfbcc5b43fc2946dea53aa13418e36dd
+Z 825753ba4f6b25b31a6a5697f19e6232
