@@ -937,6 +937,7 @@ INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
 INCLUDE ../ext/misc/appendvfs.c
+INCLUDE ../ext/misc/memtrace.c
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -8879,6 +8880,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       ** command, so ignore them */
       break;
 #endif
+    }else if( strcmp(z, "-memtrace")==0 ){
+      sqlite3MemTraceActivate(stderr);
     }
   }
   verify_uninitialized();
@@ -9024,6 +9027,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-lookaside")==0 ){
       i+=2;
     }else if( strcmp(z,"-mmap")==0 ){
+      i++;
+    }else if( strcmp(z,"-memtrace")==0 ){
       i++;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     }else if( strcmp(z,"-sorterref")==0 ){
