@@ -188,7 +188,7 @@ static int memdbWrite(
   sqlite_int64 iOfst
 ){
   MemFile *p = (MemFile *)pFile;
-  if( p->mFlags & SQLITE_DESERIALIZE_READONLY ) return SQLITE_READONLY;
+  if( NEVER(p->mFlags & SQLITE_DESERIALIZE_READONLY) ) return SQLITE_READONLY;
   if( iOfst+iAmt>p->sz ){
     int rc;
     if( iOfst+iAmt>p->szAlloc
@@ -238,6 +238,11 @@ static int memdbFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 */
 static int memdbLock(sqlite3_file *pFile, int eLock){
   MemFile *p = (MemFile *)pFile;
+  if( eLock>SQLITE_LOCK_SHARED 
+   && (p->mFlags & SQLITE_DESERIALIZE_READONLY)!=0
+  ){
+    return SQLITE_READONLY;
+  }
   p->eLock = eLock;
   return SQLITE_OK;
 }

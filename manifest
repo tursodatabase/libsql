@@ -1,5 +1,5 @@
-C Update\sdbfuzz2\sto\sset\sa\smaximum\sdatabase\ssize\sof\s100MiB\sby\sdefault,\sbut\nwith\sthe\snew\s--max-db-size\sN\soption\sto\schange\sthat\slimit.
-D 2019-01-22T16:11:31.841
+C Fix\sthe\sSQLITE_DESERIALIZE_READONLY\sfeature\sso\sthat\sit\sdoes\snot\scause\nan\sassertion\sfault\sin\sthe\spager.
+D 2019-01-22T16:43:47.471
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -485,7 +485,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 25d36740e40ed3f3758c17bd6ed7db099a6b1d8033d7ea7058496774ac14d8c4
+F src/memdb.c 6099be387f1161e07b20e5ea5118348a6fb7eb55edcb487d6bea15ee917b37e4
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30f08d58882819a69e353bcc1b6b349664bbfbe00aa1c115ba44a9fd899fcc5b
-R c0a93c2de998a25ade80e52d3493d401
+P 21d6bb78ef2979d011b917d2d6519d7cd0009fcad83ed23ab2e9a5e02d8e51ab
+R c10e509bd08fe49c65bda07d588ac180
 U drh
-Z e95af0696f8de39c19179e79f984dce6
+Z 2cd758b83be35b67f60e995e64492823
