@@ -1,5 +1,5 @@
-C Make\ssure\scursors\sare\sopened\son\sall\sindexes\sfor\san\sUPDATE\sOR\sREPLACE\nregardless\sof\swhether\sor\snot\sthe\sindexes\sare\spartial\sor\scontain\scolumns\nthat\smight\sneed\sto\sbe\supdated.
-D 2019-01-22T13:45:48.673
+C Enhancements\sto\sdeserialize:\s(1)\sAdd\sthe\sSQLITE_FCNTL_SIZE_LIMIT\sfile\scontrol\nto\sset\sa\smaximum\ssize\sfor\san\sin-memory\sdatabase,\sdefaulting\sto\s\nSQLITE_MEMDB_DEFAULT_MAXSIZE\sor\s1GiB.\s\s(2)\sHonor\sthe\sSQLITE_DESERIALIZE_READONLY\nflag.\s(3)\sEnhance\sthe\sTCL\sinterface\sto\ssupport\s-maxsize\sN\sand\s-readonly\sBOOLEAN.\n(4)\sAdd\sthe\s--maxsize\soption\sto\sthe\s".open"\scommand\sand\son\sthe\scommand-line\sfor\nthe\sCLI.
+D 2019-01-22T16:06:20.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -485,7 +485,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c cb4013d56fa71c79c498717cbc47b27dd1c7653fd866584b2071ae04114eec46
+F src/memdb.c 25d36740e40ed3f3758c17bd6ed7db099a6b1d8033d7ea7058496774ac14d8c4
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
@@ -515,15 +515,15 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c a40867ce07a9b58121d6f9a8fc969555d3c9bdcb6c2b5fc202670815af8dbd91
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c f7260c833c87c52ac187bc160ccc675a67d5a226cacd7eb1cdcb3c3ff25bde76
-F src/shell.c.in 58b94d2473d84f457dfee94bd0dac3173d39dfdfad058c1c4042a157ec43c4fa
-F src/sqlite.h.in b54cd42d2f3b739a00de540cafe2dcd0de3b8e1748a2db33a68def487e9e602f
+F src/shell.c.in 7649cd10a1ad8bf4caf78e501db97e96bb4c4f35120b8dd2c3f983e859ea1325
+F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
 F src/sqliteInt.h a2330a569d8c5461aa35fe3ad29a1885e13ddfd07088a3e833131490c3a99ca9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c e72862a271348d779672b45a730c33fd0c535e630ff927e8ce4a0c908d1d28c6
+F src/tclsqlite.c 6b19e7562195aaf881f3e35e2472dc01ae3cb156961db5126c3d616744729b7e
 F src/test1.c 64cdc914a77102e008dfae7adaa4ded54c2d4953d1464ea8709805a2aab755eb
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1120,7 +1120,7 @@ F test/malloctraceviewer.tcl b7a54595270c1d201abf1c3f3d461f27eaf24cdef623ad08a0f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test 61aa1dbdeea6320791d2ff42a9a6149d5716be674bf06ee0ffa0aad1bf3eb5f8
+F test/memdb1.test 0632e6ea56c48e3c6e9b0c73e120310bad8f93762543f809e267888f5a37943f
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba3b8412726548a0716c1a2d67260c3b7e31956474f4cd4ce607cf2cebc667dd
-R 7ce2d510eb9d051132c78a15e023756d
+P e148cdad35520e6684cfeba23b003f60b55f83a6bf621aff16be8aa5612cdcee
+R 9d6d2798c27f659933ba85e19f8b3d4e
 U drh
-Z d4e1fff084d7bc0803e5ba0a13f2d0e8
+Z aaf32ec586902c86687ff793f750210d
