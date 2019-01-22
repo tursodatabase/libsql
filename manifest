@@ -1,5 +1,5 @@
-C Fix\sanother\ssegfault\scaused\sby\sa\scorrupt\sfts3\sdatabase.
-D 2019-01-22T12:21:28.175
+C Make\ssure\scursors\sare\sopened\son\sall\sindexes\sfor\san\sUPDATE\sOR\sREPLACE\nregardless\sof\swhether\sor\snot\sthe\sindexes\sare\spartial\sor\scontain\scolumns\nthat\smight\sneed\sto\sbe\supdated.
+D 2019-01-22T13:45:48.673
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -580,7 +580,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c8af4feebd8bf5a4d60a14018d91f61013f658ec864dfce7661bae73d86b3191
 F src/treeview.c c6ff90da4cc1813ff2d9bb11f17d4d927db62c47e552faa1835edc47269d753d
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
-F src/update.c 4e630e47852e206d0b29ec63ea0402e0b7ba328a1c19dd645ae8ac7bd0a378cf
+F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
@@ -1565,7 +1565,7 @@ F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ffeea7747d5ba962a8009a20b7e53d68cbae05b063604c68702c5998eb50c981
 F test/update.test 1148de8d913e9817717990603aadeca07aab9ddbb10a30f167cbfd8d3a3ccb60
-F test/update2.test 5e67667e1c54017d964e626db765cf8bedcf87483c184f4c575bdb8c1dd2313e
+F test/update2.test 67455bc61fcbcf96923c45b3bc4f87bc72be7d67575ad35f134906148c7b06d3
 F test/upsert1.test 994bde41800bb77dbe32fcd2e1f6c4b49cc9f2c6cd345731c774dff02b51c110
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 058a8006dceda78a894ea9446f057aa60b6d38e96506d4d91bda0ee2f9314ba3
-R a7502ca2669e6df14a57f581f838d7d9
-U dan
-Z 21217ff1c201496284c94d42e339d5c2
+P ba3b8412726548a0716c1a2d67260c3b7e31956474f4cd4ce607cf2cebc667dd
+R 7ce2d510eb9d051132c78a15e023756d
+U drh
+Z d4e1fff084d7bc0803e5ba0a13f2d0e8
