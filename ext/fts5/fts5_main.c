@@ -1777,6 +1777,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
   Fts5PoslistReader *aIter;       /* One iterator for each phrase */
   int nIter;                      /* Number of iterators/phrases */
+  int nCol = ((Fts5Table*)pCsr->base.pVtab)->pConfig->nCol;
   
   nIter = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
   if( pCsr->aInstIter==0 ){
@@ -1830,6 +1831,10 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
         aInst[0] = iBest;
         aInst[1] = FTS5_POS2COLUMN(aIter[iBest].iPos);
         aInst[2] = FTS5_POS2OFFSET(aIter[iBest].iPos);
+        if( aInst[1]<0 || aInst[1]>=nCol ){
+          rc = FTS5_CORRUPT;
+          break;
+        }
         sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
       }
     }
