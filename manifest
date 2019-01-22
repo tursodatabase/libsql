@@ -1,5 +1,5 @@
-C Enhancements\sto\sdeserialize:\s(1)\sAdd\sthe\sSQLITE_FCNTL_SIZE_LIMIT\sfile\scontrol\nto\sset\sa\smaximum\ssize\sfor\san\sin-memory\sdatabase,\sdefaulting\sto\s\nSQLITE_MEMDB_DEFAULT_MAXSIZE\sor\s1GiB.\s\s(2)\sHonor\sthe\sSQLITE_DESERIALIZE_READONLY\nflag.\s(3)\sEnhance\sthe\sTCL\sinterface\sto\ssupport\s-maxsize\sN\sand\s-readonly\sBOOLEAN.\n(4)\sAdd\sthe\s--maxsize\soption\sto\sthe\s".open"\scommand\sand\son\sthe\scommand-line\sfor\nthe\sCLI.
-D 2019-01-22T16:06:20.120
+C Update\sdbfuzz2\sto\sset\sa\smaximum\sdatabase\ssize\sof\s100MiB\sby\sdefault,\sbut\nwith\sthe\snew\s--max-db-size\sN\soption\sto\schange\sthat\slimit.
+D 2019-01-22T16:11:31.841
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -783,7 +783,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 5659cbbc01e38678c119c8a58071cac59d0d6c71837a385f3d1838012f12e1e1
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 849f0c48a3f0b637cc67e98792fe7a3f253e5b393b1b6e30e265353643d605df
+F test/dbfuzz2.c ffd2d85cab49936959b8ee6073498bcb827d5670c7286e4b40b06e433b32a94a
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e148cdad35520e6684cfeba23b003f60b55f83a6bf621aff16be8aa5612cdcee
-R 9d6d2798c27f659933ba85e19f8b3d4e
+P 30f08d58882819a69e353bcc1b6b349664bbfbe00aa1c115ba44a9fd899fcc5b
+R c0a93c2de998a25ade80e52d3493d401
 U drh
-Z aaf32ec586902c86687ff793f750210d
+Z e95af0696f8de39c19179e79f984dce6

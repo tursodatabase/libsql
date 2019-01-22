@@ -69,6 +69,9 @@ int eVerbosity = 0;
 /* True to activate PRAGMA vdbe_debug=on */
 static int bVdbeDebug = 0;
 
+/* Maximum size of the in-memory database file */
+static sqlite3_int64 szMax = 104857600;
+
 /* libFuzzer invokes this routine with fuzzed database files (in aData).
 ** This routine run SQLite against the malformed database to see if it
 ** can provoke a failure or malfunction.
@@ -78,6 +81,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   sqlite3 *db;
   int rc;
   int i;
+  sqlite3_int64 x;
 
   if( eVerbosity>=1 ){
     printf("************** nByte=%d ***************\n", (int)nByte);
@@ -92,6 +96,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   sqlite3_deserialize(db, "main", a, nByte, nByte,
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
+  x = szMax;
+  sqlite3_file_control(db, "main", SQLITE_FCNTL_SIZE_LIMIT, &x);
   if( bVdbeDebug ){
     sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
   }
@@ -148,6 +154,14 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
       }
       if( strcmp(z,"vdbe-debug")==0 ){
         bVdbeDebug = 1;
+        continue;
+      }
+      if( strcmp(z,"max-db-size")==0 ){
+        if( i+1==argc ){
+          fprintf(stderr, "missing argument to %s\n", argv[i]);
+          exit(1);
+        }
+        szMax = strtol(argv[++i], 0, 0);
         continue;
       }
       if( strcmp(z,"max-stack")==0
