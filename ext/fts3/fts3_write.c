@@ -2255,6 +2255,11 @@ static int fts3SegWriterAdd(
   nPrefix = fts3PrefixCompress(pWriter->zTerm, pWriter->nTerm, zTerm, nTerm);
   nSuffix = nTerm-nPrefix;
 
+  /* If nSuffix is zero or less, then zTerm/nTerm must be a prefix of 
+  ** pWriter->zTerm/pWriter->nTerm. i.e. must be equal to or less than when
+  ** compared with BINARY collation. This indicates corruption.  */
+  if( nSuffix<=0 ) return FTS_CORRUPT_VTAB;
+
   /* Figure out how many bytes are required by this new entry */
   nReq = sqlite3Fts3VarintLen(nPrefix) +    /* varint containing prefix size */
     sqlite3Fts3VarintLen(nSuffix) +         /* varint containing suffix size */
