@@ -1,5 +1,5 @@
-C Use\s_strdup()\sinstead\sof\sstrdup()\son\sWindows\sbuilds\sof\sthe\sCLI,\sto\savoid\na\scompiler\swarning\sreported\son\sthe\smailing\slist.
-D 2019-01-22T16:44:59.908
+C Do\snot\srun\sshmlock.test\sas\spart\sof\sthe\sjournaltest\spermutation.
+D 2019-01-22T20:18:29.964
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -1192,7 +1192,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 61c0f61d9b26ebb4643b2ed848e9b3f55492f74e0addab66c7dcd70b081d7b03
+F test/permutations.test 5b729823f3f4b8a488c64dee3484cfb4e924ee0713c7eef1da3ed99ea8573d80
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9eccef7825c61980678599358b62bc394283124653061ce163ead0c653f481d
-R 31c47432b5b5a86301fd8f9558738dd0
-U drh
-Z 1ebf6a23a577431713cfd419e4185fab
+P a7126a4f4fb4e3e25be95d673323f835252bb2b427469616046a90b2acf64071
+R c630cbdb66e598fc219bc0d3a705f7c5
+U dan
+Z 37fc7c7d51dd1b501bcf4c294997ad5b
