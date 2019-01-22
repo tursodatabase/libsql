@@ -138,6 +138,9 @@ typedef unsigned char u8;
 # ifndef unlink
 #  define unlink _unlink
 # endif
+# ifndef strdup
+#  define strdup _strdup
+# endif
 # undef popen
 # define popen _popen
 # undef pclose

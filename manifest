@@ -1,5 +1,5 @@
-C Fix\sthe\sSQLITE_DESERIALIZE_READONLY\sfeature\sso\sthat\sit\sdoes\snot\scause\nan\sassertion\sfault\sin\sthe\spager.
-D 2019-01-22T16:43:47.471
+C Use\s_strdup()\sinstead\sof\sstrdup()\son\sWindows\sbuilds\sof\sthe\sCLI,\sto\savoid\na\scompiler\swarning\sreported\son\sthe\smailing\slist.
+D 2019-01-22T16:44:59.908
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -515,7 +515,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c a40867ce07a9b58121d6f9a8fc969555d3c9bdcb6c2b5fc202670815af8dbd91
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c f7260c833c87c52ac187bc160ccc675a67d5a226cacd7eb1cdcb3c3ff25bde76
-F src/shell.c.in 7649cd10a1ad8bf4caf78e501db97e96bb4c4f35120b8dd2c3f983e859ea1325
+F src/shell.c.in 58f69c9143d9635a3d71a32c3d4cb6fad4de4f0ca400c098fa76ff83e3ec58cb
 F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1801,7 +1801,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 21d6bb78ef2979d011b917d2d6519d7cd0009fcad83ed23ab2e9a5e02d8e51ab
-R c10e509bd08fe49c65bda07d588ac180
+P b9eccef7825c61980678599358b62bc394283124653061ce163ead0c653f481d
+R 31c47432b5b5a86301fd8f9558738dd0
 U drh
-Z 2cd758b83be35b67f60e995e64492823
+Z 1ebf6a23a577431713cfd419e4185fab
