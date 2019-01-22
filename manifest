@@ -1,5 +1,5 @@
-C OSSFuzz\sfound\sa\scase\swhere\san\sassert()\sinside\ssqlite3ExprCompare()\scan\sbe\ntrue.\s\sTest\scase\sadded\sto\sTH3.
-D 2018-12-12T11:57:35.159
+C Add\sthe\sSQLITE_ENABLE_EARLY_CURSOR_CLOSE\scompile-time\soption\swhich\scauses\sread\scursors\sto\sbe\sclosed\safter\stheir\susefulness\sends\sduring\sa\stwo-pass\sUPDATE.
+D 2019-01-22T18:20:22.754
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -591,7 +591,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c fb94aadc9099ff9c6506d0a8b88d51266005bcaa265403f3d7caf732a562eb66
-F src/where.c 3818e8a736a05d2cb194e64399af707e367fbcc5c251d785804d02eaf121288e
+F src/where.c e575883d9fed4fe431d5a2f666627e801d71c60b7f3bbb7039f7e56a83daa39d
 F src/whereInt.h f125f29fca80890768e0b2caa14f95db74b2dacd3a122a168f97aa7b64d6968f
 F src/wherecode.c c45f03aefc2266b990df0fc4d7acc4e27f56f881f4fc0fc355b7cbc4d7189da5
 F src/whereexpr.c 491f0894ad9903750cdecb7894437a0cabdffdd88f574d2b1c9ac85d14fe4b9c
@@ -1779,8 +1779,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b7567fc0c7dc143f7622733f9addbf36b931cf405e71681db5b5f1ae7905c92
-Q +23b62fb160d86dc9d9073bcc714601f5b7695f96abd893eafecf4b2e565b87f2
-R d8bc0151b2cf3f37be4941bb30d0cff2
-U drh
-Z 4ac6c0d939bf9a66432a24f717d5535f
+P bc891ac6b62fe7d9a5c157a95d0b9dc2559f7abb84d7b22e258acb9b250c224f
+Q +7def6c8edd85f19ee09038e01541f75b1f71ca39b9fb782b8f0fcac89207c353
+R 2c3c7b5a4f9860720780fba51f6c623a
+U mistachkin
+Z b6a6e9475bbc391b26b5886d199f2c37
