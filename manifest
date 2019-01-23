@@ -1,5 +1,5 @@
-C Stricter\senforcement\sof\scell\ssizes\swhen\sdoing\sbalancing\soperations\son\sthe\nbtree,\sin\sorder\sto\scatch\sfile\scorruption\ssooner.
-D 2019-01-23T19:25:59.893
+C Fix\sa\sproblem\swith\srenaming\sa\stable\swithin\sa\sschema\sthat\scontains\sa\scomposite\squery\sthat\suses\sa\scolumn\salias\sas\san\sORDER\sBY\sterm.
+D 2019-01-23T19:50:46.730
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -512,7 +512,7 @@ F src/pragma.h fdd03d78a7497f74a3f652909f945328480089189526841ae829ce7313d98d13
 F src/prepare.c 63b8395d728cc63c3fdc6cb98eb01e1ce84d66c46aa3c32f38332ea789429922
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 12fca5d0b5474ae42e7c32e9f631a4937ac065ab755c56d7636857c376dd2057
+F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c f7260c833c87c52ac187bc160ccc675a67d5a226cacd7eb1cdcb3c3ff25bde76
 F src/shell.c.in 58f69c9143d9635a3d71a32c3d4cb6fad4de4f0ca400c098fa76ff83e3ec58cb
@@ -623,7 +623,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test 6e13f13d8c30708f16187908c31dadb1bfff9e3cb2a07a7392a7a5e076f58f4a
 F test/altertab2.test 7bedde2e6e71fdecd7a2af64b696cd0b3d3a344f5cf1db6785d9e3b5665193cf
-F test/altertab3.test b27923ad48b05f70364ddd8f4bdb6ee5e411e13d23badb74ccff048648b11986
+F test/altertab3.test 94152c25eaf5fc7ce2a20ce660c0fc014f40089625a12f74f4c224929b7d1b25
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 7168c8bffa5d5cbc53c05b7e9c7fcdd24b365a1bc5046ce80c45efa3c02e6b7c
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1802,7 +1802,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 44ce8baa47192be03c8f11777904c3c07fa5cc5c97b6d8e81572d380995ac688
-R 394e54d0902bcab8f75c7f1ab86066f4
-U drh
-Z 2303e2a69753b4d3e54ffe2a91200226
+P 12713f320b2c1def273dd8b7833dddaaad5331aba779d4b1ec9aa949814f38fe
+R 6a3b0c4e7e1f7bf7bc1dc93e72839241
+U dan
+Z 41dbe4c761083f3a99006e306f2f6874
