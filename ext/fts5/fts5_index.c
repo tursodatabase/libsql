@@ -4127,7 +4127,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
   int i;
   Fts5Buffer buf;
   memset(&buf, 0, sizeof(Fts5Buffer));
-  for(i=0; i<pIter->nSeg; i++){
+  for(i=0; i<pIter->nSeg && p->rc==SQLITE_OK; i++){
     Fts5SegIter *pSeg = &pIter->aSeg[i];
     if( pSeg->pSeg==0 ){
       /* no-op */
@@ -4147,33 +4147,41 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
       iLeafRowid = FTS5_SEGMENT_ROWID(iId, pSeg->iTermLeafPgno);
       pData = fts5DataRead(p, iLeafRowid);
       if( pData ){
-        fts5BufferZero(&buf);
-        fts5BufferGrow(&p->rc, &buf, pData->nn);
-        fts5BufferAppendBlob(&p->rc, &buf, sizeof(aHdr), aHdr);
-        fts5BufferAppendVarint(&p->rc, &buf, pSeg->term.n);
-        fts5BufferAppendBlob(&p->rc, &buf, pSeg->term.n, pSeg->term.p);
-        fts5BufferAppendBlob(&p->rc, &buf, pData->szLeaf-iOff, &pData->p[iOff]);
-        if( p->rc==SQLITE_OK ){
-          /* Set the szLeaf field */
-          fts5PutU16(&buf.p[2], (u16)buf.n);
-        }
+        if( iOff>pData->szLeaf ){
+          /* This can occur if the pages that the segments occupy overlap - if
+          ** a single page has been assigned to more than one segment. In
+          ** this case a prior iteration of this loop may have corrupted the
+          ** segment currently being trimmed.  */
+          p->rc = FTS5_CORRUPT;
+        }else{
+          fts5BufferZero(&buf);
+          fts5BufferGrow(&p->rc, &buf, pData->nn);
+          fts5BufferAppendBlob(&p->rc, &buf, sizeof(aHdr), aHdr);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->term.n);
+          fts5BufferAppendBlob(&p->rc, &buf, pSeg->term.n, pSeg->term.p);
+          fts5BufferAppendBlob(&p->rc, &buf, pData->szLeaf-iOff,&pData->p[iOff]);
+          if( p->rc==SQLITE_OK ){
+            /* Set the szLeaf field */
+            fts5PutU16(&buf.p[2], (u16)buf.n);
+          }
 
-        /* Set up the new page-index array */
-        fts5BufferAppendVarint(&p->rc, &buf, 4);
-        if( pSeg->iLeafPgno==pSeg->iTermLeafPgno 
-         && pSeg->iEndofDoclist<pData->szLeaf 
-        ){
-          int nDiff = pData->szLeaf - pSeg->iEndofDoclist;
-          fts5BufferAppendVarint(&p->rc, &buf, buf.n - 1 - nDiff - 4);
-          fts5BufferAppendBlob(&p->rc, &buf, 
-              pData->nn - pSeg->iPgidxOff, &pData->p[pSeg->iPgidxOff]
-          );
-        }
+          /* Set up the new page-index array */
+          fts5BufferAppendVarint(&p->rc, &buf, 4);
+          if( pSeg->iLeafPgno==pSeg->iTermLeafPgno 
+              && pSeg->iEndofDoclist<pData->szLeaf 
+            ){
+            int nDiff = pData->szLeaf - pSeg->iEndofDoclist;
+            fts5BufferAppendVarint(&p->rc, &buf, buf.n - 1 - nDiff - 4);
+            fts5BufferAppendBlob(&p->rc, &buf, 
+                pData->nn - pSeg->iPgidxOff, &pData->p[pSeg->iPgidxOff]
+                );
+          }
 
+          pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;
+          fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 1), iLeafRowid);
+          fts5DataWrite(p, iLeafRowid, buf.p, buf.n);
+        }
         fts5DataRelease(pData);
-        pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;
-        fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 1), iLeafRowid);
-        fts5DataWrite(p, iLeafRowid, buf.p, buf.n);
       }
     }
   }
