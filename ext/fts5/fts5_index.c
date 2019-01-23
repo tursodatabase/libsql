@@ -5021,6 +5021,7 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
         fts5DoclistIterNext(&i1);
         fts5DoclistIterNext(&i2);
+        assert( out.n<=(p1->n+p2->n+9) );
         if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
       }
     }
