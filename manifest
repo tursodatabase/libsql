@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srenaming\sa\stable\swithin\sa\sschema\sthat\scontains\sa\scomposite\squery\sthat\suses\sa\scolumn\salias\sas\san\sORDER\sBY\sterm.
-D 2019-01-23T19:50:46.730
+C Fix\san\sassert()\sin\svdbemem.c\sthat\scould\sfire\sif\sthe\sdatabase\swas\scorrupt.
+D 2019-01-23T20:31:56.371
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -591,7 +591,7 @@ F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
 F src/vdbeaux.c f6cd3f538697aff71f1ef92a769feb18173eb9df80372f570d741a237ea30628
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 7b3305bc4a5139f4536ac9b5f61da0f915e49d2e3fdfa87dfdfa9d7aba8bc1e9
+F src/vdbemem.c fdf49ecf8e4b81cd3593b8c4c3b34c1a0cf0e21d8b2897b89ed2d3a476ad1961
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 70188a745dc4e57d26e942681ff4b2912b7c8249ad5de3f60f0677b4337bcfaa
@@ -757,7 +757,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5ef338c560ca4dfb7360828da16f1829be4deba3b378cafdc7a1cdaf027eb5c4
-F test/corruptL.test 7992f33562c23eb24430521ab70e59bc17829969fc70c8f8bf2bab573dc73616
+F test/corruptL.test 8b2a8cf20fbd0b225cc3dea431e2c945878148a9df998d8f4134588be359057f
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/countofview.test e3d4cd6900e4e4f074968ab24b8b87d3671cd624961bef40fd3a6b8f574343cf
@@ -1802,7 +1802,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12713f320b2c1def273dd8b7833dddaaad5331aba779d4b1ec9aa949814f38fe
-R 6a3b0c4e7e1f7bf7bc1dc93e72839241
+P 2ca6b8f84ec07e313aa4e1c0894827401b418dcc4221e9c54c384f1c3893952a
+R e8fdc8836590ceb99c45f46a404f58f1
 U dan
-Z 41dbe4c761083f3a99006e306f2f6874
+Z f16217977338f606c6b57b218fc2ad12
