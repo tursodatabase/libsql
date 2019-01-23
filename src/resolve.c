@@ -858,10 +858,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->y.pWin ){
           Select *pSel = pNC->pWinSelect;
+          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
           sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
-          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           if( 0==pSel->pWin 
            || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
           ){
@@ -1531,6 +1531,17 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( ExprHasProperty(pItem->pExpr, EP_Agg) ){
           sqlite3ErrorMsg(pParse, "aggregate functions are not allowed in "
               "the GROUP BY clause");
+          return WRC_Abort;
+        }
+      }
+    }
+
+    if( IN_RENAME_OBJECT ){
+      Window *pWin;
+      for(pWin=p->pWinDefn; pWin; pWin=pWin->pNextWin){
+        if( sqlite3ResolveExprListNames(&sNC, pWin->pOrderBy)
+         || sqlite3ResolveExprListNames(&sNC, pWin->pPartition)
+        ){
           return WRC_Abort;
         }
       }
