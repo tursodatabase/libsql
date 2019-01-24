@@ -2548,7 +2548,7 @@ static int fts3DoclistOrMerge(
   ** A symetric argument may be made if the doclists are in descending 
   ** order.
   */
-  aOut = sqlite3_malloc64((sqlite3_int64)n1+n2+FTS3_VARINT_MAX-1);
+  aOut = sqlite3_malloc64((i64)n1+n2+FTS3_VARINT_MAX-1+FTS3_BUFFER_PADDING);
   if( !aOut ) return SQLITE_NOMEM;
 
   p = aOut;
@@ -2577,10 +2577,12 @@ static int fts3DoclistOrMerge(
   if( rc!=SQLITE_OK ){
     sqlite3_free(aOut);
     p = aOut = 0;
+  }else{
+    assert( (p-aOut)<=n1+n2+FTS3_VARINT_MAX-1 );
+    memset(&aOut[(p-aOut)], 0, FTS3_BUFFER_PADDING);
   }
   *paOut = aOut;
   *pnOut = (int)(p-aOut);
-  assert( *pnOut<=n1+n2+FTS3_VARINT_MAX-1 );
   return rc;
 }
 
