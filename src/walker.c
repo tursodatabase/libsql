@@ -116,7 +116,9 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
   {
     Parse *pParse = pWalker->pParse;
     if( pParse && IN_RENAME_OBJECT ){
-      if( walkWindowList(pWalker, p->pWinDefn) ) return WRC_Abort;
+      int rc = walkWindowList(pWalker, p->pWinDefn);
+      assert( rc==WRC_Continue );
+      return rc;
     }
   }
 #endif
