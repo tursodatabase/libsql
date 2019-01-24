@@ -1,5 +1,5 @@
-C Omit\sdeprecated\sPRAGMAs\swhen\scompiling\swith\sthe\s-DSQLITE_OMIT_DEPRECATED\soption.
-D 2019-01-24T16:07:18.008
+C While\sPRAGME\sfull_column_names\sis\soff\s(the\sdefault)\sdo\snot\smake\schanges\sto\nthe\sshort_column_names\spragma\swhen\scomputing\sthe\scolumn\snames\sfor\ssubqueries.
+D 2019-01-24T16:51:06.380
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -514,7 +514,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 8e22fda41a737c391e8b797f7c71e7ded1d107c31181b07bb10b3d4f22a28cd9
+F src/select.c aa96c72292f4078c2e57916b6f81ed9065296806db4770612dfd4a78d8f393c9
 F src/shell.c.in 58f69c9143d9635a3d71a32c3d4cb6fad4de4f0ca400c098fa76ff83e3ec58cb
 F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1802,7 +1802,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1601db7adba2dccd4f90fbbe5099c801a2b0d97af087fbe82ed98d05496b38c
-R 48bd598e50bcb5c94ac5469f837fee23
+P 008112bcef561a8a3ebfb007cbef36cbc0071f547e6ebdba3d3bbb39e2c48c7a
+R 0dce994cd3f334e32ee4c8a0ea4e683a
+T *branch * literal-column-names
+T *sym-literal-column-names *
+T -sym-trunk *
 U drh
-Z a55a93aacf9ea2089ba765c28e112e54
+Z 38e71e468ce8ef806b78187f43a45eca
