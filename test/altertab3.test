@@ -63,6 +63,24 @@ do_execsql_test 2.1 {
     SELECT a,b,c FROM "t1x" WHERE b>='d' ORDER BY name;
     SELECT new.c;
   END}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b, c, d);
+  CREATE VIEW v1 AS SELECT * FROM t1 WHERE a=1 OR (b IN ());
+}
+
+do_execsql_test 3.1 {
+  ALTER TABLE t1 RENAME b TO bbb;
+}
+
+do_execsql_test 3.2 {
+  SELECT sql FROM sqlite_master WHERE name = 'v1'
+} {{CREATE VIEW v1 AS SELECT * FROM t1 WHERE a=1 OR (bbb IN ())}}
+
+
+
 finish_test
 
 

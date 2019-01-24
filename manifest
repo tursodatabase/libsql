@@ -1,5 +1,5 @@
-C Omit\sdeprecated\sPRAGMAs\swhen\scompiling\swith\sthe\s-DSQLITE_OMIT_DEPRECATED\soption.
-D 2019-01-24T16:07:18.008
+C Fix\sa\sproblem\swith\srunning\sALTER\sTABLE\son\sa\sschema\sthat\scontains\sexpressions\sof\sthe\stype\s"col\sIN\s()"\s(empty\sset\son\sRHS\sof\sIN\soperator).
+D 2019-01-24T16:27:10.406
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -503,7 +503,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 857dde3e525f665cfab23b6765bf04ca6638c0759ae7da6d63acfb463e230aa6
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 489673ac424c1d3ec3c97f65df572652b32a47bbcee5be1492ad7d4874d47430
+F src/parse.y 9e5fc4c9788cc692c2117c4236eebb6e03d4f75a3a138656814fddba2eae3903
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c fffd5250a323579384a3b3904302b9fe87e186ba24602af3013f749a0234ae98
@@ -623,7 +623,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test 6e13f13d8c30708f16187908c31dadb1bfff9e3cb2a07a7392a7a5e076f58f4a
 F test/altertab2.test 7bedde2e6e71fdecd7a2af64b696cd0b3d3a344f5cf1db6785d9e3b5665193cf
-F test/altertab3.test 94152c25eaf5fc7ce2a20ce660c0fc014f40089625a12f74f4c224929b7d1b25
+F test/altertab3.test 9dd97ab8161eb6afc0e30e7c61a38336687fbd09e6ddc4c9f1e450cc0b12160b
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 7168c8bffa5d5cbc53c05b7e9c7fcdd24b365a1bc5046ce80c45efa3c02e6b7c
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1802,7 +1802,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1601db7adba2dccd4f90fbbe5099c801a2b0d97af087fbe82ed98d05496b38c
-R 48bd598e50bcb5c94ac5469f837fee23
-U drh
-Z a55a93aacf9ea2089ba765c28e112e54
+P 008112bcef561a8a3ebfb007cbef36cbc0071f547e6ebdba3d3bbb39e2c48c7a
+R 523a2eff32fe7ae56ab8feb2e43f8b41
+U dan
+Z 25bb1be3c29e0b5fdd31f536b284fa69
