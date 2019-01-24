@@ -1,5 +1,5 @@
-C Change\sa\sinteger\svariable\sin\ssqlite3VdbeRecordUnpack()\sto\sunsigned\sin\sorder\nto\savoid\sany\spossibility\sof\san\sinteger\soverflow.
-D 2019-01-24T14:16:20.388
+C Fix\sa\spotential\sproblem\swith\s"INSERT\sINTO\s...\sSELECT\s*\sFROM"\s(or\sVACUUM)\sstatements\son\sa\scorrupted\sdatabase.
+D 2019-01-24T15:16:17.305
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 0e7c107ebcaff26681bc5bcf017557db85aa828d6f7fd652d748b7a78072c298
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 58574154361f57da015436f53d9107dde74387b3b939c7a7ef6a7998b5dfb1af
+F src/btree.c 21eb929285901255cf0af2f8e2e9ee41c77e0620e031ddad3d065cfaf95583fd
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c f07c0b154c23737d1699ee63bba31c8ca8b323e2446b957bc6bfec81a62295fc
@@ -757,7 +757,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5ef338c560ca4dfb7360828da16f1829be4deba3b378cafdc7a1cdaf027eb5c4
-F test/corruptL.test 8b2a8cf20fbd0b225cc3dea431e2c945878148a9df998d8f4134588be359057f
+F test/corruptL.test 05e4e193bdd56896bae94d1d1f73a29ff41c9c2bafe32bd390d547c5bfa38f34
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/countofview.test e3d4cd6900e4e4f074968ab24b8b87d3671cd624961bef40fd3a6b8f574343cf
@@ -782,7 +782,7 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
-F test/dbfuzz001.test 5659cbbc01e38678c119c8a58071cac59d0d6c71837a385f3d1838012f12e1e1
+F test/dbfuzz001.test 9617fb870f7d655c27994749955efee5d93a641c082dce4c59059796ff81145e
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c ffd2d85cab49936959b8ee6073498bcb827d5670c7286e4b40b06e433b32a94a
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
@@ -1802,7 +1802,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65ad6c55f1ba9bc2f75afffa3adaf19f145fad7ac9a00ccce6372e9a2cc4341b
-R 044fae2f8d5b50f222adeecb83c19999
-U drh
-Z a7a11efee3ef8017d4f6272584568b02
+P 1b536f6fd8d58800042f130842f0586aaa357841ee0d1b690a9815c865d50826
+R fc284f1d3ce3f15ef50f8cba68163dd7
+U dan
+Z 7614ae7f2756b52b23d2b92aadbeffdc
