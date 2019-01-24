@@ -8351,7 +8351,11 @@ static int btreeOverwriteContent(
     if( memcmp(pDest, ((u8*)pX->pData) + iOffset, iAmt)!=0 ){
       int rc = sqlite3PagerWrite(pPage->pDbPage);
       if( rc ) return rc;
-      memcpy(pDest, ((u8*)pX->pData) + iOffset, iAmt);
+      /* In a corrupt database, it is possible for the source and destination
+      ** buffers to overlap.  This is harmless since the database is already
+      ** corrupt but it does cause valgrind and ASAN warnings.  So use
+      ** memmove(). */
+      memmove(pDest, ((u8*)pX->pData) + iOffset, iAmt);
     }
   }
   return SQLITE_OK;
