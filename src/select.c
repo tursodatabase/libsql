@@ -2089,9 +2089,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   db->flags &= ~(u64)SQLITE_FullColNames;
   db->flags |= SQLITE_ShortColNames;
   sqlite3SelectPrep(pParse, pSelect, 0);
+  db->flags = savedFlags;
   if( pParse->nErr ) return 0;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
-  db->flags = savedFlags;
   pTab = sqlite3DbMallocZero(db, sizeof(Table) );
   if( pTab==0 ){
     return 0;
