@@ -793,6 +793,11 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
     sqlite3_file_control(cx.db, "main", SQLITE_FCNTL_SIZE_LIMIT, &x);
   }
 
+  /* For high debugging levels, turn on debug mode */
+  if( eVerbosity>=5 ){
+    sqlite3_exec(cx.db, "PRAGMA vdbe_debug=ON;", 0, 0, 0);
+  }
+
   /* Block debug pragmas and ATTACH/DETACH.  But wait until after
   ** deserialize to do this because deserialize depends on ATTACH */
   sqlite3_set_authorizer(cx.db, block_troublesome_sql, 0);
@@ -1243,6 +1248,19 @@ static int integerValue(const char *zArg){
 }
 
 /*
+** Return the number of "v" characters in a string.  Return 0 if there
+** are any characters in the string other than "v".
+*/
+static int numberOfVChar(const char *z){
+  int N = 0;
+  while( z[0] && z[0]=='v' ){
+    z++;
+    N++;
+  }
+  return z[0]==0 ? N : 0;
+}
+
+/*
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
@@ -1315,6 +1333,7 @@ int main(int argc, char **argv){
   int nativeMalloc = 0;        /* Turn off MEMSYS3/5 and lookaside if true */
   sqlite3_vfs *pDfltVfs;       /* The default VFS */
   int openFlags4Data;          /* Flags for sqlite3_open_v2() */
+  int nV;                      /* How much to increase verbosity with -vvvv */
 
   sqlite3_initialize();
   iBegin = timeOfDay();
@@ -1421,10 +1440,16 @@ int main(int argc, char **argv){
         fatalError("timeout is not available on non-unix systems");
 #endif
       }else
-      if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
+      if( strcmp(z,"verbose")==0 ){
         quietFlag = 0;
         verboseFlag++;
         eVerbosity++;
+        if( verboseFlag>1 ) runFlags |= SQL_TRACE;
+      }else
+      if( (nV = numberOfVChar(z))>=1 ){
+        quietFlag = 0;
+        verboseFlag += nV;
+        eVerbosity += nV;
         if( verboseFlag>1 ) runFlags |= SQL_TRACE;
       }else
       if( strcmp(z,"version")==0 ){
