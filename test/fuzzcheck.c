@@ -604,7 +604,7 @@ static int progress_handler(void *pClientData) {
   if( iDiff > p->mxInterval ) p->mxInterval = iDiff;
   p->nCb++;
   if( rc==0 && p->mxCb>0 && p->mxCb<=p->nCb ) rc = 1;
-  if( rc && !p->timeoutHit && eVerbosity ){
+  if( rc && !p->timeoutHit && eVerbosity>=2 ){
     printf("Timeout on progress callback %d\n", p->nCb);
     fflush(stdout);
     p->timeoutHit = 1;
@@ -653,14 +653,14 @@ static int runDbSql(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
   while( isspace(zSql[0]) ) zSql++;
   if( zSql[0]==0 ) return SQLITE_OK;
-  if( eVerbosity>=3 ){
+  if( eVerbosity>=4 ){
     printf("RUNNING-SQL: [%s]\n", zSql);
     fflush(stdout);
   }
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
-      if( eVerbosity>=4 ){
+      if( eVerbosity>=5 ){
         int j;
         for(j=0; j<sqlite3_column_count(pStmt); j++){
           if( j ) printf(",");
@@ -706,13 +706,13 @@ static int runDbSql(sqlite3 *db, const char *zSql){
         } /* End for() */
         printf("\n");
         fflush(stdout);
-      } /* End if( eVerbosity>=4 ) */
+      } /* End if( eVerbosity>=5 ) */
     } /* End while( SQLITE_ROW */
-    if( rc!=SQLITE_DONE && eVerbosity>=3 ){
+    if( rc!=SQLITE_DONE && eVerbosity>=4 ){
       printf("SQL-ERROR: (%d) %s\n", rc, sqlite3_errmsg(db));
       fflush(stdout);
     }
-  }else if( eVerbosity>=3 ){
+  }else if( eVerbosity>=4 ){
     printf("SQL-ERROR (%d): %s\n", rc, sqlite3_errmsg(db));
     fflush(stdout);    
   } /* End if( SQLITE_OK ) */
@@ -745,7 +745,7 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
   iSql = decodeDatabase((unsigned char*)aData, (int)nByte, &aDb, &nDb);
   if( iSql<0 ) return 0;
   nSql = nByte - iSql;
-  if( eVerbosity>=2 ){
+  if( eVerbosity>=3 ){
     printf(
       "****** %d-byte input, %d-byte database, %d-byte script "
       "******\n", (int)nByte, nDb, nSql);
@@ -830,7 +830,7 @@ testrun_finished:
   if( rc!=SQLITE_OK ){
     fprintf(stdout, "sqlite3_close() returns %d\n", rc);
   }
-  if( eVerbosity ){
+  if( eVerbosity>=2 ){
     fprintf(stdout, "Peak memory usages: %f MB\n",
        sqlite3_memory_highwater(1) / 1000000.0);
   }
@@ -854,9 +854,14 @@ testrun_finished:
 ** true if this does appear to be a dbsqlfuzz test case and false otherwise.
 */
 static int isDbSql(unsigned char *a, int n){
+  unsigned char buf[12];
+  int i;
   if( n>4 && memcmp(a,"\n--\n",4)==0 ) return 1;
   while( n>0 && isspace(a[0]) ){ a++; n--; }
-  if( n>8 && memcmp(a,"53514c69",8)==0 ) return 1;
+  for(i=0; n>0 && i<8; n--, a++){
+    if( isxdigit(a[0]) ) buf[i++] = a[0];
+  }
+  if( i==8 && memcmp(buf,"53514c69",8)==0 ) return 1;
   return 0;
 }
 
