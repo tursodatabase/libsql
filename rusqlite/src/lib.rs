@@ -90,7 +90,7 @@ use crate::error::{error_from_handle, error_from_sqlite_code};
 use crate::raw_statement::RawStatement;
 use crate::types::{ToSql, ValueRef};
 
-pub use crate::statement::Statement;
+pub use crate::statement::{Statement, StatementStatus};
 
 pub use crate::row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
 
