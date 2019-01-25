@@ -606,7 +606,7 @@ static int fts5BufferCompareBlob(
 */
 static int fts5BufferCompare(Fts5Buffer *pLeft, Fts5Buffer *pRight){
   int nCmp = MIN(pLeft->n, pRight->n);
-  int res = memcmp(pLeft->p, pRight->p, nCmp);
+  int res = fts5Memcmp(pLeft->p, pRight->p, nCmp);
   return (res==0 ? (pLeft->n - pRight->n) : res);
 }
 
@@ -2534,7 +2534,7 @@ static void fts5AssertComparisonResult(
       assert( pRes->iFirst==i1 );
     }else{
       int nMin = MIN(p1->term.n, p2->term.n);
-      int res = memcmp(p1->term.p, p2->term.p, nMin);
+      int res = fts5Memcmp(p1->term.p, p2->term.p, nMin);
       if( res==0 ) res = p1->term.n - p2->term.n;
 
       if( res==0 ){
@@ -3580,7 +3580,7 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
       for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
           int iId = pStruct->aLevel[iLvl].aSeg[iSeg].iSegid;
-          if( iId<=FTS5_MAX_SEGMENT ){
+          if( iId<=FTS5_MAX_SEGMENT && iId>0 ){
             aUsed[(iId-1) / 32] |= (u32)1 << ((iId-1) % 32);
           }
         }
@@ -4273,7 +4273,7 @@ static void fts5IndexMergeLevel(
     const u8 *pTerm;
 
     pTerm = fts5MultiIterTerm(pIter, &nTerm);
-    if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
+    if( nTerm!=term.n || fts5Memcmp(pTerm, term.p, nTerm) ){
       if( pnRem && writer.nLeafWritten>nRem ){
         break;
       }
@@ -5897,7 +5897,7 @@ static void fts5IndexIntegrityCheckSegment(
         p->rc = FTS5_CORRUPT;
       }else{
         iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
-        res = memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));
+        res = fts5Memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));
         if( res==0 ) res = nTerm - nIdxTerm;
         if( res<0 ) p->rc = FTS5_CORRUPT;
       }

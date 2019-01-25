@@ -335,11 +335,12 @@ static int fts5SnippetScore(
   int nInst;
   int nScore = 0;
   int iLast = 0;
+  sqlite3_int64 iEnd = (sqlite3_int64)iPos + nToken;
 
   rc = pApi->xInstCount(pFts, &nInst);
   for(i=0; i<nInst && rc==SQLITE_OK; i++){
     rc = pApi->xInst(pFts, i, &ip, &ic, &iOff);
-    if( rc==SQLITE_OK && ic==iCol && iOff>=iPos && iOff<(iPos+nToken) ){
+    if( rc==SQLITE_OK && ic==iCol && iOff>=iPos && iOff<iEnd ){
       nScore += (aSeen[ip] ? 1 : 1000);
       aSeen[ip] = 1;
       if( iFirst<0 ) iFirst = iOff;
@@ -349,7 +350,7 @@ static int fts5SnippetScore(
 
   *pnScore = nScore;
   if( piPos ){
-    int iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
+    sqlite3_int64 iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
     if( (iAdj+nToken)>nDocsize ) iAdj = nDocsize - nToken;
     if( iAdj<0 ) iAdj = 0;
     *piPos = iAdj;

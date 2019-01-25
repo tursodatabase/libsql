@@ -87,6 +87,12 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(x)
 #endif
 
+/*
+** A version of memcmp() that does not cause asan errors if one of the pointer
+** parameters is NULL and the number of bytes to compare is zero.
+*/
+#define fts5Memcmp(s1, s2, n) ((n)==0 ? 0 : memcmp((s1), (s2), (n)))
+
 /* Mark a function parameter as unused, to suppress nuisance compiler
 ** warnings. */
 #ifndef UNUSED_PARAM
