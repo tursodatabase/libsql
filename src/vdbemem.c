@@ -1530,9 +1530,11 @@ static int valueFromExpr(
   }
 #endif
   else if( op==TK_TRUEFALSE ){
-     pVal = valueNew(db, pCtx);
-     pVal->flags = MEM_Int;
-     pVal->u.i = pExpr->u.zToken[4]==0;
+    pVal = valueNew(db, pCtx);
+    if( pVal ){
+      pVal->flags = MEM_Int;
+      pVal->u.i = pExpr->u.zToken[4]==0;
+    }
   }
 
   *ppVal = pVal;
