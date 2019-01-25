@@ -569,6 +569,17 @@ impl<'conn> Statement<'conn> {
                 .map(|s| str::from_utf8_unchecked(s.to_bytes()))
         }
     }
+
+    /// Get the value for one of the status counters for this statement.
+    pub fn get_status(&self, status: StatementStatus) -> i32 {
+        self.stmt.get_status(status, false)
+    }
+
+    /// Reset the value of one of the status counters for this statement,
+    /// returning the value it had before resetting.
+    pub fn reset_status(&self, status: StatementStatus) -> i32 {
+        self.stmt.get_status(status, true)
+    }
 }
 
 impl<'conn> Into<RawStatement> for Statement<'conn> {
@@ -668,6 +679,32 @@ impl<'conn> Statement<'conn> {
     pub(crate) fn reset(&self) -> c_int {
         self.stmt.reset()
     }
+}
+
+/// Prepared statement status counters.
+///
+/// See https://www.sqlite.org/c3ref/c_stmtstatus_counter.html
+/// for explanations of each.
+///
+/// Note that depending on your version of SQLite, all of these
+/// may not be available.
+#[repr(i32)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum StatementStatus {
+    /// Equivalent to SQLITE_STMTSTATUS_FULLSCAN_STEP
+    FullscanStep = 1,
+    /// Equivalent to SQLITE_STMTSTATUS_SORT
+    Sort = 2,
+    /// Equivalent to SQLITE_STMTSTATUS_AUTOINDEX
+    AutoIndex = 3,
+    /// Equivalent to SQLITE_STMTSTATUS_VM_STEP
+    VmStep = 4,
+    /// Equivalent to SQLITE_STMTSTATUS_REPREPARE
+    RePrepare = 5,
+    /// Equivalent to SQLITE_STMTSTATUS_RUN
+    Run = 6,
+    /// Equivalent to SQLITE_STMTSTATUS_MEMUSED
+    MemUsed = 99,
 }
 
 #[cfg(test)]
