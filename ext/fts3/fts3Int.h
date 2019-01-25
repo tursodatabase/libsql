@@ -130,6 +130,18 @@ SQLITE_EXTENSION_INIT3
 #define POS_END     (0)     /* Position-list terminator */ 
 
 /*
+** The assert_fts3_nc() macro is similar to the assert() macro, except that it
+** is used for assert() conditions that are true only if it can be 
+** guranteed that the database is not corrupt.
+*/
+#ifdef SQLITE_DEBUG
+extern int sqlite3_fts3_may_be_corrupt;
+# define assert_fts3_nc(x) assert(sqlite3_fts3_may_be_corrupt || (x))
+#else
+# define assert_fts3_nc(x) assert(x)
+#endif
+
+/*
 ** This section provides definitions to allow the
 ** FTS3 extension to be compiled outside of the 
 ** amalgamation.

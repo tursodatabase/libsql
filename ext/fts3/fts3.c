@@ -320,6 +320,14 @@ int sqlite3Fts3Never(int b)  { assert( !b ); return b; }
 # endif
 #endif
 
+/*
+** This variable is set to false when running tests for which the on disk
+** structures should not be corrupt. Otherwise, true. If it is false, extra
+** assert() conditions in the fts3 code are activated - conditions that are
+** only true if it is guaranteed that the fts3 database is not corrupt.
+*/
+int sqlite3_fts3_may_be_corrupt = 1;
+
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].
 ** The length of data written will be between 1 and FTS3_VARINT_MAX bytes.
