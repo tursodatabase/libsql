@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sfuzzcheck
-D 2019-01-25T17:51:06.963
+C Fix\sthe\sassert_fts3_nc()\smacro\sso\sthat\sit\sworks\sfor\stest\sbuilds\sthat\somit\nSQLITE_DEBUG.
+D 2019-01-25T18:17:03.021
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -82,7 +82,7 @@ F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 229d0d6e087db5f694fd12e40f48fc748fead59f998b9b7015edee183fbc00f2
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 24ecc6a79ab97784643e5fb877fa8866a246cb47fcd2f11afa6f787e0f9f28ec
+F ext/fts3/fts3Int.h 74384e28b778a057f1467529715668b98f3f12f52eeb564fd6ae1e894125c00c
 F ext/fts3/fts3_aux.c 32e3ecada9014ff577022f9b44c9c5654d59405b39dc57ba8977298157e8c89b
 F ext/fts3/fts3_expr.c b132af223e90e35b9f9efa9fe63d6ae737d34153a3b6066736086df8abc78a1f
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 202f9919c222ee933924c63c15ad36ec4481457b1e4d9179af14c9f284117c0c
-R 5993301b53e351451822ca9138373189
+P a82539665718c8183d9d0bb7bcb3adcb1a23294b8c30f364829a982dab89a332
+R d60111b60294967c2ac708acd1c0203d
 U drh
-Z 28dd075cf2a9d09311894c57cd8c7c5a
+Z 5fe9feba6377dc5a7c5ba0110d3c611d
