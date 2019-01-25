@@ -1,5 +1,5 @@
-C Fix\sthe\sassert_fts3_nc()\smacro\sso\sthat\sit\sworks\sfor\stest\sbuilds\sthat\somit\nSQLITE_DEBUG.
-D 2019-01-25T18:17:03.021
+C Fix\sharmless\scompiler\swarnings.
+D 2019-01-25T18:17:37.520
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -589,7 +589,7 @@ F src/vdbe.c 090d40c688b56b4602fb196a78e9d17213f381984258131c1e8f665636ca35ac
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
-F src/vdbeaux.c 11ded95e16dc340625d1e321430349b7d1cbcfc2bd09dda455e7a4c6c2fa102e
+F src/vdbeaux.c 158abc9c49a6870ce9c173b080faa6c3382a9b5a2d653d0a002eb20482e17cb2
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 8d170e387c230d12250d2feaec2c1a0d9a7184753f676df10a4b28f17abfcdaf
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a82539665718c8183d9d0bb7bcb3adcb1a23294b8c30f364829a982dab89a332
-R d60111b60294967c2ac708acd1c0203d
+P b10df2b569e356551cf51ca179f307e4f8827413ee9feb886db1f1e0650e6c5f
+R 2ff0ac8d710b630c9d6e6161696595c6
 U drh
-Z 5fe9feba6377dc5a7c5ba0110d3c611d
+Z a3295b111131a3efd3a7c19b13f5e5af

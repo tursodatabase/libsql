@@ -3805,7 +3805,7 @@ void sqlite3VdbeRecordUnpack(
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
   u = 0;
-  while( idx<szHdr && d<=nKey ){
+  while( idx<szHdr && d<=(u32)nKey ){
     u32 serial_type;
 
     idx += getVarint32(&aKey[idx], serial_type);
@@ -3818,7 +3818,7 @@ void sqlite3VdbeRecordUnpack(
     pMem++;
     if( (++u)>=p->nField ) break;
   }
-  if( d>nKey && u ){
+  if( d>(u32)nKey && u ){
     assert( CORRUPT_DB );
     /* In a corrupt record entry, the last pMem might have been set up using 
     ** uninitialized memory. Overwrite its value with NULL, to prevent
