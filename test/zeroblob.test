@@ -316,5 +316,16 @@ do_test 12.5 {
 
 sqlite3_finalize $stmt
 
+# 2019-01-25 https://sqlite.org/src/tktview/bb4bdb9f7f654b0bb9f34cfbac
+# Zeroblob truncated by an index on expression
+#
+do_execsql_test 13.100 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c);
+  CREATE INDEX t1bbc ON t1(b, b+c);
+  INSERT INTO t1(a,b,c) VALUES(1,zeroblob(8),3);
+  SELECT a, quote(b), length(b), c FROM t1;
+} {1 X'0000000000000000' 8 3}
+
 test_restore_config_pagecache
 finish_test

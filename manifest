@@ -1,5 +1,5 @@
-C Reinitialize\sdebugging\sinformation\son\sregisters\sof\sa\strigger\sprior\sto\seach\ninvocation\sof\sthe\strigger.\s\sThis\sprevents\sfalse-positives\sfrom\sthe\nsqlite3VdbeMemAboutToChange()\stest\slogic.
-D 2019-01-25T19:29:01.388
+C Do\snot\saccidently\struncate\szeroblob\svalues\swhen\sdoing\san\sarithmetic\noperation.\s\sFix\sfor\sticket\s[bb4bdb9f7f654b0bb9f34cfba].
+D 2019-01-25T20:09:04.290
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -585,7 +585,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
 F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
-F src/vdbe.c 2c99f790ae42af5268529cb67cfd4beaf9542cdc62fd0a10a18edec1fa9a5c09
+F src/vdbe.c b7b6f965153607072917dbd81d654a268abf4872c58d556701d1549550766c02
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
@@ -1698,7 +1698,7 @@ F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
-F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
+F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
 F test/zipfile.test b3b558639f7a103e095713ad0f57fec1fce1b7d60c8054df5789b98f7547a395
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ff220ad378d547538b4501e6b2201e835a2c66891e5e40856db377c101a50e5
-R ecf877bc394877eb1dbb4bb85afd2412
+P 98b3b97573ccb3d986d1552f97f96e15088a598945923adcac77010c1e8b7fe4
+R 1d7c45280e753f1cbd5da589341c01ea
 U drh
-Z 456c3e392f5a0f89b55001f14b2aaf25
+Z 62265ca3345faf783a3f875668f7525d
