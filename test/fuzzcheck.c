@@ -445,7 +445,7 @@ static int eVerbosity = 0;
 static int bVdbeDebug = 0;
 
 /* Timeout for each fuzzing attempt, in milliseconds */
-static int iTimeout = 10000;   /* Defaults to 10 seconds */
+static int giTimeout = 10000;   /* Defaults to 10 seconds */
 
 /* Maximum number of progress handler callbacks */
 static unsigned int mxProgressCb = 2000;
@@ -464,7 +464,7 @@ static sqlite3_int64 maxDbSize = 104857600;
 ** This routine only works if h really is a valid hexadecimal
 ** character:  0..9a..fA..F
 */
-static unsigned int hexToInt(unsigned int h){
+static unsigned char hexToInt(unsigned int h){
 #ifdef SQLITE_EBCDIC
   h += 9*(1&~(h>>4));   /* EBCDIC */
 #else
@@ -526,7 +526,7 @@ static int decodeDatabase(
   unsigned char b = 0;
   if( nIn<4 ) return -1;
   n = (unsigned int)nIn;
-  a = sqlite3_malloc( nAlloc );
+  a = sqlite3_malloc64( nAlloc );
   if( a==0 ){
     fprintf(stderr, "Out of memory!\n");
     exit(1);
@@ -562,7 +562,7 @@ static int decodeDatabase(
             }
             newSize = MX_FILE_SZ;
           }
-          a = sqlite3_realloc( a, newSize );
+          a = sqlite3_realloc64( a, newSize );
           if( a==0 ){
             fprintf(stderr, "Out of memory!\n");
             exit(1);
@@ -744,7 +744,7 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
   memset(&cx, 0, sizeof(cx));
   iSql = decodeDatabase((unsigned char*)aData, (int)nByte, &aDb, &nDb);
   if( iSql<0 ) return 0;
-  nSql = nByte - iSql;
+  nSql = (int)(nByte - iSql);
   if( eVerbosity>=3 ){
     printf(
       "****** %d-byte input, %d-byte database, %d-byte script "
@@ -759,11 +759,11 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
 
   /* Invoke the progress handler frequently to check to see if we
   ** are taking too long.  The progress handler will return true
-  ** (which will block further processing) if more than iTimeout seconds have
+  ** (which will block further processing) if more than giTimeout seconds have
   ** elapsed since the start of the test.
   */
   cx.iLastCb = timeOfDay();
-  cx.iCutoffTime = cx.iLastCb + iTimeout;  /* Now + iTimeout seconds */
+  cx.iCutoffTime = cx.iLastCb + giTimeout;  /* Now + giTimeout seconds */
   cx.mxCb = mxProgressCb;
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   sqlite3_progress_handler(cx.db, 10, progress_handler, (void*)&cx);
@@ -1454,10 +1454,10 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"version")==0 ){
         int ii;
-        const char *z;
+        const char *zz;
         printf("SQLite %s %s\n", sqlite3_libversion(), sqlite3_sourceid());
-        for(ii=0; (z = sqlite3_compileoption_get(ii))!=0; ii++){
-          printf("%s\n", z);
+        for(ii=0; (zz = sqlite3_compileoption_get(ii))!=0; ii++){
+          printf("%s\n", zz);
         }
         return 0;
       }else
