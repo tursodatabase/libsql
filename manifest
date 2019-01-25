@@ -1,5 +1,5 @@
-C In\sfuzzcheck,\sactivate\svdbe_debug\sfor\sdbsqlfuzz\scases\swhen\susing\sthe\s-vvvvv\nverbosity\slevel\sor\sabove.
-D 2019-01-25T13:03:38.630
+C Fix\sthe\sxFetch\smethod\sof\sthe\s"memdb"\sVFS\s(used\sby\sdeserialize)\sso\sthat\sit\nis\srobust\sagainst\scorrupt\sdatabase\sfile.
+D 2019-01-25T14:16:01.971
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -485,7 +485,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 6099be387f1161e07b20e5ea5118348a6fb7eb55edcb487d6bea15ee917b37e4
+F src/memdb.c d95f6ad26f7c582026c5501b32dc0201ce781ad496bc61107d759b5e4e5c563a
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
@@ -1803,7 +1803,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ef24e89c9630fd383ba32f5aefcf9c27907f27f5072f3537a1cfd75a093a8d7
-R 78219aab4a0221491f08b172e31b7d10
+P 2e6f7c2aced49824a38b3494b796a8ec73aa7a90b51159f670596df15ed1c5ab
+R d3c46f45cfa450474f5afffc67ad7b0c
 U drh
-Z 41b8e92f1ee93947404c7576345f9b31
+Z 5dedbab04a9e53521f2d03819a9b0105

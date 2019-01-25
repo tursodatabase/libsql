@@ -310,8 +310,13 @@ static int memdbFetch(
   void **pp
 ){
   MemFile *p = (MemFile *)pFile;
-  p->nMmap++;
-  *pp = (void*)(p->aData + iOfst);
+  if( iOfst+iAmt>p->sz ){
+    assert( CORRUPT_DB );
+    *pp = 0;
+  }else{
+    p->nMmap++;
+    *pp = (void*)(p->aData + iOfst);
+  }
   return SQLITE_OK;
 }
 
