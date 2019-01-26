@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sfts3.\sAlso\ssome\stest\sscript\sissues\scausing\sfailures\swith\sbuilds\sthat\sdo\snot\ssupport\sfts3.
-D 2019-01-26T21:05:54.969
+C Ensure\sthat\sthe\sbtree\scursor\sis\scorrectly\sset\sup\sprior\sto\sbacking\sit\sup\nas\spart\sof\sa\sdelete\soperation\son\sa\sdivider\scell\sin\san\sindex.
+D 2019-01-26T23:34:50.536
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c f7ee98fca2c136020527050c00bb63b89cb663a1fad69160bdd332d9c73ce5da
+F src/btree.c c78051b514c5ea214f5ee1119d5df7d47471e32c0cb4d5b93f135bf86d67f0ca
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h 620ab4c7235f43572cf3ac2ac8723cbdf68073be4d29da24897c7b77dda5fd96
 F src/build.c f07c0b154c23737d1699ee63bba31c8ca8b323e2446b957bc6bfec81a62295fc
@@ -1804,10 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 626502faa17b5b7a0fa36cabfd12e463eb09aec048d01c587a18d3977cf04662
-Q +5016303421a678a185d619bda556411e6bd0830e5dab9318a35682085b0973f7
-Q +773b5986084b7ebe8d1d47cf51d1c10e600935b4cc9af38921dcb06b0d4d82c0
-Q +b8dd2d67b5c5555d0fd8b8fc9b953d54efb2d154413a50dca795a57b44dbdec7
-R 47e399a45caf56fdfbccb5dc53f4aac3
-U dan
-Z 342a8eb97d6f20d32cf847b5e98c0840
+P d59567dda231e7ffec437d5e055676cf42d791196406cdc696cafa2583eb483b
+R a26bc7cfbb63ac2a47ad91e615545d2f
+U drh
+Z c383150dc1908979b363a955c6f6b956

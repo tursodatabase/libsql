@@ -8770,6 +8770,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** sub-tree headed by the child page of the cell being deleted. This makes
   ** balancing the tree following the delete operation easier.  */
   if( !pPage->leaf ){
+    pCur->skipNext = 0;
     rc = sqlite3BtreePrevious(pCur, 0);
     assert( rc!=SQLITE_DONE );
     if( rc ) return rc;
