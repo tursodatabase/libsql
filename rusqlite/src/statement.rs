@@ -999,7 +999,7 @@ mod test {
         // dynamic slice:
         db.query_row(
             "SELECT ?1, ?2, ?3",
-            &[&1u8 as &ToSql, &"one", &Some("one")],
+            &[&1u8 as &dyn ToSql, &"one", &Some("one")],
             |row| row.get::<_, u8>(0),
         )
         .unwrap();
