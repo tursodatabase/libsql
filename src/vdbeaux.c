@@ -636,7 +636,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   while( (pOp = opIterNext(&sIter))!=0 ){
     int opcode = pOp->opcode;
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
-     || opcode==OP_VDestroy
+     || opcode==OP_VDestroy || opcode==OP_Vacuum
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && ((pOp->p1&0xff)==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))
     ){
@@ -744,6 +744,12 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 #endif
         case OP_Vacuum:
         case OP_JournalMode: {
+          /* Neither VACUUM or "PRAGMA journal_mode" statements generate an
+          ** OP_Transaction opcode. So setting usesStmtJournal does not cause
+          ** either statement to actually open a statement journal. However,
+          ** it does prevent them from rolling back an entire transaction
+          ** if they fail because there is already a transaction open.  */
+          p->usesStmtJournal = 1;
           p->readOnly = 0;
           p->bIsReader = 1;
           break;
@@ -2203,8 +2209,8 @@ void sqlite3VdbeMakeReady(
   assert( x.nFree>=0 );
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
-  resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+  resolveP2Values(p, &nArg);
   if( pParse->explain && nMem<10 ){
     nMem = 10;
   }
@@ -2943,7 +2949,9 @@ int sqlite3VdbeHalt(Vdbe *p){
     }else if( eStatementOp==0 ){
       if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
         eStatementOp = SAVEPOINT_RELEASE;
-      }else if( p->errorAction==OE_Abort ){
+      }else if( p->errorAction==OE_Abort 
+           && (p->usesStmtJournal || p->readOnly || p->rc!=SQLITE_ERROR) 
+      ){
         eStatementOp = SAVEPOINT_ROLLBACK;
       }else{
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);

@@ -700,5 +700,38 @@ do_execsql_test 16.2 {
   3 101
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 17.0 {
+  CREATE TABLE tbl1(a,b,c,d);
+  CREATE TRIGGER r1 AFTER INSERT ON tbl1 WHEN new.a NOT NULL BEGIN
+    SELECT sum(d) OVER
+    (PARTITION BY b ORDER BY d ROWS BETWEEN 2 PRECEDING AND -2 FOLLOWING)
+    FROM tbl1;
+  END;
+}
+
+do_catchsql_test 17.1.1 {
+  INSERT INTO tbl1(a) VALUES(1);
+} {1 {frame ending offset must be a non-negative integer}}
+do_execsql_test 17.1.2 {
+  SELECT count(*) FROM tbl1;
+} 0
+
+do_catchsql_test 17.2.1 {
+  INSERT INTO tbl1(a) VALUES(NULL), (NULL), (1);
+} {1 {frame ending offset must be a non-negative integer}}
+do_execsql_test 17.2.2 {
+  SELECT count(*) FROM tbl1;
+} 0
+
+do_catchsql_test 17.3.1 {
+  BEGIN;
+    INSERT INTO tbl1(a) VALUES(NULL);
+    INSERT INTO tbl1(a) VALUES(NULL), (1);
+} {1 {frame ending offset must be a non-negative integer}}
+do_execsql_test 17.3.2 {
+  SELECT count(*) FROM tbl1;
+} 0
+do_test 17.3.3 { sqlite3_get_autocommit db } 1
 
 finish_test
