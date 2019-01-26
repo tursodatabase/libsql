@@ -196,7 +196,12 @@ pub enum DatabaseName<'a> {
 
 // Currently DatabaseName is only used by the backup and blob mods, so hide
 // this (private) impl to avoid dead code warnings.
-#[cfg(any(feature = "backup", feature = "blob", feature = "session", feature = "bundled"))]
+#[cfg(any(
+    feature = "backup",
+    feature = "blob",
+    feature = "session",
+    feature = "bundled"
+))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};
