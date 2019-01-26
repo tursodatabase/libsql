@@ -94,6 +94,11 @@ pub enum Error {
 
     #[cfg(feature = "functions")]
     UnwindingPanic,
+
+    /// An error returned when `Context::get_aux` attempts to retrieve data
+    /// of a different type than what had been stored using `Context::set_aux`.
+    #[cfg(feature = "functions")]
+    GetAuxWrongType,
 }
 
 impl PartialEq for Error {
@@ -131,6 +136,8 @@ impl PartialEq for Error {
             (Error::ModuleError(s1), Error::ModuleError(s2)) => s1 == s2,
             #[cfg(feature = "functions")]
             (Error::UnwindingPanic, Error::UnwindingPanic) => true,
+            #[cfg(feature = "functions")]
+            (Error::GetAuxWrongType, Error::GetAuxWrongType) => true,
             (_, _) => false,
         }
     }
@@ -196,6 +203,8 @@ impl fmt::Display for Error {
             Error::ModuleError(ref desc) => write!(f, "{}", desc),
             #[cfg(feature = "functions")]
             Error::UnwindingPanic => write!(f, "unwinding panic"),
+            #[cfg(feature = "functions")]
+            Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
         }
     }
 }
@@ -235,6 +244,8 @@ impl error::Error for Error {
             Error::ModuleError(ref desc) => desc,
             #[cfg(feature = "functions")]
             Error::UnwindingPanic => "unwinding panic",
+            #[cfg(feature = "functions")]
+            Error::GetAuxWrongType => "get_aux called with wrong type",
         }
     }
 
@@ -272,6 +283,9 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::UnwindingPanic => None,
+
+            #[cfg(feature = "functions")]
+            Error::GetAuxWrongType => None,
         }
     }
 }
