@@ -569,6 +569,17 @@ impl<'conn> Statement<'conn> {
                 .map(|s| str::from_utf8_unchecked(s.to_bytes()))
         }
     }
+
+    /// Get the value for one of the status counters for this statement.
+    pub fn get_status(&self, status: StatementStatus) -> i32 {
+        self.stmt.get_status(status, false)
+    }
+
+    /// Reset the value of one of the status counters for this statement,
+    /// returning the value it had before resetting.
+    pub fn reset_status(&self, status: StatementStatus) -> i32 {
+        self.stmt.get_status(status, true)
+    }
 }
 
 impl<'conn> Into<RawStatement> for Statement<'conn> {
@@ -670,8 +681,35 @@ impl<'conn> Statement<'conn> {
     }
 }
 
+/// Prepared statement status counters.
+///
+/// See https://www.sqlite.org/c3ref/c_stmtstatus_counter.html
+/// for explanations of each.
+///
+/// Note that depending on your version of SQLite, all of these
+/// may not be available.
+#[repr(i32)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum StatementStatus {
+    /// Equivalent to SQLITE_STMTSTATUS_FULLSCAN_STEP
+    FullscanStep = 1,
+    /// Equivalent to SQLITE_STMTSTATUS_SORT
+    Sort = 2,
+    /// Equivalent to SQLITE_STMTSTATUS_AUTOINDEX
+    AutoIndex = 3,
+    /// Equivalent to SQLITE_STMTSTATUS_VM_STEP
+    VmStep = 4,
+    /// Equivalent to SQLITE_STMTSTATUS_REPREPARE
+    RePrepare = 5,
+    /// Equivalent to SQLITE_STMTSTATUS_RUN
+    Run = 6,
+    /// Equivalent to SQLITE_STMTSTATUS_MEMUSED
+    MemUsed = 99,
+}
+
 #[cfg(test)]
 mod test {
+    use crate::types::ToSql;
     use crate::{Connection, Error, Result, NO_PARAMS};
 
     #[test]
@@ -953,5 +991,41 @@ mod test {
         let stmt = db.prepare("SELECT ?").unwrap();
         stmt.bind_parameter(&1, 1).unwrap();
         assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
+    }
+
+    #[test]
+    fn test_bind_parameters() {
+        let db = Connection::open_in_memory().unwrap();
+        // dynamic slice:
+        db.query_row(
+            "SELECT ?1, ?2, ?3",
+            &[&1u8 as &ToSql, &"one", &Some("one")],
+            |row| row.get::<_, u8>(0),
+        )
+        .unwrap();
+        // existing collection:
+        let data = vec![1, 2, 3];
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, u8>(0))
+            .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data.as_slice(), |row| {
+            row.get::<_, u8>(0)
+        })
+        .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data, |row| row.get::<_, u8>(0))
+            .unwrap();
+
+        use std::collections::BTreeSet;
+        let data: BTreeSet<String> = ["one", "two", "three"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, String>(0))
+            .unwrap();
+
+        let data = [0; 3];
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, u8>(0))
+            .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data.iter(), |row| row.get::<_, u8>(0))
+            .unwrap();
     }
 }
