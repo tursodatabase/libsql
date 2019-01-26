@@ -709,6 +709,7 @@ pub enum StatementStatus {
 
 #[cfg(test)]
 mod test {
+    use crate::types::ToSql;
     use crate::{Connection, Error, Result, NO_PARAMS};
 
     #[test]
@@ -990,5 +991,41 @@ mod test {
         let stmt = db.prepare("SELECT ?").unwrap();
         stmt.bind_parameter(&1, 1).unwrap();
         assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
+    }
+
+    #[test]
+    fn test_bind_parameters() {
+        let db = Connection::open_in_memory().unwrap();
+        // dynamic slice:
+        db.query_row(
+            "SELECT ?1, ?2, ?3",
+            &[&1u8 as &ToSql, &"one", &Some("one")],
+            |row| row.get::<_, u8>(0),
+        )
+        .unwrap();
+        // existing collection:
+        let data = vec![1, 2, 3];
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, u8>(0))
+            .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data.as_slice(), |row| {
+            row.get::<_, u8>(0)
+        })
+        .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data, |row| row.get::<_, u8>(0))
+            .unwrap();
+
+        use std::collections::BTreeSet;
+        let data: BTreeSet<String> = ["one", "two", "three"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, String>(0))
+            .unwrap();
+
+        let data = [0; 3];
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, u8>(0))
+            .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data.iter(), |row| row.get::<_, u8>(0))
+            .unwrap();
     }
 }
