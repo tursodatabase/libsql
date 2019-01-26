@@ -196,7 +196,7 @@ pub enum DatabaseName<'a> {
 
 // Currently DatabaseName is only used by the backup and blob mods, so hide
 // this (private) impl to avoid dead code warnings.
-#[cfg(any(feature = "backup", feature = "blob", feature = "session"))]
+#[cfg(any(feature = "backup", feature = "blob", feature = "session", feature = "bundled"))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};
@@ -594,6 +594,20 @@ impl Connection {
         self.db.borrow().db()
     }
 
+    /// Create a `Connection` from a raw handle.
+    ///
+    /// The underlying SQLite database connection handle will not be closed when
+    /// the returned connection is dropped/closed.
+    pub unsafe fn from_handle(db: *mut ffi::sqlite3) -> Result<Connection> {
+        let db_path = db_filename(db);
+        let db = InnerConnection::new(db, false);
+        Ok(Connection {
+            db: RefCell::new(db),
+            cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
+            path: db_path,
+        })
+    }
+
     /// Get access to a handle that can be used to interrupt long running
     /// queries from another thread.
     pub fn get_interrupt_handle(&self) -> InterruptHandle {
@@ -644,6 +658,7 @@ struct InnerConnection {
     free_rollback_hook: Option<fn(*mut ::std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
     free_update_hook: Option<fn(*mut ::std::os::raw::c_void)>,
+    owned: bool,
 }
 
 bitflags! {
@@ -818,21 +833,23 @@ To fix this, either:
 
 impl InnerConnection {
     #[cfg(not(feature = "hooks"))]
-    fn new(db: *mut ffi::sqlite3) -> InnerConnection {
+    fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
         InnerConnection {
             db,
             interrupt_lock: Arc::new(Mutex::new(db)),
+            owned,
         }
     }
 
     #[cfg(feature = "hooks")]
-    fn new(db: *mut ffi::sqlite3) -> InnerConnection {
+    fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
         InnerConnection {
             db,
             interrupt_lock: Arc::new(Mutex::new(db)),
             free_commit_hook: None,
             free_rollback_hook: None,
             free_update_hook: None,
+            owned,
         }
     }
 
@@ -880,7 +897,7 @@ impl InnerConnection {
             // attempt to turn on extended results code; don't fail if we can't.
             ffi::sqlite3_extended_result_codes(db, 1);
 
-            Ok(InnerConnection::new(db))
+            Ok(InnerConnection::new(db, true))
         }
     }
 
@@ -910,6 +927,10 @@ impl InnerConnection {
             !shared_handle.is_null(),
             "Bug: Somehow interrupt_lock was cleared before the DB was closed"
         );
+        if !self.owned {
+            self.db = ptr::null_mut();
+            return Ok(());
+        }
         unsafe {
             let r = ffi::sqlite3_close(self.db);
             // Need to use _raw because _guard has a reference out, and
@@ -1079,6 +1100,21 @@ impl Drop for InnerConnection {
             }
         }
     }
+}
+
+#[cfg(feature = "bundled")] // 3.7.10
+unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
+    let db_name = DatabaseName::Main.to_cstring().unwrap();
+    let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
+    if db_filename.is_null() {
+        None
+    } else {
+        CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
+    }
+}
+#[cfg(not(feature = "bundled"))]
+unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
+    None
 }
 
 #[cfg(test)]
@@ -1616,6 +1652,17 @@ mod test {
             let x = row.get_raw("x").as_str().unwrap();
             assert_eq!(x, expect);
         }
+    }
+
+    #[test]
+    fn test_from_handle() {
+        let db = checked_memory_handle();
+        let handle = unsafe { db.handle() };
+        {
+            let db = unsafe { Connection::from_handle(handle) }.unwrap();
+            db.execute_batch("PRAGMA VACUUM").unwrap();
+        }
+        db.close().unwrap();
     }
 
     mod query_and_then_tests {
