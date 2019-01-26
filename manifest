@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sfts3corrupt4.test\scausing\sit\sto\sfail\sif\sthe\sbuild\sdoes\snot\ssupport\sfts3.
-D 2019-01-26T20:35:31.056
+C Fix\sanother\stypo\sin\sfts3_common.tcl\scausing\stest\sfailures\sin\sbuilds\sthat\sdo\snot\ssupport\sfts3.
+D 2019-01-26T20:41:23.303
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -891,7 +891,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
-F test/fts3_common.tcl 23ec6f568cded727866f69d51e53e32b4fedfac570693480da79208bdd263d5e
+F test/fts3_common.tcl dffad248f9ce090800e272017d2898005c28ee6314fc1dd5550643a02666907a
 F test/fts3aa.test 814d60a1ba30b4a71d8f9306a6564bc7b636dd6efacd2ad80306f9b23ef3ebee
 F test/fts3ab.test 7f6cf260ae80dda064023df8e8e503e9a412b91f
 F test/fts3ac.test 636ed7486043055d4f126a0e385f2d5a82ebbf63
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8dd2d67b5c5555d0fd8b8fc9b953d54efb2d154413a50dca795a57b44dbdec7
-R 269064cdf160aee7a2256606ef6f385f
+P 5016303421a678a185d619bda556411e6bd0830e5dab9318a35682085b0973f7
+R a7b11f5fd01fa4bd2da3a82bbf6b81ee
 U dan
-Z 6a08041280275fac1f14cc3b69ceb80c
+Z 74970c041e6ad312d874be57955c684e
