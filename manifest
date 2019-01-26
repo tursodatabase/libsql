@@ -1,5 +1,5 @@
-C Do\snot\saccidently\struncate\szeroblob\svalues\swhen\sdoing\san\sarithmetic\noperation.\s\sFix\sfor\sticket\s[bb4bdb9f7f654b0bb9f34cfba].
-D 2019-01-25T20:09:04.290
+C Add\sthe\s".eqp\strace"\scommand\sto\sthe\sCLI\swhen\susing\sSQLITE_DEBUG,\sas\sa\nconvenient\sshorthand\sfor\s"PRAGMA\svdbe_debug=ON"\sbut\swith\sautomatic\sindentation\nfeature\sfor\sprogram\slistings\sprovided\sby\sthe\sCLI.
+D 2019-01-26T15:40:04.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -515,7 +515,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8e22fda41a737c391e8b797f7c71e7ded1d107c31181b07bb10b3d4f22a28cd9
-F src/shell.c.in 58f69c9143d9635a3d71a32c3d4cb6fad4de4f0ca400c098fa76ff83e3ec58cb
+F src/shell.c.in 324bc8df6e0ddc1c17771927f3bc9616340175e78cbb15f6cdfd10cade01cdbf
 F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 98b3b97573ccb3d986d1552f97f96e15088a598945923adcac77010c1e8b7fe4
-R 1d7c45280e753f1cbd5da589341c01ea
+P 13f6942eb0da2d92a0830f18640ce64208bd0cd6ff6d0c97e4a4c57ac3d65ba6
+R 526b182186e89dc3ca0b6f304ae40eae
 U drh
-Z 62265ca3345faf783a3f875668f7525d
+Z abb2dd0860dab724b6ef3b845cc9519b
