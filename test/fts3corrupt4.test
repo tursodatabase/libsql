@@ -19,13 +19,13 @@ source $testdir/tester.tcl
 source $testdir/fts3_common.tcl
 set testprefix fts3corrupt4
 
-sqlite3_fts3_may_be_corrupt 1
-
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
   finish_test
   return
 }
+
+sqlite3_fts3_may_be_corrupt 1
 
 do_execsql_test 1.0 {
   BEGIN;
