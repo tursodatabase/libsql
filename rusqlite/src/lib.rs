@@ -618,7 +618,10 @@ impl Connection {
         self.db.borrow_mut().decode_result(code)
     }
 
-    fn changes(&self) -> usize {
+    /// Return the number of rows modified, inserted or deleted by the most
+    /// recently completed INSERT, UPDATE or DELETE statement on the database
+    /// connection.
+    pub fn changes(&self) -> usize {
         self.db.borrow_mut().changes()
     }
 
