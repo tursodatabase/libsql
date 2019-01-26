@@ -28,7 +28,7 @@ preupdate_hook = []
 session = ["preupdate_hook"]
 
 [build-dependencies]
-bindgen = { version = "0.46", optional = true }
+bindgen = { version = "0.47", optional = true }
 pkg-config = { version = "0.3", optional = true }
 cc = { version = "1.0", optional = true }
 
