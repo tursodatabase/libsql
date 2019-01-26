@@ -196,7 +196,12 @@ pub enum DatabaseName<'a> {
 
 // Currently DatabaseName is only used by the backup and blob mods, so hide
 // this (private) impl to avoid dead code warnings.
-#[cfg(any(feature = "backup", feature = "blob", feature = "session", feature = "bundled"))]
+#[cfg(any(
+    feature = "backup",
+    feature = "blob",
+    feature = "session",
+    feature = "bundled"
+))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};
@@ -618,7 +623,10 @@ impl Connection {
         self.db.borrow_mut().decode_result(code)
     }
 
-    fn changes(&self) -> usize {
+    /// Return the number of rows modified, inserted or deleted by the most
+    /// recently completed INSERT, UPDATE or DELETE statement on the database
+    /// connection.
+    pub fn changes(&self) -> usize {
         self.db.borrow_mut().changes()
     }
 

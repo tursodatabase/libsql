@@ -713,10 +713,13 @@ mod test {
         })
         .unwrap();
 
-        let res: bool = db.query_row(
-            "SELECT example(0, i) FROM (SELECT 0 as i UNION SELECT 1)",
-            NO_PARAMS,
-            |r| r.get(0)).unwrap();
+        let res: bool = db
+            .query_row(
+                "SELECT example(0, i) FROM (SELECT 0 as i UNION SELECT 1)",
+                NO_PARAMS,
+                |r| r.get(0),
+            )
+            .unwrap();
         // Doesn't actually matter, we'll assert in the function if there's a problem.
         assert!(res);
     }
