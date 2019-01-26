@@ -1,5 +1,5 @@
-C Roll\sback\sthe\stransaction\sif\sa\swrite\sstatement\sfails\swith\sOE_Abort\sbut\sthere\sis\sno\sopen\sstatement\stransaction.
-D 2019-01-26T16:34:08.268
+C Fix\s"PRAGMA\sjournal_mode"\sso\sthat\sif\sit\sfails\sbecause\sthere\sis\sa\stransaction\sopen,\sit\sdoes\snot\sroll\sthat\stransaction\sback.
+D 2019-01-26T17:47:59.293
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -584,12 +584,12 @@ F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
-F src/vacuum.c c3b29ca1fad775a44689a0c1a76db364f6da8fd91bfd3ed95b3e8319224da0ac
+F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
 F src/vdbe.c e5f6b9a31b6d2c1345d9f6652c8b904c43dda8cbf1c3fd7c40d943bc5b6e9cf4
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
-F src/vdbeaux.c 698579727cc7722a8c4c7aece21d8913b70c4bc969827cec3b263c7fe8d0a456
+F src/vdbeaux.c 2cda9db3566aff51039009647e3579eec01c285fe64f00da3b4bbfc155c7388b
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 8d170e387c230d12250d2feaec2c1a0d9a7184753f676df10a4b28f17abfcdaf
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 626502faa17b5b7a0fa36cabfd12e463eb09aec048d01c587a18d3977cf04662
-R 374a4a5a4902f8068a8e4fb4932d79c2
+P d536be698d1c6479e09f99ac12620c900f7f57bad0842372cbfe0755e41355e9
+R 7a7b147a59e96285f397d235eaa318c8
 U dan
-Z 051e3778c0a596a848823fd20b772e47
+Z c08d667ddb58fa059acf12e3bf16deea

@@ -744,6 +744,12 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 #endif
         case OP_Vacuum:
         case OP_JournalMode: {
+          /* Neither VACUUM or "PRAGMA journal_mode" statements generate an
+          ** OP_Transaction opcode. So setting usesStmtJournal does not cause
+          ** either statement to actually open a statement journal. However,
+          ** it does prevent them from rolling back an entire transaction
+          ** if they fail because there is already a transaction open.  */
+          p->usesStmtJournal = 1;
           p->readOnly = 0;
           p->bIsReader = 1;
           break;
@@ -2203,8 +2209,8 @@ void sqlite3VdbeMakeReady(
   assert( x.nFree>=0 );
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
-  resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+  resolveP2Values(p, &nArg);
   if( pParse->explain && nMem<10 ){
     nMem = 10;
   }
