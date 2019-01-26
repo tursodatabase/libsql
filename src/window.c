@@ -1076,6 +1076,9 @@ static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
   VdbeCoverageNeverNullIf(v, eCond==1);
   VdbeCoverageNeverNullIf(v, eCond==2);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
+#ifdef SQLITE_DEBUG
+  sqlite3VdbeChangeP3(v, -1, 1);
+#endif
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
   sqlite3ReleaseTempReg(pParse, regZero);
 }

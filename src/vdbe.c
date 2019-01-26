@@ -988,7 +988,7 @@ case OP_Halt: {
 
   pcx = (int)(pOp - aOp);
 #ifdef SQLITE_DEBUG
-  if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
+  if( pOp->p2==OE_Abort && !pOp->p3 ){ sqlite3VdbeAssertAbortable(p); }
 #endif
   if( pOp->p1==SQLITE_OK && p->pFrame ){
     /* Halt the sub-program. Return control to the parent frame. */

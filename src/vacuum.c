@@ -130,6 +130,8 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm, Expr *pInto){
     }
     sqlite3VdbeAddOp2(v, OP_Vacuum, iDb, iIntoReg);
     sqlite3VdbeUsesBtree(v, iDb);
+    assert( pParse==pParse->pToplevel || pParse->pToplevel==0 );
+    pParse->mayAbort = pParse->isMultiWrite = 1;
   }
 build_vacuum_end:
   sqlite3ExprDelete(pParse->db, pInto);
