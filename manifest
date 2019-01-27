@@ -1,5 +1,5 @@
-C New\stest\scases\sform\sdbsqlfuzz
-D 2019-01-27T02:45:32.191
+C Improvements\sto\sthe\s".eqp\strace"\scommand\sin\sthe\sCLI\sso\sthat\sit\sensures\sthat\nthe\sschema\shas\sbeen\sread\sprior\sto\sactiving\sthe\stracing\sfeature,\sto\savoid\ncluttering\sthe\soutput\swith\sa\strace\sof\sthe\sschema\sparse.
+D 2019-01-27T19:50:56.340
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -515,7 +515,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8e22fda41a737c391e8b797f7c71e7ded1d107c31181b07bb10b3d4f22a28cd9
-F src/shell.c.in 324bc8df6e0ddc1c17771927f3bc9616340175e78cbb15f6cdfd10cade01cdbf
+F src/shell.c.in 705a00be4fa43303b6b18df2241f5397cefd8d9f076bb035ad01b42635c7a1de
 F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ea05a0eb96acb860d8af2e788e29a5ae3b161e7892ab62f1ff2f3e722c0dcb6
-R eaaae6d4983b2f4cb951fc0379b461d7
+P 9cf8ebd141aa2eb661d457624c76433bd9e4abfdef04aa52e28bc169172c2c8f
+R 3e3c6032378ec0b1bc4989b8470ba10d
 U drh
-Z facc76abd2629540783d8839a1ab85da
+Z f362f232181a0d8f741744fba7a850da
