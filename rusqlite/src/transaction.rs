@@ -11,7 +11,7 @@ pub enum TransactionBehavior {
 }
 
 /// Options for how a Transaction or Savepoint should behave when it is dropped.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DropBehavior {
     /// Roll back the changes. This is the default.
     Rollback,
@@ -50,6 +50,7 @@ pub enum DropBehavior {
 ///     tx.commit()
 /// }
 /// ```
+#[derive(Debug)]
 pub struct Transaction<'conn> {
     conn: &'conn Connection,
     drop_behavior: DropBehavior,
