@@ -638,7 +638,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
      || opcode==OP_VDestroy
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
-      && ((pOp->p1&0xff)==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))
+      && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
     ){
       hasAbort = 1;
       break;

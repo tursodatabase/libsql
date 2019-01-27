@@ -1,5 +1,5 @@
-C Update\sfuzzcheck\sso\sthat\swith\sthe\s--load-dbsql\soptions\sit\sscreens\sits\ninputs\sto\sensure\sthat\sthey\sare\svalid\sdbsqlfuzz\scases.\s\sAdd\snew\sdbsqlfuzz\nfinds\sto\sthe\stest/fuzzdata8.db\sdatabase.
-D 2019-01-27T01:11:40.746
+C Window\sfunctions\sthat\scan\sabort\sshould\sindicate\sthis,\sso\sthat\sif\sthey\sare\nused\sin\sDML\sstatement,\sa\sstatement\sjournal\swill\sbe\sused.
+D 2019-01-27T02:41:34.370
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -589,7 +589,7 @@ F src/vdbe.c b7b6f965153607072917dbd81d654a268abf4872c58d556701d1549550766c02
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
-F src/vdbeaux.c 158abc9c49a6870ce9c173b080faa6c3382a9b5a2d653d0a002eb20482e17cb2
+F src/vdbeaux.c 4fa28b32452f6197dba7c8780dde11576b9a6d8ce6f35adbb69efc3e7d37fa0c
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 8d170e387c230d12250d2feaec2c1a0d9a7184753f676df10a4b28f17abfcdaf
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
@@ -603,7 +603,7 @@ F src/where.c c5d201699d03be61c35bc04b96e481b1c8dc68177617ca1db156ef7409da2fae
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 89d2ec668aec884dfa7ac500c6744e42ec0590fcd72fb740a8b48326a8412811
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
-F src/window.c 1f4f7c69f23992b91c82e71fe47dd4e3ed70ceae12ce5ca6a1e757fdb158dcae
+F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3ea1a822d3a110f4f186f2fc8550f435c8c98635d058096b7be9d4df7066b8b
-R 03df092f631b381cdd6c4288d6623f64
+P 004f7d9bbeee049c22a7e1c82c6cc0ea79a237967de3ff57686acea3060d5f45
+R 7d3d07254fa4e2fa0c89d5dd83acdc85
 U drh
-Z b86c20bb8077d2eac80dc37ebee27c9e
+Z bd3c0e468015b30eacb236d732938e6a
