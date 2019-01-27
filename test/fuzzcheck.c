@@ -870,6 +870,17 @@ static int isDbSql(unsigned char *a, int n){
   return 0;
 }
 
+/* Implementation of the isdbsql(TEXT) SQL function.
+*/
+static void isDbSqlFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int n = sqlite3_value_bytes(argv[0]);
+  unsigned char *a = (unsigned char*)sqlite3_value_blob(argv[0]);
+  sqlite3_result_int(context, a!=0 && n>0 && isDbSql(a,n));
+}
 
 /* Methods for the VHandle object
 */
@@ -1169,23 +1180,28 @@ static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
 **    (2)  Put all entries in order
 **    (3)  Vacuum
 */
-static void rebuild_database(sqlite3 *db){
+static void rebuild_database(sqlite3 *db, int dbSqlOnly){
   int rc;
-  rc = sqlite3_exec(db, 
+  char *zSql;
+  zSql = sqlite3_mprintf(
      "BEGIN;\n"
      "CREATE TEMP TABLE dbx AS SELECT DISTINCT dbcontent FROM db;\n"
      "DELETE FROM db;\n"
      "INSERT INTO db(dbid, dbcontent) "
         " SELECT NULL, dbcontent FROM dbx ORDER BY 2;\n"
      "DROP TABLE dbx;\n"
-     "CREATE TEMP TABLE sx AS SELECT DISTINCT sqltext FROM xsql;\n"
+     "CREATE TEMP TABLE sx AS SELECT DISTINCT sqltext FROM xsql %s;\n"
      "DELETE FROM xsql;\n"
      "INSERT INTO xsql(sqlid,sqltext) "
         " SELECT NULL, sqltext FROM sx ORDER BY 2;\n"
      "DROP TABLE sx;\n"
      "COMMIT;\n"
      "PRAGMA page_size=1024;\n"
-     "VACUUM;\n", 0, 0, 0);
+     "VACUUM;\n",
+     dbSqlOnly ? " WHERE isdbsql(sqltext)" : ""
+  );
+  rc = sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
   if( rc ) fatalError("cannot rebuild: %s", sqlite3_errmsg(db));
 }
 
@@ -1279,6 +1295,7 @@ static void showHelp(void){
 "  --limit-vdbe         Panic if any test runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...   Load SQL scripts fron files into SOURCE-DB\n"
 "  --load-db ARGS...    Load template databases from files into SOURCE_DB\n"
+"  --load-dbsql ARGS..  Load dbsqlfuzz outputs into the xsql table\n"
 "  -m TEXT              Add a description to the database\n"
 "  --native-vfs         Use the native VFS for initially empty database files\n"
 "  --native-malloc      Turn off MEMSYS3/5 and Lookaside\n"
@@ -1305,6 +1322,7 @@ int main(int argc, char **argv){
   Blob *pSql;                  /* For looping over SQL scripts */
   Blob *pDb;                   /* For looping over template databases */
   int i;                       /* Loop index for the argv[] loop */
+  int dbSqlOnly = 0;           /* Only use scripts that are dbsqlfuzz */
   int onlySqlid = -1;          /* --sqlid */
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
@@ -1361,7 +1379,7 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         zExpDb = argv[++i];
       }else
-      if( strcmp(z,"export-sql")==0 ){
+      if( strcmp(z,"export-sql")==0 || strcmp(z,"export-dbsql")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         zExpSql = argv[++i];
       }else
@@ -1394,6 +1412,13 @@ int main(int argc, char **argv){
         zInsSql = "INSERT INTO db(dbcontent) VALUES(readfile(?1))";
         iFirstInsArg = i+1;
         openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+        break;
+      }else
+      if( strcmp(z,"load-dbsql")==0 ){
+        zInsSql = "INSERT INTO xsql(sqltext)VALUES(CAST(readfile(?1) AS text))";
+        iFirstInsArg = i+1;
+        openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+        dbSqlOnly = 1;
         break;
       }else
       if( strcmp(z,"m")==0 ){
@@ -1577,6 +1602,8 @@ int main(int argc, char **argv){
     if( zInsSql ){
       sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
                               readfileFunc, 0, 0);
+      sqlite3_create_function(db, "isdbsql", 1, SQLITE_UTF8, 0,
+                              isDbSqlFunc, 0, 0);
       rc = sqlite3_prepare_v2(db, zInsSql, -1, &pStmt, 0);
       if( rc ) fatalError("cannot prepare statement [%s]: %s",
                           zInsSql, sqlite3_errmsg(db));
@@ -1592,7 +1619,7 @@ int main(int argc, char **argv){
       rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
       if( rc ) fatalError("cannot commit the transaction: %s",
                           sqlite3_errmsg(db));
-      rebuild_database(db);
+      rebuild_database(db, dbSqlOnly);
       sqlite3_close(db);
       return 0;
     }
@@ -1679,7 +1706,7 @@ int main(int argc, char **argv){
         printf("%s: rebuilding... ", zDbName);
         fflush(stdout);
       }
-      rebuild_database(db);
+      rebuild_database(db, 0);
       if( !quietFlag ) printf("done\n");
     }
   
