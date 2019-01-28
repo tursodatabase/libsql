@@ -845,7 +845,7 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
     assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_INVALID );
-    pCur->skipNext |= skipNext;
+    if( skipNext ) pCur->skipNext = skipNext;
     if( pCur->skipNext && pCur->eState==CURSOR_VALID ){
       pCur->eState = CURSOR_SKIPNEXT;
     }
@@ -915,7 +915,6 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
   if( pCur->eState!=CURSOR_VALID ){
     *pDifferentRow = 1;
   }else{
-    assert( pCur->skipNext==0 );
     *pDifferentRow = 0;
   }
   return SQLITE_OK;
@@ -5334,7 +5333,7 @@ int sqlite3BtreeMovetoUnpacked(
       ** try to get there using sqlite3BtreeNext() rather than a full
       ** binary search.  This is an optimization only.  The correct answer
       ** is still obtained without this case, only a little more slowely */
-      if( pCur->info.nKey+1==intKey && !pCur->skipNext ){
+      if( pCur->info.nKey+1==intKey ){
         *pRes = 0;
         rc = sqlite3BtreeNext(pCur, 0);
         if( rc==SQLITE_OK ){
@@ -5608,7 +5607,6 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
   MemPage *pPage;
 
   assert( cursorOwnsBtShared(pCur) );
-  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   if( pCur->eState!=CURSOR_VALID ){
     assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
     rc = restoreCursorPosition(pCur);
@@ -5618,14 +5616,9 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
     if( CURSOR_INVALID==pCur->eState ){
       return SQLITE_DONE;
     }
-    if( pCur->skipNext ){
-      assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
+    if( pCur->eState==CURSOR_SKIPNEXT ){
       pCur->eState = CURSOR_VALID;
-      if( pCur->skipNext>0 ){
-        pCur->skipNext = 0;
-        return SQLITE_OK;
-      }
-      pCur->skipNext = 0;
+      if( pCur->skipNext>0 ) return SQLITE_OK;
     }
   }
 
@@ -5680,7 +5673,6 @@ int sqlite3BtreeNext(BtCursor *pCur, int flags){
   UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
-  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur);
@@ -5721,7 +5713,6 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
   MemPage *pPage;
 
   assert( cursorOwnsBtShared(pCur) );
-  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   assert( (pCur->curFlags & (BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey))==0 );
   assert( pCur->info.nSize==0 );
   if( pCur->eState!=CURSOR_VALID ){
@@ -5732,14 +5723,9 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
     if( CURSOR_INVALID==pCur->eState ){
       return SQLITE_DONE;
     }
-    if( pCur->skipNext ){
-      assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
+    if( CURSOR_SKIPNEXT==pCur->eState ){
       pCur->eState = CURSOR_VALID;
-      if( pCur->skipNext<0 ){
-        pCur->skipNext = 0;
-        return SQLITE_OK;
-      }
-      pCur->skipNext = 0;
+      if( pCur->skipNext<0 ) return SQLITE_OK;
     }
   }
 
@@ -5774,7 +5760,6 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
 int sqlite3BtreePrevious(BtCursor *pCur, int flags){
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
-  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey);
   pCur->info.nSize = 0;
@@ -8770,7 +8755,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** sub-tree headed by the child page of the cell being deleted. This makes
   ** balancing the tree following the delete operation easier.  */
   if( !pPage->leaf ){
-    pCur->skipNext = 0;
     rc = sqlite3BtreePrevious(pCur, 0);
     assert( rc!=SQLITE_DONE );
     if( rc ) return rc;
