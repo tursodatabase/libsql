@@ -1,5 +1,5 @@
-C Make\sindexes\son\sCAST(...)\sexpressions\swork.
-D 2019-01-28T18:08:59.152
+C Fix\sa\sperformance\sregression\scaused\sby\sthe\sprevious\scommit.
+D 2019-01-28T18:58:54.614
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -599,7 +599,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
-F src/where.c c91b3dd6bb67abc7d4de879cf60e1fb57f5972045fc7b147f33537a1baecdfc0
+F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 89d2ec668aec884dfa7ac500c6744e42ec0590fcd72fb740a8b48326a8412811
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
@@ -1804,10 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9faf9033910927c74553e66c474d84ed3386f263cef3eec299e25d8306f410d
-R 9a0f3b3b7b4bc83772f491da4476a586
-T *branch * index-on-cast
-T *sym-index-on-cast *
-T -sym-trunk *
-U dan
-Z cf3b41fd70871ac23ce42361c18f4249
+P 3ef711d98fb239cf24472f124e7b36b0dde33355de5a2c9a3a978bbdd042a735
+R 54fc32c05e999eaa7483855f7fbb2719
+U drh
+Z 51fba204c69fae1056723ec255ec3703
