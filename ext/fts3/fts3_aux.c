@@ -416,15 +416,15 @@ static int fts3auxFilterMethod(
     assert( (iEq==0 && iGe==-1) || (iEq==-1 && iGe==0) );
     if( zStr ){
       pCsr->filter.zTerm = sqlite3_mprintf("%s", zStr);
-      pCsr->filter.nTerm = sqlite3_value_bytes(apVal[0]);
       if( pCsr->filter.zTerm==0 ) return SQLITE_NOMEM;
+      pCsr->filter.nTerm = strlen(pCsr->filter.zTerm);
     }
   }
 
   if( iLe>=0 ){
     pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iLe]));
-    pCsr->nStop = sqlite3_value_bytes(apVal[iLe]);
     if( pCsr->zStop==0 ) return SQLITE_NOMEM;
+    pCsr->nStop = strlen(pCsr->zStop);
   }
   
   if( iLangid>=0 ){
