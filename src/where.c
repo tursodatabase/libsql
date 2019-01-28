@@ -348,6 +348,7 @@ static WhereTerm *whereScanInit(
     if( iColumn==XN_EXPR ){
       pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
       pScan->zCollName = pIdx->azColl[j];
+      pScan->idxaff = sqlite3ExprAffinity(pScan->pIdxExpr);
     }else if( iColumn==pIdx->pTable->iPKey ){
       iColumn = XN_ROWID;
     }else if( iColumn>=0 ){
