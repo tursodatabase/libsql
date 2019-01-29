@@ -1,5 +1,5 @@
-C Fix\sthe\squery\splanner\sso\sthat\sit\sis\sable\sto\suse\san\sindex\son\sa\sCAST\sexpression.
-D 2019-01-28T19:06:17.490
+C Set\sa\slow\slimit\son\sthe\slength\sof\sstrings\sand\sblobs\sin\sthe\sOSSFuzz\smodule,\nin\san\seffort\sto\savoid\stimeouts\swhen\sthe\sfuzzer\sdoes\sthings\slike\n"randomblob(1e12)".
+D 2019-01-29T02:37:22.889
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -1179,7 +1179,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test e7b3416be4b9d5dd2fe0b42dd394daaddbb6c83eeec1f0e47b120b53e0ad3ace
-F test/ossfuzz.c 273eaea2d65b70d77ea4f01404114b9e0244488943f768dc39458c72bd722e0e
+F test/ossfuzz.c 18af635fa73d12a109b305faca727a734c1fa28a421b161d9d15c5a84a4998a2
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 1e9ee778bdeaf4f7f09997d029cdaca6a42dfc2092edafe4f5e590acbf1eab13
@@ -1804,8 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9faf9033910927c74553e66c474d84ed3386f263cef3eec299e25d8306f410d c4db0ad12d4f3d2800d36404f391b325cdc4aa7f8dcea93b2d63a489d9095ad4
-R 54fc32c05e999eaa7483855f7fbb2719
-T +closed c4db0ad12d4f3d2800d36404f391b325cdc4aa7f8dcea93b2d63a489d9095ad4
+P 2c886f3d49c9569e9f6ee28b89b57e2d4004c8972d11da0c23f7b2d2e0c9900a
+R ef986afd8b8f6d7a6be0edfceebfc371
 U drh
-Z d2bf11950d89b1b09c3cca064a694bb6
+Z e752816e40989f14dc990fea8dbd374e
