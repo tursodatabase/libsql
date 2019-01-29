@@ -556,6 +556,16 @@ mod test {
         assert_current_sum(8, &db);
     }
 
+    #[test]
+    fn test_rc() {
+        use std::rc::Rc;
+        let mut conn = Connection::open_in_memory().unwrap();
+        let rc_txn = Rc::new(conn.transaction().unwrap());
+
+        // This will compile only if Transaction is Debug
+        Rc::try_unwrap(rc_txn).unwrap();
+    }
+
     fn insert(x: i32, conn: &Connection) {
         conn.execute("INSERT INTO foo VALUES(?)", &[x]).unwrap();
     }
