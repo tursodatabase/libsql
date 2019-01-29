@@ -4145,7 +4145,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
       u8 aHdr[4] = {0x00, 0x00, 0x00, 0x00};
 
       iLeafRowid = FTS5_SEGMENT_ROWID(iId, pSeg->iTermLeafPgno);
-      pData = fts5DataRead(p, iLeafRowid);
+      pData = fts5LeafRead(p, iLeafRowid);
       if( pData ){
         if( iOff>pData->szLeaf ){
           /* This can occur if the pages that the segments occupy overlap - if
