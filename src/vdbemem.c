@@ -243,7 +243,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 ** if unable to complete the resizing.
 */
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
-  assert( szNew>0 );
+  assert( CORRUPT_DB || szNew>0 );
   assert( (pMem->flags & MEM_Dyn)==0 || pMem->szMalloc==0 );
   if( pMem->szMalloc<szNew ){
     return sqlite3VdbeMemGrow(pMem, szNew, 0);
@@ -1530,9 +1530,11 @@ static int valueFromExpr(
   }
 #endif
   else if( op==TK_TRUEFALSE ){
-     pVal = valueNew(db, pCtx);
-     pVal->flags = MEM_Int;
-     pVal->u.i = pExpr->u.zToken[4]==0;
+    pVal = valueNew(db, pCtx);
+    if( pVal ){
+      pVal->flags = MEM_Int;
+      pVal->u.i = pExpr->u.zToken[4]==0;
+    }
   }
 
   *ppVal = pVal;

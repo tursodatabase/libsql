@@ -385,6 +385,7 @@ void sqlite3ValueApplyAffinity(
 static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
   assert( (pMem->flags & (MEM_Int|MEM_Real))==0 );
   assert( (pMem->flags & (MEM_Str|MEM_Blob))!=0 );
+  ExpandBlob(pMem);
   if( sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc)==0 ){
     return 0;
   }
@@ -1584,8 +1585,8 @@ fp_math:
         break;
       }
       default: {
-        iA = (i64)rA;
-        iB = (i64)rB;
+        iA = sqlite3VdbeIntValue(pIn1);
+        iB = sqlite3VdbeIntValue(pIn2);
         if( iA==0 ) goto arithmetic_result_is_null;
         if( iA==-1 ) iA = 1;
         rB = (double)(iB % iA);
@@ -6172,6 +6173,17 @@ case OP_Program: {        /* jump */
   p->nOp = pProgram->nOp;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   p->anExec = 0;
+#endif
+#ifdef SQLITE_DEBUG
+  /* Verify that second and subsequent executions of the same trigger do not
+  ** try to reuse register values from the first use. */
+  {
+    int i;
+    for(i=0; i<p->nMem; i++){
+      aMem[i].pScopyFrom = 0;  /* Prevent false-positive AboutToChange() errs */
+      aMem[i].flags |= MEM_Undefined; /* Cause a fault if this reg is reused */
+    }
+  }
 #endif
   pOp = &aOp[-1];
 

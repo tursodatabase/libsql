@@ -335,11 +335,12 @@ static int fts5SnippetScore(
   int nInst;
   int nScore = 0;
   int iLast = 0;
+  sqlite3_int64 iEnd = (sqlite3_int64)iPos + nToken;
 
   rc = pApi->xInstCount(pFts, &nInst);
   for(i=0; i<nInst && rc==SQLITE_OK; i++){
     rc = pApi->xInst(pFts, i, &ip, &ic, &iOff);
-    if( rc==SQLITE_OK && ic==iCol && iOff>=iPos && iOff<(iPos+nToken) ){
+    if( rc==SQLITE_OK && ic==iCol && iOff>=iPos && iOff<iEnd ){
       nScore += (aSeen[ip] ? 1 : 1000);
       aSeen[ip] = 1;
       if( iFirst<0 ) iFirst = iOff;
@@ -349,7 +350,7 @@ static int fts5SnippetScore(
 
   *pnScore = nScore;
   if( piPos ){
-    int iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
+    sqlite3_int64 iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
     if( (iAdj+nToken)>nDocsize ) iAdj = nDocsize - nToken;
     if( iAdj<0 ) iAdj = 0;
     *piPos = iAdj;
@@ -442,7 +443,9 @@ static void fts5SnippetFunction(
         int jj;
 
         rc = pApi->xInst(pFts, ii, &ip, &ic, &io);
-        if( ic!=i || rc!=SQLITE_OK ) continue;
+        if( ic!=i ) continue;
+        if( io>nDocsize ) rc = FTS5_CORRUPT;
+        if( rc!=SQLITE_OK ) continue;
         memset(aSeen, 0, nPhrase);
         rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i,
             io, nToken, &nScore, &iAdj
@@ -586,6 +589,7 @@ static int fts5Bm25GetData(
 
     /* Calculate the average document length for this FTS5 table */
     if( rc==SQLITE_OK ) rc = pApi->xRowCount(pFts, &nRow);
+    assert( rc!=SQLITE_OK || nRow>0 );
     if( rc==SQLITE_OK ) rc = pApi->xColumnTotalSize(pFts, -1, &nToken);
     if( rc==SQLITE_OK ) p->avgdl = (double)nToken  / (double)nRow;
 

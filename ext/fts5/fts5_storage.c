@@ -1078,7 +1078,13 @@ int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnToken){
 int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
   int rc = fts5StorageLoadTotals(p, 0);
   if( rc==SQLITE_OK ){
+    /* nTotalRow being zero does not necessarily indicate a corrupt 
+    ** database - it might be that the FTS5 table really does contain zero
+    ** rows. However this function is only called from the xRowCount() API,
+    ** and there is no way for that API to be invoked if the table contains
+    ** no rows. Hence the FTS5_CORRUPT return.  */
     *pnRow = p->nTotalRow;
+    if( p->nTotalRow<=0 ) rc = FTS5_CORRUPT;
   }
   return rc;
 }

@@ -850,7 +850,7 @@ Expr *sqlite3PExpr(
   Expr *pRight            /* Right operand */
 ){
   Expr *p;
-  if( op==TK_AND && pParse->nErr==0 ){
+  if( op==TK_AND && pParse->nErr==0 && !IN_RENAME_OBJECT ){
     /* Take advantage of short-circuit false optimization for AND */
     p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
   }else{
@@ -5366,6 +5366,7 @@ void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   w.xSelectCallback2 = analyzeAggregatesInSelectEnd;
   w.walkerDepth = 0;
   w.u.pNC = pNC;
+  w.pParse = 0;
   assert( pNC->pSrcList!=0 );
   sqlite3WalkExpr(&w, pExpr);
 }

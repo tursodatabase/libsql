@@ -347,9 +347,14 @@ do_test dbfuzz001-110 {
 |    496: 04 03 03 02 01 04 03 02 02 01 02 03 01 02 01 02   ................
 | end x/c02.db
   }]
-  execsql {
-    DELETE FROM t3 WHERE x IN (SELECT x FROM t4);
-  }
 } {}
+
+do_catchsql_test dbfuzz001-120 {
+  PRAGMA integrity_check;
+} {1 {database disk image is malformed}}
+
+do_catchsql_test dbfuzz001-130 {
+  DELETE FROM t3 WHERE x IN (SELECT x FROM t4);
+} {1 {database disk image is malformed}}
 
 finish_test

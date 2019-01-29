@@ -638,7 +638,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
      || opcode==OP_VDestroy
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
-      && ((pOp->p1&0xff)==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))
+      && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
     ){
       hasAbort = 1;
       break;
@@ -3794,7 +3794,7 @@ void sqlite3VdbeRecordUnpack(
   UnpackedRecord *p      /* Populate this structure before returning. */
 ){
   const unsigned char *aKey = (const unsigned char *)pKey;
-  int d; 
+  u32 d; 
   u32 idx;                        /* Offset in aKey[] to read from */
   u16 u;                          /* Unsigned loop counter */
   u32 szHdr;
@@ -3805,7 +3805,7 @@ void sqlite3VdbeRecordUnpack(
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
   u = 0;
-  while( idx<szHdr && d<=nKey ){
+  while( idx<szHdr && d<=(u32)nKey ){
     u32 serial_type;
 
     idx += getVarint32(&aKey[idx], serial_type);
@@ -3818,7 +3818,7 @@ void sqlite3VdbeRecordUnpack(
     pMem++;
     if( (++u)>=p->nField ) break;
   }
-  if( d>nKey && u ){
+  if( d>(u32)nKey && u ){
     assert( CORRUPT_DB );
     /* In a corrupt record entry, the last pMem might have been set up using 
     ** uninitialized memory. Overwrite its value with NULL, to prevent
@@ -3902,7 +3902,8 @@ static int vdbeRecordCompareDebug(
 
     /* Do the comparison
     */
-    rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i], pKeyInfo->aColl[i]);
+    rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i],
+                           pKeyInfo->nAllField>i ? pKeyInfo->aColl[i] : 0);
     if( rc!=0 ){
       assert( mem1.szMalloc==0 );  /* See comment below */
       if( pKeyInfo->aSortOrder[i] ){
@@ -4333,10 +4334,12 @@ int sqlite3VdbeRecordCompareWithSkip(
         mem1.n = (serial_type - 12) / 2;
         testcase( (d1+mem1.n)==(unsigned)nKey1 );
         testcase( (d1+mem1.n+1)==(unsigned)nKey1 );
-        if( (d1+mem1.n) > (unsigned)nKey1 ){
+        if( (d1+mem1.n) > (unsigned)nKey1
+         || (pKeyInfo = pPKey2->pKeyInfo)->nAllField<=i
+        ){
           pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
-        }else if( (pKeyInfo = pPKey2->pKeyInfo)->aColl[i] ){
+        }else if( pKeyInfo->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
           mem1.flags = MEM_Str;

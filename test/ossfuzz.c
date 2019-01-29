@@ -155,6 +155,11 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Set a limit on the maximum size of a prepared statement */
   sqlite3_limit(cx.db, SQLITE_LIMIT_VDBE_OP, 25000);
 
+  /* Set a limit on the maximum length of a string or BLOB.  Without this
+  ** limit, fuzzers will invoke randomblob(N) for a large N, and the process
+  ** will timeout trying to generate the huge blob */
+  sqlite3_limit(cx.db, SQLITE_LIMIT_LENGTH, 50000);
+
   /* Bit 1 of the selector enables foreign key constraints */
   sqlite3_db_config(cx.db, SQLITE_DBCONFIG_ENABLE_FKEY, uSelector&1, &rc);
   uSelector >>= 1;

@@ -2000,11 +2000,11 @@ static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
 #endif
   {
     switch( pRtree->nDim ){
-      case 5:  area  = p->aCoord[9].i - p->aCoord[8].i;
-      case 4:  area *= p->aCoord[7].i - p->aCoord[6].i;
-      case 3:  area *= p->aCoord[5].i - p->aCoord[4].i;
-      case 2:  area *= p->aCoord[3].i - p->aCoord[2].i;
-      default: area *= p->aCoord[1].i - p->aCoord[0].i;
+      case 5:  area  = (i64)p->aCoord[9].i - (i64)p->aCoord[8].i;
+      case 4:  area *= (i64)p->aCoord[7].i - (i64)p->aCoord[6].i;
+      case 3:  area *= (i64)p->aCoord[5].i - (i64)p->aCoord[4].i;
+      case 2:  area *= (i64)p->aCoord[3].i - (i64)p->aCoord[2].i;
+      default: area *= (i64)p->aCoord[1].i - (i64)p->aCoord[0].i;
     }
   }
   return area;

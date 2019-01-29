@@ -673,4 +673,32 @@ do_execsql_test 15.2 {
   ) x WHERE x+x;
 } {}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 16.0 {
+  CREATE TABLE t7(a,b); 
+  INSERT INTO t7(rowid, a, b) VALUES
+      (1, 1, 3),
+      (2, 10, 4),
+      (3, 100, 2);
+}
+
+do_execsql_test 16.1 {
+  SELECT rowid, sum(a) OVER (PARTITION BY b IN (SELECT rowid FROM t7)) FROM t7;
+} {
+  2 10
+  1 101
+  3 101
+}
+
+do_execsql_test 16.2 {
+  SELECT rowid, sum(a) OVER w1 FROM t7 
+  WINDOW w1 AS (PARTITION BY b IN (SELECT rowid FROM t7));
+} {
+  2 10
+  1 101
+  3 101
+}
+
+
 finish_test

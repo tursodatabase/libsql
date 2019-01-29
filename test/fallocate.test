@@ -70,6 +70,15 @@ do_test fallocate-1.7 {
 } {1024}
 do_test fallocate-1.8 { execsql { COMMIT } } {}
 
+do_test fallocate-1.8 {
+  set nPg [db one {PRAGMA page_count}]
+  set nFile [expr [file size test.db] / 1024]
+  list [expr $nPg<100] [expr $nFile>100]
+} {1 1}
+
+do_execsql_test fallocate-1.9 {
+  PRAGMA max_page_count = 100;
+} {100}
 
 #-------------------------------------------------------------------------
 # The following tests - fallocate-2.* - test that things work in WAL

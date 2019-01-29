@@ -52,7 +52,7 @@ void sqlite3Fts5Put32(u8 *aBuf, int iVal){
 }
 
 int sqlite3Fts5Get32(const u8 *aBuf){
-  return (aBuf[0] << 24) + (aBuf[1] << 16) + (aBuf[2] << 8) + aBuf[3];
+  return (int)((((u32)aBuf[0])<<24) + (aBuf[1]<<16) + (aBuf[2]<<8) + aBuf[3]);
 }
 
 /*
@@ -183,7 +183,7 @@ int sqlite3Fts5PoslistNext64(
       iOff = ((i64)iVal) << 32;
       fts5FastGetVarint32(a, i, iVal);
     }
-    *piOff = iOff + (iVal-2);
+    *piOff = iOff + ((iVal-2) & 0x7FFFFFFF);
     *pi = i;
     return 0;
   }

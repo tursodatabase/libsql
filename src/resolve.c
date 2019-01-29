@@ -858,10 +858,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->y.pWin ){
           Select *pSel = pNC->pWinSelect;
+          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
           sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
-          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           if( 0==pSel->pWin 
            || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
           ){
@@ -1160,12 +1160,7 @@ static int resolveCompoundOrderBy(
             assert(pDup);
             iCol = resolveOrderByTermToExprList(pParse, pSelect, pDup);
           }
-          if( IN_RENAME_OBJECT ){
-            if( iCol>0 ){
-              pItem->done = 1;
-              continue;
-            }
-          }else{
+          if( !IN_RENAME_OBJECT ){
             sqlite3ExprDelete(db, pDup);
           }
         }
@@ -1173,21 +1168,23 @@ static int resolveCompoundOrderBy(
       if( iCol>0 ){
         /* Convert the ORDER BY term into an integer column number iCol,
         ** taking care to preserve the COLLATE clause if it exists */
-        Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
-        if( pNew==0 ) return 1;
-        pNew->flags |= EP_IntValue;
-        pNew->u.iValue = iCol;
-        if( pItem->pExpr==pE ){
-          pItem->pExpr = pNew;
-        }else{
-          Expr *pParent = pItem->pExpr;
-          assert( pParent->op==TK_COLLATE );
-          while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
-          assert( pParent->pLeft==pE );
-          pParent->pLeft = pNew;
+        if( !IN_RENAME_OBJECT ){
+          Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
+          if( pNew==0 ) return 1;
+          pNew->flags |= EP_IntValue;
+          pNew->u.iValue = iCol;
+          if( pItem->pExpr==pE ){
+            pItem->pExpr = pNew;
+          }else{
+            Expr *pParent = pItem->pExpr;
+            assert( pParent->op==TK_COLLATE );
+            while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
+            assert( pParent->pLeft==pE );
+            pParent->pLeft = pNew;
+          }
+          sqlite3ExprDelete(db, pE);
+          pItem->u.x.iOrderByCol = (u16)iCol;
         }
-        sqlite3ExprDelete(db, pE);
-        pItem->u.x.iOrderByCol = (u16)iCol;
         pItem->done = 1;
       }else{
         moreToDo = 1;
@@ -1531,6 +1528,17 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( ExprHasProperty(pItem->pExpr, EP_Agg) ){
           sqlite3ErrorMsg(pParse, "aggregate functions are not allowed in "
               "the GROUP BY clause");
+          return WRC_Abort;
+        }
+      }
+    }
+
+    if( IN_RENAME_OBJECT ){
+      Window *pWin;
+      for(pWin=p->pWinDefn; pWin; pWin=pWin->pNextWin){
+        if( sqlite3ResolveExprListNames(&sNC, pWin->pOrderBy)
+         || sqlite3ResolveExprListNames(&sNC, pWin->pPartition)
+        ){
           return WRC_Abort;
         }
       }

@@ -320,6 +320,14 @@ int sqlite3Fts3Never(int b)  { assert( !b ); return b; }
 # endif
 #endif
 
+/*
+** This variable is set to false when running tests for which the on disk
+** structures should not be corrupt. Otherwise, true. If it is false, extra
+** assert() conditions in the fts3 code are activated - conditions that are
+** only true if it is guaranteed that the fts3 database is not corrupt.
+*/
+int sqlite3_fts3_may_be_corrupt = 1;
+
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].
 ** The length of data written will be between 1 and FTS3_VARINT_MAX bytes.
@@ -561,13 +569,18 @@ static int fts3DestroyMethod(sqlite3_vtab *pVtab){
   sqlite3 *db = p->db;             /* Database handle */
 
   /* Drop the shadow tables */
-  if( p->zContentTbl==0 ){
-    fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", zDb, p->zName);
-  }
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", zDb,p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", zDb, p->zName);
+  fts3DbExec(&rc, db, 
+    "DROP TABLE IF EXISTS %Q.'%q_segments';"
+    "DROP TABLE IF EXISTS %Q.'%q_segdir';"
+    "DROP TABLE IF EXISTS %Q.'%q_docsize';"
+    "DROP TABLE IF EXISTS %Q.'%q_stat';"
+    "%s DROP TABLE IF EXISTS %Q.'%q_content';",
+    zDb, p->zName,
+    zDb, p->zName,
+    zDb, p->zName,
+    zDb, p->zName,
+    (p->zContentTbl ? "--" : ""), zDb,p->zName
+  );
 
   /* If everything has worked, invoke fts3DisconnectMethod() to free the
   ** memory associated with the Fts3Table structure and return SQLITE_OK.
@@ -2135,7 +2148,7 @@ static int fts3PutColNumber(char **pp, int iCol){
 ** updated appropriately.   The caller is responsible for insuring
 ** that there is enough space in *pp to hold the complete output.
 */
-static void fts3PoslistMerge(
+static int fts3PoslistMerge(
   char **pp,                      /* Output buffer */
   char **pp1,                     /* Left input list */
   char **pp2                      /* Right input list */
@@ -2148,11 +2161,17 @@ static void fts3PoslistMerge(
     int iCol1;         /* The current column index in pp1 */
     int iCol2;         /* The current column index in pp2 */
 
-    if( *p1==POS_COLUMN ) fts3GetVarint32(&p1[1], &iCol1);
+    if( *p1==POS_COLUMN ){ 
+      fts3GetVarint32(&p1[1], &iCol1);
+      if( iCol1==0 ) return FTS_CORRUPT_VTAB;
+    }
     else if( *p1==POS_END ) iCol1 = POSITION_LIST_END;
     else iCol1 = 0;
 
-    if( *p2==POS_COLUMN ) fts3GetVarint32(&p2[1], &iCol2);
+    if( *p2==POS_COLUMN ){
+      fts3GetVarint32(&p2[1], &iCol2);
+      if( iCol2==0 ) return FTS_CORRUPT_VTAB;
+    }
     else if( *p2==POS_END ) iCol2 = POSITION_LIST_END;
     else iCol2 = 0;
 
@@ -2200,6 +2219,7 @@ static void fts3PoslistMerge(
   *pp = p;
   *pp1 = p1 + 1;
   *pp2 = p2 + 1;
+  return SQLITE_OK;
 }
 
 /*
@@ -2492,6 +2512,7 @@ static int fts3DoclistOrMerge(
   char *a2, int n2,               /* Second doclist */
   char **paOut, int *pnOut        /* OUT: Malloc'd doclist */
 ){
+  int rc = SQLITE_OK;
   sqlite3_int64 i1 = 0;
   sqlite3_int64 i2 = 0;
   sqlite3_int64 iPrev = 0;
@@ -2535,7 +2556,7 @@ static int fts3DoclistOrMerge(
   ** A symetric argument may be made if the doclists are in descending 
   ** order.
   */
-  aOut = sqlite3_malloc64((sqlite3_int64)n1+n2+FTS3_VARINT_MAX-1);
+  aOut = sqlite3_malloc64((i64)n1+n2+FTS3_VARINT_MAX-1+FTS3_BUFFER_PADDING);
   if( !aOut ) return SQLITE_NOMEM;
 
   p = aOut;
@@ -2546,7 +2567,8 @@ static int fts3DoclistOrMerge(
 
     if( p2 && p1 && iDiff==0 ){
       fts3PutDeltaVarint3(&p, bDescDoclist, &iPrev, &bFirstOut, i1);
-      fts3PoslistMerge(&p, &p1, &p2);
+      rc = fts3PoslistMerge(&p, &p1, &p2);
+      if( rc ) break;
       fts3GetDeltaVarint3(&p1, pEnd1, bDescDoclist, &i1);
       fts3GetDeltaVarint3(&p2, pEnd2, bDescDoclist, &i2);
     }else if( !p2 || (p1 && iDiff<0) ){
@@ -2560,10 +2582,16 @@ static int fts3DoclistOrMerge(
     }
   }
 
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(aOut);
+    p = aOut = 0;
+  }else{
+    assert( (p-aOut)<=n1+n2+FTS3_VARINT_MAX-1 );
+    memset(&aOut[(p-aOut)], 0, FTS3_BUFFER_PADDING);
+  }
   *paOut = aOut;
   *pnOut = (int)(p-aOut);
-  assert( *pnOut<=n1+n2+FTS3_VARINT_MAX-1 );
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2782,6 +2810,7 @@ static int fts3TermSelectMerge(
     pTS->anOutput[0] = nDoclist;
     if( pTS->aaOutput[0] ){
       memcpy(pTS->aaOutput[0], aDoclist, nDoclist);
+      memset(&pTS->aaOutput[0][nDoclist], 0, FTS3_VARINT_MAX);
     }else{
       return SQLITE_NOMEM;
     }
@@ -3840,7 +3869,6 @@ static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts3Table *p = (Fts3Table*)pVtab;
   UNUSED_PARAMETER(iSavepoint);
   assert( p->inTransaction );
-  assert( p->mxSavepoint >= iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint );
   sqlite3Fts3PendingTermsClear(p);
   return SQLITE_OK;
@@ -5606,7 +5634,6 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr, int nCol){
       int iCol = 0;
       char *p = pPhrase->doclist.pList;
 
-      assert( *p );
       do{
         u8 c = 0;
         int iCnt = 0;

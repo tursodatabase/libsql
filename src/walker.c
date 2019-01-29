@@ -17,6 +17,22 @@
 #include <string.h>
 
 
+#if !defined(SQLITE_OMIT_WINDOWFUNC)
+/*
+** Walk all expressions linked into the list of Window objects passed
+** as the second argument.
+*/
+static int walkWindowList(Walker *pWalker, Window *pList){
+  Window *pWin;
+  for(pWin=pList; pWin; pWin=pWin->pNextWin){
+    if( sqlite3WalkExprList(pWalker, pWin->pOrderBy) ) return WRC_Abort;
+    if( sqlite3WalkExprList(pWalker, pWin->pPartition) ) return WRC_Abort;
+    if( sqlite3WalkExpr(pWalker, pWin->pFilter) ) return WRC_Abort;
+  }
+  return WRC_Continue;
+}
+#endif
+
 /*
 ** Walk an expression tree.  Invoke the callback once for each node
 ** of the expression, while descending.  (In other words, the callback
@@ -56,10 +72,7 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( ExprHasProperty(pExpr, EP_WinFunc) ){
-        Window *pWin = pExpr->y.pWin;
-        if( sqlite3WalkExprList(pWalker, pWin->pPartition) ) return WRC_Abort;
-        if( sqlite3WalkExprList(pWalker, pWin->pOrderBy) ) return WRC_Abort;
-        if( sqlite3WalkExpr(pWalker, pWin->pFilter) ) return WRC_Abort;
+        if( walkWindowList(pWalker, pExpr->y.pWin) ) return WRC_Abort;
       }
 #endif
     }
@@ -99,6 +112,16 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
   if( sqlite3WalkExpr(pWalker, p->pHaving) ) return WRC_Abort;
   if( sqlite3WalkExprList(pWalker, p->pOrderBy) ) return WRC_Abort;
   if( sqlite3WalkExpr(pWalker, p->pLimit) ) return WRC_Abort;
+#if !defined(SQLITE_OMIT_WINDOWFUNC) && !defined(SQLITE_OMIT_ALTERTABLE)
+  {
+    Parse *pParse = pWalker->pParse;
+    if( pParse && IN_RENAME_OBJECT ){
+      int rc = walkWindowList(pWalker, p->pWinDefn);
+      assert( rc==WRC_Continue );
+      return rc;
+    }
+  }
+#endif
   return WRC_Continue;
 }
 

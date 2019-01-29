@@ -606,7 +606,7 @@ static int fts5BufferCompareBlob(
 */
 static int fts5BufferCompare(Fts5Buffer *pLeft, Fts5Buffer *pRight){
   int nCmp = MIN(pLeft->n, pRight->n);
-  int res = memcmp(pLeft->p, pRight->p, nCmp);
+  int res = fts5Memcmp(pLeft->p, pRight->p, nCmp);
   return (res==0 ? (pLeft->n - pRight->n) : res);
 }
 
@@ -1652,7 +1652,7 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   int nNew;                       /* Bytes of new data */
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
-  if( iOff+nNew>pIter->pLeaf->nn || nKeep>pIter->term.n ){
+  if( iOff+nNew>pIter->pLeaf->szLeaf || nKeep>pIter->term.n ){
     p->rc = FTS5_CORRUPT;
     return;
   }
@@ -2534,7 +2534,7 @@ static void fts5AssertComparisonResult(
       assert( pRes->iFirst==i1 );
     }else{
       int nMin = MIN(p1->term.n, p2->term.n);
-      int res = memcmp(p1->term.p, p2->term.p, nMin);
+      int res = fts5Memcmp(p1->term.p, p2->term.p, nMin);
       if( res==0 ) res = p1->term.n - p2->term.n;
 
       if( res==0 ){
@@ -3580,7 +3580,7 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
       for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
           int iId = pStruct->aLevel[iLvl].aSeg[iSeg].iSegid;
-          if( iId<=FTS5_MAX_SEGMENT ){
+          if( iId<=FTS5_MAX_SEGMENT && iId>0 ){
             aUsed[(iId-1) / 32] |= (u32)1 << ((iId-1) % 32);
           }
         }
@@ -4127,7 +4127,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
   int i;
   Fts5Buffer buf;
   memset(&buf, 0, sizeof(Fts5Buffer));
-  for(i=0; i<pIter->nSeg; i++){
+  for(i=0; i<pIter->nSeg && p->rc==SQLITE_OK; i++){
     Fts5SegIter *pSeg = &pIter->aSeg[i];
     if( pSeg->pSeg==0 ){
       /* no-op */
@@ -4145,35 +4145,43 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
       u8 aHdr[4] = {0x00, 0x00, 0x00, 0x00};
 
       iLeafRowid = FTS5_SEGMENT_ROWID(iId, pSeg->iTermLeafPgno);
-      pData = fts5DataRead(p, iLeafRowid);
+      pData = fts5LeafRead(p, iLeafRowid);
       if( pData ){
-        fts5BufferZero(&buf);
-        fts5BufferGrow(&p->rc, &buf, pData->nn);
-        fts5BufferAppendBlob(&p->rc, &buf, sizeof(aHdr), aHdr);
-        fts5BufferAppendVarint(&p->rc, &buf, pSeg->term.n);
-        fts5BufferAppendBlob(&p->rc, &buf, pSeg->term.n, pSeg->term.p);
-        fts5BufferAppendBlob(&p->rc, &buf, pData->szLeaf-iOff, &pData->p[iOff]);
-        if( p->rc==SQLITE_OK ){
-          /* Set the szLeaf field */
-          fts5PutU16(&buf.p[2], (u16)buf.n);
-        }
+        if( iOff>pData->szLeaf ){
+          /* This can occur if the pages that the segments occupy overlap - if
+          ** a single page has been assigned to more than one segment. In
+          ** this case a prior iteration of this loop may have corrupted the
+          ** segment currently being trimmed.  */
+          p->rc = FTS5_CORRUPT;
+        }else{
+          fts5BufferZero(&buf);
+          fts5BufferGrow(&p->rc, &buf, pData->nn);
+          fts5BufferAppendBlob(&p->rc, &buf, sizeof(aHdr), aHdr);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->term.n);
+          fts5BufferAppendBlob(&p->rc, &buf, pSeg->term.n, pSeg->term.p);
+          fts5BufferAppendBlob(&p->rc, &buf, pData->szLeaf-iOff,&pData->p[iOff]);
+          if( p->rc==SQLITE_OK ){
+            /* Set the szLeaf field */
+            fts5PutU16(&buf.p[2], (u16)buf.n);
+          }
 
-        /* Set up the new page-index array */
-        fts5BufferAppendVarint(&p->rc, &buf, 4);
-        if( pSeg->iLeafPgno==pSeg->iTermLeafPgno 
-         && pSeg->iEndofDoclist<pData->szLeaf 
-        ){
-          int nDiff = pData->szLeaf - pSeg->iEndofDoclist;
-          fts5BufferAppendVarint(&p->rc, &buf, buf.n - 1 - nDiff - 4);
-          fts5BufferAppendBlob(&p->rc, &buf, 
-              pData->nn - pSeg->iPgidxOff, &pData->p[pSeg->iPgidxOff]
-          );
-        }
+          /* Set up the new page-index array */
+          fts5BufferAppendVarint(&p->rc, &buf, 4);
+          if( pSeg->iLeafPgno==pSeg->iTermLeafPgno 
+              && pSeg->iEndofDoclist<pData->szLeaf 
+            ){
+            int nDiff = pData->szLeaf - pSeg->iEndofDoclist;
+            fts5BufferAppendVarint(&p->rc, &buf, buf.n - 1 - nDiff - 4);
+            fts5BufferAppendBlob(&p->rc, &buf, 
+                pData->nn - pSeg->iPgidxOff, &pData->p[pSeg->iPgidxOff]
+                );
+          }
 
+          pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;
+          fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 1), iLeafRowid);
+          fts5DataWrite(p, iLeafRowid, buf.p, buf.n);
+        }
         fts5DataRelease(pData);
-        pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;
-        fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 1), iLeafRowid);
-        fts5DataWrite(p, iLeafRowid, buf.p, buf.n);
       }
     }
   }
@@ -4265,7 +4273,7 @@ static void fts5IndexMergeLevel(
     const u8 *pTerm;
 
     pTerm = fts5MultiIterTerm(pIter, &nTerm);
-    if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
+    if( nTerm!=term.n || fts5Memcmp(pTerm, term.p, nTerm) ){
       if( pnRem && writer.nLeafWritten>nRem ){
         break;
       }
@@ -4959,6 +4967,8 @@ static void fts5MergePrefixLists(
         int iOff2 = 0;
         u8 *a1 = &i1.aPoslist[i1.nSize];
         u8 *a2 = &i2.aPoslist[i2.nSize];
+        int nCopy;
+        u8 *aCopy;
 
         i64 iPrev = 0;
         Fts5PoslistWriter writer;
@@ -5002,11 +5012,16 @@ static void fts5MergePrefixLists(
           if( iPos1!=iPrev ){
             sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
           }
-          fts5BufferSafeAppendBlob(&tmp, &a1[iOff1], i1.nPoslist-iOff1);
+          aCopy = &a1[iOff1];
+          nCopy = i1.nPoslist - iOff1;
         }else{
           assert( iPos2>=0 && iPos2!=iPrev );
           sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
-          fts5BufferSafeAppendBlob(&tmp, &a2[iOff2], i2.nPoslist-iOff2);
+          aCopy = &a2[iOff2];
+          nCopy = i2.nPoslist - iOff2;
+        }
+        if( nCopy>0 ){
+          fts5BufferSafeAppendBlob(&tmp, aCopy, nCopy);
         }
 
         /* WRITEPOSLISTSIZE */
@@ -5014,6 +5029,7 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
         fts5DoclistIterNext(&i1);
         fts5DoclistIterNext(&i2);
+        assert( out.n<=(p1->n+p2->n+9) );
         if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
       }
     }
@@ -5115,7 +5131,7 @@ static void fts5SetupPrefixIter(
     }
     fts5MultiIterFree(p1);
 
-    pData = fts5IdxMalloc(p, sizeof(Fts5Data) + doclist.n);
+    pData = fts5IdxMalloc(p, sizeof(Fts5Data)+doclist.n+FTS5_DATA_ZERO_PADDING);
     if( pData ){
       pData->p = (u8*)&pData[1];
       pData->nn = pData->szLeaf = doclist.n;
@@ -5881,7 +5897,7 @@ static void fts5IndexIntegrityCheckSegment(
         p->rc = FTS5_CORRUPT;
       }else{
         iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
-        res = memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));
+        res = fts5Memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));
         if( res==0 ) res = nTerm - nIdxTerm;
         if( res<0 ) p->rc = FTS5_CORRUPT;
       }
