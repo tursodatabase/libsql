@@ -443,7 +443,9 @@ static void fts5SnippetFunction(
         int jj;
 
         rc = pApi->xInst(pFts, ii, &ip, &ic, &io);
-        if( ic!=i || rc!=SQLITE_OK ) continue;
+        if( ic!=i ) continue;
+        if( io>nDocsize ) rc = FTS5_CORRUPT;
+        if( rc!=SQLITE_OK ) continue;
         memset(aSeen, 0, nPhrase);
         rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i,
             io, nToken, &nScore, &iAdj
