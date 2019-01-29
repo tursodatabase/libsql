@@ -6814,7 +6814,7 @@ static int rebuildPage(
   const int usableSize = pPg->pBt->usableSize;
   u8 * const pEnd = &aData[usableSize];
   int i = iFirst;                 /* Which cell to copy from pCArray*/
-  int j;                          /* Start of cell content area */
+  u32 j;                          /* Start of cell content area */
   int iEnd = i+nCell;             /* Loop terminator */
   u8 *pCellptr = pPg->aCellIdx;
   u8 *pTmp = sqlite3PagerTempSpace(pPg->pBt->pPager);
@@ -6824,6 +6824,7 @@ static int rebuildPage(
 
   assert( i<iEnd );
   j = get2byte(&aData[hdr+5]);
+  if( NEVER(j>usableSize) ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
   for(k=0; pCArray->ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
@@ -7003,7 +7004,7 @@ static int pageFreeArray(
 }
 
 /*
-** pCArray contains pointers to and sizes of all cells in the pages being
+** pCArray contains pointers to and sizes of all cells in the page being
 ** balanced.  The current page, pPg, has pPg->nCell cells starting with
 ** pCArray->apCell[iOld].  After balancing, this page should hold nNew cells
 ** starting at apCell[iNew].
@@ -7037,13 +7038,17 @@ static int editPage(
 #endif
 
   /* Remove cells from the start and end of the page */
+  assert( nCell>=0 );
   if( iOld<iNew ){
     int nShift = pageFreeArray(pPg, iOld, iNew-iOld, pCArray);
+    if( nShift>nCell ) return SQLITE_CORRUPT_BKPT;
     memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
     nCell -= nShift;
   }
   if( iNewEnd < iOldEnd ){
-    nCell -= pageFreeArray(pPg, iNewEnd, iOldEnd - iNewEnd, pCArray);
+    int nTail = pageFreeArray(pPg, iNewEnd, iOldEnd - iNewEnd, pCArray);
+    assert( nCell>=nTail );
+    nCell -= nTail;
   }
 
   pData = &aData[get2byteNotZero(&aData[hdr+5])];
@@ -7053,6 +7058,7 @@ static int editPage(
   if( iNew<iOld ){
     int nAdd = MIN(nNew,iOld-iNew);
     assert( (iOld-iNew)<nNew || nCell==0 || CORRUPT_DB );
+    assert( nAdd>=0 );
     pCellptr = pPg->aCellIdx;
     memmove(&pCellptr[nAdd*2], pCellptr, nCell*2);
     if( pageInsertArray(
@@ -7067,6 +7073,7 @@ static int editPage(
     int iCell = (iOld + pPg->aiOvfl[i]) - iNew;
     if( iCell>=0 && iCell<nNew ){
       pCellptr = &pPg->aCellIdx[iCell * 2];
+      assert( nCell>=iCell );
       memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
       nCell++;
       if( pageInsertArray(
@@ -7077,6 +7084,7 @@ static int editPage(
   }
 
   /* Append cells to the end of the page */
+  assert( nCell>=0 );
   pCellptr = &pPg->aCellIdx[nCell*2];
   if( pageInsertArray(
         pPg, pBegin, &pData, pCellptr,
