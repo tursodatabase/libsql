@@ -1,5 +1,5 @@
-C Load\sall\sthe\slatest\sdbsqlfuzz\sfinds\sinto\stest/fuzzdata8.db.
-D 2019-01-29T16:47:46.602
+C Fix\sharmless\scompiler\swarnings.
+D 2019-01-29T16:54:31.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
@@ -83,7 +83,7 @@ F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 5da1329ccf66b6d597dfb16b1f81aa204133c1ec96117d82a59c20126f483b17
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 74384e28b778a057f1467529715668b98f3f12f52eeb564fd6ae1e894125c00c
-F ext/fts3/fts3_aux.c c7512135fc7df424ceed21e2b47e1fb036ca115aace3852d26da3e29960002f3
+F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
 F ext/fts3/fts3_expr.c b132af223e90e35b9f9efa9fe63d6ae737d34153a3b6066736086df8abc78a1f
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c af023d6caa0957c707719a1b609e80c81bf6a3ee1729921e4ae2444d66c3ee1f
+F src/btree.c 79464668601b6d278954cf822ef484893e1434f85addda2bd9a323796b91b328
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
 F src/build.c f07c0b154c23737d1699ee63bba31c8ca8b323e2446b957bc6bfec81a62295fc
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97704cb7d29fa7cc4ea9a6761a7844c1946d637ea2b22d287fc787ae0f63c407
-R f1ecfe922597ece998a55cb139628ace
+P e744d2dd93a78235e6c1d938b08232183b5ce7e355d1b7daf2199e585b03c106
+R a33d91a5dfd0f03de4e1216923839b6d
 U drh
-Z fbaf7cd6903e02bf2f5eaadec114bfa9
+Z 28211b0b57c9c2017af9da12db90b998
