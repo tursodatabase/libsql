@@ -1708,7 +1708,9 @@ static int fts5ApiColumnText(
 ){
   int rc = SQLITE_OK;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) ){
+  if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) 
+   || pCsr->ePlan==FTS5_PLAN_SPECIAL 
+  ){
     *pz = 0;
     *pn = 0;
   }else{
