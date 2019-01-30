@@ -112,8 +112,8 @@ impl<'conn> Statement<'conn> {
     /// }
     /// ```
     ///
-    /// Note, the `named_params` macro is provided for syntactic convenience, and
-    /// so the above example could also be written as:
+    /// Note, the `named_params` macro is provided for syntactic convenience,
+    /// and so the above example could also be written as:
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, named_params};
@@ -216,8 +216,8 @@ impl<'conn> Statement<'conn> {
     /// }
     /// ```
     ///
-    /// Note, the `named_params!` macro is provided for syntactic convenience, and
-    /// so the above example could also be written as:
+    /// Note, the `named_params!` macro is provided for syntactic convenience,
+    /// and so the above example could also be written as:
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, named_params};

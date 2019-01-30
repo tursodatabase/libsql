@@ -9,9 +9,6 @@
 //! module.
 //!
 //! ```rust
-//! extern crate rusqlite;
-//! extern crate regex;
-//!
 //! use regex::Regex;
 //! use rusqlite::{Connection, Error, Result, NO_PARAMS};
 //! use std::collections::HashMap;
