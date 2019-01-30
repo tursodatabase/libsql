@@ -3487,14 +3487,6 @@ void sqlite3CreateIndex(
       Index *p;
       assert( !IN_SPECIAL_PARSE );
       assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
-      p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
-          pIndex->zName, pIndex);
-      if( p ){
-        assert( p==pIndex );  /* Malloc must have failed */
-        sqlite3OomFault(db);
-        goto exit_create_index;
-      }
-      db->mDbFlags |= DBFLAG_SchemaChange;
       if( pTblName!=0 ){
         pIndex->tnum = db->init.newTnum;
         if( sqlite3IndexHasDuplicateRootPage(pIndex) ){
@@ -3503,6 +3495,14 @@ void sqlite3CreateIndex(
           goto exit_create_index;
         }
       }
+      p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
+          pIndex->zName, pIndex);
+      if( p ){
+        assert( p==pIndex );  /* Malloc must have failed */
+        sqlite3OomFault(db);
+        goto exit_create_index;
+      }
+      db->mDbFlags |= DBFLAG_SchemaChange;
     }
 
     /* If this is the initial CREATE INDEX statement (or CREATE TABLE if the
