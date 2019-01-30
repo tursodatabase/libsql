@@ -11,7 +11,7 @@ pub enum TransactionBehavior {
 }
 
 /// Options for how a Transaction or Savepoint should behave when it is dropped.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DropBehavior {
     /// Roll back the changes. This is the default.
     Rollback,
@@ -50,6 +50,7 @@ pub enum DropBehavior {
 ///     tx.commit()
 /// }
 /// ```
+#[derive(Debug)]
 pub struct Transaction<'conn> {
     conn: &'conn Connection,
     drop_behavior: DropBehavior,
@@ -553,6 +554,16 @@ mod test {
             sp1.commit().unwrap();
         }
         assert_current_sum(8, &db);
+    }
+
+    #[test]
+    fn test_rc() {
+        use std::rc::Rc;
+        let mut conn = Connection::open_in_memory().unwrap();
+        let rc_txn = Rc::new(conn.transaction().unwrap());
+
+        // This will compile only if Transaction is Debug
+        Rc::try_unwrap(rc_txn).unwrap();
     }
 
     fn insert(x: i32, conn: &Connection) {
