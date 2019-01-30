@@ -3497,6 +3497,11 @@ void sqlite3CreateIndex(
       db->mDbFlags |= DBFLAG_SchemaChange;
       if( pTblName!=0 ){
         pIndex->tnum = db->init.newTnum;
+        if( sqlite3IndexHasDuplicateRootPage(pIndex) ){
+          sqlite3ErrorMsg(pParse, "invalid root page");
+          pParse->rc = SQLITE_CORRUPT_BKPT;
+          goto exit_create_index;
+        }
       }
     }
 

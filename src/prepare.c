@@ -45,6 +45,19 @@ static void corruptSchema(
 }
 
 /*
+** Check to see if any sibling index (another index on the same table)
+** of pIndex has the same root page number, and if it does, return true.
+** This would indicate a corrupt schema.
+*/
+int sqlite3IndexHasDuplicateRootPage(Index *pIndex){
+  Index *p;
+  for(p=pIndex->pTable->pIndex; p; p=p->pNext){
+    if( p->tnum==pIndex->tnum && p!=pIndex ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** This is the callback routine for the code that initializes the
 ** database.  See sqlite3Init() below for additional information.
 ** This routine is also called from the OP_ParseSchema opcode of the VDBE.
@@ -122,6 +135,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     if( pIndex==0
      || sqlite3GetInt32(argv[1],&pIndex->tnum)==0
      || pIndex->tnum<2
+     || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
       corruptSchema(pData, argv[0], pIndex?"invalid rootpage":"orphan index");
     }

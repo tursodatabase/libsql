@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\serror\swhen\sparsing\sthe\snames\sof\sindexes\sthat\sdo\snot\shave\narguments\sin\sthe\sindex_usage\sutility.
-D 2019-01-30T16:58:04.039
+C Detect\sif\stwo\sindexes\sof\sthe\ssame\stable\sshare\sa\scommon\srootpage\swhile\nparsing\sthe\sschema,\sand\sthrow\san\serror\simmediately.
+D 2019-01-30T18:33:33.789
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -458,7 +458,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 79464668601b6d278954cf822ef484893e1434f85addda2bd9a323796b91b328
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
-F src/build.c f07c0b154c23737d1699ee63bba31c8ca8b323e2446b957bc6bfec81a62295fc
+F src/build.c ddcce07ea58f569da879e6fb3f4366dd66125edb6c2a41249a39fc72b01d456e
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -509,7 +509,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c fffd5250a323579384a3b3904302b9fe87e186ba24602af3013f749a0234ae98
 F src/pragma.c 20811b404b6d302a1bedd4b8af8aab2794c5e87ba1f5cb6b42dbc3266ad9c603
 F src/pragma.h 14eed1061a0b52443349eb733ae8f107144f9d0d3ce39e8e9490b5f6691c0e09
-F src/prepare.c 63b8395d728cc63c3fdc6cb98eb01e1ce84d66c46aa3c32f38332ea789429922
+F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
@@ -519,7 +519,7 @@ F src/shell.c.in 705a00be4fa43303b6b18df2241f5397cefd8d9f076bb035ad01b42635c7a1d
 F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h a2330a569d8c5461aa35fe3ad29a1885e13ddfd07088a3e833131490c3a99ca9
+F src/sqliteInt.h 5e0d8205345eef5ac1769e1129b0fb7bbd716eed0b021bc725326514bfcc3d57
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a5e6be7cbc5d931308ddcc073c9cd6275c9711cae055d72a7c4aa71c1d15914c
-R 73afc1800778e7aa30637586771889d6
+P dc794d8f518ed46536928a77a560d46e4f9365c30a00cd108f000d8556a66c00
+R b3e70bc8111edfc4ec21382bc1ad417c
 U drh
-Z dd53044ff743ff5036bf054605b85b6d
+Z 3814e0d4583bc74648e2fbf40023f27b
