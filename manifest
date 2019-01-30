@@ -1,5 +1,5 @@
-C Detect\sif\stwo\sindexes\sof\sthe\ssame\stable\sshare\sa\scommon\srootpage\swhile\nparsing\sthe\sschema,\sand\sthrow\san\serror\simmediately.
-D 2019-01-30T18:33:33.789
+C Add\stest\scase\sfor\sthe\sprevious\scommit.
+D 2019-01-30T18:47:35.202
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -757,7 +757,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5ef338c560ca4dfb7360828da16f1829be4deba3b378cafdc7a1cdaf027eb5c4
-F test/corruptL.test 4c0674edd28dfcf027f57b61944dd6f1ba61c6e98f4f6d72f0adafaef238b593
+F test/corruptL.test a4819e673097d4ad889758207c42e4238fd7c2536d18919cd1f602aec1c3fb72
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/countofview.test e3d4cd6900e4e4f074968ab24b8b87d3671cd624961bef40fd3a6b8f574343cf
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc794d8f518ed46536928a77a560d46e4f9365c30a00cd108f000d8556a66c00
-R b3e70bc8111edfc4ec21382bc1ad417c
-U drh
-Z 3814e0d4583bc74648e2fbf40023f27b
+P f21c6f1343edc4ba68f9f8e68caac34da0d1c651526ecaf61c0e2d66593a555e
+R 88d559eb30b55e443784d14bbac03dff
+U dan
+Z bff0afaec4775e81b6cc26a57aad1328
