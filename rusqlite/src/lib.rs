@@ -62,7 +62,7 @@
 //! ```
 #![allow(unknown_lints)]
 
-use libsqlite3_sys as ffi;
+pub use libsqlite3_sys as ffi;
 
 #[macro_use]
 extern crate bitflags;

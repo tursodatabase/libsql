@@ -14,7 +14,6 @@
 //! ## Example
 //!
 //! ```rust
-//! extern crate libsqlite3_sys;
 //! extern crate rusqlite;
 //!
 //! use rusqlite::blob::ZeroBlob;
