@@ -627,7 +627,7 @@ do_catchsql_test 6.1 {
     INSERT INTO t1(b) VALUES(1);
     INSERT INTO t1(b) VALUES(2);
   COMMIT;
-} {1 {malformed database schema (t1b) - invalid root page}}
+} {1 {malformed database schema (t1b) - invalid rootpage}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -720,6 +720,6 @@ do_test 7.0 {
 
 do_catchsql_test 7.1 {
   SELECT * FROM sqlite_master;
-} {1 {malformed database schema (t1x1) - invalid root page}}
+} {1 {malformed database schema (t1x1) - invalid rootpage}}
 
 finish_test

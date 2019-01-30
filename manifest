@@ -1,5 +1,5 @@
-C When\sparsing\sthe\sschema,\scheck\sfor\sduplicate\sindex\sroot\spage\snumbers\sbefore\sadding\sthe\sindex\sto\sthe\sschema\shash\stable.
-D 2019-01-30T19:12:13.341
+C Change\sthe\serror\smessage\sslightly\sfor\swhen\stwo\sor\smore\sindexes\shave\sthe\nsame\srootpage.
+D 2019-01-30T19:50:07.547
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -458,7 +458,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 79464668601b6d278954cf822ef484893e1434f85addda2bd9a323796b91b328
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
-F src/build.c f2805f5da53aa10c52323f5a7d976aade405dd70e52166ae4e7f35708577893e
+F src/build.c fe6e3753c4cfc76f9c621a24ef5f6fd62aac5aa6c843710b542509f493274eca
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -757,7 +757,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5ef338c560ca4dfb7360828da16f1829be4deba3b378cafdc7a1cdaf027eb5c4
-F test/corruptL.test 82855aa907c3f899c123e8388f0450df8fccb5016539c7b5e64695772e7595bb
+F test/corruptL.test 0f64242b83db6d0bd5b6e38c205bf7c2a3bc6c9f80351f49c4dee1639aca60d8
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/countofview.test e3d4cd6900e4e4f074968ab24b8b87d3671cd624961bef40fd3a6b8f574343cf
@@ -992,7 +992,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 3fc78e65dfe0be9df9e262075d5a335f18f627da47dfc691d1a7b822f34d4b99
-F test/fuzzdata8.db df6e7a32697f3e7be801fa90e02fe6ae9c1dbe7ce8a8a626af0febab35a54e96
+F test/fuzzdata8.db fe1b2ae0e7976f225ae9dd637eb67726154caf0da39ac329fc4a35d9991aef3b
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 197edb235b785c68fda7be788efbc61137d9452886599415a927b959ade93c65
-R 614f1871a981a455ef4904657472e2dd
-U dan
-Z 10bfb2b527ca61a24c5f5b6dad4cafcc
+P 6b360bc0b9ad18ccda9d58d43a8388d19999432bfdf294abcf5beb44ef990cb4
+R cb0273b303eb213fe70157df7871c9bb
+U drh
+Z 4c2226fa0a72348ad16843e693e2eabf
