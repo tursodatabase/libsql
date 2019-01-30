@@ -1,8 +1,8 @@
-C Fix\sanother\sbuffer\soverread\sin\sfts5\sthat\smay\soccur\swhen\saccessing\sa\scorrupt\sdatabase.
-D 2019-01-30T12:15:27.850
+C Enhancements\sto\sthe\sindex_usage\sutility\sprogram.
+D 2019-01-30T14:01:43.193
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 9947eae873c07ae894d4c8633b76c0a0daca7b9fd54401096a77d1a6c7b74359
+F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5df60c70edb157feb2148a14c687551969599bd065875a0b959b6b139721ca72
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -436,7 +436,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk e28b19556f75ba6e841fc9c883d6a3c16edeae2d16d4edf32bf3c150725fc4d8
+F main.mk 3930eb2fcbebe49ab7408f6fef3baa8c4bf3c84540f9f29dfe849bf561ff6e51
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1721,7 +1721,7 @@ F tool/fuzzershell.c e1d90a03ca790d7c331c2aae08ca46ff435f1ae1faa6cb9cc48f4687c18
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/index_usage.c 8fd515b97522ae4b1aa6ca9847439f005d4cbaf6eb0eb416b694dba77c0263f0
+F tool/index_usage.c 28194fb8422b16adada6723d7516e404d011ffd1a7fd43ae20253001e5ddd2dc
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 900a15b9efba9890d10e7959914db94c4ad5162912127f061c4328add122d6fb
 F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9a93c68a7673bda2e6c308d3b2798d0fb12fde399996cae24b1f0d5864adf355
-R 8ebb52c645af2a7f4c7c58d6e1f0cddb
-U dan
-Z b3b8142805e077c0a8e201eaf8a86ffa
+P 760d14374d40bcd9ce3a89771c18dc236c9728553c4747c9b7452ee7b24f4140
+R f27c58459d19582c78b75fe1a98114b7
+U drh
+Z eaaf90eb816c0def68c7e8f9deaf5b3d

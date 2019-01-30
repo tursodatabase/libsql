@@ -1335,7 +1335,7 @@ showshm$(TEXE):	$(TOP)/tool/showshm.c
 	$(LTLINK) -o $@ $(TOP)/tool/showshm.c
 
 index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.lo
-	$(LTLINK) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(TLIBS)
+	$(LTLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(TLIBS)
 
 changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(TLIBS)

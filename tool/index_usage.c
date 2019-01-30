@@ -90,7 +90,9 @@ int main(int argc, char **argv){
            argv[2], sqlite3_errmsg(db));
     goto errorOut;
   }
-  rc = sqlite3_prepare_v2(db, "SELECT sql, rowid FROM log.sqllog",
+  rc = sqlite3_prepare_v2(db,
+     "SELECT sql, rowid FROM log.sqllog"
+     " WHERE upper(substr(sql,1,5)) NOT IN ('BEGIN','COMMI','ROLLB','PRAGM')",
                           -1, &pStmt, 0);
   if( rc ){
     printf("Cannot read the SQLLOG table in the LOG database \"%s\" - %s\n",
