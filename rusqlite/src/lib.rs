@@ -6,7 +6,7 @@
 //! extern crate time;
 //!
 //! use rusqlite::types::ToSql;
-//! use rusqlite::{Connection, NO_PARAMS};
+//! use rusqlite::{Connection, params};
 //! use time::Timespec;
 //!
 //! #[derive(Debug)]
@@ -27,7 +27,7 @@
 //!                   time_created    TEXT NOT NULL,
 //!                   data            BLOB
 //!                   )",
-//!         NO_PARAMS,
+//!         params![],
 //!     )
 //!     .unwrap();
 //!     let me = Person {
@@ -39,7 +39,7 @@
 //!     conn.execute(
 //!         "INSERT INTO person (name, time_created, data)
 //!                   VALUES (?1, ?2, ?3)",
-//!         &[&me.name as &ToSql, &me.time_created, &me.data],
+//!         params![me.name, me.time_created, me.data],
 //!     )
 //!     .unwrap();
 //!
@@ -47,7 +47,7 @@
 //!         .prepare("SELECT id, name, time_created, data FROM person")
 //!         .unwrap();
 //!     let person_iter = stmt
-//!         .query_map(NO_PARAMS, |row| Person {
+//!         .query_map(params![], |row| Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
 //!             time_created: row.get(2),
@@ -88,7 +88,9 @@ use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 use crate::cache::StatementCache;
 use crate::error::{error_from_handle, error_from_sqlite_code};
 use crate::raw_statement::RawStatement;
-use crate::types::{ToSql, ValueRef};
+use crate::types::ValueRef;
+
+pub use crate::types::ToSql;
 
 pub use crate::statement::{Statement, StatementStatus};
 
@@ -143,6 +145,77 @@ pub mod vtab;
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 /// To be used when your statement has no [parameter](https://sqlite.org/lang_expr.html#varparam).
 pub const NO_PARAMS: &[&dyn ToSql] = &[];
+
+
+/// A macro making it more convenient to pass heterogeneous lists
+/// of parameters as a `&[&dyn ToSql]`.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use rusqlite::{Result, Connection, params};
+///
+/// struct Person {
+///     name: String,
+///     age_in_years: u8,
+///     data: Option<Vec<u8>>,
+/// }
+///
+/// fn add_person(conn: &Connection, person: &Person) -> Result<()> {
+///     conn.execute("INSERT INTO person (name, age_in_years, data)
+///                   VALUES (?1, ?2, ?3)",
+///                  params![person.name, person.age_in_years, person.data])?;
+///     Ok(())
+/// }
+/// ```
+#[macro_export]
+macro_rules! params {
+    () => {
+        $crate::NO_PARAMS
+    };
+    ($($param:expr),+ $(,)?) => {
+        &[$(&$param as &dyn $crate::ToSql),+]
+    };
+}
+
+/// A macro making it more convenient to pass lists of named parameters
+/// as a `&[(&str, &dyn ToSql)]`.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use rusqlite::{Result, Connection, named_params};
+///
+/// struct Person {
+///     name: String,
+///     age_in_years: u8,
+///     data: Option<Vec<u8>>,
+/// }
+///
+/// fn add_person(conn: &Connection, person: &Person) -> Result<()> {
+///     conn.execute_named(
+///         "INSERT INTO person (name, age_in_years, data)
+///          VALUES (:name, :age, :data)",
+///         named_params!{
+///             ":name": person.name,
+///             ":age": person.age_in_years,
+///             ":data": person.data,
+///         }
+///     )?;
+///     Ok(())
+/// }
+/// ```
+#[macro_export]
+macro_rules! named_params {
+    () => {
+        &[]
+    };
+    // Note: It's a lot more work to support this as part of the same macro as
+    // `params!`, unfortunately.
+    ($($param_name:literal: $param_val:expr),+ $(,)?) => {
+        &[$(($param_name, &$param_val as &dyn $crate::ToSql)),+]
+    };
+}
 
 /// A typedef of the result returned by many methods.
 pub type Result<T> = result::Result<T, Error>;
@@ -1644,7 +1717,7 @@ mod test {
             let i_to_insert = i as i64;
             assert_eq!(
                 insert_stmt
-                    .execute(&[&i_to_insert as &dyn ToSql, &v])
+                    .execute(params![i_to_insert, v])
                     .unwrap(),
                 1
             );
@@ -1902,7 +1975,7 @@ mod test {
                        END;";
             db.execute_batch(sql).unwrap();
 
-            db.query_row("SELECT * FROM foo", NO_PARAMS, |r| {
+            db.query_row("SELECT * FROM foo", params![], |r| {
                 assert_eq!(2, r.column_count())
             })
             .unwrap();

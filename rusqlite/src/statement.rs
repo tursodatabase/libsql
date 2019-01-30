@@ -112,6 +112,17 @@ impl<'conn> Statement<'conn> {
     /// }
     /// ```
     ///
+    /// Note, the `named_params` macro is provided for syntactic convenience, and
+    /// so the above example could also be written as:
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result, named_params};
+    /// fn insert(conn: &Connection) -> Result<usize> {
+    ///     let mut stmt = conn.prepare("INSERT INTO test (name) VALUES (:name)")?;
+    ///     stmt.execute_named(named_params!{":name": "one"})
+    /// }
+    /// ```
+    ///
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails, the executed statement
@@ -198,6 +209,21 @@ impl<'conn> Statement<'conn> {
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(&[(":name", &"one")])?;
+    ///     while let Some(row) = rows.next() {
+    ///         // ...
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// Note, the `named_params!` macro is provided for syntactic convenience, and
+    /// so the above example could also be written as:
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result, named_params};
+    /// fn query(conn: &Connection) -> Result<()> {
+    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
+    ///     let mut rows = stmt.query_named(named_params!{ ":name": "one" })?;
     ///     while let Some(row) = rows.next() {
     ///         // ...
     ///     }
