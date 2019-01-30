@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sindex_usage\sutility\sprogram.
-D 2019-01-30T14:01:43.193
+C Add\sthe\s--progress,\s--using,\sand\s-q\soptions\sto\sthe\sindex_usage\sutility\sprogram.
+D 2019-01-30T15:47:38.444
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -1721,7 +1721,7 @@ F tool/fuzzershell.c e1d90a03ca790d7c331c2aae08ca46ff435f1ae1faa6cb9cc48f4687c18
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/index_usage.c 28194fb8422b16adada6723d7516e404d011ffd1a7fd43ae20253001e5ddd2dc
+F tool/index_usage.c 9827f0f5252a6c0468e1addbd098ce9bbf909442d820d70b3ae91aa317e62a66
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 900a15b9efba9890d10e7959914db94c4ad5162912127f061c4328add122d6fb
 F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 760d14374d40bcd9ce3a89771c18dc236c9728553c4747c9b7452ee7b24f4140
-R f27c58459d19582c78b75fe1a98114b7
+P 19c739b4a8a43d894e37a99fa34838f3e3fa1fe0d019aefbc33f1d38d76af1a4
+R f8f216729fd1c799fb3786b449861140
 U drh
-Z eaaf90eb816c0def68c7e8f9deaf5b3d
+Z 016d67606384203f33b230415c37c583
