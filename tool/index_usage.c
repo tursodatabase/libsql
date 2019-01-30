@@ -186,7 +186,7 @@ int main(int argc, char **argv){
         z1 = strstr(zExplain, " USING INDEX ");
         if( z1==0 ) continue;
         z1 += 13;
-        for(z2=z1+1; z2[1] && z2[1]!='('; z2++){}
+        for(z2=z1+1; z2[0] && z2[1]!='('; z2++){}
         n = z2 - z1;
         if( zUsing && sqlite3_strnicmp(zUsing, z1, n)==0 ){
           printf("Using %s:\n%s\n", zUsing, zLog);
