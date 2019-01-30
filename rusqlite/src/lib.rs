@@ -2,11 +2,8 @@
 //! expose an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 //!
 //! ```rust
-//! extern crate rusqlite;
-//! extern crate time;
-//!
 //! use rusqlite::types::ToSql;
-//! use rusqlite::{Connection, params};
+//! use rusqlite::{params, Connection};
 //! use time::Timespec;
 //!
 //! #[derive(Debug)]
@@ -145,7 +142,6 @@ pub mod vtab;
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 /// To be used when your statement has no [parameter](https://sqlite.org/lang_expr.html#varparam).
 pub const NO_PARAMS: &[&dyn ToSql] = &[];
-
 
 /// A macro making it more convenient to pass heterogeneous lists
 /// of parameters as a `&[&dyn ToSql]`.
@@ -1715,12 +1711,7 @@ mod test {
         let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)").unwrap();
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
-            assert_eq!(
-                insert_stmt
-                    .execute(params![i_to_insert, v])
-                    .unwrap(),
-                1
-            );
+            assert_eq!(insert_stmt.execute(params![i_to_insert, v]).unwrap(), 1);
         }
 
         let mut query = db.prepare("SELECT i, x FROM foo").unwrap();

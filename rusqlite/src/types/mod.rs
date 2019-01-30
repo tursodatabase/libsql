@@ -19,9 +19,6 @@
 //! store timespecs as `f64`s:
 //!
 //! ```rust
-//! extern crate rusqlite;
-//! extern crate time;
-//!
 //! use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 //! use rusqlite::Result;
 //!
@@ -77,7 +74,6 @@ mod value_ref;
 /// ## Example
 ///
 /// ```rust,no_run
-/// # extern crate rusqlite;
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
 /// fn main() {}

@@ -14,8 +14,6 @@
 //! ## Example
 //!
 //! ```rust
-//! extern crate rusqlite;
-//!
 //! use rusqlite::blob::ZeroBlob;
 //! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
 //! use std::io::{Read, Seek, SeekFrom, Write};
