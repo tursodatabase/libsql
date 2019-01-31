@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CONFIG_MEMDB_MAXSIZE\sconfiguration\soption\sfor\sconfiguring\nthe\sdefault\smaximum\ssize\sof\san\sin-memory\sdatabase\screated\susing\nsqlite3_deserialize().\s\sThis\sis\snecessary\sto\smake\sthe\sinterface\sreasonably\ntestable.
-D 2019-01-31T15:38:53.697
+C Remove\san\sincorrect\sassert()\sfrom\sthe\sdeserialize\sin-memory\sdatabase\sVFS.
+D 2019-01-31T16:09:48.204
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -485,7 +485,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 8689716299074d1016144af05f46ddb8971621f8b589a5af95455cfe09ba35e2
+F src/memdb.c 02a5fcec19b9d40dd449ca802dc1b2e8f93f255fbf2a886277a3c3800d8d35db
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b80119bd6044c0993210115732b6ae7b4b0b29c1471b0723bef24f2052c8e671
-R 237af9b2bf342542efd55a7bfd4e7366
+P cb72ee0478ce98c48aae059fd5de4e36caf2b8c953e08fcb799bfd119ad46b73
+R 2569208d78dccb53d8326cd647042bdb
 U drh
-Z e1a3e36fa751023ea67754db7a2638ca
+Z 3a4e20499e1eb5738b12978068d03b4a

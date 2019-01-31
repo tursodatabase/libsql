@@ -306,7 +306,6 @@ static int memdbFetch(
 ){
   MemFile *p = (MemFile *)pFile;
   if( iOfst+iAmt>p->sz ){
-    assert( CORRUPT_DB );
     *pp = 0;
   }else{
     p->nMmap++;
