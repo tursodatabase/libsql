@@ -572,7 +572,14 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
   assert( pzErrMsg!=0 );
-  /* sqlite3ParserTrace(stdout, "parser: "); */
+#ifdef SQLITE_DEBUG
+  if( db->flags & SQLITE_ParserTrace ){
+    printf("parser: [[[%s]]]\n", zSql);
+    sqlite3ParserTrace(stdout, "parser: ");
+  }else{
+    sqlite3ParserTrace(0, 0);
+  }
+#endif
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   pEngine = &sEngine;
   sqlite3ParserInit(pEngine, pParse);

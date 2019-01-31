@@ -1,5 +1,5 @@
-C Change\sthe\serror\smessage\sslightly\sfor\swhen\stwo\sor\smore\sindexes\shave\sthe\nsame\srootpage.
-D 2019-01-30T19:50:07.547
+C Improvements\sto\s"PRAGMA\sparser_trace=ON":\sMake\sit\sa\sflag\spragma,\sand\sthen\nuse\sthe\sflag\sto\sshow\sthe\scomplete\sSQL\stext\sat\sthe\sbeginning\sof\sthe\sparse.
+D 2019-01-31T01:39:01.993
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -507,8 +507,8 @@ F src/parse.y 9e5fc4c9788cc692c2117c4236eebb6e03d4f75a3a138656814fddba2eae3903
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c fffd5250a323579384a3b3904302b9fe87e186ba24602af3013f749a0234ae98
-F src/pragma.c 20811b404b6d302a1bedd4b8af8aab2794c5e87ba1f5cb6b42dbc3266ad9c603
-F src/pragma.h 14eed1061a0b52443349eb733ae8f107144f9d0d3ce39e8e9490b5f6691c0e09
+F src/pragma.c af67dedaad8bafe9a5f9adcec32a0da6dd118617dd8220ad1d118f5a6bf83a02
+F src/pragma.h b774c8fdd63ed468ab8206b9b530d5d2523ed8889fbb72d1143d09272d5c6b2c
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
 F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -519,7 +519,7 @@ F src/shell.c.in 705a00be4fa43303b6b18df2241f5397cefd8d9f076bb035ad01b42635c7a1d
 F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h 5e0d8205345eef5ac1769e1129b0fb7bbd716eed0b021bc725326514bfcc3d57
+F src/sqliteInt.h 40eb4e59a487a02525121e2af140052d1d33120ee367692523a91bf4a16707a7
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -577,7 +577,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c c8af4feebd8bf5a4d60a14018d91f61013f658ec864dfce7661bae73d86b3191
+F src/tokenize.c a9a474205b7549bc5df46d941c2cc0096f1039dbce2d6f4fe084e1af9ba49aa2
 F src/treeview.c c6ff90da4cc1813ff2d9bb11f17d4d927db62c47e552faa1835edc47269d753d
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
@@ -1737,7 +1737,7 @@ F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl f69c3acb55af6e8f364465c28be5ffa5bdbd34440b27bf05bcc21ce9eb8a2cf2
+F tool/mkpragmatab.tcl 18d3d04b616dc15db0f91ce5a725783ebd36f051f291d5787fdc31927ed0b9d4
 F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b360bc0b9ad18ccda9d58d43a8388d19999432bfdf294abcf5beb44ef990cb4
-R cb0273b303eb213fe70157df7871c9bb
+P 916c52dad414b224695d455a42af36f85dff216504c2aa67d1d2c5818cdca8d6
+R 10b41745b3135a2b0ba24c50f8ff3515
 U drh
-Z 4c2226fa0a72348ad16843e693e2eabf
+Z ce6c99fa816c4a6ba08dcf1f5aeb929d

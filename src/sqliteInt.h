@@ -1555,6 +1555,7 @@ struct sqlite3 {
 #define SQLITE_VdbeTrace      HI(0x0004)  /* True to trace VDBE execution */
 #define SQLITE_VdbeAddopTrace HI(0x0008)  /* Trace sqlite3VdbeAddOp() calls */
 #define SQLITE_VdbeEQP        HI(0x0010)  /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_ParserTrace    HI(0x0020)  /* PRAGMA parser_trace=ON */
 #endif
 
 /*
