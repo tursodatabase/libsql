@@ -1652,7 +1652,7 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   int nNew;                       /* Bytes of new data */
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
-  if( iOff+nNew>pIter->pLeaf->szLeaf || nKeep>pIter->term.n ){
+  if( iOff+nNew>pIter->pLeaf->szLeaf || nKeep>pIter->term.n || nNew==0 ){
     p->rc = FTS5_CORRUPT;
     return;
   }
