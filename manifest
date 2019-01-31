@@ -1,5 +1,5 @@
-C Fix\sanother\sbuffer\soverrun\sthat\scould\soccur\swhen\squering\sa\scorrupt\sdatabase\susing\san\sfts5vocab\stable.
-D 2019-01-31T14:37:18.133
+C Add\sthe\sSQLITE_CONFIG_MEMDB_MAXSIZE\sconfiguration\soption\sfor\sconfiguring\nthe\sdefault\smaximum\ssize\sof\san\sin-memory\sdatabase\screated\susing\nsqlite3_deserialize().\s\sThis\sis\snecessary\sto\smake\sthe\sinterface\sreasonably\ntestable.
+D 2019-01-31T15:38:53.697
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -470,7 +470,7 @@ F src/expr.c 4bc508644845d2c9fb870e808df125b233a8d93d132c2184f8db0a034864325a
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
 F src/func.c 0341881d22903aac5ba7f352b188806d6436e1d6ae4235ff01e44d56879dfe63
-F src/global.c 8291eee0782b83124de14ec0389ec9fd6ae1873358a6b0d9469fe17a46ad803b
+F src/global.c 0dea3065ea72a65ae941559b6686aad6516d4913e76fa4f79a95ff7787f624ec
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
@@ -478,14 +478,14 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3ed9ceaa4b7d56a6f2613355e1cd1ae5cfe31712bce2bf5aa93c5f1f130704b2
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
-F src/main.c 008f45dd39cdc7fb9e7e1f61d75a5c97397f8e07427a8879be23e27747d5f948
+F src/main.c ac8da4375e870d0bc359e6028644ba01c67ca0af3cc03f61a917e1e2917e040a
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c d95f6ad26f7c582026c5501b32dc0201ce781ad496bc61107d759b5e4e5c563a
+F src/memdb.c 8689716299074d1016144af05f46ddb8971621f8b589a5af95455cfe09ba35e2
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
 F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
@@ -516,10 +516,10 @@ F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8e22fda41a737c391e8b797f7c71e7ded1d107c31181b07bb10b3d4f22a28cd9
 F src/shell.c.in 705a00be4fa43303b6b18df2241f5397cefd8d9f076bb035ad01b42635c7a1de
-F src/sqlite.h.in 8ded85ecaa768afd196b24201382ccdf00e5bab6861e30549cd750bebd273a0b
+F src/sqlite.h.in 947ac377d889055e0979138cc85b3a3b42ee53170b8d55bd589a1ced0e6928f6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h 40eb4e59a487a02525121e2af140052d1d33120ee367692523a91bf4a16707a7
+F src/sqliteInt.h 7899f2f28c98e998e9720bf9b23b19aa364caf0a0d0a4086334adda3a1b9fa83
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1bb17c863a269ab8b28df94b9fdaac3ee70777ccd0a30300131bf67df6722052
-R b2ec4376c70b20bc03f8261edcac4e94
-U dan
-Z 389be73abd4fd2cdec568e6d77909c32
+P b80119bd6044c0993210115732b6ae7b4b0b29c1471b0723bef24f2052c8e671
+R 237af9b2bf342542efd55a7bfd4e7366
+U drh
+Z e1a3e36fa751023ea67754db7a2638ca

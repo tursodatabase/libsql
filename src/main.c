@@ -653,6 +653,13 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_ENABLE_SORTER_REFERENCES */
 
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    case SQLITE_CONFIG_MEMDB_MAXSIZE: {
+      sqlite3GlobalConfig.mxMemdbSize = va_arg(ap, sqlite3_int64);
+      break;
+    }
+#endif /* SQLITE_ENABLE_DESERIALIZE */
+
     default: {
       rc = SQLITE_ERROR;
       break;
