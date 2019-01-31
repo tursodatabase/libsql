@@ -1,5 +1,5 @@
-C Improvements\sto\s"PRAGMA\sparser_trace=ON":\sMake\sit\sa\sflag\spragma,\sand\sthen\nuse\sthe\sflag\sto\sshow\sthe\scomplete\sSQL\stext\sat\sthe\sbeginning\sof\sthe\sparse.
-D 2019-01-31T01:39:01.993
+C If\sthe\samalgamation\sfile\s"sqlite3.c"\sis\sgenerated\susing\sthe\nSQLITE_ENABLE_UPDATE_DELETE_LIMIT\soption,\sbut\sthen\ssubsequently\s(mis-)compiled\nwithout\sthat\soption,\sand\sthen\sa\sparticular\ssyntax\serror\scould\scause\na\smemory\sleak,\sbut\sfor\sthis\sfix.
+D 2019-01-31T02:42:47.796
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -503,7 +503,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 857dde3e525f665cfab23b6765bf04ca6638c0759ae7da6d63acfb463e230aa6
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 9e5fc4c9788cc692c2117c4236eebb6e03d4f75a3a138656814fddba2eae3903
+F src/parse.y 741a270b7f2f85bc5d026d06fb5a9ccba5335304ff2831e1cb44b36cd0da6006
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c fffd5250a323579384a3b3904302b9fe87e186ba24602af3013f749a0234ae98
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 916c52dad414b224695d455a42af36f85dff216504c2aa67d1d2c5818cdca8d6
-R 10b41745b3135a2b0ba24c50f8ff3515
+P 507c43537f00d089efb3c3020fb6e826e8f89f3efa2caaa12c5309d35dd0c22e
+R 82f5f5d5764a2da0c40fb39d1c1cd862
 U drh
-Z ce6c99fa816c4a6ba08dcf1f5aeb929d
+Z 9789512014c7a3db2155ae83f232245b
