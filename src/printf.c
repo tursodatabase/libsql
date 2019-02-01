@@ -237,6 +237,9 @@ void sqlite3_str_vappendf(
     flag_leftjustify = flag_prefix = cThousand =
      flag_alternateform = flag_altform2 = flag_zeropad = 0;
     done = 0;
+    width = 0;
+    flag_long = 0;
+    precision = -1;
     do{
       switch( c ){
         case '-':   flag_leftjustify = 1;     break;
@@ -247,80 +250,93 @@ void sqlite3_str_vappendf(
         case '0':   flag_zeropad = 1;         break;
         case ',':   cThousand = ',';          break;
         default:    done = 1;                 break;
+        case 'l': {
+          flag_long = 1;
+          c = *++fmt;
+          if( c=='l' ){
+            c = *++fmt;
+            flag_long = 2;
+          }
+          done = 1;
+          break;
+        }
+        case '1': case '2': case '3': case '4': case '5':
+        case '6': case '7': case '8': case '9': {
+          unsigned wx = c - '0';
+          while( (c = *++fmt)>='0' && c<='9' ){
+            wx = wx*10 + c - '0';
+          }
+          testcase( wx>0x7fffffff );
+          width = wx & 0x7fffffff;
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+          if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
+            width = SQLITE_PRINTF_PRECISION_LIMIT;
+          }
+#endif
+          if( c!='.' && c!='l' ){
+            done = 1;
+          }else{
+            fmt--;
+          }
+          break;
+        }
+        case '*': {
+          if( bArgList ){
+            width = (int)getIntArg(pArgList);
+          }else{
+            width = va_arg(ap,int);
+          }
+          if( width<0 ){
+            flag_leftjustify = 1;
+            width = width >= -2147483647 ? -width : 0;
+          }
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+          if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
+            width = SQLITE_PRINTF_PRECISION_LIMIT;
+          }
+#endif
+          if( (c = fmt[1])!='.' && c!='l' ){
+            c = *++fmt;
+            done = 1;
+          }
+          break;
+        }
+        case '.': {
+          c = *++fmt;
+          if( c=='*' ){
+            if( bArgList ){
+              precision = (int)getIntArg(pArgList);
+            }else{
+              precision = va_arg(ap,int);
+            }
+            if( precision<0 ){
+              precision = precision >= -2147483647 ? -precision : -1;
+            }
+            c = *++fmt;
+          }else{
+            unsigned px = 0;
+            while( c>='0' && c<='9' ){
+              px = px*10 + c - '0';
+              c = *++fmt;
+            }
+            testcase( px>0x7fffffff );
+            precision = px & 0x7fffffff;
+          }
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+          if( precision>SQLITE_PRINTF_PRECISION_LIMIT ){
+            precision = SQLITE_PRINTF_PRECISION_LIMIT;
+          }
+#endif
+          if( c=='l' ){
+            --fmt;
+          }else{
+            done = 1;
+          }
+          break;
+        }
       }
     }while( !done && (c=(*++fmt))!=0 );
-    /* Get the field width */
-    if( c=='*' ){
-      if( bArgList ){
-        width = (int)getIntArg(pArgList);
-      }else{
-        width = va_arg(ap,int);
-      }
-      if( width<0 ){
-        flag_leftjustify = 1;
-        width = width >= -2147483647 ? -width : 0;
-      }
-      c = *++fmt;
-    }else{
-      unsigned wx = 0;
-      while( c>='0' && c<='9' ){
-        wx = wx*10 + c - '0';
-        c = *++fmt;
-      }
-      testcase( wx>0x7fffffff );
-      width = wx & 0x7fffffff;
-    }
-    assert( width>=0 );
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-    if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
-      width = SQLITE_PRINTF_PRECISION_LIMIT;
-    }
-#endif
 
-    /* Get the precision */
-    if( c=='.' ){
-      c = *++fmt;
-      if( c=='*' ){
-        if( bArgList ){
-          precision = (int)getIntArg(pArgList);
-        }else{
-          precision = va_arg(ap,int);
-        }
-        c = *++fmt;
-        if( precision<0 ){
-          precision = precision >= -2147483647 ? -precision : -1;
-        }
-      }else{
-        unsigned px = 0;
-        while( c>='0' && c<='9' ){
-          px = px*10 + c - '0';
-          c = *++fmt;
-        }
-        testcase( px>0x7fffffff );
-        precision = px & 0x7fffffff;
-      }
-    }else{
-      precision = -1;
-    }
-    assert( precision>=(-1) );
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-    if( precision>SQLITE_PRINTF_PRECISION_LIMIT ){
-      precision = SQLITE_PRINTF_PRECISION_LIMIT;
-    }
-#endif
-
-
-    /* Get the conversion type modifier */
-    if( c=='l' ){
-      flag_long = 1;
-      c = *++fmt;
-      if( c=='l' ){
-        flag_long = 2;
-        c = *++fmt;
-      }
-    }else{
-      flag_long = 0;
-    }
     /* Fetch the info entry for the field */
     infop = &fmtinfo[0];
     xtype = etINVALID;
