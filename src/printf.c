@@ -155,6 +155,27 @@ static char *getTextArg(PrintfArguments *p){
   return (char*)sqlite3_value_text(p->apArg[p->nUsed++]);
 }
 
+/*
+** Allocate memory for a temporary buffer needed for printf rendering.
+**
+** If the requested size of the temp buffer is larger than the size
+** of the output buffer in pAccum, then cause an SQLITE_TOOBIG error.
+** Do the size check before the memory allocation to prevent rogue
+** SQL from requesting large allocations using the precision or width
+** field of the printf() function.
+*/
+static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
+  char *z;
+  if( n>pAccum->nAlloc && n>pAccum->mxAlloc ){
+    setStrAccumError(pAccum, SQLITE_TOOBIG);
+    return 0;
+  }
+  z = sqlite3DbMallocRaw(pAccum->db, n);
+  if( z==0 ){
+    setStrAccumError(pAccum, SQLITE_NOMEM);
+  }
+  return z;
+}
 
 /*
 ** On machines with a small stack size, you can redefine the
@@ -422,11 +443,8 @@ void sqlite3_str_vappendf(
           zOut = buf;
         }else{
           u64 n = (u64)precision + 10 + precision/3;
-          zOut = zExtra = sqlite3Malloc( n );
-          if( zOut==0 ){
-            setStrAccumError(pAccum, SQLITE_NOMEM);
-            return;
-          }
+          zOut = zExtra = printfTempBuf(pAccum, n);
+          if( zOut==0 ) return;
           nOut = (int)n;
         }
         bufpt = &zOut[nOut-1];
@@ -545,12 +563,12 @@ void sqlite3_str_vappendf(
         }else{
           e2 = exp;
         }
-        if( MAX(e2,0)+(i64)precision+(i64)width > etBUFSIZE - 15 ){
-          bufpt = zExtra 
-              = sqlite3Malloc( MAX(e2,0)+(i64)precision+(i64)width+15 );
-          if( bufpt==0 ){
-            setStrAccumError(pAccum, SQLITE_NOMEM);
-            return;
+        {
+          i64 szBufNeeded;           /* Size of a temporary buffer needed */
+          szBufNeeded = MAX(e2,0)+(i64)precision+(i64)width+15;
+          if( szBufNeeded > etBUFSIZE ){
+            bufpt = zExtra = printfTempBuf(pAccum, szBufNeeded);
+            if( bufpt==0 ) return;
           }
         }
         zOut = bufpt;
@@ -774,11 +792,8 @@ void sqlite3_str_vappendf(
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 3;
         if( n>etBUFSIZE ){
-          bufpt = zExtra = sqlite3Malloc( n );
-          if( bufpt==0 ){
-            setStrAccumError(pAccum, SQLITE_NOMEM);
-            return;
-          }
+          bufpt = zExtra = printfTempBuf(pAccum, n);
+          if( bufpt==0 ) return;
         }else{
           bufpt = buf;
         }

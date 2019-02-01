@@ -1,5 +1,5 @@
-C Performance\simprovement\sin\sthe\sparsing\sof\soptions\sto\s%-formats\sin\sthe\nprintf\simplementation.
-D 2019-02-01T18:46:41.116
+C Prevent\sthe\sprintf\sformatter\sfrom\sdoing\slarge\smemory\sallocations\s-\slarger\nthan\seither\sthe\ssize\sof\sthe\sstatic\sbuffer\sfor\sinterfaces\slike\nsqlite3_snprintf(),\sor\slarger\sthan\sSQLITE_LIMIT_LENGTH\sfor\sinterfaces\sthat\nare\sassociated\swith\sa\sdatabase\sconnection.\s\sThis\shelps\sto\sprevent\sDOS\nattacks\son\sproducts\sthat\slet\shostile\ssources\sinject\sarbitrary\sSQL.\s\sIt\salso\nhelps\sfuzzers\srun\sfaster\sand\smore\seffectively.
+D 2019-02-01T20:29:04.040
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -510,7 +510,7 @@ F src/pcache1.c fffd5250a323579384a3b3904302b9fe87e186ba24602af3013f749a0234ae98
 F src/pragma.c af67dedaad8bafe9a5f9adcec32a0da6dd118617dd8220ad1d118f5a6bf83a02
 F src/pragma.h b774c8fdd63ed468ab8206b9b530d5d2523ed8889fbb72d1143d09272d5c6b2c
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
-F src/printf.c fdea5e38f20413dcef9776c12c2d0eb32ea27cb4192a0f71d193574852631c60
+F src/printf.c 15c8c8c4095cdfeb6a295630b6914fbb702e68d06fc9fa08ff18cd3db6c35596
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ca9d5d53d41d08fbce29f9da8cc0948df9c4c3136210af88b499cf889b5ccb8
-R 3a0fd1c7830f595fdcbdfa420aaebcd3
+P 40d8f8ae87abf928542c4e558a4c3a3eab18776a3e8db7ca1c5e5f744ca0bce3
+R 39962f884b7a14fe935665eaeaac0027
 U drh
-Z 027c010e323198cb67ddd7c2ea43d1d6
+Z 9dd5bee31b2eabbe1bf794461fb9903d
