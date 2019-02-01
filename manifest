@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sfts5\sthat\scould\sfail\sif\sthe\sdatabase\sis\scorrupt.
-D 2019-02-01T14:40:44.768
+C Improve\sthe\sstrict\senforcement\sof\scell\ssizes\sin\sbalancing\sfrom\ncheck-in\s[12713f320b2c1def]\sso\sthat\sit\salso\sworks\swith\stable-btrees\nin\saddition\sto\sindex-btrees.
+D 2019-02-01T14:50:43.745
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 79464668601b6d278954cf822ef484893e1434f85addda2bd9a323796b91b328
+F src/btree.c 9649c95a846deddf256525125ae257ef1ce0cf29409031df8378330a45d513a6
 F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
 F src/build.c fe6e3753c4cfc76f9c621a24ef5f6fd62aac5aa6c843710b542509f493274eca
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9876ae1b802a449aacbbdd42778653edc19e29315dc627c23ab7493d6492c800
-R 37889ca5f23631d6a97887212bc95ece
-U dan
-Z f38e72163280904b28dc1d9373c8a5e6
+P 55f06aa3f890dc1dc5c2ed0e6777e46d609a6f9d223d1d4b5813097ce4f4e797
+R 20b34459b8ccf247d9f81319ceb019f1
+U drh
+Z b1e6b3262e06a43d75a1c54043cfe677
