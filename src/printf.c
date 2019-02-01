@@ -442,7 +442,9 @@ void sqlite3_str_vappendf(
           nOut = etBUFSIZE;
           zOut = buf;
         }else{
-          u64 n = (u64)precision + 10 + precision/3;
+          u64 n;
+          n = (u64)precision + 10;
+          if( cThousand ) n += precision/3;
           zOut = zExtra = printfTempBuf(pAccum, n);
           if( zOut==0 ) return;
           nOut = (int)n;
