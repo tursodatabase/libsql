@@ -1363,6 +1363,7 @@ static void gatherSelectWindows(Select *p){
   w.xExprCallback = gatherSelectWindowsCallback;
   w.xSelectCallback = gatherSelectWindowsSelectCallback;
   w.xSelectCallback2 = 0;
+  w.pParse = 0;
   w.u.pSelect = p;
   sqlite3WalkSelect(&w, p);
 }
