@@ -5001,7 +5001,7 @@ static void fts5MergePrefixLists(
               sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
               if( iPos1<0 ) break;
             }else{
-              assert( iPos2!=iPrev );
+              assert_nc( iPos2!=iPrev );
               sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
               sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
               if( iPos2<0 ) break;
