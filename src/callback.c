@@ -16,6 +16,14 @@
 
 #include "sqliteInt.h"
 
+struct SchemaPool {
+  int nRef;                       /* Number of pointers to this object */
+  u64 cksum;                      /* Checksum for this Schema contents */
+  Schema *pSchema;                /* Linked list of Schema objects */
+  Schema sSchema;                 /* The single dummy schema object */
+  SchemaPool *pNext;              /* Next element in schemaPoolList */
+};
+
 /*
 ** Invoke the 'collation needed' callback to request a collation sequence
 ** in the encoding enc of name zName, length nName.
@@ -480,10 +488,10 @@ void sqlite3SchemaClear(void *p){
 }
 
 /*
-** Global linked list of sharable Schema objects. Read and write access must
+** Global linked list of SchemaPool objects. Read and write access must
 ** be protected by the SQLITE_MUTEX_STATIC_MASTER mutex.
 */
-static Schema *SQLITE_WSD sharedSchemaList = 0;
+static SchemaPool *SQLITE_WSD schemaPoolList = 0;
 
 /*
 ** Check that the schema of db iDb is writable (either because it is the temp
@@ -499,87 +507,120 @@ void sqlite3SchemaWritable(Parse *pParse, int iDb){
   }
 }
 
-/*
-** Replace the Schema object currently associated with database iDb with
-** an empty schema object, ready to be populated. If there are multiple
-** users of the Schema, this means decrementing the current objects ref
-** count and replacing it with a pointer to a new, empty, object. Or, if
-** the database handle passed as the first argument of the schema object 
-** is the only user, remove it from the shared list (if applicable) and 
-** clear it in place.
-*/
-void sqlite3SchemaUnuse(sqlite3 *db, int iDb){
-  Db *pDb = &db->aDb[iDb];
-  Schema *pSchema;
-  assert( iDb!=1 );
-  if( (pSchema = pDb->pSchema) ){
-
-    if( (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
-      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-      assert( pSchema->nRef>=1 );
-      if( pSchema->nRef==1 ){
-        Schema **pp;
-        for(pp=&sharedSchemaList; (*pp); pp=&(*pp)->pNext){
-          if( *pp==pSchema ){
-            *pp = pSchema->pNext;
-            break;
-          }
-        }
-        pSchema->pNext = 0;
-      }else{
-        assert( db->openFlags & SQLITE_OPEN_REUSE_SCHEMA );
-        pSchema->nRef--;
-        pDb->pSchema = pSchema = 0;
-      }
-      sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-    }
-
-    if( pSchema==0 ){
-      db->aDb[iDb].pSchema = sqlite3SchemaGet(db, 0);
-    }else{
-      sqlite3SchemaClear(pSchema);
-    }
-  }
+static void schemaDelete(Schema *pSchema){
+  sqlite3SchemaClear((void*)pSchema);
+  sqlite3_free(pSchema);
 }
 
 /*
 ** The schema for database iDb of database handle db, which was opened
-** with SQLITE_OPEN_REUSE_SCHEMA, has just been parsed. This function
-** checks the global list (sharedSchemaList) for a matching schema and,
-** if one is found, frees the newly parsed Schema object and adds a pointer 
-** to the existing shared schema in its place. Or, if there is no matching
-** schema in the list, then the new schema is added to it.
+** with SQLITE_OPEN_REUSE_SCHEMA, has just been parsed. This function either
+** finds a matching SchemaPool object on the global list (schemaPoolList) or
+** else allocates a new one and sets the Db.pSPool variable accordingly.
 */
-void sqlite3SchemaReuse(sqlite3 *db, int iDb){
+int sqlite3SchemaConnect(sqlite3 *db, int iDb, u64 cksum){
   Schema *pSchema = db->aDb[iDb].pSchema;
-  Schema *p;
-  assert( pSchema && iDb!=1 );
+  SchemaPool *p;
+
+  assert( pSchema && iDb!=1 && db->aDb[iDb].pSPool==0 );
 
   sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-  for(p=sharedSchemaList; p; p=p->pNext){
-    if( p->cksum==pSchema->cksum 
-        && p->schema_cookie==pSchema->schema_cookie 
-      ){
+
+  /* Search for a matching SchemaPool object */
+  for(p=schemaPoolList; p; p=p->pNext){
+    if( p->cksum==cksum && p->sSchema.schema_cookie==pSchema->schema_cookie ){
       break;
     }
   }
   if( !p ){
-    /* No matching schema was found. */
-    pSchema->pNext = sharedSchemaList;
-    sharedSchemaList = pSchema;
-  }else{
-    /* Found a matching schema. Increase its ref count. */
-    p->nRef++;
+    /* No SchemaPool object found. Allocate a new one. */
+    p = (SchemaPool*)sqlite3_malloc(sizeof(SchemaPool));
+    if( p ){
+      memset(p, 0, sizeof(SchemaPool));
+      p->cksum = cksum;
+      p->pNext = schemaPoolList;
+      schemaPoolList = p;
+
+      p->sSchema.schema_cookie = pSchema->schema_cookie;
+      p->sSchema.iGeneration = pSchema->iGeneration;
+      p->sSchema.file_format = pSchema->file_format;
+      p->sSchema.enc = pSchema->enc;
+      p->sSchema.cache_size = pSchema->cache_size;
+    }
   }
+
+  if( p ) p->nRef++;
+
+  /* If the SchemaPool contains one or more free schemas at the moment, 
+  ** delete one of them. */
+  if( p->pSchema ){
+    Schema *pDel = p->pSchema;
+    p->pSchema = pDel->pNext;
+    schemaDelete(pDel);
+  }
+
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 
-  /* If a matching schema was found in the shared schema list, free the
-  ** schema object just parsed, and add a pointer to the matching schema
-  ** to the db handle.  */
-  if( p ){
-    sqlite3SchemaClear(pSchema);
-    sqlite3DbFree(0, pSchema);
-    db->aDb[iDb].pSchema = p;
+  db->aDb[iDb].pSPool = p;
+  return (p ? SQLITE_OK : SQLITE_NOMEM);
+}
+
+void sqlite3SchemaDisconnect(sqlite3 *db, int iDb){
+  Db *pDb = &db->aDb[iDb];
+  if( pDb->pSPool ){
+    SchemaPool *pSPool = pDb->pSPool;
+    pDb->pSPool = 0;
+    assert( iDb!=1 );
+
+    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+    assert( pSPool->nRef>=1 );
+    pSPool->nRef--;
+    if( pSPool->nRef<=0 ){
+      Schema *pNext;
+      while( pSPool->pSchema ){
+        Schema *pNext = pSPool->pSchema->pNext;
+        schemaDelete(pSPool->pSchema);
+        pSPool->pSchema = pNext;
+      }
+      sqlite3_free(pSPool);
+    }
+    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  }
+}
+
+/*
+** Extract and return a pointer to a schema object from the SchemaPool passed
+** as the only argument, if one is available. If one is not available, return
+** NULL.
+*/
+Schema *sqlite3SchemaExtract(SchemaPool *pSPool){
+  Schema *pRet = 0;
+  if( pSPool ){
+    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+    if( pSPool->pSchema ){
+      pRet = pSPool->pSchema;
+      pSPool->pSchema = pRet->pNext;
+      pRet->pNext = 0;
+    }
+    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  }
+  return pRet;
+}
+
+void sqlite3SchemaReleaseAll(sqlite3 *db){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( i!=1 ){
+      Db *pDb = &db->aDb[i];
+      if( pDb->pSPool && pDb->pSchema && DbHasProperty(db,i,DB_SchemaLoaded) ){
+        sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+        pDb->pSchema->pNext = pDb->pSPool->pSchema;
+        pDb->pSPool->pSchema = pDb->pSchema;
+        pDb->pSchema = &pDb->pSPool->sSchema;
+        assert( DbHasProperty(db, i, DB_SchemaLoaded)==0 );
+        sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+      }
+    }
   }
 }
 
@@ -602,7 +643,6 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
     sqlite3HashInit(&p->trigHash);
     sqlite3HashInit(&p->fkeyHash);
     p->enc = SQLITE_UTF8;
-    p->nRef = 1;
   }
   return p;
 }

@@ -301,9 +301,6 @@ int sqlite3_db_status(
           for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
             sqlite3DeleteTable(db, (Table *)sqliteHashData(p));
           }
-          if( pSchema->nRef>1 ){
-            nByte -= (nByte - nStart)*(pSchema->nRef-1)/pSchema->nRef;
-          }
         }
       }
       db->pnBytesFreed = 0;

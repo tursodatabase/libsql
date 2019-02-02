@@ -1185,10 +1185,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
       sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
       if( j!=1 ){
-        if( db->openFlags & SQLITE_OPEN_REUSE_SCHEMA ){
-          sqlite3SchemaUnuse(db, j);
-          sqlite3DbFree(0, pDb->pSchema);
-        }
+        sqlite3SchemaDisconnect(db, j);
         pDb->pSchema = 0;
       }
     }

@@ -1070,6 +1070,7 @@ typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Db Db;
 typedef struct Schema Schema;
+typedef struct SchemaPool SchemaPool;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct FKey FKey;
@@ -1202,6 +1203,7 @@ struct Db {
   u8 safety_level;     /* How aggressive at syncing data to disk */
   u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
+  SchemaPool *pSPool;  /* For REUSE_SCHEMA mode */
 };
 
 /*
@@ -1233,10 +1235,7 @@ struct Schema {
   u8 enc;              /* Text encoding used by this database */
   u16 schemaFlags;     /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
-
-  int nRef;            /* Number of connections using this schema */
-  u64 cksum;           /* Checksum for this database schema */
-  Schema *pNext;       /* Next schema in shared schema list */
+  Schema *pNext;       /* Next Schema object SchemaPool (REUSE_SCHEMA) */
 };
 
 /*
@@ -1499,6 +1498,8 @@ struct sqlite3 {
 #endif
 };
 
+#define IsReuseSchema(db) (((db)->openFlags & SQLITE_OPEN_REUSE_SCHEMA)!=0)
+
 /*
 ** A macro to discover the encoding of a database.
 */
@@ -1563,6 +1564,8 @@ struct sqlite3 {
 #define DBFLAG_PreferBuiltin  0x0002  /* Preference to built-in funcs */
 #define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
 #define DBFLAG_SchemaKnownOk  0x0008  /* Schema is known to be valid */
+
+#define DBFLAG_SchemaInuse    0x0010  /* Do not free schemas */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -3353,6 +3356,7 @@ typedef struct {
   int iDb;            /* 0 for main database.  1 for TEMP, 2.. for ATTACHed */
   int rc;             /* Result code stored here */
   u32 mInitFlags;     /* Flags controlling error messages */
+  u64 cksum;          /* Schema checksum for REUSE_SCHEMA mode */
 } InitData;
 
 /*
@@ -4289,8 +4293,10 @@ void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 void sqlite3SchemaClear(void *);
-void sqlite3SchemaUnuse(sqlite3*, int);
-void sqlite3SchemaReuse(sqlite3*, int);
+int sqlite3SchemaConnect(sqlite3*, int, u64);
+void sqlite3SchemaDisconnect(sqlite3 *, int);
+Schema *sqlite3SchemaExtract(SchemaPool*);
+void sqlite3SchemaReleaseAll(sqlite3 *);
 void sqlite3SchemaWritable(Parse*, int);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);

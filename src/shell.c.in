@@ -1065,7 +1065,7 @@ struct ShellState {
 #define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
 #define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
 #define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
-#define SHELL_OPEN_REUSESCHEMA 5    /* Open for schema reuse */
+#define SHELL_OPEN_REUSESCHEMA 6      /* Open for schema reuse */
 
 /*
 ** These are the allowed shellFlgs values

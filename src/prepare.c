@@ -49,19 +49,19 @@ static void corruptSchema(
 ** specified by the three arguments following the first.
 */
 void schemaUpdateChecksum(
-  Schema *pSchema,                /* Schema object being parsed */
+  InitData *pData,                /* Schema parse context */
   const char *zName,              /* Name of new database object */
   const char *zRoot,              /* Root page of new database object */
   const char *zSql                /* SQL used to create new database object */
 ){
   int i;
-  u64 cksum = pSchema->cksum;
+  u64 cksum = pData->cksum;
   if( zName ){
     for(i=0; zName[i]; i++) cksum += (cksum<<3) + zName[i];
   }
   if( zRoot ) for(i=0; zRoot[i]; i++) cksum += (cksum<<3) + zRoot[i];
   if( zSql ) for(i=0; zSql[i]; i++) cksum += (cksum<<3) + zSql[i];
-  pSchema->cksum = cksum;
+  pData->cksum = cksum;
 }
 
 /*
@@ -151,13 +151,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   }
 
   if( iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
-    /* If this schema might be used by multiple connections, ensure that
-    ** the affinity string is allocated here. Otherwise, there might be
-    ** a race condition where two threads attempt to allocate it
-    ** simultaneously.  */
-    Index *pIndex = sqlite3FindIndex(db, argv[0], db->aDb[iDb].zDbSName);
-    if( pIndex ) sqlite3IndexAffinityStr(db, pIndex);
-    schemaUpdateChecksum(db->aDb[iDb].pSchema, argv[0], argv[1], argv[2]);
+    schemaUpdateChecksum(pData, argv[0], argv[1], argv[2]);
   }
   return 0;
 }
@@ -185,9 +179,27 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   assert( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 );
   assert( iDb>=0 && iDb<db->nDb );
-  assert( db->aDb[iDb].pSchema );
+  assert( db->aDb[iDb].pSchema || (IsReuseSchema(db) && iDb!=1) );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
+
+  pDb = &db->aDb[iDb];
+  if( pDb->pSPool ){
+    assert( IsReuseSchema(db) );
+    /* See if there is a free schema object in the schema-pool. If not,
+    ** disconnect from said schema pool and continue. This function will
+    ** connect to a (possibly different) schema-pool before returning. */
+    if( (pDb->pSchema = sqlite3SchemaExtract(pDb->pSPool)) ){
+      return SQLITE_OK;
+    }
+    sqlite3SchemaDisconnect(db, iDb);
+    assert( pDb->pSchema==0 && pDb->pSPool==0 );
+    pDb->pSchema = sqlite3SchemaGet(db, 0);
+    if( pDb->pSchema==0 ){
+      rc = SQLITE_NOMEM_BKPT;
+      goto error_out;
+    }
+  }
 
   db->init.busy = 1;
 
@@ -214,7 +226,6 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   /* Create a cursor to hold the database open
   */
-  pDb = &db->aDb[iDb];
   if( pDb->pBt==0 ){
     assert( iDb==1 );
     DbSetProperty(db, 1, DB_SchemaLoaded);
@@ -370,8 +381,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     rc = SQLITE_OK;
   }
 
-  if( iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
-    sqlite3SchemaReuse(db, iDb);
+  if( rc==SQLITE_OK && iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+    rc = sqlite3SchemaConnect(db, iDb, initData.cksum);
   }
 
   /* Jump here for an error that occurs after successfully allocating
@@ -446,7 +457,7 @@ int sqlite3ReadSchema(Parse *pParse){
     if( rc!=SQLITE_OK ){
       pParse->rc = rc;
       pParse->nErr++;
-    }else if( db->noSharedCache ){
+    }else if( db->noSharedCache && !IsReuseSchema(db) ){
       db->mDbFlags |= DBFLAG_SchemaKnownOk;
     }
   }
@@ -718,6 +729,7 @@ static int sqlite3LockAndPrepare(
 ){
   int rc;
   int cnt = 0;
+  int bReleaseSchema = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
@@ -727,6 +739,12 @@ static int sqlite3LockAndPrepare(
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
+  if( IsReuseSchema(db) ){
+    if( (db->mDbFlags & DBFLAG_SchemaInuse)==0 ){
+      db->mDbFlags |= DBFLAG_SchemaInuse;
+      bReleaseSchema = 1;
+    }
+  }
   sqlite3BtreeEnterAll(db);
   do{
     /* Make multiple attempts to compile the SQL, until it either succeeds
@@ -736,7 +754,14 @@ static int sqlite3LockAndPrepare(
     assert( rc==SQLITE_OK || *ppStmt==0 );
   }while( rc==SQLITE_ERROR_RETRY
        || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
+
   sqlite3BtreeLeaveAll(db);
+
+  if( bReleaseSchema ){
+    db->mDbFlags &= ~DBFLAG_SchemaInuse;
+    sqlite3SchemaReleaseAll(db);
+  }
+
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
   sqlite3_mutex_leave(db->mutex);

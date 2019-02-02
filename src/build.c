@@ -530,11 +530,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
   if( db->nSchemaLock==0 ){
     for(i=0; i<db->nDb; i++){
       if( DbHasProperty(db, i, DB_ResetWanted) ){
-        if( i==1 ){
-          sqlite3SchemaClear(db->aDb[1].pSchema);
-        }else{
-          sqlite3SchemaUnuse(db, i);
-        }
+        sqlite3SchemaClear(db->aDb[1].pSchema);
       }
     }
   }
@@ -549,7 +545,10 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   sqlite3BtreeEnterAll(db);
   assert( db->nSchemaLock==0 );
   for(i=0; i<db->nDb; i=(i?i+1:2)){
-    sqlite3SchemaUnuse(db, i);
+    Db *pDb = &db->aDb[i];
+    if( pDb->pSchema ){
+      sqlite3SchemaClear(pDb->pSchema);
+    }
   }
   sqlite3SchemaClear(db->aDb[1].pSchema);
   db->mDbFlags &= ~(DBFLAG_SchemaChange|DBFLAG_SchemaKnownOk);
