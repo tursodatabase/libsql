@@ -523,7 +523,7 @@ mod test {
     use crate::{Connection, Error, Result, NO_PARAMS};
 
     fn half(ctx: &Context<'_>) -> Result<c_double> {
-        assert!(ctx.len() == 1, "called with unexpected number of arguments");
+        assert_eq!(ctx.len(), 1, "called with unexpected number of arguments");
         let value = ctx.get::<c_double>(0)?;
         Ok(value / 2f64)
     }
@@ -553,7 +553,7 @@ mod test {
     // (https://www.sqlite.org/c3ref/get_auxdata.html) to avoid recompiling the regular
     // expression multiple times within one query.
     fn regexp_with_auxilliary(ctx: &Context<'_>) -> Result<bool> {
-        assert!(ctx.len() == 2, "called with unexpected number of arguments");
+        assert_eq!(ctx.len(), 2, "called with unexpected number of arguments");
 
         let saved_re: Option<&Regex> = ctx.get_aux(0)?;
         let new_re = match saved_re {
@@ -634,7 +634,7 @@ mod test {
         // until the function is removed.
         let mut cached_regexes = HashMap::new();
         db.create_scalar_function("regexp", 2, true, move |ctx| {
-            assert!(ctx.len() == 2, "called with unexpected number of arguments");
+            assert_eq!(ctx.len(), 2, "called with unexpected number of arguments");
 
             let regex_s = ctx.get::<String>(0)?;
             let entry = cached_regexes.entry(regex_s.clone());
