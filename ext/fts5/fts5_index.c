@@ -6427,6 +6427,10 @@ static void fts5DecodeFunction(
     /* Decode any more doclist data that appears on the page before the
     ** first term. */
     nDoclist = (iTermOff ? iTermOff : szLeaf) - iOff;
+    if( nDoclist+iOff>n ){
+      rc = FTS5_CORRUPT;
+      goto decode_out;
+    }
     fts5DecodeDoclist(&rc, &s, &a[iOff], nDoclist);
 
     while( iPgidxOff<n && rc==SQLITE_OK ){
