@@ -258,7 +258,7 @@ impl Changeset {
     }
 
     /// Create an iterator to traverse a changeset
-    pub fn iter<'changeset>(&'changeset self) -> Result<ChangesetIter<'changeset>> {
+    pub fn iter(&self) -> Result<ChangesetIter<'_>> {
         let mut it: *mut ffi::sqlite3_changeset_iter = unsafe { mem::uninitialized() };
         check!(unsafe { ffi::sqlite3changeset_start(&mut it, self.n, self.cs) });
         Ok(ChangesetIter {

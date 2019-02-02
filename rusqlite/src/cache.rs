@@ -33,7 +33,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn prepare_cached<'a>(&'a self, sql: &str) -> Result<CachedStatement<'a>> {
+    pub fn prepare_cached(&self, sql: &str) -> Result<CachedStatement<'_>> {
         self.cache.get(self, sql)
     }
 

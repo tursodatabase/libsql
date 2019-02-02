@@ -567,7 +567,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn prepare<'a>(&'a self, sql: &str) -> Result<Statement<'a>> {
+    pub fn prepare(&self, sql: &str) -> Result<Statement<'_>> {
         self.db.borrow_mut().prepare(self, sql)
     }
 
