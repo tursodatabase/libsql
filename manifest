@@ -1,5 +1,5 @@
-C Honor\skey\squery\sparameters\sfor\sSEE\son\sthe\sURI\sfilename\sfor\sATTACH\s\nand\sVACUUM\sINTO.
-D 2019-02-02T15:59:49.826
+C New\stestcase\sadded\sto\stest/fuzzdata8.db.
+D 2019-02-02T18:24:28.180
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -992,7 +992,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 3fc78e65dfe0be9df9e262075d5a335f18f627da47dfc691d1a7b822f34d4b99
-F test/fuzzdata8.db 4d977eebe3447f60bb846dad84744d171a577423ee3e40cf6fffd5585921c96a
+F test/fuzzdata8.db 411f8398e0a4ea1a219abeb18fcb695d670479e787c997e7d54737a5c8e22935
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69b0b2ee536fda8975f60643f7f1891db4649958aca476822ea2a632ce731992
-R 997b448db68d3c909bebb8c879b2cd6d
+P 2e01096b8933a2315e3dffcd7d0de84c744c1b4be1d909388c61f0fd636ddb99
+R 742814539bcab3a0e1fefee487a3682a
 U drh
-Z 1e6a7f7be5667686510be9242a9cd19f
+Z 1bf316c7c8e06ced5f02590d0f4da5e7
