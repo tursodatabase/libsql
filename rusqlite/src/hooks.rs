@@ -243,15 +243,15 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
 
         lazy_static! {
-            static ref called: AtomicBool = AtomicBool::new(false);
+            static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         db.commit_hook(Some(|| {
-            called.store(true, Ordering::Relaxed);
+            CALLED.store(true, Ordering::Relaxed);
             false
         }));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
             .unwrap();
-        assert!(called.load(Ordering::Relaxed));
+        assert!(CALLED.load(Ordering::Relaxed));
     }
 
     #[test]
@@ -272,14 +272,14 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
 
         lazy_static! {
-            static ref called: AtomicBool = AtomicBool::new(false);
+            static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         db.rollback_hook(Some(|| {
-            called.store(true, Ordering::Relaxed);
+            CALLED.store(true, Ordering::Relaxed);
         }));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;")
             .unwrap();
-        assert!(called.load(Ordering::Relaxed));
+        assert!(CALLED.load(Ordering::Relaxed));
     }
 
     #[test]
@@ -287,17 +287,17 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
 
         lazy_static! {
-            static ref called: AtomicBool = AtomicBool::new(false);
+            static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         db.update_hook(Some(|action, db: &str, tbl: &str, row_id| {
             assert_eq!(Action::SQLITE_INSERT, action);
             assert_eq!("main", db);
             assert_eq!("foo", tbl);
             assert_eq!(1, row_id);
-            called.store(true, Ordering::Relaxed);
+            CALLED.store(true, Ordering::Relaxed);
         }));
         db.execute_batch("CREATE TABLE foo (t TEXT)").unwrap();
         db.execute_batch("INSERT INTO foo VALUES ('lisa')").unwrap();
-        assert!(called.load(Ordering::Relaxed));
+        assert!(CALLED.load(Ordering::Relaxed));
     }
 }

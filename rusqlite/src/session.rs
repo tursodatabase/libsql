@@ -797,19 +797,19 @@ mod test {
             .unwrap();
 
         lazy_static! {
-            static ref called: AtomicBool = AtomicBool::new(false);
+            static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         db.apply(
             &changeset,
             None::<fn(&str) -> bool>,
             |_conflict_type, _item| {
-                called.store(true, Ordering::Relaxed);
+                CALLED.store(true, Ordering::Relaxed);
                 ConflictAction::SQLITE_CHANGESET_OMIT
             },
         )
         .unwrap();
 
-        assert!(!called.load(Ordering::Relaxed));
+        assert!(!CALLED.load(Ordering::Relaxed));
         let check = db
             .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| {
                 row.get::<_, i32>(0)
@@ -822,7 +822,7 @@ mod test {
             &changeset,
             None::<fn(&str) -> bool>,
             |conflict_type, item| {
-                called.store(true, Ordering::Relaxed);
+                CALLED.store(true, Ordering::Relaxed);
                 assert_eq!(ConflictType::SQLITE_CHANGESET_CONFLICT, conflict_type);
                 let conflict = item.conflict(0).unwrap();
                 assert_eq!(Ok("bar"), conflict.as_str());
@@ -830,7 +830,7 @@ mod test {
             },
         )
         .unwrap();
-        assert!(called.load(Ordering::Relaxed));
+        assert!(CALLED.load(Ordering::Relaxed));
     }
 
     #[test]
