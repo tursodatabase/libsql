@@ -60,6 +60,7 @@ impl Error for FromSqlError {
     }
 
     #[allow(clippy::match_same_arms)]
+    #[allow(deprecated)]
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
