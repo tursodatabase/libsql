@@ -1,5 +1,5 @@
-C Slight\sadjustment\sto\sthe\sprintf\sformatter\slarge\smemory\sallocation\sdetector\nso\sthat\sit\sdoes\snot\soverestimate\sthe\samount\sof\sspace\sneeded\sfor\noversize\s%d\sconversions.
-D 2019-02-01T21:08:27.686
+C Fix\sharmless\scompiler\swarning.
+D 2019-02-02T01:27:45.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -577,7 +577,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c a9a474205b7549bc5df46d941c2cc0096f1039dbce2d6f4fe084e1af9ba49aa2
+F src/tokenize.c 0a065eaa31f494ba31ac21d4a5d24a5a7865a7d849459f8c6266df1ac6b9aedf
 F src/treeview.c c6ff90da4cc1813ff2d9bb11f17d4d927db62c47e552faa1835edc47269d753d
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 179e5d46054e5c86f53a79b7a0823d9a383da8391ad1d3c3b22645927a1e052b
-R 50c42a74fe98f5dbb904cae1cb8cbfbb
-U drh
-Z 1fdda9ae13508dc111d3e51c4aa9232f
+P 1aee70d6de8a9b17ebb74a7cb1dad65139cde1b615dcce4d15d3a476fda8676b
+R 583d30fa3e42d45463163548707233f9
+U mistachkin
+Z b053a74a348fba4f89bc506f6888cd90

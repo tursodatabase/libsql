@@ -747,7 +747,7 @@ char *sqlite3Normalize(
   int i;             /* Next unread byte of zSql[] */
   int n;             /* length of current token */
   int tokenType;     /* type of current token */
-  int prevType;      /* Previous non-whitespace token */
+  int prevType = 0;  /* Previous non-whitespace token */
   int nParen;        /* Number of nested levels of parentheses */
   int iStartIN;      /* Start of RHS of IN operator in z[] */
   int nParenAtIN;    /* Value of nParent at start of RHS of IN operator */
