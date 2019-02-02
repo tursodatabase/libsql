@@ -11,11 +11,12 @@ use crate::{Connection, InnerConnection};
 
 /// Action Codes
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(i32)]
 pub enum Action {
     UNKNOWN = -1,
-    SQLITE_DELETE = ffi::SQLITE_DELETE as isize,
-    SQLITE_INSERT = ffi::SQLITE_INSERT as isize,
-    SQLITE_UPDATE = ffi::SQLITE_UPDATE as isize,
+    SQLITE_DELETE = ffi::SQLITE_DELETE,
+    SQLITE_INSERT = ffi::SQLITE_INSERT,
+    SQLITE_UPDATE = ffi::SQLITE_UPDATE,
 }
 
 impl From<i32> for Action {

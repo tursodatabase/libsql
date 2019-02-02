@@ -608,14 +608,15 @@ impl Connection {
 }
 
 /// Constants passed to the conflict handler
+#[repr(i32)]
 #[derive(Debug, PartialEq)]
 pub enum ConflictType {
     UNKNOWN = -1,
-    SQLITE_CHANGESET_DATA = ffi::SQLITE_CHANGESET_DATA as isize,
-    SQLITE_CHANGESET_NOTFOUND = ffi::SQLITE_CHANGESET_NOTFOUND as isize,
-    SQLITE_CHANGESET_CONFLICT = ffi::SQLITE_CHANGESET_CONFLICT as isize,
-    SQLITE_CHANGESET_CONSTRAINT = ffi::SQLITE_CHANGESET_CONSTRAINT as isize,
-    SQLITE_CHANGESET_FOREIGN_KEY = ffi::SQLITE_CHANGESET_FOREIGN_KEY as isize,
+    SQLITE_CHANGESET_DATA = ffi::SQLITE_CHANGESET_DATA,
+    SQLITE_CHANGESET_NOTFOUND = ffi::SQLITE_CHANGESET_NOTFOUND,
+    SQLITE_CHANGESET_CONFLICT = ffi::SQLITE_CHANGESET_CONFLICT,
+    SQLITE_CHANGESET_CONSTRAINT = ffi::SQLITE_CHANGESET_CONSTRAINT,
+    SQLITE_CHANGESET_FOREIGN_KEY = ffi::SQLITE_CHANGESET_FOREIGN_KEY,
 }
 impl From<i32> for ConflictType {
     fn from(code: i32) -> ConflictType {
@@ -631,11 +632,12 @@ impl From<i32> for ConflictType {
 }
 
 /// Constants returned by the conflict handler
+#[repr(i32)]
 #[derive(Debug, PartialEq)]
 pub enum ConflictAction {
-    SQLITE_CHANGESET_OMIT = ffi::SQLITE_CHANGESET_OMIT as isize,
-    SQLITE_CHANGESET_REPLACE = ffi::SQLITE_CHANGESET_REPLACE as isize,
-    SQLITE_CHANGESET_ABORT = ffi::SQLITE_CHANGESET_ABORT as isize,
+    SQLITE_CHANGESET_OMIT = ffi::SQLITE_CHANGESET_OMIT,
+    SQLITE_CHANGESET_REPLACE = ffi::SQLITE_CHANGESET_REPLACE,
+    SQLITE_CHANGESET_ABORT = ffi::SQLITE_CHANGESET_ABORT,
 }
 
 unsafe extern "C" fn call_filter<F, C>(p_ctx: *mut c_void, tbl_str: *const c_char) -> c_int
