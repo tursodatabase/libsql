@@ -60,6 +60,7 @@ impl Error for FromSqlError {
     }
 
     #[allow(clippy::match_same_arms)]
+    #[allow(deprecated)]
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
@@ -231,11 +232,11 @@ mod test {
         check_ranges::<i16>(&db, &[-32769, 32768], &[-32768, -1, 0, 1, 32767]);
         check_ranges::<i32>(
             &db,
-            &[-2147483649, 2147483648],
-            &[-2147483648, -1, 0, 1, 2147483647],
+            &[-2_147_483_649, 2_147_483_648],
+            &[-2_147_483_648, -1, 0, 1, 2_147_483_647],
         );
         check_ranges::<u8>(&db, &[-2, -1, 256], &[0, 1, 255]);
         check_ranges::<u16>(&db, &[-2, -1, 65536], &[0, 1, 65535]);
-        check_ranges::<u32>(&db, &[-2, -1, 4294967296], &[0, 1, 4294967295]);
+        check_ranges::<u32>(&db, &[-2, -1, 4_294_967_296], &[0, 1, 4_294_967_295]);
     }
 }

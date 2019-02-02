@@ -258,7 +258,7 @@ impl Changeset {
     }
 
     /// Create an iterator to traverse a changeset
-    pub fn iter<'changeset>(&'changeset self) -> Result<ChangesetIter<'changeset>> {
+    pub fn iter(&self) -> Result<ChangesetIter<'_>> {
         let mut it: *mut ffi::sqlite3_changeset_iter = unsafe { mem::uninitialized() };
         check!(unsafe { ffi::sqlite3changeset_start(&mut it, self.n, self.cs) });
         Ok(ChangesetIter {
@@ -608,14 +608,15 @@ impl Connection {
 }
 
 /// Constants passed to the conflict handler
+#[repr(i32)]
 #[derive(Debug, PartialEq)]
 pub enum ConflictType {
     UNKNOWN = -1,
-    SQLITE_CHANGESET_DATA = ffi::SQLITE_CHANGESET_DATA as isize,
-    SQLITE_CHANGESET_NOTFOUND = ffi::SQLITE_CHANGESET_NOTFOUND as isize,
-    SQLITE_CHANGESET_CONFLICT = ffi::SQLITE_CHANGESET_CONFLICT as isize,
-    SQLITE_CHANGESET_CONSTRAINT = ffi::SQLITE_CHANGESET_CONSTRAINT as isize,
-    SQLITE_CHANGESET_FOREIGN_KEY = ffi::SQLITE_CHANGESET_FOREIGN_KEY as isize,
+    SQLITE_CHANGESET_DATA = ffi::SQLITE_CHANGESET_DATA,
+    SQLITE_CHANGESET_NOTFOUND = ffi::SQLITE_CHANGESET_NOTFOUND,
+    SQLITE_CHANGESET_CONFLICT = ffi::SQLITE_CHANGESET_CONFLICT,
+    SQLITE_CHANGESET_CONSTRAINT = ffi::SQLITE_CHANGESET_CONSTRAINT,
+    SQLITE_CHANGESET_FOREIGN_KEY = ffi::SQLITE_CHANGESET_FOREIGN_KEY,
 }
 impl From<i32> for ConflictType {
     fn from(code: i32) -> ConflictType {
@@ -631,11 +632,12 @@ impl From<i32> for ConflictType {
 }
 
 /// Constants returned by the conflict handler
+#[repr(i32)]
 #[derive(Debug, PartialEq)]
 pub enum ConflictAction {
-    SQLITE_CHANGESET_OMIT = ffi::SQLITE_CHANGESET_OMIT as isize,
-    SQLITE_CHANGESET_REPLACE = ffi::SQLITE_CHANGESET_REPLACE as isize,
-    SQLITE_CHANGESET_ABORT = ffi::SQLITE_CHANGESET_ABORT as isize,
+    SQLITE_CHANGESET_OMIT = ffi::SQLITE_CHANGESET_OMIT,
+    SQLITE_CHANGESET_REPLACE = ffi::SQLITE_CHANGESET_REPLACE,
+    SQLITE_CHANGESET_ABORT = ffi::SQLITE_CHANGESET_ABORT,
 }
 
 unsafe extern "C" fn call_filter<F, C>(p_ctx: *mut c_void, tbl_str: *const c_char) -> c_int
@@ -795,19 +797,19 @@ mod test {
             .unwrap();
 
         lazy_static! {
-            static ref called: AtomicBool = AtomicBool::new(false);
+            static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         db.apply(
             &changeset,
             None::<fn(&str) -> bool>,
             |_conflict_type, _item| {
-                called.store(true, Ordering::Relaxed);
+                CALLED.store(true, Ordering::Relaxed);
                 ConflictAction::SQLITE_CHANGESET_OMIT
             },
         )
         .unwrap();
 
-        assert!(!called.load(Ordering::Relaxed));
+        assert!(!CALLED.load(Ordering::Relaxed));
         let check = db
             .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| {
                 row.get::<_, i32>(0)
@@ -820,7 +822,7 @@ mod test {
             &changeset,
             None::<fn(&str) -> bool>,
             |conflict_type, item| {
-                called.store(true, Ordering::Relaxed);
+                CALLED.store(true, Ordering::Relaxed);
                 assert_eq!(ConflictType::SQLITE_CHANGESET_CONFLICT, conflict_type);
                 let conflict = item.conflict(0).unwrap();
                 assert_eq!(Ok("bar"), conflict.as_str());
@@ -828,7 +830,7 @@ mod test {
             },
         )
         .unwrap();
-        assert!(called.load(Ordering::Relaxed));
+        assert!(CALLED.load(Ordering::Relaxed));
     }
 
     #[test]

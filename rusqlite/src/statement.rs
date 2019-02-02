@@ -186,7 +186,7 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query<'a, P>(&'a mut self, params: P) -> Result<Rows<'a>>
+    pub fn query<P>(&mut self, params: P) -> Result<Rows<'_>>
     where
         P: IntoIterator,
         P::Item: ToSql,
@@ -263,7 +263,7 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_map<'a, T, P, F>(&'a mut self, params: P, f: F) -> Result<MappedRows<'a, F>>
+    pub fn query_map<T, P, F>(&mut self, params: P, f: F) -> Result<MappedRows<'_, F>>
     where
         P: IntoIterator,
         P::Item: ToSql,
@@ -319,11 +319,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then<'a, T, E, P, F>(
-        &'a mut self,
-        params: P,
-        f: F,
-    ) -> Result<AndThenRows<'a, F>>
+    pub fn query_and_then<T, E, P, F>(&mut self, params: P, f: F) -> Result<AndThenRows<'_, F>>
     where
         P: IntoIterator,
         P::Item: ToSql,
@@ -858,6 +854,7 @@ mod test {
         assert_eq!(1, doubled_id);
 
         // second row should be Err
+        #[allow(clippy::match_wild_err_arm)]
         match rows.next().unwrap() {
             Ok(_) => panic!("invalid Ok"),
             Err(Error::SqliteSingleThreadedMode) => (),
@@ -1042,7 +1039,7 @@ mod test {
 
         use std::collections::BTreeSet;
         let data: BTreeSet<String> = ["one", "two", "three"]
-            .into_iter()
+            .iter()
             .map(|s| s.to_string())
             .collect();
         db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, String>(0))

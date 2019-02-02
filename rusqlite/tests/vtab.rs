@@ -88,7 +88,7 @@ fn test_dummy_module() {
         .unwrap();
 
     let version = version_number();
-    if version < 3008012 {
+    if version < 3_008_012 {
         return;
     }
 

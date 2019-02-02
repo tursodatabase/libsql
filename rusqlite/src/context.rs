@@ -12,7 +12,7 @@ use crate::types::{ToSqlOutput, ValueRef};
 #[cfg(feature = "array")]
 use crate::vtab::array::{free_array, ARRAY_TYPE};
 
-pub(crate) unsafe fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
+pub(crate) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<'_>) {
     let value = match *result {
         ToSqlOutput::Borrowed(v) => v,
         ToSqlOutput::Owned(ref v) => ValueRef::from(v),

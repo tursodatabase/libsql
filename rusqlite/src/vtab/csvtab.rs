@@ -366,7 +366,7 @@ mod test {
                 .query_map(NO_PARAMS, |row| row.get::<_, i32>(0))
                 .unwrap()
                 .collect();
-            let sum = ids.unwrap().iter().fold(0, |acc, &id| acc + id);
+            let sum = ids.unwrap().iter().sum::<i32>();
             assert_eq!(sum, 15);
         }
         db.execute_batch("DROP TABLE vtab").unwrap();

@@ -567,7 +567,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn prepare<'a>(&'a self, sql: &str) -> Result<Statement<'a>> {
+    pub fn prepare(&self, sql: &str) -> Result<Statement<'_>> {
         self.db.borrow_mut().prepare(self, sql)
     }
 
@@ -1247,11 +1247,9 @@ mod test {
             let tx2 = db2.transaction().unwrap();
 
             // SELECT first makes sqlite lock with a shared lock
-            let _ = tx1
-                .query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
+            tx1.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
                 .unwrap();
-            let _ = tx2
-                .query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
+            tx2.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
                 .unwrap();
 
             tx1.execute("INSERT INTO foo VALUES(?1)", &[1]).unwrap();
