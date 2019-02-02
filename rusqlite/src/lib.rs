@@ -98,16 +98,18 @@ pub use crate::transaction::{DropBehavior, Savepoint, Transaction, TransactionBe
 pub use crate::types::ToSql;
 pub use crate::version::*;
 
+#[macro_use]
+mod error;
+
 #[cfg(feature = "backup")]
 pub mod backup;
 #[cfg(feature = "blob")]
 pub mod blob;
 mod busy;
 mod cache;
+pub mod config;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;
-#[macro_use]
-mod error;
 #[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "hooks")]
