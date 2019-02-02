@@ -270,7 +270,7 @@ mod test {
     #[test]
     fn test_series_module() {
         let version = unsafe { ffi::sqlite3_libversion_number() };
-        if version < 3008012 {
+        if version < 3_008_012 {
             return;
         }
 

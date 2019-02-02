@@ -180,7 +180,7 @@ mod test {
         array::load_module(&db).unwrap();
 
         let v = vec![1i64, 2, 3, 4];
-        let values = v.into_iter().map(|i| Value::from(i)).collect();
+        let values = v.into_iter().map(Value::from).collect();
         let ptr = Rc::new(values);
         {
             let mut stmt = db.prepare("SELECT value from rarray(?);").unwrap();

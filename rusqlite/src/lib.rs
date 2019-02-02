@@ -1247,11 +1247,9 @@ mod test {
             let tx2 = db2.transaction().unwrap();
 
             // SELECT first makes sqlite lock with a shared lock
-            let _ = tx1
-                .query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
+            tx1.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
                 .unwrap();
-            let _ = tx2
-                .query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
+            tx2.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
                 .unwrap();
 
             tx1.execute("INSERT INTO foo VALUES(?1)", &[1]).unwrap();

@@ -854,6 +854,7 @@ mod test {
         assert_eq!(1, doubled_id);
 
         // second row should be Err
+        #[allow(clippy::match_wild_err_arm)]
         match rows.next().unwrap() {
             Ok(_) => panic!("invalid Ok"),
             Err(Error::SqliteSingleThreadedMode) => (),
@@ -1038,7 +1039,7 @@ mod test {
 
         use std::collections::BTreeSet;
         let data: BTreeSet<String> = ["one", "two", "three"]
-            .into_iter()
+            .iter()
             .map(|s| s.to_string())
             .collect();
         db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, String>(0))
